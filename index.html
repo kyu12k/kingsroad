@@ -650,8 +650,7 @@ function saveMyScoreToServer() {
         .catch((err) => console.error("저장 실패:", err));
 }
 
-/* [시스템] 스마트 랭킹 로드 (최적화 버전) */
-// ★ 각 리그별 전체 인원 수 저장 (백분율 계산용)
+/* [시스템] 스마트 랭킹 로드 (호환성 수정 버전) */
 var leagueTotalCounts = {};
 
 function loadLeaderboard(targetTier, callback) {
@@ -659,72 +658,59 @@ function loadLeaderboard(targetTier, callback) {
 
     // 1. 내 티어 확인
     const searchTier = (targetTier !== undefined) ? targetTier : (leagueData.tier || 0);
-    
-    // 2. 캐시 문서 ID
     const CACHE_DOC_ID = `cache_tier_${searchTier}`; 
     
     console.log(`📡 [${LEAGUE_CONFIG[searchTier].name}] 랭킹 신문 가지러 가는 중...`);
 
-    // ============================================================
-    // [STEP 1] 가판대에서 신문(캐시)을 먼저 봅니다. (비용: 1회)
-    // ============================================================
+    // [STEP 1] 캐시 확인
     db.collection("system_cache").doc(CACHE_DOC_ID).get()
         .then((doc) => {
             const now = new Date().getTime();
             let needUpdate = false;
             const CACHE_DURATION = 60 * 60 * 1000; // 1시간
 
-            // 신문이 없거나, 오래되었으면 -> "업데이트 필요"
+            // 신문이 없거나 낡았으면 업데이트
             if (!doc.exists || !doc.data().updatedAt || (now - doc.data().updatedAt.toMillis()) > CACHE_DURATION) {
                 needUpdate = true;
                 console.log("⏰ 신문이 낡아서 새로 취재하러 갑니다.");
             } else {
-                // ---------------------------------------------------------
-                // [최적화] 신문이 최신이면 여기서 모든 정보를 다 가져옵니다!
-                // ---------------------------------------------------------
                 console.log("📰 갓 구운 신문을 읽습니다. (추가 조회 0회!)");
                 try {
                     const data = doc.data();
                     const cachedList = JSON.parse(data.jsonList);
                     
-                    // ★ 핵심: 신문에 적혀있던 '총 인원 수'를 그대로 가져옴 (서버 요청 X)
-                    // (옛날 신문이라 totalCount가 없으면 그냥 리스트 길이로 대충 때움)
+                    // 캐시된 인원수 사용 (없으면 리스트 길이로 대체)
                     leagueTotalCounts[searchTier] = data.totalCount || cachedList.length;
-                    console.log(`✅ 전체 인원(캐시): ${leagueTotalCounts[searchTier]}명`);
-
-                    // 내 정보 표시를 위해 isMe 플래그 다시 계산
+                    
                     cachedList.forEach(p => p.isMe = (p.uid === myServerUid));
                     
                     if (callback) callback(cachedList);
-                    return; // ★ 여기서 완벽하게 종료!
+                    return; 
                 } catch (e) {
-                    needUpdate = true; // 에러 나면 다시 만듦
+                    needUpdate = true;
                 }
             }
 
-            // ============================================================
-            // [STEP 2] 기자 모드 (총대 메기) - 업데이트가 필요할 때만 실행
-            // ============================================================
+            // [STEP 2] 기자 모드 (직접 DB 조회) - 여기가 수정됨!
             if (needUpdate) {
-                // 1. TOP 100 명단 조회 (비용: 100회)
+                // A. TOP 100 명단 조회 (점수 높은 순)
                 const top100Query = db.collection("leaderboard")
                     .where("tier", "==", searchTier)
                     .orderBy("score", "desc")
                     .limit(100)
                     .get();
 
-                // 2. 전체 인원 수 조회 (비용: 인원수에 따라 소량)
+                // B. ★ 수정됨: count() 대신 전체 목록을 가져와서 사이즈 체크
+                // (주의: 유저가 수천 명이면 비용이 들지만, 1시간에 1번이라 괜찮음)
                 const totalCountQuery = db.collection("leaderboard")
                     .where("tier", "==", searchTier)
-                    .count()
-                    .get();
+                    .get(); // .count()를 제거했습니다!
 
-                // ★ 두 조사를 동시에 진행 (Promise.all)
                 Promise.all([top100Query, totalCountQuery])
-                    .then(([snapshot, countResult]) => {
-                        // A. 명단 정리
+                    .then(([snapshotTop100, snapshotTotal]) => {
+                        // 1. 명단 정리
                         let rankList = [];
-                        snapshot.forEach((originDoc) => {
+                        snapshotTop100.forEach((originDoc) => {
                             const data = originDoc.data();
                             rankList.push({
                                 name: data.nickname,
@@ -738,25 +724,25 @@ function loadLeaderboard(targetTier, callback) {
                             });
                         });
 
-                        // B. 전체 인원 수 정리
-                        const totalCount = countResult.data().count;
+                        // 2. 전체 인원 수 정리 (.size 사용)
+                        // ★ 여기서 snapshotTotal.size 를 씁니다!
+                        const totalCount = snapshotTotal.size;
                         leagueTotalCounts[searchTier] = totalCount;
                         console.log(`✅ [취재 완료] 전체 인원: ${totalCount}명`);
 
-                        // 화면에 먼저 뿌려줌
                         if (callback) callback(rankList);
 
-                        // C. ★ [핵심] 명단 + 전체 인원 수를 함께 '신문'에 인쇄
+                        // 3. 신문 발행
                         db.collection("system_cache").doc(CACHE_DOC_ID).set({
                             jsonList: JSON.stringify(rankList), 
-                            totalCount: totalCount, // <-- 여기에 같이 저장!
+                            totalCount: totalCount,
                             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        }).then(() => console.log("✅ 신문 발행 완료 (명단+인원수 포함)"));
+                        }).then(() => console.log("✅ 신문 발행 완료"));
 
                     })
                     .catch((error) => {
                         console.error("랭킹 업데이트 실패:", error);
-                        // 실패 시 비상용 로직 실행
+                        // 에러나면 비상용 로직 (인원수 없이 명단만)
                         fallbackLoadLeaderboard(searchTier, callback);
                     });
             }
