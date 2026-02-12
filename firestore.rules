@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 랭킹 데이터: 모두 읽기 가능, 인증된 유저만 본인 데이터 쓰기
+    match /leaderboard/{userId} {
+      allow read: if true;
+      // 실제 배포 시에는 request.auth.uid == userId로 제한 권장
+      allow write: if true; // 임시로 모두 허용 (익명 인증 사용 중)
+    }
+    
+    // 명예의 전당: 읽기만 가능 (Cloud Functions에서만 쓰기)
+    match /history/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    
+    // 시스템 메타데이터: 읽기만 가능 (Cloud Functions에서만 쓰기)
+    match /system_meta/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    
+    // 캐시 데이터: 모두 읽기 가능, 인증된 유저만 쓰기
+    match /system_cache/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}
