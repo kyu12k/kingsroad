@@ -1264,57 +1264,42 @@ body, html {
     text-shadow: 0 0 5px #f1c40f;
 }
 
-/* [수정] 메인 화면 '여정 시작' 버튼 - 간격(Margin) 최소화 */
+/* [최종] 여정 시작 버튼 */
 #start-journey-btn {
-    /* 1. 크기 설정 (아까와 동일) */
-    width: 200px !important;
-    padding: 10px 0 !important;
-    font-size: 1rem !important;
-    border-radius: 20px !important;
-    
-    /* 2. ★ 핵심: 위아래 간격 줄이기 ★ */
-    /* 위쪽 요소(컨트롤 패널)와의 간격을 5px로 확 줄임 */
-    margin-top: 5px !important; 
-    
-    /* 아래쪽 바닥과의 간격도 5px로 줄임 */
-    margin-bottom: 5px !important; 
-    
-    /* (옵션) 만약 그래도 간격이 넓다면 display 속성 확인 */
-    display: block !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-}
-
-/* [최종] 여정 시작 버튼: 위치 조정 + 디자인 복구 */
-#start-journey-btn {
-    /* 1. 위치와 크기 (다이어트) */
     width: 200px !important;
     padding: 12px 0 !important;
-    margin-top: 5px !important;     /* 위쪽 간격 좁힘 */
-    margin-bottom: 10px !important; /* 아래쪽 간격 좁힘 */
-    margin-left: auto !important;   /* 중앙 정렬 */
-    margin-right: auto !important;  /* 중앙 정렬 */
-    display: block !important;      /* 블록 요소로 변경 */
-
-    /* 2. ★ 디자인 (이게 없어서 흰색으로 보였던 겁니다!) */
-    background-color: #f1c40f !important;  /* 황금색 배경 */
-    color: #fff !important;                /* 흰색 글씨 */
-    border: none !important;               /* 회색 테두리 삭제 */
-    border-radius: 30px !important;        /* 둥글게 깎기 */
-    
-    /* 3. 폰트와 효과 */
+    margin-top: 5px !important;
+    margin-bottom: 10px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    display: block !important;
     font-size: 1.1rem !important;
     font-weight: bold !important;
     cursor: pointer !important;
-    box-shadow: 0 4px 0 #d35400 !important; /* 바닥 그림자 (입체감) */
-    text-shadow: 0 1px 2px rgba(0,0,0,0.2); /* 글씨 그림자 */
-    transition: transform 0.1s;
+    border: none !important;
+    border-radius: 30px !important;
+    
+    /* 파란색 그라데이션 배경 */
+    background: linear-gradient(135deg, #1d2088 0%, #3d4aad 50%, #5865d8 100%) !important;
+    color: #fff !important;
+    
+    /* 검은색 그림자 적용 */
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5) !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
 }
 
-/* 버튼 눌렀을 때 움찔하는 효과 */
+/* 버튼 호버 효과 */
+#start-journey-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6) !important;
+    background: linear-gradient(135deg, #252a9e 0%, #4a56c2 50%, #6b78e8 100%) !important;
+}
+
+/* 버튼 눌렀을 때 효과 */
 #start-journey-btn:active {
-    transform: translateY(4px);    /* 아래로 눌림 */
-    box-shadow: none !important;   /* 그림자 사라짐 */
+    transform: translateY(0);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
 }
 
 /* [3단계: 바이블 타워 게임 스타일 수정] */
@@ -1734,4 +1719,64 @@ body, html {
 }
 .booster-float.open .booster-float-panel {
     display: inline-block;
+}
+
+/* 도움말 스타일 */
+.help-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    border-left: 4px solid #3498db;
+}
+
+.help-title {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.help-desc {
+    font-size: 0.9rem;
+    color: #555;
+    line-height: 1.5;
+}
+
+/* 여정 시작 버튼 */
+.btn-main-action {
+    background: linear-gradient(135deg, #1d2088 0%, #3d4aad 50%, #5865d8 100%);
+    color: white;
+    font-size: 1.3rem;
+    font-weight: bold;
+    padding: 18px 50px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    transition: all 0.3s ease;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.btn-main-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+    background: linear-gradient(135deg, #252a9e 0%, #4a56c2 50%, #6b78e8 100%);
+}
+
+.btn-main-action:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+/* 월말 알림 펄스 애니메이션 */
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 4px 10px rgba(231,76,60,0.4);
+    }
+    50% {
+        transform: scale(1.02);
+        box-shadow: 0 6px 15px rgba(231,76,60,0.6);
+    }
 }

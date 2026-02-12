@@ -48,6 +48,44 @@
 
 </head>
 <body>
+<div id="help-modal" class="modal-overlay" style="z-index: 700;">
+    <div class="result-card" style="max-width: 500px; max-height: 80vh; overflow-y: auto;">
+        <div style="text-align: right;">
+            <button onclick="closeHelpModal()" style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
+        </div>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h2 style="margin:0; color:#2c3e50;">❓ 도움말</h2>
+            <p style="color:#7f8c8d; font-size:0.9rem; margin-top:5px;">각 기능에 대한 설명입니다</p>
+        </div>
+
+        <div style="text-align: left; color:#2c3e50;">
+            <div class="help-item">
+                <div class="help-title">🚶 여정 시작</div>
+                <div class="help-desc">맵 화면으로 이동하여 성경 암송 훈련을 시작합니다. 요한계시록 각 장을 순서대로 학습할 수 있습니다.</div>
+            </div>
+
+            <div class="help-item">
+                <div class="help-title">🏰 성전 건축</div>
+                <div class="help-desc">보석을 사용하여 성전 레벨을 올릴 수 있습니다. 성전 레벨이 높을수록 방치 시 자동으로 생산되는 보석이 증가합니다.</div>
+            </div>
+
+            <div class="help-item">
+                <div class="help-title">👤 프로필 (닉네임 변경)</div>
+                <div class="help-desc">닉네임과 지파를 설정할 수 있습니다. 지파에 따른 색상이 부여됩니다.</div>
+            </div>
+
+            <div class="help-item">
+                <div class="help-title">💾 데이터 관리</div>
+                <div class="help-desc">게임 진행 상황을 내보내거나 불러올 수 있습니다. 기기 변경 시 데이터를 옮길 때 사용하세요.</div>
+            </div>
+
+            <div class="help-item">
+                <div class="help-title">⚠️ 초기화</div>
+                <div class="help-desc">모든 게임 데이터를 삭제하고 처음부터 다시 시작합니다. <strong>되돌릴 수 없으니</strong> 신중하게 사용하세요.</div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div id="mode-select-modal" class="modal-overlay" style="z-index: 600;">
     <div class="result-card">
@@ -134,7 +172,7 @@
             <h1 style="color:#f1c40f; margin-bottom:5px;">⛺ 시온 마트</h1>
             <p style="color:#bdc3c7; font-size:0.9rem;">여정에 필요한 물품을 구비하세요</p>
             <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:10px; display:inline-block; margin-top:10px;">
-                내 보석: 💎 <span id="shop-user-gems" style="color:#fff; font-weight:bold;">0</span>
+                내 보석: <span id="shop-user-gems" style="color:#fff; font-weight:bold;">0</span>
             </div>
         </div>
 
@@ -191,6 +229,9 @@
     </div>
 
     <div id="home-screen" class="screen active">
+    <button onclick="openHelpModal()" style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:#fff; width:40px; height:40px; border-radius:50%; font-size:1.3rem; cursor:pointer; z-index:100; transition: all 0.3s; display:flex; align-items:center; justify-content:center;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+        ❓
+    </button>
     <div>
         <div class="game-title">KING'S ROAD</div>
         <div class="game-subtitle">새 예루살렘을 건설해가는 왕의 여정</div>
@@ -206,6 +247,12 @@
                 <div style="font-size:0.9rem;">🔒 건축 불가</div>
                 <div style="font-size:1rem; color:#ecf0f1;">필요: 1,000</div>
             </button></div>
+    </div>
+
+    <!-- ★ 월말 승점 차단 알림 -->
+    <div id="month-end-warning" style="display:none; background:linear-gradient(135deg, #e74c3c, #c0392b); color:#fff; padding:12px 20px; border-radius:15px; margin:10px 20px; animation: pulse 2s ease-in-out infinite; box-shadow: 0 4px 10px rgba(231,76,60,0.4); border: 2px solid rgba(255,255,255,0.3);">
+        <div style="font-size:1.1rem; font-weight:bold; margin-bottom:5px;">⚠️ 시즌 종료 임박</div>
+        <div style="font-size:0.85rem; line-height:1.5;">오늘 23:00~24:00 승점 획득 불가<br><span style="font-size:0.8rem; opacity:0.9;">💎 보석 획득은 정상 지급</span></div>
     </div>
 
     <button id="start-journey-btn" class="btn-main-action" onclick="startGame()">
@@ -616,8 +663,8 @@ try {
 function saveMyScoreToServer() {
     if (!db || !myServerUid) return; 
 
-    // 1. 현재 주차 ID 계산 (예: "2024-W06")
-    const currentWeekId = getWeekId();
+    // 1. 현재 월간 ID 계산 (예: "2026-02")
+    const currentMonthId = getMonthId();
     
     // 2. 내 정보 패키징
     const myData = {
@@ -628,7 +675,7 @@ function saveMyScoreToServer() {
         tag: myTag,
         tier: (leagueData.tier !== undefined) ? leagueData.tier : 0, // 리그 등급
         tribe: (myTribe !== undefined) ? myTribe : 0, // 지파 정보
-        weekId: currentWeekId,          // 주차 정보
+        weekId: currentMonthId,          // 시즌 정보 (월간)
         originalDeviceId: myPlayerId,  
         updatedAt: firebase.firestore.FieldValue.serverTimestamp() 
     };
@@ -639,14 +686,14 @@ function saveMyScoreToServer() {
     const currentRef = db.collection("leaderboard").doc(myServerUid);
     batch.set(currentRef, myData, { merge: true });
 
-    // B. [역사관] 명예의 전당용 (문서 ID를 '주차_유저ID'로 만듦)
-    // 예: history_2024-W06_user123
-    const historyRef = db.collection("history").doc(`${currentWeekId}_${myServerUid}`);
+    // B. [명예의 전당] 시즌별 기록용 (문서 ID를 '시즌_유저ID'로 만듦)
+    // 예: 2026-02_user123
+    const historyRef = db.collection("history").doc(`${currentMonthId}_${myServerUid}`);
     batch.set(historyRef, myData, { merge: true });
 
     // 전송!
     batch.commit()
-        .then(() => console.log("☁️ 서버에 기록 저장 완료 (현황+역사)"))
+        .then(() => console.log("☁️ 서버에 기록 저장 완료 (현황+명예의전당)"))
         .catch((err) => console.error("저장 실패:", err));
 }
 
@@ -732,6 +779,20 @@ function loadLeaderboard(targetTier, callback) {
 
                         if (callback) callback(rankList);
 
+                        // ★ [Step 3] 시온성(Tier 5) 커트라인 자동 조절
+                        if (searchTier === 5 && snapshotTop100.size >= 100) {
+                            // 100등(목록의 마지막)의 점수 가져오기
+                            const lastDoc = snapshotTop100.docs[snapshotTop100.size - 1];
+                            const newCutoff = lastDoc.data().score;
+
+                            // 칠판(system_meta)에 새로운 커트라인 적어두기
+                            db.collection("system_meta").doc("tier_info").set({
+                                zion_cutoff: newCutoff
+                            }, { merge: true });
+                            
+                            console.log(`⚖️ 시온성 경쟁 치열! 커트라인이 ${newCutoff}점으로 올라갔습니다.`);
+                        }
+                        
                         // 3. 신문 발행
                         db.collection("system_cache").doc(CACHE_DOC_ID).set({
                             jsonList: JSON.stringify(rankList), 
@@ -798,16 +859,16 @@ function fallbackLoadLeaderboard(targetTier, callback) {
         });
 }
 
-/* [기능] 명예의 전당 데이터 가져오기 (특정 주차) */
-function loadHallOfFame(weekId, callback) {
+/* [기능] 명예의 전당 데이터 가져오기 (특정 시즌) */
+function loadHallOfFame(monthId, callback) {
     if (!db) return;
 
-    console.log(`📜 ${weekId} 명예의 전당 조회 중...`);
+    console.log(`📜 ${monthId} 명예의 전당 조회 중...`);
 
     db.collection("history")
-        .where("weekId", "==", weekId) // 해당 주차의 기록만
+        .where("weekId", "==", monthId) // 해당 시즌의 기록만
         .orderBy("score", "desc")      // 점수 높은 순
-        .limit(100)                     // 상위 100명만 (명예의 전당이니까)
+        .limit(100)                     // 상위 100명만 (명예의 전당)
         .get()
         .then((snapshot) => {
             let list = [];
