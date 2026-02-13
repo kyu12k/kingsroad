@@ -1486,6 +1486,16 @@ let boosterData = {
     nextLoginReward: null // { multi: 3, min: 15 } 형태 (내일 보상 저장용)
 };
 
+/* ✨ [캐시] 랭킹 데이터 클라이언트 캐싱 (1시간 유지) */
+let rankingCache = {
+    tribes: {}, // { tribeId: { data, timestamp }, ... }
+    zion: { data: null, timestamp: 0 },
+    weeklyHall: { data: null, timestamp: 0 },
+    monthlyHall: { data: null, timestamp: 0 }
+};
+
+const RANKING_CACHE_DURATION = 60 * 60 * 1000; // 1시간(ms)
+
         /* [데이터: 챕터 및 스테이지 정보 (자동 생성 시스템 - 버그 수정판)] */
 const gameData = [];
 
@@ -5333,16 +5343,30 @@ function loadZionRanking() {
     loadZionLeaderboard((data) => renderRankingList(data));
 }
 
-/* [데이터] 주간 지파/시온성 랭킹 로드 */
+/* [데이터] 주간 지파/시온성 랭킹 로드 (+ 캐싱) */
 function loadTribeLeaderboard(tribeId, callback) {
     if (typeof db === 'undefined' || !db) {
         callback([]);
         return;
     }
 
+    const now = Date.now();
+    
+    // ✨ 캐시 확인
+    if (!rankingCache.tribes[tribeId]) {
+        rankingCache.tribes[tribeId] = { data: null, timestamp: 0 };
+    }
+    
+    const cached = rankingCache.tribes[tribeId];
+    if (cached.data && (now - cached.timestamp) < RANKING_CACHE_DURATION) {
+        console.log(`📦 캐시 사용 (tribe_${tribeId})`);
+        callback(cached.data);
+        return;
+    }
+
     const currentWeekId = getWeekId();
     
-    // ✅ Snapshot 문서에서 읽기 (1회 읽기)
+    // 📡 서버에서 읽기
     db.collection('ranking_snapshots')
         .doc(currentWeekId)
         .collection('tribes')
@@ -5371,6 +5395,9 @@ function loadTribeLeaderboard(tribeId, callback) {
                 };
             });
             
+            // 💾 캐시 저장
+            rankingCache.tribes[tribeId] = { data: transformed, timestamp: now };
+            
             callback(transformed);
         })
         .catch(err => {
@@ -5385,9 +5412,18 @@ function loadZionLeaderboard(callback) {
         return;
     }
 
+    const now = Date.now();
+    
+    // ✨ 캐시 확인
+    if (rankingCache.zion.data && (now - rankingCache.zion.timestamp) < RANKING_CACHE_DURATION) {
+        console.log(`📦 캐시 사용 (zion)`);
+        callback(rankingCache.zion.data);
+        return;
+    }
+
     const currentWeekId = getWeekId();
     
-    // ✅ Snapshot 문서에서 읽기 (1회 읽기)
+    // 📡 서버에서 읽기
     db.collection('ranking_snapshots')
         .doc(currentWeekId)
         .collection('tribes')
@@ -5416,6 +5452,9 @@ function loadZionLeaderboard(callback) {
                 };
             });
             
+            // 💾 캐시 저장
+            rankingCache.zion = { data: transformed, timestamp: now };
+            
             callback(transformed);
         })
         .catch(err => {
@@ -5425,9 +5464,19 @@ function loadZionLeaderboard(callback) {
 }
 
 /* ✨ [NEW] 주간 명예의 전당 로드 */
+/* ✨ [NEW] 주간 명예의 전당 로드 (+ 캐싱) */
 function loadWeeklyHallOfFame() {
     const list = document.getElementById('ranking-list');
     if (!list) return;
+
+    const now = Date.now();
+    
+    // ✨ 캐시 확인
+    if (rankingCache.weeklyHall.data && (now - rankingCache.weeklyHall.timestamp) < RANKING_CACHE_DURATION) {
+        console.log(`📦 캐시 사용 (weeklyHall)`);
+        renderHallOfFameList(rankingCache.weeklyHall.data, '지난 주 명예의 전당');
+        return;
+    }
 
     list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">📡 주간 명예의 전당 불러오는 중...</div>`;
 
@@ -5438,7 +5487,7 @@ function loadWeeklyHallOfFame() {
         return;
     }
 
-    // ranking_snapshots/{lastWeekId}/tribes/zion 에서 지난주 Top100 읽기
+    // 📡 서버에서 읽기
     db.collection('ranking_snapshots')
         .doc(lastWeekId)
         .collection('tribes')
@@ -5453,6 +5502,10 @@ function loadWeeklyHallOfFame() {
 
             const data = doc.data();
             const ranks = data.ranks || [];
+            
+            // 💾 캐시 저장
+            rankingCache.weeklyHall = { data: ranks, timestamp: now };
+            
             renderHallOfFameList(ranks, '지난 주 명예의 전당');
         })
         .catch(err => {
@@ -5461,10 +5514,19 @@ function loadWeeklyHallOfFame() {
         });
 }
 
-/* ✨ [NEW] 월간 명예의 전당 로드 */
+/* ✨ [NEW] 월간 명예의 전당 로드 (+ 캐싱) */
 function loadMonthlyHallOfFame() {
     const list = document.getElementById('ranking-list');
     if (!list) return;
+
+    const now = Date.now();
+    
+    // ✨ 캐시 확인
+    if (rankingCache.monthlyHall.data && (now - rankingCache.monthlyHall.timestamp) < RANKING_CACHE_DURATION) {
+        console.log(`📦 캐시 사용 (monthlyHall)`);
+        renderHallOfFameList(rankingCache.monthlyHall.data, '지난 달 명예의 전당');
+        return;
+    }
 
     list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">📡 월간 명예의 전당 불러오는 중...</div>`;
 
@@ -5475,7 +5537,7 @@ function loadMonthlyHallOfFame() {
         return;
     }
 
-    // ranking_snapshots/{lastMonthId}/hall/monthly 에서 지난달 Top100 읽기
+    // 📡 서버에서 읽기
     db.collection('ranking_snapshots')
         .doc(lastMonthId)
         .collection('hall')
@@ -5490,6 +5552,10 @@ function loadMonthlyHallOfFame() {
 
             const data = doc.data();
             const ranks = data.ranks || [];
+            
+            // 💾 캐시 저장
+            rankingCache.monthlyHall = { data: ranks, timestamp: now };
+            
             renderHallOfFameList(ranks, '지난 달 명예의 전당');
         })
         .catch(err => {
