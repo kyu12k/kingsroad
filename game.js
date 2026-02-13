@@ -951,20 +951,7 @@ function showTribeInfo(e, id) {
     }, 1500);
 }
 
-/* [시스템] 리그(티어) 설정 데이터 */
-const LEAGUE_CONFIG = [
-    { id: 0, name: "애굽", icon: "🧱", color: "#7f8c8d", promote: 300, demote: -1 },        // 기본 (강등 없음)
-    { id: 1, name: "광야", icon: "🌵", color: "#cd7f32", promote: 1000, demote: 0 },       // 300점 넘으면 옴
-    { id: 2, name: "요단", icon: "🌊", color: "#3498db", promote: 2500, demote: 500 },     // 1000점 넘으면 옴
-    { id: 3, name: "여리고", icon: "🏰", color: "#9b59b6", promote: 5000, demote: 1500 },  // 2500점 넘으면 옴
-    { id: 4, name: "가나안", icon: "🍇", color: "#e67e22", promote: 10000, demote: 3000 }, // 5000점 넘으면 옴
-    { id: 5, name: "시온성", icon: "👑", color: "#f1c40f", promote: 999999, demote: 7000 } // 최고 등급
-];
-
-/* [규칙 설명]
-   - promote: 이 점수를 넘기면 다음 주에 한 단계 승급
-   - demote: 이 점수보다 못하면 다음 주에 한 단계 강등
-*/
+/* [시스템] 리그 티어 기반 구조는 폐지됨 (지파 랭킹 사용) */
 
         /* [데이터: 성경 전체 데이터베이스 (1~5장 통합)] */
 /* 기존의 bossStageData 변수는 삭제하고 이 변수를 사용합니다. */
@@ -1484,10 +1471,11 @@ function generateRandomNickname() {
       
   // 1. 리그 및 부스터 데이터 초기화
 let leagueData = {
-    tier: 0, // 0:애굽 ~ 5:시온성
-    weekId: getMonthId(), // 현재 시즌 (예: "2026-02")
+    weekId: getWeekId(), // 현재 주차 (예: "2026-W07")
+    monthId: getMonthId(), // 현재 월 (예: "202602")
     myScore: 0,
-    stageLog: {} // { "1-1": "2026-02" } -> 이번 달 클리어 기록
+    myMonthlyScore: 0, // 월간 누적 점수
+    stageLog: {} // { "1-1": "2026-W07" } -> 이번 주 클리어 기록
 };
 
 /* [시스템: 미션 및 부스터 데이터] */
@@ -1500,6 +1488,14 @@ let boosterData = {
 
         /* [데이터: 챕터 및 스테이지 정보 (자동 생성 시스템 - 버그 수정판)] */
 const gameData = [];
+
+// ★ 디버그: bibleData 길이 확인
+console.log('=== bibleData 장별 길이 확인 ===');
+for (let j = 1; j <= 22; j++) {
+    if (bibleData[j]) {
+        console.log(`장 ${j}: ${bibleData[j].length}절`);
+    }
+}
 
 // 1장부터 22장까지 반복
 for (let i = 1; i <= 22; i++) {
@@ -1702,19 +1698,14 @@ function startGame() {
             // 3. 성전 모습 업데이트
             updateCastleView();
 
-            // ★ 월말 승점 차단 알림 표시
+            // ★ 주간 리셋 알림 표시
             const warningEl = document.getElementById('month-end-warning');
             if (warningEl) {
                 const now = new Date();
-                const isLastDay = isLastDayOfMonth();
-                const currentHour = now.getHours();
-                
-                // 월말 당일이고 23시 이전이면 알림 표시
-                if (isLastDay && currentHour < 23) {
-                    warningEl.style.display = 'block';
-                } else {
-                    warningEl.style.display = 'none';
-                }
+                const isLastDay = isLastDayOfWeek();
+
+                // 일요일이면 알림 표시
+                warningEl.style.display = isLastDay ? 'block' : 'none';
             }
 
             // ★ [추가] 중요! 혹시 열려있을지 모르는 스테이지 시트(하얀 박스)를 닫아줌
@@ -1924,6 +1915,75 @@ function drawRiver() {
         // 전역 변수로 타이머 관리 (창 닫을 때 끄기 위해)
 var stageSheetTimer = null;
 
+// [도우미] 스테이지가 속한 챕터 데이터 조회
+function getChapterDataByStageId(stageId) {
+    const chNum = parseInt(String(stageId).split('-')[0]);
+    if (isNaN(chNum)) return null;
+    return gameData.find(c => c.id === chNum) || null;
+}
+
+// [도우미] 해당 스테이지 구간의 체크포인트(중간점검/보스) ID 찾기
+function getSegmentCheckpointStageId(chapterData, stageId) {
+    if (!chapterData || !chapterData.stages) return null;
+    const idx = chapterData.stages.findIndex(s => s.id === stageId);
+    if (idx === -1) return null;
+
+    for (let i = idx + 1; i < chapterData.stages.length; i++) {
+        const stage = chapterData.stages[i];
+        if (!stage) continue;
+        if (stage.type === 'mid-boss' || stage.type === 'boss') return stage.id;
+    }
+
+    return null;
+}
+
+// [도우미] 중간점검/보스 클리어 시 전체학습 허용 여부
+function isFullLearningUnlockedByCheckpoint(stageId) {
+    const chapterData = getChapterDataByStageId(stageId);
+    if (!chapterData) return false;
+
+    const stage = chapterData.stages.find(s => s.id === stageId);
+    if (!stage || stage.type !== 'normal') return false;
+
+    const checkpointId = getSegmentCheckpointStageId(chapterData, stageId);
+    if (!checkpointId) return false;
+
+    return (stageMastery[checkpointId] || 0) > 0;
+}
+
+// [도우미] 한 번도 진행하지 않은 스테이지인지 확인
+function isUnplayedStage(stageId) {
+    return !missionData.stageProgress || !missionData.stageProgress[stageId];
+}
+
+// ★ [도우미] 해당 장의 아직 초회를 받지 않은 mid-boss의 총 절수
+function getUnreceivedMidBossVerses(chapterNum) {
+    const chData = gameData.find(c => c.id === chapterNum);
+    if (!chData) return 0;
+    
+    let unreceived = 0;
+    chData.stages.forEach(stage => {
+        if (stage.type === 'mid-boss') {
+            const lastTime = stageLastClear[stage.id] || 0;
+            const isClearedToday = lastTime && new Date(lastTime).toDateString() === new Date().toDateString();
+            // 초회를 못 받은 mid-boss = 아직 오늘 클리어하지 않은 것
+            if (!isClearedToday) {
+                unreceived += stage.targetVerseCount || 0;
+            }
+        }
+    });
+    return unreceived;
+}
+
+// ★ [도우미] 해당 장의 모든 mid-boss 스테이지 ID 목록
+function getChapterMidBossIds(chapterNum) {
+    const chData = gameData.find(c => c.id === chapterNum);
+    if (!chData) return [];
+    return chData.stages
+        .filter(s => s.type === 'mid-boss')
+        .map(s => s.id);
+}
+
 /* [수정] 스테이지 시트 열기 (각 버튼별 타이머 적용) */
 function openStageSheet(chapterData) {
     const sheet = document.getElementById('stage-sheet');
@@ -1989,11 +2049,19 @@ if (memStatus.level > 0) {
         let progress = missionData.stageProgress ? missionData.stageProgress[stage.id] : null;
         let isCoolingDown = (progress && progress.unlockTime > Date.now());
 
+        const canForceFullNew = isFullLearningUnlockedByCheckpoint(stage.id) && isUnplayedStage(stage.id);
+
         // 3. 버튼 오른쪽 표시 (톱니바퀴 vs 재생버튼 vs 타이머)
         let rightSideContent = "";
         let rewardInfo = "";
 
-        if (isCleared && memStatus.level >= 1) {
+        if (canForceFullNew) {
+            rightSideContent = `<div style="font-size:1.2rem; color:#f1c40f;">▶</div>`;
+            if (stage.type !== 'boss' && stage.type !== 'mid-boss') {
+                rewardInfo = `<div style="font-size:0.75rem; color:#e67e22; font-weight:bold; margin-top:4px;">🎁 신규 전체학습: 최대 70💎</div>`;
+            }
+        }
+        else if (isCleared && memStatus.level >= 1) {
             // 기억 레벨 1 이상일 때만 복습 모드 아이콘
             rightSideContent = `<div style="font-size:1.2rem; color:#bdc3c7;">⚙️</div>`;
         } 
@@ -2006,8 +2074,14 @@ if (memStatus.level > 0) {
             // 안 깼고 쿨타임도 아님 -> 재생 버튼
             rightSideContent = `<div style="font-size:1.2rem; color:#f1c40f;">▶</div>`;
             
-            // ★ [수정] 보스나 중간점검이 아닐 때만 보상 문구 표시
-            if (stage.type !== 'boss' && stage.type !== 'mid-boss') {
+            // ★ [수정] 모든 스테이지 타입의 보상 정보 표시
+            if (stage.type === 'boss' || stage.type === 'mid-boss') {
+                // 보스/중간점검: verseCount × maxPlayerHearts × (5 초회, 1 반복)
+                const rewardData = getDisplayRewardInfo(stage.id, stage.type, stage.targetVerseCount, isTodayClear);
+                let badge = isTodayClear ? '🔄[반복]' : '📖[초회 완료]';
+                rewardInfo = `<div style="font-size:0.75rem; color:#e67e22; font-weight:bold; margin-top:4px;">${badge} 최대 +${rewardData.gem}💎, 승점 +${rewardData.score}</div>`;
+            } else {
+                // 일반 스테이지
                 rewardInfo = `<div style="font-size:0.75rem; color:#e67e22; font-weight:bold; margin-top:4px;">🎁 최초 완료 보상: 총 100💎</div>`;
             }
         }
@@ -2031,6 +2105,8 @@ if (memStatus.level > 0) {
 
             if (stage.type === 'boss' || stage.type === 'mid-boss') {
                 startBossBattle(stage.targetVerseCount); 
+            } else if (canForceFullNew) {
+                startTraining(stage.id, 'full-new');
             } else if (isCleared && memStatus.level >= 1) {
                 openModeSelect(stage.id);
             } else {
@@ -2332,6 +2408,8 @@ function startBossBattle(limitCount_unused) {
     let startIndex = 0; 
     let endIndex = fullChapterData.length; // 기본값: 전체 (최종보스)
 
+    console.log(`[보스 시작] 1단계: 장 확인 - ${chapterNum}장, bibleData[${chapterNum}].length = ${fullChapterData.length}`);
+
     const chData = gameData.find(c => c.id === chapterNum);
     
     // 중간보스라면 순서를 찾아서 범위 지정
@@ -2354,6 +2432,9 @@ function startBossBattle(limitCount_unused) {
     // 데이터 잘라내기
     window.currentBattleData = fullChapterData.slice(startIndex, endIndex);
     maxBossHp = window.currentBattleData.length; 
+    
+    // ★ 디버그: 보스 체력 확인
+    console.log(`[보스 시작] 장: ${chapterNum}, 스테이지: ${sId}, 최대 체력: ${maxBossHp}, 구절 수: ${window.currentBattleData.length}`); 
 
     // -----------------------------------------------------------
     // [체력 설정] 하트 10개 버그 수정 (확실한 초기화)
@@ -2373,7 +2454,64 @@ function startBossBattle(limitCount_unused) {
     loadNextVerse();
 }
 
-        /* [수정] loadNextVerse (승리 연출 추가 버전) */
+/* [축하 이펙트] 보스 클리어 시 파티클 폭죽 생성 */
+function createVictoryParticles() {
+    const gameScreen = document.getElementById('game-screen');
+    const particleEmojis = ['⭐', '✨', '💛', '🎉', '🏆', '💎'];
+    
+    // 2번의 웨이브로 나눠서 생성 (더 화려하게)
+    for (let wave = 0; wave < 2; wave++) {
+        setTimeout(() => {
+            for (let i = 0; i < 15; i++) {
+                const particle = document.createElement('div');
+                particle.innerHTML = particleEmojis[Math.floor(Math.random() * particleEmojis.length)];
+                
+                // 랜덤 위치에서 시작
+                const startX = Math.random() * 100; // 0 ~ 100%
+                const startY = -10; // 화면 위에서 출발
+                
+                particle.style.cssText = `
+                    position: fixed;
+                    left: ${startX}%;
+                    top: ${startY}%;
+                    font-size: ${1.5 + Math.random() * 1}rem;
+                    pointer-events: none;
+                    z-index: 1000;
+                    animation: fallDown ${2 + Math.random() * 1}s ease-in forwards;
+                    opacity: 1;
+                `;
+                
+                gameScreen.appendChild(particle);
+            }
+        }, wave * 300); // 300ms 간격으로 웨이브 생성
+    }
+}
+
+/* [CSS 인젝션] fallDown 애니메이션 (동적 추가) */
+(function injectParticleStyles() {
+    if (document.getElementById('particle-style')) return; // 이미 있으면 스킵
+    
+    const style = document.createElement('style');
+    style.id = 'particle-style';
+    style.textContent = `
+        @keyframes fallDown {
+            0% {
+                transform: translateY(0) translateX(0) scale(1);
+                opacity: 1;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) translateX(${Math.sin(Math.random() * Math.PI) * 200}px) scale(0);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+})();
+
+        /* [수정] loadNextVerse (축하 이펙트 강화 버전) */
 function loadNextVerse() {
     // 1. 전투 종료 체크 (승리!)
     if (currentVerseIdx >= window.currentBattleData.length) {
@@ -2385,13 +2523,19 @@ function loadNextVerse() {
             // 1. 사망 애니메이션 클래스 추가
             bossAvatar.classList.add('boss-die-effect');
             
-            // 2. 비명 소리 (기존 오답음을 길게 변형하거나, 타격음 연타)
+            // 2. 축하 이펙트 음성 (승리 팡파레 시뮬레이션)
             if(typeof SoundEffect !== 'undefined') {
-                // 약간 낮은 톤으로 길게 끄는 소리 (비명 느낌)
-                SoundEffect.playTone(150, 'sawtooth', 0.8, 0.2); 
+                // 승리 음성: 상승하는 톤 연속
+                SoundEffect.playTone(330, 'sine', 0.3, 0.1);  // 미(E)
+                setTimeout(() => SoundEffect.playTone(392, 'sine', 0.3, 0.1), 100);  // 파(G)
+                setTimeout(() => SoundEffect.playTone(494, 'sine', 0.3, 0.1), 200);  // 라(A)
+                setTimeout(() => SoundEffect.playTone(587, 'sine', 0.5, 0.2), 300);  // 시(B) - 길게
             }
 
-            // 3. 애니메이션 시간(1.5초) 뒤에 진짜 승리 처리
+            // 3. 파티클 폭죽 이펙트 생성
+            createVictoryParticles();
+
+            // 4. 애니메이션 시간(2초) 뒤에 진짜 승리 처리
             setTimeout(() => {
                 const clearedStageId = window.currentStageId;
                 const sId = String(window.currentStageId);
@@ -2404,7 +2548,7 @@ function loadNextVerse() {
                 
                 quitGame();
                 openStageSheetForStageId(clearedStageId);
-            }, 1500); // 1.5초 딜레이
+            }, 2000); // 2초 딜레이 (폭죽 효과 최대 2개 웨이브)
             
             return; // 함수 여기서 중단 (애니메이션 기다림)
         }
@@ -2579,14 +2723,53 @@ attackBtn.onclick = () => {
 }
         
 
-/* [수정] UI 업데이트 함수 (하트 숫자 고정 문제 해결판) */
+/* [수정] UI 업데이트 함수 (분할 체력바 + 개선된 보스 표시) */
 function updateBattleUI() {
-    // 1. 보스 체력바 업데이트
+    // ★ 디버그: updateBattleUI 호출 시점의 maxBossHp 확인
+    console.log(`[updateBattleUI] 호출됨 - maxBossHp=${maxBossHp}, currentBossHp=${currentBossHp}`);
+    
+    // 1. 보스 체력바 업데이트 (세그먼트 방식)
     if(typeof maxBossHp !== 'undefined' && maxBossHp > 0) { 
-        const bossBar = document.getElementById('boss-hp-bar');
+        const hpContainer = document.querySelector('.hp-container');
         const bossText = document.getElementById('boss-hp-text');
-        if(bossBar) bossBar.style.width = `${(currentBossHp / maxBossHp) * 100}%`;
-        if(bossText) bossText.innerText = currentBossHp;
+        
+        // ★ 핵심: maxBossHp가 변경되면 항상 새로 생성 (플래그 확인 안 함)
+        if(hpContainer) {
+            const currentSegmentCount = hpContainer.querySelectorAll('.hp-segment').length;
+            
+            // maxBossHp가 일치하지 않으면 새로 생성
+            if (currentSegmentCount !== maxBossHp) {
+                hpContainer.innerHTML = ''; // 기존 내용 제거
+                
+                // 각 구절마다 세그먼트 생성
+                for (let i = 0; i < maxBossHp; i++) {
+                    const segment = document.createElement('div');
+                    segment.className = 'hp-segment';
+                    segment.setAttribute('data-index', i);
+                    if (i >= currentBossHp) {
+                        segment.classList.add('damaged');
+                    }
+                    // 모든 세그먼트가 동일한 크기를 가지도록 계산: (전체 너비 - gap*개수) / 개수
+                    const flexBasis = `calc((100% - ${(maxBossHp - 1) * 1}px) / ${maxBossHp})`;
+                    segment.style.flex = `0 0 ${flexBasis}`;
+                    segment.style.height = '100%';
+                    hpContainer.appendChild(segment);
+                }
+            } else {
+                // 이미 동일한 개수의 세그먼트가 있으면 상태만 업데이트
+                const segments = hpContainer.querySelectorAll('.hp-segment');
+                segments.forEach((seg, i) => {
+                    if (i >= currentBossHp) {
+                        seg.classList.add('damaged');
+                    } else {
+                        seg.classList.remove('damaged');
+                    }
+                });
+            }
+        }
+        
+        // 텍스트 업데이트 (현재 체력 / 최대 체력)
+        if(bossText) bossText.innerText = `${currentBossHp} / ${maxBossHp}`;
     }
 
     // 2. 데이터 준비
@@ -2974,6 +3157,7 @@ function startTraining(stageId, mode = 'normal') {
     // 1. 진행 데이터 로드
     if (!missionData.stageProgress) missionData.stageProgress = {};
     let progress = missionData.stageProgress[stageId] || { phase: 0, unlockTime: 0 };
+    const isForceFullNew = (mode === 'full-new');
     
     // ★ [수정] chNum을 여기서 미리 정의합니다 (함수 전체에서 쓰임)
     // 파싱을 좀 더 견고하게: '1-2', '1-boss' 등 여러 형식 허용
@@ -3002,7 +3186,7 @@ function startTraining(stageId, mode = 'normal') {
     
     const memStatus = checkMemoryStatus(stageId);
     const isReplayEligible = isCleared && memStatus.level >= 1;
-    window.isReplayMode = isReplayEligible;
+    window.isReplayMode = isReplayEligible && !isForceFullNew;
 
     // ----------------------------------------------------
     // [A] 복습 모드 (이미 깬 스테이지)
@@ -3019,6 +3203,10 @@ function startTraining(stageId, mode = 'normal') {
     // [B] 새 진도 (시간 차 학습)
     // ----------------------------------------------------
     else {
+        if (isForceFullNew) {
+            mode = 'full-new';
+            stepSequence = [1, 2, 3, 4, 5];
+        } else {
         // [안전장치] 3단계 완료했는데 기록 없으면 강제 클리어 처리
         if (progress.phase >= 3) {
             alert("🎉 학습 과정을 모두 마쳤습니다! 이제 복습 모드로 전환됩니다.");
@@ -3054,6 +3242,7 @@ function startTraining(stageId, mode = 'normal') {
             progress.phase = 0;
             mode = 'phase1';
             stepSequence = [1, 2];
+        }
         }
     }
 
@@ -3869,6 +4058,12 @@ function finishTraining() {
         if (!missionData.stageProgress) missionData.stageProgress = {};
         let progress = missionData.stageProgress[sId] || { phase: 0, unlockTime: 0 };
 
+        if (window.trainingMode === 'full-new') {
+            progress.phase = 3;
+            progress.unlockTime = 0;
+            missionData.stageProgress[sId] = progress;
+        }
+
         // 1단계 완료 (씨뿌리기) -> 보석 10개 (소량)
         if (window.trainingMode === 'phase1') {
             progress.phase = 1; 
@@ -3962,6 +4157,10 @@ function showClearScreen() {
     if (window.trainingMode === 'phase3') {
         baseGem = 70; 
         msg = "🍒 [완전 정복] 시간 차 학습 완료!";
+    }
+    else if (window.trainingMode === 'full-new') {
+        baseGem = 70;
+        msg = "📖 [전체 학습] 신규 클리어!";
     }
     // [B] 복습 (빠른 복습 OR 전체 학습)
     else {
@@ -4776,32 +4975,19 @@ const LEAGUE_TIERS = [
     { name: "👑 천국 리그", color: "#9b59b6" }  // Master
 ];
 
-/* [기능] 시즌 리셋 (새로운 월이 시작되었을 때) */
-function resetLeague(newMonthId) {
-    console.log(`🔄 새 시즌 감지: ${leagueData.weekId} → ${newMonthId}`);
-    leagueData.weekId = newMonthId;
+/* [기능] 시즌 리셋 (새로운 주가 시작되었을 때) */
+function resetLeague(newWeekId) {
+    console.log(`🔄 새 시즌 감지: ${leagueData.weekId} → ${newWeekId}`);
+    leagueData.weekId = newWeekId;
     // stageLog와 myScore는 checkDailyLogin에서 초기화하므로 여기선 weekId만 업데이트
 }
 
-/* [수정] calculateScore 함수 (재도전 보너스 시스템 + 23시 차단) */
+/* [수정] calculateScore 함수 (재도전 보너스 시스템) */
 function calculateScore(stageId, type, verseCount, hearts) {
-    const currentMonth = getMonthId();
+    const currentWeek = getWeekId();
     
-    if (leagueData.weekId !== currentMonth) {
-        resetLeague(currentMonth);
-    }
-
-    // ★ 월말 23시~00시 승점 획득 차단
-    const now = new Date();
-    const currentHour = now.getHours();
-    if (isLastDayOfMonth() && currentHour >= 23) {
-        return {
-            score: 0,
-            bonus: 0,
-            isRetry: false,
-            blocked: true,
-            blockReason: "월말 23시 이후 승점 획득 불가"
-        };
+    if (leagueData.weekId !== currentWeek) {
+        resetLeague(currentWeek);
     }
 
     let baseScore = 0;
@@ -4816,13 +5002,13 @@ function calculateScore(stageId, type, verseCount, hearts) {
     }
 
     // [초회/반복 점수 로직]
-    if (leagueData.stageLog[stageId] === currentMonth) {
+    if (leagueData.stageLog[stageId] === currentWeek) {
         isRetry = true;
-        // 같은 달 반복: 기본 점수 유지 (x1)
+        // 같은 주 반복: 기본 점수 유지 (x1)
         // baseScore 변경 없음
     } else {
-        leagueData.stageLog[stageId] = currentMonth;
-        // 새로운 달 초회: 5배 보너스
+        leagueData.stageLog[stageId] = currentWeek;
+        // 새로운 주 초회: 5배 보너스
         baseScore = baseScore * 5;
     }
 
@@ -4832,6 +5018,7 @@ function calculateScore(stageId, type, verseCount, hearts) {
     const finalScore = Math.floor(baseScore * boosterData.multiplier);
 
     leagueData.myScore += finalScore;
+    leagueData.myMonthlyScore += finalScore; // ✨ 월간 누적도 추가
     saveGameData();
 
     return { 
@@ -5005,6 +5192,61 @@ if (document.readyState === 'loading') {
     initBoosterFloat();
 }
 
+// 주간 랭킹 카운트 캐시 (지파/전체)
+let weeklyRankCounts = {
+    weekId: null,
+    totalCount: 0,
+    tribeCounts: {},
+    cutoffTotal: 0,
+    cutoffTribes: {}
+};
+
+function loadWeeklyRankCounts() {
+    if (typeof db === 'undefined' || !db) return;
+
+    db.collection('system_meta').doc('weekly_counts').get()
+        .then(doc => {
+            if (!doc.exists) return;
+            const data = doc.data();
+            const currentWeekId = getWeekId();
+
+            if (data.weekId !== currentWeekId) return;
+
+            weeklyRankCounts = {
+                weekId: data.weekId,
+                totalCount: data.totalCount || 0,
+                tribeCounts: data.tribeCounts || {},
+                cutoffTotal: data.cutoffTotal || 0,
+                cutoffTribes: data.cutoffTribes || {}
+            };
+
+            if (document.getElementById('ranking-screen')) {
+                updateStickyMyRank(window.lastRankInTop100 === true);
+            }
+        })
+        .catch(err => {
+            console.error('❌ 주간 카운트 로드 실패:', err);
+        });
+}
+
+function getCurrentRankingTotalCount() {
+    const mode = window.currentRankingMode || 'tribe';
+    if (mode === 'zion') {
+        return weeklyRankCounts.totalCount || 0;
+    }
+    const tribeKey = String(myTribe);
+    return (weeklyRankCounts.tribeCounts && weeklyRankCounts.tribeCounts[tribeKey]) || 0;
+}
+
+function getCurrentRankingCutoff() {
+    const mode = window.currentRankingMode || 'tribe';
+    if (mode === 'zion') {
+        return weeklyRankCounts.cutoffTotal || 0;
+    }
+    const tribeKey = String(myTribe);
+    return (weeklyRankCounts.cutoffTribes && weeklyRankCounts.cutoffTribes[tribeKey]) || 0;
+}
+
 /* [수정] 랭킹 화면 열기 */
 function openRankingScreen() {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -5016,43 +5258,38 @@ function openRankingScreen() {
         screen.id = 'ranking-screen';
         screen.className = 'screen';
         screen.style.background = "#2c3e50"; 
-        
-        // 리그 버튼 HTML 생성
-        let leagueBtnsHtml = '';
-        LEAGUE_CONFIG.forEach((lg) => {
-            leagueBtnsHtml += `
-                <button onclick="switchLeagueTab(${lg.id})" id="btn-league-${lg.id}" 
-                    style="background:none; border:1px solid rgba(255,255,255,0.2); border-radius:10px; padding:5px 10px; margin-right:5px; cursor:pointer; min-width:60px; flex-shrink:0;">
-                    <div style="font-size:1.5rem;">${lg.icon}</div>
-                    <div style="font-size:0.7rem; color:#bdc3c7; margin-top:2px;">${lg.name.split(' ')[0]}</div>
-                </button>
-            `;
-        });
 
         screen.innerHTML = `
     <div class="map-header" style="flex-direction:column; justify-content:center; border-bottom:1px solid rgba(255,255,255,0.1); padding:15px 0;">
-        <div style="font-weight:bold; font-size:1.2rem; color:white; margin-bottom:5px;">🏆 리그별 순위 (Top 100)</div>
+        <div style="font-weight:bold; font-size:1.2rem; color:white; margin-bottom:5px;">🏆 지파 랭킹 (Top 100)</div>
         <div id="season-timer-display" style="font-size:0.85rem; color:#bdc3c7; font-family:monospace; margin-bottom:10px;">⏳ 시간 계산 중...</div>
+        <div style="font-size:0.8rem; color:#95a5a6; margin-bottom:10px;">🔄 정오(12:00) · 저녁 6시(18:00)에 업데이트됩니다</div>
         
         <button onclick="scrollToMyRank()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #ecf0f1; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 5px; margin: 0 auto;">
             📍 내 순위 찾기
         </button>
     </div>
 
-    <div style="display:flex; padding:10px; gap:5px;">
-        <button id="tab-current" onclick="switchRankingTab('current')" 
-            style="flex:1; padding:12px 2px; border-radius:10px; border:none; background:#f1c40f; color:#2c3e50; font-weight:bold; cursor:pointer; white-space:nowrap; font-size:0.95rem; letter-spacing:-0.5px; display:flex; align-items:center; justify-content:center;">
-            📅 이번 주
+    <div style="display:grid; grid-template-columns: 1fr 1fr; padding:10px; gap:5px;">
+        <button id="tab-tribe" onclick="switchRankingTab('tribe')" 
+            style="padding:12px 2px; border-radius:10px; border:none; background:#f1c40f; color:#2c3e50; font-weight:bold; cursor:pointer; white-space:nowrap; font-size:0.9rem; letter-spacing:-0.5px;">
+            🧭 내 지파
         </button>
 
-        <button id="tab-fame" onclick="switchRankingTab('fame')" 
-            style="flex:1; padding:12px 2px; border-radius:10px; border:none; background:rgba(255,255,255,0.1); color:#bdc3c7; font-weight:bold; cursor:pointer; white-space:nowrap; font-size:0.95rem; letter-spacing:-0.5px; display:flex; align-items:center; justify-content:center;">
-            🏛️ 명예의 전당
+        <button id="tab-zion" onclick="switchRankingTab('zion')" 
+            style="padding:12px 2px; border-radius:10px; border:none; background:rgba(255,255,255,0.1); color:#bdc3c7; font-weight:bold; cursor:pointer; white-space:nowrap; font-size:0.9rem; letter-spacing:-0.5px;">
+            👑 시온성
         </button>
-    </div>
 
-    <div id="league-selector-bar" style="display:flex; overflow-x:auto; padding:0 10px 10px 10px; gap:5px; white-space:nowrap; -webkit-overflow-scrolling:touch;">
-        ${leagueBtnsHtml}
+        <button id="tab-weekly-hall" onclick="switchRankingTab('weekly-hall')" 
+            style="padding:12px 2px; border-radius:10px; border:none; background:rgba(255,255,255,0.1); color:#bdc3c7; font-weight:bold; cursor:pointer; white-space:nowrap; font-size:0.9rem; letter-spacing:-0.5px;">
+            🏛️ 주간 명예
+        </button>
+
+        <button id="tab-monthly-hall" onclick="switchRankingTab('monthly-hall')" 
+            style="padding:12px 2px; border-radius:10px; border:none; background:rgba(255,255,255,0.1); color:#bdc3c7; font-weight:bold; cursor:pointer; white-space:nowrap; font-size:0.9rem; letter-spacing:-0.5px;">
+            📜 월간 명예
+        </button>
     </div>
 
         <div id="ranking-list" style="flex: 1; overflow-y: auto; padding: 10px; padding-bottom: 150px;">
@@ -5067,62 +5304,203 @@ function openRankingScreen() {
     }
     
     screen.classList.add('active'); 
-    switchRankingTab('current'); // 기본 탭 열기
+    switchRankingTab('tribe'); // 기본 탭 열기
     startSeasonTimer();
+    loadWeeklyRankCounts();
     // 백버튼 가시성 갱신 (랭킹 화면에서는 보여야 함)
     if (typeof updateBackButtonVisibility === 'function') updateBackButtonVisibility();
 }
 
-/* [추가] 리그 탭 전환 기능 */
-function switchLeagueTab(tierId) {
-    // 1. 모든 버튼 스타일 초기화 (흐리게)
-    LEAGUE_CONFIG.forEach(lg => {
-        const btn = document.getElementById(`btn-league-${lg.id}`);
-        if(btn) {
-            btn.style.background = "none";
-            btn.style.borderColor = "rgba(255,255,255,0.2)";
-            btn.querySelector('div:last-child').style.color = "#bdc3c7";
-            btn.style.transform = "scale(1)";
-        }
-    });
+/* [추가] 지파/시온성 랭킹 로드 */
+function loadTribeRanking() {
+    const list = document.getElementById('ranking-list');
+    if (!list) return;
 
-    // 2. 선택된 버튼 강조 (진하게 + 색상)
-    const activeBtn = document.getElementById(`btn-league-${tierId}`);
-    if(activeBtn) {
-        const color = LEAGUE_CONFIG[tierId].color; // 리그 고유색
-        activeBtn.style.background = `rgba(255,255,255,0.1)`;
-        activeBtn.style.borderColor = color;
-        activeBtn.querySelector('div:last-child').style.color = color;
-        activeBtn.querySelector('div:last-child').style.fontWeight = "bold";
-        activeBtn.style.transform = "scale(1.05)";
-        
-        // 버튼이 화면 밖이면 스크롤해서 보여주기
-        activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    const tribeName = (TRIBE_DATA[myTribe] && TRIBE_DATA[myTribe].name) ? TRIBE_DATA[myTribe].name : '내 지파';
+    list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">📡 ${tribeName} 랭킹 불러오는 중...</div>`;
+
+    window.currentRankingMode = 'tribe';
+    loadTribeLeaderboard(myTribe, (data) => renderRankingList(data));
+}
+
+function loadZionRanking() {
+    const list = document.getElementById('ranking-list');
+    if (!list) return;
+
+    list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">📡 시온성 랭킹 불러오는 중...</div>`;
+
+    window.currentRankingMode = 'zion';
+    loadZionLeaderboard((data) => renderRankingList(data));
+}
+
+/* [데이터] 주간 지파/시온성 랭킹 로드 */
+function loadTribeLeaderboard(tribeId, callback) {
+    if (typeof db === 'undefined' || !db) {
+        callback([]);
+        return;
     }
 
-    // 3. 해당 리그 데이터 로드
-    const list = document.getElementById('ranking-list');
-    list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">📡 ${LEAGUE_CONFIG[tierId].name} 불러오는 중...</div>`;
+    const currentWeekId = getWeekId();
     
-    // 전역 변수로 현재 보고 있는 티어 저장 (내 순위 찾기 등에서 씀)
-    window.currentViewingTier = tierId; 
+    // ✅ Snapshot 문서에서 읽기 (1회 읽기)
+    db.collection('ranking_snapshots')
+        .doc(currentWeekId)
+        .collection('tribes')
+        .doc(`tribe_${tribeId}`)
+        .get()
+        .then(doc => {
+            if (!doc.exists) {
+                console.warn(`⚠️ Snapshot 아직 준비 중: ${currentWeekId}/tribe_${tribeId}`);
+                callback([]);
+                return;
+            }
+            
+            const data = doc.data();
+            const ranks = data.ranks || [];
+            
+            // ranks 배열을 UI에 맞게 변환
+            const transformed = ranks.map((row, index) => {
+                return {
+                    rank: index + 1,
+                    name: row.name || "이름없음",
+                    score: row.score || 0,
+                    tribe: row.tribe !== undefined ? row.tribe : tribeId,
+                    tag: row.tag || "",
+                    castle: row.castle || 0,
+                    isMe: false  // ⚠️ Snapshot에는 myPlayerId 정보가 없으므로 false로 설정
+                };
+            });
+            
+            callback(transformed);
+        })
+        .catch(err => {
+            console.error("❌ 지파 랭킹 로드 실패:", err);
+            callback([]);
+        });
+}
 
-    loadLeaderboard(tierId, (data) => renderRankingList(data));
+function loadZionLeaderboard(callback) {
+    if (typeof db === 'undefined' || !db) {
+        callback([]);
+        return;
+    }
+
+    const currentWeekId = getWeekId();
+    
+    // ✅ Snapshot 문서에서 읽기 (1회 읽기)
+    db.collection('ranking_snapshots')
+        .doc(currentWeekId)
+        .collection('tribes')
+        .doc('zion')
+        .get()
+        .then(doc => {
+            if (!doc.exists) {
+                console.warn(`⚠️ Zion Snapshot 아직 준비 중: ${currentWeekId}/zion`);
+                callback([]);
+                return;
+            }
+            
+            const data = doc.data();
+            const ranks = data.ranks || [];
+            
+            // ranks 배열을 UI에 맞게 변환
+            const transformed = ranks.map((row, index) => {
+                return {
+                    rank: index + 1,
+                    name: row.name || "이름없음",
+                    score: row.score || 0,
+                    tribe: row.tribe !== undefined ? row.tribe : 0,
+                    tag: row.tag || "",
+                    castle: row.castle || 0,
+                    isMe: false  // ⚠️ Snapshot에는 myPlayerId 정보가 없으므로 false로 설정
+                };
+            });
+            
+            callback(transformed);
+        })
+        .catch(err => {
+            console.error("❌ 시온성 랭킹 로드 실패:", err);
+            callback([]);
+        });
+}
+
+/* ✨ [NEW] 주간 명예의 전당 로드 */
+function loadWeeklyHallOfFame() {
+    const list = document.getElementById('ranking-list');
+    if (!list) return;
+
+    list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">📡 주간 명예의 전당 불러오는 중...</div>`;
+
+    const lastWeekId = getLastWeekId(); // 지난주 ID
+    
+    if (typeof db === 'undefined' || !db) {
+        renderHallOfFameList([], '지난 주 명예의 전당');
+        return;
+    }
+
+    // ranking_snapshots/{lastWeekId}/tribes/zion 에서 지난주 Top100 읽기
+    db.collection('ranking_snapshots')
+        .doc(lastWeekId)
+        .collection('tribes')
+        .doc('zion')
+        .get()
+        .then(doc => {
+            if (!doc.exists) {
+                console.warn(`⚠️ 주간 명예의 전당 데이터 없음: ${lastWeekId}`);
+                renderHallOfFameList([], '지난 주 명예의 전당');
+                return;
+            }
+
+            const data = doc.data();
+            const ranks = data.ranks || [];
+            renderHallOfFameList(ranks, '지난 주 명예의 전당');
+        })
+        .catch(err => {
+            console.error("❌ 주간 명예의 전당 로드 실패:", err);
+            renderHallOfFameList([], '지난 주 명예의 전당');
+        });
+}
+
+/* ✨ [NEW] 월간 명예의 전당 로드 */
+function loadMonthlyHallOfFame() {
+    const list = document.getElementById('ranking-list');
+    if (!list) return;
+
+    list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">📡 월간 명예의 전당 불러오는 중...</div>`;
+
+    const lastMonthId = getLastMonthId(); // 지난달 ID
+    
+    if (typeof db === 'undefined' || !db) {
+        renderHallOfFameList([], '지난 달 명예의 전당');
+        return;
+    }
+
+    // ranking_snapshots/{lastMonthId}/hall/monthly 에서 지난달 Top100 읽기
+    db.collection('ranking_snapshots')
+        .doc(lastMonthId)
+        .collection('hall')
+        .doc('monthly')
+        .get()
+        .then(doc => {
+            if (!doc.exists) {
+                console.warn(`⚠️ 월간 명예의 전당 데이터 없음: ${lastMonthId}`);
+                renderHallOfFameList([], '지난 달 명예의 전당');
+                return;
+            }
+
+            const data = doc.data();
+            const ranks = data.ranks || [];
+            renderHallOfFameList(ranks, '지난 달 명예의 전당');
+        })
+        .catch(err => {
+            console.error("❌ 월간 명예의 전당 로드 실패:", err);
+            renderHallOfFameList([], '지난 달 명예의 전당');
+        });
 }
 
 /* [수정] 내 순위 찾기 */
 function scrollToMyRank() {
-    const myTier = leagueData.tier || 0;
-
-    // 1. 만약 다른 리그를 보고 있다면 -> 내 리그로 이동
-    if (window.currentViewingTier !== myTier) {
-        switchLeagueTab(myTier);
-        // 데이터 로딩 시간을 고려해 약간 뒤에 스크롤
-        setTimeout(findAndScrollMe, 700);
-    } else {
-        // 이미 내 리그를 보고 있다면 바로 찾기
-        findAndScrollMe();
-    }
+    findAndScrollMe();
 }
 
 // 스크롤 로직 분리
@@ -5139,7 +5517,7 @@ function findAndScrollMe() {
         myCard.style.transform = "scale(1.05)";
         setTimeout(() => myCard.style.transform = "scale(1)", 200);
     } else {
-        alert("현재 리그 100위 안에 들지 못했습니다.\n분발하세요, 순례자여! 🔥");
+        alert("현재 랭킹 Top 100 안에 들지 못했습니다.\n분발하세요, 순례자여! 🔥");
     }
 }
 
@@ -5194,39 +5572,42 @@ function startSeasonTimer() {
 
 /* [수정] 메인 탭 전환 (리그 선택 바 숨김/표시 추가) */
 function switchRankingTab(tabName) {
-    const btnCurrent = document.getElementById('tab-current');
-    const btnFame = document.getElementById('tab-fame');
-    const leagueBar = document.getElementById('league-selector-bar');
+    const btnTribe = document.getElementById('tab-tribe');
+    const btnZion = document.getElementById('tab-zion');
+    const btnWeeklyHall = document.getElementById('tab-weekly-hall');
+    const btnMonthlyHall = document.getElementById('tab-monthly-hall');
 
-    if (tabName === 'current') {
-        // [이번 주]
-        btnCurrent.style.background = "#f1c40f";
-        btnCurrent.style.color = "#2c3e50";
-        btnFame.style.background = "rgba(255,255,255,0.1)";
-        btnFame.style.color = "#bdc3c7";
-        
-        // ★ 리그 선택 바 보이기
-        if(leagueBar) leagueBar.style.display = "flex";
+    // 모든 탭 버튼 초기화
+    [btnTribe, btnZion, btnWeeklyHall, btnMonthlyHall].forEach(btn => {
+        if (btn) {
+            btn.style.background = "rgba(255,255,255,0.1)";
+            btn.style.color = "#bdc3c7";
+        }
+    });
 
-        // ★ 내 리그를 기본으로 보여줌
-        const myTier = leagueData.tier || 0;
-        switchLeagueTab(myTier);
+    if (tabName === 'tribe') {
+        // [내 지파]
+        btnTribe.style.background = "#f1c40f";
+        btnTribe.style.color = "#2c3e50";
+        loadTribeRanking();
 
-    } else {
-        // [명예의 전당]
-        btnCurrent.style.background = "rgba(255,255,255,0.1)";
-        btnCurrent.style.color = "#bdc3c7";
-        btnFame.style.background = "#e67e22";
-        btnFame.style.color = "white";
+    } else if (tabName === 'zion') {
+        // [시온성]
+        btnZion.style.background = "#e67e22";
+        btnZion.style.color = "white";
+        loadZionRanking();
 
-        // ★ 리그 선택 바 숨기기 (명예의 전당은 전체 통합이므로)
-        if(leagueBar) leagueBar.style.display = "none";
+    } else if (tabName === 'weekly-hall') {
+        // [주간 명예의 전당]
+        btnWeeklyHall.style.background = "#9b59b6";
+        btnWeeklyHall.style.color = "white";
+        loadWeeklyHallOfFame();
 
-        // 명예의 전당 로드 (기존 로직)
-        const list = document.getElementById('ranking-list');
-        list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">📡 전당 데이터 로드 중...</div>`;
-        const lastMonthId = getLastMonthId();
-        loadHallOfFame(lastMonthId, (data) => renderHallOfFameList(data, lastMonthId));
+    } else if (tabName === 'monthly-hall') {
+        // [월간 명예의 전당]
+        btnMonthlyHall.style.background = "#1abc9c";
+        btnMonthlyHall.style.color = "white";
+        loadMonthlyHallOfFame();
     }
 }
 
@@ -5242,7 +5623,6 @@ function renderHallOfFameList(data, title) {
     header.innerHTML = `
         <div style="font-size:0.9rem; color:#f39c12; font-weight:bold;">🏆 HALL OF FAME</div>
         <div style="font-size:1.5rem; color:white; font-weight:bold;">${title}</div>
-        <div style="font-size:0.8rem; color:#bdc3c7;">지난 시즌 명예의 전당 (Top 100)</div>
     `;
     list.appendChild(header);
 
@@ -5329,16 +5709,14 @@ function renderRankingList(data) {
 
     // 1. 내가 리스트(Top 100) 안에 있는지 확인
     let amIInTop100 = false;
-    
-    // ★ 현재 보고 있는 리그의 전체 인원 수 표시
-    const currentTierIdx = window.currentViewingTier || (leagueData.tier || 0);
-    const tierName = LEAGUE_CONFIG[currentTierIdx] ? LEAGUE_CONFIG[currentTierIdx].name : "리그";
-    const totalCount = leagueTotalCounts[currentTierIdx] || "계산 중...";
-    
-    // 헤더에 전체 인원 수 표시
+
+    // 헤더 표시
+    const mode = window.currentRankingMode || 'tribe';
+    const tribeName = (TRIBE_DATA[myTribe] && TRIBE_DATA[myTribe].name) ? TRIBE_DATA[myTribe].name : '내 지파';
+    const headerTitle = mode === 'zion' ? '👑 시온성 Top 100' : `🧭 ${tribeName} Top 100`;
     const headerDiv = document.createElement('div');
     headerDiv.style.cssText = `padding: 15px; color: #bdc3c7; font-size: 0.9rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);`;
-    headerDiv.innerHTML = `<strong>${tierName}</strong> 리그 | 전체 인원: <strong style="color: #f1c40f;">${totalCount}명</strong>`;
+    headerDiv.innerHTML = `${headerTitle} <span style="opacity:0.7; margin-left:6px;">(${getWeekId()})</span>`;
     list.appendChild(headerDiv);
     
     // 데이터가 없을 때 처리
@@ -5352,9 +5730,6 @@ function renderRankingList(data) {
         const isMe = user.isMe;
         if (isMe) amIInTop100 = true; // 나를 찾았다!
         
-        // (기존 카드 디자인 코드 ...)
-        const userTierIdx = user.tier !== undefined ? user.tier : 0;
-        const tierInfo = LEAGUE_CONFIG[userTierIdx] || LEAGUE_CONFIG[0];
         const userTribe = (user.tribe !== undefined) ? user.tribe : 0;
 
         const bgStyle = isMe 
@@ -5378,12 +5753,10 @@ function renderRankingList(data) {
             <div style="font-size:1.5rem; margin-right:12px; width:35px; text-align:center;">${rankBadge}</div>
             <div style="flex:1;">
                 <div style="display:flex; align-items:center; margin-bottom:4px;">
-                    <span style="font-size:0.75rem; padding:2px 6px; border-radius:4px; background:${tierInfo.color}; color:white; margin-right:6px; display:flex; align-items:center; text-shadow:none;">
-                        ${tierInfo.icon} ${tierInfo.name}
-                    </span>
                     <span style="font-weight:bold; font-size:1.05rem; display:flex; align-items:center; color:#fff;">
                         ${getTribeIcon(userTribe)} ${user.name}
                     </span>
+                    ${mode === 'zion' ? `<span style="font-size:0.75rem; color:#bdc3c7; margin-left:6px;">(${TRIBE_DATA[userTribe] ? TRIBE_DATA[userTribe].name : '지파'})</span>` : ''}
                 </div>
                 <div style="font-size:0.8rem; color:#bdc3c7;">
                     🏰 성전 Lv.${user.castle || 0} <span style="opacity:0.5; margin:0 3px;">|</span> <span style="opacity:0.7;">#${user.tag}</span>
@@ -5400,6 +5773,7 @@ function renderRankingList(data) {
     });
 
     // 3. ★ 핵심: 내가 100위 안에 없으면 하단에 '내 정보 바' 띄우기
+    window.lastRankInTop100 = amIInTop100;
     updateStickyMyRank(amIInTop100);
 }
 
@@ -5409,44 +5783,29 @@ function updateStickyMyRank(amIInTop100) {
     const oldBar = document.getElementById('sticky-my-rank');
     if (oldBar) oldBar.remove();
 
-    // 2. 내 정보 가져오기
-    const myTierIdx = leagueData.tier || 0;
-    const myTierInfo = LEAGUE_CONFIG[myTierIdx];
-    
-    // 현재 보고 있는 탭의 티어 (없으면 내 티어 기준)
-    const viewingTier = (typeof window.currentViewingTier !== 'undefined') 
-                        ? window.currentViewingTier 
-                        : myTierIdx;
+    // 2. 100위 안이면 표시하지 않음
+    if (amIInTop100) return;
 
-    // 3. 표시 여부 결정 로직
-    let showBar = false;
-    let rankDisplay = "-";
-    let message = "🔥 순위권 진입에 도전하세요!";
-    let rankColor = "#7f8c8d"; // 회색
+    const mode = window.currentRankingMode || 'tribe';
+    const tribeName = (TRIBE_DATA[myTribe] && TRIBE_DATA[myTribe].name) ? TRIBE_DATA[myTribe].name : '내 지파';
+    const leagueName = mode === 'zion' ? '시온성' : tribeName;
+    const totalCount = getCurrentRankingTotalCount();
+    const topPercent = totalCount > 0 ? Math.min(100, (100 / totalCount) * 100) : null;
+    const cutoffScore = getCurrentRankingCutoff();
 
-    // [상황 A] 남의 리그를 구경 중일 때 -> 무조건 바 표시
-    if (viewingTier !== myTierIdx) {
-        showBar = true;
-        // 등수 대신 내 리그 아이콘 표시
-        rankDisplay = myTierInfo.icon; 
-        rankColor = myTierInfo.color;
-        message = `현재 <span style="color:${myTierInfo.color}; font-weight:bold;">${myTierInfo.name}</span> 리그 소속입니다.`;
-    } 
-    // [상황 B] 내 리그를 보고 있는데, 100위 밖일 때 -> 바 표시
-    else if (!amIInTop100) {
-        showBar = true;
-        // ★ 백분율 계산
-        const totalCount = leagueTotalCounts[myTierIdx] || 0;
-        if (totalCount > 0) {
-            const percentile = ((100 / totalCount) * 100).toFixed(1);
-            rankDisplay = `상위<br>${percentile}%`;
-            message = `🔥 상위 ${percentile}% 달성! 더 분발하면 순위권 진입이 가능합니다.`;
-            rankColor = "#3498db"; // 파란색
-        }
+    let approxText = '';
+    if (topPercent && cutoffScore > 0 && myScore > 0) {
+        const ratio = myScore / cutoffScore;
+        const estimated = topPercent / Math.max(ratio, 0.1);
+        const estimatedPercent = Math.min(100, Math.max(topPercent, estimated));
+        approxText = ` (대략 상위 ${estimatedPercent.toFixed(1)}%)`;
     }
 
-    // 표시할 필요 없으면 중단 (내 리그이고, 순위권 안일 때)
-    if (!showBar) return;
+    const rankDisplay = topPercent ? `상위<br>${topPercent.toFixed(1)}%` : "순위<br>외";
+    const rankColor = "#7f8c8d";
+    const message = topPercent
+        ? `${leagueName} 랭킹: 순위 외입니다. (Top 100은 상위 ${topPercent.toFixed(1)}% 기준)${approxText}`
+        : `${leagueName} 랭킹: 순위 외입니다.`;
 
     // 4. 하단 바 생성 (디자인 개선)
     const stickyBar = document.createElement('div');
@@ -5457,7 +5816,7 @@ function updateStickyMyRank(amIInTop100) {
     left: 0; 
     width: 100%;
     background: rgba(30, 40, 50, 0.98); 
-    border-top: 2px solid ${myTierInfo.color}; 
+    border-top: 2px solid #7f8c8d; 
     padding: 12px 15px;
     box-shadow: 0 -5px 20px rgba(0,0,0,0.6);
     display: flex; align-items: center; z-index: 100;
@@ -5498,39 +5857,58 @@ function updateStickyMyRank(amIInTop100) {
 const originalSaveGameData = saveGameData; // 혹시 몰라 백업 (안 씀)
 
 
-/* [수정] 월간 ID 생성기 (날짜를 넣으면 그 달의 월간 ID를 반환) */
+/* [시스템] 주간 ID 생성기 (월요일 시작, ISO 주차) */
+function getWeekId(dateObj) {
+    const d = dateObj ? new Date(dateObj) : new Date();
+    d.setHours(0, 0, 0, 0);
+
+    // ISO week: 월요일 시작 기준으로 주차 계산
+    const day = (d.getDay() + 6) % 7; // 월=0 ... 일=6
+    d.setDate(d.getDate() - day + 3); // 해당 주의 목요일로 이동
+
+    const firstThursday = new Date(d.getFullYear(), 0, 4);
+    const firstDay = (firstThursday.getDay() + 6) % 7;
+    firstThursday.setDate(firstThursday.getDate() - firstDay + 3);
+
+    const weekNumber = 1 + Math.round((d - firstThursday) / (7 * 24 * 60 * 60 * 1000));
+    return `${d.getFullYear()}-W${String(weekNumber).padStart(2, '0')}`;
+}
+
+/* [시스템] 지난주 ID 구하기 */
+function getLastWeekId() {
+    const today = new Date();
+    const lastWeek = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7);
+    return getWeekId(lastWeek);
+}
+
+/* [시스템] 주간 마감 당일인지 확인 (일요일) */
+function isLastDayOfWeek() {
+    const today = new Date();
+    return today.getDay() === 0; // 일요일
+}
+
+/* [시스템] 현재 월간 ID 구하기 (YYYYMM 형식) */
 function getMonthId(dateObj) {
-    // 인자가 없으면 오늘 날짜 사용
     const d = dateObj ? new Date(dateObj) : new Date();
     const year = d.getFullYear();
-    const month = (d.getMonth() + 1).toString().padStart(2, '0');
-    
-    // 예: "2026-02"
-    return `${year}-${month}`;
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    return `${year}${month}`;
 }
 
-// 하위 호환성을 위한 별칭
-function getWeekId(dateObj) {
-    return getMonthId(dateObj);
-}
-
-/* [수정] 지난달 ID 구하기 */
+/* [시스템] 지난달 ID 구하기 */
 function getLastMonthId() {
     const today = new Date();
-    // 한 달 전 날짜 계산
     const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
     return getMonthId(lastMonth);
 }
 
-/* [기능] 월말 당일인지 확인 */
-function isLastDayOfMonth() {
+/* [시스템] 월간 마감 당일인지 확인 (1일) */
+function isFirstDayOfMonth() {
     const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.getDate() === 1; // 내일이 1일이면 오늘이 월말
+    return today.getDate() === 1;
 }
 
-/* [시스템] 출석 및 월간 리그 결산 (핵심 로직) */
+/* [시스템] 출석 및 주간 리그 결산 (핵심 로직) */
 function checkDailyLogin() {
     const today = new Date().toDateString(); 
     const lastDate = localStorage.getItem('lastPlayedDate');
@@ -5539,28 +5917,37 @@ function checkDailyLogin() {
     if (!missionData) missionData = { weekly: { attendance: 0, claimed: [false, false, false] } };
     if (!missionData.weekly) missionData.weekly = { attendance: 0, claimed: [false, false, false] };
 
-    // 2. 월간 초기화 및 리그 결산 (새로운 달이 시작되었는지 확인)
-    const currentMonthId = getMonthId(); // 예: "2026-02"
+    // 2. 주간 초기화 (새로운 주가 시작되었는지 확인)
+    const currentWeekId = getWeekId(); // 예: "2026-W07"
     
-    if (missionData.weekId !== currentMonthId) {
-        console.log("🔄 새로운 시즌이 시작되었습니다! (월간 리셋)");
-        
-        // (1) 명예의 전당 저장 (processLeagueResult에서 처리)
-        processLeagueResult();
+    if (missionData.weekId !== currentWeekId) {
+        console.log("🔄 새로운 주가 시작되었습니다! (주간 리셋)");
 
-        // (2) 월간 데이터 초기화
-        missionData.weekId = currentMonthId;
+        // (1) 주간 데이터 초기화
+        missionData.weekId = currentWeekId;
         missionData.weekly.attendance = 0;
         missionData.weekly.claimed = [false, false, false];
         missionData.weekly.dragonKill = 0;
         missionData.weekly.stageClear = 0;
         
-        // (3) 내 점수 리셋 (새로운 시즌 시작)
+        // (2) 내 점수 리셋 (새로운 주 시작)
+        leagueData.weekId = currentWeekId;
         leagueData.myScore = 0; // 점수 0점부터 다시 시작
         leagueData.stageLog = {}; // 반복 훈련 기록 초기화
     }
 
-    // 3. 일일 출석 체크
+    // ✨ NEW: 3. 월간 초기화 (새로운 달이 시작되었는지 확인)
+    const currentMonthId = getMonthId(); // 예: "202602"
+    
+    if (leagueData.monthId !== currentMonthId) {
+        console.log("🔄 새로운 달이 시작되었습니다! (월간 리셋)");
+
+        // (1) 월간 데이터 초기화
+        leagueData.monthId = currentMonthId;
+        leagueData.myMonthlyScore = 0; // 월간 점수 0점부터 다시 시작
+    }
+
+    // 4. 일일 출석 체크
     if (lastDate !== today) {
         missionData.weekly.attendance++;
         if (missionData.weekly.attendance > 7) missionData.weekly.attendance = 7;
@@ -5572,45 +5959,6 @@ function checkDailyLogin() {
     }
 }
 
-/* [기능] 지난 시즌 성적에 따른 리그 승급 처리 (강등 없음) */
-function processLeagueResult() {
-    // 현재 내 점수와 티어 가져오기
-    const lastScore = leagueData.myScore || 0;
-    const currentTierIdx = leagueData.tier || 0;
-    const config = LEAGUE_CONFIG[currentTierIdx];
-    
-    let msg = `📅 [시즌 종료]\n지난 시즌 성적: ${lastScore}점\n\n`;
-    let newTier = currentTierIdx;
-    let promoted = false;
-
-    // 승급 심사 (강등 없음)
-    if (lastScore >= config.promote && currentTierIdx < LEAGUE_CONFIG.length - 1) {
-        newTier++;
-        const nextLeague = LEAGUE_CONFIG[newTier];
-        
-        // 시온성 진입은 특별 처리 필요 (Top 100 확인)
-        if (newTier === 5) {
-            msg += `🎊 시온성 입성 자격 획득!\n10,000점 목표를 달성했습니다!\n\n다음 시즌에 Top 100에 진입하면\n🏆 명예의 전당에 등극합니다!`;
-        } else {
-            msg += `🎉 축하합니다!\n[${nextLeague.icon} ${nextLeague.name}] 리그로 승급!\n(보상: 💎300)`;
-        }
-        addGems(300);
-        promoted = true;
-    } else if (currentTierIdx === 5 && lastScore >= 10000) {
-        msg += `👑 시온성 유지!\n명예로운 시즌이었습니다.\n(보상: 💎500)`;
-        addGems(500);
-    } else {
-        msg += `💪 다음 시즌을 준비하세요!\n[${config.icon} ${config.name}] 리그를 유지합니다.`;
-    }
-
-    // 결과 반영
-    leagueData.tier = newTier;
-    
-    // 알림 띄우기
-    alert(msg);
-}
-
-           
 // [3] 스테이지 클리어 함수 (수정됨)
 stageClear = function(type) {
     try {
@@ -5633,19 +5981,27 @@ stageClear = function(type) {
 
         // [A] 보스 (챕터 전체)
         if (type === 'boss') { 
-            stageLastClear[sId] = Date.now(); 
+            stageLastClear[sId] = Date.now();
             
             const verseCount = bibleData[chNum] ? bibleData[chNum].length : 0;
             const rewardData = calculateProgressiveReward(chNum, verseCount, 1);
             
             // 보석: 초회/반복 구분
             if (isAlreadyClearedToday) {
-                // 같은 날 반복: hp × 10
+                // 같은 날 반복: verseCount × 10
                 baseGem = verseCount * 10;
                 msg += "🐲 [반복 토벌] (기본 보상)\n";
             } else {
-                // 새로운 날 초회: hp × 50
-                baseGem = verseCount * 50;
+                // ★ [수정] 먼저 남은 절수 계산 (마킹 전에!)
+                const remainingVerses = getUnreceivedMidBossVerses(chNum);
+                baseGem = remainingVerses * 50;
+                msg += `🐲 [신규 토벌] 남은 ${remainingVerses}절 초회 보너스\n`;
+                
+                // ★ 보석 계산 후 모든 mid-boss를 당일 클리어로 자동 마킹
+                const midBossIds = getChapterMidBossIds(chNum);
+                midBossIds.forEach(midBossId => {
+                    stageLastClear[midBossId] = Date.now();
+                });
             }
 
             // ★ 보스 stage 객체에서 실제 hp 값 가져오기
@@ -5702,13 +6058,15 @@ stageClear = function(type) {
                 }
                 const rewardData = calculateProgressiveReward(chNum, endV, startV);
                 
-                // 초회/반복 구분: 실제 hp 값 적용
+                // 초회/반복 구분
                 if (isAlreadyClearedToday) {
-                    maxGem = actualHp * 10; // 같은 날 반복: hp × 10
+                    // 같은 날 반복: hp × 10
+                    maxGem = actualHp * 10;
                     msg += "🛡️ [반복 점검] (기본 보상)\n";
                 } else {
-                    maxGem = actualHp * 50; // 새로운 날 초회: hp × 50
-                    msg += "🛡️ [중간 점검] 훈련 완료!\n";
+                    // ★ [수정] 새로운 날 초회: 자신의 절수 × 50 (다른 스테이지 상태와 무관)
+                    maxGem = actualHp * 50;
+                    msg += `🛡️ [중간 점검] ${actualHp}절 초회 보너스\n`;
                 }
                 
                 // 실제 hp 값으로 계산
@@ -5736,7 +6094,11 @@ stageClear = function(type) {
                     msg += "⚡ [반복 훈련] (기본 보상)\n";
                 } else {
                     // 새로운 날 초회
-                    if (window.trainingMode === 'phase3') {
+                    if (window.trainingMode === 'full-new') {
+                        maxGem = 70;
+                        msg += "📖 [전체 학습] 신규 클리어! (+70💎)\n";
+                    }
+                    else if (window.trainingMode === 'phase3') {
                         maxGem = 70; // 3단계는 70개
                         msg += "🍒 [완전 정복] 시간 차 학습 완료! (+70💎)\n";
                     } else {
@@ -5781,6 +6143,7 @@ stageClear = function(type) {
             ? Math.max(0.1, (100 - (wrongCount * 5)) / 100) 
             : Math.max(0.1, (100 - (wrongCount * 10)) / 100);
         
+        const baseGemBeforeAccuracy = baseGem; // ★ 정확도 적용 전 값 저장
         baseGem = Math.floor(baseGem * accuracyRate);
 
         // 성전 보너스
@@ -5790,10 +6153,10 @@ stageClear = function(type) {
         let totalGem = baseGem + castleBonusGem;
 
         // 퍼펙트 보너스
+        let perfectBonus = 0;
         if (wrongCount === 0) {
-            const perfectBonus = Math.floor(baseGem * 0.1);
+            perfectBonus = Math.floor(baseGem * 0.1);
             totalGem += perfectBonus;
-            msg += `(💎 퍼펙트 +${perfectBonus})\n`;
             if(typeof SoundEffect !== 'undefined') SoundEffect.playLevelUp(); 
             updateStats('perfect', 1);
         }
@@ -5805,10 +6168,41 @@ stageClear = function(type) {
         stageMastery[sId]++;
 
         const accPercent = Math.floor(accuracyRate * 100);
-        msg += `🎯 정확도: ${accPercent}% (오답: ${wrongCount})\n`;
-        msg += `✨ 승점: +${scoreResult.score}\n`; 
-        msg += `💎 보석: +${totalGem} (성전 +${castleBonusGem})`;
-
+        
+        // 초회 클리어 시 상세 정보 표시
+        if (!isAlreadyClearedToday) {
+            msg += `\n━━━━━━━━━━━━━━━━\n`;
+            
+            if (type === 'mid-boss') {
+                msg += `💎 초회 기본: ${baseGemBeforeAccuracy}개 (${verseCnt}절 × 50)\n`;
+            } else if (type === 'boss') {
+                const remainingVerses = getUnreceivedMidBossVerses(chNum);
+                if (remainingVerses > 0) {
+                    msg += `💎 초회 기본: ${baseGemBeforeAccuracy}개 (${remainingVerses}절 × 50)\n`;
+                } else {
+                    msg += `💎 초회 기본: 0개 (모든 구간 완료)\n`;
+                }
+            } else {
+                // 일반 스테이지
+                msg += `💎 초회 기본: ${baseGemBeforeAccuracy}개\n`;
+            }
+            
+            msg += `🎯 정확도: ${accPercent}% (오답: ${wrongCount}) → ${baseGem}개\n`;
+            msg += `🏰 성전 보너스: +${castleBonusGem}개\n`;
+            if (perfectBonus > 0) {
+                msg += `⭐ 퍼펙트 보너스: +${perfectBonus}개\n`;
+            }
+            msg += `✨ 승점: +${scoreResult.score}\n`;
+            msg += `💎 최종 획득: ${totalGem}개`;
+        } else {
+            // 반복 클리어 시 기존 표시
+            msg += `🎯 정확도: ${accPercent}% (오답: ${wrongCount})\n`;
+            if (perfectBonus > 0) {
+                msg += `(💎 퍼펙트 +${perfectBonus})\n`;
+            }
+            msg += `✨ 승점: +${scoreResult.score}\n`; 
+            msg += `💎 보석: +${totalGem} (성전 +${castleBonusGem})`;
+        }
         if (typeof triggerConfetti === 'function') triggerConfetti();
 
         /* [3] 클리어 횟수 기록 (함수 맨 끝부분, alert 뜨기 전) */
@@ -7032,34 +7426,52 @@ function isChapterBossClearedToday(chNum) {
 }
 
 /* [UI 보조] 스테이지 목록에 표시할 예상 보상 계산기 */
-function getDisplayRewardInfo(stageId, type, verseCount) {
+function getDisplayRewardInfo(stageId, type, verseCount, isAlreadyClearedToday = false) {
     let maxGem = 0;
     let maxScore = 0;
+    let isReduced = false;
 
-    // 1. 기본값 설정
-    if (type === 'normal') {
+    // 1. 보스/중간점검의 정확한 보상 계산
+    if (type === 'mid-boss' || type === 'boss') {
+        // 최대 하트 기준 계산: verseCount × maxPlayerHearts × 1
+        const baseScore = verseCount * maxPlayerHearts * 1;
+        
+        if (isAlreadyClearedToday) {
+            // 반복 클리어: 기본 승점대로
+            maxScore = baseScore;
+            maxGem = verseCount * 10; // 반복: 구절 수 × 10
+        } else {
+            // ★ [수정] 초회 클리어: boss는 남은 mid-boss 절수만 계산
+            if (type === 'boss') {
+                const chNum = parseInt(stageId.split('-')[0]);
+                const remainingVerses = getUnreceivedMidBossVerses(chNum);
+                maxGem = remainingVerses * 50;
+                maxScore = baseScore * 5;
+            } else {
+                // mid-boss는 자신의 절수만
+                maxScore = baseScore * 5;
+                maxGem = verseCount * 50;
+            }
+        }
+    } 
+    // 2. 일반 스테이지
+    else if (type === 'normal') {
         maxGem = 100;
-        maxScore = 150; // (기본 100 + 하트30 + 기타) 대략적 수치
-    } else if (type === 'mid-boss') {
-        maxGem = verseCount * 50;
-        maxScore = (verseCount * 100) + 150; // 대략적 최대치
-    } else if (type === 'boss') {
-        maxGem = verseCount * 50;
-        maxScore = (verseCount * 100) + 150;
+        maxScore = 150; // (기본)
     }
 
-    // 2. 패널티 확인 (중간점검 & 보스 클리어 상태)
+    // 3. 패널티 확인 (중간점검 & 보스가 깨졌을 때)
     if (type === 'mid-boss') {
         const chNum = parseInt(stageId.split('-')[0]);
         if (isChapterBossClearedToday(chNum)) {
             // 보스 깼으면 1/5 토막 (표시도 줄여줌)
             maxGem = Math.floor(maxGem * 0.2);
             maxScore = Math.floor(maxScore * 0.2);
-            return { gem: maxGem, score: maxScore, isReduced: true };
+            isReduced = true;
         }
     }
 
-    return { gem: maxGem, score: maxScore, isReduced: false };
+    return { gem: maxGem, score: maxScore, isReduced };
 }
 
 /* [시스템: 도움말 모달] */
@@ -7072,6 +7484,21 @@ function openHelpModal() {
 
 function closeHelpModal() {
     const modal = document.getElementById('help-modal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+/* [시스템: 맵 화면 도움말 모달] */
+function openStageHelpModal() {
+    const modal = document.getElementById('stage-help-modal');
+    if (modal) {
+        modal.classList.add('active');
+    }
+}
+
+function closeStageHelpModal() {
+    const modal = document.getElementById('stage-help-modal');
     if (modal) {
         modal.classList.remove('active');
     }
@@ -7948,69 +8375,24 @@ function saveMyScoreToServer() {
     // 1. 파이어베이스가 없으면 중단 (안전장치)
     if (typeof db === 'undefined' || !db || !myPlayerId) return;
 
-    console.log("📡 서버에 점수 저장 및 티어 심사 중...");
+    console.log("📡 서버에 주간 점수 저장 중...");
 
-    // 2. [시스템] 커트라인 칠판(system_meta) 확인
-    db.collection("system_meta").doc("tier_info").get().then((doc) => {
-        let cutoff = 10000; // 기본 커트라인 1만 점
-        if (doc.exists && doc.data().zion_cutoff) {
-            cutoff = doc.data().zion_cutoff;
-        }
+    const currentWeekId = leagueData.weekId || getWeekId();
+    const currentScore = leagueData.myScore || 0;
 
-        // 3. [심사] 내 점수와 커트라인 비교 (승격 전용 - 강등 없음)
-        let currentScore = leagueData.myScore;
-        let currentTier = leagueData.tier;
-        let newTier = currentTier;
-
-        // 시온성(Tier 5) 진입 조건: 점수가 커트라인보다 높음
-        if (currentScore >= cutoff && currentTier < 5) {
-            newTier = 5; 
-            console.log(`🎉 [승격] 축하합니다! 시온성(Tier 5) 기준(${cutoff}점)을 통과했습니다!`);
-            alert(`🎉 축하합니다! 시온성으로 승격되었습니다!`);
-        }
-
-        // 4. [반영] 내 로컬 데이터 업데이트
-        if (newTier !== currentTier) {
-            leagueData.tier = newTier;
-            // 로컬에도 바뀐 티어 즉시 저장 (무한 루프 방지 위해 saveMyScoreToServer 호출 안 함)
-            localStorage.setItem('kingsRoadSave', JSON.stringify({
-                ...JSON.parse(localStorage.getItem('kingsRoadSave')),
-                leagueData: leagueData
-            }));
-        }
-
-        // 5. [제출] 서버에 최종 성적표 제출
-        // 월간 ID (예: "2026-02")
-        const currentMonthId = leagueData.weekId || new Date().toISOString().slice(0, 7);
-
-        db.collection("leaderboard").doc(myPlayerId).set({
-            nickname: myNickname,
-            score: currentScore,
-            tier: newTier,        // 심사 결과 반영된 티어
-            castleLv: myCastleLevel,
-            tribe: myTribe,
-            tag: myTag,
-            weekId: currentMonthId, // 월간 랭킹용 ID
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true })
-        .then(() => {
-            console.log(`✅ 서버 저장 완료: ${currentScore}점 (Tier ${newTier})`);
-        })
-        .catch((error) => {
-            console.error("❌ 점수 저장 실패:", error);
-        });
-    }).catch((error) => {
-        console.log("⚠️ 커트라인 확인 불가 (오프라인 등):", error);
-        // 에러 나도 점수는 저장 시도
-        db.collection("leaderboard").doc(myPlayerId).set({
-            nickname: myNickname,
-            score: leagueData.myScore,
-            tier: leagueData.tier,
-            castleLv: myCastleLevel,
-            tribe: myTribe,
-            tag: myTag,
-            weekId: leagueData.weekId,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
+    db.collection("leaderboard").doc(myPlayerId).set({
+        nickname: myNickname,
+        score: currentScore,
+        castleLv: myCastleLevel,
+        tribe: myTribe,
+        tag: myTag,
+        weekId: currentWeekId, // 주간 랭킹용 ID
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true })
+    .then(() => {
+        console.log(`✅ 서버 저장 완료: ${currentScore}점 (${currentWeekId})`);
+    })
+    .catch((error) => {
+        console.error("❌ 점수 저장 실패:", error);
     });
 }

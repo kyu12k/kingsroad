@@ -4,114 +4,173 @@ admin.initializeApp();
 
 const db = admin.firestore();
 
+const TRIBE_COUNT = 12;
+
+function getWeekId(dateObj) {
+    const d = dateObj ? new Date(dateObj) : new Date();
+    d.setHours(0, 0, 0, 0);
+
+    const day = (d.getDay() + 6) % 7; // 월=0 ... 일=6
+    d.setDate(d.getDate() - day + 3); // 해당 주의 목요일
+
+    const firstThursday = new Date(d.getFullYear(), 0, 4);
+    const firstDay = (firstThursday.getDay() + 6) % 7;
+    firstThursday.setDate(firstThursday.getDate() - firstDay + 3);
+
+    const weekNumber = 1 + Math.round((d - firstThursday) / (7 * 24 * 60 * 60 * 1000));
+    return `${d.getFullYear()}-W${String(weekNumber).padStart(2, '0')}`;
+}
+
+function getMonthId(dateObj) {
+    const d = dateObj ? new Date(dateObj) : new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    return `${year}${month}`;
+}
+
+async function countQuery(query) {
+    const snapshot = await query.count().get();
+    return snapshot.data().count || 0;
+}
+
 /**
- * 시온성 커트라인 자동 조절 시스템
- * leaderboard 컬렉션에 데이터가 쓰일 때마다 실행되어 시온성 인원을 체크하고
- * 100명이 넘으면 100등의 점수를 커트라인으로 설정합니다.
+ * 주간 랭킹 카운트 집계 + Snapshot 생성
+ * 매시간 현재 주차의 전체/지파별 인원을 system_meta에 저장
+ * 각 지파별 Top100과 Zion Top100을 ranking_snapshots에 저장 (클라이언트 읽기 용)
  */
-exports.updateZionCutoff = functions.firestore
-    .document('leaderboard/{userId}')
-    .onWrite(async (change, context) => {
+exports.updateWeeklyCounts = functions.pubsub
+    .schedule('0 12,18 * * *') // 정오 + 저녁 6시
+    .timeZone('Asia/Seoul')
+    .onRun(async () => {
         try {
-            // 삭제된 경우는 무시
-            if (!change.after.exists) {
-                console.log('문서 삭제됨, 처리 안함');
-                return null;
+            const currentWeekId = getWeekId();
+            console.log(`📊 주간 카운트 집계 + Snapshot 생성 시작: ${currentWeekId}`);
+
+            const baseQuery = db.collection('leaderboard').where('weekId', '==', currentWeekId);
+            const totalCount = await countQuery(baseQuery);
+
+            const tribeCounts = {};
+            const cutoffTribes = {};
+            
+            // 1️⃣ 지파별 인원 수 집계 및 Snapshot 생성
+            const snapshotBatch = db.batch();
+            const tribeJobs = [];
+            
+            for (let i = 0; i < TRIBE_COUNT; i++) {
+                const tribeQuery = baseQuery.where('tribe', '==', i);
+                
+                tribeJobs.push(
+                    Promise.all([
+                        // 인원 수 카운트
+                        countQuery(tribeQuery),
+                        // Top100 조회
+                        tribeQuery.orderBy('score', 'desc').limit(100).get()
+                    ]).then(([count, snapshot]) => {
+                        tribeCounts[String(i)] = count;
+                        
+                        // Cutoff 점수 저장
+                        if (!snapshot.empty && snapshot.size >= 100) {
+                            cutoffTribes[String(i)] = snapshot.docs[snapshot.docs.length - 1].data().score || 0;
+                        } else {
+                            cutoffTribes[String(i)] = 0;
+                        }
+                        
+                        // Snapshot 생성: tribe_{i} 문서에 Top100 저장
+                        const rankingData = snapshot.docs.map((doc, index) => {
+                            const row = doc.data();
+                            return {
+                                rank: index + 1,
+                                name: row.nickname || "이름없음",
+                                score: row.score || 0,
+                                tribe: row.tribe,
+                                tag: row.tag || "",
+                                castle: row.castleLv || 0
+                            };
+                        });
+                        
+                        const snapshotRef = db.collection('ranking_snapshots').doc(currentWeekId)
+                            .collection('tribes').doc(`tribe_${i}`);
+                        snapshotBatch.set(snapshotRef, {
+                            weekId: currentWeekId,
+                            tribeId: i,
+                            ranks: rankingData,
+                            count: snapshot.size,
+                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                        });
+                    })
+                );
             }
 
-            const updatedData = change.after.data();
-            console.log(`📡 랭킹 업데이트 감지: ${updatedData.nickname} (점수: ${updatedData.score})`);
+            await Promise.all(tribeJobs);
 
-            // 현재 시즌 ID (예: "2026-02")
-            const currentMonthId = new Date().toISOString().slice(0, 7);
-
-            // 시온성(tier 5) 유저들만 조회하여 상위 100명 추출
-            const zionSnapshot = await db.collection('leaderboard')
-                .where('tier', '==', 5)
-                .where('weekId', '==', currentMonthId)
-                .orderBy('score', 'desc')
-                .limit(100)
-                .get();
-
-            console.log(`🏰 시온성 인원: ${zionSnapshot.size}명`);
-
-            // 100명 이상이면 100등의 점수를 커트라인으로 설정
-            if (zionSnapshot.size >= 100) {
-                const docs = zionSnapshot.docs;
-                const cutoffScore = docs[docs.length - 1].data().score;
-
-                // system_meta에 커트라인 저장
-                await db.collection('system_meta').doc('tier_info').set({
-                    zion_cutoff: cutoffScore,
-                    zion_count: zionSnapshot.size,
-                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-
-                console.log(`✅ 시온성 커트라인 업데이트: ${cutoffScore}점 (인원: ${zionSnapshot.size}명)`);
-
-                // 101등부터는 가나안(tier 4)으로 강등
-                if (zionSnapshot.size > 100) {
-                    const batch = db.batch();
-                    let demotedCount = 0;
-
-                    // 전체 시온성 인원을 다시 조회 (100명 이상)
-                    const allZionSnapshot = await db.collection('leaderboard')
-                        .where('tier', '==', 5)
-                        .where('weekId', '==', currentMonthId)
-                        .orderBy('score', 'desc')
-                        .get();
-
-                    // 101등부터 강등
-                    allZionSnapshot.docs.slice(100).forEach(doc => {
-                        batch.update(doc.ref, { tier: 4 });
-                        demotedCount++;
-                    });
-
-                    if (demotedCount > 0) {
-                        await batch.commit();
-                        console.log(`⬇️ ${demotedCount}명 강등 처리 (가나안으로)`);
-                    }
-                }
-            } else {
-                // 100명 미만이면 기본 커트라인 (10,000점) 유지
-                await db.collection('system_meta').doc('tier_info').set({
-                    zion_cutoff: 10000,
-                    zion_count: zionSnapshot.size,
-                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-
-                console.log(`📊 시온성 인원 부족 (${zionSnapshot.size}명), 기본 커트라인 10,000점 유지`);
+            // 2️⃣ Zion (전체) Top100 조회 및 Snapshot 생성
+            const zionSnapshot = await baseQuery.orderBy('score', 'desc').limit(100).get();
+            let cutoffTotal = 0;
+            
+            if (!zionSnapshot.empty && zionSnapshot.size >= 100) {
+                cutoffTotal = zionSnapshot.docs[zionSnapshot.docs.length - 1].data().score || 0;
             }
+            
+            const zionRankingData = zionSnapshot.docs.map((doc, index) => {
+                const row = doc.data();
+                return {
+                    rank: index + 1,
+                    name: row.nickname || "이름없음",
+                    score: row.score || 0,
+                    tribe: row.tribe,
+                    tag: row.tag || "",
+                    castle: row.castleLv || 0
+                };
+            });
+            
+            const zionSnapshotRef = db.collection('ranking_snapshots').doc(currentWeekId)
+                .collection('tribes').doc('zion');
+            snapshotBatch.set(zionSnapshotRef, {
+                weekId: currentWeekId,
+                tribeId: 'zion',
+                ranks: zionRankingData,
+                count: zionSnapshot.size,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
 
+            // 3️⃣ 일괄 저장
+            await snapshotBatch.commit();
+            console.log(`✅ Ranking Snapshots 저장 완료 (지파 12개 + Zion 1개)`);
+
+            // 4️⃣ 카운트 메타데이터 저장
+            await db.collection('system_meta').doc('weekly_counts').set({
+                weekId: currentWeekId,
+                totalCount: totalCount,
+                tribeCounts: tribeCounts,
+                cutoffTotal: cutoffTotal,
+                cutoffTribes: cutoffTribes,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+
+            console.log(`✅ 주간 카운트 저장 완료: total=${totalCount}`);
             return null;
-
         } catch (error) {
-            console.error('❌ 커트라인 업데이트 실패:', error);
+            console.error('❌ 주간 카운트 집계 실패:', error);
             return null;
         }
     });
 
 /**
- * 매일 자정 명예의 전당 기록 생성
- * 매월 1일 00:00에 실행되어 지난달 Top 100을 history 컬렉션에 영구 보관
+ * 주간 랭킹 기록 생성
+ * 매주 월요일 00:00에 지난주 Top 100을 history 컬렉션에 보관
  */
-exports.archiveMonthlyRankings = functions.pubsub
-    .schedule('0 0 1 * *')  // 매월 1일 00:00 (한국시간: 0 9 1 * *)
+exports.archiveWeeklyRankings = functions.pubsub
+    .schedule('0 0 * * 1')  // 매주 월요일 00:00
     .timeZone('Asia/Seoul')
-    .onRun(async (context) => {
+    .onRun(async () => {
         try {
-            console.log('📜 월간 명예의 전당 아카이빙 시작');
+            console.log('📜 주간 랭킹 아카이빙 시작');
 
-            // 지난달 ID 계산 (예: "2026-01")
-            const now = new Date();
-            const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-            const lastMonthId = lastMonth.toISOString().slice(0, 7);
+            const lastWeekId = getWeekId(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+            console.log(`🗓️ 아카이빙 대상: ${lastWeekId}`);
 
-            console.log(`🗓️ 아카이빙 대상: ${lastMonthId}`);
-
-            // leaderboard에서 지난달 데이터 중 상위 100명 조회
             const snapshot = await db.collection('leaderboard')
-                .where('weekId', '==', lastMonthId)
+                .where('weekId', '==', lastWeekId)
                 .orderBy('score', 'desc')
                 .limit(100)
                 .get();
@@ -121,66 +180,106 @@ exports.archiveMonthlyRankings = functions.pubsub
                 return null;
             }
 
-            // history 컬렉션에 복사
             const batch = db.batch();
             snapshot.docs.forEach((doc, index) => {
                 const data = doc.data();
-                const historyDocId = `${lastMonthId}_${doc.id}`;
-                const historyRef = db.collection('history').doc(historyDocId);
-                
+                const historyDocId = `${lastWeekId}_${doc.id}`;
+                const historyRef = db.collection('weekly_history').doc(historyDocId);
+
                 batch.set(historyRef, {
                     ...data,
-                    rank: index + 1,  // 순위 기록
+                    rank: index + 1,
+                    weekId: lastWeekId,
                     archivedAt: admin.firestore.FieldValue.serverTimestamp()
                 });
             });
 
             await batch.commit();
-            console.log(`✅ ${snapshot.size}명 명예의 전당 등록 완료 (${lastMonthId})`);
+            console.log(`✅ ${snapshot.size}명 주간 랭킹 보관 완료 (${lastWeekId})`);
 
             return null;
-
         } catch (error) {
-            console.error('❌ 아카이빙 실패:', error);
+            console.error('❌ 주간 아카이빙 실패:', error);
             return null;
         }
     });
 
 /**
- * [선택] 시온성 진입 가능 여부 확인 API
- * 클라이언트에서 호출 가능한 callable function
+ * 월간 랭킹 기록 생성 및 Snapshot 생성
+ * 매달 1일 00:00에 지난달 Top 100을 시온성 기준으로 history 컬렉션에 보관
+ * 월간 명예의 전당용 snapshot도 동시 생성
  */
-exports.checkZionEligibility = functions.https.onCall(async (data, context) => {
-    try {
-        const { score } = data;
+exports.archiveMonthlyRankings = functions.pubsub
+    .schedule('0 0 1 * *')  // 매달 1일 00:00
+    .timeZone('Asia/Seoul')
+    .onRun(async () => {
+        try {
+            console.log('📜 월간 랭킹 아카이빙 시작');
 
-        if (!score || typeof score !== 'number') {
-            throw new functions.https.HttpsError('invalid-argument', '점수가 필요합니다');
+            // 지난달 ID 계산
+            const today = new Date();
+            const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            const lastMonthId = getMonthId(lastMonth);
+            console.log(`🗓️ 아카이빙 대상: ${lastMonthId}`);
+
+            // 지난달의 모든 사용자 데이터 조회 (monthId 기준)
+            const snapshot = await db.collection('leaderboard')
+                .where('monthId', '==', lastMonthId)
+                .orderBy('myMonthlyScore', 'desc')
+                .limit(100)
+                .get();
+
+            if (snapshot.empty) {
+                console.log('⚠️ 월간 아카이빙할 데이터 없음');
+                return null;
+            }
+
+            // 1️⃣ 월간 히스토리 저장
+            const historyBatch = db.batch();
+            snapshot.docs.forEach((doc, index) => {
+                const data = doc.data();
+                const historyDocId = `${lastMonthId}_${doc.id}`;
+                const historyRef = db.collection('monthly_history').doc(historyDocId);
+
+                historyBatch.set(historyRef, {
+                    ...data,
+                    rank: index + 1,
+                    monthId: lastMonthId,
+                    archivedAt: admin.firestore.FieldValue.serverTimestamp()
+                });
+            });
+
+            await historyBatch.commit();
+            console.log(`✅ ${snapshot.size}명 월간 랭킹 보관 완료 (${lastMonthId})`);
+
+            // 2️⃣ 월간 명예의 전당 Snapshot 생성 (Zion 기준)
+            const monthlyRankingData = snapshot.docs.map((doc, index) => {
+                const row = doc.data();
+                return {
+                    rank: index + 1,
+                    name: row.nickname || "이름없음",
+                    score: row.myMonthlyScore || 0,
+                    tribe: row.tribe,
+                    tag: row.tag || "",
+                    castle: row.castleLv || 0
+                };
+            });
+
+            const snapshotRef = db.collection('ranking_snapshots').doc(lastMonthId)
+                .collection('hall').doc('monthly');
+
+            await snapshotRef.set({
+                monthId: lastMonthId,
+                ranks: monthlyRankingData,
+                count: snapshot.size,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+
+            console.log(`✅ 월간 명예의 전당 Snapshot 저장 완료 (${lastMonthId})`);
+
+            return null;
+        } catch (error) {
+            console.error('❌ 월간 아카이빙 실패:', error);
+            return null;
         }
-
-        // 현재 커트라인 조회
-        const tierInfoDoc = await db.collection('system_meta').doc('tier_info').get();
-        const cutoff = tierInfoDoc.exists ? (tierInfoDoc.data().zion_cutoff || 10000) : 10000;
-        const zionCount = tierInfoDoc.exists ? (tierInfoDoc.data().zion_count || 0) : 0;
-
-        // 진입 가능 여부 판정
-        const canEnter = score >= cutoff && zionCount < 100;
-
-        return {
-            success: true,
-            canEnter,
-            cutoff,
-            currentCount: zionCount,
-            yourScore: score,
-            message: canEnter 
-                ? '🎉 시온성 진입 가능합니다!' 
-                : zionCount >= 100 
-                    ? `현재 시온성 만원 (커트라인: ${cutoff}점)` 
-                    : `커트라인 미달 (필요: ${cutoff}점)`
-        };
-
-    } catch (error) {
-        console.error('❌ 시온성 자격 확인 실패:', error);
-        throw new functions.https.HttpsError('internal', '서버 오류가 발생했습니다');
-    }
-});
+    });

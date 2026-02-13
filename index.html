@@ -87,6 +87,65 @@
     </div>
 </div>
 
+<div id="stage-help-modal" class="modal-overlay" style="z-index: 700;">
+    <div class="result-card" style="max-width: 500px; max-height: 80vh; overflow-y: auto;">
+        <div style="text-align: right;">
+            <button onclick="closeStageHelpModal()" style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
+        </div>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h2 style="margin:0; color:#2c3e50;">📚 게임 방법</h2>
+            <p style="color:#7f8c8d; font-size:0.9rem; margin-top:5px;">암송 훈련을 시작하기 전에 읽어보세요</p>
+        </div>
+
+        <div style="text-align: left; color:#2c3e50;">
+            <div class="help-item">
+                <div class="help-title">1. 세 가지 훈련 방법</div>
+                <div class="help-desc">
+                    📖 <strong>일반 훈련</strong>: 한 절씩 외웁니다<br>
+                    🛡️ <strong>중간 점검</strong>: 여러 절을 한꺼번에 복습합니다 (3~7절)<br>
+                    🐲 <strong>보스전</strong>: 한 장 전체를 복습합니다 (20절)
+                </div>
+            </div>
+
+            <div class="help-item">
+                <div class="help-title">2. 보석 받는 방법</div>
+                <div class="help-desc">
+                    ⭐ <strong>오늘 처음 클리어</strong>: 보석을 많이 받습니다 (1절당 50개)<br>
+                    🔄 <strong>같은 날 다시 클리어</strong>: 보석을 조금 받습니다 (1절당 10개)<br><br>
+                    💡 <strong>중요!</strong> 중간 점검과 보스는 보상을 나눠 갖습니다<br>
+                    예: 16~20절 중간 점검을 먼저 하면<br>
+                    보스전에서는 나머지 1~15절만 보상을 줍니다
+                </div>
+            </div>
+
+            <div class="help-item">
+                <div class="help-title">3. 전체 학습 기능</div>
+                <div class="help-desc">
+                    중간 점검이나 보스를 클리어하면<br>
+                    그 안의 스테이지를 처음 해보는 것이어도 전체 학습이 가능합니다<br>
+                    전체 학습으로 처음 클리어하면 보석 70개!
+                </div>
+            </div>
+
+            <div class="help-item">
+                <div class="help-title">4. 기억 레벨 💜</div>
+                <div class="help-desc">
+                    시간이 지나면 💜 표시가 나타납니다<br>
+                    이때 다시 복습하면 보너스 +20%를 받습니다
+                </div>
+            </div>
+
+            <div class="help-item">
+                <div class="help-title">5. 정확하게 외울수록 좋아요</div>
+                <div class="help-desc">
+                    한 번도 틀리지 않으면: 보석 10% 더!<br>
+                    틀릴수록: 받는 보석이 줄어듭니다
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="mode-select-modal" class="modal-overlay" style="z-index: 600;">
     <div class="result-card">
         <div style="text-align: right;">
@@ -249,10 +308,10 @@
             </button></div>
     </div>
 
-    <!-- ★ 월말 승점 차단 알림 -->
+    <!-- ★ 주간 리셋 알림 -->
     <div id="month-end-warning" style="display:none; background:linear-gradient(135deg, #e74c3c, #c0392b); color:#fff; padding:12px 20px; border-radius:15px; margin:10px 20px; animation: pulse 2s ease-in-out infinite; box-shadow: 0 4px 10px rgba(231,76,60,0.4); border: 2px solid rgba(255,255,255,0.3);">
-        <div style="font-size:1.1rem; font-weight:bold; margin-bottom:5px;">⚠️ 시즌 종료 임박</div>
-        <div style="font-size:0.85rem; line-height:1.5;">오늘 23:00~24:00 승점 획득 불가<br><span style="font-size:0.8rem; opacity:0.9;">💎 보석 획득은 정상 지급</span></div>
+        <div style="font-size:1.1rem; font-weight:bold; margin-bottom:5px;">⚠️ 주간 리셋 안내</div>
+        <div style="font-size:0.85rem; line-height:1.5;">월요일 00:00에 주간 랭킹이 초기화됩니다</div>
     </div>
 
     <button id="start-journey-btn" class="btn-main-action" onclick="startGame()">
@@ -467,7 +526,10 @@
     <div id="stage-sheet">
         <div class="sheet-header">
             <h2 class="sheet-title" id="sheet-chapter-title">Chapter 1</h2>
-            <button class="close-btn" onclick="closeStageSheet()">✕</button>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button class="help-btn" onclick="openStageHelpModal()" style="background:none; border:none; font-size:1.5rem; color:#3498db; cursor:pointer; padding:0;">❓</button>
+                <button class="close-btn" onclick="closeStageSheet()">✕</button>
+            </div>
         </div>
         <div class="stage-list" id="stage-list-area"></div>
     </div>
@@ -498,7 +560,7 @@
             <div class="hp-container">
                 <div class="hp-bar-fill" id="boss-hp-bar" style="width: 100%;"></div>
             </div>
-            <div class="boss-hp-text">붉은 용 HP: <span id="boss-hp-text">20</span></div>
+            <div class="boss-hp-text">용 HP: <span id="boss-hp-text">-</span></div>
         </div>
         
         <div class="player-status" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
@@ -639,6 +701,7 @@ try {
         if (user) {
             // 이미 로그인 되어 있음
             myServerUid = user.uid;
+            if (typeof myPlayerId !== 'undefined') myPlayerId = myServerUid;
             console.log("🔥 서버 연결 유지 중 (ID: " + myServerUid + ")");
         } else {
             // 로그인 안 되어 있으면 새로 로그인
@@ -647,7 +710,8 @@ try {
                     myServerUid = credential.user.uid;
                     console.log("🔥 서버 연결 성공! (새 ID 발급)");
                     // 로그인 직후 점수 한번 저장
-                    saveMyScoreToServer();
+                    if (typeof myPlayerId !== 'undefined') myPlayerId = myServerUid;
+                    if (typeof saveMyScoreToServer === 'function') saveMyScoreToServer();
                 })
                 .catch((error) => {
                     console.error("서버 연결 실패:", error);
@@ -659,43 +723,6 @@ try {
     console.error("파이어베이스 초기화 오류 (키를 확인하세요):", e);
 }
 
-/* [수정] 내 점수 저장 (현재 상태 + 역사 기록 동시 저장) */
-function saveMyScoreToServer() {
-    if (!db || !myServerUid) return; 
-
-    // 1. 현재 월간 ID 계산 (예: "2026-02")
-    const currentMonthId = getMonthId();
-    
-    // 2. 내 정보 패키징
-    const myData = {
-        nickname: myNickname,          
-        score: leagueData.myScore,      // 현재 점수
-        castleLv: myCastleLevel,       
-        totalClear: userStats.totalVersesCleared, 
-        tag: myTag,
-        tier: (leagueData.tier !== undefined) ? leagueData.tier : 0, // 리그 등급
-        tribe: (myTribe !== undefined) ? myTribe : 0, // 지파 정보
-        weekId: currentMonthId,          // 시즌 정보 (월간)
-        originalDeviceId: myPlayerId,  
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp() 
-    };
-
-    const batch = db.batch();
-
-    // A. [현황판] 실시간 랭킹용 (기존과 동일)
-    const currentRef = db.collection("leaderboard").doc(myServerUid);
-    batch.set(currentRef, myData, { merge: true });
-
-    // B. [명예의 전당] 시즌별 기록용 (문서 ID를 '시즌_유저ID'로 만듦)
-    // 예: 2026-02_user123
-    const historyRef = db.collection("history").doc(`${currentMonthId}_${myServerUid}`);
-    batch.set(historyRef, myData, { merge: true });
-
-    // 전송!
-    batch.commit()
-        .then(() => console.log("☁️ 서버에 기록 저장 완료 (현황+명예의전당)"))
-        .catch((err) => console.error("저장 실패:", err));
-}
 
 /* [시스템] 스마트 랭킹 로드 (호환성 수정 버전) */
 var leagueTotalCounts = {};
