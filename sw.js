@@ -3,7 +3,7 @@
 // 게임 비활성화 상태에서도 복습 알림 표시
 // ========================================
 
-const CACHE_NAME = 'kingsroad-v1';
+const CACHE_NAME = 'kingsroad-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -18,7 +18,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
       console.log('✅ 캐시 생성 완료');
-      return self.skipWaiting();
+      return cache.addAll(urlsToCache).then(() => self.skipWaiting());
     })
   );
 });
@@ -26,11 +26,38 @@ self.addEventListener('install', event => {
 // ★ 활성화 단계
 self.addEventListener('activate', event => {
   console.log('🚀 Service Worker 활성화됨');
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches.keys().then(keys => {
+      const deletions = keys
+        .filter(key => key !== CACHE_NAME)
+        .map(key => caches.delete(key));
+      return Promise.all(deletions);
+    }).then(() => self.clients.claim())
+  );
 });
 
 // ★ 네트워크 요청 처리 (오프라인 대비)
 self.addEventListener('fetch', event => {
+  const requestUrl = new URL(event.request.url);
+  const isCoreAsset = requestUrl.pathname === '/' ||
+    requestUrl.pathname.endsWith('/index.html') ||
+    requestUrl.pathname.endsWith('/game.js') ||
+    requestUrl.pathname.endsWith('/style.css') ||
+    requestUrl.pathname.endsWith('/manifest.json');
+
+  if (event.request.mode === 'navigate' || isCoreAsset) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then(response => {
       return response || fetch(event.request);

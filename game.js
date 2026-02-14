@@ -4766,18 +4766,45 @@ let currentLifeBookChapter = 1;
 function openLifeBook() {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     
+    // ★ 매번 새로 생성 (HTML 업데이트 보장)
     let screen = document.getElementById('life-book-screen');
-    if (!screen) {
-        screen = document.createElement('div');
-        screen.id = 'life-book-screen';
-        screen.className = 'screen';
-        // flex 레이아웃
-        screen.style.display = 'flex';
-        screen.style.flexDirection = 'column';
+    if (screen) screen.remove();
+    
+    screen = document.createElement('div');
+    screen.id = 'life-book-screen';
+    screen.className = 'screen';
+    // flex 레이아웃
+    screen.style.display = 'flex';
+    screen.style.flexDirection = 'column';
         
         screen.innerHTML = `
             <div class="life-book-header" style="padding:20px; text-align:center; background:#2c3e50; z-index:10; border-bottom:1px solid rgba(255,255,255,0.1); flex-shrink: 0;">
-                <h1 style="color:#f1c40f; margin:0 0 5px 0;">📖 도감</h1>
+                <div style="display:flex; align-items:center; justify-content:center; gap:10px;">
+                    <h1 style="color:#f1c40f; margin:0;">📖 도감</h1>
+                    <button onclick="document.getElementById('life-book-help').classList.toggle('hidden'); document.getElementById('help-icon').textContent = document.getElementById('life-book-help').classList.contains('hidden') ? '❓' : '❌';" style="background:none; border:none; font-size:1.3rem; cursor:pointer; padding:5px; color:#f1c40f;" id="help-icon">❓</button>
+                </div>
+                
+                <div id="life-book-help" class="hidden" style="background:rgba(52, 73, 94, 0.8); padding:15px; border-radius:10px; margin:10px 0; text-align:left; border-left:3px solid #f1c40f;">
+                    <div style="font-size:0.85rem; color:#bdc3c7; line-height:1.6;">
+                        <div style="margin-bottom:8px;"><strong style="color:#f1c40f;">🎯 도감이란?</strong></div>
+                        <div>각 구절을 여러 번 훈련하면서 <strong>'도감 점수'</strong>를 모아갑니다. 점수가 높아질수록 더 강한 보너스를 얻습니다.</div>
+                        <div style="margin-top:12px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:10px;">
+                            <div style="margin-bottom:8px;"><strong style="color:#f1c40f;">📊 점수 획득 방식</strong></div>
+                            <div>• 구절 1회 클리어: 10점</div>
+                            <div>• 구절 5회 이상: 20점</div>
+                            <div>• 구절 10회 이상: 30점</div>
+                            <div>• 구절 20회 이상: 50점</div>
+                        </div>
+                        <div style="margin-top:12px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:10px;">
+                            <div style="margin-bottom:8px;"><strong style="color:#f1c40f;">⭐ 깨달음의 경지 보너스</strong></div>
+                            <div style="font-size:0.8rem;">• 1000점: 보석 5% 추가 획득</div>
+                            <div style="font-size:0.8rem;">• 2500점: 오답 1회 무시</div>
+                            <div style="font-size:0.8rem;">• 6000점: 보석 10%, 승점 5% 추가</div>
+                            <div style="font-size:0.8rem;">• 14000점: 보석 15%, 오답 2회</div>
+                            <div style="font-size:0.8rem;">• 20000점: 보석 15% + 오답 3회 + 승점 15%</div>
+                        </div>
+                    </div>
+                </div>
                 
                 <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:15px; margin-top:10px;">
                     <div style="font-size:0.9rem; color:#bdc3c7;">현재 도감 점수</div>
@@ -4785,7 +4812,7 @@ function openLifeBook() {
                         <span id="collection-score">0</span> <span style="font-size:1rem;">pts</span>
                     </div>
                     <div style="margin-top:15px; padding-top:15px; border-top:1px dashed rgba(255,255,255,0.1);">
-                        <div style="font-size:0.8rem; color:#bdc3c7; margin-bottom:5px;">현재 직분 (Rank)</div>
+                        <div style="font-size:0.8rem; color:#bdc3c7; margin-bottom:5px;">깨달음의 경지</div>
                         <div id="collection-rank-label" style="font-size:1.5rem; font-weight:bold; color:#95a5a6;">🎒 나그네</div>
                         <div id="collection-rank-buff" style="font-size:0.9rem; color:#2ecc71; margin-top:5px;">아직 효과 없음</div>
                     </div>
@@ -4802,8 +4829,8 @@ function openLifeBook() {
         <button class="btn-gray btn-back" onclick="goMap()">돌아가기</button>
     </div>
         `;
-        document.body.appendChild(screen);
-    }
+    
+    document.body.appendChild(screen);
 
     ensureBackButton(screen);
     screen.classList.add('active');
@@ -4847,22 +4874,11 @@ function renderLifeBook() {
         }
     }
 
-    // 3. ★ 다음 직분까지 남은 점수 계산 ★
-    let nextGoalText = "";
-    
-    if (grandTotalScore < 1000) {
-        nextGoalText = `다음 <b>[🕊️ 성도]</b>까지 ${1000 - grandTotalScore}점 남음`;
-    } else if (grandTotalScore < 5000) {
-        nextGoalText = `다음 <b>[🛡️ 파수꾼]</b>까지 ${5000 - grandTotalScore}점 남음`;
-    } else if (grandTotalScore < 10000) {
-        nextGoalText = `다음 <b>[⚔️ 군사]</b>까지 ${10000 - grandTotalScore}점 남음`;
-    } else if (grandTotalScore < 15000) {
-        nextGoalText = `다음 <b>[👑 왕 같은 제사장]</b>까지 ${15000 - grandTotalScore}점 남음`;
-    } else if (grandTotalScore < 20200) {
-        nextGoalText = `다음 <b>[🍒 처음 익은 열매]</b>까지 ${20200 - grandTotalScore}점 남음`;
-    } else {
-        nextGoalText = "🎉 명예로운 만점! 온전한 결실을 맺으셨습니다!";
-    }
+    // 3. ★ 다음 경지까지 남은 점수 계산 ★
+    const nextRank = getNextCollectionRank(grandTotalScore);
+    const nextGoalText = nextRank
+        ? `다음 <b>[${nextRank.title}]</b>까지 ${nextRank.min - grandTotalScore}점 남음`
+        : "🎉 명예로운 만점! 온전한 결실을 맺으셨습니다!";
 
     // 4. UI 업데이트
     document.getElementById('collection-score').innerText = grandTotalScore.toLocaleString();
@@ -4880,7 +4896,19 @@ function renderLifeBook() {
             </div>
         `;
         rankLabel.style.color = rankInfo.color;
-        rankBuff.innerHTML = rankInfo.buff;
+        
+        // 현재 레벨의 보너스 표시
+        let buffText = "";
+        if (rankInfo.gemBonus > 0 || rankInfo.wrongCorrection > 0 || rankInfo.scoreBonus > 0) {
+            let buffItems = [];
+            if (rankInfo.gemBonus > 0) buffItems.push(`💎 보석 +${rankInfo.gemBonus}%`);
+            if (rankInfo.wrongCorrection > 0) buffItems.push(`🐛 오답 ${rankInfo.wrongCorrection}회`);
+            if (rankInfo.scoreBonus > 0) buffItems.push(`⭐ 승점 +${rankInfo.scoreBonus}%`);
+            buffText = buffItems.join(" · ");
+        } else {
+            buffText = "아직 효과 없음";
+        }
+        rankBuff.innerHTML = buffText;
     }
 
     // 5. 카드 그리드 그리기 (기존과 동일)
@@ -4927,16 +4955,49 @@ function renderLifeBook() {
     }
 }
 
-// [보조 함수] 점수에 따른 직분 계산 (최종 수정)
+// [보조 함수] 점수에 따른 경지 계산 (10단계) - 레벨별 보너스 포함
+const COLLECTION_RANKS = [
+    { min: 0, title: "좋은 땅에 뿌린 씨", color: "#95a5a6", gemBonus: 0, wrongCorrection: 0, scoreBonus: 0 },
+    { min: 1000, title: "단단한 뿌리", color: "#2ecc71", gemBonus: 5, wrongCorrection: 0, scoreBonus: 0 },
+    { min: 2500, title: "수줍은 새싹", color: "#7f8c8d", gemBonus: 5, wrongCorrection: 1, scoreBonus: 0 },
+    { min: 4000, title: "푸르른 본잎", color: "#27ae60", gemBonus: 5, wrongCorrection: 1, scoreBonus: 5 },
+    { min: 6000, title: "곧게 뻗은 줄기", color: "#3498db", gemBonus: 10, wrongCorrection: 1, scoreBonus: 5 },
+    { min: 8500, title: "풍성한 가지", color: "#16a085", gemBonus: 10, wrongCorrection: 2, scoreBonus: 5 },
+    { min: 11000, title: "강인한 나무", color: "#9b59b6", gemBonus: 10, wrongCorrection: 2, scoreBonus: 10 },
+    { min: 14000, title: "간절한 꽃봉오리", color: "#8e44ad", gemBonus: 15, wrongCorrection: 2, scoreBonus: 10 },
+    { min: 17000, title: "눈부신 개화", color: "#f1c40f", gemBonus: 15, wrongCorrection: 3, scoreBonus: 10 },
+    { min: 20000, title: "처음 익은 열매", color: "#e74c3c", gemBonus: 15, wrongCorrection: 3, scoreBonus: 15 }
+];
+
+// 현재 도감 점수 계산
+function getCurrentCollectionScore() {
+    let score = 0;
+    for (let ch = 1; ch <= 22; ch++) {
+        if (bibleData[ch]) {
+            bibleData[ch].forEach((v, idx) => {
+                const count = stageMastery[`${ch}-${idx + 1}`] || 0;
+                if (count >= 20) score += 50;
+                else if (count >= 10) score += 30;
+                else if (count >= 5) score += 20;
+                else if (count >= 1) score += 10;
+            });
+        }
+    }
+    return score;
+}
+
 function getCollectionRank(score) {
-   if (score >= 20000) return { title: "🍒 첫 열매", color: "#e74c3c", buff: "히든 엔딩 자격 획득" };
-    
-    if (score >= 15000) return { title: "👑 왕 같은 제사장", color: "#f1c40f", buff: "최대 체력 +3 ❤️" };
-    if (score >= 10000) return { title: "⚔️ 그리스도의 군사", color: "#9b59b6", buff: "최대 체력 +2 ❤️" };
-    if (score >= 5000)  return { title: "🛡️ 파수꾼", color: "#3498db", buff: "최대 체력 +1 ❤️" };
-    if (score >= 1000)  return { title: "🕊️ 성도", color: "#2ecc71", buff: "매일 보석 +50 지급💎" };
-    
-    return { title: "🎒 나그네", color: "#95a5a6", buff: "아직 효과 없음" };
+    for (let i = COLLECTION_RANKS.length - 1; i >= 0; i--) {
+        if (score >= COLLECTION_RANKS[i].min) return COLLECTION_RANKS[i];
+    }
+    return COLLECTION_RANKS[0];
+}
+
+function getNextCollectionRank(score) {
+    for (let i = 0; i < COLLECTION_RANKS.length; i++) {
+        if (score < COLLECTION_RANKS[i].min) return COLLECTION_RANKS[i];
+    }
+    return null;
 }
 
 /* [시스템: 일일 보급 (Daily Reward)] */
@@ -6236,6 +6297,17 @@ stageClear = function(type) {
             }
         }
         
+        // ★ [깨달음의 경지 보너스 적용]
+        const collectionScore = getCurrentCollectionScore();
+        const rankBuff = getCollectionRank(collectionScore);
+        let buffMsg = "";
+        
+        // 보석 보너스
+        if (rankBuff.gemBonus > 0) {
+            baseGem = Math.floor(baseGem * (1 + rankBuff.gemBonus / 100));
+            buffMsg += `💎 깨달음 보석 보너스(+${rankBuff.gemBonus}%)\n`;
+        }
+        
         // ★ [4회 이상 클리어 시 보상 제한]
         let scoreType = (type === 'boss') ? 'boss' : (type === 'mid-boss' ? 'mid-boss' : 'normal');
         
@@ -6250,11 +6322,22 @@ stageClear = function(type) {
         }
         
         scoreResult.score = Math.floor(scoreResult.score);
+        
+        // 승점 보너스 (차단되지 않았을 때만)
+        if (!scoreResult.blocked && rankBuff.scoreBonus > 0) {
+            scoreResult.score = Math.floor(scoreResult.score * (1 + rankBuff.scoreBonus / 100));
+            buffMsg += `✨ 깨달음 승점 보너스(+${rankBuff.scoreBonus}%)\n`;
+        }
 
         // 정확도 보너스
+        let adjustedWrongCount = Math.max(0, wrongCount - rankBuff.wrongCorrection);
         let accuracyRate = (type === 'boss' || type === 'mid-boss') 
-            ? Math.max(0.1, (100 - (wrongCount * 5)) / 100) 
-            : Math.max(0.1, (100 - (wrongCount * 10)) / 100);
+            ? Math.max(0.1, (100 - (adjustedWrongCount * 5)) / 100) 
+            : Math.max(0.1, (100 - (adjustedWrongCount * 10)) / 100);
+        
+        if (rankBuff.wrongCorrection > 0) {
+            buffMsg += `👼 깨달음 오답 보정(${rankBuff.wrongCorrection}회)\n`;
+        }
         
         const baseGemBeforeAccuracy = baseGem; // ★ 정확도 적용 전 값 저장
         baseGem = Math.floor(baseGem * accuracyRate);
@@ -6267,7 +6350,7 @@ stageClear = function(type) {
 
         // 퍼펙트 보너스
         let perfectBonus = 0;
-        if (wrongCount === 0) {
+        if (adjustedWrongCount === 0) {
             perfectBonus = Math.floor(baseGem * 0.1);
             totalGem += perfectBonus;
             if(typeof SoundEffect !== 'undefined') SoundEffect.playLevelUp(); 
@@ -6282,6 +6365,11 @@ stageClear = function(type) {
 
         const accPercent = Math.floor(accuracyRate * 100);
         
+        // 깨달음 보너스 메시지 추가
+        if (buffMsg) {
+            msg += buffMsg;
+        }
+        
         // 초회 클리어 시 상세 정보 표시
         if (!isAlreadyClearedToday) {
             msg += `\n━━━━━━━━━━━━━━━━\n`;
@@ -6295,7 +6383,7 @@ stageClear = function(type) {
                 msg += `💎 초회 기본: ${baseGemBeforeAccuracy}개\n`;
             }
             
-            msg += `🎯 정확도: ${accPercent}% (오답: ${wrongCount}) → ${baseGem}개\n`;
+            msg += `🎯 정확도: ${accPercent}% (오답: ${adjustedWrongCount}) → ${baseGem}개\n`;
             msg += `🏰 성전 보너스: +${castleBonusGem}개\n`;
             if (perfectBonus > 0) {
                 msg += `⭐ 퍼펙트 보너스: +${perfectBonus}개\n`;
@@ -6304,9 +6392,12 @@ stageClear = function(type) {
             msg += `💎 최종 획득: ${totalGem}개`;
         } else {
             // 반복 클리어 시 기존 표시
-            msg += `🎯 정확도: ${accPercent}% (오답: ${wrongCount})\n`;
+            msg += `🎯 정확도: ${accPercent}% (오답: ${adjustedWrongCount})\n`;
             if (perfectBonus > 0) {
                 msg += `(💎 퍼펙트 +${perfectBonus})\n`;
+            }
+            if (buffMsg) {
+                msg += buffMsg;
             }
             msg += `✨ 승점: +${scoreResult.score}\n`; 
             msg += `💎 보석: +${totalGem} (성전 +${castleBonusGem})`;
