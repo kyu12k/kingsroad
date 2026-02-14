@@ -1,3 +1,29 @@
+/* =============================================
+   [전역 변수 선언부 - 충돌 방지를 위해 최상단에 배치]
+   ============================================= */
+
+// [시스템: 경제 및 인벤토리]
+let myGems = 0;           // 현재 보유 보석
+let myNickname = "순례자";
+let myTag = "";
+let myPlayerId = "";
+
+/* [수정] 체력 변수 분리 (충돌 방지용) */
+let purchasedMaxHearts = 5; // 상점에서 구매한 순수 체력 (이걸 저장합니다)
+let maxPlayerHearts = 5;    // 버프가 포함된 실제 게임 체력
+
+let inventory = {
+    lifeBread: 0,  // 생명의 떡 개수
+};
+
+// [시스템: 게임 진행 데이터]
+let stageMastery = {}; // ID별 클리어 횟수 저장
+let stageLastClear = {}; // ID별 마지막 클리어 시간 (타임스탬프)
+let stageNextEligibleTime = {}; // 다음 클리어 가능 시간 (forgetting-curve)
+let stageTimedBonus = {}; // 망각 주기 기반 보너스 (때를 따른 양식)
+
+/* ============================================= */
+
 /* (주의) saveGameData의 통합 구현은 아래의 선언부(function saveGameData)에서 관리합니다. */
 // 2. 게임 불러오기 (데이터가 없어도 에러 안 나게 방어)
 loadGameData = function() {
@@ -1464,45 +1490,24 @@ function generateRandomNickname() {
     return adj + " " + noun;
 }
 
-// [시스템: 경제 및 인벤토리]
-        let myGems = 0;           // 현재 보유 보석
-        let myNickname = "순례자";
-        let myTag = "";
-        let myPlayerId = "";
+/* [추가] 최종 체력 계산 함수 (버프 적용용) */
+function recalculateMaxHearts() {
+    // 1. 도감 점수 확인 (15,000점 이상이면 +3 보너스)
+    let bonus = 0;
+    
+    // 아직 점수 변수가 안 만들어졌을 수도 있으니 안전하게 확인
+    if (typeof grandTotalScore !== 'undefined' && grandTotalScore >= 15000) {
+        bonus = 3;
+    }
 
-        /* [수정] 체력 변수 분리 (충돌 방지용) */
-        let purchasedMaxHearts = 5; // 상점에서 구매한 순수 체력 (이걸 저장합니다)
-        let maxPlayerHearts = 5;    // 버프가 포함된 실제 게임 체력
-        
-        // let heartUpgradeCount = 0; // (참고: 이제 구매한 체력 숫자를 직접 쓰므로 이 변수는 필요 없습니다)
-        
-        let inventory = {
-            lifeBread: 0,  // 생명의 떡 개수
-        };
+    // 2. 최종 체력 = 구매한 체력 + 보너스
+    maxPlayerHearts = purchasedMaxHearts + bonus;
+    
+    // 3. UI 갱신 (화면의 하트 숫자 바꾸기)
+    if(typeof updateBattleUI !== 'undefined') updateBattleUI();
+}
 
-        /* [추가] 최종 체력 계산 함수 (버프 적용용) */
-        function recalculateMaxHearts() {
-            // 1. 도감 점수 확인 (15,000점 이상이면 +3 보너스)
-            let bonus = 0;
-            
-            // 아직 점수 변수가 안 만들어졌을 수도 있으니 안전하게 확인
-            if (typeof grandTotalScore !== 'undefined' && grandTotalScore >= 15000) {
-                bonus = 3;
-            }
-
-            // 2. 최종 체력 = 구매한 체력 + 보너스
-            maxPlayerHearts = purchasedMaxHearts + bonus;
-            
-            // 3. UI 갱신 (화면의 하트 숫자 바꾸기)
-            if(typeof updateBattleUI !== 'undefined') updateBattleUI();
-        }
-
-        let stageMastery = {}; // ID별 클리어 횟수 저장
-        let stageLastClear = {}; // ★ [추가] ID별 마지막 클리어 시간 (타임스탬프)
-        let stageNextEligibleTime = {}; // ★ [추가] 다음 클리어 가능 시간 (forgetting-curve)
-        let stageTimedBonus = {}; // ★ [새로운] 망각 주기 기반 보너스 (때를 따른 양식)
-      
-  // 1. 리그 및 부스터 데이터 초기화
+// 1. 리그 및 부스터 데이터 초기화
 let leagueData = {
     weekId: getWeekId(), // 현재 주차 (예: "2026-W07")
     monthId: getMonthId(), // 현재 월 (예: "202602")
@@ -1812,6 +1817,11 @@ function startGame() {
 
         function goMap() {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            
+            // ★ [수정] 동적으로 생성된 화면(도감 등) 제거
+            const lifeBookScreen = document.getElementById('life-book-screen');
+            if (lifeBookScreen) lifeBookScreen.remove();
+            
             document.getElementById('map-screen').classList.add('active');
             if (typeof seasonTimerInterval !== 'undefined' && seasonTimerInterval) {
         clearInterval(seasonTimerInterval);
@@ -1823,6 +1833,8 @@ function startGame() {
          setTimeout(drawRiver, 50);
         // 백버튼 표시 상태 갱신 (맵에서는 숨김)
         if (typeof updateBackButtonVisibility === 'function') updateBackButtonVisibility();
+        // ★ [추가] 맵으로 돌아올 때 리소스 UI 업데이트 (만나 수령 시 보석 반영)
+        if (typeof updateResourceUI === 'function') updateResourceUI();
         }
 
         // 백버튼(돌아가기) 표시를 현재 활성 화면에 따라 제어
