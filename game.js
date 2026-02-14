@@ -15,7 +15,14 @@ loadGameData = function() {
         // [기본 복구]
         myCastleLevel = parsed.level || 0;
         myGems = parsed.gems || 0;
-        inventory = parsed.inv || { potion: 0 };
+        inventory = parsed.inv || { lifeBread: 0 };
+        if (inventory) {
+            if (typeof inventory.lifeBread === 'undefined' && typeof inventory.potion !== 'undefined') {
+                inventory.lifeBread = inventory.potion;
+                delete inventory.potion;
+            }
+            if (typeof inventory.lifeBread === 'undefined') inventory.lifeBread = 0;
+        }
         purchasedMaxHearts = parsed.maxHearts || 5;
         myNickname = parsed.nickname || "순례자";
         myTribe = (parsed.tribe !== undefined) ? parsed.tribe : 0;
@@ -26,10 +33,28 @@ loadGameData = function() {
         stageLastClear = parsed.lastClear || {};
         stageMastery = parsed.mastery || {};
         stageMemoryLevels = parsed.memoryLevels || {};
+        stageNextEligibleTime = parsed.nextEligibleTime || {}; // ★ [Forgetting-Curve] 다음 클리어 가능 시간
+        stageTimedBonus = parsed.timedBonus || {}; // ★ [때를 따른 양식] 망각 주기 기반 보너스
         // stageDailyAttempts 제거됨 (초회/반복만 구분)
         if(parsed.leagueData) leagueData = parsed.leagueData;
         if(parsed.missions) missionData = parsed.missions;
         if(parsed.boosterData) boosterData = parsed.boosterData;
+
+        // 미션 데이터 구조 보정 (구버전 호환)
+        if (!missionData) missionData = {};
+        if (!missionData.daily) missionData.daily = {};
+        if (!missionData.weekly) missionData.weekly = {};
+        if (!Array.isArray(missionData.daily.claimed)) missionData.daily.claimed = [false, false, false];
+        if (!Array.isArray(missionData.weekly.claimed)) missionData.weekly.claimed = [false, false, false];
+
+        if (typeof missionData.daily.newClear !== 'number') missionData.daily.newClear = 0;
+        if (typeof missionData.daily.differentStages !== 'number') missionData.daily.differentStages = 0;
+        if (typeof missionData.daily.checkpointBoss !== 'number') missionData.daily.checkpointBoss = 0;
+
+        if (typeof missionData.weekly.attendance !== 'number') missionData.weekly.attendance = 0;
+        if (!Array.isArray(missionData.weekly.attendanceLog)) missionData.weekly.attendanceLog = [];
+        if (typeof missionData.weekly.dragonKill !== 'number') missionData.weekly.dragonKill = 0;
+        if (typeof missionData.weekly.stageClear !== 'number') missionData.weekly.stageClear = 0;
 
         // [★ 핵심 복구: 업적 및 통계]
         // 저장된 업적 기록이 있으면 덮어쓰고, 없으면 기존(0) 유지
@@ -291,8 +316,8 @@ let missionData = {
     // 일일 미션 진행도
     daily: {
         newClear: 0,        // 신규 훈련 횟수
-        reviewClear: 0,     // 복습 횟수
-        totalClear: 0,      // 아무 스테이지나 클리어 횟수
+        differentStages: 0, // 서로 다른 스테이지 클리어 횟수
+        checkpointBoss: 0,  // 중보/보스 처치 횟수
         claimed: [false, false, false] // 보상 수령 여부
     },
     
@@ -300,7 +325,7 @@ let missionData = {
     weekly: {
         attendance: 0,      // 주간 출석 일수
         attendanceLog: [],  // 이번 주 출석한 날짜들 ["Mon", "Tue"...] (중복 방지용)
-        dragonKill: 0,      // 용 사냥 횟수
+        dragonKill: 0,      // 용/중보/보스 처치 횟수
         stageClear: 0,      // 스테이지 15개 완료 횟수
         claimed: [false, false, false]
     }
@@ -317,8 +342,8 @@ function checkMissions() {
         missionData.lastLoginDate = today;
         missionData.daily = {
             newClear: 0,
-            reviewClear: 0,
-            totalClear: 0,
+            differentStages: 0,
+            checkpointBoss: 0,
             claimed: [false, false, false]
         };
         console.log("📅 새로운 하루가 시작되어 일일 미션이 초기화되었습니다.");
@@ -369,29 +394,35 @@ function updateWeeklyAttendance(today, currentWeek) {
 
 /* [시스템: 미션 진행도 업데이트 (핵심 기능)] */
 // type: 'new'(신규), 'review'(복습), 'dragon'(용)
-function updateMissionProgress(type) {
-    // 1. 일일 미션 카운트
+function updateMissionProgress(type, extraData) {
+    if (type === 'training') type = 'new';
+    if (type === 'dragonKill') type = 'dragon';
+    if (type === 'review') return;
+
+    // 1. 일일 미션: 신규 훈련
     if (type === 'new') {
         missionData.daily.newClear++;
-    } else if (type === 'review') {
-        missionData.daily.reviewClear++;
+    } 
+    // 2. 일일 미션: 다양성 (오늘 처음 클리어하는 스테이지)
+    else if (type === 'differentStage') {
+        missionData.daily.differentStages = (missionData.daily.differentStages || 0) + 1;
     }
-    
-    // '어떤 스테이지든 3회 클리어'는 신규/복습 모두 포함
-    if (type === 'new' || type === 'review') {
-        missionData.daily.totalClear++;
-        
-        // 주간 미션: 스테이지 15회 완료 (누적)
-        missionData.weekly.stageClear++; 
+    // 3. 일일 미션: 중보/보스 처치
+    else if (type === 'checkpointBoss') {
+        missionData.daily.checkpointBoss = (missionData.daily.checkpointBoss || 0) + 1;
     }
-    
-    // 2. 주간 미션 (용 사냥)
-    if (type === 'dragon') {
+    // 4. 주간 미션: 중보/보스 처치 (용 사냥)
+    else if (type === 'dragon') {
         missionData.weekly.dragonKill++;
     }
     
-    saveGameData(); // 저장
-    updateMissionUI(); // 미션 화면이 열려있다면 즉시 갱신
+    // 5. 스테이지 클리어 총수 (일반 스테이지에서만)
+    if (type === 'new') {
+        missionData.weekly.stageClear++;
+    }
+    
+    saveGameData(); 
+    updateMissionUI();
 }
 
 /* [시스템: 미션 UI 표시 (화면 그리기)] */
@@ -401,48 +432,48 @@ function updateMissionUI() {
     
     list.innerHTML = ""; // 기존 목록 초기화
 
-    // ----------------------------------------------------
-    // 1. 일일 미션 정의 (새로운 규칙 적용)
-    // ----------------------------------------------------
+    // ============================================
+    // 1. 일일 미션 정의 (신규훈련, 다양성, 중보/보스)
+    // ============================================
     const dailyMissions = [
         { 
-            desc: "새로운 훈련 1회 완료", // (수정됨: 출석 -> 훈련)
+            desc: "새로운 훈련 1회 완료",
             current: missionData.daily.newClear, 
             target: 1, 
-            rewardText: "⚡ 승점 2배 (10분)", 
-            rewardType: "xp_boost",
-            val1: 2, val2: 10, // 2배, 10분
+            rewardText: "💎 보석 100개",
+            rewardType: "gem",
+            val1: 100, val2: 0,
             claimed: missionData.daily.claimed[0],
             index: 0,
             type: 'daily'
         },
         { 
-            desc: "복습(재시도) 1회 완료", 
-            current: missionData.daily.reviewClear, 
-            target: 1, 
-            rewardText: "⚡ 승점 2배 (10분)", 
-            rewardType: "xp_boost",
-            val1: 2, val2: 10,
+            desc: "서로 다른 스테이지 3개 클리어",
+            current: missionData.daily.differentStages, 
+            target: 3, 
+            rewardText: "💎 보석 300개",
+            rewardType: "gem",
+            val1: 300, val2: 0,
             claimed: missionData.daily.claimed[1],
             index: 1,
             type: 'daily'
         },
         { 
-            desc: "어떤 스테이지든 3회 클리어", 
-            current: missionData.daily.totalClear, 
-            target: 3, 
-            rewardText: "📅 내일 승점 3배 (15분)", 
-            rewardType: "next_day_xp", // (신규 보상 타입)
-            val1: 3, val2: 15,
+            desc: "중보/보스 처치 1회", 
+            current: missionData.daily.checkpointBoss, 
+            target: 1, 
+            rewardText: "💎 보석 500개",
+            rewardType: "gem",
+            val1: 500, val2: 0,
             claimed: missionData.daily.claimed[2],
             index: 2,
             type: 'daily'
         }
     ];
 
-    // ----------------------------------------------------
-    // 2. 주간 미션 정의 (새로운 규칙 적용)
-    // ----------------------------------------------------
+    // ============================================
+    // 2. 주간 미션 정의 (중보/보스 5회로 증가)
+    // ============================================
     const weeklyMissions = [
         { 
             desc: "주 5일 출석하기", 
@@ -456,18 +487,18 @@ function updateMissionUI() {
             type: 'weekly'
         },
         { 
-            desc: "붉은 용 1마리 사냥", 
+            desc: "중보/보스 처치 5회", 
             current: missionData.weekly.dragonKill, 
-            target: 1, 
-            rewardText: "💎 보석 2,000개", 
+            target: 5, 
+            rewardText: "💎 보석 3,000개", 
             rewardType: "gem",
-            val1: 2000, val2: 0,
+            val1: 3000, val2: 0,
             claimed: missionData.weekly.claimed[1],
             index: 1,
             type: 'weekly'
         },
         { 
-            desc: "스테이지 15회 완료", // (수정됨: 부자되기 -> 스테이지)
+            desc: "스테이지 15회 완료",
             current: missionData.weekly.stageClear, 
             target: 15, 
             rewardText: "💎 보석 2,000개", 
@@ -1446,7 +1477,7 @@ function generateRandomNickname() {
         // let heartUpgradeCount = 0; // (참고: 이제 구매한 체력 숫자를 직접 쓰므로 이 변수는 필요 없습니다)
         
         let inventory = {
-            potion: 0,  // 생명의 떡 개수
+            lifeBread: 0,  // 생명의 떡 개수
         };
 
         /* [추가] 최종 체력 계산 함수 (버프 적용용) */
@@ -1468,6 +1499,8 @@ function generateRandomNickname() {
 
         let stageMastery = {}; // ID별 클리어 횟수 저장
         let stageLastClear = {}; // ★ [추가] ID별 마지막 클리어 시간 (타임스탬프)
+        let stageNextEligibleTime = {}; // ★ [추가] 다음 클리어 가능 시간 (forgetting-curve)
+        let stageTimedBonus = {}; // ★ [새로운] 망각 주기 기반 보너스 (때를 따른 양식)
       
   // 1. 리그 및 부스터 데이터 초기화
 let leagueData = {
@@ -1475,8 +1508,61 @@ let leagueData = {
     monthId: getMonthId(), // 현재 월 (예: "202602")
     myScore: 0,
     myMonthlyScore: 0, // 월간 누적 점수
-    stageLog: {} // { "1-1": "2026-W07" } -> 이번 주 클리어 기록
+    stageLog: {}, // { "1-1": "2026-02-14" } -> 일일 초회 클리어 기록 (미션용)
 };
+
+// ============================================================
+// [Forgetting-Curve 냉각 시간 계산]
+// ============================================================
+function getNextEligibleTime(memoryLevel) {
+    // 메모리 레벨에 따른 냉각 시간 (시간 단위)
+    const cooldownHours = {
+        0: 23,   // Level 0: 1일 (23시간)
+        1: 71,   // Level 1: 3일 (71시간)
+        2: 167,  // Level 2: 7일 (167시간)
+        3: 167,  // Level 3+: 7일
+        4: 167,
+        5: 167
+    };
+    
+    const hours = cooldownHours[memoryLevel] || 167;
+    return Date.now() + (hours * 60 * 60 * 1000);
+}
+
+// ============================================================
+// [때를 따른 양식 보너스 시스템]
+// ============================================================
+function getTimedBonus(stageId) {
+    // 보너스 데이터 초기화
+    if (!stageTimedBonus[stageId]) {
+        stageTimedBonus[stageId] = { remaining: 3, lastClear: 0 };
+    }
+    
+    const bonus = stageTimedBonus[stageId];
+    
+    // 망각 주기 체크
+    const memStatus = checkMemoryStatus(stageId);
+    
+    // 망각 주기 도래 시 자동 리셋
+    if (memStatus.isForgotten && bonus.remaining < 3) {
+        bonus.remaining = 3;
+    }
+    
+    return bonus;
+}
+
+function consumeTimedBonus(stageId) {
+    const bonus = getTimedBonus(stageId);
+    
+    const currentLevel = bonus.remaining; // 현재 값 저장
+    
+    if (bonus.remaining > 0) {
+        bonus.remaining--;
+        bonus.lastClear = Date.now();
+    }
+    
+    return currentLevel; // 소진 전 값 반환
+}
 
 /* [시스템: 미션 및 부스터 데이터] */
 let boosterData = {
@@ -1694,8 +1780,8 @@ function startGame() {
     // 5. 맵 화면으로 이동
     goMap(); 
 
-    // 6. 일일 만나 지급 체크
-    setTimeout(checkDailyManna, 500);
+    // 6. 일일 생명의 떡 지급 체크
+    setTimeout(checkDailyLifeBread, 500);
 }
 
         function goHome() {
@@ -1966,6 +2052,23 @@ function isUnplayedStage(stageId) {
     return !missionData.stageProgress || !missionData.stageProgress[stageId];
 }
 
+// [도우미] 스테이지 진행도 스냅샷
+function getStageProgressSnapshot(stageId) {
+    if (!missionData || !missionData.stageProgress) return null;
+    return missionData.stageProgress[stageId] || null;
+}
+
+// [도우미] Step 1~5 완료 처리 여부
+function isStageFullyLearned(stageId, stageData) {
+    const progress = getStageProgressSnapshot(stageId);
+    const phase = progress ? progress.phase : 0;
+    const hasMastery = (stageMastery && stageMastery[stageId] && stageMastery[stageId] > 0);
+    const isCleared = stageData && stageData.cleared;
+
+    if (hasMastery || isCleared || phase >= 3) return true;
+    return isFullLearningUnlockedByCheckpoint(stageId);
+}
+
 // ★ [도우미] 해당 장의 아직 초회를 받지 않은 mid-boss의 총 절수
 function getUnreceivedMidBossVerses(chapterNum) {
     const chData = gameData.find(c => c.id === chapterNum);
@@ -2056,25 +2159,44 @@ if (memStatus.level > 0) {
         if (isCleared) iconChar = "🌳"; 
 
         // 2. ★ 쿨타임(숙성) 여부 확인 ★
-        let progress = missionData.stageProgress ? missionData.stageProgress[stage.id] : null;
-        let isCoolingDown = (progress && progress.unlockTime > Date.now());
-
-        const canForceFullNew = isFullLearningUnlockedByCheckpoint(stage.id) && isUnplayedStage(stage.id);
+        const progress = getStageProgressSnapshot(stage.id);
+        const progressPhase = progress ? progress.phase : 0;
+        const isFullStepsComplete = isStageFullyLearned(stage.id, stage);
+        const isCoolingDown = !isFullStepsComplete && progress && progress.unlockTime > Date.now();
+        const isNormalStage = (stage.type !== 'boss' && stage.type !== 'mid-boss');
+        const canChooseReviewMode = isNormalStage && isFullStepsComplete;
 
         // 3. 버튼 오른쪽 표시 (톱니바퀴 vs 재생버튼 vs 타이머)
         let rightSideContent = "";
         let rewardInfo = "";
 
-        if (canForceFullNew) {
-            rightSideContent = `<div style="font-size:1.2rem; color:#f1c40f;">▶</div>`;
-            if (stage.type !== 'boss' && stage.type !== 'mid-boss') {
-                rewardInfo = `<div style="font-size:0.75rem; color:#e67e22; font-weight:bold; margin-top:4px;">🎁 신규 전체학습: 최대 70💎</div>`;
-            }
-        }
-        else if (isCleared && memStatus.level >= 1) {
-            // 기억 레벨 1 이상일 때만 복습 모드 아이콘
+        if (canChooseReviewMode) {
             rightSideContent = `<div style="font-size:1.2rem; color:#bdc3c7;">⚙️</div>`;
-        } 
+            
+            // ★ [때를 따른 양식 보너스 표시]
+            const timedBonus = getTimedBonus(stage.id);
+            const bonusRemaining = timedBonus.remaining;
+            const baseGem = 10;
+            const bonusMultiplier = (bonusRemaining === 3) ? 5 : (bonusRemaining === 2) ? 2 : (bonusRemaining === 1) ? 1.5 : 1;
+            let displayGem = Math.floor(baseGem * bonusMultiplier);
+            if (isForgotten) displayGem = Math.floor(displayGem * 1.2);
+            const forgottenTag = isForgotten ? " 💜+20%" : "";
+
+            let rewardLabel = "";
+            if (bonusRemaining === 3) {
+                rewardLabel = `🎁[1회차] ${displayGem}💎 (×5)${forgottenTag}`;
+            } else if (bonusRemaining === 2) {
+                rewardLabel = `🔱[2회차] ${displayGem}💎 (×2)${forgottenTag}`;
+            } else if (bonusRemaining === 1) {
+                rewardLabel = `⚔️[3회차] ${displayGem}💎 (×1.5)${forgottenTag}`;
+            } else {
+                rewardLabel = `⏳[쿨타임] ${displayGem}💎 (×1)${forgottenTag}`;
+            }
+            const bossNote = (stage.type === 'boss' || stage.type === 'mid-boss')
+                ? `<div style="font-size:0.7rem; color:#7f8c8d; margin-top:2px;">정확도/성전/퍼펙트는 별도 적용</div>`
+                : "";
+            rewardInfo = `<div style="font-size:0.75rem; color:#e67e22; font-weight:bold; margin-top:4px;">${rewardLabel}</div>${bossNote}`;
+        }
         else if (isCoolingDown) {
             // 쿨타임 중
             rightSideContent = `<div class="live-timer" data-unlock="${progress.unlockTime}" style="font-size:0.9rem; color:#e74c3c; font-weight:bold; background:#fff0f0; padding:4px 8px; border-radius:12px; border:1px solid #e74c3c;">⏳ 계산중</div>`;
@@ -2084,17 +2206,33 @@ if (memStatus.level > 0) {
             // 안 깼고 쿨타임도 아님 -> 재생 버튼
             rightSideContent = `<div style="font-size:1.2rem; color:#f1c40f;">▶</div>`;
             
-            // ★ [수정] 모든 스테이지 타입의 보상 정보 표시
-            if (stage.type === 'boss' || stage.type === 'mid-boss') {
-                // 보스/중간점검: verseCount × maxPlayerHearts × (5 초회, 1 반복)
-                const rewardData = getDisplayRewardInfo(stage.id, stage.type, stage.targetVerseCount, isTodayClear);
-                let badge = isTodayClear ? '🔄[반복]' : '📖[초회 완료]';
-                rewardInfo = `<div style="font-size:0.75rem; color:#e67e22; font-weight:bold; margin-top:4px;">${badge} 최대 +${rewardData.gem}💎, 승점 +${rewardData.score}</div>`;
+            // ★ [통일] 모든 스테이지에 때를 따른 양식 보너스 표시
+            const timedBonus = getTimedBonus(stage.id);
+            const bonusRemaining = timedBonus.remaining;
+            const bonusMultiplier = (bonusRemaining === 3) ? 5 : (bonusRemaining === 2) ? 2 : (bonusRemaining === 1) ? 1.5 : 1;
+            const baseGem = (stage.type === 'boss' || stage.type === 'mid-boss')
+                ? (stage.targetVerseCount || 0) * 10
+                : 10;
+            let displayGem = Math.floor(baseGem * bonusMultiplier);
+            if (isForgotten) displayGem = Math.floor(displayGem * 1.2);
+            const forgottenTag = isForgotten ? " 💜+20%" : "";
+
+            let rewardLabel = "";
+            if (bonusRemaining === 3) {
+                rewardLabel = `🎁[1회차] ${displayGem}💎 (×5)${forgottenTag}`;
+            } else if (bonusRemaining === 2) {
+                rewardLabel = `🔱[2회차] ${displayGem}💎 (×2)${forgottenTag}`;
+            } else if (bonusRemaining === 1) {
+                rewardLabel = `⚔️[3회차] ${displayGem}💎 (×1.5)${forgottenTag}`;
             } else {
-                // 일반 스테이지
-                rewardInfo = `<div style="font-size:0.75rem; color:#e67e22; font-weight:bold; margin-top:4px;">🎁 최초 완료 보상: 총 100💎</div>`;
+                rewardLabel = `⏳[쿨타임] ${displayGem}💎 (×1)${forgottenTag}`;
             }
+            rewardInfo = `<div style="font-size:0.75rem; color:#e67e22; font-weight:bold; margin-top:4px;">${rewardLabel}</div>`;
         }
+
+        // 3-1. 단계 진행 안내 뱃지 (phase 시스템 제거로 인해 삭제됨)
+        let stepHintHtml = "";
+        // (이전: "다음: Step 1~2" 등의 표시 제거됨)
 
         // 4. HTML 조립
         item.innerHTML = `
@@ -2104,6 +2242,7 @@ if (memStatus.level > 0) {
         <div class="stage-title">
             ${levelBadgeHtml} ${stage.title}  </div>
         <div class="stage-desc">${stage.desc}</div> 
+        ${stepHintHtml}
         ${rewardInfo}
     </div>
     ${rightSideContent}
@@ -2115,9 +2254,7 @@ if (memStatus.level > 0) {
 
             if (stage.type === 'boss' || stage.type === 'mid-boss') {
                 startBossBattle(stage.targetVerseCount); 
-            } else if (canForceFullNew) {
-                startTraining(stage.id, 'full-new');
-            } else if (isCleared && memStatus.level >= 1) {
+            } else if (canChooseReviewMode) {
                 openModeSelect(stage.id);
             } else {
                 startTraining(stage.id);
@@ -2783,17 +2920,17 @@ function updateBattleUI() {
     }
 
     // 2. 데이터 준비
-    const potCnt = (typeof inventory !== 'undefined' && inventory.potion) ? inventory.potion : 0;
+    const lifeBreadCnt = (typeof inventory !== 'undefined' && inventory.lifeBread) ? inventory.lifeBread : 0;
     const heartIcon = playerHearts > 0 ? "❤️" : "💔";
     const isDanger = (playerHearts <= 2);
 
-    // 물약 버튼 HTML (공통 사용)
-    const potionBtnHtml = `
-        <span onclick="event.stopPropagation(); useBattleItem('potion')" 
+    // 생명의 떡 버튼 HTML (공통 사용)
+    const lifeBreadBtnHtml = `
+        <span onclick="event.stopPropagation(); useBattleItem('lifeBread')" 
               style="cursor:pointer; margin-left:10px; font-size:0.9rem; display:inline-flex; align-items:center; 
                      background:#fff; color:#2c3e50; padding:4px 12px; border-radius:20px; 
                      border:1px solid #bdc3c7; box-shadow:0 2px 5px rgba(0,0,0,0.1); transition:transform 0.1s;">
-            🍞 <span style="margin-left:5px; font-weight:bold; font-size:1rem;">${potCnt}</span>
+            🍞 <span style="margin-left:5px; font-weight:bold; font-size:1rem;">${lifeBreadCnt}</span>
         </span>
     `;
 
@@ -2807,7 +2944,7 @@ function updateBattleUI() {
                 <span style="font-size:1.2rem;">${heartIcon}</span> 
                 <span id="player-hearts" style="font-weight:bold; margin-left:5px;">${playerHearts}</span>
                 <span style="font-size:0.8rem; color:#bdc3c7; margin-left:3px;"> / ${maxPlayerHearts}</span>
-                ${potionBtnHtml}
+                ${lifeBreadBtnHtml}
             </div>
         `;
         applyDangerEffect(heartDisplay, isDanger);
@@ -2825,7 +2962,7 @@ function updateBattleUI() {
             // ★ 핵심: 갱신할 때 id="training-hearts"를 반드시 다시 적어줘야 다음에도 찾을 수 있습니다.
             parent.innerHTML = `
                 ${heartIcon} <span id="training-hearts" style="margin-left:5px; font-weight:bold; color:#2c3e50;">${playerHearts}</span>
-                ${potionBtnHtml}
+                ${lifeBreadBtnHtml}
             `;
             applyDangerEffect(parent, isDanger);
         }
@@ -3086,6 +3223,8 @@ function saveGameData() {
         missions: missionData,
         mastery: stageMastery,
         lastClear: stageLastClear,
+        nextEligibleTime: stageNextEligibleTime, // ★ [Forgetting-Curve] 다음 클리어 가능 시간
+        timedBonus: stageTimedBonus, // ★ [때를 따른 양식] 망각 주기 기반 보너스
         // dailyAttempts 제거됨
         achievementStatus: achievementStatus, 
         memoryLevels: stageMemoryLevels,
@@ -3114,7 +3253,7 @@ function saveGameData() {
 /* [수정됨] 통합 자원 UI 업데이트 (지파 색상 반영) */
 function updateGemDisplay() {
     // 1. 인벤토리 파악
-    const potionCnt = (typeof inventory !== 'undefined' && inventory.potion) ? inventory.potion : 0;
+    const lifeBreadCnt = (typeof inventory !== 'undefined' && inventory.lifeBread) ? inventory.lifeBread : 0;
     
     // 2. 현재 내 지파 정보 가져오기 (색상 적용을 위해)
     const currentTribe = TRIBE_DATA[myTribe] || TRIBE_DATA[0];
@@ -3125,7 +3264,7 @@ function updateGemDisplay() {
     
     // 4. 표시할 HTML 구성 (지파 보석 + 숫자)
     // toLocaleString()을 써서 1,000 단위 쉼표 추가
-    const resourceHtml = `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> 🍞 ${potionCnt} <span style="opacity:0.3; margin:0 3px;">|</span> ❤️ ${maxPlayerHearts}`;
+    const resourceHtml = `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> 🍞 ${lifeBreadCnt} <span style="opacity:0.3; margin:0 3px;">|</span> ❤️ ${maxPlayerHearts}`;
 
     // 5. [맵 화면] 헤더 업데이트 (ID로 안전하게 찾기)
     const mapRes = document.getElementById('header-resources');
@@ -3162,98 +3301,50 @@ function normalizeChunkText(text) {
 // ▼▼▼ [미사용] startLevel 함수 - 제거됨 (startTraining으로 완전 대체)
 // 호출되지 않으므로 제거해도 무방
 
-/* [수정] 훈련 시작 함수 (변수 범위 오류 수정판) */
+/* [수정] 훈련 시작 함수 (phase 시스템 제거) */
 function startTraining(stageId, mode = 'normal') {
-    // 1. 진행 데이터 로드
-    if (!missionData.stageProgress) missionData.stageProgress = {};
-    let progress = missionData.stageProgress[stageId] || { phase: 0, unlockTime: 0 };
     const isForceFullNew = (mode === 'full-new');
     
-    // ★ [수정] chNum을 여기서 미리 정의합니다 (함수 전체에서 쓰임)
-    // 파싱을 좀 더 견고하게: '1-2', '1-boss' 등 여러 형식 허용
+    // ★ chNum을 여기서 미리 정의 (함수 전체에서 쓰임)
     const m = String(stageId).match(/^(\d+)(?:-(\d+|.+))?/);
     const chNum = m ? parseInt(m[1], 10) : 0;
     const verseNum = (m && m[2] && /^\d+$/.test(m[2])) ? parseInt(m[2], 10) : 1;
 
-    // ----------------------------------------------------
-    // [복습 모드 판단]
-    // ----------------------------------------------------
-    let isCleared = false;
-    
-    // 1순위: 저장된 클리어 횟수 확인
+    // ============================================
+    // [이미 클리어했는지 판단]
+    // ============================================
+    let stageData = null;
     if (stageMastery[stageId] && stageMastery[stageId] > 0) {
-        isCleared = true;
-    }
-    // 2순위: (보조) gameData 확인
-    else {
-        // chNum은 위에서 정의했으므로 바로 사용 가능
+        // 이미 클리어했으면 그냥 진행 (게임은 할 수 있되, 보상은 제한될 수 있음)
+    } else {
         const chData = gameData.find(c => c.id === chNum);
         if (chData) {
-            const stData = chData.stages.find(s => s.id === stageId);
-            if (stData && stData.cleared) isCleared = true;
+            stageData = chData.stages.find(s => s.id === stageId);
         }
     }
     
-    const memStatus = checkMemoryStatus(stageId);
-    const isReplayEligible = isCleared && memStatus.level >= 1;
+    // ============================================
+    // [복습 모드 판단: Step 1~5 완료했나?]
+    // ============================================
+    const isFullStepsComplete = isStageFullyLearned(stageId, stageData);
+    const isReplayEligible = isFullStepsComplete;
     window.isReplayMode = isReplayEligible && !isForceFullNew;
 
-    // ----------------------------------------------------
-    // [A] 복습 모드 (이미 깬 스테이지)
-    // ----------------------------------------------------
+    // ============================================
+    // [모드 결정: 복습 vs 전체 학습]
+    // ============================================
     if (window.isReplayMode) {
+        // 이미 Step 1~5를 다 완료한 상태
         const courses = {
             'quick': [2, 5],
             'full': [1, 2, 3, 4, 5],
             'normal': [1, 2, 3, 4, 5]
         };
         stepSequence = courses[mode] || courses['full'];
-    } 
-    // ----------------------------------------------------
-    // [B] 새 진도 (시간 차 학습)
-    // ----------------------------------------------------
-    else {
-        if (isForceFullNew) {
-            mode = 'full-new';
-            stepSequence = [1, 2, 3, 4, 5];
-        } else {
-        // [안전장치] 3단계 완료했는데 기록 없으면 강제 클리어 처리
-        if (progress.phase >= 3) {
-            alert("🎉 학습 과정을 모두 마쳤습니다! 이제 복습 모드로 전환됩니다.");
-            if (!stageMastery[stageId]) stageMastery[stageId] = 0;
-            stageMastery[stageId]++;
-            saveGameData();
-            startTraining(stageId, 'full'); // 재귀 호출
-            return;
-        }
-
-        const now = Date.now();
-        if (now < progress.unlockTime) {
-            const remainSec = Math.ceil((progress.unlockTime - now) / 1000);
-            const mm = Math.floor(remainSec / 60);
-            const ss = (remainSec % 60).toString().padStart(2, '0');
-            alert(`⏳ 뇌가 말씀을 소화하고 있습니다.\n[${mm}:${ss}] 뒤에 다음 단계가 열립니다!`);
-            return; 
-        }
-
-        if (progress.phase === 0) {
-            mode = 'phase1';
-            stepSequence = [1, 2];
-            alert("🌱 [1단계] 말씀을 심습니다. (Step 1~2)");
-        } else if (progress.phase === 1) {
-            mode = 'phase2';
-            stepSequence = [3, 4];
-            alert("🌿 [2단계] 말씀을 다집니다. (Step 3~4)");
-        } else if (progress.phase === 2) {
-            mode = 'phase3';
-            stepSequence = [5];
-            alert("🍒 [3단계] 말씀을 완성합니다! (Step 5)");
-        } else {
-            progress.phase = 0;
-            mode = 'phase1';
-            stepSequence = [1, 2];
-        }
-        }
+    } else {
+        // 아직 Step 1~5를 완료하지 않은 상태: 항상 전체 학습
+        mode = 'full-new';
+        stepSequence = [1, 2, 3, 4, 5];
     }
 
     // ----------------------------------------------------
@@ -4058,55 +4149,10 @@ function checkTrainingAnswer() {
     }
 }
 
-/* [수정] 훈련 중간 종료 처리 (시간 차 학습 보상 지급) */
+/* [수정] 훈련 중간 종료 처리 (phase 시스템 제거) */
 function finishTraining() {
-    const sId = window.currentStageId;
-    const isReplay = window.isReplayMode;
-
-    // [A] 새 진도 (시간 차 학습)
-    if (!isReplay) {
-        if (!missionData.stageProgress) missionData.stageProgress = {};
-        let progress = missionData.stageProgress[sId] || { phase: 0, unlockTime: 0 };
-
-        if (window.trainingMode === 'full-new') {
-            progress.phase = 3;
-            progress.unlockTime = 0;
-            missionData.stageProgress[sId] = progress;
-        }
-
-        // 1단계 완료 (씨뿌리기) -> 보석 10개 (소량)
-        if (window.trainingMode === 'phase1') {
-            progress.phase = 1; 
-            progress.unlockTime = Date.now() + (10 * 60 * 1000); // 10분 쿨타임
-            
-            addGems(10); // ★ 10개 지급
-            missionData.stageProgress[sId] = progress;
-            saveGameData();
-            
-            showPhaseClearScreen(10); 
-            return;
-        } 
-        // 2단계 완료 (물주기) -> 보석 20개
-        else if (window.trainingMode === 'phase2') {
-            progress.phase = 2; 
-            progress.unlockTime = Date.now() + (10 * 60 * 1000); // 10분 쿨타임
-            
-            addGems(20); // ★ 20개 지급
-            missionData.stageProgress[sId] = progress;
-            saveGameData();
-
-            showPhaseClearScreen(20);
-            return;
-        } 
-        // 3단계 완료 (열매맺기) -> 여기서 안 주고 stageClear에서 70개 줌
-        else if (window.trainingMode === 'phase3') {
-            progress.phase = 3; 
-        }
-
-        missionData.stageProgress[sId] = progress;
-    }
-
-    // [B] 진짜 클리어 (Phase 3 완료 or 복습) -> 결과창 이동
+    // Phase 시스템이 제거되었으므로
+    // 모든 모드는 동일하게 처리: 결과 화면으로 이동
     showClearScreen(); 
 }
 
@@ -4158,37 +4204,29 @@ function showClearScreen() {
     let accuracy = Math.max(0, 100 - (wrongCount * 10));
 
     // ============================================================
-    // ▼ [수정 구간] 실제 장부(stageLastClear)를 확인하도록 변경
+    // ▼ [때를 따른 양식 보너스] 망각 주기 기반
     // ============================================================
-    let baseGem = 0;
-    let msg = "";
+    let baseGem = 10; // 기본 보상
+    let msg = "📖 [훈련] 완료!";
 
-    // [A] 새 진도 완성 (Phase 3) -> 70개
-    if (window.trainingMode === 'phase3') {
-        baseGem = 70; 
-        msg = "🍒 [완전 정복] 시간 차 학습 완료!";
-    }
-    else if (window.trainingMode === 'full-new') {
-        baseGem = 70;
-        msg = "📖 [전체 학습] 신규 클리어!";
-    }
-    // [B] 복습 (빠른 복습 OR 전체 학습)
-    else {
-        // ★ 핵심: 현재 스테이지 ID로 '오늘 도전 횟수' 확인 후 보너스 적용
-        const sId = window.currentStageId;
-        const lastTime = stageLastClear[sId] || 0;
-        const isAlreadyClearedToday = new Date(lastTime).setHours(0,0,0,0) === new Date().setHours(0,0,0,0);
+    // 현재 스테이지 ID
+    const sId = window.currentStageId;
 
-        if (isAlreadyClearedToday) {
-            // 같은 날 반복: 기본 보상 10개
-            baseGem = 10;
-            msg = "⚡ [반복 훈련] (기본 보상)";
-        } else {
-            // 새로운 날 초회: 초회 보상 50개
-            baseGem = 50;
-            if (window.trainingMode === 'quick') msg = "⚡ [빠른 복습] 신선한 도전 완료!";
-            else msg = "📖 [전체 학습] 신선한 도전 완료!";
-        }
+    // ★ 보너스 확인 (망각 주기 도래 시 자동 복구)
+    const timedBonus = getTimedBonus(sId);
+    const bonusCount = timedBonus.remaining;
+
+    if (bonusCount === 3) {
+        baseGem *= 5;
+        msg += " 🎁 (때를 따른 양식 × 5배)";
+    } else if (bonusCount === 2) {
+        baseGem *= 2;
+        msg += " 🔱 (때를 따른 양식 × 2배)";
+    } else if (bonusCount === 1) {
+        baseGem *= 1.5;
+        msg += " ⚔️ (때를 따른 양식 × 1.5배)";
+    } else {
+        msg += " ⏳ (보너스 쿨타임)";
     }
 
     // 정확도 반영
@@ -4314,16 +4352,16 @@ function openShop() {
 function updateItemButtons() {
     // 보스전 버튼
     const pBtn = document.getElementById('btn-potion-cnt');
-    if(pBtn) pBtn.innerText = inventory.potion;
+    if(pBtn) pBtn.innerText = inventory.lifeBread;
 
     // 훈련 모드 버튼
     const pBtnT = document.getElementById('btn-potion-cnt-t');
-    if(pBtnT) pBtnT.innerText = inventory.potion;
+    if(pBtnT) pBtnT.innerText = inventory.lifeBread;
 }
 
-// 1. 물약 사용하기 (누르면 바로 회복)
-function usePotion() {
-    if (inventory.potion <= 0) { 
+// 1. 생명의 떡 사용하기 (누르면 바로 회복)
+function useLifeBread() {
+    if (inventory.lifeBread <= 0) { 
         alert("🥖 생명의 떡이 없습니다.\n상점에서 구매하세요!"); 
         return; 
     }
@@ -4333,14 +4371,14 @@ function usePotion() {
     }
     
     // 사용 처리
-    inventory.potion--;
+    inventory.lifeBread--;
     playerHearts = Math.min(playerHearts + 3, maxPlayerHearts); // 3칸 회복
     
     SoundEffect.playCorrect(); // 띠링! 소리
     alert(`체력이 회복되었습니다. (현재: ${playerHearts})`);
     
     updateBattleUI();   // 하트 UI 갱신
-    updateItemButtons(); // 물약 개수 UI 갱신
+    updateItemButtons(); // 생명의 떡 개수 UI 갱신
     saveGameData();     // 저장
 }
 
@@ -4568,28 +4606,28 @@ function renderMissionList(tabName) {
                 desc: "새로운 말씀을 1회 학습하세요.",
                 target: 1,
                 current: missionData.daily.newClear,
-                reward: "⚡승점 2배(10분)",
-                rewardType: 'xp_boost', val1: 2, val2: 10,
+                reward: "💎 보석 100개",
+                rewardType: 'gem', val1: 100, val2: 0,
                 claimed: missionData.daily.claimed[0]
             },
             {
                 id: 1,
-                title: "복습(재시도) 1회 완료",
-                desc: "이미 학습한 말씀을 복습하세요.",
-                target: 1,
-                current: missionData.daily.reviewClear,
-                reward: "⚡승점 2배(10분)",
-                rewardType: 'xp_boost', val1: 2, val2: 10,
+                title: "서로 다른 스테이지 3회 완료",
+                desc: "다른 스테이지를 골고루 학습하세요.",
+                target: 3,
+                current: missionData.daily.differentStages,
+                reward: "💎 보석 300개",
+                rewardType: 'gem', val1: 300, val2: 0,
                 claimed: missionData.daily.claimed[1]
             },
             {
                 id: 2,
-                title: "일반 스테이지 3회 완료",
-                desc: "첫 학습이든 복습이든 상관없습니다.",
-                target: 3,
-                current: missionData.daily.totalClear,
-                reward: "📅내일 승점 3배(15분)",
-                rewardType: 'next_day_xp', val1: 3, val2: 15,
+                title: "중보/보스 처치 1회",
+                desc: "중간 점검 또는 보스를 완료하세요.",
+                target: 1,
+                current: missionData.daily.checkpointBoss,
+                reward: "💎 보석 500개",
+                rewardType: 'gem', val1: 500, val2: 0,
                 claimed: missionData.daily.claimed[2]
             }
         ];
@@ -4610,10 +4648,10 @@ function renderMissionList(tabName) {
                 id: 1,
                 title: "용 사냥",
                 desc: "중간 점검 또는 보스 완료.",
-                target: 1,
+                target: 5,
                 current: missionData.weekly.dragonKill,
-                reward: "💎 보석 2,000",
-                rewardType: 'gem', val1: 2000,
+                reward: "💎 보석 3,000",
+                rewardType: 'gem', val1: 3000,
                 claimed: missionData.weekly.claimed[1]
             },
             {
@@ -4956,7 +4994,7 @@ function resetGameData() {
         localStorage.removeItem('kingsRoadSave'); 
         
         // 3. 서브 데이터들도 꼼꼼하게 삭제 (통계, 설정, 이어하기 등)
-        localStorage.removeItem('kingsroad_last_login_date'); // 만나 기록
+        localStorage.removeItem('kingsroad_last_login_date'); // 생명의 떡 기록
         localStorage.removeItem('kingsRoad_stats');           // 누적 통계
         localStorage.removeItem('kingsRoad_checkpoint');      // 보스전 이어하기
         localStorage.removeItem('lastPlayedDate');            // 출석 날짜
@@ -4992,7 +5030,7 @@ function resetLeague(newWeekId) {
     // stageLog와 myScore는 checkDailyLogin에서 초기화하므로 여기선 weekId만 업데이트
 }
 
-/* [수정] calculateScore 함수 (재도전 보너스 시스템) */
+/* [수정] calculateScore 함수 (반복 보너스 시스템) */
 function calculateScore(stageId, type, verseCount, hearts) {
     const currentWeek = getWeekId();
     
@@ -5001,8 +5039,8 @@ function calculateScore(stageId, type, verseCount, hearts) {
     }
 
     let baseScore = 0;
-    let isRetry = false;
     let bonus = 1.0;
+    let isRetry = false;
 
     // 기본 점수 계산 (현재 하트 기준)
     if (type === 'boss' || type === 'mid-boss') {
@@ -5011,17 +5049,30 @@ function calculateScore(stageId, type, verseCount, hearts) {
         baseScore = hearts * 1;  // 일반: hearts × 1
     }
 
-    // [초회/반복 점수 로직]
-    if (leagueData.stageLog[stageId] === currentWeek) {
-        isRetry = true;
-        // 같은 주 반복: 기본 점수 유지 (x1)
-        // baseScore 변경 없음
-    } else {
-        leagueData.stageLog[stageId] = currentWeek;
-        // 새로운 주 초회: 5배 보너스
+    // ============================================================
+    // [때를 따른 양식 보너스] (망각 주기 기반, 모든 스테이지 적용)
+    // ============================================================
+    const bonusLevel = consumeTimedBonus(stageId); // 보너스 소진 후 사용 전 값 반환
+    
+    // 보너스 배율 적용
+    if (bonusLevel === 3) {
+        // 1회차 보너스 (5배)
         baseScore = baseScore * 5;
+        isRetry = false;
+    } else if (bonusLevel === 2) {
+        // 2회차 보너스 (2배)
+        baseScore = baseScore * 2;
+        isRetry = true;
+    } else if (bonusLevel === 1) {
+        // 3회차 보너스 (1.5배)
+        baseScore = baseScore * 1.5;
+        isRetry = true;
+    } else {
+        // 보너스 소진 (1배, 보너스 없음)
+        baseScore = baseScore * 1;
+        isRetry = true;
     }
-
+    
     // ... (이하 부스터 적용 및 저장 로직 그대로 유지) ...
     
     checkBoosterStatus(); 
@@ -5893,9 +5944,6 @@ function updateStickyMyRank(amIInTop100) {
     const myTribeIdx = (typeof myTribe !== 'undefined') ? myTribe : 0;
 
     stickyBar.innerHTML = `
-        <div style="font-size:1.2rem; margin-right:15px; width:45px; text-align:center; color:${rankColor}; font-weight:bold; text-shadow:0 0 10px rgba(0,0,0,0.5); line-height:1.2;">
-            ${rankDisplay}
-        </div>
         <div style="flex:1;">
             <div style="display:flex; align-items:center; margin-bottom:3px;">
                 <span style="font-weight:bold; font-size:1rem; color:white;">
@@ -5907,6 +5955,9 @@ function updateStickyMyRank(amIInTop100) {
             </div>
         </div>
         <div style="text-align:right;">
+            <div style="display:inline-block; font-size:0.7rem; color:${rankColor}; border:1px solid rgba(127,140,141,0.6); padding:2px 6px; border-radius:10px; margin-bottom:4px; font-weight:bold;">
+                ${rankDisplay.replace('<br>', ' ')}
+            </div>
             <div style="font-weight:bold; color:#f1c40f; font-size:1.1rem;">
                 ${myScore.toLocaleString()}
             </div>
@@ -6018,10 +6069,16 @@ function checkDailyLogin() {
         missionData.weekly.attendance++;
         if (missionData.weekly.attendance > 7) missionData.weekly.attendance = 7;
         
+        // ★ 일일 미션 초기화
+        missionData.daily.newClear = 0;
+        missionData.daily.differentStages = 0;
+        missionData.daily.checkpointBoss = 0;
+        missionData.daily.claimed = [false, false, false];
+        
         localStorage.setItem('lastPlayedDate', today);
         saveGameData();
         
-        // (선택) 출석 알림 대신 만나(물약) 알림이 뜨므로 여기선 조용히 넘어감
+        // (선택) 출석 알림 대신 생명의 떡 알림이 뜨므로 여기선 조용히 넘어감
     }
 }
 
@@ -6052,23 +6109,12 @@ stageClear = function(type) {
             const verseCount = bibleData[chNum] ? bibleData[chNum].length : 0;
             const rewardData = calculateProgressiveReward(chNum, verseCount, 1);
             
-            // 보석: 초회/반복 구분
-            if (isAlreadyClearedToday) {
-                // 같은 날 반복: verseCount × 10
-                baseGem = verseCount * 10;
-                msg += "🐲 [반복 토벌] (기본 보상)\n";
-            } else {
-                // ★ [수정] 먼저 남은 절수 계산 (마킹 전에!)
-                const remainingVerses = getUnreceivedMidBossVerses(chNum);
-                baseGem = remainingVerses * 50;
-                msg += `🐲 [신규 토벌] 남은 ${remainingVerses}절 초회 보너스\n`;
-                
-                // ★ 보석 계산 후 모든 mid-boss를 당일 클리어로 자동 마킹
-                const midBossIds = getChapterMidBossIds(chNum);
-                midBossIds.forEach(midBossId => {
-                    stageLastClear[midBossId] = Date.now();
-                });
-            }
+            // ★ [통일] 보스 기본 보상: 보스 절수 × 10 (mid-boss 상태 무관)
+            baseGem = verseCount * 10;
+            msg += `🐲 [드래곤 토벌] ${verseCount}절 완료!\n`;
+            
+            // ★ 보스 클리어 시 mid-boss를 당일 클리어로 자동 마킹하지 않음
+            // (때를 따른 양식/표시 일관성 유지)
 
             // ★ 보스 stage 객체에서 실제 hp 값 가져오기
             const chData = gameData.find(c => c.id === chNum);
@@ -6082,21 +6128,11 @@ stageClear = function(type) {
 
             verseCnt = bossHpForScore;
 
-            // 하위 스테이지 일괄 처리
-            if (chData && chData.stages) {
-                chData.stages.forEach((stage) => {
-                    const subId = stage.id;
-                    if (subId.includes('boss') && !subId.includes('mid')) return;
-
-                    stageLastClear[subId] = Date.now(); 
-                    if (!stageMastery[subId]) stageMastery[subId] = 0;
-                    stageMastery[subId]++;
-                    stage.cleared = true;
-                    if (!stageMemoryLevels[subId]) stageMemoryLevels[subId] = 1;
-                    // ★ leagueData.stageLog 업데이트는 calculateScore에서만 처리
-                });
-            }
-            updateMissionProgress('dragon'); 
+            // 하위 스테이지 자동 처리 제거: 보스 클리어가 다른 스테이지에 영향 주지 않음
+            
+            // ★ 미션 업데이트: 보스 처치
+            updateMissionProgress('checkpointBoss'); // 일일 미션
+            updateMissionProgress('dragon'); // 주간 미션 
         }
         // [B] 일반 / 중간점검
         else {
@@ -6124,16 +6160,9 @@ stageClear = function(type) {
                 }
                 const rewardData = calculateProgressiveReward(chNum, endV, startV);
                 
-                // 초회/반복 구분
-                if (isAlreadyClearedToday) {
-                    // 같은 날 반복: hp × 10
-                    maxGem = actualHp * 10;
-                    msg += "🛡️ [반복 점검] (기본 보상)\n";
-                } else {
-                    // ★ [수정] 새로운 날 초회: 자신의 절수 × 50 (다른 스테이지 상태와 무관)
-                    maxGem = actualHp * 50;
-                    msg += `🛡️ [중간 점검] ${actualHp}절 초회 보너스\n`;
-                }
+                // ★ [통일] 중간보스도 기본 보상으로 통일 (때를 따른 양식 보너스로 대체)
+                maxGem = actualHp * 10; // 기본: 절수 × 10
+                msg += `🛡️ [중간 점검] ${actualHp}절 완료!\n`;
                 
                 // 실제 hp 값으로 계산
                 verseCnt = actualHp; 
@@ -6145,42 +6174,60 @@ stageClear = function(type) {
                         const targetStage = chData.stages[i];
                         if (targetStage.type === 'boss' || targetStage.type === 'mid-boss') break;
                         const subId = targetStage.id;
-                        stageLastClear[subId] = Date.now();
                         if (!stageMastery[subId]) stageMastery[subId] = 0;
                         stageMastery[subId]++;
                         targetStage.cleared = true;
-                        // ★ leagueData.stageLog 업데이트는 calculateScore에서만 처리
                     }
                 }
+                
+                // ★ 미션 업데이트: 중보 처치
+                if (!isAlreadyClearedToday) {
+                    updateMissionProgress('checkpointBoss'); // 일일 미션
+                }
+                updateMissionProgress('dragon'); // 주간 미션 (중보/보스)
             }
             else { 
-                // 일반 스테이지: 초회/반복 구분
-                if (isAlreadyClearedToday) {
-                    maxGem = 10; // 같은 날 반복: 10개
-                    msg += "⚡ [반복 훈련] (기본 보상)\n";
-                } else {
-                    // 새로운 날 초회
-                    if (window.trainingMode === 'full-new') {
-                        maxGem = 70;
-                        msg += "📖 [전체 학습] 신규 클리어! (+70💎)\n";
-                    }
-                    else if (window.trainingMode === 'phase3') {
-                        maxGem = 70; // 3단계는 70개
-                        msg += "🍒 [완전 정복] 시간 차 학습 완료! (+70💎)\n";
-                    } else {
-                        maxGem = 50; // 나머지는 50개
-                        if (window.trainingMode === 'quick') msg += "⚡ [빠른 복습] 신선한 도전 완료! (+50💎)\n";
-                        else msg += "📖 [전체 학습] 신선한 도전 완료! (+50💎)\n";
-                    }
-                }
+                // 일반 스테이지: 때를 따른 양식 보너스
+                maxGem = 10; // 기본 보상
+                msg += "📖 [훈련] 완료!\n";
                 verseCnt = 1; // 일반은 1개
                 
                 if (isForgotten) stageMemoryLevels[sId] = (prevLevel || 0) + 1;
-                if (window.isReplayMode) updateMissionProgress('review');
-                else updateMissionProgress('new');
+                
+                // ★ 미션 업데이트
+                if (window.isReplayMode) {
+                    // 복습 모드: 일반 클리어 (미션 증가 없음)
+                } else {
+                    // 신규 모드: 일반 클리어
+                    updateMissionProgress('new'); // 신규 훈련 증가
+                    
+                    // 다양성 미션: 오늘 처음 클리어하는 스테이지라면
+                    if (!isAlreadyClearedToday) {
+                        updateMissionProgress('differentStage');
+                    }
+                }
             } 
 
-            baseGem = maxGem; 
+            baseGem = maxGem;
+
+            // ★ [때를 따른 양식 보너스] 망각 주기 기반 (모든 스테이지 적용)
+            // 주의: calculateScore보다 먼저 호출하면 안 됨 (중복 소진 방지)
+            const timedBonus = getTimedBonus(sId); // 현재 상태만 확인
+            const bonusLevel = timedBonus.remaining; // 소진 전 값
+
+            if (bonusLevel === 3) {
+                baseGem *= 5;
+                msg += `🎁 때를 따른 양식 ( × 5배)\n`;
+            } else if (bonusLevel === 2) {
+                baseGem *= 2;
+                msg += `🔱 때를 따른 양식 ( × 2배)\n`;
+            } else if (bonusLevel === 1) {
+                baseGem *= 1.5;
+                msg += `⚔️ 때를 따른 양식 ( × 1.5배)\n`;
+            } else {
+                msg += `⏳ 보너스 쿨타임 (망각 주기 대기 중)\n`;
+            }
+
             stageLastClear[sId] = Date.now(); 
 
             if (isForgotten) {
@@ -6188,11 +6235,11 @@ stageClear = function(type) {
                 msg += `💜 [기억 회복] 보너스 20%!\n`;
             }
         }
-            
-        // [C] 승점 및 최종 계산
+        
+        // ★ [4회 이상 클리어 시 보상 제한]
         let scoreType = (type === 'boss') ? 'boss' : (type === 'mid-boss' ? 'mid-boss' : 'normal');
         
-        // 재도전 보너스가 자동으로 포함됨 (calculateScore 내부)
+        // 재도전 보너스가 자동으로 포함됨 (calculateScore 내부에서 보너스 소진)
         const scoreResult = calculateScore(sId, scoreType, verseCnt, playerHearts);
         
         // ★ 월말 23시 이후 승점 차단 체크
@@ -6240,14 +6287,9 @@ stageClear = function(type) {
             msg += `\n━━━━━━━━━━━━━━━━\n`;
             
             if (type === 'mid-boss') {
-                msg += `💎 초회 기본: ${baseGemBeforeAccuracy}개 (${verseCnt}절 × 50)\n`;
+                msg += `💎 초회 기본: ${baseGemBeforeAccuracy}개 (${verseCnt}절 × 10)\n`;
             } else if (type === 'boss') {
-                const remainingVerses = getUnreceivedMidBossVerses(chNum);
-                if (remainingVerses > 0) {
-                    msg += `💎 초회 기본: ${baseGemBeforeAccuracy}개 (${remainingVerses}절 × 50)\n`;
-                } else {
-                    msg += `💎 초회 기본: 0개 (모든 구간 완료)\n`;
-                }
+                msg += `💎 초회 기본: ${baseGemBeforeAccuracy}개 (${verseCnt}절 × 10)\n`;
             } else {
                 // 일반 스테이지
                 msg += `💎 초회 기본: ${baseGemBeforeAccuracy}개\n`;
@@ -6273,9 +6315,9 @@ stageClear = function(type) {
 
         /* [3] 클리어 횟수 기록 (함수 맨 끝부분, alert 뜨기 전) */
     if (type === 'boss' || type === 'mid-boss') {
-        updateStats('boss_kill', 1); // ★ 추가!
+        updateStats('boss_kill', 1);
     } else {
-        updateStats('verse_clear', 1); // ★ 추가!
+        updateStats('verse_clear', 1);
     }
 
         alert(msg);
@@ -6322,12 +6364,14 @@ function calculateProgressiveReward(chNum, count, startVerse = 1) {
 
 // 일반 아이템 목록 (가격 고정)
 const SHOP_ITEMS = {
-    "potion": { name: "생명의 떡", price: 50, desc: "체력 2칸 회복", icon: "🍞" },
-    "booster": { name: "승점 부스터", price: 500, desc: "30분간 승점 2배", icon: "⚡" }
+    "lifeBread": { name: "생명의 떡", price: 50, desc: "체력 2칸 회복", icon: "🍞" },
+    "booster": { name: "승점 부스터", price: 500, desc: "30분간 승점 2배", icon: "⚡" },
+    "booster3": { name: "승점 부스터+", price: 1200, desc: "30분간 승점 3배", icon: "⚡" }
 };
 
 /* [수정] 통합 상점 구매 함수 (최종 수정판) */
 function buyItem(itemType) {
+    if (itemType === 'potion') itemType = 'lifeBread';
     // ------------------------------------------
     // [1] 체력 구매 (굳건한 마음) - 가격 3,000 적용
     // ------------------------------------------
@@ -6364,7 +6408,7 @@ function buyItem(itemType) {
     }
 
     // ------------------------------------------
-    // [2] 일반 아이템 (물약, 부스터) 구매
+    // [2] 일반 아이템 (생명의 떡, 부스터) 구매
     // ------------------------------------------
     // SHOP_ITEMS에 정의된 아이템인지 확인
     const item = SHOP_ITEMS[itemType];
@@ -6383,6 +6427,8 @@ function buyItem(itemType) {
         // 부스터는 즉시 사용, 나머지는 인벤토리에 추가
         if (itemType === 'booster') {
             activateBooster(2, 30); // 2배, 30분
+        } else if (itemType === 'booster3') {
+            activateBooster(3, 30); // 3배, 30분
         } else {
             if (!inventory) inventory = {};
             inventory[itemType] = (inventory[itemType] || 0) + 1;
@@ -6438,14 +6484,14 @@ updateShopUI = function() {
     list.appendChild(heartDiv);
 
     // [일반 아이템]
-    ['potion', 'booster'].forEach(key => {
+    ['lifeBread', 'booster', 'booster3'].forEach(key => {
         const item = SHOP_ITEMS[key];
         const count = (inventory && inventory[key]) ? inventory[key] : 0;
         const div = document.createElement('div');
         div.className = 'shop-item';
         div.style.cssText = "background:white; padding:15px; border-radius:15px; display:flex; align-items:center; color:black; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:10px;";
         
-        let countHtml = key === 'booster' ? '' : `<div style="font-size:0.8rem; color:#2ecc71; font-weight:bold;">보유: ${count}개</div>`;
+        let countHtml = (key === 'booster' || key === 'booster3') ? '' : `<div style="font-size:0.8rem; color:#2ecc71; font-weight:bold;">보유: ${count}개</div>`;
 
         div.innerHTML = `
             <div style="font-size:2.5rem; margin-right:15px;">${item.icon}</div>
@@ -6463,12 +6509,13 @@ updateShopUI = function() {
 
 // 3. 전투 중 아이템 사용 함수
 function useBattleItem(itemType) {
+    if (itemType === 'potion') itemType = 'lifeBread';
     if (!inventory || !inventory[itemType] || inventory[itemType] <= 0) {
         alert("아이템이 없습니다! 보급소에서 구매하세요.");
         return;
     }
 
-    if (itemType === "potion") {
+    if (itemType === "lifeBread") {
         if (playerHearts >= maxPlayerHearts) {
             alert("이미 체력이 가득 찼습니다!");
             return;
@@ -7246,38 +7293,38 @@ function showDamageEffect() {
         updateCastleView(); // 3. 성전 모습 업데이트
 
 /* =========================================
-   [시스템: 일일 만나 (출석 보상) - 물약 지급]
-   ========================================= */
+    [시스템: 일일 생명의 떡 (출석 보상) - 지급]
+    ========================================= */
 
-function checkDailyManna() {
+function checkDailyLifeBread() {
     const lastDate = localStorage.getItem("kingsroad_last_login_date");
     const today = new Date().toDateString(); // 예: "Fri Jan 16 2026"
 
     // [테스트용] 오늘 이미 받았어도 확인해보고 싶다면 아래 if문을 잠시 주석 처리하세요.
     if (lastDate !== today) {
         
-        // 1. 물약(생명의 떡) 지급 로직
-        if (typeof inventory === 'undefined') inventory = { potion: 0 };
-        if (!inventory.potion) inventory.potion = 0; // 안전장치
+        // 1. 생명의 떡 지급 로직
+        if (typeof inventory === 'undefined') inventory = { lifeBread: 0 };
+        if (!inventory.lifeBread) inventory.lifeBread = 0; // 안전장치
         
-        inventory.potion += 1; // 물약 1개 추가
+        inventory.lifeBread += 1; // 생명의 떡 1개 추가
         saveGameData();        // 데이터 저장
         
         // 2. 날짜 갱신 (오늘 받음 표시)
         localStorage.setItem("kingsroad_last_login_date", today);
 
         // 3. 안내창 띄우기
-        showMannaModal();
+        showLifeBreadModal();
     }
 }
 
-function showMannaModal() {
+function showLifeBreadModal() {
     // 이미 떠 있으면 중복 생성 방지
-    if (document.getElementById('manna-modal')) return;
+    if (document.getElementById('life-bread-modal')) return;
 
     // 모달 배경 생성
     const div = document.createElement('div');
-    div.id = 'manna-modal';
+    div.id = 'life-bread-modal';
     div.style.cssText = `
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0,0,0,0.8); z-index: 9999;
@@ -7286,17 +7333,17 @@ function showMannaModal() {
     `;
     
     // 현재 보유량 확인
-    const currentPotion = (typeof inventory !== 'undefined') ? inventory.potion : 1;
+    const currentLifeBread = (typeof inventory !== 'undefined') ? inventory.lifeBread : 1;
 
     // 모달 내용 (어르신 맞춤형 설명 포함)
     div.innerHTML = `
         <div style="background: #fff; padding: 25px; border-radius: 20px; text-align: center; width: 85%; max-width: 320px; box-shadow: 0 0 25px #f1c40f; border: 4px solid #f39c12; position:relative;">
             <div style="font-size: 3.5rem; margin-bottom: 10px; animation: float 3s infinite;">🍞</div>
             
-            <h2 style="color: #d35400; margin: 0; font-size:1.5rem;">오늘의 만나 도착!</h2>
+            <h2 style="color: #d35400; margin: 0; font-size:1.5rem;">오늘의 생명의 떡 도착!</h2>
             
             <p style="color: #2c3e50; margin: 15px 0; font-size: 1.1rem; font-weight:bold;">
-                '생명의 떡(물약)'을 드립니다.
+                '생명의 떡'을 드립니다.
             </p>
 
             <div style="background:#fef9e7; padding:15px; border-radius:10px; margin-bottom:15px; text-align:left; border:1px dashed #f39c12;">
@@ -7317,10 +7364,10 @@ function showMannaModal() {
             </div>
 
             <div style="font-size: 1.2rem; font-weight: bold; color: #e74c3c; margin-bottom: 20px;">
-                현재 보유량: ${currentPotion}개
+                현재 보유량: ${currentLifeBread}개
             </div>
 
-            <button onclick="closeMannaModal()" 
+            <button onclick="closeLifeBreadModal()" 
                 style="background: #27ae60; color: white; border: none; padding: 12px 30px; border-radius: 30px; font-size: 1.2rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #1e8449; width:100%;">
                 감사히 받기 (아멘)
             </button>
@@ -7336,14 +7383,14 @@ function showMannaModal() {
     }
 }
 
-function closeMannaModal() {
-    const modal = document.getElementById('manna-modal');
+function closeLifeBreadModal() {
+    const modal = document.getElementById('life-bread-modal');
     if (modal) {
         modal.style.opacity = '0'; // 페이드 아웃 효과
         setTimeout(() => modal.remove(), 300);
     }
     
-    // 혹시 상점이나 메인 UI에 물약 개수 표시가 있다면 갱신
+    // 혹시 상점이나 메인 UI에 생명의 떡 개수 표시가 있다면 갱신
     if(typeof updateShopUI === 'function') updateShopUI();
     if(typeof updateItemButtons === 'function') updateItemButtons();
 }
@@ -7468,9 +7515,8 @@ function updateProfileUI() {
     // 2. 상단 작은 닉네임
     const subDisplay = document.getElementById('sub-profile-name');
     if (subDisplay) {
-        const tribeName = TRIBE_DATA[myTribe] ? TRIBE_DATA[myTribe].name : "";
-        // 예: 💎 베드로 지파 순례자
-        subDisplay.innerHTML = `${getTribeIcon(myTribe)} ${tribeName} 지파 ${myNickname}`;
+        // 지파 아이콘과 닉네임만 표시 (지파 이름 텍스트 제거)
+        subDisplay.innerHTML = `${getTribeIcon(myTribe)} ${myNickname}`;
     }
 }
 
@@ -7507,23 +7553,21 @@ function getDisplayRewardInfo(stageId, type, verseCount, isAlreadyClearedToday =
             maxScore = baseScore;
             maxGem = verseCount * 10; // 반복: 구절 수 × 10
         } else {
-            // ★ [수정] 초회 클리어: boss는 남은 mid-boss 절수만 계산
-            if (type === 'boss') {
-                const chNum = parseInt(stageId.split('-')[0]);
-                const remainingVerses = getUnreceivedMidBossVerses(chNum);
-                maxGem = remainingVerses * 50;
-                maxScore = baseScore * 5;
-            } else {
-                // mid-boss는 자신의 절수만
-                maxScore = baseScore * 5;
-                maxGem = verseCount * 50;
-            }
+            // 초회 클리어: 보너스는 때를 따른 양식에서 처리
+            maxScore = baseScore * 5;
+            maxGem = verseCount * 10;
         }
     } 
     // 2. 일반 스테이지
     else if (type === 'normal') {
-        maxGem = 100;
-        maxScore = 150; // (기본)
+        const baseScore = maxPlayerHearts * 1;
+        if (isAlreadyClearedToday) {
+            maxGem = 10;
+            maxScore = baseScore;
+        } else {
+            maxGem = 50;
+            maxScore = baseScore * 5;
+        }
     }
 
     // 3. 패널티 확인 (중간점검 & 보스가 깨졌을 때)
@@ -8250,13 +8294,13 @@ function updateNotificationBadges() {
     if (missionData && missionData.daily) {
         // 하드코딩된 목표치와 비교 (updateMissionUI 로직 참조)
         if (missionData.daily.newClear >= 1 && !missionData.daily.claimed[0]) hasMissionReward = true;
-        if (missionData.daily.reviewClear >= 1 && !missionData.daily.claimed[1]) hasMissionReward = true;
-        if (missionData.daily.totalClear >= 3 && !missionData.daily.claimed[2]) hasMissionReward = true;
+        if (missionData.daily.differentStages >= 3 && !missionData.daily.claimed[1]) hasMissionReward = true;
+        if (missionData.daily.checkpointBoss >= 1 && !missionData.daily.claimed[2]) hasMissionReward = true;
     }
     // 주간 미션 체크
     if (missionData && missionData.weekly) {
         if (missionData.weekly.attendance >= 5 && !missionData.weekly.claimed[0]) hasMissionReward = true;
-        if (missionData.weekly.dragonKill >= 1 && !missionData.weekly.claimed[1]) hasMissionReward = true;
+        if (missionData.weekly.dragonKill >= 5 && !missionData.weekly.claimed[1]) hasMissionReward = true;
         if (missionData.weekly.stageClear >= 15 && !missionData.weekly.claimed[2]) hasMissionReward = true;
     }
 
