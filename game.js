@@ -2,6 +2,9 @@
    [전역 변수 선언부 - 충돌 방지를 위해 최상단에 배치]
    ============================================= */
 
+// [정식 배포] 게임 버전 정보
+const GAME_VERSION = "1.0.0"; // 정식 배포 버전
+
 // [시스템: 경제 및 인벤토리]
 let myGems = 0;           // 현재 보유 보석
 let myNickname = "순례자";
@@ -37,6 +40,16 @@ loadGameData = function() {
 
     try {
         const parsed = JSON.parse(savedString);
+
+        // ★ [정식 배포] 버전 체크: 구버전이거나 버전 정보가 없으면 초기화
+        if (!parsed.version || parsed.version !== GAME_VERSION) {
+            console.log(`🔄 게임 버전 업데이트 감지 (${parsed.version || '구버전'} → ${GAME_VERSION})`);
+            console.log("📦 데이터를 초기화합니다...");
+            localStorage.removeItem('kingsRoadSave');
+            alert(`🎉 King's Road v${GAME_VERSION} 정식 버전에 오신 것을 환영합니다!\n\n새로운 시작을 위해 게임 데이터가 초기화되었습니다.`);
+            lastClaimTime = Date.now();
+            return;
+        }
 
         // [기본 복구]
         myCastleLevel = parsed.level || 0;
@@ -3220,6 +3233,7 @@ function saveGameData() {
     }
 
     const saveData = {
+        version: GAME_VERSION, // ★ [정식 배포] 버전 정보 추가
         level: myCastleLevel,
         gems: myGems,
         maxHearts: purchasedMaxHearts, // 순수 체력만 저장
@@ -3395,74 +3409,10 @@ function startTraining(stageId, mode = 'normal') {
     loadStep();
 }
 
-/* [모바일 치트] Step 표시 영역 5회 연타 시 클리어 */
+/* [정식 배포] 모바일 UI 최적화 함수 (디버그 기능 제거됨) */
 function enableMobileCheat() {
-    // 1. 타겟 요소 찾기 (Step 표시 숫자)
-    const stepEl = document.getElementById('total-step-num');
-    
-    // 요소가 없으면 중단 (안전장치)
-    if (!stepEl) return;
-
-    // 2. 터치 영역 확대 (숫자만 누르기 힘드니까 부모 요소 전체를 타겟으로)
-    const targetArea = stepEl.parentElement; 
-    
-    // 중복 리스너 방지를 위해 기존 것 제거 시도 (선택사항)
-    // targetArea.replaceWith(targetArea.cloneNode(true)); 
-    // 위 코드는 리스너를 초기화하지만, 변수 참조가 끊길 수 있어 아래 방식 추천:
-    
-    let tapCount = 0;
-    let lastTapTime = 0;
-
-    targetArea.onclick = (e) => {
-        // 이벤트 버블링 방지 (혹시 모를 오작동 차단)
-        e.preventDefault(); 
-        e.stopPropagation();
-
-        const currentTime = new Date().getTime();
-
-        // 0.8초 이내에 다시 탭했는지 확인
-        if (currentTime - lastTapTime < 800) {
-            tapCount++;
-        } else {
-            tapCount = 1; // 시간이 너무 지났으면 리셋
-        }
-        
-        lastTapTime = currentTime;
-
-        // ★ 5회 연속 탭 성공 시!
-        if (tapCount === 5) {
-            // 1. 햅틱 피드백 (진동) - 모바일에서 '징-' 하고 울림
-            if (navigator.vibrate) navigator.vibrate(200);
-            
-            // 2. 시각적 피드백 (글자가 잠시 초록색으로 번쩍!)
-            const originalColor = targetArea.style.color;
-            targetArea.style.color = "#2ecc71"; // 밝은 초록
-            targetArea.style.transform = "scale(1.5)"; // 확 커짐
-            
-            setTimeout(() => {
-                targetArea.style.color = originalColor;
-                targetArea.style.transform = "scale(1)";
-            }, 300);
-
-            // 3. 치트 실행
-            console.log("⚡ 개발자 모드: 강제 클리어 발동!");
-            
-            // 현재 모드 확인 (보스전인지 일반 훈련인지)
-            const isBossMode = document.getElementById('game-screen').classList.contains('boss-mode');
-            const clearedStageId = window.currentStageId;
-            
-            if (isBossMode) {
-                stageClear('boss'); // 보스 즉사
-            } else {
-                stageClear(); // 일반 스테이지 클리어
-            }
-            quitGame();
-            openStageSheetForStageId(clearedStageId);
-            tapCount = 0; // 카운트 초기화
-        }
-    };
-    
-    console.log("🕵️‍♂️ 시크릿 치트가 활성화되었습니다: Step 영역 5연타");
+    // 정식 배포 버전: 기능 비활성화
+    // 추후 필요한 모바일 최적화 로직은 여기에 추가
 }
 
 // 2. 단계별 화면 로드
@@ -7073,43 +7023,9 @@ function claimTempleSupply() {
     saveGameData();
 }
 
-/* [시스템: 개발자용 치트키 (보스 즉시 처치)] */
-function instantWin() {
-    // 1. 현재 게임 화면인지 확인
-    const gameScreen = document.getElementById('game-screen');
-    if (!gameScreen.classList.contains('active')) {
-        console.log("전투 화면이 아닙니다.");
-        return;
-    }
-
-    // 2. 보스전 데이터가 있는지 확인
-    if (!window.currentBattleData) {
-        console.log("진행 중인 전투 데이터가 없습니다.");
-        return;
-    }
-
-    // 3. 강제 승리 조건 세팅
-    // 현재 문제 번호를 '전체 문제 개수'와 같게 만들면, loadNextVerse()가 종료 조건으로 인식합니다.
-    currentVerseIdx = window.currentBattleData.length;
-    
-    // 4. 시각적 효과 (체력 0 만들기)
-    currentBossHp = 0;
-    updateBattleUI();
-
-    // 5. 알림 및 승리 처리 함수 호출
-    console.log("⚡ 치트키 발동: 붉은 용을 물리쳤습니다!");
-    loadNextVerse(); // 수정된 loadNextVerse가 실행되며 승리 처리됨
-}
-
-/* [치트 트리거: 보석 생성] 'G' 키를 누르면 발동 */
-document.addEventListener('keydown', function(event) {
-    if (event.key === 'g' || event.key === 'G') {
-        myGems += 100000; // 보석 10만개 추가
-        updateGemDisplay(); // 화면 갱신
-        saveGameData();     // 저장
-        alert("💎 치트키 발동! 보석 100,000개를 획득했습니다.");
-    }
-});
+/* ========================================
+   [정식 배포 버전 - 치트키 제거됨]
+   ======================================== */
 
 /* [추가] 두루마리 게임 천천히 모드 토글 */
 function toggleScrollSlowMode(btn) {
@@ -7933,7 +7849,7 @@ window.onload = function() {
         localStorage.setItem('hasShownProfileSetup', 'true');
         setTimeout(openProfileSettings, 1000); // 1초 뒤 자연스럽게 등장
     }
-    enableMobileCheat();
+    // enableMobileCheat(); // 정식 버전: 비활성화
 };
 
 // [1. 초성 변환 함수 추가] 
@@ -8102,73 +8018,9 @@ function triggerConfetti() {
     }());
 }
 
-/* [치트] 'C' 키를 누르면 현재 스테이지 즉시 클리어 */
-document.addEventListener('keydown', function(event) {
-    // 게임 화면이 켜져 있을 때만 작동
-    const gameScreen = document.getElementById('game-screen');
-    if ((event.key === 'c' || event.key === 'C') && gameScreen.classList.contains('active')) {
-        
-        console.log("⚡ 스테이지 클리어 치트 발동!");
-
-        // [상황 1] 보스전 / 중간점검 중일 때
-        if (window.currentBattleData) {
-            instantWin(); // 기존에 있던 보스 처치 함수 호출
-        } 
-        // [상황 2] 일반 훈련(Step 1~5) 중일 때
-        else {
-            // ★ 만약 1단계(씨뿌리기) 중이라면 -> 바로 3단계(완전정복) 직전으로 점프시킬 수도 있음
-            // 여기서는 '현재 단계 완료'로 처리합니다.
-            
-            // 효과음 재생
-            if(typeof SoundEffect !== 'undefined') SoundEffect.playCorrect();
-            
-            // 즉시 훈련 종료 처리
-            const clearedStageId = window.currentStageId;
-            stageClear('normal'); 
-            quitGame();
-            openStageSheetForStageId(clearedStageId);
-        }
-    }
-});
-
-/* [시스템] 모바일용 히든 치트 (상단 5회 터치) */
-(function initMobileCheat() {
-    let touchCount = 0;
-    let touchTimer = null;
-
-    // 게임 화면 전체에 터치 감지
-    const gameScreen = document.getElementById('game-screen');
-    
-    gameScreen.addEventListener('click', function(e) {
-        // 1. 화면 상단 150px 이내(헤더 영역)를 터치했을 때만 인정
-        if (e.clientY < 150) {
-            touchCount++;
-
-            // 2. 1초 안에 다음 터치가 없으면 카운트 리셋 (연타 감지)
-            clearTimeout(touchTimer);
-            touchTimer = setTimeout(() => {
-                touchCount = 0;
-            }, 1000);
-
-            // 3. 5회 연속 터치 성공 시 -> 클리어 발동!
-            if (touchCount >= 5) {
-                console.log("👆 모바일 히든 치트 발동!");
-                touchCount = 0; // 리셋
-
-                // 진동 효과 (모바일에서 지원 시 징~ 울림)
-                if (navigator.vibrate) navigator.vibrate(200);
-
-                // 치트 로직 (C키와 동일)
-                if (window.currentBattleData) {
-                    instantWin(); // 보스전 승리
-                } else {
-                    if(typeof SoundEffect !== 'undefined') SoundEffect.playCorrect();
-                    finishTraining(); // 일반 훈련 승리
-                }
-            }
-        }
-    });
-})();
+/* ========================================
+   [정식 배포 버전 - 디버그 기능 제거됨]
+   ======================================== */
 
 /* =========================================
    [시스템: 업적(나의 기록실) UI 및 로직]
