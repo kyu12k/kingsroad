@@ -33,6 +33,114 @@ async function countQuery(query) {
     return snapshot.data().count || 0;
 }
 
+async function updateWeeklyCountsImpl() {
+    const currentWeekId = getWeekId();
+    console.log(`📊 주간 카운트 집계 + Snapshot 생성 시작: ${currentWeekId}`);
+
+    const baseQuery = db.collection('leaderboard').where('weekId', '==', currentWeekId);
+    const totalCount = await countQuery(baseQuery);
+
+    const tribeCounts = {};
+    const cutoffTribes = {};
+
+    // 1️⃣ 지파별 인원 수 집계 및 Snapshot 생성
+    const snapshotBatch = db.batch();
+    const tribeJobs = [];
+
+    for (let i = 0; i < TRIBE_COUNT; i++) {
+        const tribeQuery = baseQuery.where('tribe', '==', i);
+
+        tribeJobs.push(
+            Promise.all([
+                // 인원 수 카운트
+                countQuery(tribeQuery),
+                // Top100 조회
+                tribeQuery.orderBy('score', 'desc').limit(100).get()
+            ]).then(([count, snapshot]) => {
+                tribeCounts[String(i)] = count;
+
+                // Cutoff 점수 저장
+                if (!snapshot.empty && snapshot.size >= 100) {
+                    cutoffTribes[String(i)] = snapshot.docs[snapshot.docs.length - 1].data().score || 0;
+                } else {
+                    cutoffTribes[String(i)] = 0;
+                }
+
+                // Snapshot 생성: tribe_{i} 문서에 Top100 저장
+                const rankingData = snapshot.docs.map((doc, index) => {
+                    const row = doc.data();
+                    return {
+                        rank: index + 1,
+                        name: row.nickname || "이름없음",
+                        score: row.score || 0,
+                        tribe: row.tribe,
+                        tag: row.tag || "",
+                        castle: row.castleLv || 0
+                    };
+                });
+
+                const snapshotRef = db.collection('ranking_snapshots').doc(currentWeekId)
+                    .collection('tribes').doc(`tribe_${i}`);
+                snapshotBatch.set(snapshotRef, {
+                    weekId: currentWeekId,
+                    tribeId: i,
+                    ranks: rankingData,
+                    count: snapshot.size,
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                });
+            })
+        );
+    }
+
+    await Promise.all(tribeJobs);
+
+    // 2️⃣ Zion (전체) Top100 조회 및 Snapshot 생성
+    const zionSnapshot = await baseQuery.orderBy('score', 'desc').limit(100).get();
+    let cutoffTotal = 0;
+
+    if (!zionSnapshot.empty && zionSnapshot.size >= 100) {
+        cutoffTotal = zionSnapshot.docs[zionSnapshot.docs.length - 1].data().score || 0;
+    }
+
+    const zionRankingData = zionSnapshot.docs.map((doc, index) => {
+        const row = doc.data();
+        return {
+            rank: index + 1,
+            name: row.nickname || "이름없음",
+            score: row.score || 0,
+            tribe: row.tribe,
+            tag: row.tag || "",
+            castle: row.castleLv || 0
+        };
+    });
+
+    const zionSnapshotRef = db.collection('ranking_snapshots').doc(currentWeekId)
+        .collection('tribes').doc('zion');
+    snapshotBatch.set(zionSnapshotRef, {
+        weekId: currentWeekId,
+        tribeId: 'zion',
+        ranks: zionRankingData,
+        count: zionSnapshot.size,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    // 3️⃣ 일괄 저장
+    await snapshotBatch.commit();
+    console.log(`✅ Ranking Snapshots 저장 완료 (지파 12개 + Zion 1개)`);
+
+    // 4️⃣ 카운트 메타데이터 저장
+    await db.collection('system_meta').doc('weekly_counts').set({
+        weekId: currentWeekId,
+        totalCount: totalCount,
+        tribeCounts: tribeCounts,
+        cutoffTotal: cutoffTotal,
+        cutoffTribes: cutoffTribes,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    console.log(`✅ 주간 카운트 저장 완료: total=${totalCount}`);
+}
+
 /**
  * 주간 랭킹 카운트 집계 + Snapshot 생성
  * 매시간 현재 주차의 전체/지파별 인원을 system_meta에 저장
@@ -43,111 +151,7 @@ exports.updateWeeklyCounts = functions.pubsub
     .timeZone('Asia/Seoul')
     .onRun(async () => {
         try {
-            const currentWeekId = getWeekId();
-            console.log(`📊 주간 카운트 집계 + Snapshot 생성 시작: ${currentWeekId}`);
-
-            const baseQuery = db.collection('leaderboard').where('weekId', '==', currentWeekId);
-            const totalCount = await countQuery(baseQuery);
-
-            const tribeCounts = {};
-            const cutoffTribes = {};
-            
-            // 1️⃣ 지파별 인원 수 집계 및 Snapshot 생성
-            const snapshotBatch = db.batch();
-            const tribeJobs = [];
-            
-            for (let i = 0; i < TRIBE_COUNT; i++) {
-                const tribeQuery = baseQuery.where('tribe', '==', i);
-                
-                tribeJobs.push(
-                    Promise.all([
-                        // 인원 수 카운트
-                        countQuery(tribeQuery),
-                        // Top100 조회
-                        tribeQuery.orderBy('score', 'desc').limit(100).get()
-                    ]).then(([count, snapshot]) => {
-                        tribeCounts[String(i)] = count;
-                        
-                        // Cutoff 점수 저장
-                        if (!snapshot.empty && snapshot.size >= 100) {
-                            cutoffTribes[String(i)] = snapshot.docs[snapshot.docs.length - 1].data().score || 0;
-                        } else {
-                            cutoffTribes[String(i)] = 0;
-                        }
-                        
-                        // Snapshot 생성: tribe_{i} 문서에 Top100 저장
-                        const rankingData = snapshot.docs.map((doc, index) => {
-                            const row = doc.data();
-                            return {
-                                rank: index + 1,
-                                name: row.nickname || "이름없음",
-                                score: row.score || 0,
-                                tribe: row.tribe,
-                                tag: row.tag || "",
-                                castle: row.castleLv || 0
-                            };
-                        });
-                        
-                        const snapshotRef = db.collection('ranking_snapshots').doc(currentWeekId)
-                            .collection('tribes').doc(`tribe_${i}`);
-                        snapshotBatch.set(snapshotRef, {
-                            weekId: currentWeekId,
-                            tribeId: i,
-                            ranks: rankingData,
-                            count: snapshot.size,
-                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                        });
-                    })
-                );
-            }
-
-            await Promise.all(tribeJobs);
-
-            // 2️⃣ Zion (전체) Top100 조회 및 Snapshot 생성
-            const zionSnapshot = await baseQuery.orderBy('score', 'desc').limit(100).get();
-            let cutoffTotal = 0;
-            
-            if (!zionSnapshot.empty && zionSnapshot.size >= 100) {
-                cutoffTotal = zionSnapshot.docs[zionSnapshot.docs.length - 1].data().score || 0;
-            }
-            
-            const zionRankingData = zionSnapshot.docs.map((doc, index) => {
-                const row = doc.data();
-                return {
-                    rank: index + 1,
-                    name: row.nickname || "이름없음",
-                    score: row.score || 0,
-                    tribe: row.tribe,
-                    tag: row.tag || "",
-                    castle: row.castleLv || 0
-                };
-            });
-            
-            const zionSnapshotRef = db.collection('ranking_snapshots').doc(currentWeekId)
-                .collection('tribes').doc('zion');
-            snapshotBatch.set(zionSnapshotRef, {
-                weekId: currentWeekId,
-                tribeId: 'zion',
-                ranks: zionRankingData,
-                count: zionSnapshot.size,
-                updatedAt: admin.firestore.FieldValue.serverTimestamp()
-            });
-
-            // 3️⃣ 일괄 저장
-            await snapshotBatch.commit();
-            console.log(`✅ Ranking Snapshots 저장 완료 (지파 12개 + Zion 1개)`);
-
-            // 4️⃣ 카운트 메타데이터 저장
-            await db.collection('system_meta').doc('weekly_counts').set({
-                weekId: currentWeekId,
-                totalCount: totalCount,
-                tribeCounts: tribeCounts,
-                cutoffTotal: cutoffTotal,
-                cutoffTribes: cutoffTribes,
-                updatedAt: admin.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-
-            console.log(`✅ 주간 카운트 저장 완료: total=${totalCount}`);
+            await updateWeeklyCountsImpl();
             return null;
         } catch (error) {
             console.error('❌ 주간 카운트 집계 실패:', error);
