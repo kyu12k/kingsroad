@@ -1941,8 +1941,7 @@ function startGame() {
     // 5. 맵 화면으로 이동
     goMap(); 
 
-    // 6. 일일 생명의 떡 지급 체크
-    setTimeout(checkDailyLifeBread, 500);
+    // 6. 일일 생명의 떡 지급 체크 (기능 제거)
 }
 
         function goHome() {
@@ -6586,6 +6585,19 @@ const SHOP_ITEMS = {
     "booster3": { name: "승점 부스터+", price: 1200, desc: "30분간 승점 3배", icon: "⚡" }
 };
 
+function getShopTodayKey() {
+    return new Date().toDateString();
+}
+
+function isLifeBreadFreeAvailable() {
+    const lastFreeDate = localStorage.getItem("kingsroad_free_lifebread_date");
+    return lastFreeDate !== getShopTodayKey();
+}
+
+function markLifeBreadFreeUsed() {
+    localStorage.setItem("kingsroad_free_lifebread_date", getShopTodayKey());
+}
+
 /* [수정] 통합 상점 구매 함수 (최종 수정판) */
 function buyItem(itemType) {
     if (itemType === 'potion') itemType = 'lifeBread';
@@ -6631,15 +6643,21 @@ function buyItem(itemType) {
     const item = SHOP_ITEMS[itemType];
     if (!item) return;
 
+    const isFreeLifeBread = (itemType === 'lifeBread') && isLifeBreadFreeAvailable();
+    const price = isFreeLifeBread ? 0 : item.price;
+    const confirmMsg = isFreeLifeBread
+        ? `오늘 무료 1회로 [${item.name}]을 구매하시겠습니까?`
+        : `💎 ${price} 보석으로 [${item.name}]을 구매하시겠습니까?`;
+
     // 가격 확인
-    if (myGems < item.price) {
+    if (price > 0 && myGems < price) {
         alert("💎 보석이 부족합니다!");
         return;
     }
 
     // 구매 진행
-    if(confirm(`💎 ${item.price} 보석으로 [${item.name}]을 구매하시겠습니까?`)) {
-        myGems -= item.price;
+    if(confirm(confirmMsg)) {
+        if (price > 0) myGems -= price;
 
         // 부스터는 즉시 사용, 나머지는 인벤토리에 추가
         if (itemType === 'booster') {
@@ -6650,6 +6668,10 @@ function buyItem(itemType) {
             if (!inventory) inventory = {};
             inventory[itemType] = (inventory[itemType] || 0) + 1;
             alert(`✅ [${item.name}] 구매 완료! (보유: ${inventory[itemType]}개)`);
+        }
+
+        if (isFreeLifeBread) {
+            markLifeBreadFreeUsed();
         }
         
         updateGemDisplay();
@@ -6707,18 +6729,22 @@ updateShopUI = function() {
         const div = document.createElement('div');
         div.className = 'shop-item';
         div.style.cssText = "background:white; padding:15px; border-radius:15px; display:flex; align-items:center; color:black; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:10px;";
+        const isFreeLifeBread = (key === 'lifeBread') && isLifeBreadFreeAvailable();
+        const priceText = isFreeLifeBread ? "무료 1회" : `💎 ${item.price}`;
         
         let countHtml = (key === 'booster' || key === 'booster3') ? '' : `<div style="font-size:0.8rem; color:#2ecc71; font-weight:bold;">보유: ${count}개</div>`;
+
+        const buttonText = (key === 'lifeBread' && isFreeLifeBread) ? "무료" : "구매";
 
         div.innerHTML = `
             <div style="font-size:2.5rem; margin-right:15px;">${item.icon}</div>
             <div style="flex:1;">
                 <div style="font-weight:bold; font-size:1.1rem;">${item.name}</div>
                 <div style="font-size:0.8rem; color:#7f8c8d;">${item.desc}</div>
-                <div style="color:#e67e22; font-weight:bold; margin-top:5px;">💎 ${item.price}</div>
+                <div style="color:#e67e22; font-weight:bold; margin-top:5px;">${priceText}</div>
                 ${countHtml}
             </div>
-            <button onclick="buyItem('${key}')" style="background:#f1c40f; border:none; color:#2c3e50; padding:8px 15px; border-radius:20px; font-weight:bold; cursor:pointer;">구매</button>
+            <button onclick="buyItem('${key}')" style="background:#f1c40f; border:none; color:#2c3e50; padding:8px 15px; border-radius:20px; font-weight:bold; cursor:pointer;">${buttonText}</button>
         `;
         list.appendChild(div);
     });
@@ -7475,108 +7501,6 @@ function showDamageEffect() {
         renderChapterMap(); // 2. 그 내용을 바탕으로 지도를 그림
         updateCastleView(); // 3. 성전 모습 업데이트
 
-/* =========================================
-    [시스템: 일일 생명의 떡 (출석 보상) - 지급]
-    ========================================= */
-
-function checkDailyLifeBread() {
-    const lastDate = localStorage.getItem("kingsroad_last_login_date");
-    const today = new Date().toDateString(); // 예: "Fri Jan 16 2026"
-
-    // [테스트용] 오늘 이미 받았어도 확인해보고 싶다면 아래 if문을 잠시 주석 처리하세요.
-    if (lastDate !== today) {
-        
-        // 1. 생명의 떡 지급 로직
-        if (typeof inventory === 'undefined') inventory = { lifeBread: 0 };
-        if (!inventory.lifeBread) inventory.lifeBread = 0; // 안전장치
-        
-        inventory.lifeBread += 1; // 생명의 떡 1개 추가
-        saveGameData();        // 데이터 저장
-        
-        // 2. 날짜 갱신 (오늘 받음 표시)
-        localStorage.setItem("kingsroad_last_login_date", today);
-
-        // 3. 안내창 띄우기
-        showLifeBreadModal();
-    }
-}
-
-function showLifeBreadModal() {
-    // 이미 떠 있으면 중복 생성 방지
-    if (document.getElementById('life-bread-modal')) return;
-
-    // 모달 배경 생성
-    const div = document.createElement('div');
-    div.id = 'life-bread-modal';
-    div.style.cssText = `
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.8); z-index: 9999;
-        display: flex; justify-content: center; align-items: center;
-        animation: fadeIn 0.5s;
-    `;
-    
-    // 현재 보유량 확인
-    const currentLifeBread = (typeof inventory !== 'undefined') ? inventory.lifeBread : 1;
-
-    // 모달 내용 (어르신 맞춤형 설명 포함)
-    div.innerHTML = `
-        <div style="background: #fff; padding: 25px; border-radius: 20px; text-align: center; width: 85%; max-width: 320px; box-shadow: 0 0 25px #f1c40f; border: 4px solid #f39c12; position:relative;">
-            <div style="font-size: 3.5rem; margin-bottom: 10px; animation: float 3s infinite;">🍞</div>
-            
-            <h2 style="color: #d35400; margin: 0; font-size:1.5rem;">오늘의 생명의 떡 도착!</h2>
-            
-            <p style="color: #2c3e50; margin: 15px 0; font-size: 1.1rem; font-weight:bold;">
-                '생명의 떡'을 드립니다.
-            </p>
-
-            <div style="background:#fef9e7; padding:15px; border-radius:10px; margin-bottom:15px; text-align:left; border:1px dashed #f39c12;">
-                <div style="display:flex; align-items:center; margin-bottom:8px;">
-                    <span style="font-size:1.5rem; margin-right:10px;">🍞</span>
-                    <div>
-                        <strong style="color:#d35400;">사용법</strong><br>
-                        <span style="font-size:0.9rem; color:#555;">체력이 부족할 때<br>게임 화면 <b>오른쪽 위 빵</b>을 누르세요!</span>
-                    </div>
-                </div>
-                <div style="display:flex; align-items:center;">
-                    <span style="font-size:1.5rem; margin-right:10px;">🏠</span>
-                    <div>
-                        <strong style="color:#27ae60;">구매법</strong><br>
-                        <span style="font-size:0.9rem; color:#555;">다 썼다면 <b>상점</b>에서<br>보석으로 더 살 수 있습니다.</span>
-                    </div>
-                </div>
-            </div>
-
-            <div style="font-size: 1.2rem; font-weight: bold; color: #e74c3c; margin-bottom: 20px;">
-                현재 보유량: ${currentLifeBread}개
-            </div>
-
-            <button onclick="closeLifeBreadModal()" 
-                style="background: #27ae60; color: white; border: none; padding: 12px 30px; border-radius: 30px; font-size: 1.2rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #1e8449; width:100%;">
-                감사히 받기 (아멘)
-            </button>
-        </div>
-    `;
-    document.body.appendChild(div);
-    
-    // 효과음 (획득 소리)
-    if(typeof SoundEffect !== 'undefined' && SoundEffect.playGetItem) {
-        SoundEffect.playGetItem(); 
-    } else if(typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) {
-        SoundEffect.playCorrect();
-    }
-}
-
-function closeLifeBreadModal() {
-    const modal = document.getElementById('life-bread-modal');
-    if (modal) {
-        modal.style.opacity = '0'; // 페이드 아웃 효과
-        setTimeout(() => modal.remove(), 300);
-    }
-    
-    // 혹시 상점이나 메인 UI에 생명의 떡 개수 표시가 있다면 갱신
-    if(typeof updateShopUI === 'function') updateShopUI();
-    if(typeof updateItemButtons === 'function') updateItemButtons();
-}
 /* =========================================
    [시스템: 어르신 맞춤형 백업 (카톡 공유)]
    ========================================= */

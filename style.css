@@ -49,10 +49,16 @@ body, html {
             background: radial-gradient(1600px circle at 20% 10%, rgba(var(--home-accent-strong-rgb), 0.45) 0%, #1b2438 55%, #0f141f 100%);
             text-align: center; padding: 20px;
             box-sizing: border-box;
-            overflow-y: auto;
+            overflow: hidden;
             justify-content: flex-start;
             position: relative;
             isolation: isolate;
+        }
+
+        @media (max-height: 850px) {
+            #home-screen {
+                overflow-y: auto;
+            }
         }
         #home-screen::before {
             content: "";
