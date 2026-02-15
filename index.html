@@ -108,10 +108,10 @@
             </div>
 
             <div class="help-item">
-                <div class="help-title">2. 보석 받는 방법</div>
+                <div class="help-title">2. 보너스 받는 방법</div>
                 <div class="help-desc">
-                    ⭐ <strong>오늘 처음 클리어</strong>: 보석을 많이 받습니다 (1절당 50개)<br>
-                    🔄 <strong>같은 날 다시 클리어</strong>: 보석을 조금 받습니다 (1절당 10개)<br><br>
+                    🎁 <strong>때를 따른 양식</strong>: 보너스가 있을 때 보석이 크게 증가합니다<br>
+                    1회차 ×5, 2회차 ×2, 3회차 ×1.5 (이후는 쿨타임)<br><br>
                     💡 <strong>중요!</strong> 중간 점검과 보스는 보상을 나눠 갖습니다<br>
                     예: 16~20절 중간 점검을 먼저 하면<br>
                     보스전에서는 나머지 1~15절만 보상을 줍니다
@@ -122,16 +122,17 @@
                 <div class="help-title">3. 전체 학습 기능</div>
                 <div class="help-desc">
                     중간 점검이나 보스를 클리어하면<br>
-                    그 안의 스테이지를 처음 해보는 것이어도 전체 학습이 가능합니다<br>
-                    전체 학습으로 처음 클리어하면 보석 70개!
+                    그 안의 스테이지를 처음 해보는 것이어도 빠른 복습을 할 수 있습니다
                 </div>
             </div>
 
             <div class="help-item">
                 <div class="help-title">4. 기억 레벨 💜</div>
                 <div class="help-desc">
-                    시간이 지나면 💜 표시가 나타납니다<br>
-                    이때 다시 복습하면 보너스 +20%를 받습니다
+                    최초 클리어부터 일정 시간이 지나면 망각 표시(💜)가 뜹니다<br>
+                    망각 표시가 떴을 때 클리어하면 기억 레벨이 오릅니다<br>
+                    기억 레벨 보너스: 기억 레벨당 보석 +10% 승점 +10%<br>
+                    대기 시간: 약 1일, 3일, 7일, 14일, 30일 (이후는 약 30일 고정)
                 </div>
             </div>
 
@@ -575,9 +576,17 @@
                 </button>
             </div>
 
-            <div class="heart-display">
-                ❤️ <span id="player-hearts">5</span>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button class="battle-help-btn" onclick="document.getElementById('battle-help').classList.toggle('hidden');">❓ 도움말</button>
+                <div class="heart-display">
+                    ❤️ <span id="player-hearts">5</span>
+                </div>
             </div>
+        </div>
+        <div class="battle-help hidden" id="battle-help">
+            <div>블럭을 두 번 누르면 제거됩니다.</div>
+            <div>입력된 블럭을 누르고 다른 블럭을 눌러 자리를 바꿀 수 있습니다.</div>
+            <div>풀에서 누르면 정답칸에 바로 들어갑니다.</div>
         </div>
     </div>
 

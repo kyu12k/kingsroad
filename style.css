@@ -398,12 +398,12 @@ body, html {
 
 /* [보스 피격 효과 - 수정됨] */
 @keyframes boss-hit-shake {
-    0% { transform: translate(0, 0) rotate(0deg); filter: none; }
-    10% { transform: translate(-10px, 0) rotate(-10deg); filter: grayscale(100%) brightness(40%) sepia(100%) hue-rotate(-50deg) saturate(600%) contrast(0.8); } /* 강렬한 빨강 */
-    30% { transform: translate(10px, 0) rotate(10deg); filter: grayscale(100%) brightness(40%) sepia(100%) hue-rotate(-50deg) saturate(600%) contrast(0.8); }
-    50% { transform: translate(-10px, 0) rotate(-10deg); filter: grayscale(100%) brightness(40%) sepia(100%) hue-rotate(-50deg) saturate(600%) contrast(0.8); }
-    70% { transform: translate(10px, 0) rotate(10deg); filter: none; }
-    100% { transform: translate(0, 0) rotate(0deg); filter: none; }
+    0% { transform: translate(0, 0) rotate(0deg) scaleX(-1); filter: none; }
+    10% { transform: translate(-10px, 0) rotate(-10deg) scaleX(-1); filter: grayscale(100%) brightness(40%) sepia(100%) hue-rotate(-50deg) saturate(600%) contrast(0.8); } /* 강렬한 빨강 */
+    30% { transform: translate(10px, 0) rotate(10deg) scaleX(-1); filter: grayscale(100%) brightness(40%) sepia(100%) hue-rotate(-50deg) saturate(600%) contrast(0.8); }
+    50% { transform: translate(-10px, 0) rotate(-10deg) scaleX(-1); filter: grayscale(100%) brightness(40%) sepia(100%) hue-rotate(-50deg) saturate(600%) contrast(0.8); }
+    70% { transform: translate(10px, 0) rotate(10deg) scaleX(-1); filter: none; }
+    100% { transform: translate(0, 0) rotate(0deg) scaleX(-1); filter: none; }
 }
 
 /* 중요: !important를 붙여서 기존 둥둥 뜨는 애니메이션을 무시하게 함 */
@@ -514,6 +514,7 @@ body, html {
             margin-bottom: 10px;
             filter: drop-shadow(0 0 8px #ff6b3d);
             position: relative;
+            transform: scaleX(-1);
         }
         
         /* 용이 불을 뿜는 애니메이션 */
@@ -528,8 +529,8 @@ body, html {
         }
         
         @keyframes breathing-fire {
-            0%, 100% { transform: scaleX(1); filter: drop-shadow(0 0 8px #ff6b3d); }
-            50% { transform: scaleX(1.1); filter: drop-shadow(0 0 15px #ff4500); }
+            0%, 100% { transform: scaleX(-1); filter: drop-shadow(0 0 8px #ff6b3d); }
+            50% { transform: scaleX(-1.1); filter: drop-shadow(0 0 15px #ff4500); }
         }
         
         @keyframes fire-burst {
@@ -617,7 +618,7 @@ body, html {
         .btn-attack:active { transform: translateY(4px); box-shadow: none; }
         .btn-pause { background: none; border: 1px solid #7f8c8d; color: #bdc3c7; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
         
-        @keyframes floating { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+        @keyframes floating { 0% { transform: translateY(0px) scaleX(-1); } 50% { transform: translateY(-10px) scaleX(-1); } 100% { transform: translateY(0px) scaleX(-1); } }
         @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
         .shake-effect { animation: shake 0.5s; }
 
@@ -1668,16 +1669,16 @@ body, html {
 /* [보스 사망 효과] */
 @keyframes boss-death-spin {
     0% { 
-        transform: scale(1) rotate(0deg); 
+        transform: scaleX(-1) scale(1) rotate(0deg); 
         opacity: 1; 
         filter: none; 
     }
     20% { 
-        transform: scale(1.2) rotate(-20deg); /* 마지막 발악 (커짐) */
+        transform: scaleX(-1) scale(1.2) rotate(-20deg); /* 마지막 발악 (커짐) */
         filter: sepia(1) saturate(1000%) hue-rotate(-50deg) contrast(2); /* 시뻘겋게 변함 */
     }
     100% { 
-        transform: scale(0) rotate(720deg); /* 뱅글뱅글 돌며 소멸 */
+        transform: scaleX(-1) scale(0) rotate(720deg); /* 뱅글뱅글 돌며 소멸 */
         opacity: 0; 
         filter: grayscale(100%); /* 흑백이 됨 */
     }
@@ -1946,4 +1947,32 @@ body, html {
         transform: scale(1.02);
         box-shadow: 0 6px 15px rgba(231,76,60,0.6);
     }
+}
+
+.battle-help-btn {
+    background: rgba(255,255,255,0.1);
+    color: #ecf0f1;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.battle-help {
+    width: 100%;
+    margin-top: 8px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.2);
+    color: #ecf0f1;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    text-align: right;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.battle-help.hidden {
+    display: none;
 }

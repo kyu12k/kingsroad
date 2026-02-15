@@ -1117,15 +1117,18 @@ function showTribeInfo(e, id) {
     const rect = e.target.getBoundingClientRect();
     const targetX = rect.left + (rect.width / 2); // 아이콘의 가로 중심
     const targetY = rect.top; // 아이콘의 윗부분
+    const belowY = rect.bottom; // 아이콘의 아랫부분
 
     // 4. 팝업 생성
     const toast = document.createElement('div');
     toast.id = 'tribe-toast';
     
     // 스타일: 클릭한 곳 바로 위에 뜨도록 설정
+    const toastTop = (targetY - 45 < 8) ? (belowY + 8) : (targetY - 45);
+
     toast.style.cssText = `
         position: fixed;
-        top: ${targetY - 45}px; /* 아이콘보다 45px 위에 배치 */
+        top: ${toastTop}px; /* 상단에 닿으면 아래로 뒤집기 */
         left: ${targetX}px;
         transform: translateX(-50%); /* 정확히 중앙 정렬 */
         
@@ -1702,12 +1705,12 @@ function getNextEligibleTime(memoryLevel) {
         0: 23,   // Level 0: 1일 (23시간)
         1: 71,   // Level 1: 3일 (71시간)
         2: 167,  // Level 2: 7일 (167시간)
-        3: 167,  // Level 3+: 7일
-        4: 167,
-        5: 167
+        3: 335,  // Level 3: 14일 (335시간)
+        4: 719,  // Level 4+: 30일 (719시간)
+        5: 719
     };
     
-    const hours = cooldownHours[memoryLevel] || 167;
+    const hours = cooldownHours[memoryLevel] || 719;
     return Date.now() + (hours * 60 * 60 * 1000);
 }
 
@@ -2367,8 +2370,8 @@ if (memStatus.level > 0) {
             const baseGem = 10;
             const bonusMultiplier = (bonusRemaining === 3) ? 5 : (bonusRemaining === 2) ? 2 : (bonusRemaining === 1) ? 1.5 : 1;
             let displayGem = Math.floor(baseGem * bonusMultiplier);
-            if (isForgotten) displayGem = Math.floor(displayGem * 1.2);
-            const forgottenTag = isForgotten ? " 💜+20%" : "";
+            if (isForgotten) displayGem = Math.floor(displayGem * 1.1);
+            const forgottenTag = isForgotten ? " 💜+10%" : "";
 
             let rewardLabel = "";
             if (bonusRemaining === 3) {
@@ -2402,8 +2405,8 @@ if (memStatus.level > 0) {
                 ? (stage.targetVerseCount || 0) * 10
                 : 10;
             let displayGem = Math.floor(baseGem * bonusMultiplier);
-            if (isForgotten) displayGem = Math.floor(displayGem * 1.2);
-            const forgottenTag = isForgotten ? " 💜+20%" : "";
+            if (isForgotten) displayGem = Math.floor(displayGem * 1.1);
+            const forgottenTag = isForgotten ? " 💜+10%" : "";
 
             let rewardLabel = "";
             if (bonusRemaining === 3) {
@@ -2629,8 +2632,12 @@ function checkMemoryStatus(stageId) {
     
     if (currentLevel === 1) {
         forgettingTime = 71;  // Lv.1 (3일=72시간 -> 71시간)
-    } else if (currentLevel >= 2) {
-        forgettingTime = 167; // Lv.2 이상 (7일=168시간 -> 167시간)
+    } else if (currentLevel === 2) {
+        forgettingTime = 167; // Lv.2 (7일=168시간 -> 167시간)
+    } else if (currentLevel === 3) {
+        forgettingTime = 335; // Lv.3 (14일=336시간 -> 335시간)
+    } else if (currentLevel >= 4) {
+        forgettingTime = 719; // Lv.4+ (30일=720시간 -> 719시간)
     }
 
     // 설정된 시간보다 더 지났으면 '망각 상태(true)'
@@ -2689,6 +2696,7 @@ if (type === 'normal') {
 
         //[시스템: 보스전 로직]//
         let currentBossHp, maxBossHp, playerHearts, currentVerseIdx, currentVerseData, selectedBlocks;
+        let currentBossParts, currentBossPartIndex, currentBossChunks;
 
   //[2] 보스전 시작 함수 (하트 버그 수정 + 구간 자동 탐지)//
 function startBossBattle(limitCount_unused) { 
@@ -2719,7 +2727,7 @@ function startBossBattle(limitCount_unused) {
         bossAvatar.classList.remove('boss-die-effect'); // 사망 연출 제거 (부활)
         bossAvatar.classList.remove('boss-hit-effect'); // 피격 연출 제거
         bossAvatar.style.opacity = "1"; // 혹시 모르니 투명도 원상복구
-        bossAvatar.style.transform = "none"; // 회전/크기 원상복구
+        bossAvatar.style.transform = "scaleX(-1)"; // 좌우 반전 유지
     }
 
     const field = document.querySelector('.battle-field');
@@ -2767,6 +2775,9 @@ function startBossBattle(limitCount_unused) {
     // 데이터 잘라내기
     window.currentBattleData = fullChapterData.slice(startIndex, endIndex);
     maxBossHp = window.currentBattleData.length; 
+
+    window.currentBattleChapter = chapterNum;
+    window.currentBattleStartIndex = startIndex;
     
     // ★ 디버그: 보스 체력 확인
     console.log(`[보스 시작] 장: ${chapterNum}, 스테이지: ${sId}, 최대 체력: ${maxBossHp}, 구절 수: ${window.currentBattleData.length}`); 
@@ -2778,11 +2789,13 @@ function startBossBattle(limitCount_unused) {
         currentVerseIdx = savedData.index;
         playerHearts = savedData.hp;     
         currentBossHp = savedData.bossHp;
+        currentBossPartIndex = (typeof savedData.partIndex === 'number') ? savedData.partIndex : 0;
     } else {
         // ★ 새로 시작: 일단 기본 체력으로 초기화
         currentVerseIdx = 0;
         currentBossHp = maxBossHp;
         playerHearts = maxPlayerHearts; // (보통 5)
+        currentBossPartIndex = 0;
     }
 
     updateBattleUI(); 
@@ -2911,22 +2924,37 @@ function loadNextVerse() {
 
     // 3. 데이터 준비
     currentVerseData = window.currentBattleData[currentVerseIdx];
-    
+
+    const verseChunks = (currentVerseData && currentVerseData.chunks) ? currentVerseData.chunks : [];
+    if (verseChunks.length > 20) {
+        const splitIndex = Math.ceil(verseChunks.length / 2);
+        currentBossParts = [verseChunks.slice(0, splitIndex), verseChunks.slice(splitIndex)];
+        if (typeof currentBossPartIndex !== 'number' || currentBossPartIndex < 0) currentBossPartIndex = 0;
+        if (currentBossPartIndex >= currentBossParts.length) currentBossPartIndex = 0;
+        currentBossChunks = currentBossParts[currentBossPartIndex];
+    } else {
+        currentBossParts = null;
+        currentBossPartIndex = 0;
+        currentBossChunks = verseChunks;
+    }
+
+    function updateVerseIndicator() {
+        const chapterNum = window.currentBattleChapter || 1;
+        const verseNum = (window.currentBattleStartIndex || 0) + currentVerseIdx + 1;
+        let label = `요한계시록 ${chapterNum}장 ${verseNum}절`;
+        if (currentBossParts && currentBossParts.length > 1) {
+            label += ` (파트 ${currentBossPartIndex + 1}/${currentBossParts.length})`;
+        }
+        const verseEl = document.getElementById('verse-index');
+        if (verseEl) verseEl.innerText = label;
+    }
+
     // 상단 스테이지 표시 업데이트
-    document.getElementById('verse-index').innerText = `Stage ${currentVerseIdx + 1}/${window.currentBattleData.length}`;
+    updateVerseIndicator();
     
     const zone = document.getElementById('answer-zone');
     const pool = document.getElementById('block-pool');
     
-    // 팁 문구 (없으면 추가)
-    if (!document.getElementById('boss-tip')) {
-        const tipDiv = document.createElement('div');
-        tipDiv.id = 'boss-tip';
-        tipDiv.style.cssText = "margin-top: 10px; font-size: 0.85rem; color: #576574; text-align: center; background-color: rgba(255,255,255,0.8); padding: 8px 15px; border-radius: 8px;";
-        tipDiv.innerHTML = `💡 <b>전투 팁:</b> 정답칸 블록을 <b>두 번 누르면</b> 빠집니다.`;
-        document.querySelector('.battle-control').insertBefore(tipDiv, pool);
-    }
-
     // 4. 블록 클릭 핸들러
     let selectedBlock = null; 
     function deselect() {
@@ -2972,19 +3000,27 @@ function loadNextVerse() {
         }
     }
 
+    function renderBossBlocks(chunks) {
+        zone.innerHTML = '<span class="placeholder-text" id="placeholder-text">단어를 터치하여 공격 주문을 완성하세요</span>';
+        pool.innerHTML = '';
+        selectedBlock = null;
+
+        const shuffled = [...chunks].sort(() => Math.random() - 0.5);
+        shuffled.forEach(word => {
+            const btn = document.createElement('div');
+            btn.className = 'word-block';
+            btn.innerText = getChosung(word);
+            btn.dataset.original = word;
+            btn.style.backgroundColor = "#e74c3c"; // 붉은색 계열
+            btn.style.color = "#fff";
+            btn.style.border = "1px solid #c0392b";
+            btn.onclick = () => handleBossBlockClick(btn);
+            pool.appendChild(btn);
+        });
+    }
+
     // 5. 블록 생성
-    let shuffled = [...currentVerseData.chunks].sort(() => Math.random() - 0.5);
-    shuffled.forEach(word => {
-        const btn = document.createElement('div');
-        btn.className = 'word-block';
-        btn.innerText = getChosung(word);
-        btn.dataset.original = word;
-        btn.style.backgroundColor = "#e74c3c"; // 붉은색 계열
-        btn.style.color = "#fff";
-        btn.style.border = "1px solid #c0392b";
-        btn.onclick = () => handleBossBlockClick(btn);
-        pool.appendChild(btn);
-    });
+    renderBossBlocks(currentBossChunks);
 
     // 6. 공격 버튼 생성
     const oldBtn = document.getElementById('btn-boss-attack');
@@ -2998,7 +3034,7 @@ function loadNextVerse() {
     // [수정] 보스전 공격 버튼 클릭 로직
 attackBtn.onclick = () => {
     const currentBlocks = Array.from(zone.querySelectorAll('.word-block'));
-    const correctChunks = currentVerseData.chunks;
+    const correctChunks = currentBossChunks;
 
     // 개수 체크
     if (currentBlocks.length !== correctChunks.length) {
@@ -3024,6 +3060,16 @@ attackBtn.onclick = () => {
     });
 
     if (errorCount === 0) {
+        if (currentBossParts && currentBossPartIndex < currentBossParts.length - 1) {
+            SoundEffect.playAttack();
+            currentBossPartIndex += 1;
+            currentBossChunks = currentBossParts[currentBossPartIndex];
+            renderBossBlocks(currentBossChunks);
+            updateVerseIndicator();
+            deselect();
+            return;
+        }
+
         // 🔵 성공 로직 (기존 유지)
         SoundEffect.playAttack();
         triggerBossHitEffect();
@@ -3285,6 +3331,7 @@ function saveBattleCheckpoint() {
     const saveData = {
         stageId: window.currentStageId,   // 현재 스테이지
         index: currentVerseIdx,           // 현재 몇 번째 구절인지
+        partIndex: (typeof currentBossPartIndex === 'number') ? currentBossPartIndex : 0,
         hp: playerHearts,                 // ★ 현재 체력 그대로 저장
         maxHp: maxPlayerHearts,
         bossHp: currentBossHp,
@@ -5191,7 +5238,7 @@ function resetLeague(newWeekId) {
 }
 
 /* [수정] calculateScore 함수 (반복 보너스 시스템) */
-function calculateScore(stageId, type, verseCount, hearts) {
+function calculateScore(stageId, type, verseCount, hearts, isForgotten) {
     const currentWeek = getWeekId();
     
     if (leagueData.weekId !== currentWeek) {
@@ -5233,6 +5280,10 @@ function calculateScore(stageId, type, verseCount, hearts) {
         isRetry = true;
     }
     
+    if (isForgotten) {
+        baseScore = baseScore * 1.1;
+    }
+
     // ... (이하 부스터 적용 및 저장 로직 그대로 유지) ...
     
     checkBoosterStatus(); 
@@ -6441,8 +6492,8 @@ stageClear = function(type) {
             stageLastClear[sId] = Date.now(); 
 
             if (isForgotten) {
-                baseGem = Math.floor(baseGem * 1.2);
-                msg += `💜 [기억 회복] 보너스 20%!\n`;
+                baseGem = Math.floor(baseGem * 1.1);
+                msg += `💜 [기억 회복] 보너스 10%!\n`;
             }
         }
         
@@ -6461,7 +6512,7 @@ stageClear = function(type) {
         let scoreType = (type === 'boss') ? 'boss' : (type === 'mid-boss' ? 'mid-boss' : 'normal');
         
         // 재도전 보너스가 자동으로 포함됨 (calculateScore 내부에서 보너스 소진)
-        const scoreResult = calculateScore(sId, scoreType, verseCnt, playerHearts);
+        const scoreResult = calculateScore(sId, scoreType, verseCnt, playerHearts, isForgotten);
         
         // ★ 월말 23시 이후 승점 차단 체크
         if (scoreResult.blocked) {
