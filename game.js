@@ -65,6 +65,7 @@ loadGameData = function() {
         purchasedMaxHearts = parsed.maxHearts || 5;
         myNickname = parsed.nickname || "순례자";
         myTribe = (parsed.tribe !== undefined) ? parsed.tribe : 0;
+        myDept = (parsed.dept !== undefined) ? parsed.dept : 0;
         myTag = parsed.tag || "0000";
         myPlayerId = parsed.playerId || "";
 
@@ -1024,6 +1025,18 @@ const TRIBE_DATA = [
     { id: 11, name: "도마", core: "#E09FFF", glow: "#7f1084", gem: "자정" }
 ];
 
+/* [시스템] 소속 부서 데이터 */
+const DEPT_DATA = [
+    { id: 0, name: "교역자", tag: "교" },
+    { id: 1, name: "장로회", tag: "로" },
+    { id: 2, name: "자문회", tag: "자" },
+    { id: 3, name: "장년회", tag: "장" },
+    { id: 4, name: "부녀회", tag: "부" },
+    { id: 5, name: "청년회", tag: "청" },
+    { id: 6, name: "학생회", tag: "학" },
+    { id: 7, name: "유년회", tag: "유" }
+];
+
 function hexToRgbString(hex) {
     if (!hex) return null;
     const normalized = hex.replace('#', '').trim();
@@ -1055,6 +1068,13 @@ function applyHomeThemeByTribe(tribeIdx) {
 
 // 현재 나의 지파 (기본값: 0)
 let myTribe = 0;
+// 현재 나의 부서 (기본값: 0)
+let myDept = 0;
+
+function getDeptTag(deptId) {
+    const dept = DEPT_DATA[deptId] || DEPT_DATA[0];
+    return `<span style="display:inline-block; margin:0 4px; padding:2px 6px; border-radius:6px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.25); font-size:0.8em; line-height:1;">[${dept.tag}]</span>`;
+}
 
 /* [수정] 지파 아이콘 HTML 생성기 (클릭 기능 추가) */
 function getTribeIcon(tribeIdx) {
@@ -3383,6 +3403,7 @@ function saveGameData() {
         // ★ 닉네임 / 지파 정보 추가
         nickname: myNickname,
         tribe: (typeof myTribe !== 'undefined') ? myTribe : 0,
+        dept: (typeof myDept !== 'undefined') ? myDept : 0,
         tag: myTag,
         playerId: myPlayerId,
         
@@ -6678,6 +6699,7 @@ function buyItem(itemType) {
         updateShopUI();
         saveGameData();
         updateResourceUI();
+        if (typeof updateNotificationBadges === 'function') updateNotificationBadges();
     }
 }
 
@@ -6748,6 +6770,8 @@ updateShopUI = function() {
         `;
         list.appendChild(div);
     });
+
+    if (typeof updateNotificationBadges === 'function') updateNotificationBadges();
 };
 
 // 3. 전투 중 아이템 사용 함수
@@ -7616,14 +7640,14 @@ function updateProfileUI() {
     if (display) {
         const tag = (typeof myTag !== 'undefined' && myTag) ? myTag : "0000";
         // ★ getTribeIcon 사용
-        display.innerHTML = `${getTribeIcon(myTribe)} ${myNickname} <span style="opacity:0.6; font-size:0.85em;">#${tag}</span>`;
+        display.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname} <span style="opacity:0.6; font-size:0.85em;">#${tag}</span>`;
     }
 
     // 2. 상단 작은 닉네임
     const subDisplay = document.getElementById('sub-profile-name');
     if (subDisplay) {
         // 지파 아이콘과 닉네임만 표시 (지파 이름 텍스트 제거)
-        subDisplay.innerHTML = `${getTribeIcon(myTribe)} ${myNickname}`;
+        subDisplay.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname}`;
     }
 
     applyHomeThemeByTribe(myTribe);
@@ -7730,6 +7754,7 @@ function openProfileSettings() {
     let tempName = (myNickname === "순례자") ? generateRandomNickname() : myNickname;
     window.tempNickname = tempName; 
     window.tempTribe = (typeof myTribe !== 'undefined') ? myTribe : 0; 
+    window.tempDept = (typeof myDept !== 'undefined') ? myDept : 0;
 
     const modal = document.createElement('div');
     modal.id = 'nickname-modal';
@@ -7763,19 +7788,39 @@ function openProfileSettings() {
     });
     tribeButtonsHtml += `</div>`;
 
+    let deptButtonsHtml = `<div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-bottom:20px;">`;
+
+    DEPT_DATA.forEach((d) => {
+        const isSelected = (d.id === window.tempDept) ?
+            `border:2px solid #f1c40f; transform:scale(1.03); background:#fff;` :
+            `border:1px solid #bdc3c7; opacity:0.85; background:#f9f9f9;`;
+
+        deptButtonsHtml += `
+            <div id="dept-btn-${d.id}" onclick="selectDept(${d.id})"
+                 style="border-radius:12px; padding:10px 5px; cursor:pointer; text-align:center; transition:all 0.2s; ${isSelected} box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                <div style="font-size:1rem; font-weight:bold; color:#2c3e50;">[${d.tag}]</div>
+                <div style="font-size:0.75rem; color:#7f8c8d; font-weight:bold; white-space:nowrap;">${d.name}</div>
+            </div>
+        `;
+    });
+    deptButtonsHtml += `</div>`;
+
     modal.innerHTML = `
         <div class="result-card" style="max-width:340px; background:#fff; color:#2c3e50; text-align:center; max-height:85vh; overflow-y:auto;">
             <h2 style="color:#2c3e50; margin:0 0 5px 0;">순례자 등록</h2>
-            <p style="color:#7f8c8d; font-size:0.85rem; margin-bottom:15px;">이름과 소속 지파를 선택하세요.</p>
+            <p style="color:#7f8c8d; font-size:0.85rem; margin-bottom:15px;">이름과 소속 부서/지파를 선택하세요.</p>
             
             <div style="background:#f4f6f7; padding:15px; border-radius:15px; margin-bottom:15px; border:1px solid #ecf0f1;">
                 <div id="preview-full" style="font-size: 1.3rem; font-weight: bold; color: #2c3e50; margin-bottom:10px; background:#2c3e50; padding:10px; border-radius:10px; color:white;">
-                    ${getTribeIcon(window.tempTribe)} ${tempName}
+                    ${getTribeIcon(window.tempTribe)}${getDeptTag(window.tempDept)} ${tempName}
                 </div>
                 <button onclick="refreshNickname()" style="background:white; border:1px solid #bdc3c7; color:#7f8c8d; padding:6px 15px; border-radius:20px; font-weight:bold; cursor:pointer; font-size:0.8rem;">
                     🎲 이름 랜덤 변경
                 </button>
             </div>
+
+            <div style="text-align:left; font-size:0.9rem; font-weight:bold; color:#7f8c8d; margin-bottom:10px; margin-left:5px;">소속 부서 선택</div>
+            ${deptButtonsHtml}
 
             <div style="text-align:left; font-size:0.9rem; font-weight:bold; color:#7f8c8d; margin-bottom:10px; margin-left:5px;">소속 지파 선택</div>
             ${tribeButtonsHtml}
@@ -7813,6 +7858,29 @@ function selectTribe(id) {
     updatePreviewText();
 }
 
+/* [기능] 부서 선택 처리 (선택 시 UI 갱신) */
+function selectDept(id) {
+    window.tempDept = id;
+
+    DEPT_DATA.forEach(d => {
+        const btn = document.getElementById(`dept-btn-${d.id}`);
+        if (!btn) return;
+        if (d.id === id) {
+            btn.style.border = "2px solid #f1c40f";
+            btn.style.transform = "scale(1.03)";
+            btn.style.background = "#fff";
+            btn.style.opacity = "1";
+        } else {
+            btn.style.border = "1px solid #bdc3c7";
+            btn.style.transform = "scale(1)";
+            btn.style.background = "#f9f9f9";
+            btn.style.opacity = "0.85";
+        }
+    });
+
+    updatePreviewText();
+}
+
 /* [기능] 이름 랜덤 변경 */
 function refreshNickname() {
     window.tempNickname = generateRandomNickname();
@@ -7823,7 +7891,7 @@ function refreshNickname() {
 function updatePreviewText() {
     const preview = document.getElementById('preview-full');
     if (preview) {
-        preview.innerHTML = `${getTribeIcon(window.tempTribe)} ${window.tempNickname}`;
+        preview.innerHTML = `${getTribeIcon(window.tempTribe)}${getDeptTag(window.tempDept)} ${window.tempNickname}`;
     }
 }
 
@@ -7831,6 +7899,7 @@ function updatePreviewText() {
 function confirmProfile() {
     if (window.tempNickname) myNickname = window.tempNickname;
     if (window.tempTribe !== undefined) myTribe = window.tempTribe;
+    if (window.tempDept !== undefined) myDept = window.tempDept;
     
     // 저장 및 갱신
     saveGameData();
@@ -8369,6 +8438,14 @@ function updateNotificationBadges() {
         if (hasMissionReward) misBadge.classList.add('active');
         else misBadge.classList.remove('active');
     }
+
+    // 3. 상점 알림 체크 (일일 무료 생명의 떡)
+    const shopBadge = document.getElementById('badge-shop');
+    if (shopBadge) {
+        const hasFreeLifeBread = (typeof isLifeBreadFreeAvailable === 'function') && isLifeBreadFreeAvailable();
+        if (hasFreeLifeBread) shopBadge.classList.add('active');
+        else shopBadge.classList.remove('active');
+    }
 }
 
 /* [기능] 보스 타격 연출 함수 (흔들림 + 데미지 숫자) */
@@ -8540,6 +8617,7 @@ function openStageSheetForStageId(stageId) {
 /* =========================================
    [서버 연동] 파이어베이스 점수 저장 및 시온성 심사
    ========================================= */
+let lastScorePayloadKey = null;
 function saveMyScoreToServer() {
     // 1. 파이어베이스가 없으면 중단 (안전장치)
     if (typeof db === 'undefined' || !db || !myPlayerId) return;
@@ -8548,17 +8626,37 @@ function saveMyScoreToServer() {
 
     const currentWeekId = leagueData.weekId || getWeekId();
     const currentScore = leagueData.myScore || 0;
-
-    db.collection("leaderboard").doc(myPlayerId).set({
+    const payload = {
         nickname: myNickname,
         score: currentScore,
         castleLv: myCastleLevel,
         tribe: myTribe,
         tag: myTag,
-        weekId: currentWeekId, // 주간 랭킹용 ID
+        weekId: currentWeekId
+    };
+
+    if (typeof lastScorePayloadKey === 'undefined' || lastScorePayloadKey === null) {
+        try {
+            lastScorePayloadKey = localStorage.getItem("kingsroad_last_score_payload") || "";
+        } catch (e) {
+            lastScorePayloadKey = "";
+        }
+    }
+
+    const nextKey = JSON.stringify(payload);
+    if (nextKey === lastScorePayloadKey) return;
+
+    db.collection("leaderboard").doc(myPlayerId).set({
+        ...payload,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true })
     .then(() => {
+        lastScorePayloadKey = nextKey;
+        try {
+            localStorage.setItem("kingsroad_last_score_payload", nextKey);
+        } catch (e) {
+            // Ignore storage errors.
+        }
         console.log(`✅ 서버 저장 완료: ${currentScore}점 (${currentWeekId})`);
     })
     .catch((error) => {
