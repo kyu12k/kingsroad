@@ -74,6 +74,7 @@ async function updateWeeklyCountsImpl() {
                         name: row.nickname || "이름없음",
                         score: row.score || 0,
                         tribe: row.tribe,
+                        dept: row.dept,
                         tag: row.tag || "",
                         castle: row.castleLv || 0
                     };
@@ -109,6 +110,7 @@ async function updateWeeklyCountsImpl() {
             name: row.nickname || "이름없음",
             score: row.score || 0,
             tribe: row.tribe,
+            dept: row.dept,
             tag: row.tag || "",
             castle: row.castleLv || 0
         };
@@ -264,6 +266,7 @@ exports.archiveMonthlyRankings = functions.pubsub
                     name: row.nickname || "이름없음",
                     score: row.myMonthlyScore || 0,
                     tribe: row.tribe,
+                    dept: row.dept,
                     tag: row.tag || "",
                     castle: row.castleLv || 0
                 };

@@ -1072,6 +1072,7 @@ let myTribe = 0;
 let myDept = 0;
 
 function getDeptTag(deptId) {
+    if (deptId === null || typeof deptId === 'undefined') return "";
     const dept = DEPT_DATA[deptId] || DEPT_DATA[0];
     return `<span style="display:inline-block; margin:0 4px; padding:2px 6px; border-radius:6px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.25); font-size:0.8em; line-height:1;">[${dept.tag}]</span>`;
 }
@@ -5647,6 +5648,7 @@ function loadTribeLeaderboard(tribeId, callback) {
                     name: row.name || "이름없음",
                     score: row.score || 0,
                     tribe: row.tribe !== undefined ? row.tribe : tribeId,
+                    dept: row.dept !== undefined ? row.dept : 0,
                     tag: row.tag || "",
                     castle: row.castle || 0,
                     isMe: false  // ⚠️ Snapshot에는 myPlayerId 정보가 없으므로 false로 설정
@@ -5704,6 +5706,7 @@ function loadZionLeaderboard(callback) {
                     name: row.name || "이름없음",
                     score: row.score || 0,
                     tribe: row.tribe !== undefined ? row.tribe : 0,
+                    dept: row.dept !== undefined ? row.dept : 0,
                     tag: row.tag || "",
                     castle: row.castle || 0,
                     isMe: false  // ⚠️ Snapshot에는 myPlayerId 정보가 없으므로 false로 설정
@@ -5996,7 +5999,7 @@ function renderHallOfFameList(data, title) {
                     ${medalText}
                 </div>
                 <div style="font-size:1.2rem; font-weight:bold; color:white; margin-bottom:5px;">
-                    ${getTribeIcon(user.tribe || 0)} ${user.name}
+                    ${getTribeIcon(user.tribe || 0)}${getDeptTag(user.dept)} ${user.name}
                 </div>
                 <div style="font-size:1rem; color:${trophyColor}; font-weight:bold;">
                     ${user.score.toLocaleString()} 점
@@ -6017,7 +6020,7 @@ function renderHallOfFameList(data, title) {
                     ${rank <= 10 ? '⭐' : ''}${rank}
                 </div>
                 <div style="flex:1; margin-left:10px;">
-                    ${getTribeIcon(user.tribe || 0)} ${user.name}
+                    ${getTribeIcon(user.tribe || 0)}${getDeptTag(user.dept)} ${user.name}
                 </div>
                 <div style="font-weight:bold; color:#ecf0f1;">${user.score.toLocaleString()}</div>
             `;
@@ -6078,7 +6081,7 @@ function renderRankingList(data) {
             <div style="flex:1;">
                 <div style="display:flex; align-items:center; margin-bottom:4px;">
                     <span style="font-weight:bold; font-size:1.05rem; display:flex; align-items:center; color:#fff;">
-                        ${getTribeIcon(userTribe)} ${user.name}
+                        ${getTribeIcon(userTribe)}${getDeptTag(user.dept)} ${user.name}
                     </span>
                     ${mode === 'zion' ? `<span style="font-size:0.75rem; color:#bdc3c7; margin-left:6px;">(${TRIBE_DATA[userTribe] ? TRIBE_DATA[userTribe].name : '지파'})</span>` : ''}
                 </div>
@@ -6154,7 +6157,7 @@ function updateStickyMyRank(amIInTop100) {
         <div style="flex:1;">
             <div style="display:flex; align-items:center; margin-bottom:3px;">
                 <span style="font-weight:bold; font-size:1rem; color:white;">
-                    ${getTribeIcon(myTribeIdx)} ${myNickname}
+                    ${getTribeIcon(myTribeIdx)}${getDeptTag(myDept)} ${myNickname}
                 </span>
             </div>
             <div style="font-size:0.8rem; color:#bdc3c7;">
@@ -8631,6 +8634,7 @@ function saveMyScoreToServer() {
         score: currentScore,
         castleLv: myCastleLevel,
         tribe: myTribe,
+        dept: myDept,
         tag: myTag,
         weekId: currentWeekId
     };
