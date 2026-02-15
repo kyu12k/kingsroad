@@ -3,6 +3,10 @@
             --primary-color: #f1c40f; 
             --bg-dark: #2c3e50;       
             --text-light: #ecf0f1;
+            --home-accent-rgb: 241, 196, 15;
+            --home-accent-strong-rgb: 52, 152, 219;
+            --home-btn-a-rgb: 241, 196, 15;
+            --home-btn-b-rgb: 52, 152, 219;
         }
 
         /* [수정] body, html 스타일 (스크롤 잠금 해제) */
@@ -42,14 +46,48 @@ body, html {
 
         /* [3. 홈 화면 스타일 & 성전 건축] */
         #home-screen {
-            background: url('icon.png') center/cover no-repeat;
+            background: radial-gradient(1600px circle at 20% 10%, rgba(var(--home-accent-strong-rgb), 0.45) 0%, #1b2438 55%, #0f141f 100%);
             text-align: center; padding: 20px;
             box-sizing: border-box;
             overflow-y: auto;
             justify-content: flex-start;
+            position: relative;
+            isolation: isolate;
         }
-        .game-title { font-size: 3rem; font-weight: bold; color: var(--primary-color); text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-        .game-subtitle { font-size: 1rem; opacity: 0.9; margin-bottom: 40px; font-style: italic; }
+        #home-screen::before {
+            content: "";
+            position: absolute;
+            inset: -30% -10% auto -10%;
+            height: 70%;
+            background: radial-gradient(closest-side at 30% 40%, rgba(var(--home-accent-rgb), 0.2), rgba(var(--home-accent-rgb), 0) 70%),
+                        radial-gradient(closest-side at 75% 20%, rgba(var(--home-accent-strong-rgb), 0.35), rgba(var(--home-accent-strong-rgb), 0) 75%);
+            filter: blur(10px);
+            z-index: 0;
+        }
+        #home-screen::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(15, 20, 31, 0.15) 0%, rgba(15, 20, 31, 0.65) 60%, rgba(15, 20, 31, 0.85) 100%);
+            z-index: 0;
+        }
+        #home-screen > * {
+            position: relative;
+            z-index: 1;
+        }
+        #home-screen > div:first-of-type {
+            background: rgba(15, 20, 31, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 18px 22px;
+            border-radius: 18px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(6px);
+        }
+        #castle-display {
+            margin-top: 6px;
+        }
+        .game-title { font-size: 3rem; font-weight: bold; color: var(--primary-color); text-shadow: 0 6px 18px rgba(0,0,0,0.6); letter-spacing: 1px; }
+        .game-subtitle { font-size: 1rem; opacity: 0.95; margin-bottom: 0; font-style: italic; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
         
         /* 성전 건축 단계별 스타일 */
         .castle-area {
@@ -1402,8 +1440,8 @@ body, html {
     border: none !important;
     border-radius: 30px !important;
     
-    /* 파란색 그라데이션 배경 */
-    background: linear-gradient(135deg, #1d2088 0%, #3d4aad 50%, #5865d8 100%) !important;
+    /* 지파 색상 기반 배경 */
+    background: linear-gradient(135deg, rgba(var(--home-btn-a-rgb), 0.95) 0%, rgba(var(--home-btn-b-rgb), 0.95) 100%) !important;
     color: #fff !important;
     
     /* 검은색 그림자 적용 */
@@ -1416,7 +1454,7 @@ body, html {
 #start-journey-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6) !important;
-    background: linear-gradient(135deg, #252a9e 0%, #4a56c2 50%, #6b78e8 100%) !important;
+    background: linear-gradient(135deg, rgba(var(--home-btn-a-rgb), 1) 0%, rgba(var(--home-btn-b-rgb), 1) 100%) !important;
 }
 
 /* 버튼 눌렀을 때 효과 */
@@ -1868,7 +1906,7 @@ body, html {
 
 /* 여정 시작 버튼 */
 .btn-main-action {
-    background: linear-gradient(135deg, #1d2088 0%, #3d4aad 50%, #5865d8 100%);
+    background: linear-gradient(135deg, rgba(var(--home-btn-a-rgb), 0.95) 0%, rgba(var(--home-btn-b-rgb), 0.95) 100%);
     color: white;
     font-size: 1.3rem;
     font-weight: bold;
@@ -1884,7 +1922,7 @@ body, html {
 .btn-main-action:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
-    background: linear-gradient(135deg, #252a9e 0%, #4a56c2 50%, #6b78e8 100%);
+    background: linear-gradient(135deg, rgba(var(--home-btn-a-rgb), 1) 0%, rgba(var(--home-btn-b-rgb), 1) 100%);
 }
 
 .btn-main-action:active {

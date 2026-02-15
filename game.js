@@ -164,10 +164,124 @@ var userStats = {
     totalVersesCleared: 0,  // 누적 구절 클리어
     totalBossKilled: 0,     // 보스/중간점검 처치
     totalGemsEarned: 0,     // 누적 획득 보석
+    totalScoreEarned: 0,    // 누적 획득 승점
     totalPerfects: 0,       // 퍼펙트 횟수
     maxCastleLevel: 0,      // 성전 최고 레벨
-    earlyBirdCounts: 0      // 새벽 암송 횟수
+    earlyBirdCounts: 0,     // 새벽 암송 횟수
+    accountCreatedAt: 0,    // 계정 생성 시각 (timestamp)
+    totalPlaySeconds: 0,    // 누적 플레이타임 (초)
+    dailyPlaySeconds: {}    // 일별 플레이타임 (YYYY-MM-DD: seconds)
 };
+
+let playSessionStart = null;
+
+function ensurePlaytimeStats() {
+    if (!userStats.accountCreatedAt) userStats.accountCreatedAt = Date.now();
+    if (typeof userStats.totalPlaySeconds !== 'number') userStats.totalPlaySeconds = 0;
+    if (!userStats.dailyPlaySeconds || typeof userStats.dailyPlaySeconds !== 'object') userStats.dailyPlaySeconds = {};
+    if (typeof userStats.totalScoreEarned !== 'number') userStats.totalScoreEarned = 0;
+}
+
+function getDateKey(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function addPlaytimeRange(startMs, endMs) {
+    if (!startMs || !endMs || endMs <= startMs) return;
+    let cursor = startMs;
+    while (cursor < endMs) {
+        const currentDate = new Date(cursor);
+        const nextDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1);
+        const chunkEnd = Math.min(endMs, nextDay.getTime());
+        const seconds = Math.floor((chunkEnd - cursor) / 1000);
+        const key = getDateKey(currentDate);
+        userStats.dailyPlaySeconds[key] = (userStats.dailyPlaySeconds[key] || 0) + seconds;
+        userStats.totalPlaySeconds += seconds;
+        cursor = chunkEnd;
+    }
+}
+
+function startPlaySession() {
+    if (playSessionStart) return;
+    playSessionStart = Date.now();
+}
+
+function stopPlaySession() {
+    if (!playSessionStart) return;
+    const end = Date.now();
+    addPlaytimeRange(playSessionStart, end);
+    playSessionStart = null;
+    saveGameData();
+}
+
+function formatDuration(totalSeconds) {
+    if (!totalSeconds || totalSeconds <= 0) return "0m";
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+}
+
+function getStageClearCounts() {
+    let normal = 0;
+    let bossMid = 0;
+    const keys = Object.keys(stageMastery || {});
+    keys.forEach((id) => {
+        if (!stageMastery[id]) return;
+        if (id.includes('boss') || id.includes('mid')) {
+            bossMid += 1;
+            return;
+        }
+        if (/^\d+-\d+$/.test(id)) normal += 1;
+    });
+    return { normal, bossMid };
+}
+
+function getTotalMemoryLevel() {
+    let total = 0;
+    Object.keys(stageMemoryLevels || {}).forEach((id) => {
+        if (id.includes('boss')) return;
+        const value = stageMemoryLevels[id] || 0;
+        total += value;
+    });
+    return total;
+}
+
+function getAverageDailySecondsLast7Days() {
+    if (!userStats.accountCreatedAt) return 0;
+    const today = new Date();
+    const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+    const startWindow = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7);
+    const startDate = new Date(userStats.accountCreatedAt);
+    const startDay = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+    const start = startDay > startWindow ? startDay : startWindow;
+    if (yesterday < start) return 0;
+
+    let total = 0;
+    const dayCount = Math.floor((yesterday - start) / 86400000) + 1;
+    const daily = userStats.dailyPlaySeconds || {};
+    Object.keys(daily).forEach((key) => {
+        if (key >= getDateKey(start) && key <= getDateKey(yesterday)) {
+            total += daily[key];
+        }
+    });
+
+    return dayCount > 0 ? Math.floor(total / dayCount) : 0;
+}
+
+function getTotalPlaySecondsNow() {
+    const base = (userStats && typeof userStats.totalPlaySeconds === 'number') ? userStats.totalPlaySeconds : 0;
+    if (playSessionStart) {
+        const extra = Math.floor((Date.now() - playSessionStart) / 1000);
+        return base + Math.max(0, extra);
+    }
+    return base;
+}
 
 /* [시스템] 통계 업데이트 매니저 (업적 감지 기능 추가됨) */
 function updateStats(type, value = 1) {
@@ -909,6 +1023,35 @@ const TRIBE_DATA = [
     { id: 10, name: "서울야고보", core: "#78BEFF", glow: "#005dac", gem: "청옥" },
     { id: 11, name: "도마", core: "#E09FFF", glow: "#7f1084", gem: "자정" }
 ];
+
+function hexToRgbString(hex) {
+    if (!hex) return null;
+    const normalized = hex.replace('#', '').trim();
+    if (normalized.length === 3) {
+        const r = parseInt(normalized[0] + normalized[0], 16);
+        const g = parseInt(normalized[1] + normalized[1], 16);
+        const b = parseInt(normalized[2] + normalized[2], 16);
+        return `${r}, ${g}, ${b}`;
+    }
+    if (normalized.length === 6) {
+        const r = parseInt(normalized.slice(0, 2), 16);
+        const g = parseInt(normalized.slice(2, 4), 16);
+        const b = parseInt(normalized.slice(4, 6), 16);
+        return `${r}, ${g}, ${b}`;
+    }
+    return null;
+}
+
+function applyHomeThemeByTribe(tribeIdx) {
+    const tribe = TRIBE_DATA[tribeIdx] || TRIBE_DATA[0];
+    const root = document.documentElement;
+    const accent = hexToRgbString(tribe.core);
+    const strong = hexToRgbString(tribe.glow);
+    if (accent) root.style.setProperty('--home-accent-rgb', accent);
+    if (strong) root.style.setProperty('--home-accent-strong-rgb', strong);
+    if (accent) root.style.setProperty('--home-btn-a-rgb', accent);
+    if (strong) root.style.setProperty('--home-btn-b-rgb', strong);
+}
 
 // 현재 나의 지파 (기본값: 0)
 let myTribe = 0;
@@ -5006,33 +5149,6 @@ function checkDailyReward() {
     }
 }
 
-/* [시스템] 데이터 초기화 (좀비 데이터 부활 방지 패치) */
-function resetGameData() {
-    if(confirm("모든 데이터를 삭제하고 처음부터 시작하시겠습니까?\n(되돌릴 수 없습니다)")) {
-        
-        // 1. ★ 핵심: 리셋 중임을 표시하여 자동 저장을 일시 중단
-        window.isResetting = true;
-        
-        // 2. 메인 데이터 삭제
-        localStorage.removeItem('kingsRoadSave'); 
-        
-        // 3. 서브 데이터들도 꼼꼼하게 삭제 (통계, 설정, 이어하기 등)
-        localStorage.removeItem('kingsroad_last_login_date'); // 생명의 떡 기록
-        localStorage.removeItem('kingsRoad_stats');           // 누적 통계
-        localStorage.removeItem('kingsRoad_checkpoint');      // 보스전 이어하기
-        localStorage.removeItem('lastPlayedDate');            // 출석 날짜
-        localStorage.removeItem('streakDays');                // 연속 출석일
-        
-        // (선택) 설정값도 초기화하고 싶다면 아래 주석 해제
-        // localStorage.removeItem('setting_bgm_on');
-        // localStorage.removeItem('setting_sfx_mute');
-        
-        // 4. 알림 후 새로고침
-        alert("모든 데이터가 초기화되었습니다.\n새로운 마음으로 시작합니다!");
-        location.reload();
-    }
-}
-
 /* =========================================
    [시스템: 천국 침노 랭킹전 (Kingdom League) & XP 시스템]
    ========================================= */
@@ -5103,6 +5219,9 @@ function calculateScore(stageId, type, verseCount, hearts) {
 
     leagueData.myScore += finalScore;
     leagueData.myMonthlyScore += finalScore; // ✨ 월간 누적도 추가
+    if (typeof userStats !== 'undefined') {
+        userStats.totalScoreEarned = (userStats.totalScoreEarned || 0) + finalScore;
+    }
     saveGameData();
 
     return { 
@@ -5331,6 +5450,32 @@ function getCurrentRankingCutoff() {
     return (weeklyRankCounts.cutoffTribes && weeklyRankCounts.cutoffTribes[tribeKey]) || 0;
 }
 
+function updateMyScorePanel() {
+    const weeklyEl = document.getElementById('my-weekly-score');
+    const monthlyEl = document.getElementById('my-monthly-score');
+    const weekIdEl = document.getElementById('my-week-id');
+    const monthIdEl = document.getElementById('my-month-id');
+    if (!weeklyEl || !monthlyEl || !weekIdEl || !monthIdEl) return;
+
+    const weekly = (leagueData && typeof leagueData.myScore === 'number') ? leagueData.myScore : 0;
+    const monthly = (leagueData && typeof leagueData.myMonthlyScore === 'number') ? leagueData.myMonthlyScore : 0;
+    const weekId = (leagueData && leagueData.weekId) ? leagueData.weekId : getWeekId();
+    const monthId = (leagueData && leagueData.monthId) ? leagueData.monthId : getMonthId();
+
+    weeklyEl.textContent = weekly.toLocaleString();
+    monthlyEl.textContent = monthly.toLocaleString();
+    weekIdEl.textContent = weekId;
+    monthIdEl.textContent = monthId;
+}
+
+function toggleMyScorePanel() {
+    const panel = document.getElementById('my-score-panel');
+    if (!panel) return;
+    const isOpen = panel.style.display === 'block';
+    panel.style.display = isOpen ? 'none' : 'block';
+    if (!isOpen) updateMyScorePanel();
+}
+
 /* [수정] 랭킹 화면 열기 */
 function openRankingScreen() {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -5352,6 +5497,24 @@ function openRankingScreen() {
         <button onclick="scrollToMyRank()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #ecf0f1; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 5px; margin: 0 auto;">
             📍 내 순위 찾기
         </button>
+
+        <button onclick="toggleMyScorePanel()" style="background: rgba(241,196,15,0.15); border: 1px solid rgba(241,196,15,0.4); color: #f1c40f; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; margin: 10px auto 0;">
+            📊 나의 주간·월간 승점
+        </button>
+        <div id="my-score-panel" style="display:none; margin:8px auto 0; width:90%; max-width:320px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; color:#ecf0f1; font-size:0.85rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                <span>주간 승점</span>
+                <span style="font-weight:bold; color:#f1c40f;"><span id="my-weekly-score">0</span> pts</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                <span>월간 승점</span>
+                <span style="font-weight:bold; color:#f1c40f;"><span id="my-monthly-score">0</span> pts</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#95a5a6;">
+                <span>주차: <span id="my-week-id">-</span></span>
+                <span>월: <span id="my-month-id">-</span></span>
+            </div>
+        </div>
     </div>
 
     <div style="display:grid; grid-template-columns: 1fr 1fr; padding:10px; gap:5px;">
@@ -5391,6 +5554,7 @@ function openRankingScreen() {
     switchRankingTab('tribe'); // 기본 탭 열기
     startSeasonTimer();
     loadWeeklyRankCounts();
+    updateMyScorePanel();
     // 백버튼 가시성 갱신 (랭킹 화면에서는 보여야 함)
     if (typeof updateBackButtonVisibility === 'function') updateBackButtonVisibility();
 }
@@ -6918,7 +7082,7 @@ function updateCastleView() {
             <button class="castle-nav-btn" ${prevDisabled} onclick="changeViewLevel(-1)">‹</button>
 
             <div style="text-align:center;">
-                <div style="font-size: 1.2rem; font-weight: bold; color: ${isPast ? '#bdc3c7' : '#f1c40f'}; margin-bottom:5px; transition:color 0.3s;">
+                <div style="font-size: 1.2rem; font-weight: bold; color: ${isPast ? '#bdc3c7' : '#f1c40f'}; margin-top:3px; margin-bottom:2.5px; transition:color 0.3s;">
                     Lv.${viewBP.level} ${viewBP.name}
                 </div>
 
@@ -6932,11 +7096,11 @@ function updateCastleView() {
             <button class="castle-nav-btn" ${nextDisabled} onclick="changeViewLevel(1)">›</button>
         </div>
 
-        <div style="font-size: 0.85rem; color: #bdc3c7; margin-top: 10px; margin-bottom: 5px; font-style: italic; min-height:3em;">
+        <div style="font-size: 0.85rem; color: #bdc3c7; margin-top: 3px; margin-bottom: 3px; font-style: italic; min-height:3em;">
             "${viewBP.desc}"
         </div>
 
-        <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-top:5px; width:95%; max-width:320px; margin-left:auto; margin-right:auto;">
+        <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-top:1px; width:95%; max-width:320px; margin-left:auto; margin-right:auto;">
             ${leftBtnHTML}
 
             <div style="flex:1; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(255,255,255,0.1); height:50px; display:flex; flex-direction:column; justify-content:center; align-items:center;">
@@ -7537,6 +7701,8 @@ function updateProfileUI() {
         // 지파 아이콘과 닉네임만 표시 (지파 이름 텍스트 제거)
         subDisplay.innerHTML = `${getTribeIcon(myTribe)} ${myNickname}`;
     }
+
+    applyHomeThemeByTribe(myTribe);
 }
 
 /* [수정] 자원 UI 업데이트 (updateGemDisplay로 통합) */
@@ -7800,6 +7966,16 @@ window.onload = function() {
     if(typeof updateResourceUI === 'function') updateResourceUI();
     if(typeof updateProfileUI === 'function') updateProfileUI();
     if(typeof updateCastleView === 'function') updateCastleView();
+    ensurePlaytimeStats();
+    startPlaySession();
+    if (!window.playtimeTrackingInitialized) {
+        window.playtimeTrackingInitialized = true;
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) stopPlaySession();
+            else startPlaySession();
+        });
+        window.addEventListener('beforeunload', stopPlaySession);
+    }
 
     console.log("✅ 게임 로딩 완료!");
 
@@ -8050,6 +8226,9 @@ function openAchievement() {
                 당신의 여정이 이곳에 기록됩니다.
             </div>
 
+            <div id="record-summary" style="padding:15px; flex-shrink:0;">
+            </div>
+
             <div id="achievement-list" style="flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 80px;">
                 </div>
 
@@ -8061,6 +8240,7 @@ function openAchievement() {
     }
 
     screen.classList.add('active'); // 여기서 CSS가 display: flex를 적용해줍니다.
+    renderMyPlayRecord();
     renderAchievementList(); // 목록 그리기
     // 백버튼 가시성 갱신 (기록실 화면에서는 보여야 함)
     if (typeof updateBackButtonVisibility === 'function') updateBackButtonVisibility();
@@ -8460,4 +8640,49 @@ function saveMyScoreToServer() {
     .catch((error) => {
         console.error("❌ 점수 저장 실패:", error);
     });
+}
+
+function renderMyPlayRecord() {
+    const summary = document.getElementById('record-summary');
+    if (!summary) return;
+    ensurePlaytimeStats();
+
+    const totalPlaySeconds = getTotalPlaySecondsNow();
+    const avgDailySeconds = getAverageDailySecondsLast7Days();
+    const counts = getStageClearCounts();
+    const totalMemoryLevel = getTotalMemoryLevel();
+    const gems = (userStats && typeof userStats.totalGemsEarned === 'number') ? userStats.totalGemsEarned : 0;
+    const score = (userStats && typeof userStats.totalScoreEarned === 'number') ? userStats.totalScoreEarned : 0;
+
+    const tile = (icon, label, value, accent) => `
+        <div style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px; color:#ecf0f1; font-size:0.85rem; box-shadow:0 6px 12px rgba(0,0,0,0.2);">
+            <div style="display:flex; align-items:center; gap:6px; color:#95a5a6; font-size:0.75rem; margin-bottom:4px;">
+                <span>${icon}</span><span>${label}</span>
+            </div>
+            <div style="font-weight:bold; font-size:1rem; color:${accent};">${value}</div>
+        </div>
+    `;
+
+    summary.innerHTML = `
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+            <div style="background:rgba(241,196,15,0.15); border:1px solid rgba(241,196,15,0.4); color:#f1c40f; padding:6px 10px; border-radius:999px; font-size:0.8rem; font-weight:bold;">
+                🧭 누적 승점 ${score.toLocaleString()} pts
+            </div>
+            <div style="background:rgba(52,152,219,0.15); border:1px solid rgba(52,152,219,0.4); color:#7fbdf0; padding:6px 10px; border-radius:999px; font-size:0.8rem; font-weight:bold;">
+                💎 누적 보석 ${gems.toLocaleString()}개
+            </div>
+            <div style="background:rgba(46,204,113,0.15); border:1px solid rgba(46,204,113,0.4); color:#2ecc71; padding:6px 10px; border-radius:999px; font-size:0.8rem; font-weight:bold;">
+                ⏱️ 누적 플레이타임 ${formatDuration(totalPlaySeconds)}
+            </div>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:10px;">
+            ${tile("⏱️", "플레이타임(누적)", formatDuration(totalPlaySeconds), "#f1c40f")}
+            ${tile("📆", "최근 7일 평균", formatDuration(avgDailySeconds), "#7fbdf0")}
+            ${tile("📖", "일반 스테이지 클리어", `${counts.normal}개`, "#ecf0f1")}
+            ${tile("🐲", "중간/보스 클리어", `${counts.bossMid}개`, "#ecf0f1")}
+            ${tile("💎", "누적 획득 보석", `${gems.toLocaleString()}개`, "#7fbdf0")}
+            ${tile("🏅", "누적 획득 승점", `${score.toLocaleString()} pts`, "#f1c40f")}
+            ${tile("💜", "총 기억레벨 합계", `${totalMemoryLevel} Lv`, "#b487ff")}
+        </div>
+    `;
 }
