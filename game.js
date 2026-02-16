@@ -5281,7 +5281,11 @@ function calculateScore(stageId, type, verseCount, hearts, isForgotten) {
     }
     
     if (isForgotten) {
-        baseScore = baseScore * 1.1;
+        // (기억레벨+1) × 10% 보너스 적용 (최소 10%, Lv4이상 50%)
+        const memStatus = checkMemoryStatus(stageId);
+        let bonusPercent = ((memStatus.level + 1) * 0.1);
+        if (bonusPercent > 0.5) bonusPercent = 0.5; // 50% cap
+        baseScore = baseScore * (1 + bonusPercent);
     }
 
     // ... (이하 부스터 적용 및 저장 로직 그대로 유지) ...
@@ -5564,7 +5568,7 @@ function openRankingScreen() {
     <div class="map-header" style="flex-direction:column; justify-content:center; border-bottom:1px solid rgba(255,255,255,0.1); padding:15px 0;">
         <div style="font-weight:bold; font-size:1.2rem; color:white; margin-bottom:5px;">🏆 지파 랭킹 (Top 100)</div>
         <div id="season-timer-display" style="font-size:0.85rem; color:#bdc3c7; font-family:monospace; margin-bottom:10px;">⏳ 시간 계산 중...</div>
-        <div style="font-size:0.8rem; color:#95a5a6; margin-bottom:10px;">🔄 정오(12:00) · 저녁 6시(18:00)에 업데이트됩니다</div>
+        <div style="font-size:0.8rem; color:#95a5a6; margin-bottom:10px;">🔄 06시, 정오(12:00) · 18시, 자정(00:00)에 업데이트됩니다</div>
         
         <button onclick="scrollToMyRank()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #ecf0f1; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 5px; margin: 0 auto;">
             📍 내 순위 찾기
@@ -6493,8 +6497,11 @@ stageClear = function(type) {
             stageLastClear[sId] = Date.now(); 
 
             if (isForgotten) {
-                baseGem = Math.floor(baseGem * 1.1);
-                msg += `💜 [기억 회복] 보너스 10%!\n`;
+                // (기억레벨+1) × 10% 보너스 적용 (최소 10%, Lv4이상 50%)
+                let bonusPercent = ((prevLevel + 1) * 0.1);
+                if (bonusPercent > 0.5) bonusPercent = 0.5; // 50% cap
+                baseGem = Math.floor(baseGem * (1 + bonusPercent));
+                msg += `💜 [기억 회복] 보너스 +${Math.round(bonusPercent*100)}%! (Lv.${prevLevel})\n`;
             }
         }
         
@@ -8006,6 +8013,7 @@ window.onload = function() {
 
     // 1. 저장된 데이터 불러오기 (가장 중요)
     loadGameData(); 
+    checkMissions(); // [추가] 게임 시작 시 미션 초기화 체크
     updateStats('login');
     updateNotificationBadges();
 
