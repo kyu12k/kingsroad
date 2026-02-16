@@ -6327,18 +6327,19 @@ function checkDailyLogin() {
 
     // 4. 일일 출석 체크
     if (lastDate !== today) {
-        missionData.weekly.attendance++;
-        if (missionData.weekly.attendance > 7) missionData.weekly.attendance = 7;
-        
+        // 주간 출석 체크는 반드시 updateWeeklyAttendance로 통일
+        const currentWeekId = getWeekId();
+        updateWeeklyAttendance(today, currentWeekId);
+
         // ★ 일일 미션 초기화
         missionData.daily.newClear = 0;
         missionData.daily.differentStages = 0;
         missionData.daily.checkpointBoss = 0;
         missionData.daily.claimed = [false, false, false];
-        
+
         localStorage.setItem('lastPlayedDate', today);
         saveGameData();
-        
+
         // (선택) 출석 알림 대신 생명의 떡 알림이 뜨므로 여기선 조용히 넘어감
     }
 }

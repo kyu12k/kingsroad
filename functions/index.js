@@ -149,7 +149,7 @@ async function updateWeeklyCountsImpl() {
  * 각 지파별 Top100과 Zion Top100을 ranking_snapshots에 저장 (클라이언트 읽기 용)
  */
 exports.updateWeeklyCounts = functions.pubsub
-    .schedule('0 12,18 * * *') // 정오 + 저녁 6시
+    .schedule('0 0,6,12,18 * * *') // 자정, 06시, 정오, 18시
     .timeZone('Asia/Seoul')
     .onRun(async () => {
         try {
