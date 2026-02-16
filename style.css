@@ -614,8 +614,29 @@ body, html {
         .word-block { background-color: #ecf0f1; color: #2c3e50; padding: 10px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 3px 0 #bdc3c7; transition: transform 0.1s; }
         .word-block:active { transform: translateY(3px); box-shadow: none; }
         .answer-zone .word-block { background-color: var(--primary-color); box-shadow: 0 3px 0 #d35400; }
-        .btn-attack { width: 100%; padding: 15px; background-color: #e74c3c; color: white; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 0 #c0392b; }
+        .btn-attack { width: 100%; padding: 15px; background-color: #e74c3c; color: white; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 0 #c0392b; transition: background 0.15s; }
         .btn-attack:active { transform: translateY(4px); box-shadow: none; }
+
+        /* Step5 다시하기 버튼 */
+        .btn-reset-step5 {
+            width: 100%;
+            padding: 15px;
+            background-color: #bdc3c7;
+            color: #2c3e50;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #7f8c8d;
+            margin-left: 0;
+            transition: background 0.15s;
+        }
+        .btn-reset-step5:active {
+            background-color: #95a5a6;
+            color: #fff;
+            box-shadow: none;
+        }
         .btn-pause { background: none; border: 1px solid #7f8c8d; color: #bdc3c7; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
         
         @keyframes floating { 0% { transform: translateY(0px) scaleX(-1); } 50% { transform: translateY(-10px) scaleX(-1); } 100% { transform: translateY(0px) scaleX(-1); } }

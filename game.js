@@ -2996,31 +2996,12 @@ function loadNextVerse() {
         if (btn.parentElement === pool) {
             const ph = document.getElementById('placeholder-text');
             if(ph) ph.style.display = 'none';
-
-            if (selectedBlock) {
-                zone.insertBefore(btn, selectedBlock);
-                deselect();
-            } else {
-                zone.appendChild(btn);
-            }
+            zone.appendChild(btn);
         } else {
-            if (selectedBlock === btn) {
-                deselect();
-                pool.appendChild(btn);
-                if (zone.children.length === 0) {
-                    const ph = document.getElementById('placeholder-text');
-                    if(ph) ph.style.display = 'block';
-                }
-            } else if (selectedBlock) {
-                const temp = document.createElement("div");
-                selectedBlock.parentNode.insertBefore(temp, selectedBlock);
-                btn.parentNode.insertBefore(selectedBlock, btn);
-                temp.parentNode.insertBefore(btn, temp);
-                temp.parentNode.removeChild(temp);
-                deselect();
-            } else {
-                selectedBlock = btn;
-                btn.classList.add('selected-block');
+            pool.appendChild(btn);
+            if (zone.children.length === 0) {
+                const ph = document.getElementById('placeholder-text');
+                if(ph) ph.style.display = 'block';
             }
         }
     }
@@ -4019,7 +4000,7 @@ function loadStep() {
             </div>
         `;
         
-        control.innerHTML = `<div style="text-align:center; color:#7f8c8d;">좌우로 움직이는 블록을 터치하세요!</div>`;
+        control.innerHTML = "";
 
         // 게임 시작 (약간의 딜레이 후)
         setTimeout(() => {
@@ -4105,52 +4086,83 @@ function loadStep() {
             const btn = document.createElement('div');
             btn.className = 'word-block';
             btn.innerText = word;
-            
             // 클릭 이벤트 (배치 로직)
             btn.onclick = () => {
-                // 이미 사용된(숨겨진) 버튼이면 무시
                 if (btn.style.visibility === 'hidden') return;
-
                 const placeholder = document.getElementById('placeholder-text');
                 if (placeholder) placeholder.remove();
-
                 // (1) 복제 블록 생성 (정답칸에 들어갈 녀석)
                 const answerBlock = document.createElement('div');
                 answerBlock.className = 'word-block';
-                answerBlock.innerText = word; 
-                answerBlock.dataset.original = word; 
-                
+                answerBlock.innerText = word;
+                answerBlock.dataset.original = word;
                 // 스타일 (노란색 강조)
-                answerBlock.style.backgroundColor = "#f1c40f"; 
+                answerBlock.style.backgroundColor = "#f1c40f";
                 answerBlock.style.color = "#000";
                 answerBlock.style.margin = "5px";
-
                 // (2) 복제 블록 클릭 시 (취소/회수)
                 answerBlock.onclick = () => {
-                    answerBlock.remove(); // 정답칸에서 제거
-                    btn.style.visibility = 'visible'; // 원본 다시 보이기
+                    answerBlock.remove();
+                    btn.style.visibility = 'visible';
                     SoundEffect.playClick();
-                    
-                    // 다 빼서 비었으면 안내문구 다시 표시
                     if (zone.children.length === 0) {
                         zone.innerHTML = '<span class="placeholder-text" id="placeholder-text">단어를 터치하여 문장을 만드세요</span>';
                     }
+                    // block-pool이 비었는지 체크해서 레이아웃 조정
+                    setTimeout(() => {
+                        if ([...pool.children].every(b => b.style.visibility === 'hidden')) {
+                            pool.style.height = '0px';
+                            pool.style.margin = '0';
+                            zone.style.minHeight = '180px';
+                            zone.style.paddingBottom = '40px';
+                        } else {
+                            pool.style.height = '';
+                            pool.style.margin = '';
+                            zone.style.minHeight = '120px';
+                            zone.style.paddingBottom = '';
+                        }
+                    }, 10);
                 };
-
                 // (3) 화면 추가 및 원본 숨기기
-                // 만약 선택된 블록(끼워넣기 모드)이 있으면 그 앞에 삽입
                 if (selectedBlock && selectedBlock.parentElement === zone) {
                     zone.insertBefore(answerBlock, selectedBlock);
                     deselect();
                 } else {
                     zone.appendChild(answerBlock);
                 }
-                
-                btn.style.visibility = 'hidden'; // 원본은 투명하게 (자리 유지)
+                btn.style.visibility = 'hidden';
                 SoundEffect.playClick();
+                // block-pool이 비었는지 체크해서 레이아웃 조정
+                setTimeout(() => {
+                    if ([...pool.children].every(b => b.style.visibility === 'hidden')) {
+                        pool.style.height = '0px';
+                        pool.style.margin = '0';
+                        zone.style.minHeight = '180px';
+                        zone.style.paddingBottom = '40px';
+                    } else {
+                        pool.style.height = '';
+                        pool.style.margin = '';
+                        zone.style.minHeight = '120px';
+                        zone.style.paddingBottom = '';
+                    }
+                }, 10);
             };
             pool.appendChild(btn);
         });
+        // 최초 진입 시에도 block-pool이 비어있으면 레이아웃 조정
+        setTimeout(() => {
+            if ([...pool.children].every(b => b.style.visibility === 'hidden')) {
+                pool.style.height = '0px';
+                pool.style.margin = '0';
+                zone.style.minHeight = '180px';
+                zone.style.paddingBottom = '40px';
+            } else {
+                pool.style.height = '';
+                pool.style.margin = '';
+                zone.style.minHeight = '120px';
+                zone.style.paddingBottom = '';
+            }
+        }, 10);
 
         // 4. 빈 곳 클릭 시 선택 해제
         zone.onclick = (e) => { 
@@ -4158,23 +4170,27 @@ function loadStep() {
         };
 
         // 5. [정답 확인] 버튼 생성
+        // 컨트롤 버튼 래퍼 생성 (정답 확인 + 다시하기)
+        const btnWrapper = document.createElement('div');
+        btnWrapper.style.display = 'flex';
+        btnWrapper.style.width = '100%';
+        btnWrapper.style.gap = '2%';
+
+        // 정답 확인 버튼 (왼쪽 3/4)
         const checkBtn = document.createElement('button');
         checkBtn.className = 'btn-attack';
         checkBtn.innerText = "정답 확인";
+        checkBtn.style.flex = '3 1 0';
         checkBtn.onclick = () => {
             const currentBlocks = Array.from(zone.querySelectorAll('.word-block'));
-
             if (currentBlocks.length !== correctChunks.length) {
                 alert("블록을 모두 채워주세요.");
                 return;
             }
-
             let errorCount = 0;
             currentBlocks.forEach((btn, index) => {
                 const expected = normalizeChunkText(correctChunks[index]);
                 const actual = normalizeChunkText(btn.dataset.original);
-
-                // 정답 확인: 저장된 원본(dataset.original)과 정답을 비교합니다.
                 if (actual === expected) {
                     btn.classList.add('correct-block');
                     btn.classList.remove('error-block');
@@ -4184,7 +4200,6 @@ function loadStep() {
                     errorCount++;
                 }
             });
-
             if (errorCount === 0) {
                 nextStep();
             } else {
@@ -4192,124 +4207,39 @@ function loadStep() {
                 playerHearts--;
                 updateBattleUI();
                 wrongCount++;
-                
                 alert(`${errorCount}군데가 틀렸습니다.`);
-                
                 if (playerHearts <= 0) {
                     setTimeout(showReviveModal, 100);
                 }
             }
         };
-        control.appendChild(checkBtn);
+
+        // 다시하기 버튼 (오른쪽 1/4)
+        const resetBtn = document.createElement('button');
+        resetBtn.className = 'btn-reset-step5';
+        resetBtn.innerText = '다시하기';
+        resetBtn.style.flex = '1 1 0';
+        resetBtn.onclick = () => {
+            // 정답칸 비우기
+            Array.from(zone.querySelectorAll('.word-block')).forEach(block => block.remove());
+            // 안내문구 복구
+            if (!zone.querySelector('#placeholder-text')) {
+                zone.innerHTML = '<span class="placeholder-text" id="placeholder-text">단어를 터치하여 문장을 만드세요</span>';
+            }
+            // 모든 블록 다시 보이게
+            Array.from(pool.children).forEach(btn => {
+                btn.style.visibility = 'visible';
+            });
+            deselect();
+            SoundEffect.playClick();
+        };
+
+        btnWrapper.appendChild(checkBtn);
+        btnWrapper.appendChild(resetBtn);
+        control.appendChild(btnWrapper);
     }
 
 // ▼▼▼ [수정된 Step 6 코드] ▼▼▼
-    else if (currentStep === 6) {
-        // 1. 화면 구성
-        field.innerHTML = `
-            <div class="verse-indicator" style="color:#d63031;">🔥 Step 6. 초성만 보고 문장을 완성하세요! (최종)</div>
-            <div class="answer-zone" id="answer-zone" style="align-content: flex-start;">
-                <span class="placeholder-text" id="placeholder-text">초성 블록을 순서대로 터치하세요</span>
-            </div>
-        `;
-        
-        control.innerHTML = `<div class="block-pool" id="block-pool"></div>`;
-        const pool = document.getElementById('block-pool');
-        const zone = document.getElementById('answer-zone');
-
-        const correctChunks = trainingVerseData.chunks;
-        
-        // 2. 블록 생성
-        let list = [...correctChunks].sort(() => Math.random() - 0.5);
-
-        list.forEach(word => {
-        const btn = document.createElement('div');
-        btn.className = 'word-block';
-        
-        btn.innerText = getChosung(word); // 초성만 보여줌
-        btn.dataset.original = word;      // 정답 확인용 원본
-        
-        btn.style.backgroundColor = "#6c5ce7"; 
-        btn.style.color = "#fff";
-
-        // 클릭 이벤트 (수정됨: 고정형)
-        btn.onclick = () => {
-            if (btn.style.visibility === 'hidden') return;
-
-            const placeholder = document.getElementById('placeholder-text');
-            if (placeholder) placeholder.remove();
-
-            // 1. 복제 블록 생성
-            const answerBlock = document.createElement('div');
-            answerBlock.className = 'word-block';
-            
-            answerBlock.innerText = btn.innerText; // 초성 복사
-            answerBlock.dataset.original = btn.dataset.original; // 원본 복사
-            
-            // 정답 칸 스타일 (보라색)
-            answerBlock.style.backgroundColor = "#6c5ce7"; 
-            answerBlock.style.color = "#fff";
-            answerBlock.style.margin = "5px";
-
-            // 2. 복제 블록 클릭 시 (취소)
-            answerBlock.onclick = () => {
-                answerBlock.remove();
-                btn.style.visibility = 'visible'; // 원본 다시 보이기
-                SoundEffect.playClick();
-            };
-
-            // 3. 화면 추가 및 원본 숨기기
-            zone.appendChild(answerBlock);
-            btn.style.visibility = 'hidden'; // ★ 투명하게 숨김
-            
-            SoundEffect.playClick();
-        };
-        pool.appendChild(btn);
-    });
-
-        // 3. 정답 확인
-        const checkBtn = document.createElement('button');
-        checkBtn.className = 'btn-attack';
-        checkBtn.innerText = "👑 암송 완료";
-        checkBtn.style.background = "linear-gradient(45deg, #a29bfe, #6c5ce7)";
-        
-        checkBtn.onclick = () => {
-             const currentBlocks = Array.from(zone.querySelectorAll('.word-block'));
-
-             if (currentBlocks.length !== correctChunks.length) {
-                 alert("블록을 모두 채워주세요.");
-                 return;
-             }
-
-             let errorCount = 0;
-             currentBlocks.forEach((btn, index) => {
-                 if (btn.dataset.original === correctChunks[index]) {
-                     btn.classList.add('correct-block');
-                     btn.classList.remove('error-block');
-                 } else {
-                     btn.classList.add('error-block');
-                     btn.classList.remove('correct-block');
-                     errorCount++;
-                 }
-             });
-
-             if (errorCount === 0) {
-                 finishTraining(); 
-             } else {
-                 SoundEffect.playWrong();
-                 playerHearts--;
-                 updateBattleUI(); // ★ 수정됨
-                 wrongCount++;
-                 
-                 alert(`${errorCount}군데가 틀렸습니다.`);
-                 
-                 if (playerHearts <= 0) {
-                     setTimeout(showReviveModal, 100); // ★ 수정됨 (부활창 띄우기)
-                 }
-             }
-        };
-        control.appendChild(checkBtn);
-    }
 
 } // loadStep 끝
 
@@ -4580,71 +4510,134 @@ function useLifeBread() {
     saveGameData();     // 저장
 }
 
-// 2. 힌트 사용하기 (만능 도우미)
+// 2. 힌트 사용하기 (만능 도우미, 개선)
+let isHintModalOpen = false;
+let hintCost = 10;
 function useHint() {
-    // A. 비용 체크
-    const cost = 10;
-    if (myGems < cost) {
-        alert("💎 보석이 부족합니다! (필요: 10)");
+    if (isHintModalOpen) return;
+    if (typeof hintCost !== 'number' || hintCost < 10) hintCost = 10;
+    if (myGems < hintCost) {
+        alert(`💎 보석이 부족합니다! (필요: ${hintCost})`);
         return;
     }
-
-    // B. 현재 상황 파악 (어떤 힌트를 줄까?)
     const screen = document.getElementById('game-screen');
     const isTraining = screen.classList.contains('mode-training');
-    
-    // 훈련 모드인데 Step 1(읽기)이면 힌트 필요 없음
     if (isTraining && currentStep === 1) {
         alert("이 단계에서는 큰 소리로 읽는 것이 정답입니다! 📣");
         return;
     }
+    // 안내 문구
+    if (!confirm(`💎 보석 ${hintCost}개를 소모하여 힌트를 보시겠습니까?`)) {
+        return;
+    }
+    // 보석 차감 및 입력 비활성화
+    myGems -= hintCost;
+    updateGemDisplay();
+    saveGameData();
+    SoundEffect.playClick();
+    disableGameInputs(true);
+    isHintModalOpen = true;
+    hintCost += 5;
+    // 힌트 모달 생성 및 표시
+    showHintModal({
+        cost: hintCost - 5,
+        onClose: () => {
+            isHintModalOpen = false;
+            disableGameInputs(false);
+        }
+    });
+}
 
-    // C. 결제 진행
-    if(!confirm(`💎 보석 ${cost}개를 사용하여 힌트를 보시겠습니까?`)) return;
-    
-    myGems -= cost;
-    updateGemDisplay(); // 보석 UI 갱신
-    saveGameData();     // 저장
-
-    // D. 단계별 힌트 로직 실행
-    SoundEffect.playClick(); // 효과음
-
-    // [상황 1] 훈련 모드
+function showHintModal({ cost, onClose }) {
+    if (document.getElementById('hint-modal')) return;
+    let hintText = '';
+    const screen = document.getElementById('game-screen');
+    const isTraining = screen.classList.contains('mode-training');
+    let verse = '';
+    let highlightHtml = '';
     if (isTraining) {
-        if (currentStep === 2) { 
-            // Step 2: 초성 퀴즈 -> 다음 초성 자동 해결
-            const correctWord = trainingVerseData.chunks[window.currentSlotIndex];
-            const correctBlock = Array.from(document.querySelectorAll('#block-pool .word-block'))
-                                      .find(b => b.innerText === correctWord && b.style.visibility !== 'hidden');
-            if(correctBlock) correctBlock.click(); // 정답 블록을 강제로 클릭하게 만듦 (자동 입력)
+        if (typeof trainingVerseData === 'object' && trainingVerseData.verse) {
+            verse = trainingVerseData.verse;
         }
-        else if (currentStep === 3) {
-            // Step 3: 빈칸 채우기 -> 첫 번째 빈칸 자동 채우기
-            const targetSlot = document.querySelector('.blank-slot'); // 아직 안 채워진 첫 빈칸
-            if (targetSlot && targetSlot.innerText === "_______") {
+        if (currentStep === 2 && typeof trainingVerseData.chunks === 'object') {
+            const idx = window.currentSlotIndex;
+            highlightHtml = trainingVerseData.chunks.map((w,i)=>
+                i===idx ? `<span style='background:#ffe066; border-radius:5px;'>${w}</span>` : w
+            ).join(' ');
+            hintText = `<div style='margin-bottom:8px;'>현재 구절</div><div style='font-size:1.1rem; color:#2c3e50;'>${verse}</div><div style='margin-top:10px;'>현재 단어: ${highlightHtml}</div>`;
+        } else if (currentStep === 3 && typeof trainingVerseData.verse === 'string') {
+            const targetSlot = document.querySelector('.blank-slot');
+            if (targetSlot) {
                 const answer = targetSlot.dataset.answer;
-                const correctBlock = Array.from(document.querySelectorAll('#block-pool .word-block'))
-                                          .find(b => b.innerText === answer && b.style.visibility !== 'hidden');
-                if(correctBlock) correctBlock.click(); // 강제 클릭
+                highlightHtml = trainingVerseData.verse.replace(answer, `<span style='background:#ffe066; border-radius:5px;'>${answer}</span>`);
+                hintText = `<div style='margin-bottom:8px;'>현재 구절</div><div style='font-size:1.1rem; color:#2c3e50;'>${highlightHtml}</div>`;
+            } else {
+                hintText = `<div style='font-size:1.1rem; color:#2c3e50;'>${trainingVerseData.verse}</div>`;
             }
+        } else if (currentStep === 4) {
+            hintText = `<div style='font-size:1.1rem; color:#2c3e50;'>${trainingVerseData.verse}</div><div style='margin-top:10px; color:#e74c3c;'>가짜 단어를 찾아 빨갛게 표시합니다.</div>`;
+        } else if (currentStep === 5) {
+            hintText = `<div style='font-size:1.1rem; color:#2c3e50;'>${trainingVerseData.verse}</div>`;
+        } else {
+            hintText = `<div style='font-size:1.1rem; color:#2c3e50;'>${trainingVerseData.verse}</div>`;
         }
-        else if (currentStep === 4) {
-            // Step 4: 옥에 티 -> 범인 색출
-            const fakeSpan = document.querySelector('span[data-is-fake="true"]');
-            if (fakeSpan) {
-                fakeSpan.classList.add('imposter-reveal'); // 빨갛게 만듦
-                setTimeout(() => fakeSpan.classList.remove('imposter-reveal'), 2000); // 2초 뒤 원상복구
-            }
+    } else {
+        if (typeof currentVerseData === 'object' && currentVerseData.verse) {
+            verse = currentVerseData.verse;
         }
-        else if (currentStep === 5) {
-            // Step 5: 문장 배열 -> 다음 블록 깜빡이기 (Navigation)
-            highlightNextBlock(trainingVerseData.chunks);
+        if (typeof currentVerseData.chunks === 'object') {
+            const zone = document.getElementById('answer-zone');
+            const currentBlocks = zone.querySelectorAll('.word-block');
+            const idx = currentBlocks.length;
+            highlightHtml = currentVerseData.chunks.map((w,i)=>
+                i===idx ? `<span style='background:#ffe066; border-radius:5px;'>${w}</span>` : w
+            ).join(' ');
+            hintText = `<div style='margin-bottom:8px;'>현재 구절</div><div style='font-size:1.1rem; color:#2c3e50;'>${verse}</div><div style='margin-top:10px;'>현재 부분: ${highlightHtml}</div>`;
+        } else {
+            hintText = `<div style='font-size:1.1rem; color:#2c3e50;'>${verse}</div>`;
         }
-    } 
-    // [상황 2] 보스전 (또는 중간점검)
-    else {
-        // 보스전도 Step 5와 똑같이 '다음 블록'을 알려줌
-        highlightNextBlock(currentVerseData.chunks);
+    }
+    const modal = document.createElement('div');
+    modal.id = 'hint-modal';
+    modal.className = 'modal-overlay';
+    modal.style.zIndex = 9999;
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+        <div class="result-card" style="max-width:400px; text-align:center;">
+            <div style="text-align:right;">
+                <button id="hint-modal-close" style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
+            </div>
+            <div style="margin-bottom:10px; font-size:1.1rem; color:#2c3e50;">💡 힌트 사용 (💎${cost})</div>
+            <div style="margin-bottom:20px; color:#34495e;">${hintText}</div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById('hint-modal-close').onclick = function() {
+        document.body.removeChild(modal);
+        if (typeof onClose === 'function') onClose();
+    };
+}
+
+// 게임 입력/버튼 비활성화 (힌트 모달용)
+function disableGameInputs(disable) {
+    // 주요 버튼/입력 모두 비활성화
+    const btns = document.querySelectorAll('button, input, .word-block');
+    btns.forEach(btn => {
+        if (disable) {
+            btn.setAttribute('disabled', 'disabled');
+            btn.style.pointerEvents = 'none';
+        } else {
+            btn.removeAttribute('disabled');
+            btn.style.pointerEvents = '';
+        }
+    });
+    // 단, 힌트 모달 내 버튼은 예외로 복구
+    if (!disable) {
+        const modalBtns = document.querySelectorAll('#hint-modal button');
+        modalBtns.forEach(btn => {
+            btn.removeAttribute('disabled');
+            btn.style.pointerEvents = '';
+        });
     }
 }
 
@@ -6421,11 +6414,12 @@ stageClear = function(type) {
 
         // [A] 보스 (챕터 전체)
         if (type === 'boss') { 
-            stageLastClear[sId] = Date.now();
-            
+            // 망각 주기가 지난 경우에만 클리어 시각 갱신
+            if (isForgotten) {
+                stageLastClear[sId] = Date.now();
+            }
             const verseCount = bibleData[chNum] ? bibleData[chNum].length : 0;
             const rewardData = calculateProgressiveReward(chNum, verseCount, 1);
-            
             // ★ [통일] 보스 기본 보상: 보스 절수 × 10 (mid-boss 상태 무관)
             baseGem = verseCount * 10;
             msg += `🐲 [드래곤 토벌] ${verseCount}절 완료!\n`;
@@ -6545,7 +6539,10 @@ stageClear = function(type) {
                 msg += `⏳ 보너스 쿨타임 (망각 주기 대기 중)\n`;
             }
 
-            stageLastClear[sId] = Date.now(); 
+            // 망각 주기가 지난 경우에만 클리어 시각 갱신
+            if (isForgotten) {
+                stageLastClear[sId] = Date.now();
+            }
 
             if (isForgotten) {
                 // (기억레벨+1) × 10% 보너스 적용 (최소 10%, Lv4이상 50%)
