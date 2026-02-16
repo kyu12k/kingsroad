@@ -553,10 +553,35 @@ function updateMissionProgress(type, extraData) {
     if (type === 'dragonKill') type = 'dragon';
     if (type === 'review') return;
 
-    // 1. 일일 미션: 신규 훈련
+    // 모든 도감이 열렸는지 체크 (하루 1회만 인정)
+    let allOpened = true;
+    for (let ch = 1; ch <= 22; ch++) {
+        if (bibleData[ch]) {
+            for (let idx = 0; idx < bibleData[ch].length; idx++) {
+                const sId = `${ch}-${idx + 1}`;
+                if (!(stageMastery[sId] && stageMastery[sId] >= 1)) {
+                    allOpened = false;
+                    break;
+                }
+            }
+            if (!allOpened) break;
+        }
+    }
+
+    // 오늘 날짜
+    const today = new Date().toISOString().split('T')[0];
+
+    // 1. 일일 미션: 신규 훈련 or 모든 도감 오픈 시 아무 스테이지든 1회
     if (type === 'new') {
-        missionData.daily.newClear++;
-    } 
+        if (allOpened) {
+            if (missionData.daily.anyStageClearDate !== today) {
+                missionData.daily.anyStageClearDate = today;
+                missionData.daily.newClear = 1; // 하루 1회만 인정
+            }
+        } else {
+            missionData.daily.newClear++;
+        }
+    }
     // 2. 일일 미션: 다양성 (오늘 처음 클리어하는 스테이지)
     else if (type === 'differentStage') {
         missionData.daily.differentStages = (missionData.daily.differentStages || 0) + 1;
@@ -569,12 +594,12 @@ function updateMissionProgress(type, extraData) {
     else if (type === 'dragon') {
         missionData.weekly.dragonKill++;
     }
-    
+
     // 5. 스테이지 클리어 총수 (일반 스테이지에서만)
     if (type === 'new') {
         missionData.weekly.stageClear++;
     }
-    
+
     saveGameData(); 
     updateMissionUI();
 }
@@ -4772,7 +4797,33 @@ function renderMissionList(tabName) {
     let missions = [];
 
     if (tabName === 'daily') {
+        // 모든 도감이 열렸는지 체크
+        let allOpened = true;
+        for (let ch = 1; ch <= 22; ch++) {
+            if (bibleData[ch]) {
+                for (let idx = 0; idx < bibleData[ch].length; idx++) {
+                    const sId = `${ch}-${idx + 1}`;
+                    if (!(stageMastery[sId] && stageMastery[sId] >= 1)) {
+                        allOpened = false;
+                        break;
+                    }
+                }
+                if (!allOpened) break;
+            }
+        }
         missions = [
+            allOpened ?
+            {
+                id: 0,
+                title: "어떤 스테이지든 1회 학습",
+                desc: "아무 스테이지나 1회 학습하세요.",
+                target: 1,
+                current: missionData.daily.newClear, // 기존 카운트 활용
+                reward: "💎 보석 100개",
+                rewardType: 'gem', val1: 100, val2: 0,
+                claimed: missionData.daily.claimed[0]
+            }
+            :
             {
                 id: 0,
                 title: "새로운 훈련 1회 완료",
