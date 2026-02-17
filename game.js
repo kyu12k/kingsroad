@@ -4022,11 +4022,11 @@ function loadStep() {
         field.innerHTML = `
             <div class="verse-indicator">Step 4. 🔥불타기 전에 빈칸을 채우세요!</div>
             
-            <button id="btn-scroll-slow" onclick="toggleScrollSlowMode(this)" 
-                style="margin-bottom:10px; background:rgba(255,255,255,0.9); border:2px solid #27ae60; color:#27ae60;
+            <button id="btn-scroll-fast" onclick="toggleScrollFastMode(this)" 
+                style="margin-bottom:10px; background:rgba(255,255,255,0.9); border:2px solid #e67e22; color:#e67e22;
                        padding:8px 15px; border-radius:20px; font-weight:bold; font-size:0.9rem; 
                        box-shadow:0 2px 5px rgba(0,0,0,0.1); cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
-                🐢 천천히 (어르신 전용)
+                🐇 빨리 감기
             </button>
 
             <div id="scroll-game-container">
@@ -4043,7 +4043,7 @@ function loadStep() {
 
         // 두루마리 게임 설정 초기화
         if (typeof scrollGame === 'undefined') scrollGame = {};
-        scrollGame.isSlowMode = false; // 모드 초기화
+        scrollGame.isSlowMode = true; // 느린 모드가 기본값
 
         // 2. 게임 시작 (화면 로딩 안정성을 위해 0.1초 뒤 실행)
         setTimeout(startScrollStep, 100);
@@ -7005,6 +7005,8 @@ function initTowerGame() {
     spawnTowerBlock();
 }
 
+
+
 function spawnTowerBlock() {
     const movingBlock = document.getElementById('moving-block');
     if (!movingBlock) return;
@@ -7351,29 +7353,24 @@ function claimTempleSupply() {
    [정식 배포 버전 - 치트키 제거됨]
    ======================================== */
 
-/* [추가] 두루마리 게임 천천히 모드 토글 */
-function toggleScrollSlowMode(btn) {
-    scrollGame.isSlowMode = !scrollGame.isSlowMode; // 켜고 끄기
-
-    if (scrollGame.isSlowMode) {
-        // 🐢 켜짐: 버튼 스타일 변경 및 속도 저하
-        btn.innerHTML = "🐇 다시 빠르게";
-        btn.style.borderColor = "#e67e22";
-        btn.style.color = "#e67e22";
-        
-        // 즉시 속도 적용 (아주 느리게)
-        scrollGame.speed = 0.6; 
-        
-        // 안내 메시지 (잠깐 띄우기)
-        alert("느린 모드가 적용되었습니다.\n두루마리가 천천히 움직입니다.");
+// [변경] 두루마리 게임 빨리 감기/어르신 모드 토글 동작
+function toggleScrollFastMode(btn) {
+    if (!scrollGame.isSlowMode) {
+        // 어르신 모드로 전환
+        scrollGame.isSlowMode = true;
+        scrollGame.speed = 0.6;
+        btn.innerHTML = '🐇 빨리 감기';
+        btn.style.borderColor = '#e67e22';
+        btn.style.color = '#e67e22';
+        alert('어르신 모드(느린 속도)로 전환되었습니다.');
     } else {
-        // 🐇 꺼짐: 원래대로 복구
-        btn.innerHTML = "🐢 천천히 (어르신 전용)";
-        btn.style.borderColor = "#27ae60";
-        btn.style.color = "#27ae60";
-        
-        // 원래 속도로 복구 (기본값)
+        // 기존(빠른) 속도로 전환
+        scrollGame.isSlowMode = false;
         scrollGame.speed = 1.5;
+        btn.innerHTML = '🐢 어르신 모드';
+        btn.style.borderColor = '#27ae60';
+        btn.style.color = '#27ae60';
+        alert('빠른 속도로 전환되었습니다.');
     }
 }
 
@@ -7388,7 +7385,7 @@ function startScrollStep() {
     if (scrollGame.isSlowMode) {
         scrollGame.speed = 0.6; // 아주 느리게
     } else {
-        scrollGame.speed = 1.2; // 기본 속도
+        scrollGame.speed = 1.5; // 기존 빠른 속도
     }
 
     const track = document.getElementById('scroll-track');
