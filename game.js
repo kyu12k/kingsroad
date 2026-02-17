@@ -1946,12 +1946,34 @@ const castleBlueprints = [
 
         /* [시스템: 화면 이동] */
 /* [수정] 게임 시작 함수 (사운드 설정 불러오기 적용) */
-function startGame() { 
+function startGame() {
+    // 0. 여정 시작 오버레이 표시
+    const overlay = document.getElementById('journey-overlay');
+    const amenBtn = document.getElementById('amen-btn');
+    if (overlay) {
+        overlay.style.display = 'flex';
+    }
+    if (amenBtn) {
+        amenBtn.style.opacity = '0';
+        amenBtn.style.pointerEvents = 'none';
+        setTimeout(() => {
+            amenBtn.style.opacity = '1';
+            amenBtn.style.pointerEvents = 'auto';
+        }, 1000);
+        amenBtn.onclick = amenAndStartGame;
+    }
+}
+
+function amenAndStartGame() {
+    const overlay = document.getElementById('journey-overlay');
+    const amenBtn = document.getElementById('amen-btn');
+    if (overlay) overlay.style.display = 'none';
+    if (amenBtn) amenBtn.style.display = 'none';
+
     // 1. 오디오 권한 획득
     if (typeof SoundEffect !== 'undefined' && SoundEffect.ctx.state === 'suspended') {
         SoundEffect.ctx.resume();
     }
-    
     // 2. ★ [핵심] 배경 음악 설정 확인 및 시작
     // 저장된 값이 없으면(null) 기본값 'true'(켜짐)로 간주
     const savedBgmState = localStorage.getItem('setting_bgm_on');
@@ -1965,7 +1987,6 @@ function startGame() {
             // 꺼놨다면 재생하지 않음 (BackgroundMusic.isPlaying은 기본 false임)
             BackgroundMusic.stop(); 
         }
-        
         // 3. ★ 버튼 상태 동기화 (UI 업데이트)
         const bgmBtn = document.getElementById('btn-bgm');
         if(bgmBtn) {
@@ -5598,6 +5619,23 @@ function toggleMyScorePanel() {
 
 /* [수정] 랭킹 화면 열기 */
 function openRankingScreen() {
+    // 랭킹 오버레이 먼저 띄우기
+    const overlay = document.getElementById('ranking-overlay');
+    const amenBtn = document.getElementById('ranking-amen-btn');
+    if (overlay) {
+        overlay.style.display = 'flex';
+    }
+    if (amenBtn) {
+        amenBtn.style.opacity = '0';
+        amenBtn.style.pointerEvents = 'none';
+        setTimeout(() => {
+            amenBtn.style.opacity = '1';
+            amenBtn.style.pointerEvents = 'auto';
+        }, 1000);
+        amenBtn.onclick = showRankingScreenReal;
+    }
+
+    // ====== 랭킹 화면 및 데이터 백그라운드 로딩 ======
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
 
     let screen = document.getElementById('ranking-screen');
@@ -5677,6 +5715,16 @@ function openRankingScreen() {
     updateMyScorePanel();
     // 백버튼 가시성 갱신 (랭킹 화면에서는 보여야 함)
     if (typeof updateBackButtonVisibility === 'function') updateBackButtonVisibility();
+}
+
+function showRankingScreenReal() {
+    const overlay = document.getElementById('ranking-overlay');
+    const amenBtn = document.getElementById('ranking-amen-btn');
+    if (overlay) overlay.style.display = 'none';
+    if (amenBtn) {
+        amenBtn.style.opacity = '0';
+        amenBtn.style.pointerEvents = 'none';
+    }
 }
 
 /* [추가] 지파/시온성 랭킹 로드 */
@@ -8209,7 +8257,7 @@ function startForgottenStatusChecker() {
 
 /* [시스템: 클리어 축하 폭죽 효과 (Confetti)] */
 function triggerConfetti() {
-    const duration = 3000; // 3초 동안 지속
+    const duration = 1500; // 1.5초 동안 지속
     const end = Date.now() + duration;
 
     // 캔버스 생성 및 설정
