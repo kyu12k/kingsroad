@@ -134,9 +134,6 @@
                 <div class="help-desc">
                     🎁 <strong>때를 따른 양식</strong>: 보너스가 있을 때 보석이 크게 증가합니다<br>
                     1회차 ×5, 2회차 ×2, 3회차 ×1.5 (이후는 쿨타임)<br><br>
-                    💡 <strong>중요!</strong> 중간 점검과 보스는 보상을 나눠 갖습니다<br>
-                    예: 16~20절 중간 점검을 먼저 하면<br>
-                    보스전에서는 나머지 1~15절만 보상을 줍니다
                 </div>
             </div>
 
@@ -317,6 +314,9 @@
     <button id="thanks-btn" onclick="openThanksModal()" style="position:absolute; top:68px; right:20px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:#fff; width:40px; height:40px; border-radius:50%; font-size:1.3rem; cursor:pointer; z-index:100; transition: all 0.3s; display:flex; align-items:center; justify-content:center;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
         👥
     </button>
+    <button id="tip-btn" onclick="openTipModal()" style="position:absolute; top:116px; right:20px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:#fff; width:40px; height:40px; border-radius:50%; font-size:1.3rem; cursor:pointer; z-index:100; transition: all 0.3s; display:flex; align-items:center; justify-content:center;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+        💡
+    </button>
     <!-- 감사한 분들 모달 -->
     <div id="thanks-modal" class="modal-overlay" style="z-index: 9999; display:none;">
         <div class="result-card" style="max-width: 400px; max-height: 80vh; overflow-y: auto;">
@@ -330,6 +330,41 @@
                     <span id="thanks-dept-tag"></span>
                     <span id="thanks-name" style="color:#2c3e50; font-size:1.1rem; font-weight:bold;"></span>
                     <span id="thanks-code" style="color:#95a5a6; font-size:0.95rem;"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 꿀팁 모달 -->
+    <div id="tip-modal" class="modal-overlay" style="z-index: 9999; display:none;">
+        <div class="result-card" style="max-width: 400px; max-height: 80vh; overflow-y: auto;">
+            <div style="text-align: right;">
+                <button onclick="closeTipModal()" style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
+            </div>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="margin:0; color:#2c3e50;">꿀팁 <span style="font-size:1.2em;">💡</span></h2>
+                <div style="text-align:left; margin:20px 0 0 0; color:#34495e; font-size:1.05em; line-height:1.7;">
+                    <div style="margin-bottom:1em;">
+                        <b>암기 꿀팁</b><br>
+                        1. 암송하려는 구절을 찾아 완료한다.<br>
+                        2. 10분 뒤, 해당 구절을 다시 완료한다.<br>
+                        3. 1시간 뒤, 해당 구절을 다시 완료한다.<br>
+                        4. 5개 구절 단위의 중간 점검으로 복습한다.<br>
+                        5. 한 장을 완료하면 보스전으로 최종 복습한다.<br>
+                        6. 망각 주기가 도래하여 복습할 스테이지가 생기면 또 복습한다.<br>
+                    </div>
+                    <div style="margin-bottom:1em;">
+                        <b>보석 획득 꿀팁</b><br>
+                        1. 5배, 2배, 1.5배 보너스가 있는 구절을 완료한다.<br>
+                        2. 일일미션, 주간미션을 착실히 수행한다.<br>
+                        3. 기록실을 확인하여 달성할만한 것을 찾아 도전한다(예: 새벽 암송).<br>
+                        4. 획득한 보석으로 홈 화면의 성전을 업그레이드 하여 주기적으로 보석을 획득한다.<br>
+                    </div>
+                    <div>
+                        <b>승점 획득 꿀팁</b><br>
+                        1. 5배, 2배, 1.5배 보너스가 있는 구절을 완료한다.<br>
+                        2. 상점의 승점 부스터를 활용한다.<br>
+                        3. 하트 최대치를 늘리고, 최대한 안 틀리려고 노력하며 생명의 떡으로 체력을 가득 채운 채로 완료한다.
+                    </div>
                 </div>
             </div>
         </div>
@@ -361,6 +396,13 @@
     }
     function closeThanksModal() {
         document.getElementById('thanks-modal').style.display = 'none';
+    }
+    // 꿀팁 모달 열기/닫기 함수
+    function openTipModal() {
+        document.getElementById('tip-modal').style.display = 'flex';
+    }
+    function closeTipModal() {
+        document.getElementById('tip-modal').style.display = 'none';
     }
     </script>
     <div>
