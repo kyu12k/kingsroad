@@ -7,8 +7,9 @@ function getForgettingStages() {
     window.gameData.forEach(chapter => {
         chapter.stages.forEach(stage => {
             const id = stage.id;
-            // 복습 필요: 다음 eligibleTime이 현재보다 과거(=복습 가능)
-            if (stageNextEligibleTime && stageNextEligibleTime[id] && now >= stageNextEligibleTime[id]) {
+            // '망각 위험'이 뜨는 스테이지만 복습 목록에 포함
+            const memStatus = (typeof checkMemoryStatus === 'function') ? checkMemoryStatus(id) : null;
+            if (memStatus && memStatus.isForgotten) {
                 result.push({
                     id,
                     name: stage.name || (chapter.name + ' ' + (stage.label || id)),
