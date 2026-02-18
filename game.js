@@ -43,9 +43,25 @@ function openForgettingModal() {
     } else {
         listArea.innerHTML = '';
         stages.forEach(stage => {
+            // '몇 장 몇 절' 정보 추출 (id가 '3-5' 형태면 3장 5절)
+            let chapterVerse = '';
+            const match = stage.id.match(/^(\d+)-(\d+)$/);
+            if (match) {
+                chapterVerse = `${match[1]}장 ${match[2]}절`;
+            } else if (stage.title) {
+                chapterVerse = stage.title;
+            } else {
+                chapterVerse = stage.label || stage.name || stage.id;
+            }
             const div = document.createElement('div');
             div.className = 'forgetting-stage-item';
-            div.innerHTML = `<span>${stage.chapter ? stage.chapter + ' ' : ''}${stage.label}</span><button class="play-btn" onclick="playForgettingStage('${stage.id}')">플레이</button>`;
+                div.innerHTML = `
+                    <span>${chapterVerse}</span>
+                    <div style="display:flex; gap:8px;">
+                        <button class="play-btn" onclick="playForgettingStage('${stage.id}')">플레이</button>
+                        <button class="play-btn" style="background:#2ecc71;" onclick="goToStageOnMap('${stage.id}')">바로가기</button>
+                    </div>
+                `;
             listArea.appendChild(div);
         });
     }
@@ -8242,21 +8258,7 @@ window.onload = function() {
         });
         
         // 망각 상태인 스테이지가 있으면 알림
-        if (forgottenCount > 0) {
-            const msg = `📚 복습할 구절이 ${forgottenCount}개 있습니다!\n\n${forgottenList.slice(0, 3).join('\n')}${forgottenCount > 3 ? '\n... 외 ' + (forgottenCount - 3) + '개' : ''}`;
-            
-            const toast = document.getElementById('toast-notification');
-            if (toast) {
-                toast.innerHTML = msg;
-                toast.style.visibility = 'visible';
-                toast.classList.add('show');
-                
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                    setTimeout(() => { toast.style.visibility = 'hidden'; }, 500);
-                }, 5000);
-            }
-        }
+        // 복습 토스트 알림 표시 코드 삭제됨
         
         // ★ [추가] Service Worker용 알림 데이터 업데이트 및 주기 체크 시작
         updateForgottenNotificationData();
