@@ -1,3 +1,85 @@
+// 💜 망각 주기 도래 스테이지 버튼/모달 관련
+function getForgettingStages() {
+    // 망각 주기가 도래한 스테이지를 반환 (id, 이름, 챕터 등)
+    const now = Date.now();
+    const result = [];
+    if (!window.gameData) return result;
+    window.gameData.forEach(chapter => {
+        chapter.stages.forEach(stage => {
+            const id = stage.id;
+            // 복습 필요: 다음 eligibleTime이 현재보다 과거(=복습 가능)
+            if (stageNextEligibleTime && stageNextEligibleTime[id] && now >= stageNextEligibleTime[id]) {
+                result.push({
+                    id,
+                    name: stage.name || (chapter.name + ' ' + (stage.label || id)),
+                    chapter: chapter.name || '',
+                    label: stage.label || id
+                });
+            }
+        });
+    });
+    return result;
+}
+
+function updateForgettingBtn() {
+    // 맵 화면에서만 버튼 표시
+    const btn = document.getElementById('forgetting-btn');
+    if (!btn) return;
+    const mapScreen = document.getElementById('map-screen');
+    if (mapScreen && mapScreen.classList.contains('active')) {
+        const stages = getForgettingStages();
+        btn.style.display = stages.length > 0 ? 'block' : 'none';
+    } else {
+        btn.style.display = 'none';
+    }
+}
+
+function openForgettingModal() {
+    const modal = document.getElementById('forgetting-modal');
+    const listArea = document.getElementById('forgetting-stage-list');
+    if (!modal || !listArea) return;
+    const stages = getForgettingStages();
+    if (stages.length === 0) {
+        listArea.innerHTML = '<div style="color:#7f8c8d; text-align:center;">복습할 스테이지가 없습니다!</div>';
+    } else {
+        listArea.innerHTML = '';
+        stages.forEach(stage => {
+            const div = document.createElement('div');
+            div.className = 'forgetting-stage-item';
+            div.innerHTML = `<span>${stage.chapter ? stage.chapter + ' ' : ''}${stage.label}</span><button class="play-btn" onclick="playForgettingStage('${stage.id}')">플레이</button>`;
+            listArea.appendChild(div);
+        });
+    }
+    modal.classList.add('active');
+}
+
+function closeForgettingModal() {
+    const modal = document.getElementById('forgetting-modal');
+    if (modal) modal.classList.remove('active');
+}
+
+function playForgettingStage(stageId) {
+    // 스테이지 시트/게임 화면으로 이동하는 함수와 연동 필요
+    closeForgettingModal();
+    // 예시: openStageSheet, startStage 등 실제 함수명에 맞게 수정 필요
+    if (typeof openStageSheet === 'function') {
+        openStageSheet(stageId);
+    } else if (typeof startStage === 'function') {
+        startStage(stageId);
+    } else {
+        alert('스테이지로 이동하는 기능이 연결되어 있지 않습니다.');
+    }
+}
+
+// 맵 화면 진입/전환 시 버튼 갱신 (화면 전환 함수에 추가 필요)
+// 예시: goToMapScreen, showMapScreen 등에서 updateForgettingBtn() 호출
+// 또는 setInterval로 주기적 체크(비효율적이나 안전)
+setInterval(updateForgettingBtn, 1500);
+
+// 모달 닫기 함수 전역 등록
+window.openForgettingModal = openForgettingModal;
+window.closeForgettingModal = closeForgettingModal;
+window.playForgettingStage = playForgettingStage;
 /* =============================================
    [전역 변수 선언부 - 충돌 방지를 위해 최상단에 배치]
    ============================================= */
@@ -1954,6 +2036,7 @@ function startGame() {
         overlay.style.display = 'flex';
     }
     if (amenBtn) {
+        amenBtn.style.display = 'block'; // display 속성 복구 추가
         amenBtn.style.opacity = '0';
         amenBtn.style.pointerEvents = 'none';
         setTimeout(() => {
@@ -6471,7 +6554,7 @@ stageClear = function(type) {
             // ★ [통일] 보스 기본 보상: 보스 절수 × 10 (mid-boss 상태 무관)
             baseGem = verseCount * 10;
             msg += `🐲 [드래곤 토벌] ${verseCount}절 완료!\n`;
-            
+
             // ★ 보스 클리어 시 mid-boss를 당일 클리어로 자동 마킹하지 않음
             // (때를 따른 양식/표시 일관성 유지)
 
@@ -6487,8 +6570,24 @@ stageClear = function(type) {
 
             verseCnt = bossHpForScore;
 
+            // ★ [때를 따른 양식 보너스] 망각 주기 기반 (보스도 mid-boss/일반과 동일하게 적용)
+            const timedBonus = getTimedBonus(sId); // 현재 상태만 확인
+            const bonusLevel = timedBonus.remaining; // 소진 전 값
+            if (bonusLevel === 3) {
+                baseGem *= 5;
+                msg += `🎁 때를 따른 양식 ( × 5배)\n`;
+            } else if (bonusLevel === 2) {
+                baseGem *= 2;
+                msg += `🔱 때를 따른 양식 ( × 2배)\n`;
+            } else if (bonusLevel === 1) {
+                baseGem *= 1.5;
+                msg += `⚔️ 때를 따른 양식 ( × 1.5배)\n`;
+            } else {
+                msg += `⏳ 보너스 쿨타임 (망각 주기 대기 중)\n`;
+            }
+
             // 하위 스테이지 자동 처리 제거: 보스 클리어가 다른 스테이지에 영향 주지 않음
-            
+
             // ★ 미션 업데이트: 보스 처치
             updateMissionProgress('checkpointBoss'); // 일일 미션
             updateMissionProgress('dragon'); // 주간 미션 
@@ -6554,16 +6653,12 @@ stageClear = function(type) {
                 if (isForgotten) stageMemoryLevels[sId] = (prevLevel || 0) + 1;
                 
                 // ★ 미션 업데이트
-                if (window.isReplayMode) {
-                    // 복습 모드: 일반 클리어 (미션 증가 없음)
-                } else {
-                    // 신규 모드: 일반 클리어
-                    updateMissionProgress('new'); // 신규 훈련 증가
-                    
-                    // 다양성 미션: 오늘 처음 클리어하는 스테이지라면
-                    if (!isAlreadyClearedToday) {
-                        updateMissionProgress('differentStage');
-                    }
+                // 복습 모드, 전체 학습 모드, 신규 모드 모두 카운트
+                updateMissionProgress('new'); // 스테이지 클리어 시 무조건 카운트
+
+                // 다양성 미션: 오늘 처음 클리어하는 스테이지라면 (복습/전체학습/신규 모두 적용)
+                if (!isAlreadyClearedToday) {
+                    updateMissionProgress('differentStage');
                 }
             } 
 

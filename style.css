@@ -1,3 +1,68 @@
+        /* 💜 망각 주기 도래 스테이지 버튼/모달 */
+        #forgetting-btn {
+            position: fixed;
+            left: 50%;
+            bottom: 80px;
+            transform: translateX(-50%);
+            z-index: 120;
+            background: var(--primary-color);
+            color: #2c3e50;
+            font-size: 1.1rem;
+            font-weight: bold;
+            padding: 12px 32px;
+            border-radius: 30px;
+            border: none;
+            box-shadow: 0 2px 10px #2224;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            display: none;
+        }
+        #forgetting-btn:active {
+            background: #ffe066;
+            color: #222;
+        }
+
+        #forgetting-modal .result-card {
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            background: #fffbe6;
+            color: #2c3e50;
+            border: 2px solid #f1c40f;
+            box-shadow: 0 8px 32px rgba(44,62,80,0.18);
+        }
+        #forgetting-stage-list {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .forgetting-stage-item {
+            background: #f9f6e7;
+            border: 1px solid #f1c40f;
+            border-radius: 12px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 1rem;
+            box-shadow: 0 2px 8px rgba(241,196,15,0.07);
+        }
+        .forgetting-stage-item .play-btn {
+            background: #f1c40f;
+            color: #2c3e50;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 16px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: background 0.2s, color 0.2s;
+        }
+        .forgetting-stage-item .play-btn:active {
+            background: #ffe066;
+            color: #222;
+        }
         /* [1. 기본 설정] */
         :root {
             --primary-color: #f1c40f; 
