@@ -6684,9 +6684,9 @@ stageClear = function(type) {
             // 망각 주기가 지난 경우에만 클리어 시각 갱신
             if (isForgotten) {
                 stageLastClear[sId] = Date.now();
-            }
-
-            if (isForgotten) {
+                // 복습 주기 갱신: 현재 기억레벨 기준으로 다음 eligibleTime 설정
+                const memoryLevel = stageMemoryLevels[sId] || 0;
+                stageNextEligibleTime[sId] = getNextEligibleTime(memoryLevel);
                 // (기억레벨+1) × 10% 보너스 적용 (최소 10%, Lv4이상 50%)
                 let bonusPercent = ((prevLevel + 1) * 0.1);
                 if (bonusPercent > 0.5) bonusPercent = 0.5; // 50% cap
