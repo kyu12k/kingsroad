@@ -27,8 +27,7 @@ function updateForgettingBtn() {
     if (!btn) return;
     const mapScreen = document.getElementById('map-screen');
     if (mapScreen && mapScreen.classList.contains('active')) {
-        const stages = getForgettingStages();
-        btn.style.display = stages.length > 0 ? 'block' : 'none';
+        btn.style.display = 'block';
     } else {
         btn.style.display = 'none';
     }
