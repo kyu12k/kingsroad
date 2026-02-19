@@ -8278,19 +8278,16 @@ function getChosung(str) {
 function updateForgottenNotificationData() {
     try {
         let forgottenStages = [];
+        
         // 모든 스테이지에서 망각 상태 확인
         gameData.forEach((chapter) => {
             if (!chapter.stages) return;
             chapter.stages.forEach((stage) => {
                 if (stage.type === 'boss' || stage.id.includes('boss')) return;
+                
                 const memStatus = checkMemoryStatus(stage.id);
                 if (memStatus.isForgotten) {
-                    // id, chapter, title 모두 저장
-                    forgottenStages.push({
-                        id: stage.id,
-                        chapter: chapter.title,
-                        title: stage.title
-                    });
+                    forgottenStages.push(`${chapter.title} - ${stage.title}`);
                 }
             });
         });
@@ -8301,6 +8298,7 @@ function updateForgottenNotificationData() {
             forgottenStages: forgottenStages,
             count: forgottenStages.length
         };
+        
         localStorage.setItem('kingsroad_notifications', JSON.stringify(notificationData));
         
         // ★ 복습할 스테이지 버튼 표시 제어
@@ -8317,30 +8315,44 @@ function updateForgottenNotificationData() {
         if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
             navigator.serviceWorker.controller.postMessage({
                 type: 'UPDATE_FORGOTTEN_DATA',
-                let forgottenStages = [];
-                try {
-                    const data = localStorage.getItem('kingsroad_notifications');
-                    if (data) {
-                        const parsed = JSON.parse(data);
-                        if (parsed && Array.isArray(parsed.forgottenStages)) {
-                            forgottenStages = parsed.forgottenStages;
-                        }
-                    }
-                } catch (e) {}
+                stages: forgottenStages,
+                count: forgottenStages.length
+            });
+        }
+        
+        console.log('📝 복습 알림 데이터 업데이트:', forgottenStages.length + '개');
+    } catch (err) {
+        console.error('❌ 복습 알림 업데이트 실패:', err);
+    }
+}
 
-                // 3. 목록 렌더링 (복습하기 버튼 포함)
-                if (forgottenStages.length === 0) {
-                    listDiv.innerHTML = '<div style="color:#7f8c8d; text-align:center; padding:20px 0;">망각 위험 스테이지가 없습니다.</div>';
-                } else {
-                    listDiv.innerHTML = forgottenStages.map((s, i) => {
-                        // s: {id, chapter, title}
-                        const label = `${s.chapter} - ${s.title}`;
-                        const btnHtml = s.id
-                            ? `<button style=\"margin-left:10px; padding:4px 12px; border-radius:12px; background:#f1c40f; color:#2c3e50; border:none; font-size:0.95em; cursor:pointer;\" onclick=\"startQuickReviewFromModal('${s.id}')\">복습하기</button>`
-                            : `<button style=\"margin-left:10px; padding:4px 12px; border-radius:12px; background:#ccc; color:#888; border:none; font-size:0.95em; cursor:not-allowed;\" disabled>복습 불가</button>`;
-                        return `<div style=\"padding:8px 0; border-bottom:1px solid #eee; font-size:1rem; display:flex; align-items:center;\">${i+1}. ${label}${btnHtml}</div>`;
-                    }).join('');
+// ★ [추가] 주기적인 복습 상태 확인 (5분마다)
+function startForgottenStatusChecker() {
+    // 게임 로딩 후 5초 지나서 시작
+    setTimeout(() => {
+        updateForgottenNotificationData();
+        
+        // 이후 5분마다 확인
+        setInterval(() => {
+            updateForgottenNotificationData();
+            
+            // Background Sync 지원 시 sync 이벤트 발동
+            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                if ('sync' in navigator.serviceWorker.registration) {
+                    navigator.serviceWorker.ready.then(reg => {
+                        reg.sync.register('check-forgotten-stages');
+                    });
                 }
+            }
+        }, 5 * 60 * 1000); // 5분 = 300000ms
+    }, 5000);
+}
+
+/* [시스템: 클리어 축하 폭죽 효과 (Confetti)] */
+function triggerConfetti() {
+    const duration = 1500; // 1.5초 동안 지속
+    const end = Date.now() + duration;
+
     // 캔버스 생성 및 설정
     const canvas = document.createElement('canvas');
     canvas.style.position = 'fixed';
