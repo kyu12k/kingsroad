@@ -8303,10 +8303,10 @@ function updateForgottenNotificationData() {
             if (!chapter.stages) return;
             chapter.stages.forEach((stage) => {
                 if (stage.type === 'boss' || stage.id.includes('boss')) return;
-                
                 const memStatus = checkMemoryStatus(stage.id);
                 if (memStatus.isForgotten) {
-                    forgottenStages.push(`${chapter.title} - ${stage.title}`);
+                    // 챕터 타이틀 없이 스테이지 타이틀만 저장
+                    forgottenStages.push(stage.title);
                 }
             });
         });
