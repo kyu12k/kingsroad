@@ -21,17 +21,30 @@ function openForgettingModal() {
     if (forgottenStages.length === 0) {
         listDiv.innerHTML = '<div style="color:#7f8c8d; text-align:center; padding:20px 0;">망각 위험 스테이지가 없습니다.</div>';
     } else {
-        // 각 스테이지명에서 id 추출 (형식: '제 1장 - 스테이지명')
+        // 각 스테이지명에서 id 추출 (chapter.title 매칭 실패 시 stage.title만으로도 찾기)
         listDiv.innerHTML = forgottenStages.map((s, i) => {
-            // id 추출 로직: gameData에서 title, stage.title로 매칭
             let stageId = null;
+            let displayTitle = null;
             if (window.gameData) {
+                // 1. 기존 방식: chapter.title + ' - ' + stage.title 매칭
                 for (const chapter of gameData) {
                     if (s.startsWith(chapter.title)) {
                         const stageTitle = s.replace(chapter.title + ' - ', '');
                         const found = chapter.stages && chapter.stages.find(st => st.title === stageTitle);
                         if (found) {
                             stageId = found.id;
+                            displayTitle = found.title;
+                            break;
+                        }
+                    }
+                }
+                // 2. 실패 시: 모든 스테이지에서 stage.title만으로 매칭
+                if (!stageId) {
+                    for (const chapter of gameData) {
+                        const found = chapter.stages && chapter.stages.find(st => st.title === s || st.title === s.replace(/.* - /, ''));
+                        if (found) {
+                            stageId = found.id;
+                            displayTitle = found.title;
                             break;
                         }
                     }
@@ -41,7 +54,13 @@ function openForgettingModal() {
             const btnHtml = stageId
                 ? `<button style=\"margin-left:10px; padding:4px 12px; border-radius:12px; background:#f1c40f; color:#2c3e50; border:none; font-size:0.95em; cursor:pointer;\" onclick=\"startQuickReviewFromModal('${stageId}')\">복습하기</button>`
                 : `<button style=\"margin-left:10px; padding:4px 12px; border-radius:12px; background:#ccc; color:#888; border:none; font-size:0.95em; cursor:not-allowed;\" disabled>복습 불가</button>`;
-            return `<div style=\"padding:8px 0; border-bottom:1px solid #eee; font-size:1rem; display:flex; align-items:center;\">${i+1}. ${s}${btnHtml}</div>`;
+            // 스테이지 타이틀만 표시 (displayTitle가 없으면 s에서 마지막 '-' 이후만 추출)
+            let titleToShow = displayTitle;
+            if (!titleToShow) {
+                const parts = s.split('-');
+                titleToShow = parts.length > 1 ? parts.slice(1).join('-').trim() : s;
+            }
+            return `<div style=\"padding:8px 0; border-bottom:1px solid #eee; font-size:1rem; display:flex; align-items:center;\">${i+1}. ${titleToShow}${btnHtml}</div>`;
         }).join('');
     }
 
