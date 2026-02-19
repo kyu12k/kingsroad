@@ -22,20 +22,31 @@ function openForgettingModal() {
         // id로만 매칭, UI에는 스테이지 타이틀만 표시
         listDiv.innerHTML = forgottenStages.map((stageId, i) => {
             let stageTitle = null;
+            let matchedId = null;
             if (window.gameData) {
                 for (const ch of gameData) {
-                    const st = ch.stages && ch.stages.find(st => st.id === stageId);
-                    if (st) {
-                        stageTitle = st.title;
-                        break;
+                    if (ch.stages) {
+                        const st = ch.stages.find(st => st.id === stageId);
+                        if (st) {
+                            stageTitle = st.title;
+                            matchedId = st.id;
+                            break;
+                        }
                     }
                 }
+            }
+            // 디버그: id 일치 여부 및 공백 여부 표시
+            let debugInfo = '';
+            if (matchedId && matchedId !== stageId) {
+                debugInfo = `<span style='color:red; font-size:0.85em; margin-left:6px;'>(id mismatch: '${stageId}' vs '${matchedId}')</span>`;
+            } else if (!matchedId && typeof stageId === 'string' && stageId !== stageId.trim()) {
+                debugInfo = `<span style='color:orange; font-size:0.85em; margin-left:6px;'>(공백 포함됨)</span>`;
             }
             const btnHtml = stageTitle
                 ? `<button style=\"margin-left:10px; padding:4px 12px; border-radius:12px; background:#f1c40f; color:#2c3e50; border:none; font-size:0.95em; cursor:pointer;\" onclick=\"startQuickReviewFromModal('${stageId}')\">복습하기</button>`
                 : `<button style=\"margin-left:10px; padding:4px 12px; border-radius:12px; background:#ccc; color:#888; border:none; font-size:0.95em; cursor:not-allowed;\" disabled>복습 불가</button>`;
             const titleToShow = stageTitle || stageId;
-            return `<div style=\"padding:8px 0; border-bottom:1px solid #eee; font-size:1rem; display:flex; align-items:center;\">${i+1}. ${titleToShow}${btnHtml}</div>`;
+            return `<div style=\"padding:8px 0; border-bottom:1px solid #eee; font-size:1rem; display:flex; align-items:center;\">${i+1}. ${titleToShow}${btnHtml}${debugInfo}</div>`;
         }).join('');
     }
 
