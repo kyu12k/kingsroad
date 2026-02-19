@@ -17,17 +17,65 @@ function openForgettingModal() {
         }
     } catch (e) {}
 
-    // 3. 목록 렌더링
+    // 3. 목록 렌더링 (복습하기 버튼 포함)
     if (forgottenStages.length === 0) {
         listDiv.innerHTML = '<div style="color:#7f8c8d; text-align:center; padding:20px 0;">망각 위험 스테이지가 없습니다.</div>';
     } else {
-        listDiv.innerHTML = forgottenStages.map((s, i) =>
-            `<div style="padding:8px 0; border-bottom:1px solid #eee; font-size:1rem;">${i+1}. ${s}</div>`
-        ).join('');
+        // 각 스테이지명에서 id 추출 (형식: '제 1장 - 스테이지명')
+        listDiv.innerHTML = forgottenStages.map((s, i) => {
+            // id 추출 로직: gameData에서 title, stage.title로 매칭
+            let stageId = null;
+            if (window.gameData) {
+                for (const chapter of gameData) {
+                    if (s.startsWith(chapter.title)) {
+                        const stageTitle = s.replace(chapter.title + ' - ', '');
+                        const found = chapter.stages && chapter.stages.find(st => st.title === stageTitle);
+                        if (found) {
+                            stageId = found.id;
+                            break;
+                        }
+                    }
+                }
+            }
+            // 버튼: stageId가 있으면 활성화, 없으면 비활성화
+            const btnHtml = stageId
+                ? `<button style=\"margin-left:10px; padding:4px 12px; border-radius:12px; background:#f1c40f; color:#2c3e50; border:none; font-size:0.95em; cursor:pointer;\" onclick=\"startQuickReviewFromModal('${stageId}')\">복습하기</button>`
+                : `<button style=\"margin-left:10px; padding:4px 12px; border-radius:12px; background:#ccc; color:#888; border:none; font-size:0.95em; cursor:not-allowed;\" disabled>복습 불가</button>`;
+            return `<div style=\"padding:8px 0; border-bottom:1px solid #eee; font-size:1rem; display:flex; align-items:center;\">${i+1}. ${s}${btnHtml}</div>`;
+        }).join('');
     }
 
     // 4. 모달 표시
     modal.style.display = 'flex';
+}
+
+// [추가] 복습 모달에서 복습하기 버튼 클릭 시 빠른 복습 시작
+function startQuickReviewFromModal(stageId) {
+    closeForgettingModal();
+    // 빠른 복습(스마트/전체/복습 모드 등)으로 연결: openStageSheet 등 활용
+    // stageId로 해당 챕터 데이터 찾기
+    if (!window.gameData) return;
+    let chapterData = null;
+    for (const ch of gameData) {
+        if (ch.stages && ch.stages.find(st => st.id === stageId)) {
+            chapterData = ch;
+            break;
+        }
+    }
+    if (chapterData) {
+        // openStageSheet로 스테이지 시트 열고, 해당 스테이지 자동 선택
+        openStageSheet(chapterData);
+        setTimeout(() => {
+            // 스테이지 버튼 클릭 시와 동일하게 동작하도록 트리거
+            const itemList = document.querySelectorAll('.stage-item');
+            for (const item of itemList) {
+                if (item && item.onclick && item.innerText.includes(stageId.split('-').pop())) {
+                    item.onclick();
+                    break;
+                }
+            }
+        }, 300);
+    }
 }
 
 // [추가] 망각 위험 스테이지 모달 닫기 함수
