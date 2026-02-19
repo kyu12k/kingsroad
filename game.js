@@ -3562,6 +3562,8 @@ function normalizeChunkText(text) {
 /* [수정] 훈련 시작 함수 (phase 시스템 제거) */
 function startTraining(stageId, mode = 'normal') {
     const isForceFullNew = (mode === 'full-new');
+    // 힌트 비용 스테이지별 리셋
+    hintCost = 10;
     
     // ★ chNum을 여기서 미리 정의 (함수 전체에서 쓰임)
     const m = String(stageId).match(/^(\d+)(?:-(\d+|.+))?/);
@@ -4571,30 +4573,36 @@ function showHintModal({ cost, onClose }) {
     let verse = '';
     let highlightHtml = '';
     if (isTraining) {
-        if (typeof trainingVerseData === 'object' && trainingVerseData.verse) {
-            verse = trainingVerseData.verse;
+        // step5 힌트 undefined 방지
+        if (!trainingVerseData || !trainingVerseData.text) {
+            alert("이 구절의 힌트 데이터를 불러올 수 없습니다.");
+            if (typeof onClose === 'function') onClose();
+            return;
+        }
+        if (typeof trainingVerseData === 'object' && trainingVerseData.text) {
+            verse = trainingVerseData.text;
         }
         if (currentStep === 2 && typeof trainingVerseData.chunks === 'object') {
             const idx = window.currentSlotIndex;
             highlightHtml = trainingVerseData.chunks.map((w,i)=>
                 i===idx ? `<span style='background:#ffe066; border-radius:5px;'>${w}</span>` : w
             ).join(' ');
-            hintText = `<div style='margin-bottom:8px;'>현재 구절</div><div style='font-size:1.1rem; color:#2c3e50;'>${verse}</div><div style='margin-top:10px;'>현재 단어: ${highlightHtml}</div>`;
-        } else if (currentStep === 3 && typeof trainingVerseData.verse === 'string') {
+            hintText = `<div style='margin-top:10px;'>현재 단어: ${highlightHtml}</div>`;
+        } else if (currentStep === 3 && typeof trainingVerseData.text === 'string') {
             const targetSlot = document.querySelector('.blank-slot');
             if (targetSlot) {
                 const answer = targetSlot.dataset.answer;
-                highlightHtml = trainingVerseData.verse.replace(answer, `<span style='background:#ffe066; border-radius:5px;'>${answer}</span>`);
+                highlightHtml = trainingVerseData.text.replace(answer, `<span style='background:#ffe066; border-radius:5px;'>${answer}</span>`);
                 hintText = `<div style='margin-bottom:8px;'>현재 구절</div><div style='font-size:1.1rem; color:#2c3e50;'>${highlightHtml}</div>`;
             } else {
-                hintText = `<div style='font-size:1.1rem; color:#2c3e50;'>${trainingVerseData.verse}</div>`;
+                hintText = `<div style='font-size:1.1rem; color:#2c3e50;'>${trainingVerseData.text}</div>`;
             }
         } else if (currentStep === 4) {
-            hintText = `<div style='font-size:1.1rem; color:#2c3e50;'>${trainingVerseData.verse}</div><div style='margin-top:10px; color:#e74c3c;'>가짜 단어를 찾아 빨갛게 표시합니다.</div>`;
+            hintText = `<div style='font-size:1.1rem; color:#2c3e50;'>${trainingVerseData.text}</div><div style='margin-top:10px; color:#e74c3c;'>가짜 단어를 찾아 빨갛게 표시합니다.</div>`;
         } else if (currentStep === 5) {
-            hintText = `<div style='font-size:1.1rem; color:#2c3e50;'>${trainingVerseData.verse}</div>`;
+            hintText = `<div style='font-size:1.1rem; color:#2c3e50;'>${trainingVerseData.text}</div>`;
         } else {
-            hintText = `<div style='font-size:1.1rem; color:#2c3e50;'>${trainingVerseData.verse}</div>`;
+            hintText = `<div style='font-size:1.1rem; color:#2c3e50;'>${trainingVerseData.text}</div>`;
         }
     } else {
         if (typeof currentVerseData === 'object' && currentVerseData.verse) {
