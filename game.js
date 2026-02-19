@@ -2755,10 +2755,7 @@ function calculateBossBaseGem(chapterNum) {
 
 /* [수정] 기억 상태 확인 함수 (1시간 여유 두기 패치) */
 function checkMemoryStatus(stageId) {
-    // 1. 보스 스테이지는 기억 관리 대상 아님 (즉시 리턴)
-    if (String(stageId).includes('boss')) {
-        return { level: 0, isForgotten: false, remainTime: 0 };
-    }
+    // 1. (기존) 보스/중간점검도 망각 위험 판정에서 제외했으나, 이제 포함
 
     // 2. 한 번도 안 깬 경우
     if (!stageLastClear[stageId]) {
