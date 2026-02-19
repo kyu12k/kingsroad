@@ -5,7 +5,6 @@ function openForgettingModal() {
     const listDiv = document.getElementById('forgetting-stage-list');
     if (!modal || !listDiv) return;
 
-    // 2. 로컬스토리지에서 최신 망각 스테이지 목록 불러오기
     let forgottenStages = [];
     try {
         const data = localStorage.getItem('kingsroad_notifications');
@@ -17,49 +16,25 @@ function openForgettingModal() {
         }
     } catch (e) {}
 
-    // 3. 목록 렌더링 (복습하기 버튼 포함)
     if (forgottenStages.length === 0) {
         listDiv.innerHTML = '<div style="color:#7f8c8d; text-align:center; padding:20px 0;">망각 위험 스테이지가 없습니다.</div>';
     } else {
-        // 각 스테이지명에서 id 추출 (chapter.title 매칭 실패 시 stage.title만으로도 찾기)
-        listDiv.innerHTML = forgottenStages.map((s, i) => {
-            let stageId = null;
-            let displayTitle = null;
+        // id로만 매칭, UI에는 스테이지 타이틀만 표시
+        listDiv.innerHTML = forgottenStages.map((stageId, i) => {
+            let stageTitle = null;
             if (window.gameData) {
-                // 1. 기존 방식: chapter.title + ' - ' + stage.title 매칭
-                for (const chapter of gameData) {
-                    if (s.startsWith(chapter.title)) {
-                        const stageTitle = s.replace(chapter.title + ' - ', '');
-                        const found = chapter.stages && chapter.stages.find(st => st.title === stageTitle);
-                        if (found) {
-                            stageId = found.id;
-                            displayTitle = found.title;
-                            break;
-                        }
-                    }
-                }
-                // 2. 실패 시: 모든 스테이지에서 stage.title만으로 매칭
-                if (!stageId) {
-                    for (const chapter of gameData) {
-                        const found = chapter.stages && chapter.stages.find(st => st.title === s || st.title === s.replace(/.* - /, ''));
-                        if (found) {
-                            stageId = found.id;
-                            displayTitle = found.title;
-                            break;
-                        }
+                for (const ch of gameData) {
+                    const st = ch.stages && ch.stages.find(st => st.id === stageId);
+                    if (st) {
+                        stageTitle = st.title;
+                        break;
                     }
                 }
             }
-            // 버튼: stageId가 있으면 활성화, 없으면 비활성화
-            const btnHtml = stageId
+            const btnHtml = stageTitle
                 ? `<button style=\"margin-left:10px; padding:4px 12px; border-radius:12px; background:#f1c40f; color:#2c3e50; border:none; font-size:0.95em; cursor:pointer;\" onclick=\"startQuickReviewFromModal('${stageId}')\">복습하기</button>`
                 : `<button style=\"margin-left:10px; padding:4px 12px; border-radius:12px; background:#ccc; color:#888; border:none; font-size:0.95em; cursor:not-allowed;\" disabled>복습 불가</button>`;
-            // 스테이지 타이틀만 표시 (displayTitle가 없으면 s에서 마지막 '-' 이후만 추출)
-            let titleToShow = displayTitle;
-            if (!titleToShow) {
-                const parts = s.split('-');
-                titleToShow = parts.length > 1 ? parts.slice(1).join('-').trim() : s;
-            }
+            const titleToShow = stageTitle || stageId;
             return `<div style=\"padding:8px 0; border-bottom:1px solid #eee; font-size:1rem; display:flex; align-items:center;\">${i+1}. ${titleToShow}${btnHtml}</div>`;
         }).join('');
     }
@@ -71,24 +46,25 @@ function openForgettingModal() {
 // [추가] 복습 모달에서 복습하기 버튼 클릭 시 빠른 복습 시작
 function startQuickReviewFromModal(stageId) {
     closeForgettingModal();
-    // 빠른 복습(스마트/전체/복습 모드 등)으로 연결: openStageSheet 등 활용
-    // stageId로 해당 챕터 데이터 찾기
     if (!window.gameData) return;
     let chapterData = null;
+    let stageObj = null;
     for (const ch of gameData) {
-        if (ch.stages && ch.stages.find(st => st.id === stageId)) {
-            chapterData = ch;
-            break;
+        if (ch.stages) {
+            const st = ch.stages.find(st => st.id === stageId);
+            if (st) {
+                chapterData = ch;
+                stageObj = st;
+                break;
+            }
         }
     }
-    if (chapterData) {
-        // openStageSheet로 스테이지 시트 열고, 해당 스테이지 자동 선택
+    if (chapterData && stageObj) {
         openStageSheet(chapterData);
         setTimeout(() => {
-            // 스테이지 버튼 클릭 시와 동일하게 동작하도록 트리거
             const itemList = document.querySelectorAll('.stage-item');
             for (const item of itemList) {
-                if (item && item.onclick && item.innerText.includes(stageId.split('-').pop())) {
+                if (item && item.onclick && item.dataset && item.dataset.stageId === stageId) {
                     item.onclick();
                     break;
                 }
@@ -8297,21 +8273,17 @@ function getChosung(str) {
 function updateForgottenNotificationData() {
     try {
         let forgottenStages = [];
-        
-        // 모든 스테이지에서 망각 상태 확인
+        // 모든 스테이지에서 망각 상태 확인 (id만 저장)
         gameData.forEach((chapter) => {
             if (!chapter.stages) return;
             chapter.stages.forEach((stage) => {
                 if (stage.type === 'boss' || stage.id.includes('boss')) return;
                 const memStatus = checkMemoryStatus(stage.id);
                 if (memStatus.isForgotten) {
-                    // 챕터 타이틀 없이 스테이지 타이틀만 저장
-                    forgottenStages.push(stage.title);
+                    forgottenStages.push(stage.id);
                 }
             });
         });
-        
-        // 로컬스토리지에 저장
         const notificationData = {
             lastUpdated: Date.now(),
             forgottenStages: forgottenStages,
