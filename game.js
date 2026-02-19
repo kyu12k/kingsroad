@@ -1,3 +1,40 @@
+// [추가] 망각 위험 스테이지 모달 오픈 함수
+function openForgettingModal() {
+    // 1. 모달 요소 가져오기
+    const modal = document.getElementById('forgetting-modal');
+    const listDiv = document.getElementById('forgetting-stage-list');
+    if (!modal || !listDiv) return;
+
+    // 2. 로컬스토리지에서 최신 망각 스테이지 목록 불러오기
+    let forgottenStages = [];
+    try {
+        const data = localStorage.getItem('kingsroad_notifications');
+        if (data) {
+            const parsed = JSON.parse(data);
+            if (parsed && Array.isArray(parsed.forgottenStages)) {
+                forgottenStages = parsed.forgottenStages;
+            }
+        }
+    } catch (e) {}
+
+    // 3. 목록 렌더링
+    if (forgottenStages.length === 0) {
+        listDiv.innerHTML = '<div style="color:#7f8c8d; text-align:center; padding:20px 0;">망각 위험 스테이지가 없습니다.</div>';
+    } else {
+        listDiv.innerHTML = forgottenStages.map((s, i) =>
+            `<div style="padding:8px 0; border-bottom:1px solid #eee; font-size:1rem;">${i+1}. ${s}</div>`
+        ).join('');
+    }
+
+    // 4. 모달 표시
+    modal.style.display = 'flex';
+}
+
+// [추가] 망각 위험 스테이지 모달 닫기 함수
+function closeForgettingModal() {
+    const modal = document.getElementById('forgetting-modal');
+    if (modal) modal.style.display = 'none';
+}
 // [정식 배포] 게임 버전 정보
 const GAME_VERSION = "1.0.0"; // 정식 배포 버전
 
@@ -8189,8 +8226,6 @@ function getChosung(str) {
     return result;
 }
 
-// (디버그) 강제 망각 테스트용 함수는 삭제되었습니다.
-
 // ★ [추가] 복습 알림 데이터 저장 및 업데이트 (Service Worker용)
 function updateForgottenNotificationData() {
     try {
@@ -8218,6 +8253,16 @@ function updateForgottenNotificationData() {
         
         localStorage.setItem('kingsroad_notifications', JSON.stringify(notificationData));
         
+        // ★ 복습할 스테이지 버튼 표시 제어
+        const forgettingBtn = document.getElementById('forgetting-btn');
+        if (forgettingBtn) {
+            if (forgottenStages.length > 0) {
+                forgettingBtn.style.display = 'block';
+            } else {
+                forgettingBtn.style.display = 'none';
+            }
+        }
+
         // Service Worker에 메시지 전달
         if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
             navigator.serviceWorker.controller.postMessage({
