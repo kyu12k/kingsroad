@@ -19,7 +19,7 @@ function openForgettingModal() {
     if (forgottenStages.length === 0) {
         listDiv.innerHTML = '<div style="color:#7f8c8d; text-align:center; padding:20px 0;">망각 위험 스테이지가 없습니다.</div>';
     } else {
-        // id로만 매칭, UI에는 스테이지 타이틀만 표시
+        // 맵 UI 스타일로 노드 직접 생성
         listDiv.innerHTML = forgottenStages.map((stageId, i) => {
             let stageTitle = null;
             if (window.gameData) {
@@ -31,33 +31,14 @@ function openForgettingModal() {
                     }
                 }
             }
-            const btnHtml = stageTitle
-                ? `<button style=\"margin-left:10px; padding:4px 12px; border-radius:12px; background:#f1c40f; color:#2c3e50; border:none; font-size:0.95em; cursor:pointer;\" onclick=\"startQuickReviewFromModal('${stageId}')\">복습하기</button>`
-                : `<button style=\"margin-left:10px; padding:4px 12px; border-radius:12px; background:#ccc; color:#888; border:none; font-size:0.95em; cursor:not-allowed;\" disabled>복습 불가</button>`;
-            const titleToShow = stageTitle || stageId;
-            return `<div style=\"padding:8px 0; border-bottom:1px solid #eee; font-size:1rem; display:flex; align-items:center;\">${i+1}. ${titleToShow}${btnHtml}</div>`;
+            // 맵 UI 스타일: 아이콘, 타이틀, 클릭 이벤트
+            const nodeHtml = `<div class="forgetting-stage-item" style="display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #eee; cursor:pointer;" onclick="startQuickReviewFromModal('${stageId}')">
+                <div class="tree-icon" style="font-size:1.5rem;">🌳</div>
+                <div class="stage-label" style="font-weight:bold; color:#2c3e50;">${stageTitle || stageId}</div>
+            </div>`;
+            return nodeHtml;
         }).join('');
-    }
-
-    // 4. 모달 표시
-    modal.style.display = 'flex';
-}
-
-// [추가] 복습 모달에서 복습하기 버튼 클릭 시 빠른 복습 시작
-function startQuickReviewFromModal(stageId) {
-    closeForgettingModal();
-    if (!window.gameData) return;
-    let chapterData = null;
-    let stageObj = null;
-    for (const ch of gameData) {
-        if (ch.stages) {
-            const st = ch.stages.find(st => st.id === stageId);
-            if (st) {
-                chapterData = ch;
-                stageObj = st;
-                break;
-            }
-        }
+    // 함수 끝
     }
     if (chapterData && stageObj) {
         openStageSheet(chapterData);
