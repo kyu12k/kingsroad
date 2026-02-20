@@ -2658,7 +2658,27 @@ function openModeSelect(stageId) {
             btn.style = 'display:block; width:100%; background:rgba(241,196,15,0.12); border:1px solid #f1c40f; color:#fff; padding:12px 0; border-radius:12px; margin-bottom:10px; font-size:1.05rem; cursor:pointer; transition:background 0.2s;';
             btn.onclick = function() {
                 closeForgottenStagesOverlay();
-                openModeSelect(item.stageId);
+                // 중간점검/보스전이면 바로 step6 진입, 아니면 복습 모드 선택
+                const stageData = (function() {
+                    for (let chapter of gameData) {
+                        if (!chapter.stages) continue;
+                        for (let s of chapter.stages) {
+                            if (s.id === item.stageId) return s;
+                        }
+                    }
+                    return null;
+                })();
+                if (stageData && (stageData.type === 'midboss' || stageData.type === 'boss')) {
+                    // step6 진입 함수가 있다면 호출, 없으면 fallback
+                    if (typeof startStep6 === 'function') {
+                        startStep6(item.stageId);
+                    } else {
+                        // fallback: openModeSelect로 진입
+                        openModeSelect(item.stageId);
+                    }
+                } else {
+                    openModeSelect(item.stageId);
+                }
             };
             listDiv.appendChild(btn);
         }
