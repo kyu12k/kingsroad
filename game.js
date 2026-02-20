@@ -19,29 +19,52 @@ function openForgettingModal() {
     if (forgottenStages.length === 0) {
         listDiv.innerHTML = '<div style="color:#7f8c8d; text-align:center; padding:20px 0;">망각 위험 스테이지가 없습니다.</div>';
     } else {
-        // 맵 UI 스타일로 노드 직접 생성
-        listDiv.innerHTML = forgottenStages.map((stageId, i) => {
-            let stageTitle = null;
+        // 기존 내용 비우기
+        listDiv.innerHTML = '';
+        forgottenStages.forEach((stageId, i) => {
+            let stageTitle = stageId;
             if (window.gameData) {
                 for (const ch of gameData) {
                     const st = ch.stages && ch.stages.find(st => st.id === stageId);
-                    if (st) {
+                    if (st && st.title) {
                         stageTitle = st.title;
                         break;
                     }
                 }
             }
-            // 맵 UI 스타일: 아이콘, 타이틀, 클릭 이벤트
-            const nodeHtml = `<div class="forgetting-stage-item" style="display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #eee; cursor:pointer;" onclick="startQuickReviewFromModal('${stageId}')">
-                <div class="tree-icon" style="font-size:1.5rem;">🌳</div>
-                <div class="stage-label" style="font-weight:bold; color:#2c3e50;">${stageTitle || stageId}</div>
-            </div>`;
-            return nodeHtml;
-        }).join('');
-    // 함수 끝
+            // DOM 요소 생성
+            const nodeDiv = document.createElement('div');
+            nodeDiv.className = 'forgetting-stage-item';
+            nodeDiv.style.display = 'flex';
+            nodeDiv.style.alignItems = 'center';
+            nodeDiv.style.gap = '12px';
+            nodeDiv.style.padding = '10px 0';
+            nodeDiv.style.borderBottom = '1px solid #eee';
+            nodeDiv.style.cursor = 'pointer';
+
+            const iconDiv = document.createElement('div');
+            iconDiv.className = 'tree-icon';
+            iconDiv.style.fontSize = '1.5rem';
+            iconDiv.innerText = '🌳';
+
+            const labelDiv = document.createElement('div');
+            labelDiv.className = 'stage-label';
+            labelDiv.style.fontWeight = 'bold';
+            labelDiv.style.color = '#2c3e50';
+            labelDiv.innerText = stageTitle;
+
+            nodeDiv.appendChild(iconDiv);
+            nodeDiv.appendChild(labelDiv);
+
+            nodeDiv.addEventListener('click', function() {
+                startQuickReviewFromModal(stageId);
+            });
+
+            listDiv.appendChild(nodeDiv);
+        });
+    }
     // 모달 표시 보장
     modal.style.display = 'flex';
-    }
     if (chapterData && stageObj) {
         openStageSheet(chapterData);
         setTimeout(() => {
