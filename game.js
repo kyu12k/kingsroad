@@ -39,6 +39,8 @@ function openForgettingModal() {
             return nodeHtml;
         }).join('');
     // 함수 끝
+    // 모달 표시 보장
+    modal.style.display = 'flex';
     }
     if (chapterData && stageObj) {
         openStageSheet(chapterData);
