@@ -2674,11 +2674,8 @@ function openModeSelect(stageId) {
                     (stageData.id && (String(stageData.id).includes('mid') || String(stageData.id).includes('boss')))
                 );
                 if (isMidOrBoss) {
-                    if (typeof startStep6 === 'function') {
-                        startStep6(item.stageId);
-                    } else {
-                        openModeSelect(item.stageId);
-                    }
+                    window.currentStageId = item.stageId;
+                    startBossBattle();
                 } else {
                     openModeSelect(item.stageId);
                 }
