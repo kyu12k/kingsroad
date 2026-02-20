@@ -1,7 +1,7 @@
 // [추가] 망각 위험 스테이지 모달 오픈 함수
 function openForgettingModal() {
     // 1. 모달 요소 가져오기
-    const modal = document.getElementById('forgetting-modal');
+        const modal = document.getElementById('forgetting-modal'); // [추가] 망각 위험 스테이지 모달 오픈 함수
     const listDiv = document.getElementById('forgetting-stage-list');
     if (!modal || !listDiv) return;
 
@@ -82,7 +82,7 @@ function openForgettingModal() {
 // [추가] 망각 위험 스테이지 모달 닫기 함수
 function closeForgettingModal() {
     const modal = document.getElementById('forgetting-modal');
-    if (modal) modal.style.display = 'none';
+        if (modal) modal.style.display = 'none'; // [추가] 망각 위험 스테이지 모달 닫기 함수
 }
 // [정식 배포] 게임 버전 정보
 const GAME_VERSION = "1.0.0"; // 정식 배포 버전
