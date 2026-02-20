@@ -2668,12 +2668,15 @@ function openModeSelect(stageId) {
                     }
                     return null;
                 })();
-                if (stageData && (stageData.type === 'midboss' || stageData.type === 'boss')) {
-                    // step6 진입 함수가 있다면 호출, 없으면 fallback
+                // 중간점검/보스전 인식 개선: type이 'mid-boss'/'boss'이거나 id에 'mid'/'boss' 포함 시
+                const isMidOrBoss = stageData && (
+                    (stageData.type && (stageData.type === 'mid-boss' || stageData.type === 'boss' || stageData.type === 'midboss')) ||
+                    (stageData.id && (String(stageData.id).includes('mid') || String(stageData.id).includes('boss')))
+                );
+                if (isMidOrBoss) {
                     if (typeof startStep6 === 'function') {
                         startStep6(item.stageId);
                     } else {
-                        // fallback: openModeSelect로 진입
                         openModeSelect(item.stageId);
                     }
                 } else {
