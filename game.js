@@ -2652,7 +2652,7 @@ function openModeSelect(stageId) {
             const btn = document.createElement('button');
             btn.innerHTML = `
                 <span style="font-weight:bold; color:#f1c40f;">${item.stageName}</span>
-                <span style="color:#fff; font-size:0.95em; margin-left:8px;">(제${item.chapterNum}장)</span>
+                ${item.chapterNum !== undefined ? `<span style=\"color:#fff; font-size:0.95em; margin-left:8px;\">(제${item.chapterNum}장)</span>` : ''}
                 <span style="color:#e74c3c; font-size:0.9em; margin-left:8px;">망각 위험!</span>
             `;
             btn.style = 'display:block; width:100%; background:rgba(241,196,15,0.12); border:1px solid #f1c40f; color:#fff; padding:12px 0; border-radius:12px; margin-bottom:10px; font-size:1.05rem; cursor:pointer; transition:background 0.2s;';
