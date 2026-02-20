@@ -2595,6 +2595,82 @@ function openModeSelect(stageId) {
     window.selectedStageForMode = stageId;
     modal.style.display = 'flex';
 }
+    // =========================================
+    // [추가] 망각 위험 스테이지 오버레이 및 추적 함수
+    // =========================================
+
+    // 망각 위험 스테이지 리스트를 수집하는 함수
+    function getForgottenStages() {
+        const forgottenList = [];
+        // gameData는 각 장별 스테이지 정보 배열
+        for (let chapter of gameData) {
+            if (!chapter.stages) continue;
+            for (let stage of chapter.stages) {
+                const stageId = stage.id;
+                const memStatus = checkMemoryStatus(stageId);
+                if (memStatus && memStatus.isForgotten) {
+                    forgottenList.push({
+                        stageId,
+                        chapterNum: chapter.chapter,
+                        stageName: stage.name || `스테이지 ${stageId}`,
+                        memStatus
+                    });
+                }
+            }
+        }
+        return forgottenList;
+    }
+
+    // 망각 위험 스테이지 오버레이 표시 함수
+    function openForgottenStagesOverlay() {
+        let overlay = document.getElementById('forgotten-stages-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'forgotten-stages-overlay';
+            overlay.style = 'display:flex; position:fixed; z-index:9999; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.97); color:#f1c40f; flex-direction:column; align-items:center; justify-content:center; font-size:1.2rem; text-align:center;';
+            overlay.innerHTML = `
+                <div style="max-width:90vw; font-size:1.1em; line-height:1.7; font-weight:bold; color:#fff; text-shadow:0 2px 8px #222; margin-bottom:30px;">
+                    🕑 망각 위험 스테이지<br><span style="font-size:0.95em; color:#f1c40f;">기억이 희미해진 스테이지를 복습하세요!</span>
+                </div>
+                <div id="forgotten-stages-list" style="background:rgba(0,0,0,0.3); padding:20px; border-radius:15px; max-width:600px; min-width:220px; margin-bottom:30px;">
+                </div>
+                <button onclick="closeForgottenStagesOverlay()" style="background: #f1c40f; color: #2c3e50; font-size:1.1rem; font-weight:bold; padding: 10px 32px; border-radius: 30px; border:none; box-shadow:0 2px 10px #2224; cursor:pointer; margin-top:0;">닫기</button>
+            `;
+            document.body.appendChild(overlay);
+        } else {
+            overlay.style.display = 'flex';
+        }
+        // 리스트 렌더링
+        const listDiv = document.getElementById('forgotten-stages-list');
+        const forgottenList = getForgottenStages();
+        if (forgottenList.length === 0) {
+            listDiv.innerHTML = '<div style="color:#bdc3c7;">망각 위험 스테이지가 없습니다!</div>';
+            return;
+        }
+        listDiv.innerHTML = '';
+        for (const item of forgottenList) {
+            const btn = document.createElement('button');
+            btn.innerHTML = `
+                <span style="font-weight:bold; color:#f1c40f;">${item.stageName}</span>
+                <span style="color:#fff; font-size:0.95em; margin-left:8px;">(제${item.chapterNum}장)</span>
+                <span style="color:#e74c3c; font-size:0.9em; margin-left:8px;">망각 위험!</span>
+            `;
+            btn.style = 'display:block; width:100%; background:rgba(241,196,15,0.12); border:1px solid #f1c40f; color:#fff; padding:12px 0; border-radius:12px; margin-bottom:10px; font-size:1.05rem; cursor:pointer; transition:background 0.2s;';
+            btn.onclick = function() {
+                closeForgottenStagesOverlay();
+                openModeSelect(item.stageId);
+            };
+            listDiv.appendChild(btn);
+        }
+    }
+
+    function closeForgottenStagesOverlay() {
+        const overlay = document.getElementById('forgotten-stages-overlay');
+        if (overlay) overlay.style.display = 'none';
+    }
+
+    // 오버레이를 열 수 있는 버튼을 홈 화면에 추가하려면 아래 함수를 호출하세요:
+    // openForgottenStagesOverlay();
 
 function confirmMode(mode) {
     if (!window.selectedStageForMode) return;

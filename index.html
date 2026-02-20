@@ -545,6 +545,11 @@
 
     <div id="map-screen" class="screen">
         <div class="map-header">
+        <!-- 망각 위험 플로팅 버튼: 맵 화면 하단 중앙에 위치, 스크롤에 맞게 움직임 -->
+        <button id="forgotten-stages-floating-btn" onclick="openForgottenStagesOverlay()" style="position:absolute; left:50%; transform:translateX(-50%); bottom:72px; z-index:1200; background:rgba(241,196,15,0.18); border:2px solid #f1c40f; color:#f1c40f; font-size:0.75rem; font-weight:bold; padding:5px 14px; border-radius:18px; box-shadow:0 2px 10px #2224; cursor:pointer; display:flex; align-items:center; gap:4px;">
+            <span style="font-size:1.2rem;">💜</span>
+            <span style="font-size:1.2rem;">망각 위험</span>
+        </button>
     <div style="display:flex; align-items:center; gap:10px;">
     <span id="sub-profile-name" style="font-weight:bold; color:#f1c40f;">예비 제사장</span>
         
@@ -712,8 +717,6 @@
         </svg>
     </div>
         <div class="bottom-nav">
-    <!-- 망각 주기 도래 스테이지 버튼 (고정) -->
-    <button id="forgetting-btn" onclick="openForgettingModal()" style="position:fixed; left:50%; bottom:80px; transform:translateX(-50%); z-index:120; background:#f1c40f; color:#2c3e50; font-size:1.1rem; font-weight:bold; padding:12px 32px; border-radius:30px; border:none; box-shadow:0 2px 10px #2224; cursor:pointer; display:none;">💜 복습할 스테이지</button>
 
     <div class="bottom-nav">
         <div class="nav-item" onclick="goHome()"><span>🏰</span><span>홈</span></div>
@@ -728,22 +731,10 @@
         <div class="nav-item" onclick="openAchievement()">
             <div id="badge-achievement" class="nav-badge"></div> <span>🎖️</span><span>기록실</span>
         </div>
+        <!-- 망각 위험 버튼은 네비게이션 바에서 제거됨 -->
     </div>
     </div>
 
-    <!-- 망각 주기 도래 스테이지 모달 -->
-    <div id="forgetting-modal" class="modal-overlay" style="z-index: 9999;">
-        <div class="result-card" style="max-width: 400px; max-height: 80vh; overflow-y: auto;">
-            <div style="text-align: right;">
-                <button onclick="closeForgettingModal()" style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
-            </div>
-            <div style="text-align: center; margin-bottom: 20px;">
-                <h2 style="margin:0; color:#2c3e50;">💜 복습할 스테이지</h2>
-                <p style="color:#7f8c8d; font-size:0.9rem; margin-top:5px;">망각 주기가 도래한 스테이지 목록입니다.<br>바로 플레이할 수 있습니다.</p>
-            </div>
-            <div id="forgetting-stage-list" style="text-align:left; color:#2c3e50;"></div>
-        </div>
-    </div>
     </div>
 
     <div id="stage-sheet">
