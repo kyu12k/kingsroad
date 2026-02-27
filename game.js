@@ -5896,7 +5896,7 @@ function loadTribeLeaderboard(tribeId, callback) {
                     dept: row.dept !== undefined ? row.dept : 0,
                     tag: row.tag || "",
                     castle: row.castle || 0,
-                    isMe: false  // ⚠️ Snapshot에는 myPlayerId 정보가 없으므로 false로 설정
+                    isMe: ((row.name === myNickname || row.nickname === myNickname) && row.tag === myTag)
                 };
             });
             
@@ -5954,7 +5954,7 @@ function loadZionLeaderboard(callback) {
                     dept: row.dept !== undefined ? row.dept : 0,
                     tag: row.tag || "",
                     castle: row.castle || 0,
-                    isMe: false  // ⚠️ Snapshot에는 myPlayerId 정보가 없으므로 false로 설정
+                    isMe: ((row.name === myNickname || row.nickname === myNickname) && row.tag === myTag)
                 };
             });
             
@@ -6698,17 +6698,24 @@ stageClear = function(type) {
             }
 
             // 망각 주기가 지난 경우에만 클리어 시각 갱신
+            const isFirstClear = !stageLastClear[sId];
+
+        // 망각 주기가 지났거나, '아예 처음 클리어한 경우' 모두 시각 갱신
+        if (isForgotten || isFirstClear) {
+            stageLastClear[sId] = Date.now();
+            
+            // 복습 주기 갱신: 현재 기억레벨 기준으로 다음 eligibleTime 설정
+            const memoryLevel = stageMemoryLevels[sId] || 0;
+            stageNextEligibleTime[sId] = getNextEligibleTime(memoryLevel);
+            
+            // 망각 주기가 지나서 깬 경우에만 보너스 제공
             if (isForgotten) {
-                stageLastClear[sId] = Date.now();
-                // 복습 주기 갱신: 현재 기억레벨 기준으로 다음 eligibleTime 설정
-                const memoryLevel = stageMemoryLevels[sId] || 0;
-                stageNextEligibleTime[sId] = getNextEligibleTime(memoryLevel);
-                // (기억레벨+1) × 10% 보너스 적용 (최소 10%, Lv4이상 50%)
                 let bonusPercent = ((prevLevel + 1) * 0.1);
-                if (bonusPercent > 0.5) bonusPercent = 0.5; // 50% cap
+                if (bonusPercent > 0.5) bonusPercent = 0.5; 
                 baseGem = Math.floor(baseGem * (1 + bonusPercent));
                 msg += `💜 [기억 회복] 보너스 +${Math.round(bonusPercent*100)}%! (Lv.${prevLevel})\n`;
             }
+        }
         }
         
         // ★ [깨달음의 경지 보너스 적용]
