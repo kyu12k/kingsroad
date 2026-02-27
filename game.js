@@ -6243,8 +6243,9 @@ function renderHallOfFameList(data, title) {
                 <div style="font-size:0.7rem; color:${trophyColor}; font-weight:bold; letter-spacing:1px; margin-bottom:8px;">
                     ${medalText}
                 </div>
-                <div style="font-size:1.2rem; font-weight:bold; color:white; margin-bottom:5px;">
+                <div style="font-size:1.2rem; font-weight:bold; color:white; margin-bottom:5px; display:flex; justify-content:center; align-items:center;">
                     ${getTribeIcon(user.tribe || 0)}${getDeptTag(user.dept)} ${user.name}
+                    <span style="font-size:0.8rem; color:#bdc3c7; font-weight:normal; margin-left:6px;">#${user.tag || "0000"}</span>
                 </div>
                 <div style="font-size:1rem; color:${trophyColor}; font-weight:bold;">
                     ${user.score.toLocaleString()} 점
@@ -6266,6 +6267,7 @@ function renderHallOfFameList(data, title) {
                 </div>
                 <div style="flex:1; margin-left:10px;">
                     ${getTribeIcon(user.tribe || 0)}${getDeptTag(user.dept)} ${user.name}
+                    <span style="font-size:0.8rem; color:#7f8c8d; margin-left:4px;">#${user.tag || "0000"}</span>
                 </div>
                 <div style="font-weight:bold; color:#ecf0f1;">${user.score.toLocaleString()}</div>
             `;
