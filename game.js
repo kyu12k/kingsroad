@@ -86,7 +86,8 @@ loadGameData = function() {
         if (typeof missionData.daily.newClear !== 'number') missionData.daily.newClear = 0;
         if (typeof missionData.daily.differentStages !== 'number') missionData.daily.differentStages = 0;
         if (typeof missionData.daily.checkpointBoss !== 'number') missionData.daily.checkpointBoss = 0;
-
+        if (missionData.daily.claimed.length < 4) missionData.daily.claimed.push(false);
+        if (typeof missionData.daily.backup === 'undefined') missionData.daily.backup = 0;
         if (typeof missionData.weekly.attendance !== 'number') missionData.weekly.attendance = 0;
         if (!Array.isArray(missionData.weekly.attendanceLog)) missionData.weekly.attendanceLog = [];
         if (typeof missionData.weekly.dragonKill !== 'number') missionData.weekly.dragonKill = 0;
@@ -494,7 +495,8 @@ function checkMissions() {
             newClear: 0,
             differentStages: 0,
             checkpointBoss: 0,
-            claimed: [false, false, false]
+            backup: 0, 
+            claimed: [false, false, false, false] 
         };
         console.log("📅 새로운 하루가 시작되어 일일 미션이 초기화되었습니다.");
         
@@ -4965,7 +4967,18 @@ function renderMissionList(tabName) {
                 reward: "💎 보석 500개",
                 rewardType: 'gem', val1: 500, val2: 0,
                 claimed: missionData.daily.claimed[2]
-            }
+            },
+            { 
+            id: 3, 
+            title: "데이터 기록 보관", 
+            desc: "텍스트 파일로 기록을 안전하게 보관하세요.", 
+            target: 1, 
+            current: missionData.daily.backup || 0, 
+            reward: "💎 보석 100개", 
+            rewardType: 'gem', 
+            val1: 100, val2: 0, 
+            claimed: missionData.daily.claimed[3] 
+        }
         ];
     } else {
         // 주간 미션 정의
@@ -5020,7 +5033,12 @@ function renderMissionList(tabName) {
             // 보상 받기 버튼
             btnHtml = `<button class="btn-claim ready" onclick="claimReward('${tabName}', ${m.id}, '${m.rewardType}', ${m.val1 || 0}, ${m.val2 || 0})">보상 받기</button>`;
         } else {
-            btnHtml = `<button class="btn-claim" disabled>${m.current}/${m.target}</button>`;
+            // 💡 [NEW] 4번째 백업 미션이면서 아직 미완료일 때 '바로가기' 버튼 표시
+            if (tabName === 'daily' && m.id === 3) {
+                btnHtml = `<button class="btn-claim" style="background:#3498db; color:white; border:none; cursor:pointer;" onclick="openDataSettings()">바로가기</button>`;
+            } else {
+                btnHtml = `<button class="btn-claim" disabled>${m.current}/${m.target}</button>`;
+            }
         }
 
         div.innerHTML = `
@@ -7800,9 +7818,8 @@ function showDamageEffect() {
         updateCastleView(); // 3. 성전 모습 업데이트
 
 /* =========================================
-   [시스템: 어르신 맞춤형 백업 (카톡 공유)]
+   [시스템: 텍스트 파일 백업 및 불러오기 (.txt)]
    ========================================= */
-
 function openDataSettings() {
     let modal = document.getElementById('data-modal');
     if (!modal) {
@@ -7813,31 +7830,35 @@ function openDataSettings() {
         modal.innerHTML = `
             <div class="result-card" style="max-width:350px; text-align:left; background:white; color:#2c3e50;">
                 <div class="result-header" style="font-size:1.4rem; text-align:center; color:#2c3e50; margin-bottom:5px;">
-                    💾 데이터 보관함
+                    💾 데이터 관리소
                 </div>
-                
                 <div style="margin-bottom:20px; padding:15px; background:#fef9e7; border-radius:10px; border:1px solid #f1c40f;">
-                    <h3 style="color:#d35400; margin:0 0 5px 0; font-size:1.1rem;">📤 기록 보관하기</h3>
+                    <h3 style="color:#d35400; margin:0 0 5px 0; font-size:1.1rem;">📤 기록 보관하기 (일일 미션)</h3>
                     <p style="font-size:0.9rem; color:#7f8c8d; margin-bottom:10px;">
-                        내 게임 기록을 <b>카카오톡</b>이나 <b>문자</b>로<br>가족에게 보내두세요. (가장 안전합니다)
+                        내 진행 상황을 <b>텍스트 파일(.txt)</b>로 만들어 기기에 다운로드하거나 카카오톡에 보관합니다.
                     </p>
-                    <button onclick="shareSaveCode()" style="width:100%; background:#f39c12; color:white; border:none; padding:15px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 0 #d35400;">
-                        🎁 카톡/문자로 기록 보내기
+                    <button onclick="shareSaveCodeAndGetReward()" style="width:100%; background:#f39c12; color:white; border:none; padding:15px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 0 #d35400;">
+                        🎁 파일로 저장 및 공유
                     </button>
                 </div>
 
                 <div style="margin-bottom:20px; padding:15px; background:#e8f8f5; border-radius:10px; border:1px solid #2ecc71;">
                     <h3 style="color:#27ae60; margin:0 0 5px 0; font-size:1.1rem;">📥 기록 가져오기</h3>
                     <p style="font-size:0.9rem; color:#7f8c8d; margin-bottom:10px;">
-                        보관해둔 긴 영어 코드를 복사해서<br>아래 버튼을 눌러 붙여넣으세요.
+                        보관해둔 텍스트 파일을 찾아 불러오거나, 안의 내용을 복사해서 붙여넣으세요.
                     </p>
-                    <button onclick="importSaveCode()" style="width:100%; background:#27ae60; color:white; border:none; padding:15px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 0 #1e8449;">
-                        📝 기록 붙여넣기
-                    </button>
+                    <div style="display:flex; gap:8px;">
+                        <button onclick="document.getElementById('import-file-input').click()" style="flex:1; background:#27ae60; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor:pointer; box-shadow:0 3px 0 #1e8449;">
+                            📁 파일 찾기
+                        </button>
+                        <button onclick="importSaveCode()" style="flex:1; background:#2ecc71; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor:pointer; box-shadow:0 3px 0 #27ae60;">
+                            📝 붙여넣기
+                        </button>
+                    </div>
+                    <input type="file" id="import-file-input" accept=".txt, .json" style="display:none;" onchange="importSaveFile(event)">
                 </div>
-
                 <button onclick="document.getElementById('data-modal').style.display='none'" style="width:100%; background:#95a5a6; color:white; border:none; padding:12px; border-radius:30px; cursor:pointer; font-weight:bold;">
-                    확인
+                    닫기
                 </button>
             </div>
         `;
@@ -7846,64 +7867,88 @@ function openDataSettings() {
     modal.style.display = 'flex';
 }
 
-// [기능 1] 공유하기 (Share API)
-function shareSaveCode() {
-    saveGameData(); // 저장
-    const rawData = localStorage.getItem('kingsRoadSave');
-    
-    if (!rawData) { alert("저장할 기록이 없습니다."); return; }
+// [기능 1] 백업 및 일일 미션 달성
+function shareSaveCodeAndGetReward() {
+    saveGameData();
+    const savedData = localStorage.getItem('kingsRoadSave');
+    if (!savedData) return alert("저장할 기록이 없습니다.");
 
-    try {
-        // 데이터를 안전한 코드로 변환
-        const code = btoa(encodeURIComponent(rawData));
-        const shareData = {
-            title: "킹스로드 구원 기록",
-            text: code
-        };
+    const today = new Date().toISOString().split('T')[0];
+    const fileName = `KingsRoad_Backup_${today}.txt`;
+    const file = new File([savedData], fileName, { type: "text/plain" });
 
-        // ★ 핵심: 스마트폰의 '공유하기' 창을 띄웁니다 (카톡, 문자 등 선택 가능)
-        if (navigator.share) {
-            navigator.share(shareData)
-                .then(() => console.log('공유 성공'))
-                .catch((error) => console.log('공유 취소', error));
+    // 미션 달성 처리 함수
+    const completeMission = () => {
+        if (missionData.daily.backup < 1) {
+            missionData.daily.backup = 1;
+            saveGameData();
+            if (typeof renderMissionList === 'function' && currentMissionTab === 'daily') {
+                renderMissionList('daily');
+            }
+            alert("✅ 안전하게 보관되었습니다!\n일일 미션이 달성되었습니다. 미션 탭에서 보상을 받으세요.");
         } else {
-            // PC 등 공유 기능이 없는 경우 -> 클립보드 복사로 대체
-            copyToClipboard(code);
+            alert("✅ 기록이 안전하게 업데이트 되었습니다.");
         }
-    } catch (e) {
-        console.error(e);
-        alert("오류가 발생했습니다.");
+    };
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({
+            title: '킹스로드 백업 데이터',
+            text: '나의 킹스로드 텍스트 세이브 데이터입니다. 안전하게 보관하세요!',
+            files: [file]
+        }).then(completeMission).catch(e => console.log('공유 취소됨'));
+    } else {
+        // 공유 미지원 환경(PC 등) 다운로드 처리
+        const url = URL.createObjectURL(file);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        completeMission();
     }
 }
 
-// (보조) 클립보드 복사 함수 (공유 기능 미지원 기기용)
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        alert("📋 기록 코드가 복사되었습니다!\n카카오톡을 열고 '붙여넣기' 해서 보관하세요.");
-    }).catch(() => {
-        prompt("아래 코드를 전체 복사(Ctrl+A)하세요:", text);
-    });
+// [기능 2] 파일로 불러오기
+function importSaveFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        processImportData(e.target.result);
+        event.target.value = ''; // 같은 파일 다시 열 수 있게 초기화
+    };
+    reader.readAsText(file);
 }
 
-// [기능 2] 불러오기 (Import)
+// [기능 3] 붙여넣기로 불러오기
 function importSaveCode() {
-    const code = prompt("카톡/문자에 보관해둔 코드를\n여기에 '붙여넣기' 하세요:");
+    const code = prompt("백업 파일(.txt) 안의 텍스트를 복사하여\n여기에 모두 '붙여넣기' 하세요:");
+    if (!code) return;
     
-    if (!code) return; 
+    let rawData = code;
+    // 혹시 예전 방식(영어 암호)으로 된 것을 넣었을 때 호환성 유지
+    if (!code.trim().startsWith('{')) {
+        try { rawData = decodeURIComponent(atob(code)); } catch(e) {}
+    }
+    processImportData(rawData);
+}
 
+// [공통] 복구 실행 함수
+function processImportData(jsonString) {
     try {
-        const jsonString = decodeURIComponent(atob(code));
         const parsedData = JSON.parse(jsonString);
-        
         if (parsedData.gems === undefined) throw new Error("데이터 없음");
-
-        if (confirm("⚠️ 현재 진행 상황을 지우고,\n입력한 기록으로 되돌리시겠습니까?")) {
+        
+        if (confirm("⚠️ 현재 진행 상황을 덮어쓰고,\n선택한 기록으로 되돌리시겠습니까?\n\n(다른 기기의 데이터일 경우 현재 진행 상황이 지워집니다!)")) {
             localStorage.setItem('kingsRoadSave', jsonString);
             alert("✅ 기록 복원 완료!\n게임을 다시 시작합니다.");
             location.reload();
         }
     } catch (e) {
-        alert("❌ 코드가 잘못되었습니다.\n전체 코드를 빠짐없이 복사했는지 확인해주세요.");
+        alert("❌ 데이터 형식이 잘못되었습니다.\n정상적인 백업 파일인지 확인해주세요.");
     }
 }
 
