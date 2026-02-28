@@ -4038,13 +4038,19 @@ function loadStep() {
                         slot.style.color = "#2c3e50";
                         slot.style.border = "none";
                         slot.style.fontWeight = "bold";
-                        
                         // 강조 애니메이션 (선택)
                         slot.animate([
                             { transform: 'scale(1)' },
                             { transform: 'scale(1.2)' },
                             { transform: 'scale(1)' }
                         ], 300);
+
+                        // 방금 채워진 블럭이 화면에 보이도록 스크롤을 딱 한 칸만 부드럽게 내립니다.
+                        setTimeout(() => {
+                            slot.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                            const display = document.getElementById('initials-display');
+                            if (display) display.scrollTop = display.scrollHeight;
+                        }, 50);
                     }
 
                     // 버튼 숨기기 (중복 클릭 방지)
@@ -4251,6 +4257,12 @@ function loadStep() {
                 }
                 btn.style.visibility = 'hidden';
                 SoundEffect.playClick();
+                // 👉 [추가된 부분] 방금 추가된 블록이 잘 보이도록 스크롤을 부드럽게 이동시킵니다.
+                setTimeout(() => {
+                    answerBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    // scrollIntoView가 작동하지 않는 구형 기기를 위한 안전장치
+                    zone.scrollTop = zone.scrollHeight; 
+                }, 50);
                 // block-pool이 비었는지 체크해서 레이아웃 조정
                 setTimeout(() => {
                     if ([...pool.children].every(b => b.style.visibility === 'hidden')) {
