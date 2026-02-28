@@ -3984,8 +3984,9 @@ function loadStep() {
         
         field.innerHTML = `
             <div class="verse-indicator">Step 2. 초성에 맞는 단어를 누르세요! (틀리면 ❤️감소)</div>
-            <div class="reading-card" id="initials-display" style="line-height:2.2; display:flex; flex-wrap:wrap; justify-content:center; gap:8px;">
-                </div>
+            <div class="reading-card" id="initials-display" 
+                 style="position:relative; max-height:140px; overflow-y:auto; align-content:flex-start; line-height:2.2; display:flex; flex-wrap:wrap; justify-content:center; gap:8px;">
+            </div>
         `;
 
         const display = document.getElementById('initials-display');
@@ -4053,12 +4054,15 @@ function loadStep() {
                                 const slotBottom = slot.offsetTop + slot.offsetHeight;
                                 
                                 // 2. 현재 정답 창이 보여주고 있는 밑바닥 경계선 계산
-                                const displayVisibleBottom = display.scrollTop + display.offsetHeight;
+                                const displayVisibleBottom = display.scrollTop + display.clientHeight;
                                 
-                                // 3. 만약 블럭이 경계선 아래로 넘어가서 안 보이려고 한다면?
+                                // 3. 블럭이 경계선 아래로 넘어가서 가려지려고 한다면?
                                 if (slotBottom > displayVisibleBottom - 10) { 
-                                    // 정답 창의 스크롤을 딱 '블럭 한 칸 높이 + 여백' 만큼만 부드럽게 내립니다.
-                                    display.scrollBy({ top: slot.offsetHeight + 8, behavior: 'smooth' });
+                                    // 정답 창 내부의 스크롤만 부드럽게 한 칸 내립니다.
+                                    display.scrollTo({ 
+                                        top: display.scrollTop + slot.offsetHeight + 8, 
+                                        behavior: 'smooth' 
+                                    });
                                 }
                             }
                         }, 50);
