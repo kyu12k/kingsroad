@@ -3801,7 +3801,6 @@ function enableMobileCheat() {
 }
 
 // 2. 단계별 화면 로드
-/* [수정된 단계별 로직 함수: 3단계 타워 적용] */
 function loadStep() {
     const currentOrder = sequenceIndex + 1;
     const totalCount = stepSequence.length || 1; // 0으로 나누기 방지
@@ -3825,13 +3824,23 @@ function loadStep() {
     // 현재 스테이지 ID(예: 1-3)에서 장과 절을 뽑아냅니다.
     let verseLabel = "";
     if (window.currentStageId) {
-        const parts = String(window.currentStageId).split('-');
-        // 파트가 2개 이상일 때만 (예: 1-3) 장/절 라벨을 만듭니다. (중간점검/보스는 예외처리)
-        if (parts.length >= 2 && !String(window.currentStageId).includes('mid') && !String(window.currentStageId).includes('boss')) {
-            const chapterNum = parts[0];
-            const verseNum = parts[1];
-            // 요한계시록을 줄여서 [계 1:3] 처럼 예쁘게 만듭니다.
-            verseLabel = `<span style="color:#f39c12; font-weight:bold; margin-right:8px;">[계 ${chapterNum}:${verseNum}]</span>`;
+        // ID가 숫자나 문자열 등 어떤 형태든 일단 문자열로 변환합니다.
+        const stageIdStr = String(window.currentStageId);
+        
+        // mid나 boss가 포함되어 있으면 장/절 표시를 하지 않습니다.
+        if (!stageIdStr.includes('mid') && !stageIdStr.includes('boss')) {
+            
+            // 만약 '1-3' 처럼 하이픈이 있다면 정상적으로 장과 절 분리
+            if (stageIdStr.includes('-')) {
+                const parts = stageIdStr.split('-');
+                const chapterNum = parts[0];
+                const verseNum = parts[1];
+                verseLabel = `<span style="color:#f39c12; font-weight:bold; margin-right:8px;">[계 ${chapterNum}:${verseNum}]</span>`;
+            } 
+            // 만약 하이픈 없이 숫자만 온다면? (예: 1장 통째로 등) -> 보조적인 표시
+            else {
+                 verseLabel = `<span style="color:#f39c12; font-weight:bold; margin-right:8px;">[스테이지 ${stageIdStr}]</span>`;
+            }
         }
     }
 
