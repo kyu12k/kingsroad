@@ -6668,6 +6668,10 @@ stageClear = function(type) {
             // 망각 주기가 지난 경우에만 클리어 시각 갱신
             if (isForgotten) {
                 stageLastClear[sId] = Date.now();
+
+            // 👉 [추가된 부분] 보스전도 망각 상태에서 클리어하면 기억 레벨(Lv)이 오릅니다!
+            // (prevLevel 변수 오류 방지를 위해 직접 안전하게 계산)
+            stageMemoryLevels[sId] = (stageMemoryLevels[sId] || 0) + 1;
             }
             const verseCount = bibleData[chNum] ? bibleData[chNum].length : 0;
             const rewardData = calculateProgressiveReward(chNum, verseCount, 1);
@@ -6744,6 +6748,9 @@ stageClear = function(type) {
                 
                 // 실제 hp 값으로 계산
                 verseCnt = actualHp; 
+
+                // 👉 [추가된 부분] 중간 점검도 클리어 시 기억 레벨(Lv)을 올려줍니다!
+                if (isForgotten) stageMemoryLevels[sId] = (prevLevel || 0) + 1;
 
                 // 역주행 처리
                 if (chData && chData.stages) {
