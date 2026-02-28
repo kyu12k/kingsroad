@@ -3145,98 +3145,101 @@ function loadNextVerse() {
     // 5. 블록 생성
     renderBossBlocks(currentBossChunks);
 
-    // 6. 공격 버튼 생성
+    // 6. 공격 버튼(과 다시 조립 버튼) 생성
     const oldBtn = document.getElementById('btn-boss-attack');
     if(oldBtn) oldBtn.remove();
+    
+    // 혹시 기존에 남아있을 수 있는 버튼 래퍼도 안전하게 지우기
+    const oldWrapper = document.getElementById('boss-btn-wrapper');
+    if(oldWrapper) oldWrapper.remove();
 
+    // 💡 [추가] 두 버튼을 담을 가로 정렬 상자 (Wrapper) 만들기
+    const btnWrapper = document.createElement('div');
+    btnWrapper.id = 'boss-btn-wrapper';
+    btnWrapper.style.display = 'flex';
+    btnWrapper.style.width = '100%';
+    btnWrapper.style.gap = '2%';
+    btnWrapper.style.marginTop = '10px';
+
+    // (1) 공격 버튼 설정
     const attackBtn = document.createElement('button');
     attackBtn.id = 'btn-boss-attack';
     attackBtn.className = 'btn-attack';
     attackBtn.innerText = "⚔️ 공격하기";
+    attackBtn.style.flex = '3 1 0'; // 래퍼 안에서 차지하는 비율 (3/4)
     
-    // [수정] 보스전 공격 버튼 클릭 로직
-attackBtn.onclick = () => {
-    const currentBlocks = Array.from(zone.querySelectorAll('.word-block'));
-    const correctChunks = currentBossChunks;
+    attackBtn.onclick = () => {
+        const currentBlocks = Array.from(zone.querySelectorAll('.word-block'));
+        const correctChunks = currentBossChunks;
 
-    // 개수 체크
-    if (currentBlocks.length !== correctChunks.length) {
-        alert(`주문이 완성되지 않았습니다!\n(현재: ${currentBlocks.length} / 필요: ${correctChunks.length})`);
-        return;
-    }
-
-    let errorCount = 0;
-    currentBlocks.forEach((btn, index) => {
-        // ★ [핵심 수정] 원래 단어(dataset.original)가 아니라, 
-        // 화면에 보이는 초성(innerText)이 정답의 초성과 같은지 비교합니다.
-        const visibleText = btn.innerText; 
-        const targetChosung = getChosung(correctChunks[index]);
-
-        if (visibleText === targetChosung) {
-            btn.classList.add('correct-block');
-            btn.classList.remove('error-block');
-        } else {
-            btn.classList.add('error-block');
-            btn.classList.remove('correct-block');
-            errorCount++;
-        }
-    });
-
-    if (errorCount === 0) {
-        if (currentBossParts && currentBossPartIndex < currentBossParts.length - 1) {
-            SoundEffect.playAttack();
-            currentBossPartIndex += 1;
-            currentBossChunks = currentBossParts[currentBossPartIndex];
-            renderBossBlocks(currentBossChunks);
-            updateVerseIndicator();
-            deselect();
+        // 개수 체크
+        if (currentBlocks.length !== correctChunks.length) {
+            alert(`주문이 완성되지 않았습니다!\n(현재: ${currentBlocks.length} / 필요: ${correctChunks.length})`);
             return;
         }
 
-        // 🔵 성공 로직 (기존 유지)
-        SoundEffect.playAttack();
-        triggerBossHitEffect();
-        currentBossHp--;
-        updateBattleUI();
-        
-        attackBtn.innerText = "✨ CRITICAL HIT! ✨";
-        attackBtn.style.backgroundColor = "#f1c40f";
-        
-        setTimeout(() => {
-            currentVerseIdx++;
-            loadNextVerse();
-        }, 1000);
-        deselect();
-    } else {
-        // 🔴 실패 로직 (기존 유지)
-        SoundEffect.playWrong();
-        playerHearts--;
-        wrongCount++;
-        updateBattleUI();
+        let errorCount = 0;
+        currentBlocks.forEach((btn, index) => {
+            const visibleText = btn.innerText; 
+            const targetChosung = getChosung(correctChunks[index]);
 
-        alert(`❌ 공격 실패!\n${errorCount}군데가 틀렸습니다.`);
-        
-        if (playerHearts <= 0) {
-            showReviveModal(); 
+            if (visibleText === targetChosung) {
+                btn.classList.add('correct-block');
+                btn.classList.remove('error-block');
+            } else {
+                btn.classList.add('error-block');
+                btn.classList.remove('correct-block');
+                errorCount++;
+            }
+        });
+
+        if (errorCount === 0) {
+            if (currentBossParts && currentBossPartIndex < currentBossParts.length - 1) {
+                SoundEffect.playAttack();
+                currentBossPartIndex += 1;
+                currentBossChunks = currentBossParts[currentBossPartIndex];
+                renderBossBlocks(currentBossChunks);
+                updateVerseIndicator();
+                deselect();
+                return;
+            }
+
+            // 🔵 성공 로직
+            SoundEffect.playAttack();
+            triggerBossHitEffect();
+            currentBossHp--;
+            updateBattleUI();
+            
+            attackBtn.innerText = "✨ CRITICAL HIT! ✨";
+            attackBtn.style.backgroundColor = "#f1c40f";
+            
+            setTimeout(() => {
+                currentVerseIdx++;
+                loadNextVerse();
+            }, 1000);
+            deselect();
+        } else {
+            // 🔴 실패 로직
+            SoundEffect.playWrong();
+            playerHearts--;
+            wrongCount++;
+            updateBattleUI();
+
+            alert(`❌ 공격 실패!\n${errorCount}군데가 틀렸습니다.`);
+            
+            if (playerHearts <= 0) {
+                showReviveModal(); 
+            }
+            deselect();
         }
-        deselect();
-    }
-};
+    }; // <-- 공격 버튼 onclick 끝
 
-    // ▼▼▼ [수정된 부분: 공격버튼 + 다시하기 버튼 나란히 배치] ▼▼▼
-    const btnWrapper = document.createElement('div');
-    btnWrapper.style.display = 'flex';
-    btnWrapper.style.width = '100%';
-    btnWrapper.style.gap = '2%';
-    
-    // 기존 공격 버튼 크기 조정
-    attackBtn.style.flex = '3 1 0';
-    
-    // 다시 조립(초기화) 버튼 생성
+    // (2) 💡 [추가] 다시 조립 버튼 설정
     const resetBtn = document.createElement('button');
     resetBtn.className = 'btn-reset-step5'; 
     resetBtn.innerText = '다시 조립';
-    resetBtn.style.flex = '1 1 0';
+    resetBtn.style.flex = '1 1 0'; // 래퍼 안에서 차지하는 비율 (1/4)
+    
     resetBtn.onclick = () => {
         const zone = document.getElementById('answer-zone');
         const pool = document.getElementById('block-pool');
@@ -3245,11 +3248,9 @@ attackBtn.onclick = () => {
             // 1. 정답칸에 올라간 모든 블록을 찾아서
             const blocks = Array.from(zone.querySelectorAll('.word-block'));
             blocks.forEach(block => {
-                // 혹시 남아있는 에러/정답 붉은 테두리 표시 지우기
                 block.classList.remove('error-block');
                 block.classList.remove('correct-block');
-                
-                // 2. 대기열(pool)로 물리적으로 다시 돌려보내기
+                // 2. 대기열(pool)로 물리적으로 돌려보내기
                 pool.appendChild(block);
             });
             
@@ -3259,13 +3260,20 @@ attackBtn.onclick = () => {
             }
         }
         if (typeof SoundEffect !== 'undefined') SoundEffect.playClick();
-    };
+    }; // <-- 다시 조립 버튼 onclick 끝
 
-    // 두 버튼을 묶어서 화면에 추가
+    // (3) 두 버튼을 래퍼에 담고, 최종적으로 화면(battle-control)에 추가
     btnWrapper.appendChild(attackBtn);
     btnWrapper.appendChild(resetBtn);
-    document.querySelector('.battle-control').appendChild(btnWrapper);
-}
+    
+    // 이미 함수 위쪽에서 정의된 control 변수를 그대로 사용합니다. (const 제거)
+    if (control) {
+        control.appendChild(btnWrapper);
+    } else {
+        // 혹시 control이 없을 경우를 대비한 안전망
+        document.querySelector('.battle-control').appendChild(btnWrapper);
+    }
+} // <-- loadNextVerse 함수의 진짜 끝!
         
 
 /* [수정] UI 업데이트 함수 (분할 체력바 + 개선된 보스 표시) */
