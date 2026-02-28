@@ -3821,24 +3821,19 @@ function loadStep() {
     field.innerHTML = "";
     control.innerHTML = "";
 
-    // 현재 스테이지 ID(예: 1-3)에서 장과 절을 뽑아냅니다.
+    // 👉 [개선된 코드] 현재 스테이지 ID에서 장과 절을 더 안전하게 뽑아냅니다.
     let verseLabel = "";
     if (window.currentStageId) {
-        // ID가 숫자나 문자열 등 어떤 형태든 일단 문자열로 변환합니다.
         const stageIdStr = String(window.currentStageId);
         
         // mid나 boss가 포함되어 있으면 장/절 표시를 하지 않습니다.
         if (!stageIdStr.includes('mid') && !stageIdStr.includes('boss')) {
-            
-            // 만약 '1-3' 처럼 하이픈이 있다면 정상적으로 장과 절 분리
             if (stageIdStr.includes('-')) {
                 const parts = stageIdStr.split('-');
                 const chapterNum = parts[0];
                 const verseNum = parts[1];
                 verseLabel = `<span style="color:#f39c12; font-weight:bold; margin-right:8px;">[계 ${chapterNum}:${verseNum}]</span>`;
-            } 
-            // 만약 하이픈 없이 숫자만 온다면? (예: 1장 통째로 등) -> 보조적인 표시
-            else {
+            } else {
                  verseLabel = `<span style="color:#f39c12; font-weight:bold; margin-right:8px;">[스테이지 ${stageIdStr}]</span>`;
             }
         }
@@ -3849,7 +3844,7 @@ function loadStep() {
     // ----------------------------------------------------
     if (currentStep === 1) {
         field.innerHTML = `
-            <div class="verse-indicator">Step 1. 화면을 꾹 눌러 말씀을 머리에 새기세요</div>
+            <div class="verse-indicator">${verseLabel}Step 1. 화면을 꾹 눌러 말씀을 머리에 새기세요</div>
             
             <div style="position: relative; margin-bottom: 30px;">
                 <div class="reading-card" id="tap-reading-card" 
