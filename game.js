@@ -4045,12 +4045,22 @@ function loadStep() {
                             { transform: 'scale(1)' }
                         ], 300);
 
-                        // 👉 [수정됨] 스크롤 코드는 '인덱스가 증가하기 전'의 현재 슬롯을 기준으로 작동해야 안전합니다.
+                        // 👉 [새로운 접근법] 정답 창 내부의 스크롤만 수학적으로 계산해서 움직입니다.
                         setTimeout(() => {
-                            slot.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                            // 혹시 scrollIntoView가 안 먹히는 브라우저를 위한 대비책
                             const display = document.getElementById('initials-display');
-                            if (display) display.scrollTop = display.scrollHeight;
+                            if (display && slot) {
+                                // 1. 방금 불이 들어온 블럭의 밑바닥 위치 계산
+                                const slotBottom = slot.offsetTop + slot.offsetHeight;
+                                
+                                // 2. 현재 정답 창이 보여주고 있는 밑바닥 경계선 계산
+                                const displayVisibleBottom = display.scrollTop + display.offsetHeight;
+                                
+                                // 3. 만약 블럭이 경계선 아래로 넘어가서 안 보이려고 한다면?
+                                if (slotBottom > displayVisibleBottom - 10) { 
+                                    // 정답 창의 스크롤을 딱 '블럭 한 칸 높이 + 여백' 만큼만 부드럽게 내립니다.
+                                    display.scrollBy({ top: slot.offsetHeight + 8, behavior: 'smooth' });
+                                }
+                            }
                         }, 50);
                     }
 
