@@ -2837,7 +2837,7 @@ if (type === 'normal') {
 }
 
         //[시스템: 보스전 로직]//
-        let currentBossHp, maxBossHp, playerHearts, currentVerseIdx, currentVerseData, selectedBlocks;
+        let currentBossHp, maxBossHp, playerHearts, currentVerseIdx, currentVerseData ;
         let currentBossParts, currentBossPartIndex, currentBossChunks;
 
   //[2] 보스전 시작 함수 (하트 버그 수정 + 구간 자동 탐지)//
@@ -3223,7 +3223,48 @@ attackBtn.onclick = () => {
     }
 };
 
-    document.querySelector('.battle-control').appendChild(attackBtn);
+    // ▼▼▼ [수정된 부분: 공격버튼 + 다시하기 버튼 나란히 배치] ▼▼▼
+    const btnWrapper = document.createElement('div');
+    btnWrapper.style.display = 'flex';
+    btnWrapper.style.width = '100%';
+    btnWrapper.style.gap = '2%';
+    
+    // 기존 공격 버튼 크기 조정
+    attackBtn.style.flex = '3 1 0';
+    
+    // 다시 조립(초기화) 버튼 생성
+    const resetBtn = document.createElement('button');
+    resetBtn.className = 'btn-reset-step5'; 
+    resetBtn.innerText = '다시 조립';
+    resetBtn.style.flex = '1 1 0';
+    resetBtn.onclick = () => {
+        const zone = document.getElementById('answer-zone');
+        const pool = document.getElementById('block-pool');
+        
+        if (zone && pool) {
+            // 1. 정답칸에 올라간 모든 블록을 찾아서
+            const blocks = Array.from(zone.querySelectorAll('.word-block'));
+            blocks.forEach(block => {
+                // 혹시 남아있는 에러/정답 붉은 테두리 표시 지우기
+                block.classList.remove('error-block');
+                block.classList.remove('correct-block');
+                
+                // 2. 대기열(pool)로 물리적으로 다시 돌려보내기
+                pool.appendChild(block);
+            });
+            
+            // 3. 안내 문구 다시 띄우기
+            if (!zone.querySelector('#placeholder-text')) {
+                zone.innerHTML = '<span class="placeholder-text" id="placeholder-text">단어를 터치하여 공격 주문을 완성하세요</span>';
+            }
+        }
+        if (typeof SoundEffect !== 'undefined') SoundEffect.playClick();
+    };
+
+    // 두 버튼을 묶어서 화면에 추가
+    btnWrapper.appendChild(attackBtn);
+    btnWrapper.appendChild(resetBtn);
+    document.querySelector('.battle-control').appendChild(btnWrapper);
 }
         
 
@@ -4409,21 +4450,6 @@ function nextStep() {
         // ★ 중요: 건너뛴 단계에 따라 UI나 변수 초기화가 필요할 수 있음
         // (예: 타워 게임 잔상 제거 등은 loadStep에서 처리하므로 OK)
         
-        loadStep();
-    }
-}
-
-// 4. 정답 체크 (훈련용)
-function checkTrainingAnswer() {
-    // 사용자가 맞춘 답
-    if (selectedBlocks.join(" ") === trainingVerseData.chunks.join(" ")) {
-        alert("정답입니다! 다음 단계로 넘어갑니다.");
-        nextStep();
-    } else {
-        alert("틀렸습니다. 다시 해보세요!");
-        wrongCount++;
-        // 블록 리셋 로직 (간단히 Step 2 다시 로드)
-        selectedBlocks = [];
         loadStep();
     }
 }
