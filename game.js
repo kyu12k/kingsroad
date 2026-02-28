@@ -3822,7 +3822,18 @@ function loadStep() {
     field.innerHTML = "";
     control.innerHTML = "";
 
-    // game.js - loadStep 함수 내부
+    // 현재 스테이지 ID(예: 1-3)에서 장과 절을 뽑아냅니다.
+    let verseLabel = "";
+    if (window.currentStageId) {
+        const parts = String(window.currentStageId).split('-');
+        // 파트가 2개 이상일 때만 (예: 1-3) 장/절 라벨을 만듭니다. (중간점검/보스는 예외처리)
+        if (parts.length >= 2 && !String(window.currentStageId).includes('mid') && !String(window.currentStageId).includes('boss')) {
+            const chapterNum = parts[0];
+            const verseNum = parts[1];
+            // 요한계시록을 줄여서 [계 1:3] 처럼 예쁘게 만듭니다.
+            verseLabel = `<span style="color:#f39c12; font-weight:bold; margin-right:8px;">[계 ${chapterNum}:${verseNum}]</span>`;
+        }
+    }
 
     // ----------------------------------------------------
     // [Step 1] 각인 모드 (속도 조절: 낭독 속도)
@@ -4032,7 +4043,7 @@ function loadStep() {
         const chunkInitials = trainingVerseData.chunks.map(word => getChosung(word));
         
         field.innerHTML = `
-            <div class="verse-indicator">Step 2. 초성에 맞는 단어를 누르세요! (틀리면 ❤️감소)</div>
+            <div class="verse-indicator">${verseLabel}Step 2. 초성에 맞는 단어를 누르세요! (틀리면 ❤️감소)</div>
             <div class="reading-card" id="initials-display" 
                  style="position:relative; max-height:140px; overflow-y:auto; align-content:flex-start; line-height:2.2; display:flex; flex-wrap:wrap; justify-content:center; gap:8px;">
             </div>
@@ -4183,7 +4194,7 @@ function loadStep() {
     else if (currentStep === 3) {
         // 게임 영역 생성 (HTML 구조 변경: #tower-text-display 추가)
         field.innerHTML = `
-            <div class="verse-indicator">Step 3. 타이밍을 맞춰 단어를 쌓으세요!</div>
+            <div class="verse-indicator">${verseLabel}Step 3. 타이밍을 맞춰 단어를 쌓으세요!</div>
             <div id="tower-game-container" onclick="dropTowerBlock()">
                 <div id="tower-text-display"></div>
                 
@@ -4214,7 +4225,7 @@ function loadStep() {
 
         // 1. 화면 구성 (두루마리 틀 만들기 + 천천히 버튼 추가)
         field.innerHTML = `
-            <div class="verse-indicator">Step 4. 🔥불타기 전에 빈칸을 채우세요!</div>
+            <div class="verse-indicator">${verseLabel}Step 4. 🔥불타기 전에 빈칸을 채우세요!</div>
             
             <button id="btn-scroll-fast" onclick="toggleScrollFastMode(this)" 
                 style="margin-bottom:10px; background:rgba(255,255,255,0.9); border:2px solid #e67e22; color:#e67e22;
@@ -4247,7 +4258,7 @@ function loadStep() {
     else if (currentStep === 5) {
         // 1. 화면 구성 (field.innerHTML 사용 - modeTitle 오류 해결!)
         field.innerHTML = `
-            <div class="verse-indicator">Step 5. 단어를 터치하여 문장을 완성하세요</div>
+            <div class="verse-indicator">${verseLabel}Step 5. 단어를 터치하여 문장을 완성하세요</div>
             
             <div class="answer-zone" id="answer-zone" style="min-height: 120px; align-content: flex-start;">
                 <span class="placeholder-text" id="placeholder-text">단어를 터치하여 문장을 만드세요</span>
@@ -7291,7 +7302,7 @@ function spawnTowerBlock() {
     towerGame.pos = Math.random() * 80 + 10; 
     towerGame.dir = Math.random() > 0.5 ? 1 : -1;
     
-    towerGame.speed = 0.8 + (towerGame.idx * 0.05); 
+    towerGame.speed = 0.8; 
 
     if (towerGame.interval) clearInterval(towerGame.interval);
     towerGame.interval = setInterval(moveTowerBlock, 16); 
