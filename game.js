@@ -566,8 +566,12 @@ function updateMissionProgress(type, extraData) {
         }
     }
 
-    // 오늘 날짜
-    const today = new Date().toISOString().split('T')[0];
+    // 👉 저장하는 오늘 날짜 (내 기기의 현지 시간 기준 YYYY-MM-DD 만들기)
+const now = new Date();
+const year = now.getFullYear();
+const month = String(now.getMonth() + 1).padStart(2, '0'); // 월은 0부터 시작하므로 1 더하기
+const day = String(now.getDate()).padStart(2, '0');
+const today = `${year}-${month}-${day}`;
 
     // 1. 일일 미션: 신규 훈련 or 모든 도감 오픈 시 아무 스테이지든 1회
     if (type === 'new') {
