@@ -4045,9 +4045,10 @@ function loadStep() {
                             { transform: 'scale(1)' }
                         ], 300);
 
-                        // 방금 채워진 블럭이 화면에 보이도록 스크롤을 딱 한 칸만 부드럽게 내립니다.
+                        // 👉 [수정됨] 스크롤 코드는 '인덱스가 증가하기 전'의 현재 슬롯을 기준으로 작동해야 안전합니다.
                         setTimeout(() => {
                             slot.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                            // 혹시 scrollIntoView가 안 먹히는 브라우저를 위한 대비책
                             const display = document.getElementById('initials-display');
                             if (display) display.scrollTop = display.scrollHeight;
                         }, 50);
@@ -4069,6 +4070,11 @@ function loadStep() {
                             nextSlot.style.color = "#2c3e50";
                             nextSlot.style.fontWeight = "bold";
                             nextSlot.style.backgroundColor = "white";
+                            
+                            // 👉 [선택사항] 만약 '다음에 채울 빈칸'이 보였으면 좋겠다면 이 주석을 풀고 아래 코드를 사용하세요.
+                            // setTimeout(() => {
+                            //     nextSlot.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                            // }, 60);
                         }
                     } else {
                         // 모든 슬롯 완성! (0.3초 뒤 성공 처리)
