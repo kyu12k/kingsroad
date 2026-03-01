@@ -3232,6 +3232,9 @@ function loadNextVerse() {
         });
 
         if (errorCount === 0) {
+            // ★ [버그 픽스] 더블 클릭(연타) 방지! 버튼 기능 즉시 정지
+            attackBtn.disabled = true;
+            attackBtn.style.pointerEvents = 'none';
             if (currentBossParts && currentBossPartIndex < currentBossParts.length - 1) {
                 SoundEffect.playAttack();
                 currentBossPartIndex += 1;
@@ -3564,6 +3567,10 @@ function quitGame() {
     if(typeof scrollGame !== 'undefined' && scrollGame.animId) {
         cancelAnimationFrame(scrollGame.animId);
     }
+    // ★ [버그 픽스] 찌꺼기 UI 청소 (부서진 하트, 힌트 창 등)
+    document.querySelectorAll('.damage-heart-effect').forEach(el => el.remove());
+    const hintModal = document.getElementById('hint-modal');
+    if (hintModal) hintModal.remove();
 
     // 2. 화면 전환 (전투 -> 맵)
     document.getElementById('game-screen').classList.remove('active');
@@ -4454,6 +4461,8 @@ function loadStep() {
                 }
             });
             if (errorCount === 0) {
+                // ★ [버그 픽스] 더블 클릭으로 인한 단계 건너뜀 방지
+                checkBtn.disabled = true;
                 nextStep();
             } else {
                 SoundEffect.playWrong();
@@ -7280,11 +7289,7 @@ function confirmQuit() {
             cancelAnimationFrame(scrollGame.animId); // 현재 예약된 프레임 삭제
             scrollGame.animId = null;
         }
-    }
-
-    // 3. 혹시 모를 보스전 공격 타이머 등도 안전하게 종료
-    if (typeof bossAttackInterval !== 'undefined') clearInterval(bossAttackInterval);
-    
+    }    
     // 화면 초기화 및 맵으로 돌아가기
     quitGame(); 
 }
