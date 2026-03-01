@@ -7262,6 +7262,12 @@ function cancelQuit() {
 function confirmQuit() {
     document.getElementById('quit-modal').classList.remove('active');
     
+    // ★ [버그 픽스] 타워 게임(Step 3) 클리어 직후 예약된 다음 스텝 이동 취소!
+    if (window.towerNextTimeout) {
+        clearTimeout(window.towerNextTimeout);
+        window.towerNextTimeout = null; // 예약증 초기화
+    }
+
     // 오답 처리를 할지, 그냥 나갈지는 왕의 선택입니다.
     // 여기서는 "포기"로 간주하고 맵으로 이동시킵니다.
     quitGame(); 
