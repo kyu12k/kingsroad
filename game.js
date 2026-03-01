@@ -4229,28 +4229,26 @@ function loadStep() {
     }
 
     // ----------------------------------------------------
-    // [Step 3] 바이블 타워 (기록판 추가)
+    // [Step 3] 바이블 타워 (선택형/객관식으로 변경)
     // ----------------------------------------------------
     else if (currentStep === 3) {
-        // 게임 영역 생성 (HTML 구조 변경: #tower-text-display 추가)
+        // 1. 게임 영역 (타워와 빈칸 기록판만 남김)
         field.innerHTML = `
-            <div class="verse-indicator">${verseLabel}Step 3. 타이밍을 맞춰 단어를 쌓으세요!</div>
-            <div id="tower-game-container" onclick="dropTowerBlock()">
+            <div class="verse-indicator">${verseLabel}Step 3. 다음 빈칸에 들어갈 단어를 고르세요!</div>
+            <div id="tower-game-container">
                 <div id="tower-text-display"></div>
                 
-                <div id="tower-msg">화면을 터치하여 블록을 떨어뜨리세요</div>
-                <div id="moving-block">READY</div>
+                <div id="tower-msg">아래에서 알맞은 블록을 선택하세요</div>
                 <div id="tower-stack-area"></div>
                 <div id="tower-base"></div>
             </div>
         `;
         
-        control.innerHTML = "";
+        // 2. 하단 컨트롤 영역에 객관식 버튼이 들어갈 공간(풀) 마련!
+        control.innerHTML = `<div class="block-pool" id="tower-choices-area"></div>`;
 
-        // 게임 시작 (약간의 딜레이 후)
-        setTimeout(() => {
-            initTowerGame();
-        }, 500);
+        // 지연 시간 없이 바로 게임 셋업 시작
+        initTowerGame();
     }
 
     // ----------------------------------------------------
@@ -7284,7 +7282,6 @@ function initTowerGame() {
     towerGame.idx = 0;
     towerGame.stackHeight = 0;
     
-    // 1. 이전 잔여물 제거 및 위치 초기화
     const stackArea = document.getElementById('tower-stack-area');
     const base = document.getElementById('tower-base');
     const textDisplay = document.getElementById('tower-text-display');
@@ -7297,89 +7294,65 @@ function initTowerGame() {
         base.style.transform = "translateX(-50%) translateY(0px)"; 
     }
 
-    // 2. 상단 기록판 세팅 (★ 정답 숨기기 - 빈칸으로 표시)
     if (textDisplay) {
         textDisplay.innerHTML = "";
         towerGame.words.forEach((word, index) => {
             const span = document.createElement('span');
-            span.innerText = "___"; // 처음엔 정답을 보여주지 않음
+            span.innerText = "___"; 
             span.className = 'tower-word-slot'; 
             span.id = `tower-word-${index}`;
             textDisplay.appendChild(span);
         });
     }
     
-    // 메시지 초기화
     document.getElementById('tower-msg').innerText = "다음 블록을 선택하세요!";
     document.getElementById('tower-msg').style.color = "#2c3e50";
 
-    // 기존 타이밍 게임용 크레인 숨기기
-    const movingBlock = document.getElementById('moving-block');
-    if (movingBlock) movingBlock.style.display = "none";
-
-    // 3. 하단에 객관식 버튼 영역 만들기
-    setupTowerChoicesArea();
+    // 바로 보기 블록 생성
     spawnTowerChoices();
-}
-
-// 하단 선택지 영역 동적 생성
-function setupTowerChoicesArea() {
-    let choicesArea = document.getElementById('tower-choices-area');
-    if (!choicesArea) {
-        choicesArea = document.createElement('div');
-        choicesArea.id = 'tower-choices-area';
-        // 하단에 찰싹 붙어서 버튼들이 나열되도록 스타일 주입
-        choicesArea.style.cssText = "position:absolute; bottom:25px; width:100%; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; z-index:20; padding: 0 10px; box-sizing: border-box;";
-        document.getElementById('tower-game-container').appendChild(choicesArea);
-    }
-    choicesArea.innerHTML = "";
 }
 
 // 문제 출제 (객관식 보기 생성)
 function spawnTowerChoices() {
-    // 모든 단어 완료 체크
     if (towerGame.idx >= towerGame.words.length) {
         document.getElementById('tower-msg').innerText = "🎉 성벽 건축 완료!";
         document.getElementById('tower-msg').style.color = "#f1c40f";
-        document.getElementById('tower-choices-area').innerHTML = ""; // 버튼 치우기
+        document.getElementById('tower-choices-area').innerHTML = ""; 
         
-        setTimeout(() => {
+        // ★ 3번 문제를 위한 힌트: 이 setTimeout이 원인입니다!
+        window.towerNextTimeout = setTimeout(() => {
             nextStep(); 
         }, 1500);
         return;
     }
 
+    // 이제 컨트롤 영역에 있는 choices-area를 찾습니다
     const choicesArea = document.getElementById('tower-choices-area');
     choicesArea.innerHTML = "";
 
     const correctWord = towerGame.words[towerGame.idx];
-    let options = [correctWord]; // 정답을 먼저 넣음
+    let options = [correctWord]; 
 
-    // 오답 만들기 (현재 구절의 다른 단어들 중 랜덤 추출하여 헷갈리게 만듦)
     let wrongCandidates = towerGame.words.filter((w, i) => i !== towerGame.idx && w !== correctWord);
-    wrongCandidates = [...new Set(wrongCandidates)]; // 중복 단어 제거
-    wrongCandidates.sort(() => Math.random() - 0.5); // 무작위 섞기
+    wrongCandidates = [...new Set(wrongCandidates)]; 
+    wrongCandidates.sort(() => Math.random() - 0.5); 
 
-    // 오답 2개 추가 (단어가 부족하면 아무 단어나 비상용으로 투입)
     if (wrongCandidates.length > 0) options.push(wrongCandidates[0]);
     if (wrongCandidates.length > 1) options.push(wrongCandidates[1]);
     
     const fallbackWords = ["은혜", "말씀", "어린양", "보좌", "생명수"];
     while (options.length < 3) {
         options.push(fallbackWords[Math.floor(Math.random() * fallbackWords.length)]);
-        options = [...new Set(options)]; // 중복 방지
+        options = [...new Set(options)]; 
     }
 
-    // 보기 순서 섞기
     options.sort(() => Math.random() - 0.5);
 
-    // 버튼 생성 및 화면에 추가
     options.forEach(word => {
-        const btn = document.createElement('button');
+        const btn = document.createElement('div'); // button에서 div로 변경 (기존 word-block 통일)
         btn.innerText = word;
-        btn.className = 'word-block'; // Step 5의 예쁜 블록 디자인 재활용
-        // 터치하기 편하게 약간의 인라인 스타일 추가
-        btn.style.cssText = "background-color: #ecf0f1; color: #2c3e50; padding: 12px 18px; border-radius: 12px; font-weight: bold; cursor: pointer; border:none; box-shadow: 0 4px 0 #bdc3c7; font-size: 1rem; transition: transform 0.1s;";
+        btn.className = 'word-block'; // ★ 원래의 예쁜 디자인 클래스 적용!
+        // 억지로 넣었던 style.cssText 삭제
         
         btn.onclick = () => handleTowerChoice(btn, word, correctWord);
         choicesArea.appendChild(btn);
