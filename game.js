@@ -7270,15 +7270,11 @@ function confirmQuit() {
 }
 
 /* =========================================
-   [Step 3: 바이블 타워 게임 로직 (속도/스크롤 개선판)]
+   [Step 3: 바이블 타워 게임 로직 (선택형/객관식으로 완전 개편)]
    ========================================= */
 let towerGame = {
     words: [],
     idx: 0,
-    interval: null,
-    pos: 50,
-    dir: 1, 
-    speed: 0.8,    // [수정] 시작 속도 낮춤 (너무 빠르지 않게)
     stackHeight: 0
 };
 
@@ -7287,12 +7283,11 @@ function initTowerGame() {
     towerGame.words = [...trainingVerseData.chunks];
     towerGame.idx = 0;
     towerGame.stackHeight = 0;
-    towerGame.speed = 0.8; 
     
     // 1. 이전 잔여물 제거 및 위치 초기화
     const stackArea = document.getElementById('tower-stack-area');
     const base = document.getElementById('tower-base');
-    const textDisplay = document.getElementById('tower-text-display'); // [NEW]
+    const textDisplay = document.getElementById('tower-text-display');
     
     if(stackArea) {
         stackArea.innerHTML = "";
@@ -7302,33 +7297,51 @@ function initTowerGame() {
         base.style.transform = "translateX(-50%) translateY(0px)"; 
     }
 
-    // 2. [NEW] 말씀 기록판(빈칸) 미리 만들기
+    // 2. 상단 기록판 세팅 (★ 정답 숨기기 - 빈칸으로 표시)
     if (textDisplay) {
         textDisplay.innerHTML = "";
         towerGame.words.forEach((word, index) => {
             const span = document.createElement('span');
-            span.innerText = word;
-            span.className = 'tower-word-slot'; // 기본 흐릿한 상태
-            span.id = `tower-word-${index}`; // 나중에 찾기 위해 ID 부여
+            span.innerText = "___"; // 처음엔 정답을 보여주지 않음
+            span.className = 'tower-word-slot'; 
+            span.id = `tower-word-${index}`;
             textDisplay.appendChild(span);
         });
     }
     
-    // 3. 게임 시작
-    spawnTowerBlock();
+    // 메시지 초기화
+    document.getElementById('tower-msg').innerText = "다음 블록을 선택하세요!";
+    document.getElementById('tower-msg').style.color = "#2c3e50";
+
+    // 기존 타이밍 게임용 크레인 숨기기
+    const movingBlock = document.getElementById('moving-block');
+    if (movingBlock) movingBlock.style.display = "none";
+
+    // 3. 하단에 객관식 버튼 영역 만들기
+    setupTowerChoicesArea();
+    spawnTowerChoices();
 }
 
+// 하단 선택지 영역 동적 생성
+function setupTowerChoicesArea() {
+    let choicesArea = document.getElementById('tower-choices-area');
+    if (!choicesArea) {
+        choicesArea = document.createElement('div');
+        choicesArea.id = 'tower-choices-area';
+        // 하단에 찰싹 붙어서 버튼들이 나열되도록 스타일 주입
+        choicesArea.style.cssText = "position:absolute; bottom:25px; width:100%; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; z-index:20; padding: 0 10px; box-sizing: border-box;";
+        document.getElementById('tower-game-container').appendChild(choicesArea);
+    }
+    choicesArea.innerHTML = "";
+}
 
-
-function spawnTowerBlock() {
-    const movingBlock = document.getElementById('moving-block');
-    if (!movingBlock) return;
-
+// 문제 출제 (객관식 보기 생성)
+function spawnTowerChoices() {
     // 모든 단어 완료 체크
     if (towerGame.idx >= towerGame.words.length) {
         document.getElementById('tower-msg').innerText = "🎉 성벽 건축 완료!";
         document.getElementById('tower-msg').style.color = "#f1c40f";
-        movingBlock.style.display = "none";
+        document.getElementById('tower-choices-area').innerHTML = ""; // 버튼 치우기
         
         setTimeout(() => {
             nextStep(); 
@@ -7336,114 +7349,115 @@ function spawnTowerBlock() {
         return;
     }
 
-    // 블록 세팅
-    movingBlock.innerText = towerGame.words[towerGame.idx];
-    movingBlock.style.display = "flex";
+    const choicesArea = document.getElementById('tower-choices-area');
+    choicesArea.innerHTML = "";
+
+    const correctWord = towerGame.words[towerGame.idx];
+    let options = [correctWord]; // 정답을 먼저 넣음
+
+    // 오답 만들기 (현재 구절의 다른 단어들 중 랜덤 추출하여 헷갈리게 만듦)
+    let wrongCandidates = towerGame.words.filter((w, i) => i !== towerGame.idx && w !== correctWord);
+    wrongCandidates = [...new Set(wrongCandidates)]; // 중복 단어 제거
+    wrongCandidates.sort(() => Math.random() - 0.5); // 무작위 섞기
+
+    // 오답 2개 추가 (단어가 부족하면 아무 단어나 비상용으로 투입)
+    if (wrongCandidates.length > 0) options.push(wrongCandidates[0]);
+    if (wrongCandidates.length > 1) options.push(wrongCandidates[1]);
     
-    // [확인] CSS에서 top: 30%로 잡았지만, JS에서 덮어쓰지 않도록 주의하거나 명시적으로 지정
-    movingBlock.style.top = "30%"; 
-    
-    movingBlock.style.backgroundColor = "#e74c3c";
-    
-    // 위치 및 방향 초기화
-    towerGame.pos = Math.random() * 80 + 10; 
-    towerGame.dir = Math.random() > 0.5 ? 1 : -1;
-    
-    towerGame.speed = 0.8; 
-
-    if (towerGame.interval) clearInterval(towerGame.interval);
-    towerGame.interval = setInterval(moveTowerBlock, 16); 
-}
-
-// 블록 움직임 처리 (기존과 동일)
-function moveTowerBlock() {
-    towerGame.pos += towerGame.speed * towerGame.dir;
-    if (towerGame.pos > 90 || towerGame.pos < 10) {
-        towerGame.dir *= -1;
-    }
-    const block = document.getElementById('moving-block');
-    if(block) {
-        block.style.left = towerGame.pos + "%";
-        block.style.transform = "translateX(-50%)";
-    }
-}
-
-// 블록 떨어뜨리기
-function dropTowerBlock() {
-    if (!towerGame.interval) return;
-
-    clearInterval(towerGame.interval);
-    towerGame.interval = null;
-
-    const movingBlock = document.getElementById('moving-block');
-    const stackArea = document.getElementById('tower-stack-area');
-    const base = document.getElementById('tower-base');
-
-    // 판정 로직
-    const blockRect = movingBlock.getBoundingClientRect();
-    
-    let targetRect;
-    const lastStacked = stackArea.lastElementChild;
-    if (lastStacked) {
-        targetRect = lastStacked.getBoundingClientRect();
-    } else {
-        targetRect = base.getBoundingClientRect();
+    const fallbackWords = ["은혜", "말씀", "어린양", "보좌", "생명수"];
+    while (options.length < 3) {
+        options.push(fallbackWords[Math.floor(Math.random() * fallbackWords.length)]);
+        options = [...new Set(options)]; // 중복 방지
     }
 
-    const overlap = !(blockRect.right < targetRect.left || blockRect.left > targetRect.right);
+    // 보기 순서 섞기
+    options.sort(() => Math.random() - 0.5);
 
-    if (overlap) {
-        // [성공]
-        SoundEffect.playClick();
+    // 버튼 생성 및 화면에 추가
+    options.forEach(word => {
+        const btn = document.createElement('button');
+        btn.innerText = word;
+        btn.className = 'word-block'; // Step 5의 예쁜 블록 디자인 재활용
+        // 터치하기 편하게 약간의 인라인 스타일 추가
+        btn.style.cssText = "background-color: #ecf0f1; color: #2c3e50; padding: 12px 18px; border-radius: 12px; font-weight: bold; cursor: pointer; border:none; box-shadow: 0 4px 0 #bdc3c7; font-size: 1rem; transition: transform 0.1s;";
         
-        // 1. 블록 쌓기 (기존 로직)
+        btn.onclick = () => handleTowerChoice(btn, word, correctWord);
+        choicesArea.appendChild(btn);
+    });
+}
+
+// 플레이어가 블록을 선택했을 때의 판정
+function handleTowerChoice(btn, selectedWord, correctWord) {
+    // 더블 클릭 방지를 위해 버튼들 일시 비활성화
+    const choicesArea = document.getElementById('tower-choices-area');
+    Array.from(choicesArea.children).forEach(child => child.disabled = true);
+
+    if (selectedWord === correctWord) {
+        // [정답]
+        if (typeof SoundEffect !== 'undefined' && SoundEffect.playClick) SoundEffect.playClick();
+        
+        btn.style.backgroundColor = "#2ecc71"; // 초록색으로 뿅!
+        btn.style.color = "white";
+        btn.style.boxShadow = "0 4px 0 #27ae60";
+
+        // 1. 블록 쌓기 연출
+        const stackArea = document.getElementById('tower-stack-area');
         const stacked = document.createElement('div');
         stacked.className = 'stacked-block';
-        stacked.innerText = movingBlock.innerText;
-        stacked.style.left = towerGame.pos + "%";
+        stacked.innerText = correctWord;
+        stacked.style.left = "50%";
         stacked.style.transform = "translateX(-50%)";
-        stacked.style.width = movingBlock.offsetWidth + "px";
-        
-        // CSS 상 블록 높이 40px
-        stacked.style.bottom = (20 + (towerGame.stackHeight * 40)) + "px";
+        stacked.style.padding = "0 15px"; // 글자 길이에 맞춰 너비 자동 조절
+        stacked.style.bottom = (20 + (towerGame.stackHeight * 40)) + "px"; // 한 층씩 위로
         stackArea.appendChild(stacked);
         
-        // 2. [NEW] 상단 기록판 업데이트 (빈칸 채우기!)
+        // 2. 상단 기록판 업데이트 (빈칸을 황금색 정답으로 교체!)
         const wordSlot = document.getElementById(`tower-word-${towerGame.idx}`);
         if (wordSlot) {
-            wordSlot.classList.add('active'); // 황금색으로 빛나게 변경
-            // 스크롤이 필요하면 해당 단어로 이동
+            wordSlot.innerText = correctWord;
+            wordSlot.classList.add('active'); 
             wordSlot.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
         towerGame.stackHeight++;
         towerGame.idx++;
 
-        // 3. 스크롤 효과 (기존 로직)
-        // 화면 중앙(약 5~6개)을 넘어가면 내리기 시작
+        // 3. 타워가 너무 높아지면 카메라(시점) 아래로 스크롤 효과
         if (towerGame.stackHeight > 4) {
             const scrollOffset = (towerGame.stackHeight - 4) * 40; 
             stackArea.style.transform = `translateY(${scrollOffset}px)`;
-            base.style.transform = `translateX(-50%) translateY(${scrollOffset}px)`;
+            document.getElementById('tower-base').style.transform = `translateX(-50%) translateY(${scrollOffset}px)`;
         }
         
-        setTimeout(spawnTowerBlock, 400);
+        // 0.4초 뒤에 다음 문제 출제
+        setTimeout(spawnTowerChoices, 400);
         
     } else {
-        // [실패]
-        SoundEffect.playWrong();
-        // 실패 연출은 동일
-        movingBlock.style.transition = "top 0.5s ease-in";
-        movingBlock.style.top = "100%"; 
-        movingBlock.style.backgroundColor = "#95a5a6";
+        // [오답]
+        if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
         
-        document.getElementById('tower-msg').innerText = "빗나갔습니다. 다시 시도!";
+        btn.style.backgroundColor = "#e74c3c"; // 빨간색
+        btn.style.color = "white";
+        btn.style.boxShadow = "0 4px 0 #c0392b";
+        btn.classList.add('shake-effect'); // 흔들림 효과
         
+        document.getElementById('tower-msg').innerText = "앗! 다른 블록입니다.";
+        document.getElementById('tower-msg').style.color = "#e74c3c";
+        
+        // 틀렸을 때 하트를 깎는 로직이 있다면 여기에 추가 (예: takeDamage())
+        
+        // 0.8초 뒤 버튼 원래대로 복구하고 다시 선택하게 함
         setTimeout(() => {
-            movingBlock.style.transition = "none"; 
-            document.getElementById('tower-msg').innerText = "화면을 터치하여 블록을 떨어뜨리세요";
-            spawnTowerBlock();
-        }, 1000);
+            btn.style.backgroundColor = "#ecf0f1";
+            btn.style.color = "#2c3e50";
+            btn.style.boxShadow = "0 4px 0 #bdc3c7";
+            btn.classList.remove('shake-effect');
+            
+            document.getElementById('tower-msg').innerText = "다음 블록을 선택하세요!";
+            document.getElementById('tower-msg').style.color = "#2c3e50";
+            
+            Array.from(choicesArea.children).forEach(child => child.disabled = false);
+        }, 800);
     }
 }
 
