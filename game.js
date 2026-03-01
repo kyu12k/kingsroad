@@ -7262,14 +7262,19 @@ function cancelQuit() {
 function confirmQuit() {
     document.getElementById('quit-modal').classList.remove('active');
     
-    // ★ [버그 픽스] 타워 게임(Step 3) 클리어 직후 예약된 다음 스텝 이동 취소!
+    // ★ 1. 스텝 3 -> 스텝 4로 넘어가는 예약증 확실히 파기!
     if (window.towerNextTimeout) {
         clearTimeout(window.towerNextTimeout);
-        window.towerNextTimeout = null; // 예약증 초기화
+        window.towerNextTimeout = null;
     }
 
-    // 오답 처리를 할지, 그냥 나갈지는 왕의 선택입니다.
-    // 여기서는 "포기"로 간주하고 맵으로 이동시킵니다.
+    // ★ 2. Step 4 (두루마리) 등 배경에서 돌고 있을지 모르는 인터벌 강제 종료!
+    // (만약 Step 4나 보스전에서 사용하는 setInterval 변수 이름이 있다면 여기에 다 추가해 주세요)
+    if (typeof scrollInterval !== 'undefined') clearInterval(scrollInterval);
+    if (typeof bossAttackInterval !== 'undefined') clearInterval(bossAttackInterval);
+    
+    // 원래 있던 나가기 함수 (맵으로 돌아가거나 화면을 초기화하는 함수)
+    // ⚠️주의: 만약 quitGame()이 모달을 여는 함수라면, 여기서는 다른 함수(예: goHome() 등)를 호출해야 합니다.
     quitGame(); 
 }
 
