@@ -2878,6 +2878,7 @@ if (type === 'normal') {
 
   //[2] 보스전 시작 함수 (하트 버그 수정 + 구간 자동 탐지)//
 function startBossBattle(limitCount_unused) { 
+    window.isGamePlaying = true; // ★ 게임 시작! 스위치 ON
     // 1. 이어하기 데이터 확인
     const savedRaw = localStorage.getItem('kingsRoad_checkpoint');
     let resumeMode = false;
@@ -3039,6 +3040,7 @@ function createVictoryParticles() {
 
         /* [수정] loadNextVerse (축하 이펙트 강화 버전) */
 function loadNextVerse() {
+    if (!window.isGamePlaying) return; // ★ 추가: 나갔으면 중단! (보스전 타이머 방어)
     // 1. 전투 종료 체크 (승리!)
     if (currentVerseIdx >= window.currentBattleData.length) {
         
@@ -3557,6 +3559,7 @@ function clearCheckpoint() {
 
         /* [수정] 게임 종료/포기 (나가기 시 밀린 팝업 확인 기능 추가) */
 function quitGame() {
+    window.isGamePlaying = false; // ★ 핵심 방어막: 게임 종료 선언! 유령 타이머 차단!
     // 1. 스크롤 게임 정지 (안전장치)
     if(typeof scrollGame !== 'undefined' && scrollGame.animId) {
         cancelAnimationFrame(scrollGame.animId);
@@ -3748,6 +3751,7 @@ function normalizeChunkText(text) {
 
 /* [수정] 훈련 시작 함수 (phase 시스템 제거) */
 function startTraining(stageId, mode = 'normal') {
+    window.isGamePlaying = true; // ★ 게임 시작! 스위치 ON
     const isForceFullNew = (mode === 'full-new');
     // 힌트 비용 스테이지별 리셋
     hintCost = 10;
@@ -4494,6 +4498,7 @@ function loadStep() {
 
 // [2. nextStep 함수 교체] (노선도 방식)
 function nextStep() {
+    if (!window.isGamePlaying) return; // ★ 추가: 나갔으면 중단!
     // 다음 순번으로 이동 (0 -> 1 -> 2...)
     sequenceIndex++;
 
@@ -7331,6 +7336,7 @@ function initTowerGame() {
 
 // 문제 출제 (객관식 보기 생성)
 function spawnTowerChoices() {
+    if (!window.isGamePlaying) return; // ★ 추가: 나갔으면 중단!
     if (towerGame.idx >= towerGame.words.length) {
         document.getElementById('tower-msg').innerText = "🎉 성벽 건축 완료!";
         document.getElementById('tower-msg').style.color = "#f1c40f";
@@ -7695,6 +7701,7 @@ function toggleScrollFastMode(btn) {
    [Step 4] 예언의 두루마리 게임 로직 (NEW)
    ========================================= */
 function startScrollStep() {
+    if (!window.isGamePlaying) return; // ★ 추가: 나갔으면 중단!
     scrollGame.isOver = false;
     scrollGame.nextBlankIdx = 0;
     
@@ -7783,7 +7790,7 @@ function startScrollStep() {
 }
 
 function scrollGameLoop() {
-    if (scrollGame.isOver) return;
+    if (!window.isGamePlaying || scrollGame.isOver) return; // ★ 2중 방어막 추가!
 
     // 이동
     scrollGame.pos -= scrollGame.speed;
