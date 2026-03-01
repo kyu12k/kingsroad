@@ -3232,34 +3232,46 @@ function loadNextVerse() {
         });
 
         if (errorCount === 0) {
-            // ★ [버그 픽스] 더블 클릭(연타) 방지! 버튼 기능 즉시 정지
-            attackBtn.disabled = true;
-            attackBtn.style.pointerEvents = 'none';
-            if (currentBossParts && currentBossPartIndex < currentBossParts.length - 1) {
-                SoundEffect.playAttack();
-                currentBossPartIndex += 1;
-                currentBossChunks = currentBossParts[currentBossPartIndex];
+        // 🔵 성공 로직 시작 시점에 연타 방지 추가!
+        // ★ [버그 픽스] 공격 성공 즉시 버튼 비활성화 (보스 & 중간점검 공통 적용)
+        attackBtn.disabled = true;
+        attackBtn.style.pointerEvents = 'none';
+        attackBtn.style.opacity = '0.7'; // 눌렸다는 시각적 표시
+
+        if (currentBossParts && currentBossPartIndex < currentBossParts.length - 1) {
+            // 파트가 남았을 경우 (다음 파트로 이동)
+            SoundEffect.playAttack();
+            currentBossPartIndex += 1;
+            currentBossChunks = currentBossParts[currentBossPartIndex];
+            
+            // 다음 파트 블록을 그린 후 버튼을 다시 활성화해줘야 다음 공격이 가능합니다.
+            setTimeout(() => {
                 renderBossBlocks(currentBossChunks);
                 updateVerseIndicator();
                 deselect();
-                return;
-            }
+                // ★ 다음 파트가 나왔으니 버튼 다시 활성화
+                attackBtn.disabled = false;
+                attackBtn.style.pointerEvents = 'auto';
+                attackBtn.style.opacity = '1';
+            }, 100); 
+            return;
+        }
 
-            // 🔵 성공 로직
-            SoundEffect.playAttack();
-            triggerBossHitEffect();
-            currentBossHp--;
-            updateBattleUI();
-            
-            attackBtn.innerText = "✨ CRITICAL HIT! ✨";
-            attackBtn.style.backgroundColor = "#f1c40f";
-            
-            setTimeout(() => {
-                currentVerseIdx++;
-                loadNextVerse();
-            }, 1000);
-            deselect();
-        } else {
+        // 🔵 진짜 성공 (다음 구절로 넘어가는 시점)
+        SoundEffect.playAttack();
+        triggerBossHitEffect();
+        currentBossHp--;
+        updateBattleUI();
+        
+        attackBtn.innerText = "✨ CRITICAL HIT! ✨";
+        attackBtn.style.backgroundColor = "#f1c40f";
+        
+        setTimeout(() => {
+            currentVerseIdx++;
+            loadNextVerse(); // 여기서 다음 구절을 불러오며 버튼이 새로 생성되므로 자연스럽게 초기화됩니다.
+        }, 1000);
+        deselect();
+    } else {
             // 🔴 실패 로직
             SoundEffect.playWrong();
             playerHearts--;
