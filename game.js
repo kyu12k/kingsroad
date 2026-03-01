@@ -2671,12 +2671,12 @@ function openModeSelect(stageId) {
             overlay.id = 'forgotten-stages-overlay';
             overlay.style = 'display:flex; position:fixed; z-index:9999; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.97); color:#f1c40f; flex-direction:column; align-items:center; justify-content:center; font-size:1.2rem; text-align:center;';
             overlay.innerHTML = `
-                <div style="max-width:90vw; font-size:1.1em; line-height:1.7; font-weight:bold; color:#fff; text-shadow:0 2px 8px #222; margin-bottom:30px;">
+                <div style="max-width:90vw; font-size:1.1em; line-height:1.7; font-weight:bold; color:#fff; text-shadow:0 2px 8px #222; margin-bottom:30px; flex-shrink: 0;">
                     🕑 망각 위험 스테이지<br><span style="font-size:0.95em; color:#f1c40f;">기억이 희미해진 스테이지를 복습하세요!</span>
                 </div>
-                <div id="forgotten-stages-list" style="background:rgba(0,0,0,0.3); padding:20px; border-radius:15px; max-width:600px; min-width:220px; margin-bottom:30px;">
+                <div id="forgotten-stages-list" style="background:rgba(0,0,0,0.3); padding:20px; border-radius:15px; width:90vw; max-width:600px; min-width:220px; margin-bottom:30px; max-height:50vh; overflow-y:auto; flex-shrink: 0;">
                 </div>
-                <button onclick="closeForgottenStagesOverlay()" style="background: #f1c40f; color: #2c3e50; font-size:1.1rem; font-weight:bold; padding: 10px 32px; border-radius: 30px; border:none; box-shadow:0 2px 10px #2224; cursor:pointer; margin-top:0;">닫기</button>
+                <button onclick="closeForgottenStagesOverlay()" style="background: #f1c40f; color: #2c3e50; font-size:1.1rem; font-weight:bold; padding: 10px 32px; border-radius: 30px; border:none; box-shadow:0 2px 10px #2224; cursor:pointer; margin-top:0; flex-shrink: 0;">닫기</button>
             `;
             document.body.appendChild(overlay);
         } else {

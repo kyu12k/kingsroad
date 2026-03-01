@@ -23,31 +23,22 @@
         }
 
         /* 1. 모달 전체 틀 (Flex 컨테이너로 변환하여 전체 스크롤을 막습니다) */
+/* 오리지널 코드로 원상복구 */
 #forgetting-modal .result-card {
     max-width: 400px;
-    max-height: 80vh; /* 화면의 80%까지만 커지도록 제한 */
-    display: flex;            /* ★ 추가: 내부 요소들을 Flex로 배치 */
-    flex-direction: column;   /* ★ 추가: 위에서 아래로 쌓기 */
-    overflow: hidden;         /* ★ 수정: 카드 전체가 스크롤되는 것을 방지 */
-    
+    max-height: 80vh;
+    overflow-y: auto;
     background: #fffbe6;
     color: #2c3e50;
     border: 2px solid #f1c40f;
     box-shadow: 0 8px 32px rgba(44,62,80,0.18);
-    /* padding: 20px; (기존 HTML 구조에 따라 패딩이 있다면 유지해주세요) */
 }
 
-/* 2. 스테이지 목록 (이 부분만 스크롤되도록 설정합니다) */
 #forgetting-stage-list {
     margin-top: 10px;
-    margin-bottom: 15px;      /* 하단 닫기 버튼과의 여유 공간 */
     display: flex;
     flex-direction: column;
     gap: 12px;
-    max-height: 150px;
-    flex-grow: 1;             /* ★ 핵심: 남는 세로 공간을 이 리스트가 다 차지하게 함 */
-    overflow-y: auto;         /* ★ 핵심: 아이템이 많아지면 여기만 스크롤 바 생성! */
-    padding-right: 5px;       /* 스크롤바와 내용이 너무 딱 붙지 않게 여백 추가 */
 }
         .forgetting-stage-item {
             background: #f9f6e7;
@@ -2075,21 +2066,18 @@ body, html {
     display: none;
 }
 
-/* 망각 주기 모달 전용 커스텀 스크롤바 */
-#forgetting-stage-list::-webkit-scrollbar {
-    width: 6px; /* 스크롤바 굵기를 얇고 세련되게 */
+/* 망각 위험 모달 스크롤바 디자인 */
+#forgotten-stages-list::-webkit-scrollbar {
+    width: 6px;
 }
-
-#forgetting-stage-list::-webkit-scrollbar-track {
-    background: rgba(241, 196, 15, 0.1); /* 옅은 노란색 트랙 배경 */
+#forgotten-stages-list::-webkit-scrollbar-track {
+    background: rgba(241, 196, 15, 0.1); 
     border-radius: 10px;
 }
-
-#forgetting-stage-list::-webkit-scrollbar-thumb {
-    background: #f1c40f; /* 테마에 맞는 황금색 손잡이 */
+#forgotten-stages-list::-webkit-scrollbar-thumb {
+    background: #f1c40f; 
     border-radius: 10px;
 }
-
-#forgetting-stage-list::-webkit-scrollbar-thumb:active {
-    background: #f39c12; /* 클릭하면 살짝 진해지는 효과 */
+#forgotten-stages-list::-webkit-scrollbar-thumb:active {
+    background: #f39c12; 
 }
