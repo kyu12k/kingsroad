@@ -7262,19 +7262,25 @@ function cancelQuit() {
 function confirmQuit() {
     document.getElementById('quit-modal').classList.remove('active');
     
-    // ★ 1. 스텝 3 -> 스텝 4로 넘어가는 예약증 확실히 파기!
+    // 1. [Step 3] 타워 게임 -> 다음 스텝 넘어가는 예약 취소
     if (window.towerNextTimeout) {
         clearTimeout(window.towerNextTimeout);
         window.towerNextTimeout = null;
     }
 
-    // ★ 2. Step 4 (두루마리) 등 배경에서 돌고 있을지 모르는 인터벌 강제 종료!
-    // (만약 Step 4나 보스전에서 사용하는 setInterval 변수 이름이 있다면 여기에 다 추가해 주세요)
-    if (typeof scrollInterval !== 'undefined') clearInterval(scrollInterval);
+    // ★ 2. [Step 4] 두루마리 게임 애니메이션(무한 루프) 강제 종료!
+    if (typeof scrollGame !== 'undefined') {
+        scrollGame.isOver = true; // 다음 프레임이 실행되지 않도록 차단
+        if (scrollGame.animId) {
+            cancelAnimationFrame(scrollGame.animId); // 현재 예약된 프레임 삭제
+            scrollGame.animId = null;
+        }
+    }
+
+    // 3. 혹시 모를 보스전 공격 타이머 등도 안전하게 종료
     if (typeof bossAttackInterval !== 'undefined') clearInterval(bossAttackInterval);
     
-    // 원래 있던 나가기 함수 (맵으로 돌아가거나 화면을 초기화하는 함수)
-    // ⚠️주의: 만약 quitGame()이 모달을 여는 함수라면, 여기서는 다른 함수(예: goHome() 등)를 호출해야 합니다.
+    // 화면 초기화 및 맵으로 돌아가기
     quitGame(); 
 }
 
