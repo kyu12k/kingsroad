@@ -1,5 +1,41 @@
 // [정식 배포] 게임 버전 정보
 const GAME_VERSION = "1.0.0"; // 정식 배포 버전
+// [PWA 설치 프롬프트 및 iOS 안내]
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const btn = document.getElementById('add-to-home-btn');
+    if (btn) btn.style.display = 'flex';
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('add-to-home-btn');
+    if (btn) {
+        // iOS Safari 환경 감지
+        const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        if (isIOS && isSafari) {
+            btn.style.display = 'flex';
+            btn.onclick = function() {
+                alert('iOS에서는 사파리 브라우저의 공유 버튼(아래 화살표) → "홈 화면에 추가"를 직접 눌러주세요!');
+            };
+        } else {
+            btn.onclick = async function() {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        btn.style.display = 'none';
+                    }
+                    deferredPrompt = null;
+                } else {
+                    alert('설치 프롬프트를 띄울 수 없습니다. 이미 설치했거나 지원하지 않는 환경입니다.');
+                }
+            };
+        }
+    }
+});
 
 // [시스템: 경제 및 인벤토리]
 let myGems = 0;           // 현재 보유 보석
