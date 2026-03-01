@@ -44,7 +44,7 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    
+    max-height: 150px;
     flex-grow: 1;             /* ★ 핵심: 남는 세로 공간을 이 리스트가 다 차지하게 함 */
     overflow-y: auto;         /* ★ 핵심: 아이템이 많아지면 여기만 스크롤 바 생성! */
     padding-right: 5px;       /* 스크롤바와 내용이 너무 딱 붙지 않게 여백 추가 */
