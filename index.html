@@ -1,4 +1,30 @@
-    <!-- 랭킹 오버레이 -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>King's Road - 요한계시록 암송</title>
+    
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    
+    <link rel="stylesheet" href="style.css">
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('✅ Service Worker 등록 성공'))
+            .catch(err => console.error('❌ Service Worker 등록 실패:', err));
+        });
+      }
+    </script>
+</head>
+<body>
+    
     <div id="ranking-overlay" style="display:none; position:fixed; z-index:9999; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.97); color:#f1c40f; flex-direction:column; align-items:center; justify-content:center; font-size:1.3rem; text-align:center;">
         <div style="max-width:90vw; font-size:1.1em; line-height:1.7; font-weight:bold; color:#fff; text-shadow:0 2px 8px #222; margin-bottom:30px;">
             "운동장에서 달음질하는 자들이 다 달아날찌라도 오직 상 얻는 자는 하나인 줄을 너희가 알지 못하느냐<br>너희도 얻도록 이와 같이 달음질하라"<br><span style="font-size:0.95em; color:#f1c40f;">(고전 9:24)</span>
@@ -9,7 +35,6 @@
     </div>
 
     <script>
-    // 페이지 로드시 랭킹 오버레이 숨김
     window.addEventListener('DOMContentLoaded', function() {
         var overlay = document.getElementById('ranking-overlay');
         if (overlay) overlay.style.display = 'none';
@@ -20,56 +45,7 @@
         }
     });
     </script>
-<!DOCTYPE html>
-<!-- saved from url=(0028)https://kingsload.pages.dev/ -->
-<html lang="ko">
-<head>
-<link rel="apple-touch-icon" href="icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-    <title>King's Road - 요한계시록 암송</title>
-    
-    <link rel="stylesheet" href="style.css">
-
-<link rel="manifest" href="./manifest.json">
-
-  <meta name="apple-mobile-web-app-capable" content="yes">
-
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-  <link rel="apple-touch-icon" href="icon.png">
-
-  <link rel="icon" type="image/png" href="icon.png">
-
-  <title>킹스로드</title>
-
-  <!-- ★ Service Worker 등록 -->
-  <script>
-    // Service Worker 등록 (브라우저 알림 및 오프라인 기능)
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(reg => {
-            console.log('✅ Service Worker 등록 성공:', reg);
-            
-            // 알림 권한 요청
-            if ('Notification' in window && Notification.permission === 'default') {
-              Notification.requestPermission().then(permission => {
-                console.log('🔔 알림 권한:', permission);
-              });
-            }
-          })
-          .catch(err => console.error('❌ Service Worker 등록 실패:', err));
-      });
-    }
-  </script>
-
-</head>
-<body>
+        
 <div id="help-modal" class="modal-overlay" style="z-index: 700;">
     <div class="result-card" style="max-width: 500px; max-height: 80vh; overflow-y: auto;">
         <div style="text-align: right;">
