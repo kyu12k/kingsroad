@@ -8130,15 +8130,14 @@ function importSaveCode() {
     };
 }
 
-// [공통] 복구 실행 함수 (★ 철벽 방어 핵심 로직)
+// [공통] 복구 실행 함수 (★ 최종 완벽 수정판)
 function processImportData(inputString) {
     try {
         let rawData = inputString.trim();
         
-        // 1. 암호화(Base64) 데이터 해독 (괄호 '{' 로 시작하지 않으면 암호화된 것으로 판단)
+        // 1. 암호화(Base64) 데이터 해독
         if (!rawData.startsWith('{')) {
             try {
-                // 복사 과정에서 생긴 띄어쓰기, 줄바꿈 완벽 제거
                 const cleanBase64 = rawData.replace(/\s+/g, '');
                 rawData = decodeURIComponent(atob(cleanBase64));
             } catch(err) {
@@ -8153,16 +8152,18 @@ function processImportData(inputString) {
         const parsedData = JSON.parse(rawData);
 
         if (parsedData.gems === undefined) {
-            throw new Error("올바른 킹스로드 세이브 데이터가 아닙니다.");
+            throw new Error("올바른 세이브 데이터가 아닙니다.");
         }
 
         if (confirm("⚠️ 현재 진행 상황을 덮어쓰고,\n선택한 기록으로 되돌리시겠습니까?\n\n(다른 기기의 데이터일 경우 현재 기기의 진행 상황이 지워집니다!)")) {
             
-            // ★ 가장 중요: 불러온 데이터의 버전을 '현재 게임의 최신 버전'으로 강제 업데이트!
-            // (이 코드가 없으면 새로고침 시 구버전으로 인식되어 데이터가 삭제됩니다)
+            // 불러온 데이터의 버전을 현재 게임의 최신 버전으로 강제 업데이트
             if (typeof GAME_VERSION !== 'undefined') {
                 parsedData.version = GAME_VERSION; 
             }
+
+            // ★★★ 핵심 해결책: 새로고침 직전 자동저장이 발동해버리는 것을 완벽 차단! ★★★
+            window.isResetting = true; 
 
             // 로컬 스토리지에 안전하게 저장
             localStorage.setItem('kingsRoadSave', JSON.stringify(parsedData));
