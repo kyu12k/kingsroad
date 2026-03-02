@@ -7828,9 +7828,8 @@ function checkScrollCollision() {
     // 타겟(다음 빈칸) 찾기
     const targetIdx = scrollGame.blanks[scrollGame.nextBlankIdx];
 
-    // [상황 A] 성공 체크 (그대로 유지)
+    // [상황 A] 성공 체크
     if (targetIdx === undefined) {
-        // ... (기존 성공 로직 유지) ...
         const lastNode = nodes[nodes.length-1];
         if(!lastNode) return;
         const rect = lastNode.getBoundingClientRect();
@@ -7844,21 +7843,49 @@ function checkScrollCollision() {
         return;
     }
 
-    // [상황 B] 충돌 체크
+    // [상황 B] 충돌 & 경고 체크
     const targetNode = nodes[targetIdx];
     const rect = targetNode.getBoundingClientRect();
     const container = document.getElementById('scroll-game-container');
     const nodeLeftRel = rect.left - container.getBoundingClientRect().left; // 화면상 빈칸의 위치
 
-    // 데드라인을 넘었는데 아직 정답을 못 맞췄다면?
+    // ★ [추가] 2초 전 경고 계산 로직 ★
+    // 1프레임(약 16ms)당 scrollGame.speed 만큼 이동함.
+    // 2초 = 약 120프레임. 따라서 2초 동안 이동하는 거리는 (120 * scrollGame.speed)
+    const warningDistance = 120 * scrollGame.speed; 
+    const distanceToDeadline = nodeLeftRel - deadline;
+
+    // 만약 선까지 남은 거리가 2초 거리 안쪽으로 들어왔다면?
+    if (distanceToDeadline > 0 && distanceToDeadline <= warningDistance && !targetNode.classList.contains('filled')) {
+        // 1. 단어 상자에 붉은색 경고 깜빡임 추가
+        targetNode.classList.add('scroll-warning');
+
+        // 2. (선택사항) 아래 버튼 덱에서 정답 버튼도 반짝거리게 힌트 주기
+        const correctWord = targetNode.dataset.answer;
+        const deckBtns = document.querySelectorAll('#scroll-deck .word-block');
+        deckBtns.forEach(btn => {
+            if (btn.innerText === correctWord) {
+                btn.classList.add('hint-blink');
+            }
+        });
+    } else {
+        // 거리가 멀거나 이미 맞춘 경우 경고 제거
+        targetNode.classList.remove('scroll-warning');
+        const deckBtns = document.querySelectorAll('#scroll-deck .word-block');
+        deckBtns.forEach(btn => btn.classList.remove('hint-blink'));
+    }
+
+
+    // 데드라인을 넘었는데 아직 정답을 못 맞췄다면? (기존 충돌 로직)
     if (nodeLeftRel < deadline && targetNode.classList.contains('scroll-blank') && !targetNode.classList.contains('filled')) {
         
-        // -------------------------------------------------------------
-        // 🔥 [수정됨] 무적 시간(Cooldown) 체크 추가
-        // 연속으로 다다닥 깎이는 것을 막기 위해 '충돌 중' 상태면 무시
+        // 경고 클래스 떼주기
+        targetNode.classList.remove('scroll-warning');
+        const deckBtns = document.querySelectorAll('#scroll-deck .word-block');
+        deckBtns.forEach(btn => btn.classList.remove('hint-blink'));
+
         if (scrollGame.isColliding) return; 
-        scrollGame.isColliding = true; // 충돌 상태 ON
-        // -------------------------------------------------------------
+        scrollGame.isColliding = true; 
 
         // 1. 체력 감소
         if(typeof playerHearts !== 'undefined') {
@@ -7871,29 +7898,21 @@ function checkScrollCollision() {
         showDamageEffect();
         if(typeof SoundEffect !== 'undefined') SoundEffect.playWrong();
 
-        // 3. ★ [핵심 수정] 절대 좌표 계산으로 밀어내기 ★
-        // 논리: (트랙의 왼쪽 위치 + 빈칸의 트랙 내 위치) = 화면상 빈칸 위치
-        // 우리가 원하는 것: 화면상 빈칸 위치 = 데드라인 + 250px (안전거리)
-        // 따라서: 트랙의 왼쪽 위치 = (데드라인 + 250px) - 빈칸의 트랙 내 위치
+        // 3. 밀어내기
+        const safeDistance = 250; 
+        const nodeOffset = targetNode.offsetLeft; 
         
-        const safeDistance = 250; // 데드라인 뒤로 250px만큼 확실하게 밉니다
-        const nodeOffset = targetNode.offsetLeft; // 트랙 시작점부터 빈칸까지의 거리
-        
-        // 트랙의 새로운 위치 강제 지정
         scrollGame.pos = (deadline + safeDistance) - nodeOffset;
         
         const track = document.getElementById('scroll-track');
-        track.style.transition = "left 0.2s cubic-bezier(0.25, 1, 0.5, 1)"; // 튕겨나가는 애니메이션
+        track.style.transition = "left 0.2s cubic-bezier(0.25, 1, 0.5, 1)"; 
         track.style.left = scrollGame.pos + "px";
         
-        // -------------------------------------------------------------
-        // 4. 충돌 상태 해제 (0.5초 뒤)
-        // 밀려나는 애니메이션이 끝날 때쯤 다시 충돌 감지를 켭니다.
+        // 4. 충돌 상태 해제 
         setTimeout(() => { 
             track.style.transition = "none"; 
-            scrollGame.isColliding = false; // 충돌 상태 OFF
+            scrollGame.isColliding = false; 
         }, 500);
-        // -------------------------------------------------------------
 
         // 5. 게임 오버 체크
         if (typeof playerHearts !== 'undefined' && playerHearts <= 0) {
@@ -7915,7 +7934,10 @@ function handleScrollCardClick(btn, word) {
     const correctWord = targetNode.dataset.answer;
 
     if (word === correctWord) {
-        // 정답 로직 (기존과 동일)
+        // 힌트 깜빡임 제거
+    btn.classList.remove('hint-blink');
+    targetNode.classList.remove('scroll-warning');
+    // 정답 로직 (기존과 동일)
         if(typeof SoundEffect !== 'undefined') SoundEffect.playCorrect();
         targetNode.classList.add('filled');
         targetNode.innerText = correctWord;

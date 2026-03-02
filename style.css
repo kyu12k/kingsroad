@@ -2081,3 +2081,26 @@ body, html {
 #forgotten-stages-list::-webkit-scrollbar-thumb:active {
     background: #f39c12; 
 }
+/* ⚠️ 2초 전 경고 애니메이션 (상자용) */
+@keyframes warningBlink {
+    0% { border-color: #e74c3c; box-shadow: 0 0 15px rgba(231, 76, 60, 0.8); background-color: rgba(231, 76, 60, 0.1); }
+    50% { border-color: #f39c12; box-shadow: 0 0 5px rgba(243, 156, 18, 0.5); background-color: transparent; }
+    100% { border-color: #e74c3c; box-shadow: 0 0 15px rgba(231, 76, 60, 0.8); background-color: rgba(231, 76, 60, 0.1); }
+}
+
+.scroll-warning {
+    animation: warningBlink 0.6s infinite !important;
+    color: #e74c3c !important;
+    font-weight: bold;
+}
+
+/* ⚠️ 2초 전 경고 애니메이션 (정답 버튼 힌트용 - 선택 사항) */
+@keyframes hintBlink {
+    0% { transform: scale(1); box-shadow: 0 4px 0px #bdc3c7; }
+    50% { transform: scale(1.05); box-shadow: 0 0 15px #f1c40f, 0 4px 0px #f39c12; border-color: #f1c40f; }
+    100% { transform: scale(1); box-shadow: 0 4px 0px #bdc3c7; }
+}
+
+.hint-blink {
+    animation: hintBlink 0.6s infinite !important;
+}
