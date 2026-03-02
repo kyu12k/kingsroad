@@ -8023,7 +8023,7 @@ function openDataSettings() {
     modal.style.display = 'flex';
 }
 
-// [기능 1] 백업 및 일일 미션 달성
+// [기능 1] 파일로 저장 및 공유 (안전한 Base64 암호화 적용)
 function shareSaveCodeAndGetReward() {
     saveGameData();
     const savedData = localStorage.getItem('kingsRoadSave');
@@ -8031,16 +8031,19 @@ function shareSaveCodeAndGetReward() {
 
     const today = new Date().toISOString().split('T')[0];
     const fileName = `KingsRoad_Backup_${today}.txt`;
-    const file = new File([savedData], fileName, { type: "text/plain" });
+    
+    // ★ JSON 원본 대신 영문+숫자 조합(Base64)으로 암호화하여 저장
+    // (모바일 환경에서 따옴표 등 특수문자 깨짐을 원천 차단)
+    const encodedData = btoa(encodeURIComponent(savedData));
+    const file = new File([encodedData], fileName, { type: "text/plain" });
 
-    // 미션 달성 처리 함수
+    // 미션 달성 처리 로직
     const completeMission = () => {
-        if (missionData.daily.backup < 1) {
+        if (!missionData.daily) missionData.daily = {};
+        if (missionData.daily.backup < 1 || !missionData.daily.backup) {
             missionData.daily.backup = 1;
             saveGameData();
-            if (typeof renderMissionList === 'function' && currentMissionTab === 'daily') {
-                renderMissionList('daily');
-            }
+            if (typeof updateMissionUI === 'function') updateMissionUI();
             alert("✅ 안전하게 보관되었습니다!\n일일 미션이 달성되었습니다. 미션 탭에서 보상을 받으세요.");
         } else {
             alert("✅ 기록이 안전하게 업데이트 되었습니다.");
@@ -8050,11 +8053,10 @@ function shareSaveCodeAndGetReward() {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
         navigator.share({
             title: '킹스로드 백업 데이터',
-            text: '나의 킹스로드 텍스트 세이브 데이터입니다. 안전하게 보관하세요!',
+            text: '나의 킹스로드 세이브 데이터입니다. 안전하게 보관하세요!',
             files: [file]
         }).then(completeMission).catch(e => console.log('공유 취소됨'));
     } else {
-        // 공유 미지원 환경(PC 등) 다운로드 처리
         const url = URL.createObjectURL(file);
         const a = document.createElement('a');
         a.href = url;
@@ -8067,113 +8069,110 @@ function shareSaveCodeAndGetReward() {
     }
 }
 
-// [기능 2] 파일로 불러오기 (수정됨: 암호화 해독 로직 추가)
+// [기능 2] 파일로 불러오기 (로직 단순화)
 function importSaveFile(event) {
     const file = event.target.files[0];
     if (!file) return;
     
     const reader = new FileReader();
     reader.onload = function(e) {
-        let fileContent = e.target.result;
-        let rawData = fileContent;
-        
-        // 붙여넣기 기능과 동일하게, 암호화된 텍스트일 경우 해독하는 로직 추가
-        if (!fileContent.trim().startsWith('{')) {
-            try { 
-                rawData = decodeURIComponent(atob(fileContent)); 
-            } catch(err) {
-                console.error("파일 데이터 해독 실패:", err);
-                alert("파일 형식이 올바르지 않거나 데이터가 손상되었습니다.");
-                event.target.value = ''; // 초기화
-                return;
-            }
-        }
-        
-        // 해독된 데이터를 처리 함수로 전달
-        processImportData(rawData);
-        
-        // 같은 파일을 연달아 불러올 수 있도록 input 값을 초기화
+        processImportData(e.target.result); // 해독과 정제는 processImportData가 모두 담당
         event.target.value = ''; 
     };
-    
-    // 한글이나 특수문자가 깨지지 않도록 UTF-8 인코딩을 명시하여 읽기
     reader.readAsText(file, "UTF-8");
 }
 
-// [기능 3] 붙여넣기로 불러오기 (수정됨: prompt 대신 커스텀 입력창 사용)
+// [기능 3] 붙여넣기로 불러오기 (넓은 입력창 UI)
 function importSaveCode() {
-    // 1. 화면에 띄울 새로운 입력창(모달)을 만듭니다.
-    let inputModal = document.createElement('div');
-    inputModal.id = 'import-input-modal';
-    inputModal.style.position = 'fixed';
-    inputModal.style.top = '0';
-    inputModal.style.left = '0';
-    inputModal.style.width = '100%';
-    inputModal.style.height = '100%';
-    inputModal.style.backgroundColor = 'rgba(0,0,0,0.6)';
-    inputModal.style.zIndex = '10000'; // 기존 모달창보다 위에 뜨도록 설정
-    inputModal.style.display = 'flex';
-    inputModal.style.justifyContent = 'center';
-    inputModal.style.alignItems = 'center';
+    let inputModal = document.getElementById('import-input-modal');
+    if (!inputModal) {
+        inputModal = document.createElement('div');
+        inputModal.id = 'import-input-modal';
+        inputModal.style.position = 'fixed';
+        inputModal.style.top = '0';
+        inputModal.style.left = '0';
+        inputModal.style.width = '100%';
+        inputModal.style.height = '100%';
+        inputModal.style.backgroundColor = 'rgba(0,0,0,0.6)';
+        inputModal.style.zIndex = '10000';
+        inputModal.style.display = 'flex';
+        inputModal.style.justifyContent = 'center';
+        inputModal.style.alignItems = 'center';
 
-    // 2. 넉넉하게 붙여넣을 수 있는 <textarea>가 포함된 HTML을 넣습니다.
-    inputModal.innerHTML = `
-        <div style="background:white; padding:20px; border-radius:10px; width:90%; max-width:400px; text-align:center; box-sizing:border-box;">
-            <h3 style="margin-top:0; color:#27ae60; font-size:1.2rem;">📝 코드 붙여넣기</h3>
-            <p style="font-size:0.9rem; color:#7f8c8d; margin-bottom:15px;">복사한 텍스트를 아래 빈칸을 꾹 눌러 붙여넣으세요.</p>
-            
-            <textarea id="save-code-textarea" style="width:100%; height:150px; margin-bottom:15px; padding:10px; border:1px solid #bdc3c7; border-radius:5px; resize:none; font-family:monospace; box-sizing:border-box;" placeholder="여기에 전체 코드를 붙여넣으세요..."></textarea>
-            
-            <div style="display:flex; gap:10px;">
-                <button id="cancel-import-btn" style="flex:1; padding:12px; border:none; border-radius:8px; background:#e74c3c; color:white; font-weight:bold; cursor:pointer;">취소</button>
-                <button id="confirm-import-btn" style="flex:1; padding:12px; border:none; border-radius:8px; background:#2ecc71; color:white; font-weight:bold; cursor:pointer;">불러오기</button>
+        inputModal.innerHTML = `
+            <div style="background:white; padding:20px; border-radius:10px; width:90%; max-width:400px; text-align:center; box-sizing:border-box;">
+                <h3 style="margin-top:0; color:#27ae60; font-size:1.2rem;">📝 코드 붙여넣기</h3>
+                <p style="font-size:0.9rem; color:#7f8c8d; margin-bottom:15px;">복사한 텍스트를 아래 빈칸을 꾹 눌러 붙여넣으세요.</p>
+                <textarea id="save-code-textarea" style="width:100%; height:150px; margin-bottom:15px; padding:10px; border:1px solid #bdc3c7; border-radius:5px; resize:none; font-family:monospace; box-sizing:border-box;" placeholder="여기에 전체 코드를 붙여넣으세요..."></textarea>
+                <div style="display:flex; gap:10px;">
+                    <button id="cancel-import-btn" style="flex:1; padding:12px; border:none; border-radius:8px; background:#e74c3c; color:white; font-weight:bold; cursor:pointer;">취소</button>
+                    <button id="confirm-import-btn" style="flex:1; padding:12px; border:none; border-radius:8px; background:#2ecc71; color:white; font-weight:bold; cursor:pointer;">불러오기</button>
+                </div>
             </div>
-        </div>
-    `;
+        `;
+        document.body.appendChild(inputModal);
+    } else {
+        inputModal.style.display = 'flex';
+    }
 
-    document.body.appendChild(inputModal);
+    document.getElementById('save-code-textarea').value = ''; // 초기화
 
-    // 3. 취소 버튼을 눌렀을 때의 동작 (창 닫기)
     document.getElementById('cancel-import-btn').onclick = function() {
-        document.body.removeChild(inputModal);
+        inputModal.style.display = 'none';
     };
 
-    // 4. 불러오기(확인) 버튼을 눌렀을 때의 동작
     document.getElementById('confirm-import-btn').onclick = function() {
         const code = document.getElementById('save-code-textarea').value;
-        document.body.removeChild(inputModal); // 창 먼저 닫기
+        if (!code || code.trim() === "") return alert("입력된 코드가 없습니다.");
         
-        if (!code || code.trim() === "") {
-            alert("입력된 코드가 없습니다.");
-            return;
-        }
-        
-        let rawData = code;
-        // 기존 암호화 호환성 유지 (유저님이 작성하신 코드 그대로)
-        if (!code.trim().startsWith('{')) {
-            try { rawData = decodeURIComponent(atob(code)); } catch(e) {
-                console.error("암호 해독 실패:", e);
-            }
-        }
-        
-        // 데이터 처리 함수 실행
-        processImportData(rawData);
+        inputModal.style.display = 'none';
+        processImportData(code); // 통합 처리 함수로 넘김
     };
 }
 
-// [공통] 복구 실행 함수
-function processImportData(jsonString) {
+// [공통] 복구 실행 함수 (★ 철벽 방어 핵심 로직)
+function processImportData(inputString) {
     try {
-        const parsedData = JSON.parse(jsonString);
-        if (parsedData.gems === undefined) throw new Error("데이터 없음");
+        let rawData = inputString.trim();
         
-        if (confirm("⚠️ 현재 진행 상황을 덮어쓰고,\n선택한 기록으로 되돌리시겠습니까?\n\n(다른 기기의 데이터일 경우 현재 진행 상황이 지워집니다!)")) {
-            localStorage.setItem('kingsRoadSave', jsonString);
+        // 1. 암호화(Base64) 데이터 해독 (괄호 '{' 로 시작하지 않으면 암호화된 것으로 판단)
+        if (!rawData.startsWith('{')) {
+            try {
+                // 복사 과정에서 생긴 띄어쓰기, 줄바꿈 완벽 제거
+                const cleanBase64 = rawData.replace(/\s+/g, '');
+                rawData = decodeURIComponent(atob(cleanBase64));
+            } catch(err) {
+                throw new Error("암호 해독 실패");
+            }
+        }
+
+        // 2. 혹시 모를 모바일 기기의 스마트 따옴표(“ ”) 변형 복구
+        rawData = rawData.replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'");
+
+        // 3. JSON 변환
+        const parsedData = JSON.parse(rawData);
+
+        if (parsedData.gems === undefined) {
+            throw new Error("올바른 킹스로드 세이브 데이터가 아닙니다.");
+        }
+
+        if (confirm("⚠️ 현재 진행 상황을 덮어쓰고,\n선택한 기록으로 되돌리시겠습니까?\n\n(다른 기기의 데이터일 경우 현재 기기의 진행 상황이 지워집니다!)")) {
+            
+            // ★ 가장 중요: 불러온 데이터의 버전을 '현재 게임의 최신 버전'으로 강제 업데이트!
+            // (이 코드가 없으면 새로고침 시 구버전으로 인식되어 데이터가 삭제됩니다)
+            if (typeof GAME_VERSION !== 'undefined') {
+                parsedData.version = GAME_VERSION; 
+            }
+
+            // 로컬 스토리지에 안전하게 저장
+            localStorage.setItem('kingsRoadSave', JSON.stringify(parsedData));
+            
             alert("✅ 기록 복원 완료!\n게임을 다시 시작합니다.");
             location.reload();
         }
     } catch (e) {
-        alert("❌ 데이터 형식이 잘못되었습니다.\n정상적인 백업 파일인지 확인해주세요.");
+        console.error("데이터 복구 에러:", e);
+        alert("❌ 데이터 복구 실패!\n파일이 손상되었거나 복사 과정에서 코드가 일부 누락되었습니다.");
     }
 }
 
