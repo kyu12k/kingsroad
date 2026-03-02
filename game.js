@@ -7983,11 +7983,14 @@ function openDataSettings() {
         modal.id = 'data-modal';
         modal.className = 'modal-overlay';
         modal.style.zIndex = "9999";
+        
+        // 기존 UI에 '데이터 완전 초기화' 구역(빨간색 박스)을 추가했습니다.
         modal.innerHTML = `
-            <div class="result-card" style="max-width:350px; text-align:left; background:white; color:#2c3e50;">
+            <div class="result-card" style="max-width:350px; text-align:left; background:white; color:#2c3e50; max-height:90vh; overflow-y:auto;">
                 <div class="result-header" style="font-size:1.4rem; text-align:center; color:#2c3e50; margin-bottom:5px;">
                     💾 데이터 관리소
                 </div>
+                
                 <div style="margin-bottom:20px; padding:15px; background:#fef9e7; border-radius:10px; border:1px solid #f1c40f;">
                     <h3 style="color:#d35400; margin:0 0 5px 0; font-size:1.1rem;">📤 기록 보관하기 (일일 미션)</h3>
                     <p style="font-size:0.9rem; color:#7f8c8d; margin-bottom:10px;">
@@ -8013,6 +8016,17 @@ function openDataSettings() {
                     </div>
                     <input type="file" id="import-file-input" accept=".txt, .json" style="display:none;" onchange="importSaveFile(event)">
                 </div>
+
+                <div style="margin-bottom:20px; padding:15px; background:#fdedec; border-radius:10px; border:1px solid #e74c3c;">
+                    <h3 style="color:#c0392b; margin:0 0 5px 0; font-size:1.1rem;">⚠️ 모든 데이터 초기화</h3>
+                    <p style="font-size:0.9rem; color:#7f8c8d; margin-bottom:10px;">
+                        현재 기기의 모든 진행 상황을 완전히 삭제하고 처음부터 다시 시작합니다.
+                    </p>
+                    <button onclick="resetGameData()" style="width:100%; background:#e74c3c; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor:pointer; box-shadow:0 3px 0 #c0392b;">
+                        🚨 완전 초기화 실행
+                    </button>
+                </div>
+
                 <button onclick="document.getElementById('data-modal').style.display='none'" style="width:100%; background:#95a5a6; color:white; border:none; padding:12px; border-radius:30px; cursor:pointer; font-weight:bold;">
                     닫기
                 </button>
@@ -8021,6 +8035,27 @@ function openDataSettings() {
         document.body.appendChild(modal);
     }
     modal.style.display = 'flex';
+}
+
+// [기능 4] 데이터 완전 초기화 로직 (새로 추가)
+function resetGameData() {
+    // 1차 경고
+    if (confirm("⚠️ 정말로 기기에 저장된 모든 데이터를 삭제하시겠습니까?\n\n(※ 한 번 삭제된 데이터는 파일을 미리 보관해두지 않은 이상 절대 복구할 수 없습니다.)")) {
+        // 2차 경고 (실수 방지)
+        if (confirm("마지막으로 확인합니다.\n정말로 모든 진행 상황을 지우고 태그 발급부터 다시 시작하시겠습니까?")) {
+            
+            // ★ 핵심: 자동 저장 기능이 삭제된 상태를 덮어쓰지 못하도록 막음
+            window.isResetting = true; 
+            
+            // 로컬 스토리지의 킹스로드 데이터 삭제
+            localStorage.removeItem('kingsRoadSave'); 
+            
+            alert("데이터가 완전히 초기화되었습니다.\n게임을 처음부터 다시 시작합니다.");
+            
+            // 페이지 새로고침하여 초기 상태로 진입
+            location.reload(); 
+        }
+    }
 }
 
 // [기능 1] 파일로 저장 및 공유 (안전한 Base64 암호화 적용)
