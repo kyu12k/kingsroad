@@ -8067,29 +8067,98 @@ function shareSaveCodeAndGetReward() {
     }
 }
 
-// [기능 2] 파일로 불러오기
+// [기능 2] 파일로 불러오기 (수정됨: 암호화 해독 로직 추가)
 function importSaveFile(event) {
     const file = event.target.files[0];
     if (!file) return;
+    
     const reader = new FileReader();
     reader.onload = function(e) {
-        processImportData(e.target.result);
-        event.target.value = ''; // 같은 파일 다시 열 수 있게 초기화
+        let fileContent = e.target.result;
+        let rawData = fileContent;
+        
+        // 붙여넣기 기능과 동일하게, 암호화된 텍스트일 경우 해독하는 로직 추가
+        if (!fileContent.trim().startsWith('{')) {
+            try { 
+                rawData = decodeURIComponent(atob(fileContent)); 
+            } catch(err) {
+                console.error("파일 데이터 해독 실패:", err);
+                alert("파일 형식이 올바르지 않거나 데이터가 손상되었습니다.");
+                event.target.value = ''; // 초기화
+                return;
+            }
+        }
+        
+        // 해독된 데이터를 처리 함수로 전달
+        processImportData(rawData);
+        
+        // 같은 파일을 연달아 불러올 수 있도록 input 값을 초기화
+        event.target.value = ''; 
     };
-    reader.readAsText(file);
+    
+    // 한글이나 특수문자가 깨지지 않도록 UTF-8 인코딩을 명시하여 읽기
+    reader.readAsText(file, "UTF-8");
 }
 
-// [기능 3] 붙여넣기로 불러오기
+// [기능 3] 붙여넣기로 불러오기 (수정됨: prompt 대신 커스텀 입력창 사용)
 function importSaveCode() {
-    const code = prompt("백업 파일(.txt) 안의 텍스트를 복사하여\n여기에 모두 '붙여넣기' 하세요:");
-    if (!code) return;
-    
-    let rawData = code;
-    // 혹시 예전 방식(영어 암호)으로 된 것을 넣었을 때 호환성 유지
-    if (!code.trim().startsWith('{')) {
-        try { rawData = decodeURIComponent(atob(code)); } catch(e) {}
-    }
-    processImportData(rawData);
+    // 1. 화면에 띄울 새로운 입력창(모달)을 만듭니다.
+    let inputModal = document.createElement('div');
+    inputModal.id = 'import-input-modal';
+    inputModal.style.position = 'fixed';
+    inputModal.style.top = '0';
+    inputModal.style.left = '0';
+    inputModal.style.width = '100%';
+    inputModal.style.height = '100%';
+    inputModal.style.backgroundColor = 'rgba(0,0,0,0.6)';
+    inputModal.style.zIndex = '10000'; // 기존 모달창보다 위에 뜨도록 설정
+    inputModal.style.display = 'flex';
+    inputModal.style.justifyContent = 'center';
+    inputModal.style.alignItems = 'center';
+
+    // 2. 넉넉하게 붙여넣을 수 있는 <textarea>가 포함된 HTML을 넣습니다.
+    inputModal.innerHTML = `
+        <div style="background:white; padding:20px; border-radius:10px; width:90%; max-width:400px; text-align:center; box-sizing:border-box;">
+            <h3 style="margin-top:0; color:#27ae60; font-size:1.2rem;">📝 코드 붙여넣기</h3>
+            <p style="font-size:0.9rem; color:#7f8c8d; margin-bottom:15px;">복사한 텍스트를 아래 빈칸을 꾹 눌러 붙여넣으세요.</p>
+            
+            <textarea id="save-code-textarea" style="width:100%; height:150px; margin-bottom:15px; padding:10px; border:1px solid #bdc3c7; border-radius:5px; resize:none; font-family:monospace; box-sizing:border-box;" placeholder="여기에 전체 코드를 붙여넣으세요..."></textarea>
+            
+            <div style="display:flex; gap:10px;">
+                <button id="cancel-import-btn" style="flex:1; padding:12px; border:none; border-radius:8px; background:#e74c3c; color:white; font-weight:bold; cursor:pointer;">취소</button>
+                <button id="confirm-import-btn" style="flex:1; padding:12px; border:none; border-radius:8px; background:#2ecc71; color:white; font-weight:bold; cursor:pointer;">불러오기</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(inputModal);
+
+    // 3. 취소 버튼을 눌렀을 때의 동작 (창 닫기)
+    document.getElementById('cancel-import-btn').onclick = function() {
+        document.body.removeChild(inputModal);
+    };
+
+    // 4. 불러오기(확인) 버튼을 눌렀을 때의 동작
+    document.getElementById('confirm-import-btn').onclick = function() {
+        const code = document.getElementById('save-code-textarea').value;
+        document.body.removeChild(inputModal); // 창 먼저 닫기
+        
+        if (!code || code.trim() === "") {
+            alert("입력된 코드가 없습니다.");
+            return;
+        }
+        
+        let rawData = code;
+        // 기존 암호화 호환성 유지 (유저님이 작성하신 코드 그대로)
+        if (!code.trim().startsWith('{')) {
+            try { rawData = decodeURIComponent(atob(code)); } catch(e) {
+                console.error("암호 해독 실패:", e);
+            }
+        }
+        
+        // 데이터 처리 함수 실행
+        processImportData(rawData);
+    };
 }
 
 // [공통] 복구 실행 함수
