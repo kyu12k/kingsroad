@@ -9184,3 +9184,11 @@ function renderMyPlayRecord() {
         </div>
     `;
 }
+// 서비스 워커 등록 (앱 설치 조건을 만족시키기 위함)
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('서비스 워커 등록 완료!'))
+            .catch(err => console.log('서비스 워커 등록 실패:', err));
+    });
+}
