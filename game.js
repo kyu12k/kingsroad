@@ -9097,7 +9097,7 @@ function saveMyScoreToServer() {
     // 1. 파이어베이스가 없으면 중단 (안전장치)
     if (typeof db === 'undefined' || !db || !myPlayerId) return;
 
-    console.log("📡 서버에 주간 점수 저장 중...");
+    // (여기 있던 console.log를 아래로 내렸습니다)
 
     const currentWeekId = leagueData.weekId || getWeekId();
     const currentScore = leagueData.myScore || 0;
@@ -9120,7 +9120,12 @@ function saveMyScoreToServer() {
     }
 
     const nextKey = JSON.stringify(payload);
+    
+    // ★ 방어막: 데이터가 이전과 똑같다면 파이어베이스에 안 보내고 조용히 함수 종료!
     if (nextKey === lastScorePayloadKey) return;
+
+    // ★ 진짜로 서버에 데이터를 보낼 때만 로그를 띄우도록 위치 변경
+    console.log("📡 점수 변동 감지! 서버에 주간 점수 저장 중...");
 
     db.collection("leaderboard").doc(myPlayerId).set({
         ...payload,
