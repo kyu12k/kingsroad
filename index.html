@@ -24,7 +24,58 @@
     </script>
 </head>
 <body>
-    
+    <!-- 감사한 분들 모달 -->
+    <div id="thanks-modal" class="modal-overlay" style="z-index: 9999; display:none;">
+        <div class="result-card" style="max-width: 400px; max-height: 80vh; overflow-y: auto;">
+            <div style="text-align: right;">
+                <button onclick="closeThanksModal()" style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
+            </div>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="margin:0; color:#2c3e50;">감사한 분들</h2>
+                <div style="margin-top:15px; display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap;">
+                    <span id="thanks-tribe-icon"></span>
+                    <span id="thanks-dept-tag"></span>
+                    <span id="thanks-name" style="color:#2c3e50; font-size:1.1rem; font-weight:bold;"></span>
+                    <span id="thanks-code" style="color:#95a5a6; font-size:0.95rem;"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 꿀팁 모달 -->
+    <div id="tip-modal" class="modal-overlay" style="z-index: 9999; display:none;">
+        <div class="result-card" style="max-width: 400px; max-height: 80vh; overflow-y: auto;">
+            <div style="text-align: right;">
+                <button onclick="closeTipModal()" style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
+            </div>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="margin:0; color:#2c3e50;">꿀팁 <span style="font-size:1.2em;">💡</span></h2>
+                <div style="text-align:left; margin:20px 0 0 0; color:#34495e; font-size:1.05em; line-height:1.7;">
+                    <div style="margin-bottom:1em;">
+                        <b>암기 꿀팁</b><br>
+                        1. 암송하려는 구절을 찾아 완료한다.<br>
+                        2. 10분 뒤, 해당 구절을 다시 완료한다.<br>
+                        3. 1시간 뒤, 해당 구절을 다시 완료한다.<br>
+                        4. 5개 구절 단위의 중간 점검으로 복습한다.<br>
+                        5. 한 장을 완료하면 보스전으로 최종 복습한다.<br>
+                        6. 망각 주기가 도래하여 복습할 스테이지가 생기면 또 복습한다.<br>
+                    </div>
+                    <div style="margin-bottom:1em;">
+                        <b>보석 획득 꿀팁</b><br>
+                        1. 5배, 2배, 1.5배 보너스가 있는 구절을 완료한다.<br>
+                        2. 일일미션, 주간미션을 착실히 수행한다.<br>
+                        3. 기록실을 확인하여 달성할만한 것을 찾아 도전한다(예: 새벽 암송).<br>
+                        4. 획득한 보석으로 홈 화면의 성전을 업그레이드 하여 주기적으로 보석을 획득한다.<br>
+                    </div>
+                    <div>
+                        <b>승점 획득 꿀팁</b><br>
+                        1. 5배, 2배, 1.5배 보너스가 있는 구절을 완료한다.<br>
+                        2. 상점의 승점 부스터를 활용한다.<br>
+                        3. 하트 최대치를 늘리고, 최대한 안 틀리려고 노력하며 생명의 떡으로 체력을 가득 채운 채로 완료한다.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div id="ranking-overlay" style="display:none; position:fixed; z-index:9999; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.97); color:#f1c40f; flex-direction:column; align-items:center; justify-content:center; font-size:1.3rem; text-align:center;">
         <div style="max-width:90vw; font-size:1.1em; line-height:1.7; font-weight:bold; color:#fff; text-shadow:0 2px 8px #222; margin-bottom:30px;">
             "운동장에서 달음질하는 자들이 다 달아날찌라도 오직 상 얻는 자는 하나인 줄을 너희가 알지 못하느냐<br>너희도 얻도록 이와 같이 달음질하라"<br><span style="font-size:0.95em; color:#f1c40f;">(고전 9:24)</span>
@@ -297,58 +348,7 @@
         <button id="add-to-home-btn" style="position:absolute; top:164px; right:20px; background:rgba(255,255,255,0.15); border:1px solid #2ecc71; color:#2ecc71; width:40px; height:40px; border-radius:50%; font-size:1.3rem; cursor:pointer; z-index:100; display:flex; align-items:center; justify-content:center; transition:all 0.3s;" title="홈 화면에 추가" onmouseover="this.style.background='rgba(46,204,113,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
             <span style="font-size:1.5em;">📱</span>
         </button>
-    <!-- 감사한 분들 모달 -->
-    <div id="thanks-modal" class="modal-overlay" style="z-index: 9999; display:none;">
-        <div class="result-card" style="max-width: 400px; max-height: 80vh; overflow-y: auto;">
-            <div style="text-align: right;">
-                <button onclick="closeThanksModal()" style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
-            </div>
-            <div style="text-align: center; margin-bottom: 20px;">
-                <h2 style="margin:0; color:#2c3e50;">감사한 분들</h2>
-                <div style="margin-top:15px; display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap;">
-                    <span id="thanks-tribe-icon"></span>
-                    <span id="thanks-dept-tag"></span>
-                    <span id="thanks-name" style="color:#2c3e50; font-size:1.1rem; font-weight:bold;"></span>
-                    <span id="thanks-code" style="color:#95a5a6; font-size:0.95rem;"></span>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- 꿀팁 모달 -->
-    <div id="tip-modal" class="modal-overlay" style="z-index: 9999; display:none;">
-        <div class="result-card" style="max-width: 400px; max-height: 80vh; overflow-y: auto;">
-            <div style="text-align: right;">
-                <button onclick="closeTipModal()" style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
-            </div>
-            <div style="text-align: center; margin-bottom: 20px;">
-                <h2 style="margin:0; color:#2c3e50;">꿀팁 <span style="font-size:1.2em;">💡</span></h2>
-                <div style="text-align:left; margin:20px 0 0 0; color:#34495e; font-size:1.05em; line-height:1.7;">
-                    <div style="margin-bottom:1em;">
-                        <b>암기 꿀팁</b><br>
-                        1. 암송하려는 구절을 찾아 완료한다.<br>
-                        2. 10분 뒤, 해당 구절을 다시 완료한다.<br>
-                        3. 1시간 뒤, 해당 구절을 다시 완료한다.<br>
-                        4. 5개 구절 단위의 중간 점검으로 복습한다.<br>
-                        5. 한 장을 완료하면 보스전으로 최종 복습한다.<br>
-                        6. 망각 주기가 도래하여 복습할 스테이지가 생기면 또 복습한다.<br>
-                    </div>
-                    <div style="margin-bottom:1em;">
-                        <b>보석 획득 꿀팁</b><br>
-                        1. 5배, 2배, 1.5배 보너스가 있는 구절을 완료한다.<br>
-                        2. 일일미션, 주간미션을 착실히 수행한다.<br>
-                        3. 기록실을 확인하여 달성할만한 것을 찾아 도전한다(예: 새벽 암송).<br>
-                        4. 획득한 보석으로 홈 화면의 성전을 업그레이드 하여 주기적으로 보석을 획득한다.<br>
-                    </div>
-                    <div>
-                        <b>승점 획득 꿀팁</b><br>
-                        1. 5배, 2배, 1.5배 보너스가 있는 구절을 완료한다.<br>
-                        2. 상점의 승점 부스터를 활용한다.<br>
-                        3. 하트 최대치를 늘리고, 최대한 안 틀리려고 노력하며 생명의 떡으로 체력을 가득 채운 채로 완료한다.
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    
     <script>
     // 감사한 분들 모달에 지파 아이콘, 부서 태그, 이름, 코드 동적 렌더링
     function openThanksModal() {
