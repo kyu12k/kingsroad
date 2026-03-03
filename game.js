@@ -6728,12 +6728,8 @@ stageClear = function(type) {
         if (type === 'boss') { 
             // 망각 주기가 지난 경우에만 클리어 시각 갱신
             if (isForgotten) {
-                stageLastClear[sId] = Date.now();
-
-            // 👉 [추가된 부분] 보스전도 망각 상태에서 클리어하면 기억 레벨(Lv)이 오릅니다!
-            // (prevLevel 변수 오류 방지를 위해 직접 안전하게 계산)
-            stageMemoryLevels[sId] = (stageMemoryLevels[sId] || 0) + 1;
-            }
+    stageMemoryLevels[sId] = (prevLevel || 0) + 1; // prevLevel 변수로 안전하게 통일
+}
             const verseCount = bibleData[chNum] ? bibleData[chNum].length : 0;
             const rewardData = calculateProgressiveReward(chNum, verseCount, 1);
             // ★ [통일] 보스 기본 보상: 보스 절수 × 10 (mid-boss 상태 무관)
@@ -6754,25 +6750,7 @@ stageClear = function(type) {
             }
 
             verseCnt = bossHpForScore;
-
-            // ★ [때를 따른 양식 보너스] 망각 주기 기반 (보스도 mid-boss/일반과 동일하게 적용)
-            const timedBonus = getTimedBonus(sId); // 현재 상태만 확인
-            const bonusLevel = timedBonus.remaining; // 소진 전 값
-            if (bonusLevel === 3) {
-                baseGem *= 5;
-                msg += `🎁 때를 따른 양식 ( × 5배)\n`;
-            } else if (bonusLevel === 2) {
-                baseGem *= 2;
-                msg += `🔱 때를 따른 양식 ( × 2배)\n`;
-            } else if (bonusLevel === 1) {
-                baseGem *= 1.5;
-                msg += `⚔️ 때를 따른 양식 ( × 1.5배)\n`;
-            } else {
-                msg += `⏳ 보너스 쿨타임 (망각 주기 대기 중)\n`;
-            }
-
             // 하위 스테이지 자동 처리 제거: 보스 클리어가 다른 스테이지에 영향 주지 않음
-
             // ★ 미션 업데이트: 보스 처치
             updateMissionProgress('checkpointBoss'); // 일일 미션
             updateMissionProgress('dragon'); // 주간 미션 
@@ -6851,12 +6829,10 @@ stageClear = function(type) {
             } 
 
             baseGem = maxGem;
-
-            // ★ [때를 따른 양식 보너스] 망각 주기 기반 (모든 스테이지 적용)
-            // 주의: calculateScore보다 먼저 호출하면 안 됨 (중복 소진 방지)
+        }
+        // ★ [때를 따른 양식 보너스] 망각 주기 기반 (보스도 mid-boss/일반과 동일하게 적용)
             const timedBonus = getTimedBonus(sId); // 현재 상태만 확인
             const bonusLevel = timedBonus.remaining; // 소진 전 값
-
             if (bonusLevel === 3) {
                 baseGem *= 5;
                 msg += `🎁 때를 따른 양식 ( × 5배)\n`;
@@ -6870,7 +6846,7 @@ stageClear = function(type) {
                 msg += `⏳ 보너스 쿨타임 (망각 주기 대기 중)\n`;
             }
 
-            // 망각 주기가 지난 경우에만 클리어 시각 갱신
+        // 망각 주기가 지난 경우에만 클리어 시각 갱신
             const isFirstClear = !stageLastClear[sId];
 
         // 망각 주기가 지났거나, '아예 처음 클리어한 경우' 모두 시각 갱신
@@ -6888,7 +6864,6 @@ stageClear = function(type) {
                 baseGem = Math.floor(baseGem * (1 + bonusPercent));
                 msg += `💜 [기억 회복] 보너스 +${Math.round(bonusPercent*100)}%! (Lv.${prevLevel})\n`;
             }
-        }
         }
         
         // ★ [깨달음의 경지 보너스 적용]
