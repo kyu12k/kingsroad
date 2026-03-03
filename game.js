@@ -6047,7 +6047,8 @@ function loadTribeLeaderboard(tribeId, callback) {
             }
             
             const data = doc.data();
-            const ranks = data.ranks || [];
+            // 🛡️ 중복 방지 필터 적용!
+const ranks = filterAndCleanRanking(data.ranks || []);
             
             // ranks 배열을 UI에 맞게 변환
             const transformed = ranks.map((row, index) => {
