@@ -4787,37 +4787,44 @@ function useLifeBread() {
     saveGameData();     // 저장
 }
 
-// 2. 힌트 사용하기 (만능 도우미, 개선)
+// 2. 힌트 사용하기 (비용 고정 버전)
 let isHintModalOpen = false;
-let hintCost = 10;
+const HINT_COST = 10; // ★ 비용이 증가하지 않도록 상수로 고정합니다.
+
 function useHint() {
     if (isHintModalOpen) return;
-    if (typeof hintCost !== 'number' || hintCost < 10) hintCost = 10;
-    if (myGems < hintCost) {
-        alert(`💎 보석이 부족합니다! (필요: ${hintCost})`);
+    
+    if (myGems < HINT_COST) {
+        alert(`💎 보석이 부족합니다! (필요: ${HINT_COST})`);
         return;
     }
+
     const screen = document.getElementById('game-screen');
     const isTraining = screen.classList.contains('mode-training');
+    
     if (isTraining && currentStep === 1) {
         alert("이 단계에서는 큰 소리로 읽는 것이 정답입니다! 📣");
         return;
     }
+
     // 안내 문구
-    if (!confirm(`💎 보석 ${hintCost}개를 소모하여 힌트를 보시겠습니까?`)) {
+    if (!confirm(`💎 보석 ${HINT_COST}개를 소모하여 힌트를 보시겠습니까?`)) {
         return;
     }
+
     // 보석 차감 및 입력 비활성화
-    myGems -= hintCost;
+    myGems -= HINT_COST;
     updateGemDisplay();
     saveGameData();
     SoundEffect.playClick();
     disableGameInputs(true);
     isHintModalOpen = true;
-    hintCost += 5;
+    
+    // ★ 누적 비용을 계산하던 찌꺼기 코드(hintCost += 5 등) 완전 제거
+    
     // 힌트 모달 생성 및 표시
     showHintModal({
-        cost: hintCost - 5,
+        cost: HINT_COST,
         onClose: () => {
             isHintModalOpen = false;
             disableGameInputs(false);
@@ -4827,11 +4834,13 @@ function useHint() {
 
 function showHintModal({ cost, onClose }) {
     if (document.getElementById('hint-modal')) return;
+    
     let hintText = '';
     const screen = document.getElementById('game-screen');
     const isTraining = screen.classList.contains('mode-training');
     let verse = '';
     let highlightHtml = '';
+    
     if (isTraining) {
         // step5 힌트 undefined 방지
         if (!trainingVerseData || !trainingVerseData.text) {
@@ -4842,6 +4851,7 @@ function showHintModal({ cost, onClose }) {
         if (typeof trainingVerseData === 'object' && trainingVerseData.text) {
             verse = trainingVerseData.text;
         }
+        
         if (currentStep === 2 && typeof trainingVerseData.chunks === 'object') {
             const idx = window.currentSlotIndex;
             highlightHtml = trainingVerseData.chunks.map((w,i)=>
@@ -4868,18 +4878,36 @@ function showHintModal({ cost, onClose }) {
         if (typeof currentVerseData === 'object' && currentVerseData.verse) {
             verse = currentVerseData.verse;
         }
-        if (typeof currentVerseData.chunks === 'object') {
+        
+        // ★ [버그 픽스] 전체 구절이 아닌 '현재 풀고 있는 파트(currentBossChunks)'를 기준으로 힌트 생성
+        let targetChunks = null;
+        if (typeof currentBossChunks !== 'undefined' && currentBossChunks && currentBossChunks.length > 0) {
+            targetChunks = currentBossChunks;
+        } else if (typeof currentVerseData === 'object' && currentVerseData.chunks) {
+            targetChunks = currentVerseData.chunks;
+        }
+
+        if (targetChunks) {
             const zone = document.getElementById('answer-zone');
-            const currentBlocks = zone.querySelectorAll('.word-block');
+            // 'placeholder-text' 같은 안내 문구가 섞여있을 수 있으므로 순수 word-block만 셉니다.
+            const currentBlocks = Array.from(zone.querySelectorAll('.word-block')).filter(b => b.id !== 'placeholder-text');
             const idx = currentBlocks.length;
-            highlightHtml = currentVerseData.chunks.map((w,i)=>
-                i===idx ? `<span style='background:#ffe066; border-radius:5px;'>${w}</span>` : w
+            
+            highlightHtml = targetChunks.map((w,i)=>
+                i===idx ? `<span style='background:#ffe066; border-radius:5px; padding:0 3px;'>${w}</span>` : w
             ).join(' ');
-            hintText = `<div style='margin-bottom:8px;'>현재 구절</div><div style='font-size:1.1rem; color:#2c3e50;'>${verse}</div><div style='margin-top:10px;'>현재 부분: ${highlightHtml}</div>`;
+            
+            hintText = `
+                <div style='margin-bottom:8px; font-weight:bold;'>현재 전체 구절</div>
+                <div style='font-size:1.1rem; color:#2c3e50; margin-bottom:15px;'>${verse}</div>
+                <div style='margin-bottom:8px; font-weight:bold; color:#e74c3c;'>현재 풀어야 할 파트</div>
+                <div style='font-size:1.1rem; color:#2c3e50;'>${highlightHtml}</div>
+            `;
         } else {
             hintText = `<div style='font-size:1.1rem; color:#2c3e50;'>${verse}</div>`;
         }
     }
+    
     const modal = document.createElement('div');
     modal.id = 'hint-modal';
     modal.className = 'modal-overlay';
@@ -4894,7 +4922,9 @@ function showHintModal({ cost, onClose }) {
             <div style="margin-bottom:20px; color:#34495e;">${hintText}</div>
         </div>
     `;
+    
     document.body.appendChild(modal);
+    
     document.getElementById('hint-modal-close').onclick = function() {
         document.body.removeChild(modal);
         if (typeof onClose === 'function') onClose();
@@ -4903,7 +4933,6 @@ function showHintModal({ cost, onClose }) {
 
 // 게임 입력/버튼 비활성화 (힌트 모달용)
 function disableGameInputs(disable) {
-    // 주요 버튼/입력 모두 비활성화
     const btns = document.querySelectorAll('button, input, .word-block');
     btns.forEach(btn => {
         if (disable) {
@@ -4914,101 +4943,13 @@ function disableGameInputs(disable) {
             btn.style.pointerEvents = '';
         }
     });
-    // 단, 힌트 모달 내 버튼은 예외로 복구
+    
     if (!disable) {
         const modalBtns = document.querySelectorAll('#hint-modal button');
         modalBtns.forEach(btn => {
             btn.removeAttribute('disabled');
             btn.style.pointerEvents = '';
         });
-    }
-}
-
-// [수정] 힌트 로직: 오답이 있으면 오답부터 지적, 없으면 다음 길 안내
-function highlightNextBlock(correctChunks) {
-    const zone = document.getElementById('answer-zone');
-    const currentBlocks = zone.querySelectorAll('.word-block');
-    
-    let errorIndex = -1;
-
-    // 1. [오답 체크] 앞에서부터 검사해서 틀린 곳 찾기
-    for(let i=0; i<currentBlocks.length; i++) {
-        if (currentBlocks[i].id === 'placeholder-text') continue;
-        
-        // ★ [핵심 수정] 블록의 텍스트가 초성인지 전체 단어인지 확인하여 비교
-        const blockText = currentBlocks[i].innerText;
-        
-        // 정답 데이터 (상황에 따라 초성으로 변환해서 비교)
-        let targetText = correctChunks[i];
-        
-        // 만약 현재 블록이 '초성(1~2글자)'라면 정답도 초성으로 변환해서 비교
-        // (단, '이와' 같이 원래 짧은 단어와 구분을 위해 한글 여부 등 체크하면 좋지만, 
-        //  게임 문맥상 길이가 같고 텍스트가 다르면 다른 글자로 봄)
-        if (blockText.length !== targetText.length || blockText !== targetText) {
-             // 텍스트가 다를 경우, 혹시 초성 게임 중인가? 확인
-             if (getChosung(targetText) === blockText) {
-                 // 초성으로 변환했더니 같다면 -> 정답으로 인정! (Pass)
-                 continue; 
-             }
-             
-             // 진짜 틀림
-             errorIndex = i;
-             break; 
-        }
-    }
-
-    // 2. [상황 A: 오답이 발견됨] -> 빨갛게 알려줌 (빼라고)
-    if (errorIndex !== -1) {
-        const wrongBlock = currentBlocks[errorIndex];
-        
-        // 효과 적용
-        wrongBlock.classList.add('hint-error');
-        
-        // 안내 메시지
-        alert(`❌ 틀린 부분이 있습니다!\n빨갛게 깜빡이는 '${wrongBlock.innerText}' 블록을 눌러서 빼세요.`);
-        
-        // 3초 뒤 효과 끄기
-        setTimeout(() => wrongBlock.classList.remove('hint-error'), 3000);
-        return; // 여기서 종료 (다음 블록 안 알려줌)
-    }
-
-    // 3. [상황 B: 오답 없음 (깨끗함)] -> 다음 블록 노랗게 알려줌 (넣으라고)
-    
-    // 현재 놓인 개수가 곧 다음 정답의 인덱스
-    const nextIndex = currentBlocks.length;
-
-    // 이미 다 채웠는데 힌트 누른 경우
-    if (nextIndex >= correctChunks.length) {
-        alert("모든 블록이 올바르게 배치되었습니다! 공격 버튼을 누르세요.");
-        return;
-    }
-
-    const targetWord = correctChunks[nextIndex];
-
-    // 대기실(Pool)에서 그 단어 찾기
-    const poolBlocks = Array.from(document.querySelectorAll('#block-pool .word-block'));
-    const targetBlock = poolBlocks.find(b => {
-        const text = b.dataset.original || b.innerText;
-        return text === targetWord && b.style.visibility !== 'hidden';
-    });
-
-    if (targetBlock) {
-        // 노란색 효과
-        targetBlock.classList.add('hint-highlight');
-        
-        // 안내 메시지 (선택사항 - 너무 자주 뜨면 귀찮을 수 있음)
-        // alert(`다음 단어는 '${targetWord}' 입니다.`); 
-        
-        setTimeout(() => targetBlock.classList.remove('hint-highlight'), 3000);
-        
-        // 클릭하면 즉시 효과 해제
-        targetBlock.addEventListener('click', function remover() {
-            targetBlock.classList.remove('hint-highlight');
-            targetBlock.removeEventListener('click', remover);
-        });
-    } else {
-        // 희귀 케이스: 대기실에 없는데 정답칸에도 없다? (로직상 발생 희박)
-        alert(`다음 단어 '${targetWord}'를 찾을 수 없습니다.`);
     }
 }
 
