@@ -1,3 +1,29 @@
+/* step1~5 및 모달/오버레이용 x(닫기) 버튼 고정 위치 스타일 */
+.close-btn, .modal-close-btn, .step-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 200;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #95a5a6;
+    cursor: pointer;
+    padding: 0;
+}
+
+/* 부모 컨테이너가 relative여야 absolute가 정상 동작 */
+.step-modal, .step-overlay, .modal-overlay, .result-card {
+    position: relative;
+}
+
+@media (max-width: 400px) {
+    .close-btn, .modal-close-btn, .step-close-btn {
+        top: 4px;
+        right: 4px;
+        font-size: 1.2rem;
+    }
+}
 /* 💜 망각 주기 도래 스테이지 버튼/모달 */
         #forgetting-btn {
             position: fixed;
