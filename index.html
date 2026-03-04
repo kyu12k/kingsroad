@@ -334,7 +334,7 @@
 
     </div>
 
-    <div id="home-screen" class="screen active">
+    <div id="home-screen" class="screen active" style="overflow-y: auto; padding-bottom: 80px; justify-content: flex-start;">
     <button onclick="openHelpModal()" style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:#fff; width:40px; height:40px; border-radius:50%; font-size:1.3rem; cursor:pointer; z-index:100; transition: all 0.3s; display:flex; align-items:center; justify-content:center;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
         ❓
     </button>
@@ -519,11 +519,7 @@
             }
             </script>
             
-        </div>
-    </div>
-</div>
-
-    <div id="map-screen" class="screen">
+        </div> </div> <div id="map-screen" class="screen">
         <div class="map-header">
         <!-- 망각 위험 플로팅 버튼: 맵 화면 하단 중앙에 위치, 스크롤에 맞게 움직임 -->
         <button id="forgotten-stages-floating-btn" onclick="openForgottenStagesOverlay()" style="position:absolute; left:50%; transform:translateX(-50%); bottom:72px; z-index:1200; background:rgba(241,196,15,0.18); border:2px solid #f1c40f; color:#f1c40f; font-size:0.75rem; font-weight:bold; padding:5px 14px; border-radius:18px; box-shadow:0 2px 10px #2224; cursor:pointer; display:flex; align-items:center; gap:4px;">
@@ -696,7 +692,7 @@
         </div></div></div> <svg id="river-svg">           <path id="river-path" class="river-path" d=""></path>
         </svg>
     </div>
-        </div> <div class="bottom-nav">
+        </div><div class="bottom-nav">
 
         <div class="nav-item" onclick="goHome()"><span>🏰</span><span>홈</span></div>
         <div class="nav-item" onclick="openRankingScreen()"><span>🏆</span><span>랭킹</span></div>
