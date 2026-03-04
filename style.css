@@ -2104,3 +2104,19 @@ body, html {
 .hint-blink {
     animation: hintBlink 0.6s infinite !important;
 }
+
+/* 1. 홈 화면이 켜져 있을 때는 하단 네비바를 강제로 숨김 */
+#home-screen.active ~ .bottom-nav { 
+    display: none !important; 
+}
+
+/* 2. 상점, 미션, 도감 등에서 내용이 네비바에 가려지지 않게 하단 여백 추가 */
+#shop-screen, #mission-screen, #life-book-screen, #ranking-screen {
+    padding-bottom: 90px !important;
+}
+
+/* 3. 화면 맨 밑의 '돌아가기' 고정 버튼을 네비바 위로 끌어올림 */
+.button-area-static {
+    bottom: 70px !important; /* 네비바 높이만큼 위로 띄움 */
+    z-index: 100;
+}
