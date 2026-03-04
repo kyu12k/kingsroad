@@ -3268,6 +3268,7 @@ function loadNextVerse() {
         
         setTimeout(() => {
             currentVerseIdx++;
+            currentBossPartIndex = 0;
             loadNextVerse(); // 여기서 다음 구절을 불러오며 버튼이 새로 생성되므로 자연스럽게 초기화됩니다.
         }, 1000);
         deselect();
@@ -4099,14 +4100,36 @@ function loadStep() {
     }
     
     // ----------------------------------------------------
-    // [Step 2] 초성 퀴즈 (기존 유지)
+    // [Step 2] 초성 퀴즈 (긴 구절 파트 분할 적용)
     // ----------------------------------------------------
     else if (currentStep === 2) {
-        // (기존 코드와 동일)
-        const chunkInitials = trainingVerseData.chunks.map(word => getChosung(word));
         
+        // 1. 최대 표시 단어 개수 설정 (한 화면에 이 개수까지만 보여줍니다. 12~15 추천)
+        const MAX_WORDS = 15; 
+
+        // 2. 파트 데이터 초기화 (처음 진입했거나, 구절이 바뀌었을 때만)
+        if (window.currentStep2PartIndex === undefined) {
+            window.currentStep2PartIndex = 0;
+            window.step2Parts = [];
+            
+            // 전체 chunks를 MAX_WORDS 개수 단위로 싹둑싹둑 잘라 배열에 넣습니다.
+            for (let i = 0; i < trainingVerseData.chunks.length; i += MAX_WORDS) {
+                window.step2Parts.push(trainingVerseData.chunks.slice(i, i + MAX_WORDS));
+            }
+        }
+
+        // 3. 현재 파트(화면)에 보여줄 데이터만 꺼내오기
+        const currentChunks = window.step2Parts[window.currentStep2PartIndex];
+        const chunkInitials = currentChunks.map(word => getChosung(word));
+        
+        // 상단에 (파트 1/3) 라벨 추가
+        let partLabel = "";
+        if (window.step2Parts.length > 1) {
+            partLabel = ` <span style="color:#e74c3c;">(파트 ${window.currentStep2PartIndex + 1}/${window.step2Parts.length})</span>`;
+        }
+
         field.innerHTML = `
-            <div class="verse-indicator">${verseLabel}Step 2. 초성에 맞는 단어를 누르세요! (틀리면 ❤️감소)</div>
+            <div class="verse-indicator">${verseLabel}${partLabel}<br>Step 2. 초성에 맞는 단어를 누르세요!</div>
             <div class="reading-card" id="initials-display" 
                  style="position:relative; max-height:140px; overflow-y:auto; align-content:flex-start; line-height:2.2; display:flex; flex-wrap:wrap; justify-content:center; gap:8px;">
             </div>
@@ -4136,7 +4159,8 @@ function loadStep() {
         control.innerHTML = `<div class="block-pool" id="block-pool"></div>`;
         const pool = document.getElementById('block-pool');
         
-        let shuffledList = [...trainingVerseData.chunks].sort(() => Math.random() - 0.5);
+        // 4. 전체가 아닌 '현재 파트'의 단어들만 섞어서 버튼 생성
+        let shuffledList = [...currentChunks].sort(() => Math.random() - 0.5);
         window.currentSlotIndex = 0; 
 
         shuffledList.forEach(word => {
@@ -4144,17 +4168,14 @@ function loadStep() {
             btn.className = 'word-block';
             btn.innerText = word;
             
-            // ★ 클릭 이벤트 핸들러 (수정됨)
             btn.onclick = function() {
-                // 1. 현재 맞춰야 할 정답 단어 가져오기
-                const correctWord = trainingVerseData.chunks[window.currentSlotIndex];
+                // 비교할 정답도 현재 파트(currentChunks)에서 가져옵니다
+                const correctWord = currentChunks[window.currentSlotIndex];
 
-                // 2. 정답 판별
                 if (word === correctWord) {
                     // 🔵 [성공] 정답일 때
                     SoundEffect.playCorrect();
                     
-                    // 슬롯 채우기 (시각 효과)
                     const slot = document.getElementById(`slot-${window.currentSlotIndex}`);
                     if (slot) {
                         slot.innerText = correctWord;
@@ -4162,26 +4183,19 @@ function loadStep() {
                         slot.style.color = "#2c3e50";
                         slot.style.border = "none";
                         slot.style.fontWeight = "bold";
-                        // 강조 애니메이션 (선택)
                         slot.animate([
                             { transform: 'scale(1)' },
                             { transform: 'scale(1.2)' },
                             { transform: 'scale(1)' }
                         ], 300);
 
-                        // 👉 [새로운 접근법] 정답 창 내부의 스크롤만 수학적으로 계산해서 움직입니다.
+                        // 자동 스크롤 로직 유지
                         setTimeout(() => {
                             const display = document.getElementById('initials-display');
                             if (display && slot) {
-                                // 1. 방금 불이 들어온 블럭의 밑바닥 위치 계산
                                 const slotBottom = slot.offsetTop + slot.offsetHeight;
-                                
-                                // 2. 현재 정답 창이 보여주고 있는 밑바닥 경계선 계산
                                 const displayVisibleBottom = display.scrollTop + display.clientHeight;
-                                
-                                // 3. 블럭이 경계선 아래로 넘어가서 가려지려고 한다면?
                                 if (slotBottom > displayVisibleBottom - 10) { 
-                                    // 정답 창 내부의 스크롤만 부드럽게 한 칸 내립니다.
                                     display.scrollTo({ 
                                         top: display.scrollTop + slot.offsetHeight + 8, 
                                         behavior: 'smooth' 
@@ -4191,58 +4205,61 @@ function loadStep() {
                         }, 50);
                     }
 
-                    // 버튼 숨기기 (중복 클릭 방지)
                     this.style.visibility = "hidden";
-                    this.onclick = null; // 이벤트 제거
+                    this.onclick = null; 
 
-                    // 다음 단계로 인덱스 증가
+                    // 인덱스 증가
                     window.currentSlotIndex++;
 
-                    // 다음 슬롯이 남았는지 확인
-                    if (window.currentSlotIndex < trainingVerseData.chunks.length) {
-                        // 다음 슬롯 강조 표시
+                    // 5. 다음 슬롯, 파트, 단계 이동 판별
+                    if (window.currentSlotIndex < currentChunks.length) {
+                        // 아직 '현재 파트'에 맞출 단어가 남았음 -> 다음 빈칸 테두리 칠하기
                         const nextSlot = document.getElementById(`slot-${window.currentSlotIndex}`);
                         if (nextSlot) {
                             nextSlot.style.border = "2px solid var(--primary-color)";
                             nextSlot.style.color = "#2c3e50";
                             nextSlot.style.fontWeight = "bold";
                             nextSlot.style.backgroundColor = "white";
-                            
-                            // 👉 [선택사항] 만약 '다음에 채울 빈칸'이 보였으면 좋겠다면 이 주석을 풀고 아래 코드를 사용하세요.
-                            // setTimeout(() => {
-                            //     nextSlot.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                            // }, 60);
                         }
                     } else {
-                        // 모든 슬롯 완성! (0.3초 뒤 성공 처리)
-                        setTimeout(() => {
-                            nextStep();
-                        }, 300);
+                        // '현재 파트'를 다 맞췄음! -> 파트 인덱스 1 증가
+                        window.currentStep2PartIndex++;
+
+                        if (window.currentStep2PartIndex < window.step2Parts.length) {
+                            // 🟢 아직 다음 파트가 남아있다면 화면 다시 그리기
+                            setTimeout(() => {
+                                loadStep(); // 현재 loadStep 함수를 다시 불러서 새 파트 렌더링
+                            }, 300);
+                        } else {
+                            // 🟢 모든 파트를 다 맞췄다면 Step 3으로 이동
+                            setTimeout(() => {
+                                // 다음 구절을 위해 파트 데이터 메모리 비워주기 (아주 중요!)
+                                window.currentStep2PartIndex = undefined; 
+                                window.step2Parts = undefined;
+                                
+                                nextStep();
+                            }, 500);
+                        }
                     }
 
                 } else {
-                    // 🔴 [실패] 오답일 때 (else 문으로 확실히 분리!)
+                    // 🔴 [실패] 오답일 때 (기존 로직 유지)
                     SoundEffect.playWrong();
                     playerHearts--;
                     wrongCount++;
-                    updateBattleUI(); // 하트 UI 갱신
+                    updateBattleUI(); 
                     
-                    // 버튼 흔들기 효과
                     this.style.backgroundColor = "#e74c3c"; 
                     this.classList.add('shake-effect');
                     
-                    const self = this; // setTimeout 안에서 this 쓰기 위해 저장
+                    const self = this; 
                     setTimeout(() => {
                         self.style.backgroundColor = "#ecf0f1"; 
                         self.classList.remove('shake-effect');
                     }, 500);
 
-                    // 게임 오버 체크
                     if (playerHearts <= 0) {
-                        setTimeout(() => {
-                            // 즉시 부활 모달 띄우기
-                            showReviveModal(); 
-                        }, 100);
+                        setTimeout(() => showReviveModal(), 100);
                     }
                 }
             };
