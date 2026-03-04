@@ -1251,10 +1251,8 @@ function showTribeInfo(e, id) {
     }, 1500);
 }
 
-/* [시스템] 리그 티어 기반 구조는 폐지됨 (지파 랭킹 사용) */
 
-        /* [데이터: 성경 전체 데이터베이스 (1~5장 통합)] */
-/* 기존의 bossStageData 변수는 삭제하고 이 변수를 사용합니다. */
+        /* [데이터: 성경 전체 데이터베이스] */
 const bibleData = {
     1: [
         { text: "예수 그리스도의 계시라 이는 하나님이 그에게 주사 반드시 속히 될 일을 그 종들에게 보이시려고 그 천사를 그 종 요한에게 보내어 지시하신 것이라", chunks: ["예수", "그리스도의", "계시라", "이는", "하나님이", "그에게", "주사", "반드시", "속히", "될", "일을", "그", "종들에게", "보이시려고", "그", "천사를", "그", "종", "요한에게", "보내어", "지시하신", "것이라"] },
@@ -2049,8 +2047,6 @@ function amenAndStartGame() {
 
     // 5. 맵 화면으로 이동
     goMap(); 
-
-    // 6. 일일 생명의 떡 지급 체크 (기능 제거)
 }
 
         function goHome() {
@@ -9095,13 +9091,15 @@ function openStageSheetForStageId(stageId) {
    ========================================= */
 let lastScorePayloadKey = null;
 function saveMyScoreToServer() {
-    // 1. 파이어베이스가 없으면 중단 (안전장치)
     if (typeof db === 'undefined' || !db || !myPlayerId) return;
-
-    // (여기 있던 console.log를 아래로 내렸습니다)
 
     const currentWeekId = leagueData.weekId || getWeekId();
     const currentScore = leagueData.myScore || 0;
+    
+    // 👉 [추가된 부분] 월간 ID와 월간 점수도 꼭 챙겨야 합니다!
+    const currentMonthId = leagueData.monthId || getMonthId();
+    const currentMonthlyScore = leagueData.myMonthlyScore || 0;
+
     const payload = {
         nickname: myNickname,
         score: currentScore,
@@ -9109,7 +9107,10 @@ function saveMyScoreToServer() {
         tribe: myTribe,
         dept: myDept,
         tag: myTag,
-        weekId: currentWeekId
+        weekId: currentWeekId,
+        // 👉 [추가된 부분] 파이어베이스로 보낼 짐싸기에 포함!
+        monthId: currentMonthId,
+        myMonthlyScore: currentMonthlyScore 
     };
 
     if (typeof lastScorePayloadKey === 'undefined' || lastScorePayloadKey === null) {

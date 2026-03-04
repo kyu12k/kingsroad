@@ -68,17 +68,17 @@ async function updateWeeklyCountsImpl() {
 
                 // Snapshot 생성: tribe_{i} 문서에 Top100 저장
                 const rankingData = snapshot.docs.map((doc, index) => {
-                    const row = doc.data();
-                    return {
-                        rank: index + 1,
-                        name: row.nickname || "이름없음",
-                        score: row.score || 0,
-                        tribe: row.tribe,
-                        dept: row.dept,
-                        tag: row.tag || "",
-                        castle: row.castleLv || 0
-                    };
-                });
+    const row = doc.data();
+    return {
+        rank: index + 1,
+        name: row.nickname || "이름없음",
+        score: row.score || 0,
+        tribe: row.tribe !== undefined ? row.tribe : 0, // 안전장치 추가!
+        dept: row.dept !== undefined ? row.dept : 0,   // 안전장치 추가!
+        tag: row.tag || "",
+        castle: row.castleLv || 0
+    };
+});
 
                 const snapshotRef = db.collection('ranking_snapshots').doc(currentWeekId)
                     .collection('tribes').doc(`tribe_${i}`);
@@ -104,17 +104,17 @@ async function updateWeeklyCountsImpl() {
     }
 
     const zionRankingData = zionSnapshot.docs.map((doc, index) => {
-        const row = doc.data();
-        return {
-            rank: index + 1,
-            name: row.nickname || "이름없음",
-            score: row.score || 0,
-            tribe: row.tribe,
-            dept: row.dept,
-            tag: row.tag || "",
-            castle: row.castleLv || 0
-        };
-    });
+    const row = doc.data();
+    return {
+        rank: index + 1,
+        name: row.nickname || "이름없음",
+        score: row.score || 0,
+        tribe: row.tribe !== undefined ? row.tribe : 0, 
+        dept: row.dept !== undefined ? row.dept : 0,   
+        tag: row.tag || "",
+        castle: row.castleLv || 0
+    };
+});
 
     const zionSnapshotRef = db.collection('ranking_snapshots').doc(currentWeekId)
         .collection('tribes').doc('zion');
@@ -260,17 +260,17 @@ exports.archiveMonthlyRankings = functions.pubsub
 
             // 2️⃣ 월간 명예의 전당 Snapshot 생성 (Zion 기준)
             const monthlyRankingData = snapshot.docs.map((doc, index) => {
-                const row = doc.data();
-                return {
-                    rank: index + 1,
-                    name: row.nickname || "이름없음",
-                    score: row.myMonthlyScore || 0,
-                    tribe: row.tribe,
-                    dept: row.dept,
-                    tag: row.tag || "",
-                    castle: row.castleLv || 0
-                };
-            });
+    const row = doc.data();
+    return {
+        rank: index + 1,
+        name: row.nickname || "이름없음",
+        score: row.myMonthlyScore || 0,
+        tribe: row.tribe !== undefined ? row.tribe : 0,
+        dept: row.dept !== undefined ? row.dept : 0,
+        tag: row.tag || "",
+        castle: row.castleLv || 0
+    };
+});
 
             const snapshotRef = db.collection('ranking_snapshots').doc(lastMonthId)
                 .collection('hall').doc('monthly');
