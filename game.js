@@ -5612,6 +5612,22 @@ function calculateScore(stageId, type, verseCount, hearts, isForgotten) {
     checkBoosterStatus(); 
     const finalScore = Math.floor(baseScore * boosterData.multiplier);
 
+    // 🛡️ 1. 점수를 더하기 전에, 해가 바뀌었는지(주/월 리셋) 먼저 검사합니다!
+    const currentRealWeek = getWeekId();
+    if (leagueData.weekId !== currentRealWeek) {
+        console.log("🔄 새로운 주간 시작! 주간 점수 리셋");
+        leagueData.weekId = currentRealWeek;
+        leagueData.myScore = 0; 
+    }
+
+    const currentRealMonth = getMonthId();
+    if (leagueData.monthId !== currentRealMonth) {
+        console.log("🔄 새로운 월간 시작! 월간 점수 리셋");
+        leagueData.monthId = currentRealMonth;
+        leagueData.myMonthlyScore = 0; 
+    }
+
+    // 🎯 2. 깨끗해진 상태(또는 유지된 상태)에서 방금 얻은 승점을 더합니다.
     leagueData.myScore += finalScore;
     leagueData.myMonthlyScore += finalScore; // ✨ 월간 누적도 추가
     if (typeof userStats !== 'undefined') {
