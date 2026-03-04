@@ -3826,6 +3826,12 @@ function startTraining(stageId, mode = 'normal') {
     sequenceIndex = 0;
     currentStep = stepSequence[0];
 
+    // 👉 [바로 여기에 추가!] Step 2, Step 5 파트 분할 데이터 완벽 초기화
+    window.currentStep2PartIndex = undefined;
+    window.step2Parts = undefined;
+    window.currentStep5PartIndex = undefined;
+    window.step5Parts = undefined;
+
     // [데이터 로드] - chNum, verseNum이 위에서 정의되어 있어 오류 해결됨
     if (bibleData[chNum] && bibleData[chNum][verseNum - 1]) {
         trainingVerseData = bibleData[chNum][verseNum - 1];
@@ -4333,10 +4339,34 @@ function loadStep() {
     }
 
     // [수정된 Step 5: 오류 수정 & 기능 강화]
+    // [수정된 Step 5: 파트 분할 적용 & 기능 강화]
     else if (currentStep === 5) {
-        // 1. 화면 구성 (field.innerHTML 사용 - modeTitle 오류 해결!)
+        
+        // 👉 1. 최대 표시 단어 개수 설정 (Step 2와 동일하게 맞춤)
+        const MAX_WORDS = 15;
+
+        // 👉 2. 파트 데이터 초기화
+        if (window.currentStep5PartIndex === undefined) {
+            window.currentStep5PartIndex = 0;
+            window.step5Parts = [];
+            
+            for (let i = 0; i < trainingVerseData.chunks.length; i += MAX_WORDS) {
+                window.step5Parts.push(trainingVerseData.chunks.slice(i, i + MAX_WORDS));
+            }
+        }
+
+        // 👉 3. 현재 파트(화면)에 보여줄 데이터만 꺼내오기
+        const correctChunks = window.step5Parts[window.currentStep5PartIndex];
+        
+        // 상단 파트 라벨 생성
+        let partLabel = "";
+        if (window.step5Parts.length > 1) {
+            partLabel = ` <span style="color:#e74c3c;">(파트 ${window.currentStep5PartIndex + 1}/${window.step5Parts.length})</span>`;
+        }
+
+        // 4. 화면 구성
         field.innerHTML = `
-            <div class="verse-indicator">${verseLabel}Step 5. 단어를 터치하여 문장을 완성하세요</div>
+            <div class="verse-indicator">${verseLabel}${partLabel}<br>Step 5. 단어를 터치하여 문장을 완성하세요</div>
             
             <div class="answer-zone" id="answer-zone" style="min-height: 120px; align-content: flex-start;">
                 <span class="placeholder-text" id="placeholder-text">단어를 터치하여 문장을 만드세요</span>
@@ -4350,10 +4380,9 @@ function loadStep() {
         control.innerHTML = `<div class="block-pool" id="block-pool"></div>`;
         const pool = document.getElementById('block-pool');
         const zone = document.getElementById('answer-zone');
-        const correctChunks = trainingVerseData.chunks;
 
-        // 2. 단어 섞기
-        let list = [...trainingVerseData.chunks].sort(() => Math.random() - 0.5);
+        // 👉 5. 단어 섞기 (전체가 아닌 '현재 파트'만 섞습니다)
+        let list = [...correctChunks].sort(() => Math.random() - 0.5);
         let selectedBlock = null;
 
         // 선택 해제 함수
@@ -4364,7 +4393,7 @@ function loadStep() {
             }
         }
 
-        // 3. 단어 블록 생성
+        // 단어 블록 생성
         list.forEach(word => {
             const btn = document.createElement('div');
             btn.className = 'word-block';
@@ -4374,15 +4403,16 @@ function loadStep() {
                 if (btn.style.visibility === 'hidden') return;
                 const placeholder = document.getElementById('placeholder-text');
                 if (placeholder) placeholder.remove();
-                // (1) 복제 블록 생성 (정답칸에 들어갈 녀석)
+                
+                // (1) 복제 블록 생성
                 const answerBlock = document.createElement('div');
                 answerBlock.className = 'word-block';
                 answerBlock.innerText = word;
                 answerBlock.dataset.original = word;
-                // 스타일 (노란색 강조)
                 answerBlock.style.backgroundColor = "#f1c40f";
                 answerBlock.style.color = "#000";
                 answerBlock.style.margin = "5px";
+                
                 // (2) 복제 블록 클릭 시 (취소/회수)
                 answerBlock.onclick = () => {
                     answerBlock.remove();
@@ -4391,7 +4421,6 @@ function loadStep() {
                     if (zone.children.length === 0) {
                         zone.innerHTML = '<span class="placeholder-text" id="placeholder-text">단어를 터치하여 문장을 만드세요</span>';
                     }
-                    // block-pool이 비었는지 체크해서 레이아웃 조정
                     setTimeout(() => {
                         if ([...pool.children].every(b => b.style.visibility === 'hidden')) {
                             pool.style.height = '0px';
@@ -4406,6 +4435,7 @@ function loadStep() {
                         }
                     }, 10);
                 };
+                
                 // (3) 화면 추가 및 원본 숨기기
                 if (selectedBlock && selectedBlock.parentElement === zone) {
                     zone.insertBefore(answerBlock, selectedBlock);
@@ -4415,13 +4445,12 @@ function loadStep() {
                 }
                 btn.style.visibility = 'hidden';
                 SoundEffect.playClick();
-                // 👉 [추가된 부분] 방금 추가된 블록이 잘 보이도록 스크롤을 부드럽게 이동시킵니다.
+                
                 setTimeout(() => {
                     answerBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    // scrollIntoView가 작동하지 않는 구형 기기를 위한 안전장치
                     zone.scrollTop = zone.scrollHeight; 
                 }, 50);
-                // block-pool이 비었는지 체크해서 레이아웃 조정
+                
                 setTimeout(() => {
                     if ([...pool.children].every(b => b.style.visibility === 'hidden')) {
                         pool.style.height = '0px';
@@ -4438,7 +4467,7 @@ function loadStep() {
             };
             pool.appendChild(btn);
         });
-        // 최초 진입 시에도 block-pool이 비어있으면 레이아웃 조정
+
         setTimeout(() => {
             if ([...pool.children].every(b => b.style.visibility === 'hidden')) {
                 pool.style.height = '0px';
@@ -4453,19 +4482,18 @@ function loadStep() {
             }
         }, 10);
 
-        // 4. 빈 곳 클릭 시 선택 해제
+        // 빈 곳 클릭 시 선택 해제
         zone.onclick = (e) => { 
             if (e.target === zone) deselect(); 
         };
 
-        // 5. [정답 확인] 버튼 생성
-        // 컨트롤 버튼 래퍼 생성 (정답 확인 + 다시하기)
+        // 컨트롤 버튼 래퍼 생성
         const btnWrapper = document.createElement('div');
         btnWrapper.style.display = 'flex';
         btnWrapper.style.width = '100%';
         btnWrapper.style.gap = '2%';
 
-        // 정답 확인 버튼 (왼쪽 3/4)
+        // 👉 6. 정답 확인 버튼 로직 수정 (파트 판별 추가)
         const checkBtn = document.createElement('button');
         checkBtn.className = 'btn-attack';
         checkBtn.innerText = "정답 확인";
@@ -4476,6 +4504,7 @@ function loadStep() {
                 alert("블록을 모두 채워주세요.");
                 return;
             }
+            
             let errorCount = 0;
             currentBlocks.forEach((btn, index) => {
                 const expected = normalizeChunkText(correctChunks[index]);
@@ -4489,11 +4518,27 @@ function loadStep() {
                     errorCount++;
                 }
             });
+            
             if (errorCount === 0) {
-                // ★ [버그 픽스] 더블 클릭으로 인한 단계 건너뜀 방지
+                // 🔵 정답일 때
                 checkBtn.disabled = true;
-                nextStep();
+                window.currentStep5PartIndex++;
+
+                if (window.currentStep5PartIndex < window.step5Parts.length) {
+                    // 다음 파트가 남았다면 화면 다시 그리기
+                    setTimeout(() => {
+                        loadStep(); 
+                    }, 500);
+                } else {
+                    // 모든 파트를 다 맞췄다면 다음 Step으로 이동
+                    setTimeout(() => {
+                        window.currentStep5PartIndex = undefined; 
+                        window.step5Parts = undefined;
+                        nextStep();
+                    }, 500);
+                }
             } else {
+                // 🔴 오답일 때
                 SoundEffect.playWrong();
                 playerHearts--;
                 updateBattleUI();
@@ -4505,19 +4550,16 @@ function loadStep() {
             }
         };
 
-        // 다시하기 버튼 (오른쪽 1/4)
+        // 다시하기 버튼 (현재 파트 안에서만 리셋됨)
         const resetBtn = document.createElement('button');
         resetBtn.className = 'btn-reset-step5';
         resetBtn.innerText = '다시하기';
         resetBtn.style.flex = '1 1 0';
         resetBtn.onclick = () => {
-            // 정답칸 비우기
             Array.from(zone.querySelectorAll('.word-block')).forEach(block => block.remove());
-            // 안내문구 복구
             if (!zone.querySelector('#placeholder-text')) {
                 zone.innerHTML = '<span class="placeholder-text" id="placeholder-text">단어를 터치하여 문장을 만드세요</span>';
             }
-            // 모든 블록 다시 보이게
             Array.from(pool.children).forEach(btn => {
                 btn.style.visibility = 'visible';
             });
@@ -4529,9 +4571,6 @@ function loadStep() {
         btnWrapper.appendChild(resetBtn);
         control.appendChild(btnWrapper);
     }
-
-// ▼▼▼ [수정된 Step 6 코드] ▼▼▼
-
 } // loadStep 끝
 
 // [2. nextStep 함수 교체] (노선도 방식)
