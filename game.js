@@ -6006,6 +6006,12 @@ function loadZionRanking() {
     window.currentRankingMode = 'zion';
     loadZionLeaderboard((data) => renderRankingList(data));
 }
+// [추가] 랭킹 데이터 필터링 (독립적인 함수로 바깥에 배치)
+function filterAndCleanRanking(ranks) {
+    if (!ranks || !Array.isArray(ranks)) return [];
+    // 점수가 0점보다 큰 정상적인 데이터만 통과
+    return ranks.filter(user => user && typeof user.score === 'number' && user.score > 0);
+}
 
 /* [데이터] 주간 지파/시온성 랭킹 로드 (+ 캐싱) */
 function loadTribeLeaderboard(tribeId, callback) {
@@ -6045,8 +6051,8 @@ function loadTribeLeaderboard(tribeId, callback) {
             
             const data = doc.data();
             // 🛡️ 중복 방지 필터 적용!
-const ranks = filterAndCleanRanking(data.ranks || []);
-            
+            const ranks = filterAndCleanRanking(data.ranks || []);
+
             // ranks 배열을 UI에 맞게 변환
             const transformed = ranks.map((row, index) => {
                 return {
