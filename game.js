@@ -6564,12 +6564,12 @@ function updateStickyMyRank(amIInTop100) {
     const stickyBar = document.createElement('div');
     stickyBar.id = 'sticky-my-rank';
     stickyBar.style.cssText = `
-    position: absolute; 
-    bottom: 85px; /* ✅ 수정: 닫기 버튼 높이(약 80px)만큼 위로 띄움 */
-    left: 0; 
+    position: fixed;
+    bottom: 80px; /* 돌아가기 버튼 위로 띄움 */
+    left: 0;
     width: 100%;
-    background: rgba(30, 40, 50, 0.98); 
-    border-top: 2px solid #7f8c8d; 
+    background: rgba(30, 40, 50, 0.98);
+    border-top: 2px solid #7f8c8d;
     padding: 12px 15px;
     box-shadow: 0 -5px 20px rgba(0,0,0,0.6);
     display: flex; align-items: center; z-index: 100;
