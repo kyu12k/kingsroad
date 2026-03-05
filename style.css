@@ -967,8 +967,8 @@ body, html {
 
 /* [선택된 블록 강조 스타일] */
 .word-block.selected-block {
-    border: 3px solid #f1c40f !important; /* 진한 노란색 */
-    background-color: #fff9c4 !important; /* 연한 노란색 배경 */
+    border: 3px solid #f1c40f !important; /* 진한 노랑색 */
+    background-color: #fff9c4 !important; /* 연한 노랑색 배경 */
     color: #333 !important;
     transform: scale(1.1); /* 약간 커짐 */
     box-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
@@ -2366,8 +2366,8 @@ body, html {
     font-family: 'Gowun Dodum', 'Noto Sans KR', sans-serif !important;
     font-size: 1.15rem !important;
     color: #fffbe6 !important;
-    text-shadow: 0 1px 8px #2c3e50, 0 1px 0 #fff7b2 !important;
-    font-weight: 500 !important;
+    text-shadow: 0 1px 2px #2c3e50 !important;
+    font-weight: 600 !important;
     letter-spacing: 0.01em !important;
     margin-bottom: 0 !important;
     line-height: 1.4 !important;
@@ -2382,4 +2382,7 @@ body, html {
 }
 .castle-desc {
     margin-bottom: 5px !important;
+}
+#menu-btn {
+    border: none !important;
 }
