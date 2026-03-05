@@ -73,8 +73,8 @@ async function updateWeeklyCountsImpl() {
         rank: index + 1,
         name: row.nickname || "이름없음",
         score: row.score || 0,
-        tribe: row.tribe !== undefined ? row.tribe : 0, // 안전장치 추가!
-        dept: row.dept !== undefined ? row.dept : 0,   // 안전장치 추가!
+        tribe: row.tribe !== undefined ? row.tribe : 0,
+        dept: row.dept !== undefined ? row.dept : 0,
         tag: row.tag || "",
         castle: row.castleLv || 0
     };
@@ -109,8 +109,8 @@ async function updateWeeklyCountsImpl() {
         rank: index + 1,
         name: row.nickname || "이름없음",
         score: row.score || 0,
-        tribe: row.tribe !== undefined ? row.tribe : 0, 
-        dept: row.dept !== undefined ? row.dept : 0,   
+        tribe: row.tribe !== undefined ? row.tribe : 0,
+        dept: row.dept !== undefined ? row.dept : 0,
         tag: row.tag || "",
         castle: row.castleLv || 0
     };
