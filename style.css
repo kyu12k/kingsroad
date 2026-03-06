@@ -75,7 +75,20 @@
 .nav-badge:empty { display: none; }
 .nav-badge.active { display: block; }
 
-/* ... (중간의 nth-child 색상 코드는 그대로 유지) ... */
+/* 🎨 각 버튼별 배경색과 글자색 조화 (기존 디자인 유지) */
+.bottom-nav .nav-item:nth-child(1) { color: #4e8cff; background: linear-gradient(135deg, #eaf2ff 60%, #f5faff 100%); }
+.bottom-nav .nav-item:nth-child(2) { color: #ffb84e; background: linear-gradient(135deg, #fff6e5 60%, #fffaf3 100%); }
+.bottom-nav .nav-item:nth-child(3) { color: #1fcfa1; background: linear-gradient(135deg, #e6fff7 60%, #f3fffb 100%); }
+.bottom-nav .nav-item:nth-child(4) { color: #a84eff; background: linear-gradient(135deg, #f3eaff 60%, #faf5ff 100%); }
+.bottom-nav .nav-item:nth-child(5) { color: #ff4e8c; background: linear-gradient(135deg, #ffeaf3 60%, #fff5fa 100%); }
+.bottom-nav .nav-item:nth-child(6) { color: #ff6a00; background: linear-gradient(135deg, #fff3e5 60%, #fff8f3 100%); }
+
+/* 버튼 누를 때 효과 */
+.nav-item:hover, .nav-item:active {
+    background: linear-gradient(135deg, rgba(44,62,80,0.08) 0%, rgba(44,62,80,0.03) 100%) !important;
+    box-shadow: 0 2px 8px rgba(44,62,80,0.10);
+    filter: brightness(1.09);
+}
 
 /* 📱 모바일 화면 최적화 (높이 50% 확대 비율 적용) */
 @media (max-width: 600px) {
