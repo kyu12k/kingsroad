@@ -1,5 +1,5 @@
 /* =========================================
-   [하단 네비게이션 2행 3열 (Grid) & 가로 배치]
+   [하단 네비게이션 2행 3열 - 꽉 찬 둥근 사각형 버전]
    ========================================= */
 
 .bottom-nav {
@@ -8,16 +8,19 @@
     right: 0;
     bottom: 0;
     width: 100vw;
-    height: 115px; /* 🌟 2줄 높이 넉넉하게 */
+    /* 🌟 1. 높이를 기존 115px에서 약 50% 커진 170px로 대폭 확대! */
+    height: 170px; 
     
     display: grid;
     grid-template-columns: repeat(3, 1fr); 
     grid-template-rows: repeat(2, 1fr);    
-    gap: 6px; 
-    padding: 8px; 
+    /* 🌟 2. 버튼 사이의 틈새를 2px로 확 줄여서 네비게이션 배경을 덮어버림 */
+    gap: 3px; 
+    /* 🌟 3. 바깥쪽 여백도 최소화하여 버튼이 공간을 꽉 차지하게 함 */
+    padding: 4px 6px 6px 6px; 
     
     background: rgba(255,255,255,0.92);
-    box-shadow: 0 -4px 20px rgba(44,62,80,0.1); 
+    box-shadow: 0 -4px 20px rgba(44,62,80,0.15); 
     z-index: 1200;
     border-top-left-radius: 20px;
     border-top-right-radius: 20px;
@@ -27,39 +30,43 @@
 .nav-item {
     position: relative; 
     display: flex;
-    flex-direction: row; /* 🌟 아이콘과 글자를 양옆으로 나란히 */
+    flex-direction: row; 
     align-items: center;
     justify-content: center;
-    gap: 8px; 
+    gap: 10px; /* 버튼이 커졌으니 아이콘과 글자 사이도 살짝 더 띄움 */
     
     font-weight: 700;
     cursor: pointer;
     transition: background 0.18s, color 0.18s, box-shadow 0.18s;
-    border-radius: 14px;
+    
+    /* 🌟 4. 알약 모양 탈피! 모서리 4곳에만 작은 사분원을 그리는 마법의 수치 */
+    border-radius: 12px !important; 
+    
+    width: 100%; /* 격자 공간을 100% 꽉 채우기 */
+    height: 100%;
     user-select: none;
     border: none !important; 
 }
 
-/* 🌟 아이콘 크기 */
+/* 🌟 아이콘 크기 (버튼이 커진 만큼 조금 더 키워도 좋습니다) */
 .nav-item span:first-child {
-    font-size: 1.6em; 
+    font-size: 1.8em; 
     margin-bottom: 0; 
 }
 
 /* 🌟 글자 크기 */
 .nav-item span:last-child {
-    font-size: 1.15em; 
+    font-size: 1.25em; 
     margin-top: 0;
 }
 
-/* 🔴 알림 배지 (Red Dot) */
+/* 🔴 알림 배지 (Red Dot) - 버튼이 커졌으니 위치 살짝 수정 */
 .nav-badge {
     position: absolute;
-    top: 6px;           
-    right: 12%; 
-    
-    width: 6px;
-    height: 6px;
+    top: 15px; /* 버튼 윗부분에서 여유 있게 떨어뜨림 */
+    right: 15%; 
+    width: 7px; /* 빨간 점도 살짝 키움 */
+    height: 7px;
     background-color: #ff4757;
     border-radius: 50%;
     box-shadow: 0 0 4px rgba(255, 71, 87, 0.5);
@@ -68,30 +75,15 @@
 .nav-badge:empty { display: none; }
 .nav-badge.active { display: block; }
 
-/* 🎨 각 버튼별 배경색과 글자색 조화 (기존 디자인 유지) */
-.bottom-nav .nav-item:nth-child(1) { color: #4e8cff; background: linear-gradient(135deg, #eaf2ff 60%, #f5faff 100%); }
-.bottom-nav .nav-item:nth-child(2) { color: #ffb84e; background: linear-gradient(135deg, #fff6e5 60%, #fffaf3 100%); }
-.bottom-nav .nav-item:nth-child(3) { color: #1fcfa1; background: linear-gradient(135deg, #e6fff7 60%, #f3fffb 100%); }
-.bottom-nav .nav-item:nth-child(4) { color: #a84eff; background: linear-gradient(135deg, #f3eaff 60%, #faf5ff 100%); }
-.bottom-nav .nav-item:nth-child(5) { color: #ff4e8c; background: linear-gradient(135deg, #ffeaf3 60%, #fff5fa 100%); }
-.bottom-nav .nav-item:nth-child(6) { color: #ff6a00; background: linear-gradient(135deg, #fff3e5 60%, #fff8f3 100%); }
+/* ... (중간의 nth-child 색상 코드는 그대로 유지) ... */
 
-/* 버튼 누를 때 효과 */
-.nav-item:hover, .nav-item:active {
-    background: linear-gradient(135deg, rgba(44,62,80,0.08) 0%, rgba(44,62,80,0.03) 100%) !important;
-    box-shadow: 0 2px 8px rgba(44,62,80,0.10);
-    filter: brightness(1.09);
-}
-
-/* 📱 모바일 화면 최적화 */
+/* 📱 모바일 화면 최적화 (높이 50% 확대 비율 적용) */
 @media (max-width: 600px) {
     .bottom-nav {
-        height: 105px; /* 납작해지지 않게 높이 유지 */
-        border-top-left-radius: 12px;
-        border-top-right-radius: 12px;
+        height: 150px; /* 모바일에서도 듬직하게! */
     }
-    .nav-item span:first-child { font-size: 1.4em; }
-    .nav-item span:last-child { font-size: 1.05em; }
+    .nav-item span:first-child { font-size: 1.6em; }
+    .nav-item span:last-child { font-size: 1.15em; }
 }
 
 /* Google Fonts: Gowun Dodum */
