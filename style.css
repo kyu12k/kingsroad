@@ -2229,7 +2229,7 @@ body, html {
 
 /* 2. 상점, 미션, 도감 등에서 내용이 네비바에 가려지지 않게 하단 여백 추가 */
 #shop-screen, #mission-screen, #life-book-screen, #ranking-screen {
-    padding-bottom: 190px !important;
+    padding-bottom: 10px !important;
 }
 
 /* 3. 화면 맨 밑의 '돌아가기' 고정 버튼을 네비바 위로 끌어올림 */
