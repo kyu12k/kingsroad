@@ -252,20 +252,17 @@ body, html {
         .hidden { display: none !important; }
 
         /* [3. 홈 화면 스타일 & 성전 건축] */
-        #home-screen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background: radial-gradient(1600px circle at 20% 10%, rgba(var(--home-accent-strong-rgb), 0.45) 0%, #1b2438 55%, #0f141f 100%);
-            text-align: center;
-            padding: 20px;
-            box-sizing: border-box;
-            overflow: hidden;
-            position: relative;
-            isolation: isolate;
-        }
+#home-screen {
+    /* display, flex-direction, align-items, justify-content 삭제 완료! */
+    min-height: 100vh;
+    background: radial-gradient(1600px circle at 20% 10%, rgba(var(--home-accent-strong-rgb), 0.45) 0%, #1b2438 55%, #0f141f 100%);
+    text-align: center;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow: hidden;
+    position: relative;
+    isolation: isolate;
+}
 
         @media (max-height: 850px) {
             #home-screen {
