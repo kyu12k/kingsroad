@@ -8071,18 +8071,27 @@ function resetGameData() {
     }
 }
 
-// [기능 1] 파일로 저장 및 공유 (안전한 Base64 암호화 적용)
+// [기능 1] 파일로 저장 및 공유 (비밀번호 강력 암호화 적용 + PC 바로 다운로드)
 function shareSaveCodeAndGetReward() {
     saveGameData();
     const savedData = localStorage.getItem('kingsRoadSave');
     if (!savedData) return alert("저장할 기록이 없습니다.");
 
+    // 🌟 비밀번호 입력받기
+    const pwd = prompt("데이터를 안전하게 보호할 '비밀번호'를 입력하세요.\n(다른 기기에서 불러올 때 이 비밀번호가 필요합니다!)");
+    if (!pwd) return; // 취소 시 중단
+
     const today = new Date().toISOString().split('T')[0];
     const fileName = `KingsRoad_Backup_${today}.txt`;
     
-    // ★ JSON 원본 대신 영문+숫자 조합(Base64)으로 암호화하여 저장
-    // (모바일 환경에서 따옴표 등 특수문자 깨짐을 원천 차단)
-    const encodedData = btoa(encodeURIComponent(savedData));
+    // 🌟 암호화 진행 (앞에 'ENC_'를 붙여 구분)
+    let encodedData;
+    try {
+        encodedData = "ENC_" + CryptoJS.AES.encrypt(savedData, pwd).toString();
+    } catch (e) {
+        return alert("암호화 중 오류가 발생했습니다.");
+    }
+
     const file = new File([encodedData], fileName, { type: "text/plain" });
 
     // 미션 달성 처리 로직
@@ -8098,19 +8107,24 @@ function shareSaveCodeAndGetReward() {
         }
     };
 
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    // 🌟 [핵심 변경] 기기 구분 (스마트폰인지 PC인지 확인)
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (isMobile && navigator.canShare && navigator.canShare({ files: [file] })) {
+        // 스마트폰일 경우: 카카오톡 등으로 보낼 수 있게 모바일 공유창 띄우기
         navigator.share({
             title: '킹스로드 백업 데이터',
             text: '나의 킹스로드 세이브 데이터입니다. 안전하게 보관하세요!',
             files: [file]
         }).then(completeMission).catch(e => console.log('공유 취소됨'));
     } else {
+        // PC일 경우 (또는 공유 기능 미지원 시): 공유창 안 띄우고 바로 파일 다운로드!
         const url = URL.createObjectURL(file);
         const a = document.createElement('a');
         a.href = url;
         a.download = fileName;
         document.body.appendChild(a);
-        a.click();
+        a.click(); // 몰래 버튼을 눌러서 다운로드 실행
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         completeMission();
@@ -8178,50 +8192,74 @@ function importSaveCode() {
     };
 }
 
-// [공통] 복구 실행 함수 (★ 최종 완벽 수정판)
+// [공통] 복구 실행 함수 (비밀번호 해독 및 다중 접속 차단 포함)
 function processImportData(inputString) {
     try {
         let rawData = inputString.trim();
+        let parsedData;
         
-        // 1. 암호화(Base64) 데이터 해독
-        if (!rawData.startsWith('{')) {
-            try {
-                const cleanBase64 = rawData.replace(/\s+/g, '');
-                rawData = decodeURIComponent(atob(cleanBase64));
-            } catch(err) {
-                throw new Error("암호 해독 실패");
-            }
+        // 🌟 [보안 추가] 1. 새로운 비밀번호 암호화 데이터(ENC_)인 경우
+        if (rawData.startsWith("ENC_")) {
+            const pwd = prompt("🔒 이 데이터는 잠겨있습니다.\n저장할 때 설정한 '비밀번호'를 입력하세요:");
+            if (!pwd) return alert("비밀번호 입력이 취소되었습니다.");
+
+            const encryptedText = rawData.substring(4); // "ENC_" 떼어내기
+            const bytes = CryptoJS.AES.decrypt(encryptedText, pwd);
+            const decryptedString = bytes.toString(CryptoJS.enc.Utf8);
+
+            if (!decryptedString) throw new Error("비밀번호 불일치");
+            parsedData = JSON.parse(decryptedString);
+        } 
+        // 2. 예전 방식(Base64) 데이터 호환 (과거 데이터 살리기)
+        else if (!rawData.startsWith('{')) {
+            const cleanBase64 = rawData.replace(/\s+/g, '');
+            const decoded = decodeURIComponent(atob(cleanBase64));
+            parsedData = JSON.parse(decoded.replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'"));
+        } 
+        // 3. 생짜 JSON
+        else {
+            parsedData = JSON.parse(rawData);
         }
 
-        // 2. 혹시 모를 모바일 기기의 스마트 따옴표(“ ”) 변형 복구
-        rawData = rawData.replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'");
+        if (parsedData.gems === undefined) throw new Error("올바른 세이브 데이터가 아닙니다.");
 
-        // 3. JSON 변환
-        const parsedData = JSON.parse(rawData);
-
-        if (parsedData.gems === undefined) {
-            throw new Error("올바른 세이브 데이터가 아닙니다.");
-        }
-
-        if (confirm("⚠️ 현재 진행 상황을 덮어쓰고,\n선택한 기록으로 되돌리시겠습니까?\n\n(다른 기기의 데이터일 경우 현재 기기의 진행 상황이 지워집니다!)")) {
+        if (confirm("⚠️ 현재 진행 상황을 덮어쓰고,\n선택한 기록으로 되돌리시겠습니까?\n\n(다른 기기의 데이터일 경우 기존 기기의 진행 상황은 지워집니다!)")) {
             
-            // 불러온 데이터의 버전을 현재 게임의 최신 버전으로 강제 업데이트
-            if (typeof GAME_VERSION !== 'undefined') {
-                parsedData.version = GAME_VERSION; 
-            }
-
-            // ★★★ 핵심 해결책: 새로고침 직전 자동저장이 발동해버리는 것을 완벽 차단! ★★★
+            if (typeof GAME_VERSION !== 'undefined') parsedData.version = GAME_VERSION; 
             window.isResetting = true; 
+
+            // 🌟 [핵심 보안] 새 기기에 로그인했으므로 '새로운 인증키(세션)' 발급!
+            const newSessionToken = "session_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+            parsedData.sessionToken = newSessionToken;
+            window.currentSessionToken = newSessionToken;
 
             // 로컬 스토리지에 안전하게 저장
             localStorage.setItem('kingsRoadSave', JSON.stringify(parsedData));
             
-            alert("✅ 기록 복원 완료!\n게임을 다시 시작합니다.");
-            location.reload();
+            // 🌟 파이어베이스에 새 인증키 등록 (기존 기기 쫓아내기)
+            if (typeof db !== 'undefined' && parsedData.playerId) {
+                db.collection("leaderboard").doc(parsedData.playerId).set({
+                    sessionToken: newSessionToken,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true }).then(() => {
+                    alert("✅ 기록 복원 완료!\n게임을 다시 시작합니다.");
+                    location.reload();
+                }).catch(() => {
+                    alert("✅ 기록 복원 완료 (서버 연결 지연)\n게임을 다시 시작합니다.");
+                    location.reload();
+                });
+            } else {
+                alert("✅ 기록 복원 완료!\n게임을 다시 시작합니다.");
+                location.reload();
+            }
         }
     } catch (e) {
         console.error("데이터 복구 에러:", e);
-        alert("❌ 데이터 복구 실패!\n파일이 손상되었거나 복사 과정에서 코드가 일부 누락되었습니다.");
+        if (e.message === "비밀번호 불일치") {
+            alert("❌ 비밀번호가 틀렸습니다!");
+        } else {
+            alert("❌ 데이터 복구 실패!\n파일이 손상되었거나 복사 과정에서 코드가 일부 누락되었습니다.");
+        }
     }
 }
 
@@ -8547,6 +8585,9 @@ window.onload = function() {
     updateStats('login');
     updateNotificationBadges();
 
+    // 🛡️ [핵심 추가] 데이터 로딩이 끝났으니 다중 기기 접속 감시 시작!
+    if (typeof startSessionGuard === 'function') startSessionGuard();
+    
     // 4. 화면 UI 갱신
     updateGemDisplay();
     if(typeof updateResourceUI === 'function') updateResourceUI();
@@ -9213,5 +9254,33 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
             .then(reg => console.log('서비스 워커 등록 완료!'))
             .catch(err => console.log('서비스 워커 등록 실패:', err));
+    });
+}
+// 🛡️ 다중 기기 동시 접속 차단기 (실시간 감시)
+function startSessionGuard() {
+    if (typeof db === 'undefined' || !myPlayerId) return;
+
+    // 내 로컬 세션 토큰 확인 (없으면 발급)
+    const savedData = JSON.parse(localStorage.getItem('kingsRoadSave') || "{}");
+    if (!savedData.sessionToken) {
+        savedData.sessionToken = "session_" + Date.now();
+        localStorage.setItem('kingsRoadSave', JSON.stringify(savedData));
+    }
+    window.currentSessionToken = savedData.sessionToken;
+
+    // 파이어베이스에 있는 '내 랭킹 데이터'를 실시간으로 감시합니다.
+    db.collection("leaderboard").doc(myPlayerId).onSnapshot((doc) => {
+        if (doc.exists) {
+            const serverData = doc.data();
+            
+            // 🚨 서버의 인증키가 내 기기의 인증키와 다르면?! (다른 기기에서 불러오기를 한 상황)
+            if (serverData.sessionToken && serverData.sessionToken !== window.currentSessionToken) {
+                alert("🚨 다른 기기에서 로그인이 감지되었습니다.\n계정 보호를 위해 현재 기기의 접속이 차단되고 데이터가 초기화됩니다.");
+                
+                // 기존 기기의 데이터 싹 비우기 (분신술, 어뷰징 완벽 차단)
+                localStorage.removeItem('kingsRoadSave'); 
+                location.reload(); // 새로고침하여 쫓아냄
+            }
+        }
     });
 }
