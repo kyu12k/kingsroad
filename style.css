@@ -1,73 +1,84 @@
-.bottom-nav .nav-item:nth-child(6) {
-    color: #ff6a00;
-    background: linear-gradient(135deg, #fff3e5 60%, #fff8f3 100%);
-}
-/* ===== 하단 네비게이션 커스텀 ===== */
+/* =========================================
+   [하단 네비게이션 2행 3열 (Grid) & 가로 배치]
+   ========================================= */
+
 .bottom-nav {
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
     width: 100vw;
-    height: 62px;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
+    height: 110px; /* 🌟 2줄이 들어가야 하니 네비게이션 바 높이를 넉넉하게 키웁니다 */
+    
+    /* 🌟 핵심: Flex 대신 Grid를 사용하여 2행 3열 만들기 */
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 가로로 3칸 */
+    grid-template-rows: repeat(2, 1fr);    /* 세로로 2칸 */
+    gap: 4px; /* 버튼 사이의 간격 (원하면 조절 가능) */
+    padding: 6px; /* 바깥쪽 여백 */
+    
     background: rgba(255,255,255,0.92);
-    box-shadow: 0 -2px 16px rgba(44,62,80,0.08);
+    box-shadow: 0 -4px 20px rgba(44,62,80,0.1); /* 그림자를 조금 더 넓게 */
     z-index: 1200;
-    border-top-left-radius: 18px;
-    border-top-right-radius: 18px;
-    font-family: 'Gowun Dodum', 'Noto Sans KR', sans-serif;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
     backdrop-filter: blur(8px);
 }
 
-/* =========================================
-   [하단 네비게이션 버튼 & 알림 배지 통합 디자인]
-   ========================================= */
-
-/* 1. 버튼 (배지가 뜰 수 있는 '기준점' 역할) */
 .nav-item {
-    position: relative; /* 🌟 핵심: 배지가 이 버튼 안에서 위치를 잡도록 기준점이 됨 */
-    flex: 1;
+    position: relative; 
+    
+    /* 🌟 핵심: 아이콘과 글자를 위아래가 아닌 '양옆'으로 나란히 배치 */
     display: flex;
-    flex-direction: column;
+    flex-direction: row; /* column에서 row로 변경! */
     align-items: center;
     justify-content: center;
-    font-size: 1.08em; /* 폰트 크기가 작아졌다면 이 숫자를 1.1em, 1.2em 등으로 키워주세요 */
-    font-family: inherit;
-    font-weight: 600;
-    letter-spacing: 0.01em;
+    gap: 8px; /* 아이콘과 글자 사이의 간격 띄우기 */
+    
+    font-weight: 700;
     cursor: pointer;
-    padding: 4px 0 0 0;
     transition: background 0.18s, color 0.18s, box-shadow 0.18s;
     border-radius: 14px;
-    margin: 0 2px;
     user-select: none;
+    border: none !important; /* Grid에서는 세로줄(구분선)이 지저분해 보일 수 있어 제거 */
 }
 
-/* 2. 빨간 알림 점 (공간을 차지하지 않고 공중 부양!) */
+/* 🌟 아이콘 크기 대폭 키우기 */
+.nav-item span:first-child {
+    font-size: 1.6em; /* 기존 1.45em에서 훨씬 크게! */
+    margin-bottom: 0; /* 가로 배치이므로 하단 여백 제거 */
+}
+
+/* 🌟 글자 크기 대폭 키우기 */
+.nav-item span:last-child {
+    font-size: 1.15em; /* 기존 0.92em에서 시원하게! */
+    margin-top: 0;
+}
+
+/* 알림 배지 (Red Dot) 위치 재조정 */
 .nav-badge {
-    position: absolute; /* 🌟 핵심: 다른 글자나 아이콘을 밀어내지 않고 공중에 뜸 */
-    top: 6px;           /* 버튼 위쪽 가장자리에서 6px 아래로 */
-    right: calc(50% - 18px); /* 아이콘의 우측 상단 쯤에 정확히 걸치도록 계산 */
+    position: absolute;
+    top: 8px;           
+    right: 12%; /* 우측 상단에 예쁘게 안착 */
     
-    width: 6px;         /* 빨간 점의 너비 */
-    height: 6px;        /* 빨간 점의 높이 */
-    background-color: #ff4757; /* 눈에 띄는 빨간색 */
-    border-radius: 50%; /* 완벽한 동그라미로 만들기 */
-    box-shadow: 0 0 4px rgba(255, 71, 87, 0.5); /* 은은한 붉은빛 그림자 (옵션) */
-    z-index: 100;       /* 아이콘보다 항상 위에 보이도록 */
+    width: 6px;
+    height: 6px;
+    background-color: #ff4757;
+    border-radius: 50%;
+    box-shadow: 0 0 4px rgba(255, 71, 87, 0.5);
+    z-index: 100;
 }
 
-/* 3. 배지가 비어있을 때(알림이 없을 때)는 숨김 */
-.nav-badge:empty {
-    display: none;
-}
+.nav-badge:empty { display: none; }
+.nav-badge.active { display: block; }
 
-/* 자바스크립트가 스위치를 켜면(active) 무조건 보임 */
-.nav-badge.active {
-    display: block; /* 활성화되면 보임 */
+/* 📱 모바일 화면 최적화 (화면이 작아져도 비율 유지) */
+@media (max-width: 600px) {
+    .bottom-nav {
+        height: 105px; 
+    }
+    .nav-item span:first-child { font-size: 1.4em; }
+    .nav-item span:last-child { font-size: 1.05em; }
 }
 
 /* 각 버튼별 은은한 색상 강조 */
@@ -93,7 +104,10 @@
     color: #ff4e8c;
     background: linear-gradient(135deg, #ffeaf3 60%, #fff5fa 100%);
 }
-
+.bottom-nav .nav-item:nth-child(6) {
+    color: #ff6a00;
+    background: linear-gradient(135deg, #fff3e5 60%, #fff8f3 100%);
+}
 .bottom-nav .nav-item:not(:last-child) {
     border-right: 1.5px solid rgba(44,62,80,0.07);
 }
