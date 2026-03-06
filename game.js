@@ -5560,12 +5560,6 @@ function resetLeague(newWeekId) {
 
 /* [수정] calculateScore 함수 (반복 보너스 시스템) */
 function calculateScore(stageId, type, verseCount, hearts, isForgotten) {
-    const currentWeek = getWeekId();
-    
-    if (leagueData.weekId !== currentWeek) {
-        resetLeague(currentWeek);
-    }
-
     let baseScore = 0;
     let bonus = 1.0;
     let isRetry = false;
@@ -5614,12 +5608,16 @@ function calculateScore(stageId, type, verseCount, hearts, isForgotten) {
     checkBoosterStatus(); 
     const finalScore = Math.floor(baseScore * boosterData.multiplier);
 
-    // 🛡️ 1. 점수를 더하기 전에, 해가 바뀌었는지(주/월 리셋) 먼저 검사합니다!
+    // 🛡️ 1. 점수를 더하기 전에, 해가 바뀌었는지 여기서 "딱 한 번만" 검사합니다!
     const currentRealWeek = getWeekId();
     if (leagueData.weekId !== currentRealWeek) {
         console.log("🔄 새로운 주간 시작! 주간 점수 리셋");
+        
+        // ★ 기존 맨 위에 있던 리셋 함수를 이쪽으로 이사시켰습니다.
+        if (typeof resetLeague === 'function') resetLeague(currentRealWeek);
+
         leagueData.weekId = currentRealWeek;
-        leagueData.myScore = 0; 
+        leagueData.myScore = 0; // 이제 정상적으로 0점으로 초기화됩니다!
     }
 
     const currentRealMonth = getMonthId();
@@ -5629,9 +5627,9 @@ function calculateScore(stageId, type, verseCount, hearts, isForgotten) {
         leagueData.myMonthlyScore = 0; 
     }
 
-    // 🎯 2. 깨끗해진 상태(또는 유지된 상태)에서 방금 얻은 승점을 더합니다.
+    // 🎯 2. 깨끗해진 상태에서 방금 얻은 승점을 더합니다.
     leagueData.myScore += finalScore;
-    leagueData.myMonthlyScore += finalScore; // ✨ 월간 누적도 추가
+    leagueData.myMonthlyScore += finalScore; 
     if (typeof userStats !== 'undefined') {
         userStats.totalScoreEarned = (userStats.totalScoreEarned || 0) + finalScore;
     }
