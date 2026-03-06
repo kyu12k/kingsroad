@@ -96,10 +96,10 @@
 /* 📱 모바일 화면 최적화 (모바일에서도 글자 큼직하게 유지) */
 @media (max-width: 600px) {
     .bottom-nav {
-        height: 150px; 
+        height: 170px; 
     }
-    .nav-item span:first-child { font-size: 1.8em; }
-    .nav-item span:last-child { font-size: 1.35em; } /* 모바일에서도 글자 큼직하게! */
+    .nav-item span:first-child { font-size: 2.1em; }
+    .nav-item span:last-child { font-size: 1.65em; } /* 모바일에서도 글자 큼직하게! */
 }
 
 /* Google Fonts: Gowun Dodum */
