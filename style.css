@@ -8,22 +8,18 @@
     right: 0;
     bottom: 0;
     width: 100vw;
-    /* 🌟 1. 높이를 기존 115px에서 약 50% 커진 170px로 대폭 확대! */
     height: 170px; 
     
     display: grid;
     grid-template-columns: repeat(3, 1fr); 
     grid-template-rows: repeat(2, 1fr);    
-    /* 🌟 2. 버튼 사이의 틈새를 2px로 확 줄여서 네비게이션 배경을 덮어버림 */
-    gap: 3px; 
-    /* 🌟 3. 바깥쪽 여백도 최소화하여 버튼이 공간을 꽉 차지하게 함 */
-    padding: 4px 6px 6px 6px; 
+    gap: 4px; /* 간격을 아주 살짝 띄웁니다 */
+    padding: 6px; 
     
-    background: rgba(255,255,255,0.92);
+    /* 🌟 배경을 흰색에서 '아주 연한 회색'으로 바꿔서 파스텔 버튼들이 돋보이게 합니다 */
+    background: #f1f4f8; 
     box-shadow: 0 -4px 20px rgba(44,62,80,0.15); 
     z-index: 1200;
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
     backdrop-filter: blur(8px);
 }
 
@@ -33,19 +29,20 @@
     flex-direction: row; 
     align-items: center;
     justify-content: center;
-    gap: 10px; /* 버튼이 커졌으니 아이콘과 글자 사이도 살짝 더 띄움 */
+    gap: 10px; 
     
     font-weight: 700;
     cursor: pointer;
-    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
-    
-    /* 🌟 4. 알약 모양 탈피! 모서리 4곳에만 작은 사분원을 그리는 마법의 수치 */
+    transition: background 0.18s, transform 0.1s, box-shadow 0.18s;
     border-radius: 12px !important; 
     
-    width: 100%; /* 격자 공간을 100% 꽉 채우기 */
+    width: 100%; 
     height: 100%;
     user-select: none;
-    border: none !important; 
+    
+    /* 🌟 버튼마다 옅은 그림자와 은은한 하얀 테두리를 주어 확실하게 구분되도록 만듭니다 */
+    border: 1px solid rgba(255,255,255,0.8) !important; 
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04); 
 }
 
 /* 🌟 아이콘 크기 (버튼이 커진 만큼 조금 더 키워도 좋습니다) */
