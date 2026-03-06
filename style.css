@@ -381,15 +381,17 @@ body, html {
         }
         
         /* 맵 컨테이너 */
-        .river-map-container {
-            flex: 1; width: 100%;
-            position: relative;
-            overflow-y: auto;
-            overflow-x: hidden;
-            /* 하단 네비게이션 가리지 않게 여백 */
-            padding-bottom: 190px; /* 돌아가기 버튼 높이만큼 여백 추가 */
-            background: #2c2c2c; /* 기본 황무지 색 */
-        }
+.river-map-container {
+    flex: 1; width: 100%;
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
+    
+    /* 🌟 네비게이션 바(140px) + 플로팅 버튼 여유 공간까지 고려해서 엄청 넉넉하게! */
+    padding-bottom: 220px !important; 
+    
+    background: #2c2c2c; /* 기본 황무지 색 */
+}
 
         /* [수정] 껍데기 (위치 잡는 역할만 함, 레이어 간섭 X) */
         .zone-wrapper {
