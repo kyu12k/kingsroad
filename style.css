@@ -8,17 +8,16 @@
     right: 0;
     bottom: 0;
     width: 100vw;
-    height: 110px; /* 🌟 2줄이 들어가야 하니 네비게이션 바 높이를 넉넉하게 키웁니다 */
+    height: 115px; /* 🌟 2줄 높이 넉넉하게 */
     
-    /* 🌟 핵심: Flex 대신 Grid를 사용하여 2행 3열 만들기 */
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 가로로 3칸 */
-    grid-template-rows: repeat(2, 1fr);    /* 세로로 2칸 */
-    gap: 4px; /* 버튼 사이의 간격 (원하면 조절 가능) */
-    padding: 6px; /* 바깥쪽 여백 */
+    grid-template-columns: repeat(3, 1fr); 
+    grid-template-rows: repeat(2, 1fr);    
+    gap: 6px; 
+    padding: 8px; 
     
     background: rgba(255,255,255,0.92);
-    box-shadow: 0 -4px 20px rgba(44,62,80,0.1); /* 그림자를 조금 더 넓게 */
+    box-shadow: 0 -4px 20px rgba(44,62,80,0.1); 
     z-index: 1200;
     border-top-left-radius: 20px;
     border-top-right-radius: 20px;
@@ -27,39 +26,37 @@
 
 .nav-item {
     position: relative; 
-    
-    /* 🌟 핵심: 아이콘과 글자를 위아래가 아닌 '양옆'으로 나란히 배치 */
     display: flex;
-    flex-direction: row; /* column에서 row로 변경! */
+    flex-direction: row; /* 🌟 아이콘과 글자를 양옆으로 나란히 */
     align-items: center;
     justify-content: center;
-    gap: 8px; /* 아이콘과 글자 사이의 간격 띄우기 */
+    gap: 8px; 
     
     font-weight: 700;
     cursor: pointer;
     transition: background 0.18s, color 0.18s, box-shadow 0.18s;
     border-radius: 14px;
     user-select: none;
-    border: none !important; /* Grid에서는 세로줄(구분선)이 지저분해 보일 수 있어 제거 */
+    border: none !important; 
 }
 
-/* 🌟 아이콘 크기 대폭 키우기 */
+/* 🌟 아이콘 크기 */
 .nav-item span:first-child {
-    font-size: 1.6em; /* 기존 1.45em에서 훨씬 크게! */
-    margin-bottom: 0; /* 가로 배치이므로 하단 여백 제거 */
+    font-size: 1.6em; 
+    margin-bottom: 0; 
 }
 
-/* 🌟 글자 크기 대폭 키우기 */
+/* 🌟 글자 크기 */
 .nav-item span:last-child {
-    font-size: 1.15em; /* 기존 0.92em에서 시원하게! */
+    font-size: 1.15em; 
     margin-top: 0;
 }
 
-/* 알림 배지 (Red Dot) 위치 재조정 */
+/* 🔴 알림 배지 (Red Dot) */
 .nav-badge {
     position: absolute;
-    top: 8px;           
-    right: 12%; /* 우측 상단에 예쁘게 안착 */
+    top: 6px;           
+    right: 12%; 
     
     width: 6px;
     height: 6px;
@@ -68,85 +65,33 @@
     box-shadow: 0 0 4px rgba(255, 71, 87, 0.5);
     z-index: 100;
 }
-
 .nav-badge:empty { display: none; }
 .nav-badge.active { display: block; }
 
-/* 📱 모바일 화면 최적화 (화면이 작아져도 비율 유지) */
-@media (max-width: 600px) {
-    .bottom-nav {
-        height: 105px; 
-    }
-    .nav-item span:first-child { font-size: 1.4em; }
-    .nav-item span:last-child { font-size: 1.05em; }
-}
+/* 🎨 각 버튼별 배경색과 글자색 조화 (기존 디자인 유지) */
+.bottom-nav .nav-item:nth-child(1) { color: #4e8cff; background: linear-gradient(135deg, #eaf2ff 60%, #f5faff 100%); }
+.bottom-nav .nav-item:nth-child(2) { color: #ffb84e; background: linear-gradient(135deg, #fff6e5 60%, #fffaf3 100%); }
+.bottom-nav .nav-item:nth-child(3) { color: #1fcfa1; background: linear-gradient(135deg, #e6fff7 60%, #f3fffb 100%); }
+.bottom-nav .nav-item:nth-child(4) { color: #a84eff; background: linear-gradient(135deg, #f3eaff 60%, #faf5ff 100%); }
+.bottom-nav .nav-item:nth-child(5) { color: #ff4e8c; background: linear-gradient(135deg, #ffeaf3 60%, #fff5fa 100%); }
+.bottom-nav .nav-item:nth-child(6) { color: #ff6a00; background: linear-gradient(135deg, #fff3e5 60%, #fff8f3 100%); }
 
-/* 각 버튼별 은은한 색상 강조 */
-
-/* 각 버튼별 배경색과 글자색 조화 */
-.bottom-nav .nav-item:nth-child(1) {
-    color: #4e8cff;
-    background: linear-gradient(135deg, #eaf2ff 60%, #f5faff 100%);
-}
-.bottom-nav .nav-item:nth-child(2) {
-    color: #ffb84e;
-    background: linear-gradient(135deg, #fff6e5 60%, #fffaf3 100%);
-}
-.bottom-nav .nav-item:nth-child(3) {
-    color: #1fcfa1;
-    background: linear-gradient(135deg, #e6fff7 60%, #f3fffb 100%);
-}
-.bottom-nav .nav-item:nth-child(4) {
-    color: #a84eff;
-    background: linear-gradient(135deg, #f3eaff 60%, #faf5ff 100%);
-}
-.bottom-nav .nav-item:nth-child(5) {
-    color: #ff4e8c;
-    background: linear-gradient(135deg, #ffeaf3 60%, #fff5fa 100%);
-}
-.bottom-nav .nav-item:nth-child(6) {
-    color: #ff6a00;
-    background: linear-gradient(135deg, #fff3e5 60%, #fff8f3 100%);
-}
-.bottom-nav .nav-item:not(:last-child) {
-    border-right: 1.5px solid rgba(44,62,80,0.07);
-}
-
+/* 버튼 누를 때 효과 */
 .nav-item:hover, .nav-item:active {
     background: linear-gradient(135deg, rgba(44,62,80,0.08) 0%, rgba(44,62,80,0.03) 100%) !important;
     box-shadow: 0 2px 8px rgba(44,62,80,0.10);
-    font-weight: 700;
     filter: brightness(1.09);
 }
 
-.nav-item span:first-child {
-    font-size: 1.45em;
-    margin-bottom: 1px;
-    display: block;
-}
-.nav-item span:last-child {
-    font-size: 0.92em;
-    font-family: inherit;
-    margin-top: 0px;
-}
-
-.nav-item:hover, .nav-item:active {
-    background: rgba(44, 62, 80, 0.07);
-    box-shadow: 0 2px 8px rgba(44,62,80,0.08);
-    font-weight: 700;
-    filter: brightness(1.08);
-}
-
+/* 📱 모바일 화면 최적화 */
 @media (max-width: 600px) {
     .bottom-nav {
-        height: 54px;
-        font-size: 0.98em;
+        height: 105px; /* 납작해지지 않게 높이 유지 */
         border-top-left-radius: 12px;
         border-top-right-radius: 12px;
     }
-    .nav-item span:first-child {
-        font-size: 1.18em;
-    }
+    .nav-item span:first-child { font-size: 1.4em; }
+    .nav-item span:last-child { font-size: 1.05em; }
 }
 
 /* Google Fonts: Gowun Dodum */
