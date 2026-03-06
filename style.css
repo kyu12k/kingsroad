@@ -1,7 +1,3 @@
-/* nav-badge가 비어있으면 숨김 */
-.nav-badge:empty {
-    display: none;
-}
 .bottom-nav .nav-item:nth-child(6) {
     color: #ff6a00;
     background: linear-gradient(135deg, #fff3e5 60%, #fff8f3 100%);
@@ -26,13 +22,19 @@
     backdrop-filter: blur(8px);
 }
 
+/* =========================================
+   [하단 네비게이션 버튼 & 알림 배지 통합 디자인]
+   ========================================= */
+
+/* 1. 버튼 (배지가 뜰 수 있는 '기준점' 역할) */
 .nav-item {
+    position: relative; /* 🌟 핵심: 배지가 이 버튼 안에서 위치를 잡도록 기준점이 됨 */
     flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 1.08em;
+    font-size: 1.08em; /* 폰트 크기가 작아졌다면 이 숫자를 1.1em, 1.2em 등으로 키워주세요 */
     font-family: inherit;
     font-weight: 600;
     letter-spacing: 0.01em;
@@ -42,6 +44,30 @@
     border-radius: 14px;
     margin: 0 2px;
     user-select: none;
+}
+
+/* 2. 빨간 알림 점 (공간을 차지하지 않고 공중 부양!) */
+.nav-badge {
+    position: absolute; /* 🌟 핵심: 다른 글자나 아이콘을 밀어내지 않고 공중에 뜸 */
+    top: 6px;           /* 버튼 위쪽 가장자리에서 6px 아래로 */
+    right: calc(50% - 18px); /* 아이콘의 우측 상단 쯤에 정확히 걸치도록 계산 */
+    
+    width: 6px;         /* 빨간 점의 너비 */
+    height: 6px;        /* 빨간 점의 높이 */
+    background-color: #ff4757; /* 눈에 띄는 빨간색 */
+    border-radius: 50%; /* 완벽한 동그라미로 만들기 */
+    box-shadow: 0 0 4px rgba(255, 71, 87, 0.5); /* 은은한 붉은빛 그림자 (옵션) */
+    z-index: 100;       /* 아이콘보다 항상 위에 보이도록 */
+}
+
+/* 3. 배지가 비어있을 때(알림이 없을 때)는 숨김 */
+.nav-badge:empty {
+    display: none;
+}
+
+/* 자바스크립트가 스위치를 켜면(active) 무조건 보임 */
+.nav-badge.active {
+    display: block; /* 활성화되면 보임 */
 }
 
 /* 각 버튼별 은은한 색상 강조 */
@@ -569,7 +595,6 @@ body, html {
         #map-screen.active ~ .bottom-nav {
             display: flex !important;
         }
-        .nav-item { flex: 1; display: flex; align-items: center; justify-content: center; color: #95a5a6; font-size: 0.8rem; flex-direction: column; cursor: pointer; }
         .nav-item:active { color: var(--primary-color); }
 
         /* [5. 스테이지 시트 (Bottom Sheet)] */
@@ -648,30 +673,6 @@ body, html {
     0% { transform: translateY(0) scale(1); opacity: 1; }
     50% { transform: translateY(-30px) scale(1.5); opacity: 1; }
     100% { transform: translateY(-60px) scale(1); opacity: 0; }
-}
-
-/* [알림 배지 (Red Dot) 스타일] */
-.nav-item {
-    position: relative; /* 배지 위치 기준점 */
-}
-
-.nav-badge {
-    position: absolute;
-    top: 5px;
-    right: 30%; /* 아이콘 오른쪽 위에 배치 */
-    width: 10px;
-    height: 10px;
-    background-color: #e74c3c; /* 빨간색 */
-    border: 2px solid #2c3e50; /* 배경색과 같은 테두리로 분리감 주기 */
-    border-radius: 50%;
-    display: none; /* 평소엔 숨김 */
-    z-index: 60;
-    box-shadow: 0 0 5px rgba(231, 76, 60, 0.8);
-    animation: bounce-badge 1s infinite;
-}
-
-.nav-badge.active {
-    display: block; /* 활성화되면 보임 */
 }
 
 @keyframes bounce-badge {
