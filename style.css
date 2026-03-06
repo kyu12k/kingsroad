@@ -1,10 +1,8 @@
+/* 🌟 귀여운 폰트(Jua) 불러오기, 최상단에 위치해야 함 */
+@import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
 * {
     box-sizing: border-box; /* 🌟 모든 요소의 너비 계산에 여백/테두리를 포함 */
-    max-width: 100%;       /* 어떤 요소도 부모보다 커지지 않게 제한 */
 }
-/* 🌟 귀여운 폰트(Jua) 불러오기 */
-@import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
-
 /* =========================================
    [하단 네비게이션 2행 3열 - 다크 테마 & 귀여운 폰트 버전]
    ========================================= */
