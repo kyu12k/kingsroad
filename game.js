@@ -9225,8 +9225,9 @@ function renderMyPlayRecord() {
         </div>
     `;
 
+    // 🌟 상단 요약 배지는 놔두고, 하단 상세 타일들만 아코디언 안으로 넣었습니다!
     summary.innerHTML = `
-        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:15px;">
             <div style="background:rgba(241,196,15,0.15); border:1px solid rgba(241,196,15,0.4); color:#f1c40f; padding:6px 10px; border-radius:999px; font-size:0.8rem; font-weight:bold;">
                 🧭 누적 승점 ${score.toLocaleString()} pts
             </div>
@@ -9237,16 +9238,44 @@ function renderMyPlayRecord() {
                 ⏱️ 누적 플레이타임 ${formatDuration(totalPlaySeconds)}
             </div>
         </div>
-        <div style="display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:10px;">
-            ${tile("⏱️", "플레이타임(누적)", formatDuration(totalPlaySeconds), "#f1c40f")}
-            ${tile("📆", "최근 7일 평균", formatDuration(avgDailySeconds), "#7fbdf0")}
-            ${tile("📖", "일반 스테이지 클리어", `${counts.normal}개`, "#ecf0f1")}
-            ${tile("🐲", "중간/보스 클리어", `${counts.bossMid}개`, "#ecf0f1")}
-            ${tile("💎", "누적 획득 보석", `${gems.toLocaleString()}개`, "#7fbdf0")}
-            ${tile("🏅", "누적 획득 승점", `${score.toLocaleString()} pts`, "#f1c40f")}
-            ${tile("💜", "총 기억레벨 합계", `${totalMemoryLevel} Lv`, "#b487ff")}
+
+        <div class="record-accordion" style="width: 100%; border-radius: 15px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); overflow: hidden;">
+            <button class="accordion-header" onclick="toggleAccordion('detail-stats', this)" style="width: 100%; padding: 15px 20px; background: rgba(0,0,0,0.2); color: #f1c40f; border: none; text-align: left; font-size: 1.1rem; font-family: 'Jua', sans-serif; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                <span>📊 나의 상세 기록 보기</span>
+                <span class="toggle-icon" style="font-size: 0.9rem; transition: transform 0.3s ease;">▼</span>
+            </button>
+            
+            <div id="detail-stats" class="accordion-content" style="max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out, padding 0.4s ease; background: rgba(255,255,255,0.02);">
+                <div style="display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:10px; padding: 15px 20px;">
+                    ${tile("⏱️", "플레이타임(누적)", formatDuration(totalPlaySeconds), "#f1c40f")}
+                    ${tile("📆", "최근 7일 평균", formatDuration(avgDailySeconds), "#7fbdf0")}
+                    ${tile("📖", "일반 스테이지 클리어", `${counts.normal}개`, "#ecf0f1")}
+                    ${tile("🐲", "중간/보스 클리어", `${counts.bossMid}개`, "#ecf0f1")}
+                    ${tile("💎", "누적 획득 보석", `${gems.toLocaleString()}개`, "#7fbdf0")}
+                    ${tile("🏅", "누적 획득 승점", `${score.toLocaleString()} pts`, "#f1c40f")}
+                    ${tile("💜", "총 기억레벨 합계", `${totalMemoryLevel} Lv`, "#b487ff")}
+                </div>
+            </div>
         </div>
-    `;
+        `;
+}
+
+// 🌟 아코디언을 열고 닫는 스위치 함수 (game.js 맨 아래나 적당한 곳에 추가해 주세요)
+function toggleAccordion(contentId, btnElement) {
+    const content = document.getElementById(contentId);
+    
+    // 내용물이 열려있으면 닫고, 닫혀있으면 엽니다
+    if (content.style.maxHeight && content.style.maxHeight !== '0px') {
+        content.style.maxHeight = '0px';
+        content.style.paddingTop = '0px';
+        content.style.paddingBottom = '0px';
+        btnElement.querySelector('.toggle-icon').style.transform = 'rotate(0deg)';
+    } else {
+        content.style.maxHeight = '800px'; // 타일들이 다 보일 만큼 넉넉한 높이
+        content.style.paddingTop = '0px'; 
+        content.style.paddingBottom = '0px';
+        btnElement.querySelector('.toggle-icon').style.transform = 'rotate(180deg)';
+    }
 }
 // 서비스 워커 등록 (앱 설치 조건을 만족시키기 위함)
 if ('serviceWorker' in navigator) {

@@ -13,7 +13,7 @@
     width: 100vw;
     height: 130px; 
     
-    display: grid;
+    display: none;
     grid-template-columns: repeat(3, 1fr); 
     grid-template-rows: repeat(2, 1fr);    
     gap: 4px; 
@@ -25,7 +25,10 @@
     z-index: 1200;
     backdrop-filter: blur(10px);
 }
-
+/* 🌟 메인 맵 화면이 켜졌을 때만 네비게이션 바를 2행 3열(grid)로 보여라! */
+#map-screen.active ~ .bottom-nav {
+    display: grid !important;
+}
 .nav-item {
     position: relative; 
     display: flex;
