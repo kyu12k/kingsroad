@@ -3681,7 +3681,9 @@ function saveGameData() {
         dept: (typeof myDept !== 'undefined') ? myDept : 0,
         tag: myTag,
         playerId: myPlayerId,
-        
+        // 🌟 [건망증 치료] 저장할 때 현재 인증키를 빼먹지 않도록 꼭 챙겨 넣습니다!
+        sessionToken: window.currentSessionToken || (JSON.parse(localStorage.getItem('kingsRoadSave') || "{}")).sessionToken,
+
         // 나머지 데이터 유지
         inv: inventory,
         missions: missionData,
@@ -9268,18 +9270,33 @@ function startSessionGuard() {
     }
     window.currentSessionToken = savedData.sessionToken;
 
-    // 파이어베이스에 있는 '내 랭킹 데이터'를 실시간으로 감시합니다.
+    // 파이어베이스에 있는 '내 랭킹 데이터'를 24시간 실시간으로 감시합니다.
     db.collection("leaderboard").doc(myPlayerId).onSnapshot((doc) => {
+        
+        // 브라우저의 '과거 기억(캐시)'으로 인한 오해 차단
+        if (doc.metadata && doc.metadata.fromCache) return; 
+
         if (doc.exists) {
             const serverData = doc.data();
             
-            // 🚨 서버의 인증키가 내 기기의 인증키와 다르면?! (다른 기기에서 불러오기를 한 상황)
+            // 🚨 서버의 인증키가 내 기기의 인증키와 다르면?!
             if (serverData.sessionToken && serverData.sessionToken !== window.currentSessionToken) {
-                alert("🚨 다른 기기에서 로그인이 감지되었습니다.\n계정 보호를 위해 현재 기기의 접속이 차단되고 데이터가 초기화됩니다.");
                 
-                // 기존 기기의 데이터 싹 비우기 (분신술, 어뷰징 완벽 차단)
+                // 🌟 [아이폰 좀비 버그 완벽 해결]
+                // 1. 알림창이 뜨기 전에 '저장 금지 스위치'부터 무조건 켭니다!
+                window.isResetting = true; 
+                
+                // 2. 알림창이 뜨기 전에 하드디스크(로컬 스토리지)를 확실하게 날려버립니다.
                 localStorage.removeItem('kingsRoadSave'); 
-                location.reload(); // 새로고침하여 쫓아냄
+                
+                // 3. 아이폰 머릿속(메모리)에 남아있는 신분증 번호도 직접 파괴합니다.
+                myPlayerId = ""; 
+                
+                // 4. 모든 데이터가 죽은 상태에서 비로소 유저에게 알립니다.
+                alert("🚨 다른 기기에서 로그인이 감지되었습니다.\n계정 보호를 위해 현재 기기의 접속이 차단되고 초기화됩니다.");
+                
+                // 5. 아이폰의 독한 메모리 캐시를 뚫고 '완전 강제 새로고침'을 실행합니다!
+                window.location.replace(window.location.href.split('?')[0] + '?reset=' + Date.now());
             }
         }
     });
