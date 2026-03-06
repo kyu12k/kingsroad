@@ -552,8 +552,8 @@ body, html {
             position: fixed; bottom: 0; z-index: 50;
         }
         #map-screen.active ~ .bottom-nav {
-            display: flex !important;
-        }
+    display: grid !important; /* 🌟 flex를 grid로 바꿉니다! */
+}
         .nav-item:active { color: var(--primary-color); }
 
         /* [5. 스테이지 시트 (Bottom Sheet)] */
