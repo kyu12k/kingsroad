@@ -9326,6 +9326,11 @@ function startSessionGuard() {
         if (doc.exists) {
             const serverData = doc.data();
             
+            // 🕵️‍♂️ 범인 검거용 로그
+console.log("=== 다중 접속 검사 ===");
+console.log("1. 내 아이디 (myPlayerId):", myPlayerId);
+console.log("2. 서버의 토큰 (server):", serverData.sessionToken);
+console.log("3. 내 로컬 토큰 (local):", window.currentSessionToken);
             // 🚨 서버의 인증키가 내 기기의 인증키와 다르면?!
 if (serverData.sessionToken && serverData.sessionToken !== window.currentSessionToken) {
     
