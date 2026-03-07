@@ -8587,13 +8587,20 @@ window.onload = function() {
 
     // 1. 저장된 데이터 불러오기 (가장 중요)
     loadGameData(); 
-    // 🌟 [추가] 복구 직후라면 0.1초 만에 자동 저장 및 서버 동기화 실행 (수동 저장 효과)
-if (localStorage.getItem('forceSyncAfterLoad') === 'true') {
-    localStorage.removeItem('forceSyncAfterLoad'); // 1회용이므로 삭제
-    if (typeof saveGameData === 'function') saveGameData();
-    if (typeof saveMyScoreToServer === 'function') saveMyScoreToServer();
-    console.log("🔄 복구 데이터 서버 강제 동기화 완료!");
-}
+
+    // 🌟 [핵심 장전] 서버에 데이터를 쏘기 전에, 방금 불러온 세이브 파일에서 토큰을 꺼내 메모리에 확실히 쥐여줍니다!
+    const savedData = JSON.parse(localStorage.getItem('kingsRoadSave') || "{}");
+    if (savedData.sessionToken) {
+        window.currentSessionToken = savedData.sessionToken;
+    }
+
+    // 2. 복구 직후 자동 동기화 (이제 서버로 완벽한 토큰이 날아갑니다)
+    if (localStorage.getItem('forceSyncAfterLoad') === 'true') {
+        localStorage.removeItem('forceSyncAfterLoad'); 
+        if (typeof saveGameData === 'function') saveGameData();
+        if (typeof saveMyScoreToServer === 'function') saveMyScoreToServer();
+        console.log("🔄 복구 데이터 서버 강제 동기화 완료!");
+    }
     checkMissions(); // [추가] 게임 시작 시 미션 초기화 체크
     updateStats('login');
     updateNotificationBadges();
