@@ -8061,19 +8061,16 @@ function resetGameData() {
     // 1차 경고
     if (confirm("⚠️ 정말로 기기에 저장된 모든 데이터를 삭제하시겠습니까?\n\n(※ 한 번 삭제된 데이터는 파일을 미리 보관해두지 않은 이상 절대 복구할 수 없습니다.)")) {
         // 2차 경고 (실수 방지)
-        if (confirm("마지막으로 확인합니다.\n정말로 모든 진행 상황을 지우고 태그 발급부터 다시 시작하시겠습니까?")) {
-            
-            // ★ 핵심: 자동 저장 기능이 삭제된 상태를 덮어쓰지 못하도록 막음
-            window.isResetting = true; 
-            
-            // 로컬 스토리지의 킹스로드 데이터 삭제
-            localStorage.removeItem('kingsRoadSave'); 
-            
-            alert("데이터가 완전히 초기화되었습니다.\n게임을 처음부터 다시 시작합니다.");
-            
-            // 페이지 새로고침하여 초기 상태로 진입
-            location.reload(); 
-        }
+if (confirm("마지막으로 확인합니다.\n정말로 모든 진행 상황을 지우고 태그 발급부터 다시 시작하시겠습니까?")) {
+    
+    window.isResetting = true; 
+    
+    // 🌟 [수정] 수동 초기화 때도 모든 찌꺼기 완벽 소각!
+    localStorage.clear(); 
+    
+    alert("데이터가 완전히 초기화되었습니다.\n게임을 처음부터 다시 시작합니다.");
+    location.reload(); 
+}
     }
 }
 
@@ -9321,24 +9318,21 @@ function startSessionGuard() {
             const serverData = doc.data();
             
             // 🚨 서버의 인증키가 내 기기의 인증키와 다르면?!
-            if (serverData.sessionToken && serverData.sessionToken !== window.currentSessionToken) {
-                
-                // 🌟 [아이폰 좀비 버그 완벽 해결]
-                // 1. 알림창이 뜨기 전에 '저장 금지 스위치'부터 무조건 켭니다!
-                window.isResetting = true; 
-                
-                // 2. 알림창이 뜨기 전에 하드디스크(로컬 스토리지)를 확실하게 날려버립니다.
-                localStorage.removeItem('kingsRoadSave'); 
-                
-                // 3. 아이폰 머릿속(메모리)에 남아있는 신분증 번호도 직접 파괴합니다.
-                myPlayerId = ""; 
-                
-                // 4. 모든 데이터가 죽은 상태에서 비로소 유저에게 알립니다.
-                alert("🚨 다른 기기에서 로그인이 감지되었습니다.\n계정 보호를 위해 현재 기기의 접속이 차단되고 초기화됩니다.");
-                
-                // 5. 아이폰의 독한 메모리 캐시를 뚫고 '완전 강제 새로고침'을 실행합니다!
-                window.location.replace(window.location.href.split('?')[0] + '?reset=' + Date.now());
-            }
+if (serverData.sessionToken && serverData.sessionToken !== window.currentSessionToken) {
+    
+    // 1. 알림창이 뜨기 전에 '저장 금지 스위치' 켜기
+    window.isResetting = true; 
+    
+    // 🌟 2. [수정] 본체뿐만 아니라 찌꺼기까지 하드디스크 전체를 완벽하게 포맷! (무한 루프 방지)
+    localStorage.clear(); 
+    
+    // 3. 메모리 파괴
+    myPlayerId = ""; 
+    window.currentSessionToken = ""; // 혹시 모를 토큰 찌꺼기 파괴
+    
+    alert("🚨 다른 기기에서 로그인이 감지되었습니다.\n계정 보호를 위해 현재 기기의 접속이 차단되고 초기화됩니다.");
+    window.location.replace(window.location.href.split('?')[0] + '?reset=' + Date.now());
+}
         }
     });
 }
