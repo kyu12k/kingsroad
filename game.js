@@ -7715,9 +7715,9 @@ function startScrollStep() {
     
     // [수정] 속도 설정 (느린 모드 체크)
     if (scrollGame.isSlowMode) {
-        scrollGame.speed = 0.6; // 아주 느리게
+        scrollGame.speed = 0.3; // 아주 느리게
     } else {
-        scrollGame.speed = 1.5; // 기존 빠른 속도
+        scrollGame.speed = 1.0; // 기존 빠른 속도
     }
 
     const track = document.getElementById('scroll-track');
@@ -7840,13 +7840,13 @@ function checkScrollCollision() {
     const container = document.getElementById('scroll-game-container');
     const nodeLeftRel = rect.left - container.getBoundingClientRect().left; // 화면상 빈칸의 위치
 
-    // ★ [추가] 2초 전 경고 계산 로직 ★
+    // ★ [추가] 3초 전 경고 계산 로직 ★
     // 1프레임(약 16ms)당 scrollGame.speed 만큼 이동함.
-    // 2초 = 약 120프레임. 따라서 2초 동안 이동하는 거리는 (120 * scrollGame.speed)
-    const warningDistance = 120 * scrollGame.speed; 
+    // 3초 = 약 180프레임. 따라서 3초 동안 이동하는 거리는 (180 * scrollGame.speed)
+    const warningDistance = 180 * scrollGame.speed; 
     const distanceToDeadline = nodeLeftRel - deadline;
 
-    // 만약 선까지 남은 거리가 2초 거리 안쪽으로 들어왔다면?
+    // 만약 선까지 남은 거리가 3초 거리 안쪽으로 들어왔다면?
     if (distanceToDeadline > 0 && distanceToDeadline <= warningDistance && !targetNode.classList.contains('filled')) {
         // 1. 단어 상자에 붉은색 경고 깜빡임 추가
         targetNode.classList.add('scroll-warning');
