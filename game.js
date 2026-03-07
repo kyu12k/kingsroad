@@ -8241,7 +8241,8 @@ function processImportData(inputString) {
 
             // 로컬 스토리지에 안전하게 저장
             localStorage.setItem('kingsRoadSave', JSON.stringify(parsedData));
-            
+            // 🌟 [추가] 화면이 새로고침된 직후 자동으로 서버에 저장하도록 예약 
+localStorage.setItem('forceSyncAfterLoad', 'true');
             // 🌟 파이어베이스에 새 인증키 등록 (기존 기기 쫓아내기)
             if (typeof db !== 'undefined' && parsedData.playerId) {
                 db.collection("leaderboard").doc(parsedData.playerId).set({
@@ -8587,6 +8588,13 @@ window.onload = function() {
 
     // 1. 저장된 데이터 불러오기 (가장 중요)
     loadGameData(); 
+    // 🌟 [추가] 복구 직후라면 0.1초 만에 자동 저장 및 서버 동기화 실행 (수동 저장 효과)
+if (localStorage.getItem('forceSyncAfterLoad') === 'true') {
+    localStorage.removeItem('forceSyncAfterLoad'); // 1회용이므로 삭제
+    if (typeof saveGameData === 'function') saveGameData();
+    if (typeof saveMyScoreToServer === 'function') saveMyScoreToServer();
+    console.log("🔄 복구 데이터 서버 강제 동기화 완료!");
+}
     checkMissions(); // [추가] 게임 시작 시 미션 초기화 체크
     updateStats('login');
     updateNotificationBadges();
