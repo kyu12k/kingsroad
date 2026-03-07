@@ -100,6 +100,7 @@ loadGameData = function() {
         myDept = (parsed.dept !== undefined) ? parsed.dept : 0;
         myTag = parsed.tag || "0000";
         myPlayerId = parsed.playerId || "";
+        window.currentSessionToken = parsed.sessionToken || "";
 
         // [진행도 복구]
         stageLastClear = parsed.lastClear || {};
@@ -9345,8 +9346,7 @@ if (serverData.sessionToken && serverData.sessionToken !== window.currentSession
     window.currentSessionToken = ""; // 혹시 모를 토큰 찌꺼기 파괴
     
     alert("🚨 다른 기기에서 로그인이 감지되었습니다.\n계정 보호를 위해 현재 기기의 접속이 차단되고 초기화됩니다.");
-    window.location.replace(window.location.href.split('?')[0] + '?reset=' + Date.now());
-}
+    window.location.replace(window.location.href.split('?')[0]);}
         }
     });
 }
