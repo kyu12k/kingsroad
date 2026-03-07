@@ -55,7 +55,7 @@ let inventory = {
 let stageMastery = {}; // ID별 클리어 횟수 저장
 let stageLastClear = {}; // ID별 마지막 클리어 시간 (타임스탬프)
 let stageNextEligibleTime = {}; // 다음 클리어 가능 시간 (forgetting-curve)
-let stageTimedBonus = {}; // 망각 주기 기반 보너스 (때를 따른 양식)
+let stageTimedBonus = {}; // 각인 주기 기반 보너스 (때를 따른 양식)
 
 /* ============================================= */
 
@@ -106,7 +106,7 @@ loadGameData = function() {
         stageMastery = parsed.mastery || {};
         stageMemoryLevels = parsed.memoryLevels || {};
         stageNextEligibleTime = parsed.nextEligibleTime || {}; // ★ [Forgetting-Curve] 다음 클리어 가능 시간
-        stageTimedBonus = parsed.timedBonus || {}; // ★ [때를 따른 양식] 망각 주기 기반 보너스
+        stageTimedBonus = parsed.timedBonus || {}; // ★ [때를 따른 양식] 각인 주기 기반 보너스
         // stageDailyAttempts 제거됨 (초회/반복만 구분)
         if(parsed.leagueData) leagueData = parsed.leagueData;
         if(parsed.missions) missionData = parsed.missions;
@@ -411,11 +411,11 @@ function checkAchievementUnlock(statType) {
     }
 }
 
-/* [시스템: 망각 곡선 및 기억 레벨 설정] */
+/* [시스템: 망각 곡선 및 말씀 숙련도 설정] */
 // 레벨별 복습 주기 (Lv.0 -> 1일, Lv.1 -> 3일, Lv.2 -> 7일...)
 const FORGETTING_CURVE = [1, 3, 7, 14, 30]; 
 
-// 각 스테이지의 기억 레벨을 저장할 객체 (예: { "1-1": 2, "1-2": 0 })
+// 각 스테이지의 말씀 숙련도를 저장할 객체 (예: { "1-1": 2, "1-2": 0 })
 let stageMemoryLevels = {};
 
 /* [시스템] 업적(기록실) 데이터 설정 */
@@ -1786,10 +1786,10 @@ function getTimedBonus(stageId) {
     
     const bonus = stageTimedBonus[stageId];
     
-    // 망각 주기 체크
+    // 각인 주기 체크
     const memStatus = checkMemoryStatus(stageId);
     
-    // 망각 주기 도래 시 자동 리셋
+    // 각인 주기 도래 시 자동 리셋
     if (memStatus.isForgotten && bonus.remaining < 3) {
         bonus.remaining = 3;
     }
@@ -2405,13 +2405,13 @@ if (isTodayClear) {
     itemClass += ' today-clear';
     statusBadgeHtml = `<div class="today-badge">오늘 완료</div>`;
 } 
-// 2. 망각 위험 배지
+// 2. 기억 다지기 배지
 else if (isForgotten) {
     itemClass += ' forgotten-clear';
-    statusBadgeHtml = `<div class="forgotten-badge">망각 위험!</div>`;
+    statusBadgeHtml = `<div class="forgotten-badge">기억 다지기</div>`;
 }
 
-// 3. 기억 레벨 배지 (타이틀 옆에 붙일 예정)
+// 3. 말씀 숙련도 배지 (타이틀 옆에 붙일 예정)
 // 레벨 0은 굳이 표시 안 함 (깔끔하게)
 let levelBadgeHtml = "";
 if (memStatus.level > 0) {
@@ -2634,10 +2634,10 @@ function openModeSelect(stageId) {
     modal.style.display = 'flex';
 }
     // =========================================
-    // [추가] 망각 위험 스테이지 오버레이 및 추적 함수
+    // [추가] 기억 다지기 스테이지 오버레이 및 추적 함수
     // =========================================
 
-    // 망각 위험 스테이지 리스트를 수집하는 함수
+    // 기억 다지기 스테이지 리스트를 수집하는 함수
     function getForgottenStages() {
         const forgottenList = [];
         // gameData는 각 장별 스테이지 정보 배열
@@ -2659,7 +2659,7 @@ function openModeSelect(stageId) {
         return forgottenList;
     }
 
-    // 망각 위험 스테이지 오버레이 표시 함수
+    // 기억 다지기 스테이지 오버레이 표시 함수
     function openForgottenStagesOverlay() {
         let overlay = document.getElementById('forgotten-stages-overlay');
         if (!overlay) {
@@ -2668,7 +2668,7 @@ function openModeSelect(stageId) {
             overlay.style = 'display:flex; position:fixed; z-index:9999; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.97); color:#f1c40f; flex-direction:column; align-items:center; justify-content:center; font-size:1.2rem; text-align:center;';
             overlay.innerHTML = `
                 <div style="max-width:90vw; font-size:1.1em; line-height:1.7; font-weight:bold; color:#fff; text-shadow:0 2px 8px #222; margin-bottom:30px; flex-shrink: 0;">
-                    🕑 망각 위험 스테이지<br><span style="font-size:0.95em; color:#f1c40f;">기억이 희미해진 스테이지를 복습하세요!</span>
+                    🕑 기억 다지기 스테이지<br><span style="font-size:0.95em; color:#f1c40f;">스테이지를 복습해서 기억을 다지세요!</span>
                 </div>
                 <div id="forgotten-stages-list" style="background:rgba(0,0,0,0.3); padding:20px; border-radius:15px; width:90vw; max-width:600px; min-width:220px; margin-bottom:30px; max-height:50vh; overflow-y:auto; flex-shrink: 0;">
                 </div>
@@ -2682,7 +2682,7 @@ function openModeSelect(stageId) {
         const listDiv = document.getElementById('forgotten-stages-list');
         const forgottenList = getForgottenStages();
         if (forgottenList.length === 0) {
-            listDiv.innerHTML = '<div style="color:#bdc3c7;">망각 위험 스테이지가 없습니다!</div>';
+            listDiv.innerHTML = '<div style="color:#bdc3c7;">기억 다지기 스테이지가 없습니다!</div>';
             return;
         }
         listDiv.innerHTML = '';
@@ -2691,7 +2691,7 @@ function openModeSelect(stageId) {
             btn.innerHTML = `
                 <span style="font-weight:bold; color:#f1c40f;">${item.stageName}</span>
                 ${item.chapterNum !== undefined ? `<span style=\"color:#fff; font-size:0.95em; margin-left:8px;\">(제${item.chapterNum}장)</span>` : ''}
-                <span style="color:#e74c3c; font-size:0.9em; margin-left:8px;">망각 위험!</span>
+                <span style="color:#e74c3c; font-size:0.9em; margin-left:8px;">기억 다지기</span>
             `;
             btn.style = 'display:block; width:100%; background:rgba(241,196,15,0.12); border:1px solid #f1c40f; color:#fff; padding:12px 0; border-radius:12px; margin-bottom:10px; font-size:1.05rem; cursor:pointer; transition:background 0.2s;';
             btn.onclick = function() {
@@ -2787,7 +2787,7 @@ function calculateBossBaseGem(chapterNum) {
 
 /* [수정] 기억 상태 확인 함수 (1시간 여유 두기 패치) */
 function checkMemoryStatus(stageId) {
-    // 1. (기존) 보스/중간점검도 망각 위험 판정에서 제외했으나, 이제 포함
+    // 1. (기존) 보스/중간점검도 기억 다지기 판정에서 제외했으나, 이제 포함
 
     // 2. 한 번도 안 깬 경우
     if (!stageLastClear[stageId]) {
@@ -2801,7 +2801,7 @@ function checkMemoryStatus(stageId) {
     // 경과 시간(시간 단위) 계산
     const diffHours = (now - lastTime) / (1000 * 60 * 60);
 
-    // ★ [핵심 변경] 레벨별 망각 주기 (1시간씩 단축!)
+    // ★ [핵심 변경] 레벨별 각인 주기 (1시간씩 단축!)
     let forgettingTime = 23; // Lv.0 (기본 24시간 -> 23시간)
     
     if (currentLevel === 1) {
@@ -3690,7 +3690,7 @@ function saveGameData() {
         mastery: stageMastery,
         lastClear: stageLastClear,
         nextEligibleTime: stageNextEligibleTime, // ★ [Forgetting-Curve] 다음 클리어 가능 시간
-        timedBonus: stageTimedBonus, // ★ [때를 따른 양식] 망각 주기 기반 보너스
+        timedBonus: stageTimedBonus, // ★ [때를 따른 양식] 각인 주기 기반 보너스
         // dailyAttempts 제거됨
         achievementStatus: achievementStatus, 
         memoryLevels: stageMemoryLevels,
@@ -4650,7 +4650,7 @@ function showClearScreen() {
     let accuracy = Math.max(0, 100 - (wrongCount * 10));
 
     // ============================================================
-    // ▼ [때를 따른 양식 보너스] 망각 주기 기반
+    // ▼ [때를 따른 양식 보너스] 각인 주기 기반
     // ============================================================
     let baseGem = 10; // 기본 보상
     let msg = "📖 [훈련] 완료!";
@@ -4658,7 +4658,7 @@ function showClearScreen() {
     // 현재 스테이지 ID
     const sId = window.currentStageId;
 
-    // ★ 보너스 확인 (망각 주기 도래 시 자동 복구)
+    // ★ 보너스 확인 (각인 주기 도래 시 자동 복구)
     const timedBonus = getTimedBonus(sId);
     const bonusCount = timedBonus.remaining;
 
@@ -5576,7 +5576,7 @@ function calculateScore(stageId, type, verseCount, hearts, isForgotten) {
     }
 
     // ============================================================
-    // [때를 따른 양식 보너스] (망각 주기 기반, 모든 스테이지 적용)
+    // [때를 따른 양식 보너스] (각인 주기 기반, 모든 스테이지 적용)
     // ============================================================
     const bonusLevel = consumeTimedBonus(stageId); // 보너스 소진 후 사용 전 값 반환
     
@@ -6745,7 +6745,7 @@ stageClear = function(type) {
 
         // [A] 보스 (챕터 전체)
         if (type === 'boss') { 
-            // 망각 주기가 지난 경우에만 클리어 시각 갱신
+            // 각인 주기가 지난 경우에만 클리어 시각 갱신
             if (isForgotten) {
     stageMemoryLevels[sId] = (prevLevel || 0) + 1; // prevLevel 변수로 안전하게 통일
 }
@@ -6807,7 +6807,7 @@ stageClear = function(type) {
                 // 실제 hp 값으로 계산
                 verseCnt = actualHp; 
 
-                // 👉 [추가된 부분] 중간 점검도 클리어 시 기억 레벨(Lv)을 올려줍니다!
+                // 👉 [추가된 부분] 중간 점검도 클리어 시 말씀 숙련도(Lv)을 올려줍니다!
                 if (isForgotten) stageMemoryLevels[sId] = (prevLevel || 0) + 1;
 
                 // 역주행 처리
@@ -6849,7 +6849,7 @@ stageClear = function(type) {
 
             baseGem = maxGem;
         }
-        // ★ [때를 따른 양식 보너스] 망각 주기 기반 (보스도 mid-boss/일반과 동일하게 적용)
+        // ★ [때를 따른 양식 보너스] 각인 주기 기반 (보스도 mid-boss/일반과 동일하게 적용)
             const timedBonus = getTimedBonus(sId); // 현재 상태만 확인
             const bonusLevel = timedBonus.remaining; // 소진 전 값
             if (bonusLevel === 3) {
@@ -6862,28 +6862,30 @@ stageClear = function(type) {
                 baseGem *= 1.5;
                 msg += `⚔️ 때를 따른 양식 ( × 1.5배)\n`;
             } else {
-                msg += `⏳ 보너스 쿨타임 (망각 주기 대기 중)\n`;
+                msg += `⏳ 보너스 쿨타임 (각인 주기 대기 중)\n`;
             }
 
-        // 망각 주기가 지난 경우에만 클리어 시각 갱신
-            const isFirstClear = !stageLastClear[sId];
+        // 각인 주기가 지난 경우에만 클리어 시각 갱신 (주석 내용도 이제 바뀌어야겠죠!)
+const isFirstClear = !stageLastClear[sId];
 
-        // 망각 주기가 지났거나, '아예 처음 클리어한 경우' 모두 시각 갱신
-        if (isForgotten || isFirstClear) {
-            stageLastClear[sId] = Date.now();
-            
-            // 복습 주기 갱신: 현재 기억레벨 기준으로 다음 eligibleTime 설정
-            const memoryLevel = stageMemoryLevels[sId] || 0;
-            stageNextEligibleTime[sId] = getNextEligibleTime(memoryLevel);
-            
-            // 망각 주기가 지나서 깬 경우에만 보너스 제공
-            if (isForgotten) {
-                let bonusPercent = ((prevLevel + 1) * 0.1);
-                if (bonusPercent > 0.5) bonusPercent = 0.5; 
-                baseGem = Math.floor(baseGem * (1 + bonusPercent));
-                msg += `💜 [기억 회복] 보너스 +${Math.round(bonusPercent*100)}%! (Lv.${prevLevel})\n`;
-            }
-        }
+// 🌟 1. '오늘 완료' 뱃지를 위해 클리어 시각은 조건 없이 무조건 '지금'으로 갱신!
+stageLastClear[sId] = Date.now();
+
+// 🌟 2. 말씀 숙련도 레벨업, 복습 주기 갱신, 보너스 지급은 원래대로 엄격하게 심사
+if (isForgotten || isFirstClear) {
+    
+    // 복습 주기 갱신: 현재 말씀 숙련도 레벨 기준으로 다음 eligibleTime 설정
+    const memoryLevel = stageMemoryLevels[sId] || 0;
+    stageNextEligibleTime[sId] = getNextEligibleTime(memoryLevel);
+    
+    // 각인 주기가 지나서 깬 경우에만 보너스 제공
+    if (isForgotten) {
+        let bonusPercent = ((prevLevel + 1) * 0.1);
+        if (bonusPercent > 0.5) bonusPercent = 0.5; 
+        baseGem = Math.floor(baseGem * (1 + bonusPercent));
+        msg += `💜 [말씀 숙련도] 보너스 +${Math.round(bonusPercent*100)}%! (Lv.${prevLevel})\n`;
+    }
+}
         
         // ★ [깨달음의 경지 보너스 적용]
         const collectionScore = getCurrentCollectionScore();
