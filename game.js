@@ -3912,8 +3912,8 @@ function loadStep() {
             
             <div style="position: relative; margin-bottom: 30px;">
                 <div class="reading-card" id="tap-reading-card" 
-                     style="cursor:pointer; min-height:150px; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px; line-height: 1.8; user-select: none; position: relative; z-index: 2;">
-                </div>
+     style="width: 100%; box-sizing: border-box; cursor:pointer; min-height:150px; display:flex; flex-wrap:wrap; align-content:flex-start; justify-content:center; gap:8px; line-height: 1.8; user-select: none; position: relative; z-index: 2;">
+</div>
                 <div id="pouring-light" style="position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: 40px; height: 0; background: linear-gradient(to bottom, #f1c40f 30%, rgba(255,255,255,0)); opacity: 0; transition: all 0.8s ease-in-out; z-index: 1;"></div>
             </div>
 
@@ -3991,10 +3991,11 @@ function loadStep() {
         };
 
         // 카드 자체는 스크롤 전용으로 두고, 별도 버튼에서 각인(한 번/롱프레스)을 처리합니다.
-        card.style.overflowY = 'auto';
-        card.style.maxHeight = '50vh';
-        card.style.cursor = 'auto';
-        card.style.padding = '12px';
+        card.style.overflowY = 'hidden'; /* 스크롤바 공간 삭제 */
+        card.style.maxHeight = 'none';   /* 글자가 많아져도 상자가 늘어나게 함 */
+        card.style.cursor = 'pointer'; 
+        card.style.padding = '20px 10px'; /* 위아래 20px, 좌우 10px로 양옆 공백 최소화 */
+        card.style.boxSizing = 'border-box'; /* 여백 계산 확실하게 굳히기 */
 
         // 리빌 버튼 생성: 짧게 누르면 한 덩어리, 길게 누르면 자동 재생
         const revealBtn = document.createElement('button');
