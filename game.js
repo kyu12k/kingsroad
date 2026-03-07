@@ -6852,9 +6852,16 @@ stageClear = function(type) {
 
             baseGem = maxGem;
         }
+        // 🌟 [핵심 수술] 망각 주기(isForgotten)가 도래했다면 남은 횟수를 무조건 3(5배)으로 초기화!
+if (isForgotten) {
+    if (typeof resetTimedBonus === 'function') {
+        resetTimedBonus(sId); // 기존에 리셋 함수가 있다면 실행
+    }
+}
         // ★ [때를 따른 양식 보너스] 각인 주기 기반 (보스도 mid-boss/일반과 동일하게 적용)
             const timedBonus = getTimedBonus(sId); // 현재 상태만 확인
-            const bonusLevel = timedBonus.remaining; // 소진 전 값
+            // 혹시 getTimedBonus 내부에서 리셋이 제대로 안 되었을 경우를 대비한 강력한 2차 방어막
+let bonusLevel = isForgotten ? 3 : timedBonus.remaining;
             if (bonusLevel === 3) {
                 baseGem *= 5;
                 msg += `🎁 때를 따른 양식 ( × 5배)\n`;
