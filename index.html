@@ -756,22 +756,22 @@
     <div id="game-screen" class="screen">
     
     <div class="training-header">
-        <div class="step-indicator">Step <span id="current-step-num">1</span>/<span id="total-step-num">6</span></div>
+    <div class="step-indicator">Step <span id="current-step-num">1</span>/<span id="total-step-num">6</span></div>
+    
+    <div style="display:flex; gap:12px; align-items:center;">
         
-        <div class="step-progress-bar">
-            <div class="step-progress-fill" id="step-progress-fill"></div>
-        </div>
-
-        <div style="display:flex; gap:5px; margin-right:10px; align-items:center;">
-            <button onclick="useHint()" class="item-btn" style="background:#f39c12; border-color:#d35400; color:white;">
-                💡 힌트 <span style="font-size:0.7rem; margin-left:2px;">(💎10)</span>
-            </button>
-        </div>
-        <div style="font-size:1.2rem; margin-right:15px; display:flex; align-items:center;">
+        <button onclick="useHint()" class="item-btn" style="background:#f39c12; border-color:#d35400; color:white; margin:0;">
+            💡 힌트 <span style="font-size:0.7rem; margin-left:2px;">(💎10)</span>
+        </button>
+        
+        <div style="font-size:1.2rem; display:flex; align-items:center; margin:0;">
             ❤️ <span id="training-hearts" style="font-weight:bold; margin-left:5px;">5</span>
         </div>
-        <button class="btn-pause" onclick="quitGame()" style="color:#7f8c8d; border-color:#bdc3c7;">✕</button>
+        
+        <button class="btn-pause" onclick="quitGame()" style="color:#7f8c8d; border-color:#bdc3c7; position: static; margin: 0;">✕</button>
+        
     </div>
+</div>
 
     <div class="battle-header">
         <div class="boss-status">
