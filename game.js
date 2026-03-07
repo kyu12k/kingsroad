@@ -244,6 +244,8 @@ function startPlaySession() {
 }
 
 function stopPlaySession() {
+    // 🌟 1순위 방어막: 초기화(리셋) 중일 때는 절대 아무 흔적도 남기지 말고 그냥 조용히 퇴장해라!
+    if (window.isResetting) return;
     if (!playSessionStart) return;
     const end = Date.now();
     addPlaytimeRange(playSessionStart, end);
