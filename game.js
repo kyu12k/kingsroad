@@ -4193,21 +4193,6 @@ function loadStep() {
                             { transform: 'scale(1.2)' },
                             { transform: 'scale(1)' }
                         ], 300);
-
-                        // 자동 스크롤 로직 유지
-                        setTimeout(() => {
-                            const display = document.getElementById('initials-display');
-                            if (display && slot) {
-                                const slotBottom = slot.offsetTop + slot.offsetHeight;
-                                const displayVisibleBottom = display.scrollTop + display.clientHeight;
-                                if (slotBottom > displayVisibleBottom - 10) { 
-                                    display.scrollTo({ 
-                                        top: display.scrollTop + slot.offsetHeight + 8, 
-                                        behavior: 'smooth' 
-                                    });
-                                }
-                            }
-                        }, 50);
                     }
 
                     this.style.visibility = "hidden";
@@ -4225,6 +4210,24 @@ function loadStep() {
                             nextSlot.style.color = "#2c3e50";
                             nextSlot.style.fontWeight = "bold";
                             nextSlot.style.backgroundColor = "white";
+                            // 🌟 [수정됨] 한 박자 빠른 자동 스크롤! (다음 빈칸을 기준으로 계산)
+                            setTimeout(() => {
+                                const display = document.getElementById('initials-display');
+                                if (display) {
+                                    // '다음 빈칸(nextSlot)'의 바닥 위치를 계산합니다
+                                    const nextSlotBottom = nextSlot.offsetTop + nextSlot.offsetHeight;
+                                    const displayVisibleBottom = display.scrollTop + display.clientHeight;
+                                    
+                                    // 🌟 다음 빈칸이 화면 맨 아래쪽에 가까워지면(여유 공간이 40px 이하로 남으면) 미리 내림!
+                                    if (nextSlotBottom > displayVisibleBottom - 40) { 
+                                        display.scrollTo({ 
+                                            // 다음 줄이 시원하게 보이도록 넉넉하게 스크롤업
+                                            top: display.scrollTop + nextSlot.offsetHeight + 15, 
+                                            behavior: 'smooth' 
+                                        });
+                                    }
+                                }
+                            }, 50);
                         }
                     } else {
                         // '현재 파트'를 다 맞췄음! -> 파트 인덱스 1 증가
