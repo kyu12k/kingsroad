@@ -6739,6 +6739,13 @@ function checkDailyLogin() {
         needsSave = true; // 🌟 출석했으니 저장 필수!
 
     }
+    // 🚨 [임시 핫픽스] 월요일 새벽 접속자들의 꼬인 점수 강제 세탁 (다음 주 업데이트 때 지우셔도 됩니다)
+    if (!localStorage.getItem('hotfix_score_bug_fixed')) {
+        leagueData.myScore = 0; // 점수 무조건 0점 처리
+        localStorage.setItem('hotfix_score_bug_fixed', 'true'); // 치료 완료 도장
+        needsSave = true; // 무조건 저장 스위치 ON
+        console.log("🛠️ 핫픽스 적용: 주간 점수 강제 초기화 완료!");
+    }
 // 🌟 5. [맨 마지막 줄] 위에서 스위치가 켜졌다면 여기서 한 번에 저장 & 서버 전송!
     if (needsSave) {
         if (typeof saveGameData === 'function') saveGameData();
