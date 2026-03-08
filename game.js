@@ -6683,6 +6683,9 @@ function checkDailyLogin() {
     const today = new Date().toDateString(); 
     const lastDate = localStorage.getItem('lastPlayedDate');
     
+    // 이 스위치가 true가 되면 마지막에 무조건 저장을 실행합니다.
+    let needsSave = false;
+
     // 1. 미션 데이터 안전장치
     if (!missionData) missionData = { weekly: { attendance: 0, claimed: [false, false, false] } };
     if (!missionData.weekly) missionData.weekly = { attendance: 0, claimed: [false, false, false] };
@@ -6704,6 +6707,8 @@ function checkDailyLogin() {
         leagueData.weekId = currentWeekId;
         leagueData.myScore = 0; // 점수 0점부터 다시 시작
         leagueData.stageLog = {}; // 반복 훈련 기록 초기화
+    
+        needsSave = true; // 🌟 초기화했으니 저장 필수!
     }
 
     // ✨ NEW: 3. 월간 초기화 (새로운 달이 시작되었는지 확인)
@@ -6715,6 +6720,7 @@ function checkDailyLogin() {
         // (1) 월간 데이터 초기화
         leagueData.monthId = currentMonthId;
         leagueData.myMonthlyScore = 0; // 월간 점수 0점부터 다시 시작
+        needsSave = true; // 🌟 초기화했으니 저장 필수!
     }
 
     // 4. 일일 출석 체크
@@ -6730,9 +6736,18 @@ function checkDailyLogin() {
         missionData.daily.claimed = [false, false, false];
 
         localStorage.setItem('lastPlayedDate', today);
-        saveGameData();
+        needsSave = true; // 🌟 출석했으니 저장 필수!
 
-        // (선택) 출석 알림 대신 생명의 떡 알림이 뜨므로 여기선 조용히 넘어감
+    }
+// 🌟 5. [맨 마지막 줄] 위에서 스위치가 켜졌다면 여기서 한 번에 저장 & 서버 전송!
+    if (needsSave) {
+        if (typeof saveGameData === 'function') saveGameData();
+        
+        if (typeof saveMyScoreToServer === 'function') {
+            localStorage.removeItem("kingsroad_last_score_payload");
+            if (typeof window !== 'undefined') window.lastScorePayloadKey = null;
+            saveMyScoreToServer(); 
+        }
     }
 }
 
