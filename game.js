@@ -8188,10 +8188,8 @@ function shareSaveCodeAndGetReward() {
         return alert("암호화 중 오류가 발생했습니다.");
     }
 
-    // 🌟 [핵심 수정 1] 파일 타입을 'application/octet-stream'으로 변경!
     // -> "텔레그램아, 이거 내용물 열어보려고 끙끙대지 말고 그냥 파일 자체로만 전달해!" 라는 뜻입니다.
-    const file = new File([encodedData], fileName, { type: "application/octet-stream" });
-
+    const file = new File([encodedData], fileName, { type: "text/plain" });
     // 3. 미션 달성 처리 로직
     const completeMission = () => {
         if (!missionData.daily) missionData.daily = {};
@@ -8213,6 +8211,7 @@ function shareSaveCodeAndGetReward() {
         // 🌟 [핵심 수정 2] title과 text 속성을 완전히 삭제!
         // -> 클립보드가 헷갈려서 글자만 복사해 가는 것을 원천 차단합니다. 오직 파일만 줍니다.
         navigator.share({
+            title: '킹스로드 백업 데이터', 
             files: [file]
         }).then(completeMission).catch(e => console.log('공유 취소됨'));
         
