@@ -2978,6 +2978,17 @@ function startBossBattle(limitCount_unused) {
 
     updateBattleUI(); 
     loadNextVerse();
+
+    // 🌟 [완성] 보스 / 중간보스 구분해서 토스트 알림 발사!
+    if (typeof showReadAloudToast === 'function') {
+        if (sId.includes('mid')) {
+            // 중간보스일 때
+            showReadAloudToast("🛡️ 소리 내어 읽으며 용을 물리칩시다!");
+        } else {
+            // 최종 보스(드래곤)일 때
+            showReadAloudToast("⚔️ 진리를 나팔같이 외쳐 용을 잡으세요!");
+        }
+    }
 }
 
 /* [축하 이펙트] 보스 클리어 시 파티클 폭죽 생성 */
@@ -3767,9 +3778,6 @@ function normalizeChunkText(text) {
         .trim();
 }
 
-// ▼▼▼ [미사용] startLevel 함수 - 제거됨 (startTraining으로 완전 대체)
-// 호출되지 않으므로 제거해도 무방
-
 /* [수정] 훈련 시작 함수 (phase 시스템 제거) */
 function startTraining(stageId, mode = 'normal') {
     window.isGamePlaying = true; // ★ 게임 시작! 스위치 ON
@@ -3859,6 +3867,13 @@ function startTraining(stageId, mode = 'normal') {
         totalStepEl.innerText = stepSequence.length; 
     }
     loadStep();
+    // 🌟 [바로 여기에 추가!] 모드에 맞춰서 토스트 알림 발사!
+    if (mode === 'quick') {
+        showReadAloudToast("💡 소리내어 읽으면 암기 효과가 2배!");
+    } else {
+        // full, normal, full-new 등 전체 학습일 때
+        showReadAloudToast("🗣️ 소리내어 읽으면 암기 효과가 2배!");
+    }
 }
 
 /* [정식 배포] 모바일 UI 최적화 함수 (디버그 기능 제거됨) */
@@ -9407,4 +9422,23 @@ window.currentSessionToken = "";
     window.location.replace(window.location.href.split('?')[0]);}
         }
     });
+}
+
+let toastTimeout;
+
+// 📢 토스트 알림 띄우기 함수
+function showReadAloudToast(message = "🗣️ 소리 내어 읽으면 기억에 2배 더 오래 남아요!") {
+    const toast = document.getElementById('read-aloud-toast');
+    if (!toast) return;
+
+    toast.innerHTML = message;
+    toast.classList.add('show');
+
+    // 기존에 작동 중인 타이머가 있다면 캔슬 (연속해서 뜰 때 깜빡임 방지)
+    if (toastTimeout) clearTimeout(toastTimeout);
+
+    // 3초 뒤에 스르륵 사라짐
+    toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
 }

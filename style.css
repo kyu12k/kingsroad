@@ -2362,3 +2362,31 @@ body, html {
 #menu-btn {
     border: none !important;
 }
+
+/* 🗣️ 소리 내어 읽기 토스트 알림 스타일 */
+#read-aloud-toast {
+    position: fixed;
+    top: 15%; /* 화면 위쪽에서 살짝 내려온 위치 */
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: rgba(44, 62, 80, 0.95); /* 어두운 남색 배경 (킹스로드 톤) */
+    color: #f1c40f; /* 포인트 노란색 글씨 */
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-size: 0.95rem;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    border: 1px solid rgba(241, 196, 15, 0.3);
+    opacity: 0;
+    pointer-events: none; /* 클릭 방해 금지 */
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* 젤리처럼 통통 튀는 효과 */
+    z-index: 9999;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* 알림이 나타날 때 붙여줄 클래스 */
+#read-aloud-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
