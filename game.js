@@ -4303,7 +4303,7 @@ function loadStep() {
     }
 
     // ----------------------------------------------------
-    // [Step 4] 예언의 두루마리 (어르신 모드 추가)
+    // [Step 4] 예언의 두루마리 (3단계 속도 모드 적용)
     // ----------------------------------------------------
     else if (currentStep === 4) {
         // 안전장치: Step 3에서 넘어왔을 때 타워 게임 멈추기
@@ -4312,21 +4312,34 @@ function loadStep() {
             towerGame.interval = null;
         }
 
-        // 1. 화면 구성 (두루마리 틀 만들기 + 천천히 버튼 추가)
+        // 🌟 [핵심 수정 1] 옛날 isSlowMode를 지우고, speedMode 기본값을 'normal'로 설정합니다.
+        // (HTML을 그리기 전에 변수부터 세팅하는 것이 훨씬 안전합니다)
+        if (typeof scrollGame === 'undefined') scrollGame = {};
+        scrollGame.speedMode = 'normal'; 
+
+        // 1. 화면 구성 (두루마리 틀 만들기 + 🌟 3버튼 추가)
         field.innerHTML = `
             <div class="verse-indicator">${verseLabel}Step 4. 🔥불타기 전에 빈칸을 채우세요!</div>
             
-            <button id="btn-scroll-fast" onclick="toggleScrollFastMode(this)" 
-                style="margin-bottom:10px; background:rgba(255,255,255,0.9); border:2px solid #e67e22; color:#e67e22;
-                       padding:8px 15px; border-radius:20px; font-weight:bold; font-size:0.9rem; 
-                       box-shadow:0 2px 5px rgba(0,0,0,0.1); cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
-                🐇 빨리 감기
-            </button>
+            <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 15px;">
+                <button id="btn-speed-slow" onclick="changeScrollSpeed('slow')" 
+                    style="padding: 6px 12px; border-radius: 20px; border: 2px solid #ccc; background: white; color: #7f8c8d; cursor: pointer; font-size: 0.85rem;">
+                    🐢 느리게
+                </button>
+                <button id="btn-speed-normal" onclick="changeScrollSpeed('normal')" 
+                    style="padding: 6px 12px; border-radius: 20px; border: 2px solid #27ae60; background: #27ae60; color: white; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
+                    🚶 보통
+                </button>
+                <button id="btn-speed-fast" onclick="changeScrollSpeed('fast')" 
+                    style="padding: 6px 12px; border-radius: 20px; border: 2px solid #ccc; background: white; color: #7f8c8d; cursor: pointer; font-size: 0.85rem;">
+                    🐇 빠르게
+                </button>
+            </div>
 
             <div id="scroll-game-container">
                 <div id="deadline-line"></div>
                 <div id="scroll-track">
-                    </div>
+                </div>
             </div>
         `;
         
@@ -4334,10 +4347,6 @@ function loadStep() {
             <div style="text-align:center; margin-bottom:10px; color:#bdc3c7;">아래 카드를 눌러 빈칸을 채우세요</div>
             <div class="block-pool" id="scroll-deck"></div>
         `;
-
-        // 두루마리 게임 설정 초기화
-        if (typeof scrollGame === 'undefined') scrollGame = {};
-        scrollGame.isSlowMode = true; // 느린 모드가 기본값
 
         // 2. 게임 시작 (화면 로딩 안정성을 위해 0.1초 뒤 실행)
         setTimeout(startScrollStep, 100);
@@ -7700,24 +7709,52 @@ function claimTempleSupply() {
    [정식 배포 버전 - 치트키 제거됨]
    ======================================== */
 
-// [변경] 두루마리 게임 빨리 감기/어르신 모드 토글 동작
-function toggleScrollFastMode(btn) {
-    if (!scrollGame.isSlowMode) {
-        // 어르신 모드로 전환
-        scrollGame.isSlowMode = true;
-        scrollGame.speed = 0.6;
-        btn.innerHTML = '🐇 빨리 감기';
-        btn.style.borderColor = '#e67e22';
-        btn.style.color = '#e67e22';
+// [변경] 두루마리 게임 속도 3단계 조절 (기존 toggleScrollFastMode 대체)
+function changeScrollSpeed(mode) {
+    scrollGame.speedMode = mode;
+
+    // 1. 버튼 3개 가져오기
+    const btnSlow = document.getElementById('btn-speed-slow');
+    const btnNormal = document.getElementById('btn-speed-normal');
+    const btnFast = document.getElementById('btn-speed-fast');
+
+    // 2. 모든 버튼 스타일 초기화 (비활성화 상태처럼 보이기)
+    [btnSlow, btnNormal, btnFast].forEach(btn => {
+        if(btn) {
+            btn.style.borderColor = '#ccc';
+            btn.style.color = '#7f8c8d'; // 회색 글자
+            btn.style.fontWeight = 'normal';
+        }
+    });
+
+    // 3. 선택된 모드에 따라 속도 적용 및 버튼 색상 강조
+    if (mode === 'slow') {
+        scrollGame.speed = 0.6; // 기존 어르신 모드 속도
+        if(btnSlow) {
+            btnSlow.style.borderColor = '#e67e22'; // 주황색
+            btnSlow.style.color = '#e67e22';
+            btnSlow.style.fontWeight = 'bold';
+        }
         alert('어르신 모드(느린 속도)로 전환되었습니다.');
-    } else {
-        // 기존(빠른) 속도로 전환
-        scrollGame.isSlowMode = false;
-        scrollGame.speed = 1.5;
-        btn.innerHTML = '🐢 어르신 모드';
-        btn.style.borderColor = '#27ae60';
-        btn.style.color = '#27ae60';
+        
+    } else if (mode === 'fast') {
+        scrollGame.speed = 1.5; // 기존 빠른 모드 속도
+        if(btnFast) {
+            btnFast.style.borderColor = '#e74c3c'; // 빨간색 (아주 빠름 강조)
+            btnFast.style.color = '#e74c3c';
+            btnFast.style.fontWeight = 'bold';
+        }
         alert('빠른 속도로 전환되었습니다.');
+        
+    } else {
+        // normal (보통)
+        scrollGame.speed = 1.0; // 0.6과 1.5 사이의 적절한 중간 속도
+        if(btnNormal) {
+            btnNormal.style.borderColor = '#27ae60'; // 초록색
+            btnNormal.style.color = '#27ae60';
+            btnNormal.style.fontWeight = 'bold';
+        }
+        // 보통 속도는 굳이 알림창을 띄우지 않아도 자연스럽습니다.
     }
 }
 
@@ -7729,11 +7766,15 @@ function startScrollStep() {
     scrollGame.isOver = false;
     scrollGame.nextBlankIdx = 0;
     
-    // [수정] 속도 설정 (느린 모드 체크)
-    if (scrollGame.isSlowMode) {
-        scrollGame.speed = 0.3; // 아주 느리게
+    // 🌟 [개선] 3단계 속도 설정 (기본값: 보통)
+    if (!scrollGame.speedMode) scrollGame.speedMode = 'normal'; // 초기값이 없으면 보통으로 설정
+
+    if (scrollGame.speedMode === 'slow') {
+        scrollGame.speed = 0.4; // 1단계: 아주 느리게 (어르신, 구형 기기용)
+    } else if (scrollGame.speedMode === 'fast') {
+        scrollGame.speed = 1.0; // 3단계: 아주 빠르게 (고인물, 최신 기기용)
     } else {
-        scrollGame.speed = 1.0; // 기존 빠른 속도
+        scrollGame.speed = 0.7; // 2단계: 보통 속도 (기본값)
     }
 
     const track = document.getElementById('scroll-track');
