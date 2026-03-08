@@ -8173,14 +8173,14 @@ function shareSaveCodeAndGetReward() {
     const savedData = localStorage.getItem('kingsRoadSave');
     if (!savedData) return alert("저장할 기록이 없습니다.");
 
-    // 🌟 비밀번호 입력받기
+    // 1. 비밀번호 입력받기
     const pwd = prompt("데이터를 안전하게 보호할 '비밀번호'를 입력하세요.\n(다른 기기에서 불러올 때 이 비밀번호가 필요합니다!)");
     if (!pwd) return; // 취소 시 중단
 
     const today = new Date().toISOString().split('T')[0];
     const fileName = `KingsRoad_Backup_${today}.txt`;
     
-    // 🌟 암호화 진행 (앞에 'ENC_'를 붙여 구분)
+    // 2. 암호화 진행 (앞에 'ENC_'를 붙여 구분)
     let encodedData;
     try {
         encodedData = "ENC_" + CryptoJS.AES.encrypt(savedData, pwd).toString();
@@ -8188,9 +8188,11 @@ function shareSaveCodeAndGetReward() {
         return alert("암호화 중 오류가 발생했습니다.");
     }
 
-    const file = new File([encodedData], fileName, { type: "text/plain" });
+    // 🌟 [핵심 수정 1] 파일 타입을 'application/octet-stream'으로 변경!
+    // -> "텔레그램아, 이거 내용물 열어보려고 끙끙대지 말고 그냥 파일 자체로만 전달해!" 라는 뜻입니다.
+    const file = new File([encodedData], fileName, { type: "application/octet-stream" });
 
-    // 미션 달성 처리 로직
+    // 3. 미션 달성 처리 로직
     const completeMission = () => {
         if (!missionData.daily) missionData.daily = {};
         if (missionData.daily.backup < 1 || !missionData.daily.backup) {
@@ -8203,16 +8205,17 @@ function shareSaveCodeAndGetReward() {
         }
     };
 
-    // 🌟 [핵심 변경] 기기 구분 (스마트폰인지 PC인지 확인)
+    // 4. 기기 구분 (스마트폰인지 PC인지 확인)
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
     if (isMobile && navigator.canShare && navigator.canShare({ files: [file] })) {
-        // 스마트폰일 경우: 카카오톡 등으로 보낼 수 있게 모바일 공유창 띄우기
+        
+        // 🌟 [핵심 수정 2] title과 text 속성을 완전히 삭제!
+        // -> 클립보드가 헷갈려서 글자만 복사해 가는 것을 원천 차단합니다. 오직 파일만 줍니다.
         navigator.share({
-            title: '킹스로드 백업 데이터',
-            text: '나의 킹스로드 세이브 데이터입니다. 안전하게 보관하세요!',
             files: [file]
         }).then(completeMission).catch(e => console.log('공유 취소됨'));
+        
     } else {
         // PC일 경우 (또는 공유 기능 미지원 시): 공유창 안 띄우고 바로 파일 다운로드!
         const url = URL.createObjectURL(file);
