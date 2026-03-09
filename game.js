@@ -6691,24 +6691,26 @@ function checkDailyLogin() {
     if (!missionData.weekly) missionData.weekly = { attendance: 0, claimed: [false, false, false] };
 
     // 2. 주간 초기화 (새로운 주가 시작되었는지 확인)
-    const currentWeekId = getWeekId(); // 예: "2026-W07"
+    const currentWeekId = getWeekId(); 
     
+    // 🌟 (1) 미션 주간 초기화 (따로 검사)
     if (missionData.weekId !== currentWeekId) {
-        console.log("🔄 새로운 주가 시작되었습니다! (주간 리셋)");
-
-        // (1) 주간 데이터 초기화
+        console.log("🔄 미션 주간 리셋");
         missionData.weekId = currentWeekId;
         missionData.weekly.attendance = 0;
         missionData.weekly.claimed = [false, false, false];
         missionData.weekly.dragonKill = 0;
         missionData.weekly.stageClear = 0;
-        
-        // (2) 내 점수 리셋 (새로운 주 시작)
+        needsSave = true; 
+    }
+
+    // 🌟 (2) 승점 주간 초기화 (미션과 완전히 독립적으로 따로 검사!)
+    if (leagueData.weekId !== currentWeekId) {
+        console.log("🔄 승점 주간 리셋 (엇박자 치료 완료!)");
         leagueData.weekId = currentWeekId;
-        leagueData.myScore = 0; // 점수 0점부터 다시 시작
-        leagueData.stageLog = {}; // 반복 훈련 기록 초기화
-    
-        needsSave = true; // 🌟 초기화했으니 저장 필수!
+        leagueData.myScore = 0; 
+        leagueData.stageLog = {}; 
+        needsSave = true; 
     }
 
     // ✨ NEW: 3. 월간 초기화 (새로운 달이 시작되었는지 확인)
