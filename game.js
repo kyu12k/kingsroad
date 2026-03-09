@@ -5954,25 +5954,28 @@ function openRankingScreen() {
         screen.style.background = "#2c3e50"; 
 
         screen.innerHTML = `
-    <div class="map-header" style="flex-direction:column; justify-content:center; border-bottom:1px solid rgba(255,255,255,0.1); padding:15px 0;">
-        <div style="font-weight:bold; font-size:1.2rem; color:white; margin-bottom:5px;">🏆 지파 랭킹 (Top 100)</div>
+    <div class="map-header" style="flex-direction:column; justify-content:center; border-bottom:1px solid rgba(255,255,255,0.1); padding:15px 10px;">
+        <div style="font-weight:bold; font-size:1.2rem; color:white; margin-bottom:5px;">🏆 킹스로드 랭킹 보드</div>
         <div id="season-timer-display" style="font-size:0.85rem; color:#bdc3c7; font-family:monospace; margin-bottom:10px;">⏳ 시간 계산 중...</div>
         <div style="font-size:0.8rem; color:#95a5a6; margin-bottom:10px;">🔄 06시, 정오(12:00) · 18시, 자정(00:00)에 업데이트됩니다</div>
         
-        <button onclick="scrollToMyRank()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #ecf0f1; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 5px; margin: 0 auto;">
-            📍 내 순위 찾기
-        </button>
+        <div style="display:flex; flex-direction:row; gap:8px; margin-top:5px; justify-content:flex-start; width:100%; flex-wrap:wrap;">
+            <button onclick="scrollToMyRank()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #ecf0f1; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                📍 내 순위 찾기
+            </button>
 
-        <button onclick="toggleMyScorePanel()" style="background: rgba(241,196,15,0.15); border: 1px solid rgba(241,196,15,0.4); color: #f1c40f; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; margin: 10px auto 0;">
-            📊 나의 주간·월간 승점
-        </button>
-        <div id="my-score-panel" style="display:none; margin:8px auto 0; width:90%; max-width:320px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; color:#ecf0f1; font-size:0.85rem;">
+            <button onclick="toggleMyScorePanel()" style="background: rgba(241,196,15,0.15); border: 1px solid rgba(241,196,15,0.4); color: #f1c40f; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                📊 나의 승점 패널
+            </button>
+        </div>
+
+        <div id="my-score-panel" style="display:none; margin:10px 0 0 0; width:100%; max-width:320px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; color:#ecf0f1; font-size:0.85rem;">
             <div style="display:flex; justify-content:space-between; margin-bottom:8px; padding-bottom:8px; border-bottom:1px dashed rgba(255,255,255,0.2);">
                 <span style="color:#f1c40f; font-weight:bold;">👑 누적 승점</span>
                 <span style="font-weight:bold; color:#f1c40f;"><span id="my-total-score">0</span> pts</span>
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-                <span>주간 승점 (매주 초기화)</span>
+                <span>주간 승점 (매주 리셋)</span>
                 <span style="font-weight:bold; color:#2ecc71;"><span id="my-weekly-score">0</span> pts</span>
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
@@ -5986,15 +5989,35 @@ function openRankingScreen() {
         </div>
     </div>
 
-    <div style="display:grid; grid-template-columns: 1fr 1fr; padding:10px; gap:5px;">
-        <button id="tab-tribe" onclick="switchRankingTab('tribe')" style="...">🧭 내 지파</button>
-        <button id="tab-zion" onclick="switchRankingTab('zion')" style="...">👑 시온성</button>
-        <button id="tab-weekly-hall" onclick="switchRankingTab('weekly-hall')" style="...">🏛️ 주간 명예</button>
-        <button id="tab-monthly-hall" onclick="switchRankingTab('monthly-hall')" style="...">📜 월간 명예</button>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; padding:10px; gap:8px;">
+        <button id="tab-tribe" onclick="switchRankingTab('tribe')" 
+            style="padding:12px 5px; border-radius:10px; border:2px solid rgba(255,255,255,0.1); background:linear-gradient(145deg, rgba(255,255,255,0.1), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.95rem; box-shadow:0 4px 6px rgba(0,0,0,0.3); transition:all 0.2s; display:flex; flex-direction:row; justify-content:center; align-items:center; gap:6px;">
+            <span style="font-size:1.2rem;">🧭</span>
+            <span>내 지파</span>
+        </button>
+
+        <button id="tab-zion" onclick="switchRankingTab('zion')" 
+            style="padding:12px 5px; border-radius:10px; border:2px solid rgba(255,255,255,0.1); background:linear-gradient(145deg, rgba(255,255,255,0.1), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.95rem; box-shadow:0 4px 6px rgba(0,0,0,0.3); transition:all 0.2s; display:flex; flex-direction:row; justify-content:center; align-items:center; gap:6px;">
+            <span style="font-size:1.2rem;">👑</span>
+            <span>시온성</span>
+        </button>
+
+        <button id="tab-weekly-hall" onclick="switchRankingTab('weekly-hall')" 
+            style="padding:12px 5px; border-radius:10px; border:2px solid rgba(255,255,255,0.1); background:linear-gradient(145deg, rgba(255,255,255,0.1), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.95rem; box-shadow:0 4px 6px rgba(0,0,0,0.3); transition:all 0.2s; display:flex; flex-direction:row; justify-content:center; align-items:center; gap:6px;">
+            <span style="font-size:1.2rem;">🏛️</span>
+            <span>주간 명예</span>
+        </button>
+
+        <button id="tab-monthly-hall" onclick="switchRankingTab('monthly-hall')" 
+            style="padding:12px 5px; border-radius:10px; border:2px solid rgba(255,255,255,0.1); background:linear-gradient(145deg, rgba(255,255,255,0.1), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.95rem; box-shadow:0 4px 6px rgba(0,0,0,0.3); transition:all 0.2s; display:flex; flex-direction:row; justify-content:center; align-items:center; gap:6px;">
+            <span style="font-size:1.2rem;">📜</span>
+            <span>월간 명예</span>
+        </button>
         
         <button id="tab-total-hall" onclick="switchRankingTab('total-hall')" 
-            style="grid-column: 1 / span 2; padding:12px 2px; border-radius:10px; border:none; background:rgba(255,255,255,0.1); color:#f1c40f; font-weight:bold; cursor:pointer; white-space:nowrap; font-size:0.9rem; letter-spacing:-0.5px;">
-            💎 누적 명예의 전당 (All-Time)
+            style="grid-column: 1 / span 2; padding:14px 5px; border-radius:10px; border:2px solid rgba(255,255,255,0.1); background:linear-gradient(145deg, rgba(255,255,255,0.1), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:1.05rem; box-shadow:0 4px 6px rgba(0,0,0,0.3); transition:all 0.2s; display:flex; flex-direction:row; justify-content:center; align-items:center; gap:8px;">
+            <span style="font-size:1.3rem;">💎</span>
+            <span>누적 명예의 전당 (All-Time)</span>
         </button>
     </div>
 
@@ -6352,48 +6375,69 @@ function startSeasonTimer() {
     seasonTimerInterval = setInterval(updateTimer, 1000);
 }
 
-/* [수정 완결판] 메인 탭 전환 (누적 명예 추가 + 기존 색상/함수 유지) */
+/* [수정] 랭킹 탭 전환 (입체적인 게임 UI 스타일) */
 function switchRankingTab(tabName) {
-    const btnTribe = document.getElementById('tab-tribe');
-    const btnZion = document.getElementById('tab-zion');
-    const btnWeeklyHall = document.getElementById('tab-weekly-hall');
-    const btnMonthlyHall = document.getElementById('tab-monthly-hall');
-    const btnTotalHall = document.getElementById('tab-total-hall'); // 🌟 추가된 누적 탭 버튼
+    const tabs = {
+        'tribe': document.getElementById('tab-tribe'),
+        'zion': document.getElementById('tab-zion'),
+        'weekly-hall': document.getElementById('tab-weekly-hall'),
+        'monthly-hall': document.getElementById('tab-monthly-hall'),
+        'total-hall': document.getElementById('tab-total-hall')
+    };
 
-    // 모든 탭 버튼 초기화
-    [btnTribe, btnZion, btnWeeklyHall, btnMonthlyHall, btnTotalHall].forEach(btn => {
+    // 1. 모든 탭 버튼을 '선택 해제(어두운)' 상태로 초기화
+    Object.values(tabs).forEach(btn => {
         if (btn) {
-            btn.style.background = "rgba(255,255,255,0.1)";
-            btn.style.color = "#bdc3c7";
+            btn.style.background = "linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.4))";
+            btn.style.color = "#95a5a6";
+            btn.style.borderColor = "rgba(255,255,255,0.1)";
+            btn.style.boxShadow = "inset 0 2px 5px rgba(0,0,0,0.5)"; // 꾹 눌린 느낌
+            btn.style.transform = "scale(0.98)";
         }
     });
 
     window.currentRankingMode = tabName;
+    const activeBtn = tabs[tabName];
 
-    if (tabName === 'tribe') {
-        // [내 지파]
-        if (btnTribe) { btnTribe.style.background = "#f1c40f"; btnTribe.style.color = "#2c3e50"; }
-        if (typeof loadTribeRanking === 'function') loadTribeRanking();
+    // 2. 선택된 탭만 볼륨감 있게 튀어나오고 화려하게 빛나도록!
+    if (activeBtn) {
+        activeBtn.style.transform = "scale(1)";
+        
+        if (tabName === 'tribe') {
+            activeBtn.style.background = "linear-gradient(145deg, #f1c40f, #f39c12)";
+            activeBtn.style.color = "#2c3e50";
+            activeBtn.style.borderColor = "#f1c40f";
+            activeBtn.style.boxShadow = "0 0 15px rgba(241,196,15,0.4), 0 4px 6px rgba(0,0,0,0.3)";
+            if (typeof loadTribeRanking === 'function') loadTribeRanking();
 
-    } else if (tabName === 'zion') {
-        // [시온성]
-        if (btnZion) { btnZion.style.background = "#e67e22"; btnZion.style.color = "white"; }
-        if (typeof loadZionRanking === 'function') loadZionRanking();
+        } else if (tabName === 'zion') {
+            activeBtn.style.background = "linear-gradient(145deg, #e67e22, #d35400)";
+            activeBtn.style.color = "white";
+            activeBtn.style.borderColor = "#e67e22";
+            activeBtn.style.boxShadow = "0 0 15px rgba(230,126,34,0.4), 0 4px 6px rgba(0,0,0,0.3)";
+            if (typeof loadZionRanking === 'function') loadZionRanking();
 
-    } else if (tabName === 'weekly-hall') {
-        // [주간 명예의 전당]
-        if (btnWeeklyHall) { btnWeeklyHall.style.background = "#9b59b6"; btnWeeklyHall.style.color = "white"; }
-        if (typeof loadWeeklyHallOfFame === 'function') loadWeeklyHallOfFame();
+        } else if (tabName === 'weekly-hall') {
+            activeBtn.style.background = "linear-gradient(145deg, #9b59b6, #8e44ad)";
+            activeBtn.style.color = "white";
+            activeBtn.style.borderColor = "#9b59b6";
+            activeBtn.style.boxShadow = "0 0 15px rgba(155,89,182,0.4), 0 4px 6px rgba(0,0,0,0.3)";
+            if (typeof loadWeeklyHallOfFame === 'function') loadWeeklyHallOfFame();
 
-    } else if (tabName === 'monthly-hall') {
-        // [월간 명예의 전당]
-        if (btnMonthlyHall) { btnMonthlyHall.style.background = "#1abc9c"; btnMonthlyHall.style.color = "white"; }
-        if (typeof loadMonthlyHallOfFame === 'function') loadMonthlyHallOfFame();
+        } else if (tabName === 'monthly-hall') {
+            activeBtn.style.background = "linear-gradient(145deg, #1abc9c, #16a085)";
+            activeBtn.style.color = "white";
+            activeBtn.style.borderColor = "#1abc9c";
+            activeBtn.style.boxShadow = "0 0 15px rgba(26,188,156,0.4), 0 4px 6px rgba(0,0,0,0.3)";
+            if (typeof loadMonthlyHallOfFame === 'function') loadMonthlyHallOfFame();
 
-    } else if (tabName === 'total-hall') {
-        // 🌟 [누적 명예의 전당] (새로 추가됨!)
-        if (btnTotalHall) { btnTotalHall.style.background = "#f39c12"; btnTotalHall.style.color = "#2c3e50"; }
-        if (typeof loadTotalHallRanking === 'function') loadTotalHallRanking(); // 맨 아래 넣으신 함수 호출!
+        } else if (tabName === 'total-hall') {
+            activeBtn.style.background = "linear-gradient(145deg, #f39c12, #e67e22)";
+            activeBtn.style.color = "#2c3e50";
+            activeBtn.style.borderColor = "#f1c40f";
+            activeBtn.style.boxShadow = "0 0 20px rgba(243,156,18,0.5), 0 4px 6px rgba(0,0,0,0.3)";
+            if (typeof loadTotalHallRanking === 'function') loadTotalHallRanking();
+        }
     }
 }
 
