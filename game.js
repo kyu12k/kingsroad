@@ -9464,3 +9464,37 @@ function showReadAloudToast(message = "🗣️ 소리 내어 읽으면 기억에
         toast.classList.remove('show');
     }, 3000);
 }
+// 🌟 [핵심 수술] 유저가 앱을 껐다가 다시 화면으로 돌아올 때마다 날짜 검사!
+document.addEventListener("visibilitychange", () => {
+    // 화면이 다시 보일 때 (백그라운드에서 깨어났을 때)
+    if (document.visibilityState === 'visible') {
+        console.log("☀️ 화면이 깨어났습니다. 날짜 변경선을 확인합니다.");
+        
+        // 날짜/주차가 바뀌었는지 확인하고, 바뀌었다면 알아서 0점으로 리셋해줍니다.
+        if (typeof checkDailyLogin === 'function') {
+            checkDailyLogin();
+        }
+    }
+});
+// ⏰ 자정 지킴이 (1분마다 몰래 날짜가 바뀌었는지 확인합니다)
+setInterval(() => {
+    // 🌟 전투 중(게임 플레이 중)에는 방해하지 않고, 맵 화면에 있을 때만 검사!
+    if (!window.isGamePlaying) { 
+        const today = new Date().toDateString();
+        const lastDate = localStorage.getItem('lastPlayedDate');
+
+        // 저장된 날짜와 지금 실제 날짜가 다르다? = 자정이 지났다!
+        if (lastDate && lastDate !== today) {
+            console.log("🕛 자정이 지났습니다! 날짜 변경선 및 주간 리셋을 적용합니다.");
+            
+            // 우리가 완벽하게 고쳐둔 출석체크/리셋 함수 실행
+            if (typeof checkDailyLogin === 'function') {
+                checkDailyLogin(); 
+            }
+            
+            // (선택) UI도 바로 갱신해서 유저가 화면에서 바뀐 걸 볼 수 있게 해줍니다.
+            if (typeof updateProfileUI === 'function') updateProfileUI();
+            if (typeof updateMyScorePanel === 'function') updateMyScorePanel();
+        }
+    }
+}, 60000); // 60000ms = 1분마다 한 번씩 실행
