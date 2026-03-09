@@ -6004,7 +6004,7 @@ function openRankingScreen() {
 
             <div style="min-width:85%; flex:0 0 auto; scroll-snap-align:center; background:linear-gradient(135deg, #34495e, #2c3e50); border:1px dashed rgba(255,255,255,0.2); border-radius:15px; padding:15px; opacity:0.8; display:flex; flex-direction:column; justify-content:center; align-items:center;">
                 <div style="font-size:2.5rem; margin-bottom:10px;">📜</div>
-                <div style="color:#bdc3c7; font-weight:bold; font-size:1.1rem;">과거의 영광</div>
+                <div style="color:#bdc3c7; font-weight:bold; font-size:1.1rem;">다가올 영광</div>
                 <div style="font-size:0.8rem; color:#95a5a6; text-align:center; margin-top:5px; line-height:1.4;">내년 연말정산 이후,<br>이곳에 위대한 역사가 보존됩니다.</div>
             </div>
 
