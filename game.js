@@ -108,8 +108,23 @@ loadGameData = function() {
         stageMemoryLevels = parsed.memoryLevels || {};
         stageNextEligibleTime = parsed.nextEligibleTime || {}; // ★ [Forgetting-Curve] 다음 클리어 가능 시간
         stageTimedBonus = parsed.timedBonus || {}; // ★ [때를 따른 양식] 각인 주기 기반 보너스
+        // [진행도 복구] 영역 어딘가에 있습니다.
         // stageDailyAttempts 제거됨 (초회/반복만 구분)
-        if(parsed.leagueData) leagueData = parsed.leagueData;
+        if(parsed.leagueData) {
+            leagueData = parsed.leagueData;
+            
+            // 🌟🌟 [핵심 수술 1단계: 누적 승점 대이동] 🌟🌟
+            if (typeof leagueData.totalScore === 'undefined') {
+                console.log("🚚 옛날 점수를 누적 승점 금고로 이사합니다...");
+                // 1. 기존의 꼬여있던 점수를 누적 점수 금고로 옮겨서 영구 보존!
+                leagueData.totalScore = leagueData.myScore || 0;
+                // 2. 진짜 이번 주 주간 점수는 0점으로 깨끗하게 새 출발!
+                leagueData.myScore = 0; 
+                
+                // 3. 이사 완료 직후 즉시 서버와 동기화되도록 예약
+                localStorage.setItem('forceSyncAfterLoad', 'true');
+            }
+        }
         if(parsed.missions) missionData = parsed.missions;
         if(parsed.boosterData) boosterData = parsed.boosterData;
 
@@ -1753,11 +1768,12 @@ function recalculateMaxHearts() {
 
 // 1. 리그 및 부스터 데이터 초기화
 let leagueData = {
-    weekId: getWeekId(), // 현재 주차 (예: "2026-W07")
-    monthId: getMonthId(), // 현재 월 (예: "202602")
+    weekId: getWeekId(), 
+    monthId: getMonthId(), 
     myScore: 0,
-    myMonthlyScore: 0, // 월간 누적 점수
-    stageLog: {}, // { "1-1": "2026-02-14" } -> 일일 초회 클리어 기록 (미션용)
+    myMonthlyScore: 0, 
+    totalScore: 0, // 🌟 [추가] 영구 보존되는 누적 승점
+    stageLog: {}, 
 };
 
 // ============================================================
@@ -5639,17 +5655,17 @@ function calculateScore(stageId, type, verseCount, hearts, isForgotten) {
     checkBoosterStatus(); 
     const finalScore = Math.floor(baseScore * boosterData.multiplier);
 
-    // 🌟 [핵심 수정] 꼬여있던 타이머 검사 블록 2개(weekId, monthId)를 통째로 지웠습니다!
-    // (이 역할은 checkDailyLogin()이 이미 완벽하게 수행하고 있습니다.)
-
     // 🎯 깨끗하게 정리된 누적 로직: 방금 얻은 승점만 순수하게 더해줍니다.
     leagueData.myScore = (leagueData.myScore || 0) + finalScore;
-    leagueData.myMonthlyScore = (leagueData.myMonthlyScore || 0) + finalScore; 
+    leagueData.myMonthlyScore = (leagueData.myMonthlyScore || 0) + finalScore;
     
+    // 🌟 [핵심 수술 2단계: 양손잡이 점수 획득]
+    leagueData.totalScore = (leagueData.totalScore || 0) + finalScore; // 누적 점수도 영원히 오름!
+
     if (typeof userStats !== 'undefined') {
         userStats.totalScoreEarned = (userStats.totalScoreEarned || 0) + finalScore;
     }
-    
+
     saveGameData();
 
     return { 
@@ -5881,17 +5897,21 @@ function getCurrentRankingCutoff() {
 function updateMyScorePanel() {
     const weeklyEl = document.getElementById('my-weekly-score');
     const monthlyEl = document.getElementById('my-monthly-score');
+    const totalEl = document.getElementById('my-total-score'); // 🌟 추가
     const weekIdEl = document.getElementById('my-week-id');
     const monthIdEl = document.getElementById('my-month-id');
+    
     if (!weeklyEl || !monthlyEl || !weekIdEl || !monthIdEl) return;
 
     const weekly = (leagueData && typeof leagueData.myScore === 'number') ? leagueData.myScore : 0;
     const monthly = (leagueData && typeof leagueData.myMonthlyScore === 'number') ? leagueData.myMonthlyScore : 0;
+    const total = (leagueData && typeof leagueData.totalScore === 'number') ? leagueData.totalScore : 0; // 🌟 추가
     const weekId = (leagueData && leagueData.weekId) ? leagueData.weekId : getWeekId();
     const monthId = (leagueData && leagueData.monthId) ? leagueData.monthId : getMonthId();
 
     weeklyEl.textContent = weekly.toLocaleString();
     monthlyEl.textContent = monthly.toLocaleString();
+    if (totalEl) totalEl.textContent = total.toLocaleString(); // 🌟 추가
     weekIdEl.textContent = weekId;
     monthIdEl.textContent = monthId;
 }
@@ -5947,13 +5967,17 @@ function openRankingScreen() {
             📊 나의 주간·월간 승점
         </button>
         <div id="my-score-panel" style="display:none; margin:8px auto 0; width:90%; max-width:320px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; color:#ecf0f1; font-size:0.85rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px; padding-bottom:8px; border-bottom:1px dashed rgba(255,255,255,0.2);">
+                <span style="color:#f1c40f; font-weight:bold;">👑 누적 승점</span>
+                <span style="font-weight:bold; color:#f1c40f;"><span id="my-total-score">0</span> pts</span>
+            </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-                <span>주간 승점</span>
-                <span style="font-weight:bold; color:#f1c40f;"><span id="my-weekly-score">0</span> pts</span>
+                <span>주간 승점 (매주 초기화)</span>
+                <span style="font-weight:bold; color:#2ecc71;"><span id="my-weekly-score">0</span> pts</span>
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
                 <span>월간 승점</span>
-                <span style="font-weight:bold; color:#f1c40f;"><span id="my-monthly-score">0</span> pts</span>
+                <span style="font-weight:bold; color:#3498db;"><span id="my-monthly-score">0</span> pts</span>
             </div>
             <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#95a5a6;">
                 <span>주차: <span id="my-week-id">-</span></span>
@@ -5963,24 +5987,14 @@ function openRankingScreen() {
     </div>
 
     <div style="display:grid; grid-template-columns: 1fr 1fr; padding:10px; gap:5px;">
-        <button id="tab-tribe" onclick="switchRankingTab('tribe')" 
-            style="padding:12px 2px; border-radius:10px; border:none; background:#f1c40f; color:#2c3e50; font-weight:bold; cursor:pointer; white-space:nowrap; font-size:0.9rem; letter-spacing:-0.5px;">
-            🧭 내 지파
-        </button>
-
-        <button id="tab-zion" onclick="switchRankingTab('zion')" 
-            style="padding:12px 2px; border-radius:10px; border:none; background:rgba(255,255,255,0.1); color:#bdc3c7; font-weight:bold; cursor:pointer; white-space:nowrap; font-size:0.9rem; letter-spacing:-0.5px;">
-            👑 시온성
-        </button>
-
-        <button id="tab-weekly-hall" onclick="switchRankingTab('weekly-hall')" 
-            style="padding:12px 2px; border-radius:10px; border:none; background:rgba(255,255,255,0.1); color:#bdc3c7; font-weight:bold; cursor:pointer; white-space:nowrap; font-size:0.9rem; letter-spacing:-0.5px;">
-            🏛️ 주간 명예
-        </button>
-
-        <button id="tab-monthly-hall" onclick="switchRankingTab('monthly-hall')" 
-            style="padding:12px 2px; border-radius:10px; border:none; background:rgba(255,255,255,0.1); color:#bdc3c7; font-weight:bold; cursor:pointer; white-space:nowrap; font-size:0.9rem; letter-spacing:-0.5px;">
-            📜 월간 명예
+        <button id="tab-tribe" onclick="switchRankingTab('tribe')" style="...">🧭 내 지파</button>
+        <button id="tab-zion" onclick="switchRankingTab('zion')" style="...">👑 시온성</button>
+        <button id="tab-weekly-hall" onclick="switchRankingTab('weekly-hall')" style="...">🏛️ 주간 명예</button>
+        <button id="tab-monthly-hall" onclick="switchRankingTab('monthly-hall')" style="...">📜 월간 명예</button>
+        
+        <button id="tab-total-hall" onclick="switchRankingTab('total-hall')" 
+            style="grid-column: 1 / span 2; padding:12px 2px; border-radius:10px; border:none; background:rgba(255,255,255,0.1); color:#f1c40f; font-weight:bold; cursor:pointer; white-space:nowrap; font-size:0.9rem; letter-spacing:-0.5px;">
+            💎 누적 명예의 전당 (All-Time)
         </button>
     </div>
 
@@ -6338,44 +6352,48 @@ function startSeasonTimer() {
     seasonTimerInterval = setInterval(updateTimer, 1000);
 }
 
-/* [수정] 메인 탭 전환 (리그 선택 바 숨김/표시 추가) */
+/* [수정 완결판] 메인 탭 전환 (누적 명예 추가 + 기존 색상/함수 유지) */
 function switchRankingTab(tabName) {
     const btnTribe = document.getElementById('tab-tribe');
     const btnZion = document.getElementById('tab-zion');
     const btnWeeklyHall = document.getElementById('tab-weekly-hall');
     const btnMonthlyHall = document.getElementById('tab-monthly-hall');
+    const btnTotalHall = document.getElementById('tab-total-hall'); // 🌟 추가된 누적 탭 버튼
 
     // 모든 탭 버튼 초기화
-    [btnTribe, btnZion, btnWeeklyHall, btnMonthlyHall].forEach(btn => {
+    [btnTribe, btnZion, btnWeeklyHall, btnMonthlyHall, btnTotalHall].forEach(btn => {
         if (btn) {
             btn.style.background = "rgba(255,255,255,0.1)";
             btn.style.color = "#bdc3c7";
         }
     });
 
+    window.currentRankingMode = tabName;
+
     if (tabName === 'tribe') {
         // [내 지파]
-        btnTribe.style.background = "#f1c40f";
-        btnTribe.style.color = "#2c3e50";
-        loadTribeRanking();
+        if (btnTribe) { btnTribe.style.background = "#f1c40f"; btnTribe.style.color = "#2c3e50"; }
+        if (typeof loadTribeRanking === 'function') loadTribeRanking();
 
     } else if (tabName === 'zion') {
         // [시온성]
-        btnZion.style.background = "#e67e22";
-        btnZion.style.color = "white";
-        loadZionRanking();
+        if (btnZion) { btnZion.style.background = "#e67e22"; btnZion.style.color = "white"; }
+        if (typeof loadZionRanking === 'function') loadZionRanking();
 
     } else if (tabName === 'weekly-hall') {
         // [주간 명예의 전당]
-        btnWeeklyHall.style.background = "#9b59b6";
-        btnWeeklyHall.style.color = "white";
-        loadWeeklyHallOfFame();
+        if (btnWeeklyHall) { btnWeeklyHall.style.background = "#9b59b6"; btnWeeklyHall.style.color = "white"; }
+        if (typeof loadWeeklyHallOfFame === 'function') loadWeeklyHallOfFame();
 
     } else if (tabName === 'monthly-hall') {
         // [월간 명예의 전당]
-        btnMonthlyHall.style.background = "#1abc9c";
-        btnMonthlyHall.style.color = "white";
-        loadMonthlyHallOfFame();
+        if (btnMonthlyHall) { btnMonthlyHall.style.background = "#1abc9c"; btnMonthlyHall.style.color = "white"; }
+        if (typeof loadMonthlyHallOfFame === 'function') loadMonthlyHallOfFame();
+
+    } else if (tabName === 'total-hall') {
+        // 🌟 [누적 명예의 전당] (새로 추가됨!)
+        if (btnTotalHall) { btnTotalHall.style.background = "#f39c12"; btnTotalHall.style.color = "#2c3e50"; }
+        if (typeof loadTotalHallRanking === 'function') loadTotalHallRanking(); // 맨 아래 넣으신 함수 호출!
     }
 }
 
@@ -9269,6 +9287,8 @@ function saveMyScoreToServer() {
     // 👉 [추가된 부분] 월간 ID와 월간 점수도 꼭 챙겨야 합니다!
     const currentMonthId = leagueData.monthId || getMonthId();
     const currentMonthlyScore = leagueData.myMonthlyScore || 0;
+    // 🌟 [핵심 수술 3단계: 서버로 보낼 짐싸기]
+    const currentTotalScore = leagueData.totalScore || 0; 
 
     const payload = {
         nickname: myNickname,
@@ -9278,9 +9298,9 @@ function saveMyScoreToServer() {
         dept: myDept,
         tag: myTag,
         weekId: currentWeekId,
-        // 👉 [추가된 부분] 파이어베이스로 보낼 짐싸기에 포함!
         monthId: currentMonthId,
-        myMonthlyScore: currentMonthlyScore 
+        myMonthlyScore: currentMonthlyScore,
+        totalScore: currentTotalScore // 👉 누적 승점 항목 추가!
     };
 
     if (typeof lastScorePayloadKey === 'undefined' || lastScorePayloadKey === null) {
@@ -9500,3 +9520,50 @@ setInterval(() => {
         }
     }
 }, 60000); // 60000ms = 1분마다 한 번씩 실행
+
+/* [추가] 누적 명예의 전당 랭킹 로드 */
+function loadTotalHallRanking() {
+    const list = document.getElementById('ranking-list');
+    if (!list) return;
+
+    list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">📡 누적 명예의 전당 불러오는 중...</div>`;
+
+    if (typeof db === 'undefined' || !db) return;
+
+    // 서버의 'all_time/hall/total' 스냅샷 문서를 읽어옵니다.
+    db.collection('ranking_snapshots').doc('all_time')
+      .collection('hall').doc('total')
+      .get()
+      .then(doc => {
+          if (!doc.exists) {
+              list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">아직 누적 랭킹 데이터가 없습니다.<br>잠시 후 다음 스냅샷을 기다려주세요!</div>`;
+              return;
+          }
+          
+          const data = doc.data();
+          const ranks = data.ranks || [];
+          
+          // 기존 렌더링 UI 변환 로직과 완벽하게 호환됩니다.
+          const transformed = ranks.map((row, index) => {
+              return {
+                  rank: index + 1,
+                  name: row.name || "이름없음",
+                  score: row.score || 0, // 서버에서 예쁘게 변환해준 totalScore 입니다!
+                  tribe: row.tribe !== undefined ? row.tribe : 0,
+                  dept: row.dept !== undefined ? row.dept : 0,
+                  tag: row.tag || "",
+                  castle: row.castle || 0,
+                  isMe: ((row.name === myNickname || row.nickname === myNickname) && row.tag === myTag)
+              };
+          });
+          
+          // 기존에 만들어두신 리스트 렌더링 함수 호출
+          if (typeof renderRankingList === 'function') {
+              renderRankingList(transformed);
+          }
+      })
+      .catch(err => {
+          console.error("❌ 누적 랭킹 로드 실패:", err);
+          list.innerHTML = `<div style="text-align:center; padding:50px; color:#e74c3c;">데이터를 불러오지 못했습니다.</div>`;
+      });
+}

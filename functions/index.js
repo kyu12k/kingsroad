@@ -126,11 +126,46 @@ async function updateWeeklyCountsImpl() {
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    // 3️⃣ 일괄 저장
-    await snapshotBatch.commit();
-    console.log(`✅ Ranking Snapshots 저장 완료 (지파 12개 + Zion 1개)`);
+    // 🌟🌟🌟 [여기서부터 새로 추가되는 부분] 🌟🌟🌟
+    // 3️⃣ 누적 승점(명예의 전당) Top100 조회 및 Snapshot 생성
+    // 누적 승점은 주차(weekId)와 상관없이 전체 리더보드에서 'totalScore' 기준으로 가져옵니다.
+    const totalSnapshot = await db.collection('leaderboard')
+        .orderBy('totalScore', 'desc')
+        .limit(100)
+        .get();
 
-    // 4️⃣ 카운트 메타데이터 저장
+    const totalRankingData = totalSnapshot.docs.map((doc, index) => {
+        const row = doc.data();
+        return {
+            rank: index + 1,
+            name: row.nickname || "이름없음",
+            // 클라이언트(앱)에서 기존 UI 코드를 그대로 재사용할 수 있도록
+            // totalScore 값을 score라는 이름으로 예쁘게 포장해서 보내줍니다!
+            score: row.totalScore || 0, 
+            tribe: row.tribe !== undefined ? row.tribe : 0,
+            dept: row.dept !== undefined ? row.dept : 0,
+            tag: row.tag || "",
+            castle: row.castleLv || 0
+        };
+    });
+
+    // 저장 경로는 영구 보존의 느낌을 살려 'all_time/hall/total'로 만듭니다.
+    const totalSnapshotRef = db.collection('ranking_snapshots').doc('all_time')
+        .collection('hall').doc('total');
+    
+    snapshotBatch.set(totalSnapshotRef, {
+        type: 'all_time_total',
+        ranks: totalRankingData,
+        count: totalSnapshot.size,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    // 🌟🌟🌟 [새로 추가되는 부분 끝] 🌟🌟🌟
+
+    // 4️⃣ 일괄 저장 (원래 3️⃣이었던 부분)
+    await snapshotBatch.commit();
+    console.log(`✅ Ranking Snapshots 저장 완료 (지파 12개 + Zion 1개 + 누적 1개)`);
+
+    // 5️⃣ 카운트 메타데이터 저장 (원래 4️⃣였던 부분)
     await db.collection('system_meta').doc('weekly_counts').set({
         weekId: currentWeekId,
         totalCount: totalCount,
