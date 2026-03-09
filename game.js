@@ -5924,7 +5924,7 @@ function toggleMyScorePanel() {
     if (!isOpen) updateMyScorePanel();
 }
 
-/* [수정] 랭킹 화면 열기 */
+/* [수정] 랭킹 화면 열기 (팝업 모달 방식 적용) */
 function openRankingScreen() {
     // 랭킹 오버레이 먼저 띄우기
     const overlay = document.getElementById('ranking-overlay');
@@ -5952,7 +5952,7 @@ function openRankingScreen() {
         screen.id = 'ranking-screen';
         screen.className = 'screen';
         screen.style.background = "#2c3e50"; 
-
+        screen.style.overflowY = "auto";
         screen.innerHTML = `
     <div class="map-header" style="flex-direction:column; justify-content:center; border-bottom:1px solid rgba(255,255,255,0.1); padding:15px 10px;">
         <div style="font-weight:bold; font-size:1.2rem; color:white; margin-bottom:5px;">🏆 킹스로드 랭킹 보드</div>
@@ -5989,7 +5989,7 @@ function openRankingScreen() {
         </div>
     </div>
 
-    <div style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap:15px; padding:15px 5px 20px 5px; margin-top:10px; border-bottom:1px solid rgba(255,255,255,0.1); scrollbar-width: none;">
+    <div id="yearly-swipe-area" style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap:15px; padding:15px 5px 20px 5px; margin-top:10px; border-bottom:1px solid rgba(255,255,255,0.1); scrollbar-width: none;">
             
             <div style="min-width:85%; flex:0 0 auto; scroll-snap-align:center; background:linear-gradient(135deg, #2c3e50, #1a252f); border:2px solid #f39c12; border-radius:15px; padding:15px; box-shadow:0 8px 15px rgba(0,0,0,0.5); position:relative; overflow:hidden;">
                 <div style="position:absolute; top:-10px; right:-15px; font-size:6rem; opacity:0.05; pointer-events:none;">🏆</div>
@@ -6010,57 +6010,60 @@ function openRankingScreen() {
 
         </div>
 
-    <div style="display:grid; grid-template-columns: 1fr 1fr; padding:10px; gap:8px;">
-        <button id="tab-tribe" onclick="switchRankingTab('tribe')" 
-            style="padding:12px 5px; border-radius:10px; border:2px solid rgba(255,255,255,0.1); background:linear-gradient(145deg, rgba(255,255,255,0.1), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.95rem; box-shadow:0 4px 6px rgba(0,0,0,0.3); transition:all 0.2s; display:flex; flex-direction:row; justify-content:center; align-items:center; gap:6px;">
-            <span style="font-size:1.2rem;">🧭</span>
-            <span>내 지파</span>
+    <div id="sticky-tabs-container" style="background: #2c3e50; padding: 10px 5px; border-bottom: 1px solid rgba(255,255,255,0.1); display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
+        
+        <button id="tab-tribe" onclick="openRankingModal('tribe', '🧭 내 지파 랭킹')" 
+            style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
+            <span style="font-size:1rem;">🧭</span><span>내 지파</span>
         </button>
 
-        <button id="tab-zion" onclick="switchRankingTab('zion')" 
-            style="padding:12px 5px; border-radius:10px; border:2px solid rgba(255,255,255,0.1); background:linear-gradient(145deg, rgba(255,255,255,0.1), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.95rem; box-shadow:0 4px 6px rgba(0,0,0,0.3); transition:all 0.2s; display:flex; flex-direction:row; justify-content:center; align-items:center; gap:6px;">
-            <span style="font-size:1.2rem;">👑</span>
-            <span>시온성</span>
+        <button id="tab-zion" onclick="openRankingModal('zion', '👑 시온성 랭킹')" 
+            style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
+            <span style="font-size:1rem;">👑</span><span>시온성</span>
         </button>
 
-        <button id="tab-weekly-hall" onclick="switchRankingTab('weekly-hall')" 
-            style="padding:12px 5px; border-radius:10px; border:2px solid rgba(255,255,255,0.1); background:linear-gradient(145deg, rgba(255,255,255,0.1), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.95rem; box-shadow:0 4px 6px rgba(0,0,0,0.3); transition:all 0.2s; display:flex; flex-direction:row; justify-content:center; align-items:center; gap:6px;">
-            <span style="font-size:1.2rem;">🏛️</span>
-            <span>주간 명예</span>
+        <button id="tab-weekly-hall" onclick="openRankingModal('weekly-hall', '🏛️ 주간 명예의 전당')" 
+            style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
+            <span style="font-size:1rem;">🏛️</span><span>주간 명예</span>
         </button>
 
-        <button id="tab-monthly-hall" onclick="switchRankingTab('monthly-hall')" 
-            style="padding:12px 5px; border-radius:10px; border:2px solid rgba(255,255,255,0.1); background:linear-gradient(145deg, rgba(255,255,255,0.1), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.95rem; box-shadow:0 4px 6px rgba(0,0,0,0.3); transition:all 0.2s; display:flex; flex-direction:row; justify-content:center; align-items:center; gap:6px;">
-            <span style="font-size:1.2rem;">📜</span>
-            <span>월간 명예</span>
+        <button id="tab-monthly-hall" onclick="openRankingModal('monthly-hall', '📜 월간 명예의 전당')" 
+            style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
+            <span style="font-size:1rem;">📜</span><span>월간 명예</span>
         </button>
         
-        <button id="tab-total-hall" onclick="switchRankingTab('total-hall')" 
-            style="grid-column: 1 / span 2; padding:14px 5px; border-radius:10px; border:2px solid rgba(255,255,255,0.1); background:linear-gradient(145deg, rgba(255,255,255,0.1), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:1.05rem; box-shadow:0 4px 6px rgba(0,0,0,0.3); transition:all 0.2s; display:flex; flex-direction:row; justify-content:center; align-items:center; gap:8px;">
-            <span style="font-size:1.3rem;">💎</span>
-            <span>누적 명예의 전당 (All-Time)</span>
+        <button id="tab-total-hall" onclick="openRankingModal('total-hall', '💎 누적 명예의 전당 (All-Time)')" 
+            style="grid-column: 1 / span 2; padding:10px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.95rem; display:flex; justify-content:center; align-items:center; gap:6px;">
+            <span style="font-size:1.1rem;">💎</span><span>누적 명예의 전당 (All-Time)</span>
         </button>
     </div>
 
-        <div id="ranking-list" style="flex: 1; overflow-y: auto; padding: 10px; padding-bottom: 150px;">
-            <div style="text-align:center; padding:50px; color:#bdc3c7;">📡 데이터 불러오는 중...</div>
+    <div id="ranking-modal-overlay" onclick="if(event.target === this) closeRankingModal()" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:9999; justify-content:center; align-items:center; padding:20px; box-sizing:border-box;">
+        
+        <div style="background:#2c3e50; border:2px solid #f39c12; border-radius:15px; width:100%; max-width:400px; height:75vh; display:flex; flex-direction:column; box-shadow:0 10px 30px rgba(0,0,0,0.9); overflow:hidden;">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; background:rgba(0,0,0,0.2); border-bottom:1px solid rgba(255,255,255,0.1);">
+                <h3 id="ranking-modal-title" style="margin:0; color:#f1c40f; font-size:1.1rem; font-weight:bold;">랭킹</h3>
+                <button onclick="closeRankingModal()" style="background:none; border:none; color:#ecf0f1; font-size:1.8rem; cursor:pointer; padding:0 10px; line-height:0.8;">&times;</button>
+            </div>
+            
+            <div id="ranking-list" style="flex:1; overflow-y:auto; padding:10px; background:#1a252f; scrollbar-width: none;">
+                </div>
         </div>
 
-        <div class="button-area-static">
-            <button class="btn-gray btn-back" onclick="goMap()">돌아가기</button>
-        </div>
-        `;
+    </div>
+
+    <div class="button-area-static">
+        <button class="btn-gray btn-back" onclick="goMap()">돌아가기</button>
+    </div>
+    `;
         document.body.appendChild(screen);
     }
-    
     screen.classList.add('active'); 
-    switchRankingTab('tribe'); // 기본 탭 열기
     startSeasonTimer();
     loadWeeklyRankCounts();
     updateMyScorePanel();
-    // 🌟 [여기 추가!] 랭킹 화면 열 때 연간 대항전 카드 데이터도 같이 불러옵니다!
     if (typeof loadYearlyTribeRanking === 'function') loadYearlyTribeRanking();
-    // 백버튼 가시성 갱신 (랭킹 화면에서는 보여야 함)
+    if (typeof enableDragToScroll === 'function') enableDragToScroll('yearly-swipe-area');
     if (typeof updateBackButtonVisibility === 'function') updateBackButtonVisibility();
 }
 
@@ -6397,73 +6400,42 @@ function startSeasonTimer() {
     updateTimer();
     seasonTimerInterval = setInterval(updateTimer, 1000);
 }
+/* [추가] 랭킹 팝업창 열기 */
+function openRankingModal(tabName, titleText) {
+    const overlay = document.getElementById('ranking-modal-overlay');
+    const titleEl = document.getElementById('ranking-modal-title');
+    const listEl = document.getElementById('ranking-list');
 
-/* [수정] 랭킹 탭 전환 (입체적인 게임 UI 스타일) */
-function switchRankingTab(tabName) {
-    const tabs = {
-        'tribe': document.getElementById('tab-tribe'),
-        'zion': document.getElementById('tab-zion'),
-        'weekly-hall': document.getElementById('tab-weekly-hall'),
-        'monthly-hall': document.getElementById('tab-monthly-hall'),
-        'total-hall': document.getElementById('tab-total-hall')
-    };
+    if (!overlay || !titleEl || !listEl) return;
 
-    // 1. 모든 탭 버튼을 '선택 해제(어두운)' 상태로 초기화
-    Object.values(tabs).forEach(btn => {
-        if (btn) {
-            btn.style.background = "linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.4))";
-            btn.style.color = "#95a5a6";
-            btn.style.borderColor = "rgba(255,255,255,0.1)";
-            btn.style.boxShadow = "inset 0 2px 5px rgba(0,0,0,0.5)"; // 꾹 눌린 느낌
-            btn.style.transform = "scale(0.98)";
-        }
-    });
+    // 창 제목을 바꾸고, 팝업을 화면에 띄웁니다.
+    titleEl.innerHTML = titleText;
+    listEl.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">📡 데이터 불러오는 중...</div>`;
+    overlay.style.display = 'flex';
 
     window.currentRankingMode = tabName;
-    const activeBtn = tabs[tabName];
 
-    // 2. 선택된 탭만 볼륨감 있게 튀어나오고 화려하게 빛나도록!
-    if (activeBtn) {
-        activeBtn.style.transform = "scale(1)";
-        
-        if (tabName === 'tribe') {
-            activeBtn.style.background = "linear-gradient(145deg, #f1c40f, #f39c12)";
-            activeBtn.style.color = "#2c3e50";
-            activeBtn.style.borderColor = "#f1c40f";
-            activeBtn.style.boxShadow = "0 0 15px rgba(241,196,15,0.4), 0 4px 6px rgba(0,0,0,0.3)";
-            if (typeof loadTribeRanking === 'function') loadTribeRanking();
-
-        } else if (tabName === 'zion') {
-            activeBtn.style.background = "linear-gradient(145deg, #e67e22, #d35400)";
-            activeBtn.style.color = "white";
-            activeBtn.style.borderColor = "#e67e22";
-            activeBtn.style.boxShadow = "0 0 15px rgba(230,126,34,0.4), 0 4px 6px rgba(0,0,0,0.3)";
-            if (typeof loadZionRanking === 'function') loadZionRanking();
-
-        } else if (tabName === 'weekly-hall') {
-            activeBtn.style.background = "linear-gradient(145deg, #9b59b6, #8e44ad)";
-            activeBtn.style.color = "white";
-            activeBtn.style.borderColor = "#9b59b6";
-            activeBtn.style.boxShadow = "0 0 15px rgba(155,89,182,0.4), 0 4px 6px rgba(0,0,0,0.3)";
-            if (typeof loadWeeklyHallOfFame === 'function') loadWeeklyHallOfFame();
-
-        } else if (tabName === 'monthly-hall') {
-            activeBtn.style.background = "linear-gradient(145deg, #1abc9c, #16a085)";
-            activeBtn.style.color = "white";
-            activeBtn.style.borderColor = "#1abc9c";
-            activeBtn.style.boxShadow = "0 0 15px rgba(26,188,156,0.4), 0 4px 6px rgba(0,0,0,0.3)";
-            if (typeof loadMonthlyHallOfFame === 'function') loadMonthlyHallOfFame();
-
-        } else if (tabName === 'total-hall') {
-            activeBtn.style.background = "linear-gradient(145deg, #f39c12, #e67e22)";
-            activeBtn.style.color = "#2c3e50";
-            activeBtn.style.borderColor = "#f1c40f";
-            activeBtn.style.boxShadow = "0 0 20px rgba(243,156,18,0.5), 0 4px 6px rgba(0,0,0,0.3)";
-            if (typeof loadTotalHallRanking === 'function') loadTotalHallRanking();
-        }
+    // 해당 랭킹의 데이터를 불러옵니다. (id="ranking-list"가 팝업 안에 있으므로 기존 함수들이 완벽히 호환됩니다)
+    if (tabName === 'tribe') {
+        if (typeof loadTribeRanking === 'function') loadTribeRanking();
+    } else if (tabName === 'zion') {
+        if (typeof loadZionRanking === 'function') loadZionRanking();
+    } else if (tabName === 'weekly-hall') {
+        if (typeof loadWeeklyHallOfFame === 'function') loadWeeklyHallOfFame();
+    } else if (tabName === 'monthly-hall') {
+        if (typeof loadMonthlyHallOfFame === 'function') loadMonthlyHallOfFame();
+    } else if (tabName === 'total-hall') {
+        if (typeof loadTotalHallRanking === 'function') loadTotalHallRanking();
     }
 }
 
+/* [추가] 랭킹 팝업창 닫기 */
+function closeRankingModal() {
+    const overlay = document.getElementById('ranking-modal-overlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+}
 /* [기능] 명예의 전당 리스트 그리기 */
 function renderHallOfFameList(data, title) {
     const list = document.getElementById('ranking-list');
@@ -9663,4 +9635,35 @@ function loadYearlyTribeRanking() {
           console.error("❌ 연간 대항전 로드 실패:", err);
           listEl.innerHTML = `<div style="text-align:center; color:#e74c3c; font-size:0.85rem;">데이터를 불러오지 못했습니다.</div>`;
       });
+}
+/* [추가] PC 환경에서 마우스 드래그로 가로 스크롤 가능하게 하는 기능 */
+function enableDragToScroll(elementId) {
+    const slider = document.getElementById(elementId);
+    if (!slider) return;
+
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+
+    slider.addEventListener('mousedown', (e) => {
+        isDown = true;
+        slider.style.cursor = 'grabbing';
+        startX = e.pageX - slider.offsetLeft;
+        scrollLeft = slider.scrollLeft;
+    });
+    slider.addEventListener('mouseleave', () => {
+        isDown = false;
+        slider.style.cursor = 'grab';
+    });
+    slider.addEventListener('mouseup', () => {
+        isDown = false;
+        slider.style.cursor = 'grab';
+    });
+    slider.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - slider.offsetLeft;
+        const walk = (x - startX) * 1.5; // 스크롤 속도 조절
+        slider.scrollLeft = scrollLeft - walk;
+    });
 }
