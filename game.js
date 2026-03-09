@@ -5989,6 +5989,27 @@ function openRankingScreen() {
         </div>
     </div>
 
+    <div style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap:15px; padding:15px 5px 20px 5px; margin-top:10px; border-bottom:1px solid rgba(255,255,255,0.1); scrollbar-width: none;">
+            
+            <div style="min-width:85%; flex:0 0 auto; scroll-snap-align:center; background:linear-gradient(135deg, #2c3e50, #1a252f); border:2px solid #f39c12; border-radius:15px; padding:15px; box-shadow:0 8px 15px rgba(0,0,0,0.5); position:relative; overflow:hidden;">
+                <div style="position:absolute; top:-10px; right:-15px; font-size:6rem; opacity:0.05; pointer-events:none;">🏆</div>
+                
+                <div style="text-align:center; font-weight:bold; color:#f1c40f; font-size:1.15rem; margin-bottom:5px; letter-spacing:-0.5px;">⚔️ 2026 12지파 대항전</div>
+                <div style="font-size:0.75rem; color:#bdc3c7; text-align:center; margin-bottom:15px;">(각 지파 상위 12,000명 기여도 합산)</div>
+
+                <div id="yearly-top3-list" style="display:flex; flex-direction:column; gap:8px;">
+                    <div style="text-align:center; padding:10px; color:#95a5a6; font-size:0.85rem;">📡 스냅샷을 기다리는 중입니다...</div>
+                </div>
+            </div>
+
+            <div style="min-width:85%; flex:0 0 auto; scroll-snap-align:center; background:linear-gradient(135deg, #34495e, #2c3e50); border:1px dashed rgba(255,255,255,0.2); border-radius:15px; padding:15px; opacity:0.8; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                <div style="font-size:2.5rem; margin-bottom:10px;">📜</div>
+                <div style="color:#bdc3c7; font-weight:bold; font-size:1.1rem;">과거의 영광</div>
+                <div style="font-size:0.8rem; color:#95a5a6; text-align:center; margin-top:5px; line-height:1.4;">내년 연말정산 이후,<br>이곳에 위대한 역사가 보존됩니다.</div>
+            </div>
+
+        </div>
+
     <div style="display:grid; grid-template-columns: 1fr 1fr; padding:10px; gap:8px;">
         <button id="tab-tribe" onclick="switchRankingTab('tribe')" 
             style="padding:12px 5px; border-radius:10px; border:2px solid rgba(255,255,255,0.1); background:linear-gradient(145deg, rgba(255,255,255,0.1), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.95rem; box-shadow:0 4px 6px rgba(0,0,0,0.3); transition:all 0.2s; display:flex; flex-direction:row; justify-content:center; align-items:center; gap:6px;">
@@ -6037,6 +6058,8 @@ function openRankingScreen() {
     startSeasonTimer();
     loadWeeklyRankCounts();
     updateMyScorePanel();
+    // 🌟 [여기 추가!] 랭킹 화면 열 때 연간 대항전 카드 데이터도 같이 불러옵니다!
+    if (typeof loadYearlyTribeRanking === 'function') loadYearlyTribeRanking();
     // 백버튼 가시성 갱신 (랭킹 화면에서는 보여야 함)
     if (typeof updateBackButtonVisibility === 'function') updateBackButtonVisibility();
 }
@@ -9588,5 +9611,56 @@ function loadTotalHallRanking() {
       .catch(err => {
           console.error("❌ 누적 랭킹 로드 실패:", err);
           list.innerHTML = `<div style="text-align:center; padding:50px; color:#e74c3c;">데이터를 불러오지 못했습니다.</div>`;
+      });
+}
+/* [추가] 연간 대항전 금은동 순위 불러오기 */
+function loadYearlyTribeRanking() {
+    const listEl = document.getElementById('yearly-top3-list');
+    if (!listEl) return;
+
+    if (typeof db === 'undefined' || !db) return;
+
+    db.collection('ranking_snapshots').doc('yearly')
+      .collection('tribes').doc('current')
+      .get()
+      .then(doc => {
+          if (!doc.exists) {
+              listEl.innerHTML = `<div style="text-align:center; padding:10px; color:#95a5a6; font-size:0.85rem;">이번 연도 스냅샷 데이터가 없습니다.</div>`;
+              return;
+          }
+
+          const data = doc.data();
+          const ranks = data.ranks || [];
+
+          // 1, 2, 3등 필터링 (0점 제외)
+          const top3 = ranks.filter(r => r.rank <= 3 && r.score > 0);
+
+          if (top3.length === 0) {
+              listEl.innerHTML = `<div style="text-align:center; padding:10px; color:#95a5a6; font-size:0.85rem;">아직 승점을 획득한 지파가 없습니다.</div>`;
+              return;
+          }
+
+          let html = '';
+          const medals = { 1: '🥇 금메달', 2: '🥈 은메달', 3: '🥉 동메달' };
+          const colors = { 1: '#f1c40f', 2: '#bdc3c7', 3: '#cd7f32' }; // 금, 은, 동 색상
+
+          top3.forEach(item => {
+              const tribeName = TRIBE_DATA[item.tribeId] ? TRIBE_DATA[item.tribeId].name : "알 수 없음";
+              const medalText = medals[item.rank] || `${item.rank}위`;
+              const color = colors[item.rank] || '#ecf0f1';
+
+              html += `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.4); padding:8px 12px; border-radius:8px; border-left:4px solid ${color}; margin-bottom: 5px;">
+                    <span style="font-weight:bold; color:${color}; font-size:1rem; text-shadow:1px 1px 2px rgba(0,0,0,0.8);">${medalText} : ${tribeName}</span>
+                    <span style="font-size:0.9rem; color:#ecf0f1; font-family:monospace; font-weight:bold;">${item.score.toLocaleString()} pts</span>
+                </div>
+              `;
+          });
+
+          listEl.innerHTML = html;
+      })
+      .catch(err => {
+          console.error("❌ 연간 대항전 로드 실패:", err);
+          listEl.innerHTML = `<div style="text-align:center; color:#e74c3c; font-size:0.85rem;">데이터를 불러오지 못했습니다.</div>`;
       });
 }
