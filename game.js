@@ -8151,10 +8151,10 @@ function openDataSettings() {
                 <div style="margin-bottom:20px; padding:15px; background:#fef9e7; border-radius:10px; border:1px solid #f1c40f;">
                     <h3 style="color:#d35400; margin:0 0 5px 0; font-size:1.1rem;">📤 기록 보관하기 (일일 미션)</h3>
                     <p style="font-size:0.9rem; color:#7f8c8d; margin-bottom:10px;">
-                        내 진행 상황을 <b>텍스트 파일(.txt)</b>로 만들어 기기에 다운로드하거나 카카오톡에 보관합니다.
+                        내 진행 상황을 <b>텍스트 파일(.txt)</b>로 만들어 기기에 다운로드합니다.
                     </p>
                     <button onclick="shareSaveCodeAndGetReward()" style="width:100%; background:#f39c12; color:white; border:none; padding:15px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 0 #d35400;">
-                        🎁 파일로 저장 및 공유
+                        🎁 파일로 저장
                     </button>
                 </div>
 
