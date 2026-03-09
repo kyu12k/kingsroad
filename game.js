@@ -108,8 +108,6 @@ loadGameData = function() {
         stageMemoryLevels = parsed.memoryLevels || {};
         stageNextEligibleTime = parsed.nextEligibleTime || {}; // ★ [Forgetting-Curve] 다음 클리어 가능 시간
         stageTimedBonus = parsed.timedBonus || {}; // ★ [때를 따른 양식] 각인 주기 기반 보너스
-        // [진행도 복구] 영역 어딘가에 있습니다.
-        // stageDailyAttempts 제거됨 (초회/반복만 구분)
         if(parsed.leagueData) {
             leagueData = parsed.leagueData;
             
@@ -2892,7 +2890,7 @@ if (type === 'normal') {
         let currentBossParts, currentBossPartIndex, currentBossChunks;
 
   //[2] 보스전 시작 함수 (하트 버그 수정 + 구간 자동 탐지)//
-function startBossBattle(limitCount_unused) { 
+function startBossBattle() { 
     window.isGamePlaying = true; // ★ 게임 시작! 스위치 ON
     // 1. 이어하기 데이터 확인
     const savedRaw = localStorage.getItem('kingsRoad_checkpoint');
@@ -3890,12 +3888,6 @@ function startTraining(stageId, mode = 'normal') {
         // full, normal, full-new 등 전체 학습일 때
         showReadAloudToast("🗣️ 소리내어 읽으면 암기 효과가 2배!");
     }
-}
-
-/* [정식 배포] 모바일 UI 최적화 함수 (디버그 기능 제거됨) */
-function enableMobileCheat() {
-    // 정식 배포 버전: 기능 비활성화
-    // 추후 필요한 모바일 최적화 로직은 여기에 추가
 }
 
 // 2. 단계별 화면 로드
@@ -6685,10 +6677,6 @@ function updateStickyMyRank(amIInTop100) {
     if (screen) screen.appendChild(stickyBar);
 }
 
-// [덮어쓰기] 저장/불러오기/클리어 함수 (기존 기능을 업그레이드)
-const originalSaveGameData = saveGameData; // 혹시 몰라 백업 (안 씀)
-
-
 /* [시스템] 주간 ID 생성기 (월요일 시작, ISO 주차) */
 function getWeekId(dateObj) {
     const d = dateObj ? new Date(dateObj) : new Date();
@@ -8711,8 +8699,6 @@ setTimeout(checkDataWarning, 500);
 
 /* [시스템: 게임 초기화 및 시작] */
 window.onload = function() {
-    console.log("🚀 게임 로딩 시작...");
-
     // 1. 저장된 데이터 불러오기 (가장 중요)
     loadGameData(); 
 
@@ -9456,11 +9442,6 @@ function startSessionGuard() {
         if (doc.exists) {
             const serverData = doc.data();
             
-            // 🕵️‍♂️ 범인 검거용 로그
-console.log("=== 다중 접속 검사 ===");
-console.log("1. 내 아이디 (myPlayerId):", myPlayerId);
-console.log("2. 서버의 토큰 (server):", serverData.sessionToken);
-console.log("3. 내 로컬 토큰 (local):", window.currentSessionToken);
             // 🚨 서버의 인증키가 내 기기의 인증키와 다르면?!
 if (serverData.sessionToken && serverData.sessionToken !== window.currentSessionToken) {
     
