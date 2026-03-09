@@ -2425,7 +2425,7 @@ if (isTodayClear) {
 // 2. 기억 다지기 배지
 else if (isForgotten) {
     itemClass += ' forgotten-clear';
-    statusBadgeHtml = `<div class="forgotten-badge">기억 다지기</div>`;
+    statusBadgeHtml = `<div class="forgotten-badge">기억 다지기 보너스</div>`;
 }
 
 // 3. 말씀 숙련도 배지 (타이틀 옆에 붙일 예정)
@@ -2685,7 +2685,7 @@ function openModeSelect(stageId) {
             overlay.style = 'display:flex; position:fixed; z-index:9999; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.97); color:#f1c40f; flex-direction:column; align-items:center; justify-content:center; font-size:1.2rem; text-align:center;';
             overlay.innerHTML = `
                 <div style="max-width:90vw; font-size:1.1em; line-height:1.7; font-weight:bold; color:#fff; text-shadow:0 2px 8px #222; margin-bottom:30px; flex-shrink: 0;">
-                    🕑 기억 다지기 스테이지<br><span style="font-size:0.95em; color:#f1c40f;">스테이지를 복습해서 기억을 다지세요!</span>
+                    🕑 기억 다지기 보너스 스테이지<br><span style="font-size:0.95em; color:#f1c40f;">스테이지를 복습해서 기억을 다지세요!(보상 5배)</span>
                 </div>
                 <div id="forgotten-stages-list" style="background:rgba(0,0,0,0.3); padding:20px; border-radius:15px; width:90vw; max-width:600px; min-width:220px; margin-bottom:30px; max-height:50vh; overflow-y:auto; flex-shrink: 0;">
                 </div>
@@ -2708,7 +2708,7 @@ function openModeSelect(stageId) {
             btn.innerHTML = `
                 <span style="font-weight:bold; color:#f1c40f;">${item.stageName}</span>
                 ${item.chapterNum !== undefined ? `<span style=\"color:#fff; font-size:0.95em; margin-left:8px;\">(제${item.chapterNum}장)</span>` : ''}
-                <span style="color:#e74c3c; font-size:0.9em; margin-left:8px;">기억 다지기</span>
+                <span style="color:#e74c3c; font-size:0.9em; margin-left:8px;">바로 가기</span>
             `;
             btn.style = 'display:block; width:100%; background:rgba(241,196,15,0.12); border:1px solid #f1c40f; color:#fff; padding:12px 0; border-radius:12px; margin-bottom:10px; font-size:1.05rem; cursor:pointer; transition:background 0.2s;';
             btn.onclick = function() {
