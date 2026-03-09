@@ -8231,7 +8231,7 @@ function resetGameData() {
     }
 }
 
-// [기능 1] 파일로 저장 및 공유 (비밀번호 강력 암호화 적용 + PC 바로 다운로드)
+// [기능 1] 파일로 저장 및 공유 (안정성 100%: 무조건 기기 다운로드 방식)
 function shareSaveCodeAndGetReward() {
     saveGameData();
     const savedData = localStorage.getItem('kingsRoadSave');
@@ -8243,7 +8243,7 @@ function shareSaveCodeAndGetReward() {
 
     const today = new Date().toISOString().split('T')[0];
     const fileName = `KingsRoad_Backup_${today}.txt`;
-    
+
     // 🌟 암호화 진행 (앞에 'ENC_'를 붙여 구분)
     let encodedData;
     try {
@@ -8254,41 +8254,31 @@ function shareSaveCodeAndGetReward() {
 
     const file = new File([encodedData], fileName, { type: "text/plain" });
 
-    // 미션 달성 처리 로직
+    // 미션 달성 처리 로직 (멘트 살짝 수정)
     const completeMission = () => {
         if (!missionData.daily) missionData.daily = {};
         if (missionData.daily.backup < 1 || !missionData.daily.backup) {
             missionData.daily.backup = 1;
             saveGameData();
             if (typeof updateMissionUI === 'function') updateMissionUI();
-            alert("✅ 안전하게 보관되었습니다!\n일일 미션이 달성되었습니다. 미션 탭에서 보상을 받으세요.");
+            alert("📥 파일이 기기의 '다운로드' 폴더에 저장되었습니다!\n텔레그램이나 카카오톡으로 이 파일을 공유해 보관하세요.\n\n(일일 미션 달성! 보상을 받으세요 🎁)");
         } else {
-            alert("✅ 기록이 안전하게 업데이트 되었습니다.");
+            alert("📥 파일이 기기의 '다운로드' 폴더에 안전하게 저장되었습니다!\n텔레그램이나 카카오톡으로 이 파일을 공유해 보관하세요.");
         }
     };
 
-    // 🌟 [핵심 변경] 기기 구분 (스마트폰인지 PC인지 확인)
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-    if (isMobile && navigator.canShare && navigator.canShare({ files: [file] })) {
-        // 스마트폰일 경우: 카카오톡 등으로 보낼 수 있게 모바일 공유창 띄우기
-        navigator.share({
-            title: '킹스로드 백업 데이터',
-            text: '나의 킹스로드 세이브 데이터입니다. 안전하게 보관하세요!',
-            files: [file]
-        }).then(completeMission).catch(e => console.log('공유 취소됨'));
-    } else {
-        // PC일 경우 (또는 공유 기능 미지원 시): 공유창 안 띄우고 바로 파일 다운로드!
-        const url = URL.createObjectURL(file);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click(); // 몰래 버튼을 눌러서 다운로드 실행
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        completeMission();
-    }
+    // 🌟 [핵심 수술] 모바일/PC 구분을 없애고 무조건 기기에 '다운로드' 시킵니다.
+    // 불안정한 navigator.share 를 제거하여 무한 로딩(프리징) 원천 차단!
+    const url = URL.createObjectURL(file);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click(); // 몰래 버튼을 눌러서 강제 다운로드 실행!
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    completeMission();
 }
 
 // [기능 2] 파일로 불러오기 (로직 단순화)
