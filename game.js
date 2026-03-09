@@ -122,6 +122,11 @@ loadGameData = function() {
                 // 3. 이사 완료 직후 즉시 서버와 동기화되도록 예약
                 localStorage.setItem('forceSyncAfterLoad', 'true');
             }
+            // 🌟🌟 [추가] 연간 승점(대항전 기여도) 세팅 🌟🌟
+            if (typeof leagueData.yearlyScore === 'undefined') {
+                // 올해 처음 시작하는 대항전이므로 현재까지의 누적 점수를 복사해 줌
+                leagueData.yearlyScore = leagueData.totalScore || 0;
+            }
         }
         if(parsed.missions) missionData = parsed.missions;
         if(parsed.boosterData) boosterData = parsed.boosterData;
@@ -1770,7 +1775,8 @@ let leagueData = {
     monthId: getMonthId(), 
     myScore: 0,
     myMonthlyScore: 0, 
-    totalScore: 0, // 🌟 [추가] 영구 보존되는 누적 승점
+    totalScore: 0, 
+    yearlyScore: 0, // 🌟 [추가] 올해의 지파 대항전 기여도
     stageLog: {}, 
 };
 
@@ -5653,6 +5659,8 @@ function calculateScore(stageId, type, verseCount, hearts, isForgotten) {
     
     // 🌟 [핵심 수술 2단계: 양손잡이 점수 획득]
     leagueData.totalScore = (leagueData.totalScore || 0) + finalScore; // 누적 점수도 영원히 오름!
+// 🌟 [추가] 연간 대항전 기여도에도 점수 더하기!
+    leagueData.yearlyScore = (leagueData.yearlyScore || 0) + finalScore;
 
     if (typeof userStats !== 'undefined') {
         userStats.totalScoreEarned = (userStats.totalScoreEarned || 0) + finalScore;
@@ -8647,15 +8655,30 @@ function updatePreviewText() {
     }
 }
 
-/* [기능] 프로필 확정 (저장) */
+/* [기능] 프로필 확정 (저장) + 지파 이적 페널티 */
 function confirmProfile() {
+    // 🌟 [핵심 방어막] 최초 가입이 아닌 유저가 지파를 바꿀 때 경고!
+    if (myNickname !== "순례자" && myTribe !== window.tempTribe) {
+        const warnMsg = "⚠️ [경고] 지파를 변경하시면 올해 모은 '12지파 대항전 기여도(연간 승점)'가 0점으로 초기화됩니다!\n\n(개인의 누적 승점은 보존되지만, 새로운 지파에서의 기여도는 0부터 다시 쌓아야 합니다.)\n\n정말로 지파를 변경하시겠습니까?";
+        if (!confirm(warnMsg)) {
+            return; // 취소하면 함수 종료 (변경 취소)
+        }
+        // 확인을 눌렀다면 기여도를 무자비하게 0점으로 초기화!
+        if (typeof leagueData !== 'undefined') {
+            leagueData.yearlyScore = 0;
+            console.log("🚨 지파 변경으로 인해 연간 승점이 0으로 초기화되었습니다.");
+        }
+    }
+
     if (window.tempNickname) myNickname = window.tempNickname;
     if (window.tempTribe !== undefined) myTribe = window.tempTribe;
     if (window.tempDept !== undefined) myDept = window.tempDept;
-    
+
     // 저장 및 갱신
     saveGameData();
-    updateProfileUI(); // 메인 화면 갱신
+    updateProfileUI();
+    
+    // 메인 화면 갱신
     if (typeof saveMyScoreToServer === 'function') saveMyScoreToServer(); // 서버 전송
     
     // 팝업 닫기
@@ -9292,6 +9315,7 @@ function saveMyScoreToServer() {
     const currentMonthlyScore = leagueData.myMonthlyScore || 0;
     // 🌟 [핵심 수술 3단계: 서버로 보낼 짐싸기]
     const currentTotalScore = leagueData.totalScore || 0; 
+    const currentYearlyScore = leagueData.yearlyScore || 0; // 🌟 추가
 
     const payload = {
         nickname: myNickname,
@@ -9303,7 +9327,8 @@ function saveMyScoreToServer() {
         weekId: currentWeekId,
         monthId: currentMonthId,
         myMonthlyScore: currentMonthlyScore,
-        totalScore: currentTotalScore // 👉 누적 승점 항목 추가!
+        totalScore: currentTotalScore, // 👉 누적 승점 항목 추가!
+        yearlyScore: currentYearlyScore // 🌟 추가 (이걸 바탕으로 서버가 지파 합산을 합니다)
     };
 
     if (typeof lastScorePayloadKey === 'undefined' || lastScorePayloadKey === null) {

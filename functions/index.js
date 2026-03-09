@@ -161,9 +161,79 @@ async function updateWeeklyCountsImpl() {
     });
     // 🌟🌟🌟 [새로 추가되는 부분 끝] 🌟🌟🌟
 
-    // 4️⃣ 일괄 저장 (원래 3️⃣이었던 부분)
+    // 🌟🌟🌟 [여기서부터 새로 추가할 대항전 합산 로직] 🌟🌟🌟
+    console.log(`⚔️ 12지파 대항전(연간) 상위 12,000명 합산 시작...`);
+    const yearlyTribeJobs = [];
+    const yearlyScores = []; // 각 지파의 합산 점수를 담을 배열
+
+    // 12개 지파를 순회하며 쿼리 실행
+    for (let i = 0; i < 12; i++) {
+        const tribeYearlyQuery = db.collection('leaderboard')
+            .where('tribe', '==', i)
+            .orderBy('yearlyScore', 'desc')
+            .limit(12000); // 🌟 요한계시록의 14,4000명 룰 (지파당 12,000명 제한!)
+
+        yearlyTribeJobs.push(
+            tribeYearlyQuery.get().then(snapshot => {
+                let tribeTotal = 0;
+                snapshot.forEach(doc => {
+                    tribeTotal += (doc.data().yearlyScore || 0);
+                });
+                yearlyScores.push({ tribeId: i, score: tribeTotal });
+            })
+        );
+    }
+
+    // 12지파의 점수 계산이 모두 끝날 때까지 대기
+    await Promise.all(yearlyTribeJobs);
+
+    // 점수가 높은 순서대로 내림차순 정렬
+    yearlyScores.sort((a, b) => b.score - a.score);
+
+    const yearlyRankingData = [];
+    let currentRank = 1;
+    let previousScore = -1;
+    let actualPosition = 1; // 공동 순위를 건너뛰기 위한 실제 위치 (1, 2, 2, 4...)
+
+    // 🌟 정교한 랭킹 시스템 적용 (동점 처리 및 0점 12등 강등)
+    for (let i = 0; i < yearlyScores.length; i++) {
+        const current = yearlyScores[i];
+        
+        if (current.score === 0) {
+            // 점수가 0점이면 무조건 공동 12등으로 깔아버림
+            currentRank = 12;
+        } else if (current.score === previousScore) {
+            // 이전 지파와 동점이면 등수 유지 (공동 1위, 공동 2위 등)
+        } else {
+            // 점수가 다르면 실제 위치로 등수 갱신
+            currentRank = actualPosition;
+        }
+
+        yearlyRankingData.push({
+            rank: currentRank,
+            tribeId: current.tribeId,
+            score: current.score
+        });
+
+        previousScore = current.score;
+        actualPosition++;
+    }
+
+    // 연간 랭킹 스냅샷 문서 생성
+    const currentYear = new Date().getFullYear();
+    const yearlySnapshotRef = db.collection('ranking_snapshots').doc('yearly')
+        .collection('tribes').doc('current');
+        
+    snapshotBatch.set(yearlySnapshotRef, {
+        year: currentYear,
+        ranks: yearlyRankingData,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    // 🌟🌟🌟 [대항전 합산 로직 끝] 🌟🌟🌟
+
+    // 4️⃣ 일괄 저장 (원래 있던 코드)
     await snapshotBatch.commit();
-    console.log(`✅ Ranking Snapshots 저장 완료 (지파 12개 + Zion 1개 + 누적 1개)`);
+    console.log(`✅ Ranking Snapshots 저장 완료 (지파 12개 + Zion + 누적 + 연간 대항전)`);
 
     // 5️⃣ 카운트 메타데이터 저장 (원래 4️⃣였던 부분)
     await db.collection('system_meta').doc('weekly_counts').set({
