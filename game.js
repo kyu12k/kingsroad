@@ -6426,6 +6426,8 @@ function openRankingModal(tabName, titleText) {
         if (typeof loadMonthlyHallOfFame === 'function') loadMonthlyHallOfFame();
     } else if (tabName === 'total-hall') {
         if (typeof loadTotalHallRanking === 'function') loadTotalHallRanking();
+    } else if (tabName === 'yearly-hall') {
+        if (typeof loadYearlyHallOfFame === 'function') loadYearlyHallOfFame();
     }
 }
 
@@ -9629,6 +9631,13 @@ function loadYearlyTribeRanking() {
               `;
           });
 
+          html += `
+            <button onclick="openRankingModal('yearly-hall', '⚔️ 2026 12지파 대항전 전체 순위')" 
+                style="margin-top:10px; padding:8px; width:100%; border-radius:8px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#bdc3c7; font-size:0.85rem; cursor:pointer; font-weight:bold; transition:all 0.2s;">
+                전체 순위 보기 🔍
+            </button>
+          `;
+
           listEl.innerHTML = html;
       })
       .catch(err => {
@@ -9666,4 +9675,59 @@ function enableDragToScroll(elementId) {
         const walk = (x - startX) * 1.5; // 스크롤 속도 조절
         slider.scrollLeft = scrollLeft - walk;
     });
+}
+/* [추가] 12지파 대항전 전체 순위(1~12위) 팝업 리스트 불러오기 */
+function loadYearlyHallOfFame() {
+    const listEl = document.getElementById('ranking-list');
+    if (!listEl) return;
+
+    db.collection('ranking_snapshots').doc('yearly')
+      .collection('tribes').doc('current')
+      .get()
+      .then(doc => {
+          if (!doc.exists) {
+              listEl.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">아직 대항전 데이터가 없습니다.</div>`;
+              return;
+          }
+          
+          const data = doc.data();
+          const ranks = data.ranks || [];
+          
+          if (ranks.length === 0) {
+              listEl.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">아직 승점을 획득한 지파가 없습니다.</div>`;
+              return;
+          }
+
+          let html = '';
+          ranks.forEach(item => {
+              const tribeName = TRIBE_DATA[item.tribeId] ? TRIBE_DATA[item.tribeId].name : "알 수 없음";
+              
+              // 1,2,3등은 메달 아이콘, 4등부터는 회색 숫자
+              let medalIcon = '';
+              if (item.rank === 1) medalIcon = '🥇';
+              else if (item.rank === 2) medalIcon = '🥈';
+              else if (item.rank === 3) medalIcon = '🥉';
+              else medalIcon = `<span style="display:inline-block; width:24px; text-align:center; color:#7f8c8d; font-size:0.9rem; font-weight:bold;">${item.rank}</span>`;
+
+              // 상위권일수록 배경과 테두리를 화려하게!
+              const bgColor = item.rank <= 3 ? 'rgba(241, 196, 15, 0.1)' : 'rgba(255,255,255,0.03)';
+              const borderColor = item.rank === 1 ? '#f1c40f' : item.rank === 2 ? '#bdc3c7' : item.rank === 3 ? '#cd7f32' : 'transparent';
+              const nameColor = item.rank <= 3 ? '#fff' : '#bdc3c7';
+
+              html += `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:${bgColor}; padding:12px 15px; margin-bottom:8px; border-radius:10px; border-left:4px solid ${borderColor};">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span style="font-size:1.2rem;">${medalIcon}</span>
+                        <span style="color:${nameColor}; font-weight:bold; font-size:1rem;">${tribeName}</span>
+                    </div>
+                    <span style="color:#f1c40f; font-family:monospace; font-weight:bold; font-size:1.05rem;">${item.score.toLocaleString()} pts</span>
+                </div>
+              `;
+          });
+          listEl.innerHTML = html;
+      })
+      .catch(err => {
+          console.error("❌ 연간 대항전 전체보기 로드 실패:", err);
+          listEl.innerHTML = `<div style="text-align:center; padding:50px; color:#e74c3c;">데이터를 불러오지 못했습니다.</div>`;
+      });
 }
