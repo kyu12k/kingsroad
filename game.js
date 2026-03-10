@@ -2550,9 +2550,22 @@ if (memStatus.level > 0) {
             if (stage.type === 'boss' || stage.type === 'mid-boss') {
                 startBossBattle(stage.targetVerseCount); 
             } else if (canChooseReviewMode) {
+                // 모드 선택 창을 띄웁니다. 
+                // (여기는 일단 그대로 둡니다. 나중에 모드 버튼 안쪽에 애니메이션을 걸어줄 거예요!)
                 openModeSelect(stage.id);
             } else {
-                startTraining(stage.id);
+                // 🌟 [수정된 부분] 최초 플레이 시 바로 step1으로 갈 때 애니메이션 발동!
+
+                // 1. stage.id(예: "1-3")에서 챕터(장)와 절 번호를 뽑아냅니다.
+                const parts = String(stage.id).split('-');
+                const chNum = parseInt(parts[0]); // "1" -> 1장
+                const verseNum = parseInt(parts[1]); // "3" -> 3절
+
+                // 2. 애니메이션을 먼저 쫙~ 틀어줍니다!
+                startStageWithTransition(chNum, verseNum, () => {
+                    // 3. 애니메이션이 스르륵 끝나면 원래 하려던 진짜 게임 화면을 엽니다.
+                    startTraining(stage.id);
+                });
             }
         };
         
@@ -9516,7 +9529,7 @@ function showReadAloudToast(message = "🗣️ 소리 내어 읽으면 기억에
     // 3초 뒤에 스르륵 사라짐
     toastTimeout = setTimeout(() => {
         toast.classList.remove('show');
-    }, 3000);
+    }, 1500);
 }
 // 🌟 [핵심 수술] 유저가 앱을 껐다가 다시 화면으로 돌아올 때마다 날짜 검사!
 document.addEventListener("visibilitychange", () => {
@@ -9761,4 +9774,153 @@ function cancelProfileRegistration() {
             modalEl.remove(); 
         }, 200);
     }
+}
+/* [완결판 7.0] 방향 이탈 방지 + 렉(버벅거림) 제거 최적화 */
+function playBibleTransition(targetVerseId, onCompleteCallback) {
+    const overlay = document.getElementById('bible-transition-overlay');
+    const book = document.getElementById('bible-book');
+    const targetVerse = document.getElementById(targetVerseId);
+
+    if (!overlay || !book || !targetVerse) {
+        if(onCompleteCallback) onCompleteCallback();
+        return;
+    }
+
+    gsap.set(book, { rotationX: 0, scale: 1, x: 0, y: 0, opacity: 0 });
+    
+    // 🌟 타겟 구절 하이라이트
+    targetVerse.style.color = "#d35400"; 
+    targetVerse.style.textShadow = "0 0 10px rgba(241, 196, 15, 0.8), 0 0 20px rgba(241, 196, 15, 0.4)";
+    targetVerse.style.fontWeight = "900";
+    targetVerse.style.background = "rgba(241, 196, 15, 0.15)";
+    targetVerse.style.borderRadius = "5px";
+
+    gsap.set(book, { transformOrigin: "50% 50%" });
+
+    const bookRect = book.getBoundingClientRect();
+    const bookCenterX = bookRect.left + bookRect.width / 2;
+    const bookCenterY = bookRect.top + bookRect.height / 2;
+    
+    // 구절 중심점 계산
+    const vRect = targetVerse.getBoundingClientRect();
+    const vx = vRect.left + vRect.width / 2;
+    const vy = vRect.top + vRect.height / 2;
+    
+    // 1차 줌인 배율과 좌표 (읽기 용도)
+    const readScale = 2.6; 
+    const targetX = (bookCenterX - vx) * readScale;
+    const targetY = (bookCenterY - vy) * readScale;
+
+    // 🌟 2차 딥-줌인 배율과 좌표 (빨려 들어가는 용도)
+    // 배율을 8배로 낮춰서 렉을 없애고, 좌표도 8배에 맞춰서 정확히 곱해줍니다!
+    const deepScale = 8.0; 
+    const deepTargetX = (bookCenterX - vx) * deepScale;
+    const deepTargetY = (bookCenterY - vy) * deepScale;
+
+    const charCount = targetVerse.innerText.length;
+    const holdDuration = Math.min(4.0, Math.max(1.5, charCount * 0.08)); 
+
+    gsap.set(overlay, { opacity: 1, pointerEvents: "auto" });
+    // 🌟 force3D: true를 미리 줘서 브라우저 GPU를 예열시킵니다 (렉 방지)
+    gsap.set(book, { rotationX: 15, scale: 0.7, opacity: 0, force3D: true });
+
+    const tl = gsap.timeline({
+        onComplete: () => {
+            gsap.set(overlay, { pointerEvents: "none" });
+            targetVerse.style.color = "";
+            targetVerse.style.textShadow = "";
+            targetVerse.style.fontWeight = "";
+            targetVerse.style.background = "";
+        }
+    });
+
+    // [SCENE 1] 책 펴지기
+    tl.to(book, { opacity: 1, duration: 0.5 })
+      .to(book, { rotationX: 0, scale: 0.9, duration: 1.2, ease: "power2.out" }, "<0.2")
+      
+    // [SCENE 2] 구절 줌인
+      .to(book, { scale: readScale, x: targetX, y: targetY, duration: 1.5, ease: "power2.inOut" }, "+=0.3")
+      
+    // [SCENE 3] 읽을 시간 대기
+      .to(book, { duration: holdDuration })
+
+    // 🌟 [SCENE 4] 구절을 향해 일직선으로 딥-줌인! (좌표까지 함께 이동)
+      .to(book, { 
+          scale: deepScale, 
+          x: deepTargetX, 
+          y: deepTargetY, 
+          opacity: 0, 
+          duration: 0.6, 
+          ease: "power2.in",
+          force3D: true // 렌더링 가속!
+      })
+
+    // [SCENE 5] 몰래 콜백 실행하여 뒤쪽 화면을 Step 1으로 바꿈
+      .call(() => {
+          if (onCompleteCallback) onCompleteCallback();
+      })
+
+    // [SCENE 6] Step 1 화면이 다 그려진 후 커튼(overlay) 스르륵 걷어냄
+      .to(overlay, { opacity: 0, duration: 0.8 }, "+=0.2"); 
+}
+
+/* [수정] 성경책 데이터 세팅 (단어 쪼개기 제거, 순수 텍스트만 렌더링) */
+function startStageWithTransition(chapterNum, verseNum, startStageCallback) {
+    const book = document.getElementById('bible-book');
+    if (!book) return startStageCallback();
+
+    const chapterData = bibleData[chapterNum]; 
+    if (!chapterData) return startStageCallback();
+
+    let fontSize = "0.75rem"; 
+    let marginB = "12px";
+    let lineH = "1.65";
+
+    if (chapterData.length >= 26) {
+        fontSize = "0.55rem";
+        marginB = "8px";
+        lineH = "1.5";
+    } else if (chapterData.length > 16) {
+        fontSize = "0.65rem";
+        marginB = "10px";
+        lineH = "1.55";
+    }
+
+    let totalLength = 0;
+    chapterData.forEach(v => totalLength += v.text.length);
+    const targetLength = totalLength * 0.45; 
+    let currentLength = 0;
+    let splitIndex = 0; 
+
+    for (let i = 0; i < chapterData.length; i++) {
+        currentLength += chapterData[i].text.length;
+        if (currentLength >= targetLength && splitIndex === 0) {
+            splitIndex = i; 
+        }
+    }
+
+    let leftVersesHtml = `<h2 style="column-span: all; text-align: center; font-size: 1.5rem; font-weight: 900; color: #000; border-bottom: 2px solid #555; padding-bottom: 10px; margin-bottom: 15px;">요한계시록 ${chapterNum}장</h2>`;
+    let rightVersesHtml = ``;
+    
+    chapterData.forEach((verseObj, index) => {
+        const vNum = index + 1;
+        
+        // 🌟 복잡한 span 쪼개기 삭제! 그냥 원본 텍스트 그대로 씁니다.
+        const verseHtml = `<div class="bible-verse" id="verse-${vNum}" style="font-size: ${fontSize}; margin-bottom: ${marginB}; line-height: ${lineH};"><span class="verse-num">${vNum}</span> ${verseObj.text}</div>`;
+
+        if (index <= splitIndex) {
+            leftVersesHtml += verseHtml;
+        } else {
+            rightVersesHtml += verseHtml;
+        }
+    });
+
+    book.innerHTML = `
+        <div class="bible-page left-page">${leftVersesHtml}</div>
+        <div class="bible-page right-page">${rightVersesHtml}</div>
+    `;
+
+    playBibleTransition(`verse-${verseNum}`, () => {
+        startStageCallback(); 
+    });
 }
