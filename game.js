@@ -8562,9 +8562,14 @@ function openProfileSettings() {
     });
     deptButtonsHtml += `</div>`;
 
-    modal.innerHTML = `
+    // 1️⃣ HTML 수정 (개발자님이 완벽하게 수정하신 부분!)
+modal.innerHTML = `
         <div class="result-card" style="max-width:340px; background:#fff; color:#2c3e50; text-align:center; max-height:85vh; overflow-y:auto;">
-            <h2 style="color:#2c3e50; margin:0 0 5px 0;">순례자 등록</h2>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <h2 style="color:#2c3e50; margin:0;">순례자 등록</h2>
+                <button onclick="cancelProfileRegistration()" style="background:none; border:none; color:#bdc3c7; font-size:1.8rem; cursor:pointer; padding:0; line-height:1;">&times;</button>
+            </div>
             <p style="color:#7f8c8d; font-size:0.85rem; margin-bottom:15px;">이름과 소속 부서/지파를 선택하세요.</p>
             
             <div style="background:#f4f6f7; padding:15px; border-radius:15px; margin-bottom:15px; border:1px solid #ecf0f1;">
@@ -8587,7 +8592,14 @@ function openProfileSettings() {
             </button>
         </div>
     `;
-    
+
+    // 2️⃣ JS 추가: 여기서부터 추가해 주시면 됩니다!
+    // 모달 바깥쪽(검은 배경)을 클릭했을 때 취소 로직을 실행합니다.
+    modal.onclick = function(event) {
+        if (event.target === modal) {
+            cancelProfileRegistration();
+        }
+    };
     document.body.appendChild(modal);
     setTimeout(() => modal.classList.add('active'), 10);
 }
@@ -9730,4 +9742,23 @@ function loadYearlyHallOfFame() {
           console.error("❌ 연간 대항전 전체보기 로드 실패:", err);
           listEl.innerHTML = `<div style="text-align:center; padding:50px; color:#e74c3c;">데이터를 불러오지 못했습니다.</div>`;
       });
+}
+/* [추가] 순례자 등록(프로필 수정) 취소 함수 */
+function cancelProfileRegistration() {
+    // 1. 유저에게 친절하게 저장되지 않았음을 알립니다.
+    alert("변경사항이 저장되지 않았습니다.");
+
+    // 2. 이름표가 'nickname-modal'인 팝업창을 찾습니다.
+    const modalEl = document.getElementById('nickname-modal');
+    
+    // 3. 팝업창이 존재한다면 부드럽게 화면에서 지워줍니다.
+    if (modalEl) {
+        // 부드럽게 사라지는 효과를 위해 active 클래스를 먼저 뺍니다.
+        modalEl.classList.remove('active'); 
+        
+        // 0.2초(200ms) 뒤에 애니메이션이 끝나면 HTML에서 완전히 삭제합니다.
+        setTimeout(() => {
+            modalEl.remove(); 
+        }, 200);
+    }
 }
