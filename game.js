@@ -3592,6 +3592,17 @@ function clearCheckpoint() {
     localStorage.removeItem('kingsRoad_checkpoint');
 }
 
+/* 🌟 [새로 추가] 포기 버튼을 눌렀을 때 의사를 먼저 묻는 함수 */
+function confirmQuit() {
+    // 확인/취소를 선택할 수 있는 알림창을 띄워
+    const wantsToQuit = confirm("정말 이 스테이지를 포기하시겠습니까?\n지금까지 진행한 상황은 저장되지 않습니다.");
+    
+    // 유저가 '확인'을 눌렀을 때(wantsToQuit이 true일 때)만 진짜 종료 함수 실행!
+    if (wantsToQuit) {
+        quitGame(); 
+    }
+    // '취소'를 누르면 아무 일도 일어나지 않고 게임이 계속 진행돼.
+}
         /* [수정] 게임 종료/포기 (나가기 시 밀린 팝업 확인 기능 추가) */
 function quitGame() {
     window.isGamePlaying = false; // ★ 핵심 방어막: 게임 종료 선언! 유령 타이머 차단!
@@ -3608,9 +3619,12 @@ function quitGame() {
     document.getElementById('game-screen').classList.remove('active');
     document.getElementById('map-screen').classList.add('active');
     
-    // 3. 모달 닫기
+    // 3. 모달 닫기 (안전장치)
     const quitModal = document.getElementById('quit-modal');
-    if (quitModal) quitModal.style.display = 'none';
+    if (quitModal) {
+        quitModal.classList.remove('active'); // 통일!
+        quitModal.style.display = ''; // 혹시라도 걸려있을지 모를 족쇄(inline style) 해제
+    }
     
     // 4. 전투 데이터 및 진행 상황 완전 초기화
     window.currentBattleData = null; 
@@ -9853,7 +9867,7 @@ function playScrollTransition(targetCellId, targetText, onCompleteCallback) {
     // 이렇게 하면 아무리 배율을 키워도 엉뚱한 곳으로 시선이 빗겨가지 않습니다.
     const localX = (cellRect.left - boardRect.left) + cellRect.width / 2;
     const localY = (cellRect.top - boardRect.top) + cellRect.height / 2;
-    gsap.set(board, { transformOrigin: `${localX}px ${localY}px` });
+    gsap.set(board, { transformOrigin: `${localX}px ${localY}px`, force3D: false, willChange: "transform" });
 
     // 화면 정중앙 좌표
     const viewportCenterX = window.innerWidth / 2;
@@ -10017,7 +10031,7 @@ function startBossTransition(chapterNum, startVerse, endVerse, isMidBoss, onComp
     const localX = (cellRect.left - boardRect.left) + cellRect.width / 2;
     const localY = (cellRect.top - boardRect.top) + cellRect.height / 2;
     // 🌟 렌더링 최적화: 브라우저 GPU 예열
-    gsap.set(board, { transformOrigin: `${localX}px ${localY}px`, willChange: "transform" });
+    gsap.set(board, { transformOrigin: `${localX}px ${localY}px`, force3D: false});
     const moveX = (window.innerWidth / 2) - (boardRect.left + localX);
     const moveY = (window.innerHeight / 2) - (boardRect.top + localY);
     const fillScale = Math.max(window.innerWidth / cellRect.width, window.innerHeight / cellRect.height) * 1.5;
