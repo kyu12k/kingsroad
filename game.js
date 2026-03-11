@@ -2554,18 +2554,7 @@ if (memStatus.level > 0) {
                 // (여기는 일단 그대로 둡니다. 나중에 모드 버튼 안쪽에 애니메이션을 걸어줄 거예요!)
                 openModeSelect(stage.id);
             } else {
-                // 🌟 [수정된 부분] 최초 플레이 시 바로 step1으로 갈 때 애니메이션 발동!
-
-                // 1. stage.id(예: "1-3")에서 챕터(장)와 절 번호를 뽑아냅니다.
-                const parts = String(stage.id).split('-');
-                const chNum = parseInt(parts[0]); // "1" -> 1장
-                const verseNum = parseInt(parts[1]); // "3" -> 3절
-
-                // 2. 애니메이션을 먼저 쫙~ 틀어줍니다!
-                startStageWithTransition(chNum, verseNum, () => {
-                    // 3. 애니메이션이 스르륵 끝나면 원래 하려던 진짜 게임 화면을 엽니다.
-                    startTraining(stage.id);
-                });
+            startTraining(stage.id, 'full-new');
             }
         };
         
@@ -3871,37 +3860,59 @@ function startTraining(stageId, mode = 'normal') {
     // 모드 선택 시트 닫기
     if (typeof closeStageSheet === 'function') closeStageSheet();
 
-    // 🌟 [핵심 변경점] 기존의 화면 전환 및 게임 시작 로직을 하나의 함수로 묶어줍니다!
+    // ✂️============== [안전하게 포장된 화면 전환 콜백] ==============✂️
     const startStageAction = () => {
-        // 화면 전환
-        document.getElementById('map-screen').classList.remove('active');
-        document.getElementById('game-screen').classList.add('active');
-        document.getElementById('game-screen').classList.add('mode-training');
+        try {
+            console.log("1. ✅ 애니메이션 종료! 게임 세팅을 시작합니다.");
+            
+            // 🌟 시트 닫기를 콜백 안으로 이동 (보스전과 똑같이 꼬임 방지)
+            if (typeof closeStageSheet === 'function') closeStageSheet();
 
-        if(typeof recalculateMaxHearts === 'function') recalculateMaxHearts();
-        playerHearts = maxPlayerHearts;
-        updateBattleUI();
+            const mapScreen = document.getElementById('map-screen');
+            const gameScreen = document.getElementById('game-screen');
 
-        stageStartTime = Date.now();
-        wrongCount = 0;
-        const totalStepEl = document.getElementById('total-step-num');
-        if (totalStepEl) {
-            totalStepEl.innerText = stepSequence.length; 
-        }
-        
-        // 본격적인 게임(Step) 시작
-        loadStep();
-        
-        // 토스트 알림 발사
-        if (mode === 'quick') {
-            showReadAloudToast("💡 소리내어 읽으면 암기 효과가 2배!");
-        } else {
-            showReadAloudToast("🗣️ 소리내어 읽으면 암기 효과가 2배!");
+            if (mapScreen) mapScreen.classList.remove('active');
+            if (gameScreen) {
+                gameScreen.classList.add('active');
+                gameScreen.classList.add('mode-training');
+            }
+            console.log("2. ✅ 화면 클래스 전환 완료");
+
+            if(typeof recalculateMaxHearts === 'function') recalculateMaxHearts();
+            
+            // 전역 변수 maxPlayerHearts가 혹시 undefined일 경우를 대비한 안전 장치
+            playerHearts = (typeof maxPlayerHearts !== 'undefined') ? maxPlayerHearts : 5; 
+            
+            if(typeof updateBattleUI === 'function') updateBattleUI();
+
+            stageStartTime = Date.now();
+            wrongCount = 0;
+            
+            const totalStepEl = document.getElementById('total-step-num');
+            if (totalStepEl && typeof stepSequence !== 'undefined') {
+                totalStepEl.innerText = stepSequence.length; 
+            }
+            
+            console.log("3. ✅ loadStep 호출 전");
+            if (typeof loadStep === 'function') loadStep();
+            
+            console.log("4. ✅ 게임 시작 완료! 토스트 띄우기");
+            if (typeof mode !== 'undefined') {
+                if (mode === 'quick') {
+                    showReadAloudToast("💡 소리내어 읽으면 암기 효과가 2배!");
+                } else {
+                    showReadAloudToast("🗣️ 소리내어 읽으면 암기 효과가 2배!");
+                }
+            }
+
+        } catch (error) {
+            // 🚨 화면이 넘어가지 않고 멈춘다면, 여기서 범인을 정확히 알려줍니다!
+            console.error("🚨 startStageAction 실행 중 치명적 에러 발생:", error);
+            alert("게임 전환 중 오류가 발생했습니다. 브라우저 콘솔(F12)을 확인해주세요.");
         }
     };
 
-    // 🌟 [여기에 추가!] 게임을 바로 시작하지 않고, 두루마리 애니메이션을 먼저 실행합니다.
-    // 애니메이션이 심도 속으로 빠져들어가는(SCENE 5) 순간, 위에서 만든 startStageAction을 몰래 실행합니다.
+    // 🌟 마지막으로, 잘 싼 보따리를 애니메이션 함수에 던져줍니다.
     startStageWithTransition(chNum, verseNum, startStageAction);
 }
 
@@ -9919,10 +9930,10 @@ function playScrollTransition(targetCellId, targetText, onCompleteCallback) {
 
         // 🌟 Step 1 화면이 등장할 때 부드럽게 떠오르는 연출 추가!
         // 주의: 'step1-container' 부분을 실제 Step 1을 감싸는 최상위 div의 ID로 바꿔주세요.
-        const step1Screen = document.getElementById('step1-container'); 
-        if (step1Screen) {
-            // 커튼이 열릴 타이밍에 맞춰 아래에서 위로 스르륵 나타납니다.
-            gsap.fromTo(step1Screen, 
+        // 🌟 어떤 모드, 어떤 Step으로 시작하든 완벽하게 작동하도록 전체 화면(game-screen)을 타겟으로 잡습니다.
+        const gameScreen = document.getElementById('game-screen'); 
+        if (gameScreen) {
+            gsap.fromTo(gameScreen, 
                 { opacity: 0, y: 30 }, 
                 { opacity: 1, y: 0, duration: 1.0, ease: "power2.out", delay: 0.3 } 
             );
