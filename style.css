@@ -2397,73 +2397,110 @@ body, html {
     left: 0;
     width: 100%;
     height: 100%;
-    background: #0a0a0a; /* 아주 어두운 배경 */
+    background: #0a0a0a; /* 🌟 딥-줌인 시 이 어두운 색이 '커튼' 역할을 완벽히 해줍니다 */
     z-index: 10000;
     display: flex;
     justify-content: center;
     align-items: center;
-    perspective: 1500px; /* 🌟 카메라 무빙을 위한 3D 원근감 필수! */
+    perspective: 1500px; 
     overflow: hidden;
-    opacity: 0; /* 처음엔 투명하게 시작 */
-    pointer-events: none; /* 애니메이션 도중 터치 방지 */
+    opacity: 0; 
+    pointer-events: none; 
 }
 
-/* 성경책 전체 모양 */
-#bible-book {
-    display: flex;
-    width: 95vw;
-    max-width: 900px;
-    height: 85vh;
-    max-height: 600px;
-    background: #fdfbf7; /* 약간 오래된 종이 느낌의 흰색 */
-    border-radius: 5px;
-    box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+/* 두루마리 본체 */
+#scroll-board {
+    width: 90vw;
+    max-width: 450px; 
+    background: #fdfbf7; /* 기존 종이 느낌 유지 */
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    padding: 25px 20px;
     transform-style: preserve-3d;
-    transform: rotateX(20deg) scale(0.8); /* 처음엔 살짝 눕혀져 있고 멀리 있음 */
+    position: relative;
 }
 
-/* 책의 양쪽 페이지 공통 스타일 */
-.bible-page {
-    flex: 1;
-    padding: 30px 20px;
-    overflow: hidden;
-    box-sizing: border-box; 
-    height: 100%; 
-    column-count: 2; 
-    column-gap: 25px; 
-    
-    /* 🌟 핵심: balance를 지우고 auto로 변경하여 위에서 아래로 자연스럽게 채웁니다 */
-    column-fill: auto; 
-    
-    text-align: justify;
-    font-family: 'Batang', 'Gowun Batang', 'Myungjo', serif;
+#scroll-title {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #111;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #555;
+    padding-bottom: 10px;
 }
 
-/* 왼쪽 페이지 (제본선 그림자 효과) */
-.bible-page.left-page {
-    border-right: 1px solid #dcdcdc;
-    box-shadow: inset -15px 0 30px rgba(0,0,0,0.08);
+/* 5x6 완벽한 바둑판 배열 */
+#scroll-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr); 
+    gap: 8px; /* 칸 사이 간격 */
 }
 
-/* 오른쪽 페이지 (제본선 그림자 효과) */
-.bible-page.right-page {
-    box-shadow: inset 15px 0 30px rgba(0,0,0,0.08);
-}
-
-/* 각 구절(절)의 스타일 (폰트 축소) */
-.bible-verse {
-    font-size: 0.65rem; /* 🌟 13절에서 20절까지 넉넉히 들어가도록 축소! */
-    line-height: 1.6;
-    color: #111; /* 글자를 더 까맣고 또렷하게 */
-    margin-bottom: 10px;
-    break-inside: avoid; 
-}
-
-/* 장 번호 (예: 1)와 절 번호 스타일 */
-.verse-num {
-    font-size: 0.6rem;
+/* 개별 칸(절 번호) 디자인 */
+.grid-cell {
+    aspect-ratio: 1 / 1; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
     font-weight: bold;
-    color: #e74c3c; /* 절 번호는 살짝 붉은 빛으로 강조 */
-    margin-right: 4px;
-    vertical-align: super;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    position: relative;
+}
+
+/* 말씀이 없는 빈 칸 (모양 유지를 위해 존재) */
+.grid-cell.empty {
+    opacity: 0.15;
+    border-style: dashed;
+}
+
+/* 🌟 [새로 추가] 화면 정중앙에 띄울 독립적인 텍스트 오버레이 */
+#verse-text-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 85vw; /* 화면 너비의 85% 안에 예쁘게 갇힘 */
+    max-width: 600px;
+    font-size: 5.5vw; /* 모바일 화면 꽉 차는 시원한 글자 크기 */
+    font-weight: 900;
+    color: #3e2723; /* 양피지 배경과 어울리는 진한 갈색 잉크 */
+    text-align: center;
+    line-height: 1.5;
+    word-break: keep-all; /* 단어 단위로 줄바꿈되어 읽기 편함 */
+    z-index: 10005; /* 두루마리보다 더 위에 위치 */
+    pointer-events: none;
+}
+
+/* PC/태블릿 환경을 위한 크기 제한 */
+@media (min-width: 768px) {
+    #verse-text-overlay {
+        font-size: 2rem;
+    }
+}
+
+/* 🌟 스킵 버튼 스타일 */
+#skip-transition-btn {
+    position: absolute;
+    bottom: 40px;
+    right: 30px;
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 30px;
+    cursor: pointer;
+    z-index: 10010; /* 텍스트 오버레이보다 위로 */
+    backdrop-filter: blur(5px);
+    transition: background 0.3s, transform 0.1s;
+}
+
+#skip-transition-btn:active {
+    transform: scale(0.95);
+    background: rgba(0, 0, 0, 0.7);
 }

@@ -9775,152 +9775,175 @@ function cancelProfileRegistration() {
         }, 200);
     }
 }
-/* [완결판 7.0] 방향 이탈 방지 + 렉(버벅거림) 제거 최적화 */
-function playBibleTransition(targetVerseId, onCompleteCallback) {
+/* 1. 두루마리 칸(Grid) 자동 생성기 */
+function startStageWithTransition(chapterNum, verseNum, startStageCallback) {
+    const gridContainer = document.getElementById('scroll-grid');
+    const title = document.getElementById('scroll-title');
     const overlay = document.getElementById('bible-transition-overlay');
-    const book = document.getElementById('bible-book');
-    const targetVerse = document.getElementById(targetVerseId);
 
-    if (!overlay || !book || !targetVerse) {
-        if(onCompleteCallback) onCompleteCallback();
-        return;
+    if (!gridContainer || !bibleData[chapterNum]) return startStageCallback();
+
+    const chapterData = bibleData[chapterNum];
+    
+    // 타이틀 업데이트
+    title.innerText = `요한계시록 ${chapterNum}장`;
+    
+    // 이전 내용 지우기
+    gridContainer.innerHTML = '';
+
+    // 🌟 무조건 30칸(5x6)을 생성하여 전체 형태를 고정합니다.
+    for (let i = 1; i <= 30; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'grid-cell';
+        cell.id = `cell-${i}`;
+
+        if (i <= chapterData.length) {
+            // 구절이 있는 칸
+            const numSpan = document.createElement('span');
+            numSpan.innerText = i; // 절 번호만 크게 표시
+            numSpan.className = 'cell-number';
+            cell.appendChild(numSpan);
+        } else {
+            // 구절이 없는 빈 칸 (형태 유지용)
+            cell.classList.add('empty');
+        }
+        
+        gridContainer.appendChild(cell);
     }
 
-    gsap.set(book, { rotationX: 0, scale: 1, x: 0, y: 0, opacity: 0 });
-    
-    // 🌟 타겟 구절 하이라이트
-    targetVerse.style.color = "#d35400"; 
-    targetVerse.style.textShadow = "0 0 10px rgba(241, 196, 15, 0.8), 0 0 20px rgba(241, 196, 15, 0.4)";
-    targetVerse.style.fontWeight = "900";
-    targetVerse.style.background = "rgba(241, 196, 15, 0.15)";
-    targetVerse.style.borderRadius = "5px";
+    // 목표 구절의 텍스트 데이터 가져오기 (배열 인덱스는 0부터 시작하므로 -1)
+    const targetText = chapterData[verseNum - 1].text;
 
-    gsap.set(book, { transformOrigin: "50% 50%" });
-
-    const bookRect = book.getBoundingClientRect();
-    const bookCenterX = bookRect.left + bookRect.width / 2;
-    const bookCenterY = bookRect.top + bookRect.height / 2;
-    
-    // 구절 중심점 계산
-    const vRect = targetVerse.getBoundingClientRect();
-    const vx = vRect.left + vRect.width / 2;
-    const vy = vRect.top + vRect.height / 2;
-    
-    // 1차 줌인 배율과 좌표 (읽기 용도)
-    const readScale = 2.6; 
-    const targetX = (bookCenterX - vx) * readScale;
-    const targetY = (bookCenterY - vy) * readScale;
-
-    // 🌟 2차 딥-줌인 배율과 좌표 (빨려 들어가는 용도)
-    // 배율을 8배로 낮춰서 렉을 없애고, 좌표도 8배에 맞춰서 정확히 곱해줍니다!
-    const deepScale = 8.0; 
-    const deepTargetX = (bookCenterX - vx) * deepScale;
-    const deepTargetY = (bookCenterY - vy) * deepScale;
-
-    const charCount = targetVerse.innerText.length;
-    const holdDuration = Math.min(4.0, Math.max(1.5, charCount * 0.08)); 
-
+    // 칸 생성이 끝났으니, 오버레이를 켜고 줌인 애니메이션 시작!
     gsap.set(overlay, { opacity: 1, pointerEvents: "auto" });
-    // 🌟 force3D: true를 미리 줘서 브라우저 GPU를 예열시킵니다 (렉 방지)
-    gsap.set(book, { rotationX: 15, scale: 0.7, opacity: 0, force3D: true });
-
-    const tl = gsap.timeline({
-        onComplete: () => {
-            gsap.set(overlay, { pointerEvents: "none" });
-            targetVerse.style.color = "";
-            targetVerse.style.textShadow = "";
-            targetVerse.style.fontWeight = "";
-            targetVerse.style.background = "";
-        }
-    });
-
-    // [SCENE 1] 책 펴지기
-    tl.to(book, { opacity: 1, duration: 0.5 })
-      .to(book, { rotationX: 0, scale: 0.9, duration: 1.2, ease: "power2.out" }, "<0.2")
-      
-    // [SCENE 2] 구절 줌인
-      .to(book, { scale: readScale, x: targetX, y: targetY, duration: 1.5, ease: "power2.inOut" }, "+=0.3")
-      
-    // [SCENE 3] 읽을 시간 대기
-      .to(book, { duration: holdDuration })
-
-    // 🌟 [SCENE 4] 구절을 향해 일직선으로 딥-줌인! (좌표까지 함께 이동)
-      .to(book, { 
-          scale: deepScale, 
-          x: deepTargetX, 
-          y: deepTargetY, 
-          opacity: 0, 
-          duration: 0.6, 
-          ease: "power2.in",
-          force3D: true // 렌더링 가속!
-      })
-
-    // [SCENE 5] 몰래 콜백 실행하여 뒤쪽 화면을 Step 1으로 바꿈
-      .call(() => {
-          if (onCompleteCallback) onCompleteCallback();
-      })
-
-    // [SCENE 6] Step 1 화면이 다 그려진 후 커튼(overlay) 스르륵 걷어냄
-      .to(overlay, { opacity: 0, duration: 0.8 }, "+=0.2"); 
+    playScrollTransition(`cell-${verseNum}`, targetText, startStageCallback);
 }
 
-/* [수정] 성경책 데이터 세팅 (단어 쪼개기 제거, 순수 텍스트만 렌더링) */
-function startStageWithTransition(chapterNum, verseNum, startStageCallback) {
-    const book = document.getElementById('bible-book');
-    if (!book) return startStageCallback();
 
-    const chapterData = bibleData[chapterNum]; 
-    if (!chapterData) return startStageCallback();
-
-    let fontSize = "0.75rem"; 
-    let marginB = "12px";
-    let lineH = "1.65";
-
-    if (chapterData.length >= 26) {
-        fontSize = "0.55rem";
-        marginB = "8px";
-        lineH = "1.5";
-    } else if (chapterData.length > 16) {
-        fontSize = "0.65rem";
-        marginB = "10px";
-        lineH = "1.55";
-    }
-
-    let totalLength = 0;
-    chapterData.forEach(v => totalLength += v.text.length);
-    const targetLength = totalLength * 0.45; 
-    let currentLength = 0;
-    let splitIndex = 0; 
-
-    for (let i = 0; i < chapterData.length; i++) {
-        currentLength += chapterData[i].text.length;
-        if (currentLength >= targetLength && splitIndex === 0) {
-            splitIndex = i; 
-        }
-    }
-
-    let leftVersesHtml = `<h2 style="column-span: all; text-align: center; font-size: 1.5rem; font-weight: 900; color: #000; border-bottom: 2px solid #555; padding-bottom: 10px; margin-bottom: 15px;">요한계시록 ${chapterNum}장</h2>`;
-    let rightVersesHtml = ``;
+/* [최종 진화] 기준점 고정(Drift 방지) + 칸이 화면이 되는 동적 줌인 */
+function playScrollTransition(targetCellId, targetText, onCompleteCallback) {
+    const board = document.getElementById('scroll-board');
+    const targetCell = document.getElementById(targetCellId);
+    const overlay = document.getElementById('bible-transition-overlay');
     
-    chapterData.forEach((verseObj, index) => {
-        const vNum = index + 1;
-        
-        // 🌟 복잡한 span 쪼개기 삭제! 그냥 원본 텍스트 그대로 씁니다.
-        const verseHtml = `<div class="bible-verse" id="verse-${vNum}" style="font-size: ${fontSize}; margin-bottom: ${marginB}; line-height: ${lineH};"><span class="verse-num">${vNum}</span> ${verseObj.text}</div>`;
+    // 1. 화면 정중앙 텍스트 오버레이 준비
+    let textOverlay = document.getElementById('verse-text-overlay');
+    if (!textOverlay) {
+        textOverlay = document.createElement('div');
+        textOverlay.id = 'verse-text-overlay';
+        overlay.appendChild(textOverlay);
+    }
+    textOverlay.innerText = targetText;
+    gsap.set(textOverlay, { opacity: 0, y: 20, scale: 0.9 });
 
-        if (index <= splitIndex) {
-            leftVersesHtml += verseHtml;
-        } else {
-            rightVersesHtml += verseHtml;
+    // 🌟 2. 좌표 측정 전, 두루마리를 1:1 원래 비율과 위치로 리셋해야 정확한 값을 얻습니다.
+    gsap.set(board, { x: 0, y: 0, scale: 1, rotationX: 0 });
+
+    const boardRect = board.getBoundingClientRect();
+    const cellRect = targetCell.getBoundingClientRect();
+
+    // 🌟 3. [핵심] 타겟 칸의 중심점(Local)을 찾아 보드의 '확대 기준점'으로 설정!
+    // 이렇게 하면 아무리 배율을 키워도 엉뚱한 곳으로 시선이 빗겨가지 않습니다.
+    const localX = (cellRect.left - boardRect.left) + cellRect.width / 2;
+    const localY = (cellRect.top - boardRect.top) + cellRect.height / 2;
+    gsap.set(board, { transformOrigin: `${localX}px ${localY}px` });
+
+    // 화면 정중앙 좌표
+    const viewportCenterX = window.innerWidth / 2;
+    const viewportCenterY = window.innerHeight / 2;
+
+    // 현재 기준점이 화면상 어디에 있는지 계산
+    const currentOriginX = boardRect.left + localX;
+    const currentOriginY = boardRect.top + localY;
+
+    // 타겟 칸을 화면 정중앙으로 오게 하기 위해 이동해야 할 거리
+    const moveX = viewportCenterX - currentOriginX;
+    const moveY = viewportCenterY - currentOriginY;
+
+    // 🌟 4. [핵심] 칸이 화면을 완전히 덮어버리도록 동적 배율 계산
+    // 화면의 가로, 세로 해상도 중 더 긴 쪽에 맞춰 칸을 무한 확대! (여유분 1.5배 추가)
+    const scaleToFillScreenWidth = window.innerWidth / cellRect.width;
+    const scaleToFillScreenHeight = window.innerHeight / cellRect.height;
+    const fillScale = Math.max(scaleToFillScreenWidth, scaleToFillScreenHeight) * 1.5;
+
+    // 타겟 칸 하이라이트
+    targetCell.style.background = "rgba(211, 84, 0, 0.15)";
+    targetCell.style.borderColor = "#d35400";
+    targetCell.style.color = "#d35400";
+
+    const skipBtn = document.getElementById('skip-transition-btn');
+    const tl = gsap.timeline();
+
+    // [SCENE 1] 두루마리 등장
+    tl.fromTo(board, 
+        { scale: 0.7, opacity: 0, rotationX: 10 },
+        { scale: 1, opacity: 1, rotationX: 0, duration: 0.6, ease: "power2.out" }
+    )
+    
+    // [SCENE 2] 칸이 화면을 삼키는 정조준 줌인
+    // 칸의 테두리가 화면 밖으로 밀려나며 화면 전체가 칸 안의 양피지가 됩니다.
+    .to(board, { scale: fillScale, x: moveX, y: moveY, duration: 1.2, ease: "power2.inOut" }, "+=0.2")
+
+    // [SCENE 3] 절 번호는 스르륵 사라지고, 화면 가득 구절 텍스트가 웅장하게 등장!
+    .to(targetCell.querySelector('.cell-number'), { opacity: 0, scale: 0.5, duration: 0.4 }, "+=0.1")
+    .to(textOverlay, { opacity: 1, y: 0, scale: 1, duration: 0.6 }, "<")
+
+    // 🌟 [추가] 텍스트가 화면에 다 나오면 스킵 버튼을 보여주고 클릭 이벤트를 활성화합니다.
+    .call(() => {
+        if(skipBtn) {
+            skipBtn.style.display = "block";
+            // 스킵 버튼을 누르면 타임라인을 'endReading' 라벨로 순간이동!
+            skipBtn.onclick = () => tl.seek("endReading");
         }
-    });
+    })
 
-    book.innerHTML = `
-        <div class="bible-page left-page">${leftVersesHtml}</div>
-        <div class="bible-page right-page">${rightVersesHtml}</div>
-    `;
+    // [SCENE 4] 구절 길이에 비례하여 읽을 시간 대기 (길어도 안심!)
+    const readTime = Math.max(3.0, targetText.length * 0.15);
+    tl.to(board, { duration: readTime })
 
-    playBibleTransition(`verse-${verseNum}`, () => {
-        startStageCallback(); 
+    // 🌟 [여기에 라벨(깃발) 꽂기!] 스킵을 누르면 시간 대기를 무시하고 바로 이 지점으로 넘어옵니다.
+    .addLabel("endReading")
+    
+    // 🌟 [추가] 딥-줌인이 시작되기 직전에 스킵 버튼을 다시 숨깁니다.
+    .call(() => {
+        if(skipBtn) {
+            skipBtn.style.display = "none";
+            skipBtn.onclick = null; // 이벤트 초기화
+        }
+    })
+
+    // [SCENE 5] 딥-줌인 & 페이드아웃 (스킵을 눌러도 이 멋진 연출은 그대로 보여줍니다)
+    .to(board, { scale: fillScale * 2.5, opacity: 0, duration: 0.8, ease: "power2.in" })
+    .to(textOverlay, { opacity: 0, scale: 1.1, duration: 0.8, ease: "power2.inOut" }, "<")
+    
+    // 🌟 [SCENE 6] 콜백 실행 및 Step 1 등장 연출
+    .call(() => {
+        // 기존처럼 게임 화면 로딩을 실행합니다.
+        if (onCompleteCallback) onCompleteCallback();
+
+        // 🌟 Step 1 화면이 등장할 때 부드럽게 떠오르는 연출 추가!
+        // 주의: 'step1-container' 부분을 실제 Step 1을 감싸는 최상위 div의 ID로 바꿔주세요.
+        const step1Screen = document.getElementById('step1-container'); 
+        if (step1Screen) {
+            // 커튼이 열릴 타이밍에 맞춰 아래에서 위로 스르륵 나타납니다.
+            gsap.fromTo(step1Screen, 
+                { opacity: 0, y: 30 }, 
+                { opacity: 1, y: 0, duration: 1.0, ease: "power2.out", delay: 0.3 } 
+            );
+        }
+    })
+
+    // [SCENE 7] 커튼 걷기: 뒤에 Step 1이 로드되며 떠오르는 동안 까만 오버레이를 스르륵 걷어냄
+    .to(overlay, { opacity: 0, duration: 0.8, ease: "power2.inOut" })
+
+    // [완전 종료 후 초기화] 
+    .call(() => {
+        gsap.set(board, { x: 0, y: 0, scale: 1, opacity: 0, transformOrigin: "50% 50%" }); 
+        gsap.set(overlay, { pointerEvents: "none" });
+        
+        targetCell.querySelector('.cell-number').style.opacity = 1;
+        targetCell.style.background = ""; 
+        targetCell.style.borderColor = "#ddd"; 
+        targetCell.style.color = "#333";
     });
 }
