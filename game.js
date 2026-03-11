@@ -2908,9 +2908,10 @@ if (type === 'normal') {
         let currentBossHp, maxBossHp, playerHearts, currentVerseIdx, currentVerseData ;
         let currentBossParts, currentBossPartIndex, currentBossChunks;
 
-  //[2] 보스전 시작 함수 (하트 버그 수정 + 구간 자동 탐지)//
+ //[2] 보스전 시작 함수 (하트 버그 수정 + 구간 자동 탐지 + 연출 콜백 분리)//
 function startBossBattle() { 
     window.isGamePlaying = true; // ★ 게임 시작! 스위치 ON
+    
     // 1. 이어하기 데이터 확인
     const savedRaw = localStorage.getItem('kingsRoad_checkpoint');
     let resumeMode = false;
@@ -2927,58 +2928,26 @@ function startBossBattle() {
         }
     }
 
-    // 화면 전환 및 초기화
-    closeStageSheet();
-    document.getElementById('map-screen').classList.remove('active');
-    document.getElementById('game-screen').classList.add('active');
-    document.getElementById('game-screen').classList.remove('mode-training');
-
-    const bossAvatar = document.querySelector('.boss-avatar');
-    if (bossAvatar) {
-        bossAvatar.classList.remove('boss-die-effect'); // 사망 연출 제거 (부활)
-        bossAvatar.classList.remove('boss-hit-effect'); // 피격 연출 제거
-        bossAvatar.style.opacity = "1"; // 혹시 모르니 투명도 원상복구
-        bossAvatar.style.transform = "scaleX(-1)"; // 좌우 반전 유지
-    }
-
-    const field = document.querySelector('.battle-field');
-    const control = document.querySelector('.battle-control');
-    field.innerHTML = `<div class="verse-indicator" id="verse-index">준비 중...</div><div class="answer-zone" id="answer-zone"><span class="placeholder-text" id="placeholder-text">...</span></div>`;
-    control.innerHTML = `<div class="block-pool" id="block-pool"></div>`;
-
-    window.currentBattleData = [];
-    wrongCount = 0;
-
+    // 🌟 [수정됨] 애니메이션에 필요한 '데이터 계산'은 보따리 밖에 둡니다.
     const sId = String(window.currentStageId);
     const parts = sId.split('-'); 
     const chapterNum = parseInt(parts[0]);
 
     if (isNaN(chapterNum) || !bibleData[chapterNum]) return;
 
-    // -----------------------------------------------------------
-    // [구간 설정] ID 이름이 아닌 '순서'로 5개씩 끊기
-    // -----------------------------------------------------------
     const fullChapterData = bibleData[chapterNum];
     let startIndex = 0; 
     let endIndex = fullChapterData.length; // 기본값: 전체 (최종보스)
 
-    console.log(`[보스 시작] 1단계: 장 확인 - ${chapterNum}장, bibleData[${chapterNum}].length = ${fullChapterData.length}`);
-
     const chData = gameData.find(c => c.id === chapterNum);
     
-    // 중간보스라면 순서를 찾아서 범위 지정
     if (chData && sId.includes('mid')) { 
         const midBosses = chData.stages.filter(s => s.type === 'mid-boss');
         const myIndex = midBosses.findIndex(s => s.id === sId);
 
-        // 0번(첫째): 0~5 (1~5절)
-        // 1번(둘째): 5~10 (6~10절)
-        // 2번(셋째): 10~15 (11~15절)
         if (myIndex !== -1) {
             startIndex = myIndex * 5;
             endIndex = startIndex + 5;
-            
-            // 데이터 범위 초과 방지 안전장치
             if (endIndex > fullChapterData.length) endIndex = fullChapterData.length;
         }
     }
@@ -2986,42 +2955,60 @@ function startBossBattle() {
     // 데이터 잘라내기
     window.currentBattleData = fullChapterData.slice(startIndex, endIndex);
     maxBossHp = window.currentBattleData.length; 
-
     window.currentBattleChapter = chapterNum;
     window.currentBattleStartIndex = startIndex;
     
-    // ★ 디버그: 보스 체력 확인
-    console.log(`[보스 시작] 장: ${chapterNum}, 스테이지: ${sId}, 최대 체력: ${maxBossHp}, 구절 수: ${window.currentBattleData.length}`); 
 
-    // -----------------------------------------------------------
-    // [체력 설정] 하트 10개 버그 수정 (확실한 초기화)
-    // -----------------------------------------------------------
-    if (resumeMode && savedData) {
-        currentVerseIdx = savedData.index;
-        playerHearts = savedData.hp;     
-        currentBossHp = savedData.bossHp;
-        currentBossPartIndex = (typeof savedData.partIndex === 'number') ? savedData.partIndex : 0;
-    } else {
-        // ★ 새로 시작: 일단 기본 체력으로 초기화
-        currentVerseIdx = 0;
-        currentBossHp = maxBossHp;
-        playerHearts = maxPlayerHearts; // (보통 5)
-        currentBossPartIndex = 0;
-    }
+    // ✂️============== [여기서부터 콜백 보따리를 쌉니다] ==============✂️
+    // 화면 조작, UI 업데이트, 실제 전투 시작 로직만 담습니다.
+    const startBossAction = () => {
+        closeStageSheet();
+        document.getElementById('map-screen').classList.remove('active');
+        document.getElementById('game-screen').classList.add('active');
+        document.getElementById('game-screen').classList.remove('mode-training');
 
-    updateBattleUI(); 
-    loadNextVerse();
-
-    // 🌟 [완성] 보스 / 중간보스 구분해서 토스트 알림 발사!
-    if (typeof showReadAloudToast === 'function') {
-        if (sId.includes('mid')) {
-            // 중간보스일 때
-            showReadAloudToast("🛡️ 소리 내어 읽으며 용을 물리칩시다!");
-        } else {
-            // 최종 보스(드래곤)일 때
-            showReadAloudToast("⚔️ 진리를 나팔같이 외쳐 용을 잡으세요!");
+        const bossAvatar = document.querySelector('.boss-avatar');
+        if (bossAvatar) {
+            bossAvatar.classList.remove('boss-die-effect'); 
+            bossAvatar.classList.remove('boss-hit-effect'); 
+            bossAvatar.style.opacity = "1"; 
+            bossAvatar.style.transform = "scaleX(-1)"; 
         }
-    }
+
+        const field = document.querySelector('.battle-field');
+        const control = document.querySelector('.battle-control');
+        field.innerHTML = `<div class="verse-indicator" id="verse-index">준비 중...</div><div class="answer-zone" id="answer-zone"><span class="placeholder-text" id="placeholder-text">...</span></div>`;
+        control.innerHTML = `<div class="block-pool" id="block-pool"></div>`;
+
+        wrongCount = 0;
+
+        if (resumeMode && savedData) {
+            currentVerseIdx = savedData.index;
+            playerHearts = savedData.hp;     
+            currentBossHp = savedData.bossHp;
+            currentBossPartIndex = (typeof savedData.partIndex === 'number') ? savedData.partIndex : 0;
+        } else {
+            currentVerseIdx = 0;
+            currentBossHp = maxBossHp;
+            playerHearts = maxPlayerHearts; 
+            currentBossPartIndex = 0;
+        }
+
+        updateBattleUI(); 
+        loadNextVerse();
+
+        if (typeof showReadAloudToast === 'function') {
+            if (sId.includes('mid')) {
+                showReadAloudToast("🛡️ 소리 내어 읽으며 용을 물리칩시다!");
+            } else {
+                showReadAloudToast("⚔️ 진리를 나팔같이 외쳐 용을 잡으세요!");
+            }
+        }
+    }; // ✂️============== [보따리 끝] ==============✂️
+
+    
+    // 🌟 밖에서 미리 계산해둔 변수들을 사용해서 애니메이션을 먼저 틀어줍니다!
+    startBossTransition(chapterNum, startIndex + 1, endIndex, sId.includes('mid'), startBossAction);
 }
 
 /* [축하 이펙트] 보스 클리어 시 파티클 폭죽 생성 */
@@ -3868,45 +3855,54 @@ function startTraining(stageId, mode = 'normal') {
     sequenceIndex = 0;
     currentStep = stepSequence[0];
 
-    // 👉 [바로 여기에 추가!] Step 2, Step 5 파트 분할 데이터 완벽 초기화
+    // Step 2, Step 5 파트 분할 데이터 완벽 초기화
     window.currentStep2PartIndex = undefined;
     window.step2Parts = undefined;
     window.currentStep5PartIndex = undefined;
     window.step5Parts = undefined;
 
-    // [데이터 로드] - chNum, verseNum이 위에서 정의되어 있어 오류 해결됨
+    // [데이터 로드]
     if (bibleData[chNum] && bibleData[chNum][verseNum - 1]) {
         trainingVerseData = bibleData[chNum][verseNum - 1];
     } else {
         alert("데이터 로드 오류"); return;
     }
 
-    // 화면 전환
+    // 모드 선택 시트 닫기
     if (typeof closeStageSheet === 'function') closeStageSheet();
-    document.getElementById('map-screen').classList.remove('active');
-    document.getElementById('game-screen').classList.add('active');
-    document.getElementById('game-screen').classList.add('mode-training');
 
-    if(typeof recalculateMaxHearts === 'function') recalculateMaxHearts();
-    playerHearts = maxPlayerHearts;
-    updateBattleUI();
+    // 🌟 [핵심 변경점] 기존의 화면 전환 및 게임 시작 로직을 하나의 함수로 묶어줍니다!
+    const startStageAction = () => {
+        // 화면 전환
+        document.getElementById('map-screen').classList.remove('active');
+        document.getElementById('game-screen').classList.add('active');
+        document.getElementById('game-screen').classList.add('mode-training');
 
-    stageStartTime = Date.now();
-    wrongCount = 0;
-    const totalStepEl = document.getElementById('total-step-num');
-    if (totalStepEl) {
-        // 전체 단계가 줄었으므로, 현재 시퀀스의 길이로 표시하는 것이 더 직관적일 수 있습니다.
-        // 예: 빠른 복습이면 "Step 1/2", 전체 학습이면 "Step 1/5"
-        totalStepEl.innerText = stepSequence.length; 
-    }
-    loadStep();
-    // 🌟 [바로 여기에 추가!] 모드에 맞춰서 토스트 알림 발사!
-    if (mode === 'quick') {
-        showReadAloudToast("💡 소리내어 읽으면 암기 효과가 2배!");
-    } else {
-        // full, normal, full-new 등 전체 학습일 때
-        showReadAloudToast("🗣️ 소리내어 읽으면 암기 효과가 2배!");
-    }
+        if(typeof recalculateMaxHearts === 'function') recalculateMaxHearts();
+        playerHearts = maxPlayerHearts;
+        updateBattleUI();
+
+        stageStartTime = Date.now();
+        wrongCount = 0;
+        const totalStepEl = document.getElementById('total-step-num');
+        if (totalStepEl) {
+            totalStepEl.innerText = stepSequence.length; 
+        }
+        
+        // 본격적인 게임(Step) 시작
+        loadStep();
+        
+        // 토스트 알림 발사
+        if (mode === 'quick') {
+            showReadAloudToast("💡 소리내어 읽으면 암기 효과가 2배!");
+        } else {
+            showReadAloudToast("🗣️ 소리내어 읽으면 암기 효과가 2배!");
+        }
+    };
+
+    // 🌟 [여기에 추가!] 게임을 바로 시작하지 않고, 두루마리 애니메이션을 먼저 실행합니다.
+    // 애니메이션이 심도 속으로 빠져들어가는(SCENE 5) 순간, 위에서 만든 startStageAction을 몰래 실행합니다.
+    startStageWithTransition(chNum, verseNum, startStageAction);
 }
 
 // 2. 단계별 화면 로드
@@ -9945,5 +9941,120 @@ function playScrollTransition(targetCellId, targetText, onCompleteCallback) {
         targetCell.style.background = ""; 
         targetCell.style.borderColor = "#ddd"; 
         targetCell.style.color = "#333";
+    });
+}
+
+/* 🌟 보스전 전용 두루마리 줌인 애니메이션 */
+function startBossTransition(chapterNum, startVerse, endVerse, isMidBoss, onCompleteCallback) {
+    const gridContainer = document.getElementById('scroll-grid');
+    const title = document.getElementById('scroll-title');
+    const overlay = document.getElementById('bible-transition-overlay');
+    const board = document.getElementById('scroll-board');
+    const chapterData = bibleData[chapterNum];
+
+    title.innerText = `요한계시록 ${chapterNum}장`;
+    gridContainer.innerHTML = '';
+
+    // 1. 30칸 그리드 생성 및 보스 타겟 구간 붉게 물들이기
+    for (let i = 1; i <= 30; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'grid-cell';
+        cell.id = `cell-${i}`;
+
+        if (i <= chapterData.length) {
+            const numSpan = document.createElement('span');
+            numSpan.innerText = i;
+            numSpan.className = 'cell-number';
+            cell.appendChild(numSpan);
+
+            // 🌟 이번에 싸울 타겟 구간 강조 (렉 유발하는 boxShadow 삭제)
+            if (i >= startVerse && i <= endVerse) {
+                cell.style.background = "rgba(139, 0, 0, 0.35)"; // 배경색을 조금 더 진하게
+                cell.style.borderColor = "darkred";
+                cell.style.color = "darkred";
+                cell.style.fontWeight = "900"; // 글씨를 굵게 해서 강조
+                // cell.style.boxShadow = ... <-- 이 부분은 완전히 지워주세요!
+            }
+        } else {
+            cell.classList.add('empty');
+        }
+        gridContainer.appendChild(cell);
+    }
+
+    // 2. 화면 중앙 경고 텍스트 오버레이 세팅
+    let textOverlay = document.getElementById('verse-text-overlay');
+    if (!textOverlay) {
+        textOverlay = document.createElement('div');
+        textOverlay.id = 'verse-text-overlay';
+        overlay.appendChild(textOverlay);
+    }
+    
+    // 모드에 따른 텍스트 분기
+    if (isMidBoss) {
+        textOverlay.innerHTML = `<span style="color:red; font-size:1.5em;">⚔️ 중간 점검</span><br/>${startVerse}절 ~ ${endVerse}절`;
+    } else {
+        textOverlay.innerHTML = `<span style="color:darkred; font-size:1.5em;">🐉 보스 출현</span><br/>${chapterNum}장 전체`;
+    }
+    gsap.set(textOverlay, { opacity: 0, y: 20, scale: 0.9 });
+
+    // 3. 전투가 시작될 '첫 번째 칸(startVerse)'을 줌인 타겟으로 삼습니다.
+    const targetCell = document.getElementById(`cell-${startVerse}`);
+    gsap.set(board, { x: 0, y: 0, scale: 1, rotationX: 0 });
+
+    const boardRect = board.getBoundingClientRect();
+    const cellRect = targetCell.getBoundingClientRect();
+    const localX = (cellRect.left - boardRect.left) + cellRect.width / 2;
+    const localY = (cellRect.top - boardRect.top) + cellRect.height / 2;
+    // 🌟 렌더링 최적화: 브라우저 GPU 예열
+    gsap.set(board, { transformOrigin: `${localX}px ${localY}px`, willChange: "transform" });
+    const moveX = (window.innerWidth / 2) - (boardRect.left + localX);
+    const moveY = (window.innerHeight / 2) - (boardRect.top + localY);
+    const fillScale = Math.max(window.innerWidth / cellRect.width, window.innerHeight / cellRect.height) * 1.5;
+
+    gsap.set(overlay, { opacity: 1, pointerEvents: "auto" });
+
+    // 4. GSAP 보스 출현 타임라인 구성
+    const tl = gsap.timeline();
+
+    tl.fromTo(board, 
+        { scale: 0.7, opacity: 0, rotationX: 10 },
+        { scale: 1, opacity: 1, rotationX: 0, duration: 0.6, ease: "power2.out" }
+    )
+    
+    // 약간의 진동(Shake)
+    .to(board, { x: 5, duration: 0.05, yoyo: true, repeat: 5 }) 
+    
+    // 정조준 줌인
+    .to(board, { scale: fillScale, x: moveX, y: moveY, duration: 1.2, ease: "power2.inOut" }, "+=0.2")
+
+    // 칸 내용 숨기고 보스 경고 텍스트 등장
+    .to(targetCell.querySelector('.cell-number'), { opacity: 0, scale: 0.5, duration: 0.4 }, "+=0.1")
+    .to(textOverlay, { opacity: 1, y: 0, scale: 1, duration: 0.6 }, "<")
+
+    // 경고 읽을 시간 대기
+    .to(board, { duration: 3.0 })
+
+    // 🌟 [핵심 최적화] 딥-줌인 직전에 복잡한 격자(Grid)들을 스르륵 숨깁니다.
+    // 뼈대만 남기고 날려버리기 때문에 아무리 거대하게 확대해도 렉이 0%가 됩니다!
+    .to(gridContainer, { opacity: 0, duration: 0.3 })
+
+    // 딥-줌인으로 게임 진입!
+    .to(board, { scale: fillScale * 2.5, opacity: 0, duration: 0.8, ease: "power2.in" }, "<")
+    .to(textOverlay, { opacity: 0, scale: 1.1, duration: 0.8, ease: "power2.inOut" }, "<")
+    
+    .call(() => {
+        if(onCompleteCallback) onCompleteCallback();
+        
+        const gameScreen = document.getElementById('game-screen');
+        if (gameScreen) {
+            gsap.fromTo(gameScreen, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1.0, ease: "power2.out", delay: 0.3 });
+        }
+    })
+    .to(overlay, { opacity: 0, duration: 0.8, ease: "power2.inOut" })
+    .call(() => {
+        // 다음을 위해 속성 완벽 복구
+        gsap.set(board, { x: 0, y: 0, scale: 1, opacity: 0, transformOrigin: "50% 50%", willChange: "auto" }); 
+        gsap.set(gridContainer, { opacity: 1 }); // 그리드 다시 보이게 세팅
+        gsap.set(overlay, { pointerEvents: "none" });
     });
 }
