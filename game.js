@@ -9897,7 +9897,7 @@ function playScrollTransition(targetCellId, targetText, onCompleteCallback) {
 
     // [SCENE 1] 두루마리 등장
     tl.fromTo(board, 
-        { scale: 0.7, opacity: 0, rotationX: 10 },
+        { scale: 1, opacity: 0, rotationX: 10 },
         { scale: 1, opacity: 1, rotationX: 0, duration: 1.6, ease: "power2.out" }
     )
     
@@ -9933,10 +9933,10 @@ function playScrollTransition(targetCellId, targetText, onCompleteCallback) {
         }
     })
 
-    // [SCENE 5] 딥-줌인 & 페이드아웃 (스킵을 눌러도 이 멋진 연출은 그대로 보여줍니다)
-    .to(board, { scale: fillScale * 2.5, opacity: 0, duration: 0.8, ease: "power2.in" })
-    .to(textOverlay, { opacity: 0, scale: 1.1, duration: 0.8, ease: "power2.inOut" }, "<")
-    
+// 🌟 [SCENE 5] 줌인 없이 그 자리에서 부드럽게 스르륵 암전!
+    .to(board, { opacity: 0, duration: 0.8, ease: "power2.inOut" })
+    .to(textOverlay, { opacity: 0, duration: 0.8, ease: "power2.inOut" }, "<")
+
     // 🌟 [SCENE 6] 콜백 실행 및 Step 1 등장 연출
     .call(() => {
         // 기존처럼 게임 화면 로딩을 실행합니다.
@@ -10063,10 +10063,10 @@ function startBossTransition(chapterNum, startVerse, endVerse, isMidBoss, onComp
     // 뼈대만 남기고 날려버리기 때문에 아무리 거대하게 확대해도 렉이 0%가 됩니다!
     .to(gridContainer, { opacity: 0, duration: 0.3 })
 
-    // 딥-줌인으로 게임 진입!
-    .to(board, { scale: fillScale * 2.5, opacity: 0, duration: 0.8, ease: "power2.in" }, "<")
-    .to(textOverlay, { opacity: 0, scale: 1.1, duration: 0.8, ease: "power2.inOut" }, "<")
-    
+// 🌟 [SCENE 5] 줌인 없이 그 자리에서 부드럽게 스르륵 암전!
+    .to(board, { opacity: 0, duration: 0.8, ease: "power2.inOut" })
+    .to(textOverlay, { opacity: 0, duration: 0.8, ease: "power2.inOut" }, "<")
+        
     .call(() => {
         if(onCompleteCallback) onCompleteCallback();
         

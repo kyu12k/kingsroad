@@ -2473,6 +2473,7 @@ body, html {
     word-break: keep-all; /* 단어 단위로 줄바꿈되어 읽기 편함 */
     z-index: 10005; /* 두루마리보다 더 위에 위치 */
     pointer-events: none;
+    will-change: opacity; /* 🌟 추가: 투명도 변화만 렉 없이 부드럽게 처리하라는 명령 */
 }
 
 /* PC/태블릿 환경을 위한 크기 제한 */
@@ -2503,4 +2504,69 @@ body, html {
 #skip-transition-btn:active {
     transform: scale(0.95);
     background: rgba(0, 0, 0, 0.7);
+}
+
+/* ========================================================= */
+/* 📜 [수정] 돌돌 말린 두루마리 디자인 (렉 없음, 선명함 유지) */
+/* ========================================================= */
+
+/* 📜 전체 두루마리 보드 (양피지 부분 - 두께 소폭 조정) */
+#scroll-board {
+    position: relative; /* 🌟 중요: 나무 막대기 배치를 위해 필수 */
+    
+    background-color: #FDF8E7; /* 기존 양피지 색 */
+    border: 2px solid #5C4330; /* 🌟 테두리를 조금 더 가늘게 (종이 느낌) */
+    border-radius: 20px; /* 기존 귀여운 모서리 */
+    box-shadow: inset 0 0 20px rgba(92, 67, 48, 0.1); /* 기존 부드러운 음영 */
+    
+    /* 🌟 나무 막대기가 앉을 여백 확보 (padding 조정) */
+    padding-top: 35px; /* 위쪽 막대기 공간 */
+    padding-bottom: 35px; /* 아래쪽 막대기 공간 */
+    padding-left: 15px; /* 기존 horizontal */
+    padding-right: 15px; /* 기존 horizontal */
+    
+    /* 🌟 딥-줌인 시 막대기가 화면 밖으로 깔끔하게 밀려나도록 설정 */
+    overflow: visible; 
+}
+
+/* 📜 격자(Grid) 배치 소폭 수정 */
+#scroll-grid {
+    /* ... 기존 grid 배치 코드 ... */
+    margin-top: 15px;
+    margin-bottom: 20px; /* 아래 막대기와 겹치지 않게 여백 */
+}
+
+/* ========================================================= */
+/* 🌟 [새로 추가] 나무 막대기 (Lighter Brown Wood + Subtle Gradient) */
+/* CSS만 사용하여 아무리 확대해도 선명하며 렉이 발생하지 않습니다. */
+/* ========================================================= */
+.roller-top, .roller-bottom {
+    position: absolute;
+    
+    /* 종이 넓이보다 살짝 더 길게 (귀여운 돌출 효과) */
+    left: -15px;  
+    right: -15px;
+    
+    height: 28px; /* 귀여운 굵기 */
+    background: #8E6F54; /* 따뜻한 나무 갈색 */
+    border: 3px solid #5C4330; /* 기존 낡은 잉크색으로 또렷한 테두리 */
+    border-radius: 15px; /* 양 끝을 둥글게 (귀여움) */
+    box-shadow: 0 4px 6px rgba(0,0,0,0.15); /* 입체감 그림자 */
+    
+    /* 최적화된 그라데이션: 렉 없이 둥근 막대기 질감 표현 */
+    background-image: linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.1) 0%,   /* 위쪽 하이라이트 */
+        rgba(0, 0, 0, 0) 50%,          /* 중앙 */
+        rgba(0, 0, 0, 0.15) 100%        /* 아래쪽 그림자 */
+    );
+    z-index: 10; /* 종이보다 위에 배치 */
+}
+
+.roller-top {
+    top: -14px; /* 종이 테두리 위로 살짝 올라앉게 */
+}
+
+.roller-bottom {
+    bottom: -14px; /* 종이 테두리 아래로 살짝 올라앉게 */
 }
