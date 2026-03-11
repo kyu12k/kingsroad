@@ -9867,7 +9867,7 @@ function playScrollTransition(targetCellId, targetText, onCompleteCallback) {
     // 이렇게 하면 아무리 배율을 키워도 엉뚱한 곳으로 시선이 빗겨가지 않습니다.
     const localX = (cellRect.left - boardRect.left) + cellRect.width / 2;
     const localY = (cellRect.top - boardRect.top) + cellRect.height / 2;
-    gsap.set(board, { transformOrigin: `${localX}px ${localY}px`, force3D: false, willChange: "transform" });
+    gsap.set(board, { transformOrigin: `${localX}px ${localY}px`, force3D: false });
 
     // 화면 정중앙 좌표
     const viewportCenterX = window.innerWidth / 2;
@@ -9898,7 +9898,7 @@ function playScrollTransition(targetCellId, targetText, onCompleteCallback) {
     // [SCENE 1] 두루마리 등장
     tl.fromTo(board, 
         { scale: 0.7, opacity: 0, rotationX: 10 },
-        { scale: 1, opacity: 1, rotationX: 0, duration: 0.6, ease: "power2.out" }
+        { scale: 1, opacity: 1, rotationX: 0, duration: 1.6, ease: "power2.out" }
     )
     
     // [SCENE 2] 칸이 화면을 삼키는 정조준 줌인
@@ -10043,7 +10043,7 @@ function startBossTransition(chapterNum, startVerse, endVerse, isMidBoss, onComp
 
     tl.fromTo(board, 
         { scale: 0.7, opacity: 0, rotationX: 10 },
-        { scale: 1, opacity: 1, rotationX: 0, duration: 0.6, ease: "power2.out" }
+        { scale: 1, opacity: 1, rotationX: 0, duration: 1.6, ease: "power2.out" }
     )
     
     // 약간의 진동(Shake)
@@ -10057,7 +10057,7 @@ function startBossTransition(chapterNum, startVerse, endVerse, isMidBoss, onComp
     .to(textOverlay, { opacity: 1, y: 0, scale: 1, duration: 0.6 }, "<")
 
     // 경고 읽을 시간 대기
-    .to(board, { duration: 3.0 })
+    .to(board, { duration: 1.0 })
 
     // 🌟 [핵심 최적화] 딥-줌인 직전에 복잡한 격자(Grid)들을 스르륵 숨깁니다.
     // 뼈대만 남기고 날려버리기 때문에 아무리 거대하게 확대해도 렉이 0%가 됩니다!
