@@ -3974,7 +3974,7 @@ function loadStep() {
     }
 
     // ----------------------------------------------------
-    // [Step 1] 각인 모드 (속도 조절: 낭독 속도)
+    // [Step 1] 각인 모드 (속도 조절: 낭독 속도 + 초성 힌트)
     // ----------------------------------------------------
     if (currentStep === 1) {
         field.innerHTML = `
@@ -3993,32 +3993,78 @@ function loadStep() {
                 </svg>
             </div>
         `;
-        
+
+        // ★ [추가] 1. 한글 초성 추출 도구
+        const getChosung = (str) => {
+            const cho = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
+            let result = "";
+            for(let i=0; i<str.length; i++) {
+                let code = str.charCodeAt(i) - 44032;
+                if(code > -1 && code < 11172) result += cho[Math.floor(code / 588)];
+                else result += str.charAt(i); // 한글이 아니면(알파벳, 기호 등) 그대로 둠
+            }
+            return result;
+        };
+
+        // ★ [추가] 2. 글자수만큼 블록(■)으로 마스킹하는 도구
+        const getMasked = (str) => str.replace(/[가-힣a-zA-Z0-9]/g, '■');
+
         const card = document.getElementById('tap-reading-card');
         window.chunksToReveal = trainingVerseData.chunks;
         window.revealIndex = 0;
         let autoFillInterval = null;
+        let isChosungMode = false; // ★ 초성 모드 상태 변수
 
-        // 미리보기 (흐린 글씨) 생성
+        // 미리보기 (블라인드 글씨) 생성
         window.chunksToReveal.forEach((chunk, idx) => {
             const span = document.createElement('span');
-            span.innerText = chunk;
+            // ★ 원본, 초성, 마스킹 데이터를 span 태그 안에 꽁꽁 숨겨둡니다.
+            span.dataset.original = chunk;
+            span.dataset.chosung = getChosung(chunk);
+            span.dataset.masked = getMasked(chunk);
+            
+            span.innerText = span.dataset.masked; // 처음엔 완벽히 가림
             span.id = `chunk-${idx}`;
             span.style.color = "#bdc3c7"; 
             span.style.fontSize = "1.3rem";
-            span.style.opacity = "0.4";
-            // 애니메이션 속도를 조금 더 부드럽게 조정
+            span.style.opacity = "0.8"; // 너무 투명하면 마스킹이 안 보이므로 조금 진하게
             span.style.transition = "all 0.3s ease-out"; 
             card.appendChild(span);
         });
 
         control.innerHTML = `
-            <button class="btn-attack" id="btn-step1-next" onclick="nextStep()" style="display:none; background-color:#2ecc71; margin-top:10px;">성령 충만! 다음 단계로 ▶</button>
+            <div id="step1-controls" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 10px;"></div>
+            <button class="btn-attack" id="btn-step1-next" onclick="nextStep()" style="display:none; background-color:#2ecc71; margin-top:10px; width: 100%;">성령 충만! 다음 단계로 ▶</button>
             <div style="text-align:center; color:#7f8c8d; font-size:0.9rem; margin-top:5px;">
                 <span style="background:#eee; padding:2px 8px; border-radius:10px;">TIP</span> 꾹 누르면 말씀이 흘러들어옵니다
             </div>
         `;
-        
+
+        const controlsContainer = document.getElementById('step1-controls');
+
+        // ★ [추가] 3. 초성 토글 버튼과 로직 생성
+        const toggleChosung = () => {
+            isChosungMode = !isChosungMode;
+            chosungBtn.innerText = isChosungMode ? '초성 끄기 👁️' : '초성 보기 💡';
+            chosungBtn.style.backgroundColor = isChosungMode ? '#e67e22' : '#f39c12';
+
+            // 안 열린 단어들만 초성 <-> 블라인드 전환
+            for (let i = window.revealIndex; i < window.chunksToReveal.length; i++) {
+                const span = document.getElementById(`chunk-${i}`);
+                if (span) {
+                    span.innerText = isChosungMode ? span.dataset.chosung : span.dataset.masked;
+                }
+            }
+        };
+
+        const chosungBtn = document.createElement('button');
+        chosungBtn.id = 'btn-toggle-chosung';
+        chosungBtn.className = 'btn-attack';
+        chosungBtn.style.backgroundColor = '#f39c12'; // 눈에 띄는 노란/오렌지색
+        chosungBtn.style.flex = "1";
+        chosungBtn.innerText = '초성 보기 💡';
+        chosungBtn.onclick = toggleChosung;
+
         const fillOneChunk = () => {
             if (window.revealIndex >= window.chunksToReveal.length) {
                 stopAutoFill(); 
@@ -4027,6 +4073,7 @@ function loadStep() {
             
             const span = document.getElementById(`chunk-${window.revealIndex}`);
             if (span) {
+                span.innerText = span.dataset.original; // ★ 단어가 공개될 때 숨겨둔 원본 텍스트로 교체!
                 span.style.color = "#2c3e50"; 
                 span.style.fontWeight = "bold";
                 span.style.opacity = "1";
@@ -4034,7 +4081,7 @@ function loadStep() {
                 span.style.transform = "scale(1.1)";
                 setTimeout(() => { 
                     span.style.transform = "scale(1)";
-                    span.style.fontSize = "1.3rem"; // ★ 원래 크기로 복귀
+                    span.style.fontSize = "1.3rem"; 
                 }, 200);
             }
 
@@ -4045,7 +4092,6 @@ function loadStep() {
             }
         };
 
-        // ▼ [수정됨] 자동 채우기 속도 조절 (낭독 속도)
         const startAutoFill = (e) => {
             if(e && e.preventDefault) e.preventDefault();
             fillOneChunk(); 
@@ -4060,30 +4106,25 @@ function loadStep() {
             }
         };
 
-        // 카드 자체는 스크롤 전용으로 두고, 별도 버튼에서 각인(한 번/롱프레스)을 처리합니다.
-        card.style.overflowY = 'hidden'; /* 스크롤바 공간 삭제 */
-        card.style.maxHeight = 'none';   /* 글자가 많아져도 상자가 늘어나게 함 */
+        card.style.overflowY = 'hidden'; 
+        card.style.maxHeight = 'none';   
         card.style.cursor = 'pointer'; 
-        card.style.padding = '20px 10px'; /* 위아래 20px, 좌우 10px로 양옆 공백 최소화 */
-        card.style.boxSizing = 'border-box'; /* 여백 계산 확실하게 굳히기 */
+        card.style.padding = '20px 10px'; 
+        card.style.boxSizing = 'border-box'; 
 
-        // 리빌 버튼 생성: 짧게 누르면 한 덩어리, 길게 누르면 자동 재생
         const revealBtn = document.createElement('button');
         revealBtn.id = 'btn-reveal';
         revealBtn.className = 'btn-attack';
-        revealBtn.style.marginRight = '8px';
+        revealBtn.style.flex = "1";
         revealBtn.innerText = '읽기 ▶ (한 번/꾹 누름)';
 
         let longPressTimer = null;
         let longPressActive = false;
-
-        // 포인터 캡처 및 이동 임계값 적용: 작은 손 떨림으로 자동 재생이 멈추지 않도록
         let startX = 0, startY = 0;
-        const MOVE_THRESHOLD = 10; // px
+        const MOVE_THRESHOLD = 10; 
 
         revealBtn.addEventListener('pointerdown', (ev) => {
             ev.preventDefault();
-            // 포인터 캡처로 다른 요소로 포인터가 넘어가지 않게 유지
             try { revealBtn.setPointerCapture && revealBtn.setPointerCapture(ev.pointerId); } catch (e) {}
             startX = ev.clientX; startY = ev.clientY;
             longPressActive = false;
@@ -4092,13 +4133,12 @@ function loadStep() {
                 longPressActive = true;
                 revealBtn.classList.add('active');
                 startAutoFill();
-            }, 300); // 300ms 롱프레스
+            }, 300); 
         }, {passive: false});
 
         revealBtn.addEventListener('pointermove', (ev) => {
-            // 버튼 내부에서의 손/커서 이동은 허용합니다. 버튼 바깥으로 벗어났을 때만 취소합니다.
             const rect = revealBtn.getBoundingClientRect();
-            const MARGIN = 10; // 버튼 바깥으로 살짝 나가면 취소
+            const MARGIN = 10; 
             const inside = (ev.clientX >= rect.left - MARGIN && ev.clientX <= rect.right + MARGIN &&
                             ev.clientY >= rect.top - MARGIN && ev.clientY <= rect.bottom + MARGIN);
             if (!inside) {
@@ -4120,7 +4160,6 @@ function loadStep() {
                 revealBtn.classList.remove('active');
                 longPressActive = false;
             } else {
-                // 짧게 누른 경우 한 덩어리만 채우기
                 fillOneChunk();
             }
         });
@@ -4133,17 +4172,15 @@ function loadStep() {
             revealBtn.classList.remove('active');
         });
 
-        // 컨트롤 영역에 리빌 버튼을 앞쪽에 삽입
-        const nextBtn = document.getElementById('btn-step1-next');
-        if (nextBtn) {
-            control.insertBefore(revealBtn, nextBtn);
-        } else {
-            control.appendChild(revealBtn);
-        }
+        // ★ [배치] 버튼들을 나란히 배치합니다.
+        controlsContainer.appendChild(revealBtn);
+        controlsContainer.appendChild(chosungBtn);
 
-        // 피니시 효과 (빛줄기 + 머리 채움)
         const finishStep1Effect = () => {
             stopAutoFill();
+            
+            // 말씀이 완성되면 초성 버튼을 비활성화/숨김 처리합니다.
+            chosungBtn.style.display = 'none';
             
             card.style.transition = "box-shadow 0.5s, background 0.5s";
             card.style.boxShadow = "0 0 30px #f1c40f"; 
