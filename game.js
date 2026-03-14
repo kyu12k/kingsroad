@@ -1,5 +1,9 @@
 // [정식 배포] 게임 버전 정보
 const GAME_VERSION = "1.0.0"; // 정식 배포 버전
+
+// 🌟 [추가] 브라우저에 저장된 음소거 상태를 불러옵니다. (앱 전체에서 공유)
+let isGlobalMuted = localStorage.getItem('isMuted') === 'true';
+
 // [PWA 설치 프롬프트 및 iOS 안내]
 let deferredPrompt = null;
 window.addEventListener('beforeinstallprompt', (e) => {
@@ -9802,52 +9806,75 @@ function startStageWithTransition(chapterNum, verseNum, startStageCallback) {
     const title = document.getElementById('scroll-title');
     const overlay = document.getElementById('bible-transition-overlay');
 
-    if (!gridContainer || !bibleData[chapterNum]) return startStageCallback();
+    const cNum = parseInt(chapterNum, 10);
+    const vNum = parseInt(verseNum, 10);
 
-    const chapterData = bibleData[chapterNum];
-    
-    // 타이틀 업데이트
-    title.innerText = `요한계시록 ${chapterNum}장`;
-    
-    // 이전 내용 지우기
+    if (!gridContainer || !bibleData[cNum]) return startStageCallback();
+
+    const chapterData = bibleData[cNum];
+    title.innerText = `요한계시록 ${cNum}장`;
     gridContainer.innerHTML = '';
 
-    // 🌟 무조건 30칸(5x6)을 생성하여 전체 형태를 고정합니다.
     for (let i = 1; i <= 30; i++) {
         const cell = document.createElement('div');
         cell.className = 'grid-cell';
         cell.id = `cell-${i}`;
 
         if (i <= chapterData.length) {
-            // 구절이 있는 칸
             const numSpan = document.createElement('span');
-            numSpan.innerText = i; // 절 번호만 크게 표시
+            numSpan.innerText = i; 
             numSpan.className = 'cell-number';
             cell.appendChild(numSpan);
         } else {
-            // 구절이 없는 빈 칸 (형태 유지용)
             cell.classList.add('empty');
         }
-        
         gridContainer.appendChild(cell);
     }
 
-    // 목표 구절의 텍스트 데이터 가져오기 (배열 인덱스는 0부터 시작하므로 -1)
-    const targetText = chapterData[verseNum - 1].text;
+    const targetText = chapterData[vNum - 1].text;
 
-    // 칸 생성이 끝났으니, 오버레이를 켜고 줌인 애니메이션 시작!
+    // 🌟 [수정] 네가 정한 깔끔한 이름 규칙(장-절.mp3) 적용!
+    // 만약 폴더 이름이 'sounds'라면 'sounds/${cNum}-${vNum}.mp3'로 맞추면 돼.
+    const audioUrl = `assets/audio/${cNum}-${vNum}.mp3`;
+    
+    // 🌟 [추가] 오디오 객체를 여기서 미리 생성하고 다운로드를 강제합니다.
+    const preloadedAudio = new Audio(audioUrl);
+    preloadedAudio.preload = 'auto';
+    preloadedAudio.load();
+
+    // 🌟 까만 커튼을 덮어서 유저의 시선을 차단합니다. (로딩 화면 역할)
     gsap.set(overlay, { opacity: 1, pointerEvents: "auto" });
-    playScrollTransition(`cell-${verseNum}`, targetText, startStageCallback);
+
+    // 🌟 오디오 로딩 상태 추적 변수
+    let isAudioReady = false;
+
+    // 🌟 오디오 다운로드가 완료되어 끊김 없이 재생할 준비가 되었다는 이벤트
+    preloadedAudio.addEventListener('canplaythrough', () => {
+        if (!isAudioReady) {
+            isAudioReady = true;
+            // 로딩이 끝났으니, 준비된 오디오 객체를 들고 애니메이션 시작!
+            playScrollTransition(`cell-${vNum}`, targetText, preloadedAudio, startStageCallback);
+        }
+    }, { once: true }); // 한 번만 실행되도록 설정
+
+    // 🌟 [안전장치] 만약 인터넷이 느려서 로딩이 1.5초 이상 지연되면? 
+    // 무한정 까만 화면에 멈춰있지 않도록 일단 애니메이션을 강제로 시작시킵니다.
+    setTimeout(() => {
+        if (!isAudioReady) {
+            console.warn("오디오 사전 로딩 지연, 애니메이션을 강제로 시작합니다.");
+            isAudioReady = true;
+            playScrollTransition(`cell-${vNum}`, targetText, preloadedAudio, startStageCallback);
+        }
+    }, 1500); 
 }
 
-
-/* [최종 진화] 기준점 고정(Drift 방지) + 칸이 화면이 되는 동적 줌인 */
-function playScrollTransition(targetCellId, targetText, onCompleteCallback) {
+/* [시네마틱 + 즉시 스킵 + 음소거 유지] 완벽 통합 버전 */
+function playScrollTransition(targetCellId, targetText, verseAudio, onCompleteCallback) {
     const board = document.getElementById('scroll-board');
+    const gridContainer = document.getElementById('scroll-grid'); 
     const targetCell = document.getElementById(targetCellId);
     const overlay = document.getElementById('bible-transition-overlay');
     
-    // 1. 화면 정중앙 텍스트 오버레이 준비
     let textOverlay = document.getElementById('verse-text-overlay');
     if (!textOverlay) {
         textOverlay = document.createElement('div');
@@ -9857,94 +9884,115 @@ function playScrollTransition(targetCellId, targetText, onCompleteCallback) {
     textOverlay.innerText = targetText;
     gsap.set(textOverlay, { opacity: 0, y: 20, scale: 0.9 });
 
-    // 🌟 2. 좌표 측정 전, 두루마리를 1:1 원래 비율과 위치로 리셋해야 정확한 값을 얻습니다.
     gsap.set(board, { x: 0, y: 0, scale: 1, rotationX: 0 });
 
     const boardRect = board.getBoundingClientRect();
     const cellRect = targetCell.getBoundingClientRect();
 
-    // 🌟 3. [핵심] 타겟 칸의 중심점(Local)을 찾아 보드의 '확대 기준점'으로 설정!
-    // 이렇게 하면 아무리 배율을 키워도 엉뚱한 곳으로 시선이 빗겨가지 않습니다.
     const localX = (cellRect.left - boardRect.left) + cellRect.width / 2;
     const localY = (cellRect.top - boardRect.top) + cellRect.height / 2;
-    gsap.set(board, { transformOrigin: `${localX}px ${localY}px`, force3D: false });
+    gsap.set(board, { transformOrigin: `${localX}px ${localY}px` });
 
-    // 화면 정중앙 좌표
-    const viewportCenterX = window.innerWidth / 2;
-    const viewportCenterY = window.innerHeight / 2;
+    const moveX = (window.innerWidth / 2) - (boardRect.left + localX);
+    const moveY = (window.innerHeight / 2) - (boardRect.top + localY);
+    const fillScale = Math.max(window.innerWidth / cellRect.width, window.innerHeight / cellRect.height) * 1.5;
 
-    // 현재 기준점이 화면상 어디에 있는지 계산
-    const currentOriginX = boardRect.left + localX;
-    const currentOriginY = boardRect.top + localY;
-
-    // 타겟 칸을 화면 정중앙으로 오게 하기 위해 이동해야 할 거리
-    const moveX = viewportCenterX - currentOriginX;
-    const moveY = viewportCenterY - currentOriginY;
-
-    // 🌟 4. [핵심] 칸이 화면을 완전히 덮어버리도록 동적 배율 계산
-    // 화면의 가로, 세로 해상도 중 더 긴 쪽에 맞춰 칸을 무한 확대! (여유분 1.5배 추가)
-    const scaleToFillScreenWidth = window.innerWidth / cellRect.width;
-    const scaleToFillScreenHeight = window.innerHeight / cellRect.height;
-    const fillScale = Math.max(scaleToFillScreenWidth, scaleToFillScreenHeight) * 1.5;
-
-    // 타겟 칸 하이라이트
     targetCell.style.background = "rgba(211, 84, 0, 0.15)";
     targetCell.style.borderColor = "#d35400";
     targetCell.style.color = "#d35400";
 
     const skipBtn = document.getElementById('skip-transition-btn');
+    const muteBtn = document.getElementById('mute-toggle-btn'); // 🌟 음소거 버튼 연결
     const tl = gsap.timeline();
 
-    // [SCENE 1] 두루마리 등장
-    tl.fromTo(board, 
-        { scale: 1, opacity: 0, rotationX: 10 },
-        { scale: 1, opacity: 1, rotationX: 0, duration: 1.6, ease: "power2.out" }
-    )
-    
-    // [SCENE 2] 칸이 화면을 삼키는 정조준 줌인
-    // 칸의 테두리가 화면 밖으로 밀려나며 화면 전체가 칸 안의 양피지가 됩니다.
-    .to(board, { scale: fillScale, x: moveX, y: moveY, duration: 1.2, ease: "power2.inOut" }, "+=0.2")
+    let fallbackTimer;
+    let isSkipped = false;
+    const readTime = Math.max(3.5, targetText.length * 0.15); 
 
-    // [SCENE 3] 절 번호는 스르륵 사라지고, 화면 가득 구절 텍스트가 웅장하게 등장!
-    .to(targetCell.querySelector('.cell-number'), { opacity: 0, scale: 0.5, duration: 0.4 }, "+=0.1")
-    .to(textOverlay, { opacity: 1, y: 0, scale: 1, duration: 0.6 }, "<")
+    let audioObj = verseAudio;
+    if (typeof verseAudio === 'string') {
+        audioObj = new Audio(verseAudio);
+    }
 
-    // 🌟 [추가] 텍스트가 화면에 다 나오면 스킵 버튼을 보여주고 클릭 이벤트를 활성화합니다.
-    .call(() => {
-        if(skipBtn) {
-            skipBtn.style.display = "block";
-            // 스킵 버튼을 누르면 타임라인을 'endReading' 라벨로 순간이동!
-            skipBtn.onclick = () => tl.seek("endReading");
-        }
-    })
+    // 🌟 [핵심 1] 저장된 글로벌 음소거 상태를 오디오에 즉시 적용
+    audioObj.muted = isGlobalMuted;
 
-    // [SCENE 4] 구절 길이에 비례하여 읽을 시간 대기 (길어도 안심!)
-    const readTime = Math.max(3.0, targetText.length * 0.15);
-    tl.to(board, { duration: readTime })
+    // 🌟 [핵심 2] 음소거 버튼 로직
+    if (muteBtn) {
+        muteBtn.style.display = "flex"; 
+        muteBtn.innerText = isGlobalMuted ? "🔇" : "🔊"; // 현재 상태에 맞게 아이콘 변경
 
-    // 🌟 [여기에 라벨(깃발) 꽂기!] 스킵을 누르면 시간 대기를 무시하고 바로 이 지점으로 넘어옵니다.
-    .addLabel("endReading")
-    
-    // 🌟 [추가] 딥-줌인이 시작되기 직전에 스킵 버튼을 다시 숨깁니다.
-    .call(() => {
-        if(skipBtn) {
+        muteBtn.onclick = () => {
+            isGlobalMuted = !isGlobalMuted; // 상태 뒤집기
+            localStorage.setItem('isMuted', isGlobalMuted); // 🌟 상태를 브라우저에 영구 저장!
+            audioObj.muted = isGlobalMuted; // 재생 중인 소리 즉시 제어
+            muteBtn.innerText = isGlobalMuted ? "🔇" : "🔊"; // 아이콘 업데이트
+        };
+    }
+
+    if (skipBtn) {
+        skipBtn.style.display = "block";
+        skipBtn.onclick = () => {
+            if (isSkipped) return;
+            isSkipped = true;
+            
+            audioObj.pause();
+            audioObj.currentTime = 0;
+            clearTimeout(fallbackTimer);
             skipBtn.style.display = "none";
-            skipBtn.onclick = null; // 이벤트 초기화
+            if(muteBtn) muteBtn.style.display = "none"; // 스킵 시 음소거 버튼도 같이 숨김
+            
+            tl.play("outro"); 
+        };
+    }
+
+    tl.fromTo(board, 
+        { scale: 0.7, opacity: 0, rotationX: 10 },
+        { scale: 1, opacity: 1, rotationX: 0, duration: 0.6, ease: "power2.out" }
+    )
+    .to(board, { opacity: 0, duration: 0.4, ease: "power2.inOut" }, "+=1.2")
+    .set(board, { scale: fillScale, x: moveX, y: moveY })
+    .set(targetCell.querySelector('.cell-number'), { opacity: 0 })
+    .to(board, { opacity: 1, duration: 0.5, ease: "power2.inOut" })
+    .to(textOverlay, { opacity: 1, y: 0, scale: 1, duration: 0.5 }, "<")
+    
+    .call(() => {
+        if (isSkipped) return; 
+        tl.pause(); 
+
+        const playPromise = audioObj.play();
+
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                audioObj.onended = () => {
+                    if (isSkipped) return;
+                    clearTimeout(fallbackTimer);
+                    tl.play("outro"); 
+                };
+            }).catch((error) => {
+                console.warn("오디오 재생 불가:", error);
+                fallbackTimer = setTimeout(() => {
+                    if (isSkipped) return;
+                    tl.play("outro"); 
+                }, readTime * 1000);
+            });
         }
     })
 
-// 🌟 [SCENE 5] 줌인 없이 그 자리에서 부드럽게 스르륵 암전!
-    .to(board, { opacity: 0, duration: 0.8, ease: "power2.inOut" })
-    .to(textOverlay, { opacity: 0, duration: 0.8, ease: "power2.inOut" }, "<")
+    .addLabel("outro")
 
-    // 🌟 [SCENE 6] 콜백 실행 및 Step 1 등장 연출
+    // 🌟 아웃트로 진입 시 켜져있는 버튼들을 일괄적으로 끄기
     .call(() => {
-        // 기존처럼 게임 화면 로딩을 실행합니다.
+        if(skipBtn) skipBtn.style.display = "none";
+        if(muteBtn) muteBtn.style.display = "none";
+    })
+
+    .to(board, { opacity: 0, duration: 0.6, ease: "power2.inOut" })
+    .to(textOverlay, { opacity: 0, duration: 0.6, ease: "power2.inOut" }, "<")
+
+    .call(() => {
         if (onCompleteCallback) onCompleteCallback();
 
-        // 🌟 Step 1 화면이 등장할 때 부드럽게 떠오르는 연출 추가!
-        // 주의: 'step1-container' 부분을 실제 Step 1을 감싸는 최상위 div의 ID로 바꿔주세요.
-        // 🌟 어떤 모드, 어떤 Step으로 시작하든 완벽하게 작동하도록 전체 화면(game-screen)을 타겟으로 잡습니다.
         const gameScreen = document.getElementById('game-screen'); 
         if (gameScreen) {
             gsap.fromTo(gameScreen, 
@@ -9954,14 +10002,12 @@ function playScrollTransition(targetCellId, targetText, onCompleteCallback) {
         }
     })
 
-    // [SCENE 7] 커튼 걷기: 뒤에 Step 1이 로드되며 떠오르는 동안 까만 오버레이를 스르륵 걷어냄
-    .to(overlay, { opacity: 0, duration: 0.8, ease: "power2.inOut" })
+    .to(overlay, { opacity: 0, duration: 0.6, ease: "power2.inOut" })
 
-    // [완전 종료 후 초기화] 
     .call(() => {
         gsap.set(board, { x: 0, y: 0, scale: 1, opacity: 0, transformOrigin: "50% 50%" }); 
+        gsap.set(gridContainer, { opacity: 1 }); 
         gsap.set(overlay, { pointerEvents: "none" });
-        
         targetCell.querySelector('.cell-number').style.opacity = 1;
         targetCell.style.background = ""; 
         targetCell.style.borderColor = "#ddd"; 

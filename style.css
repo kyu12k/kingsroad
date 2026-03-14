@@ -2570,3 +2570,29 @@ body, html {
 .roller-bottom {
     bottom: -14px; /* 종이 테두리 아래로 살짝 올라앉게 */
 }
+
+/* 🌟 좌측 상단 음소거 버튼 디자인 */
+#mute-toggle-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 99999; /* 오버레이보다 무조건 위로 */
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: 2px solid #A68A6D;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    font-size: 1.3rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+}
+
+/* 마우스 올렸을 때 살짝 밝아짐 */
+#mute-toggle-btn:hover {
+    background: rgba(0, 0, 0, 0.8);
+}
