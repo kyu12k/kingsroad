@@ -4116,7 +4116,7 @@ function loadStep() {
         revealBtn.id = 'btn-reveal';
         revealBtn.className = 'btn-attack';
         revealBtn.style.flex = "1";
-        revealBtn.innerText = '읽기 ▶ (한 번/꾹 누름)';
+        revealBtn.innerText = '보기';
 
         let longPressTimer = null;
         let longPressActive = false;
