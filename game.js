@@ -4460,7 +4460,7 @@ function loadStep() {
     // [수정된 Step 5: 파트 분할 적용 & 기능 강화]
     else if (currentStep === 5) {
         
-        // 👉 1. 최대 표시 단어 개수 설정 (Step 2와 동일하게 맞춤)
+        // 👉 1. 최대 표시 단어 개수 설정
         const MAX_WORDS = 15;
 
         // 👉 2. 파트 데이터 초기화
@@ -4476,7 +4476,6 @@ function loadStep() {
         // 👉 3. 현재 파트(화면)에 보여줄 데이터만 꺼내오기
         const correctChunks = window.step5Parts[window.currentStep5PartIndex];
         
-        // 상단 파트 라벨 생성
         let partLabel = "";
         if (window.step5Parts.length > 1) {
             partLabel = ` <span style="color:#e74c3c;">(파트 ${window.currentStep5PartIndex + 1}/${window.step5Parts.length})</span>`;
@@ -4491,7 +4490,7 @@ function loadStep() {
             </div>
             
             <div style="margin-top: 10px; font-size: 0.85rem; color: #576574; text-align: center; background-color: rgba(255,255,255,0.8); padding: 8px 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                💡 <b>팁:</b> 정답칸의 단어를 <b>누르면</b> 다시 빠집니다.
+                💡 <b>팁:</b> 5초간 고민하면 힌트가 나타납니다!
             </div>
         `;
         
@@ -4499,11 +4498,61 @@ function loadStep() {
         const pool = document.getElementById('block-pool');
         const zone = document.getElementById('answer-zone');
 
-        // 👉 5. 단어 섞기 (전체가 아닌 '현재 파트'만 섞습니다)
+        // 👉 5. 단어 섞기
         let list = [...correctChunks].sort(() => Math.random() - 0.5);
         let selectedBlock = null;
 
-        // 선택 해제 함수
+        // 🌟 [추가] 5초 대기 힌트 시스템
+        if (window.step5IdleTimer) clearTimeout(window.step5IdleTimer);
+        
+        function checkAndShowHint() {
+            // 기존 힌트 초기화
+            document.querySelectorAll('.hint-glow').forEach(el => el.classList.remove('hint-glow'));
+            document.querySelectorAll('.error-glow').forEach(el => el.classList.remove('error-glow'));
+
+            const currentBlocks = Array.from(zone.querySelectorAll('.word-block'));
+            let firstErrorIndex = -1;
+
+            // 현재 놓인 블록 중에 오답이 있는지 검사
+            for (let i = 0; i < currentBlocks.length; i++) {
+                const actual = normalizeChunkText(currentBlocks[i].dataset.original);
+                const expected = normalizeChunkText(correctChunks[i]);
+                if (actual !== expected) {
+                    firstErrorIndex = i;
+                    break;
+                }
+            }
+
+            if (firstErrorIndex !== -1) {
+                // 상황 A: 놓은 것 중에 틀린 게 있으면 그걸 빨갛게 반짝임
+                currentBlocks[firstErrorIndex].classList.add('error-glow');
+            } else if (currentBlocks.length < correctChunks.length) {
+                // 상황 B: 다 맞게 놓고 다음 걸 모를 때, 보기 풀에서 정답을 파랗게 반짝임
+                const nextExpectedWord = correctChunks[currentBlocks.length];
+                const poolBlocks = Array.from(pool.children);
+                const targetBlock = poolBlocks.find(b => 
+                    b.style.visibility !== 'hidden' && 
+                    normalizeChunkText(b.innerText) === normalizeChunkText(nextExpectedWord)
+                );
+                if (targetBlock) {
+                    targetBlock.classList.add('hint-glow');
+                }
+            }
+        }
+
+        // 동작이 있을 때마다 타이머를 리셋하는 함수
+        function resetIdleTimer() {
+            if (window.step5IdleTimer) clearTimeout(window.step5IdleTimer);
+            document.querySelectorAll('.hint-glow').forEach(el => el.classList.remove('hint-glow'));
+            document.querySelectorAll('.error-glow').forEach(el => el.classList.remove('error-glow'));
+            
+            // 정답을 다 맞춘 상태가 아니라면 5초 뒤에 힌트 작동
+            const currentBlocks = Array.from(zone.querySelectorAll('.word-block'));
+            if (currentBlocks.length < correctChunks.length || currentBlocks.some((b, i) => normalizeChunkText(b.dataset.original) !== normalizeChunkText(correctChunks[i]))) {
+                window.step5IdleTimer = setTimeout(checkAndShowHint, 5000);
+            }
+        }
+
         function deselect() {
             if (selectedBlock) {
                 selectedBlock.classList.remove('selected-block');
@@ -4516,13 +4565,12 @@ function loadStep() {
             const btn = document.createElement('div');
             btn.className = 'word-block';
             btn.innerText = word;
-            // 클릭 이벤트 (배치 로직)
+            
             btn.onclick = () => {
                 if (btn.style.visibility === 'hidden') return;
                 const placeholder = document.getElementById('placeholder-text');
                 if (placeholder) placeholder.remove();
                 
-                // (1) 복제 블록 생성
                 const answerBlock = document.createElement('div');
                 answerBlock.className = 'word-block';
                 answerBlock.innerText = word;
@@ -4531,11 +4579,12 @@ function loadStep() {
                 answerBlock.style.color = "#000";
                 answerBlock.style.margin = "5px";
                 
-                // (2) 복제 블록 클릭 시 (취소/회수)
                 answerBlock.onclick = () => {
                     answerBlock.remove();
                     btn.style.visibility = 'visible';
                     SoundEffect.playClick();
+                    resetIdleTimer(); // 🌟 블록을 뺄 때도 힌트 타이머 리셋
+
                     if (zone.children.length === 0) {
                         zone.innerHTML = '<span class="placeholder-text" id="placeholder-text">단어를 터치하여 문장을 만드세요</span>';
                     }
@@ -4554,7 +4603,6 @@ function loadStep() {
                     }, 10);
                 };
                 
-                // (3) 화면 추가 및 원본 숨기기
                 if (selectedBlock && selectedBlock.parentElement === zone) {
                     zone.insertBefore(answerBlock, selectedBlock);
                     deselect();
@@ -4563,6 +4611,7 @@ function loadStep() {
                 }
                 btn.style.visibility = 'hidden';
                 SoundEffect.playClick();
+                resetIdleTimer(); // 🌟 블록을 넣을 때 힌트 타이머 리셋
                 
                 setTimeout(() => {
                     answerBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -4586,40 +4635,30 @@ function loadStep() {
             pool.appendChild(btn);
         });
 
-        setTimeout(() => {
-            if ([...pool.children].every(b => b.style.visibility === 'hidden')) {
-                pool.style.height = '0px';
-                pool.style.margin = '0';
-                zone.style.minHeight = '180px';
-                zone.style.paddingBottom = '40px';
-            } else {
-                pool.style.height = '';
-                pool.style.margin = '';
-                zone.style.minHeight = '120px';
-                zone.style.paddingBottom = '';
-            }
-        }, 10);
+        // 초기 시작 시 힌트 타이머 가동
+        resetIdleTimer();
 
-        // 빈 곳 클릭 시 선택 해제
         zone.onclick = (e) => { 
             if (e.target === zone) deselect(); 
         };
 
-        // 컨트롤 버튼 래퍼 생성
         const btnWrapper = document.createElement('div');
         btnWrapper.style.display = 'flex';
         btnWrapper.style.width = '100%';
         btnWrapper.style.gap = '2%';
 
-        // 👉 6. 정답 확인 버튼 로직 수정 (파트 판별 추가)
+        // 👉 6. 정답 확인 버튼
         const checkBtn = document.createElement('button');
         checkBtn.className = 'btn-attack';
         checkBtn.innerText = "정답 확인";
-        checkBtn.style.flex = '3 1 0';
+        checkBtn.style.flex = '2 1 0';
         checkBtn.onclick = () => {
+            if (window.step5IdleTimer) clearTimeout(window.step5IdleTimer); // 검사 중엔 힌트 끄기
+
             const currentBlocks = Array.from(zone.querySelectorAll('.word-block'));
             if (currentBlocks.length !== correctChunks.length) {
                 alert("블록을 모두 채워주세요.");
+                resetIdleTimer();
                 return;
             }
             
@@ -4629,7 +4668,7 @@ function loadStep() {
                 const actual = normalizeChunkText(btn.dataset.original);
                 if (actual === expected) {
                     btn.classList.add('correct-block');
-                    btn.classList.remove('error-block');
+                    btn.classList.remove('error-block', 'error-glow');
                 } else {
                     btn.classList.add('error-block');
                     btn.classList.remove('correct-block');
@@ -4638,17 +4677,12 @@ function loadStep() {
             });
             
             if (errorCount === 0) {
-                // 🔵 정답일 때
                 checkBtn.disabled = true;
                 window.currentStep5PartIndex++;
 
                 if (window.currentStep5PartIndex < window.step5Parts.length) {
-                    // 다음 파트가 남았다면 화면 다시 그리기
-                    setTimeout(() => {
-                        loadStep(); 
-                    }, 500);
+                    setTimeout(() => { loadStep(); }, 500);
                 } else {
-                    // 모든 파트를 다 맞췄다면 다음 Step으로 이동
                     setTimeout(() => {
                         window.currentStep5PartIndex = undefined; 
                         window.step5Parts = undefined;
@@ -4656,22 +4690,24 @@ function loadStep() {
                     }, 500);
                 }
             } else {
-                // 🔴 오답일 때
                 SoundEffect.playWrong();
                 playerHearts--;
                 updateBattleUI();
                 wrongCount++;
                 alert(`${errorCount}군데가 틀렸습니다.`);
+                
+                // 틀렸을 경우 다시 힌트 타이머 가동
+                resetIdleTimer();
+
                 if (playerHearts <= 0) {
                     setTimeout(showReviveModal, 100);
                 }
             }
         };
-
-        // 다시하기 버튼 (현재 파트 안에서만 리셋됨)
+        // 다시하기 버튼
         const resetBtn = document.createElement('button');
         resetBtn.className = 'btn-reset-step5';
-        resetBtn.innerText = '다시하기';
+        resetBtn.innerText = '🔄 리셋';
         resetBtn.style.flex = '1 1 0';
         resetBtn.onclick = () => {
             Array.from(zone.querySelectorAll('.word-block')).forEach(block => block.remove());
@@ -4683,6 +4719,7 @@ function loadStep() {
             });
             deselect();
             SoundEffect.playClick();
+            resetIdleTimer(); // 🌟 초기화 후 다시 힌트 타이머 가동
         };
 
         btnWrapper.appendChild(checkBtn);
