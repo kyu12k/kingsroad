@@ -273,11 +273,6 @@ body, html {
     isolation: isolate;
 }
 
-        @media (max-height: 850px) {
-            #home-screen {
-                /* 스크롤 제거: overflow-y: auto 삭제 */
-            }
-        }
         #home-screen::before {
             content: "";
             position: absolute;
@@ -298,9 +293,6 @@ body, html {
         #home-screen > * {
             position: relative;
             z-index: 1;
-        }
-        #home-screen > div:first-of-type {
-            /* 박스 스타일 제거: 타이틀 배경, 테두리, 그림자, 패딩 등 삭제 */
         }
         #castle-display {
             margin-top: 10px;
