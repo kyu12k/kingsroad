@@ -55,7 +55,7 @@ async function updateWeeklyCountsImpl() {
                 // 인원 수 카운트
                 countQuery(tribeQuery),
                 // Top100 조회
-                tribeQuery.orderBy('score', 'desc').limit(100).get()
+                tribeQuery.where('score', '>', 0).orderBy('score', 'desc').limit(100).get()
             ]).then(([count, snapshot]) => {
                 tribeCounts[String(i)] = count;
 
@@ -96,7 +96,7 @@ async function updateWeeklyCountsImpl() {
     await Promise.all(tribeJobs);
 
     // 2️⃣ Zion (전체) Top100 조회 및 Snapshot 생성
-    const zionSnapshot = await baseQuery.orderBy('score', 'desc').limit(100).get();
+    const zionSnapshot = await baseQuery.where('score', '>', 0).orderBy('score', 'desc').limit(100).get();
     let cutoffTotal = 0;
 
     if (!zionSnapshot.empty && zionSnapshot.size >= 100) {
@@ -130,9 +130,10 @@ async function updateWeeklyCountsImpl() {
     // 3️⃣ 누적 승점(명예의 전당) Top100 조회 및 Snapshot 생성
     // 누적 승점은 주차(weekId)와 상관없이 전체 리더보드에서 'totalScore' 기준으로 가져옵니다.
     const totalSnapshot = await db.collection('leaderboard')
-        .orderBy('totalScore', 'desc')
-        .limit(100)
-        .get();
+    .where('totalScore', '>', 0)
+    .orderBy('totalScore', 'desc')
+    .limit(100)
+    .get();
 
     const totalRankingData = totalSnapshot.docs.map((doc, index) => {
         const row = doc.data();
@@ -169,9 +170,10 @@ async function updateWeeklyCountsImpl() {
     // 12개 지파를 순회하며 쿼리 실행
     for (let i = 0; i < 12; i++) {
         const tribeYearlyQuery = db.collection('leaderboard')
-            .where('tribe', '==', i)
-            .orderBy('yearlyScore', 'desc')
-            .limit(12000); // 🌟 요한계시록의 14,4000명 룰 (지파당 12,000명 제한!)
+    .where('tribe', '==', i)
+    .where('yearlyScore', '>', 0)
+    .orderBy('yearlyScore', 'desc')
+    .limit(12000); // 🌟 요한계시록의 14,4000명 룰 (지파당 12,000명 제한!)
 
         yearlyTribeJobs.push(
             tribeYearlyQuery.get().then(snapshot => {
@@ -281,10 +283,11 @@ exports.archiveWeeklyRankings = functions.pubsub
             console.log(`🗓️ 아카이빙 대상: ${lastWeekId}`);
 
             const snapshot = await db.collection('leaderboard')
-                .where('weekId', '==', lastWeekId)
-                .orderBy('score', 'desc')
-                .limit(100)
-                .get();
+    .where('weekId', '==', lastWeekId)
+    .where('score', '>', 0)
+    .orderBy('score', 'desc')
+    .limit(100)
+    .get();
 
             if (snapshot.empty) {
                 console.log('⚠️ 아카이빙할 데이터 없음');
@@ -335,10 +338,11 @@ exports.archiveMonthlyRankings = functions.pubsub
 
             // 지난달의 모든 사용자 데이터 조회 (monthId 기준)
             const snapshot = await db.collection('leaderboard')
-                .where('monthId', '==', lastMonthId)
-                .orderBy('myMonthlyScore', 'desc')
-                .limit(100)
-                .get();
+    .where('monthId', '==', lastMonthId)
+    .where('myMonthlyScore', '>', 0)
+    .orderBy('myMonthlyScore', 'desc')
+    .limit(100)
+    .get();
 
             if (snapshot.empty) {
                 console.log('⚠️ 월간 아카이빙할 데이터 없음');
