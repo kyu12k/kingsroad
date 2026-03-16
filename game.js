@@ -1734,26 +1734,81 @@ const bibleData = {
 };
 
 
-/* [시스템] 닉네임 생성 데이터 */
+/* [시스템] 닉네임 생성 데이터 (총 50개씩, 2500가지 조합) */
+
 const NICK_ADJECTIVES = [
+    // 1~20 (기존 자연/성품)
     "푸른", "붉은", "하얀", "황금", "투명한", 
     "온유한", "겸손한", "강한", "지혜로운", "신실한",
     "기뻐하는", "기도하는", "감사하는", "순종하는", "담대한",
-    "새벽의", "은혜로운", "거룩한", "따뜻한", "빛나는"
+    "새벽의", "은혜로운", "거룩한", "따뜻한", "빛나는",
+    
+    // 21~35 (요한계시록/순례자 테마)
+    "이기는", "충성된", "영원한", "불꽃같은", "찬란한",
+    "깨어있는", "인내하는", "영광스러운", "존귀한", "흠없는",
+    "의로운", "화평한", "정결한", "슬기로운", "택함받은",
+
+    // 🌟 36~50 (새로 추가된 깊이 있는 테마)
+    "진실한", "살아있는", "거듭난", "보배로운", "새로운",
+    "변함없는", "감춰진", "눈부신", "기다리는", "거침없는",
+    "승리하는", "마르지않는", "부르심받은", "처음익은", "아름다운"
 ];
 
 const NICK_NOUNS = [
+    // 1~20 (기존 자연/도구)
     "만나", "무화과", "포도", "감람유", "밀이삭",
     "양", "비둘기", "사자", "독수리", "나귀",
     "방패", "성벽", "물매돌", "지팡이", "등불",
-    "시냇물", "종려나무", "백향목", "면류관", "항아리"
+    "시냇물", "종려나무", "백향목", "면류관", "항아리",
+    
+    // 21~35 (요한계시록 상징물)
+    "흰돌", "일곱별", "금촛대", "생명나무", "새벽별",
+    "거문고", "금향로", "두루마리", "유리바다", "흰옷",
+    "생명책", "나팔", "보좌", "무지개", "어린양",
+
+    // 🌟 36~50 (새로 추가된 순례자/성경 테마)
+    "순례자", "파수꾼", "용사", "나그네", "증인",
+    "새예루살렘", "생명수", "반석", "성소", "장막",
+    "포도나무", "감람나무", "향기", "인", "만국"
 ];
 
-/* [기능] 랜덤 닉네임 조합 함수 */
+// 🌟 1. 현재 선택된 단어를 기억할 전역 변수 추가
+window.selectedAdj = "";
+window.selectedNoun = "";
+
+/* [기능] 랜덤 닉네임 추출 및 드롭다운 세팅 */
 function generateRandomNickname() {
-    const adj = NICK_ADJECTIVES[Math.floor(Math.random() * NICK_ADJECTIVES.length)];
-    const noun = NICK_NOUNS[Math.floor(Math.random() * NICK_NOUNS.length)];
-    return adj + " " + noun;
+    window.selectedAdj = NICK_ADJECTIVES[Math.floor(Math.random() * NICK_ADJECTIVES.length)];
+    window.selectedNoun = NICK_NOUNS[Math.floor(Math.random() * NICK_NOUNS.length)];
+    
+    // 이 함수가 실행되면 드롭다운의 값도 같이 바꿔줍니다.
+    const adjSelect = document.getElementById('adj-select');
+    const nounSelect = document.getElementById('noun-select');
+    if (adjSelect) adjSelect.value = window.selectedAdj;
+    if (nounSelect) nounSelect.value = window.selectedNoun;
+    
+    updateNicknamePreview(); // 프리뷰 즉시 갱신
+}
+
+/* [기능] 실시간 프리뷰 업데이트 */
+function updateNicknamePreview() {
+    const adjSelect = document.getElementById('adj-select');
+    const nounSelect = document.getElementById('noun-select');
+    
+    if (adjSelect && nounSelect) {
+        window.selectedAdj = adjSelect.value;
+        window.selectedNoun = nounSelect.value;
+        
+        // ★ [버그 픽스] 부서/지파 선택 함수가 찾는 변수에도 이름을 쥐여줍니다!
+        window.tempNickname = window.selectedAdj + " " + window.selectedNoun;
+        window.tempName = window.tempNickname; 
+    }
+    
+    // 화면 상단의 까만색 프리뷰 박스 갱신
+    const previewBox = document.getElementById('preview-full');
+    if (previewBox) {
+        previewBox.innerHTML = `${getTribeIcon(window.tempTribe)}${getDeptTag(window.tempDept)} ${window.tempNickname}`;
+    }
 }
 
 /* [추가] 최종 체력 계산 함수 (버프 적용용) */
@@ -8614,12 +8669,29 @@ function closeStageHelpModal() {
     }
 }
 
-/* [수정] 프로필 설정 팝업 (네온 반짝이 버전) */
+/* [수정] 프로필 설정 팝업 (네온 반짝이 + 드롭다운 닉네임 완벽 통합본) */
 function openProfileSettings() {
     if (document.getElementById('nickname-modal')) return;
 
-    let tempName = (myNickname === "순례자") ? generateRandomNickname() : myNickname;
-    window.tempNickname = tempName; 
+    // 기존 유저의 닉네임을 형용사와 명사로 쪼개서 기억
+    if (typeof myNickname !== 'undefined' && myNickname !== "순례자" && myNickname.includes(" ")) {
+        const parts = myNickname.split(" ");
+        window.selectedAdj = parts[0];
+        window.selectedNoun = parts[1];
+        window.tempName = myNickname;
+        window.isFirstTimeNaming = false; 
+    } else {
+        // 신규 유저 무작위 생성
+        window.selectedAdj = NICK_ADJECTIVES[Math.floor(Math.random() * NICK_ADJECTIVES.length)];
+        window.selectedNoun = NICK_NOUNS[Math.floor(Math.random() * NICK_NOUNS.length)];
+        window.tempName = window.selectedAdj + " " + window.selectedNoun;
+        window.isFirstTimeNaming = true; 
+    }
+
+    // ★ [버그 픽스] 최초 생성된 이름도 tempNickname에 동기화!
+    window.tempNickname = window.tempName;
+
+    // 지파 및 부서 임시 변수 세팅
     window.tempTribe = (typeof myTribe !== 'undefined') ? myTribe : 0; 
     window.tempDept = (typeof myDept !== 'undefined') ? myDept : 0;
 
@@ -8628,16 +8700,13 @@ function openProfileSettings() {
     modal.className = 'modal-overlay';
     modal.style.zIndex = "9999";
     
-    // 지파 버튼 생성 HTML (네온 스타일 적용)
+    // 지파 버튼 생성 HTML (네온 스타일)
     let tribeButtonsHtml = `<div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-bottom:20px;">`;
-    
     TRIBE_DATA.forEach((t) => {
-        // 선택된 버튼은 진한 테두리 + 약간 커짐
         const isSelected = (t.id === window.tempTribe) ? 
             `border:2px solid ${t.glow}; transform:scale(1.05); background:#fff;` : 
             `border:1px solid #bdc3c7; opacity:0.8; background:#f9f9f9;`;
         
-        // 버튼 안의 반짝이 스타일
         const iconStyle = `
             font-size:1.8rem; 
             color:${t.core}; 
@@ -8655,8 +8724,8 @@ function openProfileSettings() {
     });
     tribeButtonsHtml += `</div>`;
 
+    // 부서 버튼 생성 HTML
     let deptButtonsHtml = `<div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-bottom:20px;">`;
-
     DEPT_DATA.forEach((d) => {
         const isSelected = (d.id === window.tempDept) ?
             `border:2px solid #f1c40f; transform:scale(1.03); background:#fff;` :
@@ -8672,9 +8741,9 @@ function openProfileSettings() {
     });
     deptButtonsHtml += `</div>`;
 
-    // 1️⃣ HTML 수정 (개발자님이 완벽하게 수정하신 부분!)
-modal.innerHTML = `
-        <div class="result-card" style="max-width:340px; background:#fff; color:#2c3e50; text-align:center; max-height:85vh; overflow-y:auto;">
+    // 모달창 뼈대 조립
+    modal.innerHTML = `
+        <div class="result-card" style="max-width:340px; background:#fff; color:#2c3e50; text-align:center; max-height:85vh; overflow-y:auto; padding-bottom: 20px;">
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                 <h2 style="color:#2c3e50; margin:0;">순례자 등록</h2>
@@ -8683,13 +8752,32 @@ modal.innerHTML = `
             <p style="color:#7f8c8d; font-size:0.85rem; margin-bottom:15px;">이름과 소속 부서/지파를 선택하세요.</p>
             
             <div style="background:#f4f6f7; padding:15px; border-radius:15px; margin-bottom:15px; border:1px solid #ecf0f1;">
-                <div id="preview-full" style="font-size: 1.3rem; font-weight: bold; color: #2c3e50; margin-bottom:10px; background:#2c3e50; padding:10px; border-radius:10px; color:white;">
-                    ${getTribeIcon(window.tempTribe)}${getDeptTag(window.tempDept)} ${tempName}
-                </div>
-                <button onclick="refreshNickname()" style="background:white; border:1px solid #bdc3c7; color:#7f8c8d; padding:6px 15px; border-radius:20px; font-weight:bold; cursor:pointer; font-size:0.8rem;">
-                    🎲 이름 랜덤 변경
-                </button>
-            </div>
+    
+    <div id="preview-full" style="font-size: 1.3rem; font-weight: bold; color: #2c3e50; margin-bottom:10px; background:#2c3e50; padding:10px; border-radius:10px; color:white;">
+        ${getTribeIcon(window.tempTribe)}${getDeptTag(window.tempDept)} ${window.tempName}
+    </div>
+    
+    ${window.isFirstTimeNaming ? `
+        <div style="margin-bottom: 12px; margin-top: -2px;">
+            <span style="background:#ffeaa7; color:#d35400; padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                💡 이름을 아래에서 직접 골라보세요! 👇
+            </span>
+        </div>
+    ` : ''}
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <select id="adj-select" onchange="updateNicknamePreview()" style="flex:1; padding:10px; border-radius:10px; border:1px solid #bdc3c7; font-size:1rem; outline:none; background:white; color:#2c3e50; cursor:pointer;">
+            ${NICK_ADJECTIVES.map(adj => `<option value="${adj}">${adj}</option>`).join('')}
+        </select>
+        <select id="noun-select" onchange="updateNicknamePreview()" style="flex:1; padding:10px; border-radius:10px; border:1px solid #bdc3c7; font-size:1rem; outline:none; background:white; color:#2c3e50; cursor:pointer;">
+            ${NICK_NOUNS.map(noun => `<option value="${noun}">${noun}</option>`).join('')}
+        </select>
+    </div>
+
+    <button onclick="generateRandomNickname()" style="background:white; border:1px solid #bdc3c7; color:#7f8c8d; padding:8px 15px; border-radius:20px; font-weight:bold; cursor:pointer; font-size:0.85rem;">
+        🎲 이름 랜덤 변경
+    </button>
+</div>
 
             <div style="text-align:left; font-size:0.9rem; font-weight:bold; color:#7f8c8d; margin-bottom:10px; margin-left:5px;">소속 부서 선택</div>
             ${deptButtonsHtml}
@@ -8703,15 +8791,21 @@ modal.innerHTML = `
         </div>
     `;
 
-    // 2️⃣ JS 추가: 여기서부터 추가해 주시면 됩니다!
-    // 모달 바깥쪽(검은 배경)을 클릭했을 때 취소 로직을 실행합니다.
+    // 🌟 [필수 복구] 모달 바깥을 누르면 닫히는 기능과 화면에 띄우는 기능
     modal.onclick = function(event) {
-        if (event.target === modal) {
-            cancelProfileRegistration();
-        }
+        if (event.target === modal) cancelProfileRegistration();
     };
     document.body.appendChild(modal);
-    setTimeout(() => modal.classList.add('active'), 10);
+
+    // 모달을 띄우면서 드롭다운에 현재 선택된 단어를 매칭시켜줍니다.
+    setTimeout(() => {
+        const adjSelect = document.getElementById('adj-select');
+        const nounSelect = document.getElementById('noun-select');
+        if (adjSelect && window.selectedAdj) adjSelect.value = window.selectedAdj;
+        if (nounSelect && window.selectedNoun) nounSelect.value = window.selectedNoun;
+        
+        modal.classList.add('active');
+    }, 10);
 }
 
 /* [기능] 지파 선택 처리 (선택 시 UI 갱신) */
