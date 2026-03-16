@@ -996,29 +996,18 @@ const SoundEffect = {
     }
 };
 
-/* [시스템: 배경 음악 (절차적 생성형 앰비언트 - 무한 재생)] */
+/* [시스템: 배경 음악 (4종류 절차적 생성형 앰비언트 - 찌르는 소리, 안 들리는 소리 제거)] */
 const BackgroundMusic = {
     audioCtx: null,
     isPlaying: false,
-    droneTimer: null,
-    chimeTimer: null,
+    currentTrackIndex: 0,
+    timers: [], 
 
-    // ★ 마법의 음계: C 메이저 펜타토닉 스케일 (도, 레, 미, 솔, 라)
-    // 이 음계 안에서는 아무 음이나 무작위로 동시에 쳐도 절대 불협화음이 나지 않습니다.
-    scale: [
-        130.81, // C3 (저음)
-        146.83, // D3
-        164.81, // E3
-        196.00, // G3
-        220.00, // A3
-        261.63, // C4 (중음)
-        293.66, // D4
-        329.63, // E4
-        392.00, // G4
-        440.00, // A4
-        523.25, // C5 (고음)
-        587.33, // D5
-        659.25  // E5
+    tracks: [
+        { name: "🎵 영원의 물방울" },     // 1. 무작위 (유지)
+        { name: "🎵 별의 궤적" },         // 2. 위상/교차 1 (유지)
+        { name: "🎵 빛의 장막" },         // 3. [NEW] 부드러운 화음의 파도
+        { name: "🎵 은빛 순례길" }        // 4. [NEW] 위상/교차 2 (2번의 변형)
     ],
 
     init: function() {
@@ -1029,16 +1018,13 @@ const BackgroundMusic = {
         if (this.isPlaying) return;
         this.init();
         this.isPlaying = true;
-        
-        // 투 트랙(배경 깔기 + 물방울 튕기기) 연주를 동시에 시작합니다.
-        this.playDrone();
-        this.playChime();
+        this.playCurrentTrack();
     },
 
     stop: function() {
         this.isPlaying = false;
-        if (this.droneTimer) clearTimeout(this.droneTimer);
-        if (this.chimeTimer) clearTimeout(this.chimeTimer);
+        this.timers.forEach(id => clearTimeout(id));
+        this.timers = [];
     },
 
     toggle: function() {
@@ -1047,66 +1033,142 @@ const BackgroundMusic = {
         return this.isPlaying;
     },
 
-    // 🎵 트랙 1: 드론(Drone) - 깊고 은은하게 공간을 채우는 안개 같은 소리
-    playDrone: function() {
-        if (!this.isPlaying) return;
-
-        // 0~5번 인덱스(저음~중음역대) 중에서 아무 음이나 하나 고릅니다.
-        const freq = this.scale[Math.floor(Math.random() * 6)];
-        
-        // 소리 길이는 6초 ~ 10초 사이로 아주아주 길고 묵직하게 유지합니다.
-        const duration = 6 + (Math.random() * 4);
-
-        this.playEtherealTone(freq, duration, 0.04);
-
-        // 다음 안개 소리는 현재 소리가 겹치도록 4~8초 뒤에 무작위로 발생시킵니다.
-        const nextDelay = (4 + (Math.random() * 4)) * 1000;
-        this.droneTimer = setTimeout(() => this.playDrone(), nextDelay);
+    addTimer: function(fn, delay) {
+        const id = setTimeout(fn, delay);
+        this.timers.push(id);
     },
 
-    // 🎵 트랙 2: 차임(Chime) - 가끔씩 영롱하게 떨어지는 물방울 같은 멜로디 조각
-    playChime: function() {
-        if (!this.isPlaying) return;
-
-        // 5~12번 인덱스(중음~고음역대) 중에서 아무 음이나 하나 고릅니다.
-        const freq = this.scale[5 + Math.floor(Math.random() * 8)];
+    nextTrack: function() {
+        const wasPlaying = this.isPlaying;
+        this.stop(); 
         
-        // 소리 길이는 2초 ~ 4초 사이로 은은한 여운을 줍니다.
-        const duration = 2 + (Math.random() * 2);
+        this.currentTrackIndex = (this.currentTrackIndex + 1) % this.tracks.length;
+        
+        const btn = document.getElementById('bgm-track-btn');
+        if (btn) btn.innerText = this.tracks[this.currentTrackIndex].name;
 
-        this.playEtherealTone(freq, duration, 0.05);
-
-        // 다음 물방울 소리는 1.5초 ~ 4초 사이의 예측할 수 없는 박자로 발생합니다.
-        const nextDelay = (1.5 + (Math.random() * 2.5)) * 1000;
-        this.chimeTimer = setTimeout(() => this.playChime(), nextDelay);
+        if (wasPlaying) this.start(); 
     },
 
-    // ☁️ 궁극의 부드러움을 깎아내는 소리 합성 엔진
-    playEtherealTone: function(freq, duration, maxVol) {
+    playCurrentTrack: function() {
+        if (this.currentTrackIndex === 0) {
+            this.playT1Drone();
+            this.playT1Chime();
+        } else if (this.currentTrackIndex === 1) {
+            this.t2Indices = [0, 0, 0]; 
+            this.playT2Loop(0, 2.0); 
+            this.playT2Loop(1, 2.7); 
+            this.playT2Loop(2, 3.5); 
+        } else if (this.currentTrackIndex === 2) {
+            this.playT3Chord();
+        } else if (this.currentTrackIndex === 3) {
+            this.t4Indices = [0, 0]; 
+            this.playT4Loop(0, 1.5); // 1.5초 주기
+            this.playT4Loop(1, 2.2); // 2.2초 주기
+        }
+    },
+
+    // ==========================================
+    // 🎵 1. 영원의 물방울 (기존 유지)
+    // ==========================================
+    t1Scale: [130.81, 146.83, 164.81, 196.00, 220.00, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25],
+    playT1Drone: function() {
+        if (!this.isPlaying || this.currentTrackIndex !== 0) return;
+        const freq = this.t1Scale[Math.floor(Math.random() * 6)];
+        this.playSoftTone(freq, 'sine', 3, 5, 0.04);
+        this.addTimer(() => this.playT1Drone(), (4 + Math.random()*4) * 1000);
+    },
+    playT1Chime: function() {
+        if (!this.isPlaying || this.currentTrackIndex !== 0) return;
+        const freq = this.t1Scale[5 + Math.floor(Math.random() * 6)];
+        this.playSoftTone(freq, 'sine', 1, 3, 0.05);
+        this.addTimer(() => this.playT1Chime(), (1.5 + Math.random()*2.5) * 1000);
+    },
+
+    // ==========================================
+    // 🎵 2. 별의 궤적 (기존 유지 - 극찬받은 트랙)
+    // ==========================================
+    t2Arrays: [
+        [261.63, 329.63, 392.00], 
+        [220.00, 261.63, 293.66, 329.63, 392.00], 
+        [523.25, 440.00, 392.00, 329.63, 293.66, 261.63, 220.00] 
+    ],
+    t2Indices: [0, 0, 0],
+    playT2Loop: function(loopIdx, delay) {
+        if (!this.isPlaying || this.currentTrackIndex !== 1) return;
+        const arr = this.t2Arrays[loopIdx];
+        const freq = arr[this.t2Indices[loopIdx]];
+        this.t2Indices[loopIdx] = (this.t2Indices[loopIdx] + 1) % arr.length;
+        this.playSoftTone(freq, 'sine', 1.5, 4, 0.035);
+        this.addTimer(() => this.playT2Loop(loopIdx, delay), delay * 1000);
+    },
+
+    // ==========================================
+    // 🎵 3. 빛의 장막 (톡 쏘는 소리 제거 -> 구름처럼 부드러운 화음)
+    // ==========================================
+    // 스마트폰에서도 선명하게 들리면서 절대 귀를 찌르지 않는 황금 음역대(C4~A4)
+    t3Chords: [
+        [261.63, 329.63, 392.00], // C4, E4, G4 (편안함)
+        [261.63, 349.23, 440.00], // C4, F4, A4 (열림)
+        [293.66, 349.23, 440.00], // D4, F4, A4 (신비로움)
+        [246.94, 293.66, 392.00]  // B3, D4, G4 (따뜻함)
+    ],
+    playT3Chord: function() {
+        if (!this.isPlaying || this.currentTrackIndex !== 2) return;
+        
+        const chord = this.t3Chords[Math.floor(Math.random() * this.t3Chords.length)];
+        chord.forEach(freq => {
+            // 가장 부드러운 사인파(sine)로 4초간 천천히 나타났다가 5초간 천천히 사라짐
+            this.playSoftTone(freq, 'sine', 4, 5, 0.03);
+        });
+        
+        // 6초마다 새로운 화음이 이전 화음과 겹치며 아름답게 크로스페이드 됩니다.
+        this.addTimer(() => this.playT3Chord(), 6000);
+    },
+
+    // ==========================================
+    // 🎵 4. 은빛 순례길 (안 들리는 저음 제거 -> 2번과 비슷한 구조의 아름다운 교차)
+    // ==========================================
+    // 2번 트랙이 3, 5, 7박자의 웅장한 교차였다면, 4번은 4박자와 5박자의 좀 더 사색적이고 차분한 교차입니다.
+    t4Arrays: [
+        [261.63, 329.63, 392.00, 440.00],        // 상승하는 따뜻한 음계 (길이 4)
+        [523.25, 392.00, 329.63, 293.66, 261.63] // 천천히 내려오는 은빛 음계 (길이 5)
+    ],
+    t4Indices: [0, 0],
+    playT4Loop: function(loopIdx, delay) {
+        if (!this.isPlaying || this.currentTrackIndex !== 3) return;
+        
+        const arr = this.t4Arrays[loopIdx];
+        const freq = arr[this.t4Indices[loopIdx]];
+        this.t4Indices[loopIdx] = (this.t4Indices[loopIdx] + 1) % arr.length;
+        
+        // 1.5초 동안 부드럽게 나타나 3초 동안 사라지며 끊임없이 겹칩니다.
+        this.playSoftTone(freq, 'sine', 1.5, 3, 0.04);
+        this.addTimer(() => this.playT4Loop(loopIdx, delay), delay * 1000);
+    },
+
+    // ==========================================
+    // ☁️ 공통 합성 엔진 (100% 모서리 없는 부드러운 소리)
+    // ==========================================
+    playSoftTone: function(freq, type, attackSec, releaseSec, maxVol) {
         const osc = this.audioCtx.createOscillator();
         const gain = this.audioCtx.createGain();
 
         osc.connect(gain);
         gain.connect(this.audioCtx.destination);
         
-        // 사인파(Sine)로 가장 둥글고 자극 없는 소리를 냅니다.
-        osc.type = 'sine'; 
+        osc.type = type; 
         osc.frequency.value = freq;
 
         const now = this.audioCtx.currentTime;
-
         gain.gain.setValueAtTime(0, now);
         
-        // ★ 소리의 각(모서리)을 완전히 날려버리는 호흡 조절
-        // 1. Attack: 전체 길이의 앞쪽 30% 동안 아주 서서히, 몰래 볼륨이 커집니다. (타격감 0%)
-        gain.gain.linearRampToValueAtTime(maxVol, now + (duration * 0.3)); 
-        
-        // 2. Release: 나머지 70% 시간 동안 마치 연기가 사라지듯 천천히 소멸합니다.
-        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-        gain.gain.linearRampToValueAtTime(0, now + duration + 0.1); 
+        gain.gain.linearRampToValueAtTime(maxVol, now + attackSec); 
+        gain.gain.exponentialRampToValueAtTime(0.001, now + attackSec + releaseSec);
+        gain.gain.linearRampToValueAtTime(0, now + attackSec + releaseSec + 0.1);
 
         osc.start(now);
-        osc.stop(now + duration + 0.2); 
+        osc.stop(now + attackSec + releaseSec + 0.2); 
     }
 };
 
