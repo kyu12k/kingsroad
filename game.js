@@ -996,19 +996,19 @@ const SoundEffect = {
     }
 };
 
-/* [시스템: 배경 음악 (4종류 절차적 생성형 앰비언트 - 찌르는 소리, 안 들리는 소리 제거)] */
+/* [시스템: 배경 음악 (별의 궤적 - 위상 교차 앰비언트 단일 테마)] */
 const BackgroundMusic = {
     audioCtx: null,
     isPlaying: false,
-    currentTrackIndex: 0,
-    timers: [], 
+    timers: [], // 실행 중인 무한 생성 타이머들을 관리하는 배열
 
-    tracks: [
-        { name: "🎵 영원의 물방울" },     // 1. 무작위 (유지)
-        { name: "🎵 별의 궤적" },         // 2. 위상/교차 1 (유지)
-        { name: "🎵 빛의 장막" },         // 3. [NEW] 부드러운 화음의 파도
-        { name: "🎵 은빛 순례길" }        // 4. [NEW] 위상/교차 2 (2번의 변형)
+    // 🎵 별의 궤적 (서로 다른 길이의 3가지 톱니바퀴 음계)
+    arrays: [
+        [261.63, 329.63, 392.00], // 길이 3 (C, E, G)
+        [220.00, 261.63, 293.66, 329.63, 392.00], // 길이 5 (A, C, D, E, G)
+        [523.25, 440.00, 392.00, 329.63, 293.66, 261.63, 220.00] // 길이 7 (하강)
     ],
+    indices: [0, 0, 0],
 
     init: function() {
         if (!this.audioCtx) this.audioCtx = SoundEffect.ctx; 
@@ -1018,11 +1018,17 @@ const BackgroundMusic = {
         if (this.isPlaying) return;
         this.init();
         this.isPlaying = true;
-        this.playCurrentTrack();
+        this.indices = [0, 0, 0]; // 재생할 때마다 궤적 초기화
+        
+        // 3개의 톱니바퀴를 서로 다른 주기(2초, 2.7초, 3.5초)로 굴리기 시작합니다.
+        this.playLoop(0, 2.0); 
+        this.playLoop(1, 2.7); 
+        this.playLoop(2, 3.5); 
     },
 
     stop: function() {
         this.isPlaying = false;
+        // 모든 생성 타이머를 즉시 정지 (기존 소리는 여운을 남기며 자연스럽게 사라짐)
         this.timers.forEach(id => clearTimeout(id));
         this.timers = [];
     },
@@ -1033,123 +1039,27 @@ const BackgroundMusic = {
         return this.isPlaying;
     },
 
+    // 안전하게 타이머를 추가하는 헬퍼 함수
     addTimer: function(fn, delay) {
         const id = setTimeout(fn, delay);
         this.timers.push(id);
     },
 
-    nextTrack: function() {
-        const wasPlaying = this.isPlaying;
-        this.stop(); 
+    // 위상 음악 루프 엔진
+    playLoop: function(loopIdx, delay) {
+        if (!this.isPlaying) return;
         
-        this.currentTrackIndex = (this.currentTrackIndex + 1) % this.tracks.length;
+        const arr = this.arrays[loopIdx];
+        const freq = arr[this.indices[loopIdx]];
+        this.indices[loopIdx] = (this.indices[loopIdx] + 1) % arr.length;
         
-        const btn = document.getElementById('bgm-track-btn');
-        if (btn) btn.innerText = this.tracks[this.currentTrackIndex].name;
-
-        if (wasPlaying) this.start(); 
-    },
-
-    playCurrentTrack: function() {
-        if (this.currentTrackIndex === 0) {
-            this.playT1Drone();
-            this.playT1Chime();
-        } else if (this.currentTrackIndex === 1) {
-            this.t2Indices = [0, 0, 0]; 
-            this.playT2Loop(0, 2.0); 
-            this.playT2Loop(1, 2.7); 
-            this.playT2Loop(2, 3.5); 
-        } else if (this.currentTrackIndex === 2) {
-            this.playT3Chord();
-        } else if (this.currentTrackIndex === 3) {
-            this.t4Indices = [0, 0]; 
-            this.playT4Loop(0, 1.5); // 1.5초 주기
-            this.playT4Loop(1, 2.2); // 2.2초 주기
-        }
-    },
-
-    // ==========================================
-    // 🎵 1. 영원의 물방울 (기존 유지)
-    // ==========================================
-    t1Scale: [130.81, 146.83, 164.81, 196.00, 220.00, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25],
-    playT1Drone: function() {
-        if (!this.isPlaying || this.currentTrackIndex !== 0) return;
-        const freq = this.t1Scale[Math.floor(Math.random() * 6)];
-        this.playSoftTone(freq, 'sine', 3, 5, 0.04);
-        this.addTimer(() => this.playT1Drone(), (4 + Math.random()*4) * 1000);
-    },
-    playT1Chime: function() {
-        if (!this.isPlaying || this.currentTrackIndex !== 0) return;
-        const freq = this.t1Scale[5 + Math.floor(Math.random() * 6)];
-        this.playSoftTone(freq, 'sine', 1, 3, 0.05);
-        this.addTimer(() => this.playT1Chime(), (1.5 + Math.random()*2.5) * 1000);
-    },
-
-    // ==========================================
-    // 🎵 2. 별의 궤적 (기존 유지 - 극찬받은 트랙)
-    // ==========================================
-    t2Arrays: [
-        [261.63, 329.63, 392.00], 
-        [220.00, 261.63, 293.66, 329.63, 392.00], 
-        [523.25, 440.00, 392.00, 329.63, 293.66, 261.63, 220.00] 
-    ],
-    t2Indices: [0, 0, 0],
-    playT2Loop: function(loopIdx, delay) {
-        if (!this.isPlaying || this.currentTrackIndex !== 1) return;
-        const arr = this.t2Arrays[loopIdx];
-        const freq = arr[this.t2Indices[loopIdx]];
-        this.t2Indices[loopIdx] = (this.t2Indices[loopIdx] + 1) % arr.length;
+        // 부드러운 사인파(sine) 소리를 생성합니다.
         this.playSoftTone(freq, 'sine', 1.5, 4, 0.035);
-        this.addTimer(() => this.playT2Loop(loopIdx, delay), delay * 1000);
+        
+        this.addTimer(() => this.playLoop(loopIdx, delay), delay * 1000);
     },
 
-    // ==========================================
-    // 🎵 3. 빛의 장막 (톡 쏘는 소리 제거 -> 구름처럼 부드러운 화음)
-    // ==========================================
-    // 스마트폰에서도 선명하게 들리면서 절대 귀를 찌르지 않는 황금 음역대(C4~A4)
-    t3Chords: [
-        [261.63, 329.63, 392.00], // C4, E4, G4 (편안함)
-        [261.63, 349.23, 440.00], // C4, F4, A4 (열림)
-        [293.66, 349.23, 440.00], // D4, F4, A4 (신비로움)
-        [246.94, 293.66, 392.00]  // B3, D4, G4 (따뜻함)
-    ],
-    playT3Chord: function() {
-        if (!this.isPlaying || this.currentTrackIndex !== 2) return;
-        
-        const chord = this.t3Chords[Math.floor(Math.random() * this.t3Chords.length)];
-        chord.forEach(freq => {
-            // 가장 부드러운 사인파(sine)로 4초간 천천히 나타났다가 5초간 천천히 사라짐
-            this.playSoftTone(freq, 'sine', 4, 5, 0.03);
-        });
-        
-        // 6초마다 새로운 화음이 이전 화음과 겹치며 아름답게 크로스페이드 됩니다.
-        this.addTimer(() => this.playT3Chord(), 6000);
-    },
-
-    // ==========================================
-    // 🎵 4. 은빛 순례길 (안 들리는 저음 제거 -> 2번과 비슷한 구조의 아름다운 교차)
-    // ==========================================
-    // 2번 트랙이 3, 5, 7박자의 웅장한 교차였다면, 4번은 4박자와 5박자의 좀 더 사색적이고 차분한 교차입니다.
-    t4Arrays: [
-        [261.63, 329.63, 392.00, 440.00],        // 상승하는 따뜻한 음계 (길이 4)
-        [523.25, 392.00, 329.63, 293.66, 261.63] // 천천히 내려오는 은빛 음계 (길이 5)
-    ],
-    t4Indices: [0, 0],
-    playT4Loop: function(loopIdx, delay) {
-        if (!this.isPlaying || this.currentTrackIndex !== 3) return;
-        
-        const arr = this.t4Arrays[loopIdx];
-        const freq = arr[this.t4Indices[loopIdx]];
-        this.t4Indices[loopIdx] = (this.t4Indices[loopIdx] + 1) % arr.length;
-        
-        // 1.5초 동안 부드럽게 나타나 3초 동안 사라지며 끊임없이 겹칩니다.
-        this.playSoftTone(freq, 'sine', 1.5, 3, 0.04);
-        this.addTimer(() => this.playT4Loop(loopIdx, delay), delay * 1000);
-    },
-
-    // ==========================================
-    // ☁️ 공통 합성 엔진 (100% 모서리 없는 부드러운 소리)
-    // ==========================================
+    // ☁️ 공통 합성 엔진: 100% 모서리 없는 부드러운 소리
     playSoftTone: function(freq, type, attackSec, releaseSec, maxVol) {
         const osc = this.audioCtx.createOscillator();
         const gain = this.audioCtx.createGain();
