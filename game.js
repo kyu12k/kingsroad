@@ -8855,7 +8855,6 @@ window.onload = function() {
     if (localStorage.getItem('forceSyncAfterLoad') === 'true') {
         localStorage.removeItem('forceSyncAfterLoad'); 
         if (typeof saveGameData === 'function') saveGameData();
-        if (typeof saveMyScoreToServer === 'function') saveMyScoreToServer();
         console.log("🔄 복구 데이터 서버 강제 동기화 완료!");
     }
     checkMissions(); // [추가] 게임 시작 시 미션 초기화 체크
@@ -8873,13 +8872,29 @@ window.onload = function() {
     ensurePlaytimeStats();
     startPlaySession();
     if (!window.playtimeTrackingInitialized) {
-        window.playtimeTrackingInitialized = true;
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) stopPlaySession();
-            else startPlaySession();
-        });
-        window.addEventListener('beforeunload', stopPlaySession);
-    }
+    window.playtimeTrackingInitialized = true;
+    
+    // 📱 1. 모바일 & 탭 이동 대응: 화면이 안 보일 때 서버에 저장
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            stopPlaySession();
+            
+            // 🌟 화면이 가려지는 순간(홈으로 나가기 등), 서버로 데이터를 툭 던져놓습니다.
+            if (typeof saveMyScoreToServer === 'function') saveMyScoreToServer();
+            console.log("🔒 화면 숨김 감지: 서버에 안전하게 데이터 백업 완료");
+        } else {
+            startPlaySession();
+        }
+    });
+    
+    // 💻 2. PC 대응: 브라우저 탭을 완전히 닫거나 새로고침할 때 서버에 저장
+    window.addEventListener('beforeunload', (event) => {
+        stopPlaySession();
+        
+        // 🌟 창이 닫히기 직전 마지막으로 서버에 기록을 남깁니다.
+        if (typeof saveMyScoreToServer === 'function') saveMyScoreToServer();
+    });
+}
 
     console.log("✅ 게임 로딩 완료!");
 
