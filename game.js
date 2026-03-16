@@ -3596,17 +3596,6 @@ function clearCheckpoint() {
     localStorage.removeItem('kingsRoad_checkpoint');
 }
 
-/* 🌟 [새로 추가] 포기 버튼을 눌렀을 때 의사를 먼저 묻는 함수 */
-function confirmQuit() {
-    // 확인/취소를 선택할 수 있는 알림창을 띄워
-    const wantsToQuit = confirm("정말 이 스테이지를 포기하시겠습니까?\n지금까지 진행한 상황은 저장되지 않습니다.");
-    
-    // 유저가 '확인'을 눌렀을 때(wantsToQuit이 true일 때)만 진짜 종료 함수 실행!
-    if (wantsToQuit) {
-        quitGame(); 
-    }
-    // '취소'를 누르면 아무 일도 일어나지 않고 게임이 계속 진행돼.
-}
         /* [수정] 게임 종료/포기 (나가기 시 밀린 팝업 확인 기능 추가) */
 function quitGame() {
     window.isGamePlaying = false; // ★ 핵심 방어막: 게임 종료 선언! 유령 타이머 차단!
@@ -3977,7 +3966,7 @@ function loadStep() {
     // ----------------------------------------------------
     if (currentStep === 1) {
         field.innerHTML = `
-            <div class="verse-indicator">${verseLabel}Step 1. 화면을 꾹 눌러 말씀을 머리에 새기세요</div>
+            <div class="verse-indicator">${verseLabel}Step 1. '열기'를 눌러 외운 말씀을 확인하세요</div>
             
             <div style="position: relative; margin-bottom: 30px;">
                 <div class="reading-card" id="tap-reading-card" 
@@ -4035,7 +4024,7 @@ function loadStep() {
             <div id="step1-controls" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 10px;"></div>
             <button class="btn-attack" id="btn-step1-next" onclick="nextStep()" style="display:none; background-color:#2ecc71; margin-top:10px; width: 100%;">성령 충만! 다음 단계로 ▶</button>
             <div style="text-align:center; color:#7f8c8d; font-size:0.9rem; margin-top:5px;">
-                <span style="background:#eee; padding:2px 8px; border-radius:10px;">TIP</span> 꾹 누르면 말씀이 흘러들어옵니다
+                <span style="background:#eee; padding:2px 8px; border-radius:10px;">TIP</span> 하나씩 말하며 '열기' 버튼을 눌러보세요
             </div>
         `;
 
@@ -4115,7 +4104,7 @@ function loadStep() {
         revealBtn.id = 'btn-reveal';
         revealBtn.className = 'btn-attack';
         revealBtn.style.flex = "1";
-        revealBtn.innerText = '보기';
+        revealBtn.innerText = '열기';
 
         let longPressTimer = null;
         let longPressActive = false;
@@ -7474,26 +7463,36 @@ function cancelQuit() {
     document.getElementById('quit-modal').classList.remove('active');
 }
 
-// 4. [나가기] 버튼: 진짜로 나감
+/* 🌟 [통합 버그 픽스] 포기 의사를 묻고, 확인 시 자원을 청소하며 나가는 함수 */
 function confirmQuit() {
-    document.getElementById('quit-modal').classList.remove('active');
+    // 1. 유저에게 의사를 먼저 묻습니다. (첫 번째 함수의 심플한 알림창)
+    const wantsToQuit = confirm("정말 이 스테이지를 포기하시겠습니까?\n지금까지 진행한 상황은 저장되지 않습니다.");
     
-    // 1. [Step 3] 타워 게임 -> 다음 스텝 넘어가는 예약 취소
-    if (window.towerNextTimeout) {
-        clearTimeout(window.towerNextTimeout);
-        window.towerNextTimeout = null;
-    }
-
-    // ★ 2. [Step 4] 두루마리 게임 애니메이션(무한 루프) 강제 종료!
-    if (typeof scrollGame !== 'undefined') {
-        scrollGame.isOver = true; // 다음 프레임이 실행되지 않도록 차단
-        if (scrollGame.animId) {
-            cancelAnimationFrame(scrollGame.animId); // 현재 예약된 프레임 삭제
-            scrollGame.animId = null;
+    // 2. 유저가 '확인'을 눌렀을 때만 청소 및 종료 실행!
+    if (wantsToQuit) {
+        
+        // (혹시 모를 커스텀 모달이 열려있다면 닫아줍니다)
+        const quitModal = document.getElementById('quit-modal');
+        if (quitModal) quitModal.classList.remove('active');
+        
+        // [청소 1] 타워 게임 다음 스텝 넘어가는 예약 취소
+        if (window.towerNextTimeout) {
+            clearTimeout(window.towerNextTimeout);
+            window.towerNextTimeout = null;
         }
-    }    
-    // 화면 초기화 및 맵으로 돌아가기
-    quitGame(); 
+
+        // [청소 2] 두루마리 게임 애니메이션(무한 루프) 강제 종료!
+        if (typeof scrollGame !== 'undefined') {
+            scrollGame.isOver = true; 
+            if (scrollGame.animId) {
+                cancelAnimationFrame(scrollGame.animId); 
+                scrollGame.animId = null;
+            }
+        }    
+        
+        // 3. 화면 초기화 및 맵으로 돌아가기 (진짜 종료)
+        quitGame(); 
+    }
 }
 
 /* =========================================
