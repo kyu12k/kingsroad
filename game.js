@@ -996,59 +996,49 @@ const SoundEffect = {
     }
 };
 
-/* [시스템: 배경 음악 (Soft Flowing - 물 흐르듯 부드럽게)] */
+/* [시스템: 배경 음악 (절차적 생성형 앰비언트 - 무한 재생)] */
 const BackgroundMusic = {
     audioCtx: null,
     isPlaying: false,
-    timerID: null,
-    noteIndex: 0,
+    droneTimer: null,
+    chimeTimer: null,
 
-    // 중음역대 위주의 따뜻한 음색
-    notes: {
-        'G3': 196.00, 'A3': 220.00, 'B3': 246.94,
-        'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23, 'G4': 392.00, 'A4': 440.00, 'B4': 493.88,
-        'C5': 523.25, 'D5': 587.33, 'E5': 659.25
-    },
-
-    // ★ 튀지 않는 부드러운 멜로디
-    // 특징: 음 길이(l)가 대기 시간(d)보다 깁니다. (잔향이 계속 남음)
-    melody: [
-        /* === Part 1: 잔잔한 도입 === */
-        {n:'E4', l:1.5, d:800}, {n:'G4', l:1.5, d:800}, {n:'C5', l:2.0, d:1200},
-        {n:'B4', l:1.5, d:800}, {n:'A4', l:1.5, d:800}, {n:'G4', l:2.0, d:1200},
-        
-        {n:'F4', l:1.5, d:800}, {n:'A4', l:1.5, d:800}, {n:'G4', l:1.5, d:800}, {n:'E4', l:1.5, d:800},
-        {n:'D4', l:1.5, d:800}, {n:'E4', l:1.5, d:800}, {n:'G4', l:2.0, d:1600},
-
-        /* === Part 2: 평온한 흐름 === */
-        {n:'C4', l:1.5, d:800}, {n:'E4', l:1.5, d:800}, {n:'G4', l:1.5, d:800}, {n:'C5', l:2.0, d:1200},
-        {n:'D5', l:1.5, d:800}, {n:'C5', l:1.5, d:800}, {n:'B4', l:1.5, d:800}, {n:'A4', l:2.0, d:1200},
-
-        {n:'G4', l:1.5, d:800}, {n:'C5', l:1.5, d:800}, {n:'E5', l:2.0, d:1200},
-        {n:'D5', l:1.5, d:800}, {n:'C5', l:1.5, d:800}, {n:'B4', l:1.5, d:800}, {n:'C5', l:3.0, d:2000},
-
-        /* === Part 3: 낮은 음의 여운 (반복 전 휴식) === */
-        {n:'G3', l:2.0, d:1000}, {n:'C4', l:2.0, d:1000}, {n:'E4', l:2.0, d:1000}, 
-        {n:'D4', l:2.5, d:1500}, {n:'C4', l:3.0, d:2000}
+    // ★ 마법의 음계: C 메이저 펜타토닉 스케일 (도, 레, 미, 솔, 라)
+    // 이 음계 안에서는 아무 음이나 무작위로 동시에 쳐도 절대 불협화음이 나지 않습니다.
+    scale: [
+        130.81, // C3 (저음)
+        146.83, // D3
+        164.81, // E3
+        196.00, // G3
+        220.00, // A3
+        261.63, // C4 (중음)
+        293.66, // D4
+        329.63, // E4
+        392.00, // G4
+        440.00, // A4
+        523.25, // C5 (고음)
+        587.33, // D5
+        659.25  // E5
     ],
 
     init: function() {
-        if (!this.audioCtx) {
-            this.audioCtx = SoundEffect.ctx; 
-        }
+        if (!this.audioCtx) this.audioCtx = SoundEffect.ctx; 
     },
 
     start: function() {
         if (this.isPlaying) return;
         this.init();
         this.isPlaying = true;
-        this.noteIndex = 0; 
-        this.playNextNote();
+        
+        // 투 트랙(배경 깔기 + 물방울 튕기기) 연주를 동시에 시작합니다.
+        this.playDrone();
+        this.playChime();
     },
 
     stop: function() {
         this.isPlaying = false;
-        if (this.timerID) clearTimeout(this.timerID);
+        if (this.droneTimer) clearTimeout(this.droneTimer);
+        if (this.chimeTimer) clearTimeout(this.chimeTimer);
     },
 
     toggle: function() {
@@ -1057,47 +1047,66 @@ const BackgroundMusic = {
         return this.isPlaying;
     },
 
-    playNextNote: function() {
+    // 🎵 트랙 1: 드론(Drone) - 깊고 은은하게 공간을 채우는 안개 같은 소리
+    playDrone: function() {
         if (!this.isPlaying) return;
 
-        const noteData = this.melody[this.noteIndex];
-        const freq = this.notes[noteData.n];
+        // 0~5번 인덱스(저음~중음역대) 중에서 아무 음이나 하나 고릅니다.
+        const freq = this.scale[Math.floor(Math.random() * 6)];
+        
+        // 소리 길이는 6초 ~ 10초 사이로 아주아주 길고 묵직하게 유지합니다.
+        const duration = 6 + (Math.random() * 4);
 
-        if (freq) this.playPianoTone(freq, noteData.l);
+        this.playEtherealTone(freq, duration, 0.04);
 
-        this.noteIndex = (this.noteIndex + 1) % this.melody.length;
-        this.timerID = setTimeout(() => this.playNextNote(), noteData.d);
+        // 다음 안개 소리는 현재 소리가 겹치도록 4~8초 뒤에 무작위로 발생시킵니다.
+        const nextDelay = (4 + (Math.random() * 4)) * 1000;
+        this.droneTimer = setTimeout(() => this.playDrone(), nextDelay);
     },
 
-    playPianoTone: function(freq, duration) {
+    // 🎵 트랙 2: 차임(Chime) - 가끔씩 영롱하게 떨어지는 물방울 같은 멜로디 조각
+    playChime: function() {
+        if (!this.isPlaying) return;
 
+        // 5~12번 인덱스(중음~고음역대) 중에서 아무 음이나 하나 고릅니다.
+        const freq = this.scale[5 + Math.floor(Math.random() * 8)];
+        
+        // 소리 길이는 2초 ~ 4초 사이로 은은한 여운을 줍니다.
+        const duration = 2 + (Math.random() * 2);
 
+        this.playEtherealTone(freq, duration, 0.05);
+
+        // 다음 물방울 소리는 1.5초 ~ 4초 사이의 예측할 수 없는 박자로 발생합니다.
+        const nextDelay = (1.5 + (Math.random() * 2.5)) * 1000;
+        this.chimeTimer = setTimeout(() => this.playChime(), nextDelay);
+    },
+
+    // ☁️ 궁극의 부드러움을 깎아내는 소리 합성 엔진
+    playEtherealTone: function(freq, duration, maxVol) {
         const osc = this.audioCtx.createOscillator();
         const gain = this.audioCtx.createGain();
 
-        // Sine파: 가장 둥글고 부드러운 소리
+        osc.connect(gain);
+        gain.connect(this.audioCtx.destination);
+        
+        // 사인파(Sine)로 가장 둥글고 자극 없는 소리를 냅니다.
         osc.type = 'sine'; 
         osc.frequency.value = freq;
 
-        const maxVol = 0.12; 
-
-        osc.connect(gain);
-        gain.connect(this.audioCtx.destination);
-
         const now = this.audioCtx.currentTime;
 
-        // ★ [핵심] 튀는 소리 제거를 위한 Envelope 설정
-        
-        // 1. Attack (소리 시작): 0.2초 동안 아주 천천히 볼륨이 올라갑니다.
-        // (이전 버전의 0.05초보다 4배 느림 -> "땅!" 소리가 사라짐)
         gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(maxVol, now + 0.2); 
         
-        // 2. Sustain (유지): 소리가 급격히 줄지 않고 오랫동안 은은하게 울립니다.
-        gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+        // ★ 소리의 각(모서리)을 완전히 날려버리는 호흡 조절
+        // 1. Attack: 전체 길이의 앞쪽 30% 동안 아주 서서히, 몰래 볼륨이 커집니다. (타격감 0%)
+        gain.gain.linearRampToValueAtTime(maxVol, now + (duration * 0.3)); 
+        
+        // 2. Release: 나머지 70% 시간 동안 마치 연기가 사라지듯 천천히 소멸합니다.
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        gain.gain.linearRampToValueAtTime(0, now + duration + 0.1); 
 
         osc.start(now);
-        osc.stop(now + duration);
+        osc.stop(now + duration + 0.2); 
     }
 };
 
