@@ -3204,13 +3204,16 @@ function loadNextVerse() {
             // 1. 사망 애니메이션 클래스 추가
             bossAvatar.classList.add('boss-die-effect');
             
-            // 2. 축하 이펙트 음성 (승리 팡파레 시뮬레이션)
+            // 2. 축하 이펙트 음성 (승리 팡파레 시뮬레이션 - 빠르고 경쾌하게!)
             if(typeof SoundEffect !== 'undefined') {
-                // 승리 음성: 상승하는 톤 연속
-                SoundEffect.playTone(330, 'sine', 0.3, 0.1);  // 미(E)
-                setTimeout(() => SoundEffect.playTone(392, 'sine', 0.3, 0.1), 100);  // 파(G)
-                setTimeout(() => SoundEffect.playTone(494, 'sine', 0.3, 0.1), 200);  // 라(A)
-                setTimeout(() => SoundEffect.playTone(587, 'sine', 0.5, 0.2), 300);  // 시(B) - 길게
+                // 부드러운 'sine' 대신 밝은 'square'나 'triangle' 사용
+                // 0.3(서서히) 대신 0.05(즉각적 타격) 또는 0.1(짧고 경쾌함)으로 변경
+                
+                // 빰! 빰! 빰! 빠아암~! (간격도 살짝 타이트하게 당겼습니다)
+                SoundEffect.playTone(330, 'square', 0.1, 0.1);  // 미(E)
+                setTimeout(() => SoundEffect.playTone(392, 'square', 0.1, 0.1), 80);   // 파(G)
+                setTimeout(() => SoundEffect.playTone(494, 'square', 0.1, 0.1), 160);  // 라(A)
+                setTimeout(() => SoundEffect.playTone(587, 'square', 0.4, 0.2), 240);  // 시(B) - 마지막은 길게 뻗음
             }
 
             // 3. 파티클 폭죽 이펙트 생성
@@ -4796,6 +4799,15 @@ function loadStep() {
             
             if (errorCount === 0) {
                 checkBtn.disabled = true;
+                
+                // 🌟 [수정] "띠-리-링~!" 하고 밝고 맑게 퍼지는 정답 축하음
+                if(typeof SoundEffect !== 'undefined') {
+                    // sine 파동을 써서 아주 맑고 영롱한 소리를 냅니다.
+                    SoundEffect.playTone(523.25, 'sine', 0.1, 0.2); // 도 (짧게 타격)
+                    setTimeout(() => SoundEffect.playTone(659.25, 'sine', 0.1, 0.2), 80); // 미 (빠르게 이어짐)
+                    setTimeout(() => SoundEffect.playTone(783.99, 'sine', 0.6, 0.2), 160); // 솔 (길고 기분 좋은 여운)
+                }
+
                 window.currentStep5PartIndex++;
 
                 if (window.currentStep5PartIndex < window.step5Parts.length) {
