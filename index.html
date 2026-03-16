@@ -916,27 +916,44 @@ try {
     auth = firebase.auth();
     
     // 3. 익명 로그인 (게임 켜자마자 자동 실행)
-    auth.onAuthStateChanged((user) => {
-        if (user) {
-            // 이미 로그인 되어 있음
-            myServerUid = user.uid;
-            if (typeof myPlayerId !== 'undefined') myPlayerId = myServerUid;
-            console.log("🔥 서버 연결 유지 중 (ID: " + myServerUid + ")");
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        // 이미 로그인 되어 있음 (파이어베이스가 진짜 신분증을 줌)
+        myServerUid = user.uid;
+        
+        // 🌟 [추가된 마법의 코드] 구형 ID 이사 로직
+        if (typeof myPlayerId !== 'undefined' && myPlayerId.startsWith('user_')) {
+            console.log("🔄 구형 임시 ID 감지! 진짜 UID로 데이터 이사 시작...");
+            
+            // 1. 내 ID를 진짜 신분증으로 덮어씁니다.
+            myPlayerId = myServerUid;
+            
+            // 2. 개발자님이 만들어둔 저장 함수 실행!
+            // -> 로컬 스토리지에 새 ID가 저장되고, 서버에도 새 이름표로 데이터가 복사됩니다!
+            if (typeof saveGameData === 'function') saveGameData();
         } else {
-            // 로그인 안 되어 있으면 새로 로그인
-            auth.signInAnonymously()
-                .then((credential) => {
-                    myServerUid = credential.user.uid;
-                    console.log("🔥 서버 연결 성공! (새 ID 발급)");
-                    // 로그인 직후 점수 한번 저장
-                    if (typeof myPlayerId !== 'undefined') myPlayerId = myServerUid;
-                    if (typeof saveMyScoreToServer === 'function') saveMyScoreToServer();
-                })
-                .catch((error) => {
-                    console.error("서버 연결 실패:", error);
-                });
+            // 이미 이사를 마쳤거나 원래 진짜 UID를 쓰던 정상 유저
+            if (typeof myPlayerId !== 'undefined') myPlayerId = myServerUid;
         }
-    });
+
+        console.log("🔥 서버 연결 유지 중 (진짜 UID: " + myServerUid + ")");
+    } else {
+        // 로그인 안 되어 있으면 새로 로그인
+        auth.signInAnonymously()
+            .then((credential) => {
+                myServerUid = credential.user.uid;
+                console.log("🔥 서버 연결 성공! (새 진짜 UID 발급)");
+                
+                if (typeof myPlayerId !== 'undefined') myPlayerId = myServerUid;
+                
+                // 🌟 로그인 직후 로컬+서버 모두 새 UID로 갱신하도록 saveGameData로 통일
+                if (typeof saveGameData === 'function') saveGameData();
+            })
+            .catch((error) => {
+                console.error("서버 연결 실패:", error);
+            });
+    }
+});
 
 } catch (e) {
     console.error("파이어베이스 초기화 오류 (키를 확인하세요):", e);

@@ -3701,7 +3701,6 @@ function updateCastleView() {
 /* [수정] 게임 저장하기 (닉네임 포함) */
 function saveGameData() {
     // ID와 태그가 없으면 만듭니다
-    if (!myPlayerId) myPlayerId = 'user_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
     if (!myTag) myTag = Math.floor(1000 + Math.random() * 9000);
 
     // 리셋 중에는 저장을 중단합니다.
