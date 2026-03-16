@@ -665,6 +665,8 @@ const today = `${year}-${month}-${day}`;
 
     saveGameData(); 
     updateMissionUI();
+    // 🌟 [추가 1] 카운트가 올랐으니 배지 상태도 즉시 새로고침!
+    if (typeof updateNotificationBadges === 'function') updateNotificationBadges();
 }
 
 /* [시스템: 미션 UI 표시 (화면 그리기)] */
@@ -812,6 +814,8 @@ function createMissionElement(parent, m) {
         if (btn) {
             btn.onclick = function() {
                 claimReward(m.type, m.index, m.rewardType, m.val1, m.val2);
+                // 🌟 [추가 2] 보상을 받았으니 배지 상태 새로고침! (빨간 점 끄기)
+                if (typeof updateNotificationBadges === 'function') updateNotificationBadges();
             };
         }
     }
