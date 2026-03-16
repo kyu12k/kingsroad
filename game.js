@@ -6761,7 +6761,7 @@ function renderRankingList(data) {
     updateStickyMyRank(amIInTop100);
 }
 
-/* [수정] 하단 고정 내 정보 바 (타 리그 구경 모드 지원) */
+/* [수정] 하단 고정 내 정보 바 (타 리그 구경 모드 지원 및 퍼센트 버그 수정) */
 function updateStickyMyRank(amIInTop100) {
     // 1. 기존 바 제거
     const oldBar = document.getElementById('sticky-my-rank');
@@ -6770,22 +6770,32 @@ function updateStickyMyRank(amIInTop100) {
     // 2. 100위 안이면 표시하지 않음
     if (amIInTop100) return;
 
+    // ★ [버그 픽스 1] 내 점수와 지파 데이터를 가장 먼저 불러옵니다!
+    const myScore = (typeof leagueData !== 'undefined' && leagueData.myScore) ? leagueData.myScore : 0;
+    const myTribeIdx = (typeof myTribe !== 'undefined') ? myTribe : 0;
+
     const mode = window.currentRankingMode || 'tribe';
-    const tribeName = (TRIBE_DATA[myTribe] && TRIBE_DATA[myTribe].name) ? TRIBE_DATA[myTribe].name : '내 지파';
+    const tribeName = (TRIBE_DATA[myTribeIdx] && TRIBE_DATA[myTribeIdx].name) ? TRIBE_DATA[myTribeIdx].name : '내 지파';
     const leagueName = mode === 'zion' ? '시온성' : tribeName;
+    
     const totalCount = getCurrentRankingTotalCount();
+    // topPercent는 'Top 100이 전체의 몇 %인가'를 나타내는 커트라인 기준점입니다.
     const topPercent = totalCount > 0 ? Math.min(100, (100 / totalCount) * 100) : null;
     const cutoffScore = getCurrentRankingCutoff();
 
     let approxText = '';
+    let displayPercent = topPercent; // ★ [버그 픽스 2] 화면에 최종적으로 보여줄 퍼센트 변수
+
+    // 내 점수가 있으면 커트라인과 비교해서 내 진짜 위치(%)를 추정합니다.
     if (topPercent && cutoffScore > 0 && myScore > 0) {
         const ratio = myScore / cutoffScore;
         const estimated = topPercent / Math.max(ratio, 0.1);
-        const estimatedPercent = Math.min(100, Math.max(topPercent, estimated));
-        approxText = ` (대략 상위 ${estimatedPercent.toFixed(1)}%)`;
+        displayPercent = Math.min(100, Math.max(topPercent, estimated)); // 유저의 추정 퍼센트!
+        approxText = ` (대략 상위 ${displayPercent.toFixed(1)}%)`;
     }
 
-    const rankDisplay = topPercent ? `상위<br>${topPercent.toFixed(1)}%` : "순위<br>외";
+    // ★ [버그 픽스 3] topPercent가 아니라 유저의 displayPercent를 보여줍니다.
+    const rankDisplay = displayPercent ? `상위<br>${displayPercent.toFixed(1)}%` : "순위<br>외";
     const rankColor = "#7f8c8d";
     const message = topPercent
         ? `${leagueName} 랭킹: 순위 외입니다. (Top 100은 상위 ${topPercent.toFixed(1)}% 기준)${approxText}`
@@ -6795,26 +6805,23 @@ function updateStickyMyRank(amIInTop100) {
     const stickyBar = document.createElement('div');
     stickyBar.id = 'sticky-my-rank';
     stickyBar.style.cssText = `
-    position: fixed;
-    bottom: 80px; /* 돌아가기 버튼 위로 띄움 */
-    left: 0;
-    width: 100%;
-    background: rgba(30, 40, 50, 0.98);
-    border-top: 2px solid #7f8c8d;
-    padding: 12px 15px;
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.6);
-    display: flex; align-items: center; z-index: 100;
-    box-sizing: border-box; animation: slideUp 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-`;
-
-    const myScore = leagueData.myScore || 0;
-    const myTribeIdx = (typeof myTribe !== 'undefined') ? myTribe : 0;
+        position: fixed;
+        bottom: 80px; /* 돌아가기 버튼 위로 띄움 */
+        left: 0;
+        width: 100%;
+        background: rgba(30, 40, 50, 0.98);
+        border-top: 2px solid #7f8c8d;
+        padding: 12px 15px;
+        box-shadow: 0 -5px 20px rgba(0,0,0,0.6);
+        display: flex; align-items: center; z-index: 100;
+        box-sizing: border-box; animation: slideUp 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    `;
 
     stickyBar.innerHTML = `
         <div style="flex:1;">
             <div style="display:flex; align-items:center; margin-bottom:3px;">
                 <span style="font-weight:bold; font-size:1rem; color:white;">
-                    ${getTribeIcon(myTribeIdx)}${getDeptTag(myDept)} ${myNickname}
+                    ${getTribeIcon(myTribeIdx)}${getDeptTag(typeof myDept !== 'undefined' ? myDept : 0)} ${typeof myNickname !== 'undefined' ? myNickname : '순례자'}
                 </span>
             </div>
             <div style="font-size:0.8rem; color:#bdc3c7;">
