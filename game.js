@@ -8377,7 +8377,14 @@ function shareSaveCodeAndGetReward() {
     const pwd = prompt("데이터를 안전하게 보호할 '비밀번호'를 입력하세요.\n(다른 기기에서 불러올 때 이 비밀번호가 필요합니다!)");
     if (!pwd) return; // 취소 시 중단
 
-    const today = new Date().toISOString().split('T')[0];
+    // ==========================================
+    // 🌟 [버그 픽스] 영국 시간(UTC) 대신 한국 시간(기기 로컬 시간)으로 파일명 생성!
+    const now = new Date();
+    // 내 기기의 시간대(KST 등)와 UTC의 차이를 계산해서 더해줍니다.
+    const localTime = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+    const today = localTime.toISOString().split('T')[0];
+    // ==========================================
+
     const fileName = `KingsRoad_Backup_${today}.txt`;
 
     // 🌟 암호화 진행 (앞에 'ENC_'를 붙여 구분)
