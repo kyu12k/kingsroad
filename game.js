@@ -6115,7 +6115,6 @@ function openRankingScreen() {
             <button onclick="scrollToMyRank()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #ecf0f1; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 5px;">
                 📍 내 순위 찾기
             </button>
-
             <button onclick="toggleMyScorePanel()" style="background: rgba(241,196,15,0.15); border: 1px solid rgba(241,196,15,0.4); color: #f1c40f; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 5px;">
                 📊 나의 승점 패널
             </button>
@@ -6142,72 +6141,53 @@ function openRankingScreen() {
     </div>
 
     <div id="yearly-swipe-area" style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap:15px; padding:15px 5px 20px 5px; margin-top:10px; border-bottom:1px solid rgba(255,255,255,0.1); scrollbar-width: none;">
-            
             <div style="min-width:85%; flex:0 0 auto; scroll-snap-align:center; background:linear-gradient(135deg, #2c3e50, #1a252f); border:2px solid #f39c12; border-radius:15px; padding:15px; box-shadow:0 8px 15px rgba(0,0,0,0.5); position:relative; overflow:hidden;">
                 <div style="position:absolute; top:-10px; right:-15px; font-size:6rem; opacity:0.05; pointer-events:none;">🏆</div>
-                
                 <div style="text-align:center; font-weight:bold; color:#f1c40f; font-size:1.15rem; margin-bottom:5px; letter-spacing:-0.5px;">⚔️ 2026 12지파 대항전</div>
                 <div style="font-size:0.75rem; color:#bdc3c7; text-align:center; margin-bottom:15px;">(각 지파 상위 12,000명 기여도 합산)</div>
-
                 <div id="yearly-top3-list" style="display:flex; flex-direction:column; gap:8px;">
                     <div style="text-align:center; padding:10px; color:#95a5a6; font-size:0.85rem;">📡 스냅샷을 기다리는 중입니다...</div>
                 </div>
             </div>
-
             <div style="min-width:85%; flex:0 0 auto; scroll-snap-align:center; background:linear-gradient(135deg, #34495e, #2c3e50); border:1px dashed rgba(255,255,255,0.2); border-radius:15px; padding:15px; opacity:0.8; display:flex; flex-direction:column; justify-content:center; align-items:center;">
                 <div style="font-size:2.5rem; margin-bottom:10px;">📜</div>
                 <div style="color:#bdc3c7; font-weight:bold; font-size:1.1rem;">다가올 영광</div>
                 <div style="font-size:0.8rem; color:#95a5a6; text-align:center; margin-top:5px; line-height:1.4;">내년 연말정산 이후,<br>이곳에 위대한 역사가 보존됩니다.</div>
             </div>
-
-        </div>
+    </div>
 
     <div id="sticky-tabs-container" style="background: #2c3e50; padding: 10px 5px; border-bottom: 1px solid rgba(255,255,255,0.1); display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
-        
-        <button id="tab-tribe" onclick="openRankingModal('tribe', '🧭 내 지파 랭킹')" 
-            style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
+        <button id="tab-tribe" onclick="openRankingModal('tribe', '🧭 내 지파 랭킹')" style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
             <span style="font-size:1rem;">🧭</span><span>내 지파</span>
         </button>
-
-        <button id="tab-zion" onclick="openRankingModal('zion', '👑 시온성 랭킹')" 
-            style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
+        <button id="tab-zion" onclick="openRankingModal('zion', '👑 시온성 랭킹')" style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
             <span style="font-size:1rem;">👑</span><span>시온성</span>
         </button>
-
-        <button id="tab-weekly-hall" onclick="openRankingModal('weekly-hall', '🏛️ 주간 명예의 전당')" 
-            style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
+        <button id="tab-weekly-hall" onclick="openRankingModal('weekly-hall', '🏛️ 주간 명예의 전당')" style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
             <span style="font-size:1rem;">🏛️</span><span>주간 명예</span>
         </button>
-
-        <button id="tab-monthly-hall" onclick="openRankingModal('monthly-hall', '📜 월간 명예의 전당')" 
-            style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
+        <button id="tab-monthly-hall" onclick="openRankingModal('monthly-hall', '📜 월간 명예의 전당')" style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
             <span style="font-size:1rem;">📜</span><span>월간 명예</span>
         </button>
-        
-        <button id="tab-total-hall" onclick="openRankingModal('total-hall', '💎 누적 명예의 전당 (All-Time)')" 
-            style="grid-column: 1 / span 2; padding:10px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.95rem; display:flex; justify-content:center; align-items:center; gap:6px;">
+        <button id="tab-total-hall" onclick="openRankingModal('total-hall', '💎 누적 명예의 전당 (All-Time)')" style="grid-column: 1 / span 2; padding:10px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.95rem; display:flex; justify-content:center; align-items:center; gap:6px;">
             <span style="font-size:1.1rem;">💎</span><span>누적 명예의 전당 (All-Time)</span>
         </button>
     </div>
 
-    // 기존 코드에서 모달창을 그리는 부분 (openRankingScreen 함수 내부)
-<div id="ranking-modal-overlay" onclick="if(event.target === this) closeRankingModal()" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:9999; justify-content:center; align-items:center; padding:20px; box-sizing:border-box;">
-    
-    <div style="background:#2c3e50; border:2px solid #f39c12; border-radius:15px; width:100%; max-width:400px; height:75vh; display:flex; flex-direction:column; box-shadow:0 10px 30px rgba(0,0,0,0.9); overflow:hidden;">
-        
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; background:rgba(0,0,0,0.2); border-bottom:1px solid rgba(255,255,255,0.1);">
-            <h3 id="ranking-modal-title" style="margin:0; color:#f1c40f; font-size:1.1rem; font-weight:bold;">랭킹</h3>
-            <button onclick="closeRankingModal()" style="background:none; border:none; color:#ecf0f1; font-size:1.8rem; cursor:pointer; padding:0 10px; line-height:0.8;">&times;</button>
-        </div>
-        
-        <div id="ranking-list" style="flex:1; overflow-y:auto; padding:10px; background:#1a252f; scrollbar-width: none;">
-        </div>
-
-        <div id="modal-my-rank-footer" style="display:none; background: rgba(30, 40, 50, 0.98); border-top: 1px solid rgba(255,255,255,0.1); padding: 12px 15px; flex-shrink: 0; align-items: center;">
+    <div id="ranking-modal-overlay" onclick="if(event.target === this) closeRankingModal()" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:9999; justify-content:center; align-items:center; padding:20px; box-sizing:border-box;">
+        <div style="background:#2c3e50; border:2px solid #f39c12; border-radius:15px; width:100%; max-width:400px; height:75vh; display:flex; flex-direction:column; box-shadow:0 10px 30px rgba(0,0,0,0.9); overflow:hidden;">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; background:rgba(0,0,0,0.2); border-bottom:1px solid rgba(255,255,255,0.1);">
+                <h3 id="ranking-modal-title" style="margin:0; color:#f1c40f; font-size:1.1rem; font-weight:bold;">랭킹</h3>
+                <button onclick="closeRankingModal()" style="background:none; border:none; color:#ecf0f1; font-size:1.8rem; cursor:pointer; padding:0 10px; line-height:0.8;">&times;</button>
+            </div>
+            
+            <div id="ranking-list" style="flex:1; overflow-y:auto; padding:10px; background:#1a252f; scrollbar-width: none;">
             </div>
 
+            <div id="modal-my-rank-footer" style="display:none; background: rgba(30, 40, 50, 0.98); border-top: 1px solid rgba(255,255,255,0.1); padding: 12px 15px; flex-shrink: 0; align-items: center;">
+            </div>
+        </div>
     </div>
-</div>
 
     <div class="button-area-static">
         <button class="btn-gray btn-back" onclick="goMap()">돌아가기</button>
