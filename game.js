@@ -6776,6 +6776,12 @@ function updateStickyMyRank(amIInTop100) {
     const oldBar = document.getElementById('sticky-my-rank');
     if (oldBar) oldBar.remove();
 
+    // 🌟 [핵심 픽스] 아직 랭킹 데이터를 '불러오는 중'이라면 섣불리 바를 띄우지 않고 기다립니다!
+    const list = document.getElementById('ranking-list');
+    if (list && list.innerHTML.includes('불러오는 중')) {
+        return; // 여기서 함수를 멈추고 돌아갑니다.
+    }
+
     // 2. 100위 안이면 표시하지 않음
     if (amIInTop100) return;
 
