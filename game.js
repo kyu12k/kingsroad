@@ -6190,19 +6190,24 @@ function openRankingScreen() {
         </button>
     </div>
 
-    <div id="ranking-modal-overlay" onclick="if(event.target === this) closeRankingModal()" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:9999; justify-content:center; align-items:center; padding:20px; box-sizing:border-box;">
+    // 기존 코드에서 모달창을 그리는 부분 (openRankingScreen 함수 내부)
+<div id="ranking-modal-overlay" onclick="if(event.target === this) closeRankingModal()" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:9999; justify-content:center; align-items:center; padding:20px; box-sizing:border-box;">
+    
+    <div style="background:#2c3e50; border:2px solid #f39c12; border-radius:15px; width:100%; max-width:400px; height:75vh; display:flex; flex-direction:column; box-shadow:0 10px 30px rgba(0,0,0,0.9); overflow:hidden;">
         
-        <div style="background:#2c3e50; border:2px solid #f39c12; border-radius:15px; width:100%; max-width:400px; height:75vh; display:flex; flex-direction:column; box-shadow:0 10px 30px rgba(0,0,0,0.9); overflow:hidden;">
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; background:rgba(0,0,0,0.2); border-bottom:1px solid rgba(255,255,255,0.1);">
-                <h3 id="ranking-modal-title" style="margin:0; color:#f1c40f; font-size:1.1rem; font-weight:bold;">랭킹</h3>
-                <button onclick="closeRankingModal()" style="background:none; border:none; color:#ecf0f1; font-size:1.8rem; cursor:pointer; padding:0 10px; line-height:0.8;">&times;</button>
-            </div>
-            
-            <div id="ranking-list" style="flex:1; overflow-y:auto; padding:10px; background:#1a252f; scrollbar-width: none;">
-                </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; background:rgba(0,0,0,0.2); border-bottom:1px solid rgba(255,255,255,0.1);">
+            <h3 id="ranking-modal-title" style="margin:0; color:#f1c40f; font-size:1.1rem; font-weight:bold;">랭킹</h3>
+            <button onclick="closeRankingModal()" style="background:none; border:none; color:#ecf0f1; font-size:1.8rem; cursor:pointer; padding:0 10px; line-height:0.8;">&times;</button>
+        </div>
+        
+        <div id="ranking-list" style="flex:1; overflow-y:auto; padding:10px; background:#1a252f; scrollbar-width: none;">
         </div>
 
+        <div id="modal-my-rank-footer" style="display:none; background: rgba(30, 40, 50, 0.98); border-top: 1px solid rgba(255,255,255,0.1); padding: 12px 15px; flex-shrink: 0; align-items: center;">
+            </div>
+
     </div>
+</div>
 
     <div class="button-area-static">
         <button class="btn-gray btn-back" onclick="goMap()">돌아가기</button>
@@ -6767,93 +6772,84 @@ function renderRankingList(data) {
         leagueData.myScore = myActualScore;
     }
 
-    updateStickyMyRank(amIInTop100);
+    updateModalMyRank(amIInTop100);
 }
 
-/* [수정] 하단 고정 내 정보 바 (타 리그 구경 모드 지원 및 퍼센트 버그 수정) */
-function updateStickyMyRank(amIInTop100) {
-    // 1. 기존 바 제거
-    const oldBar = document.getElementById('sticky-my-rank');
-    if (oldBar) oldBar.remove();
+/* ✨ [NEW] 모달창 내부 전용 하단 고정 바 업데이트 로직 (최종 완성본) */
+function updateModalMyRank(amIInTop100) {
+    const footer = document.getElementById('modal-my-rank-footer');
+    if (!footer) return;
 
-    // 🌟 [핵심 픽스] 아직 랭킹 데이터를 '불러오는 중'이라면 섣불리 바를 띄우지 않고 기다립니다!
-    const list = document.getElementById('ranking-list');
-    if (list && list.innerHTML.includes('불러오는 중')) {
-        return; // 여기서 함수를 멈추고 돌아갑니다.
+    // 100위 안에 있으면 바를 깔끔하게 숨깁니다
+    if (amIInTop100) {
+        footer.style.display = 'none';
+        return;
     }
-
-    // ★ [버그 픽스 1] 내 점수와 지파 데이터를 가장 먼저 불러옵니다!
-    const myScore = (typeof leagueData !== 'undefined' && leagueData.myScore) ? leagueData.myScore : 0;
-    const myTribeIdx = (typeof myTribe !== 'undefined') ? myTribe : 0;
 
     const mode = window.currentRankingMode || 'tribe';
-    const tribeName = (TRIBE_DATA[myTribeIdx] && TRIBE_DATA[myTribeIdx].name) ? TRIBE_DATA[myTribeIdx].name : '내 지파';
-    const leagueName = mode === 'zion' ? '시온성' : tribeName;
     
-    const totalCount = getCurrentRankingTotalCount();
-    // topPercent는 'Top 100이 전체의 몇 %인가'를 나타내는 커트라인 기준점입니다.
-    const topPercent = totalCount > 0 ? Math.min(100, (100 / totalCount) * 100) : null;
-    const cutoffScore = getCurrentRankingCutoff();
+    // 🌟 1. 탭(모드)에 따라 '내 진짜 점수'와 '이름' 골라오기
+    let myTargetScore = 0;
+    let modeName = "";
 
-    let approxText = '';
-    let displayPercent = topPercent; // ★ [버그 픽스 2] 화면에 최종적으로 보여줄 퍼센트 변수
-
-    // 내 점수가 있으면 커트라인과 비교해서 내 진짜 위치(%)를 추정합니다.
-    if (topPercent && cutoffScore > 0 && myScore > 0) {
-        const ratio = myScore / cutoffScore;
-        const estimated = topPercent / Math.max(ratio, 0.1);
-        displayPercent = Math.min(100, Math.max(topPercent, estimated)); // 유저의 추정 퍼센트!
-        approxText = ` (대략 상위 ${displayPercent.toFixed(1)}%)`;
+    if (mode === 'tribe' || mode === 'zion' || mode === 'weekly-hall') {
+        myTargetScore = (typeof leagueData !== 'undefined' && leagueData.myScore) ? leagueData.myScore : 0;
+        modeName = (mode === 'tribe') ? "내 지파" : "시온성";
+        if (mode === 'weekly-hall') modeName = "주간 명예";
+    } 
+    else if (mode === 'monthly-hall') {
+        myTargetScore = (typeof leagueData !== 'undefined' && leagueData.myMonthlyScore) ? leagueData.myMonthlyScore : 0;
+        modeName = "월간 명예";
+    } 
+    else if (mode === 'total-hall') {
+        myTargetScore = (typeof leagueData !== 'undefined' && leagueData.totalScore) ? leagueData.totalScore : 0;
+        modeName = "누적 명예";
     }
 
-    // ★ [버그 픽스 3] topPercent가 아니라 유저의 displayPercent를 보여줍니다.
-    const rankDisplay = displayPercent ? `상위<br>${displayPercent.toFixed(1)}%` : "순위<br>외";
-    const rankColor = "#7f8c8d";
-    const message = topPercent
-        ? `${leagueName} 랭킹: 순위 외입니다. (Top 100은 상위 ${topPercent.toFixed(1)}% 기준)${approxText}`
-        : `${leagueName} 랭킹: 순위 외입니다.`;
+    // 🌟 2. 주간 랭킹일 때만 전체 인원수 가져오기 (월간/누적은 0으로 고정)
+    let totalCount = 0;
+    if (mode === 'tribe') {
+        const tribeKey = String(typeof myTribe !== 'undefined' ? myTribe : 0);
+        totalCount = (typeof weeklyRankCounts !== 'undefined' && weeklyRankCounts.tribeCounts) ? (weeklyRankCounts.tribeCounts[tribeKey] || 0) : 0;
+    } else if (mode === 'zion' || mode === 'weekly-hall') {
+        totalCount = (typeof weeklyRankCounts !== 'undefined') ? (weeklyRankCounts.totalCount || 0) : 0;
+    }
 
-    // 4. 하단 바 생성 (디자인 개선)
-    const stickyBar = document.createElement('div');
-    stickyBar.id = 'sticky-my-rank';
-    stickyBar.style.cssText = `
-        position: fixed;
-        bottom: 80px; /* 돌아가기 버튼 위로 띄움 */
-        left: 0;
-        width: 100%;
-        background: rgba(30, 40, 50, 0.98);
-        border-top: 2px solid #7f8c8d;
-        padding: 12px 15px;
-        box-shadow: 0 -5px 20px rgba(0,0,0,0.6);
-        display: flex; align-items: center; z-index: 100;
-        box-sizing: border-box; animation: slideUp 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-    `;
+    // 🌟 3. 퍼센트 계산 (전체 인원을 모르는 월간/누적은 무조건 "순위 외"로 표시)
+    let rankDisplay = "순위<br>외";
+    if (totalCount > 0) {
+        // 인원수가 있으면 퍼센트 계산 (최대 100%)
+        const displayPercent = Math.min(100, (100 / totalCount) * 100);
+        rankDisplay = `상위<br>${displayPercent.toFixed(1)}%`;
+    }
 
-    stickyBar.innerHTML = `
+    const myNicknameDisplay = typeof myNickname !== 'undefined' ? myNickname : '순례자';
+
+    // 4. 모달 푸터에 예쁘게 그리기
+    footer.innerHTML = `
         <div style="flex:1;">
             <div style="display:flex; align-items:center; margin-bottom:3px;">
                 <span style="font-weight:bold; font-size:1rem; color:white;">
-                    ${getTribeIcon(myTribeIdx)}${getDeptTag(typeof myDept !== 'undefined' ? myDept : 0)} ${typeof myNickname !== 'undefined' ? myNickname : '순례자'}
+                    ${myNicknameDisplay}
                 </span>
             </div>
             <div style="font-size:0.8rem; color:#bdc3c7;">
-                ${message}
+                ${modeName} 랭킹 100위 밖입니다.
             </div>
         </div>
         <div style="text-align:right;">
-            <div style="display:inline-block; font-size:0.7rem; color:${rankColor}; border:1px solid rgba(127,140,141,0.6); padding:2px 6px; border-radius:10px; margin-bottom:4px; font-weight:bold;">
+            <div style="display:inline-block; font-size:0.7rem; color:#7f8c8d; border:1px solid rgba(127,140,141,0.6); padding:2px 6px; border-radius:10px; margin-bottom:4px; font-weight:bold;">
                 ${rankDisplay.replace('<br>', ' ')}
             </div>
             <div style="font-weight:bold; color:#f1c40f; font-size:1.1rem;">
-                ${myScore.toLocaleString()}
+                ${myTargetScore.toLocaleString()}
             </div>
             <div style="font-size:0.7rem; color:#95a5a6;">점 (내 점수)</div>
         </div>
     `;
-
-    // 랭킹 스크린에 붙이기
-    const screen = document.getElementById('ranking-screen');
-    if (screen) screen.appendChild(stickyBar);
+    
+    // 준비가 다 되면 바를 짠! 하고 보여줍니다
+    footer.style.display = 'flex';
 }
 
 /* [시스템] 주간 ID 생성기 (월요일 시작, ISO 주차) */
