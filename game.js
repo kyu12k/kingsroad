@@ -6782,9 +6782,6 @@ function updateStickyMyRank(amIInTop100) {
         return; // 여기서 함수를 멈추고 돌아갑니다.
     }
 
-    // 2. 100위 안이면 표시하지 않음
-    if (amIInTop100) return;
-
     // ★ [버그 픽스 1] 내 점수와 지파 데이터를 가장 먼저 불러옵니다!
     const myScore = (typeof leagueData !== 'undefined' && leagueData.myScore) ? leagueData.myScore : 0;
     const myTribeIdx = (typeof myTribe !== 'undefined') ? myTribe : 0;
