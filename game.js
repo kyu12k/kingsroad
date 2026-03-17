@@ -6466,24 +6466,48 @@ function loadMonthlyHallOfFame() {
         });
 }
 
-/* [수정] 내 순위 찾기 */
+/* [수정] 내 순위 찾기 (스마트 자동 스크롤) */
 function scrollToMyRank() {
+    // 1. 모달창(팝업)이 열려있는지 확인합니다.
+    const modalOverlay = document.getElementById('ranking-modal-overlay');
+    const isModalOpen = modalOverlay && modalOverlay.style.display !== 'none';
+
+    // 2. 모달이 닫혀있다면, 가장 기본인 '내 지파' 랭킹을 자동으로 열어줍니다!
+    if (!isModalOpen) {
+        // 내 지파 랭킹 모달 열기 함수 실행 (기존에 정의된 함수 호출)
+        if (typeof openRankingModal === 'function') {
+            openRankingModal('tribe', '🧭 내 지파 랭킹');
+        }
+        
+        // 데이터 로딩 시간이 쪼금 필요하므로, 0.8초(800ms) 뒤에 내 이름을 찾습니다.
+        setTimeout(() => {
+            findAndScrollMe();
+        }, 800);
+        return;
+    }
+
+    // 3. 이미 모달이 열려있다면 바로 찾아서 스크롤!
     findAndScrollMe();
 }
 
-// 스크롤 로직 분리
+// 스크롤 및 강조 효과 로직 분리
 function findAndScrollMe() {
-    // isMe 플래그가 있는 카드 찾기 (renderRankingList에서 이미 id를 심어두는 게 좋음)
-    // 현재 코드에서는 isMe일 때 배경색을 바꾸는데, 식별용 ID도 추가하면 좋습니다.
-    // renderRankingList 함수 안의 item 생성 부분에 id="my-ranking-card" 가 들어가는 조건 확인 필요
-    
-    const myCard = document.getElementById('my-ranking-card'); // renderRankingList에서 이 ID를 넣어주셔야 합니다!
+    const myCard = document.getElementById('my-ranking-card'); 
     
     if (myCard) {
+        // 부드럽게 화면 중앙으로 끌고 오기
         myCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        myCard.style.transition = "transform 0.2s";
-        myCard.style.transform = "scale(1.05)";
-        setTimeout(() => myCard.style.transform = "scale(1)", 200);
+        
+        // ✨ Tech Lead UX 포인트: 그냥 스크롤만 되면 심심하니, 내 카드를 반짝! 빛나게 해줍니다.
+        myCard.style.transition = "all 0.3s";
+        myCard.style.transform = "scale(1.03)";
+        myCard.style.boxShadow = "0 0 15px rgba(241, 196, 15, 0.8)"; // 금빛 후광 효과
+        
+        // 1초 뒤에 효과 원상복구
+        setTimeout(() => {
+            myCard.style.transform = "scale(1)";
+            myCard.style.boxShadow = "none";
+        }, 1000);
     } else {
         alert("현재 랭킹 Top 100 안에 들지 못했습니다.\n분발하세요, 순례자여! 🔥");
     }
