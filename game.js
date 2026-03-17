@@ -6752,7 +6752,6 @@ function renderRankingList(data) {
                     <span style="font-weight:bold; font-size:1.05rem; display:flex; align-items:center; color:#fff;">
                         ${getTribeIcon(userTribe)}${getDeptTag(user.dept)} ${user.name}
                     </span>
-                    ${mode === 'zion' ? `<span style="font-size:0.75rem; color:#bdc3c7; margin-left:6px;">(${TRIBE_DATA[userTribe] ? TRIBE_DATA[userTribe].name : '지파'})</span>` : ''}
                 </div>
                 <div style="font-size:0.8rem; color:#bdc3c7;">
                     🏰 성전 Lv.${user.castle || 0} <span style="opacity:0.5; margin:0 3px;">|</span> <span style="opacity:0.7;">#${user.tag}</span>
