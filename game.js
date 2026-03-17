@@ -6683,17 +6683,18 @@ function renderHallOfFameList(data, title) {
     });
 }
 
-/* [수정] 랭킹 리스트 그리기 (+ 50위 밖일 때 하단 고정바 표시) */
+/* [수정] 랭킹 리스트 그리기 (내 순위 인식 버그 완벽 수정) */
 function renderRankingList(data) {
     const list = document.getElementById('ranking-list');
     list.innerHTML = ""; 
 
     // 1. 내가 리스트(Top 100) 안에 있는지 확인
     let amIInTop100 = false;
+    let myActualScore = 0; // 리스트에서 찾은 내 실제 점수를 백업할 변수
 
     // 헤더 표시
     const mode = window.currentRankingMode || 'tribe';
-    const tribeName = (TRIBE_DATA[myTribe] && TRIBE_DATA[myTribe].name) ? TRIBE_DATA[myTribe].name : '내 지파';
+    const tribeName = (typeof myTribe !== 'undefined' && TRIBE_DATA[myTribe] && TRIBE_DATA[myTribe].name) ? TRIBE_DATA[myTribe].name : '내 지파';
     const headerTitle = mode === 'zion' ? '👑 시온성 Top 100' : `🧭 ${tribeName} Top 100`;
     const headerDiv = document.createElement('div');
     headerDiv.style.cssText = `padding: 15px; color: #bdc3c7; font-size: 0.9rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);`;
@@ -6708,8 +6709,14 @@ function renderRankingList(data) {
     // 2. 리스트 그리기
     data.forEach((user, index) => {
         const rank = index + 1;
-        const isMe = user.isMe;
-        if (isMe) amIInTop100 = true; // 나를 찾았다!
+        
+        // 🌟 [버그 픽스 1] 서버에서 isMe를 누락했더라도, 내 닉네임(name)과 일치하면 무조건 '나'로 강제 인식!
+        const isMe = user.isMe || (typeof myNickname !== 'undefined' && user.name === myNickname);
+        
+        if (isMe) {
+            amIInTop100 = true; // 나를 찾았다! (이제 하단 바가 숨어버립니다)
+            myActualScore = user.score || 0; // 리스트에 적힌 내 진짜 점수 확보
+        }
         
         const userTribe = (user.tribe !== undefined) ? user.tribe : 0;
 
@@ -6725,9 +6732,8 @@ function renderRankingList(data) {
         const item = document.createElement('div');
         item.style.cssText = `${bgStyle} margin-bottom:8px; padding:12px 15px; border-radius:12px; display:flex; align-items:center; color:#ecf0f1;`;
         
-        // ★ 내 카드에 ID 설정 (scrollToMyRank에서 찾기 위함)
         if (isMe) {
-            item.id = 'my-ranking-card';
+            item.id = 'my-ranking-card'; // 스크롤 이동용 ID 부여
         }
         
         item.innerHTML = `
@@ -6755,6 +6761,12 @@ function renderRankingList(data) {
 
     // 3. ★ 핵심: 내가 100위 안에 없으면 하단에 '내 정보 바' 띄우기
     window.lastRankInTop100 = amIInTop100;
+    
+    // 🌟 [버그 픽스 2] 내가 100위 안이라면, 점수가 0점으로 뜨는 엇박자를 막기 위해 점수 동기화
+    if (amIInTop100 && myActualScore > 0 && typeof leagueData !== 'undefined') {
+        leagueData.myScore = myActualScore;
+    }
+
     updateStickyMyRank(amIInTop100);
 }
 
