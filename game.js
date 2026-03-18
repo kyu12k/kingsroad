@@ -6776,12 +6776,6 @@ function renderRankingList(data) {
 
     // 3. ★ 핵심: 내가 100위 안에 없으면 하단에 '내 정보 바' 띄우기
     window.lastRankInTop100 = amIInTop100;
-    
-    // 🌟 [버그 픽스 2] 내가 100위 안이라면, 점수가 0점으로 뜨는 엇박자를 막기 위해 점수 동기화
-    if (amIInTop100 && myActualScore > 0 && typeof leagueData !== 'undefined') {
-        leagueData.myScore = myActualScore;
-    }
-
     updateModalMyRank(amIInTop100);
 }
 
