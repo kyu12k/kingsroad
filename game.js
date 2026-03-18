@@ -2113,7 +2113,10 @@ function amenAndStartGame() {
         db.collection("leaderboard").doc(myPlayerId).set({
             sessionToken: newSessionToken,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true }).catch(err => console.error("출입증 갱신 지연:", err));
+        }, { merge: true }).then(() => {
+            // 🌟🌟 [여기 추가!] 서버에 내 새 출입증이 완벽하게 등록된 직후에 감시 카메라를 켭니다!
+            if (typeof startSessionGuard === 'function') startSessionGuard();
+        }).catch(err => console.error("출입증 갱신 지연:", err));
     }
 
     // 5. 맵 화면으로 이동
@@ -8970,9 +8973,6 @@ window.onload = function() {
     checkMissions(); // [추가] 게임 시작 시 미션 초기화 체크
     updateStats('login');
     updateNotificationBadges();
-
-    // 🛡️ [핵심 추가] 데이터 로딩이 끝났으니 다중 기기 접속 감시 시작!
-    if (typeof startSessionGuard === 'function') startSessionGuard();
     
     // 4. 화면 UI 갱신
     updateGemDisplay();
@@ -9691,11 +9691,44 @@ if ('serviceWorker' in navigator) {
             .catch(err => console.log('서비스 워커 등록 실패:', err));
     });
 }
-// 🛡️ 다중 기기 동시 접속 차단기 (기능 비활성화 상태)
+// 🛡️ 다중 기기 동시 접속 차단기 (스마트 감시 버전)
 function startSessionGuard() {
-    // 🌟 이 한 줄이 핵심입니다. 함수가 불려도 아무것도 안 하고 바로 종료시켜버립니다.
-    console.log("🛡️ 보안 요원 퇴근: 다중 기기 감시 기능이 임시 비활성화되었습니다.");
-    return; 
+    if (typeof db === 'undefined' || !myPlayerId) return;
+
+    console.log("🛡️ 스마트 보안 요원 배치 완료: 실시간 감시를 시작합니다.");
+
+    // 기존에 켜진 카메라가 있다면 끄고 새로 시작 (중복 감시 방지)
+    if (window.sessionGuardUnsubscribe) {
+        window.sessionGuardUnsubscribe();
+    }
+
+    // 파이어베이스 실시간 감시 (onSnapshot)
+    window.sessionGuardUnsubscribe = db.collection("leaderboard").doc(myPlayerId).onSnapshot((doc) => {
+        if (doc.metadata && doc.metadata.fromCache) return; 
+
+        if (doc.exists) {
+            const serverData = doc.data();
+            
+            // 🚨 [핵심 보안] 내 메모리의 출입증과 서버의 출입증이 다르면? 
+            // 누군가 다른 기기에서 '여정 시작'을 눌러서 서버 출입증을 갱신했다는 뜻!
+            if (serverData.sessionToken && window.currentSessionToken && serverData.sessionToken !== window.currentSessionToken) {
+                
+                console.log("🚨 다른 기기 로그인 감지! 현재 기기를 초기화합니다.");
+                
+                window.isResetting = true; 
+                localStorage.clear(); 
+
+                if (typeof firebase !== 'undefined' && firebase.auth) {
+                    firebase.auth().signOut().catch(e => console.log(e));
+                }
+
+                myPlayerId = "";
+                window.currentSessionToken = "";    
+                alert("🚨 다른 기기에서 로그인이 감지되었습니다.\n계정 보호를 위해 현재 기기의 접속이 차단되고 초기화됩니다.");
+                window.location.replace(window.location.href.split('?')[0]);
+            }
+        }
+    });
 }
 
 let toastTimeout;
