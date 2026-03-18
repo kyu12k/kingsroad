@@ -2078,42 +2078,46 @@ function amenAndStartGame() {
     if (typeof SoundEffect !== 'undefined' && SoundEffect.ctx.state === 'suspended') {
         SoundEffect.ctx.resume();
     }
-    // 2. ★ [핵심] 배경 음악 설정 확인 및 시작
-    // 저장된 값이 없으면(null) 기본값 'true'(켜짐)로 간주
+    
+    // 2. 배경 음악 설정 확인 및 시작
     const savedBgmState = localStorage.getItem('setting_bgm_on');
     const shouldPlayBgm = (savedBgmState === null) || (savedBgmState === 'true');
 
     if (typeof BackgroundMusic !== 'undefined') {
-        // 이전에 켜놨거나, 처음 실행이라면 음악 재생
-        if (shouldPlayBgm) {
-            BackgroundMusic.start();
-        } else {
-            // 꺼놨다면 재생하지 않음 (BackgroundMusic.isPlaying은 기본 false임)
-            BackgroundMusic.stop(); 
-        }
-        // 3. ★ 버튼 상태 동기화 (UI 업데이트)
+        if (shouldPlayBgm) BackgroundMusic.start();
+        else BackgroundMusic.stop(); 
+        
         const bgmBtn = document.getElementById('btn-bgm');
         if(bgmBtn) {
-            if (shouldPlayBgm) {
-                bgmBtn.style.opacity = "1";
-                bgmBtn.innerText = "🎵";
-            } else {
-                bgmBtn.style.opacity = "0.5";
-                bgmBtn.innerText = "🔇";
-            }
+            bgmBtn.style.opacity = shouldPlayBgm ? "1" : "0.5";
+            bgmBtn.innerText = shouldPlayBgm ? "🎵" : "🔇";
         }
     }
 
-    // 4. ★ 효과음 버튼 상태 동기화
-    // SoundEffect.isMuted는 1단계에서 이미 불러왔으므로, 버튼 아이콘만 맞춰줍니다.
+    // 3. 효과음 버튼 상태 동기화
     const sfxBtn = document.querySelector('.map-header button[onclick="toggleSound(this)"]');
     if (sfxBtn) {
-        // isMuted가 true면(음소거면) 🔇, 아니면 🔊
         sfxBtn.innerText = SoundEffect.isMuted ? "🔇" : "🔊";
     }
 
+    // 🌟 4. [핵심 수술 2] 여정 시작 시 (Lazy Authentication)
+    // 비로소 새로운 출입증을 발급받고 서버에 등록하여 다른 공기계의 접속을 차단합니다!
+    if (typeof db !== 'undefined' && typeof myPlayerId !== 'undefined' && myPlayerId) {
+        const newSessionToken = "session_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+        window.currentSessionToken = newSessionToken;
+        
+        // 변경된 출입증을 기기에 즉시 저장
+        if (typeof saveGameData === 'function') saveGameData(); 
+
+        // 서버에 새 출입증 신고 (기존 기기 쫓아내기)
+        db.collection("leaderboard").doc(myPlayerId).set({
+            sessionToken: newSessionToken,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true }).catch(err => console.error("출입증 갱신 지연:", err));
+    }
+
     // 5. 맵 화면으로 이동
-    goMap(); 
+    if (typeof goMap === 'function') goMap(); 
 }
 
         function goHome() {
@@ -8544,31 +8548,19 @@ function processImportData(inputString) {
             if (typeof GAME_VERSION !== 'undefined') parsedData.version = GAME_VERSION; 
             window.isResetting = true; 
 
-            // 🌟 [핵심 보안] 새 기기에 로그인했으므로 '새로운 인증키(세션)' 발급!
-            const newSessionToken = "session_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
-            parsedData.sessionToken = newSessionToken;
-            window.currentSessionToken = newSessionToken;
-
+            // 🌟 [핵심 수술 1] 백업 데이터를 덮어씌울 때, 현재 기기의 합법적인 출입증 유지!
+            // 이렇게 해야 새로고침 시 서버가 불법 침입으로 오해하지 않고 부드럽게 넘어갑니다.
+            parsedData.sessionToken = window.currentSessionToken; 
+            
             // 로컬 스토리지에 안전하게 저장
             localStorage.setItem('kingsRoadSave', JSON.stringify(parsedData));
-            // 🌟 [추가] 화면이 새로고침된 직후 자동으로 서버에 저장하도록 예약 
-localStorage.setItem('forceSyncAfterLoad', 'true');
-            // 🌟 파이어베이스에 새 인증키 등록 (기존 기기 쫓아내기)
-            if (typeof db !== 'undefined' && parsedData.playerId) {
-                db.collection("leaderboard").doc(parsedData.playerId).set({
-                    sessionToken: newSessionToken,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true }).then(() => {
-                    alert("✅ 기록 복원 완료!\n게임을 다시 시작합니다.");
-                    location.reload();
-                }).catch(() => {
-                    alert("✅ 기록 복원 완료 (서버 연결 지연)\n게임을 다시 시작합니다.");
-                    location.reload();
-                });
-            } else {
-                alert("✅ 기록 복원 완료!\n게임을 다시 시작합니다.");
-                location.reload();
-            }
+            
+            // 🌟 [추가] 화면이 새로고침된 직후 자동으로 서버에 점수를 동기화하도록 예약
+            localStorage.setItem('forceSyncAfterLoad', 'true');
+            
+            // 파이어베이스 통신 없이 즉시 새로고침 (오류 원인 원천 차단!)
+            alert("✅ 기록 복원 완료!\n게임을 다시 시작합니다.");
+            location.reload();
         }
     } catch (e) {
         console.error("데이터 복구 에러:", e);
