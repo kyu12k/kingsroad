@@ -9691,51 +9691,11 @@ if ('serviceWorker' in navigator) {
             .catch(err => console.log('서비스 워커 등록 실패:', err));
     });
 }
-// 🛡️ 다중 기기 동시 접속 차단기 (실시간 감시)
+// 🛡️ 다중 기기 동시 접속 차단기 (기능 비활성화 상태)
 function startSessionGuard() {
-    if (typeof db === 'undefined' || !myPlayerId) return;
-
-    // 내 로컬 세션 토큰 확인 (없으면 발급)
-    const savedData = JSON.parse(localStorage.getItem('kingsRoadSave') || "{}");
-    if (!savedData.sessionToken) {
-        savedData.sessionToken = "session_" + Date.now();
-        localStorage.setItem('kingsRoadSave', JSON.stringify(savedData));
-    }
-    window.currentSessionToken = savedData.sessionToken;
-
-    // 파이어베이스에 있는 '내 랭킹 데이터'를 24시간 실시간으로 감시합니다.
-    db.collection("leaderboard").doc(myPlayerId).onSnapshot((doc) => {
-        
-        // 브라우저의 '과거 기억(캐시)'으로 인한 오해 차단
-        if (doc.metadata && doc.metadata.fromCache) return; 
-
-        if (doc.exists) {
-            const serverData = doc.data();
-            
-            // 🚨 서버의 인증키가 내 기기의 인증키와 다르면?!
-            // 🌟 [핵심 수술] 단! 방금 '데이터 복원'을 진행해서 '복구 중(forceSyncAfterLoad)' 팻말이 걸려있다면 튕겨내지 않고 임시 통과(Bypass)시킵니다!
-            if (serverData.sessionToken && 
-                serverData.sessionToken !== window.currentSessionToken && 
-                localStorage.getItem('forceSyncAfterLoad') !== 'true') {    
-    // 1. 알림창이 뜨기 전에 '저장 금지 스위치' 켜기
-    window.isResetting = true; 
-    
-    localStorage.clear(); 
-
-// 🌟 2. [핵심 수술] 파이어베이스의 투명 신분증(익명 로그인 기억)까지 완벽하게 소각!
-if (typeof firebase !== 'undefined' && firebase.auth) {
-    firebase.auth().signOut().catch(function(error) {
-        console.log("투명 신분증 소각 실패:", error);
-    });
-}
-
-// 3. 내 로컬 변수들도 싹 비우기
-myPlayerId = "";
-window.currentSessionToken = "";    
-    alert("🚨 다른 기기에서 로그인이 감지되었습니다.\n계정 보호를 위해 현재 기기의 접속이 차단되고 초기화됩니다.");
-    window.location.replace(window.location.href.split('?')[0]);}
-        }
-    });
+    // 🌟 이 한 줄이 핵심입니다. 함수가 불려도 아무것도 안 하고 바로 종료시켜버립니다.
+    console.log("🛡️ 보안 요원 퇴근: 다중 기기 감시 기능이 임시 비활성화되었습니다.");
+    return; 
 }
 
 let toastTimeout;
