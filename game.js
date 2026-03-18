@@ -9713,8 +9713,10 @@ function startSessionGuard() {
             const serverData = doc.data();
             
             // 🚨 서버의 인증키가 내 기기의 인증키와 다르면?!
-if (serverData.sessionToken && serverData.sessionToken !== window.currentSessionToken) {
-    
+            // 🌟 [핵심 수술] 단! 방금 '데이터 복원'을 진행해서 '복구 중(forceSyncAfterLoad)' 팻말이 걸려있다면 튕겨내지 않고 임시 통과(Bypass)시킵니다!
+            if (serverData.sessionToken && 
+                serverData.sessionToken !== window.currentSessionToken && 
+                localStorage.getItem('forceSyncAfterLoad') !== 'true') {    
     // 1. 알림창이 뜨기 전에 '저장 금지 스위치' 켜기
     window.isResetting = true; 
     
