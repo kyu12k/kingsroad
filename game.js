@@ -10178,7 +10178,12 @@ function playScrollTransition(targetCellId, targetText, verseAudio, onCompleteCa
             clearTimeout(fallbackTimer);
             skipBtn.style.display = "none";
             if (muteBtn) muteBtn.style.display = "none"; // 스킵 시 음소거 버튼도 같이 숨김
-
+            // 🌟 [수술 1] 스킵할 때 반복 재생 버튼도 '즉시' 같이 숨겨줍니다!
+            if(repeatBtn) {
+                repeatBtn.style.display = "none";
+                repeatBtn.style.opacity = "0.4"; 
+                repeatBtn.style.border = "1px solid #7f8c8d";
+            }
             tl.play("outro");
         };
     }
