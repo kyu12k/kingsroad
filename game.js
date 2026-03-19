@@ -2019,28 +2019,22 @@ let lastClaimTime = Date.now(); // 방치형 보상 시간 기록
 
 /* [1단계] 성전 데이터 수정 (생산량 1/4 축소 + reqStage 제거) */
 const castleBlueprints = [
-    // [Lv.0]
-    { 
-        level: 0, 
-        name: "제사장의 시작", 
-        desc: "작은 촛불 하나,<br>그리고 고요한 방.<br>이 빈 공간은 무엇으로 채워지게 될까요?", 
-        img: "image_0.webp", 
-        cost: 0, prod: 0, cap: 0, bonus: 0 
-    },
-    // [Lv.1~3]
-    { level: 1, name: "쌓이는 노력", desc: "바닥에 쌓인 책들만큼<br>당신의 마음에도 말씀이 쌓여갑니다.", img: "image_1.webp", cost: 1000, prod: 5, cap: 40, bonus: 2 },
-    { level: 2, name: "첫 번째 책장", desc: "어수선하던 생각들이<br>제자리를 찾기 시작합니다.", img: "image_2.webp", cost: 2000, prod: 10, cap: 80, bonus: 4 },
-    { level: 3, name: "서재의 모습", desc: "책상 위 가득한 열정과<br>깊어진 지식.", img: "image_3.webp", cost: 3000, prod: 15, cap: 120, bonus: 6 },
-    // [Lv.4~7]
-    { level: 4, name: "빛의 변화", desc: "벽면에 일곱 금 촛대가<br>불을 밝혔습니다.", img: "image_4.webp", cost: 5000, prod: 25, cap: 200, bonus: 8 },
-    { level: 5, name: "정결한 옷", desc: "순백의 두루마기가<br>준비되었습니다.", img: "image_5.webp", cost: 7000, prod: 35, cap: 280, bonus: 10 },
-    { level: 6, name: "생명의 샘", desc: "메마른 바닥에서<br>맑은 생명수가 터져 나옵니다.", img: "image_6.webp", cost: 10000, prod: 45, cap: 360, bonus: 12 },
-    { level: 7, name: "자라나는 생명", desc: "물가에 심기운 나무처럼,<br>당신의 믿음에 푸른 싹이 돋아납니다.", img: "image_7.webp", cost: 13000, prod: 60, cap: 480, bonus: 15 },
-    // [Lv.8~11]
-    { level: 8, name: "하늘의 보화", desc: "책장 한편에 반짝이는 보석과<br>면류관이 보이나요?", img: "image_8.webp", cost: 17000, prod: 80, cap: 640, bonus: 18 },
-    { level: 9, name: "새 노래", desc: "정적을 깨고<br>아름다운 선율이 흐릅니다.", img: "image_9.webp", cost: 21000, prod: 100, cap: 800, bonus: 20 },
-    { level: 10, name: "풍성한 결실", desc: "어느새 천장까지 닿은 나무에<br>생명 과실이 가득합니다.", img: "image_10.webp", cost: 28000, prod: 125, cap: 1000, bonus: 25 },
-    { level: 11, name: "열린 문과 영광", desc: "굳게 닫혀있던 문이 열리고<br>영광의 빛이 쏟아집니다!", img: "image_11.webp", cost: 37000, prod: 150, cap: 1500, bonus: 30 }
+    // [Lv.1]
+    { level: 1, name: "제사장의 시작", desc: "작은 촛불 하나, 고요한 방.<br>이 공간은 무엇으로 채워지게 될까요?", img: "image_0.webp", cost: 0, prod: 0, cap: 0, bonus: 0 },
+    // [Lv.2~4]
+    { level: 2, name: "쌓이는 노력", desc: "바닥에 쌓인 책들만큼<br>당신의 마음에도 말씀이 쌓여갑니다.", img: "image_1.webp", cost: 1000, prod: 5, cap: 40, bonus: 2 },
+    { level: 3, name: "첫 번째 책장", desc: "어수선하던 생각들이<br>제자리를 찾기 시작합니다.", img: "image_2.webp", cost: 2000, prod: 10, cap: 80, bonus: 4 },
+    { level: 4, name: "서재의 모습", desc: "책상 위 가득한 열정과<br>깊어진 지식.", img: "image_3.webp", cost: 3000, prod: 15, cap: 120, bonus: 6 },
+    // [Lv.5~8]
+    { level: 5, name: "빛의 변화", desc: "벽면에 일곱 금 촛대가<br>불을 밝혔습니다.", img: "image_4.webp", cost: 5000, prod: 25, cap: 200, bonus: 8 },
+    { level: 6, name: "정결한 옷", desc: "순백의 두루마기가<br>준비되었습니다.", img: "image_5.webp", cost: 7000, prod: 35, cap: 280, bonus: 10 },
+    { level: 7, name: "생명의 샘", desc: "메마른 바닥에서<br>맑은 생명수가 터져 나옵니다.", img: "image_6.webp", cost: 10000, prod: 45, cap: 360, bonus: 12 },
+    { level: 8, name: "자라나는 생명", desc: "물가에 심기운 나무처럼,<br>당신의 믿음에 푸른 싹이 돋아납니다.", img: "image_7.webp", cost: 13000, prod: 60, cap: 480, bonus: 15 },
+    // [Lv.9~12]
+    { level: 9, name: "하늘의 보화", desc: "책장 한편에 반짝이는 보석과<br>면류관이 보이나요?", img: "image_8.webp", cost: 17000, prod: 80, cap: 640, bonus: 18 },
+    { level: 10, name: "새 노래", desc: "정적을 깨고<br>아름다운 선율이 흐릅니다.", img: "image_9.webp", cost: 21000, prod: 100, cap: 800, bonus: 20 },
+    { level: 11, name: "풍성한 결실", desc: "어느새 천장까지 닿은 나무에<br>생명 과실이 가득합니다.", img: "image_10.webp", cost: 28000, prod: 125, cap: 1000, bonus: 25 },
+    { level: 12, name: "열린 문과 영광", desc: "굳게 닫혀있던 문이 열리고<br>영광의 빛이 쏟아집니다!", img: "image_11.webp", cost: 37000, prod: 150, cap: 1500, bonus: 30 }
 ];
 
         // [시스템: 성과 측정 변수]
