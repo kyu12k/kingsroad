@@ -10268,6 +10268,18 @@ function playScrollTransition(targetCellId, targetText, verseAudio, onCompleteCa
 
 /* 🌟 보스전 전용 두루마리 줌인 애니메이션 */
 function startBossTransition(chapterNum, startVerse, endVerse, isMidBoss, onCompleteCallback) {
+    // 🌟 [버그 픽스] 보스전 진입 시, 화면에 남아있을지 모르는 일반 스테이지용 오디오 버튼들을 강제로 싹 치워버립니다!
+    const muteBtn = document.getElementById('mute-toggle-btn');
+    const repeatBtn = document.getElementById('repeat-toggle-btn');
+    const skipBtn = document.getElementById('skip-transition-btn');
+
+    if (muteBtn) muteBtn.style.display = 'none';
+    if (skipBtn) skipBtn.style.display = 'none';
+    if (repeatBtn) {
+        repeatBtn.style.display = 'none';
+        repeatBtn.style.opacity = '0.4'; // 다음 일반 스테이지를 위해 반투명 상태로 초기화
+        repeatBtn.style.border = '1px solid #7f8c8d';
+    }
     const gridContainer = document.getElementById('scroll-grid');
     const title = document.getElementById('scroll-title');
     const overlay = document.getElementById('bible-transition-overlay');
