@@ -68,17 +68,17 @@ async function updateWeeklyCountsImpl() {
 
                 // Snapshot 생성: tribe_{i} 문서에 Top100 저장
                 const rankingData = snapshot.docs.map((doc, index) => {
-    const row = doc.data();
-    return {
-        rank: index + 1,
-        name: row.nickname || "이름없음",
-        score: row.score || 0,
-        tribe: row.tribe !== undefined ? row.tribe : 0,
-        dept: row.dept !== undefined ? row.dept : 0,
-        tag: row.tag || "",
-        castle: row.castleLv || 0
-    };
-});
+                    const row = doc.data();
+                    return {
+                        rank: index + 1,
+                        name: row.nickname || "이름없음",
+                        score: row.score || 0,
+                        tribe: row.tribe !== undefined ? row.tribe : 0,
+                        dept: row.dept !== undefined ? row.dept : 0,
+                        tag: row.tag || "",
+                        castle: row.castleLv || 0
+                    };
+                });
 
                 const snapshotRef = db.collection('ranking_snapshots').doc(currentWeekId)
                     .collection('tribes').doc(`tribe_${i}`);
@@ -104,17 +104,17 @@ async function updateWeeklyCountsImpl() {
     }
 
     const zionRankingData = zionSnapshot.docs.map((doc, index) => {
-    const row = doc.data();
-    return {
-        rank: index + 1,
-        name: row.nickname || "이름없음",
-        score: row.score || 0,
-        tribe: row.tribe !== undefined ? row.tribe : 0,
-        dept: row.dept !== undefined ? row.dept : 0,
-        tag: row.tag || "",
-        castle: row.castleLv || 0
-    };
-});
+        const row = doc.data();
+        return {
+            rank: index + 1,
+            name: row.nickname || "이름없음",
+            score: row.score || 0,
+            tribe: row.tribe !== undefined ? row.tribe : 0,
+            dept: row.dept !== undefined ? row.dept : 0,
+            tag: row.tag || "",
+            castle: row.castleLv || 0
+        };
+    });
 
     const zionSnapshotRef = db.collection('ranking_snapshots').doc(currentWeekId)
         .collection('tribes').doc('zion');
@@ -130,10 +130,10 @@ async function updateWeeklyCountsImpl() {
     // 3️⃣ 누적 승점(명예의 전당) Top100 조회 및 Snapshot 생성
     // 누적 승점은 주차(weekId)와 상관없이 전체 리더보드에서 'totalScore' 기준으로 가져옵니다.
     const totalSnapshot = await db.collection('leaderboard')
-    .where('totalScore', '>', 0)
-    .orderBy('totalScore', 'desc')
-    .limit(100)
-    .get();
+        .where('totalScore', '>', 0)
+        .orderBy('totalScore', 'desc')
+        .limit(100)
+        .get();
 
     const totalRankingData = totalSnapshot.docs.map((doc, index) => {
         const row = doc.data();
@@ -142,7 +142,7 @@ async function updateWeeklyCountsImpl() {
             name: row.nickname || "이름없음",
             // 클라이언트(앱)에서 기존 UI 코드를 그대로 재사용할 수 있도록
             // totalScore 값을 score라는 이름으로 예쁘게 포장해서 보내줍니다!
-            score: row.totalScore || 0, 
+            score: row.totalScore || 0,
             tribe: row.tribe !== undefined ? row.tribe : 0,
             dept: row.dept !== undefined ? row.dept : 0,
             tag: row.tag || "",
@@ -153,7 +153,7 @@ async function updateWeeklyCountsImpl() {
     // 저장 경로는 영구 보존의 느낌을 살려 'all_time/hall/total'로 만듭니다.
     const totalSnapshotRef = db.collection('ranking_snapshots').doc('all_time')
         .collection('hall').doc('total');
-    
+
     snapshotBatch.set(totalSnapshotRef, {
         type: 'all_time_total',
         ranks: totalRankingData,
@@ -170,10 +170,10 @@ async function updateWeeklyCountsImpl() {
     // 12개 지파를 순회하며 쿼리 실행
     for (let i = 0; i < 12; i++) {
         const tribeYearlyQuery = db.collection('leaderboard')
-    .where('tribe', '==', i)
-    .where('yearlyScore', '>', 0)
-    .orderBy('yearlyScore', 'desc')
-    .limit(12000); // 🌟 요한계시록의 14,4000명 룰 (지파당 12,000명 제한!)
+            .where('tribe', '==', i)
+            .where('yearlyScore', '>', 0)
+            .orderBy('yearlyScore', 'desc')
+            .limit(12000); // 🌟 요한계시록의 14,4000명 룰 (지파당 12,000명 제한!)
 
         yearlyTribeJobs.push(
             tribeYearlyQuery.get().then(snapshot => {
@@ -200,7 +200,7 @@ async function updateWeeklyCountsImpl() {
     // 🌟 정교한 랭킹 시스템 적용 (동점 처리 및 0점 12등 강등)
     for (let i = 0; i < yearlyScores.length; i++) {
         const current = yearlyScores[i];
-        
+
         if (current.score === 0) {
             // 점수가 0점이면 무조건 공동 12등으로 깔아버림
             currentRank = 12;
@@ -225,7 +225,7 @@ async function updateWeeklyCountsImpl() {
     const currentYear = new Date().getFullYear();
     const yearlySnapshotRef = db.collection('ranking_snapshots').doc('yearly')
         .collection('tribes').doc('current');
-        
+
     snapshotBatch.set(yearlySnapshotRef, {
         year: currentYear,
         ranks: yearlyRankingData,
@@ -283,11 +283,11 @@ exports.archiveWeeklyRankings = functions.pubsub
             console.log(`🗓️ 아카이빙 대상: ${lastWeekId}`);
 
             const snapshot = await db.collection('leaderboard')
-    .where('weekId', '==', lastWeekId)
-    .where('score', '>', 0)
-    .orderBy('score', 'desc')
-    .limit(100)
-    .get();
+                .where('weekId', '==', lastWeekId)
+                .where('score', '>', 0)
+                .orderBy('score', 'desc')
+                .limit(100)
+                .get();
 
             if (snapshot.empty) {
                 console.log('⚠️ 아카이빙할 데이터 없음');
@@ -338,11 +338,11 @@ exports.archiveMonthlyRankings = functions.pubsub
 
             // 지난달의 모든 사용자 데이터 조회 (monthId 기준)
             const snapshot = await db.collection('leaderboard')
-    .where('monthId', '==', lastMonthId)
-    .where('myMonthlyScore', '>', 0)
-    .orderBy('myMonthlyScore', 'desc')
-    .limit(100)
-    .get();
+                .where('monthId', '==', lastMonthId)
+                .where('myMonthlyScore', '>', 0)
+                .orderBy('myMonthlyScore', 'desc')
+                .limit(100)
+                .get();
 
             if (snapshot.empty) {
                 console.log('⚠️ 월간 아카이빙할 데이터 없음');
@@ -369,17 +369,17 @@ exports.archiveMonthlyRankings = functions.pubsub
 
             // 2️⃣ 월간 명예의 전당 Snapshot 생성 (Zion 기준)
             const monthlyRankingData = snapshot.docs.map((doc, index) => {
-    const row = doc.data();
-    return {
-        rank: index + 1,
-        name: row.nickname || "이름없음",
-        score: row.myMonthlyScore || 0,
-        tribe: row.tribe !== undefined ? row.tribe : 0,
-        dept: row.dept !== undefined ? row.dept : 0,
-        tag: row.tag || "",
-        castle: row.castleLv || 0
-    };
-});
+                const row = doc.data();
+                return {
+                    rank: index + 1,
+                    name: row.nickname || "이름없음",
+                    score: row.myMonthlyScore || 0,
+                    tribe: row.tribe !== undefined ? row.tribe : 0,
+                    dept: row.dept !== undefined ? row.dept : 0,
+                    tag: row.tag || "",
+                    castle: row.castleLv || 0
+                };
+            });
 
             const snapshotRef = db.collection('ranking_snapshots').doc(lastMonthId)
                 .collection('hall').doc('monthly');

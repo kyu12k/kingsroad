@@ -1,41 +1,45 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>King's Road - 요한계시록 암송</title>
-    
+
     <link rel="manifest" href="./manifest.json">
     <link rel="icon" type="image/png" href="icon-192.png">
     <link rel="apple-touch-icon" href="icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    
+
     <link rel="stylesheet" href="style.css">
 
     <!-- Google Fonts: Gowun Dodum -->
     <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
 
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('✅ Service Worker 등록 성공'))
-            .catch(err => console.error('❌ Service Worker 등록 실패:', err));
-        });
-      }
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('✅ Service Worker 등록 성공'))
+                    .catch(err => console.error('❌ Service Worker 등록 실패:', err));
+            });
+        }
     </script>
 </head>
+
 <body>
     <!-- 감사한 분들 모달 -->
     <div id="thanks-modal" class="modal-overlay" style="z-index: 9999; display:none;">
         <div class="result-card" style="max-width: 400px; max-height: 80vh; overflow-y: auto;">
             <div style="text-align: right;">
-                <button onclick="closeThanksModal()" style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
+                <button onclick="closeThanksModal()"
+                    style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
             </div>
             <div style="text-align: center; margin-bottom: 20px;">
                 <h2 style="margin:0; color:#2c3e50;">감사한 분들</h2>
-                <div style="margin-top:15px; display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap;">
+                <div
+                    style="margin-top:15px; display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap;">
                     <span id="thanks-tribe-icon"></span>
                     <span id="thanks-dept-tag"></span>
                     <span id="thanks-name" style="color:#2c3e50; font-size:1.1rem; font-weight:bold;"></span>
@@ -48,7 +52,8 @@
     <div id="tip-modal" class="modal-overlay" style="z-index: 9999; display:none;">
         <div class="result-card" style="max-width: 400px; max-height: 80vh; overflow-y: auto;">
             <div style="text-align: right;">
-                <button onclick="closeTipModal()" style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
+                <button onclick="closeTipModal()"
+                    style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
             </div>
             <div style="text-align: center; margin-bottom: 20px;">
                 <h2 style="margin:0; color:#2c3e50;">꿀팁 <span style="font-size:1.2em;">💡</span></h2>
@@ -79,226 +84,245 @@
             </div>
         </div>
     </div>
-    <div id="ranking-overlay" style="display:none; position:fixed; z-index:9999; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.97); color:#f1c40f; flex-direction:column; align-items:center; justify-content:center; font-size:1.3rem; text-align:center;">
-        <div style="max-width:90vw; font-size:1.1em; line-height:1.7; font-weight:bold; color:#fff; text-shadow:0 2px 8px #222; margin-bottom:30px;">
-            "운동장에서 달음질하는 자들이 다 달아날찌라도 오직 상 얻는 자는 하나인 줄을 너희가 알지 못하느냐<br>너희도 얻도록 이와 같이 달음질하라"<br><span style="font-size:0.95em; color:#f1c40f;">(고전 9:24)</span>
+    <div id="ranking-overlay"
+        style="display:none; position:fixed; z-index:9999; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.97); color:#f1c40f; flex-direction:column; align-items:center; justify-content:center; font-size:1.3rem; text-align:center;">
+        <div
+            style="max-width:90vw; font-size:1.1em; line-height:1.7; font-weight:bold; color:#fff; text-shadow:0 2px 8px #222; margin-bottom:30px;">
+            "운동장에서 달음질하는 자들이 다 달아날찌라도 오직 상 얻는 자는 하나인 줄을 너희가 알지 못하느냐<br>너희도 얻도록 이와 같이 달음질하라"<br><span
+                style="font-size:0.95em; color:#f1c40f;">(고전 9:24)</span>
         </div>
         <div style="height:56px; display:flex; align-items:center; justify-content:center;">
-            <button id="ranking-amen-btn" style="opacity:0; pointer-events:none; background: #f1c40f; color: #2c3e50; font-size:1.2rem; font-weight:bold; padding: 12px 38px; border-radius: 30px; border:none; box-shadow:0 2px 10px #2224; cursor:pointer; margin-top:0; transition: opacity 0.7s; position:relative;">아멘</button>
+            <button id="ranking-amen-btn"
+                style="opacity:0; pointer-events:none; background: #f1c40f; color: #2c3e50; font-size:1.2rem; font-weight:bold; padding: 12px 38px; border-radius: 30px; border:none; box-shadow:0 2px 10px #2224; cursor:pointer; margin-top:0; transition: opacity 0.7s; position:relative;">아멘</button>
         </div>
     </div>
 
     <script>
-    window.addEventListener('DOMContentLoaded', function() {
-        var overlay = document.getElementById('ranking-overlay');
-        if (overlay) overlay.style.display = 'none';
-        var amenBtn = document.getElementById('ranking-amen-btn');
-        if (amenBtn) {
-            amenBtn.style.opacity = '0';
-            amenBtn.style.pointerEvents = 'none';
-        }
-    });
+        window.addEventListener('DOMContentLoaded', function () {
+            var overlay = document.getElementById('ranking-overlay');
+            if (overlay) overlay.style.display = 'none';
+            var amenBtn = document.getElementById('ranking-amen-btn');
+            if (amenBtn) {
+                amenBtn.style.opacity = '0';
+                amenBtn.style.pointerEvents = 'none';
+            }
+        });
     </script>
-        
-<div id="help-modal" class="modal-overlay" style="z-index: 700;">
-    <div class="result-card" style="max-width: 500px; max-height: 80vh; overflow-y: auto;">
-        <div style="text-align: right;">
-            <button onclick="closeHelpModal()" style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
-        </div>
-        <div style="text-align: center; margin-bottom: 20px;">
-            <h2 style="margin:0; color:#2c3e50;">❓ 도움말</h2>
-            <p style="color:#7f8c8d; font-size:0.9rem; margin-top:5px;">각 기능에 대한 설명입니다</p>
-        </div>
 
-        <div style="text-align: left; color:#2c3e50;">
-            <div class="help-item">
-                <div class="help-title">🚶 여정 시작</div>
-                <div class="help-desc">맵 화면으로 이동하여 성경 암송 훈련을 시작합니다. 요한계시록 각 장을 순서대로 학습할 수 있습니다.</div>
+    <div id="help-modal" class="modal-overlay" style="z-index: 700;">
+        <div class="result-card" style="max-width: 500px; max-height: 80vh; overflow-y: auto;">
+            <div style="text-align: right;">
+                <button onclick="closeHelpModal()"
+                    style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
+            </div>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="margin:0; color:#2c3e50;">❓ 도움말</h2>
+                <p style="color:#7f8c8d; font-size:0.9rem; margin-top:5px;">각 기능에 대한 설명입니다</p>
             </div>
 
-            <div class="help-item">
-                <div class="help-title">🏰 성전 건축</div>
-                <div class="help-desc">보석을 사용하여 성전 레벨을 올릴 수 있습니다. 성전 레벨이 높을수록 방치 시 자동으로 생산되는 보석이 증가합니다.</div>
-            </div>
-
-            <div class="help-item">
-                <div class="help-title">👤 프로필 (닉네임 변경)</div>
-                <div class="help-desc">닉네임과 지파를 설정할 수 있습니다. 지파에 따른 색상이 부여됩니다.</div>
-            </div>
-
-            <div class="help-item">
-                <div class="help-title">💾 기기 변경</div>
-                <div class="help-desc">게임 진행 상황을 내보내거나 불러올 수 있습니다. 기기 변경 시 데이터를 옮길 때 사용하세요.</div>
-            </div>
-
-            <div class="help-item">
-                <div class="help-title">📝 설문조사</div>
-                <div class="help-desc">간단한 설문으로 의견을 남길 수 있습니다. 다음 업데이트에 반영합니다.</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div id="stage-help-modal" class="modal-overlay" style="z-index: 700;">
-    <div class="result-card" style="max-width: 500px; max-height: 80vh; overflow-y: auto;">
-        <div style="text-align: right;">
-            <button onclick="closeStageHelpModal()" style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
-        </div>
-        <div style="text-align: center; margin-bottom: 20px;">
-            <h2 style="margin:0; color:#2c3e50;">📚 게임 방법</h2>
-            <p style="color:#7f8c8d; font-size:0.9rem; margin-top:5px;">암송 훈련을 시작하기 전에 읽어보세요</p>
-        </div>
-
-        <div style="text-align: left; color:#2c3e50;">
-            <div class="help-item">
-                <div class="help-title">1. 세 가지 훈련 방법</div>
-                <div class="help-desc">
-                    📖 <strong>일반 훈련</strong>: 한 절씩 외웁니다<br>
-                    🛡️ <strong>중간 점검</strong>: 여러 절을 한꺼번에 복습합니다 (3~7절)<br>
-                    🐲 <strong>보스전</strong>: 한 장 전체를 복습합니다 (20절)
+            <div style="text-align: left; color:#2c3e50;">
+                <div class="help-item">
+                    <div class="help-title">🚶 여정 시작</div>
+                    <div class="help-desc">맵 화면으로 이동하여 성경 암송 훈련을 시작합니다. 요한계시록 각 장을 순서대로 학습할 수 있습니다.</div>
                 </div>
-            </div>
 
-            <div class="help-item">
-                <div class="help-title">2. 보너스 받는 방법</div>
-                <div class="help-desc">
-                    🎁 <strong>때를 따른 양식</strong>: 보너스가 있을 때 보석이 크게 증가합니다<br>
-                    1회차 ×5, 2회차 ×2, 3회차 ×1.5 (이후는 쿨타임)<br><br>
+                <div class="help-item">
+                    <div class="help-title">🏰 성전 건축</div>
+                    <div class="help-desc">보석을 사용하여 성전 레벨을 올릴 수 있습니다. 성전 레벨이 높을수록 방치 시 자동으로 생산되는 보석이 증가합니다.</div>
                 </div>
-            </div>
 
-            <div class="help-item">
-                <div class="help-title">3. 전체 학습 기능</div>
-                <div class="help-desc">
-                    중간 점검이나 보스를 클리어하면<br>
-                    그 안의 스테이지를 처음 해보는 것이어도 빠른 복습을 할 수 있습니다
+                <div class="help-item">
+                    <div class="help-title">👤 프로필 (닉네임 변경)</div>
+                    <div class="help-desc">닉네임과 지파를 설정할 수 있습니다. 지파에 따른 색상이 부여됩니다.</div>
                 </div>
-            </div>
 
-            <div class="help-item">
-                <div class="help-title">4. 말씀 숙련도 레벨 💜</div>
-                <div class="help-desc">
-                    최초 클리어부터 일정 시간이 지나면 각인 표시(💜)가 뜹니다<br>
-                    각인 표시가 떴을 때 클리어하면 말씀 숙련도 레벨이 오릅니다<br>
-                    말씀 숙련도 레벨 보너스: 레벨당 보석 +10% 승점 +10%<br>
-                    대기 시간: 약 1일, 3일, 7일, 14일, 30일 (이후는 약 30일 고정)
+                <div class="help-item">
+                    <div class="help-title">💾 기기 변경</div>
+                    <div class="help-desc">게임 진행 상황을 내보내거나 불러올 수 있습니다. 기기 변경 시 데이터를 옮길 때 사용하세요.</div>
                 </div>
-            </div>
 
-            <div class="help-item">
-                <div class="help-title">5. 정확하게 외울수록 좋아요</div>
-                <div class="help-desc">
-                    한 번도 틀리지 않으면: 보석 10% 더!<br>
-                    틀릴수록: 받는 보석이 줄어듭니다
+                <div class="help-item">
+                    <div class="help-title">📝 설문조사</div>
+                    <div class="help-desc">간단한 설문으로 의견을 남길 수 있습니다. 다음 업데이트에 반영합니다.</div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<div id="mode-select-modal" class="modal-overlay" style="z-index: 600;">
-    <div class="result-card">
-        <div style="text-align: right;">
-            <button onclick="closeModeSelect()" style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
-        </div>
-        <div style="text-align: center; margin-bottom: 20px;">
-            <h2 style="margin:0; color:#2c3e50;">학습 모드 선택</h2>
-            <p style="color:#7f8c8d; font-size:0.9rem; margin-top:5px;">어떻게 훈련하시겠습니까?</p>
-        </div>
-
-        <button class="mode-btn mode-normal" onclick="confirmMode('normal')">
-            <div class="mode-icon">📖</div>
-            <div class="mode-info">
-                <div class="mode-title">정석 훈련 (Step 1~5)</div>
-                <div class="mode-desc">읽기부터 암송까지 꼼꼼하게</div>
+    <div id="stage-help-modal" class="modal-overlay" style="z-index: 700;">
+        <div class="result-card" style="max-width: 500px; max-height: 80vh; overflow-y: auto;">
+            <div style="text-align: right;">
+                <button onclick="closeStageHelpModal()"
+                    style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
             </div>
-        </button>
-
-        <button class="mode-btn mode-quick" onclick="confirmMode('quick')">
-            <div class="mode-icon">⚡</div>
-            <div class="mode-info">
-                <div class="mode-tag">추천</div>
-                <div class="mode-title">빠른 복습 (Step 2, 5)</div>
-                <div class="mode-desc">초성 퀴즈와 문장 완성으로 핵심만!</div>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="margin:0; color:#2c3e50;">📚 게임 방법</h2>
+                <p style="color:#7f8c8d; font-size:0.9rem; margin-top:5px;">암송 훈련을 시작하기 전에 읽어보세요</p>
             </div>
-        </button>
+
+            <div style="text-align: left; color:#2c3e50;">
+                <div class="help-item">
+                    <div class="help-title">1. 세 가지 훈련 방법</div>
+                    <div class="help-desc">
+                        📖 <strong>일반 훈련</strong>: 한 절씩 외웁니다<br>
+                        🛡️ <strong>중간 점검</strong>: 여러 절을 한꺼번에 복습합니다 (3~7절)<br>
+                        🐲 <strong>보스전</strong>: 한 장 전체를 복습합니다 (20절)
+                    </div>
+                </div>
+
+                <div class="help-item">
+                    <div class="help-title">2. 보너스 받는 방법</div>
+                    <div class="help-desc">
+                        🎁 <strong>때를 따른 양식</strong>: 보너스가 있을 때 보석이 크게 증가합니다<br>
+                        1회차 ×5, 2회차 ×2, 3회차 ×1.5 (이후는 쿨타임)<br><br>
+                    </div>
+                </div>
+
+                <div class="help-item">
+                    <div class="help-title">3. 전체 학습 기능</div>
+                    <div class="help-desc">
+                        중간 점검이나 보스를 클리어하면<br>
+                        그 안의 스테이지를 처음 해보는 것이어도 빠른 복습을 할 수 있습니다
+                    </div>
+                </div>
+
+                <div class="help-item">
+                    <div class="help-title">4. 말씀 숙련도 레벨 💜</div>
+                    <div class="help-desc">
+                        최초 클리어부터 일정 시간이 지나면 각인 표시(💜)가 뜹니다<br>
+                        각인 표시가 떴을 때 클리어하면 말씀 숙련도 레벨이 오릅니다<br>
+                        말씀 숙련도 레벨 보너스: 레벨당 보석 +10% 승점 +10%<br>
+                        대기 시간: 약 1일, 3일, 7일, 14일, 30일 (이후는 약 30일 고정)
+                    </div>
+                </div>
+
+                <div class="help-item">
+                    <div class="help-title">5. 정확하게 외울수록 좋아요</div>
+                    <div class="help-desc">
+                        한 번도 틀리지 않으면: 보석 10% 더!<br>
+                        틀릴수록: 받는 보석이 줄어듭니다
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
 
-<div id="quit-modal" class="modal-overlay" style="z-index: 500;">
-    <div class="result-card" style="border: 4px solid #e74c3c; background: linear-gradient(135deg, #fff 0%, #f9f9f9 100%);">
-        <div style="font-size: 3rem; margin-bottom: 10px;">⚠️</div>
-        <div class="result-header" style="color: #c0392b; font-size: 1.5rem; margin-bottom:15px;">전장을 떠나시겠습니까?</div>
-        
-        <div style="margin: 20px 0; color: #7f8c8d; font-size: 1rem; line-height: 1.5;">
-            지금 나가면 진행 상황이<br>
-            저장되지 않을 수 있습니다.
-        </div>
+    <div id="mode-select-modal" class="modal-overlay" style="z-index: 600;">
+        <div class="result-card">
+            <div style="text-align: right;">
+                <button onclick="closeModeSelect()"
+                    style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
+            </div>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="margin:0; color:#2c3e50;">학습 모드 선택</h2>
+                <p style="color:#7f8c8d; font-size:0.9rem; margin-top:5px;">어떻게 훈련하시겠습니까?</p>
+            </div>
 
-        <div style="display:flex; gap:10px; justify-content: center;">
-            <button onclick="cancelQuit()" style="flex:1; background:#95a5a6; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; font-size:1rem; cursor:pointer;">
-                계속하기
+            <button class="mode-btn mode-normal" onclick="confirmMode('normal')">
+                <div class="mode-icon">📖</div>
+                <div class="mode-info">
+                    <div class="mode-title">정석 훈련 (Step 1~5)</div>
+                    <div class="mode-desc">읽기부터 암송까지 꼼꼼하게</div>
+                </div>
             </button>
-            <button onclick="confirmQuit()" style="flex:1; background:#e74c3c; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; font-size:1rem; cursor:pointer; box-shadow: 0 4px 0 #c0392b;">
-                나가기
+
+            <button class="mode-btn mode-quick" onclick="confirmMode('quick')">
+                <div class="mode-icon">⚡</div>
+                <div class="mode-info">
+                    <div class="mode-tag">추천</div>
+                    <div class="mode-title">빠른 복습 (Step 2, 5)</div>
+                    <div class="mode-desc">초성 퀴즈와 문장 완성으로 핵심만!</div>
+                </div>
             </button>
         </div>
     </div>
-</div>
 
-<div id="revive-modal" class="modal-overlay" style="display:none; z-index: 600;">
-    <div class="result-card" style="text-align:center;">
-        <div style="font-size: 4rem; margin-bottom: 10px; animation: float 3s ease-in-out infinite;">
-            👼
-        </div>
-        
-        <div class="result-header" style="color: #2c3e50; font-size: 1.5rem; margin-bottom:10px;">
-            쓰러지셨습니까?
-        </div>
-        
-        <div style="margin: 15px 0; color: #7f8c8d; font-size: 1rem; line-height: 1.6;">
-            여기서 포기하면 처음부터 다시 해야 합니다.<br>
-            <b>보석 <span id="revive-cost-text" style="color:#e67e22; font-size:1.2rem;">300</span>개</b>를 사용하여<br>
-            부활하시겠습니까?
-        </div>
+    <div id="quit-modal" class="modal-overlay" style="z-index: 500;">
+        <div class="result-card"
+            style="border: 4px solid #e74c3c; background: linear-gradient(135deg, #fff 0%, #f9f9f9 100%);">
+            <div style="font-size: 3rem; margin-bottom: 10px;">⚠️</div>
+            <div class="result-header" style="color: #c0392b; font-size: 1.5rem; margin-bottom:15px;">전장을 떠나시겠습니까?</div>
 
-        <div style="display:flex; gap:10px; justify-content: center; margin-top:5px;">
-            <button onclick="revivePlayer()" style="background:var(--primary-color); color:#fff; border:none; padding:12px 20px; border-radius:12px; font-weight:bold; cursor:pointer; flex:1; font-size:1rem; box-shadow: 0 4px 0 #d35400; transition: transform 0.1s;">
-                💎 <span id="revive-btn-cost">300</span> 부활하기
-            </button>
-            
-            <button onclick="giveUpBattle()" style="background:#bdc3c7; color:#fff; border:none; padding:12px 20px; border-radius:12px; font-weight:bold; cursor:pointer; flex:1; font-size:1rem; box-shadow: 0 4px 0 #95a5a6; transition: transform 0.1s;">
-                🏳️ 포기하기
-            </button>
+            <div style="margin: 20px 0; color: #7f8c8d; font-size: 1rem; line-height: 1.5;">
+                지금 나가면 진행 상황이<br>
+                저장되지 않을 수 있습니다.
+            </div>
+
+            <div style="display:flex; gap:10px; justify-content: center;">
+                <button onclick="cancelQuit()"
+                    style="flex:1; background:#95a5a6; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; font-size:1rem; cursor:pointer;">
+                    계속하기
+                </button>
+                <button onclick="confirmQuit()"
+                    style="flex:1; background:#e74c3c; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; font-size:1rem; cursor:pointer; box-shadow: 0 4px 0 #c0392b;">
+                    나가기
+                </button>
+            </div>
         </div>
     </div>
-</div>
 
-<div id="toast-notification">💾 진행 상황이 저장되었습니다</div>
+    <div id="revive-modal" class="modal-overlay" style="display:none; z-index: 600;">
+        <div class="result-card" style="text-align:center;">
+            <div style="font-size: 4rem; margin-bottom: 10px; animation: float 3s ease-in-out infinite;">
+                👼
+            </div>
 
-<div id="shop-screen" class="screen" style="background-color:#2c3e50; overflow-y:auto; justify-content: flex-start;">
+            <div class="result-header" style="color: #2c3e50; font-size: 1.5rem; margin-bottom:10px;">
+                쓰러지셨습니까?
+            </div>
+
+            <div style="margin: 15px 0; color: #7f8c8d; font-size: 1rem; line-height: 1.6;">
+                여기서 포기하면 처음부터 다시 해야 합니다.<br>
+                <b>보석 <span id="revive-cost-text" style="color:#e67e22; font-size:1.2rem;">300</span>개</b>를 사용하여<br>
+                부활하시겠습니까?
+            </div>
+
+            <div style="display:flex; gap:10px; justify-content: center; margin-top:5px;">
+                <button onclick="revivePlayer()"
+                    style="background:var(--primary-color); color:#fff; border:none; padding:12px 20px; border-radius:12px; font-weight:bold; cursor:pointer; flex:1; font-size:1rem; box-shadow: 0 4px 0 #d35400; transition: transform 0.1s;">
+                    💎 <span id="revive-btn-cost">300</span> 부활하기
+                </button>
+
+                <button onclick="giveUpBattle()"
+                    style="background:#bdc3c7; color:#fff; border:none; padding:12px 20px; border-radius:12px; font-weight:bold; cursor:pointer; flex:1; font-size:1rem; box-shadow: 0 4px 0 #95a5a6; transition: transform 0.1s;">
+                    🏳️ 포기하기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-notification">💾 진행 상황이 저장되었습니다</div>
+
+    <div id="shop-screen" class="screen"
+        style="background-color:#2c3e50; overflow-y:auto; justify-content: flex-start;">
         <div style="padding:20px; text-align:center;">
             <h1 style="color:#f1c40f; margin-bottom:5px;">⛺ 시온 마트</h1>
             <p style="color:#bdc3c7; font-size:0.9rem;">여정에 필요한 물품을 구비하세요</p>
-            <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:10px; display:inline-block; margin-top:10px;">
+            <div
+                style="background:rgba(0,0,0,0.3); padding:10px; border-radius:10px; display:inline-block; margin-top:10px;">
                 내 보석: <span id="shop-user-gems" style="color:#fff; font-weight:bold;">0</span>
             </div>
         </div>
 
         <div class="shop-list" style="padding:20px; display:flex; flex-direction:column; gap:15px;">
-            <div class="shop-item" style="background:white; padding:15px; border-radius:15px; display:flex; align-items:center;">
+            <div class="shop-item"
+                style="background:white; padding:15px; border-radius:15px; display:flex; align-items:center;">
                 <div style="font-size:2.5rem; margin-right:15px;">❤️</div>
-                <button onclick="buyItem('heart')" style="background:#2ecc71; border:none; color:white; padding:10px 15px; border-radius:20px; font-weight:bold; cursor:pointer;">구매</button>
+                <button onclick="buyItem('heart')"
+                    style="background:#2ecc71; border:none; color:white; padding:10px 15px; border-radius:20px; font-weight:bold; cursor:pointer;">구매</button>
             </div>
-            <div class="shop-item" style="background:white; padding:15px; border-radius:15px; display:flex; align-items:center;">
+            <div class="shop-item"
+                style="background:white; padding:15px; border-radius:15px; display:flex; align-items:center;">
                 <div style="font-size:2.5rem; margin-right:15px;">🍞</div>
-                <button onclick="buyItem('lifeBread')" style="background:#3498db; border:none; color:white; padding:10px 15px; border-radius:20px; font-weight:bold; cursor:pointer;">구매</button>
+                <button onclick="buyItem('lifeBread')"
+                    style="background:#3498db; border:none; color:white; padding:10px 15px; border-radius:20px; font-weight:bold; cursor:pointer;">구매</button>
             </div>
         </div>
 
     </div>
 
-<div id="mission-screen" class="screen" style="background-color:#2c3e50; overflow-y:auto; justify-content: flex-start;">
+    <div id="mission-screen" class="screen"
+        style="background-color:#2c3e50; overflow-y:auto; justify-content: flex-start;">
         <div style="padding:20px; text-align:center;">
             <h1 style="color:#f1c40f; margin-bottom:5px;">📜 왕의 임무</h1>
             <p style="color:#bdc3c7; font-size:0.9rem;">성실함이 곧 왕의 자질입니다</p>
@@ -309,407 +333,550 @@
             <button class="tab-btn" onclick="switchMissionTab('weekly')">주간 미션</button>
         </div>
 
-        <div class="mission-list" id="mission-list-area" style="padding:20px; display:flex; flex-direction:column; gap:15px;">
-            </div>
+        <div class="mission-list" id="mission-list-area"
+            style="padding:20px; display:flex; flex-direction:column; gap:15px;">
+        </div>
 
     </div>
 
-<div id="life-book-screen" class="screen" style="background-color:#2c3e50; overflow-y:auto; justify-content: flex-start;">
-        <div style="padding:20px; text-align:center; background:#2c3e50; z-index:10; border-bottom:1px solid rgba(255,255,255,0.1);">
+    <div id="life-book-screen" class="screen"
+        style="background-color:#2c3e50; overflow-y:auto; justify-content: flex-start;">
+        <div
+            style="padding:20px; text-align:center; background:#2c3e50; z-index:10; border-bottom:1px solid rgba(255,255,255,0.1);">
             <h1 style="color:#f1c40f; margin:0 0 5px 0;">📖 도감</h1>
-            
+
             <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:15px; margin-top:10px;">
                 <div style="font-size:0.9rem; color:#bdc3c7;">현재 도감 점수</div>
                 <div style="font-size:2rem; font-weight:bold; color:#fff; text-shadow:0 0 10px #f1c40f;">
                     <span id="collection-score">0</span> <span style="font-size:1rem;">pts</span>
                 </div>
                 <div style="margin-top:5px; padding-top:15px; border-top:1px dashed rgba(255,255,255,0.1);">
-    <div style="font-size:0.8rem; color:#bdc3c7; margin-bottom:5px;">깨달음의 경지</div>
-    <div id="collection-rank-label" style="font-size:1.5rem; font-weight:bold; color:#95a5a6;">🎒 나그네</div>
-    <div id="collection-rank-buff" style="font-size:0.9rem; color:#2ecc71; margin-top:5px;">아직 효과 없음</div>
-</div>
-            </div>
-            
-            <div id="lb-chapter-selector">
+                    <div style="font-size:0.8rem; color:#bdc3c7; margin-bottom:5px;">깨달음의 경지</div>
+                    <div id="collection-rank-label" style="font-size:1.5rem; font-weight:bold; color:#95a5a6;">🎒 나그네
+                    </div>
+                    <div id="collection-rank-buff" style="font-size:0.9rem; color:#2ecc71; margin-top:5px;">아직 효과 없음
+                    </div>
                 </div>
+            </div>
+
+            <div id="lb-chapter-selector">
+            </div>
         </div>
 
-        <div id="card-grid" style="padding:15px; display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; padding-bottom: 100px;">
-            </div>
+        <div id="card-grid"
+            style="padding:15px; display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; padding-bottom: 100px;">
+        </div>
 
     </div>
 
     <div id="home-screen" class="screen active">
         <!-- 메뉴 버튼 및 패널 -->
-        <button id="menu-btn" style="position:fixed; top:20px; right:20px; background:rgba(44,62,80,0.95); border:1.5px solid #f1c40f; color:#fff; width:44px; height:44px; border-radius:50%; font-size:1.5rem; cursor:pointer; z-index:3000; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 16px rgba(44,62,80,0.18); transition:all 0.3s;">
-                <span style="font-size:1.5em;">☰</span>
+        <button id="menu-btn"
+            style="position:fixed; top:20px; right:20px; background:rgba(44,62,80,0.95); border:1.5px solid #f1c40f; color:#fff; width:44px; height:44px; border-radius:50%; font-size:1.5rem; cursor:pointer; z-index:3000; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 16px rgba(44,62,80,0.18); transition:all 0.3s;">
+            <span style="font-size:1.5em;">☰</span>
         </button>
-        <div id="menu-panel" style="display:none; position:fixed; top:72px; right:20px; z-index:3001; background:rgba(44,62,80,0.98); border-radius:18px; box-shadow:0 8px 32px rgba(44,62,80,0.18); padding:18px 14px; min-width:180px; border:1.5px solid #f1c40f; flex-direction:column; gap:8px;">
-                <button class="menu-action-btn" onclick="openHelpModal()">❓ 도움말</button>
-                <button class="menu-action-btn" onclick="openThanksModal()">👥 감사한 분들</button>
-                <button class="menu-action-btn" onclick="openTipModal()">💡 꿀팁</button>
-                <button id="add-to-home-btn" class="menu-action-btn" style="display: none;">📱 홈 화면에 추가</button>                <button class="menu-action-btn" onclick="window.open('https://naver.me/xVRetic8', '_blank')">📝 설문조사</button>
-                <button class="menu-action-btn" onclick="openNoticeModal()">📢 공지사항</button>
-                <button class="menu-action-btn" onclick="window.open('https://naver.me/x1uiCCjv', '_blank')">🐞 불편 신고</button>
-                <button class="menu-action-btn" onclick="openDataSettings()">💾 기기 변경</button>
+        <div id="menu-panel"
+            style="display:none; position:fixed; top:72px; right:20px; z-index:3001; background:rgba(44,62,80,0.98); border-radius:18px; box-shadow:0 8px 32px rgba(44,62,80,0.18); padding:18px 14px; min-width:180px; border:1.5px solid #f1c40f; flex-direction:column; gap:8px;">
+            <button class="menu-action-btn" onclick="openHelpModal()">❓ 도움말</button>
+            <button class="menu-action-btn" onclick="openThanksModal()">👥 감사한 분들</button>
+            <button class="menu-action-btn" onclick="openTipModal()">💡 꿀팁</button>
+            <button id="add-to-home-btn" class="menu-action-btn" style="display: none;">📱 홈 화면에 추가</button> <button
+                class="menu-action-btn" onclick="window.open('https://naver.me/xVRetic8', '_blank')">📝 설문조사</button>
+            <button class="menu-action-btn" onclick="openNoticeModal()">📢 공지사항</button>
+            <button class="menu-action-btn" onclick="window.open('https://naver.me/x1uiCCjv', '_blank')">🐞 불편
+                신고</button>
+            <button class="menu-action-btn" onclick="openDataSettings()">💾 기기 변경</button>
         </div>
         <script>
-        // 메뉴 버튼 토글
-        document.addEventListener('DOMContentLoaded', function() {
-            const menuBtn = document.getElementById('menu-btn');
-            const menuPanel = document.getElementById('menu-panel');
-            menuBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                menuPanel.style.display = (menuPanel.style.display === 'none' || menuPanel.style.display === '') ? 'flex' : 'none';
+            // 메뉴 버튼 토글
+            document.addEventListener('DOMContentLoaded', function () {
+                const menuBtn = document.getElementById('menu-btn');
+                const menuPanel = document.getElementById('menu-panel');
+                menuBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    menuPanel.style.display = (menuPanel.style.display === 'none' || menuPanel.style.display === '') ? 'flex' : 'none';
+                });
+                document.addEventListener('click', function (e) {
+                    if (menuPanel.style.display === 'flex' && !menuPanel.contains(e.target) && e.target !== menuBtn) {
+                        menuPanel.style.display = 'none';
+                    }
+                });
             });
-            document.addEventListener('click', function(e) {
-                if (menuPanel.style.display === 'flex' && !menuPanel.contains(e.target) && e.target !== menuBtn) {
-                    menuPanel.style.display = 'none';
-                }
-            });
-        });
         </script>
-    
-    <script>
-    // 감사한 분들 모달에 지파 아이콘, 부서 태그, 이름, 코드 동적 렌더링
-    function openThanksModal() {
-        document.getElementById('thanks-modal').style.display = 'flex';
-        // 예시 데이터
-        const tribeIdx = 2; // 부산야고보지파
-        const deptId = 0; // 교역자
-        const name = '거룩한 시냇물';
-        const code = '#5850';
-        // game.js의 getTribeIcon, getDeptTag 활용
-        if (window.getTribeIcon) {
-            document.getElementById('thanks-tribe-icon').innerHTML = getTribeIcon(tribeIdx);
-        } else {
-            // Fallback: 직접 스타일 적용
-            const tribe = window.TRIBE_DATA ? window.TRIBE_DATA[tribeIdx] : { core: '#3498db', glow: '#2980b9', name: '부산야고보지파' };
-            document.getElementById('thanks-tribe-icon').innerHTML = `<span style="color:${tribe.core}; text-shadow:0 0 5px ${tribe.glow}; font-size:1.2rem; margin-right:2px;">✦</span>`;
-        }
-        if (window.getDeptTag) {
-            document.getElementById('thanks-dept-tag').innerHTML = getDeptTag(deptId);
-        } else {
-            document.getElementById('thanks-dept-tag').innerHTML = `<span style="background:rgba(52,152,219,0.15); color:#2c3e50; border-radius:6px; padding:2px 8px; font-size:0.95rem;">[교역자]</span>`;
-        }
-        document.getElementById('thanks-name').innerText = name;
-        document.getElementById('thanks-code').innerText = code;
-    }
-    function closeThanksModal() {
-        document.getElementById('thanks-modal').style.display = 'none';
-    }
-    // 꿀팁 모달 열기/닫기 함수
-    function openTipModal() {
-        document.getElementById('tip-modal').style.display = 'flex';
-    }
-    function closeTipModal() {
-        document.getElementById('tip-modal').style.display = 'none';
-    }
-    </script>
-    <div class="home-title-box">
-        <div class="game-title">KING'S ROAD</div>
-        <div class="game-subtitle">제사장의 인 맞는 길</div>
-    </div>
 
-    <div id="castle-display" style="margin-bottom: 5px;">
-        
-        <div style="font-size: 0.8rem; color: #bdc3c7; background:rgba(0,0,0,0.3); padding:8px; border-radius:8px; display:inline-block;">
-            <div style="margin-bottom:3px;"><span style="color:#2ecc71;">⚡방치 생산: 0/H</span></div>
-            <div><span style="color:#3498db;">💎보너스: +0%</span></div>
+        <script>
+            // 감사한 분들 모달에 지파 아이콘, 부서 태그, 이름, 코드 동적 렌더링
+            function openThanksModal() {
+                document.getElementById('thanks-modal').style.display = 'flex';
+                // 예시 데이터
+                const tribeIdx = 2; // 부산야고보지파
+                const deptId = 0; // 교역자
+                const name = '거룩한 시냇물';
+                const code = '#5850';
+                // game.js의 getTribeIcon, getDeptTag 활용
+                if (window.getTribeIcon) {
+                    document.getElementById('thanks-tribe-icon').innerHTML = getTribeIcon(tribeIdx);
+                } else {
+                    // Fallback: 직접 스타일 적용
+                    const tribe = window.TRIBE_DATA ? window.TRIBE_DATA[tribeIdx] : { core: '#3498db', glow: '#2980b9', name: '부산야고보지파' };
+                    document.getElementById('thanks-tribe-icon').innerHTML = `<span style="color:${tribe.core}; text-shadow:0 0 5px ${tribe.glow}; font-size:1.2rem; margin-right:2px;">✦</span>`;
+                }
+                if (window.getDeptTag) {
+                    document.getElementById('thanks-dept-tag').innerHTML = getDeptTag(deptId);
+                } else {
+                    document.getElementById('thanks-dept-tag').innerHTML = `<span style="background:rgba(52,152,219,0.15); color:#2c3e50; border-radius:6px; padding:2px 8px; font-size:0.95rem;">[교역자]</span>`;
+                }
+                document.getElementById('thanks-name').innerText = name;
+                document.getElementById('thanks-code').innerText = code;
+            }
+            function closeThanksModal() {
+                document.getElementById('thanks-modal').style.display = 'none';
+            }
+            // 꿀팁 모달 열기/닫기 함수
+            function openTipModal() {
+                document.getElementById('tip-modal').style.display = 'flex';
+            }
+            function closeTipModal() {
+                document.getElementById('tip-modal').style.display = 'none';
+            }
+        </script>
+        <div class="home-title-box">
+            <div class="game-title">KING'S ROAD</div>
+            <div class="game-subtitle">제사장의 인 맞는 길</div>
         </div>
-        <div id="temple-actions" style="display:flex; gap:10px; justify-content:center; margin-top:5px; align-items: flex-end;"><button class="btn-build-action" style="background: rgb(149, 165, 166); border-bottom: 5px solid rgb(127, 140, 141); box-shadow: none;">
-                <div style="font-size:0.9rem;">🔒 건축 불가</div>
-                <div style="font-size:1rem; color:#ecf0f1;">필요: 1,000</div>
-            </button></div>
-    </div>
 
-    <!-- ★ 주간 리셋 알림 -->
-    <div id="month-end-warning" style="display:none; background:linear-gradient(135deg, #e74c3c, #c0392b); color:#fff; padding:12px 20px; border-radius:15px; margin:10px 20px; animation: pulse 2s ease-in-out infinite; box-shadow: 0 4px 10px rgba(231,76,60,0.4); border: 2px solid rgba(255,255,255,0.3);">
-        <div style="font-size:1.1rem; font-weight:bold; margin-bottom:5px;">⚠️ 주간 리셋 안내</div>
-        <div style="font-size:0.85rem; line-height:1.5;">월요일 00:00에 주간 랭킹이 초기화됩니다</div>
-    </div>
+        <div id="castle-display" style="margin-bottom: 5px;">
 
-    <button id="start-journey-btn" class="btn-main-action" onclick="startGame()">
-    여정 시작
-</button>
-
-    <!-- 여정 시작 오버레이 -->
-    <div id="journey-overlay" style="display:none; position:fixed; z-index:9999; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.97); color:#f1c40f; flex-direction:column; align-items:center; justify-content:center; font-size:1.3rem; text-align:center;">
-        <!-- 로딩 애니메이션 제거 -->
-        <div style="max-width:90vw; font-size:1.1em; line-height:1.7; font-weight:bold; color:#fff; text-shadow:0 2px 8px #222; margin-bottom:30px;">
-            "이 예언의 말씀을 읽는 자와 듣는 자들과 그 가운데 기록한 것을 지키는 자들이 복이 있나니<br>때가 가까움이라"<br><span style="font-size:0.95em; color:#f1c40f;">(계 1:3)</span>
+            <div
+                style="font-size: 0.8rem; color: #bdc3c7; background:rgba(0,0,0,0.3); padding:8px; border-radius:8px; display:inline-block;">
+                <div style="margin-bottom:3px;"><span style="color:#2ecc71;">⚡방치 생산: 0/H</span></div>
+                <div><span style="color:#3498db;">💎보너스: +0%</span></div>
+            </div>
+            <div id="temple-actions"
+                style="display:flex; gap:10px; justify-content:center; margin-top:5px; align-items: flex-end;"><button
+                    class="btn-build-action"
+                    style="background: rgb(149, 165, 166); border-bottom: 5px solid rgb(127, 140, 141); box-shadow: none;">
+                    <div style="font-size:0.9rem;">🔒 건축 불가</div>
+                    <div style="font-size:1rem; color:#ecf0f1;">필요: 1,000</div>
+                </button></div>
         </div>
-        <div style="height:56px; display:flex; align-items:center; justify-content:center;">
-            <button id="amen-btn" style="opacity:0; pointer-events:none; background: #f1c40f; color: #2c3e50; font-size:1.2rem; font-weight:bold; padding: 12px 38px; border-radius: 30px; border:none; box-shadow:0 2px 10px #2224; cursor:pointer; margin-top:0; transition: opacity 0.7s; position:relative;">아멘</button>
+
+        <!-- ★ 주간 리셋 알림 -->
+        <div id="month-end-warning"
+            style="display:none; background:linear-gradient(135deg, #e74c3c, #c0392b); color:#fff; padding:12px 20px; border-radius:15px; margin:10px 20px; animation: pulse 2s ease-in-out infinite; box-shadow: 0 4px 10px rgba(231,76,60,0.4); border: 2px solid rgba(255,255,255,0.3);">
+            <div style="font-size:1.1rem; font-weight:bold; margin-bottom:5px;">⚠️ 주간 리셋 안내</div>
+            <div style="font-size:0.85rem; line-height:1.5;">월요일 00:00에 주간 랭킹이 초기화됩니다</div>
         </div>
-    </div>
 
-    <script>
-    // 페이지 로드시 오버레이가 혹시라도 보이면 숨김
-    window.addEventListener('DOMContentLoaded', function() {
-        var overlay = document.getElementById('journey-overlay');
-        if (overlay) overlay.style.display = 'none';
-        var amenBtn = document.getElementById('amen-btn');
-        if (amenBtn) {
-            amenBtn.style.opacity = '0';
-            amenBtn.style.pointerEvents = 'none';
-        }
-    });
-    </script>
-
-    <!-- 로딩 애니메이션 스타일 -->
-    <style>
-    .lds-ellipsis {
-        display: inline-block;
-        position: relative;
-        width: 80px;
-        height: 40px;
-    }
-    .lds-ellipsis div {
-        position: absolute;
-        top: 18px;
-        width: 13px;
-        height: 13px;
-        border-radius: 50%;
-        background: #f1c40f;
-        animation-timing-function: cubic-bezier(0, 1, 1, 0);
-    }
-    .lds-ellipsis div:nth-child(1) {
-        left: 8px;
-        animation: lds-ellipsis1 0.6s infinite;
-    }
-    .lds-ellipsis div:nth-child(2) {
-        left: 8px;
-        animation: lds-ellipsis2 0.6s infinite;
-    }
-    .lds-ellipsis div:nth-child(3) {
-        left: 32px;
-        animation: lds-ellipsis2 0.6s infinite;
-    }
-    .lds-ellipsis div:nth-child(4) {
-        left: 56px;
-        animation: lds-ellipsis3 0.6s infinite;
-    }
-    @keyframes lds-ellipsis1 {
-        0% { transform: scale(0); }
-        100% { transform: scale(1); }
-    }
-    @keyframes lds-ellipsis2 {
-        0% { transform: translateX(0); }
-        100% { transform: translateX(24px); }
-    }
-    @keyframes lds-ellipsis3 {
-        0% { transform: scale(1); }
-        100% { transform: scale(0); }
-    }
-    </style>
-    
-    <div style="margin-top:5px; display:flex; flex-direction:column; gap:10px; align-items:center;">
-        
-        <button onclick="openProfileSettings()" style="background:rgba(0,0,0,0.4); border:1px solid #f1c40f; color:#f1c40f; padding:8px 20px; border-radius:20px; font-size:0.9rem; display:flex; align-items:center; cursor:pointer; z-index:10;">
-            <span id="home-nickname-display">순례자</span> <span style="font-size:0.8em; opacity:0.7; margin-left:5px;">(변경)</span>
+        <button id="start-journey-btn" class="btn-main-action" onclick="startGame()">
+            여정 시작
         </button>
 
-        <!-- 메뉴 패널로 통합됨 -->
+        <!-- 여정 시작 오버레이 -->
+        <div id="journey-overlay"
+            style="display:none; position:fixed; z-index:9999; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.97); color:#f1c40f; flex-direction:column; align-items:center; justify-content:center; font-size:1.3rem; text-align:center;">
+            <!-- 로딩 애니메이션 제거 -->
+            <div
+                style="max-width:90vw; font-size:1.1em; line-height:1.7; font-weight:bold; color:#fff; text-shadow:0 2px 8px #222; margin-bottom:30px;">
+                "이 예언의 말씀을 읽는 자와 듣는 자들과 그 가운데 기록한 것을 지키는 자들이 복이 있나니<br>때가 가까움이라"<br><span
+                    style="font-size:0.95em; color:#f1c40f;">(계 1:3)</span>
+            </div>
+            <div style="height:56px; display:flex; align-items:center; justify-content:center;">
+                <button id="amen-btn"
+                    style="opacity:0; pointer-events:none; background: #f1c40f; color: #2c3e50; font-size:1.2rem; font-weight:bold; padding: 12px 38px; border-radius: 30px; border:none; box-shadow:0 2px 10px #2224; cursor:pointer; margin-top:0; transition: opacity 0.7s; position:relative;">아멘</button>
+            </div>
+        </div>
+
+        <script>
+            // 페이지 로드시 오버레이가 혹시라도 보이면 숨김
+            window.addEventListener('DOMContentLoaded', function () {
+                var overlay = document.getElementById('journey-overlay');
+                if (overlay) overlay.style.display = 'none';
+                var amenBtn = document.getElementById('amen-btn');
+                if (amenBtn) {
+                    amenBtn.style.opacity = '0';
+                    amenBtn.style.pointerEvents = 'none';
+                }
+            });
+        </script>
+
+        <!-- 로딩 애니메이션 스타일 -->
+        <style>
+            .lds-ellipsis {
+                display: inline-block;
+                position: relative;
+                width: 80px;
+                height: 40px;
+            }
+
+            .lds-ellipsis div {
+                position: absolute;
+                top: 18px;
+                width: 13px;
+                height: 13px;
+                border-radius: 50%;
+                background: #f1c40f;
+                animation-timing-function: cubic-bezier(0, 1, 1, 0);
+            }
+
+            .lds-ellipsis div:nth-child(1) {
+                left: 8px;
+                animation: lds-ellipsis1 0.6s infinite;
+            }
+
+            .lds-ellipsis div:nth-child(2) {
+                left: 8px;
+                animation: lds-ellipsis2 0.6s infinite;
+            }
+
+            .lds-ellipsis div:nth-child(3) {
+                left: 32px;
+                animation: lds-ellipsis2 0.6s infinite;
+            }
+
+            .lds-ellipsis div:nth-child(4) {
+                left: 56px;
+                animation: lds-ellipsis3 0.6s infinite;
+            }
+
+            @keyframes lds-ellipsis1 {
+                0% {
+                    transform: scale(0);
+                }
+
+                100% {
+                    transform: scale(1);
+                }
+            }
+
+            @keyframes lds-ellipsis2 {
+                0% {
+                    transform: translateX(0);
+                }
+
+                100% {
+                    transform: translateX(24px);
+                }
+            }
+
+            @keyframes lds-ellipsis3 {
+                0% {
+                    transform: scale(1);
+                }
+
+                100% {
+                    transform: scale(0);
+                }
+            }
+        </style>
+
+        <div style="margin-top:5px; display:flex; flex-direction:column; gap:10px; align-items:center;">
+
+            <button onclick="openProfileSettings()"
+                style="background:rgba(0,0,0,0.4); border:1px solid #f1c40f; color:#f1c40f; padding:8px 20px; border-radius:20px; font-size:0.9rem; display:flex; align-items:center; cursor:pointer; z-index:10;">
+                <span id="home-nickname-display">순례자</span> <span
+                    style="font-size:0.8em; opacity:0.7; margin-left:5px;">(변경)</span>
+            </button>
+
+            <!-- 메뉴 패널로 통합됨 -->
 
             <!-- 공지사항 모달 -->
             <div id="notice-modal" class="modal-overlay" style="z-index: 9999; display:none;">
                 <div class="result-card" style="max-width: 400px; max-height: 80vh; overflow-y: auto;">
                     <div style="text-align: right;">
-                        <button onclick="closeNoticeModal()" style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
+                        <button onclick="closeNoticeModal()"
+                            style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
                     </div>
                     <div style="text-align: center; margin-bottom: 20px;">
                         <h2 style="margin:0; color:#2c3e50;">📢 공지사항</h2>
-                        <p style="color:#7f8c8d; font-size:0.95rem; margin-top:5px;">공지사항 내용이 여기에 표시됩니다.<br>관리자가 최신 소식을 안내합니다.</p>
+                        <p style="color:#7f8c8d; font-size:0.95rem; margin-top:5px;">공지사항 내용이 여기에 표시됩니다.<br>관리자가 최신 소식을
+                            안내합니다.</p>
                         <div id="notice-content" style="color:#2c3e50; text-align:left; margin-top:15px;"></div>
                     </div>
                 </div>
             </div>
             <script>
-            // 공지사항 모달 열기/닫기 함수
-            function openNoticeModal() {
-                document.getElementById('notice-modal').style.display = 'flex';
-                // 메뉴 패널 닫기
-                var menuPanel = document.getElementById('menu-panel');
-                if (menuPanel) menuPanel.style.display = 'none';
-            }
-            function closeNoticeModal() {
-                document.getElementById('notice-modal').style.display = 'none';
-            }
+                // 공지사항 모달 열기/닫기 함수
+                function openNoticeModal() {
+                    document.getElementById('notice-modal').style.display = 'flex';
+                    // 메뉴 패널 닫기
+                    var menuPanel = document.getElementById('menu-panel');
+                    if (menuPanel) menuPanel.style.display = 'none';
+                }
+                function closeNoticeModal() {
+                    document.getElementById('notice-modal').style.display = 'none';
+                }
             </script>
-            
-        </div> </div> <div id="map-screen" class="screen">
+
+        </div>
+    </div>
+    <div id="map-screen" class="screen">
         <div class="map-header">
-        <button id="forgotten-stages-floating-btn" onclick="openForgottenStagesOverlay()" 
-    style="position: fixed; left: 50%; transform: translateX(-50%); bottom: 160px; z-index: 1300; background: rgba(241,196,15,0.18); border: 2px solid #f1c40f; color: #f1c40f; font-size: 0.75rem; font-weight: bold; padding: 5px 14px; border-radius: 18px; box-shadow: 0 2px 10px #2224; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap;"> <span style="font-size:1.2rem; flex-shrink: 0;">💜</span> <span style="font-size:1.2rem;">기억 다지기 보너스</span>
-</button>
-    <div style="display:flex; align-items:center; gap:10px;">
-    <span id="sub-profile-name" style="font-weight:bold; color:#f1c40f;">예비 제사장</span>
-        
-        <button onclick="toggleSound(this)" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">🔊</button>
-        <button id="btn-bgm" onclick="toggleBGM(this)" style="background:none; border:none; font-size:1.2rem; cursor:pointer; opacity: 0.5;">🎵</button>
-    </div>
-    <span id="header-resources" style="font-weight:bold;">💎 0 | 🍞 0 | ❤️ 5</span>
-</div>
+            <button id="forgotten-stages-floating-btn" onclick="openForgottenStagesOverlay()"
+                style="position: fixed; left: 50%; transform: translateX(-50%); bottom: 160px; z-index: 1300; background: rgba(241,196,15,0.18); border: 2px solid #f1c40f; color: #f1c40f; font-size: 0.75rem; font-weight: bold; padding: 5px 14px; border-radius: 18px; box-shadow: 0 2px 10px #2224; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
+                <span style="font-size:1.2rem; flex-shrink: 0;">💜</span> <span style="font-size:1.2rem;">기억 다지기
+                    보너스</span>
+            </button>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span id="sub-profile-name" style="font-weight:bold; color:#f1c40f;">예비 제사장</span>
+
+                <button onclick="toggleSound(this)"
+                    style="background:none; border:none; font-size:1.2rem; cursor:pointer;">🔊</button>
+                <button id="btn-bgm" onclick="toggleBGM(this)"
+                    style="background:none; border:none; font-size:1.2rem; cursor:pointer; opacity: 0.5;">🎵</button>
+            </div>
+            <span id="header-resources" style="font-weight:bold;">💎 0 | 🍞 0 | ❤️ 5</span>
+        </div>
         <div class="river-map-container" id="chapter-list-area">
-        <div id="map-land-area"><div class="zone-wrapper left"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-0">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 1장</div>
-        </div></div><div class="zone-wrapper right"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-1">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 2장</div>
-        </div></div><div class="zone-wrapper left"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-2">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 3장</div>
-        </div></div><div class="zone-wrapper right"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-3">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 4장</div>
-        </div></div><div class="zone-wrapper left"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-4">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 5장</div>
-        </div></div><div class="zone-wrapper right"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-5">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 6장</div>
-        </div></div><div class="zone-wrapper left"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-6">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 7장</div>
-        </div></div><div class="zone-wrapper right"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-7">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 8장</div>
-        </div></div><div class="zone-wrapper left"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-8">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 9장</div>
-        </div></div><div class="zone-wrapper right"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-9">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 10장</div>
-        </div></div><div class="zone-wrapper left"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-10">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 11장</div>
-        </div></div><div class="zone-wrapper right"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-11">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 12장</div>
-        </div></div><div class="zone-wrapper left"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-12">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 13장</div>
-        </div></div><div class="zone-wrapper right"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-13">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 14장</div>
-        </div></div><div class="zone-wrapper left"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-14">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 15장</div>
-        </div></div><div class="zone-wrapper right"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-15">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 16장</div>
-        </div></div><div class="zone-wrapper left"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-16">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 17장</div>
-        </div></div><div class="zone-wrapper right"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-17">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 18장</div>
-        </div></div><div class="zone-wrapper left"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-18">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 19장</div>
-        </div></div><div class="zone-wrapper right"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-19">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 20장</div>
-        </div></div><div class="zone-wrapper left"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-20">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 21장</div>
-        </div></div><div class="zone-wrapper right"><div class="land-bg barren"></div><div class="stage-node unlocked" id="node-21">
-            <div class="tree-icon">
-                🌳
-                
-            </div>
-            
-            <div class="stage-label">제 22장</div>
-        </div></div></div> <svg id="river-svg">           <path id="river-path" class="river-path" d=""></path>
-        </svg>
+            <div id="map-land-area">
+                <div class="zone-wrapper left">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-0">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 1장</div>
+                    </div>
+                </div>
+                <div class="zone-wrapper right">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-1">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 2장</div>
+                    </div>
+                </div>
+                <div class="zone-wrapper left">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-2">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 3장</div>
+                    </div>
+                </div>
+                <div class="zone-wrapper right">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-3">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 4장</div>
+                    </div>
+                </div>
+                <div class="zone-wrapper left">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-4">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 5장</div>
+                    </div>
+                </div>
+                <div class="zone-wrapper right">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-5">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 6장</div>
+                    </div>
+                </div>
+                <div class="zone-wrapper left">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-6">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 7장</div>
+                    </div>
+                </div>
+                <div class="zone-wrapper right">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-7">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 8장</div>
+                    </div>
+                </div>
+                <div class="zone-wrapper left">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-8">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 9장</div>
+                    </div>
+                </div>
+                <div class="zone-wrapper right">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-9">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 10장</div>
+                    </div>
+                </div>
+                <div class="zone-wrapper left">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-10">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 11장</div>
+                    </div>
+                </div>
+                <div class="zone-wrapper right">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-11">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 12장</div>
+                    </div>
+                </div>
+                <div class="zone-wrapper left">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-12">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 13장</div>
+                    </div>
+                </div>
+                <div class="zone-wrapper right">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-13">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 14장</div>
+                    </div>
+                </div>
+                <div class="zone-wrapper left">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-14">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 15장</div>
+                    </div>
+                </div>
+                <div class="zone-wrapper right">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-15">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 16장</div>
+                    </div>
+                </div>
+                <div class="zone-wrapper left">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-16">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 17장</div>
+                    </div>
+                </div>
+                <div class="zone-wrapper right">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-17">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 18장</div>
+                    </div>
+                </div>
+                <div class="zone-wrapper left">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-18">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 19장</div>
+                    </div>
+                </div>
+                <div class="zone-wrapper right">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-19">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 20장</div>
+                    </div>
+                </div>
+                <div class="zone-wrapper left">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-20">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 21장</div>
+                    </div>
+                </div>
+                <div class="zone-wrapper right">
+                    <div class="land-bg barren"></div>
+                    <div class="stage-node unlocked" id="node-21">
+                        <div class="tree-icon">
+                            🌳
+
+                        </div>
+
+                        <div class="stage-label">제 22장</div>
+                    </div>
+                </div>
+            </div> <svg id="river-svg">
+                <path id="river-path" class="river-path" d=""></path>
+            </svg>
+        </div>
     </div>
-        </div><div class="bottom-nav">
+    <div class="bottom-nav">
 
         <div class="nav-item" onclick="goHome()">
             <div class="nav-badge"></div>
@@ -744,7 +911,8 @@
         <div class="sheet-header">
             <h2 class="sheet-title" id="sheet-chapter-title">Chapter 1</h2>
             <div style="display: flex; gap: 10px; align-items: center;">
-                <button class="help-btn" onclick="openStageHelpModal()" style="background:none; border:none; font-size:1.5rem; color:#3498db; cursor:pointer; padding:0;">❓</button>
+                <button class="help-btn" onclick="openStageHelpModal()"
+                    style="background:none; border:none; font-size:1.5rem; color:#3498db; cursor:pointer; padding:0;">❓</button>
                 <button class="close-btn" onclick="closeStageSheet()">✕</button>
             </div>
         </div>
@@ -752,69 +920,74 @@
     </div>
 
     <div id="game-screen" class="screen">
-    
-    <div class="training-header">
-    <div class="step-indicator">Step <span id="current-step-num">1</span>/<span id="total-step-num">6</span></div>
-    
-    <div style="display:flex; gap:12px; align-items:center;">
-        
-        <button onclick="useHint()" class="item-btn" style="background:#f39c12; border-color:#d35400; color:white; margin:0;">
-            💡 힌트 <span style="font-size:0.7rem; margin-left:2px;">(💎10)</span>
-        </button>
-        
-        <div style="font-size:1.2rem; display:flex; align-items:center; margin:0;">
-            ❤️ <span id="training-hearts" style="font-weight:bold; margin-left:5px;">5</span>
-        </div>
-        
-        <button class="btn-pause" onclick="confirmQuit()" style="color:#7f8c8d; border-color:#bdc3c7; position: static; margin: 0;">✕</button>
-        
-    </div>
-</div>
 
-    <div class="battle-header">
-        <div class="boss-status">
-            <div class="boss-avatar" onclick="touchBossToKill()">🐲</div>
-            <div class="hp-container">
-                <div class="hp-bar-fill" id="boss-hp-bar" style="width: 100%;"></div>
+        <div class="training-header">
+            <div class="step-indicator">Step <span id="current-step-num">1</span>/<span id="total-step-num">6</span>
             </div>
-            <div class="boss-hp-text">용 HP: <span id="boss-hp-text">-</span></div>
-        </div>
-        
-        <div class="player-status" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-            <button class="btn-pause" onclick="openQuitModal()">🏳️ 포기</button>
-            
-            <div style="display:flex; gap:5px; align-items:center;">
-                <button onclick="useHint()" class="item-btn" style="background:#f39c12; border-color:#d35400; color:white;">
+
+            <div style="display:flex; gap:12px; align-items:center;">
+
+                <button onclick="useHint()" class="item-btn"
+                    style="background:#f39c12; border-color:#d35400; color:white; margin:0;">
                     💡 힌트 <span style="font-size:0.7rem; margin-left:2px;">(💎10)</span>
                 </button>
+
+                <div style="font-size:1.2rem; display:flex; align-items:center; margin:0;">
+                    ❤️ <span id="training-hearts" style="font-weight:bold; margin-left:5px;">5</span>
+                </div>
+
+                <button class="btn-pause" onclick="confirmQuit()"
+                    style="color:#7f8c8d; border-color:#bdc3c7; position: static; margin: 0;">✕</button>
+
+            </div>
+        </div>
+
+        <div class="battle-header">
+            <div class="boss-status">
+                <div class="boss-avatar" onclick="touchBossToKill()">🐲</div>
+                <div class="hp-container">
+                    <div class="hp-bar-fill" id="boss-hp-bar" style="width: 100%;"></div>
+                </div>
+                <div class="boss-hp-text">용 HP: <span id="boss-hp-text">-</span></div>
             </div>
 
-            <div style="display:flex; gap:8px; align-items:center;">
-                <div class="heart-display">
-                    ❤️ <span id="player-hearts">5</span>
+            <div class="player-status"
+                style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                <button class="btn-pause" onclick="openQuitModal()">🏳️ 포기</button>
+
+                <div style="display:flex; gap:5px; align-items:center;">
+                    <button onclick="useHint()" class="item-btn"
+                        style="background:#f39c12; border-color:#d35400; color:white;">
+                        💡 힌트 <span style="font-size:0.7rem; margin-left:2px;">(💎10)</span>
+                    </button>
+                </div>
+
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <div class="heart-display">
+                        ❤️ <span id="player-hearts">5</span>
+                    </div>
                 </div>
             </div>
+            <!-- battle-help 안내문구 삭제됨 -->
         </div>
-        <!-- battle-help 안내문구 삭제됨 -->
-    </div>
 
-    <div class="battle-field">
-        <div class="verse-indicator" id="verse-index">준비 중...</div>
-        <div class="answer-zone" id="answer-zone">
-            <span class="placeholder-text" id="placeholder-text">...</span>
+        <div class="battle-field">
+            <div class="verse-indicator" id="verse-index">준비 중...</div>
+            <div class="answer-zone" id="answer-zone">
+                <span class="placeholder-text" id="placeholder-text">...</span>
+            </div>
         </div>
+
+        <div class="battle-control">
+            <div class="block-pool" id="block-pool"></div>
+        </div>
+
     </div>
 
-    <div class="battle-control">
-        <div class="block-pool" id="block-pool"></div>
-    </div>
-
-</div>
-
-<div id="result-modal" class="modal-overlay">
+    <div id="result-modal" class="modal-overlay">
         <div class="result-card">
             <div class="result-header">🎉 STAGE CLEAR!</div>
-            
+
             <div class="streak-container">
                 <div class="streak-icon">🔥</div>
                 <div class="streak-text">연속 <span id="streak-days">1</span>일째 타오르는 중!</div>
@@ -839,402 +1012,425 @@
         </div>
     </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="game.js"></script>
-<script>
-/* [보안] 초보적인 접근 차단 (심리적 방어) */
-(function() {
-    // 1. 우클릭 방지
-    document.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-        // alert("보안을 위해 우클릭이 제한됩니다."); // 너무 자주 뜨면 귀찮으니 주석 처리
-    });
-
-    // 2. 개발자 도구 단축키 방지 (F12, Ctrl+Shift+I, J, C 등)
-    document.addEventListener('keydown', function(e) {
-        // F12
-        if (e.key === 'F12' || e.keyCode === 123) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        // Ctrl+Shift+I, J, C (개발자 도구)
-        if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C' || e.key === 'i' || e.key === 'j' || e.key === 'c')) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        // Ctrl+U (소스 보기)
-        if (e.ctrlKey && (e.key === 'U' || e.key === 'u')) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-    });
-
-    // 3. 디버거 함정 (콘솔을 억지로 열면 브라우저를 멈추게 함)
-    // 일반 유저에게는 영향이 없고, 콘솔을 연 사람만 괴롭히는 코드입니다.
-    setInterval(function() {
-        const startTime = performance.now();
-        debugger; // ★ 여기서 개발자 도구가 켜져 있으면 딱 멈춥니다!
-        const endTime = performance.now();
-        
-        if (endTime - startTime > 100) {
-            // 디버거에 걸려서 시간이 지체되었다면 -> 개발자 도구를 켠 것임
-            // alert("보안 정책 위반이 감지되었습니다.");
-            // location.reload(); // 강제 새로고침 시켜버림 (선택 사항)
-        }
-    }, 1000);
-})();
-
-/* =========================================
-   [시스템: 서버 연결 및 보안 설정 (수정본)]
-   ========================================= */
-
-// ★ 핵심 수정: 전역 변수로 선언하여 어디서든 접근 가능하게 함
-var db = null;
-var auth = null;
-var myServerUid = null;
-
-// 1. 연결 설정 (아까 복사한 본인의 키를 넣어주세요!)
-const firebaseConfig = {
-  apiKey: "AIzaSyAcbA0mVWA1PPXL3UvjNWaG4Ks3kt83WHQ",
-  authDomain: "kings-road-rank.firebaseapp.com",
-  projectId: "kings-road-rank",
-  storageBucket: "kings-road-rank.firebasestorage.app",
-  messagingSenderId: "1081566937897",
-  appId: "1:1081566937897:web:a01c9c7bee29772cd6ad38"
-};
-
-// 2. 파이어베이스 시동 걸기
-try {
-    firebase.initializeApp(firebaseConfig);
-    
-    // ★ 수정: const를 빼고 전역 변수에 할당
-    db = firebase.firestore();
-    auth = firebase.auth();
-    
-    // 3. 익명 로그인 (게임 켜자마자 자동 실행)
-auth.onAuthStateChanged((user) => {
-    if (user) {
-        // 이미 로그인 되어 있음 (파이어베이스가 진짜 신분증을 줌)
-        myServerUid = user.uid;
-        
-        // 🌟 [추가된 마법의 코드] 구형 ID 이사 로직
-        if (typeof myPlayerId !== 'undefined' && myPlayerId.startsWith('user_')) {
-            console.log("🔄 구형 임시 ID 감지! 진짜 UID로 데이터 이사 시작...");
-            
-            // 1. 내 ID를 진짜 신분증으로 덮어씁니다.
-            myPlayerId = myServerUid;
-            
-            // 2. 개발자님이 만들어둔 저장 함수 실행!
-            // -> 로컬 스토리지에 새 ID가 저장되고, 서버에도 새 이름표로 데이터가 복사됩니다!
-            if (typeof saveGameData === 'function') saveGameData();
-        } else {
-            // 이미 이사를 마쳤거나 원래 진짜 UID를 쓰던 정상 유저
-            if (typeof myPlayerId !== 'undefined') myPlayerId = myServerUid;
-        }
-
-        console.log("🔥 서버 연결 유지 중 (진짜 UID: " + myServerUid + ")");
-    } else {
-        // 로그인 안 되어 있으면 새로 로그인
-        auth.signInAnonymously()
-            .then((credential) => {
-                myServerUid = credential.user.uid;
-                console.log("🔥 서버 연결 성공! (새 진짜 UID 발급)");
-                
-                if (typeof myPlayerId !== 'undefined') myPlayerId = myServerUid;
-                
-                // 🌟 로그인 직후 로컬+서버 모두 새 UID로 갱신하도록 saveGameData로 통일
-                if (typeof saveGameData === 'function') saveGameData();
-            })
-            .catch((error) => {
-                console.error("서버 연결 실패:", error);
+    <script>
+        /* [보안] 초보적인 접근 차단 (심리적 방어) */
+        (function () {
+            // 1. 우클릭 방지
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+                // alert("보안을 위해 우클릭이 제한됩니다."); // 너무 자주 뜨면 귀찮으니 주석 처리
             });
-    }
-});
 
-} catch (e) {
-    console.error("파이어베이스 초기화 오류 (키를 확인하세요):", e);
-}
-
-
-/* [시스템] 스마트 랭킹 로드 (호환성 수정 버전) */
-var leagueTotalCounts = {};
-
-function loadLeaderboard(targetTier, callback) {
-    if (!db) return;
-
-    // 1. 내 티어 확인
-    const searchTier = (targetTier !== undefined) ? targetTier : (leagueData.tier || 0);
-    const CACHE_DOC_ID = `cache_tier_${searchTier}`; 
-    
-    console.log(`📡 [${LEAGUE_CONFIG[searchTier].name}] 랭킹 신문 가지러 가는 중...`);
-
-    // [STEP 1] 캐시 확인
-    db.collection("system_cache").doc(CACHE_DOC_ID).get()
-        .then((doc) => {
-            const now = new Date().getTime();
-            let needUpdate = false;
-            const CACHE_DURATION = 60 * 60 * 1000; // 1시간
-
-            // 신문이 없거나 낡았으면 업데이트
-            if (!doc.exists || !doc.data().updatedAt || (now - doc.data().updatedAt.toMillis()) > CACHE_DURATION) {
-                needUpdate = true;
-                console.log("⏰ 신문이 낡아서 새로 취재하러 갑니다.");
-            } else {
-                console.log("📰 갓 구운 신문을 읽습니다. (추가 조회 0회!)");
-                try {
-                    const data = doc.data();
-                    const cachedList = JSON.parse(data.jsonList);
-                    
-                    // 캐시된 인원수 사용 (없으면 리스트 길이로 대체)
-                    leagueTotalCounts[searchTier] = data.totalCount || cachedList.length;
-                    
-                    cachedList.forEach(p => p.isMe = (p.uid === myServerUid));
-                    
-                    if (callback) callback(cachedList);
-                    return; 
-                } catch (e) {
-                    needUpdate = true;
+            // 2. 개발자 도구 단축키 방지 (F12, Ctrl+Shift+I, J, C 등)
+            document.addEventListener('keydown', function (e) {
+                // F12
+                if (e.key === 'F12' || e.keyCode === 123) {
+                    e.preventDefault();
+                    e.stopPropagation();
                 }
-            }
-
-            // [STEP 2] 기자 모드 (직접 DB 조회) - 여기가 수정됨!
-            if (needUpdate) {
-                // A. TOP 100 명단 조회 (점수 높은 순)
-                const top100Query = db.collection("leaderboard")
-                    .where("tier", "==", searchTier)
-                    .orderBy("score", "desc")
-                    .limit(100)
-                    .get();
-
-                // B. ★ 수정됨: count() 대신 전체 목록을 가져와서 사이즈 체크
-                // (주의: 유저가 수천 명이면 비용이 들지만, 1시간에 1번이라 괜찮음)
-                const totalCountQuery = db.collection("leaderboard")
-                    .where("tier", "==", searchTier)
-                    .get(); // .count()를 제거했습니다!
-
-                Promise.all([top100Query, totalCountQuery])
-                    .then(([snapshotTop100, snapshotTotal]) => {
-                        // 1. 명단 정리
-                        let rankList = [];
-                        snapshotTop100.forEach((originDoc) => {
-                            const data = originDoc.data();
-                            rankList.push({
-                                name: data.nickname,
-                                tribe: (data.tribe !== undefined) ? data.tribe : 0,
-                                score: data.score,
-                                castle: data.castleLv,
-                                tag: data.tag || "0000",
-                                tier: data.tier,
-                                uid: originDoc.id, 
-                                isMe: (originDoc.id === myServerUid)
-                            });
-                        });
-
-                        // 2. 전체 인원 수 정리 (.size 사용)
-                        // ★ 여기서 snapshotTotal.size 를 씁니다!
-                        const totalCount = snapshotTotal.size;
-                        leagueTotalCounts[searchTier] = totalCount;
-                        console.log(`✅ [취재 완료] 전체 인원: ${totalCount}명`);
-
-                        if (callback) callback(rankList);
-
-                        // ★ [Step 3] 시온성(Tier 5) 커트라인 자동 조절
-                        if (searchTier === 5 && snapshotTop100.size >= 100) {
-                            // 100등(목록의 마지막)의 점수 가져오기
-                            const lastDoc = snapshotTop100.docs[snapshotTop100.size - 1];
-                            const newCutoff = lastDoc.data().score;
-
-                            // 칠판(system_meta)에 새로운 커트라인 적어두기
-                            db.collection("system_meta").doc("tier_info").set({
-                                zion_cutoff: newCutoff
-                            }, { merge: true });
-                            
-                            console.log(`⚖️ 시온성 경쟁 치열! 커트라인이 ${newCutoff}점으로 올라갔습니다.`);
-                        }
-                        
-                        // 3. 신문 발행
-                        db.collection("system_cache").doc(CACHE_DOC_ID).set({
-                            jsonList: JSON.stringify(rankList), 
-                            totalCount: totalCount,
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        }).then(() => console.log("✅ 신문 발행 완료"));
-
-                    })
-                    .catch((error) => {
-                        console.error("랭킹 업데이트 실패:", error);
-                        // 에러나면 비상용 로직 (인원수 없이 명단만)
-                        fallbackLoadLeaderboard(searchTier, callback);
-                    });
-            }
-        })
-        .catch((error) => {
-            console.error("캐시 접근 실패:", error);
-            fallbackLoadLeaderboard(searchTier, callback);
-        });
-}
-
-// [비상용] 기존 로직 (신문 가판대가 고장 났을 때)
-function fallbackLoadLeaderboard(targetTier, callback) {
-    const searchTier = (targetTier !== undefined) ? targetTier : (leagueData.tier || 0);
-    
-    // TOP 100 데이터 먼저 조회
-    db.collection("leaderboard")
-        .where("tier", "==", searchTier)
-        .orderBy("score", "desc")
-        .limit(100)
-        .get()
-        .then((snapshot) => {
-            let rankList = [];
-            snapshot.forEach((doc) => {
-                const d = doc.data();
-                rankList.push({ name: d.nickname, tribe: d.tribe||0, score: d.score, castle: d.castleLv, tag: d.tag||"0000", tier: d.tier, isMe: (doc.id===myServerUid) });
+                // Ctrl+Shift+I, J, C (개발자 도구)
+                if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C' || e.key === 'i' || e.key === 'j' || e.key === 'c')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                // Ctrl+U (소스 보기)
+                if (e.ctrlKey && (e.key === 'U' || e.key === 'u')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
             });
-            if(callback) callback(rankList);
 
-            // ★ 동시에 전체 인원 수 조회 (비동기)
+            // 3. 디버거 함정 (콘솔을 억지로 열면 브라우저를 멈추게 함)
+            // 일반 유저에게는 영향이 없고, 콘솔을 연 사람만 괴롭히는 코드입니다.
+            setInterval(function () {
+                const startTime = performance.now();
+                debugger; // ★ 여기서 개발자 도구가 켜져 있으면 딱 멈춥니다!
+                const endTime = performance.now();
+
+                if (endTime - startTime > 100) {
+                    // 디버거에 걸려서 시간이 지체되었다면 -> 개발자 도구를 켠 것임
+                    // alert("보안 정책 위반이 감지되었습니다.");
+                    // location.reload(); // 강제 새로고침 시켜버림 (선택 사항)
+                }
+            }, 1000);
+        })();
+
+        /* =========================================
+           [시스템: 서버 연결 및 보안 설정 (수정본)]
+           ========================================= */
+
+        // ★ 핵심 수정: 전역 변수로 선언하여 어디서든 접근 가능하게 함
+        var db = null;
+        var auth = null;
+        var myServerUid = null;
+
+        // 1. 연결 설정 (아까 복사한 본인의 키를 넣어주세요!)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAcbA0mVWA1PPXL3UvjNWaG4Ks3kt83WHQ",
+            authDomain: "kings-road-rank.firebaseapp.com",
+            projectId: "kings-road-rank",
+            storageBucket: "kings-road-rank.firebasestorage.app",
+            messagingSenderId: "1081566937897",
+            appId: "1:1081566937897:web:a01c9c7bee29772cd6ad38"
+        };
+
+        // 2. 파이어베이스 시동 걸기
+        try {
+            firebase.initializeApp(firebaseConfig);
+
+            // ★ 수정: const를 빼고 전역 변수에 할당
+            db = firebase.firestore();
+            auth = firebase.auth();
+
+            // 3. 익명 로그인 (게임 켜자마자 자동 실행)
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    // 이미 로그인 되어 있음 (파이어베이스가 진짜 신분증을 줌)
+                    myServerUid = user.uid;
+
+                    // 🌟 [추가된 마법의 코드] 구형 ID 이사 로직
+                    if (typeof myPlayerId !== 'undefined' && myPlayerId.startsWith('user_')) {
+                        console.log("🔄 구형 임시 ID 감지! 진짜 UID로 데이터 이사 시작...");
+
+                        // 1. 내 ID를 진짜 신분증으로 덮어씁니다.
+                        myPlayerId = myServerUid;
+
+                        // 2. 개발자님이 만들어둔 저장 함수 실행!
+                        // -> 로컬 스토리지에 새 ID가 저장되고, 서버에도 새 이름표로 데이터가 복사됩니다!
+                        if (typeof saveGameData === 'function') saveGameData();
+                    } else {
+                        // 이미 이사를 마쳤거나 원래 진짜 UID를 쓰던 정상 유저
+                        if (typeof myPlayerId !== 'undefined') myPlayerId = myServerUid;
+                    }
+
+                    console.log("🔥 서버 연결 유지 중 (진짜 UID: " + myServerUid + ")");
+                } else {
+                    // 로그인 안 되어 있으면 새로 로그인
+                    auth.signInAnonymously()
+                        .then((credential) => {
+                            myServerUid = credential.user.uid;
+                            console.log("🔥 서버 연결 성공! (새 진짜 UID 발급)");
+
+                            if (typeof myPlayerId !== 'undefined') myPlayerId = myServerUid;
+
+                            // 🌟 로그인 직후 로컬+서버 모두 새 UID로 갱신하도록 saveGameData로 통일
+                            if (typeof saveGameData === 'function') saveGameData();
+                        })
+                        .catch((error) => {
+                            console.error("서버 연결 실패:", error);
+                        });
+                }
+            });
+
+        } catch (e) {
+            console.error("파이어베이스 초기화 오류 (키를 확인하세요):", e);
+        }
+
+
+        /* [시스템] 스마트 랭킹 로드 (호환성 수정 버전) */
+        var leagueTotalCounts = {};
+
+        function loadLeaderboard(targetTier, callback) {
+            if (!db) return;
+
+            // 1. 내 티어 확인
+            const searchTier = (targetTier !== undefined) ? targetTier : (leagueData.tier || 0);
+            const CACHE_DOC_ID = `cache_tier_${searchTier}`;
+
+            console.log(`📡 [${LEAGUE_CONFIG[searchTier].name}] 랭킹 신문 가지러 가는 중...`);
+
+            // [STEP 1] 캐시 확인
+            db.collection("system_cache").doc(CACHE_DOC_ID).get()
+                .then((doc) => {
+                    const now = new Date().getTime();
+                    let needUpdate = false;
+                    const CACHE_DURATION = 60 * 60 * 1000; // 1시간
+
+                    // 신문이 없거나 낡았으면 업데이트
+                    if (!doc.exists || !doc.data().updatedAt || (now - doc.data().updatedAt.toMillis()) > CACHE_DURATION) {
+                        needUpdate = true;
+                        console.log("⏰ 신문이 낡아서 새로 취재하러 갑니다.");
+                    } else {
+                        console.log("📰 갓 구운 신문을 읽습니다. (추가 조회 0회!)");
+                        try {
+                            const data = doc.data();
+                            const cachedList = JSON.parse(data.jsonList);
+
+                            // 캐시된 인원수 사용 (없으면 리스트 길이로 대체)
+                            leagueTotalCounts[searchTier] = data.totalCount || cachedList.length;
+
+                            cachedList.forEach(p => p.isMe = (p.uid === myServerUid));
+
+                            if (callback) callback(cachedList);
+                            return;
+                        } catch (e) {
+                            needUpdate = true;
+                        }
+                    }
+
+                    // [STEP 2] 기자 모드 (직접 DB 조회) - 여기가 수정됨!
+                    if (needUpdate) {
+                        // A. TOP 100 명단 조회 (점수 높은 순)
+                        const top100Query = db.collection("leaderboard")
+                            .where("tier", "==", searchTier)
+                            .orderBy("score", "desc")
+                            .limit(100)
+                            .get();
+
+                        // B. ★ 수정됨: count() 대신 전체 목록을 가져와서 사이즈 체크
+                        // (주의: 유저가 수천 명이면 비용이 들지만, 1시간에 1번이라 괜찮음)
+                        const totalCountQuery = db.collection("leaderboard")
+                            .where("tier", "==", searchTier)
+                            .get(); // .count()를 제거했습니다!
+
+                        Promise.all([top100Query, totalCountQuery])
+                            .then(([snapshotTop100, snapshotTotal]) => {
+                                // 1. 명단 정리
+                                let rankList = [];
+                                snapshotTop100.forEach((originDoc) => {
+                                    const data = originDoc.data();
+                                    rankList.push({
+                                        name: data.nickname,
+                                        tribe: (data.tribe !== undefined) ? data.tribe : 0,
+                                        score: data.score,
+                                        castle: data.castleLv,
+                                        tag: data.tag || "0000",
+                                        tier: data.tier,
+                                        uid: originDoc.id,
+                                        isMe: (originDoc.id === myServerUid)
+                                    });
+                                });
+
+                                // 2. 전체 인원 수 정리 (.size 사용)
+                                // ★ 여기서 snapshotTotal.size 를 씁니다!
+                                const totalCount = snapshotTotal.size;
+                                leagueTotalCounts[searchTier] = totalCount;
+                                console.log(`✅ [취재 완료] 전체 인원: ${totalCount}명`);
+
+                                if (callback) callback(rankList);
+
+                                // ★ [Step 3] 시온성(Tier 5) 커트라인 자동 조절
+                                if (searchTier === 5 && snapshotTop100.size >= 100) {
+                                    // 100등(목록의 마지막)의 점수 가져오기
+                                    const lastDoc = snapshotTop100.docs[snapshotTop100.size - 1];
+                                    const newCutoff = lastDoc.data().score;
+
+                                    // 칠판(system_meta)에 새로운 커트라인 적어두기
+                                    db.collection("system_meta").doc("tier_info").set({
+                                        zion_cutoff: newCutoff
+                                    }, { merge: true });
+
+                                    console.log(`⚖️ 시온성 경쟁 치열! 커트라인이 ${newCutoff}점으로 올라갔습니다.`);
+                                }
+
+                                // 3. 신문 발행
+                                db.collection("system_cache").doc(CACHE_DOC_ID).set({
+                                    jsonList: JSON.stringify(rankList),
+                                    totalCount: totalCount,
+                                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                                }).then(() => console.log("✅ 신문 발행 완료"));
+
+                            })
+                            .catch((error) => {
+                                console.error("랭킹 업데이트 실패:", error);
+                                // 에러나면 비상용 로직 (인원수 없이 명단만)
+                                fallbackLoadLeaderboard(searchTier, callback);
+                            });
+                    }
+                })
+                .catch((error) => {
+                    console.error("캐시 접근 실패:", error);
+                    fallbackLoadLeaderboard(searchTier, callback);
+                });
+        }
+
+        // [비상용] 기존 로직 (신문 가판대가 고장 났을 때)
+        function fallbackLoadLeaderboard(targetTier, callback) {
+            const searchTier = (targetTier !== undefined) ? targetTier : (leagueData.tier || 0);
+
+            // TOP 100 데이터 먼저 조회
             db.collection("leaderboard")
                 .where("tier", "==", searchTier)
-                .count()
+                .orderBy("score", "desc")
+                .limit(100)
                 .get()
-                .then((countResult) => {
-                    leagueTotalCounts[searchTier] = countResult.data().count;
-                    console.log(`✅ [${LEAGUE_CONFIG[searchTier].name}] 전체 인원: ${leagueTotalCounts[searchTier]}명`);
-                })
-                .catch((err) => {
-                    console.warn("count 쿼리 미지원, 재시도:", err);
-                    // count API 미지원시 일반 쿼리로 재시도
+                .then((snapshot) => {
+                    let rankList = [];
+                    snapshot.forEach((doc) => {
+                        const d = doc.data();
+                        rankList.push({ name: d.nickname, tribe: d.tribe || 0, score: d.score, castle: d.castleLv, tag: d.tag || "0000", tier: d.tier, isMe: (doc.id === myServerUid) });
+                    });
+                    if (callback) callback(rankList);
+
+                    // ★ 동시에 전체 인원 수 조회 (비동기)
                     db.collection("leaderboard")
                         .where("tier", "==", searchTier)
+                        .count()
                         .get()
-                        .then((allSnapshot) => {
-                            leagueTotalCounts[searchTier] = allSnapshot.size;
-                            console.log(`✅ [${LEAGUE_CONFIG[searchTier].name}] 전체 인원(재조회): ${leagueTotalCounts[searchTier]}명`);
+                        .then((countResult) => {
+                            leagueTotalCounts[searchTier] = countResult.data().count;
+                            console.log(`✅ [${LEAGUE_CONFIG[searchTier].name}] 전체 인원: ${leagueTotalCounts[searchTier]}명`);
+                        })
+                        .catch((err) => {
+                            console.warn("count 쿼리 미지원, 재시도:", err);
+                            // count API 미지원시 일반 쿼리로 재시도
+                            db.collection("leaderboard")
+                                .where("tier", "==", searchTier)
+                                .get()
+                                .then((allSnapshot) => {
+                                    leagueTotalCounts[searchTier] = allSnapshot.size;
+                                    console.log(`✅ [${LEAGUE_CONFIG[searchTier].name}] 전체 인원(재조회): ${leagueTotalCounts[searchTier]}명`);
+                                });
                         });
+                })
+                .catch((error) => {
+                    console.error("TOP 100 조회 실패:", error);
+                    alert("랭킹을 불러올 수 없습니다. 인터넷 연결을 확인하세요.");
                 });
-        })
-        .catch((error) => {
-            console.error("TOP 100 조회 실패:", error);
-            alert("랭킹을 불러올 수 없습니다. 인터넷 연결을 확인하세요.");
-        });
-}
+        }
 
-/* [기능] 명예의 전당 데이터 가져오기 (특정 시즌) */
-function loadHallOfFame(monthId, callback) {
-    if (!db) return;
+        /* [기능] 명예의 전당 데이터 가져오기 (특정 시즌) */
+        function loadHallOfFame(monthId, callback) {
+            if (!db) return;
 
-    console.log(`📜 ${monthId} 명예의 전당 조회 중...`);
+            console.log(`📜 ${monthId} 명예의 전당 조회 중...`);
 
-    db.collection("history")
-        .where("weekId", "==", monthId) // 해당 시즌의 기록만
-        .orderBy("score", "desc")      // 점수 높은 순
-        .limit(100)                     // 상위 100명만 (명예의 전당)
-        .get()
-        .then((snapshot) => {
-            let list = [];
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                list.push({
-                    name: data.nickname,      
-                    score: data.score,        
-                    castle: data.castleLv,    
-                    tag: data.tag || "0000",
-                    tier: data.tier,
-                    tribe: data.tribe,
-                    isMe: (doc.id.includes(myServerUid)) // ID에 내 ID가 포함되어 있으면 나
+            db.collection("history")
+                .where("weekId", "==", monthId) // 해당 시즌의 기록만
+                .orderBy("score", "desc")      // 점수 높은 순
+                .limit(100)                     // 상위 100명만 (명예의 전당)
+                .get()
+                .then((snapshot) => {
+                    let list = [];
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        list.push({
+                            name: data.nickname,
+                            score: data.score,
+                            castle: data.castleLv,
+                            tag: data.tag || "0000",
+                            tier: data.tier,
+                            tribe: data.tribe,
+                            isMe: (doc.id.includes(myServerUid)) // ID에 내 ID가 포함되어 있으면 나
+                        });
+                    });
+                    if (callback) callback(list);
+                })
+                .catch((error) => {
+                    console.error("명예의 전당 로딩 실패:", error);
+                    // 인덱스 에러 처리
+                    if (error.code === 'failed-precondition') {
+                        console.log("⚠️ 파이어베이스 인덱스 생성 필요 (history 컬렉션)");
+                    }
                 });
-            });
-            if (callback) callback(list);
-        })
-        .catch((error) => {
-            console.error("명예의 전당 로딩 실패:", error);
-            // 인덱스 에러 처리
-            if (error.code === 'failed-precondition') {
-                console.log("⚠️ 파이어베이스 인덱스 생성 필요 (history 컬렉션)");
-            }
-        });
-}
+        }
 
-</script>
+    </script>
 
-<div id="data-warning-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; font-family: 'Pretendard', 'Noto Sans KR', 'Malgun Gothic', sans-serif;">
-    <div style="background: #2c3e50; width: 85%; max-width: 340px; padding: 25px; border-radius: 15px; border: 2px solid #3498db; text-align: center; color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-        
-        <div style="font-size: 35px; margin-bottom: 5px;">📱</div>
-        <h2 style="margin: 0 0 15px 0; color: #3498db; font-size: 1.3rem; font-weight: 800; word-break: keep-all; letter-spacing: -0.5px;">홈 화면에 추가하고<br>앱처럼 즐기세요!</h2>
-        
-        <div style="font-size: 14px; line-height: 1.6; color: #ecf0f1; margin-bottom: 20px; text-align: left; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px;">
-            
-            <div style="background: rgba(231, 76, 60, 0.15); border: 1px solid rgba(231, 76, 60, 0.5); border-radius: 8px; padding: 12px; margin-bottom: 15px; text-align: center; word-break: keep-all;">
-                <span style="color:#e74c3c; font-weight:bold; font-size: 0.95rem;">⚠️ 텔레그램으로 접속하셨나요?</span><br>
-                우측 상단의 <span style="color:#f1c40f; font-weight:bold;">메뉴(⋮)</span>를 눌러<br>
-                반드시 <strong style="color:white; text-decoration: underline;">'다른 브라우저(또는 Safari)에서 열기'</strong>를 먼저 해주세요!
+    <div id="data-warning-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; font-family: 'Pretendard', 'Noto Sans KR', 'Malgun Gothic', sans-serif;">
+        <div
+            style="background: #2c3e50; width: 85%; max-width: 340px; padding: 25px; border-radius: 15px; border: 2px solid #3498db; text-align: center; color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+
+            <div style="font-size: 35px; margin-bottom: 5px;">📱</div>
+            <h2
+                style="margin: 0 0 15px 0; color: #3498db; font-size: 1.3rem; font-weight: 800; word-break: keep-all; letter-spacing: -0.5px;">
+                홈 화면에 추가하고<br>앱처럼 즐기세요!</h2>
+
+            <div
+                style="font-size: 14px; line-height: 1.6; color: #ecf0f1; margin-bottom: 20px; text-align: left; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px;">
+
+                <div
+                    style="background: rgba(231, 76, 60, 0.15); border: 1px solid rgba(231, 76, 60, 0.5); border-radius: 8px; padding: 12px; margin-bottom: 15px; text-align: center; word-break: keep-all;">
+                    <span style="color:#e74c3c; font-weight:bold; font-size: 0.95rem;">⚠️ 텔레그램으로 접속하셨나요?</span><br>
+                    우측 상단의 <span style="color:#f1c40f; font-weight:bold;">메뉴(⋮)</span>를 눌러<br>
+                    반드시 <strong style="color:white; text-decoration: underline;">'다른 브라우저(또는 Safari)에서 열기'</strong>를 먼저
+                    해주세요!
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <span style="font-size:1.1rem;">🍎</span> <strong style="color:white;">아이폰 (Safari)</strong><br>
+                    <span style="color:#bdc3c7; font-size:0.85rem;">사파리 하단 [공유] 버튼(↑) ➔ [홈 화면에 추가]</span>
+                </div>
+                <div>
+                    <span style="font-size:1.1rem;">🤖</span> <strong style="color:white;">안드로이드 (Chrome)</strong><br>
+                    <span style="color:#bdc3c7; font-size:0.85rem;">크롬 우측 상단 [메뉴(⋮)] ➔ [홈 화면에 추가]</span>
+                </div>
             </div>
 
-            <div style="margin-bottom: 12px;">
-                <span style="font-size:1.1rem;">🍎</span> <strong style="color:white;">아이폰 (Safari)</strong><br>
-                <span style="color:#bdc3c7; font-size:0.85rem;">사파리 하단 [공유] 버튼(↑) ➔ [홈 화면에 추가]</span>
-            </div>
-            <div>
-                <span style="font-size:1.1rem;">🤖</span> <strong style="color:white;">안드로이드 (Chrome)</strong><br>
-                <span style="color:#bdc3c7; font-size:0.85rem;">크롬 우측 상단 [메뉴(⋮)] ➔ [홈 화면에 추가]</span>
-            </div>
-        </div>
+            <button onclick="closeWarningModal()"
+                style="background: #3498db; color: white; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; letter-spacing: -0.5px;">
+                꿀팁 확인 완료!
+            </button>
 
-        <button onclick="closeWarningModal()" style="background: #3498db; color: white; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; letter-spacing: -0.5px;">
-    꿀팁 확인 완료!
-</button>
-        
-        <div style="margin-top: 15px;">
-            <label style="font-size: 13px; color: #95a5a6; cursor: pointer;">
-                <input type="checkbox" id="dont-show-again" style="vertical-align: middle;">
-                다시 보지 않기
-            </label>
+            <div style="margin-top: 15px;">
+                <label style="font-size: 13px; color: #95a5a6; cursor: pointer;">
+                    <input type="checkbox" id="dont-show-again" style="vertical-align: middle;">
+                    다시 보지 않기
+                </label>
+            </div>
         </div>
     </div>
-</div>
 
     <div id="booster-float" class="booster-float" aria-live="polite">
         <button id="booster-float-btn" class="booster-float-btn" type="button" aria-label="booster timer">⚡</button>
         <div id="booster-float-panel" class="booster-float-panel"></div>
     </div>
-    
-<div id="read-aloud-toast"></div>
 
-<div id="bible-transition-overlay">
-    
-    <div id="scroll-board">
-    <div class="roller-top"></div> <div class="scroll-content"> <h2 id="scroll-title">요한계시록 1장</h2>
-        <hr>
-        <div id="scroll-grid">
-            </div>
-    </div>
-    
-    <div class="roller-bottom"></div> </div>
-    <button id="mute-toggle-btn" style="display:none; position:absolute; top:22px; left:20px; z-index:10000; background:rgba(0,0,0,0.6); color:white; border:1px solid #7f8c8d; border-radius:50%; width:42px; height:42px; justify-content:center; align-items:center; font-size:1.3rem; cursor:pointer; transition: opacity 0.2s;">
-        🔊
-    </button>
-    
-    <button id="repeat-toggle-btn" style="display:none; position:absolute; top:22px; left:70px; z-index:10000; background:rgba(0,0,0,0.6); color:white; border:1px solid #7f8c8d; border-radius:50%; width:42px; height:42px; justify-content:center; align-items:center; font-size:1.3rem; cursor:pointer; transition: opacity 0.2s;">
-        🔁
-    </button>
-<button id="skip-transition-btn" style="display: none;">넘기기 ⏭</button>
-</div>
-<div id="chapter-title-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center;">
-    <div style="background:#2c3e50; border:2px solid #f1c40f; border-radius:15px; padding:20px 25px; width:80%; max-width:320px; text-align:center; color:#ecf0f1; position:relative; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
-        <button onclick="closeChapterTitle()" style="position:absolute; top:10px; right:15px; background:none; border:none; color:#bdc3c7; font-size:1.8rem; cursor:pointer;">&times;</button>
-        
-        <h3 id="title-modal-chapter" style="color:#f1c40f; margin-top:5px; margin-bottom:20px; font-size:1.4rem; font-weight:bold;">요한계시록 1장</h3>
-        
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-            <button id="title-prev-btn" style="display:none; background:none; border:none; font-size:1.8rem; cursor:pointer; padding:0; transition: transform 0.1s;">⬅️</button>
-            <div id="title-modal-text" style="font-size:1.15rem; line-height:1.5; word-break:keep-all; flex:1; font-weight:bold;">
+    <div id="read-aloud-toast"></div>
+
+    <div id="bible-transition-overlay">
+
+        <div id="scroll-board">
+            <div class="roller-top"></div>
+            <div class="scroll-content">
+                <h2 id="scroll-title">요한계시록 1장</h2>
+                <hr>
+                <div id="scroll-grid">
                 </div>
-            <button id="title-next-btn" style="display:none; background:none; border:none; font-size:1.8rem; cursor:pointer; padding:0; transition: transform 0.1s;">➡️</button>
+            </div>
+
+            <div class="roller-bottom"></div>
+        </div>
+        <button id="mute-toggle-btn"
+            style="display:none; position:absolute; top:22px; left:20px; z-index:10000; background:rgba(0,0,0,0.6); color:white; border:1px solid #7f8c8d; border-radius:50%; width:42px; height:42px; justify-content:center; align-items:center; font-size:1.3rem; cursor:pointer; transition: opacity 0.2s;">
+            🔊
+        </button>
+
+        <button id="repeat-toggle-btn"
+            style="display:none; position:absolute; top:22px; left:70px; z-index:10000; background:rgba(0,0,0,0.6); color:white; border:1px solid #7f8c8d; border-radius:50%; width:42px; height:42px; justify-content:center; align-items:center; font-size:1.3rem; cursor:pointer; transition: opacity 0.2s;">
+            🔁
+        </button>
+        <button id="skip-transition-btn" style="display: none;">넘기기 ⏭</button>
+    </div>
+    <div id="chapter-title-modal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center;">
+        <div
+            style="background:#2c3e50; border:2px solid #f1c40f; border-radius:15px; padding:20px 25px; width:80%; max-width:320px; text-align:center; color:#ecf0f1; position:relative; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
+            <button onclick="closeChapterTitle()"
+                style="position:absolute; top:10px; right:15px; background:none; border:none; color:#bdc3c7; font-size:1.8rem; cursor:pointer;">&times;</button>
+
+            <h3 id="title-modal-chapter"
+                style="color:#f1c40f; margin-top:5px; margin-bottom:20px; font-size:1.4rem; font-weight:bold;">요한계시록 1장
+            </h3>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                <button id="title-prev-btn"
+                    style="display:none; background:none; border:none; font-size:1.8rem; cursor:pointer; padding:0; transition: transform 0.1s;">⬅️</button>
+                <div id="title-modal-text"
+                    style="font-size:1.15rem; line-height:1.5; word-break:keep-all; flex:1; font-weight:bold;">
+                </div>
+                <button id="title-next-btn"
+                    style="display:none; background:none; border:none; font-size:1.8rem; cursor:pointer; padding:0; transition: transform 0.1s;">➡️</button>
+            </div>
         </div>
     </div>
-</div>
-</body></html>
+</body>
+
+</html>
