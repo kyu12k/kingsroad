@@ -1217,5 +1217,18 @@ function loadHallOfFame(monthId, callback) {
     <button id="mute-toggle-btn" style="display: none;">🔊</button>
     <button id="skip-transition-btn" style="display: none;">넘기기 ⏭</button>
 </div>
-
+<div id="chapter-title-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:#2c3e50; border:2px solid #f1c40f; border-radius:15px; padding:20px 25px; width:80%; max-width:320px; text-align:center; color:#ecf0f1; position:relative; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
+        <button onclick="closeChapterTitle()" style="position:absolute; top:10px; right:15px; background:none; border:none; color:#bdc3c7; font-size:1.8rem; cursor:pointer;">&times;</button>
+        
+        <h3 id="title-modal-chapter" style="color:#f1c40f; margin-top:5px; margin-bottom:20px; font-size:1.4rem; font-weight:bold;">요한계시록 1장</h3>
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <button id="title-prev-btn" style="display:none; background:none; border:none; font-size:1.8rem; cursor:pointer; padding:0; transition: transform 0.1s;">⬅️</button>
+            <div id="title-modal-text" style="font-size:1.15rem; line-height:1.5; word-break:keep-all; flex:1; font-weight:bold;">
+                </div>
+            <button id="title-next-btn" style="display:none; background:none; border:none; font-size:1.8rem; cursor:pointer; padding:0; transition: transform 0.1s;">➡️</button>
+        </div>
+    </div>
+</div>
 </body></html>

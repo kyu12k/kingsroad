@@ -2277,6 +2277,39 @@ function renderChapterMap() {
             else alert("🔒 이전 챕터를 먼저 클리어하여 길을 여세요."); 
         };
 
+        // 🌟 [제목] 버튼 생성 및 지그재그 배치
+        const isLeft = (index % 2 === 0); // 짝수면 왼쪽, 홀수면 오른쪽
+        const titleBtn = document.createElement('div');
+        titleBtn.innerHTML = '📝 제목';
+        
+        // 버튼 디자인 및 좌우 위치 자동 조절
+        titleBtn.style.cssText = `
+            position: absolute;
+            top: 15px; /* 나무 높이에 맞춰 살짝 내림 */
+            ${isLeft ? 'right: -75px;' : 'left: -75px;'} /* 나무 반대편으로 밀어내기! */
+            background-color: #2c3e50;
+            color: #f1c40f;
+            font-size: 0.8rem;
+            font-weight: bold;
+            padding: 5px 12px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+            cursor: pointer;
+            border: 2px solid #f39c12;
+            z-index: 20;
+            white-space: nowrap; /* 글자 줄바꿈 방지 */
+            transition: transform 0.1s;
+        `;
+
+        // 🚨 중요: 버튼을 눌렀을 때 맵(스테이지) 입장 기능이 같이 실행되지 않도록 막아줌!
+        titleBtn.onclick = (e) => {
+            e.stopPropagation(); // 이벤트 전파(Bubbling) 차단
+            openChapterTitle(chapter.id);
+        };
+
+        // 노드(나무)에 제목 버튼을 찰싹 붙여줍니다.
+        node.appendChild(titleBtn);
+        
         // ★ 핵심: 배경과 버튼을 형제(Sibling)로 배치
         wrapper.appendChild(bg);   // 1층 (배경)
         wrapper.appendChild(node); // 3층 (버튼) - CSS z-index:10 적용됨
@@ -10314,4 +10347,82 @@ function startBossTransition(chapterNum, startVerse, endVerse, isMidBoss, onComp
         gsap.set(gridContainer, { opacity: 1 }); // 그리드 다시 보이게 세팅
         gsap.set(overlay, { pointerEvents: "none" });
     });
+}
+
+// 🌟 1. 장별 제목 데이터베이스 (개발자님이 주신 데이터!)
+const CHAPTER_TITLES = {
+    1: ["계 1:1~8 계시록 전장의 요약과 결론", "계 1:9~20 계시록 사건의 시작과 일곱 별과 일곱 금 촛대의 비밀"], // 1장만 배열(두 개)입니다!
+    2: "계 2장 일곱 교회 사자에게 보낸 편지",
+    3: "계 3장 일곱 교회 사자에게 보낸 편지",
+    4: "계 4장 영계 하나님의 보좌와 계열",
+    5: "계 5장 일곱 인으로 봉한 책",
+    6: "계 6장 배도한 선천 해⋅달⋅별에 대한 심판",
+    7: "계 7장 새 창조된 영적 새 이스라엘 열두 지파",
+    8: "계 8장 마지막 인과 일곱 나팔",
+    9: "계 9장 무저갱의 황충과 범죄한 천사",
+    10: "계 10장 하늘에서 온 계시 책과 약속의 목자",
+    11: "계 11장 두 증인과 일곱째 나팔",
+    12: "계 12장 용과 하나님과의 전쟁",
+    13: "계 13장 짐승에게 표 받고 배도한 선민",
+    14: "계 14장 처음 익은 열매 시온산 십사만 사천",
+    15: "계 15장 만국이 와서 경배할 증거장막 성전",
+    16: "계 16장 진노의 일곱 대접",
+    17: "계 17장 마귀의 양식 음행의 포도주",
+    18: "계 18장 만국을 무너뜨린 사단과의 결혼",
+    19: "계 19장 영육 어린양의 혼인 잔치",
+    20: "계 20장 순교의 영과 산 자의 첫째 부활",
+    21: "계 21장 약속한 새 하늘 새 땅 신천지",
+    22: "계 22장 생명나무가 있는 거룩한 성"
+};
+
+// 🌟 2. 팝업창 제어 변수 및 함수
+let currentChapter1Index = 0; // 1장일 때 앞부분(0)인지 뒷부분(1)인지 기억하는 변수
+
+function openChapterTitle(chapterNum) {
+    const modal = document.getElementById('chapter-title-modal');
+    const chapterHeader = document.getElementById('title-modal-chapter');
+    const textContent = document.getElementById('title-modal-text');
+    const prevBtn = document.getElementById('title-prev-btn');
+    const nextBtn = document.getElementById('title-next-btn');
+
+    chapterHeader.innerText = `요한계시록 ${chapterNum}장`;
+    
+    // 버튼 초기화 (일단 숨김)
+    prevBtn.style.display = 'none';
+    nextBtn.style.display = 'none';
+    prevBtn.onclick = null;
+    nextBtn.onclick = null;
+
+    if (chapterNum === 1) {
+        // 🌟 1장이면 화살표 버튼을 켜고, 토글(번갈아 보기) 기능을 연결합니다.
+        currentChapter1Index = 0; // 항상 1~8절부터 시작
+        textContent.innerText = CHAPTER_TITLES[1][currentChapter1Index];
+        
+        prevBtn.style.display = 'block';
+        nextBtn.style.display = 'block';
+        
+        const toggleFunc = () => {
+            currentChapter1Index = currentChapter1Index === 0 ? 1 : 0; // 0과 1을 왔다갔다!
+            textContent.innerText = CHAPTER_TITLES[1][currentChapter1Index];
+            // 버튼 누를 때 쫀득한 효과 주기
+            gsap.fromTo(textContent, { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.2 });
+        };
+        
+        prevBtn.onclick = toggleFunc;
+        nextBtn.onclick = toggleFunc;
+    } else {
+        // 🌟 2장~22장이면 그냥 해당 텍스트만 띄웁니다.
+        textContent.innerText = CHAPTER_TITLES[chapterNum] || "준비 중입니다.";
+    }
+
+    // 모달창 짠! 하고 나타나기
+    modal.style.display = 'flex';
+    gsap.fromTo(modal.firstElementChild, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.3, ease: "back.out(1.5)" });
+}
+
+function closeChapterTitle() {
+    const modal = document.getElementById('chapter-title-modal');
+    gsap.to(modal.firstElementChild, { opacity: 0, y: 30, duration: 0.2, onComplete: () => {
+        modal.style.display = 'none';
+    }});
 }
