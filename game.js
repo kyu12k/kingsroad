@@ -2975,14 +2975,19 @@ function startBossBattle() {
 
     const chData = gameData.find(c => c.id === chapterNum);
     
+    // 🌟 [핵심 수술] '무조건 5개'라는 하드코딩을 버리고, 지도의 데이터를 그대로 읽어옵니다!
     if (chData && sId.includes('mid')) { 
-        const midBosses = chData.stages.filter(s => s.type === 'mid-boss');
-        const myIndex = midBosses.findIndex(s => s.id === sId);
-
-        if (myIndex !== -1) {
-            startIndex = myIndex * 5;
-            endIndex = startIndex + 5;
-            if (endIndex > fullChapterData.length) endIndex = fullChapterData.length;
+        // 1. 내가 누른 스테이지의 정확한 정보를 지도(chData)에서 찾아옵니다.
+        const myStage = chData.stages.find(s => s.id === sId);
+        
+        if (myStage) {
+            // 2. ID가 "16-mid-21" 형태이므로, 맨 끝 번호(21)를 뽑아냅니다.
+            const endVerseNum = parseInt(sId.split('-')[2]); 
+            endIndex = endVerseNum; 
+            
+            // 3. 시작 번호는 (끝 번호 - 이번 스테이지의 목표 개수)로 정확하게 역산합니다!
+            // 예: 21절에서 끝나는데 타겟이 6개면? -> 인덱스 15 (즉 16절부터 시작)
+            startIndex = endIndex - myStage.targetVerseCount; 
         }
     }
 
