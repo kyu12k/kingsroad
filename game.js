@@ -10122,6 +10122,7 @@ function playScrollTransition(targetCellId, targetText, verseAudio, onCompleteCa
 
     const skipBtn = document.getElementById('skip-transition-btn');
     const muteBtn = document.getElementById('mute-toggle-btn'); // 🌟 음소거 버튼 연결
+    const repeatBtn = document.getElementById('repeat-toggle-btn');
     const tl = gsap.timeline();
 
     let fallbackTimer;
@@ -10146,6 +10147,23 @@ function playScrollTransition(targetCellId, targetText, verseAudio, onCompleteCa
             localStorage.setItem('isMuted', isGlobalMuted); // 🌟 상태를 브라우저에 영구 저장!
             audioObj.muted = isGlobalMuted; // 재생 중인 소리 즉시 제어
             muteBtn.innerText = isGlobalMuted ? "🔇" : "🔊"; // 아이콘 업데이트
+        };
+    }
+    // 🌟 [추가 2] 반복 재생 버튼 로직
+    let isLooping = false; // 기본은 '반복 안 함'
+    audioObj.loop = isLooping; // 오디오 객체에 기본값 세팅
+
+    if (repeatBtn) {
+        repeatBtn.style.display = "flex";
+        repeatBtn.style.opacity = "0.4"; // 처음엔 꺼져있다는 의미로 반투명하게!
+
+        repeatBtn.onclick = () => {
+            isLooping = !isLooping; // 상태 뒤집기 (토글)
+            audioObj.loop = isLooping; // 오디오에 즉시 적용 (true면 무한 반복!)
+            
+            // 시각적 피드백 (켜지면 불 들어오고, 꺼지면 반투명)
+            repeatBtn.style.opacity = isLooping ? "1" : "0.4"; 
+            repeatBtn.style.border = isLooping ? "2px solid #f1c40f" : "1px solid #7f8c8d";
         };
     }
 
@@ -10179,31 +10197,40 @@ function playScrollTransition(targetCellId, targetText, verseAudio, onCompleteCa
         if (isSkipped) return; 
         tl.pause(); 
 
+        // 🌟 [수술 1단계] 리스너 선 탑재: 소리가 끝나기 전에 귀부터 열어둡니다! (지각 결석 방지)
+        audioObj.onended = () => {
+            if (isSkipped) return;
+            clearTimeout(fallbackTimer);
+            tl.resume(); // 🌟 [수술 2단계] 강제 점프(play) 대신 자연스럽게 일시정지 해제(resume)로 이어서 갑니다!
+        };
+
         const playPromise = audioObj.play();
 
         if (playPromise !== undefined) {
-            playPromise.then(() => {
-                audioObj.onended = () => {
-                    if (isSkipped) return;
-                    clearTimeout(fallbackTimer);
-                    tl.play("outro"); 
-                };
-            }).catch((error) => {
+            // then()은 과감히 지워버리고, 에러가 났을 때(catch)만 대비합니다.
+            playPromise.catch((error) => {
                 console.warn("오디오 재생 불가:", error);
                 fallbackTimer = setTimeout(() => {
                     if (isSkipped) return;
-                    tl.play("outro"); 
+                    tl.resume(); 
                 }, readTime * 1000);
             });
         }
     })
 
-    .addLabel("outro")
+    // 🌟 [수술 3단계] 0.01초 띄우기: call()과 완전히 분리하여 GSAP 무한루프 충돌을 원천 차단!
+    .addLabel("outro", "+=0.01") 
 
     // 🌟 아웃트로 진입 시 켜져있는 버튼들을 일괄적으로 끄기
     .call(() => {
         if(skipBtn) skipBtn.style.display = "none";
         if(muteBtn) muteBtn.style.display = "none";
+        // 🌟 [추가 3] 반복 재생 버튼도 잊지 말고 같이 숨겨줍니다!
+        if(repeatBtn) {
+            repeatBtn.style.display = "none";
+            repeatBtn.style.opacity = "0.4"; // 다음을 위해 초기화
+            repeatBtn.style.border = "1px solid #7f8c8d";
+        }
     })
 
     .to(board, { opacity: 0, duration: 0.6, ease: "power2.inOut" })

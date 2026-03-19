@@ -1214,8 +1214,14 @@ function loadHallOfFame(monthId, callback) {
     </div>
     
     <div class="roller-bottom"></div> </div>
-    <button id="mute-toggle-btn" style="display: none;">🔊</button>
-    <button id="skip-transition-btn" style="display: none;">넘기기 ⏭</button>
+    <button id="mute-toggle-btn" style="display:none; position:absolute; top:22px; left:20px; z-index:10000; background:rgba(0,0,0,0.6); color:white; border:1px solid #7f8c8d; border-radius:50%; width:42px; height:42px; justify-content:center; align-items:center; font-size:1.3rem; cursor:pointer; transition: opacity 0.2s;">
+        🔊
+    </button>
+    
+    <button id="repeat-toggle-btn" style="display:none; position:absolute; top:22px; left:70px; z-index:10000; background:rgba(0,0,0,0.6); color:white; border:1px solid #7f8c8d; border-radius:50%; width:42px; height:42px; justify-content:center; align-items:center; font-size:1.3rem; cursor:pointer; transition: opacity 0.2s;">
+        🔁
+    </button>
+<button id="skip-transition-btn" style="display: none;">넘기기 ⏭</button>
 </div>
 <div id="chapter-title-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center;">
     <div style="background:#2c3e50; border:2px solid #f1c40f; border-radius:15px; padding:20px 25px; width:80%; max-width:320px; text-align:center; color:#ecf0f1; position:relative; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
