@@ -978,24 +978,27 @@ body, html {
     flex-direction: column;
     gap: 4px;
     min-width: 0;
-    flex: 1 1 auto;
+    flex: 1 1 180px;
 }
 
 .training-header-right {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 12px;
+    justify-content: flex-end;
+    gap: 5px;
     min-width: 0;
-    flex: 0 0 auto;
-    white-space: nowrap;
-    overflow-x: auto;
+    flex: 0 1 auto;
+    flex-shrink: 0;
+    max-width: 100%;
 }
 
 #game-screen.mode-hardship .training-header {
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
 }
 
 #game-screen.hide-hint-force .hint-btn,
@@ -1010,9 +1013,8 @@ body, html {
     font-size: 0.85rem;
     color: #576574;
     font-weight: 700;
-    white-space: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
+    white-space: normal;
+    overflow: visible;
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
@@ -1020,6 +1022,47 @@ body, html {
 .hardship-header-meta::-webkit-scrollbar,
 .training-header-right::-webkit-scrollbar {
     display: none;
+}
+
+#game-screen.mode-hardship .training-header .item-btn,
+#game-screen.mode-hardship .training-header .btn-pause,
+#game-screen.mode-hardship .hardship-score-chip,
+#game-screen.mode-hardship #training-heart-wrap,
+#game-screen.mode-hardship .hardship-life-bread-btn {
+    flex-shrink: 0;
+}
+
+#game-screen.mode-hardship .training-header .item-btn {
+    min-width: auto !important;
+    padding: 6px 9px !important;
+    font-size: 0.88rem;
+}
+
+#game-screen.mode-hardship .training-header .btn-pause {
+    padding: 5px 9px;
+}
+
+#game-screen.mode-hardship #training-heart-wrap {
+    gap: 4px;
+    font-size: 1rem !important;
+}
+
+#game-screen.mode-hardship .hardship-score-chip,
+#game-screen.mode-hardship .hardship-life-bread-btn {
+    padding: 6px 10px;
+    font-size: 0.88rem;
+}
+
+#game-screen.mode-hardship .hardship-life-bread-btn {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    background: #fff;
+    color: #2c3e50;
+    border-radius: 20px;
+    border: 1px solid #bdc3c7;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: transform 0.1s;
 }
 
 .hardship-score-chip {
@@ -1251,15 +1294,59 @@ body, html {
         gap: 8px;
     }
 
+    .training-header-left,
     .training-header-right {
-        gap: 8px;
-        max-width: 46%;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .training-header-right {
+        justify-content: flex-start;
+        gap: 6px;
     }
 
     .hardship-header-meta,
     .hardship-score-chip,
     #training-cycle-indicator {
         font-size: 0.78rem;
+    }
+}
+
+@media (max-width: 480px) {
+    #game-screen.mode-hardship .training-header {
+        padding: 12px 10px;
+        gap: 8px;
+    }
+
+    .training-header-right {
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 5px;
+    }
+
+    #game-screen.mode-hardship .training-header .item-btn,
+    #game-screen.mode-hardship .hardship-score-chip,
+    #game-screen.mode-hardship .hardship-life-bread-btn,
+    #game-screen.mode-hardship #training-heart-wrap,
+    #game-screen.mode-hardship .training-header .btn-pause {
+        font-size: 0.8rem !important;
+    }
+
+    #game-screen.mode-hardship .training-header .item-btn {
+        padding: 5px 7px !important;
+    }
+
+    #game-screen.mode-hardship .hardship-score-chip,
+    #game-screen.mode-hardship .hardship-life-bread-btn {
+        padding: 5px 8px;
+    }
+
+    #game-screen.mode-hardship #training-heart-wrap {
+        gap: 3px;
+    }
+
+    .hardship-header-meta {
+        font-size: 0.75rem;
     }
 }
 

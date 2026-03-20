@@ -3517,11 +3517,9 @@ function updateBattleUI() {
 
     // 생명의 떡 버튼 HTML (공통 사용)
     const lifeBreadBtnHtml = `
-        <span onclick="event.stopPropagation(); useBattleItem('lifeBread')" 
-              style="cursor:pointer; margin-left:10px; font-size:0.9rem; display:inline-flex; align-items:center; 
-                     background:#fff; color:#2c3e50; padding:4px 12px; border-radius:20px; 
-                     border:1px solid #bdc3c7; box-shadow:0 2px 5px rgba(0,0,0,0.1); transition:transform 0.1s;">
-            🍞 <span style="margin-left:5px; font-weight:bold; font-size:1rem;">${lifeBreadCnt}</span>
+        <span class="hardship-life-bread-btn" onclick="event.stopPropagation(); useBattleItem('lifeBread')"
+              style="margin-left:6px;">
+            🍞 <span style="margin-left:4px; font-weight:bold;">${lifeBreadCnt}</span>
         </span>
     `;
 
@@ -11189,16 +11187,13 @@ function updateHardshipHeader() {
     }
 
     const modeMeta = getHardshipModeMeta(hardshipState.mode);
-    const remaining = getHardshipRemainingCount();
     const lifeBreadCnt = (typeof inventory !== 'undefined' && inventory.lifeBread) ? inventory.lifeBread : 0;
     const heartIcon = playerHearts > 0 ? '❤️' : '💔';
     const isDanger = playerHearts <= 2;
     const lifeBreadBtnHtml = `
-        <span onclick="event.stopPropagation(); useBattleItem('lifeBread')"
-              style="cursor:pointer; margin-left:10px; font-size:0.9rem; display:inline-flex; align-items:center;
-                     background:#fff; color:#2c3e50; padding:4px 12px; border-radius:20px;
-                     border:1px solid #bdc3c7; box-shadow:0 2px 5px rgba(0,0,0,0.1); transition:transform 0.1s;">
-            🍞 <span style="margin-left:5px; font-weight:bold; font-size:1rem;">${lifeBreadCnt}</span>
+        <span class="hardship-life-bread-btn" onclick="event.stopPropagation(); useBattleItem('lifeBread')"
+              style="margin-left:6px;">
+            🍞 <span style="margin-left:4px; font-weight:bold;">${lifeBreadCnt}</span>
         </span>
     `;
 
@@ -11206,10 +11201,12 @@ function updateHardshipHeader() {
     if (cycleIndicator) cycleIndicator.innerText = `${modeMeta.icon} ${modeMeta.title}`;
 
     if (hardshipMeta) {
+        const totalCount = hardshipState.queue.length || HARDSHIP_VERSES.length;
+        const progressCount = hardshipState.mode === 'endurance'
+            ? hardshipState.studiedCount
+            : hardshipState.answeredCount;
         hardshipMeta.classList.remove('hidden');
-        hardshipMeta.textContent = hardshipState.mode === 'endurance'
-            ? `확인 ${hardshipState.studiedCount}절 · 남은 ${remaining}절`
-            : `진행 ${hardshipState.answeredCount}절 · 남은 ${remaining}절`;
+        hardshipMeta.textContent = `[${modeMeta.title}] ${progressCount} / ${totalCount}절`;
     }
 
     if (hardshipScoreChip) {
@@ -11226,7 +11223,7 @@ function updateHardshipHeader() {
             hintBtn.style.display = 'inline-flex';
             hintBtn.hidden = false;
             hintBtn.disabled = false;
-            hintBtn.innerHTML = '💡 글자 힌트 <span id="training-hint-cost" style="font-size:0.7rem; margin-left:2px;">(💎10)</span>';
+            hintBtn.innerHTML = '💡 힌트 <span id="training-hint-cost" style="font-size:0.7rem; margin-left:2px;">(💎10)</span>';
         } else {
             hintBtn.style.display = 'none';
             hintBtn.hidden = true;
