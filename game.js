@@ -11034,6 +11034,10 @@ function getHardshipModeMeta(mode) {
     return HARDSHIP_MODES[mode] || HARDSHIP_MODES.endurance;
 }
 
+function isHardshipTypingTargetChar(character) {
+    return isHardshipFillableChar(character) || character === ' ';
+}
+
 function clearHardshipPendingTimeout() {
     if (hardshipState.pendingTimeoutId) {
         clearTimeout(hardshipState.pendingTimeoutId);
@@ -11522,7 +11526,7 @@ function renderHardshipMemoryVerse() {
     const activeValidSlotIndex = getHardshipActiveValidSlotIndex();
 
     const typingBoardHtml = hardshipState.currentVerse.text.split('').map((character, index) => {
-        if (!isHardshipFillableChar(character)) {
+        if (!isHardshipTypingTargetChar(character)) {
             const extraClass = character === ' ' ? ' space' : '';
             const displayChar = character === ' ' ? '&nbsp;' : character;
             return `<span class="hardship-fixed-char${extraClass}">${displayChar}</span>`;
@@ -11535,6 +11539,7 @@ function renderHardshipMemoryVerse() {
             'char-slot',
             'hardship-char-slot',
             !isHintRevealed ? 'is-valid' : '',
+            character === ' ' ? 'is-space' : '',
             isHintRevealed ? 'hint-revealed' : '',
             currentValue ? 'filled' : '',
             !isHintRevealed && activeValidSlotIndex === validSlotIndex ? 'active' : ''
@@ -11572,6 +11577,8 @@ function renderHardshipMemoryVerse() {
         </div>
     `;
 
+    bindHardshipMemoryInputGuards();
+
     if (!hardshipState.locked) {
         setTimeout(() => focusHardshipMemoryHiddenInput(), 0);
     }
@@ -11581,6 +11588,36 @@ function focusHardshipMemoryHiddenInput() {
     const input = document.getElementById('hidden-typing-input');
     if (!input || hardshipState.locked) return;
     input.focus();
+    moveHardshipMemoryCursorToEnd(input);
+}
+
+function moveHardshipMemoryCursorToEnd(input) {
+    if (!input || typeof input.setSelectionRange !== 'function') return;
+
+    const end = input.value.length;
+    input.setSelectionRange(end, end);
+}
+
+function bindHardshipMemoryInputGuards() {
+    const input = document.getElementById('hidden-typing-input');
+    if (!input || input.dataset.guardsBound === 'true') return;
+
+    const blockArrowNavigation = (event) => {
+        if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
+            event.preventDefault();
+            moveHardshipMemoryCursorToEnd(input);
+        }
+    };
+
+    const forceCursorToEnd = () => {
+        moveHardshipMemoryCursorToEnd(input);
+    };
+
+    input.addEventListener('keydown', blockArrowNavigation);
+    input.addEventListener('click', forceCursorToEnd);
+    input.addEventListener('touchend', forceCursorToEnd);
+    input.addEventListener('focus', forceCursorToEnd);
+    input.dataset.guardsBound = 'true';
 }
 
 function escapeHardshipInputValue(value) {
@@ -11593,24 +11630,16 @@ function escapeHardshipInputValue(value) {
 
 function getHardshipFillableVerseLength() {
     if (!hardshipState.currentVerse) return 0;
-    return hardshipState.currentVerse.text.split('').filter(character => isHardshipFillableChar(character)).length;
+    return hardshipState.currentVerse.text.length;
 }
 
 function getHardshipValidSlotIndexByVerseIndex(verseIndex) {
     if (!hardshipState.currentVerse) return -1;
 
-    let validIndex = -1;
-    hardshipState.currentVerse.text.split('').forEach((character, index) => {
-        if (!isHardshipFillableChar(character)) return;
-        if (hardshipState.revealedHints.indexOf(index) !== -1) return;
-        validIndex += 1;
-        if (index === verseIndex) return;
-    });
-
     let count = 0;
     for (let index = 0; index <= verseIndex; index++) {
         const character = hardshipState.currentVerse.text.charAt(index);
-        if (!isHardshipFillableChar(character)) continue;
+        if (!isHardshipTypingTargetChar(character)) continue;
         if (hardshipState.revealedHints.indexOf(index) !== -1) continue;
         count += 1;
     }
@@ -11628,7 +11657,7 @@ function getHardshipInputTargetCount() {
 
     let count = 0;
     hardshipState.currentVerse.text.split('').forEach((character, index) => {
-        if (!isHardshipFillableChar(character)) return;
+        if (!isHardshipTypingTargetChar(character)) return;
         if (hardshipState.revealedHints.indexOf(index) !== -1) return;
         count += 1;
     });
@@ -11639,7 +11668,7 @@ function initializeHardshipMemorySlots() {
     if (!hardshipState.currentVerse) return;
 
     hardshipState.currentVerse.text.split('').forEach((character, index) => {
-        if (!isHardshipFillableChar(character)) {
+        if (!isHardshipTypingTargetChar(character)) {
             hardshipState.memorySlots[index] = character;
             return;
         }
@@ -11662,14 +11691,10 @@ function mapHardshipTypedTextToSlots(currentText) {
     let typedIndex = 0;
 
     hardshipState.currentVerse.text.split('').forEach((character, index) => {
-        if (!isHardshipFillableChar(character)) return;
+        if (!isHardshipTypingTargetChar(character)) return;
         if (hardshipState.revealedHints.indexOf(index) !== -1) {
             hardshipState.memorySlots[index] = hardshipState.currentVerse.text.charAt(index);
             return;
-        }
-
-        while (typedIndex < typedChars.length && !isHardshipFillableChar(typedChars[typedIndex])) {
-            typedIndex += 1;
         }
 
         hardshipState.memorySlots[index] = typedIndex < typedChars.length ? typedChars[typedIndex] : '';
@@ -11684,6 +11709,7 @@ function updateHardshipMemoryBoard() {
 
     const text = String(hardshipState.memoryTypedText || '');
     const slots = document.querySelectorAll('.char-slot.is-valid');
+    let targetScrollSlot = null;
 
     slots.forEach((slot, index) => {
         if (index < text.length) {
@@ -11698,6 +11724,13 @@ function updateHardshipMemoryBoard() {
 
     if (text.length < slots.length && slots[text.length]) {
         slots[text.length].classList.add('active');
+        targetScrollSlot = slots[text.length];
+    } else if (slots.length > 0) {
+        targetScrollSlot = slots[slots.length - 1];
+    }
+
+    if (targetScrollSlot && typeof targetScrollSlot.scrollIntoView === 'function') {
+        targetScrollSlot.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 }
 
@@ -11709,6 +11742,7 @@ function handleHardshipMemoryInput(event) {
 
     hardshipState.memoryTypedText = currentText;
     updateHardshipMemoryBoard();
+    moveHardshipMemoryCursorToEnd(input);
 }
 
 function resetHardshipMemoryInputs() {
@@ -11724,7 +11758,7 @@ function getNextHardshipHintIndex() {
 
     const text = hardshipState.currentVerse.text;
     for (let index = 0; index < text.length; index++) {
-        if (!isHardshipFillableChar(text.charAt(index))) continue;
+        if (!isHardshipTypingTargetChar(text.charAt(index))) continue;
         if ((hardshipState.memorySlots[index] || '') !== text.charAt(index)) {
             return index;
         }
@@ -11771,7 +11805,7 @@ function submitHardshipMemoryGuess() {
     let isCorrect = true;
     for (let index = 0; index < text.length; index++) {
         const answerChar = text.charAt(index);
-        if (!isHardshipFillableChar(answerChar)) continue;
+        if (!isHardshipTypingTargetChar(answerChar)) continue;
         if ((hardshipState.memorySlots[index] || '') !== answerChar) {
             isCorrect = false;
             break;
