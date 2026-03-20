@@ -342,9 +342,14 @@ function getTotalPlaySecondsNow() {
     return base;
 }
 
+function isFocusedTrainingSession() {
+    return !!(window.isTrainingMode || window.trainingMode === 'training');
+}
+
 /* [시스템] 통계 업데이트 매니저 (업적 감지 기능 추가됨) */
 function updateStats(type, value = 1) {
     if (typeof userStats === 'undefined') return;
+    if (isFocusedTrainingSession() && ['verse_clear', 'boss_kill', 'gem_get', 'perfect', 'earlybird'].includes(type)) return;
 
     let isChanged = false;
 
@@ -608,6 +613,7 @@ function updateWeeklyAttendance(today, currentWeek) {
 /* [시스템: 미션 진행도 업데이트 (핵심 기능)] */
 // type: 'new'(신규), 'review'(복습), 'dragon'(용)
 function updateMissionProgress(type, extraData) {
+    if (isFocusedTrainingSession()) return;
     if (type === 'training') type = 'new';
     if (type === 'dragonKill') type = 'dragon';
     if (type === 'review') return;
@@ -2122,7 +2128,11 @@ function goHome() {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
 
     // 2. 홈 화면 켜기
-    document.getElementById('home-screen').classList.add('active');
+    const homeScreen = document.getElementById('home-screen');
+    if (homeScreen) {
+        homeScreen.style.display = '';
+        homeScreen.classList.add('active');
+    }
 
     // 3. 성전 모습 업데이트
     updateCastleView();
@@ -2145,6 +2155,11 @@ function goHome() {
 
 function goMap() {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+
+    const homeScreen = document.getElementById('home-screen');
+    if (homeScreen) {
+        homeScreen.style.display = '';
+    }
 
     // ★ [수정] 동적으로 생성된 화면(도감 등) 제거
     const lifeBookScreen = document.getElementById('life-book-screen');
@@ -2785,7 +2800,7 @@ function openForgottenStagesOverlay() {
     const listDiv = document.getElementById('forgotten-stages-list');
     const forgottenList = getForgottenStages();
     if (forgottenList.length === 0) {
-        listDiv.innerHTML = '<div style="color:#bdc3c7;">기억 다지기 스테이지가 없습니다!</div>';
+        listDiv.innerHTML = '<div style="color:#bdc3c7;">구절을 잊을만 할 때 알려드립니다!</div>';
         return;
     }
     listDiv.innerHTML = '';
@@ -2929,6 +2944,11 @@ function checkMemoryStatus(stageId) {
 
 /* [수정] 스테이지 클리어: 다음 스테이지 잠금 해제 로직 추가 */
 function stageClear(type) {
+    // 🌟 [핵심 수술 2] 훈련 모드 철벽 방어막!
+    if (window.isTrainingMode) {
+        console.log("⚔️ 집중 훈련 완료! (보상 및 데이터 저장을 스킵합니다.)");
+        return; // 이 아래에 있는 보상 로직을 단 하나도 실행하지 않고 함수를 종료합니다!
+    }
     // [추가] 숙련도(클리어 횟수) 증가 로직
     if (window.currentStageId) {
         if (!stageMastery[window.currentStageId]) {
@@ -3179,7 +3199,7 @@ function loadNextVerse() {
                 if (sId.includes('mid')) stageClear('mid-boss');
                 else stageClear('boss');
 
-                quitGame();
+                quitGame(isFocusedTrainingSession() ? 'home' : 'map');
                 openStageSheetForStageId(clearedStageId);
             }, 2000); // 2초 딜레이 (폭죽 효과 최대 2개 웨이브)
 
@@ -3600,7 +3620,7 @@ function showReviveModal() {
 function giveUpBattle() {
     document.getElementById('revive-modal').style.display = 'none';
     alert("💔 패배... 눈앞이 캄캄해집니다.");
-    quitGame();
+    quitGame(isFocusedTrainingSession() ? 'home' : 'map');
 }
 
 /* [수정] 부활 함수 (Step 4 재시동 기능 탑재) */
@@ -3679,8 +3699,11 @@ function clearCheckpoint() {
 }
 
 /* [수정] 게임 종료/포기 (나가기 시 밀린 팝업 확인 기능 추가) */
-function quitGame() {
+function quitGame(destination = 'map') {
+    const targetScreen = (destination === 'home') ? 'home' : 'map';
+    window.isTrainingMode = false; // 🌟 [추가] 포기하고 나갈 때는 훈련 모드 스위치 확실히 끄기!
     window.isGamePlaying = false; // ★ 핵심 방어막: 게임 종료 선언! 유령 타이머 차단!
+    window.trainingMode = null;
     // 1. 스크롤 게임 정지 (안전장치)
     if (typeof scrollGame !== 'undefined' && scrollGame.animId) {
         cancelAnimationFrame(scrollGame.animId);
@@ -3690,9 +3713,11 @@ function quitGame() {
     const hintModal = document.getElementById('hint-modal');
     if (hintModal) hintModal.remove();
 
-    // 2. 화면 전환 (전투 -> 맵)
-    document.getElementById('game-screen').classList.remove('active');
-    document.getElementById('map-screen').classList.add('active');
+    // 2. 전투 화면 정리
+    const gameScreen = document.getElementById('game-screen');
+    if (gameScreen) {
+        gameScreen.classList.remove('active', 'mode-training', 'is-training-mode');
+    }
 
     // 3. 모달 닫기 (안전장치)
     const quitModal = document.getElementById('quit-modal');
@@ -3713,7 +3738,23 @@ function quitGame() {
         playBGM('main');
     }
 
-    // ★ [NEW] 6. 전투 끝나고 맵에 도착했으니, 밀린 업적 팝업이 있다면 보여줘!
+    // 6. 목적지 화면으로 이동
+    if (targetScreen === 'home') {
+        if (typeof goHome === 'function') {
+            goHome();
+        }
+    } else {
+        if (typeof goMap === 'function') {
+            goMap();
+        } else {
+            document.getElementById('map-screen').classList.add('active');
+            if (typeof renderChapterMap === 'function') {
+                renderChapterMap(currentChapterId || window.currentBattleChapter || 1);
+            }
+        }
+    }
+
+    // ★ [NEW] 7. 전투 종료 후 밀린 업적 팝업이 있다면 보여줘!
     // 0.5초 뒤에 실행 (화면 전환이 완전히 끝난 뒤 자연스럽게)
     setTimeout(() => {
         if (typeof tryShowMilestone === 'function') {
@@ -4807,9 +4848,45 @@ function loadStep() {
     }
 } // loadStep 끝
 
-// [2. nextStep 함수 교체] (노선도 방식)
+// [2. nextStep 함수 교체] (노선도 방식 + 🌟 훈련 모드 분기 추가)
 function nextStep() {
-    if (!window.isGamePlaying) return; // ★ 추가: 나갔으면 중단!
+    if (!window.isGamePlaying) return; 
+
+    // 🌟 훈련 모드일 때는 스텝을 고정하고 구절만 다음으로 넘깁니다!
+    // 🌟 훈련 모드일 때는 스텝을 고정하고 구절만 다음으로 넘깁니다!
+    if (window.isTrainingMode) {
+        if (window.currentVerseIdx < window.currentBattleData.length - 1) {
+            
+            window.currentVerseIdx++; // 다음 구절로 인덱스 이동
+            
+            // 🌟 [핵심 수술 1] 엔진이 쓸법한 모든 데이터 변수에 새 구절을 완벽하게 덮어씌웁니다!
+            const nextVerseData = window.currentBattleData[window.currentVerseIdx];
+            window.trainingVerseData = nextVerseData;
+            if (typeof trainingVerseData !== 'undefined') trainingVerseData = nextVerseData;
+            window.currentVerseData = nextVerseData; 
+            
+            // 🌟 [찌꺼기 청소] 이전 구절의 조각(Step 2, 5)이 남아있지 않도록 리셋!
+            window.currentStep2PartIndex = undefined;
+            window.step2Parts = undefined;
+            window.currentStep5PartIndex = undefined;
+            window.step5Parts = undefined;
+
+            // 이름표 갱신
+            const chNum = window.currentBattleChapter;
+            const realVerseNum = window.trainStartVerse + window.currentVerseIdx;
+            window.currentStageId = `${chNum}-${realVerseNum}`; 
+            
+            loadStep(); // 화면 다시 그리기
+        } else {
+            // 모든 구절을 다 돌았다면 훈련 종료!
+            finishTraining();
+        }
+        return; 
+    }
+
+    // -----------------------------------------
+    // (이하 기존 일반 모드 로직 유지)
+    // -----------------------------------------
     // 다음 순번으로 이동 (0 -> 1 -> 2...)
     sequenceIndex++;
 
@@ -4819,10 +4896,6 @@ function nextStep() {
     } else {
         // 목록(stepSequence)에 적힌 다음 숫자를 currentStep에 넣음
         currentStep = stepSequence[sequenceIndex];
-
-        // ★ 중요: 건너뛴 단계에 따라 UI나 변수 초기화가 필요할 수 있음
-        // (예: 타워 게임 잔상 제거 등은 loadStep에서 처리하므로 OK)
-
         loadStep();
     }
 }
@@ -4867,58 +4940,93 @@ function getChosung(str) {
     return result;
 }
 
-/* [수정] 결과 화면 표시 (표시 오류 해결판) */
+/* [수정] 결과 화면 표시 (🌟 훈련 모드 분기 완벽 적용판) */
 function showClearScreen() {
     triggerConfetti();
     SoundEffect.playClear();
 
-    // 1. 시간 계산
+    // 1. 시간 계산 (훈련 모드에서도 이건 피드백으로 보여줍니다!)
     const endTime = Date.now();
     const duration = Math.floor((stageStartTime ? (endTime - stageStartTime) : 0) / 1000);
     const minutes = Math.floor(duration / 60).toString().padStart(2, '0');
     const seconds = (duration % 60).toString().padStart(2, '0');
 
-    // 2. 정확도 계산
+    // 2. 정확도 계산 (틀린 횟수 기반)
     let accuracy = Math.max(0, 100 - (wrongCount * 10));
 
-    // ============================================================
-    // ▼ [때를 따른 양식 보너스] 각인 주기 기반
-    // ============================================================
-    let baseGem = 10; // 기본 보상
-    let msg = "📖 [훈련] 완료!";
+    let displayGem = 0;
+    let streakDays = "-"; // 훈련 모드에서는 스트릭 텍스트를 숨기거나 '-'로 표시
+    let msg = "";
+    const isTraining = window.isTrainingMode;
 
-    // 현재 스테이지 ID
-    const sId = window.currentStageId;
+    const resultTitle = document.getElementById('result-title');
+    const resultStreakText = document.getElementById('result-streak-text');
+    const resultExpLabel = document.getElementById('result-exp-label');
+    const resultContinueBtn = document.getElementById('result-continue-btn');
 
-    // ★ 보너스 확인 (각인 주기 도래 시 자동 복구)
-    const timedBonus = getTimedBonus(sId);
-    const bonusCount = timedBonus.remaining;
-
-    if (bonusCount === 3) {
-        baseGem *= 5;
-        msg += " 🎁 (때를 따른 양식 × 5배)";
-    } else if (bonusCount === 2) {
-        baseGem *= 2;
-        msg += " 🔱 (때를 따른 양식 × 2배)";
-    } else if (bonusCount === 1) {
-        baseGem *= 1.5;
-        msg += " ⚔️ (때를 따른 양식 × 1.5배)";
+    // 🌟 [핵심 수술] 훈련 모드 vs 일반 모드 분기 처리
+    if (isTraining) {
+        msg = "⚔️ 집중 훈련 완료! (보상 없음)";
+        displayGem = '완료';
+        streakDays = "집중 훈련";
+        
     } else {
-        msg += " ⏳ (보너스 쿨타임)";
+        // ============================================================
+        // ▼ [일반 모드 전용] 때를 따른 양식 보너스 및 스트릭 업데이트
+        // ============================================================
+        let baseGem = 10; // 기본 보상
+        msg = "📖 [훈련] 완료!";
+
+        const sId = window.currentStageId;
+        const timedBonus = getTimedBonus(sId);
+        const bonusCount = timedBonus.remaining;
+
+        if (bonusCount === 3) {
+            baseGem *= 5;
+            msg += " 🎁 (때를 따른 양식 × 5배)";
+        } else if (bonusCount === 2) {
+            baseGem *= 2;
+            msg += " 🔱 (때를 따른 양식 × 2배)";
+        } else if (bonusCount === 1) {
+            baseGem *= 1.5;
+            msg += " ⚔️ (때를 따른 양식 × 1.5배)";
+        } else {
+            msg += " ⏳ (보너스 쿨타임)";
+        }
+
+        displayGem = Math.floor(baseGem * (accuracy / 100));
+        
+        // 3. 스트릭 업데이트 (일반 모드에서만 진짜로 기록을 올립니다!)
+        const streakInfo = updateStreak();
+        streakDays = streakInfo.days;
+        // ============================================================
     }
 
-    // 정확도 반영
-    let displayGem = Math.floor(baseGem * (accuracy / 100));
-    // ============================================================
-
-    // 3. 스트릭 업데이트
-    const streakInfo = updateStreak();
+    if (resultTitle) {
+        resultTitle.innerText = isTraining ? '⚔️ 집중 훈련 완료!' : '🎉 STAGE CLEAR!';
+    }
+    if (resultStreakText) {
+        resultStreakText.innerHTML = isTraining
+            ? '오늘의 훈련을 무사히 마쳤습니다.'
+            : `연속 <span id="streak-days">${streakDays}</span>일째 타오르는 중!`;
+    }
+    if (resultExpLabel) {
+        resultExpLabel.innerText = isTraining ? '📝 상태' : '💎 획득';
+    }
+    if (resultContinueBtn) {
+        resultContinueBtn.innerText = isTraining ? '홈으로 돌아가기 ▶' : '계속하기 ▶';
+    }
 
     // 4. UI 업데이트
     document.getElementById('result-time').innerText = `${minutes}:${seconds}`;
     document.getElementById('result-accuracy').innerText = `${accuracy}%`;
-    document.getElementById('result-exp').innerText = `+${displayGem}`;
-    document.getElementById('streak-days').innerText = streakInfo.days;
+    document.getElementById('result-exp').innerText = isTraining ? `${displayGem}` : `+${displayGem}`;
+    if (!isTraining) {
+        document.getElementById('streak-days').innerText = streakDays;
+    }
+    
+    // (선택) 만약 html에 result-msg 같은 ID가 있다면 msg 텍스트도 뿌려줄 수 있습니다.
+    // document.getElementById('result-msg').innerText = msg;
 
     document.getElementById('result-modal').classList.add('active');
 }
@@ -4979,12 +5087,23 @@ function updateStreak() {
 }
 
 // 모달 닫고 나가기
+// 모달 닫고 나가기 (🌟 훈련 모드 조기 퇴근 완벽 적용판)
 function closeResultModal() {
     document.getElementById('result-modal').classList.remove('active');
 
-    // 여기서 진짜 종료 처리
+    // 🌟 [훈련 모드 전용 퇴근 루트]
+    if (window.isTrainingMode) {
+        quitGame('home');
+
+        // 🌟 [가장 중요] 여기서 함수를 끝냅니다! 아래쪽 일반 보상 코드로 넘어가지 못하게 막습니다.
+        return; 
+    }
+    
+    // ----------------------------------------------------
+    // ▼ (여기서부터는 일반 모드일 때만 실행됩니다) ▼
+    // ----------------------------------------------------
     const clearedStageId = window.currentStageId;
-    stageClear('normal');
+    stageClear('normal'); // 보석과 승점 계산!
     quitGame();
     openStageSheetForStageId(clearedStageId);
     setTimeout(tryShowMilestone, 500);
@@ -5064,11 +5183,17 @@ function useLifeBread() {
 let isHintModalOpen = false;
 const HINT_COST = 10; // ★ 비용이 증가하지 않도록 상수로 고정합니다.
 
+function getCurrentHintCost() {
+    return isFocusedTrainingSession() ? 0 : HINT_COST;
+}
+
 function useHint() {
     if (isHintModalOpen) return;
 
-    if (myGems < HINT_COST) {
-        alert(`💎 보석이 부족합니다! (필요: ${HINT_COST})`);
+    const hintCost = getCurrentHintCost();
+
+    if (hintCost > 0 && myGems < hintCost) {
+        alert(`💎 보석이 부족합니다! (필요: ${hintCost})`);
         return;
     }
 
@@ -5081,14 +5206,18 @@ function useHint() {
     }
 
     // 안내 문구
-    if (!confirm(`💎 보석 ${HINT_COST}개를 소모하여 힌트를 보시겠습니까?`)) {
-        return;
+    if (hintCost > 0) {
+        if (!confirm(`💎 보석 ${hintCost}개를 소모하여 힌트를 보시겠습니까?`)) {
+            return;
+        }
     }
 
     // 보석 차감 및 입력 비활성화
-    myGems -= HINT_COST;
-    updateGemDisplay();
-    saveGameData();
+    if (hintCost > 0) {
+        myGems -= hintCost;
+        updateGemDisplay();
+        saveGameData();
+    }
     SoundEffect.playClick();
     disableGameInputs(true);
     isHintModalOpen = true;
@@ -5097,7 +5226,7 @@ function useHint() {
 
     // 힌트 모달 생성 및 표시
     showHintModal({
-        cost: HINT_COST,
+        cost: hintCost,
         onClose: () => {
             isHintModalOpen = false;
             disableGameInputs(false);
@@ -5191,7 +5320,7 @@ function showHintModal({ cost, onClose }) {
             <div style="text-align:right;">
                 <button id="hint-modal-close" style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
             </div>
-            <div style="margin-bottom:10px; font-size:1.1rem; color:#2c3e50;">💡 힌트 사용 (💎${cost})</div>
+            <div style="margin-bottom:10px; font-size:1.1rem; color:#2c3e50;">💡 힌트 사용 (${cost > 0 ? `💎${cost}` : '무료'})</div>
             <div style="margin-bottom:20px; color:#34495e;">${hintText}</div>
         </div>
     `;
@@ -7007,6 +7136,13 @@ function checkDailyLogin() {
 // [3] 스테이지 클리어 함수 (수정됨)
 stageClear = function (type) {
     try {
+        // 🌟 [핵심 수술] 훈련 모드 철벽 방어막!
+        // 훈련 모드일 때는 보석 계산도, 승점 계산도, 저장도 하지 않고 그냥 함수를 조용히 끝냅니다.
+        if (window.isTrainingMode) {
+            console.log("⚔️ 집중 훈련 완료! (보상 지급을 스킵합니다.)");
+            return; // ➔ 여기서 함수가 즉시 종료됩니다! (아래 계산 코드 무시)
+        }
+        // 🌟 ---------------------------------------------------------
         const sId = String(window.currentStageId);
 
         // 변수 호이스팅 문제 방지용 선언
@@ -7296,7 +7432,7 @@ stageClear = function (type) {
     } catch (error) {
         console.error("클리어 처리 중 오류:", error);
         alert("오류 발생: " + error.message);
-        quitGame();
+        quitGame(isFocusedTrainingSession() ? 'home' : 'map');
     }
 };
 
@@ -7596,8 +7732,8 @@ function confirmQuit() {
             }
         }
 
-        // 3. 화면 초기화 및 맵으로 돌아가기 (진짜 종료)
-        quitGame();
+        // 3. 화면 초기화 및 원래 진입 화면으로 돌아가기 (진짜 종료)
+        quitGame(isFocusedTrainingSession() ? 'home' : 'map');
     }
 }
 
@@ -10471,4 +10607,203 @@ function closeChapterTitle() {
             modal.style.display = 'none';
         }
     });
+}
+
+// 🌟 훈련 모드 전환 변수
+let currentGameModeIndex = 0; // 0: 실전(여정 시작), 1: 훈련 모드
+
+// 🌟 좌우 화살표를 누르면 실행되는 함수
+function toggleGameMode(direction) {
+    const modes = [
+        { text: "👑 여정 시작", action: startGame, bg: "" }, // 기존 CSS 스타일 유지
+        { text: "⚔️ 집중 훈련", action: startTrainingMode, bg: "linear-gradient(to bottom, #2c3e50, #34495e)" } // 훈련 모드용 차분한 색상
+    ];
+    
+    // 인덱스 변경 (좌우 루프)
+    currentGameModeIndex += direction;
+    if (currentGameModeIndex < 0) currentGameModeIndex = modes.length - 1;
+    if (currentGameModeIndex >= modes.length) currentGameModeIndex = 0;
+    
+    const currentMode = modes[currentGameModeIndex];
+    const btn = document.getElementById('start-journey-btn');
+    
+    // 버튼 텍스트와 클릭 시 실행될 함수 변경!
+    btn.innerHTML = currentMode.text;
+    btn.onclick = currentMode.action;
+    if (currentMode.bg) {
+        btn.style.background = currentMode.bg;
+        btn.style.borderBottom = "5px solid #2c3e50";
+    } else {
+        btn.style.background = ""; // 기본값 복구
+        btn.style.borderBottom = "";
+    }
+    
+    // 스르륵 바뀌는 쫀득한 애니메이션 효과
+    if (typeof gsap !== 'undefined') {
+        gsap.fromTo(btn, { scale: 0.9, opacity: 0.8 }, { scale: 1, opacity: 1, duration: 0.2, ease: "back.out(2)" });
+    }
+}
+
+// 🌟 훈련 모드 전용 변수
+let selectedTrainingStep = 1; // 기본은 Step 1
+
+// 1. 훈련 모드 모달 열기 (임시 함수였던 것을 교체!)
+function startTrainingMode() {
+    const modal = document.getElementById('training-modal');
+    modal.style.display = 'flex';
+    
+    // 모달 애니메이션
+    gsap.fromTo(modal.firstElementChild, { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(1.5)" });
+
+    // 장(Chapter) 목록 세팅하기
+    initTrainingChapters();
+    
+    // 스텝 버튼 클릭 이벤트 연결
+    const stepBtns = document.querySelectorAll('.train-step-btn');
+    stepBtns.forEach(btn => {
+        btn.onclick = (e) => {
+            // 모든 버튼을 회색(비활성)으로
+            stepBtns.forEach(b => {
+                b.style.background = '#7f8c8d';
+                b.classList.remove('active');
+            });
+            // 방금 누른 버튼만 파란색(활성)으로
+            e.target.style.background = '#3498db';
+            e.target.classList.add('active');
+            selectedTrainingStep = parseInt(e.target.getAttribute('data-step'));
+        };
+    });
+}
+
+function closeTrainingModal() {
+    const modal = document.getElementById('training-modal');
+    gsap.to(modal.firstElementChild, { scale: 0.8, opacity: 0, duration: 0.2, onComplete: () => {
+        modal.style.display = 'none';
+    }});
+}
+
+// 2. 성경 데이터(bibleData)를 바탕으로 장(Chapter) 목록 채우기
+function initTrainingChapters() {
+    const chapterSelect = document.getElementById('train-chapter-select');
+    chapterSelect.innerHTML = ''; // 초기화
+
+    // bibleData 객체에서 데이터가 있는 장만 뽑아옵니다.
+    for (let i = 1; i <= 22; i++) {
+        if (typeof bibleData !== 'undefined' && bibleData[i] && bibleData[i].length > 0) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.innerText = `요한계시록 ${i}장`;
+            chapterSelect.appendChild(option);
+        }
+    }
+    
+    // 첫 번째 장의 절(Verse) 목록 업데이트
+    updateTrainingVerses();
+}
+
+// 3. 장을 바꿀 때마다 시작/끝 절(Verse) 목록 업데이트
+function updateTrainingVerses() {
+    const chapter = document.getElementById('train-chapter-select').value;
+    const startSelect = document.getElementById('train-start-verse');
+    const endSelect = document.getElementById('train-end-verse');
+    
+    startSelect.innerHTML = '';
+    endSelect.innerHTML = '';
+
+    const maxVerses = bibleData[chapter].length;
+
+    for (let i = 1; i <= maxVerses; i++) {
+        const startOpt = document.createElement('option');
+        startOpt.value = i;
+        startOpt.innerText = `${i}절`;
+        startSelect.appendChild(startOpt);
+
+        const endOpt = document.createElement('option');
+        endOpt.value = i;
+        endOpt.innerText = `${i}절`;
+        // 끝 절은 기본적으로 맨 마지막 절로 세팅
+        if (i === maxVerses) endOpt.selected = true; 
+        endSelect.appendChild(endOpt);
+    }
+}
+
+// 🌟 [추가] 훈련 모드를 판별하는 핵심 스위치!
+window.isTrainingMode = false;
+window.trainingTargetStep = 1;
+
+// 🌟 [교체] 모달창에서 [훈련 시작!] 버튼을 눌렀을 때 실행되는 진짜 함수 (엔진 완벽 동기화판)
+function executeTraining() {
+    const chapterNum = parseInt(document.getElementById('train-chapter-select').value);
+    const startVerse = parseInt(document.getElementById('train-start-verse').value);
+    const endVerse = parseInt(document.getElementById('train-end-verse').value);
+
+    if (startVerse > endVerse) {
+        alert("⚠️ 시작 절이 끝 절보다 클 수 없습니다.");
+        return;
+    }
+
+    closeTrainingModal();
+
+    // 1. 훈련 모드 스위치 ON
+    window.isGamePlaying = true;
+    window.isTrainingMode = true;
+    window.trainingTargetStep = selectedTrainingStep;
+    window.trainingMode = 'training'; // 기타 시스템 에러 방지용 꼬리표
+
+    // 2. 훈련 범위 데이터 장전
+    window.currentBattleData = bibleData[chapterNum].slice(startVerse - 1, endVerse);
+    window.currentBattleChapter = chapterNum;
+    window.currentVerseIdx = 0; 
+    window.trainStartVerse = startVerse; // 🌟 [추가] 시작 절 번호를 시스템에 기억시킵니다!
+    
+    // 🌟 3. [핵심 수술 1] window 꼬리표를 떼고 코어 엔진이 진짜로 찾는 변수에 직접 주입합니다!
+    trainingVerseData = window.currentBattleData[window.currentVerseIdx]; 
+    window.currentStageId = `${chapterNum}-${startVerse + window.currentVerseIdx}`; 
+
+    // 🌟 4. [핵심 수술 2] 스텝을 1개로 고정하고, 화면의 숫자(1/6 등)도 1/1로 강제 업데이트!
+    stepSequence = [window.trainingTargetStep]; 
+    sequenceIndex = 0;
+    currentStep = stepSequence[0];
+    
+    const totalStepEl = document.getElementById('total-step-num');
+    if (totalStepEl) totalStepEl.innerText = stepSequence.length; // 이제 1/1 로 뜹니다!
+
+    // 파트 분할 데이터 초기화 (에러 방지용)
+    window.currentStep2PartIndex = undefined;
+    window.step2Parts = undefined;
+    window.currentStep5PartIndex = undefined;
+    window.step5Parts = undefined;
+
+    // 5. 체력 및 찌꺼기 초기화
+    playerHearts = (typeof maxPlayerHearts !== 'undefined') ? maxPlayerHearts : 5; 
+    earnedGems = 0;
+    earnedScore = 0;
+    wrongCount = 0;
+    stageStartTime = Date.now();
+    maxBossHp = undefined; 
+    currentBossHp = undefined;
+
+    // 6. 화면 테마 전환 (밝은 배경)
+    const homeScreen = document.querySelector('.home-screen') || document.getElementById('home-screen');
+    const mapScreen = document.getElementById('map-screen');
+    const gameScreen = document.getElementById('game-screen');
+
+    document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
+    if (homeScreen) homeScreen.style.display = '';
+    if (mapScreen) mapScreen.classList.remove('active');
+    if (gameScreen) {
+        gameScreen.classList.add('active', 'mode-training', 'is-training-mode');
+    }
+
+    const bossAvatar = document.querySelector('.boss-avatar');
+    if (bossAvatar) bossAvatar.style.display = 'none';
+
+    // 🌟 7. UI 세팅 및 내용물 채워넣기 (일반 시작 로직 완벽 복제)
+    if (typeof recalculateMaxHearts === 'function') recalculateMaxHearts();
+    if (typeof updateBattleUI === 'function') updateBattleUI();
+    if (typeof loadStep === 'function') loadStep(); // 알맹이와 버튼을 그리는 마법의 함수!
+
+    if (typeof showReadAloudToast === 'function') {
+        showReadAloudToast(`⚔️ 집중 훈련: Step ${window.trainingTargetStep} 반복 모드`);
+    }
 }

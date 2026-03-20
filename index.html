@@ -468,9 +468,15 @@
             <div style="font-size:0.85rem; line-height:1.5;">월요일 00:00에 주간 랭킹이 초기화됩니다</div>
         </div>
 
-        <button id="start-journey-btn" class="btn-main-action" onclick="startGame()">
-            여정 시작
-        </button>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin: 15px 0;">
+            <button onclick="toggleGameMode(-1)" style="background: none; border: none; color: #bdc3c7; font-size: 2rem; cursor: pointer; padding: 0; transition: transform 0.1s;">◀</button>
+            
+            <button id="start-journey-btn" class="btn-main-action" onclick="startGame()" style="margin: 0; min-width: 220px; transition: all 0.2s ease;">
+                👑 여정 시작
+            </button>
+            
+            <button onclick="toggleGameMode(1)" style="background: none; border: none; color: #bdc3c7; font-size: 2rem; cursor: pointer; padding: 0; transition: transform 0.1s;">▶</button>
+        </div>
 
         <!-- 여정 시작 오버레이 -->
         <div id="journey-overlay"
@@ -986,11 +992,11 @@
 
     <div id="result-modal" class="modal-overlay">
         <div class="result-card">
-            <div class="result-header">🎉 STAGE CLEAR!</div>
+            <div class="result-header" id="result-title">🎉 STAGE CLEAR!</div>
 
             <div class="streak-container">
                 <div class="streak-icon">🔥</div>
-                <div class="streak-text">연속 <span id="streak-days">1</span>일째 타오르는 중!</div>
+                <div class="streak-text" id="result-streak-text">연속 <span id="streak-days">1</span>일째 타오르는 중!</div>
             </div>
 
             <div class="stats-grid">
@@ -1003,12 +1009,12 @@
                     <div class="stat-value" id="result-accuracy">100%</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-label">💎 획득</div>
+                    <div class="stat-label" id="result-exp-label">💎 획득</div>
                     <div class="stat-value" id="result-exp">+50</div>
                 </div>
             </div>
 
-            <button class="btn-continue" onclick="closeResultModal()">계속하기 ▶</button>
+            <button class="btn-continue" id="result-continue-btn" onclick="closeResultModal()">계속하기 ▶</button>
         </div>
     </div>
 
@@ -1431,6 +1437,43 @@
             </div>
         </div>
     </div>
+    <div id="training-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; justify-content:center; align-items:center;">
+    <div style="background:#2c3e50; border:2px solid #3498db; border-radius:15px; padding:25px; width:85%; max-width:350px; text-align:center; color:#ecf0f1; position:relative; box-shadow: 0 10px 25px rgba(0,0,0,0.6);">
+        
+        <button onclick="closeTrainingModal()" style="position:absolute; top:10px; right:15px; background:none; border:none; color:#bdc3c7; font-size:1.8rem; cursor:pointer;">&times;</button>
+        
+        <h3 style="color:#3498db; margin-top:0; margin-bottom:5px; font-size:1.5rem;">⚔️ 집중 훈련소</h3>
+        <p style="font-size:0.8rem; color:#e74c3c; margin-bottom:20px; font-weight:bold;">※ 훈련 모드에서는 리그 승점과 보석이 지급되지 않습니다.</p>
+
+        <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:10px; margin-bottom:15px;">
+            <div style="font-size:0.9rem; color:#bdc3c7; margin-bottom:8px; text-align:left;">📖 훈련 범위 선택</div>
+            
+            <select id="train-chapter-select" onchange="updateTrainingVerses()" style="width:100%; padding:8px; border-radius:5px; background:#34495e; color:#fff; border:1px solid #7f8c8d; margin-bottom:10px; font-size:1rem;">
+                </select>
+            
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                <select id="train-start-verse" style="flex:1; padding:8px; border-radius:5px; background:#34495e; color:#fff; border:1px solid #7f8c8d; font-size:1rem;"></select>
+                <span style="color:#bdc3c7;">~</span>
+                <select id="train-end-verse" style="flex:1; padding:8px; border-radius:5px; background:#34495e; color:#fff; border:1px solid #7f8c8d; font-size:1rem;"></select>
+            </div>
+        </div>
+
+        <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:10px; margin-bottom:20px;">
+            <div style="font-size:0.9rem; color:#bdc3c7; margin-bottom:10px; text-align:left;">🏃 훈련 스텝 선택</div>
+            <div id="train-step-buttons" style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;">
+                <button class="train-step-btn active" data-step="1" style="flex:1; min-width:30%; padding:8px; background:#3498db; color:#fff; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">Step 1</button>
+                <button class="train-step-btn" data-step="2" style="flex:1; min-width:30%; padding:8px; background:#7f8c8d; color:#fff; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">Step 2</button>
+                <button class="train-step-btn" data-step="3" style="flex:1; min-width:30%; padding:8px; background:#7f8c8d; color:#fff; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">Step 3</button>
+                <button class="train-step-btn" data-step="4" style="flex:1; min-width:30%; padding:8px; background:#7f8c8d; color:#fff; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">Step 4</button>
+                <button class="train-step-btn" data-step="5" style="flex:1; min-width:30%; padding:8px; background:#7f8c8d; color:#fff; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">Step 5</button>
+            </div>
+        </div>
+
+        <button onclick="executeTraining()" style="width:100%; padding:12px; background:#e67e22; color:white; font-size:1.2rem; font-weight:bold; border:none; border-radius:8px; cursor:pointer; box-shadow:0 4px 0 #d35400;">
+            훈련 시작!
+        </button>
+    </div>
+</div>
 </body>
 
 </html>
