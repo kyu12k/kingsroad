@@ -468,14 +468,16 @@
             <div style="font-size:0.85rem; line-height:1.5;">월요일 00:00에 주간 랭킹이 초기화됩니다</div>
         </div>
 
-        <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin: 15px 0;">
-            <button onclick="toggleGameMode(-1)" style="background: none; border: none; color: #bdc3c7; font-size: 2rem; cursor: pointer; padding: 0; transition: transform 0.1s;">◀</button>
-            
-            <button id="start-journey-btn" class="btn-main-action" onclick="startGame()" style="margin: 0; min-width: 220px; transition: all 0.2s ease;">
-                👑 여정 시작
-            </button>
-            
-            <button onclick="toggleGameMode(1)" style="background: none; border: none; color: #bdc3c7; font-size: 2rem; cursor: pointer; padding: 0; transition: transform 0.1s;">▶</button>
+        <div class="home-action-row">
+            <div class="home-mode-carousel">
+                <button onclick="toggleGameMode(-1)" style="background: none; border: none; color: #bdc3c7; font-size: 2rem; cursor: pointer; padding: 0; transition: transform 0.1s;">◀</button>
+
+                <button id="start-journey-btn" class="btn-main-action" onclick="startGame()" style="margin: 0; min-width: 220px; transition: all 0.2s ease;">
+                    👑 여정 시작
+                </button>
+
+                <button onclick="toggleGameMode(1)" style="background: none; border: none; color: #bdc3c7; font-size: 2rem; cursor: pointer; padding: 0; transition: transform 0.1s;">▶</button>
+            </div>
         </div>
 
         <!-- 여정 시작 오버레이 -->
@@ -932,16 +934,18 @@
                 <div class="step-indicator">Step <span id="current-step-num">1</span>/<span id="total-step-num">6</span>
                 </div>
                 <div id="training-cycle-indicator" style="font-size:0.9rem; color:#7f8c8d; font-weight:bold;">사이클 1/1</div>
+                <div id="hardship-header-meta" class="hardship-header-meta hidden"></div>
             </div>
 
             <div style="display:flex; gap:12px; align-items:center;">
+                <div id="hardship-score-chip" class="hardship-score-chip hidden">승점 0</div>
 
                 <button onclick="useHint()" class="item-btn" id="training-hint-btn"
                     style="background:#f39c12; border-color:#d35400; color:white; margin:0;">
                     💡 힌트 <span id="training-hint-cost" style="font-size:0.7rem; margin-left:2px;">(💎10)</span>
                 </button>
 
-                <div style="font-size:1.2rem; display:flex; align-items:center; margin:0;">
+                <div id="training-heart-wrap" style="font-size:1.2rem; display:flex; align-items:center; margin:0;">
                     ❤️ <span id="training-hearts" style="font-weight:bold; margin-left:5px;">5</span>
                 </div>
 
@@ -991,6 +995,43 @@
             <div class="block-pool" id="block-pool"></div>
         </div>
 
+    </div>
+
+    <div id="hardship-mode-modal" class="modal-overlay" style="z-index: 650;">
+        <div class="result-card hardship-mode-card">
+            <div style="text-align: right;">
+                <button onclick="closeHardshipModeSelect()"
+                    style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
+            </div>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="margin:0; color:#2c3e50;">고난 길</h2>
+                <p style="color:#7f8c8d; font-size:0.95rem; margin-top:8px; line-height:1.5;">요한계시록 404절을 중복 없이 무작위로 훈련합니다.</p>
+            </div>
+
+            <button class="mode-btn hardship-mode-btn hardship-mode-a" onclick="startHardshipFromModal('endurance')">
+                <div class="mode-icon">🕊️</div>
+                <div class="mode-info">
+                    <div class="mode-title">모드 A · 인내의 고난</div>
+                    <div class="mode-desc">Step 1 방식으로 확인만 진행, 하트·보상 없음</div>
+                </div>
+            </button>
+
+            <button class="mode-btn hardship-mode-btn hardship-mode-b" onclick="startHardshipFromModal('address')">
+                <div class="mode-icon">🎯</div>
+                <div class="mode-info">
+                    <div class="mode-title">모드 B · 주소의 고난</div>
+                    <div class="mode-desc">내용을 보고 장·절을 슬롯처럼 맞혀 승점을 획득</div>
+                </div>
+            </button>
+
+            <button class="mode-btn hardship-mode-btn hardship-mode-c" onclick="startHardshipFromModal('memory')">
+                <div class="mode-icon">⌨️</div>
+                <div class="mode-info">
+                    <div class="mode-title">모드 C · 망각의 고난</div>
+                    <div class="mode-desc">주소만 보고 전체 말씀을 빈칸 타이핑으로 인출</div>
+                </div>
+            </button>
+        </div>
     </div>
 
     <div id="result-modal" class="modal-overlay">

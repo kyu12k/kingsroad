@@ -3461,6 +3461,11 @@ function updateBattleUI() {
     console.log(`[updateBattleUI] 호출됨 - maxBossHp=${maxBossHp}, currentBossHp=${currentBossHp}`);
     updateHintButtonLabels();
 
+    if (window.isHardshipMode) {
+        updateHardshipHeader();
+        return;
+    }
+
     // 1. 보스 체력바 업데이트 (세그먼트 방식)
     if (typeof maxBossHp !== 'undefined' && maxBossHp > 0) {
         const hpContainer = document.querySelector('.hp-container');
@@ -3703,6 +3708,10 @@ function clearCheckpoint() {
 function quitGame(destination = 'map') {
     const targetScreen = (destination === 'home') ? 'home' : 'map';
     window.isTrainingMode = false; // 🌟 [추가] 포기하고 나갈 때는 훈련 모드 스위치 확실히 끄기!
+    if (typeof resetHardshipSessionState === 'function') {
+        resetHardshipSessionState();
+    }
+    window.isHardshipMode = false;
     window.isGamePlaying = false; // ★ 핵심 방어막: 게임 종료 선언! 유령 타이머 차단!
     window.trainingMode = null;
     // 1. 스크롤 게임 정지 (안전장치)
@@ -3717,7 +3726,7 @@ function quitGame(destination = 'map') {
     // 2. 전투 화면 정리
     const gameScreen = document.getElementById('game-screen');
     if (gameScreen) {
-        gameScreen.classList.remove('active', 'mode-training', 'is-training-mode');
+        gameScreen.classList.remove('active', 'mode-training', 'is-training-mode', 'mode-hardship');
     }
 
     // 3. 모달 닫기 (안전장치)
@@ -5085,7 +5094,7 @@ function closeResultModal() {
     document.getElementById('result-modal').classList.remove('active');
 
     // 🌟 [훈련 모드 전용 퇴근 루트]
-    if (window.isTrainingMode) {
+    if (window.isTrainingMode || window.isHardshipMode) {
         quitGame('home');
 
         // 🌟 [가장 중요] 여기서 함수를 끝냅니다! 아래쪽 일반 보상 코드로 넘어가지 못하게 막습니다.
@@ -5177,6 +5186,10 @@ let isHintModalOpen = false;
 const HINT_COST = 10; // ★ 비용이 증가하지 않도록 상수로 고정합니다.
 
 function getCurrentHintCost() {
+    if (window.isHardshipMode) {
+        return hardshipState.mode === 'memory' ? HINT_COST : 0;
+    }
+
     return isFocusedTrainingSession() ? 0 : HINT_COST;
 }
 
@@ -5193,6 +5206,12 @@ function updateHintButtonLabels() {
 
 function useHint() {
     if (isHintModalOpen) return;
+
+    if (window.isHardshipMode) {
+        if (hardshipState.mode !== 'memory') return;
+        useHardshipMemoryHint();
+        return;
+    }
 
     const hintCost = getCurrentHintCost();
 
@@ -7714,7 +7733,10 @@ function cancelQuit() {
 /* 🌟 [통합 버그 픽스] 포기 의사를 묻고, 확인 시 자원을 청소하며 나가는 함수 */
 function confirmQuit() {
     // 1. 유저에게 의사를 먼저 묻습니다. (첫 번째 함수의 심플한 알림창)
-    const wantsToQuit = confirm("정말 이 스테이지를 포기하시겠습니까?\n지금까지 진행한 상황은 저장되지 않습니다.");
+    const quitMessage = window.isHardshipMode
+        ? "정말 고난 길 세션을 종료하시겠습니까?\n현재 세션의 진행 순서는 저장되지 않습니다."
+        : "정말 이 스테이지를 포기하시겠습니까?\n지금까지 진행한 상황은 저장되지 않습니다.";
+    const wantsToQuit = confirm(quitMessage);
 
     // 2. 유저가 '확인'을 눌렀을 때만 청소 및 종료 실행!
     if (wantsToQuit) {
@@ -7739,7 +7761,7 @@ function confirmQuit() {
         }
 
         // 3. 화면 초기화 및 원래 진입 화면으로 돌아가기 (진짜 종료)
-        quitGame(isFocusedTrainingSession() ? 'home' : 'map');
+        quitGame(window.isHardshipMode ? 'home' : (isFocusedTrainingSession() ? 'home' : 'map'));
     }
 }
 
@@ -10615,14 +10637,15 @@ function closeChapterTitle() {
     });
 }
 
-// 🌟 훈련 모드 전환 변수
-let currentGameModeIndex = 0; // 0: 실전(여정 시작), 1: 훈련 모드
+// 🌟 홈 캐러셀 모드 전환 변수
+let currentGameModeIndex = 0; // 0: 여정 시작, 1: 집중 훈련, 2: 고난 길
 
 // 🌟 좌우 화살표를 누르면 실행되는 함수
 function toggleGameMode(direction) {
     const modes = [
         { text: "👑 여정 시작", action: startGame, bg: "" }, // 기존 CSS 스타일 유지
-        { text: "⚔️ 집중 훈련", action: startTrainingMode, bg: "linear-gradient(to bottom, #2c3e50, #34495e)" } // 훈련 모드용 차분한 색상
+        { text: "⚔️ 집중 훈련", action: startTrainingMode, bg: "linear-gradient(to bottom, #2c3e50, #34495e)" },
+        { text: "⛰️ 고난 길", action: openHardshipModeSelect, bg: "linear-gradient(135deg, #5c4634 0%, #2f3b4a 100%)" }
     ];
     
     // 인덱스 변경 (좌우 루프)
@@ -10920,4 +10943,930 @@ function executeTraining() {
     if (typeof showReadAloudToast === 'function') {
         showReadAloudToast(`⚔️ 집중 훈련: Step ${window.trainingTargetStep} 반복 모드`);
     }
+}
+
+/* =========================================
+   [시스템: 고난 길 모드]
+   ========================================= */
+
+window.isHardshipMode = false;
+
+const HARDSHIP_MODES = {
+    endurance: {
+        title: '인내의 고난',
+        icon: '🕊️',
+        summary: 'Step 1 방식으로 확인만 진행합니다.'
+    },
+    address: {
+        title: '주소의 고난',
+        icon: '🎯',
+        summary: '내용을 보고 장과 절을 맞힙니다.'
+    },
+    memory: {
+        title: '망각의 고난',
+        icon: '⌨️',
+        summary: '주소만 보고 전체 구절을 인출합니다.'
+    }
+};
+
+function createEmptyHardshipState() {
+    return {
+        active: false,
+        mode: null,
+        queue: [],
+        cursor: 0,
+        currentVerse: null,
+        studiedCount: 0,
+        answeredCount: 0,
+        score: 0,
+        feedback: null,
+        locked: false,
+        pendingTimeoutId: null,
+        revealIndex: 0,
+        selectedChapter: 1,
+        selectedVerse: 1,
+        memorySlots: [],
+        revealedHints: [],
+        memoryTypedText: ''
+    };
+}
+
+let hardshipState = createEmptyHardshipState();
+
+const HARDSHIP_VERSES = [];
+for (let hardshipChapter = 1; hardshipChapter <= 22; hardshipChapter++) {
+    const chapterVerses = bibleData[hardshipChapter] || [];
+    for (let hardshipVerseIndex = 0; hardshipVerseIndex < chapterVerses.length; hardshipVerseIndex++) {
+        const verseData = chapterVerses[hardshipVerseIndex];
+        HARDSHIP_VERSES.push({
+            id: `${hardshipChapter}-${hardshipVerseIndex + 1}`,
+            chapter: hardshipChapter,
+            verse: hardshipVerseIndex + 1,
+            text: verseData.text,
+            verseText: verseData.text,
+            chunks: Array.isArray(verseData.chunks) ? verseData.chunks : String(verseData.text || '').split(' '),
+            label: `계 ${hardshipChapter}:${hardshipVerseIndex + 1}`
+        });
+    }
+}
+
+const HARDSHIP_VERSE_MAP = HARDSHIP_VERSES.reduce((accumulator, verse) => {
+    accumulator[verse.id] = verse;
+    return accumulator;
+}, {});
+
+function shuffleHardshipQueue(items) {
+    const shuffled = items.slice();
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const swapIndex = Math.floor(Math.random() * (i + 1));
+        const temp = shuffled[i];
+        shuffled[i] = shuffled[swapIndex];
+        shuffled[swapIndex] = temp;
+    }
+    return shuffled;
+}
+
+function isHardshipFillableChar(character) {
+    return /[0-9A-Za-z가-힣]/.test(character);
+}
+
+function getHardshipModeMeta(mode) {
+    return HARDSHIP_MODES[mode] || HARDSHIP_MODES.endurance;
+}
+
+function clearHardshipPendingTimeout() {
+    if (hardshipState.pendingTimeoutId) {
+        clearTimeout(hardshipState.pendingTimeoutId);
+        hardshipState.pendingTimeoutId = null;
+    }
+}
+
+function getHardshipRemainingCount() {
+    return Math.max(hardshipState.queue.length - hardshipState.cursor, 0);
+}
+
+function buildHardshipFeedbackHtml() {
+    if (!hardshipState.feedback) return '';
+    return `<div class="hardship-feedback ${hardshipState.feedback.type}">${hardshipState.feedback.message}</div>`;
+}
+
+function resetHardshipSessionState() {
+    clearHardshipPendingTimeout();
+    hardshipState = createEmptyHardshipState();
+    const gameScreen = document.getElementById('game-screen');
+    if (gameScreen) {
+        gameScreen.classList.remove('hide-hint-force');
+    }
+
+    const stepIndicator = document.querySelector('.training-header .step-indicator');
+    if (stepIndicator) stepIndicator.style.display = '';
+
+    const cycleIndicator = document.getElementById('training-cycle-indicator');
+    if (cycleIndicator) cycleIndicator.innerText = '사이클 1/1';
+
+    const hardshipMeta = document.getElementById('hardship-header-meta');
+    if (hardshipMeta) {
+        hardshipMeta.classList.add('hidden');
+        hardshipMeta.textContent = '';
+    }
+
+    const hardshipScoreChip = document.getElementById('hardship-score-chip');
+    if (hardshipScoreChip) {
+        hardshipScoreChip.classList.add('hidden');
+        hardshipScoreChip.textContent = '승점 0';
+    }
+
+    const hintBtn = document.getElementById('training-hint-btn');
+    const battleHintBtn = document.getElementById('battle-hint-btn');
+    if (hintBtn) {
+        hintBtn.style.display = '';
+        hintBtn.hidden = false;
+        hintBtn.disabled = false;
+        hintBtn.innerHTML = '💡 힌트 <span id="training-hint-cost" style="font-size:0.7rem; margin-left:2px;">(💎10)</span>';
+    }
+    if (battleHintBtn) {
+        battleHintBtn.style.display = '';
+        battleHintBtn.hidden = false;
+        battleHintBtn.disabled = false;
+    }
+
+    const trainingHeartWrap = document.getElementById('training-heart-wrap');
+    if (trainingHeartWrap) {
+        trainingHeartWrap.style.display = 'flex';
+        trainingHeartWrap.style.alignItems = 'center';
+        trainingHeartWrap.style.justifyContent = '';
+        trainingHeartWrap.style.animation = 'none';
+        trainingHeartWrap.innerHTML = '❤️ <span id="training-hearts" style="font-weight:bold; margin-left:5px;">5</span>';
+    }
+
+    const field = document.querySelector('.battle-field');
+    const control = document.querySelector('.battle-control');
+    if (field && window.isHardshipMode) {
+        field.innerHTML = '<div class="verse-indicator" id="verse-index">준비 중...</div><div class="answer-zone" id="answer-zone"><span class="placeholder-text" id="placeholder-text">...</span></div>';
+    }
+    if (control && window.isHardshipMode) {
+        control.innerHTML = '<div class="block-pool" id="block-pool"></div>';
+    }
+}
+
+function openHardshipModeSelect() {
+    const modal = document.getElementById('hardship-mode-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeHardshipModeSelect() {
+    const modal = document.getElementById('hardship-mode-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+function startHardshipFromModal(mode) {
+    closeHardshipModeSelect();
+    startHardshipSession(mode);
+}
+
+function startHardshipSession(mode) {
+    const modeMeta = getHardshipModeMeta(mode);
+
+    clearHardshipPendingTimeout();
+    hardshipState = createEmptyHardshipState();
+    hardshipState.active = true;
+    hardshipState.mode = mode;
+    hardshipState.queue = shuffleHardshipQueue(HARDSHIP_VERSES.map(verse => verse.id));
+
+    if (typeof recalculateMaxHearts === 'function') {
+        recalculateMaxHearts();
+    }
+
+    window.isGamePlaying = true;
+    window.isTrainingMode = false;
+    window.isHardshipMode = true;
+    window.trainingMode = 'hardship';
+
+    playerHearts = (typeof maxPlayerHearts !== 'undefined') ? maxPlayerHearts : 5;
+    wrongCount = 0;
+    stageStartTime = Date.now();
+    currentBossHp = undefined;
+    maxBossHp = undefined;
+
+    const gameScreen = document.getElementById('game-screen');
+    document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
+    if (gameScreen) {
+        gameScreen.classList.add('active', 'mode-training', 'mode-hardship');
+        if (mode === 'memory') gameScreen.classList.remove('hide-hint-force');
+        else gameScreen.classList.add('hide-hint-force');
+    }
+
+    const bossAvatar = document.querySelector('.boss-avatar');
+    if (bossAvatar) bossAvatar.style.display = 'none';
+
+    updateBattleUI();
+    loadNextHardshipVerse();
+
+    if (typeof showReadAloudToast === 'function') {
+        showReadAloudToast(`${modeMeta.icon} ${modeMeta.title} 시작`);
+    }
+}
+
+function updateHardshipHeader() {
+    const stepIndicator = document.querySelector('.training-header .step-indicator');
+    const cycleIndicator = document.getElementById('training-cycle-indicator');
+    const hardshipMeta = document.getElementById('hardship-header-meta');
+    const hardshipScoreChip = document.getElementById('hardship-score-chip');
+    const hintBtn = document.getElementById('training-hint-btn');
+    const battleHintBtn = document.getElementById('battle-hint-btn');
+    const heartEl = document.getElementById('training-hearts');
+    const heartParent = heartEl ? heartEl.parentElement : null;
+
+    if (!window.isHardshipMode || !hardshipState.active) {
+        if (stepIndicator) stepIndicator.style.display = '';
+        if (hardshipMeta) hardshipMeta.classList.add('hidden');
+        if (hardshipScoreChip) hardshipScoreChip.classList.add('hidden');
+        return;
+    }
+
+    const modeMeta = getHardshipModeMeta(hardshipState.mode);
+    const remaining = getHardshipRemainingCount();
+    const lifeBreadCnt = (typeof inventory !== 'undefined' && inventory.lifeBread) ? inventory.lifeBread : 0;
+    const heartIcon = playerHearts > 0 ? '❤️' : '💔';
+    const isDanger = playerHearts <= 2;
+    const lifeBreadBtnHtml = `
+        <span onclick="event.stopPropagation(); useBattleItem('lifeBread')"
+              style="cursor:pointer; margin-left:10px; font-size:0.9rem; display:inline-flex; align-items:center;
+                     background:#fff; color:#2c3e50; padding:4px 12px; border-radius:20px;
+                     border:1px solid #bdc3c7; box-shadow:0 2px 5px rgba(0,0,0,0.1); transition:transform 0.1s;">
+            🍞 <span style="margin-left:5px; font-weight:bold; font-size:1rem;">${lifeBreadCnt}</span>
+        </span>
+    `;
+
+    if (stepIndicator) stepIndicator.style.display = 'none';
+    if (cycleIndicator) cycleIndicator.innerText = `${modeMeta.icon} ${modeMeta.title}`;
+
+    if (hardshipMeta) {
+        hardshipMeta.classList.remove('hidden');
+        hardshipMeta.textContent = hardshipState.mode === 'endurance'
+            ? `확인 ${hardshipState.studiedCount}절 · 남은 ${remaining}절`
+            : `진행 ${hardshipState.answeredCount}절 · 남은 ${remaining}절`;
+    }
+
+    if (hardshipScoreChip) {
+        if (hardshipState.mode === 'endurance') {
+            hardshipScoreChip.classList.add('hidden');
+        } else {
+            hardshipScoreChip.classList.remove('hidden');
+            hardshipScoreChip.textContent = `승점 ${hardshipState.score}`;
+        }
+    }
+
+    if (hintBtn) {
+        if (hardshipState.mode === 'memory') {
+            hintBtn.style.display = 'inline-flex';
+            hintBtn.hidden = false;
+            hintBtn.disabled = false;
+            hintBtn.innerHTML = '💡 글자 힌트 <span id="training-hint-cost" style="font-size:0.7rem; margin-left:2px;">(💎10)</span>';
+        } else {
+            hintBtn.style.display = 'none';
+            hintBtn.hidden = true;
+            hintBtn.disabled = true;
+        }
+    }
+
+    const gameScreen = document.getElementById('game-screen');
+    if (gameScreen) {
+        if (hardshipState.mode === 'memory') gameScreen.classList.remove('hide-hint-force');
+        else gameScreen.classList.add('hide-hint-force');
+    }
+
+    if (battleHintBtn) {
+        battleHintBtn.style.display = hardshipState.mode === 'memory' ? '' : 'none';
+        battleHintBtn.hidden = hardshipState.mode !== 'memory';
+        battleHintBtn.disabled = hardshipState.mode !== 'memory';
+    }
+
+    if (heartParent) {
+        if (hardshipState.mode === 'endurance') {
+            heartParent.innerHTML = '';
+            heartParent.style.display = 'none';
+            heartParent.style.animation = 'none';
+        } else {
+            heartParent.style.display = 'flex';
+            heartParent.style.alignItems = 'center';
+            heartParent.style.justifyContent = 'center';
+            heartParent.innerHTML = `
+                ${heartIcon} <span id="training-hearts" style="margin-left:5px; font-weight:bold; color:#2c3e50;">${playerHearts}</span>
+                <span style="font-size:0.8rem; color:#7f8c8d; margin-left:4px;">/ ${maxPlayerHearts}</span>
+                ${lifeBreadBtnHtml}
+            `;
+            applyDangerEffect(heartParent, isDanger);
+        }
+    }
+
+    updateHintButtonLabels();
+}
+
+function loadNextHardshipVerse() {
+    clearHardshipPendingTimeout();
+
+    if (!window.isHardshipMode || !hardshipState.active) return;
+
+    if (hardshipState.cursor >= hardshipState.queue.length) {
+        finishHardshipSession('completed');
+        return;
+    }
+
+    const nextVerseId = hardshipState.queue[hardshipState.cursor];
+    hardshipState.cursor += 1;
+    hardshipState.currentVerse = HARDSHIP_VERSE_MAP[nextVerseId] || null;
+    hardshipState.feedback = null;
+    hardshipState.locked = false;
+    hardshipState.revealIndex = 0;
+    hardshipState.selectedChapter = 1;
+    hardshipState.selectedVerse = 1;
+    hardshipState.revealedHints = [];
+    hardshipState.memoryTypedText = '';
+
+    if (hardshipState.currentVerse) {
+        hardshipState.memorySlots = hardshipState.currentVerse.text.split('').map(character => {
+            return isHardshipFillableChar(character) ? '' : character;
+        });
+        currentVerseData = hardshipState.currentVerse;
+        trainingVerseData = hardshipState.currentVerse;
+        window.currentStageId = hardshipState.currentVerse.id;
+    }
+
+    renderCurrentHardshipVerse();
+    updateBattleUI();
+}
+
+function renderCurrentHardshipVerse() {
+    if (!window.isHardshipMode || !hardshipState.currentVerse) return;
+
+    if (hardshipState.mode === 'endurance') {
+        renderHardshipEnduranceVerse();
+        return;
+    }
+
+    if (hardshipState.mode === 'address') {
+        renderHardshipAddressVerse();
+        return;
+    }
+
+    renderHardshipMemoryVerse();
+}
+
+function renderHardshipEnduranceVerse() {
+    const field = document.querySelector('.battle-field');
+    const control = document.querySelector('.battle-control');
+    if (!field || !control || !hardshipState.currentVerse) return;
+
+    const maskedChunks = hardshipState.currentVerse.chunks.map((chunk, index) => {
+        const chunkText = hardshipState.revealIndex > index
+            ? chunk
+            : String(chunk).replace(/[0-9A-Za-z가-힣]/g, '▢');
+        const color = hardshipState.revealIndex > index ? '#2c3e50' : '#a4b0be';
+        const weight = hardshipState.revealIndex > index ? '800' : '600';
+        return `<span id="hardship-a-chunk-${index}" style="color:${color}; font-weight:${weight};">${chunkText}</span>`;
+    }).join('');
+
+    field.innerHTML = `
+        <div class="verse-indicator">[${hardshipState.currentVerse.label}] Step 1 방식으로 말씀을 확인하세요</div>
+        <div class="hardship-verse-card">
+            <div class="hardship-mode-tag">${getHardshipModeMeta('endurance').icon} ${getHardshipModeMeta('endurance').summary}</div>
+            <div class="hardship-endurance-reading">${maskedChunks}</div>
+            ${buildHardshipFeedbackHtml()}
+        </div>
+    `;
+
+    control.innerHTML = `
+        <div class="hardship-control-row">
+            <button class="btn-attack" onclick="revealHardshipEnduranceChunk()" ${hardshipState.locked ? 'disabled' : ''}>열기</button>
+            <button class="btn-attack" onclick="loadNextHardshipVerse()" style="background:#2ecc71; ${hardshipState.locked ? '' : 'display:none;'}">다음 말씀 ▶</button>
+        </div>
+    `;
+}
+
+function revealHardshipEnduranceChunk() {
+    if (!window.isHardshipMode || hardshipState.mode !== 'endurance' || hardshipState.locked) return;
+
+    const chunkIndex = hardshipState.revealIndex;
+    const chunk = hardshipState.currentVerse.chunks[chunkIndex];
+    const chunkEl = document.getElementById(`hardship-a-chunk-${chunkIndex}`);
+    if (!chunkEl) return;
+
+    chunkEl.textContent = chunk;
+    chunkEl.style.color = '#2c3e50';
+    chunkEl.style.fontWeight = '800';
+    chunkEl.style.transform = 'scale(1.05)';
+    setTimeout(() => {
+        if (chunkEl) chunkEl.style.transform = 'scale(1)';
+    }, 160);
+
+    hardshipState.revealIndex += 1;
+
+    if (hardshipState.revealIndex >= hardshipState.currentVerse.chunks.length) {
+        hardshipState.locked = true;
+        hardshipState.studiedCount += 1;
+        hardshipState.feedback = {
+            type: 'info',
+            message: `누적 확인 ${hardshipState.studiedCount}절째입니다.`
+        };
+        renderHardshipEnduranceVerse();
+        updateBattleUI();
+    }
+}
+
+function renderHardshipAddressVerse() {
+    const field = document.querySelector('.battle-field');
+    const control = document.querySelector('.battle-control');
+    if (!field || !control || !hardshipState.currentVerse) return;
+
+    field.innerHTML = `
+        <div class="verse-indicator">주소를 맞히세요</div>
+        <div class="hardship-verse-card">
+            <div class="hardship-mode-tag">${getHardshipModeMeta('address').icon} ${getHardshipModeMeta('address').summary}</div>
+            <div class="hardship-verse-text">${hardshipState.currentVerse.text}</div>
+            ${buildHardshipFeedbackHtml()}
+        </div>
+    `;
+
+    control.innerHTML = `
+        <div class="hardship-slot-machine">
+            <div class="hardship-slot-column">
+                <label class="hardship-slot-label" for="hardship-chapter-select">장 선택</label>
+                <select id="hardship-chapter-select" class="hardship-slot-select" onchange="handleHardshipAddressChapterChange()" ${hardshipState.locked ? 'disabled' : ''}></select>
+            </div>
+            <div class="hardship-slot-column">
+                <label class="hardship-slot-label" for="hardship-verse-select">절 선택</label>
+                <select id="hardship-verse-select" class="hardship-slot-select" onchange="handleHardshipAddressVerseChange()" ${hardshipState.locked ? 'disabled' : ''}></select>
+            </div>
+        </div>
+        <div class="hardship-control-row">
+            <button class="btn-attack" onclick="submitHardshipAddressGuess()" ${hardshipState.locked ? 'disabled' : ''}>주소 확인</button>
+        </div>
+    `;
+
+    populateHardshipChapterSelect();
+    updateHardshipAddressVerseOptions();
+}
+
+function populateHardshipChapterSelect() {
+    const chapterSelect = document.getElementById('hardship-chapter-select');
+    if (!chapterSelect) return;
+
+    chapterSelect.innerHTML = '';
+    for (let chapter = 1; chapter <= 22; chapter++) {
+        const option = document.createElement('option');
+        option.value = String(chapter);
+        option.textContent = `${chapter}장`;
+        if (chapter === hardshipState.selectedChapter) option.selected = true;
+        chapterSelect.appendChild(option);
+    }
+}
+
+function updateHardshipAddressVerseOptions() {
+    const chapterSelect = document.getElementById('hardship-chapter-select');
+    const verseSelect = document.getElementById('hardship-verse-select');
+    if (!chapterSelect || !verseSelect) return;
+
+    const selectedChapter = parseInt(chapterSelect.value, 10) || 1;
+    const maxVerse = bibleData[selectedChapter] ? bibleData[selectedChapter].length : 1;
+    const safeVerse = Math.min(Math.max(hardshipState.selectedVerse || 1, 1), maxVerse);
+
+    hardshipState.selectedChapter = selectedChapter;
+    hardshipState.selectedVerse = safeVerse;
+
+    verseSelect.innerHTML = '';
+    for (let verse = 1; verse <= maxVerse; verse++) {
+        const option = document.createElement('option');
+        option.value = String(verse);
+        option.textContent = `${verse}절`;
+        if (verse === safeVerse) option.selected = true;
+        verseSelect.appendChild(option);
+    }
+}
+
+function handleHardshipAddressChapterChange() {
+    hardshipState.selectedVerse = 1;
+    updateHardshipAddressVerseOptions();
+}
+
+function handleHardshipAddressVerseChange() {
+    const verseSelect = document.getElementById('hardship-verse-select');
+    hardshipState.selectedVerse = verseSelect ? (parseInt(verseSelect.value, 10) || 1) : 1;
+}
+
+function awardHardshipScore(points) {
+    if (!points || points <= 0) return;
+
+    hardshipState.score += points;
+    leagueData.myScore = (leagueData.myScore || 0) + points;
+    leagueData.myMonthlyScore = (leagueData.myMonthlyScore || 0) + points;
+    leagueData.totalScore = (leagueData.totalScore || 0) + points;
+    leagueData.yearlyScore = (leagueData.yearlyScore || 0) + points;
+    userStats.totalScoreEarned = (userStats.totalScoreEarned || 0) + points;
+
+    if (typeof updateMyScorePanel === 'function') updateMyScorePanel();
+    saveGameData();
+}
+
+function submitHardshipAddressGuess() {
+    if (!window.isHardshipMode || hardshipState.mode !== 'address' || hardshipState.locked || !hardshipState.currentVerse) return;
+
+    hardshipState.locked = true;
+    hardshipState.answeredCount += 1;
+
+    const guessedChapter = hardshipState.selectedChapter;
+    const guessedVerse = hardshipState.selectedVerse;
+    const isCorrect = guessedChapter === hardshipState.currentVerse.chapter && guessedVerse === hardshipState.currentVerse.verse;
+
+    if (isCorrect) {
+        const earnedPoints = playerHearts;
+        awardHardshipScore(earnedPoints);
+        hardshipState.studiedCount += 1;
+        hardshipState.feedback = {
+            type: 'success',
+            message: `정답입니다. ${hardshipState.currentVerse.label} · +${earnedPoints}점`
+        };
+        if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
+        renderHardshipAddressVerse();
+        updateBattleUI();
+        hardshipState.pendingTimeoutId = setTimeout(() => {
+            loadNextHardshipVerse();
+        }, 900);
+        return;
+    }
+
+    playerHearts = Math.max(0, playerHearts - 1);
+    wrongCount += 1;
+    hardshipState.feedback = {
+        type: 'error',
+        message: `오답입니다. 정답은 ${hardshipState.currentVerse.label}입니다.`
+    };
+    if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
+    renderHardshipAddressVerse();
+    updateBattleUI();
+    hardshipState.pendingTimeoutId = setTimeout(() => {
+        if (playerHearts <= 0) {
+            finishHardshipSession('hearts');
+        } else {
+            loadNextHardshipVerse();
+        }
+    }, 1400);
+}
+
+function renderHardshipMemoryVerse() {
+    const field = document.querySelector('.battle-field');
+    const control = document.querySelector('.battle-control');
+    if (!field || !control || !hardshipState.currentVerse) return;
+
+    initializeHardshipMemorySlots();
+    const activeValidSlotIndex = getHardshipActiveValidSlotIndex();
+
+    const typingBoardHtml = hardshipState.currentVerse.text.split('').map((character, index) => {
+        if (!isHardshipFillableChar(character)) {
+            const extraClass = character === ' ' ? ' space' : '';
+            const displayChar = character === ' ' ? '&nbsp;' : character;
+            return `<span class="hardship-fixed-char${extraClass}">${displayChar}</span>`;
+        }
+
+        const currentValue = hardshipState.memorySlots[index] || '';
+        const isHintRevealed = hardshipState.revealedHints.indexOf(index) !== -1;
+        const validSlotIndex = getHardshipValidSlotIndexByVerseIndex(index);
+        const slotClasses = [
+            'char-slot',
+            'hardship-char-slot',
+            !isHintRevealed ? 'is-valid' : '',
+            isHintRevealed ? 'hint-revealed' : '',
+            currentValue ? 'filled' : '',
+            !isHintRevealed && activeValidSlotIndex === validSlotIndex ? 'active' : ''
+        ].filter(Boolean).join(' ');
+        const displayValue = currentValue || '&nbsp;';
+        return `<button type="button" class="${slotClasses}" data-index="${index}" onclick="focusHardshipMemoryHiddenInput()" ontouchstart="focusHardshipMemoryHiddenInput()" ${hardshipState.locked ? 'disabled' : ''}>${displayValue}</button>`;
+    }).join('');
+
+    const hiddenInputMaxLength = getHardshipFillableVerseLength();
+
+    field.innerHTML = `
+        <div class="verse-indicator">[${hardshipState.currentVerse.label}] 전체 말씀을 입력하세요</div>
+        <div class="hardship-verse-card" onclick="focusHardshipMemoryHiddenInput()" ontouchstart="focusHardshipMemoryHiddenInput()">
+            <div class="hardship-mode-tag">${getHardshipModeMeta('memory').icon} ${getHardshipModeMeta('memory').summary}</div>
+            <div class="hardship-typing-board" onclick="focusHardshipMemoryHiddenInput()" ontouchstart="focusHardshipMemoryHiddenInput()">${typingBoardHtml}</div>
+            <input
+                id="hidden-typing-input"
+                class="hardship-memory-hidden-input"
+                type="text"
+                value="${escapeHardshipInputValue(hardshipState.memoryTypedText || '')}"
+                maxlength="${hiddenInputMaxLength}"
+                autocomplete="off"
+                autocapitalize="off"
+                spellcheck="false"
+                oninput="handleHardshipMemoryInput(event)"
+            />
+            ${buildHardshipFeedbackHtml()}
+        </div>
+    `;
+
+    control.innerHTML = `
+        <div class="hardship-control-row">
+            <button class="btn-attack" onclick="submitHardshipMemoryGuess()" ${hardshipState.locked ? 'disabled' : ''}>정답 확인</button>
+            <button class="btn-reset-step5" onclick="resetHardshipMemoryInputs()" ${hardshipState.locked ? 'disabled' : ''}>입력 초기화</button>
+        </div>
+    `;
+
+    if (!hardshipState.locked) {
+        setTimeout(() => focusHardshipMemoryHiddenInput(), 0);
+    }
+}
+
+function focusHardshipMemoryHiddenInput() {
+    const input = document.getElementById('hidden-typing-input');
+    if (!input || hardshipState.locked) return;
+    input.focus();
+}
+
+function escapeHardshipInputValue(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function getHardshipFillableVerseLength() {
+    if (!hardshipState.currentVerse) return 0;
+    return hardshipState.currentVerse.text.split('').filter(character => isHardshipFillableChar(character)).length;
+}
+
+function getHardshipValidSlotIndexByVerseIndex(verseIndex) {
+    if (!hardshipState.currentVerse) return -1;
+
+    let validIndex = -1;
+    hardshipState.currentVerse.text.split('').forEach((character, index) => {
+        if (!isHardshipFillableChar(character)) return;
+        if (hardshipState.revealedHints.indexOf(index) !== -1) return;
+        validIndex += 1;
+        if (index === verseIndex) return;
+    });
+
+    let count = 0;
+    for (let index = 0; index <= verseIndex; index++) {
+        const character = hardshipState.currentVerse.text.charAt(index);
+        if (!isHardshipFillableChar(character)) continue;
+        if (hardshipState.revealedHints.indexOf(index) !== -1) continue;
+        count += 1;
+    }
+    return count - 1;
+}
+
+function getHardshipActiveValidSlotIndex() {
+    const validSlotCount = getHardshipInputTargetCount();
+    const currentLength = Array.from(String(hardshipState.memoryTypedText || '')).length;
+    return currentLength < validSlotCount ? currentLength : -1;
+}
+
+function getHardshipInputTargetCount() {
+    if (!hardshipState.currentVerse) return 0;
+
+    let count = 0;
+    hardshipState.currentVerse.text.split('').forEach((character, index) => {
+        if (!isHardshipFillableChar(character)) return;
+        if (hardshipState.revealedHints.indexOf(index) !== -1) return;
+        count += 1;
+    });
+    return count;
+}
+
+function initializeHardshipMemorySlots() {
+    if (!hardshipState.currentVerse) return;
+
+    hardshipState.currentVerse.text.split('').forEach((character, index) => {
+        if (!isHardshipFillableChar(character)) {
+            hardshipState.memorySlots[index] = character;
+            return;
+        }
+
+        if (hardshipState.revealedHints.indexOf(index) !== -1) {
+            hardshipState.memorySlots[index] = hardshipState.currentVerse.text.charAt(index);
+            return;
+        }
+
+        hardshipState.memorySlots[index] = '';
+    });
+
+    mapHardshipTypedTextToSlots(hardshipState.memoryTypedText || '');
+}
+
+function mapHardshipTypedTextToSlots(currentText) {
+    if (!hardshipState.currentVerse) return;
+
+    const typedChars = Array.from(String(currentText || ''));
+    let typedIndex = 0;
+
+    hardshipState.currentVerse.text.split('').forEach((character, index) => {
+        if (!isHardshipFillableChar(character)) return;
+        if (hardshipState.revealedHints.indexOf(index) !== -1) {
+            hardshipState.memorySlots[index] = hardshipState.currentVerse.text.charAt(index);
+            return;
+        }
+
+        while (typedIndex < typedChars.length && !isHardshipFillableChar(typedChars[typedIndex])) {
+            typedIndex += 1;
+        }
+
+        hardshipState.memorySlots[index] = typedIndex < typedChars.length ? typedChars[typedIndex] : '';
+        typedIndex += 1;
+    });
+}
+
+function updateHardshipMemoryBoard() {
+    if (!hardshipState.currentVerse) return;
+
+    initializeHardshipMemorySlots();
+
+    const text = String(hardshipState.memoryTypedText || '');
+    const slots = document.querySelectorAll('.char-slot.is-valid');
+
+    slots.forEach((slot, index) => {
+        if (index < text.length) {
+            slot.innerText = text[index];
+            slot.classList.add('filled');
+        } else {
+            slot.innerText = '';
+            slot.classList.remove('filled');
+        }
+        slot.classList.remove('active');
+    });
+
+    if (text.length < slots.length && slots[text.length]) {
+        slots[text.length].classList.add('active');
+    }
+}
+
+function handleHardshipMemoryInput(event) {
+    if (!window.isHardshipMode || hardshipState.mode !== 'memory' || hardshipState.locked) return;
+
+    const input = event.target;
+    const currentText = input.value;
+
+    hardshipState.memoryTypedText = currentText;
+    updateHardshipMemoryBoard();
+}
+
+function resetHardshipMemoryInputs() {
+    if (!window.isHardshipMode || hardshipState.mode !== 'memory' || hardshipState.locked || !hardshipState.currentVerse) return;
+
+    hardshipState.memoryTypedText = '';
+
+    renderHardshipMemoryVerse();
+}
+
+function getNextHardshipHintIndex() {
+    if (!hardshipState.currentVerse) return -1;
+
+    const text = hardshipState.currentVerse.text;
+    for (let index = 0; index < text.length; index++) {
+        if (!isHardshipFillableChar(text.charAt(index))) continue;
+        if ((hardshipState.memorySlots[index] || '') !== text.charAt(index)) {
+            return index;
+        }
+    }
+
+    return -1;
+}
+
+function useHardshipMemoryHint() {
+    if (!window.isHardshipMode || hardshipState.mode !== 'memory' || hardshipState.locked) return;
+
+    const hintIndex = getNextHardshipHintIndex();
+    if (hintIndex === -1) {
+        alert('이미 모든 글자가 맞게 채워져 있습니다.');
+        return;
+    }
+
+    if (myGems < HINT_COST) {
+        alert(`💎 보석이 부족합니다! (필요: ${HINT_COST})`);
+        return;
+    }
+
+    if (!confirm(`💎 보석 ${HINT_COST}개를 사용해 글자 하나를 보시겠습니까?`)) {
+        return;
+    }
+
+    myGems -= HINT_COST;
+    if (hardshipState.revealedHints.indexOf(hintIndex) === -1) {
+        hardshipState.revealedHints.push(hintIndex);
+    }
+
+    updateGemDisplay();
+    saveGameData();
+    renderHardshipMemoryVerse();
+}
+
+function submitHardshipMemoryGuess() {
+    if (!window.isHardshipMode || hardshipState.mode !== 'memory' || hardshipState.locked || !hardshipState.currentVerse) return;
+
+    hardshipState.locked = true;
+    hardshipState.answeredCount += 1;
+
+    const text = hardshipState.currentVerse.text;
+    let isCorrect = true;
+    for (let index = 0; index < text.length; index++) {
+        const answerChar = text.charAt(index);
+        if (!isHardshipFillableChar(answerChar)) continue;
+        if ((hardshipState.memorySlots[index] || '') !== answerChar) {
+            isCorrect = false;
+            break;
+        }
+    }
+
+    if (isCorrect) {
+        const earnedPoints = playerHearts * 2;
+        awardHardshipScore(earnedPoints);
+        hardshipState.studiedCount += 1;
+        hardshipState.feedback = {
+            type: 'success',
+            message: `정답입니다. ${hardshipState.currentVerse.label} · +${earnedPoints}점`
+        };
+        if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
+        renderHardshipMemoryVerse();
+        updateBattleUI();
+        hardshipState.pendingTimeoutId = setTimeout(() => {
+            loadNextHardshipVerse();
+        }, 900);
+        return;
+    }
+
+    playerHearts = Math.max(0, playerHearts - 1);
+    wrongCount += 1;
+    hardshipState.feedback = {
+        type: 'error',
+        message: `오답입니다. 정답 말씀: ${hardshipState.currentVerse.text}`
+    };
+    if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
+    renderHardshipMemoryVerse();
+    updateBattleUI();
+    hardshipState.pendingTimeoutId = setTimeout(() => {
+        if (playerHearts <= 0) {
+            finishHardshipSession('hearts');
+        } else {
+            loadNextHardshipVerse();
+        }
+    }, 1600);
+}
+
+function finishHardshipSession(reason) {
+    clearHardshipPendingTimeout();
+
+    const duration = Math.floor((Date.now() - stageStartTime) / 1000);
+    const minutes = String(Math.floor(duration / 60)).padStart(2, '0');
+    const seconds = String(duration % 60).padStart(2, '0');
+    const accuracy = hardshipState.answeredCount > 0
+        ? Math.max(0, Math.round(((hardshipState.answeredCount - wrongCount) / hardshipState.answeredCount) * 100))
+        : 100;
+    const modeMeta = getHardshipModeMeta(hardshipState.mode);
+
+    const resultTitle = document.getElementById('result-title');
+    const resultStreakText = document.getElementById('result-streak-text');
+    const resultExpLabel = document.getElementById('result-exp-label');
+    const resultContinueBtn = document.getElementById('result-continue-btn');
+    const resultTime = document.getElementById('result-time');
+    const resultAccuracy = document.getElementById('result-accuracy');
+    const resultExp = document.getElementById('result-exp');
+
+    if (reason !== 'hearts') {
+        if (typeof triggerConfetti === 'function') triggerConfetti();
+        if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
+    }
+
+    if (resultTitle) {
+        if (reason === 'completed') resultTitle.innerText = `🏁 ${modeMeta.title} 완주`;
+        else if (reason === 'hearts') resultTitle.innerText = `💀 ${modeMeta.title} 종료`;
+        else resultTitle.innerText = `⛰️ ${modeMeta.title} 종료`;
+    }
+
+    if (resultStreakText) {
+        if (hardshipState.mode === 'endurance') {
+            resultStreakText.innerHTML = `이번 세션에서 <span id="streak-days">${hardshipState.studiedCount}</span>절을 확인했습니다.`;
+        } else {
+            resultStreakText.innerHTML = `이번 세션 승점 <span id="streak-days">${hardshipState.score}</span>점`;
+        }
+    }
+
+    if (resultExpLabel) {
+        resultExpLabel.innerText = hardshipState.mode === 'endurance' ? '📘 확인' : '🏆 승점';
+    }
+
+    if (resultContinueBtn) {
+        resultContinueBtn.innerText = '홈으로 돌아가기 ▶';
+    }
+
+    if (resultTime) resultTime.innerText = `${minutes}:${seconds}`;
+    if (resultAccuracy) resultAccuracy.innerText = `${accuracy}%`;
+    if (resultExp) {
+        resultExp.innerText = hardshipState.mode === 'endurance'
+            ? `${hardshipState.studiedCount}절`
+            : `${hardshipState.score}`;
+    }
+
+    const resultModal = document.getElementById('result-modal');
+    if (resultModal) resultModal.classList.add('active');
 }
