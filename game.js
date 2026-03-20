@@ -3459,6 +3459,7 @@ function loadNextVerse() {
 function updateBattleUI() {
     // ★ 디버그: updateBattleUI 호출 시점의 maxBossHp 확인
     console.log(`[updateBattleUI] 호출됨 - maxBossHp=${maxBossHp}, currentBossHp=${currentBossHp}`);
+    updateHintButtonLabels();
 
     // 1. 보스 체력바 업데이트 (세그먼트 방식)
     if (typeof maxBossHp !== 'undefined' && maxBossHp > 0) {
@@ -4053,6 +4054,7 @@ function loadStep() {
     // 1. 텍스트 업데이트 (예: Step 1/2)
     const stepNumEl = document.getElementById('current-step-num');
     if (stepNumEl) stepNumEl.innerText = currentOrder;
+    updateTrainingCycleIndicator();
 
     // 2. 진행바 게이지 계산 (전체 단계 수에 비례하여 꽉 차게)
     const percent = (currentOrder / totalCount) * 100;
@@ -4858,25 +4860,16 @@ function nextStep() {
         if (window.currentVerseIdx < window.currentBattleData.length - 1) {
             
             window.currentVerseIdx++; // 다음 구절로 인덱스 이동
-            
-            // 🌟 [핵심 수술 1] 엔진이 쓸법한 모든 데이터 변수에 새 구절을 완벽하게 덮어씌웁니다!
-            const nextVerseData = window.currentBattleData[window.currentVerseIdx];
-            window.trainingVerseData = nextVerseData;
-            if (typeof trainingVerseData !== 'undefined') trainingVerseData = nextVerseData;
-            window.currentVerseData = nextVerseData; 
-            
-            // 🌟 [찌꺼기 청소] 이전 구절의 조각(Step 2, 5)이 남아있지 않도록 리셋!
-            window.currentStep2PartIndex = undefined;
-            window.step2Parts = undefined;
-            window.currentStep5PartIndex = undefined;
-            window.step5Parts = undefined;
-
-            // 이름표 갱신
-            const chNum = window.currentBattleChapter;
-            const realVerseNum = window.trainStartVerse + window.currentVerseIdx;
-            window.currentStageId = `${chNum}-${realVerseNum}`; 
+            syncTrainingVerseState();
             
             loadStep(); // 화면 다시 그리기
+        } else if (currentTrainingCycle < trainingRepeatCount) {
+            currentTrainingCycle++;
+            window.currentTrainingCycle = currentTrainingCycle;
+            window.currentVerseIdx = 0;
+            playerHearts = (typeof maxPlayerHearts !== 'undefined') ? maxPlayerHearts : playerHearts;
+            syncTrainingVerseState();
+            loadStep();
         } else {
             // 모든 구절을 다 돌았다면 훈련 종료!
             finishTraining();
@@ -5187,6 +5180,17 @@ function getCurrentHintCost() {
     return isFocusedTrainingSession() ? 0 : HINT_COST;
 }
 
+function updateHintButtonLabels() {
+    const hintCost = getCurrentHintCost();
+    const hintLabel = hintCost > 0 ? `(💎${hintCost})` : '(무료)';
+
+    const trainingHintCost = document.getElementById('training-hint-cost');
+    if (trainingHintCost) trainingHintCost.textContent = hintLabel;
+
+    const battleHintCost = document.getElementById('battle-hint-cost');
+    if (battleHintCost) battleHintCost.textContent = hintLabel;
+}
+
 function useHint() {
     if (isHintModalOpen) return;
 
@@ -5320,7 +5324,9 @@ function showHintModal({ cost, onClose }) {
             <div style="text-align:right;">
                 <button id="hint-modal-close" style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
             </div>
-            <div style="margin-bottom:10px; font-size:1.1rem; color:#2c3e50;">💡 힌트 사용 (${cost > 0 ? `💎${cost}` : '무료'})</div>
+            <div style="margin-bottom:10px; font-size:1.1rem; color:#2c3e50;">
+                💡 힌트 사용 ${cost > 0 ? `💎${cost}` : '<span style="color:#27ae60; font-weight:bold;">무료</span>'}
+            </div>
             <div style="margin-bottom:20px; color:#34495e;">${hintText}</div>
         </div>
     `;
@@ -10646,6 +10652,82 @@ function toggleGameMode(direction) {
 
 // 🌟 훈련 모드 전용 변수
 let selectedTrainingStep = 1; // 기본은 Step 1
+let selectedTrainingRepeatCount = 1;
+let currentTrainingCycle = 1;
+let trainingRepeatCount = 1;
+const TRAINING_SETTINGS_KEY = 'kingsroad_training_settings';
+
+function getDefaultTrainingSettings() {
+    return {
+        chapter: 1,
+        startVerse: 1,
+        endVerse: 1,
+        step: 1,
+        repeatCount: 1
+    };
+}
+
+function loadTrainingSettings() {
+    try {
+        const raw = localStorage.getItem(TRAINING_SETTINGS_KEY);
+        if (!raw) return getDefaultTrainingSettings();
+        const parsed = JSON.parse(raw);
+        return {
+            ...getDefaultTrainingSettings(),
+            ...parsed
+        };
+    } catch (error) {
+        return getDefaultTrainingSettings();
+    }
+}
+
+function saveTrainingSettings(settings) {
+    try {
+        localStorage.setItem(TRAINING_SETTINGS_KEY, JSON.stringify(settings));
+    } catch (error) {
+        console.warn('집중 훈련 설정 저장 실패:', error);
+    }
+}
+
+function updateTrainingCycleIndicator() {
+    const cycleEl = document.getElementById('training-cycle-indicator');
+    if (!cycleEl) return;
+
+    if (!window.isTrainingMode) {
+        cycleEl.innerText = '사이클 1/1';
+        return;
+    }
+
+    const currentCycle = window.currentTrainingCycle || currentTrainingCycle || 1;
+    const totalCycles = window.trainingRepeatCount || trainingRepeatCount || 1;
+    cycleEl.innerText = `사이클 ${currentCycle}/${totalCycles}`;
+}
+
+function applyTrainingStepSelection() {
+    const stepBtns = document.querySelectorAll('.train-step-btn');
+    stepBtns.forEach(btn => {
+        const step = parseInt(btn.getAttribute('data-step'), 10);
+        const isActive = step === selectedTrainingStep;
+        btn.style.background = isActive ? '#3498db' : '#7f8c8d';
+        btn.classList.toggle('active', isActive);
+    });
+}
+
+function syncTrainingVerseState() {
+    const nextVerseData = window.currentBattleData[window.currentVerseIdx];
+    window.trainingVerseData = nextVerseData;
+    if (typeof trainingVerseData !== 'undefined') trainingVerseData = nextVerseData;
+    window.currentVerseData = nextVerseData;
+
+    window.currentStep2PartIndex = undefined;
+    window.step2Parts = undefined;
+    window.currentStep5PartIndex = undefined;
+    window.step5Parts = undefined;
+
+    const chNum = window.currentBattleChapter;
+    const realVerseNum = window.trainStartVerse + window.currentVerseIdx;
+    window.currentStageId = `${chNum}-${realVerseNum}`;
+}
 
 // 1. 훈련 모드 모달 열기 (임시 함수였던 것을 교체!)
 function startTrainingMode() {
@@ -10657,20 +10739,20 @@ function startTrainingMode() {
 
     // 장(Chapter) 목록 세팅하기
     initTrainingChapters();
+    applyTrainingStepSelection();
+
+    const repeatSelect = document.getElementById('train-repeat-count');
+    if (repeatSelect) {
+        repeatSelect.value = String(selectedTrainingRepeatCount);
+    }
+    updateTrainingCycleIndicator();
     
     // 스텝 버튼 클릭 이벤트 연결
     const stepBtns = document.querySelectorAll('.train-step-btn');
     stepBtns.forEach(btn => {
         btn.onclick = (e) => {
-            // 모든 버튼을 회색(비활성)으로
-            stepBtns.forEach(b => {
-                b.style.background = '#7f8c8d';
-                b.classList.remove('active');
-            });
-            // 방금 누른 버튼만 파란색(활성)으로
-            e.target.style.background = '#3498db';
-            e.target.classList.add('active');
-            selectedTrainingStep = parseInt(e.target.getAttribute('data-step'));
+            selectedTrainingStep = parseInt(e.target.getAttribute('data-step'), 10);
+            applyTrainingStepSelection();
         };
     });
 }
@@ -10685,6 +10767,7 @@ function closeTrainingModal() {
 // 2. 성경 데이터(bibleData)를 바탕으로 장(Chapter) 목록 채우기
 function initTrainingChapters() {
     const chapterSelect = document.getElementById('train-chapter-select');
+    const savedSettings = loadTrainingSettings();
     chapterSelect.innerHTML = ''; // 초기화
 
     // bibleData 객체에서 데이터가 있는 장만 뽑아옵니다.
@@ -10696,33 +10779,44 @@ function initTrainingChapters() {
             chapterSelect.appendChild(option);
         }
     }
+
+    if (bibleData[savedSettings.chapter] && bibleData[savedSettings.chapter].length > 0) {
+        chapterSelect.value = String(savedSettings.chapter);
+    }
+
+    selectedTrainingStep = savedSettings.step || 1;
+    selectedTrainingRepeatCount = Math.max(1, parseInt(savedSettings.repeatCount, 10) || 1);
     
-    // 첫 번째 장의 절(Verse) 목록 업데이트
-    updateTrainingVerses();
+    // 저장된 설정을 기준으로 절(Verse) 목록 업데이트
+    updateTrainingVerses(savedSettings.startVerse, savedSettings.endVerse);
 }
 
 // 3. 장을 바꿀 때마다 시작/끝 절(Verse) 목록 업데이트
-function updateTrainingVerses() {
+function updateTrainingVerses(preferredStartVerse, preferredEndVerse) {
     const chapter = document.getElementById('train-chapter-select').value;
     const startSelect = document.getElementById('train-start-verse');
     const endSelect = document.getElementById('train-end-verse');
+    const currentStart = parseInt(startSelect.value || preferredStartVerse || 1, 10);
+    const currentEnd = parseInt(endSelect.value || preferredEndVerse || 1, 10);
     
     startSelect.innerHTML = '';
     endSelect.innerHTML = '';
 
     const maxVerses = bibleData[chapter].length;
+    const safeStartVerse = Math.min(Math.max(currentStart, 1), maxVerses);
+    const safeEndVerse = Math.min(Math.max(currentEnd, safeStartVerse), maxVerses);
 
     for (let i = 1; i <= maxVerses; i++) {
         const startOpt = document.createElement('option');
         startOpt.value = i;
         startOpt.innerText = `${i}절`;
+        if (i === safeStartVerse) startOpt.selected = true;
         startSelect.appendChild(startOpt);
 
         const endOpt = document.createElement('option');
         endOpt.value = i;
         endOpt.innerText = `${i}절`;
-        // 끝 절은 기본적으로 맨 마지막 절로 세팅
-        if (i === maxVerses) endOpt.selected = true; 
+        if (i === safeEndVerse) endOpt.selected = true;
         endSelect.appendChild(endOpt);
     }
 }
@@ -10736,11 +10830,27 @@ function executeTraining() {
     const chapterNum = parseInt(document.getElementById('train-chapter-select').value);
     const startVerse = parseInt(document.getElementById('train-start-verse').value);
     const endVerse = parseInt(document.getElementById('train-end-verse').value);
+    const repeatSelect = document.getElementById('train-repeat-count');
+    const repeatCount = repeatSelect ? parseInt(repeatSelect.value, 10) : 1;
 
     if (startVerse > endVerse) {
         alert("⚠️ 시작 절이 끝 절보다 클 수 없습니다.");
         return;
     }
+
+    if (!repeatCount || repeatCount < 1) {
+        alert("⚠️ 반복 횟수는 1회 이상이어야 합니다.");
+        return;
+    }
+
+    selectedTrainingRepeatCount = repeatCount;
+    saveTrainingSettings({
+        chapter: chapterNum,
+        startVerse: startVerse,
+        endVerse: endVerse,
+        step: selectedTrainingStep,
+        repeatCount: repeatCount
+    });
 
     closeTrainingModal();
 
@@ -10749,6 +10859,11 @@ function executeTraining() {
     window.isTrainingMode = true;
     window.trainingTargetStep = selectedTrainingStep;
     window.trainingMode = 'training'; // 기타 시스템 에러 방지용 꼬리표
+    trainingRepeatCount = repeatCount;
+    currentTrainingCycle = 1;
+    window.trainingRepeatCount = repeatCount;
+    window.currentTrainingCycle = currentTrainingCycle;
+    updateTrainingCycleIndicator();
 
     // 2. 훈련 범위 데이터 장전
     window.currentBattleData = bibleData[chapterNum].slice(startVerse - 1, endVerse);
@@ -10756,9 +10871,8 @@ function executeTraining() {
     window.currentVerseIdx = 0; 
     window.trainStartVerse = startVerse; // 🌟 [추가] 시작 절 번호를 시스템에 기억시킵니다!
     
-    // 🌟 3. [핵심 수술 1] window 꼬리표를 떼고 코어 엔진이 진짜로 찾는 변수에 직접 주입합니다!
-    trainingVerseData = window.currentBattleData[window.currentVerseIdx]; 
-    window.currentStageId = `${chapterNum}-${startVerse + window.currentVerseIdx}`; 
+    // 🌟 3. [핵심 수술 1] 현재 훈련 구절 상태를 엔진에 주입합니다!
+    syncTrainingVerseState();
 
     // 🌟 4. [핵심 수술 2] 스텝을 1개로 고정하고, 화면의 숫자(1/6 등)도 1/1로 강제 업데이트!
     stepSequence = [window.trainingTargetStep]; 

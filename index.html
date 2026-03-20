@@ -928,14 +928,17 @@
     <div id="game-screen" class="screen">
 
         <div class="training-header">
-            <div class="step-indicator">Step <span id="current-step-num">1</span>/<span id="total-step-num">6</span>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+                <div class="step-indicator">Step <span id="current-step-num">1</span>/<span id="total-step-num">6</span>
+                </div>
+                <div id="training-cycle-indicator" style="font-size:0.9rem; color:#7f8c8d; font-weight:bold;">사이클 1/1</div>
             </div>
 
             <div style="display:flex; gap:12px; align-items:center;">
 
-                <button onclick="useHint()" class="item-btn"
+                <button onclick="useHint()" class="item-btn" id="training-hint-btn"
                     style="background:#f39c12; border-color:#d35400; color:white; margin:0;">
-                    💡 힌트 <span style="font-size:0.7rem; margin-left:2px;">(💎10)</span>
+                    💡 힌트 <span id="training-hint-cost" style="font-size:0.7rem; margin-left:2px;">(💎10)</span>
                 </button>
 
                 <div style="font-size:1.2rem; display:flex; align-items:center; margin:0;">
@@ -962,9 +965,9 @@
                 <button class="btn-pause" onclick="openQuitModal()">🏳️ 포기</button>
 
                 <div style="display:flex; gap:5px; align-items:center;">
-                    <button onclick="useHint()" class="item-btn"
+                    <button onclick="useHint()" class="item-btn" id="battle-hint-btn"
                         style="background:#f39c12; border-color:#d35400; color:white;">
-                        💡 힌트 <span style="font-size:0.7rem; margin-left:2px;">(💎10)</span>
+                        💡 힌트 <span id="battle-hint-cost" style="font-size:0.7rem; margin-left:2px;">(💎10)</span>
                     </button>
                 </div>
 
@@ -1467,6 +1470,12 @@
                 <button class="train-step-btn" data-step="4" style="flex:1; min-width:30%; padding:8px; background:#7f8c8d; color:#fff; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">Step 4</button>
                 <button class="train-step-btn" data-step="5" style="flex:1; min-width:30%; padding:8px; background:#7f8c8d; color:#fff; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">Step 5</button>
             </div>
+        </div>
+
+        <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:10px; margin-bottom:20px;">
+            <div style="font-size:0.9rem; color:#bdc3c7; margin-bottom:10px; text-align:left;">🔁 반복 사이클</div>
+            <input id="train-repeat-count" type="number" min="1" step="1" value="1" inputmode="numeric" style="width:100%; padding:8px; border-radius:5px; background:#34495e; color:#fff; border:1px solid #7f8c8d; font-size:1rem;">
+            <div style="margin-top:8px; font-size:0.8rem; color:#95a5a6; text-align:left;">선택한 범위를 한 사이클로 보고 같은 스텝을 반복합니다.</div>
         </div>
 
         <button onclick="executeTraining()" style="width:100%; padding:12px; background:#e67e22; color:white; font-size:1.2rem; font-weight:bold; border:none; border-radius:8px; cursor:pointer; box-shadow:0 4px 0 #d35400;">
