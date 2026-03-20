@@ -981,6 +981,13 @@ body, html {
     flex: 1 1 180px;
 }
 
+#game-screen.mode-hardship .training-header-left {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
 .training-header-right {
     display: flex;
     flex-direction: row;
@@ -1017,6 +1024,12 @@ body, html {
     overflow: visible;
     -ms-overflow-style: none;
     scrollbar-width: none;
+}
+
+#game-screen.mode-hardship #training-cycle-indicator {
+    font-size: 1rem;
+    line-height: 1;
+    flex: 0 0 auto;
 }
 
 .hardship-header-meta::-webkit-scrollbar,

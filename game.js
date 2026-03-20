@@ -7720,7 +7720,21 @@ window.addEventListener('load', function () {
 
 // 2. 팝업 열기
 function openQuitModal() {
-    document.getElementById('quit-modal').classList.add('active');
+    const modal = document.getElementById('quit-modal');
+    const title = document.getElementById('quit-modal-title');
+    const message = document.getElementById('quit-modal-message');
+
+    if (title) {
+        title.innerText = getQuitModalTitleText();
+    }
+
+    if (message) {
+        message.innerHTML = getQuitModalMessageHtml();
+    }
+
+    if (modal) {
+        modal.classList.add('active');
+    }
 }
 
 // 3. [계속하기] 버튼: 팝업 닫고 게임 계속
@@ -7728,11 +7742,48 @@ function cancelQuit() {
     document.getElementById('quit-modal').classList.remove('active');
 }
 
+function getQuitModalTitleText() {
+    if (!window.isHardshipMode) {
+        return '전장을 떠나시겠습니까?';
+    }
+
+    const modeMeta = getHardshipModeMeta(hardshipState.mode);
+    return `${modeMeta.title}을 종료하시겠습니까?`;
+}
+
+function getHardshipQuitNoticeText() {
+    if (!window.isHardshipMode) return '';
+
+    if (hardshipState.mode === 'endurance') {
+        return '현재 진행 순서는 저장되지 않습니다.';
+    }
+
+    return '지금까지 획득한 승점은 저장됩니다. 현재 진행 순서는 저장되지 않습니다.';
+}
+
+function getHardshipBackQuitNoticeText() {
+    if (!window.isHardshipMode) return '';
+
+    if (hardshipState.mode === 'endurance') {
+        return '지금 나가면 진행 상황이 저장되지 않을 수 있습니다.';
+    }
+
+    return '지금까지 얻은 승점은 저장되나 진행 상황은 저장되지 않습니다.';
+}
+
+function getQuitModalMessageHtml() {
+    if (window.isHardshipMode) {
+        return getHardshipBackQuitNoticeText().replace(/\. /g, '.<br>');
+    }
+
+    return '지금 나가면 진행 상황이<br>저장되지 않을 수 있습니다.';
+}
+
 /* 🌟 [통합 버그 픽스] 포기 의사를 묻고, 확인 시 자원을 청소하며 나가는 함수 */
 function confirmQuit() {
     // 1. 유저에게 의사를 먼저 묻습니다. (첫 번째 함수의 심플한 알림창)
     const quitMessage = window.isHardshipMode
-        ? "정말 고난 길 세션을 종료하시겠습니까?\n현재 세션의 진행 순서는 저장되지 않습니다."
+        ? `${getQuitModalTitleText()}\n${getHardshipQuitNoticeText()}`
         : "정말 이 스테이지를 포기하시겠습니까?\n지금까지 진행한 상황은 저장되지 않습니다.";
     const wantsToQuit = confirm(quitMessage);
 
@@ -11064,7 +11115,10 @@ function resetHardshipSessionState() {
     if (stepIndicator) stepIndicator.style.display = '';
 
     const cycleIndicator = document.getElementById('training-cycle-indicator');
-    if (cycleIndicator) cycleIndicator.innerText = '사이클 1/1';
+    if (cycleIndicator) {
+        cycleIndicator.innerText = '사이클 1/1';
+        cycleIndicator.style.display = '';
+    }
 
     const hardshipMeta = document.getElementById('hardship-header-meta');
     if (hardshipMeta) {
@@ -11181,6 +11235,7 @@ function updateHardshipHeader() {
 
     if (!window.isHardshipMode || !hardshipState.active) {
         if (stepIndicator) stepIndicator.style.display = '';
+        if (cycleIndicator) cycleIndicator.style.display = '';
         if (hardshipMeta) hardshipMeta.classList.add('hidden');
         if (hardshipScoreChip) hardshipScoreChip.classList.add('hidden');
         return;
@@ -11198,7 +11253,10 @@ function updateHardshipHeader() {
     `;
 
     if (stepIndicator) stepIndicator.style.display = 'none';
-    if (cycleIndicator) cycleIndicator.innerText = `${modeMeta.icon} ${modeMeta.title}`;
+    if (cycleIndicator) {
+        cycleIndicator.innerText = '';
+        cycleIndicator.style.display = 'none';
+    }
 
     if (hardshipMeta) {
         const totalCount = hardshipState.queue.length || HARDSHIP_VERSES.length;
@@ -11206,7 +11264,7 @@ function updateHardshipHeader() {
             ? hardshipState.studiedCount
             : hardshipState.answeredCount;
         hardshipMeta.classList.remove('hidden');
-        hardshipMeta.textContent = `[${modeMeta.title}] ${progressCount} / ${totalCount}절`;
+        hardshipMeta.textContent = `${modeMeta.title} ${progressCount}/${totalCount}절`;
     }
 
     if (hardshipScoreChip) {
