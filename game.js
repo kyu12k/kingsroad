@@ -11572,7 +11572,7 @@ function renderHardshipMemoryVerse() {
 
     control.innerHTML = `
         <div class="hardship-control-row">
-            <button class="btn-attack" onclick="submitHardshipMemoryGuess()" ${hardshipState.locked ? 'disabled' : ''}>정답 확인</button>
+            <button id="hardship-memory-submit-btn" class="btn-attack" onclick="submitHardshipMemoryGuess()" ${hardshipState.locked ? 'disabled' : ''}>정답 확인</button>
             <button class="btn-reset-step5" onclick="resetHardshipMemoryInputs()" ${hardshipState.locked ? 'disabled' : ''}>입력 초기화</button>
         </div>
     `;
@@ -11603,6 +11603,13 @@ function bindHardshipMemoryInputGuards() {
     if (!input || input.dataset.guardsBound === 'true') return;
 
     const blockArrowNavigation = (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            input.blur();
+            submitHardshipMemoryGuess();
+            return;
+        }
+
         if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
             event.preventDefault();
             moveHardshipMemoryCursorToEnd(input);
@@ -11739,10 +11746,18 @@ function handleHardshipMemoryInput(event) {
 
     const input = event.target;
     const currentText = input.value;
+    const targetLength = Number(input.maxLength) || getHardshipFillableVerseLength();
 
     hardshipState.memoryTypedText = currentText;
     updateHardshipMemoryBoard();
     moveHardshipMemoryCursorToEnd(input);
+
+    if (currentText.length === targetLength) {
+        const submitButton = document.getElementById('hardship-memory-submit-btn');
+        if (submitButton && typeof submitButton.scrollIntoView === 'function') {
+            submitButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
 }
 
 function resetHardshipMemoryInputs() {
