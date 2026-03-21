@@ -2323,38 +2323,21 @@ function renderChapterMap() {
             else alert("🔒 이전 챕터를 먼저 클리어하여 길을 여세요.");
         };
 
-        // 🌟 [제목] 버튼 생성 및 지그재그 배치
-        const isLeft = (index % 2 === 0); // 짝수면 왼쪽, 홀수면 오른쪽
-        const titleBtn = document.createElement('div');
-        titleBtn.innerHTML = '📝 제목';
-
-        // 버튼 디자인 및 좌우 위치 자동 조절
-        titleBtn.style.cssText = `
-            position: absolute;
-            top: 15px; /* 나무 높이에 맞춰 살짝 내림 */
-            ${isLeft ? 'right: -75px;' : 'left: -75px;'} /* 나무 반대편으로 밀어내기! */
-            background-color: #2c3e50;
-            color: #f1c40f;
-            font-size: 0.8rem;
-            font-weight: bold;
-            padding: 5px 12px;
-            border-radius: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
-            cursor: pointer;
-            border: 2px solid #f39c12;
-            z-index: 20;
-            white-space: nowrap; /* 글자 줄바꿈 방지 */
-            transition: transform 0.1s;
-        `;
-
-        // 🚨 중요: 버튼을 눌렀을 때 맵(스테이지) 입장 기능이 같이 실행되지 않도록 막아줌!
-        titleBtn.onclick = (e) => {
-            e.stopPropagation(); // 이벤트 전파(Bubbling) 차단
-            openChapterTitle(chapter.id);
-        };
-
-        // 노드(나무)에 제목 버튼을 찰싹 붙여줍니다.
-        node.appendChild(titleBtn);
+        // ★ [신규] 클리어한 장에만 '심화 훈련' 숏컷 버튼을 나무 반대편에 배치
+        const isLeft = (index % 2 === 0);
+        if (isChapterClear) {
+            const hardshipBtn = document.createElement('button');
+            hardshipBtn.className = 'chapter-hardship-btn';
+            hardshipBtn.innerHTML = '🔥 심화 훈련';
+            hardshipBtn.style.cssText = `
+                ${isLeft ? 'right: -88px;' : 'left: -88px;'}
+            `;
+            hardshipBtn.onclick = (e) => {
+                e.stopPropagation();
+                openChapterHardship(chapter.id);
+            };
+            node.appendChild(hardshipBtn);
+        }
 
         // ★ 핵심: 배경과 버튼을 형제(Sibling)로 배치
         wrapper.appendChild(bg);   // 1층 (배경)
@@ -11261,6 +11244,12 @@ function resetHardshipSessionState() {
     }
 }
 
+function openChapterHardship(chapterNum) {
+    // 장별 고난 길: 해당 챕터를 강제 고정하고 모드 선택 모달을 엽니다.
+    window.hardshipForcedChapter = chapterNum;
+    openHardshipModeSelect();
+}
+
 function openHardshipModeSelect() {
     const modal = document.getElementById('hardship-mode-modal');
     if (modal) modal.style.display = 'flex';
@@ -11383,7 +11372,19 @@ function closeHardshipConfigModal() {
 
 function startHardshipFromModal(mode) {
     closeHardshipModeSelect();
-    openHardshipConfigModal(mode);
+    // 장별 고난 길 숏컷으로 진입한 경우: 범위 설정 창 없이 바로 시작
+    if (window.hardshipForcedChapter != null) {
+        const ch = window.hardshipForcedChapter;
+        window.hardshipForcedChapter = null;
+        const verseIds = getHardshipVerseIdsByChapterRange(ch, ch);
+        if (verseIds.length === 0) {
+            alert(`⚠️ ${ch}장의 구절 데이터가 없습니다.`);
+            return;
+        }
+        startHardshipSession(mode, verseIds);
+    } else {
+        openHardshipConfigModal(mode);
+    }
 }
 
 function startHardshipFromConfig() {
