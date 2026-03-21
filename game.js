@@ -10735,7 +10735,8 @@ function getDefaultTrainingSettings() {
         startVerse: 1,
         endVerse: 1,
         step: 1,
-        repeatCount: 1
+        repeatCount: 1,
+        randomOrder: false
     };
 }
 
@@ -10796,8 +10797,10 @@ function syncTrainingVerseState() {
     window.currentStep5PartIndex = undefined;
     window.step5Parts = undefined;
 
-    const chNum = window.currentBattleChapter;
-    const realVerseNum = window.trainStartVerse + window.currentVerseIdx;
+    const chNum = nextVerseData && nextVerseData.__chapterNum ? nextVerseData.__chapterNum : window.currentBattleChapter;
+    const realVerseNum = nextVerseData && nextVerseData.__verseNum
+        ? nextVerseData.__verseNum
+        : window.trainStartVerse + window.currentVerseIdx;
     window.currentStageId = `${chNum}-${realVerseNum}`;
 }
 
@@ -10817,6 +10820,12 @@ function startTrainingMode() {
     if (repeatSelect) {
         repeatSelect.value = String(selectedTrainingRepeatCount);
     }
+
+    const randomCheckbox = document.getElementById('train-random-checkbox');
+    if (randomCheckbox) {
+        randomCheckbox.checked = !!loadTrainingSettings().randomOrder;
+    }
+
     updateTrainingCycleIndicator();
     
     // 스텝 버튼 클릭 이벤트 연결
@@ -10904,6 +10913,8 @@ function executeTraining() {
     const endVerse = parseInt(document.getElementById('train-end-verse').value);
     const repeatSelect = document.getElementById('train-repeat-count');
     const repeatCount = repeatSelect ? parseInt(repeatSelect.value, 10) : 1;
+    const randomCheckbox = document.getElementById('train-random-checkbox');
+    const isRandomOrder = !!(randomCheckbox && randomCheckbox.checked);
 
     if (startVerse > endVerse) {
         alert("⚠️ 시작 절이 끝 절보다 클 수 없습니다.");
@@ -10921,7 +10932,8 @@ function executeTraining() {
         startVerse: startVerse,
         endVerse: endVerse,
         step: selectedTrainingStep,
-        repeatCount: repeatCount
+        repeatCount: repeatCount,
+        randomOrder: isRandomOrder
     });
 
     closeTrainingModal();
@@ -10938,7 +10950,14 @@ function executeTraining() {
     updateTrainingCycleIndicator();
 
     // 2. 훈련 범위 데이터 장전
-    window.currentBattleData = bibleData[chapterNum].slice(startVerse - 1, endVerse);
+    window.currentBattleData = bibleData[chapterNum].slice(startVerse - 1, endVerse).map((verseData, index) => ({
+        ...verseData,
+        __chapterNum: chapterNum,
+        __verseNum: startVerse + index
+    }));
+    if (isRandomOrder) {
+        window.currentBattleData = shuffleHardshipQueue(window.currentBattleData);
+    }
     window.currentBattleChapter = chapterNum;
     window.currentVerseIdx = 0; 
     window.trainStartVerse = startVerse; // 🌟 [추가] 시작 절 번호를 시스템에 기억시킵니다!
@@ -11036,11 +11055,13 @@ function createEmptyHardshipState() {
         selectedVerse: 1,
         memorySlots: [],
         revealedHints: [],
-        memoryTypedText: ''
+        memoryTypedText: '',
+        awaitingNext: false
     };
 }
 
 let hardshipState = createEmptyHardshipState();
+let selectedHardshipConfigMode = 'endurance';
 
 const HARDSHIP_VERSES = [];
 for (let hardshipChapter = 1; hardshipChapter <= 22; hardshipChapter++) {
@@ -11092,6 +11113,19 @@ function clearHardshipPendingTimeout() {
         clearTimeout(hardshipState.pendingTimeoutId);
         hardshipState.pendingTimeoutId = null;
     }
+}
+
+function proceedHardshipToNextVerse() {
+    if (!window.isHardshipMode || !hardshipState.active || !hardshipState.awaitingNext) return;
+
+    hardshipState.awaitingNext = false;
+
+    if (playerHearts <= 0 && hardshipState.mode !== 'endurance') {
+        finishHardshipSession('hearts');
+        return;
+    }
+
+    loadNextHardshipVerse();
 }
 
 function getHardshipRemainingCount() {
@@ -11175,19 +11209,155 @@ function closeHardshipModeSelect() {
     if (modal) modal.style.display = 'none';
 }
 
-function startHardshipFromModal(mode) {
-    closeHardshipModeSelect();
-    startHardshipSession(mode);
+function populateHardshipConfigChapterOptions() {
+    const startSelect = document.getElementById('hardship-start-chapter');
+    const endSelect = document.getElementById('hardship-end-chapter');
+    if (!startSelect || !endSelect) return;
+
+    if (startSelect.options.length === 22 && endSelect.options.length === 22) return;
+
+    startSelect.innerHTML = '';
+    endSelect.innerHTML = '';
+
+    for (let chapter = 1; chapter <= 22; chapter += 1) {
+        const startOption = document.createElement('option');
+        startOption.value = String(chapter);
+        startOption.innerText = `${chapter}장`;
+        startSelect.appendChild(startOption);
+
+        const endOption = document.createElement('option');
+        endOption.value = String(chapter);
+        endOption.innerText = `${chapter}장`;
+        endSelect.appendChild(endOption);
+    }
+
+    startSelect.value = '1';
+    endSelect.value = '22';
 }
 
-function startHardshipSession(mode) {
+function getHardshipSelectedRangeType() {
+    const checked = document.querySelector('input[name="hardship-range-type"]:checked');
+    return checked ? checked.value : 'all';
+}
+
+function getHardshipVerseIdsByChapterRange(startChapter, endChapter) {
+    return HARDSHIP_VERSES
+        .filter(verse => verse.chapter >= startChapter && verse.chapter <= endChapter)
+        .map(verse => verse.id);
+}
+
+function syncHardshipConfigChapterRange() {
+    const startSelect = document.getElementById('hardship-start-chapter');
+    const endSelect = document.getElementById('hardship-end-chapter');
+    if (!startSelect || !endSelect) return;
+
+    let startChapter = parseInt(startSelect.value, 10) || 1;
+    let endChapter = parseInt(endSelect.value, 10) || 22;
+
+    if (startChapter > endChapter) {
+        if (document.activeElement === startSelect) {
+            endChapter = startChapter;
+            endSelect.value = String(endChapter);
+        } else {
+            startChapter = endChapter;
+            startSelect.value = String(startChapter);
+        }
+    }
+
+    updateHardshipConfigRangeUI();
+}
+
+function updateHardshipConfigRangeUI() {
+    const rangeType = getHardshipSelectedRangeType();
+    const startSelect = document.getElementById('hardship-start-chapter');
+    const endSelect = document.getElementById('hardship-end-chapter');
+    const summary = document.getElementById('hardship-config-summary');
+
+    if (!startSelect || !endSelect || !summary) return;
+
+    const isRangeSelected = rangeType === 'range';
+    startSelect.disabled = !isRangeSelected;
+    endSelect.disabled = !isRangeSelected;
+
+    const startChapter = parseInt(startSelect.value, 10) || 1;
+    const endChapter = parseInt(endSelect.value, 10) || 22;
+    const verseIds = isRangeSelected
+        ? getHardshipVerseIdsByChapterRange(startChapter, endChapter)
+        : getHardshipVerseIdsByChapterRange(1, 22);
+
+    if (isRangeSelected) {
+        summary.innerText = `${startChapter}장~${endChapter}장, 총 ${verseIds.length}절에서 무작위 출제됩니다.`;
+    } else {
+        summary.innerText = `전장 ${verseIds.length}절에서 무작위 출제됩니다.`;
+    }
+}
+
+function openHardshipConfigModal(mode) {
+    selectedHardshipConfigMode = mode;
+    populateHardshipConfigChapterOptions();
+    const modeLabel = document.getElementById('hardship-config-mode-label');
+    if (modeLabel) {
+        modeLabel.innerText = getHardshipModeMeta(mode).title;
+    }
+
+    const allRadio = document.querySelector('input[name="hardship-range-type"][value="all"]');
+    if (allRadio) allRadio.checked = true;
+
+    const startSelect = document.getElementById('hardship-start-chapter');
+    const endSelect = document.getElementById('hardship-end-chapter');
+    if (startSelect) startSelect.value = '1';
+    if (endSelect) endSelect.value = '22';
+
+    updateHardshipConfigRangeUI();
+
+    const modal = document.getElementById('hardship-config-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeHardshipConfigModal() {
+    const modal = document.getElementById('hardship-config-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+function startHardshipFromModal(mode) {
+    closeHardshipModeSelect();
+    openHardshipConfigModal(mode);
+}
+
+function startHardshipFromConfig() {
+    const rangeType = getHardshipSelectedRangeType();
+    const startSelect = document.getElementById('hardship-start-chapter');
+    const endSelect = document.getElementById('hardship-end-chapter');
+    const startChapter = rangeType === 'range' ? parseInt(startSelect.value, 10) || 1 : 1;
+    const endChapter = rangeType === 'range' ? parseInt(endSelect.value, 10) || 22 : 22;
+
+    if (startChapter > endChapter) {
+        alert('⚠️ 시작 장이 끝 장보다 클 수 없습니다.');
+        return;
+    }
+
+    const selectedVerseIds = getHardshipVerseIdsByChapterRange(startChapter, endChapter);
+    if (selectedVerseIds.length === 0) {
+        alert('⚠️ 선택한 범위에 해당하는 구절이 없습니다.');
+        return;
+    }
+
+    closeHardshipConfigModal();
+    startHardshipSession(selectedHardshipConfigMode, selectedVerseIds);
+}
+
+function startHardshipSession(mode, selectedVerseIds) {
     const modeMeta = getHardshipModeMeta(mode);
 
     clearHardshipPendingTimeout();
     hardshipState = createEmptyHardshipState();
     hardshipState.active = true;
     hardshipState.mode = mode;
-    hardshipState.queue = shuffleHardshipQueue(HARDSHIP_VERSES.map(verse => verse.id));
+    hardshipState.queue = shuffleHardshipQueue(
+        Array.isArray(selectedVerseIds) && selectedVerseIds.length > 0
+            ? selectedVerseIds
+            : HARDSHIP_VERSES.map(verse => verse.id)
+    );
 
     if (typeof recalculateMaxHearts === 'function') {
         recalculateMaxHearts();
@@ -11337,6 +11507,7 @@ function loadNextHardshipVerse() {
     hardshipState.currentVerse = HARDSHIP_VERSE_MAP[nextVerseId] || null;
     hardshipState.feedback = null;
     hardshipState.locked = false;
+    hardshipState.awaitingNext = false;
     hardshipState.revealIndex = 0;
     hardshipState.selectedChapter = 1;
     hardshipState.selectedVerse = 1;
@@ -11459,7 +11630,8 @@ function renderHardshipAddressVerse() {
             </div>
         </div>
         <div class="hardship-control-row">
-            <button class="btn-attack" onclick="submitHardshipAddressGuess()" ${hardshipState.locked ? 'disabled' : ''}>주소 확인</button>
+            <button id="hardship-address-submit-btn" class="btn-attack" onclick="submitHardshipAddressGuess()" style="${hardshipState.awaitingNext ? 'display:none;' : ''}" ${hardshipState.locked ? 'disabled' : ''}>주소 확인</button>
+            <button id="hardship-next-btn" class="btn-attack" onclick="proceedHardshipToNextVerse()" style="background:#2ecc71; ${hardshipState.awaitingNext ? '' : 'display:none;'}">다음 ⏭️</button>
         </div>
     `;
 
@@ -11531,6 +11703,7 @@ function submitHardshipAddressGuess() {
     if (!window.isHardshipMode || hardshipState.mode !== 'address' || hardshipState.locked || !hardshipState.currentVerse) return;
 
     hardshipState.locked = true;
+    hardshipState.awaitingNext = true;
     hardshipState.answeredCount += 1;
 
     const guessedChapter = hardshipState.selectedChapter;
@@ -11548,9 +11721,6 @@ function submitHardshipAddressGuess() {
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
         renderHardshipAddressVerse();
         updateBattleUI();
-        hardshipState.pendingTimeoutId = setTimeout(() => {
-            loadNextHardshipVerse();
-        }, 900);
         return;
     }
 
@@ -11563,13 +11733,6 @@ function submitHardshipAddressGuess() {
     if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
     renderHardshipAddressVerse();
     updateBattleUI();
-    hardshipState.pendingTimeoutId = setTimeout(() => {
-        if (playerHearts <= 0) {
-            finishHardshipSession('hearts');
-        } else {
-            loadNextHardshipVerse();
-        }
-    }, 1400);
 }
 
 function renderHardshipMemoryVerse() {
@@ -11627,8 +11790,9 @@ function renderHardshipMemoryVerse() {
 
     control.innerHTML = `
         <div class="hardship-control-row">
-            <button id="hardship-memory-submit-btn" class="btn-attack" onclick="submitHardshipMemoryGuess()" ${hardshipState.locked ? 'disabled' : ''}>정답 확인</button>
-            <button class="btn-reset-step5" onclick="resetHardshipMemoryInputs()" ${hardshipState.locked ? 'disabled' : ''}>입력 초기화</button>
+            <button id="hardship-memory-submit-btn" class="btn-attack" onclick="submitHardshipMemoryGuess()" style="${hardshipState.awaitingNext ? 'display:none;' : ''}" ${hardshipState.locked ? 'disabled' : ''}>정답 확인</button>
+            <button id="hardship-next-btn" class="btn-attack" onclick="proceedHardshipToNextVerse()" style="background:#2ecc71; ${hardshipState.awaitingNext ? '' : 'display:none;'}">다음 ⏭️</button>
+            <button class="btn-reset-step5" onclick="resetHardshipMemoryInputs()" style="${hardshipState.awaitingNext ? 'display:none;' : ''}" ${hardshipState.locked ? 'disabled' : ''}>입력 초기화</button>
         </div>
     `;
 
@@ -11868,7 +12032,13 @@ function useHardshipMemoryHint() {
 function submitHardshipMemoryGuess() {
     if (!window.isHardshipMode || hardshipState.mode !== 'memory' || hardshipState.locked || !hardshipState.currentVerse) return;
 
+    const hiddenInput = document.getElementById('hidden-typing-input');
+    if (hiddenInput && typeof hiddenInput.blur === 'function') {
+        hiddenInput.blur();
+    }
+
     hardshipState.locked = true;
+    hardshipState.awaitingNext = true;
     hardshipState.answeredCount += 1;
 
     const text = hardshipState.currentVerse.text;
@@ -11893,9 +12063,6 @@ function submitHardshipMemoryGuess() {
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
         renderHardshipMemoryVerse();
         updateBattleUI();
-        hardshipState.pendingTimeoutId = setTimeout(() => {
-            loadNextHardshipVerse();
-        }, 900);
         return;
     }
 
@@ -11908,13 +12075,6 @@ function submitHardshipMemoryGuess() {
     if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
     renderHardshipMemoryVerse();
     updateBattleUI();
-    hardshipState.pendingTimeoutId = setTimeout(() => {
-        if (playerHearts <= 0) {
-            finishHardshipSession('hearts');
-        } else {
-            loadNextHardshipVerse();
-        }
-    }, 1600);
 }
 
 function finishHardshipSession(reason) {

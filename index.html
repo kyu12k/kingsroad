@@ -1005,7 +1005,7 @@
             </div>
             <div style="text-align: center; margin-bottom: 20px;">
                 <h2 style="margin:0; color:#2c3e50;">고난 길</h2>
-                <p style="color:#7f8c8d; font-size:0.95rem; margin-top:8px; line-height:1.5;">요한계시록 404절을 중복 없이 무작위로 훈련합니다.</p>
+                <p style="color:#7f8c8d; font-size:0.95rem; margin-top:8px; line-height:1.5;">모드를 고른 뒤 출제 범위를 설정하고 시작합니다.</p>
             </div>
 
             <button class="mode-btn hardship-mode-btn hardship-mode-a" onclick="startHardshipFromModal('endurance')">
@@ -1031,6 +1031,47 @@
                     <div class="mode-desc">주소만 보고 전체 말씀을 빈칸 타이핑으로 인출</div>
                 </div>
             </button>
+        </div>
+    </div>
+
+    <div id="hardship-config-modal" class="modal-overlay" style="z-index: 655;">
+        <div class="result-card hardship-config-card">
+            <div style="text-align: right;">
+                <button onclick="closeHardshipConfigModal()"
+                    style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
+            </div>
+            <div style="text-align: center; margin-bottom: 18px;">
+                <h2 style="margin:0; color:#2c3e50;">고난 길 설정</h2>
+                <p id="hardship-config-mode-label" style="color:#7f8c8d; font-size:0.95rem; margin-top:8px; line-height:1.5;">모드를 선택하세요.</p>
+            </div>
+
+            <div class="hardship-config-section">
+                <div class="hardship-config-title">출제 범위</div>
+                <label class="hardship-config-radio">
+                    <input type="radio" name="hardship-range-type" value="all" checked onchange="updateHardshipConfigRangeUI()">
+                    <span>전장 (404절)</span>
+                </label>
+                <label class="hardship-config-radio">
+                    <input type="radio" name="hardship-range-type" value="range" onchange="updateHardshipConfigRangeUI()">
+                    <span>범위 선택</span>
+                </label>
+            </div>
+
+            <div class="hardship-config-section hardship-config-range-row" id="hardship-config-range-row">
+                <div class="hardship-config-select-wrap">
+                    <div class="hardship-config-title">시작 장</div>
+                    <select id="hardship-start-chapter" onchange="syncHardshipConfigChapterRange()"></select>
+                </div>
+                <div class="hardship-config-range-separator">~</div>
+                <div class="hardship-config-select-wrap">
+                    <div class="hardship-config-title">끝 장</div>
+                    <select id="hardship-end-chapter" onchange="syncHardshipConfigChapterRange()"></select>
+                </div>
+            </div>
+
+            <div id="hardship-config-summary" class="hardship-config-summary">전장 404절에서 무작위 출제됩니다.</div>
+
+            <button class="hardship-config-start-btn" onclick="startHardshipFromConfig()">고난 길 시작</button>
         </div>
     </div>
 
@@ -1518,6 +1559,11 @@
             <input id="train-repeat-count" type="number" min="1" step="1" value="1" inputmode="numeric" style="width:100%; padding:8px; border-radius:5px; background:#34495e; color:#fff; border:1px solid #7f8c8d; font-size:1rem;">
             <div style="margin-top:8px; font-size:0.8rem; color:#95a5a6; text-align:left;">선택한 범위를 한 사이클로 보고 같은 스텝을 반복합니다.</div>
         </div>
+
+        <label style="display:flex; align-items:center; gap:8px; margin-bottom:20px; font-size:0.95rem; color:#ecf0f1; text-align:left; cursor:pointer;">
+            <input type="checkbox" id="train-random-checkbox" style="width:18px; height:18px; accent-color:#3498db;">
+            무작위 순서로 훈련하기
+        </label>
 
         <button onclick="executeTraining()" style="width:100%; padding:12px; background:#e67e22; color:white; font-size:1.2rem; font-weight:bold; border:none; border-radius:8px; cursor:pointer; box-shadow:0 4px 0 #d35400;">
             훈련 시작!

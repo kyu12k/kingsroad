@@ -848,7 +848,8 @@ body, html {
     width: 100%; padding: 20px;
     background-color: white;
     border-bottom: 1px solid #bdc3c7;
-    justify-content: space-between; align-items: center;
+    justify-content: space-between; align-items: flex-start;
+    gap: 12px;
     box-sizing: border-box;
 }
 #game-screen.mode-training .training-header { display: flex; } /* 훈련 모드일 때만 보임 */
@@ -977,8 +978,10 @@ body, html {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    min-width: 0;
-    flex: 1 1 180px;
+    min-width: max-content;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 #game-screen.mode-hardship .training-header-left {
@@ -986,6 +989,9 @@ body, html {
     align-items: center;
     flex-wrap: wrap;
     gap: 6px;
+    min-width: 0;
+    flex: 1 1 180px;
+    white-space: normal;
 }
 
 .training-header-right {
@@ -993,11 +999,12 @@ body, html {
     flex-direction: row;
     align-items: center;
     justify-content: flex-end;
-    gap: 5px;
-    min-width: 0;
+    gap: 10px;
+    min-width: max-content;
     flex: 0 1 auto;
     flex-shrink: 0;
     max-width: 100%;
+    white-space: nowrap;
 }
 
 #game-screen.mode-hardship .training-header {
@@ -1302,36 +1309,70 @@ body, html {
 }
 
 @media (max-width: 600px) {
+    #game-screen.mode-training:not(.mode-hardship) .training-header {
+        padding: 14px 12px;
+        gap: 8px;
+    }
+
+    #game-screen.mode-training:not(.mode-hardship) .training-header-right {
+        gap: 6px;
+    }
+
     #game-screen.mode-hardship .training-header {
         padding: 14px 12px;
         gap: 8px;
     }
 
-    .training-header-left,
-    .training-header-right {
+    #game-screen.mode-hardship .training-header-left,
+    #game-screen.mode-hardship .training-header-right {
         width: 100%;
         max-width: 100%;
     }
 
-    .training-header-right {
+    #game-screen.mode-hardship .training-header-right {
         justify-content: flex-start;
         gap: 6px;
     }
 
     .hardship-header-meta,
     .hardship-score-chip,
-    #training-cycle-indicator {
+    #game-screen.mode-hardship #training-cycle-indicator {
         font-size: 0.78rem;
     }
 }
 
 @media (max-width: 480px) {
+    #game-screen.mode-training:not(.mode-hardship) .training-header {
+        padding: 12px 10px !important;
+        gap: 6px;
+    }
+
+    #game-screen.mode-training:not(.mode-hardship) .training-header-left {
+        font-size: 0.92rem;
+    }
+
+    #game-screen.mode-training:not(.mode-hardship) .training-header-right {
+        gap: 4px;
+        transform: scale(0.94);
+        transform-origin: right top;
+    }
+
+    #game-screen.mode-training:not(.mode-hardship) .training-header .item-btn {
+        min-width: auto !important;
+        padding: 5px 7px !important;
+        font-size: 0.78rem;
+    }
+
+    #game-screen.mode-training:not(.mode-hardship) #training-heart-wrap {
+        font-size: 0.94rem !important;
+    }
+
     #game-screen.mode-hardship .training-header {
         padding: 12px 10px;
         gap: 8px;
     }
 
-    .training-header-right {
+    #game-screen.mode-hardship .training-header-right {
         flex-wrap: wrap;
         align-items: center;
         gap: 5px;
@@ -2605,6 +2646,88 @@ body, html {
     max-width: 460px;
 }
 
+.hardship-config-card {
+    max-width: 440px;
+}
+
+.hardship-config-section {
+    background: #f6f8fb;
+    border: 1px solid #d9e2ec;
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 14px;
+    text-align: left;
+}
+
+.hardship-config-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #55606f;
+    margin-bottom: 10px;
+}
+
+.hardship-config-radio {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 8px;
+    cursor: pointer;
+}
+
+.hardship-config-radio:last-child {
+    margin-bottom: 0;
+}
+
+.hardship-config-range-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: end;
+    gap: 10px;
+}
+
+.hardship-config-select-wrap select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #c7d2db;
+    background: #fff;
+    color: #2c3e50;
+    font-size: 0.98rem;
+}
+
+.hardship-config-select-wrap select:disabled {
+    background: #edf1f5;
+    color: #95a5a6;
+}
+
+.hardship-config-range-separator {
+    font-size: 1.1rem;
+    color: #7f8c8d;
+    padding-bottom: 10px;
+}
+
+.hardship-config-summary {
+    margin-bottom: 16px;
+    color: #6b7785;
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+.hardship-config-start-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #8b5a2b 0%, #4b3621 100%);
+    color: #fffaf1;
+    font-size: 1.08rem;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(75, 54, 33, 0.25);
+}
+
 .hardship-mode-btn {
     text-align: left;
 }
@@ -2664,6 +2787,15 @@ body, html {
 
     .hardship-char-slot {
         width: 24px;
+    }
+
+    .hardship-config-range-row {
+        grid-template-columns: 1fr;
+    }
+
+    .hardship-config-range-separator {
+        padding-bottom: 0;
+        text-align: center;
     }
 }
 
