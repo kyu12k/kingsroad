@@ -3087,13 +3087,17 @@ function startBossBattle() {
     const startBossAction = () => {
         closeStageSheet();
         document.getElementById('map-screen').classList.remove('active');
-        document.getElementById('game-screen').classList.add('active');
-        document.getElementById('game-screen').classList.remove('mode-training');
+        // ★ [버그 픽스] 집중 훈련/고난 길이 남긴 모드 클래스를 모두 벗겨냅니다.
+        const gs = document.getElementById('game-screen');
+        gs.classList.add('active');
+        gs.classList.remove('mode-training', 'is-training-mode', 'mode-hardship');
 
         const bossAvatar = document.querySelector('.boss-avatar');
         if (bossAvatar) {
             bossAvatar.classList.remove('boss-die-effect');
             bossAvatar.classList.remove('boss-hit-effect');
+            // ★ [버그 픽스] 훈련/고난 모드가 설정한 display:none 인라인 스타일을 초기화합니다.
+            bossAvatar.style.display = '';
             bossAvatar.style.opacity = "1";
             bossAvatar.style.transform = "scaleX(-1)";
         }
@@ -3757,6 +3761,10 @@ function quitGame(destination = 'map') {
     if (gameScreen) {
         gameScreen.classList.remove('active', 'mode-training', 'is-training-mode', 'mode-hardship');
     }
+    // ★ [버그 픽스] 훈련/고난 모드가 boss-avatar에 설정한 display:none 인라인 스타일 초기화.
+    // 다음에 보스전이 시작될 때 용이 정상적으로 나타나도록 합니다.
+    const quitBossAvatar = document.querySelector('.boss-avatar');
+    if (quitBossAvatar) quitBossAvatar.style.display = '';
 
     // 3. 모달 닫기 (안전장치)
     const quitModal = document.getElementById('quit-modal');
