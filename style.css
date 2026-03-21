@@ -4,6 +4,39 @@
 * {
     box-sizing: border-box; /* 🌟 모든 요소의 너비 계산에 여백/테두리를 포함 */
 }
+
+button,
+.btn,
+.step-btn,
+.train-step-btn,
+.char-slot,
+.hardship-char-slot,
+.btn-start,
+.btn-back,
+.btn-attack,
+.btn-reset-step5,
+.btn-pause,
+.btn-continue,
+.btn-claim,
+.btn-gray,
+.btn-build-action,
+.btn-claim-action,
+.btn-get-reward,
+.btn-main-action,
+.btn-hardship-entry,
+.item-btn,
+.mode-btn,
+.menu-action-btn,
+.tab-btn,
+.nav-item,
+.word-block,
+.card-item,
+.close-btn,
+.modal-close-btn,
+.step-close-btn {
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+}
 /* =========================================
    [하단 네비게이션 2행 3열 - 다크 테마 & 귀여운 폰트 버전]
    ========================================= */
@@ -1009,10 +1042,6 @@ body, html {
     display: none;
 }
 
-#game-screen.mode-hardship .training-header {
-    display: flex;
-}
-
 .training-header-left {
     display: flex;
     flex-direction: column;
@@ -1021,16 +1050,6 @@ body, html {
     flex: 0 0 auto;
     white-space: nowrap;
     flex-shrink: 0;
-}
-
-#game-screen.mode-hardship .training-header-left {
-    flex-direction: row;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 6px;
-    min-width: 0;
-    flex: 1 1 180px;
-    white-space: normal;
 }
 
 .training-header-right {
@@ -1047,105 +1066,107 @@ body, html {
 }
 
 #game-screen.mode-hardship .training-header {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 8px;
-}
-
-#game-screen.hide-hint-force .hint-btn,
-#game-screen.hide-hint-force #training-hint-btn,
-#game-screen.hide-hint-force #battle-hint-btn {
-    display: none !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-}
-
-.hardship-header-meta {
-    font-size: 0.85rem;
-    color: #576574;
-    font-weight: 700;
-    white-space: normal;
-    overflow: visible;
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
-
-#game-screen.mode-hardship #training-cycle-indicator {
-    font-size: 1rem;
-    line-height: 1;
-    flex: 0 0 auto;
-}
-
-.hardship-header-meta::-webkit-scrollbar,
-.training-header-right::-webkit-scrollbar {
     display: none;
 }
 
-#game-screen.mode-hardship .training-header .item-btn,
-#game-screen.mode-hardship .training-header .btn-pause,
-#game-screen.mode-hardship .hardship-score-chip,
-#game-screen.mode-hardship #training-heart-wrap,
-#game-screen.mode-hardship .hardship-life-bread-btn {
+#common-hardship-header {
+    display: none;
+    width: 100%;
+    padding: 14px 16px;
+    box-sizing: border-box;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.94);
+    border-bottom: 1px solid rgba(44, 62, 80, 0.12);
+    box-shadow: 0 10px 24px rgba(44, 62, 80, 0.08);
     flex-shrink: 0;
 }
 
-#game-screen.mode-hardship .training-header .item-btn {
-    min-width: auto !important;
-    padding: 6px 9px !important;
-    font-size: 0.88rem;
+#game-screen.mode-hardship #common-hardship-header {
+    display: flex;
 }
 
-#game-screen.mode-hardship .training-header .btn-pause {
-    padding: 5px 9px;
+.common-hardship-header-left {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
-#game-screen.mode-hardship #training-heart-wrap {
-    gap: 4px;
-    font-size: 1rem !important;
-}
-
-#game-screen.mode-hardship .hardship-score-chip,
-#game-screen.mode-hardship .hardship-life-bread-btn {
-    padding: 6px 10px;
-    font-size: 0.88rem;
-}
-
-#game-screen.mode-hardship .hardship-life-bread-btn {
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    background: #fff;
+.common-hardship-title {
+    font-size: 1rem;
+    font-weight: 900;
     color: #2c3e50;
-    border-radius: 20px;
-    border: 1px solid #bdc3c7;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    transition: transform 0.1s;
+    line-height: 1.15;
 }
 
-.hardship-score-chip {
+.common-hardship-progress {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #6b7785;
+    line-height: 1.1;
+}
+
+.common-hardship-header-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.common-hardship-chip {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 7px 12px;
+    gap: 4px;
+    padding: 7px 10px;
     border-radius: 999px;
-    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-    color: #f8c54a;
+    border: 1px solid rgba(44, 62, 80, 0.12);
+    background: #fff;
+    color: #2c3e50;
+    font-size: 0.85rem;
     font-weight: 800;
-    box-shadow: 0 6px 16px rgba(44, 62, 80, 0.22);
+    box-shadow: 0 3px 10px rgba(44, 62, 80, 0.08);
 }
 
-.hardship-neutral-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 12px;
-    border-radius: 999px;
-    background: #eef2f7;
-    color: #2c3e50;
-    font-size: 0.9rem;
-    font-weight: 700;
+.common-hardship-score {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border-color: rgba(44, 62, 80, 0.18);
+    color: #f8c54a;
+}
+
+.common-hardship-hearts.is-danger {
+    color: #c0392b;
+    border-color: rgba(192, 57, 43, 0.28);
+    background: #fff5f3;
+}
+
+#common-hardship-hint-btn {
+    min-width: auto;
+    padding: 7px 10px;
+    margin: 0;
+    background: #f39c12;
+    border-color: #d35400;
+    color: #fff;
+}
+
+#common-hardship-close-btn {
+    padding: 7px 10px;
+    color: #7f8c8d;
+    border-color: #bdc3c7;
+    background: #fff;
+    margin: 0;
+}
+
+.hardship-life-bread-btn {
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.hardship-life-bread-btn:active {
+    transform: scale(0.97);
 }
 
 .hardship-verse-card {
@@ -1357,25 +1378,23 @@ body, html {
         gap: 6px;
     }
 
-    #game-screen.mode-hardship .training-header {
+    #common-hardship-header {
         padding: 14px 12px;
         gap: 8px;
     }
 
-    #game-screen.mode-hardship .training-header-left,
-    #game-screen.mode-hardship .training-header-right {
-        width: 100%;
-        max-width: 100%;
-    }
-
-    #game-screen.mode-hardship .training-header-right {
-        justify-content: flex-start;
+    .common-hardship-header-right {
         gap: 6px;
     }
 
-    .hardship-header-meta,
-    .hardship-score-chip,
-    #game-screen.mode-hardship #training-cycle-indicator {
+    .common-hardship-title {
+        font-size: 0.94rem;
+    }
+
+    .common-hardship-progress,
+    .common-hardship-chip,
+    #common-hardship-hint-btn,
+    #common-hardship-close-btn {
         font-size: 0.78rem;
     }
 }
@@ -1406,40 +1425,26 @@ body, html {
         font-size: 0.94rem !important;
     }
 
-    #game-screen.mode-hardship .training-header {
+    #common-hardship-header {
         padding: 12px 10px;
-        gap: 8px;
+        gap: 6px;
     }
 
-    #game-screen.mode-hardship .training-header-right {
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 5px;
+    .common-hardship-header-right {
+        gap: 4px;
     }
 
-    #game-screen.mode-hardship .training-header .item-btn,
-    #game-screen.mode-hardship .hardship-score-chip,
-    #game-screen.mode-hardship .hardship-life-bread-btn,
-    #game-screen.mode-hardship #training-heart-wrap,
-    #game-screen.mode-hardship .training-header .btn-pause {
+    .common-hardship-progress,
+    .common-hardship-chip,
+    #common-hardship-hint-btn,
+    #common-hardship-close-btn {
         font-size: 0.8rem !important;
     }
 
-    #game-screen.mode-hardship .training-header .item-btn {
+    #common-hardship-hint-btn,
+    .common-hardship-chip,
+    #common-hardship-close-btn {
         padding: 5px 7px !important;
-    }
-
-    #game-screen.mode-hardship .hardship-score-chip,
-    #game-screen.mode-hardship .hardship-life-bread-btn {
-        padding: 5px 8px;
-    }
-
-    #game-screen.mode-hardship #training-heart-wrap {
-        gap: 3px;
-    }
-
-    .hardship-header-meta {
-        font-size: 0.75rem;
     }
 }
 
@@ -2333,8 +2338,8 @@ body, html {
 /* [잊혀가는 말씀 스타일] */
 .stage-item.forgotten-clear {
     border: 2px solid #9b59b6 !important; /* 보라색 테두리 */
-    background: linear-gradient(to right, #fff, #f4ecf7);
-    box-shadow: 0 0 10px rgba(155, 89, 182, 0.4);
+    background: linear-gradient(135deg, #fffdfd 0%, #f4ecf7 100%);
+    box-shadow: 0 0 14px rgba(111, 47, 152, 0.28);
     position: relative;
     overflow: hidden;
 }
@@ -2343,14 +2348,18 @@ body, html {
     position: absolute;
     top: 0;
     right: 0;
-    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+    background: linear-gradient(135deg, #8f49bc 0%, #6f2f98 100%);
     color: #fff;
     font-size: 0.7rem;
     font-weight: bold;
-    padding: 4px 10px;
+    padding: 5px 12px;
     border-bottom-left-radius: 10px;
-    box-shadow: -2px 2px 5px rgba(0,0,0,0.1);
+    border-left: 1px solid rgba(255,255,255,0.22);
+    border-bottom: 1px solid rgba(255,255,255,0.16);
+    box-shadow: -3px 4px 10px rgba(44, 16, 69, 0.28);
     z-index: 1;
+    opacity: 1;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.24);
 }
 
 /* [기억 레벨 배지 스타일] */

@@ -624,10 +624,9 @@
     <div id="map-screen" class="screen">
         <div class="map-header">
             <button id="forgotten-stages-floating-btn" onclick="openForgottenStagesOverlay()"
-                style="position: fixed; left: 50%; transform: translateX(-50%); bottom: 160px; z-index: 1300; background: rgba(241,196,15,0.18); border: 2px solid #f1c40f; color: #f1c40f; font-size: 0.75rem; font-weight: bold; padding: 5px 14px; border-radius: 18px; box-shadow: 0 2px 10px #2224; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
-                <span style="font-size:1.2rem; flex-shrink: 0;">💜</span> <span style="font-size:1.2rem;">기억 다지기
-                    보너스</span>
-            </button>
+    style="position: fixed; left: 50%; transform: translateX(-50%); bottom: 160px; z-index: 1300; background: #f1c40f; border: 2px solid #f1c40f; color: #222222; font-size: 0.75rem; font-weight: bold; padding: 5px 14px; border-radius: 18px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
+    <span style="font-size:1.2rem; flex-shrink: 0;">💜</span> <span style="font-size:1.2rem;">기억 다지기 보너스</span>
+</button>
             <div style="display:flex; align-items:center; gap:10px;">
                 <span id="sub-profile-name" style="font-weight:bold; color:#f1c40f;">예비 제사장</span>
 
@@ -937,12 +936,9 @@
                 <div class="step-indicator">Step <span id="current-step-num">1</span>/<span id="total-step-num">6</span>
                 </div>
                 <div id="training-cycle-indicator" style="font-size:0.9rem; color:#7f8c8d; font-weight:bold;">사이클 1/1</div>
-                <div id="hardship-header-meta" class="hardship-header-meta hidden"></div>
             </div>
 
             <div class="training-header-right">
-                <div id="hardship-score-chip" class="hardship-score-chip hidden">승점 0</div>
-
                 <button onclick="useHint()" class="item-btn" id="training-hint-btn"
                     style="background:#f39c12; border-color:#d35400; color:white; margin:0;">
                     💡 힌트 <span id="training-hint-cost" style="font-size:0.7rem; margin-left:2px;">(💎10)</span>
@@ -955,6 +951,27 @@
                 <button class="btn-pause" onclick="confirmQuit()"
                     style="color:#7f8c8d; border-color:#bdc3c7; position: static; margin: 0;">✕</button>
 
+            </div>
+        </div>
+
+        <div id="common-hardship-header">
+            <div class="common-hardship-header-left">
+                <div id="common-hardship-title" class="common-hardship-title">고난 길</div>
+                <div id="common-hardship-progress" class="common-hardship-progress">0/404절</div>
+            </div>
+
+            <div class="common-hardship-header-right">
+                <div id="common-hardship-score" class="common-hardship-chip common-hardship-score">승점 0</div>
+                <div id="common-hardship-heart-wrap" class="common-hardship-chip common-hardship-hearts">
+                    ❤️ <span id="common-hardship-heart-count">5</span><span id="common-hardship-heart-max">/5</span>
+                </div>
+                <button type="button" id="common-hardship-life-bread-btn" class="common-hardship-chip hardship-life-bread-btn" onclick="useBattleItem('lifeBread')">
+                    🍞 <span id="common-hardship-life-bread-count">0</span>
+                </button>
+                <button type="button" onclick="useHint()" class="item-btn" id="common-hardship-hint-btn">
+                    💡 힌트 <span id="common-hardship-hint-cost" style="font-size:0.7rem; margin-left:2px;">(💎10)</span>
+                </button>
+                <button type="button" id="common-hardship-close-btn" class="btn-pause" onclick="confirmQuit()">✕</button>
             </div>
         </div>
 
