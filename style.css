@@ -47,13 +47,13 @@ button,
     right: 0;
     bottom: 0;
     width: 100%;
-    height: 130px; 
+    height: 64px; 
     
     display: none;
-    grid-template-columns: repeat(3, minmax(0, 1fr)); 
-    grid-template-rows: repeat(2, minmax(0, 1fr));    
-    gap: 4px; 
-    padding: 6px; 
+    grid-template-columns: repeat(6, minmax(0, 1fr)); 
+    grid-template-rows: 1fr;    
+    gap: 3px; 
+    padding: 4px 6px; 
     
     /* 🌟 배경을 흰색에서 '반투명한 남색'으로 변경하여 게임과 어우러지게 함 */
     background: rgba(30, 42, 56, 0.95); 
@@ -90,26 +90,26 @@ button,
     box-shadow: 0 2px 6px rgba(0,0,0,0.2); 
 }
 
-/* 🌟 아이콘 크기 (알림 배지에 밀리지 않게 정확히 지정!) */
+/* 🌟 아이콘 크기 */
 .nav-item span:nth-of-type(1) {
-    font-size: 2.0em; /* 원하시는 만큼 숫자를 팍팍 키워주세요! (4.0em은 너무 클 수 있어 2.5em 추천) */
+    font-size: 1.8em;
     margin-bottom: 0; 
 }
 
-/* 🌟 글자 크기 대폭 확대! */
+/* 🌟 글자 크기 */
 .nav-item span:last-child {
-    font-size: 2.2em; 
+    font-size: 1.44em; 
     margin-top: 0;
-    letter-spacing: 1px; 
+    letter-spacing: 0.5px; 
 }
 
-/* 🔴 알림 배지 (Red Dot) */
+/* 🔴 알림 배지 (Red Dot) — 이모지 우상단 */
 .nav-badge {
     position: absolute;
-    top: 15px; 
-    right: 15%; 
-    width: 8px; 
-    height: 8px;
+    top: 6px; 
+    right: calc(50% - 16px); 
+    width: 7px; 
+    height: 7px;
     background-color: #ff4757;
     border-radius: 50%;
     box-shadow: 0 0 6px rgba(255, 71, 87, 0.8);
@@ -132,13 +132,13 @@ button,
     box-shadow: 0 2px 10px rgba(0,0,0,0.5);
 }
 
-/* 📱 모바일 화면 최적화 (모바일에서도 글자 큼직하게 유지) */
+/* 📱 모바일 화면 최적화 */
 @media (max-width: 600px) {
     .bottom-nav {
-        height: 140px; 
+        height: 60px; 
     }
-    .nav-item span:first-child { font-size: 2.1em; }
-    .nav-item span:last-child { font-size: 1.65em; } /* 모바일에서도 글자 큼직하게! */
+    .nav-item span:first-child { font-size: 1.7em; }
+    .nav-item span:last-child { font-size: 1.36em; }
 }
 
 /* Google Fonts: Gowun Dodum */
@@ -240,9 +240,12 @@ button,
         }
         /* [1. 기본 설정] */
         :root {
-            --primary-color: #f1c40f; 
-            --bg-dark: #2c3e50;       
-            --text-light: #ecf0f1;
+            --primary-color: #f1c40f;
+            --bg-dark: #0f1623;           /* 네이비 심안 (통일 팔레트 기준) */
+            --bg-mid: #12203a;            /* 미드 네이비 (훈련/읽기 화면) */
+            --bg-panel: #1c2e4a;          /* 패널/카드 배경 */
+            --text-light: #dce8f5;        /* 네이비 배경용 밝은 텍스트 */
+            --border-navy: #1d3550;       /* 네이비 계열 테두리 */
             --home-accent-rgb: 241, 196, 15;
             --home-accent-strong-rgb: 52, 152, 219;
             --home-btn-a-rgb: 241, 196, 15;
@@ -444,7 +447,7 @@ body, html {
         /* [4. 맵 화면 스타일 (약속의 땅 버전)] */
         #map-screen { 
             justify-content: flex-start; 
-            background-color: #1a1a2e; /* 기본 배경 */
+            background-color: var(--bg-dark); /* 보스전과 동일한 네이비 심안 */
             padding: 0; /* 여백 제거 (땅으로 꽉 채우기 위해) */
         }
 
@@ -662,14 +665,14 @@ body, html {
         /* [5. 스테이지 시트 (Bottom Sheet)] */
         #stage-sheet {
             position: absolute; bottom: 0; left: 0; width: 100%; height: 70%;
-            background-color: #ecf0f1; border-radius: 30px 30px 0 0;
+            background-color: var(--bg-panel); border-radius: 30px 30px 0 0;
             box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
             transform: translateY(110%); transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
             z-index: 1500; display: flex; flex-direction: column;
         }
         #stage-sheet.open { transform: translateY(0); }
-        .sheet-header { padding: 20px; text-align: center; border-bottom: 1px solid #bdc3c7; background: white; border-radius: 30px 30px 0 0; position: relative; }
-        .sheet-title { font-size: 1.5rem; font-weight: bold; color: #2c3e50; margin: 0; }
+        .sheet-header { padding: 20px; text-align: center; border-bottom: 1px solid var(--border-navy); background: var(--bg-panel); border-radius: 30px 30px 0 0; position: relative; }
+        .sheet-title { font-size: 1.5rem; font-weight: bold; color: var(--text-light); margin: 0; }
         .close-btn { display: none !important; }
         /* 스테이지 목록 닫기 버튼은 표시 + 우측 배치 */
         #stage-sheet .close-btn {
@@ -767,14 +770,14 @@ body, html {
 
         /* [6. 게임 화면 (보스전)] */
         #game-screen {
-            background-color: #2c3e50;
-            background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://www.transparenttextures.com/patterns/cubes.png');
+            background-color: #060c18; /* 보스전: 최고 긴장감의 가장 어두운 네이비 */
+            background-image: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url('https://www.transparenttextures.com/patterns/cubes.png');
             justify-content: space-between;
         }
         .battle-header { 
             width: 100%; 
             padding: 20px; 
-            background: linear-gradient(to bottom, #721c24, #2c3e50); 
+            background: linear-gradient(to bottom, #5a0e1c, #0a1428); /* 크림슨 → 딥 네이비: 보스의 분노+공포 */
             display: flex; 
             flex-direction: row; 
             align-items: flex-start; 
@@ -930,8 +933,8 @@ body, html {
 /* [훈련 모드(Normal) 전용 스타일] */
 #game-screen.mode-training {
     background-image: none;
-    background-color: #ecf0f1; /* 밝은 배경 */
-    color: #2c3e50; /* 어두운 글자 */
+    background-color: var(--bg-mid);
+    color: var(--text-light);
 }
 
 /* 훈련 모드일 때 보스 헤더 숨기기 */
@@ -964,8 +967,11 @@ body, html {
 
 /* 텍스트 읽기 모드 (Step 1) 스타일 */
 .reading-card {
-    background: white; padding: 30px; border-radius: 15px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    background: var(--bg-panel);
+    color: var(--text-light);
+    border: 1px solid var(--border-navy);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.35), 0 0 0 1px rgba(241,196,15,0.08);
+    padding: 30px; border-radius: 15px;
     font-size: 1.5rem; line-height: 1.8; text-align: center;
     margin-bottom: 20px; width: 90%;
 }
@@ -1059,8 +1065,8 @@ body, html {
 
 #game-screen.mode-hardship {
     background-image: none;
-    background: linear-gradient(180deg, #f7f3e8 0%, #ebe4d2 100%);
-    color: #2c3e50;
+    background-color: var(--bg-mid);
+    color: var(--text-light);
 }
 
 #game-screen.mode-hardship .battle-header {
@@ -1102,9 +1108,9 @@ body, html {
     justify-content: space-between;
     align-items: center;
     gap: 10px;
-    background: rgba(255,255,255,0.94);
-    border-bottom: 1px solid rgba(44, 62, 80, 0.12);
-    box-shadow: 0 10px 24px rgba(44, 62, 80, 0.08);
+    background: rgba(12, 22, 35, 0.94);
+    border-bottom: 1px solid var(--border-navy);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
     flex-shrink: 0;
 }
 
@@ -3125,10 +3131,10 @@ body, html {
 /* 두루마리 본체 */
 #scroll-board {
     width: 90vw;
-    max-width: 450px; 
-    background: #fdfbf7; /* 기존 종이 느낌 유지 */
+    max-width: 450px;
+    background: var(--bg-dark);
     border-radius: 8px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 0 1px rgba(200,169,110,0.18);
     padding: 25px 20px;
     transform-style: preserve-3d;
     position: relative;
@@ -3138,9 +3144,9 @@ body, html {
     text-align: center;
     font-size: 1.5rem;
     font-weight: 900;
-    color: #111;
+    color: #f0e6c8;
     margin-bottom: 20px;
-    border-bottom: 2px solid #555;
+    border-bottom: 2px solid rgba(200,169,110,0.35);
     padding-bottom: 10px;
 }
 
@@ -3150,7 +3156,7 @@ body, html {
     font-size: 0.95rem;
     line-height: 1.45;
     font-weight: 700;
-    color: #4a4031;
+    color: var(--primary-color);
 }
 
 /* 5x6 완벽한 바둑판 배열 */
@@ -3168,8 +3174,8 @@ body, html {
     align-items: center;
     font-size: 1.2rem;
     font-weight: bold;
-    color: #333;
-    border: 1px solid #ddd;
+    color: #f0e6c8;
+    border: 1px solid rgba(200,169,110,0.22);
     border-radius: 4px;
     position: relative;
 }
@@ -3190,7 +3196,7 @@ body, html {
     max-width: 600px;
     font-size: 5.5vw; /* 모바일 화면 꽉 차는 시원한 글자 크기 */
     font-weight: 900;
-    color: #3e2723; /* 양피지 배경과 어울리는 진한 갈색 잉크 */
+    color: #f0e6c8;
     text-align: center;
     line-height: 1.5;
     word-break: keep-all; /* 단어 단위로 줄바꿈되어 읽기 편함 */
@@ -3233,14 +3239,14 @@ body, html {
 /* 📜 [수정] 돌돌 말린 두루마리 디자인 (렉 없음, 선명함 유지) */
 /* ========================================================= */
 
-/* 📜 전체 두루마리 보드 (양피지 부분 - 두께 소폭 조정) */
+/* 📜 전체 두루마리 보드 (네이비 테마) */
 #scroll-board {
     position: relative; /* 🌟 중요: 나무 막대기 배치를 위해 필수 */
     
-    background-color: #FDF8E7; /* 기존 양피지 색 */
-    border: 2px solid #5C4330; /* 🌟 테두리를 조금 더 가늘게 (종이 느낌) */
-    border-radius: 20px; /* 기존 귀여운 모서리 */
-    box-shadow: inset 0 0 20px rgba(92, 67, 48, 0.1); /* 기존 부드러운 음영 */
+    background-color: #2a1f0e;
+    border: 1px solid #5c4330;
+    border-radius: 20px;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(200,169,110,0.15);
     
     /* 🌟 나무 막대기가 앉을 여백 확보 (padding 조정) */
     padding-top: 35px; /* 위쪽 막대기 공간 */
@@ -3300,27 +3306,51 @@ body, html {
     top: 20px;
     left: 20px;
     z-index: 99999; /* 오버레이보다 무조건 위로 */
-    background: rgba(0, 0, 0, 0.6);
-    color: white;
-    border: 2px solid #A68A6D;
-    border-radius: 50%;
-    width: 45px;
-    height: 45px;
-    font-size: 1.3rem;
+    background: rgba(42, 31, 14, 0.92);
+    color: #f0e6c8;
+    border: 1.5px solid #c8a96e;
+    border-radius: 22px;
+    width: 46px;
+    height: 36px;
+    font-size: 1.2rem;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.4);
     transition: all 0.2s ease;
 }
 
 /* 마우스 올렸을 때 살짝 밝아짐 */
 #mute-toggle-btn:hover {
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(60, 45, 20, 0.95);
+    border-color: #d4b87a;
 }
 
-/* 🌟 Step 5 힌트 애니메이션 */
+/* 반복 토글 버튼 */
+#repeat-toggle-btn {
+    position: absolute;
+    top: 20px;
+    left: 76px;
+    z-index: 99999;
+    background: rgba(42, 31, 14, 0.92);
+    color: #f0e6c8;
+    border: 1.5px solid #c8a96e;
+    border-radius: 22px;
+    width: 46px;
+    height: 36px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+    transition: all 0.2s ease;
+}
+#repeat-toggle-btn:hover {
+    background: rgba(60, 45, 20, 0.95);
+    border-color: #d4b87a;
+}
 @keyframes hintPulse {
     0% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.7); transform: scale(1); }
     50% { box-shadow: 0 0 15px 10px rgba(52, 152, 219, 0); transform: scale(1.05); }

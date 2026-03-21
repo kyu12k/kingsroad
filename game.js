@@ -3533,11 +3533,11 @@ function updateBattleUI() {
     const heartIcon = playerHearts > 0 ? "❤️" : "💔";
     const isDanger = (playerHearts <= 2);
 
-    // 생명의 떡 버튼 HTML (공통 사용)
+    // 생명의 떡 버튼 HTML (보스전 전용 - 흰색 숫자)
     const lifeBreadBtnHtml = `
         <span class="hardship-life-bread-btn" onclick="event.stopPropagation(); useBattleItem('lifeBread')"
               style="margin-left:6px;">
-            🍞 <span style="margin-left:4px; font-weight:bold;">${lifeBreadCnt}</span>
+            🍞 <span style="margin-left:4px; font-weight:bold; color:#fff;">${lifeBreadCnt}</span>
         </span>
     `;
 
@@ -3569,7 +3569,7 @@ function updateBattleUI() {
             // ★ 핵심: 갱신할 때 id="training-hearts"를 반드시 다시 적어줘야 다음에도 찾을 수 있습니다.
             parent.innerHTML = `
                 ${heartIcon} <span id="training-hearts" style="margin-left:5px; font-weight:bold; color:#2c3e50;">${playerHearts}</span>
-                ${lifeBreadBtnHtml}
+                <span class="hardship-life-bread-btn" onclick="event.stopPropagation(); useBattleItem('lifeBread')" style="margin-left:6px;">🍞 <span style="margin-left:4px; font-weight:bold; color:#111;">${lifeBreadCnt}</span></span>
             `;
             applyDangerEffect(parent, isDanger);
         }
@@ -4184,9 +4184,9 @@ function loadStep() {
 
             span.innerText = span.dataset.masked; // 처음엔 완벽히 가림
             span.id = `chunk-${idx}`;
-            span.style.color = "#bdc3c7";
+            span.style.color = "#3a4f6a";
             span.style.fontSize = "1.3rem";
-            span.style.opacity = "0.8"; // 너무 투명하면 마스킹이 안 보이므로 조금 진하게
+            span.style.opacity = "1";
             span.style.transition = "all 0.3s ease-out";
             card.appendChild(span);
         });
@@ -4194,8 +4194,8 @@ function loadStep() {
         control.innerHTML = `
             <div id="step1-controls" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 10px;"></div>
             <button class="btn-attack" id="btn-step1-next" onclick="nextStep()" style="display:none; background-color:#2ecc71; margin-top:10px; width: 100%;">성령 충만! 다음 단계로 ▶</button>
-            <div style="text-align:center; color:#7f8c8d; font-size:0.9rem; margin-top:5px;">
-                <span style="background:#eee; padding:2px 8px; border-radius:10px;">TIP</span> 하나씩 말하며 '열기' 버튼을 눌러보세요
+            <div style="text-align:center; color:#8fa8c8; font-size:0.9rem; margin-top:5px;">
+                <span style="background:#1d3550; color:#dce8f5; padding:2px 8px; border-radius:10px;">TIP</span> 하나씩 말하며 '열기' 버튼을 눌러보세요
             </div>
         `;
 
@@ -4233,7 +4233,7 @@ function loadStep() {
             const span = document.getElementById(`chunk-${window.revealIndex}`);
             if (span) {
                 span.innerText = span.dataset.original; // ★ 단어가 공개될 때 숨겨둔 원본 텍스트로 교체!
-                span.style.color = "#2c3e50";
+                span.style.color = "#dce8f5";
                 span.style.fontWeight = "bold";
                 span.style.opacity = "1";
                 span.style.fontSize = "1.5rem";
