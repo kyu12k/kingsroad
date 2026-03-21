@@ -3,6 +3,30 @@ const GAME_VERSION = "1.0.0"; // 정식 배포 버전
 
 // 🌟 [추가] 브라우저에 저장된 음소거 상태를 불러옵니다. (앱 전체에서 공유)
 let isGlobalMuted = localStorage.getItem('isMuted') === 'true';
+let isVoiceRepeat = localStorage.getItem('isVoiceRepeat') === 'true';
+
+function updateVoiceRepeatButtonState(buttonEl) {
+    if (!buttonEl) return;
+    buttonEl.style.opacity = isVoiceRepeat ? '1' : '0.4';
+    buttonEl.style.border = isVoiceRepeat ? '2px solid #f1c40f' : '1px solid #7f8c8d';
+}
+
+function updateTempleUpgradeNotification() {
+    const badge = document.getElementById('temple-upgrade-noti');
+    if (!badge) return;
+
+    const nextBlueprint = castleBlueprints[myCastleLevel + 1];
+    const canUpgrade = !!(nextBlueprint && myGems >= nextBlueprint.cost);
+    badge.style.display = canUpgrade ? 'block' : 'none';
+}
+
+function getChapterTitleHtml(chapterNum) {
+    const rawTitle = CHAPTER_TITLES[chapterNum];
+    if (Array.isArray(rawTitle)) {
+        return rawTitle.join('<br>');
+    }
+    return rawTitle || '준비 중입니다.';
+}
 
 // [PWA 설치 프롬프트 및 iOS 안내]
 let deferredPrompt = null;
@@ -39,6 +63,13 @@ window.addEventListener('DOMContentLoaded', () => {
             };
         }
     }
+
+    const repeatBtn = document.getElementById('repeat-toggle-btn');
+    if (repeatBtn) {
+        updateVoiceRepeatButtonState(repeatBtn);
+    }
+
+    updateTempleUpgradeNotification();
 });
 
 // [시스템: 경제 및 인벤토리]
@@ -3904,6 +3935,8 @@ function updateGemDisplay() {
     const homeScreen = document.getElementById('home-screen');
     if (homeScreen && homeScreen.classList.contains('active') && typeof updateCastleView === 'function') {
         updateCastleView();
+    } else {
+        updateTempleUpgradeNotification();
     }
 }
 
@@ -8125,6 +8158,8 @@ function updateCastleView() {
             ${rightBtnHTML}
         </div>
     `;
+
+    updateTempleUpgradeNotification();
 }
 
 // [추가] 뷰어 레벨 변경 함수
@@ -10244,7 +10279,7 @@ function startStageWithTransition(chapterNum, verseNum, startStageCallback) {
     if (!gridContainer || !bibleData[cNum]) return startStageCallback();
 
     const chapterData = bibleData[cNum];
-    title.innerText = `요한계시록 ${cNum}장`;
+    title.innerHTML = `요한계시록 ${cNum}장<span class="scroll-chapter-subtitle">${getChapterTitleHtml(cNum)}</span>`;
     gridContainer.innerHTML = '';
 
     for (let i = 1; i <= 30; i++) {
@@ -10363,20 +10398,19 @@ function playScrollTransition(targetCellId, targetText, verseAudio, onCompleteCa
         };
     }
     // 🌟 [추가 2] 반복 재생 버튼 로직
-    let isLooping = false; // 기본은 '반복 안 함'
+    let isLooping = isVoiceRepeat;
     audioObj.loop = isLooping; // 오디오 객체에 기본값 세팅
 
     if (repeatBtn) {
         repeatBtn.style.display = "flex";
-        repeatBtn.style.opacity = "0.4"; // 처음엔 꺼져있다는 의미로 반투명하게!
+        updateVoiceRepeatButtonState(repeatBtn);
 
         repeatBtn.onclick = () => {
             isLooping = !isLooping; // 상태 뒤집기 (토글)
+            isVoiceRepeat = isLooping;
+            localStorage.setItem('isVoiceRepeat', String(isVoiceRepeat));
             audioObj.loop = isLooping; // 오디오에 즉시 적용 (true면 무한 반복!)
-
-            // 시각적 피드백 (켜지면 불 들어오고, 꺼지면 반투명)
-            repeatBtn.style.opacity = isLooping ? "1" : "0.4";
-            repeatBtn.style.border = isLooping ? "2px solid #f1c40f" : "1px solid #7f8c8d";
+            updateVoiceRepeatButtonState(repeatBtn);
         };
     }
 
@@ -10394,8 +10428,7 @@ function playScrollTransition(targetCellId, targetText, verseAudio, onCompleteCa
             // 🌟 [수술 1] 스킵할 때 반복 재생 버튼도 '즉시' 같이 숨겨줍니다!
             if(repeatBtn) {
                 repeatBtn.style.display = "none";
-                repeatBtn.style.opacity = "0.4"; 
-                repeatBtn.style.border = "1px solid #7f8c8d";
+                updateVoiceRepeatButtonState(repeatBtn);
             }
             tl.play("outro");
         };
@@ -10446,8 +10479,7 @@ function playScrollTransition(targetCellId, targetText, verseAudio, onCompleteCa
             // 🌟 [추가 3] 반복 재생 버튼도 잊지 말고 같이 숨겨줍니다!
             if (repeatBtn) {
                 repeatBtn.style.display = "none";
-                repeatBtn.style.opacity = "0.4"; // 다음을 위해 초기화
-                repeatBtn.style.border = "1px solid #7f8c8d";
+                updateVoiceRepeatButtonState(repeatBtn);
             }
         })
 
