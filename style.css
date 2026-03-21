@@ -252,7 +252,1026 @@ button,
             --home-btn-b-rgb: 52, 152, 219;
         }
 
-        /* [수정] body, html 스타일 (스크롤 잠금 해제) */
+        /* [라이트 모드] — 아래에 색상 변수 오버라이드를 채워주세요 */
+        body.light-mode {
+        }
+
+        /* =============================================
+           [홈 화면 라이트 모드]
+           ============================================= */
+
+        /* 배경: 따뜻한 아이보리 */
+        body.light-mode #home-screen {
+            background: #f5f0e8 !important;
+        }
+        /* 다크 오버레이 레이어 제거 */
+        body.light-mode #home-screen::before,
+        body.light-mode #home-screen::after {
+            display: none !important;
+        }
+
+        /* 타이틀 박스 */
+        body.light-mode .home-title-box {
+            background: #ffffff !important;
+            border-color: #b8860b !important;
+            box-shadow: 0 4px 18px rgba(184,134,11,0.18) !important;
+            backdrop-filter: none !important;
+        }
+        body.light-mode .home-title-box .game-title {
+            color: #1a1a2e !important;
+            text-shadow: none !important;
+        }
+        body.light-mode .home-title-box .game-subtitle {
+            color: #4a3800 !important;
+            text-shadow: none !important;
+        }
+
+        /* 픽셀아트 이미지 프레임 (.castle-area lv0) */
+        body.light-mode .castle-area {
+            background-color: #fff8e7 !important;
+            border-color: #b8860b !important;
+        }
+        body.light-mode .castle-lv0 {
+            border: 2px dashed #b8860b !important;
+        }
+
+        /* 보석/진행 정보 텍스트 */
+        body.light-mode #home-screen .castle-desc {
+            color: #1a1a2e !important;
+            text-shadow: none !important;
+        }
+        body.light-mode #home-screen #castle-display {
+            color: #1a1a2e !important;
+        }
+
+        /* '여정 시작' 버튼 */
+        body.light-mode .btn-main-action {
+            background: #b8860b !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 14px rgba(184,134,11,0.35) !important;
+            text-shadow: none !important;
+        }
+        body.light-mode .btn-main-action:hover {
+            background: #9a700a !important;
+        }
+
+        /* 닉네임 박스 */
+        body.light-mode #home-screen button[onclick="openProfileSettings()"] {
+            background: #fff8e7 !important;
+            border-color: #b8860b !important;
+            color: #1a1a2e !important;
+        }
+
+        /* 홈 화면 전반 텍스트 */
+        body.light-mode #home-screen {
+            color: #1a1a2e !important;
+        }
+
+        /* 지파 색상 배경에 반영 (::before 재활용) */
+        body.light-mode #home-screen::before {
+            display: block !important;
+            background: radial-gradient(
+                120% 80% at 50% 30%,
+                rgba(var(--home-accent-rgb), 0.28) 0%,
+                rgba(var(--home-accent-rgb), 0.12) 45%,
+                transparent 75%
+            ) !important;
+            filter: none !important;
+            inset: 0 !important;
+            height: 100% !important;
+        }
+
+        /* =============================================
+           [메뉴 버튼 & 패널 라이트 모드]
+           ============================================= */
+
+        /* 햄버거 버튼 */
+        body.light-mode #menu-btn {
+            background: #fff8f0 !important;
+            border-color: #d4a853 !important;
+            color: #2a1f0e !important;
+            box-shadow: 0 4px 14px rgba(184,134,11,0.18) !important;
+        }
+        body.light-mode #menu-btn:hover,
+        body.light-mode #menu-btn:active {
+            background: #fff0d6 !important;
+            filter: none !important;
+        }
+
+        /* 메뉴 패널 */
+        body.light-mode #menu-panel {
+            background: #fff8f0 !important;
+            border-color: #d4a853 !important;
+            box-shadow: 0 8px 32px rgba(184,134,11,0.18) !important;
+        }
+
+        /* 메뉴 아이템 */
+        body.light-mode .menu-action-btn {
+            color: #2a1f0e !important;
+        }
+        body.light-mode .menu-action-btn:hover,
+        body.light-mode .menu-action-btn:active {
+            background: rgba(180,130,60,0.10) !important;
+            color: #7a4f00 !important;
+        }
+
+        /* ===== [맵 화면 라이트 모드] ===== */
+
+        /* 맵 배경 전체 */
+        body.light-mode #map-screen {
+            background: #d4e8c2 !important;
+        }
+
+        /* 맵 헤더 (상단 상태바) */
+        body.light-mode .map-header {
+            background: #ccd9c0 !important;
+            color: #2a3d1f !important;
+            border-bottom: none !important;
+        }
+        body.light-mode .map-header * {
+            color: #2a3d1f !important;
+        }
+
+        /* 강물 경로 */
+        body.light-mode .river-path {
+            stroke: #6bb8d4 !important;
+            filter: drop-shadow(0 0 6px rgba(107,184,212,0.55)) !important;
+            opacity: 1 !important;
+        }
+
+        /* 맵 컨테이너 배경 */
+        body.light-mode .river-map-container {
+            background: #d4e8c2 !important;
+        }
+
+        /* 지역 배경 — 단색으로 통일 (그라디언트 제거) */
+        body.light-mode .land-bg.barren {
+            background: #c8ddb0 !important;
+        }
+        body.light-mode .land-bg.garden {
+            background: #a8cc88 !important;
+        }
+        body.light-mode .land-bg.desert {
+            background: #c8ddb0 !important;
+        }
+        body.light-mode .land-bg.mountain {
+            background: #b8d098 !important;
+        }
+
+        /* 챕터 노드 원형 */
+        body.light-mode .tree-icon {
+            background-color: #f0fae8 !important;
+            border-color: #5a8a3c !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+        }
+        body.light-mode .stage-node.completed .tree-icon {
+            background-color: #d4f0a8 !important;
+            border-color: #3d7a28 !important;
+            box-shadow: 0 0 14px rgba(90,138,60,0.45) !important;
+        }
+        body.light-mode .stage-node.locked .tree-icon {
+            background-color: #c8ddb0 !important;
+            opacity: 0.6 !important;
+        }
+
+        /* 챕터 이름 라벨 */
+        body.light-mode .stage-label {
+            background: rgba(255, 248, 240, 0.92) !important;
+            color: #2a1f0e !important;
+        }
+
+        /* 심화 훈련 버튼 */
+        body.light-mode .chapter-hardship-btn {
+            background: linear-gradient(135deg, #b8860b, #c0392b) !important;
+            border-color: #7a4f00 !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.22) !important;
+        }
+
+        /* 잊어버린 스테이지 플로팅 버튼 */
+        body.light-mode #forgotten-stages-floating-btn {
+            background: #fff0c0 !important;
+            color: #7a4f00 !important;
+            border-color: #b8860b !important;
+        }
+
+        /* 하단 탭바 */
+        body.light-mode .bottom-nav {
+            background: rgba(255, 248, 240, 0.95) !important;
+            border-top: 1px solid rgba(184,134,11,0.30) !important;
+        }
+        body.light-mode .nav-item:nth-child(1) { color: #1565c0 !important; }
+        body.light-mode .nav-item:nth-child(2) { color: #e65100 !important; }
+        body.light-mode .nav-item:nth-child(3) { color: #00695c !important; }
+        body.light-mode .nav-item:nth-child(4) { color: #6a1b9a !important; }
+        body.light-mode .nav-item:nth-child(5) { color: #c62828 !important; }
+        body.light-mode .nav-item:nth-child(6) { color: #bf360c !important; }
+        body.light-mode .nav-item.active {
+            opacity: 1 !important;
+        }
+
+        /* ===== [훈련 화면 라이트 모드] ===== */
+
+        /* 전체 배경 */
+        body.light-mode #game-screen.mode-training {
+            background-color: #f5f0e8 !important;
+            background-image: none !important;
+        }
+
+        /* 상단 헤더 (Step N/5, 사이클) */
+        body.light-mode .training-header {
+            background-color: #fff8f0 !important;
+            border-bottom: 1px solid rgba(184,134,11,0.20) !important;
+            color: #2a1f0e !important;
+        }
+        body.light-mode .training-header * {
+            color: #2a1f0e !important;
+        }
+        /* 힌트 버튼은 색상 유지 */
+        body.light-mode #training-hint-btn {
+            background: #d4a853 !important;
+            border-color: #b8860b !important;
+            color: #ffffff !important;
+        }
+        body.light-mode #training-hint-btn * {
+            color: #ffffff !important;
+        }
+        /* 일시정지/종료 버튼 */
+        body.light-mode .training-header .btn-pause {
+            color: #7a5c2a !important;
+            border-color: #d4a853 !important;
+        }
+
+        /* 말씀 카드 */
+        body.light-mode .reading-card {
+            background: #ffffff !important;
+            border: 1px solid #d4a853 !important;
+            color: #1a1a2e !important;
+            box-shadow: 0 4px 16px rgba(184,134,11,0.15) !important;
+        }
+
+        /* TIP 뱃지 */
+        body.light-mode #step1-tip-badge {
+            background: #fff0c0 !important;
+            color: #8a6f3a !important;
+        }
+        body.light-mode #step1-tip-text {
+            color: #8a6f3a !important;
+        }
+
+        /* ===== [보스전 화면 라이트 모드] ===== */
+
+        /* 배경 — 아이보리 (스테이지와 동일 톤) */
+        body.light-mode #game-screen:not(.mode-training):not(.mode-hardship) {
+            background-color: #f5f0e8 !important;
+            background-image: none !important;
+        }
+        body.light-mode #game-screen:not(.mode-training):not(.mode-hardship)::before {
+            display: none !important;
+        }
+
+        /* 배틀 헤더 */
+        body.light-mode .battle-header {
+            background: #fff8f0 !important;
+            box-shadow: 0 4px 12px rgba(180,130,60,0.18) !important;
+        }
+
+        /* 보스 HP바 */
+        body.light-mode .hp-container {
+            background-color: #d4c4a8 !important;
+            border-color: #c4a060 !important;
+        }
+        body.light-mode .hp-segment {
+            background: linear-gradient(90deg, #e05c3a 0%, #c0401a 100%) !important;
+            border-color: #b83818 !important;
+        }
+        body.light-mode .hp-segment.damaged {
+            background: #d4c4a8 !important;
+            opacity: 1 !important;
+        }
+        body.light-mode .hp-bar-fill {
+            background: linear-gradient(90deg, #e05c3a 0%, #c0401a 50%, #a03010 100%) !important;
+        }
+        body.light-mode .boss-hp-text {
+            color: #5a3e1a !important;
+        }
+
+        /* 포기 버튼 */
+        body.light-mode .battle-header .btn-pause {
+            background: #f0e8d8 !important;
+            color: #5a3e1a !important;
+            border-color: #c4a060 !important;
+        }
+
+        /* 힌트 버튼 */
+        body.light-mode #battle-hint-btn {
+            background: #fff8e0 !important;
+            border-color: #d4a853 !important;
+            color: #7a4f00 !important;
+        }
+        body.light-mode #battle-hint-btn * {
+            color: #7a4f00 !important;
+        }
+
+        /* 하트 표시 */
+        body.light-mode .heart-display {
+            color: #5a3e1a !important;
+            background: rgba(212, 168, 83, 0.15) !important;
+            border-color: #d4a853 !important;
+        }
+
+        /* 절 표시 텍스트 */
+        body.light-mode #game-screen:not(.mode-training):not(.mode-hardship) .verse-indicator {
+            color: #2a1f0e !important;
+        }
+
+        /* 입력 카드 (단어 조합 영역) */
+        body.light-mode .answer-zone {
+            background-color: #ffffff !important;
+            border-color: #d4a853 !important;
+        }
+
+        /* 단어 블록 버튼 */
+        body.light-mode .word-block {
+            background-color: #e8d5b0 !important;
+            color: #2a1f0e !important;
+            border: 1px solid #c4a060 !important;
+            box-shadow: 0 3px 0 #b08840 !important;
+        }
+        body.light-mode .answer-zone .word-block {
+            background-color: #d4a853 !important;
+            color: #2a1f0e !important;
+            box-shadow: 0 3px 0 #b08840 !important;
+        }
+
+        /* 공격하기 버튼 */
+        body.light-mode .btn-attack {
+            background-color: #e05c3a !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 0 #b83818 !important;
+        }
+
+        /* 다시 조립 버튼 */
+        body.light-mode .btn-reset-step5 {
+            background-color: #f0e8d8 !important;
+            color: #5a3e1a !important;
+            box-shadow: 0 4px 0 #c4a878 !important;
+        }
+
+        /* 하단 조립 영역 */
+        body.light-mode .battle-control {
+            background-color: #ede4d4 !important;
+            border-top-color: rgba(196,160,96,0.3) !important;
+        }
+
+        /* ===== [고난 길 화면 라이트 모드] ===== */
+
+        /* 전체 배경 */
+        body.light-mode #game-screen.mode-hardship {
+            background-color: #f5f0e8 !important;
+            background-image: none !important;
+        }
+
+        /* 상단 헤더 */
+        body.light-mode #common-hardship-header {
+            background: rgba(255, 248, 240, 0.95) !important;
+            border-bottom-color: rgba(212,168,83,0.25) !important;
+            box-shadow: 0 4px 12px rgba(180,130,60,0.12) !important;
+        }
+        body.light-mode #common-hardship-header * {
+            color: #2a1f0e !important;
+        }
+        body.light-mode .common-hardship-title {
+            color: #2a1f0e !important;
+        }
+        body.light-mode .common-hardship-progress {
+            color: #5a3e1a !important;
+        }
+        /* 힌트 버튼은 색상 유지 */
+        body.light-mode #common-hardship-hint-btn {
+            background: #fff8e0 !important;
+            border-color: #d4a853 !important;
+            color: #7a4f00 !important;
+        }
+        body.light-mode #common-hardship-hint-btn * {
+            color: #7a4f00 !important;
+        }
+        body.light-mode #common-hardship-close-btn {
+            background: #f0e8d8 !important;
+            border-color: #c4a060 !important;
+            color: #5a3e1a !important;
+        }
+        /* 점수 칩 */
+        body.light-mode .common-hardship-score {
+            background: #fff8e0 !important;
+            color: #7a4f00 !important;
+            border-color: rgba(212,168,83,0.40) !important;
+        }
+        /* 하트 칩 */
+        body.light-mode .common-hardship-chip.common-hardship-hearts {
+            background: #fff0f0 !important;
+            border-color: rgba(200,80,80,0.30) !important;
+            color: #8b1a1a !important;
+        }
+
+        /* 말씀 카드 */
+        body.light-mode .hardship-verse-card {
+            background: #ffffff !important;
+            border: 1px solid #d4a853 !important;
+            box-shadow: 0 8px 24px rgba(180,130,60,0.15) !important;
+            color: #1a1a2e !important;
+        }
+        body.light-mode .hardship-verse-card * {
+            color: #1a1a2e !important;
+        }
+        body.light-mode .hardship-mode-tag {
+            background: rgba(212,168,83,0.15) !important;
+            color: #7a5a28 !important;
+        }
+
+        /* 고난 길 설정 섹션 */
+        body.light-mode .hardship-config-section {
+            background: #fff8f0 !important;
+            border-color: rgba(212,168,83,0.3) !important;
+        }
+        body.light-mode .hardship-config-title {
+            color: #7a5a28 !important;
+        }
+        body.light-mode .hardship-config-radio {
+            color: #2a1f0e !important;
+        }
+        body.light-mode .hardship-config-range-separator {
+            color: #8a7a5a !important;
+        }
+        body.light-mode .hardship-config-summary {
+            color: #7a5a28 !important;
+        }
+
+        /* select 박스 */
+        body.light-mode .hardship-config-select-wrap select {
+            background: #fff8f0 !important;
+            color: #2a1f0e !important;
+            border-color: #d4a853 !important;
+        }
+        body.light-mode .hardship-config-select-wrap select:disabled {
+            background: #ede8df !important;
+            color: #8a7a5a !important;
+        }
+
+        /* 모드 선택 버튼 (A/B/C) */
+        body.light-mode .hardship-mode-a,
+        body.light-mode .hardship-mode-b,
+        body.light-mode .hardship-mode-c {
+            background: #fff8f0 !important;
+            border-color: #d4a853 !important;
+            color: #2a1f0e !important;
+        }
+        body.light-mode .hardship-mode-a.selected,
+        body.light-mode .hardship-mode-b.selected,
+        body.light-mode .hardship-mode-c.selected,
+        body.light-mode input[type="radio"]:checked + .hardship-mode-a,
+        body.light-mode input[type="radio"]:checked + .hardship-mode-b,
+        body.light-mode input[type="radio"]:checked + .hardship-mode-c {
+            background: #d4a853 !important;
+            color: #ffffff !important;
+        }
+
+        /* 고난 길 시작 버튼 */
+        body.light-mode .hardship-config-start-btn {
+            background: #e05c3a !important;
+            color: #ffffff !important;
+            box-shadow: 0 6px 16px rgba(224,92,58,0.3) !important;
+        }
+
+        /* ===== [말씀 오버레이 라이트 모드] ===== */
+
+        /* 여정 시작 / 랭킹 오버레이 배경 */
+        body.light-mode #journey-overlay,
+        body.light-mode #ranking-overlay {
+            background: rgba(245, 240, 232, 0.97) !important;
+            color: #2a1f0e !important;
+        }
+        /* 말씀 텍스트 (div 안의 직접 텍스트 색) */
+        body.light-mode #journey-overlay > div:first-of-type,
+        body.light-mode #ranking-overlay > div:first-of-type {
+            color: #2a1f0e !important;
+            text-shadow: none !important;
+        }
+        /* 출처 텍스트 (계 1:3 등의 span) */
+        body.light-mode #journey-overlay span,
+        body.light-mode #ranking-overlay span {
+            color: #b8860b !important;
+        }
+        /* 아멘 버튼 */
+        body.light-mode #amen-btn,
+        body.light-mode #ranking-amen-btn {
+            background: #d4a853 !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 14px rgba(180,130,60,0.35) !important;
+        }
+
+        /* ============================================================
+           [탭 화면 공통 라이트 모드]
+           대상: 랭킹·상점·미션·도감·기록실 (하단 탭바 5개 화면)
+           팔레트: 배경 #f5f0e8, 카드 #fff, 테두리 #d4a853, 제목 #2a1f0e
+           ============================================================ */
+
+        /* ── 공통 배경 ── */
+        body.light-mode #ranking-screen,
+        body.light-mode #shop-screen,
+        body.light-mode #mission-screen,
+        body.light-mode #life-book-screen,
+        body.light-mode #achievement-screen {
+            background-color: #f5f0e8 !important;
+        }
+
+        /* ── 돌아가기 버튼 (.btn-back / .btn-gray 조합) ── */
+        body.light-mode .btn-back {
+            background: #d4a853 !important;
+            color: #ffffff !important;
+            border-color: #b8860b !important;
+        }
+
+        /* ──────────────────────────────
+           상점 (shop-screen)
+           ────────────────────────────── */
+        body.light-mode #shop-screen h1 {
+            color: #7a4f00 !important;
+            text-shadow: none !important;
+        }
+        body.light-mode #shop-screen h1 + p {
+            color: #4a3800 !important;
+        }
+        /* "내 보석" 표시 박스 */
+        body.light-mode #shop-screen > div:first-child > div {
+            background: rgba(212,168,83,0.15) !important;
+            border: 1px solid rgba(212,168,83,0.4) !important;
+            color: #4a3800 !important;
+        }
+        body.light-mode #shop-user-gems {
+            color: #2a1f0e !important;
+        }
+        /* 상품 카드 */
+        body.light-mode .shop-item {
+            background: #ffffff !important;
+            border: 1px solid #d4a853 !important;
+            box-shadow: 0 4px 12px rgba(212,168,83,0.18) !important;
+        }
+
+        /* ──────────────────────────────
+           미션 (mission-screen)
+           ────────────────────────────── */
+        body.light-mode #mission-screen h1 {
+            color: #7a4f00 !important;
+            text-shadow: none !important;
+        }
+        body.light-mode #mission-screen h1 + p {
+            color: #4a3800 !important;
+        }
+        /* 일일/주간 탭 버튼 */
+        body.light-mode .tab-btn {
+            background: #f0e8d8 !important;
+            border-color: #d4a853 !important;
+            color: #5a3e1a !important;
+        }
+        body.light-mode .tab-btn.active {
+            background: #d4a853 !important;
+            color: #ffffff !important;
+            border-color: #b8860b !important;
+            box-shadow: 0 0 10px rgba(212,168,83,0.4) !important;
+        }
+        /* 미션 카드 */
+        body.light-mode .mission-item {
+            background: #ffffff !important;
+            border: 1px solid #d4a853 !important;
+            box-shadow: 0 4px 12px rgba(212,168,83,0.15) !important;
+        }
+        body.light-mode .mission-title { color: #2a1f0e !important; }
+        body.light-mode .mission-desc  { color: #4a3800 !important; }
+        body.light-mode .mission-progress-bg { background: #f0e8d8 !important; }
+        body.light-mode .mission-progress-bar { background: #d4a853 !important; }
+        /* 수령 버튼 */
+        body.light-mode .btn-claim {
+            background: #e8ddc8 !important;
+            color: #9a8a70 !important;
+        }
+        body.light-mode .btn-claim.ready {
+            background: linear-gradient(to bottom, #e8b84b, #c99a35) !important;
+            color: #ffffff !important;
+            box-shadow: 0 2px 0 #9a7020 !important;
+        }
+        body.light-mode .btn-claim.done {
+            background: #5a8a3c !important;
+            color: #ffffff !important;
+        }
+
+        /* ──────────────────────────────
+           도감 (life-book-screen)
+           ────────────────────────────── */
+        /* 스티키 헤더 */
+        body.light-mode #life-book-screen > div:first-child {
+            background: #f5f0e8 !important;
+            border-bottom-color: rgba(212,168,83,0.3) !important;
+        }
+        body.light-mode #life-book-screen h1 { color: #2a1f0e !important; }
+        /* 도감 점수 패널 */
+        body.light-mode #life-book-screen > div:first-child > div:not(#lb-chapter-selector) {
+            background: rgba(255,255,255,0.7) !important;
+            border: 1px solid rgba(212,168,83,0.4) !important;
+            color: #2a1f0e !important;
+        }
+        body.light-mode #collection-score {
+            color: #2a3d1f !important;
+            text-shadow: none !important;
+        }
+        body.light-mode #collection-rank-label { color: #2a1f0e !important; }
+        body.light-mode #collection-rank-buff  { color: #5a8a3c !important; }
+        /* 챕터 선택 스크롤 */
+        body.light-mode #lb-chapter-selector {
+            border-top-color: rgba(212,168,83,0.35) !important;
+            scrollbar-color: #d4a853 #f5f0e8 !important;
+        }
+        body.light-mode #lb-chapter-selector::-webkit-scrollbar-track { background: #f5f0e8 !important; }
+        body.light-mode #lb-chapter-selector::-webkit-scrollbar-thumb {
+            background-color: #d4a853 !important;
+            border-color: #f5f0e8 !important;
+        }
+        /* 챕터 탭 버튼 */
+        body.light-mode .lb-chapter-btn {
+            background: #f0e8d8 !important;
+            color: #4a3800 !important;
+            border-color: rgba(212,168,83,0.5) !important;
+        }
+        body.light-mode .lb-chapter-btn.active {
+            background: #d4a853 !important;
+            color: #ffffff !important;
+            border-color: #b8860b !important;
+            box-shadow: 0 0 10px rgba(212,168,83,0.4) !important;
+        }
+        /* 카드 아이템 */
+        body.light-mode .card-item {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.12) !important;
+        }
+        body.light-mode .card-num { color: #2a1f0e !important; }
+        /* 잠긴 카드 (tier 클래스 없음) */
+        body.light-mode .card-item:not([class*="tier"]) {
+            background: #e8e0d0 !important;
+            border-color: #b8a070 !important;
+        }
+        body.light-mode .card-item:not([class*="tier"]) > div:first-child {
+            color: #b8a070 !important;
+        }
+        body.light-mode .card-item:not([class*="tier"]) > div:last-child {
+            color: #8a7a5a !important;
+        }
+
+        /* ──────────────────────────────
+           랭킹 (ranking-screen) — JS 인라인 스타일 오버라이드
+           ────────────────────────────── */
+        /* 랭킹 화면 헤더 — 맵 공통 배경(#ccd9c0)을 아이보리로 재정의 */
+        body.light-mode #ranking-screen .map-header {
+            background: #f5f0e8 !important;
+        }
+        /* 헤더 (.map-header) 내부 텍스트 */
+        body.light-mode #ranking-screen .map-header div,
+        body.light-mode #ranking-screen .map-header span {
+            color: #2a1f0e !important;
+        }
+        body.light-mode #ranking-screen .map-header button {
+            background: rgba(212,168,83,0.15) !important;
+            border-color: rgba(212,168,83,0.5) !important;
+            color: #5a3e1a !important;
+        }
+        /* 내 승점 패널 */
+        body.light-mode #my-score-panel {
+            background: rgba(255,248,240,0.95) !important;
+            border-color: rgba(212,168,83,0.4) !important;
+        }
+        body.light-mode #my-score-panel div,
+        body.light-mode #my-score-panel span {
+            color: #2a1f0e !important;
+            border-color: rgba(212,168,83,0.3) !important;
+        }
+        /* 연도별 스와이프 영역 */
+        body.light-mode #yearly-swipe-area {
+            background: #f5f0e8 !important;
+            border-bottom-color: rgba(212,168,83,0.3) !important;
+        }
+        body.light-mode #yearly-swipe-area > div {
+            background: #ffffff !important;
+            border-color: #d4a853 !important;
+            box-shadow: 0 4px 14px rgba(212,168,83,0.18) !important;
+        }
+        body.light-mode #yearly-swipe-area > div div,
+        body.light-mode #yearly-swipe-area > div span {
+            color: #2a1f0e !important;
+        }
+        /* 12지파 대항전 메달 행 */
+        body.light-mode #yearly-top3-list > div {
+            background: #fff0e8 !important;  /* 기본(동메달) */
+            border-left-color: #cd7f32 !important;
+        }
+        body.light-mode #yearly-top3-list > div span:first-child {
+            color: #6a3a1a !important;
+            text-shadow: 0 1px 0 rgba(0,0,0,0.15) !important;
+        }
+        body.light-mode #yearly-top3-list > div span:last-child {
+            color: #b8860b !important;
+            text-shadow: none !important;
+        }
+        body.light-mode #yearly-top3-list > div:nth-child(1) {
+            background: #fff8e0 !important;
+            border-left-color: #f1c40f !important;
+        }
+        body.light-mode #yearly-top3-list > div:nth-child(1) span:first-child {
+            color: #7a4f00 !important;
+            text-shadow: 0 1px 0 rgba(0,0,0,0.15) !important;
+        }
+        body.light-mode #yearly-top3-list > div:nth-child(2) {
+            background: #f5f5f5 !important;
+            border-left-color: #bdc3c7 !important;
+        }
+        body.light-mode #yearly-top3-list > div:nth-child(2) span:first-child {
+            color: #4a4a4a !important;
+            text-shadow: 0 1px 0 rgba(0,0,0,0.12) !important;
+        }
+        /* 메달 행 내 [전체 순위 보기] 버튼 */
+        body.light-mode #yearly-top3-list > button {
+            background: rgba(212,168,83,0.12) !important;
+            border-color: rgba(212,168,83,0.4) !important;
+            color: #5a3e1a !important;
+        }
+        /* 탭 그리드 */
+        body.light-mode #sticky-tabs-container {
+            background: #f5f0e8 !important;
+            border-bottom-color: rgba(212,168,83,0.3) !important;
+        }
+        body.light-mode #tab-tribe,
+        body.light-mode #tab-zion,
+        body.light-mode #tab-weekly-hall,
+        body.light-mode #tab-monthly-hall,
+        body.light-mode #tab-total-hall {
+            background: #ffffff !important;
+            border: 0.5px solid #d4a853 !important;
+            border-radius: 20px !important;
+            color: #4a3800 !important;
+            box-shadow: 0 2px 6px rgba(212,168,83,0.12) !important;
+        }
+        /* 랭킹 모달 */
+        body.light-mode #ranking-modal-overlay > div {
+            background: #f5f0e8 !important;
+            border-color: #d4a853 !important;
+        }
+        body.light-mode #ranking-modal-overlay > div > div:first-child {
+            background: rgba(212,168,83,0.12) !important;
+            border-bottom-color: rgba(212,168,83,0.3) !important;
+        }
+        body.light-mode #ranking-modal-title { color: #2a1f0e !important; }
+        body.light-mode #ranking-modal-overlay > div > div:first-child button {
+            color: #5a3e1a !important;
+        }
+        body.light-mode #ranking-list {
+            background: #f5f0e8 !important;
+        }
+        /* 헤더 div (첫 번째 자식) */
+        body.light-mode #ranking-list > div:first-child {
+            background: rgba(212,168,83,0.1) !important;
+            border-bottom-color: rgba(212,168,83,0.3) !important;
+            color: #4a3800 !important;
+        }
+        body.light-mode #ranking-list > div:first-child span { color: #5a3e1a !important; }
+        /* 일반 아이템 */
+        body.light-mode #ranking-list > div:not(:first-child) {
+            background: #fff8f0 !important;
+            border-color: rgba(212,168,83,0.3) !important;
+            color: #2a1f0e !important;
+        }
+        body.light-mode #ranking-list > div:not(:first-child) div,
+        body.light-mode #ranking-list > div:not(:first-child) span:not([onclick]) {
+            color: #2a1f0e !important;
+        }
+        /* 내 카드 강조 */
+        body.light-mode #my-ranking-card {
+            background: rgba(212,168,83,0.2) !important;
+            border-color: #d4a853 !important;
+        }
+        /* 점수 (금색 유지) */
+        body.light-mode #ranking-list > div > div:last-child > div:first-child {
+            color: #b8860b !important;
+        }
+        /* 하단 내 랭크 바 */
+        body.light-mode #modal-my-rank-footer {
+            background: rgba(245,240,232,0.98) !important;
+            border-top-color: rgba(212,168,83,0.3) !important;
+        }
+        body.light-mode #modal-my-rank-footer div,
+        body.light-mode #modal-my-rank-footer span {
+            color: #2a1f0e !important;
+        }
+
+        /* ──────────────────────────────
+           기록실 (achievement-screen) — JS 인라인 스타일 오버라이드
+           ────────────────────────────── */
+        /* 헤더 배경 — 맵 공통 초록(#ccd9c0)을 아이보리로 재정의 */
+        body.light-mode #achievement-screen .map-header {
+            background: #f5f0e8 !important;
+        }
+        /* 헤더 (.map-header) 내부 텍스트 */
+        body.light-mode #achievement-screen .map-header div,
+        body.light-mode #achievement-screen .map-header span {
+            color: #2a1f0e !important;
+        }
+        /* "당신의 여정이…" 소개 텍스트 영역 */
+        body.light-mode #achievement-screen > div:nth-child(2) {
+            background: rgba(212,168,83,0.1) !important;
+            color: #4a3800 !important;
+        }
+        /* 기록 요약 배지 */
+        body.light-mode #record-summary > div > div {
+            background: rgba(212,168,83,0.15) !important;
+            border-color: rgba(212,168,83,0.4) !important;
+            color: #7a4f00 !important;
+        }
+        /* 아코디언 */
+        body.light-mode .accordion-header {
+            background: rgba(212,168,83,0.15) !important;
+            color: #2a1f0e !important;
+        }
+        body.light-mode .accordion-content {
+            background: rgba(255,255,255,0.5) !important;
+        }
+        /* 통계 타일 */
+        body.light-mode .accordion-content > div > div {
+            background: rgba(255,255,255,0.9) !important;
+            border-color: rgba(212,168,83,0.3) !important;
+            color: #2a1f0e !important;
+        }
+        body.light-mode .accordion-content > div > div div,
+        body.light-mode .accordion-content > div > div span {
+            color: #4a3800 !important;
+        }
+        /* 업적 아이템 */
+        body.light-mode #achievement-list > div {
+            background: #ffffff !important;
+            border: 1px solid #d4a853 !important;
+            box-shadow: 0 4px 12px rgba(212,168,83,0.15) !important;
+        }
+        /* 업적 텍스트 */
+        body.light-mode #achievement-list > div > div div,
+        body.light-mode #achievement-list > div > div span {
+            color: #4a3800 !important;
+        }
+        /* 업적 제목 (굵은 색상) */
+        body.light-mode #achievement-list > div > div > div:first-child {
+            color: #2a1f0e !important;
+        }
+        /* 진행바 배경 */
+        body.light-mode #achievement-list div[style*="background:#ecf0f1"] {
+            background: #f0e8d8 !important;
+        }
+        /* 진행중 버튼 */
+        body.light-mode #achievement-list button[disabled]:not([style*="#2ecc71"]) {
+            background: #f0e8d8 !important;
+            color: #9a8a70 !important;
+            border: 1px solid #d4a853 !important;
+        }
+
+        /* ======================================
+           [기억 다지기 보너스 모달 라이트 모드]
+           ====================================== */
+        body.light-mode #forgotten-stages-overlay {
+            background: rgba(245,240,232,0.97) !important;
+        }
+        /* 제목 텍스트 영역 */
+        body.light-mode #forgotten-stages-overlay > div:first-child {
+            color: #2a1f0e !important;
+            text-shadow: none !important;
+        }
+        body.light-mode #forgotten-stages-overlay > div:first-child span {
+            color: #b8860b !important;
+        }
+        /* 스테이지 리스트 컨테이너 */
+        body.light-mode #forgotten-stages-list {
+            background: #fff8f0 !important;
+            border: 1px solid #d4a853 !important;
+        }
+        /* 스테이지 버튼 */
+        body.light-mode #forgotten-stages-list button {
+            background: #ffffff !important;
+            border-color: #d4a853 !important;
+            color: #4a3800 !important;
+        }
+        body.light-mode #forgotten-stages-list button span:first-child {
+            color: #b8860b !important;
+        }
+        body.light-mode #forgotten-stages-list button span:last-child {
+            color: #c0392b !important;
+        }
+        /* '닫기' 버튼 */
+        body.light-mode #forgotten-stages-overlay > button:last-child {
+            background: #d4a853 !important;
+            color: #ffffff !important;
+            border: none !important;
+        }
+
+        /* ======================================
+           [바텀시트 (#stage-sheet) 라이트 모드]
+           ====================================== */
+        body.light-mode #stage-sheet {
+            background-color: #fff8f0 !important;
+        }
+        body.light-mode .sheet-header {
+            background: #f5f0e8 !important;
+            border-bottom-color: rgba(212,168,83,0.3) !important;
+        }
+        body.light-mode .sheet-title {
+            color: #2a1f0e !important;
+        }
+        body.light-mode #stage-sheet .close-btn {
+            color: #5a3e1a !important;
+        }
+        body.light-mode .stage-list {
+            background: #fff8f0 !important;
+        }
+        body.light-mode .stage-item {
+            background: #ffffff !important;
+            border: 1px solid #ede0c8 !important;
+            box-shadow: 0 2px 6px rgba(212,168,83,0.1) !important;
+        }
+        body.light-mode .stage-info,
+        body.light-mode .stage-info .stage-title {
+            color: #2a1f0e !important;
+        }
+        body.light-mode .stage-info .stage-desc {
+            color: #4a3800 !important;
+        }
+        /* 보상 텍스트 (인라인 오렌지 색상 오버라이드) */
+        body.light-mode .stage-info > div[style*="color:#e67e22"],
+        body.light-mode .stage-info > div[style*="color:#95a5a6"] {
+            color: #b8860b !important;
+        }
+        /* ▶ 재생 버튼 */
+        body.light-mode .stage-item > div[style*="color:#f1c40f"] {
+            color: #d4a853 !important;
+        }
+        body.light-mode .stage-item.boss {
+            background: #fff0f0 !important;
+            border-color: #e74c3c !important;
+        }
+
+        /* ======================================
+           [두루마리 보드 라이트 모드]
+           롤러(상하 막대): 고유 색상 유지
+           내부 종이: 따뜻한 크림 팔레트
+           ====================================== */
+        /* 두루마리 종이 내부 배경: 따뜻한 크림 */
+        body.light-mode #scroll-board {
+            background-color: #fff8f0 !important;
+            border-color: #c4a070 !important;
+        }
+        /* 제목: 진한 갈색 */
+        body.light-mode #scroll-title {
+            color: #2a1f0e !important;
+            border-bottom-color: rgba(196,160,112,0.5) !important;
+        }
+        /* 부제목 */
+        body.light-mode #scroll-title .scroll-chapter-subtitle {
+            color: #8a6f3a !important;
+        }
+        /* 숫자 그리드 영역 */
+        body.light-mode #scroll-grid {
+            background: #fff8f0 !important;
+            border-radius: 8px !important;
+            padding: 8px !important;
+        }
+        /* 일반 절 카드 */
+        body.light-mode .grid-cell {
+            background: #ffffff !important;
+            border-color: #d4c4a8 !important;
+            color: #2a1f0e !important;
+        }
+        body.light-mode .grid-cell.empty {
+            background: #f5f0e8 !important;
+            border-color: rgba(212,196,168,0.4) !important;
+            color: rgba(42,31,14,0.25) !important;
+        }
+        /* 현재 스테이지(강조 셀) — JS 인라인 스타일 오버라이드 */
+        body.light-mode .grid-cell[style*="rgba(211, 84, 0"] {
+            background: #fff0d0 !important;
+            border-color: #d4a853 !important;
+            color: #b8860b !important;
+        }
+        /* ======================================
+           [음성 재생 화면 (#verse-text-overlay)]
+           배경: 아이보리 / 텍스트: 진한 갈색
+           ====================================== */
+        body.light-mode #verse-text-overlay {
+            background: rgba(245,240,232,0.95) !important;
+            color: #2a1f0e !important;
+            border-radius: 14px !important;
+            padding: 18px 22px !important;
+            box-shadow: 0 4px 20px rgba(42,31,14,0.12) !important;
+        }
+
 body, html {
     font-family: 'Pretendard', sans-serif;
     margin: 0; padding: 0;
@@ -1762,15 +2781,9 @@ body, html {
 /* 3. 버튼 영역 수정 */
 .button-area-static {
     padding: 8px 10px 8px 10px;
-    
-    /* [수정 1] 반투명(rgba) 대신 배경색과 똑같은 색(#2c3e50)을 칠합니다 */
-    background: var(--bg-dark); /* 또는 #2c3e50 */
-    
-    border-top: 1px solid rgba(255,255,255,0.1);
+    background: transparent;
     text-align: center;
-    
-    /* [수정 2] 모바일(아이폰 등)에서 홈 바 영역까지 색을 꽉 채우기 위해 여백 추가 */
-    padding-bottom: max(65px, env(safe-area-inset-bottom));
+    padding-bottom: max(80px, env(safe-area-inset-bottom));
 }
 
 /* 4. 회색 버튼 (보여주신 코드의 button 스타일을 수정해서 적용) */
@@ -2969,8 +3982,10 @@ body, html {
 
 /* 3. 화면 맨 밑의 '돌아가기' 고정 버튼을 네비바 위로 끌어올림 */
 .button-area-static {
-    bottom: 70px !important; /* 네비바 높이만큼 위로 띄움 */
+    bottom: 70px !important;
     z-index: 100;
+    background: transparent !important;
+    border-top: none !important;
 }
 
 /* ===== 홈 메뉴 버튼 및 패널 ===== */
