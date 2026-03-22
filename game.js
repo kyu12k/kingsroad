@@ -4140,7 +4140,7 @@ function loadStep() {
     // ----------------------------------------------------
     if (currentStep === 1) {
         field.innerHTML = `
-            <div class="verse-indicator">${verseLabel}Step 1. '열기'를 눌러 외운 말씀을 확인하세요</div>
+            <div class="verse-indicator">${verseLabel}Step 1. 한 단어씩 읽으며 '읽기'를 눌러 외운 말씀을 확인하세요</div>
             
             <div style="position: relative; margin-bottom: 30px;">
                 <div class="reading-card" id="tap-reading-card" 
@@ -4198,7 +4198,7 @@ function loadStep() {
             <div id="step1-controls" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 10px;"></div>
             <button class="btn-attack" id="btn-step1-next" onclick="nextStep()" style="display:none; background-color:#2ecc71; margin-top:10px; width: 100%;">성령 충만! 다음 단계로 ▶</button>
             <div id="step1-tip-text" style="text-align:center; font-size:0.9rem; margin-top:5px; color:${!document.body.classList.contains('dark-mode') ? '#8a6f3a' : '#8fa8c8'}">
-                <span id="step1-tip-badge" style="padding:2px 8px; border-radius:10px; background:${!document.body.classList.contains('dark-mode') ? '#fff0c0' : '#1d3550'}; color:${!document.body.classList.contains('dark-mode') ? '#8a6f3a' : '#dce8f5'};">TIP</span> 하나씩 말하며 '열기' 버튼을 눌러보세요
+                <span id="step1-tip-badge" style="padding:2px 8px; border-radius:10px; background:${!document.body.classList.contains('dark-mode') ? '#fff0c0' : '#1d3550'}; color:${!document.body.classList.contains('dark-mode') ? '#8a6f3a' : '#dce8f5'};">TIP</span> 하나씩 말하며 '읽기' 버튼을 눌러보세요
             </div>
         `;
 
@@ -4279,7 +4279,7 @@ function loadStep() {
         revealBtn.id = 'btn-reveal';
         revealBtn.className = 'btn-attack';
         revealBtn.style.flex = "1";
-        revealBtn.innerText = '열기';
+        revealBtn.innerText = '읽기';
 
         let longPressTimer = null;
         let longPressActive = false;
