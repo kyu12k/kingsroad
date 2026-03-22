@@ -1561,11 +1561,28 @@ body, html {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 16px;
             width: 100%;
             box-sizing: border-box;
-            padding: 8px 16px;
+            padding: 6px 16px;
             flex-shrink: 0;
+        }
+        .map-header-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .map-header-row1 {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+        }
+        .map-header-row2 {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
         }
 
 
