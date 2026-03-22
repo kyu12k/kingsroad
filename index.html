@@ -938,6 +938,9 @@
         <div class="more-menu-item" onclick="openAchievementFromMenu()">
             <span class="menu-icon-wrap">🎖️<div id="badge-achievement" class="nav-badge"></div></span> 기록실
         </div>
+        <div class="more-menu-item" id="notif-menu-item" onclick="openNotifSettingFromMenu()">
+            <span class="menu-icon-wrap">🔔</span> 알림 설정
+        </div>
     </div>
     </div>
 
@@ -1121,6 +1124,17 @@
         </div>
     </div>
 
+    <!-- FCM 알림 권한 요청 커스텀 모달 -->
+    <div id="notification-permission-modal">
+        <div class="notif-modal-box">
+            <div class="notif-icon">💜</div>
+            <h3>말셀 복습 알림</h3>
+            <p>외운 말셀을 잊기 전에<br>딱 맞는 타이밍에 알려드려요.<br>10분 후, 1시간 후, 6시간 후</p>
+            <button id="notif-allow-btn">받을게요</button>
+            <button id="notif-deny-btn">괴늮아요</button>
+        </div>
+    </div>
+
     <div id="result-modal" class="modal-overlay">
         <div class="result-card">
             <div class="result-header" id="result-title">🎉 STAGE CLEAR!</div>
@@ -1145,6 +1159,7 @@
                 </div>
             </div>
 
+            <p id="result-quote" style="display:none; font-style:italic; color:#2a1f0e; font-size:15px; text-align:center; margin:10px 0 0; padding:12px 0; line-height:1.6; border-top:1px solid rgba(212,168,83,0.3); border-bottom:1px solid rgba(212,168,83,0.3);"></p>
             <button class="btn-continue" id="result-continue-btn" onclick="closeResultModal()">계속하기 ▶</button>
         </div>
     </div>
@@ -1152,6 +1167,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="game.js"></script>

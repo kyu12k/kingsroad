@@ -399,3 +399,96 @@ exports.archiveMonthlyRankings = functions.pubsub
             return null;
         }
     });
+
+/**
+ * FCM 예약 알림 발송
+ * 매 5분마다 실행: notifyAt <= 지금 인 문서를 조회하여 푸시 알림 발송
+ */
+exports.sendScheduledNotifications = functions.pubsub
+    .schedule('every 5 minutes')
+    .timeZone('Asia/Seoul')
+    .onRun(async () => {
+        try {
+            const now = admin.firestore.Timestamp.now();
+
+            const snapshot = await db.collection('leaderboard')
+                .where('notifyAt', '<=', now)
+                .limit(500)
+                .get();
+
+            if (snapshot.empty) {
+                console.log('📭 발송할 알림 없음');
+                return null;
+            }
+
+            console.log(`📬 알림 발송 대상: ${snapshot.size}명`);
+
+            const CYCLE_MESSAGES = {
+                1: {
+                    title: '말씀 복습 시간이에요 💜',
+                    body: '방금 외운 말씀, 지금 다시 확인하면 기억이 두 배로 굳어져요'
+                },
+                2: {
+                    title: '말씀 복습 시간이에요 💜',
+                    body: '1시간이 지났어요. 다시 한 번 확인해보세요'
+                },
+                3: {
+                    title: '말씀 복습 시간이에요 💜',
+                    body: '오늘의 마지막 복습이에요. 말씀을 다시 새겨보세요'
+                }
+            };
+
+            const jobs = snapshot.docs.map(async (doc) => {
+                const data = doc.data();
+                const fcmToken = data.fcmToken;
+
+                if (!fcmToken) {
+                    console.log(`⏭️ fcmToken 없음, 건너뜀: ${doc.id}`);
+                    return;
+                }
+
+                const cycle = data.notifCycle || 1;
+                const msg = CYCLE_MESSAGES[cycle] || CYCLE_MESSAGES[1];
+
+                try {
+                    await admin.messaging().send({
+                        token: fcmToken,
+                        notification: {
+                            title: msg.title,
+                            body: msg.body
+                        },
+                        android: {
+                            priority: 'high'
+                        },
+                        apns: {
+                            payload: {
+                                aps: { sound: 'default' }
+                            }
+                        }
+                    });
+
+                    // 발송 성공: notifyAt 삭제, lastNotifSentAt 기록
+                    await doc.ref.update({
+                        notifyAt: admin.firestore.FieldValue.delete(),
+                        lastNotifSentAt: admin.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    console.log(`✅ 알림 발송 완료 [${cycle}단계]: ${doc.id}`);
+                } catch (sendErr) {
+                    // 발송 실패 (토큰 만료 등): 토큰/notifyAt 정리
+                    console.error(`❌ 알림 발송 실패: ${doc.id}`, sendErr.message);
+                    await doc.ref.update({
+                        fcmToken: admin.firestore.FieldValue.delete(),
+                        notifyAt: admin.firestore.FieldValue.delete()
+                    });
+                }
+            });
+
+            await Promise.all(jobs);
+            console.log(`✅ 알림 발송 사이클 완료`);
+            return null;
+        } catch (error) {
+            console.error('❌ sendScheduledNotifications 실패:', error);
+            return null;
+        }
+    });

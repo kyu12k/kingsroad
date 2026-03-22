@@ -2076,7 +2076,10 @@ const castleBlueprints = [
 
 // [시스템: 성과 측정 변수]
 let stageStartTime = 0; // 시작 시간
+let bossStartTime = 0;  // 보스전 시작 시간
 let wrongCount = 0;     // 틀린 횟수
+let battleHintCount = 0; // 보스전/훈련 중 힌트 사용 횟수
+let bossHintCount = 0;   // 보스전 전용 힌트 사용 횟수
 
 /* [시스템: 화면 이동] */
 /* [수정] 게임 시작 함수 (사운드 설정 불러오기 적용) */
@@ -2513,6 +2516,23 @@ function openStageSheet(chapterData) {
 
     const list = document.getElementById('stage-list-area');
     list.innerHTML = "";
+
+    // 보스 클리어 멘트 배너 (보류 멘트가 있으면 시트 상단에 표시)
+    let quoteBanner = document.getElementById('sheet-quote-banner');
+    if (!quoteBanner) {
+        quoteBanner = document.createElement('p');
+        quoteBanner.id = 'sheet-quote-banner';
+        quoteBanner.style.cssText = 'font-style:italic; color:var(--primary-color,#f1c40f); font-size:0.9rem; text-align:center; padding:10px 16px 0; margin:0; line-height:1.6; display:none;';
+        list.parentNode.insertBefore(quoteBanner, list);
+    }
+    if (window._pendingResultQuote) {
+        quoteBanner.textContent = window._pendingResultQuote;
+        quoteBanner.style.display = 'block';
+        window._pendingResultQuote = null;
+    } else {
+        quoteBanner.textContent = '';
+        quoteBanner.style.display = 'none';
+    }
 
     // 이전에 돌아가던 타이머가 있다면 정지 (중복 방지)
     if (stageSheetTimer) clearInterval(stageSheetTimer);
@@ -3010,6 +3030,74 @@ function stageClear(type) {
     // 3. 저장
     saveGameData();
     updateNotificationBadges();
+
+    // 4. FCM 알림 사이클 업데이트 (알림 권한 있을 때만)
+    updateNotifCycle();
+}
+
+/* [FCM] 스테이지 클리어 훈 알림 사이클을 Firestore에 저장 */
+function updateNotifCycle() {
+    // 알림 권한 없거나 Firebase 미춤발 시 스킵
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    if (typeof db === 'undefined' || !db || !myPlayerId) return;
+
+    const now = Date.now();
+    const docRef = db.collection('leaderboard').doc(myPlayerId);
+
+    docRef.get().then((doc) => {
+        let notifCycle = 0;
+        let lastNotifSentAt = 0;
+
+        if (doc.exists) {
+            const data = doc.data();
+            notifCycle = data.notifCycle || 0;
+            // lastNotifSentAt은 Firebase Timestamp 또는 번호일 수 있음
+            const raw = data.lastNotifSentAt;
+            if (raw && typeof raw.toMillis === 'function') {
+                lastNotifSentAt = raw.toMillis();
+            } else if (typeof raw === 'number') {
+                lastNotifSentAt = raw;
+            }
+        }
+
+        // 6시간 이상 지났으면 사이클 리셋
+        const SIX_HOURS = 6 * 60 * 60 * 1000;
+        if (lastNotifSentAt > 0 && (now - lastNotifSentAt) >= SIX_HOURS) {
+            notifCycle = 0;
+        }
+
+        // 단계별 notifyAt 계산
+        const cycleDelays = [
+            10 * 60 * 1000,          // 0단계 → 10분 훈
+            1 * 60 * 60 * 1000,      // 1단계 → 1시간 훈
+            6 * 60 * 60 * 1000       // 2단계 → 6시간 훈
+        ];
+
+        if (notifCycle >= 3) {
+            // 3단계: 완료, notifyAt 저장 안 함
+            docRef.set({
+                lastClearAt: firebase.firestore.Timestamp.fromMillis(now),
+                notifCycle: 3
+            }, { merge: true });
+            return;
+        }
+
+        const delay = cycleDelays[notifCycle];
+        const notifyAt = firebase.firestore.Timestamp.fromMillis(now + delay);
+        const nextCycle = notifCycle + 1;
+
+        docRef.set({
+            notifyAt: notifyAt,
+            notifCycle: nextCycle,
+            lastClearAt: firebase.firestore.Timestamp.fromMillis(now)
+        }, { merge: true }).then(() => {
+            console.log(`🔔 FCM 알림 예약: ${nextCycle}단계, ${new Date(now + delay).toLocaleTimeString()}에 발송`);
+        }).catch((err) => {
+            console.error('FCM 알림 사이클 저장 실패:', err);
+        });
+    }).catch((err) => {
+        console.error('FCM 사이클 코드 읽기 실패:', err);
+    });
 }
 
 //[시스템: 보스전 로직]//
@@ -3098,6 +3186,9 @@ function startBossBattle() {
         control.innerHTML = `<div class="block-pool" id="block-pool"></div>`;
 
         wrongCount = 0;
+        battleHintCount = 0;
+        bossHintCount = 0;
+        bossStartTime = Date.now();
 
         if (resumeMode && savedData) {
             currentVerseIdx = savedData.index;
@@ -3224,8 +3315,8 @@ function loadNextVerse() {
                 if (sId.includes('mid')) stageClear('mid-boss');
                 else stageClear('boss');
 
-                quitGame(isFocusedTrainingSession() ? 'home' : 'map');
-                openStageSheetForStageId(clearedStageId);
+                // 보스 클리어 결과 모달 표시
+                showBossClearScreen(clearedStageId);
             }, 2000); // 2초 딜레이 (폭죽 효과 최대 2개 웨이브)
 
             return; // 함수 여기서 중단 (애니메이션 기다림)
@@ -3893,9 +3984,6 @@ function saveGameData() {
         boosterData: boosterData
     };
     localStorage.setItem('kingsRoadSave', JSON.stringify(saveData));
-
-    // 서버 업로드가 있다면 호출
-    if (typeof saveMyScoreToServer === 'function') saveMyScoreToServer();
 
     // Service Worker용 복습 알림 데이터 업데이트
     if (typeof updateForgottenNotificationData === 'function') {
@@ -5078,8 +5166,44 @@ function showClearScreen() {
         document.getElementById('streak-days').innerText = streakDays;
     }
     
-    // (선택) 만약 html에 result-msg 같은 ID가 있다면 msg 텍스트도 뿌려줄 수 있습니다.
-    // document.getElementById('result-msg').innerText = msg;
+    // 일반 스테이지: 각인 레벨 상승 멘트
+    const quoteEl = document.getElementById('result-quote');
+    if (quoteEl) {
+        let quoteText = '';
+        if (!isTraining) {
+            const sId = window.currentStageId;
+            if (sId) {
+                const masteryQuotes = {
+                    1: '말씀과의 첫 만남. 10분 후 다시 만나보세요.',
+                    2: '두 번째 만남. 기억이 뿌리내리기 시작했습니다.',
+                    3: '사흘을 견뎠습니다. 이 말씀은 아직 쉽게 떠납니다.',
+                    4: '일주일을 견뎠습니다. 장기 기억에 자리잡고 있습니다.',
+                    5: '이 말씀은 이제 당신의 것입니다.'
+                };
+                const currentLevel = stageMastery[sId] || 0;
+                quoteText = masteryQuotes[currentLevel + 1] || '';
+            }
+        }
+        quoteEl.textContent = quoteText;
+        quoteEl.style.display = quoteText ? 'block' : 'none';
+    }
+
+    // 알림 켜기 링크 (권한 미허용 상태일 때만 표시)
+    let notifLink = document.getElementById('result-notif-link');
+    if (!notifLink) {
+        notifLink = document.createElement('p');
+        notifLink.id = 'result-notif-link';
+        notifLink.style.cssText = 'font-size:12px; color:var(--text-light); opacity:0.6; text-align:center; margin:10px 0 0; cursor:pointer;';
+        notifLink.onclick = () => requestNotificationPermission();
+        const resultCard = document.querySelector('.result-card');
+        if (resultCard) resultCard.appendChild(notifLink);
+    }
+    if (Notification.permission !== 'granted') {
+        notifLink.textContent = '🔔 복습 알림 켜기';
+        notifLink.style.display = 'block';
+    } else {
+        notifLink.style.display = 'none';
+    }
 
     document.getElementById('result-modal').classList.add('active');
 }
@@ -5139,6 +5263,62 @@ function updateStreak() {
     return { days: streak };
 }
 
+/* [보스 클리어 결과 모달 표시] */
+function showBossClearScreen(clearedStageId) {
+    triggerConfetti();
+    SoundEffect.playClear();
+
+    const endTime = Date.now();
+    const duration = Math.floor((bossStartTime ? (endTime - bossStartTime) : 0) / 1000);
+    const minutes = Math.floor(duration / 60).toString().padStart(2, '0');
+    const seconds = (duration % 60).toString().padStart(2, '0');
+    const accuracy = Math.max(0, 100 - (wrongCount * 10));
+
+    const streakInfo = updateStreak();
+
+    const bq0 = ['이 말씀이 이제 당신 안에 있습니다.', '외운 것이 아니라 새긴 것입니다.', '말씀이 마음판에 기록되었습니다.'];
+    const bq1 = ['거의 다 새겨졌습니다. 조금만 더요.', '윤곽이 보입니다. 다음엔 더 선명해질 거예요.'];
+    const bq4 = ['씨앗이 뿌려졌습니다. 물을 주면 자랍니다.', '처음은 누구나 이렇습니다. 시스템을 믿고 따라오세요.'];
+    const quotePool = bossHintCount === 0 ? bq0 : bossHintCount <= 3 ? bq1 : bq4;
+    const quoteText = quotePool[Math.floor(Math.random() * quotePool.length)];
+    bossHintCount = 0;
+
+    const resultTitle = document.getElementById('result-title');
+    const resultStreakText = document.getElementById('result-streak-text');
+    const resultExpLabel = document.getElementById('result-exp-label');
+    const resultContinueBtn = document.getElementById('result-continue-btn');
+    const quoteEl = document.getElementById('result-quote');
+
+    if (resultTitle) resultTitle.innerText = '🐲 BOSS CLEAR!';
+    if (resultStreakText) resultStreakText.innerHTML = `연속 <span id="streak-days">${streakInfo.days}</span>일째 타오르는 중!`;
+    if (resultExpLabel) resultExpLabel.innerText = '🏆 보스 격파';
+    if (resultContinueBtn) {
+        resultContinueBtn.innerText = '계속하기 ▶';
+        resultContinueBtn.onclick = () => closeBossClearModal(clearedStageId);
+    }
+    if (quoteEl) {
+        quoteEl.textContent = quoteText;
+        quoteEl.style.display = 'block';
+    }
+
+    document.getElementById('result-time').innerText = `${minutes}:${seconds}`;
+    document.getElementById('result-accuracy').innerText = `${accuracy}%`;
+    document.getElementById('result-exp').innerText = '격파!';
+
+    document.getElementById('result-modal').classList.add('active');
+}
+
+/* [보스 클리어 모달 닫기] */
+function closeBossClearModal(clearedStageId) {
+    document.getElementById('result-modal').classList.remove('active');
+    // 계속하기 버튼을 기본 핸들러로 복원
+    const btn = document.getElementById('result-continue-btn');
+    if (btn) btn.onclick = closeResultModal;
+    quitGame('map');
+    openStageSheetForStageId(clearedStageId);
+    setTimeout(tryShowMilestone, 500);
+}
+
 // 모달 닫고 나가기
 // 모달 닫고 나가기 (🌟 훈련 모드 조기 퇴근 완벽 적용판)
 function closeResultModal() {
@@ -5164,6 +5344,120 @@ function closeResultModal() {
     quitGame();
     openStageSheetForStageId(clearedStageId);
     setTimeout(tryShowMilestone, 500);
+
+    // 첫 클리어 훈 알림 권한 요청 (한 번만)
+    if (!localStorage.getItem('notifAsked')) {
+        setTimeout(() => requestNotificationPermission(), 600);
+    }
+}
+
+/* =========================================
+   [FCM 푸시 알림 시스템]
+   ========================================= */
+async function initFCM() {
+    try {
+        if (typeof firebase === 'undefined' || !firebase.messaging) {
+            console.warn('Firebase Messaging SDK가 로드되지 않았습니다.');
+            return;
+        }
+        const messaging = firebase.messaging();
+
+        // FCM 토큰 발급
+        const token = await messaging.getToken({
+            vapidKey: 'BOfPucJVR1HrYQaV0TB6nAib2HHG509bKOzSvqZ9_qlBrm7AUt9kx-PIYb-Z8Iw9BMKI-dn1ZYXpLoCSSmg18Ks'
+        });
+
+        if (token && myPlayerId && typeof db !== 'undefined' && db) {
+            // Firestore leaderboard 문서에 fcmToken 저장
+            db.collection('leaderboard').doc(myPlayerId).set(
+                { fcmToken: token, updatedAt: firebase.firestore.FieldValue.serverTimestamp() },
+                { merge: true }
+            ).then(() => {
+                console.log('✅ FCM 토큰 저장 완료');
+            }).catch(err => {
+                console.error('❌ FCM 토큰 저장 실패:', err);
+            });
+        }
+
+        // 토큰 갱신 시 자동 업데이트
+        messaging.onTokenRefresh(async () => {
+            try {
+                const newToken = await messaging.getToken();
+                if (newToken && myPlayerId && typeof db !== 'undefined' && db) {
+                    db.collection('leaderboard').doc(myPlayerId).set(
+                        { fcmToken: newToken, updatedAt: firebase.firestore.FieldValue.serverTimestamp() },
+                        { merge: true }
+                    );
+                }
+            } catch (e) {
+                console.error('FCM 토큰 갱신 실패:', e);
+            }
+        });
+
+        // 포그라운드 알림 수신 핸들러 (앱이 켜져 있을 때)
+        messaging.onMessage((payload) => {
+            console.log('[FCM] 포그라운드 메시지 수신:', payload);
+
+            const title = payload.notification?.title || '킹스로드 말씀 복습';
+            const body  = payload.notification?.body  || '복습할 말씀이 있습니다.';
+
+            if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+            const notif = new Notification(title, {
+                body: body,
+                icon: '/icon-192.png'
+            });
+
+            notif.onclick = () => {
+                window.focus();
+                notif.close();
+            };
+        });
+    } catch (err) {
+        console.error('FCM 초기화 오류:', err);
+    }
+}
+
+function requestNotificationPermission() {
+    const modal = document.getElementById('notification-permission-modal');
+    if (!modal) return;
+    modal.classList.add('active');
+
+    const allowBtn = document.getElementById('notif-allow-btn');
+    const denyBtn = document.getElementById('notif-deny-btn');
+
+    const cleanup = () => {
+        modal.classList.remove('active');
+        localStorage.setItem('notifAsked', 'true');
+        // 더보기 메뉴 알림 항목 레이블 갱신
+        updateNotifMenuLabel();
+    };
+
+    allowBtn.onclick = async () => {
+        cleanup();
+        try {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                await initFCM();
+            }
+        } catch (e) {
+            console.warn('알림 권한 요청 실패:', e);
+        }
+    };
+
+    denyBtn.onclick = () => {
+        cleanup();
+    };
+}
+
+function updateNotifMenuLabel() {
+    const el = document.getElementById('notif-menu-item');
+    if (!el) return;
+    if (Notification.permission === 'granted') {
+        el.innerHTML = '<span class="menu-icon-wrap">🔔</span> 알림 켜짐';
+    } else {
+        el.innerHTML = '<span class="menu-icon-wrap">🔔</span> 알림 설정';
+    }
 }
 
 // 소리 토글 함수 (기존 코드)
@@ -5272,6 +5566,9 @@ function useHint() {
     }
 
     const hintCost = getCurrentHintCost();
+    battleHintCount++; // 힌트 사용 횟수 누적
+    // 보스전(훈련/고난 아닐 때)에만 bossHintCount 증가
+    if (!window.isTrainingMode && !window.isHardshipMode) bossHintCount++;
 
     if (hintCost > 0 && myGems < hintCost) {
         alert(`💎 보석이 부족합니다! (필요: ${hintCost})`);
@@ -7134,6 +7431,10 @@ function closeMoreMenu() {
 
 function openShopFromMenu() { closeMoreMenu(); openShop(); }
 function openAchievementFromMenu() { closeMoreMenu(); openAchievement(); }
+function openNotifSettingFromMenu() {
+    closeMoreMenu();
+    requestNotificationPermission();
+}
 
 // 팝업 외부 클릭 시 닫기
 document.addEventListener('click', function(e) {
@@ -9339,6 +9640,9 @@ window.onload = function () {
 
     console.log("✅ 게임 로딩 완료!");
 
+    // 더보기 메뉴 알림 항목 초기 라벨 설정
+    if (typeof updateNotifMenuLabel === 'function') updateNotifMenuLabel();
+
 
 
     // ▼▼▼ [수정] 최초 1회만 닉네임 설정창 띄우기 ▼▼▼
@@ -9832,17 +10136,11 @@ function claimMilestoneReward(key, tier, reward) {
 
 /* [시스템: 데이터 보호 시스템] */
 
-// 1. 자동 저장 (1분마다)
-// 유저가 멍하니 화면만 보고 있어도 보석이 날아가지 않게 해줍니다.
-setInterval(() => {
-    saveGameData();
-    console.log("💾 자동 저장 완료");
-}, 60 * 1000); // 60초
-
-// 2. 페이지 종료/새로고침 직전 강제 저장
+// 페이지 종료/새로고침 직전 강제 저장
 // 실수로 창을 닫거나 새로고침했을 때 마지막 순간을 기록합니다.
 window.addEventListener("beforeunload", () => {
     saveGameData();
+    if (typeof saveMyScoreToServer === 'function') saveMyScoreToServer();
 });
 
 // [시스템] 스테이지 목록 강제 새로고침 (UI 갱신용)
