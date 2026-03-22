@@ -2204,6 +2204,10 @@ function goMap() {
     if (typeof updateForgottenNotificationData === 'function') {
         updateForgottenNotificationData();
     }
+    // ★ [추가] 맵으로 돌아올 때 맵 재렌더링 (보스 클리어 후 풀밭 배경 즉시 반영)
+    if (typeof renderChapterMap === 'function') {
+        renderChapterMap();
+    }
     setTimeout(drawRiver, 50);
     // 백버튼 표시 상태 갱신 (맵에서는 숨김)
     if (typeof updateBackButtonVisibility === 'function') updateBackButtonVisibility();
@@ -5141,11 +5145,15 @@ function closeResultModal() {
     document.getElementById('result-modal').classList.remove('active');
 
     // 🌟 [훈련 모드 전용 퇴근 루트]
-    if (window.isTrainingMode || window.isHardshipMode) {
+    if (window.isTrainingMode) {
         quitGame('home');
 
         // 🌟 [가장 중요] 여기서 함수를 끝냅니다! 아래쪽 일반 보상 코드로 넘어가지 못하게 막습니다.
         return; 
+    }
+    if (window.isHardshipMode) {
+        quitGame('map');
+        return;
     }
     
     // ----------------------------------------------------
@@ -7892,7 +7900,7 @@ function confirmQuit() {
         }
 
         // 3. 화면 초기화 및 원래 진입 화면으로 돌아가기 (진짜 종료)
-        quitGame(window.isHardshipMode ? 'home' : (isFocusedTrainingSession() ? 'home' : 'map'));
+        quitGame(window.isHardshipMode ? 'map' : (isFocusedTrainingSession() ? 'home' : 'map'));
     }
 }
 
@@ -12230,7 +12238,7 @@ function finishHardshipSession(reason) {
     }
 
     if (resultContinueBtn) {
-        resultContinueBtn.innerText = '홈으로 돌아가기 ▶';
+        resultContinueBtn.innerText = '맵으로 돌아가기 ▶';
     }
 
     if (resultTime) resultTime.innerText = `${minutes}:${seconds}`;
