@@ -6354,7 +6354,7 @@ function openRankingScreen() {
         <div id="season-timer-display" style="font-size:0.85rem; color:#bdc3c7; font-family:monospace; margin-bottom:10px;">⏳ 시간 계산 중...</div>
         <div style="font-size:0.8rem; color:#95a5a6; margin-bottom:10px;">🔄 06시, 정오(12:00) · 18시, 자정(00:00)에 업데이트됩니다</div>
         
-        <div style="display:flex; flex-direction:row; gap:8px; margin-top:5px; justify-content:flex-start; width:100%; flex-wrap:wrap;">
+        <div style="display:flex; flex-direction:row; gap:8px; margin-top:5px; justify-content:center; width:100%; flex-wrap:wrap;">
             <button onclick="scrollToMyRank()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #ecf0f1; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 5px;">
                 📍 내 순위 찾기
             </button>
