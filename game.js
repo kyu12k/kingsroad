@@ -2323,25 +2323,28 @@ function renderChapterMap() {
             else alert("🔒 이전 챕터를 먼저 클리어하여 길을 여세요.");
         };
 
-        // ★ [신규] 클리어한 장에만 '심화 훈련' 숏컷 버튼을 나무 반대편에 배치
         const isLeft = (index % 2 === 0);
+
+        // ★ 핵심: 배경과 나무 노드를 wrapper에 추가
+        wrapper.appendChild(bg);   // 1층 (배경)
+        wrapper.appendChild(node); // 2층 (나무 노드)
+
+        // ★ 클리어한 장에만 '심화 훈련' 버튼을 나무 반대편에 배치
+        // zone-wrapper(position:relative, width:100%) 기준 absolute
+        // → 나무가 왼쪽(left zone)이면 버튼은 오른쪽, 나무가 오른쪽(right zone)이면 버튼은 왼쪽
         if (isChapterClear) {
             const hardshipBtn = document.createElement('button');
             hardshipBtn.className = 'chapter-hardship-btn';
             hardshipBtn.innerHTML = '🔥 심화 훈련';
-            hardshipBtn.style.cssText = `
-                ${isLeft ? 'right: -88px;' : 'left: -88px;'}
-            `;
+            hardshipBtn.style.cssText = isLeft
+                ? 'right: 12%; top: 50%; transform: translateY(-50%);'
+                : 'left: 12%; top: 50%; transform: translateY(-50%);';
             hardshipBtn.onclick = (e) => {
                 e.stopPropagation();
                 openChapterHardship(chapter.id);
             };
-            node.appendChild(hardshipBtn);
+            wrapper.appendChild(hardshipBtn);
         }
-
-        // ★ 핵심: 배경과 버튼을 형제(Sibling)로 배치
-        wrapper.appendChild(bg);   // 1층 (배경)
-        wrapper.appendChild(node); // 3층 (버튼) - CSS z-index:10 적용됨
 
         landArea.appendChild(wrapper);
     });
@@ -4518,19 +4521,25 @@ function loadStep() {
                     }
 
                 } else {
-                    // 🔴 [실패] 오답일 때 (기존 로직 유지)
+                    // 🔴 [실패] 오답일 때
                     SoundEffect.playWrong();
                     playerHearts--;
                     wrongCount++;
                     updateBattleUI();
 
-                    this.style.backgroundColor = "#e74c3c";
-                    this.classList.add('shake-effect');
+                    this.classList.add('error-block', 'shake-effect');
+
+                    // 정답 입력칸(초성 표시 영역) 테두리 오답 피드백
+                    const displayEl = document.getElementById('initials-display');
+                    if (displayEl) {
+                        displayEl.style.outline = '2px solid #e05c3a';
+                        displayEl.style.transition = 'outline 0.3s';
+                    }
 
                     const self = this;
                     setTimeout(() => {
-                        self.style.backgroundColor = "#ecf0f1";
-                        self.classList.remove('shake-effect');
+                        self.classList.remove('error-block', 'shake-effect');
+                        if (displayEl) displayEl.style.outline = '';
                     }, 500);
 
                     if (playerHearts <= 0) {
@@ -7099,6 +7108,36 @@ function getWeekId(dateObj) {
     const weekNumber = 1 + Math.round((d - firstThursday) / (7 * 24 * 60 * 60 * 1000));
     return `${d.getFullYear()}-W${String(weekNumber).padStart(2, '0')}`;
 }
+
+// ===== 더보기 팝업 메뉴 =====
+function toggleMoreMenu(btn) {
+    const popup = document.getElementById('more-menu-popup');
+    const icon = document.getElementById('nav-more-icon');
+    const isOpen = popup.classList.toggle('open');
+    if (icon) icon.textContent = isOpen ? '▼' : '▲';
+}
+
+function closeMoreMenu() {
+    const popup = document.getElementById('more-menu-popup');
+    const icon = document.getElementById('nav-more-icon');
+    if (popup) popup.classList.remove('open');
+    if (icon) icon.textContent = '▲';
+}
+
+function openShopFromMenu() { closeMoreMenu(); openShop(); }
+function openAchievementFromMenu() { closeMoreMenu(); openAchievement(); }
+
+// 팝업 외부 클릭 시 닫기
+document.addEventListener('click', function(e) {
+    const popup = document.getElementById('more-menu-popup');
+    const btn = document.getElementById('nav-more-btn');
+    if (popup && popup.classList.contains('open')) {
+        if (!popup.contains(e.target) && btn && !btn.contains(e.target)) {
+            closeMoreMenu();
+        }
+    }
+});
+// ===== 더보기 팝업 메뉴 끝 =====
 
 /* [시스템] 지난주 ID 구하기 */
 function getLastWeekId() {
@@ -10541,7 +10580,7 @@ function startBossTransition(chapterNum, startVerse, endVerse, isMidBoss, onComp
     const board = document.getElementById('scroll-board');
     const chapterData = bibleData[chapterNum];
 
-    title.innerText = `요한계시록 ${chapterNum}장`;
+    title.innerHTML = `요한계시록 ${chapterNum}장<span class="scroll-chapter-subtitle">${getChapterTitleHtml(chapterNum)}</span>`;
     gridContainer.innerHTML = '';
 
     // 1. 30칸 그리드 생성 및 보스 타겟 구간 붉게 물들이기

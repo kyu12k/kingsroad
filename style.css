@@ -50,7 +50,7 @@ button,
     height: 64px; 
     
     display: none;
-    grid-template-columns: repeat(6, minmax(0, 1fr)); 
+    grid-template-columns: repeat(4, minmax(0, 1fr)); 
     grid-template-rows: 1fr;    
     gap: 3px; 
     padding: 4px 6px; 
@@ -64,6 +64,39 @@ button,
 /* 🌟 메인 맵 화면이 켜졌을 때만 네비게이션 바를 2행 3열(grid)로 보여라! */
 #map-screen.active ~ .bottom-nav {
     display: grid !important;
+}
+
+/* 더보기 팔업 */
+#more-menu-popup {
+    display: none;
+    flex-direction: column;
+    position: fixed;
+    bottom: 64px;
+    right: 0;
+    width: 25%;
+    background: rgba(28, 46, 74, 0.97);
+    border: 0.5px solid #1d3550;
+    border-radius: 12px 12px 0 0;
+    padding: 8px 0;
+    z-index: 1201;
+    box-shadow: -4px -4px 16px rgba(0,0,0,0.35);
+    backdrop-filter: blur(10px);
+}
+#more-menu-popup.open {
+    display: flex;
+}
+.more-menu-item {
+    padding: 12px 20px;
+    font-size: 14px;
+    font-family: 'Pretendard', sans-serif;
+    font-weight: 600;
+    color: #dce8f5;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+.more-menu-item:hover {
+    background: rgba(212, 168, 83, 0.15);
 }
 .nav-item {
     position: relative; 
@@ -123,9 +156,6 @@ button,
 .bottom-nav .nav-item:nth-child(2) { color: #ffd180; background: rgba(255, 209, 128, 0.12); }
 .bottom-nav .nav-item:nth-child(3) { color: #80cbc4; background: rgba(128, 203, 196, 0.12); }
 .bottom-nav .nav-item:nth-child(4) { color: #b388ff; background: rgba(179, 136, 255, 0.12); }
-.bottom-nav .nav-item:nth-child(5) { color: #ff8a80; background: rgba(255, 138, 128, 0.12); }
-.bottom-nav .nav-item:nth-child(6) { color: #ffb74d; background: rgba(255, 183, 77, 0.12); }
-
 /* 버튼 누를 때 밝아지는 은은한 효과 */
 .nav-item:hover, .nav-item:active {
     filter: brightness(1.3);
@@ -388,7 +418,7 @@ button,
             color: #2a3d1f !important;
             border-bottom: none !important;
         }
-        body:not(.dark-mode) .map-header * {
+        body:not(.dark-mode) .map-header *:not([onclick]) {
             color: #2a3d1f !important;
         }
 
@@ -463,10 +493,19 @@ button,
         body:not(.dark-mode) .nav-item:nth-child(2) { color: #e65100 !important; }
         body:not(.dark-mode) .nav-item:nth-child(3) { color: #00695c !important; }
         body:not(.dark-mode) .nav-item:nth-child(4) { color: #6a1b9a !important; }
-        body:not(.dark-mode) .nav-item:nth-child(5) { color: #c62828 !important; }
-        body:not(.dark-mode) .nav-item:nth-child(6) { color: #bf360c !important; }
         body:not(.dark-mode) .nav-item.active {
             opacity: 1 !important;
+        }
+        /* 더보기 팔업 라이트 모드 */
+        body:not(.dark-mode) #more-menu-popup {
+            background: rgba(255, 248, 240, 0.97) !important;
+            border-color: #d4a853 !important;
+        }
+        body:not(.dark-mode) .more-menu-item {
+            color: #2a1f0e !important;
+        }
+        body:not(.dark-mode) .more-menu-item:hover {
+            background: rgba(212, 168, 83, 0.1) !important;
         }
 
         /* ===== [훈련 화면 라이트 모드] ===== */
@@ -552,14 +591,21 @@ button,
             background: linear-gradient(90deg, #e05c3a 0%, #c0401a 50%, #a03010 100%) !important;
         }
         body:not(.dark-mode) .boss-hp-text {
-            color: #5a3e1a !important;
+            color: #2a1f0e !important;
+            text-shadow: none !important;
         }
 
-        /* 포기 버튼 */
+        /* 포기/헤더 버튼 */
         body:not(.dark-mode) .battle-header .btn-pause {
-            background: #f0e8d8 !important;
-            color: #5a3e1a !important;
-            border-color: #c4a060 !important;
+            background: #fff8f0 !important;
+            color: #2a1f0e !important;
+            border-color: #d4a853 !important;
+        }
+        /* 보스전 헤더 전체 버튼 통일 */
+        body:not(.dark-mode) .battle-header button {
+            background: #fff8f0 !important;
+            color: #2a1f0e !important;
+            border-color: #d4a853 !important;
         }
 
         /* 힌트 버튼 */
@@ -574,9 +620,16 @@ button,
 
         /* 하트 표시 */
         body:not(.dark-mode) .heart-display {
-            color: #5a3e1a !important;
+            color: #2a1f0e !important;
             background: rgba(212, 168, 83, 0.15) !important;
             border-color: #d4a853 !important;
+        }
+        /* 생명의 떡 숫자 (JS 인라인 color:#fff 오버라이드) */
+        body:not(.dark-mode) .hardship-life-bread-btn span[style*="color:#fff"] {
+            color: #2a1f0e !important;
+        }
+        body:not(.dark-mode) .heart-display span[style*="color:#bdc3c7"] {
+            color: #8a7a5a !important;
         }
 
         /* 절 표시 텍스트 */
@@ -599,8 +652,14 @@ button,
         }
         body:not(.dark-mode) .answer-zone .word-block {
             background-color: #d4a853 !important;
-            color: #2a1f0e !important;
+            color: #ffffff !important;
             box-shadow: 0 3px 0 #b08840 !important;
+        }
+        /* 오답 단어 블록 */
+        body:not(.dark-mode) .word-block.error-block {
+            background-color: #f0c0b0 !important;
+            border: 2px solid #e05c3a !important;
+            color: #8b1a1a !important;
         }
 
         /* 공격하기 버튼 */
@@ -608,6 +667,11 @@ button,
             background-color: #e05c3a !important;
             color: #ffffff !important;
             box-shadow: 0 4px 0 #b83818 !important;
+        }
+        body:not(.dark-mode) .btn-attack:active {
+            background-color: #b8860b !important;
+            transform: scale(0.97) !important;
+            box-shadow: none !important;
         }
 
         /* 다시 조립 버튼 */
@@ -1258,6 +1322,12 @@ button,
         body:not(.dark-mode) .grid-cell[style*="rgba(211, 84, 0"] {
             background: #fff0d0 !important;
             border-color: #d4a853 !important;
+            color: #b8860b !important;
+        }
+        /* 보스전/중간점검 타겟 구간 강조 셀 */
+        body:not(.dark-mode) .grid-cell[style*="rgba(139, 0, 0"] {
+            background: #fff0d0 !important;
+            border: 2px solid #d4a853 !important;
             color: #b8860b !important;
         }
         /* ======================================
