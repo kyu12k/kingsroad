@@ -906,7 +906,6 @@
         </div>
     </div>
     <div class="bottom-nav">
-
         <div class="nav-item" onclick="goHome()">
             <div class="nav-badge"></div>
             <span>🏰</span><span>홈</span>
@@ -915,21 +914,25 @@
             <div class="nav-badge"></div>
             <span>🏆</span><span>랭킹</span>
         </div>
-        <div class="nav-item" onclick="openShop()">
-            <div id="badge-shop" class="nav-badge"></div>
-            <span>⛺</span><span>상점</span>
-        </div>
         <div class="nav-item" onclick="openMission()">
             <div id="badge-mission" class="nav-badge"></div>
             <span>📜</span><span>미션</span>
         </div>
-        <div class="nav-item" onclick="openLifeBook()">
-            <div class="nav-badge"></div>
-            <span>📖</span><span>도감</span>
+        <div class="nav-item" id="nav-more-btn" onclick="toggleMoreMenu(this)">
+            <div id="badge-more" class="nav-badge"></div>
+            <span id="nav-more-icon">▲</span><span>더보기</span>
         </div>
-        <div class="nav-item" onclick="openAchievement()">
-            <div id="badge-achievement" class="nav-badge"></div>
-            <span>🎖️</span><span>기록실</span>
+    </div>
+
+    <div id="more-menu-popup">
+        <div class="more-menu-item" onclick="openShopFromMenu()">
+            <span class="menu-icon-wrap">⛺<div id="badge-shop" class="nav-badge"></div></span> 상점
+        </div>
+        <div class="more-menu-item" onclick="openLifeBook(); closeMoreMenu();">
+            <span class="menu-icon-wrap">📖</span> 도감
+        </div>
+        <div class="more-menu-item" onclick="openAchievementFromMenu()">
+            <span class="menu-icon-wrap">🎖️<div id="badge-achievement" class="nav-badge"></div></span> 기록실
         </div>
     </div>
     </div>

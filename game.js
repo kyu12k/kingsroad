@@ -9662,12 +9662,9 @@ function updateNotificationBadges() {
         }
     }
 
-    // 배지 켜기/끄기
+    // 기록실 배지는 사용하지 않음 — 항상 숨김
     const achBadge = document.getElementById('badge-achievement');
-    if (achBadge) {
-        if (hasAchievementReward) achBadge.classList.add('active');
-        else achBadge.classList.remove('active');
-    }
+    if (achBadge) achBadge.classList.remove('active');
 
     // 2. 미션 알림 체크
     let hasMissionReward = false;

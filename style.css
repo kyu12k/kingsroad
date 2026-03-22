@@ -85,6 +85,16 @@ button,
 #more-menu-popup.open {
     display: flex;
 }
+.menu-icon-wrap {
+    position: relative;
+    display: inline-block;
+    margin-right: 6px;
+}
+.more-menu-item .nav-badge {
+    top: -3px;
+    right: -5px;
+    left: auto;
+}
 .more-menu-item {
     padding: 12px 20px;
     font-size: 14px;
@@ -165,7 +175,8 @@ button,
 /* 📱 모바일 화면 최적화 */
 @media (max-width: 600px) {
     .bottom-nav {
-        height: 60px; 
+        height: 60px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
     }
     .nav-item span:first-child { font-size: 1.7em; }
     .nav-item span:last-child { font-size: 1.36em; }
