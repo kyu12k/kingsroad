@@ -295,6 +295,7 @@ button,
 
         /* [라이트 모드] — 아래에 색상 변수 오버라이드를 채워주세요 */
         body:not(.dark-mode) {
+            background-color: #ddd8c4 !important; /* 맵 하단 빈 여백 노출 방지 */
         }
 
         /* =============================================
@@ -420,14 +421,18 @@ button,
 
         /* 맵 배경 전체 */
         body:not(.dark-mode) #map-screen {
-            background: #d4e8c2 !important;
+            background: #ddd8c4 !important;
+            position: fixed !important;
         }
 
         /* 맵 헤더 (상단 상태바) */
         body:not(.dark-mode) .map-header {
-            background: #ccd9c0 !important;
+            background: #ddd8c4 !important;
             color: #2a3d1f !important;
             border-bottom: none !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            justify-content: center !important;
         }
         body:not(.dark-mode) .map-header *:not([onclick]) {
             color: #2a3d1f !important;
@@ -442,7 +447,7 @@ button,
 
         /* 맵 컨테이너 배경 */
         body:not(.dark-mode) .river-map-container {
-            background: #d4e8c2 !important;
+            background: #ddd8c4 !important;
         }
 
         /* 지역 배경 — 단색으로 통일 (그라디언트 제거) */
@@ -1357,7 +1362,7 @@ body, html {
     font-family: 'Pretendard', sans-serif;
     margin: 0; padding: 0;
     width: 100%; height: 100%;
-    background-color: var(--bg-dark);
+    background-color: var(--bg-dark);  /* 다크 모드 기본값 */
     color: var(--text-light);
     -webkit-user-select: none;
     -ms-user-select: none;
@@ -1551,7 +1556,19 @@ body, html {
             padding: 0; /* 여백 제거 (땅으로 꽉 채우기 위해) */
         }
 
-        /* 도감 화면: 전체 x축 스크롤 방지 */
+        /* 맵 헤더 기본 레이아웃 (다크/라이트 공통) */
+        .map-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px 16px;
+            flex-shrink: 0;
+        }
+
+
         #life-book-screen {
             overflow-x: hidden;
         }
@@ -1570,7 +1587,7 @@ body, html {
     overflow-x: hidden;
     
     /* 🌟 네비게이션 바(140px) + 플로팅 버튼 여유 공간까지 고려해서 엄청 넉넉하게! */
-    padding-bottom: 220px !important; 
+    padding-bottom: 64px !important; /* 탭바 높이만큼만 확보 */ 
     
     background: #2c2c2c; /* 기본 황무지 색 */
 }
