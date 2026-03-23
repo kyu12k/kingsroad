@@ -3037,6 +3037,10 @@ function stageClear(type) {
 
 /* [FCM] 스테이지 클리어 훈 알림 사이클을 Firestore에 저장 */
 function updateNotifCycle() {
+    console.log('[notifyAt] updateNotifCycle 호출됨');
+    console.log('[notifyAt] Notification.permission:', Notification.permission);
+    console.log('[notifyAt] myPlayerId:', myPlayerId);
+    console.log('[notifyAt] db 존재:', typeof db !== 'undefined' && !!db);
     console.log('[FCM] updateNotifCycle 시작');
     // 알림 권한 없거나 Firebase 미춤발 시 스킵
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
@@ -3079,6 +3083,7 @@ function updateNotifCycle() {
 
         if (notifCycle >= 3) {
             // 3단계: 완료, notifyAt 저장 안 함
+            console.log('[notifyAt] Firestore 저장 시도');
             docRef.set({
                 lastClearAt: firebase.firestore.Timestamp.fromMillis(now),
                 notifCycle: 3
@@ -3091,6 +3096,7 @@ function updateNotifCycle() {
         console.log('[FCM] notifyAt 저장 시도:', notifyAt);
         const nextCycle = notifCycle + 1;
 
+        console.log('[notifyAt] Firestore 저장 시도');
         docRef.set({
             notifyAt: notifyAt,
             notifCycle: nextCycle,
