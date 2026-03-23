@@ -3037,14 +3037,18 @@ function stageClear(type) {
 
 /* [FCM] 스테이지 클리어 훈 알림 사이클을 Firestore에 저장 */
 function updateNotifCycle() {
+    console.log('[FCM] updateNotifCycle 시작');
     // 알림 권한 없거나 Firebase 미춤발 시 스킵
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    console.log('[FCM] 권한:', Notification.permission);
     if (typeof db === 'undefined' || !db || !myPlayerId) return;
+    console.log('[FCM] db/playerId 확인');
 
     const now = Date.now();
     const docRef = db.collection('leaderboard').doc(myPlayerId);
 
     docRef.get().then((doc) => {
+        console.log('[FCM] 문서 데이터:', doc.data());
         let notifCycle = 0;
         let lastNotifSentAt = 0;
 
@@ -3084,6 +3088,7 @@ function updateNotifCycle() {
 
         const delay = cycleDelays[notifCycle];
         const notifyAt = firebase.firestore.Timestamp.fromMillis(now + delay);
+        console.log('[FCM] notifyAt 저장 시도:', notifyAt);
         const nextCycle = notifCycle + 1;
 
         docRef.set({
@@ -3092,11 +3097,12 @@ function updateNotifCycle() {
             lastClearAt: firebase.firestore.Timestamp.fromMillis(now)
         }, { merge: true }).then(() => {
             console.log(`🔔 FCM 알림 예약: ${nextCycle}단계, ${new Date(now + delay).toLocaleTimeString()}에 발송`);
+            console.log('[FCM] 저장 완료');
         }).catch((err) => {
-            console.error('FCM 알림 사이클 저장 실패:', err);
+            console.error('[FCM] 오류:', err);
         });
     }).catch((err) => {
-        console.error('FCM 사이클 코드 읽기 실패:', err);
+        console.error('[FCM] 오류:', err);
     });
 }
 
@@ -5355,6 +5361,7 @@ function closeResultModal() {
    [FCM 푸시 알림 시스템]
    ========================================= */
 async function initFCM() {
+    console.log('[FCM] initFCM 시작');
     try {
         if (typeof firebase === 'undefined' || !firebase.messaging) {
             console.warn('Firebase Messaging SDK가 로드되지 않았습니다.');
@@ -5362,10 +5369,13 @@ async function initFCM() {
         }
         const messaging = firebase.messaging();
 
-        // FCM 토큰 발급
+        // FCM 토큰 발급 (Service Worker 준비 후)
+        const registration = await navigator.serviceWorker.ready;
         const token = await messaging.getToken({
-            vapidKey: 'BOfPucJVR1HrYQaV0TB6nAib2HHG509bKOzSvqZ9_qlBrm7AUt9kx-PIYb-Z8Iw9BMKI-dn1ZYXpLoCSSmg18Ks'
+            vapidKey: 'BOfPucJVR1HrYQaV0TB6nAib2HHG509bKOzSvqZ9_qlBrm7AUt9kx-PIYb-Z8Iw9BMKI-dn1ZYXpLoCSSmg18Ks',
+            serviceWorkerRegistration: registration
         });
+        console.log('[FCM] 토큰:', token);
 
         if (token && myPlayerId && typeof db !== 'undefined' && db) {
             // Firestore leaderboard 문서에 fcmToken 저장
@@ -5373,9 +5383,9 @@ async function initFCM() {
                 { fcmToken: token, updatedAt: firebase.firestore.FieldValue.serverTimestamp() },
                 { merge: true }
             ).then(() => {
-                console.log('✅ FCM 토큰 저장 완료');
+                console.log('[FCM] 토큰 저장 완료');
             }).catch(err => {
-                console.error('❌ FCM 토큰 저장 실패:', err);
+                console.error('[FCM] initFCM 오류:', err);
             });
         }
 
@@ -5414,7 +5424,7 @@ async function initFCM() {
             };
         });
     } catch (err) {
-        console.error('FCM 초기화 오류:', err);
+        console.error('[FCM] initFCM 오류:', err);
     }
 }
 
