@@ -2663,6 +2663,19 @@ function openStageSheet(chapterData) {
         let stepHintHtml = "";
         // (이전: "다음: Step 1~2" 등의 표시 제거됨)
 
+        // 3-2. 다음 복습 주기 카운트다운
+        let reviewCountdownHtml = "";
+        if (memStatus.remainTime !== null && !isForgotten) {
+            const remainHours = memStatus.remainTime;
+            let countdownText;
+            if (remainHours < 1) {
+                countdownText = "1시간 이내";
+            } else {
+                countdownText = `${Math.floor(remainHours)}시간`;
+            }
+            reviewCountdownHtml = `<div style="font-size:0.72rem; color:#95a5a6; margin-top:3px;">⏱ 다음 복습까지 ${countdownText}</div>`;
+        }
+
         // 4. HTML 조립
         item.innerHTML = `
     ${statusBadgeHtml}
@@ -2670,7 +2683,8 @@ function openStageSheet(chapterData) {
     <div class="stage-info">
         <div class="stage-title">
             ${levelBadgeHtml} ${stage.title}  </div>
-        <div class="stage-desc">${stage.desc}</div> 
+        <div class="stage-desc">${stage.desc}</div>
+        ${reviewCountdownHtml}
         ${stepHintHtml}
         ${rewardInfo}
     </div>
@@ -5059,6 +5073,7 @@ function showClearScreen() {
     let displayGem = 0;
     let streakDays = "-"; // 훈련 모드에서는 스트릭 텍스트를 숨기거나 '-'로 표시
     let msg = "";
+    let bonusCount = 0; // 때를 따른 양식 잔여 횟수 (훈련 모드에서는 0)
     const isTraining = window.isTrainingMode;
 
     const resultTitle = document.getElementById('result-title');
@@ -5081,7 +5096,7 @@ function showClearScreen() {
 
         const sId = window.currentStageId;
         const timedBonus = getTimedBonus(sId);
-        const bonusCount = timedBonus.remaining;
+        bonusCount = timedBonus.remaining;
 
         if (bonusCount === 3) {
             baseGem *= 5;
@@ -5135,17 +5150,16 @@ function showClearScreen() {
             const sId = window.currentStageId;
             if (sId) {
                 const masteryQuotes = {
-                    1: '말씀과의 첫 만남. 10분 후 다시 만나보세요.',
-                    2: '두 번째 만남. 기억이 뿌리내리기 시작했습니다.',
-                    3: '사흘을 견뎠습니다. 이 말씀은 아직 쉽게 떠납니다.',
-                    4: '일주일을 견뎠습니다. 장기 기억에 자리잡고 있습니다.',
-                    5: '이 말씀은 이제 당신의 것입니다.'
+                    1: '말씀을 잊지 않고 싶으시다면<br>10분 후 다시 만나보세요.',
+                    2: '기억이 뿌리내리기 시작했습니다.<br>한 시간 뒤 다시 만나보세요.',
+                    3: '기억에 거름을 줬습니다.<br>복습 주기를 기다려보세요.',
+                    4: '반복은 완벽을 만듭니다.'
                 };
-                const currentLevel = stageMastery[sId] || 0;
-                quoteText = masteryQuotes[currentLevel + 1] || '';
+                const reviewCycle = 4 - bonusCount; // 3→1회차, 2→2회차, 1→3회차, 0→쿨타임
+                quoteText = masteryQuotes[reviewCycle] || '';
             }
         }
-        quoteEl.textContent = quoteText;
+        quoteEl.innerHTML = quoteText;
         quoteEl.style.display = quoteText ? 'block' : 'none';
     }
 
