@@ -5367,15 +5367,12 @@ async function initFCM() {
 
             if (!('Notification' in window) || Notification.permission !== 'granted') return;
 
-            const notif = new Notification(title, {
-                body: body,
-                icon: '/icon-192.png'
+            navigator.serviceWorker.ready.then(registration => {
+                registration.showNotification(title, {
+                    body: body,
+                    icon: '/icon-192.png'
+                });
             });
-
-            notif.onclick = () => {
-                window.focus();
-                notif.close();
-            };
         });
     } catch (err) {
         console.error('[FCM] initFCM 오류:', err);
@@ -7500,9 +7497,11 @@ function testNotifLocal() {
         alert('알림 권한이 없습니다.');
         return;
     }
-    new Notification('말씀 복습 시간이에요 💜', {
-        body: '방금 외운 말씀, 지금 다시 확인하면 기억이 두 배로 굳어져요',
-        icon: '/images/icon-192.png'
+    navigator.serviceWorker.ready.then(registration => {
+        registration.showNotification('말씀 복습 시간이에요 💜', {
+            body: '방금 외운 말씀, 지금 다시 확인하면 기억이 두 배로 굳어져요',
+            icon: '/images/icon-192.png'
+        });
     });
 }
 
