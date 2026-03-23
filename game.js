@@ -7422,6 +7422,23 @@ function openSettingsModal() {
                 ${Notification.permission === 'denied' ? '<div style="margin-top:10px;font-size:0.78rem;color:#e67e22;">⚠️ 브라우저에서 알림이 차단되어 있습니다. 브라우저 설정에서 직접 허용해 주세요.</div>' : ''}
             </div>
 
+            ${notifOn ? `
+            <div style="background:rgba(255,255,255,0.05);border-radius:12px;padding:16px 14px;margin-bottom:12px;">
+                <div style="font-size:0.95rem;color:#ccc;margin-bottom:10px;">🧪 알림 테스트</div>
+                <div style="display:flex;gap:8px;">
+                    <button onclick="testNotifLocal()"
+                        style="flex:1;background:#2980b9;color:#fff;border:none;border-radius:8px;padding:8px 10px;font-size:0.82rem;cursor:pointer;font-family:inherit;">
+                        즉시 테스트
+                    </button>
+                    <button onclick="testNotifFCM()"
+                        style="flex:1;background:#8e44ad;color:#fff;border:none;border-radius:8px;padding:8px 10px;font-size:0.82rem;cursor:pointer;font-family:inherit;">
+                        FCM 테스트
+                    </button>
+                </div>
+                <div style="font-size:0.75rem;color:#888;margin-top:8px;">즉시: 브라우저 알림 바로 표시 / FCM: 서버 경유 (5분 내 도착)</div>
+            </div>
+            ` : ''}
+
             <button onclick="document.getElementById(\'settings-modal\').remove()"
                 style="width:100%;background:rgba(255,255,255,0.08);color:#ccc;border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px;font-size:0.95rem;cursor:pointer;font-family:inherit;margin-top:4px;">
                 닫기
@@ -7461,6 +7478,33 @@ async function toggleNotifFromSettings() {
         localStorage.removeItem('notifDisabled');
         document.getElementById('settings-modal')?.remove();
         requestNotificationPermission();
+    }
+}
+
+function testNotifLocal() {
+    if (Notification.permission !== 'granted') {
+        alert('알림 권한이 없습니다.');
+        return;
+    }
+    new Notification('말씀 복습 시간이에요 💜', {
+        body: '방금 외운 말씀, 지금 다시 확인하면 기억이 두 배로 굳어져요',
+        icon: '/images/icon-192.png'
+    });
+}
+
+async function testNotifFCM() {
+    if (!myPlayerId || typeof db === 'undefined' || !db) {
+        alert('로그인 상태를 확인해 주세요.');
+        return;
+    }
+    try {
+        await db.collection('leaderboard').doc(myPlayerId).set({
+            notifyAt: firebase.firestore.Timestamp.now(),
+            notifCycle: 1
+        }, { merge: true });
+        alert('FCM 테스트 요청 완료!\n5분 내로 알림이 도착합니다.');
+    } catch (e) {
+        alert('오류: ' + e.message);
     }
 }
 
