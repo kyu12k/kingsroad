@@ -10323,10 +10323,15 @@ function toggleAccordion(contentId, btnElement) {
 }
 // 서비스 워커 등록 (앱 설치 조건을 만족시키기 위함)
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
+        window.addEventListener('load', async () => {
         navigator.serviceWorker.register('./sw.js')
             .then(reg => console.log('서비스 워커 등록 완료!'))
             .catch(err => console.log('서비스 워커 등록 실패:', err));
+
+            if (Notification.permission === 'granted') {
+                console.log('[FCM] 권한 이미 허용됨 → initFCM 자동 실행');
+                await initFCM();
+            }
     });
 }
 // 🛡️ 다중 기기 동시 접속 차단기 (스마트 감시 버전)
