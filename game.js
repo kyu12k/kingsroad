@@ -2990,8 +2990,9 @@ function updateNotifCycle() {
     console.log('[notifyAt] myPlayerId:', myPlayerId);
     console.log('[notifyAt] db 존재:', typeof db !== 'undefined' && !!db);
     console.log('[FCM] updateNotifCycle 시작');
-    // 알림 권한 없거나 Firebase 미춤발 시 스킵
+    // 알림 권한 없거나, 사용자가 알림을 끈 경우, Firebase 미초기화 시 스킵
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    if (localStorage.getItem('notifDisabled') === 'true') return;
     console.log('[FCM] 권한:', Notification.permission);
     if (typeof db === 'undefined' || !db || !myPlayerId) return;
     console.log('[FCM] db/playerId 확인');
@@ -7383,6 +7384,84 @@ function openAchievementFromMenu() { closeMoreMenu(); openAchievement(); }
 function openNotifSettingFromMenu() {
     closeMoreMenu();
     requestNotificationPermission();
+}
+
+function openSettingsModal() {
+    // 메뉴 패널 닫기
+    const menuPanel = document.getElementById('menu-panel');
+    if (menuPanel) menuPanel.style.display = 'none';
+
+    // 기존 모달 제거
+    const existing = document.getElementById('settings-modal');
+    if (existing) existing.remove();
+
+    const isGranted = typeof Notification !== 'undefined' && Notification.permission === 'granted';
+    const isDisabled = localStorage.getItem('notifDisabled') === 'true';
+    const notifOn = isGranted && !isDisabled;
+
+    const modal = document.createElement('div');
+    modal.id = 'settings-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;';
+
+    modal.innerHTML = `
+        <div style="background:#1a2535;border:1.5px solid #f1c40f;border-radius:18px;padding:28px 24px;min-width:280px;max-width:340px;width:90%;color:#fff;font-family:inherit;">
+            <h2 style="margin:0 0 20px;font-size:1.2rem;color:#f1c40f;text-align:center;">⚙️ 설정</h2>
+
+            <div style="background:rgba(255,255,255,0.05);border-radius:12px;padding:16px 14px;margin-bottom:12px;">
+                <div style="font-size:0.95rem;color:#ccc;margin-bottom:12px;">🔔 복습 알림</div>
+                <div style="font-size:0.85rem;color:#aaa;margin-bottom:14px;">스테이지 클리어 후 10분, 1시간, 6시간 뒤에 복습 알림을 보내드립니다.</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <span id="notif-status-label" style="font-size:1rem;font-weight:bold;color:${notifOn ? '#2ecc71' : '#e74c3c'};">
+                        ${notifOn ? '알림 켜짐 ✅' : '알림 꺼짐 ❌'}
+                    </span>
+                    <button id="notif-toggle-btn" onclick="toggleNotifFromSettings()"
+                        style="background:${notifOn ? '#c0392b' : '#27ae60'};color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:0.9rem;cursor:pointer;font-family:inherit;">
+                        ${notifOn ? '끄기' : '켜기'}
+                    </button>
+                </div>
+                ${Notification.permission === 'denied' ? '<div style="margin-top:10px;font-size:0.78rem;color:#e67e22;">⚠️ 브라우저에서 알림이 차단되어 있습니다. 브라우저 설정에서 직접 허용해 주세요.</div>' : ''}
+            </div>
+
+            <button onclick="document.getElementById(\'settings-modal\').remove()"
+                style="width:100%;background:rgba(255,255,255,0.08);color:#ccc;border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px;font-size:0.95rem;cursor:pointer;font-family:inherit;margin-top:4px;">
+                닫기
+            </button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+}
+
+async function toggleNotifFromSettings() {
+    const isGranted = typeof Notification !== 'undefined' && Notification.permission === 'granted';
+    const isDisabled = localStorage.getItem('notifDisabled') === 'true';
+    const notifOn = isGranted && !isDisabled;
+
+    if (notifOn) {
+        // 알림 끄기: Firestore에서 fcmToken과 notifyAt 삭제, 로컬 플래그 설정
+        localStorage.setItem('notifDisabled', 'true');
+        if (myPlayerId && typeof db !== 'undefined' && db) {
+            await db.collection('leaderboard').doc(myPlayerId).update({
+                fcmToken: firebase.firestore.FieldValue.delete(),
+                notifyAt: firebase.firestore.FieldValue.delete()
+            }).catch(() => {});
+        }
+        // UI 갱신
+        const label = document.getElementById('notif-status-label');
+        const btn = document.getElementById('notif-toggle-btn');
+        if (label) { label.textContent = '알림 꺼짐 ❌'; label.style.color = '#e74c3c'; }
+        if (btn) { btn.textContent = '켜기'; btn.style.background = '#27ae60'; }
+    } else {
+        // 알림 켜기
+        if (Notification.permission === 'denied') {
+            alert('브라우저에서 알림이 차단되어 있습니다.\n브라우저 주소창 왼쪽의 자물쇠 아이콘을 눌러 알림을 허용해 주세요.');
+            return;
+        }
+        localStorage.removeItem('notifDisabled');
+        document.getElementById('settings-modal')?.remove();
+        requestNotificationPermission();
+    }
 }
 
 // 팝업 외부 클릭 시 닫기
