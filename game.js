@@ -2985,6 +2985,7 @@ function checkMemoryStatus(stageId) {
 
 /* [수정] 스테이지 클리어: 다음 스테이지 잠금 해제 로직 추가 */
 function stageClear(type) {
+    console.log('[stageClear] isTrainingMode:', window.isTrainingMode, '/ isReplayMode:', window.isReplayMode, '/ type:', type);
     // 🌟 [핵심 수술 2] 훈련 모드 철벽 방어막!
     if (window.isTrainingMode) {
         console.log("⚔️ 집중 훈련 완료! (보상 및 데이터 저장을 스킵합니다.)");
