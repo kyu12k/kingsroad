@@ -5372,7 +5372,7 @@ async function initFCM() {
         // FCM 토큰 발급 (Service Worker 준비 후)
         const registration = await navigator.serviceWorker.ready;
         const token = await messaging.getToken({
-            vapidKey: 'BOfPucJVR1HrYQaV0TB6nAib2HHG509bKOzSvqZ9_qlBrm7AUt9kx-PIYb-Z8Iw9BMKI-dn1ZYXpLoCSSmg18Ks',
+            vapidKey: 'BLdqmLN5TbNMaDizmgaOBtSRG3Q_i_1VayUMMaO7kCP_K0DRp0fkBhpFiSWZNxjFz-sxs1OCiMbI7dmYluuo6mk',
             serviceWorkerRegistration: registration
         });
         console.log('[FCM] 토큰:', token);
@@ -5393,7 +5393,7 @@ async function initFCM() {
         messaging.onTokenRefresh(async () => {
     try {
         const newToken = await messaging.getToken({
-            vapidKey: 'BOfPucJVR1HrYQaV0TB6nAib2HHG509bKOzSvqZ9_qlBrm7AUt9kx-PIYb-Z8Iw9BMKI-dn1ZYXpLoCSSmg18Ks'
+            vapidKey: 'BLdqmLN5TbNMaDizmgaOBtSRG3Q_i_1VayUMMaO7kCP_K0DRp0fkBhpFiSWZNxjFz-sxs1OCiMbI7dmYluuo6mk'
         });
         if (newToken && myPlayerId && typeof db !== 'undefined' && db) {
             db.collection('leaderboard').doc(myPlayerId).set(
