@@ -5391,18 +5391,20 @@ async function initFCM() {
 
         // 토큰 갱신 시 자동 업데이트
         messaging.onTokenRefresh(async () => {
-            try {
-                const newToken = await messaging.getToken();
-                if (newToken && myPlayerId && typeof db !== 'undefined' && db) {
-                    db.collection('leaderboard').doc(myPlayerId).set(
-                        { fcmToken: newToken, updatedAt: firebase.firestore.FieldValue.serverTimestamp() },
-                        { merge: true }
-                    );
-                }
-            } catch (e) {
-                console.error('FCM 토큰 갱신 실패:', e);
-            }
+    try {
+        const newToken = await messaging.getToken({
+            vapidKey: 'BOfPucJVR1HrYQaV0TB6nAib2HHG509bKOzSvqZ9_qlBrm7AUt9kx-PIYb-Z8Iw9BMKI-dn1ZYXpLoCSSmg18Ks'
         });
+        if (newToken && myPlayerId && typeof db !== 'undefined' && db) {
+            db.collection('leaderboard').doc(myPlayerId).set(
+                { fcmToken: newToken, updatedAt: firebase.firestore.FieldValue.serverTimestamp() },
+                { merge: true }
+            );
+        }
+    } catch (e) {
+        console.error('FCM 토큰 갱신 실패:', e);
+    }
+});
 
         // 포그라운드 알림 수신 핸들러 (앱이 켜져 있을 때)
         messaging.onMessage((payload) => {
