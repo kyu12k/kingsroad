@@ -2983,59 +2983,6 @@ function checkMemoryStatus(stageId) {
     };
 }
 
-/* [수정] 스테이지 클리어: 다음 스테이지 잠금 해제 로직 추가 */
-function stageClear(type) {
-    console.log('[stageClear] isTrainingMode:', window.isTrainingMode, '/ isReplayMode:', window.isReplayMode, '/ type:', type);
-    // 🌟 [핵심 수술 2] 훈련 모드 철벽 방어막!
-    if (window.isTrainingMode) {
-        console.log("⚔️ 집중 훈련 완료! (보상 및 데이터 저장을 스킵합니다.)");
-        return; // 이 아래에 있는 보상 로직을 단 하나도 실행하지 않고 함수를 종료합니다!
-    }
-    // [추가] 숙련도(클리어 횟수) 증가 로직
-    if (window.currentStageId) {
-        if (!stageMastery[window.currentStageId]) {
-            stageMastery[window.currentStageId] = 0;
-        }
-        stageMastery[window.currentStageId]++; // 횟수 +1
-    }
-    // 1. 현재 스테이지 클리어 처리
-    let currentStageIndex = -1;
-    let targetChapter = null;
-
-    if (window.currentStageId) {
-        // 전체 챕터를 뒤져서 현재 스테이지 위치를 찾음
-        gameData.forEach(ch => {
-            const idx = ch.stages.findIndex(st => st.id === window.currentStageId);
-            if (idx !== -1) {
-                ch.stages[idx].cleared = true; // 깃발 꽂기
-                currentStageIndex = idx;
-                targetChapter = ch;
-            }
-        });
-    }
-
-
-    if (type === 'normal') {
-        updateMissionProgress('training', 1); // 훈련 1회 완료
-    }
-    if (window.isReplayMode) {
-        updateMissionProgress('review', 1); // 복습 1회 완료
-    }
-
-    // ★ 보스나 중간점검을 잡았다면? -> 주간 미션 갱신!
-    if (type === 'boss' || type === 'mid-boss') {
-        updateMissionProgress('dragonKill', 1, 'weekly');
-    }
-    updateGemDisplay(); // UI 갱신
-
-    // 3. 저장
-    saveGameData();
-    updateNotificationBadges();
-
-    // 4. FCM 알림 사이클 업데이트 (알림 권한 있을 때만)
-    updateNotifCycle();
-}
-
 /* [FCM] 스테이지 클리어 훈 알림 사이클을 Firestore에 저장 */
 function updateNotifCycle() {
     console.log('[notifyAt] updateNotifCycle 호출됨');
@@ -7844,6 +7791,7 @@ stageClear = function (type) {
         alert(msg);
         updateGemDisplay();
         saveGameData();
+        updateNotifCycle();
 
     } catch (error) {
         console.error("클리어 처리 중 오류:", error);
