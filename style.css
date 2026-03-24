@@ -4587,11 +4587,36 @@ body, html {
     border-color: #d4b87a;
 }
 
+/* 일시정지/재생 토글 버튼 */
+#pause-toggle-btn {
+    position: absolute;
+    top: 20px;
+    left: 76px;
+    z-index: 99999;
+    background: rgba(42, 31, 14, 0.92);
+    color: #f0e6c8;
+    border: 1.5px solid #c8a96e;
+    border-radius: 22px;
+    width: 46px;
+    height: 36px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+    transition: all 0.2s ease;
+}
+#pause-toggle-btn:hover {
+    background: rgba(60, 45, 20, 0.95);
+    border-color: #d4b87a;
+}
+
 /* 반복 토글 버튼 */
 #repeat-toggle-btn {
     position: absolute;
     top: 20px;
-    left: 76px;
+    left: 132px;
     z-index: 99999;
     background: rgba(42, 31, 14, 0.92);
     color: #f0e6c8;

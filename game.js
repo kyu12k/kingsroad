@@ -10812,6 +10812,7 @@ function playScrollTransition(targetCellId, targetText, verseAudio, onCompleteCa
 
     const skipBtn = document.getElementById('skip-transition-btn');
     const muteBtn = document.getElementById('mute-toggle-btn'); // 🌟 음소거 버튼 연결
+    const pauseBtn = document.getElementById('pause-toggle-btn');
     const repeatBtn = document.getElementById('repeat-toggle-btn');
     const tl = gsap.timeline();
 
@@ -10856,6 +10857,22 @@ function playScrollTransition(targetCellId, targetText, verseAudio, onCompleteCa
         };
     }
 
+    // 일시정지/재생 버튼 로직
+    if (pauseBtn) {
+        pauseBtn.innerText = "⏸";
+        pauseBtn.style.display = "none"; // 오디오 재생 시작 전까지는 숨김
+
+        pauseBtn.onclick = () => {
+            if (audioObj.paused) {
+                audioObj.play();
+                pauseBtn.innerText = "⏸";
+            } else {
+                audioObj.pause();
+                pauseBtn.innerText = "▶";
+            }
+        };
+    }
+
     if (skipBtn) {
         skipBtn.style.display = "block";
         skipBtn.onclick = () => {
@@ -10867,6 +10884,7 @@ function playScrollTransition(targetCellId, targetText, verseAudio, onCompleteCa
             clearTimeout(fallbackTimer);
             skipBtn.style.display = "none";
             if (muteBtn) muteBtn.style.display = "none"; // 스킵 시 음소거 버튼도 같이 숨김
+            if (pauseBtn) pauseBtn.style.display = "none";
             // 🌟 [수술 1] 스킵할 때 반복 재생 버튼도 '즉시' 같이 숨겨줍니다!
             if(repeatBtn) {
                 repeatBtn.style.display = "none";
@@ -10894,6 +10912,7 @@ function playScrollTransition(targetCellId, targetText, verseAudio, onCompleteCa
             audioObj.onended = () => {
                 if (isSkipped) return;
                 clearTimeout(fallbackTimer);
+                if (pauseBtn) pauseBtn.style.display = "none";
                 tl.resume(); // 🌟 [수술 2단계] 강제 점프(play) 대신 자연스럽게 일시정지 해제(resume)로 이어서 갑니다!
             };
 
@@ -10903,11 +10922,18 @@ function playScrollTransition(targetCellId, targetText, verseAudio, onCompleteCa
                 // then()은 과감히 지워버리고, 에러가 났을 때(catch)만 대비합니다.
                 playPromise.catch((error) => {
                     console.warn("오디오 재생 불가:", error);
+                    if (pauseBtn) pauseBtn.style.display = "none";
                     fallbackTimer = setTimeout(() => {
                         if (isSkipped) return;
                         tl.resume();
                     }, readTime * 1000);
                 });
+            }
+
+            // 오디오 재생 시작 시 일시정지 버튼 표시
+            if (pauseBtn) {
+                pauseBtn.innerText = "⏸";
+                pauseBtn.style.display = "flex";
             }
         })
 
@@ -10918,6 +10944,7 @@ function playScrollTransition(targetCellId, targetText, verseAudio, onCompleteCa
         .call(() => {
             if (skipBtn) skipBtn.style.display = "none";
             if (muteBtn) muteBtn.style.display = "none";
+            if (pauseBtn) pauseBtn.style.display = "none";
             // 🌟 [추가 3] 반복 재생 버튼도 잊지 말고 같이 숨겨줍니다!
             if (repeatBtn) {
                 repeatBtn.style.display = "none";
@@ -10957,10 +10984,12 @@ function playScrollTransition(targetCellId, targetText, verseAudio, onCompleteCa
 function startBossTransition(chapterNum, startVerse, endVerse, isMidBoss, onCompleteCallback) {
     // 🌟 [버그 픽스] 보스전 진입 시, 화면에 남아있을지 모르는 일반 스테이지용 오디오 버튼들을 강제로 싹 치워버립니다!
     const muteBtn = document.getElementById('mute-toggle-btn');
+    const pauseBtn = document.getElementById('pause-toggle-btn');
     const repeatBtn = document.getElementById('repeat-toggle-btn');
     const skipBtn = document.getElementById('skip-transition-btn');
 
     if (muteBtn) muteBtn.style.display = 'none';
+    if (pauseBtn) pauseBtn.style.display = 'none';
     if (skipBtn) skipBtn.style.display = 'none';
     if (repeatBtn) {
         repeatBtn.style.display = 'none';
