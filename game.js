@@ -3005,6 +3005,9 @@ function checkMemoryStatus(stageId) {
 /* [FCM] 스테이지 클리어 후 보너스 배수에 따라 복습 알림을 Firestore에 예약
  * bonusLevel: 3=5배(10분후), 2=2배(1시간후), 1=1.5배(6시간후), 0=보너스없음(알림없음)
  * 우선순위: 10분 > 1시간 > 6시간 — 더 짧은 알림이 이미 예약돼 있으면 덮어쓰지 않음 */
+// 앱 종료/백그라운드 시 Firestore에 쓸 알림 예약 데이터 (메모리 캐시)
+let pendingNotif = null; // { notifyAt: ms, bonusLevel }
+
 function updateNotifCycle(bonusLevel) {
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
     if (localStorage.getItem('notifDisabled') === 'true') return;
@@ -3021,35 +3024,51 @@ function updateNotifCycle(bonusLevel) {
     if (!newDelay) return;
 
     const now = Date.now();
-    const docRef = db.collection('leaderboard').doc(myPlayerId);
+    const newNotifyAt = now + newDelay;
 
-    docRef.get().then((doc) => {
+    // 이미 더 짧은 알림이 메모리에 있으면 유지
+    if (pendingNotif && pendingNotif.notifyAt > now && (pendingNotif.notifyAt - now) < newDelay) {
+        console.log(`[FCM] 기존 알림 유지 (${Math.round((pendingNotif.notifyAt - now) / 60000)}분 남음)`);
+        return;
+    }
+
+    pendingNotif = { notifyAt: newNotifyAt, bonusLevel };
+    const timeStr = newDelay >= 3600000 ? `${newDelay / 3600000}시간` : `${newDelay / 60000}분`;
+    console.log(`[FCM] 알림 메모리 예약: ${timeStr} 후 (bonusLevel=${bonusLevel})`);
+}
+
+async function flushPendingNotif() {
+    if (!pendingNotif) return;
+    if (typeof db === 'undefined' || !db || !myPlayerId) return;
+
+    const { notifyAt, bonusLevel } = pendingNotif;
+    pendingNotif = null;
+
+    try {
+        const docRef = db.collection('leaderboard').doc(myPlayerId);
+        const doc = await docRef.get();
         let currentNotifyAt = 0;
         if (doc.exists) {
             const raw = doc.data().notifyAt;
             if (raw && typeof raw.toMillis === 'function') currentNotifyAt = raw.toMillis();
         }
 
-        // 현재 예약된 알림이 더 짧은 delay라면 그대로 유지 (우선순위 높은 알림 보존)
-        if (currentNotifyAt > now && (currentNotifyAt - now) < newDelay) {
-            console.log(`[FCM] 기존 알림 유지 (${Math.round((currentNotifyAt - now) / 60000)}분 남음)`);
+        const now = Date.now();
+        // Firestore에 이미 더 짧은 알림이 있으면 유지
+        if (currentNotifyAt > now && (currentNotifyAt - now) < (notifyAt - now)) {
+            console.log(`[FCM] Firestore 기존 알림 유지`);
             return;
         }
 
-        // 새 알림 예약 (같은 delay면 시각 갱신, 더 짧은 delay면 교체)
-        docRef.set({
-            notifyAt: firebase.firestore.Timestamp.fromMillis(now + newDelay),
+        await docRef.set({
+            notifyAt: firebase.firestore.Timestamp.fromMillis(notifyAt),
             notifCycle: bonusLevel,
             lastClearAt: firebase.firestore.Timestamp.fromMillis(now)
-        }, { merge: true }).then(() => {
-            const timeStr = newDelay >= 3600000 ? `${newDelay / 3600000}시간` : `${newDelay / 60000}분`;
-            console.log(`🔔 FCM 알림 예약: ${timeStr} 후 (bonusLevel=${bonusLevel})`);
-        }).catch((err) => {
-            console.error('[FCM] 오류:', err);
-        });
-    }).catch((err) => {
-        console.error('[FCM] 오류:', err);
-    });
+        }, { merge: true });
+        console.log(`[FCM] Firestore 알림 예약 완료`);
+    } catch (err) {
+        console.error('[FCM] flushPendingNotif 오류:', err);
+    }
 }
 
 //[시스템: 보스전 로직]//
@@ -10386,6 +10405,14 @@ if ('serviceWorker' in navigator) {
             }
     });
 }
+
+// 앱 백그라운드 전환 또는 종료 시 Firestore에 알림 예약 저장
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushPendingNotif();
+});
+window.addEventListener('pagehide', () => {
+    flushPendingNotif();
+});
 // 🛡️ 다중 기기 동시 접속 차단기 (스마트 감시 버전)
 function startSessionGuard() {
     if (typeof db === 'undefined' || !myPlayerId) return;
