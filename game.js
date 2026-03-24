@@ -5315,8 +5315,8 @@ async function initFCM() {
         }
         const messaging = firebase.messaging();
 
-        // FCM 토큰 발급 (Service Worker 준비 후)
-        const registration = await navigator.serviceWorker.ready;
+        // FCM 토큰 발급 (firebase-messaging-sw.js 명시적으로 사용)
+        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
         const token = await messaging.getToken({
             vapidKey: 'BLdqmLN5TbNMaDizmgaOBtSRG3Q_i_1VayUMMaO7kCP_K0DRp0fkBhpFiSWZNxjFz-sxs1OCiMbI7dmYluuo6mk',
             serviceWorkerRegistration: registration
