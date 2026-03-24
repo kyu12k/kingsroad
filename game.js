@@ -7500,7 +7500,7 @@ function testNotifLocal() {
     navigator.serviceWorker.ready.then(registration => {
         registration.showNotification('말씀 복습 시간이에요 💜', {
             body: '방금 외운 말씀, 지금 다시 확인하면 기억이 두 배로 굳어져요',
-            icon: '/images/icon-192.png'
+            icon: '/icon-192.png'
         });
     });
 }

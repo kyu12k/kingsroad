@@ -23,8 +23,8 @@ messaging.onBackgroundMessage((payload) => {
     const title = payload.notification?.title || '킹스로드 말씀 복습';
     const options = {
         body: payload.notification?.body || '복습할 말씀이 있습니다.',
-        icon: '/images/icon-192.png',
-        badge: '/images/icon-72.png',
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
         data: payload.data || {}
     };
     self.registration.showNotification(title, options);
@@ -122,8 +122,8 @@ async function checkAndNotifyForgotten() {
         
         self.registration.showNotification('📚 King\'s Road - 복습 시간!', {
           body: `복습할 구절이 ${count}개 있습니다.\n\n${stages}${count > 2 ? '\n...' : ''}`,
-          icon: '/icon.png',
-          badge: '/icon.png',
+          icon: '/icon-192.png',
+          badge: '/icon-192.png',
           tag: 'forgotten-reminder',
           requireInteraction: false,
           data: { type: 'forgotten' }

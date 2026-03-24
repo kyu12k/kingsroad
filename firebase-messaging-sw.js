@@ -22,8 +22,8 @@ messaging.onBackgroundMessage((payload) => {
     const notificationTitle = payload.notification?.title || '킹스로드 말씀 복습';
     const notificationOptions = {
         body: payload.notification?.body || '복습할 말씀이 있습니다.',
-        icon: '/images/icon-192.png',
-        badge: '/images/icon-72.png',
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
         data: payload.data || {}
     };
 
