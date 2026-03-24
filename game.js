@@ -2963,41 +2963,37 @@ function calculateBossBaseGem(chapterNum) {
     return totalGem;
 }
 
-/* [수정] 기억 상태 확인 함수 (1시간 여유 두기 패치) */
+/* [기억 상태 확인 함수] stageNextEligibleTime 기준으로 판단 (반복 클리어 시 타이머 초기화 방지) */
 function checkMemoryStatus(stageId) {
-    // 1. (기존) 보스/중간점검도 기억 다지기 판정에서 제외했으나, 이제 포함
-
-    // 2. 한 번도 안 깬 경우
+    // 한 번도 안 깬 경우
     if (!stageLastClear[stageId]) {
         return { level: 0, isForgotten: false, remainTime: null };
     }
 
     const currentLevel = stageMemoryLevels[stageId] || 0;
-    const lastTime = stageLastClear[stageId];
     const now = Date.now();
 
-    // 경과 시간(시간 단위) 계산
-    const diffHours = (now - lastTime) / (1000 * 60 * 60);
-
-    // ★ [핵심 변경] 레벨별 각인 주기 (1시간씩 단축!)
-    let forgettingTime = 23; // Lv.0 (기본 24시간 -> 23시간)
-
-    if (currentLevel === 1) {
-        forgettingTime = 71;  // Lv.1 (3일=72시간 -> 71시간)
-    } else if (currentLevel === 2) {
-        forgettingTime = 167; // Lv.2 (7일=168시간 -> 167시간)
-    } else if (currentLevel === 3) {
-        forgettingTime = 335; // Lv.3 (14일=336시간 -> 335시간)
-    } else if (currentLevel >= 4) {
-        forgettingTime = 719; // Lv.4+ (30일=720시간 -> 719시간)
+    // stageNextEligibleTime이 설정된 경우: 이를 기준으로 판단 (반복 클리어해도 타이머 유지)
+    if (stageNextEligibleTime[stageId]) {
+        const remainMs = stageNextEligibleTime[stageId] - now;
+        const remainHours = remainMs / (1000 * 60 * 60);
+        return {
+            level: currentLevel,
+            isForgotten: remainHours <= 0,
+            remainTime: Math.max(0, remainHours)
+        };
     }
 
-    // 설정된 시간보다 더 지났으면 '망각 상태(true)'
-    const isForgotten = diffHours >= forgettingTime;
-
+    // 하위 호환: 구 저장 데이터에 nextEligibleTime이 없는 경우 stageLastClear로 계산
+    const diffHours = (now - stageLastClear[stageId]) / (1000 * 60 * 60);
+    let forgettingTime = 23;
+    if (currentLevel === 1) forgettingTime = 71;
+    else if (currentLevel === 2) forgettingTime = 167;
+    else if (currentLevel === 3) forgettingTime = 335;
+    else if (currentLevel >= 4) forgettingTime = 719;
     return {
         level: currentLevel,
-        isForgotten: isForgotten,
+        isForgotten: diffHours >= forgettingTime,
         remainTime: forgettingTime - diffHours
     };
 }
