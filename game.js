@@ -4640,17 +4640,21 @@ function loadStep() {
             <div class="verse-indicator">${verseLabel}Step 4. 🔥불타기 전에 빈칸을 채우세요!</div>
             
             <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 15px;">
-                <button id="btn-speed-slow" onclick="changeScrollSpeed('slow')" 
+                <button id="btn-speed-slow" onclick="changeScrollSpeed('slow')"
                     style="padding: 6px 12px; border-radius: 20px; border: 2px solid #ccc; background: white; color: #7f8c8d; cursor: pointer; font-size: 0.85rem;">
                     🐢 느리게
                 </button>
-                <button id="btn-speed-normal" onclick="changeScrollSpeed('normal')" 
+                <button id="btn-speed-normal" onclick="changeScrollSpeed('normal')"
                     style="padding: 6px 12px; border-radius: 20px; border: 2px solid #27ae60; background: #27ae60; color: white; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
                     🚶 보통
                 </button>
-                <button id="btn-speed-fast" onclick="changeScrollSpeed('fast')" 
+                <button id="btn-speed-fast" onclick="changeScrollSpeed('fast')"
                     style="padding: 6px 12px; border-radius: 20px; border: 2px solid #ccc; background: white; color: #7f8c8d; cursor: pointer; font-size: 0.85rem;">
                     🐇 빠르게
+                </button>
+                <button id="btn-speed-skip" onclick="skipToEnd()"
+                    style="display: none; padding: 6px 12px; border-radius: 20px; border: 2px solid #e74c3c; background: #e74c3c; color: white; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
+                    ⏩ 빨리 넘기기
                 </button>
             </div>
 
@@ -8720,6 +8724,12 @@ function changeScrollSpeed(mode) {
     }
 }
 
+function skipToEnd() {
+    scrollGame.speed = 15;
+    const skipBtn = document.getElementById('btn-speed-skip');
+    if (skipBtn) skipBtn.disabled = true;
+}
+
 /* =========================================
    [Step 4] 예언의 두루마리 게임 로직 (NEW)
    ========================================= */
@@ -8954,7 +8964,10 @@ function handleScrollCardClick(btn, word) {
         btn.style.visibility = 'hidden';
         scrollGame.nextBlankIdx++;
 
-        if (scrollGame.nextBlankIdx >= scrollGame.blanks.length) scrollGame.speed = 15;
+        if (scrollGame.nextBlankIdx >= scrollGame.blanks.length) {
+            const skipBtn = document.getElementById('btn-speed-skip');
+            if (skipBtn) skipBtn.style.display = 'inline-block';
+        }
 
     } else {
         // [오답 로직 수정됨]
