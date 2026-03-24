@@ -545,11 +545,16 @@ var achievementStatus = {
 
 // [시스템] 영문+숫자 혼합 4자리 태그 생성 함수 (167만 가지 조합)
 function generateRandomTag() {
-    const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    let result = "";
-    for (let i = 0; i < 4; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
+    // 혼동 문자(O, I, S, Z) 제거
+    const chars = "0123456789ABCDEFGHJKMNPQRTUVWXY";
+    const banned = ["SHIT","HELL","DAMN","KILL","DEAD","SICK","FUCK","DICK","CRAP","ASS"];
+    let result;
+    do {
+        result = "";
+        for (let i = 0; i < 4; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+    } while (banned.includes(result) || /^[0-9]+$/.test(result));
     return result;
 }
 
@@ -3916,7 +3921,7 @@ function updateCastleView() {
 /* [수정] 게임 저장하기 (닉네임 포함) */
 function saveGameData() {
     // ID와 태그가 없으면 만듭니다
-    if (!myTag) myTag = Math.floor(1000 + Math.random() * 9000);
+    if (!myTag) myTag = generateRandomTag();
 
     // 리셋 중에는 저장을 중단합니다.
     if (window.isResetting) {
