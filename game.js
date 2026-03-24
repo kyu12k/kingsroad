@@ -11808,13 +11808,14 @@ function startHardshipFromModal(mode) {
     // 장별 고난 길 숏컷으로 진입한 경우: 범위 설정 창 없이 바로 시작
     if (window.hardshipForcedChapter != null) {
         const ch = window.hardshipForcedChapter;
-        window.hardshipForcedChapter = null;
         const verseIds = getHardshipVerseIdsByChapterRange(ch, ch);
+        window.hardshipForcedChapter = null;
         if (verseIds.length === 0) {
             alert(`⚠️ ${ch}장의 구절 데이터가 없습니다.`);
             return;
         }
         startHardshipSession(mode, verseIds);
+        hardshipState.forcedChapter = ch;
     } else {
         openHardshipConfigModal(mode);
     }
@@ -11960,7 +11961,7 @@ function loadNextHardshipVerse() {
     hardshipState.locked = false;
     hardshipState.awaitingNext = false;
     hardshipState.revealIndex = 0;
-    hardshipState.selectedChapter = 1;
+    hardshipState.selectedChapter = hardshipState.forcedChapter || 1;
     hardshipState.selectedVerse = 1;
     hardshipState.revealedHints = [];
     hardshipState.memoryTypedText = '';
@@ -12073,7 +12074,7 @@ function renderHardshipAddressVerse() {
         <div class="hardship-slot-machine">
             <div class="hardship-slot-column">
                 <label class="hardship-slot-label" for="hardship-chapter-select">장 선택</label>
-                <select id="hardship-chapter-select" class="hardship-slot-select" onchange="handleHardshipAddressChapterChange()" ${hardshipState.locked ? 'disabled' : ''}></select>
+                <select id="hardship-chapter-select" class="hardship-slot-select" onchange="handleHardshipAddressChapterChange()" ${(hardshipState.locked || hardshipState.forcedChapter != null) ? 'disabled' : ''}></select>
             </div>
             <div class="hardship-slot-column">
                 <label class="hardship-slot-label" for="hardship-verse-select">절 선택</label>
