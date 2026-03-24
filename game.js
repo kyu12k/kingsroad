@@ -551,10 +551,10 @@ function generateRandomTag() {
     let result;
     do {
         result = "";
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 6; i++) {
             result += chars.charAt(Math.floor(Math.random() * chars.length));
         }
-    } while (banned.includes(result) || /^[0-9]+$/.test(result));
+    } while (banned.some(w => result.includes(w)) || /^[0-9]+$/.test(result));
     return result;
 }
 
