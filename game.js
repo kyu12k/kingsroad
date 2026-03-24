@@ -5339,8 +5339,8 @@ async function initFCM() {
         messaging.onMessage((payload) => {
             console.log('[FCM] 포그라운드 메시지 수신:', payload);
 
-            const title = payload.notification?.title || '킹스로드 말씀 복습';
-            const body  = payload.notification?.body  || '복습할 말씀이 있습니다.';
+            const title = payload.data?.title || payload.notification?.title || '킹스로드 말씀 복습';
+            const body  = payload.data?.body  || payload.notification?.body  || '복습할 말씀이 있습니다.';
 
             if (!('Notification' in window) || Notification.permission !== 'granted') return;
 

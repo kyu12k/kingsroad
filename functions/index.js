@@ -454,7 +454,7 @@ exports.sendScheduledNotifications = functions.pubsub
                 try {
                     await admin.messaging().send({
                         token: fcmToken,
-                        notification: {
+                        data: {
                             title: msg.title,
                             body: msg.body
                         },
@@ -465,6 +465,9 @@ exports.sendScheduledNotifications = functions.pubsub
                             payload: {
                                 aps: { sound: 'default' }
                             }
+                        },
+                        webpush: {
+                            headers: { Urgency: 'high' }
                         }
                     });
 
