@@ -3037,38 +3037,20 @@ function updateNotifCycle(bonusLevel) {
     console.log(`[FCM] 알림 메모리 예약: ${timeStr} 후 (bonusLevel=${bonusLevel})`);
 }
 
-async function flushPendingNotif() {
+function flushPendingNotif() {
     if (!pendingNotif) return;
     if (typeof db === 'undefined' || !db || !myPlayerId) return;
 
     const { notifyAt, bonusLevel } = pendingNotif;
-    pendingNotif = null;
+    const now = Date.now();
 
-    try {
-        const docRef = db.collection('leaderboard').doc(myPlayerId);
-        const doc = await docRef.get();
-        let currentNotifyAt = 0;
-        if (doc.exists) {
-            const raw = doc.data().notifyAt;
-            if (raw && typeof raw.toMillis === 'function') currentNotifyAt = raw.toMillis();
-        }
-
-        const now = Date.now();
-        // Firestore에 이미 더 짧은 알림이 있으면 유지
-        if (currentNotifyAt > now && (currentNotifyAt - now) < (notifyAt - now)) {
-            console.log(`[FCM] Firestore 기존 알림 유지`);
-            return;
-        }
-
-        await docRef.set({
-            notifyAt: firebase.firestore.Timestamp.fromMillis(notifyAt),
-            notifCycle: bonusLevel,
-            lastClearAt: firebase.firestore.Timestamp.fromMillis(now)
-        }, { merge: true });
-        console.log(`[FCM] Firestore 알림 예약 완료`);
-    } catch (err) {
-        console.error('[FCM] flushPendingNotif 오류:', err);
-    }
+    // 읽기 없이 바로 쓰기 (메모리의 우선순위 로직을 신뢰)
+    db.collection('leaderboard').doc(myPlayerId).set({
+        notifyAt: firebase.firestore.Timestamp.fromMillis(notifyAt),
+        notifCycle: bonusLevel,
+        lastClearAt: firebase.firestore.Timestamp.fromMillis(now)
+    }, { merge: true });
+    console.log(`[FCM] Firestore 알림 예약 완료`);
 }
 
 //[시스템: 보스전 로직]//
@@ -5343,11 +5325,23 @@ async function initFCM() {
         console.log('[FCM] 토큰:', token);
 
         if (token && myPlayerId && typeof db !== 'undefined' && db) {
-            // Firestore leaderboard 문서에 fcmToken 저장
-            db.collection('leaderboard').doc(myPlayerId).set(
-                { fcmToken: token, updatedAt: firebase.firestore.FieldValue.serverTimestamp() },
-                { merge: true }
-            ).then(() => {
+            const docRef = db.collection('leaderboard').doc(myPlayerId);
+
+            // FCM 토큰 저장 + 현재 notifyAt을 메모리에 로드
+            const doc = await docRef.get();
+            const updateData = { fcmToken: token, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+            if (doc.exists) {
+                const raw = doc.data().notifyAt;
+                const cycle = doc.data().notifCycle;
+                if (raw && typeof raw.toMillis === 'function') {
+                    const notifyAtMs = raw.toMillis();
+                    if (notifyAtMs > Date.now()) {
+                        pendingNotif = { notifyAt: notifyAtMs, bonusLevel: cycle || 1 };
+                        console.log(`[FCM] 기존 예약 로드: ${Math.round((notifyAtMs - Date.now()) / 60000)}분 후`);
+                    }
+                }
+            }
+            docRef.set(updateData, { merge: true }).then(() => {
                 console.log('[FCM] 토큰 저장 완료');
             }).catch(err => {
                 console.error('[FCM] initFCM 오류:', err);
