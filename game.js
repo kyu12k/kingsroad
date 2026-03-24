@@ -3002,76 +3002,48 @@ function checkMemoryStatus(stageId) {
     };
 }
 
-/* [FCM] 스테이지 클리어 훈 알림 사이클을 Firestore에 저장 */
-function updateNotifCycle() {
-    console.log('[notifyAt] updateNotifCycle 호출됨');
-    console.log('[notifyAt] Notification.permission:', Notification.permission);
-    console.log('[notifyAt] myPlayerId:', myPlayerId);
-    console.log('[notifyAt] db 존재:', typeof db !== 'undefined' && !!db);
-    console.log('[FCM] updateNotifCycle 시작');
-    // 알림 권한 없거나, 사용자가 알림을 끈 경우, Firebase 미초기화 시 스킵
+/* [FCM] 스테이지 클리어 후 보너스 배수에 따라 복습 알림을 Firestore에 예약
+ * bonusLevel: 3=5배(10분후), 2=2배(1시간후), 1=1.5배(6시간후), 0=보너스없음(알림없음)
+ * 우선순위: 10분 > 1시간 > 6시간 — 더 짧은 알림이 이미 예약돼 있으면 덮어쓰지 않음 */
+function updateNotifCycle(bonusLevel) {
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
     if (localStorage.getItem('notifDisabled') === 'true') return;
-    console.log('[FCM] 권한:', Notification.permission);
     if (typeof db === 'undefined' || !db || !myPlayerId) return;
-    console.log('[FCM] db/playerId 확인');
+    if (!bonusLevel || bonusLevel === 0) return; // 보너스 없는 스테이지는 알림 없음
+
+    const DELAY_MAP = {
+        3: 10 * 60 * 1000,       // 5배 → 10분 후
+        2: 1 * 60 * 60 * 1000,   // 2배 → 1시간 후
+        1: 6 * 60 * 60 * 1000    // 1.5배 → 6시간 후
+    };
+
+    const newDelay = DELAY_MAP[bonusLevel];
+    if (!newDelay) return;
 
     const now = Date.now();
     const docRef = db.collection('leaderboard').doc(myPlayerId);
 
     docRef.get().then((doc) => {
-        console.log('[FCM] 문서 데이터:', doc.data());
-        let notifCycle = 0;
-        let lastNotifSentAt = 0;
-
+        let currentNotifyAt = 0;
         if (doc.exists) {
-            const data = doc.data();
-            notifCycle = data.notifCycle || 0;
-            // lastNotifSentAt은 Firebase Timestamp 또는 번호일 수 있음
-            const raw = data.lastNotifSentAt;
-            if (raw && typeof raw.toMillis === 'function') {
-                lastNotifSentAt = raw.toMillis();
-            } else if (typeof raw === 'number') {
-                lastNotifSentAt = raw;
-            }
+            const raw = doc.data().notifyAt;
+            if (raw && typeof raw.toMillis === 'function') currentNotifyAt = raw.toMillis();
         }
 
-        // 6시간 이상 지났으면 사이클 리셋
-        const SIX_HOURS = 6 * 60 * 60 * 1000;
-        if (lastNotifSentAt > 0 && (now - lastNotifSentAt) >= SIX_HOURS) {
-            notifCycle = 0;
-        }
-
-        // 단계별 notifyAt 계산
-        const cycleDelays = [
-            10 * 60 * 1000,          // 0단계 → 10분 훈
-            1 * 60 * 60 * 1000,      // 1단계 → 1시간 훈
-            6 * 60 * 60 * 1000       // 2단계 → 6시간 훈
-        ];
-
-        if (notifCycle >= 3) {
-            // 3단계: 완료, notifyAt 저장 안 함
-            console.log('[notifyAt] Firestore 저장 시도');
-            docRef.set({
-                lastClearAt: firebase.firestore.Timestamp.fromMillis(now),
-                notifCycle: 3
-            }, { merge: true });
+        // 현재 예약된 알림이 더 짧은 delay라면 그대로 유지 (우선순위 높은 알림 보존)
+        if (currentNotifyAt > now && (currentNotifyAt - now) < newDelay) {
+            console.log(`[FCM] 기존 알림 유지 (${Math.round((currentNotifyAt - now) / 60000)}분 남음)`);
             return;
         }
 
-        const delay = cycleDelays[notifCycle];
-        const notifyAt = firebase.firestore.Timestamp.fromMillis(now + delay);
-        console.log('[FCM] notifyAt 저장 시도:', notifyAt);
-        const nextCycle = notifCycle + 1;
-
-        console.log('[notifyAt] Firestore 저장 시도');
+        // 새 알림 예약 (같은 delay면 시각 갱신, 더 짧은 delay면 교체)
         docRef.set({
-            notifyAt: notifyAt,
-            notifCycle: nextCycle,
+            notifyAt: firebase.firestore.Timestamp.fromMillis(now + newDelay),
+            notifCycle: bonusLevel,
             lastClearAt: firebase.firestore.Timestamp.fromMillis(now)
         }, { merge: true }).then(() => {
-            console.log(`🔔 FCM 알림 예약: ${nextCycle}단계, ${new Date(now + delay).toLocaleTimeString()}에 발송`);
-            console.log('[FCM] 저장 완료');
+            const timeStr = newDelay >= 3600000 ? `${newDelay / 3600000}시간` : `${newDelay / 60000}분`;
+            console.log(`🔔 FCM 알림 예약: ${timeStr} 후 (bonusLevel=${bonusLevel})`);
         }).catch((err) => {
             console.error('[FCM] 오류:', err);
         });
@@ -6338,7 +6310,8 @@ function calculateScore(stageId, type, verseCount, hearts, isForgotten) {
         score: finalScore,
         bonus: bonus,
         isRetry: isRetry,
-        blocked: false
+        blocked: false,
+        bonusLevel: bonusLevel
     };
 }
 
@@ -7932,7 +7905,7 @@ stageClear = function (type) {
         alert(msg);
         updateGemDisplay();
         saveGameData();
-        updateNotifCycle();
+        updateNotifCycle(scoreResult.bonusLevel);
 
     } catch (error) {
         console.error("클리어 처리 중 오류:", error);
