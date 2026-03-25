@@ -7616,10 +7616,16 @@ function checkDailyLogin() {
         missionData.daily.differentStages = 0;
         missionData.daily.checkpointBoss = 0;
         missionData.daily.claimed = [false, false, false];
+        missionData.lastLoginDate = today; // ★ [버그 수정] checkMissions()와 동기화
 
         localStorage.setItem('lastPlayedDate', today);
         needsSave = true; // 🌟 출석했으니 저장 필수!
 
+    }
+
+    // [버그 수정] needsSave가 true이면 반드시 저장 (자정 지킴이에서 호출 시 데이터 유실 방지)
+    if (needsSave) {
+        saveGameData();
     }
 }
 
