@@ -4648,10 +4648,6 @@ function loadStep() {
                     style="padding: 6px 12px; border-radius: 20px; border: 2px solid #ccc; background: white; color: #7f8c8d; cursor: pointer; font-size: 0.85rem;">
                     🐇 빠르게
                 </button>
-                <button id="btn-speed-skip" onclick="skipToEnd()"
-                    style="display: none; padding: 6px 12px; border-radius: 20px; border: 2px solid #e74c3c; background: #e74c3c; color: white; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
-                    ⏩ 빨리 넘기기
-                </button>
             </div>
 
             <div id="scroll-game-container">
@@ -4664,6 +4660,12 @@ function loadStep() {
         control.innerHTML = `
             <div style="text-align:center; margin-bottom:10px; color:#bdc3c7;">아래 카드를 눌러 빈칸을 채우세요</div>
             <div class="block-pool" id="scroll-deck"></div>
+            <div style="text-align:center; margin-top:12px;">
+                <button id="btn-speed-skip" onclick="skipToEnd()"
+                    style="display: none; padding: 10px 24px; border-radius: 20px; border: 2px solid #e74c3c; background: #e74c3c; color: white; font-weight: bold; cursor: pointer; font-size: 0.95rem;">
+                    ⏩ 빨리 넘기기
+                </button>
+            </div>
         `;
 
         // 2. 게임 시작 (화면 로딩 안정성을 위해 0.1초 뒤 실행)
