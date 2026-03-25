@@ -4451,7 +4451,6 @@ body, html {
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
     width: 85vw; /* 화면 너비의 85% 안에 예쁘게 갇힘 */
     max-width: 600px;
     font-size: 5.5vw; /* 모바일 화면 꽉 차는 시원한 글자 크기 */

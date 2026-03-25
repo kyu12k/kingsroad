@@ -10808,7 +10808,7 @@ function playScrollTransition(targetCellId, targetText, verseAudio, onCompleteCa
         overlay.appendChild(textOverlay);
     }
     textOverlay.innerText = targetText;
-    gsap.set(textOverlay, { opacity: 0, y: 20, scale: 0.9 });
+    gsap.set(textOverlay, { opacity: 0, y: 20, scale: 0.9, xPercent: -50, yPercent: -50 });
 
     gsap.set(board, { x: 0, y: 0, scale: 1, rotationX: 0 });
 
@@ -11062,7 +11062,7 @@ function startBossTransition(chapterNum, startVerse, endVerse, isMidBoss, onComp
     } else {
         textOverlay.innerHTML = `<span style="color:darkred; font-size:1.5em;">🐉 보스 출현</span><br/>${chapterNum}장 전체`;
     }
-    gsap.set(textOverlay, { opacity: 0, y: 20, scale: 0.9 });
+    gsap.set(textOverlay, { opacity: 0, y: 20, scale: 0.9, xPercent: -50, yPercent: -50 });
 
     // 3. 전투가 시작될 '첫 번째 칸(startVerse)'을 줌인 타겟으로 삼습니다.
     const targetCell = document.getElementById(`cell-${startVerse}`);
