@@ -7824,7 +7824,7 @@ stageClear = function (type) {
             }
         }
         // ★ [때를 따른 양식 보너스] 각인 주기 기반 (보스도 mid-boss/일반과 동일하게 적용)
-        let bonusLevel = isForgotten ? 1 : peekTimedBonus(sId);
+        let bonusLevel = peekTimedBonus(sId);
         if (bonusLevel === 1) {
             baseGem *= 5;
             msg += `🎁 때를 따른 양식 ( × 5배)\n`;
