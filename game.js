@@ -1906,17 +1906,49 @@ function getTimedBonus(stageId) {
     return bonus;
 }
 
+// 소진 없이 현재 받을 수 있는 보너스 레벨 미리 확인 (UI 표시용)
+// 반환값: 4=최초(×1), 3=×1.5가능, 2=×2가능, 1=×5가능, 0=대기중/쿨타임
+function peekTimedBonus(stageId) {
+    const bonus = getTimedBonus(stageId);
+    if (bonus.lastClear === 0) return 4;
+    if (bonus.remaining === 0) return 0;
+    const THRESHOLDS = { 3: 600000, 2: 3600000, 1: 21600000 };
+    const elapsed = Date.now() - bonus.lastClear;
+    return elapsed >= THRESHOLDS[bonus.remaining] ? bonus.remaining : 0;
+}
+
 function consumeTimedBonus(stageId) {
     const bonus = getTimedBonus(stageId);
+    const now = Date.now();
 
-    const currentLevel = bonus.remaining; // 현재 값 저장
-
-    if (bonus.remaining > 0) {
-        bonus.remaining--;
-        bonus.lastClear = Date.now();
+    // 최초 클리어 (lastClear=0)
+    if (bonus.lastClear === 0) {
+        bonus.lastClear = now;
+        return 4; // ×1, 10분 후 알림 예약
     }
 
-    return currentLevel; // 소진 전 값 반환
+    // 쿨타임 (모든 보너스 소진)
+    if (bonus.remaining === 0) return 0;
+
+    const THRESHOLDS = {
+        3: 10 * 60 * 1000,       // remaining=3: 10분 대기 후 ×1.5
+        2: 60 * 60 * 1000,       // remaining=2: 1시간 대기 후 ×2
+        1: 6 * 60 * 60 * 1000,   // remaining=1: 6시간 대기 후 ×5
+    };
+
+    const elapsed = now - bonus.lastClear;
+    const threshold = THRESHOLDS[bonus.remaining];
+
+    if (elapsed >= threshold) {
+        // 타이밍 OK → 보너스 지급, 단계 소진
+        const level = bonus.remaining;
+        bonus.remaining--;
+        bonus.lastClear = now;
+        return level; // 3→×1.5, 2→×2, 1→×5
+    } else {
+        // 너무 일찍 → ×1, 단계 유지 (lastClear 갱신 안 함)
+        return 0;
+    }
 }
 
 /* [시스템: 미션 및 부스터 데이터] */
@@ -2609,20 +2641,22 @@ function openStageSheet(chapterData) {
 
             // ★ [때를 따른 양식 보너스 표시]
             const timedBonus = getTimedBonus(stage.id);
-            const bonusRemaining = timedBonus.remaining;
+            const bonusPeek = peekTimedBonus(stage.id);
             const baseGem = 10;
-            const bonusMultiplier = (bonusRemaining === 3) ? 5 : (bonusRemaining === 2) ? 2 : (bonusRemaining === 1) ? 1.5 : 1;
+            const bonusMultiplier = (bonusPeek === 1) ? 5 : (bonusPeek === 2) ? 2 : (bonusPeek === 3) ? 1.5 : 1;
             let displayGem = Math.floor(baseGem * bonusMultiplier);
             if (isForgotten) displayGem = Math.floor(displayGem * 1.1);
             const forgottenTag = isForgotten ? " 💜+10%" : "";
 
             let rewardLabel = "";
-            if (bonusRemaining === 3) {
-                rewardLabel = `🎁[1회차] ${displayGem}💎 (×5)${forgottenTag}`;
-            } else if (bonusRemaining === 2) {
-                rewardLabel = `🔱[2회차] ${displayGem}💎 (×2)${forgottenTag}`;
-            } else if (bonusRemaining === 1) {
-                rewardLabel = `⚔️[3회차] ${displayGem}💎 (×1.5)${forgottenTag}`;
+            if (bonusPeek === 1) {
+                rewardLabel = `🎁[4회차] ${displayGem}💎 (×5)${forgottenTag}`;
+            } else if (bonusPeek === 2) {
+                rewardLabel = `⚔️[3회차] ${displayGem}💎 (×2)${forgottenTag}`;
+            } else if (bonusPeek === 3) {
+                rewardLabel = `🔱[2회차] ${displayGem}💎 (×1.5)${forgottenTag}`;
+            } else if (timedBonus.remaining > 0) {
+                rewardLabel = `⏳[대기중] ${displayGem}💎 (×1)${forgottenTag}`;
             } else {
                 rewardLabel = `⏳[쿨타임] ${displayGem}💎 (×1)${forgottenTag}`;
             }
@@ -2641,27 +2675,31 @@ function openStageSheet(chapterData) {
             rightSideContent = `<div style="font-size:1.2rem; color:#f1c40f;">▶</div>`;
 
             // ★ [통일] 모든 스테이지에 때를 따른 양식 보너스 표시
-            const timedBonus = getTimedBonus(stage.id);
-            const bonusRemaining = timedBonus.remaining;
-            const bonusMultiplier = (bonusRemaining === 3) ? 5 : (bonusRemaining === 2) ? 2 : (bonusRemaining === 1) ? 1.5 : 1;
-            const baseGem = (stage.type === 'boss' || stage.type === 'mid-boss')
+            const timedBonus2 = getTimedBonus(stage.id);
+            const bonusPeek2 = peekTimedBonus(stage.id);
+            const bonusMultiplier2 = (bonusPeek2 === 1) ? 5 : (bonusPeek2 === 2) ? 2 : (bonusPeek2 === 3) ? 1.5 : 1;
+            const baseGem2 = (stage.type === 'boss' || stage.type === 'mid-boss')
                 ? (stage.targetVerseCount || 0) * 10
                 : 10;
-            let displayGem = Math.floor(baseGem * bonusMultiplier);
-            if (isForgotten) displayGem = Math.floor(displayGem * 1.1);
-            const forgottenTag = isForgotten ? " 💜+10%" : "";
+            let displayGem2 = Math.floor(baseGem2 * bonusMultiplier2);
+            if (isForgotten) displayGem2 = Math.floor(displayGem2 * 1.1);
+            const forgottenTag2 = isForgotten ? " 💜+10%" : "";
 
-            let rewardLabel = "";
-            if (bonusRemaining === 3) {
-                rewardLabel = `🎁[1회차] ${displayGem}💎 (×5)${forgottenTag}`;
-            } else if (bonusRemaining === 2) {
-                rewardLabel = `🔱[2회차] ${displayGem}💎 (×2)${forgottenTag}`;
-            } else if (bonusRemaining === 1) {
-                rewardLabel = `⚔️[3회차] ${displayGem}💎 (×1.5)${forgottenTag}`;
+            let rewardLabel2 = "";
+            if (timedBonus2.lastClear === 0) {
+                rewardLabel2 = `📖[신규] ${displayGem2}💎 (×1)${forgottenTag2}`;
+            } else if (bonusPeek2 === 1) {
+                rewardLabel2 = `🎁[4회차] ${displayGem2}💎 (×5)${forgottenTag2}`;
+            } else if (bonusPeek2 === 2) {
+                rewardLabel2 = `⚔️[3회차] ${displayGem2}💎 (×2)${forgottenTag2}`;
+            } else if (bonusPeek2 === 3) {
+                rewardLabel2 = `🔱[2회차] ${displayGem2}💎 (×1.5)${forgottenTag2}`;
+            } else if (timedBonus2.remaining > 0) {
+                rewardLabel2 = `⏳[대기중] ${displayGem2}💎 (×1)${forgottenTag2}`;
             } else {
-                rewardLabel = `⏳[쿨타임] ${displayGem}💎 (×1)${forgottenTag}`;
+                rewardLabel2 = `⏳[쿨타임] ${displayGem2}💎 (×1)${forgottenTag2}`;
             }
-            rewardInfo = `<div style="font-size:0.75rem; color:#e67e22; font-weight:bold; margin-top:4px;">${rewardLabel}</div>`;
+            rewardInfo = `<div style="font-size:0.75rem; color:#e67e22; font-weight:bold; margin-top:4px;">${rewardLabel2}</div>`;
         }
 
         // 3-1. 단계 진행 안내 뱃지 (phase 시스템 제거로 인해 삭제됨)
@@ -2999,7 +3037,9 @@ function checkMemoryStatus(stageId) {
 }
 
 /* [FCM] 스테이지 클리어 후 보너스 배수에 따라 복습 알림을 Firestore에 예약
- * bonusLevel: 3=5배(10분후), 2=2배(1시간후), 1=1.5배(6시간후), 0=보너스없음(알림없음)
+ * bonusLevel: 4=최초클리어→10분후(×1.5 창 오픈), 3=×1.5획득→1시간후(×2 창 오픈),
+ *             2=×2획득→6시간후(×5 창 오픈), 1=×5획득→알림없음, 0=대기/쿨타임→알림없음
+ * 기억 다지기(isForgotten): remaining=3 리셋, lastClear 유지 → ×1.5부터 시작(1시간→6시간 알림)
  * 우선순위: 10분 > 1시간 > 6시간 — 더 짧은 알림이 이미 예약돼 있으면 덮어쓰지 않음 */
 // 앱 종료/백그라운드 시 Firestore에 쓸 알림 예약 데이터 (메모리 캐시)
 let pendingNotif = null; // { notifyAt: ms, bonusLevel }
@@ -3008,12 +3048,15 @@ function updateNotifCycle(bonusLevel) {
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
     if (localStorage.getItem('notifDisabled') === 'true') return;
     if (typeof db === 'undefined' || !db || !myPlayerId) return;
-    if (!bonusLevel || bonusLevel === 0) return; // 보너스 없는 스테이지는 알림 없음
+
+    // 4=최초 클리어, 3=1.5배 획득, 2=2배 획득 → 다음 보너스 창 오픈 알림
+    // 1=5배 획득, 0=대기/쿨타임 → 알림 없음
+    if (bonusLevel !== 4 && bonusLevel !== 3 && bonusLevel !== 2) return;
 
     const DELAY_MAP = {
-        3: 10 * 60 * 1000,       // 5배 → 10분 후
-        2: 1 * 60 * 60 * 1000,   // 2배 → 1시간 후
-        1: 6 * 60 * 60 * 1000    // 1.5배 → 6시간 후
+        4: 10 * 60 * 1000,        // 최초 클리어 → 10분 후 알림 (×1.5 창 오픈)
+        3: 1 * 60 * 60 * 1000,    // ×1.5 획득 → 1시간 후 알림 (×2 창 오픈)
+        2: 6 * 60 * 60 * 1000,    // ×2 획득 → 6시간 후 알림 (×5 창 오픈)
     };
 
     const newDelay = DELAY_MAP[bonusLevel];
@@ -5075,20 +5118,19 @@ function showClearScreen() {
         msg = "📖 [훈련] 완료!";
 
         const sId = window.currentStageId;
-        const timedBonus = getTimedBonus(sId);
-        bonusCount = timedBonus.remaining;
+        bonusCount = peekTimedBonus(sId);
 
-        if (bonusCount === 3) {
+        if (bonusCount === 1) {
             baseGem *= 5;
             msg += " 🎁 (때를 따른 양식 × 5배)";
         } else if (bonusCount === 2) {
             baseGem *= 2;
-            msg += " 🔱 (때를 따른 양식 × 2배)";
-        } else if (bonusCount === 1) {
+            msg += " ⚔️ (때를 따른 양식 × 2배)";
+        } else if (bonusCount === 3) {
             baseGem *= 1.5;
-            msg += " ⚔️ (때를 따른 양식 × 1.5배)";
+            msg += " 🔱 (때를 따른 양식 × 1.5배)";
         } else {
-            msg += " ⏳ (보너스 쿨타임)";
+            msg += " ⏳ (보너스 대기 중)";
         }
 
         displayGem = Math.floor(baseGem * (accuracy / 100));
@@ -6274,21 +6316,25 @@ function calculateScore(stageId, type, verseCount, hearts, isForgotten) {
     // ============================================================
     const bonusLevel = consumeTimedBonus(stageId); // 보너스 소진 후 사용 전 값 반환
 
-    // 보너스 배율 적용
-    if (bonusLevel === 3) {
-        // 1회차 보너스 (5배)
+    // 보너스 배율 적용 (순방향: 복습 횟수가 쌓일수록 보상 증가)
+    if (bonusLevel === 1) {
+        // 4회차 보너스 (×5배, 6시간 후 복습)
         baseScore = baseScore * 5;
-        isRetry = false;
+        isRetry = true;
     } else if (bonusLevel === 2) {
-        // 2회차 보너스 (2배)
+        // 3회차 보너스 (×2배, 1시간 후 복습)
         baseScore = baseScore * 2;
         isRetry = true;
-    } else if (bonusLevel === 1) {
-        // 3회차 보너스 (1.5배)
+    } else if (bonusLevel === 3) {
+        // 2회차 보너스 (×1.5배, 10분 후 복습)
         baseScore = baseScore * 1.5;
         isRetry = true;
+    } else if (bonusLevel === 4) {
+        // 최초 클리어 (×1배)
+        baseScore = baseScore * 1;
+        isRetry = false;
     } else {
-        // 보너스 소진 (1배, 보너스 없음)
+        // 너무 이르거나 쿨타임 (×1배)
         baseScore = baseScore * 1;
         isRetry = true;
     }
@@ -7725,20 +7771,18 @@ stageClear = function (type) {
             }
         }
         // ★ [때를 따른 양식 보너스] 각인 주기 기반 (보스도 mid-boss/일반과 동일하게 적용)
-        const timedBonus = getTimedBonus(sId); // 현재 상태만 확인
-        // 혹시 getTimedBonus 내부에서 리셋이 제대로 안 되었을 경우를 대비한 강력한 2차 방어막
-        let bonusLevel = isForgotten ? 3 : timedBonus.remaining;
-        if (bonusLevel === 3) {
+        let bonusLevel = isForgotten ? 1 : peekTimedBonus(sId);
+        if (bonusLevel === 1) {
             baseGem *= 5;
             msg += `🎁 때를 따른 양식 ( × 5배)\n`;
         } else if (bonusLevel === 2) {
             baseGem *= 2;
-            msg += `🔱 때를 따른 양식 ( × 2배)\n`;
-        } else if (bonusLevel === 1) {
+            msg += `⚔️ 때를 따른 양식 ( × 2배)\n`;
+        } else if (bonusLevel === 3) {
             baseGem *= 1.5;
-            msg += `⚔️ 때를 따른 양식 ( × 1.5배)\n`;
+            msg += `🔱 때를 따른 양식 ( × 1.5배)\n`;
         } else {
-            msg += `⏳ 보너스 쿨타임 (각인 주기 대기 중)\n`;
+            msg += `⏳ 보너스 대기 중 (때를 따른 양식)\n`;
         }
 
         // 각인 주기가 지난 경우에만 클리어 시각 갱신 (주석 내용도 이제 바뀌어야겠죠!)
@@ -9603,6 +9647,12 @@ function confirmProfile() {
 
     const tribeName = TRIBE_DATA[myTribe].name;
     alert(`[${tribeName} 지파]의 ${myNickname}님,\n환영합니다! 🙏`);
+
+    // 신규 유저에게 게임 가이드 자동 표시
+    if (window.isFirstTimeNaming && !localStorage.getItem('hasShownGuide')) {
+        localStorage.setItem('hasShownGuide', 'true');
+        setTimeout(openGuideModal, 500);
+    }
 }
 
 /* [시스템] 데이터 경고 팝업 제어 */
@@ -12640,4 +12690,134 @@ function finishHardshipSession(reason) {
 
     const resultModal = document.getElementById('result-modal');
     if (resultModal) resultModal.classList.add('active');
+}
+
+// ── 게임 가이드 모달 ──────────────────────────────
+
+const GUIDE_PAGES = [
+    {
+        title: '🗺️ 전체 여정 흐름',
+        html: `
+            <p>킹스로드는 <b>훈련 → 복습 → 보스전</b>을 반복하며 말씀을 암기하는 게임입니다.</p>
+            <div style="text-align:center; font-size:14px; line-height:2.2; margin:16px 0;">
+                📖 훈련 (구절 선택)<br>↓<br>
+                🛡️ 중간점검 (4~7구절마다)<br>↓<br>
+                🐲 보스전 (챕터 완료)<br>↓<br>
+                🔄 복습 → 보너스 획득
+            </div>
+            <p style="font-size:13px; color:#888;">구절을 선택해 훈련을 시작하고, 4~7구절마다 중간점검을 통과하면 챕터 보스전에 도전할 수 있습니다.</p>
+        `
+    },
+    {
+        title: '📝 훈련 6단계',
+        html: `
+            <p style="font-size:13px; color:#888; margin-bottom:12px;">각 구절은 아래 6단계를 순서대로 거쳐 완전히 암기됩니다.</p>
+            <ol style="padding-left:20px; line-height:2;">
+                <li><b>읽기</b> — 말씀 전체를 눈으로 읽기</li>
+                <li><b>초성 채우기</b> — 초성 힌트로 받아쓰기</li>
+                <li><b>일부 빈칸</b> — 점점 줄어드는 힌트</li>
+                <li><b>중간점검</b> — 4~7구절 묶음 테스트</li>
+                <li><b>보스전</b> — 챕터 전체 암송</li>
+                <li><b>복습</b> — 기억 강화 & 보너스 획득</li>
+            </ol>
+        `
+    },
+    {
+        title: '⏰ 복습 보너스 타이밍',
+        html: `
+            <p style="font-size:13px; color:#888;">복습을 반복할수록 보석이 <b>점점 커집니다.</b> 타이밍이 핵심!</p>
+            <div style="font-size:14px; line-height:1; margin:16px 0;">
+                <div style="padding:10px 12px; border-radius:8px; background:rgba(149,165,166,0.1); margin-bottom:8px;">
+                    <span style="color:#95a5a6;">📖 <b>최초 클리어</b> → 기본 보석 (×1배)</span>
+                </div>
+                <div style="padding:10px 12px; border-radius:8px; background:rgba(142,68,173,0.1); margin-bottom:8px;">
+                    <span style="color:#8e44ad; font-weight:bold;">🔱 10분 후 복습 → 보석 ×1.5배</span>
+                </div>
+                <div style="padding:10px 12px; border-radius:8px; background:rgba(41,128,185,0.1); margin-bottom:8px;">
+                    <span style="color:#2980b9; font-weight:bold;">⚔️ 1시간 후 복습 → 보석 ×2배</span>
+                </div>
+                <div style="padding:10px 12px; border-radius:8px; background:rgba(230,126,34,0.1); margin-bottom:8px;">
+                    <span style="color:#e67e22; font-weight:bold;">🎁 6시간 후 복습 → 보석 ×5배</span><br>
+                    <span style="font-size:12px; color:#aaa;">4번 모두 올바른 타이밍에 복습해야 획득!</span>
+                </div>
+            </div>
+            <p style="font-size:12px; color:#aaa;">💡 복습 알림을 허용하면 딱 맞는 타이밍에 알려드려요!</p>
+        `
+    },
+    {
+        title: '💎 보석 & 미션',
+        html: `
+            <p><b>보석 획득 방법:</b></p>
+            <ul style="padding-left:18px; line-height:1.9; font-size:14px;">
+                <li>훈련 & 복습 완료 (보너스 배수 적용)</li>
+                <li>오타 없이 완료하면 +10% 추가</li>
+                <li>일일 미션 / 주간 미션 클리어</li>
+                <li>업적 달성</li>
+                <li>성전 방치 생산</li>
+            </ul>
+            <p style="margin-top:12px;"><b>미션 초기화:</b></p>
+            <div style="font-size:13px; color:#666; line-height:1.9;">
+                📅 일일 미션 — 매일 자정 초기화<br>
+                📆 주간 미션 — 매주 월요일 초기화
+            </div>
+        `
+    },
+    {
+        title: '🏰 성전 & 업적',
+        html: `
+            <p><b>성전 건축:</b> 보석을 사용해 성전을 업그레이드하면 방치 생산량이 늘어납니다.</p>
+            <p style="margin-top:12px;"><b>업적 7종:</b></p>
+            <ul style="padding-left:18px; line-height:1.9; font-size:13px;">
+                <li>🗓️ 누적 출석</li>
+                <li>📖 구절 암송 수</li>
+                <li>🐲 보스 승리</li>
+                <li>💎 누적 보석 획득</li>
+                <li>✨ 오타 없는 암송 (완벽 암송)</li>
+                <li>🏰 성전 건축 단계</li>
+                <li>🌅 새벽 암송 (새벽 5시 이전)</li>
+            </ul>
+        `
+    }
+];
+
+let guidePage = 0;
+
+function openGuideModal() {
+    guidePage = 0;
+    renderGuidePage();
+    document.getElementById('guide-modal').style.display = 'flex';
+}
+
+function closeGuideModal() {
+    document.getElementById('guide-modal').style.display = 'none';
+}
+
+function guideChangePage(delta) {
+    guidePage = Math.max(0, Math.min(GUIDE_PAGES.length - 1, guidePage + delta));
+    renderGuidePage();
+}
+
+function renderGuidePage() {
+    const page = GUIDE_PAGES[guidePage];
+    const total = GUIDE_PAGES.length;
+
+    document.getElementById('guide-content').innerHTML =
+        `<h3 style="margin-top:0;">${page.title}</h3>${page.html}`;
+
+    document.getElementById('guide-page-label').textContent = `${guidePage + 1} / ${total}`;
+    document.getElementById('guide-prev-btn').style.visibility = guidePage === 0 ? 'hidden' : 'visible';
+
+    const nextBtn = document.getElementById('guide-next-btn');
+    if (guidePage === total - 1) {
+        nextBtn.textContent = '✓ 완료';
+        nextBtn.onclick = closeGuideModal;
+    } else {
+        nextBtn.textContent = '다음 ▶';
+        nextBtn.onclick = () => guideChangePage(1);
+    }
+
+    document.getElementById('guide-dots').innerHTML =
+        GUIDE_PAGES.map((_, i) =>
+            `<span style="display:inline-block; width:8px; height:8px; border-radius:50%; margin:0 3px; background:${i === guidePage ? '#f1c40f' : '#ccc'};"></span>`
+        ).join('');
 }

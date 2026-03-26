@@ -48,6 +48,23 @@
             </div>
         </div>
     </div>
+    <!-- 게임 가이드 모달 -->
+    <div id="guide-modal" class="modal-overlay" style="z-index:9999; display:none;">
+        <div class="result-card" style="max-width:420px; max-height:85vh; overflow:hidden; display:flex; flex-direction:column;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h2 style="margin:0;">📖 킹스로드 가이드</h2>
+                <button onclick="closeGuideModal()" style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
+            </div>
+            <div id="guide-dots" style="text-align:center; margin-bottom:12px;"></div>
+            <div id="guide-content" style="flex:1; overflow-y:auto; min-height:0;"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
+                <button id="guide-prev-btn" onclick="guideChangePage(-1)" class="action-btn" style="min-width:80px;">◀ 이전</button>
+                <span id="guide-page-label" style="color:#888; font-size:13px;">1 / 5</span>
+                <button id="guide-next-btn" onclick="guideChangePage(1)" class="action-btn" style="min-width:80px;">다음 ▶</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 꿀팁 모달 -->
     <div id="tip-modal" class="modal-overlay" style="z-index: 9999; display:none;">
         <div class="result-card" style="max-width: 400px; max-height: 80vh; overflow-y: auto;">
@@ -377,6 +394,7 @@
         </button>
         <div id="menu-panel"
             style="display:none; position:fixed; top:72px; right:20px; z-index:3001; background:rgba(44,62,80,0.98); border-radius:18px; box-shadow:0 8px 32px rgba(44,62,80,0.18); padding:18px 14px; min-width:180px; border:1.5px solid #f1c40f; flex-direction:column; gap:8px;">
+            <button class="menu-action-btn" onclick="openGuideModal(); closeMenu();">📖 게임 가이드</button>
             <button class="menu-action-btn" onclick="openHelpModal()">❓ 도움말</button>
             <button class="menu-action-btn" onclick="openThanksModal()">👥 감사한 분들</button>
             <button class="menu-action-btn" onclick="openTipModal()">💡 꿀팁</button>
