@@ -2767,10 +2767,24 @@ function openStageSheet(chapterData) {
                 el.style.background = "#eafaf1";
                 // (선택 사항: 여기서 리스트를 새로고침하면 재생 버튼으로 바뀜)
             } else {
-                // 남은 시간 표시 (MM:SS)
-                const mm = Math.floor(diff / 60000);
-                const ss = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-                el.innerText = `⏳ ${mm}:${ss}`;
+                // 남은 시간 표시 (어댑티브: 구간에 따라 정밀도 조절)
+                let timeStr;
+                if (diff >= 60 * 60 * 1000) {
+                    // 1시간 이상: "N시간 M분"
+                    const h = Math.floor(diff / (60 * 60 * 1000));
+                    const m = Math.floor((diff % (60 * 60 * 1000)) / 60000);
+                    timeStr = m > 0 ? `${h}시간 ${m}분` : `${h}시간`;
+                } else if (diff >= 10 * 60 * 1000) {
+                    // 10분~1시간: "N분"
+                    const m = Math.floor(diff / 60000);
+                    timeStr = `${m}분`;
+                } else {
+                    // 10분 미만: "MM:SS"
+                    const mm = Math.floor(diff / 60000);
+                    const ss = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+                    timeStr = `${mm}:${ss}`;
+                }
+                el.innerText = `⏳ ${timeStr}`;
             }
         });
     }, 1000);
