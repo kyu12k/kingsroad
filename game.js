@@ -5358,8 +5358,6 @@ function requestNotificationPermission() {
     const cleanup = () => {
         modal.classList.remove('active');
         localStorage.setItem('notifAsked', 'true');
-        // 더보기 메뉴 알림 항목 레이블 갱신
-        updateNotifMenuLabel();
     };
 
     allowBtn.onclick = async () => {
@@ -5377,16 +5375,6 @@ function requestNotificationPermission() {
     denyBtn.onclick = () => {
         cleanup();
     };
-}
-
-function updateNotifMenuLabel() {
-    const el = document.getElementById('notif-menu-item');
-    if (!el) return;
-    if (Notification.permission === 'granted') {
-        el.innerHTML = '<span class="menu-icon-wrap">🔔</span> 알림 켜짐';
-    } else {
-        el.innerHTML = '<span class="menu-icon-wrap">🔔</span> 알림 설정';
-    }
 }
 
 // 소리 토글 함수 (기존 코드)
@@ -7357,10 +7345,7 @@ function closeMoreMenu() {
 
 function openShopFromMenu() { closeMoreMenu(); openShop(); }
 function openAchievementFromMenu() { closeMoreMenu(); openAchievement(); }
-function openNotifSettingFromMenu() {
-    closeMoreMenu();
-    requestNotificationPermission();
-}
+
 
 function openSettingsModal() {
     // 메뉴 패널 닫기
@@ -9649,8 +9634,6 @@ window.onload = function () {
 
     console.log("✅ 게임 로딩 완료!");
 
-    // 더보기 메뉴 알림 항목 초기 라벨 설정
-    if (typeof updateNotifMenuLabel === 'function') updateNotifMenuLabel();
 
 
 
