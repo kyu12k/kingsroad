@@ -3049,6 +3049,13 @@ function flushPendingNotif() {
     const { notifyAt, bonusLevel } = pendingNotif;
     const now = Date.now();
 
+    // 이미 지난 알림은 저장하지 않음 (중복 발송 방지)
+    if (notifyAt <= now) {
+        pendingNotif = null;
+        return;
+    }
+
+    pendingNotif = null; // 중복 flush 방지
     // 읽기 없이 바로 쓰기 (메모리의 우선순위 로직을 신뢰)
     db.collection('leaderboard').doc(myPlayerId).set({
         notifyAt: firebase.firestore.Timestamp.fromMillis(notifyAt),

@@ -423,17 +423,17 @@ exports.sendScheduledNotifications = functions.pubsub
 
             console.log(`📬 알림 발송 대상: ${snapshot.size}명`);
 
-            // notifCycle: 3=5배(10분후), 2=2배(1시간후), 1=1.5배(6시간후)
+            // notifCycle: 4=최초클리어(10분후 ×1.5창), 3=×1.5획득(1시간후 ×2창), 2=×2획득(6시간후 ×5창)
             const CYCLE_MESSAGES = {
-                3: {
+                4: {
                     title: '말씀 복습 시간이에요 💜',
                     body: '방금 외운 말씀, 지금 다시 확인하면 기억이 두 배로 굳어져요'
                 },
-                2: {
+                3: {
                     title: '말씀 복습 시간이에요 💜',
                     body: '1시간이 지났어요. 다시 한 번 확인해보세요'
                 },
-                1: {
+                2: {
                     title: '말씀 복습 시간이에요 💜',
                     body: '오늘의 마지막 복습이에요. 말씀을 다시 새겨보세요'
                 }
@@ -448,8 +448,8 @@ exports.sendScheduledNotifications = functions.pubsub
                     return;
                 }
 
-                const cycle = data.notifCycle || 3;
-                const msg = CYCLE_MESSAGES[cycle] || CYCLE_MESSAGES[3];
+                const cycle = data.notifCycle || 4;
+                const msg = CYCLE_MESSAGES[cycle] || CYCLE_MESSAGES[4];
 
                 try {
                     await admin.messaging().send({
