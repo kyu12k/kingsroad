@@ -3083,7 +3083,9 @@ function flushPendingNotif() {
         notifyAt: firebase.firestore.Timestamp.fromMillis(notifyAt),
         notifCycle: bonusLevel,
         lastClearAt: firebase.firestore.Timestamp.fromMillis(now)
-    }, { merge: true });
+    }, { merge: true }).catch(err => {
+        console.error('[FCM] Firestore 알림 예약 실패:', err);
+    });
     console.log(`[FCM] Firestore 알림 예약 완료`);
 }
 
@@ -5341,7 +5343,7 @@ async function initFCM() {
                 if (raw && typeof raw.toMillis === 'function') {
                     const notifyAtMs = raw.toMillis();
                     if (notifyAtMs > Date.now()) {
-                        pendingNotif = { notifyAt: notifyAtMs, bonusLevel: cycle || 1 };
+                        pendingNotif = { notifyAt: notifyAtMs, bonusLevel: cycle || 4 };
                         console.log(`[FCM] 기존 예약 로드: ${Math.round((notifyAtMs - Date.now()) / 60000)}분 후`);
                     }
                 }

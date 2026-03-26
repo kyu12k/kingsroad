@@ -1172,6 +1172,7 @@
 
             // ★ 수정: const를 빼고 전역 변수에 할당
             db = firebase.firestore();
+            db.enablePersistence({ synchronizeTabs: false }).catch(() => {});
             auth = firebase.auth();
 
             // 3. 익명 로그인 (게임 켜자마자 자동 실행)
