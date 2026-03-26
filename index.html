@@ -65,43 +65,7 @@
         </div>
     </div>
 
-    <!-- 꿀팁 모달 -->
-    <div id="tip-modal" class="modal-overlay" style="z-index: 9999; display:none;">
-        <div class="result-card" style="max-width: 400px; max-height: 80vh; overflow-y: auto;">
-            <div style="text-align: right;">
-                <button onclick="closeTipModal()"
-                    style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
-            </div>
-            <div style="text-align: center; margin-bottom: 20px;">
-                <h2 style="margin:0; color:#2c3e50;">꿀팁 <span style="font-size:1.2em;">💡</span></h2>
-                <div style="text-align:left; margin:20px 0 0 0; color:#34495e; font-size:1.05em; line-height:1.7;">
-                    <div style="margin-bottom:1em;">
-                        <b>암기 꿀팁</b><br>
-                        1. 암송하려는 구절을 찾아 완료한다.<br>
-                        2. 10분 뒤, 해당 구절을 다시 완료한다.<br>
-                        3. 1시간 뒤, 해당 구절을 다시 완료한다.<br>
-                        4. 5개 구절 단위의 중간 점검으로 복습한다.<br>
-                        5. 한 장을 완료하면 보스전으로 최종 복습한다.<br>
-                        6. 각인 주기가 도래하여 복습할 스테이지가 생기면 또 복습한다.<br>
-                    </div>
-                    <div style="margin-bottom:1em;">
-                        <b>보석 획득 꿀팁</b><br>
-                        1. 5배, 2배, 1.5배 보너스가 있는 구절을 완료한다.<br>
-                        2. 일일미션, 주간미션을 착실히 수행한다.<br>
-                        3. 기록실을 확인하여 달성할만한 것을 찾아 도전한다(예: 새벽 암송).<br>
-                        4. 획득한 보석으로 홈 화면의 성전을 업그레이드 하여 주기적으로 보석을 획득한다.<br>
-                    </div>
-                    <div>
-                        <b>승점 획득 꿀팁</b><br>
-                        1. 5배, 2배, 1.5배 보너스가 있는 구절을 완료한다.<br>
-                        2. 상점의 승점 부스터를 활용한다.<br>
-                        3. 하트 최대치를 늘리고, 최대한 안 틀리려고 노력하며 생명의 떡으로 체력을 가득 채운 채로 완료한다.
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div id="ranking-overlay"
+<div id="ranking-overlay"
         style="display:none; position:fixed; z-index:9999; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.97); color:#f1c40f; flex-direction:column; align-items:center; justify-content:center; font-size:1.3rem; text-align:center;">
         <div
             style="max-width:90vw; font-size:1.1em; line-height:1.7; font-weight:bold; color:#fff; text-shadow:0 2px 8px #222; margin-bottom:30px;">
@@ -126,47 +90,8 @@
         });
     </script>
 
-    <div id="help-modal" class="modal-overlay" style="z-index: 700;">
-        <div class="result-card" style="max-width: 500px; max-height: 80vh; overflow-y: auto;">
-            <div style="text-align: right;">
-                <button onclick="closeHelpModal()"
-                    style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
-            </div>
-            <div style="text-align: center; margin-bottom: 20px;">
-                <h2 style="margin:0; color:#2c3e50;">❓ 도움말</h2>
-                <p style="color:#7f8c8d; font-size:0.9rem; margin-top:5px;">각 기능에 대한 설명입니다</p>
-            </div>
 
-            <div style="text-align: left; color:#2c3e50;">
-                <div class="help-item">
-                    <div class="help-title">🚶 여정 시작</div>
-                    <div class="help-desc">맵 화면으로 이동하여 성경 암송 훈련을 시작합니다. 요한계시록 각 장을 순서대로 학습할 수 있습니다.</div>
-                </div>
-
-                <div class="help-item">
-                    <div class="help-title">🏰 성전 건축</div>
-                    <div class="help-desc">보석을 사용하여 성전 레벨을 올릴 수 있습니다. 성전 레벨이 높을수록 방치 시 자동으로 생산되는 보석이 증가합니다.</div>
-                </div>
-
-                <div class="help-item">
-                    <div class="help-title">👤 프로필 (닉네임 변경)</div>
-                    <div class="help-desc">닉네임과 지파를 설정할 수 있습니다. 지파에 따른 색상이 부여됩니다.</div>
-                </div>
-
-                <div class="help-item">
-                    <div class="help-title">💾 기기 변경</div>
-                    <div class="help-desc">게임 진행 상황을 내보내거나 불러올 수 있습니다. 기기 변경 시 데이터를 옮길 때 사용하세요.</div>
-                </div>
-
-                <div class="help-item">
-                    <div class="help-title">📝 설문조사</div>
-                    <div class="help-desc">간단한 설문으로 의견을 남길 수 있습니다. 다음 업데이트에 반영합니다.</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="stage-help-modal" class="modal-overlay" style="z-index: 700;">
+<div id="stage-help-modal" class="modal-overlay" style="z-index: 700;">
         <div class="result-card" style="max-width: 500px; max-height: 80vh; overflow-y: auto;">
             <div style="text-align: right;">
                 <button onclick="closeStageHelpModal()"
@@ -395,9 +320,7 @@
         <div id="menu-panel"
             style="display:none; position:fixed; top:72px; right:20px; z-index:3001; background:rgba(44,62,80,0.98); border-radius:18px; box-shadow:0 8px 32px rgba(44,62,80,0.18); padding:18px 14px; min-width:180px; border:1.5px solid #f1c40f; flex-direction:column; gap:8px;">
             <button class="menu-action-btn" onclick="openGuideModal(); closeMenu();">📖 게임 가이드</button>
-            <button class="menu-action-btn" onclick="openHelpModal()">❓ 도움말</button>
             <button class="menu-action-btn" onclick="openThanksModal()">👥 감사한 분들</button>
-            <button class="menu-action-btn" onclick="openTipModal()">💡 꿀팁</button>
             <button id="add-to-home-btn" class="menu-action-btn" style="display: none;">📱 홈 화면에 추가</button> <button
                 class="menu-action-btn" onclick="window.open('https://naver.me/xVRetic8', '_blank')">📝 설문조사</button>
             <button class="menu-action-btn" onclick="openNoticeModal()">📢 공지사항</button>
@@ -470,13 +393,6 @@
             }
             function closeThanksModal() {
                 document.getElementById('thanks-modal').style.display = 'none';
-            }
-            // 꿀팁 모달 열기/닫기 함수
-            function openTipModal() {
-                document.getElementById('tip-modal').style.display = 'flex';
-            }
-            function closeTipModal() {
-                document.getElementById('tip-modal').style.display = 'none';
             }
         </script>
         <div class="home-title-box">

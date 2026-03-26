@@ -9309,21 +9309,6 @@ function getDisplayRewardInfo(stageId, type, verseCount, isAlreadyClearedToday =
     return { gem: maxGem, score: maxScore, isReduced };
 }
 
-/* [시스템: 도움말 모달] */
-function openHelpModal() {
-    const modal = document.getElementById('help-modal');
-    if (modal) {
-        modal.classList.add('active');
-    }
-}
-
-function closeHelpModal() {
-    const modal = document.getElementById('help-modal');
-    if (modal) {
-        modal.classList.remove('active');
-    }
-}
-
 /* [시스템: 맵 화면 도움말 모달] */
 function openStageHelpModal() {
     const modal = document.getElementById('stage-help-modal');
