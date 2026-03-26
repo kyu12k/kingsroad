@@ -2864,6 +2864,45 @@ function getForgottenStages() {
 }
 
 // 기억 다지기 스테이지 오버레이 표시 함수
+// 보너스 대기 중인 스테이지 목록 반환 (remaining > 0 이고 아직 대기 시간이 남은 스테이지)
+function getWaitingBonusStages() {
+    const THRESHOLDS = { 3: 600000, 2: 3600000, 1: 21600000 };
+    const BONUS_LABELS = { 3: '×1.5', 2: '×2', 1: '×5' };
+    const result = [];
+    const now = Date.now();
+    for (let chapter of gameData) {
+        if (!chapter.stages) continue;
+        for (let stage of chapter.stages) {
+            const stageId = stage.id;
+            const bonus = stageTimedBonus[stageId];
+            if (!bonus || bonus.lastClear === 0 || bonus.remaining === 0) continue;
+            const elapsed = now - bonus.lastClear;
+            const threshold = THRESHOLDS[bonus.remaining];
+            if (elapsed < threshold) {
+                result.push({
+                    stageId,
+                    stageName: stage.name || `스테이지 ${stageId}`,
+                    chapterNum: chapter.chapter,
+                    remaining: bonus.remaining,
+                    bonusLabel: BONUS_LABELS[bonus.remaining],
+                    notifyAt: bonus.lastClear + threshold,
+                    timeLeft: threshold - elapsed,
+                });
+            }
+        }
+    }
+    result.sort((a, b) => a.timeLeft - b.timeLeft);
+    return result;
+}
+
+function formatTimeLeft(ms) {
+    const min = Math.ceil(ms / 60000);
+    if (min < 60) return `${min}분 후`;
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return m > 0 ? `${h}시간 ${m}분 후` : `${h}시간 후`;
+}
+
 function openForgottenStagesOverlay() {
     let overlay = document.getElementById('forgotten-stages-overlay');
     if (!overlay) {
@@ -2933,6 +2972,79 @@ function closeForgottenStagesOverlay() {
 
 // 오버레이를 열 수 있는 버튼을 홈 화면에 추가하려면 아래 함수를 호출하세요:
 // openForgottenStagesOverlay();
+
+/* [FCM] 수동 알림 예약 — Firestore에 직접 저장 후 완료 안내 */
+async function scheduleNotifManual(notifyAt, bonusLevel) {
+    if (typeof db === 'undefined' || !db || !myPlayerId) {
+        alert('알림 예약에 실패했습니다. (로그인 필요)');
+        return;
+    }
+    try {
+        await db.collection('leaderboard').doc(myPlayerId).set({
+            notifyAt: firebase.firestore.Timestamp.fromMillis(notifyAt),
+            notifCycle: bonusLevel,
+            lastClearAt: firebase.firestore.Timestamp.fromMillis(Date.now())
+        }, { merge: true });
+        pendingNotif = null; // visibilitychange 이중 저장 방지
+        closeWaitingBonusOverlay();
+        alert('✅ 알림이 예약되었습니다!\n\n앱을 직접 종료해주세요.\n(홈 버튼으로 앱을 닫으면 알림이 전송됩니다)');
+    } catch (err) {
+        console.error('[FCM] 수동 알림 예약 실패:', err);
+        alert('알림 예약에 실패했습니다. 다시 시도해주세요.');
+    }
+}
+
+/* [UI] 보너스 대기 중인 스테이지 알림 예약 오버레이 */
+function openWaitingBonusOverlay() {
+    let overlay = document.getElementById('waiting-bonus-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'waiting-bonus-overlay';
+        overlay.className = 'waiting-bonus-overlay';
+        overlay.innerHTML = `
+            <div class="waiting-bonus-title">
+                ⏳ 보너스 복습 대기 중<br>
+                <span class="waiting-bonus-subtitle">알림을 받으면 최적 타이밍을 놓치지 않을 수 있어요!</span>
+            </div>
+            <div id="waiting-bonus-list" class="waiting-bonus-list"></div>
+            <button onclick="closeWaitingBonusOverlay()" class="waiting-bonus-close-btn">닫기</button>
+        `;
+        document.body.appendChild(overlay);
+    } else {
+        overlay.style.display = 'flex';
+    }
+    const listDiv = document.getElementById('waiting-bonus-list');
+    const waitingList = getWaitingBonusStages();
+    if (waitingList.length === 0) {
+        listDiv.innerHTML = '<div style="color:#bdc3c7;">현재 대기 중인 스테이지가 없습니다.</div>';
+        return;
+    }
+    listDiv.innerHTML = '';
+    for (const item of waitingList) {
+        const row = document.createElement('div');
+        row.className = 'waiting-bonus-row';
+        row.innerHTML = `
+            <div class="waiting-bonus-info">
+                <span class="waiting-bonus-name">${item.stageName}</span>
+                ${item.chapterNum !== undefined ? `<span class="waiting-bonus-chapter">(제${item.chapterNum}장)</span>` : ''}
+                <span class="waiting-bonus-time">${formatTimeLeft(item.timeLeft)}</span>
+                <span class="waiting-bonus-label">${item.bonusLabel}</span>
+            </div>
+            <button class="waiting-bonus-notif-btn">알림 받기</button>
+        `;
+        row.querySelector('.waiting-bonus-notif-btn').onclick = function () {
+            if (confirm(`'${item.stageName}' 알림을 예약하면 앱을 종료해야 합니다.\n예약하시겠습니까?`)) {
+                scheduleNotifManual(item.notifyAt, item.remaining);
+            }
+        };
+        listDiv.appendChild(row);
+    }
+}
+
+function closeWaitingBonusOverlay() {
+    const overlay = document.getElementById('waiting-bonus-overlay');
+    if (overlay) overlay.style.display = 'none';
+}
 
 function confirmMode(mode) {
     if (!window.selectedStageForMode) return;
@@ -7865,7 +7977,6 @@ stageClear = function (type) {
         alert(msg);
         updateGemDisplay();
         saveGameData();
-        updateNotifCycle(scoreResult.bonusLevel);
 
     } catch (error) {
         console.error("클리어 처리 중 오류:", error);
