@@ -2460,6 +2460,21 @@ function drawRiver() {
 // 전역 변수로 타이머 관리 (창 닫을 때 끄기 위해)
 var stageSheetTimer = null;
 
+// 남은 시간을 어댑티브 형식으로 변환 (diff: ms)
+function formatAdaptiveTime(diff) {
+    if (diff >= 60 * 60 * 1000) {
+        const h = Math.floor(diff / (60 * 60 * 1000));
+        const m = Math.floor((diff % (60 * 60 * 1000)) / 60000);
+        return m > 0 ? `${h}시간 ${m}분` : `${h}시간`;
+    } else if (diff >= 10 * 60 * 1000) {
+        return `${Math.floor(diff / 60000)}분`;
+    } else {
+        const mm = Math.floor(diff / 60000);
+        const ss = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+        return `${mm}:${ss}`;
+    }
+}
+
 // [도우미] 스테이지가 속한 챕터 데이터 조회
 function getChapterDataByStageId(stageId) {
     const chNum = parseInt(String(stageId).split('-')[0]);
@@ -2656,7 +2671,10 @@ function openStageSheet(chapterData) {
             } else if (bonusPeek === 3) {
                 rewardLabel = `🔱[2회차] ${displayGem}💎 (×1.5)${forgottenTag}`;
             } else if (timedBonus.remaining > 0) {
-                rewardLabel = `⏳[대기중] ${displayGem}💎 (×1)${forgottenTag}`;
+                const BONUS_THRESHOLDS = { 3: 600000, 2: 3600000, 1: 21600000 };
+                const nextUnlock = timedBonus.lastClear + BONUS_THRESHOLDS[timedBonus.remaining];
+                const nextLabel = timedBonus.remaining === 3 ? '×1.5' : timedBonus.remaining === 2 ? '×2' : '×5';
+                rewardLabel = `⏳[<span class="live-timer-bonus" data-unlock="${nextUnlock}">계산중</span>] ${displayGem}💎 → ${nextLabel}${forgottenTag}`;
             } else {
                 rewardLabel = `⏳[쿨타임] ${displayGem}💎 (×1)${forgottenTag}`;
             }
@@ -2695,7 +2713,10 @@ function openStageSheet(chapterData) {
             } else if (bonusPeek2 === 3) {
                 rewardLabel2 = `🔱[2회차] ${displayGem2}💎 (×1.5)${forgottenTag2}`;
             } else if (timedBonus2.remaining > 0) {
-                rewardLabel2 = `⏳[대기중] ${displayGem2}💎 (×1)${forgottenTag2}`;
+                const BONUS_THRESHOLDS2 = { 3: 600000, 2: 3600000, 1: 21600000 };
+                const nextUnlock2 = timedBonus2.lastClear + BONUS_THRESHOLDS2[timedBonus2.remaining];
+                const nextLabel2 = timedBonus2.remaining === 3 ? '×1.5' : timedBonus2.remaining === 2 ? '×2' : '×5';
+                rewardLabel2 = `⏳[<span class="live-timer-bonus" data-unlock="${nextUnlock2}">계산중</span>] ${displayGem2}💎 → ${nextLabel2}${forgottenTag2}`;
             } else {
                 rewardLabel2 = `⏳[쿨타임] ${displayGem2}💎 (×1)${forgottenTag2}`;
             }
@@ -2751,41 +2772,28 @@ function openStageSheet(chapterData) {
 
     // ★ 6. 타이머 작동 시작 (1초마다 갱신) ★
     stageSheetTimer = setInterval(() => {
-        const timerEls = document.querySelectorAll('.live-timer');
-        if (timerEls.length === 0) return;
-
         const now = Date.now();
-        timerEls.forEach(el => {
+
+        // 숙성 쿨타임 타이머 (live-timer)
+        document.querySelectorAll('.live-timer').forEach(el => {
             const unlockTime = parseInt(el.dataset.unlock);
             const diff = unlockTime - now;
 
             if (diff <= 0) {
-                // 시간이 다 되면 -> 'OPEN'으로 변경 (초록색)
                 el.innerText = "🔓 OPEN";
                 el.style.color = "#2ecc71";
                 el.style.borderColor = "#2ecc71";
                 el.style.background = "#eafaf1";
-                // (선택 사항: 여기서 리스트를 새로고침하면 재생 버튼으로 바뀜)
             } else {
-                // 남은 시간 표시 (어댑티브: 구간에 따라 정밀도 조절)
-                let timeStr;
-                if (diff >= 60 * 60 * 1000) {
-                    // 1시간 이상: "N시간 M분"
-                    const h = Math.floor(diff / (60 * 60 * 1000));
-                    const m = Math.floor((diff % (60 * 60 * 1000)) / 60000);
-                    timeStr = m > 0 ? `${h}시간 ${m}분` : `${h}시간`;
-                } else if (diff >= 10 * 60 * 1000) {
-                    // 10분~1시간: "N분"
-                    const m = Math.floor(diff / 60000);
-                    timeStr = `${m}분`;
-                } else {
-                    // 10분 미만: "MM:SS"
-                    const mm = Math.floor(diff / 60000);
-                    const ss = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-                    timeStr = `${mm}:${ss}`;
-                }
-                el.innerText = `⏳ ${timeStr}`;
+                el.innerText = `⏳ ${formatAdaptiveTime(diff)}`;
             }
+        });
+
+        // 보너스 대기 타이머 (live-timer-bonus)
+        document.querySelectorAll('.live-timer-bonus').forEach(el => {
+            const unlockTime = parseInt(el.dataset.unlock);
+            const diff = unlockTime - now;
+            el.innerText = diff <= 0 ? "지금!" : formatAdaptiveTime(diff) + " 후";
         });
     }, 1000);
 }
