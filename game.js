@@ -5165,10 +5165,10 @@ function showClearScreen() {
                 const masteryQuotes = {
                     1: '말씀을 잊지 않고 싶으시다면<br>10분 후 다시 만나보세요.',
                     2: '기억이 뿌리내리기 시작했습니다.<br>한 시간 뒤 다시 만나보세요.',
-                    3: '기억에 거름을 줬습니다.<br>복습 주기를 기다려보세요.',
+                    3: '기억에 거름을 줬습니다.<br>6시간 후 다시 만나보세요.',
                     4: '반복은 완벽을 만듭니다.'
                 };
-                const reviewCycle = 4 - bonusCount; // 3→1회차, 2→2회차, 1→3회차, 0→쿨타임
+                const reviewCycle = 5 - bonusCount; // 4→1회차(10분), 3→2회차(1시간), 2→3회차(6시간), 1→완료
                 quoteText = masteryQuotes[reviewCycle] || '';
             }
         }
