@@ -2850,7 +2850,7 @@ function openForgottenStagesOverlay() {
         overlay.style = 'display:flex; position:fixed; z-index:9999; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.97); color:#f1c40f; flex-direction:column; align-items:center; justify-content:center; font-size:1.2rem; text-align:center;';
         overlay.innerHTML = `
                 <div style="max-width:90vw; font-size:1.1em; line-height:1.7; font-weight:bold; color:#fff; text-shadow:0 2px 8px #222; margin-bottom:30px; flex-shrink: 0;">
-                    🕑 기억 다지기 보너스 스테이지<br><span style="font-size:0.95em; color:#f1c40f;">스테이지를 복습해서 <br>기억을 다지세요!(보상 5배)</span>
+                    🕑 기억 다지기 보너스 스테이지<br><span style="font-size:0.95em; color:#f1c40f;">스테이지를 복습해서 <br>기억을 다지세요!(최대 보상 5배)</span>
                 </div>
                 <div id="forgotten-stages-list" style="background:rgba(0,0,0,0.3); padding:20px; border-radius:15px; width:90vw; max-width:600px; min-width:220px; margin-bottom:30px; max-height:50vh; overflow-y:auto; flex-shrink: 0;">
                 </div>
@@ -8169,7 +8169,7 @@ function confirmQuit() {
     // 1. 유저에게 의사를 먼저 묻습니다. (첫 번째 함수의 심플한 알림창)
     const quitMessage = window.isHardshipMode
         ? `${getQuitModalTitleText()}\n${getHardshipQuitNoticeText()}`
-        : "정말 이 스테이지를 포기하시겠습니까?\n지금까지 진행한 상황은 저장되지 않습니다.";
+        : "정말 이 스테이지를 중단하시겠습니까?\n지금까지 진행한 상황은 저장되지 않습니다.";
     const wantsToQuit = confirm(quitMessage);
 
     // 2. 유저가 '확인'을 눌렀을 때만 청소 및 종료 실행!
