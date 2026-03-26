@@ -5330,6 +5330,7 @@ async function initFCM() {
             serviceWorkerRegistration: registration
         });
         console.log('[FCM] 토큰:', token);
+        console.log('[FCM] 저장 조건 확인 - token:', !!token, 'myPlayerId:', myPlayerId, 'db:', typeof db !== 'undefined' && !!db);
 
         if (token && myPlayerId && typeof db !== 'undefined' && db) {
             const docRef = db.collection('leaderboard').doc(myPlayerId);
