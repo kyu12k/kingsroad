@@ -10024,11 +10024,18 @@ function updateNotificationBadges() {
     }
 
     // 3. 상점 알림 체크 (일일 무료 생명의 떡)
+    const hasFreeLifeBread = (typeof isLifeBreadFreeAvailable === 'function') && isLifeBreadFreeAvailable();
     const shopBadge = document.getElementById('badge-shop');
     if (shopBadge) {
-        const hasFreeLifeBread = (typeof isLifeBreadFreeAvailable === 'function') && isLifeBreadFreeAvailable();
         if (hasFreeLifeBread) shopBadge.classList.add('active');
         else shopBadge.classList.remove('active');
+    }
+
+    // 4. 더보기 알림 체크 (상점 무료 생명의 떡 포함)
+    const moreBadge = document.getElementById('badge-more');
+    if (moreBadge) {
+        if (hasFreeLifeBread) moreBadge.classList.add('active');
+        else moreBadge.classList.remove('active');
     }
 }
 
