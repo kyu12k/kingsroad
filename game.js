@@ -4614,10 +4614,8 @@ function loadStep() {
             <div class="verse-indicator">${verseLabel}Step 3. 다음 빈칸에 들어갈 단어를 고르세요!</div>
             <div id="tower-game-container">
                 <div id="tower-text-display"></div>
-                
-                <div id="tower-msg">아래에서 알맞은 블록을 선택하세요</div>
-                <div id="tower-stack-area"></div>
-                <div id="tower-base"></div>
+
+                <div id="tower-msg">알맞은 단어를 고르세요!</div>
             </div>
         `;
 
@@ -8212,26 +8210,15 @@ function confirmQuit() {
 let towerGame = {
     words: [],
     idx: 0,
-    stackHeight: 0
+    locked: false
 };
 
 // 타워 게임 초기화
 function initTowerGame() {
     towerGame.words = [...trainingVerseData.chunks];
     towerGame.idx = 0;
-    towerGame.stackHeight = 0;
 
-    const stackArea = document.getElementById('tower-stack-area');
-    const base = document.getElementById('tower-base');
     const textDisplay = document.getElementById('tower-text-display');
-
-    if (stackArea) {
-        stackArea.innerHTML = "";
-        stackArea.style.transform = "translateY(0px)";
-    }
-    if (base) {
-        base.style.transform = "translateX(-50%) translateY(0px)";
-    }
 
     if (textDisplay) {
         textDisplay.innerHTML = "";
@@ -8244,7 +8231,7 @@ function initTowerGame() {
         });
     }
 
-    document.getElementById('tower-msg').innerText = "다음 블록을 선택하세요!";
+    document.getElementById('tower-msg').innerText = "알맞은 단어를 고르세요!";
     document.getElementById('tower-msg').style.color = "#2c3e50";
 
     // 바로 보기 블록 생성
@@ -8254,8 +8241,9 @@ function initTowerGame() {
 // 문제 출제 (객관식 보기 생성)
 function spawnTowerChoices() {
     if (!window.isGamePlaying) return; // ★ 추가: 나갔으면 중단!
+    towerGame.locked = false; // 새 보기가 나타날 때 잠금 해제
     if (towerGame.idx >= towerGame.words.length) {
-        document.getElementById('tower-msg').innerText = "🎉 성벽 건축 완료!";
+        document.getElementById('tower-msg').innerText = "🎉 완성!";
         document.getElementById('tower-msg').style.color = "#f1c40f";
         document.getElementById('tower-choices-area').innerHTML = "";
 
@@ -8301,9 +8289,9 @@ function spawnTowerChoices() {
 
 // 플레이어가 블록을 선택했을 때의 판정
 function handleTowerChoice(btn, selectedWord, correctWord) {
-    // 더블 클릭 방지를 위해 버튼들 일시 비활성화
+    if (towerGame.locked) return; // 연타 방지
+    towerGame.locked = true;
     const choicesArea = document.getElementById('tower-choices-area');
-    Array.from(choicesArea.children).forEach(child => child.disabled = true);
 
     if (selectedWord === correctWord) {
         // [정답]
@@ -8313,37 +8301,12 @@ function handleTowerChoice(btn, selectedWord, correctWord) {
         btn.style.color = "white";
         btn.style.boxShadow = "0 4px 0 #27ae60";
 
-        // 1. 블록 쌓기 연출
-        const stackArea = document.getElementById('tower-stack-area');
-        const stacked = document.createElement('div');
-        stacked.className = 'stacked-block';
-        stacked.innerText = correctWord;
-        stacked.style.left = "50%";
-        stacked.style.transform = "translateX(-50%)";
-        stacked.style.padding = "0 15px"; // 글자 길이에 맞춰 너비 자동 조절
-        stacked.style.bottom = (20 + (towerGame.stackHeight * 40)) + "px"; // 한 층씩 위로
-        stackArea.appendChild(stacked);
-
-        // 2. 상단 기록판 업데이트 (빈칸을 황금색 정답으로 교체!)
-        const wordSlot = document.getElementById(`tower-word-${towerGame.idx}`);
-        if (wordSlot) {
-            wordSlot.innerText = correctWord;
-            wordSlot.classList.add('active');
-            wordSlot.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-
-        towerGame.stackHeight++;
+        // 단어를 상단 기록판으로 날려보내기
+        flyWordToSlot(btn, correctWord, towerGame.idx);
         towerGame.idx++;
 
-        // 3. 타워가 너무 높아지면 카메라(시점) 아래로 스크롤 효과
-        if (towerGame.stackHeight > 4) {
-            const scrollOffset = (towerGame.stackHeight - 4) * 40;
-            stackArea.style.transform = `translateY(${scrollOffset}px)`;
-            document.getElementById('tower-base').style.transform = `translateX(-50%) translateY(${scrollOffset}px)`;
-        }
-
-        // 0.4초 뒤에 다음 문제 출제
-        setTimeout(spawnTowerChoices, 400);
+        // 날아가는 애니메이션 이후 다음 문제 출제
+        setTimeout(spawnTowerChoices, 380);
 
     } else {
         // [오답]
@@ -8354,7 +8317,7 @@ function handleTowerChoice(btn, selectedWord, correctWord) {
         btn.style.boxShadow = "0 4px 0 #c0392b";
         btn.classList.add('shake-effect'); // 흔들림 효과
 
-        document.getElementById('tower-msg').innerText = "앗! 다른 블록입니다.";
+        document.getElementById('tower-msg').innerText = "앗! 다른 단어입니다.";
         document.getElementById('tower-msg').style.color = "#e74c3c";
 
         // 틀렸을 때 하트를 깎는 로직이 있다면 여기에 추가 (예: takeDamage())
@@ -8366,12 +8329,47 @@ function handleTowerChoice(btn, selectedWord, correctWord) {
             btn.style.boxShadow = "0 4px 0 #bdc3c7";
             btn.classList.remove('shake-effect');
 
-            document.getElementById('tower-msg').innerText = "다음 블록을 선택하세요!";
+            document.getElementById('tower-msg').innerText = "알맞은 단어를 고르세요!";
             document.getElementById('tower-msg').style.color = "#2c3e50";
 
-            Array.from(choicesArea.children).forEach(child => child.disabled = false);
+            towerGame.locked = false; // 오답 후 재시도 허용
         }, 800);
     }
+}
+
+// 정답 단어를 상단 기록판 슬롯으로 날려보내는 연출
+function flyWordToSlot(sourceBtn, word, idx) {
+    const slot = document.getElementById(`tower-word-${idx}`);
+    if (!slot) return;
+
+    const btnRect  = sourceBtn.getBoundingClientRect();
+    const slotRect = slot.getBoundingClientRect();
+
+    // 날아갈 복사본 생성
+    const fly = document.createElement('div');
+    fly.className = 'flying-word';
+    fly.innerText = word;
+    fly.style.left = (btnRect.left + btnRect.width  / 2) + 'px';
+    fly.style.top  = (btnRect.top  + btnRect.height / 2) + 'px';
+    document.body.appendChild(fly);
+
+    // 다음 프레임에서 목적지로 이동 (transition 작동을 위해 rAF 사용)
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            fly.style.left      = (slotRect.left + slotRect.width  / 2) + 'px';
+            fly.style.top       = (slotRect.top  + slotRect.height / 2) + 'px';
+            fly.style.transform = 'translate(-50%, -50%) scale(0.7)';
+            fly.style.opacity   = '0';
+        });
+    });
+
+    // 도착 직전에 슬롯 채우기, 복사본 제거
+    setTimeout(() => {
+        slot.innerText = word;
+        slot.classList.add('active');
+        slot.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        fly.remove();
+    }, 220);
 }
 
 // [Step 4: 예언의 두루마리 게임 상태 변수]

@@ -3069,55 +3069,24 @@ body, html {
             touch-action: none; /* 터치 시 스크롤 방지 */
         }
 
-        /* 움직이는 크레인 블록 (위쪽) */
-        #moving-block {
-            position: absolute;
-            top: 60px;
-            height: 40px;
-            background: #e74c3c;
-            color: white;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 5px;
-            font-weight: bold;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            white-space: nowrap;
-            padding: 0 15px;
-            z-index: 10;
-            border: 2px solid white;
-        }
-
-        /* 이미 쌓인 블록들 (아래쪽) */
-        .stacked-block {
-            position: absolute;
-            height: 40px;
-            background: #f1c40f; /* 황금 벽돌 */
+        /* 날아가는 단어 */
+        .flying-word {
+            position: fixed;
+            transform: translate(-50%, -50%);
+            background: #f1c40f;
             color: #2c3e50;
-            border: 1px solid #d35400;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 4px;
+            padding: 5px 12px;
+            border-radius: 14px;
             font-weight: bold;
-            box-sizing: border-box;
-            box-shadow: inset 0 0 10px rgba(255,255,255,0.3);
-        }
-
-        /* [수정] 쌓인 블록 영역 (움직임 효과 추가) */
-        #tower-stack-area {
-            position: absolute;
-            width: 100%; height: 100%;
-            bottom: 0; left: 0;
-            transition: transform 0.5s ease; /* 스크롤 애니메이션 */
-        }
-
-        /* 바닥 (기초석) */
-        #tower-base {
-            position: absolute;
-            bottom: 0; left: 50%;
-            transform: translateX(-50%);
-            width: 150px; height: 20px;
-            background: #7f8c8d;
-            border-radius: 5px 5px 0 0;
-            border: 1px solid #95a5a6;
-            transition: bottom 0.5s ease, transform 0.5s ease;
+            font-size: 0.9rem;
+            pointer-events: none;
+            z-index: 1000;
+            white-space: nowrap;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.35);
+            transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                        top  0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                        transform 0.25s ease,
+                        opacity  0.25s ease;
         }
 
         /* 게임 메시지 */
@@ -3502,24 +3471,6 @@ body, html {
     text-shadow: 0 0 5px rgba(241, 196, 15, 0.5);
     border-bottom: none;
     transform: scale(1.1);
-}
-
-/* 움직이는 크레인 블록 (위치 조정) */
-#moving-block {
-    position: absolute;
-    /* [수정] 기록판(25%) 아래에서 생성되도록 위치를 내림 */
-    top: 30%; 
-    height: 40px;
-    background: #e74c3c;
-    color: white;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 5px;
-    font-weight: bold;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    white-space: nowrap;
-    padding: 0 15px;
-    z-index: 10;
-    border: 2px solid white;
 }
 
 /* 게임 메시지 위치 조정 */
