@@ -2702,10 +2702,6 @@ function openStageSheet(chapterData) {
             rewardInfo = `<div style="font-size:0.75rem; color:#e67e22; font-weight:bold; margin-top:4px;">${rewardLabel2}</div>`;
         }
 
-        // 3-1. 단계 진행 안내 뱃지 (phase 시스템 제거로 인해 삭제됨)
-        let stepHintHtml = "";
-        // (이전: "다음: Step 1~2" 등의 표시 제거됨)
-
         // 3-2. 다음 복습 주기 카운트다운
         let reviewCountdownHtml = "";
         if (memStatus.remainTime !== null && !isForgotten) {
@@ -2728,7 +2724,6 @@ function openStageSheet(chapterData) {
             ${levelBadgeHtml} ${stage.title}  </div>
         <div class="stage-desc">${stage.desc}</div>
         ${reviewCountdownHtml}
-        ${stepHintHtml}
         ${rewardInfo}
     </div>
     ${rightSideContent}
@@ -2781,35 +2776,6 @@ function openStageSheet(chapterData) {
     }, 1000);
 }
 
-// [1. 스마트 모드 선택 팝업 (시간 감지 기능 탑재)]
-
-// 시간대별 설정값 (아이콘, 색상, 설명, 코스모드)
-const TIME_ROUTINE = {
-    'morning': {
-        title: "🌅 아침 묵상",
-        desc: "읽기(Step 1) + 초성(Step 2)으로 하루를 여세요.",
-        color: "#f39c12",
-        mode: "morning"
-    },
-    'lunch': {
-        title: "🍱 점심 게임",
-        desc: "타워(Step 3) + 두루마리(Step 4)로 잠을 깨우세요!",
-        color: "#27ae60",
-        mode: "lunch"
-    },
-    'evening': {
-        title: "🌙 저녁 완성",
-        desc: "배열(Step 5) + 초성완성(Step 6)으로 기억 저장.",
-        color: "#8e44ad",
-        mode: "evening"
-    },
-    'night': {
-        title: "🦉 심야 훈련",
-        desc: "고요한 시간에 말씀에 집중하세요.",
-        color: "#34495e",
-        mode: "full" // 밤에는 그냥 풀코스 추천
-    }
-};
 
 let selectedStageForMode = null;
 
@@ -4054,9 +4020,6 @@ function normalizeChunkText(text) {
 function startTraining(stageId, mode = 'normal') {
     window.isGamePlaying = true; // ★ 게임 시작! 스위치 ON
     const isForceFullNew = (mode === 'full-new');
-    // 힌트 비용 스테이지별 리셋
-    hintCost = 10;
-
     // ★ chNum을 여기서 미리 정의 (함수 전체에서 쓰임)
     const m = String(stageId).match(/^(\d+)(?:-(\d+|.+))?/);
     const chNum = m ? parseInt(m[1], 10) : 0;
@@ -4079,8 +4042,7 @@ function startTraining(stageId, mode = 'normal') {
     // [복습 모드 판단: Step 1~5 완료했나?]
     // ============================================
     const isFullStepsComplete = isStageFullyLearned(stageId, stageData);
-    const isReplayEligible = isFullStepsComplete;
-    window.isReplayMode = isReplayEligible && !isForceFullNew;
+    window.isReplayMode = isFullStepsComplete && !isForceFullNew;
 
     // ============================================
     // [모드 결정: 복습 vs 전체 학습]
@@ -5205,34 +5167,6 @@ function showClearScreen() {
     document.getElementById('result-modal').classList.add('active');
 }
 
-//[수정된 중간 결과창: 보상 안내 추가]
-function showPhaseClearScreen(rewardAmount) {
-    triggerConfetti();
-    SoundEffect.playClear();
-
-    // 메시지 구성
-    let msg = "";
-    let nextTime = "";
-
-    if (window.trainingMode === 'phase1') {
-        msg = `🌱 1단계 완료! 보석 +${rewardAmount}개 획득!`;
-        nextTime = "10분 뒤에 [물주기]가 가능합니다.";
-    } else {
-        msg = `🌿 2단계 완료! 보석 +${rewardAmount}개 획득!`;
-        nextTime = "10분 뒤에 [열매맺기]가 가능합니다.";
-    }
-
-    // 알림창
-    alert(`${msg}\n\n⏳ ${nextTime}\n(뇌가 말씀을 저장할 시간을 주세요)`);
-
-    // 화면 전환
-    document.getElementById('game-screen').classList.remove('active');
-    document.getElementById('map-screen').classList.add('active');
-
-    if (typeof updateMapUI === 'function') updateMapUI();
-    reloadCurrentChapterUI();
-}
-
 // 스트릭 계산 로직
 function updateStreak() {
     const today = new Date().toDateString(); // "Wed Jan 08 2026" 형식
@@ -6282,14 +6216,6 @@ function checkDailyReward() {
    [시스템: 천국 침노 랭킹전 (Kingdom League) & XP 시스템]
    ========================================= */
 
-const LEAGUE_TIERS = [
-    { name: "🌿 광야 리그", color: "#cd7f32" }, // Bronze
-    { name: "🕊️ 성도 리그", color: "#bdc3c7" }, // Silver
-    { name: "⚔️ 군사 리그", color: "#f1c40f" }, // Gold
-    { name: "📜 장로 리그", color: "#2ecc71" }, // Platinum
-    { name: "🔥 사도 리그", color: "#3498db" }, // Diamond
-    { name: "👑 천국 리그", color: "#9b59b6" }  // Master
-];
 
 /* [기능] 시즌 리셋 (새로운 주가 시작되었을 때) */
 function resetLeague(newWeekId) {
@@ -9748,7 +9674,6 @@ window.onload = function () {
         localStorage.setItem('hasShownProfileSetup', 'true');
         setTimeout(openProfileSettings, 1000); // 1초 뒤 자연스럽게 등장
     }
-    // enableMobileCheat(); // 정식 버전: 비활성화
 };
 
 // [1. 초성 변환 함수 추가] 
