@@ -2954,10 +2954,21 @@ function openStageSheet(chapterData) {
         item.onclick = () => {
             window.currentStageId = stage.id;
 
+            // [성능] 일반 스테이지 클릭 시 오디오를 미리 로드 (startStageWithTransition 도착 전에 준비)
+            if (stage.type !== 'boss' && stage.type !== 'mid-boss') {
+                const _m = String(stage.id).match(/^(\d+)(?:-(\d+))?/);
+                const _cn = _m ? parseInt(_m[1], 10) : 0;
+                const _vn = (_m && _m[2]) ? parseInt(_m[2], 10) : 1;
+                const _preload = new Audio(`assets/audio/${_cn}-${_vn}.mp3`);
+                _preload.preload = 'auto';
+                _preload.load();
+                window._preloadedStageAudio = _preload;
+            }
+
             if (stage.type === 'boss' || stage.type === 'mid-boss') {
                 startBossBattle(stage.targetVerseCount);
             } else if (canChooseReviewMode) {
-                // 모드 선택 창을 띄웁니다. 
+                // 모드 선택 창을 띄웁니다.
                 // (여기는 일단 그대로 둡니다. 나중에 모드 버튼 안쪽에 애니메이션을 걸어줄 거예요!)
                 openModeSelect(stage.id);
             } else {
@@ -4438,14 +4449,7 @@ function startTraining(stageId, mode = 'normal') {
             // 🌟 시트 닫기를 콜백 안으로 이동 (보스전과 똑같이 꼬임 방지)
             if (typeof closeStageSheet === 'function') closeStageSheet();
 
-            const mapScreen = document.getElementById('map-screen');
-            const gameScreen = document.getElementById('game-screen');
-
-            if (mapScreen) mapScreen.classList.remove('active');
-            if (gameScreen) {
-                gameScreen.classList.add('active');
-                gameScreen.classList.add('mode-training');
-            }
+            // (맵 숨기기/게임화면 활성화는 startStageWithTransition 호출 전에 이미 완료됨)
             console.log("2. ✅ 화면 클래스 전환 완료");
 
             if (typeof recalculateMaxHearts === 'function') recalculateMaxHearts();
@@ -4481,6 +4485,15 @@ function startTraining(stageId, mode = 'normal') {
             alert("게임 전환 중 오류가 발생했습니다. 브라우저 콘솔(F12)을 확인해주세요.");
         }
     };
+
+    // [성능] 애니메이션 시작 전에 맵을 숨겨 불필요한 렌더링을 차단
+    const _mapScreen = document.getElementById('map-screen');
+    const _gameScreen = document.getElementById('game-screen');
+    if (_mapScreen) _mapScreen.classList.remove('active');
+    if (_gameScreen) {
+        _gameScreen.classList.add('active');
+        _gameScreen.classList.add('mode-training');
+    }
 
     // 🌟 마지막으로, 잘 싼 보따리를 애니메이션 함수에 던져줍니다.
     startStageWithTransition(chNum, verseNum, startStageAction);
@@ -11112,10 +11125,16 @@ function startStageWithTransition(chapterNum, verseNum, startStageCallback) {
     // 만약 폴더 이름이 'sounds'라면 'sounds/${cNum}-${vNum}.mp3'로 맞추면 돼.
     const audioUrl = `assets/audio/${cNum}-${vNum}.mp3`;
 
-    // 🌟 [추가] 오디오 객체를 여기서 미리 생성하고 다운로드를 강제합니다.
-    const preloadedAudio = new Audio(audioUrl);
-    preloadedAudio.preload = 'auto';
-    preloadedAudio.load();
+    // [성능] 스테이지 클릭 시 미리 로드한 오디오가 있으면 재사용, 없으면 새로 로드
+    let preloadedAudio;
+    if (window._preloadedStageAudio) {
+        preloadedAudio = window._preloadedStageAudio;
+        window._preloadedStageAudio = null;
+    } else {
+        preloadedAudio = new Audio(audioUrl);
+        preloadedAudio.preload = 'auto';
+        preloadedAudio.load();
+    }
 
     // 🌟 까만 커튼을 덮어서 유저의 시선을 차단합니다. (로딩 화면 역할)
     gsap.set(overlay, { opacity: 1, pointerEvents: "auto" });
