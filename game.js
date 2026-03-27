@@ -734,7 +734,7 @@ function updateMissionUI() {
             type: 'daily'
         },
         {
-            desc: "서로 다른 스테이지 3개 클리어",
+            desc: "서로 다른 구절 3개 클리어",
             current: missionData.daily.differentStages,
             target: 3,
             rewardText: "💎 보석 300개",
@@ -784,7 +784,7 @@ function updateMissionUI() {
             type: 'weekly'
         },
         {
-            desc: "스테이지 15회 완료",
+            desc: "구절 15회 학습",
             current: missionData.weekly.stageClear,
             target: 15,
             rewardText: "💎 보석 2,000개",
@@ -3030,7 +3030,7 @@ function openModeSelect(stageId) {
         </div>
         <div style="text-align: center; margin-bottom: 20px;">
             <h2 style="margin:0; color:#2c3e50;">복습 모드 선택</h2>
-            <p style="color:#7f8c8d; font-size:0.9rem; margin-top:5px;">완료된 스테이지입니다.</p>
+            <p style="color:#7f8c8d; font-size:0.9rem; margin-top:5px;">완료한 구절입니다.</p>
         </div>
 
         <button class="mode-btn" onclick="confirmMode('quick')" style="background:#fff9c4; border:2px solid #f1c40f; color:#d35400; box-shadow: 0 4px 0 #f39c12;">
@@ -3098,7 +3098,7 @@ function getWaitingBonusStages() {
             if (elapsed < threshold) {
                 result.push({
                     stageId,
-                    stageName: stage.name || `스테이지 ${stageId}`,
+                    stageName: stage.name || `계 ${stageId}`,
                     chapterNum: chapter.chapter,
                     remaining: bonus.remaining,
                     bonusLabel: BONUS_LABELS[bonus.remaining],
@@ -3220,8 +3220,8 @@ function openWaitingBonusOverlay() {
         overlay.className = 'waiting-bonus-overlay';
         overlay.innerHTML = `
             <div class="waiting-bonus-title">
-                ⏳ 보너스 복습 대기 중<br>
-                <span class="waiting-bonus-subtitle">알림을 받으면 최적 타이밍을 놓치지 않을 수 있어요!</span>
+                ⏳ 때를 따른 복습 대기 중<br>
+                <span class="waiting-bonus-subtitle">알림을 받으면 제때 복습할 수 있어요!</span>
             </div>
             <div id="waiting-bonus-list" class="waiting-bonus-list"></div>
             <button onclick="closeWaitingBonusOverlay()" class="waiting-bonus-close-btn">닫기</button>
@@ -6101,8 +6101,8 @@ function renderMissionList(tabName) {
             allOpened ?
                 {
                     id: 0,
-                    title: "어떤 스테이지든 1회 학습",
-                    desc: "아무 스테이지나 1회 학습하세요.",
+                    title: "어떤 구절이든 1회 학습",
+                    desc: "아무 구절이나 1회 학습하세요.",
                     target: 1,
                     current: missionData.daily.newClear, // 기존 카운트 활용
                     reward: "💎 보석 100개",
@@ -6112,8 +6112,8 @@ function renderMissionList(tabName) {
                 :
                 {
                     id: 0,
-                    title: "새로운 훈련 1회 완료",
-                    desc: "새로운 말씀을 1회 학습하세요.",
+                    title: "새로운 구절 1회 학습",
+                    desc: "새로운 구절을 1회 학습하세요.",
                     target: 1,
                     current: missionData.daily.newClear,
                     reward: "💎 보석 100개",
@@ -6122,8 +6122,8 @@ function renderMissionList(tabName) {
                 },
             {
                 id: 1,
-                title: "서로 다른 스테이지 3회 완료",
-                desc: "다른 스테이지를 골고루 학습하세요.",
+                title: "서로 다른 구절 3회 학습",
+                desc: "다른 구절을 골고루 학습하세요.",
                 target: 3,
                 current: missionData.daily.differentStages,
                 reward: "💎 보석 300개",
@@ -6177,8 +6177,8 @@ function renderMissionList(tabName) {
             },
             {
                 id: 2,
-                title: "스테이지 15회 완료",
-                desc: "(주간)누적 15회 완료.",
+                title: "구절 15회 학습",
+                desc: "(주간)누적 15회 학습.",
                 target: 15,
                 current: missionData.weekly.stageClear,
                 reward: "💎 보석 2,000",
@@ -7740,7 +7740,7 @@ function openSettingsModal() {
 
             <div style="background:rgba(255,255,255,0.05);border-radius:12px;padding:16px 14px;margin-bottom:12px;">
                 <div style="font-size:0.95rem;color:#ccc;margin-bottom:12px;">🔔 복습 알림</div>
-                <div style="font-size:0.85rem;color:#aaa;margin-bottom:14px;">스테이지 클리어 후 10분, 1시간, 6시간 뒤에 복습 알림을 보내드립니다.</div>
+                <div style="font-size:0.85rem;color:#aaa;margin-bottom:14px;">때를 따른 복습 알림을 보내드릴 수 있습니다.</div>
                 <div style="display:flex;align-items:center;justify-content:space-between;">
                     <span id="notif-status-label" style="font-size:1rem;font-weight:bold;color:${notifOn ? '#2ecc71' : '#e74c3c'};">
                         ${notifOn ? '알림 켜짐 ✅' : '알림 꺼짐 ❌'}
@@ -8538,7 +8538,7 @@ function confirmQuit() {
     // 1. 유저에게 의사를 먼저 묻습니다. (첫 번째 함수의 심플한 알림창)
     const quitMessage = window.isHardshipMode
         ? `${getQuitModalTitleText()}\n${getHardshipQuitNoticeText()}`
-        : "정말 이 스테이지를 중단하시겠습니까?\n지금까지 진행한 상황은 저장되지 않습니다.";
+        : "정말 중단하시겠습니까?\n지금까지 진행한 상황은 저장되지 않습니다.";
     const wantsToQuit = confirm(quitMessage);
 
     // 2. 유저가 '확인'을 눌렀을 때만 청소 및 종료 실행!
