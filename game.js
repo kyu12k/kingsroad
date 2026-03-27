@@ -3426,7 +3426,7 @@ function openStageSheet(chapterData) {
                 const nextLabel2 = timedBonus2.remaining === 3 ? '×1.5' : timedBonus2.remaining === 2 ? '×2' : '×5';
                 rewardLabel2 = `⏳[<span class="live-timer-bonus" data-unlock="${nextUnlock2}">계산중</span>] ${displayGem2}💎 → ${nextLabel2}${forgottenTag2}`;
             } else {
-                rewardLabel2 = `⏳[쿨타임] ${displayGem2}💎 (×1)${forgottenTag2}`;
+                rewardLabel2 = `⏳[기억 숙성 중] ${displayGem2}💎 (×1)${forgottenTag2}`;
             }
             rewardInfo = `<div style="font-size:0.75rem; color:#e67e22; font-weight:bold; margin-top:4px;">${rewardLabel2}</div>`;
         }
@@ -3441,7 +3441,7 @@ function openStageSheet(chapterData) {
             } else {
                 countdownText = `${Math.floor(remainHours)}시간`;
             }
-            reviewCountdownHtml = `<div style="font-size:0.72rem; color:#95a5a6; margin-top:3px;">⏱ 다음 복습까지 ${countdownText}</div>`;
+            reviewCountdownHtml = `<div style="font-size:0.72rem; color:#95a5a6; margin-top:3px;">⏱ 보너스 초기화까지 ${countdownText}</div>`;
         }
 
         // 4. HTML 조립
@@ -3489,8 +3489,8 @@ function openStageSheet(chapterData) {
 
     sheet.classList.add('open');
 
-    // ★ 6. 타이머 작동 시작 (1분마다 갱신) ★
-    stageSheetTimer = setInterval(() => {
+    // ★ 6. 타이머 작동 시작 (즉시 1회 실행 후 1분마다 갱신) ★
+    function updateSheetTimers() {
         const now = Date.now();
 
         // 숙성 쿨타임 타이머 (live-timer)
@@ -3504,8 +3504,11 @@ function openStageSheet(chapterData) {
                 el.style.borderColor = "#2ecc71";
                 el.style.background = "#eafaf1";
             } else {
-                const mins = Math.floor(diff / 60000);
-                el.innerText = `⏳ ${mins > 0 ? mins + '분' : '1분 미만'}`;
+                const totalMins = Math.floor(diff / 60000);
+                const timeStr = totalMins >= 60
+                    ? `${Math.floor(totalMins / 60)}시간 ${totalMins % 60 > 0 ? (totalMins % 60) + '분' : ''}`.trim()
+                    : (totalMins > 0 ? totalMins + '분' : '1분 미만');
+                el.innerText = `${timeStr} 후 복습 추천`;
             }
         });
 
@@ -3516,11 +3519,17 @@ function openStageSheet(chapterData) {
             if (diff <= 0) {
                 el.innerText = "지금!";
             } else {
-                const mins = Math.floor(diff / 60000);
-                el.innerText = (mins > 0 ? mins + '분' : '1분 미만') + " 후";
+                const totalMins = Math.floor(diff / 60000);
+                const timeStr = totalMins >= 60
+                    ? `${Math.floor(totalMins / 60)}시간 ${totalMins % 60 > 0 ? (totalMins % 60) + '분' : ''}`.trim()
+                    : (totalMins > 0 ? totalMins + '분' : '1분 미만');
+                el.innerText = `${timeStr} 후 복습 추천`;
             }
         });
-    }, 60000);
+    }
+
+    updateSheetTimers();
+    stageSheetTimer = setInterval(updateSheetTimers, 60000);
 }
 
 
@@ -3752,7 +3761,7 @@ function openWaitingBonusOverlay() {
             <div class="waiting-bonus-info">
                 <span class="waiting-bonus-name">${item.stageName}</span>
                 ${item.chapterNum !== undefined ? `<span class="waiting-bonus-chapter">(제${item.chapterNum}장)</span>` : ''}
-                <span class="waiting-bonus-time">${formatTimeLeft(item.timeLeft)}</span>
+                <span class="waiting-bonus-time">${(() => { const m = Math.floor(item.timeLeft / 60000); return m >= 60 ? `${Math.floor(m/60)}시간 ${m%60 > 0 ? (m%60)+'분 ' : ''}`.trim() : (m > 0 ? m+'분' : '1분 미만'); })()} 후 복습 추천</span>
                 <span class="waiting-bonus-label">${item.bonusLabel}</span>
             </div>
             <button class="waiting-bonus-notif-btn">알림 받기</button>
