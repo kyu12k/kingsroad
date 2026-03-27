@@ -1035,6 +1035,78 @@ const SoundEffect = {
     playGetGem: function () {
         if (this.isMuted) return;
         this.playTone(1200, 'sine', 0.1, 0.1);
+    },
+
+    // 8. 구절 공개 소리 - 인내의 고난 (부드러운 페이지 넘김)
+    playReveal: function () {
+        if (this.isMuted) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const now = this.ctx.currentTime;
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.linearRampToValueAtTime(600, now + 0.12);
+
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.08, now + 0.04);
+        gain.gain.linearRampToValueAtTime(0.001, now + 0.12);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.12);
+    },
+
+    // 9. 하트 소모 소리 - 주소/망각의 고난 (둔탁한 충격음)
+    playHeartLoss: function () {
+        if (this.isMuted) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const now = this.ctx.currentTime;
+
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(200, now);
+        osc.frequency.exponentialRampToValueAtTime(80, now + 0.25);
+
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.linearRampToValueAtTime(0.001, now + 0.25);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.25);
+    },
+
+    // 10. 힌트 사용 소리 - 망각의 고난 (밝은 동전/벨)
+    playHint: function () {
+        if (this.isMuted) return;
+        const now = this.ctx.currentTime;
+        this.createOsc(900, 'sine', now, 0.08);
+        this.createOsc(1200, 'sine', now + 0.07, 0.12);
+    },
+
+    // 11. 타이핑 소리 - 망각의 고난 (짧은 키보드 클릭, 디바운스 15ms)
+    _lastKeystrokeTime: 0,
+    playKeyStroke: function () {
+        if (this.isMuted) return;
+        const now = Date.now();
+        if (now - this._lastKeystrokeTime < 15) return;
+        this._lastKeystrokeTime = now;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const t = this.ctx.currentTime;
+
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(1000, t);
+
+        gain.gain.setValueAtTime(0.05, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.025);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.025);
     }
 };
 
@@ -12296,6 +12368,8 @@ function renderHardshipEnduranceVerse() {
 function revealHardshipEnduranceChunk() {
     if (!window.isHardshipMode || hardshipState.mode !== 'endurance' || hardshipState.locked) return;
 
+    SoundEffect.playReveal();
+
     const chunkIndex = hardshipState.revealIndex;
     const chunk = hardshipState.currentVerse.chunks[chunkIndex];
     const chunkEl = document.getElementById(`hardship-a-chunk-${chunkIndex}`);
@@ -12450,6 +12524,7 @@ function submitHardshipAddressGuess() {
         message: `오답입니다. 정답은 ${hardshipState.currentVerse.label}입니다.`
     };
     if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
+    if (typeof SoundEffect !== 'undefined' && SoundEffect.playHeartLoss) SoundEffect.playHeartLoss();
     renderHardshipAddressVerse();
     updateBattleUI();
 }
@@ -12682,6 +12757,8 @@ function updateHardshipMemoryBoard() {
 function handleHardshipMemoryInput(event) {
     if (!window.isHardshipMode || hardshipState.mode !== 'memory' || hardshipState.locked) return;
 
+    if (typeof SoundEffect !== 'undefined' && SoundEffect.playKeyStroke) SoundEffect.playKeyStroke();
+
     const input = event.target;
     const currentText = input.value;
     const targetLength = Number(input.maxLength) || getHardshipFillableVerseLength();
@@ -12785,6 +12862,7 @@ function useHardshipMemoryHint() {
     }
 
     myGems -= HINT_COST;
+    if (typeof SoundEffect !== 'undefined' && SoundEffect.playHint) SoundEffect.playHint();
     if (autoSpaces) {
         hardshipState.memoryTypedText = `${String(hardshipState.memoryTypedText || '')}${autoSpaces}`;
 
@@ -12847,6 +12925,7 @@ function submitHardshipMemoryGuess() {
         message: `오답입니다. 정답 말씀: ${hardshipState.currentVerse.text}`
     };
     if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
+    if (typeof SoundEffect !== 'undefined' && SoundEffect.playHeartLoss) SoundEffect.playHeartLoss();
     renderHardshipMemoryVerse();
     updateBattleUI();
 }
