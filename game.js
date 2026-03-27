@@ -2806,19 +2806,11 @@ function amenAndStartGame() {
         SoundEffect.ctx.resume();
     }
 
-    // 2. 배경 음악 설정 확인 및 시작
-    const savedBgmState = localStorage.getItem('setting_bgm_on');
-    const shouldPlayBgm = (savedBgmState === null) || (savedBgmState === 'true');
-
+    // 2. 배경 음악 비활성화 (제거됨)
     if (typeof BackgroundMusic !== 'undefined') {
-        if (shouldPlayBgm) BackgroundMusic.start();
-        else BackgroundMusic.stop();
-
+        BackgroundMusic.stop();
         const bgmBtn = document.getElementById('btn-bgm');
-        if (bgmBtn) {
-            bgmBtn.style.opacity = shouldPlayBgm ? "1" : "0.5";
-            bgmBtn.innerText = shouldPlayBgm ? "🎵" : "🔇";
-        }
+        if (bgmBtn) bgmBtn.style.display = 'none';
     }
 
     // 3. 효과음 버튼 상태 동기화
@@ -3999,8 +3991,6 @@ function startBossBattle() {
     const startBossAction = () => {
         closeStageSheet();
         document.getElementById('map-screen').classList.remove('active');
-        BackgroundMusic.setBattleContext(chapterNum, sId.includes('mid'));
-        BackgroundMusic.setMode('battle');
         // ★ [버그 픽스] 집중 훈련/고난 길이 남긴 모드 클래스를 모두 벗겨냅니다.
         const gs = document.getElementById('game-screen');
         gs.classList.add('active');
@@ -4658,7 +4648,6 @@ function clearCheckpoint() {
 function quitGame(destination = 'map') {
     const targetScreen = (destination === 'home') ? 'home' : 'map';
     window.isTrainingMode = false; // 🌟 [추가] 포기하고 나갈 때는 훈련 모드 스위치 확실히 끄기!
-    BackgroundMusic.setMode('map');
     if (typeof resetHardshipSessionState === 'function') {
         resetHardshipSessionState();
     }
@@ -4982,8 +4971,6 @@ function startTraining(stageId, mode = 'normal') {
 
             if (typeof updateBattleUI === 'function') updateBattleUI();
 
-            BackgroundMusic.setNormalContext(chNum);
-            BackgroundMusic.setMode('battle');
 
             stageStartTime = Date.now();
             wrongCount = 0;
@@ -6273,21 +6260,8 @@ function toggleSound(btn) {
     btn.innerText = isMuted ? "🔇" : "🔊";
 }
 
-// ▼▼▼ [수정] 배경음악 토글 함수 (설정 저장 기능 추가) ▼▼▼
-function toggleBGM(btn) {
-    const isPlaying = BackgroundMusic.toggle();
-
-    // ★ [추가] 켜졌으면 'true', 꺼졌으면 'false'로 저장
-    localStorage.setItem('setting_bgm_on', isPlaying);
-
-    if (isPlaying) {
-        btn.style.opacity = "1";
-        btn.innerText = "🎵";
-    } else {
-        btn.style.opacity = "0.5";
-        btn.innerText = "🔇";
-    }
-}
+// 배경음악 제거됨 - 함수 유지 (버튼 참조 오류 방지)
+function toggleBGM(btn) {}
 
 /* [시스템: 성전 보급소 로직] */
 function openShop() {
@@ -12820,7 +12794,6 @@ function startHardshipSession(mode, selectedVerseIds) {
     if (gameScreen) {
         gameScreen.classList.add('active', 'mode-training', 'mode-hardship');
     }
-    BackgroundMusic.setMode('hardship');
 
     const bossAvatar = document.querySelector('.boss-avatar');
     if (bossAvatar) bossAvatar.style.display = 'none';

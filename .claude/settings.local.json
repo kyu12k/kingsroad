@@ -3,7 +3,8 @@
     "allow": [
       "Bash(find /c/Users/kikej/OneDrive/바탕 화면/kingsload/public -type f \\\\\\(-name *.html -o -name *.js -o -name *.css \\\\\\))",
       "Bash(sed 's/-.*//')",
-      "Bash(find 'c:\\\\Users\\\\kikej\\\\OneDrive\\\\바탕 화면\\\\kingsload' -type f \\\\\\(-name *.mp3 -o -name *.wav -o -name *.ogg -o -name *.flac -o -name *.aac \\\\\\))"
+      "Bash(find 'c:\\\\Users\\\\kikej\\\\OneDrive\\\\바탕 화면\\\\kingsload' -type f \\\\\\(-name *.mp3 -o -name *.wav -o -name *.ogg -o -name *.flac -o -name *.aac \\\\\\))",
+      "Bash(find '/c/Users/kikej/OneDrive/바탕 화면/kingsload/assets' -type f \\\\\\(-name *.mp3 -o -name *.wav -o -name *.ogg \\\\\\))"
     ]
   }
 }
