@@ -5088,6 +5088,11 @@ function loadStep() {
             Array.from(pool.children).forEach(btn => {
                 btn.style.visibility = 'visible';
             });
+            // pool/zone 레이아웃 스타일 원상 복구
+            pool.style.height = '';
+            pool.style.margin = '';
+            zone.style.minHeight = '120px';
+            zone.style.paddingBottom = '';
             deselect();
             SoundEffect.playClick();
             resetIdleTimer(); // 🌟 초기화 후 다시 힌트 타이머 가동
