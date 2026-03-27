@@ -4214,6 +4214,7 @@ function loadNextVerse() {
     function handleBossBlockClick(btn) {
         btn.classList.remove('error-block');
         btn.classList.remove('correct-block');
+        SoundEffect.playClick();
 
         if (btn.parentElement === pool) {
             const ph = document.getElementById('placeholder-text');
