@@ -1038,19 +1038,56 @@ const SoundEffect = {
     }
 };
 
-/* [시스템: 배경 음악 (별의 궤적 - 위상 교차 앰비언트 단일 테마)] */
+/* [시스템: 배경 음악 (별의 궤적 - 위상 교차 앰비언트 / 상황별 모드)] */
 const BackgroundMusic = {
     audioCtx: null,
     isPlaying: false,
-    timers: [], // 실행 중인 무한 생성 타이머들을 관리하는 배열
-
-    // 🎵 별의 궤적 (서로 다른 길이의 3가지 톱니바퀴 음계)
-    arrays: [
-        [261.63, 329.63, 392.00], // 길이 3 (C, E, G)
-        [220.00, 261.63, 293.66, 329.63, 392.00], // 길이 5 (A, C, D, E, G)
-        [523.25, 440.00, 392.00, 329.63, 293.66, 261.63, 220.00] // 길이 7 (하강)
-    ],
+    timers: [],
+    currentMode: 'map',
     indices: [0, 0, 0],
+
+    // 🎵 상황별 음악 모드 설정
+    modes: {
+        // 지도 화면 - 밝고 따뜻한 C장조 앰비언트 (낮은 음 제거)
+        map: {
+            arrays: [
+                [261.63, 329.63, 392.00],           // C4, E4, G4
+                [392.00, 493.88, 523.25],            // G4, B4, C5 (밝은 중음역)
+                [523.25, 587.33, 659.25, 587.33]    // C5, D5, E5, D5 (오르내리는 밝은 패턴)
+            ],
+            delays: [2.0, 2.7, 3.5],
+            wave: 'sine',
+            volume: 0.035,
+            attack: 2.0,
+            release: 4.5
+        },
+        // 전투 화면 - 에너지틱하지만 밝은 G장조 펜타토닉
+        battle: {
+            arrays: [
+                [392.00, 440.00, 523.25],                        // G4, A4, C5
+                [329.63, 392.00, 440.00, 523.25, 587.33],       // E, G, A, C, D (밝은 5음)
+                [659.25, 587.33, 523.25, 440.00, 392.00]        // 높은 음역 하강 (밝음)
+            ],
+            delays: [1.5, 2.0, 2.7],
+            wave: 'triangle',
+            volume: 0.045,
+            attack: 1.0,
+            release: 2.5
+        },
+        // 고난 길 - 엄숙하고 묵직한 단조
+        hardship: {
+            arrays: [
+                [220.00, 261.63, 311.13],
+                [174.61, 220.00, 261.63, 311.13, 349.23],
+                [440.00, 392.00, 349.23, 311.13, 261.63, 220.00, 174.61]
+            ],
+            delays: [3.5, 4.5, 5.8],
+            wave: 'sine',
+            volume: 0.03,
+            attack: 2.0,
+            release: 5.0
+        }
+    },
 
     init: function () {
         if (!this.audioCtx) this.audioCtx = SoundEffect.ctx;
@@ -1060,17 +1097,12 @@ const BackgroundMusic = {
         if (this.isPlaying) return;
         this.init();
         this.isPlaying = true;
-        this.indices = [0, 0, 0]; // 재생할 때마다 궤적 초기화
-
-        // 3개의 톱니바퀴를 서로 다른 주기(2초, 2.7초, 3.5초)로 굴리기 시작합니다.
-        this.playLoop(0, 2.0);
-        this.playLoop(1, 2.7);
-        this.playLoop(2, 3.5);
+        this.indices = [0, 0, 0];
+        this._startLoops(this.currentMode);
     },
 
     stop: function () {
         this.isPlaying = false;
-        // 모든 생성 타이머를 즉시 정지 (기존 소리는 여운을 남기며 자연스럽게 사라짐)
         this.timers.forEach(id => clearTimeout(id));
         this.timers = [];
     },
@@ -1081,46 +1113,82 @@ const BackgroundMusic = {
         return this.isPlaying;
     },
 
-    // 안전하게 타이머를 추가하는 헬퍼 함수
+    // 상황에 맞는 모드로 전환 (전투 시작/종료, 고난 길 등)
+    setMode: function (mode) {
+        if (!this.modes[mode] || this.currentMode === mode) return;
+        this.currentMode = mode;
+        if (!this.isPlaying) return;
+        this.timers.forEach(id => clearTimeout(id));
+        this.timers = [];
+        this.indices = [0, 0, 0];
+        this._startLoops(mode);
+    },
+
+    _startLoops: function (mode) {
+        const cfg = this.modes[mode];
+        cfg.delays.forEach((delay, i) => this.playLoop(i, delay, mode));
+    },
+
     addTimer: function (fn, delay) {
         const id = setTimeout(fn, delay);
         this.timers.push(id);
     },
 
-    // 위상 음악 루프 엔진
-    playLoop: function (loopIdx, delay) {
-        if (!this.isPlaying) return;
+    playLoop: function (loopIdx, delay, mode) {
+        if (!this.isPlaying || this.currentMode !== mode) return;
 
-        const arr = this.arrays[loopIdx];
+        const cfg = this.modes[mode];
+        const arr = cfg.arrays[loopIdx];
         const freq = arr[this.indices[loopIdx]];
         this.indices[loopIdx] = (this.indices[loopIdx] + 1) % arr.length;
 
-        // 부드러운 사인파(sine) 소리를 생성합니다.
-        this.playSoftTone(freq, 'sine', 1.5, 4, 0.035);
-
-        this.addTimer(() => this.playLoop(loopIdx, delay), delay * 1000);
+        this.playWarmTone(freq, cfg.wave, cfg.attack, cfg.release, cfg.volume);
+        this.addTimer(() => this.playLoop(loopIdx, delay, mode), delay * 1000);
     },
 
-    // ☁️ 공통 합성 엔진: 100% 모서리 없는 부드러운 소리
-    playSoftTone: function (freq, type, attackSec, releaseSec, maxVol) {
-        const osc = this.audioCtx.createOscillator();
-        const gain = this.audioCtx.createGain();
+    // 🎹 따뜻한 음색 합성: 주 오실레이터 + 옥타브 하모닉 + 비브라토(LFO)
+    playWarmTone: function (freq, type, attackSec, releaseSec, maxVol) {
+        const ctx = this.audioCtx;
+        const now = ctx.currentTime;
 
-        osc.connect(gain);
-        gain.connect(this.audioCtx.destination);
+        // 주 오실레이터 (triangle/sine - 따뜻한 베이스 음색)
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = type;
+        osc1.frequency.value = freq;
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        gain1.gain.setValueAtTime(0, now);
+        gain1.gain.linearRampToValueAtTime(maxVol, now + attackSec);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + attackSec + releaseSec);
+        gain1.gain.linearRampToValueAtTime(0, now + attackSec + releaseSec + 0.1);
+        osc1.start(now);
+        osc1.stop(now + attackSec + releaseSec + 0.2);
 
-        osc.type = type;
-        osc.frequency.value = freq;
+        // 옥타브 하모닉 (볼륨 1/4) - 풍성한 배음 추가
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.value = freq * 2;
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        gain2.gain.setValueAtTime(0, now);
+        gain2.gain.linearRampToValueAtTime(maxVol * 0.25, now + attackSec);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + attackSec + releaseSec);
+        gain2.gain.linearRampToValueAtTime(0, now + attackSec + releaseSec + 0.1);
+        osc2.start(now);
+        osc2.stop(now + attackSec + releaseSec + 0.2);
 
-        const now = this.audioCtx.currentTime;
-        gain.gain.setValueAtTime(0, now);
-
-        gain.gain.linearRampToValueAtTime(maxVol, now + attackSec);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + attackSec + releaseSec);
-        gain.gain.linearRampToValueAtTime(0, now + attackSec + releaseSec + 0.1);
-
-        osc.start(now);
-        osc.stop(now + attackSec + releaseSec + 0.2);
+        // 비브라토 LFO - 어택 절반 이후부터 자연스럽게 흔들림
+        const lfo = ctx.createOscillator();
+        const lfoGain = ctx.createGain();
+        lfo.type = 'sine';
+        lfo.frequency.value = 4.5;
+        lfoGain.gain.value = freq * 0.012;
+        lfo.connect(lfoGain);
+        lfoGain.connect(osc1.frequency);
+        lfo.start(now + attackSec * 0.5);
+        lfo.stop(now + attackSec + releaseSec + 0.2);
     }
 };
 
@@ -3266,6 +3334,7 @@ function startBossBattle() {
     const startBossAction = () => {
         closeStageSheet();
         document.getElementById('map-screen').classList.remove('active');
+        BackgroundMusic.setMode('battle');
         // ★ [버그 픽스] 집중 훈련/고난 길이 남긴 모드 클래스를 모두 벗겨냅니다.
         const gs = document.getElementById('game-screen');
         gs.classList.add('active');
@@ -3923,6 +3992,7 @@ function clearCheckpoint() {
 function quitGame(destination = 'map') {
     const targetScreen = (destination === 'home') ? 'home' : 'map';
     window.isTrainingMode = false; // 🌟 [추가] 포기하고 나갈 때는 훈련 모드 스위치 확실히 끄기!
+    BackgroundMusic.setMode('map');
     if (typeof resetHardshipSessionState === 'function') {
         resetHardshipSessionState();
     }
@@ -12073,6 +12143,7 @@ function startHardshipSession(mode, selectedVerseIds) {
     if (gameScreen) {
         gameScreen.classList.add('active', 'mode-training', 'mode-hardship');
     }
+    BackgroundMusic.setMode('hardship');
 
     const bossAvatar = document.querySelector('.boss-avatar');
     if (bossAvatar) bossAvatar.style.display = 'none';
