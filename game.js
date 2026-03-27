@@ -2590,9 +2590,17 @@ function renderChapterMap() {
         landArea.appendChild(wrapper);
     });
 
-    // 3. 강물 그리기
+    // 3. 강물 그리기 (디바운스 150ms, 이전 리스너 제거 후 재등록)
+    if (renderChapterMap._resizeHandler) {
+        window.removeEventListener('resize', renderChapterMap._resizeHandler);
+    }
+    let _resizeTimer;
+    renderChapterMap._resizeHandler = function() {
+        clearTimeout(_resizeTimer);
+        _resizeTimer = setTimeout(drawRiver, 150);
+    };
+    window.addEventListener('resize', renderChapterMap._resizeHandler);
     setTimeout(drawRiver, 100);
-    window.addEventListener('resize', drawRiver);
 }
 
 /* [시스템: S자 강물 그리기 (Zone 대응 버전)] */
@@ -2604,27 +2612,20 @@ function drawRiver() {
 
     if (nodes.length === 0 || !svg || !path || !container || container.offsetParent === null) return;
 
-    // 1. SVG 높이 설정 (컨텐츠 전체 높이만큼)
-    svg.style.height = `${container.scrollHeight}px`;
-
-    // 2. 컨테이너 위치
+    // 1. 모든 DOM 읽기를 먼저 수행 (레이아웃 스래싱 방지)
+    const scrollH = container.scrollHeight;
     const containerRect = container.getBoundingClientRect();
+    const scrollTop = container.scrollTop;
+    const nodeRects = Array.from(nodes).map(n => n.getBoundingClientRect());
+
+    // 2. SVG 높이 설정 (읽기 이후 쓰기)
+    svg.style.height = `${scrollH}px`;
 
     // 3. 좌표 수집
-    let points = [];
-    nodes.forEach(node => {
-        const rect = node.getBoundingClientRect();
-
-        // X: 노드 중심
-        const x = (rect.left - containerRect.left) + (rect.width / 2);
-
-        // Y: 노드 중심 + 스크롤 보정
-        // (주의: position:relative인 부모들 때문에 offsetTop이 더 정확할 수 있음)
-        // 여기서는 getBoundingClientRect와 scrollTop을 조합
-        const y = (rect.top - containerRect.top) + container.scrollTop + (rect.height / 2);
-
-        points.push({ x, y });
-    });
+    const points = nodeRects.map(rect => ({
+        x: (rect.left - containerRect.left) + (rect.width / 2),
+        y: (rect.top - containerRect.top) + scrollTop + (rect.height / 2),
+    }));
 
     if (points.length < 2) return;
 
@@ -2638,14 +2639,15 @@ function drawRiver() {
             if (i === 0) d += `L ${p1.x + ox} ${p1.y} `;
             d += `C ${p1.x + ox} ${midY}, ${p2.x + ox} ${midY}, ${p2.x + ox} ${p2.y} `;
         }
-        d += `L ${points[points.length - 1].x + ox} ${container.scrollHeight}`;
+        d += `L ${points[points.length - 1].x + ox} ${scrollH}`;
         return d;
     }
 
-    // 5. 경로 적용
+    // 5. 경로 적용 (bank와 path는 동일 경로 — 한 번만 빌드)
+    const basePath = buildPath(0);
     const bank = document.getElementById('river-bank');
-    if (bank) bank.setAttribute('d', buildPath(0));
-    path.setAttribute('d', buildPath(0));
+    if (bank) bank.setAttribute('d', basePath);
+    path.setAttribute('d', basePath);
 
     // 물결 4개: 강폭(-16~+16) 안에서 각기 다른 위치
     const hlOffsets = [-10, -3, +4, +11];

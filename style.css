@@ -1788,6 +1788,7 @@ body, html {
             line-height: 1;
             opacity: 0.5;
             animation: sway 4s infinite ease-in-out;
+            will-change: transform;
         }
 
         /* 꽃밭 상태 */
@@ -1807,6 +1808,7 @@ body, html {
             z-index: 2;
             line-height: 1;
             animation: sway 3s infinite ease-in-out;
+            will-change: transform;
         }
 
         @keyframes sway {
@@ -1843,7 +1845,6 @@ body, html {
             stroke-linejoin: round;
             filter: drop-shadow(0 0 12px rgba(0,188,212,0.7));
             opacity: 0.85;
-            transition: d 0.3s ease;
         }
 
         /* 3~6층: 물결 4가닥 (공통 기본값) */
@@ -1852,8 +1853,8 @@ body, html {
             stroke-linecap: round;
             stroke-linejoin: round;
             stroke-width: 2px;
-            filter: blur(0.6px);
             animation: river-flow 4s linear infinite;
+            will-change: stroke-dashoffset;
         }
 
         /* 가닥 1: 왼쪽, 빠름 */
