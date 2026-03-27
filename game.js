@@ -2440,7 +2440,13 @@ function renderChapterMap() {
     // 1. 컨테이너 초기화
     container.className = 'river-map-container';
     container.innerHTML = `
-        <div id="map-land-area"></div> <svg id="river-svg">           <path id="river-path" class="river-path" d="" />
+        <div id="map-land-area"></div> <svg id="river-svg">
+            <path id="river-bank"  class="river-bank"  d="" />
+            <path id="river-path"  class="river-path"  d="" />
+            <path id="river-hl-1"  class="river-hl river-hl-1" d="" />
+            <path id="river-hl-2"  class="river-hl river-hl-2" d="" />
+            <path id="river-hl-3"  class="river-hl river-hl-3" d="" />
+            <path id="river-hl-4"  class="river-hl river-hl-4" d="" />
         </svg>
     `;
 
@@ -2467,6 +2473,57 @@ function renderChapterMap() {
             bgClass = 'land-bg garden';
         }
         bg.className = bgClass;
+
+        // 황무지 마른 풀 장식 (장별 산발 배치)
+        if (!isChapterClear) {
+            const grassBase = [
+                { x: 10, y: 10, s: 1.0, d: 0.0 },
+                { x: 72, y: 20, s: 0.8, d: 1.2 },
+                { x: 38, y: 15, s: 0.9, d: 0.5 },
+                { x: 85, y: 60, s: 0.75,d: 1.8 },
+                { x: 20, y: 70, s: 0.85,d: 0.9 },
+                { x: 55, y: 75, s: 1.0, d: 2.1 },
+                { x: 88, y: 82, s: 0.8, d: 0.3 },
+            ];
+            const seed = chapter.id;
+            grassBase.forEach((f, i) => {
+                const ox = ((seed * 17 + i * 31) % 22) - 11; // -11~+11
+                const oy = ((seed * 13 + i * 23) % 18) - 9;  // -9~+9
+                const x = Math.max(5, Math.min(90, f.x + ox));
+                const y = Math.max(5, Math.min(85, f.y + oy));
+                const span = document.createElement('span');
+                span.className = 'barren-grass';
+                span.textContent = '🌾';
+                span.style.cssText = `left:${x}%;top:${y}%;font-size:${f.s}rem;animation-delay:${f.d}s`;
+                bg.appendChild(span);
+            });
+        }
+
+        // 풀밭 꽃 장식 (장별 산발 배치)
+        if (isChapterClear) {
+            const flowerBase = [
+                { e: '🌸', x:  8, y: 12, s: 1.1, d: 0.0 },
+                { e: '🌼', x: 78, y: 18, s: 0.9, d: 0.7 },
+                { e: '🌺', x: 42, y:  8, s: 1.0, d: 1.4 },
+                { e: '🌿', x: 15, y: 62, s: 0.85,d: 0.3 },
+                { e: '🌷', x: 85, y: 55, s: 1.0, d: 1.8 },
+                { e: '🌻', x: 58, y: 72, s: 0.95,d: 0.9 },
+                { e: '🌹', x: 28, y: 80, s: 0.8, d: 2.2 },
+                { e: '🌸', x: 90, y: 80, s: 0.9, d: 1.1 },
+            ];
+            const seed = chapter.id;
+            flowerBase.forEach((f, i) => {
+                const ox = ((seed * 19 + i * 37) % 22) - 11; // -11~+11
+                const oy = ((seed * 11 + i * 29) % 18) - 9;  // -9~+9
+                const x = Math.max(5, Math.min(90, f.x + ox));
+                const y = Math.max(5, Math.min(85, f.y + oy));
+                const span = document.createElement('span');
+                span.className = 'garden-flower';
+                span.textContent = f.e;
+                span.style.cssText = `left:${x}%;top:${y}%;font-size:${f.s}rem;animation-delay:${f.d}s`;
+                bg.appendChild(span);
+            });
+        }
 
         // D. 나무 버튼 (Node) 생성
         const node = document.createElement('div');
@@ -2571,30 +2628,31 @@ function drawRiver() {
 
     if (points.length < 2) return;
 
-    // 4. 경로 그리기
-    // 시작: 첫 번째 노드의 훨씬 위쪽 하늘에서 시작 (강물이 내려오는 느낌)
-    let d = `M ${points[0].x} 0 `;
-
-    // 각 노드를 연결 (부드러운 곡선)
-    for (let i = 0; i < points.length - 1; i++) {
-        const p1 = points[i];
-        const p2 = points[i + 1];
-
-        // 중간 지점 (Control Point)
-        const midY = (p1.y + p2.y) / 2;
-
-        // p1 -> p2로 가는 베지어 곡선
-        // 첫 번째 점은 직선으로 연결하지 않고, 이전 곡선과 이어지게 처리
-        if (i === 0) d += `L ${p1.x} ${p1.y} `;
-
-        d += `C ${p1.x} ${midY}, ${p2.x} ${midY}, ${p2.x} ${p2.y} `;
+    // 4. x 오프셋을 적용한 경로 빌더
+    function buildPath(ox) {
+        let d = `M ${points[0].x + ox} 0 `;
+        for (let i = 0; i < points.length - 1; i++) {
+            const p1 = points[i];
+            const p2 = points[i + 1];
+            const midY = (p1.y + p2.y) / 2;
+            if (i === 0) d += `L ${p1.x + ox} ${p1.y} `;
+            d += `C ${p1.x + ox} ${midY}, ${p2.x + ox} ${midY}, ${p2.x + ox} ${p2.y} `;
+        }
+        d += `L ${points[points.length - 1].x + ox} ${container.scrollHeight}`;
+        return d;
     }
 
-    // 끝: 마지막 노드 아래로 흘러가게
-    const lastP = points[points.length - 1];
-    d += `L ${lastP.x} ${container.scrollHeight}`;
+    // 5. 경로 적용
+    const bank = document.getElementById('river-bank');
+    if (bank) bank.setAttribute('d', buildPath(0));
+    path.setAttribute('d', buildPath(0));
 
-    path.setAttribute('d', d);
+    // 물결 4개: 강폭(-16~+16) 안에서 각기 다른 위치
+    const hlOffsets = [-10, -3, +4, +11];
+    hlOffsets.forEach((ox, i) => {
+        const hl = document.getElementById(`river-hl-${i + 1}`);
+        if (hl) hl.setAttribute('d', buildPath(ox));
+    });
 }
 
 // 전역 변수로 타이머 관리 (창 닫을 때 끄기 위해)
