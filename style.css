@@ -3069,6 +3069,64 @@ body, html {
             touch-action: none; /* 터치 시 스크롤 방지 */
         }
 
+        /* ── Step3 애니메이션: 정답 버튼 플래시 ── */
+        @keyframes towerCorrectFlash {
+            0%   { background-color: #6cff9e; box-shadow: 0 4px 0 #27ae60; }
+            100% { background-color: #ecf0f1; box-shadow: 0 4px 0 #bdc3c7; }
+        }
+        .tower-correct-flash { animation: towerCorrectFlash 0.4s ease forwards; }
+
+        /* ── Step3 애니메이션: 오답 버튼 플래시 ── */
+        @keyframes towerWrongFlash {
+            0%   { background-color: #ff6b6b; box-shadow: 0 4px 0 #c0392b; }
+            100% { background-color: #ecf0f1; box-shadow: 0 4px 0 #bdc3c7; }
+        }
+        .tower-wrong-flash { animation: towerWrongFlash 0.4s ease forwards; }
+
+        /* ── Step3 애니메이션: 버튼 shake (오답) ── */
+        @keyframes towerBtnShake {
+            0%   { transform: translateX(0); }
+            20%  { transform: translateX(-6px); }
+            40%  { transform: translateX(6px); }
+            60%  { transform: translateX(-4px); }
+            80%  { transform: translateX(4px); }
+            100% { transform: translateX(0); }
+        }
+        .tower-btn-shake { animation: towerBtnShake 0.4s ease; }
+
+        /* ── Step3 애니메이션: 화면 shake (오답) ── */
+        @keyframes towerScreenShake {
+            0%   { transform: translateX(0); }
+            20%  { transform: translateX(-8px); }
+            40%  { transform: translateX(8px); }
+            60%  { transform: translateX(-5px); }
+            80%  { transform: translateX(5px); }
+            100% { transform: translateX(0); }
+        }
+        .tower-screen-shake { animation: towerScreenShake 0.4s ease; }
+
+        /* ── Step3: 현재 채워야 할 빈칸 강조 ── */
+        @keyframes blinkBorder {
+            0%, 100% { border-bottom-color: #f5c842; }
+            50%       { border-bottom-color: transparent; }
+        }
+        .tower-word-slot.current-blank {
+            border-bottom: 2px solid #f5c842;
+            animation: blinkBorder 0.8s ease infinite;
+        }
+
+        /* ── Step3: 별빛 dot ── */
+        .tower-star {
+            position: absolute;
+            border-radius: 50%;
+            background: white;
+            pointer-events: none;
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; }
+            50%       { opacity: 0.9; }
+        }
+
         /* 날아가는 단어 */
         .flying-word {
             position: fixed;

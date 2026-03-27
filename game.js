@@ -8373,7 +8373,10 @@ function initTowerGame() {
     }
 
     document.getElementById('tower-msg').innerText = "알맞은 단어를 고르세요!";
-    document.getElementById('tower-msg').style.color = "#2c3e50";
+    document.getElementById('tower-msg').style.color = "#f0e6c0";
+
+    // 애니메이션 초기화
+    spawnTowerStars();
 
     // 바로 보기 블록 생성
     spawnTowerChoices();
@@ -8426,6 +8429,8 @@ function spawnTowerChoices() {
         btn.onclick = () => handleTowerChoice(btn, word, correctWord);
         choicesArea.appendChild(btn);
     });
+
+    highlightCurrentBlank();
 }
 
 // 플레이어가 블록을 선택했을 때의 판정
@@ -8438,13 +8443,27 @@ function handleTowerChoice(btn, selectedWord, correctWord) {
         // [정답]
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playClick) SoundEffect.playClick();
 
-        btn.style.backgroundColor = "#2ecc71"; // 초록색으로 뿅!
-        btn.style.color = "white";
-        btn.style.boxShadow = "0 4px 0 #27ae60";
+        // 버튼 중심 좌표
+        const bRect = btn.getBoundingClientRect();
+        const cx = bRect.left + bRect.width / 2;
+        const cy = bRect.top  + bRect.height / 2;
+
+        // 버튼 플래시 (초록)
+        btn.classList.remove('tower-wrong-flash', 'tower-btn-shake');
+        btn.style.backgroundColor = '';
+        btn.style.color = '';
+        btn.style.boxShadow = '';
+        void btn.offsetWidth;
+        btn.classList.add('tower-correct-flash');
+
+        // 파티클 + 글로우 링
+        spawnTowerParticles(cx, cy);
+        spawnGlowRing(cx, cy);
 
         // 단어를 상단 기록판으로 날려보내기
         flyWordToSlot(btn, correctWord, towerGame.idx);
         towerGame.idx++;
+        highlightCurrentBlank();
 
         // 날아가는 애니메이션 이후 다음 문제 출제
         setTimeout(spawnTowerChoices, 380);
@@ -8453,10 +8472,25 @@ function handleTowerChoice(btn, selectedWord, correctWord) {
         // [오답]
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
 
-        btn.style.backgroundColor = "#e74c3c"; // 빨간색
-        btn.style.color = "white";
-        btn.style.boxShadow = "0 4px 0 #c0392b";
-        btn.classList.add('shake-effect'); // 흔들림 효과
+        // 버튼 중심 좌표
+        const bRect = btn.getBoundingClientRect();
+        const cx = bRect.left + bRect.width / 2;
+        const cy = bRect.top  + bRect.height / 2;
+
+        // 버튼 플래시 (빨강) + shake
+        btn.classList.remove('tower-correct-flash');
+        btn.style.backgroundColor = '';
+        btn.style.color = '';
+        btn.style.boxShadow = '';
+        void btn.offsetWidth;
+        btn.classList.add('tower-wrong-flash', 'tower-btn-shake');
+
+        // 화면 shake
+        const gameContainer = document.getElementById('tower-game-container');
+        if (gameContainer) {
+            gameContainer.classList.add('tower-screen-shake');
+            setTimeout(() => gameContainer.classList.remove('tower-screen-shake'), 450);
+        }
 
         document.getElementById('tower-msg').innerText = "앗! 다른 단어입니다.";
         document.getElementById('tower-msg').style.color = "#e74c3c";
@@ -8465,13 +8499,13 @@ function handleTowerChoice(btn, selectedWord, correctWord) {
 
         // 0.8초 뒤 버튼 원래대로 복구하고 다시 선택하게 함
         setTimeout(() => {
+            btn.classList.remove('tower-wrong-flash', 'tower-btn-shake');
             btn.style.backgroundColor = "#ecf0f1";
             btn.style.color = "#2c3e50";
             btn.style.boxShadow = "0 4px 0 #bdc3c7";
-            btn.classList.remove('shake-effect');
 
             document.getElementById('tower-msg').innerText = "알맞은 단어를 고르세요!";
-            document.getElementById('tower-msg').style.color = "#2c3e50";
+            document.getElementById('tower-msg').style.color = "#f0e6c0";
 
             towerGame.locked = false; // 오답 후 재시도 허용
         }, 800);
@@ -8511,6 +8545,67 @@ function flyWordToSlot(sourceBtn, word, idx) {
         slot.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         fly.remove();
     }, 220);
+}
+
+// ── Step3 애니메이션 헬퍼 함수들 ──
+
+// 별빛 배치
+function spawnTowerStars() {
+    const container = document.getElementById('tower-game-container');
+    if (!container) return;
+    container.querySelectorAll('.tower-star').forEach(s => s.remove());
+    const count = 20 + Math.floor(Math.random() * 11);
+    for (let i = 0; i < count; i++) {
+        const s = document.createElement('div');
+        s.className = 'tower-star';
+        const size = 2 + Math.random() * 3;
+        s.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation:twinkle ${1.5+Math.random()*2}s ${Math.random()*2}s infinite;`;
+        container.appendChild(s);
+    }
+}
+
+// 현재 채워야 할 빈칸 강조
+function highlightCurrentBlank() {
+    document.querySelectorAll('.tower-word-slot').forEach((s, i) => {
+        s.classList.toggle('current-blank', i === towerGame.idx && !s.classList.contains('active'));
+    });
+}
+
+// 파티클 효과
+function spawnTowerParticles(x, y) {
+    const colors = ['#f5c842', '#ffd700', '#ffffff'];
+    const count = 10 + Math.floor(Math.random() * 5);
+    for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const size = 5 + Math.random() * 5;
+        const angle = Math.random() * 360;
+        const dist = 40 + Math.random() * 60;
+        p.style.cssText = `position:fixed;border-radius:50%;width:${size}px;height:${size}px;left:${x}px;top:${y}px;background:${color};pointer-events:none;z-index:3000;transform:translate(-50%,-50%);transition:transform 0.5s ease-out,opacity 0.5s ease-out;`;
+        document.body.appendChild(p);
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                const rad = (angle * Math.PI) / 180;
+                p.style.transform = `translate(calc(-50% + ${dist * Math.cos(rad)}px), calc(-50% + ${dist * Math.sin(rad)}px))`;
+                p.style.opacity = '0';
+            });
+        });
+        setTimeout(() => p.remove(), 520);
+    }
+}
+
+// 글로우 링
+function spawnGlowRing(x, y) {
+    const ring = document.createElement('div');
+    ring.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:40px;height:40px;border-radius:50%;border:2px solid #f5c842;pointer-events:none;z-index:3000;transform:translate(-50%,-50%) scale(0);opacity:1;transition:transform 0.5s ease-out,opacity 0.5s ease-out;`;
+    document.body.appendChild(ring);
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            ring.style.transform = 'translate(-50%,-50%) scale(2.5)';
+            ring.style.opacity = '0';
+        });
+    });
+    setTimeout(() => ring.remove(), 520);
 }
 
 // [Step 4: 예언의 두루마리 게임 상태 변수]
