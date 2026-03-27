@@ -3384,7 +3384,7 @@ function openStageSheet(chapterData) {
                 const nextLabel = timedBonus.remaining === 3 ? '×1.5' : timedBonus.remaining === 2 ? '×2' : '×5';
                 rewardLabel = `⏳[<span class="live-timer-bonus" data-unlock="${nextUnlock}">계산중</span>] ${displayGem}💎 → ${nextLabel}${forgottenTag}`;
             } else {
-                rewardLabel = `⏳[쿨타임] ${displayGem}💎 (×1)${forgottenTag}`;
+                rewardLabel = `⏳[기억 숙성 중] ${displayGem}💎 (×1)${forgottenTag}`;
             }
             const bossNote = (stage.type === 'boss' || stage.type === 'mid-boss')
                 ? `<div style="font-size:0.7rem; color:#7f8c8d; margin-top:2px;">정확도/성전/퍼펙트는 별도 적용</div>`
