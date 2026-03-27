@@ -2981,7 +2981,7 @@ function openStageSheet(chapterData) {
 
     sheet.classList.add('open');
 
-    // ★ 6. 타이머 작동 시작 (1초마다 갱신) ★
+    // ★ 6. 타이머 작동 시작 (1분마다 갱신) ★
     stageSheetTimer = setInterval(() => {
         const now = Date.now();
 
@@ -2996,7 +2996,8 @@ function openStageSheet(chapterData) {
                 el.style.borderColor = "#2ecc71";
                 el.style.background = "#eafaf1";
             } else {
-                el.innerText = `⏳ ${formatAdaptiveTime(diff)}`;
+                const mins = Math.floor(diff / 60000);
+                el.innerText = `⏳ ${mins > 0 ? mins + '분' : '1분 미만'}`;
             }
         });
 
@@ -3004,9 +3005,14 @@ function openStageSheet(chapterData) {
         document.querySelectorAll('.live-timer-bonus').forEach(el => {
             const unlockTime = parseInt(el.dataset.unlock);
             const diff = unlockTime - now;
-            el.innerText = diff <= 0 ? "지금!" : formatAdaptiveTime(diff) + " 후";
+            if (diff <= 0) {
+                el.innerText = "지금!";
+            } else {
+                const mins = Math.floor(diff / 60000);
+                el.innerText = (mins > 0 ? mins + '분' : '1분 미만') + " 후";
+            }
         });
-    }, 1000);
+    }, 60000);
 }
 
 

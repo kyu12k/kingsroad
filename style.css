@@ -1787,8 +1787,6 @@ body, html {
             z-index: 2;
             line-height: 1;
             opacity: 0.5;
-            animation: sway 4s infinite ease-in-out;
-            will-change: transform;
         }
 
         /* 꽃밭 상태 */
@@ -1807,13 +1805,6 @@ body, html {
             pointer-events: none;
             z-index: 2;
             line-height: 1;
-            animation: sway 3s infinite ease-in-out;
-            will-change: transform;
-        }
-
-        @keyframes sway {
-            0%, 100% { transform: rotate(-8deg); }
-            50%       { transform: rotate( 8deg); }
         }
 
         /* 강물 (2층 - 땅 위, 나무 아래) */
@@ -1925,27 +1916,13 @@ body, html {
             position: absolute;
             font-size: 0.8rem; /* 열매 크기 */
             filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
-            animation: fruit-bounce 3s infinite ease-in-out;
         }
 
         /* 열매 위치 배치 (삼각형 구도) */
-        .f1 { top: 5%; left: 50%; transform: translateX(-50%); animation-delay: 0s; }   /* 꼭대기 */
-        .f2 { top: 35%; left: 15%; animation-delay: 0.5s; } /* 왼쪽 */
-        .f3 { top: 35%; right: 15%; animation-delay: 1.0s; } /* 오른쪽 */
-        .f4 { bottom: 20%; left: 35%; font-size: 0.6rem; animation-delay: 1.5s; } /* 중앙 아래 (작은거) */
-
-        /* 열매가 살랑거리는 애니메이션 */
-        @keyframes fruit-bounce {
-            0%, 100% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-3px) scale(1.1); }
-        }
-        
-        /* 꼭대기 열매는 좌우 정렬 유지하며 움직임 */
-        @keyframes fruit-bounce-top {
-            0%, 100% { transform: translateX(-50%) translateY(0); }
-            50% { transform: translateX(-50%) translateY(-3px); }
-        }
-        .f1 { animation-name: fruit-bounce-top; }
+        .f1 { top: 5%; left: 50%; transform: translateX(-50%); }   /* 꼭대기 */
+        .f2 { top: 35%; left: 15%; } /* 왼쪽 */
+        .f3 { top: 35%; right: 15%; } /* 오른쪽 */
+        .f4 { bottom: 20%; left: 35%; font-size: 0.6rem; } /* 중앙 아래 (작은거) */
 
         /* 나무 아이콘 */
         .tree-icon {
