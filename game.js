@@ -5409,7 +5409,7 @@ function closeResultModal() {
         return; 
     }
     if (window.isHardshipMode) {
-        quitGame('map');
+        quitGame(window.hardshipOrigin || 'home');
         return;
     }
     
@@ -8341,7 +8341,7 @@ function confirmQuit() {
         }
 
         // 3. 화면 초기화 및 원래 진입 화면으로 돌아가기 (진짜 종료)
-        quitGame(window.isHardshipMode ? 'map' : (isFocusedTrainingSession() ? 'home' : 'map'));
+        quitGame(window.isHardshipMode ? (window.hardshipOrigin || 'home') : (isFocusedTrainingSession() ? 'home' : 'map'));
     }
 }
 
@@ -11711,6 +11711,7 @@ function resetHardshipSessionState() {
     clearHardshipPendingTimeout();
     hardshipState = createEmptyHardshipState();
     window.currentHardshipMode = null;
+    window.hardshipOrigin = null;
     const gameScreen = document.getElementById('game-screen');
 
     const stepIndicator = document.querySelector('.training-header .step-indicator');
@@ -11777,9 +11778,11 @@ function openChapterHardship(chapterNum) {
     // 장별 고난 길: 해당 챕터를 강제 고정하고 모드 선택 모달을 엽니다.
     window.hardshipForcedChapter = chapterNum;
     openHardshipModeSelect();
+    window.hardshipOrigin = 'map'; // 맵에서 진입했으므로 'home'을 덮어씀
 }
 
 function openHardshipModeSelect() {
+    window.hardshipOrigin = 'home'; // 기본: 홈 진입
     const modal = document.getElementById('hardship-mode-modal');
     if (modal) modal.style.display = 'flex';
 }
