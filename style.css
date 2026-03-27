@@ -1733,8 +1733,8 @@ body, html {
     overflow-y: auto;
     overflow-x: hidden;
     
-    /* 🌟 네비게이션 바(140px) + 플로팅 버튼 여유 공간까지 고려해서 엄청 넉넉하게! */
-    padding-bottom: 64px !important; /* 탭바 높이만큼만 확보 */ 
+    /* 탭바(64px) + 플로팅 버튼(bottom:80px + 높이~33px) + 여유 */
+    padding-bottom: 130px !important;
     
     background: #2c2c2c; /* 기본 황무지 색 */
 }
