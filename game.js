@@ -4555,6 +4555,8 @@ function loadStep() {
                 headIcon.style.filter = "drop-shadow(0 0 15px #f1c40f)";
             }, 600);
 
+            SoundEffect.playLevelUp();
+
             setTimeout(() => {
                 document.getElementById('btn-step1-next').style.display = 'block';
                 document.getElementById('btn-step1-next').classList.add('shake-effect');
@@ -8441,7 +8443,7 @@ function handleTowerChoice(btn, selectedWord, correctWord) {
 
     if (selectedWord === correctWord) {
         // [정답]
-        if (typeof SoundEffect !== 'undefined' && SoundEffect.playClick) SoundEffect.playClick();
+        if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
 
         // 버튼 중심 좌표
         const bRect = btn.getBoundingClientRect();
