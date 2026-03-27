@@ -1117,6 +1117,39 @@ const BackgroundMusic = {
     timers: [],
     currentMode: 'map',
     indices: [0, 0, 0],
+    layers: {
+        bass:false, subBass:false, chord:false, arpeggio:false,
+        openHihat:false, ride:false, sixteenth:false, shaker:false,
+        drone:false, noise:false, crash:false, heartbeat:false,
+        synthLead:false, siren:false
+    },
+    availableLayers: [],   // 현재 씬에서 패널에 표시할 레이어 키 배열
+
+    // 22개 장별 레이어 배정: base(중간점검 진입 시), mid(+1), boss(+2 추가)
+    chapterMusicConfig: {
+        1:  { base:['drone','synthLead'],  mid:'chord',     boss:['bass','crash'] },
+        2:  { base:['bass','chord'],       mid:'sixteenth',  boss:['subBass','ride'] },
+        3:  { base:['shaker','arpeggio'],  mid:'chord',     boss:['bass','crash'] },
+        4:  { base:['openHihat','crash'],  mid:'bass',      boss:['subBass','drone'] },
+        5:  { base:['noise','heartbeat'],  mid:'chord',     boss:['bass','siren'] },
+        6:  { base:['subBass','siren'],    mid:'shaker',    boss:['crash','sixteenth'] },
+        7:  { base:['sixteenth','ride'],   mid:'bass',      boss:['chord','drone'] },
+        8:  { base:['bass','arpeggio'],    mid:'noise',     boss:['heartbeat','crash'] },
+        9:  { base:['chord','drone'],      mid:'bass',      boss:['subBass','sixteenth'] },
+        10: { base:['synthLead','crash'],  mid:'shaker',    boss:['noise','heartbeat'] },
+        11: { base:['heartbeat','bass'],   mid:'drone',     boss:['chord','siren'] },
+        12: { base:['noise','ride'],       mid:'subBass',   boss:['sixteenth','crash'] },
+        13: { base:['siren','shaker'],     mid:'bass',      boss:['chord','heartbeat'] },
+        14: { base:['subBass','openHihat'],mid:'chord',     boss:['crash','synthLead'] },
+        15: { base:['sixteenth','chord'],  mid:'openHihat', boss:['bass','noise'] },
+        16: { base:['drone','arpeggio'],   mid:'crash',     boss:['synthLead','heartbeat'] },
+        17: { base:['synthLead','heartbeat'],mid:'subBass', boss:['siren','bass'] },
+        18: { base:['crash','subBass'],    mid:'sixteenth', boss:['shaker','chord'] },
+        19: { base:['arpeggio','openHihat'],mid:'bass',     boss:['crash','synthLead'] },
+        20: { base:['noise','synthLead'],  mid:'chord',     boss:['bass','ride'] },
+        21: { base:['siren','arpeggio'],   mid:'drone',     boss:['subBass','crash'] },
+        22: { base:['ride','heartbeat'],   mid:'synthLead', boss:['siren','chord'] }
+    },
 
     // 🎵 상황별 음악 모드 설정
     modes: {
@@ -1133,18 +1166,18 @@ const BackgroundMusic = {
             attack: 2.0,
             release: 4.5
         },
-        // 전투 화면 - 에너지틱하지만 밝은 G장조 펜타토닉
+        // 전투 화면 - 긴장감 있는 반음 진행 (Phrygian) + sawtooth
         battle: {
             arrays: [
-                [392.00, 440.00, 523.25],                        // G4, A4, C5
-                [329.63, 392.00, 440.00, 523.25, 587.33],       // E, G, A, C, D (밝은 5음)
-                [659.25, 587.33, 523.25, 440.00, 392.00]        // 높은 음역 하강 (밝음)
+                [293.66, 329.63, 349.23, 392.00, 349.23],  // D4, E4, F4, G4, F4 (상승-복귀)
+                [392.00, 415.30, 440.00, 392.00, 466.16],  // G4, Ab4, A4, G4, Bb4 (반음 긴장)
+                [523.25, 440.00, 493.88, 523.25, 587.33]   // C5→A4→B4→C5→D5 (박동감)
             ],
-            delays: [1.5, 2.0, 2.7],
-            wave: 'triangle',
-            volume: 0.045,
-            attack: 1.0,
-            release: 2.5
+            delays: [1.0, 1.5, 2.0],
+            wave: 'sawtooth',
+            volume: 0.04,
+            attack: 0.5,
+            release: 1.5
         },
         // 고난 길 - 엄숙하고 묵직한 단조
         hardship: {
@@ -1185,10 +1218,38 @@ const BackgroundMusic = {
         return this.isPlaying;
     },
 
+    // 전투 진입 전 장 번호·타입에 따라 레이어 자동 설정
+    setBattleContext: function (chapter, isMid) {
+        Object.keys(this.layers).forEach(k => { this.layers[k] = false; });
+        const cfg = this.chapterMusicConfig[chapter];
+        if (!cfg) return;
+        cfg.base.forEach(k => { this.layers[k] = true; });
+        this.layers[cfg.mid] = true;
+        if (!isMid) cfg.boss.forEach(k => { this.layers[k] = true; });
+        // availableLayers: base + mid + boss 전체 (유저가 토글 가능한 풀 목록)
+        this.availableLayers = [...new Set([...cfg.base, cfg.mid, ...cfg.boss])];
+        // battle→battle 재진입 시 setMode가 스킵되지 않도록 강제 리셋
+        this.currentMode = 'map';
+    },
+
+    setNormalContext: function (chapter) {
+        Object.keys(this.layers).forEach(k => { this.layers[k] = false; });
+        const cfg = this.chapterMusicConfig[chapter];
+        if (!cfg) return;
+        // 초기 ON: base 레이어만
+        cfg.base.forEach(k => { this.layers[k] = true; });
+        // 패널에는 base + mid + boss 전부 표시 (유저가 자유롭게 토글 가능)
+        this.availableLayers = [...new Set([...cfg.base, cfg.mid, ...cfg.boss])];
+        this.currentMode = 'map';
+    },
+
     // 상황에 맞는 모드로 전환 (전투 시작/종료, 고난 길 등)
     setMode: function (mode) {
         if (!this.modes[mode] || this.currentMode === mode) return;
+        const prev = this.currentMode;
         this.currentMode = mode;
+        if (mode === 'battle') this._injectDJPanel();
+        else if (prev === 'battle') this._removeDJPanel();
         if (!this.isPlaying) return;
         this.timers.forEach(id => clearTimeout(id));
         this.timers = [];
@@ -1198,7 +1259,17 @@ const BackgroundMusic = {
 
     _startLoops: function (mode) {
         const cfg = this.modes[mode];
-        cfg.delays.forEach((delay, i) => this.playLoop(i, delay, mode));
+        if (mode === 'battle') {
+            this.playBeat();
+            // 독립루프 레이어 시작
+            if (this.layers.arpeggio)  this._loopArpeggio();
+            if (this.layers.drone)     this._loopDrone();
+            if (this.layers.noise)     this._loopNoise();
+            if (this.layers.synthLead) this._loopSynthLead();
+            if (this.layers.siren)     this._loopSiren();
+        } else {
+            cfg.delays.forEach((delay, i) => this.playLoop(i, delay, mode));
+        }
     },
 
     addTimer: function (fn, delay) {
@@ -1261,6 +1332,451 @@ const BackgroundMusic = {
         lfoGain.connect(osc1.frequency);
         lfo.start(now + attackSec * 0.5);
         lfo.stop(now + attackSec + releaseSec + 0.2);
+    },
+
+    // 🥁 드럼 루프: 4/4박자 90BPM + 14개 레이어 조건부 실행
+    playBeat: function () {
+        if (!this.isPlaying || this.currentMode !== 'battle') return;
+        const b = (60 / 90) * 1000; // ~667ms per beat
+        const L = this.layers;
+        const s = (off, fn) => this.addTimer(fn, b * off);
+
+        // beat 1: 킥
+        this.playKick();
+        if (L.bass)      this.playBassStab();
+        if (L.subBass)   this.playSubBass();
+        if (L.crash)     this.playCrash();
+        if (L.heartbeat) { this.playHeartbeat(); s(0.15/b, () => this.playHeartbeat()); }
+
+        // 16분음표 하이햇 (bar 전체 16개)
+        if (L.sixteenth) {
+            for (let i = 1; i < 16; i++) s(i * 0.25, () => this.playSixteenth());
+        }
+
+        // 셰이커 off-beat
+        if (L.shaker) [0.25, 0.75, 1.25, 1.75, 2.25, 2.75, 3.25, 3.75].forEach(o => s(o, () => this.playShaker()));
+
+        // beat 1.5: 하이햇
+        s(0.5, () => this.playHihat());
+
+        // beat 2: 스네어 + ride + chord
+        s(1, () => {
+            this.playSnare(); this.playHihat();
+            if (L.chord)     this.playChordStab();
+            if (L.ride)      this.playRide();
+            if (L.openHihat) this.playOpenHihat();
+        });
+
+        // beat 2.5
+        s(1.5, () => this.playHihat());
+
+        // beat 3: 킥
+        s(2, () => {
+            this.playKick();
+            if (L.bass)    this.playBassStab();
+            if (L.subBass) this.playSubBass();
+        });
+
+        // beat 3.5
+        s(2.5, () => this.playHihat());
+
+        // beat 4: 스네어 + ride + chord
+        s(3, () => {
+            this.playSnare(); this.playHihat();
+            if (L.chord)     this.playChordStab();
+            if (L.ride)      this.playRide();
+        });
+
+        // beat 4.5
+        s(3.5, () => this.playHihat());
+
+        s(4, () => this.playBeat());
+    },
+
+    playKick: function () {
+        const ctx = this.audioCtx;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.setValueAtTime(100, now);
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.35);
+    },
+
+    playSnare: function () {
+        const ctx = this.audioCtx;
+        const now = ctx.currentTime;
+        const bufferSize = Math.floor(ctx.sampleRate * 0.2);
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 300;
+        filter.Q.value = 0.5;
+        const gain = ctx.createGain();
+        source.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        source.start(now);
+        source.stop(now + 0.2);
+    },
+
+    playHihat: function () {
+        const ctx = this.audioCtx;
+        const now = ctx.currentTime;
+        const bufferSize = Math.floor(ctx.sampleRate * 0.05);
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.value = 8000;
+        const gain = ctx.createGain();
+        source.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0.07, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        source.start(now);
+        source.stop(now + 0.08);
+    },
+
+    // 킥 박자에 맞춰 울리는 묵직한 저음 베이스
+    playBassStab: function () {
+        const ctx = this.audioCtx;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = 73.42; // D2
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+        osc.start(now);
+        osc.stop(now + 0.3);
+    },
+
+    // 스네어 박자에 맞춰 찍히는 D단조 코드 스탭 (D4 + F4 + A4)
+    playChordStab: function () {
+        const ctx = this.audioCtx;
+        const now = ctx.currentTime;
+        [293.66, 349.23, 440.00].forEach(freq => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.value = freq;
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            gain.gain.setValueAtTime(0.05, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+            osc.start(now);
+            osc.stop(now + 0.25);
+        });
+    },
+
+    // 🎸 서브 베이스 (40Hz sine, beat 1,3)
+    playSubBass: function () {
+        const ctx = this.audioCtx, now = ctx.currentTime;
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.type = 'sine'; osc.frequency.value = 40;
+        osc.connect(gain); gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+        osc.start(now); osc.stop(now + 0.45);
+    },
+
+    // 🥁 오픈 하이햇 (긴 잔향, beat 2)
+    playOpenHihat: function () {
+        const ctx = this.audioCtx, now = ctx.currentTime;
+        const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.35), ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        const src = ctx.createBufferSource(); src.buffer = buf;
+        const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 7000;
+        const gain = ctx.createGain();
+        src.connect(f); f.connect(gain); gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        src.start(now); src.stop(now + 0.35);
+    },
+
+    // 🎪 라이드 심벌 (금속성 잔향, beat 2,4)
+    playRide: function () {
+        const ctx = this.audioCtx, now = ctx.currentTime;
+        const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.25), ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        const src = ctx.createBufferSource(); src.buffer = buf;
+        const f = ctx.createBiquadFilter(); f.type = 'bandpass';
+        f.frequency.value = 6000; f.Q.value = 0.8;
+        const gain = ctx.createGain();
+        src.connect(f); f.connect(gain); gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0.09, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+        src.start(now); src.stop(now + 0.25);
+    },
+
+    // 🔩 16분음표 하이햇
+    playSixteenth: function () {
+        const ctx = this.audioCtx, now = ctx.currentTime;
+        const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.03), ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        const src = ctx.createBufferSource(); src.buffer = buf;
+        const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 9000;
+        const gain = ctx.createGain();
+        src.connect(f); f.connect(gain); gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+        src.start(now); src.stop(now + 0.035);
+    },
+
+    // 🎶 셰이커 off-beat
+    playShaker: function () {
+        const ctx = this.audioCtx, now = ctx.currentTime;
+        const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.06), ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        const src = ctx.createBufferSource(); src.buffer = buf;
+        const f = ctx.createBiquadFilter(); f.type = 'bandpass';
+        f.frequency.value = 5000; f.Q.value = 1.5;
+        const gain = ctx.createGain();
+        src.connect(f); f.connect(gain); gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        src.start(now); src.stop(now + 0.065);
+    },
+
+    // 💓 심장박동 더블펄스 (beat 1 + 1박 후)
+    playHeartbeat: function () {
+        const ctx = this.audioCtx, now = ctx.currentTime;
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.type = 'sine'; osc.frequency.value = 55;
+        osc.connect(gain); gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        osc.start(now); osc.stop(now + 0.2);
+    },
+
+    // 🎻 아르페지오 루프 (D단조 4음 상승)
+    _loopArpeggio: function () {
+        if (!this.isPlaying || this.currentMode !== 'battle' || !this.layers.arpeggio) return;
+        const notes = [293.66, 349.23, 440.00, 523.25];
+        const step = 167; // 90BPM 16분음표 (667ms/4)
+        notes.forEach((freq, i) => {
+            this.addTimer(() => {
+                if (!this.layers.arpeggio) return;
+                const ctx = this.audioCtx, now = ctx.currentTime;
+                const osc = ctx.createOscillator(), gain = ctx.createGain();
+                osc.type = 'triangle'; osc.frequency.value = freq;
+                osc.connect(gain); gain.connect(ctx.destination);
+                gain.gain.setValueAtTime(0.07, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                osc.start(now); osc.stop(now + 0.18);
+            }, i * step);
+        });
+        this.addTimer(() => this._loopArpeggio(), 1334); // 정확히 2박
+    },
+
+    // 🌊 로우 드론 루프 (D1 73Hz sine 지속)
+    _loopDrone: function () {
+        if (!this.isPlaying || this.currentMode !== 'battle' || !this.layers.drone) return;
+        const ctx = this.audioCtx, now = ctx.currentTime;
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.type = 'sine'; osc.frequency.value = 73.42;
+        osc.connect(gain); gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.08, now + 0.5);
+        gain.gain.linearRampToValueAtTime(0.06, now + 2.5);
+        gain.gain.linearRampToValueAtTime(0, now + 3.0);
+        osc.start(now); osc.stop(now + 3.1);
+        this.addTimer(() => this._loopDrone(), 2668); // 정확히 1마디(4박)
+    },
+
+    // 🌫️ 화이트 노이즈 버스트 루프
+    _loopNoise: function () {
+        if (!this.isPlaying || this.currentMode !== 'battle' || !this.layers.noise) return;
+        const ctx = this.audioCtx, now = ctx.currentTime;
+        const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.8), ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        const src = ctx.createBufferSource(); src.buffer = buf;
+        const f = ctx.createBiquadFilter(); f.type = 'bandpass';
+        f.frequency.value = 1200; f.Q.value = 0.4;
+        const gain = ctx.createGain();
+        src.connect(f); f.connect(gain); gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.04, now + 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+        src.start(now); src.stop(now + 0.8);
+        this.addTimer(() => this._loopNoise(), 2668); // 정확히 1마디(4박)
+    },
+
+    // 🎸 신스 리드 루프 (D 단조 반복 단음, square wave)
+    _loopSynthLead: function () {
+        if (!this.isPlaying || this.currentMode !== 'battle' || !this.layers.synthLead) return;
+        const pattern = [293.66, 329.63, 293.66, 349.23, 293.66, 261.63];
+        const step = 333; // 90BPM 8분음표 (667ms/2)
+        pattern.forEach((freq, i) => {
+            this.addTimer(() => {
+                if (!this.layers.synthLead) return;
+                const ctx = this.audioCtx, now = ctx.currentTime;
+                const osc = ctx.createOscillator(), gain = ctx.createGain();
+                osc.type = 'square'; osc.frequency.value = freq;
+                osc.connect(gain); gain.connect(ctx.destination);
+                gain.gain.setValueAtTime(0.04, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+                osc.start(now); osc.stop(now + 0.3);
+            }, i * step);
+        });
+        this.addTimer(() => this._loopSynthLead(), 2668); // 정확히 1마디(4박)
+    },
+
+    // 🚨 사이렌 루프 (주파수 오르내림)
+    _loopSiren: function () {
+        if (!this.isPlaying || this.currentMode !== 'battle' || !this.layers.siren) return;
+        const ctx = this.audioCtx, now = ctx.currentTime;
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(220, now);
+        osc.frequency.linearRampToValueAtTime(440, now + 1.0);
+        osc.frequency.linearRampToValueAtTime(220, now + 2.0);
+        osc.connect(gain); gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0.03, now);
+        gain.gain.setValueAtTime(0.03, now + 1.8);
+        gain.gain.linearRampToValueAtTime(0, now + 2.1);
+        osc.start(now); osc.stop(now + 2.2);
+        this.addTimer(() => this._loopSiren(), 2668); // 정확히 1마디(4박)
+    },
+
+    // 바 첫 박 강조 크래쉬 심벌
+    playCrash: function () {
+        const ctx = this.audioCtx;
+        const now = ctx.currentTime;
+        const bufSize = Math.floor(ctx.sampleRate * 0.5);
+        const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) d[i] = Math.random() * 2 - 1;
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 5000;
+        filter.Q.value = 0.3;
+        const gain = ctx.createGain();
+        src.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+        src.start(now); src.stop(now + 0.5);
+    },
+
+    // 선율 픽업 단음 (sawtooth, 짧게)
+    playMelodyNote: function (freq, delayMs) {
+        const ctx = this.audioCtx;
+        const t = ctx.currentTime + delayMs / 1000;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        osc.connect(gain); gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0.06, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+        osc.start(t); osc.stop(t + 0.2);
+    },
+
+    // 레이어 이름·이모지 정의
+    _layerMeta: {
+        bass:'🎸베이스', subBass:'🔉서브베이스', chord:'🎹코드', arpeggio:'🎼아르페지오',
+        openHihat:'🥁오픈햇', ride:'🔔라이드', sixteenth:'⚡16분햇', shaker:'🪇셰이커',
+        drone:'🌊드론', noise:'🌫️노이즈', crash:'💥크래쉬', heartbeat:'💓심장박동',
+        synthLead:'🔌신스리드', siren:'🚨사이렌'
+    },
+
+    // 현재 장에서 사용 가능한 레이어를 토글할 수 있는 패널
+    _injectDJPanel: function () {
+        this._removeDJPanel();
+        const panel = document.createElement('div');
+        panel.id = 'dj-panel';
+        panel.style.cssText = 'position:fixed; bottom:82px; right:12px; z-index:999; display:flex; flex-direction:column; align-items:flex-end; gap:7px;';
+
+        const layersDiv = document.createElement('div');
+        layersDiv.id = 'dj-layers';
+        layersDiv.style.cssText = 'display:none; flex-direction:column; gap:5px; align-items:flex-end;';
+
+        const keysToShow = this.availableLayers.length > 0
+            ? this.availableLayers
+            : Object.keys(this._layerMeta);
+
+        keysToShow.forEach(key => {
+            if (!this._layerMeta[key]) return;
+            const chip = document.createElement('span');
+            chip.id = `dj-chip-${key}`;
+            chip.dataset.layer = key;
+            const on = this.layers[key];
+            chip.textContent = this._layerMeta[key];
+            chip.style.cssText = `background:rgba(0,0,0,0.75);
+                border:1px solid ${on ? '#e74c3c' : '#444'};
+                color:${on ? '#ff7979' : '#555'};
+                padding:5px 12px; border-radius:16px; font-size:0.78rem;
+                white-space:nowrap; cursor:pointer;`;
+            chip.addEventListener('click', () => this._toggleLayer(key));
+            layersDiv.appendChild(chip);
+        });
+
+        const toggleBtn = document.createElement('button');
+        toggleBtn.id = 'dj-toggle';
+        toggleBtn.textContent = '🎛️';
+        toggleBtn.style.cssText = 'background:rgba(0,0,0,0.75); border:1px solid #666; color:white; width:42px; height:42px; border-radius:50%; cursor:pointer; font-size:1.1rem;';
+        toggleBtn.onclick = () => {
+            const isOpen = layersDiv.style.display !== 'none';
+            layersDiv.style.display = isOpen ? 'none' : 'flex';
+            toggleBtn.style.borderColor = isOpen ? '#666' : '#e74c3c';
+        };
+
+        panel.appendChild(layersDiv);
+        panel.appendChild(toggleBtn);
+        document.body.appendChild(panel);
+    },
+
+    _toggleLayer: function (key) {
+        this.layers[key] = !this.layers[key];
+        const on = this.layers[key];
+        // 칩 UI 업데이트
+        const chip = document.getElementById(`dj-chip-${key}`);
+        if (chip) {
+            chip.style.borderColor = on ? '#e74c3c' : '#444';
+            chip.style.color       = on ? '#ff7979' : '#555';
+        }
+        // 루프형 레이어: ON 전환 시 루프 즉시 시작
+        // (OFF 시에는 각 루프 함수 내부 가드가 자동 중단시킴)
+        if (on && this.isPlaying && this.currentMode === 'battle') {
+            const starters = {
+                arpeggio:  () => this._loopArpeggio(),
+                drone:     () => this._loopDrone(),
+                noise:     () => this._loopNoise(),
+                synthLead: () => this._loopSynthLead(),
+                siren:     () => this._loopSiren(),
+            };
+            if (starters[key]) starters[key]();
+        }
+        // 비트형(bass, subBass, chord 등)은 playBeat()가 매 박자마다 체크하므로 추가 처리 불필요
+    },
+
+    _removeDJPanel: function () {
+        const el = document.getElementById('dj-panel');
+        if (el) el.remove();
     }
 };
 
@@ -3483,6 +3999,7 @@ function startBossBattle() {
     const startBossAction = () => {
         closeStageSheet();
         document.getElementById('map-screen').classList.remove('active');
+        BackgroundMusic.setBattleContext(chapterNum, sId.includes('mid'));
         BackgroundMusic.setMode('battle');
         // ★ [버그 픽스] 집중 훈련/고난 길이 남긴 모드 클래스를 모두 벗겨냅니다.
         const gs = document.getElementById('game-screen');
@@ -4464,6 +4981,9 @@ function startTraining(stageId, mode = 'normal') {
             playerHearts = (typeof maxPlayerHearts !== 'undefined') ? maxPlayerHearts : 5;
 
             if (typeof updateBattleUI === 'function') updateBattleUI();
+
+            BackgroundMusic.setNormalContext(chNum);
+            BackgroundMusic.setMode('battle');
 
             stageStartTime = Date.now();
             wrongCount = 0;
