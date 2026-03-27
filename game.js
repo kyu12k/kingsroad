@@ -3597,6 +3597,23 @@ function getForgottenStages() {
     return forgottenList;
 }
 
+// Service Worker에 복습 필요 스테이지 데이터 전달
+function updateForgottenNotificationData() {
+    if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) return;
+    const forgotten = getForgottenStages();
+    const stages = forgotten.map(item => `${item.chapterNum}장 - ${item.stageName}`);
+    navigator.serviceWorker.controller.postMessage({
+        type: 'UPDATE_FORGOTTEN_DATA',
+        stages: stages
+    });
+    // 게임 닫힌 후에도 알림이 오도록 Background Sync 등록
+    if (stages.length > 0) {
+        navigator.serviceWorker.ready.then(reg => {
+            if (reg.sync) reg.sync.register('check-forgotten-stages').catch(() => {});
+        });
+    }
+}
+
 // 기억 다지기 스테이지 오버레이 표시 함수
 // 보너스 대기 중인 스테이지 목록 반환 (remaining > 0 이고 아직 대기 시간이 남은 스테이지)
 function getWaitingBonusStages() {
@@ -6272,6 +6289,7 @@ function toggleSound(btn) {
 
 // 배경음악 제거됨 - 함수 유지 (버튼 참조 오류 방지)
 function toggleBGM(btn) {}
+function playBGM(type) {} // BGM 시스템 제거됨
 
 /* [시스템: 성전 보급소 로직] */
 function openShop() {
@@ -10611,18 +10629,6 @@ window.onload = function () {
         setTimeout(openProfileSettings, 1000); // 1초 뒤 자연스럽게 등장
     }
 };
-
-// [1. 초성 변환 함수 추가] 
-function getChosung(str) {
-    const cho = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
-    let result = "";
-    for (let i = 0; i < str.length; i++) {
-        let code = str.charCodeAt(i) - 44032;
-        if (code > -1 && code < 11172) result += cho[Math.floor(code / 588)];
-        else result += str.charAt(i);
-    }
-    return result;
-}
 
 /* [시스템: 클리어 축하 폭죽 효과 (Confetti)] */
 function triggerConfetti() {

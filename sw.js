@@ -109,17 +109,54 @@ async function checkAndNotifyForgotten() {
   }
 }
 
+// IndexedDB에서 알림 데이터 읽기
+async function getFromClientStorage(dbName) {
+  return new Promise((resolve) => {
+    const request = indexedDB.open(dbName, 1);
+    request.onupgradeneeded = e => {
+      e.target.result.createObjectStore('data', { keyPath: 'id' });
+    };
+    request.onsuccess = e => {
+      const db = e.target.result;
+      const tx = db.transaction('data', 'readonly');
+      const store = tx.objectStore('data');
+      const get = store.get('notifications');
+      get.onsuccess = () => resolve(get.result);
+      get.onerror = () => resolve(null);
+    };
+    request.onerror = () => resolve(null);
+  });
+}
+
+// IndexedDB에 알림 데이터 저장
+async function saveToClientStorage(dbName, data) {
+  return new Promise((resolve) => {
+    const request = indexedDB.open(dbName, 1);
+    request.onupgradeneeded = e => {
+      e.target.result.createObjectStore('data', { keyPath: 'id' });
+    };
+    request.onsuccess = e => {
+      const db = e.target.result;
+      const tx = db.transaction('data', 'readwrite');
+      const store = tx.objectStore('data');
+      store.put({ id: 'notifications', ...data });
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    };
+    request.onerror = () => resolve();
+  });
+}
+
 // 클라이언트에서 메시지 수신
 self.addEventListener('message', event => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
-  
-  // 게임에서 전달한 복습 데이터 저장
+
+  // 게임에서 전달한 복습 데이터를 IndexedDB에 저장
   if (event.data && event.data.type === 'UPDATE_FORGOTTEN_DATA') {
-    console.log('📝 복습 데이터 업데이트:', event.data.stages);
-    // 실제로는 IndexedDB에 저장하는 것이 좋지만,
-    // 간단하게 처리하려면 클라이언트에서 직접 처리
+    const dbName = 'kingsroad_notifications';
+    saveToClientStorage(dbName, { forgottenStages: event.data.stages });
   }
 });
 
