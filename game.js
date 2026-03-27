@@ -2649,8 +2649,8 @@ function drawRiver() {
     if (bank) bank.setAttribute('d', basePath);
     path.setAttribute('d', basePath);
 
-    // 물결 4개: 강폭(-16~+16) 안에서 각기 다른 위치
-    const hlOffsets = [-10, -3, +4, +11];
+    // 물결 4개: 강폭(-16~+16) 안에서 고르게 분산
+    const hlOffsets = [-13, -5, +5, +13];
     hlOffsets.forEach((ox, i) => {
         const hl = document.getElementById(`river-hl-${i + 1}`);
         if (hl) hl.setAttribute('d', buildPath(ox));

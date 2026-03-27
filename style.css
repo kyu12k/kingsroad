@@ -1838,48 +1838,33 @@ body, html {
             opacity: 0.85;
         }
 
-        /* 3~6층: 물결 4가닥 (공통 기본값) */
+        /* 3~6층: 물결 4가닥 (정적 표시) */
         .river-hl {
             fill: none;
             stroke-linecap: round;
             stroke-linejoin: round;
             stroke-width: 2px;
-            animation: river-flow 4s linear infinite;
-            will-change: stroke-dashoffset;
         }
 
-        /* 가닥 1: 왼쪽, 빠름 */
+        /* 가닥 1: 왼쪽 */
         .river-hl-1 {
             stroke: rgba(210, 248, 255, 0.55);
             stroke-dasharray: 28 22;
-            animation-duration: 3.2s;
-            animation-delay: 0s;
         }
-        /* 가닥 2: 왼쪽 중간, 느림 */
+        /* 가닥 2: 왼쪽 중간 */
         .river-hl-2 {
             stroke: rgba(255, 255, 255, 0.35);
             stroke-dasharray: 14 36;
-            animation-duration: 5.5s;
-            animation-delay: -2.1s;
         }
-        /* 가닥 3: 오른쪽 중간, 중간 */
+        /* 가닥 3: 오른쪽 중간 */
         .river-hl-3 {
             stroke: rgba(180, 240, 255, 0.45);
             stroke-dasharray: 22 18;
-            animation-duration: 4.1s;
-            animation-delay: -1.3s;
         }
-        /* 가닥 4: 오른쪽, 가장 느림 */
+        /* 가닥 4: 오른쪽 */
         .river-hl-4 {
             stroke: rgba(255, 255, 255, 0.28);
             stroke-dasharray: 10 42;
-            animation-duration: 6.8s;
-            animation-delay: -3.7s;
-        }
-
-        @keyframes river-flow {
-            from { stroke-dashoffset: 52; }
-            to   { stroke-dashoffset: 0;  }
         }
 
         /* 스테이지 버튼 (3층 - 맨 위) */
