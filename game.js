@@ -10176,6 +10176,12 @@ function processImportData(inputString) {
             // 이렇게 해야 새로고침 시 서버가 불법 침입으로 오해하지 않고 부드럽게 넘어갑니다.
             parsedData.sessionToken = window.currentSessionToken;
 
+            // 🌟 [중복 랭킹 방지] 구 기기 playerId 기록 (새 UID 확정 후 Firestore 구 문서 삭제용)
+            const _oldImportId = parsedData.playerId;
+            if (_oldImportId && typeof _oldImportId === 'string' && _oldImportId.length > 0) {
+                localStorage.setItem('kingsroad_import_old_playerid', _oldImportId);
+            }
+
             // 로컬 스토리지에 안전하게 저장
             localStorage.setItem('kingsRoadSave', JSON.stringify(parsedData));
 

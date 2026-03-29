@@ -1201,6 +1201,15 @@
                     }
 
                     console.log("🔥 서버 연결 유지 중 (진짜 UID: " + myServerUid + ")");
+
+                    // 🌟 [중복 랭킹 방지] 임포트된 구 기기의 Firestore 문서 삭제
+                    const _importedOldId = localStorage.getItem('kingsroad_import_old_playerid');
+                    if (_importedOldId && _importedOldId !== myPlayerId && typeof db !== 'undefined' && db) {
+                        localStorage.removeItem('kingsroad_import_old_playerid');
+                        db.collection("leaderboard").doc(_importedOldId).delete()
+                            .then(() => console.log("✅ 이전 기기 랭킹 항목 정리 완료"))
+                            .catch(e => console.warn("⚠️ 구 랭킹 항목 삭제 실패:", e));
+                    }
                 } else {
                     // 로그인 안 되어 있으면 새로 로그인
                     auth.signInAnonymously()
@@ -1212,6 +1221,15 @@
 
                             // 🌟 로그인 직후 로컬+서버 모두 새 UID로 갱신하도록 saveGameData로 통일
                             if (typeof saveGameData === 'function') saveGameData();
+
+                            // 🌟 [중복 랭킹 방지] 임포트된 구 기기의 Firestore 문서 삭제
+                            const _importedOldId = localStorage.getItem('kingsroad_import_old_playerid');
+                            if (_importedOldId && _importedOldId !== myPlayerId && typeof db !== 'undefined' && db) {
+                                localStorage.removeItem('kingsroad_import_old_playerid');
+                                db.collection("leaderboard").doc(_importedOldId).delete()
+                                    .then(() => console.log("✅ 이전 기기 랭킹 항목 정리 완료"))
+                                    .catch(e => console.warn("⚠️ 구 랭킹 항목 삭제 실패:", e));
+                            }
                         })
                         .catch((error) => {
                             console.error("서버 연결 실패:", error);
