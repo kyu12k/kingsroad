@@ -5925,7 +5925,10 @@ function showClearScreen() {
         notifLink.style.display = 'none';
     }
 
-    document.getElementById('result-modal').classList.add('active');
+    const resultModalEl = document.getElementById('result-modal');
+    const existingHistoryEl = resultModalEl && resultModalEl.querySelector('.hardship-history-wrap');
+    if (existingHistoryEl) existingHistoryEl.remove();
+    resultModalEl.classList.add('active');
 }
 
 // 스트릭 계산 로직
@@ -5997,7 +6000,10 @@ function showBossClearScreen(clearedStageId) {
     document.getElementById('result-accuracy').innerText = `${accuracy}%`;
     document.getElementById('result-exp').innerText = '격파!';
 
-    document.getElementById('result-modal').classList.add('active');
+    const bossResultModal = document.getElementById('result-modal');
+    const existingBossHistory = bossResultModal && bossResultModal.querySelector('.hardship-history-wrap');
+    if (existingBossHistory) existingBossHistory.remove();
+    bossResultModal.classList.add('active');
 }
 
 /* [보스 클리어 모달 닫기] */
