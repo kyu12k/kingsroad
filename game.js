@@ -91,6 +91,7 @@ let stageMastery = {}; // ID별 클리어 횟수 저장
 let stageLastClear = {}; // ID별 마지막 클리어 시간 (타임스탬프)
 let stageNextEligibleTime = {}; // 다음 클리어 가능 시간 (forgetting-curve)
 let stageTimedBonus = {}; // 각인 주기 기반 보너스 (때를 따른 양식)
+let hardshipAddressClearHistory = {}; // 장별 주소의 고난 클리어 기록 { "1": [{correct, total, score, date}, ...] }
 
 /* ============================================= */
 
@@ -196,6 +197,8 @@ loadGameData = function () {
             const oldStats = localStorage.getItem("kingsRoad_stats");
             if (oldStats) Object.assign(userStats, JSON.parse(oldStats));
         }
+
+        if (parsed.hardshipAddressClearHistory) hardshipAddressClearHistory = parsed.hardshipAddressClearHistory;
 
         // [기타]
         if (parsed.lastClaimTime) lastClaimTime = parsed.lastClaimTime;
@@ -4688,7 +4691,8 @@ function saveGameData() {
         lastPlayed: localStorage.getItem('lastPlayedDate'),
         streak: localStorage.getItem('streakDays'),
         leagueData: leagueData,
-        boosterData: boosterData
+        boosterData: boosterData,
+        hardshipAddressClearHistory: hardshipAddressClearHistory
     };
     localStorage.setItem('kingsRoadSave', JSON.stringify(saveData));
 
@@ -13426,8 +13430,62 @@ function finishHardshipSession(reason) {
             : `${hardshipState.score}`;
     }
 
+    // 주소의 고난 단일 장 완주: 기록 저장 및 결과 화면에 히스토리 표시
+    const addressHistoryHtml = (() => {
+        if (reason !== 'completed' || hardshipState.mode !== 'address') return '';
+        const ch = hardshipState.forcedChapter;
+        if (ch == null) return '';
+
+        const record = {
+            correct: hardshipState.studiedCount,
+            total: hardshipState.queue.length,
+            score: hardshipState.score,
+            date: Date.now()
+        };
+
+        if (!hardshipAddressClearHistory[ch]) hardshipAddressClearHistory[ch] = [];
+        hardshipAddressClearHistory[ch].push(record);
+        if (hardshipAddressClearHistory[ch].length > 10) {
+            hardshipAddressClearHistory[ch].shift();
+        }
+        saveGameData();
+
+        const history = hardshipAddressClearHistory[ch];
+        const rows = history.slice().reverse().map((r, i) => {
+            const isThis = i === 0;
+            const d = new Date(r.date);
+            const dateStr = `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+            return `<tr class="${isThis ? 'hardship-history-current' : ''}">
+                <td>${isThis ? '▶' : history.length - i}회</td>
+                <td class="hardship-history-score">${r.correct}/${r.total}</td>
+                <td>${r.score}점</td>
+                <td>${dateStr}</td>
+            </tr>`;
+        }).join('');
+
+        return `<div class="hardship-history-wrap">
+            <div class="hardship-history-title">🎯 ${ch}장 주소의 고난 · 최근 ${history.length}회</div>
+            <table class="hardship-history-table">
+                <thead><tr><th></th><th>맞힌 수</th><th>승점</th><th>일시</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>`;
+    })();
+
     const resultModal = document.getElementById('result-modal');
-    if (resultModal) resultModal.classList.add('active');
+    if (resultModal) {
+        const existingHistory = resultModal.querySelector('.hardship-history-wrap');
+        if (existingHistory) existingHistory.remove();
+        if (addressHistoryHtml) {
+            const continueBtn = resultModal.querySelector('#result-continue-btn');
+            if (continueBtn) {
+                continueBtn.insertAdjacentHTML('beforebegin', addressHistoryHtml);
+            } else {
+                resultModal.querySelector('.result-card').insertAdjacentHTML('beforeend', addressHistoryHtml);
+            }
+        }
+        resultModal.classList.add('active');
+    }
 }
 
 // ── 게임 가이드 모달 ──────────────────────────────

@@ -2296,6 +2296,7 @@ body, html {
     text-align: center; color: #2c3e50;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     transform: scale(0.9); animation: popUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    max-height: 90vh; overflow-y: auto;
 }
 
 .result-header { font-size: 2rem; font-weight: 900; color: #f1c40f; margin-bottom: 20px; text-shadow: 1px 1px 0 #d35400; }
@@ -2316,6 +2317,55 @@ body, html {
     box-shadow: 0 4px 0 #d35400;
 }
 .btn-continue:active { transform: translateY(4px); box-shadow: none; }
+
+/* 주소의 고난 클리어 히스토리 */
+.hardship-history-wrap {
+    margin: 0 0 16px;
+    border-top: 1px solid rgba(212,168,83,0.3);
+    padding-top: 14px;
+    text-align: left;
+}
+.hardship-history-title {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #e67e22;
+    margin-bottom: 8px;
+    text-align: center;
+}
+.hardship-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    color: #2c3e50;
+}
+.hardship-history-table thead tr {
+    background: rgba(212,168,83,0.15);
+}
+.hardship-history-table th {
+    padding: 5px 4px;
+    font-weight: bold;
+    color: #7f8c8d;
+    text-align: center;
+    font-size: 0.75rem;
+}
+.hardship-history-table td {
+    padding: 5px 4px;
+    text-align: center;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+.hardship-history-score {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #2c3e50;
+}
+.hardship-history-current td {
+    background: rgba(241,196,15,0.12);
+    font-weight: bold;
+}
+.hardship-history-current .hardship-history-score {
+    color: #e67e22;
+    font-size: 1.1rem;
+}
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes popUp { to { transform: scale(1); } }
