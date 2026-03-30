@@ -3616,36 +3616,6 @@ function updateForgottenNotificationData() {
 
 // 기억 다지기 스테이지 오버레이 표시 함수
 // 보너스 대기 중인 스테이지 목록 반환 (remaining > 0 이고 아직 대기 시간이 남은 스테이지)
-function getWaitingBonusStages() {
-    const THRESHOLDS = { 3: 600000, 2: 3600000, 1: 21600000 };
-    const BONUS_LABELS = { 3: '×1.5', 2: '×2', 1: '×5' };
-    const result = [];
-    const now = Date.now();
-    for (let chapter of gameData) {
-        if (!chapter.stages) continue;
-        for (let stage of chapter.stages) {
-            const stageId = stage.id;
-            const bonus = stageTimedBonus[stageId];
-            if (!bonus || bonus.lastClear === 0 || bonus.remaining === 0) continue;
-            const elapsed = now - bonus.lastClear;
-            const threshold = THRESHOLDS[bonus.remaining];
-            if (elapsed < threshold) {
-                result.push({
-                    stageId,
-                    stageName: stage.name || `계 ${stageId}`,
-                    chapterNum: chapter.chapter,
-                    remaining: bonus.remaining,
-                    bonusLabel: BONUS_LABELS[bonus.remaining],
-                    notifyAt: bonus.lastClear + threshold,
-                    timeLeft: threshold - elapsed,
-                });
-            }
-        }
-    }
-    result.sort((a, b) => a.timeLeft - b.timeLeft);
-    return result;
-}
-
 function formatTimeLeft(ms) {
     const min = Math.ceil(ms / 60000);
     if (min < 60) return `${min}분 후`;
@@ -3723,79 +3693,6 @@ function closeForgottenStagesOverlay() {
 
 // 오버레이를 열 수 있는 버튼을 홈 화면에 추가하려면 아래 함수를 호출하세요:
 // openForgottenStagesOverlay();
-
-/* [FCM] 수동 알림 예약 — Firestore에 직접 저장 후 완료 안내 */
-async function scheduleNotifManual(notifyAt, bonusLevel) {
-    if (typeof db === 'undefined' || !db || !myPlayerId) {
-        alert('알림 예약에 실패했습니다. (로그인 필요)');
-        return;
-    }
-    try {
-        await db.collection('leaderboard').doc(myPlayerId).set({
-            notifyAt: firebase.firestore.Timestamp.fromMillis(notifyAt),
-            notifCycle: bonusLevel,
-            lastClearAt: firebase.firestore.Timestamp.fromMillis(Date.now())
-        }, { merge: true });
-        pendingNotif = null; // visibilitychange 이중 저장 방지
-        closeWaitingBonusOverlay();
-        alert('✅ 알림이 예약되었습니다!\n\n앱을 직접 종료해주세요.\n(홈 버튼으로 앱을 닫으면 알림이 전송됩니다)');
-    } catch (err) {
-        console.error('[FCM] 수동 알림 예약 실패:', err);
-        alert('알림 예약에 실패했습니다. 다시 시도해주세요.');
-    }
-}
-
-/* [UI] 보너스 대기 중인 스테이지 알림 예약 오버레이 */
-function openWaitingBonusOverlay() {
-    let overlay = document.getElementById('waiting-bonus-overlay');
-    if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.id = 'waiting-bonus-overlay';
-        overlay.className = 'waiting-bonus-overlay';
-        overlay.innerHTML = `
-            <div class="waiting-bonus-title">
-                ⏳ 때를 따른 복습 대기 중<br>
-                <span class="waiting-bonus-subtitle">알림을 받으면 제때 복습할 수 있어요!</span>
-            </div>
-            <div id="waiting-bonus-list" class="waiting-bonus-list"></div>
-            <button onclick="closeWaitingBonusOverlay()" class="waiting-bonus-close-btn">닫기</button>
-        `;
-        document.body.appendChild(overlay);
-    } else {
-        overlay.style.display = 'flex';
-    }
-    const listDiv = document.getElementById('waiting-bonus-list');
-    const waitingList = getWaitingBonusStages();
-    if (waitingList.length === 0) {
-        listDiv.innerHTML = '<div style="color:#bdc3c7;">현재 대기 중인 스테이지가 없습니다.</div>';
-        return;
-    }
-    listDiv.innerHTML = '';
-    for (const item of waitingList) {
-        const row = document.createElement('div');
-        row.className = 'waiting-bonus-row';
-        row.innerHTML = `
-            <div class="waiting-bonus-info">
-                <span class="waiting-bonus-name">${item.stageName}</span>
-                ${item.chapterNum !== undefined ? `<span class="waiting-bonus-chapter">(제${item.chapterNum}장)</span>` : ''}
-                <span class="waiting-bonus-time">${(() => { const m = Math.floor(item.timeLeft / 60000); return m >= 60 ? `${Math.floor(m/60)}시간 ${m%60 > 0 ? (m%60)+'분 ' : ''}`.trim() : (m > 0 ? m+'분' : '1분 미만'); })()} 후 복습 추천</span>
-                <span class="waiting-bonus-label">${item.bonusLabel}</span>
-            </div>
-            <button class="waiting-bonus-notif-btn">알림 받기</button>
-        `;
-        row.querySelector('.waiting-bonus-notif-btn').onclick = function () {
-            if (confirm(`'${item.stageName}' 알림을 예약하면 앱을 종료해야 합니다.\n예약하시겠습니까?`)) {
-                scheduleNotifManual(item.notifyAt, item.remaining);
-            }
-        };
-        listDiv.appendChild(row);
-    }
-}
-
-function closeWaitingBonusOverlay() {
-    const overlay = document.getElementById('waiting-bonus-overlay');
-    if (overlay) overlay.style.display = 'none';
-}
 
 function confirmMode(mode) {
     if (!window.selectedStageForMode) return;
@@ -3887,69 +3784,26 @@ function checkMemoryStatus(stageId) {
     };
 }
 
-/* [FCM] 스테이지 클리어 후 보너스 배수에 따라 복습 알림을 Firestore에 예약
- * bonusLevel: 4=최초클리어→10분후(×1.5 창 오픈), 3=×1.5획득→1시간후(×2 창 오픈),
- *             2=×2획득→6시간후(×5 창 오픈), 1=×5획득→알림없음, 0=대기/쿨타임→알림없음
- * 기억 다지기(isForgotten): remaining=3 리셋, lastClear 유지 → ×1.5부터 시작(1시간→6시간 알림)
- * 우선순위: 10분 > 1시간 > 6시간 — 더 짧은 알림이 이미 예약돼 있으면 덮어쓰지 않음 */
-// 앱 종료/백그라운드 시 Firestore에 쓸 알림 예약 데이터 (메모리 캐시)
-let pendingNotif = null; // { notifyAt: ms, bonusLevel }
-
-function updateNotifCycle(bonusLevel) {
+/* [FCM] 앱 백그라운드 전환 시 stageNextEligibleTime 중 가장 이른 미래 시각을 Firestore에 저장.
+ * Cloud Function이 해당 시각에 기억 다지기 알림을 발송 (하루 1회 제한은 서버에서 처리). */
+function flushReviewNotif() {
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
     if (localStorage.getItem('notifDisabled') === 'true') return;
     if (typeof db === 'undefined' || !db || !myPlayerId) return;
 
-    // 4=최초 클리어, 3=1.5배 획득, 2=2배 획득 → 다음 보너스 창 오픈 알림
-    // 1=5배 획득, 0=대기/쿨타임 → 알림 없음
-    if (bonusLevel !== 4 && bonusLevel !== 3 && bonusLevel !== 2) return;
-
-    const DELAY_MAP = {
-        4: 10 * 60 * 1000,        // 최초 클리어 → 10분 후 알림 (×1.5 창 오픈)
-        3: 1 * 60 * 60 * 1000,    // ×1.5 획득 → 1시간 후 알림 (×2 창 오픈)
-        2: 6 * 60 * 60 * 1000,    // ×2 획득 → 6시간 후 알림 (×5 창 오픈)
-    };
-
-    const newDelay = DELAY_MAP[bonusLevel];
-    if (!newDelay) return;
-
     const now = Date.now();
-    const newNotifyAt = now + newDelay;
-
-    // 이미 더 짧은 알림이 메모리에 있으면 유지
-    if (pendingNotif && pendingNotif.notifyAt > now && (pendingNotif.notifyAt - now) < newDelay) {
-        console.log(`[FCM] 기존 알림 유지 (${Math.round((pendingNotif.notifyAt - now) / 60000)}분 남음)`);
-        return;
+    let earliest = null;
+    for (const stageId in stageNextEligibleTime) {
+        const t = stageNextEligibleTime[stageId];
+        if (t > now && (earliest === null || t < earliest)) earliest = t;
     }
+    if (!earliest) return;
 
-    pendingNotif = { notifyAt: newNotifyAt, bonusLevel };
-    const timeStr = newDelay >= 3600000 ? `${newDelay / 3600000}시간` : `${newDelay / 60000}분`;
-    console.log(`[FCM] 알림 메모리 예약: ${timeStr} 후 (bonusLevel=${bonusLevel})`);
-}
-
-function flushPendingNotif() {
-    if (!pendingNotif) return;
-    if (typeof db === 'undefined' || !db || !myPlayerId) return;
-
-    const { notifyAt, bonusLevel } = pendingNotif;
-    const now = Date.now();
-
-    // 이미 지난 알림은 저장하지 않음 (중복 발송 방지)
-    if (notifyAt <= now) {
-        pendingNotif = null;
-        return;
-    }
-
-    pendingNotif = null; // 중복 flush 방지
-    // 읽기 없이 바로 쓰기 (메모리의 우선순위 로직을 신뢰)
     db.collection('leaderboard').doc(myPlayerId).set({
-        notifyAt: firebase.firestore.Timestamp.fromMillis(notifyAt),
-        notifCycle: bonusLevel,
-        lastClearAt: firebase.firestore.Timestamp.fromMillis(now)
+        notifyAt: firebase.firestore.Timestamp.fromMillis(earliest)
     }, { merge: true }).catch(err => {
-        console.error('[FCM] Firestore 알림 예약 실패:', err);
+        console.error('[FCM] 알림 예약 실패:', err);
     });
-    console.log(`[FCM] Firestore 알림 예약 완료`);
 }
 
 //[시스템: 보스전 로직]//
@@ -6209,20 +6063,8 @@ async function initFCM() {
         if (token && myPlayerId && typeof db !== 'undefined' && db) {
             const docRef = db.collection('leaderboard').doc(myPlayerId);
 
-            // FCM 토큰 저장 + 현재 notifyAt을 메모리에 로드
-            const doc = await docRef.get();
+            // FCM 토큰 저장
             const updateData = { fcmToken: token, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
-            if (doc.exists) {
-                const raw = doc.data().notifyAt;
-                const cycle = doc.data().notifCycle;
-                if (raw && typeof raw.toMillis === 'function') {
-                    const notifyAtMs = raw.toMillis();
-                    if (notifyAtMs > Date.now()) {
-                        pendingNotif = { notifyAt: notifyAtMs, bonusLevel: cycle || 4 };
-                        console.log(`[FCM] 기존 예약 로드: ${Math.round((notifyAtMs - Date.now()) / 60000)}분 후`);
-                    }
-                }
-            }
             docRef.set(updateData, { merge: true }).then(() => {
                 console.log('[FCM] 토큰 저장 완료');
             }).catch(err => {
@@ -11301,12 +11143,12 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// 앱 백그라운드 전환 또는 종료 시 Firestore에 알림 예약 저장
+// 앱 백그라운드 전환 또는 종료 시 기억 다지기 알림 예약 저장
 document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') flushPendingNotif();
+    if (document.visibilityState === 'hidden') flushReviewNotif();
 });
 window.addEventListener('pagehide', () => {
-    flushPendingNotif();
+    flushReviewNotif();
 });
 // 🛡️ 다중 기기 동시 접속 차단기 (스마트 감시 버전)
 function startSessionGuard() {
@@ -13637,7 +13479,7 @@ const GUIDE_PAGES = [
                     <span style="font-size:12px; color:#aaa;">4번 모두 올바른 타이밍에 복습해야 획득!</span>
                 </div>
             </div>
-            <p style="font-size:12px; color:#aaa;">💡 복습 알림을 허용하면 딱 맞는 타이밍에 알려드려요!</p>
+            <p style="font-size:12px; color:#aaa;">💡 알림을 허용하면 기억 다지기 뱃지가 붙을 때 알려드려요!</p>
         `
     },
     {

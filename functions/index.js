@@ -423,20 +423,9 @@ exports.sendScheduledNotifications = functions.pubsub
 
             console.log(`📬 알림 발송 대상: ${snapshot.size}명`);
 
-            // notifCycle: 4=최초클리어(10분후 ×1.5창), 3=×1.5획득(1시간후 ×2창), 2=×2획득(6시간후 ×5창)
-            const CYCLE_MESSAGES = {
-                4: {
-                    title: '말씀 복습 시간이에요 💜',
-                    body: '방금 외운 말씀, 지금 다시 확인하면 기억이 두 배로 굳어져요'
-                },
-                3: {
-                    title: '말씀 복습 시간이에요 💜',
-                    body: '1시간이 지났어요. 다시 한 번 확인해보세요'
-                },
-                2: {
-                    title: '말씀 복습 시간이에요 💜',
-                    body: '오늘의 마지막 복습이에요. 말씀을 다시 새겨보세요'
-                }
+            const msg = {
+                title: '기억 다지기 시간이에요 💜',
+                body: '복습할 말씀이 생겼어요. 지금 다시 새겨보세요!'
             };
 
             const jobs = snapshot.docs.map(async (doc) => {
@@ -448,8 +437,17 @@ exports.sendScheduledNotifications = functions.pubsub
                     return;
                 }
 
-                const cycle = data.notifCycle || 4;
-                const msg = CYCLE_MESSAGES[cycle] || CYCLE_MESSAGES[4];
+                // 오늘(KST) 이미 발송한 경우 skip
+                const lastSent = data.lastNotifSentAt ? data.lastNotifSentAt.toDate() : null;
+                if (lastSent) {
+                    const nowDate = new Date(now.toDate().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+                    const lastDate = new Date(lastSent.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+                    if (nowDate.toDateString() === lastDate.toDateString()) {
+                        console.log(`⏭️ 오늘 이미 발송, 건너뜀: ${doc.id}`);
+                        await doc.ref.update({ notifyAt: admin.firestore.FieldValue.delete() });
+                        return;
+                    }
+                }
 
                 try {
                     await admin.messaging().send({
@@ -477,7 +475,7 @@ exports.sendScheduledNotifications = functions.pubsub
                         lastNotifSentAt: admin.firestore.FieldValue.serverTimestamp()
                     });
 
-                    console.log(`✅ 알림 발송 완료 [${cycle}단계]: ${doc.id}`);
+                    console.log(`✅ 알림 발송 완료: ${doc.id}`);
                 } catch (sendErr) {
                     // 발송 실패 (토큰 만료 등): 토큰/notifyAt 정리
                     console.error(`❌ 알림 발송 실패: ${doc.id}`, sendErr.message);
