@@ -4782,12 +4782,42 @@ body, html {
     bottom: -14px; /* 종이 테두리 아래로 살짝 올라앉게 */
 }
 
-/* 🌟 좌측 상단 음소거 버튼 디자인 */
+/* 상단 헤더: 장 제목 + 절 번호 표시 */
+#stage-intro-header {
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    color: #f0e6c8;
+    z-index: 10005;
+    width: 90%;
+    max-width: 450px;
+    line-height: 1.6;
+}
+#stage-intro-header .intro-chapter {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #f1c40f;
+}
+#stage-intro-header .intro-subtitle {
+    font-size: 0.95rem;
+    color: #c8a96e;
+    margin-top: 4px;
+}
+#stage-intro-header .intro-verse-num {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #ffffff;
+    margin-top: 8px;
+}
+
+/* 🌟 하단 중앙 음소거 버튼 */
 #mute-toggle-btn {
     position: absolute;
-    top: 20px;
-    left: 20px;
-    z-index: 99999; /* 오버레이보다 무조건 위로 */
+    bottom: 90px;
+    left: calc(50% - 80px);
+    z-index: 99999;
     background: rgba(42, 31, 14, 0.92);
     color: #f0e6c8;
     border: 1.5px solid #c8a96e;
@@ -4812,8 +4842,8 @@ body, html {
 /* 일시정지/재생 토글 버튼 */
 #pause-toggle-btn {
     position: absolute;
-    top: 20px;
-    left: 76px;
+    bottom: 90px;
+    left: calc(50% - 23px);
     z-index: 99999;
     background: rgba(42, 31, 14, 0.92);
     color: #f0e6c8;
@@ -4837,8 +4867,8 @@ body, html {
 /* 반복 토글 버튼 */
 #repeat-toggle-btn {
     position: absolute;
-    top: 20px;
-    left: 132px;
+    bottom: 90px;
+    left: calc(50% + 34px);
     z-index: 99999;
     background: rgba(42, 31, 14, 0.92);
     color: #f0e6c8;
