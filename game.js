@@ -2841,8 +2841,9 @@ function amenAndStartGame() {
         }).catch(err => console.error("출입증 갱신 지연:", err));
     }
 
-    // 5. 맵 화면으로 이동
-    if (typeof goMap === 'function') goMap();
+    // 5. 기억 퀴즈 시도 후 맵 화면으로 이동
+    if (typeof showMemoryQuizOverlay === 'function') showMemoryQuizOverlay();
+    else if (typeof goMap === 'function') goMap();
 }
 
 function goHome() {
@@ -13623,3 +13624,177 @@ function renderGuidePage() {
             `<span style="display:inline-block; width:8px; height:8px; border-radius:50%; margin:0 3px; background:${i === guidePage ? '#f1c40f' : '#ccc'};"></span>`
         ).join('');
 }
+// ── 기억하시나요? 퀴즈 ──────────────────────────────────────────────────────
+(function () {
+    var _quizSessionUsed = [];
+    var _currentQuizStageId = null;
+
+    function getMemoryQuizDate() {
+        var now = new Date();
+        var d;
+        if (now.getHours() < 6) {
+            d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+        } else {
+            d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        }
+        return d.toISOString().split('T')[0];
+    }
+
+    function getMemoryQuizCorrectToday() {
+        var today = getMemoryQuizDate();
+        var savedDate = localStorage.getItem('kingsRoad_memoryQuizDate');
+        if (savedDate !== today) {
+            localStorage.setItem('kingsRoad_memoryQuizDate', today);
+            localStorage.setItem('kingsRoad_memoryQuizCorrect', '{}');
+            return {};
+        }
+        try {
+            return JSON.parse(localStorage.getItem('kingsRoad_memoryQuizCorrect') || '{}');
+        } catch (e) { return {}; }
+    }
+
+    function markQuizCorrect(stageId) {
+        var correct = getMemoryQuizCorrectToday();
+        correct[stageId] = true;
+        localStorage.setItem('kingsRoad_memoryQuizCorrect', JSON.stringify(correct));
+    }
+
+    function getEligibleQuizVerses() {
+        var correct = getMemoryQuizCorrectToday();
+        var allCleared = Object.keys(stageMastery).filter(function (id) {
+            return /^\d+-\d+$/.test(id);
+        });
+        // 클리어된 구절 중 텍스트가 중복되는 것 파악 (찍어야 하는 상황 방지)
+        var textCount = {};
+        allCleared.forEach(function (id) {
+            var p = id.split('-');
+            var ch = parseInt(p[0]), v = parseInt(p[1]);
+            var text = bibleData[ch] && bibleData[ch][v - 1] ? bibleData[ch][v - 1].text : null;
+            if (text) textCount[text] = (textCount[text] || 0) + 1;
+        });
+        var eligible = allCleared.filter(function (id) {
+            if (correct[id]) return false;
+            var p = id.split('-');
+            var ch = parseInt(p[0]), v = parseInt(p[1]);
+            var text = bibleData[ch] && bibleData[ch][v - 1] ? bibleData[ch][v - 1].text : null;
+            return text && textCount[text] === 1;
+        });
+        var filtered = eligible.filter(function (id) { return _quizSessionUsed.indexOf(id) === -1; });
+        if (filtered.length === 0 && eligible.length > 0) {
+            _quizSessionUsed = [];
+            filtered = eligible;
+        }
+        return filtered;
+    }
+
+    function populateChapterSelect() {
+        var sel = document.getElementById('quiz-chapter-select');
+        sel.innerHTML = '';
+        for (var i = 1; i <= 22; i++) {
+            var opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = i + '장';
+            sel.appendChild(opt);
+        }
+        sel.value = 1;
+        updateMemoryQuizVerseOptions();
+    }
+
+    window.updateMemoryQuizVerseOptions = function () {
+        var chapter = parseInt(document.getElementById('quiz-chapter-select').value);
+        var verseCount = (bibleData[chapter] && bibleData[chapter].length) || 1;
+        var sel = document.getElementById('quiz-verse-select');
+        sel.innerHTML = '';
+        for (var i = 1; i <= verseCount; i++) {
+            var opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = i + '절';
+            sel.appendChild(opt);
+        }
+        sel.value = 1;
+    };
+
+    window.showMemoryQuizOverlay = function () {
+        _quizSessionUsed = [];
+        var eligible = getEligibleQuizVerses();
+        if (eligible.length === 0) {
+            if (typeof goMap === 'function') goMap();
+            return;
+        }
+        var overlay = document.getElementById('memory-quiz-overlay');
+        if (overlay) overlay.style.display = 'flex';
+
+        populateChapterSelect();
+
+        var stageId = eligible[Math.floor(Math.random() * eligible.length)];
+        _currentQuizStageId = stageId;
+        _quizSessionUsed.push(stageId);
+        renderMemoryQuizQuestion(stageId);
+    };
+
+    function renderMemoryQuizQuestion(stageId) {
+        _currentQuizStageId = stageId;
+        var parts = stageId.split('-');
+        var chapter = parseInt(parts[0]);
+        var verse = parseInt(parts[1]);
+        var verseData = bibleData[chapter] && bibleData[chapter][verse - 1];
+        var text = verseData ? verseData.text : '';
+        document.getElementById('memory-quiz-verse-text').textContent = '\u201c' + text + '\u201d';
+        document.getElementById('memory-quiz-question-panel').style.display = '';
+        document.getElementById('memory-quiz-result-panel').style.display = 'none';
+
+        // 셀렉트를 1장 1절로 초기화
+        var chSel = document.getElementById('quiz-chapter-select');
+        if (chSel) { chSel.value = 1; updateMemoryQuizVerseOptions(); }
+    }
+
+    window.handleMemoryQuizSubmit = function () {
+        var selectedChapter = parseInt(document.getElementById('quiz-chapter-select').value);
+        var selectedVerse = parseInt(document.getElementById('quiz-verse-select').value);
+
+        var parts = _currentQuizStageId.split('-');
+        var correctChapter = parseInt(parts[0]);
+        var correctVerse = parseInt(parts[1]);
+        var isCorrect = (selectedChapter === correctChapter && selectedVerse === correctVerse);
+
+        document.getElementById('memory-quiz-question-panel').style.display = 'none';
+        var resultPanel = document.getElementById('memory-quiz-result-panel');
+        resultPanel.style.display = 'flex';
+        var resultText = document.getElementById('memory-quiz-result-text');
+
+        if (isCorrect) {
+            myGems += 10;
+            updateGemDisplay();
+            if (typeof saveGameData === 'function') saveGameData();
+            markQuizCorrect(_currentQuizStageId);
+            resultText.innerHTML =
+                '<span style="color:#f1c40f; font-size:1.8em;">\u2736</span><br>' +
+                '<span style="color:#f1c40f;">\uc815\ub2f5\uc785\ub2c8\ub2e4!</span><br>' +
+                '<span style="font-size:0.85em; color:#aaa;">\uacc4\uc2dc\ub85d ' + correctChapter + '\uc7a5 ' + correctVerse + '\uc808</span><br>' +
+                '<span style="font-size:0.95em; color:#f1c40f;">\uad6c\uc1a1\ub529 10\uac1c \ud68d\ub4dd</span>';
+        } else {
+            resultText.innerHTML =
+                '<span style="color:#e74c3c; font-size:1.2em;">\uc544\uc26c\uc6b4\ub370\uc694</span><br>' +
+                '<span style="font-size:0.88em; color:#aaa;">\uc815\ub2f5\uc740</span><br>' +
+                '<span style="color:#f1c40f; font-weight:bold; font-size:1.1em;">\uacc4\uc2dc\ub85d ' + correctChapter + '\uc7a5 ' + correctVerse + '\uc808</span><br>' +
+                '<span style="font-size:0.88em; color:#aaa;">\uc774\uc5c8\uc2b5\ub2c8\ub2e4.</span>';
+        }
+    };
+
+    window.handleMemoryQuizContinue = function () {
+        var eligible = getEligibleQuizVerses();
+        if (eligible.length === 0) {
+            window.handleMemoryQuizStop();
+            return;
+        }
+        var stageId = eligible[Math.floor(Math.random() * eligible.length)];
+        _quizSessionUsed.push(stageId);
+        renderMemoryQuizQuestion(stageId);
+    };
+
+    window.handleMemoryQuizStop = function () {
+        var overlay = document.getElementById('memory-quiz-overlay');
+        if (overlay) overlay.style.display = 'none';
+        if (typeof goMap === 'function') goMap();
+    };
+})();
