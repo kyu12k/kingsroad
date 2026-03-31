@@ -2557,9 +2557,15 @@ function getTimedBonus(stageId) {
     // 각인 주기 체크
     const memStatus = checkMemoryStatus(stageId);
 
-    // 각인 주기 도래 시 자동 리셋
-    if (memStatus.isForgotten && bonus.remaining < 3) {
-        bonus.remaining = 3;
+    // 각인 주기 도래 시 자동 리셋 (숙련도에 따라 시작 배율 차등)
+    // level 0→1 (1회차): 1.5x에서 시작 (remaining=3)
+    // level 1→2 (2회차): 2x에서 시작 (remaining=2)
+    // level 2+ (3회차+): 5x에서 시작 (remaining=1)
+    if (memStatus.isForgotten) {
+        const startRemaining = memStatus.level === 0 ? 3 : memStatus.level === 1 ? 2 : 1;
+        if (bonus.remaining < startRemaining) {
+            bonus.remaining = startRemaining;
+        }
     }
 
     return bonus;
