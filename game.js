@@ -13777,7 +13777,7 @@ function renderGuidePage() {
                 '<span style="color:#f1c40f; font-size:1.8em;">\u2736</span><br>' +
                 '<span style="color:#f1c40f;">\uc815\ub2f5\uc785\ub2c8\ub2e4!</span><br>' +
                 '<span style="font-size:0.85em; color:#aaa;">\uacc4\uc2dc\ub85d ' + correctChapter + '\uc7a5 ' + correctVerse + '\uc808</span><br>' +
-                '<span style="font-size:0.95em; color:#f1c40f;">\uad6c\uc1a1\ub529 10\uac1c \ud68d\ub4dd</span>';
+                '<span style="font-size:0.95em; color:#f1c40f;">💎 보석 10개 획득</span>';
         } else {
             resultText.innerHTML =
                 '<span style="color:#e74c3c; font-size:1.2em;">\uc544\uc26c\uc6b4\ub370\uc694</span><br>' +
