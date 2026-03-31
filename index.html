@@ -1096,6 +1096,35 @@
         </div>
     </div>
 
+    <div id="hardship-order-modal" class="modal-overlay" style="z-index: 660; display: none;">
+        <div class="result-card hardship-config-card">
+            <div style="text-align: right;">
+                <button onclick="closeHardshipOrderModal()"
+                    style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
+            </div>
+            <div style="text-align: center; margin-bottom: 18px;">
+                <h2 style="margin:0; color:#2c3e50;">출제 순서</h2>
+                <p style="color:#7f8c8d; font-size:0.95rem; margin-top:8px;">모드 C · 망각의 고난</p>
+            </div>
+            <button class="mode-btn hardship-mode-btn hardship-mode-c"
+                    onclick="selectHardshipOrder('random')">
+                <div class="mode-icon">🔀</div>
+                <div class="mode-info">
+                    <div class="mode-title">무작위 순서</div>
+                    <div class="mode-desc">구절을 무작위로 섞어 출제합니다</div>
+                </div>
+            </button>
+            <button class="mode-btn hardship-mode-btn hardship-mode-a"
+                    onclick="selectHardshipOrder('sequential')">
+                <div class="mode-icon">📖</div>
+                <div class="mode-info">
+                    <div class="mode-title">순서대로</div>
+                    <div class="mode-desc">1장 1절부터 차례로 출제합니다</div>
+                </div>
+            </button>
+        </div>
+    </div>
+
     <!-- FCM 알림 권한 요청 커스텀 모달 -->
     <div id="notification-permission-modal">
         <div class="notif-modal-box">

@@ -488,8 +488,8 @@ const ACHIEVEMENT_DATA = {
     login: {
         title: "누적 출석 달성",
         desc: "성실함이 곧 능력입니다.",
-        tiers: [3, 7, 14, 30, 50, 100, 365],
-        rewards: [100, 300, 500, 1000, 2000, 3000, 5000]
+        tiers: [1, 3, 7, 14, 30, 50, 100, 365],
+        rewards: [50, 100, 300, 500, 1000, 2000, 3000, 5000]
     },
     // 2. 📖 구절 암송 (verse)
     verse: {
@@ -8279,7 +8279,8 @@ function checkDailyLogin() {
         missionData.daily.newClear = 0;
         missionData.daily.differentStages = 0;
         missionData.daily.checkpointBoss = 0;
-        missionData.daily.claimed = [false, false, false];
+        missionData.daily.backup = 0;
+        missionData.daily.claimed = [false, false, false, false];
         missionData.lastLoginDate = today; // ★ [버그 수정] checkMissions()와 동기화
 
         localStorage.setItem('lastPlayedDate', today);
@@ -9392,12 +9393,11 @@ function upgradeCastle() {
         // [★추가] 업그레이드 즉시 최신 모습을 보여주기 위해 뷰어 갱신
         viewingCastleLevel = myCastleLevel;
 
-        updateStats('castle_levelup', myCastleLevel);
-
         if (typeof SoundEffect !== 'undefined') SoundEffect.playLevelUp();
 
         alert(`🎉 건축 완료!\n\n[Lv.${myCastleLevel} ${nextBP.name}]\n"${nextBP.desc}"`);
 
+        updateStats('castle_levelup', myCastleLevel);
         updateGemDisplay();
         updateCastleView(); // 화면 갱신
         saveGameData();
@@ -9478,7 +9478,7 @@ function changeScrollSpeed(mode) {
             btnNormal.style.color = '#27ae60';
             btnNormal.style.fontWeight = 'bold';
         }
-        // 보통 속도는 굳이 알림창을 띄우지 않아도 자연스럽습니다.
+        alert('보통 속도로 전환되었습니다.');
     }
 }
 
@@ -12200,6 +12200,7 @@ function createEmptyHardshipState() {
 
 let hardshipState = createEmptyHardshipState();
 let selectedHardshipConfigMode = 'endurance';
+let selectedHardshipOrderType = 'random'; // 'random' | 'sequential'
 
 const HARDSHIP_VERSES = [];
 for (let hardshipChapter = 1; hardshipChapter <= 22; hardshipChapter++) {
@@ -12470,8 +12471,52 @@ function closeHardshipConfigModal() {
     if (modal) modal.style.display = 'none';
 }
 
+function openHardshipOrderModal(mode) {
+    selectedHardshipConfigMode = mode;
+    const modal = document.getElementById('hardship-order-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeHardshipOrderModal() {
+    window.hardshipPendingForcedChapter = null; // 맵 진입 취소 시 stale 상태 방지
+    const modal = document.getElementById('hardship-order-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+function selectHardshipOrder(orderType) {
+    selectedHardshipOrderType = orderType;
+    closeHardshipOrderModal();
+
+    if (window.hardshipPendingForcedChapter != null) {
+        // 맵 경로: forced chapter 소비 후 바로 세션 시작
+        const ch = window.hardshipPendingForcedChapter;
+        window.hardshipPendingForcedChapter = null;
+        const verseIds = getHardshipVerseIdsByChapterRange(ch, ch);
+        if (verseIds.length === 0) {
+            alert(`⚠️ ${ch}장의 구절 데이터가 없습니다.`);
+            return;
+        }
+        startHardshipSession(selectedHardshipConfigMode, verseIds, ch);
+    } else {
+        // 홈 경로: config 모달로 이동
+        openHardshipConfigModal(selectedHardshipConfigMode);
+    }
+}
+
 function startHardshipFromModal(mode) {
     closeHardshipModeSelect();
+
+    if (mode === 'memory') {
+        // 순서 선택 모달 삽입 (forced chapter 있으면 보존)
+        if (window.hardshipForcedChapter != null) {
+            window.hardshipPendingForcedChapter = window.hardshipForcedChapter;
+            window.hardshipForcedChapter = null;
+        }
+        openHardshipOrderModal(mode);
+        return;
+    }
+
+    // 나머지 모드는 기존 로직 그대로
     // 장별 고난 길 숏컷으로 진입한 경우: 범위 설정 창 없이 바로 시작
     if (window.hardshipForcedChapter != null) {
         const ch = window.hardshipForcedChapter;
@@ -12481,8 +12526,7 @@ function startHardshipFromModal(mode) {
             alert(`⚠️ ${ch}장의 구절 데이터가 없습니다.`);
             return;
         }
-        startHardshipSession(mode, verseIds);
-        hardshipState.forcedChapter = ch;
+        startHardshipSession(mode, verseIds, ch);
     } else {
         openHardshipConfigModal(mode);
     }
@@ -12510,18 +12554,20 @@ function startHardshipFromConfig() {
     startHardshipSession(selectedHardshipConfigMode, selectedVerseIds);
 }
 
-function startHardshipSession(mode, selectedVerseIds) {
+function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
     const modeMeta = getHardshipModeMeta(mode);
 
     clearHardshipPendingTimeout();
     hardshipState = createEmptyHardshipState();
     hardshipState.active = true;
     hardshipState.mode = mode;
-    hardshipState.queue = shuffleHardshipQueue(
-        Array.isArray(selectedVerseIds) && selectedVerseIds.length > 0
-            ? selectedVerseIds
-            : HARDSHIP_VERSES.map(verse => verse.id)
-    );
+    if (forcedChapter != null) hardshipState.forcedChapter = forcedChapter;
+    const baseIds = Array.isArray(selectedVerseIds) && selectedVerseIds.length > 0
+        ? selectedVerseIds
+        : HARDSHIP_VERSES.map(verse => verse.id);
+    hardshipState.queue = (mode === 'memory' && selectedHardshipOrderType === 'sequential')
+        ? baseIds.slice()
+        : shuffleHardshipQueue(baseIds);
 
     if (typeof recalculateMaxHearts === 'function') {
         recalculateMaxHearts();
