@@ -12941,9 +12941,9 @@ function renderHardshipMemoryVerse() {
     const hiddenInputMaxLength = getHardshipFillableVerseLength();
 
     field.innerHTML = `
-        <div class="verse-indicator">[${hardshipState.currentVerse.label}] 전체 말씀을 입력하세요</div>
+        <div class="verse-indicator">주소만 보고 전체 구절을 인출합니다</div>
         <div class="hardship-verse-card" onclick="focusHardshipMemoryHiddenInput()" ontouchstart="focusHardshipMemoryHiddenInput()">
-            <div class="hardship-mode-tag">${getHardshipModeMeta('memory').icon} ${getHardshipModeMeta('memory').summary}</div>
+            <div class="hardship-mode-tag">[${hardshipState.currentVerse.label}]</div>
             <div class="hardship-typing-board" onclick="focusHardshipMemoryHiddenInput()" ontouchstart="focusHardshipMemoryHiddenInput()">${typingBoardHtml}</div>
             <input
                 id="hidden-typing-input"
