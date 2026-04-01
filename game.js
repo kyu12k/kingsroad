@@ -12490,18 +12490,17 @@ function closeHardshipOrderModal() {
 
 function selectHardshipOrder(orderType) {
     selectedHardshipOrderType = orderType;
+    const pendingChapter = window.hardshipPendingForcedChapter; // closeHardshipOrderModal이 초기화하기 전에 저장
     closeHardshipOrderModal();
 
-    if (window.hardshipPendingForcedChapter != null) {
+    if (pendingChapter != null) {
         // 맵 경로: forced chapter 소비 후 바로 세션 시작
-        const ch = window.hardshipPendingForcedChapter;
-        window.hardshipPendingForcedChapter = null;
-        const verseIds = getHardshipVerseIdsByChapterRange(ch, ch);
+        const verseIds = getHardshipVerseIdsByChapterRange(pendingChapter, pendingChapter);
         if (verseIds.length === 0) {
-            alert(`⚠️ ${ch}장의 구절 데이터가 없습니다.`);
+            alert(`⚠️ ${pendingChapter}장의 구절 데이터가 없습니다.`);
             return;
         }
-        startHardshipSession(selectedHardshipConfigMode, verseIds, ch);
+        startHardshipSession(selectedHardshipConfigMode, verseIds, pendingChapter);
     } else {
         // 홈 경로: config 모달로 이동
         openHardshipConfigModal(selectedHardshipConfigMode);
