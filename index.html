@@ -38,13 +38,7 @@
             </div>
             <div style="text-align: center; margin-bottom: 20px;">
                 <h2 style="margin:0; color:#2c3e50;">감사한 분들</h2>
-                <div
-                    style="margin-top:15px; display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap;">
-                    <span id="thanks-tribe-icon"></span>
-                    <span id="thanks-dept-tag"></span>
-                    <span id="thanks-name" style="color:#2c3e50; font-size:1.1rem; font-weight:bold;"></span>
-                    <span id="thanks-code" style="color:#95a5a6; font-size:0.95rem;"></span>
-                </div>
+                <div id="thanks-list" style="margin-top:15px; display:flex; flex-direction:column; gap:10px;"></div>
             </div>
         </div>
     </div>
@@ -367,29 +361,40 @@
         </script>
 
         <script>
-            // 감사한 분들 모달에 지파 아이콘, 부서 태그, 이름, 코드 동적 렌더링
+            // 감사한 분들 목록
+            const THANKS_PEOPLE = [
+                { tribeIdx: 2, deptId: 0, name: '거룩한 시냇물', code: '#5850' },
+                { tribeIdx: 2, deptId: 5, name: '투명한 시냇물', code: '#2938' },
+                { tribeIdx: 2, deptId: 5, name: '황금 양', code: '#2556' },
+            ];
+
             function openThanksModal() {
                 document.getElementById('thanks-modal').style.display = 'flex';
-                // 예시 데이터
-                const tribeIdx = 2; // 부산야고보지파
-                const deptId = 0; // 교역자
-                const name = '거룩한 시냇물';
-                const code = '#5850';
-                // game.js의 getTribeIcon, getDeptTag 활용
-                if (window.getTribeIcon) {
-                    document.getElementById('thanks-tribe-icon').innerHTML = getTribeIcon(tribeIdx);
-                } else {
-                    // Fallback: 직접 스타일 적용
-                    const tribe = window.TRIBE_DATA ? window.TRIBE_DATA[tribeIdx] : { core: '#3498db', glow: '#2980b9', name: '부산야고보지파' };
-                    document.getElementById('thanks-tribe-icon').innerHTML = `<span style="color:${tribe.core}; text-shadow:0 0 5px ${tribe.glow}; font-size:1.2rem; margin-right:2px;">✦</span>`;
-                }
-                if (window.getDeptTag) {
-                    document.getElementById('thanks-dept-tag').innerHTML = getDeptTag(deptId);
-                } else {
-                    document.getElementById('thanks-dept-tag').innerHTML = `<span style="background:rgba(52,152,219,0.15); color:#2c3e50; border-radius:6px; padding:2px 8px; font-size:0.95rem;">[교역자]</span>`;
-                }
-                document.getElementById('thanks-name').innerText = name;
-                document.getElementById('thanks-code').innerText = code;
+                const list = document.getElementById('thanks-list');
+                list.innerHTML = THANKS_PEOPLE.map(p => {
+                    let tribeHtml = '';
+                    if (p.tribeIdx !== undefined) {
+                        if (window.getTribeIcon) {
+                            tribeHtml = getTribeIcon(p.tribeIdx);
+                        } else {
+                            const tribe = window.TRIBE_DATA ? window.TRIBE_DATA[p.tribeIdx] : { core: '#3498db', glow: '#2980b9' };
+                            tribeHtml = `<span style="color:${tribe.core}; text-shadow:0 0 5px ${tribe.glow}; font-size:1.2rem; margin-right:2px;">✦</span>`;
+                        }
+                    }
+                    let deptHtml = '';
+                    if (p.deptId !== undefined) {
+                        if (window.getDeptTag) {
+                            deptHtml = getDeptTag(p.deptId);
+                        } else {
+                            deptHtml = `<span style="background:rgba(52,152,219,0.15); color:#2c3e50; border-radius:6px; padding:2px 8px; font-size:0.95rem;">[교역자]</span>`;
+                        }
+                    }
+                    return `<div style="display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap;">
+                        ${tribeHtml}${deptHtml}
+                        <span style="color:#2c3e50; font-size:1.1rem; font-weight:bold;">${p.name}</span>
+                        <span style="color:#95a5a6; font-size:0.95rem;">${p.code}</span>
+                    </div>`;
+                }).join('');
             }
             function closeThanksModal() {
                 document.getElementById('thanks-modal').style.display = 'none';
@@ -456,40 +461,51 @@
         <!-- 기억하시나요? 퀴즈 오버레이 -->
         <div id="memory-quiz-overlay"
             style="display:none; position:fixed; z-index:9998; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.97); color:#f1c40f; flex-direction:column; align-items:center; justify-content:center; font-size:1rem; text-align:center; padding:20px; box-sizing:border-box;">
-            <!-- 질문 패널 -->
             <div id="memory-quiz-question-panel">
                 <div style="font-size:1.4em; font-weight:bold; color:#f1c40f; margin-bottom:16px; letter-spacing:1px;">기억하시나요?</div>
-                <div id="memory-quiz-verse-text"
-                    style="max-width:85vw; font-size:1em; line-height:1.7; color:#fff; margin-bottom:18px; padding:14px 18px; background:rgba(255,255,255,0.07); border-radius:12px; word-break:keep-all;"></div>
-                <div style="color:#aaa; font-size:0.88em; margin-bottom:16px;">이 구절은 계시록 몇 장 몇 절일까요?</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; max-width:280px; margin:0 auto 22px;">
-                    <div style="background:rgba(255,255,255,0.07); border-radius:16px; padding:12px; text-align:center;">
-                        <div style="color:#f1c40f; font-size:0.82em; font-weight:bold; margin-bottom:8px; letter-spacing:0.05em;">장</div>
-                        <select id="quiz-chapter-select" onchange="updateMemoryQuizVerseOptions()"
-                            style="width:100%; padding:10px 4px; border-radius:10px; border:1px solid rgba(241,196,15,0.35); background:#1a2a38; color:#fff; font-size:1.05rem; font-weight:bold; text-align:center; cursor:pointer; appearance:auto;"></select>
-                    </div>
-                    <div style="background:rgba(255,255,255,0.07); border-radius:16px; padding:12px; text-align:center;">
-                        <div style="color:#f1c40f; font-size:0.82em; font-weight:bold; margin-bottom:8px; letter-spacing:0.05em;">절</div>
-                        <select id="quiz-verse-select"
-                            style="width:100%; padding:10px 4px; border-radius:10px; border:1px solid rgba(241,196,15,0.35); background:#1a2a38; color:#fff; font-size:1.05rem; font-weight:bold; text-align:center; cursor:pointer; appearance:auto;"></select>
+                <!-- 플래시카드 -->
+                <div class="quiz-card-wrap">
+                    <div class="quiz-card" id="quiz-card">
+                        <div class="quiz-card-front">
+                            <div id="memory-quiz-verse-text"></div>
+                        </div>
+                        <div class="quiz-card-back" id="quiz-card-back">
+                            <div id="quiz-back-verse"></div>
+                            <div id="quiz-back-address" style="font-size:1.1em; font-weight:bold;"></div>
+                        </div>
                     </div>
                 </div>
-                <button onclick="handleMemoryQuizSubmit()"
-                    style="background:#f1c40f; color:#2c3e50; font-size:1.1rem; font-weight:bold; padding:12px 44px; border-radius:30px; border:none; cursor:pointer; margin-bottom:14px; box-shadow:0 2px 10px rgba(0,0,0,0.3);">확인</button>
-                <br>
-                <button onclick="handleMemoryQuizStop()"
-                    style="background:transparent; color:#888; font-size:0.88rem; border:none; cursor:pointer; padding:6px 20px; text-decoration:underline;">건너뛰기</button>
-            </div>
-            <!-- 결과 패널 -->
-            <div id="memory-quiz-result-panel"
-                style="display:none; flex-direction:column; align-items:center; justify-content:center;">
-                <div id="memory-quiz-result-text"
-                    style="font-size:1.15em; font-weight:bold; line-height:1.9; margin-bottom:28px; color:#fff;"></div>
-                <button onclick="handleMemoryQuizContinue()"
-                    style="background:#f1c40f; color:#2c3e50; font-size:1.05rem; font-weight:bold; padding:12px 40px; border-radius:30px; border:none; cursor:pointer; margin-bottom:14px; box-shadow:0 2px 10px rgba(0,0,0,0.3);">계속하기</button>
-                <br>
-                <button onclick="handleMemoryQuizStop()"
-                    style="background:transparent; color:#888; font-size:0.88rem; border:none; cursor:pointer; padding:6px 20px; text-decoration:underline;">그만하기</button>
+                <!-- 컨트롤 (뒤집기 전) -->
+                <div id="quiz-controls">
+                    <div style="color:#aaa; font-size:0.88em; margin-bottom:16px;">이 구절은 계시록 몇 장 몇 절일까요?</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; max-width:280px; margin:0 auto 22px;">
+                        <div style="background:rgba(255,255,255,0.07); border-radius:16px; padding:12px; text-align:center;">
+                            <div style="color:#f1c40f; font-size:0.82em; font-weight:bold; margin-bottom:8px; letter-spacing:0.05em;">장</div>
+                            <select id="quiz-chapter-select" onchange="updateMemoryQuizVerseOptions()"
+                                style="width:100%; padding:10px 4px; border-radius:10px; border:1px solid rgba(241,196,15,0.35); background:#1a2a38; color:#fff; font-size:1.05rem; font-weight:bold; text-align:center; cursor:pointer; appearance:auto;"></select>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.07); border-radius:16px; padding:12px; text-align:center;">
+                            <div style="color:#f1c40f; font-size:0.82em; font-weight:bold; margin-bottom:8px; letter-spacing:0.05em;">절</div>
+                            <select id="quiz-verse-select"
+                                style="width:100%; padding:10px 4px; border-radius:10px; border:1px solid rgba(241,196,15,0.35); background:#1a2a38; color:#fff; font-size:1.05rem; font-weight:bold; text-align:center; cursor:pointer; appearance:auto;"></select>
+                        </div>
+                    </div>
+                    <button onclick="handleMemoryQuizSubmit()"
+                        style="background:#f1c40f; color:#2c3e50; font-size:1.1rem; font-weight:bold; padding:12px 44px; border-radius:30px; border:none; cursor:pointer; margin-bottom:14px; box-shadow:0 2px 10px rgba(0,0,0,0.3);">확인</button>
+                    <br>
+                    <button onclick="handleMemoryQuizStop()"
+                        style="background:transparent; color:#888; font-size:0.88rem; border:none; cursor:pointer; padding:6px 20px; text-decoration:underline;">건너뛰기</button>
+                </div>
+                <!-- 결과 (뒤집은 후) -->
+                <div id="quiz-result-area" style="display:none; flex-direction:column; align-items:center;">
+                    <div id="memory-quiz-result-text"
+                        style="font-size:1em; font-weight:bold; line-height:1.9; margin-bottom:20px; color:#fff;"></div>
+                    <button onclick="handleMemoryQuizContinue()"
+                        style="background:#f1c40f; color:#2c3e50; font-size:1.05rem; font-weight:bold; padding:12px 40px; border-radius:30px; border:none; cursor:pointer; margin-bottom:14px; box-shadow:0 2px 10px rgba(0,0,0,0.3);">계속하기</button>
+                    <br>
+                    <button onclick="handleMemoryQuizStop()"
+                        style="background:transparent; color:#888; font-size:0.88rem; border:none; cursor:pointer; padding:6px 20px; text-decoration:underline;">그만하기</button>
+                </div>
             </div>
         </div>
 

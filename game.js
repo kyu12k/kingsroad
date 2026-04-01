@@ -88,6 +88,7 @@ let inventory = {
 
 // [시스템: 게임 진행 데이터]
 let stageMastery = {}; // ID별 클리어 횟수 저장
+let stageClearDate = {}; // verseId → 처음 클리어한 game-day ('YYYY-MM-DD')
 let stageLastClear = {}; // ID별 마지막 클리어 시간 (타임스탬프)
 let stageNextEligibleTime = {}; // 다음 클리어 가능 시간 (forgetting-curve)
 let stageTimedBonus = {}; // 각인 주기 기반 보너스 (때를 따른 양식)
@@ -141,6 +142,7 @@ loadGameData = function () {
         // [진행도 복구]
         stageLastClear = parsed.lastClear || {};
         stageMastery = parsed.mastery || {};
+        stageClearDate = parsed.clearDate || {};
         stageMemoryLevels = parsed.memoryLevels || {};
         stageNextEligibleTime = parsed.nextEligibleTime || {}; // ★ [Forgetting-Curve] 다음 클리어 가능 시간
         stageTimedBonus = parsed.timedBonus || {}; // ★ [때를 따른 양식] 각인 주기 기반 보너스
@@ -4685,6 +4687,7 @@ function saveGameData() {
         inv: inventory,
         missions: missionData,
         mastery: stageMastery,
+        clearDate: stageClearDate,
         lastClear: stageLastClear,
         nextEligibleTime: stageNextEligibleTime, // ★ [Forgetting-Curve] 다음 클리어 가능 시간
         timedBonus: stageTimedBonus, // ★ [때를 따른 양식] 각인 주기 기반 보너스
@@ -8397,6 +8400,7 @@ stageClear = function (type) {
                         const subId = targetStage.id;
                         if (!stageMastery[subId]) stageMastery[subId] = 0;
                         stageMastery[subId]++;
+                        if (!stageClearDate[subId]) stageClearDate[subId] = getMemoryQuizDate();
                         targetStage.cleared = true;
                     }
                 }
@@ -8535,6 +8539,7 @@ stageClear = function (type) {
 
         if (!stageMastery[sId]) stageMastery[sId] = 0;
         stageMastery[sId]++;
+        if (!stageClearDate[sId]) stageClearDate[sId] = getMemoryQuizDate();
 
         const accPercent = Math.floor(accuracyRate * 100);
 
@@ -13561,6 +13566,13 @@ function renderGuidePage() {
         return d.toISOString().split('T')[0];
     }
 
+    function getPreviousMemoryQuizDate() {
+        var today = getMemoryQuizDate();
+        var d = new Date(today);
+        d.setDate(d.getDate() - 1);
+        return d.toISOString().split('T')[0];
+    }
+
     function getMemoryQuizCorrectToday() {
         var today = getMemoryQuizDate();
         var savedDate = localStorage.getItem('kingsRoad_memoryQuizDate');
@@ -13582,8 +13594,9 @@ function renderGuidePage() {
 
     function getEligibleQuizVerses() {
         var correct = getMemoryQuizCorrectToday();
+        var yesterday = getPreviousMemoryQuizDate();
         var allCleared = Object.keys(stageMastery).filter(function (id) {
-            return /^\d+-\d+$/.test(id);
+            return /^\d+-\d+$/.test(id) && stageClearDate[id] === yesterday;
         });
         // 클리어된 구절 중 텍스트가 중복되는 것 파악 (찍어야 하는 상황 방지)
         var textCount = {};
@@ -13662,7 +13675,18 @@ function renderGuidePage() {
         var text = verseData ? verseData.text : '';
         document.getElementById('memory-quiz-verse-text').textContent = '\u201c' + text + '\u201d';
         document.getElementById('memory-quiz-question-panel').style.display = '';
-        document.getElementById('memory-quiz-result-panel').style.display = 'none';
+
+        // 카드 초기화
+        var card = document.getElementById('quiz-card');
+        if (card) card.classList.remove('flipped');
+        var backEl = document.getElementById('quiz-card-back');
+        if (backEl) backEl.classList.remove('correct', 'incorrect');
+
+        // 컨트롤 표시, 결과 숨김
+        var controls = document.getElementById('quiz-controls');
+        var resultArea = document.getElementById('quiz-result-area');
+        if (controls) controls.style.display = '';
+        if (resultArea) resultArea.style.display = 'none';
 
         // 셀렉트를 1장 1절로 초기화
         var chSel = document.getElementById('quiz-chapter-select');
@@ -13678,11 +13702,27 @@ function renderGuidePage() {
         var correctVerse = parseInt(parts[1]);
         var isCorrect = (selectedChapter === correctChapter && selectedVerse === correctVerse);
 
-        document.getElementById('memory-quiz-question-panel').style.display = 'none';
-        var resultPanel = document.getElementById('memory-quiz-result-panel');
-        resultPanel.style.display = 'flex';
-        var resultText = document.getElementById('memory-quiz-result-text');
+        // 뒷면 채우기
+        var vd = bibleData[correctChapter] && bibleData[correctChapter][correctVerse - 1];
+        document.getElementById('quiz-back-verse').textContent = '\u201c' + (vd ? vd.text : '') + '\u201d';
+        document.getElementById('quiz-back-address').textContent = '계시록 ' + correctChapter + '장 ' + correctVerse + '절';
 
+        // 카드 뒤집기
+        var card = document.getElementById('quiz-card');
+        var backEl = document.getElementById('quiz-card-back');
+        if (card) card.classList.add('flipped');
+        if (backEl) {
+            backEl.classList.remove('correct', 'incorrect');
+            backEl.classList.add(isCorrect ? 'correct' : 'incorrect');
+        }
+
+        // 컨트롤 숨김, 결과 표시
+        var controls = document.getElementById('quiz-controls');
+        var resultArea = document.getElementById('quiz-result-area');
+        if (controls) controls.style.display = 'none';
+        if (resultArea) resultArea.style.display = 'flex';
+
+        var resultText = document.getElementById('memory-quiz-result-text');
         if (isCorrect) {
             myGems += 10;
             updateGemDisplay();
@@ -13691,14 +13731,11 @@ function renderGuidePage() {
             resultText.innerHTML =
                 '<span style="color:#f1c40f; font-size:1.8em;">\u2736</span><br>' +
                 '<span style="color:#f1c40f;">\uc815\ub2f5\uc785\ub2c8\ub2e4!</span><br>' +
-                '<span style="font-size:0.85em; color:#aaa;">\uacc4\uc2dc\ub85d ' + correctChapter + '\uc7a5 ' + correctVerse + '\uc808</span><br>' +
                 '<span style="font-size:0.95em; color:#f1c40f;">💎 보석 10개 획득</span>';
         } else {
             resultText.innerHTML =
                 '<span style="color:#e74c3c; font-size:1.2em;">\uc544\uc26c\uc6b4\ub370\uc694</span><br>' +
-                '<span style="font-size:0.88em; color:#aaa;">\uc815\ub2f5\uc740</span><br>' +
-                '<span style="color:#f1c40f; font-weight:bold; font-size:1.1em;">\uacc4\uc2dc\ub85d ' + correctChapter + '\uc7a5 ' + correctVerse + '\uc808</span><br>' +
-                '<span style="font-size:0.88em; color:#aaa;">\uc774\uc5c8\uc2b5\ub2c8\ub2e4.</span>';
+                '<span style="font-size:0.88em; color:#aaa;">\ub0b4\uac00 \uc120\ud0dd: \uacc4\uc2dc\ub85d ' + selectedChapter + '\uc7a5 ' + selectedVerse + '\uc808</span>';
         }
     };
 

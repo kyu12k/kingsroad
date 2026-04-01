@@ -4911,3 +4911,56 @@ body, html {
     border: 2px solid #e74c3c !important;
     color: #c0392b !important;
 }
+/* ── 기억하시나요? 플래시카드 ── */
+.quiz-card-wrap {
+    perspective: 900px;
+    width: 85vw;
+    max-width: 400px;
+    margin: 0 auto 18px;
+}
+.quiz-card {
+    position: relative;
+    width: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.55s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+.quiz-card.flipped {
+    transform: rotateY(180deg);
+}
+.quiz-card-front,
+.quiz-card-back {
+    width: 100%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 12px;
+    padding: 14px 18px;
+    box-sizing: border-box;
+    font-size: 1em;
+    line-height: 1.7;
+    color: #fff;
+    word-break: keep-all;
+    text-align: center;
+}
+.quiz-card-front {
+    background: rgba(255, 255, 255, 0.07);
+}
+.quiz-card-back {
+    position: absolute;
+    top: 0;
+    left: 0;
+    min-height: 100%;
+    transform: rotateY(180deg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+.quiz-card-back.correct {
+    background: rgba(241, 196, 15, 0.15);
+    border: 1px solid rgba(241, 196, 15, 0.5);
+}
+.quiz-card-back.incorrect {
+    background: rgba(231, 76, 60, 0.15);
+    border: 1px solid rgba(231, 76, 60, 0.45);
+}
