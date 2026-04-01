@@ -13564,6 +13564,7 @@ function renderGuidePage() {
         }
         return d.toISOString().split('T')[0];
     }
+    window.getMemoryQuizDate = getMemoryQuizDate;
 
     function getPreviousMemoryQuizDate() {
         var today = getMemoryQuizDate();
