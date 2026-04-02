@@ -1939,11 +1939,30 @@ function getReviewStatus(stageId) {
 function advanceReviewStep(stageId) {
     const currentStep = stageReviewStep[stageId] || 1;
     const earnedGem = getReviewBaseGem(currentStep);
-    const nextStep = currentStep + 1;
-    stageReviewStep[stageId] = nextStep;
-    const waitMs = getReviewWaitMs(nextStep);
-    stageNextReviewTime[stageId] = waitMs > 0 ? Date.now() + waitMs : 0;
-    return earnedGem;
+
+    // step 1(초학습)은 항상 Perfect. 이후 복습부터 기억 강도로 판정.
+    const strength = currentStep > 1 ? getMemoryStrength(stageId) : null;
+    const outcome = (strength === null || strength >= 0.8) ? 'perfect'
+                  : strength >= 0.4 ? 'good'
+                  : 'miss';
+
+    if (outcome === 'perfect') {
+        const nextStep = currentStep + 1;
+        stageReviewStep[stageId] = nextStep;
+        const waitMs = getReviewWaitMs(nextStep);
+        stageNextReviewTime[stageId] = waitMs > 0 ? Date.now() + waitMs : 0;
+    } else if (outcome === 'good') {
+        // 스텝 유지, 다음 대기 50% 단축
+        const nextWaitMs = getReviewWaitMs(currentStep + 1);
+        stageNextReviewTime[stageId] = Date.now() + Math.floor(nextWaitMs * 0.5);
+    } else { // miss
+        const fallbackStep = getPhaseStartStep(currentStep);
+        stageReviewStep[stageId] = fallbackStep;
+        const waitMs = getReviewWaitMs(fallbackStep + 1);
+        stageNextReviewTime[stageId] = Date.now() + waitMs;
+    }
+
+    return { earnedGem: outcome === 'miss' ? 0 : earnedGem, outcome };
 }
 
 // ★ [에빙하우스] 현재 기억 강도 계산 (0~1)
@@ -1978,6 +1997,14 @@ function getMemoryStrength(stageId) {
 
     const elapsedHr = (Date.now() - lastClear) / 3600000;
     return Math.max(0, Math.min(1, Math.exp(-elapsedHr / S)));
+}
+
+// Miss 시 복귀할 구간 시작 스텝 반환
+function getPhaseStartStep(step) {
+    if (step <= 4) return 1;   // step 2~4 Miss → 재학습
+    if (step <= 7) return 4;   // step 5~7 Miss → 23시간 구간 재시작
+    if (step <= 9) return 7;   // step 8~9 Miss → 71시간 구간 재시작
+    return 9;                  // step 10+ Miss → 167시간 구간 재시작
 }
 
 // 중간점검 스테이지에 속한 서브스테이지 목록 반환 (앞쪽 normal 스테이지들)
@@ -2969,7 +2996,9 @@ function openStageSheet(chapterData) {
                                  : pct >= 60 ? 'mem-strength-yellow'
                                  : pct >= 40 ? 'mem-strength-orange'
                                  : 'mem-strength-red';
-                memoryBarHtml = `<div class="mem-strength-bar-wrap" data-stage-id="${stage.id}"><div class="mem-strength-label">기억 강도 <span class="mem-strength-pct">${pct}%</span></div><div class="mem-strength-track"><div class="mem-strength-fill ${colorClass}" style="width:${pct}%"></div></div></div>`;
+                const flameIcon  = pct >= 60 ? '🔥' : pct >= 40 ? '🕯️' : '💀';
+                const flameClass = pct >= 80 ? 'flame-alive' : pct >= 60 ? 'flame-dim' : pct >= 40 ? 'flame-low' : 'flame-ash';
+                memoryBarHtml = `<div class="mem-strength-bar-wrap" data-stage-id="${stage.id}"><div class="mem-strength-label"><span class="flame-icon ${flameClass}">${flameIcon}</span> <span class="mem-strength-pct">${pct}%</span></div><div class="mem-strength-track"><div class="mem-strength-fill ${colorClass}" style="width:${pct}%"></div></div></div>`;
             }
         } else if (stage.type === 'mid-boss') {
             // 중간점검: 소속 서브스테이지 평균 기억 강도 표시
@@ -2980,7 +3009,9 @@ function openStageSheet(chapterData) {
                                  : pct >= 60 ? 'mem-strength-yellow'
                                  : pct >= 40 ? 'mem-strength-orange'
                                  : 'mem-strength-red';
-                memoryBarHtml = `<div class="mem-strength-bar-wrap" data-mid-boss-id="${stage.id}"><div class="mem-strength-label">평균 기억 강도 <span class="mem-strength-pct">${pct}%</span></div><div class="mem-strength-track"><div class="mem-strength-fill ${colorClass}" style="width:${pct}%"></div></div></div>`;
+                const flameIcon  = pct >= 60 ? '🔥' : pct >= 40 ? '🕯️' : '💀';
+                const flameClass = pct >= 80 ? 'flame-alive' : pct >= 60 ? 'flame-dim' : pct >= 40 ? 'flame-low' : 'flame-ash';
+                memoryBarHtml = `<div class="mem-strength-bar-wrap" data-mid-boss-id="${stage.id}"><div class="mem-strength-label"><span class="flame-icon ${flameClass}">${flameIcon}</span> 평균 <span class="mem-strength-pct">${pct}%</span></div><div class="mem-strength-track"><div class="mem-strength-fill ${colorClass}" style="width:${pct}%"></div></div></div>`;
             }
         }
 
@@ -3097,10 +3128,14 @@ function openStageSheet(chapterData) {
                              : pct >= 60 ? 'mem-strength-yellow'
                              : pct >= 40 ? 'mem-strength-orange'
                              : 'mem-strength-red';
+            const flameIcon  = pct >= 60 ? '🔥' : pct >= 40 ? '🕯️' : '💀';
+            const flameClass = pct >= 80 ? 'flame-alive' : pct >= 60 ? 'flame-dim' : pct >= 40 ? 'flame-low' : 'flame-ash';
             const fill = wrap.querySelector('.mem-strength-fill');
             const pctEl = wrap.querySelector('.mem-strength-pct');
+            const flameEl = wrap.querySelector('.flame-icon');
             if (fill) { fill.style.width = pct + '%'; fill.className = `mem-strength-fill ${colorClass}`; }
             if (pctEl) pctEl.textContent = pct + '%';
+            if (flameEl) { flameEl.textContent = flameIcon; flameEl.className = `flame-icon ${flameClass}`; }
         });
 
         // ★ [에빙하우스] 기억 강도 바 업데이트 (중간점검 — 서브스테이지 평균)
@@ -5379,7 +5414,12 @@ function showClearScreen() {
                 msg = `📖 [훈련] 첫 학습 완료! (${baseGem}💎)`;
             } else {
                 msg = `📖 [훈련] ${completedStep}회차 복습 완료! (${baseGem}💎)`;
+                const outcome = window._lastClearOutcome;
+                if (outcome === 'perfect') msg += '\n🟢 완벽한 타이밍! 기억이 더 오래갑니다.';
+                else if (outcome === 'good') msg += '\n🟡 위험했어요! 기억을 간신히 살려냈습니다.';
             }
+        } else if (window._lastClearOutcome === 'miss') {
+            msg = `📖 [훈련] 복습 완료 (보석 없음)\n🔴 불씨가 식었습니다. 다시 불을 피웁니다.`;
         } else {
             msg = "📖 [훈련] 완료! (보석 없음 - 대기 중)";
             baseGem = 0;
@@ -7667,7 +7707,7 @@ stageClear = function (type) {
                     // 복습 보상 (대기 중이 아닌 서브스테이지만)
                     const subStatus = getReviewStatus(subId);
                     if (subStatus.isEligible) {
-                        const earned = advanceReviewStep(subId);
+                        const { earnedGem: earned } = advanceReviewStep(subId);
                         stageMastery[subId]++;
                         subGemTotal += earned;
                         eligibleSubCount++;
@@ -7710,7 +7750,7 @@ stageClear = function (type) {
                         // 복습 보상 (대기 중이 아닌 서브스테이지만)
                         const subStatus = getReviewStatus(subId);
                         if (subStatus.isEligible) {
-                            const earned = advanceReviewStep(subId);
+                            const { earnedGem: earned } = advanceReviewStep(subId);
                             stageMastery[subId]++;
                             subGemTotal += earned;
                             eligibleSubCount++;
@@ -7734,7 +7774,9 @@ stageClear = function (type) {
 
                 if (isEligible) {
                     const completingStep = reviewStatus.step;
-                    maxGem = advanceReviewStep(sId);
+                    const advResult = advanceReviewStep(sId);
+                    maxGem = advResult.earnedGem;
+                    window._lastClearOutcome = advResult.outcome;
                     if (completingStep === 1) {
                         msg += `📖 [훈련] 첫 학습 완료! (${maxGem}💎)\n`;
                     } else {

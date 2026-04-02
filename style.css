@@ -3869,6 +3869,17 @@ body, html {
 .mem-strength-orange { background: #e67e22; }
 .mem-strength-red    { background: #e74c3c; }
 
+/* ★ [불꽃 아이콘] 기억 강도 시각화 */
+@keyframes flame-flicker {
+    0%, 100% { transform: scale(1) rotate(-3deg); }
+    50%       { transform: scale(1.15) rotate(3deg); }
+}
+.flame-icon  { display: inline-block; font-size: 0.85rem; }
+.flame-alive { animation: flame-flicker 0.8s ease-in-out infinite; }
+.flame-dim   { opacity: 0.75; }
+.flame-low   { opacity: 0.5; }
+.flame-ash   { opacity: 0.35; filter: grayscale(60%); }
+
 /* [보스 사망 효과] */
 @keyframes boss-death-spin {
     0% { 
