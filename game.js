@@ -2226,10 +2226,6 @@ function goMap() {
     if (typeof seasonTimerInterval !== 'undefined' && seasonTimerInterval) {
         clearInterval(seasonTimerInterval);
     }
-    // ★ [추가] 맵으로 돌아올 때 복습 데이터 업데이트
-    if (typeof updateForgottenNotificationData === 'function') {
-        updateForgottenNotificationData();
-    }
     // ★ [추가] 맵으로 돌아올 때 맵 재렌더링 (보스 클리어 후 풀밭 배경 즉시 반영)
     if (typeof renderChapterMap === 'function') {
         renderChapterMap();
@@ -2935,23 +2931,6 @@ function getForgottenStages() {
     return forgottenList;
 }
 
-// Service Worker에 복습 필요 스테이지 데이터 전달
-function updateForgottenNotificationData() {
-    if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) return;
-    const forgotten = getForgottenStages();
-    const stages = forgotten.map(item => `${item.chapterNum}장 - ${item.stageName}`);
-    navigator.serviceWorker.controller.postMessage({
-        type: 'UPDATE_FORGOTTEN_DATA',
-        stages: stages
-    });
-    // 게임 닫힌 후에도 알림이 오도록 Background Sync 등록
-    if (stages.length > 0) {
-        navigator.serviceWorker.ready.then(reg => {
-            if (reg.sync) reg.sync.register('check-forgotten-stages').catch(() => {});
-        });
-    }
-}
-
 // 기억 다지기 스테이지 오버레이 표시 함수
 // 보너스 대기 중인 스테이지 목록 반환 (remaining > 0 이고 아직 대기 시간이 남은 스테이지)
 function formatTimeLeft(ms) {
@@ -3120,28 +3099,6 @@ function checkMemoryStatus(stageId) {
         isForgotten: diffHours >= forgettingTime,
         remainTime: forgettingTime - diffHours
     };
-}
-
-/* [FCM] 앱 백그라운드 전환 시 stageNextEligibleTime 중 가장 이른 미래 시각을 Firestore에 저장.
- * Cloud Function이 해당 시각에 기억 다지기 알림을 발송 (하루 1회 제한은 서버에서 처리). */
-function flushReviewNotif() {
-    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
-    if (localStorage.getItem('notifDisabled') === 'true') return;
-    if (typeof db === 'undefined' || !db || !myPlayerId) return;
-
-    const now = Date.now();
-    let earliest = null;
-    for (const stageId in stageNextEligibleTime) {
-        const t = stageNextEligibleTime[stageId];
-        if (t > now && (earliest === null || t < earliest)) earliest = t;
-    }
-    if (!earliest) return;
-
-    db.collection('leaderboard').doc(myPlayerId).set({
-        notifyAt: firebase.firestore.Timestamp.fromMillis(earliest)
-    }, { merge: true }).catch(err => {
-        console.error('[FCM] 알림 예약 실패:', err);
-    });
 }
 
 //[시스템: 보스전 로직]//
@@ -4028,11 +3985,6 @@ function saveGameData() {
         hardshipAddressClearHistory: hardshipAddressClearHistory
     };
     localStorage.setItem('kingsRoadSave', JSON.stringify(saveData));
-
-    // Service Worker용 복습 알림 데이터 업데이트
-    if (typeof updateForgottenNotificationData === 'function') {
-        try { updateForgottenNotificationData(); } catch (e) { console.error(e); }
-    }
 
     const missionModal = document.getElementById('mission-modal');
     const missionScreen = document.getElementById('mission-screen');
@@ -5241,23 +5193,6 @@ function showClearScreen() {
         quoteEl.style.display = quoteText ? 'block' : 'none';
     }
 
-    // 알림 켜기 링크 (권한 미허용 상태일 때만 표시)
-    let notifLink = document.getElementById('result-notif-link');
-    if (!notifLink) {
-        notifLink = document.createElement('p');
-        notifLink.id = 'result-notif-link';
-        notifLink.style.cssText = 'font-size:12px; color:var(--text-light); opacity:0.6; text-align:center; margin:10px 0 0; cursor:pointer;';
-        notifLink.onclick = () => requestNotificationPermission();
-        const resultCard = document.querySelector('.result-card');
-        if (resultCard) resultCard.appendChild(notifLink);
-    }
-    if (Notification.permission !== 'granted') {
-        notifLink.textContent = '🔔 복습 알림 켜기';
-        notifLink.style.display = 'block';
-    } else {
-        notifLink.style.display = 'none';
-    }
-
     const resultModalEl = document.getElementById('result-modal');
     const existingHistoryEl = resultModalEl && resultModalEl.querySelector('.hardship-history-wrap');
     if (existingHistoryEl) existingHistoryEl.remove();
@@ -5376,94 +5311,6 @@ function closeResultModal() {
     openStageSheetForStageId(clearedStageId);
     setTimeout(tryShowMilestone, 500);
 
-    // 첫 클리어 훈 알림 권한 요청 (한 번만)
-    if (!localStorage.getItem('notifAsked')) {
-        setTimeout(() => requestNotificationPermission(), 600);
-    }
-}
-
-/* =========================================
-   [FCM 푸시 알림 시스템]
-   ========================================= */
-async function initFCM() {
-    console.log('[FCM] initFCM 시작');
-    try {
-        if (typeof firebase === 'undefined' || !firebase.messaging) {
-            console.warn('Firebase Messaging SDK가 로드되지 않았습니다.');
-            return;
-        }
-        const messaging = firebase.messaging();
-
-        // FCM 토큰 발급 (firebase-messaging-sw.js 명시적으로 사용)
-        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-        const token = await messaging.getToken({
-            vapidKey: 'BLdqmLN5TbNMaDizmgaOBtSRG3Q_i_1VayUMMaO7kCP_K0DRp0fkBhpFiSWZNxjFz-sxs1OCiMbI7dmYluuo6mk',
-            serviceWorkerRegistration: registration
-        });
-        console.log('[FCM] 토큰:', token);
-        console.log('[FCM] 저장 조건 확인 - token:', !!token, 'myPlayerId:', myPlayerId, 'db:', typeof db !== 'undefined' && !!db);
-
-        if (token && myPlayerId && typeof db !== 'undefined' && db) {
-            const docRef = db.collection('leaderboard').doc(myPlayerId);
-
-            // FCM 토큰 저장
-            const updateData = { fcmToken: token, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
-            docRef.set(updateData, { merge: true }).then(() => {
-                console.log('[FCM] 토큰 저장 완료');
-            }).catch(err => {
-                console.error('[FCM] initFCM 오류:', err);
-            });
-        }
-
-        // 포그라운드 알림 수신 핸들러 (앱이 켜져 있을 때)
-        messaging.onMessage((payload) => {
-            console.log('[FCM] 포그라운드 메시지 수신:', payload);
-
-            const title = payload.data?.title || payload.notification?.title || '킹스로드 말씀 복습';
-            const body  = payload.data?.body  || payload.notification?.body  || '복습할 말씀이 있습니다.';
-
-            if (!('Notification' in window) || Notification.permission !== 'granted') return;
-
-            navigator.serviceWorker.ready.then(registration => {
-                registration.showNotification(title, {
-                    body: body,
-                    icon: '/icon-192.png'
-                });
-            });
-        });
-    } catch (err) {
-        console.error('[FCM] initFCM 오류:', err);
-    }
-}
-
-function requestNotificationPermission() {
-    const modal = document.getElementById('notification-permission-modal');
-    if (!modal) return;
-    modal.classList.add('active');
-
-    const allowBtn = document.getElementById('notif-allow-btn');
-    const denyBtn = document.getElementById('notif-deny-btn');
-
-    const cleanup = () => {
-        modal.classList.remove('active');
-        localStorage.setItem('notifAsked', 'true');
-    };
-
-    allowBtn.onclick = async () => {
-        cleanup();
-        try {
-            const permission = await Notification.requestPermission();
-            if (permission === 'granted') {
-                await initFCM();
-            }
-        } catch (e) {
-            console.warn('알림 권한 요청 실패:', e);
-        }
-    };
-
-    denyBtn.onclick = () => {
-        cleanup();
-    };
 }
 
 // 소리 토글 함수 (기존 코드)
@@ -7421,84 +7268,6 @@ function closeMoreMenu() {
 function openShopFromMenu() { closeMoreMenu(); openShop(); }
 function openAchievementFromMenu() { closeMoreMenu(); openAchievement(); }
 
-
-function openSettingsModal() {
-    // 메뉴 패널 닫기
-    const menuPanel = document.getElementById('menu-panel');
-    if (menuPanel) menuPanel.style.display = 'none';
-
-    // 기존 모달 제거
-    const existing = document.getElementById('settings-modal');
-    if (existing) existing.remove();
-
-    const isGranted = typeof Notification !== 'undefined' && Notification.permission === 'granted';
-    const isDisabled = localStorage.getItem('notifDisabled') === 'true';
-    const notifOn = isGranted && !isDisabled;
-
-    const modal = document.createElement('div');
-    modal.id = 'settings-modal';
-    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;';
-
-    modal.innerHTML = `
-        <div style="background:#1a2535;border:1.5px solid #f1c40f;border-radius:18px;padding:28px 24px;min-width:280px;max-width:340px;width:90%;color:#fff;font-family:inherit;">
-            <h2 style="margin:0 0 20px;font-size:1.2rem;color:#f1c40f;text-align:center;">⚙️ 설정</h2>
-
-            <div style="background:rgba(255,255,255,0.05);border-radius:12px;padding:16px 14px;margin-bottom:12px;">
-                <div style="font-size:0.95rem;color:#ccc;margin-bottom:12px;">🔔 복습 알림</div>
-                <div style="font-size:0.85rem;color:#aaa;margin-bottom:14px;">때를 따른 복습 알림을 보내드릴 수 있습니다.</div>
-                <div style="display:flex;align-items:center;justify-content:space-between;">
-                    <span id="notif-status-label" style="font-size:1rem;font-weight:bold;color:${notifOn ? '#2ecc71' : '#e74c3c'};">
-                        ${notifOn ? '알림 켜짐 ✅' : '알림 꺼짐 ❌'}
-                    </span>
-                    <button id="notif-toggle-btn" onclick="toggleNotifFromSettings()"
-                        style="background:${notifOn ? '#c0392b' : '#27ae60'};color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:0.9rem;cursor:pointer;font-family:inherit;">
-                        ${notifOn ? '끄기' : '켜기'}
-                    </button>
-                </div>
-                ${Notification.permission === 'denied' ? '<div style="margin-top:10px;font-size:0.78rem;color:#e67e22;">⚠️ 브라우저에서 알림이 차단되어 있습니다. 브라우저 설정에서 직접 허용해 주세요.</div>' : ''}
-            </div>
-
-            <button onclick="document.getElementById(\'settings-modal\').remove()"
-                style="width:100%;background:rgba(255,255,255,0.08);color:#ccc;border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px;font-size:0.95rem;cursor:pointer;font-family:inherit;margin-top:4px;">
-                닫기
-            </button>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
-}
-
-async function toggleNotifFromSettings() {
-    const isGranted = typeof Notification !== 'undefined' && Notification.permission === 'granted';
-    const isDisabled = localStorage.getItem('notifDisabled') === 'true';
-    const notifOn = isGranted && !isDisabled;
-
-    if (notifOn) {
-        // 알림 끄기: Firestore에서 fcmToken과 notifyAt 삭제, 로컬 플래그 설정
-        localStorage.setItem('notifDisabled', 'true');
-        if (myPlayerId && typeof db !== 'undefined' && db) {
-            await db.collection('leaderboard').doc(myPlayerId).update({
-                fcmToken: firebase.firestore.FieldValue.delete(),
-                notifyAt: firebase.firestore.FieldValue.delete()
-            }).catch(() => {});
-        }
-        // UI 갱신
-        const label = document.getElementById('notif-status-label');
-        const btn = document.getElementById('notif-toggle-btn');
-        if (label) { label.textContent = '알림 꺼짐 ❌'; label.style.color = '#e74c3c'; }
-        if (btn) { btn.textContent = '켜기'; btn.style.background = '#27ae60'; }
-    } else {
-        // 알림 켜기
-        if (Notification.permission === 'denied') {
-            alert('브라우저에서 알림이 차단되어 있습니다.\n브라우저 주소창 왼쪽의 자물쇠 아이콘을 눌러 알림을 허용해 주세요.');
-            return;
-        }
-        localStorage.removeItem('notifDisabled');
-        document.getElementById('settings-modal')?.remove();
-        requestNotificationPermission();
-    }
-}
 
 // 팝업 외부 클릭 시 닫기
 document.addEventListener('click', function(e) {
@@ -10474,25 +10243,13 @@ function toggleAccordion(contentId, btnElement) {
 }
 // 서비스 워커 등록 (앱 설치 조건을 만족시키기 위함)
 if ('serviceWorker' in navigator) {
-        window.addEventListener('load', async () => {
+    window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
             .then(reg => console.log('서비스 워커 등록 완료!'))
             .catch(err => console.log('서비스 워커 등록 실패:', err));
-
-            if (Notification.permission === 'granted') {
-                console.log('[FCM] 권한 이미 허용됨 → initFCM 자동 실행');
-                await initFCM();
-            }
     });
 }
 
-// 앱 백그라운드 전환 또는 종료 시 기억 다지기 알림 예약 저장
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') flushReviewNotif();
-});
-window.addEventListener('pagehide', () => {
-    flushReviewNotif();
-});
 // 🛡️ 다중 기기 동시 접속 차단기 (스마트 감시 버전)
 function startSessionGuard() {
     if (typeof db === 'undefined' || !myPlayerId) return;

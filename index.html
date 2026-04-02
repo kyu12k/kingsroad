@@ -322,7 +322,6 @@
                 신고</button>
             <button class="menu-action-btn" onclick="openDataSettings()">💾 기기 변경</button>
             <button class="menu-action-btn" id="theme-toggle-btn" onclick="toggleTheme()">🌙 다크 모드</button>
-            <button class="menu-action-btn" id="settings-menu-btn" onclick="openSettingsModal()">⚙️ 설정</button>
         </div>
         <script>
             // 라이트/다크 모드 토글
@@ -1139,18 +1138,6 @@
         </div>
     </div>
 
-    <!-- FCM 알림 권한 요청 커스텀 모달 -->
-    <div id="notification-permission-modal">
-        <div class="notif-modal-box">
-            <div class="notif-icon">💜</div>
-            <h3>기억 다지기 알림</h3>
-            <p>말씀에 기억 다지기 뱃지가 붙으면<br>알림으로 알려드려요.<br>하루에 한 번만 조용히 알려드려요.</p>
-            <p style="font-size:12px; opacity:0.6; margin-top:-12px;">앱을 백그라운드로 내려둬야 알림이 와요</p>
-            <button id="notif-allow-btn">받을게요</button>
-            <button id="notif-deny-btn">괜찮아요</button>
-        </div>
-    </div>
-
     <div id="result-modal" class="modal-overlay">
         <div class="result-card">
             <div class="result-header" id="result-title">🎉 STAGE CLEAR!</div>
@@ -1183,7 +1170,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="game.js"></script>
