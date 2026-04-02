@@ -605,28 +605,59 @@
             <!-- 공지사항 모달 -->
             <div id="notice-modal" class="modal-overlay" style="z-index: 9999; display:none;">
                 <div class="result-card" style="max-width: 400px; max-height: 80vh; overflow-y: auto;">
-                    <div style="text-align: right;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                        <h2 style="margin:0; color:#2c3e50;">📢 공지사항</h2>
                         <button onclick="closeNoticeModal()"
                             style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
                     </div>
-                    <div style="text-align: center; margin-bottom: 20px;">
-                        <h2 style="margin:0; color:#2c3e50;">📢 공지사항</h2>
-                        <p style="color:#7f8c8d; font-size:0.95rem; margin-top:5px;">공지사항 내용이 여기에 표시됩니다.<br>관리자가 최신 소식을
-                            안내합니다.</p>
-                        <div id="notice-content" style="color:#2c3e50; text-align:left; margin-top:15px;"></div>
-                    </div>
+                    <div id="notice-list"></div>
                 </div>
             </div>
             <script>
-                // 공지사항 모달 열기/닫기 함수
+                const NOTICES = [
+                    {
+                        date: '2026-04-03',
+                        title: '베타테스트 안내',
+                        content: `<p>현재 킹스로드는 <strong>베타테스트 중</strong>입니다.</p>
+<ul style="padding-left:18px; margin:8px 0;">
+  <li>게임 밸런스, 기능, UI 등이 <strong>예고 없이 변경</strong>될 수 있습니다.</li>
+  <li>업데이트 과정에서 저장 데이터가 <strong>초기화되거나 복구 불가능하게 손실</strong>될 수 있습니다.</li>
+  <li>데이터 손실에 대한 보상은 제공되지 않을 수 있습니다.</li>
+</ul>
+<p style="margin-top:10px;">불편을 드려 죄송합니다. 테스트에 참여해 주셔서 감사합니다! 🙏</p>`
+                    }
+                ];
+
                 function openNoticeModal() {
+                    renderNotices();
                     document.getElementById('notice-modal').style.display = 'flex';
-                    // 메뉴 패널 닫기
                     var menuPanel = document.getElementById('menu-panel');
                     if (menuPanel) menuPanel.style.display = 'none';
                 }
                 function closeNoticeModal() {
                     document.getElementById('notice-modal').style.display = 'none';
+                }
+                function renderNotices() {
+                    var list = document.getElementById('notice-list');
+                    list.innerHTML = NOTICES.map(function(n, i) {
+                        return '<div class="notice-item">' +
+                            '<button class="notice-header" onclick="toggleNotice(' + i + ')">' +
+                                '<span class="notice-date">' + n.date + '</span>' +
+                                '<span class="notice-title">' + n.title + '</span>' +
+                                '<span class="notice-arrow" id="notice-arrow-' + i + '">▼</span>' +
+                            '</button>' +
+                            '<div class="notice-body" id="notice-body-' + i + '" style="display:none;">' +
+                                n.content +
+                            '</div>' +
+                        '</div>';
+                    }).join('');
+                }
+                function toggleNotice(i) {
+                    var body = document.getElementById('notice-body-' + i);
+                    var arrow = document.getElementById('notice-arrow-' + i);
+                    var isOpen = body.style.display !== 'none';
+                    body.style.display = isOpen ? 'none' : 'block';
+                    arrow.textContent = isOpen ? '▼' : '▲';
                 }
             </script>
 
