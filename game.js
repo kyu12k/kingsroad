@@ -1952,9 +1952,9 @@ function advanceReviewStep(stageId) {
         const waitMs = getReviewWaitMs(nextStep);
         stageNextReviewTime[stageId] = waitMs > 0 ? Date.now() + waitMs : 0;
     } else if (outcome === 'good') {
-        // 스텝 유지, 다음 대기 50% 단축
-        const nextWaitMs = getReviewWaitMs(currentStep + 1);
-        stageNextReviewTime[stageId] = Date.now() + Math.floor(nextWaitMs * 0.5);
+        // 스텝 유지, 방금 기다린 시간의 50%로 재시도
+        const currentWaitMs = getReviewWaitMs(currentStep);
+        stageNextReviewTime[stageId] = Date.now() + Math.floor(currentWaitMs * 0.5);
     } else { // miss
         const fallbackStep = getPhaseStartStep(currentStep);
         stageReviewStep[stageId] = fallbackStep;
@@ -5464,20 +5464,22 @@ function showClearScreen() {
             const sId = window.currentStageId;
             if (sId) {
                 const nextStatus = getReviewStatus(sId);
-                // 다음 복습까지의 대기 시간 안내
-                const waitMs = getReviewWaitMs(nextStatus.step);
-                if (waitMs === 10 * 60 * 1000) {
+                const outcome = window._lastClearOutcome;
+                if (outcome === 'perfect' && nextStatus.step === 2) {
+                    // step 1 클리어 (최초 학습 또는 miss 후 재학습)
                     quoteText = '말씀을 잊지 않고 싶으시다면<br>10분 후 다시 만나보세요.';
-                } else if (waitMs === 60 * 60 * 1000) {
-                    quoteText = '기억이 뿌리내리기 시작했습니다.<br>한 시간 뒤 다시 만나보세요.';
-                } else if (waitMs === 6 * 60 * 60 * 1000) {
-                    quoteText = '기억에 거름을 줬습니다.<br>6시간 후 다시 만나보세요.';
-                } else if (waitMs === 23 * 60 * 60 * 1000) {
-                    quoteText = '오늘의 학습이 뿌리내립니다.<br>내일 다시 만나보세요.';
-                } else if (waitMs > 0) {
-                    quoteText = '반복은 완벽을 만듭니다.';
-                } else {
-                    quoteText = ''; // 더 이상 대기 없음
+                } else if (outcome === 'perfect') {
+                    const waitMs = getReviewWaitMs(nextStatus.step);
+                    const hr = waitMs / 3600000;
+                    let waitLabel;
+                    if (hr < 1) waitLabel = `${Math.round(waitMs / 60000)}분`;
+                    else if (hr < 24) waitLabel = `${Math.round(hr)}시간`;
+                    else waitLabel = `${Math.round(hr / 24)}일`;
+                    quoteText = `적절한 복습 간격입니다.<br>${waitLabel} 후에 복습하세요!`;
+                } else if (outcome === 'good') {
+                    quoteText = '다시 떠올리기 힘들진 않으셨나요?<br>빠른 간격으로 복습해보세요.';
+                } else if (outcome === 'miss') {
+                    quoteText = '이전 단계부터 다시 단단히 다져보아요.<br>(기억 레벨이 감소합니다)';
                 }
             }
         }
