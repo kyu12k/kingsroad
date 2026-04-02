@@ -3858,6 +3858,17 @@ body, html {
     color: #27ae60;
 }
 
+/* ★ [에빙하우스] 기억 강도 바 */
+.mem-strength-bar-wrap { margin-top: 5px; }
+.mem-strength-label { font-size: 0.72rem; color: #7f8c8d; margin-bottom: 2px; display: flex; align-items: center; gap: 4px; }
+.mem-strength-pct { font-weight: bold; color: #2c3e50; }
+.mem-strength-track { height: 5px; background: rgba(0,0,0,0.08); border-radius: 3px; overflow: hidden; }
+.mem-strength-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+.mem-strength-green  { background: #2ecc71; }
+.mem-strength-yellow { background: #f1c40f; }
+.mem-strength-orange { background: #e67e22; }
+.mem-strength-red    { background: #e74c3c; }
+
 /* [보스 사망 효과] */
 @keyframes boss-death-spin {
     0% { 

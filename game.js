@@ -1908,11 +1908,18 @@ function getReviewBaseGem(step) {
 }
 
 // step이 해금되기까지 이전 step으로부터 기다려야 할 시간(ms) 반환
+// step 10+: 167 → 355 → 671 → 1343시간 (약 2배씩 증가)
 function getReviewWaitMs(step) {
     if (step <= 1) return 0;
     const idx = step - 1; // step 2 → index 1
     if (idx < REVIEW_SEQUENCE.length) return REVIEW_SEQUENCE[idx].waitMs;
-    return 167 * 60 * 60 * 1000; // step 10+: 167시간
+    // step 10 이후 대기 시간 (사용자 원안 기준)
+    const longWaits = [167, 355, 671, 1343]; // step 10~13
+    const n = step - 10; // step 10 → n=0
+    const hours = n < longWaits.length
+        ? longWaits[n]
+        : Math.round(longWaits[longWaits.length - 1] * Math.pow(2, n - (longWaits.length - 1)));
+    return hours * 60 * 60 * 1000;
 }
 
 // 현재 복습 상태를 통합 반환 (checkMemoryStatus + peekTimedBonus 역할)
@@ -1937,6 +1944,40 @@ function advanceReviewStep(stageId) {
     const waitMs = getReviewWaitMs(nextStep);
     stageNextReviewTime[stageId] = waitMs > 0 ? Date.now() + waitMs : 0;
     return earnedGem;
+}
+
+// ★ [에빙하우스] 현재 기억 강도 계산 (0~1)
+// 공식: R = e^(-t/S), t=경과시간(hr), S=안정성(hr, 스텝별 증가)
+function getMemoryStrength(stageId) {
+    const lastClear = stageLastClear[stageId] || 0;
+    if (lastClear === 0) return null;
+
+    const step = stageReviewStep[stageId] || 1;
+    // 각 스텝에서 다음 복습 시점에 R=0.8이 되도록 S 산출 (S = waitHr / 0.2231)
+    const STABILITY_HOURS = [
+        0.747,  // step 1: 10분 후 복습
+        4.48,   // step 2: 1시간 후
+        26.9,   // step 3: 6시간 후
+        103.1,  // step 4: 23시간 후
+        103.1,  // step 5: 부스터 (안정성 유지)
+        103.1,  // step 6: 부스터 (안정성 유지)
+        318.4,  // step 7: 71시간 후
+        318.4,  // step 8: 부스터 (안정성 유지)
+        748.7,  // step 9: 167시간 후
+    ];
+
+    let S;
+    const idx = step - 1;
+    if (idx < STABILITY_HOURS.length) {
+        S = STABILITY_HOURS[idx];
+    } else {
+        // step 10+: 다음 복습 대기시간으로 동적 산출
+        const waitMs = getReviewWaitMs(step + 1);
+        S = (waitMs / 3600000) / 0.2231;
+    }
+
+    const elapsedHr = (Date.now() - lastClear) / 3600000;
+    return Math.max(0, Math.min(1, Math.exp(-elapsedHr / S)));
 }
 
 // step → 통계/배지 표시용 레벨(0~5) 변환 (getTotalMemoryLevel, mem-badge 호환용)
@@ -2901,6 +2942,20 @@ function openStageSheet(chapterData) {
         // ★ [v1.1.0] 복습 단계 배지 (일반 스테이지에만 표시)
         rewardInfo = isNormalStage ? buildReviewBadgeHtml(stage.id) : "";
 
+        // ★ [에빙하우스] 기억 강도 바
+        let memoryBarHtml = "";
+        if (isCleared && isNormalStage) {
+            const strength = getMemoryStrength(stage.id);
+            if (strength !== null) {
+                const pct = Math.round(strength * 100);
+                const colorClass = pct >= 80 ? 'mem-strength-green'
+                                 : pct >= 60 ? 'mem-strength-yellow'
+                                 : pct >= 40 ? 'mem-strength-orange'
+                                 : 'mem-strength-red';
+                memoryBarHtml = `<div class="mem-strength-bar-wrap" data-stage-id="${stage.id}"><div class="mem-strength-label">기억 강도 <span class="mem-strength-pct">${pct}%</span></div><div class="mem-strength-track"><div class="mem-strength-fill ${colorClass}" style="width:${pct}%"></div></div></div>`;
+            }
+        }
+
         // 4. HTML 조립
         item.innerHTML = `
     ${statusBadgeHtml}
@@ -2910,6 +2965,7 @@ function openStageSheet(chapterData) {
             ${levelBadgeHtml} ${stage.title}  </div>
         <div class="stage-desc">${stage.desc}</div>
         ${rewardInfo}
+        ${memoryBarHtml}
     </div>
     ${rightSideContent}
         `;
@@ -3001,6 +3057,22 @@ function openStageSheet(chapterData) {
                 if (m > 0 || timeStr === '') timeStr += `${m}분`;
                 el.textContent = `${timeStr.trim()} 후`;
             }
+        });
+
+        // ★ [에빙하우스] 기억 강도 바 업데이트
+        document.querySelectorAll('.mem-strength-bar-wrap[data-stage-id]').forEach(wrap => {
+            const sid = wrap.dataset.stageId;
+            const strength = getMemoryStrength(sid);
+            if (strength === null) return;
+            const pct = Math.round(strength * 100);
+            const colorClass = pct >= 80 ? 'mem-strength-green'
+                             : pct >= 60 ? 'mem-strength-yellow'
+                             : pct >= 40 ? 'mem-strength-orange'
+                             : 'mem-strength-red';
+            const fill = wrap.querySelector('.mem-strength-fill');
+            const pctEl = wrap.querySelector('.mem-strength-pct');
+            if (fill) { fill.style.width = pct + '%'; fill.className = `mem-strength-fill ${colorClass}`; }
+            if (pctEl) pctEl.textContent = pct + '%';
         });
     }
 
