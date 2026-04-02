@@ -5490,9 +5490,9 @@ function showClearScreen() {
                     if (hr < 1) waitLabel = `${Math.round(waitMs / 60000)}분`;
                     else if (hr < 24) waitLabel = `${Math.round(hr)}시간`;
                     else waitLabel = `${Math.round(hr / 24)}일`;
-                    quoteText = `적절한 복습 간격입니다.<br>${waitLabel} 후에 복습하세요!`;
+                    quoteText = `적절한 복습 간격입니다.<br>${waitLabel} 후에 복습하세요!(기억 레벨이 오릅니다)`;
                 } else if (outcome === 'good') {
-                    quoteText = '다시 떠올리기 힘들진 않으셨나요?<br>빠른 간격으로 복습해보세요.';
+                    quoteText = '다시 떠올리기 힘들진 않으셨나요?<br>빠른 간격으로 복습해보세요(기억 레벨이 유지됩니다).';
                 } else if (outcome === 'miss') {
                     quoteText = '이전 단계부터 다시 단단히 다져보아요.<br>(기억 레벨이 감소합니다)';
                 }
