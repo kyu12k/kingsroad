@@ -2136,7 +2136,7 @@ function buildReviewBadgeHtml(stageId) {
     } else if (step === 1) {
         statusHtml = `<span class="review-ready">${status.baseGem}💎 첫 학습!</span>`;
     } else {
-        statusHtml = `<span class="review-ready">${status.baseGem}💎 지금 복습 가능!</span>`;
+        statusHtml = `<span class="review-ready">${status.baseGem}💎 지금 복습 추천!</span>`;
     }
 
     return `<div class="review-badge-strip"><div class="review-dots">${dotsHtml}</div><div class="review-status">${statusHtml}</div></div>`;
@@ -3103,7 +3103,7 @@ function openStageSheet(chapterData) {
             const unlockTime = parseInt(el.dataset.unlock);
             const diff = unlockTime - now;
             if (diff <= 0) {
-                el.textContent = "지금 복습 가능!";
+                el.textContent = "지금 복습 추천!";
                 el.className = 'review-ready';
             } else {
                 const totalMins = Math.floor(diff / 60000);
