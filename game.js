@@ -1,5 +1,5 @@
 ﻿// [정식 배포] 게임 버전 정보
-const GAME_VERSION = "1.0.0"; // 정식 배포 버전
+const GAME_VERSION = "1.1.0"; // 복습 단계 시스템 통합
 
 // 🌟 [추가] 브라우저에 저장된 음소거 상태를 불러옵니다. (앱 전체에서 공유)
 let isGlobalMuted = localStorage.getItem('isMuted') === 'true';
@@ -90,8 +90,11 @@ let inventory = {
 let stageMastery = {}; // ID별 클리어 횟수 저장
 let stageClearDate = {}; // verseId → 처음 클리어한 game-day ('YYYY-MM-DD')
 let stageLastClear = {}; // ID별 마지막 클리어 시간 (타임스탬프)
-let stageNextEligibleTime = {}; // 다음 클리어 가능 시간 (forgetting-curve)
-let stageTimedBonus = {}; // 각인 주기 기반 보너스 (때를 따른 양식)
+let stageNextEligibleTime = {}; // 다음 클리어 가능 시간 (forgetting-curve) [구버전 호환용]
+let stageTimedBonus = {}; // 각인 주기 기반 보너스 (때를 따른 양식) [구버전 호환용]
+// ★ [v1.1.0 직렬 복습 시스템]
+let stageReviewStep = {};      // 각 스테이지의 현재 복습 단계 (1-based)
+let stageNextReviewTime = {};  // 다음 복습 가능 시각 (timestamp, 0이면 즉시 가능)
 let hardshipAddressClearHistory = {}; // 장별 주소의 고난 클리어 기록 { "1": [{correct, total, score, date}, ...] }
 
 /* ============================================= */
@@ -110,14 +113,19 @@ loadGameData = function () {
     try {
         const parsed = JSON.parse(savedString);
 
-        // ★ [정식 배포] 버전 체크: 구버전이거나 버전 정보가 없으면 초기화
+        // ★ 버전 체크: v1.0.0은 마이그레이션, 그 외 구버전은 초기화
         if (!parsed.version || parsed.version !== GAME_VERSION) {
-            console.log(`🔄 게임 버전 업데이트 감지 (${parsed.version || '구버전'} → ${GAME_VERSION})`);
-            console.log("📦 데이터를 초기화합니다...");
-            localStorage.removeItem('kingsRoadSave');
-            alert(`🎉 King's Road v${GAME_VERSION} 정식 버전에 오신 것을 환영합니다!\n\n새로운 시작을 위해 게임 데이터가 초기화되었습니다.`);
-            lastClaimTime = Date.now();
-            return;
+            if (parsed.version === '1.0.0') {
+                // v1.0.0 → v1.1.0: 복습 시스템 마이그레이션 (데이터 유지)
+                console.log(`🔄 v1.0.0 → v${GAME_VERSION} 마이그레이션 시작`);
+            } else {
+                console.log(`🔄 게임 버전 업데이트 감지 (${parsed.version || '구버전'} → ${GAME_VERSION})`);
+                console.log("📦 데이터를 초기화합니다...");
+                localStorage.removeItem('kingsRoadSave');
+                alert(`🎉 King's Road v${GAME_VERSION} 정식 버전에 오신 것을 환영합니다!\n\n새로운 시작을 위해 게임 데이터가 초기화되었습니다.`);
+                lastClaimTime = Date.now();
+                return;
+            }
         }
 
         // [기본 복구]
@@ -144,8 +152,14 @@ loadGameData = function () {
         stageMastery = parsed.mastery || {};
         stageClearDate = parsed.clearDate || {};
         stageMemoryLevels = parsed.memoryLevels || {};
-        stageNextEligibleTime = parsed.nextEligibleTime || {}; // ★ [Forgetting-Curve] 다음 클리어 가능 시간
-        stageTimedBonus = parsed.timedBonus || {}; // ★ [때를 따른 양식] 각인 주기 기반 보너스
+        stageNextEligibleTime = parsed.nextEligibleTime || {}; // 구버전 호환용
+        stageTimedBonus = parsed.timedBonus || {}; // 구버전 호환용
+        stageReviewStep = parsed.reviewStep || {};
+        stageNextReviewTime = parsed.nextReviewTime || {};
+        // 마이그레이션: 신규 키가 없고 구버전 데이터가 있으면 변환
+        if (Object.keys(stageReviewStep).length === 0 && Object.keys(stageMemoryLevels).length > 0) {
+            migrateToSerialReview(parsed);
+        }
         if (parsed.leagueData) {
             leagueData = parsed.leagueData;
 
@@ -339,11 +353,19 @@ function getStageClearCounts() {
 
 function getTotalMemoryLevel() {
     let total = 0;
-    Object.keys(stageMemoryLevels || {}).forEach((id) => {
-        if (id.includes('boss')) return;
-        const value = stageMemoryLevels[id] || 0;
-        total += value;
-    });
+    // ★ [v1.1.0] stageReviewStep 기준으로 계산 (없으면 구버전 stageMemoryLevels 폴백)
+    const source = Object.keys(stageReviewStep || {}).length > 0 ? stageReviewStep : null;
+    if (source) {
+        Object.keys(source).forEach((id) => {
+            if (id.includes('boss')) return;
+            total += getMemoryLevelFromStep(source[id] || 1);
+        });
+    } else {
+        Object.keys(stageMemoryLevels || {}).forEach((id) => {
+            if (id.includes('boss')) return;
+            total += stageMemoryLevels[id] || 0;
+        });
+    }
     return total;
 }
 
@@ -480,6 +502,21 @@ function checkAchievementUnlock(statType) {
 /* [시스템: 망각 곡선 및 말씀 숙련도 설정] */
 // 레벨별 복습 주기 (Lv.0 -> 1일, Lv.1 -> 3일, Lv.2 -> 7일...)
 const FORGETTING_CURVE = [1, 3, 7, 14, 30];
+
+// ★ [v1.1.0] 직렬 복습 시스템: 각 step별 대기 시간과 기본 보석 보상
+// step 1이 index 0, waitMs는 "이전 step 클리어로부터 얼마 후에 이 step이 해금되는가"
+const REVIEW_SEQUENCE = [
+    { waitMs: 0,                          baseGem: 10  }, // step 1: 최초 학습
+    { waitMs: 10 * 60 * 1000,            baseGem: 15  }, // step 2: 10분 후
+    { waitMs: 60 * 60 * 1000,            baseGem: 20  }, // step 3: 1시간 후
+    { waitMs: 6 * 60 * 60 * 1000,        baseGem: 50  }, // step 4: 6시간 후
+    { waitMs: 23 * 60 * 60 * 1000,       baseGem: 60  }, // step 5: 23시간(1일) 후
+    { waitMs: 1 * 60 * 60 * 1000,        baseGem: 70  }, // step 6: 1시간 후
+    { waitMs: 6 * 60 * 60 * 1000,        baseGem: 80  }, // step 7: 6시간 후
+    { waitMs: 71 * 60 * 60 * 1000,       baseGem: 90  }, // step 8: 71시간(3일) 후
+    { waitMs: 6 * 60 * 60 * 1000,        baseGem: 100 }, // step 9: 6시간 후
+    // step 10+: waitMs = 167시간(7일), baseGem = 100 + (step-10)*10
+];
 
 // 각 스테이지의 말씀 숙련도를 저장할 객체 (예: { "1-1": 2, "1-2": 0 })
 let stageMemoryLevels = {};
@@ -1859,7 +1896,165 @@ let leagueData = {
 };
 
 // ============================================================
-// [Forgetting-Curve 냉각 시간 계산]
+// ★ [v1.1.0] 직렬 복습 시스템 핵심 함수
+// ============================================================
+
+// step(1-based)에 해당하는 기본 보석 보상 반환
+function getReviewBaseGem(step) {
+    if (step <= 0) return 0;
+    const idx = step - 1;
+    if (idx < REVIEW_SEQUENCE.length) return REVIEW_SEQUENCE[idx].baseGem;
+    return 100 + (step - 10) * 10; // step 10+
+}
+
+// step이 해금되기까지 이전 step으로부터 기다려야 할 시간(ms) 반환
+function getReviewWaitMs(step) {
+    if (step <= 1) return 0;
+    const idx = step - 1; // step 2 → index 1
+    if (idx < REVIEW_SEQUENCE.length) return REVIEW_SEQUENCE[idx].waitMs;
+    return 167 * 60 * 60 * 1000; // step 10+: 167시간
+}
+
+// 현재 복습 상태를 통합 반환 (checkMemoryStatus + peekTimedBonus 역할)
+// 반환: { step, nextReviewTime, isEligible, remainMs, baseGem, isFirstClear }
+function getReviewStatus(stageId) {
+    const step = stageReviewStep[stageId] || 1;
+    const nextTime = stageNextReviewTime[stageId] || 0;
+    const now = Date.now();
+    const isFirstClear = (step === 1 && nextTime === 0);
+    const isEligible = (now >= nextTime); // nextTime=0이면 항상 가능
+    const remainMs = isEligible ? 0 : nextTime - now;
+    const baseGem = isEligible ? getReviewBaseGem(step) : 0;
+    return { step, nextReviewTime: nextTime, isEligible, remainMs, baseGem, isFirstClear };
+}
+
+// 클리어 시 step을 올리고 다음 타이머를 설정. 획득한 보석 수를 반환.
+function advanceReviewStep(stageId) {
+    const currentStep = stageReviewStep[stageId] || 1;
+    const earnedGem = getReviewBaseGem(currentStep);
+    const nextStep = currentStep + 1;
+    stageReviewStep[stageId] = nextStep;
+    const waitMs = getReviewWaitMs(nextStep);
+    stageNextReviewTime[stageId] = waitMs > 0 ? Date.now() + waitMs : 0;
+    return earnedGem;
+}
+
+// step → 통계/배지 표시용 레벨(0~5) 변환 (getTotalMemoryLevel, mem-badge 호환용)
+function getMemoryLevelFromStep(step) {
+    if (step <= 1) return 0;
+    if (step <= 4) return 1;  // 1단계 진행 중
+    if (step <= 7) return 2;  // 2단계
+    if (step <= 9) return 3;  // 3단계
+    if (step <= 11) return 4;
+    return 5;
+}
+
+// 구버전(v1.0.0) 데이터를 신규 step 시스템으로 마이그레이션
+function migrateToSerialReview(parsed) {
+    const oldLevels = parsed.memoryLevels || {};
+    const oldBonus  = parsed.timedBonus || {};
+    const oldNextTime = parsed.nextEligibleTime || {};
+    const newStep = {};
+    const newNextTime = {};
+
+    Object.keys(oldLevels).forEach(id => {
+        const level = oldLevels[id] || 0;
+        const bonus = oldBonus[id] || { remaining: 3, lastClear: 0 };
+
+        let mappedStep;
+        if (level === 0) {
+            if (bonus.lastClear === 0) {
+                mappedStep = 1; // 미클리어
+            } else if (bonus.remaining === 3) {
+                mappedStep = 1; // 클리어 직후, 10분 대기
+            } else if (bonus.remaining === 2) {
+                mappedStep = 2; // 10분 완료, 1시간 대기
+            } else if (bonus.remaining === 1) {
+                mappedStep = 3; // 1시간 완료, 6시간 대기
+            } else {
+                mappedStep = 4; // 6시간 완료, 23시간 대기
+            }
+        } else if (level === 1) {
+            mappedStep = 5;
+        } else if (level === 2) {
+            mappedStep = 8;
+        } else if (level === 3) {
+            mappedStep = 10;
+        } else {
+            mappedStep = 10 + (level - 3) * 2;
+        }
+
+        newStep[id] = mappedStep;
+
+        // 기존 nextEligibleTime이 아직 유효하면 그대로 사용
+        if (oldNextTime[id] && oldNextTime[id] > Date.now()) {
+            newNextTime[id] = oldNextTime[id];
+        } else {
+            newNextTime[id] = 0; // 만료됐으면 즉시 가능
+        }
+    });
+
+    stageReviewStep = newStep;
+    stageNextReviewTime = newNextTime;
+    console.log(`✅ 마이그레이션 완료: ${Object.keys(newStep).length}개 스테이지 변환됨`);
+}
+
+// 스테이지 버튼에 표시할 복습 단계 배지 HTML 생성
+function buildReviewBadgeHtml(stageId) {
+    const status = getReviewStatus(stageId);
+    const step = status.step;
+
+    // 단계 그룹 및 표시할 step strip 정의
+    let stepDefs;
+    if (step <= 4) {
+        stepDefs = [
+            { label: '시작', step: 1 },
+            { label: '10분 후', step: 2 },
+            { label: '1시간 후', step: 3 },
+            { label: '6시간 후', step: 4 },
+        ];
+    } else if (step <= 7) {
+        stepDefs = [
+            { label: '1일 후', step: 5 },
+            { label: '1시간 후', step: 6 },
+            { label: '6시간 후', step: 7 },
+        ];
+    } else if (step <= 9) {
+        stepDefs = [
+            { label: '3일 후', step: 8 },
+            { label: '6시간 후', step: 9 },
+        ];
+    } else {
+        // step 10+: 대기 시간 표시
+        const waitMs = getReviewWaitMs(step);
+        const waitHr = Math.round(waitMs / 3600000);
+        const waitLabel = waitHr >= 24 ? `${Math.round(waitHr / 24)}일 후` : `${waitHr}시간 후`;
+        stepDefs = [{ label: waitLabel, step }];
+    }
+
+    const dotsHtml = stepDefs.map((s, i) => {
+        const isDone = s.step < step;
+        const isCurrent = s.step === step;
+        const cls = isDone ? 'review-dot done' : isCurrent ? 'review-dot current' : 'review-dot future';
+        const sep = i > 0 ? '<span class="review-dot-sep">→</span>' : '';
+        return `${sep}<span class="${cls}">${s.label}</span>`;
+    }).join('');
+
+    // 타이머 or 보상 표시
+    let statusHtml;
+    if (!status.isEligible) {
+        statusHtml = `<span class="review-timer live-timer-review" data-unlock="${status.nextReviewTime}">계산중</span>`;
+    } else if (step === 1) {
+        statusHtml = `<span class="review-ready">${status.baseGem}💎 첫 학습!</span>`;
+    } else {
+        statusHtml = `<span class="review-ready">${status.baseGem}💎 지금 복습 가능!</span>`;
+    }
+
+    return `<div class="review-badge-strip"><div class="review-dots">${dotsHtml}</div><div class="review-status">${statusHtml}</div></div>`;
+}
+
+// ============================================================
+// [Forgetting-Curve 냉각 시간 계산] (구버전 호환용, 직접 호출 금지)
 // ============================================================
 function getNextEligibleTime(memoryLevel) {
     // 메모리 레벨에 따른 냉각 시간 (시간 단위)
@@ -2645,9 +2840,9 @@ function openStageSheet(chapterData) {
         const lastTime = stageLastClear[stage.id] || 0;
         let isTodayClear = new Date(lastTime).toDateString() === new Date().toDateString();
 
-        // [추가] 망각 상태 체크 로직
-        const memStatus = checkMemoryStatus(stage.id);
-        const isForgotten = memStatus.isForgotten;
+        // ★ [v1.1.0] 복습 상태 조회
+        const stageReviewStatusUI = getReviewStatus(stage.id);
+        const isForgotten = stageReviewStatusUI.isEligible && stageReviewStatusUI.step > 1; // 복습 가능 타이밍
 
         let statusBadgeHtml = "";
 
@@ -2656,21 +2851,21 @@ function openStageSheet(chapterData) {
             itemClass += ' today-clear';
             statusBadgeHtml = `<div class="today-badge">오늘 완료</div>`;
         }
-        // 2. 기억 다지기 배지
+        // 2. 기억 다지기 배지 (복습 가능 타이밍이고 step 2 이상)
         else if (isForgotten) {
             itemClass += ' forgotten-clear';
             statusBadgeHtml = `<div class="forgotten-badge">기억 다지기</div>`;
         }
 
-        // 3. 말씀 숙련도 배지 (타이틀 옆에 붙일 예정)
-        // 레벨 0은 굳이 표시 안 함 (깔끔하게)
+        // 3. 말씀 숙련도 배지
+        const memLevelUI = getMemoryLevelFromStep(stageReviewStatusUI.step);
         let levelBadgeHtml = "";
-        if (memStatus.level > 0) {
+        if (memLevelUI > 0) {
             let colorClass = "mem-lv-low"; // 초록 (Lv.1~2)
-            if (memStatus.level >= 5) colorClass = "mem-lv-high"; // 빨강 (Lv.5+)
-            else if (memStatus.level >= 3) colorClass = "mem-lv-mid"; // 파랑 (Lv.3~4)
+            if (memLevelUI >= 5) colorClass = "mem-lv-high"; // 빨강 (Lv.5+)
+            else if (memLevelUI >= 3) colorClass = "mem-lv-mid"; // 파랑 (Lv.3~4)
 
-            levelBadgeHtml = `<span class="mem-badge ${colorClass}">Lv.${memStatus.level}</span>`;
+            levelBadgeHtml = `<span class="mem-badge ${colorClass}">Lv.${memLevelUI}</span>`;
         }
 
         item.className = itemClass;
@@ -2695,88 +2890,16 @@ function openStageSheet(chapterData) {
 
         if (canChooseReviewMode) {
             rightSideContent = `<div style="font-size:1.2rem; color:#bdc3c7;">⚙️</div>`;
-
-            // ★ [때를 따른 양식 보너스 표시]
-            const timedBonus = getTimedBonus(stage.id);
-            const bonusPeek = peekTimedBonus(stage.id);
-            const baseGem = 10;
-            const bonusMultiplier = (bonusPeek === 1) ? 5 : (bonusPeek === 2) ? 2 : (bonusPeek === 3) ? 1.5 : 1;
-            let displayGem = Math.floor(baseGem * bonusMultiplier);
-            if (isForgotten) displayGem = Math.floor(displayGem * 1.1);
-            const forgottenTag = isForgotten ? " 💜+10%" : "";
-
-            let rewardLabel = "";
-            if (bonusPeek === 1) {
-                rewardLabel = `🎁[4회차] ${displayGem}💎 (×5)${forgottenTag}`;
-            } else if (bonusPeek === 2) {
-                rewardLabel = `⚔️[3회차] ${displayGem}💎 (×2)${forgottenTag}`;
-            } else if (bonusPeek === 3) {
-                rewardLabel = `🔱[2회차] ${displayGem}💎 (×1.5)${forgottenTag}`;
-            } else if (timedBonus.remaining > 0) {
-                const BONUS_THRESHOLDS = { 3: 600000, 2: 3600000, 1: 21600000 };
-                const nextUnlock = timedBonus.lastClear + BONUS_THRESHOLDS[timedBonus.remaining];
-                const nextLabel = timedBonus.remaining === 3 ? '×1.5' : timedBonus.remaining === 2 ? '×2' : '×5';
-                rewardLabel = `⏳[<span class="live-timer-bonus" data-unlock="${nextUnlock}">계산중</span>] ${displayGem}💎 → ${nextLabel}${forgottenTag}`;
-            } else {
-                rewardLabel = `⏳[기억 숙성 중] ${displayGem}💎 (×1)${forgottenTag}`;
-            }
-            const bossNote = (stage.type === 'boss' || stage.type === 'mid-boss')
-                ? `<div style="font-size:0.7rem; color:#7f8c8d; margin-top:2px;">정확도/성전/퍼펙트는 별도 적용</div>`
-                : "";
-            rewardInfo = `<div style="font-size:0.75rem; color:#e67e22; font-weight:bold; margin-top:4px;">${rewardLabel}</div>${bossNote}`;
         }
         else if (isCoolingDown) {
-            // 쿨타임 중
             rightSideContent = `<div class="live-timer" data-unlock="${progress.unlockTime}" style="font-size:0.9rem; color:#e74c3c; font-weight:bold; background:#fff0f0; padding:4px 8px; border-radius:12px; border:1px solid #e74c3c;">⏳ 계산중</div>`;
-            rewardInfo = `<div style="font-size:0.75rem; color:#95a5a6; margin-top:4px;">뇌가 소화 중입니다...</div>`;
         }
         else {
-            // 안 깼고 쿨타임도 아님 -> 재생 버튼
             rightSideContent = `<div style="font-size:1.2rem; color:#f1c40f;">▶</div>`;
-
-            // ★ [통일] 모든 스테이지에 때를 따른 양식 보너스 표시
-            const timedBonus2 = getTimedBonus(stage.id);
-            const bonusPeek2 = peekTimedBonus(stage.id);
-            const bonusMultiplier2 = (bonusPeek2 === 1) ? 5 : (bonusPeek2 === 2) ? 2 : (bonusPeek2 === 3) ? 1.5 : 1;
-            const baseGem2 = (stage.type === 'boss' || stage.type === 'mid-boss')
-                ? (stage.targetVerseCount || 0) * 10
-                : 10;
-            let displayGem2 = Math.floor(baseGem2 * bonusMultiplier2);
-            if (isForgotten) displayGem2 = Math.floor(displayGem2 * 1.1);
-            const forgottenTag2 = isForgotten ? " 💜+10%" : "";
-
-            let rewardLabel2 = "";
-            if (timedBonus2.lastClear === 0) {
-                rewardLabel2 = `📖[신규] ${displayGem2}💎 (×1)${forgottenTag2}`;
-            } else if (bonusPeek2 === 1) {
-                rewardLabel2 = `🎁[4회차] ${displayGem2}💎 (×5)${forgottenTag2}`;
-            } else if (bonusPeek2 === 2) {
-                rewardLabel2 = `⚔️[3회차] ${displayGem2}💎 (×2)${forgottenTag2}`;
-            } else if (bonusPeek2 === 3) {
-                rewardLabel2 = `🔱[2회차] ${displayGem2}💎 (×1.5)${forgottenTag2}`;
-            } else if (timedBonus2.remaining > 0) {
-                const BONUS_THRESHOLDS2 = { 3: 600000, 2: 3600000, 1: 21600000 };
-                const nextUnlock2 = timedBonus2.lastClear + BONUS_THRESHOLDS2[timedBonus2.remaining];
-                const nextLabel2 = timedBonus2.remaining === 3 ? '×1.5' : timedBonus2.remaining === 2 ? '×2' : '×5';
-                rewardLabel2 = `⏳[<span class="live-timer-bonus" data-unlock="${nextUnlock2}">계산중</span>] ${displayGem2}💎 → ${nextLabel2}${forgottenTag2}`;
-            } else {
-                rewardLabel2 = `⏳[기억 숙성 중] ${displayGem2}💎 (×1)${forgottenTag2}`;
-            }
-            rewardInfo = `<div style="font-size:0.75rem; color:#e67e22; font-weight:bold; margin-top:4px;">${rewardLabel2}</div>`;
         }
 
-        // 3-2. 다음 복습 주기 카운트다운
-        let reviewCountdownHtml = "";
-        if (memStatus.remainTime !== null && !isForgotten) {
-            const remainHours = memStatus.remainTime;
-            let countdownText;
-            if (remainHours < 1) {
-                countdownText = "1시간 이내";
-            } else {
-                countdownText = `${Math.floor(remainHours)}시간`;
-            }
-            reviewCountdownHtml = `<div style="font-size:0.72rem; color:#95a5a6; margin-top:3px;">⏱ 보너스 초기화까지 ${countdownText}</div>`;
-        }
+        // ★ [v1.1.0] 복습 단계 배지 (일반 스테이지에만 표시)
+        rewardInfo = isNormalStage ? buildReviewBadgeHtml(stage.id) : "";
 
         // 4. HTML 조립
         item.innerHTML = `
@@ -2786,7 +2909,6 @@ function openStageSheet(chapterData) {
         <div class="stage-title">
             ${levelBadgeHtml} ${stage.title}  </div>
         <div class="stage-desc">${stage.desc}</div>
-        ${reviewCountdownHtml}
         ${rewardInfo}
     </div>
     ${rightSideContent}
@@ -2846,7 +2968,7 @@ function openStageSheet(chapterData) {
             }
         });
 
-        // 보너스 대기 타이머 (live-timer-bonus)
+        // 보너스 대기 타이머 (live-timer-bonus) - 구버전 호환용
         document.querySelectorAll('.live-timer-bonus').forEach(el => {
             const unlockTime = parseInt(el.dataset.unlock);
             const diff = unlockTime - now;
@@ -2858,6 +2980,26 @@ function openStageSheet(chapterData) {
                     ? `${Math.floor(totalMins / 60)}시간 ${totalMins % 60 > 0 ? (totalMins % 60) + '분' : ''}`.trim()
                     : (totalMins > 0 ? totalMins + '분' : '1분 미만');
                 el.innerText = `${timeStr} 후 복습 추천`;
+            }
+        });
+
+        // ★ [v1.1.0] 복습 단계 배지 타이머 (live-timer-review)
+        document.querySelectorAll('.live-timer-review').forEach(el => {
+            const unlockTime = parseInt(el.dataset.unlock);
+            const diff = unlockTime - now;
+            if (diff <= 0) {
+                el.textContent = "지금 복습 가능!";
+                el.className = 'review-ready';
+            } else {
+                const totalMins = Math.floor(diff / 60000);
+                const d = Math.floor(totalMins / 1440);
+                const h = Math.floor((totalMins % 1440) / 60);
+                const m = totalMins % 60;
+                let timeStr = '';
+                if (d > 0) timeStr += `${d}일 `;
+                if (h > 0) timeStr += `${h}시간 `;
+                if (m > 0 || timeStr === '') timeStr += `${m}분`;
+                el.textContent = `${timeStr.trim()} 후`;
             }
         });
     }
@@ -2917,13 +3059,14 @@ function getForgottenStages() {
         if (!chapter.stages) continue;
         for (let stage of chapter.stages) {
             const stageId = stage.id;
-            const memStatus = checkMemoryStatus(stageId);
-            if (memStatus && memStatus.isForgotten) {
+            const revStatus = getReviewStatus(stageId);
+            // 한 번 이상 클리어했고 복습 가능 타이밍인 스테이지 (step > 1이고 isEligible)
+            if (revStatus.step > 1 && revStatus.isEligible) {
                 forgottenList.push({
                     stageId,
                     chapterNum: chapter.chapter,
                     stageName: stage.name || `스테이지 ${stageId}`,
-                    memStatus
+                    memStatus: { level: getMemoryLevelFromStep(revStatus.step), isForgotten: true, remainTime: 0 }
                 });
             }
         }
@@ -3969,8 +4112,10 @@ function saveGameData() {
         mastery: stageMastery,
         clearDate: stageClearDate,
         lastClear: stageLastClear,
-        nextEligibleTime: stageNextEligibleTime, // ★ [Forgetting-Curve] 다음 클리어 가능 시간
-        timedBonus: stageTimedBonus, // ★ [때를 따른 양식] 각인 주기 기반 보너스
+        nextEligibleTime: stageNextEligibleTime, // 구버전 호환용
+        timedBonus: stageTimedBonus, // 구버전 호환용
+        reviewStep: stageReviewStep,       // ★ [v1.1.0] 직렬 복습 단계
+        nextReviewTime: stageNextReviewTime, // ★ [v1.1.0] 다음 복습 가능 시각
         // dailyAttempts 제거됨
         achievementStatus: achievementStatus,
         memoryLevels: stageMemoryLevels,
@@ -5120,25 +5265,26 @@ function showClearScreen() {
         
     } else {
         // ============================================================
-        // ▼ [일반 모드 전용] 때를 따른 양식 보너스 및 스트릭 업데이트
+        // ▼ [일반 모드 전용] 복습 단계 보너스 및 스트릭 업데이트
         // ============================================================
-        let baseGem = 10; // 기본 보상
-        msg = "📖 [훈련] 완료!";
-
         const sId = window.currentStageId;
-        bonusCount = peekTimedBonus(sId);
+        // ★ [v1.1.0] 보석 보상이 있었으면 stageClear에서 advanceReviewStep이 호출됨 → step이 +1된 상태
+        // window._lastClearGem에 실제 지급된 보석 수를 저장하도록 stageClear에서 설정
+        const earnedGem = (typeof window._lastClearGem === 'number') ? window._lastClearGem : 0;
+        const reviewSt = getReviewStatus(sId);
+        const completedStep = earnedGem > 0 ? Math.max(1, reviewSt.step - 1) : reviewSt.step;
+        let baseGem = earnedGem > 0 ? earnedGem : 0;
+        bonusCount = completedStep;
 
-        if (bonusCount === 1) {
-            baseGem *= 5;
-            msg += " 🎁 (때를 따른 양식 × 5배)";
-        } else if (bonusCount === 2) {
-            baseGem *= 2;
-            msg += " ⚔️ (때를 따른 양식 × 2배)";
-        } else if (bonusCount === 3) {
-            baseGem *= 1.5;
-            msg += " 🔱 (때를 따른 양식 × 1.5배)";
+        if (earnedGem > 0) {
+            if (completedStep === 1) {
+                msg = `📖 [훈련] 첫 학습 완료! (${baseGem}💎)`;
+            } else {
+                msg = `📖 [훈련] ${completedStep}회차 복습 완료! (${baseGem}💎)`;
+            }
         } else {
-            msg += " ⏳ (보너스 대기 중)";
+            msg = "📖 [훈련] 완료! (보석 없음 - 대기 중)";
+            baseGem = 0;
         }
 
         displayGem = Math.floor(baseGem * (accuracy / 100));
@@ -5172,21 +5318,29 @@ function showClearScreen() {
         document.getElementById('streak-days').innerText = streakDays;
     }
     
-    // 일반 스테이지: 각인 레벨 상승 멘트
+    // 일반 스테이지: 다음 복습 안내 멘트
     const quoteEl = document.getElementById('result-quote');
     if (quoteEl) {
         let quoteText = '';
         if (!isTraining) {
             const sId = window.currentStageId;
             if (sId) {
-                const masteryQuotes = {
-                    1: '말씀을 잊지 않고 싶으시다면<br>10분 후 다시 만나보세요.',
-                    2: '기억이 뿌리내리기 시작했습니다.<br>한 시간 뒤 다시 만나보세요.',
-                    3: '기억에 거름을 줬습니다.<br>6시간 후 다시 만나보세요.',
-                    4: '반복은 완벽을 만듭니다.'
-                };
-                const reviewCycle = 5 - bonusCount; // 4→1회차(10분), 3→2회차(1시간), 2→3회차(6시간), 1→완료
-                quoteText = masteryQuotes[reviewCycle] || '';
+                const nextStatus = getReviewStatus(sId);
+                // 다음 복습까지의 대기 시간 안내
+                const waitMs = getReviewWaitMs(nextStatus.step);
+                if (waitMs === 10 * 60 * 1000) {
+                    quoteText = '말씀을 잊지 않고 싶으시다면<br>10분 후 다시 만나보세요.';
+                } else if (waitMs === 60 * 60 * 1000) {
+                    quoteText = '기억이 뿌리내리기 시작했습니다.<br>한 시간 뒤 다시 만나보세요.';
+                } else if (waitMs === 6 * 60 * 60 * 1000) {
+                    quoteText = '기억에 거름을 줬습니다.<br>6시간 후 다시 만나보세요.';
+                } else if (waitMs === 23 * 60 * 60 * 1000) {
+                    quoteText = '오늘의 학습이 뿌리내립니다.<br>내일 다시 만나보세요.';
+                } else if (waitMs > 0) {
+                    quoteText = '반복은 완벽을 만듭니다.';
+                } else {
+                    quoteText = ''; // 더 이상 대기 없음
+                }
             }
         }
         quoteEl.innerHTML = quoteText;
@@ -6147,40 +6301,17 @@ function calculateScore(stageId, type, verseCount, hearts, isForgotten) {
         baseScore = hearts * 1;  // 일반: hearts × 1
     }
 
-    // ============================================================
-    // [때를 따른 양식 보너스] (각인 주기 기반, 모든 스테이지 적용)
-    // ============================================================
-    const bonusLevel = consumeTimedBonus(stageId); // 보너스 소진 후 사용 전 값 반환
-
-    // 보너스 배율 적용 (순방향: 복습 횟수가 쌓일수록 보상 증가)
-    if (bonusLevel === 1) {
-        // 4회차 보너스 (×5배, 6시간 후 복습)
-        baseScore = baseScore * 5;
-        isRetry = true;
-    } else if (bonusLevel === 2) {
-        // 3회차 보너스 (×2배, 1시간 후 복습)
-        baseScore = baseScore * 2;
-        isRetry = true;
-    } else if (bonusLevel === 3) {
-        // 2회차 보너스 (×1.5배, 10분 후 복습)
-        baseScore = baseScore * 1.5;
-        isRetry = true;
-    } else if (bonusLevel === 4) {
-        // 최초 클리어 (×1배)
-        baseScore = baseScore * 1;
-        isRetry = false;
-    } else {
-        // 너무 이르거나 쿨타임 (×1배)
-        baseScore = baseScore * 1;
-        isRetry = true;
-    }
-
+    // ★ [v1.1.0] 복습 타이밍 점수 보너스 (isEligible = 복습 가능 타이밍)
+    // isForgotten 파라미터가 true이면 복습 가능 타이밍으로 판단
     if (isForgotten) {
-        // (기억레벨+1) × 10% 보너스 적용 (최소 10%, Lv4이상 50%)
-        const memStatus = checkMemoryStatus(stageId);
-        let bonusPercent = ((memStatus.level + 1) * 0.1);
-        if (bonusPercent > 0.5) bonusPercent = 0.5; // 50% cap
-        baseScore = baseScore * (1 + bonusPercent);
+        const reviewSt = getReviewStatus(stageId);
+        const step = reviewSt.step > 1 ? reviewSt.step - 1 : 1; // 방금 advanceReviewStep 했으므로 -1
+        if (step >= 4) {
+            baseScore = baseScore * 1.5; // 6시간 이상 기다린 복습: 점수 보너스
+            isRetry = true;
+        } else {
+            isRetry = true;
+        }
     }
 
     // ... (이하 부스터 적용 및 저장 로직 그대로 유지) ...
@@ -7402,9 +7533,12 @@ stageClear = function (type) {
         // 변수 호이스팅 문제 방지용 선언
         let verseCnt = 1;
 
-        const memStatus = checkMemoryStatus(sId);
-        const prevLevel = memStatus.level;
-        const isForgotten = memStatus.isForgotten;
+        // ★ [v1.1.0] 직렬 복습 상태 조회
+        const reviewStatus = getReviewStatus(sId);
+        const isEligible = reviewStatus.isEligible;
+        const isFirstClear = reviewStatus.isFirstClear;
+        // 구버전 호환: calculateScore 등 내부 호환용
+        const isForgotten = isEligible; // 복습 가능 타이밍 = 구 isForgotten 역할 (calculateScore 호환용)
 
         let baseGem = 0;
         let msg = `🎉 클리어 성공!\n\n`;
@@ -7416,10 +7550,8 @@ stageClear = function (type) {
 
         // [A] 보스 (챕터 전체)
         if (type === 'boss') {
-            // 각인 주기가 지난 경우에만 클리어 시각 갱신
-            if (isForgotten) {
-                stageMemoryLevels[sId] = (prevLevel || 0) + 1; // prevLevel 변수로 안전하게 통일
-            }
+            // 복습 단계 상태 갱신 (보석은 별도 계산)
+            if (isEligible) advanceReviewStep(sId);
             const verseCount = bibleData[chNum] ? bibleData[chNum].length : 0;
             const rewardData = calculateProgressiveReward(chNum, verseCount, 1);
             // ★ [통일] 보스 기본 보상: 보스 절수 × 10 (mid-boss 상태 무관)
@@ -7478,8 +7610,8 @@ stageClear = function (type) {
                 // 실제 hp 값으로 계산
                 verseCnt = actualHp;
 
-                // 👉 [추가된 부분] 중간 점검도 클리어 시 말씀 숙련도(Lv)을 올려줍니다!
-                if (isForgotten) stageMemoryLevels[sId] = (prevLevel || 0) + 1;
+                // 복습 단계 상태 갱신 (보석은 별도 계산)
+                if (isEligible) advanceReviewStep(sId);
 
                 // 역주행 처리
                 if (chData && chData.stages) {
@@ -7502,12 +7634,25 @@ stageClear = function (type) {
                 updateMissionProgress('dragon'); // 주간 미션 (중보/보스)
             }
             else {
-                // 일반 스테이지: 때를 따른 양식 보너스
-                maxGem = 10; // 기본 보상
-                msg += "📖 [훈련] 완료!\n";
-                verseCnt = 1; // 일반은 1개
+                // ★ [v1.1.0] 일반 스테이지: 직렬 복습 시스템 적용
+                verseCnt = 1;
 
-                if (isForgotten) stageMemoryLevels[sId] = (prevLevel || 0) + 1;
+                if (isEligible) {
+                    const completingStep = reviewStatus.step;
+                    maxGem = advanceReviewStep(sId);
+                    if (completingStep === 1) {
+                        msg += `📖 [훈련] 첫 학습 완료! (${maxGem}💎)\n`;
+                    } else {
+                        msg += `📖 [훈련] ${completingStep}회차 복습 완료! (${maxGem}💎)\n`;
+                    }
+                } else {
+                    maxGem = 0;
+                    const remainMin = Math.ceil(reviewStatus.remainMs / 60000);
+                    const timeStr = remainMin >= 60
+                        ? `${Math.floor(remainMin / 60)}시간 ${remainMin % 60 > 0 ? remainMin % 60 + '분' : ''}`.trim()
+                        : `${remainMin}분`;
+                    msg += `📖 [훈련] 완료! (보석 없음 - ${timeStr} 후 복습 시 보상)\n`;
+                }
 
                 // ★ 미션 업데이트
                 // 복습 모드, 전체 학습 모드, 신규 모드 모두 카운트
@@ -7521,48 +7666,9 @@ stageClear = function (type) {
 
             baseGem = maxGem;
         }
-        // 🌟 [핵심 수술] 망각 주기(isForgotten)가 도래했다면 남은 횟수를 무조건 3(5배)으로 초기화!
-        if (isForgotten) {
-            if (typeof resetTimedBonus === 'function') {
-                resetTimedBonus(sId); // 기존에 리셋 함수가 있다면 실행
-            }
-        }
-        // ★ [때를 따른 양식 보너스] 각인 주기 기반 (보스도 mid-boss/일반과 동일하게 적용)
-        let bonusLevel = peekTimedBonus(sId);
-        if (bonusLevel === 1) {
-            baseGem *= 5;
-            msg += `🎁 때를 따른 양식 ( × 5배)\n`;
-        } else if (bonusLevel === 2) {
-            baseGem *= 2;
-            msg += `⚔️ 때를 따른 양식 ( × 2배)\n`;
-        } else if (bonusLevel === 3) {
-            baseGem *= 1.5;
-            msg += `🔱 때를 따른 양식 ( × 1.5배)\n`;
-        } else {
-            msg += `⏳ 보너스 대기 중 (때를 따른 양식)\n`;
-        }
 
-        // 각인 주기가 지난 경우에만 클리어 시각 갱신 (주석 내용도 이제 바뀌어야겠죠!)
-        const isFirstClear = !stageLastClear[sId];
-
-        // 🌟 1. '오늘 완료' 뱃지를 위해 클리어 시각은 조건 없이 무조건 '지금'으로 갱신!
+        // 🌟 '오늘 완료' 뱃지를 위해 클리어 시각은 무조건 갱신
         stageLastClear[sId] = Date.now();
-
-        // 🌟 2. 말씀 숙련도 레벨업, 복습 주기 갱신, 보너스 지급은 원래대로 엄격하게 심사
-        if (isForgotten || isFirstClear) {
-
-            // 복습 주기 갱신: 현재 말씀 숙련도 레벨 기준으로 다음 eligibleTime 설정
-            const memoryLevel = stageMemoryLevels[sId] || 0;
-            stageNextEligibleTime[sId] = getNextEligibleTime(memoryLevel);
-
-            // 각인 주기가 지나서 깬 경우에만 보너스 제공
-            if (isForgotten) {
-                let bonusPercent = ((prevLevel + 1) * 0.1);
-                if (bonusPercent > 0.5) bonusPercent = 0.5;
-                baseGem = Math.floor(baseGem * (1 + bonusPercent));
-                msg += `💜 [말씀 숙련도] 보너스 +${Math.round(bonusPercent * 100)}%! (Lv.${prevLevel})\n`;
-            }
-        }
 
         // ★ [깨달음의 경지 보너스 적용]
         const collectionScore = getCurrentCollectionScore();
@@ -7626,6 +7732,7 @@ stageClear = function (type) {
 
         myGems += totalGem;
         updateStats('gem_get', totalGem);
+        window._lastClearGem = baseGemBeforeAccuracy; // 결과 모달용 (정확도 적용 전 기본 보석 수)
 
         if (!stageMastery[sId]) stageMastery[sId] = 0;
         stageMastery[sId]++;

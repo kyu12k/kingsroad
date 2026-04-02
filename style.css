@@ -3808,6 +3808,56 @@ body, html {
 .mem-lv-mid { background-color: #3498db; border: 1px solid #2980b9; } /* Lv.3~4 (파랑) */
 .mem-lv-high { background-color: #e74c3c; border: 1px solid #c0392b; } /* Lv.5+ (빨강) */
 
+/* ★ [v1.1.0] 복습 단계 배지 스트립 */
+.review-badge-strip {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 5px;
+}
+.review-dots {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1px;
+}
+.review-dot {
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 0.68rem;
+    font-weight: bold;
+    white-space: nowrap;
+}
+.review-dot.done {
+    background: #d5f5e3;
+    color: #1e8449;
+    opacity: 0.6;
+}
+.review-dot.current {
+    background: #f9e79f;
+    color: #7d6608;
+    border: 1px solid #f1c40f;
+}
+.review-dot.future {
+    background: rgba(0,0,0,0.06);
+    color: #95a5a6;
+}
+.review-dot-sep {
+    color: #bdc3c7;
+    font-size: 0.6rem;
+    padding: 0 1px;
+}
+.review-status {
+    font-size: 0.72rem;
+    font-weight: bold;
+}
+.review-timer {
+    color: #e74c3c;
+}
+.review-ready {
+    color: #27ae60;
+}
+
 /* [보스 사망 효과] */
 @keyframes boss-death-spin {
     0% { 
