@@ -2702,7 +2702,7 @@ function renderChapterMap() {
         if (isChapterClear) {
             const hardshipBtn = document.createElement('button');
             hardshipBtn.className = 'chapter-hardship-btn';
-            hardshipBtn.innerHTML = '🔥 심화 훈련';
+            hardshipBtn.innerHTML = '🔥 왕의 고난';
             hardshipBtn.style.cssText = isLeft
                 ? 'right: 12%; top: 50%; transform: translateY(-50%);'
                 : 'left: 12%; top: 50%; transform: translateY(-50%);';
