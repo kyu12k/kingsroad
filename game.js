@@ -2892,11 +2892,7 @@ function openStageSheet(chapterData) {
             itemClass += ' today-clear';
             statusBadgeHtml = `<div class="today-badge">오늘 완료</div>`;
         }
-        // 2. 기억 다지기 배지 (복습 가능 타이밍이고 step 2 이상)
-        else if (isForgotten) {
-            itemClass += ' forgotten-clear';
-            statusBadgeHtml = `<div class="forgotten-badge">기억 다지기</div>`;
-        }
+        // 2. 기억 다지기 배지 제거 — review badge strip으로 대체됨
 
         // 3. 말씀 숙련도 배지
         const memLevelUI = getMemoryLevelFromStep(stageReviewStatusUI.step);
