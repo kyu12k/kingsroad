@@ -5327,8 +5327,23 @@ function nextStep() {
 
 /* [수정] 훈련 중간 종료 처리 (phase 시스템 제거) */
 function finishTraining() {
-    // Phase 시스템이 제거되었으므로
-    // 모든 모드는 동일하게 처리: 결과 화면으로 이동
+    // 결과창 표시 전에 현재 스테이지의 보석 예상값을 갱신 (이전 스테이지 잔류값 방지)
+    // showClearScreen()은 stageClear()보다 먼저 실행되므로 window._lastClearGem이 이전 스테이지 값일 수 있음
+    const sId = window.currentStageId;
+    if (!window.isTrainingMode && !window.isHardshipMode && sId) {
+        const reviewSt = getReviewStatus(sId);
+        if (reviewSt.isEligible) {
+            const strength = reviewSt.step > 1 ? getMemoryStrength(sId) : null;
+            const previewOutcome = (strength === null || strength >= 0.8) ? 'perfect'
+                                 : strength >= 0.4 ? 'good'
+                                 : 'miss';
+            window._lastClearGem = previewOutcome === 'miss' ? 0 : getReviewBaseGem(reviewSt.step);
+            window._lastClearOutcome = previewOutcome;
+        } else {
+            window._lastClearGem = 0;
+            window._lastClearOutcome = null;
+        }
+    }
     showClearScreen();
 }
 
