@@ -7668,34 +7668,43 @@ stageClear = function (type) {
         const currentWeekId = (typeof getWeekId === 'function') ? getWeekId() : null;
         const chNum = parseInt(sId.split('-')[0]);
 
-        // [A] 보스 (챕터 전체)
+        // [A] 보스 (챕터 전체) — 중간점검과 동일한 편의 트리거 방식
         if (type === 'boss') {
-            // 복습 단계 상태 갱신 (보석은 별도 계산)
-            if (isEligible) advanceReviewStep(sId);
-            const verseCount = bibleData[chNum] ? bibleData[chNum].length : 0;
-            const rewardData = calculateProgressiveReward(chNum, verseCount, 1);
-            // ★ [통일] 보스 기본 보상: 보스 절수 × 10 (mid-boss 상태 무관)
-            baseGem = verseCount * 10;
-            msg += `🐲 [드래곤 토벌] ${verseCount}절 완료!\n`;
-
-            // ★ 보스 클리어 시 mid-boss를 당일 클리어로 자동 마킹하지 않음
-            // (때를 따른 양식/표시 일관성 유지)
-
-            // ★ 보스 stage 객체에서 실제 hp 값 가져오기
             const chData = gameData.find(c => c.id === chNum);
-            let bossHpForScore = verseCount; // 기본값
-            if (chData) {
-                const bossStage = chData.stages.find(s => s.id === sId);
-                if (bossStage && bossStage.targetVerseCount) {
-                    bossHpForScore = bossStage.targetVerseCount; // ★ 실제 hp 값 사용
-                }
+
+            // 챕터 내 모든 노멀 스테이지 일괄 처리
+            let subGemTotal = 0;
+            let eligibleSubCount = 0;
+
+            if (chData && chData.stages) {
+                chData.stages.forEach(targetStage => {
+                    if (targetStage.type !== 'normal') return;
+                    const subId = targetStage.id;
+
+                    // 클리어 기록 (게임 진행용 — eligible 여부 무관)
+                    if (!stageMastery[subId]) stageMastery[subId] = 0;
+                    if (!stageClearDate[subId]) stageClearDate[subId] = getMemoryQuizDate();
+                    targetStage.cleared = true;
+                    stageLastClear[subId] = Date.now(); // 기억 강도 100% 리셋
+
+                    // 복습 보상 (대기 중이 아닌 서브스테이지만)
+                    const subStatus = getReviewStatus(subId);
+                    if (subStatus.isEligible) {
+                        const earned = advanceReviewStep(subId);
+                        stageMastery[subId]++;
+                        subGemTotal += earned;
+                        eligibleSubCount++;
+                    }
+                });
             }
 
-            verseCnt = bossHpForScore;
-            // 하위 스테이지 자동 처리 제거: 보스 클리어가 다른 스테이지에 영향 주지 않음
+            baseGem = subGemTotal;
+            verseCnt = eligibleSubCount; // 승점 계산용
+            msg += `🐲 [드래곤 토벌] ${eligibleSubCount}개 스테이지 복습!\n`;
+
             // ★ 미션 업데이트: 보스 처치
             updateMissionProgress('checkpointBoss'); // 일일 미션
-            updateMissionProgress('dragon'); // 주간 미션 
+            updateMissionProgress('dragon'); // 주간 미션
         }
         // [B] 일반 / 중간점검
         else {
