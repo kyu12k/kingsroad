@@ -51,7 +51,9 @@ step 10+: 이후 지수 증가 (약 2배씩)
 | `getReviewStatus(id)` | game.js:1927 | 현재 스텝, 복습 가능 여부, 남은 시간 |
 | `advanceReviewStep(id)` | game.js:1939 | 복습 완료 시 스텝 증가 + 다음 시간 계산 |
 | `getMemoryStrength(id)` | game.js:~1949 | 에빙하우스 공식으로 현재 기억 강도(0~1) 반환 |
-| `getMemoryLevelFromStep(step)` | game.js:~1983 | 스텝 → 레벨(0~5) 변환 |
+| `getSubStagesOfMidBoss(chData, stage)` | game.js:~1983 | 중간점검 소속 서브스테이지 목록 반환 |
+| `getMidBossAvgStrength(chData, stage)` | game.js:~1991 | 중간점검 소속 서브스테이지 평균 기억 강도 반환 |
+| `getMemoryLevelFromStep(step)` | game.js:~2003 | 스텝 → 레벨(0~5) 변환 |
 | `buildReviewBadgeHtml(id)` | game.js:2010 | 복습 단계 배지 HTML 생성 |
 | `openStageSheet()` | game.js:2809 | 스테이지 시트 열기 + 목록 렌더링 |
 | `updateSheetTimers()` | game.js:~2956 | 60초마다 타이머 + 기억 강도 바 업데이트 |
@@ -80,6 +82,17 @@ CSS 클래스: `mem-strength-green` (≥80%), `mem-strength-yellow` (≥60%), `m
 
 ---
 
+## 중간점검(mid-boss) 클리어 동작
+
+중간점검은 편의 트리거 개념으로, **자체 복습 스텝/보상 없음**. 클리어 시:
+- 소속 서브스테이지 중 **대기 중이 아닌(eligible)** 것만 `advanceReviewStep()` 호출
+- eligible 서브스테이지의 `stageLastClear`, `stageMastery`, `stageClearDate` 업데이트
+- 보석 = eligible 서브스테이지 각각의 `baseGem` 합산
+- 승점 = eligible 서브스테이지 수 × hearts × 1
+- 대기 중인 서브스테이지는 스텝/타이머 완전 무시
+
+---
+
 ## 스테이지 시트 UI 구조
 
 스테이지 목록 아이템 구성 (일반 스테이지 기준):
@@ -87,8 +100,16 @@ CSS 클래스: `mem-strength-green` (≥80%), `mem-strength-yellow` (≥60%), `m
 [상태 배지] [아이콘] [제목 + 설명] [복습 단계 배지] [기억 강도 바]   [오른쪽: ▶ / ⏳ / ⚙️]
 ```
 
+중간점검 아이템 구성:
+```
+[상태 배지] [아이콘] [제목 + 설명] [서브스테이지 평균 기억 강도 바]   [오른쪽: ▶ / ⏳]
+```
+- Lv 배지 없음, 복습 단계 배지 없음
+- `data-mid-boss-id` 속성으로 `updateSheetTimers()`에서 별도 업데이트
+
 배지 종류:
 - `today-badge`: 오늘 클리어
 - `forgotten-badge`: 복습 가능 (step > 1)
-- `mem-lv-low/mid/high`: 기억 레벨 (Lv.1~5+)
-- `mem-strength-bar-wrap`: 기억 강도 바 (에빙하우스)
+- `mem-lv-low/mid/high`: 기억 레벨 (Lv.1~5+, 일반 스테이지만)
+- `mem-strength-bar-wrap[data-stage-id]`: 기억 강도 바 (일반 스테이지)
+- `mem-strength-bar-wrap[data-mid-boss-id]`: 평균 기억 강도 바 (중간점검)

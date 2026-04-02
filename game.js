@@ -1980,6 +1980,27 @@ function getMemoryStrength(stageId) {
     return Math.max(0, Math.min(1, Math.exp(-elapsedHr / S)));
 }
 
+// 중간점검 스테이지에 속한 서브스테이지 목록 반환 (앞쪽 normal 스테이지들)
+function getSubStagesOfMidBoss(chData, midBossStage) {
+    const idx = chData.stages.findIndex(s => s.id === midBossStage.id);
+    const subs = [];
+    for (let i = idx - 1; i >= 0; i--) {
+        const s = chData.stages[i];
+        if (s.type === 'boss' || s.type === 'mid-boss') break;
+        subs.push(s);
+    }
+    return subs;
+}
+
+// 중간점검 소속 서브스테이지들의 평균 기억 강도(0~1) 반환
+function getMidBossAvgStrength(chData, midBossStage) {
+    const subs = getSubStagesOfMidBoss(chData, midBossStage);
+    const cleared = subs.filter(s => stageLastClear[s.id]);
+    if (cleared.length === 0) return null;
+    const sum = cleared.reduce((acc, s) => acc + (getMemoryStrength(s.id) || 0), 0);
+    return sum / cleared.length;
+}
+
 // step → 통계/배지 표시용 레벨(0~5) 변환 (getTotalMemoryLevel, mem-badge 호환용)
 function getMemoryLevelFromStep(step) {
     if (step <= 1) return 0;
@@ -2894,10 +2915,10 @@ function openStageSheet(chapterData) {
         }
         // 2. 기억 다지기 배지 제거 — review badge strip으로 대체됨
 
-        // 3. 말씀 숙련도 배지
+        // 3. 말씀 숙련도 배지 (중간점검은 자체 스텝 없으므로 미표시)
         const memLevelUI = getMemoryLevelFromStep(stageReviewStatusUI.step);
         let levelBadgeHtml = "";
-        if (memLevelUI > 0) {
+        if (memLevelUI > 0 && stage.type !== 'mid-boss') {
             let colorClass = "mem-lv-low"; // 초록 (Lv.1~2)
             if (memLevelUI >= 5) colorClass = "mem-lv-high"; // 빨강 (Lv.5+)
             else if (memLevelUI >= 3) colorClass = "mem-lv-mid"; // 파랑 (Lv.3~4)
@@ -2949,6 +2970,17 @@ function openStageSheet(chapterData) {
                                  : pct >= 40 ? 'mem-strength-orange'
                                  : 'mem-strength-red';
                 memoryBarHtml = `<div class="mem-strength-bar-wrap" data-stage-id="${stage.id}"><div class="mem-strength-label">기억 강도 <span class="mem-strength-pct">${pct}%</span></div><div class="mem-strength-track"><div class="mem-strength-fill ${colorClass}" style="width:${pct}%"></div></div></div>`;
+            }
+        } else if (stage.type === 'mid-boss') {
+            // 중간점검: 소속 서브스테이지 평균 기억 강도 표시
+            const avgStrength = getMidBossAvgStrength(chapterData, stage);
+            if (avgStrength !== null) {
+                const pct = Math.round(avgStrength * 100);
+                const colorClass = pct >= 80 ? 'mem-strength-green'
+                                 : pct >= 60 ? 'mem-strength-yellow'
+                                 : pct >= 40 ? 'mem-strength-orange'
+                                 : 'mem-strength-red';
+                memoryBarHtml = `<div class="mem-strength-bar-wrap" data-mid-boss-id="${stage.id}"><div class="mem-strength-label">평균 기억 강도 <span class="mem-strength-pct">${pct}%</span></div><div class="mem-strength-track"><div class="mem-strength-fill ${colorClass}" style="width:${pct}%"></div></div></div>`;
             }
         }
 
@@ -3055,12 +3087,33 @@ function openStageSheet(chapterData) {
             }
         });
 
-        // ★ [에빙하우스] 기억 강도 바 업데이트
+        // ★ [에빙하우스] 기억 강도 바 업데이트 (일반 스테이지)
         document.querySelectorAll('.mem-strength-bar-wrap[data-stage-id]').forEach(wrap => {
             const sid = wrap.dataset.stageId;
             const strength = getMemoryStrength(sid);
             if (strength === null) return;
             const pct = Math.round(strength * 100);
+            const colorClass = pct >= 80 ? 'mem-strength-green'
+                             : pct >= 60 ? 'mem-strength-yellow'
+                             : pct >= 40 ? 'mem-strength-orange'
+                             : 'mem-strength-red';
+            const fill = wrap.querySelector('.mem-strength-fill');
+            const pctEl = wrap.querySelector('.mem-strength-pct');
+            if (fill) { fill.style.width = pct + '%'; fill.className = `mem-strength-fill ${colorClass}`; }
+            if (pctEl) pctEl.textContent = pct + '%';
+        });
+
+        // ★ [에빙하우스] 기억 강도 바 업데이트 (중간점검 — 서브스테이지 평균)
+        document.querySelectorAll('.mem-strength-bar-wrap[data-mid-boss-id]').forEach(wrap => {
+            const midBossId = wrap.dataset.midBossId;
+            const chNum = parseInt(midBossId.split('-')[0]);
+            const chData = gameData.find(c => c.id === chNum);
+            if (!chData) return;
+            const midBossStage = chData.stages.find(s => s.id === midBossId);
+            if (!midBossStage) return;
+            const avgStrength = getMidBossAvgStrength(chData, midBossStage);
+            if (avgStrength === null) return;
+            const pct = Math.round(avgStrength * 100);
             const colorClass = pct >= 80 ? 'mem-strength-green'
                              : pct >= 60 ? 'mem-strength-yellow'
                              : pct >= 40 ? 'mem-strength-orange'
@@ -6407,7 +6460,6 @@ function calculateScore(stageId, type, verseCount, hearts, isForgotten) {
         bonus: bonus,
         isRetry: isRetry,
         blocked: false,
-        bonusLevel: bonusLevel
     };
 }
 
@@ -7650,50 +7702,39 @@ stageClear = function (type) {
             let maxGem = 0;
 
             if (type === 'mid-boss') {
-                let startV = 1;
-                let endV = 5;
                 const chData = gameData.find(c => c.id === chNum);
-                let actualHp = 5; // 기본값
 
-                if (chData) {
-                    // 현재 스테이지의 실제 hp 값 찾기
-                    const currentStage = chData.stages.find(s => s.id === sId);
-                    if (currentStage && currentStage.targetVerseCount) {
-                        actualHp = currentStage.targetVerseCount; // ★ 실제 hp 값 사용
-                    }
+                // 서브스테이지 일괄 처리 (중간점검은 편의 트리거 — 자체 보상 없음)
+                let subGemTotal = 0;
+                let eligibleSubCount = 0;
 
-                    const midBosses = chData.stages.filter(s => s.type === 'mid-boss');
-                    const myIndex = midBosses.findIndex(s => s.id === sId);
-                    if (myIndex !== -1) {
-                        startV = (myIndex * 5) + 1;
-                        endV = startV + 4;
-                    }
-                }
-                const rewardData = calculateProgressiveReward(chNum, endV, startV);
-
-                // ★ [통일] 중간보스도 기본 보상으로 통일 (때를 따른 양식 보너스로 대체)
-                maxGem = actualHp * 10; // 기본: 절수 × 10
-                msg += `🛡️ [중간 점검] ${actualHp}절 완료!\n`;
-
-                // 실제 hp 값으로 계산
-                verseCnt = actualHp;
-
-                // 복습 단계 상태 갱신 (보석은 별도 계산)
-                if (isEligible) advanceReviewStep(sId);
-
-                // 역주행 처리
                 if (chData && chData.stages) {
-                    let myIndexInMap = chData.stages.findIndex(s => s.id === sId);
+                    const myIndexInMap = chData.stages.findIndex(s => s.id === sId);
                     for (let i = myIndexInMap - 1; i >= 0; i--) {
                         const targetStage = chData.stages[i];
                         if (targetStage.type === 'boss' || targetStage.type === 'mid-boss') break;
                         const subId = targetStage.id;
+
+                        // 클리어 기록 (게임 진행용 — eligible 여부 무관)
                         if (!stageMastery[subId]) stageMastery[subId] = 0;
-                        stageMastery[subId]++;
                         if (!stageClearDate[subId]) stageClearDate[subId] = getMemoryQuizDate();
                         targetStage.cleared = true;
+
+                        // 복습 보상 (대기 중이 아닌 서브스테이지만)
+                        const subStatus = getReviewStatus(subId);
+                        if (subStatus.isEligible) {
+                            const earned = advanceReviewStep(subId);
+                            stageMastery[subId]++;
+                            stageLastClear[subId] = Date.now(); // 기억 강도 100% 리셋
+                            subGemTotal += earned;
+                            eligibleSubCount++;
+                        }
                     }
                 }
+
+                maxGem = subGemTotal;
+                verseCnt = eligibleSubCount; // 승점 계산용 (보스/중보 공식: verseCount × hearts × 1)
+                msg += `🛡️ [중간 점검] ${eligibleSubCount}개 스테이지 복습!\n`;
 
                 // ★ 미션 업데이트: 중보 처치
                 if (!isAlreadyClearedToday) {
