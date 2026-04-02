@@ -2340,7 +2340,7 @@ for (let i = 1; i <= 22; i++) {
                 chapterObj.stages.push({
                     id: `${i}-mid-${range.end}`, // ID는 끝 번호 기준
                     title: `🛡️ 중간 점검 (${i}장 ${range.start}~${range.end}절)`,
-                    desc: `지금까지 외운 ${hp}개 절을 확인합니다.`,
+                    desc: `${hp}개 절을 한 번에 복습 또는 학습합니다.`,
                     type: "mid-boss",
                     targetVerseCount: hp, // ★ 실제 개수만큼 HP 설정!
                     locked: false,
@@ -3114,7 +3114,7 @@ function openStageSheet(chapterData) {
                 if (d > 0) timeStr += `${d}일 `;
                 if (h > 0) timeStr += `${h}시간 `;
                 if (m > 0 || timeStr === '') timeStr += `${m}분`;
-                el.textContent = `${timeStr.trim()} 후`;
+                el.textContent = `${timeStr.trim()} 후 복습 추천(추가 보상)`;
             }
         });
 
@@ -7692,6 +7692,7 @@ stageClear = function (type) {
             // 챕터 내 모든 노멀 스테이지 일괄 처리
             let subGemTotal = 0;
             let eligibleSubCount = 0;
+            let totalSubCount = 0;
 
             if (chData && chData.stages) {
                 chData.stages.forEach(targetStage => {
@@ -7703,21 +7704,24 @@ stageClear = function (type) {
                     if (!stageClearDate[subId]) stageClearDate[subId] = getMemoryQuizDate();
                     targetStage.cleared = true;
                     stageLastClear[subId] = Date.now(); // 기억 강도 100% 리셋
+                    totalSubCount++;
 
-                    // 복습 보상 (대기 중이 아닌 서브스테이지만)
+                    // 복습 보상
                     const subStatus = getReviewStatus(subId);
                     if (subStatus.isEligible) {
                         const { earnedGem: earned } = advanceReviewStep(subId);
                         stageMastery[subId]++;
                         subGemTotal += earned;
                         eligibleSubCount++;
+                    } else {
+                        subGemTotal += 10; // 대기 중 최소 보상
                     }
                 });
             }
 
             baseGem = subGemTotal;
-            verseCnt = eligibleSubCount; // 승점 계산용
-            msg += `🐲 [드래곤 토벌] ${eligibleSubCount}개 스테이지 복습!\n`;
+            verseCnt = totalSubCount; // 승점 계산용: 전체 서브스테이지 수 × hearts
+            msg += `🐲 [드래곤 토벌] ${totalSubCount}개 스테이지 복습! (${eligibleSubCount}개 단계 상승)\n`;
 
             // ★ 미션 업데이트: 보스 처치
             updateMissionProgress('checkpointBoss'); // 일일 미션
@@ -7733,6 +7737,7 @@ stageClear = function (type) {
                 // 서브스테이지 일괄 처리 (중간점검은 편의 트리거 — 자체 보상 없음)
                 let subGemTotal = 0;
                 let eligibleSubCount = 0;
+                let totalSubCount = 0;
 
                 if (chData && chData.stages) {
                     const myIndexInMap = chData.stages.findIndex(s => s.id === sId);
@@ -7746,21 +7751,24 @@ stageClear = function (type) {
                         if (!stageClearDate[subId]) stageClearDate[subId] = getMemoryQuizDate();
                         targetStage.cleared = true;
                         stageLastClear[subId] = Date.now(); // 기억 강도 100% 리셋 (실제 복습했으므로 항상 적용)
+                        totalSubCount++;
 
-                        // 복습 보상 (대기 중이 아닌 서브스테이지만)
+                        // 복습 보상
                         const subStatus = getReviewStatus(subId);
                         if (subStatus.isEligible) {
                             const { earnedGem: earned } = advanceReviewStep(subId);
                             stageMastery[subId]++;
                             subGemTotal += earned;
                             eligibleSubCount++;
+                        } else {
+                            subGemTotal += 10; // 대기 중 최소 보상
                         }
                     }
                 }
 
                 maxGem = subGemTotal;
-                verseCnt = eligibleSubCount; // 승점 계산용 (보스/중보 공식: verseCount × hearts × 1)
-                msg += `🛡️ [중간 점검] ${eligibleSubCount}개 스테이지 복습!\n`;
+                verseCnt = totalSubCount; // 승점 계산용: 전체 서브스테이지 수 × hearts
+                msg += `🛡️ [중간 점검] ${totalSubCount}개 스테이지 복습! (${eligibleSubCount}개 단계 상승)\n`;
 
                 // ★ 미션 업데이트: 중보 처치
                 if (!isAlreadyClearedToday) {
@@ -7783,12 +7791,12 @@ stageClear = function (type) {
                         msg += `📖 [훈련] ${completingStep}회차 복습 완료! (${maxGem}💎)\n`;
                     }
                 } else {
-                    maxGem = 0;
+                    maxGem = 10;
                     const remainMin = Math.ceil(reviewStatus.remainMs / 60000);
                     const timeStr = remainMin >= 60
                         ? `${Math.floor(remainMin / 60)}시간 ${remainMin % 60 > 0 ? remainMin % 60 + '분' : ''}`.trim()
                         : `${remainMin}분`;
-                    msg += `📖 [훈련] 완료! (보석 없음 - ${timeStr} 후 복습 시 보상)\n`;
+                    msg += `📖 [훈련] 완료! (10💎 최소 보상 - ${timeStr} 후 복습 시 추가 보상)\n`;
                 }
 
                 // ★ 미션 업데이트
@@ -12824,7 +12832,7 @@ const GUIDE_PAGES = [
                 <li>💎 누적 보석 획득</li>
                 <li>✨ 오타 없는 암송 (완벽 암송)</li>
                 <li>🏰 성전 건축 단계</li>
-                <li>🌅 새벽 암송 (새벽 5시 이전)</li>
+                <li>🌅 새벽 암송 (07시 이전 암송)</li>
             </ul>
         `
     }
