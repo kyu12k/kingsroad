@@ -3175,19 +3175,20 @@ function openModeSelect(stageId) {
 // 기억 다지기 스테이지 리스트를 수집하는 함수
 function getForgottenStages() {
     const forgottenList = [];
-    // gameData는 각 장별 스테이지 정보 배열
     for (let chapter of gameData) {
         if (!chapter.stages) continue;
         for (let stage of chapter.stages) {
+            // 중간점검/보스전 제외
+            if (stage.type === 'boss' || stage.type === 'mid-boss') continue;
             const stageId = stage.id;
             const revStatus = getReviewStatus(stageId);
-            // 한 번 이상 클리어했고 복습 가능 타이밍인 스테이지 (step > 1이고 isEligible)
             if (revStatus.step > 1 && revStatus.isEligible) {
+                const m = String(stageId).match(/^(\d+)-(\d+)$/);
+                const label = m ? `${m[1]}장 ${m[2]}절` : stageId;
                 forgottenList.push({
                     stageId,
-                    chapterNum: chapter.chapter,
-                    stageName: stage.name || `스테이지 ${stageId}`,
-                    memStatus: { level: getMemoryLevelFromStep(revStatus.step), isForgotten: true, remainTime: 0 }
+                    label,
+                    step: revStatus.step,
                 });
             }
         }
@@ -3213,7 +3214,7 @@ function openForgottenStagesOverlay() {
         overlay.style = 'display:flex; position:fixed; z-index:9999; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.97); color:#f1c40f; flex-direction:column; align-items:center; justify-content:center; font-size:1.2rem; text-align:center;';
         overlay.innerHTML = `
                 <div style="max-width:90vw; font-size:1.1em; line-height:1.7; font-weight:bold; color:#fff; text-shadow:0 2px 8px #222; margin-bottom:30px; flex-shrink: 0;">
-                    🕑 기억 다지기 보너스 스테이지<br><span style="font-size:0.95em; color:#f1c40f;">스테이지를 복습해서 <br>기억을 다지세요!(최대 보상 5배)</span>
+                    🕑 복습하기 좋은 때<br><span style="font-size:0.95em; color:#f1c40f;">스테이지를 복습해서 <br>기억을 다지세요!</span>
                 </div>
                 <div id="forgotten-stages-list" style="background:rgba(0,0,0,0.3); padding:20px; border-radius:15px; width:90vw; max-width:600px; min-width:220px; margin-bottom:30px; max-height:50vh; overflow-y:auto; flex-shrink: 0;">
                 </div>
@@ -3233,35 +3234,11 @@ function openForgottenStagesOverlay() {
     listDiv.innerHTML = '';
     for (const item of forgottenList) {
         const btn = document.createElement('button');
-        btn.innerHTML = `
-                <span style="font-weight:bold; color:#f1c40f;">${item.stageName}</span>
-                ${item.chapterNum !== undefined ? `<span style=\"color:#fff; font-size:0.95em; margin-left:8px;\">(제${item.chapterNum}장)</span>` : ''}
-                <span style="color:#e74c3c; font-size:0.9em; margin-left:8px;">바로 가기</span>
-            `;
+        btn.innerHTML = `<span style="font-weight:bold; color:#f1c40f;">${item.label}</span><span style="color:#bdc3c7; margin-left:8px;">- ${item.step}회차 복습 시점</span>`;
         btn.style = 'display:block; width:100%; background:rgba(241,196,15,0.12); border:1px solid #f1c40f; color:#fff; padding:12px 0; border-radius:12px; margin-bottom:10px; font-size:1.05rem; cursor:pointer; transition:background 0.2s;';
         btn.onclick = function () {
             closeForgottenStagesOverlay();
-            // 중간점검/보스전이면 바로 step6 진입, 아니면 복습 모드 선택
-            const stageData = (function () {
-                for (let chapter of gameData) {
-                    if (!chapter.stages) continue;
-                    for (let s of chapter.stages) {
-                        if (s.id === item.stageId) return s;
-                    }
-                }
-                return null;
-            })();
-            // 중간점검/보스전 인식 개선: type이 'mid-boss'/'boss'이거나 id에 'mid'/'boss' 포함 시
-            const isMidOrBoss = stageData && (
-                (stageData.type && (stageData.type === 'mid-boss' || stageData.type === 'boss' || stageData.type === 'midboss')) ||
-                (stageData.id && (String(stageData.id).includes('mid') || String(stageData.id).includes('boss')))
-            );
-            if (isMidOrBoss) {
-                window.currentStageId = item.stageId;
-                startBossBattle();
-            } else {
-                openModeSelect(item.stageId);
-            }
+            openModeSelect(item.stageId);
         };
         listDiv.appendChild(btn);
     }
