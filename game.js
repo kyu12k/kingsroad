@@ -7719,13 +7719,13 @@ stageClear = function (type) {
                         if (!stageMastery[subId]) stageMastery[subId] = 0;
                         if (!stageClearDate[subId]) stageClearDate[subId] = getMemoryQuizDate();
                         targetStage.cleared = true;
+                        stageLastClear[subId] = Date.now(); // 기억 강도 100% 리셋 (실제 복습했으므로 항상 적용)
 
                         // 복습 보상 (대기 중이 아닌 서브스테이지만)
                         const subStatus = getReviewStatus(subId);
                         if (subStatus.isEligible) {
                             const earned = advanceReviewStep(subId);
                             stageMastery[subId]++;
-                            stageLastClear[subId] = Date.now(); // 기억 강도 100% 리셋
                             subGemTotal += earned;
                             eligibleSubCount++;
                         }
