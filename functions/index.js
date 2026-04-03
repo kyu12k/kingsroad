@@ -424,13 +424,10 @@ exports.sendDailyNotifications = functions
                 .filter(doc => doc.data().fcmToken)
                 .map(doc => ({
                     token: doc.data().fcmToken,
-                    notification: {
+                    data: {
                         title: '킹스로드 복습 시간',
                         body: '오늘의 복습할 말씀이 기다리고 있습니다.',
-                    },
-                    webpush: {
-                        notification: { icon: '/icon-192.png' },
-                        fcmOptions: { link: 'https://kings-road-rank.web.app' }
+                        link: 'https://kings-road-rank.web.app'
                     }
                 }));
 
