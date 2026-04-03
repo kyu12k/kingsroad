@@ -400,3 +400,58 @@ exports.archiveMonthlyRankings = functions.pubsub
         }
     });
 
+// ── 매일 알림 발송 (매 분 실행) ─────────────────────────────────────────────
+
+exports.sendDailyNotifications = functions
+    .region('asia-northeast3')
+    .pubsub.schedule('* * * * *')
+    .timeZone('Asia/Seoul')
+    .onRun(async () => {
+        try {
+            const now = new Date();
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            const currentTime = `${hh}:${mm}`;
+
+            const snap = await db.collection('leaderboard')
+                .where('notificationTimes', 'array-contains', currentTime)
+                .get();
+
+            if (snap.empty) return null;
+
+            const messages = snap.docs
+                .filter(doc => doc.data().fcmToken)
+                .map(doc => ({
+                    token: doc.data().fcmToken,
+                    notification: {
+                        title: '킹스로드 복습 시간',
+                        body: '오늘의 복습할 말씀이 기다리고 있습니다.',
+                    },
+                    webpush: {
+                        notification: { icon: '/icon-192.png' },
+                        fcmOptions: { link: 'https://kings-road-rank.web.app' }
+                    }
+                }));
+
+            if (messages.length === 0) return null;
+
+            // FCM 최대 500개씩 배치 발송
+            const chunks = [];
+            for (let i = 0; i < messages.length; i += 500) {
+                chunks.push(messages.slice(i, i + 500));
+            }
+            const results = await Promise.all(chunks.map(chunk =>
+                admin.messaging().sendEach(chunk)
+            ));
+
+            const totalSent = results.reduce((sum, r) => sum + r.successCount, 0);
+            const totalFailed = results.reduce((sum, r) => sum + r.failureCount, 0);
+            console.log(`✅ 알림 발송 완료 [${currentTime}] 성공: ${totalSent}, 실패: ${totalFailed}`);
+
+            return null;
+        } catch (error) {
+            console.error('❌ 알림 발송 실패:', error);
+            return null;
+        }
+    });
+

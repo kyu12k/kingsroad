@@ -9204,6 +9204,147 @@ function openDataSettings() {
     modal.style.display = 'flex';
 }
 
+// ── 알림 설정 ──────────────────────────────────────────────────────────────
+
+const FCM_VAPID_KEY = 'BABLNeK2ZuUV6zqT4JwtDNnS1uhSKJY66RD2usuqooL3LpSI0Qlr82qa3PkrWHMcgJNa39TVWOF4GqyixAzN5Yc';
+
+async function initFCM() {
+    if (typeof firebase === 'undefined' || !firebase.messaging) return null;
+    try {
+        const messaging = firebase.messaging();
+        const token = await messaging.getToken({ vapidKey: FCM_VAPID_KEY });
+        if (token && myPlayerId) {
+            await db.collection('leaderboard').doc(myPlayerId).set(
+                { fcmToken: token }, { merge: true }
+            );
+        }
+        return token;
+    } catch (e) {
+        console.warn('FCM 토큰 취득 실패:', e);
+        return null;
+    }
+}
+
+async function openNotificationSettings() {
+    // 메뉴 닫기
+    const menuPanel = document.getElementById('menu-panel');
+    if (menuPanel) menuPanel.style.display = 'none';
+
+    let modal = document.getElementById('notification-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'notification-modal';
+        modal.className = 'modal-overlay';
+        modal.style.zIndex = '9999';
+        modal.innerHTML = `
+            <div class="result-card" style="max-width:340px; text-align:left; background:white; color:#2c3e50;">
+                <div class="result-header" style="font-size:1.4rem; text-align:center; color:#2c3e50; margin-bottom:16px;">
+                    🔔 알림 설정
+                </div>
+                <p style="font-size:0.9rem; color:#7f8c8d; margin-bottom:16px;">
+                    매일 지정한 시간에 복습 알림을 보내드립니다.<br>최대 3개까지 설정할 수 있습니다.
+                </p>
+                <div id="notif-time-list" style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;"></div>
+                <button id="notif-add-btn" onclick="notifAddTime()" style="width:100%; background:#3498db; color:white; border:none; padding:11px; border-radius:10px; font-weight:bold; cursor:pointer; margin-bottom:10px;">
+                    + 시간 추가
+                </button>
+                <button onclick="notifSave()" style="width:100%; background:#27ae60; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor:pointer; margin-bottom:8px;">
+                    저장
+                </button>
+                <button onclick="document.getElementById('notification-modal').style.display='none'" style="width:100%; background:#95a5a6; color:white; border:none; padding:12px; border-radius:30px; cursor:pointer; font-weight:bold;">
+                    닫기
+                </button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    modal.style.display = 'flex';
+
+    // 저장된 알림 시간 불러오기
+    let savedTimes = [];
+    try {
+        if (myPlayerId && db) {
+            const doc = await db.collection('leaderboard').doc(myPlayerId).get();
+            savedTimes = doc.data()?.notificationTimes || [];
+        }
+    } catch (e) { /* 오프라인 등 무시 */ }
+
+    const list = document.getElementById('notif-time-list');
+    list.innerHTML = '';
+    if (savedTimes.length === 0) {
+        notifAddTime();
+    } else {
+        savedTimes.forEach(t => notifAddTime(t));
+    }
+    notifUpdateAddBtn();
+}
+
+function notifAddTime(value = '') {
+    const list = document.getElementById('notif-time-list');
+    if (!list) return;
+    const rows = list.querySelectorAll('.notif-row');
+    if (rows.length >= 3) return;
+
+    const row = document.createElement('div');
+    row.className = 'notif-row';
+    row.style.cssText = 'display:flex; align-items:center; gap:8px;';
+    row.innerHTML = `
+        <input type="time" value="${value}" style="flex:1; padding:10px; border:1.5px solid #ddd; border-radius:8px; font-size:1rem; color:#2c3e50;">
+        <button onclick="this.closest('.notif-row').remove(); notifUpdateAddBtn();" style="background:#e74c3c; color:white; border:none; width:36px; height:36px; border-radius:8px; cursor:pointer; font-size:1.1rem;">✕</button>
+    `;
+    list.appendChild(row);
+    notifUpdateAddBtn();
+}
+
+function notifUpdateAddBtn() {
+    const list = document.getElementById('notif-time-list');
+    const btn = document.getElementById('notif-add-btn');
+    if (!list || !btn) return;
+    btn.style.display = list.querySelectorAll('.notif-row').length >= 3 ? 'none' : 'block';
+}
+
+async function notifSave() {
+    const rows = document.querySelectorAll('#notif-time-list .notif-row input[type=time]');
+    const times = Array.from(rows).map(i => i.value).filter(v => v);
+
+    if (times.length === 0) {
+        // 알림 해제
+        if (myPlayerId && db) {
+            await db.collection('leaderboard').doc(myPlayerId).set(
+                { notificationTimes: [], fcmToken: '' }, { merge: true }
+            );
+        }
+        document.getElementById('notification-modal').style.display = 'none';
+        showToast('알림이 해제되었습니다.');
+        return;
+    }
+
+    // 알림 권한 요청 + FCM 토큰 취득
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+        showToast('알림 권한이 필요합니다. 브라우저 설정에서 허용해주세요.');
+        return;
+    }
+
+    const token = await initFCM();
+    if (!token) {
+        showToast('알림 등록에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        return;
+    }
+
+    if (myPlayerId && db) {
+        await db.collection('leaderboard').doc(myPlayerId).set(
+            { notificationTimes: times }, { merge: true }
+        );
+    }
+
+    document.getElementById('notification-modal').style.display = 'none';
+    showToast(`알림이 설정되었습니다. (${times.join(', ')})`);
+}
+
+// ── 알림 설정 끝 ────────────────────────────────────────────────────────────
+
 // [기능 4] 데이터 완전 초기화 로직 (새로 추가)
 function resetGameData() {
     // 1차 경고

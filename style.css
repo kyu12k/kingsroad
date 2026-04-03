@@ -2214,6 +2214,21 @@ body, html {
     max-height: 90vh; overflow-y: auto;
 }
 
+/* 알림 설정 모달 */
+#notification-modal .notif-row input[type=time] {
+    background: #f8f9fa;
+    border: 1.5px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 1rem;
+    color: #2c3e50;
+    flex: 1;
+}
+#notification-modal .notif-row input[type=time]:focus {
+    border-color: #3498db;
+    outline: none;
+}
+
 /* 공지사항 아코디언 */
 .notice-item { border-bottom: 1px solid #ecf0f1; }
 .notice-item:last-child { border-bottom: none; }
