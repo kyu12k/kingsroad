@@ -1962,7 +1962,8 @@ function advanceReviewStep(stageId) {
         stageNextReviewTime[stageId] = Date.now() + waitMs;
     }
 
-    return { earnedGem: outcome === 'miss' ? 0 : earnedGem, outcome };
+    const finalGem = outcome === 'perfect' ? earnedGem : 10;
+    return { earnedGem: finalGem, outcome };
 }
 
 // ★ [에빙하우스] 현재 기억 강도 계산 (0~1)
@@ -5337,7 +5338,7 @@ function finishTraining() {
             const previewOutcome = (strength === null || strength >= 0.8) ? 'perfect'
                                  : strength >= 0.4 ? 'good'
                                  : 'miss';
-            window._lastClearGem = previewOutcome === 'miss' ? 0 : getReviewBaseGem(reviewSt.step);
+            window._lastClearGem = previewOutcome === 'perfect' ? getReviewBaseGem(reviewSt.step) : 10;
             window._lastClearOutcome = previewOutcome;
         } else {
             window._lastClearGem = 0;
