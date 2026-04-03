@@ -5481,11 +5481,12 @@ function showClearScreen() {
             if (sId) {
                 const nextStatus = getReviewStatus(sId);
                 const outcome = window._lastClearOutcome;
-                if (outcome === 'perfect' && nextStatus.step === 2) {
+                if (outcome === 'perfect' && nextStatus.step === 1) {
                     // step 1 클리어 (최초 학습 또는 miss 후 재학습)
+                    // advanceReviewStep 호출 전이므로 step이 아직 1
                     quoteText = '말씀을 잊지 않고 싶으시다면<br>10분 후 다시 만나보세요.';
                 } else if (outcome === 'perfect') {
-                    const waitMs = getReviewWaitMs(nextStatus.step);
+                    const waitMs = getReviewWaitMs(nextStatus.step + 1); // advanceReviewStep 호출 전이므로 +1
                     const hr = waitMs / 3600000;
                     let waitLabel;
                     if (hr < 1) waitLabel = `${Math.round(waitMs / 60000)}분`;
