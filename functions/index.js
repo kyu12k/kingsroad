@@ -409,8 +409,9 @@ exports.sendDailyNotifications = functions
     .onRun(async () => {
         try {
             const now = new Date();
-            const hh = String(now.getHours()).padStart(2, '0');
-            const mm = String(now.getMinutes()).padStart(2, '0');
+            const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000); // UTC → KST(+9)
+            const hh = String(kst.getUTCHours()).padStart(2, '0');
+            const mm = String(kst.getUTCMinutes()).padStart(2, '0');
             const currentTime = `${hh}:${mm}`;
 
             const snap = await db.collection('leaderboard')
