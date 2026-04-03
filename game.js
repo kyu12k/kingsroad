@@ -9306,42 +9306,49 @@ function notifUpdateAddBtn() {
 }
 
 async function notifSave() {
-    const rows = document.querySelectorAll('#notif-time-list .notif-row input[type=time]');
-    const times = Array.from(rows).map(i => i.value).filter(v => v);
+    const saveBtn = document.querySelector('#notification-modal [onclick="notifSave()"]');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '알림 예약 중...'; }
 
-    if (times.length === 0) {
-        // 알림 해제
+    try {
+        const rows = document.querySelectorAll('#notif-time-list .notif-row input[type=time]');
+        const times = Array.from(rows).map(i => i.value).filter(v => v);
+
+        if (times.length === 0) {
+            // 알림 해제
+            if (myPlayerId && db) {
+                await db.collection('leaderboard').doc(myPlayerId).set(
+                    { notificationTimes: [], fcmToken: '' }, { merge: true }
+                );
+            }
+            document.getElementById('notification-modal').style.display = 'none';
+            showToast('알림이 해제되었습니다.');
+            return;
+        }
+
+        // 알림 권한 요청 + FCM 토큰 취득
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+            showToast('알림 권한이 필요합니다. 브라우저 설정에서 허용해주세요.');
+            return;
+        }
+
+        const token = await initFCM();
+        if (!token) {
+            showToast('알림 등록에 실패했습니다. 잠시 후 다시 시도해주세요.');
+            return;
+        }
+
         if (myPlayerId && db) {
             await db.collection('leaderboard').doc(myPlayerId).set(
-                { notificationTimes: [], fcmToken: '' }, { merge: true }
+                { notificationTimes: times }, { merge: true }
             );
         }
+
         document.getElementById('notification-modal').style.display = 'none';
-        showToast('알림이 해제되었습니다.');
-        return;
+        showToast(`알림이 설정되었습니다. (${times.join(', ')})`);
+    } finally {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '저장'; }
     }
-
-    // 알림 권한 요청 + FCM 토큰 취득
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-        showToast('알림 권한이 필요합니다. 브라우저 설정에서 허용해주세요.');
-        return;
-    }
-
-    const token = await initFCM();
-    if (!token) {
-        showToast('알림 등록에 실패했습니다. 잠시 후 다시 시도해주세요.');
-        return;
-    }
-
-    if (myPlayerId && db) {
-        await db.collection('leaderboard').doc(myPlayerId).set(
-            { notificationTimes: times }, { merge: true }
-        );
-    }
-
-    document.getElementById('notification-modal').style.display = 'none';
-    showToast(`알림이 설정되었습니다. (${times.join(', ')})`);
 }
 
 // ── 알림 설정 끝 ────────────────────────────────────────────────────────────
