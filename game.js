@@ -1973,17 +1973,18 @@ function getMemoryStrength(stageId) {
     if (lastClear === 0) return null;
 
     const step = stageReviewStep[stageId] || 1;
-    // 각 스텝에서 다음 복습 시점에 R=0.8이 되도록 S 산출 (S = waitHr / 0.2231)
+    // S값 기준: 대복습 완료 직후 안정성이 약 2배 증가한다는 FSRS 이론 적용
+    // step 5, 8: 대복습(23hr, 71hr) 완료 후 S를 2배로 상향 → R=80% 여유 구간 확보
     const STABILITY_HOURS = [
         0.747,  // step 1: 10분 후 복습
         4.48,   // step 2: 1시간 후
         26.9,   // step 3: 6시간 후
         103.1,  // step 4: 23시간 후
-        103.1,  // step 5: 부스터 (안정성 유지)
-        103.1,  // step 6: 부스터 (안정성 유지)
-        318.4,  // step 7: 71시간 후
-        318.4,  // step 8: 부스터 (안정성 유지)
-        748.7,  // step 9: 167시간 후
+        206.0,  // step 5: 대복습(23hr) 완료 → S ×2 (R=80%: 46시간 후)
+        206.0,  // step 6: 부스터 (안정성 유지)
+        206.0,  // step 7: 부스터 (안정성 유지)
+        637.0,  // step 8: 대복습(71hr) 완료 → S ×2 (R=80%: 142시간 후)
+        748.7,  // step 9: 부스터 (안정성 유지)
     ];
 
     let S;
@@ -12903,6 +12904,10 @@ function finishHardshipSession(reason) {
 
     const resultModal = document.getElementById('result-modal');
     if (resultModal) {
+        // result-quote 초기화 (이전 일반 스테이지 복습 문구 잔류 방지)
+        const quoteEl = document.getElementById('result-quote');
+        if (quoteEl) { quoteEl.innerHTML = ''; quoteEl.style.display = 'none'; }
+
         const existingHistory = resultModal.querySelector('.hardship-history-wrap');
         if (existingHistory) existingHistory.remove();
         if (addressHistoryHtml) {
