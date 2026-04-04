@@ -86,6 +86,43 @@ let inventory = {
     lifeBread: 0,  // 생명의 떡 개수
 };
 
+// [BGM]
+let bgmAudio = null;
+let bgmEnabled = (localStorage.getItem('kingsRoadBgmOn') !== 'false'); // 기본값: 켜짐
+
+function initBgm() {
+    bgmAudio = new Audio('assets/audio/bgm.mp3');
+    bgmAudio.loop = true;
+    bgmAudio.volume = 0.4;
+    updateBgmIcon();
+}
+
+function updateBgmIcon() {
+    const icon = document.getElementById('bgm-icon');
+    if (icon) icon.textContent = bgmEnabled ? '🎵' : '🔇';
+}
+
+function toggleBgm() {
+    bgmEnabled = !bgmEnabled;
+    localStorage.setItem('kingsRoadBgmOn', bgmEnabled);
+    if (bgmEnabled) {
+        bgmAudio.play().catch(() => {});
+    } else {
+        bgmAudio.pause();
+    }
+    updateBgmIcon();
+}
+
+function startBgm() {
+    if (bgmEnabled && bgmAudio) {
+        bgmAudio.play().catch(() => {});
+    }
+}
+
+function stopBgm() {
+    if (bgmAudio) bgmAudio.pause();
+}
+
 // [시스템: 게임 진행 데이터]
 let stageMastery = {}; // ID별 클리어 횟수 저장
 let stageClearDate = {}; // verseId → 처음 클리어한 game-day ('YYYY-MM-DD')
@@ -2494,6 +2531,8 @@ function goHome() {
     closeStageSheet();
     // 백버튼 표시 상태 갱신 (홈에서는 숨김)
     if (typeof updateBackButtonVisibility === 'function') updateBackButtonVisibility();
+    // BGM 재생
+    startBgm();
 }
 
 function goMap() {
@@ -2521,6 +2560,8 @@ function goMap() {
     if (typeof updateBackButtonVisibility === 'function') updateBackButtonVisibility();
     // ★ [추가] 맵으로 돌아올 때 리소스 UI 업데이트 (만나 수령 시 보석 반영)
     if (typeof updateResourceUI === 'function') updateResourceUI();
+    // BGM 정지
+    stopBgm();
 }
 
 // 백버튼(돌아가기) 표시를 현재 활성 화면에 따라 제어
@@ -9141,6 +9182,7 @@ function showDamageEffect() {
 loadGameData();     // 1. 장부(데이터)를 먼저 꺼내고
 renderChapterMap(); // 2. 그 내용을 바탕으로 지도를 그림
 updateCastleView(); // 3. 성전 모습 업데이트
+initBgm();          // 4. BGM 초기화 (홈 화면 배경음악)
 
 /* =========================================
    [시스템: 텍스트 파일 백업 및 불러오기 (.txt)]
