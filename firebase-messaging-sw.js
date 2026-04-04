@@ -34,20 +34,16 @@ messaging.onBackgroundMessage((payload) => {
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
 
-    const targetUrl = event.notification.data?.link || 'https://kings-road-rank.web.app';
-
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-            // 이미 열린 탭이 있으면 포커스
+            // 이미 열린 PWA 창이 있으면 포커스
             for (const client of clientList) {
                 if (client.url.includes('kings-road-rank') && 'focus' in client) {
                     return client.focus();
                 }
             }
-            // 열린 탭이 없으면 새 탭 열기
-            if (clients.openWindow) {
-                return clients.openWindow(targetUrl);
-            }
+            // 없으면 PWA scope 내 상대경로로 열기 (standalone 모드 유지)
+            return clients.openWindow('/');
         })
     );
 });
