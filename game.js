@@ -115,6 +115,7 @@ function toggleBgm() {
 
 function startBgm() {
     if (bgmEnabled && bgmAudio) {
+        bgmAudio.currentTime = 0;
         bgmAudio.play().catch(() => {});
     }
 }
