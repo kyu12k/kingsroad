@@ -4554,7 +4554,7 @@ function loadStep() {
 
             span.innerText = span.dataset.masked; // 처음엔 완벽히 가림
             span.id = `chunk-${idx}`;
-            span.style.color = !document.body.classList.contains('dark-mode') ? "#e0d5c5" : "#3a4f6a";
+            span.style.color = "#3a4f6a";
             span.style.fontSize = "1.3rem";
             span.style.opacity = "1";
             span.style.transition = "all 0.3s ease-out";
@@ -4564,8 +4564,8 @@ function loadStep() {
         control.innerHTML = `
             <div id="step1-controls" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 10px;"></div>
             <button class="btn-attack" id="btn-step1-next" onclick="nextStep()" style="display:none; background-color:#2ecc71; margin-top:10px; width: 100%;">성령 충만! 다음 단계로 ▶</button>
-            <div id="step1-tip-text" style="text-align:center; font-size:0.9rem; margin-top:5px; color:${!document.body.classList.contains('dark-mode') ? '#8a6f3a' : '#8fa8c8'}">
-                <span id="step1-tip-badge" style="padding:2px 8px; border-radius:10px; background:${!document.body.classList.contains('dark-mode') ? '#fff0c0' : '#1d3550'}; color:${!document.body.classList.contains('dark-mode') ? '#8a6f3a' : '#dce8f5'};">TIP</span> 하나씩 말하며 '읽기' 버튼을 눌러보세요
+            <div id="step1-tip-text" style="text-align:center; font-size:0.9rem; margin-top:5px; color:#8fa8c8">
+                <span id="step1-tip-badge" style="padding:2px 8px; border-radius:10px; background:#1d3550; color:#dce8f5;">TIP</span> 하나씩 말하며 '읽기' 버튼을 눌러보세요
             </div>
         `;
 
@@ -4575,8 +4575,7 @@ function loadStep() {
         const toggleChosung = () => {
             isChosungMode = !isChosungMode;
             chosungBtn.innerText = isChosungMode ? '초성 끄기 👁️' : '초성 보기 💡';
-            const isLight = !document.body.classList.contains('dark-mode');
-            chosungBtn.style.backgroundColor = isChosungMode ? '#e67e22' : (isLight ? '#d4a853' : '#f39c12');
+            chosungBtn.style.backgroundColor = isChosungMode ? '#e67e22' : '#f39c12';
 
             // 안 열린 단어들만 초성 <-> 블라인드 전환
             for (let i = window.revealIndex; i < window.chunksToReveal.length; i++) {
@@ -4590,7 +4589,7 @@ function loadStep() {
         const chosungBtn = document.createElement('button');
         chosungBtn.id = 'btn-toggle-chosung';
         chosungBtn.className = 'btn-attack';
-        chosungBtn.style.backgroundColor = !document.body.classList.contains('dark-mode') ? '#d4a853' : '#f39c12';
+        chosungBtn.style.backgroundColor = '#f39c12';
         chosungBtn.style.flex = "1";
         chosungBtn.innerText = '초성 보기 💡';
         chosungBtn.onclick = toggleChosung;
@@ -4604,7 +4603,7 @@ function loadStep() {
             const span = document.getElementById(`chunk-${window.revealIndex}`);
             if (span) {
                 span.innerText = span.dataset.original; // ★ 단어가 공개될 때 숨겨둔 원본 텍스트로 교체!
-                span.style.color = !document.body.classList.contains('dark-mode') ? "#1a1a2e" : "#dce8f5";
+                span.style.color = "#dce8f5";
                 span.style.fontWeight = "bold";
                 span.style.opacity = "1";
                 span.style.fontSize = "1.5rem";
