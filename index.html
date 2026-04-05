@@ -384,6 +384,7 @@
         </button>
         <div id="menu-panel"
             style="display:none; position:fixed; top:72px; right:20px; z-index:3001; background:rgba(44,62,80,0.98); border-radius:18px; box-shadow:0 8px 32px rgba(44,62,80,0.18); padding:18px 14px; min-width:180px; border:1.5px solid #f1c40f; flex-direction:column; gap:8px;">
+            <button id="kings-step-btn" class="menu-action-btn" style="display:none;" onclick="cycleKingsStep(); document.getElementById('menu-panel').style.display='none';">👑 왕의 길 -단계</button>
             <button class="menu-action-btn" onclick="openGuideModal(); closeMenu();">📖 게임 가이드</button>
             <button class="menu-action-btn" onclick="openThanksModal()">👥 감사한 분들</button>
             <button id="add-to-home-btn" class="menu-action-btn" style="display: none;">📱 홈 화면에 추가</button> <button
@@ -511,6 +512,7 @@
                     style="opacity:0; pointer-events:none; background: #f1c40f; color: #2c3e50; font-size:1.2rem; font-weight:bold; padding: 12px 38px; border-radius: 30px; border:none; box-shadow:0 2px 10px #2224; cursor:pointer; margin-top:0; transition: opacity 0.7s; position:relative;">아멘</button>
             </div>
         </div>
+
 
         <!-- 기억하시나요? 퀴즈 오버레이 -->
         <div id="memory-quiz-overlay"
@@ -1121,6 +1123,54 @@
 
     </div>
 
+    <!-- ★ 모드 선택 모달 -->
+    <div id="mode-select-overlay" class="modal-overlay" style="z-index:10000;" onclick="closeModeSelectOverlay()">
+        <div class="result-card mode-select-card" onclick="event.stopPropagation()">
+            <div class="mode-modal-header">
+                <span class="mode-select-title">여정을 선택하세요</span>
+                <button class="mode-close-btn" onclick="closeModeSelectOverlay()">✕</button>
+            </div>
+            <button class="mode-journey-btn kings-btn" onclick="onClickKingsRoad()">
+                <span class="mode-btn-icon">👑</span>
+                <div class="mode-btn-text">
+                    <span class="mode-btn-label">왕의 길</span>
+                    <span class="mode-btn-desc">계시록 순서대로 매일 암기하는 여정</span>
+                </div>
+            </button>
+            <button class="mode-journey-btn free-btn" onclick="onClickFreeJourney()">
+                <span class="mode-btn-icon">🗺️</span>
+                <div class="mode-btn-text">
+                    <span class="mode-btn-label">자유여행</span>
+                    <span class="mode-btn-desc">원하는 구절을 자유롭게 학습</span>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <!-- ★ 왕의 길 단계 선택 모달 -->
+    <div id="kings-step-select-overlay" class="modal-overlay" style="z-index:10000;" onclick="closeKingsStepSelectOverlay()">
+        <div class="result-card mode-select-card" onclick="event.stopPropagation()">
+            <div class="mode-modal-header">
+                <span class="mode-select-title">👑 왕의 길</span>
+                <button class="mode-close-btn" onclick="closeKingsStepSelectOverlay()">✕</button>
+            </div>
+            <p class="mode-select-subtitle">암기 단계를 선택하세요</p>
+            <button class="step-btn" onclick="onSelectKingsStep(1)">
+                <span class="step-btn-num">1단계</span>
+                <span class="step-btn-desc">하루 1구절 암기<br><span class="step-btn-goal">약 126일만에 1~5장, 205일만에 1~10장 완성</span></span>
+            </button>
+            <button class="step-btn" onclick="onSelectKingsStep(2)">
+                <span class="step-btn-num">2단계</span>
+                <span class="step-btn-desc">하루 2구절 암기<br><span class="step-btn-goal">약 159일만에 1~15장 완성</span></span>
+            </button>
+            <button class="step-btn" onclick="onSelectKingsStep(3)">
+                <span class="step-btn-num">3단계</span>
+                <span class="step-btn-desc">하루 3구절 암기<br><span class="step-btn-goal">약 165일만에 전장 완성</span></span>
+            </button>
+            <button class="mode-back-btn" onclick="closeKingsStepSelectOverlay(); openModeSelectOverlay();">← 돌아가기</button>
+        </div>
+    </div>
+
     <div id="hardship-mode-modal" class="modal-overlay" style="z-index: 650;">
         <div class="result-card hardship-mode-card">
             <div style="text-align: right;">
@@ -1136,7 +1186,7 @@
                 <div class="mode-icon">🕊️</div>
                 <div class="mode-info">
                     <div class="mode-title">모드 A · 인내의 고난</div>
-                    <div class="mode-desc">Step 1 방식으로 확인만 진행, 하트·보상 없음</div>
+                    <div class="mode-desc">Step 1 방식으로 확인만 하기</div>
                 </div>
             </button>
 
@@ -1144,7 +1194,7 @@
                 <div class="mode-icon">🎯</div>
                 <div class="mode-info">
                     <div class="mode-title">모드 B · 주소의 고난</div>
-                    <div class="mode-desc">내용을 보고 장·절을 슬롯처럼 맞혀 승점을 획득</div>
+                    <div class="mode-desc">내용을 보고 장·절 맞히기</div>
                 </div>
             </button>
 
@@ -1152,7 +1202,7 @@
                 <div class="mode-icon">⌨️</div>
                 <div class="mode-info">
                     <div class="mode-title">모드 C · 망각의 고난</div>
-                    <div class="mode-desc">주소만 보고 전체 말씀을 빈칸 타이핑으로 인출</div>
+                    <div class="mode-desc">장·절을 보고 전체 말씀을 입력하기</div>
                 </div>
             </button>
         </div>

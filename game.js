@@ -135,6 +135,25 @@ let stageReviewStep = {};      // 각 스테이지의 현재 복습 단계 (1-ba
 let stageNextReviewTime = {};  // 다음 복습 가능 시각 (timestamp, 0이면 즉시 가능)
 let hardshipAddressClearHistory = {}; // 장별 주소의 고난 클리어 기록 { "1": [{correct, total, score, date}, ...] }
 
+// ★ [게임 모드 시스템]
+let activeMode = 'free'; // 'free' | 'kings'
+// 자유여행 데이터 백업 (모드 스왑용)
+let _freeStageMastery = {};
+let _freeStageClearDate = {};
+let _freeStageLastClear = {};
+let _freeStageReviewStep = {};
+let _freeStageNextReviewTime = {};
+// 왕의 길 전용 저장 객체
+let kingsRoadData = {
+    mastery: {},
+    clearDate: {},
+    lastClear: {},
+    reviewStep: {},
+    nextReviewTime: {},
+    stepHistory: []
+    // stepHistory 항목: { step: 1|2|3, timestamp: Date.now(), baseCount: N }
+};
+
 /* ============================================= */
 
 /* (주의) saveGameData의 통합 구현은 아래의 선언부(function saveGameData)에서 관리합니다. */
@@ -253,6 +272,32 @@ loadGameData = function () {
         }
 
         if (parsed.hardshipAddressClearHistory) hardshipAddressClearHistory = parsed.hardshipAddressClearHistory;
+
+        // ★ [게임 모드] 왕의 길 데이터 복구
+        if (parsed.kingsMode) {
+            kingsRoadData.mastery = parsed.kingsMode.mastery || {};
+            kingsRoadData.clearDate = parsed.kingsMode.clearDate || {};
+            kingsRoadData.lastClear = parsed.kingsMode.lastClear || {};
+            kingsRoadData.reviewStep = parsed.kingsMode.reviewStep || {};
+            kingsRoadData.nextReviewTime = parsed.kingsMode.nextReviewTime || {};
+            kingsRoadData.stepHistory = parsed.kingsMode.stepHistory || [];
+        }
+        // 마지막으로 선택한 모드 복원 (기본값 'free')
+        activeMode = parsed.activeMode || 'free';
+        // 자유여행 데이터를 백업 변수에도 저장
+        _freeStageMastery = stageMastery;
+        _freeStageClearDate = stageClearDate;
+        _freeStageLastClear = stageLastClear;
+        _freeStageReviewStep = stageReviewStep;
+        _freeStageNextReviewTime = stageNextReviewTime;
+        // 왕의 길 모드였으면 전역 변수를 왕의 길 데이터로 스왑
+        if (activeMode === 'kings') {
+            stageMastery = kingsRoadData.mastery;
+            stageClearDate = kingsRoadData.clearDate;
+            stageLastClear = kingsRoadData.lastClear;
+            stageReviewStep = kingsRoadData.reviewStep;
+            stageNextReviewTime = kingsRoadData.nextReviewTime;
+        }
 
         // [기타]
         if (parsed.lastClaimTime) lastClaimTime = parsed.lastClaimTime;
@@ -2442,15 +2487,248 @@ let bossHintCount = 0;   // 보스전 전용 힌트 사용 횟수
 
 /* [시스템: 화면 이동] */
 /* [수정] 게임 시작 함수 (사운드 설정 불러오기 적용) */
-function startGame() {
-    // 0. 여정 시작 오버레이 표시
+// ============================================================
+// ★ [왕의 길 모드] 핵심 로직
+// ============================================================
+
+// 전역 변수 스왑으로 모드 전환 (기존 함수들이 변경 없이 올바른 데이터를 참조하게 됨)
+function switchMode(mode) {
+    if (mode === activeMode) return;
+
+    if (mode === 'kings') {
+        // 현재 자유여행 데이터를 백업
+        _freeStageMastery = stageMastery;
+        _freeStageClearDate = stageClearDate;
+        _freeStageLastClear = stageLastClear;
+        _freeStageReviewStep = stageReviewStep;
+        _freeStageNextReviewTime = stageNextReviewTime;
+        // 왕의 길 데이터로 스왑
+        stageMastery = kingsRoadData.mastery;
+        stageClearDate = kingsRoadData.clearDate;
+        stageLastClear = kingsRoadData.lastClear;
+        stageReviewStep = kingsRoadData.reviewStep;
+        stageNextReviewTime = kingsRoadData.nextReviewTime;
+    } else {
+        // 자유여행 데이터로 복원
+        stageMastery = _freeStageMastery;
+        stageClearDate = _freeStageClearDate;
+        stageLastClear = _freeStageLastClear;
+        stageReviewStep = _freeStageReviewStep;
+        stageNextReviewTime = _freeStageNextReviewTime;
+        // 왕의 길 데이터 백업
+        kingsRoadData.mastery = kingsRoadData.mastery; // 이미 같은 참조
+    }
+
+    activeMode = mode;
+    // 맵의 스테이지 클리어 상태 반영
+    gameData.forEach(chapter => {
+        chapter.stages.forEach(stage => {
+            stage.cleared = (stageMastery[stage.id] || 0) > 0;
+            stage.locked = false;
+        });
+    });
+    saveGameData();
+}
+
+// 왕의 길 단계 설정 (최초 선택 or 변경)
+function setKingsRoadStep(newStep) {
+    if (kingsRoadData.stepHistory.length === 0) {
+        // 최초 설정: { isInitial: true } 플래그로 첫날 +1 적용 여부 구분
+        kingsRoadData.stepHistory = [{ step: newStep, timestamp: Date.now(), baseCount: 0, isInitial: true }];
+    } else {
+        // 단계 변경: 현재 해금 수를 고정하고 내일부터 새 단계 적용
+        // 배열은 마지막 항목 1개만 유지 (연타 방지 + 메모리 절약)
+        const currentUnlocked = getKingsRoadUnlockedCount();
+        kingsRoadData.stepHistory = [{ step: newStep, timestamp: Date.now(), baseCount: currentUnlocked, isInitial: false }];
+    }
+    updateKingsStepBtn();
+    saveGameData();
+}
+
+// 왕의 길 단계 순환 (메뉴 버튼) — 1초 쿨다운으로 연타 방지
+let _kingsStepChangeCooldown = false;
+function cycleKingsStep() {
+    if (kingsRoadData.stepHistory.length === 0) return;
+    if (_kingsStepChangeCooldown) return; // 연타 차단
+    _kingsStepChangeCooldown = true;
+    setTimeout(() => { _kingsStepChangeCooldown = false; }, 1000);
+
+    const currentStep = kingsRoadData.stepHistory[kingsRoadData.stepHistory.length - 1].step;
+    const nextStep = currentStep >= 3 ? 1 : currentStep + 1;
+    setKingsRoadStep(nextStep);
+    alert(`👑 왕의 길 ${nextStep}단계로 변경되었습니다.\n내일부터 하루 ${nextStep}구절씩 해금됩니다.`);
+}
+
+// 메뉴의 왕의 길 단계 버튼 텍스트 갱신
+function updateKingsStepBtn() {
+    const btn = document.getElementById('kings-step-btn');
+    if (!btn) return;
+    if (kingsRoadData.stepHistory.length === 0) {
+        btn.style.display = 'none';
+    } else {
+        const step = kingsRoadData.stepHistory[kingsRoadData.stepHistory.length - 1].step;
+        btn.style.display = 'flex';
+        btn.textContent = `👑 왕의 길 ${step}단계`;
+    }
+}
+
+// 현재 해금된 일반 스테이지 수 반환
+function getKingsRoadUnlockedCount() {
+    const history = kingsRoadData.stepHistory;
+    if (!history || history.length === 0) return 0;
+    const last = history[history.length - 1];
+    const daysElapsed = Math.floor((Date.now() - last.timestamp) / 86400000);
+    // 최초 설정: day 0에 1×step 즉시 해금 → (daysElapsed + 1) * step
+    // 단계 변경:  변경 당일은 보너스 없고 내일부터 → daysElapsed * step
+    const bonus = last.isInitial
+        ? (daysElapsed + 1) * last.step
+        : daysElapsed * last.step;
+    return Math.min(last.baseCount + bonus, getTotalNormalStageCount());
+}
+
+// 전체 일반 스테이지 수 반환 (캐시)
+let _totalNormalStageCount = 0;
+function getTotalNormalStageCount() {
+    if (_totalNormalStageCount > 0) return _totalNormalStageCount;
+    let count = 0;
+    gameData.forEach(ch => ch.stages.forEach(s => { if (s.type === 'normal') count++; }));
+    _totalNormalStageCount = count;
+    return count;
+}
+
+// 왕의 길에서 해금된 stage id Set 반환 (normal + 관련 mid-boss/boss 포함)
+function getKingsRoadUnlockedSet() {
+    const unlockedCount = getKingsRoadUnlockedCount();
+    const result = new Set();
+    let normalIdx = 0;
+
+    // 각 챕터별 해금 상태를 추적
+    const chapterNormalUnlocked = {}; // chapterId → {total: N, unlocked: N}
+
+    gameData.forEach(chapter => {
+        const chId = chapter.id;
+        const normals = chapter.stages.filter(s => s.type === 'normal');
+        chapterNormalUnlocked[chId] = { total: normals.length, unlocked: 0 };
+
+        chapter.stages.forEach(stage => {
+            if (stage.type === 'normal') {
+                if (normalIdx < unlockedCount) {
+                    result.add(stage.id);
+                    chapterNormalUnlocked[chId].unlocked++;
+                }
+                normalIdx++;
+            }
+        });
+    });
+
+    // mid-boss: 구성 절이 모두 해금이면 해금
+    gameData.forEach(chapter => {
+        chapter.stages.forEach(stage => {
+            if (stage.type === 'mid-boss') {
+                // id 형식: "X-mid-Y" (1~Y절이 구성 절)
+                const match = stage.id.match(/^(\d+)-mid-(\d+)$/);
+                if (match) {
+                    const chId = parseInt(match[1]);
+                    const endVerse = parseInt(match[2]);
+                    // 해당 챕터에서 절 번호 1~endVerse 인 일반 스테이지가 모두 해금인지 확인
+                    const chData = gameData.find(c => c.id === chId);
+                    if (chData) {
+                        const componentNormals = chData.stages.filter(s => {
+                            if (s.type !== 'normal') return false;
+                            const vMatch = s.id.match(/^\d+-(\d+)$/);
+                            if (!vMatch) return false;
+                            const vNum = parseInt(vMatch[1]);
+                            // 이 mid-boss가 어떤 절 범위를 커버하는지 계산
+                            // mid-boss 이전의 마지막 mid-boss 끝 절 + 1 부터 endVerse 까지
+                            return vNum <= endVerse;
+                        });
+                        // 이 mid-boss에 속하는 구간만 추출 (이전 mid-boss 이후부터)
+                        // 더 간단하게: endVerse까지의 모든 일반 스테이지가 해금이면 해금
+                        const allUnlocked = componentNormals.every(s => result.has(s.id));
+                        if (allUnlocked && componentNormals.length > 0) result.add(stage.id);
+                    }
+                }
+            } else if (stage.type === 'boss') {
+                // boss: 해당 챕터 모든 일반 스테이지가 해금이면 해금
+                const chId = chapter.id;
+                const info = chapterNormalUnlocked[chId];
+                if (info && info.unlocked >= info.total && info.total > 0) {
+                    result.add(stage.id);
+                }
+            }
+        });
+    });
+
+    return result;
+}
+
+// 왕의 길 모드에서 스테이지가 잠금인지 여부
+function isKingsRoadLocked(stageId) {
+    if (activeMode !== 'kings') return false;
+    const unlocked = getKingsRoadUnlockedSet();
+    return !unlocked.has(stageId);
+}
+
+// 왕의 길 모드 선택 오버레이 열기
+function openModeSelectOverlay() {
+    const el = document.getElementById('mode-select-overlay');
+    if (el) el.style.display = 'flex';
+}
+
+// 왕의 길 모드 선택 오버레이 닫기
+function closeModeSelectOverlay() {
+    const el = document.getElementById('mode-select-overlay');
+    if (el) el.style.display = 'none';
+}
+
+// 왕의 길 단계 선택 오버레이 열기
+function openKingsStepSelectOverlay() {
+    closeModeSelectOverlay();
+    const el = document.getElementById('kings-step-select-overlay');
+    if (el) el.style.display = 'flex';
+}
+
+// 왕의 길 단계 선택 오버레이 닫기
+function closeKingsStepSelectOverlay() {
+    const el = document.getElementById('kings-step-select-overlay');
+    if (el) el.style.display = 'none';
+}
+
+// '왕의 길' 버튼 클릭 시
+function onClickKingsRoad() {
+    closeModeSelectOverlay();
+    if (kingsRoadData.stepHistory.length === 0) {
+        // 단계 미설정: 단계 선택 화면으로
+        openKingsStepSelectOverlay();
+    } else {
+        // 단계 기설정: 바로 여정 시작
+        switchMode('kings');
+        proceedToJourneyOverlay();
+    }
+}
+
+// 단계 선택 완료 후
+function onSelectKingsStep(step) {
+    closeKingsStepSelectOverlay();
+    setKingsRoadStep(step);
+    switchMode('kings');
+    proceedToJourneyOverlay();
+}
+
+// '자유여행' 버튼 클릭 시
+function onClickFreeJourney() {
+    closeModeSelectOverlay();
+    switchMode('free');
+    proceedToJourneyOverlay();
+}
+
+// 기존 여정 오버레이 + amen 버튼 흐름 진행
+function proceedToJourneyOverlay() {
     const overlay = document.getElementById('journey-overlay');
     const amenBtn = document.getElementById('amen-btn');
-    if (overlay) {
-        overlay.style.display = 'flex';
-    }
+    if (overlay) overlay.style.display = 'flex';
     if (amenBtn) {
-        amenBtn.style.display = 'block'; // display 속성 복구 추가
+        amenBtn.style.display = 'block';
         amenBtn.style.opacity = '0';
         amenBtn.style.pointerEvents = 'none';
         setTimeout(() => {
@@ -2459,6 +2737,13 @@ function startGame() {
         }, 1000);
         amenBtn.onclick = amenAndStartGame;
     }
+}
+
+// ============================================================
+
+function startGame() {
+    // 모드 선택 오버레이를 먼저 표시
+    openModeSelectOverlay();
 }
 
 function amenAndStartGame() {
@@ -2606,6 +2891,30 @@ function ensureBackButton(screen) {
 /* [시스템: 맵 렌더링 (레이어 완벽 분리 버전)] */
 function renderChapterMap() {
     const container = document.getElementById('chapter-list-area');
+
+    // ★ 왕의 길 모드 헤더 표시/갱신
+    let kingsHeader = document.getElementById('kings-road-map-header');
+    const mapScreen = document.getElementById('map-screen');
+    if (activeMode === 'kings' && mapScreen) {
+        if (!kingsHeader) {
+            kingsHeader = document.createElement('div');
+            kingsHeader.id = 'kings-road-map-header';
+            kingsHeader.className = 'kings-road-map-header';
+            mapScreen.insertBefore(kingsHeader, container);
+        }
+        const step = kingsRoadData.stepHistory.length > 0
+            ? kingsRoadData.stepHistory[kingsRoadData.stepHistory.length - 1].step : '?';
+        const startTs = kingsRoadData.stepHistory.length > 0 ? kingsRoadData.stepHistory[0].timestamp : Date.now();
+        const dayNum = Math.floor((Date.now() - startTs) / 86400000) + 1;
+        const unlockedCount = getKingsRoadUnlockedCount();
+        kingsHeader.innerHTML = `
+            <span class="kh-title">👑 왕의 길 ${step}단계</span>
+            <span class="kh-info">D+${dayNum}일 · ${unlockedCount}구절 해금</span>
+        `;
+        kingsHeader.style.display = 'flex';
+    } else if (kingsHeader) {
+        kingsHeader.style.display = 'none';
+    }
 
     // 1. 컨테이너 초기화
     container.className = 'river-map-container';
@@ -2959,6 +3268,9 @@ function openStageSheet(chapterData) {
     // 이전에 돌아가던 타이머가 있다면 정지 (중복 방지)
     if (stageSheetTimer) clearInterval(stageSheetTimer);
 
+    // ★ 왕의 길 모드: 해금 set 미리 계산
+    const kingsUnlockedSet = (activeMode === 'kings') ? getKingsRoadUnlockedSet() : null;
+
     chapterData.stages.forEach(stage => {
         const item = document.createElement('div');
 
@@ -3072,6 +3384,18 @@ function openStageSheet(chapterData) {
     </div>
     ${rightSideContent}
         `;
+
+        // ★ 왕의 길 잠금 처리
+        if (kingsUnlockedSet && !kingsUnlockedSet.has(stage.id)) {
+            item.classList.add('kings-locked');
+            item.innerHTML += `<span class="kings-locked-badge">🔒</span>`;
+            item.onclick = () => {
+                const daysLeft = 1; // 안내 메시지용
+                alert('🔒 아직 열리지 않은 구절입니다.\n매일 새로운 구절이 열립니다!');
+            };
+            list.appendChild(item);
+            return; // 나머지 클릭 이벤트 설정 건너뜀
+        }
 
         // 5. 클릭 이벤트
         item.onclick = () => {
@@ -4283,28 +4607,38 @@ function saveGameData() {
         // 🌟 [건망증 치료] 저장할 때 현재 인증키를 빼먹지 않도록 꼭 챙겨 넣습니다!
         sessionToken: window.currentSessionToken || (JSON.parse(localStorage.getItem('kingsRoadSave') || "{}")).sessionToken,
 
-        // 나머지 데이터 유지
+        // 나머지 데이터 유지 (항상 자유여행 데이터 저장)
         inv: inventory,
         missions: missionData,
-        mastery: stageMastery,
-        clearDate: stageClearDate,
-        lastClear: stageLastClear,
+        mastery: activeMode === 'kings' ? _freeStageMastery : stageMastery,
+        clearDate: activeMode === 'kings' ? _freeStageClearDate : stageClearDate,
+        lastClear: activeMode === 'kings' ? _freeStageLastClear : stageLastClear,
         nextEligibleTime: stageNextEligibleTime, // 구버전 호환용
         timedBonus: stageTimedBonus, // 구버전 호환용
-        reviewStep: stageReviewStep,       // ★ [v1.1.0] 직렬 복습 단계
-        nextReviewTime: stageNextReviewTime, // ★ [v1.1.0] 다음 복습 가능 시각
+        reviewStep: activeMode === 'kings' ? _freeStageReviewStep : stageReviewStep,
+        nextReviewTime: activeMode === 'kings' ? _freeStageNextReviewTime : stageNextReviewTime,
         // dailyAttempts 제거됨
         achievementStatus: achievementStatus,
         memoryLevels: stageMemoryLevels,
         // 통계 데이터 포함
         stats: userStats,
         lastClaimTime: lastClaimTime,
-        clearedStages: Object.keys(stageMastery),
+        clearedStages: Object.keys(activeMode === 'kings' ? _freeStageMastery : stageMastery),
         lastPlayed: localStorage.getItem('lastPlayedDate'),
         streak: localStorage.getItem('streakDays'),
         leagueData: leagueData,
         boosterData: boosterData,
-        hardshipAddressClearHistory: hardshipAddressClearHistory
+        hardshipAddressClearHistory: hardshipAddressClearHistory,
+        // ★ [게임 모드]
+        activeMode: activeMode,
+        kingsMode: {
+            mastery: kingsRoadData.mastery,
+            clearDate: kingsRoadData.clearDate,
+            lastClear: kingsRoadData.lastClear,
+            reviewStep: kingsRoadData.reviewStep,
+            nextReviewTime: kingsRoadData.nextReviewTime,
+            stepHistory: kingsRoadData.stepHistory
+        }
     };
     localStorage.setItem('kingsRoadSave', JSON.stringify(saveData));
 
@@ -9184,6 +9518,7 @@ loadGameData();     // 1. 장부(데이터)를 먼저 꺼내고
 renderChapterMap(); // 2. 그 내용을 바탕으로 지도를 그림
 updateCastleView(); // 3. 성전 모습 업데이트
 initBgm();          // 4. BGM 초기화 (홈 화면 배경음악)
+updateKingsStepBtn(); // 5. 왕의 길 단계 버튼 상태 초기화
 
 /* =========================================
    [시스템: 텍스트 파일 백업 및 불러오기 (.txt)]

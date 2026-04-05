@@ -4072,3 +4072,189 @@ body, html {
     background: rgba(231, 76, 60, 0.15);
     border: 1px solid rgba(231, 76, 60, 0.45);
 }
+
+/* ============================================================
+   ★ 왕의 길 모드 선택 UI
+   ============================================================ */
+
+/* 모드 선택 카드 (result-card 위에 덮어씌움) */
+.mode-select-card {
+    background: #1e2d3d;
+    color: #ecf0f1;
+    text-align: left;
+    padding: 22px 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 320px;
+    width: 90%;
+}
+
+/* 모달 헤더 (제목 + X 버튼) */
+.mode-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2px;
+}
+
+.mode-select-title {
+    color: #f1c40f;
+    font-size: 1.2rem;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+/* X 닫기 버튼 */
+.mode-close-btn {
+    background: none;
+    border: none;
+    color: #7f8c8d;
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 4px 6px;
+    line-height: 1;
+    border-radius: 6px;
+    transition: color 0.15s;
+}
+.mode-close-btn:hover { color: #e74c3c; }
+
+.mode-select-subtitle {
+    color: #7f8c8d;
+    font-size: 0.88rem;
+    margin: -6px 0 0;
+    text-align: center;
+}
+
+/* 모드 버튼 (왕의 길 / 자유여행) */
+.mode-journey-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1.5px solid transparent;
+    background: rgba(255,255,255,0.05);
+    cursor: pointer;
+    transition: all 0.18s;
+    text-align: left;
+}
+.mode-journey-btn:active { transform: scale(0.97); }
+
+.mode-journey-btn.kings-btn {
+    border-color: rgba(241, 196, 15, 0.6);
+    background: rgba(241, 196, 15, 0.08);
+}
+.mode-journey-btn.kings-btn:hover { background: rgba(241, 196, 15, 0.16); }
+
+.mode-journey-btn.free-btn {
+    border-color: rgba(52, 152, 219, 0.6);
+    background: rgba(52, 152, 219, 0.08);
+}
+.mode-journey-btn.free-btn:hover { background: rgba(52, 152, 219, 0.16); }
+
+.mode-btn-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+.mode-btn-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.mode-btn-label {
+    font-size: 1.05rem;
+    font-weight: bold;
+    color: #ecf0f1;
+}
+.mode-btn-desc {
+    font-size: 0.8rem;
+    color: #95a5a6;
+    line-height: 1.4;
+}
+
+/* 단계 선택 버튼 */
+.step-btn {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    align-items: center;
+    gap: 0 14px;
+    padding: 16px 18px;
+    border-radius: 16px;
+    border: 1.5px solid rgba(241, 196, 15, 0.35);
+    background: rgba(255,255,255,0.05);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+}
+.step-btn:hover { background: rgba(241, 196, 15, 0.12); border-color: #f1c40f; }
+.step-btn:active { transform: scale(0.97); }
+
+.step-btn-num {
+    font-size: 1.05rem;
+    font-weight: bold;
+    color: #f1c40f;
+}
+.step-btn-desc {
+    font-size: 0.88rem;
+    color: #ecf0f1;
+    line-height: 1.5;
+}
+.step-btn-goal {
+    font-size: 0.78rem;
+    color: #95a5a6;
+}
+
+/* 돌아가기 버튼 */
+.mode-back-btn {
+    background: transparent;
+    color: #7f8c8d;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 8px 16px;
+    border-radius: 12px;
+    transition: color 0.2s;
+}
+.mode-back-btn:hover { color: #bdc3c7; }
+
+/* 왕의 길 맵 헤더 */
+.kings-road-map-header {
+    background: linear-gradient(135deg, rgba(241,196,15,0.15), rgba(255,215,0,0.08));
+    border: 1.5px solid rgba(241,196,15,0.4);
+    border-radius: 14px;
+    padding: 10px 16px;
+    margin: 8px 16px 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.kings-road-map-header .kh-title {
+    color: #f1c40f;
+    font-size: 0.95rem;
+    font-weight: bold;
+}
+.kings-road-map-header .kh-info {
+    color: #bdc3c7;
+    font-size: 0.82rem;
+}
+
+/* 왕의 길 잠금 스테이지 */
+.stage-item.kings-locked {
+    opacity: 0.4;
+    filter: grayscale(0.6);
+    position: relative;
+    cursor: not-allowed;
+}
+.kings-locked-badge {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.1rem;
+    color: #7f8c8d;
+}
