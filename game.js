@@ -693,6 +693,7 @@ let missionData = {
 
     // 일일 미션 진행도
     daily: {
+        loginReward: 0,     // 매일 접속 시 자동 완료
         newClear: 0,        // 신규 훈련 횟수
         differentStages: 0, // 서로 다른 스테이지 클리어 횟수
         checkpointBoss: 0,  // 중보/보스 처치 횟수
@@ -719,12 +720,14 @@ function checkMissions() {
     if (missionData.lastLoginDate !== today) {
         missionData.lastLoginDate = today;
         missionData.daily = {
+            loginReward: 0,
             newClear: 0,
             differentStages: 0,
             checkpointBoss: 0,
             backup: 0,
             claimed: [false, false, false, false]
         };
+        missionData.daily.loginReward = 1; // 접속 시 즉시 완료
         console.log("📅 새로운 하루가 시작되어 일일 미션이 초기화되었습니다.");
 
         // 날짜 변경 시 초기화 (stageDailyAttempts 제거)
@@ -753,6 +756,11 @@ function checkMissions() {
             claimed: [false, false, false]
         };
         console.log("📅 새로운 주가 시작되어 주간 미션이 초기화되었습니다.");
+    }
+
+    // 기존 세이브 데이터에 loginReward 필드 없을 때 보정
+    if (missionData.daily.loginReward === undefined) {
+        missionData.daily.loginReward = 1;
     }
 
     updateMissionUI();
@@ -848,8 +856,8 @@ function updateMissionUI() {
     // ============================================
     const dailyMissions = [
         {
-            desc: "새로운 훈련 1회 완료",
-            current: missionData.daily.newClear,
+            desc: "매일 접속 시 보상",
+            current: missionData.daily.loginReward || 0,
             target: 1,
             rewardText: "💎 보석 100개",
             rewardType: "gem",
@@ -859,9 +867,9 @@ function updateMissionUI() {
             type: 'daily'
         },
         {
-            desc: "서로 다른 구절 3개 클리어",
-            current: missionData.daily.differentStages,
-            target: 3,
+            desc: "새로운 구절 1회 학습",
+            current: missionData.daily.newClear,
+            target: 1,
             rewardText: "💎 보석 300개",
             rewardType: "gem",
             val1: 300, val2: 0,
@@ -6322,49 +6330,23 @@ function renderMissionList(tabName) {
     let missions = [];
 
     if (tabName === 'daily') {
-        // 모든 도감이 열렸는지 체크
-        let allOpened = true;
-        for (let ch = 1; ch <= 22; ch++) {
-            if (bibleData[ch]) {
-                for (let idx = 0; idx < bibleData[ch].length; idx++) {
-                    const sId = `${ch}-${idx + 1}`;
-                    if (!(stageMastery[sId] && stageMastery[sId] >= 1)) {
-                        allOpened = false;
-                        break;
-                    }
-                }
-                if (!allOpened) break;
-            }
-        }
         missions = [
-            allOpened ?
-                {
-                    id: 0,
-                    title: "어떤 구절이든 1회 학습",
-                    desc: "아무 구절이나 1회 학습하세요.",
-                    target: 1,
-                    current: missionData.daily.newClear, // 기존 카운트 활용
-                    reward: "💎 보석 100개",
-                    rewardType: 'gem', val1: 100, val2: 0,
-                    claimed: missionData.daily.claimed[0]
-                }
-                :
-                {
-                    id: 0,
-                    title: "새로운 구절 1회 학습",
-                    desc: "새로운 구절을 1회 학습하세요.",
-                    target: 1,
-                    current: missionData.daily.newClear,
-                    reward: "💎 보석 100개",
-                    rewardType: 'gem', val1: 100, val2: 0,
-                    claimed: missionData.daily.claimed[0]
-                },
+            {
+                id: 0,
+                title: "매일 접속 시 보상",
+                desc: "오늘 접속하면 자동으로 완료됩니다.",
+                target: 1,
+                current: missionData.daily.loginReward || 0,
+                reward: "💎 보석 100개",
+                rewardType: 'gem', val1: 100, val2: 0,
+                claimed: missionData.daily.claimed[0]
+            },
             {
                 id: 1,
-                title: "서로 다른 구절 3회 학습",
-                desc: "다른 구절을 골고루 학습하세요.",
-                target: 3,
-                current: missionData.daily.differentStages,
+                title: "새로운 구절 1회 학습",
+                desc: "새로운 구절을 1회 학습하세요.",
+                target: 1,
+                current: missionData.daily.newClear,
                 reward: "💎 보석 300개",
                 rewardType: 'gem', val1: 300, val2: 0,
                 claimed: missionData.daily.claimed[1]
@@ -10706,8 +10688,8 @@ function updateNotificationBadges() {
     // 일일 미션 체크
     if (missionData && missionData.daily) {
         // 하드코딩된 목표치와 비교 (updateMissionUI 로직 참조)
-        if (missionData.daily.newClear >= 1 && !missionData.daily.claimed[0]) hasMissionReward = true;
-        if (missionData.daily.differentStages >= 3 && !missionData.daily.claimed[1]) hasMissionReward = true;
+        if ((missionData.daily.loginReward || 0) >= 1 && !missionData.daily.claimed[0]) hasMissionReward = true;
+        if (missionData.daily.newClear >= 1 && !missionData.daily.claimed[1]) hasMissionReward = true;
         if (missionData.daily.checkpointBoss >= 1 && !missionData.daily.claimed[2]) hasMissionReward = true;
     }
     // 주간 미션 체크
@@ -12555,6 +12537,7 @@ function loadNextHardshipVerse() {
     hardshipState.revealIndex = 0;
     hardshipState.selectedChapter = hardshipState.forcedChapter || 1;
     hardshipState.selectedVerse = 1;
+    hardshipState.addressPhase = null;
     hardshipState.revealedHints = [];
     hardshipState.memoryTypedText = '';
 
@@ -12664,71 +12647,74 @@ function renderHardshipAddressVerse() {
         </div>
     `;
 
-    control.innerHTML = `
-        <div class="hardship-slot-machine">
-            <div class="hardship-slot-column">
-                <label class="hardship-slot-label" for="hardship-chapter-select">장 선택</label>
-                <select id="hardship-chapter-select" class="hardship-slot-select" onchange="handleHardshipAddressChapterChange()" ${(hardshipState.locked || hardshipState.forcedChapter != null) ? 'disabled' : ''}></select>
-            </div>
-            <div class="hardship-slot-column">
-                <label class="hardship-slot-label" for="hardship-verse-select">절 선택</label>
-                <select id="hardship-verse-select" class="hardship-slot-select" onchange="handleHardshipAddressVerseChange()" ${hardshipState.locked ? 'disabled' : ''}></select>
-            </div>
-        </div>
-        <div class="hardship-control-row">
-            <button id="hardship-address-submit-btn" class="btn-attack" onclick="submitHardshipAddressGuess()" style="${hardshipState.awaitingNext ? 'display:none;' : ''}" ${hardshipState.locked ? 'disabled' : ''}>주소 확인</button>
-            <button id="hardship-next-btn" class="btn-attack" onclick="proceedHardshipToNextVerse()" style="background:#2ecc71; ${hardshipState.awaitingNext ? '' : 'display:none;'}">다음 ⏭️</button>
-        </div>
-    `;
+    // 첫 렌더 시 단계 초기화
+    if (!hardshipState.addressPhase) {
+        hardshipState.addressPhase = hardshipState.forcedChapter != null ? 'verse' : 'chapter';
+    }
 
-    populateHardshipChapterSelect();
-    updateHardshipAddressVerseOptions();
+    renderHardshipAddressControl(control);
 }
 
-function populateHardshipChapterSelect() {
-    const chapterSelect = document.getElementById('hardship-chapter-select');
-    if (!chapterSelect) return;
+function renderHardshipAddressControl(control) {
+    if (hardshipState.awaitingNext) {
+        // 제출 완료 상태: 요약 + 다음 버튼
+        control.innerHTML = `
+            <div class="hardship-control-row">
+                <button id="hardship-next-btn" class="btn-attack" onclick="proceedHardshipToNextVerse()" style="background:#2ecc71;">다음 ⏭️</button>
+            </div>
+        `;
+        return;
+    }
 
-    chapterSelect.innerHTML = '';
-    for (let chapter = 1; chapter <= 22; chapter++) {
-        const option = document.createElement('option');
-        option.value = String(chapter);
-        option.textContent = `${chapter}장`;
-        if (chapter === hardshipState.selectedChapter) option.selected = true;
-        chapterSelect.appendChild(option);
+    if (hardshipState.addressPhase === 'chapter') {
+        let buttonsHtml = '';
+        for (let ch = 1; ch <= 22; ch++) {
+            buttonsHtml += `<button class="addr-ch-btn" onclick="selectHardshipChapter(${ch})">${ch}장</button>`;
+        }
+        control.innerHTML = `
+            <div class="addr-grid-wrap">
+                <div class="addr-grid-label">계시록 몇 장인가요?</div>
+                <div class="addr-chapter-grid">${buttonsHtml}</div>
+            </div>
+        `;
+    } else {
+        const chapter = hardshipState.selectedChapter;
+        const maxVerse = bibleData[chapter] ? bibleData[chapter].length : 1;
+        let buttonsHtml = '';
+        for (let v = 1; v <= maxVerse; v++) {
+            buttonsHtml += `<button class="addr-v-btn" onclick="selectHardshipVerse(${v})">${v}절</button>`;
+        }
+        const canGoBack = hardshipState.forcedChapter == null;
+        control.innerHTML = `
+            <div class="addr-grid-wrap">
+                <div class="addr-grid-label">
+                    ${canGoBack ? `<button class="addr-back-btn" onclick="backToHardshipChapter()">←</button>` : ''}
+                    계시록 <span class="addr-selected-chapter" ${canGoBack ? 'style="cursor:pointer;" onclick="backToHardshipChapter()"' : ''}>${chapter}장</span> 몇 절인가요?
+                </div>
+                <div class="addr-verse-grid">${buttonsHtml}</div>
+            </div>
+        `;
     }
 }
 
-function updateHardshipAddressVerseOptions() {
-    const chapterSelect = document.getElementById('hardship-chapter-select');
-    const verseSelect = document.getElementById('hardship-verse-select');
-    if (!chapterSelect || !verseSelect) return;
-
-    const selectedChapter = parseInt(chapterSelect.value, 10) || 1;
-    const maxVerse = bibleData[selectedChapter] ? bibleData[selectedChapter].length : 1;
-    const safeVerse = Math.min(Math.max(hardshipState.selectedVerse || 1, 1), maxVerse);
-
-    hardshipState.selectedChapter = selectedChapter;
-    hardshipState.selectedVerse = safeVerse;
-
-    verseSelect.innerHTML = '';
-    for (let verse = 1; verse <= maxVerse; verse++) {
-        const option = document.createElement('option');
-        option.value = String(verse);
-        option.textContent = `${verse}절`;
-        if (verse === safeVerse) option.selected = true;
-        verseSelect.appendChild(option);
-    }
-}
-
-function handleHardshipAddressChapterChange() {
+function selectHardshipChapter(ch) {
+    if (hardshipState.locked) return;
+    hardshipState.selectedChapter = ch;
     hardshipState.selectedVerse = 1;
-    updateHardshipAddressVerseOptions();
+    hardshipState.addressPhase = 'verse';
+    renderHardshipAddressControl(document.querySelector('.battle-control'));
 }
 
-function handleHardshipAddressVerseChange() {
-    const verseSelect = document.getElementById('hardship-verse-select');
-    hardshipState.selectedVerse = verseSelect ? (parseInt(verseSelect.value, 10) || 1) : 1;
+function selectHardshipVerse(v) {
+    if (hardshipState.locked) return;
+    hardshipState.selectedVerse = v;
+    submitHardshipAddressGuess();
+}
+
+function backToHardshipChapter() {
+    if (hardshipState.locked || hardshipState.forcedChapter != null) return;
+    hardshipState.addressPhase = 'chapter';
+    renderHardshipAddressControl(document.querySelector('.battle-control'));
 }
 
 function awardHardshipScore(points) {
@@ -13500,32 +13486,63 @@ function renderGuidePage() {
         return filtered;
     }
 
-    function populateChapterSelect() {
-        var sel = document.getElementById('quiz-chapter-select');
-        sel.innerHTML = '';
-        for (var i = 1; i <= 22; i++) {
-            var opt = document.createElement('option');
-            opt.value = i;
-            opt.textContent = i + '장';
-            sel.appendChild(opt);
+    var _quizPhase = 'chapter';
+    var _selectedQuizChapter = 1;
+    var _selectedQuizVerse = 1;
+
+    function renderMemoryQuizAddressControl() {
+        var container = document.getElementById('quiz-addr-input');
+        if (!container) return;
+
+        if (_quizPhase === 'chapter') {
+            var btns = '';
+            for (var ch = 1; ch <= 22; ch++) {
+                btns += '<button class="addr-ch-btn" onclick="selectMemoryQuizChapter(' + ch + ')">' + ch + '장</button>';
+            }
+            container.innerHTML =
+                '<div class="addr-grid-wrap">' +
+                '<div class="addr-grid-label">계시록 몇 장인가요?</div>' +
+                '<div class="addr-chapter-grid">' + btns + '</div>' +
+                '</div>';
+        } else {
+            var verseCount = (bibleData[_selectedQuizChapter] && bibleData[_selectedQuizChapter].length) || 1;
+            var vbtns = '';
+            for (var v = 1; v <= verseCount; v++) {
+                vbtns += '<button class="addr-v-btn" onclick="selectMemoryQuizVerse(' + v + ')">' + v + '절</button>';
+            }
+            container.innerHTML =
+                '<div class="addr-grid-wrap">' +
+                '<div class="addr-grid-label">' +
+                '<button class="addr-back-btn" onclick="backToMemoryQuizChapter()">←</button>' +
+                '계시록 <span class="addr-selected-chapter" style="cursor:pointer;" onclick="backToMemoryQuizChapter()">' + _selectedQuizChapter + '장</span> 몇 절인가요?' +
+                '</div>' +
+                '<div class="addr-verse-grid">' + vbtns + '</div>' +
+                '</div>';
         }
-        sel.value = 1;
-        updateMemoryQuizVerseOptions();
     }
 
-    window.updateMemoryQuizVerseOptions = function () {
-        var chapter = parseInt(document.getElementById('quiz-chapter-select').value);
-        var verseCount = (bibleData[chapter] && bibleData[chapter].length) || 1;
-        var sel = document.getElementById('quiz-verse-select');
-        sel.innerHTML = '';
-        for (var i = 1; i <= verseCount; i++) {
-            var opt = document.createElement('option');
-            opt.value = i;
-            opt.textContent = i + '절';
-            sel.appendChild(opt);
-        }
-        sel.value = 1;
+    window.selectMemoryQuizChapter = function (ch) {
+        _selectedQuizChapter = ch;
+        _quizPhase = 'verse';
+        renderMemoryQuizAddressControl();
     };
+
+    window.selectMemoryQuizVerse = function (v) {
+        _selectedQuizVerse = v;
+        handleMemoryQuizSubmit();
+    };
+
+    window.backToMemoryQuizChapter = function () {
+        _quizPhase = 'chapter';
+        renderMemoryQuizAddressControl();
+    };
+
+    function populateChapterSelect() {
+        _quizPhase = 'chapter';
+        _selectedQuizChapter = 1;
+        _selectedQuizVerse = 1;
+        renderMemoryQuizAddressControl();
+    }
 
     window.showMemoryQuizOverlay = function () {
         _quizSessionUsed = [];
@@ -13567,14 +13584,16 @@ function renderGuidePage() {
         if (controls) controls.style.display = '';
         if (resultArea) resultArea.style.display = 'none';
 
-        // 셀렉트를 1장 1절로 초기화
-        var chSel = document.getElementById('quiz-chapter-select');
-        if (chSel) { chSel.value = 1; updateMemoryQuizVerseOptions(); }
+        // 장/절 버튼 그리드 초기화
+        _quizPhase = 'chapter';
+        _selectedQuizChapter = 1;
+        _selectedQuizVerse = 1;
+        renderMemoryQuizAddressControl();
     }
 
     window.handleMemoryQuizSubmit = function () {
-        var selectedChapter = parseInt(document.getElementById('quiz-chapter-select').value);
-        var selectedVerse = parseInt(document.getElementById('quiz-verse-select').value);
+        var selectedChapter = _selectedQuizChapter;
+        var selectedVerse = _selectedQuizVerse;
 
         var parts = _currentQuizStageId.split('-');
         var correctChapter = parseInt(parts[0]);
