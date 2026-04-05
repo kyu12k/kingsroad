@@ -13348,27 +13348,27 @@ const GUIDE_PAGES = [
     {
         title: '🗺️ 전체 여정 흐름',
         html: `
-            <p>킹스로드는 <b>훈련 → 복습 → 보스전</b>을 반복하며 말씀을 암기하는 게임입니다.</p>
+            <p>킹스로드는 <b>학습 → 복습 → 보스전</b>을 반복하며 말씀을 암기하는 게임입니다.</p>
             <div style="text-align:center; font-size:14px; line-height:2.2; margin:16px 0;">
-                📖 훈련 (구절 선택)<br>↓<br>
-                🛡️ 중간점검 (4~7구절마다)<br>↓<br>
-                🐲 보스전 (챕터 완료)<br>↓<br>
-                🔄 복습 → 보너스 획득
+                📖 학습 (구절 선택)<br>↓<br>
+                🛡️ 중간점검 (4~7구절마다 점검)<br>↓<br>
+                🐲 보스전 (챕터 전체 점검)<br>↓<br>
+                🔄 복습 → 기억 강화
             </div>
-            <p style="font-size:13px; color:#888;">구절을 선택해 훈련을 시작하고, 4~7구절마다 중간점검을 통과하면 챕터 보스전에 도전할 수 있습니다.</p>
+            <p style="font-size:13px; color:#888;">구절을 선택해 암송을 시작하고, 4~7구절마다 있는 중간점검과 장의 마지막 보스전으로 점검하세요.</p>
         `
     },
     {
-        title: '📝 훈련 6단계',
+        title: '📝 암송 단계',
         html: `
-            <p style="font-size:13px; color:#888; margin-bottom:12px;">각 구절은 아래 6단계를 순서대로 거쳐 완전히 암기됩니다.</p>
+            <p style="font-size:13px; color:#888; margin-bottom:12px;">각 구절은 아래 단계를 순서대로 거쳐 완전히 암기됩니다.</p>
             <ol style="padding-left:20px; line-height:2;">
                 <li><b>읽기</b> — 말씀 전체를 눈으로 읽기</li>
-                <li><b>초성 채우기</b> — 초성 힌트로 받아쓰기</li>
-                <li><b>일부 빈칸</b> — 점점 줄어드는 힌트</li>
-                <li><b>중간점검</b> — 4~7구절 묶음 테스트</li>
-                <li><b>보스전</b> — 챕터 전체 암송</li>
-                <li><b>복습</b> — 기억 강화 & 보너스 획득</li>
+                <li><b>초성 채우기</b> — 초성 힌트로 알맞은 단어 찾기</li>
+                <li><b>알맞은 단어 찾기</b> — 세 보기 중 정답 찾기</li>
+                <li><b>두루마리 채우기</b> — 시간제한 빈칸 채우기</li>
+                <li><b>순서 맞추기</b> — 단어만 보고 순서대로 정렬하기</li>
+                <li><b>복습</b> — 2, 5단계만 복습해 기억 강화</li>
             </ol>
         `
     },
@@ -13388,10 +13388,10 @@ const GUIDE_PAGES = [
                 </div>
                 <div style="padding:10px 12px; border-radius:8px; background:rgba(230,126,34,0.1); margin-bottom:8px;">
                     <span style="color:#e67e22; font-weight:bold;">🎁 6시간 후 복습 → 보석 ×5배</span><br>
-                    <span style="font-size:12px; color:#aaa;">4번 모두 올바른 타이밍에 복습해야 획득!</span>
+                    <span style="font-size:12px; color:#aaa;">적당한 대기 시간 후에 복습해야 획득!</span>
                 </div>
             </div>
-            <p style="font-size:12px; color:#aaa;">💡 알림을 허용하면 기억 다지기 뱃지가 붙을 때 알려드려요!</p>
+            <p style="font-size:12px; color:#aaa;">💡 맵 화면의 '복습 타이밍' 버튼에서 대기 시간이 지났을 때 알려드려요!</p>
         `
     },
     {
@@ -13399,11 +13399,11 @@ const GUIDE_PAGES = [
         html: `
             <p><b>보석 획득 방법:</b></p>
             <ul style="padding-left:18px; line-height:1.9; font-size:14px;">
-                <li>훈련 & 복습 완료 (보너스 배수 적용)</li>
-                <li>오타 없이 완료하면 +10% 추가</li>
+                <li>학습 & 복습 완료 (보너스 배수 적용)</li>
+                <li>실수 없이 완료하면 +10% 추가</li>
                 <li>일일 미션 / 주간 미션 클리어</li>
                 <li>업적 달성</li>
-                <li>성전 방치 생산</li>
+                <li>성전 자동 생산</li>
             </ul>
             <p style="margin-top:12px;"><b>미션 초기화:</b></p>
             <div style="font-size:13px; color:#666; line-height:1.9;">
@@ -13422,7 +13422,7 @@ const GUIDE_PAGES = [
                 <li>📖 구절 암송 수</li>
                 <li>🐲 보스 승리</li>
                 <li>💎 누적 보석 획득</li>
-                <li>✨ 오타 없는 암송 (완벽 암송)</li>
+                <li>✨ 실수 없는 암송</li>
                 <li>🏰 성전 건축 단계</li>
                 <li>🌅 새벽 암송 (07시 이전 암송)</li>
             </ul>
