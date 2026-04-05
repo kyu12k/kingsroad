@@ -2963,7 +2963,7 @@ function openStageSheet(chapterData) {
         const item = document.createElement('div');
 
         // 1. 상태 정보 확인
-        const isCleared = stage.cleared;
+        const isCleared = (stageMastery[stage.id] || 0) > 0; // stage.cleared는 로드 시에만 갱신되므로 실시간 확인
         const chNum = parseInt(stage.id.split('-')[0]);
 
         // 배지 및 스타일
