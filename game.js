@@ -1118,7 +1118,7 @@ const SoundEffect = {
         osc.frequency.setValueAtTime(150, this.ctx.currentTime); // 낮은음
         osc.frequency.linearRampToValueAtTime(100, this.ctx.currentTime + 0.3); // 더 낮아짐
 
-        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
         gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
 
         osc.connect(gain);
@@ -1137,7 +1137,7 @@ const SoundEffect = {
         osc.frequency.setValueAtTime(800, this.ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.15); // 급격히 떨어짐
 
-        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
         gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
 
         osc.connect(gain);
@@ -1204,7 +1204,7 @@ const SoundEffect = {
         osc.frequency.setValueAtTime(200, now);
         osc.frequency.exponentialRampToValueAtTime(80, now + 0.25);
 
-        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.setValueAtTime(0.15, now);
         gain.gain.linearRampToValueAtTime(0.001, now + 0.25);
 
         osc.connect(gain);
@@ -1245,6 +1245,41 @@ const SoundEffect = {
     }
 };
 
+/* =========================================
+   [시스템: 음성 파일 음량 정규화]
+   음성 MP3 파일을 Web Audio API를 통해 라우팅하여
+   파일 간 음량 차이를 균등화하고 효과음과 비슷한
+   수준으로 맞춥니다 (DynamicsCompressor 사용).
+   ========================================= */
+function connectVoiceToAudioContext(audioElem) {
+    if (!audioElem || audioElem._voiceConnected) return;
+    audioElem._voiceConnected = true;
+
+    try {
+        const ctx = SoundEffect.ctx;
+        if (ctx.state === 'suspended') ctx.resume();
+
+        const source = ctx.createMediaElementSource(audioElem);
+
+        // 다이나믹 컴프레서: 파일 간 음량 차이 균등화
+        const compressor = ctx.createDynamicsCompressor();
+        compressor.threshold.setValueAtTime(-24, ctx.currentTime); // -24dBFS 이상 압축
+        compressor.knee.setValueAtTime(5, ctx.currentTime);
+        compressor.ratio.setValueAtTime(10, ctx.currentTime);      // 압축 비율 10:1
+        compressor.attack.setValueAtTime(0.003, ctx.currentTime);  // 3ms
+        compressor.release.setValueAtTime(0.2, ctx.currentTime);   // 200ms
+
+        // 압축 후 음량 조정 (효과음 gain 0.1과 유사한 수준으로)
+        const gainNode = ctx.createGain();
+        gainNode.gain.setValueAtTime(1.2, ctx.currentTime);
+
+        source.connect(compressor);
+        compressor.connect(gainNode);
+        gainNode.connect(ctx.destination);
+    } catch (e) {
+        console.warn('음성 정규화 연결 오류:', e);
+    }
+}
 
 /* [시스템] 12지파 설정 데이터 (보석 이름 복구 완료) */
 const TRIBE_DATA = [
@@ -11475,6 +11510,7 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback) {
     }
 
     audioObj.muted = isGlobalMuted;
+    connectVoiceToAudioContext(audioObj);
 
     if (muteBtn) {
         muteBtn.style.display = "flex";
