@@ -498,6 +498,12 @@
             </div>
         </div>
 
+        <!-- 왕의 길 해금 정보 -->
+        <div id="kings-road-info" style="display:none; text-align:center; margin-top:-4px; margin-bottom:8px;">
+            <div id="kings-new-badge" class="kings-unlock-badge" style="display:none;"></div>
+            <div id="kings-unlock-timer" class="kings-unlock-timer"></div>
+        </div>
+
         <!-- 여정 시작 오버레이 -->
         <div id="journey-overlay"
             style="display:none; position:fixed; z-index:9999; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.97); color:#f1c40f; flex-direction:column; align-items:center; justify-content:center; font-size:1.3rem; text-align:center;">
@@ -1121,6 +1127,10 @@
                 <div class="mode-btn-text">
                     <span class="mode-btn-label">왕의 길</span>
                     <span class="mode-btn-desc">계시록 순서대로 매일 암기하는 여정</span>
+                    <span id="kings-overlay-info" style="display:none; flex-direction:column; gap:3px; margin-top:5px;">
+                        <span id="kings-overlay-badge" class="kings-unlock-badge" style="display:none;"></span>
+                        <span id="kings-overlay-timer" class="kings-unlock-timer" style="font-size:0.78rem;"></span>
+                    </span>
                 </div>
             </button>
             <button class="mode-journey-btn free-btn" onclick="onClickFreeJourney()">

@@ -2749,10 +2749,128 @@ function isKingsRoadLocked(stageId) {
     return !unlocked.has(stageId);
 }
 
+// === 왕의 길 해금 정보 UI ===
+
+// 다음 해금까지 남은 ms 반환 (전부 해금됐으면 -1)
+function getKingsRoadNextUnlockMs() {
+    const history = kingsRoadData.stepHistory;
+    if (!history || history.length === 0) return -1;
+    const total = getTotalNormalStageCount();
+    const current = getKingsRoadUnlockedCount();
+    if (current >= total) return -1;
+    const last = history[history.length - 1];
+    const daysElapsed = Math.floor((Date.now() - last.timestamp) / 86400000);
+    const nextUnlockTime = last.timestamp + (daysElapsed + 1) * 86400000;
+    return Math.max(0, nextUnlockTime - Date.now());
+}
+
+// 해금됐지만 한 번도 클리어하지 않은 일반 스테이지 수 반환
+function getKingsRoadNewStageCount() {
+    if (!kingsRoadData.stepHistory || kingsRoadData.stepHistory.length === 0) return 0;
+    const mastery = kingsRoadData.mastery || {};
+    const unlocked = getKingsRoadUnlockedSet();
+    let count = 0;
+    unlocked.forEach(id => {
+        // 일반 스테이지만 확인 (mid-boss, boss 제외)
+        if (!id.includes('boss') && !id.includes('mid')) {
+            if (!(mastery[id] > 0)) count++;
+        }
+    });
+    return count;
+}
+
+let _kingsRoadInfoInterval = null;
+
+function updateKingsRoadHomeInfo() {
+    const infoEl = document.getElementById('kings-road-info');
+    if (!infoEl) return;
+
+    const history = kingsRoadData.stepHistory;
+    if (!history || history.length === 0) {
+        infoEl.style.display = 'none';
+        _updateKingsOverlayBtnInfo(0, -1, false);
+        return;
+    }
+
+    infoEl.style.display = '';
+
+    const newCount = getKingsRoadNewStageCount();
+    const msLeft = getKingsRoadNextUnlockMs();
+
+    // 홈 화면 뱃지
+    const badgeEl = document.getElementById('kings-new-badge');
+    if (badgeEl) {
+        if (newCount > 0) {
+            badgeEl.textContent = `🆕 ${newCount}구절 학습 대기`;
+            badgeEl.style.display = '';
+        } else {
+            badgeEl.style.display = 'none';
+        }
+    }
+
+    // 홈 화면 타이머
+    const timerEl = document.getElementById('kings-unlock-timer');
+    if (timerEl) {
+        if (msLeft < 0) {
+            timerEl.textContent = '🎉 모든 구절 해금 완료!';
+        } else {
+            const h = Math.floor(msLeft / 3600000);
+            const m = Math.floor((msLeft % 3600000) / 60000);
+            const s = Math.floor((msLeft % 60000) / 1000);
+            const pad = n => String(n).padStart(2, '0');
+            timerEl.textContent = `⏳ 다음 해금까지 ${pad(h)}:${pad(m)}:${pad(s)}`;
+        }
+    }
+
+    _updateKingsOverlayBtnInfo(newCount, msLeft, true);
+}
+
+function _updateKingsOverlayBtnInfo(newCount, msLeft, hasHistory) {
+    const overlayInfoEl = document.getElementById('kings-overlay-info');
+    if (!overlayInfoEl) return;
+
+    if (!hasHistory) {
+        overlayInfoEl.style.display = 'none';
+        return;
+    }
+
+    overlayInfoEl.style.display = 'flex';
+
+    const overlayBadgeEl = document.getElementById('kings-overlay-badge');
+    if (overlayBadgeEl) {
+        if (newCount > 0) {
+            overlayBadgeEl.textContent = `🆕 ${newCount}구절 학습 대기`;
+            overlayBadgeEl.style.display = '';
+        } else {
+            overlayBadgeEl.style.display = 'none';
+        }
+    }
+
+    const overlayTimerEl = document.getElementById('kings-overlay-timer');
+    if (overlayTimerEl) {
+        if (msLeft < 0) {
+            overlayTimerEl.textContent = '🎉 모든 구절 해금!';
+        } else {
+            const h = Math.floor(msLeft / 3600000);
+            const m = Math.floor((msLeft % 3600000) / 60000);
+            const s = Math.floor((msLeft % 60000) / 1000);
+            const pad = n => String(n).padStart(2, '0');
+            overlayTimerEl.textContent = `해금까지 ${pad(h)}:${pad(m)}:${pad(s)}`;
+        }
+    }
+}
+
+function startKingsRoadInfoTimer() {
+    if (_kingsRoadInfoInterval) clearInterval(_kingsRoadInfoInterval);
+    updateKingsRoadHomeInfo();
+    _kingsRoadInfoInterval = setInterval(updateKingsRoadHomeInfo, 1000);
+}
+
 // 왕의 길 모드 선택 오버레이 열기
 function openModeSelectOverlay() {
     const el = document.getElementById('mode-select-overlay');
     if (el) el.style.display = 'flex';
+    updateKingsRoadHomeInfo();
 }
 
 // 왕의 길 모드 선택 오버레이 닫기
@@ -8403,7 +8521,7 @@ stageClear = function (type) {
         alert(msg);
         updateGemDisplay();
         saveGameData();
-
+        updateKingsRoadHomeInfo();
     } catch (error) {
         console.error("클리어 처리 중 오류:", error);
         alert("오류 발생: " + error.message);
@@ -10415,6 +10533,7 @@ window.onload = function () {
     }
     checkMissions(); // [추가] 게임 시작 시 미션 초기화 체크
     updateStats('login');
+    startKingsRoadInfoTimer();
     updateNotificationBadges();
 
     // 4. 화면 UI 갱신
