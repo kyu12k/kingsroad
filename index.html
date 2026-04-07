@@ -724,7 +724,7 @@
             <div class="map-header-inner">
                 <div class="map-header-row1">
                     <span id="sub-profile-name" style="font-weight:bold; color:#f1c40f;">예비 제사장</span>
-                    <button onclick="toggleSound(this)"
+                    <button onclick="toggleSound()" class="sfx-toggle-btn"
                         style="background:none; border:none; font-size:1.1rem; cursor:pointer; padding:0;">🔊</button>
                 </div>
                 <div class="map-header-row2">
@@ -1046,6 +1046,8 @@
                     ❤️ <span id="training-hearts" style="font-weight:bold; margin-left:5px;">5</span>
                 </div>
 
+                <button onclick="toggleSound()" class="sfx-toggle-btn btn-pause"
+                    style="position:static; margin:0; padding:4px 8px; font-size:1.1rem;">🔊</button>
                 <button class="btn-pause" onclick="confirmQuit()"
                     style="color:#7f8c8d; border-color:#bdc3c7; position: static; margin: 0;">✕</button>
 
@@ -1069,6 +1071,7 @@
                 <button type="button" onclick="useHint()" class="item-btn" id="common-hardship-hint-btn">
                     💡 힌트 <span id="common-hardship-hint-cost" style="font-size:0.7rem; margin-left:2px;">(💎10)</span>
                 </button>
+                <button type="button" onclick="toggleSound()" class="sfx-toggle-btn btn-pause" style="padding:6px 10px; font-size:1.1rem;">🔊</button>
                 <button type="button" id="common-hardship-close-btn" class="btn-pause" onclick="confirmQuit()">✕</button>
             </div>
         </div>
@@ -1094,6 +1097,7 @@
                 </div>
 
                 <div style="display:flex; gap:8px; align-items:center;">
+                    <button onclick="toggleSound()" class="sfx-toggle-btn" style="background:none; border:none; font-size:1.1rem; cursor:pointer; padding:0; color:white;">🔊</button>
                     <div class="heart-display">
                         ❤️ <span id="player-hearts">5</span>
                     </div>

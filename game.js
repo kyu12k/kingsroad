@@ -2958,10 +2958,7 @@ function amenAndStartGame() {
 
 
     // 3. 효과음 버튼 상태 동기화
-    const sfxBtn = document.querySelector('.map-header button[onclick="toggleSound(this)"]');
-    if (sfxBtn) {
-        sfxBtn.innerText = SoundEffect.isMuted ? "🔇" : "🔊";
-    }
+    syncSfxButtons();
 
     // 🌟 4. [핵심 수술 2] 여정 시작 시 (Lazy Authentication)
     // 비로소 새로운 출입증을 발급받고 서버에 등록하여 다른 공기계의 접속을 차단합니다!
@@ -6218,10 +6215,15 @@ function closeResultModal() {
 
 }
 
-// 소리 토글 함수 (기존 코드)
-function toggleSound(btn) {
-    const isMuted = SoundEffect.toggleMute();
-    btn.innerText = isMuted ? "🔇" : "🔊";
+// 소리 토글 함수
+function syncSfxButtons() {
+    const icon = SoundEffect.isMuted ? "🔇" : "🔊";
+    document.querySelectorAll('.sfx-toggle-btn').forEach(b => b.innerText = icon);
+}
+
+function toggleSound() {
+    SoundEffect.toggleMute();
+    syncSfxButtons();
 }
 
 // 배경음악 제거됨 - 함수 유지 (버튼 참조 오류 방지)
