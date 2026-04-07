@@ -129,19 +129,18 @@ async function updateWeeklyCountsImpl() {
     // 🌟🌟🌟 [여기서부터 새로 추가되는 부분] 🌟🌟🌟
     // 3️⃣ 누적 승점(명예의 전당) Top100 조회 및 Snapshot 생성
     // 누적 승점은 주차(weekId)와 상관없이 전체 리더보드에서 'totalScore' 기준으로 가져옵니다.
+    // 중복 제거 후 100명을 확보하기 위해 여유 있게 300개를 가져옵니다
     const totalSnapshot = await db.collection('leaderboard')
         .where('totalScore', '>', 0)
         .orderBy('totalScore', 'desc')
-        .limit(100)
+        .limit(300)
         .get();
 
-    const totalRankingData = totalSnapshot.docs.map((doc, index) => {
+    // 1차: 원시 데이터 변환
+    const rawTotalData = totalSnapshot.docs.map(doc => {
         const row = doc.data();
         return {
-            rank: index + 1,
             name: row.nickname || "이름없음",
-            // 클라이언트(앱)에서 기존 UI 코드를 그대로 재사용할 수 있도록
-            // totalScore 값을 score라는 이름으로 예쁘게 포장해서 보내줍니다!
             score: row.totalScore || 0,
             tribe: row.tribe !== undefined ? row.tribe : 0,
             dept: row.dept !== undefined ? row.dept : 0,
@@ -149,6 +148,22 @@ async function updateWeeklyCountsImpl() {
             castle: row.castleLv || 0
         };
     });
+
+    // 2차: tag 기준 중복 제거 (같은 계정의 여러 기기 문서, 닉네임 변경 케이스 포함)
+    // tag는 계정당 고유하게 발급되므로 닉네임이 달라도 같은 사람으로 처리
+    const seenPlayers = new Map();
+    for (const item of rawTotalData) {
+        // tag가 없거나 기본값("0000")인 경우 name+score를 fallback 키로 사용
+        const key = (item.tag && item.tag !== "0000") ? item.tag : `${item.name}__${item.score}`;
+        if (!seenPlayers.has(key) || seenPlayers.get(key).score < item.score) {
+            seenPlayers.set(key, item);
+        }
+    }
+
+    // 3차: 점수 내림차순 재정렬 후 rank 부여
+    const totalRankingData = [...seenPlayers.values()]
+        .sort((a, b) => b.score - a.score)
+        .map((item, index) => ({ ...item, rank: index + 1 }));
 
     // 저장 경로는 영구 보존의 느낌을 살려 'all_time/hall/total'로 만듭니다.
     const totalSnapshotRef = db.collection('ranking_snapshots').doc('all_time')

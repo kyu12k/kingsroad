@@ -10143,8 +10143,9 @@ function processImportData(inputString) {
             // 이렇게 해야 새로고침 시 서버가 불법 침입으로 오해하지 않고 부드럽게 넘어갑니다.
             parsedData.sessionToken = window.currentSessionToken;
 
-            // 🌟 [중복 랭킹 방지] 구 기기 playerId 기록 (새 UID 확정 후 Firestore 구 문서 삭제용)
-            const _oldImportId = parsedData.playerId;
+            // 🌟 [중복 랭킹 방지] 현재 기기의 playerId 기록 (가져오기 완료 후 기존 Firestore 문서 삭제용)
+            // parsedData.playerId(가져올 데이터의 ID)가 아닌 myPlayerId(지금 기기의 ID)를 저장해야 함
+            const _oldImportId = myPlayerId;
             if (_oldImportId && typeof _oldImportId === 'string' && _oldImportId.length > 0) {
                 localStorage.setItem('kingsroad_import_old_playerid', _oldImportId);
             }
@@ -10555,6 +10556,16 @@ window.onload = function () {
         if (typeof saveGameData === 'function') saveGameData();
         console.log("🔄 복구 데이터 서버 강제 동기화 완료!");
     }
+
+    // 🗑️ [중복 랭킹 방지] 데이터 가져오기 후 이전 기기의 Firestore 문서 삭제
+    const _importOldId = localStorage.getItem('kingsroad_import_old_playerid');
+    if (_importOldId && typeof db !== 'undefined' && db && _importOldId !== myPlayerId) {
+        localStorage.removeItem('kingsroad_import_old_playerid');
+        db.collection('leaderboard').doc(_importOldId).delete()
+            .then(() => console.log('🗑️ 구 기기 랭킹 문서 삭제 완료:', _importOldId))
+            .catch(e => console.warn('⚠️ 구 기기 랭킹 문서 삭제 실패 (이미 없을 수 있음):', e));
+    }
+
     checkMissions(); // [추가] 게임 시작 시 미션 초기화 체크
     updateStats('login');
     startKingsRoadInfoTimer();
