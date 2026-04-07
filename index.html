@@ -1061,16 +1061,22 @@
             </div>
 
             <div class="common-hardship-header-right">
-                <div id="common-hardship-score" class="common-hardship-chip common-hardship-score">승점 0</div>
-                <div id="common-hardship-heart-wrap" class="common-hardship-chip common-hardship-hearts">
-                    ❤️ <span id="common-hardship-heart-count">5</span><span id="common-hardship-heart-max">/5</span>
+                <!-- 하트 + 생명의 떡: 세로 2줄 -->
+                <div class="hardship-hud-group">
+                    <div id="common-hardship-heart-wrap" class="common-hardship-chip common-hardship-hearts">
+                        ❤️ <span id="common-hardship-heart-count">5</span><span id="common-hardship-heart-max">/5</span>
+                    </div>
+                    <button type="button" id="common-hardship-life-bread-btn" class="common-hardship-chip hardship-life-bread-btn" onclick="useBattleItem('lifeBread')">
+                        🍞 <span id="common-hardship-life-bread-count">0</span>
+                    </button>
                 </div>
-                <button type="button" id="common-hardship-life-bread-btn" class="common-hardship-chip hardship-life-bread-btn" onclick="useBattleItem('lifeBread')">
-                    🍞 <span id="common-hardship-life-bread-count">0</span>
-                </button>
-                <button type="button" onclick="useHint()" class="item-btn" id="common-hardship-hint-btn">
-                    💡 힌트 <span id="common-hardship-hint-cost" style="font-size:0.7rem; margin-left:2px;">(💎10)</span>
-                </button>
+                <!-- 승점 + 힌트: 세로 2줄 -->
+                <div class="hardship-hud-group">
+                    <div id="common-hardship-score" class="common-hardship-chip common-hardship-score">승점 0</div>
+                    <button type="button" onclick="useHint()" class="item-btn" id="common-hardship-hint-btn">
+                        💡 힌트 <span id="common-hardship-hint-cost" style="font-size:0.7rem; margin-left:2px;">(💎10)</span>
+                    </button>
+                </div>
                 <button type="button" onclick="toggleSound()" class="sfx-toggle-btn btn-pause" style="padding:6px 10px; font-size:1.1rem;">🔊</button>
                 <button type="button" id="common-hardship-close-btn" class="btn-pause" onclick="confirmQuit()">✕</button>
             </div>
