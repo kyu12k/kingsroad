@@ -4228,6 +4228,18 @@ body, html {
     color: #95a5a6;
     line-height: 1.4;
 }
+.mode-btn-review-count {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: bold;
+    color: #e67e22;
+    background: rgba(230, 126, 34, 0.13);
+    border: 1px solid rgba(230, 126, 34, 0.4);
+    border-radius: 20px;
+    padding: 2px 10px;
+    margin-top: 4px;
+    align-self: flex-start;
+}
 
 /* 왕의 길 해금 정보 */
 .kings-unlock-badge {

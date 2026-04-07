@@ -2860,6 +2860,31 @@ function _updateKingsOverlayBtnInfo(newCount, msLeft, hasHistory) {
     }
 }
 
+function updateModeSelectReviewCounts() {
+    const kingsCount = getReviewCountForMode('kings');
+    const freeCount = getReviewCountForMode('free');
+
+    const kingsEl = document.getElementById('kings-btn-review-count');
+    if (kingsEl) {
+        if (kingsCount > 0) {
+            kingsEl.textContent = `📖 복습 ${kingsCount}구절`;
+            kingsEl.style.display = '';
+        } else {
+            kingsEl.style.display = 'none';
+        }
+    }
+
+    const freeEl = document.getElementById('free-btn-review-count');
+    if (freeEl) {
+        if (freeCount > 0) {
+            freeEl.textContent = `📖 복습 ${freeCount}구절`;
+            freeEl.style.display = '';
+        } else {
+            freeEl.style.display = 'none';
+        }
+    }
+}
+
 function startKingsRoadInfoTimer() {
     if (_kingsRoadInfoInterval) clearInterval(_kingsRoadInfoInterval);
     updateKingsRoadHomeInfo();
@@ -2871,6 +2896,7 @@ function openModeSelectOverlay() {
     const el = document.getElementById('mode-select-overlay');
     if (el) el.style.display = 'flex';
     updateKingsRoadHomeInfo();
+    updateModeSelectReviewCounts();
 }
 
 // 왕의 길 모드 선택 오버레이 닫기
@@ -3792,6 +3818,33 @@ function getForgottenStages() {
         }
     }
     return forgottenList;
+}
+
+// 특정 모드의 복습 대기 구절 수를 반환 (모드 전환 없이 조회)
+function getReviewCountForMode(mode) {
+    let reviewStepMap, nextReviewTimeMap;
+    if (mode === activeMode) {
+        reviewStepMap = stageReviewStep;
+        nextReviewTimeMap = stageNextReviewTime;
+    } else if (mode === 'kings') {
+        reviewStepMap = kingsRoadData.reviewStep;
+        nextReviewTimeMap = kingsRoadData.nextReviewTime;
+    } else {
+        reviewStepMap = _freeStageReviewStep;
+        nextReviewTimeMap = _freeStageNextReviewTime;
+    }
+    const now = Date.now();
+    let count = 0;
+    for (const chapter of gameData) {
+        if (!chapter.stages) continue;
+        for (const stage of chapter.stages) {
+            if (stage.type === 'boss' || stage.type === 'mid-boss') continue;
+            const step = reviewStepMap[stage.id] || 1;
+            const nextTime = nextReviewTimeMap[stage.id] || 0;
+            if (step > 1 && now >= nextTime) count++;
+        }
+    }
+    return count;
 }
 
 // 기억 다지기 스테이지 오버레이 표시 함수
