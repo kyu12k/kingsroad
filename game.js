@@ -5332,6 +5332,16 @@ function loadStep() {
                 document.getElementById('btn-step1-next').style.display = 'block';
                 document.getElementById('btn-step1-next').classList.add('shake-effect');
                 pouringLight.style.opacity = "0";
+
+                // 읽기 버튼 → 다시하기 버튼으로 교체
+                const restartBtn = document.createElement('button');
+                restartBtn.className = revealBtn.className;
+                restartBtn.style.flex = "1";
+                restartBtn.innerText = '다시하기 🔄';
+                restartBtn.onclick = () => { loadStep(); };
+                if (revealBtn.parentNode) {
+                    revealBtn.parentNode.replaceChild(restartBtn, revealBtn);
+                }
             }, 1500);
         };
     }
