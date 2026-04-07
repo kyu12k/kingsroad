@@ -2292,7 +2292,7 @@ function buildReviewBadgeHtml(stageId) {
     const pending = stagePendingRetry[stageId];
     if (pending) {
         if (pending.type === 'good') {
-            statusHtml = `<span class="review-ready">⚡ 재시도 가능!</span>`;
+            statusHtml = `<span class="review-ready">⚡ 재시도 하여 다음 단계로!</span>`;
         } else if (pending.type === 'miss') {
             statusHtml = `<span class="review-ready">🔄 재도전 ${pending.remaining}회 남음</span>`;
         }
@@ -4790,7 +4790,7 @@ function updateCastleView() {
 
     // 2. 텍스트 & 이미지 업데이트
     document.getElementById('castle-name').innerText = `Lv.${data.level} ${data.name}`;
-    document.getElementById('castle-desc').innerText = data.desc;
+    document.getElementById('castle-desc').innerHTML = data.desc;
 
     const imgTag = document.getElementById('castle-img');
     imgTag.src = data.img; // 이미지 파일 연결! (파일 없으면 엑박 대신 🚧 뜸)
