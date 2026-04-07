@@ -2782,45 +2782,14 @@ function getKingsRoadNewStageCount() {
 let _kingsRoadInfoInterval = null;
 
 function updateKingsRoadHomeInfo() {
-    const infoEl = document.getElementById('kings-road-info');
-    if (!infoEl) return;
-
     const history = kingsRoadData.stepHistory;
     if (!history || history.length === 0) {
-        infoEl.style.display = 'none';
         _updateKingsOverlayBtnInfo(0, -1, false);
         return;
     }
 
-    infoEl.style.display = '';
-
     const newCount = getKingsRoadNewStageCount();
     const msLeft = getKingsRoadNextUnlockMs();
-
-    // 홈 화면 뱃지
-    const badgeEl = document.getElementById('kings-new-badge');
-    if (badgeEl) {
-        if (newCount > 0) {
-            badgeEl.textContent = `🆕 ${newCount}구절 학습 대기`;
-            badgeEl.style.display = '';
-        } else {
-            badgeEl.style.display = 'none';
-        }
-    }
-
-    // 홈 화면 타이머
-    const timerEl = document.getElementById('kings-unlock-timer');
-    if (timerEl) {
-        if (msLeft < 0) {
-            timerEl.textContent = '🎉 모든 구절 해금 완료!';
-        } else {
-            const h = Math.floor(msLeft / 3600000);
-            const m = Math.floor((msLeft % 3600000) / 60000);
-            const s = Math.floor((msLeft % 60000) / 1000);
-            const pad = n => String(n).padStart(2, '0');
-            timerEl.textContent = `⏳ 다음 해금까지 ${pad(h)}:${pad(m)}:${pad(s)}`;
-        }
-    }
 
     _updateKingsOverlayBtnInfo(newCount, msLeft, true);
 }
