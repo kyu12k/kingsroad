@@ -3744,8 +3744,8 @@ function openModeSelect(stageId) {
             <div class="mode-icon">⚡</div>
             <div class="mode-info">
                 <div class="mode-tag" style="background:#f1c40f; color:#d35400;">추천</div>
-                <div class="mode-title">빠른 복습 (Step 2, 5)</div>
-                <div class="mode-desc">초성 퀴즈 + 문장 배열 (핵심만!)</div>
+                <div class="mode-title">빠른 복습 (Step 1, 5)</div>
+                <div class="mode-desc">읽기 + 문장 배열 (핵심만!)</div>
             </div>
         </button>
 
@@ -4962,7 +4962,7 @@ function startTraining(stageId, mode = 'normal') {
     if (window.isReplayMode) {
         // 이미 Step 1~5를 다 완료한 상태
         const courses = {
-            'quick': [2, 5],
+            'quick': [1, 5],
             'full': [1, 2, 3, 4, 5],
             'normal': [1, 2, 3, 4, 5]
         };
