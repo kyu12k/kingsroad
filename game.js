@@ -5101,7 +5101,7 @@ function loadStep() {
     // ----------------------------------------------------
     if (currentStep === 1) {
         field.innerHTML = `
-            <div class="verse-indicator">${verseLabel}Step 1. 한 단어씩 읽으며 '읽기'를 눌러 외운 말씀을 확인하세요</div>
+            <div class="verse-indicator">${verseLabel}Step 1. 한 단어씩 읽으며 '읽기'를 눌러 외운 말씀을 확인하세요.<br>확실히 외웠다는 생각이 들 때까지 반복하세요.</div>
             
             <div style="position: relative; margin-bottom: 30px;">
                 <div class="reading-card" id="tap-reading-card" 
@@ -5157,7 +5157,7 @@ function loadStep() {
 
         control.innerHTML = `
             <div id="step1-controls" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 10px;"></div>
-            <button class="btn-attack" id="btn-step1-next" onclick="nextStep()" style="display:none; background-color:#2ecc71; margin-top:10px; width: 100%;">성령 충만! 다음 단계로 ▶</button>
+            <button class="btn-attack" id="btn-step1-next" onclick="nextStep()" style="display:none; background-color:#2ecc71; margin-top:10px; width: 100%;">다 외웠다! 성령 충만! 다음 단계로 ▶</button>
             <div id="step1-tip-text" style="text-align:center; font-size:0.9rem; margin-top:5px; color:#8fa8c8">
                 <span id="step1-tip-badge" style="padding:2px 8px; border-radius:10px; background:#1d3550; color:#dce8f5;">TIP</span> 하나씩 말하며 '읽기' 버튼을 눌러보세요
             </div>
@@ -5337,7 +5337,7 @@ function loadStep() {
                 const restartBtn = document.createElement('button');
                 restartBtn.className = revealBtn.className;
                 restartBtn.style.flex = "1";
-                restartBtn.innerText = '다시하기 🔄';
+                restartBtn.innerText = '다시하기: 눈 감고도 외울 때까지!';
                 restartBtn.onclick = () => { loadStep(); };
                 if (revealBtn.parentNode) {
                     revealBtn.parentNode.replaceChild(restartBtn, revealBtn);
@@ -9004,7 +9004,7 @@ function initTowerGame() {
         });
     }
 
-    document.getElementById('tower-msg').innerText = "알맞은 단어를 고르세요!";
+    document.getElementById('tower-msg').innerText = "세 단어 중 순서에 맞는 단어를 고르세요!";
     document.getElementById('tower-msg').style.color = "#f0e6c0";
 
     // 애니메이션 초기화
