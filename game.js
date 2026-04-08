@@ -8848,12 +8848,20 @@ window.addEventListener('load', function () {
             // 종료 팝업 띄우기
             openQuitModal();
         } else {
-            // 게임 중이 아닐 때(홈, 맵 등)는
-            // 여기서 앱을 종료할지, 아니면 그냥 둘지 결정할 수 있습니다.
-            // 일단은 홈 화면 등에서는 뒤로가기가 작동하지 않게 막거나(동일 로직),
-            // 별도 처리를 안 하면 브라우저 기본 동작을 따릅니다.
-            // (모바일 웹앱 특성상 계속 머무르게 하려면 아래 줄 유지)
-            history.pushState(null, null, location.href);
+            // 게임 중이 아닐 때(홈, 맵 등) — 두 번 누르면 종료
+            const now = Date.now();
+            if (window._lastBackPress && now - window._lastBackPress < 2000) {
+                // 2초 내 두 번째 누름 → 종료 허용 (pushState 하지 않음)
+            } else {
+                window._lastBackPress = now;
+                history.pushState(null, null, location.href);
+                const hasScheduledNotif = localStorage.getItem('notifTimes') || sessionStorage.getItem('reviewNotifScheduled');
+                if (hasScheduledNotif) {
+                    showToast('탭을 열어두시면 복습 알림을 받을 수 있어요.\n종료하려면 한 번 더 누르세요.');
+                } else {
+                    showToast('종료하려면 한 번 더 누르세요.');
+                }
+            }
         }
     };
 });
@@ -10032,7 +10040,9 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
     }
 
     // 페이지가 열려 있을 때 foreground fallback
+    sessionStorage.setItem('reviewNotifScheduled', '1');
     setTimeout(() => {
+        sessionStorage.removeItem('reviewNotifScheduled');
         if (document.visibilityState !== 'hidden') {
             try { new Notification(title, { body, icon: '/icon-192.png' }); } catch(e) {}
         }
