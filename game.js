@@ -13972,6 +13972,13 @@ function renderGuidePage() {
         if (controls) controls.style.display = '';
         if (resultArea) resultArea.style.display = 'none';
 
+        // 남은 퀴즈 개수 표시
+        var remaining = getEligibleQuizVerses().length;
+        var remEl = document.getElementById('quiz-remaining');
+        if (remEl) {
+            remEl.textContent = remaining <= 1 ? '남은 퀴즈: ' + remaining + '개 (마지막)' : '남은 퀴즈: ' + remaining + '개';
+        }
+
         // 장/절 버튼 그리드 초기화
         _quizPhase = 'chapter';
         _selectedQuizChapter = 1;
