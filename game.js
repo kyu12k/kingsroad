@@ -8848,9 +8848,14 @@ window.addEventListener('load', function () {
             // 종료 팝업 띄우기
             openQuitModal();
         } else {
-            // 게임 중이 아닐 때(홈, 맵 등) — 종료 확인 모달
             history.pushState(null, null, location.href);
-            openExitConfirmModal();
+            // 종료 확인 모달이 열려 있으면 닫기
+            const exitModal = document.getElementById('exit-confirm-modal');
+            if (exitModal && exitModal.classList.contains('active')) {
+                cancelExitApp();
+            } else {
+                openExitConfirmModal();
+            }
         }
     };
 });
