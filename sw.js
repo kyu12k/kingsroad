@@ -80,8 +80,23 @@ self.addEventListener('message', event => {
       self.registration.showNotification(title, {
         body,
         icon: '/icon-192.png',
-        badge: '/icon-192.png'
+        badge: '/icon-192.png',
+        tag: 'review-notification',
+        renotify: true
       });
     }, delayMs);
   }
+});
+
+// 알림 클릭 시 앱 포커스 또는 새 창 열기
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      for (const client of clientList) {
+        if ('focus' in client) return client.focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow('/');
+    })
+  );
 });

@@ -230,7 +230,7 @@ button,
             display: none;
         }
         #forgetting-btn:active {
-            background: #ffe066;
+            background: #f1c40f;
             color: #222;
             transform: translateX(-50%) scale(0.95); /* 누를 때 쫀득한 애니메이션 추가 */
         }
@@ -276,7 +276,7 @@ button,
             transition: background 0.2s, color 0.2s;
         }
         .forgetting-stage-item .play-btn:active {
-            background: #ffe066;
+            background: #f1c40f;
             color: #222;
         }
         /* [1. 기본 설정] */
@@ -1601,11 +1601,11 @@ body, html {
     position: relative;
     width: 92%;
     max-width: 760px;
-    background: rgba(255, 255, 255, 0.88);
-    border: 1px solid rgba(44, 62, 80, 0.08);
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 24px;
     padding: 22px 20px;
-    box-shadow: 0 18px 40px rgba(44, 62, 80, 0.12);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
 }
 
 .hardship-mode-tag {
@@ -1615,8 +1615,8 @@ body, html {
     padding: 6px 12px;
     margin-bottom: 14px;
     border-radius: 999px;
-    background: rgba(44, 62, 80, 0.08);
-    color: #2c3e50;
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.75);
     font-size: 0.82rem;
     font-weight: 800;
 }
@@ -1624,7 +1624,7 @@ body, html {
 .hardship-verse-text {
     font-size: 1.2rem;
     line-height: 1.9;
-    color: #2c3e50;
+    color: rgba(255, 255, 255, 0.92);
     word-break: keep-all;
     overflow-wrap: break-word;
 }
@@ -1686,11 +1686,11 @@ body, html {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.88rem;
-    font-weight: 700;
-    color: #7f8c8d;
+    font-family: 'Noto Serif KR', serif;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #f1c40f;
     margin-bottom: 10px;
-    letter-spacing: 0.04em;
 }
 
 .addr-chapter-grid {
@@ -1748,8 +1748,9 @@ body, html {
 }
 
 .addr-selected-chapter {
+    font-family: 'Noto Serif KR', serif;
     font-weight: 900;
-    color: #2c3e50;
+    color: #f1c40f;
 }
 
 /* 기억하시나요? 다크 테마 오버라이드 */
@@ -1772,7 +1773,7 @@ body, html {
 }
 
 #memory-quiz-overlay .addr-grid-label {
-    color: rgba(241, 196, 15, 0.7);
+    color: rgba(241, 196, 15, 1.0);
 }
 
 #memory-quiz-overlay .addr-selected-chapter {
@@ -3708,7 +3709,7 @@ body, html {
     font-size: 2.5rem !important;
     font-weight: 900 !important;
     letter-spacing: 0.08em !important;
-    color: #ffe066 !important;
+    color: #f1c40f !important;
     text-shadow: 0 2px 12px #2c3e50, 0 1px 0 #fff7b2 !important;
     margin-bottom: 8px !important;
     line-height: 1.1 !important;

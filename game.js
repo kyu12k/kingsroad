@@ -6152,7 +6152,7 @@ function showClearScreen() {
                     const stageObj = chData && chData.stages ? chData.stages.find(s => s.id === sId) : null;
                     const stageTitle = stageObj ? stageObj.title : '이 말씀';
                     notifWrap.innerHTML = `
-                        <p style="font-size:0.85rem; color:#7f8c8d; margin:0 0 6px;">${waitLabel} 뒤 알려드릴까요?</p>
+                        <p style="font-size:0.85rem; color:#7f8c8d; margin:0 0 6px;">${waitLabel} 뒤 알려드릴까요? (앱을 완전히 종료하지 않으면 알림을 보내드립니다)</p>
                         <button onclick="scheduleReviewNotification(${rawDelayMs}, '${stageTitle.replace(/'/g, "\\'")}', this)"
                             style="background:#e8a020; color:white; border:none; padding:9px 20px; border-radius:20px; font-weight:bold; font-size:0.9rem; cursor:pointer;">
                             🔔 알림 예약
@@ -8848,20 +8848,9 @@ window.addEventListener('load', function () {
             // 종료 팝업 띄우기
             openQuitModal();
         } else {
-            // 게임 중이 아닐 때(홈, 맵 등) — 두 번 누르면 종료
-            const now = Date.now();
-            if (window._lastBackPress && now - window._lastBackPress < 2000) {
-                // 2초 내 두 번째 누름 → 종료 허용 (pushState 하지 않음)
-            } else {
-                window._lastBackPress = now;
-                history.pushState(null, null, location.href);
-                const hasScheduledNotif = localStorage.getItem('notifTimes') || sessionStorage.getItem('reviewNotifScheduled');
-                if (hasScheduledNotif) {
-                    showToast('탭을 열어두시면 복습 알림을 받을 수 있어요.\n종료하려면 한 번 더 누르세요.');
-                } else {
-                    showToast('종료하려면 한 번 더 누르세요.');
-                }
-            }
+            // 게임 중이 아닐 때(홈, 맵 등) — 종료 확인 모달
+            history.pushState(null, null, location.href);
+            openExitConfirmModal();
         }
     };
 });
@@ -8883,6 +8872,27 @@ function openQuitModal() {
     if (modal) {
         modal.classList.add('active');
     }
+}
+
+// [앱 종료 확인 모달]
+function openExitConfirmModal() {
+    const hasScheduledNotif = localStorage.getItem('notifTimes') || sessionStorage.getItem('reviewNotifScheduled');
+    const msgEl = document.getElementById('exit-confirm-message');
+    if (msgEl) {
+        msgEl.innerHTML = hasScheduledNotif
+            ? '탭을 열어두시면<br>복습 알림을 받을 수 있어요.'
+            : '정말 종료하시겠습니까?';
+    }
+    document.getElementById('exit-confirm-modal').classList.add('active');
+}
+
+function cancelExitApp() {
+    document.getElementById('exit-confirm-modal').classList.remove('active');
+}
+
+function confirmExitApp() {
+    document.getElementById('exit-confirm-modal').classList.remove('active');
+    history.back();
 }
 
 // 3. [계속하기] 버튼: 팝업 닫고 게임 계속
@@ -10056,7 +10066,7 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
     }
     const hr = delayMs / 3600000;
     const label = hr < 1 ? `${Math.round(delayMs / 60000)}분` : `${Math.round(hr)}시간`;
-    showToast(`${label} 뒤 알림을 드릴게요! (탭을 닫지 마세요)`);
+    showToast(`${label} 뒤 알림을 드릴게요! (앱을 완전히 종료하지 않으면 알림을 보내드립니다)`);
 }
 // ── 복습 알림 예약 끝 ────────────────────────────────────────────────────────
 
@@ -12443,6 +12453,17 @@ for (let hardshipChapter = 1; hardshipChapter <= 22; hardshipChapter++) {
     }
 }
 
+const HARDSHIP_CHURCH_HINTS = {
+    '2-29': '두아디라',
+    '3-6': '사데',
+    '3-13': '빌라델비아',
+    '3-22': '라오디게아'
+};
+for (const verse of HARDSHIP_VERSES) {
+    const hint = HARDSHIP_CHURCH_HINTS[verse.id];
+    verse.displayText = hint ? `${verse.text} (${hint})` : verse.text;
+}
+
 const HARDSHIP_VERSE_MAP = HARDSHIP_VERSES.reduce((accumulator, verse) => {
     accumulator[verse.id] = verse;
     return accumulator;
@@ -13004,7 +13025,7 @@ function renderHardshipAddressVerse() {
         <div class="verse-indicator">주소를 맞히세요</div>
         <div class="hardship-verse-card">
             <div class="hardship-mode-tag">${getHardshipModeMeta('address').icon} ${getHardshipModeMeta('address').summary}</div>
-            <div class="hardship-verse-text">${hardshipState.currentVerse.text}</div>
+            <div class="hardship-verse-text">${hardshipState.currentVerse.displayText || hardshipState.currentVerse.text}</div>
             ${buildHardshipFeedbackHtml()}
         </div>
     `;
