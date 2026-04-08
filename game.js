@@ -9903,14 +9903,11 @@ async function openNotificationSettings() {
 
     modal.style.display = 'flex';
 
-    // 저장된 알림 시간 불러오기
+    // 저장된 알림 시간 불러오기 (localStorage)
     let savedTimes = [];
     try {
-        if (myPlayerId && db) {
-            const doc = await db.collection('leaderboard').doc(myPlayerId).get();
-            savedTimes = doc.data()?.notificationTimes || [];
-        }
-    } catch (e) { /* 오프라인 등 무시 */ }
+        savedTimes = JSON.parse(localStorage.getItem('notifTimes') || '[]');
+    } catch (e) { /* 무시 */ }
 
     const list = document.getElementById('notif-time-list');
     list.innerHTML = '';
@@ -9956,34 +9953,21 @@ async function notifSave() {
 
         if (times.length === 0) {
             // 알림 해제
-            if (myPlayerId && db) {
-                await db.collection('leaderboard').doc(myPlayerId).set(
-                    { notificationTimes: [], fcmToken: '' }, { merge: true }
-                );
-            }
+            localStorage.removeItem('notifTimes');
             document.getElementById('notification-modal').style.display = 'none';
             showToast('알림이 해제되었습니다.');
             return;
         }
 
-        // 알림 권한 요청 + FCM 토큰 취득
+        // 알림 권한 요청
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') {
             showToast('알림 권한이 필요합니다. 브라우저 설정에서 허용해주세요.');
             return;
         }
 
-        const token = await initFCM();
-        if (!token) {
-            showToast('알림 등록에 실패했습니다. 잠시 후 다시 시도해주세요.');
-            return;
-        }
-
-        if (myPlayerId && db) {
-            await db.collection('leaderboard').doc(myPlayerId).set(
-                { notificationTimes: times }, { merge: true }
-            );
-        }
+        // localStorage에 저장 (서버 불필요)
+        localStorage.setItem('notifTimes', JSON.stringify(times));
 
         document.getElementById('notification-modal').style.display = 'none';
         showToast(`알림이 설정되었습니다. (${times.join(', ')})`);
@@ -9993,6 +9977,35 @@ async function notifSave() {
 }
 
 // ── 알림 설정 끝 ────────────────────────────────────────────────────────────
+
+// ── 매일 알림 시간 체크 (클라이언트 전용) ────────────────────────────────────
+function startNotificationCheck() {
+    if (!('Notification' in window)) return;
+    setInterval(() => {
+        if (Notification.permission !== 'granted') return;
+        let times;
+        try { times = JSON.parse(localStorage.getItem('notifTimes') || '[]'); } catch (e) { return; }
+        if (!times.length) return;
+        const now = new Date();
+        const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        const todayKey = `notif_shown_${now.toDateString()}`;
+        let shownToday;
+        try { shownToday = JSON.parse(localStorage.getItem(todayKey) || '[]'); } catch (e) { shownToday = []; }
+        times.forEach(t => {
+            if (t === hhmm && !shownToday.includes(t)) {
+                try {
+                    new Notification('킹스로드 복습 알림', {
+                        body: '오늘의 말씀을 복습할 시간입니다!',
+                        icon: '/icon-192.png'
+                    });
+                } catch (e) {}
+                shownToday.push(t);
+                localStorage.setItem(todayKey, JSON.stringify(shownToday));
+            }
+        });
+    }, 60000);
+}
+// ── 매일 알림 시간 체크 끝 ────────────────────────────────────────────────────
 
 // ── 복습 알림 예약 (결과 창 일회성 알림) ────────────────────────────────────
 async function scheduleReviewNotification(delayMs, stageTitle, btn) {
@@ -11363,6 +11376,9 @@ if ('serviceWorker' in navigator) {
             .catch(err => console.log('서비스 워커 등록 실패:', err));
     });
 }
+
+// 매일 알림 시간 체크 시작
+startNotificationCheck();
 
 // 🛡️ 다중 기기 동시 접속 차단기 (스마트 감시 버전)
 function startSessionGuard() {
