@@ -74,4 +74,14 @@ self.addEventListener('message', event => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+  if (event.data && event.data.type === 'SCHEDULE_NOTIFICATION') {
+    const { delayMs, title, body } = event.data;
+    setTimeout(() => {
+      self.registration.showNotification(title, {
+        body,
+        icon: '/icon-192.png',
+        badge: '/icon-192.png'
+      });
+    }, delayMs);
+  }
 });

@@ -6127,6 +6127,42 @@ function showClearScreen() {
         quoteEl.style.display = quoteText ? 'block' : 'none';
     }
 
+    // 알림 예약 버튼 (10분/1시간/6시간 대기 복습만)
+    const notifWrap = document.getElementById('result-notif-wrap');
+    if (notifWrap) {
+        notifWrap.innerHTML = '';
+        notifWrap.style.display = 'none';
+        if (!isTraining) {
+            const sId = window.currentStageId;
+            const outcome = window._lastClearOutcome;
+            if (sId && outcome === 'perfect') {
+                const nextStatus = getReviewStatus(sId);
+                const rawDelayMs = nextStatus.step === 1
+                    ? 10 * 60 * 1000
+                    : getReviewWaitMs(nextStatus.step + 1);
+                const rawHr = rawDelayMs / 3600000;
+                // 10분(0.17hr), 1시간, 6시간만 버튼 표시
+                const isShortDelay = rawHr <= 6.5;
+                if (isShortDelay) {
+                    let waitLabel;
+                    if (rawHr < 1) waitLabel = `${Math.round(rawDelayMs / 60000)}분`;
+                    else waitLabel = `${Math.round(rawHr)}시간`;
+                    // 스테이지 제목 가져오기
+                    const chData = getChapterDataByStageId(sId);
+                    const stageObj = chData && chData.stages ? chData.stages.find(s => s.id === sId) : null;
+                    const stageTitle = stageObj ? stageObj.title : '이 말씀';
+                    notifWrap.innerHTML = `
+                        <p style="font-size:0.85rem; color:#7f8c8d; margin:0 0 6px;">${waitLabel} 뒤 알려드릴까요?</p>
+                        <button onclick="scheduleReviewNotification(${rawDelayMs}, '${stageTitle.replace(/'/g, "\\'")}', this)"
+                            style="background:#e8a020; color:white; border:none; padding:9px 20px; border-radius:20px; font-weight:bold; font-size:0.9rem; cursor:pointer;">
+                            🔔 알림 예약
+                        </button>`;
+                    notifWrap.style.display = 'block';
+                }
+            }
+        }
+    }
+
     const resultModalEl = document.getElementById('result-modal');
     const existingHistoryEl = resultModalEl && resultModalEl.querySelector('.hardship-history-wrap');
     if (existingHistoryEl) existingHistoryEl.remove();
@@ -9957,6 +9993,49 @@ async function notifSave() {
 }
 
 // ── 알림 설정 끝 ────────────────────────────────────────────────────────────
+
+// ── 복습 알림 예약 (결과 창 일회성 알림) ────────────────────────────────────
+async function scheduleReviewNotification(delayMs, stageTitle, btn) {
+    if (!('Notification' in window)) {
+        showToast('이 브라우저는 알림을 지원하지 않습니다.');
+        return;
+    }
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+        showToast('알림 권한이 필요합니다. 브라우저 설정에서 허용해주세요.');
+        return;
+    }
+
+    const title = '킹스로드 복습 알림';
+    const body = `"${stageTitle}" 복습할 시간입니다!`;
+
+    // Service Worker에 예약 전달 (백그라운드 탭에서도 작동)
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(reg => {
+            if (reg.active) {
+                reg.active.postMessage({ type: 'SCHEDULE_NOTIFICATION', delayMs, title, body });
+            }
+        }).catch(() => {});
+    }
+
+    // 페이지가 열려 있을 때 foreground fallback
+    setTimeout(() => {
+        if (document.visibilityState !== 'hidden') {
+            try { new Notification(title, { body, icon: '/icon-192.png' }); } catch(e) {}
+        }
+    }, delayMs);
+
+    // 버튼 상태 변경
+    if (btn) {
+        btn.textContent = '✅ 예약됨';
+        btn.disabled = true;
+        btn.style.background = '#27ae60';
+    }
+    const hr = delayMs / 3600000;
+    const label = hr < 1 ? `${Math.round(delayMs / 60000)}분` : `${Math.round(hr)}시간`;
+    showToast(`${label} 뒤 알림을 드릴게요! (탭을 닫지 마세요)`);
+}
+// ── 복습 알림 예약 끝 ────────────────────────────────────────────────────────
 
 // [기능 4] 데이터 완전 초기화 로직 (새로 추가)
 function resetGameData() {
