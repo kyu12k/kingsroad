@@ -1626,6 +1626,7 @@ body, html {
     line-height: 1.9;
     color: #2c3e50;
     word-break: keep-all;
+    overflow-wrap: break-word;
 }
 
 .hardship-feedback {
