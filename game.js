@@ -4203,7 +4203,7 @@ function loadNextVerse() {
             <span class="placeholder-text" id="placeholder-text">단어를 터치하여 공격 주문을 완성하세요</span>
         </div>
     `;
-    control.innerHTML = `<div class="block-pool" id="block-pool"></div>`;
+    control.innerHTML = `<div style="position:relative;"><span class="next-part-badge" id="next-part-badge" style="display:none;"></span><div class="block-pool" id="block-pool"></div></div>`;
 
     // 3. 데이터 준비
     currentVerseData = window.currentBattleData[currentVerseIdx];
@@ -4223,12 +4223,22 @@ function loadNextVerse() {
         const verseNum = (window.currentBattleStartIndex || 0) + currentVerseIdx + 1;
         let label = `요한계시록 ${chapterNum}장 ${verseNum}절`;
         if (currentBossParts && currentBossParts.length > 1) {
-            const nextBossPartCount = currentBossParts[currentBossPartIndex + 1]?.length;
-            const nextBossInfo = nextBossPartCount ? ` · 다음: ${nextBossPartCount}단어` : '';
-            label += ` (파트 ${currentBossPartIndex + 1}/${currentBossParts.length}${nextBossInfo})`;
+            label += ` (파트 ${currentBossPartIndex + 1}/${currentBossParts.length})`;
         }
         const verseEl = document.getElementById('verse-index');
         if (verseEl) verseEl.innerText = label;
+
+        // 다음 파트 배지 업데이트
+        const badge = document.getElementById('next-part-badge');
+        if (badge) {
+            const nextCount = currentBossParts?.[currentBossPartIndex + 1]?.length;
+            if (nextCount) {
+                badge.textContent = `다음 파트: ${nextCount}단어`;
+                badge.style.display = '';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
     }
 
     // 상단 스테이지 표시 업데이트
@@ -5363,15 +5373,18 @@ function loadStep() {
 
         // 상단에 (파트 1/3) 라벨 추가
         let partLabel = "";
+        let nextPartBadge = "";
         if (window.step2Parts.length > 1) {
             const nextPartCount = window.step2Parts[window.currentStep2PartIndex + 1]?.length;
-            const nextInfo = nextPartCount ? ` · 다음 파트: ${nextPartCount}단어` : '';
-            partLabel = ` <span style="color:#e74c3c;">(파트 ${window.currentStep2PartIndex + 1}/${window.step2Parts.length}${nextInfo})</span>`;
+            partLabel = ` <span style="color:#e74c3c;">(파트 ${window.currentStep2PartIndex + 1}/${window.step2Parts.length})</span>`;
+            if (nextPartCount) {
+                nextPartBadge = `<span class="next-part-badge">다음 파트: ${nextPartCount}단어</span>`;
+            }
         }
 
         field.innerHTML = `
             <div class="verse-indicator">${verseLabel}${partLabel}<br>Step 2. 초성에 맞는 단어를 누르세요!</div>
-            <div class="reading-card" id="initials-display" 
+            <div class="reading-card" id="initials-display"
                  style="position:relative; max-height:140px; overflow-y:auto; align-content:flex-start; line-height:2.2; display:flex; flex-wrap:wrap; justify-content:center; gap:8px;">
             </div>
         `;
@@ -5397,7 +5410,7 @@ function loadStep() {
             display.appendChild(span);
         });
 
-        control.innerHTML = `<div class="block-pool" id="block-pool"></div>`;
+        control.innerHTML = `<div style="position:relative;">${nextPartBadge}<div class="block-pool" id="block-pool"></div></div>`;
         const pool = document.getElementById('block-pool');
 
         // 4. 전체가 아닌 '현재 파트'의 단어들만 가나다순으로 정렬하여 버튼 생성
@@ -5629,26 +5642,29 @@ function loadStep() {
         const correctChunks = window.step5Parts[window.currentStep5PartIndex];
 
         let partLabel = "";
+        let nextPartBadge = "";
         if (window.step5Parts.length > 1) {
             const nextPartCount = window.step5Parts[window.currentStep5PartIndex + 1]?.length;
-            const nextInfo = nextPartCount ? ` · 다음 파트: ${nextPartCount}단어` : '';
-            partLabel = ` <span style="color:#e74c3c;">(파트 ${window.currentStep5PartIndex + 1}/${window.step5Parts.length}${nextInfo})</span>`;
+            partLabel = ` <span style="color:#e74c3c;">(파트 ${window.currentStep5PartIndex + 1}/${window.step5Parts.length})</span>`;
+            if (nextPartCount) {
+                nextPartBadge = `<span class="next-part-badge">다음 파트: ${nextPartCount}단어</span>`;
+            }
         }
 
         // 4. 화면 구성
         field.innerHTML = `
             <div class="verse-indicator">${verseLabel}${partLabel}<br>Step 5. 단어를 터치하여 문장을 완성하세요</div>
-            
+
             <div class="answer-zone" id="answer-zone" style="min-height: 120px; align-content: flex-start;">
                 <span class="placeholder-text" id="placeholder-text">단어를 터치하여 문장을 만드세요</span>
             </div>
-            
+
             <div style="margin-top: 10px; font-size: 0.85rem; color: #576574; text-align: center; background-color: rgba(255,255,255,0.8); padding: 8px 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
                 💡 <b>팁:</b> 5초간 고민하면 힌트가 나타납니다!
             </div>
         `;
 
-        control.innerHTML = `<div class="block-pool" id="block-pool"></div>`;
+        control.innerHTML = `<div style="position:relative;">${nextPartBadge}<div class="block-pool" id="block-pool"></div></div>`;
         const pool = document.getElementById('block-pool');
         const zone = document.getElementById('answer-zone');
 

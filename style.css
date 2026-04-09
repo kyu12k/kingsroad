@@ -3185,6 +3185,21 @@ body, html {
     overflow-y: auto; /* 내용이 길면 그 안에서 스크롤 */
 }
 
+.next-part-badge {
+    position: absolute;
+    top: -14px;
+    right: 0;
+    background-color: #e74c3c;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: bold;
+    padding: 2px 10px;
+    border-radius: 10px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 1;
+}
+
 /* 2. 정답 입력 박스 넓히기 (4번, 5번 문제 해결) */
 .answer-zone {
     width: 98% !important; /* 90% -> 98%로 확장 (옆 공간 최대한 활용) */

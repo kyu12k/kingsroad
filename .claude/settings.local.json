@@ -5,7 +5,8 @@
       "Bash(sed 's/-.*//')",
       "Bash(find 'c:\\\\Users\\\\kikej\\\\OneDrive\\\\바탕 화면\\\\kingsload' -type f \\\\\\(-name *.mp3 -o -name *.wav -o -name *.ogg -o -name *.flac -o -name *.aac \\\\\\))",
       "Bash(find '/c/Users/kikej/OneDrive/바탕 화면/kingsload/assets' -type f \\\\\\(-name *.mp3 -o -name *.wav -o -name *.ogg \\\\\\))",
-      "Bash(du -sh \"c:/Users/kikej/OneDrive/바탕 화면/kingsload/.git/objects/\"*)"
+      "Bash(du -sh \"c:/Users/kikej/OneDrive/바탕 화면/kingsload/.git/objects/\"*)",
+      "Bash(node -e ':*)"
     ]
   }
 }
