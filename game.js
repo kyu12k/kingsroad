@@ -4209,24 +4209,23 @@ function loadNextVerse() {
     currentVerseData = window.currentBattleData[currentVerseIdx];
 
     const verseChunks = (currentVerseData && currentVerseData.chunks) ? currentVerseData.chunks : [];
-    if (verseChunks.length > 20) {
-        const splitIndex = Math.ceil(verseChunks.length / 2);
-        currentBossParts = [verseChunks.slice(0, splitIndex), verseChunks.slice(splitIndex)];
+    currentBossParts = splitChunksIntoParts(verseChunks);
+    if (currentBossParts.length > 1) {
         if (typeof currentBossPartIndex !== 'number' || currentBossPartIndex < 0) currentBossPartIndex = 0;
         if (currentBossPartIndex >= currentBossParts.length) currentBossPartIndex = 0;
-        currentBossChunks = currentBossParts[currentBossPartIndex];
     } else {
-        currentBossParts = null;
         currentBossPartIndex = 0;
-        currentBossChunks = verseChunks;
     }
+    currentBossChunks = currentBossParts[currentBossPartIndex];
 
     function updateVerseIndicator() {
         const chapterNum = window.currentBattleChapter || 1;
         const verseNum = (window.currentBattleStartIndex || 0) + currentVerseIdx + 1;
         let label = `요한계시록 ${chapterNum}장 ${verseNum}절`;
         if (currentBossParts && currentBossParts.length > 1) {
-            label += ` (파트 ${currentBossPartIndex + 1}/${currentBossParts.length})`;
+            const nextBossPartCount = currentBossParts[currentBossPartIndex + 1]?.length;
+            const nextBossInfo = nextBossPartCount ? ` · 다음: ${nextBossPartCount}단어` : '';
+            label += ` (파트 ${currentBossPartIndex + 1}/${currentBossParts.length}${nextBossInfo})`;
         }
         const verseEl = document.getElementById('verse-index');
         if (verseEl) verseEl.innerText = label;
@@ -4270,7 +4269,7 @@ function loadNextVerse() {
         pool.innerHTML = '';
         selectedBlock = null;
 
-        const shuffled = [...chunks].sort(() => Math.random() - 0.5);
+        const shuffled = [...chunks].sort((a, b) => a.localeCompare(b, 'ko'));
         shuffled.forEach(word => {
             const btn = document.createElement('div');
             btn.className = 'word-block';
@@ -5352,17 +5351,10 @@ function loadStep() {
     else if (currentStep === 2) {
 
         // 1. 최대 표시 단어 개수 설정 (한 화면에 이 개수까지만 보여줍니다. 12~15 추천)
-        const MAX_WORDS = 15;
-
         // 2. 파트 데이터 초기화 (처음 진입했거나, 구절이 바뀌었을 때만)
         if (window.currentStep2PartIndex === undefined) {
             window.currentStep2PartIndex = 0;
-            window.step2Parts = [];
-
-            // 전체 chunks를 MAX_WORDS 개수 단위로 싹둑싹둑 잘라 배열에 넣습니다.
-            for (let i = 0; i < trainingVerseData.chunks.length; i += MAX_WORDS) {
-                window.step2Parts.push(trainingVerseData.chunks.slice(i, i + MAX_WORDS));
-            }
+            window.step2Parts = splitChunksIntoParts(trainingVerseData.chunks);
         }
 
         // 3. 현재 파트(화면)에 보여줄 데이터만 꺼내오기
@@ -5372,7 +5364,9 @@ function loadStep() {
         // 상단에 (파트 1/3) 라벨 추가
         let partLabel = "";
         if (window.step2Parts.length > 1) {
-            partLabel = ` <span style="color:#e74c3c;">(파트 ${window.currentStep2PartIndex + 1}/${window.step2Parts.length})</span>`;
+            const nextPartCount = window.step2Parts[window.currentStep2PartIndex + 1]?.length;
+            const nextInfo = nextPartCount ? ` · 다음 파트: ${nextPartCount}단어` : '';
+            partLabel = ` <span style="color:#e74c3c;">(파트 ${window.currentStep2PartIndex + 1}/${window.step2Parts.length}${nextInfo})</span>`;
         }
 
         field.innerHTML = `
@@ -5406,8 +5400,8 @@ function loadStep() {
         control.innerHTML = `<div class="block-pool" id="block-pool"></div>`;
         const pool = document.getElementById('block-pool');
 
-        // 4. 전체가 아닌 '현재 파트'의 단어들만 섞어서 버튼 생성
-        let shuffledList = [...currentChunks].sort(() => Math.random() - 0.5);
+        // 4. 전체가 아닌 '현재 파트'의 단어들만 가나다순으로 정렬하여 버튼 생성
+        let shuffledList = [...currentChunks].sort((a, b) => a.localeCompare(b, 'ko'));
         window.currentSlotIndex = 0;
 
         shuffledList.forEach(word => {
@@ -5625,17 +5619,10 @@ function loadStep() {
     // [수정된 Step 5: 파트 분할 적용 & 기능 강화]
     else if (currentStep === 5) {
 
-        // 👉 1. 최대 표시 단어 개수 설정
-        const MAX_WORDS = 15;
-
         // 👉 2. 파트 데이터 초기화
         if (window.currentStep5PartIndex === undefined) {
             window.currentStep5PartIndex = 0;
-            window.step5Parts = [];
-
-            for (let i = 0; i < trainingVerseData.chunks.length; i += MAX_WORDS) {
-                window.step5Parts.push(trainingVerseData.chunks.slice(i, i + MAX_WORDS));
-            }
+            window.step5Parts = splitChunksIntoParts(trainingVerseData.chunks);
         }
 
         // 👉 3. 현재 파트(화면)에 보여줄 데이터만 꺼내오기
@@ -5643,7 +5630,9 @@ function loadStep() {
 
         let partLabel = "";
         if (window.step5Parts.length > 1) {
-            partLabel = ` <span style="color:#e74c3c;">(파트 ${window.currentStep5PartIndex + 1}/${window.step5Parts.length})</span>`;
+            const nextPartCount = window.step5Parts[window.currentStep5PartIndex + 1]?.length;
+            const nextInfo = nextPartCount ? ` · 다음 파트: ${nextPartCount}단어` : '';
+            partLabel = ` <span style="color:#e74c3c;">(파트 ${window.currentStep5PartIndex + 1}/${window.step5Parts.length}${nextInfo})</span>`;
         }
 
         // 4. 화면 구성
@@ -5663,8 +5652,8 @@ function loadStep() {
         const pool = document.getElementById('block-pool');
         const zone = document.getElementById('answer-zone');
 
-        // 👉 5. 단어 섞기
-        let list = [...correctChunks].sort(() => Math.random() - 0.5);
+        // 👉 5. 단어 가나다순 정렬
+        let list = [...correctChunks].sort((a, b) => a.localeCompare(b, 'ko'));
         let selectedBlock = null;
 
         // 🌟 [추가] 5초 대기 힌트 시스템
@@ -6005,6 +5994,22 @@ function addGems(amount) {
     }
 }
 // ▲▲▲ [여기까지] ▲▲▲
+
+/* [유틸: 청크 균등 파트 분할] */
+function splitChunksIntoParts(chunks, maxWords = 20) {
+    if (chunks.length <= maxWords) return [chunks];
+    const numParts = Math.ceil(chunks.length / maxWords);
+    const parts = [];
+    const base = Math.floor(chunks.length / numParts);
+    const extra = chunks.length % numParts;
+    let idx = 0;
+    for (let i = 0; i < numParts; i++) {
+        const size = base + (i < extra ? 1 : 0);
+        parts.push(chunks.slice(idx, idx + size));
+        idx += size;
+    }
+    return parts;
+}
 
 /* [유틸: 한글 초성 추출기] */
 function getChosung(str) {

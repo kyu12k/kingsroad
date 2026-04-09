@@ -54,6 +54,7 @@ step 10+: 이후 지수 증가 (약 2배씩)
 | `getSubStagesOfMidBoss(chData, stage)` | game.js:~1983 | 중간점검 소속 서브스테이지 목록 반환 |
 | `getMidBossAvgStrength(chData, stage)` | game.js:~1991 | 중간점검 소속 서브스테이지 평균 기억 강도 반환 |
 | `getMemoryLevelFromStep(step)` | game.js:~2003 | 스텝 → 레벨(0~5) 변환 |
+| `splitChunksIntoParts(chunks, maxWords)` | game.js:~6009 | 청크 배열을 maxWords(기본 20) 기준으로 균등 분할. 21개 이상이면 파트 수를 `Math.ceil(총/20)`으로 계산해 각 파트를 최대한 균등하게 나눔 |
 | `buildReviewBadgeHtml(id)` | game.js:2010 | 복습 단계 배지 HTML 생성 |
 | `openStageSheet()` | game.js:2809 | 스테이지 시트 열기 + 목록 렌더링 |
 | `updateSheetTimers()` | game.js:~2956 | 60초마다 타이머 + 기억 강도 바 업데이트 |
@@ -81,6 +82,18 @@ step 10+: 이후 지수 증가 (약 2배씩)
 > S×2 근거: FSRS 이론 — R=80% 부근에서 복습 완료 시 안정성이 약 2배 증가
 
 CSS 클래스: `mem-strength-green` (≥80%), `mem-strength-yellow` (≥60%), `mem-strength-orange` (≥40%), `mem-strength-red` (<40%)
+
+---
+
+## 단어 버튼 파트 분할 (Step 2, Step 5, 보스/중간점검)
+
+구절이 길 경우 단어 버튼을 여러 파트로 나눠 표시함. 공통 유틸 `splitChunksIntoParts()` 사용.
+
+- **기준**: 20단어 이하 → 1파트, 21개 이상 → `Math.ceil(총/20)` 파트로 균등 분할
+- 예: 24개 → [12]+[12], 58개 → [20]+[19]+[19]
+- **버튼 정렬**: 가나다순 (`localeCompare('ko')`)
+- **파트 라벨**: 2파트 이상일 때 상단에 `(파트 1/2 · 다음 파트: 12단어)` 표시, 마지막 파트엔 "다음 파트" 미표시
+- 보스전(`loadNextVerse`)은 `currentBossParts` / `currentBossPartIndex` 변수로 파트 관리
 
 ---
 
