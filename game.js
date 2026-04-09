@@ -8858,24 +8858,26 @@ window.addEventListener('load', function () {
     history.pushState(null, null, location.href);
 
     window.onpopstate = function (event) {
-        if (window.isExitingApp) return;
-        // 게임 화면(전투 중)일 때만 막음
+        history.pushState(null, null, location.href);
+
         const gameScreen = document.getElementById('game-screen');
+        const homeScreen = document.getElementById('home-screen');
 
         if (gameScreen.classList.contains('active')) {
-            // 뒤로가기를 누르면 히스토리가 빠지므로, 다시 채워넣어서 "못 나가게" 막음
-            history.pushState(null, null, location.href);
-
-            // 종료 팝업 띄우기
+            // 전투 중: 나가기 확인 팝업
             openQuitModal();
-        } else {
-            history.pushState(null, null, location.href);
-            // 종료 확인 모달이 열려 있으면 닫기
+        } else if (homeScreen.classList.contains('active')) {
+            // 홈 화면: 종료 안내 모달
             const exitModal = document.getElementById('exit-confirm-modal');
             if (exitModal && exitModal.classList.contains('active')) {
                 cancelExitApp();
             } else {
                 openExitConfirmModal();
+            }
+        } else {
+            // 홈이 아닌 다른 화면: 홈으로 이동
+            if (typeof goHome === 'function') {
+                goHome();
             }
         }
     };
@@ -8900,26 +8902,13 @@ function openQuitModal() {
     }
 }
 
-// [앱 종료 확인 모달]
+// [앱 종료 안내 모달]
 function openExitConfirmModal() {
-    const hasScheduledNotif = localStorage.getItem('notifTimes') || sessionStorage.getItem('reviewNotifScheduled');
-    const msgEl = document.getElementById('exit-confirm-message');
-    if (msgEl) {
-        msgEl.innerHTML = hasScheduledNotif
-            ? '탭을 열어두시면<br>복습 알림을 받을 수 있어요.'
-            : '정말 종료하시겠습니까?';
-    }
     document.getElementById('exit-confirm-modal').classList.add('active');
 }
 
 function cancelExitApp() {
     document.getElementById('exit-confirm-modal').classList.remove('active');
-}
-
-function confirmExitApp() {
-    document.getElementById('exit-confirm-modal').classList.remove('active');
-    window.isExitingApp = true;
-    window.close();
 }
 
 // 3. [계속하기] 버튼: 팝업 닫고 게임 계속
