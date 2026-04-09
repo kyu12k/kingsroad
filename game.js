@@ -5983,8 +5983,8 @@ function finishTraining() {
                                  : getReviewBaseGem(reviewSt.step);
             window._lastClearOutcome = previewOutcome;
         } else {
-            window._lastClearGem = 0;
-            window._lastClearOutcome = null;
+            window._lastClearGem = 10; // 대기 중이어도 최소 10개 보상
+            window._lastClearOutcome = 'waiting';
         }
     }
     showClearScreen();
@@ -6083,7 +6083,9 @@ function showClearScreen() {
         let baseGem = earnedGem > 0 ? earnedGem : 0;
         bonusCount = completedStep;
 
-        if (earnedGem > 0) {
+        if (window._lastClearOutcome === 'waiting') {
+            msg = `📖 [훈련] 완료! (${baseGem}💎 최소 보상 - 대기 중)`;
+        } else if (earnedGem > 0) {
             if (completedStep === 1) {
                 msg = `📖 [훈련] 첫 학습 완료! (${baseGem}💎)`;
             } else {
@@ -8617,9 +8619,6 @@ stageClear = function (type) {
             msg += `🎯 정확도: ${accPercent}% (오답: ${adjustedWrongCount})\n`;
             if (perfectBonus > 0) {
                 msg += `(💎 퍼펙트 +${perfectBonus})\n`;
-            }
-            if (buffMsg) {
-                msg += buffMsg;
             }
             msg += `✨ 승점: +${scoreResult.score}\n`;
             msg += `💎 보석: +${totalGem} (성전 +${castleBonusGem})`;
