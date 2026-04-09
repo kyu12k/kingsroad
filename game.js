@@ -6239,6 +6239,10 @@ function updateStreak() {
 
 /* [보스 클리어 결과 모달 표시] */
 function showBossClearScreen(clearedStageId) {
+    // result-notif-wrap 초기화 (이전 결과 화면의 알림 버튼 잔상 제거)
+    const notifWrapBoss = document.getElementById('result-notif-wrap');
+    if (notifWrapBoss) { notifWrapBoss.innerHTML = ''; notifWrapBoss.style.display = 'none'; }
+
     triggerConfetti();
     SoundEffect.playClear();
 
@@ -9353,15 +9357,15 @@ function updateCastleView() {
     if (!isPast && myCastleLevel < 11) {
         if (myGems < nextBP.cost) {
             rightBtnHTML = `
-                <button style="width:50px; height:50px; border-radius:10px; border:none; background:#34495e; color:#7f8c8d; padding:0; display:flex; flex-direction:column; align-items:center; justify-content:center; border-bottom:3px solid #2c3e50;">
-                    <div style="font-size:1rem;">🔒</div>
-                    <div style="font-size:0.55rem; margin-top:2px;">${nextBP.cost.toLocaleString()}</div>
+                <button style="width:auto; min-width:70px; height:50px; border-radius:10px; border:none; background:#34495e; color:#7f8c8d; padding:0 10px; display:flex; flex-direction:column; align-items:center; justify-content:center; border-bottom:3px solid #2c3e50;">
+                    <div style="font-size:0.9rem;">🔒 건축</div>
+                    <div style="font-size:0.6rem; margin-top:2px; white-space:nowrap;"><span style="color:#e74c3c;">${myGems.toLocaleString()}</span> / ${nextBP.cost.toLocaleString()} 💎</div>
                 </button>`;
         } else {
             rightBtnHTML = `
-                <button onclick="upgradeCastle()" class="btn-pulse" style="width:50px; height:50px; border-radius:10px; border:none; background:#e67e22; color:#fff; cursor:pointer; padding:0; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 3px 0 #d35400;">
-                    <div style="font-size:1.2rem;">🔨</div>
-                    <div style="font-size:0.6rem; font-weight:bold;">UP</div>
+                <button onclick="upgradeCastle()" class="btn-pulse" style="width:auto; min-width:70px; height:50px; border-radius:10px; border:none; background:#e67e22; color:#fff; cursor:pointer; padding:0 10px; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 3px 0 #d35400;">
+                    <div style="font-size:0.9rem;">🔨 건축</div>
+                    <div style="font-size:0.6rem; margin-top:2px; white-space:nowrap; color:#fde3c0;">${myGems.toLocaleString()} / ${nextBP.cost.toLocaleString()} 💎</div>
                 </button>`;
         }
     } else if (isPast) {
@@ -13590,6 +13594,10 @@ function submitHardshipMemoryGuess() {
 }
 
 function finishHardshipSession(reason) {
+    // result-notif-wrap 초기화 (이전 결과 화면의 알림 버튼 잔상 제거)
+    const notifWrapHs = document.getElementById('result-notif-wrap');
+    if (notifWrapHs) { notifWrapHs.innerHTML = ''; notifWrapHs.style.display = 'none'; }
+
     clearHardshipPendingTimeout();
 
     const duration = Math.floor((Date.now() - stageStartTime) / 1000);
