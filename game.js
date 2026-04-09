@@ -13884,26 +13884,29 @@ function renderGuidePage() {
         localStorage.setItem('kingsRoad_memoryQuizCorrect', JSON.stringify(correct));
     }
 
+    // 타임스탬프를 퀴즈 날짜 문자열(YYYY-MM-DD)로 변환 (오전 6시 이전은 전날로 처리)
+    function timestampToQuizDate(ts) {
+        var d = new Date(ts);
+        var adj;
+        if (d.getHours() < 6) {
+            adj = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1);
+        } else {
+            adj = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        }
+        return adj.toISOString().split('T')[0];
+    }
+
     function getEligibleQuizVerses() {
         var correct = getMemoryQuizCorrectToday();
         var yesterday = getPreviousMemoryQuizDate();
+        // 최초 클리어가 아닌, 어제 클리어한(stageLastClear 기준) 모든 구절 대상
         var allCleared = Object.keys(stageMastery).filter(function (id) {
-            return /^\d+-\d+$/.test(id) && stageClearDate[id] === yesterday;
-        });
-        // 클리어된 구절 중 텍스트가 중복되는 것 파악 (찍어야 하는 상황 방지)
-        var textCount = {};
-        allCleared.forEach(function (id) {
-            var p = id.split('-');
-            var ch = parseInt(p[0]), v = parseInt(p[1]);
-            var text = bibleData[ch] && bibleData[ch][v - 1] ? bibleData[ch][v - 1].text : null;
-            if (text) textCount[text] = (textCount[text] || 0) + 1;
+            if (!/^\d+-\d+$/.test(id)) return false;
+            if (!stageLastClear[id]) return false;
+            return timestampToQuizDate(stageLastClear[id]) === yesterday;
         });
         var eligible = allCleared.filter(function (id) {
-            if (correct[id]) return false;
-            var p = id.split('-');
-            var ch = parseInt(p[0]), v = parseInt(p[1]);
-            var text = bibleData[ch] && bibleData[ch][v - 1] ? bibleData[ch][v - 1].text : null;
-            return text && textCount[text] === 1;
+            return !correct[id];
         });
         var filtered = eligible.filter(function (id) { return _quizSessionUsed.indexOf(id) === -1; });
         if (filtered.length === 0 && eligible.length > 0) {
@@ -13996,6 +13999,9 @@ function renderGuidePage() {
         var verse = parseInt(parts[1]);
         var verseData = bibleData[chapter] && bibleData[chapter][verse - 1];
         var text = verseData ? verseData.text : '';
+        // 동일 텍스트 중복 구절(7교회 마지막 절)은 교회 이름을 뒤에 표시
+        var CHURCH_NAMES = { '2-29': '두아디라 교회', '3-6': '사데 교회', '3-13': '빌라델비아 교회', '3-22': '라오디게아 교회' };
+        if (CHURCH_NAMES[stageId]) text = text + ' (' + CHURCH_NAMES[stageId] + ')';
         document.getElementById('memory-quiz-verse-text').textContent = '\u201c' + text + '\u201d';
         document.getElementById('memory-quiz-question-panel').style.display = '';
 
