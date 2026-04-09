@@ -10080,20 +10080,20 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
     const title = '킹스로드 복습 알림';
     const body = `"${stageTitle}" 복습할 시간입니다!`;
 
-    // Service Worker에 예약 전달 (백그라운드 탭에서도 작동)
+    // Service Worker에 예약 전달 (백그라운드/포그라운드 모두 처리)
+    let swScheduled = false;
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.ready.then(reg => {
             if (reg.active) {
                 reg.active.postMessage({ type: 'SCHEDULE_NOTIFICATION', delayMs, title, body });
+                swScheduled = true;
             }
         }).catch(() => {});
     }
 
-    // 페이지가 열려 있을 때 foreground fallback
-    sessionStorage.setItem('reviewNotifScheduled', '1');
+    // SW를 쓸 수 없는 환경의 폴백 (SW가 있으면 SW가 알림을 보내므로 중복 방지)
     setTimeout(() => {
-        sessionStorage.removeItem('reviewNotifScheduled');
-        if (document.visibilityState !== 'hidden') {
+        if (!swScheduled) {
             try { new Notification(title, { body, icon: '/icon-192.png' }); } catch(e) {}
         }
     }, delayMs);
