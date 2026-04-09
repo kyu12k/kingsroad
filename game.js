@@ -5481,13 +5481,33 @@ function loadStep() {
                                 loadStep(); // 현재 loadStep 함수를 다시 불러서 새 파트 렌더링
                             }, 300);
                         } else {
-                            // 🟢 모든 파트를 다 맞췄다면 Step 3으로 이동
+                            // 🟢 모든 파트를 다 맞췄다면 → 다시하기 / 다음 단계로 버튼 표시
                             setTimeout(() => {
-                                // 다음 구절을 위해 파트 데이터 메모리 비워주기 (아주 중요!)
-                                window.currentStep2PartIndex = undefined;
-                                window.step2Parts = undefined;
+                                const btnWrap = document.createElement('div');
+                                btnWrap.style.cssText = 'display:flex;gap:10px;margin-top:16px;';
 
-                                nextStep();
+                                const retryBtn = document.createElement('button');
+                                retryBtn.className = 'btn-attack';
+                                retryBtn.style.flex = '1';
+                                retryBtn.innerText = '다시하기';
+                                retryBtn.onclick = () => {
+                                    window.currentStep2PartIndex = 0;
+                                    loadStep();
+                                };
+
+                                const nextBtn = document.createElement('button');
+                                nextBtn.className = 'btn-attack';
+                                nextBtn.style.cssText = 'flex:1; background-color:#2ecc71;';
+                                nextBtn.innerText = '다음 단계로 ▶';
+                                nextBtn.onclick = () => {
+                                    window.currentStep2PartIndex = undefined;
+                                    window.step2Parts = undefined;
+                                    nextStep();
+                                };
+
+                                btnWrap.appendChild(retryBtn);
+                                btnWrap.appendChild(nextBtn);
+                                control.appendChild(btnWrap);
                             }, 500);
                         }
                     }
@@ -8838,6 +8858,7 @@ window.addEventListener('load', function () {
     history.pushState(null, null, location.href);
 
     window.onpopstate = function (event) {
+        if (window.isExitingApp) return;
         // 게임 화면(전투 중)일 때만 막음
         const gameScreen = document.getElementById('game-screen');
 
@@ -8897,7 +8918,8 @@ function cancelExitApp() {
 
 function confirmExitApp() {
     document.getElementById('exit-confirm-modal').classList.remove('active');
-    history.back();
+    window.isExitingApp = true;
+    window.close();
 }
 
 // 3. [계속하기] 버튼: 팝업 닫고 게임 계속
