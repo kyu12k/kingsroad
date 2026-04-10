@@ -4200,7 +4200,7 @@ function loadNextVerse() {
     field.innerHTML = `
         <div class="verse-indicator" id="verse-index">준비 중...</div>
         <div class="answer-zone" id="answer-zone">
-            <span class="placeholder-text" id="placeholder-text">단어를 터치하여 공격 주문을 완성하세요</span>
+            <span class="placeholder-text" id="placeholder-text">단어를 터치하여 구절을 완성하세요</span>
         </div>
     `;
     control.innerHTML = `<div style="position:relative;"><span class="next-part-badge" id="next-part-badge" style="display:none;"></span><div class="block-pool" id="block-pool"></div></div>`;
@@ -4275,7 +4275,7 @@ function loadNextVerse() {
     }
 
     function renderBossBlocks(chunks) {
-        zone.innerHTML = '<span class="placeholder-text" id="placeholder-text">단어를 터치하여 공격 주문을 완성하세요</span>';
+        zone.innerHTML = '<span class="placeholder-text" id="placeholder-text">단어를 터치하여 구절을 완성하세요</span>';
         pool.innerHTML = '';
         selectedBlock = null;
 
@@ -4423,7 +4423,7 @@ function loadNextVerse() {
 
             // 3. 안내 문구 다시 띄우기
             if (!zone.querySelector('#placeholder-text')) {
-                zone.innerHTML = '<span class="placeholder-text" id="placeholder-text">단어를 터치하여 공격 주문을 완성하세요</span>';
+                zone.innerHTML = '<span class="placeholder-text" id="placeholder-text">단어를 터치하여 구절을 완성하세요</span>';
             }
         }
         if (typeof SoundEffect !== 'undefined') SoundEffect.playClick();
