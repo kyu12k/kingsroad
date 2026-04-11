@@ -12543,6 +12543,7 @@ function proceedHardshipToNextVerse() {
     if (!window.isHardshipMode || !hardshipState.active || !hardshipState.awaitingNext) return;
 
     hardshipState.awaitingNext = false;
+    hardshipState.wrongSlots = [];
 
     if (playerHearts <= 0 && hardshipState.mode !== 'endurance') {
         finishHardshipSession('hearts');
