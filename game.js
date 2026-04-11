@@ -13209,6 +13209,7 @@ function renderHardshipMemoryVerse() {
         const currentValue = hardshipState.memorySlots[index] || '';
         const isHintRevealed = hardshipState.revealedHints.indexOf(index) !== -1;
         const validSlotIndex = getHardshipValidSlotIndexByVerseIndex(index);
+        const isWrong = hardshipState.wrongSlots && hardshipState.wrongSlots.indexOf(index) !== -1;
         const slotClasses = [
             'char-slot',
             'hardship-char-slot',
@@ -13216,6 +13217,7 @@ function renderHardshipMemoryVerse() {
             character === ' ' ? 'is-space' : '',
             isHintRevealed ? 'hint-revealed' : '',
             currentValue ? 'filled' : '',
+            isWrong ? 'wrong' : '',
             !isHintRevealed && activeValidSlotIndex === validSlotIndex ? 'active' : ''
         ].filter(Boolean).join(' ');
         const displayValue = currentValue || '&nbsp;';
@@ -13570,6 +13572,7 @@ function submitHardshipMemoryGuess() {
         const earnedPoints = playerHearts * 2;
         awardHardshipScore(earnedPoints);
         hardshipState.studiedCount += 1;
+        hardshipState.wrongSlots = [];
         hardshipState.feedback = {
             type: 'success',
             message: `정답입니다. ${hardshipState.currentVerse.label} · +${earnedPoints}점`
@@ -13578,6 +13581,17 @@ function submitHardshipMemoryGuess() {
         renderHardshipMemoryVerse();
         updateBattleUI();
         return;
+    }
+
+    // 오답 슬롯 인덱스 수집
+    hardshipState.wrongSlots = [];
+    for (let index = 0; index < text.length; index++) {
+        const answerChar = text.charAt(index);
+        if (!isHardshipTypingTargetChar(answerChar)) continue;
+        if (hardshipState.revealedHints.indexOf(index) !== -1) continue;
+        if ((hardshipState.memorySlots[index] || '') !== answerChar) {
+            hardshipState.wrongSlots.push(index);
+        }
     }
 
     playerHearts = Math.max(0, playerHearts - 1);
