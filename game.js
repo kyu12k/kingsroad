@@ -10150,7 +10150,8 @@ async function openNotificationSettings() {
                     🔔 알림 설정
                 </div>
                 <p style="font-size:0.9rem; color:#7f8c8d; margin-bottom:16px;">
-                    매일 지정한 시간에 복습 알림을 보내드립니다.<br>최대 3개까지 설정할 수 있습니다.
+                    매일 지정한 시간에 복습 알림을 보내드립니다.<br>최대 3개까지 설정할 수 있습니다.<br>
+                    <span style="color:#e67e22; font-size:0.82rem;">※ 앱이 완전히 종료되면 알림이 오지 않을 수 있습니다.</span>
                 </p>
                 <div id="notif-time-list" style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;"></div>
                 <button id="notif-add-btn" onclick="notifAddTime()" style="width:100%; background:#3498db; color:white; border:none; padding:11px; border-radius:10px; font-weight:bold; cursor:pointer; margin-bottom:10px;">
@@ -10235,6 +10236,9 @@ async function notifSave() {
         // localStorage에 저장 (서버 불필요)
         localStorage.setItem('notifTimes', JSON.stringify(times));
 
+        // SW에 매일 알림 예약 전달 (백그라운드 지원)
+        scheduleNotifTimesViaSW();
+
         document.getElementById('notification-modal').style.display = 'none';
         showToast(`알림이 설정되었습니다. (${times.join(', ')})`);
     } finally {
@@ -10245,8 +10249,34 @@ async function notifSave() {
 // ── 알림 설정 끝 ────────────────────────────────────────────────────────────
 
 // ── 매일 알림 시간 체크 (클라이언트 전용) ────────────────────────────────────
+function scheduleNotifTimesViaSW() {
+    if (!('serviceWorker' in navigator)) return;
+    let times;
+    try { times = JSON.parse(localStorage.getItem('notifTimes') || '[]'); } catch(e) { return; }
+    if (!times.length) return;
+    navigator.serviceWorker.ready.then(reg => {
+        if (!reg.active) return;
+        const now = new Date();
+        times.forEach(t => {
+            const [h, m] = t.split(':').map(Number);
+            const target = new Date(now);
+            target.setHours(h, m, 0, 0);
+            if (target <= now) target.setDate(target.getDate() + 1);
+            const delayMs = target - now;
+            reg.active.postMessage({
+                type: 'SCHEDULE_DAILY_NOTIFICATION',
+                delayMs,
+                title: '킹스로드 복습 알림',
+                body: '오늘의 말씀을 복습할 시간입니다!'
+            });
+        });
+    });
+}
+
 function startNotificationCheck() {
     if (!('Notification' in window)) return;
+    // 앱 로드 시 SW에 재예약 (SW가 종료됐을 경우 복구)
+    scheduleNotifTimesViaSW();
     setInterval(() => {
         if (Notification.permission !== 'granted') return;
         let times;

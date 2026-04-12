@@ -86,6 +86,22 @@ self.addEventListener('message', event => {
       });
     }, delayMs);
   }
+  if (event.data && event.data.type === 'SCHEDULE_DAILY_NOTIFICATION') {
+    const { delayMs, title, body } = event.data;
+    function scheduleNext(delay) {
+      setTimeout(() => {
+        self.registration.showNotification(title, {
+          body,
+          icon: '/icon-192.png',
+          badge: '/icon-192.png',
+          tag: 'daily-notification',
+          renotify: true
+        });
+        scheduleNext(24 * 60 * 60 * 1000);
+      }, delay);
+    }
+    scheduleNext(delayMs);
+  }
 });
 
 // 알림 클릭 시 앱 포커스 또는 새 창 열기
