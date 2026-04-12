@@ -4316,12 +4316,12 @@ function loadNextVerse() {
             insertBtn.style.background = '#e67e22';
             insertBtn.style.boxShadow = '0 4px 0 #b7770d';
             insertBtn.style.color = '#fff';
-            insertBtn.innerText = '✂️ ON';
+            insertBtn.innerHTML = '끼워<br>ON';
         } else {
             insertBtn.style.background = '';
             insertBtn.style.boxShadow = '';
             insertBtn.style.color = '';
-            insertBtn.innerText = '✂️ 끼워넣기';
+            insertBtn.innerHTML = '끼워<br>넣기';
         }
     }
 
@@ -4501,7 +4501,7 @@ function loadNextVerse() {
     // (2) 💡 [추가] 다시 조립 버튼 설정
     const resetBtn = document.createElement('button');
     resetBtn.className = 'btn-reset-step5';
-    resetBtn.innerText = '다시 조립';
+    resetBtn.innerHTML = '다시<br>조립';
     resetBtn.style.flex = '1 1 0'; // 래퍼 안에서 차지하는 비율 (1/4)
 
     resetBtn.onclick = () => {
@@ -5937,12 +5937,12 @@ function loadStep() {
                 insertBtn.style.background = '#e67e22';
                 insertBtn.style.boxShadow = '0 4px 0 #b7770d';
                 insertBtn.style.color = '#fff';
-                insertBtn.innerText = '✂️ ON';
+                insertBtn.innerHTML = '끼워<br>ON';
             } else {
                 insertBtn.style.background = '';
                 insertBtn.style.boxShadow = '';
                 insertBtn.style.color = '';
-                insertBtn.innerText = '✂️ 끼워넣기';
+                insertBtn.innerHTML = '끼워<br>넣기';
             }
         }
 
