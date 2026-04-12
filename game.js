@@ -1,6 +1,17 @@
 ﻿// [정식 배포] 게임 버전 정보
 const GAME_VERSION = "1.1.0"; // 복습 단계 시스템 통합
 
+function preloadCastleImage(level) {
+    const bp = castleBlueprints[Math.min(level, castleBlueprints.length - 1)];
+    if (!bp || !bp.img) return;
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = 'images/' + bp.img;
+    link.fetchPriority = 'high';
+    document.head.appendChild(link);
+}
+
 // 🌟 [추가] 브라우저에 저장된 음소거 상태를 불러옵니다. (앱 전체에서 공유)
 let isGlobalMuted = localStorage.getItem('isMuted') === 'true';
 let isVoiceRepeat = localStorage.getItem('isVoiceRepeat') === 'true';
@@ -165,6 +176,7 @@ loadGameData = function () {
     if (!savedString) {
         console.log("📂 저장된 데이터 없음: 신규 시작");
         lastClaimTime = Date.now();
+        preloadCastleImage(0);
         return;
     }
 
@@ -188,6 +200,7 @@ loadGameData = function () {
 
         // [기본 복구]
         myCastleLevel = parsed.level || 0;
+        preloadCastleImage(myCastleLevel);
         myGems = parsed.gems || 0;
         inventory = parsed.inv || { lifeBread: 0 };
         if (inventory) {
@@ -2942,41 +2955,43 @@ function startGame() {
 function amenAndStartGame() {
     const overlay = document.getElementById('journey-overlay');
     const amenBtn = document.getElementById('amen-btn');
+    // 시각적 피드백만 즉시 처리 (INP 개선: 브라우저가 먼저 페인트할 수 있도록)
     if (overlay) overlay.style.display = 'none';
     if (amenBtn) amenBtn.style.display = 'none';
 
-    // 1. 오디오 권한 획득
+    // 1. 오디오 권한 획득 (동기 but 빠름)
     if (typeof SoundEffect !== 'undefined' && SoundEffect.ctx.state === 'suspended') {
         SoundEffect.ctx.resume();
     }
 
-
-
     // 3. 효과음 버튼 상태 동기화
     syncSfxButtons();
 
-    // 🌟 4. [핵심 수술 2] 여정 시작 시 (Lazy Authentication)
-    // 비로소 새로운 출입증을 발급받고 서버에 등록하여 다른 공기계의 접속을 차단합니다!
-    if (typeof db !== 'undefined' && typeof myPlayerId !== 'undefined' && myPlayerId) {
-        const newSessionToken = "session_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
-        window.currentSessionToken = newSessionToken;
+    // 무거운 작업은 다음 태스크로 미뤄 브라우저가 먼저 페인트하게 함
+    setTimeout(() => {
+        // 🌟 4. [핵심 수술 2] 여정 시작 시 (Lazy Authentication)
+        // 비로소 새로운 출입증을 발급받고 서버에 등록하여 다른 공기계의 접속을 차단합니다!
+        if (typeof db !== 'undefined' && typeof myPlayerId !== 'undefined' && myPlayerId) {
+            const newSessionToken = "session_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+            window.currentSessionToken = newSessionToken;
 
-        // 변경된 출입증을 기기에 즉시 저장
-        if (typeof saveGameData === 'function') saveGameData();
+            // 변경된 출입증을 기기에 즉시 저장
+            if (typeof saveGameData === 'function') saveGameData();
 
-        // 서버에 새 출입증 신고 (기존 기기 쫓아내기)
-        db.collection("leaderboard").doc(myPlayerId).set({
-            sessionToken: newSessionToken,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true }).then(() => {
-            // 🌟🌟 [여기 추가!] 서버에 내 새 출입증이 완벽하게 등록된 직후에 감시 카메라를 켭니다!
-            if (typeof startSessionGuard === 'function') startSessionGuard();
-        }).catch(err => console.error("출입증 갱신 지연:", err));
-    }
+            // 서버에 새 출입증 신고 (기존 기기 쫓아내기)
+            db.collection("leaderboard").doc(myPlayerId).set({
+                sessionToken: newSessionToken,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true }).then(() => {
+                // 🌟🌟 [여기 추가!] 서버에 내 새 출입증이 완벽하게 등록된 직후에 감시 카메라를 켭니다!
+                if (typeof startSessionGuard === 'function') startSessionGuard();
+            }).catch(err => console.error("출입증 갱신 지연:", err));
+        }
 
-    // 5. 기억 퀴즈 시도 후 맵 화면으로 이동
-    if (typeof showMemoryQuizOverlay === 'function') showMemoryQuizOverlay();
-    else if (typeof goMap === 'function') goMap();
+        // 5. 기억 퀴즈 시도 후 맵 화면으로 이동
+        if (typeof showMemoryQuizOverlay === 'function') showMemoryQuizOverlay();
+        else if (typeof goMap === 'function') goMap();
+    }, 0);
 }
 
 function goHome() {
@@ -11470,25 +11485,25 @@ function createMilestoneOverlay() {
 
 // 보상 받기 버튼 클릭 시
 function claimMilestoneReward(key, tier, reward) {
-    // 1. 보상 지급 (기존 claimAchievementReward 로직 재활용)
+    // 1. 보상 지급
     if (typeof myGems === 'undefined') myGems = 0;
     myGems += reward;
 
-    // 2. 상태 업데이트 (중요: 여기서 수령 처리를 함)
+    // 2. 상태 업데이트
     achievementStatus[key] = tier + 1;
 
-    // 3. 저장 및 갱신
-    saveGameData();
+    // 3. 시각적 피드백 즉시 처리 (INP 개선)
     updateGemDisplay();
-    updateNotificationBadges(); // 배지 갱신
-
-    // 4. 팝업 닫기
     const overlay = document.getElementById('milestone-overlay');
     overlay.style.display = 'none';
     isMilestoneShowing = false;
 
-    // 5. ★ 다음 대기열 확인 (연속 달성 시 줄줄이 사탕처럼 나옴)
-    setTimeout(tryShowMilestone, 300);
+    // 4. 무거운 작업은 다음 태스크로 미뤄 브라우저가 먼저 페인트하게 함
+    setTimeout(() => {
+        saveGameData();
+        updateNotificationBadges(); // 배지 갱신
+        tryShowMilestone(); // 다음 대기열 확인 (연속 달성 시 줄줄이 사탕처럼 나옴)
+    }, 0);
 }
 
 /* [시스템: 데이터 보호 시스템] */

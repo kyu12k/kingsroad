@@ -4,13 +4,25 @@
 // ========================================
 // FCM 백그라운드 알림은 firebase-messaging-sw.js에서 처리합니다.
 
-const CACHE_NAME = 'kingsroad-v2';
+const CACHE_NAME = 'kingsroad-v3';
 const urlsToCache = [
   '/',
   '/index.html',
   '/style.css',
   '/game.js',
-  '/manifest.json'
+  '/manifest.json',
+  '/images/image_0.webp',
+  '/images/image_1.webp',
+  '/images/image_2.webp',
+  '/images/image_3.webp',
+  '/images/image_4.webp',
+  '/images/image_5.webp',
+  '/images/image_6.webp',
+  '/images/image_7.webp',
+  '/images/image_8.webp',
+  '/images/image_9.webp',
+  '/images/image_10.webp',
+  '/images/image_11.webp',
 ];
 
 // ★ 설치 단계: 캐시 생성
