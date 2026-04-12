@@ -4249,6 +4249,10 @@ function loadNextVerse() {
 
     // 4. 블록 클릭 핸들러
     let selectedBlock = null;
+    let insertMode = false;
+    let insertSelectedPoolBtn = null;
+    let insertBtn = null; // 버튼 생성 후 할당
+
     function deselect() {
         if (selectedBlock) {
             selectedBlock.classList.remove('selected-block');
@@ -4256,25 +4260,117 @@ function loadNextVerse() {
         }
     }
 
+    function hideInsertMarkers() {
+        Array.from(zone.querySelectorAll('.insert-marker')).forEach(m => m.remove());
+    }
+
+    function showInsertMarkers() {
+        hideInsertMarkers();
+        const blocks = Array.from(zone.querySelectorAll('.word-block'));
+        if (blocks.length === 0) return;
+
+        function createMarker(refNode) {
+            const m = document.createElement('button');
+            m.className = 'insert-marker';
+            m.textContent = '+';
+            m.onclick = (e) => {
+                e.stopPropagation();
+                if (!insertSelectedPoolBtn) return;
+                insertSelectedPoolBtn.classList.remove('error-block', 'correct-block');
+                if (refNode && refNode.parentElement === zone) {
+                    zone.insertBefore(insertSelectedPoolBtn, refNode);
+                } else {
+                    zone.appendChild(insertSelectedPoolBtn);
+                }
+                const ph = document.getElementById('placeholder-text');
+                if (ph) ph.style.display = 'none';
+                insertSelectedPoolBtn.classList.remove('insert-mode-selected');
+                insertSelectedPoolBtn = null;
+                hideInsertMarkers();
+                SoundEffect.playClick();
+                if (insertBtn) updateInsertBtnDisabled();
+            };
+            return m;
+        }
+
+        zone.insertBefore(createMarker(blocks[0]), blocks[0]);
+        blocks.forEach((block, i) => {
+            block.after(createMarker(blocks[i + 1] || null));
+        });
+    }
+
+    function setInsertMode(val) {
+        insertMode = val;
+        if (!val) {
+            if (insertSelectedPoolBtn) {
+                insertSelectedPoolBtn.classList.remove('insert-mode-selected');
+                insertSelectedPoolBtn = null;
+            }
+            hideInsertMarkers();
+        }
+        if (insertBtn) updateInsertModeBtn();
+    }
+
+    function updateInsertModeBtn() {
+        if (insertMode) {
+            insertBtn.style.background = '#e67e22';
+            insertBtn.style.boxShadow = '0 4px 0 #b7770d';
+            insertBtn.style.color = '#fff';
+            insertBtn.innerText = '✂️ ON';
+        } else {
+            insertBtn.style.background = '';
+            insertBtn.style.boxShadow = '';
+            insertBtn.style.color = '';
+            insertBtn.innerText = '✂️ 끼워넣기';
+        }
+    }
+
+    function updateInsertBtnDisabled() {
+        if (!insertBtn) return;
+        const hasBlocks = zone.querySelectorAll('.word-block').length > 0;
+        insertBtn.disabled = !hasBlocks;
+        if (!hasBlocks && insertMode) setInsertMode(false);
+    }
+
     function handleBossBlockClick(btn) {
         btn.classList.remove('error-block');
         btn.classList.remove('correct-block');
-        SoundEffect.playClick();
 
+        // ── 끼워넣기 모드: pool 블록만 선택/해제, zone 블록은 무시 ──
+        if (insertMode) {
+            if (btn.parentElement === pool) {
+                if (insertSelectedPoolBtn === btn) {
+                    btn.classList.remove('insert-mode-selected');
+                    insertSelectedPoolBtn = null;
+                    hideInsertMarkers();
+                } else {
+                    if (insertSelectedPoolBtn) insertSelectedPoolBtn.classList.remove('insert-mode-selected');
+                    insertSelectedPoolBtn = btn;
+                    btn.classList.add('insert-mode-selected');
+                    showInsertMarkers();
+                }
+            }
+            return;
+        }
+
+        // ── 일반 모드 ──
+        SoundEffect.playClick();
         if (btn.parentElement === pool) {
             const ph = document.getElementById('placeholder-text');
             if (ph) ph.style.display = 'none';
             zone.appendChild(btn);
         } else {
             pool.appendChild(btn);
-            if (zone.children.length === 0) {
+            if (zone.querySelectorAll('.word-block').length === 0) {
                 const ph = document.getElementById('placeholder-text');
                 if (ph) ph.style.display = 'block';
             }
         }
+        updateInsertBtnDisabled();
     }
 
     function renderBossBlocks(chunks) {
+        setInsertMode(false); // 파트 전환 / 초기 렌더링 시 끼워넣기 OFF
         zone.innerHTML = '<span class="placeholder-text" id="placeholder-text">단어를 터치하여 구절을 완성하세요</span>';
         pool.innerHTML = '';
         selectedBlock = null;
@@ -4291,6 +4387,7 @@ function loadNextVerse() {
             btn.onclick = () => handleBossBlockClick(btn);
             pool.appendChild(btn);
         });
+        updateInsertBtnDisabled(); // 렌더링 후 끼워넣기 버튼 상태 갱신
     }
 
     // 5. 블록 생성
@@ -4408,6 +4505,7 @@ function loadNextVerse() {
     resetBtn.style.flex = '1 1 0'; // 래퍼 안에서 차지하는 비율 (1/4)
 
     resetBtn.onclick = () => {
+        setInsertMode(false); // 다시 조립 시 끼워넣기 OFF
         const zone = document.getElementById('answer-zone');
         const pool = document.getElementById('block-pool');
 
@@ -4426,11 +4524,24 @@ function loadNextVerse() {
                 zone.innerHTML = '<span class="placeholder-text" id="placeholder-text">단어를 터치하여 구절을 완성하세요</span>';
             }
         }
+        updateInsertBtnDisabled();
         if (typeof SoundEffect !== 'undefined') SoundEffect.playClick();
     }; // <-- 다시 조립 버튼 onclick 끝
 
+    // ── 끼워넣기 토글 버튼 ──
+    insertBtn = document.createElement('button');
+    insertBtn.className = 'btn-reset-step5';
+    insertBtn.style.flex = '1 1 0';
+    updateInsertModeBtn();
+    updateInsertBtnDisabled();
+    insertBtn.onclick = () => {
+        if (insertBtn.disabled) return;
+        setInsertMode(!insertMode);
+    };
+
     // (3) 두 버튼을 래퍼에 담고, 최종적으로 화면(battle-control)에 추가
     btnWrapper.appendChild(attackBtn);
+    btnWrapper.appendChild(insertBtn);
     btnWrapper.appendChild(resetBtn);
 
     // 이미 함수 위쪽에서 정의된 control 변수를 그대로 사용합니다. (const 제거)
@@ -5670,53 +5781,48 @@ function loadStep() {
 
         // 👉 5. 단어 가나다순 정렬
         let list = [...correctChunks].sort((a, b) => a.localeCompare(b, 'ko'));
+
+        // ── 상태 변수 ──
         let selectedBlock = null;
+        let insertMode = false;
+        let insertSelectedPoolBtn = null;
+        let insertBtn = null; // 버튼 생성 후 할당
 
         // 🌟 [추가] 5초 대기 힌트 시스템
         if (window.step5IdleTimer) clearTimeout(window.step5IdleTimer);
 
         function checkAndShowHint() {
-            // 기존 힌트 초기화
             document.querySelectorAll('.hint-glow').forEach(el => el.classList.remove('hint-glow'));
             document.querySelectorAll('.error-glow').forEach(el => el.classList.remove('error-glow'));
 
             const currentBlocks = Array.from(zone.querySelectorAll('.word-block'));
             let firstErrorIndex = -1;
 
-            // 현재 놓인 블록 중에 오답이 있는지 검사
             for (let i = 0; i < currentBlocks.length; i++) {
                 const actual = normalizeChunkText(currentBlocks[i].dataset.original);
                 const expected = normalizeChunkText(correctChunks[i]);
-                if (actual !== expected) {
-                    firstErrorIndex = i;
-                    break;
-                }
+                if (actual !== expected) { firstErrorIndex = i; break; }
             }
 
             if (firstErrorIndex !== -1) {
-                // 상황 A: 놓은 것 중에 틀린 게 있으면 그걸 빨갛게 반짝임
+                // 상황 A: 오답 위치 빨갛게 반짝임
                 currentBlocks[firstErrorIndex].classList.add('error-glow');
             } else if (currentBlocks.length < correctChunks.length) {
-                // 상황 B: 다 맞게 놓고 다음 걸 모를 때, 보기 풀에서 정답을 파랗게 반짝임
+                // 상황 B: 다음에 놓을 단어를 풀에서 파랗게 반짝임
                 const nextExpectedWord = correctChunks[currentBlocks.length];
-                const poolBlocks = Array.from(pool.children);
-                const targetBlock = poolBlocks.find(b =>
+                const targetBlock = Array.from(pool.children).find(b =>
                     b.style.visibility !== 'hidden' &&
                     normalizeChunkText(b.innerText) === normalizeChunkText(nextExpectedWord)
                 );
-                if (targetBlock) {
-                    targetBlock.classList.add('hint-glow');
-                }
+                if (targetBlock) targetBlock.classList.add('hint-glow');
             }
         }
 
-        // 동작이 있을 때마다 타이머를 리셋하는 함수
         function resetIdleTimer() {
             if (window.step5IdleTimer) clearTimeout(window.step5IdleTimer);
             document.querySelectorAll('.hint-glow').forEach(el => el.classList.remove('hint-glow'));
             document.querySelectorAll('.error-glow').forEach(el => el.classList.remove('error-glow'));
 
-            // 정답을 다 맞춘 상태가 아니라면 5초 뒤에 힌트 작동
             const currentBlocks = Array.from(zone.querySelectorAll('.word-block'));
             if (currentBlocks.length < correctChunks.length || currentBlocks.some((b, i) => normalizeChunkText(b.dataset.original) !== normalizeChunkText(correctChunks[i]))) {
                 window.step5IdleTimer = setTimeout(checkAndShowHint, 5000);
@@ -5730,6 +5836,124 @@ function loadStep() {
             }
         }
 
+        // ── 풀 레이아웃 업데이트 ──
+        function updatePoolLayout() {
+            if ([...pool.children].every(b => b.style.visibility === 'hidden')) {
+                pool.style.height = '0px';
+                pool.style.margin = '0';
+                zone.style.minHeight = '180px';
+                zone.style.paddingBottom = '40px';
+            } else {
+                pool.style.height = '';
+                pool.style.margin = '';
+                zone.style.minHeight = '120px';
+                zone.style.paddingBottom = '';
+            }
+        }
+
+        // ── answer block 생성 헬퍼 (풀 버튼과 쌍으로 연결) ──
+        function buildAnswerBlock(word, poolBtn) {
+            const ab = document.createElement('div');
+            ab.className = 'word-block';
+            ab.innerText = word;
+            ab.dataset.original = word;
+            ab.style.backgroundColor = "#f1c40f";
+            ab.style.color = "#000";
+            ab.style.margin = "5px";
+            ab.onclick = () => {
+                if (insertMode) return; // 끼워넣기 모드에서는 zone 단어 탭 무시
+                ab.remove();
+                poolBtn.style.visibility = 'visible';
+                SoundEffect.playClick();
+                resetIdleTimer();
+                if (zone.querySelectorAll('.word-block').length === 0) {
+                    zone.innerHTML = '<span class="placeholder-text" id="placeholder-text">단어를 터치하여 문장을 만드세요</span>';
+                }
+                setTimeout(() => updatePoolLayout(), 10);
+                if (insertBtn) updateInsertBtnDisabled();
+            };
+            return ab;
+        }
+
+        // ── 끼워넣기 마커 ──
+        function hideInsertMarkers() {
+            Array.from(zone.querySelectorAll('.insert-marker')).forEach(m => m.remove());
+        }
+
+        function showInsertMarkers() {
+            hideInsertMarkers();
+            const blocks = Array.from(zone.querySelectorAll('.word-block'));
+            if (blocks.length === 0) return;
+
+            function createMarker(refNode) {
+                const m = document.createElement('button');
+                m.className = 'insert-marker';
+                m.textContent = '+';
+                m.onclick = (e) => {
+                    e.stopPropagation();
+                    if (!insertSelectedPoolBtn) return;
+                    const word = insertSelectedPoolBtn.innerText;
+                    const ab = buildAnswerBlock(word, insertSelectedPoolBtn);
+                    if (refNode && refNode.parentElement === zone) {
+                        zone.insertBefore(ab, refNode);
+                    } else {
+                        zone.appendChild(ab);
+                    }
+                    insertSelectedPoolBtn.style.visibility = 'hidden';
+                    insertSelectedPoolBtn.classList.remove('insert-mode-selected');
+                    insertSelectedPoolBtn = null;
+                    hideInsertMarkers();
+                    SoundEffect.playClick();
+                    resetIdleTimer();
+                    updateInsertBtnDisabled();
+                    setTimeout(() => updatePoolLayout(), 10);
+                };
+                return m;
+            }
+
+            // 첫 번째 블록 앞에 마커
+            zone.insertBefore(createMarker(blocks[0]), blocks[0]);
+            // 각 블록 뒤에 마커
+            blocks.forEach((block, i) => {
+                block.after(createMarker(blocks[i + 1] || null));
+            });
+        }
+
+        // ── 끼워넣기 모드 ON/OFF ──
+        function setInsertMode(val) {
+            insertMode = val;
+            if (!val) {
+                if (insertSelectedPoolBtn) {
+                    insertSelectedPoolBtn.classList.remove('insert-mode-selected');
+                    insertSelectedPoolBtn = null;
+                }
+                hideInsertMarkers();
+            }
+            if (insertBtn) updateInsertModeBtn();
+        }
+
+        function updateInsertModeBtn() {
+            if (insertMode) {
+                insertBtn.style.background = '#e67e22';
+                insertBtn.style.boxShadow = '0 4px 0 #b7770d';
+                insertBtn.style.color = '#fff';
+                insertBtn.innerText = '✂️ ON';
+            } else {
+                insertBtn.style.background = '';
+                insertBtn.style.boxShadow = '';
+                insertBtn.style.color = '';
+                insertBtn.innerText = '✂️ 끼워넣기';
+            }
+        }
+
+        // zone이 비어 있으면 끼워넣기 버튼 비활성화
+        function updateInsertBtnDisabled() {
+            if (!insertBtn) return;
+            const hasBlocks = zone.querySelectorAll('.word-block').length > 0;
+            insertBtn.disabled = !hasBlocks;
+            if (!hasBlocks && insertMode) setInsertMode(false);
+        }
+
         // 단어 블록 생성
         list.forEach(word => {
             const btn = document.createElement('div');
@@ -5738,41 +5962,27 @@ function loadStep() {
 
             btn.onclick = () => {
                 if (btn.style.visibility === 'hidden') return;
+
+                // ── 끼워넣기 모드: 선택/해제 후 + 마커 표시 ──
+                if (insertMode) {
+                    if (insertSelectedPoolBtn === btn) {
+                        btn.classList.remove('insert-mode-selected');
+                        insertSelectedPoolBtn = null;
+                        hideInsertMarkers();
+                    } else {
+                        if (insertSelectedPoolBtn) insertSelectedPoolBtn.classList.remove('insert-mode-selected');
+                        insertSelectedPoolBtn = btn;
+                        btn.classList.add('insert-mode-selected');
+                        showInsertMarkers();
+                    }
+                    return;
+                }
+
+                // ── 일반 모드: 맨 뒤에 추가 ──
                 const placeholder = document.getElementById('placeholder-text');
                 if (placeholder) placeholder.remove();
 
-                const answerBlock = document.createElement('div');
-                answerBlock.className = 'word-block';
-                answerBlock.innerText = word;
-                answerBlock.dataset.original = word;
-                answerBlock.style.backgroundColor = "#f1c40f";
-                answerBlock.style.color = "#000";
-                answerBlock.style.margin = "5px";
-
-                answerBlock.onclick = () => {
-                    answerBlock.remove();
-                    btn.style.visibility = 'visible';
-                    SoundEffect.playClick();
-                    resetIdleTimer(); // 🌟 블록을 뺄 때도 힌트 타이머 리셋
-
-                    if (zone.children.length === 0) {
-                        zone.innerHTML = '<span class="placeholder-text" id="placeholder-text">단어를 터치하여 문장을 만드세요</span>';
-                    }
-                    setTimeout(() => {
-                        if ([...pool.children].every(b => b.style.visibility === 'hidden')) {
-                            pool.style.height = '0px';
-                            pool.style.margin = '0';
-                            zone.style.minHeight = '180px';
-                            zone.style.paddingBottom = '40px';
-                        } else {
-                            pool.style.height = '';
-                            pool.style.margin = '';
-                            zone.style.minHeight = '120px';
-                            zone.style.paddingBottom = '';
-                        }
-                    }, 10);
-                };
-
+                const answerBlock = buildAnswerBlock(word, btn);
                 if (selectedBlock && selectedBlock.parentElement === zone) {
                     zone.insertBefore(answerBlock, selectedBlock);
                     deselect();
@@ -5781,26 +5991,14 @@ function loadStep() {
                 }
                 btn.style.visibility = 'hidden';
                 SoundEffect.playClick();
-                resetIdleTimer(); // 🌟 블록을 넣을 때 힌트 타이머 리셋
+                resetIdleTimer();
+                updateInsertBtnDisabled();
 
                 setTimeout(() => {
                     answerBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     zone.scrollTop = zone.scrollHeight;
                 }, 50);
-
-                setTimeout(() => {
-                    if ([...pool.children].every(b => b.style.visibility === 'hidden')) {
-                        pool.style.height = '0px';
-                        pool.style.margin = '0';
-                        zone.style.minHeight = '180px';
-                        zone.style.paddingBottom = '40px';
-                    } else {
-                        pool.style.height = '';
-                        pool.style.margin = '';
-                        zone.style.minHeight = '120px';
-                        zone.style.paddingBottom = '';
-                    }
-                }, 10);
+                setTimeout(() => updatePoolLayout(), 10);
             };
             pool.appendChild(btn);
         });
@@ -5823,7 +6021,7 @@ function loadStep() {
         checkBtn.innerText = "정답 확인";
         checkBtn.style.flex = '2 1 0';
         checkBtn.onclick = () => {
-            if (window.step5IdleTimer) clearTimeout(window.step5IdleTimer); // 검사 중엔 힌트 끄기
+            if (window.step5IdleTimer) clearTimeout(window.step5IdleTimer);
 
             const currentBlocks = Array.from(zone.querySelectorAll('.word-block'));
             if (currentBlocks.length !== correctChunks.length) {
@@ -5848,13 +6046,12 @@ function loadStep() {
 
             if (errorCount === 0) {
                 checkBtn.disabled = true;
+                setInsertMode(false); // 파트 전환 시 끼워넣기 OFF
 
-                // 🌟 [수정] "띠-리-링~!" 하고 밝고 맑게 퍼지는 정답 축하음
                 if (typeof SoundEffect !== 'undefined') {
-                    // sine 파동을 써서 아주 맑고 영롱한 소리를 냅니다.
-                    SoundEffect.playTone(523.25, 'sine', 0.1, 0.2); // 도 (짧게 타격)
-                    setTimeout(() => SoundEffect.playTone(659.25, 'sine', 0.1, 0.2), 80); // 미 (빠르게 이어짐)
-                    setTimeout(() => SoundEffect.playTone(783.99, 'sine', 0.6, 0.2), 160); // 솔 (길고 기분 좋은 여운)
+                    SoundEffect.playTone(523.25, 'sine', 0.1, 0.2);
+                    setTimeout(() => SoundEffect.playTone(659.25, 'sine', 0.1, 0.2), 80);
+                    setTimeout(() => SoundEffect.playTone(783.99, 'sine', 0.6, 0.2), 160);
                 }
 
                 window.currentStep5PartIndex++;
@@ -5874,21 +6071,31 @@ function loadStep() {
                 updateBattleUI();
                 wrongCount++;
                 alert(`${errorCount}군데가 틀렸습니다.`);
-
-                // 틀렸을 경우 다시 힌트 타이머 가동
                 resetIdleTimer();
-
                 if (playerHearts <= 0) {
                     setTimeout(showReviveModal, 100);
                 }
             }
         };
-        // 다시하기 버튼
+
+        // ── 끼워넣기 토글 버튼 ──
+        insertBtn = document.createElement('button');
+        insertBtn.className = 'btn-reset-step5';
+        insertBtn.style.flex = '1 1 0';
+        updateInsertModeBtn();   // insertBtn 할당 직후 초기화
+        updateInsertBtnDisabled();
+        insertBtn.onclick = () => {
+            if (insertBtn.disabled) return;
+            setInsertMode(!insertMode);
+        };
+
+        // ── 다시하기 버튼 ──
         const resetBtn = document.createElement('button');
         resetBtn.className = 'btn-reset-step5';
         resetBtn.innerText = '🔄 리셋';
         resetBtn.style.flex = '1 1 0';
         resetBtn.onclick = () => {
+            setInsertMode(false); // 리셋 시 끼워넣기 OFF
             Array.from(zone.querySelectorAll('.word-block')).forEach(block => block.remove());
             if (!zone.querySelector('#placeholder-text')) {
                 zone.innerHTML = '<span class="placeholder-text" id="placeholder-text">단어를 터치하여 문장을 만드세요</span>';
@@ -5896,17 +6103,18 @@ function loadStep() {
             Array.from(pool.children).forEach(btn => {
                 btn.style.visibility = 'visible';
             });
-            // pool/zone 레이아웃 스타일 원상 복구
             pool.style.height = '';
             pool.style.margin = '';
             zone.style.minHeight = '120px';
             zone.style.paddingBottom = '';
             deselect();
             SoundEffect.playClick();
-            resetIdleTimer(); // 🌟 초기화 후 다시 힌트 타이머 가동
+            resetIdleTimer();
+            updateInsertBtnDisabled();
         };
 
         btnWrapper.appendChild(checkBtn);
+        btnWrapper.appendChild(insertBtn);
         btnWrapper.appendChild(resetBtn);
         control.appendChild(btnWrapper);
     }

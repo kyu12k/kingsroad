@@ -4106,6 +4106,42 @@ body, html {
     border: 2px solid #e74c3c !important;
     color: #c0392b !important;
 }
+
+/* [Step 5 끼워넣기 모드] 삽입 위치 마커 (+버튼) */
+.insert-marker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #e67e22;
+    color: #fff;
+    border: none;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    margin: 3px 2px;
+    box-shadow: 0 2px 6px rgba(230, 126, 34, 0.5);
+    transition: transform 0.1s, background 0.1s;
+    vertical-align: middle;
+    flex-shrink: 0;
+    line-height: 1;
+}
+.insert-marker:active {
+    transform: scale(0.85);
+    background: #ca6f1e;
+}
+
+/* [Step 5 끼워넣기 모드] 선택된 풀 단어 강조 — hint-glow(파랑)·error-glow(빨강)과 구별되는 주황 스타일 */
+.insert-mode-selected {
+    border: 2px solid #e67e22 !important;
+    background-color: #fdebd0 !important;
+    color: #ca6f1e !important;
+    transform: scale(1.08);
+    box-shadow: 0 0 10px rgba(230, 126, 34, 0.55);
+    z-index: 10;
+}
 /* ── 기억하시나요? 플래시카드 ── */
 .quiz-card-wrap {
     perspective: 900px;
