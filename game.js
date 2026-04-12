@@ -9457,7 +9457,7 @@ function upgradeCastle() {
 
         if (typeof SoundEffect !== 'undefined') SoundEffect.playLevelUp();
 
-        alert(`🎉 건축 완료!\n\n[Lv.${myCastleLevel} ${nextBP.name}]\n"${nextBP.desc}"`);
+        alert(`🎉 건축 완료!\n\n[Lv.${myCastleLevel} ${nextBP.name}]\n"${nextBP.desc.replace(/<br>/g, '\n')}"`);
 
         updateStats('castle_levelup', myCastleLevel);
         updateGemDisplay();
