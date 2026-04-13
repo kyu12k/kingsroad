@@ -88,43 +88,107 @@ self.addEventListener('message', event => {
   }
   if (event.data && event.data.type === 'SCHEDULE_NOTIFICATION') {
     const { delayMs, title, body, tag } = event.data;
-    setTimeout(() => {
-      self.registration.showNotification(title, {
-        body,
-        icon: '/icon-192.png',
-        badge: '/icon-192.png',
-        tag: tag || 'review-notification',
-        renotify: true
-      });
-    }, delayMs);
+    const options = {
+      body,
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      tag: tag || 'review-notification',
+      renotify: true
+    };
+    if ('TimestampTrigger' in self) {
+      // OS 레벨 예약: SW가 종료되어도 알림 발화 보장
+      options.showTrigger = new TimestampTrigger(Date.now() + delayMs);
+      event.waitUntil(self.registration.showNotification(title, options));
+    } else {
+      // 폴백: 앱이 열려 있을 때만 작동 (SW 종료 시 소멸)
+      setTimeout(() => {
+        self.registration.showNotification(title, options);
+      }, delayMs);
+    }
   }
   if (event.data && event.data.type === 'SCHEDULE_DAILY_NOTIFICATION') {
-    const { delayMs, title, body } = event.data;
-    function scheduleNext(delay) {
+    const { delayMs, title, body, timeStr } = event.data;
+    const notifTag = timeStr ? `daily-${timeStr}` : 'daily-notification';
+    const options = {
+      body,
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      tag: notifTag,
+      renotify: true
+    };
+    if ('TimestampTrigger' in self) {
+      // OS 레벨 예약: 같은 tag로 덮어쓰기 되므로 중복 없음
+      options.showTrigger = new TimestampTrigger(Date.now() + delayMs);
+      event.waitUntil(self.registration.showNotification(title, options));
+    } else {
+      // 폴백: 다음 1회만 예약 (재귀 setTimeout 제거 — SW 종료 시 소멸하므로 의미 없음)
       setTimeout(() => {
-        self.registration.showNotification(title, {
-          body,
-          icon: '/icon-192.png',
-          badge: '/icon-192.png',
-          tag: 'daily-notification',
-          renotify: true
-        });
-        scheduleNext(24 * 60 * 60 * 1000);
-      }, delay);
+        self.registration.showNotification(title, options);
+      }, delayMs);
     }
-    scheduleNext(delayMs);
   }
 });
 
-// 알림 클릭 시 앱 포커스 또는 새 창 열기
+// 알림 클릭 시 앱 포커스 또는 새 창 열기, 매일 알림은 다음 날 재예약
 self.addEventListener('notificationclick', event => {
+  const tag = event.notification.tag;
+  const notifTitle = event.notification.title;
+  const notifBody = event.notification.body;
   event.notification.close();
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-      for (const client of clientList) {
-        if ('focus' in client) return client.focus();
-      }
-      if (self.clients.openWindow) return self.clients.openWindow('/');
-    })
+    Promise.all([
+      // 앱 포커스
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+        for (const client of clientList) {
+          if ('focus' in client) return client.focus();
+        }
+        if (self.clients.openWindow) return self.clients.openWindow('/');
+      }),
+      // 매일 알림 클릭 시 다음 날 동일 시각 재예약 (TimestampTrigger 지원 환경)
+      (() => {
+        if (tag && tag.startsWith('daily-') && 'TimestampTrigger' in self) {
+          const timeStr = tag.replace('daily-', '');
+          if (/^\d{2}:\d{2}$/.test(timeStr)) {
+            const [h, m] = timeStr.split(':').map(Number);
+            const next = new Date();
+            next.setDate(next.getDate() + 1);
+            next.setHours(h, m, 0, 0);
+            return self.registration.showNotification(notifTitle, {
+              body: notifBody,
+              icon: '/icon-192.png',
+              badge: '/icon-192.png',
+              tag,
+              renotify: true,
+              showTrigger: new TimestampTrigger(next.getTime())
+            });
+          }
+        }
+        return Promise.resolve();
+      })()
+    ])
   );
+});
+
+// 매일 알림 닫기(무시) 시에도 다음 날 재예약
+self.addEventListener('notificationclose', event => {
+  const tag = event.notification.tag;
+  if (tag && tag.startsWith('daily-') && 'TimestampTrigger' in self) {
+    const timeStr = tag.replace('daily-', '');
+    if (/^\d{2}:\d{2}$/.test(timeStr)) {
+      const [h, m] = timeStr.split(':').map(Number);
+      const next = new Date();
+      next.setDate(next.getDate() + 1);
+      next.setHours(h, m, 0, 0);
+      event.waitUntil(
+        self.registration.showNotification(event.notification.title, {
+          body: event.notification.body,
+          icon: '/icon-192.png',
+          badge: '/icon-192.png',
+          tag,
+          renotify: true,
+          showTrigger: new TimestampTrigger(next.getTime())
+        })
+      );
+    }
+  }
 });

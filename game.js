@@ -10282,7 +10282,8 @@ function scheduleNotifTimesViaSW() {
                 type: 'SCHEDULE_DAILY_NOTIFICATION',
                 delayMs,
                 title: '킹스로드 복습 알림',
-                body: '오늘의 말씀을 복습할 시간입니다!'
+                body: '오늘의 말씀을 복습할 시간입니다!',
+                timeStr: t  // tag를 'daily-HH:MM' 형태로 만들기 위해 전달
             });
         });
     });
@@ -13914,6 +13915,38 @@ function finishHardshipSession(reason) {
         resultExp.innerText = hardshipState.mode === 'endurance'
             ? `${hardshipState.studiedCount}절`
             : `${hardshipState.score}`;
+    }
+
+    // 주소의 고난 / 망각의 고난 완주 시 해당 장 하위 스테이지 클리어 (보스 클리어와 동일 처리)
+    if (reason === 'completed' && (hardshipState.mode === 'address' || hardshipState.mode === 'memory')) {
+        const chNum = hardshipState.forcedChapter ?? hardshipState.selectedChapter;
+        const chData = gameData.find(c => c.id === chNum);
+        if (chData && chData.stages) {
+            let subGemTotal = 0, eligibleSubCount = 0, totalSubCount = 0;
+            chData.stages.forEach(targetStage => {
+                if (targetStage.type !== 'normal') return;
+                const subId = targetStage.id;
+                if (!stageMastery[subId]) stageMastery[subId] = 0;
+                if (!stageClearDate[subId]) stageClearDate[subId] = getMemoryQuizDate();
+                targetStage.cleared = true;
+                stageLastClear[subId] = Date.now();
+                totalSubCount++;
+                const subStatus = getReviewStatus(subId);
+                if (subStatus.isEligible) {
+                    const { earnedGem: earned } = advanceReviewStep(subId);
+                    stageMastery[subId]++;
+                    subGemTotal += earned;
+                    eligibleSubCount++;
+                } else {
+                    subGemTotal += 10;
+                }
+            });
+            myGems += subGemTotal;
+            saveGameData();
+            if (resultStreakText) {
+                resultStreakText.innerHTML += `<br><span style="font-size:13px;color:#aad4ff;">💎 ${subGemTotal}젬 획득 · ${totalSubCount}개 스테이지 클리어 (${eligibleSubCount}개 단계 상승)</span>`;
+            }
+        }
     }
 
     // 주소의 고난 단일 장 완주: 기록 저장 및 결과 화면에 히스토리 표시
