@@ -2423,7 +2423,7 @@ body, html {
     border-radius: 50px;
     padding: 16px;
     position: fixed;
-    z-index: 2000;
+    z-index: 99999;
     left: 50%;
     bottom: 30px;
     transform: translateX(-50%);

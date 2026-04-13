@@ -6401,7 +6401,7 @@ function showClearScreen() {
         if (!isTraining) {
             const sId = window.currentStageId;
             const outcome = window._lastClearOutcome;
-            if (sId && outcome === 'perfect') {
+            if (sId && (outcome === 'perfect' || outcome === 'good' || outcome === 'miss')) {
                 const nextStatus = getReviewStatus(sId);
                 const rawDelayMs = nextStatus.step === 1
                     ? 10 * 60 * 1000
@@ -10307,7 +10307,8 @@ function startNotificationCheck() {
                 try {
                     new Notification('킹스로드 복습 알림', {
                         body: '오늘의 말씀을 복습할 시간입니다!',
-                        icon: '/icon-192.png'
+                        icon: '/icon-192.png',
+                        tag: 'daily-notification'
                     });
                 } catch (e) {}
                 shownToday.push(t);
@@ -10332,23 +10333,20 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
 
     const title = '킹스로드 복습 알림';
     const body = `"${stageTitle}" 복습할 시간입니다!`;
+    const notifTag = `review-${Date.now()}`;
 
-    // Service Worker에 예약 전달 (백그라운드/포그라운드 모두 처리)
-    let swScheduled = false;
+    // Service Worker에 예약 전달 (백그라운드 지원)
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.ready.then(reg => {
             if (reg.active) {
-                reg.active.postMessage({ type: 'SCHEDULE_NOTIFICATION', delayMs, title, body });
-                swScheduled = true;
+                reg.active.postMessage({ type: 'SCHEDULE_NOTIFICATION', delayMs, title, body, tag: notifTag });
             }
         }).catch(() => {});
     }
 
-    // SW를 쓸 수 없는 환경의 폴백 (SW가 있으면 SW가 알림을 보내므로 중복 방지)
+    // 폴백: 항상 실행 (앱이 열려있을 때 보장, SW와 tag 동일해 중복 안 뜸)
     setTimeout(() => {
-        if (!swScheduled) {
-            try { new Notification(title, { body, icon: '/icon-192.png' }); } catch(e) {}
-        }
+        try { new Notification(title, { body, icon: '/icon-192.png', tag: notifTag }); } catch(e) {}
     }, delayMs);
 
     // 버튼 상태 변경
@@ -13256,7 +13254,7 @@ function renderHardshipEnduranceVerse() {
         const chunkText = hardshipState.revealIndex > index
             ? chunk
             : String(chunk).replace(/[0-9A-Za-z가-힣]/g, '▢');
-        const color = hardshipState.revealIndex > index ? '#2c3e50' : '#a4b0be';
+        const color = hardshipState.revealIndex > index ? '#ffffff' : 'rgba(255,255,255,0.45)';
         const weight = hardshipState.revealIndex > index ? '800' : '600';
         return `<span id="hardship-a-chunk-${index}" style="color:${color}; font-weight:${weight};">${chunkText}</span>`;
     }).join('');
@@ -13289,7 +13287,7 @@ function revealHardshipEnduranceChunk() {
     if (!chunkEl) return;
 
     chunkEl.textContent = chunk;
-    chunkEl.style.color = '#2c3e50';
+    chunkEl.style.color = '#ffffff';
     chunkEl.style.fontWeight = '800';
     chunkEl.style.transform = 'scale(1.05)';
     setTimeout(() => {

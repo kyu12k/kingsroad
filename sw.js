@@ -87,13 +87,13 @@ self.addEventListener('message', event => {
     self.skipWaiting();
   }
   if (event.data && event.data.type === 'SCHEDULE_NOTIFICATION') {
-    const { delayMs, title, body } = event.data;
+    const { delayMs, title, body, tag } = event.data;
     setTimeout(() => {
       self.registration.showNotification(title, {
         body,
         icon: '/icon-192.png',
         badge: '/icon-192.png',
-        tag: 'review-notification',
+        tag: tag || 'review-notification',
         renotify: true
       });
     }, delayMs);
