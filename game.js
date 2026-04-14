@@ -609,11 +609,8 @@ const REVIEW_SEQUENCE = [
     { waitMs: 60 * 60 * 1000,            baseGem: 20  }, // step 3: 1시간 후
     { waitMs: 6 * 60 * 60 * 1000,        baseGem: 50  }, // step 4: 6시간 후
     { waitMs: 23 * 60 * 60 * 1000,       baseGem: 60  }, // step 5: 23시간(1일) 후
-    { waitMs: 1 * 60 * 60 * 1000,        baseGem: 70  }, // step 6: 1시간 후
-    { waitMs: 6 * 60 * 60 * 1000,        baseGem: 80  }, // step 7: 6시간 후
-    { waitMs: 71 * 60 * 60 * 1000,       baseGem: 90  }, // step 8: 71시간(3일) 후
-    { waitMs: 6 * 60 * 60 * 1000,        baseGem: 100 }, // step 9: 6시간 후
-    // step 10+: waitMs = 167시간(7일), baseGem = 100 + (step-10)*10
+    { waitMs: 71 * 60 * 60 * 1000,       baseGem: 90  }, // step 6: 71시간(3일) 후
+    // step 7+: waitMs = 167시간(7일), baseGem = 90 + (step-7)*10
 ];
 
 // 각 스테이지의 말씀 숙련도를 저장할 객체 (예: { "1-1": 2, "1-2": 0 })
@@ -2045,18 +2042,18 @@ function getReviewBaseGem(step) {
     if (step <= 0) return 0;
     const idx = step - 1;
     if (idx < REVIEW_SEQUENCE.length) return REVIEW_SEQUENCE[idx].baseGem;
-    return 100 + (step - 10) * 10; // step 10+
+    return 90 + (step - 7) * 10; // step 7+
 }
 
 // step이 해금되기까지 이전 step으로부터 기다려야 할 시간(ms) 반환
-// step 10+: 167 → 355 → 671 → 1343시간 (약 2배씩 증가)
+// step 7+: 167 → 355 → 671 → 1343시간 (약 2배씩 증가)
 function getReviewWaitMs(step) {
     if (step <= 1) return 0;
     const idx = step - 1; // step 2 → index 1
     if (idx < REVIEW_SEQUENCE.length) return REVIEW_SEQUENCE[idx].waitMs;
     // step 10 이후 대기 시간 (사용자 원안 기준)
-    const longWaits = [167, 355, 671, 1343]; // step 10~13
-    const n = step - 10; // step 10 → n=0
+    const longWaits = [167, 355, 671, 1343]; // step 7~10
+    const n = step - 7; // step 7 → n=0
     const hours = n < longWaits.length
         ? longWaits[n]
         : Math.round(longWaits[longWaits.length - 1] * Math.pow(2, n - (longWaits.length - 1)));
@@ -2143,17 +2140,14 @@ function getMemoryStrength(stageId) {
 
     const step = stageReviewStep[stageId] || 1;
     // S값 기준: 대복습 완료 직후 안정성이 약 2배 증가한다는 FSRS 이론 적용
-    // step 5, 8: 대복습(23hr, 71hr) 완료 후 S를 2배로 상향 → R=80% 여유 구간 확보
+    // step 5, 6: 대복습(23hr, 71hr) 완료 후 S를 2배로 상향 → R=80% 여유 구간 확보
     const STABILITY_HOURS = [
         0.747,  // step 1: 10분 후 복습
         4.48,   // step 2: 1시간 후
         26.9,   // step 3: 6시간 후
         103.1,  // step 4: 23시간 후
         206.0,  // step 5: 대복습(23hr) 완료 → S ×2 (R=80%: 46시간 후)
-        206.0,  // step 6: 부스터 (안정성 유지)
-        206.0,  // step 7: 부스터 (안정성 유지)
-        637.0,  // step 8: 대복습(71hr) 완료 → S ×2 (R=80%: 142시간 후)
-        748.7,  // step 9: 부스터 (안정성 유지)
+        637.0,  // step 6: 대복습(71hr) 완료 → S ×2 (R=80%: 142시간 후)
     ];
 
     let S;
@@ -2161,7 +2155,7 @@ function getMemoryStrength(stageId) {
     if (idx < STABILITY_HOURS.length) {
         S = STABILITY_HOURS[idx];
     } else {
-        // step 10+: 다음 복습 대기시간으로 동적 산출
+        // step 7+: 다음 복습 대기시간으로 동적 산출
         const waitMs = getReviewWaitMs(step + 1);
         S = (waitMs / 3600000) / 0.2231;
     }
@@ -2173,9 +2167,9 @@ function getMemoryStrength(stageId) {
 // Miss 시 복귀할 구간 시작 스텝 반환
 function getPhaseStartStep(step) {
     if (step <= 4) return 1;   // step 2~4 Miss → 재학습
-    if (step <= 7) return 4;   // step 5~7 Miss → 23시간 구간 재시작
-    if (step <= 9) return 7;   // step 8~9 Miss → 71시간 구간 재시작
-    return 9;                  // step 10+ Miss → 167시간 구간 재시작
+    if (step <= 5) return 4;   // step 5 Miss → 23시간 구간 재시작
+    if (step <= 6) return 5;   // step 6 Miss → 71시간 구간 재시작
+    return 6;                  // step 7+ Miss → 167시간 구간 재시작
 }
 
 // 중간점검 스테이지에 속한 서브스테이지 목록 반환 (앞쪽 normal 스테이지들)
@@ -2203,9 +2197,9 @@ function getMidBossAvgStrength(chData, midBossStage) {
 function getMemoryLevelFromStep(step) {
     if (step <= 1) return 0;
     if (step <= 4) return 1;  // 1단계 진행 중
-    if (step <= 7) return 2;  // 2단계
-    if (step <= 9) return 3;  // 3단계
-    if (step <= 11) return 4;
+    if (step <= 5) return 2;  // 2단계
+    if (step <= 6) return 3;  // 3단계
+    if (step <= 9) return 4;
     return 5;
 }
 
@@ -2273,19 +2267,16 @@ function buildReviewBadgeHtml(stageId) {
             { label: '1시간 후', step: 3 },
             { label: '6시간 후', step: 4 },
         ];
-    } else if (step <= 7) {
+    } else if (step <= 5) {
         stepDefs = [
             { label: '1일 후', step: 5 },
-            { label: '1시간 후', step: 6 },
-            { label: '6시간 후', step: 7 },
         ];
-    } else if (step <= 9) {
+    } else if (step <= 6) {
         stepDefs = [
-            { label: '3일 후', step: 8 },
-            { label: '6시간 후', step: 9 },
+            { label: '3일 후', step: 6 },
         ];
     } else {
-        // step 10+: 대기 시간 표시
+        // step 7+: 대기 시간 표시
         const waitMs = getReviewWaitMs(step);
         const waitHr = Math.round(waitMs / 3600000);
         const waitLabel = waitHr >= 24 ? `${Math.round(waitHr / 24)}일 후` : `${waitHr}시간 후`;
