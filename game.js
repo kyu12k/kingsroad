@@ -11928,13 +11928,20 @@ function startSessionGuard() {
     }
 
     // 파이어베이스 실시간 감시 (onSnapshot)
+    // 첫 스냅샷은 Firestore 전파 지연으로 구 토큰이 올 수 있으므로 초기화 용도로만 사용
+    let _guardInitialized = false;
     window.sessionGuardUnsubscribe = db.collection("leaderboard").doc(myTag).onSnapshot((doc) => {
         if (doc.metadata && doc.metadata.fromCache) return;
+
+        if (!_guardInitialized) {
+            _guardInitialized = true;
+            return; // 첫 번째 스냅샷은 초기 상태 확인용 — 여기서는 차단하지 않음
+        }
 
         if (doc.exists) {
             const serverData = doc.data();
 
-            // 🚨 [핵심 보안] 내 메모리의 출입증과 서버의 출입증이 다르면? 
+            // 🚨 [핵심 보안] 내 메모리의 출입증과 서버의 출입증이 다르면?
             // 누군가 다른 기기에서 '여정 시작'을 눌러서 서버 출입증을 갱신했다는 뜻!
             if (serverData.sessionToken && window.currentSessionToken && serverData.sessionToken !== window.currentSessionToken) {
 
