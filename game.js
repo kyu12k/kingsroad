@@ -5793,6 +5793,7 @@ function loadStep() {
         let insertMode = false;
         let insertSelectedPoolBtn = null;
         let insertBtn = null; // 버튼 생성 후 할당
+        let removeErrorBtn = null; // 오답 빼기 버튼
 
         // 🌟 [추가] 5초 대기 힌트 시스템
         if (window.step5IdleTimer) clearTimeout(window.step5IdleTimer);
@@ -5863,12 +5864,14 @@ function loadStep() {
             ab.className = 'word-block';
             ab.innerText = word;
             ab.dataset.original = word;
+            ab._poolBtn = poolBtn; // pool 버튼 직접 참조 저장
             ab.style.backgroundColor = "#f1c40f";
             ab.style.color = "#000";
             ab.style.margin = "5px";
             ab.onclick = () => {
                 if (insertMode) return; // 끼워넣기 모드에서는 zone 단어 탭 무시
                 ab.remove();
+                if (removeErrorBtn) { removeErrorBtn.remove(); removeErrorBtn = null; }
                 poolBtn.style.visibility = 'visible';
                 SoundEffect.playClick();
                 resetIdleTimer();
@@ -5912,6 +5915,7 @@ function loadStep() {
                     SoundEffect.playClick();
                     resetIdleTimer();
                     updateInsertBtnDisabled();
+                    tryAutoCheck();
                     setTimeout(() => updatePoolLayout(), 10);
                 };
                 return m;
@@ -5960,6 +5964,86 @@ function loadStep() {
             if (!hasBlocks && insertMode) setInsertMode(false);
         }
 
+        // 오답 빼기 버튼 표시
+        function showRemoveErrorBtn() {
+            if (removeErrorBtn) return;
+            removeErrorBtn = document.createElement('button');
+            removeErrorBtn.className = 'btn-remove-errors';
+            removeErrorBtn.innerText = '오답 빼기';
+            removeErrorBtn.onclick = () => {
+                setInsertMode(false);
+                const errorBlocks = Array.from(zone.querySelectorAll('.error-block'));
+                errorBlocks.forEach(ab => {
+                    if (ab._poolBtn) ab._poolBtn.style.visibility = 'visible';
+                    ab.remove();
+                });
+                // 정답 블록도 error 상태 초기화
+                Array.from(zone.querySelectorAll('.correct-block')).forEach(b => {
+                    b.classList.remove('correct-block');
+                });
+                removeErrorBtn.remove();
+                removeErrorBtn = null;
+                if (typeof SoundEffect !== 'undefined') SoundEffect.playClick();
+                resetIdleTimer();
+                updateInsertBtnDisabled();
+                setTimeout(() => updatePoolLayout(), 10);
+            };
+            zone.appendChild(removeErrorBtn);
+        }
+
+        // zone이 꽉 찼을 때 자동 정답 확인
+        function autoCheck() {
+            if (window.step5IdleTimer) clearTimeout(window.step5IdleTimer);
+            const currentBlocks = Array.from(zone.querySelectorAll('.word-block'));
+            let errorCount = 0;
+            currentBlocks.forEach((b, index) => {
+                const expected = normalizeChunkText(correctChunks[index]);
+                const actual = normalizeChunkText(b.dataset.original);
+                if (actual === expected) {
+                    b.classList.add('correct-block');
+                    b.classList.remove('error-block', 'error-glow');
+                } else {
+                    b.classList.add('error-block');
+                    b.classList.remove('correct-block');
+                    errorCount++;
+                }
+            });
+            if (errorCount === 0) {
+                setInsertMode(false);
+                if (typeof SoundEffect !== 'undefined') {
+                    SoundEffect.playTone(523.25, 'sine', 0.1, 0.2);
+                    setTimeout(() => SoundEffect.playTone(659.25, 'sine', 0.1, 0.2), 80);
+                    setTimeout(() => SoundEffect.playTone(783.99, 'sine', 0.6, 0.2), 160);
+                }
+                window.currentStep5PartIndex++;
+                if (window.currentStep5PartIndex < window.step5Parts.length) {
+                    setTimeout(() => { loadStep(); }, 500);
+                } else {
+                    setTimeout(() => {
+                        window.currentStep5PartIndex = undefined;
+                        window.step5Parts = undefined;
+                        nextStep();
+                    }, 500);
+                }
+            } else {
+                SoundEffect.playWrong();
+                playerHearts--;
+                updateBattleUI();
+                wrongCount++;
+                showRemoveErrorBtn();
+                if (playerHearts <= 0) {
+                    setTimeout(showReviveModal, 100);
+                }
+            }
+        }
+
+        function tryAutoCheck() {
+            const currentBlocks = Array.from(zone.querySelectorAll('.word-block'));
+            if (currentBlocks.length === correctChunks.length) {
+                autoCheck();
+            }
+        }
+
         // 단어 블록 생성
         list.forEach(word => {
             const btn = document.createElement('div');
@@ -5999,6 +6083,7 @@ function loadStep() {
                 SoundEffect.playClick();
                 resetIdleTimer();
                 updateInsertBtnDisabled();
+                tryAutoCheck();
 
                 setTimeout(() => {
                     answerBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -6021,69 +6106,6 @@ function loadStep() {
         btnWrapper.style.width = '100%';
         btnWrapper.style.gap = '2%';
 
-        // 👉 6. 정답 확인 버튼
-        const checkBtn = document.createElement('button');
-        checkBtn.className = 'btn-attack';
-        checkBtn.innerText = "정답 확인";
-        checkBtn.style.flex = '2 1 0';
-        checkBtn.onclick = () => {
-            if (window.step5IdleTimer) clearTimeout(window.step5IdleTimer);
-
-            const currentBlocks = Array.from(zone.querySelectorAll('.word-block'));
-            if (currentBlocks.length !== correctChunks.length) {
-                alert("블록을 모두 채워주세요.");
-                resetIdleTimer();
-                return;
-            }
-
-            let errorCount = 0;
-            currentBlocks.forEach((btn, index) => {
-                const expected = normalizeChunkText(correctChunks[index]);
-                const actual = normalizeChunkText(btn.dataset.original);
-                if (actual === expected) {
-                    btn.classList.add('correct-block');
-                    btn.classList.remove('error-block', 'error-glow');
-                } else {
-                    btn.classList.add('error-block');
-                    btn.classList.remove('correct-block');
-                    errorCount++;
-                }
-            });
-
-            if (errorCount === 0) {
-                checkBtn.disabled = true;
-                setInsertMode(false); // 파트 전환 시 끼워넣기 OFF
-
-                if (typeof SoundEffect !== 'undefined') {
-                    SoundEffect.playTone(523.25, 'sine', 0.1, 0.2);
-                    setTimeout(() => SoundEffect.playTone(659.25, 'sine', 0.1, 0.2), 80);
-                    setTimeout(() => SoundEffect.playTone(783.99, 'sine', 0.6, 0.2), 160);
-                }
-
-                window.currentStep5PartIndex++;
-
-                if (window.currentStep5PartIndex < window.step5Parts.length) {
-                    setTimeout(() => { loadStep(); }, 500);
-                } else {
-                    setTimeout(() => {
-                        window.currentStep5PartIndex = undefined;
-                        window.step5Parts = undefined;
-                        nextStep();
-                    }, 500);
-                }
-            } else {
-                SoundEffect.playWrong();
-                playerHearts--;
-                updateBattleUI();
-                wrongCount++;
-                alert(`${errorCount}군데가 틀렸습니다.`);
-                resetIdleTimer();
-                if (playerHearts <= 0) {
-                    setTimeout(showReviveModal, 100);
-                }
-            }
-        };
-
         // ── 끼워넣기 토글 버튼 ──
         insertBtn = document.createElement('button');
         insertBtn.className = 'btn-reset-step5';
@@ -6102,6 +6124,7 @@ function loadStep() {
         resetBtn.style.flex = '1 1 0';
         resetBtn.onclick = () => {
             setInsertMode(false); // 리셋 시 끼워넣기 OFF
+            if (removeErrorBtn) { removeErrorBtn.remove(); removeErrorBtn = null; }
             Array.from(zone.querySelectorAll('.word-block')).forEach(block => block.remove());
             if (!zone.querySelector('#placeholder-text')) {
                 zone.innerHTML = '<span class="placeholder-text" id="placeholder-text">단어를 터치하여 문장을 만드세요</span>';
@@ -6119,7 +6142,6 @@ function loadStep() {
             updateInsertBtnDisabled();
         };
 
-        btnWrapper.appendChild(checkBtn);
         btnWrapper.appendChild(insertBtn);
         btnWrapper.appendChild(resetBtn);
         control.appendChild(btnWrapper);
