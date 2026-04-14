@@ -10127,16 +10127,21 @@ function openDataSettings() {
 // ── 알림 설정 ──────────────────────────────────────────────────────────────
 
 const FCM_VAPID_KEY = 'BABLNeK2ZuUV6zqT4JwtDNnS1uhSKJY66RD2usuqooL3LpSI0Qlr82qa3PkrWHMcgJNa39TVWOF4GqyixAzN5Yc';
+let _fcmToken = null; // 캐시된 토큰
 
 async function initFCM() {
     if (typeof firebase === 'undefined' || !firebase.messaging) return null;
+    if (_fcmToken) return _fcmToken; // 이미 취득한 토큰 재사용
     try {
         const messaging = firebase.messaging();
         const token = await messaging.getToken({ vapidKey: FCM_VAPID_KEY });
-        if (token && myPlayerId) {
-            await db.collection('leaderboard').doc(myPlayerId).set(
-                { fcmToken: token }, { merge: true }
-            );
+        if (token) {
+            _fcmToken = token;
+            if (myPlayerId) {
+                await db.collection('leaderboard').doc(myPlayerId).set(
+                    { fcmToken: token }, { merge: true }
+                );
+            }
         }
         return token;
     } catch (e) {
@@ -10253,11 +10258,10 @@ async function notifSave() {
         // localStorage에 저장 (폴백용)
         localStorage.setItem('notifTimes', JSON.stringify(times));
 
-        // FCM 토큰 확보 + Firestore에 알림 시간 저장 (서버 발송용)
-        const token = await initFCM();
+        // Firestore에 알림 시간 저장 (서버 발송용)
         if (myPlayerId && db) {
             const updateData = { notificationTimes: times };
-            if (token) updateData.fcmToken = token;
+            if (_fcmToken) updateData.fcmToken = _fcmToken;
             await db.collection('leaderboard').doc(myPlayerId).set(updateData, { merge: true });
         }
 
@@ -10345,10 +10349,9 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
     // FCM 서버 예약 (앱이 꺼져도 작동)
     if (myPlayerId && db) {
         try {
-            const token = await initFCM();
             const notifAt = new Date(Date.now() + delayMs);
             const updateData = { nextReviewNotifAt: notifAt, nextReviewStage: stageTitle };
-            if (token) updateData.fcmToken = token;
+            if (_fcmToken) updateData.fcmToken = _fcmToken;
             await db.collection('leaderboard').doc(myPlayerId).set(updateData, { merge: true });
 
             if (btn) {
@@ -11714,6 +11717,11 @@ if ('serviceWorker' in navigator) {
 
 // 매일 알림 시간 체크 시작
 startNotificationCheck();
+
+// FCM 토큰 미리 취득 (복습 알림 예약 시 지연 방지)
+if (Notification.permission === 'granted') {
+    initFCM().catch(() => {});
+}
 
 // 🛡️ 다중 기기 동시 접속 차단기 (스마트 감시 버전)
 function startSessionGuard() {
