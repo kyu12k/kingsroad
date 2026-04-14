@@ -10342,8 +10342,7 @@ async function openNotificationSettings() {
                     🔔 알림 설정
                 </div>
                 <p style="font-size:0.9rem; color:#7f8c8d; margin-bottom:16px;">
-                    매일 지정한 시간에 복습 알림을 보내드립니다.<br>최대 3개까지 설정할 수 있습니다.<br>
-                    <span style="color:#e67e22; font-size:0.82rem;">※ 앱이 완전히 종료되면 알림이 오지 않을 수 있습니다.</span>
+                    매일 지정한 시간에 복습 알림을 보내드립니다.<br>최대 3개까지 설정할 수 있습니다.
                 </p>
                 <div id="notif-time-list" style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;"></div>
                 <button id="notif-add-btn" onclick="notifAddTime()" style="width:100%; background:#3498db; color:white; border:none; padding:11px; border-radius:10px; font-weight:bold; cursor:pointer; margin-bottom:10px;">
@@ -10559,7 +10558,7 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
         btn.disabled = true;
         btn.style.background = '#27ae60';
     }
-    showToast(`${label} 뒤 알림을 드릴게요! (앱을 완전히 종료하지 않으면 알림이 오지 않습니다)`);
+    showToast(`${label} 뒤 알림을 드릴게요!`);
 }
 // ── 복습 알림 예약 끝 ────────────────────────────────────────────────────────
 
