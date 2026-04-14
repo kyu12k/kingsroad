@@ -13588,8 +13588,11 @@ function bindHardshipMemoryInputGuards() {
     const blockArrowNavigation = (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
-            input.blur();
-            submitHardshipMemoryGuess();
+            const filled = (hardshipState.memoryTypedText || '').length >= getHardshipFillableVerseLength();
+            if (!hardshipState.locked && filled && !hardshipState.awaitingNext) {
+                input.blur();
+                submitHardshipMemoryGuess();
+            }
             return;
         }
 
