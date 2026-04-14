@@ -13666,8 +13666,25 @@ function updateHardshipMemoryBoard() {
         targetScrollSlot = slots[slots.length - 1];
     }
 
-    if (targetScrollSlot && typeof targetScrollSlot.scrollIntoView === 'function') {
-        targetScrollSlot.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (targetScrollSlot) {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        if (isIOS && window.visualViewport) {
+            // iOS: visualViewport로 키보드 높이 반영한 수동 스크롤
+            const container = targetScrollSlot.closest('.battle-field');
+            if (container) {
+                const slotRect = targetScrollSlot.getBoundingClientRect();
+                const vvTop = window.visualViewport.offsetTop;
+                const vvHeight = window.visualViewport.height;
+                const slotCenter = slotRect.top + slotRect.height / 2;
+                const targetCenter = vvTop + vvHeight / 2;
+                const diff = slotCenter - targetCenter;
+                if (Math.abs(diff) > 40) {
+                    container.scrollTop += diff;
+                }
+            }
+        } else if (typeof targetScrollSlot.scrollIntoView === 'function') {
+            targetScrollSlot.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     }
 }
 
