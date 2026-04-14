@@ -11928,15 +11928,13 @@ function startSessionGuard() {
     }
 
     // 파이어베이스 실시간 감시 (onSnapshot)
-    // 첫 스냅샷은 Firestore 전파 지연으로 구 토큰이 올 수 있으므로 초기화 용도로만 사용
-    let _guardInitialized = false;
+    // 감시 시작 직후 3초간은 초기 연결/전파 스냅샷을 무시 (모바일에서 여러 스냅샷이 연속 발생하는 경우 대비)
+    const _guardStartTime = Date.now();
     window.sessionGuardUnsubscribe = db.collection("leaderboard").doc(myTag).onSnapshot((doc) => {
         if (doc.metadata && doc.metadata.fromCache) return;
 
-        if (!_guardInitialized) {
-            _guardInitialized = true;
-            return; // 첫 번째 스냅샷은 초기 상태 확인용 — 여기서는 차단하지 않음
-        }
+        // 감시 시작 후 3초 이내 스냅샷은 자체 쓰기/초기 전파 결과일 수 있으므로 무시
+        if (Date.now() - _guardStartTime < 3000) return;
 
         if (doc.exists) {
             const serverData = doc.data();
