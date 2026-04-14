@@ -2980,7 +2980,6 @@ function amenAndStartGame() {
 
     // 무거운 작업은 다음 태스크로 미뤄 브라우저가 먼저 페인트하게 함
     setTimeout(() => {
-        console.log('[DEBUG] amenAndStartGame setTimeout 진입');
         // 🌟 4. [핵심 수술 2] 여정 시작 시 (Lazy Authentication)
         // 비로소 새로운 출입증을 발급받고 서버에 등록하여 다른 공기계의 접속을 차단합니다!
         try {
@@ -2994,23 +2993,19 @@ function amenAndStartGame() {
                 // 서버에 새 출입증 신고 (기존 기기 쫓아내기)
                 db.collection("leaderboard").doc(myTag).set({
                     sessionToken: newSessionToken,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    updatedAt: new Date()
                 }, { merge: true }).then(() => {
-                    console.log('[DEBUG] Firestore 출입증 등록 완료 → startSessionGuard 호출');
                     if (typeof startSessionGuard === 'function') startSessionGuard();
                     checkPendingReward();
                 }).catch(err => console.error("출입증 갱신 지연:", err));
-            } else {
-                console.log('[DEBUG] Firebase 블록 건너뜀 — db:', typeof db, '/ myTag:', myTag);
             }
         } catch(e) {
-            console.error('[DEBUG] Firebase 블록 에러 (무시하고 진행):', e && e.message || e);
+            console.error("출입증 발급 오류 (무시하고 진행):", e && e.message || e);
         }
 
         // 5. 기억 퀴즈 시도 후 맵 화면으로 이동
-        console.log('[DEBUG] showMemoryQuizOverlay 존재:', typeof showMemoryQuizOverlay);
         if (typeof showMemoryQuizOverlay === 'function') showMemoryQuizOverlay();
-        else if (typeof goMap === 'function') { console.log('[DEBUG] goMap 직접 호출'); goMap(); }
+        else if (typeof goMap === 'function') goMap();
     }, 0);
 }
 
@@ -3191,38 +3186,24 @@ function goHome() {
 }
 
 function goMap() {
-    console.log('[DEBUG] goMap 호출됨');
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
 
     const homeScreen = document.getElementById('home-screen');
     if (homeScreen) {
         homeScreen.style.display = '';
-        console.log('[DEBUG] homeScreen display 후:', homeScreen.style.display, '/ classList:', homeScreen.className);
     }
 
     // ★ [수정] 동적으로 생성된 화면(도감 등) 제거
     const lifeBookScreen = document.getElementById('life-book-screen');
     if (lifeBookScreen) lifeBookScreen.remove();
 
-    const mapScreen = document.getElementById('map-screen');
-    console.log('[DEBUG] map-screen 존재:', !!mapScreen);
-    if (mapScreen) {
-        mapScreen.classList.add('active');
-        console.log('[DEBUG] map-screen active 추가 완료');
-    } else {
-        console.error('[DEBUG] map-screen 엘리먼트를 찾을 수 없음!');
-    }
+    document.getElementById('map-screen').classList.add('active');
     if (typeof seasonTimerInterval !== 'undefined' && seasonTimerInterval) {
         clearInterval(seasonTimerInterval);
     }
     // ★ [추가] 맵으로 돌아올 때 맵 재렌더링 (보스 클리어 후 풀밭 배경 즉시 반영)
     if (typeof renderChapterMap === 'function') {
-        try {
-            renderChapterMap();
-            console.log('[DEBUG] renderChapterMap 완료');
-        } catch(e) {
-            console.error('[DEBUG] renderChapterMap 에러:', e.message);
-        }
+        renderChapterMap();
     }
     setTimeout(drawRiver, 50);
     // 백버튼 표시 상태 갱신 (맵에서는 숨김)
@@ -14551,13 +14532,10 @@ function renderGuidePage() {
     window.showMemoryQuizOverlay = function () {
         _quizSessionUsed = [];
         var eligible = getEligibleQuizVerses();
-        console.log('[DEBUG] showMemoryQuizOverlay — eligible:', eligible.length);
         if (eligible.length === 0) {
-            console.log('[DEBUG] eligible 없음 → goMap 호출');
             if (typeof goMap === 'function') goMap();
             return;
         }
-        console.log('[DEBUG] 기억퀴즈 오버레이 표시');
         var overlay = document.getElementById('memory-quiz-overlay');
         if (overlay) overlay.style.display = 'flex';
 
