@@ -3195,19 +3195,32 @@ function goMap() {
     const homeScreen = document.getElementById('home-screen');
     if (homeScreen) {
         homeScreen.style.display = '';
+        console.log('[DEBUG] homeScreen display 후:', homeScreen.style.display, '/ classList:', homeScreen.className);
     }
 
     // ★ [수정] 동적으로 생성된 화면(도감 등) 제거
     const lifeBookScreen = document.getElementById('life-book-screen');
     if (lifeBookScreen) lifeBookScreen.remove();
 
-    document.getElementById('map-screen').classList.add('active');
+    const mapScreen = document.getElementById('map-screen');
+    console.log('[DEBUG] map-screen 존재:', !!mapScreen);
+    if (mapScreen) {
+        mapScreen.classList.add('active');
+        console.log('[DEBUG] map-screen active 추가 완료');
+    } else {
+        console.error('[DEBUG] map-screen 엘리먼트를 찾을 수 없음!');
+    }
     if (typeof seasonTimerInterval !== 'undefined' && seasonTimerInterval) {
         clearInterval(seasonTimerInterval);
     }
     // ★ [추가] 맵으로 돌아올 때 맵 재렌더링 (보스 클리어 후 풀밭 배경 즉시 반영)
     if (typeof renderChapterMap === 'function') {
-        renderChapterMap();
+        try {
+            renderChapterMap();
+            console.log('[DEBUG] renderChapterMap 완료');
+        } catch(e) {
+            console.error('[DEBUG] renderChapterMap 에러:', e.message);
+        }
     }
     setTimeout(drawRiver, 50);
     // 백버튼 표시 상태 갱신 (맵에서는 숨김)
