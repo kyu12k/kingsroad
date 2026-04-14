@@ -2983,26 +2983,28 @@ function amenAndStartGame() {
         console.log('[DEBUG] amenAndStartGame setTimeout 진입');
         // 🌟 4. [핵심 수술 2] 여정 시작 시 (Lazy Authentication)
         // 비로소 새로운 출입증을 발급받고 서버에 등록하여 다른 공기계의 접속을 차단합니다!
-        if (typeof db !== 'undefined' && typeof myTag !== 'undefined' && myTag) {
-            const newSessionToken = "session_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
-            window.currentSessionToken = newSessionToken;
+        try {
+            if (typeof db !== 'undefined' && typeof myTag !== 'undefined' && myTag) {
+                const newSessionToken = "session_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+                window.currentSessionToken = newSessionToken;
 
-            // 변경된 출입증을 기기에 즉시 저장
-            if (typeof saveGameData === 'function') saveGameData();
+                // 변경된 출입증을 기기에 즉시 저장
+                if (typeof saveGameData === 'function') saveGameData();
 
-            // 서버에 새 출입증 신고 (기존 기기 쫓아내기)
-            db.collection("leaderboard").doc(myTag).set({
-                sessionToken: newSessionToken,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true }).then(() => {
-                console.log('[DEBUG] Firestore 출입증 등록 완료 → startSessionGuard 호출');
-                // 🌟🌟 [여기 추가!] 서버에 내 새 출입증이 완벽하게 등록된 직후에 감시 카메라를 켭니다!
-                if (typeof startSessionGuard === 'function') startSessionGuard();
-                // 지난 주 보상 확인 (출입증 등록 완료 후 1회)
-                checkPendingReward();
-            }).catch(err => console.error("출입증 갱신 지연:", err));
-        } else {
-            console.log('[DEBUG] Firebase 블록 건너뜀 — db:', typeof db, '/ myTag:', myTag);
+                // 서버에 새 출입증 신고 (기존 기기 쫓아내기)
+                db.collection("leaderboard").doc(myTag).set({
+                    sessionToken: newSessionToken,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true }).then(() => {
+                    console.log('[DEBUG] Firestore 출입증 등록 완료 → startSessionGuard 호출');
+                    if (typeof startSessionGuard === 'function') startSessionGuard();
+                    checkPendingReward();
+                }).catch(err => console.error("출입증 갱신 지연:", err));
+            } else {
+                console.log('[DEBUG] Firebase 블록 건너뜀 — db:', typeof db, '/ myTag:', myTag);
+            }
+        } catch(e) {
+            console.error('[DEBUG] Firebase 블록 에러 (무시하고 진행):', e && e.message || e);
         }
 
         // 5. 기억 퀴즈 시도 후 맵 화면으로 이동
