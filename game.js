@@ -6605,7 +6605,7 @@ function showClearScreen() {
                     const stageObj = chData && chData.stages ? chData.stages.find(s => s.id === sId) : null;
                     const stageTitle = stageObj ? stageObj.title : '이 말씀';
                     notifWrap.innerHTML = `
-                        <p style="font-size:0.85rem; color:#7f8c8d; margin:0 0 6px;">${waitLabel} 뒤 알려드릴까요? (앱을 완전히 종료하지 않으면 알림을 보내드립니다)</p>
+                        <p style="font-size:0.85rem; color:#7f8c8d; margin:0 0 6px;">${waitLabel} 뒤 알려드릴까요?</p>
                         <button onclick="scheduleReviewNotification(${rawDelayMs}, '${stageTitle.replace(/'/g, "\\'")}', this)"
                             style="background:#e8a020; color:white; border:none; padding:9px 20px; border-radius:20px; font-weight:bold; font-size:0.9rem; cursor:pointer;">
                             🔔 알림 예약
