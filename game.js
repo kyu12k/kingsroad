@@ -2980,6 +2980,7 @@ function amenAndStartGame() {
 
     // 무거운 작업은 다음 태스크로 미뤄 브라우저가 먼저 페인트하게 함
     setTimeout(() => {
+        console.log('[DEBUG] amenAndStartGame setTimeout 진입');
         // 🌟 4. [핵심 수술 2] 여정 시작 시 (Lazy Authentication)
         // 비로소 새로운 출입증을 발급받고 서버에 등록하여 다른 공기계의 접속을 차단합니다!
         if (typeof db !== 'undefined' && typeof myTag !== 'undefined' && myTag) {
@@ -2994,16 +2995,20 @@ function amenAndStartGame() {
                 sessionToken: newSessionToken,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true }).then(() => {
+                console.log('[DEBUG] Firestore 출입증 등록 완료 → startSessionGuard 호출');
                 // 🌟🌟 [여기 추가!] 서버에 내 새 출입증이 완벽하게 등록된 직후에 감시 카메라를 켭니다!
                 if (typeof startSessionGuard === 'function') startSessionGuard();
                 // 지난 주 보상 확인 (출입증 등록 완료 후 1회)
                 checkPendingReward();
             }).catch(err => console.error("출입증 갱신 지연:", err));
+        } else {
+            console.log('[DEBUG] Firebase 블록 건너뜀 — db:', typeof db, '/ myTag:', myTag);
         }
 
         // 5. 기억 퀴즈 시도 후 맵 화면으로 이동
+        console.log('[DEBUG] showMemoryQuizOverlay 존재:', typeof showMemoryQuizOverlay);
         if (typeof showMemoryQuizOverlay === 'function') showMemoryQuizOverlay();
-        else if (typeof goMap === 'function') goMap();
+        else if (typeof goMap === 'function') { console.log('[DEBUG] goMap 직접 호출'); goMap(); }
     }, 0);
 }
 
@@ -3184,6 +3189,7 @@ function goHome() {
 }
 
 function goMap() {
+    console.log('[DEBUG] goMap 호출됨');
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
 
     const homeScreen = document.getElementById('home-screen');
@@ -14530,10 +14536,13 @@ function renderGuidePage() {
     window.showMemoryQuizOverlay = function () {
         _quizSessionUsed = [];
         var eligible = getEligibleQuizVerses();
+        console.log('[DEBUG] showMemoryQuizOverlay — eligible:', eligible.length);
         if (eligible.length === 0) {
+            console.log('[DEBUG] eligible 없음 → goMap 호출');
             if (typeof goMap === 'function') goMap();
             return;
         }
+        console.log('[DEBUG] 기억퀴즈 오버레이 표시');
         var overlay = document.getElementById('memory-quiz-overlay');
         if (overlay) overlay.style.display = 'flex';
 
