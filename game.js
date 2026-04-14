@@ -695,6 +695,26 @@ function generateRandomTag() {
     return result;
 }
 
+async function generateUniqueTag() {
+    if (typeof db === 'undefined' || !db) return generateRandomTag();
+    const chars = "0123456789ABCDEFGHJKMNPQRTUVWXY";
+    const banned = ["SHIT","HELL","DAMN","KILL","DEAD","SICK","FUCK","DICK","CRAP","ASS"];
+    for (let attempt = 0; attempt < 10; attempt++) {
+        let candidate = "";
+        do {
+            candidate = "";
+            for (let i = 0; i < 6; i++) {
+                candidate += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+        } while (banned.some(w => candidate.includes(w)) || /^[0-9]+$/.test(candidate));
+
+        const doc = await db.collection('leaderboard').doc(candidate).get();
+        if (!doc.exists) return candidate;
+    }
+    // 10회 시도 후 실패 시 fallback (사실상 발생 불가)
+    return generateRandomTag();
+}
+
 /* =========================================
    [시스템: 미션 관리 (일일/주간 통합)]
    ========================================= */
@@ -11082,7 +11102,7 @@ function updatePreviewText() {
 }
 
 /* [기능] 프로필 확정 (저장) + 지파 이적 페널티 */
-function confirmProfile() {
+async function confirmProfile() {
     // 🌟 [핵심 방어막] 최초 가입이 아닌 유저가 지파를 바꿀 때 경고!
     if (myNickname !== "순례자" && myTribe !== window.tempTribe) {
         const warnMsg = "⚠️ [경고] 지파를 변경하시면 올해 모은 '12지파 대항전 기여도(연간 승점)'가 0점으로 초기화됩니다!\n\n(개인의 누적 승점은 보존되지만, 새로운 지파에서의 기여도는 0부터 다시 쌓아야 합니다.)\n\n정말로 지파를 변경하시겠습니까?";
@@ -11099,6 +11119,9 @@ function confirmProfile() {
     if (window.tempNickname) myNickname = window.tempNickname;
     if (window.tempTribe !== undefined) myTribe = window.tempTribe;
     if (window.tempDept !== undefined) myDept = window.tempDept;
+
+    // 신규 유저(tag 없음)에 한해 중복 없는 tag 생성
+    if (!myTag) myTag = await generateUniqueTag();
 
     // 저장 및 갱신
     saveGameData();
