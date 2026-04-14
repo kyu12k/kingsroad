@@ -6392,8 +6392,14 @@ function showClearScreen() {
         if (!isTraining) {
             const sId = window.currentStageId;
             const outcome = window._lastClearOutcome;
-            if (sId && (outcome === 'perfect' || outcome === 'good' || outcome === 'miss')) {
+            // 알림은 실제로 다음 복습 타이머가 시작되는 시점에만 표시:
+            // - perfect: 정상 클리어 → step+1로 타이머 시작
+            // - good-retry / miss-retry-final: 재도전 완료 → "다음 단계로 진행합니다" 시점 = 타이머 시작
+            // good / miss 는 재도전 대기(타이머=0)이므로 제외
+            if (sId && (outcome === 'perfect' || outcome === 'good-retry' || outcome === 'miss-retry-final')) {
                 const nextStatus = getReviewStatus(sId);
+                // showClearScreen은 advanceReviewStep 호출 전이므로 step이 아직 현재 step
+                // → 다음 단계 대기시간은 step+1 기준
                 const rawDelayMs = nextStatus.step === 1
                     ? 10 * 60 * 1000
                     : getReviewWaitMs(nextStatus.step + 1);
@@ -10227,6 +10233,11 @@ async function notifSave() {
         if (times.length === 0) {
             // 알림 해제
             localStorage.removeItem('notifTimes');
+            if (myPlayerId && db) {
+                await db.collection('leaderboard').doc(myPlayerId).set(
+                    { notificationTimes: [] }, { merge: true }
+                );
+            }
             document.getElementById('notification-modal').style.display = 'none';
             showToast('알림이 해제되었습니다.');
             return;
@@ -10239,11 +10250,16 @@ async function notifSave() {
             return;
         }
 
-        // localStorage에 저장 (서버 불필요)
+        // localStorage에 저장 (폴백용)
         localStorage.setItem('notifTimes', JSON.stringify(times));
 
-        // SW에 매일 알림 예약 전달 (백그라운드 지원)
-        scheduleNotifTimesViaSW();
+        // FCM 토큰 확보 + Firestore에 알림 시간 저장 (서버 발송용)
+        const token = await initFCM();
+        if (myPlayerId && db) {
+            const updateData = { notificationTimes: times };
+            if (token) updateData.fcmToken = token;
+            await db.collection('leaderboard').doc(myPlayerId).set(updateData, { merge: true });
+        }
 
         document.getElementById('notification-modal').style.display = 'none';
         showToast(`알림이 설정되었습니다. (${times.join(', ')})`);
@@ -10323,33 +10339,49 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
         return;
     }
 
+    const hr = delayMs / 3600000;
+    const label = hr < 1 ? `${Math.round(delayMs / 60000)}분` : `${Math.round(hr)}시간`;
+
+    // FCM 서버 예약 (앱이 꺼져도 작동)
+    if (myPlayerId && db) {
+        try {
+            const token = await initFCM();
+            const notifAt = new Date(Date.now() + delayMs);
+            const updateData = { nextReviewNotifAt: notifAt, nextReviewStage: stageTitle };
+            if (token) updateData.fcmToken = token;
+            await db.collection('leaderboard').doc(myPlayerId).set(updateData, { merge: true });
+
+            if (btn) {
+                btn.textContent = '✅ 예약됨';
+                btn.disabled = true;
+                btn.style.background = '#27ae60';
+            }
+            showToast(`${label} 뒤 알림을 드릴게요!`);
+            return;
+        } catch (e) {
+            console.warn('FCM 복습 알림 예약 실패, 로컬 폴백:', e);
+        }
+    }
+
+    // 폴백: 로그인 안 됐거나 Firestore 실패 시 (앱이 열려있을 때만 작동)
     const title = '킹스로드 복습 알림';
     const body = `"${stageTitle}" 복습할 시간입니다!`;
     const notifTag = `review-${Date.now()}`;
-
-    // Service Worker에 예약 전달 (백그라운드 지원)
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.ready.then(reg => {
-            if (reg.active) {
-                reg.active.postMessage({ type: 'SCHEDULE_NOTIFICATION', delayMs, title, body, tag: notifTag });
-            }
+            if (reg.active) reg.active.postMessage({ type: 'SCHEDULE_NOTIFICATION', delayMs, title, body, tag: notifTag });
         }).catch(() => {});
     }
-
-    // 폴백: 항상 실행 (앱이 열려있을 때 보장, SW와 tag 동일해 중복 안 뜸)
     setTimeout(() => {
         try { new Notification(title, { body, icon: '/icon-192.png', tag: notifTag }); } catch(e) {}
     }, delayMs);
 
-    // 버튼 상태 변경
     if (btn) {
         btn.textContent = '✅ 예약됨';
         btn.disabled = true;
         btn.style.background = '#27ae60';
     }
-    const hr = delayMs / 3600000;
-    const label = hr < 1 ? `${Math.round(delayMs / 60000)}분` : `${Math.round(hr)}시간`;
-    showToast(`${label} 뒤 알림을 드릴게요! (앱을 완전히 종료하지 않으면 알림을 보내드립니다)`);
+    showToast(`${label} 뒤 알림을 드릴게요! (앱을 완전히 종료하지 않으면 알림이 오지 않습니다)`);
 }
 // ── 복습 알림 예약 끝 ────────────────────────────────────────────────────────
 
@@ -13492,7 +13524,7 @@ function renderHardshipMemoryVerse() {
 
     control.innerHTML = `
         <div class="hardship-control-row">
-            <button id="hardship-memory-submit-btn" class="btn-attack" onclick="submitHardshipMemoryGuess()" style="${hardshipState.awaitingNext ? 'display:none;' : ''}" ${hardshipState.locked ? 'disabled' : ''}>정답 확인</button>
+            <button id="hardship-memory-submit-btn" class="btn-attack" onclick="submitHardshipMemoryGuess()" style="${hardshipState.awaitingNext ? 'display:none;' : ''}" ${(hardshipState.locked || (hardshipState.memoryTypedText || '').length < getHardshipFillableVerseLength()) ? 'disabled' : ''}>정답 확인</button>
             <button id="hardship-next-btn" class="btn-attack" onclick="proceedHardshipToNextVerse()" style="background:#2ecc71; ${hardshipState.awaitingNext ? '' : 'display:none;'}">다음 ⏭️</button>
             <button class="btn-reset-step5" onclick="resetHardshipMemoryInputs()" style="${hardshipState.awaitingNext ? 'display:none;' : ''}" ${hardshipState.locked ? 'disabled' : ''}>입력 초기화</button>
         </div>
@@ -13655,6 +13687,11 @@ function updateHardshipMemoryBoard() {
         targetScrollSlot = slots[text.length];
     } else if (slots.length > 0) {
         targetScrollSlot = slots[slots.length - 1];
+    }
+
+    const submitBtn = document.getElementById('hardship-memory-submit-btn');
+    if (submitBtn && !hardshipState.locked && !hardshipState.awaitingNext) {
+        submitBtn.disabled = text.length < slots.length;
     }
 
     if (targetScrollSlot) {

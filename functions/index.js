@@ -468,3 +468,66 @@ exports.sendDailyNotifications = functions
         }
     });
 
+// ── 복습 알림 발송 (매 1분 실행) ──────────────────────────────────────────────
+exports.sendReviewNotifications = functions
+    .region('asia-northeast3')
+    .pubsub.schedule('* * * * *')
+    .timeZone('Asia/Seoul')
+    .onRun(async () => {
+        try {
+            const now = admin.firestore.Timestamp.now();
+
+            const snap = await db.collection('leaderboard')
+                .where('nextReviewNotifAt', '<=', now)
+                .get();
+
+            if (snap.empty) return null;
+
+            const messages = [];
+            const clearBatch = db.batch();
+
+            snap.docs.forEach(doc => {
+                const data = doc.data();
+                if (!data.fcmToken) return;
+
+                const stageTitle = data.nextReviewStage || '말씀';
+                messages.push({
+                    token: data.fcmToken,
+                    data: {
+                        title: '킹스로드 복습 알림',
+                        body: `"${stageTitle}" 복습할 시간입니다!`,
+                        link: 'https://kings-road-rank.web.app'
+                    }
+                });
+
+                // 발송 후 필드 삭제 (중복 발송 방지)
+                clearBatch.update(doc.ref, {
+                    nextReviewNotifAt: admin.firestore.FieldValue.delete(),
+                    nextReviewStage: admin.firestore.FieldValue.delete()
+                });
+            });
+
+            if (messages.length === 0) return null;
+
+            // FCM 최대 500개씩 배치 발송
+            const chunks = [];
+            for (let i = 0; i < messages.length; i += 500) {
+                chunks.push(messages.slice(i, i + 500));
+            }
+            const results = await Promise.all(chunks.map(chunk =>
+                admin.messaging().sendEach(chunk)
+            ));
+
+            await clearBatch.commit();
+
+            const totalSent = results.reduce((sum, r) => sum + r.successCount, 0);
+            const totalFailed = results.reduce((sum, r) => sum + r.failureCount, 0);
+            console.log(`✅ 복습 알림 발송 완료: 성공 ${totalSent}, 실패 ${totalFailed}`);
+
+            return null;
+        } catch (error) {
+            console.error('❌ 복습 알림 발송 실패:', error);
+            return null;
+        }
+    });
+
