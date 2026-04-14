@@ -660,6 +660,12 @@
                     style="font-size:0.8em; opacity:0.7; margin-left:5px;">(변경)</span>
             </button>
 
+            <!-- 지난 주 보상 버튼 (pendingReward 있을 때만 표시) -->
+            <button id="last-week-reward-btn" onclick="openLastWeekRewardModal()"
+                style="display:none; background:linear-gradient(135deg,#f39c12,#e67e22); border:none; color:white; padding:10px 22px; border-radius:20px; font-size:0.95rem; font-weight:bold; cursor:pointer; z-index:10; align-items:center; gap:8px; box-shadow:0 4px 14px rgba(243,156,18,0.5); animation:pulse-gold 1.8s infinite;">
+                🏆 <span>지난 주 랭킹 보상 수령</span>
+            </button>
+
             <!-- 메뉴 패널로 통합됨 -->
 
             <!-- 공지사항 모달 -->

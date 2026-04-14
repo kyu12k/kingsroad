@@ -287,8 +287,36 @@ exports.updateWeeklyCounts = functions.pubsub
  * 주간 랭킹 기록 생성
  * 매주 월요일 00:00에 지난주 Top 100을 history 컬렉션에 보관
  */
+// 순위 → 시온성 보석 환산
+function calcZionGems(rank) {
+    if (rank === 1)          return 500;
+    if (rank <= 3)           return 300;
+    if (rank <= 10)          return 200;
+    if (rank <= 30)          return 120;
+    return 60; // 31~100
+}
+
+// 순위 → 지파 보석 환산
+function calcTribeGems(rank) {
+    if (rank === 1)          return 300;
+    if (rank <= 3)           return 180;
+    if (rank <= 10)          return 120;
+    if (rank <= 30)          return 70;
+    return 30; // 31~100
+}
+
+// Firestore batch 500개 제한 안전하게 커밋
+async function commitInChunks(updates) {
+    const CHUNK = 500;
+    for (let i = 0; i < updates.length; i += CHUNK) {
+        const b = db.batch();
+        updates.slice(i, i + CHUNK).forEach(({ ref, data }) => b.update(ref, data));
+        await b.commit();
+    }
+}
+
 exports.archiveWeeklyRankings = functions.pubsub
-    .schedule('0 0 * * 1')  // 매주 월요일 00:00
+    .schedule('5 0 * * 1')  // 매주 월요일 00:05 (updateWeeklyCounts 00:00 완료 후)
     .timeZone('Asia/Seoul')
     .onRun(async () => {
         try {
@@ -297,34 +325,128 @@ exports.archiveWeeklyRankings = functions.pubsub
             const lastWeekId = getWeekId(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
             console.log(`🗓️ 아카이빙 대상: ${lastWeekId}`);
 
-            const snapshot = await db.collection('leaderboard')
+            const baseQuery = db.collection('leaderboard')
                 .where('weekId', '==', lastWeekId)
                 .where('score', '>', 0)
-                .orderBy('score', 'desc')
-                .limit(100)
-                .get();
+                .orderBy('score', 'desc');
 
-            if (snapshot.empty) {
+            // ① 시온성(전체) Top100
+            const zionSnapshot = await baseQuery.limit(100).get();
+
+            if (zionSnapshot.empty) {
                 console.log('⚠️ 아카이빙할 데이터 없음');
                 return null;
             }
 
-            const batch = db.batch();
-            snapshot.docs.forEach((doc, index) => {
+            // ② 주간 히스토리 보관 (기존 로직)
+            const archiveBatch = db.batch();
+            zionSnapshot.docs.forEach((doc, index) => {
                 const data = doc.data();
-                const historyDocId = `${lastWeekId}_${doc.id}`;
-                const historyRef = db.collection('weekly_history').doc(historyDocId);
-
-                batch.set(historyRef, {
+                const historyRef = db.collection('weekly_history').doc(`${lastWeekId}_${doc.id}`);
+                archiveBatch.set(historyRef, {
                     ...data,
                     rank: index + 1,
                     weekId: lastWeekId,
                     archivedAt: admin.firestore.FieldValue.serverTimestamp()
                 });
             });
+            await archiveBatch.commit();
+            console.log(`✅ ${zionSnapshot.size}명 주간 랭킹 보관 완료 (${lastWeekId})`);
 
-            await batch.commit();
-            console.log(`✅ ${snapshot.size}명 주간 랭킹 보관 완료 (${lastWeekId})`);
+            // ③ 지파별 Top100 병렬 조회
+            const tribeJobs = [];
+            for (let i = 0; i < TRIBE_COUNT; i++) {
+                tribeJobs.push(
+                    db.collection('leaderboard')
+                        .where('weekId', '==', lastWeekId)
+                        .where('tribe', '==', i)
+                        .where('score', '>', 0)
+                        .orderBy('score', 'desc')
+                        .limit(100)
+                        .get()
+                );
+            }
+            const tribeSnapshots = await Promise.all(tribeJobs);
+
+            // ④ 보상 계산
+            const zionQualified = zionSnapshot.size >= 100;
+            // playerId → reward 정보
+            const rewardMap = new Map();
+
+            // 시온성 보상
+            if (zionQualified) {
+                zionSnapshot.docs.forEach((doc, idx) => {
+                    const rank = idx + 1;
+                    rewardMap.set(doc.id, {
+                        score: doc.data().score || 0,
+                        zionRank: rank,
+                        zionGems: calcZionGems(rank),
+                        zionQualified: true,
+                        tribeRank: null,
+                        tribeGems: 0,
+                        tribeQualified: false
+                    });
+                });
+            } else {
+                // 인원 미달이어도 순위 기록은 남김 (보석만 0)
+                zionSnapshot.docs.forEach((doc, idx) => {
+                    rewardMap.set(doc.id, {
+                        score: doc.data().score || 0,
+                        zionRank: idx + 1,
+                        zionGems: 0,
+                        zionQualified: false,
+                        tribeRank: null,
+                        tribeGems: 0,
+                        tribeQualified: false
+                    });
+                });
+            }
+
+            // 지파 보상 병합
+            tribeSnapshots.forEach((snapshot) => {
+                const tribeQualified = snapshot.size >= 100;
+                snapshot.docs.forEach((doc, idx) => {
+                    const rank = idx + 1;
+                    const existing = rewardMap.get(doc.id) || {
+                        score: doc.data().score || 0,
+                        zionRank: null,
+                        zionGems: 0,
+                        zionQualified,
+                        tribeRank: null,
+                        tribeGems: 0,
+                        tribeQualified: false
+                    };
+                    existing.tribeRank = rank;
+                    existing.tribeGems = tribeQualified ? calcTribeGems(rank) : 0;
+                    existing.tribeQualified = tribeQualified;
+                    rewardMap.set(doc.id, existing);
+                });
+            });
+
+            // ⑤ pendingReward 일괄 기록 (500개씩 분할 커밋)
+            const updates = [];
+            rewardMap.forEach((reward, playerId) => {
+                const totalGems = reward.zionGems + reward.tribeGems;
+                updates.push({
+                    ref: db.collection('leaderboard').doc(playerId),
+                    data: {
+                        pendingReward: {
+                            weekId: lastWeekId,
+                            score: reward.score,
+                            zionRank: reward.zionRank,
+                            zionGems: reward.zionGems,
+                            zionQualified: reward.zionQualified,
+                            tribeRank: reward.tribeRank,
+                            tribeGems: reward.tribeGems,
+                            tribeQualified: reward.tribeQualified,
+                            totalGems
+                        }
+                    }
+                });
+            });
+
+            await commitInChunks(updates);
+            console.log(`🎁 ${updates.length}명에게 주간 보상 기록 완료`);
 
             return null;
         } catch (error) {
@@ -359,16 +481,41 @@ exports.archiveMonthlyRankings = functions.pubsub
                 .limit(100)
                 .get();
 
-            if (snapshot.empty) {
+            // 월 전환 직후 앱을 켠 유저는 monthId가 이미 새달로 바뀌어 위 쿼리에 누락될 수 있음.
+            // prevMonthId 백업 필드로 보존된 데이터를 fallback으로 추가 조회.
+            const fallbackSnapshot = await db.collection('leaderboard')
+                .where('prevMonthId', '==', lastMonthId)
+                .where('prevMonthlyScore', '>', 0)
+                .orderBy('prevMonthlyScore', 'desc')
+                .limit(100)
+                .get();
+
+            // 두 결과 병합 (중복 제거, 점수 높은 쪽 우선)
+            const combinedMap = new Map();
+            snapshot.docs.forEach(doc => {
+                const d = doc.data();
+                combinedMap.set(doc.id, { id: doc.id, score: d.myMonthlyScore || 0, data: d });
+            });
+            fallbackSnapshot.docs.forEach(doc => {
+                if (!combinedMap.has(doc.id)) {
+                    const d = doc.data();
+                    combinedMap.set(doc.id, { id: doc.id, score: d.prevMonthlyScore || 0, data: { ...d, myMonthlyScore: d.prevMonthlyScore || 0 } });
+                }
+            });
+
+            const mergedDocs = Array.from(combinedMap.values())
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 100);
+
+            if (mergedDocs.length === 0) {
                 console.log('⚠️ 월간 아카이빙할 데이터 없음');
                 return null;
             }
 
             // 1️⃣ 월간 히스토리 저장
             const historyBatch = db.batch();
-            snapshot.docs.forEach((doc, index) => {
-                const data = doc.data();
-                const historyDocId = `${lastMonthId}_${doc.id}`;
+            mergedDocs.forEach(({ id, data }, index) => {
+                const historyDocId = `${lastMonthId}_${id}`;
                 const historyRef = db.collection('monthly_history').doc(historyDocId);
 
                 historyBatch.set(historyRef, {
@@ -380,19 +527,18 @@ exports.archiveMonthlyRankings = functions.pubsub
             });
 
             await historyBatch.commit();
-            console.log(`✅ ${snapshot.size}명 월간 랭킹 보관 완료 (${lastMonthId})`);
+            console.log(`✅ ${mergedDocs.length}명 월간 랭킹 보관 완료 (${lastMonthId})`);
 
             // 2️⃣ 월간 명예의 전당 Snapshot 생성 (Zion 기준)
-            const monthlyRankingData = snapshot.docs.map((doc, index) => {
-                const row = doc.data();
+            const monthlyRankingData = mergedDocs.map(({ score, data }, index) => {
                 return {
                     rank: index + 1,
-                    name: row.nickname || "이름없음",
-                    score: row.myMonthlyScore || 0,
-                    tribe: row.tribe !== undefined ? row.tribe : 0,
-                    dept: row.dept !== undefined ? row.dept : 0,
-                    tag: row.tag || "",
-                    castle: row.castleLv || 0
+                    name: data.nickname || "이름없음",
+                    score: score,
+                    tribe: data.tribe !== undefined ? data.tribe : 0,
+                    dept: data.dept !== undefined ? data.dept : 0,
+                    tag: data.tag || "",
+                    castle: data.castleLv || 0
                 };
             });
 
@@ -402,7 +548,7 @@ exports.archiveMonthlyRankings = functions.pubsub
             await snapshotRef.set({
                 monthId: lastMonthId,
                 ranks: monthlyRankingData,
-                count: snapshot.size,
+                count: mergedDocs.length,
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
 

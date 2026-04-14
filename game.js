@@ -2976,6 +2976,8 @@ function amenAndStartGame() {
             }, { merge: true }).then(() => {
                 // 🌟🌟 [여기 추가!] 서버에 내 새 출입증이 완벽하게 등록된 직후에 감시 카메라를 켭니다!
                 if (typeof startSessionGuard === 'function') startSessionGuard();
+                // 지난 주 보상 확인 (출입증 등록 완료 후 1회)
+                checkPendingReward();
             }).catch(err => console.error("출입증 갱신 지연:", err));
         }
 
@@ -2983,6 +2985,150 @@ function amenAndStartGame() {
         if (typeof showMemoryQuizOverlay === 'function') showMemoryQuizOverlay();
         else if (typeof goMap === 'function') goMap();
     }, 0);
+}
+
+/* =====================================================
+   [지난 주 보상] pendingReward 확인 → 홈 버튼 표시
+   ===================================================== */
+function checkPendingReward() {
+    if (typeof db === 'undefined' || !db || !myPlayerId) return;
+
+    db.collection('leaderboard').doc(myPlayerId).get().then(doc => {
+        if (!doc.exists) return;
+        const reward = doc.data().pendingReward;
+        if (!reward || !reward.weekId) return;
+
+        // 버튼 표시
+        const btn = document.getElementById('last-week-reward-btn');
+        if (btn) btn.style.display = 'flex';
+    }).catch(err => console.warn('pendingReward 확인 실패:', err));
+}
+
+/* 보상 모달 열기 */
+function openLastWeekRewardModal() {
+    if (typeof db === 'undefined' || !db || !myPlayerId) return;
+
+    db.collection('leaderboard').doc(myPlayerId).get().then(doc => {
+        if (!doc.exists) return;
+        const reward = doc.data().pendingReward;
+        if (!reward) return;
+
+        _showLastWeekRewardModal(reward);
+    }).catch(err => console.warn('보상 조회 실패:', err));
+}
+
+function _showLastWeekRewardModal(reward) {
+    // 기존 모달 제거
+    const old = document.getElementById('last-week-reward-modal');
+    if (old) old.remove();
+
+    const zionRank   = reward.zionRank;
+    const tribeRank  = reward.tribeRank;
+    const zionGems   = reward.zionGems  || 0;
+    const tribeGems  = reward.tribeGems || 0;
+    const totalGems  = reward.totalGems || 0;
+    const score      = reward.score     || 0;
+    const weekId     = reward.weekId    || '';
+    const zionQ      = reward.zionQualified;
+    const tribeQ     = reward.tribeQualified;
+
+    // 순위 텍스트 생성
+    function rankTxt(rank) {
+        if (!rank) return null;
+        return `${rank}위`;
+    }
+
+    // 보상 행 HTML
+    function rewardRow(label, rank, gems, qualified) {
+        if (!rank) return '';
+        const gemText = qualified
+            ? `<span style="color:#f1c40f; font-weight:bold;">+${gems}💎</span>`
+            : `<span style="color:#95a5a6; font-size:0.85rem;">인원 미달 (보상 없음)</span>`;
+        return `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.08);">
+                <div>
+                    <div style="font-size:0.8rem; color:#95a5a6;">${label}</div>
+                    <div style="font-size:1.5rem; font-weight:bold; color:white;">${rankTxt(rank)}</div>
+                </div>
+                <div style="text-align:right;">${gemText}</div>
+            </div>`;
+    }
+
+    const noReward = totalGems === 0;
+    const noRewardMsg = noReward ? `
+        <div style="margin-top:12px; padding:10px; background:rgba(231,76,60,0.15); border-radius:8px; font-size:0.85rem; color:#e74c3c; text-align:center; line-height:1.5;">
+            지파 또는 시온성 랭킹의 참여 인원이<br>100명 미만이어서 이번 주 보상이 없습니다.
+        </div>` : '';
+
+    const claimSection = noReward
+        ? `<button onclick="closeLastWeekRewardModal()" style="margin-top:18px; width:100%; padding:12px; background:#7f8c8d; border:none; border-radius:10px; color:white; font-size:1rem; font-weight:bold; cursor:pointer;">확인</button>`
+        : `<button onclick="claimWeeklyReward()" style="margin-top:18px; width:100%; padding:12px; background:linear-gradient(135deg,#f39c12,#e67e22); border:none; border-radius:10px; color:white; font-size:1rem; font-weight:bold; cursor:pointer;">💎 ${totalGems} 보석 수령하기</button>`;
+
+    const modal = document.createElement('div');
+    modal.id = 'last-week-reward-modal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:10000;display:flex;justify-content:center;align-items:center;padding:20px;box-sizing:border-box;';
+    modal.innerHTML = `
+        <div style="background:#2c3e50;border:2px solid #f39c12;border-radius:18px;width:100%;max-width:360px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,0.9);">
+            <div style="text-align:center; margin-bottom:16px;">
+                <div style="font-size:2rem;">🏆</div>
+                <div style="font-size:1.1rem; color:#f1c40f; font-weight:bold; margin-top:4px;">지난 주 랭킹 결과</div>
+                <div style="font-size:0.8rem; color:#95a5a6; margin-top:2px;">${weekId}</div>
+                <div style="margin-top:8px; font-size:0.9rem; color:#bdc3c7;">승점 <strong style="color:white;">${score.toLocaleString()}</strong> pts</div>
+            </div>
+            ${rewardRow('시온성 랭킹', zionRank, zionGems, zionQ)}
+            ${rewardRow('내 지파 랭킹', tribeRank, tribeGems, tribeQ)}
+            ${noRewardMsg}
+            ${claimSection}
+        </div>`;
+
+    document.body.appendChild(modal);
+
+    // 팡파레
+    triggerConfetti();
+    if (typeof SoundEffect !== 'undefined' && SoundEffect.playLevelUp) SoundEffect.playLevelUp();
+}
+
+function closeLastWeekRewardModal() {
+    // 보상 없는 경우(확인 버튼) — pendingReward는 서버에서 삭제해 버튼도 숨김
+    if (typeof db !== 'undefined' && db && myPlayerId) {
+        db.collection('leaderboard').doc(myPlayerId).update({
+            pendingReward: firebase.firestore.FieldValue.delete()
+        }).catch(() => {});
+    }
+    const btn = document.getElementById('last-week-reward-btn');
+    if (btn) btn.style.display = 'none';
+    const modal = document.getElementById('last-week-reward-modal');
+    if (modal) modal.remove();
+}
+
+function claimWeeklyReward() {
+    if (typeof db === 'undefined' || !db || !myPlayerId) return;
+
+    // 서버에서 pendingReward 읽어 최종 확인 후 보석 지급
+    db.collection('leaderboard').doc(myPlayerId).get().then(doc => {
+        if (!doc.exists) return;
+        const reward = doc.data().pendingReward;
+        if (!reward) return;
+
+        const totalGems = reward.totalGems || 0;
+
+        // 1. 서버 필드 삭제 먼저 (중복 수령 방지)
+        return db.collection('leaderboard').doc(myPlayerId).update({
+            pendingReward: firebase.firestore.FieldValue.delete()
+        }).then(() => {
+            // 2. 보석 지급
+            if (totalGems > 0) addGems(totalGems);
+
+            // 3. UI 정리
+            const btn = document.getElementById('last-week-reward-btn');
+            if (btn) btn.style.display = 'none';
+            const modal = document.getElementById('last-week-reward-modal');
+            if (modal) modal.remove();
+        });
+    }).catch(err => {
+        console.error('보상 수령 실패:', err);
+        alert('보상 수령 중 오류가 발생했습니다. 다시 시도해주세요.');
+    });
 }
 
 function goHome() {
@@ -7754,6 +7900,9 @@ function openRankingScreen() {
             </div>
     </div>
 
+    <div style="background:#1a252f; padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.07); text-align:center;">
+        <span style="font-size:0.78rem; color:#7f8c8d; line-height:1.5;">🎁 지파 순위 보상은 해당 주에 <strong style="color:#bdc3c7;">지파원 100명 이상</strong>이 참여해야 지급됩니다.<br>시온성 랭킹 보상은 전체 100명 이상 참여 시 지급됩니다.</span>
+    </div>
     <div id="sticky-tabs-container" style="background: #2c3e50; padding: 10px 5px; border-bottom: 1px solid rgba(255,255,255,0.1); display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
         <button id="tab-tribe" onclick="openRankingModal('tribe', '🧭 내 지파 랭킹')" style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
             <span style="font-size:1rem;">🧭</span><span>내 지파</span>
@@ -8570,7 +8719,11 @@ function checkDailyLogin() {
     if (leagueData.monthId !== currentMonthId) {
         console.log("🔄 새로운 달이 시작되었습니다! (월간 리셋)");
 
-        // (1) 월간 데이터 초기화
+        // (1) 지난달 점수를 백업 필드에 보존 (CF 아카이빙 경쟁조건 방어)
+        leagueData.prevMonthId = leagueData.monthId || getLastMonthId();
+        leagueData.prevMonthlyScore = leagueData.myMonthlyScore || 0;
+
+        // (2) 월간 데이터 초기화
         leagueData.monthId = currentMonthId;
         leagueData.myMonthlyScore = 0; // 월간 점수 0점부터 다시 시작
         needsSave = true; // 🌟 초기화했으니 저장 필수!
@@ -11620,6 +11773,12 @@ function saveMyScoreToServer() {
         totalScore: currentTotalScore, // 👉 누적 승점 항목 추가!
         yearlyScore: currentYearlyScore // 🌟 추가 (이걸 바탕으로 서버가 지파 합산을 합니다)
     };
+
+    // 월 전환 시 이전달 백업 데이터가 있으면 함께 전송 (CF 아카이빙 경쟁조건 방어)
+    if (leagueData.prevMonthId && leagueData.prevMonthlyScore > 0) {
+        payload.prevMonthId = leagueData.prevMonthId;
+        payload.prevMonthlyScore = leagueData.prevMonthlyScore;
+    }
 
     if (typeof lastScorePayloadKey === 'undefined' || lastScorePayloadKey === null) {
         try {
