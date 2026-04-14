@@ -11812,7 +11812,7 @@ function saveMyScoreToServer() {
 
     db.collection("leaderboard").doc(myTag).set({
         ...payload,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        updatedAt: new Date()
     }, { merge: true })
         .then(() => {
             lastScorePayloadKey = nextKey;
