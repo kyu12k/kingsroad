@@ -33,6 +33,17 @@ async function countQuery(query) {
     return snapshot.data().count || 0;
 }
 
+// tag 기준 중복 제거 (점수 내림차순 정렬 상태에서 먼저 나온 것이 높은 점수)
+function deduplicateByTag(docs) {
+    const seen = new Set();
+    return docs.filter(doc => {
+        const tag = doc.data().tag || doc.id;
+        if (seen.has(tag)) return false;
+        seen.add(tag);
+        return true;
+    });
+}
+
 async function updateWeeklyCountsImpl() {
     const currentWeekId = getWeekId();
     console.log(`📊 주간 카운트 집계 + Snapshot 생성 시작: ${currentWeekId}`);
@@ -67,7 +78,7 @@ async function updateWeeklyCountsImpl() {
                 }
 
                 // Snapshot 생성: tribe_{i} 문서에 Top100 저장
-                const rankingData = snapshot.docs.map((doc, index) => {
+                const rankingData = deduplicateByTag(snapshot.docs).slice(0, 100).map((doc, index) => {
                     const row = doc.data();
                     return {
                         rank: index + 1,
@@ -103,7 +114,7 @@ async function updateWeeklyCountsImpl() {
         cutoffTotal = zionSnapshot.docs[zionSnapshot.docs.length - 1].data().score || 0;
     }
 
-    const zionRankingData = zionSnapshot.docs.map((doc, index) => {
+    const zionRankingData = deduplicateByTag(zionSnapshot.docs).slice(0, 100).map((doc, index) => {
         const row = doc.data();
         return {
             rank: index + 1,
@@ -330,17 +341,20 @@ exports.archiveWeeklyRankings = functions.pubsub
                 .where('score', '>', 0)
                 .orderBy('score', 'desc');
 
-            // ① 시온성(전체) Top100
-            const zionSnapshot = await baseQuery.limit(100).get();
+            // ① 시온성(전체) Top100 (중복 포함 여유분 조회)
+            const zionSnapshot = await baseQuery.limit(200).get();
 
             if (zionSnapshot.empty) {
                 console.log('⚠️ 아카이빙할 데이터 없음');
                 return null;
             }
 
+            // tag 기준 중복 제거 후 Top100 확정
+            const zionDocs = deduplicateByTag(zionSnapshot.docs).slice(0, 100);
+
             // ② 주간 히스토리 보관 (기존 로직)
             const archiveBatch = db.batch();
-            zionSnapshot.docs.forEach((doc, index) => {
+            zionDocs.forEach((doc, index) => {
                 const data = doc.data();
                 const historyRef = db.collection('weekly_history').doc(`${lastWeekId}_${doc.id}`);
                 archiveBatch.set(historyRef, {
@@ -351,9 +365,9 @@ exports.archiveWeeklyRankings = functions.pubsub
                 });
             });
             await archiveBatch.commit();
-            console.log(`✅ ${zionSnapshot.size}명 주간 랭킹 보관 완료 (${lastWeekId})`);
+            console.log(`✅ ${zionDocs.length}명 주간 랭킹 보관 완료 (${lastWeekId})`);
 
-            // ③ 지파별 Top100 병렬 조회
+            // ③ 지파별 Top100 병렬 조회 (중복 포함 여유분 조회)
             const tribeJobs = [];
             for (let i = 0; i < TRIBE_COUNT; i++) {
                 tribeJobs.push(
@@ -362,52 +376,42 @@ exports.archiveWeeklyRankings = functions.pubsub
                         .where('tribe', '==', i)
                         .where('score', '>', 0)
                         .orderBy('score', 'desc')
-                        .limit(100)
+                        .limit(200)
                         .get()
                 );
             }
             const tribeSnapshots = await Promise.all(tribeJobs);
 
             // ④ 보상 계산
-            const zionQualified = zionSnapshot.size >= 100;
-            // playerId → reward 정보
+            // tag → reward 정보 (tag를 키로 사용해 중복 방지)
             const rewardMap = new Map();
 
-            // 시온성 보상
-            if (zionQualified) {
-                zionSnapshot.docs.forEach((doc, idx) => {
-                    const rank = idx + 1;
-                    rewardMap.set(doc.id, {
-                        score: doc.data().score || 0,
-                        zionRank: rank,
-                        zionGems: calcZionGems(rank),
-                        zionQualified: true,
-                        tribeRank: null,
-                        tribeGems: 0,
-                        tribeQualified: false
-                    });
+            // 시온성 보상 (zionDocs는 이미 중복 제거 + Top100 확정)
+            const zionQualified = zionDocs.length >= 100;
+            zionDocs.forEach((doc, idx) => {
+                const tag = doc.data().tag || doc.id;
+                const rank = idx + 1;
+                rewardMap.set(tag, {
+                    docId: doc.data().tag || doc.id, // tag 기반 문서 ID
+                    score: doc.data().score || 0,
+                    zionRank: rank,
+                    zionGems: zionQualified ? calcZionGems(rank) : 0,
+                    zionQualified,
+                    tribeRank: null,
+                    tribeGems: 0,
+                    tribeQualified: false
                 });
-            } else {
-                // 인원 미달이어도 순위 기록은 남김 (보석만 0)
-                zionSnapshot.docs.forEach((doc, idx) => {
-                    rewardMap.set(doc.id, {
-                        score: doc.data().score || 0,
-                        zionRank: idx + 1,
-                        zionGems: 0,
-                        zionQualified: false,
-                        tribeRank: null,
-                        tribeGems: 0,
-                        tribeQualified: false
-                    });
-                });
-            }
+            });
 
-            // 지파 보상 병합
+            // 지파 보상 병합 (지파별로 중복 제거 후 Top100 확정)
             tribeSnapshots.forEach((snapshot) => {
-                const tribeQualified = snapshot.size >= 100;
-                snapshot.docs.forEach((doc, idx) => {
+                const tribeDocs = deduplicateByTag(snapshot.docs).slice(0, 100);
+                const tribeQualified = tribeDocs.length >= 100;
+                tribeDocs.forEach((doc, idx) => {
+                    const tag = doc.data().tag || doc.id;
                     const rank = idx + 1;
-                    const existing = rewardMap.get(doc.id) || {
+                    const existing = rewardMap.get(tag) || {
+                        docId: tag,
                         score: doc.data().score || 0,
                         zionRank: null,
                         zionGems: 0,
@@ -419,16 +423,16 @@ exports.archiveWeeklyRankings = functions.pubsub
                     existing.tribeRank = rank;
                     existing.tribeGems = tribeQualified ? calcTribeGems(rank) : 0;
                     existing.tribeQualified = tribeQualified;
-                    rewardMap.set(doc.id, existing);
+                    rewardMap.set(tag, existing);
                 });
             });
 
-            // ⑤ pendingReward 일괄 기록 (500개씩 분할 커밋)
+            // ⑤ pendingReward 일괄 기록 (tag 기반 문서에 저장)
             const updates = [];
-            rewardMap.forEach((reward, playerId) => {
+            rewardMap.forEach((reward) => {
                 const totalGems = reward.zionGems + reward.tribeGems;
                 updates.push({
-                    ref: db.collection('leaderboard').doc(playerId),
+                    ref: db.collection('leaderboard').doc(reward.docId),
                     data: {
                         pendingReward: {
                             weekId: lastWeekId,

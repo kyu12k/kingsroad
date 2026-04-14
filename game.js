@@ -2962,7 +2962,7 @@ function amenAndStartGame() {
     setTimeout(() => {
         // 🌟 4. [핵심 수술 2] 여정 시작 시 (Lazy Authentication)
         // 비로소 새로운 출입증을 발급받고 서버에 등록하여 다른 공기계의 접속을 차단합니다!
-        if (typeof db !== 'undefined' && typeof myPlayerId !== 'undefined' && myPlayerId) {
+        if (typeof db !== 'undefined' && typeof myTag !== 'undefined' && myTag) {
             const newSessionToken = "session_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
             window.currentSessionToken = newSessionToken;
 
@@ -2970,7 +2970,7 @@ function amenAndStartGame() {
             if (typeof saveGameData === 'function') saveGameData();
 
             // 서버에 새 출입증 신고 (기존 기기 쫓아내기)
-            db.collection("leaderboard").doc(myPlayerId).set({
+            db.collection("leaderboard").doc(myTag).set({
                 sessionToken: newSessionToken,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true }).then(() => {
@@ -2991,9 +2991,9 @@ function amenAndStartGame() {
    [지난 주 보상] pendingReward 확인 → 홈 버튼 표시
    ===================================================== */
 function checkPendingReward() {
-    if (typeof db === 'undefined' || !db || !myPlayerId) return;
+    if (typeof db === 'undefined' || !db || !myTag) return;
 
-    db.collection('leaderboard').doc(myPlayerId).get().then(doc => {
+    db.collection('leaderboard').doc(myTag).get().then(doc => {
         if (!doc.exists) return;
         const reward = doc.data().pendingReward;
         if (!reward || !reward.weekId) return;
@@ -3006,9 +3006,9 @@ function checkPendingReward() {
 
 /* 보상 모달 열기 */
 function openLastWeekRewardModal() {
-    if (typeof db === 'undefined' || !db || !myPlayerId) return;
+    if (typeof db === 'undefined' || !db || !myTag) return;
 
-    db.collection('leaderboard').doc(myPlayerId).get().then(doc => {
+    db.collection('leaderboard').doc(myTag).get().then(doc => {
         if (!doc.exists) return;
         const reward = doc.data().pendingReward;
         if (!reward) return;
@@ -3090,8 +3090,8 @@ function _showLastWeekRewardModal(reward) {
 
 function closeLastWeekRewardModal() {
     // 보상 없는 경우(확인 버튼) — pendingReward는 서버에서 삭제해 버튼도 숨김
-    if (typeof db !== 'undefined' && db && myPlayerId) {
-        db.collection('leaderboard').doc(myPlayerId).update({
+    if (typeof db !== 'undefined' && db && myTag) {
+        db.collection('leaderboard').doc(myTag).update({
             pendingReward: firebase.firestore.FieldValue.delete()
         }).catch(() => {});
     }
@@ -3102,10 +3102,10 @@ function closeLastWeekRewardModal() {
 }
 
 function claimWeeklyReward() {
-    if (typeof db === 'undefined' || !db || !myPlayerId) return;
+    if (typeof db === 'undefined' || !db || !myTag) return;
 
     // 서버에서 pendingReward 읽어 최종 확인 후 보석 지급
-    db.collection('leaderboard').doc(myPlayerId).get().then(doc => {
+    db.collection('leaderboard').doc(myTag).get().then(doc => {
         if (!doc.exists) return;
         const reward = doc.data().pendingReward;
         if (!reward) return;
@@ -3113,7 +3113,7 @@ function claimWeeklyReward() {
         const totalGems = reward.totalGems || 0;
 
         // 1. 서버 필드 삭제 먼저 (중복 수령 방지)
-        return db.collection('leaderboard').doc(myPlayerId).update({
+        return db.collection('leaderboard').doc(myTag).update({
             pendingReward: firebase.firestore.FieldValue.delete()
         }).then(() => {
             // 2. 보석 지급
@@ -7985,8 +7985,14 @@ function loadZionRanking() {
 // [추가] 랭킹 데이터 필터링 (독립적인 함수로 바깥에 배치)
 function filterAndCleanRanking(ranks) {
     if (!ranks || !Array.isArray(ranks)) return [];
-    // 점수가 0점보다 큰 정상적인 데이터만 통과
-    return ranks.filter(user => user && typeof user.score === 'number' && user.score > 0);
+    const seen = new Set();
+    return ranks.filter(user => {
+        if (!user || typeof user.score !== 'number' || user.score <= 0) return false;
+        const key = user.tag || user.name;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
 }
 
 /* [데이터] 주간 지파/시온성 랭킹 로드 (+ 캐싱) */
@@ -10312,8 +10318,8 @@ async function initFCM() {
         const token = await messaging.getToken({ vapidKey: FCM_VAPID_KEY });
         if (token) {
             _fcmToken = token;
-            if (myPlayerId) {
-                await db.collection('leaderboard').doc(myPlayerId).set(
+            if (myTag) {
+                await db.collection('leaderboard').doc(myTag).set(
                     { fcmToken: token }, { merge: true }
                 );
             }
@@ -10412,8 +10418,8 @@ async function notifSave() {
         if (times.length === 0) {
             // 알림 해제
             localStorage.removeItem('notifTimes');
-            if (myPlayerId && db) {
-                await db.collection('leaderboard').doc(myPlayerId).set(
+            if (myTag && db) {
+                await db.collection('leaderboard').doc(myTag).set(
                     { notificationTimes: [] }, { merge: true }
                 );
             }
@@ -10433,10 +10439,10 @@ async function notifSave() {
         localStorage.setItem('notifTimes', JSON.stringify(times));
 
         // Firestore에 알림 시간 저장 (서버 발송용)
-        if (myPlayerId && db) {
+        if (myTag && db) {
             const updateData = { notificationTimes: times };
             if (_fcmToken) updateData.fcmToken = _fcmToken;
-            await db.collection('leaderboard').doc(myPlayerId).set(updateData, { merge: true });
+            await db.collection('leaderboard').doc(myTag).set(updateData, { merge: true });
         }
 
         document.getElementById('notification-modal').style.display = 'none';
@@ -10521,12 +10527,12 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
     const label = hr < 1 ? `${Math.round(delayMs / 60000)}분` : `${Math.round(hr)}시간`;
 
     // FCM 서버 예약 (앱이 꺼져도 작동)
-    if (myPlayerId && db) {
+    if (myTag && db) {
         try {
             const notifAt = new Date(Date.now() + delayMs);
             const updateData = { nextReviewNotifAt: notifAt, nextReviewStage: stageTitle };
             if (_fcmToken) updateData.fcmToken = _fcmToken;
-            await db.collection('leaderboard').doc(myPlayerId).set(updateData, { merge: true });
+            await db.collection('leaderboard').doc(myTag).set(updateData, { merge: true });
 
             if (btn) {
                 btn.textContent = '✅ 예약됨';
@@ -10756,13 +10762,6 @@ function processImportData(inputString) {
             // 🌟 [핵심 수술 1] 백업 데이터를 덮어씌울 때, 현재 기기의 합법적인 출입증 유지!
             // 이렇게 해야 새로고침 시 서버가 불법 침입으로 오해하지 않고 부드럽게 넘어갑니다.
             parsedData.sessionToken = window.currentSessionToken;
-
-            // 🌟 [중복 랭킹 방지] 현재 기기의 playerId 기록 (가져오기 완료 후 기존 Firestore 문서 삭제용)
-            // parsedData.playerId(가져올 데이터의 ID)가 아닌 myPlayerId(지금 기기의 ID)를 저장해야 함
-            const _oldImportId = myPlayerId;
-            if (_oldImportId && typeof _oldImportId === 'string' && _oldImportId.length > 0) {
-                localStorage.setItem('kingsroad_import_old_playerid', _oldImportId);
-            }
 
             // 로컬 스토리지에 안전하게 저장
             localStorage.setItem('kingsRoadSave', JSON.stringify(parsedData));
@@ -11169,15 +11168,6 @@ window.onload = function () {
         localStorage.removeItem('forceSyncAfterLoad');
         if (typeof saveGameData === 'function') saveGameData();
         console.log("🔄 복구 데이터 서버 강제 동기화 완료!");
-    }
-
-    // 🗑️ [중복 랭킹 방지] 데이터 가져오기 후 이전 기기의 Firestore 문서 삭제
-    const _importOldId = localStorage.getItem('kingsroad_import_old_playerid');
-    if (_importOldId && typeof db !== 'undefined' && db && _importOldId !== myPlayerId) {
-        localStorage.removeItem('kingsroad_import_old_playerid');
-        db.collection('leaderboard').doc(_importOldId).delete()
-            .then(() => console.log('🗑️ 구 기기 랭킹 문서 삭제 완료:', _importOldId))
-            .catch(e => console.warn('⚠️ 구 기기 랭킹 문서 삭제 실패 (이미 없을 수 있음):', e));
     }
 
     checkMissions(); // [추가] 게임 시작 시 미션 초기화 체크
@@ -11747,7 +11737,7 @@ function openStageSheetForStageId(stageId) {
    ========================================= */
 let lastScorePayloadKey = null;
 function saveMyScoreToServer() {
-    if (typeof db === 'undefined' || !db || !myPlayerId) return;
+    if (typeof db === 'undefined' || !db || !myTag) return;
 
     const currentWeekId = leagueData.weekId || getWeekId();
     const currentScore = leagueData.myScore || 0;
@@ -11795,7 +11785,7 @@ function saveMyScoreToServer() {
     // ★ 진짜로 서버에 데이터를 보낼 때만 로그를 띄우도록 위치 변경
     console.log("📡 점수 변동 감지! 서버에 주간 점수 저장 중...");
 
-    db.collection("leaderboard").doc(myPlayerId).set({
+    db.collection("leaderboard").doc(myTag).set({
         ...payload,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true })
@@ -11915,7 +11905,7 @@ function startSessionGuard() {
     }
 
     // 파이어베이스 실시간 감시 (onSnapshot)
-    window.sessionGuardUnsubscribe = db.collection("leaderboard").doc(myPlayerId).onSnapshot((doc) => {
+    window.sessionGuardUnsubscribe = db.collection("leaderboard").doc(myTag).onSnapshot((doc) => {
         if (doc.metadata && doc.metadata.fromCache) return;
 
         if (doc.exists) {
