@@ -5216,7 +5216,7 @@ async function initFirestoreSync() {
  * - 기존 saveGameData()는 localStorage 캐시 역할을 계속 수행.
  */
 async function syncToFirestore() {
-    if (typeof db === 'undefined' || !db) return;
+    if (typeof firebase === 'undefined') return;
     if (typeof myPlayerId === 'undefined' || !myPlayerId) return;
 
     // saveGameData()가 localStorage에 방금 저장한 데이터를 재활용
@@ -5227,9 +5227,10 @@ async function syncToFirestore() {
     try { saveData = JSON.parse(raw); } catch (e) { return; }
 
     try {
-        await db.collection('saves').doc(myPlayerId).set(saveData);
+        const saveGameDataSecure = firebase.app().functions('asia-northeast3').httpsCallable('saveGameDataSecure');
+        await saveGameDataSecure(saveData);
     } catch (e) {
-        console.warn('[syncToFirestore] 저장 실패:', e);
+        console.warn('[syncToFirestore] 저장 실패:', e.message || e);
     }
 }
 
