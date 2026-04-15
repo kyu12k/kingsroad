@@ -89,6 +89,7 @@ let myNickname = "순례자";
 let myTag = "";
 let myPlayerId = "";
 
+
 /* [수정] 체력 변수 분리 (충돌 방지용) */
 let purchasedMaxHearts = 5; // 상점에서 구매한 순수 체력 (이걸 저장합니다)
 let maxPlayerHearts = 5;    // 버프가 포함된 실제 게임 체력
@@ -1061,6 +1062,7 @@ function claimReward(type, index, rewardType, value1, value2) {
 
     // 4. 저장 및 화면 갱신
     saveGameData();
+    syncToFirestore(); // [Firestore] 미션 보상 청구
     updateNotificationBadges();
     // ✅ [수정됨] 현재 보고 있는 탭의 화면을 다시 그립니다.
     if (typeof renderMissionList === 'function') {
@@ -5150,7 +5152,8 @@ function saveGameData() {
             reviewStep: kingsRoadData.reviewStep,
             nextReviewTime: kingsRoadData.nextReviewTime,
             stepHistory: kingsRoadData.stepHistory
-        }
+        },
+        updatedAt: Date.now() // [Firestore] 충돌 해결용 타임스탬프
     };
     localStorage.setItem('kingsRoadSave', JSON.stringify(saveData));
 
@@ -5170,6 +5173,83 @@ function saveGameData() {
     }
 }
 
+
+/* =========================================
+   Firestore 저장 / 로드
+   ========================================= */
+
+/**
+ * Firebase 인증 완료 후 한 번 호출.
+ * Firestore 데이터와 localStorage 데이터를 비교해 더 최신 데이터를 적용하고,
+ * Firestore에 데이터가 없으면 localStorage 데이터를 마이그레이션(1회 업로드)한다.
+ */
+async function initFirestoreSync() {
+    if (typeof db === 'undefined' || !db) return;
+    if (typeof myPlayerId === 'undefined' || !myPlayerId) return;
+
+    const remoteData = await loadFromFirestore();
+    const localRaw = localStorage.getItem('kingsRoadSave');
+    const localData = localRaw ? (() => { try { return JSON.parse(localRaw); } catch(e) { return null; } })() : null;
+
+    if (!remoteData) {
+        // Firestore에 데이터 없음 → localStorage 데이터 마이그레이션
+        window.firestoreSyncPending = false;
+        if (localData) {
+            console.log('[Firestore] 최초 마이그레이션: localStorage → Firestore');
+            await syncToFirestore();
+        }
+        return;
+    }
+
+    // Firestore가 권위(authority) — 항상 Firestore 데이터를 적용
+    console.log('[Firestore] 서버 데이터 적용 중...');
+    localStorage.setItem('kingsRoadSave', JSON.stringify(remoteData));
+    window.firestoreSyncPending = false;
+    loadGameData();
+    if (typeof renderChapterMap === 'function') renderChapterMap();
+    if (typeof updateCastleView  === 'function') updateCastleView();
+}
+
+/**
+ * 현재 메모리 상태를 Firestore saves/{myPlayerId} 에 저장한다.
+ * - 네트워크가 없거나 db/myPlayerId 미준비 시 조용히 종료.
+ * - 기존 saveGameData()는 localStorage 캐시 역할을 계속 수행.
+ */
+async function syncToFirestore() {
+    if (typeof db === 'undefined' || !db) return;
+    if (typeof myPlayerId === 'undefined' || !myPlayerId) return;
+
+    // saveGameData()가 localStorage에 방금 저장한 데이터를 재활용
+    const raw = localStorage.getItem('kingsRoadSave');
+    if (!raw) return;
+
+    let saveData;
+    try { saveData = JSON.parse(raw); } catch (e) { return; }
+
+    try {
+        await db.collection('saves').doc(myPlayerId).set(saveData);
+    } catch (e) {
+        console.warn('[syncToFirestore] 저장 실패:', e);
+    }
+}
+
+/**
+ * Firestore saves/{myPlayerId} 에서 데이터를 불러온다.
+ * @returns {Object|null} 저장 데이터 또는 null (문서 없음 / 오류)
+ */
+async function loadFromFirestore() {
+    if (typeof db === 'undefined' || !db) return null;
+    if (typeof myPlayerId === 'undefined' || !myPlayerId) return null;
+
+    try {
+        const doc = await db.collection('saves').doc(myPlayerId).get();
+        if (doc.exists) return doc.data();
+        return null;
+    } catch (e) {
+        console.warn('[loadFromFirestore] 로드 실패:', e);
+        return null;
+    }
+}
 
 
 /* [수정됨] 통합 자원 UI 업데이트 (지파 색상 반영) */
@@ -7585,6 +7665,7 @@ function calculateScore(stageId, type, verseCount, hearts, isForgotten) {
     }
 
     saveGameData();
+    syncToFirestore(); // [Firestore] 승점 변동
 
     return {
         score: finalScore,
@@ -7682,6 +7763,7 @@ function activateBooster(multiplier, minutes) {
     }
 
     saveGameData();
+    syncToFirestore(); // [Firestore] 부스터 활성화
     startBoosterTimer(); // 타이머 시작!
 }
 
@@ -9058,6 +9140,7 @@ stageClear = function (type) {
         alert(msg);
         updateGemDisplay();
         saveGameData();
+        syncToFirestore(); // [Firestore] 스테이지 클리어
         updateKingsRoadHomeInfo();
     } catch (error) {
         console.error("클리어 처리 중 오류:", error);
@@ -9149,6 +9232,7 @@ function buyItem(itemType) {
             updateGemDisplay();      // UI 갱신
             updateShopUI();          // 상점 UI 갱신 (가격표 업데이트)
             saveGameData();          // 저장
+            syncToFirestore();       // [Firestore] 체력 구매
 
             alert(`❤️ 최대 체력이 ${maxPlayerHearts}칸으로 늘어났습니다!`);
         }
@@ -9196,6 +9280,7 @@ function buyItem(itemType) {
         updateGemDisplay();
         updateShopUI();
         saveGameData();
+        syncToFirestore(); // [Firestore] 아이템 구매
         updateResourceUI();
         if (typeof updateNotificationBadges === 'function') updateNotificationBadges();
     }
@@ -9292,6 +9377,7 @@ function useBattleItem(itemType) {
     }
 
     saveGameData();
+    syncToFirestore(); // [Firestore] 아이템 사용
     updateBattleUI(); // 화면 갱신
 }
 
@@ -9886,6 +9972,7 @@ function upgradeCastle() {
         updateGemDisplay();
         updateCastleView(); // 화면 갱신
         saveGameData();
+        syncToFirestore(); // [Firestore] 성전 업그레이드
     } else {
         alert(`보석이 부족합니다.\n(필요: ${nextBP.cost}개 / 보유: ${myGems}개)`);
     }
@@ -9912,6 +9999,7 @@ function claimTempleSupply() {
     updateCastleView(); // 화면 갱신
     updateResourceUI();
     saveGameData();
+    syncToFirestore(); // [Firestore] 보석 수거
 }
 
 /* ========================================
@@ -11127,6 +11215,7 @@ async function confirmProfile() {
 
     // 저장 및 갱신
     saveGameData();
+    syncToFirestore(); // [Firestore] 프로필 변경
     updateProfileUI();
 
     // 메인 화면 갱신
@@ -11513,6 +11602,7 @@ function claimAchievementReward(key) {
     // 3. 저장 및 갱신
     if (typeof updateGemDisplay === 'function') updateGemDisplay();
     if (typeof saveGameData === 'function') saveGameData();
+    if (typeof syncToFirestore === 'function') syncToFirestore(); // [Firestore] 업적 보상 청구
     updateNotificationBadges();
 
     // 4. 효과음 및 알림
@@ -11715,6 +11805,7 @@ function claimMilestoneReward(key, tier, reward) {
     // 4. 무거운 작업은 다음 태스크로 미뤄 브라우저가 먼저 페인트하게 함
     setTimeout(() => {
         saveGameData();
+        syncToFirestore(); // [Firestore] 마일스톤 보상 청구
         updateNotificationBadges(); // 배지 갱신
         tryShowMilestone(); // 다음 대기열 확인 (연속 달성 시 줄줄이 사탕처럼 나옴)
     }, 0);
@@ -11726,7 +11817,16 @@ function claimMilestoneReward(key, tier, reward) {
 // 실수로 창을 닫거나 새로고침했을 때 마지막 순간을 기록합니다.
 window.addEventListener("beforeunload", () => {
     saveGameData();
+    syncToFirestore(); // [Firestore] 종료 직전 (best-effort)
     if (typeof saveMyScoreToServer === 'function') saveMyScoreToServer();
+});
+
+// 앱 백그라운드 전환 시 저장 (모바일 홈 버튼, 탭 전환 등)
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === 'hidden') {
+        saveGameData();
+        syncToFirestore(); // [Firestore] 백그라운드 전환
+    }
 });
 
 // [시스템] 스테이지 목록 강제 새로고침 (UI 갱신용)
@@ -14199,6 +14299,7 @@ function finishHardshipSession(reason) {
             });
             myGems += subGemTotal;
             saveGameData();
+            syncToFirestore(); // [Firestore] 하드십 클리어
             if (resultStreakText) {
                 resultStreakText.innerHTML += `<br><span style="font-size:13px;color:#aad4ff;">💎 ${subGemTotal}젬 획득 · ${totalSubCount}개 스테이지 클리어 (${eligibleSubCount}개 단계 상승)</span>`;
             }
@@ -14224,6 +14325,7 @@ function finishHardshipSession(reason) {
             hardshipAddressClearHistory[ch].shift();
         }
         saveGameData();
+        syncToFirestore(); // [Firestore] 주소 고난 완주 기록
 
         const history = hardshipAddressClearHistory[ch];
         const rows = history.slice().reverse().map((r, i) => {

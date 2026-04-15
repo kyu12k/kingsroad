@@ -1342,47 +1342,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="game.js"></script>
     <script>
-        /* [보안] 초보적인 접근 차단 (심리적 방어) */
-        (function () {
-            // 1. 우클릭 방지
-            document.addEventListener('contextmenu', function (e) {
-                e.preventDefault();
-                // alert("보안을 위해 우클릭이 제한됩니다."); // 너무 자주 뜨면 귀찮으니 주석 처리
-            });
-
-            // 2. 개발자 도구 단축키 방지 (F12, Ctrl+Shift+I, J, C 등)
-            document.addEventListener('keydown', function (e) {
-                // F12
-                if (e.key === 'F12' || e.keyCode === 123) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                // Ctrl+Shift+I, J, C (개발자 도구)
-                if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C' || e.key === 'i' || e.key === 'j' || e.key === 'c')) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                // Ctrl+U (소스 보기)
-                if (e.ctrlKey && (e.key === 'U' || e.key === 'u')) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-            });
-
-            // 3. 디버거 함정 (콘솔을 억지로 열면 브라우저를 멈추게 함)
-            // 일반 유저에게는 영향이 없고, 콘솔을 연 사람만 괴롭히는 코드입니다.
-            setInterval(function () {
-                const startTime = performance.now();
-                debugger; // ★ 여기서 개발자 도구가 켜져 있으면 딱 멈춥니다!
-                const endTime = performance.now();
-
-                if (endTime - startTime > 100) {
-                    // 디버거에 걸려서 시간이 지체되었다면 -> 개발자 도구를 켠 것임
-                    // alert("보안 정책 위반이 감지되었습니다.");
-                    // location.reload(); // 강제 새로고침 시켜버림 (선택 사항)
-                }
-            }, 1000);
-        })();
 
         /* =========================================
            [시스템: 서버 연결 및 보안 설정 (수정본)]
@@ -1435,6 +1394,9 @@
 
                     console.log("🔥 서버 연결 유지 중 (진짜 UID: " + myServerUid + ")");
 
+                    // [Firestore 동기화] 인증 완료 후 마이그레이션 및 최신 데이터 적용
+                    if (typeof initFirestoreSync === 'function') initFirestoreSync();
+
                     // 🌟 [중복 랭킹 방지] 임포트된 구 기기의 Firestore 문서 삭제
                     const _importedOldId = localStorage.getItem('kingsroad_import_old_playerid');
                     if (_importedOldId && _importedOldId !== myPlayerId && typeof db !== 'undefined' && db) {
@@ -1454,6 +1416,9 @@
 
                             // 🌟 로그인 직후 로컬+서버 모두 새 UID로 갱신하도록 saveGameData로 통일
                             if (typeof saveGameData === 'function') saveGameData();
+
+                            // [Firestore 동기화] 신규 로그인 후 마이그레이션 및 최신 데이터 적용
+                            if (typeof initFirestoreSync === 'function') initFirestoreSync();
 
                             // 🌟 [중복 랭킹 방지] 임포트된 구 기기의 Firestore 문서 삭제
                             const _importedOldId = localStorage.getItem('kingsroad_import_old_playerid');
