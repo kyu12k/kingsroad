@@ -1779,6 +1779,25 @@
         </button>
     </div>
 </div>
+<!-- 모바일 디버그 콘솔 (eruda) -->
+<script>
+(function() {
+    var btn = document.createElement('button');
+    btn.textContent = '🐛';
+    btn.style.cssText = 'position:fixed;bottom:120px;right:12px;z-index:99999;width:36px;height:36px;border-radius:50%;background:#333;color:#fff;font-size:16px;border:none;opacity:0.5;cursor:pointer;';
+    btn.onclick = function() {
+        if (typeof eruda === 'undefined') {
+            var s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/eruda';
+            s.onload = function() { eruda.init(); eruda.show(); };
+            document.body.appendChild(s);
+        } else {
+            eruda.show();
+        }
+    };
+    document.body.appendChild(btn);
+})();
+</script>
 </body>
 
 </html>

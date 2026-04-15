@@ -5231,6 +5231,16 @@ async function syncToFirestore() {
         await saveGameDataSecure(saveData);
     } catch (e) {
         console.warn('[syncToFirestore] 저장 실패:', e.message || e);
+        // 저장 실패 시 사용자에게 알림 (데이터 유실 방지)
+        const msg = document.getElementById('sync-fail-toast');
+        if (!msg) {
+            const toast = document.createElement('div');
+            toast.id = 'sync-fail-toast';
+            toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#c0392b;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:99999;text-align:center;';
+            toast.textContent = '⚠️ 서버 저장 실패. 네트워크를 확인해주세요.';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
     }
 }
 
