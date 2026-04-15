@@ -10560,14 +10560,23 @@ async function notifSave() {
         localStorage.setItem('notifTimes', JSON.stringify(times));
 
         // Firestore에 알림 시간 저장 (서버 발송용)
-        if (myTag && db) {
+        let firestoreSaved = false;
+        try {
+            await initFCM().catch(() => {}); // 토큰 미리 취득 (권한 허용 직후 null일 수 있음)
             const updateData = { notificationTimes: times };
             if (_fcmToken) updateData.fcmToken = _fcmToken;
             await db.collection('leaderboard').doc(myTag).set(updateData, { merge: true });
+            firestoreSaved = true;
+        } catch (e) {
+            console.warn('Firestore 알림 시간 저장 실패:', e);
         }
 
         document.getElementById('notification-modal').style.display = 'none';
-        showToast(`알림이 설정되었습니다. (${times.join(', ')})`);
+        if (firestoreSaved) {
+            showToast(`알림이 설정되었습니다. (${times.join(', ')})`);
+        } else {
+            showToast('⚠️ 서버 저장에 실패했습니다. 네트워크를 확인 후 다시 시도해주세요.');
+        }
     } finally {
         if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '저장'; }
     }
@@ -10650,6 +10659,7 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
     // FCM 서버 예약 (앱이 꺼져도 작동)
     if (myTag && db) {
         try {
+            await initFCM().catch(() => {}); // 토큰 미리 취득
             const notifAt = new Date(Date.now() + delayMs);
             const updateData = { nextReviewNotifAt: notifAt, nextReviewStage: stageTitle };
             if (_fcmToken) updateData.fcmToken = _fcmToken;
