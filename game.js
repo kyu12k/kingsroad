@@ -10561,18 +10561,20 @@ async function notifSave() {
 
         // Firestore에 알림 시간 저장 (서버 발송용)
         let firestoreSaved = false;
-        try {
-            await initFCM().catch(() => {}); // 토큰 미리 취득 (권한 허용 직후 null일 수 있음)
-            const updateData = { notificationTimes: times };
-            if (_fcmToken) updateData.fcmToken = _fcmToken;
-            await db.collection('leaderboard').doc(myTag).set(updateData, { merge: true });
-            firestoreSaved = true;
-        } catch (e) {
-            console.warn('Firestore 알림 시간 저장 실패:', e);
+        if (myTag && db) {
+            try {
+                await initFCM().catch(() => {}); // 토큰 미리 취득 (권한 허용 직후 null일 수 있음)
+                const updateData = { notificationTimes: times };
+                if (_fcmToken) updateData.fcmToken = _fcmToken;
+                await db.collection('leaderboard').doc(myTag).set(updateData, { merge: true });
+                firestoreSaved = true;
+            } catch (e) {
+                console.warn('Firestore 알림 시간 저장 실패:', e);
+            }
         }
 
         document.getElementById('notification-modal').style.display = 'none';
-        if (firestoreSaved) {
+        if (!myTag || !db || firestoreSaved) {
             showToast(`알림이 설정되었습니다. (${times.join(', ')})`);
         } else {
             showToast('⚠️ 서버 저장에 실패했습니다. 네트워크를 확인 후 다시 시도해주세요.');
