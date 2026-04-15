@@ -10665,7 +10665,7 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
             const notifAt = new Date(Date.now() + delayMs);
             const updateData = { nextReviewNotifAt: notifAt, nextReviewStage: stageTitle };
             if (_fcmToken) updateData.fcmToken = _fcmToken;
-            await db.collection('leaderboard').doc(myTag).set(updateData, { merge: true });
+            await db.collection('leaderboard').doc(String(myTag)).set(updateData, { merge: true });
 
             if (btn) {
                 btn.textContent = '✅ 예약됨';
