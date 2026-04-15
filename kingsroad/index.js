@@ -12,7 +12,8 @@ const ALLOWED_ORIGINS = [
     "http://127.0.0.1:5500",
     "http://localhost:5500",
     "https://kings-road-rank.web.app",
-    "https://kings-road-rank.firebaseapp.com"
+    "https://kings-road-rank.firebaseapp.com",
+    "https://kingsload.pages.dev"
 ];
 
 // 저장 가능한 최대 젬 증가량 (1회 저장 요청 기준)
