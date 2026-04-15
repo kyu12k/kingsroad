@@ -34,10 +34,13 @@ async function countQuery(query) {
 }
 
 // tag 기준 중복 제거 (점수 내림차순 정렬 상태에서 먼저 나온 것이 높은 점수)
+// tag 필드가 없는 옛날 계정도 nickname+score 조합으로 fallback 처리
 function deduplicateByTag(docs) {
     const seen = new Set();
     return docs.filter(doc => {
-        const tag = doc.data().tag || doc.id;
+        const d = doc.data();
+        // tag 필드가 있으면 tag 우선 사용, 없으면 nickname+score로 fallback (doc.id는 다른 기기/계정에선 달라질 수 있음)
+        const tag = (d.tag && d.tag !== '0000') ? d.tag : `${d.nickname || ''}__${d.score || 0}`;
         if (seen.has(tag)) return false;
         seen.add(tag);
         return true;
@@ -65,8 +68,8 @@ async function updateWeeklyCountsImpl() {
             Promise.all([
                 // 인원 수 카운트
                 countQuery(tribeQuery),
-                // Top100 조회
-                tribeQuery.where('score', '>', 0).orderBy('score', 'desc').limit(100).get()
+                // Top100 조회 (중복 제거 후 100명 확보를 위해 여유분 포함)
+                tribeQuery.where('score', '>', 0).orderBy('score', 'desc').limit(200).get()
             ]).then(([count, snapshot]) => {
                 tribeCounts[String(i)] = count;
 
@@ -106,8 +109,8 @@ async function updateWeeklyCountsImpl() {
 
     await Promise.all(tribeJobs);
 
-    // 2️⃣ Zion (전체) Top100 조회 및 Snapshot 생성
-    const zionSnapshot = await baseQuery.where('score', '>', 0).orderBy('score', 'desc').limit(100).get();
+    // 2️⃣ Zion (전체) Top100 조회 및 Snapshot 생성 (중복 제거 후 100명 확보를 위해 여유분 포함)
+    const zionSnapshot = await baseQuery.where('score', '>', 0).orderBy('score', 'desc').limit(200).get();
     let cutoffTotal = 0;
 
     if (!zionSnapshot.empty && zionSnapshot.size >= 100) {
