@@ -10570,6 +10570,7 @@ async function notifSave() {
                 firestoreSaved = true;
             } catch (e) {
                 console.warn('Firestore 알림 시간 저장 실패:', e);
+                window._lastNotifSaveError = e?.message || String(e);
             }
         }
 
@@ -10577,7 +10578,7 @@ async function notifSave() {
         if (!myTag || !db || firestoreSaved) {
             showToast(`알림이 설정되었습니다. (${times.join(', ')})`);
         } else {
-            showToast('⚠️ 서버 저장에 실패했습니다. 네트워크를 확인 후 다시 시도해주세요.');
+            showToast('⚠️ 서버 저장 실패: ' + (window._lastNotifSaveError || '알 수 없는 오류'));
         }
     } finally {
         if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '저장'; }
