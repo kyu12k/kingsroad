@@ -215,7 +215,7 @@ loadGameData = function () {
         myNickname = parsed.nickname || "순례자";
         myTribe = (parsed.tribe !== undefined) ? parsed.tribe : 0;
         myDept = (parsed.dept !== undefined) ? parsed.dept : 0;
-        myTag = parsed.tag || "0000";
+        myTag = String(parsed.tag || "0000");
         myPlayerId = parsed.playerId || "";
         window.currentSessionToken = parsed.sessionToken || "";
 
@@ -10440,7 +10440,7 @@ async function initFCM() {
         if (token) {
             _fcmToken = token;
             if (myTag) {
-                await db.collection('leaderboard').doc(myTag).set(
+                await db.collection('leaderboard').doc(String(myTag)).set(
                     { fcmToken: token }, { merge: true }
                 );
             }
@@ -10566,11 +10566,10 @@ async function notifSave() {
                 await initFCM().catch(() => {}); // 토큰 미리 취득 (권한 허용 직후 null일 수 있음)
                 const updateData = { notificationTimes: times };
                 if (_fcmToken) updateData.fcmToken = _fcmToken;
-                await db.collection('leaderboard').doc(myTag).set(updateData, { merge: true });
+                await db.collection('leaderboard').doc(String(myTag)).set(updateData, { merge: true });
                 firestoreSaved = true;
             } catch (e) {
                 console.warn('Firestore 알림 시간 저장 실패:', e);
-                window._lastNotifSaveError = e?.message || String(e);
             }
         }
 
@@ -10578,7 +10577,7 @@ async function notifSave() {
         if (!myTag || !db || firestoreSaved) {
             showToast(`알림이 설정되었습니다. (${times.join(', ')})`);
         } else {
-            showToast('⚠️ 서버 저장 실패: ' + (window._lastNotifSaveError || '알 수 없는 오류'));
+            showToast('⚠️ 서버 저장에 실패했습니다. 네트워크를 확인 후 다시 시도해주세요.');
         }
     } finally {
         if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '저장'; }
