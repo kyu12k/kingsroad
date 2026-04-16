@@ -5191,7 +5191,22 @@ async function initFirestoreSync() {
     const localRaw = localStorage.getItem('kingsRoadSave');
     const localData = localRaw ? (() => { try { return JSON.parse(localRaw); } catch(e) { return null; } })() : null;
 
+    // 백업 복원 직후 리로드된 경우 — 로컬 데이터를 서버로 밀어내고 서버 덮어쓰기 건너뜀
+    if (localStorage.getItem('forceSyncAfterLoad') === 'true') {
+        localStorage.removeItem('forceSyncAfterLoad');
+        window.firestoreSyncPending = false;
+        if (localData) {
+            console.log('[Firestore] 백업 복원 후 강제 업로드: localStorage → Firestore');
+            await syncToFirestore();
+        }
+        return;
+    }
+
     if (!remoteData) {
+        // pendingRecovery 확인: 세션 충돌로 초기화된 유저 자동 복구
+        const recovered = await checkPendingRecovery();
+        if (recovered) return;
+
         // Firestore에 데이터 없음 → localStorage 데이터 마이그레이션
         window.firestoreSyncPending = false;
         if (localData) {
@@ -5208,6 +5223,55 @@ async function initFirestoreSync() {
     loadGameData();
     if (typeof renderChapterMap === 'function') renderChapterMap();
     if (typeof updateCastleView  === 'function') updateCastleView();
+}
+
+/**
+ * 세션 충돌로 초기화된 유저의 데이터를 자동 복구한다.
+ * Firestore pendingRecovery/{tag} 문서가 있으면 해당 데이터를 현재 계정에 복원한다.
+ * @returns {boolean} 복구 성공 여부
+ */
+async function checkPendingRecovery() {
+    if (typeof db === 'undefined' || !db) return false;
+    if (typeof myTag === 'undefined' || !myTag || myTag === '0000') return false;
+
+    try {
+        const doc = await db.collection('pendingRecovery').doc(myTag).get();
+        if (!doc.exists) return false;
+
+        const recoveryData = doc.data();
+        // pendingRecovery 메타 필드 제거
+        delete recoveryData.pendingRecovery;
+        delete recoveryData.recoveryCreatedAt;
+
+        // 현재 세션 토큰으로 교체 (세션 가드 오작동 방지)
+        recoveryData.playerId = myPlayerId;
+        recoveryData.sessionToken = window.currentSessionToken || recoveryData.sessionToken;
+        if (typeof GAME_VERSION !== 'undefined') recoveryData.version = GAME_VERSION;
+
+        console.log('[Recovery] pendingRecovery 발견! 데이터 복구 중...', recoveryData.nickname, recoveryData.tag);
+
+        localStorage.setItem('kingsRoadSave', JSON.stringify(recoveryData));
+        window.firestoreSyncPending = false;
+        loadGameData();
+
+        // 복구 데이터를 Firestore 현재 계정에 저장
+        await syncToFirestore();
+
+        // pendingRecovery 문서 삭제 (1회용)
+        await db.collection('pendingRecovery').doc(myTag).delete();
+
+        if (typeof renderChapterMap === 'function') renderChapterMap();
+        if (typeof updateCastleView === 'function') updateCastleView();
+        if (typeof updateGemDisplay === 'function') updateGemDisplay();
+        if (typeof updateResourceUI === 'function') updateResourceUI();
+        if (typeof updateProfileUI === 'function') updateProfileUI();
+
+        alert('✅ 이전 계정 데이터가 자동으로 복구되었습니다!\n\n닉네임: ' + recoveryData.nickname + '\n태그: #' + recoveryData.tag);
+        return true;
+    } catch (e) {
+        console.warn('[Recovery] pendingRecovery 복구 실패:', e);
+        return false;
+    }
 }
 
 /**
@@ -10759,6 +10823,7 @@ function resetGameData() {
         if (confirm("마지막으로 확인합니다.\n정말로 모든 진행 상황을 지우고 태그 발급부터 다시 시작하시겠습니까?")) {
 
             window.isResetting = true;
+            sessionStorage.setItem('manualReset', 'true'); // 수동 초기화 표시 (복구 팝업 비활성화)
 
             // 1. 하드디스크(로컬 스토리지) 완벽 소각!
             localStorage.clear();
@@ -10936,6 +11001,15 @@ function processImportData(inputString) {
         }
 
         if (parsedData.gems === undefined) throw new Error("올바른 세이브 데이터가 아닙니다.");
+
+        // 남의 코드 차단: 내 태그가 확정된 상태에서 다른 태그의 코드를 막음
+        const isFreshAccount = !myTag || myTag === '0000';
+        const isSameTag = parsedData.tag && parsedData.tag === myTag;
+        const isSamePlayer = parsedData.playerId && parsedData.playerId === myPlayerId;
+        if (!isFreshAccount && !isSameTag && !isSamePlayer) {
+            alert("❌ 다른 계정의 데이터는 불러올 수 없습니다.\n본인의 저장 코드만 사용해주세요.");
+            return;
+        }
 
         if (confirm("⚠️ 현재 진행 상황을 덮어쓰고,\n선택한 기록으로 되돌리시겠습니까?\n\n(다른 기기의 데이터일 경우 기존 기기의 진행 상황은 지워집니다!)")) {
 
@@ -11350,12 +11424,7 @@ window.onload = function () {
         window.currentSessionToken = savedData.sessionToken;
     }
 
-    // 2. 복구 직후 자동 동기화 (이제 서버로 완벽한 토큰이 날아갑니다)
-    if (localStorage.getItem('forceSyncAfterLoad') === 'true') {
-        localStorage.removeItem('forceSyncAfterLoad');
-        if (typeof saveGameData === 'function') saveGameData();
-        console.log("🔄 복구 데이터 서버 강제 동기화 완료!");
-    }
+    // 2. 복구 직후 자동 동기화는 initFirestoreSync()에서 forceSyncAfterLoad 플래그를 보고 처리
 
     checkMissions(); // [추가] 게임 시작 시 미션 초기화 체크
     updateStats('login');
@@ -11402,9 +11471,73 @@ window.onload = function () {
     // ▼▼▼ [수정] 최초 1회만 닉네임 설정창 띄우기 ▼▼▼
     if (myNickname === "순례자" && !localStorage.getItem('hasShownProfileSetup')) {
         localStorage.setItem('hasShownProfileSetup', 'true');
-        setTimeout(openProfileSettings, 1000); // 1초 뒤 자연스럽게 등장
+        // 수동 초기화는 복구 팝업 없이 바로 프로필 설정
+        const isManualReset = sessionStorage.getItem('manualReset') === 'true';
+        sessionStorage.removeItem('manualReset');
+        if (isManualReset) {
+            setTimeout(openProfileSettings, 1000);
+        } else {
+            // 자동 초기화(세션 충돌 등) 시에만 복구 팝업 제공
+            setTimeout(() => {
+                const wantRecover = confirm("👋 처음 오셨나요?\n\n이전에 플레이한 기록이 있다면 '확인'을 눌러 복구할 수 있습니다.\n(새로 시작하려면 '취소')");
+                if (wantRecover) {
+                    openTagRecovery();
+                } else {
+                    openProfileSettings();
+                }
+            }, 1000);
+        }
     }
 };
+
+/**
+ * 이전 계정 태그로 데이터 복구
+ * pendingRecovery/{tag} 문서를 조회해 현재 계정으로 복원한다.
+ */
+async function openTagRecovery() {
+    if (typeof db === 'undefined' || !db) {
+        alert('서버에 연결되지 않았습니다. 잠시 후 다시 시도해주세요.');
+        openProfileSettings();
+        return;
+    }
+
+    const tag = prompt('🔍 이전 계정의 태그를 입력하세요.\n(예: KWXMKY — # 없이 영문 6자리)');
+    if (!tag || tag.trim() === '') {
+        openProfileSettings();
+        return;
+    }
+
+    const cleanTag = tag.trim().toUpperCase();
+
+    try {
+        const doc = await db.collection('pendingRecovery').doc(cleanTag).get();
+        if (!doc.exists) {
+            alert('❌ 해당 태그의 복구 데이터를 찾을 수 없습니다.\n태그를 다시 확인하거나 새 계정으로 시작해주세요.');
+            openProfileSettings();
+            return;
+        }
+
+        const recoveryData = doc.data();
+        delete recoveryData.pendingRecovery;
+        delete recoveryData.recoveryCreatedAt;
+
+        recoveryData.playerId = myPlayerId;
+        recoveryData.sessionToken = window.currentSessionToken || recoveryData.sessionToken;
+        if (typeof GAME_VERSION !== 'undefined') recoveryData.version = GAME_VERSION;
+
+        localStorage.setItem('kingsRoadSave', JSON.stringify(recoveryData));
+        localStorage.setItem('forceSyncAfterLoad', 'true');
+
+        await db.collection('pendingRecovery').doc(cleanTag).delete();
+
+        alert('✅ 복구 완료!\n\n닉네임: ' + recoveryData.nickname + '\n태그: #' + recoveryData.tag + '\n\n게임을 다시 시작합니다.');
+        location.reload();
+    } catch (e) {
+        console.error('[openTagRecovery]', e);
+        alert('복구 중 오류가 발생했습니다. 다시 시도해주세요.');
+        openProfileSettings();
+    }
+}
 
 /* [시스템: 클리어 축하 폭죽 효과 (Confetti)] */
 function triggerConfetti() {
@@ -12127,6 +12260,19 @@ function startSessionGuard() {
             if (serverData.sessionToken && window.currentSessionToken && serverData.sessionToken !== window.currentSessionToken) {
 
                 console.log("🚨 다른 기기 로그인 감지! 현재 기기를 초기화합니다.");
+
+                // 초기화 전 현재 데이터를 pendingRecovery에 백업 (나중에 태그 입력으로 복구 가능)
+                try {
+                    if (typeof db !== 'undefined' && db && typeof myTag !== 'undefined' && myTag && myTag !== '0000') {
+                        const localRaw = localStorage.getItem('kingsRoadSave');
+                        if (localRaw) {
+                            const backupData = JSON.parse(localRaw);
+                            backupData.pendingRecovery = true;
+                            backupData.recoveryCreatedAt = new Date().toISOString();
+                            db.collection('pendingRecovery').doc(myTag).set(backupData).catch(() => {});
+                        }
+                    }
+                } catch(e) {}
 
                 window.isResetting = true;
                 localStorage.clear();
