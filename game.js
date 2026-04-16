@@ -5096,9 +5096,6 @@ function updateCastleView() {
 
 /* [수정] 게임 저장하기 (닉네임 포함) */
 function saveGameData() {
-    // ID와 태그가 없으면 만듭니다
-    if (!myTag) myTag = generateRandomTag();
-
     // 리셋 중에는 저장을 중단합니다.
     if (window.isResetting) {
         console.log('저장 중단: 리셋 플래그 활성화');
@@ -11026,6 +11023,8 @@ function processImportData(inputString) {
             // 🌟 [핵심 수술 1] 백업 데이터를 덮어씌울 때, 현재 기기의 합법적인 출입증 유지!
             // 이렇게 해야 새로고침 시 서버가 불법 침입으로 오해하지 않고 부드럽게 넘어갑니다.
             parsedData.sessionToken = window.currentSessionToken;
+            // 현재 기기의 Firebase UID로 교체 (서버의 playerId === uid 검증 통과)
+            if (myPlayerId) parsedData.playerId = myPlayerId;
 
             // 로컬 스토리지에 안전하게 저장
             localStorage.setItem('kingsRoadSave', JSON.stringify(parsedData));
