@@ -10436,20 +10436,53 @@ async function initFCM() {
     if (typeof firebase === 'undefined' || !firebase.messaging) return null;
     if (_fcmToken) return _fcmToken; // 이미 취득한 토큰 재사용
     try {
+        // firebase-messaging-sw.js가 active 상태가 될 때까지 대기
+        if ('serviceWorker' in navigator) {
+            await navigator.serviceWorker.ready;
+        }
         const messaging = firebase.messaging();
         const token = await messaging.getToken({ vapidKey: FCM_VAPID_KEY });
         if (token) {
             _fcmToken = token;
-            if (myTag) {
-                await db.collection('leaderboard').doc(String(myTag)).set(
-                    { fcmToken: token }, { merge: true }
-                );
-            }
+            await saveFCMTokenToFirestore(token);
         }
         return token;
     } catch (e) {
         console.warn('FCM 토큰 취득 실패:', e);
         return null;
+    }
+}
+
+async function saveFCMTokenToFirestore(token) {
+    if (!myTag || !db) return;
+    try {
+        await db.collection('leaderboard').doc(String(myTag)).set(
+            { fcmToken: token }, { merge: true }
+        );
+    } catch (e) {
+        console.warn('FCM 토큰 Firestore 저장 실패:', e);
+    }
+}
+
+function startFCMTokenRefreshListener() {
+    if (typeof firebase === 'undefined' || !firebase.messaging) return;
+    try {
+        const messaging = firebase.messaging();
+        // 브라우저가 토큰을 갱신할 때 Firestore도 함께 업데이트
+        messaging.onTokenRefresh(async () => {
+            try {
+                const newToken = await messaging.getToken({ vapidKey: FCM_VAPID_KEY });
+                if (newToken) {
+                    _fcmToken = newToken;
+                    await saveFCMTokenToFirestore(newToken);
+                    console.log('FCM 토큰 갱신 완료');
+                }
+            } catch (e) {
+                console.warn('FCM 토큰 갱신 실패:', e);
+            }
+        });
+    } catch (e) {
+        // onTokenRefresh가 지원되지 않는 환경(최신 SDK에서는 자동 처리됨)
     }
 }
 
@@ -10565,6 +10598,7 @@ async function notifSave() {
         if (myTag && db) {
             try {
                 await initFCM().catch(() => {}); // 토큰 미리 취득 (권한 허용 직후 null일 수 있음)
+                startFCMTokenRefreshListener(); // 권한 허용 직후 갱신 리스너 시작
                 const updateData = { notificationTimes: times };
                 if (_fcmToken) updateData.fcmToken = _fcmToken;
                 await db.collection('leaderboard').doc(String(myTag)).set(updateData, { merge: true });
@@ -10663,10 +10697,25 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
     if (myTag && db) {
         try {
             await initFCM().catch(() => {}); // 토큰 미리 취득
+
+            // 토큰이 없으면 Firestore에 기존 토큰이 있는지 확인
+            if (!_fcmToken) {
+                const existingDoc = await db.collection('leaderboard').doc(String(myTag)).get();
+                if (existingDoc.exists && existingDoc.data().fcmToken) {
+                    _fcmToken = existingDoc.data().fcmToken;
+                }
+            }
+
+            if (!_fcmToken) {
+                // 토큰을 끝내 못 얻으면 SW 폴백으로 진행
+                throw new Error('FCM 토큰 없음');
+            }
+
             const notifAt = new Date(Date.now() + delayMs);
-            const updateData = { nextReviewNotifAt: notifAt, nextReviewStage: stageTitle };
-            if (_fcmToken) updateData.fcmToken = _fcmToken;
-            await db.collection('leaderboard').doc(String(myTag)).set(updateData, { merge: true });
+            await db.collection('leaderboard').doc(String(myTag)).set(
+                { nextReviewNotifAt: notifAt, nextReviewStage: stageTitle, fcmToken: _fcmToken },
+                { merge: true }
+            );
 
             if (btn) {
                 btn.textContent = '✅ 예약됨';
@@ -12037,9 +12086,17 @@ if ('serviceWorker' in navigator) {
 // 매일 알림 시간 체크 시작
 startNotificationCheck();
 
-// FCM 토큰 미리 취득 (복습 알림 예약 시 지연 방지)
+// FCM 토큰 미리 취득 + 갱신 리스너 시작
 if (Notification.permission === 'granted') {
-    initFCM().catch(() => {});
+    // SW가 준비된 후 실행 (getToken이 SW active 상태를 요구함)
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(() => {
+            initFCM().catch(() => {});
+            startFCMTokenRefreshListener();
+        });
+    } else {
+        initFCM().catch(() => {});
+    }
 }
 
 // 🛡️ 다중 기기 동시 접속 차단기 (스마트 감시 버전)

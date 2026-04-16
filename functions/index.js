@@ -639,6 +639,7 @@ exports.sendReviewNotifications = functions
             const messages = [];
             const clearBatch = db.batch();
 
+            const docRefs = []; // messages 와 1:1 대응
             snap.docs.forEach(doc => {
                 const data = doc.data();
                 if (!data.fcmToken) return;
@@ -652,24 +653,49 @@ exports.sendReviewNotifications = functions
                         link: 'https://kings-road-rank.web.app'
                     }
                 });
-
-                // 발송 후 필드 삭제 (중복 발송 방지)
-                clearBatch.update(doc.ref, {
-                    nextReviewNotifAt: admin.firestore.FieldValue.delete(),
-                    nextReviewStage: admin.firestore.FieldValue.delete()
-                });
+                docRefs.push(doc.ref);
             });
 
             if (messages.length === 0) return null;
 
             // FCM 최대 500개씩 배치 발송
             const chunks = [];
+            const refChunks = [];
             for (let i = 0; i < messages.length; i += 500) {
                 chunks.push(messages.slice(i, i + 500));
+                refChunks.push(docRefs.slice(i, i + 500));
             }
             const results = await Promise.all(chunks.map(chunk =>
                 admin.messaging().sendEach(chunk)
             ));
+
+            // 성공한 메시지만 필드 삭제 (실패한 건 다음 분에 재시도)
+            // 토큰 만료/무효 에러 시 fcmToken도 함께 삭제 (재등록 유도)
+            const INVALID_TOKEN_ERRORS = [
+                'registration-token-not-registered',
+                'invalid-registration-token',
+                'invalid-argument'
+            ];
+            results.forEach((result, ci) => {
+                result.responses.forEach((resp, ri) => {
+                    if (resp.success) {
+                        clearBatch.update(refChunks[ci][ri], {
+                            nextReviewNotifAt: admin.firestore.FieldValue.delete(),
+                            nextReviewStage: admin.firestore.FieldValue.delete()
+                        });
+                    } else if (resp.error) {
+                        const code = resp.error.code || '';
+                        if (INVALID_TOKEN_ERRORS.some(e => code.includes(e))) {
+                            // 토큰 무효 → 삭제해서 다음 앱 실행 시 재취득하게 함
+                            clearBatch.update(refChunks[ci][ri], {
+                                nextReviewNotifAt: admin.firestore.FieldValue.delete(),
+                                nextReviewStage: admin.firestore.FieldValue.delete(),
+                                fcmToken: admin.firestore.FieldValue.delete()
+                            });
+                        }
+                    }
+                });
+            });
 
             await clearBatch.commit();
 
