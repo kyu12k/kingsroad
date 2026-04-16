@@ -12971,8 +12971,9 @@ const TRAINING_SETTINGS_KEY = 'kingsroad_training_settings';
 
 function getDefaultTrainingSettings() {
     return {
-        chapter: 1,
+        startChapter: 1,
         startVerse: 1,
+        endChapter: 1,
         endVerse: 1,
         step: 1,
         repeatCount: 1,
@@ -12985,6 +12986,11 @@ function loadTrainingSettings() {
         const raw = localStorage.getItem(TRAINING_SETTINGS_KEY);
         if (!raw) return getDefaultTrainingSettings();
         const parsed = JSON.parse(raw);
+        // 구버전 저장값 마이그레이션 (chapter → startChapter/endChapter)
+        if (parsed.chapter && !parsed.startChapter) {
+            parsed.startChapter = parsed.chapter;
+            parsed.endChapter = parsed.chapter;
+        }
         return {
             ...getDefaultTrainingSettings(),
             ...parsed
@@ -13087,59 +13093,98 @@ function closeTrainingModal() {
 
 // 2. 성경 데이터(bibleData)를 바탕으로 장(Chapter) 목록 채우기
 function initTrainingChapters() {
-    const chapterSelect = document.getElementById('train-chapter-select');
+    const startChapterSelect = document.getElementById('train-start-chapter');
+    const endChapterSelect = document.getElementById('train-end-chapter');
     const savedSettings = loadTrainingSettings();
-    chapterSelect.innerHTML = ''; // 초기화
 
-    // bibleData 객체에서 데이터가 있는 장만 뽑아옵니다.
+    startChapterSelect.innerHTML = '';
+    endChapterSelect.innerHTML = '';
+
     for (let i = 1; i <= 22; i++) {
         if (typeof bibleData !== 'undefined' && bibleData[i] && bibleData[i].length > 0) {
-            const option = document.createElement('option');
-            option.value = i;
-            option.innerText = `요한계시록 ${i}장`;
-            chapterSelect.appendChild(option);
+            const opt1 = document.createElement('option');
+            opt1.value = i;
+            opt1.innerText = `${i}장`;
+            startChapterSelect.appendChild(opt1);
+
+            const opt2 = document.createElement('option');
+            opt2.value = i;
+            opt2.innerText = `${i}장`;
+            endChapterSelect.appendChild(opt2);
         }
     }
 
-    if (bibleData[savedSettings.chapter] && bibleData[savedSettings.chapter].length > 0) {
-        chapterSelect.value = String(savedSettings.chapter);
-    }
+    const savedStart = savedSettings.startChapter || 1;
+    const savedEnd = savedSettings.endChapter || savedStart;
+    if (bibleData[savedStart]) startChapterSelect.value = String(savedStart);
+    if (bibleData[savedEnd]) endChapterSelect.value = String(savedEnd);
 
     selectedTrainingStep = savedSettings.step || 1;
     selectedTrainingRepeatCount = Math.max(1, parseInt(savedSettings.repeatCount, 10) || 1);
-    
+
     // 저장된 설정을 기준으로 절(Verse) 목록 업데이트
-    updateTrainingVerses(savedSettings.startVerse, savedSettings.endVerse);
+    updateTrainingStartVerses(savedSettings.startVerse);
+    updateTrainingEndVerses(savedSettings.endVerse);
 }
 
-// 3. 장을 바꿀 때마다 시작/끝 절(Verse) 목록 업데이트
-function updateTrainingVerses(preferredStartVerse, preferredEndVerse) {
-    const chapter = document.getElementById('train-chapter-select').value;
-    const startSelect = document.getElementById('train-start-verse');
-    const endSelect = document.getElementById('train-end-verse');
-    const currentStart = parseInt(startSelect.value || preferredStartVerse || 1, 10);
-    const currentEnd = parseInt(endSelect.value || preferredEndVerse || 1, 10);
-    
-    startSelect.innerHTML = '';
-    endSelect.innerHTML = '';
+// 3a. 시작 장이 바뀔 때 시작 절 목록 업데이트
+function updateTrainingStartVerses(preferredVerse) {
+    const chapter = parseInt(document.getElementById('train-start-chapter').value, 10);
+    const select = document.getElementById('train-start-verse');
+    const current = parseInt(preferredVerse || select.value || 1, 10);
 
-    const maxVerses = bibleData[chapter].length;
-    const safeStartVerse = Math.min(Math.max(currentStart, 1), maxVerses);
-    const safeEndVerse = Math.min(Math.max(currentEnd, safeStartVerse), maxVerses);
+    select.innerHTML = '';
+    const maxVerses = bibleData[chapter] ? bibleData[chapter].length : 1;
+    const safe = Math.min(Math.max(current, 1), maxVerses);
 
     for (let i = 1; i <= maxVerses; i++) {
-        const startOpt = document.createElement('option');
-        startOpt.value = i;
-        startOpt.innerText = `${i}절`;
-        if (i === safeStartVerse) startOpt.selected = true;
-        startSelect.appendChild(startOpt);
-
-        const endOpt = document.createElement('option');
-        endOpt.value = i;
-        endOpt.innerText = `${i}절`;
-        if (i === safeEndVerse) endOpt.selected = true;
-        endSelect.appendChild(endOpt);
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.innerText = `${i}절`;
+        if (i === safe) opt.selected = true;
+        select.appendChild(opt);
     }
+
+    // 끝 장이 시작 장보다 작아지면 끝 장을 시작 장에 맞춤
+    const endChapterSelect = document.getElementById('train-end-chapter');
+    if (parseInt(endChapterSelect.value, 10) < chapter) {
+        endChapterSelect.value = String(chapter);
+        updateTrainingEndVerses();
+    }
+}
+
+// 3b. 끝 장이 바뀔 때 끝 절 목록 업데이트
+function updateTrainingEndVerses(preferredVerse) {
+    const startChapter = parseInt(document.getElementById('train-start-chapter').value, 10);
+    const endChapterSelect = document.getElementById('train-end-chapter');
+    let endChapter = parseInt(endChapterSelect.value, 10);
+
+    // 끝 장이 시작 장보다 작으면 자동 보정
+    if (endChapter < startChapter) {
+        endChapter = startChapter;
+        endChapterSelect.value = String(startChapter);
+    }
+
+    const select = document.getElementById('train-end-verse');
+    const current = parseInt(preferredVerse || select.value || 1, 10);
+
+    select.innerHTML = '';
+    const maxVerses = bibleData[endChapter] ? bibleData[endChapter].length : 1;
+    const safe = Math.min(Math.max(current, 1), maxVerses);
+
+    for (let i = 1; i <= maxVerses; i++) {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.innerText = `${i}절`;
+        if (i === safe) opt.selected = true;
+        select.appendChild(opt);
+    }
+}
+
+// 하위 호환용 래퍼 (구형 onchange 참조가 남아 있을 경우 대비)
+function updateTrainingVerses(preferredStartVerse, preferredEndVerse) {
+    updateTrainingStartVerses(preferredStartVerse);
+    updateTrainingEndVerses(preferredEndVerse);
 }
 
 // 🌟 [추가] 훈련 모드를 판별하는 핵심 스위치!
@@ -13148,16 +13193,17 @@ window.trainingTargetStep = 1;
 
 // 🌟 [교체] 모달창에서 [훈련 시작!] 버튼을 눌렀을 때 실행되는 진짜 함수 (엔진 완벽 동기화판)
 function executeTraining() {
-    const chapterNum = parseInt(document.getElementById('train-chapter-select').value);
-    const startVerse = parseInt(document.getElementById('train-start-verse').value);
-    const endVerse = parseInt(document.getElementById('train-end-verse').value);
+    const startChapter = parseInt(document.getElementById('train-start-chapter').value);
+    const startVerse   = parseInt(document.getElementById('train-start-verse').value);
+    const endChapter   = parseInt(document.getElementById('train-end-chapter').value);
+    const endVerse     = parseInt(document.getElementById('train-end-verse').value);
     const repeatSelect = document.getElementById('train-repeat-count');
     const repeatCount = repeatSelect ? parseInt(repeatSelect.value, 10) : 1;
     const randomCheckbox = document.getElementById('train-random-checkbox');
     const isRandomOrder = !!(randomCheckbox && randomCheckbox.checked);
 
-    if (startVerse > endVerse) {
-        alert("⚠️ 시작 절이 끝 절보다 클 수 없습니다.");
+    if (startChapter > endChapter || (startChapter === endChapter && startVerse > endVerse)) {
+        alert("⚠️ 시작 위치가 끝 위치보다 클 수 없습니다.");
         return;
     }
 
@@ -13166,10 +13212,13 @@ function executeTraining() {
         return;
     }
 
+    const chapterNum = startChapter; // 하위 호환용
+
     selectedTrainingRepeatCount = repeatCount;
     saveTrainingSettings({
-        chapter: chapterNum,
+        startChapter: startChapter,
         startVerse: startVerse,
+        endChapter: endChapter,
         endVerse: endVerse,
         step: selectedTrainingStep,
         repeatCount: repeatCount,
@@ -13189,17 +13238,23 @@ function executeTraining() {
     window.currentTrainingCycle = currentTrainingCycle;
     updateTrainingCycleIndicator();
 
-    // 2. 훈련 범위 데이터 장전
-    window.currentBattleData = bibleData[chapterNum].slice(startVerse - 1, endVerse).map((verseData, index) => ({
-        ...verseData,
-        __chapterNum: chapterNum,
-        __verseNum: startVerse + index
-    }));
+    // 2. 훈련 범위 데이터 장전 (다중 장 지원)
+    {
+        const verses = [];
+        for (let ch = startChapter; ch <= endChapter; ch++) {
+            const from = ch === startChapter ? startVerse - 1 : 0;
+            const to   = ch === endChapter   ? endVerse       : bibleData[ch].length;
+            bibleData[ch].slice(from, to).forEach((verseData, idx) => {
+                verses.push({ ...verseData, __chapterNum: ch, __verseNum: from + 1 + idx });
+            });
+        }
+        window.currentBattleData = verses;
+    }
     if (isRandomOrder) {
         window.currentBattleData = shuffleHardshipQueue(window.currentBattleData);
     }
-    window.currentBattleChapter = chapterNum;
-    window.currentVerseIdx = 0; 
+    window.currentBattleChapter = chapterNum; // 하위 호환 (startChapter)
+    window.currentVerseIdx = 0;
     window.trainStartVerse = startVerse; // 🌟 [추가] 시작 절 번호를 시스템에 기억시킵니다!
     
     // 🌟 3. [핵심 수술 1] 현재 훈련 구절 상태를 엔진에 주입합니다!

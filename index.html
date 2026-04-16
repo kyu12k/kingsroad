@@ -1742,14 +1742,17 @@
 
         <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:10px; margin-bottom:15px;">
             <div style="font-size:0.9rem; color:#bdc3c7; margin-bottom:8px; text-align:left;">📖 훈련 범위 선택</div>
-            
-            <select id="train-chapter-select" onchange="updateTrainingVerses()" style="width:100%; padding:8px; border-radius:5px; background:#34495e; color:#fff; border:1px solid #7f8c8d; margin-bottom:10px; font-size:1rem;">
-                </select>
-            
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-                <select id="train-start-verse" style="flex:1; padding:8px; border-radius:5px; background:#34495e; color:#fff; border:1px solid #7f8c8d; font-size:1rem;"></select>
-                <span style="color:#bdc3c7;">~</span>
-                <select id="train-end-verse" style="flex:1; padding:8px; border-radius:5px; background:#34495e; color:#fff; border:1px solid #7f8c8d; font-size:1rem;"></select>
+
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+                <span style="color:#bdc3c7; font-size:0.8rem; min-width:22px;">시작</span>
+                <select id="train-start-chapter" onchange="updateTrainingStartVerses()" style="flex:1; padding:8px; border-radius:5px; background:#34495e; color:#fff; border:1px solid #7f8c8d; font-size:0.95rem;"></select>
+                <select id="train-start-verse" style="flex:1; padding:8px; border-radius:5px; background:#34495e; color:#fff; border:1px solid #7f8c8d; font-size:0.95rem;"></select>
+            </div>
+            <div style="text-align:center; color:#bdc3c7; margin-bottom:6px; font-size:0.9rem;">~</div>
+            <div style="display:flex; align-items:center; gap:6px;">
+                <span style="color:#bdc3c7; font-size:0.8rem; min-width:22px;">끝</span>
+                <select id="train-end-chapter" onchange="updateTrainingEndVerses()" style="flex:1; padding:8px; border-radius:5px; background:#34495e; color:#fff; border:1px solid #7f8c8d; font-size:0.95rem;"></select>
+                <select id="train-end-verse" style="flex:1; padding:8px; border-radius:5px; background:#34495e; color:#fff; border:1px solid #7f8c8d; font-size:0.95rem;"></select>
             </div>
         </div>
 
