@@ -5213,7 +5213,19 @@ async function initFirestoreSync() {
         return;
     }
 
-    // Firestore가 권위(authority) — 항상 Firestore 데이터를 적용
+    // 타임스탬프 비교: 로컬이 더 최신이면 Firestore 덮어쓰기 건너뜀
+    const localUpdatedAt  = (localData  && localData.updatedAt)  ? localData.updatedAt  : 0;
+    const remoteUpdatedAt = (remoteData && remoteData.updatedAt) ? remoteData.updatedAt : 0;
+
+    if (localUpdatedAt > remoteUpdatedAt) {
+        // 로컬이 더 최신 (게임 시작 직후 행동 등) → Firestore로 업로드
+        console.log('[Firestore] 로컬 데이터가 더 최신 → Firestore 업로드');
+        window.firestoreSyncPending = false;
+        await syncToFirestore();
+        return;
+    }
+
+    // Firestore가 권위(authority) — Firestore 데이터를 적용
     console.log('[Firestore] 서버 데이터 적용 중...');
     localStorage.setItem('kingsRoadSave', JSON.stringify(remoteData));
     window.firestoreSyncPending = false;
