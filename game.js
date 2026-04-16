@@ -10754,6 +10754,13 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
         return;
     }
 
+    // 로딩 상태 표시
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="kr-spinner"></span>알림 예약 중';
+        btn.style.background = '#b0b0b0';
+    }
+
     const hr = delayMs / 3600000;
     const label = hr < 1 ? `${Math.round(delayMs / 60000)}분` : `${Math.round(hr)}시간`;
 
@@ -10782,7 +10789,7 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
             );
 
             if (btn) {
-                btn.textContent = '✅ 예약됨';
+                btn.innerHTML = '✅ 예약됨';
                 btn.disabled = true;
                 btn.style.background = '#27ae60';
             }
@@ -10807,7 +10814,7 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
     }, delayMs);
 
     if (btn) {
-        btn.textContent = '✅ 예약됨';
+        btn.innerHTML = '✅ 예약됨';
         btn.disabled = true;
         btn.style.background = '#27ae60';
     }

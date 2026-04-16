@@ -1,6 +1,21 @@
 ﻿/* 🌟 세련된 프리텐다드(Pretendard) 폰트 불러오기 (반드시 최상단에 위치!) */
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
 
+@keyframes kr-spin {
+    to { transform: rotate(360deg); }
+}
+.kr-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: kr-spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
 * {
     box-sizing: border-box; /* 🌟 모든 요소의 너비 계산에 여백/테두리를 포함 */
 }
