@@ -40,7 +40,8 @@ function deduplicateByTag(docs) {
     return docs.filter(doc => {
         const d = doc.data();
         // tag 필드가 있으면 tag 우선 사용, 없으면 nickname+score로 fallback (doc.id는 다른 기기/계정에선 달라질 수 있음)
-        const tag = (d.tag && d.tag !== '0000') ? d.tag : `${d.nickname || ''}__${d.score || 0}`;
+        const tagStr = String(d.tag || '');
+        const tag = (tagStr && tagStr !== '0000') ? tagStr : `${d.nickname || ''}`;
         if (seen.has(tag)) return false;
         seen.add(tag);
         return true;
@@ -168,7 +169,8 @@ async function updateWeeklyCountsImpl() {
     const seenPlayers = new Map();
     for (const item of rawTotalData) {
         // tag가 없거나 기본값("0000")인 경우 name+score를 fallback 키로 사용
-        const key = (item.tag && item.tag !== "0000") ? item.tag : `${item.name}__${item.score}`;
+        const tagStr = String(item.tag || '');
+        const key = (tagStr && tagStr !== "0000") ? tagStr : `${item.name}`;
         if (!seenPlayers.has(key) || seenPlayers.get(key).score < item.score) {
             seenPlayers.set(key, item);
         }

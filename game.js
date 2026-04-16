@@ -250,7 +250,7 @@ loadGameData = function () {
             // 🌟🌟 [추가] 연간 승점(대항전 기여도) 세팅 🌟🌟
             if (typeof leagueData.yearlyScore === 'undefined') {
                 // 올해 처음 시작하는 대항전이므로 현재까지의 누적 점수를 복사해 줌
-                leagueData.yearlyScore = leagueData.totalScore || 0;
+                leagueData.yearlyScore = 0;
             }
         }
         if (parsed.missions) missionData = parsed.missions;
@@ -12146,6 +12146,24 @@ function saveMyScoreToServer() {
                 // Ignore storage errors.
             }
             console.log(`✅ 서버 저장 완료: ${currentScore}점 (${currentWeekId})`);
+            // 구형 문서(tag가 숫자로 저장된 것) 1회 자동 삭제
+            if (!localStorage.getItem('kingsroad_legacy_cleanup_done') && myTag && myTag !== '0000') {
+                const numericTag = parseInt(myTag, 10);
+                if (!isNaN(numericTag)) {
+                    db.collection('leaderboard')
+                        .where('tag', '==', numericTag)
+                        .get()
+                        .then(snapshot => {
+                            snapshot.forEach(doc => {
+                                if (doc.id !== myTag) {
+                                    doc.ref.delete().catch(() => {});
+                                }
+                            });
+                            localStorage.setItem('kingsroad_legacy_cleanup_done', '1');
+                        })
+                        .catch(() => {});
+                }
+            }
         })
         .catch((error) => {
             console.error("❌ 점수 저장 실패:", error);
