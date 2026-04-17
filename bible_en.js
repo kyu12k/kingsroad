@@ -2322,19 +2322,14 @@ const bibleDataEn = {
         "which keep the commandments of God,",
         "and have the testimony of Jesus Christ."
       ]
-    },
-    {
-      "text": "And I stood upon the sand of the sea.",
-      "chunks": [
-        "And I stood upon the",
-        "sand of the sea."
-      ]
     }
   ],
   "13": [
     {
-      "text": "And saw a beast rise up out of the sea, having seven heads and ten horns, and upon his horns ten crowns, and upon his heads the name of blasphemy.",
+      "text": "And I stood upon the sand of the sea. And saw a beast rise up out of the sea, having seven heads and ten horns, and upon his horns ten crowns, and upon his heads the name of blasphemy.",
       "chunks": [
+        "And I stood upon the",
+        "sand of the sea.",
         "And saw a beast rise",
         "up out of the sea,",
         "having seven heads and ten horns,",

@@ -75,6 +75,17 @@ async function main() {
   const bibleDataEn = {};
   let totalVerses = 0;
 
+  // KJV 12:18은 일부 판본에서 13:1 앞에 붙는 구절 (개역한글은 13:1에 통합).
+  // 이 구절을 13:1 텍스트 앞에 붙이고 12장에서 제거해 개역한글(17절)과 절 수를 맞춤.
+  const ch12 = revelation.chapters[11]; // 0-based
+  const ch13 = revelation.chapters[12];
+  const extra1218 = ch12[ch12.length - 1]; // "And I stood upon the sand of the sea."
+  const ch12trimmed = ch12.slice(0, -1);
+  // 13:1 앞에 접두 문장 추가
+  const ch13patched = [extra1218 + ' ' + ch13[0], ...ch13.slice(1)];
+  revelation.chapters[11] = ch12trimmed;
+  revelation.chapters[12] = ch13patched;
+
   for (let chIdx = 0; chIdx < revelation.chapters.length; chIdx++) {
     const chNum = chIdx + 1;
     const chapter = revelation.chapters[chIdx];
