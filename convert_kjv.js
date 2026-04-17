@@ -27,11 +27,18 @@ function phraseChunk(text) {
       continue;
     }
 
-    // 7단어 초과 → 절반으로 분리
-    if (words.length > 7) {
-      const mid = Math.ceil(words.length / 2);
-      chunks.push(words.slice(0, mid).join(' '));
-      chunks.push(words.slice(mid).join(' '));
+    // 3단어 초과 → 3단어씩 순차 분리 (마지막 1단어 조각은 앞에 병합)
+    if (words.length > 3) {
+      let i = 0;
+      while (i < words.length) {
+        const slice = words.slice(i, i + 3);
+        if (slice.length === 1 && chunks.length > 0) {
+          chunks[chunks.length - 1] += ' ' + slice[0];
+        } else {
+          chunks.push(slice.join(' '));
+        }
+        i += 3;
+      }
       continue;
     }
 

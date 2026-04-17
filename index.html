@@ -80,8 +80,8 @@
             }
         </style>
         <div id="splash-title">KING'S ROAD</div>
-        <div id="splash-sub">제사장의 인 맞는 길</div>
-        <div id="splash-tap">아무데나 눌러서 시작</div>
+        <div id="splash-sub" data-i18n="splash_sub">제사장의 인 맞는 길</div>
+        <div id="splash-tap" data-i18n="splash_tap">아무데나 눌러서 시작</div>
     </div>
     <script>
         function dismissSplash() {
@@ -93,6 +93,19 @@
                 if (typeof startBgm === 'function') startBgm();
             }, 380);
         }
+        // 저장된 언어 설정으로 스플래시 텍스트 즉시 적용
+        (function() {
+            const lang = localStorage.getItem('lang') || 'ko';
+            const strings = {
+                ko: { splash_sub: '제사장의 인 맞는 길', splash_tap: '아무데나 눌러서 시작' },
+                en: { splash_sub: 'The Path of the Sealed Priest', splash_tap: 'Tap anywhere to begin' }
+            };
+            const s = strings[lang] || strings.ko;
+            const sub = document.getElementById('splash-sub');
+            const tap = document.getElementById('splash-tap');
+            if (sub) sub.textContent = s.splash_sub;
+            if (tap) tap.textContent = s.splash_tap;
+        })();
     </script>
 
     <!-- 감사한 분들 모달 -->
@@ -103,7 +116,7 @@
                     style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
             </div>
             <div style="text-align: center; margin-bottom: 20px;">
-                <h2 style="margin:0; color:#2c3e50;">감사한 분들</h2>
+                <h2 style="margin:0; color:#2c3e50;" data-i18n="thanks_modal_title">감사한 분들</h2>
                 <div id="thanks-list" style="margin-top:15px; display:flex; flex-direction:column; gap:10px;"></div>
             </div>
         </div>
@@ -112,13 +125,13 @@
     <div id="guide-modal" class="modal-overlay" style="z-index:9999; display:none;">
         <div class="result-card" style="max-width:420px; max-height:85vh; overflow:hidden; display:flex; flex-direction:column;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <h2 style="margin:0;">📖 킹스로드 가이드</h2>
+                <h2 style="margin:0;" data-i18n="guide_modal_title">📖 킹스로드 가이드</h2>
                 <button onclick="closeGuideModal()" style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
             </div>
             <div id="guide-dots" style="text-align:center; margin-bottom:12px;"></div>
             <div id="guide-content" style="flex:1; overflow-y:auto; min-height:0;"></div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
-                <button id="guide-prev-btn" onclick="guideChangePage(-1)" class="action-btn" style="min-width:80px;">◀ 이전</button>
+                <button id="guide-prev-btn" onclick="guideChangePage(-1)" class="action-btn" data-i18n="guide_prev_btn" style="min-width:80px;">◀ 이전</button>
                 <span id="guide-page-label" style="color:#888; font-size:13px;">1 / 5</span>
                 <button id="guide-next-btn" onclick="guideChangePage(1)" class="action-btn" style="min-width:80px;">다음 ▶</button>
             </div>
@@ -129,11 +142,11 @@
         style="display:none; position:fixed; z-index:9999; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.97); color:#f1c40f; flex-direction:column; align-items:center; justify-content:center; font-size:1.3rem; text-align:center;">
         <div
             style="max-width:90vw; font-size:1.1em; line-height:1.7; font-weight:bold; color:#fff; text-shadow:0 2px 8px #222; margin-bottom:30px;">
-            "운동장에서 달음질하는 자들이<br>다 달아날찌라도<br>오직 상 얻는 자는 하나인 줄을<br>너희가 알지 못하느냐<br>너희도 얻도록 이와 같이 달음질하라"<br><span
-                style="font-size:0.95em; color:#f1c40f;">(고전 9:24)</span>
+            <span data-i18n-html="ranking_verse">"운동장에서 달음질하는 자들이<br>다 달아날찌라도<br>오직 상 얻는 자는 하나인 줄을<br>너희가 알지 못하느냐<br>너희도 얻도록 이와 같이 달음질하라"</span><br><span
+                style="font-size:0.95em; color:#f1c40f;" data-i18n="ranking_verse_ref">(고전 9:24)</span>
         </div>
         <div style="height:56px; display:flex; align-items:center; justify-content:center;">
-            <button id="ranking-amen-btn"
+            <button id="ranking-amen-btn" data-i18n="btn_amen"
                 style="opacity:0; pointer-events:none; background: #f1c40f; color: #2c3e50; font-size:1.2rem; font-weight:bold; padding: 12px 38px; border-radius: 30px; border:none; box-shadow:0 2px 10px #2224; cursor:pointer; margin-top:0; transition: opacity 0.7s; position:relative;">아멘</button>
         </div>
     </div>
@@ -314,11 +327,11 @@
     <div id="shop-screen" class="screen"
         style="background-color:#2c3e50; overflow-y:auto; justify-content: flex-start;">
         <div style="padding:20px; text-align:center;">
-            <h1 style="color:#f1c40f; margin-bottom:5px;">⛺ 시온 마트</h1>
-            <p style="color:#bdc3c7; font-size:0.9rem;">여정에 필요한 물품을 구비하세요</p>
+            <h1 style="color:#f1c40f; margin-bottom:5px;" data-i18n="shop_title">⛺ 시온 마트</h1>
+            <p style="color:#bdc3c7; font-size:0.9rem;" data-i18n="shop_subtitle">여정에 필요한 물품을 구비하세요</p>
             <div
                 style="background:rgba(0,0,0,0.3); padding:10px; border-radius:10px; display:inline-block; margin-top:10px;">
-                내 보석: <span id="shop-user-gems" style="color:#fff; font-weight:bold;">0</span>
+                <span data-i18n="shop_my_gems">내 보석</span>: <span id="shop-user-gems" style="color:#fff; font-weight:bold;">0</span>
             </div>
         </div>
 
@@ -342,13 +355,13 @@
     <div id="mission-screen" class="screen"
         style="background-color:#2c3e50; overflow-y:auto; justify-content: flex-start;">
         <div style="padding:20px; text-align:center;">
-            <h1 style="color:#f1c40f; margin-bottom:5px;">📜 왕의 임무</h1>
-            <p style="color:#bdc3c7; font-size:0.9rem;">성실함이 곧 왕의 자질입니다</p>
+            <h1 style="color:#f1c40f; margin-bottom:5px;" data-i18n="mission_title">📜 왕의 임무</h1>
+            <p style="color:#bdc3c7; font-size:0.9rem;" data-i18n="mission_subtitle">성실함이 곧 왕의 자질입니다</p>
         </div>
 
         <div class="mission-tabs" style="display:flex; justify-content:center; gap:10px; margin-bottom:10px;">
-            <button class="tab-btn active" onclick="switchMissionTab('daily')">일일 미션</button>
-            <button class="tab-btn" onclick="switchMissionTab('weekly')">주간 미션</button>
+            <button class="tab-btn active" data-i18n="mission_tab_daily" onclick="switchMissionTab('daily')">일일 미션</button>
+            <button class="tab-btn" data-i18n="mission_tab_weekly" onclick="switchMissionTab('weekly')">주간 미션</button>
         </div>
 
         <div class="mission-list" id="mission-list-area"
@@ -402,14 +415,13 @@
             style="display:none; position:fixed; top:72px; right:20px; z-index:3001; background:rgba(44,62,80,0.98); border-radius:18px; box-shadow:0 8px 32px rgba(44,62,80,0.18); padding:18px 14px; min-width:180px; border:1.5px solid #f1c40f; flex-direction:column; gap:8px;">
             <button id="lang-toggle-btn" class="menu-action-btn" onclick="toggleLang(); document.getElementById('menu-panel').style.display='none';">🌐 English</button>
             <button id="kings-step-btn" class="menu-action-btn" style="display:none;" onclick="cycleKingsStep(); document.getElementById('menu-panel').style.display='none';">👑 왕의 길 -단계</button>
-            <button class="menu-action-btn" onclick="openGuideModal(); closeMenu();">📖 게임 가이드</button>
-            <button class="menu-action-btn" onclick="openThanksModal()">👥 감사한 분들</button>
-            <button id="add-to-home-btn" class="menu-action-btn" style="display: none;">📱 홈 화면에 추가</button> <button
-                class="menu-action-btn" onclick="window.open('https://naver.me/xVRetic8', '_blank')">📝 설문조사</button>
-            <button class="menu-action-btn" onclick="openNoticeModal()">📢 공지사항</button>
-            <button class="menu-action-btn" onclick="window.open('https://naver.me/x1uiCCjv', '_blank')">🐞 불편
-                신고</button>
-            <button class="menu-action-btn" onclick="openDataSettings()">💾 기기 변경</button>
+            <button class="menu-action-btn" data-i18n="menu_guide" onclick="openGuideModal(); closeMenu();">📖 게임 가이드</button>
+            <button class="menu-action-btn" data-i18n="menu_thanks" onclick="openThanksModal()">👥 감사한 분들</button>
+            <button id="add-to-home-btn" class="menu-action-btn" data-i18n="menu_home_add" style="display: none;">📱 홈 화면에 추가</button> <button
+                class="menu-action-btn" data-i18n="menu_survey" onclick="window.open('https://naver.me/xVRetic8', '_blank')">📝 설문조사</button>
+            <button class="menu-action-btn" data-i18n="menu_notice" onclick="openNoticeModal()">📢 공지사항</button>
+            <button class="menu-action-btn" data-i18n="menu_report" onclick="window.open('https://naver.me/x1uiCCjv', '_blank')">🐞 불편 신고</button>
+            <button class="menu-action-btn" data-i18n="menu_data" onclick="openDataSettings()">💾 기기 변경</button>
         </div>
         <script>
             document.body.classList.add('dark-mode');
@@ -477,11 +489,11 @@
         </script>
         <div class="home-title-box">
             <div class="game-title">KING'S ROAD</div>
-            <div class="game-subtitle">제사장의 인 맞는 길</div>
+            <div class="game-subtitle" data-i18n="splash_sub">제사장의 인 맞는 길</div>
         </div>
 
         <div class="temple-display-wrap">
-        <div id="temple-upgrade-noti">⬆️ 업그레이드 가능</div>
+        <div id="temple-upgrade-noti" data-i18n="home_upgrade_avail">⬆️ 업그레이드 가능</div>
         <div id="castle-display" style="margin-bottom: 5px;">
 
             <div
@@ -509,7 +521,7 @@
             <div class="home-mode-carousel">
                 <button onclick="toggleGameMode(-1)" style="background: none; border: none; color: #bdc3c7; font-size: 2rem; cursor: pointer; padding: 0; transition: transform 0.1s;">◀</button>
 
-                <button id="start-journey-btn" class="btn-main-action" onclick="startGame()" style="margin: 0; min-width: 220px; transition: all 0.2s ease;">
+                <button id="start-journey-btn" class="btn-main-action" onclick="startGame()" data-i18n="btn_journey" style="margin: 0; min-width: 220px; transition: all 0.2s ease;">
                     👑 여정 시작
                 </button>
 
@@ -523,11 +535,11 @@
             <!-- 로딩 애니메이션 제거 -->
             <div
                 style="max-width:90vw; font-size:1.1em; line-height:1.7; font-weight:bold; color:#fff; text-shadow:0 2px 8px #222; margin-bottom:30px;">
-                "이 예언의 말씀을 읽는 자와 듣는 자들과<br>그 가운데 기록한 것을 지키는 자들이<br>복이 있나니 때가 가까움이라"<br><span
-                    style="font-size:0.95em; color:#f1c40f;">(계 1:3)</span>
+                <span data-i18n-html="journey_verse">"이 예언의 말씀을 읽는 자와 듣는 자들과<br>그 가운데 기록한 것을 지키는 자들이<br>복이 있나니 때가 가까움이라"</span><br><span
+                    style="font-size:0.95em; color:#f1c40f;" data-i18n="journey_verse_ref">(계 1:3)</span>
             </div>
             <div style="height:56px; display:flex; align-items:center; justify-content:center;">
-                <button id="amen-btn"
+                <button id="amen-btn" data-i18n="btn_amen"
                     style="opacity:0; pointer-events:none; background: #f1c40f; color: #2c3e50; font-size:1.2rem; font-weight:bold; padding: 12px 38px; border-radius: 30px; border:none; box-shadow:0 2px 10px #2224; cursor:pointer; margin-top:0; transition: opacity 0.7s; position:relative;">아멘</button>
             </div>
         </div>
@@ -660,7 +672,7 @@
             <button onclick="openProfileSettings()"
                 style="background:rgba(0,0,0,0.4); border:1px solid #f1c40f; color:#f1c40f; padding:8px 20px; border-radius:20px; font-size:0.9rem; display:flex; align-items:center; cursor:pointer; z-index:10;">
                 <span id="home-nickname-display">순례자</span> <span
-                    style="font-size:0.8em; opacity:0.7; margin-left:5px;">(변경)</span>
+                    style="font-size:0.8em; opacity:0.7; margin-left:5px;" data-i18n="home_change">(변경)</span>
             </button>
 
             <!-- 지난 주 보상 버튼 (pendingReward 있을 때만 표시) -->
@@ -675,7 +687,7 @@
             <div id="notice-modal" class="modal-overlay" style="z-index: 9999; display:none;">
                 <div class="result-card" style="max-width: 400px; max-height: 80vh; overflow-y: auto;">
                     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
-                        <h2 style="margin:0; color:#2c3e50;">📢 공지사항</h2>
+                        <h2 style="margin:0; color:#2c3e50;" data-i18n="notice_modal_title">📢 공지사항</h2>
                         <button onclick="closeNoticeModal()"
                             style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
                     </div>
@@ -687,13 +699,21 @@
                     {
                         date: '2026-04-03',
                         title: '베타테스트 안내',
+                        titleEn: 'Beta Test Notice',
                         content: `<p>현재 킹스로드는 <strong>베타테스트 중</strong>입니다.</p>
 <ul style="padding-left:18px; margin:8px 0;">
   <li>게임 밸런스, 기능, UI 등이 <strong>예고 없이 변경</strong>될 수 있습니다.</li>
   <li>업데이트 과정에서 저장 데이터가 <strong>초기화되거나 복구 불가능하게 손실</strong>될 수 있습니다.</li>
   <li>데이터 손실에 대한 보상은 제공되지 않을 수 있습니다.</li>
 </ul>
-<p style="margin-top:10px;">불편을 드려 죄송합니다. 테스트에 참여해 주셔서 감사합니다! 🙏</p>`
+<p style="margin-top:10px;">불편을 드려 죄송합니다. 테스트에 참여해 주셔서 감사합니다! 🙏</p>`,
+                        contentEn: `<p>King's Road is currently in <strong>Beta Testing</strong>.</p>
+<ul style="padding-left:18px; margin:8px 0;">
+  <li>Game balance, features, and UI may change <strong>without notice</strong>.</li>
+  <li>Saved data may be <strong>reset or permanently lost</strong> during updates.</li>
+  <li>Compensation for data loss may not be provided.</li>
+</ul>
+<p style="margin-top:10px;">We apologize for any inconvenience. Thank you for participating in the test! 🙏</p>`
                     }
                 ];
 
@@ -707,16 +727,19 @@
                     document.getElementById('notice-modal').style.display = 'none';
                 }
                 function renderNotices() {
+                    var lang = (typeof currentLang !== 'undefined') ? currentLang : (localStorage.getItem('lang') || 'ko');
                     var list = document.getElementById('notice-list');
                     list.innerHTML = NOTICES.map(function(n, i) {
+                        var title = (lang === 'en' && n.titleEn) ? n.titleEn : n.title;
+                        var content = (lang === 'en' && n.contentEn) ? n.contentEn : n.content;
                         return '<div class="notice-item">' +
                             '<button class="notice-header" onclick="toggleNotice(' + i + ')">' +
                                 '<span class="notice-date">' + n.date + '</span>' +
-                                '<span class="notice-title">' + n.title + '</span>' +
+                                '<span class="notice-title">' + title + '</span>' +
                                 '<span class="notice-arrow" id="notice-arrow-' + i + '">▼</span>' +
                             '</button>' +
                             '<div class="notice-body" id="notice-body-' + i + '" style="display:none;">' +
-                                n.content +
+                                content +
                             '</div>' +
                         '</div>';
                     }).join('');
@@ -736,11 +759,11 @@
         <div class="map-header">
             <button id="forgotten-stages-floating-btn" onclick="openForgottenStagesOverlay()"
     style="position: fixed; right: 10%; bottom: 80px; z-index: 1300; background: #f1c40f; border: 2px solid #f1c40f; color: #222222; font-size: 0.75rem; font-weight: bold; padding: 5px 14px; border-radius: 18px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
-    <span style="font-size:1.2rem; flex-shrink: 0;">💜</span> <span style="font-size:1.2rem;">복습 타이밍</span>
+    <span style="font-size:1.2rem; flex-shrink: 0;">💜</span> <span style="font-size:1.2rem;" data-i18n="btn_review_timing">복습 타이밍</span>
 </button>
         <button onclick="openNotificationSettings()"
     style="position: fixed; left: 10%; bottom: 80px; z-index: 1300; background: #2c3e50; border: 2px solid #7f8c8d; color: #ecf0f1; font-size: 0.75rem; font-weight: bold; padding: 5px 14px; border-radius: 18px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
-    <span style="font-size:1.2rem; flex-shrink: 0;">🔔</span> <span style="font-size:1.2rem;">알림 설정</span>
+    <span style="font-size:1.2rem; flex-shrink: 0;">🔔</span> <span style="font-size:1.2rem;" data-i18n="btn_notif_settings">알림 설정</span>
 </button>
             <div class="map-header-inner">
                 <div class="map-header-row1">
@@ -1005,15 +1028,15 @@
     <div class="bottom-nav">
         <div class="nav-item" onclick="goHome()">
             <div class="nav-badge"></div>
-            <span>🏰</span><span>홈</span>
+            <span>🏰</span><span data-i18n="nav_home">홈</span>
         </div>
         <div class="nav-item" onclick="openRankingScreen()">
             <div class="nav-badge"></div>
-            <span>🏆</span><span>랭킹</span>
+            <span>🏆</span><span data-i18n="nav_ranking">랭킹</span>
         </div>
         <div class="nav-item" onclick="openMission()">
             <div id="badge-mission" class="nav-badge"></div>
-            <span>📜</span><span>미션</span>
+            <span>📜</span><span data-i18n="nav_mission">미션</span>
         </div>
         <div class="nav-item" id="nav-more-btn" onclick="toggleMoreMenu(this)">
             <div id="badge-more" class="nav-badge"></div>
@@ -1023,13 +1046,13 @@
 
     <div id="more-menu-popup">
         <div class="more-menu-item" onclick="openShopFromMenu()">
-            <span class="menu-icon-wrap">⛺<div id="badge-shop" class="nav-badge"></div></span> 상점
+            <span class="menu-icon-wrap">⛺<div id="badge-shop" class="nav-badge"></div></span> <span data-i18n="nav_shop">상점</span>
         </div>
         <div class="more-menu-item" onclick="openLifeBook(); closeMoreMenu();">
-            <span class="menu-icon-wrap">📖</span> 도감
+            <span class="menu-icon-wrap">📖</span> <span data-i18n="nav_library">도감</span>
         </div>
         <div class="more-menu-item" onclick="openAchievementFromMenu()">
-            <span class="menu-icon-wrap">🎖️<div id="badge-achievement" class="nav-badge"></div></span> 기록실
+            <span class="menu-icon-wrap">🎖️<div id="badge-achievement" class="nav-badge"></div></span> <span data-i18n="nav_records">기록실</span>
         </div>
     </div>
     </div>
@@ -1094,8 +1117,8 @@
                 <!-- 승점 + 힌트: 세로 2줄 -->
                 <div class="hardship-hud-group">
                     <div id="common-hardship-score" class="common-hardship-chip common-hardship-score">승점 0</div>
-                    <button type="button" onclick="useHint()" class="item-btn" id="common-hardship-hint-btn">
-                        💡 힌트 <span id="common-hardship-hint-cost" style="font-size:0.7rem; margin-left:2px;">(💎10)</span>
+                    <button type="button" onclick="useHint()" class="item-btn" id="common-hardship-hint-btn" style="display:none;">
+                        💡 <span id="common-hardship-hint-label">힌트</span> <span id="common-hardship-hint-cost" style="font-size:0.7rem; margin-left:2px;">(💎10)</span>
                     </button>
                 </div>
                 <button type="button" onclick="toggleSound()" class="sfx-toggle-btn btn-pause" style="padding:6px 10px; font-size:1.1rem;">🔊</button>
@@ -1150,14 +1173,14 @@
     <div id="mode-select-overlay" class="modal-overlay" style="z-index:10000;" onclick="closeModeSelectOverlay()">
         <div class="result-card mode-select-card" onclick="event.stopPropagation()">
             <div class="mode-modal-header">
-                <span class="mode-select-title">여정을 선택하세요</span>
+                <span class="mode-select-title" data-i18n="mode_select_title">여정을 선택하세요</span>
                 <button class="mode-close-btn" onclick="closeModeSelectOverlay()">✕</button>
             </div>
             <button class="mode-journey-btn kings-btn" onclick="onClickKingsRoad()">
                 <span class="mode-btn-icon">👑</span>
                 <div class="mode-btn-text">
-                    <span class="mode-btn-label">왕의 길</span>
-                    <span class="mode-btn-desc">계시록 순서대로 매일 암기하는 여정</span>
+                    <span class="mode-btn-label" data-i18n="label_kings_road">왕의 길</span>
+                    <span class="mode-btn-desc" data-i18n="label_kings_road_desc">계시록 순서대로 매일 암기하는 여정</span>
                     <span id="kings-btn-review-count" class="mode-btn-review-count" style="display:none;"></span>
                     <span id="kings-overlay-info" style="display:none; flex-direction:column; gap:3px; margin-top:5px;">
                         <span id="kings-overlay-badge" class="kings-unlock-badge" style="display:none;"></span>
@@ -1168,8 +1191,8 @@
             <button class="mode-journey-btn free-btn" onclick="onClickFreeJourney()">
                 <span class="mode-btn-icon">🗺️</span>
                 <div class="mode-btn-text">
-                    <span class="mode-btn-label">자유여행</span>
-                    <span class="mode-btn-desc">원하는 구절을 자유롭게 학습</span>
+                    <span class="mode-btn-label" data-i18n="label_free_journey">자유여행</span>
+                    <span class="mode-btn-desc" data-i18n="label_free_journey_desc">원하는 구절을 자유롭게 학습</span>
                     <span id="free-btn-review-count" class="mode-btn-review-count" style="display:none;"></span>
                 </div>
             </button>
@@ -1180,23 +1203,23 @@
     <div id="kings-step-select-overlay" class="modal-overlay" style="z-index:10000;" onclick="closeKingsStepSelectOverlay()">
         <div class="result-card mode-select-card" onclick="event.stopPropagation()">
             <div class="mode-modal-header">
-                <span class="mode-select-title">👑 왕의 길</span>
+                <span class="mode-select-title" data-i18n="kings_step_select_title">👑 왕의 길</span>
                 <button class="mode-close-btn" onclick="closeKingsStepSelectOverlay()">✕</button>
             </div>
-            <p class="mode-select-subtitle">암기 단계를 선택하세요</p>
+            <p class="mode-select-subtitle" data-i18n="kings_step_select_subtitle">암기 단계를 선택하세요</p>
             <button class="step-btn" onclick="onSelectKingsStep(1)">
-                <span class="step-btn-num">1단계</span>
-                <span class="step-btn-desc">하루 1구절 암기<br><span class="step-btn-goal">약 126일만에 1~5장, 205일만에 1~10장 완성</span></span>
+                <span class="step-btn-num" data-i18n="kings_step_1_num">1단계</span>
+                <span class="step-btn-desc"><span data-i18n="kings_step_1_desc">하루 1구절 암기</span><br><span class="step-btn-goal" data-i18n="kings_step_1_goal">약 126일만에 1~5장, 205일만에 1~10장 완성</span></span>
             </button>
             <button class="step-btn" onclick="onSelectKingsStep(2)">
-                <span class="step-btn-num">2단계</span>
-                <span class="step-btn-desc">하루 2구절 암기<br><span class="step-btn-goal">약 159일만에 1~15장 완성</span></span>
+                <span class="step-btn-num" data-i18n="kings_step_2_num">2단계</span>
+                <span class="step-btn-desc"><span data-i18n="kings_step_2_desc">하루 2구절 암기</span><br><span class="step-btn-goal" data-i18n="kings_step_2_goal">약 159일만에 1~15장 완성</span></span>
             </button>
             <button class="step-btn" onclick="onSelectKingsStep(3)">
-                <span class="step-btn-num">3단계</span>
-                <span class="step-btn-desc">하루 3구절 암기<br><span class="step-btn-goal">약 165일만에 전장 완성</span></span>
+                <span class="step-btn-num" data-i18n="kings_step_3_num">3단계</span>
+                <span class="step-btn-desc"><span data-i18n="kings_step_3_desc">하루 3구절 암기</span><br><span class="step-btn-goal" data-i18n="kings_step_3_goal">약 165일만에 전장 완성</span></span>
             </button>
-            <button class="mode-back-btn" onclick="closeKingsStepSelectOverlay(); openModeSelectOverlay();">← 돌아가기</button>
+            <button class="mode-back-btn" data-i18n="btn_back_nav" onclick="closeKingsStepSelectOverlay(); openModeSelectOverlay();">← 돌아가기</button>
         </div>
     </div>
 
@@ -1207,31 +1230,31 @@
                     style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
             </div>
             <div style="text-align: center; margin-bottom: 20px;">
-                <h2 style="margin:0; color:#2c3e50;">고난 길</h2>
-                <p style="color:#7f8c8d; font-size:0.95rem; margin-top:8px; line-height:1.5;">모드를 고른 뒤 출제 범위를 설정하고 시작합니다.</p>
+                <h2 style="margin:0; color:#2c3e50;" data-i18n="hardship_title">고난 길</h2>
+                <p style="color:#7f8c8d; font-size:0.95rem; margin-top:8px; line-height:1.5;" data-i18n="hardship_subtitle">모드를 고른 뒤 출제 범위를 설정하고 시작합니다.</p>
             </div>
 
             <button class="mode-btn hardship-mode-btn hardship-mode-a" onclick="startHardshipFromModal('endurance')">
                 <div class="mode-icon">🕊️</div>
                 <div class="mode-info">
-                    <div class="mode-title">모드 A · 인내의 고난</div>
-                    <div class="mode-desc">Step 1 방식으로 확인만 하기</div>
+                    <div class="mode-title" data-i18n="hardship_mode_a_title">모드 A · 인내의 고난</div>
+                    <div class="mode-desc" data-i18n="hardship_mode_a_desc">Step 1 방식으로 확인만 하기</div>
                 </div>
             </button>
 
             <button class="mode-btn hardship-mode-btn hardship-mode-b" onclick="startHardshipFromModal('address')">
                 <div class="mode-icon">🎯</div>
                 <div class="mode-info">
-                    <div class="mode-title">모드 B · 주소의 고난</div>
-                    <div class="mode-desc">내용을 보고 장·절 맞히기</div>
+                    <div class="mode-title" data-i18n="hardship_mode_b_title">모드 B · 주소의 고난</div>
+                    <div class="mode-desc" data-i18n="hardship_mode_b_desc">내용을 보고 장·절 맞히기</div>
                 </div>
             </button>
 
             <button class="mode-btn hardship-mode-btn hardship-mode-c" onclick="startHardshipFromModal('memory')">
                 <div class="mode-icon">⌨️</div>
                 <div class="mode-info">
-                    <div class="mode-title">모드 C · 망각의 고난</div>
-                    <div class="mode-desc">장·절을 보고 전체 말씀을 입력하기</div>
+                    <div class="mode-title" data-i18n="hardship_mode_c_title">모드 C · 망각의 고난</div>
+                    <div class="mode-desc" data-i18n="hardship_mode_c_desc">장·절을 보고 전체 말씀을 입력하기</div>
                 </div>
             </button>
         </div>
@@ -1244,37 +1267,37 @@
                     style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
             </div>
             <div style="text-align: center; margin-bottom: 18px;">
-                <h2 style="margin:0; color:#2c3e50;">고난 길 설정</h2>
-                <p id="hardship-config-mode-label" style="color:#7f8c8d; font-size:0.95rem; margin-top:8px; line-height:1.5;">모드를 선택하세요.</p>
+                <h2 style="margin:0; color:#2c3e50;" data-i18n="hardship_config_title">고난 길 설정</h2>
+                <p id="hardship-config-mode-label" style="color:#7f8c8d; font-size:0.95rem; margin-top:8px; line-height:1.5;" data-i18n="hardship_config_placeholder">모드를 선택하세요.</p>
             </div>
 
             <div class="hardship-config-section">
-                <div class="hardship-config-title">출제 범위</div>
+                <div class="hardship-config-title" data-i18n="hardship_config_range_label">출제 범위</div>
                 <label class="hardship-config-radio">
                     <input type="radio" name="hardship-range-type" value="all" checked onchange="updateHardshipConfigRangeUI()">
-                    <span>전장 (404절)</span>
+                    <span data-i18n="hardship_config_all">전장 (404절)</span>
                 </label>
                 <label class="hardship-config-radio">
                     <input type="radio" name="hardship-range-type" value="range" onchange="updateHardshipConfigRangeUI()">
-                    <span>범위 선택</span>
+                    <span data-i18n="hardship_config_range">범위 선택</span>
                 </label>
             </div>
 
             <div class="hardship-config-section hardship-config-range-row" id="hardship-config-range-row">
                 <div class="hardship-config-select-wrap">
-                    <div class="hardship-config-title">시작 장</div>
+                    <div class="hardship-config-title" data-i18n="hardship_config_start_ch">시작 장</div>
                     <select id="hardship-start-chapter" onchange="syncHardshipConfigChapterRange()"></select>
                 </div>
                 <div class="hardship-config-range-separator">~</div>
                 <div class="hardship-config-select-wrap">
-                    <div class="hardship-config-title">끝 장</div>
+                    <div class="hardship-config-title" data-i18n="hardship_config_end_ch">끝 장</div>
                     <select id="hardship-end-chapter" onchange="syncHardshipConfigChapterRange()"></select>
                 </div>
             </div>
 
-            <div id="hardship-config-summary" class="hardship-config-summary">전장 404절에서 무작위 출제됩니다.</div>
+            <div id="hardship-config-summary" class="hardship-config-summary" data-i18n="hardship_config_summary_all">전장 404절에서 무작위 출제됩니다.</div>
 
-            <button class="hardship-config-start-btn" onclick="startHardshipFromConfig()">고난 길 시작</button>
+            <button class="hardship-config-start-btn" onclick="startHardshipFromConfig()" data-i18n="hardship_config_start_btn">고난 길 시작</button>
         </div>
     </div>
 
@@ -1285,23 +1308,23 @@
                     style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
             </div>
             <div style="text-align: center; margin-bottom: 18px;">
-                <h2 style="margin:0; color:#2c3e50;">출제 순서</h2>
-                <p style="color:#7f8c8d; font-size:0.95rem; margin-top:8px;">모드 C · 망각의 고난</p>
+                <h2 style="margin:0; color:#2c3e50;" data-i18n="hardship_order_title">출제 순서</h2>
+                <p style="color:#7f8c8d; font-size:0.95rem; margin-top:8px;" data-i18n="hardship_order_subtitle">모드 C · 망각의 고난</p>
             </div>
             <button class="mode-btn hardship-mode-btn hardship-mode-c"
                     onclick="selectHardshipOrder('random')">
                 <div class="mode-icon">🔀</div>
                 <div class="mode-info">
-                    <div class="mode-title">무작위 순서</div>
-                    <div class="mode-desc">구절을 무작위로 섞어 출제합니다</div>
+                    <div class="mode-title" data-i18n="hardship_order_random_title">무작위 순서</div>
+                    <div class="mode-desc" data-i18n="hardship_order_random_desc">구절을 무작위로 섞어 출제합니다</div>
                 </div>
             </button>
             <button class="mode-btn hardship-mode-btn hardship-mode-a"
                     onclick="selectHardshipOrder('sequential')">
                 <div class="mode-icon">📖</div>
                 <div class="mode-info">
-                    <div class="mode-title">순서대로</div>
-                    <div class="mode-desc">1장 1절부터 차례로 출제합니다</div>
+                    <div class="mode-title" data-i18n="hardship_order_seq_title">순서대로</div>
+                    <div class="mode-desc" data-i18n="hardship_order_seq_desc">1장 1절부터 차례로 출제합니다</div>
                 </div>
             </button>
         </div>
@@ -1740,27 +1763,27 @@
         
         <button onclick="closeTrainingModal()" style="position:absolute; top:10px; right:15px; background:none; border:none; color:#bdc3c7; font-size:1.8rem; cursor:pointer;">&times;</button>
         
-        <h3 style="color:#3498db; margin-top:0; margin-bottom:5px; font-size:1.5rem;">⚔️ 집중 훈련소</h3>
-        <p style="font-size:0.8rem; color:#e74c3c; margin-bottom:20px; font-weight:bold;">※ 훈련 모드에서는 리그 승점과 보석이 지급되지 않습니다.</p>
+        <h3 style="color:#3498db; margin-top:0; margin-bottom:5px; font-size:1.5rem;" data-i18n="training_title">⚔️ 집중 훈련소</h3>
+        <p style="font-size:0.8rem; color:#e74c3c; margin-bottom:20px; font-weight:bold;" data-i18n="training_notice">※ 훈련 모드에서는 리그 승점과 보석이 지급되지 않습니다.</p>
 
         <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:10px; margin-bottom:15px;">
-            <div style="font-size:0.9rem; color:#bdc3c7; margin-bottom:8px; text-align:left;">📖 훈련 범위 선택</div>
+            <div style="font-size:0.9rem; color:#bdc3c7; margin-bottom:8px; text-align:left;" data-i18n="training_range">📖 훈련 범위 선택</div>
 
             <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-                <span style="color:#bdc3c7; font-size:0.8rem; min-width:22px;">시작</span>
+                <span style="color:#bdc3c7; font-size:0.8rem; min-width:22px;" data-i18n="training_start">시작</span>
                 <select id="train-start-chapter" onchange="updateTrainingStartVerses()" style="flex:1; padding:8px; border-radius:5px; background:#34495e; color:#fff; border:1px solid #7f8c8d; font-size:0.95rem;"></select>
                 <select id="train-start-verse" style="flex:1; padding:8px; border-radius:5px; background:#34495e; color:#fff; border:1px solid #7f8c8d; font-size:0.95rem;"></select>
             </div>
             <div style="text-align:center; color:#bdc3c7; margin-bottom:6px; font-size:0.9rem;">~</div>
             <div style="display:flex; align-items:center; gap:6px;">
-                <span style="color:#bdc3c7; font-size:0.8rem; min-width:22px;">끝</span>
+                <span style="color:#bdc3c7; font-size:0.8rem; min-width:22px;" data-i18n="training_end">끝</span>
                 <select id="train-end-chapter" onchange="updateTrainingEndVerses()" style="flex:1; padding:8px; border-radius:5px; background:#34495e; color:#fff; border:1px solid #7f8c8d; font-size:0.95rem;"></select>
                 <select id="train-end-verse" style="flex:1; padding:8px; border-radius:5px; background:#34495e; color:#fff; border:1px solid #7f8c8d; font-size:0.95rem;"></select>
             </div>
         </div>
 
         <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:10px; margin-bottom:20px;">
-            <div style="font-size:0.9rem; color:#bdc3c7; margin-bottom:10px; text-align:left;">🏃 훈련 스텝 선택</div>
+            <div style="font-size:0.9rem; color:#bdc3c7; margin-bottom:10px; text-align:left;" data-i18n="training_step">🏃 훈련 스텝 선택</div>
             <div id="train-step-buttons" style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;">
                 <button class="train-step-btn active" data-step="1" style="flex:1; min-width:30%; padding:8px; background:#3498db; color:#fff; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">Step 1</button>
                 <button class="train-step-btn" data-step="2" style="flex:1; min-width:30%; padding:8px; background:#7f8c8d; color:#fff; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">Step 2</button>
@@ -1771,18 +1794,18 @@
         </div>
 
         <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:10px; margin-bottom:20px;">
-            <div style="font-size:0.9rem; color:#bdc3c7; margin-bottom:10px; text-align:left;">🔁 반복 사이클</div>
+            <div style="font-size:0.9rem; color:#bdc3c7; margin-bottom:10px; text-align:left;" data-i18n="training_cycle">🔁 반복 사이클</div>
             <input id="train-repeat-count" type="number" min="1" step="1" value="1" inputmode="numeric" style="width:100%; padding:8px; border-radius:5px; background:#34495e; color:#fff; border:1px solid #7f8c8d; font-size:1rem;">
-            <div style="margin-top:8px; font-size:0.8rem; color:#95a5a6; text-align:left;">선택한 범위를 한 사이클로 보고 같은 스텝을 반복합니다.</div>
+            <div style="margin-top:8px; font-size:0.8rem; color:#95a5a6; text-align:left;" data-i18n="training_cycle_desc">선택한 범위를 한 사이클로 보고 같은 스텝을 반복합니다.</div>
         </div>
 
         <label style="display:flex; align-items:center; gap:8px; margin-bottom:20px; font-size:0.95rem; color:#ecf0f1; text-align:left; cursor:pointer;">
             <input type="checkbox" id="train-random-checkbox" style="width:18px; height:18px; accent-color:#3498db;">
-            무작위 순서로 훈련하기
+            <span data-i18n="training_random">무작위 순서로 훈련하기</span>
         </label>
 
         <button onclick="executeTraining()" style="width:100%; padding:12px; background:#e67e22; color:white; font-size:1.2rem; font-weight:bold; border:none; border-radius:8px; cursor:pointer; box-shadow:0 4px 0 #d35400;">
-            훈련 시작!
+            <span data-i18n="training_go">훈련 시작!</span>
         </button>
     </div>
 </div>

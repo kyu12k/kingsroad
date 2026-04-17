@@ -38,10 +38,43 @@ const LANG = {
         menu_report: '🐞 불편 신고',
         menu_data: '💾 기기 변경',
 
+        // 데이터 관리소
+        data_modal_title: '💾 데이터 관리소',
+        data_export_title: '📤 기록 보관하기 (일일 미션)',
+        data_export_desc: '내 진행 상황을 <b>텍스트 파일(.txt)</b>로 만들어 기기에 다운로드합니다.',
+        data_export_btn: '🎁 파일로 저장',
+        data_import_title: '📥 기록 가져오기',
+        data_import_desc: '보관해둔 텍스트 파일을 찾아 불러오거나, 안의 내용을 복사해서 붙여넣으세요.',
+        data_import_file_btn: '📁 파일 찾기',
+        data_import_paste_btn: '📝 붙여넣기',
+        data_reset_title: '⚠️ 모든 데이터 초기화',
+        data_reset_desc: '현재 기기의 모든 진행 상황을 완전히 삭제하고 처음부터 다시 시작합니다.',
+        data_reset_btn: '🚨 완전 초기화 실행',
+        btn_close: '닫기',
+
+        // 게임 가이드
+        guide_modal_title: '📖 킹스로드 가이드',
+        guide_prev_btn: '◀ 이전',
+        guide_p1_title: '🗺️ 전체 여정 흐름',
+        guide_p1_html: `<p>킹스로드는 <b>학습 → 복습 → 보스전</b>을 반복하며 말씀을 암기하는 게임입니다.</p><div style="text-align:center; font-size:14px; line-height:2.2; margin:16px 0;">📖 학습 (구절 선택)<br>↓<br>🛡️ 중간점검 (4~7구절마다 점검)<br>↓<br>🐲 보스전 (챕터 전체 점검)<br>↓<br>🔄 복습 → 기억 강화</div><p style="font-size:13px; color:#888;">구절을 선택해 암송을 시작하고, 4~7구절마다 있는 중간점검과 장의 마지막 보스전으로 점검하세요.</p>`,
+        guide_p2_title: '📝 암송 단계',
+        guide_p2_html: `<p style="font-size:13px; color:#888; margin-bottom:12px;">각 구절은 아래 단계를 순서대로 거쳐 완전히 암기됩니다.</p><ol style="padding-left:20px; line-height:2;"><li><b>읽기</b> — 말씀 전체를 눈으로 읽기</li><li><b>초성 채우기</b> — 초성 힌트로 알맞은 단어 찾기</li><li><b>알맞은 단어 찾기</b> — 세 보기 중 정답 찾기</li><li><b>두루마리 채우기</b> — 시간제한 빈칸 채우기</li><li><b>순서 맞추기</b> — 단어만 보고 순서대로 정렬하기</li><li><b>복습</b> — 2, 5단계만 복습해 기억 강화</li></ol>`,
+        guide_p3_title: '⏰ 복습 보너스 타이밍',
+        guide_p3_html: `<p style="font-size:13px; color:#888;">복습을 반복할수록 보석이 <b>점점 커집니다.</b> 타이밍이 핵심!</p><div style="font-size:14px; line-height:1; margin:16px 0;"><div style="padding:10px 12px; border-radius:8px; background:rgba(149,165,166,0.1); margin-bottom:8px;"><span style="color:#95a5a6;">📖 <b>최초 클리어</b> → 기본 보석 (×1배)</span></div><div style="padding:10px 12px; border-radius:8px; background:rgba(142,68,173,0.1); margin-bottom:8px;"><span style="color:#8e44ad; font-weight:bold;">🔱 10분 후 복습 → 보석 ×1.5배</span></div><div style="padding:10px 12px; border-radius:8px; background:rgba(41,128,185,0.1); margin-bottom:8px;"><span style="color:#2980b9; font-weight:bold;">⚔️ 1시간 후 복습 → 보석 ×2배</span></div><div style="padding:10px 12px; border-radius:8px; background:rgba(230,126,34,0.1); margin-bottom:8px;"><span style="color:#e67e22; font-weight:bold;">🎁 6시간 후 복습 → 보석 ×5배</span><br><span style="font-size:12px; color:#aaa;">적당한 대기 시간 후에 복습해야 획득!</span></div></div><p style="font-size:12px; color:#aaa;">💡 맵 화면의 '복습 타이밍' 버튼에서 대기 시간이 지났을 때 알려드려요!</p>`,
+        guide_p4_title: '💎 보석 & 미션',
+        guide_p4_html: `<p><b>보석 획득 방법:</b></p><ul style="padding-left:18px; line-height:1.9; font-size:14px;"><li>학습 & 복습 완료 (보너스 배수 적용)</li><li>실수 없이 완료하면 +10% 추가</li><li>일일 미션 / 주간 미션 클리어</li><li>업적 달성</li><li>성전 자동 생산</li></ul><p style="margin-top:12px;"><b>미션 초기화:</b></p><div style="font-size:13px; color:#666; line-height:1.9;">📅 일일 미션 — 매일 자정 초기화<br>📆 주간 미션 — 매주 월요일 초기화</div>`,
+        guide_p5_title: '🏰 성전 & 업적',
+        guide_p5_html: `<p><b>성전 건축:</b> 보석을 사용해 성전을 업그레이드하면 방치 생산량이 늘어납니다.</p><p style="margin-top:12px;"><b>업적 7종:</b></p><ul style="padding-left:18px; line-height:1.9; font-size:13px;"><li>🗓️ 누적 출석</li><li>📖 구절 암송 수</li><li>🐲 보스 승리</li><li>💎 누적 보석 획득</li><li>✨ 실수 없는 암송</li><li>🏰 성전 건축 단계</li><li>🌅 새벽 암송 (07시 이전 암송)</li></ul>`,
+
         // 네비
+        nav_home: '홈',
+        nav_ranking: '랭킹',
+        nav_mission: '미션',
         nav_shop: '상점',
         nav_library: '도감',
         nav_records: '기록실',
+        btn_review_timing: '복습 타이밍',
+        btn_notif_settings: '알림 설정',
 
         // 상태/타이머
         status_preparing: '준비 중입니다.',
@@ -63,12 +96,44 @@ const LANG = {
         label_hearts: '체력',
         label_gems: '보석',
         label_kings_road: '왕의 길',
+        label_kings_road_desc: '계시록 순서대로 매일 암기하는 여정',
+        label_free_journey: '자유여행',
+        label_free_journey_desc: '원하는 구절을 자유롭게 학습',
+        mode_select_title: '여정을 선택하세요',
+        kings_step_select_title: '👑 왕의 길',
+        kings_step_select_subtitle: '암기 단계를 선택하세요',
+        kings_step_1_num: '1단계',
+        kings_step_1_desc: '하루 1구절 암기',
+        kings_step_1_goal: '약 126일만에 1~5장, 205일만에 1~10장 완성',
+        kings_step_2_num: '2단계',
+        kings_step_2_desc: '하루 2구절 암기',
+        kings_step_2_goal: '약 159일만에 1~15장 완성',
+        kings_step_3_num: '3단계',
+        kings_step_3_desc: '하루 3구절 암기',
+        kings_step_3_goal: '약 165일만에 전장 완성',
+        btn_back_nav: '← 돌아가기',
+        journey_verse: '"이 예언의 말씀을 읽는 자와 듣는 자들과<br>그 가운데 기록한 것을 지키는 자들이<br>복이 있나니 때가 가까움이라"',
+        journey_verse_ref: '(계 1:3)',
+        btn_amen: '아멘',
+        ranking_verse: '"운동장에서 달음질하는 자들이<br>다 달아날찌라도<br>오직 상 얻는 자는 하나인 줄을<br>너희가 알지 못하느냐<br>너희도 얻도록 이와 같이 달음질하라"',
+        ranking_verse_ref: '(고전 9:24)',
+        kings_header_title: '👑 왕의 길 {step}단계',
+        kings_header_info: 'D+{day}일 · {count}구절 해금',
         label_mid_boss: '중간점검',
         label_boss: '보스전',
         label_hardship: '고난',
         label_part: '파트 {cur}/{total}',
         label_next_part: '다음 파트: {count}단어',
         label_chapter_header: '요한계시록 {num}장',
+        stage_title_normal: '{ch}장 {v}절',
+        stage_title_midboss: '🛡️ 중간 점검 ({ch}장 {start}~{end}절)',
+        stage_title_boss: '🐲 BOSS: {ch}장 완전 정복',
+        stage_desc_midboss: '{hp}개 절을 한 번에 복습 또는 학습합니다.',
+        stage_desc_boss: '붉은 용을 물리치고 {ch}장을 완성하라!',
+        label_this_word: '이 말씀',
+        label_free: '무료',
+        msg_boss_clear: '🐲 [드래곤 토벌] {total}개 스테이지 복습! ({eligible}개 단계 상승)',
+        msg_midboss_clear: '🛡️ [중간 점검] {total}개 스테이지 복습! ({eligible}개 단계 상승)',
 
         // alert 메시지
         alert_ios_install: 'iOS에서는 사파리 브라우저의 공유 버튼(아래 화살표) → "홈 화면에 추가"를 직접 눌러주세요!',
@@ -95,6 +160,15 @@ const LANG = {
         alert_hint_no_gems: '💎 보석이 부족합니다! (필요: {cost})',
         alert_hint_read_aloud: '이 단계에서는 큰 소리로 읽는 것이 정답입니다! 📣',
         alert_hint_load_error: '이 구절의 힌트 데이터를 불러올 수 없습니다.',
+        hint_btn_label: '💡 힌트',
+        hint_confirm: '💎 보석 {cost}개를 소모하여 힌트를 보시겠습니까?',
+        hint_modal_header: '💡 힌트 사용 💎{cost}',
+        hint_modal_header_free: '💡 힌트 사용 <span style="color:#27ae60; font-weight:bold;">무료</span>',
+        hint_step2_current: '현재 단어: ',
+        hint_step3_label: '현재 구절',
+        hint_step4_fake: '가짜 단어를 찾아 빨갛게 표시합니다.',
+        hint_boss_full_verse: '현재 전체 구절',
+        hint_boss_current_part: '현재 풀어야 할 파트',
         alert_locked_first_clear: '해당 구절을 1회 이상 클리어하여 잠금을 해제하세요.',
         alert_daily_bonus: '🕊️ [일용할 양식]\n\n성도의 직분을 가진 자에게\n보석 {count}개가 지급되었습니다! 💎\n(현재 보석: {total})',
         alert_booster_stronger: '🔥 더 강력한 {multi}배 부스터가 적용되었습니다!',
@@ -157,6 +231,413 @@ const LANG = {
         // 게임플레이
         game_hint_instruction: '단어를 터치하여 구절을 완성하세요',
         game_lang_switch_ingame: '스테이지 진행 중에는 언어를 변경할 수 없습니다.',
+
+        // 홈 화면
+        btn_journey: '👑 여정 시작',
+        btn_training: '⚔️ 집중 훈련',
+        btn_hardship: '⛰️ 고난 길',
+        training_title: '⚔️ 집중 훈련소',
+        training_notice: '※ 훈련 모드에서는 리그 승점과 보석이 지급되지 않습니다.',
+        training_range: '📖 훈련 범위 선택',
+        training_start: '시작',
+        training_end: '끝',
+        training_step: '🏃 훈련 스텝 선택',
+        training_cycle: '🔁 반복 사이클',
+        training_cycle_desc: '선택한 범위를 한 사이클로 보고 같은 스텝을 반복합니다.',
+        training_random: '무작위 순서로 훈련하기',
+        training_go: '훈련 시작!',
+        home_change: '(변경)',
+        home_upgrade_avail: '⬆️ 업그레이드 가능',
+        castle_build_locked: '🔒 건축',
+        castle_build: '🔨 건축',
+        castle_past_badge: '🕰️ 과거의 기록',
+
+        // 프로필 모달
+        profile_title: '순례자 등록',
+        profile_subtitle: '이름과 소속 부서/지파를 선택하세요.',
+        profile_name_tip: '💡 이름을 아래에서 직접 골라보세요! 👇',
+        profile_random_name: '🎲 이름 랜덤 변경',
+        profile_dept_label: '소속 부서 선택',
+        profile_tribe_label: '소속 지파 선택',
+        profile_confirm: '✅ 등록 완료',
+        profile_tribe_warn: "⚠️ [경고] 지파를 변경하시면 올해 모은 '12지파 대항전 기여도(연간 승점)'가 0점으로 초기화됩니다!\n\n(개인의 누적 승점은 보존되지만, 새로운 지파에서의 기여도는 0부터 다시 쌓아야 합니다.)\n\n정말로 지파를 변경하시겠습니까?",
+
+        // 결과 화면
+        result_training_title: '⚔️ 집중 훈련 완료!',
+        result_stage_clear: '🎉 STAGE CLEAR!',
+        result_boss_clear: '🐲 BOSS CLEAR!',
+        result_training_streak: '오늘의 훈련을 무사히 마쳤습니다.',
+        result_streak_text: '연속 {days}일째 타오르는 중!',
+        result_exp_training: '📝 상태',
+        result_exp_gems: '💎 획득',
+        result_boss_exp: '🏆 보스 격파',
+        result_boss_defeated: '격파!',
+        result_continue_training: '홈으로 돌아가기 ▶',
+        result_continue: '계속하기 ▶',
+        result_msg_training_done: '완료',
+        result_msg_training_waiting: '⚔️ 집중 훈련 완료! (보상 없음)',
+        result_msg_waiting: '📖 [훈련] 완료! ({gem}💎 최소 보상 - 대기 중)',
+        result_msg_first_clear: '📖 [훈련] 첫 학습 완료! ({gem}💎)',
+        result_msg_review_done: '📖 [훈련] {step}회차 복습 완료! ({gem}💎)',
+        result_msg_perfect_timing: '\n🟢 완벽한 타이밍! 기억이 더 오래갑니다.',
+        result_msg_good_timing: '\n🟡 위험했어요! 기억을 간신히 살려냈습니다.',
+        result_msg_miss: '📖 [훈련] 복습 완료 (보석 없음)\n🔴 불씨가 식었습니다. 다시 불을 피웁니다.',
+        result_msg_no_gem: '📖 [훈련] 완료! (보석 없음 - 대기 중)',
+        quote_first_clear: '말씀을 잊지 않고 싶으시다면<br>10분 후 다시 만나보세요.',
+        quote_perfect: '적절한 복습 간격입니다.<br>{wait} 후에 복습하세요!(기억 레벨이 오릅니다)',
+        quote_good: '거의 다 왔어요!<br>한 번 더 복습해보세요.',
+        quote_good_retry: '잘하셨어요!<br>다음 단계로 진행합니다.',
+        quote_miss: '괜찮아요! 2번만 더 복습하면<br>다음 단계로 진행됩니다.',
+        quote_miss_retry: '잘하셨어요! 한 번만 더 복습하면<br>다음 단계로 진행됩니다.',
+        quote_miss_retry_final: '수고하셨어요!<br>다음 단계로 진행합니다.',
+        notif_ask: '{wait} 뒤 알려드릴까요?',
+        notif_btn: '🔔 알림 예약',
+        boss_quote_perfect: ['이 말씀이 이제 당신 안에 있습니다.', '외운 것이 아니라 새긴 것입니다.', '말씀이 마음판에 기록되었습니다.'],
+        boss_quote_good: ['거의 다 새겨졌습니다. 조금만 더요.', '윤곽이 보입니다. 다음엔 더 선명해질 거예요.'],
+        boss_quote_miss: ['씨앗이 뿌려졌습니다. 물을 주면 자랍니다.', '처음은 누구나 이렇습니다. 시스템을 믿고 따라오세요.'],
+
+        // 미션 UI
+        mission_screen_title: '임무',
+        mission_title: '📜 왕의 임무',
+        mission_subtitle: '성실함이 곧 왕의 자질입니다',
+
+        // 상점
+        shop_title: '⛺ 시온 마트',
+        shop_subtitle: '여정에 필요한 물품을 구비하세요',
+        shop_my_gems: '내 보석',
+        shop_heart_name: '굳건한 마음',
+        shop_heart_desc: '최대 체력 영구 증가',
+        shop_heart_sold_out: '품절 (MAX)',
+        shop_heart_done: '완료',
+        shop_btn_buy: '구매',
+        shop_btn_free: '무료',
+        shop_free_once: '무료 1회',
+        shop_owned: '보유: {count}개',
+        mission_tab_daily: '일일 미션',
+        mission_tab_weekly: '주간 미션',
+        mission_reset_daily: '🕒 매일 자정에 초기화됩니다',
+        mission_reset_weekly: '🕒 매주 월요일 자정에 초기화됩니다',
+        mission_btn_done: '완료',
+        mission_btn_claim: '보상 받기',
+        mission_btn_goto: '바로가기',
+        mission_daily_0_title: '매일 접속 시 보상',
+        mission_daily_0_desc: '오늘 접속하면 자동으로 완료됩니다.',
+        mission_daily_1_title: '새로운 구절 1회 학습',
+        mission_daily_1_desc: '새로운 구절을 1회 학습하세요.',
+        mission_daily_2_title: '중보/보스 처치 1회',
+        mission_daily_2_desc: '중간 점검 또는 보스를 완료하세요.',
+        mission_daily_3_title: '데이터 기록 보관',
+        mission_daily_3_desc: '텍스트 파일로 기록을 안전하게 보관하세요.',
+        mission_weekly_0_title: '주 5일 출석하기',
+        mission_weekly_0_desc: '꾸준함이 실력입니다.',
+        mission_weekly_1_title: '용 사냥',
+        mission_weekly_1_desc: '중간 점검 또는 보스 완료.',
+        mission_weekly_2_title: '구절 15회 학습',
+        mission_weekly_2_desc: '(주간)누적 15회 학습.',
+
+        // 고난 길 모달
+        hardship_title: '고난 길',
+        hardship_subtitle: '모드를 고른 뒤 출제 범위를 설정하고 시작합니다.',
+        hardship_mode_a_title: '모드 A · 인내의 고난',
+        hardship_mode_a_desc: 'Step 1 방식으로 확인만 하기',
+        hardship_mode_b_title: '모드 B · 주소의 고난',
+        hardship_mode_b_desc: '내용을 보고 장·절 맞히기',
+        hardship_mode_c_title: '모드 C · 망각의 고난',
+        hardship_mode_c_desc: '장·절을 보고 전체 말씀을 입력하기',
+        hardship_config_title: '고난 길 설정',
+        hardship_config_placeholder: '모드를 선택하세요.',
+        hardship_config_range_label: '출제 범위',
+        hardship_config_all: '전장 (404절)',
+        hardship_config_range: '범위 선택',
+        hardship_config_start_ch: '시작 장',
+        hardship_config_end_ch: '끝 장',
+        hardship_config_summary_all: '전장 {count}절에서 무작위 출제됩니다.',
+        hardship_config_summary_range: '{start}장~{end}장, 총 {count}절에서 무작위 출제됩니다.',
+        hardship_config_start_btn: '고난 길 시작',
+        hardship_order_title: '출제 순서',
+        hardship_order_subtitle: '모드 C · 망각의 고난',
+        hardship_order_random_title: '무작위 순서',
+        hardship_order_random_desc: '구절을 무작위로 섞어 출제합니다',
+        hardship_order_seq_title: '순서대로',
+        hardship_order_seq_desc: '1장 1절부터 차례로 출제합니다',
+        hardship_chapter_option: '{num}장',
+        hardship_endurance_title: '인내의 고난',
+        hardship_endurance_summary: 'Step 1 방식으로 확인만 진행합니다.',
+        hardship_address_title: '주소의 고난',
+        hardship_address_summary: '내용을 보고 장과 절을 맞힙니다.',
+        hardship_memory_title: '망각의 고난',
+        hardship_memory_summary: '주소만 보고 전체 구절을 인출합니다.',
+        hardship_endurance_indicator: '[{label}] Step 1 방식으로 말씀을 확인하세요',
+        hardship_btn_reveal: '열기',
+        hardship_btn_next_verse: '다음 말씀 ▶',
+        hardship_btn_next: '다음 ⏭️',
+        hardship_address_indicator: '주소를 맞히세요',
+        hardship_address_ask_chapter: '계시록 몇 장인가요?',
+        hardship_address_ask_verse: '계시록 {ch}장 몇 절인가요?',
+        hardship_address_ch_btn: '{ch}장',
+        hardship_address_v_btn: '{v}절',
+        hardship_memory_indicator: '주소만 보고 전체 구절을 인출합니다',
+        hardship_btn_submit: '정답 확인',
+        hardship_btn_reset_input: '입력 초기화',
+        hardship_hint_confirm: '💎 보석 {cost}개를 사용해 글자 하나를 보시겠습니까?',
+        hardship_quit_title: '{title}을 종료하시겠습니까?',
+        hardship_quit_notice_endurance: '현재 진행 순서는 저장되지 않습니다.',
+        hardship_quit_notice_scored: '지금까지 획득한 승점은 저장됩니다. 현재 진행 순서는 저장되지 않습니다.',
+        hardship_back_quit_endurance: '지금 나가면 진행 상황이 저장되지 않을 수 있습니다.',
+        hardship_back_quit_scored: '지금까지 얻은 승점은 저장되나 진행 상황은 저장되지 않습니다.',
+        hardship_kings_btn: '🔥 왕의 고난',
+        hardship_endurance_count: '누적 확인 {n}절째입니다.',
+        hardship_feedback_correct: '정답입니다. {label} · +{pts}점',
+        hardship_feedback_wrong_address: '오답입니다. 정답은 {label}입니다.',
+        hardship_feedback_wrong_memory: '오답입니다. 정답 말씀: {text}',
+        hardship_step1_indicator: 'Step 1. 한 단어씩 읽으며 \'읽기\'를 눌러 외운 말씀을 확인하세요.<br>확실히 외웠다는 생각이 들 때까지 반복하세요.',
+        step1_tip_text: '하나씩 말하며 \'읽기\' 버튼을 눌러보세요',
+
+        // Step 4 스크롤 게임
+        step4_indicator: '🔥불타기 전에 빈칸을 채우세요!',
+        step4_speed_slow: '🐢 느리게',
+        step4_speed_normal: '🚶 보통',
+        step4_speed_fast: '🐇 빠르게',
+        step4_fill_hint: '아래 카드를 눌러 빈칸을 채우세요',
+        step4_skip: '⏩ 빨리 넘기기',
+
+        // Step 5 단어 배열
+        step5_indicator: 'Step 5. 단어를 터치하여 문장을 완성하세요',
+        step5_placeholder: '단어를 터치하여 문장을 만드세요',
+        step5_tip: '💡 <b>팁:</b> 5초간 고민하면 힌트가 나타납니다!',
+        step5_insert_on: '끼워<br>ON',
+        step5_insert_btn: '끼워<br>넣기',
+
+        // 클리어 결과 alert
+        clear_success: '🎉 클리어 성공!',
+        clear_first_study: '📖 [훈련] 첫 학습 완료! ({gem}💎)',
+        clear_review_nth: '📖 [훈련] {n}회차 복습 완료! ({gem}💎)',
+        clear_review_wait: '📖 [훈련] 완료! (10💎 최소 보상 - {time} 후 복습 시 추가 보상)',
+        clear_wait_hours: '{h}시간 {m}분',
+        clear_wait_hours_only: '{h}시간',
+        clear_wait_mins: '{m}분',
+        clear_buff_gem: '💎 깨달음 보석 보너스(+{n}%)',
+        clear_buff_score: '✨ 깨달음 승점 보너스(+{n}%)',
+        clear_buff_wrong: '👼 깨달음 오답 보정({n}회)',
+        clear_base_gem_verse: '💎 초회 기본: {gem}개 ({cnt}절 × 10)',
+        clear_base_gem: '💎 초회 기본: {gem}개',
+        clear_accuracy: '🎯 정확도: {pct}% (오답: {wrong}) → {gem}개',
+        clear_castle_bonus: '🏰 성전 보너스: +{gem}개',
+        clear_perfect_bonus: '⭐ 퍼펙트 보너스: +{gem}개',
+        clear_score: '✨ 승점: +{score}',
+        clear_total_gem: '💎 최종 획득: {gem}개',
+        clear_repeat_accuracy: '🎯 정확도: {pct}% (오답: {wrong})',
+        clear_repeat_perfect: '(💎 퍼펙트 +{gem})',
+        clear_repeat_gem: '💎 보석: +{gem} (성전 +{castle})',
+        clear_score_blocked_gem: '💎 보석은 정상 지급됩니다.',
+
+        // 토스트 메시지
+        toast_progress_saved: '💾 진행 상황 저장됨 (Step {n})',
+        toast_notif_disabled: '알림이 해제되었습니다.',
+        toast_notif_permission: '알림 권한이 필요합니다. 브라우저 설정에서 허용해주세요.',
+        toast_notif_set: '알림이 설정되었습니다. ({times})',
+        toast_server_save_fail: '⚠️ 서버 저장에 실패했습니다. 네트워크를 확인 후 다시 시도해주세요.',
+        toast_notif_unsupported: '이 브라우저는 알림을 지원하지 않습니다.',
+        toast_remind_later: '{label} 뒤 알림을 드릴게요!',
+
+        // 버튼 추가
+        btn_save: '저장',
+        notif_scheduling: '알림 예약 중',
+
+        // 시간 단위
+        label_minutes_unit: '{n}분',
+        label_hours_unit: '{n}시간',
+
+        // 복습 알림 오버레이
+        forgotten_empty: '구절을 잊을만 할 때 알려드립니다!',
+        forgotten_review_step: '- {step}회차 복습 시점',
+
+        // 랭킹 / 명예의 전당
+        ranking_loading_tribe: '📡 {name} 랭킹 불러오는 중...',
+        ranking_loading_zion: '📡 시온성 랭킹 불러오는 중...',
+        ranking_loading_weekly_hall: '📡 주간 명예의 전당 불러오는 중...',
+        ranking_loading_monthly_hall: '📡 월간 명예의 전당 불러오는 중...',
+        ranking_loading: '📡 데이터 불러오는 중...',
+        ranking_loading_total_hall: '📡 누적 명예의 전당 불러오는 중...',
+        ranking_empty_season: '지난 시즌 기록이 없습니다.<br>(역사가 이제 막 시작되었습니다)',
+        ranking_empty_weekly: '아직 기록이 없습니다.<br>첫 번째 주인공이 되어보세요!',
+        ranking_empty_total: '아직 누적 랭킹 데이터가 없습니다.<br>잠시 후 다음 스냅샷을 기다려주세요!',
+        ranking_load_fail: '데이터를 불러오지 못했습니다.',
+        ranking_empty_year_snapshot: '이번 연도 스냅샷 데이터가 없습니다.',
+        ranking_empty_year_tribe: '아직 승점을 획득한 지파가 없습니다.',
+        ranking_empty_battle: '아직 대항전 데이터가 없습니다.',
+        ranking_all_btn: '전체 순위 보기 🔍',
+        ranking_no_name: '이름없음',
+        ranking_unknown_tribe: '알 수 없음',
+        ranking_weekly_hall_title: '지난 주 명예의 전당',
+        ranking_monthly_hall_title: '지난 달 명예의 전당',
+        label_my_tribe: '내 지파',
+        label_my_tribe_ranking: '🧭 내 지파 랭킹',
+        label_weekly_rank: '주간 명예',
+        label_monthly_rank: '월간 명예',
+        label_total_rank: '누적 명예',
+        ranking_footer_out: '{mode} 랭킹 100위 밖입니다.',
+        ranking_footer_score: '점 (내 점수)',
+        ranking_footer_outside: '순위<br>외',
+        ranking_board_title: '🏆 킹스로드 랭킹 보드',
+        ranking_timer_loading: '⏳ 시간 계산 중...',
+        ranking_update_schedule: '🔄 06시, 정오(12:00) · 18시, 자정(00:00)에 업데이트됩니다',
+        ranking_find_my_rank: '📍 내 순위 찾기',
+        ranking_my_score_panel: '📊 나의 승점 패널',
+        ranking_total_score: '👑 누적 승점',
+        ranking_weekly_score: '주간 승점 (매주 리셋)',
+        ranking_monthly_score: '월간 승점',
+        ranking_week_label: '주차:',
+        ranking_month_label: '월:',
+        ranking_yearly_battle: '⚔️ 2026 12지파 대항전',
+        ranking_yearly_battle_full: '⚔️ 2026 12지파 대항전 전체 순위',
+        ranking_castle_lv: '🏰 성전 Lv.{lv}',
+        ranking_pts: '점',
+        label_zion: '시온성',
+        label_zion_ranking: '시온성 랭킹',
+        ranking_top_percent: '상위<br>{pct}%',
+        reward_no_reward_msg: '지파 또는 시온성 랭킹의 참여 인원이<br>100명 미만이어서 이번 주 보상이 없습니다.',
+        reward_confirm_btn: '확인',
+        reward_last_week_title: '지난 주 랭킹 결과',
+        reward_score_label: '승점',
+        reward_claim_btn: '💎 {count} 보석 수령하기',
+        ranking_medal_gold: '🥇 금메달',
+        ranking_medal_silver: '🥈 은메달',
+        ranking_medal_bronze: '🥉 동메달',
+        ranking_rank_n: '{n}위',
+        ranking_yearly_desc: '(각 지파 상위 12,000명 기여도 합산)',
+        ranking_snapshot_waiting: '📡 스냅샷을 기다리는 중입니다...',
+        ranking_glory_coming: '다가올 영광',
+        ranking_glory_desc: '내년 연말정산 이후,<br>이곳에 위대한 역사가 보존됩니다.',
+        ranking_reward_notice: '🎁 지파 순위 보상은 해당 주에 <strong style="color:#bdc3c7;">지파원 100명 이상</strong>이 참여해야 지급됩니다.<br>시온성 랭킹 보상은 전체 100명 이상 참여 시 지급됩니다.',
+        ranking_tab_weekly: '주간 명예',
+        ranking_tab_monthly: '월간 명예',
+        ranking_tab_total: '누적 명예의 전당 (All-Time)',
+        ranking_tab_weekly_full: '🏛️ 주간 명예의 전당',
+        ranking_tab_monthly_full: '📜 월간 명예의 전당',
+        ranking_tab_total_full: '💎 누적 명예의 전당 (All-Time)',
+        ranking_modal_default_title: '랭킹',
+        btn_go_back: '돌아가기',
+        btn_chosung: '초성 보기 💡',
+        btn_chosung_off: '초성 끄기 👁️',
+        btn_read: '읽기',
+        btn_retry_perfect: '다시하기: 눈 감고도 외울 때까지!',
+        btn_next_stage: '다음 단계로 ▶',
+        btn_remove_wrong: '오답 빼기',
+        btn_reset: '🔄 리셋',
+        btn_castle_build_cost: '🔨 건설하기 (💎 {cost})',
+        btn_castle_build_locked_cost: '🔒 건설 불가 (필요: 💎 {cost})',
+        label_cycle_display: '사이클 {cur}/{total}',
+        label_verse_range: '{start}절 ~ {end}절',
+        label_boss_appear: '🐉 보스 출현',
+        btn_attack: '⚔️ 공격하기',
+        tower_instruction: '세 단어 중 순서에 맞는 단어를 고르세요!',
+        tower_complete: '🎉 완성!',
+        tower_wrong: '앗! 다른 단어입니다.',
+        tower_pick: '알맞은 단어를 고르세요!',
+        label_kings_step_btn: '👑 왕의 길 {step}단계',
+        label_unlock_timer: '해금까지 {time}',
+        toast_server_save_fail_short: '⚠️ 서버 저장 실패: {msg}',
+        notif_scheduling_dots: '알림 예약 중...',
+        label_score_zero: '승점 0',
+        label_progress_verses: '{cur}/{total}절',
+        label_score_display: '승점 {score}',
+        btn_done_check: '✓ 완료',
+        label_revelation_ref: '계시록 {ch}장 {v}절',
+        review_status_retry: '⚡ 재시도 하여 다음 단계로!',
+        review_status_retry_remain: '🔄 재도전 {n}회 남음',
+        review_status_calculating: '계산중',
+        review_status_first: '{gem}💎 첫 학습!',
+        btn_step1_next: '다 외웠다! 성령 충만! 다음 단계로 ▶',
+        review_dot_start: '시작',
+        review_dot_10m: '10분 후',
+        review_dot_1h: '1시간 후',
+        review_dot_6h: '6시간 후',
+        review_dot_1d: '1일 후',
+        review_dot_3d: '3일 후',
+        review_dot_days: '{n}일 후',
+        review_dot_hours: '{n}시간 후',
+        label_preparing: '준비 중...',
+
+        // 업적
+        achievement_conquered: '👑 정복',
+        achievement_claim: '받기',
+        achievement_in_progress: '진행중',
+
+        // 도감
+        library_preparing: '🚧 데이터 준비 중',
+        library_title: '📖 도감',
+        library_help_what_title: '🎯 도감이란?',
+        library_help_what_desc: '각 구절을 여러 번 훈련하면서 <strong>\'도감 점수\'</strong>를 모아갑니다. 점수가 높아질수록 더 강한 보너스를 얻습니다.',
+        library_help_score_title: '📊 점수 획득 방식',
+        library_help_score_items: '• 구절 1회 클리어: 10점<br>• 구절 5회 이상: 20점<br>• 구절 10회 이상: 30점<br>• 구절 20회 이상: 50점',
+        library_help_rank_title: '⭐ 깨달음의 경지 보너스',
+        library_help_rank_items: '• 1000점: 보석 5% 추가 획득<br>• 2500점: 오답 1회 무시<br>• 6000점: 보석 10%, 승점 5% 추가<br>• 14000점: 보석 15%, 오답 2회<br>• 20000점: 보석 15% + 오답 3회 + 승점 15%',
+        library_current_score: '현재 도감 점수',
+        library_rank_label: '깨달음의 경지',
+        library_no_buff: '아직 효과 없음',
+        library_next_rank: '다음 <b>[{title}]</b>까지 {remain}점 남음',
+        library_max_score: '🎉 명예로운 만점! 온전한 결실을 맺으셨습니다!',
+        library_mastery: '숙련도: {count}',
+        library_buff_gem: '💎 보석 +{n}%',
+        library_buff_wrong: '🐛 오답 {n}회',
+        library_buff_score: '⭐ 승점 +{n}%',
+
+        // 업적 화면
+        achievement_screen_title: '🎖️ 나의 기록실',
+        achievement_screen_subtitle: '당신의 여정이 이곳에 기록됩니다.',
+        achievement_progress_current: '현재: {val}',
+        achievement_progress_target: '목표: {val}',
+        achievement_complete: '(완료)',
+
+        // 기록실 상세 통계
+        record_badge_score: '🧭 누적 승점 {val} pts',
+        record_badge_gems: '💎 누적 보석 {val}개',
+        record_badge_playtime: '⏱️ 누적 플레이타임 {val}',
+        record_detail_title: '📊 나의 상세 기록 보기',
+        record_tile_playtime: '플레이타임(누적)',
+        record_tile_avg7d: '최근 7일 평균',
+        record_tile_normal: '일반 스테이지 클리어',
+        record_tile_bossmid: '중간/보스 클리어',
+        record_tile_gems: '누적 획득 보석',
+        record_tile_score: '누적 획득 승점',
+        record_tile_memory: '총 기억레벨 합계',
+        record_count: '{n}개',
+        record_memory_lv: '{n} Lv',
+
+        // 감사한 분들 / 공지사항 모달
+        thanks_modal_title: '감사한 분들',
+        notice_modal_title: '📢 공지사항',
+
+        // 복습 모드 선택 모달
+        review_mode_title: '복습 모드 선택',
+        review_mode_subtitle: '완료한 구절입니다.',
+        review_mode_quick_tag: '추천',
+        review_mode_quick_title: '빠른 복습 (Step 1, 5)',
+        review_mode_quick_desc: '읽기 + 문장 배열 (핵심만!)',
+        review_mode_full_title: '전체 학습 (Step 1~5)',
+        review_mode_full_desc: '읽기부터 문장 완성까지 꼼꼼하게',
+
+        // 고난 결과
+        hardship_result_completed: '🏁 {title} 완주',
+        hardship_result_hearts_end: '💀 {title} 종료',
+        hardship_result_ended: '⛰️ {title} 종료',
+        hardship_session_endurance: '이번 세션에서 {count}절을 확인했습니다.',
+        hardship_session_score: '이번 세션 승점 {score}점',
+        hardship_result_check: '📘 확인',
+        hardship_result_score_label: '🏆 승점',
+        hardship_result_back: '맵으로 돌아가기 ▶',
+        hardship_gem_summary: '💎 {gem}젬 획득 · {total}개 스테이지 클리어 ({eligible}개 단계 상승)',
+        hardship_result_verses: '{count}절',
+
+        // 리그 타이머
+        league_timer: '⏰ 이번 리그 종료까지: {time}',
+        league_timer_time: '{d}일 {h}시간 {m}분 {s}초',
+
+        // 알림 시스템
+        notif_title: '킹스로드 복습 알림',
+        notif_daily_body: '오늘의 말씀을 복습할 시간입니다!',
+        notif_review_body: '"{title}" 복습할 시간입니다!',
     },
     en: {
         // 버튼
@@ -191,10 +672,43 @@ const LANG = {
         menu_report: '🐞 Report Issue',
         menu_data: '💾 Change Device',
 
+        // 데이터 관리소
+        data_modal_title: '💾 Data Manager',
+        data_export_title: '📤 Save Records (Daily Mission)',
+        data_export_desc: 'Download your progress as a <b>text file (.txt)</b> to this device.',
+        data_export_btn: '🎁 Save to File',
+        data_import_title: '📥 Import Records',
+        data_import_desc: 'Find your saved text file and load it, or paste its contents directly.',
+        data_import_file_btn: '📁 Find File',
+        data_import_paste_btn: '📝 Paste',
+        data_reset_title: '⚠️ Reset All Data',
+        data_reset_desc: 'Permanently delete all progress on this device and start over from the beginning.',
+        data_reset_btn: '🚨 Reset Everything',
+        btn_close: 'Close',
+
+        // 게임 가이드
+        guide_modal_title: '📖 King\'s Road Guide',
+        guide_prev_btn: '◀ Prev',
+        guide_p1_title: '🗺️ Journey Overview',
+        guide_p1_html: `<p>King's Road is a memorization game where you cycle through <b>Study → Review → Boss</b> to commit Scripture to memory.</p><div style="text-align:center; font-size:14px; line-height:2.2; margin:16px 0;">📖 Study (select a verse)<br>↓<br>🛡️ Checkpoint (every 4–7 verses)<br>↓<br>🐲 Boss Battle (full chapter review)<br>↓<br>🔄 Review → Reinforce Memory</div><p style="font-size:13px; color:#888;">Pick a verse and start reciting. Checkpoints appear every 4–7 verses, and a Boss Battle waits at the end of each chapter.</p>`,
+        guide_p2_title: '📝 Recitation Steps',
+        guide_p2_html: `<p style="font-size:13px; color:#888; margin-bottom:12px;">Each verse is fully memorized by going through these steps in order.</p><ol style="padding-left:20px; line-height:2;"><li><b>Read</b> — Read the full verse with your eyes</li><li><b>Fill Initials</b> — Find the right word using initial-letter hints</li><li><b>Choose the Word</b> — Pick the correct answer from three options</li><li><b>Fill the Scroll</b> — Fill in the blanks under a time limit</li><li><b>Order the Words</b> — Arrange words in the correct order from memory</li><li><b>Review</b> — Revisit steps 2 & 5 to reinforce memory</li></ol>`,
+        guide_p3_title: '⏰ Review Bonus Timing',
+        guide_p3_html: `<p style="font-size:13px; color:#888;">The more you review, the <b>bigger the gem reward.</b> Timing is everything!</p><div style="font-size:14px; line-height:1; margin:16px 0;"><div style="padding:10px 12px; border-radius:8px; background:rgba(149,165,166,0.1); margin-bottom:8px;"><span style="color:#95a5a6;">📖 <b>First Clear</b> → Base gems (×1)</span></div><div style="padding:10px 12px; border-radius:8px; background:rgba(142,68,173,0.1); margin-bottom:8px;"><span style="color:#8e44ad; font-weight:bold;">🔱 Review after 10 min → gems ×1.5</span></div><div style="padding:10px 12px; border-radius:8px; background:rgba(41,128,185,0.1); margin-bottom:8px;"><span style="color:#2980b9; font-weight:bold;">⚔️ Review after 1 hr → gems ×2</span></div><div style="padding:10px 12px; border-radius:8px; background:rgba(230,126,34,0.1); margin-bottom:8px;"><span style="color:#e67e22; font-weight:bold;">🎁 Review after 6 hrs → gems ×5</span><br><span style="font-size:12px; color:#aaa;">Must wait the full cooldown to earn the bonus!</span></div></div><p style="font-size:12px; color:#aaa;">💡 The 'Review Timing' button on the map screen will notify you when a cooldown is up!</p>`,
+        guide_p4_title: '💎 Gems & Missions',
+        guide_p4_html: `<p><b>How to earn gems:</b></p><ul style="padding-left:18px; line-height:1.9; font-size:14px;"><li>Complete studies & reviews (bonus multipliers apply)</li><li>+10% bonus for a perfect run</li><li>Clear daily / weekly missions</li><li>Unlock achievements</li><li>Temple auto-production</li></ul><p style="margin-top:12px;"><b>Mission reset:</b></p><div style="font-size:13px; color:#666; line-height:1.9;">📅 Daily missions — reset at midnight<br>📆 Weekly missions — reset every Monday</div>`,
+        guide_p5_title: '🏰 Temple & Achievements',
+        guide_p5_html: `<p><b>Temple Construction:</b> Upgrade the temple with gems to increase idle gem production.</p><p style="margin-top:12px;"><b>7 Achievement types:</b></p><ul style="padding-left:18px; line-height:1.9; font-size:13px;"><li>🗓️ Total attendance</li><li>📖 Verses recited</li><li>🐲 Boss victories</li><li>💎 Total gems earned</li><li>✨ Perfect recitations</li><li>🏰 Temple build level</li><li>🌅 Early-morning recitation (before 7 AM)</li></ul>`,
+
         // 네비
+        nav_home: 'Home',
+        nav_ranking: 'Ranking',
+        nav_mission: 'Mission',
         nav_shop: 'Shop',
         nav_library: 'Library',
         nav_records: 'Records',
+        btn_review_timing: 'Review Timing',
+        btn_notif_settings: 'Notifications',
 
         // 상태/타이머
         status_preparing: 'Coming Soon.',
@@ -216,12 +730,44 @@ const LANG = {
         label_hearts: 'Hearts',
         label_gems: 'Gems',
         label_kings_road: "King's Road",
+        label_kings_road_desc: 'A daily memorization journey through Revelation',
+        label_free_journey: 'Free Journey',
+        label_free_journey_desc: 'Study any verse you want',
+        mode_select_title: 'Select Your Journey',
+        kings_step_select_title: "👑 King's Road",
+        kings_step_select_subtitle: 'Select your memorization pace',
+        kings_step_1_num: 'Level 1',
+        kings_step_1_desc: '1 verse per day',
+        kings_step_1_goal: 'Ch. 1–5 in ~126 days, Ch. 1–10 in ~205 days',
+        kings_step_2_num: 'Level 2',
+        kings_step_2_desc: '2 verses per day',
+        kings_step_2_goal: 'Ch. 1–15 in ~159 days',
+        kings_step_3_num: 'Level 3',
+        kings_step_3_desc: '3 verses per day',
+        kings_step_3_goal: 'Full completion in ~165 days',
+        btn_back_nav: '← Back',
+        journey_verse: '"Blessed is the one who reads aloud<br>the words of this prophecy, and blessed are those who hear it<br>and take to heart what is written in it,<br>because the time is near."',
+        journey_verse_ref: '(Rev 1:3)',
+        btn_amen: 'Amen',
+        ranking_verse: '"Do you not know that in a race all the runners run,<br>but only one gets the prize?<br>Run in such a way<br>as to get the prize."',
+        ranking_verse_ref: '(1 Cor 9:24)',
+        kings_header_title: "👑 King's Road Level {step}",
+        kings_header_info: 'Day {day} · {count} verses unlocked',
         label_mid_boss: 'Checkpoint',
         label_boss: 'Boss Battle',
         label_hardship: 'Trial',
         label_part: 'Part {cur}/{total}',
         label_next_part: 'Next part: {count} words',
         label_chapter_header: 'Revelation {num}',
+        stage_title_normal: 'Rev {ch}:{v}',
+        stage_title_midboss: '🛡️ Checkpoint (Rev {ch}:{start}–{end})',
+        stage_title_boss: '🐲 BOSS: Conquer Revelation {ch}',
+        stage_desc_midboss: 'Review or study {hp} verses at once.',
+        stage_desc_boss: 'Defeat the red dragon and complete chapter {ch}!',
+        label_this_word: 'this verse',
+        label_free: 'Free',
+        msg_boss_clear: '🐲 [Dragon Defeated] Reviewed {total} stages! ({eligible} step(s) advanced)',
+        msg_midboss_clear: '🛡️ [Checkpoint] Reviewed {total} stages! ({eligible} step(s) advanced)',
 
         // alert 메시지
         alert_ios_install: 'On iOS Safari, tap the Share button (↑) → "Add to Home Screen".',
@@ -248,6 +794,15 @@ const LANG = {
         alert_hint_no_gems: '💎 Not enough gems! (Required: {cost})',
         alert_hint_read_aloud: 'At this stage, reading aloud is the correct answer! 📣',
         alert_hint_load_error: 'Could not load hint data for this verse.',
+        hint_btn_label: '💡 Hint',
+        hint_confirm: 'Use {cost} 💎 gems for a hint?',
+        hint_modal_header: '💡 Hint 💎{cost}',
+        hint_modal_header_free: '💡 Hint <span style="color:#27ae60; font-weight:bold;">Free</span>',
+        hint_step2_current: 'Current word: ',
+        hint_step3_label: 'Current verse',
+        hint_step4_fake: 'Find the fake word — it will be highlighted in red.',
+        hint_boss_full_verse: 'Full verse',
+        hint_boss_current_part: 'Current part to solve',
         alert_locked_first_clear: 'Clear this verse at least once to unlock.',
         alert_daily_bonus: '🕊️ [Daily Bread]\n\nAs a servant of the saints,\nyou received {count} gems! 💎\n(Current gems: {total})',
         alert_booster_stronger: '🔥 A stronger ×{multi} booster has been applied!',
@@ -310,6 +865,413 @@ const LANG = {
         // 게임플레이
         game_hint_instruction: 'Tap words to complete the verse',
         game_lang_switch_ingame: 'Cannot change language during a stage.',
+
+        // 홈 화면
+        btn_journey: '👑 Begin Journey',
+        btn_training: '⚔️ Focused Training',
+        btn_hardship: '⛰️ Hardship Road',
+        training_title: '⚔️ Training Center',
+        training_notice: '※ League points and gems are not awarded in training mode.',
+        training_range: '📖 Select Training Range',
+        training_start: 'Start',
+        training_end: 'End',
+        training_step: '🏃 Select Training Step',
+        training_cycle: '🔁 Repeat Cycles',
+        training_cycle_desc: 'Repeats the same step over the selected range each cycle.',
+        training_random: 'Train in random order',
+        training_go: 'Start Training!',
+        home_change: '(edit)',
+        home_upgrade_avail: '⬆️ Upgrade Ready',
+        castle_build_locked: '🔒 Build',
+        castle_build: '🔨 Build',
+        castle_past_badge: '🕰️ Past Record',
+
+        // 프로필 모달
+        profile_title: 'Pilgrim Registration',
+        profile_subtitle: 'Choose your name, department, and tribe.',
+        profile_name_tip: '💡 Pick your name from the list below! 👇',
+        profile_random_name: '🎲 Random Name',
+        profile_dept_label: 'Select Department',
+        profile_tribe_label: 'Select Tribe',
+        profile_confirm: '✅ Confirm',
+        profile_tribe_warn: "⚠️ [Warning] Changing your tribe will reset this year's 12-Tribe Battle contribution (yearly score) to 0!\n\n(Your personal accumulated score is preserved, but your contribution in the new tribe starts from 0.)\n\nAre you sure you want to change tribes?",
+
+        // 결과 화면
+        result_training_title: '⚔️ Training Complete!',
+        result_stage_clear: '🎉 STAGE CLEAR!',
+        result_boss_clear: '🐲 BOSS CLEAR!',
+        result_training_streak: "Today's training is complete.",
+        result_streak_text: '{days} days on fire!',
+        result_exp_training: '📝 Status',
+        result_exp_gems: '💎 Earned',
+        result_boss_exp: '🏆 Boss Defeated',
+        result_boss_defeated: 'Defeated!',
+        result_continue_training: 'Back to Home ▶',
+        result_continue: 'Continue ▶',
+        result_msg_training_done: 'Done',
+        result_msg_training_waiting: '⚔️ Training Complete! (No reward)',
+        result_msg_waiting: '📖 [Training] Complete! ({gem}💎 min reward — waiting)',
+        result_msg_first_clear: '📖 [Training] First clear! ({gem}💎)',
+        result_msg_review_done: '📖 [Training] Review #{step} complete! ({gem}💎)',
+        result_msg_perfect_timing: '\n🟢 Perfect timing! Your memory will last longer.',
+        result_msg_good_timing: "\n🟡 Close call! You barely held on to the memory.",
+        result_msg_miss: "📖 [Training] Review done (no gems)\n🔴 The flame went out. Let's reignite it.",
+        result_msg_no_gem: '📖 [Training] Complete! (no gems — waiting)',
+        quote_first_clear: 'Want to remember this verse?<br>Come back in 10 minutes.',
+        quote_perfect: 'Great timing!<br>Review again in {wait}. (Memory level goes up!)',
+        quote_good: 'Almost there!<br>Try one more review.',
+        quote_good_retry: 'Well done!<br>Moving to the next stage.',
+        quote_miss: "No worries! Two more reviews<br>and you'll advance.",
+        quote_miss_retry: "Well done! One more review<br>and you'll advance.",
+        quote_miss_retry_final: 'Great effort!<br>Moving to the next stage.',
+        notif_ask: 'Want a reminder in {wait}?',
+        notif_btn: '🔔 Set Reminder',
+        boss_quote_perfect: ['This Word is now within you.', 'Not memorized — engraved.', 'The Word has been inscribed on your heart.'],
+        boss_quote_good: ['Almost engraved. Just a little more.', 'The outline is forming. It will become clearer next time.'],
+        boss_quote_miss: ['A seed has been sown. Water it and it will grow.', 'Everyone starts this way. Trust the system and keep going.'],
+
+        // 미션 UI
+        mission_screen_title: 'Missions',
+        mission_title: '📜 Royal Missions',
+        mission_subtitle: 'Faithfulness is the mark of a king',
+
+        // 상점
+        shop_title: '⛺ Zion Mart',
+        shop_subtitle: 'Stock up for your journey',
+        shop_my_gems: 'My Gems',
+        shop_heart_name: 'Steadfast Heart',
+        shop_heart_desc: 'Permanently increase max hearts',
+        shop_heart_sold_out: 'Sold Out (MAX)',
+        shop_heart_done: 'Done',
+        shop_btn_buy: 'Buy',
+        shop_btn_free: 'Free',
+        shop_free_once: 'Free ×1',
+        shop_owned: 'Owned: {count}',
+        mission_tab_daily: 'Daily',
+        mission_tab_weekly: 'Weekly',
+        mission_reset_daily: '🕒 Resets every day at midnight',
+        mission_reset_weekly: '🕒 Resets every Monday at midnight',
+        mission_btn_done: 'Done',
+        mission_btn_claim: 'Claim',
+        mission_btn_goto: 'Go',
+        mission_daily_0_title: 'Daily Login Reward',
+        mission_daily_0_desc: 'Automatically completed when you log in today.',
+        mission_daily_1_title: 'Learn 1 New Verse',
+        mission_daily_1_desc: 'Study a new verse once.',
+        mission_daily_2_title: 'Defeat Checkpoint/Boss ×1',
+        mission_daily_2_desc: 'Complete a checkpoint or boss.',
+        mission_daily_3_title: 'Back Up Your Data',
+        mission_daily_3_desc: 'Save your records safely as a text file.',
+        mission_weekly_0_title: 'Log In 5 Days',
+        mission_weekly_0_desc: 'Consistency builds skill.',
+        mission_weekly_1_title: 'Dragon Hunt',
+        mission_weekly_1_desc: 'Complete a checkpoint or boss.',
+        mission_weekly_2_title: 'Study 15 Verses',
+        mission_weekly_2_desc: 'Cumulative 15 study sessions this week.',
+
+        // 고난 길 모달
+        hardship_title: 'Hardship Road',
+        hardship_subtitle: 'Select a mode, set the range, and begin.',
+        hardship_mode_a_title: 'Mode A · Trial of Endurance',
+        hardship_mode_a_desc: 'Confirm only — Step 1 style',
+        hardship_mode_b_title: 'Mode B · Trial of Address',
+        hardship_mode_b_desc: 'Read the text and guess the chapter & verse',
+        hardship_mode_c_title: 'Mode C · Trial of Forgetting',
+        hardship_mode_c_desc: 'See the reference and type the full verse',
+        hardship_config_title: 'Hardship Road Settings',
+        hardship_config_placeholder: 'Select a mode.',
+        hardship_config_range_label: 'Range',
+        hardship_config_all: 'Full (404 verses)',
+        hardship_config_range: 'Custom Range',
+        hardship_config_start_ch: 'Start',
+        hardship_config_end_ch: 'End',
+        hardship_config_summary_all: 'Random from all {count} verses.',
+        hardship_config_summary_range: 'Random from Ch.{start}–{end}, {count} verses total.',
+        hardship_config_start_btn: 'Start Hardship Road',
+        hardship_order_title: 'Question Order',
+        hardship_order_subtitle: 'Mode C · Trial of Forgetting',
+        hardship_order_random_title: 'Random Order',
+        hardship_order_random_desc: 'Verses shuffled randomly',
+        hardship_order_seq_title: 'Sequential',
+        hardship_order_seq_desc: 'From Ch.1 v.1 in order',
+        hardship_chapter_option: 'Ch.{num}',
+        hardship_endurance_title: 'Trial of Endurance',
+        hardship_endurance_summary: 'Confirm each verse — Step 1 style.',
+        hardship_address_title: 'Trial of Address',
+        hardship_address_summary: 'Read the text and identify the chapter & verse.',
+        hardship_memory_title: 'Trial of Forgetting',
+        hardship_memory_summary: 'See the reference and recall the full verse.',
+        hardship_endurance_indicator: '[{label}] Confirm the verse — Step 1 style',
+        hardship_btn_reveal: 'Reveal',
+        hardship_btn_next_verse: 'Next Verse ▶',
+        hardship_btn_next: 'Next ⏭️',
+        hardship_address_indicator: 'Find the reference',
+        hardship_address_ask_chapter: 'Which chapter in Revelation?',
+        hardship_address_ask_verse: 'Revelation {ch} — which verse?',
+        hardship_address_ch_btn: 'Ch.{ch}',
+        hardship_address_v_btn: 'v.{v}',
+        hardship_memory_indicator: 'See the reference and recall the full verse',
+        hardship_btn_submit: 'Check Answer',
+        hardship_btn_reset_input: 'Reset Input',
+        hardship_hint_confirm: '💎 Use {cost} gems to reveal one character?',
+        hardship_quit_title: 'Quit {title}?',
+        hardship_quit_notice_endurance: 'Your current progress order will not be saved.',
+        hardship_quit_notice_scored: 'Your score so far will be saved. Your current progress order will not be saved.',
+        hardship_back_quit_endurance: 'Leaving now may not save your progress.',
+        hardship_back_quit_scored: 'Your score will be saved, but your current progress will not.',
+        hardship_kings_btn: '🔥 King\'s Trial',
+        hardship_endurance_count: 'Confirmed {n} verse(s) so far.',
+        hardship_feedback_correct: 'Correct! {label} · +{pts} pts',
+        hardship_feedback_wrong_address: 'Wrong. The answer is {label}.',
+        hardship_feedback_wrong_memory: 'Wrong. Correct verse: {text}',
+        hardship_step1_indicator: 'Step 1. Read each word aloud and tap \'Read\' to confirm.<br>Repeat until you are confident you have memorized it.',
+        step1_tip_text: 'Say each word aloud and tap the \'Read\' button.',
+
+        // Step 4 스크롤 게임
+        step4_indicator: '🔥Fill in the blanks before they burn!',
+        step4_speed_slow: '🐢 Slow',
+        step4_speed_normal: '🚶 Normal',
+        step4_speed_fast: '🐇 Fast',
+        step4_fill_hint: 'Tap the cards below to fill in the blanks',
+        step4_skip: '⏩ Skip Ahead',
+
+        // Step 5 단어 배열
+        step5_indicator: 'Step 5. Tap words to complete the sentence',
+        step5_placeholder: 'Tap words to build the sentence',
+        step5_tip: '💡 <b>Tip:</b> A hint will appear after 5 seconds!',
+        step5_insert_on: 'Insert<br>ON',
+        step5_insert_btn: 'Insert<br>Mode',
+
+        // 클리어 결과 alert
+        clear_success: '🎉 Clear!',
+        clear_first_study: '📖 [Training] 1st study complete! ({gem}💎)',
+        clear_review_nth: '📖 [Training] Review #{n} complete! ({gem}💎)',
+        clear_review_wait: '📖 [Training] Done! (10💎 min. reward — review in {time} for more)',
+        clear_wait_hours: '{h}h {m}m',
+        clear_wait_hours_only: '{h}h',
+        clear_wait_mins: '{m}m',
+        clear_buff_gem: '💎 Enlightenment gem bonus (+{n}%)',
+        clear_buff_score: '✨ Enlightenment score bonus (+{n}%)',
+        clear_buff_wrong: '👼 Enlightenment wrong correction ({n})',
+        clear_base_gem_verse: '💎 Base: {gem} ({cnt} verses × 10)',
+        clear_base_gem: '💎 Base: {gem}',
+        clear_accuracy: '🎯 Accuracy: {pct}% (wrong: {wrong}) → {gem}',
+        clear_castle_bonus: '🏰 Temple bonus: +{gem}',
+        clear_perfect_bonus: '⭐ Perfect bonus: +{gem}',
+        clear_score: '✨ Score: +{score}',
+        clear_total_gem: '💎 Total earned: {gem}',
+        clear_repeat_accuracy: '🎯 Accuracy: {pct}% (wrong: {wrong})',
+        clear_repeat_perfect: '(💎 Perfect +{gem})',
+        clear_repeat_gem: '💎 Gems: +{gem} (temple +{castle})',
+        clear_score_blocked_gem: '💎 Gems are awarded normally.',
+
+        // 토스트 메시지
+        toast_progress_saved: '💾 Progress saved (Step {n})',
+        toast_notif_disabled: 'Notifications disabled.',
+        toast_notif_permission: 'Notification permission required. Enable it in browser settings.',
+        toast_notif_set: 'Notifications set. ({times})',
+        toast_server_save_fail: '⚠️ Server save failed. Check your network and try again.',
+        toast_notif_unsupported: 'This browser does not support notifications.',
+        toast_remind_later: "We'll remind you in {label}!",
+
+        // 버튼 추가
+        btn_save: 'Save',
+        notif_scheduling: 'Scheduling...',
+
+        // 시간 단위
+        label_minutes_unit: '{n} min',
+        label_hours_unit: '{n} hr',
+
+        // 복습 알림 오버레이
+        forgotten_empty: "We'll let you know when it's time to review!",
+        forgotten_review_step: '- Review #{step}',
+
+        // 랭킹 / 명예의 전당
+        ranking_loading_tribe: '📡 Loading {name} ranking...',
+        ranking_loading_zion: '📡 Loading Zion ranking...',
+        ranking_loading_weekly_hall: '📡 Loading Weekly Hall of Fame...',
+        ranking_loading_monthly_hall: '📡 Loading Monthly Hall of Fame...',
+        ranking_loading: '📡 Loading data...',
+        ranking_loading_total_hall: '📡 Loading All-Time Hall of Fame...',
+        ranking_empty_season: 'No records from last season.<br>(History has just begun)',
+        ranking_empty_weekly: 'No records yet.<br>Be the first to make history!',
+        ranking_empty_total: 'No all-time ranking data yet.<br>Check back after the next snapshot!',
+        ranking_load_fail: 'Failed to load data.',
+        ranking_empty_year_snapshot: 'No snapshot data for this year.',
+        ranking_empty_year_tribe: 'No tribes have earned points yet.',
+        ranking_empty_battle: 'No battle data yet.',
+        ranking_all_btn: 'View Full Rankings 🔍',
+        ranking_no_name: 'Unnamed',
+        ranking_unknown_tribe: 'Unknown',
+        ranking_weekly_hall_title: "Last Week's Hall of Fame",
+        ranking_monthly_hall_title: "Last Month's Hall of Fame",
+        label_my_tribe: 'My Tribe',
+        label_my_tribe_ranking: '🧭 My Tribe Ranking',
+        label_weekly_rank: 'Weekly',
+        label_monthly_rank: 'Monthly',
+        label_total_rank: 'All-Time',
+        ranking_footer_out: 'Not in Top 100 for {mode} ranking.',
+        ranking_footer_score: 'pts (my score)',
+        ranking_footer_outside: 'Outside<br>Ranking',
+        ranking_board_title: "🏆 King's Road Ranking Board",
+        ranking_timer_loading: '⏳ Calculating...',
+        ranking_update_schedule: '🔄 Updates at 06:00, 12:00, 18:00, 00:00',
+        ranking_find_my_rank: '📍 Find My Rank',
+        ranking_my_score_panel: '📊 My Score Panel',
+        ranking_total_score: '👑 Total Score',
+        ranking_weekly_score: 'Weekly Score (resets weekly)',
+        ranking_monthly_score: 'Monthly Score',
+        ranking_week_label: 'Week:',
+        ranking_month_label: 'Month:',
+        ranking_yearly_battle: '⚔️ 2026 12-Tribe Battle',
+        ranking_yearly_battle_full: '⚔️ 2026 12-Tribe Battle — Full Rankings',
+        ranking_castle_lv: '🏰 Temple Lv.{lv}',
+        ranking_pts: 'pts',
+        label_zion: 'Zion',
+        label_zion_ranking: 'Zion Ranking',
+        ranking_top_percent: 'Top<br>{pct}%',
+        reward_no_reward_msg: 'Fewer than 100 participants in the tribe or Zion ranking this week — no rewards issued.',
+        reward_confirm_btn: 'OK',
+        reward_last_week_title: "Last Week's Results",
+        reward_score_label: 'Score',
+        reward_claim_btn: '💎 Claim {count} Gems',
+        ranking_medal_gold: '🥇 Gold',
+        ranking_medal_silver: '🥈 Silver',
+        ranking_medal_bronze: '🥉 Bronze',
+        ranking_rank_n: '#{n}',
+        ranking_yearly_desc: '(Top 12,000 per tribe combined)',
+        ranking_snapshot_waiting: '📡 Waiting for snapshot...',
+        ranking_glory_coming: 'Glory to Come',
+        ranking_glory_desc: 'After next year\'s year-end,<br>great history will be preserved here.',
+        ranking_reward_notice: '🎁 Tribe ranking rewards require <strong style="color:#bdc3c7;">100+ members</strong> from your tribe to participate that week.<br>Zion ranking rewards require 100+ total participants.',
+        ranking_tab_weekly: 'Weekly Hall',
+        ranking_tab_monthly: 'Monthly Hall',
+        ranking_tab_total: 'All-Time Hall of Fame',
+        ranking_tab_weekly_full: '🏛️ Weekly Hall of Fame',
+        ranking_tab_monthly_full: '📜 Monthly Hall of Fame',
+        ranking_tab_total_full: '💎 All-Time Hall of Fame',
+        ranking_modal_default_title: 'Rankings',
+        btn_go_back: 'Back',
+        btn_chosung: 'Show Initials 💡',
+        btn_chosung_off: 'Hide Initials 👁️',
+        btn_read: 'Read',
+        btn_retry_perfect: 'Retry: Until you know it cold!',
+        btn_next_stage: 'Next Stage ▶',
+        btn_remove_wrong: 'Remove Wrong',
+        btn_reset: '🔄 Reset',
+        btn_castle_build_cost: '🔨 Build (💎 {cost})',
+        btn_castle_build_locked_cost: '🔒 Cannot Build (Need: 💎 {cost})',
+        label_cycle_display: 'Cycle {cur}/{total}',
+        label_verse_range: 'v.{start} – v.{end}',
+        label_boss_appear: '🐉 Boss Appears',
+        btn_attack: '⚔️ Attack!',
+        tower_instruction: 'Choose the word that fits in order!',
+        tower_complete: '🎉 Complete!',
+        tower_wrong: 'Oops! Wrong word.',
+        tower_pick: 'Pick the correct word!',
+        label_kings_step_btn: "👑 King's Road Step {step}",
+        label_unlock_timer: 'Unlocks in {time}',
+        toast_server_save_fail_short: '⚠️ Server save failed: {msg}',
+        notif_scheduling_dots: 'Scheduling...',
+        label_score_zero: 'Score 0',
+        label_progress_verses: '{cur}/{total} verses',
+        label_score_display: 'Score {score}',
+        btn_done_check: '✓ Done',
+        label_revelation_ref: 'Revelation {ch}:{v}',
+        review_status_retry: '⚡ Retry to advance!',
+        review_status_retry_remain: '🔄 {n} retries left',
+        review_status_calculating: '...',
+        review_status_first: '{gem}💎 First time!',
+        btn_step1_next: "I've got it! Spirit-filled! Next Stage ▶",
+        review_dot_start: 'Start',
+        review_dot_10m: '10 min',
+        review_dot_1h: '1 hr',
+        review_dot_6h: '6 hr',
+        review_dot_1d: '1 day',
+        review_dot_3d: '3 days',
+        review_dot_days: '{n} days',
+        review_dot_hours: '{n} hr',
+        label_preparing: 'Loading...',
+
+        // 업적
+        achievement_conquered: '👑 Conquered',
+        achievement_claim: 'Claim',
+        achievement_in_progress: 'In Progress',
+
+        // 도감
+        library_preparing: '🚧 Loading...',
+        library_title: '📖 Collection',
+        library_help_what_title: '🎯 What is the Collection?',
+        library_help_what_desc: 'As you train each verse repeatedly, you earn <strong>Collection Points</strong>. The higher your score, the stronger the bonuses.',
+        library_help_score_title: '📊 How Points Are Earned',
+        library_help_score_items: '• 1st clear: 10 pts<br>• 5+ clears: 20 pts<br>• 10+ clears: 30 pts<br>• 20+ clears: 50 pts',
+        library_help_rank_title: '⭐ Enlightenment Rank Bonuses',
+        library_help_rank_items: '• 1000 pts: +5% gems<br>• 2500 pts: 1 wrong forgiven<br>• 6000 pts: +10% gems, +5% score<br>• 14000 pts: +15% gems, 2 wrong forgiven<br>• 20000 pts: +15% gems, 3 wrong forgiven, +15% score',
+        library_current_score: 'Collection Score',
+        library_rank_label: 'Enlightenment Rank',
+        library_no_buff: 'No effect yet',
+        library_next_rank: '{remain} pts until <b>[{title}]</b>',
+        library_max_score: '🎉 Perfect score! You have borne full fruit!',
+        library_mastery: 'Mastery: {count}',
+        library_buff_gem: '💎 Gems +{n}%',
+        library_buff_wrong: '🐛 {n} wrong forgiven',
+        library_buff_score: '⭐ Score +{n}%',
+
+        // 업적 화면
+        achievement_screen_title: '🎖️ My Records',
+        achievement_screen_subtitle: 'Your journey is recorded here.',
+        achievement_progress_current: 'Current: {val}',
+        achievement_progress_target: 'Target: {val}',
+        achievement_complete: '(Complete)',
+
+        // 기록실 상세 통계
+        record_badge_score: '🧭 Total Score {val} pts',
+        record_badge_gems: '💎 Total Gems {val}',
+        record_badge_playtime: '⏱️ Total Playtime {val}',
+        record_detail_title: '📊 My Detailed Stats',
+        record_tile_playtime: 'Playtime (Total)',
+        record_tile_avg7d: '7-Day Avg',
+        record_tile_normal: 'Normal Stage Clears',
+        record_tile_bossmid: 'Mid/Boss Clears',
+        record_tile_gems: 'Total Gems Earned',
+        record_tile_score: 'Total Score Earned',
+        record_tile_memory: 'Total Memory Level',
+        record_count: '{n}',
+        record_memory_lv: '{n} Lv',
+
+        // 감사한 분들 / 공지사항 모달
+        thanks_modal_title: 'Credits',
+        notice_modal_title: '📢 Notices',
+
+        // 복습 모드 선택 모달
+        review_mode_title: 'Review Mode',
+        review_mode_subtitle: 'You have completed this verse.',
+        review_mode_quick_tag: 'Recommended',
+        review_mode_quick_title: 'Quick Review (Step 1, 5)',
+        review_mode_quick_desc: 'Read + Arrange (key steps only!)',
+        review_mode_full_title: 'Full Study (Step 1~5)',
+        review_mode_full_desc: 'From reading to full completion',
+
+        // 고난 결과
+        hardship_result_completed: '🏁 {title} Completed',
+        hardship_result_hearts_end: '💀 {title} Ended',
+        hardship_result_ended: '⛰️ {title} Ended',
+        hardship_session_endurance: 'You confirmed {count} verses this session.',
+        hardship_session_score: 'Session score: {score} pts',
+        hardship_result_check: '📘 Confirmed',
+        hardship_result_score_label: '🏆 Score',
+        hardship_result_back: 'Back to Map ▶',
+        hardship_gem_summary: '💎 {gem} gems · {total} stages cleared ({eligible} leveled up)',
+        hardship_result_verses: '{count} verses',
+
+        // 리그 타이머
+        league_timer: '⏰ Time until league ends: {time}',
+        league_timer_time: '{d}d {h}h {m}m {s}s',
+
+        // 알림 시스템
+        notif_title: "King's Road Review",
+        notif_daily_body: "Time to review today's verse!",
+        notif_review_body: 'Time to review "{title}"!',
     }
 };
 
@@ -332,18 +1294,81 @@ function applyI18nToStaticHTML() {
         const key = el.getAttribute('data-i18n');
         el.textContent = t(key);
     });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+        const key = el.getAttribute('data-i18n-html');
+        el.innerHTML = t(key);
+    });
     document.documentElement.lang = currentLang;
     const langBtn = document.getElementById('lang-toggle-btn');
     if (langBtn) langBtn.textContent = t('menu_lang_toggle');
+    const hardshipHintLabel = document.getElementById('common-hardship-hint-label');
+    if (hardshipHintLabel) hardshipHintLabel.textContent = t('label_hint');
 }
 
 function setLang(lang) {
     currentLang = lang;
     localStorage.setItem('lang', lang);
+    // 동적 생성 모달/화면 제거 (다음 열 때 새 언어로 재생성)
+    const dataModal = document.getElementById('data-modal');
+    if (dataModal) dataModal.remove();
+    const lifeBookScreen = document.getElementById('life-book-screen');
+    if (lifeBookScreen) lifeBookScreen.remove();
+    const achievementScreen = document.getElementById('achievement-screen');
+    if (achievementScreen) achievementScreen.remove();
+    const shopScreen = document.getElementById('shop-screen');
+    if (shopScreen && typeof updateShopUI === 'function') updateShopUI();
     applyI18nToStaticHTML();
     if (typeof renderChapterMap === 'function') renderChapterMap();
     if (typeof updateKingsRoadHomeInfo === 'function') updateKingsRoadHomeInfo();
     if (typeof updateMissionUI === 'function') updateMissionUI();
+    // 고난 길 config 모달이 열려있으면 챕터 옵션 텍스트 갱신
+    const hardshipConfigModal = document.getElementById('hardship-config-modal');
+    if (hardshipConfigModal && hardshipConfigModal.style.display !== 'none') {
+        const startSel = document.getElementById('hardship-start-chapter');
+        const endSel = document.getElementById('hardship-end-chapter');
+        if (startSel && endSel) {
+            const startVal = startSel.value;
+            const endVal = endSel.value;
+            startSel.innerHTML = '';
+            endSel.innerHTML = '';
+            for (let c = 1; c <= 22; c++) {
+                const label = t('hardship_chapter_option', { num: c });
+                startSel.appendChild(Object.assign(document.createElement('option'), { value: String(c), innerText: label }));
+                endSel.appendChild(Object.assign(document.createElement('option'), { value: String(c), innerText: label }));
+            }
+            startSel.value = startVal;
+            endSel.value = endVal;
+            updateHardshipConfigRangeUI();
+        }
+    }
+    if (typeof renderMissionList === 'function' && typeof currentMissionTab !== 'undefined') {
+        // 미션 탭 버튼 텍스트 갱신
+        const tabs = document.querySelectorAll('.mission-tabs .tab-btn');
+        if (tabs.length >= 2) {
+            tabs[0].textContent = t('mission_tab_daily');
+            tabs[1].textContent = t('mission_tab_weekly');
+        }
+        const missionTitle = document.querySelector('#mission-screen .map-header div');
+        if (missionTitle) missionTitle.textContent = t('mission_screen_title');
+        renderMissionList(currentMissionTab);
+    }
+    if (typeof updateCastleView === 'function') updateCastleView();
+    if (typeof updateHintButtonLabels === 'function') updateHintButtonLabels();
+    // 스테이지 시트가 열려있으면 재렌더링
+    const stageSheet = document.getElementById('stage-sheet');
+    if (stageSheet && stageSheet.classList.contains('open') && typeof openStageSheet === 'function' && typeof currentOpenChapterData !== 'undefined' && currentOpenChapterData) {
+        openStageSheet(currentOpenChapterData);
+    }
+    // 현재 선택된 게임 모드 버튼 텍스트 갱신
+    const _modeKeys = ['btn_journey', 'btn_training', 'btn_hardship'];
+    const _journeyBtn = document.getElementById('start-journey-btn');
+    if (_journeyBtn && typeof currentGameModeIndex !== 'undefined') {
+        _journeyBtn.textContent = t(_modeKeys[currentGameModeIndex] || 'btn_journey');
+    }
+    // 훈련 모달 드롭다운 갱신 (열려있을 때)
+    if (document.getElementById('train-start-chapter')) {
+        if (typeof initTrainingChapters === 'function') initTrainingChapters();
+    }
 }
 
 function toggleLang() {
@@ -981,50 +2006,50 @@ let stageMemoryLevels = {};
 const ACHIEVEMENT_DATA = {
     // 1. 🕯️ 누적 출석 (login)
     login: {
-        title: "누적 출석 달성",
-        desc: "성실함이 곧 능력입니다.",
+        title: "누적 출석 달성", titleEn: "Attendance Record",
+        desc: "성실함이 곧 능력입니다.", descEn: "Faithfulness is your strength.",
         tiers: [1, 3, 7, 14, 30, 50, 100, 365],
         rewards: [50, 100, 300, 500, 1000, 2000, 3000, 5000]
     },
     // 2. 📖 구절 암송 (verse)
     verse: {
-        title: "누적 구절 암송",
-        desc: "일반 훈련(1절)을 완료한 횟수입니다.",
+        title: "누적 구절 암송", titleEn: "Verses Memorized",
+        desc: "일반 훈련(1절)을 완료한 횟수입니다.", descEn: "Number of normal training sessions completed.",
         tiers: [10, 50, 100, 300, 500, 1000, 3000],
         rewards: [100, 300, 500, 1000, 1500, 3000, 5000]
     },
     // 3. 🏆 승리자 (boss)
     boss: {
-        title: "중간·보스 승리",
-        desc: "실전 테스트를 통과한 횟수입니다.",
+        title: "중간·보스 승리", titleEn: "Mid/Boss Victories",
+        desc: "실전 테스트를 통과한 횟수입니다.", descEn: "Number of battle tests passed.",
         tiers: [1, 5, 10, 30, 50, 100, 200],
         rewards: [200, 500, 1000, 2000, 3000, 5000, 10000]
     },
     // 4. 💎 부자 (gem)
     gem: {
-        title: "누적 획득 보석",
-        desc: "지금까지 모은 보석의 총합입니다.",
+        title: "누적 획득 보석", titleEn: "Gems Collected",
+        desc: "지금까지 모은 보석의 총합입니다.", descEn: "Total gems earned so far.",
         tiers: [1000, 5000, 10000, 30000, 50000, 100000, 300000],
         rewards: [100, 300, 500, 1000, 2000, 3000, 5000]
     },
     // 5. ✨ 완벽주의 (perfect)
     perfect: {
-        title: "오타 없는 암송",
-        desc: "실수 없이(퍼펙트) 클리어한 횟수입니다.",
+        title: "오타 없는 암송", titleEn: "Perfect Recitations",
+        desc: "실수 없이(퍼펙트) 클리어한 횟수입니다.", descEn: "Number of flawless (perfect) clears.",
         tiers: [1, 10, 30, 50, 100, 300, 500],
         rewards: [100, 300, 500, 1000, 2000, 3000, 5000]
     },
     // 6. 🏰 성전 건축 (castle)
     castle: {
-        title: "성전 건축 단계",
-        desc: "나의 성전 레벨 도달 기록입니다.",
+        title: "성전 건축 단계", titleEn: "Temple Level Reached",
+        desc: "나의 성전 레벨 도달 기록입니다.", descEn: "Your highest temple level achieved.",
         tiers: [2, 3, 5, 7, 9, 10, 11],
         rewards: [200, 400, 800, 1500, 2500, 4000, 10000]
     },
     // 7. 🌅 얼리버드 (earlybird)
     earlybird: {
-        title: "새벽 암송 달성",
-        desc: "새벽(04~07시)에 훈련한 횟수입니다.",
+        title: "새벽 암송 달성", titleEn: "Early Bird",
+        desc: "새벽(04~07시)에 훈련한 횟수입니다.", descEn: "Number of trainings done at dawn (4–7 AM).",
         tiers: [1, 3, 7, 14, 21, 40, 100],
         rewards: [100, 300, 500, 1000, 2000, 3000, 5000]
     }
@@ -1249,10 +2274,10 @@ function updateMissionUI() {
     // ============================================
     const dailyMissions = [
         {
-            desc: "매일 접속 시 보상",
+            desc: t('mission_daily_0_title'),
             current: missionData.daily.loginReward || 0,
             target: 1,
-            rewardText: "💎 보석 100개",
+            rewardText: "💎 100",
             rewardType: "gem",
             val1: 100, val2: 0,
             claimed: missionData.daily.claimed[0],
@@ -1260,10 +2285,10 @@ function updateMissionUI() {
             type: 'daily'
         },
         {
-            desc: "새로운 구절 1회 학습",
+            desc: t('mission_daily_1_title'),
             current: missionData.daily.newClear,
             target: 1,
-            rewardText: "💎 보석 300개",
+            rewardText: "💎 300",
             rewardType: "gem",
             val1: 300, val2: 0,
             claimed: missionData.daily.claimed[1],
@@ -1271,10 +2296,10 @@ function updateMissionUI() {
             type: 'daily'
         },
         {
-            desc: "중보/보스 처치 1회",
+            desc: t('mission_daily_2_title'),
             current: missionData.daily.checkpointBoss,
             target: 1,
-            rewardText: "💎 보석 500개",
+            rewardText: "💎 500",
             rewardType: "gem",
             val1: 500, val2: 0,
             claimed: missionData.daily.claimed[2],
@@ -1284,14 +2309,14 @@ function updateMissionUI() {
     ];
 
     // ============================================
-    // 2. 주간 미션 정의 (중보/보스 5회로 증가)
+    // 2. 주간 미션 정의
     // ============================================
     const weeklyMissions = [
         {
-            desc: "주 5일 출석하기",
+            desc: t('mission_weekly_0_title'),
             current: missionData.weekly.attendance,
             target: 5,
-            rewardText: "💎 보석 1,000개",
+            rewardText: "💎 1,000",
             rewardType: "gem",
             val1: 1000, val2: 0,
             claimed: missionData.weekly.claimed[0],
@@ -1299,10 +2324,10 @@ function updateMissionUI() {
             type: 'weekly'
         },
         {
-            desc: "중보/보스 처치 5회",
+            desc: t('mission_weekly_1_title'),
             current: missionData.weekly.dragonKill,
             target: 5,
-            rewardText: "💎 보석 3,000개",
+            rewardText: "💎 3,000",
             rewardType: "gem",
             val1: 3000, val2: 0,
             claimed: missionData.weekly.claimed[1],
@@ -1310,10 +2335,10 @@ function updateMissionUI() {
             type: 'weekly'
         },
         {
-            desc: "구절 15회 학습",
+            desc: t('mission_weekly_2_title'),
             current: missionData.weekly.stageClear,
             target: 15,
-            rewardText: "💎 보석 2,000개",
+            rewardText: "💎 2,000",
             rewardType: "gem",
             val1: 2000, val2: 0,
             claimed: missionData.weekly.claimed[2],
@@ -1325,16 +2350,14 @@ function updateMissionUI() {
     // ----------------------------------------------------
     // 3. HTML 생성 및 추가 (통합 렌더링)
     // ----------------------------------------------------
-    // 일일 미션 제목
     const dailyTitle = document.createElement('div');
-    dailyTitle.innerHTML = `<h3 style="margin:10px 0 5px; color:#f1c40f;">☀️ 일일 미션</h3>`;
+    dailyTitle.innerHTML = `<h3 style="margin:10px 0 5px; color:#f1c40f;">☀️ ${t('mission_tab_daily')}</h3>`;
     list.appendChild(dailyTitle);
 
     dailyMissions.forEach(m => createMissionElement(list, m));
 
-    // 주간 미션 제목
     const weeklyTitle = document.createElement('div');
-    weeklyTitle.innerHTML = `<h3 style="margin:20px 0 5px; color:#e67e22;">🏆 주간 미션</h3>`;
+    weeklyTitle.innerHTML = `<h3 style="margin:20px 0 5px; color:#e67e22;">🏆 ${t('mission_tab_weekly')}</h3>`;
     list.appendChild(weeklyTitle);
 
     weeklyMissions.forEach(m => createMissionElement(list, m));
@@ -1358,11 +2381,9 @@ function createMissionElement(parent, m) {
 
     // 버튼 상태 결정
     if (m.claimed) {
-        btnHtml = `<button style="background:#7f8c8d; color:#bdc3c7; border:none; padding:5px 10px; border-radius:5px;" disabled>완료됨</button>`;
+        btnHtml = `<button style="background:#7f8c8d; color:#bdc3c7; border:none; padding:5px 10px; border-radius:5px;" disabled>${t('mission_btn_done')}</button>`;
     } else if (isCompleted) {
-        // 완료했으나 아직 안 받음 -> 클릭 가능
-        // onclick에 claimReward 함수 연결 (인자 전달을 위해 익명함수 사용 불가피할 때도 있지만, 여기선 ID로 처리하거나 아래처럼 직접 할당)
-        btnHtml = `<button id="btn-${m.type}-${m.index}" class="btn-claim-active" style="background:#e74c3c; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-weight:bold; animation: pulse 1s infinite;">보상 받기</button>`;
+        btnHtml = `<button id="btn-${m.type}-${m.index}" class="btn-claim-active" style="background:#e74c3c; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-weight:bold; animation: pulse 1s infinite;">${t('mission_btn_claim')}</button>`;
     } else {
         btnHtml = `<button style="background:transparent; color:#7f8c8d; border:1px solid #7f8c8d; padding:5px 10px; border-radius:5px;" disabled>${m.current}/${m.target}</button>`;
     }
@@ -1675,30 +2696,30 @@ function connectVoiceToAudioContext(audioElem) {
 
 /* [시스템] 12지파 설정 데이터 (보석 이름 복구 완료) */
 const TRIBE_DATA = [
-    { id: 0, name: "요한", core: "#57E3B6", glow: "#009651", gem: "녹보석" },
-    { id: 1, name: "베드로", core: "#8FE3FF", glow: "#00a0e9", gem: "벽옥" },
-    { id: 2, name: "부산야고보", core: "#A5A9FF", glow: "#1d2088", gem: "남보석" },
-    { id: 3, name: "안드레", core: "#C4F6FF", glow: "#59c3e1", gem: "옥수" },
-    { id: 4, name: "다대오", core: "#FFB085", glow: "#eb6120", gem: "홍마노" },
-    { id: 5, name: "빌립", core: "#FF8EB9", glow: "#d7005b", gem: "홍보석" },
-    { id: 6, name: "시몬", core: "#FFF59D", glow: "#fdd000", gem: "황옥" },
-    { id: 7, name: "바돌로매", core: "#C2F0E0", glow: "#86cab6", gem: "녹옥" },
-    { id: 8, name: "마태", core: "#FFE082", glow: "#e39300", gem: "담황옥" },
-    { id: 9, name: "맛디아", core: "#B4F080", glow: "#6FBA2C", gem: "비취옥" },
-    { id: 10, name: "서울야고보", core: "#78BEFF", glow: "#005dac", gem: "청옥" },
-    { id: 11, name: "도마", core: "#E09FFF", glow: "#7f1084", gem: "자정" }
+    { id: 0, name: "요한", nameEn: "John", core: "#57E3B6", glow: "#009651", gem: "녹보석" },
+    { id: 1, name: "베드로", nameEn: "Peter", core: "#8FE3FF", glow: "#00a0e9", gem: "벽옥" },
+    { id: 2, name: "부산야고보", nameEn: "B·James", core: "#A5A9FF", glow: "#1d2088", gem: "남보석" },
+    { id: 3, name: "안드레", nameEn: "Andrew", core: "#C4F6FF", glow: "#59c3e1", gem: "옥수" },
+    { id: 4, name: "다대오", nameEn: "Thaddaeus", core: "#FFB085", glow: "#eb6120", gem: "홍마노" },
+    { id: 5, name: "빌립", nameEn: "Philip", core: "#FF8EB9", glow: "#d7005b", gem: "홍보석" },
+    { id: 6, name: "시몬", nameEn: "Simon", core: "#FFF59D", glow: "#fdd000", gem: "황옥" },
+    { id: 7, name: "바돌로매", nameEn: "Bartholomew", core: "#C2F0E0", glow: "#86cab6", gem: "녹옥" },
+    { id: 8, name: "마태", nameEn: "Matthew", core: "#FFE082", glow: "#e39300", gem: "담황옥" },
+    { id: 9, name: "맛디아", nameEn: "Matthias", core: "#B4F080", glow: "#6FBA2C", gem: "비취옥" },
+    { id: 10, name: "서울야고보", nameEn: "S·James", core: "#78BEFF", glow: "#005dac", gem: "청옥" },
+    { id: 11, name: "도마", nameEn: "Thomas", core: "#E09FFF", glow: "#7f1084", gem: "자정" }
 ];
 
 /* [시스템] 소속 부서 데이터 */
 const DEPT_DATA = [
-    { id: 0, name: "교역자", tag: "교" },
-    { id: 1, name: "장로회", tag: "로" },
-    { id: 2, name: "자문회", tag: "자" },
-    { id: 3, name: "장년회", tag: "장" },
-    { id: 4, name: "부녀회", tag: "부" },
-    { id: 5, name: "청년회", tag: "청" },
-    { id: 6, name: "학생회", tag: "학" },
-    { id: 7, name: "유년회", tag: "유" }
+    { id: 0, name: "교역자", nameEn: "Ministers", tag: "교" },
+    { id: 1, name: "장로회", nameEn: "Elders", tag: "로" },
+    { id: 2, name: "자문회", nameEn: "Advisory", tag: "자" },
+    { id: 3, name: "장년회", nameEn: "Adults", tag: "장" },
+    { id: 4, name: "부녀회", nameEn: "Women's", tag: "부" },
+    { id: 5, name: "청년회", nameEn: "Youth", tag: "청" },
+    { id: 6, name: "학생회", nameEn: "Students", tag: "학" },
+    { id: 7, name: "유년회", nameEn: "Children", tag: "유" }
 ];
 
 function hexToRgbString(hex) {
@@ -1728,6 +2749,15 @@ function applyHomeThemeByTribe(tribeIdx) {
     if (strong) root.style.setProperty('--home-accent-strong-rgb', strong);
     if (accent) root.style.setProperty('--home-btn-a-rgb', accent);
     if (strong) root.style.setProperty('--home-btn-b-rgb', strong);
+}
+
+function getTribeName(tribeData) {
+    if (!tribeData) return '';
+    return currentLang === 'en' ? (tribeData.nameEn || tribeData.name) : tribeData.name;
+}
+function getDeptName(deptData) {
+    if (!deptData) return '';
+    return currentLang === 'en' ? (deptData.nameEn || deptData.name) : deptData.name;
 }
 
 // 현재 나의 지파 (기본값: 0)
@@ -2330,6 +3360,24 @@ const NICK_ADJECTIVES = [
     "승리하는", "마르지않는", "부르심받은", "처음익은", "아름다운"
 ];
 
+const NICK_ADJECTIVES_EN = [
+    // 1~20
+    "Verdant", "Crimson", "Snowy", "Golden", "Crystal",
+    "Gentle", "Humble", "Mighty", "Wise", "Faithful",
+    "Joyful", "Praying", "Thankful", "Obedient", "Fearless",
+    "Dawning", "Gracious", "Holy", "Warm", "Shining",
+
+    // 21~35
+    "Victorious", "Loyal", "Eternal", "Blazing", "Radiant",
+    "Watchful", "Patient", "Glorious", "Honored", "Blameless",
+    "Righteous", "Peaceful", "Pure", "Prudent", "Chosen",
+
+    // 36~50
+    "Truthful", "Living", "Reborn", "Precious", "Renewed",
+    "Steadfast", "Hidden", "Dazzling", "Waiting", "Unstoppable",
+    "Triumphant", "Unfailing", "Called", "Firstfruit", "Beautiful"
+];
+
 const NICK_NOUNS = [
     // 1~20 (기존 자연/도구)
     "만나", "무화과", "포도", "감람유", "밀이삭",
@@ -2348,14 +3396,34 @@ const NICK_NOUNS = [
     "포도나무", "감람나무", "향기", "인", "만국"
 ];
 
+const NICK_NOUNS_EN = [
+    // 1~20
+    "Manna", "Fig", "Grape", "Olive", "Wheat",
+    "Sheep", "Dove", "Lion", "Eagle", "Donkey",
+    "Shield", "Rampart", "Slingstone", "Staff", "Lantern",
+    "Brook", "Palm", "Cedar", "Crown", "Vessel",
+
+    // 21~35
+    "Whitestone", "Starlight", "Lampstand", "Lifetree", "Morningstar",
+    "Lyre", "Censer", "Scroll", "Crystalsea", "Whiterobe",
+    "Lifebook", "Trumpet", "Throne", "Rainbow", "Lamb",
+
+    // 36~50
+    "Pilgrim", "Watchman", "Warrior", "Wanderer", "Witness",
+    "NewJerusalem", "Lifespring", "Rock", "Sanctuary", "Tabernacle",
+    "Vine", "OliveTree", "Fragrance", "Seal", "Nations"
+];
+
 // 🌟 1. 현재 선택된 단어를 기억할 전역 변수 추가
 window.selectedAdj = "";
 window.selectedNoun = "";
 
 /* [기능] 랜덤 닉네임 추출 및 드롭다운 세팅 */
 function generateRandomNickname() {
-    window.selectedAdj = NICK_ADJECTIVES[Math.floor(Math.random() * NICK_ADJECTIVES.length)];
-    window.selectedNoun = NICK_NOUNS[Math.floor(Math.random() * NICK_NOUNS.length)];
+    const adjArr = currentLang === 'en' ? NICK_ADJECTIVES_EN : NICK_ADJECTIVES;
+    const nounArr = currentLang === 'en' ? NICK_NOUNS_EN : NICK_NOUNS;
+    window.selectedAdj = adjArr[Math.floor(Math.random() * adjArr.length)];
+    window.selectedNoun = nounArr[Math.floor(Math.random() * nounArr.length)];
 
     // 이 함수가 실행되면 드롭다운의 값도 같이 바꿔줍니다.
     const adjSelect = document.getElementById('adj-select');
@@ -2644,24 +3712,24 @@ function buildReviewBadgeHtml(stageId) {
     let stepDefs;
     if (step <= 4) {
         stepDefs = [
-            { label: '시작', step: 1 },
-            { label: '10분 후', step: 2 },
-            { label: '1시간 후', step: 3 },
-            { label: '6시간 후', step: 4 },
+            { label: t('review_dot_start'), step: 1 },
+            { label: t('review_dot_10m'), step: 2 },
+            { label: t('review_dot_1h'), step: 3 },
+            { label: t('review_dot_6h'), step: 4 },
         ];
     } else if (step <= 5) {
         stepDefs = [
-            { label: '1일 후', step: 5 },
+            { label: t('review_dot_1d'), step: 5 },
         ];
     } else if (step <= 6) {
         stepDefs = [
-            { label: '3일 후', step: 6 },
+            { label: t('review_dot_3d'), step: 6 },
         ];
     } else {
         // step 7+: 대기 시간 표시
         const waitMs = getReviewWaitMs(step);
         const waitHr = Math.round(waitMs / 3600000);
-        const waitLabel = waitHr >= 24 ? `${Math.round(waitHr / 24)}일 후` : `${waitHr}시간 후`;
+        const waitLabel = waitHr >= 24 ? t('review_dot_days', { n: Math.round(waitHr / 24) }) : t('review_dot_hours', { n: waitHr });
         stepDefs = [{ label: waitLabel, step }];
     }
 
@@ -2678,14 +3746,14 @@ function buildReviewBadgeHtml(stageId) {
     const pending = stagePendingRetry[stageId];
     if (pending) {
         if (pending.type === 'good') {
-            statusHtml = `<span class="review-ready">⚡ 재시도 하여 다음 단계로!</span>`;
+            statusHtml = `<span class="review-ready">${t('review_status_retry')}</span>`;
         } else if (pending.type === 'miss') {
-            statusHtml = `<span class="review-ready">🔄 재도전 ${pending.remaining}회 남음</span>`;
+            statusHtml = `<span class="review-ready">${t('review_status_retry_remain', { n: pending.remaining })}</span>`;
         }
     } else if (!status.isEligible) {
-        statusHtml = `<span class="review-timer live-timer-review" data-unlock="${status.nextReviewTime}">계산중</span>`;
+        statusHtml = `<span class="review-timer live-timer-review" data-unlock="${status.nextReviewTime}">${t('review_status_calculating')}</span>`;
     } else if (step === 1) {
-        statusHtml = `<span class="review-ready">${status.baseGem}💎 첫 학습!</span>`;
+        statusHtml = `<span class="review-ready">${t('review_status_first', { gem: status.baseGem })}</span>`;
     } else {
         statusHtml = `<span class="review-ready">${status.baseGem}💎 ${t('status_review_now')}</span>`;
     }
@@ -2805,6 +3873,36 @@ const RANKING_CACHE_DURATION = 60 * 60 * 1000; // 1시간(ms)
 /* [데이터: 챕터 및 스테이지 정보 (자동 생성 시스템 - 버그 수정판)] */
 const gameData = [];
 
+function getStageTitle(stage) {
+    if (stage.type === 'mid-boss') {
+        const parts = stage.id.split('-');
+        const ch = parts[0];
+        return t('stage_title_midboss', { ch, start: stage.rangeStart, end: stage.rangeEnd });
+    }
+    if (stage.type === 'boss') {
+        const ch = stage.id.replace('-boss', '');
+        return t('stage_title_boss', { ch });
+    }
+    // normal
+    const [ch, v] = stage.id.split('-');
+    return t('stage_title_normal', { ch, v });
+}
+
+function getStageDesc(stage) {
+    if (stage.type === 'mid-boss') {
+        return t('stage_desc_midboss', { hp: stage.targetVerseCount });
+    }
+    if (stage.type === 'boss') {
+        const ch = stage.id.replace('-boss', '');
+        return t('stage_desc_boss', { ch });
+    }
+    // normal: show first ~15 chars of verse text in current language
+    const [ch, v] = stage.id.split('-');
+    const verseObj = getVerseData(Number(ch), Number(v) - 1);
+    if (verseObj) return verseObj.text.substring(0, 20) + '...';
+    return stage.desc;
+}
+
 // 언어에 따라 올바른 성경 데이터 반환 (bibleDataEn은 bible_en.js에서 로드)
 function getVerseData(ch, vIdx) {
     if (currentLang === 'en' && typeof bibleDataEn !== 'undefined' && bibleDataEn[ch] && bibleDataEn[ch][vIdx]) {
@@ -2902,6 +4000,8 @@ for (let i = 1; i <= 22; i++) {
                     desc: `${hp}개 절을 한 번에 복습 또는 학습합니다.`,
                     type: "mid-boss",
                     targetVerseCount: hp, // ★ 실제 개수만큼 HP 설정!
+                    rangeStart: range.start,
+                    rangeEnd: range.end,
                     locked: false,
                     cleared: false
                 });
@@ -2935,21 +4035,21 @@ let lastClaimTime = Date.now(); // 방치형 보상 시간 기록
 /* [1단계] 성전 데이터 수정 (생산량 1/4 축소 + reqStage 제거) */
 const castleBlueprints = [
     // [Lv.1]
-    { level: 1, name: "제사장의 시작", desc: "작은 촛불 하나, 고요한 방.<br>이 공간은 무엇으로 채워지게 될까요?", img: "image_0.webp", cost: 0, prod: 0, cap: 0, bonus: 0 },
+    { level: 1, name: "제사장의 시작", nameEn: "Priest's Beginning", desc: "작은 촛불 하나, 고요한 방.<br>이 공간은 무엇으로 채워지게 될까요?", descEn: "A single candle, a quiet room.<br>What will fill this space?", img: "image_0.webp", cost: 0, prod: 0, cap: 0, bonus: 0 },
     // [Lv.2~4]
-    { level: 2, name: "쌓이는 노력", desc: "바닥에 쌓인 책들만큼<br>당신의 마음에도 말씀이 쌓여갑니다.", img: "image_1.webp", cost: 1000, prod: 5, cap: 40, bonus: 2 },
-    { level: 3, name: "첫 번째 책장", desc: "어수선하던 생각들이<br>제자리를 찾기 시작합니다.", img: "image_2.webp", cost: 2000, prod: 10, cap: 80, bonus: 4 },
-    { level: 4, name: "서재의 모습", desc: "책상 위 가득한 열정과<br>깊어진 지식.", img: "image_3.webp", cost: 3000, prod: 15, cap: 120, bonus: 6 },
+    { level: 2, name: "쌓이는 노력", nameEn: "Growing Effort", desc: "바닥에 쌓인 책들만큼<br>당신의 마음에도 말씀이 쌓여갑니다.", descEn: "As books pile up on the floor,<br>so the Word builds in your heart.", img: "image_1.webp", cost: 1000, prod: 5, cap: 40, bonus: 2 },
+    { level: 3, name: "첫 번째 책장", nameEn: "First Bookshelf", desc: "어수선하던 생각들이<br>제자리를 찾기 시작합니다.", descEn: "Scattered thoughts begin<br>to find their place.", img: "image_2.webp", cost: 2000, prod: 10, cap: 80, bonus: 4 },
+    { level: 4, name: "서재의 모습", nameEn: "A Scholar's Study", desc: "책상 위 가득한 열정과<br>깊어진 지식.", descEn: "Passion fills the desk,<br>and knowledge deepens.", img: "image_3.webp", cost: 3000, prod: 15, cap: 120, bonus: 6 },
     // [Lv.5~8]
-    { level: 5, name: "빛의 변화", desc: "벽면에 일곱 금 촛대가<br>불을 밝혔습니다.", img: "image_4.webp", cost: 5000, prod: 25, cap: 200, bonus: 8 },
-    { level: 6, name: "정결한 옷", desc: "순백의 두루마기가<br>준비되었습니다.", img: "image_5.webp", cost: 7000, prod: 35, cap: 280, bonus: 10 },
-    { level: 7, name: "생명의 샘", desc: "메마른 바닥에서<br>맑은 생명수가 터져 나옵니다.", img: "image_6.webp", cost: 10000, prod: 45, cap: 360, bonus: 12 },
-    { level: 8, name: "자라나는 생명", desc: "물가에 심기운 나무처럼,<br>당신의 믿음에 푸른 싹이 돋아납니다.", img: "image_7.webp", cost: 13000, prod: 60, cap: 480, bonus: 15 },
+    { level: 5, name: "빛의 변화", nameEn: "Changing Light", desc: "벽면에 일곱 금 촛대가<br>불을 밝혔습니다.", descEn: "Seven golden lampstands<br>illuminate the wall.", img: "image_4.webp", cost: 5000, prod: 25, cap: 200, bonus: 8 },
+    { level: 6, name: "정결한 옷", nameEn: "Purified Garment", desc: "순백의 두루마기가<br>준비되었습니다.", descEn: "A robe of pure white<br>has been prepared.", img: "image_5.webp", cost: 7000, prod: 35, cap: 280, bonus: 10 },
+    { level: 7, name: "생명의 샘", nameEn: "Spring of Life", desc: "메마른 바닥에서<br>맑은 생명수가 터져 나옵니다.", descEn: "From the dry ground,<br>clear living water bursts forth.", img: "image_6.webp", cost: 10000, prod: 45, cap: 360, bonus: 12 },
+    { level: 8, name: "자라나는 생명", nameEn: "Growing Life", desc: "물가에 심기운 나무처럼,<br>당신의 믿음에 푸른 싹이 돋아납니다.", descEn: "Like a tree planted by the water,<br>green shoots spring from your faith.", img: "image_7.webp", cost: 13000, prod: 60, cap: 480, bonus: 15 },
     // [Lv.9~12]
-    { level: 9, name: "하늘의 보화", desc: "책장 한편에 반짝이는 보석과<br>면류관이 보이나요?", img: "image_8.webp", cost: 17000, prod: 80, cap: 640, bonus: 18 },
-    { level: 10, name: "새 노래", desc: "정적을 깨고<br>아름다운 선율이 흐릅니다.", img: "image_9.webp", cost: 21000, prod: 100, cap: 800, bonus: 20 },
-    { level: 11, name: "풍성한 결실", desc: "어느새 천장까지 닿은 나무에<br>생명 과실이 가득합니다.", img: "image_10.webp", cost: 28000, prod: 125, cap: 1000, bonus: 25 },
-    { level: 12, name: "열린 문과 영광", desc: "굳게 닫혀있던 문이 열리고<br>영광의 빛이 쏟아집니다!", img: "image_11.webp", cost: 37000, prod: 150, cap: 1500, bonus: 30 }
+    { level: 9, name: "하늘의 보화", nameEn: "Heavenly Treasure", desc: "책장 한편에 반짝이는 보석과<br>면류관이 보이나요?", descEn: "Do you see the jewels and crown<br>gleaming on the shelf?", img: "image_8.webp", cost: 17000, prod: 80, cap: 640, bonus: 18 },
+    { level: 10, name: "새 노래", nameEn: "A New Song", desc: "정적을 깨고<br>아름다운 선율이 흐릅니다.", descEn: "Breaking the silence,<br>a beautiful melody flows.", img: "image_9.webp", cost: 21000, prod: 100, cap: 800, bonus: 20 },
+    { level: 11, name: "풍성한 결실", nameEn: "Abundant Fruit", desc: "어느새 천장까지 닿은 나무에<br>생명 과실이 가득합니다.", descEn: "A tree reaching the ceiling,<br>laden with the fruit of life.", img: "image_10.webp", cost: 28000, prod: 125, cap: 1000, bonus: 25 },
+    { level: 12, name: "열린 문과 영광", nameEn: "Open Door & Glory", desc: "굳게 닫혀있던 문이 열리고<br>영광의 빛이 쏟아집니다!", descEn: "The tightly shut door opens,<br>and the light of glory pours in!", img: "image_11.webp", cost: 37000, prod: 150, cap: 1500, bonus: 30 }
 ];
 
 // [시스템: 성과 측정 변수]
@@ -3042,7 +4142,7 @@ function updateKingsStepBtn() {
     } else {
         const step = kingsRoadData.stepHistory[kingsRoadData.stepHistory.length - 1].step;
         btn.style.display = 'flex';
-        btn.textContent = `👑 왕의 길 ${step}단계`;
+        btn.textContent = t('label_kings_step_btn', { step });
     }
 }
 
@@ -3218,7 +4318,7 @@ function _updateKingsOverlayBtnInfo(newCount, msLeft, hasHistory) {
             const m = Math.floor((msLeft % 3600000) / 60000);
             const s = Math.floor((msLeft % 60000) / 1000);
             const pad = n => String(n).padStart(2, '0');
-            overlayTimerEl.textContent = `해금까지 ${pad(h)}:${pad(m)}:${pad(s)}`;
+            overlayTimerEl.textContent = t('label_unlock_timer', { time: `${pad(h)}:${pad(m)}:${pad(s)}` });
         }
     }
 }
@@ -3449,12 +4549,12 @@ function _showLastWeekRewardModal(reward) {
     const noReward = totalGems === 0;
     const noRewardMsg = noReward ? `
         <div style="margin-top:12px; padding:10px; background:rgba(231,76,60,0.15); border-radius:8px; font-size:0.85rem; color:#e74c3c; text-align:center; line-height:1.5;">
-            지파 또는 시온성 랭킹의 참여 인원이<br>100명 미만이어서 이번 주 보상이 없습니다.
+            ${t('reward_no_reward_msg')}
         </div>` : '';
 
     const claimSection = noReward
-        ? `<button onclick="closeLastWeekRewardModal()" style="margin-top:18px; width:100%; padding:12px; background:#7f8c8d; border:none; border-radius:10px; color:white; font-size:1rem; font-weight:bold; cursor:pointer;">확인</button>`
-        : `<button onclick="claimWeeklyReward()" style="margin-top:18px; width:100%; padding:12px; background:linear-gradient(135deg,#f39c12,#e67e22); border:none; border-radius:10px; color:white; font-size:1rem; font-weight:bold; cursor:pointer;">💎 ${totalGems} 보석 수령하기</button>`;
+        ? `<button onclick="closeLastWeekRewardModal()" style="margin-top:18px; width:100%; padding:12px; background:#7f8c8d; border:none; border-radius:10px; color:white; font-size:1rem; font-weight:bold; cursor:pointer;">${t('reward_confirm_btn')}</button>`
+        : `<button onclick="claimWeeklyReward()" style="margin-top:18px; width:100%; padding:12px; background:linear-gradient(135deg,#f39c12,#e67e22); border:none; border-radius:10px; color:white; font-size:1rem; font-weight:bold; cursor:pointer;">${t('reward_claim_btn', { count: totalGems })}</button>`;
 
     const modal = document.createElement('div');
     modal.id = 'last-week-reward-modal';
@@ -3463,12 +4563,12 @@ function _showLastWeekRewardModal(reward) {
         <div style="background:#2c3e50;border:2px solid #f39c12;border-radius:18px;width:100%;max-width:360px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,0.9);">
             <div style="text-align:center; margin-bottom:16px;">
                 <div style="font-size:2rem;">🏆</div>
-                <div style="font-size:1.1rem; color:#f1c40f; font-weight:bold; margin-top:4px;">지난 주 랭킹 결과</div>
+                <div style="font-size:1.1rem; color:#f1c40f; font-weight:bold; margin-top:4px;">${t('reward_last_week_title')}</div>
                 <div style="font-size:0.8rem; color:#95a5a6; margin-top:2px;">${weekId}</div>
-                <div style="margin-top:8px; font-size:0.9rem; color:#bdc3c7;">승점 <strong style="color:white;">${score.toLocaleString()}</strong> pts</div>
+                <div style="margin-top:8px; font-size:0.9rem; color:#bdc3c7;">${t('reward_score_label')} <strong style="color:white;">${score.toLocaleString()}</strong> pts</div>
             </div>
-            ${rewardRow('시온성 랭킹', zionRank, zionGems, zionQ)}
-            ${rewardRow('내 지파 랭킹', tribeRank, tribeGems, tribeQ)}
+            ${rewardRow(t('label_zion_ranking'), zionRank, zionGems, zionQ)}
+            ${rewardRow(t('label_my_tribe_ranking'), tribeRank, tribeGems, tribeQ)}
             ${noRewardMsg}
             ${claimSection}
         </div>`;
@@ -3611,13 +4711,13 @@ function ensureBackButton(screen) {
         btn = document.createElement('button');
         btn.className = 'btn-gray btn-back';
         btn.type = 'button';
-        btn.textContent = '돌아가기';
+        btn.textContent = t('btn_go_back');
         btn.onclick = goMap;
         footer.appendChild(btn);
     } else {
         btn.classList.add('btn-gray', 'btn-back');
         if (!btn.textContent || btn.textContent.trim() === '') {
-            btn.textContent = '돌아가기';
+            btn.textContent = t('btn_go_back');
         }
     }
 }
@@ -3642,8 +4742,8 @@ function renderChapterMap() {
         const dayNum = Math.floor((Date.now() - startTs) / 86400000) + 1;
         const unlockedCount = getKingsRoadUnlockedCount();
         kingsHeader.innerHTML = `
-            <span class="kh-title">👑 왕의 길 ${step}단계</span>
-            <span class="kh-info">D+${dayNum}일 · ${unlockedCount}구절 해금</span>
+            <span class="kh-title">${t('kings_header_title', { step })}</span>
+            <span class="kh-info">${t('kings_header_info', { day: dayNum, count: unlockedCount })}</span>
         `;
         kingsHeader.style.display = 'flex';
     } else if (kingsHeader) {
@@ -3789,7 +4889,7 @@ function renderChapterMap() {
         if (isChapterClear) {
             const hardshipBtn = document.createElement('button');
             hardshipBtn.className = 'chapter-hardship-btn';
-            hardshipBtn.innerHTML = '🔥 왕의 고난';
+            hardshipBtn.innerHTML = t('hardship_kings_btn');
             hardshipBtn.style.cssText = isLeft
                 ? 'right: 12%; top: 50%; transform: translateY(-50%);'
                 : 'left: 12%; top: 50%; transform: translateY(-50%);';
@@ -3974,10 +5074,13 @@ function getChapterMidBossIds(chapterNum) {
         .map(s => s.id);
 }
 
+let currentOpenChapterData = null;
+
 /* [수정] 스테이지 시트 열기 (각 버튼별 타이머 적용) */
 function openStageSheet(chapterData) {
+    currentOpenChapterData = chapterData;
     const sheet = document.getElementById('stage-sheet');
-    document.getElementById('sheet-chapter-title').innerText = chapterData.title;
+    document.getElementById('sheet-chapter-title').innerText = t('label_chapter_header', { num: chapterData.id });
 
     const list = document.getElementById('stage-list-area');
     list.innerHTML = "";
@@ -4111,8 +5214,8 @@ function openStageSheet(chapterData) {
     <div class="stage-icon">${iconChar}</div>
     <div class="stage-info">
         <div class="stage-title">
-            ${levelBadgeHtml} ${stage.title}  </div>
-        <div class="stage-desc">${stage.desc}</div>
+            ${levelBadgeHtml} ${getStageTitle(stage)}  </div>
+        <div class="stage-desc">${getStageDesc(stage)}</div>
         ${rewardInfo}
         ${memoryBarHtml}
     </div>
@@ -4280,24 +5383,24 @@ function openModeSelect(stageId) {
             <button onclick="closeModeSelect()" style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
         </div>
         <div style="text-align: center; margin-bottom: 20px;">
-            <h2 style="margin:0; color:#2c3e50;">복습 모드 선택</h2>
-            <p style="color:#7f8c8d; font-size:0.9rem; margin-top:5px;">완료한 구절입니다.</p>
+            <h2 style="margin:0; color:#2c3e50;">${t('review_mode_title')}</h2>
+            <p style="color:#7f8c8d; font-size:0.9rem; margin-top:5px;">${t('review_mode_subtitle')}</p>
         </div>
 
         <button class="mode-btn" onclick="confirmMode('quick')" style="background:#fff9c4; border:2px solid #f1c40f; color:#d35400; box-shadow: 0 4px 0 #f39c12;">
             <div class="mode-icon">⚡</div>
             <div class="mode-info">
-                <div class="mode-tag" style="background:#f1c40f; color:#d35400;">추천</div>
-                <div class="mode-title">빠른 복습 (Step 1, 5)</div>
-                <div class="mode-desc">읽기 + 문장 배열 (핵심만!)</div>
+                <div class="mode-tag" style="background:#f1c40f; color:#d35400;">${t('review_mode_quick_tag')}</div>
+                <div class="mode-title">${t('review_mode_quick_title')}</div>
+                <div class="mode-desc">${t('review_mode_quick_desc')}</div>
             </div>
         </button>
 
         <button class="mode-btn" onclick="confirmMode('full')" style="background:white; border:2px solid #bdc3c7; color:#7f8c8d; box-shadow: 0 4px 0 #95a5a6;">
             <div class="mode-icon">📖</div>
             <div class="mode-info">
-                <div class="mode-title">전체 학습 (Step 1~5)</div>
-                <div class="mode-desc">읽기부터 문장 완성까지 꼼꼼하게</div>
+                <div class="mode-title">${t('review_mode_full_title')}</div>
+                <div class="mode-desc">${t('review_mode_full_desc')}</div>
             </div>
         </button>
     `;
@@ -4392,13 +5495,13 @@ function openForgottenStagesOverlay() {
     const listDiv = document.getElementById('forgotten-stages-list');
     const forgottenList = getForgottenStages();
     if (forgottenList.length === 0) {
-        listDiv.innerHTML = '<div style="color:#bdc3c7;">구절을 잊을만 할 때 알려드립니다!</div>';
+        listDiv.innerHTML = `<div style="color:#bdc3c7;">${t('forgotten_empty')}</div>`;
         return;
     }
     listDiv.innerHTML = '';
     for (const item of forgottenList) {
         const btn = document.createElement('button');
-        btn.innerHTML = `<span style="font-weight:bold; color:#f1c40f;">${item.label}</span><span style="color:#bdc3c7; margin-left:8px;">- ${item.step}회차 복습 시점</span>`;
+        btn.innerHTML = `<span style="font-weight:bold; color:#f1c40f;">${item.label}</span><span style="color:#bdc3c7; margin-left:8px;">${t('forgotten_review_step', { step: item.step })}</span>`;
         btn.style = 'display:block; width:100%; background:rgba(241,196,15,0.12); border:1px solid #f1c40f; color:#fff; padding:12px 0; border-radius:12px; margin-bottom:10px; font-size:1.05rem; cursor:pointer; transition:background 0.2s;';
         btn.onclick = function () {
             closeForgottenStagesOverlay();
@@ -4588,7 +5691,7 @@ function startBossBattle() {
 
         const field = document.querySelector('.battle-field');
         const control = document.querySelector('.battle-control');
-        field.innerHTML = `<div class="verse-indicator" id="verse-index">준비 중...</div><div class="answer-zone" id="answer-zone"><span class="placeholder-text" id="placeholder-text">...</span></div>`;
+        field.innerHTML = `<div class="verse-indicator" id="verse-index">${t('label_preparing')}</div><div class="answer-zone" id="answer-zone"><span class="placeholder-text" id="placeholder-text">...</span></div>`;
         control.innerHTML = `<div class="block-pool" id="block-pool"></div>`;
 
         wrongCount = 0;
@@ -4860,12 +5963,12 @@ function loadNextVerse() {
             insertBtn.style.background = '#e67e22';
             insertBtn.style.boxShadow = '0 4px 0 #b7770d';
             insertBtn.style.color = '#fff';
-            insertBtn.innerHTML = '끼워<br>ON';
+            insertBtn.innerHTML = t('step5_insert_on');
         } else {
             insertBtn.style.background = '';
             insertBtn.style.boxShadow = '';
             insertBtn.style.color = '';
-            insertBtn.innerHTML = '끼워<br>넣기';
+            insertBtn.innerHTML = t('step5_insert_btn');
         }
     }
 
@@ -4957,7 +6060,7 @@ function loadNextVerse() {
     const attackBtn = document.createElement('button');
     attackBtn.id = 'btn-boss-attack';
     attackBtn.className = 'btn-attack';
-    attackBtn.innerText = "⚔️ 공격하기";
+    attackBtn.innerText = t('btn_attack');
     attackBtn.style.flex = '3 1 0'; // 래퍼 안에서 차지하는 비율 (3/4)
 
     attackBtn.onclick = () => {
@@ -5337,7 +6440,7 @@ function saveBattleCheckpoint() {
     };
 
     localStorage.setItem('kingsRoad_checkpoint', JSON.stringify(saveData));
-    showToast(`💾 진행 상황 저장됨 (Step ${currentVerseIdx + 1})`);
+    showToast(t('toast_progress_saved', { n: currentVerseIdx + 1 }));
 }
 
 // 3. 저장 데이터 삭제 (클리어하거나 죽어서 나갈 때)
@@ -5433,7 +6536,7 @@ function updateCastleView() {
 
     if (!nextData) {
         // 만렙
-        btn.innerText = "👑 건설 완료";
+        btn.innerText = t('achievement_conquered');
         btn.disabled = true;
         btn.style.background = "#2c3e50";
         btn.style.cursor = "default";
@@ -5443,14 +6546,14 @@ function updateCastleView() {
     const canBuild = myGems >= nextData.cost;
 
     if (canBuild) {
-        btn.innerText = `🔨 건설하기 (💎 ${nextData.cost})`;
+        btn.innerText = t('btn_castle_build_cost', { cost: nextData.cost });
         btn.disabled = false;
         btn.style.background = "#2ecc71"; // 초록색 (가능)
         btn.style.cursor = "pointer";
         btn.style.boxShadow = "0 4px 0 #27ae60";
         btn.onclick = tryBuildCastle; // 클릭 이벤트 연결
     } else {
-        btn.innerText = `🔒 건설 불가 (필요: 💎 ${nextData.cost})`;
+        btn.innerText = t('btn_castle_build_locked_cost', { cost: nextData.cost });
         btn.disabled = true;
         btn.style.background = "#95a5a6"; // 회색 (불가)
         btn.style.cursor = "not-allowed";
@@ -5680,7 +6783,7 @@ async function syncToFirestore() {
         const toast = document.createElement('div');
         toast.id = 'sync-fail-toast';
         toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#c0392b;color:#fff;padding:10px 18px;border-radius:8px;font-size:12px;z-index:99999;text-align:center;max-width:90vw;word-break:break-all;';
-        toast.textContent = `⚠️ 서버 저장 실패: ${errMsg}`;
+        toast.textContent = t('toast_server_save_fail_short', { msg: errMsg });
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 8000);
     }
@@ -5928,7 +7031,7 @@ function loadStep() {
     // ----------------------------------------------------
     if (currentStep === 1) {
         field.innerHTML = `
-            <div class="verse-indicator">${verseLabel}Step 1. 한 단어씩 읽으며 '읽기'를 눌러 외운 말씀을 확인하세요.<br>확실히 외웠다는 생각이 들 때까지 반복하세요.</div>
+            <div class="verse-indicator">${verseLabel}${t('hardship_step1_indicator')}</div>
             
             <div style="position: relative; margin-bottom: 30px;">
                 <div class="reading-card" id="tap-reading-card" 
@@ -5944,14 +7047,18 @@ function loadStep() {
             </div>
         `;
 
-        // ★ [추가] 1. 한글 초성 추출 도구
+        // ★ [추가] 1. 초성 추출 도구 (한글: 초성 자모, 영어: 구 앞 첫 글자만)
         const getChosung = (str) => {
             const cho = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
+            const hasKorean = [...str].some(c => { const code = c.charCodeAt(0) - 44032; return code > -1 && code < 11172; });
+            if (!hasKorean) {
+                return str.trim().split(/\s+/).map(w => w[0] || '').join(' ');
+            }
             let result = "";
             for (let i = 0; i < str.length; i++) {
                 let code = str.charCodeAt(i) - 44032;
                 if (code > -1 && code < 11172) result += cho[Math.floor(code / 588)];
-                else result += str.charAt(i); // 한글이 아니면(알파벳, 기호 등) 그대로 둠
+                else result += str.charAt(i);
             }
             return result;
         };
@@ -5984,9 +7091,9 @@ function loadStep() {
 
         control.innerHTML = `
             <div id="step1-controls" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 10px;"></div>
-            <button class="btn-attack" id="btn-step1-next" onclick="nextStep()" style="display:none; background-color:#2ecc71; margin-top:10px; width: 100%;">다 외웠다! 성령 충만! 다음 단계로 ▶</button>
+            <button class="btn-attack" id="btn-step1-next" onclick="nextStep()" style="display:none; background-color:#2ecc71; margin-top:10px; width: 100%;">${t('btn_step1_next')}</button>
             <div id="step1-tip-text" style="text-align:center; font-size:0.9rem; margin-top:5px; color:#8fa8c8">
-                <span id="step1-tip-badge" style="padding:2px 8px; border-radius:10px; background:#1d3550; color:#dce8f5;">TIP</span> 하나씩 말하며 '읽기' 버튼을 눌러보세요
+                <span id="step1-tip-badge" style="padding:2px 8px; border-radius:10px; background:#1d3550; color:#dce8f5;">TIP</span> ${t('step1_tip_text')}
             </div>
         `;
 
@@ -5995,7 +7102,7 @@ function loadStep() {
         // ★ [추가] 3. 초성 토글 버튼과 로직 생성
         const toggleChosung = () => {
             isChosungMode = !isChosungMode;
-            chosungBtn.innerText = isChosungMode ? '초성 끄기 👁️' : '초성 보기 💡';
+            chosungBtn.innerText = isChosungMode ? t('btn_chosung_off') : t('btn_chosung');
             chosungBtn.style.backgroundColor = isChosungMode ? '#e67e22' : '#f39c12';
 
             // 안 열린 단어들만 초성 <-> 블라인드 전환
@@ -6012,7 +7119,7 @@ function loadStep() {
         chosungBtn.className = 'btn-attack';
         chosungBtn.style.backgroundColor = '#f39c12';
         chosungBtn.style.flex = "1";
-        chosungBtn.innerText = '초성 보기 💡';
+        chosungBtn.innerText = t('btn_chosung');
         chosungBtn.onclick = toggleChosung;
 
         const fillOneChunk = () => {
@@ -6066,7 +7173,7 @@ function loadStep() {
         revealBtn.id = 'btn-reveal';
         revealBtn.className = 'btn-attack';
         revealBtn.style.flex = "1";
-        revealBtn.innerText = '읽기';
+        revealBtn.innerText = t('btn_read');
 
         let longPressTimer = null;
         let longPressActive = false;
@@ -6164,7 +7271,7 @@ function loadStep() {
                 const restartBtn = document.createElement('button');
                 restartBtn.className = revealBtn.className;
                 restartBtn.style.flex = "1";
-                restartBtn.innerText = '다시하기: 눈 감고도 외울 때까지!';
+                restartBtn.innerText = t('btn_retry_perfect');
                 restartBtn.onclick = () => { loadStep(); };
                 if (revealBtn.parentNode) {
                     revealBtn.parentNode.replaceChild(restartBtn, revealBtn);
@@ -6201,7 +7308,7 @@ function loadStep() {
         }
 
         field.innerHTML = `
-            <div class="verse-indicator">${verseLabel}${partLabel}<br>Step 2. 초성에 맞는 단어를 누르세요!</div>
+            <div class="verse-indicator">${verseLabel}${partLabel}<br>${currentLang === 'en' ? 'Step 2. Click the matching phrase!' : 'Step 2. 초성에 맞는 단어를 누르세요!'}</div>
             <div class="reading-card" id="initials-display"
                  style="position:relative; max-height:140px; overflow-y:auto; align-content:flex-start; line-height:2.2; display:flex; flex-wrap:wrap; justify-content:center; gap:8px;">
             </div>
@@ -6314,7 +7421,7 @@ function loadStep() {
                                 const retryBtn = document.createElement('button');
                                 retryBtn.className = 'btn-attack';
                                 retryBtn.style.flex = '1';
-                                retryBtn.innerText = '다시하기';
+                                retryBtn.innerText = t('btn_retry');
                                 retryBtn.onclick = () => {
                                     window.currentStep2PartIndex = 0;
                                     loadStep();
@@ -6323,7 +7430,7 @@ function loadStep() {
                                 const nextBtn = document.createElement('button');
                                 nextBtn.className = 'btn-attack';
                                 nextBtn.style.cssText = 'flex:1; background-color:#2ecc71;';
-                                nextBtn.innerText = '다음 단계로 ▶';
+                                nextBtn.innerText = t('btn_next_stage');
                                 nextBtn.onclick = () => {
                                     window.currentStep2PartIndex = undefined;
                                     window.step2Parts = undefined;
@@ -6407,20 +7514,20 @@ function loadStep() {
 
         // 1. 화면 구성 (두루마리 틀 만들기 + 🌟 3버튼 추가)
         field.innerHTML = `
-            <div class="verse-indicator">${verseLabel}Step 4. 🔥불타기 전에 빈칸을 채우세요!</div>
-            
+            <div class="verse-indicator">${verseLabel}Step 4. ${t('step4_indicator')}</div>
+
             <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 15px;">
                 <button id="btn-speed-slow" onclick="changeScrollSpeed('slow')"
                     style="padding: 6px 12px; border-radius: 20px; border: 2px solid #ccc; background: white; color: #7f8c8d; cursor: pointer; font-size: 0.85rem;">
-                    🐢 느리게
+                    ${t('step4_speed_slow')}
                 </button>
                 <button id="btn-speed-normal" onclick="changeScrollSpeed('normal')"
                     style="padding: 6px 12px; border-radius: 20px; border: 2px solid #27ae60; background: #27ae60; color: white; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
-                    🚶 보통
+                    ${t('step4_speed_normal')}
                 </button>
                 <button id="btn-speed-fast" onclick="changeScrollSpeed('fast')"
                     style="padding: 6px 12px; border-radius: 20px; border: 2px solid #ccc; background: white; color: #7f8c8d; cursor: pointer; font-size: 0.85rem;">
-                    🐇 빠르게
+                    ${t('step4_speed_fast')}
                 </button>
             </div>
 
@@ -6432,12 +7539,12 @@ function loadStep() {
         `;
 
         control.innerHTML = `
-            <div style="text-align:center; margin-bottom:10px; color:#bdc3c7;">아래 카드를 눌러 빈칸을 채우세요</div>
+            <div style="text-align:center; margin-bottom:10px; color:#bdc3c7;">${t('step4_fill_hint')}</div>
             <div class="block-pool" id="scroll-deck"></div>
             <div style="text-align:center; margin-top:12px;">
                 <button id="btn-speed-skip" onclick="skipToEnd()"
                     style="display: none; padding: 10px 24px; border-radius: 20px; border: 2px solid #e74c3c; background: #e74c3c; color: white; font-weight: bold; cursor: pointer; font-size: 0.95rem;">
-                    ⏩ 빨리 넘기기
+                    ${t('step4_skip')}
                 </button>
             </div>
         `;
@@ -6471,14 +7578,14 @@ function loadStep() {
 
         // 4. 화면 구성
         field.innerHTML = `
-            <div class="verse-indicator">${verseLabel}${partLabel}<br>Step 5. 단어를 터치하여 문장을 완성하세요</div>
+            <div class="verse-indicator">${verseLabel}${partLabel}<br>${t('step5_indicator')}</div>
 
             <div class="answer-zone" id="answer-zone" style="min-height: 120px; align-content: flex-start;">
-                <span class="placeholder-text" id="placeholder-text">단어를 터치하여 문장을 만드세요</span>
+                <span class="placeholder-text" id="placeholder-text">${t('step5_placeholder')}</span>
             </div>
 
             <div style="margin-top: 10px; font-size: 0.85rem; color: #576574; text-align: center; background-color: rgba(255,255,255,0.8); padding: 8px 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                💡 <b>팁:</b> 5초간 고민하면 힌트가 나타납니다!
+                ${t('step5_tip')}
             </div>
         `;
 
@@ -6577,7 +7684,7 @@ function loadStep() {
                 SoundEffect.playClick();
                 resetIdleTimer();
                 if (zone.querySelectorAll('.word-block').length === 0) {
-                    zone.innerHTML = '<span class="placeholder-text" id="placeholder-text">단어를 터치하여 문장을 만드세요</span>';
+                    zone.innerHTML = `<span class="placeholder-text" id="placeholder-text">${t('step5_placeholder')}</span>`;
                 }
                 setTimeout(() => updatePoolLayout(), 10);
                 if (insertBtn) updateInsertBtnDisabled();
@@ -6648,12 +7755,12 @@ function loadStep() {
                 insertBtn.style.background = '#e67e22';
                 insertBtn.style.boxShadow = '0 4px 0 #b7770d';
                 insertBtn.style.color = '#fff';
-                insertBtn.innerHTML = '끼워<br>ON';
+                insertBtn.innerHTML = t('step5_insert_on');
             } else {
                 insertBtn.style.background = '';
                 insertBtn.style.boxShadow = '';
                 insertBtn.style.color = '';
-                insertBtn.innerHTML = '끼워<br>넣기';
+                insertBtn.innerHTML = t('step5_insert_btn');
             }
         }
 
@@ -6670,7 +7777,7 @@ function loadStep() {
             if (removeErrorBtn) return;
             removeErrorBtn = document.createElement('button');
             removeErrorBtn.className = 'btn-remove-errors';
-            removeErrorBtn.innerText = '오답 빼기';
+            removeErrorBtn.innerText = t('btn_remove_wrong');
             removeErrorBtn.onclick = () => {
                 setInsertMode(false);
                 const errorBlocks = Array.from(zone.querySelectorAll('.error-block'));
@@ -6821,14 +7928,14 @@ function loadStep() {
         // ── 다시하기 버튼 ──
         const resetBtn = document.createElement('button');
         resetBtn.className = 'btn-reset-step5';
-        resetBtn.innerText = '🔄 리셋';
+        resetBtn.innerText = t('btn_reset');
         resetBtn.style.flex = '1 1 0';
         resetBtn.onclick = () => {
             setInsertMode(false); // 리셋 시 끼워넣기 OFF
             if (removeErrorBtn) { removeErrorBtn.remove(); removeErrorBtn = null; }
             Array.from(zone.querySelectorAll('.word-block')).forEach(block => block.remove());
             if (!zone.querySelector('#placeholder-text')) {
-                zone.innerHTML = '<span class="placeholder-text" id="placeholder-text">단어를 터치하여 문장을 만드세요</span>';
+                zone.innerHTML = `<span class="placeholder-text" id="placeholder-text">${t('step5_placeholder')}</span>`;
             }
             Array.from(pool.children).forEach(btn => {
                 btn.style.visibility = 'visible';
@@ -6967,11 +8074,16 @@ function splitChunksIntoParts(chunks, maxWords = 20) {
 /* [유틸: 한글 초성 추출기] */
 function getChosung(str) {
     const cho = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
+    const hasKorean = [...str].some(c => { const code = c.charCodeAt(0) - 44032; return code > -1 && code < 11172; });
+    if (!hasKorean) {
+        // 영어: 각 단어의 첫 글자만 반환 (한국어 초성과 동등한 난이도)
+        return str.trim().split(/\s+/).map(w => w[0] || '').join(' ');
+    }
     let result = "";
     for (let i = 0; i < str.length; i++) {
         const code = str.charCodeAt(i) - 44032;
         if (code > -1 && code < 11172) result += cho[Math.floor(code / 588)];
-        else result += str.charAt(i); // 한글 아니면 그냥 반환
+        else result += str.charAt(i);
     }
     return result;
 }
@@ -7003,10 +8115,10 @@ function showClearScreen() {
 
     // 🌟 [핵심 수술] 훈련 모드 vs 일반 모드 분기 처리
     if (isTraining) {
-        msg = "⚔️ 집중 훈련 완료! (보상 없음)";
-        displayGem = '완료';
-        streakDays = "집중 훈련";
-        
+        msg = t('result_msg_training_waiting');
+        displayGem = t('result_msg_training_done');
+        streakDays = t('result_training_title');
+
     } else {
         // ============================================================
         // ▼ [일반 모드 전용] 복습 단계 보너스 및 스트릭 업데이트
@@ -7021,20 +8133,20 @@ function showClearScreen() {
         bonusCount = completedStep;
 
         if (window._lastClearOutcome === 'waiting') {
-            msg = `📖 [훈련] 완료! (${baseGem}💎 최소 보상 - 대기 중)`;
+            msg = t('result_msg_waiting', { gem: baseGem });
         } else if (earnedGem > 0) {
             if (completedStep === 1) {
-                msg = `📖 [훈련] 첫 학습 완료! (${baseGem}💎)`;
+                msg = t('result_msg_first_clear', { gem: baseGem });
             } else {
-                msg = `📖 [훈련] ${completedStep}회차 복습 완료! (${baseGem}💎)`;
+                msg = t('result_msg_review_done', { step: completedStep, gem: baseGem });
                 const outcome = window._lastClearOutcome;
-                if (outcome === 'perfect') msg += '\n🟢 완벽한 타이밍! 기억이 더 오래갑니다.';
-                else if (outcome === 'good') msg += '\n🟡 위험했어요! 기억을 간신히 살려냈습니다.';
+                if (outcome === 'perfect') msg += t('result_msg_perfect_timing');
+                else if (outcome === 'good') msg += t('result_msg_good_timing');
             }
         } else if (window._lastClearOutcome === 'miss') {
-            msg = `📖 [훈련] 복습 완료 (보석 없음)\n🔴 불씨가 식었습니다. 다시 불을 피웁니다.`;
+            msg = t('result_msg_miss');
         } else {
-            msg = "📖 [훈련] 완료! (보석 없음 - 대기 중)";
+            msg = t('result_msg_no_gem');
             baseGem = 0;
         }
 
@@ -7047,18 +8159,18 @@ function showClearScreen() {
     }
 
     if (resultTitle) {
-        resultTitle.innerText = isTraining ? '⚔️ 집중 훈련 완료!' : '🎉 STAGE CLEAR!';
+        resultTitle.innerText = isTraining ? t('result_training_title') : t('result_stage_clear');
     }
     if (resultStreakText) {
         resultStreakText.innerHTML = isTraining
-            ? '오늘의 훈련을 무사히 마쳤습니다.'
-            : `연속 <span id="streak-days">${streakDays}</span>일째 타오르는 중!`;
+            ? t('result_training_streak')
+            : t('result_streak_text', { days: `<span id="streak-days">${streakDays}</span>` });
     }
     if (resultExpLabel) {
-        resultExpLabel.innerText = isTraining ? '📝 상태' : '💎 획득';
+        resultExpLabel.innerText = isTraining ? t('result_exp_training') : t('result_exp_gems');
     }
     if (resultContinueBtn) {
-        resultContinueBtn.innerText = isTraining ? '홈으로 돌아가기 ▶' : '계속하기 ▶';
+        resultContinueBtn.innerText = isTraining ? t('result_continue_training') : t('result_continue');
     }
 
     // 4. UI 업데이트
@@ -7081,25 +8193,25 @@ function showClearScreen() {
                 if (outcome === 'perfect' && nextStatus.step === 1) {
                     // step 1 클리어 (최초 학습 또는 miss 후 재학습)
                     // advanceReviewStep 호출 전이므로 step이 아직 1
-                    quoteText = '말씀을 잊지 않고 싶으시다면<br>10분 후 다시 만나보세요.';
+                    quoteText = t('quote_first_clear');
                 } else if (outcome === 'perfect') {
                     const waitMs = getReviewWaitMs(nextStatus.step + 1); // advanceReviewStep 호출 전이므로 +1
                     const hr = waitMs / 3600000;
                     let waitLabel;
-                    if (hr < 1) waitLabel = `${Math.round(waitMs / 60000)}분`;
-                    else if (hr < 24) waitLabel = `${Math.round(hr)}시간`;
-                    else waitLabel = `${Math.round(hr / 24)}일`;
-                    quoteText = `적절한 복습 간격입니다.<br>${waitLabel} 후에 복습하세요!(기억 레벨이 오릅니다)`;
+                    if (hr < 1) waitLabel = currentLang === 'en' ? `${Math.round(waitMs / 60000)} min` : `${Math.round(waitMs / 60000)}분`;
+                    else if (hr < 24) waitLabel = currentLang === 'en' ? `${Math.round(hr)} hr` : `${Math.round(hr)}시간`;
+                    else waitLabel = currentLang === 'en' ? `${Math.round(hr / 24)} day(s)` : `${Math.round(hr / 24)}일`;
+                    quoteText = t('quote_perfect', { wait: waitLabel });
                 } else if (outcome === 'good') {
-                    quoteText = '거의 다 왔어요!<br>한 번 더 복습해보세요.';
+                    quoteText = t('quote_good');
                 } else if (outcome === 'good-retry') {
-                    quoteText = '잘하셨어요!<br>다음 단계로 진행합니다.';
+                    quoteText = t('quote_good_retry');
                 } else if (outcome === 'miss') {
-                    quoteText = '괜찮아요! 2번만 더 복습하면<br>다음 단계로 진행됩니다.';
+                    quoteText = t('quote_miss');
                 } else if (outcome === 'miss-retry') {
-                    quoteText = '잘하셨어요! 한 번만 더 복습하면<br>다음 단계로 진행됩니다.';
+                    quoteText = t('quote_miss_retry');
                 } else if (outcome === 'miss-retry-final') {
-                    quoteText = '수고하셨어요!<br>다음 단계로 진행합니다.';
+                    quoteText = t('quote_miss_retry_final');
                 }
             }
         }
@@ -7136,12 +8248,12 @@ function showClearScreen() {
                     // 스테이지 제목 가져오기
                     const chData = getChapterDataByStageId(sId);
                     const stageObj = chData && chData.stages ? chData.stages.find(s => s.id === sId) : null;
-                    const stageTitle = stageObj ? stageObj.title : '이 말씀';
+                    const stageTitle = stageObj ? getStageTitle(stageObj) : t('label_this_word');
                     notifWrap.innerHTML = `
-                        <p style="font-size:0.85rem; color:#7f8c8d; margin:0 0 6px;">${waitLabel} 뒤 알려드릴까요?</p>
+                        <p style="font-size:0.85rem; color:#7f8c8d; margin:0 0 6px;">${t('notif_ask', { wait: waitLabel })}</p>
                         <button onclick="scheduleReviewNotification(${rawDelayMs}, '${stageTitle.replace(/'/g, "\\'")}', this)"
                             style="background:#e8a020; color:white; border:none; padding:9px 20px; border-radius:20px; font-weight:bold; font-size:0.9rem; cursor:pointer;">
-                            🔔 알림 예약
+                            ${t('notif_btn')}
                         </button>`;
                     notifWrap.style.display = 'block';
                 }
@@ -7199,9 +8311,9 @@ function showBossClearScreen(clearedStageId) {
 
     const streakInfo = updateStreak();
 
-    const bq0 = ['이 말씀이 이제 당신 안에 있습니다.', '외운 것이 아니라 새긴 것입니다.', '말씀이 마음판에 기록되었습니다.'];
-    const bq1 = ['거의 다 새겨졌습니다. 조금만 더요.', '윤곽이 보입니다. 다음엔 더 선명해질 거예요.'];
-    const bq4 = ['씨앗이 뿌려졌습니다. 물을 주면 자랍니다.', '처음은 누구나 이렇습니다. 시스템을 믿고 따라오세요.'];
+    const bq0 = LANG[currentLang].boss_quote_perfect || LANG['ko'].boss_quote_perfect;
+    const bq1 = LANG[currentLang].boss_quote_good || LANG['ko'].boss_quote_good;
+    const bq4 = LANG[currentLang].boss_quote_miss || LANG['ko'].boss_quote_miss;
     const quotePool = bossHintCount === 0 ? bq0 : bossHintCount <= 3 ? bq1 : bq4;
     const quoteText = quotePool[Math.floor(Math.random() * quotePool.length)];
     bossHintCount = 0;
@@ -7212,11 +8324,11 @@ function showBossClearScreen(clearedStageId) {
     const resultContinueBtn = document.getElementById('result-continue-btn');
     const quoteEl = document.getElementById('result-quote');
 
-    if (resultTitle) resultTitle.innerText = '🐲 BOSS CLEAR!';
-    if (resultStreakText) resultStreakText.innerHTML = `연속 <span id="streak-days">${streakInfo.days}</span>일째 타오르는 중!`;
-    if (resultExpLabel) resultExpLabel.innerText = '🏆 보스 격파';
+    if (resultTitle) resultTitle.innerText = t('result_boss_clear');
+    if (resultStreakText) resultStreakText.innerHTML = t('result_streak_text', { days: `<span id="streak-days">${streakInfo.days}</span>` });
+    if (resultExpLabel) resultExpLabel.innerText = t('result_boss_exp');
     if (resultContinueBtn) {
-        resultContinueBtn.innerText = '계속하기 ▶';
+        resultContinueBtn.innerText = t('result_continue');
         resultContinueBtn.onclick = () => closeBossClearModal(clearedStageId);
     }
     if (quoteEl) {
@@ -7226,7 +8338,7 @@ function showBossClearScreen(clearedStageId) {
 
     document.getElementById('result-time').innerText = `${minutes}:${seconds}`;
     document.getElementById('result-accuracy').innerText = `${accuracy}%`;
-    document.getElementById('result-exp').innerText = '격파!';
+    document.getElementById('result-exp').innerText = t('result_boss_defeated');
 
     const bossResultModal = document.getElementById('result-modal');
     const existingBossHistory = bossResultModal && bossResultModal.querySelector('.hardship-history-wrap');
@@ -7348,16 +8460,30 @@ function getCurrentHintCost() {
 
 function updateHintButtonLabels() {
     const hintCost = getCurrentHintCost();
-    const hintLabel = hintCost > 0 ? `(💎${hintCost})` : '(무료)';
+    const hintLabel = hintCost > 0 ? `(💎${hintCost})` : `(${t('label_free')})`;
+    const btnLabel = t('hint_btn_label');
 
-    const trainingHintCost = document.getElementById('training-hint-cost');
-    if (trainingHintCost) trainingHintCost.textContent = hintLabel;
+    const setHintBtn = (btnId, costId) => {
+        const btn = document.getElementById(btnId);
+        const costSpan = document.getElementById(costId);
+        if (btn) {
+            // 텍스트 노드만 교체 (cost span 보존)
+            const textNode = [...btn.childNodes].find(n => n.nodeType === 3);
+            if (textNode) textNode.textContent = btnLabel + ' ';
+        }
+        if (costSpan) costSpan.textContent = hintLabel;
+    };
 
-    const battleHintCost = document.getElementById('battle-hint-cost');
-    if (battleHintCost) battleHintCost.textContent = hintLabel;
+    setHintBtn('training-hint-btn', 'training-hint-cost');
+    setHintBtn('battle-hint-btn', 'battle-hint-cost');
 
     const hardshipHintCost = document.getElementById('common-hardship-hint-cost');
     if (hardshipHintCost) hardshipHintCost.textContent = hintLabel;
+    const hardshipHintBtn = document.getElementById('common-hardship-hint-btn');
+    if (hardshipHintBtn) {
+        const textNode = [...hardshipHintBtn.childNodes].find(n => n.nodeType === 3);
+        if (textNode) textNode.textContent = btnLabel + ' ';
+    }
 }
 
 function useHint() {
@@ -7389,7 +8515,7 @@ function useHint() {
 
     // 안내 문구
     if (hintCost > 0) {
-        if (!confirm(`💎 보석 ${hintCost}개를 소모하여 힌트를 보시겠습니까?`)) {
+        if (!confirm(t('hint_confirm', { cost: hintCost }))) {
             return;
         }
     }
@@ -7441,18 +8567,18 @@ function showHintModal({ cost, onClose }) {
             highlightHtml = trainingVerseData.chunks.map((w, i) =>
                 i === idx ? `<span style='background:#ffe066; border-radius:5px;'>${w}</span>` : w
             ).join(' ');
-            hintText = `<div style='margin-top:10px;'>현재 단어: ${highlightHtml}</div>`;
+            hintText = `<div style='margin-top:10px;'>${t('hint_step2_current')}${highlightHtml}</div>`;
         } else if (currentStep === 3 && typeof trainingVerseData.text === 'string') {
             const targetSlot = document.querySelector('.blank-slot');
             if (targetSlot) {
                 const answer = targetSlot.dataset.answer;
                 highlightHtml = trainingVerseData.text.replace(answer, `<span style='background:#ffe066; border-radius:5px;'>${answer}</span>`);
-                hintText = `<div style='margin-bottom:8px;'>현재 구절</div><div style='font-size:1.1rem; color:#2c3e50;'>${highlightHtml}</div>`;
+                hintText = `<div style='margin-bottom:8px;'>${t('hint_step3_label')}</div><div style='font-size:1.1rem; color:#2c3e50;'>${highlightHtml}</div>`;
             } else {
                 hintText = `<div style='font-size:1.1rem; color:#2c3e50;'>${trainingVerseData.text}</div>`;
             }
         } else if (currentStep === 4) {
-            hintText = `<div style='font-size:1.1rem; color:#2c3e50;'>${trainingVerseData.text}</div><div style='margin-top:10px; color:#e74c3c;'>가짜 단어를 찾아 빨갛게 표시합니다.</div>`;
+            hintText = `<div style='font-size:1.1rem; color:#2c3e50;'>${trainingVerseData.text}</div><div style='margin-top:10px; color:#e74c3c;'>${t('hint_step4_fake')}</div>`;
         } else if (currentStep === 5) {
             hintText = `<div style='font-size:1.1rem; color:#2c3e50;'>${trainingVerseData.text}</div>`;
         } else {
@@ -7482,9 +8608,9 @@ function showHintModal({ cost, onClose }) {
             ).join(' ');
 
             hintText = `
-                <div style='margin-bottom:8px; font-weight:bold;'>현재 전체 구절</div>
+                <div style='margin-bottom:8px; font-weight:bold;'>${t('hint_boss_full_verse')}</div>
                 <div style='font-size:1.1rem; color:#2c3e50; margin-bottom:15px;'>${verse}</div>
-                <div style='margin-bottom:8px; font-weight:bold; color:#e74c3c;'>현재 풀어야 할 파트</div>
+                <div style='margin-bottom:8px; font-weight:bold; color:#e74c3c;'>${t('hint_boss_current_part')}</div>
                 <div style='font-size:1.1rem; color:#2c3e50;'>${highlightHtml}</div>
             `;
         } else {
@@ -7503,7 +8629,7 @@ function showHintModal({ cost, onClose }) {
                 <button id="hint-modal-close" style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
             </div>
             <div style="margin-bottom:10px; font-size:1.1rem; color:#2c3e50;">
-                💡 힌트 사용 ${cost > 0 ? `💎${cost}` : '<span style="color:#27ae60; font-weight:bold;">무료</span>'}
+                ${cost > 0 ? t('hint_modal_header', { cost }) : t('hint_modal_header_free')}
             </div>
             <div style="margin-bottom:20px; color:#34495e;">${hintText}</div>
         </div>
@@ -7569,12 +8695,7 @@ function renderMissionList(tabName) {
     listArea.innerHTML = ""; // 기존 목록 초기화
 
     // 1. [추가됨] 초기화 안내 문구 삽입
-    let resetInfoText = "";
-    if (tabName === 'daily') {
-        resetInfoText = "🕒 매일 자정에 초기화됩니다";
-    } else {
-        resetInfoText = "🕒 매주 월요일 자정에 초기화됩니다";
-    }
+    const resetInfoText = tabName === 'daily' ? t('mission_reset_daily') : t('mission_reset_weekly');
 
     const infoDiv = document.createElement('div');
     infoDiv.style.textAlign = "center";
@@ -7603,76 +8724,75 @@ function renderMissionList(tabName) {
         missions = [
             {
                 id: 0,
-                title: "매일 접속 시 보상",
-                desc: "오늘 접속하면 자동으로 완료됩니다.",
+                title: t('mission_daily_0_title'),
+                desc: t('mission_daily_0_desc'),
                 target: 1,
                 current: missionData.daily.loginReward || 0,
-                reward: "💎 보석 100개",
+                reward: "💎 100",
                 rewardType: 'gem', val1: 100, val2: 0,
                 claimed: missionData.daily.claimed[0]
             },
             {
                 id: 1,
-                title: "새로운 구절 1회 학습",
-                desc: "새로운 구절을 1회 학습하세요.",
+                title: t('mission_daily_1_title'),
+                desc: t('mission_daily_1_desc'),
                 target: 1,
                 current: missionData.daily.newClear,
-                reward: "💎 보석 300개",
+                reward: "💎 300",
                 rewardType: 'gem', val1: 300, val2: 0,
                 claimed: missionData.daily.claimed[1]
             },
             {
                 id: 2,
-                title: "중보/보스 처치 1회",
-                desc: "중간 점검 또는 보스를 완료하세요.",
+                title: t('mission_daily_2_title'),
+                desc: t('mission_daily_2_desc'),
                 target: 1,
                 current: missionData.daily.checkpointBoss,
-                reward: "💎 보석 500개",
+                reward: "💎 500",
                 rewardType: 'gem', val1: 500, val2: 0,
                 claimed: missionData.daily.claimed[2]
             },
             {
                 id: 3,
-                title: "데이터 기록 보관",
-                desc: "텍스트 파일로 기록을 안전하게 보관하세요.",
+                title: t('mission_daily_3_title'),
+                desc: t('mission_daily_3_desc'),
                 target: 1,
                 current: missionData.daily.backup || 0,
-                reward: "💎 보석 100개",
+                reward: "💎 100",
                 rewardType: 'gem',
                 val1: 100, val2: 0,
                 claimed: missionData.daily.claimed[3]
             }
         ];
     } else {
-        // 주간 미션 정의
         missions = [
             {
                 id: 0,
-                title: "주 5일 출석하기",
-                desc: "꾸준함이 실력입니다.",
+                title: t('mission_weekly_0_title'),
+                desc: t('mission_weekly_0_desc'),
                 target: 5,
                 current: missionData.weekly.attendance,
-                reward: "💎 보석 1,000",
+                reward: "💎 1,000",
                 rewardType: 'gem', val1: 1000,
                 claimed: missionData.weekly.claimed[0]
             },
             {
                 id: 1,
-                title: "용 사냥",
-                desc: "중간 점검 또는 보스 완료.",
+                title: t('mission_weekly_1_title'),
+                desc: t('mission_weekly_1_desc'),
                 target: 5,
                 current: missionData.weekly.dragonKill,
-                reward: "💎 보석 3,000",
+                reward: "💎 3,000",
                 rewardType: 'gem', val1: 3000,
                 claimed: missionData.weekly.claimed[1]
             },
             {
                 id: 2,
-                title: "구절 15회 학습",
-                desc: "(주간)누적 15회 학습.",
+                title: t('mission_weekly_2_title'),
+                desc: t('mission_weekly_2_desc'),
                 target: 15,
                 current: missionData.weekly.stageClear,
-                reward: "💎 보석 2,000",
+                reward: "💎 2,000",
                 rewardType: 'gem', val1: 2000,
                 claimed: missionData.weekly.claimed[2]
             }
@@ -7691,14 +8811,12 @@ function renderMissionList(tabName) {
         // 버튼 상태 결정
         let btnHtml = "";
         if (m.claimed) {
-            btnHtml = `<button class="btn-claim done">완료</button>`;
+            btnHtml = `<button class="btn-claim done">${t('mission_btn_done')}</button>`;
         } else if (isComplete) {
-            // 보상 받기 버튼
-            btnHtml = `<button class="btn-claim ready" onclick="claimReward('${tabName}', ${m.id}, '${m.rewardType}', ${m.val1 || 0}, ${m.val2 || 0})">보상 받기</button>`;
+            btnHtml = `<button class="btn-claim ready" onclick="claimReward('${tabName}', ${m.id}, '${m.rewardType}', ${m.val1 || 0}, ${m.val2 || 0})">${t('mission_btn_claim')}</button>`;
         } else {
-            // 💡 [NEW] 4번째 백업 미션이면서 아직 미완료일 때 '바로가기' 버튼 표시
             if (tabName === 'daily' && m.id === 3) {
-                btnHtml = `<button class="btn-claim" style="background:#3498db; color:white; border:none; cursor:pointer;" onclick="openDataSettings()">바로가기</button>`;
+                btnHtml = `<button class="btn-claim" style="background:#3498db; color:white; border:none; cursor:pointer;" onclick="openDataSettings()">${t('mission_btn_goto')}</button>`;
             } else {
                 btnHtml = `<button class="btn-claim" disabled>${m.current}/${m.target}</button>`;
             }
@@ -7735,14 +8853,14 @@ function openMission() {
 
         screen.innerHTML = `
             <div class="map-header" style="justify-content: center; flex-shrink: 0;">
-                <div style="font-weight:bold; font-size:1.3rem;">임무</div>
+                <div style="font-weight:bold; font-size:1.3rem;" data-i18n="mission_screen_title">${t('mission_screen_title')}</div>
             </div>
 
             <div class="mission-list" id="mission-list-area" style="flex: 1; overflow-y: auto; padding: 20px;">
                 </div>
 
             <div class="button-area-static">
-        <button class="btn-gray btn-back" onclick="goMap()">돌아가기</button>
+        <button class="btn-gray btn-back" onclick="goMap()" data-i18n="btn_back">${t('btn_back')}</button>
     </div>
         `;
         document.body.appendChild(screen);
@@ -7763,8 +8881,8 @@ function openMission() {
         tabContainer.className = 'mission-tabs';
         tabContainer.style.cssText = "display:flex; justify-content:center; gap:10px; padding: 10px; background: var(--bg-dark); flex-shrink: 0;";
         tabContainer.innerHTML = `
-            <button class="tab-btn active" onclick="switchMissionTab('daily')">일일 미션</button>
-            <button class="tab-btn" onclick="switchMissionTab('weekly')">주간 미션</button>
+            <button class="tab-btn active" onclick="switchMissionTab('daily')">${t('mission_tab_daily')}</button>
+            <button class="tab-btn" onclick="switchMissionTab('weekly')">${t('mission_tab_weekly')}</button>
         `;
         // 헤더 바로 다음에 삽입
         screen.insertBefore(tabContainer, listArea);
@@ -7797,41 +8915,34 @@ function openLifeBook() {
     screen.innerHTML = `
             <div class="life-book-header" style="padding:20px; text-align:center; background:#2c3e50; z-index:10; border-bottom:1px solid rgba(255,255,255,0.1); flex-shrink: 0;">
                 <div style="display:flex; align-items:center; justify-content:center; gap:10px;">
-                    <h1 style="color:#f1c40f; margin:0;">📖 도감</h1>
+                    <h1 style="color:#f1c40f; margin:0;">${t('library_title')}</h1>
                     <button onclick="document.getElementById('life-book-help').classList.toggle('hidden'); document.getElementById('help-icon').textContent = document.getElementById('life-book-help').classList.contains('hidden') ? '❓' : '❌';" style="background:none; border:none; font-size:1.3rem; cursor:pointer; padding:5px; color:#f1c40f;" id="help-icon">❓</button>
                 </div>
-                
+
                 <div id="life-book-help" class="hidden" style="background:rgba(52, 73, 94, 0.8); padding:15px; border-radius:10px; margin:10px 0; text-align:left; border-left:3px solid #f1c40f;">
                     <div style="font-size:0.85rem; color:#bdc3c7; line-height:1.6;">
-                        <div style="margin-bottom:8px;"><strong style="color:#f1c40f;">🎯 도감이란?</strong></div>
-                        <div>각 구절을 여러 번 훈련하면서 <strong>'도감 점수'</strong>를 모아갑니다. 점수가 높아질수록 더 강한 보너스를 얻습니다.</div>
+                        <div style="margin-bottom:8px;"><strong style="color:#f1c40f;">${t('library_help_what_title')}</strong></div>
+                        <div>${t('library_help_what_desc')}</div>
                         <div style="margin-top:12px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:10px;">
-                            <div style="margin-bottom:8px;"><strong style="color:#f1c40f;">📊 점수 획득 방식</strong></div>
-                            <div>• 구절 1회 클리어: 10점</div>
-                            <div>• 구절 5회 이상: 20점</div>
-                            <div>• 구절 10회 이상: 30점</div>
-                            <div>• 구절 20회 이상: 50점</div>
+                            <div style="margin-bottom:8px;"><strong style="color:#f1c40f;">${t('library_help_score_title')}</strong></div>
+                            <div>${t('library_help_score_items')}</div>
                         </div>
                         <div style="margin-top:12px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:10px;">
-                            <div style="margin-bottom:8px;"><strong style="color:#f1c40f;">⭐ 깨달음의 경지 보너스</strong></div>
-                            <div style="font-size:0.8rem;">• 1000점: 보석 5% 추가 획득</div>
-                            <div style="font-size:0.8rem;">• 2500점: 오답 1회 무시</div>
-                            <div style="font-size:0.8rem;">• 6000점: 보석 10%, 승점 5% 추가</div>
-                            <div style="font-size:0.8rem;">• 14000점: 보석 15%, 오답 2회</div>
-                            <div style="font-size:0.8rem;">• 20000점: 보석 15% + 오답 3회 + 승점 15%</div>
+                            <div style="margin-bottom:8px;"><strong style="color:#f1c40f;">${t('library_help_rank_title')}</strong></div>
+                            <div style="font-size:0.8rem;">${t('library_help_rank_items')}</div>
                         </div>
                     </div>
                 </div>
-                
+
                 <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:15px; margin-top:10px;">
-                    <div style="font-size:0.9rem; color:#bdc3c7;">현재 도감 점수</div>
+                    <div style="font-size:0.9rem; color:#bdc3c7;">${t('library_current_score')}</div>
                     <div style="font-size:2rem; font-weight:bold; color:#fff; text-shadow:0 0 10px #f1c40f;">
                         <span id="collection-score">0</span> <span style="font-size:1rem;">pts</span>
                     </div>
                     <div style="margin-top:15px; padding-top:15px; border-top:1px dashed rgba(255,255,255,0.1);">
-                        <div style="font-size:0.8rem; color:#bdc3c7; margin-bottom:5px;">깨달음의 경지</div>
-                        <div id="collection-rank-label" style="font-size:1.5rem; font-weight:bold; color:#95a5a6;">🎒 나그네</div>
-                        <div id="collection-rank-buff" style="font-size:0.9rem; color:#2ecc71; margin-top:5px;">아직 효과 없음</div>
+                        <div style="font-size:0.8rem; color:#bdc3c7; margin-bottom:5px;">${t('library_rank_label')}</div>
+                        <div id="collection-rank-label" style="font-size:1.5rem; font-weight:bold; color:#95a5a6;"></div>
+                        <div id="collection-rank-buff" style="font-size:0.9rem; color:#2ecc71; margin-top:5px;">${t('library_no_buff')}</div>
                     </div>
                 </div>
                 
@@ -7843,7 +8954,7 @@ function openLifeBook() {
                 </div>
 
             <div class="button-area-static">
-        <button class="btn-gray btn-back" onclick="goMap()">돌아가기</button>
+        <button class="btn-gray btn-back" onclick="goMap()">${t('btn_go_back')}</button>
     </div>
         `;
 
@@ -7866,7 +8977,7 @@ function renderLifeBook() {
     for (let i = 1; i <= 22; i++) {
         const btn = document.createElement('button');
         btn.className = `lb-chapter-btn ${i === currentLifeBookChapter ? 'active' : ''}`;
-        btn.innerText = `제 ${i}장`;
+        btn.innerText = t('label_chapter', { num: i });
         btn.onclick = () => {
             currentLifeBookChapter = i;
             renderLifeBook();
@@ -7893,9 +9004,10 @@ function renderLifeBook() {
 
     // 3. ★ 다음 경지까지 남은 점수 계산 ★
     const nextRank = getNextCollectionRank(grandTotalScore);
+    const nextRankTitle = nextRank ? (currentLang === 'en' && nextRank.titleEn ? nextRank.titleEn : nextRank.title) : '';
     const nextGoalText = nextRank
-        ? `다음 <b>[${nextRank.title}]</b>까지 ${nextRank.min - grandTotalScore}점 남음`
-        : "🎉 명예로운 만점! 온전한 결실을 맺으셨습니다!";
+        ? t('library_next_rank', { title: nextRankTitle, remain: (nextRank.min - grandTotalScore).toLocaleString() })
+        : t('library_max_score');
 
     // 4. UI 업데이트
     document.getElementById('collection-score').innerText = grandTotalScore.toLocaleString();
@@ -7906,8 +9018,9 @@ function renderLifeBook() {
 
     if (rankLabel) {
         // 직분 이름 + 아래에 작은 글씨로 남은 점수 표시
+        const rankTitle = (currentLang === 'en' && rankInfo.titleEn) ? rankInfo.titleEn : rankInfo.title;
         rankLabel.innerHTML = `
-            ${rankInfo.title}
+            ${rankTitle}
             <div style="font-size:0.8rem; color:#7f8c8d; font-weight:normal; margin-top:5px; opacity:0.8;">
                 ${nextGoalText}
             </div>
@@ -7918,12 +9031,12 @@ function renderLifeBook() {
         let buffText = "";
         if (rankInfo.gemBonus > 0 || rankInfo.wrongCorrection > 0 || rankInfo.scoreBonus > 0) {
             let buffItems = [];
-            if (rankInfo.gemBonus > 0) buffItems.push(`💎 보석 +${rankInfo.gemBonus}%`);
-            if (rankInfo.wrongCorrection > 0) buffItems.push(`🐛 오답 ${rankInfo.wrongCorrection}회`);
-            if (rankInfo.scoreBonus > 0) buffItems.push(`⭐ 승점 +${rankInfo.scoreBonus}%`);
+            if (rankInfo.gemBonus > 0) buffItems.push(t('library_buff_gem', { n: rankInfo.gemBonus }));
+            if (rankInfo.wrongCorrection > 0) buffItems.push(t('library_buff_wrong', { n: rankInfo.wrongCorrection }));
+            if (rankInfo.scoreBonus > 0) buffItems.push(t('library_buff_score', { n: rankInfo.scoreBonus }));
             buffText = buffItems.join(" · ");
         } else {
-            buffText = "아직 효과 없음";
+            buffText = t('library_no_buff');
         }
         rankBuff.innerHTML = buffText;
     }
@@ -7934,7 +9047,7 @@ function renderLifeBook() {
     let targetData = bibleData[currentLifeBookChapter] || [];
 
     if (targetData.length === 0) {
-        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:50px; color:#7f8c8d;">🚧 데이터 준비 중</div>`;
+        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:50px; color:#7f8c8d;">${t('library_preparing')}</div>`;
     } else {
         targetData.forEach((verse, index) => {
             const verseNum = index + 1;
@@ -7946,7 +9059,7 @@ function renderLifeBook() {
                 div.className = 'card-item';
                 div.style.background = '#34495e';
                 div.style.border = '2px dashed #7f8c8d';
-                div.innerHTML = `<div style="font-size:2rem;">🔒</div><div style="color:#7f8c8d; font-size:0.8rem; margin-top:5px;">${verseNum}절</div>`;
+                div.innerHTML = `<div style="font-size:2rem;">🔒</div><div style="color:#7f8c8d; font-size:0.8rem; margin-top:5px;">${t('label_verse', { num: verseNum })}</div>`;
                 div.onclick = () => alert(t('alert_locked_first_clear'));
                 grid.appendChild(div);
                 return;
@@ -7962,7 +9075,7 @@ function renderLifeBook() {
             card.innerHTML = `
                 <div class="card-num">${currentLifeBookChapter}:${verseNum}</div>
                 <div class="card-tier-label">${tierName}</div>
-                <div style="font-size:0.7rem; color:#555; margin-top:5px;">숙련도: ${count}</div>
+                <div style="font-size:0.7rem; color:#555; margin-top:5px;">${t('library_mastery', { count })}</div>
             `;
             card.onclick = () => {
                 alert(t('alert_life_book_verse', { ch: currentLifeBookChapter, v: verseNum, text: verse.text }));
@@ -7974,16 +9087,16 @@ function renderLifeBook() {
 
 // [보조 함수] 점수에 따른 경지 계산 (10단계) - 레벨별 보너스 포함
 const COLLECTION_RANKS = [
-    { min: 0, title: "좋은 땅에 뿌린 씨", color: "#95a5a6", gemBonus: 0, wrongCorrection: 0, scoreBonus: 0 },
-    { min: 1000, title: "단단한 뿌리", color: "#2ecc71", gemBonus: 5, wrongCorrection: 0, scoreBonus: 0 },
-    { min: 2500, title: "수줍은 새싹", color: "#7f8c8d", gemBonus: 5, wrongCorrection: 1, scoreBonus: 0 },
-    { min: 4000, title: "푸르른 본잎", color: "#27ae60", gemBonus: 5, wrongCorrection: 1, scoreBonus: 5 },
-    { min: 6000, title: "곧게 뻗은 줄기", color: "#3498db", gemBonus: 10, wrongCorrection: 1, scoreBonus: 5 },
-    { min: 8500, title: "풍성한 가지", color: "#16a085", gemBonus: 10, wrongCorrection: 2, scoreBonus: 5 },
-    { min: 11000, title: "강인한 나무", color: "#9b59b6", gemBonus: 10, wrongCorrection: 2, scoreBonus: 10 },
-    { min: 14000, title: "간절한 꽃봉오리", color: "#8e44ad", gemBonus: 15, wrongCorrection: 2, scoreBonus: 10 },
-    { min: 17000, title: "눈부신 개화", color: "#f1c40f", gemBonus: 15, wrongCorrection: 3, scoreBonus: 10 },
-    { min: 20000, title: "처음 익은 열매", color: "#e74c3c", gemBonus: 15, wrongCorrection: 3, scoreBonus: 15 }
+    { min: 0, title: "좋은 땅에 뿌린 씨", titleEn: "Seed on Good Soil", color: "#95a5a6", gemBonus: 0, wrongCorrection: 0, scoreBonus: 0 },
+    { min: 1000, title: "단단한 뿌리", titleEn: "Strong Root", color: "#2ecc71", gemBonus: 5, wrongCorrection: 0, scoreBonus: 0 },
+    { min: 2500, title: "수줍은 새싹", titleEn: "Tender Sprout", color: "#7f8c8d", gemBonus: 5, wrongCorrection: 1, scoreBonus: 0 },
+    { min: 4000, title: "푸르른 본잎", titleEn: "True Leaves", color: "#27ae60", gemBonus: 5, wrongCorrection: 1, scoreBonus: 5 },
+    { min: 6000, title: "곧게 뻗은 줄기", titleEn: "Upright Stem", color: "#3498db", gemBonus: 10, wrongCorrection: 1, scoreBonus: 5 },
+    { min: 8500, title: "풍성한 가지", titleEn: "Fruitful Branch", color: "#16a085", gemBonus: 10, wrongCorrection: 2, scoreBonus: 5 },
+    { min: 11000, title: "강인한 나무", titleEn: "Mighty Tree", color: "#9b59b6", gemBonus: 10, wrongCorrection: 2, scoreBonus: 10 },
+    { min: 14000, title: "간절한 꽃봉오리", titleEn: "Eager Bud", color: "#8e44ad", gemBonus: 15, wrongCorrection: 2, scoreBonus: 10 },
+    { min: 17000, title: "눈부신 개화", titleEn: "Radiant Bloom", color: "#f1c40f", gemBonus: 15, wrongCorrection: 3, scoreBonus: 10 },
+    { min: 20000, title: "처음 익은 열매", titleEn: "Firstfruits", color: "#e74c3c", gemBonus: 15, wrongCorrection: 3, scoreBonus: 15 }
 ];
 
 // 현재 도감 점수 계산
@@ -8408,35 +9521,35 @@ function openRankingScreen() {
         screen.style.overflowY = "auto";
         screen.innerHTML = `
     <div class="map-header" style="flex-direction:column; justify-content:center; border-bottom:1px solid rgba(255,255,255,0.1); padding:15px 10px;">
-        <div style="font-weight:bold; font-size:1.2rem; color:white; margin-bottom:5px;">🏆 킹스로드 랭킹 보드</div>
-        <div id="season-timer-display" style="font-size:0.85rem; color:#bdc3c7; font-family:monospace; margin-bottom:10px;">⏳ 시간 계산 중...</div>
-        <div style="font-size:0.8rem; color:#95a5a6; margin-bottom:10px;">🔄 06시, 정오(12:00) · 18시, 자정(00:00)에 업데이트됩니다</div>
+        <div style="font-weight:bold; font-size:1.2rem; color:white; margin-bottom:5px;">${t('ranking_board_title')}</div>
+        <div id="season-timer-display" style="font-size:0.85rem; color:#bdc3c7; font-family:monospace; margin-bottom:10px;">${t('ranking_timer_loading')}</div>
+        <div style="font-size:0.8rem; color:#95a5a6; margin-bottom:10px;">${t('ranking_update_schedule')}</div>
         
         <div style="display:flex; flex-direction:row; gap:8px; margin-top:5px; justify-content:center; width:100%; flex-wrap:wrap;">
             <button onclick="scrollToMyRank()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #ecf0f1; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-                📍 내 순위 찾기
+                ${t('ranking_find_my_rank')}
             </button>
             <button onclick="toggleMyScorePanel()" style="background: rgba(241,196,15,0.15); border: 1px solid rgba(241,196,15,0.4); color: #f1c40f; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-                📊 나의 승점 패널
+                ${t('ranking_my_score_panel')}
             </button>
         </div>
 
         <div id="my-score-panel" style="display:none; margin:10px 0 0 0; width:100%; max-width:320px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; color:#ecf0f1; font-size:0.85rem;">
             <div style="display:flex; justify-content:space-between; margin-bottom:8px; padding-bottom:8px; border-bottom:1px dashed rgba(255,255,255,0.2);">
-                <span style="color:#f1c40f; font-weight:bold;">👑 누적 승점</span>
+                <span style="color:#f1c40f; font-weight:bold;">${t('ranking_total_score')}</span>
                 <span style="font-weight:bold; color:#f1c40f;"><span id="my-total-score">0</span> pts</span>
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-                <span>주간 승점 (매주 리셋)</span>
+                <span>${t('ranking_weekly_score')}</span>
                 <span style="font-weight:bold; color:#2ecc71;"><span id="my-weekly-score">0</span> pts</span>
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-                <span>월간 승점</span>
+                <span>${t('ranking_monthly_score')}</span>
                 <span style="font-weight:bold; color:#3498db;"><span id="my-monthly-score">0</span> pts</span>
             </div>
             <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#95a5a6;">
-                <span>주차: <span id="my-week-id">-</span></span>
-                <span>월: <span id="my-month-id">-</span></span>
+                <span>${t('ranking_week_label')} <span id="my-week-id">-</span></span>
+                <span>${t('ranking_month_label')} <span id="my-month-id">-</span></span>
             </div>
         </div>
     </div>
@@ -8444,44 +9557,44 @@ function openRankingScreen() {
     <div id="yearly-swipe-area" style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap:15px; padding:15px 5px 20px 5px; margin-top:10px; border-bottom:1px solid rgba(255,255,255,0.1); scrollbar-width: none;">
             <div style="min-width:85%; flex:0 0 auto; scroll-snap-align:center; background:linear-gradient(135deg, #2c3e50, #1a252f); border:2px solid #f39c12; border-radius:15px; padding:15px; box-shadow:0 8px 15px rgba(0,0,0,0.5); position:relative; overflow:hidden;">
                 <div style="position:absolute; top:-10px; right:-15px; font-size:6rem; opacity:0.05; pointer-events:none;">🏆</div>
-                <div style="text-align:center; font-weight:bold; color:#f1c40f; font-size:1.15rem; margin-bottom:5px; letter-spacing:-0.5px;">⚔️ 2026 12지파 대항전</div>
-                <div style="font-size:0.75rem; color:#bdc3c7; text-align:center; margin-bottom:15px;">(각 지파 상위 12,000명 기여도 합산)</div>
+                <div style="text-align:center; font-weight:bold; color:#f1c40f; font-size:1.15rem; margin-bottom:5px; letter-spacing:-0.5px;">${t('ranking_yearly_battle')}</div>
+                <div style="font-size:0.75rem; color:#bdc3c7; text-align:center; margin-bottom:15px;">${t('ranking_yearly_desc')}</div>
                 <div id="yearly-top3-list" style="display:flex; flex-direction:column; gap:8px;">
-                    <div style="text-align:center; padding:10px; color:#95a5a6; font-size:0.85rem;">📡 스냅샷을 기다리는 중입니다...</div>
+                    <div style="text-align:center; padding:10px; color:#95a5a6; font-size:0.85rem;">${t('ranking_snapshot_waiting')}</div>
                 </div>
             </div>
             <div style="min-width:85%; flex:0 0 auto; scroll-snap-align:center; background:linear-gradient(135deg, #34495e, #2c3e50); border:1px dashed rgba(255,255,255,0.2); border-radius:15px; padding:15px; opacity:0.8; display:flex; flex-direction:column; justify-content:center; align-items:center;">
                 <div style="font-size:2.5rem; margin-bottom:10px;">📜</div>
-                <div style="color:#bdc3c7; font-weight:bold; font-size:1.1rem;">다가올 영광</div>
-                <div style="font-size:0.8rem; color:#95a5a6; text-align:center; margin-top:5px; line-height:1.4;">내년 연말정산 이후,<br>이곳에 위대한 역사가 보존됩니다.</div>
+                <div style="color:#bdc3c7; font-weight:bold; font-size:1.1rem;">${t('ranking_glory_coming')}</div>
+                <div style="font-size:0.8rem; color:#95a5a6; text-align:center; margin-top:5px; line-height:1.4;">${t('ranking_glory_desc')}</div>
             </div>
     </div>
 
     <div style="background:#1a252f; padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.07); text-align:center;">
-        <span style="font-size:0.78rem; color:#7f8c8d; line-height:1.5;">🎁 지파 순위 보상은 해당 주에 <strong style="color:#bdc3c7;">지파원 100명 이상</strong>이 참여해야 지급됩니다.<br>시온성 랭킹 보상은 전체 100명 이상 참여 시 지급됩니다.</span>
+        <span style="font-size:0.78rem; color:#7f8c8d; line-height:1.5;">${t('ranking_reward_notice')}</span>
     </div>
     <div id="sticky-tabs-container" style="background: #2c3e50; padding: 10px 5px; border-bottom: 1px solid rgba(255,255,255,0.1); display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
-        <button id="tab-tribe" onclick="openRankingModal('tribe', '🧭 내 지파 랭킹')" style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
-            <span style="font-size:1rem;">🧭</span><span>내 지파</span>
+        <button id="tab-tribe" onclick="openRankingModal('tribe', t('label_my_tribe_ranking'))" style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
+            <span style="font-size:1rem;">🧭</span><span>${t('label_my_tribe')}</span>
         </button>
-        <button id="tab-zion" onclick="openRankingModal('zion', '👑 시온성 랭킹')" style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
-            <span style="font-size:1rem;">👑</span><span>시온성</span>
+        <button id="tab-zion" onclick="openRankingModal('zion', '👑 Zion')" style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
+            <span style="font-size:1rem;">👑</span><span>Zion</span>
         </button>
-        <button id="tab-weekly-hall" onclick="openRankingModal('weekly-hall', '🏛️ 주간 명예의 전당')" style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
-            <span style="font-size:1rem;">🏛️</span><span>주간 명예</span>
+        <button id="tab-weekly-hall" onclick="openRankingModal('weekly-hall', t('ranking_tab_weekly_full'))" style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
+            <span style="font-size:1rem;">🏛️</span><span>${t('ranking_tab_weekly')}</span>
         </button>
-        <button id="tab-monthly-hall" onclick="openRankingModal('monthly-hall', '📜 월간 명예의 전당')" style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
-            <span style="font-size:1rem;">📜</span><span>월간 명예</span>
+        <button id="tab-monthly-hall" onclick="openRankingModal('monthly-hall', t('ranking_tab_monthly_full'))" style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
+            <span style="font-size:1rem;">📜</span><span>${t('ranking_tab_monthly')}</span>
         </button>
-        <button id="tab-total-hall" onclick="openRankingModal('total-hall', '💎 누적 명예의 전당 (All-Time)')" style="grid-column: 1 / span 2; padding:10px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.95rem; display:flex; justify-content:center; align-items:center; gap:6px;">
-            <span style="font-size:1.1rem;">💎</span><span>누적 명예의 전당 (All-Time)</span>
+        <button id="tab-total-hall" onclick="openRankingModal('total-hall', t('ranking_tab_total_full'))" style="grid-column: 1 / span 2; padding:10px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.95rem; display:flex; justify-content:center; align-items:center; gap:6px;">
+            <span style="font-size:1.1rem;">💎</span><span>${t('ranking_tab_total')}</span>
         </button>
     </div>
 
     <div id="ranking-modal-overlay" onclick="if(event.target === this) closeRankingModal()" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:9999; justify-content:center; align-items:center; padding:20px; box-sizing:border-box;">
         <div style="background:#2c3e50; border:2px solid #f39c12; border-radius:15px; width:100%; max-width:400px; height:75vh; display:flex; flex-direction:column; box-shadow:0 10px 30px rgba(0,0,0,0.9); overflow:hidden;">
             <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; background:rgba(0,0,0,0.2); border-bottom:1px solid rgba(255,255,255,0.1);">
-                <h3 id="ranking-modal-title" style="margin:0; color:#f1c40f; font-size:1.1rem; font-weight:bold;">랭킹</h3>
+                <h3 id="ranking-modal-title" style="margin:0; color:#f1c40f; font-size:1.1rem; font-weight:bold;">${t('ranking_modal_default_title')}</h3>
                 <button onclick="closeRankingModal()" style="background:none; border:none; color:#ecf0f1; font-size:1.8rem; cursor:pointer; padding:0 10px; line-height:0.8;">&times;</button>
             </div>
             
@@ -8494,7 +9607,7 @@ function openRankingScreen() {
     </div>
 
     <div class="button-area-static">
-        <button class="btn-gray btn-back" onclick="goMap()">돌아가기</button>
+        <button class="btn-gray btn-back" onclick="goMap()">${t('btn_go_back')}</button>
     </div>
     `;
         document.body.appendChild(screen);
@@ -8523,8 +9636,8 @@ function loadTribeRanking() {
     const list = document.getElementById('ranking-list');
     if (!list) return;
 
-    const tribeName = (TRIBE_DATA[myTribe] && TRIBE_DATA[myTribe].name) ? TRIBE_DATA[myTribe].name : '내 지파';
-    list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">📡 ${tribeName} 랭킹 불러오는 중...</div>`;
+    const tribeName = (TRIBE_DATA[myTribe] && TRIBE_DATA[myTribe].name) ? getTribeName(TRIBE_DATA[myTribe]) : t('label_my_tribe');
+    list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">${t('ranking_loading_tribe', { name: tribeName })}</div>`;
 
     window.currentRankingMode = 'tribe';
     loadTribeLeaderboard(myTribe, (data) => renderRankingList(data));
@@ -8534,7 +9647,7 @@ function loadZionRanking() {
     const list = document.getElementById('ranking-list');
     if (!list) return;
 
-    list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">📡 시온성 랭킹 불러오는 중...</div>`;
+    list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">${t('ranking_loading_zion')}</div>`;
 
     window.currentRankingMode = 'zion';
     loadZionLeaderboard((data) => renderRankingList(data));
@@ -8596,7 +9709,7 @@ function loadTribeLeaderboard(tribeId, callback) {
             const transformed = ranks.map((row, index) => {
                 return {
                     rank: index + 1,
-                    name: row.name || "이름없음",
+                    name: row.name || t('ranking_no_name'),
                     score: row.score || 0,
                     tribe: row.tribe !== undefined ? row.tribe : tribeId,
                     dept: row.dept !== undefined ? row.dept : 0,
@@ -8655,7 +9768,7 @@ function loadZionLeaderboard(callback) {
             const transformed = ranks.map((row, index) => {
                 return {
                     rank: index + 1,
-                    name: row.name || "이름없음",
+                    name: row.name || t('ranking_no_name'),
                     score: row.score || 0,
                     tribe: row.tribe !== undefined ? row.tribe : 0,
                     dept: row.dept !== undefined ? row.dept : 0,
@@ -8687,16 +9800,16 @@ function loadWeeklyHallOfFame() {
     // ✨ 캐시 확인
     if (rankingCache.weeklyHall.data && (now - rankingCache.weeklyHall.timestamp) < RANKING_CACHE_DURATION) {
         console.log(`📦 캐시 사용 (weeklyHall)`);
-        renderHallOfFameList(rankingCache.weeklyHall.data, '지난 주 명예의 전당');
+        renderHallOfFameList(rankingCache.weeklyHall.data, t('ranking_weekly_hall_title'));
         return;
     }
 
-    list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">📡 주간 명예의 전당 불러오는 중...</div>`;
+    list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">${t('ranking_loading_weekly_hall')}</div>`;
 
     const lastWeekId = getLastWeekId(); // 지난주 ID
 
     if (typeof db === 'undefined' || !db) {
-        renderHallOfFameList([], '지난 주 명예의 전당');
+        renderHallOfFameList([], t('ranking_weekly_hall_title'));
         return;
     }
 
@@ -8709,7 +9822,7 @@ function loadWeeklyHallOfFame() {
         .then(doc => {
             if (!doc.exists) {
                 console.warn(`⚠️ 주간 명예의 전당 데이터 없음: ${lastWeekId}`);
-                renderHallOfFameList([], '지난 주 명예의 전당');
+                renderHallOfFameList([], t('ranking_weekly_hall_title'));
                 return;
             }
 
@@ -8719,11 +9832,11 @@ function loadWeeklyHallOfFame() {
             // 💾 캐시 저장
             rankingCache.weeklyHall = { data: ranks, timestamp: now };
 
-            renderHallOfFameList(ranks, '지난 주 명예의 전당');
+            renderHallOfFameList(ranks, t('ranking_weekly_hall_title'));
         })
         .catch(err => {
             console.error("❌ 주간 명예의 전당 로드 실패:", err);
-            renderHallOfFameList([], '지난 주 명예의 전당');
+            renderHallOfFameList([], t('ranking_weekly_hall_title'));
         });
 }
 
@@ -8737,16 +9850,16 @@ function loadMonthlyHallOfFame() {
     // ✨ 캐시 확인
     if (rankingCache.monthlyHall.data && (now - rankingCache.monthlyHall.timestamp) < RANKING_CACHE_DURATION) {
         console.log(`📦 캐시 사용 (monthlyHall)`);
-        renderHallOfFameList(rankingCache.monthlyHall.data, '지난 달 명예의 전당');
+        renderHallOfFameList(rankingCache.monthlyHall.data, t('ranking_monthly_hall_title'));
         return;
     }
 
-    list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">📡 월간 명예의 전당 불러오는 중...</div>`;
+    list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">${t('ranking_loading_monthly_hall')}</div>`;
 
     const lastMonthId = getLastMonthId(); // 지난달 ID
 
     if (typeof db === 'undefined' || !db) {
-        renderHallOfFameList([], '지난 달 명예의 전당');
+        renderHallOfFameList([], t('ranking_monthly_hall_title'));
         return;
     }
 
@@ -8759,7 +9872,7 @@ function loadMonthlyHallOfFame() {
         .then(doc => {
             if (!doc.exists) {
                 console.warn(`⚠️ 월간 명예의 전당 데이터 없음: ${lastMonthId}`);
-                renderHallOfFameList([], '지난 달 명예의 전당');
+                renderHallOfFameList([], t('ranking_monthly_hall_title'));
                 return;
             }
 
@@ -8769,11 +9882,11 @@ function loadMonthlyHallOfFame() {
             // 💾 캐시 저장
             rankingCache.monthlyHall = { data: ranks, timestamp: now };
 
-            renderHallOfFameList(ranks, '지난 달 명예의 전당');
+            renderHallOfFameList(ranks, t('ranking_monthly_hall_title'));
         })
         .catch(err => {
             console.error("❌ 월간 명예의 전당 로드 실패:", err);
-            renderHallOfFameList([], '지난 달 명예의 전당');
+            renderHallOfFameList([], t('ranking_monthly_hall_title'));
         });
 }
 
@@ -8787,7 +9900,7 @@ function scrollToMyRank() {
     if (!isModalOpen) {
         // 내 지파 랭킹 모달 열기 함수 실행 (기존에 정의된 함수 호출)
         if (typeof openRankingModal === 'function') {
-            openRankingModal('tribe', '🧭 내 지파 랭킹');
+            openRankingModal('tribe', t('label_my_tribe_ranking'));
         }
 
         // 데이터 로딩 시간이 쪼금 필요하므로, 0.8초(800ms) 뒤에 내 이름을 찾습니다.
@@ -8865,7 +9978,7 @@ function startSeasonTimer() {
         const s = Math.floor((diff % (1000 * 60)) / 1000);
 
         // 예쁘게 표시
-        timerDisplay.innerHTML = `⏰ 이번 리그 종료까지: <span style="color:#f1c40f;">${d}일 ${h}시간 ${m}분 ${s}초</span>`;
+        timerDisplay.innerHTML = t('league_timer', { time: `<span style="color:#f1c40f;">${t('league_timer_time', { d, h, m, s })}</span>` });
     }
 
     // 즉시 실행 후 1초마다 갱신
@@ -8882,7 +9995,7 @@ function openRankingModal(tabName, titleText) {
 
     // 창 제목을 바꾸고, 팝업을 화면에 띄웁니다.
     titleEl.innerHTML = titleText;
-    listEl.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">📡 데이터 불러오는 중...</div>`;
+    listEl.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">${t('ranking_loading')}</div>`;
     overlay.style.display = 'flex';
 
     window.currentRankingMode = tabName;
@@ -8926,7 +10039,7 @@ function renderHallOfFameList(data, title) {
     list.appendChild(header);
 
     if (data.length === 0) {
-        list.innerHTML += `<div style="text-align:center; padding:30px; color:#7f8c8d;">지난 시즌 기록이 없습니다.<br>(역사가 이제 막 시작되었습니다)</div>`;
+        list.innerHTML += `<div style="text-align:center; padding:30px; color:#7f8c8d;">${t('ranking_empty_season')}</div>`;
         return;
     }
 
@@ -8975,7 +10088,7 @@ function renderHallOfFameList(data, title) {
                     <span style="font-size:0.8rem; color:#bdc3c7; font-weight:normal; margin-left:6px;">#${user.tag || "0000"}</span>
                 </div>
                 <div style="font-size:1rem; color:${trophyColor}; font-weight:bold;">
-                    ${user.score.toLocaleString()} 점
+                    ${user.score.toLocaleString()} ${t('ranking_pts')}
                 </div>
             `;
             list.appendChild(card);
@@ -9014,8 +10127,8 @@ function renderRankingList(data) {
 
     // 헤더 표시
     const mode = window.currentRankingMode || 'tribe';
-    const tribeName = (typeof myTribe !== 'undefined' && TRIBE_DATA[myTribe] && TRIBE_DATA[myTribe].name) ? TRIBE_DATA[myTribe].name : '내 지파';
-    const headerTitle = mode === 'zion' ? '👑 시온성 Top 100' : `🧭 ${tribeName} Top 100`;
+    const tribeName = (typeof myTribe !== 'undefined' && TRIBE_DATA[myTribe] && TRIBE_DATA[myTribe].name) ? getTribeName(TRIBE_DATA[myTribe]) : t('label_my_tribe');
+    const headerTitle = mode === 'zion' ? `👑 ${t('label_zion')} Top 100` : `🧭 ${tribeName} Top 100`;
     const headerDiv = document.createElement('div');
     headerDiv.style.cssText = `padding: 15px; color: #bdc3c7; font-size: 0.9rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);`;
     headerDiv.innerHTML = `${headerTitle} <span style="opacity:0.7; margin-left:6px;">(${getWeekId()})</span>`;
@@ -9023,7 +10136,7 @@ function renderRankingList(data) {
 
     // 데이터가 없을 때 처리
     if (data.length === 0) {
-        list.innerHTML += `<div style="text-align:center; padding:30px; color:#bdc3c7;">아직 기록이 없습니다.<br>첫 번째 주인공이 되어보세요!</div>`;
+        list.innerHTML += `<div style="text-align:center; padding:30px; color:#bdc3c7;">${t('ranking_empty_weekly')}</div>`;
     }
 
     // 2. 리스트 그리기
@@ -9065,14 +10178,14 @@ function renderRankingList(data) {
                     </span>
                 </div>
                 <div style="font-size:0.8rem; color:#bdc3c7;">
-                    🏰 성전 Lv.${user.castle || 0} <span style="opacity:0.5; margin:0 3px;">|</span> <span style="opacity:0.7;">#${user.tag}</span>
+                    ${t('ranking_castle_lv', { lv: user.castle || 0 })} <span style="opacity:0.5; margin:0 3px;">|</span> <span style="opacity:0.7;">#${user.tag}</span>
                 </div>
             </div>
             <div style="text-align:right;">
                 <div style="font-weight:bold; color:#f1c40f; font-size:1.1rem;">
                     ${user.score ? user.score.toLocaleString() : 0}
                 </div>
-                <div style="font-size:0.7rem; color:#95a5a6;">점</div>
+                <div style="font-size:0.7rem; color:#95a5a6;">${t('ranking_pts')}</div>
             </div>
         `;
         list.appendChild(item);
@@ -9102,16 +10215,16 @@ function updateModalMyRank(amIInTop100) {
 
     if (mode === 'tribe' || mode === 'zion' || mode === 'weekly-hall') {
         myTargetScore = (typeof leagueData !== 'undefined' && leagueData.myScore) ? leagueData.myScore : 0;
-        modeName = (mode === 'tribe') ? "내 지파" : "시온성";
-        if (mode === 'weekly-hall') modeName = "주간 명예";
+        modeName = (mode === 'tribe') ? t('label_my_tribe') : "Zion";
+        if (mode === 'weekly-hall') modeName = t('label_weekly_rank');
     }
     else if (mode === 'monthly-hall') {
         myTargetScore = (typeof leagueData !== 'undefined' && leagueData.myMonthlyScore) ? leagueData.myMonthlyScore : 0;
-        modeName = "월간 명예";
+        modeName = t('label_monthly_rank');
     }
     else if (mode === 'total-hall') {
         myTargetScore = (typeof leagueData !== 'undefined' && leagueData.totalScore) ? leagueData.totalScore : 0;
-        modeName = "누적 명예";
+        modeName = t('label_total_rank');
     }
 
     // 🌟 2. 주간 랭킹일 때만 전체 인원수 가져오기 (월간/누적은 0으로 고정)
@@ -9124,11 +10237,11 @@ function updateModalMyRank(amIInTop100) {
     }
 
     // 🌟 3. 퍼센트 계산 (전체 인원을 모르는 월간/누적은 무조건 "순위 외"로 표시)
-    let rankDisplay = "순위<br>외";
+    let rankDisplay = t('ranking_footer_outside');
     if (totalCount > 0) {
         // 인원수가 있으면 퍼센트 계산 (최대 100%)
         const displayPercent = Math.min(100, (100 / totalCount) * 100);
-        rankDisplay = `상위<br>${displayPercent.toFixed(1)}%`;
+        rankDisplay = `${t('ranking_top_percent', { pct: displayPercent.toFixed(1) })}`;
     }
 
     const myNicknameDisplay = typeof myNickname !== 'undefined' ? myNickname : '순례자';
@@ -9142,7 +10255,7 @@ function updateModalMyRank(amIInTop100) {
                 </span>
             </div>
             <div style="font-size:0.8rem; color:#bdc3c7;">
-                ${modeName} 랭킹 100위 밖입니다.
+                ${t('ranking_footer_out', { mode: modeName })}
             </div>
         </div>
         <div style="text-align:right;">
@@ -9152,7 +10265,7 @@ function updateModalMyRank(amIInTop100) {
             <div style="font-weight:bold; color:#f1c40f; font-size:1.1rem;">
                 ${myTargetScore.toLocaleString()}
             </div>
-            <div style="font-size:0.7rem; color:#95a5a6;">점 (내 점수)</div>
+            <div style="font-size:0.7rem; color:#95a5a6;">${t('ranking_footer_score')}</div>
         </div>
     `;
 
@@ -9341,7 +10454,7 @@ stageClear = function (type) {
         const isForgotten = isEligible; // 복습 가능 타이밍 = 구 isForgotten 역할 (calculateScore 호환용)
 
         let baseGem = 0;
-        let msg = `🎉 클리어 성공!\n\n`;
+        let msg = `${t('clear_success')}\n\n`;
 
         const lastTime = stageLastClear[sId] || 0;
         const isAlreadyClearedToday = new Date(lastTime).setHours(0, 0, 0, 0) === new Date().setHours(0, 0, 0, 0);
@@ -9384,7 +10497,7 @@ stageClear = function (type) {
 
             baseGem = subGemTotal;
             verseCnt = totalSubCount; // 승점 계산용: 전체 서브스테이지 수 × hearts
-            msg += `🐲 [드래곤 토벌] ${totalSubCount}개 스테이지 복습! (${eligibleSubCount}개 단계 상승)\n`;
+            msg += t('msg_boss_clear', { total: totalSubCount, eligible: eligibleSubCount }) + '\n';
 
             // ★ 미션 업데이트: 보스 처치
             updateMissionProgress('checkpointBoss'); // 일일 미션
@@ -9431,7 +10544,7 @@ stageClear = function (type) {
 
                 maxGem = subGemTotal;
                 verseCnt = totalSubCount; // 승점 계산용: 전체 서브스테이지 수 × hearts
-                msg += `🛡️ [중간 점검] ${totalSubCount}개 스테이지 복습! (${eligibleSubCount}개 단계 상승)\n`;
+                msg += t('msg_midboss_clear', { total: totalSubCount, eligible: eligibleSubCount }) + '\n';
 
                 // ★ 미션 업데이트: 중보 처치
                 if (!isAlreadyClearedToday) {
@@ -9449,17 +10562,17 @@ stageClear = function (type) {
                     maxGem = advResult.earnedGem;
                     window._lastClearOutcome = advResult.outcome;
                     if (completingStep === 1) {
-                        msg += `📖 [훈련] 첫 학습 완료! (${maxGem}💎)\n`;
+                        msg += `${t('clear_first_study', { gem: maxGem })}\n`;
                     } else {
-                        msg += `📖 [훈련] ${completingStep}회차 복습 완료! (${maxGem}💎)\n`;
+                        msg += `${t('clear_review_nth', { n: completingStep, gem: maxGem })}\n`;
                     }
                 } else {
                     maxGem = 10;
                     const remainMin = Math.ceil(reviewStatus.remainMs / 60000);
                     const timeStr = remainMin >= 60
-                        ? `${Math.floor(remainMin / 60)}시간 ${remainMin % 60 > 0 ? remainMin % 60 + '분' : ''}`.trim()
-                        : `${remainMin}분`;
-                    msg += `📖 [훈련] 완료! (10💎 최소 보상 - ${timeStr} 후 복습 시 추가 보상)\n`;
+                        ? t(remainMin % 60 > 0 ? 'clear_wait_hours' : 'clear_wait_hours_only', { h: Math.floor(remainMin / 60), m: remainMin % 60 })
+                        : t('clear_wait_mins', { m: remainMin });
+                    msg += `${t('clear_review_wait', { time: timeStr })}\n`;
                 }
 
                 // ★ 미션 업데이트
@@ -9486,7 +10599,7 @@ stageClear = function (type) {
         // 보석 보너스
         if (rankBuff.gemBonus > 0) {
             baseGem = Math.floor(baseGem * (1 + rankBuff.gemBonus / 100));
-            buffMsg += `💎 깨달음 보석 보너스(+${rankBuff.gemBonus}%)\n`;
+            buffMsg += `${t('clear_buff_gem', { n: rankBuff.gemBonus })}\n`;
         }
 
         // ★ [4회 이상 클리어 시 보상 제한]
@@ -9498,7 +10611,7 @@ stageClear = function (type) {
         // ★ 월말 23시 이후 승점 차단 체크
         if (scoreResult.blocked) {
             msg += `\n⚠️ ${scoreResult.blockReason}\n\n`;
-            msg += `💎 보석은 정상 지급됩니다.\n`;
+            msg += `${t('clear_score_blocked_gem')}\n`;
             scoreResult.score = 0;
         }
 
@@ -9507,7 +10620,7 @@ stageClear = function (type) {
         // 승점 보너스 (차단되지 않았을 때만)
         if (!scoreResult.blocked && rankBuff.scoreBonus > 0) {
             scoreResult.score = Math.floor(scoreResult.score * (1 + rankBuff.scoreBonus / 100));
-            buffMsg += `✨ 깨달음 승점 보너스(+${rankBuff.scoreBonus}%)\n`;
+            buffMsg += `${t('clear_buff_score', { n: rankBuff.scoreBonus })}\n`;
         }
 
         // 정확도 보너스
@@ -9517,7 +10630,7 @@ stageClear = function (type) {
             : Math.max(0.1, (100 - (adjustedWrongCount * 10)) / 100);
 
         if (rankBuff.wrongCorrection > 0) {
-            buffMsg += `👼 깨달음 오답 보정(${rankBuff.wrongCorrection}회)\n`;
+            buffMsg += `${t('clear_buff_wrong', { n: rankBuff.wrongCorrection })}\n`;
         }
 
         const baseGemBeforeAccuracy = baseGem; // ★ 정확도 적용 전 값 저장
@@ -9557,30 +10670,26 @@ stageClear = function (type) {
         if (!isAlreadyClearedToday) {
             msg += `\n━━━━━━━━━━━━━━━━\n`;
 
-            if (type === 'mid-boss') {
-                msg += `💎 초회 기본: ${baseGemBeforeAccuracy}개 (${verseCnt}절 × 10)\n`;
-            } else if (type === 'boss') {
-                msg += `💎 초회 기본: ${baseGemBeforeAccuracy}개 (${verseCnt}절 × 10)\n`;
+            if (type === 'mid-boss' || type === 'boss') {
+                msg += `${t('clear_base_gem_verse', { gem: baseGemBeforeAccuracy, cnt: verseCnt })}\n`;
             } else {
-                // 일반 스테이지
-                msg += `💎 초회 기본: ${baseGemBeforeAccuracy}개\n`;
+                msg += `${t('clear_base_gem', { gem: baseGemBeforeAccuracy })}\n`;
             }
 
-            msg += `🎯 정확도: ${accPercent}% (오답: ${adjustedWrongCount}) → ${baseGem}개\n`;
-            msg += `🏰 성전 보너스: +${castleBonusGem}개\n`;
+            msg += `${t('clear_accuracy', { pct: accPercent, wrong: adjustedWrongCount, gem: baseGem })}\n`;
+            msg += `${t('clear_castle_bonus', { gem: castleBonusGem })}\n`;
             if (perfectBonus > 0) {
-                msg += `⭐ 퍼펙트 보너스: +${perfectBonus}개\n`;
+                msg += `${t('clear_perfect_bonus', { gem: perfectBonus })}\n`;
             }
-            msg += `✨ 승점: +${scoreResult.score}\n`;
-            msg += `💎 최종 획득: ${totalGem}개`;
+            msg += `${t('clear_score', { score: scoreResult.score })}\n`;
+            msg += `${t('clear_total_gem', { gem: totalGem })}`;
         } else {
-            // 반복 클리어 시 기존 표시
-            msg += `🎯 정확도: ${accPercent}% (오답: ${adjustedWrongCount})\n`;
+            msg += `${t('clear_repeat_accuracy', { pct: accPercent, wrong: adjustedWrongCount })}\n`;
             if (perfectBonus > 0) {
-                msg += `(💎 퍼펙트 +${perfectBonus})\n`;
+                msg += `${t('clear_repeat_perfect', { gem: perfectBonus })}\n`;
             }
-            msg += `✨ 승점: +${scoreResult.score}\n`;
-            msg += `💎 보석: +${totalGem} (성전 +${castleBonusGem})`;
+            msg += `${t('clear_score', { score: scoreResult.score })}\n`;
+            msg += `${t('clear_repeat_gem', { gem: totalGem, castle: castleBonusGem })}`;
         }
         if (typeof triggerConfetti === 'function') triggerConfetti();
 
@@ -9636,9 +10745,9 @@ function calculateProgressiveReward(chNum, count, startVerse = 1) {
 
 // 일반 아이템 목록 (가격 고정)
 const SHOP_ITEMS = {
-    "lifeBread": { name: "생명의 떡", price: 50, desc: "체력 2칸 회복", icon: "🍞" },
-    "booster": { name: "승점 부스터", price: 500, desc: "30분간 승점 2배", icon: "⚡" },
-    "booster3": { name: "승점 부스터+", price: 1200, desc: "30분간 승점 3배", icon: "⚡" }
+    "lifeBread": { name: "생명의 떡", nameEn: "Bread of Life", price: 50, desc: "체력 2칸 회복", descEn: "Restore 2 hearts", icon: "🍞" },
+    "booster": { name: "승점 부스터", nameEn: "Score Booster", price: 500, desc: "30분간 승점 2배", descEn: "Score ×2 for 30 min", icon: "⚡" },
+    "booster3": { name: "승점 부스터+", nameEn: "Score Booster+", price: 1200, desc: "30분간 승점 3배", descEn: "Score ×3 for 30 min", icon: "⚡" }
 };
 
 function getShopTodayKey() {
@@ -9750,11 +10859,11 @@ updateShopUI = function () {
         shopScreen.className = 'screen';
         shopScreen.innerHTML = `
             <div class="map-header" style="justify-content: center;">
-                <div style="font-weight:bold; font-size:1.3rem;">보급소</div>
+                <div style="font-weight:bold; font-size:1.3rem;">${t('shop_title')}</div>
             </div>
             <div class="shop-list" style="flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 20px;"></div>
             <div class="button-area-static">
-                <button class="btn-gray btn-back" onclick="goMap()">돌아가기</button>
+                <button class="btn-gray btn-back" onclick="goMap()">${t('btn_go_back')}</button>
             </div>
         `;
         document.body.appendChild(shopScreen);
@@ -9773,11 +10882,11 @@ updateShopUI = function () {
     heartDiv.innerHTML = `
         <div style="font-size:2.5rem; margin-right:15px;">❤️</div>
         <div style="flex:1;">
-            <div style="font-weight:bold; font-size:1.1rem;">굳건한 마음</div>
-            <div style="font-size:0.8rem; color:#7f8c8d;">최대 체력 영구 증가</div>
-            <div style="color:#e67e22; font-weight:bold; margin-top:5px;">${isMax ? "품절 (MAX)" : `💎 ${heartPrice}`}</div>
+            <div style="font-weight:bold; font-size:1.1rem;">${t('shop_heart_name')}</div>
+            <div style="font-size:0.8rem; color:#7f8c8d;">${t('shop_heart_desc')}</div>
+            <div style="color:#e67e22; font-weight:bold; margin-top:5px;">${isMax ? t('shop_heart_sold_out') : `💎 ${heartPrice}`}</div>
         </div>
-        <button onclick="buyItem('heart')" style="background:${isMax ? '#95a5a6' : '#2ecc71'}; border:none; color:white; padding:8px 15px; border-radius:20px; font-weight:bold; cursor:${isMax ? 'default' : 'pointer'};" ${isMax ? 'disabled' : ''}>${isMax ? "완료" : "구매"}</button>
+        <button onclick="buyItem('heart')" style="background:${isMax ? '#95a5a6' : '#2ecc71'}; border:none; color:white; padding:8px 15px; border-radius:20px; font-weight:bold; cursor:${isMax ? 'default' : 'pointer'};" ${isMax ? 'disabled' : ''}>${isMax ? t('shop_heart_done') : t('shop_btn_buy')}</button>
     `;
     list.appendChild(heartDiv);
 
@@ -9789,17 +10898,19 @@ updateShopUI = function () {
         div.className = 'shop-item';
         div.style.cssText = "background:white; padding:15px; border-radius:15px; display:flex; align-items:center; color:black; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:10px;";
         const isFreeLifeBread = (key === 'lifeBread') && isLifeBreadFreeAvailable();
-        const priceText = isFreeLifeBread ? "무료 1회" : `💎 ${item.price}`;
+        const priceText = isFreeLifeBread ? t('shop_free_once') : `💎 ${item.price}`;
 
-        let countHtml = (key === 'booster' || key === 'booster3') ? '' : `<div style="font-size:0.8rem; color:#2ecc71; font-weight:bold;">보유: ${count}개</div>`;
+        let countHtml = (key === 'booster' || key === 'booster3') ? '' : `<div style="font-size:0.8rem; color:#2ecc71; font-weight:bold;">${t('shop_owned', { count })}</div>`;
 
-        const buttonText = (key === 'lifeBread' && isFreeLifeBread) ? "무료" : "구매";
+        const buttonText = (key === 'lifeBread' && isFreeLifeBread) ? t('shop_btn_free') : t('shop_btn_buy');
+        const itemName = currentLang === 'en' ? (item.nameEn || item.name) : item.name;
+        const itemDesc = currentLang === 'en' ? (item.descEn || item.desc) : item.desc;
 
         div.innerHTML = `
             <div style="font-size:2.5rem; margin-right:15px;">${item.icon}</div>
             <div style="flex:1;">
-                <div style="font-weight:bold; font-size:1.1rem;">${item.name}</div>
-                <div style="font-size:0.8rem; color:#7f8c8d;">${item.desc}</div>
+                <div style="font-weight:bold; font-size:1.1rem;">${itemName}</div>
+                <div style="font-size:0.8rem; color:#7f8c8d;">${itemDesc}</div>
                 <div style="color:#e67e22; font-weight:bold; margin-top:5px;">${priceText}</div>
                 ${countHtml}
             </div>
@@ -9909,27 +11020,27 @@ function getQuitModalTitleText() {
     }
 
     const modeMeta = getHardshipModeMeta(hardshipState.mode);
-    return `${modeMeta.title}을 종료하시겠습니까?`;
+    return t('hardship_quit_title', { title: modeMeta.title });
 }
 
 function getHardshipQuitNoticeText() {
     if (!window.isHardshipMode) return '';
 
     if (hardshipState.mode === 'endurance') {
-        return '현재 진행 순서는 저장되지 않습니다.';
+        return t('hardship_quit_notice_endurance');
     }
 
-    return '지금까지 획득한 승점은 저장됩니다. 현재 진행 순서는 저장되지 않습니다.';
+    return t('hardship_quit_notice_scored');
 }
 
 function getHardshipBackQuitNoticeText() {
     if (!window.isHardshipMode) return '';
 
     if (hardshipState.mode === 'endurance') {
-        return '지금 나가면 진행 상황이 저장되지 않을 수 있습니다.';
+        return t('hardship_back_quit_endurance');
     }
 
-    return '지금까지 얻은 승점은 저장되나 진행 상황은 저장되지 않습니다.';
+    return t('hardship_back_quit_scored');
 }
 
 function getQuitModalMessageHtml() {
@@ -10002,7 +11113,7 @@ function initTowerGame() {
         });
     }
 
-    document.getElementById('tower-msg').innerText = "세 단어 중 순서에 맞는 단어를 고르세요!";
+    document.getElementById('tower-msg').innerText = t('tower_instruction');
     document.getElementById('tower-msg').style.color = "#f0e6c0";
 
     // 애니메이션 초기화
@@ -10017,7 +11128,7 @@ function spawnTowerChoices() {
     if (!window.isGamePlaying) return; // ★ 추가: 나갔으면 중단!
     towerGame.locked = false; // 새 보기가 나타날 때 잠금 해제
     if (towerGame.idx >= towerGame.words.length) {
-        document.getElementById('tower-msg').innerText = "🎉 완성!";
+        document.getElementById('tower-msg').innerText = t('tower_complete');
         document.getElementById('tower-msg').style.color = "#f1c40f";
         document.getElementById('tower-choices-area').innerHTML = "";
 
@@ -10122,7 +11233,7 @@ function handleTowerChoice(btn, selectedWord, correctWord) {
             setTimeout(() => gameContainer.classList.remove('tower-screen-shake'), 450);
         }
 
-        document.getElementById('tower-msg').innerText = "앗! 다른 단어입니다.";
+        document.getElementById('tower-msg').innerText = t('tower_wrong');
         document.getElementById('tower-msg').style.color = "#e74c3c";
 
         // 틀렸을 때 하트를 깎는 로직이 있다면 여기에 추가 (예: takeDamage())
@@ -10134,7 +11245,7 @@ function handleTowerChoice(btn, selectedWord, correctWord) {
             btn.style.color = "#2c3e50";
             btn.style.boxShadow = "0 4px 0 #bdc3c7";
 
-            document.getElementById('tower-msg').innerText = "알맞은 단어를 고르세요!";
+            document.getElementById('tower-msg').innerText = t('tower_pick');
             document.getElementById('tower-msg').style.color = "#f0e6c0";
 
             towerGame.locked = false; // 오답 후 재시도 허용
@@ -10320,13 +11431,13 @@ function updateCastleView() {
         if (myGems < nextBP.cost) {
             rightBtnHTML = `
                 <button style="width:auto; min-width:70px; height:50px; border-radius:10px; border:none; background:#34495e; color:#7f8c8d; padding:0 10px; display:flex; flex-direction:column; align-items:center; justify-content:center; border-bottom:3px solid #2c3e50;">
-                    <div style="font-size:0.9rem;">🔒 건축</div>
+                    <div style="font-size:0.9rem;">${t('castle_build_locked')}</div>
                     <div style="font-size:0.6rem; margin-top:2px; white-space:nowrap;"><span style="color:#e74c3c;">${myGems.toLocaleString()}</span> / ${nextBP.cost.toLocaleString()} 💎</div>
                 </button>`;
         } else {
             rightBtnHTML = `
                 <button onclick="upgradeCastle()" class="btn-pulse" style="width:auto; min-width:70px; height:50px; border-radius:10px; border:none; background:#e67e22; color:#fff; cursor:pointer; padding:0 10px; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 3px 0 #d35400;">
-                    <div style="font-size:0.9rem;">🔨 건축</div>
+                    <div style="font-size:0.9rem;">${t('castle_build')}</div>
                     <div style="font-size:0.6rem; margin-top:2px; white-space:nowrap; color:#fde3c0;">${myGems.toLocaleString()} / ${nextBP.cost.toLocaleString()} 💎</div>
                 </button>`;
         }
@@ -10340,7 +11451,7 @@ function updateCastleView() {
     const nextDisabled = (viewingCastleLevel >= myCastleLevel) ? 'disabled' : ''; // 내 레벨보다 미래는 못 봄
 
     // 과거 뷰일 때 화면 내부에 표시할 배지 HTML (의사요소 대신 사용)
-    const pastBadgeHTML = isPast ? `<div class="past-badge">🕰️ 과거의 기록</div>` : '';
+    const pastBadgeHTML = isPast ? `<div class="past-badge">${t('castle_past_badge')}</div>` : '';
 
     // [HTML 조립]
     display.innerHTML = `
@@ -10349,7 +11460,7 @@ function updateCastleView() {
 
             <div style="text-align:center;">
                 <div style="font-size: 1.2rem; font-weight: bold; color: ${isPast ? '#bdc3c7' : '#f1c40f'}; margin-top:3px; margin-bottom:2.5px; transition:color 0.3s;">
-                    Lv.${viewBP.level} ${viewBP.name}
+                    Lv.${viewBP.level} ${currentLang === 'en' && viewBP.nameEn ? viewBP.nameEn : viewBP.name}
                 </div>
 
                 <div class="castle-frame ${filterClass}" style="width: 220px; height: 220px; position: relative;">
@@ -10363,7 +11474,7 @@ function updateCastleView() {
         </div>
 
         <div style="font-size: 0.85rem; color: #bdc3c7; margin-top: 3px; margin-bottom: 3px; font-style: italic; min-height:3em;">
-            "${viewBP.desc}"
+            "${currentLang === 'en' && viewBP.descEn ? viewBP.descEn : viewBP.desc}"
         </div>
 
         <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-top:1px; width:95%; max-width:320px; margin-left:auto; margin-right:auto;">
@@ -10820,47 +11931,47 @@ function openDataSettings() {
         modal.innerHTML = `
             <div class="result-card" style="max-width:350px; text-align:left; background:white; color:#2c3e50; max-height:90vh; overflow-y:auto;">
                 <div class="result-header" style="font-size:1.4rem; text-align:center; color:#2c3e50; margin-bottom:5px;">
-                    💾 데이터 관리소
+                    ${t('data_modal_title')}
                 </div>
-                
+
                 <div style="margin-bottom:20px; padding:15px; background:#fef9e7; border-radius:10px; border:1px solid #f1c40f;">
-                    <h3 style="color:#d35400; margin:0 0 5px 0; font-size:1.1rem;">📤 기록 보관하기 (일일 미션)</h3>
+                    <h3 style="color:#d35400; margin:0 0 5px 0; font-size:1.1rem;">${t('data_export_title')}</h3>
                     <p style="font-size:0.9rem; color:#7f8c8d; margin-bottom:10px;">
-                        내 진행 상황을 <b>텍스트 파일(.txt)</b>로 만들어 기기에 다운로드합니다.
+                        ${t('data_export_desc')}
                     </p>
                     <button onclick="shareSaveCodeAndGetReward()" style="width:100%; background:#f39c12; color:white; border:none; padding:15px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 3px 0 #d35400;">
-                        🎁 파일로 저장
+                        ${t('data_export_btn')}
                     </button>
                 </div>
 
                 <div style="margin-bottom:20px; padding:15px; background:#e8f8f5; border-radius:10px; border:1px solid #2ecc71;">
-                    <h3 style="color:#27ae60; margin:0 0 5px 0; font-size:1.1rem;">📥 기록 가져오기</h3>
+                    <h3 style="color:#27ae60; margin:0 0 5px 0; font-size:1.1rem;">${t('data_import_title')}</h3>
                     <p style="font-size:0.9rem; color:#7f8c8d; margin-bottom:10px;">
-                        보관해둔 텍스트 파일을 찾아 불러오거나, 안의 내용을 복사해서 붙여넣으세요.
+                        ${t('data_import_desc')}
                     </p>
                     <div style="display:flex; gap:8px;">
                         <button onclick="document.getElementById('import-file-input').click()" style="flex:1; background:#27ae60; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor:pointer; box-shadow:0 3px 0 #1e8449;">
-                            📁 파일 찾기
+                            ${t('data_import_file_btn')}
                         </button>
                         <button onclick="importSaveCode()" style="flex:1; background:#2ecc71; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor:pointer; box-shadow:0 3px 0 #27ae60;">
-                            📝 붙여넣기
+                            ${t('data_import_paste_btn')}
                         </button>
                     </div>
                     <input type="file" id="import-file-input" accept=".txt, .json" style="display:none;" onchange="importSaveFile(event)">
                 </div>
 
                 <div style="margin-bottom:20px; padding:15px; background:#fdedec; border-radius:10px; border:1px solid #e74c3c;">
-                    <h3 style="color:#c0392b; margin:0 0 5px 0; font-size:1.1rem;">⚠️ 모든 데이터 초기화</h3>
+                    <h3 style="color:#c0392b; margin:0 0 5px 0; font-size:1.1rem;">${t('data_reset_title')}</h3>
                     <p style="font-size:0.9rem; color:#7f8c8d; margin-bottom:10px;">
-                        현재 기기의 모든 진행 상황을 완전히 삭제하고 처음부터 다시 시작합니다.
+                        ${t('data_reset_desc')}
                     </p>
                     <button onclick="resetGameData()" style="width:100%; background:#e74c3c; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor:pointer; box-shadow:0 3px 0 #c0392b;">
-                        🚨 완전 초기화 실행
+                        ${t('data_reset_btn')}
                     </button>
                 </div>
 
                 <button onclick="document.getElementById('data-modal').style.display='none'" style="width:100%; background:#95a5a6; color:white; border:none; padding:12px; border-radius:30px; cursor:pointer; font-weight:bold;">
-                    닫기
+                    ${t('btn_close')}
                 </button>
             </div>
         `;
@@ -11006,7 +12117,7 @@ function notifUpdateAddBtn() {
 
 async function notifSave() {
     const saveBtn = document.querySelector('#notification-modal [onclick="notifSave()"]');
-    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '알림 예약 중...'; }
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = t('notif_scheduling_dots'); }
 
     try {
         const rows = document.querySelectorAll('#notif-time-list .notif-row input[type=time]');
@@ -11021,14 +12132,14 @@ async function notifSave() {
                 );
             }
             document.getElementById('notification-modal').style.display = 'none';
-            showToast('알림이 해제되었습니다.');
+            showToast(t('toast_notif_disabled'));
             return;
         }
 
         // 알림 권한 요청
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') {
-            showToast('알림 권한이 필요합니다. 브라우저 설정에서 허용해주세요.');
+            showToast(t('toast_notif_permission'));
             return;
         }
 
@@ -11052,12 +12163,12 @@ async function notifSave() {
 
         document.getElementById('notification-modal').style.display = 'none';
         if (!myTag || !db || firestoreSaved) {
-            showToast(`알림이 설정되었습니다. (${times.join(', ')})`);
+            showToast(t('toast_notif_set', { times: times.join(', ') }));
         } else {
-            showToast('⚠️ 서버 저장에 실패했습니다. 네트워크를 확인 후 다시 시도해주세요.');
+            showToast(t('toast_server_save_fail'));
         }
     } finally {
-        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '저장'; }
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = t('btn_save'); }
     }
 }
 
@@ -11072,8 +12183,8 @@ function scheduleNotifTimesViaSW() {
     navigator.serviceWorker.ready.then(reg => {
         if (!reg.active) return;
         const now = new Date();
-        times.forEach(t => {
-            const [h, m] = t.split(':').map(Number);
+        times.forEach(timeStr => {
+            const [h, m] = timeStr.split(':').map(Number);
             const target = new Date(now);
             target.setHours(h, m, 0, 0);
             if (target <= now) target.setDate(target.getDate() + 1);
@@ -11081,9 +12192,9 @@ function scheduleNotifTimesViaSW() {
             reg.active.postMessage({
                 type: 'SCHEDULE_DAILY_NOTIFICATION',
                 delayMs,
-                title: '킹스로드 복습 알림',
-                body: '오늘의 말씀을 복습할 시간입니다!',
-                timeStr: t  // tag를 'daily-HH:MM' 형태로 만들기 위해 전달
+                title: t('notif_title'),
+                body: t('notif_daily_body'),
+                timeStr  // tag를 'daily-HH:MM' 형태로 만들기 위해 전달
             });
         });
     });
@@ -11103,16 +12214,16 @@ function startNotificationCheck() {
         const todayKey = `notif_shown_${now.toDateString()}`;
         let shownToday;
         try { shownToday = JSON.parse(localStorage.getItem(todayKey) || '[]'); } catch (e) { shownToday = []; }
-        times.forEach(t => {
-            if (t === hhmm && !shownToday.includes(t)) {
+        times.forEach(timeStr => {
+            if (timeStr === hhmm && !shownToday.includes(timeStr)) {
                 try {
-                    new Notification('킹스로드 복습 알림', {
-                        body: '오늘의 말씀을 복습할 시간입니다!',
+                    new Notification(t('notif_title'), {
+                        body: t('notif_daily_body'),
                         icon: '/icon-192.png',
                         tag: 'daily-notification'
                     });
                 } catch (e) {}
-                shownToday.push(t);
+                shownToday.push(timeStr);
                 localStorage.setItem(todayKey, JSON.stringify(shownToday));
             }
         });
@@ -11123,24 +12234,24 @@ function startNotificationCheck() {
 // ── 복습 알림 예약 (결과 창 일회성 알림) ────────────────────────────────────
 async function scheduleReviewNotification(delayMs, stageTitle, btn) {
     if (!('Notification' in window)) {
-        showToast('이 브라우저는 알림을 지원하지 않습니다.');
+        showToast(t('toast_notif_unsupported'));
         return;
     }
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
-        showToast('알림 권한이 필요합니다. 브라우저 설정에서 허용해주세요.');
+        showToast(t('toast_notif_permission'));
         return;
     }
 
     // 로딩 상태 표시
     if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<span class="kr-spinner"></span>알림 예약 중';
+        btn.innerHTML = `<span class="kr-spinner"></span>${t('notif_scheduling')}`;
         btn.style.background = '#b0b0b0';
     }
 
     const hr = delayMs / 3600000;
-    const label = hr < 1 ? `${Math.round(delayMs / 60000)}분` : `${Math.round(hr)}시간`;
+    const label = hr < 1 ? t('label_minutes_unit', { n: Math.round(delayMs / 60000) }) : t('label_hours_unit', { n: Math.round(hr) });
 
     // FCM 서버 예약 (앱이 꺼져도 작동)
     if (myTag && db) {
@@ -11171,7 +12282,7 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
                 btn.disabled = true;
                 btn.style.background = '#27ae60';
             }
-            showToast(`${label} 뒤 알림을 드릴게요!`);
+            showToast(t('toast_remind_later', { label }));
             return;
         } catch (e) {
             console.warn('FCM 복습 알림 예약 실패, 로컬 폴백:', e);
@@ -11179,8 +12290,8 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
     }
 
     // 폴백: 로그인 안 됐거나 Firestore 실패 시 (앱이 열려있을 때만 작동)
-    const title = '킹스로드 복습 알림';
-    const body = `"${stageTitle}" 복습할 시간입니다!`;
+    const title = t('notif_title');
+    const body = t('notif_review_body', { title: stageTitle });
     const notifTag = `review-${Date.now()}`;
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.ready.then(reg => {
@@ -11196,7 +12307,7 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
         btn.disabled = true;
         btn.style.background = '#27ae60';
     }
-    showToast(`${label} 뒤 알림을 드릴게요!`);
+    showToast(t('toast_remind_later', { label }));
 }
 // ── 복습 알림 예약 끝 ────────────────────────────────────────────────────────
 
@@ -11539,8 +12650,10 @@ function openProfileSettings() {
         window.isFirstTimeNaming = false;
     } else {
         // 신규 유저 무작위 생성
-        window.selectedAdj = NICK_ADJECTIVES[Math.floor(Math.random() * NICK_ADJECTIVES.length)];
-        window.selectedNoun = NICK_NOUNS[Math.floor(Math.random() * NICK_NOUNS.length)];
+        const _adjArr = currentLang === 'en' ? NICK_ADJECTIVES_EN : NICK_ADJECTIVES;
+        const _nounArr = currentLang === 'en' ? NICK_NOUNS_EN : NICK_NOUNS;
+        window.selectedAdj = _adjArr[Math.floor(Math.random() * _adjArr.length)];
+        window.selectedNoun = _nounArr[Math.floor(Math.random() * _nounArr.length)];
         window.tempName = window.selectedAdj + " " + window.selectedNoun;
         window.isFirstTimeNaming = true;
     }
@@ -11575,7 +12688,7 @@ function openProfileSettings() {
             <div id="tribe-btn-${t.id}" onclick="selectTribe(${t.id})" 
                  style="border-radius:12px; padding:10px 5px; cursor:pointer; text-align:center; transition:all 0.2s; ${isSelected} box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
                 <div style="${iconStyle}">✦</div>
-                <div style="font-size:0.75rem; color:#2c3e50; font-weight:bold; white-space:nowrap;">${t.name}</div>
+                <div style="font-size:0.75rem; color:#2c3e50; font-weight:bold; white-space:nowrap;">${currentLang === 'en' && t.nameEn ? t.nameEn : t.name}</div>
             </div>
         `;
     });
@@ -11592,7 +12705,7 @@ function openProfileSettings() {
             <div id="dept-btn-${d.id}" onclick="selectDept(${d.id})"
                  style="border-radius:12px; padding:10px 5px; cursor:pointer; text-align:center; transition:all 0.2s; ${isSelected} box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
                 <div style="font-size:1rem; font-weight:bold; color:#2c3e50;">[${d.tag}]</div>
-                <div style="font-size:0.75rem; color:#7f8c8d; font-weight:bold; white-space:nowrap;">${d.name}</div>
+                <div style="font-size:0.75rem; color:#7f8c8d; font-weight:bold; white-space:nowrap;">${currentLang === 'en' && d.nameEn ? d.nameEn : d.name}</div>
             </div>
         `;
     });
@@ -11603,10 +12716,10 @@ function openProfileSettings() {
         <div class="result-card" style="max-width:340px; background:#fff; color:#2c3e50; text-align:center; max-height:85vh; overflow-y:auto; padding-bottom: 20px;">
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                <h2 style="color:#2c3e50; margin:0;">순례자 등록</h2>
+                <h2 style="color:#2c3e50; margin:0;">${t('profile_title')}</h2>
                 <button onclick="cancelProfileRegistration()" style="background:none; border:none; color:#bdc3c7; font-size:1.8rem; cursor:pointer; padding:0; line-height:1;">&times;</button>
             </div>
-            <p style="color:#7f8c8d; font-size:0.85rem; margin-bottom:15px;">이름과 소속 부서/지파를 선택하세요.</p>
+            <p style="color:#7f8c8d; font-size:0.85rem; margin-bottom:15px;">${t('profile_subtitle')}</p>
             
             <div style="background:#f4f6f7; padding:15px; border-radius:15px; margin-bottom:15px; border:1px solid #ecf0f1;">
     
@@ -11617,33 +12730,33 @@ function openProfileSettings() {
     ${window.isFirstTimeNaming ? `
         <div style="margin-bottom: 12px; margin-top: -2px;">
             <span style="background:#ffeaa7; color:#d35400; padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                💡 이름을 아래에서 직접 골라보세요! 👇
+                ${t('profile_name_tip')}
             </span>
         </div>
     ` : ''}
     
     <div style="display: flex; gap: 10px; margin-bottom: 15px;">
         <select id="adj-select" onchange="updateNicknamePreview()" style="flex:1; padding:10px; border-radius:10px; border:1px solid #bdc3c7; font-size:1rem; outline:none; background:white; color:#2c3e50; cursor:pointer;">
-            ${NICK_ADJECTIVES.map(adj => `<option value="${adj}">${adj}</option>`).join('')}
+            ${(currentLang === 'en' ? NICK_ADJECTIVES_EN : NICK_ADJECTIVES).map(adj => `<option value="${adj}">${adj}</option>`).join('')}
         </select>
         <select id="noun-select" onchange="updateNicknamePreview()" style="flex:1; padding:10px; border-radius:10px; border:1px solid #bdc3c7; font-size:1rem; outline:none; background:white; color:#2c3e50; cursor:pointer;">
-            ${NICK_NOUNS.map(noun => `<option value="${noun}">${noun}</option>`).join('')}
+            ${(currentLang === 'en' ? NICK_NOUNS_EN : NICK_NOUNS).map(noun => `<option value="${noun}">${noun}</option>`).join('')}
         </select>
     </div>
 
     <button onclick="generateRandomNickname()" style="background:white; border:1px solid #bdc3c7; color:#7f8c8d; padding:8px 15px; border-radius:20px; font-weight:bold; cursor:pointer; font-size:0.85rem;">
-        🎲 이름 랜덤 변경
+        ${t('profile_random_name')}
     </button>
 </div>
 
-            <div style="text-align:left; font-size:0.9rem; font-weight:bold; color:#7f8c8d; margin-bottom:10px; margin-left:5px;">소속 부서 선택</div>
+            <div style="text-align:left; font-size:0.9rem; font-weight:bold; color:#7f8c8d; margin-bottom:10px; margin-left:5px;">${t('profile_dept_label')}</div>
             ${deptButtonsHtml}
 
-            <div style="text-align:left; font-size:0.9rem; font-weight:bold; color:#7f8c8d; margin-bottom:10px; margin-left:5px;">소속 지파 선택</div>
+            <div style="text-align:left; font-size:0.9rem; font-weight:bold; color:#7f8c8d; margin-bottom:10px; margin-left:5px;">${t('profile_tribe_label')}</div>
             ${tribeButtonsHtml}
 
             <button onclick="confirmProfile()" style="width:100%; background:#f1c40f; color:#2c3e50; border:none; padding:12px; border-radius:30px; font-weight:bold; cursor:pointer; font-size:1.1rem; box-shadow: 0 4px 0 #d35400;">
-                ✅ 등록 완료
+                ${t('profile_confirm')}
             </button>
         </div>
     `;
@@ -11729,7 +12842,7 @@ function updatePreviewText() {
 async function confirmProfile() {
     // 🌟 [핵심 방어막] 최초 가입이 아닌 유저가 지파를 바꿀 때 경고!
     if (myNickname !== "순례자" && myTribe !== window.tempTribe) {
-        const warnMsg = "⚠️ [경고] 지파를 변경하시면 올해 모은 '12지파 대항전 기여도(연간 승점)'가 0점으로 초기화됩니다!\n\n(개인의 누적 승점은 보존되지만, 새로운 지파에서의 기여도는 0부터 다시 쌓아야 합니다.)\n\n정말로 지파를 변경하시겠습니까?";
+        const warnMsg = t('profile_tribe_warn');
         if (!confirm(warnMsg)) {
             return; // 취소하면 함수 종료 (변경 취소)
         }
@@ -11762,7 +12875,7 @@ async function confirmProfile() {
         setTimeout(() => modal.remove(), 300);
     }
 
-    const tribeName = TRIBE_DATA[myTribe].name;
+    const tribeName = getTribeName(TRIBE_DATA[myTribe]);
     alert(t('alert_welcome_tribe', { tribe: tribeName, nick: myNickname }));
 
     // 신규 유저에게 게임 가이드 자동 표시
@@ -12039,11 +13152,11 @@ function openAchievement() {
 
         screen.innerHTML = `
             <div class="map-header" style="justify-content: center; flex-shrink: 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                <div style="font-weight:bold; font-size:1.3rem; color:#f1c40f;">🎖️ 나의 기록실</div>
+                <div style="font-weight:bold; font-size:1.3rem; color:#f1c40f;">${t('achievement_screen_title')}</div>
             </div>
 
             <div style="text-align:center; padding:15px; background:rgba(0,0,0,0.2); color:#bdc3c7; font-size:0.9rem; flex-shrink: 0;">
-                당신의 여정이 이곳에 기록됩니다.
+                ${t('achievement_screen_subtitle')}
             </div>
 
             <div id="record-summary" style="padding:15px; flex-shrink:0;">
@@ -12053,7 +13166,7 @@ function openAchievement() {
                 </div>
 
             <div class="button-area-static">
-                <button class="btn-gray btn-back" onclick="goMap()">돌아가기</button>
+                <button class="btn-gray btn-back" onclick="goMap()">${t('btn_go_back')}</button>
             </div>
         `;
         document.body.appendChild(screen);
@@ -12137,15 +13250,17 @@ function renderAchievementList() {
         if (isMax) percent = 100;
 
         // 텍스트 생성
-        let titleHtml = `<div style="font-weight:bold; color:#2c3e50; font-size:1rem;">${data.title} <span style="font-size:0.8rem; color:#7f8c8d;">(Lv.${currentTierIdx + 1})</span></div>`;
-        if (isMax) titleHtml = `<div style="font-weight:bold; color:#f1c40f; font-size:1rem;">${data.title} (완료)</div>`;
+        const dataTitle = (currentLang === 'en' && data.titleEn) ? data.titleEn : data.title;
+        const dataDesc = (currentLang === 'en' && data.descEn) ? data.descEn : data.desc;
+        let titleHtml = `<div style="font-weight:bold; color:#2c3e50; font-size:1rem;">${dataTitle} <span style="font-size:0.8rem; color:#7f8c8d;">(Lv.${currentTierIdx + 1})</span></div>`;
+        if (isMax) titleHtml = `<div style="font-weight:bold; color:#f1c40f; font-size:1rem;">${dataTitle} ${t('achievement_complete')}</div>`;
 
-        let descHtml = `<div style="font-size:0.8rem; color:#95a5a6; margin-bottom:5px;">${data.desc}</div>`;
+        let descHtml = `<div style="font-size:0.8rem; color:#95a5a6; margin-bottom:5px;">${dataDesc}</div>`;
 
         let progressHtml = `
             <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#7f8c8d; margin-bottom:2px;">
-                <span>현재: ${myValue.toLocaleString()}</span>
-                <span>목표: ${target.toLocaleString()}</span>
+                <span>${t('achievement_progress_current', { val: myValue.toLocaleString() })}</span>
+                <span>${t('achievement_progress_target', { val: target.toLocaleString() })}</span>
             </div>
             <div style="width:100%; height:8px; background:#ecf0f1; border-radius:4px; overflow:hidden;">
                 <div style="width:${percent}%; height:100%; background:${isMax ? '#2ecc71' : '#f1c40f'}; transition:width 0.5s;"></div>
@@ -12159,13 +13274,13 @@ function renderAchievementList() {
         btnDiv.style.marginLeft = "10px";
 
         if (isMax) {
-            btnDiv.innerHTML = `<button disabled style="background:#2ecc71; color:white; border:none; padding:8px 12px; border-radius:10px; font-weight:bold; font-size:0.8rem;">👑 정복</button>`;
+            btnDiv.innerHTML = `<button disabled style="background:#2ecc71; color:white; border:none; padding:8px 12px; border-radius:10px; font-weight:bold; font-size:0.8rem;">${t('achievement_conquered')}</button>`;
         } else if (myValue >= target) {
             // 보상 받기 가능
-            btnDiv.innerHTML = `<button onclick="claimAchievementReward('${key}')" class="btn-pulse" style="background:#e74c3c; color:white; border:none; padding:8px 15px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:0.85rem; box-shadow:0 3px 0 #c0392b;">💎 ${reward}<br>받기</button>`;
+            btnDiv.innerHTML = `<button onclick="claimAchievementReward('${key}')" class="btn-pulse" style="background:#e74c3c; color:white; border:none; padding:8px 15px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:0.85rem; box-shadow:0 3px 0 #c0392b;">💎 ${reward}<br>${t('achievement_claim')}</button>`;
         } else {
             // 진행 중
-            btnDiv.innerHTML = `<button disabled style="background:#ecf0f1; color:#bdc3c7; border:1px solid #bdc3c7; padding:8px 12px; border-radius:10px; font-size:0.8rem;">진행중</button>`;
+            btnDiv.innerHTML = `<button disabled style="background:#ecf0f1; color:#bdc3c7; border:1px solid #bdc3c7; padding:8px 12px; border-radius:10px; font-size:0.8rem;">${t('achievement_in_progress')}</button>`;
         }
 
         item.appendChild(iconDiv);
@@ -12202,7 +13317,7 @@ function claimAchievementReward(key) {
     if (typeof SoundEffect !== 'undefined') SoundEffect.playLevelUp(); // 또는 playGetGem
     if (typeof triggerConfetti === 'function') triggerConfetti();
 
-    alert(t('alert_achievement', { title: data.title, count: reward }));
+    alert(t('alert_achievement', { title: (currentLang === 'en' && data.titleEn) ? data.titleEn : data.title, count: reward }));
 
     // 5. 리스트 새로고침 (다음 단계 보여주기 위해)
     renderAchievementList();
@@ -12560,35 +13675,34 @@ function renderMyPlayRecord() {
         </div>
     `;
 
-    // 🌟 상단 요약 배지는 놔두고, 하단 상세 타일들만 아코디언 안으로 넣었습니다!
     summary.innerHTML = `
         <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:15px;">
             <div style="background:rgba(241,196,15,0.15); border:1px solid rgba(241,196,15,0.4); color:#f1c40f; padding:6px 10px; border-radius:999px; font-size:0.8rem; font-weight:bold;">
-                🧭 누적 승점 ${score.toLocaleString()} pts
+                ${t('record_badge_score', { val: score.toLocaleString() })}
             </div>
             <div style="background:rgba(52,152,219,0.15); border:1px solid rgba(52,152,219,0.4); color:#7fbdf0; padding:6px 10px; border-radius:999px; font-size:0.8rem; font-weight:bold;">
-                💎 누적 보석 ${gems.toLocaleString()}개
+                ${t('record_badge_gems', { val: gems.toLocaleString() })}
             </div>
             <div style="background:rgba(46,204,113,0.15); border:1px solid rgba(46,204,113,0.4); color:#2ecc71; padding:6px 10px; border-radius:999px; font-size:0.8rem; font-weight:bold;">
-                ⏱️ 누적 플레이타임 ${formatDuration(totalPlaySeconds)}
+                ${t('record_badge_playtime', { val: formatDuration(totalPlaySeconds) })}
             </div>
         </div>
 
         <div class="record-accordion" style="width: 100%; border-radius: 15px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); overflow: hidden;">
             <button class="accordion-header" onclick="toggleAccordion('detail-stats', this)" style="width: 100%; padding: 15px 20px; background: rgba(0,0,0,0.2); color: #f1c40f; border: none; text-align: left; font-size: 1.1rem; font-family: 'Jua', sans-serif; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
-                <span>📊 나의 상세 기록 보기</span>
+                <span>${t('record_detail_title')}</span>
                 <span class="toggle-icon" style="font-size: 0.9rem; transition: transform 0.3s ease;">▼</span>
             </button>
-            
+
             <div id="detail-stats" class="accordion-content" style="max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out, padding 0.4s ease; background: rgba(255,255,255,0.02);">
                 <div style="display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:10px; padding: 15px 20px;">
-                    ${tile("⏱️", "플레이타임(누적)", formatDuration(totalPlaySeconds), "#f1c40f")}
-                    ${tile("📆", "최근 7일 평균", formatDuration(avgDailySeconds), "#7fbdf0")}
-                    ${tile("📖", "일반 스테이지 클리어", `${counts.normal}개`, "#ecf0f1")}
-                    ${tile("🐲", "중간/보스 클리어", `${counts.bossMid}개`, "#ecf0f1")}
-                    ${tile("💎", "누적 획득 보석", `${gems.toLocaleString()}개`, "#7fbdf0")}
-                    ${tile("🏅", "누적 획득 승점", `${score.toLocaleString()} pts`, "#f1c40f")}
-                    ${tile("💜", "총 기억레벨 합계", `${totalMemoryLevel} Lv`, "#b487ff")}
+                    ${tile("⏱️", t('record_tile_playtime'), formatDuration(totalPlaySeconds), "#f1c40f")}
+                    ${tile("📆", t('record_tile_avg7d'), formatDuration(avgDailySeconds), "#7fbdf0")}
+                    ${tile("📖", t('record_tile_normal'), t('record_count', { n: counts.normal.toLocaleString() }), "#ecf0f1")}
+                    ${tile("🐲", t('record_tile_bossmid'), t('record_count', { n: counts.bossMid.toLocaleString() }), "#ecf0f1")}
+                    ${tile("💎", t('record_tile_gems'), t('record_count', { n: gems.toLocaleString() }), "#7fbdf0")}
+                    ${tile("🏅", t('record_tile_score'), `${score.toLocaleString()} pts`, "#f1c40f")}
+                    ${tile("💜", t('record_tile_memory'), t('record_memory_lv', { n: totalMemoryLevel }), "#b487ff")}
                 </div>
             </div>
         </div>
@@ -12753,7 +13867,7 @@ function loadTotalHallRanking() {
     const list = document.getElementById('ranking-list');
     if (!list) return;
 
-    list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">📡 누적 명예의 전당 불러오는 중...</div>`;
+    list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">${t('ranking_loading_total_hall')}</div>`;
 
     if (typeof db === 'undefined' || !db) return;
 
@@ -12763,7 +13877,7 @@ function loadTotalHallRanking() {
         .get()
         .then(doc => {
             if (!doc.exists) {
-                list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">아직 누적 랭킹 데이터가 없습니다.<br>잠시 후 다음 스냅샷을 기다려주세요!</div>`;
+                list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">${t('ranking_empty_total')}</div>`;
                 return;
             }
 
@@ -12774,7 +13888,7 @@ function loadTotalHallRanking() {
             const transformed = ranks.map((row, index) => {
                 return {
                     rank: index + 1,
-                    name: row.name || "이름없음",
+                    name: row.name || t('ranking_no_name'),
                     score: row.score || 0, // 서버에서 예쁘게 변환해준 totalScore 입니다!
                     tribe: row.tribe !== undefined ? row.tribe : 0,
                     dept: row.dept !== undefined ? row.dept : 0,
@@ -12791,7 +13905,7 @@ function loadTotalHallRanking() {
         })
         .catch(err => {
             console.error("❌ 누적 랭킹 로드 실패:", err);
-            list.innerHTML = `<div style="text-align:center; padding:50px; color:#e74c3c;">데이터를 불러오지 못했습니다.</div>`;
+            list.innerHTML = `<div style="text-align:center; padding:50px; color:#e74c3c;">${t('ranking_load_fail')}</div>`;
         });
 }
 /* [추가] 연간 대항전 금은동 순위 불러오기 */
@@ -12806,7 +13920,7 @@ function loadYearlyTribeRanking() {
         .get()
         .then(doc => {
             if (!doc.exists) {
-                listEl.innerHTML = `<div style="text-align:center; padding:10px; color:#95a5a6; font-size:0.85rem;">이번 연도 스냅샷 데이터가 없습니다.</div>`;
+                listEl.innerHTML = `<div style="text-align:center; padding:10px; color:#95a5a6; font-size:0.85rem;">${t('ranking_empty_year_snapshot')}</div>`;
                 return;
             }
 
@@ -12817,17 +13931,17 @@ function loadYearlyTribeRanking() {
             const top3 = ranks.filter(r => r.rank <= 3 && r.score > 0);
 
             if (top3.length === 0) {
-                listEl.innerHTML = `<div style="text-align:center; padding:10px; color:#95a5a6; font-size:0.85rem;">아직 승점을 획득한 지파가 없습니다.</div>`;
+                listEl.innerHTML = `<div style="text-align:center; padding:10px; color:#95a5a6; font-size:0.85rem;">${t('ranking_empty_year_tribe')}</div>`;
                 return;
             }
 
             let html = '';
-            const medals = { 1: '🥇 금메달', 2: '🥈 은메달', 3: '🥉 동메달' };
-            const colors = { 1: '#f1c40f', 2: '#bdc3c7', 3: '#cd7f32' }; // 금, 은, 동 색상
+            const medals = { 1: t('ranking_medal_gold'), 2: t('ranking_medal_silver'), 3: t('ranking_medal_bronze') };
+            const colors = { 1: '#f1c40f', 2: '#bdc3c7', 3: '#cd7f32' };
 
             top3.forEach(item => {
-                const tribeName = TRIBE_DATA[item.tribeId] ? TRIBE_DATA[item.tribeId].name : "알 수 없음";
-                const medalText = medals[item.rank] || `${item.rank}위`;
+                const tribeName = TRIBE_DATA[item.tribeId] ? getTribeName(TRIBE_DATA[item.tribeId]) : t('ranking_unknown_tribe');
+                const medalText = medals[item.rank] || t('ranking_rank_n', { n: item.rank });
                 const color = colors[item.rank] || '#ecf0f1';
 
                 html += `
@@ -12839,9 +13953,9 @@ function loadYearlyTribeRanking() {
             });
 
             html += `
-            <button onclick="openRankingModal('yearly-hall', '⚔️ 2026 12지파 대항전 전체 순위')" 
+            <button onclick="openRankingModal('yearly-hall', t('ranking_yearly_battle_full'))"
                 style="margin-top:10px; padding:8px; width:100%; border-radius:8px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#bdc3c7; font-size:0.85rem; cursor:pointer; font-weight:bold; transition:all 0.2s;">
-                전체 순위 보기 🔍
+                ${t('ranking_all_btn')}
             </button>
           `;
 
@@ -12849,7 +13963,7 @@ function loadYearlyTribeRanking() {
         })
         .catch(err => {
             console.error("❌ 연간 대항전 로드 실패:", err);
-            listEl.innerHTML = `<div style="text-align:center; color:#e74c3c; font-size:0.85rem;">데이터를 불러오지 못했습니다.</div>`;
+            listEl.innerHTML = `<div style="text-align:center; color:#e74c3c; font-size:0.85rem;">${t('ranking_load_fail')}</div>`;
         });
 }
 /* [추가] PC 환경에서 마우스 드래그로 가로 스크롤 가능하게 하는 기능 */
@@ -12893,7 +14007,7 @@ function loadYearlyHallOfFame() {
         .get()
         .then(doc => {
             if (!doc.exists) {
-                listEl.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">아직 대항전 데이터가 없습니다.</div>`;
+                listEl.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">${t('ranking_empty_battle')}</div>`;
                 return;
             }
 
@@ -12901,13 +14015,13 @@ function loadYearlyHallOfFame() {
             const ranks = data.ranks || [];
 
             if (ranks.length === 0) {
-                listEl.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">아직 승점을 획득한 지파가 없습니다.</div>`;
+                listEl.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">${t('ranking_empty_year_tribe')}</div>`;
                 return;
             }
 
             let html = '';
             ranks.forEach(item => {
-                const tribeName = TRIBE_DATA[item.tribeId] ? TRIBE_DATA[item.tribeId].name : "알 수 없음";
+                const tribeName = TRIBE_DATA[item.tribeId] ? getTribeName(TRIBE_DATA[item.tribeId]) : t('ranking_unknown_tribe');
 
                 // 1,2,3등은 메달 아이콘, 4등부터는 회색 숫자
                 let medalIcon = '';
@@ -12935,7 +14049,7 @@ function loadYearlyHallOfFame() {
         })
         .catch(err => {
             console.error("❌ 연간 대항전 전체보기 로드 실패:", err);
-            listEl.innerHTML = `<div style="text-align:center; padding:50px; color:#e74c3c;">데이터를 불러오지 못했습니다.</div>`;
+            listEl.innerHTML = `<div style="text-align:center; padding:50px; color:#e74c3c;">${t('ranking_load_fail')}</div>`;
         });
 }
 /* [추가] 순례자 등록(프로필 수정) 취소 함수 */
@@ -13204,9 +14318,9 @@ function startBossTransition(chapterNum, startVerse, endVerse, isMidBoss, onComp
     }
 
     if (isMidBoss) {
-        textOverlay.innerHTML = `<span style="color:red; font-size:1.5em;">⚔️ 중간 점검</span><br/>${startVerse}절 ~ ${endVerse}절`;
+        textOverlay.innerHTML = `<span style="color:red; font-size:1.5em;">⚔️ ${t('label_mid_boss')}</span><br/>${t('label_verse_range', { start: startVerse, end: endVerse })}`;
     } else {
-        textOverlay.innerHTML = `<span style="color:darkred; font-size:1.5em;">🐉 보스 출현</span><br/>${t('label_chapter_header', { num: chapterNum })}<br>${getChapterTitleHtml(chapterNum)}`;
+        textOverlay.innerHTML = `<span style="color:darkred; font-size:1.5em;">${t('label_boss_appear')}</span><br/>${t('label_chapter_header', { num: chapterNum })}<br>${getChapterTitleHtml(chapterNum)}`;
     }
     gsap.set(textOverlay, { opacity: 0, y: 20, scale: 0.9, xPercent: -50, yPercent: -50 });
 
@@ -13319,9 +14433,9 @@ let currentGameModeIndex = 0; // 0: 여정 시작, 1: 집중 훈련, 2: 고난 �
 // 🌟 좌우 화살표를 누르면 실행되는 함수
 function toggleGameMode(direction) {
     const modes = [
-        { text: "👑 여정 시작", action: startGame, bg: "" }, // 기존 CSS 스타일 유지
-        { text: "⚔️ 집중 훈련", action: startTrainingMode, bg: "linear-gradient(to bottom, #2c3e50, #34495e)" },
-        { text: "⛰️ 고난 길", action: openHardshipModeSelect, bg: "linear-gradient(135deg, #5c4634 0%, #2f3b4a 100%)" }
+        { text: t('btn_journey'), action: startGame, bg: "" },
+        { text: t('btn_training'), action: startTrainingMode, bg: "linear-gradient(to bottom, #2c3e50, #34495e)" },
+        { text: t('btn_hardship'), action: openHardshipModeSelect, bg: "linear-gradient(135deg, #5c4634 0%, #2f3b4a 100%)" }
     ];
     
     // 인덱스 변경 (좌우 루프)
@@ -13400,13 +14514,13 @@ function updateTrainingCycleIndicator() {
     if (!cycleEl) return;
 
     if (!window.isTrainingMode) {
-        cycleEl.innerText = '사이클 1/1';
+        cycleEl.innerText = t('label_cycle_display', { cur: 1, total: 1 });
         return;
     }
 
     const currentCycle = window.currentTrainingCycle || currentTrainingCycle || 1;
     const totalCycles = window.trainingRepeatCount || trainingRepeatCount || 1;
-    cycleEl.innerText = `사이클 ${currentCycle}/${totalCycles}`;
+    cycleEl.innerText = t('label_cycle_display', { cur: currentCycle, total: totalCycles });
 }
 
 function applyTrainingStepSelection() {
@@ -13491,12 +14605,12 @@ function initTrainingChapters() {
         if (typeof bibleData !== 'undefined' && bibleData[i] && bibleData[i].length > 0) {
             const opt1 = document.createElement('option');
             opt1.value = i;
-            opt1.innerText = `${i}장`;
+            opt1.innerText = t('label_chapter', { num: i });
             startChapterSelect.appendChild(opt1);
 
             const opt2 = document.createElement('option');
             opt2.value = i;
-            opt2.innerText = `${i}장`;
+            opt2.innerText = t('label_chapter', { num: i });
             endChapterSelect.appendChild(opt2);
         }
     }
@@ -13527,7 +14641,7 @@ function updateTrainingStartVerses(preferredVerse) {
     for (let i = 1; i <= maxVerses; i++) {
         const opt = document.createElement('option');
         opt.value = i;
-        opt.innerText = `${i}절`;
+        opt.innerText = t('label_verse', { num: i });
         if (i === safe) opt.selected = true;
         select.appendChild(opt);
     }
@@ -13562,7 +14676,7 @@ function updateTrainingEndVerses(preferredVerse) {
     for (let i = 1; i <= maxVerses; i++) {
         const opt = document.createElement('option');
         opt.value = i;
-        opt.innerText = `${i}절`;
+        opt.innerText = t('label_verse', { num: i });
         if (i === safe) opt.selected = true;
         select.appendChild(opt);
     }
@@ -13702,21 +14816,9 @@ function executeTraining() {
 window.isHardshipMode = false;
 
 const HARDSHIP_MODES = {
-    endurance: {
-        title: '인내의 고난',
-        icon: '🕊️',
-        summary: 'Step 1 방식으로 확인만 진행합니다.'
-    },
-    address: {
-        title: '주소의 고난',
-        icon: '🎯',
-        summary: '내용을 보고 장과 절을 맞힙니다.'
-    },
-    memory: {
-        title: '망각의 고난',
-        icon: '⌨️',
-        summary: '주소만 보고 전체 구절을 인출합니다.'
-    }
+    endurance: { icon: '🕊️', titleKey: 'hardship_endurance_title', summaryKey: 'hardship_endurance_summary' },
+    address:   { icon: '🎯', titleKey: 'hardship_address_title',   summaryKey: 'hardship_address_summary' },
+    memory:    { icon: '⌨️', titleKey: 'hardship_memory_title',    summaryKey: 'hardship_memory_summary' }
 };
 
 function createEmptyHardshipState() {
@@ -13749,15 +14851,19 @@ let selectedHardshipOrderType = 'random'; // 'random' | 'sequential'
 const HARDSHIP_VERSES = [];
 for (let hardshipChapter = 1; hardshipChapter <= 22; hardshipChapter++) {
     const chapterVerses = bibleData[hardshipChapter] || [];
+    const chapterVersesEn = (typeof bibleDataEn !== 'undefined' && bibleDataEn[hardshipChapter]) || [];
     for (let hardshipVerseIndex = 0; hardshipVerseIndex < chapterVerses.length; hardshipVerseIndex++) {
         const verseData = chapterVerses[hardshipVerseIndex];
+        const verseDataEn = chapterVersesEn[hardshipVerseIndex];
         HARDSHIP_VERSES.push({
             id: `${hardshipChapter}-${hardshipVerseIndex + 1}`,
             chapter: hardshipChapter,
             verse: hardshipVerseIndex + 1,
             text: verseData.text,
+            textEn: verseDataEn ? verseDataEn.text : '',
             verseText: verseData.text,
             chunks: Array.isArray(verseData.chunks) ? verseData.chunks : String(verseData.text || '').split(' '),
+            chunksEn: verseDataEn && Array.isArray(verseDataEn.chunks) ? verseDataEn.chunks : (verseDataEn ? String(verseDataEn.text || '').split(' ') : []),
             label: `계 ${hardshipChapter}:${hardshipVerseIndex + 1}`
         });
     }
@@ -13795,7 +14901,8 @@ function isHardshipFillableChar(character) {
 }
 
 function getHardshipModeMeta(mode) {
-    return HARDSHIP_MODES[mode] || HARDSHIP_MODES.endurance;
+    const m = HARDSHIP_MODES[mode] || HARDSHIP_MODES.endurance;
+    return { icon: m.icon, title: t(m.titleKey), summary: t(m.summaryKey) };
 }
 
 function isHardshipTypingTargetChar(character) {
@@ -13844,7 +14951,7 @@ function resetHardshipSessionState() {
 
     const cycleIndicator = document.getElementById('training-cycle-indicator');
     if (cycleIndicator) {
-        cycleIndicator.innerText = '사이클 1/1';
+        cycleIndicator.innerText = t('label_cycle_display', { cur: 1, total: 1 });
         cycleIndicator.style.display = '';
     }
 
@@ -13856,7 +14963,7 @@ function resetHardshipSessionState() {
     const hardshipScoreChip = document.getElementById('common-hardship-score');
     if (hardshipScoreChip) {
         hardshipScoreChip.style.display = 'none';
-        hardshipScoreChip.textContent = '승점 0';
+        hardshipScoreChip.textContent = t('label_score_zero');
     }
 
     const hardshipHintBtn = document.getElementById('common-hardship-hint-btn');
@@ -13922,7 +15029,8 @@ function populateHardshipConfigChapterOptions() {
     const endSelect = document.getElementById('hardship-end-chapter');
     if (!startSelect || !endSelect) return;
 
-    if (startSelect.options.length === 22 && endSelect.options.length === 22) return;
+    // 옵션이 이미 채워져 있고 텍스트가 현재 언어와 일치하면 스킵
+    if (startSelect.options.length === 22 && startSelect.options[0].innerText === t('hardship_chapter_option', { num: 1 })) return;
 
     startSelect.innerHTML = '';
     endSelect.innerHTML = '';
@@ -13930,12 +15038,12 @@ function populateHardshipConfigChapterOptions() {
     for (let chapter = 1; chapter <= 22; chapter += 1) {
         const startOption = document.createElement('option');
         startOption.value = String(chapter);
-        startOption.innerText = `${chapter}장`;
+        startOption.innerText = t('hardship_chapter_option', { num: chapter });
         startSelect.appendChild(startOption);
 
         const endOption = document.createElement('option');
         endOption.value = String(chapter);
-        endOption.innerText = `${chapter}장`;
+        endOption.innerText = t('hardship_chapter_option', { num: chapter });
         endSelect.appendChild(endOption);
     }
 
@@ -13994,9 +15102,9 @@ function updateHardshipConfigRangeUI() {
         : getHardshipVerseIdsByChapterRange(1, 22);
 
     if (isRangeSelected) {
-        summary.innerText = `${startChapter}장~${endChapter}장, 총 ${verseIds.length}절에서 무작위 출제됩니다.`;
+        summary.innerText = t('hardship_config_summary_range', { start: startChapter, end: endChapter, count: verseIds.length });
     } else {
-        summary.innerText = `전장 ${verseIds.length}절에서 무작위 출제됩니다.`;
+        summary.innerText = t('hardship_config_summary_all', { count: verseIds.length });
     }
 }
 
@@ -14184,14 +15292,14 @@ function updateHardshipHeader() {
 
     if (commonHeader) commonHeader.style.display = 'flex';
     if (titleEl) titleEl.textContent = modeMeta.title;
-    if (progressEl) progressEl.textContent = `${progressCount}/${totalCount}절`;
+    if (progressEl) progressEl.textContent = t('label_progress_verses', { cur: progressCount, total: totalCount });
 
     if (scoreEl) {
         if (currentMode === 'endurance') {
             scoreEl.style.display = 'none';
         } else {
             scoreEl.style.display = 'inline-flex';
-            scoreEl.textContent = `승점 ${hardshipState.score}`;
+            scoreEl.textContent = t('label_score_display', { score: hardshipState.score });
         }
     }
 
@@ -14269,7 +15377,11 @@ function renderHardshipEnduranceVerse() {
     const control = document.querySelector('.battle-control');
     if (!field || !control || !hardshipState.currentVerse) return;
 
-    const maskedChunks = hardshipState.currentVerse.chunks.map((chunk, index) => {
+    const verse = hardshipState.currentVerse;
+    const activeChunks = (currentLang === 'en' && verse.chunksEn && verse.chunksEn.length) ? verse.chunksEn : verse.chunks;
+    const verseLabel = t('label_revelation_ref', { ch: verse.chapter, v: verse.verse });
+
+    const maskedChunks = activeChunks.map((chunk, index) => {
         const chunkText = hardshipState.revealIndex > index
             ? chunk
             : String(chunk).replace(/[0-9A-Za-z가-힣]/g, '▢');
@@ -14279,7 +15391,7 @@ function renderHardshipEnduranceVerse() {
     }).join('');
 
     field.innerHTML = `
-        <div class="verse-indicator">[${hardshipState.currentVerse.label}] Step 1 방식으로 말씀을 확인하세요</div>
+        <div class="verse-indicator">${t('hardship_endurance_indicator', { label: verseLabel })}</div>
         <div class="hardship-verse-card">
             <div class="hardship-mode-tag">${getHardshipModeMeta('endurance').icon} ${getHardshipModeMeta('endurance').summary}</div>
             <div class="hardship-endurance-reading">${maskedChunks}</div>
@@ -14289,8 +15401,8 @@ function renderHardshipEnduranceVerse() {
 
     control.innerHTML = `
         <div class="hardship-control-row">
-            <button class="btn-attack" onclick="revealHardshipEnduranceChunk()" ${hardshipState.locked ? 'disabled' : ''}>열기</button>
-            <button class="btn-attack" onclick="loadNextHardshipVerse()" style="background:#2ecc71; ${hardshipState.locked ? '' : 'display:none;'}">다음 말씀 ▶</button>
+            <button class="btn-attack" onclick="revealHardshipEnduranceChunk()" ${hardshipState.locked ? 'disabled' : ''}>${t('hardship_btn_reveal')}</button>
+            <button class="btn-attack" onclick="loadNextHardshipVerse()" style="background:#2ecc71; ${hardshipState.locked ? '' : 'display:none;'}">${t('hardship_btn_next_verse')}</button>
         </div>
     `;
 }
@@ -14301,7 +15413,9 @@ function revealHardshipEnduranceChunk() {
     SoundEffect.playReveal();
 
     const chunkIndex = hardshipState.revealIndex;
-    const chunk = hardshipState.currentVerse.chunks[chunkIndex];
+    const activeChunks = (currentLang === 'en' && hardshipState.currentVerse.chunksEn && hardshipState.currentVerse.chunksEn.length)
+        ? hardshipState.currentVerse.chunksEn : hardshipState.currentVerse.chunks;
+    const chunk = activeChunks[chunkIndex];
     const chunkEl = document.getElementById(`hardship-a-chunk-${chunkIndex}`);
     if (!chunkEl) return;
 
@@ -14315,12 +15429,12 @@ function revealHardshipEnduranceChunk() {
 
     hardshipState.revealIndex += 1;
 
-    if (hardshipState.revealIndex >= hardshipState.currentVerse.chunks.length) {
+    if (hardshipState.revealIndex >= activeChunks.length) {
         hardshipState.locked = true;
         hardshipState.studiedCount += 1;
         hardshipState.feedback = {
             type: 'info',
-            message: `누적 확인 ${hardshipState.studiedCount}절째입니다.`
+            message: t('hardship_endurance_count', { n: hardshipState.studiedCount })
         };
         renderHardshipEnduranceVerse();
         updateBattleUI();
@@ -14333,10 +15447,10 @@ function renderHardshipAddressVerse() {
     if (!field || !control || !hardshipState.currentVerse) return;
 
     field.innerHTML = `
-        <div class="verse-indicator">주소를 맞히세요</div>
+        <div class="verse-indicator">${t('hardship_address_indicator')}</div>
         <div class="hardship-verse-card">
             <div class="hardship-mode-tag">${getHardshipModeMeta('address').icon} ${getHardshipModeMeta('address').summary}</div>
-            <div class="hardship-verse-text">${hardshipState.currentVerse.displayText || hardshipState.currentVerse.text}</div>
+            <div class="hardship-verse-text">${(currentLang === 'en' && hardshipState.currentVerse.textEn) ? hardshipState.currentVerse.textEn : (hardshipState.currentVerse.displayText || hardshipState.currentVerse.text)}</div>
             ${buildHardshipFeedbackHtml()}
         </div>
     `;
@@ -14354,7 +15468,7 @@ function renderHardshipAddressControl(control) {
         // 제출 완료 상태: 요약 + 다음 버튼
         control.innerHTML = `
             <div class="hardship-control-row">
-                <button id="hardship-next-btn" class="btn-attack" onclick="proceedHardshipToNextVerse()" style="background:#2ecc71;">다음 ⏭️</button>
+                <button id="hardship-next-btn" class="btn-attack" onclick="proceedHardshipToNextVerse()" style="background:#2ecc71;">${t('hardship_btn_next')}</button>
             </div>
         `;
         return;
@@ -14363,11 +15477,11 @@ function renderHardshipAddressControl(control) {
     if (hardshipState.addressPhase === 'chapter') {
         let buttonsHtml = '';
         for (let ch = 1; ch <= 22; ch++) {
-            buttonsHtml += `<button class="addr-ch-btn" onclick="selectHardshipChapter(${ch})">${ch}장</button>`;
+            buttonsHtml += `<button class="addr-ch-btn" onclick="selectHardshipChapter(${ch})">${t('hardship_address_ch_btn', { ch })}</button>`;
         }
         control.innerHTML = `
             <div class="addr-grid-wrap">
-                <div class="addr-grid-label">계시록 몇 장인가요?</div>
+                <div class="addr-grid-label">${t('hardship_address_ask_chapter')}</div>
                 <div class="addr-chapter-grid">${buttonsHtml}</div>
             </div>
         `;
@@ -14376,14 +15490,14 @@ function renderHardshipAddressControl(control) {
         const maxVerse = bibleData[chapter] ? bibleData[chapter].length : 1;
         let buttonsHtml = '';
         for (let v = 1; v <= maxVerse; v++) {
-            buttonsHtml += `<button class="addr-v-btn" onclick="selectHardshipVerse(${v})">${v}절</button>`;
+            buttonsHtml += `<button class="addr-v-btn" onclick="selectHardshipVerse(${v})">${t('hardship_address_v_btn', { v })}</button>`;
         }
         const canGoBack = hardshipState.forcedChapter == null;
         control.innerHTML = `
             <div class="addr-grid-wrap">
                 <div class="addr-grid-label">
                     ${canGoBack ? `<button class="addr-back-btn" onclick="backToHardshipChapter()">←</button>` : ''}
-                    계시록 <span class="addr-selected-chapter" ${canGoBack ? 'style="cursor:pointer;" onclick="backToHardshipChapter()"' : ''}>${chapter}장</span> 몇 절인가요?
+                    ${t('hardship_address_ask_verse', { ch: chapter })}
                 </div>
                 <div class="addr-verse-grid">${buttonsHtml}</div>
             </div>
@@ -14442,7 +15556,7 @@ function submitHardshipAddressGuess() {
         hardshipState.studiedCount += 1;
         hardshipState.feedback = {
             type: 'success',
-            message: `정답입니다. ${hardshipState.currentVerse.label} · +${earnedPoints}점`
+            message: t('hardship_feedback_correct', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }), pts: earnedPoints })
         };
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
         renderHardshipAddressVerse();
@@ -14454,7 +15568,7 @@ function submitHardshipAddressGuess() {
     wrongCount += 1;
     hardshipState.feedback = {
         type: 'error',
-        message: `오답입니다. 정답은 ${hardshipState.currentVerse.label}입니다.`
+        message: t('hardship_feedback_wrong_address', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) })
     };
     if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
     if (typeof SoundEffect !== 'undefined' && SoundEffect.playHeartLoss) SoundEffect.playHeartLoss();
@@ -14498,7 +15612,7 @@ function renderHardshipMemoryVerse() {
     const hiddenInputMaxLength = getHardshipFillableVerseLength();
 
     field.innerHTML = `
-        <div class="verse-indicator">주소만 보고 전체 구절을 인출합니다</div>
+        <div class="verse-indicator">${t('hardship_memory_indicator')}</div>
         <div class="hardship-verse-card" onclick="focusHardshipMemoryHiddenInput()" ontouchstart="focusHardshipMemoryHiddenInput()">
             <div class="hardship-mode-tag">[${hardshipState.currentVerse.label}]</div>
             <div class="hardship-typing-board" onclick="focusHardshipMemoryHiddenInput()" ontouchstart="focusHardshipMemoryHiddenInput()">${typingBoardHtml}</div>
@@ -14519,9 +15633,9 @@ function renderHardshipMemoryVerse() {
 
     control.innerHTML = `
         <div class="hardship-control-row">
-            <button id="hardship-memory-submit-btn" class="btn-attack" onclick="submitHardshipMemoryGuess()" style="${hardshipState.awaitingNext ? 'display:none;' : ''}" ${(hardshipState.locked || (hardshipState.memoryTypedText || '').length < getHardshipFillableVerseLength()) ? 'disabled' : ''}>정답 확인</button>
-            <button id="hardship-next-btn" class="btn-attack" onclick="proceedHardshipToNextVerse()" style="background:#2ecc71; ${hardshipState.awaitingNext ? '' : 'display:none;'}">다음 ⏭️</button>
-            <button class="btn-reset-step5" onclick="resetHardshipMemoryInputs()" style="${hardshipState.awaitingNext ? 'display:none;' : ''}" ${hardshipState.locked ? 'disabled' : ''}>입력 초기화</button>
+            <button id="hardship-memory-submit-btn" class="btn-attack" onclick="submitHardshipMemoryGuess()" style="${hardshipState.awaitingNext ? 'display:none;' : ''}" ${(hardshipState.locked || (hardshipState.memoryTypedText || '').length < getHardshipFillableVerseLength()) ? 'disabled' : ''}>${t('hardship_btn_submit')}</button>
+            <button id="hardship-next-btn" class="btn-attack" onclick="proceedHardshipToNextVerse()" style="background:#2ecc71; ${hardshipState.awaitingNext ? '' : 'display:none;'}">${t('hardship_btn_next')}</button>
+            <button class="btn-reset-step5" onclick="resetHardshipMemoryInputs()" style="${hardshipState.awaitingNext ? 'display:none;' : ''}" ${hardshipState.locked ? 'disabled' : ''}>${t('hardship_btn_reset_input')}</button>
         </div>
     `;
 
@@ -14817,7 +15931,7 @@ function useHardshipMemoryHint() {
         return;
     }
 
-    if (!confirm(`💎 보석 ${HINT_COST}개를 사용해 글자 하나를 보시겠습니까?`)) {
+    if (!confirm(t('hardship_hint_confirm', { cost: HINT_COST }))) {
         return;
     }
 
@@ -14871,7 +15985,7 @@ function submitHardshipMemoryGuess() {
         hardshipState.wrongSlots = [];
         hardshipState.feedback = {
             type: 'success',
-            message: `정답입니다. ${hardshipState.currentVerse.label} · +${earnedPoints}점`
+            message: t('hardship_feedback_correct', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }), pts: earnedPoints })
         };
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
         renderHardshipMemoryVerse();
@@ -14894,7 +16008,7 @@ function submitHardshipMemoryGuess() {
     wrongCount += 1;
     hardshipState.feedback = {
         type: 'error',
-        message: `오답입니다. 정답 말씀: ${hardshipState.currentVerse.text}`
+        message: t('hardship_feedback_wrong_memory', { text: (currentLang === 'en' && hardshipState.currentVerse.textEn) ? hardshipState.currentVerse.textEn : hardshipState.currentVerse.text })
     };
     if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
     if (typeof SoundEffect !== 'undefined' && SoundEffect.playHeartLoss) SoundEffect.playHeartLoss();
@@ -14931,32 +16045,32 @@ function finishHardshipSession(reason) {
     }
 
     if (resultTitle) {
-        if (reason === 'completed') resultTitle.innerText = `🏁 ${modeMeta.title} 완주`;
-        else if (reason === 'hearts') resultTitle.innerText = `💀 ${modeMeta.title} 종료`;
-        else resultTitle.innerText = `⛰️ ${modeMeta.title} 종료`;
+        if (reason === 'completed') resultTitle.innerText = t('hardship_result_completed', { title: modeMeta.title });
+        else if (reason === 'hearts') resultTitle.innerText = t('hardship_result_hearts_end', { title: modeMeta.title });
+        else resultTitle.innerText = t('hardship_result_ended', { title: modeMeta.title });
     }
 
     if (resultStreakText) {
         if (hardshipState.mode === 'endurance') {
-            resultStreakText.innerHTML = `이번 세션에서 <span id="streak-days">${hardshipState.studiedCount}</span>절을 확인했습니다.`;
+            resultStreakText.innerHTML = t('hardship_session_endurance', { count: `<span id="streak-days">${hardshipState.studiedCount}</span>` });
         } else {
-            resultStreakText.innerHTML = `이번 세션 승점 <span id="streak-days">${hardshipState.score}</span>점`;
+            resultStreakText.innerHTML = t('hardship_session_score', { score: `<span id="streak-days">${hardshipState.score}</span>` });
         }
     }
 
     if (resultExpLabel) {
-        resultExpLabel.innerText = hardshipState.mode === 'endurance' ? '📘 확인' : '🏆 승점';
+        resultExpLabel.innerText = hardshipState.mode === 'endurance' ? t('hardship_result_check') : t('hardship_result_score_label');
     }
 
     if (resultContinueBtn) {
-        resultContinueBtn.innerText = '맵으로 돌아가기 ▶';
+        resultContinueBtn.innerText = t('hardship_result_back');
     }
 
     if (resultTime) resultTime.innerText = `${minutes}:${seconds}`;
     if (resultAccuracy) resultAccuracy.innerText = `${accuracy}%`;
     if (resultExp) {
         resultExp.innerText = hardshipState.mode === 'endurance'
-            ? `${hardshipState.studiedCount}절`
+            ? t('hardship_result_verses', { count: hardshipState.studiedCount })
             : `${hardshipState.score}`;
     }
 
@@ -14988,7 +16102,7 @@ function finishHardshipSession(reason) {
             saveGameData();
             syncToFirestore(); // [Firestore] 하드십 클리어
             if (resultStreakText) {
-                resultStreakText.innerHTML += `<br><span style="font-size:13px;color:#aad4ff;">💎 ${subGemTotal}젬 획득 · ${totalSubCount}개 스테이지 클리어 (${eligibleSubCount}개 단계 상승)</span>`;
+                resultStreakText.innerHTML += `<br><span style="font-size:13px;color:#aad4ff;">${t('hardship_gem_summary', { gem: subGemTotal, total: totalSubCount, eligible: eligibleSubCount })}</span>`;
             }
         }
     }
@@ -15104,91 +16218,15 @@ function finishHardshipSession(reason) {
 
 // ── 게임 가이드 모달 ──────────────────────────────
 
-const GUIDE_PAGES = [
-    {
-        title: '🗺️ 전체 여정 흐름',
-        html: `
-            <p>킹스로드는 <b>학습 → 복습 → 보스전</b>을 반복하며 말씀을 암기하는 게임입니다.</p>
-            <div style="text-align:center; font-size:14px; line-height:2.2; margin:16px 0;">
-                📖 학습 (구절 선택)<br>↓<br>
-                🛡️ 중간점검 (4~7구절마다 점검)<br>↓<br>
-                🐲 보스전 (챕터 전체 점검)<br>↓<br>
-                🔄 복습 → 기억 강화
-            </div>
-            <p style="font-size:13px; color:#888;">구절을 선택해 암송을 시작하고, 4~7구절마다 있는 중간점검과 장의 마지막 보스전으로 점검하세요.</p>
-        `
-    },
-    {
-        title: '📝 암송 단계',
-        html: `
-            <p style="font-size:13px; color:#888; margin-bottom:12px;">각 구절은 아래 단계를 순서대로 거쳐 완전히 암기됩니다.</p>
-            <ol style="padding-left:20px; line-height:2;">
-                <li><b>읽기</b> — 말씀 전체를 눈으로 읽기</li>
-                <li><b>초성 채우기</b> — 초성 힌트로 알맞은 단어 찾기</li>
-                <li><b>알맞은 단어 찾기</b> — 세 보기 중 정답 찾기</li>
-                <li><b>두루마리 채우기</b> — 시간제한 빈칸 채우기</li>
-                <li><b>순서 맞추기</b> — 단어만 보고 순서대로 정렬하기</li>
-                <li><b>복습</b> — 2, 5단계만 복습해 기억 강화</li>
-            </ol>
-        `
-    },
-    {
-        title: '⏰ 복습 보너스 타이밍',
-        html: `
-            <p style="font-size:13px; color:#888;">복습을 반복할수록 보석이 <b>점점 커집니다.</b> 타이밍이 핵심!</p>
-            <div style="font-size:14px; line-height:1; margin:16px 0;">
-                <div style="padding:10px 12px; border-radius:8px; background:rgba(149,165,166,0.1); margin-bottom:8px;">
-                    <span style="color:#95a5a6;">📖 <b>최초 클리어</b> → 기본 보석 (×1배)</span>
-                </div>
-                <div style="padding:10px 12px; border-radius:8px; background:rgba(142,68,173,0.1); margin-bottom:8px;">
-                    <span style="color:#8e44ad; font-weight:bold;">🔱 10분 후 복습 → 보석 ×1.5배</span>
-                </div>
-                <div style="padding:10px 12px; border-radius:8px; background:rgba(41,128,185,0.1); margin-bottom:8px;">
-                    <span style="color:#2980b9; font-weight:bold;">⚔️ 1시간 후 복습 → 보석 ×2배</span>
-                </div>
-                <div style="padding:10px 12px; border-radius:8px; background:rgba(230,126,34,0.1); margin-bottom:8px;">
-                    <span style="color:#e67e22; font-weight:bold;">🎁 6시간 후 복습 → 보석 ×5배</span><br>
-                    <span style="font-size:12px; color:#aaa;">적당한 대기 시간 후에 복습해야 획득!</span>
-                </div>
-            </div>
-            <p style="font-size:12px; color:#aaa;">💡 맵 화면의 '복습 타이밍' 버튼에서 대기 시간이 지났을 때 알려드려요!</p>
-        `
-    },
-    {
-        title: '💎 보석 & 미션',
-        html: `
-            <p><b>보석 획득 방법:</b></p>
-            <ul style="padding-left:18px; line-height:1.9; font-size:14px;">
-                <li>학습 & 복습 완료 (보너스 배수 적용)</li>
-                <li>실수 없이 완료하면 +10% 추가</li>
-                <li>일일 미션 / 주간 미션 클리어</li>
-                <li>업적 달성</li>
-                <li>성전 자동 생산</li>
-            </ul>
-            <p style="margin-top:12px;"><b>미션 초기화:</b></p>
-            <div style="font-size:13px; color:#666; line-height:1.9;">
-                📅 일일 미션 — 매일 자정 초기화<br>
-                📆 주간 미션 — 매주 월요일 초기화
-            </div>
-        `
-    },
-    {
-        title: '🏰 성전 & 업적',
-        html: `
-            <p><b>성전 건축:</b> 보석을 사용해 성전을 업그레이드하면 방치 생산량이 늘어납니다.</p>
-            <p style="margin-top:12px;"><b>업적 7종:</b></p>
-            <ul style="padding-left:18px; line-height:1.9; font-size:13px;">
-                <li>🗓️ 누적 출석</li>
-                <li>📖 구절 암송 수</li>
-                <li>🐲 보스 승리</li>
-                <li>💎 누적 보석 획득</li>
-                <li>✨ 실수 없는 암송</li>
-                <li>🏰 성전 건축 단계</li>
-                <li>🌅 새벽 암송 (07시 이전 암송)</li>
-            </ul>
-        `
-    }
-];
+function getGuidePages() {
+    return [
+        { title: t('guide_p1_title'), html: t('guide_p1_html') },
+        { title: t('guide_p2_title'), html: t('guide_p2_html') },
+        { title: t('guide_p3_title'), html: t('guide_p3_html') },
+        { title: t('guide_p4_title'), html: t('guide_p4_html') },
+        { title: t('guide_p5_title'), html: t('guide_p5_html') },
+    ];
+}
 
 let guidePage = 0;
 
@@ -15203,13 +16241,15 @@ function closeGuideModal() {
 }
 
 function guideChangePage(delta) {
-    guidePage = Math.max(0, Math.min(GUIDE_PAGES.length - 1, guidePage + delta));
+    const pages = getGuidePages();
+    guidePage = Math.max(0, Math.min(pages.length - 1, guidePage + delta));
     renderGuidePage();
 }
 
 function renderGuidePage() {
-    const page = GUIDE_PAGES[guidePage];
-    const total = GUIDE_PAGES.length;
+    const pages = getGuidePages();
+    const page = pages[guidePage];
+    const total = pages.length;
 
     document.getElementById('guide-content').innerHTML =
         `<h3 style="margin-top:0;">${page.title}</h3>${page.html}`;
@@ -15219,15 +16259,15 @@ function renderGuidePage() {
 
     const nextBtn = document.getElementById('guide-next-btn');
     if (guidePage === total - 1) {
-        nextBtn.textContent = '✓ 완료';
+        nextBtn.textContent = t('btn_done_check');
         nextBtn.onclick = closeGuideModal;
     } else {
-        nextBtn.textContent = '다음 ▶';
+        nextBtn.textContent = t('btn_next');
         nextBtn.onclick = () => guideChangePage(1);
     }
 
     document.getElementById('guide-dots').innerHTML =
-        GUIDE_PAGES.map((_, i) =>
+        pages.map((_, i) =>
             `<span style="display:inline-block; width:8px; height:8px; border-radius:50%; margin:0 3px; background:${i === guidePage ? '#f1c40f' : '#ccc'};"></span>`
         ).join('');
 }
@@ -15433,7 +16473,7 @@ function renderGuidePage() {
         // 뒷면 채우기
         var vd = bibleData[correctChapter] && bibleData[correctChapter][correctVerse - 1];
         document.getElementById('quiz-back-verse').textContent = '\u201c' + (vd ? vd.text : '') + '\u201d';
-        document.getElementById('quiz-back-address').textContent = '계시록 ' + correctChapter + '장 ' + correctVerse + '절';
+        document.getElementById('quiz-back-address').textContent = t('label_revelation_ref', { ch: correctChapter, v: correctVerse });
 
         // 카드 뒤집기
         var card = document.getElementById('quiz-card');
