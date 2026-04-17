@@ -1,6 +1,362 @@
 ﻿// [정식 배포] 게임 버전 정보
 const GAME_VERSION = "1.1.0"; // 복습 단계 시스템 통합
 
+// ──────────────────────────────────────────────
+// [i18n] 언어 전환 시스템
+// ──────────────────────────────────────────────
+const LANG = {
+    ko: {
+        // 버튼
+        btn_back: '돌아가기',
+        btn_reward: '보상 받기',
+        btn_done: '완료됨',
+        btn_confirm: '확인',
+        btn_close: '닫기',
+        btn_continue: '계속하기',
+        btn_quit: '나가기',
+        btn_next: '다음 ▶',
+        btn_prev: '◀ 이전',
+        btn_revive: '부활하기',
+        btn_give_up: '포기하기',
+        btn_resume: '게임 계속하기',
+        btn_start: '시작하기',
+        btn_retry: '다시 도전',
+        btn_exit: '나가기',
+
+        // 스플래시
+        splash_sub: '제사장의 인 맞는 길',
+        splash_tap: '아무데나 눌러서 시작',
+
+        // 메뉴
+        menu_lang_toggle: '🌐 English',
+        menu_kings_step: '👑 왕의 길 -단계',
+        menu_guide: '📖 게임 가이드',
+        menu_thanks: '👥 감사한 분들',
+        menu_home_add: '📱 홈 화면에 추가',
+        menu_survey: '📝 설문조사',
+        menu_notice: '📢 공지사항',
+        menu_report: '🐞 불편 신고',
+        menu_data: '💾 기기 변경',
+
+        // 네비
+        nav_shop: '상점',
+        nav_library: '도감',
+        nav_records: '기록실',
+
+        // 상태/타이머
+        status_preparing: '준비 중입니다.',
+        status_review_now: '지금 복습 추천!',
+        status_review_later: '{time} 후 복습',
+        status_review_bonus: '{time} 후 복습 추천(추가 보상)',
+        status_today_done: '오늘 완료',
+        status_open: '🔓 OPEN',
+        status_locked: '🔒 잠금',
+        status_new_verses: '🆕 {count}구절 학습 대기',
+        status_all_unlocked: '모든 구절 해금!',
+
+        // 게임 레이블
+        label_chapter: '제 {num}장',
+        label_verse: '{num}절',
+        label_score: '승점',
+        label_hint: '힌트',
+        label_cycle: '사이클',
+        label_hearts: '체력',
+        label_gems: '보석',
+        label_kings_road: '왕의 길',
+        label_mid_boss: '중간점검',
+        label_boss: '보스전',
+        label_hardship: '고난',
+        label_part: '파트 {cur}/{total}',
+        label_next_part: '다음 파트: {count}단어',
+        label_chapter_header: '요한계시록 {num}장',
+
+        // alert 메시지
+        alert_ios_install: 'iOS에서는 사파리 브라우저의 공유 버튼(아래 화살표) → "홈 화면에 추가"를 직접 눌러주세요!',
+        alert_no_prompt: '설치 프롬프트를 띄울 수 없습니다. 이미 설치했거나 지원하지 않는 환경입니다.',
+        alert_welcome_new: "🎉 King's Road v{ver} 정식 버전에 오신 것을 환영합니다!\n\n새로운 시작을 위해 게임 데이터가 초기화되었습니다.",
+        alert_mission_reward: '🎁 지난 미션 보상으로\n[승점 {multi}배 {min}분]이 도착했습니다!',
+        alert_gems_received: '💎 보석 {count}개를 받았습니다!',
+        alert_booster_reserved: '✅ 예약 완료!\n내일 접속 시 [승점 {multi}배 {min}분] 부스터가 자동 적용됩니다.',
+        alert_kings_step_changed: '👑 왕의 길 {step}단계로 변경되었습니다.\n내일부터 하루 {step}구절씩 해금됩니다.',
+        alert_reward_error: '보상 수령 중 오류가 발생했습니다. 다시 시도해주세요.',
+        alert_chapter_locked: '🔒 이전 챕터를 먼저 클리어하여 길을 여세요.',
+        alert_verse_locked: '🔒 아직 열리지 않은 구절입니다.\n매일 새로운 구절이 열립니다!',
+        alert_spell_incomplete: '주문이 완성되지 않았습니다!\n(현재: {cur} / 필요: {need})',
+        alert_attack_fail: '❌ 공격 실패!\n{count}군데가 틀렸습니다.',
+        alert_defeat: '💔 패배... 눈앞이 캄캄해집니다.',
+        alert_revive_no_gems: '💎 보석이 부족합니다... 부활하려면 {cost}개가 필요합니다.',
+        alert_revive_success: '✨ 기적적으로 회복했습니다!\n(보석 -{cost})',
+        alert_data_recovered: '✅ 이전 계정 데이터가 자동으로 복구되었습니다!\n\n닉네임: {nick}\n태그: #{tag}',
+        alert_data_load_error: '데이터 로드 오류',
+        alert_game_switch_error: '게임 전환 중 오류가 발생했습니다. 브라우저 콘솔(F12)을 확인해주세요.',
+        alert_no_bread: '🥖 생명의 떡이 없습니다.\n상점에서 구매하세요!',
+        alert_hearts_full: '체력이 이미 가득 찼습니다.',
+        alert_hearts_restored: '체력이 회복되었습니다. (현재: {cur})',
+        alert_hint_no_gems: '💎 보석이 부족합니다! (필요: {cost})',
+        alert_hint_read_aloud: '이 단계에서는 큰 소리로 읽는 것이 정답입니다! 📣',
+        alert_hint_load_error: '이 구절의 힌트 데이터를 불러올 수 없습니다.',
+        alert_locked_first_clear: '해당 구절을 1회 이상 클리어하여 잠금을 해제하세요.',
+        alert_daily_bonus: '🕊️ [일용할 양식]\n\n성도의 직분을 가진 자에게\n보석 {count}개가 지급되었습니다! 💎\n(현재 보석: {total})',
+        alert_booster_stronger: '🔥 더 강력한 {multi}배 부스터가 적용되었습니다!',
+        alert_booster_extended: '🔥 부스터 시간이 {min}분 연장되었습니다!',
+        alert_booster_started: '⚡ {min}분간 승점 {multi}배 부스터 발동!',
+        alert_ranking_out: '현재 랭킹 Top 100 안에 들지 못했습니다.\n분발하세요, 순례자여! 🔥',
+        alert_hearts_max_reached: '더 이상 체력을 늘릴 수 없습니다 (순수 최대치 30 도달).',
+        alert_buy_hearts_no_gems: '💎 보석이 부족합니다! (필요: {cost})',
+        alert_buy_hearts_success: '❤️ 최대 체력이 {max}칸으로 늘어났습니다!',
+        alert_buy_no_gems: '💎 보석이 부족합니다!',
+        alert_buy_success: '✅ [{name}] 구매 완료! (보유: {count}개)',
+        alert_item_none: '아이템이 없습니다! 보급소에서 구매하세요.',
+        alert_item_hearts_full: '이미 체력이 가득 찼습니다!',
+        alert_item_bread_used: '🍞 생명의 떡을 먹었습니다! (체력 +2)',
+        alert_castle_max: '이미 하나님 나라가 완성되었습니다!',
+        alert_castle_built: '🎉 건축 완료!\n\n[Lv.{lv} {name}]\n"{desc}"',
+        alert_castle_no_gems: '보석이 부족합니다.\n(필요: {need}개 / 보유: {have}개)',
+        alert_temple_collected: '💎 성전 공급 보석 {count}개를 수거했습니다!',
+        alert_speed_elder: '어르신 모드(느린 속도)로 전환되었습니다.',
+        alert_speed_fast: '빠른 속도로 전환되었습니다.',
+        alert_speed_normal: '보통 속도로 전환되었습니다.',
+        alert_data_reset: '데이터가 완전히 초기화되었습니다.\n게임을 처음부터 다시 시작합니다.',
+
+        // 모달
+        modal_quit_title: '전장을 떠나시겠습니까?',
+        modal_quit_msg: '지금 나가면 진행 상황이\n저장되지 않을 수 있습니다.',
+        modal_revive_title: '쓰러지셨습니까?',
+        modal_revive_cost: '보석 {cost}개로 부활',
+        modal_exit_title: '앱 종료',
+
+        // 기기 변경/데이터
+        alert_life_book_verse: '[제 {ch}장 {v}절]\n\n{text}',
+        alert_error_msg: '오류 발생: {msg}',
+        alert_no_save_data: '저장할 기록이 없습니다.',
+        alert_encrypt_error: '암호화 중 오류가 발생했습니다.',
+        alert_file_saved_share: '📥 파일이 기기의 \'다운로드\' 폴더에 저장되었습니다!\n텔레그램이나 카카오톡으로 이 파일을 공유해 보관하세요.\n\n(일일 미션 달성! 보상을 받으세요 🎁)',
+        alert_file_saved: '📥 파일이 기기의 \'다운로드\' 폴더에 안전하게 저장되었습니다!\n텔레그램이나 카카오톡으로 이 파일을 공유해 보관하세요.',
+        alert_no_code: '입력된 코드가 없습니다.',
+        alert_pwd_cancelled: '비밀번호 입력이 취소되었습니다.',
+        alert_wrong_account: '❌ 다른 계정의 데이터는 불러올 수 없습니다.\n본인의 저장 코드만 사용해주세요.',
+        alert_restore_ok: '✅ 기록 복원 완료!\n게임을 다시 시작합니다.',
+        alert_wrong_pwd: '❌ 비밀번호가 틀렸습니다!',
+        alert_restore_fail: '❌ 데이터 복구 실패!\n파일이 손상되었거나 복사 과정에서 코드가 일부 누락되었습니다.',
+        alert_welcome_tribe: '[{tribe} 지파]의 {nick}님,\n환영합니다! 🙏',
+        alert_server_disconnect: '서버에 연결되지 않았습니다. 잠시 후 다시 시도해주세요.',
+        alert_tag_not_found: '❌ 해당 태그의 복구 데이터를 찾을 수 없습니다.\n태그를 다시 확인하거나 새 계정으로 시작해주세요.',
+        alert_recovery_ok: '✅ 복구 완료!\n\n닉네임: {nick}\n태그: #{tag}\n\n게임을 다시 시작합니다.',
+        alert_recovery_error: '복구 중 오류가 발생했습니다. 다시 시도해주세요.',
+        alert_achievement: '🎉 [{title}] 달성!\n보상으로 💎보석 {count}개를 받았습니다.',
+        alert_multi_device: '🚨 다른 기기에서 로그인이 감지되었습니다.\n계정 보호를 위해 현재 기기의 접속이 차단되고 초기화됩니다.',
+        alert_unsaved_changes: '변경사항이 저장되지 않았습니다.',
+        alert_training_start_gt_end: '⚠️ 시작 위치가 끝 위치보다 클 수 없습니다.',
+        alert_training_repeat_min: '⚠️ 반복 횟수는 1회 이상이어야 합니다.',
+        alert_training_no_data: '⚠️ {ch}장의 구절 데이터가 없습니다.',
+        alert_training_start_ch_gt_end: '⚠️ 시작 장이 끝 장보다 클 수 없습니다.',
+        alert_training_no_verses: '⚠️ 선택한 범위에 해당하는 구절이 없습니다.',
+        alert_blank_all_filled: '이미 모든 글자가 맞게 채워져 있습니다.',
+        alert_blank_hint_no_gems: '💎 보석이 부족합니다! (필요: {cost})',
+
+        // 게임플레이
+        game_hint_instruction: '단어를 터치하여 구절을 완성하세요',
+        game_lang_switch_ingame: '스테이지 진행 중에는 언어를 변경할 수 없습니다.',
+    },
+    en: {
+        // 버튼
+        btn_back: 'Back',
+        btn_reward: 'Claim Reward',
+        btn_done: 'Completed',
+        btn_confirm: 'OK',
+        btn_close: 'Close',
+        btn_continue: 'Continue',
+        btn_quit: 'Quit',
+        btn_next: 'Next ▶',
+        btn_prev: '◀ Prev',
+        btn_revive: 'Revive',
+        btn_give_up: 'Give Up',
+        btn_resume: 'Resume Game',
+        btn_start: 'Start',
+        btn_retry: 'Try Again',
+        btn_exit: 'Exit',
+
+        // 스플래시
+        splash_sub: 'The Path of the Sealed Priest',
+        splash_tap: 'Tap anywhere to begin',
+
+        // 메뉴
+        menu_lang_toggle: '🌐 한국어',
+        menu_kings_step: '👑 King\'s Road -Step',
+        menu_guide: '📖 Game Guide',
+        menu_thanks: '👥 Credits',
+        menu_home_add: '📱 Add to Home Screen',
+        menu_survey: '📝 Survey',
+        menu_notice: '📢 Notices',
+        menu_report: '🐞 Report Issue',
+        menu_data: '💾 Change Device',
+
+        // 네비
+        nav_shop: 'Shop',
+        nav_library: 'Library',
+        nav_records: 'Records',
+
+        // 상태/타이머
+        status_preparing: 'Coming Soon.',
+        status_review_now: 'Review Now!',
+        status_review_later: 'Review in {time}',
+        status_review_bonus: 'Review in {time} (bonus)',
+        status_today_done: 'Done Today',
+        status_open: '🔓 OPEN',
+        status_locked: '🔒 Locked',
+        status_new_verses: '🆕 {count} verses ready',
+        status_all_unlocked: 'All verses unlocked!',
+
+        // 게임 레이블
+        label_chapter: 'Chapter {num}',
+        label_verse: 'Verse {num}',
+        label_score: 'Score',
+        label_hint: 'Hint',
+        label_cycle: 'Cycle',
+        label_hearts: 'Hearts',
+        label_gems: 'Gems',
+        label_kings_road: "King's Road",
+        label_mid_boss: 'Checkpoint',
+        label_boss: 'Boss Battle',
+        label_hardship: 'Trial',
+        label_part: 'Part {cur}/{total}',
+        label_next_part: 'Next part: {count} words',
+        label_chapter_header: 'Revelation {num}',
+
+        // alert 메시지
+        alert_ios_install: 'On iOS Safari, tap the Share button (↑) → "Add to Home Screen".',
+        alert_no_prompt: 'Install prompt unavailable. The app may already be installed or your browser does not support it.',
+        alert_welcome_new: "🎉 Welcome to King's Road v{ver}!\n\nYour game data has been reset for a fresh start.",
+        alert_mission_reward: '🎁 Last mission reward:\n[Score ×{multi} for {min} min] has arrived!',
+        alert_gems_received: '💎 You received {count} gems!',
+        alert_booster_reserved: '✅ Reserved!\nA [Score ×{multi} for {min} min] booster will activate on your next login.',
+        alert_kings_step_changed: "👑 King's Road changed to Step {step}.\nStarting tomorrow, {step} verse(s) will unlock per day.",
+        alert_reward_error: 'Error claiming reward. Please try again.',
+        alert_chapter_locked: '🔒 Clear the previous chapter first to open the path.',
+        alert_verse_locked: '🔒 This verse is not yet unlocked.\nA new verse unlocks each day!',
+        alert_spell_incomplete: 'Spell not complete!\n(Current: {cur} / Required: {need})',
+        alert_attack_fail: '❌ Attack failed!\n{count} mistake(s) found.',
+        alert_defeat: '💔 Defeated... Everything goes dark.',
+        alert_revive_no_gems: '💎 Not enough gems. You need {cost} gems to revive.',
+        alert_revive_success: '✨ Miraculously recovered!\n(Gems -{cost})',
+        alert_data_recovered: '✅ Previous account data restored!\n\nNickname: {nick}\nTag: #{tag}',
+        alert_data_load_error: 'Data load error',
+        alert_game_switch_error: 'Error switching game. Check the browser console (F12).',
+        alert_no_bread: '🥖 No Bread of Life.\nPurchase one from the shop!',
+        alert_hearts_full: 'Hearts are already full.',
+        alert_hearts_restored: 'Hearts restored. (Current: {cur})',
+        alert_hint_no_gems: '💎 Not enough gems! (Required: {cost})',
+        alert_hint_read_aloud: 'At this stage, reading aloud is the correct answer! 📣',
+        alert_hint_load_error: 'Could not load hint data for this verse.',
+        alert_locked_first_clear: 'Clear this verse at least once to unlock.',
+        alert_daily_bonus: '🕊️ [Daily Bread]\n\nAs a servant of the saints,\nyou received {count} gems! 💎\n(Current gems: {total})',
+        alert_booster_stronger: '🔥 A stronger ×{multi} booster has been applied!',
+        alert_booster_extended: '🔥 Booster time extended by {min} minutes!',
+        alert_booster_started: '⚡ Score ×{multi} booster active for {min} minutes!',
+        alert_ranking_out: 'You are not in the Top 100 ranking.\nKeep going, pilgrim! 🔥',
+        alert_hearts_max_reached: 'Cannot increase hearts further (max 30 reached).',
+        alert_buy_hearts_no_gems: '💎 Not enough gems! (Required: {cost})',
+        alert_buy_hearts_success: '❤️ Max hearts increased to {max}!',
+        alert_buy_no_gems: '💎 Not enough gems!',
+        alert_buy_success: '✅ [{name}] purchased! (Owned: {count})',
+        alert_item_none: 'No items! Purchase from the supply depot.',
+        alert_item_hearts_full: 'Hearts are already full!',
+        alert_item_bread_used: '🍞 Used Bread of Life! (Hearts +2)',
+        alert_castle_max: 'The Kingdom of God is already complete!',
+        alert_castle_built: '🎉 Construction complete!\n\n[Lv.{lv} {name}]\n"{desc}"',
+        alert_castle_no_gems: 'Not enough gems.\n(Required: {need} / Owned: {have})',
+        alert_temple_collected: '💎 Collected {count} temple supply gems!',
+        alert_speed_elder: 'Switched to Elder mode (slow speed).',
+        alert_speed_fast: 'Switched to fast speed.',
+        alert_speed_normal: 'Switched to normal speed.',
+        alert_data_reset: 'All data has been reset.\nStarting the game from the beginning.',
+
+        // 모달
+        modal_quit_title: 'Leave the Battlefield?',
+        modal_quit_msg: 'Progress may not be saved\nif you leave now.',
+        modal_revive_title: 'You have fallen!',
+        modal_revive_cost: 'Revive for {cost} gems',
+        modal_exit_title: 'Exit App',
+
+        // 기기 변경/데이터
+        alert_life_book_verse: '[Ch. {ch} v.{v}]\n\n{text}',
+        alert_error_msg: 'Error: {msg}',
+        alert_no_save_data: 'No saved data to export.',
+        alert_encrypt_error: 'Encryption error occurred.',
+        alert_file_saved_share: '📥 File saved to your Downloads folder!\nShare it via Telegram or KakaoTalk to keep it safe.\n\n(Daily mission complete! Claim your reward 🎁)',
+        alert_file_saved: '📥 File safely saved to your Downloads folder!\nShare it via Telegram or KakaoTalk to keep it safe.',
+        alert_no_code: 'No code entered.',
+        alert_pwd_cancelled: 'Password entry was cancelled.',
+        alert_wrong_account: '❌ This data belongs to a different account.\nPlease use your own save code.',
+        alert_restore_ok: '✅ Data restored!\nRestarting the game.',
+        alert_wrong_pwd: '❌ Wrong password!',
+        alert_restore_fail: '❌ Data recovery failed!\nThe file may be corrupted or the code is incomplete.',
+        alert_welcome_tribe: 'Welcome, {nick} of the [{tribe}] tribe!\n🙏',
+        alert_server_disconnect: 'Could not connect to server. Please try again later.',
+        alert_tag_not_found: '❌ No recovery data found for that tag.\nCheck the tag or start a new account.',
+        alert_recovery_ok: '✅ Recovery complete!\n\nNickname: {nick}\nTag: #{tag}\n\nRestarting the game.',
+        alert_recovery_error: 'Recovery error. Please try again.',
+        alert_achievement: '🎉 [{title}] achieved!\nYou received 💎{count} gems as a reward.',
+        alert_multi_device: '🚨 Login detected on another device.\nFor account security, access on this device has been blocked and reset.',
+        alert_unsaved_changes: 'Changes have not been saved.',
+        alert_training_start_gt_end: '⚠️ Start position cannot be greater than end position.',
+        alert_training_repeat_min: '⚠️ Repeat count must be at least 1.',
+        alert_training_no_data: '⚠️ No verse data for Chapter {ch}.',
+        alert_training_start_ch_gt_end: '⚠️ Start chapter cannot be greater than end chapter.',
+        alert_training_no_verses: '⚠️ No verses found in the selected range.',
+        alert_blank_all_filled: 'All letters are already correctly filled.',
+        alert_blank_hint_no_gems: '💎 Not enough gems! (Required: {cost})',
+
+        // 게임플레이
+        game_hint_instruction: 'Tap words to complete the verse',
+        game_lang_switch_ingame: 'Cannot change language during a stage.',
+    }
+};
+
+let currentLang = localStorage.getItem('lang') || 'ko';
+
+function t(key, vars) {
+    let str = (LANG[currentLang] && LANG[currentLang][key] !== undefined)
+        ? LANG[currentLang][key]
+        : (LANG['ko'][key] !== undefined ? LANG['ko'][key] : key);
+    if (vars) {
+        Object.keys(vars).forEach(k => {
+            str = str.replace(new RegExp('\\{' + k + '\\}', 'g'), vars[k]);
+        });
+    }
+    return str;
+}
+
+function applyI18nToStaticHTML() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        el.textContent = t(key);
+    });
+    document.documentElement.lang = currentLang;
+    const langBtn = document.getElementById('lang-toggle-btn');
+    if (langBtn) langBtn.textContent = t('menu_lang_toggle');
+}
+
+function setLang(lang) {
+    currentLang = lang;
+    localStorage.setItem('lang', lang);
+    applyI18nToStaticHTML();
+    if (typeof renderChapterMap === 'function') renderChapterMap();
+    if (typeof updateKingsRoadHomeInfo === 'function') updateKingsRoadHomeInfo();
+    if (typeof updateMissionUI === 'function') updateMissionUI();
+}
+
+function toggleLang() {
+    const gameScreen = document.getElementById('game-screen');
+    if (gameScreen && gameScreen.classList.contains('active')) {
+        if (typeof showToast === 'function') showToast(t('game_lang_switch_ingame'));
+        else alert(t('game_lang_switch_ingame'));
+        return;
+    }
+    setLang(currentLang === 'ko' ? 'en' : 'ko');
+}
+// ──────────────────────────────────────────────
+
 function preloadCastleImage(level) {
     const bp = castleBlueprints[Math.min(level, castleBlueprints.length - 1)];
     if (!bp || !bp.img) return;
@@ -36,7 +392,7 @@ function getChapterTitleHtml(chapterNum) {
     if (Array.isArray(rawTitle)) {
         return rawTitle.join('<br>');
     }
-    return rawTitle || '준비 중입니다.';
+    return rawTitle || t('status_preparing');
 }
 
 // [PWA 설치 프롬프트 및 iOS 안내]
@@ -49,6 +405,8 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 window.addEventListener('DOMContentLoaded', () => {
+    applyI18nToStaticHTML();
+
     const btn = document.getElementById('add-to-home-btn');
     if (btn) {
         // iOS Safari 환경 감지
@@ -57,7 +415,7 @@ window.addEventListener('DOMContentLoaded', () => {
         if (isIOS && isSafari) {
             btn.style.display = 'flex';
             btn.onclick = function () {
-                alert('iOS에서는 사파리 브라우저의 공유 버튼(아래 화살표) → "홈 화면에 추가"를 직접 눌러주세요!');
+                alert(t('alert_ios_install'));
             };
         } else {
             btn.onclick = async function () {
@@ -69,7 +427,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     }
                     deferredPrompt = null;
                 } else {
-                    alert('설치 프롬프트를 띄울 수 없습니다. 이미 설치했거나 지원하지 않는 환경입니다.');
+                    alert(t('alert_no_prompt'));
                 }
             };
         }
@@ -194,7 +552,7 @@ loadGameData = function () {
                 console.log(`🔄 게임 버전 업데이트 감지 (${parsed.version || '구버전'} → ${GAME_VERSION})`);
                 console.log("📦 데이터를 초기화합니다...");
                 localStorage.removeItem('kingsRoadSave');
-                alert(`🎉 King's Road v${GAME_VERSION} 정식 버전에 오신 것을 환영합니다!\n\n새로운 시작을 위해 게임 데이터가 초기화되었습니다.`);
+                alert(t('alert_welcome_new', { ver: GAME_VERSION }));
                 lastClaimTime = Date.now();
                 return;
             }
@@ -771,7 +1129,7 @@ function checkMissions() {
         if (boosterData.nextLoginReward) {
             const reward = boosterData.nextLoginReward;
             activateBooster(reward.multi, reward.min);
-            alert(`🎁 지난 미션 보상으로\n[승점 ${reward.multi}배 ${reward.min}분]이 도착했습니다!`);
+            alert(t('alert_mission_reward', { multi: reward.multi, min: reward.min }));
             boosterData.nextLoginReward = null; // 지급 완료 후 삭제
             saveGameData();
         }
@@ -1049,7 +1407,7 @@ function claimReward(type, index, rewardType, value1, value2) {
         // 보석 지급
         myGems += value1;
         updateGemDisplay(); // 상단 보석 UI 갱신 함수
-        alert(`💎 보석 ${value1}개를 받았습니다!`);
+        alert(t('alert_gems_received', { count: value1 }));
         // playSound('coin'); // 효과음이 있다면 주석 해제
     }
     else if (rewardType === 'xp_boost') {
@@ -1059,7 +1417,7 @@ function claimReward(type, index, rewardType, value1, value2) {
     else if (rewardType === 'next_day_xp') {
         // 내일 보상 예약
         boosterData.nextLoginReward = { multi: value1, min: value2 };
-        alert(`✅ 예약 완료!\n내일 접속 시 [승점 ${value1}배 ${value2}분] 부스터가 자동 적용됩니다.`);
+        alert(t('alert_booster_reserved', { multi: value1, min: value2 }));
     }
 
     // 4. 저장 및 화면 갱신
@@ -2329,7 +2687,7 @@ function buildReviewBadgeHtml(stageId) {
     } else if (step === 1) {
         statusHtml = `<span class="review-ready">${status.baseGem}💎 첫 학습!</span>`;
     } else {
-        statusHtml = `<span class="review-ready">${status.baseGem}💎 지금 복습 추천!</span>`;
+        statusHtml = `<span class="review-ready">${status.baseGem}💎 ${t('status_review_now')}</span>`;
     }
 
     return `<div class="review-badge-strip"><div class="review-dots">${dotsHtml}</div><div class="review-status">${statusHtml}</div></div>`;
@@ -2447,6 +2805,14 @@ const RANKING_CACHE_DURATION = 60 * 60 * 1000; // 1시간(ms)
 /* [데이터: 챕터 및 스테이지 정보 (자동 생성 시스템 - 버그 수정판)] */
 const gameData = [];
 
+// 언어에 따라 올바른 성경 데이터 반환 (bibleDataEn은 bible_en.js에서 로드)
+function getVerseData(ch, vIdx) {
+    if (currentLang === 'en' && typeof bibleDataEn !== 'undefined' && bibleDataEn[ch] && bibleDataEn[ch][vIdx]) {
+        return bibleDataEn[ch][vIdx];
+    }
+    return bibleData[ch] ? bibleData[ch][vIdx] : undefined;
+}
+
 // ★ 디버그: bibleData 길이 확인
 console.log('=== bibleData 장별 길이 확인 ===');
 for (let j = 1; j <= 22; j++) {
@@ -2502,7 +2868,7 @@ for (let i = 1; i <= 22; i++) {
         // -------------------------------------------------------
         const chapterObj = {
             id: i,
-            title: `요한계시록 ${i}장`,
+            title: t('label_chapter_header', { num: i }),
             subtitle: i === 1 ? "계시의 시작" : "진행 중",
             locked: false,
             stages: []
@@ -2557,7 +2923,7 @@ for (let i = 1; i <= 22; i++) {
     }
     else {
         // 데이터 없는 챕터
-        gameData.push({ id: i, title: `요한계시록 ${i}장`, subtitle: "준비 중", locked: true, stages: [] });
+        gameData.push({ id: i, title: t('label_chapter_header', { num: i }), subtitle: t('status_preparing'), locked: true, stages: [] });
     }
 }
 
@@ -2664,7 +3030,7 @@ function cycleKingsStep() {
     const currentStep = kingsRoadData.stepHistory[kingsRoadData.stepHistory.length - 1].step;
     const nextStep = currentStep >= 3 ? 1 : currentStep + 1;
     setKingsRoadStep(nextStep);
-    alert(`👑 왕의 길 ${nextStep}단계로 변경되었습니다.\n내일부터 하루 ${nextStep}구절씩 해금됩니다.`);
+    alert(t('alert_kings_step_changed', { step: nextStep }));
 }
 
 // 메뉴의 왕의 길 단계 버튼 텍스트 갱신
@@ -2836,7 +3202,7 @@ function _updateKingsOverlayBtnInfo(newCount, msLeft, hasHistory) {
     const overlayBadgeEl = document.getElementById('kings-overlay-badge');
     if (overlayBadgeEl) {
         if (newCount > 0) {
-            overlayBadgeEl.textContent = `🆕 ${newCount}구절 학습 대기`;
+            overlayBadgeEl.textContent = t('status_new_verses', { count: newCount });
             overlayBadgeEl.style.display = '';
         } else {
             overlayBadgeEl.style.display = 'none';
@@ -2846,7 +3212,7 @@ function _updateKingsOverlayBtnInfo(newCount, msLeft, hasHistory) {
     const overlayTimerEl = document.getElementById('kings-overlay-timer');
     if (overlayTimerEl) {
         if (msLeft < 0) {
-            overlayTimerEl.textContent = '🎉 모든 구절 해금!';
+            overlayTimerEl.textContent = '🎉 ' + t('status_all_unlocked');
         } else {
             const h = Math.floor(msLeft / 3600000);
             const m = Math.floor((msLeft % 3600000) / 60000);
@@ -2864,7 +3230,7 @@ function updateModeSelectReviewCounts() {
     const kingsEl = document.getElementById('kings-btn-review-count');
     if (kingsEl) {
         if (kingsCount > 0) {
-            kingsEl.textContent = `📖 복습 ${kingsCount}구절`;
+            kingsEl.textContent = `📖 ${t('status_review_now')} ${kingsCount}`;
             kingsEl.style.display = '';
         } else {
             kingsEl.style.display = 'none';
@@ -2874,7 +3240,7 @@ function updateModeSelectReviewCounts() {
     const freeEl = document.getElementById('free-btn-review-count');
     if (freeEl) {
         if (freeCount > 0) {
-            freeEl.textContent = `📖 복습 ${freeCount}구절`;
+            freeEl.textContent = `📖 ${t('status_review_now')} ${freeCount}`;
             freeEl.style.display = '';
         } else {
             freeEl.style.display = 'none';
@@ -3153,7 +3519,7 @@ function claimWeeklyReward() {
         });
     }).catch(err => {
         console.error('보상 수령 실패:', err);
-        alert('보상 수령 중 오류가 발생했습니다. 다시 시도해주세요.');
+        alert(t('alert_reward_error'));
     });
 }
 
@@ -3408,7 +3774,7 @@ function renderChapterMap() {
 
         node.onclick = () => {
             if (!chapter.locked) openStageSheet(chapter);
-            else alert("🔒 이전 챕터를 먼저 클리어하여 길을 여세요.");
+            else alert(t('alert_chapter_locked'));
         };
 
         const isLeft = (index % 2 === 0);
@@ -3662,7 +4028,7 @@ function openStageSheet(chapterData) {
         // 1. 오늘 완료 배지
         if (isTodayClear) {
             itemClass += ' today-clear';
-            statusBadgeHtml = `<div class="today-badge">오늘 완료</div>`;
+            statusBadgeHtml = `<div class="today-badge">${t('status_today_done')}</div>`;
         }
         // 2. 기억 다지기 배지 제거 — review badge strip으로 대체됨
 
@@ -3759,7 +4125,7 @@ function openStageSheet(chapterData) {
             item.innerHTML += `<span class="kings-locked-badge">🔒</span>`;
             item.onclick = () => {
                 const daysLeft = 1; // 안내 메시지용
-                alert('🔒 아직 열리지 않은 구절입니다.\n매일 새로운 구절이 열립니다!');
+                alert(t('alert_verse_locked'));
             };
             list.appendChild(item);
             return; // 나머지 클릭 이벤트 설정 건너뜀
@@ -3815,7 +4181,7 @@ function openStageSheet(chapterData) {
                 const timeStr = totalMins >= 60
                     ? `${Math.floor(totalMins / 60)}시간 ${totalMins % 60 > 0 ? (totalMins % 60) + '분' : ''}`.trim()
                     : (totalMins > 0 ? totalMins + '분' : '1분 미만');
-                el.innerText = `${timeStr} 후 복습 추천`;
+                el.innerText = t('status_review_later', { time: timeStr });
             }
         });
 
@@ -3824,13 +4190,13 @@ function openStageSheet(chapterData) {
             const unlockTime = parseInt(el.dataset.unlock);
             const diff = unlockTime - now;
             if (diff <= 0) {
-                el.innerText = "지금!";
+                el.innerText = t('status_review_now');
             } else {
                 const totalMins = Math.floor(diff / 60000);
                 const timeStr = totalMins >= 60
                     ? `${Math.floor(totalMins / 60)}시간 ${totalMins % 60 > 0 ? (totalMins % 60) + '분' : ''}`.trim()
                     : (totalMins > 0 ? totalMins + '분' : '1분 미만');
-                el.innerText = `${timeStr} 후 복습 추천`;
+                el.innerText = t('status_review_later', { time: timeStr });
             }
         });
 
@@ -3839,7 +4205,7 @@ function openStageSheet(chapterData) {
             const unlockTime = parseInt(el.dataset.unlock);
             const diff = unlockTime - now;
             if (diff <= 0) {
-                el.textContent = "지금 복습 추천!";
+                el.textContent = t('status_review_now');
                 el.className = 'review-ready';
             } else {
                 const totalMins = Math.floor(diff / 60000);
@@ -3850,7 +4216,7 @@ function openStageSheet(chapterData) {
                 if (d > 0) timeStr += `${d}일 `;
                 if (h > 0) timeStr += `${h}시간 `;
                 if (m > 0 || timeStr === '') timeStr += `${m}분`;
-                el.textContent = `${timeStr.trim()} 후 복습 추천(추가 보상)`;
+                el.textContent = t('status_review_bonus', { time: timeStr.trim() });
             }
         });
 
@@ -4399,7 +4765,7 @@ function loadNextVerse() {
     function updateVerseIndicator() {
         const chapterNum = window.currentBattleChapter || 1;
         const verseNum = (window.currentBattleStartIndex || 0) + currentVerseIdx + 1;
-        let label = `요한계시록 ${chapterNum}장 ${verseNum}절`;
+        let label = `${t('label_chapter_header', { num: chapterNum })} ${t('label_verse', { num: verseNum })}`;
         if (currentBossParts && currentBossParts.length > 1) {
             label += ` (파트 ${currentBossPartIndex + 1}/${currentBossParts.length})`;
         }
@@ -4411,7 +4777,7 @@ function loadNextVerse() {
         if (badge) {
             const nextCount = currentBossParts?.[currentBossPartIndex + 1]?.length;
             if (nextCount) {
-                badge.textContent = `다음 파트: ${nextCount}단어`;
+                badge.textContent = t('label_next_part', { count: nextCount });
                 badge.style.display = '';
             } else {
                 badge.style.display = 'none';
@@ -4600,7 +4966,7 @@ function loadNextVerse() {
 
         // 개수 체크
         if (currentBlocks.length !== correctChunks.length) {
-            alert(`주문이 완성되지 않았습니다!\n(현재: ${currentBlocks.length} / 필요: ${correctChunks.length})`);
+            alert(t('alert_spell_incomplete', { cur: currentBlocks.length, need: correctChunks.length }));
             return;
         }
 
@@ -4667,7 +5033,7 @@ function loadNextVerse() {
             wrongCount++;
             updateBattleUI();
 
-            alert(`❌ 공격 실패!\n${errorCount}군데가 틀렸습니다.`);
+            alert(t('alert_attack_fail', { count: errorCount }));
 
             if (playerHearts <= 0) {
                 showReviveModal();
@@ -4900,7 +5266,7 @@ function showReviveModal() {
 
 function giveUpBattle() {
     document.getElementById('revive-modal').style.display = 'none';
-    alert("💔 패배... 눈앞이 캄캄해집니다.");
+    alert(t('alert_defeat'));
     quitGame(isFocusedTrainingSession() ? 'home' : 'map');
 }
 
@@ -4911,7 +5277,7 @@ function revivePlayer() {
 
     // 1. 보석 부족 체크
     if (myGems < cost) {
-        alert(`💎 보석이 부족합니다... 부활하려면 ${cost}개가 필요합니다.`);
+        alert(t('alert_revive_no_gems', { cost }));
         return;
     }
 
@@ -4941,7 +5307,7 @@ function revivePlayer() {
         SoundEffect.playLevelUp();
     }
 
-    alert(`✨ 기적적으로 회복했습니다!\n(보석 -${cost})`);
+    alert(t('alert_revive_success', { cost }));
 }
 
 /* [시스템] 자동 저장 및 불러오기 기능 */
@@ -5278,7 +5644,7 @@ async function checkPendingRecovery() {
         if (typeof updateResourceUI === 'function') updateResourceUI();
         if (typeof updateProfileUI === 'function') updateProfileUI();
 
-        alert('✅ 이전 계정 데이터가 자동으로 복구되었습니다!\n\n닉네임: ' + recoveryData.nickname + '\n태그: #' + recoveryData.tag);
+        alert(t('alert_data_recovered', { nick: recoveryData.nickname, tag: recoveryData.tag }));
         return true;
     } catch (e) {
         console.warn('[Recovery] pendingRecovery 복구 실패:', e);
@@ -5450,9 +5816,9 @@ function startTraining(stageId, mode = 'normal') {
 
     // [데이터 로드]
     if (bibleData[chNum] && bibleData[chNum][verseNum - 1]) {
-        trainingVerseData = bibleData[chNum][verseNum - 1];
+        trainingVerseData = getVerseData(chNum, verseNum - 1);
     } else {
-        alert("데이터 로드 오류"); return;
+        alert(t('alert_data_load_error')); return;
     }
 
     // 모드 선택 시트 닫기
@@ -5500,7 +5866,7 @@ function startTraining(stageId, mode = 'normal') {
         } catch (error) {
             // 🚨 화면이 넘어가지 않고 멈춘다면, 여기서 범인을 정확히 알려줍니다!
             console.error("🚨 startStageAction 실행 중 치명적 에러 발생:", error);
-            alert("게임 전환 중 오류가 발생했습니다. 브라우저 콘솔(F12)을 확인해주세요.");
+            alert(t('alert_game_switch_error'));
         }
     };
 
@@ -5828,9 +6194,9 @@ function loadStep() {
         let nextPartBadge = "";
         if (window.step2Parts.length > 1) {
             const nextPartCount = window.step2Parts[window.currentStep2PartIndex + 1]?.length;
-            partLabel = ` <span style="color:#e74c3c;">(파트 ${window.currentStep2PartIndex + 1}/${window.step2Parts.length})</span>`;
+            partLabel = ` <span style="color:#e74c3c;">(${t('label_part', { cur: window.currentStep2PartIndex + 1, total: window.step2Parts.length })})</span>`;
             if (nextPartCount) {
-                nextPartBadge = `<span class="next-part-badge">다음 파트: ${nextPartCount}단어</span>`;
+                nextPartBadge = `<span class="next-part-badge">${t('label_next_part', { count: nextPartCount })}</span>`;
             }
         }
 
@@ -6097,9 +6463,9 @@ function loadStep() {
         let nextPartBadge = "";
         if (window.step5Parts.length > 1) {
             const nextPartCount = window.step5Parts[window.currentStep5PartIndex + 1]?.length;
-            partLabel = ` <span style="color:#e74c3c;">(파트 ${window.currentStep5PartIndex + 1}/${window.step5Parts.length})</span>`;
+            partLabel = ` <span style="color:#e74c3c;">(${t('label_part', { cur: window.currentStep5PartIndex + 1, total: window.step5Parts.length })})</span>`;
             if (nextPartCount) {
-                nextPartBadge = `<span class="next-part-badge">다음 파트: ${nextPartCount}단어</span>`;
+                nextPartBadge = `<span class="next-part-badge">${t('label_next_part', { count: nextPartCount })}</span>`;
             }
         }
 
@@ -6948,11 +7314,11 @@ function updateItemButtons() {
 // 1. 생명의 떡 사용하기 (누르면 바로 회복)
 function useLifeBread() {
     if (inventory.lifeBread <= 0) {
-        alert("🥖 생명의 떡이 없습니다.\n상점에서 구매하세요!");
+        alert(t('alert_no_bread'));
         return;
     }
     if (playerHearts >= maxPlayerHearts) {
-        alert("체력이 이미 가득 찼습니다.");
+        alert(t('alert_hearts_full'));
         return;
     }
 
@@ -6961,7 +7327,7 @@ function useLifeBread() {
     playerHearts = Math.min(playerHearts + 3, maxPlayerHearts); // 3칸 회복
 
     SoundEffect.playCorrect(); // 띠링! 소리
-    alert(`체력이 회복되었습니다. (현재: ${playerHearts})`);
+    alert(t('alert_hearts_restored', { cur: playerHearts }));
 
     updateBattleUI();   // 하트 UI 갱신
     updateItemButtons(); // 생명의 떡 개수 UI 갱신
@@ -7009,7 +7375,7 @@ function useHint() {
     if (!window.isTrainingMode && !window.isHardshipMode) bossHintCount++;
 
     if (hintCost > 0 && myGems < hintCost) {
-        alert(`💎 보석이 부족합니다! (필요: ${hintCost})`);
+        alert(t('alert_hint_no_gems', { cost: hintCost }));
         return;
     }
 
@@ -7017,7 +7383,7 @@ function useHint() {
     const isTraining = screen.classList.contains('mode-training');
 
     if (isTraining && currentStep === 1) {
-        alert("이 단계에서는 큰 소리로 읽는 것이 정답입니다! 📣");
+        alert(t('alert_hint_read_aloud'));
         return;
     }
 
@@ -7062,7 +7428,7 @@ function showHintModal({ cost, onClose }) {
     if (isTraining) {
         // step5 힌트 undefined 방지
         if (!trainingVerseData || !trainingVerseData.text) {
-            alert("이 구절의 힌트 데이터를 불러올 수 없습니다.");
+            alert(t('alert_hint_load_error'));
             if (typeof onClose === 'function') onClose();
             return;
         }
@@ -7581,7 +7947,7 @@ function renderLifeBook() {
                 div.style.background = '#34495e';
                 div.style.border = '2px dashed #7f8c8d';
                 div.innerHTML = `<div style="font-size:2rem;">🔒</div><div style="color:#7f8c8d; font-size:0.8rem; margin-top:5px;">${verseNum}절</div>`;
-                div.onclick = () => alert("해당 구절을 1회 이상 클리어하여 잠금을 해제하세요.");
+                div.onclick = () => alert(t('alert_locked_first_clear'));
                 grid.appendChild(div);
                 return;
             }
@@ -7599,7 +7965,7 @@ function renderLifeBook() {
                 <div style="font-size:0.7rem; color:#555; margin-top:5px;">숙련도: ${count}</div>
             `;
             card.onclick = () => {
-                alert(`[제 ${currentLifeBookChapter}장 ${verseNum}절]\n\n${verse.text}`);
+                alert(t('alert_life_book_verse', { ch: currentLifeBookChapter, v: verseNum, text: verse.text }));
             };
             grid.appendChild(card);
         });
@@ -7687,7 +8053,7 @@ function checkDailyReward() {
 
         // 환영 메시지
         setTimeout(() => {
-            alert(`🕊️ [일용할 양식]\n\n성도의 직분을 가진 자에게\n보석 ${dailyBonus}개가 지급되었습니다! 💎\n(현재 보석: ${myGems})`);
+            alert(t('alert_daily_bonus', { count: dailyBonus, total: myGems }));
         }, 500);
     } else {
         // 성도가 아니더라도 날짜는 갱신
@@ -7836,9 +8202,9 @@ function activateBooster(multiplier, minutes) {
     if (boosterData.active && now < boosterData.endTime) {
         if (multiplier > boosterData.multiplier) {
             boosterData.multiplier = multiplier;
-            alert(`🔥 더 강력한 ${multiplier}배 부스터가 적용되었습니다!`);
+            alert(t('alert_booster_stronger', { multi: multiplier }));
         } else {
-            alert(`🔥 부스터 시간이 ${minutes}분 연장되었습니다!`);
+            alert(t('alert_booster_extended', { min: minutes }));
         }
         boosterData.endTime += duration;
     } else {
@@ -7846,7 +8212,7 @@ function activateBooster(multiplier, minutes) {
         boosterData.active = true;
         boosterData.multiplier = multiplier;
         boosterData.endTime = now + duration;
-        alert(`⚡ ${minutes}분간 승점 ${multiplier}배 부스터 발동!`);
+        alert(t('alert_booster_started', { min: minutes, multi: multiplier }));
     }
 
     saveGameData();
@@ -8454,7 +8820,7 @@ function findAndScrollMe() {
             myCard.style.boxShadow = "none";
         }, 1000);
     } else {
-        alert("현재 랭킹 Top 100 안에 들지 못했습니다.\n분발하세요, 순례자여! 🔥");
+        alert(t('alert_ranking_out'));
     }
 }
 
@@ -9232,7 +9598,7 @@ stageClear = function (type) {
         updateKingsRoadHomeInfo();
     } catch (error) {
         console.error("클리어 처리 중 오류:", error);
-        alert("오류 발생: " + error.message);
+        alert(t('alert_error_msg', { msg: error.message }));
         quitGame(isFocusedTrainingSession() ? 'home' : 'map');
     }
 };
@@ -9297,7 +9663,7 @@ function buyItem(itemType) {
     if (itemType === 'heart') {
         // 1. 최대치 제한 확인 (30칸)
         if (purchasedMaxHearts >= 30) {
-            alert("더 이상 체력을 늘릴 수 없습니다 (순수 최대치 30 도달).");
+            alert(t('alert_hearts_max_reached'));
             return;
         }
 
@@ -9306,7 +9672,7 @@ function buyItem(itemType) {
 
         // 2. 보석 부족 확인
         if (myGems < heartPrice) {
-            alert(`💎 보석이 부족합니다! (필요: ${heartPrice})`);
+            alert(t('alert_buy_hearts_no_gems', { cost: heartPrice }));
             return;
         }
 
@@ -9322,7 +9688,7 @@ function buyItem(itemType) {
             saveGameData();          // 저장
             syncToFirestore();       // [Firestore] 체력 구매
 
-            alert(`❤️ 최대 체력이 ${maxPlayerHearts}칸으로 늘어났습니다!`);
+            alert(t('alert_buy_hearts_success', { max: maxPlayerHearts }));
         }
         return; // 체력 구매 후 함수 종료
     }
@@ -9342,7 +9708,7 @@ function buyItem(itemType) {
 
     // 가격 확인
     if (price > 0 && myGems < price) {
-        alert("💎 보석이 부족합니다!");
+        alert(t('alert_buy_no_gems'));
         return;
     }
 
@@ -9358,7 +9724,7 @@ function buyItem(itemType) {
         } else {
             if (!inventory) inventory = {};
             inventory[itemType] = (inventory[itemType] || 0) + 1;
-            alert(`✅ [${item.name}] 구매 완료! (보유: ${inventory[itemType]}개)`);
+            alert(t('alert_buy_success', { name: item.name, count: inventory[itemType] }));
         }
 
         if (isFreeLifeBread) {
@@ -9449,19 +9815,19 @@ updateShopUI = function () {
 function useBattleItem(itemType) {
     if (itemType === 'potion') itemType = 'lifeBread';
     if (!inventory || !inventory[itemType] || inventory[itemType] <= 0) {
-        alert("아이템이 없습니다! 보급소에서 구매하세요.");
+        alert(t('alert_item_none'));
         return;
     }
 
     if (itemType === "lifeBread") {
         if (playerHearts >= maxPlayerHearts) {
-            alert("이미 체력이 가득 찼습니다!");
+            alert(t('alert_item_hearts_full'));
             return;
         }
         playerHearts = Math.min(playerHearts + 2, maxPlayerHearts); // 2칸 회복
         inventory[itemType]--;
         updateResourceUI();
-        alert("🍞 생명의 떡을 먹었습니다! (체력 +2)");
+        alert(t('alert_item_bread_used'));
     }
 
     saveGameData();
@@ -10038,7 +10404,7 @@ function changeViewLevel(delta) {
 
 // 1. 성전 건축하기
 function upgradeCastle() {
-    if (myCastleLevel >= 11) { alert("이미 하나님 나라가 완성되었습니다!"); return; }
+    if (myCastleLevel >= 11) { alert(t('alert_castle_max')); return; }
 
     const nextLevel = myCastleLevel + 1;
     const nextBP = castleBlueprints[nextLevel];
@@ -10054,7 +10420,7 @@ function upgradeCastle() {
 
         if (typeof SoundEffect !== 'undefined') SoundEffect.playLevelUp();
 
-        alert(`🎉 건축 완료!\n\n[Lv.${myCastleLevel} ${nextBP.name}]\n"${nextBP.desc.replace(/<br>/g, '\n')}"`);
+        alert(t('alert_castle_built', { lv: myCastleLevel, name: nextBP.name, desc: nextBP.desc.replace(/<br>/g, '\n') }));
 
         updateStats('castle_levelup', myCastleLevel);
         updateGemDisplay();
@@ -10062,7 +10428,7 @@ function upgradeCastle() {
         saveGameData();
         syncToFirestore(); // [Firestore] 성전 업그레이드
     } else {
-        alert(`보석이 부족합니다.\n(필요: ${nextBP.cost}개 / 보유: ${myGems}개)`);
+        alert(t('alert_castle_no_gems', { need: nextBP.cost, have: myGems }));
     }
 }
 
@@ -10082,7 +10448,7 @@ function claimTempleSupply() {
     lastClaimTime = now;
 
     if (typeof SoundEffect !== 'undefined') SoundEffect.playGetGem();
-    alert(`💎 성전 공급 보석 ${pending}개를 수거했습니다!`);
+    alert(t('alert_temple_collected', { count: pending }));
 
     updateCastleView(); // 화면 갱신
     updateResourceUI();
@@ -10120,7 +10486,7 @@ function changeScrollSpeed(mode) {
             btnSlow.style.color = '#e67e22';
             btnSlow.style.fontWeight = 'bold';
         }
-        alert('어르신 모드(느린 속도)로 전환되었습니다.');
+        alert(t('alert_speed_elder'));
 
     } else if (mode === 'fast') {
         scrollGame.speed = 1.5; // 기존 빠른 모드 속도
@@ -10129,7 +10495,7 @@ function changeScrollSpeed(mode) {
             btnFast.style.color = '#e74c3c';
             btnFast.style.fontWeight = 'bold';
         }
-        alert('빠른 속도로 전환되었습니다.');
+        alert(t('alert_speed_fast'));
 
     } else {
         // normal (보통)
@@ -10139,7 +10505,7 @@ function changeScrollSpeed(mode) {
             btnNormal.style.color = '#27ae60';
             btnNormal.style.fontWeight = 'bold';
         }
-        alert('보통 속도로 전환되었습니다.');
+        alert(t('alert_speed_normal'));
     }
 }
 
@@ -10855,17 +11221,17 @@ function resetGameData() {
             if (typeof firebase !== 'undefined' && firebase.auth) {
                 // signOut()이 완전히 끝난 뒤에(then) 화면을 새로고침 하도록 기다립니다.
                 firebase.auth().signOut().then(() => {
-                    alert("데이터가 완전히 초기화되었습니다.\n게임을 처음부터 다시 시작합니다.");
+                    alert(t('alert_data_reset'));
                     location.reload();
                 }).catch((error) => {
                     console.error("로그아웃 에러:", error);
                     // 혹시 에러가 나도 일단 강제 진행
-                    alert("데이터가 완전히 초기화되었습니다.\n게임을 처음부터 다시 시작합니다.");
+                    alert(t('alert_data_reset'));
                     location.reload();
                 });
             } else {
                 // 파이어베이스가 연결되지 않은 환경이라면 즉시 새로고침
-                alert("데이터가 완전히 초기화되었습니다.\n게임을 처음부터 다시 시작합니다.");
+                alert(t('alert_data_reset'));
                 location.reload();
             }
         }
@@ -10876,7 +11242,7 @@ function resetGameData() {
 function shareSaveCodeAndGetReward() {
     saveGameData();
     const savedData = localStorage.getItem('kingsRoadSave');
-    if (!savedData) return alert("저장할 기록이 없습니다.");
+    if (!savedData) return alert(t('alert_no_save_data'));
 
     // 🌟 비밀번호 입력받기
     const pwd = prompt("데이터를 안전하게 보호할 '비밀번호'를 입력하세요.\n(다른 기기에서 불러올 때 이 비밀번호가 필요합니다!)");
@@ -10897,7 +11263,7 @@ function shareSaveCodeAndGetReward() {
     try {
         encodedData = "ENC_" + CryptoJS.AES.encrypt(savedData, pwd).toString();
     } catch (e) {
-        return alert("암호화 중 오류가 발생했습니다.");
+        return alert(t('alert_encrypt_error'));
     }
 
     const file = new File([encodedData], fileName, { type: "text/plain" });
@@ -10909,9 +11275,9 @@ function shareSaveCodeAndGetReward() {
             missionData.daily.backup = 1;
             saveGameData();
             if (typeof updateMissionUI === 'function') updateMissionUI();
-            alert("📥 파일이 기기의 '다운로드' 폴더에 저장되었습니다!\n텔레그램이나 카카오톡으로 이 파일을 공유해 보관하세요.\n\n(일일 미션 달성! 보상을 받으세요 🎁)");
+            alert(t('alert_file_saved_share'));
         } else {
-            alert("📥 파일이 기기의 '다운로드' 폴더에 안전하게 저장되었습니다!\n텔레그램이나 카카오톡으로 이 파일을 공유해 보관하세요.");
+            alert(t('alert_file_saved'));
         }
     };
 
@@ -10983,7 +11349,7 @@ function importSaveCode() {
 
     document.getElementById('confirm-import-btn').onclick = function () {
         const code = document.getElementById('save-code-textarea').value;
-        if (!code || code.trim() === "") return alert("입력된 코드가 없습니다.");
+        if (!code || code.trim() === "") return alert(t('alert_no_code'));
 
         inputModal.style.display = 'none';
         processImportData(code); // 통합 처리 함수로 넘김
@@ -10999,7 +11365,7 @@ function processImportData(inputString) {
         // 🌟 [보안 추가] 1. 새로운 비밀번호 암호화 데이터(ENC_)인 경우
         if (rawData.startsWith("ENC_")) {
             const pwd = prompt("🔒 이 데이터는 잠겨있습니다.\n저장할 때 설정한 '비밀번호'를 입력하세요:");
-            if (!pwd) return alert("비밀번호 입력이 취소되었습니다.");
+            if (!pwd) return alert(t('alert_pwd_cancelled'));
 
             const encryptedText = rawData.substring(4); // "ENC_" 떼어내기
             const bytes = CryptoJS.AES.decrypt(encryptedText, pwd);
@@ -11026,7 +11392,7 @@ function processImportData(inputString) {
         const isSameTag = parsedData.tag && parsedData.tag === myTag;
         const isSamePlayer = parsedData.playerId && parsedData.playerId === myPlayerId;
         if (!isFreshAccount && !isSameTag && !isSamePlayer) {
-            alert("❌ 다른 계정의 데이터는 불러올 수 없습니다.\n본인의 저장 코드만 사용해주세요.");
+            alert(t('alert_wrong_account'));
             return;
         }
 
@@ -11048,15 +11414,15 @@ function processImportData(inputString) {
             localStorage.setItem('forceSyncAfterLoad', 'true');
 
             // 파이어베이스 통신 없이 즉시 새로고침 (오류 원인 원천 차단!)
-            alert("✅ 기록 복원 완료!\n게임을 다시 시작합니다.");
+            alert(t('alert_restore_ok'));
             location.reload();
         }
     } catch (e) {
         console.error("데이터 복구 에러:", e);
         if (e.message === "비밀번호 불일치") {
-            alert("❌ 비밀번호가 틀렸습니다!");
+            alert(t('alert_wrong_pwd'));
         } else {
-            alert("❌ 데이터 복구 실패!\n파일이 손상되었거나 복사 과정에서 코드가 일부 누락되었습니다.");
+            alert(t('alert_restore_fail'));
         }
     }
 }
@@ -11397,7 +11763,7 @@ async function confirmProfile() {
     }
 
     const tribeName = TRIBE_DATA[myTribe].name;
-    alert(`[${tribeName} 지파]의 ${myNickname}님,\n환영합니다! 🙏`);
+    alert(t('alert_welcome_tribe', { tribe: tribeName, nick: myNickname }));
 
     // 신규 유저에게 게임 가이드 자동 표시
     if (window.isFirstTimeNaming && !localStorage.getItem('hasShownGuide')) {
@@ -11517,7 +11883,7 @@ window.onload = function () {
  */
 async function openTagRecovery() {
     if (typeof db === 'undefined' || !db) {
-        alert('서버에 연결되지 않았습니다. 잠시 후 다시 시도해주세요.');
+        alert(t('alert_server_disconnect'));
         openProfileSettings();
         return;
     }
@@ -11533,7 +11899,7 @@ async function openTagRecovery() {
     try {
         const doc = await db.collection('pendingRecovery').doc(cleanTag).get();
         if (!doc.exists) {
-            alert('❌ 해당 태그의 복구 데이터를 찾을 수 없습니다.\n태그를 다시 확인하거나 새 계정으로 시작해주세요.');
+            alert(t('alert_tag_not_found'));
             openProfileSettings();
             return;
         }
@@ -11551,11 +11917,11 @@ async function openTagRecovery() {
 
         await db.collection('pendingRecovery').doc(cleanTag).delete();
 
-        alert('✅ 복구 완료!\n\n닉네임: ' + recoveryData.nickname + '\n태그: #' + recoveryData.tag + '\n\n게임을 다시 시작합니다.');
+        alert(t('alert_recovery_ok', { nick: recoveryData.nickname, tag: recoveryData.tag }));
         location.reload();
     } catch (e) {
         console.error('[openTagRecovery]', e);
-        alert('복구 중 오류가 발생했습니다. 다시 시도해주세요.');
+        alert(t('alert_recovery_error'));
         openProfileSettings();
     }
 }
@@ -11836,7 +12202,7 @@ function claimAchievementReward(key) {
     if (typeof SoundEffect !== 'undefined') SoundEffect.playLevelUp(); // 또는 playGetGem
     if (typeof triggerConfetti === 'function') triggerConfetti();
 
-    alert(`🎉 [${data.title}] 달성!\n보상으로 💎보석 ${reward}개를 받았습니다.`);
+    alert(t('alert_achievement', { title: data.title, count: reward }));
 
     // 5. 리스트 새로고침 (다음 단계 보여주기 위해)
     renderAchievementList();
@@ -12322,7 +12688,7 @@ function startSessionGuard() {
 
                 myPlayerId = "";
                 window.currentSessionToken = "";
-                alert("🚨 다른 기기에서 로그인이 감지되었습니다.\n계정 보호를 위해 현재 기기의 접속이 차단되고 초기화됩니다.");
+                alert(t('alert_multi_device'));
                 window.location.replace(window.location.href.split('?')[0]);
             }
         }
@@ -12575,7 +12941,7 @@ function loadYearlyHallOfFame() {
 /* [추가] 순례자 등록(프로필 수정) 취소 함수 */
 function cancelProfileRegistration() {
     // 1. 유저에게 친절하게 저장되지 않았음을 알립니다.
-    alert("변경사항이 저장되지 않았습니다.");
+    alert(t('alert_unsaved_changes'));
 
     // 2. 이름표가 'nickname-modal'인 팝업창을 찾습니다.
     const modalEl = document.getElementById('nickname-modal');
@@ -12606,13 +12972,13 @@ function startStageWithTransition(chapterNum, verseNum, startStageCallback) {
     // 상단 헤더: 장 제목 + 절 번호 세팅
     if (introHeader) {
         introHeader.innerHTML = `
-            <div class="intro-chapter">요한계시록 ${cNum}장</div>
+            <div class="intro-chapter">${t('label_chapter_header', { num: cNum })}</div>
             <div class="intro-subtitle">${getChapterTitleHtml(cNum)}</div>
             <div class="intro-verse-num">${cNum}:${vNum}</div>
         `;
     }
 
-    const targetText = chapterData[vNum - 1].text;
+    const targetText = (getVerseData(cNum, vNum - 1) || chapterData[vNum - 1]).text;
 
     const audioUrl = `assets/audio/${cNum}-${vNum}.mp3`;
 
@@ -12840,7 +13206,7 @@ function startBossTransition(chapterNum, startVerse, endVerse, isMidBoss, onComp
     if (isMidBoss) {
         textOverlay.innerHTML = `<span style="color:red; font-size:1.5em;">⚔️ 중간 점검</span><br/>${startVerse}절 ~ ${endVerse}절`;
     } else {
-        textOverlay.innerHTML = `<span style="color:darkred; font-size:1.5em;">🐉 보스 출현</span><br/>요한계시록 ${chapterNum}장<br>${getChapterTitleHtml(chapterNum)}`;
+        textOverlay.innerHTML = `<span style="color:darkred; font-size:1.5em;">🐉 보스 출현</span><br/>${t('label_chapter_header', { num: chapterNum })}<br>${getChapterTitleHtml(chapterNum)}`;
     }
     gsap.set(textOverlay, { opacity: 0, y: 20, scale: 0.9, xPercent: -50, yPercent: -50 });
 
@@ -12903,7 +13269,7 @@ function openChapterTitle(chapterNum) {
     const prevBtn = document.getElementById('title-prev-btn');
     const nextBtn = document.getElementById('title-next-btn');
 
-    chapterHeader.innerText = `요한계시록 ${chapterNum}장`;
+    chapterHeader.innerText = t('label_chapter_header', { num: chapterNum });
 
     // 버튼 초기화 (일단 숨김)
     prevBtn.style.display = 'none';
@@ -12930,7 +13296,7 @@ function openChapterTitle(chapterNum) {
         nextBtn.onclick = toggleFunc;
     } else {
         // 🌟 2장~22장이면 그냥 해당 텍스트만 띄웁니다.
-        textContent.innerText = CHAPTER_TITLES[chapterNum] || "준비 중입니다.";
+        textContent.innerText = CHAPTER_TITLES[chapterNum] || t('status_preparing');
     }
 
     // 모달창 짠! 하고 나타나기
@@ -13224,12 +13590,12 @@ function executeTraining() {
     const isRandomOrder = !!(randomCheckbox && randomCheckbox.checked);
 
     if (startChapter > endChapter || (startChapter === endChapter && startVerse > endVerse)) {
-        alert("⚠️ 시작 위치가 끝 위치보다 클 수 없습니다.");
+        alert(t('alert_training_start_gt_end'));
         return;
     }
 
     if (!repeatCount || repeatCount < 1) {
-        alert("⚠️ 반복 횟수는 1회 이상이어야 합니다.");
+        alert(t('alert_training_repeat_min'));
         return;
     }
 
@@ -13682,7 +14048,7 @@ function selectHardshipOrder(orderType) {
         // 맵 경로: forced chapter 소비 후 바로 세션 시작
         const verseIds = getHardshipVerseIdsByChapterRange(pendingChapter, pendingChapter);
         if (verseIds.length === 0) {
-            alert(`⚠️ ${pendingChapter}장의 구절 데이터가 없습니다.`);
+            alert(t('alert_training_no_data', { ch: pendingChapter }));
             return;
         }
         startHardshipSession(selectedHardshipConfigMode, verseIds, pendingChapter);
@@ -13712,7 +14078,7 @@ function startHardshipFromModal(mode) {
         const verseIds = getHardshipVerseIdsByChapterRange(ch, ch);
         window.hardshipForcedChapter = null;
         if (verseIds.length === 0) {
-            alert(`⚠️ ${ch}장의 구절 데이터가 없습니다.`);
+            alert(t('alert_training_no_data', { ch }));
             return;
         }
         startHardshipSession(mode, verseIds, ch);
@@ -13729,13 +14095,13 @@ function startHardshipFromConfig() {
     const endChapter = rangeType === 'range' ? parseInt(endSelect.value, 10) || 22 : 22;
 
     if (startChapter > endChapter) {
-        alert('⚠️ 시작 장이 끝 장보다 클 수 없습니다.');
+        alert(t('alert_training_start_ch_gt_end'));
         return;
     }
 
     const selectedVerseIds = getHardshipVerseIdsByChapterRange(startChapter, endChapter);
     if (selectedVerseIds.length === 0) {
-        alert('⚠️ 선택한 범위에 해당하는 구절이 없습니다.');
+        alert(t('alert_training_no_verses'));
         return;
     }
 
@@ -14442,12 +14808,12 @@ function useHardshipMemoryHint() {
     const { autoSpaces, hintIndex } = getHardshipMemoryHintPlan();
 
     if (hintIndex === -1) {
-        alert('이미 모든 글자가 맞게 채워져 있습니다.');
+        alert(t('alert_blank_all_filled'));
         return;
     }
 
     if (myGems < HINT_COST) {
-        alert(`💎 보석이 부족합니다! (필요: ${HINT_COST})`);
+        alert(t('alert_blank_hint_no_gems', { cost: HINT_COST }));
         return;
     }
 

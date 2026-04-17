@@ -400,6 +400,7 @@
         </button>
         <div id="menu-panel"
             style="display:none; position:fixed; top:72px; right:20px; z-index:3001; background:rgba(44,62,80,0.98); border-radius:18px; box-shadow:0 8px 32px rgba(44,62,80,0.18); padding:18px 14px; min-width:180px; border:1.5px solid #f1c40f; flex-direction:column; gap:8px;">
+            <button id="lang-toggle-btn" class="menu-action-btn" onclick="toggleLang(); document.getElementById('menu-panel').style.display='none';">🌐 English</button>
             <button id="kings-step-btn" class="menu-action-btn" style="display:none;" onclick="cycleKingsStep(); document.getElementById('menu-panel').style.display='none';">👑 왕의 길 -단계</button>
             <button class="menu-action-btn" onclick="openGuideModal(); closeMenu();">📖 게임 가이드</button>
             <button class="menu-action-btn" onclick="openThanksModal()">👥 감사한 분들</button>
@@ -1343,6 +1344,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="bible_en.js"></script>
     <script src="game.js"></script>
     <script>
 
