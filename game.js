@@ -17,7 +17,7 @@ const LANG = {
         btn_next: '다음 ▶',
         btn_prev: '◀ 이전',
         btn_revive: '부활하기',
-        btn_give_up: '포기하기',
+        btn_give_up: '🏳️ 포기하기',
         btn_resume: '게임 계속하기',
         btn_start: '시작하기',
         btn_retry: '다시 도전',
@@ -231,6 +231,8 @@ const LANG = {
         // 게임플레이
         game_hint_instruction: '단어를 터치하여 구절을 완성하세요',
         game_lang_switch_ingame: '스테이지 진행 중에는 언어를 변경할 수 없습니다.',
+        lang_switch_confirm: '언어 변경을 위해 앱을 재시작합니다.',
+        lang_switch_ok: '네',
 
         // 홈 화면
         btn_journey: '👑 여정 시작',
@@ -380,6 +382,9 @@ const LANG = {
         hardship_btn_submit: '정답 확인',
         hardship_btn_reset_input: '입력 초기화',
         hardship_hint_confirm: '💎 보석 {cost}개를 사용해 글자 하나를 보시겠습니까?',
+        quit_modal_title: '전장을 떠나시겠습니까?',
+        quit_modal_message: '지금 나가면 진행 상황이<br>저장되지 않을 수 있습니다.',
+        quit_confirm: '정말 중단하시겠습니까?\n지금까지 진행한 상황은 저장되지 않습니다.',
         hardship_quit_title: '{title}을 종료하시겠습니까?',
         hardship_quit_notice_endurance: '현재 진행 순서는 저장되지 않습니다.',
         hardship_quit_notice_scored: '지금까지 획득한 승점은 저장됩니다. 현재 진행 순서는 저장되지 않습니다.',
@@ -451,6 +456,27 @@ const LANG = {
         // 복습 알림 오버레이
         forgotten_empty: '구절을 잊을만 할 때 알려드립니다!',
         forgotten_review_step: '- {step}회차 복습 시점',
+        forgotten_overlay_title: '🕑 복습하기 좋은 때',
+        forgotten_overlay_subtitle: '스테이지를 복습해서 <br>기억을 다지세요!',
+        forgotten_overlay_close: '닫기',
+
+        // 토스트 메시지
+        toast_read_aloud: '🗣️ 소리내어 읽으면 암기 효과가 2배!',
+        toast_read_aloud_quick: '💡 소리내어 읽으면 암기 효과가 2배!',
+        toast_boss_mid: '🛡️ 소리 내어 읽으며 용을 물리칩시다!',
+        toast_boss_normal: '⚔️ 진리를 나팔같이 외쳐 용을 잡으세요!',
+        toast_training_repeat: '⚔️ 집중 훈련: Step {step} 반복 모드',
+        toast_hardship_start: '{icon} {title} 시작',
+
+        // 알림 설정 모달
+        notif_modal_title: '🔔 알림 설정',
+        notif_modal_desc: '매일 지정한 시간에 복습 알림을 보내드립니다.<br>최대 3개까지 설정할 수 있습니다.',
+        notif_add_time: '+ 시간 추가',
+        notif_save: '저장',
+        notif_close: '닫기',
+
+        // 스테이지 진입 애니메이션
+        skip_transition: '넘기기 ⏭',
 
         // 랭킹 / 명예의 전당
         ranking_loading_tribe: '📡 {name} 랭킹 불러오는 중...',
@@ -530,11 +556,14 @@ const LANG = {
         label_cycle_display: '사이클 {cur}/{total}',
         label_verse_range: '{start}절 ~ {end}절',
         label_boss_appear: '🐉 보스 출현',
+        label_dragon_hp: '용 HP:',
+        btn_reassemble: '다시\n조립',
         btn_attack: '⚔️ 공격하기',
         tower_instruction: '세 단어 중 순서에 맞는 단어를 고르세요!',
         tower_complete: '🎉 완성!',
         tower_wrong: '앗! 다른 단어입니다.',
         tower_pick: '알맞은 단어를 고르세요!',
+        step3_indicator: 'Step 3. 다음 빈칸에 들어갈 단어를 고르세요!',
         label_kings_step_btn: '👑 왕의 길 {step}단계',
         label_unlock_timer: '해금까지 {time}',
         toast_server_save_fail_short: '⚠️ 서버 저장 실패: {msg}',
@@ -589,6 +618,11 @@ const LANG = {
         achievement_progress_current: '현재: {val}',
         achievement_progress_target: '목표: {val}',
         achievement_complete: '(완료)',
+        milestone_reward: '보상: 💎 보석 {val}개',
+        milestone_btn: '멋져요!',
+        result_label_time: '⏱️ 시간',
+        result_label_accuracy: '🎯 정확도',
+        result_label_earned: '💎 획득',
 
         // 기록실 상세 통계
         record_badge_score: '🧭 누적 승점 {val} pts',
@@ -651,7 +685,7 @@ const LANG = {
         btn_next: 'Next ▶',
         btn_prev: '◀ Prev',
         btn_revive: 'Revive',
-        btn_give_up: 'Give Up',
+        btn_give_up: '🏳️ Give Up',
         btn_resume: 'Resume Game',
         btn_start: 'Start',
         btn_retry: 'Try Again',
@@ -865,6 +899,8 @@ const LANG = {
         // 게임플레이
         game_hint_instruction: 'Tap words to complete the verse',
         game_lang_switch_ingame: 'Cannot change language during a stage.',
+        lang_switch_confirm: 'The app will restart to apply the language change.',
+        lang_switch_ok: 'OK',
 
         // 홈 화면
         btn_journey: '👑 Begin Journey',
@@ -1014,6 +1050,9 @@ const LANG = {
         hardship_btn_submit: 'Check Answer',
         hardship_btn_reset_input: 'Reset Input',
         hardship_hint_confirm: '💎 Use {cost} gems to reveal one character?',
+        quit_modal_title: 'Leave the battle?',
+        quit_modal_message: 'Leaving now may not save<br>your progress.',
+        quit_confirm: 'Are you sure you want to quit?\nYour progress will not be saved.',
         hardship_quit_title: 'Quit {title}?',
         hardship_quit_notice_endurance: 'Your current progress order will not be saved.',
         hardship_quit_notice_scored: 'Your score so far will be saved. Your current progress order will not be saved.',
@@ -1085,6 +1124,27 @@ const LANG = {
         // 복습 알림 오버레이
         forgotten_empty: "We'll let you know when it's time to review!",
         forgotten_review_step: '- Review #{step}',
+        forgotten_overlay_title: '🕑 Good Time to Review',
+        forgotten_overlay_subtitle: 'Revisit these stages<br>to strengthen your memory!',
+        forgotten_overlay_close: 'Close',
+
+        // 토스트 메시지
+        toast_read_aloud: '🗣️ Reading aloud doubles your memorization!',
+        toast_read_aloud_quick: '💡 Reading aloud doubles your memorization!',
+        toast_boss_mid: '🛡️ Read aloud and defeat the dragon!',
+        toast_boss_normal: '⚔️ Shout the truth like a trumpet and catch the dragon!',
+        toast_training_repeat: '⚔️ Focused Training: Step {step} repeat mode',
+        toast_hardship_start: '{icon} {title} start',
+
+        // 알림 설정 모달
+        notif_modal_title: '🔔 Notification Settings',
+        notif_modal_desc: 'We\'ll send you daily review reminders at your chosen times.<br>You can set up to 3 times.',
+        notif_add_time: '+ Add Time',
+        notif_save: 'Save',
+        notif_close: 'Close',
+
+        // 스테이지 진입 애니메이션
+        skip_transition: 'Skip ⏭',
 
         // 랭킹 / 명예의 전당
         ranking_loading_tribe: '📡 Loading {name} ranking...',
@@ -1164,11 +1224,14 @@ const LANG = {
         label_cycle_display: 'Cycle {cur}/{total}',
         label_verse_range: 'v.{start} – v.{end}',
         label_boss_appear: '🐉 Boss Appears',
+        label_dragon_hp: 'Dragon HP:',
+        btn_reassemble: 'Re-\nassemble',
         btn_attack: '⚔️ Attack!',
         tower_instruction: 'Choose the word that fits in order!',
         tower_complete: '🎉 Complete!',
         tower_wrong: 'Oops! Wrong word.',
         tower_pick: 'Pick the correct word!',
+        step3_indicator: 'Step 3. Choose the word that fills the blank!',
         label_kings_step_btn: "👑 King's Road Step {step}",
         label_unlock_timer: 'Unlocks in {time}',
         toast_server_save_fail_short: '⚠️ Server save failed: {msg}',
@@ -1223,6 +1286,11 @@ const LANG = {
         achievement_progress_current: 'Current: {val}',
         achievement_progress_target: 'Target: {val}',
         achievement_complete: '(Complete)',
+        milestone_reward: 'Reward: 💎 {val} Gems',
+        milestone_btn: 'Awesome!',
+        result_label_time: '⏱️ Time',
+        result_label_accuracy: '🎯 Accuracy',
+        result_label_earned: '💎 Earned',
 
         // 기록실 상세 통계
         record_badge_score: '🧭 Total Score {val} pts',
@@ -1378,7 +1446,13 @@ function toggleLang() {
         else alert(t('game_lang_switch_ingame'));
         return;
     }
-    setLang(currentLang === 'ko' ? 'en' : 'ko');
+    const nextLang = currentLang === 'ko' ? 'en' : 'ko';
+    const msg = nextLang === 'en'
+        ? 'The app will restart to apply the language change.'
+        : '언어 변경을 위해 앱을 재시작합니다.';
+    if (!confirm(msg)) return;
+    localStorage.setItem('lang', nextLang);
+    location.reload();
 }
 // ──────────────────────────────────────────────
 
@@ -1413,7 +1487,8 @@ function updateTempleUpgradeNotification() {
 }
 
 function getChapterTitleHtml(chapterNum) {
-    const rawTitle = CHAPTER_TITLES[chapterNum];
+    const titles = (currentLang === 'en') ? CHAPTER_TITLES_EN : CHAPTER_TITLES;
+    const rawTitle = titles[chapterNum];
     if (Array.isArray(rawTitle)) {
         return rawTitle.join('<br>');
     }
@@ -4869,7 +4944,7 @@ function renderChapterMap() {
                 ${iconChar}
                 ${fruitHTML}
             </div>
-            <div class="stage-label">${chapter.title}</div>
+            <div class="stage-label">${t('label_chapter_header', { num: chapter.id })}</div>
         `;
 
         node.onclick = () => {
@@ -5424,7 +5499,7 @@ function getForgottenStages() {
             const revStatus = getReviewStatus(stageId);
             if (revStatus.step > 1 && revStatus.isEligible) {
                 const m = String(stageId).match(/^(\d+)-(\d+)$/);
-                const label = m ? `${m[1]}장 ${m[2]}절` : stageId;
+                const label = m ? t('stage_title_normal', { ch: m[1], v: m[2] }) : stageId;
                 forgottenList.push({
                     stageId,
                     label,
@@ -5481,11 +5556,11 @@ function openForgottenStagesOverlay() {
         overlay.style = 'display:flex; position:fixed; z-index:9999; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.97); color:#f1c40f; flex-direction:column; align-items:center; justify-content:center; font-size:1.2rem; text-align:center;';
         overlay.innerHTML = `
                 <div style="max-width:90vw; font-size:1.1em; line-height:1.7; font-weight:bold; color:#fff; text-shadow:0 2px 8px #222; margin-bottom:30px; flex-shrink: 0;">
-                    🕑 복습하기 좋은 때<br><span style="font-size:0.95em; color:#f1c40f;">스테이지를 복습해서 <br>기억을 다지세요!</span>
+                    ${t('forgotten_overlay_title')}<br><span style="font-size:0.95em; color:#f1c40f;">${t('forgotten_overlay_subtitle')}</span>
                 </div>
                 <div id="forgotten-stages-list" style="background:rgba(0,0,0,0.3); padding:20px; border-radius:15px; width:90vw; max-width:600px; min-width:220px; margin-bottom:30px; max-height:50vh; overflow-y:auto; flex-shrink: 0;">
                 </div>
-                <button onclick="closeForgottenStagesOverlay()" style="background: #f1c40f; color: #2c3e50; font-size:1.1rem; font-weight:bold; padding: 10px 32px; border-radius: 30px; border:none; box-shadow:0 2px 10px #2224; cursor:pointer; margin-top:0; flex-shrink: 0;">닫기</button>
+                <button onclick="closeForgottenStagesOverlay()" style="background: #f1c40f; color: #2c3e50; font-size:1.1rem; font-weight:bold; padding: 10px 32px; border-radius: 30px; border:none; box-shadow:0 2px 10px #2224; cursor:pointer; margin-top:0; flex-shrink: 0;">${t('forgotten_overlay_close')}</button>
             `;
         document.body.appendChild(overlay);
     } else {
@@ -5663,7 +5738,13 @@ function startBossBattle() {
     }
 
     // 데이터 잘라내기
-    window.currentBattleData = fullChapterData.slice(startIndex, endIndex);
+    window.currentBattleData = fullChapterData.slice(startIndex, endIndex).map((verse, i) => {
+        const enVerse = (typeof bibleDataEn !== 'undefined' && bibleDataEn[chapterNum])
+            ? bibleDataEn[chapterNum][startIndex + i] : null;
+        return enVerse
+            ? Object.assign({}, verse, { textEn: enVerse.text, chunksEn: enVerse.chunks })
+            : verse;
+    });
     maxBossHp = window.currentBattleData.length;
     window.currentBattleChapter = chapterNum;
     window.currentBattleStartIndex = startIndex;
@@ -5716,9 +5797,9 @@ function startBossBattle() {
 
         if (typeof showReadAloudToast === 'function') {
             if (sId.includes('mid')) {
-                showReadAloudToast("🛡️ 소리 내어 읽으며 용을 물리칩시다!");
+                showReadAloudToast(t('toast_boss_mid'));
             } else {
-                showReadAloudToast("⚔️ 진리를 나팔같이 외쳐 용을 잡으세요!");
+                showReadAloudToast(t('toast_boss_normal'));
             }
         }
     }; // ✂️============== [보따리 끝] ==============✂️
@@ -5847,7 +5928,7 @@ function loadNextVerse() {
     field.innerHTML = `
         <div class="verse-indicator" id="verse-index">준비 중...</div>
         <div class="answer-zone" id="answer-zone">
-            <span class="placeholder-text" id="placeholder-text">단어를 터치하여 구절을 완성하세요</span>
+            <span class="placeholder-text" id="placeholder-text">${t('game_hint_instruction')}</span>
         </div>
     `;
     control.innerHTML = `<div style="position:relative;"><span class="next-part-badge" id="next-part-badge" style="display:none;"></span><div class="block-pool" id="block-pool"></div></div>`;
@@ -5855,7 +5936,9 @@ function loadNextVerse() {
     // 3. 데이터 준비
     currentVerseData = window.currentBattleData[currentVerseIdx];
 
-    const verseChunks = (currentVerseData && currentVerseData.chunks) ? currentVerseData.chunks : [];
+    const verseChunks = (currentVerseData && currentLang === 'en' && currentVerseData.chunksEn && currentVerseData.chunksEn.length)
+        ? currentVerseData.chunksEn
+        : (currentVerseData && currentVerseData.chunks) ? currentVerseData.chunks : [];
     currentBossParts = splitChunksIntoParts(verseChunks);
     if (currentBossParts.length > 1) {
         if (typeof currentBossPartIndex !== 'number' || currentBossPartIndex < 0) currentBossPartIndex = 0;
@@ -5870,7 +5953,7 @@ function loadNextVerse() {
         const verseNum = (window.currentBattleStartIndex || 0) + currentVerseIdx + 1;
         let label = `${t('label_chapter_header', { num: chapterNum })} ${t('label_verse', { num: verseNum })}`;
         if (currentBossParts && currentBossParts.length > 1) {
-            label += ` (파트 ${currentBossPartIndex + 1}/${currentBossParts.length})`;
+            label += ` (${t('label_part', { cur: currentBossPartIndex + 1, total: currentBossParts.length })})`;
         }
         const verseEl = document.getElementById('verse-index');
         if (verseEl) verseEl.innerText = label;
@@ -6018,11 +6101,11 @@ function loadNextVerse() {
 
     function renderBossBlocks(chunks) {
         setInsertMode(false); // 파트 전환 / 초기 렌더링 시 끼워넣기 OFF
-        zone.innerHTML = '<span class="placeholder-text" id="placeholder-text">단어를 터치하여 구절을 완성하세요</span>';
+        zone.innerHTML = `<span class="placeholder-text" id="placeholder-text">${t('game_hint_instruction')}</span>`;
         pool.innerHTML = '';
         selectedBlock = null;
 
-        const shuffled = [...chunks].sort((a, b) => a.localeCompare(b, 'ko'));
+        const shuffled = [...chunks].sort((a, b) => a.localeCompare(b, currentLang === 'en' ? 'en' : 'ko'));
         shuffled.forEach(word => {
             const btn = document.createElement('div');
             btn.className = 'word-block';
@@ -6148,7 +6231,7 @@ function loadNextVerse() {
     // (2) 💡 [추가] 다시 조립 버튼 설정
     const resetBtn = document.createElement('button');
     resetBtn.className = 'btn-reset-step5';
-    resetBtn.innerHTML = '다시<br>조립';
+    resetBtn.innerHTML = t('btn_reassemble').replace('\n', '<br>');
     resetBtn.style.flex = '1 1 0'; // 래퍼 안에서 차지하는 비율 (1/4)
 
     resetBtn.onclick = () => {
@@ -6168,7 +6251,7 @@ function loadNextVerse() {
 
             // 3. 안내 문구 다시 띄우기
             if (!zone.querySelector('#placeholder-text')) {
-                zone.innerHTML = '<span class="placeholder-text" id="placeholder-text">단어를 터치하여 구절을 완성하세요</span>';
+                zone.innerHTML = `<span class="placeholder-text" id="placeholder-text">${t('game_hint_instruction')}</span>`;
             }
         }
         updateInsertBtnDisabled();
@@ -6960,9 +7043,9 @@ function startTraining(stageId, mode = 'normal') {
             console.log("4. ✅ 게임 시작 완료! 토스트 띄우기");
             if (typeof mode !== 'undefined') {
                 if (mode === 'quick') {
-                    showReadAloudToast("💡 소리내어 읽으면 암기 효과가 2배!");
+                    showReadAloudToast(t('toast_read_aloud_quick'));
                 } else {
-                    showReadAloudToast("🗣️ 소리내어 읽으면 암기 효과가 2배!");
+                    showReadAloudToast(t('toast_read_aloud'));
                 }
             }
 
@@ -7289,7 +7372,9 @@ function loadStep() {
         // 2. 파트 데이터 초기화 (처음 진입했거나, 구절이 바뀌었을 때만)
         if (window.currentStep2PartIndex === undefined) {
             window.currentStep2PartIndex = 0;
-            window.step2Parts = splitChunksIntoParts(trainingVerseData.chunks);
+            window.step2Parts = splitChunksIntoParts(
+                (currentLang === 'en' && trainingVerseData.chunksEn && trainingVerseData.chunksEn.length)
+                    ? trainingVerseData.chunksEn : trainingVerseData.chunks);
         }
 
         // 3. 현재 파트(화면)에 보여줄 데이터만 꺼내오기
@@ -7339,7 +7424,7 @@ function loadStep() {
         const pool = document.getElementById('block-pool');
 
         // 4. 전체가 아닌 '현재 파트'의 단어들만 가나다순으로 정렬하여 버튼 생성
-        let shuffledList = [...currentChunks].sort((a, b) => a.localeCompare(b, 'ko'));
+        let shuffledList = [...currentChunks].sort((a, b) => a.localeCompare(b, currentLang === 'en' ? 'en' : 'ko'));
         window.currentSlotIndex = 0;
 
         shuffledList.forEach(word => {
@@ -7482,11 +7567,11 @@ function loadStep() {
     else if (currentStep === 3) {
         // 1. 게임 영역 (타워와 빈칸 기록판만 남김)
         field.innerHTML = `
-            <div class="verse-indicator">${verseLabel}Step 3. 다음 빈칸에 들어갈 단어를 고르세요!</div>
+            <div class="verse-indicator">${verseLabel}${t('step3_indicator')}</div>
             <div id="tower-game-container">
                 <div id="tower-text-display"></div>
 
-                <div id="tower-msg">알맞은 단어를 고르세요!</div>
+                <div id="tower-msg">${t('tower_pick')}</div>
             </div>
         `;
 
@@ -7560,7 +7645,9 @@ function loadStep() {
         // 👉 2. 파트 데이터 초기화
         if (window.currentStep5PartIndex === undefined) {
             window.currentStep5PartIndex = 0;
-            window.step5Parts = splitChunksIntoParts(trainingVerseData.chunks);
+            window.step5Parts = splitChunksIntoParts(
+                (currentLang === 'en' && trainingVerseData.chunksEn && trainingVerseData.chunksEn.length)
+                    ? trainingVerseData.chunksEn : trainingVerseData.chunks);
         }
 
         // 👉 3. 현재 파트(화면)에 보여줄 데이터만 꺼내오기
@@ -7594,7 +7681,7 @@ function loadStep() {
         const zone = document.getElementById('answer-zone');
 
         // 👉 5. 단어 가나다순 정렬
-        let list = [...correctChunks].sort((a, b) => a.localeCompare(b, 'ko'));
+        let list = [...correctChunks].sort((a, b) => a.localeCompare(b, currentLang === 'en' ? 'en' : 'ko'));
 
         // ── 상태 변수 ──
         let selectedBlock = null;
@@ -8264,6 +8351,12 @@ function showClearScreen() {
     const resultModalEl = document.getElementById('result-modal');
     const existingHistoryEl = resultModalEl && resultModalEl.querySelector('.hardship-history-wrap');
     if (existingHistoryEl) existingHistoryEl.remove();
+
+    // 레이블 i18n 업데이트
+    const statLabels = resultModalEl.querySelectorAll('.stat-label');
+    if (statLabels[0]) statLabels[0].textContent = t('result_label_time');
+    if (statLabels[1]) statLabels[1].textContent = t('result_label_accuracy');
+
     resultModalEl.classList.add('active');
 }
 
@@ -8335,6 +8428,10 @@ function showBossClearScreen(clearedStageId) {
         quoteEl.textContent = quoteText;
         quoteEl.style.display = 'block';
     }
+
+    const bossStatLabels = document.getElementById('result-modal').querySelectorAll('.stat-label');
+    if (bossStatLabels[0]) bossStatLabels[0].textContent = t('result_label_time');
+    if (bossStatLabels[1]) bossStatLabels[1].textContent = t('result_label_accuracy');
 
     document.getElementById('result-time').innerText = `${minutes}:${seconds}`;
     document.getElementById('result-accuracy').innerText = `${accuracy}%`;
@@ -11016,7 +11113,7 @@ function cancelQuit() {
 
 function getQuitModalTitleText() {
     if (!window.isHardshipMode) {
-        return '전장을 떠나시겠습니까?';
+        return t('quit_modal_title');
     }
 
     const modeMeta = getHardshipModeMeta(hardshipState.mode);
@@ -11048,7 +11145,7 @@ function getQuitModalMessageHtml() {
         return getHardshipBackQuitNoticeText().replace(/\. /g, '.<br>');
     }
 
-    return '지금 나가면 진행 상황이<br>저장되지 않을 수 있습니다.';
+    return t('quit_modal_message');
 }
 
 /* 🌟 [통합 버그 픽스] 포기 의사를 묻고, 확인 시 자원을 청소하며 나가는 함수 */
@@ -11056,7 +11153,7 @@ function confirmQuit() {
     // 1. 유저에게 의사를 먼저 묻습니다. (첫 번째 함수의 심플한 알림창)
     const quitMessage = window.isHardshipMode
         ? `${getQuitModalTitleText()}\n${getHardshipQuitNoticeText()}`
-        : "정말 중단하시겠습니까?\n지금까지 진행한 상황은 저장되지 않습니다.";
+        : t('quit_confirm');
     const wantsToQuit = confirm(quitMessage);
 
     // 2. 유저가 '확인'을 눌렀을 때만 청소 및 종료 실행!
@@ -12053,20 +12150,20 @@ async function openNotificationSettings() {
         modal.innerHTML = `
             <div class="result-card" style="max-width:340px; text-align:left; background:white; color:#2c3e50;">
                 <div class="result-header" style="font-size:1.4rem; text-align:center; color:#2c3e50; margin-bottom:16px;">
-                    🔔 알림 설정
+                    ${t('notif_modal_title')}
                 </div>
                 <p style="font-size:0.9rem; color:#7f8c8d; margin-bottom:16px;">
-                    매일 지정한 시간에 복습 알림을 보내드립니다.<br>최대 3개까지 설정할 수 있습니다.
+                    ${t('notif_modal_desc')}
                 </p>
                 <div id="notif-time-list" style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;"></div>
                 <button id="notif-add-btn" onclick="notifAddTime()" style="width:100%; background:#3498db; color:white; border:none; padding:11px; border-radius:10px; font-weight:bold; cursor:pointer; margin-bottom:10px;">
-                    + 시간 추가
+                    ${t('notif_add_time')}
                 </button>
                 <button onclick="notifSave()" style="width:100%; background:#27ae60; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor:pointer; margin-bottom:8px;">
-                    저장
+                    ${t('notif_save')}
                 </button>
                 <button onclick="document.getElementById('notification-modal').style.display='none'" style="width:100%; background:#95a5a6; color:white; border:none; padding:12px; border-radius:30px; cursor:pointer; font-weight:bold;">
-                    닫기
+                    ${t('notif_close')}
                 </button>
             </div>
         `;
@@ -13454,6 +13551,8 @@ function tryShowMilestone() {
     const iconMap = { login: '🕯️', verse: '📖', boss: '🏆', gem: '💎', perfect: '✨', castle: '🏰', earlybird: '🌅' };
 
     const rewardVal = item.data.rewards[item.tier];
+    const milestoneTitle = (currentLang === 'en' && item.data.titleEn) ? item.data.titleEn : item.data.title;
+    const milestoneDesc = (currentLang === 'en' && item.data.descEn) ? item.data.descEn : item.data.desc;
 
     // 내용 채우기
     overlay.innerHTML = `
@@ -13462,18 +13561,18 @@ function tryShowMilestone() {
             <div class="milestone-icon">${iconMap[item.key]}</div>
             <div class="milestone-title">LEVEL UP!</div>
             <div style="font-size:1.1rem; font-weight:bold; color:#2c3e50; margin-bottom:5px;">
-                ${item.data.title}
+                ${milestoneTitle}
             </div>
             <div class="milestone-desc">
-                ${item.data.desc}
+                ${milestoneDesc}
             </div>
-            
+
             <div class="milestone-reward">
-                보상: 💎 보석 ${rewardVal}개
+                ${t('milestone_reward', { val: rewardVal })}
             </div>
 
             <button class="btn-get-reward" onclick="claimMilestoneReward('${item.key}', ${item.tier}, ${rewardVal})">
-                멋져요!
+                ${t('milestone_btn')}
             </button>
         </div>
     `;
@@ -14205,6 +14304,7 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback) {
 
     if (skipBtn) {
         skipBtn.style.display = "block";
+        skipBtn.textContent = t('skip_transition');
         skipBtn.onclick = () => {
             if (isSkipped) return;
             isSkipped = true;
@@ -14373,6 +14473,31 @@ const CHAPTER_TITLES = {
     22: "계 22장 생명나무가 있는 거룩한 성"
 };
 
+const CHAPTER_TITLES_EN = {
+    1: ["Rev 1:1~8 The summary and conclusion of the entire book of Revelation", "Rev 1:9~20 The beginning of the events of Revelation and the mystery of the 7 stars and the 7 golden lamp stands"],
+    2: "Rev 2 The letters sent to the messengers of the seven churches",
+    3: "Rev 3 The letters sent to the messengers of the seven churches",
+    4: "Rev 4 God's throne and structure in the spiritual world",
+    5: "Rev 5 The book sealed with seven seals",
+    6: "Rev 6 The Judgment regarding the sun, moon, and stars of the former heaven that betrayed",
+    7: "Rev 7 The newly created twelve tribes of New spiritual Israel",
+    8: "Rev 8 The last seal and the seven trumpets",
+    9: "Rev 9 The locusts from the abyss and the angels who sinned",
+    10: "Rev 10 The revealed book from heaven and the promised pastor",
+    11: "Rev 11 The two witnesses and the 7th trumpet",
+    12: "Rev 12 The war between God and the dragon",
+    13: "Rev 13 The chosen people who received the mark of the beast and betrayed",
+    14: "Rev 14 The 144000 first fruits of Mt. Zion",
+    15: "Rev 15 The temple of the tabernacle of the testimony — the place all nations come to worship",
+    16: "Rev 16 The seven bowls of wrath",
+    17: "Rev 17 The devil's food — the wine of adulteries",
+    18: "Rev 18 The marriage with Satan who destroyed all nations",
+    19: "Rev 19 The spirits and flesh of the wedding banquet of the lamb",
+    20: "Rev 20 The first resurrection of the spirits of the martyrs and the living",
+    21: "Rev 21 Shincheonji — The promised new heaven and new earth",
+    22: "Rev 22 The Holy city where the tree of life is"
+};
+
 // 🌟 2. 팝업창 제어 변수 및 함수
 let currentChapter1Index = 0; // 1장일 때 앞부분(0)인지 뒷부분(1)인지 기억하는 변수
 
@@ -14394,14 +14519,16 @@ function openChapterTitle(chapterNum) {
     if (chapterNum === 1) {
         // 🌟 1장이면 화살표 버튼을 켜고, 토글(번갈아 보기) 기능을 연결합니다.
         currentChapter1Index = 0; // 항상 1~8절부터 시작
-        textContent.innerText = CHAPTER_TITLES[1][currentChapter1Index];
+        const titles1 = (currentLang === 'en') ? CHAPTER_TITLES_EN : CHAPTER_TITLES;
+        textContent.innerText = titles1[1][currentChapter1Index];
 
         prevBtn.style.display = 'block';
         nextBtn.style.display = 'block';
 
         const toggleFunc = () => {
             currentChapter1Index = currentChapter1Index === 0 ? 1 : 0; // 0과 1을 왔다갔다!
-            textContent.innerText = CHAPTER_TITLES[1][currentChapter1Index];
+            const titlesT = (currentLang === 'en') ? CHAPTER_TITLES_EN : CHAPTER_TITLES;
+            textContent.innerText = titlesT[1][currentChapter1Index];
             // 버튼 누를 때 쫀득한 효과 주기
             gsap.fromTo(textContent, { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.2 });
         };
@@ -14410,7 +14537,8 @@ function openChapterTitle(chapterNum) {
         nextBtn.onclick = toggleFunc;
     } else {
         // 🌟 2장~22장이면 그냥 해당 텍스트만 띄웁니다.
-        textContent.innerText = CHAPTER_TITLES[chapterNum] || t('status_preparing');
+        const titlesN = (currentLang === 'en') ? CHAPTER_TITLES_EN : CHAPTER_TITLES;
+        textContent.innerText = titlesN[chapterNum] || t('status_preparing');
     }
 
     // 모달창 짠! 하고 나타나기
@@ -14805,7 +14933,7 @@ function executeTraining() {
     if (typeof loadStep === 'function') loadStep(); // 알맹이와 버튼을 그리는 마법의 함수!
 
     if (typeof showReadAloudToast === 'function') {
-        showReadAloudToast(`⚔️ 집중 훈련: Step ${window.trainingTargetStep} 반복 모드`);
+        showReadAloudToast(t('toast_training_repeat', { step: window.trainingTargetStep }));
     }
 }
 
@@ -14898,6 +15026,16 @@ function shuffleHardshipQueue(items) {
 
 function isHardshipFillableChar(character) {
     return /[0-9A-Za-z가-힣]/.test(character);
+}
+
+function getHardshipActiveText(verse) {
+    if (!verse) return '';
+    return (currentLang === 'en' && verse.textEn) ? verse.textEn : verse.text;
+}
+
+function hardshipCharsMatch(inputChar, answerChar) {
+    if (currentLang === 'en') return inputChar.toLowerCase() === answerChar.toLowerCase();
+    return inputChar === answerChar;
 }
 
 function getHardshipModeMeta(mode) {
@@ -15261,7 +15399,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
     loadNextHardshipVerse();
 
     if (typeof showReadAloudToast === 'function') {
-        showReadAloudToast(`${modeMeta.icon} ${modeMeta.title} 시작`);
+        showReadAloudToast(t('toast_hardship_start', { icon: modeMeta.icon, title: modeMeta.title }));
     }
 }
 
@@ -15344,7 +15482,7 @@ function loadNextHardshipVerse() {
     hardshipState.memoryTypedText = '';
 
     if (hardshipState.currentVerse) {
-        hardshipState.memorySlots = hardshipState.currentVerse.text.split('').map(character => {
+        hardshipState.memorySlots = getHardshipActiveText(hardshipState.currentVerse).split('').map(character => {
             return isHardshipFillableChar(character) ? '' : character;
         });
         currentVerseData = hardshipState.currentVerse;
@@ -15584,7 +15722,7 @@ function renderHardshipMemoryVerse() {
     initializeHardshipMemorySlots();
     const activeValidSlotIndex = getHardshipActiveValidSlotIndex();
 
-    const typingBoardHtml = hardshipState.currentVerse.text.split('').map((character, index) => {
+    const typingBoardHtml = getHardshipActiveText(hardshipState.currentVerse).split('').map((character, index) => {
         if (!isHardshipTypingTargetChar(character)) {
             const extraClass = character === ' ' ? ' space' : '';
             const displayChar = character === ' ' ? '&nbsp;' : character;
@@ -15702,15 +15840,16 @@ function escapeHardshipInputValue(value) {
 
 function getHardshipFillableVerseLength() {
     if (!hardshipState.currentVerse) return 0;
-    return hardshipState.currentVerse.text.length;
+    return getHardshipActiveText(hardshipState.currentVerse).length;
 }
 
 function getHardshipValidSlotIndexByVerseIndex(verseIndex) {
     if (!hardshipState.currentVerse) return -1;
 
     let count = 0;
+    const activeText = getHardshipActiveText(hardshipState.currentVerse);
     for (let index = 0; index <= verseIndex; index++) {
-        const character = hardshipState.currentVerse.text.charAt(index);
+        const character = activeText.charAt(index);
         if (!isHardshipTypingTargetChar(character)) continue;
         if (hardshipState.revealedHints.indexOf(index) !== -1) continue;
         count += 1;
@@ -15728,7 +15867,7 @@ function getHardshipInputTargetCount() {
     if (!hardshipState.currentVerse) return 0;
 
     let count = 0;
-    hardshipState.currentVerse.text.split('').forEach((character, index) => {
+    getHardshipActiveText(hardshipState.currentVerse).split('').forEach((character, index) => {
         if (!isHardshipTypingTargetChar(character)) return;
         if (hardshipState.revealedHints.indexOf(index) !== -1) return;
         count += 1;
@@ -15739,14 +15878,15 @@ function getHardshipInputTargetCount() {
 function initializeHardshipMemorySlots() {
     if (!hardshipState.currentVerse) return;
 
-    hardshipState.currentVerse.text.split('').forEach((character, index) => {
+    const activeText = getHardshipActiveText(hardshipState.currentVerse);
+    activeText.split('').forEach((character, index) => {
         if (!isHardshipTypingTargetChar(character)) {
             hardshipState.memorySlots[index] = character;
             return;
         }
 
         if (hardshipState.revealedHints.indexOf(index) !== -1) {
-            hardshipState.memorySlots[index] = hardshipState.currentVerse.text.charAt(index);
+            hardshipState.memorySlots[index] = activeText.charAt(index);
             return;
         }
 
@@ -15761,11 +15901,12 @@ function mapHardshipTypedTextToSlots(currentText) {
 
     const typedChars = Array.from(String(currentText || ''));
     let typedIndex = 0;
+    const activeText = getHardshipActiveText(hardshipState.currentVerse);
 
-    hardshipState.currentVerse.text.split('').forEach((character, index) => {
+    activeText.split('').forEach((character, index) => {
         if (!isHardshipTypingTargetChar(character)) return;
         if (hardshipState.revealedHints.indexOf(index) !== -1) {
-            hardshipState.memorySlots[index] = hardshipState.currentVerse.text.charAt(index);
+            hardshipState.memorySlots[index] = activeText.charAt(index);
             return;
         }
 
@@ -15860,10 +16001,10 @@ function resetHardshipMemoryInputs() {
 function getNextHardshipHintIndex() {
     if (!hardshipState.currentVerse) return -1;
 
-    const text = hardshipState.currentVerse.text;
+    const text = getHardshipActiveText(hardshipState.currentVerse);
     for (let index = 0; index < text.length; index++) {
         if (!isHardshipTypingTargetChar(text.charAt(index))) continue;
-        if ((hardshipState.memorySlots[index] || '') !== text.charAt(index)) {
+        if (!hardshipCharsMatch(hardshipState.memorySlots[index] || '', text.charAt(index))) {
             return index;
         }
     }
@@ -15876,7 +16017,7 @@ function getHardshipMemoryHintPlan() {
         return { autoSpaces: '', hintIndex: -1 };
     }
 
-    const verseText = hardshipState.currentVerse.text;
+    const verseText = getHardshipActiveText(hardshipState.currentVerse);
     let simulatedTypedText = String(hardshipState.memoryTypedText || '');
     const revealedHintSet = new Set(hardshipState.revealedHints || []);
 
@@ -15895,7 +16036,7 @@ function getHardshipMemoryHintPlan() {
                 typedIndex += 1;
             }
 
-            if (currentValue !== character) {
+            if (!hardshipCharsMatch(currentValue, character)) {
                 return index;
             }
         }
@@ -15967,12 +16108,12 @@ function submitHardshipMemoryGuess() {
     hardshipState.awaitingNext = true;
     hardshipState.answeredCount += 1;
 
-    const text = hardshipState.currentVerse.text;
+    const text = getHardshipActiveText(hardshipState.currentVerse);
     let isCorrect = true;
     for (let index = 0; index < text.length; index++) {
         const answerChar = text.charAt(index);
         if (!isHardshipTypingTargetChar(answerChar)) continue;
-        if ((hardshipState.memorySlots[index] || '') !== answerChar) {
+        if (!hardshipCharsMatch(hardshipState.memorySlots[index] || '', answerChar)) {
             isCorrect = false;
             break;
         }
@@ -15999,7 +16140,7 @@ function submitHardshipMemoryGuess() {
         const answerChar = text.charAt(index);
         if (!isHardshipTypingTargetChar(answerChar)) continue;
         if (hardshipState.revealedHints.indexOf(index) !== -1) continue;
-        if ((hardshipState.memorySlots[index] || '') !== answerChar) {
+        if (!hardshipCharsMatch(hardshipState.memorySlots[index] || '', answerChar)) {
             hardshipState.wrongSlots.push(index);
         }
     }
@@ -16065,6 +16206,10 @@ function finishHardshipSession(reason) {
     if (resultContinueBtn) {
         resultContinueBtn.innerText = t('hardship_result_back');
     }
+
+    const hsStatLabels = document.getElementById('result-modal').querySelectorAll('.stat-label');
+    if (hsStatLabels[0]) hsStatLabels[0].textContent = t('result_label_time');
+    if (hsStatLabels[1]) hsStatLabels[1].textContent = t('result_label_accuracy');
 
     if (resultTime) resultTime.innerText = `${minutes}:${seconds}`;
     if (resultAccuracy) resultAccuracy.innerText = `${accuracy}%`;

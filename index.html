@@ -265,13 +265,11 @@
 
             <div style="display:flex; gap:10px; justify-content: center;">
                 <button onclick="cancelQuit()"
-                    style="flex:1; background:#95a5a6; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; font-size:1rem; cursor:pointer;">
-                    계속하기
-                </button>
+                    style="flex:1; background:#95a5a6; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; font-size:1rem; cursor:pointer;"
+                    data-i18n="btn_continue">계속하기</button>
                 <button onclick="confirmQuit()"
-                    style="flex:1; background:#e74c3c; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; font-size:1rem; cursor:pointer; box-shadow: 0 4px 0 #c0392b;">
-                    나가기
-                </button>
+                    style="flex:1; background:#e74c3c; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; font-size:1rem; cursor:pointer; box-shadow: 0 4px 0 #c0392b;"
+                    data-i18n="btn_quit">나가기</button>
             </div>
         </div>
     </div>
@@ -316,7 +314,7 @@
 
                 <button onclick="giveUpBattle()"
                     style="background:#bdc3c7; color:#fff; border:none; padding:12px 20px; border-radius:12px; font-weight:bold; cursor:pointer; flex:1; font-size:1rem; box-shadow: 0 4px 0 #95a5a6; transition: transform 0.1s;">
-                    🏳️ 포기하기
+                    <span data-i18n="btn_give_up">🏳️ 포기하기</span>
                 </button>
             </div>
         </div>
@@ -1132,12 +1130,12 @@
                 <div class="hp-container">
                     <div class="hp-bar-fill" id="boss-hp-bar" style="width: 100%;"></div>
                 </div>
-                <div class="boss-hp-text">용 HP: <span id="boss-hp-text">-</span></div>
+                <div class="boss-hp-text"><span data-i18n="label_dragon_hp">용 HP:</span> <span id="boss-hp-text">-</span></div>
             </div>
 
             <div class="player-status"
                 style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                <button class="btn-pause" onclick="openQuitModal()">🏳️ 포기</button>
+                <button class="btn-pause" onclick="openQuitModal()" data-i18n="btn_give_up">🏳️ 포기하기</button>
 
                 <div style="display:flex; gap:5px; align-items:center;">
                     <button onclick="useHint()" class="item-btn" id="battle-hint-btn"
