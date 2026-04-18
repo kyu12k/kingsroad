@@ -12350,13 +12350,18 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
     // FCM 서버 예약 (앱이 꺼져도 작동)
     if (myTag && db) {
         try {
-            await initFCM().catch(() => {}); // 토큰 미리 취득
+            console.log('[복습알림] FCM 경로 시도. myTag:', myTag, '현재 _fcmToken:', _fcmToken ? '있음' : '없음');
+            await initFCM().catch(e => console.warn('[복습알림] initFCM 실패:', e));
 
             // 토큰이 없으면 Firestore에 기존 토큰이 있는지 확인
             if (!_fcmToken) {
+                console.log('[복습알림] 토큰 없음 → Firestore에서 기존 토큰 조회');
                 const existingDoc = await db.collection('leaderboard').doc(String(myTag)).get();
                 if (existingDoc.exists && existingDoc.data().fcmToken) {
                     _fcmToken = existingDoc.data().fcmToken;
+                    console.log('[복습알림] Firestore에서 기존 토큰 획득');
+                } else {
+                    console.warn('[복습알림] Firestore에도 토큰 없음');
                 }
             }
 
@@ -12366,10 +12371,12 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
             }
 
             const notifAt = new Date(Date.now() + delayMs);
+            console.log('[복습알림] Firestore 저장 시도. 예약 시각:', notifAt.toLocaleString());
             await db.collection('leaderboard').doc(String(myTag)).set(
                 { nextReviewNotifAt: notifAt, nextReviewStage: stageTitle, fcmToken: _fcmToken },
                 { merge: true }
             );
+            console.log('[복습알림] ✅ Firestore 저장 완료 (FCM 경로)');
 
             if (btn) {
                 btn.innerHTML = '✅ 예약됨';
@@ -12379,7 +12386,7 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
             showToast(t('toast_remind_later', { label }));
             return;
         } catch (e) {
-            console.warn('FCM 복습 알림 예약 실패, 로컬 폴백:', e);
+            console.warn('[복습알림] FCM 복습 알림 예약 실패, 로컬 폴백:', e);
         }
     }
 
