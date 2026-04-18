@@ -1609,6 +1609,11 @@ body, html {
     color: #fff;
 }
 
+/* 망각의 고난이 아닐 때 힌트 버튼 강제 숨김 */
+#game-screen.mode-hardship:not(.mode-hardship-memory) #common-hardship-hint-btn {
+    display: none !important;
+}
+
 #common-hardship-close-btn {
     padding: 7px 10px;
     color: #7f8c8d;

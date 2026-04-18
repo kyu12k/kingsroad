@@ -1370,7 +1370,7 @@ function applyI18nToStaticHTML() {
     const langBtn = document.getElementById('lang-toggle-btn');
     if (langBtn) langBtn.textContent = t('menu_lang_toggle');
     const hardshipHintLabel = document.getElementById('common-hardship-hint-label');
-    if (hardshipHintLabel) hardshipHintLabel.textContent = t('label_hint');
+    if (hardshipHintLabel) hardshipHintLabel.textContent = t('hint_btn_label');
 }
 
 function setLang(lang) {
@@ -8576,11 +8576,8 @@ function updateHintButtonLabels() {
 
     const hardshipHintCost = document.getElementById('common-hardship-hint-cost');
     if (hardshipHintCost) hardshipHintCost.textContent = hintLabel;
-    const hardshipHintBtn = document.getElementById('common-hardship-hint-btn');
-    if (hardshipHintBtn) {
-        const textNode = [...hardshipHintBtn.childNodes].find(n => n.nodeType === 3);
-        if (textNode) textNode.textContent = btnLabel + ' ';
-    }
+    const hardshipHintLabelSpan = document.getElementById('common-hardship-hint-label');
+    if (hardshipHintLabelSpan) hardshipHintLabelSpan.textContent = btnLabel;
 }
 
 function useHint() {
@@ -15390,6 +15387,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
     document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
     if (gameScreen) {
         gameScreen.classList.add('active', 'mode-training', 'mode-hardship');
+        gameScreen.classList.toggle('mode-hardship-memory', mode === 'memory');
     }
 
     const bossAvatar = document.querySelector('.boss-avatar');
@@ -15511,6 +15509,8 @@ function renderCurrentHardshipVerse() {
 }
 
 function renderHardshipEnduranceVerse() {
+    const hintBtn = document.getElementById('common-hardship-hint-btn');
+    if (hintBtn) hintBtn.style.display = 'none';
     const field = document.querySelector('.battle-field');
     const control = document.querySelector('.battle-control');
     if (!field || !control || !hardshipState.currentVerse) return;
@@ -15580,6 +15580,8 @@ function revealHardshipEnduranceChunk() {
 }
 
 function renderHardshipAddressVerse() {
+    const hintBtn = document.getElementById('common-hardship-hint-btn');
+    if (hintBtn) hintBtn.style.display = 'none';
     const field = document.querySelector('.battle-field');
     const control = document.querySelector('.battle-control');
     if (!field || !control || !hardshipState.currentVerse) return;
