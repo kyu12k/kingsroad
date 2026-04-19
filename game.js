@@ -4351,6 +4351,7 @@ function getKingsRoadNewStageCount() {
 let _kingsRoadInfoInterval = null;
 
 function updateKingsRoadHomeInfo() {
+    if (window.isGamePlaying) return;
     const history = kingsRoadData.stepHistory;
     if (!history || history.length === 0) {
         _updateKingsOverlayBtnInfo(0, -1, false);
@@ -6286,8 +6287,6 @@ function loadNextVerse() {
 
 /* [수정] UI 업데이트 함수 (분할 체력바 + 개선된 보스 표시) */
 function updateBattleUI() {
-    // ★ 디버그: updateBattleUI 호출 시점의 maxBossHp 확인
-    console.log(`[updateBattleUI] 호출됨 - maxBossHp=${maxBossHp}, currentBossHp=${currentBossHp}`);
     updateHintButtonLabels();
 
     if (window.isHardshipMode) {
@@ -6707,22 +6706,26 @@ function saveGameData() {
         },
         updatedAt: Date.now() // [Firestore] 충돌 해결용 타임스탬프
     };
-    localStorage.setItem('kingsRoadSave', JSON.stringify(saveData));
 
-    const missionModal = document.getElementById('mission-modal');
-    const missionScreen = document.getElementById('mission-screen');
-    const isMissionOpen = !!(
-        (missionModal && missionModal.classList.contains('active')) ||
-        (missionScreen && missionScreen.classList.contains('active'))
-    );
+    clearTimeout(window._saveDebounceTimer);
+    window._saveDebounceTimer = setTimeout(() => {
+        localStorage.setItem('kingsRoadSave', JSON.stringify(saveData));
 
-    if (isMissionOpen) {
-        if (typeof renderMissionList === 'function') {
-            renderMissionList(currentMissionTab || 'daily');
-        } else if (typeof updateMissionUI === 'function') {
-            updateMissionUI();
+        const missionModal = document.getElementById('mission-modal');
+        const missionScreen = document.getElementById('mission-screen');
+        const isMissionOpen = !!(
+            (missionModal && missionModal.classList.contains('active')) ||
+            (missionScreen && missionScreen.classList.contains('active'))
+        );
+
+        if (isMissionOpen) {
+            if (typeof renderMissionList === 'function') {
+                renderMissionList(currentMissionTab || 'daily');
+            } else if (typeof updateMissionUI === 'function') {
+                updateMissionUI();
+            }
         }
-    }
+    }, 0);
 }
 
 
