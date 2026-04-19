@@ -9325,7 +9325,6 @@ function calculateScore(stageId, type, verseCount, hearts, isForgotten) {
     }
 
     saveGameData();
-    syncToFirestore(); // [Firestore] 승점 변동
 
     return {
         score: finalScore,
@@ -9423,7 +9422,6 @@ function activateBooster(multiplier, minutes) {
     }
 
     saveGameData();
-    syncToFirestore(); // [Firestore] 부스터 활성화
     startBoosterTimer(); // 타이머 시작!
 }
 
@@ -10889,7 +10887,6 @@ function buyItem(itemType) {
             updateGemDisplay();      // UI 갱신
             updateShopUI();          // 상점 UI 갱신 (가격표 업데이트)
             saveGameData();          // 저장
-            syncToFirestore();       // [Firestore] 체력 구매
 
             alert(t('alert_buy_hearts_success', { max: maxPlayerHearts }));
         }
@@ -10937,7 +10934,6 @@ function buyItem(itemType) {
         updateGemDisplay();
         updateShopUI();
         saveGameData();
-        syncToFirestore(); // [Firestore] 아이템 구매
         updateResourceUI();
         if (typeof updateNotificationBadges === 'function') updateNotificationBadges();
     }
@@ -11036,7 +11032,6 @@ function useBattleItem(itemType) {
     }
 
     saveGameData();
-    syncToFirestore(); // [Firestore] 아이템 사용
     updateBattleUI(); // 화면 갱신
 }
 
@@ -11631,7 +11626,6 @@ function upgradeCastle() {
         updateGemDisplay();
         updateCastleView(); // 화면 갱신
         saveGameData();
-        syncToFirestore(); // [Firestore] 성전 업그레이드
     } else {
         alert(t('alert_castle_no_gems', { need: nextBP.cost, have: myGems }));
     }
@@ -11658,7 +11652,6 @@ function claimTempleSupply() {
     updateCastleView(); // 화면 갱신
     updateResourceUI();
     saveGameData();
-    syncToFirestore(); // [Firestore] 보석 수거
 }
 
 /* ========================================
@@ -13628,7 +13621,6 @@ function claimMilestoneReward(key, tier, reward) {
 // 실수로 창을 닫거나 새로고침했을 때 마지막 순간을 기록합니다.
 window.addEventListener("beforeunload", () => {
     saveGameData();
-    syncToFirestore(); // [Firestore] 종료 직전 (best-effort)
     if (typeof saveMyScoreToServer === 'function') saveMyScoreToServer();
 });
 
@@ -13636,7 +13628,6 @@ window.addEventListener("beforeunload", () => {
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === 'hidden') {
         saveGameData();
-        syncToFirestore(); // [Firestore] 백그라운드 전환
     }
 });
 
