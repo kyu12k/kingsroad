@@ -9448,6 +9448,7 @@ function startBoosterTimer() {
 
 // 3. 화면에 남은 시간 표시
 function updateBoosterDisplay() {
+    if (document.hidden) return true;
     const now = Date.now();
     const remain = boosterData.endTime - now;
 
@@ -10043,6 +10044,7 @@ function startSeasonTimer() {
     if (!timerDisplay) return;
 
     function updateTimer() {
+        if (document.hidden) return;
         const now = new Date();
 
         // 다음 주 월요일 0시 계산
