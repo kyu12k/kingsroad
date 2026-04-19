@@ -662,7 +662,6 @@ exports.sendReviewNotifications = functions
                             icon: '/icon-192.png',
                             badge: '/icon-192.png',
                             tag: 'review-notif',
-                            renotify: true,
                         },
                         fcmOptions: {
                             link: 'https://kings-road-rank.web.app'
