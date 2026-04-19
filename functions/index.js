@@ -651,23 +651,6 @@ exports.sendReviewNotifications = functions
                 const notifBody = `"${stageTitle}" 복습할 시간입니다!`;
                 messages.push({
                     token: data.fcmToken,
-                    notification: {
-                        title: notifTitle,
-                        body: notifBody,
-                    },
-                    webpush: {
-                        notification: {
-                            title: notifTitle,
-                            body: notifBody,
-                            icon: '/icon-192.png',
-                            badge: '/icon-192.png',
-                            tag: 'review-notif',
-                            renotify: true,
-                        },
-                        fcmOptions: {
-                            link: 'https://kings-road-rank.web.app'
-                        }
-                    },
                     data: {
                         title: notifTitle,
                         body: notifBody,

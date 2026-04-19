@@ -15,14 +15,10 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// 백그라운드 메시지 수신 핸들러
+// 백그라운드 메시지 수신 핸들러 (data-only 메시지 처리)
 messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] 백그라운드 메시지 수신:', payload);
 
-    // notification 필드가 있으면 브라우저가 webpush.notification을 자동 표시하므로 중복 방지
-    if (payload.notification) return;
-
-    // data-only 메시지만 수동으로 표시
     const notificationTitle = payload.data?.title || '킹스로드 말씀 복습';
     const notificationOptions = {
         body: payload.data?.body || '복습할 말씀이 있습니다.',
