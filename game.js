@@ -12109,6 +12109,19 @@ async function saveFCMTokenToFirestore(token) {
     }
 }
 
+function startFCMForegroundListener() {
+    if (typeof firebase === 'undefined' || !firebase.messaging) return;
+    try {
+        const messaging = firebase.messaging();
+        messaging.onMessage((payload) => {
+            if (Notification.permission !== 'granted') return;
+            const title = payload.data?.title || '킹스로드 복습 알림';
+            const body = payload.data?.body || '';
+            new Notification(title, { body, icon: '/icon-192.png', tag: 'review-notif', renotify: true });
+        });
+    } catch (e) {}
+}
+
 function startFCMTokenRefreshListener() {
     if (typeof firebase === 'undefined' || !firebase.messaging) return;
     try {
@@ -13844,6 +13857,7 @@ if (Notification.permission === 'granted') {
         navigator.serviceWorker.ready.then(() => {
             initFCM().catch(() => {});
             startFCMTokenRefreshListener();
+            startFCMForegroundListener();
         });
     } else {
         initFCM().catch(() => {});
