@@ -91,7 +91,12 @@ exports.saveGameDataSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
         savedByServer: true
     };
 
-    await db.collection("saves").doc(uid).set(dataToSave);
+    try {
+        await db.collection("saves").doc(uid).set(dataToSave);
+    } catch (e) {
+        console.error(`[saveGameDataSecure] Firestore set 실패 uid=${uid}`, e);
+        throw new HttpsError("internal", `Firestore 저장 실패: ${e.message}`);
+    }
 
     return { success: true, updatedAt: serverNow };
 });
