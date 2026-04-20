@@ -4188,7 +4188,11 @@ function setKingsRoadStep(newStep) {
         // 단계 변경: 현재 해금 수를 고정하고 내일부터 새 단계 적용
         // 배열은 마지막 항목 1개만 유지 (연타 방지 + 메모리 절약)
         const currentUnlocked = getKingsRoadUnlockedCount();
-        kingsRoadData.stepHistory = [{ step: newStep, timestamp: Date.now(), baseCount: currentUnlocked, isInitial: false }];
+        // 기존 타임스탬프의 현재 날짜 시작 시점을 유지해 남은 대기 시간 보존
+        const oldLast = kingsRoadData.stepHistory[kingsRoadData.stepHistory.length - 1];
+        const daysElapsed = Math.floor((Date.now() - oldLast.timestamp) / 86400000);
+        const preservedTimestamp = oldLast.timestamp + daysElapsed * 86400000;
+        kingsRoadData.stepHistory = [{ step: newStep, timestamp: preservedTimestamp, baseCount: currentUnlocked, isInitial: false }];
     }
     updateKingsStepBtn();
     saveGameData();
