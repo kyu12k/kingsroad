@@ -370,7 +370,7 @@ const LANG = {
         hardship_memory_title: '망각의 고난',
         hardship_memory_summary: '주소만 보고 전체 구절을 인출합니다.',
         hardship_endurance_indicator: '[{label}] 소리내어 말씀을 암송하세요',
-        hardship_endurance_speak_btn: '🎤 말하기',
+        hardship_endurance_speak_btn: '음성인식',
         hardship_endurance_speak_prompt: '아래 버튼을 눌러 말씀을 소리내어 암송하세요.',
         hardship_endurance_listening: '듣는 중...',
         hardship_endurance_score: '{score}% 일치 · {n}절째',
@@ -410,8 +410,8 @@ const LANG = {
         hardship_feedback_wrong_memory: '오답입니다. 정답 말씀: {text}',
         hardship_step1_indicator: 'Step 1. 한 단어씩 읽으며 \'읽기\'를 눌러 외운 말씀을 확인하세요.<br>확실히 외웠다는 생각이 들 때까지 반복하세요.',
         step1_tip_text: '하나씩 말하며 \'읽기\' 버튼을 눌러보세요',
-        step1_voice_btn: '🎤 음성인식',
-        step1_voice_listening: '🎤 듣는 중...',
+        step1_voice_btn: '음성인식',
+        step1_voice_listening: '듣는 중...',
         step1_voice_pass: '✅ 통과! ({score}%)',
         step1_voice_fail: '❌ {score}% — 다시 도전하거나 건너뛰세요',
         step1_voice_skip: '건너뛰기',
@@ -566,7 +566,7 @@ const LANG = {
         ranking_tab_total_full: '💎 누적 명예의 전당 (All-Time)',
         ranking_modal_default_title: '랭킹',
         btn_go_back: '돌아가기',
-        btn_chosung: '초성 보기 💡',
+        btn_chosung: '초성 보기',
         btn_chosung_off: '초성 끄기 👁️',
         btn_read: '읽기',
         btn_retry_perfect: '다시하기: 눈 감고도 외울 때까지!',
@@ -7246,28 +7246,6 @@ function loadStep() {
         const controlsContainer = document.getElementById('step1-controls');
 
         // ★ [추가] 3. 초성 토글 버튼과 로직 생성
-        const toggleChosung = () => {
-            isChosungMode = !isChosungMode;
-            chosungBtn.innerText = isChosungMode ? t('btn_chosung_off') : t('btn_chosung');
-            chosungBtn.style.backgroundColor = isChosungMode ? '#e67e22' : '#f39c12';
-
-            // 안 열린 단어들만 초성 <-> 블라인드 전환
-            for (let i = window.revealIndex; i < window.chunksToReveal.length; i++) {
-                const span = document.getElementById(`chunk-${i}`);
-                if (span) {
-                    span.innerText = isChosungMode ? span.dataset.chosung : span.dataset.masked;
-                }
-            }
-        };
-
-        const chosungBtn = document.createElement('button');
-        chosungBtn.id = 'btn-toggle-chosung';
-        chosungBtn.className = 'btn-attack';
-        chosungBtn.style.backgroundColor = '#f39c12';
-        chosungBtn.style.flex = "1";
-        chosungBtn.innerText = t('btn_chosung');
-        chosungBtn.onclick = toggleChosung;
-
         const fillOneChunk = () => {
             if (window.revealIndex >= window.chunksToReveal.length) {
                 stopAutoFill();
@@ -7377,7 +7355,6 @@ function loadStep() {
 
         // ★ [배치] 버튼들을 나란히 배치합니다.
         controlsContainer.appendChild(revealBtn);
-        controlsContainer.appendChild(chosungBtn);
 
         // ── 음성인식 섹션 ──────────────────────────────────────
         const voiceFeedbackDiv = document.createElement('div');
@@ -7486,8 +7463,6 @@ function loadStep() {
             stopAutoFill();
             revealBtn.disabled = true;
 
-            // 말씀이 완성되면 초성/마이크 버튼을 숨김 처리합니다.
-            chosungBtn.style.display = 'none';
             micBtn.style.display = 'none';
             voiceFeedbackDiv.innerHTML = '';
 
