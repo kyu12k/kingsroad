@@ -410,6 +410,13 @@ const LANG = {
         hardship_feedback_wrong_memory: '오답입니다. 정답 말씀: {text}',
         hardship_step1_indicator: 'Step 1. 한 단어씩 읽으며 \'읽기\'를 눌러 외운 말씀을 확인하세요.<br>확실히 외웠다는 생각이 들 때까지 반복하세요.',
         step1_tip_text: '하나씩 말하며 \'읽기\' 버튼을 눌러보세요',
+        step1_voice_btn: '🎤 음성으로 말하기',
+        step1_voice_listening: '🎤 듣는 중...',
+        step1_voice_pass: '✅ 통과! ({score}%)',
+        step1_voice_fail: '❌ {score}% — 다시 도전하거나 건너뛰세요',
+        step1_voice_skip: '건너뛰기',
+        step1_voice_retry: '다시 말하기',
+        step1_voice_no_support: '음성인식 미지원 브라우저입니다',
 
         // Step 4 스크롤 게임
         step4_indicator: '🔥불타기 전에 빈칸을 채우세요!',
@@ -1091,6 +1098,13 @@ const LANG = {
         hardship_feedback_wrong_memory: 'Wrong. Correct verse: {text}',
         hardship_step1_indicator: 'Step 1. Read each word aloud and tap \'Read\' to confirm.<br>Repeat until you are confident you have memorized it.',
         step1_tip_text: 'Say each word aloud and tap the \'Read\' button.',
+        step1_voice_btn: '🎤 Speak it',
+        step1_voice_listening: '🎤 Listening...',
+        step1_voice_pass: '✅ Passed! ({score}%)',
+        step1_voice_fail: '❌ {score}% — try again or skip',
+        step1_voice_skip: 'Skip',
+        step1_voice_retry: 'Try Again',
+        step1_voice_no_support: 'Speech recognition not supported in this browser',
 
         // Step 4 스크롤 게임
         step4_indicator: '🔥Fill in the blanks before they burn!',
@@ -7353,11 +7367,116 @@ function loadStep() {
         controlsContainer.appendChild(revealBtn);
         controlsContainer.appendChild(chosungBtn);
 
+        // ── 음성인식 섹션 ──────────────────────────────────────
+        const voiceFeedbackDiv = document.createElement('div');
+        voiceFeedbackDiv.id = 'step1-voice-feedback';
+        voiceFeedbackDiv.style.cssText = 'margin-top:8px; text-align:center; font-size:0.95rem;';
+        controlsContainer.parentNode.insertBefore(voiceFeedbackDiv, controlsContainer.nextSibling);
+
+        const revealAll = () => {
+            stopAutoFill();
+            while (window.revealIndex < window.chunksToReveal.length) {
+                const span = document.getElementById(`chunk-${window.revealIndex}`);
+                if (span) {
+                    span.innerText = span.dataset.original;
+                    span.style.color = '#dce8f5';
+                    span.style.fontWeight = 'bold';
+                    span.style.opacity = '1';
+                    span.style.fontSize = '1.3rem';
+                }
+                window.revealIndex++;
+            }
+        };
+
+        const showVoiceResult = (score) => {
+            voiceFeedbackDiv.innerHTML = '';
+            if (score >= 80) {
+                SoundEffect.playCorrect && SoundEffect.playCorrect();
+                const msg = document.createElement('div');
+                msg.style.cssText = 'color:#2ecc71; font-weight:bold; margin-bottom:6px;';
+                msg.textContent = t('step1_voice_pass', { score });
+                voiceFeedbackDiv.appendChild(msg);
+                revealAll();
+                setTimeout(() => finishStep1Effect(), 800);
+            } else {
+                SoundEffect.playWrong && SoundEffect.playWrong();
+                const msg = document.createElement('div');
+                msg.style.cssText = 'color:#e74c3c; margin-bottom:6px;';
+                msg.textContent = t('step1_voice_fail', { score });
+                voiceFeedbackDiv.appendChild(msg);
+
+                const btnRow = document.createElement('div');
+                btnRow.style.cssText = 'display:flex; gap:8px; justify-content:center;';
+
+                const retryBtn = document.createElement('button');
+                retryBtn.className = 'btn-attack';
+                retryBtn.style.cssText = 'flex:1; background:#8e44ad;';
+                retryBtn.textContent = t('step1_voice_retry');
+                retryBtn.onclick = () => { voiceFeedbackDiv.innerHTML = ''; startStep1Speech(); };
+
+                const skipBtn = document.createElement('button');
+                skipBtn.className = 'btn-attack';
+                skipBtn.style.cssText = 'flex:1; background:#7f8c8d;';
+                skipBtn.textContent = t('step1_voice_skip');
+                skipBtn.onclick = () => { voiceFeedbackDiv.innerHTML = ''; revealAll(); finishStep1Effect(); };
+
+                btnRow.appendChild(retryBtn);
+                btnRow.appendChild(skipBtn);
+                voiceFeedbackDiv.appendChild(btnRow);
+            }
+            micBtn.disabled = false;
+            micBtn.textContent = t('step1_voice_btn');
+        };
+
+        const startStep1Speech = () => {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                voiceFeedbackDiv.innerHTML = `<span style="color:#e74c3c;">${t('step1_voice_no_support')}</span>`;
+                return;
+            }
+            micBtn.disabled = true;
+            micBtn.textContent = t('step1_voice_listening');
+            voiceFeedbackDiv.innerHTML = '';
+
+            const recognition = new SpeechRecognition();
+            recognition.lang = currentLang === 'en' ? 'en-US' : 'ko-KR';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            let handled = false;
+            const handle = (transcript) => {
+                if (handled) return;
+                handled = true;
+                const verseText = (currentLang === 'en' && trainingVerseData.chunksEn && trainingVerseData.chunksEn.length)
+                    ? trainingVerseData.chunksEn.join(' ')
+                    : trainingVerseData.chunks.join(' ');
+                const score = calcEnduranceSpeechScore(transcript, verseText);
+                showVoiceResult(score);
+            };
+
+            recognition.onresult = (e) => handle(e.results[0][0].transcript);
+            recognition.onerror = () => handle('');
+            recognition.onnomatch = () => handle('');
+            recognition.onend = () => { if (!handled) { handled = true; micBtn.disabled = false; micBtn.textContent = t('step1_voice_btn'); } };
+            recognition.start();
+        };
+
+        const micBtn = document.createElement('button');
+        micBtn.id = 'btn-step1-mic';
+        micBtn.className = 'btn-attack';
+        micBtn.style.cssText = 'flex:1; background:#8e44ad;';
+        micBtn.textContent = t('step1_voice_btn');
+        micBtn.onclick = startStep1Speech;
+        controlsContainer.appendChild(micBtn);
+        // ── 음성인식 섹션 끝 ────────────────────────────────────
+
         const finishStep1Effect = () => {
             stopAutoFill();
 
-            // 말씀이 완성되면 초성 버튼을 비활성화/숨김 처리합니다.
+            // 말씀이 완성되면 초성/마이크 버튼을 숨김 처리합니다.
             chosungBtn.style.display = 'none';
+            micBtn.style.display = 'none';
+            voiceFeedbackDiv.innerHTML = '';
 
             card.style.transition = "box-shadow 0.5s, background 0.5s";
             card.style.boxShadow = "0 0 30px #f1c40f";
@@ -7380,22 +7499,22 @@ function loadStep() {
                 headIcon.style.filter = "drop-shadow(0 0 15px #f1c40f)";
             }, 600);
 
+            // 읽기 버튼 → 다시하기 버튼으로 즉시 교체
+            const restartBtn = document.createElement('button');
+            restartBtn.className = revealBtn.className;
+            restartBtn.style.flex = "1";
+            restartBtn.innerText = t('btn_retry_perfect');
+            restartBtn.onclick = () => { loadStep(); };
+            if (revealBtn.parentNode) {
+                revealBtn.parentNode.replaceChild(restartBtn, revealBtn);
+            }
+
             SoundEffect.playLevelUp();
 
             setTimeout(() => {
                 document.getElementById('btn-step1-next').style.display = 'block';
                 document.getElementById('btn-step1-next').classList.add('shake-effect');
                 pouringLight.style.opacity = "0";
-
-                // 읽기 버튼 → 다시하기 버튼으로 교체
-                const restartBtn = document.createElement('button');
-                restartBtn.className = revealBtn.className;
-                restartBtn.style.flex = "1";
-                restartBtn.innerText = t('btn_retry_perfect');
-                restartBtn.onclick = () => { loadStep(); };
-                if (revealBtn.parentNode) {
-                    revealBtn.parentNode.replaceChild(restartBtn, revealBtn);
-                }
             }, 1500);
         };
     }

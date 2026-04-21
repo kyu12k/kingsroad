@@ -82,6 +82,19 @@ CSS 클래스: `mem-strength-green` (≥80%), `mem-strength-yellow` (≥60%), `m
 
 ---
 
+## Step 1 음성인식 모드
+
+Step 1에 선택적 음성인식 기능 추가. 클릭(읽기) 방식과 병행 사용 가능.
+
+- **마이크 버튼**: 초성 버튼 옆에 배치 (`btn-step1-mic`, 보라색)
+- **동작**: 말하면 `calcEnduranceSpeechScore()`로 점수 계산
+  - **≥ 80%**: 통과 → 남은 청크 전체 공개(`revealAll`) → 0.8초 후 `finishStep1Effect()` 자동 호출
+  - **< 80%**: 점수 + 재시도/건너뛰기 버튼 표시 (재시도: 무제한, 건너뛰기: 전체 공개 후 완료)
+- **완료 시**: `finishStep1Effect()` 내에서 mic 버튼 + 피드백 영역 자동 숨김
+- 보상/젬 없음 — 단순 학습 보조 기능
+
+---
+
 ## 단어 버튼 파트 분할 (Step 2, Step 5, 보스/중간점검)
 
 구절이 길 경우 단어 버튼을 여러 파트로 나눠 표시함. 공통 유틸 `splitChunksIntoParts()` 사용.
