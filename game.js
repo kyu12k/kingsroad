@@ -7238,9 +7238,6 @@ function loadStep() {
                 <button class="hardship-endurance-info-btn" id="btn-step1-info" onclick="toggleStep1Info()">${t('step1_info_title')}</button>
                 <div id="step1-info-panel" class="hardship-endurance-info-panel" style="display:none;">${t('step1_info_body')}</div>
             </div>
-            <div id="step1-tip-text" style="text-align:center; font-size:0.9rem; margin-top:5px; color:#8fa8c8">
-                <span id="step1-tip-badge" style="padding:2px 8px; border-radius:10px; background:#1d3550; color:#dce8f5;">TIP</span> ${t('step1_tip_text')}
-            </div>
         `;
 
         const controlsContainer = document.getElementById('step1-controls');
