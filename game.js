@@ -377,6 +377,8 @@ const LANG = {
         hardship_endurance_heard: '인식된 음성',
         hardship_endurance_no_support: '이 브라우저는 음성 인식을 지원하지 않습니다.',
         hardship_session_endurance_speech: '이번 세션에서 {count}절을 암송했습니다.',
+        hardship_cooldown_today: '오늘 이미 보상을 받은 장입니다. 연습은 가능하지만 보상은 내일부터 다시 받을 수 있어요.',
+        hardship_cooldown_result: '오늘 이미 완주한 장입니다. 보상은 내일부터 다시 받을 수 있어요.',
         hardship_endurance_info_title: '📋 암송의 고난 안내',
         hardship_endurance_info_body: '• 말이 끊기면 인식이 종료됩니다. 한 호흡으로 암송하세요.<br>• 정확한 발음이 일치율에 영향을 줍니다.<br>• 80% 이상 → 통과 (만점 승점)<br>• 50~79% → 부분 승점 (절반)<br>• 50% 미만 → 승점 없음<br>• 전체 평균 80% 이상이면 해당 장 스테이지가 클리어됩니다.',
         hardship_endurance_retry: '🔄 다시 읽기',
@@ -1056,6 +1058,8 @@ const LANG = {
         hardship_endurance_heard: 'Heard',
         hardship_endurance_no_support: 'Speech recognition is not supported in this browser.',
         hardship_session_endurance_speech: 'You recited {count} verses.',
+        hardship_cooldown_today: 'You already received rewards for this chapter today. You can practice, but rewards reset tomorrow.',
+        hardship_cooldown_result: 'You already completed this chapter today. Rewards are available again tomorrow.',
         hardship_endurance_info_title: '📋 Trial of Recitation Guide',
         hardship_endurance_info_body: '• Recognition stops when you pause. Recite in one breath.<br>• Accurate pronunciation affects your match rate.<br>• 80%+ → Pass (full score)<br>• 50–79% → Partial score (half)<br>• Under 50% → No score<br>• Average 80%+ clears all stages in the chapter.',
         hardship_endurance_retry: '🔄 Try Again',
@@ -15211,13 +15215,46 @@ function closeHardshipModeSelect() {
     if (modal) modal.style.display = 'none';
 }
 
+function isHardshipChapterDoneToday(mode, ch) {
+    const historyMap = {
+        endurance: hardshipEnduranceClearHistory,
+        address: hardshipAddressClearHistory,
+        memory: hardshipMemoryClearHistory
+    };
+    const history = (historyMap[mode] || {})[ch];
+    if (!history || !history.length) return false;
+    const last = history[history.length - 1];
+    if (!last || !last.date) return false;
+    const d = new Date(last.date);
+    const lastStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    return lastStr === getMemoryQuizDate();
+}
+
+function refreshHardshipCooldownBadges() {
+    const mode = selectedHardshipConfigMode;
+    const startSelect = document.getElementById('hardship-start-chapter');
+    const endSelect = document.getElementById('hardship-end-chapter');
+    if (!startSelect || !endSelect) return;
+
+    [startSelect, endSelect].forEach(sel => {
+        Array.from(sel.options).forEach(opt => {
+            const ch = parseInt(opt.value, 10);
+            const base = t('hardship_chapter_option', { num: ch });
+            opt.innerText = isHardshipChapterDoneToday(mode, ch) ? `${base} ✅` : base;
+        });
+    });
+}
+
 function populateHardshipConfigChapterOptions() {
     const startSelect = document.getElementById('hardship-start-chapter');
     const endSelect = document.getElementById('hardship-end-chapter');
     if (!startSelect || !endSelect) return;
 
-    // 옵션이 이미 채워져 있고 텍스트가 현재 언어와 일치하면 스킵
-    if (startSelect.options.length === 22 && startSelect.options[0].innerText === t('hardship_chapter_option', { num: 1 })) return;
+    // 옵션이 이미 채워져 있고 언어와 쿨다운 배지도 일치하면 스킵 — refreshHardshipCooldownBadges에서 처리
+    const expectedFirst = isHardshipChapterDoneToday(selectedHardshipConfigMode, 1)
+        ? `${t('hardship_chapter_option', { num: 1 })} ✅`
+        : t('hardship_chapter_option', { num: 1 });
+    if (startSelect.options.length === 22 && startSelect.options[0].innerText === expectedFirst) return;
 
     startSelect.innerHTML = '';
     endSelect.innerHTML = '';
@@ -15236,6 +15273,7 @@ function populateHardshipConfigChapterOptions() {
 
     startSelect.value = '1';
     endSelect.value = '22';
+    refreshHardshipCooldownBadges();
 }
 
 function getHardshipSelectedRangeType() {
@@ -15288,11 +15326,16 @@ function updateHardshipConfigRangeUI() {
         ? getHardshipVerseIdsByChapterRange(startChapter, endChapter)
         : getHardshipVerseIdsByChapterRange(1, 22);
 
-    if (isRangeSelected) {
-        summary.innerText = t('hardship_config_summary_range', { start: startChapter, end: endChapter, count: verseIds.length });
-    } else {
-        summary.innerText = t('hardship_config_summary_all', { count: verseIds.length });
+    let summaryText = isRangeSelected
+        ? t('hardship_config_summary_range', { start: startChapter, end: endChapter, count: verseIds.length })
+        : t('hardship_config_summary_all', { count: verseIds.length });
+
+    // 단일 장 선택 시 오늘 쿨다운 안내
+    if (isRangeSelected && startChapter === endChapter && isHardshipChapterDoneToday(selectedHardshipConfigMode, startChapter)) {
+        summaryText += '\n✅ ' + t('hardship_cooldown_today');
     }
+    summary.innerText = summaryText;
+    refreshHardshipCooldownBadges();
 }
 
 function openHardshipConfigModal(mode) {
@@ -15412,6 +15455,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
     hardshipState.active = true;
     hardshipState.mode = mode;
     hardshipState.applyToFree = (window.hardshipOrigin !== 'map');
+    hardshipState.rewardBlocked = false; // 세션 중 쿨다운 확정 후 세팅
     if (forcedChapter != null) hardshipState.forcedChapter = forcedChapter;
     const baseIds = Array.isArray(selectedVerseIds) && selectedVerseIds.length > 0
         ? selectedVerseIds
@@ -15760,10 +15804,17 @@ function confirmHardshipEnduranceVerse() {
     hardshipState.speechScores.push(score);
     hardshipState.studiedCount += 1;
 
+    // 쿨다운 체크 (forcedChapter 기준, 첫 확정 시 1회만 판단)
+    if (!hardshipState.rewardBlocked && hardshipState.forcedChapter != null) {
+        hardshipState.rewardBlocked = isHardshipChapterDoneToday('endurance', hardshipState.forcedChapter);
+    }
+
     let earned = 0;
-    if (score >= 80) earned = playerHearts;
-    else if (score >= 50) earned = Math.round(playerHearts * 0.5);
-    if (earned > 0) awardHardshipScore(earned);
+    if (!hardshipState.rewardBlocked) {
+        if (score >= 80) earned = playerHearts;
+        else if (score >= 50) earned = Math.round(playerHearts * 0.5);
+        if (earned > 0) awardHardshipScore(earned);
+    }
 
     // 다음 구절 상태로 초기화
     hardshipState.currentVerseScore = null;
@@ -16428,9 +16479,15 @@ function finishHardshipSession(reason) {
     if (reason === 'completed' && hardshipState.mode === 'endurance' && enduranceAvgScore >= 80) {
         const _enduranceNeedSwap = hardshipState.applyToFree && activeMode === 'kings';
         if (_enduranceNeedSwap) switchMode('free');
-        const chNum = hardshipState.forcedChapter ?? hardshipState.selectedChapter;
-        const chData = gameData.find(c => c.id === chNum);
-        if (chData && chData.stages) {
+        const _enduranceChapters = hardshipState.forcedChapter != null
+            ? [hardshipState.forcedChapter]
+            : [...new Set(hardshipState.queue.map(id => parseInt(id.split('-')[0], 10)))].sort((a, b) => a - b);
+        let _enduranceGemGrand = 0, _enduranceEligGrand = 0, _enduranceTotalGrand = 0, _enduranceAllCooldown = true;
+        for (const chNum of _enduranceChapters) {
+            if (isHardshipChapterDoneToday('endurance', chNum)) continue;
+            _enduranceAllCooldown = false;
+            const chData = gameData.find(c => c.id === chNum);
+            if (!chData || !chData.stages) continue;
             let subGemTotal = 0, eligibleSubCount = 0, totalSubCount = 0;
             chData.stages.forEach(targetStage => {
                 if (targetStage.type !== 'normal') return;
@@ -16450,17 +16507,22 @@ function finishHardshipSession(reason) {
                     subGemTotal += 10;
                 }
             });
-            // 보스 클리어 효과: 꽃밭 배경 + 왕의 고난 버튼 표시
+            // 보스 클리어 효과
             const bossId = `${chNum}-boss`;
             if (!stageMastery[bossId]) stageMastery[bossId] = 0;
             stageMastery[bossId]++;
             myGems += subGemTotal;
-            saveGameData();
-            syncToFirestore(); // [Firestore] 암송의 고난 클리어
-            if (_enduranceNeedSwap) switchMode('kings');
-            if (resultStreakText) {
-                resultStreakText.innerHTML += `<br><span style="font-size:13px;color:#aad4ff;">${t('hardship_gem_summary', { gem: subGemTotal, total: totalSubCount, eligible: eligibleSubCount })}</span>`;
-            }
+            _enduranceGemGrand += subGemTotal;
+            _enduranceEligGrand += eligibleSubCount;
+            _enduranceTotalGrand += totalSubCount;
+        }
+        saveGameData();
+        syncToFirestore(); // [Firestore] 암송의 고난 클리어
+        if (_enduranceNeedSwap) switchMode('kings');
+        if (_enduranceAllCooldown) {
+            if (resultStreakText) resultStreakText.innerHTML += `<br><span style="font-size:13px;color:#f39c12;">${t('hardship_cooldown_result')}</span>`;
+        } else if (_enduranceTotalGrand > 0 && resultStreakText) {
+            resultStreakText.innerHTML += `<br><span style="font-size:13px;color:#aad4ff;">${t('hardship_gem_summary', { gem: _enduranceGemGrand, total: _enduranceTotalGrand, eligible: _enduranceEligGrand })}</span>`;
         }
     }
 
@@ -16468,9 +16530,15 @@ function finishHardshipSession(reason) {
     if (reason === 'completed' && (hardshipState.mode === 'address' || hardshipState.mode === 'memory')) {
         const _hardshipNeedSwap = hardshipState.applyToFree && activeMode === 'kings';
         if (_hardshipNeedSwap) switchMode('free');
-        const chNum = hardshipState.forcedChapter ?? hardshipState.selectedChapter;
-        const chData = gameData.find(c => c.id === chNum);
-        if (chData && chData.stages) {
+        const _hardshipChapters = hardshipState.forcedChapter != null
+            ? [hardshipState.forcedChapter]
+            : [...new Set(hardshipState.queue.map(id => parseInt(id.split('-')[0], 10)))].sort((a, b) => a - b);
+        let _hardshipGemGrand = 0, _hardshipEligGrand = 0, _hardshipTotalGrand = 0, _hardshipAllCooldown = true;
+        for (const chNum of _hardshipChapters) {
+            if (isHardshipChapterDoneToday(hardshipState.mode, chNum)) continue;
+            _hardshipAllCooldown = false;
+            const chData = gameData.find(c => c.id === chNum);
+            if (!chData || !chData.stages) continue;
             let subGemTotal = 0, eligibleSubCount = 0, totalSubCount = 0;
             chData.stages.forEach(targetStage => {
                 if (targetStage.type !== 'normal') return;
@@ -16491,148 +16559,229 @@ function finishHardshipSession(reason) {
                 }
             });
             myGems += subGemTotal;
-            saveGameData();
-            syncToFirestore(); // [Firestore] 하드십 클리어
-            if (_hardshipNeedSwap) switchMode('kings');
-            if (resultStreakText) {
-                resultStreakText.innerHTML += `<br><span style="font-size:13px;color:#aad4ff;">${t('hardship_gem_summary', { gem: subGemTotal, total: totalSubCount, eligible: eligibleSubCount })}</span>`;
-            }
+            _hardshipGemGrand += subGemTotal;
+            _hardshipEligGrand += eligibleSubCount;
+            _hardshipTotalGrand += totalSubCount;
+        }
+        saveGameData();
+        syncToFirestore(); // [Firestore] 하드십 클리어
+        if (_hardshipNeedSwap) switchMode('kings');
+        if (_hardshipAllCooldown) {
+            if (resultStreakText) resultStreakText.innerHTML += `<br><span style="font-size:13px;color:#f39c12;">${t('hardship_cooldown_result')}</span>`;
+        } else if (_hardshipTotalGrand > 0 && resultStreakText) {
+            resultStreakText.innerHTML += `<br><span style="font-size:13px;color:#aad4ff;">${t('hardship_gem_summary', { gem: _hardshipGemGrand, total: _hardshipTotalGrand, eligible: _hardshipEligGrand })}</span>`;
         }
     }
 
-    // 인내의 고난 단일 장 완주: 기록 저장 및 결과 화면에 히스토리 표시
+    // 암송의 고난 완주: 기록 저장 및 결과 화면에 히스토리 표시 (단일 장 및 범위 세션)
     const enduranceHistoryHtml = (() => {
         if (reason !== 'completed' || hardshipState.mode !== 'endurance') return '';
-        const ch = hardshipState.forcedChapter;
-        if (ch == null) return '';
-
         const avg = enduranceAvgScore ?? 0;
+        const sessionDuration = Math.floor((Date.now() - stageStartTime) / 1000);
         const record = {
             avgScore: avg,
             total: hardshipState.queue.length,
             score: hardshipState.score,
             date: Date.now(),
-            duration: Math.floor((Date.now() - stageStartTime) / 1000)
+            duration: sessionDuration
         };
 
-        if (!hardshipEnduranceClearHistory[ch]) hardshipEnduranceClearHistory[ch] = [];
-        hardshipEnduranceClearHistory[ch].push(record);
-        if (hardshipEnduranceClearHistory[ch].length > 10) {
-            hardshipEnduranceClearHistory[ch].shift();
-        }
-        saveGameData();
-        syncToFirestore(); // [Firestore] 인내의 고난 완주 기록
+        const ch = hardshipState.forcedChapter;
+        if (ch != null) {
+            // 단일 장 세션
+            if (!hardshipEnduranceClearHistory[ch]) hardshipEnduranceClearHistory[ch] = [];
+            hardshipEnduranceClearHistory[ch].push(record);
+            if (hardshipEnduranceClearHistory[ch].length > 10) hardshipEnduranceClearHistory[ch].shift();
+            saveGameData();
+            syncToFirestore(); // [Firestore] 인내의 고난 완주 기록
 
-        const history = hardshipEnduranceClearHistory[ch];
-        const rows = history.slice().reverse().map((r, i) => {
-            const isThis = i === 0;
-            const dur = r.duration != null ? r.duration : 0;
+            const history = hardshipEnduranceClearHistory[ch];
+            const rows = history.slice().reverse().map((r, i) => {
+                const isThis = i === 0;
+                const dur = r.duration != null ? r.duration : 0;
+                const timeStr = `${String(Math.floor(dur / 60)).padStart(2,'0')}:${String(dur % 60).padStart(2,'0')}`;
+                const cleared = r.avgScore >= 80 ? '✅' : '—';
+                return `<tr class="${isThis ? 'hardship-history-current' : ''}">
+                    <td>${isThis ? '▶' : history.length - i}회</td>
+                    <td class="hardship-history-score">${r.avgScore}%</td>
+                    <td>${r.score}점</td>
+                    <td>${timeStr}</td>
+                    <td>${cleared}</td>
+                </tr>`;
+            }).join('');
+            return `<div class="hardship-history-wrap">
+                <div class="hardship-history-title">🎤 ${ch}장 암송의 고난 · 최근 ${history.length}회</div>
+                <table class="hardship-history-table">
+                    <thead><tr><th></th><th>평균</th><th>승점</th><th>시간</th><th>클리어</th></tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>`;
+        } else {
+            // 범위 세션: 각 챕터에 동일 기록 저장
+            const chapters = [...new Set(hardshipState.queue.map(id => parseInt(id.split('-')[0], 10)))].sort((a, b) => a - b);
+            let savedCount = 0;
+            for (const chNum of chapters) {
+                if (!hardshipEnduranceClearHistory[chNum]) hardshipEnduranceClearHistory[chNum] = [];
+                hardshipEnduranceClearHistory[chNum].push(record);
+                if (hardshipEnduranceClearHistory[chNum].length > 10) hardshipEnduranceClearHistory[chNum].shift();
+                savedCount++;
+            }
+            if (savedCount > 0) {
+                saveGameData();
+                syncToFirestore(); // [Firestore] 인내의 고난 범위 완주 기록
+            }
+            if (chapters.length === 0) return '';
+            const rangeLabel = chapters.length === 1 ? `${chapters[0]}장` : `${chapters[0]}–${chapters[chapters.length - 1]}장`;
+            const dur = sessionDuration;
             const timeStr = `${String(Math.floor(dur / 60)).padStart(2,'0')}:${String(dur % 60).padStart(2,'0')}`;
-            const cleared = r.avgScore >= 80 ? '✅' : '—';
-            return `<tr class="${isThis ? 'hardship-history-current' : ''}">
-                <td>${isThis ? '▶' : history.length - i}회</td>
-                <td class="hardship-history-score">${r.avgScore}%</td>
-                <td>${r.score}점</td>
-                <td>${timeStr}</td>
-                <td>${cleared}</td>
-            </tr>`;
-        }).join('');
-
-        return `<div class="hardship-history-wrap">
-            <div class="hardship-history-title">🎤 ${ch}장 암송의 고난 · 최근 ${history.length}회</div>
-            <table class="hardship-history-table">
-                <thead><tr><th></th><th>평균</th><th>승점</th><th>시간</th><th>클리어</th></tr></thead>
-                <tbody>${rows}</tbody>
-            </table>
-        </div>`;
+            const cleared = avg >= 80 ? '✅' : '—';
+            return `<div class="hardship-history-wrap">
+                <div class="hardship-history-title">🎤 ${rangeLabel} 암송의 고난 범위 세션</div>
+                <table class="hardship-history-table">
+                    <thead><tr><th>평균</th><th>승점</th><th>시간</th><th>클리어</th></tr></thead>
+                    <tbody><tr class="hardship-history-current">
+                        <td class="hardship-history-score">${avg}%</td>
+                        <td>${record.score}점</td>
+                        <td>${timeStr}</td>
+                        <td>${cleared}</td>
+                    </tr></tbody>
+                </table>
+            </div>`;
+        }
     })();
 
-    // 주소의 고난 단일 장 완주: 기록 저장 및 결과 화면에 히스토리 표시
+    // 주소의 고난 완주: 기록 저장 및 결과 화면에 히스토리 표시 (단일 장 및 범위 세션)
     const addressHistoryHtml = (() => {
         if (reason !== 'completed' || hardshipState.mode !== 'address') return '';
-        const ch = hardshipState.forcedChapter;
-        if (ch == null) return '';
-
+        const sessionDuration = Math.floor((Date.now() - stageStartTime) / 1000);
         const record = {
             correct: hardshipState.studiedCount,
             total: hardshipState.queue.length,
             score: hardshipState.score,
             date: Date.now(),
-            duration: Math.floor((Date.now() - stageStartTime) / 1000)
+            duration: sessionDuration
         };
 
-        if (!hardshipAddressClearHistory[ch]) hardshipAddressClearHistory[ch] = [];
-        hardshipAddressClearHistory[ch].push(record);
-        if (hardshipAddressClearHistory[ch].length > 10) {
-            hardshipAddressClearHistory[ch].shift();
-        }
-        saveGameData();
-        syncToFirestore(); // [Firestore] 주소 고난 완주 기록
+        const ch = hardshipState.forcedChapter;
+        if (ch != null) {
+            if (!hardshipAddressClearHistory[ch]) hardshipAddressClearHistory[ch] = [];
+            hardshipAddressClearHistory[ch].push(record);
+            if (hardshipAddressClearHistory[ch].length > 10) hardshipAddressClearHistory[ch].shift();
+            saveGameData();
+            syncToFirestore(); // [Firestore] 주소 고난 완주 기록
 
-        const history = hardshipAddressClearHistory[ch];
-        const rows = history.slice().reverse().map((r, i) => {
-            const isThis = i === 0;
-            const dur = r.duration != null ? r.duration : 0;
+            const history = hardshipAddressClearHistory[ch];
+            const rows = history.slice().reverse().map((r, i) => {
+                const isThis = i === 0;
+                const dur = r.duration != null ? r.duration : 0;
+                const timeStr = `${String(Math.floor(dur / 60)).padStart(2,'0')}:${String(dur % 60).padStart(2,'0')}`;
+                return `<tr class="${isThis ? 'hardship-history-current' : ''}">
+                    <td>${isThis ? '▶' : history.length - i}회</td>
+                    <td class="hardship-history-score">${r.correct}/${r.total}</td>
+                    <td>${r.score}점</td>
+                    <td>${timeStr}</td>
+                </tr>`;
+            }).join('');
+            return `<div class="hardship-history-wrap">
+                <div class="hardship-history-title">🎯 ${ch}장 주소의 고난 · 최근 ${history.length}회</div>
+                <table class="hardship-history-table">
+                    <thead><tr><th></th><th>맞힌 수</th><th>승점</th><th>클리어 시간</th></tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>`;
+        } else {
+            const chapters = [...new Set(hardshipState.queue.map(id => parseInt(id.split('-')[0], 10)))].sort((a, b) => a - b);
+            let savedCount = 0;
+            for (const chNum of chapters) {
+                if (!hardshipAddressClearHistory[chNum]) hardshipAddressClearHistory[chNum] = [];
+                hardshipAddressClearHistory[chNum].push(record);
+                if (hardshipAddressClearHistory[chNum].length > 10) hardshipAddressClearHistory[chNum].shift();
+                savedCount++;
+            }
+            if (savedCount > 0) { saveGameData(); syncToFirestore(); } // [Firestore] 주소 고난 범위 완주
+            if (chapters.length === 0) return '';
+            const rangeLabel = chapters.length === 1 ? `${chapters[0]}장` : `${chapters[0]}–${chapters[chapters.length - 1]}장`;
+            const dur = sessionDuration;
             const timeStr = `${String(Math.floor(dur / 60)).padStart(2,'0')}:${String(dur % 60).padStart(2,'0')}`;
-            return `<tr class="${isThis ? 'hardship-history-current' : ''}">
-                <td>${isThis ? '▶' : history.length - i}회</td>
-                <td class="hardship-history-score">${r.correct}/${r.total}</td>
-                <td>${r.score}점</td>
-                <td>${timeStr}</td>
-            </tr>`;
-        }).join('');
-
-        return `<div class="hardship-history-wrap">
-            <div class="hardship-history-title">🎯 ${ch}장 주소의 고난 · 최근 ${history.length}회</div>
-            <table class="hardship-history-table">
-                <thead><tr><th></th><th>맞힌 수</th><th>승점</th><th>클리어 시간</th></tr></thead>
-                <tbody>${rows}</tbody>
-            </table>
-        </div>`;
+            return `<div class="hardship-history-wrap">
+                <div class="hardship-history-title">🎯 ${rangeLabel} 주소의 고난 범위 세션</div>
+                <table class="hardship-history-table">
+                    <thead><tr><th>맞힌 수</th><th>승점</th><th>시간</th></tr></thead>
+                    <tbody><tr class="hardship-history-current">
+                        <td class="hardship-history-score">${record.correct}/${record.total}</td>
+                        <td>${record.score}점</td>
+                        <td>${timeStr}</td>
+                    </tr></tbody>
+                </table>
+            </div>`;
+        }
     })();
 
-    // 망각의 고난 단일 장 완주: 기록 저장 및 결과 화면에 히스토리 표시
+    // 망각의 고난 완주: 기록 저장 및 결과 화면에 히스토리 표시 (단일 장 및 범위 세션)
     const memoryHistoryHtml = (() => {
         if (reason !== 'completed' || hardshipState.mode !== 'memory') return '';
-        const ch = hardshipState.forcedChapter;
-        if (ch == null) return '';
-
+        const sessionDuration = Math.floor((Date.now() - stageStartTime) / 1000);
         const record = {
             correct: hardshipState.studiedCount,
             total: hardshipState.queue.length,
             score: hardshipState.score,
             date: Date.now(),
-            duration: Math.floor((Date.now() - stageStartTime) / 1000)
+            duration: sessionDuration
         };
 
-        if (!hardshipMemoryClearHistory[ch]) hardshipMemoryClearHistory[ch] = [];
-        hardshipMemoryClearHistory[ch].push(record);
-        if (hardshipMemoryClearHistory[ch].length > 10) {
-            hardshipMemoryClearHistory[ch].shift();
-        }
-        saveGameData();
-        syncToFirestore(); // [Firestore] 망각 고난 완주 기록
+        const ch = hardshipState.forcedChapter;
+        if (ch != null) {
+            if (!hardshipMemoryClearHistory[ch]) hardshipMemoryClearHistory[ch] = [];
+            hardshipMemoryClearHistory[ch].push(record);
+            if (hardshipMemoryClearHistory[ch].length > 10) hardshipMemoryClearHistory[ch].shift();
+            saveGameData();
+            syncToFirestore(); // [Firestore] 망각 고난 완주 기록
 
-        const history = hardshipMemoryClearHistory[ch];
-        const rows = history.slice().reverse().map((r, i) => {
-            const isThis = i === 0;
-            const dur = r.duration != null ? r.duration : 0;
+            const history = hardshipMemoryClearHistory[ch];
+            const rows = history.slice().reverse().map((r, i) => {
+                const isThis = i === 0;
+                const dur = r.duration != null ? r.duration : 0;
+                const timeStr = `${String(Math.floor(dur / 60)).padStart(2,'0')}:${String(dur % 60).padStart(2,'0')}`;
+                return `<tr class="${isThis ? 'hardship-history-current' : ''}">
+                    <td>${isThis ? '▶' : history.length - i}회</td>
+                    <td class="hardship-history-score">${r.correct}/${r.total}</td>
+                    <td>${r.score}점</td>
+                    <td>${timeStr}</td>
+                </tr>`;
+            }).join('');
+            return `<div class="hardship-history-wrap">
+                <div class="hardship-history-title">⌨️ ${ch}장 망각의 고난 · 최근 ${history.length}회</div>
+                <table class="hardship-history-table">
+                    <thead><tr><th></th><th>맞힌 수</th><th>승점</th><th>클리어 시간</th></tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>`;
+        } else {
+            const chapters = [...new Set(hardshipState.queue.map(id => parseInt(id.split('-')[0], 10)))].sort((a, b) => a - b);
+            let savedCount = 0;
+            for (const chNum of chapters) {
+                if (!hardshipMemoryClearHistory[chNum]) hardshipMemoryClearHistory[chNum] = [];
+                hardshipMemoryClearHistory[chNum].push(record);
+                if (hardshipMemoryClearHistory[chNum].length > 10) hardshipMemoryClearHistory[chNum].shift();
+                savedCount++;
+            }
+            if (savedCount > 0) { saveGameData(); syncToFirestore(); } // [Firestore] 망각 고난 범위 완주
+            if (chapters.length === 0) return '';
+            const rangeLabel = chapters.length === 1 ? `${chapters[0]}장` : `${chapters[0]}–${chapters[chapters.length - 1]}장`;
+            const dur = sessionDuration;
             const timeStr = `${String(Math.floor(dur / 60)).padStart(2,'0')}:${String(dur % 60).padStart(2,'0')}`;
-            return `<tr class="${isThis ? 'hardship-history-current' : ''}">
-                <td>${isThis ? '▶' : history.length - i}회</td>
-                <td class="hardship-history-score">${r.correct}/${r.total}</td>
-                <td>${r.score}점</td>
-                <td>${timeStr}</td>
-            </tr>`;
-        }).join('');
-
-        return `<div class="hardship-history-wrap">
-            <div class="hardship-history-title">⌨️ ${ch}장 망각의 고난 · 최근 ${history.length}회</div>
-            <table class="hardship-history-table">
-                <thead><tr><th></th><th>맞힌 수</th><th>승점</th><th>클리어 시간</th></tr></thead>
-                <tbody>${rows}</tbody>
-            </table>
-        </div>`;
+            return `<div class="hardship-history-wrap">
+                <div class="hardship-history-title">⌨️ ${rangeLabel} 망각의 고난 범위 세션</div>
+                <table class="hardship-history-table">
+                    <thead><tr><th>맞힌 수</th><th>승점</th><th>시간</th></tr></thead>
+                    <tbody><tr class="hardship-history-current">
+                        <td class="hardship-history-score">${record.correct}/${record.total}</td>
+                        <td>${record.score}점</td>
+                        <td>${timeStr}</td>
+                    </tr></tbody>
+                </table>
+            </div>`;
+        }
     })();
 
     const resultModal = document.getElementById('result-modal');
