@@ -7122,6 +7122,10 @@ function startTraining(stageId, mode = 'normal') {
 
 // 2. 단계별 화면 로드
 function loadStep() {
+    if (window._step1FinishTimer) {
+        clearTimeout(window._step1FinishTimer);
+        window._step1FinishTimer = null;
+    }
     const currentOrder = sequenceIndex + 1;
     const totalCount = stepSequence.length || 1; // 0으로 나누기 방지
 
@@ -7472,6 +7476,7 @@ function loadStep() {
 
         const finishStep1Effect = () => {
             stopAutoFill();
+            revealBtn.disabled = true;
 
             // 말씀이 완성되면 초성/마이크 버튼을 숨김 처리합니다.
             chosungBtn.style.display = 'none';
@@ -7511,7 +7516,8 @@ function loadStep() {
 
             SoundEffect.playLevelUp();
 
-            setTimeout(() => {
+            window._step1FinishTimer = setTimeout(() => {
+                window._step1FinishTimer = null;
                 document.getElementById('btn-step1-next').style.display = 'block';
                 document.getElementById('btn-step1-next').classList.add('shake-effect');
                 pouringLight.style.opacity = "0";
