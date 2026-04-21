@@ -410,13 +410,15 @@ const LANG = {
         hardship_feedback_wrong_memory: '오답입니다. 정답 말씀: {text}',
         hardship_step1_indicator: 'Step 1. 한 단어씩 읽으며 \'읽기\'를 눌러 외운 말씀을 확인하세요.<br>확실히 외웠다는 생각이 들 때까지 반복하세요.',
         step1_tip_text: '하나씩 말하며 \'읽기\' 버튼을 눌러보세요',
-        step1_voice_btn: '🎤 음성으로 말하기',
+        step1_voice_btn: '🎤 음성인식',
         step1_voice_listening: '🎤 듣는 중...',
         step1_voice_pass: '✅ 통과! ({score}%)',
         step1_voice_fail: '❌ {score}% — 다시 도전하거나 건너뛰세요',
         step1_voice_skip: '건너뛰기',
         step1_voice_retry: '다시 말하기',
         step1_voice_no_support: '음성인식 미지원 브라우저입니다',
+        step1_info_title: 'ℹ️ Step 1 안내',
+        step1_info_body: '• \'읽기\' 버튼을 탭할 때마다 단어가 하나씩 공개됩니다.<br>• 길게 누르면 자동으로 이어서 공개됩니다.<br>• \'음성인식\'으로 전체 구절을 암송할 수 있습니다.<br>• 80% 이상 일치하면 통과, 미달 시 재시도 횟수 제한 없이 도전 가능합니다.',
 
         // Step 4 스크롤 게임
         step4_indicator: '🔥불타기 전에 빈칸을 채우세요!',
@@ -1105,6 +1107,8 @@ const LANG = {
         step1_voice_skip: 'Skip',
         step1_voice_retry: 'Try Again',
         step1_voice_no_support: 'Speech recognition not supported in this browser',
+        step1_info_title: 'ℹ️ Step 1 Guide',
+        step1_info_body: '• Tap \'Read\' to reveal one word at a time.<br>• Long-press to reveal words automatically.<br>• Tap \'Speak\' to recite the full verse by voice.<br>• 80%+ match passes; you can retry as many times as you like.',
 
         // Step 4 스크롤 게임
         step4_indicator: '🔥Fill in the blanks before they burn!',
@@ -7230,6 +7234,10 @@ function loadStep() {
         control.innerHTML = `
             <div id="step1-controls" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 10px;"></div>
             <button class="btn-attack" id="btn-step1-next" onclick="nextStep()" style="display:none; background-color:#2ecc71; margin-top:10px; width: 100%;">${t('btn_step1_next')}</button>
+            <div id="step1-info-wrap" style="margin-top:8px;">
+                <button class="hardship-endurance-info-btn" id="btn-step1-info" onclick="toggleStep1Info()">${t('step1_info_title')}</button>
+                <div id="step1-info-panel" class="hardship-endurance-info-panel" style="display:none;">${t('step1_info_body')}</div>
+            </div>
             <div id="step1-tip-text" style="text-align:center; font-size:0.9rem; margin-top:5px; color:#8fa8c8">
                 <span id="step1-tip-badge" style="padding:2px 8px; border-radius:10px; background:#1d3550; color:#dce8f5;">TIP</span> ${t('step1_tip_text')}
             </div>
@@ -7509,10 +7517,12 @@ function loadStep() {
             restartBtn.className = revealBtn.className;
             restartBtn.style.flex = "1";
             restartBtn.innerText = t('btn_retry_perfect');
+            restartBtn.disabled = true;
             restartBtn.onclick = () => { loadStep(); };
             if (revealBtn.parentNode) {
                 revealBtn.parentNode.replaceChild(restartBtn, revealBtn);
             }
+            setTimeout(() => { restartBtn.disabled = false; }, 1000);
 
             SoundEffect.playLevelUp();
 
@@ -15726,6 +15736,15 @@ function renderCurrentHardshipVerse() {
     }
 
     renderHardshipMemoryVerse();
+}
+
+function toggleStep1Info() {
+    const panel = document.getElementById('step1-info-panel');
+    const btn = document.getElementById('btn-step1-info');
+    if (!panel || !btn) return;
+    const isOpen = panel.style.display !== 'none';
+    panel.style.display = isOpen ? 'none' : 'block';
+    btn.textContent = isOpen ? t('step1_info_title') : '▲ ' + t('step1_info_title');
 }
 
 function toggleHardshipEnduranceInfo() {
