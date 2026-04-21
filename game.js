@@ -11492,13 +11492,9 @@ let scrollGame = {
 function updateCastleView() {
     // 1. 뷰어 초기화 (게임 켰을 때 한 번만 내 레벨로 동기화)
     if (viewingCastleLevel === -1) viewingCastleLevel = myCastleLevel;
-
-    // 만약 업그레이드 직후라면, 뷰어도 최신 레벨로 갱신
-    // (이 줄을 지우면 업그레이드 후에도 보고 있던 레벨이 유지됩니다)
     if (viewingCastleLevel > myCastleLevel) viewingCastleLevel = myCastleLevel;
 
-    const display = document.getElementById('castle-display');
-    if (!display) return;
+    if (!document.getElementById('castle-display')) return;
 
     // 2. 현재 '보고 있는' 레벨의 데이터 가져오기
     const viewBP = castleBlueprints[viewingCastleLevel];
@@ -11514,24 +11510,60 @@ function updateCastleView() {
     if (produced > currentBP.cap) produced = currentBP.cap;
     if (produced < 0) produced = 0;
 
-    // 이미지 태그 생성
-    const imgTag = viewBP.img ?
-        `<img src="images/${viewBP.img}" alt="${viewBP.name}" style="width:100%; height:100%; object-fit:cover; transition: filter 0.3s;" onerror="this.style.display='none';">` : '';
-
-    // ★ 과거 회상 중인지 확인
     const isPast = viewingCastleLevel < myCastleLevel;
-    const filterClass = isPast ? 'memory-filter' : ''; // 과거면 필터 클래스 추가
+
+    // 이미지 src만 교체 (DOM 재생성 없이)
+    const imgEl = document.getElementById('castle-img');
+    if (imgEl) {
+        if (viewBP.img) {
+            imgEl.src = `images/${viewBP.img}`;
+            imgEl.alt = viewBP.name;
+            imgEl.style.display = '';
+        } else {
+            imgEl.style.display = 'none';
+        }
+    }
+
+    // 과거 필터 클래스
+    const frameWrap = document.getElementById('castle-frame-wrap');
+    if (frameWrap) frameWrap.className = `castle-frame${isPast ? ' memory-filter' : ''}`;
+
+    // 과거 배지
+    const pastBadgeEl = document.getElementById('castle-past-badge');
+    if (pastBadgeEl) {
+        if (isPast) {
+            pastBadgeEl.textContent = t('castle_past_badge');
+            pastBadgeEl.style.display = '';
+        } else {
+            pastBadgeEl.style.display = 'none';
+        }
+    }
+
+    // 레벨 타이틀
+    const titleEl = document.getElementById('castle-level-title');
+    if (titleEl) {
+        titleEl.textContent = `Lv.${viewBP.level} ${currentLang === 'en' && viewBP.nameEn ? viewBP.nameEn : viewBP.name}`;
+        titleEl.style.color = isPast ? '#bdc3c7' : '#f1c40f';
+    }
+
+    // 설명
+    const descEl = document.getElementById('castle-desc');
+    if (descEl) {
+        descEl.innerHTML = `"${currentLang === 'en' && viewBP.descEn ? viewBP.descEn : viewBP.desc}"`;
+    }
+
+    // 네비게이션 화살표 상태
+    const prevBtn = document.getElementById('castle-nav-prev');
+    const nextBtn = document.getElementById('castle-nav-next');
+    if (prevBtn) prevBtn.disabled = viewingCastleLevel <= 0;
+    if (nextBtn) nextBtn.disabled = viewingCastleLevel >= myCastleLevel;
 
     // ===============================================
-    // [버튼 로직]
+    // [버튼 행] — LCP 무관하므로 innerHTML 유지
     // ===============================================
-
-    // 1. 왼쪽 (수거) 버튼: 과거를 보고 있어도 '수거'는 가능하게 하거나, 
-    //    헷갈리지 않게 '현재 레벨 보기' 버튼으로 바꿀 수 있습니다.
-    //    여기서는 "과거를 볼 땐 수거 버튼 숨김" 처리하여 깔끔하게 합니다.
     let leftBtnHTML = `<div style="width:50px; height:50px;"></div>`;
 
-    if (!isPast && currentBP.prod > 0) { // 현재 시점일 때만 수거 버튼 표시
+    if (!isPast && currentBP.prod > 0) {
         if (produced > 0) {
             leftBtnHTML = `
                 <button onclick="claimTempleSupply()" class="btn-pulse" style="width:50px; height:50px; border-radius:10px; border:none; background:#2ecc71; color:#fff; cursor:pointer; padding:0; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 3px 0 #27ae60;">
@@ -11545,14 +11577,12 @@ function updateCastleView() {
                 </button>`;
         }
     } else if (isPast) {
-        // 과거 회상 중일 때 왼쪽 버튼 위치에 '현재로 복귀' 아이콘 표시 (선택사항)
         leftBtnHTML = `
             <button onclick="viewingCastleLevel = myCastleLevel; updateCastleView();" style="width:50px; height:50px; border-radius:10px; border:1px dashed rgba(255,255,255,0.3); background:rgba(0,0,0,0.2); color:#bdc3c7; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center;">
                 <div style="font-size:1.2rem;">🔙</div>
             </button>`;
     }
 
-    // 2. 오른쪽 (건설) 버튼: 과거를 보고 있으면 '업그레이드' 버튼 숨김 (실수 방지)
     let rightBtnHTML = `<div style="width:50px; height:50px;"></div>`;
 
     if (!isPast && myCastleLevel < 11) {
@@ -11570,44 +11600,13 @@ function updateCastleView() {
                 </button>`;
         }
     } else if (isPast) {
-        // 과거를 보고 있을 땐 빈 공간 (또는 설명)
         rightBtnHTML = `<div style="width:50px; height:50px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; opacity:0.3;">🔒</div>`;
     }
 
-    // 3. 네비게이션 화살표 상태
-    const prevDisabled = (viewingCastleLevel <= 0) ? 'disabled' : '';
-    const nextDisabled = (viewingCastleLevel >= myCastleLevel) ? 'disabled' : ''; // 내 레벨보다 미래는 못 봄
-
-    // 과거 뷰일 때 화면 내부에 표시할 배지 HTML (의사요소 대신 사용)
-    const pastBadgeHTML = isPast ? `<div class="past-badge">${t('castle_past_badge')}</div>` : '';
-
-    // [HTML 조립]
-    display.innerHTML = `
-        <div style="display:flex; align-items:center; justify-content:center; gap:15px; width:100%;">
-            <button class="castle-nav-btn" ${prevDisabled} onclick="changeViewLevel(-1)">‹</button>
-
-            <div style="text-align:center;">
-                <div style="font-size: 1.2rem; font-weight: bold; color: ${isPast ? '#bdc3c7' : '#f1c40f'}; margin-top:3px; margin-bottom:2.5px; transition:color 0.3s;">
-                    Lv.${viewBP.level} ${currentLang === 'en' && viewBP.nameEn ? viewBP.nameEn : viewBP.name}
-                </div>
-
-                <div class="castle-frame ${filterClass}" style="width: 220px; height: 220px; position: relative;">
-                    ${imgTag}
-                    ${pastBadgeHTML}
-                    <div class="frame-center-decor"></div>
-                </div>
-            </div>
-
-            <button class="castle-nav-btn" ${nextDisabled} onclick="changeViewLevel(1)">›</button>
-        </div>
-
-        <div style="font-size: 0.85rem; color: #bdc3c7; margin-top: 3px; margin-bottom: 3px; font-style: italic; min-height:3em;">
-            "${currentLang === 'en' && viewBP.descEn ? viewBP.descEn : viewBP.desc}"
-        </div>
-
-        <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-top:1px; width:95%; max-width:320px; margin-left:auto; margin-right:auto;">
+    const btnRow = document.getElementById('castle-btn-row');
+    if (btnRow) {
+        btnRow.innerHTML = `
             ${leftBtnHTML}
-
             <div style="flex:1; background:rgba(0,0,0,0.4); border-radius:10px; border:1px solid rgba(255,255,255,0.1); height:50px; display:flex; flex-direction:column; justify-content:center; align-items:center;">
                 <div style="font-size: 0.9rem; color:#fff; font-weight:bold;">
                     💎 <span style="color:#f1c40f;">${produced}</span> / ${currentBP.cap}
@@ -11616,10 +11615,9 @@ function updateCastleView() {
                     ⚡${currentBP.prod}/H <span style="color:#2ecc71;">(+${currentBP.bonus}%)</span>
                 </div>
             </div>
-
             ${rightBtnHTML}
-        </div>
-    `;
+        `;
+    }
 
     updateTempleUpgradeNotification();
 }

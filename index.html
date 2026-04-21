@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
-    <link rel="preload" href="images/image_0.webp" as="image" type="image/webp">
+    <link rel="preload" href="images/image_0.webp" as="image" type="image/webp" fetchpriority="high">
     <link rel="stylesheet" href="style.css">
 
     <!-- Google Fonts: Gowun Dodum -->
@@ -494,19 +494,20 @@
         <div class="temple-display-wrap">
         <div id="temple-upgrade-noti" data-i18n="home_upgrade_avail">⬆️ 업그레이드 가능</div>
         <div id="castle-display" style="margin-bottom: 5px;">
-
-            <div
-                style="font-size: 0.8rem; color: #bdc3c7; background:rgba(0,0,0,0.3); padding:8px; border-radius:8px; display:inline-block;">
-                <div style="margin-bottom:3px;"><span style="color:#2ecc71;">⚡방치 생산: 0/H</span></div>
-                <div><span style="color:#3498db;">💎보너스: +0%</span></div>
+          <div style="display:flex; align-items:center; justify-content:center; gap:15px; width:100%;">
+            <button id="castle-nav-prev" class="castle-nav-btn" disabled onclick="changeViewLevel(-1)">‹</button>
+            <div style="text-align:center;">
+              <div id="castle-level-title" style="font-size:1.2rem; font-weight:bold; color:#f1c40f; margin-top:3px; margin-bottom:2.5px; transition:color 0.3s;">Lv.1 제사장의 시작</div>
+              <div id="castle-frame-wrap" class="castle-frame" style="width:220px; height:220px; position:relative;">
+                <img id="castle-img" src="images/image_0.webp" alt="성전" fetchpriority="high" style="width:100%; height:100%; object-fit:cover; transition:filter 0.3s;">
+                <div id="castle-past-badge" class="past-badge" style="display:none;"></div>
+                <div class="frame-center-decor"></div>
+              </div>
             </div>
-            <div id="temple-actions"
-                style="display:flex; gap:10px; justify-content:center; margin-top:5px; align-items: flex-end;"><button
-                    class="btn-build-action"
-                    style="background: rgb(149, 165, 166); border-bottom: 5px solid rgb(127, 140, 141); box-shadow: none;">
-                    <div style="font-size:0.9rem;">🔒 건축 불가</div>
-                    <div style="font-size:1rem; color:#ecf0f1;">필요: 1,000</div>
-                </button></div>
+            <button id="castle-nav-next" class="castle-nav-btn" disabled onclick="changeViewLevel(1)">›</button>
+          </div>
+          <div id="castle-desc" style="font-size:0.85rem; color:#bdc3c7; margin-top:3px; margin-bottom:3px; font-style:italic; min-height:3em;"></div>
+          <div id="castle-btn-row" style="display:flex; align-items:center; justify-content:center; gap:8px; margin-top:1px; width:95%; max-width:320px; margin-left:auto; margin-right:auto;"></div>
         </div>
         </div>
 
