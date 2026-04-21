@@ -340,8 +340,8 @@ const LANG = {
         // 고난 길 모달
         hardship_title: '고난 길',
         hardship_subtitle: '모드를 고른 뒤 출제 범위를 설정하고 시작합니다.',
-        hardship_mode_a_title: '모드 A · 인내의 고난',
-        hardship_mode_a_desc: 'Step 1 방식으로 확인만 하기',
+        hardship_mode_a_title: '모드 A · 암송의 고난',
+        hardship_mode_a_desc: '소리내어 말씀을 암송하고 채점받기',
         hardship_mode_b_title: '모드 B · 주소의 고난',
         hardship_mode_b_desc: '내용을 보고 장·절 맞히기',
         hardship_mode_c_title: '모드 C · 망각의 고난',
@@ -363,13 +363,24 @@ const LANG = {
         hardship_order_seq_title: '순서대로',
         hardship_order_seq_desc: '1장 1절부터 차례로 출제합니다',
         hardship_chapter_option: '{num}장',
-        hardship_endurance_title: '인내의 고난',
-        hardship_endurance_summary: 'Step 1 방식으로 확인만 진행합니다.',
+        hardship_endurance_title: '암송의 고난',
+        hardship_endurance_summary: '소리내어 말씀을 암송하세요.',
         hardship_address_title: '주소의 고난',
         hardship_address_summary: '내용을 보고 장과 절을 맞힙니다.',
         hardship_memory_title: '망각의 고난',
         hardship_memory_summary: '주소만 보고 전체 구절을 인출합니다.',
-        hardship_endurance_indicator: '[{label}] Step 1 방식으로 말씀을 확인하세요',
+        hardship_endurance_indicator: '[{label}] 소리내어 말씀을 암송하세요',
+        hardship_endurance_speak_btn: '🎤 말하기',
+        hardship_endurance_speak_prompt: '아래 버튼을 눌러 말씀을 소리내어 암송하세요.',
+        hardship_endurance_listening: '듣는 중...',
+        hardship_endurance_score: '{score}% 일치 · {n}절째',
+        hardship_endurance_heard: '인식된 음성',
+        hardship_endurance_no_support: '이 브라우저는 음성 인식을 지원하지 않습니다.',
+        hardship_session_endurance_speech: '이번 세션에서 {count}절을 암송했습니다.',
+        hardship_endurance_info_title: '📋 암송의 고난 안내',
+        hardship_endurance_info_body: '• 말이 끊기면 인식이 종료됩니다. 한 호흡으로 암송하세요.<br>• 정확한 발음이 일치율에 영향을 줍니다.<br>• 80% 이상 → 통과 (만점 승점)<br>• 50~79% → 부분 승점 (절반)<br>• 50% 미만 → 승점 없음<br>• 전체 평균 80% 이상이면 해당 장 스테이지가 클리어됩니다.',
+        hardship_endurance_retry: '🔄 다시 읽기',
+        hardship_endurance_confirm: '✅ 다음 구절 ▶',
         hardship_btn_reveal: '열기',
         hardship_btn_next_verse: '다음 말씀 ▶',
         hardship_btn_next: '다음 ⏭️',
@@ -1008,8 +1019,8 @@ const LANG = {
         // 고난 길 모달
         hardship_title: 'Hardship Road',
         hardship_subtitle: 'Select a mode, set the range, and begin.',
-        hardship_mode_a_title: 'Mode A · Trial of Endurance',
-        hardship_mode_a_desc: 'Confirm only — Step 1 style',
+        hardship_mode_a_title: 'Mode A · Trial of Recitation',
+        hardship_mode_a_desc: 'Recite verses aloud and get scored',
         hardship_mode_b_title: 'Mode B · Trial of Address',
         hardship_mode_b_desc: 'Read the text and guess the chapter & verse',
         hardship_mode_c_title: 'Mode C · Trial of Forgetting',
@@ -1031,13 +1042,24 @@ const LANG = {
         hardship_order_seq_title: 'Sequential',
         hardship_order_seq_desc: 'From Ch.1 v.1 in order',
         hardship_chapter_option: 'Ch.{num}',
-        hardship_endurance_title: 'Trial of Endurance',
-        hardship_endurance_summary: 'Confirm each verse — Step 1 style.',
+        hardship_endurance_title: 'Trial of Recitation',
+        hardship_endurance_summary: 'Recite each verse aloud.',
         hardship_address_title: 'Trial of Address',
         hardship_address_summary: 'Read the text and identify the chapter & verse.',
         hardship_memory_title: 'Trial of Forgetting',
         hardship_memory_summary: 'See the reference and recall the full verse.',
-        hardship_endurance_indicator: '[{label}] Confirm the verse — Step 1 style',
+        hardship_endurance_indicator: '[{label}] Recite the verse aloud',
+        hardship_endurance_speak_btn: '🎤 Speak',
+        hardship_endurance_speak_prompt: 'Tap the button below and recite the verse aloud.',
+        hardship_endurance_listening: 'Listening...',
+        hardship_endurance_score: '{score}% match · verse {n}',
+        hardship_endurance_heard: 'Heard',
+        hardship_endurance_no_support: 'Speech recognition is not supported in this browser.',
+        hardship_session_endurance_speech: 'You recited {count} verses.',
+        hardship_endurance_info_title: '📋 Trial of Recitation Guide',
+        hardship_endurance_info_body: '• Recognition stops when you pause. Recite in one breath.<br>• Accurate pronunciation affects your match rate.<br>• 80%+ → Pass (full score)<br>• 50–79% → Partial score (half)<br>• Under 50% → No score<br>• Average 80%+ clears all stages in the chapter.',
+        hardship_endurance_retry: '🔄 Try Again',
+        hardship_endurance_confirm: '✅ Next Verse ▶',
         hardship_btn_reveal: 'Reveal',
         hardship_btn_next_verse: 'Next Verse ▶',
         hardship_btn_next: 'Next ⏭️',
@@ -1325,6 +1347,7 @@ const LANG = {
         hardship_result_hearts_end: '💀 {title} Ended',
         hardship_result_ended: '⛰️ {title} Ended',
         hardship_session_endurance: 'You confirmed {count} verses this session.',
+        hardship_session_endurance_speech: 'You recited {count} verses. Average accuracy: {avg}',
         hardship_session_score: 'Session score: {score} pts',
         hardship_result_check: '📘 Confirmed',
         hardship_result_score_label: '🏆 Score',
@@ -1606,6 +1629,7 @@ let stageNextReviewTime = {};  // 다음 복습 가능 시각 (timestamp, 0이�
 let stagePendingRetry = {};    // 재시도 상태 { type: 'good'|'miss', unlockTime?, remaining? }
 let hardshipAddressClearHistory = {}; // 장별 주소의 고난 클리어 기록 { "1": [{correct, total, score, date, duration}, ...] }
 let hardshipMemoryClearHistory = {};  // 장별 망각의 고난 클리어 기록 { "1": [{correct, total, score, date, duration}, ...] }
+let hardshipEnduranceClearHistory = {}; // 장별 인내의 고난 클리어 기록 { "1": [{avgScore, total, score, date, duration}, ...] }
 
 // ★ [게임 모드 시스템]
 let activeMode = 'free'; // 'free' | 'kings'
@@ -1748,6 +1772,7 @@ loadGameData = function () {
 
         if (parsed.hardshipAddressClearHistory) hardshipAddressClearHistory = parsed.hardshipAddressClearHistory;
         if (parsed.hardshipMemoryClearHistory) hardshipMemoryClearHistory = parsed.hardshipMemoryClearHistory;
+        if (parsed.hardshipEnduranceClearHistory) hardshipEnduranceClearHistory = parsed.hardshipEnduranceClearHistory;
 
         // ★ [게임 모드] 왕의 길 데이터 복구
         if (parsed.kingsMode) {
@@ -6698,6 +6723,7 @@ function saveGameData() {
         boosterData: boosterData,
         hardshipAddressClearHistory: hardshipAddressClearHistory,
         hardshipMemoryClearHistory: hardshipMemoryClearHistory,
+        hardshipEnduranceClearHistory: hardshipEnduranceClearHistory,
         // ★ [게임 모드]
         activeMode: activeMode,
         kingsMode: {
@@ -14986,7 +15012,12 @@ function createEmptyHardshipState() {
         memorySlots: [],
         revealedHints: [],
         memoryTypedText: '',
-        awaitingNext: false
+        awaitingNext: false,
+        speechScores: [],
+        lastTranscript: '',
+        currentVerseScore: null,
+        currentVerseTranscript: '',
+        showInfo: false
     };
 }
 
@@ -15380,6 +15411,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
     hardshipState = createEmptyHardshipState();
     hardshipState.active = true;
     hardshipState.mode = mode;
+    hardshipState.applyToFree = (window.hardshipOrigin !== 'map');
     if (forcedChapter != null) hardshipState.forcedChapter = forcedChapter;
     const baseIds = Array.isArray(selectedVerseIds) && selectedVerseIds.length > 0
         ? selectedVerseIds
@@ -15529,6 +15561,11 @@ function renderCurrentHardshipVerse() {
     renderHardshipMemoryVerse();
 }
 
+function toggleHardshipEnduranceInfo() {
+    hardshipState.showInfo = !hardshipState.showInfo;
+    renderHardshipEnduranceVerse();
+}
+
 function renderHardshipEnduranceVerse() {
     const hintBtn = document.getElementById('common-hardship-hint-btn');
     if (hintBtn) hintBtn.style.display = 'none';
@@ -15537,67 +15574,202 @@ function renderHardshipEnduranceVerse() {
     if (!field || !control || !hardshipState.currentVerse) return;
 
     const verse = hardshipState.currentVerse;
-    const activeChunks = (currentLang === 'en' && verse.chunksEn && verse.chunksEn.length) ? verse.chunksEn : verse.chunks;
     const verseLabel = t('label_revelation_ref', { ch: verse.chapter, v: verse.verse });
+    const verseText = getHardshipActiveText(verse);
 
-    const maskedChunks = activeChunks.map((chunk, index) => {
-        const chunkText = hardshipState.revealIndex > index
-            ? chunk
-            : String(chunk).replace(/[0-9A-Za-z가-힣]/g, '▢');
-        const color = hardshipState.revealIndex > index ? '#ffffff' : 'rgba(255,255,255,0.45)';
-        const weight = hardshipState.revealIndex > index ? '800' : '600';
-        return `<span id="hardship-a-chunk-${index}" style="color:${color}; font-weight:${weight};">${chunkText}</span>`;
-    }).join('');
+    const infoHtml = hardshipState.showInfo
+        ? `<div class="hardship-endurance-info-panel">${t('hardship_endurance_info_body')}</div>`
+        : '';
+    const infoToggleHtml = `
+        <button class="hardship-endurance-info-btn" onclick="toggleHardshipEnduranceInfo()">
+            ${hardshipState.showInfo ? '▲ ' : 'ℹ️ '}${t('hardship_endurance_info_title')}
+        </button>
+        ${infoHtml}
+    `;
+
+    let verseBodyHtml;
+    if (hardshipState.locked) {
+        const score = hardshipState.currentVerseScore ?? 0;
+        const highlightHtml = buildEnduranceHighlightHtml(hardshipState.lastTranscript || '', verseText);
+        const transcriptHtml = hardshipState.lastTranscript
+            ? `<div class="hardship-endurance-transcript">${t('hardship_endurance_heard')}: <span>"${hardshipState.lastTranscript}"</span></div>`
+            : '';
+        verseBodyHtml = `
+            <div class="hardship-endurance-highlight">${highlightHtml}</div>
+            <div class="hardship-speech-score">${score}%</div>
+            ${transcriptHtml}
+        `;
+    } else if (hardshipState.listening) {
+        verseBodyHtml = `<div class="hardship-endurance-listening-placeholder">🎤 ${t('hardship_endurance_listening')}</div>`;
+    } else {
+        verseBodyHtml = `<div class="hardship-endurance-verse-hidden">${t('hardship_endurance_speak_prompt')}</div>`;
+    }
 
     field.innerHTML = `
         <div class="verse-indicator">${t('hardship_endurance_indicator', { label: verseLabel })}</div>
         <div class="hardship-verse-card">
             <div class="hardship-mode-tag">${getHardshipModeMeta('endurance').icon} ${getHardshipModeMeta('endurance').summary}</div>
-            <div class="hardship-endurance-reading">${maskedChunks}</div>
+            ${infoToggleHtml}
+            ${verseBodyHtml}
             ${buildHardshipFeedbackHtml()}
         </div>
     `;
 
-    control.innerHTML = `
-        <div class="hardship-control-row">
-            <button class="btn-attack" onclick="revealHardshipEnduranceChunk()" ${hardshipState.locked ? 'disabled' : ''}>${t('hardship_btn_reveal')}</button>
-            <button class="btn-attack" onclick="loadNextHardshipVerse()" style="background:#2ecc71; ${hardshipState.locked ? '' : 'display:none;'}">${t('hardship_btn_next_verse')}</button>
-        </div>
-    `;
+    const isListening = !!hardshipState.listening;
+    control.innerHTML = hardshipState.locked
+        ? `<div class="hardship-control-row">
+            <button class="btn-attack" onclick="retryHardshipEnduranceSpeech()" style="background:#6c757d;">
+                ${t('hardship_endurance_retry')}
+            </button>
+            <button class="btn-attack" onclick="confirmHardshipEnduranceVerse()" style="background:#2ecc71;">
+                ${t('hardship_endurance_confirm')}
+            </button>
+           </div>`
+        : `<div class="hardship-control-row">
+            <button class="btn-attack hardship-mic-btn ${isListening ? 'listening' : ''}"
+                onclick="startHardshipEnduranceSpeech()"
+                ${isListening ? 'disabled' : ''}>
+                ${isListening ? t('hardship_endurance_listening') : t('hardship_endurance_speak_btn')}
+            </button>
+           </div>`;
 }
 
-function revealHardshipEnduranceChunk() {
+// ── 인내의 고난 음성인식 유틸 ──────────────────────────────
+
+function normalizeForSpeech(s) {
+    return (s || '').replace(/[^가-힣a-zA-Z0-9]/g, '').toLowerCase();
+}
+
+function calcEnduranceSpeechScore(transcript, verseText) {
+    const a = normalizeForSpeech(transcript);
+    const b = normalizeForSpeech(verseText);
+    if (!b.length) return 100;
+    if (!a.length) return 0;
+    // LCS 길이 계산
+    const m = a.length, n = b.length;
+    const dp = new Uint16Array((m + 1) * (n + 1));
+    for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+            dp[i * (n + 1) + j] = a[i - 1] === b[j - 1]
+                ? dp[(i - 1) * (n + 1) + (j - 1)] + 1
+                : Math.max(dp[(i - 1) * (n + 1) + j], dp[i * (n + 1) + (j - 1)]);
+        }
+    }
+    const lcs = dp[m * (n + 1) + n];
+    return Math.min(100, Math.round(lcs / b.length * 100));
+}
+
+function buildEnduranceHighlightHtml(transcript, verseText) {
+    const normTranscript = normalizeForSpeech(transcript);
+    const words = verseText.split(/(\s+)/);
+    return words.map(token => {
+        if (/^\s+$/.test(token)) return token;
+        const normWord = normalizeForSpeech(token);
+        if (!normWord) return `<span>${token}</span>`;
+        const matched = normWord.length > 0 && normTranscript.includes(normWord);
+        return matched
+            ? `<span class="speech-word-match">${token}</span>`
+            : `<span class="speech-word-miss">${token}</span>`;
+    }).join('');
+}
+
+// ── 인내의 고난 음성 입력 ──────────────────────────────
+
+function startHardshipEnduranceSpeech() {
     if (!window.isHardshipMode || hardshipState.mode !== 'endurance' || hardshipState.locked) return;
 
-    SoundEffect.playReveal();
-
-    const chunkIndex = hardshipState.revealIndex;
-    const activeChunks = (currentLang === 'en' && hardshipState.currentVerse.chunksEn && hardshipState.currentVerse.chunksEn.length)
-        ? hardshipState.currentVerse.chunksEn : hardshipState.currentVerse.chunks;
-    const chunk = activeChunks[chunkIndex];
-    const chunkEl = document.getElementById(`hardship-a-chunk-${chunkIndex}`);
-    if (!chunkEl) return;
-
-    chunkEl.textContent = chunk;
-    chunkEl.style.color = '#ffffff';
-    chunkEl.style.fontWeight = '800';
-    chunkEl.style.transform = 'scale(1.05)';
-    setTimeout(() => {
-        if (chunkEl) chunkEl.style.transform = 'scale(1)';
-    }, 160);
-
-    hardshipState.revealIndex += 1;
-
-    if (hardshipState.revealIndex >= activeChunks.length) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
         hardshipState.locked = true;
+        hardshipState.lastTranscript = '';
+        hardshipState.speechScores.push(0);
         hardshipState.studiedCount += 1;
-        hardshipState.feedback = {
-            type: 'info',
-            message: t('hardship_endurance_count', { n: hardshipState.studiedCount })
-        };
+        hardshipState.feedback = { type: 'wrong', message: t('hardship_endurance_no_support') };
         renderHardshipEnduranceVerse();
         updateBattleUI();
+        return;
     }
+
+    // 듣는 중 상태 표시
+    hardshipState.listening = true;
+    renderHardshipEnduranceVerse();
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = currentLang === 'en' ? 'en-US' : 'ko-KR';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        submitHardshipEnduranceSpeech(transcript);
+    };
+    recognition.onerror = () => submitHardshipEnduranceSpeech('');
+    recognition.onnomatch = () => submitHardshipEnduranceSpeech('');
+    recognition.onend = () => {
+        if (hardshipState.listening) submitHardshipEnduranceSpeech('');
+    };
+
+    recognition.start();
+    hardshipState._recognition = recognition;
+}
+
+function submitHardshipEnduranceSpeech(transcript) {
+    if (!hardshipState.listening) return;
+    hardshipState.listening = false;
+    hardshipState._recognition = null;
+
+    const verseText = getHardshipActiveText(hardshipState.currentVerse);
+    const score = calcEnduranceSpeechScore(transcript, verseText);
+
+    // 최고점 채택
+    const prevBest = hardshipState.currentVerseScore;
+    if (prevBest === null || score > prevBest) {
+        hardshipState.currentVerseScore = score;
+        hardshipState.currentVerseTranscript = transcript;
+    }
+
+    hardshipState.lastTranscript = hardshipState.currentVerseTranscript;
+    hardshipState.locked = true;
+
+    const bestScore = hardshipState.currentVerseScore;
+    const feedbackType = bestScore >= 80 ? 'correct' : bestScore >= 50 ? 'info' : 'wrong';
+    const improved = prevBest !== null && score > prevBest ? ` (↑${prevBest}%→${score}%)` : '';
+    hardshipState.feedback = {
+        type: feedbackType,
+        message: t('hardship_endurance_score', { score: bestScore, n: hardshipState.studiedCount + 1 }) + improved
+    };
+
+    if (bestScore >= 80) SoundEffect.playCorrect && SoundEffect.playCorrect();
+    else if (bestScore < 50) SoundEffect.playWrong && SoundEffect.playWrong();
+
+    renderHardshipEnduranceVerse();
+    updateBattleUI();
+}
+
+function retryHardshipEnduranceSpeech() {
+    if (!hardshipState.locked) return;
+    hardshipState.locked = false;
+    hardshipState.feedback = null;
+    renderHardshipEnduranceVerse();
+    updateBattleUI();
+}
+
+function confirmHardshipEnduranceVerse() {
+    // 현재 구절 점수를 확정하고 승점 적용 후 다음 구절로
+    const score = hardshipState.currentVerseScore ?? 0;
+    hardshipState.speechScores.push(score);
+    hardshipState.studiedCount += 1;
+
+    let earned = 0;
+    if (score >= 80) earned = playerHearts;
+    else if (score >= 50) earned = Math.round(playerHearts * 0.5);
+    if (earned > 0) awardHardshipScore(earned);
+
+    // 다음 구절 상태로 초기화
+    hardshipState.currentVerseScore = null;
+    hardshipState.currentVerseTranscript = '';
+
+    loadNextHardshipVerse();
 }
 
 function renderHardshipAddressVerse() {
@@ -16214,16 +16386,22 @@ function finishHardshipSession(reason) {
         else resultTitle.innerText = t('hardship_result_ended', { title: modeMeta.title });
     }
 
+    const enduranceAvgScore = hardshipState.mode === 'endurance' && hardshipState.speechScores.length > 0
+        ? Math.round(hardshipState.speechScores.reduce((a, b) => a + b, 0) / hardshipState.speechScores.length)
+        : null;
+
     if (resultStreakText) {
         if (hardshipState.mode === 'endurance') {
-            resultStreakText.innerHTML = t('hardship_session_endurance', { count: `<span id="streak-days">${hardshipState.studiedCount}</span>` });
+            resultStreakText.innerHTML = t('hardship_session_endurance_speech', {
+                count: `<span id="streak-days">${hardshipState.studiedCount}</span>`
+            });
         } else {
             resultStreakText.innerHTML = t('hardship_session_score', { score: `<span id="streak-days">${hardshipState.score}</span>` });
         }
     }
 
     if (resultExpLabel) {
-        resultExpLabel.innerText = hardshipState.mode === 'endurance' ? t('hardship_result_check') : t('hardship_result_score_label');
+        resultExpLabel.innerText = hardshipState.mode === 'endurance' ? t('hardship_result_score_label') : t('hardship_result_score_label');
     }
 
     if (resultContinueBtn) {
@@ -16235,15 +16413,61 @@ function finishHardshipSession(reason) {
     if (hsStatLabels[1]) hsStatLabels[1].textContent = t('result_label_accuracy');
 
     if (resultTime) resultTime.innerText = `${minutes}:${seconds}`;
-    if (resultAccuracy) resultAccuracy.innerText = `${accuracy}%`;
+    if (resultAccuracy) {
+        resultAccuracy.innerText = hardshipState.mode === 'endurance'
+            ? `${enduranceAvgScore ?? 0}%`
+            : `${accuracy}%`;
+    }
     if (resultExp) {
         resultExp.innerText = hardshipState.mode === 'endurance'
-            ? t('hardship_result_verses', { count: hardshipState.studiedCount })
+            ? `${hardshipState.score}`
             : `${hardshipState.score}`;
+    }
+
+    // 암송의 고난 완주 시 평균 80% 이상이면 해당 장 하위 스테이지 클리어 + 보스 클리어 효과
+    if (reason === 'completed' && hardshipState.mode === 'endurance' && enduranceAvgScore >= 80) {
+        const _enduranceNeedSwap = hardshipState.applyToFree && activeMode === 'kings';
+        if (_enduranceNeedSwap) switchMode('free');
+        const chNum = hardshipState.forcedChapter ?? hardshipState.selectedChapter;
+        const chData = gameData.find(c => c.id === chNum);
+        if (chData && chData.stages) {
+            let subGemTotal = 0, eligibleSubCount = 0, totalSubCount = 0;
+            chData.stages.forEach(targetStage => {
+                if (targetStage.type !== 'normal') return;
+                const subId = targetStage.id;
+                if (!stageMastery[subId]) stageMastery[subId] = 0;
+                if (!stageClearDate[subId]) stageClearDate[subId] = getMemoryQuizDate();
+                targetStage.cleared = true;
+                stageLastClear[subId] = Date.now();
+                totalSubCount++;
+                const subStatus = getReviewStatus(subId);
+                if (subStatus.isEligible) {
+                    const { earnedGem: earned } = advanceReviewStep(subId);
+                    stageMastery[subId]++;
+                    subGemTotal += earned;
+                    eligibleSubCount++;
+                } else {
+                    subGemTotal += 10;
+                }
+            });
+            // 보스 클리어 효과: 꽃밭 배경 + 왕의 고난 버튼 표시
+            const bossId = `${chNum}-boss`;
+            if (!stageMastery[bossId]) stageMastery[bossId] = 0;
+            stageMastery[bossId]++;
+            myGems += subGemTotal;
+            saveGameData();
+            syncToFirestore(); // [Firestore] 암송의 고난 클리어
+            if (_enduranceNeedSwap) switchMode('kings');
+            if (resultStreakText) {
+                resultStreakText.innerHTML += `<br><span style="font-size:13px;color:#aad4ff;">${t('hardship_gem_summary', { gem: subGemTotal, total: totalSubCount, eligible: eligibleSubCount })}</span>`;
+            }
+        }
     }
 
     // 주소의 고난 / 망각의 고난 완주 시 해당 장 하위 스테이지 클리어 (보스 클리어와 동일 처리)
     if (reason === 'completed' && (hardshipState.mode === 'address' || hardshipState.mode === 'memory')) {
+        const _hardshipNeedSwap = hardshipState.applyToFree && activeMode === 'kings';
+        if (_hardshipNeedSwap) switchMode('free');
         const chNum = hardshipState.forcedChapter ?? hardshipState.selectedChapter;
         const chData = gameData.find(c => c.id === chNum);
         if (chData && chData.stages) {
@@ -16269,11 +16493,59 @@ function finishHardshipSession(reason) {
             myGems += subGemTotal;
             saveGameData();
             syncToFirestore(); // [Firestore] 하드십 클리어
+            if (_hardshipNeedSwap) switchMode('kings');
             if (resultStreakText) {
                 resultStreakText.innerHTML += `<br><span style="font-size:13px;color:#aad4ff;">${t('hardship_gem_summary', { gem: subGemTotal, total: totalSubCount, eligible: eligibleSubCount })}</span>`;
             }
         }
     }
+
+    // 인내의 고난 단일 장 완주: 기록 저장 및 결과 화면에 히스토리 표시
+    const enduranceHistoryHtml = (() => {
+        if (reason !== 'completed' || hardshipState.mode !== 'endurance') return '';
+        const ch = hardshipState.forcedChapter;
+        if (ch == null) return '';
+
+        const avg = enduranceAvgScore ?? 0;
+        const record = {
+            avgScore: avg,
+            total: hardshipState.queue.length,
+            score: hardshipState.score,
+            date: Date.now(),
+            duration: Math.floor((Date.now() - stageStartTime) / 1000)
+        };
+
+        if (!hardshipEnduranceClearHistory[ch]) hardshipEnduranceClearHistory[ch] = [];
+        hardshipEnduranceClearHistory[ch].push(record);
+        if (hardshipEnduranceClearHistory[ch].length > 10) {
+            hardshipEnduranceClearHistory[ch].shift();
+        }
+        saveGameData();
+        syncToFirestore(); // [Firestore] 인내의 고난 완주 기록
+
+        const history = hardshipEnduranceClearHistory[ch];
+        const rows = history.slice().reverse().map((r, i) => {
+            const isThis = i === 0;
+            const dur = r.duration != null ? r.duration : 0;
+            const timeStr = `${String(Math.floor(dur / 60)).padStart(2,'0')}:${String(dur % 60).padStart(2,'0')}`;
+            const cleared = r.avgScore >= 80 ? '✅' : '—';
+            return `<tr class="${isThis ? 'hardship-history-current' : ''}">
+                <td>${isThis ? '▶' : history.length - i}회</td>
+                <td class="hardship-history-score">${r.avgScore}%</td>
+                <td>${r.score}점</td>
+                <td>${timeStr}</td>
+                <td>${cleared}</td>
+            </tr>`;
+        }).join('');
+
+        return `<div class="hardship-history-wrap">
+            <div class="hardship-history-title">🎤 ${ch}장 암송의 고난 · 최근 ${history.length}회</div>
+            <table class="hardship-history-table">
+                <thead><tr><th></th><th>평균</th><th>승점</th><th>시간</th><th>클리어</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>`;
+    })();
 
     // 주소의 고난 단일 장 완주: 기록 저장 및 결과 화면에 히스토리 표시
     const addressHistoryHtml = (() => {
@@ -16371,7 +16643,7 @@ function finishHardshipSession(reason) {
 
         const existingHistory = resultModal.querySelector('.hardship-history-wrap');
         if (existingHistory) existingHistory.remove();
-        const historyHtml = addressHistoryHtml || memoryHistoryHtml;
+        const historyHtml = enduranceHistoryHtml || addressHistoryHtml || memoryHistoryHtml;
         if (historyHtml) {
             const continueBtn = resultModal.querySelector('#result-continue-btn');
             if (continueBtn) {
