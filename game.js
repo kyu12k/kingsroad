@@ -16204,10 +16204,18 @@ function bindHardshipMemoryInputGuards() {
         moveHardshipMemoryCursorToEnd(input);
     };
 
+    const onCompositionEnd = () => {
+        if (!window.isHardshipMode || hardshipState.mode !== 'memory' || hardshipState.locked) return;
+        hardshipState.memoryTypedText = input.value;
+        updateHardshipMemoryBoard();
+        moveHardshipMemoryCursorToEnd(input);
+    };
+
     input.addEventListener('keydown', blockArrowNavigation);
     input.addEventListener('click', forceCursorToEnd);
     input.addEventListener('touchend', forceCursorToEnd);
     input.addEventListener('focus', forceCursorToEnd);
+    input.addEventListener('compositionend', onCompositionEnd);
     input.dataset.guardsBound = 'true';
 }
 
@@ -16329,29 +16337,34 @@ function updateHardshipMemoryBoard() {
     }
 
     if (targetScrollSlot) {
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        if (isIOS && window.visualViewport) {
-            // iOS: visualViewport로 키보드 높이 반영한 수동 스크롤
-            const container = targetScrollSlot.closest('.battle-field');
-            if (container) {
-                const slotRect = targetScrollSlot.getBoundingClientRect();
-                const vvTop = window.visualViewport.offsetTop;
-                const vvHeight = window.visualViewport.height;
-                const slotCenter = slotRect.top + slotRect.height / 2;
-                const targetCenter = vvTop + vvHeight / 2;
-                const diff = slotCenter - targetCenter;
-                if (Math.abs(diff) > 40) {
-                    container.scrollTop += diff;
+        clearTimeout(updateHardshipMemoryBoard._scrollTimer);
+        const slotToScroll = targetScrollSlot;
+        updateHardshipMemoryBoard._scrollTimer = setTimeout(() => {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            if (isIOS && window.visualViewport) {
+                // iOS: visualViewport로 키보드 높이 반영한 수동 스크롤
+                const container = slotToScroll.closest('.battle-field');
+                if (container) {
+                    const slotRect = slotToScroll.getBoundingClientRect();
+                    const vvTop = window.visualViewport.offsetTop;
+                    const vvHeight = window.visualViewport.height;
+                    const slotCenter = slotRect.top + slotRect.height / 2;
+                    const targetCenter = vvTop + vvHeight / 2;
+                    const diff = slotCenter - targetCenter;
+                    if (Math.abs(diff) > 40) {
+                        container.scrollTop += diff;
+                    }
                 }
+            } else if (typeof slotToScroll.scrollIntoView === 'function') {
+                slotToScroll.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
-        } else if (typeof targetScrollSlot.scrollIntoView === 'function') {
-            targetScrollSlot.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        }, 80);
     }
 }
 
 function handleHardshipMemoryInput(event) {
     if (!window.isHardshipMode || hardshipState.mode !== 'memory' || hardshipState.locked) return;
+    if (event.isComposing) return;
 
     if (typeof SoundEffect !== 'undefined' && SoundEffect.playKeyStroke) SoundEffect.playKeyStroke();
 
