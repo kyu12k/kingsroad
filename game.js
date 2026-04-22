@@ -7232,6 +7232,7 @@ function loadStep() {
         });
 
         control.innerHTML = `
+            <div id="step1-chosung-row" style="display:flex; justify-content:flex-end; margin-bottom:1px;"></div>
             <div id="step1-controls" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 10px;"></div>
             <button class="btn-attack" id="btn-step1-next" onclick="nextStep()" style="display:none; background-color:#2ecc71; margin-top:10px; width: 100%;">${t('btn_step1_next')}</button>
             <div id="step1-info-wrap" style="margin-top:8px;">
@@ -7242,7 +7243,21 @@ function loadStep() {
 
         const controlsContainer = document.getElementById('step1-controls');
 
-        // ★ [추가] 3. 초성 토글 버튼과 로직 생성
+        const chosungBtn = document.createElement('button');
+        chosungBtn.id = 'btn-toggle-chosung';
+        chosungBtn.style.cssText = 'background:#f39c12; color:#fff; border:none; border-radius:8px; font-size:0.78rem; padding:4px 10px; cursor:pointer; font-weight:bold;';
+        chosungBtn.innerText = t('btn_chosung');
+        chosungBtn.onclick = () => {
+            isChosungMode = !isChosungMode;
+            chosungBtn.innerText = isChosungMode ? t('btn_chosung_off') : t('btn_chosung');
+            chosungBtn.style.background = isChosungMode ? '#e67e22' : '#f39c12';
+            for (let i = window.revealIndex; i < window.chunksToReveal.length; i++) {
+                const span = document.getElementById(`chunk-${i}`);
+                if (span) span.innerText = isChosungMode ? span.dataset.chosung : span.dataset.masked;
+            }
+        };
+        document.getElementById('step1-chosung-row').appendChild(chosungBtn);
+
         const fillOneChunk = () => {
             if (window.revealIndex >= window.chunksToReveal.length) {
                 stopAutoFill();
@@ -7461,6 +7476,7 @@ function loadStep() {
             revealBtn.disabled = true;
 
             micBtn.style.display = 'none';
+            chosungBtn.style.display = 'none';
             voiceFeedbackDiv.innerHTML = '';
 
             card.style.transition = "box-shadow 0.5s, background 0.5s";
