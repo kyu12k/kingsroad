@@ -7734,18 +7734,18 @@ function loadStep() {
     // [Step 3] 바이블 타워 (선택형/객관식으로 변경)
     // ----------------------------------------------------
     else if (currentStep === 3) {
-        // 1. 게임 영역 (타워와 빈칸 기록판만 남김)
+        // 1. 게임 영역 — 구슬 선택지를 tower-game-container 안으로 통합
         field.innerHTML = `
             <div class="verse-indicator">${verseLabel}${t('step3_indicator')}</div>
             <div id="tower-game-container">
                 <div id="tower-text-display"></div>
-
                 <div id="tower-msg">${t('tower_pick')}</div>
+                <div id="tower-choices-area"></div>
             </div>
         `;
 
-        // 2. 하단 컨트롤 영역에 객관식 버튼이 들어갈 공간(풀) 마련!
-        control.innerHTML = `<div class="block-pool" id="tower-choices-area"></div>`;
+        // 2. 하단 컨트롤 영역은 비워서 회색 영역 최소화
+        control.innerHTML = ``;
 
         // 지연 시간 없이 바로 게임 셋업 시작
         initTowerGame();
@@ -11421,11 +11421,11 @@ function spawnTowerChoices() {
 
     options.sort(() => Math.random() - 0.5);
 
-    options.forEach(word => {
-        const btn = document.createElement('div'); // button에서 div로 변경 (기존 word-block 통일)
+    options.forEach((word, i) => {
+        const btn = document.createElement('div');
         btn.innerText = word;
-        btn.className = 'word-block'; // ★ 원래의 예쁜 디자인 클래스 적용!
-        // 억지로 넣었던 style.cssText 삭제
+        btn.className = 'tower-orb';
+        btn.style.animationDelay = `${i * 80}ms`;
 
         btn.onclick = () => handleTowerChoice(btn, word, correctWord);
         choicesArea.appendChild(btn);
@@ -11501,9 +11501,9 @@ function handleTowerChoice(btn, selectedWord, correctWord) {
         // 0.8초 뒤 버튼 원래대로 복구하고 다시 선택하게 함
         setTimeout(() => {
             btn.classList.remove('tower-wrong-flash', 'tower-btn-shake');
-            btn.style.backgroundColor = "#ecf0f1";
-            btn.style.color = "#2c3e50";
-            btn.style.boxShadow = "0 4px 0 #bdc3c7";
+            btn.style.backgroundColor = '';
+            btn.style.color = '';
+            btn.style.boxShadow = '';
 
             document.getElementById('tower-msg').innerText = t('tower_pick');
             document.getElementById('tower-msg').style.color = "#f0e6c0";
