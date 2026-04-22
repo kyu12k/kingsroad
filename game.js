@@ -16173,6 +16173,11 @@ function bindHardshipMemoryInputGuards() {
             return;
         }
 
+        if (event.key === 'Tab') {
+            event.preventDefault();
+            return;
+        }
+
         if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
             event.preventDefault();
             moveHardshipMemoryCursorToEnd(input);
