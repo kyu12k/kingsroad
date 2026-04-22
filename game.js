@@ -666,10 +666,10 @@ const LANG = {
         notice_modal_title: '📢 공지사항',
 
         // 복습 모드 선택 모달
-        review_mode_title: '복습 모드 선택',
+        review_mode_title: '학습 모드 선택',
         review_mode_subtitle: '완료한 구절입니다.',
         review_mode_quick_tag: '추천',
-        review_mode_quick_title: '빠른 복습 (Step 1, 5)',
+        review_mode_quick_title: '빠른 학습 (Step 1, 5)',
         review_mode_quick_desc: '읽기 + 문장 배열 (핵심만!)',
         review_mode_full_title: '전체 학습 (Step 1~5)',
         review_mode_full_desc: '읽기부터 문장 완성까지 꼼꼼하게',
@@ -1356,10 +1356,10 @@ const LANG = {
         notice_modal_title: '📢 Notices',
 
         // 복습 모드 선택 모달
-        review_mode_title: 'Review Mode',
+        review_mode_title: 'Study Mode',
         review_mode_subtitle: 'You have completed this verse.',
         review_mode_quick_tag: 'Recommended',
-        review_mode_quick_title: 'Quick Review (Step 1, 5)',
+        review_mode_quick_title: 'Quick Study (Step 1, 5)',
         review_mode_quick_desc: 'Read + Arrange (key steps only!)',
         review_mode_full_title: 'Full Study (Step 1~5)',
         review_mode_full_desc: 'From reading to full completion',
@@ -5287,7 +5287,7 @@ function openStageSheet(chapterData) {
         const isFullStepsComplete = isStageFullyLearned(stage.id, stage);
         const isCoolingDown = !isFullStepsComplete && progress && progress.unlockTime > Date.now();
         const isNormalStage = (stage.type !== 'boss' && stage.type !== 'mid-boss');
-        const canChooseReviewMode = isNormalStage && isFullStepsComplete;
+        const canChooseReviewMode = isNormalStage;
 
         // 3. 버튼 오른쪽 표시 (톱니바퀴 vs 재생버튼 vs 타이머)
         let rightSideContent = "";
@@ -5511,7 +5511,6 @@ function openModeSelect(stageId) {
         </div>
         <div style="text-align: center; margin-bottom: 20px;">
             <h2 style="margin:0; color:#2c3e50;">${t('review_mode_title')}</h2>
-            <p style="color:#7f8c8d; font-size:0.9rem; margin-top:5px;">${t('review_mode_subtitle')}</p>
         </div>
 
         <button class="mode-btn" onclick="confirmMode('quick')" style="background:#fff9c4; border:2px solid #f1c40f; color:#d35400; box-shadow: 0 4px 0 #f39c12;">
@@ -7027,18 +7026,22 @@ function startTraining(stageId, mode = 'normal') {
     // ============================================
     // [모드 결정: 복습 vs 전체 학습]
     // ============================================
+    const courses = {
+        'quick': [1, 5],
+        'full': [1, 2, 3, 4, 5],
+        'normal': [1, 2, 3, 4, 5],
+        'full-new': [1, 2, 3, 4, 5]
+    };
     if (window.isReplayMode) {
-        // 이미 Step 1~5를 다 완료한 상태
-        const courses = {
-            'quick': [1, 5],
-            'full': [1, 2, 3, 4, 5],
-            'normal': [1, 2, 3, 4, 5]
-        };
         stepSequence = courses[mode] || courses['full'];
     } else {
-        // 아직 Step 1~5를 완료하지 않은 상태: 항상 전체 학습
-        mode = 'full-new';
-        stepSequence = [1, 2, 3, 4, 5];
+        // 미완료 스테이지: quick은 [1,5], 그 외는 전체
+        if (mode === 'quick') {
+            stepSequence = [1, 5];
+        } else {
+            mode = 'full-new';
+            stepSequence = [1, 2, 3, 4, 5];
+        }
     }
 
     // ----------------------------------------------------
