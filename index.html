@@ -697,6 +697,51 @@
             <script>
                 const NOTICES = [
                     {
+                        date: '2026-04-23',
+                        title: '업데이트 안내',
+                        titleEn: 'Update Notice',
+                        content: `<p style="font-weight:bold; margin-bottom:12px;">1. 집중 훈련소에 망각의 고난 추가</p>
+<p><strong>집중 훈련소</strong>의 훈련 스텝 선택에 <strong>⌨️ 망각의 고난</strong> 항목이 추가되었습니다.</p>
+<ul style="padding-left:18px; margin:8px 0;">
+  <li>기존 망각의 고난은 장 전체 단위로만 진행할 수 있었지만, 이제 <strong>원하는 절 범위</strong>를 직접 골라서 연습할 수 있습니다.</li>
+  <li><strong>반복 사이클</strong> 설정도 그대로 적용됩니다. (예: 3회 반복 설정 시 선택한 구절을 3바퀴 연속 진행)</li>
+  <li>집중 훈련소에서 진행한 망각의 고난은 <strong>승점이 지급되지 않으며</strong>, 스테이지 클리어 및 히스토리에도 기록되지 않습니다.</li>
+</ul>
+<p style="font-weight:bold; margin-top:16px; margin-bottom:8px;">2. 망각의 고난 개선</p>
+<ul style="padding-left:18px; margin:8px 0;">
+  <li><strong>궁극의 모드</strong> 추가: 모음까지 모두 지워진 상태에서 구절 전체를 입력하는 최고 난이도 모드입니다.</li>
+  <li>글자 입력 시 내용이 <strong>실시간</strong>으로 표시됩니다.</li>
+  <li>Enter 키로 다음 구절로 편리하게 넘어갈 수 있습니다.</li>
+  <li>입력 중 화면 떨림 현상이 수정되었습니다.</li>
+</ul>
+<p style="font-weight:bold; margin-top:16px; margin-bottom:8px;">3. 기타 개선</p>
+<ul style="padding-left:18px; margin:8px 0;">
+  <li><strong>빠른 학습</strong> 기능이 개선되었습니다.</li>
+  <li><strong>Step 1</strong>에서 초성 보기 기능이 추가되었습니다.</li>
+  <li><strong>Step 3</strong> 화면 그래픽이 개선되었습니다.</li>
+</ul>`,
+                        contentEn: `<p style="font-weight:bold; margin-bottom:12px;">1. Memory Trial Added to Intensive Training</p>
+<p>The <strong>⌨️ Memory Trial</strong> option has been added to the <strong>Intensive Training</strong> step selector.</p>
+<ul style="padding-left:18px; margin:8px 0;">
+  <li>Previously, the Memory Trial could only run on a full chapter. Now you can <strong>select any verse range</strong> to practice.</li>
+  <li><strong>Repeat cycle</strong> settings apply as well. (e.g., set to 3 cycles to loop through the selected verses 3 times)</li>
+  <li>Memory Trial sessions in Intensive Training award <strong>no victory points</strong> and are not recorded in stage clears or history.</li>
+</ul>
+<p style="font-weight:bold; margin-top:16px; margin-bottom:8px;">2. Memory Trial Improvements</p>
+<ul style="padding-left:18px; margin:8px 0;">
+  <li><strong>Ultimate Mode</strong> added: the hardest difficulty, where vowels are also removed and you must type the full verse.</li>
+  <li>Typed characters now appear <strong>in real time</strong>.</li>
+  <li>Press Enter to advance to the next verse conveniently.</li>
+  <li>Fixed screen-shaking that occurred during input.</li>
+</ul>
+<p style="font-weight:bold; margin-top:16px; margin-bottom:8px;">3. Other Improvements</p>
+<ul style="padding-left:18px; margin:8px 0;">
+  <li><strong>Quick Study</strong> feature has been improved.</li>
+  <li><strong>Initial consonant hint</strong> added in Step 1.</li>
+  <li><strong>Step 3</strong> screen graphics have been improved.</li>
+</ul>`
+                    },
+                    {
                         date: '2026-04-21',
                         title: '업데이트 안내',
                         titleEn: 'Update Notice',
@@ -1848,6 +1893,7 @@
                 <button class="train-step-btn" data-step="3" style="flex:1; min-width:30%; padding:8px; background:#7f8c8d; color:#fff; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">Step 3</button>
                 <button class="train-step-btn" data-step="4" style="flex:1; min-width:30%; padding:8px; background:#7f8c8d; color:#fff; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">Step 4</button>
                 <button class="train-step-btn" data-step="5" style="flex:1; min-width:30%; padding:8px; background:#7f8c8d; color:#fff; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">Step 5</button>
+                <button class="train-step-btn" data-step="hardship" style="flex:1; min-width:60%; padding:8px; background:#7f8c8d; color:#fff; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">⌨️ 망각의 고난</button>
             </div>
         </div>
 

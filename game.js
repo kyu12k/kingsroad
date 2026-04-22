@@ -14819,6 +14819,11 @@ function updateTrainingCycleIndicator() {
     const cycleEl = document.getElementById('training-cycle-indicator');
     if (!cycleEl) return;
 
+    if (hardshipState && hardshipState.trainingMode) {
+        cycleEl.innerText = t('label_cycle_display', { cur: hardshipState.trainingCurrentCycle || 1, total: hardshipState.trainingRepeatCount || 1 });
+        return;
+    }
+
     if (!window.isTrainingMode) {
         cycleEl.innerText = t('label_cycle_display', { cur: 1, total: 1 });
         return;
@@ -14832,7 +14837,8 @@ function updateTrainingCycleIndicator() {
 function applyTrainingStepSelection() {
     const stepBtns = document.querySelectorAll('.train-step-btn');
     stepBtns.forEach(btn => {
-        const step = parseInt(btn.getAttribute('data-step'), 10);
+        const raw = btn.getAttribute('data-step');
+        const step = raw === 'hardship' ? 'hardship' : parseInt(raw, 10);
         const isActive = step === selectedTrainingStep;
         btn.style.background = isActive ? '#3498db' : '#7f8c8d';
         btn.classList.toggle('active', isActive);
@@ -14885,7 +14891,8 @@ function startTrainingMode() {
     const stepBtns = document.querySelectorAll('.train-step-btn');
     stepBtns.forEach(btn => {
         btn.onclick = (e) => {
-            selectedTrainingStep = parseInt(e.target.getAttribute('data-step'), 10);
+            const v = e.target.getAttribute('data-step');
+            selectedTrainingStep = v === 'hardship' ? 'hardship' : parseInt(v, 10);
             applyTrainingStepSelection();
         };
     });
@@ -15014,6 +15021,26 @@ function executeTraining() {
         return;
     }
 
+    // 망각의 고난 모드: 별도 흐름으로 분기
+    if (selectedTrainingStep === 'hardship') {
+        const verseIds = HARDSHIP_VERSES
+            .filter(v => {
+                if (v.chapter < startChapter || v.chapter > endChapter) return false;
+                if (v.chapter === startChapter && v.verse < startVerse) return false;
+                if (v.chapter === endChapter && v.verse > endVerse) return false;
+                return true;
+            })
+            .map(v => v.id);
+        if (verseIds.length === 0) {
+            alert(t('alert_training_no_verses'));
+            return;
+        }
+        saveTrainingSettings({ startChapter, startVerse, endChapter, endVerse, step: 'hardship', repeatCount, randomOrder: isRandomOrder });
+        closeTrainingModal();
+        startHardshipSessionInTraining(verseIds, isRandomOrder);
+        return;
+    }
+
     if (!repeatCount || repeatCount < 1) {
         alert(t('alert_training_repeat_min'));
         return;
@@ -15115,6 +15142,18 @@ function executeTraining() {
     }
 }
 
+function startHardshipSessionInTraining(verseIds, isRandomOrder) {
+    selectedHardshipOrderType = isRandomOrder ? 'random' : 'sequential';
+    window.hardshipOrigin = 'training';
+    startHardshipSession('memory', verseIds);
+    hardshipState.trainingMode = true;
+    hardshipState.trainingVerseIds = verseIds.slice();
+    hardshipState.trainingIsRandom = isRandomOrder;
+    hardshipState.trainingRepeatCount = selectedTrainingRepeatCount;
+    hardshipState.trainingCurrentCycle = 1;
+    updateTrainingCycleIndicator();
+}
+
 /* =========================================
    [시스템: 고난 길 모드]
    ========================================= */
@@ -15153,7 +15192,8 @@ function createEmptyHardshipState() {
         currentVerseScore: null,
         currentVerseTranscript: '',
         showInfo: false,
-        ultimateMemoryMode: false
+        ultimateMemoryMode: false,
+        trainingMode: false
     };
 }
 
@@ -16070,6 +16110,7 @@ function awardHardshipScore(points) {
     if (!points || points <= 0) return;
 
     hardshipState.score += points;
+    if (hardshipState.trainingMode) return; // 집중 훈련소 망각의 고난: 승점 미지급
     leagueData.myScore = (leagueData.myScore || 0) + points;
     leagueData.myMonthlyScore = (leagueData.myMonthlyScore || 0) + points;
     leagueData.totalScore = (leagueData.totalScore || 0) + points;
@@ -16636,6 +16677,32 @@ function submitHardshipMemoryGuess() {
 }
 
 function finishHardshipSession(reason) {
+    // 집중 훈련소 망각의 고난: 사이클 남아있으면 결과 화면 없이 재시작
+    if (reason === 'completed' && hardshipState.trainingMode &&
+        hardshipState.trainingCurrentCycle < hardshipState.trainingRepeatCount) {
+        hardshipState.trainingCurrentCycle++;
+        const nextCycle = hardshipState.trainingCurrentCycle;
+        const totalCycles = hardshipState.trainingRepeatCount;
+        const verseIds = hardshipState.trainingVerseIds;
+        const isRandom = hardshipState.trainingIsRandom;
+        clearHardshipPendingTimeout();
+        selectedHardshipOrderType = isRandom ? 'random' : 'sequential';
+        window.hardshipOrigin = 'training';
+        startHardshipSession('memory', verseIds);
+        hardshipState.trainingMode = true;
+        hardshipState.trainingVerseIds = verseIds;
+        hardshipState.trainingIsRandom = isRandom;
+        hardshipState.trainingRepeatCount = totalCycles;
+        hardshipState.trainingCurrentCycle = nextCycle;
+        window.currentTrainingCycle = nextCycle;
+        window.trainingRepeatCount = totalCycles;
+        updateTrainingCycleIndicator();
+        if (typeof showReadAloudToast === 'function') {
+            showReadAloudToast(t('toast_training_repeat', { step: nextCycle }));
+        }
+        return;
+    }
+
     // result-notif-wrap 초기화 (이전 결과 화면의 알림 버튼 잔상 제거)
     const notifWrapHs = document.getElementById('result-notif-wrap');
     if (notifWrapHs) { notifWrapHs.innerHTML = ''; notifWrapHs.style.display = 'none'; }
@@ -16759,7 +16826,7 @@ function finishHardshipSession(reason) {
     }
 
     // 주소의 고난 / 망각의 고난 완주 시 해당 장 하위 스테이지 클리어 (보스 클리어와 동일 처리)
-    if (reason === 'completed' && (hardshipState.mode === 'address' || hardshipState.mode === 'memory')) {
+    if (reason === 'completed' && (hardshipState.mode === 'address' || hardshipState.mode === 'memory') && !hardshipState.trainingMode) {
         const _hardshipNeedSwap = hardshipState.applyToFree && activeMode === 'kings';
         if (_hardshipNeedSwap) switchMode('free');
         const _hardshipChapters = hardshipState.forcedChapter != null
@@ -16951,7 +17018,7 @@ function finishHardshipSession(reason) {
 
     // 망각의 고난 완주: 기록 저장 및 결과 화면에 히스토리 표시 (단일 장 및 범위 세션)
     const memoryHistoryHtml = (() => {
-        if (reason !== 'completed' || hardshipState.mode !== 'memory') return '';
+        if (reason !== 'completed' || hardshipState.mode !== 'memory' || hardshipState.trainingMode) return '';
         const sessionDuration = Math.floor((Date.now() - stageStartTime) / 1000);
         const record = {
             correct: hardshipState.studiedCount,
