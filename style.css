@@ -1809,6 +1809,63 @@ body, html {
     flex-wrap: wrap;
 }
 
+.hardship-ultimate-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 6px;
+    width: 100%;
+}
+
+.btn-hardship-ultimate {
+    background: #8e44ad;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    padding: 5px 12px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+.btn-hardship-ultimate.active {
+    background: #5b2d7e;
+}
+
+.btn-hardship-ultimate:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* 궁극의 암기 모드: 빈 슬롯과 고정 문자 숨김 */
+.hardship-typing-board.hardship-ultimate-active .hardship-char-slot:not(.filled):not(.hint-revealed),
+.hardship-typing-board.hardship-ultimate-active .hardship-fixed-char {
+    visibility: hidden;
+}
+
+.hardship-typing-board.hardship-ultimate-active .hardship-char-slot.filled {
+    visibility: visible;
+}
+
+.hardship-not-filled-alert {
+    background: rgba(231, 76, 60, 0.92);
+    color: #fff;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 0.88rem;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 8px;
+    animation: fadeInOut 2s ease forwards;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(-4px); }
+    15% { opacity: 1; transform: translateY(0); }
+    75% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
 /* 장/절 버튼 그리드 (주소의 고난 & 기억하시나요 공용) */
 .addr-grid-wrap {
     width: 100%;

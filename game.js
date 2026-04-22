@@ -568,6 +568,9 @@ const LANG = {
         btn_go_back: '돌아가기',
         btn_chosung: '초성 보기',
         btn_chosung_off: '초성 끄기 👁️',
+        btn_ultimate_memory: '궁극의 암기',
+        btn_ultimate_memory_off: '힌트 보기',
+        hardship_memory_not_filled: '글자 수를 모두 채운 후 정답을 확인하세요.',
         btn_read: '읽기',
         btn_retry_perfect: '다시하기: 눈 감고도 외울 때까지!',
         btn_next_stage: '다음 단계로 ▶',
@@ -1082,6 +1085,9 @@ const LANG = {
         hardship_address_ch_btn: 'Ch.{ch}',
         hardship_address_v_btn: 'v.{v}',
         hardship_memory_indicator: 'See the reference and recall the full verse',
+        btn_ultimate_memory: 'Ultimate Recall',
+        btn_ultimate_memory_off: 'Show Hints',
+        hardship_memory_not_filled: 'Please fill in all characters before checking.',
         hardship_btn_submit: 'Check Answer',
         hardship_btn_reset_input: 'Reset Input',
         hardship_hint_confirm: '💎 Use {cost} gems to reveal one character?',
@@ -15145,7 +15151,8 @@ function createEmptyHardshipState() {
         lastTranscript: '',
         currentVerseScore: null,
         currentVerseTranscript: '',
-        showInfo: false
+        showInfo: false,
+        ultimateMemoryMode: false
     };
 }
 
@@ -15236,6 +15243,7 @@ function proceedHardshipToNextVerse() {
 
     hardshipState.awaitingNext = false;
     hardshipState.wrongSlots = [];
+    hardshipState.ultimateMemoryMode = false;
 
     if (playerHearts <= 0 && hardshipState.mode !== 'endurance') {
         finishHardshipSession('hearts');
@@ -16128,11 +16136,13 @@ function renderHardshipMemoryVerse() {
 
     const hiddenInputMaxLength = getHardshipFillableVerseLength();
 
+    const ultimateActive = !!hardshipState.ultimateMemoryMode;
+
     field.innerHTML = `
         <div class="verse-indicator">${t('hardship_memory_indicator')}</div>
         <div class="hardship-verse-card" onclick="focusHardshipMemoryHiddenInput()" ontouchstart="focusHardshipMemoryHiddenInput()">
             <div class="hardship-mode-tag">[${hardshipState.currentVerse.label}]</div>
-            <div class="hardship-typing-board" onclick="focusHardshipMemoryHiddenInput()" ontouchstart="focusHardshipMemoryHiddenInput()">${typingBoardHtml}</div>
+            <div class="hardship-typing-board${ultimateActive ? ' hardship-ultimate-active' : ''}" onclick="focusHardshipMemoryHiddenInput()" ontouchstart="focusHardshipMemoryHiddenInput()">${typingBoardHtml}</div>
             <input
                 id="hidden-typing-input"
                 class="hardship-memory-hidden-input"
@@ -16149,8 +16159,11 @@ function renderHardshipMemoryVerse() {
     `;
 
     control.innerHTML = `
+        <div class="hardship-ultimate-row" style="${hardshipState.awaitingNext ? 'display:none;' : ''}">
+            <button id="btn-hardship-ultimate" class="btn-hardship-ultimate${ultimateActive ? ' active' : ''}" onclick="toggleHardshipUltimateMode()" ${hardshipState.locked ? 'disabled' : ''}>${ultimateActive ? t('btn_ultimate_memory_off') : t('btn_ultimate_memory')}</button>
+        </div>
         <div class="hardship-control-row">
-            <button id="hardship-memory-submit-btn" class="btn-attack" onclick="submitHardshipMemoryGuess()" style="${hardshipState.awaitingNext ? 'display:none;' : ''}" ${(hardshipState.locked || (hardshipState.memoryTypedText || '').length < getHardshipFillableVerseLength()) ? 'disabled' : ''}>${t('hardship_btn_submit')}</button>
+            <button id="hardship-memory-submit-btn" class="btn-attack" onclick="submitHardshipMemoryGuess()" style="${hardshipState.awaitingNext ? 'display:none;' : ''}" ${hardshipState.locked ? 'disabled' : ''}>${t('hardship_btn_submit')}</button>
             <button id="hardship-next-btn" class="btn-attack" onclick="proceedHardshipToNextVerse()" style="background:#2ecc71; ${hardshipState.awaitingNext ? '' : 'display:none;'}">${t('hardship_btn_next')}</button>
             <button class="btn-reset-step5" onclick="resetHardshipMemoryInputs()" style="${hardshipState.awaitingNext ? 'display:none;' : ''}" ${hardshipState.locked ? 'disabled' : ''}>${t('hardship_btn_reset_input')}</button>
         </div>
@@ -16184,8 +16197,7 @@ function bindHardshipMemoryInputGuards() {
     const blockArrowNavigation = (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
-            const filled = (hardshipState.memoryTypedText || '').length >= getHardshipFillableVerseLength();
-            if (!hardshipState.locked && filled && !hardshipState.awaitingNext) {
+            if (!hardshipState.locked && !hardshipState.awaitingNext) {
                 input.blur();
                 submitHardshipMemoryGuess();
             }
@@ -16336,7 +16348,7 @@ function updateHardshipMemoryBoard() {
 
     const submitBtn = document.getElementById('hardship-memory-submit-btn');
     if (submitBtn && !hardshipState.locked && !hardshipState.awaitingNext) {
-        submitBtn.disabled = text.length < slots.length;
+        submitBtn.disabled = false;
     }
 
     if (targetScrollSlot) {
@@ -16393,6 +16405,46 @@ function resetHardshipMemoryInputs() {
     hardshipState.memoryTypedText = '';
 
     renderHardshipMemoryVerse();
+}
+
+function toggleHardshipUltimateMode() {
+    if (!window.isHardshipMode || hardshipState.mode !== 'memory' || hardshipState.locked) return;
+    hardshipState.ultimateMemoryMode = !hardshipState.ultimateMemoryMode;
+
+    const board = document.querySelector('.hardship-typing-board');
+    const btn = document.getElementById('btn-hardship-ultimate');
+    const ultimateRow = document.querySelector('.hardship-ultimate-row');
+
+    if (board) {
+        if (hardshipState.ultimateMemoryMode) {
+            board.classList.add('hardship-ultimate-active');
+        } else {
+            board.classList.remove('hardship-ultimate-active');
+        }
+    }
+    if (btn) {
+        btn.textContent = hardshipState.ultimateMemoryMode ? t('btn_ultimate_memory_off') : t('btn_ultimate_memory');
+        btn.classList.toggle('active', hardshipState.ultimateMemoryMode);
+    }
+    setTimeout(() => focusHardshipMemoryHiddenInput(), 0);
+}
+
+function showHardshipNotFilledAlert() {
+    const existingAlert = document.getElementById('hardship-not-filled-alert');
+    if (existingAlert) return;
+
+    const verseCard = document.querySelector('.hardship-verse-card');
+    if (!verseCard) return;
+
+    const alert = document.createElement('div');
+    alert.id = 'hardship-not-filled-alert';
+    alert.className = 'hardship-not-filled-alert';
+    alert.textContent = t('hardship_memory_not_filled');
+    verseCard.appendChild(alert);
+
+    setTimeout(() => {
+        if (alert.parentNode) alert.parentNode.removeChild(alert);
+    }, 2000);
 }
 
 function getNextHardshipHintIndex() {
@@ -16495,6 +16547,14 @@ function useHardshipMemoryHint() {
 
 function submitHardshipMemoryGuess() {
     if (!window.isHardshipMode || hardshipState.mode !== 'memory' || hardshipState.locked || !hardshipState.currentVerse) return;
+
+    const filledLength = String(hardshipState.memoryTypedText || '').length;
+    const targetLength = getHardshipInputTargetCount();
+    if (filledLength < targetLength) {
+        showHardshipNotFilledAlert();
+        setTimeout(() => focusHardshipMemoryHiddenInput(), 0);
+        return;
+    }
 
     const hiddenInput = document.getElementById('hidden-typing-input');
     if (hiddenInput && typeof hiddenInput.blur === 'function') {
