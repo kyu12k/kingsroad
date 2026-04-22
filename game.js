@@ -16219,7 +16219,9 @@ function bindHardshipMemoryInputGuards() {
         moveHardshipMemoryCursorToEnd(input);
     };
 
+    const onCompositionStart = () => { hardshipState.isComposing = true; };
     const onCompositionEnd = () => {
+        hardshipState.isComposing = false;
         if (!window.isHardshipMode || hardshipState.mode !== 'memory' || hardshipState.locked) return;
         hardshipState.memoryTypedText = input.value;
         updateHardshipMemoryBoard();
@@ -16230,6 +16232,7 @@ function bindHardshipMemoryInputGuards() {
     input.addEventListener('click', forceCursorToEnd);
     input.addEventListener('touchend', forceCursorToEnd);
     input.addEventListener('focus', forceCursorToEnd);
+    input.addEventListener('compositionstart', onCompositionStart);
     input.addEventListener('compositionend', onCompositionEnd);
     input.dataset.guardsBound = 'true';
 }
@@ -16351,7 +16354,7 @@ function updateHardshipMemoryBoard() {
         submitBtn.disabled = false;
     }
 
-    if (targetScrollSlot) {
+    if (targetScrollSlot && !hardshipState.isComposing) {
         clearTimeout(updateHardshipMemoryBoard._scrollTimer);
         const slotToScroll = targetScrollSlot;
         updateHardshipMemoryBoard._scrollTimer = setTimeout(() => {
@@ -16379,9 +16382,8 @@ function updateHardshipMemoryBoard() {
 
 function handleHardshipMemoryInput(event) {
     if (!window.isHardshipMode || hardshipState.mode !== 'memory' || hardshipState.locked) return;
-    if (event.isComposing) return;
 
-    if (typeof SoundEffect !== 'undefined' && SoundEffect.playKeyStroke) SoundEffect.playKeyStroke();
+    if (typeof SoundEffect !== 'undefined' && SoundEffect.playKeyStroke && !event.isComposing) SoundEffect.playKeyStroke();
 
     const input = event.target;
     const currentText = input.value;
