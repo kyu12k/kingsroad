@@ -1099,23 +1099,22 @@ body, html {
         }
         .battle-header {
             width: 100%;
-            padding: 10px 14px;
+            padding: 8px 14px;
             background: linear-gradient(to bottom, #5a0e1c, #0a1428); /* 크림슨 → 딥 네이비: 보스의 분노+공포 */
             display: flex;
-            flex-direction: row;
-            align-items: center;
+            flex-direction: column;
+            align-items: stretch;
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
             z-index: 10;
             box-sizing: border-box;
-            gap: 10px;
+            gap: 6px;
         }
 
         .boss-status {
             display: flex;
             flex-direction: row;
             align-items: center;
-            flex: 1 1 0;
-            min-width: 0;
+            width: 100%;
             gap: 8px;
         }
 
@@ -1129,7 +1128,7 @@ body, html {
         }
 
         .boss-avatar {
-            font-size: 3.5rem;
+            font-size: 3rem;
             animation: floating 3s ease-in-out infinite, breathing-fire 4s ease-in-out infinite;
             filter: drop-shadow(0 0 8px #ff6b3d);
             position: relative;
@@ -1207,9 +1206,9 @@ body, html {
             display: flex;
             flex-direction: row;
             align-items: center;
+            justify-content: space-between;
             gap: 6px;
-            flex: 0 0 auto;
-            flex-shrink: 0;
+            width: 100%;
         }
 
         .heart-display {
