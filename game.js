@@ -6063,15 +6063,22 @@ function loadNextVerse() {
             m.onclick = (e) => {
                 e.stopPropagation();
                 if (!insertSelectedPoolBtn) return;
-                insertSelectedPoolBtn.classList.remove('error-block', 'correct-block');
+                const poolBtn = insertSelectedPoolBtn;
+                poolBtn.classList.remove('error-block', 'correct-block', 'insert-mode-selected');
+
+                // proxy 먼저 생성(innerText 읽기) 후 pool 버튼 숨김
+                const proxy = createZoneProxy(poolBtn);
+                poolBtn.style.visibility = 'hidden';
+                poolBtn.style.pointerEvents = 'none';
+
                 if (refNode && refNode.parentElement === zone) {
-                    zone.insertBefore(insertSelectedPoolBtn, refNode);
+                    zone.insertBefore(proxy, refNode);
                 } else {
-                    zone.appendChild(insertSelectedPoolBtn);
+                    zone.appendChild(proxy);
                 }
+
                 const ph = document.getElementById('placeholder-text');
                 if (ph) ph.style.display = 'none';
-                insertSelectedPoolBtn.classList.remove('insert-mode-selected');
                 insertSelectedPoolBtn = null;
                 hideInsertMarkers();
                 SoundEffect.playClick();
@@ -6119,13 +6126,32 @@ function loadNextVerse() {
         if (!hasBlocks && insertMode) setInsertMode(false);
     }
 
+    function createZoneProxy(poolBtn) {
+        const proxy = document.createElement('div');
+        proxy.className = 'word-block';
+        proxy.innerText = poolBtn.innerText;
+        proxy.dataset.original = poolBtn.dataset.original;
+        proxy.dataset.poolIndex = poolBtn.dataset.poolIndex;
+        proxy.dataset.isProxy = '1';
+        proxy.onclick = () => handleBossBlockClick(proxy);
+        return proxy;
+    }
+
+    function restorePoolBtn(poolIndex) {
+        const poolBtn = pool.querySelector(`[data-pool-index="${poolIndex}"]`);
+        if (poolBtn) {
+            poolBtn.style.visibility = '';
+            poolBtn.style.pointerEvents = '';
+        }
+    }
+
     function handleBossBlockClick(btn) {
         btn.classList.remove('error-block');
         btn.classList.remove('correct-block');
 
-        // ── 끼워넣기 모드: pool 블록만 선택/해제, zone 블록은 무시 ──
+        // ── 끼워넣기 모드: pool 블록(isProxy 아님)만 선택/해제 ──
         if (insertMode) {
-            if (btn.parentElement === pool) {
+            if (btn.dataset.isProxy !== '1') {
                 if (insertSelectedPoolBtn === btn) {
                     btn.classList.remove('insert-mode-selected');
                     insertSelectedPoolBtn = null;
@@ -6142,12 +6168,18 @@ function loadNextVerse() {
 
         // ── 일반 모드 ──
         SoundEffect.playClick();
-        if (btn.parentElement === pool) {
+        if (btn.dataset.isProxy !== '1') {
+            // proxy 먼저 생성(innerText 읽기) 후 pool 버튼 숨김
+            const proxy = createZoneProxy(btn);
+            btn.style.visibility = 'hidden';
+            btn.style.pointerEvents = 'none';
             const ph = document.getElementById('placeholder-text');
             if (ph) ph.style.display = 'none';
-            zone.appendChild(btn);
+            zone.appendChild(proxy);
         } else {
-            pool.appendChild(btn);
+            // zone proxy → 제거 + pool 버튼 복원
+            restorePoolBtn(btn.dataset.poolIndex);
+            btn.remove();
             if (zone.querySelectorAll('.word-block').length === 0) {
                 const ph = document.getElementById('placeholder-text');
                 if (ph) ph.style.display = 'block';
@@ -6163,11 +6195,12 @@ function loadNextVerse() {
         selectedBlock = null;
 
         const shuffled = [...chunks].sort((a, b) => a.localeCompare(b, currentLang === 'en' ? 'en' : 'ko'));
-        shuffled.forEach(word => {
+        shuffled.forEach((word, i) => {
             const btn = document.createElement('div');
             btn.className = 'word-block';
             btn.innerText = getChosung(word);
             btn.dataset.original = word;
+            btn.dataset.poolIndex = String(i);
             btn.style.backgroundColor = "#e74c3c"; // 붉은색 계열
             btn.style.color = "#fff";
             btn.style.border = "1px solid #c0392b";
@@ -6293,20 +6326,17 @@ function loadNextVerse() {
 
     resetBtn.onclick = () => {
         setInsertMode(false); // 다시 조립 시 끼워넣기 OFF
-        const zone = document.getElementById('answer-zone');
-        const pool = document.getElementById('block-pool');
 
         if (zone && pool) {
-            // 1. 정답칸에 올라간 모든 블록을 찾아서
-            const blocks = Array.from(zone.querySelectorAll('.word-block'));
-            blocks.forEach(block => {
-                block.classList.remove('error-block');
-                block.classList.remove('correct-block');
-                // 2. 대기열(pool)로 물리적으로 돌려보내기
-                pool.appendChild(block);
+            // zone의 모든 proxy 제거 + 대응하는 pool 버튼 복원
+            const proxies = Array.from(zone.querySelectorAll('.word-block'));
+            proxies.forEach(proxy => {
+                proxy.classList.remove('error-block', 'correct-block');
+                restorePoolBtn(proxy.dataset.poolIndex);
+                proxy.remove();
             });
 
-            // 3. 안내 문구 다시 띄우기
+            // 안내 문구 다시 띄우기
             if (!zone.querySelector('#placeholder-text')) {
                 zone.innerHTML = `<span class="placeholder-text" id="placeholder-text">${t('game_hint_instruction')}</span>`;
             }

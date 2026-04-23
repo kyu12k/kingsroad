@@ -1231,31 +1231,25 @@
         <div class="battle-header">
             <div class="boss-status">
                 <div class="boss-avatar" onclick="touchBossToKill()">🐲</div>
-                <div class="hp-container">
-                    <div class="hp-bar-fill" id="boss-hp-bar" style="width: 100%;"></div>
-                </div>
-                <div class="boss-hp-text"><span data-i18n="label_dragon_hp">용 HP:</span> <span id="boss-hp-text">-</span></div>
-            </div>
-
-            <div class="player-status"
-                style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                <button class="btn-pause" onclick="openQuitModal()" data-i18n="btn_give_up">🏳️ 포기하기</button>
-
-                <div style="display:flex; gap:5px; align-items:center;">
-                    <button onclick="useHint()" class="item-btn" id="battle-hint-btn"
-                        style="background:#f39c12; border-color:#d35400; color:white;">
-                        💡 힌트 <span id="battle-hint-cost" style="font-size:0.7rem; margin-left:2px;">(💎10)</span>
-                    </button>
-                </div>
-
-                <div style="display:flex; gap:8px; align-items:center;">
-                    <button onclick="toggleSound()" class="sfx-toggle-btn" style="background:none; border:none; font-size:1.1rem; cursor:pointer; padding:0; color:white;">🔊</button>
-                    <div class="heart-display">
-                        ❤️ <span id="player-hearts">5</span>
+                <div class="boss-hp-wrap">
+                    <div class="hp-container">
+                        <div class="hp-bar-fill" id="boss-hp-bar" style="width: 100%;"></div>
                     </div>
+                    <div class="boss-hp-text"><span data-i18n="label_dragon_hp">용 HP:</span> <span id="boss-hp-text">-</span></div>
                 </div>
             </div>
-            <!-- battle-help 안내문구 삭제됨 -->
+
+            <div class="player-status">
+                <button class="btn-pause" onclick="openQuitModal()" data-i18n="btn_give_up">🏳️ 포기</button>
+                <button onclick="useHint()" class="item-btn" id="battle-hint-btn"
+                    style="background:#f39c12; border-color:#d35400; color:white;">
+                    💡 힌트 <span id="battle-hint-cost" style="font-size:0.7rem; margin-left:2px;">(💎10)</span>
+                </button>
+                <button onclick="toggleSound()" class="sfx-toggle-btn battle-sfx-btn">🔊</button>
+                <div class="heart-display">
+                    ❤️ <span id="player-hearts">5</span>
+                </div>
+            </div>
         </div>
 
         <div class="battle-field">

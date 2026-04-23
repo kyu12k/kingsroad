@@ -1097,43 +1097,54 @@ body, html {
             background-image: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url('https://www.transparenttextures.com/patterns/cubes.png');
             justify-content: space-between;
         }
-        .battle-header { 
-            width: 100%; 
-            padding: 20px; 
+        .battle-header {
+            width: 100%;
+            padding: 10px 14px;
             background: linear-gradient(to bottom, #5a0e1c, #0a1428); /* 크림슨 → 딥 네이비: 보스의 분노+공포 */
-            display: flex; 
-            flex-direction: row; 
-            align-items: flex-start; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5); 
-            z-index: 10; 
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            z-index: 10;
             box-sizing: border-box;
-            gap: 30px;
+            gap: 10px;
         }
-        
+
         .boss-status {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
-            flex: 0 0 auto;
-            min-width: 140px;
+            flex: 1 1 0;
+            min-width: 0;
+            gap: 8px;
         }
-        
-        .boss-avatar { 
-            font-size: 7rem; 
+
+        .boss-hp-wrap {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 3px;
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        .boss-avatar {
+            font-size: 3.5rem;
             animation: floating 3s ease-in-out infinite, breathing-fire 4s ease-in-out infinite;
-            margin-bottom: 10px;
             filter: drop-shadow(0 0 8px #ff6b3d);
             position: relative;
             transform: scaleX(-1);
+            flex-shrink: 0;
+            line-height: 1;
         }
-        
+
         /* 용이 불을 뿜는 애니메이션 */
         .boss-avatar::before {
             content: '🔥';
             position: absolute;
-            font-size: 3.5rem;
-            left: -2rem;
-            top: 0.5rem;
+            font-size: 1.8rem;
+            left: -1rem;
+            top: 0.3rem;
             opacity: 0;
             animation: fire-burst 2s ease-in-out infinite;
         }
@@ -1150,14 +1161,14 @@ body, html {
             100% { opacity: 0; transform: translateX(-40px) scale(0.3); }
         }
         
-        .hp-container { 
-            width: 100%; 
-            height: 24px; 
-            background-color: #2c3e50; 
-            border-radius: 12px; 
+        .hp-container {
+            width: 100%;
+            height: 16px;
+            background-color: #2c3e50;
+            border-radius: 8px;
             overflow: hidden;
-            border: 2px solid #8b0000; 
-            margin-bottom: 8px;
+            border: 2px solid #8b0000;
+            margin-bottom: 0;
             display: flex;
             gap: 1px;
             padding: 2px;
@@ -1185,35 +1196,39 @@ body, html {
             opacity: 0.5;
         }
         
-        .boss-hp-text { 
-            font-size: 0.95rem; 
+        .boss-hp-text {
+            font-size: 0.75rem;
             color: #ff9999;
             font-weight: bold;
             text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+            white-space: nowrap;
         }
-        .player-status { 
-            width: 100%; 
-            display: flex; 
-            flex-direction: column;
-            justify-content: flex-start;
-            gap: 12px;
-            font-size: 1rem; 
-            flex: 1;
-        }
-        
-        .player-status > div {
+        .player-status {
             display: flex;
-            justify-content: space-between;
+            flex-direction: row;
             align-items: center;
-            gap: 10px;
+            gap: 6px;
+            flex: 0 0 auto;
+            flex-shrink: 0;
         }
-        
+
         .heart-display {
             background: rgba(255,69,0,0.2);
-            padding: 8px 15px;
-            border-radius: 15px;
+            padding: 5px 10px;
+            border-radius: 12px;
             border: 1px solid #ff6b3d;
             font-weight: bold;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .battle-sfx-btn {
+            background: none;
+            border: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 0 4px;
+            color: white;
         }
         .battle-field { flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
         .verse-indicator { color: var(--primary-color); margin-bottom: 15px; font-weight: bold; }
@@ -1248,6 +1263,7 @@ body, html {
             box-shadow: none;
         }
         .btn-pause { background: none; border: 1px solid #7f8c8d; color: #bdc3c7; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        .battle-header .item-btn { padding: 5px 8px !important; font-size: 0.85rem !important; min-width: 0 !important; }
         /* Step5 오답 빼기 버튼 */
         .btn-remove-errors {
             display: block;
