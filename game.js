@@ -11853,7 +11853,6 @@ function changeScrollSpeed(mode) {
             btnSlow.style.color = '#e67e22';
             btnSlow.style.fontWeight = 'bold';
         }
-        alert(t('alert_speed_elder'));
 
     } else if (mode === 'fast') {
         scrollGame.speed = 1.5; // 기존 빠른 모드 속도
@@ -11862,7 +11861,6 @@ function changeScrollSpeed(mode) {
             btnFast.style.color = '#e74c3c';
             btnFast.style.fontWeight = 'bold';
         }
-        alert(t('alert_speed_fast'));
 
     } else {
         // normal (보통)
@@ -11872,7 +11870,6 @@ function changeScrollSpeed(mode) {
             btnNormal.style.color = '#27ae60';
             btnNormal.style.fontWeight = 'bold';
         }
-        alert(t('alert_speed_normal'));
     }
 }
 
