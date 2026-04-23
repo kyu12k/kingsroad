@@ -15716,7 +15716,7 @@ function updateHardshipHeader() {
     if (progressEl) progressEl.textContent = t('label_progress_verses', { cur: progressCount, total: totalCount });
 
     if (scoreEl) {
-        if (currentMode === 'endurance') {
+        if (currentMode === 'endurance' || hardshipState.trainingMode) {
             scoreEl.style.display = 'none';
         } else {
             scoreEl.style.display = 'inline-flex';
@@ -16138,7 +16138,9 @@ function submitHardshipAddressGuess() {
         hardshipState.studiedCount += 1;
         hardshipState.feedback = {
             type: 'success',
-            message: t('hardship_feedback_correct', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }), pts: earnedPoints })
+            message: hardshipState.trainingMode
+                ? t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) + ' · 정답'
+                : t('hardship_feedback_correct', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }), pts: earnedPoints })
         };
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
         renderHardshipAddressVerse();
@@ -16645,7 +16647,9 @@ function submitHardshipMemoryGuess() {
         hardshipState.wrongSlots = [];
         hardshipState.feedback = {
             type: 'success',
-            message: t('hardship_feedback_correct', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }), pts: earnedPoints })
+            message: hardshipState.trainingMode
+                ? t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) + ' · 정답'
+                : t('hardship_feedback_correct', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }), pts: earnedPoints })
         };
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
         renderHardshipMemoryVerse();
@@ -16745,13 +16749,15 @@ function finishHardshipSession(reason) {
             resultStreakText.innerHTML = t('hardship_session_endurance_speech', {
                 count: `<span id="streak-days">${hardshipState.studiedCount}</span>`
             });
+        } else if (hardshipState.trainingMode) {
+            resultStreakText.innerHTML = `<span id="streak-days">${hardshipState.studiedCount}절 완료</span>`;
         } else {
             resultStreakText.innerHTML = t('hardship_session_score', { score: `<span id="streak-days">${hardshipState.score}</span>` });
         }
     }
 
     if (resultExpLabel) {
-        resultExpLabel.innerText = hardshipState.mode === 'endurance' ? t('hardship_result_score_label') : t('hardship_result_score_label');
+        resultExpLabel.innerText = hardshipState.trainingMode ? '훈련 결과' : (hardshipState.mode === 'endurance' ? t('hardship_result_score_label') : t('hardship_result_score_label'));
     }
 
     if (resultContinueBtn) {
@@ -16769,9 +16775,9 @@ function finishHardshipSession(reason) {
             : `${accuracy}%`;
     }
     if (resultExp) {
-        resultExp.innerText = hardshipState.mode === 'endurance'
-            ? `${hardshipState.score}`
-            : `${hardshipState.score}`;
+        resultExp.innerText = hardshipState.trainingMode
+            ? '—'
+            : (hardshipState.mode === 'endurance' ? `${hardshipState.score}` : `${hardshipState.score}`);
     }
 
     // 암송의 고난 완주 시 평균 80% 이상이면 해당 장 하위 스테이지 클리어 + 보스 클리어 효과
