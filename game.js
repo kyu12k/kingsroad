@@ -8475,7 +8475,53 @@ function showClearScreen() {
     if (statLabels[0]) statLabels[0].textContent = t('result_label_time');
     if (statLabels[1]) statLabels[1].textContent = t('result_label_accuracy');
 
+    // 다음 구절 바로 학습 버튼 (일반 모드 전용)
+    const existingNextBtn = resultModalEl.querySelector('#btn-next-stage');
+    if (existingNextBtn) existingNextBtn.remove();
+    if (!isTraining && !window.isHardshipMode) {
+        const nextId = getNextNormalStageId(window.currentStageId);
+        if (nextId) {
+            const nextBtn = document.createElement('button');
+            nextBtn.id = 'btn-next-stage';
+            nextBtn.className = 'btn-continue';
+            nextBtn.style.cssText = 'margin-top:8px; background:linear-gradient(135deg,#27ae60,#2ecc71); box-shadow:0 4px 0 #1e8449; color:#fff;';
+            nextBtn.textContent = currentLang === 'en' ? 'Next Verse ▶' : '다음 구절 학습 ▶';
+            nextBtn.onclick = () => goToNextStage(nextId);
+            const continueBtn = resultModalEl.querySelector('#result-continue-btn');
+            if (continueBtn) continueBtn.insertAdjacentElement('afterend', nextBtn);
+        }
+    }
+
     resultModalEl.classList.add('active');
+}
+
+// 현재 스테이지 다음 normal 스테이지 ID 반환 (챕터 경계 포함)
+function getNextNormalStageId(currentId) {
+    if (!currentId) return null;
+    const unlockedSet = activeMode === 'kings' ? getKingsRoadUnlockedSet() : null;
+
+    let found = false;
+    for (const chapter of gameData) {
+        for (const stage of chapter.stages) {
+            if (found) {
+                if (stage.type !== 'normal') return null; // 다음이 boss/mid-boss면 표시 안 함
+                if (unlockedSet && !unlockedSet.has(stage.id)) return null; // 왕의 길 미해금
+                return stage.id;
+            }
+            if (stage.id === currentId) found = true;
+        }
+    }
+    return null;
+}
+
+// 결과 모달에서 다음 스테이지로 바로 이동
+function goToNextStage(nextId) {
+    const clearedStageId = window.currentStageId;
+    document.getElementById('result-modal').classList.remove('active');
+    stageClear('normal');
+    quitGame('map');
+    setTimeout(tryShowMilestone, 500);
+    openModeSelect(nextId);
 }
 
 // 스트릭 계산 로직
