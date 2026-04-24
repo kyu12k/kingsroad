@@ -57,6 +57,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `updateSheetTimers()` | game.js:~2956 | 60초마다 타이머 + 기억 강도 바 업데이트 |
 | `stageClear()` | game.js:7529 | 스테이지 클리어 처리 전체 |
 | `saveGameData()` | game.js:4091 | localStorage에 저장 |
+| `showBossHistoryModal()` | game.js:~6370 | 보스전 이전 파트/구절 보기 모달 표시/토글 |
 
 ---
 

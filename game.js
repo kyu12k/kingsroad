@@ -5688,10 +5688,12 @@ function checkMemoryStatus(stageId) {
 //[시스템: 보스전 로직]//
 let currentBossHp, maxBossHp, playerHearts, currentVerseIdx, currentVerseData;
 let currentBossParts, currentBossPartIndex, currentBossChunks;
+let bossHistory = []; // { verseLabel, partLabel, chunks } 완료된 파트/구절 이력
 
 //[2] 보스전 시작 함수 (하트 버그 수정 + 구간 자동 탐지 + 연출 콜백 분리)//
 function startBossBattle() {
     window.isGamePlaying = true; // ★ 게임 시작! 스위치 ON
+    bossHistory = [];
 
     // 1. 이어하기 데이터 확인
     const savedRaw = localStorage.getItem('kingsRoad_checkpoint');
@@ -6212,27 +6214,58 @@ function loadNextVerse() {
             attackBtn.style.pointerEvents = 'none';
             attackBtn.style.opacity = '0.7'; // 눌렸다는 시각적 표시
 
+            // ── 초성 → 단어 변환 (공격 성공 공통) ──
+            const revealZoneWords = () => {
+                const proxyBlocks = zone.querySelectorAll('.word-block');
+                proxyBlocks.forEach(block => {
+                    if (block.dataset.original) {
+                        block.innerText = block.dataset.original;
+                        block.style.transition = 'background-color 0.3s';
+                        block.style.backgroundColor = '#27ae60';
+                        block.style.color = '#fff';
+                    }
+                });
+            };
+
+            // ── 이력에 현재 파트 저장 ──
+            const saveCurrentPartToHistory = () => {
+                const chapterNum = window.currentBattleChapter || 1;
+                const verseNum = (window.currentBattleStartIndex || 0) + currentVerseIdx + 1;
+                const verseLabel = `${t('label_chapter_header', { num: chapterNum })} ${t('label_verse', { num: verseNum })}`;
+                const partLabel = (currentBossParts && currentBossParts.length > 1)
+                    ? ` (${t('label_part', { cur: currentBossPartIndex + 1, total: currentBossParts.length })})`
+                    : '';
+                bossHistory.push({ verseLabel, partLabel, chunks: [...currentBossChunks] });
+            };
+
             if (currentBossParts && currentBossPartIndex < currentBossParts.length - 1) {
                 // 파트가 남았을 경우 (다음 파트로 이동)
                 SoundEffect.playAttack();
-                currentBossPartIndex += 1;
-                currentBossChunks = currentBossParts[currentBossPartIndex];
+                saveCurrentPartToHistory();
+                revealZoneWords();
 
-                // 다음 파트 블록을 그린 후 버튼을 다시 활성화해줘야 다음 공격이 가능합니다.
+                const nextPartIndex = currentBossPartIndex + 1;
+                const nextChunks = currentBossParts[nextPartIndex];
+
                 setTimeout(() => {
+                    currentBossPartIndex = nextPartIndex;
+                    currentBossChunks = nextChunks;
                     renderBossBlocks(currentBossChunks);
                     updateVerseIndicator();
                     deselect();
-                    // ★ 다음 파트가 나왔으니 버튼 다시 활성화
                     attackBtn.disabled = false;
                     attackBtn.style.pointerEvents = 'auto';
                     attackBtn.style.opacity = '1';
-                }, 100);
+                    const hBtn = document.getElementById('btn-boss-history');
+                    if (hBtn && bossHistory.length > 0) hBtn.style.display = '';
+                }, 700);
                 return;
             }
 
             // 🔵 진짜 성공 (다음 구절로 넘어가는 시점)
             SoundEffect.playAttack();
+            saveCurrentPartToHistory();
+            revealZoneWords();
             triggerBossHitEffect();
             currentBossHp--;
             updateBattleUI();
@@ -6306,14 +6339,105 @@ function loadNextVerse() {
     btnWrapper.appendChild(resetBtn);
 
     // 이미 함수 위쪽에서 정의된 control 변수를 그대로 사용합니다. (const 제거)
-    if (control) {
-        control.appendChild(btnWrapper);
-    } else {
-        // 혹시 control이 없을 경우를 대비한 안전망
-        document.querySelector('.battle-control').appendChild(btnWrapper);
+    const battleControl = control || document.querySelector('.battle-control');
+    if (battleControl) {
+        battleControl.appendChild(btnWrapper);
+    }
+
+    // ── 이전 파트/구절 보기 버튼 (battle-field 좌측 하단, 파란 박스 바로 위) ──
+    const historyBtn = document.createElement('button');
+    historyBtn.id = 'btn-boss-history';
+    historyBtn.title = '이전 구절 보기';
+    historyBtn.innerText = '📜 이전';
+    historyBtn.style.cssText = `
+        position: absolute;
+        bottom: 6px;
+        left: 8px;
+        background: rgba(30,30,50,0.85);
+        border: 1px solid #555;
+        border-radius: 6px;
+        color: #ddd;
+        font-size: 12px;
+        padding: 3px 8px;
+        cursor: pointer;
+        line-height: 1.4;
+        z-index: 10;
+        display: ${bossHistory.length > 0 ? '' : 'none'};
+    `;
+    historyBtn.onclick = () => {
+        showBossHistoryModal();
+        if (typeof SoundEffect !== 'undefined') SoundEffect.playClick();
+    };
+    if (field) {
+        field.style.position = 'relative';
+        field.appendChild(historyBtn);
     }
 } // <-- loadNextVerse 함수의 진짜 끝!
 
+
+/* 이전 파트/구절 보기 모달 */
+function showBossHistoryModal() {
+    const existing = document.getElementById('boss-history-modal');
+    if (existing) { existing.remove(); return; }
+
+    const overlay = document.createElement('div');
+    overlay.id = 'boss-history-modal';
+    overlay.style.cssText = `
+        position:fixed; inset:0; z-index:9999;
+        background:rgba(0,0,0,0.6);
+        display:flex; align-items:flex-end; justify-content:center;
+    `;
+
+    const panel = document.createElement('div');
+    panel.style.cssText = `
+        background:#1a1a2e; color:#eee;
+        width:100%; max-width:500px;
+        max-height:70vh; overflow-y:auto;
+        border-radius:16px 16px 0 0;
+        padding:16px 16px 32px;
+        box-sizing:border-box;
+    `;
+
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;';
+    header.innerHTML = `<span style="font-weight:bold; font-size:15px;">📜 지나간 구절</span>`;
+    const closeBtn = document.createElement('button');
+    closeBtn.innerText = '✕';
+    closeBtn.style.cssText = 'background:none; border:none; color:#aaa; font-size:20px; cursor:pointer; padding:0 4px;';
+    closeBtn.onclick = () => overlay.remove();
+    header.appendChild(closeBtn);
+    panel.appendChild(header);
+
+    if (bossHistory.length === 0) {
+        const empty = document.createElement('p');
+        empty.style.cssText = 'color:#888; text-align:center; margin-top:24px;';
+        empty.innerText = '아직 완료한 파트가 없습니다.';
+        panel.appendChild(empty);
+    } else {
+        bossHistory.forEach(entry => {
+            const item = document.createElement('div');
+            item.style.cssText = `
+                background:#16213e; border-radius:10px;
+                padding:10px 14px; margin-bottom:10px;
+            `;
+            const label = document.createElement('div');
+            label.style.cssText = 'font-size:12px; color:#f39c12; font-weight:bold; margin-bottom:6px;';
+            label.innerText = entry.verseLabel + entry.partLabel;
+            item.appendChild(label);
+
+            const text = document.createElement('div');
+            text.style.cssText = 'font-size:15px; line-height:1.7; color:#ddd; word-break:keep-all;';
+            text.innerText = entry.chunks.join(' ');
+            item.appendChild(text);
+
+            panel.appendChild(item);
+        });
+    }
+
+    overlay.appendChild(panel);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
+}
 
 /* [수정] UI 업데이트 함수 (분할 체력바 + 개선된 보스 표시) */
 function updateBattleUI() {
