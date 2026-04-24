@@ -1515,6 +1515,7 @@ function preloadCastleImage(level) {
 // 🌟 [추가] 브라우저에 저장된 음소거 상태를 불러옵니다. (앱 전체에서 공유)
 let isGlobalMuted = localStorage.getItem('isMuted') === 'true';
 let isVoiceRepeat = localStorage.getItem('isVoiceRepeat') === 'true';
+let selectedVoice = parseInt(localStorage.getItem('selectedVoice') || '1', 10);
 
 function updateVoiceRepeatButtonState(buttonEl) {
     if (!buttonEl) return;
@@ -5318,10 +5319,11 @@ function openStageSheet(chapterData) {
                 const _m = String(stage.id).match(/^(\d+)(?:-(\d+))?/);
                 const _cn = _m ? parseInt(_m[1], 10) : 0;
                 const _vn = (_m && _m[2]) ? parseInt(_m[2], 10) : 1;
-                const _preload = new Audio(`assets/audio/${_cn}-${_vn}.mp3`);
+                const _preload = new Audio(getAudioUrl(_cn, _vn));
                 _preload.preload = 'auto';
                 _preload.load();
                 window._preloadedStageAudio = _preload;
+                window._preloadedStageAudioVoice = selectedVoice;
             }
 
             if (stage.type === 'boss' || stage.type === 'mid-boss') {
@@ -14387,6 +14389,12 @@ function cancelProfileRegistration() {
         }, 200);
     }
 }
+function getAudioUrl(cNum, vNum, voice) {
+    voice = voice || selectedVoice;
+    if (voice === 2) return `assets/audio2/${cNum}-${vNum}.mp3`;
+    return `assets/audio/${cNum}-${vNum}.mp3`;
+}
+
 /* 1. 두루마리 칸(Grid) 자동 생성기 */
 function startStageWithTransition(chapterNum, verseNum, startStageCallback) {
     const overlay = document.getElementById('bible-transition-overlay');
@@ -14410,13 +14418,14 @@ function startStageWithTransition(chapterNum, verseNum, startStageCallback) {
 
     const targetText = (getVerseData(cNum, vNum - 1) || chapterData[vNum - 1]).text;
 
-    const audioUrl = `assets/audio/${cNum}-${vNum}.mp3`;
+    const audioUrl = getAudioUrl(cNum, vNum);
 
     // [성능] 스테이지 클릭 시 미리 로드한 오디오가 있으면 재사용, 없으면 새로 로드
     let preloadedAudio;
-    if (window._preloadedStageAudio) {
+    if (window._preloadedStageAudio && window._preloadedStageAudioVoice === selectedVoice) {
         preloadedAudio = window._preloadedStageAudio;
         window._preloadedStageAudio = null;
+        window._preloadedStageAudioVoice = null;
     } else {
         preloadedAudio = new Audio(audioUrl);
         preloadedAudio.preload = 'auto';
@@ -14430,7 +14439,7 @@ function startStageWithTransition(chapterNum, verseNum, startStageCallback) {
     preloadedAudio.addEventListener('canplaythrough', () => {
         if (!isAudioReady) {
             isAudioReady = true;
-            playScrollTransition(targetText, preloadedAudio, startStageCallback);
+            playScrollTransition(targetText, preloadedAudio, startStageCallback, cNum, vNum);
         }
     }, { once: true });
 
@@ -14438,13 +14447,13 @@ function startStageWithTransition(chapterNum, verseNum, startStageCallback) {
         if (!isAudioReady) {
             console.warn("오디오 사전 로딩 지연, 애니메이션을 강제로 시작합니다.");
             isAudioReady = true;
-            playScrollTransition(targetText, preloadedAudio, startStageCallback);
+            playScrollTransition(targetText, preloadedAudio, startStageCallback, cNum, vNum);
         }
     }, 1500);
 }
 
 /* [시네마틱 + 즉시 스킵 + 음소거 유지] */
-function playScrollTransition(targetText, verseAudio, onCompleteCallback) {
+function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, vNum) {
     const overlay = document.getElementById('bible-transition-overlay');
     const introHeader = document.getElementById('stage-intro-header');
 
@@ -14462,6 +14471,7 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback) {
     const muteBtn = document.getElementById('mute-toggle-btn');
     const pauseBtn = document.getElementById('pause-toggle-btn');
     const repeatBtn = document.getElementById('repeat-toggle-btn');
+    const voiceSelectWrap = document.getElementById('voice-select-btns');
     const tl = gsap.timeline();
 
     let fallbackTimer;
@@ -14475,6 +14485,85 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback) {
 
     audioObj.muted = isGlobalMuted;
     connectVoiceToAudioContext(audioObj);
+
+    // 음성 선택 버튼
+    function updateVoiceBtnState() {
+        if (!voiceSelectWrap) return;
+        voiceSelectWrap.querySelectorAll('.voice-select-btn').forEach(b => {
+            const v = parseInt(b.dataset.voice, 10);
+            b.classList.toggle('active', v === selectedVoice);
+        });
+    }
+
+    if (voiceSelectWrap && cNum && vNum) {
+        voiceSelectWrap.style.display = 'flex';
+        updateVoiceBtnState();
+
+        voiceSelectWrap.querySelectorAll('.voice-select-btn').forEach(btn => {
+            btn.onclick = () => {
+                const v = parseInt(btn.dataset.voice, 10);
+                if (v === selectedVoice) return;
+                selectedVoice = v;
+                localStorage.setItem('selectedVoice', String(selectedVoice));
+                updateVoiceBtnState();
+
+                const wasPlaying = !audioObj.paused;
+                const currentTime = audioObj.currentTime;
+                audioObj.pause();
+                audioObj.onended = null;
+
+                const newUrl = getAudioUrl(cNum, vNum, v);
+                const newAudio = new Audio(newUrl);
+                newAudio.muted = isGlobalMuted;
+                newAudio.loop = isLooping;
+                connectVoiceToAudioContext(newAudio);
+
+                newAudio.onerror = () => {
+                    // audio2 파일이 없으면 음성1으로 되돌리기
+                    selectedVoice = 1;
+                    localStorage.setItem('selectedVoice', '1');
+                    updateVoiceBtnState();
+                    audioObj.currentTime = currentTime;
+                    if (wasPlaying) audioObj.play();
+                    newAudio.onerror = null;
+                };
+
+                newAudio.addEventListener('canplaythrough', () => {
+                    audioObj = newAudio;
+                    // muteBtn, pauseBtn, repeatBtn이 참조하는 audioObj 교체
+                    if (muteBtn) muteBtn.onclick = () => {
+                        isGlobalMuted = !isGlobalMuted;
+                        localStorage.setItem('isMuted', isGlobalMuted);
+                        audioObj.muted = isGlobalMuted;
+                        muteBtn.innerText = isGlobalMuted ? "🔇" : "🔊";
+                    };
+                    if (repeatBtn) repeatBtn.onclick = () => {
+                        isLooping = !isLooping;
+                        isVoiceRepeat = isLooping;
+                        localStorage.setItem('isVoiceRepeat', String(isVoiceRepeat));
+                        audioObj.loop = isLooping;
+                        updateVoiceRepeatButtonState(repeatBtn);
+                    };
+                    if (pauseBtn) pauseBtn.onclick = () => {
+                        if (audioObj.paused) { audioObj.play(); pauseBtn.innerText = "⏸"; }
+                        else { audioObj.pause(); pauseBtn.innerText = "▶"; }
+                    };
+                    audioObj.onended = () => {
+                        clearTimeout(fallbackTimer);
+                        if (pauseBtn) pauseBtn.style.display = "none";
+                        tl.resume();
+                    };
+                    if (wasPlaying) {
+                        audioObj.currentTime = 0;
+                        audioObj.play().catch(() => {});
+                        if (pauseBtn) { pauseBtn.innerText = "⏸"; pauseBtn.style.display = "flex"; }
+                    }
+                }, { once: true });
+
+                newAudio.load();
+            };
+        });
+    }
 
     if (muteBtn) {
         muteBtn.style.display = "flex";
@@ -14536,6 +14625,7 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback) {
                 repeatBtn.style.display = "none";
                 updateVoiceRepeatButtonState(repeatBtn);
             }
+            if (voiceSelectWrap) voiceSelectWrap.style.display = "none";
             tl.play("outro");
         };
     }
@@ -14584,6 +14674,7 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback) {
                 repeatBtn.style.display = "none";
                 updateVoiceRepeatButtonState(repeatBtn);
             }
+            if (voiceSelectWrap) voiceSelectWrap.style.display = "none";
         })
 
         .to(introHeader, { opacity: 0, duration: 0.6, ease: "power2.inOut" })

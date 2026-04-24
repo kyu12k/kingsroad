@@ -4366,6 +4366,40 @@ body, html {
     background: rgba(60, 45, 20, 0.95);
     border-color: #d4b87a;
 }
+
+#voice-select-btns {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+}
+
+.voice-select-btn {
+    padding: 6px 18px;
+    border-radius: 20px;
+    border: 1.5px solid #7f8c8d;
+    background: rgba(30, 20, 10, 0.75);
+    color: #bdc3c7;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    backdrop-filter: blur(4px);
+}
+
+.voice-select-btn:hover {
+    border-color: #d4b87a;
+    color: #f1c40f;
+}
+
+.voice-select-btn.active {
+    border: 2px solid #f1c40f;
+    color: #f1c40f;
+    background: rgba(60, 45, 10, 0.85);
+    font-weight: bold;
+}
+
 @keyframes hintPulse {
     0% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.7); transform: scale(1); }
     50% { box-shadow: 0 0 15px 10px rgba(52, 152, 219, 0); transform: scale(1.05); }
