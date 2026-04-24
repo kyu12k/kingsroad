@@ -689,6 +689,7 @@ exports.sendReviewNotifications = functions
                         });
                     } else if (resp.error) {
                         const code = resp.error.code || '';
+                        console.warn(`[복습알림] 발송 실패 doc=${refChunks[ci][ri].id} code=${code}`);
                         if (INVALID_TOKEN_ERRORS.some(e => code.includes(e))) {
                             // 토큰 무효 → 삭제해서 다음 앱 실행 시 재취득하게 함
                             clearBatch.update(refChunks[ci][ri], {
