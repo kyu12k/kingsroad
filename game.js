@@ -4710,6 +4710,7 @@ function goHome() {
 
     // 3. 성전 모습 업데이트
     updateCastleView();
+    startHomeReviewHintTimer();
 
     // ★ 주간 리셋 알림 표시
     const warningEl = document.getElementById('month-end-warning');
@@ -11747,6 +11748,63 @@ function updateCastleView() {
     }
 
     updateTempleUpgradeNotification();
+    updateHomeReviewHint();
+}
+
+// ★ 홈 화면 - 왕의 길/자유여행 가장 가까운 대기 구절 표시
+function getNearestWaitingMs(nextReviewTimeMap) {
+    const now = Date.now();
+    let minMs = Infinity;
+    Object.values(nextReviewTimeMap || {}).forEach(ts => {
+        if (ts > now) {
+            const diff = ts - now;
+            if (diff < minMs) minMs = diff;
+        }
+    });
+    return minMs === Infinity ? null : minMs;
+}
+
+function updateHomeReviewHint() {
+    const el = document.getElementById('home-review-hint');
+    if (!el) return;
+
+    // 왕의 길 / 자유여행 각각의 nextReviewTime 맵
+    const kingsMap = kingsRoadData.nextReviewTime;
+    const freeMap = activeMode === 'kings' ? _freeStageNextReviewTime : stageNextReviewTime;
+
+    const kingsMs = getNearestWaitingMs(kingsMap);
+    const freeMs  = getNearestWaitingMs(freeMap);
+
+    function fmtMs(ms) {
+        if (ms === null) return null;
+        const totalMin = Math.ceil(ms / 60000);
+        if (totalMin < 60) return `${totalMin}분 후`;
+        const h = Math.floor(totalMin / 60);
+        const m = totalMin % 60;
+        return m > 0 ? `${h}시간 ${m}분 후` : `${h}시간 후`;
+    }
+
+    const kingsTxt = fmtMs(kingsMs);
+    const freeTxt  = fmtMs(freeMs);
+
+    // 둘 다 없으면 숨김
+    if (!kingsTxt && !freeTxt) { el.style.display = 'none'; return; }
+
+    const chipStyle = 'display:inline-flex; align-items:center; gap:4px; background:rgba(44,62,80,0.7); border:1px solid rgba(255,255,255,0.12); border-radius:20px; padding:4px 12px; font-size:0.78rem; color:#bdc3c7;';
+    const timeStyle = 'color:#f1c40f; font-weight:bold;';
+
+    let html = '';
+    if (kingsTxt) html += `<span style="${chipStyle}">👑 왕의 길 <span style="${timeStyle}">${kingsTxt}</span></span>`;
+    if (freeTxt)  html += `<span style="${chipStyle}">🧳 자유여행 <span style="${timeStyle}">${freeTxt}</span></span>`;
+
+    el.innerHTML = html;
+    el.style.display = 'flex';
+}
+
+let _homeReviewHintTimer = null;
+function startHomeReviewHintTimer() {
+    if (_homeReviewHintTimer) clearInterval(_homeReviewHintTimer);
+    _homeReviewHintTimer = setInterval(updateHomeReviewHint, 60000);
 }
 
 // [추가] 뷰어 레벨 변경 함수
@@ -12517,20 +12575,9 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
     // FCM 서버 예약 (앱이 꺼져도 작동)
     if (myTag && db) {
         try {
-            console.log('[복습알림] FCM 경로 시도. myTag:', myTag, '현재 _fcmToken:', _fcmToken ? '있음' : '없음');
+            // 항상 브라우저에서 최신 토큰을 직접 취득 (만료 토큰 재사용 방지)
+            _fcmToken = null;
             await initFCM().catch(e => console.warn('[복습알림] initFCM 실패:', e));
-
-            // 토큰이 없으면 Firestore에 기존 토큰이 있는지 확인
-            if (!_fcmToken) {
-                console.log('[복습알림] 토큰 없음 → Firestore에서 기존 토큰 조회');
-                const existingDoc = await db.collection('leaderboard').doc(String(myTag)).get();
-                if (existingDoc.exists && existingDoc.data().fcmToken) {
-                    _fcmToken = existingDoc.data().fcmToken;
-                    console.log('[복습알림] Firestore에서 기존 토큰 획득');
-                } else {
-                    console.warn('[복습알림] Firestore에도 토큰 없음');
-                }
-            }
 
             if (!_fcmToken) {
                 // 토큰을 끝내 못 얻으면 SW 폴백으로 진행
