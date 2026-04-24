@@ -7017,6 +7017,8 @@ async function syncToFirestore() {
     } catch (e) {
         const errMsg = (e && (e.message || e.code)) ? `${e.code || ''} ${e.message || ''}`.trim() : String(e);
         console.warn('[syncToFirestore] 저장 실패:', errMsg);
+        // FCM/push subscription 에러는 데이터 손실과 무관하므로 토스트 생략
+        if (errMsg.includes('push subscription') || errMsg.includes('service worker')) return;
         // 저장 실패 시 사용자에게 알림 (데이터 유실 방지)
         const existing = document.getElementById('sync-fail-toast');
         if (existing) existing.remove();
@@ -14653,6 +14655,7 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, 
                 };
 
                 newAudio.addEventListener('canplaythrough', () => {
+                    if (isSkipped) { newAudio.src = ''; return; }
                     audioObj = newAudio;
                     // muteBtn, pauseBtn, repeatBtn이 참조하는 audioObj 교체
                     if (muteBtn) muteBtn.onclick = () => {
@@ -14739,6 +14742,8 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, 
             if (isSkipped) return;
             isSkipped = true;
 
+            audioObj.onended = null;
+            audioObj.loop = false;
             audioObj.pause();
             audioObj.currentTime = 0;
             clearTimeout(fallbackTimer);
