@@ -8633,7 +8633,8 @@ function getNextNormalStageId(currentId) {
     for (const chapter of gameData) {
         for (const stage of chapter.stages) {
             if (found) {
-                if (stage.type !== 'normal') return null; // 다음이 boss/mid-boss면 표시 안 함
+                if (stage.type === 'boss') return null; // 다음이 보스면 표시 안 함
+                if (stage.type === 'mid-boss') continue; // 중간점검은 건너뜀
                 if (unlockedSet && !unlockedSet.has(stage.id)) return null; // 왕의 길 미해금
                 return stage.id;
             }
