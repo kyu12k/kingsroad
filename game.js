@@ -11830,19 +11830,19 @@ function updateCastleView() {
         }
     }
 
-    // 레벨 타이틀
+    // 레벨 타이틀 (숨김 — 토스트로 표시)
+    const titleText = `Lv.${viewBP.level} ${currentLang === 'en' && viewBP.nameEn ? viewBP.nameEn : viewBP.name}`;
     const titleEl = document.getElementById('castle-level-title');
-    if (titleEl) {
-        titleEl.textContent = `Lv.${viewBP.level} ${currentLang === 'en' && viewBP.nameEn ? viewBP.nameEn : viewBP.name}`;
-        titleEl.style.color = isPast ? '#bdc3c7' : '#f1c40f';
-    }
+    if (titleEl) titleEl.textContent = titleText;
 
     // 설명 (토스트용으로만 저장)
     const descEl = document.getElementById('castle-desc');
     const descText = `"${currentLang === 'en' && viewBP.descEn ? viewBP.descEn : viewBP.desc}"`;
     if (descEl) descEl.innerHTML = descText;
-    const toastEl = document.getElementById('castle-desc-toast');
-    if (toastEl) toastEl.innerHTML = descText;
+    const toastTitleEl = document.getElementById('castle-toast-title');
+    const toastDescEl = document.getElementById('castle-toast-desc');
+    if (toastTitleEl) { toastTitleEl.textContent = titleText; toastTitleEl.style.color = isPast ? '#bdc3c7' : '#f1c40f'; }
+    if (toastDescEl) toastDescEl.innerHTML = descText;
 
     // 네비게이션 화살표 상태
     const prevBtn = document.getElementById('castle-nav-prev');
@@ -11930,7 +11930,7 @@ function getNearestWaitingMs(nextReviewTimeMap) {
 let _castleToastTimer = null;
 function showCastleDescToast() {
     const toast = document.getElementById('castle-desc-toast');
-    if (!toast || !toast.innerHTML) return;
+    if (!toast) return;
     if (_castleToastTimer) clearTimeout(_castleToastTimer);
     toast.style.display = 'block';
     toast.style.opacity = '1';
