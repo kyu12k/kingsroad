@@ -11,7 +11,7 @@ const urlsToCache = [
   '/style.css',
   '/game.js',
   '/manifest.json',
-  '/images/image_0.webp',
+
   '/images/image_1.webp',
   '/images/image_2.webp',
   '/images/image_3.webp',
