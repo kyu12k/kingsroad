@@ -62,8 +62,9 @@ button,
     right: 0;
     bottom: 0;
     width: 100%;
-    height: 64px; 
-    
+    min-height: var(--nav-h);
+    height: auto;
+
     display: none;
     grid-template-columns: repeat(4, minmax(0, 1fr)); 
     grid-template-rows: 1fr;    
@@ -86,7 +87,7 @@ button,
     display: none;
     flex-direction: column;
     position: fixed;
-    bottom: 64px;
+    bottom: var(--nav-h);
     right: 0;
     width: 25%;
     background: rgba(28, 46, 74, 0.97);
@@ -189,8 +190,8 @@ button,
 
 /* 📱 모바일 화면 최적화 */
 @media (max-width: 600px) {
+    :root { --nav-h: 60px; }
     .bottom-nav {
-        height: 60px;
         grid-template-columns: repeat(4, minmax(0, 1fr));
     }
     .nav-item span:first-child { font-size: 1.7em; }
@@ -296,6 +297,7 @@ button,
         }
         /* [1. 기본 설정] */
         :root {
+            --nav-h: 64px;
             --primary-color: #f1c40f;
             --bg-dark: #0f1623;           /* 네이비 심안 (통일 팔레트 기준) */
             --bg-mid: #12203a;            /* 미드 네이비 (훈련/읽기 화면) */
@@ -563,6 +565,7 @@ body, html {
 #home-screen {
     /* display, flex-direction, align-items, justify-content 삭제 완료! */
     min-height: 100vh;
+    min-height: 100dvh;
     background: radial-gradient(1600px circle at 20% 10%, rgba(var(--home-accent-strong-rgb), 0.45) 0%, #1b2438 55%, #0f141f 100%);
     text-align: center;
     padding: 20px;
@@ -2424,6 +2427,7 @@ body, html {
 /* 내용이 적으면 버튼을 바닥으로 밀고, 많으면 스크롤을 만듭니다 */
 .tab-content {
     min-height: 100vh;      /* 화면 전체 높이 사용 */
+    min-height: 100dvh;
     display: flex;          /* 플렉스 박스 모드 */
     flex-direction: column; /* 세로 정렬 */
     box-sizing: border-box;
@@ -3147,7 +3151,7 @@ body, html {
     position: fixed;
     z-index: 9999;
     top: 0; left: 0;
-    width: 100vw; height: 100vh;
+    width: 100vw; height: 100vh; height: 100dvh;
     background: rgba(30, 15, 50, 0.97);
     color: #d4b3f7;
     flex-direction: column;
