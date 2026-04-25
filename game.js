@@ -4421,6 +4421,44 @@ function updateModeSelectReviewCounts() {
             freeEl.style.display = 'none';
         }
     }
+
+    // 다음 복습 대기시간 표시
+    function fmtWaitMs(ms) {
+        if (ms === null) return null;
+        const totalMin = Math.ceil(ms / 60000);
+        if (totalMin < 60) return `${totalMin}분 후`;
+        const h = Math.floor(totalMin / 60);
+        const m = totalMin % 60;
+        return m > 0 ? `${h}시간 ${m}분 후` : `${h}시간 후`;
+    }
+
+    const kingsMap = kingsRoadData.nextReviewTime;
+    const freeMap = activeMode === 'kings' ? _freeStageNextReviewTime : stageNextReviewTime;
+
+    const kingsTxt = fmtWaitMs(getNearestWaitingMs(kingsMap));
+    const freeTxt  = fmtWaitMs(getNearestWaitingMs(freeMap));
+
+    const kingsWaitEl = document.getElementById('kings-btn-review-wait');
+    const kingsWaitTime = document.getElementById('kings-btn-review-wait-time');
+    if (kingsWaitEl && kingsWaitTime) {
+        if (kingsTxt && kingsCount === 0) {
+            kingsWaitTime.textContent = kingsTxt;
+            kingsWaitEl.style.display = '';
+        } else {
+            kingsWaitEl.style.display = 'none';
+        }
+    }
+
+    const freeWaitEl = document.getElementById('free-btn-review-wait');
+    const freeWaitTime = document.getElementById('free-btn-review-wait-time');
+    if (freeWaitEl && freeWaitTime) {
+        if (freeTxt && freeCount === 0) {
+            freeWaitTime.textContent = freeTxt;
+            freeWaitEl.style.display = '';
+        } else {
+            freeWaitEl.style.display = 'none';
+        }
+    }
 }
 
 function startKingsRoadInfoTimer() {
@@ -4711,17 +4749,7 @@ function goHome() {
 
     // 3. 성전 모습 업데이트
     updateCastleView();
-    startHomeReviewHintTimer();
 
-    // ★ 주간 리셋 알림 표시
-    const warningEl = document.getElementById('month-end-warning');
-    if (warningEl) {
-        const now = new Date();
-        const isLastDay = isLastDayOfWeek();
-
-        // 일요일이면 알림 표시
-        warningEl.style.display = isLastDay ? 'block' : 'none';
-    }
 
     // ★ [추가] 중요! 혹시 열려있을지 모르는 스테이지 시트(하얀 박스)를 닫아줌
     closeStageSheet();
@@ -9925,6 +9953,8 @@ function openRankingScreen() {
             </button>
         </div>
 
+        ${isLastDayOfWeek() ? `<div style="background:linear-gradient(135deg, #e74c3c, #c0392b); color:#fff; padding:8px 16px; border-radius:12px; margin:8px 0 0 0; animation: pulse 2s ease-in-out infinite; box-shadow: 0 4px 10px rgba(231,76,60,0.4); border: 2px solid rgba(255,255,255,0.3); font-size:0.82rem; line-height:1.5;">⚠️ 월요일 00:00에 주간 랭킹이 초기화됩니다</div>` : ''}
+
         <div id="my-score-panel" style="display:none; margin:10px 0 0 0; width:100%; max-width:320px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; color:#ecf0f1; font-size:0.85rem;">
             <div style="display:flex; justify-content:space-between; margin-bottom:8px; padding-bottom:8px; border-bottom:1px dashed rgba(255,255,255,0.2);">
                 <span style="color:#f1c40f; font-weight:bold;">${t('ranking_total_score')}</span>
@@ -11807,11 +11837,12 @@ function updateCastleView() {
         titleEl.style.color = isPast ? '#bdc3c7' : '#f1c40f';
     }
 
-    // 설명
+    // 설명 (토스트용으로만 저장)
     const descEl = document.getElementById('castle-desc');
-    if (descEl) {
-        descEl.innerHTML = `"${currentLang === 'en' && viewBP.descEn ? viewBP.descEn : viewBP.desc}"`;
-    }
+    const descText = `"${currentLang === 'en' && viewBP.descEn ? viewBP.descEn : viewBP.desc}"`;
+    if (descEl) descEl.innerHTML = descText;
+    const toastEl = document.getElementById('castle-desc-toast');
+    if (toastEl) toastEl.innerHTML = descText;
 
     // 네비게이션 화살표 상태
     const prevBtn = document.getElementById('castle-nav-prev');
@@ -11881,10 +11912,9 @@ function updateCastleView() {
     }
 
     updateTempleUpgradeNotification();
-    updateHomeReviewHint();
 }
 
-// ★ 홈 화면 - 왕의 길/자유여행 가장 가까운 대기 구절 표시
+// ★ 모드 선택 오버레이 - 가장 가까운 복습 대기시간 계산
 function getNearestWaitingMs(nextReviewTimeMap) {
     const now = Date.now();
     let minMs = Infinity;
@@ -11897,47 +11927,17 @@ function getNearestWaitingMs(nextReviewTimeMap) {
     return minMs === Infinity ? null : minMs;
 }
 
-function updateHomeReviewHint() {
-    const el = document.getElementById('home-review-hint');
-    if (!el) return;
-
-    // 왕의 길 / 자유여행 각각의 nextReviewTime 맵
-    const kingsMap = kingsRoadData.nextReviewTime;
-    const freeMap = activeMode === 'kings' ? _freeStageNextReviewTime : stageNextReviewTime;
-
-    const kingsMs = getNearestWaitingMs(kingsMap);
-    const freeMs  = getNearestWaitingMs(freeMap);
-
-    function fmtMs(ms) {
-        if (ms === null) return null;
-        const totalMin = Math.ceil(ms / 60000);
-        if (totalMin < 60) return `${totalMin}분 후`;
-        const h = Math.floor(totalMin / 60);
-        const m = totalMin % 60;
-        return m > 0 ? `${h}시간 ${m}분 후` : `${h}시간 후`;
-    }
-
-    const kingsTxt = fmtMs(kingsMs);
-    const freeTxt  = fmtMs(freeMs);
-
-    // 둘 다 없으면 숨김
-    if (!kingsTxt && !freeTxt) { el.style.display = 'none'; return; }
-
-    const chipStyle = 'display:inline-flex; align-items:center; gap:4px; background:rgba(44,62,80,0.7); border:1px solid rgba(255,255,255,0.12); border-radius:20px; padding:4px 12px; font-size:0.78rem; color:#bdc3c7;';
-    const timeStyle = 'color:#f1c40f; font-weight:bold;';
-
-    let html = '';
-    if (kingsTxt) html += `<span style="${chipStyle}">👑 왕의 길 <span style="${timeStyle}">${kingsTxt}</span></span>`;
-    if (freeTxt)  html += `<span style="${chipStyle}">🧳 자유여행 <span style="${timeStyle}">${freeTxt}</span></span>`;
-
-    el.innerHTML = html;
-    el.style.display = 'flex';
-}
-
-let _homeReviewHintTimer = null;
-function startHomeReviewHintTimer() {
-    if (_homeReviewHintTimer) clearInterval(_homeReviewHintTimer);
-    _homeReviewHintTimer = setInterval(updateHomeReviewHint, 60000);
+let _castleToastTimer = null;
+function showCastleDescToast() {
+    const toast = document.getElementById('castle-desc-toast');
+    if (!toast || !toast.innerHTML) return;
+    if (_castleToastTimer) clearTimeout(_castleToastTimer);
+    toast.style.display = 'block';
+    toast.style.opacity = '1';
+    _castleToastTimer = setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => { toast.style.display = 'none'; }, 300);
+    }, 2000);
 }
 
 // [추가] 뷰어 레벨 변경 함수
