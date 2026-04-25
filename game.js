@@ -8607,7 +8607,11 @@ function showClearScreen() {
     // 다음 구절 바로 학습 버튼 (일반 모드 전용)
     const existingNextBtn = resultModalEl.querySelector('#btn-next-stage');
     if (existingNextBtn) existingNextBtn.remove();
-    if (!isTraining && !window.isHardshipMode) {
+    const _curStageId = window.currentStageId;
+    const _curChData = _curStageId ? getChapterDataByStageId(_curStageId) : null;
+    const _curStage = _curChData && _curChData.stages ? _curChData.stages.find(s => s.id === _curStageId) : null;
+    const _isCurNormal = _curStage && _curStage.type === 'normal';
+    if (!isTraining && !window.isHardshipMode && _isCurNormal) {
         const nextId = getNextNormalStageId(window.currentStageId);
         if (nextId) {
             const nextBtn = document.createElement('button');
