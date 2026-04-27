@@ -335,6 +335,8 @@ const LANG = {
         mission_weekly_1_desc: '중간 점검 또는 보스 완료.',
         mission_weekly_2_title: '구절 15회 학습',
         mission_weekly_2_desc: '(주간)누적 15회 학습.',
+        mission_weekly_hardship_title: '왕의 고난 10회 완주',
+        mission_weekly_hardship_desc: '(주간)어떤 장이든 왕의 고난을 10회 완주하세요.',
 
         // 고난 길 모달
         hardship_title: '고난 길',
@@ -1027,6 +1029,8 @@ const LANG = {
         mission_weekly_1_desc: 'Complete a checkpoint or boss.',
         mission_weekly_2_title: 'Study 15 Verses',
         mission_weekly_2_desc: 'Cumulative 15 study sessions this week.',
+        mission_weekly_hardship_title: "Complete King's Hardship 10×",
+        mission_weekly_hardship_desc: "(Weekly) Complete any chapter's King's Hardship 10 times.",
 
         // 고난 길 모달
         hardship_title: 'Hardship Road',
@@ -1782,6 +1786,9 @@ loadGameData = function () {
         if (!Array.isArray(missionData.weekly.attendanceLog)) missionData.weekly.attendanceLog = [];
         if (typeof missionData.weekly.dragonKill !== 'number') missionData.weekly.dragonKill = 0;
         if (typeof missionData.weekly.stageClear !== 'number') missionData.weekly.stageClear = 0;
+        if (typeof missionData.weekly.hardship !== 'number') missionData.weekly.hardship = 0;
+        if (!Array.isArray(missionData.weekly.claimed)) missionData.weekly.claimed = [false, false, false, false];
+        if (missionData.weekly.claimed.length < 4) missionData.weekly.claimed.push(false);
 
         // [★ 핵심 복구: 업적 및 통계]
         // 저장된 업적 기록이 있으면 덮어쓰고, 없으면 기존(0) 유지
@@ -2252,7 +2259,8 @@ let missionData = {
         attendanceLog: [],  // 이번 주 출석한 날짜들 ["Mon", "Tue"...] (중복 방지용)
         dragonKill: 0,      // 용/중보/보스 처치 횟수
         stageClear: 0,      // 스테이지 15개 완료 횟수
-        claimed: [false, false, false]
+        hardship: 0,        // 왕의 고난 완주 횟수
+        claimed: [false, false, false, false]
     }
 };
 
@@ -2300,7 +2308,8 @@ function checkMissions() {
             attendanceLog: [today], // 오늘 날짜 기록
             dragonKill: 0,
             stageClear: 0,
-            claimed: [false, false, false]
+            hardship: 0,
+            claimed: [false, false, false, false]
         };
         console.log("📅 새로운 주가 시작되어 주간 미션이 초기화되었습니다.");
     }
@@ -2375,9 +2384,10 @@ function updateMissionProgress(type, extraData) {
     else if (type === 'checkpointBoss') {
         missionData.daily.checkpointBoss = (missionData.daily.checkpointBoss || 0) + 1;
     }
-    // 3-b. 일일 미션: 왕의 고난 완주
+    // 3-b. 일일/주간 미션: 왕의 고난 완주
     else if (type === 'hardship') {
         missionData.daily.hardship = (missionData.daily.hardship || 0) + 1;
+        missionData.weekly.hardship = (missionData.weekly.hardship || 0) + 1;
     }
     // 4. 주간 미션: 중보/보스 처치 (용 사냥)
     else if (type === 'dragon') {
@@ -2446,8 +2456,8 @@ function updateMissionUI() {
             rewardText: "💎 500",
             rewardType: "gem",
             val1: 500, val2: 0,
-            claimed: missionData.daily.claimed[3],
-            index: 3,
+            claimed: missionData.daily.claimed[4],
+            index: 4,
             type: 'daily'
         }
     ];
@@ -2488,6 +2498,17 @@ function updateMissionUI() {
             claimed: missionData.weekly.claimed[2],
             index: 2,
             type: 'weekly'
+        },
+        {
+            desc: t('mission_weekly_hardship_title'),
+            current: missionData.weekly.hardship || 0,
+            target: 10,
+            rewardText: "💎 3,000",
+            rewardType: "gem",
+            val1: 3000, val2: 0,
+            claimed: missionData.weekly.claimed[3],
+            index: 3,
+            type: 'weekly'
         }
     ];
 
@@ -2498,13 +2519,21 @@ function updateMissionUI() {
     dailyTitle.innerHTML = `<h3 style="margin:10px 0 5px; color:#f1c40f;">☀️ ${t('mission_tab_daily')}</h3>`;
     list.appendChild(dailyTitle);
 
-    dailyMissions.forEach(m => createMissionElement(list, m));
+    const _checkMastery = [stageMastery, kingsRoadData && kingsRoadData.mastery].filter(Boolean);
+    const anyBossCleared = _checkMastery.some(m => Object.keys(m).some(id => id.endsWith('-boss') && m[id] > 0));
+    dailyMissions.forEach(m => {
+        if (m.index === 4 && !anyBossCleared) return;
+        createMissionElement(list, m);
+    });
 
     const weeklyTitle = document.createElement('div');
     weeklyTitle.innerHTML = `<h3 style="margin:20px 0 5px; color:#e67e22;">🏆 ${t('mission_tab_weekly')}</h3>`;
     list.appendChild(weeklyTitle);
 
-    weeklyMissions.forEach(m => createMissionElement(list, m));
+    weeklyMissions.forEach(m => {
+        if (m.index === 3 && !anyBossCleared) return;
+        createMissionElement(list, m);
+    });
 }
 
 // [보조] 미션 항목 HTML 만들기
@@ -9211,6 +9240,17 @@ function renderMissionList(tabName) {
                 rewardType: 'gem',
                 val1: 100, val2: 0,
                 claimed: missionData.daily.claimed[3]
+            },
+            {
+                id: 4,
+                title: t('mission_daily_hardship_title'),
+                desc: t('mission_daily_hardship_desc'),
+                target: 1,
+                current: missionData.daily.hardship || 0,
+                reward: "💎 500",
+                rewardType: 'gem',
+                val1: 500, val2: 0,
+                claimed: missionData.daily.claimed[4]
             }
         ];
     } else {
@@ -9244,8 +9284,29 @@ function renderMissionList(tabName) {
                 reward: "💎 2,000",
                 rewardType: 'gem', val1: 2000,
                 claimed: missionData.weekly.claimed[2]
+            },
+            {
+                id: 3,
+                title: t('mission_weekly_hardship_title'),
+                desc: t('mission_weekly_hardship_desc'),
+                target: 10,
+                current: missionData.weekly.hardship || 0,
+                reward: "💎 3,000",
+                rewardType: 'gem', val1: 3000,
+                claimed: missionData.weekly.claimed[3]
             }
         ];
+    }
+
+    if (tabName === 'daily') {
+        const _cm = [stageMastery, kingsRoadData && kingsRoadData.mastery].filter(Boolean);
+        const _anyBoss = _cm.some(m => Object.keys(m).some(id => id.endsWith('-boss') && m[id] > 0));
+        if (!_anyBoss) missions = missions.filter(m => m.id !== 4);
+    }
+    if (tabName === 'weekly') {
+        const _cm2 = [stageMastery, kingsRoadData && kingsRoadData.mastery].filter(Boolean);
+        const _anyBoss2 = _cm2.some(m => Object.keys(m).some(id => id.endsWith('-boss') && m[id] > 0));
+        if (!_anyBoss2) missions = missions.filter(m => m.id !== 3);
     }
 
     missions.forEach(m => {
@@ -10826,9 +10887,10 @@ function checkDailyLogin() {
         console.log("🔄 미션 주간 리셋");
         missionData.weekId = currentWeekId;
         missionData.weekly.attendance = 0;
-        missionData.weekly.claimed = [false, false, false];
+        missionData.weekly.claimed = [false, false, false, false];
         missionData.weekly.dragonKill = 0;
         missionData.weekly.stageClear = 0;
+        missionData.weekly.hardship = 0;
         needsSave = true;
     }
 
@@ -13842,13 +13904,16 @@ function updateNotificationBadges() {
         if ((missionData.daily.loginReward || 0) >= 1 && !missionData.daily.claimed[0]) hasMissionReward = true;
         if (missionData.daily.newClear >= 1 && !missionData.daily.claimed[1]) hasMissionReward = true;
         if (missionData.daily.checkpointBoss >= 1 && !missionData.daily.claimed[2]) hasMissionReward = true;
-        if ((missionData.daily.hardship || 0) >= 1 && !missionData.daily.claimed[3]) hasMissionReward = true;
+        const _checkMastery2 = [stageMastery, kingsRoadData && kingsRoadData.mastery].filter(Boolean);
+        const _anyBossCleared = _checkMastery2.some(m => Object.keys(m).some(id => id.endsWith('-boss') && m[id] > 0));
+        if (_anyBossCleared && (missionData.daily.hardship || 0) >= 1 && !missionData.daily.claimed[4]) hasMissionReward = true;
     }
     // 주간 미션 체크
     if (missionData && missionData.weekly) {
         if (missionData.weekly.attendance >= 5 && !missionData.weekly.claimed[0]) hasMissionReward = true;
         if (missionData.weekly.dragonKill >= 5 && !missionData.weekly.claimed[1]) hasMissionReward = true;
         if (missionData.weekly.stageClear >= 15 && !missionData.weekly.claimed[2]) hasMissionReward = true;
+        if (_anyBossCleared && (missionData.weekly.hardship || 0) >= 10 && !missionData.weekly.claimed[3]) hasMissionReward = true;
     }
 
     // 배지 켜기/끄기
