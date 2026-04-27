@@ -17,7 +17,7 @@ const ALLOWED_ORIGINS = [
 ];
 
 // 저장 가능한 최대 젬 증가량 (1회 저장 요청 기준)
-const MAX_GEM_INCREASE_PER_SAVE = 5000;
+const MAX_GEM_INCREASE_PER_SAVE = 50000;
 
 // 필수 필드 목록
 const REQUIRED_FIELDS = ["version", "gems", "level", "nickname", "tag", "playerId"];
