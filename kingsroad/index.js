@@ -74,14 +74,7 @@ exports.saveGameDataSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
             throw new HttpsError("invalid-argument", `젬 증가량이 비정상적입니다. (증가: ${gemDiff})`);
         }
 
-        // 레벨이 한 번에 2 이상 오른 경우 거부
-        // 단, 기존 문서가 신규 상태(level 0)이면 기기이전으로 간주하여 건너뜀
-        const existingLevel = existing.level || 0;
-        const levelDiff = newData.level - existingLevel;
-        if (levelDiff > 1 && existingLevel > 0) {
-            console.warn(`[보안] 레벨 비정상 증가 감지 uid=${uid} 기존=${existing.level} 신규=${newData.level}`);
-            throw new HttpsError("invalid-argument", `레벨 증가량이 비정상적입니다. (증가: ${levelDiff})`);
-        }
+
     }
 
     // 7. 검증 통과 — 서버 타임스탬프로 덮어써서 저장
