@@ -325,6 +325,8 @@ const LANG = {
         mission_daily_1_desc: '새로운 구절을 1회 학습하세요.',
         mission_daily_2_title: '중보/보스 처치 1회',
         mission_daily_2_desc: '중간 점검 또는 보스를 완료하세요.',
+        mission_daily_hardship_title: '왕의 고난 1회 완주',
+        mission_daily_hardship_desc: '어떤 장이든 왕의 고난을 완주하세요.',
         mission_daily_3_title: '데이터 기록 보관',
         mission_daily_3_desc: '텍스트 파일로 기록을 안전하게 보관하세요.',
         mission_weekly_0_title: '주 5일 출석하기',
@@ -1015,6 +1017,8 @@ const LANG = {
         mission_daily_1_desc: 'Study a new verse once.',
         mission_daily_2_title: 'Defeat Checkpoint/Boss ×1',
         mission_daily_2_desc: 'Complete a checkpoint or boss.',
+        mission_daily_hardship_title: "Complete King's Hardship ×1",
+        mission_daily_hardship_desc: "Complete any chapter's King's Hardship.",
         mission_daily_3_title: 'Back Up Your Data',
         mission_daily_3_desc: 'Save your records safely as a text file.',
         mission_weekly_0_title: 'Log In 5 Days',
@@ -1770,7 +1774,9 @@ loadGameData = function () {
         if (typeof missionData.daily.newClear !== 'number') missionData.daily.newClear = 0;
         if (typeof missionData.daily.differentStages !== 'number') missionData.daily.differentStages = 0;
         if (typeof missionData.daily.checkpointBoss !== 'number') missionData.daily.checkpointBoss = 0;
+        if (typeof missionData.daily.hardship !== 'number') missionData.daily.hardship = 0;
         if (missionData.daily.claimed.length < 4) missionData.daily.claimed.push(false);
+        if (missionData.daily.claimed.length < 5) missionData.daily.claimed.push(false);
         if (typeof missionData.daily.backup === 'undefined') missionData.daily.backup = 0;
         if (typeof missionData.weekly.attendance !== 'number') missionData.weekly.attendance = 0;
         if (!Array.isArray(missionData.weekly.attendanceLog)) missionData.weekly.attendanceLog = [];
@@ -2236,7 +2242,8 @@ let missionData = {
         newClear: 0,        // 신규 훈련 횟수
         differentStages: 0, // 서로 다른 스테이지 클리어 횟수
         checkpointBoss: 0,  // 중보/보스 처치 횟수
-        claimed: [false, false, false] // 보상 수령 여부
+        hardship: 0,        // 왕의 고난 완주 횟수
+        claimed: [false, false, false, false, false] // 보상 수령 여부
     },
 
     // 주간 미션 진행도
@@ -2263,8 +2270,9 @@ function checkMissions() {
             newClear: 0,
             differentStages: 0,
             checkpointBoss: 0,
+            hardship: 0,
             backup: 0,
-            claimed: [false, false, false, false]
+            claimed: [false, false, false, false, false]
         };
         missionData.daily.loginReward = 1; // 접속 시 즉시 완료
         console.log("📅 새로운 하루가 시작되어 일일 미션이 초기화되었습니다.");
@@ -2367,6 +2375,10 @@ function updateMissionProgress(type, extraData) {
     else if (type === 'checkpointBoss') {
         missionData.daily.checkpointBoss = (missionData.daily.checkpointBoss || 0) + 1;
     }
+    // 3-b. 일일 미션: 왕의 고난 완주
+    else if (type === 'hardship') {
+        missionData.daily.hardship = (missionData.daily.hardship || 0) + 1;
+    }
     // 4. 주간 미션: 중보/보스 처치 (용 사냥)
     else if (type === 'dragon') {
         missionData.weekly.dragonKill++;
@@ -2425,6 +2437,17 @@ function updateMissionUI() {
             val1: 500, val2: 0,
             claimed: missionData.daily.claimed[2],
             index: 2,
+            type: 'daily'
+        },
+        {
+            desc: t('mission_daily_hardship_title'),
+            current: missionData.daily.hardship || 0,
+            target: 1,
+            rewardText: "💎 500",
+            rewardType: "gem",
+            val1: 500, val2: 0,
+            claimed: missionData.daily.claimed[3],
+            index: 3,
             type: 'daily'
         }
     ];
@@ -10844,8 +10867,9 @@ function checkDailyLogin() {
         missionData.daily.newClear = 0;
         missionData.daily.differentStages = 0;
         missionData.daily.checkpointBoss = 0;
+        missionData.daily.hardship = 0;
         missionData.daily.backup = 0;
-        missionData.daily.claimed = [false, false, false, false];
+        missionData.daily.claimed = [false, false, false, false, false];
         missionData.lastLoginDate = today; // ★ [버그 수정] checkMissions()와 동기화
 
         localStorage.setItem('lastPlayedDate', today);
@@ -13818,6 +13842,7 @@ function updateNotificationBadges() {
         if ((missionData.daily.loginReward || 0) >= 1 && !missionData.daily.claimed[0]) hasMissionReward = true;
         if (missionData.daily.newClear >= 1 && !missionData.daily.claimed[1]) hasMissionReward = true;
         if (missionData.daily.checkpointBoss >= 1 && !missionData.daily.claimed[2]) hasMissionReward = true;
+        if ((missionData.daily.hardship || 0) >= 1 && !missionData.daily.claimed[3]) hasMissionReward = true;
     }
     // 주간 미션 체크
     if (missionData && missionData.weekly) {
@@ -17167,6 +17192,7 @@ function finishHardshipSession(reason) {
             if (!hardshipEnduranceClearHistory[ch]) hardshipEnduranceClearHistory[ch] = [];
             hardshipEnduranceClearHistory[ch].push(record);
             if (hardshipEnduranceClearHistory[ch].length > 10) hardshipEnduranceClearHistory[ch].shift();
+            updateMissionProgress('hardship');
             saveGameData();
             syncToFirestore(); // [Firestore] 인내의 고난 완주 기록
 
@@ -17242,6 +17268,7 @@ function finishHardshipSession(reason) {
             if (!hardshipAddressClearHistory[ch]) hardshipAddressClearHistory[ch] = [];
             hardshipAddressClearHistory[ch].push(record);
             if (hardshipAddressClearHistory[ch].length > 10) hardshipAddressClearHistory[ch].shift();
+            updateMissionProgress('hardship');
             saveGameData();
             syncToFirestore(); // [Firestore] 주소 고난 완주 기록
 
@@ -17309,6 +17336,7 @@ function finishHardshipSession(reason) {
             if (!hardshipMemoryClearHistory[ch]) hardshipMemoryClearHistory[ch] = [];
             hardshipMemoryClearHistory[ch].push(record);
             if (hardshipMemoryClearHistory[ch].length > 10) hardshipMemoryClearHistory[ch].shift();
+            updateMissionProgress('hardship');
             saveGameData();
             syncToFirestore(); // [Firestore] 망각 고난 완주 기록
 
