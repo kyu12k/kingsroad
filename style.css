@@ -3274,6 +3274,20 @@ body, html {
 }
 
 /* [기억 레벨 배지 스타일] */
+.boss-first-clear-gem {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.78rem;
+    font-weight: bold;
+    color: #7d3c00;
+    background: linear-gradient(135deg, #fff3cd, #ffe082);
+    border: 1px solid #f59e0b;
+    padding: 3px 10px;
+    border-radius: 8px;
+    margin-top: 4px;
+    box-shadow: 0 2px 4px rgba(245,158,11,0.25);
+}
+
 .mem-badge {
     display: inline-flex;
     align-items: center;

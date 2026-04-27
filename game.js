@@ -5283,6 +5283,12 @@ function openStageSheet(chapterData) {
         // ★ [v1.1.0] 복습 단계 배지 (일반 스테이지에만 표시)
         rewardInfo = isNormalStage ? buildReviewBadgeHtml(stage.id) : "";
 
+        // ★ 보스 최초 클리어 보석 안내
+        if (stage.type === 'boss' && !isCleared) {
+            const firstClearGem = (stage.targetVerseCount || 0) * 50;
+            rewardInfo = `<div class="boss-first-clear-gem">💎 최초 클리어 시 보석 ${firstClearGem}개 지급</div>`;
+        }
+
         // ★ [에빙하우스] 기억 강도 바
         let memoryBarHtml = "";
         if (isCleared && isNormalStage) {
