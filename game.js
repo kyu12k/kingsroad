@@ -13907,13 +13907,14 @@ function updateNotificationBadges() {
         const _checkMastery2 = [stageMastery, kingsRoadData && kingsRoadData.mastery].filter(Boolean);
         const _anyBossCleared = _checkMastery2.some(m => Object.keys(m).some(id => id.endsWith('-boss') && m[id] > 0));
         if (_anyBossCleared && (missionData.daily.hardship || 0) >= 1 && !missionData.daily.claimed[4]) hasMissionReward = true;
+        // 주간 미션 고난 체크 (같은 스코프에서 _anyBossCleared 재사용)
+        if (missionData.weekly && _anyBossCleared && (missionData.weekly.hardship || 0) >= 10 && !missionData.weekly.claimed[3]) hasMissionReward = true;
     }
     // 주간 미션 체크
     if (missionData && missionData.weekly) {
         if (missionData.weekly.attendance >= 5 && !missionData.weekly.claimed[0]) hasMissionReward = true;
         if (missionData.weekly.dragonKill >= 5 && !missionData.weekly.claimed[1]) hasMissionReward = true;
         if (missionData.weekly.stageClear >= 15 && !missionData.weekly.claimed[2]) hasMissionReward = true;
-        if (_anyBossCleared && (missionData.weekly.hardship || 0) >= 10 && !missionData.weekly.claimed[3]) hasMissionReward = true;
     }
 
     // 배지 켜기/끄기
