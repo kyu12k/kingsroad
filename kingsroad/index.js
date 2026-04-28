@@ -16,8 +16,6 @@ const ALLOWED_ORIGINS = [
     "https://kingsload.pages.dev"
 ];
 
-// 저장 가능한 최대 젬 증가량 (1회 저장 요청 기준)
-const MAX_GEM_INCREASE_PER_SAVE = 50000;
 
 // 필수 필드 목록
 const REQUIRED_FIELDS = ["version", "gems", "level", "nickname", "tag", "playerId"];
@@ -61,21 +59,6 @@ exports.saveGameDataSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
         throw new HttpsError("invalid-argument", "updatedAt이 서버 시간보다 미래입니다.");
     }
 
-    // 6. 기존 데이터와 비교해 비정상적인 증가 감지
-    const existingDoc = await db.collection("saves").doc(uid).get();
-
-    if (existingDoc.exists) {
-        const existing = existingDoc.data();
-
-        // 젬이 비정상적으로 많이 증가한 경우 거부
-        const gemDiff = newData.gems - (existing.gems || 0);
-        if (gemDiff > MAX_GEM_INCREASE_PER_SAVE) {
-            console.warn(`[보안] 젬 비정상 증가 감지 uid=${uid} 기존=${existing.gems} 신규=${newData.gems}`);
-            throw new HttpsError("invalid-argument", `젬 증가량이 비정상적입니다. (증가: ${gemDiff})`);
-        }
-
-
-    }
 
     // 7. 검증 통과 — 서버 타임스탬프로 덮어써서 저장
     const dataToSave = {
