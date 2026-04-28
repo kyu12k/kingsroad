@@ -1525,6 +1525,9 @@ let isGlobalMuted = localStorage.getItem('isMuted') === 'true';
 let isVoiceRepeat = localStorage.getItem('isVoiceRepeat') === 'true';
 let selectedVoice = parseInt(localStorage.getItem('selectedVoice') || '1', 10);
 
+let _activeAudio = null;   // 현재 재생 중인 오디오 (중첩 방지용 전역 추적)
+let _activeAudioSpeed = 1; // 현재 선택된 배속 (세션 유지)
+
 function updateVoiceRepeatButtonState(buttonEl) {
     if (!buttonEl) return;
     buttonEl.style.opacity = isVoiceRepeat ? '1' : '0.4';
@@ -1646,6 +1649,15 @@ function startBgm() {
 
 function stopBgm() {
     if (bgmAudio) bgmAudio.pause();
+}
+
+function stopActiveAudio() {
+    if (_activeAudio) {
+        _activeAudio.loop = false;
+        _activeAudio.pause();
+        _activeAudio.src = '';
+        _activeAudio = null;
+    }
 }
 
 // [시스템: 게임 진행 데이터]
@@ -14075,10 +14087,11 @@ window.addEventListener("beforeunload", () => {
     if (typeof saveMyScoreToServer === 'function') saveMyScoreToServer();
 });
 
-// 앱 백그라운드 전환 시 저장 (모바일 홈 버튼, 탭 전환 등)
+// 앱 백그라운드 전환 시 저장 + 오디오 중첩 방지
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === 'hidden') {
         saveGameData();
+        stopActiveAudio();
     }
 });
 
@@ -14699,6 +14712,7 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, 
     const muteBtn = document.getElementById('mute-toggle-btn');
     const pauseBtn = document.getElementById('pause-toggle-btn');
     const repeatBtn = document.getElementById('repeat-toggle-btn');
+    const speedBtn = document.getElementById('speed-toggle-btn');
     const voiceSelectWrap = document.getElementById('voice-select-btns');
     const tl = gsap.timeline();
 
@@ -14706,13 +14720,17 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, 
     let isSkipped = false;
     const readTime = Math.max(3.5, targetText.length * 0.15);
 
+    stopActiveAudio();
+
     let audioObj = verseAudio;
     if (typeof verseAudio === 'string') {
         audioObj = new Audio(verseAudio);
     }
 
     audioObj.muted = isGlobalMuted;
+    audioObj.playbackRate = _activeAudioSpeed;
     connectVoiceToAudioContext(audioObj);
+    _activeAudio = audioObj;
 
     // 음성 선택 버튼
     function updateVoiceBtnState() {
@@ -14744,6 +14762,7 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, 
                 const newAudio = new Audio(newUrl);
                 newAudio.muted = isGlobalMuted;
                 newAudio.loop = isLooping;
+                newAudio.playbackRate = _activeAudioSpeed;
                 connectVoiceToAudioContext(newAudio);
 
                 newAudio.onerror = () => {
@@ -14759,7 +14778,8 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, 
                 newAudio.addEventListener('canplaythrough', () => {
                     if (isSkipped) { newAudio.src = ''; return; }
                     audioObj = newAudio;
-                    // muteBtn, pauseBtn, repeatBtn이 참조하는 audioObj 교체
+                    _activeAudio = audioObj;
+                    // muteBtn, pauseBtn, repeatBtn, speedBtn이 참조하는 audioObj 교체
                     if (muteBtn) muteBtn.onclick = () => {
                         isGlobalMuted = !isGlobalMuted;
                         localStorage.setItem('isMuted', isGlobalMuted);
@@ -14837,6 +14857,22 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, 
         };
     }
 
+    const SPEED_STEPS = [1, 1.2, 1.5, 2];
+    const SPEED_LABELS = ['1×', '1.2×', '1.5×', '2×'];
+    function applySpeed(speed) {
+        _activeAudioSpeed = speed;
+        audioObj.playbackRate = speed;
+        if (speedBtn) speedBtn.textContent = SPEED_LABELS[SPEED_STEPS.indexOf(speed)] ?? `${speed}×`;
+    }
+    if (speedBtn) {
+        speedBtn.style.display = "flex";
+        speedBtn.textContent = SPEED_LABELS[SPEED_STEPS.indexOf(_activeAudioSpeed)] ?? `${_activeAudioSpeed}×`;
+        speedBtn.onclick = () => {
+            const idx = SPEED_STEPS.indexOf(_activeAudioSpeed);
+            applySpeed(SPEED_STEPS[(idx + 1) % SPEED_STEPS.length]);
+        };
+    }
+
     if (skipBtn) {
         skipBtn.style.display = "block";
         skipBtn.textContent = t('skip_transition');
@@ -14848,6 +14884,7 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, 
             audioObj.loop = false;
             audioObj.pause();
             audioObj.currentTime = 0;
+            _activeAudio = null;
             clearTimeout(fallbackTimer);
             skipBtn.style.display = "none";
             if (muteBtn) muteBtn.style.display = "none";
@@ -14856,6 +14893,7 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, 
                 repeatBtn.style.display = "none";
                 updateVoiceRepeatButtonState(repeatBtn);
             }
+            if (speedBtn) speedBtn.style.display = "none";
             if (voiceSelectWrap) voiceSelectWrap.style.display = "none";
             tl.play("outro");
         };
@@ -14905,7 +14943,9 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, 
                 repeatBtn.style.display = "none";
                 updateVoiceRepeatButtonState(repeatBtn);
             }
+            if (speedBtn) speedBtn.style.display = "none";
             if (voiceSelectWrap) voiceSelectWrap.style.display = "none";
+            _activeAudio = null;
         })
 
         .to(introHeader, { opacity: 0, duration: 0.6, ease: "power2.inOut" })
