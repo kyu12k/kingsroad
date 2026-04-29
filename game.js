@@ -5420,6 +5420,7 @@ function openStageSheet(chapterData) {
                 const _preload = new Audio(getAudioUrl(_cn, _vn));
                 _preload.preload = 'auto';
                 _preload.load();
+                connectVoiceToAudioContext(_preload);
                 window._preloadedStageAudio = _preload;
                 window._preloadedStageAudioVoice = selectedVoice;
             }
@@ -14087,11 +14088,10 @@ window.addEventListener("beforeunload", () => {
     if (typeof saveMyScoreToServer === 'function') saveMyScoreToServer();
 });
 
-// 앱 백그라운드 전환 시 저장 + 오디오 중첩 방지
+// 앱 백그라운드 전환 시 저장
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === 'hidden') {
         saveGameData();
-        stopActiveAudio();
     }
 });
 
@@ -14392,6 +14392,12 @@ document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === 'visible') {
         console.log("☀️ 화면이 깨어났습니다. 날짜 변경선을 확인합니다.");
 
+        // iOS에서 화면 잠금 시 AudioContext가 suspended 상태가 되므로 명시적으로 resume
+        // resume하지 않으면 Web Audio 그래프 밖 OS 오디오 경로와 중첩 현상이 생길 수 있음
+        if (SoundEffect.ctx && SoundEffect.ctx.state === 'suspended') {
+            SoundEffect.ctx.resume().catch(() => {});
+        }
+
         // 날짜/주차가 바뀌었는지 확인하고, 바뀌었다면 알아서 0점으로 리셋해줍니다.
         if (typeof checkDailyLogin === 'function') {
             checkDailyLogin();
@@ -14671,6 +14677,7 @@ function startStageWithTransition(chapterNum, verseNum, startStageCallback) {
         preloadedAudio = new Audio(audioUrl);
         preloadedAudio.preload = 'auto';
         preloadedAudio.load();
+        connectVoiceToAudioContext(preloadedAudio);
     }
 
     gsap.set(overlay, { opacity: 1, pointerEvents: "auto" });
@@ -14778,6 +14785,7 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, 
                 newAudio.addEventListener('canplaythrough', () => {
                     if (isSkipped) { newAudio.src = ''; return; }
                     audioObj = newAudio;
+                    audioObj.playbackRate = _activeAudioSpeed;
                     _activeAudio = audioObj;
                     // muteBtn, pauseBtn, repeatBtn, speedBtn이 참조하는 audioObj 교체
                     if (muteBtn) muteBtn.onclick = () => {
