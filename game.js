@@ -17789,11 +17789,12 @@ function renderGuidePage() {
 
         var stageId = eligible[Math.floor(Math.random() * eligible.length)];
         _currentQuizStageId = stageId;
+        var remainingCount = eligible.length;
         _quizSessionUsed.push(stageId);
-        renderMemoryQuizQuestion(stageId);
+        renderMemoryQuizQuestion(stageId, remainingCount);
     };
 
-    function renderMemoryQuizQuestion(stageId) {
+    function renderMemoryQuizQuestion(stageId, remainingCount) {
         _currentQuizStageId = stageId;
         var parts = stageId.split('-');
         var chapter = parseInt(parts[0]);
@@ -17818,8 +17819,8 @@ function renderGuidePage() {
         if (controls) controls.style.display = '';
         if (resultArea) resultArea.style.display = 'none';
 
-        // 남은 퀴즈 개수 표시
-        var remaining = getEligibleQuizVerses().length;
+        // 남은 퀴즈 개수 표시 (push 전에 계산된 값을 caller에서 전달받음)
+        var remaining = (remainingCount !== undefined) ? remainingCount : getEligibleQuizVerses().length + 1;
         var remEl = document.getElementById('quiz-remaining');
         if (remEl) {
             remEl.textContent = remaining <= 1 ? '남은 퀴즈: ' + remaining + '개 (마지막)' : '남은 퀴즈: ' + remaining + '개';
@@ -17885,8 +17886,9 @@ function renderGuidePage() {
             return;
         }
         var stageId = eligible[Math.floor(Math.random() * eligible.length)];
+        var remainingCount = eligible.length;
         _quizSessionUsed.push(stageId);
-        renderMemoryQuizQuestion(stageId);
+        renderMemoryQuizQuestion(stageId, remainingCount);
     };
 
     window.handleMemoryQuizStop = function () {
