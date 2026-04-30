@@ -1688,7 +1688,8 @@ let kingsRoadData = {
     lastClear: {},
     reviewStep: {},
     nextReviewTime: {},
-    stepHistory: []
+    stepHistory: [],
+    startTimestamp: null  // 최초 왕의 길 시작 시각 (단계 변경 시 유지)
     // stepHistory 항목: { step: 1|2|3, timestamp: Date.now(), baseCount: N }
 };
 
@@ -1828,6 +1829,7 @@ loadGameData = function () {
             kingsRoadData.reviewStep = parsed.kingsMode.reviewStep || {};
             kingsRoadData.nextReviewTime = parsed.kingsMode.nextReviewTime || {};
             kingsRoadData.stepHistory = parsed.kingsMode.stepHistory || [];
+            kingsRoadData.startTimestamp = parsed.kingsMode.startTimestamp || (kingsRoadData.stepHistory.length > 0 ? kingsRoadData.stepHistory[0].timestamp : null);
         }
         // 마지막으로 선택한 모드 복원 (기본값 'free')
         activeMode = parsed.activeMode || 'free';
@@ -4241,17 +4243,16 @@ function switchMode(mode) {
 // 왕의 길 단계 설정 (최초 선택 or 변경)
 function setKingsRoadStep(newStep) {
     if (kingsRoadData.stepHistory.length === 0) {
-        // 최초 설정: { isInitial: true } 플래그로 첫날 +1 적용 여부 구분
-        kingsRoadData.stepHistory = [{ step: newStep, timestamp: Date.now(), baseCount: 0, isInitial: true }];
+        // 최초 설정
+        const now = Date.now();
+        kingsRoadData.startTimestamp = now;
+        kingsRoadData.stepHistory = [{ step: newStep, timestamp: now, isInitial: true }];
     } else {
-        // 단계 변경: 현재 해금 수를 고정하고 내일부터 새 단계 적용
-        // 배열은 마지막 항목 1개만 유지 (연타 방지 + 메모리 절약)
-        const currentUnlocked = getKingsRoadUnlockedCount();
-        // 기존 타임스탬프의 현재 날짜 시작 시점을 유지해 남은 대기 시간 보존
+        // 단계 변경: 현재 날짜 시작 시점을 기록하고 새 항목 추가 (이력 보존)
         const oldLast = kingsRoadData.stepHistory[kingsRoadData.stepHistory.length - 1];
         const daysElapsed = Math.floor((Date.now() - oldLast.timestamp) / 86400000);
         const preservedTimestamp = oldLast.timestamp + daysElapsed * 86400000;
-        kingsRoadData.stepHistory = [{ step: newStep, timestamp: preservedTimestamp, baseCount: currentUnlocked, isInitial: false }];
+        kingsRoadData.stepHistory.push({ step: newStep, timestamp: preservedTimestamp, isInitial: false });
     }
     updateKingsStepBtn();
     saveGameData();
@@ -4288,14 +4289,31 @@ function updateKingsStepBtn() {
 function getKingsRoadUnlockedCount() {
     const history = kingsRoadData.stepHistory;
     if (!history || history.length === 0) return 0;
-    const last = history[history.length - 1];
-    const daysElapsed = Math.floor((Date.now() - last.timestamp) / 86400000);
-    // 최초 설정: day 0에 1×step 즉시 해금 → (daysElapsed + 1) * step
-    // 단계 변경:  변경 당일은 보너스 없고 내일부터 → daysElapsed * step
-    const bonus = last.isInitial
-        ? (daysElapsed + 1) * last.step
-        : daysElapsed * last.step;
-    return Math.min(last.baseCount + bonus, getTotalNormalStageCount());
+
+    const now = Date.now();
+    let total = 0;
+    for (let i = 0; i < history.length; i++) {
+        const entry = history[i];
+        // 구버전 호환: baseCount 필드가 있으면 해당 구간 이전 누적분을 직접 사용
+        // (단계 변경 이력이 없는 저장 데이터)
+        if (entry.baseCount !== undefined && i === 0 && history.length === 1) {
+            const daysElapsed = Math.floor((now - entry.timestamp) / 86400000);
+            const bonus = entry.isInitial
+                ? (daysElapsed + 1) * entry.step
+                : daysElapsed * entry.step;
+            total = entry.baseCount + bonus;
+            break;
+        }
+        // 이 구간이 끝나는 시점: 다음 항목의 timestamp, 없으면 현재
+        const endTs = i + 1 < history.length ? history[i + 1].timestamp : now;
+        const daysInPeriod = Math.floor((endTs - entry.timestamp) / 86400000);
+        // 최초 설정: 첫날 즉시 1×step 해금 → (days + 1) * step
+        // 단계 변경: 변경 당일 보너스 없고 내일부터 → days * step
+        total += entry.isInitial
+            ? (daysInPeriod + 1) * entry.step
+            : daysInPeriod * entry.step;
+    }
+    return Math.min(total, getTotalNormalStageCount());
 }
 
 // 전체 일반 스테이지 수 반환 (캐시)
@@ -4906,8 +4924,8 @@ function renderChapterMap() {
         }
         const step = kingsRoadData.stepHistory.length > 0
             ? kingsRoadData.stepHistory[kingsRoadData.stepHistory.length - 1].step : '?';
-        const startTs = kingsRoadData.stepHistory.length > 0 ? kingsRoadData.stepHistory[0].timestamp : Date.now();
-        const dayNum = Math.floor((Date.now() - startTs) / 86400000) + 1;
+        const startTs = kingsRoadData.startTimestamp || (kingsRoadData.stepHistory.length > 0 ? kingsRoadData.stepHistory[0].timestamp : Date.now());
+        const dayNum = Math.floor((Date.now() - startTs) / 86400000);
         const unlockedCount = getKingsRoadUnlockedCount();
         kingsHeader.innerHTML = `
             <span class="kh-title">${t('kings_header_title', { step })}</span>
@@ -6955,7 +6973,8 @@ function saveGameData() {
             lastClear: kingsRoadData.lastClear,
             reviewStep: kingsRoadData.reviewStep,
             nextReviewTime: kingsRoadData.nextReviewTime,
-            stepHistory: kingsRoadData.stepHistory
+            stepHistory: kingsRoadData.stepHistory,
+            startTimestamp: kingsRoadData.startTimestamp
         },
         updatedAt: Date.now() // [Firestore] 충돌 해결용 타임스탬프
     };
