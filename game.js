@@ -5449,7 +5449,7 @@ function openStageSheet(chapterData) {
                     if (confirm(t('alert_kings_unlock_next_confirm'))) {
                         kingsRoadData.manualBonus = (kingsRoadData.manualBonus || 0) + 1;
                         saveGameData();
-                        openStageSheet(); // 시트 새로고침
+                        openStageSheet(currentOpenChapterData); // 시트 새로고침
                     }
                 };
             } else {
