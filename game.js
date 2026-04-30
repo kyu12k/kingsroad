@@ -7417,7 +7417,7 @@ function loadStep() {
 
         const card = document.getElementById('tap-reading-card');
         window.chunksToReveal = trainingVerseData.chunks;
-        window.revealIndex = 0;
+        window.revealedChunks = new Set();
         let autoFillInterval = null;
         let isChosungMode = false; // ★ 초성 모드 상태 변수
 
@@ -7435,6 +7435,15 @@ function loadStep() {
             span.style.fontSize = "1.3rem";
             span.style.opacity = "1";
             span.style.transition = "all 0.3s ease-out";
+            span.style.cursor = "pointer";
+            span.addEventListener('click', () => {
+                if (!window.revealedChunks.has(idx)) return;
+                window.revealedChunks.delete(idx);
+                span.innerText = isChosungMode ? span.dataset.chosung : span.dataset.masked;
+                span.style.color = "#3a4f6a";
+                span.style.fontWeight = "normal";
+                span.style.fontSize = "1.3rem";
+            });
             card.appendChild(span);
         });
 
@@ -7458,7 +7467,8 @@ function loadStep() {
             isChosungMode = !isChosungMode;
             chosungBtn.innerText = isChosungMode ? t('btn_chosung_off') : t('btn_chosung');
             chosungBtn.style.background = isChosungMode ? '#e67e22' : '#f39c12';
-            for (let i = window.revealIndex; i < window.chunksToReveal.length; i++) {
+            for (let i = 0; i < window.chunksToReveal.length; i++) {
+                if (window.revealedChunks.has(i)) continue;
                 const span = document.getElementById(`chunk-${i}`);
                 if (span) span.innerText = isChosungMode ? span.dataset.chosung : span.dataset.masked;
             }
@@ -7466,14 +7476,15 @@ function loadStep() {
         document.getElementById('step1-chosung-row').appendChild(chosungBtn);
 
         const fillOneChunk = () => {
-            if (window.revealIndex >= window.chunksToReveal.length) {
-                stopAutoFill();
-                return;
+            let nextIdx = -1;
+            for (let i = 0; i < window.chunksToReveal.length; i++) {
+                if (!window.revealedChunks.has(i)) { nextIdx = i; break; }
             }
+            if (nextIdx === -1) { stopAutoFill(); return; }
 
-            const span = document.getElementById(`chunk-${window.revealIndex}`);
+            const span = document.getElementById(`chunk-${nextIdx}`);
             if (span) {
-                span.innerText = span.dataset.original; // ★ 단어가 공개될 때 숨겨둔 원본 텍스트로 교체!
+                span.innerText = span.dataset.original;
                 span.style.color = "#dce8f5";
                 span.style.fontWeight = "bold";
                 span.style.opacity = "1";
@@ -7485,9 +7496,9 @@ function loadStep() {
                 }, 200);
             }
 
-            window.revealIndex++;
+            window.revealedChunks.add(nextIdx);
 
-            if (window.revealIndex === window.chunksToReveal.length) {
+            if (window.revealedChunks.size === window.chunksToReveal.length) {
                 finishStep1Effect();
             }
         };
@@ -7583,8 +7594,9 @@ function loadStep() {
 
         const revealAll = () => {
             stopAutoFill();
-            while (window.revealIndex < window.chunksToReveal.length) {
-                const span = document.getElementById(`chunk-${window.revealIndex}`);
+            for (let i = 0; i < window.chunksToReveal.length; i++) {
+                if (window.revealedChunks.has(i)) continue;
+                const span = document.getElementById(`chunk-${i}`);
                 if (span) {
                     span.innerText = span.dataset.original;
                     span.style.color = '#dce8f5';
@@ -7592,7 +7604,7 @@ function loadStep() {
                     span.style.opacity = '1';
                     span.style.fontSize = '1.3rem';
                 }
-                window.revealIndex++;
+                window.revealedChunks.add(i);
             }
         };
 
