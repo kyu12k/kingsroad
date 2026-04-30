@@ -146,6 +146,8 @@ const LANG = {
         alert_reward_error: '보상 수령 중 오류가 발생했습니다. 다시 시도해주세요.',
         alert_chapter_locked: '🔒 이전 챕터를 먼저 클리어하여 길을 여세요.',
         alert_verse_locked: '🔒 아직 열리지 않은 구절입니다.\n매일 새로운 구절이 열립니다!',
+        alert_kings_unlock_next_confirm: '해금하시면 학습량이 늘어나게 됩니다.\n그래도 괜찮으십니까?',
+        alert_kings_unlock_order: '🔒 순서대로 해금해야 합니다.\n먼저 바로 다음 구절부터 열어주세요.',
         alert_spell_incomplete: '주문이 완성되지 않았습니다!\n(현재: {cur} / 필요: {need})',
         alert_attack_fail: '❌ 공격 실패!\n{count}군데가 틀렸습니다.',
         alert_defeat: '💔 패배... 눈앞이 캄캄해집니다.',
@@ -840,6 +842,8 @@ const LANG = {
         alert_reward_error: 'Error claiming reward. Please try again.',
         alert_chapter_locked: '🔒 Clear the previous chapter first to open the path.',
         alert_verse_locked: '🔒 This verse is not yet unlocked.\nA new verse unlocks each day!',
+        alert_kings_unlock_next_confirm: 'Unlocking this verse will increase your daily study load.\nAre you sure?',
+        alert_kings_unlock_order: '🔒 Verses must be unlocked in order.\nPlease unlock the very next verse first.',
         alert_spell_incomplete: 'Spell not complete!\n(Current: {cur} / Required: {need})',
         alert_attack_fail: '❌ Attack failed!\n{count} mistake(s) found.',
         alert_defeat: '💔 Defeated... Everything goes dark.',
@@ -1689,7 +1693,8 @@ let kingsRoadData = {
     reviewStep: {},
     nextReviewTime: {},
     stepHistory: [],
-    startTimestamp: null  // 최초 왕의 길 시작 시각 (단계 변경 시 유지)
+    startTimestamp: null,  // 최초 왕의 길 시작 시각 (단계 변경 시 유지)
+    manualBonus: 0         // 유저가 수동으로 추가 해금한 구절 수
     // stepHistory 항목: { step: 1|2|3, timestamp: Date.now(), baseCount: N }
 };
 
@@ -1830,6 +1835,7 @@ loadGameData = function () {
             kingsRoadData.nextReviewTime = parsed.kingsMode.nextReviewTime || {};
             kingsRoadData.stepHistory = parsed.kingsMode.stepHistory || [];
             kingsRoadData.startTimestamp = parsed.kingsMode.startTimestamp || (kingsRoadData.stepHistory.length > 0 ? kingsRoadData.stepHistory[0].timestamp : null);
+            kingsRoadData.manualBonus = parsed.kingsMode.manualBonus || 0;
         }
         // 마지막으로 선택한 모드 복원 (기본값 'free')
         activeMode = parsed.activeMode || 'free';
@@ -4313,7 +4319,22 @@ function getKingsRoadUnlockedCount() {
             ? (daysInPeriod + 1) * entry.step
             : daysInPeriod * entry.step;
     }
+    total += (kingsRoadData.manualBonus || 0);
     return Math.min(total, getTotalNormalStageCount());
+}
+
+// 다음으로 수동 해금 가능한 일반 스테이지 id 반환 (없으면 null)
+function getNextKingsRoadStageId() {
+    const unlockedCount = getKingsRoadUnlockedCount();
+    let normalIdx = 0;
+    for (const chapter of gameData) {
+        for (const stage of chapter.stages) {
+            if (stage.type !== 'normal') continue;
+            if (normalIdx === unlockedCount) return stage.id;
+            normalIdx++;
+        }
+    }
+    return null;
 }
 
 // 전체 일반 스테이지 수 반환 (캐시)
@@ -5418,10 +5439,22 @@ function openStageSheet(chapterData) {
         if (kingsUnlockedSet && !kingsUnlockedSet.has(stage.id)) {
             item.classList.add('kings-locked');
             item.innerHTML += `<span class="kings-locked-badge">🔒</span>`;
-            item.onclick = () => {
-                const daysLeft = 1; // 안내 메시지용
-                alert(t('alert_verse_locked'));
-            };
+            if (stage.type === 'normal') {
+                item.onclick = () => {
+                    const nextId = getNextKingsRoadStageId();
+                    if (stage.id !== nextId) {
+                        alert(t('alert_kings_unlock_order'));
+                        return;
+                    }
+                    if (confirm(t('alert_kings_unlock_next_confirm'))) {
+                        kingsRoadData.manualBonus = (kingsRoadData.manualBonus || 0) + 1;
+                        saveGameData();
+                        openStageSheet(); // 시트 새로고침
+                    }
+                };
+            } else {
+                item.onclick = () => alert(t('alert_verse_locked'));
+            }
             list.appendChild(item);
             return; // 나머지 클릭 이벤트 설정 건너뜀
         }
@@ -6974,7 +7007,8 @@ function saveGameData() {
             reviewStep: kingsRoadData.reviewStep,
             nextReviewTime: kingsRoadData.nextReviewTime,
             stepHistory: kingsRoadData.stepHistory,
-            startTimestamp: kingsRoadData.startTimestamp
+            startTimestamp: kingsRoadData.startTimestamp,
+            manualBonus: kingsRoadData.manualBonus
         },
         updatedAt: Date.now() // [Firestore] 충돌 해결용 타임스탬프
     };
