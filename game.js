@@ -11090,6 +11090,7 @@ stageClear = function (type) {
                         subGemTotal += earned;
                         eligibleSubCount++;
                     } else {
+                        stageMastery[subId]++;
                         subGemTotal += 10; // 대기 중 최소 보상
                     }
                 });
@@ -11137,6 +11138,7 @@ stageClear = function (type) {
                             subGemTotal += earned;
                             eligibleSubCount++;
                         } else {
+                            stageMastery[subId]++;
                             subGemTotal += 10; // 대기 중 최소 보상
                         }
                     }
@@ -17296,6 +17298,7 @@ function finishHardshipSession(reason) {
                     subGemTotal += earned;
                     eligibleSubCount++;
                 } else {
+                    stageMastery[subId]++;
                     subGemTotal += 10;
                 }
             });
@@ -17347,6 +17350,7 @@ function finishHardshipSession(reason) {
                     subGemTotal += earned;
                     eligibleSubCount++;
                 } else {
+                    stageMastery[subId]++;
                     subGemTotal += 10;
                 }
             });
