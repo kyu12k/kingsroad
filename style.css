@@ -988,6 +988,22 @@ body, html {
         .chapter-hardship-btn:active {
             transform: scale(0.96);
         }
+        .chapter-hardship-btn.hardship-btn-partial-done {
+            background: linear-gradient(135deg, #2e7d32, #1b5e20);
+            border-color: #a5d6a7;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.45), 0 0 10px rgba(46,125,50,0.5);
+        }
+        .chapter-hardship-btn.hardship-btn-partial-done:hover {
+            box-shadow: 0 6px 14px rgba(0,0,0,0.5), 0 0 16px rgba(46,125,50,0.7);
+        }
+        .chapter-hardship-btn.hardship-btn-all-done {
+            background: linear-gradient(135deg, #1b5e20, #004d40);
+            border-color: #69f0ae;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.45), 0 0 14px rgba(105,240,174,0.5);
+        }
+        .chapter-hardship-btn.hardship-btn-all-done:hover {
+            box-shadow: 0 6px 14px rgba(0,0,0,0.5), 0 0 20px rgba(105,240,174,0.7);
+        }
         /* [5. 스테이지 시트 (Bottom Sheet)] */
         #stage-sheet {
             position: absolute; bottom: 0; left: 0; width: 100%; height: 70%;

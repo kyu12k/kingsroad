@@ -5095,8 +5095,16 @@ function renderChapterMap() {
         // → 나무가 왼쪽(left zone)이면 버튼은 오른쪽, 나무가 오른쪽(right zone)이면 버튼은 왼쪽
         if (isChapterClear) {
             const hardshipBtn = document.createElement('button');
-            hardshipBtn.className = 'chapter-hardship-btn';
-            hardshipBtn.innerHTML = t('hardship_kings_btn');
+            try {
+                const _doneModes = ['endurance', 'address', 'memory'].filter(m => isHardshipChapterDoneToday(m, chapter.id));
+                const _allDone = _doneModes.length === 3;
+                const _anyDone = _doneModes.length > 0;
+                hardshipBtn.className = 'chapter-hardship-btn' + (_allDone ? ' hardship-btn-all-done' : _anyDone ? ' hardship-btn-partial-done' : '');
+                hardshipBtn.innerHTML = t('hardship_kings_btn') + (_anyDone ? ' ✅' : '');
+            } catch(e) {
+                hardshipBtn.className = 'chapter-hardship-btn';
+                hardshipBtn.innerHTML = t('hardship_kings_btn');
+            }
             hardshipBtn.style.cssText = isLeft
                 ? 'right: 12%; top: 50%; transform: translateY(-50%);'
                 : 'left: 12%; top: 50%; transform: translateY(-50%);';
@@ -15878,7 +15886,12 @@ function isHardshipChapterDoneToday(mode, ch) {
     if (!last || !last.date) return false;
     const d = new Date(last.date);
     const lastStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    return lastStr === getMemoryQuizDate();
+    const now = new Date();
+    const ref = now.getHours() < 6
+        ? new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
+        : now;
+    const todayStr = `${ref.getFullYear()}-${String(ref.getMonth()+1).padStart(2,'0')}-${String(ref.getDate()).padStart(2,'0')}`;
+    return lastStr === todayStr;
 }
 
 function refreshHardshipCooldownBadges() {
