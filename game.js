@@ -17572,6 +17572,10 @@ function finishHardshipSession(reason) {
         const quoteEl = document.getElementById('result-quote');
         if (quoteEl) { quoteEl.innerHTML = ''; quoteEl.style.display = 'none'; }
 
+        // 이전 일반 스테이지 클리어 시 추가된 '다음 구절 학습' 버튼 제거
+        const existingNextBtn = resultModal.querySelector('#btn-next-stage');
+        if (existingNextBtn) existingNextBtn.remove();
+
         const existingHistory = resultModal.querySelector('.hardship-history-wrap');
         if (existingHistory) existingHistory.remove();
         const historyHtml = enduranceHistoryHtml || addressHistoryHtml || memoryHistoryHtml;
