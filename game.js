@@ -561,6 +561,8 @@ const LANG = {
         ranking_glory_coming: '다가올 영광',
         ranking_glory_desc: '내년 연말정산 이후,<br>이곳에 위대한 역사가 보존됩니다.',
         ranking_reward_notice: '🎁 지파 순위 보상은 해당 주에 <strong style="color:#bdc3c7;">지파원 100명 이상</strong>이 참여해야 지급됩니다.<br>시온성 랭킹 보상은 전체 100명 이상 참여 시 지급됩니다.',
+        ranking_tab_group_current: '현재 랭킹',
+        ranking_tab_group_hall: '명예의 전당',
         ranking_tab_weekly: '주간 명예',
         ranking_tab_monthly: '월간 명예',
         ranking_tab_total: '누적 명예의 전당 (All-Time)',
@@ -1260,6 +1262,8 @@ const LANG = {
         ranking_glory_coming: 'Glory to Come',
         ranking_glory_desc: 'After next year\'s year-end,<br>great history will be preserved here.',
         ranking_reward_notice: '🎁 Tribe ranking rewards require <strong style="color:#bdc3c7;">100+ members</strong> from your tribe to participate that week.<br>Zion ranking rewards require 100+ total participants.',
+        ranking_tab_group_current: 'Current Rankings',
+        ranking_tab_group_hall: 'Hall of Fame',
         ranking_tab_weekly: 'Weekly Hall',
         ranking_tab_monthly: 'Monthly Hall',
         ranking_tab_total: 'All-Time Hall of Fame',
@@ -6533,6 +6537,54 @@ function loadNextVerse() {
 } // <-- loadNextVerse 함수의 진짜 끝!
 
 
+/* 도감 도움말 모달 */
+function showLibraryHelpModal() {
+    const existing = document.getElementById('library-help-modal');
+    if (existing) { existing.remove(); return; }
+
+    const overlay = document.createElement('div');
+    overlay.id = 'library-help-modal';
+    overlay.style.cssText = `
+        position:fixed; inset:0; z-index:9999;
+        background:rgba(0,0,0,0.65);
+        display:flex; align-items:center; justify-content:center;
+        padding:20px;
+    `;
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+    const panel = document.createElement('div');
+    panel.style.cssText = `
+        background:#2c3e50; color:#eee;
+        width:100%; max-width:420px;
+        border-radius:16px;
+        padding:24px 20px 20px;
+        box-shadow:0 8px 32px rgba(0,0,0,0.5);
+        position:relative;
+    `;
+
+    panel.innerHTML = `
+        <button onclick="document.getElementById('library-help-modal').remove()" style="
+            position:absolute; top:12px; right:14px;
+            background:none; border:none; color:#aaa; font-size:1.4rem; cursor:pointer; line-height:1;
+        ">✕</button>
+        <div style="font-size:0.9rem; color:#bdc3c7; line-height:1.7;">
+            <div style="margin-bottom:10px;"><strong style="color:#f1c40f; font-size:1rem;">${t('library_help_what_title')}</strong></div>
+            <div>${t('library_help_what_desc')}</div>
+            <div style="margin-top:14px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:14px;">
+                <div style="margin-bottom:8px;"><strong style="color:#f1c40f;">${t('library_help_score_title')}</strong></div>
+                <div>${t('library_help_score_items')}</div>
+            </div>
+            <div style="margin-top:14px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:14px;">
+                <div style="margin-bottom:8px;"><strong style="color:#f1c40f;">${t('library_help_rank_title')}</strong></div>
+                <div style="font-size:0.85rem;">${t('library_help_rank_items')}</div>
+            </div>
+        </div>
+    `;
+
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+}
+
 /* 이전 파트/구절 보기 모달 */
 function showBossHistoryModal() {
     const existing = document.getElementById('boss-history-modal');
@@ -9512,22 +9564,7 @@ function openLifeBook() {
             <div class="life-book-header" style="padding:20px; text-align:center; background:#2c3e50; z-index:10; border-bottom:1px solid rgba(255,255,255,0.1); flex-shrink: 0;">
                 <div style="display:flex; align-items:center; justify-content:center; gap:10px;">
                     <h1 style="color:#f1c40f; margin:0;">${t('library_title')}</h1>
-                    <button onclick="document.getElementById('life-book-help').classList.toggle('hidden'); document.getElementById('help-icon').textContent = document.getElementById('life-book-help').classList.contains('hidden') ? '❓' : '❌';" style="background:none; border:none; font-size:1.3rem; cursor:pointer; padding:5px; color:#f1c40f;" id="help-icon">❓</button>
-                </div>
-
-                <div id="life-book-help" class="hidden" style="background:rgba(52, 73, 94, 0.8); padding:15px; border-radius:10px; margin:10px 0; text-align:left; border-left:3px solid #f1c40f;">
-                    <div style="font-size:0.85rem; color:#bdc3c7; line-height:1.6;">
-                        <div style="margin-bottom:8px;"><strong style="color:#f1c40f;">${t('library_help_what_title')}</strong></div>
-                        <div>${t('library_help_what_desc')}</div>
-                        <div style="margin-top:12px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:10px;">
-                            <div style="margin-bottom:8px;"><strong style="color:#f1c40f;">${t('library_help_score_title')}</strong></div>
-                            <div>${t('library_help_score_items')}</div>
-                        </div>
-                        <div style="margin-top:12px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:10px;">
-                            <div style="margin-bottom:8px;"><strong style="color:#f1c40f;">${t('library_help_rank_title')}</strong></div>
-                            <div style="font-size:0.8rem;">${t('library_help_rank_items')}</div>
-                        </div>
-                    </div>
+                    <button onclick="showLibraryHelpModal()" style="background:none; border:none; font-size:1.3rem; cursor:pointer; padding:5px; color:#f1c40f;">❓</button>
                 </div>
 
                 <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:15px; margin-top:10px;">
@@ -10129,7 +10166,7 @@ function openRankingScreen() {
             </button>
         </div>
 
-        ${isLastDayOfWeek() ? `<div style="background:linear-gradient(135deg, #e74c3c, #c0392b); color:#fff; padding:8px 16px; border-radius:12px; margin:8px 0 0 0; animation: pulse 2s ease-in-out infinite; box-shadow: 0 4px 10px rgba(231,76,60,0.4); border: 2px solid rgba(255,255,255,0.3); font-size:0.82rem; line-height:1.5;">⚠️ 월요일 00:00에 주간 랭킹이 초기화됩니다</div>` : ''}
+        ${isLastDayOfWeek() ? `<div style="background:linear-gradient(135deg, #e74c3c, #c0392b); color:#fff; padding:8px 16px; border-radius:12px; margin:8px 0 0 0; box-shadow: 0 4px 10px rgba(231,76,60,0.4); border: 2px solid rgba(255,255,255,0.3); font-size:0.82rem; line-height:1.5; width:100%; box-sizing:border-box; text-align:center;">⚠️ 월요일 00:00에 주간 랭킹이 초기화됩니다</div>` : ''}
 
         <div id="my-score-panel" style="display:none; margin:10px 0 0 0; width:100%; max-width:320px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; color:#ecf0f1; font-size:0.85rem;">
             <div style="display:flex; justify-content:space-between; margin-bottom:8px; padding-bottom:8px; border-bottom:1px dashed rgba(255,255,255,0.2);">
@@ -10151,14 +10188,18 @@ function openRankingScreen() {
         </div>
     </div>
 
-    <div id="yearly-swipe-area" style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap:15px; padding:15px 5px 20px 5px; margin-top:10px; border-bottom:1px solid rgba(255,255,255,0.1); scrollbar-width: none;">
-            <div style="min-width:85%; flex:0 0 auto; scroll-snap-align:center; background:linear-gradient(135deg, #2c3e50, #1a252f); border:2px solid #f39c12; border-radius:15px; padding:15px; box-shadow:0 8px 15px rgba(0,0,0,0.5); position:relative; overflow:hidden;">
+    <div id="yearly-swipe-area" style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap:15px; padding:15px 10px 20px 10px; margin-top:10px; border-bottom:1px solid rgba(255,255,255,0.1); scrollbar-width: none; align-items:flex-start; flex-shrink:0; width:100%; box-sizing:border-box;">
+            <div style="min-width:85%; flex:0 0 auto; scroll-snap-align:center; background:linear-gradient(135deg, #2c3e50, #1a252f); border:2px solid #f39c12; border-radius:15px; padding:15px; box-shadow:0 8px 15px rgba(0,0,0,0.5); position:relative;">
                 <div style="position:absolute; top:-10px; right:-15px; font-size:6rem; opacity:0.05; pointer-events:none;">🏆</div>
                 <div style="text-align:center; font-weight:bold; color:#f1c40f; font-size:1.15rem; margin-bottom:5px; letter-spacing:-0.5px;">${t('ranking_yearly_battle')}</div>
                 <div style="font-size:0.75rem; color:#bdc3c7; text-align:center; margin-bottom:15px;">${t('ranking_yearly_desc')}</div>
                 <div id="yearly-top3-list" style="display:flex; flex-direction:column; gap:8px;">
                     <div style="text-align:center; padding:10px; color:#95a5a6; font-size:0.85rem;">${t('ranking_snapshot_waiting')}</div>
                 </div>
+                <button onclick="openRankingModal('yearly-hall', t('ranking_yearly_battle_full'))"
+                    style="margin-top:10px; padding:8px; width:100%; border-radius:8px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#bdc3c7; font-size:0.85rem; cursor:pointer; font-weight:bold;">
+                    ${t('ranking_all_btn')}
+                </button>
             </div>
             <div style="min-width:85%; flex:0 0 auto; scroll-snap-align:center; background:linear-gradient(135deg, #34495e, #2c3e50); border:1px dashed rgba(255,255,255,0.2); border-radius:15px; padding:15px; opacity:0.8; display:flex; flex-direction:column; justify-content:center; align-items:center;">
                 <div style="font-size:2.5rem; margin-bottom:10px;">📜</div>
@@ -10170,20 +10211,26 @@ function openRankingScreen() {
     <div style="background:#1a252f; padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.07); text-align:center;">
         <span style="font-size:0.78rem; color:#7f8c8d; line-height:1.5;">${t('ranking_reward_notice')}</span>
     </div>
-    <div id="sticky-tabs-container" style="background: #2c3e50; padding: 10px 5px; border-bottom: 1px solid rgba(255,255,255,0.1); display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
-        <button id="tab-tribe" onclick="openRankingModal('tribe', t('label_my_tribe_ranking'))" style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
-            <span style="font-size:1rem;">🧭</span><span>${t('label_my_tribe')}</span>
-        </button>
-        <button id="tab-zion" onclick="openRankingModal('zion', '👑 Zion')" style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
-            <span style="font-size:1rem;">👑</span><span>Zion</span>
-        </button>
-        <button id="tab-weekly-hall" onclick="openRankingModal('weekly-hall', t('ranking_tab_weekly_full'))" style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
-            <span style="font-size:1rem;">🏛️</span><span>${t('ranking_tab_weekly')}</span>
-        </button>
-        <button id="tab-monthly-hall" onclick="openRankingModal('monthly-hall', t('ranking_tab_monthly_full'))" style="padding:8px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:5px;">
-            <span style="font-size:1rem;">📜</span><span>${t('ranking_tab_monthly')}</span>
-        </button>
-        <button id="tab-total-hall" onclick="openRankingModal('total-hall', t('ranking_tab_total_full'))" style="grid-column: 1 / span 2; padding:10px 5px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); color:#bdc3c7; font-weight:bold; cursor:pointer; font-size:0.95rem; display:flex; justify-content:center; align-items:center; gap:6px;">
+    <div id="sticky-tabs-container" style="padding:12px 12px 14px; border-top:1px solid rgba(255,255,255,0.08); border-bottom:1px solid rgba(255,255,255,0.08);">
+        <div style="font-size:0.7rem; color:#7f8c8d; font-weight:bold; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:7px; padding-left:2px;">${t('ranking_tab_group_current')}</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:14px;">
+            <button id="tab-tribe" onclick="openRankingModal('tribe', t('label_my_tribe_ranking'))" style="padding:10px 6px; border-radius:10px; border:1px solid rgba(52,152,219,0.35); background:linear-gradient(145deg, rgba(52,152,219,0.15), rgba(41,128,185,0.08)); color:#85c1e9; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:6px;">
+                <span style="font-size:1.05rem;">🧭</span><span>${t('label_my_tribe')}</span>
+            </button>
+            <button id="tab-zion" onclick="openRankingModal('zion', '👑 Zion')" style="padding:10px 6px; border-radius:10px; border:1px solid rgba(52,152,219,0.35); background:linear-gradient(145deg, rgba(52,152,219,0.15), rgba(41,128,185,0.08)); color:#85c1e9; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:6px;">
+                <span style="font-size:1.05rem;">👑</span><span>Zion</span>
+            </button>
+        </div>
+        <div style="font-size:0.7rem; color:#7f8c8d; font-weight:bold; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:7px; padding-left:2px;">${t('ranking_tab_group_hall')}</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:7px;">
+            <button id="tab-weekly-hall" onclick="openRankingModal('weekly-hall', t('ranking_tab_weekly_full'))" style="padding:10px 6px; border-radius:10px; border:1px solid rgba(241,196,15,0.25); background:linear-gradient(145deg, rgba(241,196,15,0.1), rgba(243,156,18,0.05)); color:#f0d060; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:6px;">
+                <span style="font-size:1.05rem;">🏛️</span><span>${t('ranking_tab_weekly')}</span>
+            </button>
+            <button id="tab-monthly-hall" onclick="openRankingModal('monthly-hall', t('ranking_tab_monthly_full'))" style="padding:10px 6px; border-radius:10px; border:1px solid rgba(241,196,15,0.25); background:linear-gradient(145deg, rgba(241,196,15,0.1), rgba(243,156,18,0.05)); color:#f0d060; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:6px;">
+                <span style="font-size:1.05rem;">📜</span><span>${t('ranking_tab_monthly')}</span>
+            </button>
+        </div>
+        <button id="tab-total-hall" onclick="openRankingModal('total-hall', t('ranking_tab_total_full'))" style="width:100%; padding:11px 6px; border-radius:10px; border:1px solid rgba(155,89,182,0.4); background:linear-gradient(145deg, rgba(155,89,182,0.18), rgba(142,68,173,0.08)); color:#c39bd3; font-weight:bold; cursor:pointer; font-size:0.9rem; display:flex; justify-content:center; align-items:center; gap:7px;">
             <span style="font-size:1.1rem;">💎</span><span>${t('ranking_tab_total')}</span>
         </button>
     </div>
@@ -14549,9 +14596,16 @@ function loadTotalHallRanking() {
         });
 }
 /* [추가] 연간 대항전 금은동 순위 불러오기 */
+var _yearlyTribeRankingCache = null;
+
 function loadYearlyTribeRanking() {
     const listEl = document.getElementById('yearly-top3-list');
     if (!listEl) return;
+
+    if (_yearlyTribeRankingCache) {
+        listEl.innerHTML = _yearlyTribeRankingCache;
+        return;
+    }
 
     if (typeof db === 'undefined' || !db) return;
 
@@ -14592,13 +14646,7 @@ function loadYearlyTribeRanking() {
               `;
             });
 
-            html += `
-            <button onclick="openRankingModal('yearly-hall', t('ranking_yearly_battle_full'))"
-                style="margin-top:10px; padding:8px; width:100%; border-radius:8px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#bdc3c7; font-size:0.85rem; cursor:pointer; font-weight:bold; transition:all 0.2s;">
-                ${t('ranking_all_btn')}
-            </button>
-          `;
-
+            _yearlyTribeRankingCache = html;
             listEl.innerHTML = html;
         })
         .catch(err => {
