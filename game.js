@@ -6903,6 +6903,7 @@ function quitGame(destination = 'map') {
     }
     window.isHardshipMode = false;
     window.isGamePlaying = false; // ★ 핵심 방어막: 게임 종료 선언! 유령 타이머 차단!
+    removeStepAudioPanel();
     window.trainingMode = null;
     // 1. 스크롤 게임 정지 (안전장치)
     if (typeof scrollGame !== 'undefined' && scrollGame.animId) {
@@ -7473,9 +7474,11 @@ function loadStep() {
     control.style.paddingBottom = '';
     const _oldInfoWrap = document.getElementById('step1-info-wrap');
     if (_oldInfoWrap) _oldInfoWrap.remove();
+    removeStepAudioPanel();
 
     // 👉 [개선된 코드] 현재 스테이지 ID에서 장과 절을 더 안전하게 뽑아냅니다.
     let verseLabel = "";
+    let _audioCNum = null, _audioVNum = null;
     if (window.currentStageId) {
         const stageIdStr = String(window.currentStageId);
 
@@ -7486,11 +7489,14 @@ function loadStep() {
                 const chapterNum = parts[0];
                 const verseNum = parts[1];
                 verseLabel = `<span style="color:#f39c12; font-weight:bold; margin-right:8px;">[계 ${chapterNum}:${verseNum}]</span>`;
+                _audioCNum = parseInt(chapterNum, 10);
+                _audioVNum = parseInt(verseNum, 10);
             } else {
                 verseLabel = `<span style="color:#f39c12; font-weight:bold; margin-right:8px;">[스테이지 ${stageIdStr}]</span>`;
             }
         }
     }
+    createStepAudioPanel(_audioCNum, _audioVNum);
 
     // ----------------------------------------------------
     // [Step 1] 각인 모드 (속도 조절: 낭독 속도 + 초성 힌트)
@@ -16342,6 +16348,149 @@ function renderCurrentHardshipVerse() {
 
     renderHardshipMemoryVerse();
 }
+
+// ─── 스텝 플로팅 오디오 패널 ───────────────────────────────────────────
+let _stepAudio = null;
+let _stepAudioPlaying = false;
+
+function removeStepAudioPanel() {
+    const old = document.getElementById('step-audio-panel');
+    if (old) old.remove();
+    if (_stepAudio) {
+        _stepAudio.pause();
+        _stepAudio.src = '';
+        _stepAudio = null;
+    }
+    _stepAudioPlaying = false;
+}
+
+function createStepAudioPanel(cNum, vNum) {
+    removeStepAudioPanel();
+    if (!cNum || !vNum) return;
+
+    const btnStyle = `width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,0.4);`;
+
+    const panel = document.createElement('div');
+    panel.id = 'step-audio-panel';
+    panel.style.cssText = `position:fixed;bottom:160px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:9000;user-select:none;`;
+
+    const playBtn = document.createElement('button');
+    playBtn.style.cssText = btnStyle + 'background:#2980b9;color:#fff;';
+    playBtn.innerHTML = '▶';
+
+    const voiceBtn = document.createElement('button');
+    voiceBtn.style.cssText = btnStyle + 'background:#6c3483;color:#fff;font-size:0.65rem;font-weight:bold;';
+    voiceBtn.innerHTML = `음성${selectedVoice}`;
+
+    panel.appendChild(playBtn);
+    panel.appendChild(voiceBtn);
+    document.body.appendChild(panel);
+
+    // 오디오 로드
+    function loadAudio() {
+        if (_stepAudio) { _stepAudio.pause(); _stepAudio.src = ''; }
+        _stepAudio = new Audio(getAudioUrl(cNum, vNum, selectedVoice));
+        _stepAudio.preload = 'auto';
+        if (typeof connectVoiceToAudioContext === 'function') connectVoiceToAudioContext(_stepAudio);
+        _stepAudio.muted = isGlobalMuted;
+        _stepAudio.onended = () => {
+            _stepAudioPlaying = false;
+            playBtn.innerHTML = '▶';
+            playBtn.style.background = '#2980b9';
+        };
+        _stepAudio.onerror = () => {
+            if (selectedVoice === 2) {
+                selectedVoice = 1;
+                localStorage.setItem('selectedVoice', '1');
+                voiceBtn.innerHTML = '음성1';
+                loadAudio();
+            }
+        };
+    }
+    loadAudio();
+
+    playBtn.addEventListener('click', () => {
+        if (_wasDragging) return;
+        if (_stepAudioPlaying) {
+            _stepAudio.pause();
+            _stepAudioPlaying = false;
+            playBtn.innerHTML = '▶';
+            playBtn.style.background = '#2980b9';
+        } else if (_stepAudio) {
+            _stepAudio.muted = isGlobalMuted;
+            _stepAudio.play().catch(() => {});
+            _stepAudioPlaying = true;
+            playBtn.innerHTML = '⏸';
+            playBtn.style.background = '#e74c3c';
+        }
+    });
+
+    voiceBtn.addEventListener('click', () => {
+        if (_wasDragging) return;
+        const wasPlaying = _stepAudioPlaying;
+        const currentTime = _stepAudio ? _stepAudio.currentTime : 0;
+        if (_stepAudio) { _stepAudio.pause(); }
+        _stepAudioPlaying = false;
+        selectedVoice = selectedVoice === 1 ? 2 : 1;
+        localStorage.setItem('selectedVoice', String(selectedVoice));
+        voiceBtn.innerHTML = `음성${selectedVoice}`;
+        loadAudio();
+        if (wasPlaying) {
+            _stepAudio.addEventListener('canplay', () => {
+                _stepAudio.currentTime = currentTime;
+                _stepAudio.play().catch(() => {});
+                _stepAudioPlaying = true;
+                playBtn.innerHTML = '⏸';
+                playBtn.style.background = '#e74c3c';
+            }, { once: true });
+        }
+    });
+
+    // 드래그: pointerdown 위치 기록만 하고, pointermove에서 threshold 넘으면 그때 캡처
+    let _dragStartX, _dragStartY, _panelStartX, _panelStartY;
+    let _pointerDown = false;
+    let _wasDragging = false;
+
+    panel.addEventListener('pointerdown', (e) => {
+        _pointerDown = true;
+        _wasDragging = false;
+        _dragStartX = e.clientX;
+        _dragStartY = e.clientY;
+        const rect = panel.getBoundingClientRect();
+        _panelStartX = rect.left;
+        _panelStartY = rect.top;
+    });
+
+    panel.addEventListener('pointermove', (e) => {
+        if (!_pointerDown) return;
+        const dx = e.clientX - _dragStartX;
+        const dy = e.clientY - _dragStartY;
+        if (!_wasDragging && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+            _wasDragging = true;
+            panel.setPointerCapture(e.pointerId); // 임계값 넘어야 캡처
+            panel.style.cursor = 'grabbing';
+        }
+        if (!_wasDragging) return;
+        panel.style.left = (_panelStartX + dx) + 'px';
+        panel.style.top  = (_panelStartY + dy) + 'px';
+        panel.style.right = 'auto';
+        panel.style.bottom = 'auto';
+        e.preventDefault();
+    });
+
+    panel.addEventListener('pointerup', () => {
+        _pointerDown = false;
+        panel.style.cursor = '';
+        setTimeout(() => { _wasDragging = false; }, 0);
+    });
+
+    panel.addEventListener('pointercancel', () => {
+        _pointerDown = false;
+        _wasDragging = false;
+        panel.style.cursor = '';
+    });
+}
+// ─────────────────────────────────────────────────────────────────────────
 
 function toggleStep1Info() {
     const panel = document.getElementById('step1-info-panel');
