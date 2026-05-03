@@ -16373,7 +16373,17 @@ function createStepAudioPanel(cNum, vNum) {
 
     const panel = document.createElement('div');
     panel.id = 'step-audio-panel';
-    panel.style.cssText = `position:fixed;bottom:160px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:9000;user-select:none;`;
+    panel.style.cssText = `position:fixed;display:flex;flex-direction:column;gap:8px;z-index:9000;user-select:none;touch-action:none;`;
+
+    // 저장된 위치 복원, 없으면 우상단 기본값
+    const savedPos = JSON.parse(localStorage.getItem('stepAudioPanelPos') || 'null');
+    if (savedPos) {
+        panel.style.left = savedPos.x + 'px';
+        panel.style.top  = savedPos.y + 'px';
+    } else {
+        panel.style.right = '16px';
+        panel.style.top   = '80px';
+    }
 
     const playBtn = document.createElement('button');
     playBtn.style.cssText = btnStyle + 'background:#2980b9;color:#fff;';
@@ -16482,6 +16492,10 @@ function createStepAudioPanel(cNum, vNum) {
     panel.addEventListener('pointerup', () => {
         _pointerDown = false;
         panel.style.cursor = '';
+        if (_wasDragging) {
+            const rect = panel.getBoundingClientRect();
+            localStorage.setItem('stepAudioPanelPos', JSON.stringify({ x: rect.left, y: rect.top }));
+        }
         setTimeout(() => { _wasDragging = false; }, 0);
     });
 
