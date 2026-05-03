@@ -4427,6 +4427,25 @@ body, html {
     border-color: #d4b87a;
 }
 
+/* 오디오 버튼 하단 라벨 */
+#mute-toggle-btn::after,
+#pause-toggle-btn::after,
+#repeat-toggle-btn::after,
+#speed-toggle-btn::after {
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.58rem;
+    color: #c8a96e;
+    white-space: nowrap;
+    pointer-events: none;
+}
+#mute-toggle-btn::after  { content: '음소거'; }
+#pause-toggle-btn::after { content: '일시정지'; }
+#repeat-toggle-btn::after { content: '반복'; }
+#speed-toggle-btn::after { content: '배속'; }
+
 #voice-select-btns {
     position: absolute;
     top: 16px;
