@@ -7612,15 +7612,14 @@ function loadStep() {
             const span = document.getElementById(`chunk-${nextIdx}`);
             if (span) {
                 span.innerText = span.dataset.original;
-                span.style.color = "#ffffff";
                 span.style.fontWeight = "bold";
                 span.style.opacity = "1";
                 span.style.fontSize = "1.3rem";
-                span.style.textShadow = "0 0 10px #a8d8ff, 0 0 4px #fff";
-                setTimeout(() => {
-                    span.style.textShadow = "none";
-                    span.style.color = "#dce8f5";
-                }, 400);
+                span.style.color = '';
+                span.style.textShadow = '';
+                span.classList.remove('chunk-reveal-flash');
+                void span.offsetWidth;
+                span.classList.add('chunk-reveal-flash');
             }
 
             window.revealedChunks.add(nextIdx);
@@ -7831,6 +7830,7 @@ function loadStep() {
 
             const spans = card.querySelectorAll('span');
             spans.forEach(s => {
+                s.classList.remove('chunk-reveal-flash');
                 s.style.color = "#d35400";
                 s.style.textShadow = "0 0 5px #f1c40f";
             });
