@@ -10788,8 +10788,7 @@ function renderRankingList(data) {
     data.forEach((user, index) => {
         const rank = index + 1;
 
-        // 🌟 [버그 픽스 1] 서버에서 isMe를 누락했더라도, 내 닉네임(name)과 일치하면 무조건 '나'로 강제 인식!
-        const isMe = user.isMe || (typeof myNickname !== 'undefined' && user.name === myNickname);
+        const isMe = user.isMe || (typeof myNickname !== 'undefined' && user.name === myNickname && user.tag === myTag);
 
         if (isMe) {
             amIInTop100 = true; // 나를 찾았다! (이제 하단 바가 숨어버립니다)
