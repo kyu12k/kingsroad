@@ -7469,6 +7469,10 @@ function loadStep() {
     // 화면 초기화
     field.innerHTML = "";
     control.innerHTML = "";
+    control.style.paddingTop = '';
+    control.style.paddingBottom = '';
+    const _oldInfoWrap = document.getElementById('step1-info-wrap');
+    if (_oldInfoWrap) _oldInfoWrap.remove();
 
     // 👉 [개선된 코드] 현재 스테이지 ID에서 장과 절을 더 안전하게 뽑아냅니다.
     let verseLabel = "";
@@ -7560,14 +7564,24 @@ function loadStep() {
             card.appendChild(span);
         });
 
+        // Step 1 안내 버튼을 battle-control 박스 바깥(위)에 삽입
+        let existingInfoWrap = document.getElementById('step1-info-wrap');
+        if (existingInfoWrap) existingInfoWrap.remove();
+        const infoWrap = document.createElement('div');
+        infoWrap.id = 'step1-info-wrap';
+        infoWrap.style.cssText = 'padding: 4px 12px; background: transparent;';
+        infoWrap.innerHTML = `
+            <button class="hardship-endurance-info-btn" id="btn-step1-info" onclick="toggleStep1Info()">${t('step1_info_title')}</button>
+            <div id="step1-info-panel" class="hardship-endurance-info-panel" style="display:none;">${t('step1_info_body')}</div>
+        `;
+        control.parentNode.insertBefore(infoWrap, control);
+        control.style.paddingTop = '12px';
+        control.style.paddingBottom = 'max(12px, env(safe-area-inset-bottom))';
+
         control.innerHTML = `
             <div id="step1-chosung-row" style="display:flex; justify-content:flex-end; margin-bottom:1px;"></div>
-            <div id="step1-controls" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 10px;"></div>
+            <div id="step1-controls" style="display: flex; gap: 10px; justify-content: center;"></div>
             <button class="btn-attack" id="btn-step1-next" onclick="nextStep()" style="display:none; background-color:#2ecc71; margin-top:10px; width: 100%;">${t('btn_step1_next')}</button>
-            <div id="step1-info-wrap" style="margin-top:8px;">
-                <button class="hardship-endurance-info-btn" id="btn-step1-info" onclick="toggleStep1Info()">${t('step1_info_title')}</button>
-                <div id="step1-info-panel" class="hardship-endurance-info-panel" style="display:none;">${t('step1_info_body')}</div>
-            </div>
         `;
 
         const controlsContainer = document.getElementById('step1-controls');
@@ -7598,15 +7612,15 @@ function loadStep() {
             const span = document.getElementById(`chunk-${nextIdx}`);
             if (span) {
                 span.innerText = span.dataset.original;
-                span.style.color = "#dce8f5";
+                span.style.color = "#ffffff";
                 span.style.fontWeight = "bold";
                 span.style.opacity = "1";
-                span.style.fontSize = "1.5rem";
-                span.style.transform = "scale(1.1)";
+                span.style.fontSize = "1.3rem";
+                span.style.textShadow = "0 0 10px #a8d8ff, 0 0 4px #fff";
                 setTimeout(() => {
-                    span.style.transform = "scale(1)";
-                    span.style.fontSize = "1.3rem";
-                }, 200);
+                    span.style.textShadow = "none";
+                    span.style.color = "#dce8f5";
+                }, 400);
             }
 
             window.revealedChunks.add(nextIdx);
