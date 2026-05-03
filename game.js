@@ -14292,7 +14292,8 @@ function saveMyScoreToServer() {
         monthId: currentMonthId,
         myMonthlyScore: currentMonthlyScore,
         totalScore: currentTotalScore, // 👉 누적 승점 항목 추가!
-        yearlyScore: currentYearlyScore // 🌟 추가 (이걸 바탕으로 서버가 지파 합산을 합니다)
+        yearlyScore: currentYearlyScore, // 🌟 추가 (이걸 바탕으로 서버가 지파 합산을 합니다)
+        maxHearts: maxPlayerHearts
     };
 
     // 월 전환 시 이전달 백업 데이터가 있으면 함께 전송 (CF 아카이빙 경쟁조건 방어)
