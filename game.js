@@ -7157,6 +7157,20 @@ async function initFirestoreSync() {
     loadGameData();
     if (typeof renderChapterMap === 'function') renderChapterMap();
     if (typeof updateCastleView  === 'function') updateCastleView();
+
+    // 서버 데이터에 stale weekId가 있을 경우 즉시 주간 리셋 후 Firestore 재동기화.
+    // 이 처리가 없으면: 서버 데이터가 이전 주의 weekId/score를 담고 있을 때
+    // loadGameData()로 메모리에 적용된 뒤 checkDailyLogin이 호출되지 않아
+    // 이후 syncToFirestore가 stale weekId를 leaderboard에 계속 기록하는 버그 발생.
+    if (typeof checkDailyLogin === 'function') {
+        const remoteWeekId = (remoteData.leagueData && remoteData.leagueData.weekId) || null;
+        const currentWeekId = (typeof getWeekId === 'function') ? getWeekId() : null;
+        if (currentWeekId && remoteWeekId !== currentWeekId) {
+            console.log(`[Firestore] 서버 데이터의 weekId(${remoteWeekId})가 현재 주(${currentWeekId})와 다름 → 주간 리셋 후 재업로드`);
+            checkDailyLogin();
+            await syncToFirestore();
+        }
+    }
 }
 
 /**
@@ -8934,6 +8948,10 @@ function showBossClearScreen(clearedStageId) {
     // result-notif-wrap 초기화 (이전 결과 화면의 알림 버튼 잔상 제거)
     const notifWrapBoss = document.getElementById('result-notif-wrap');
     if (notifWrapBoss) { notifWrapBoss.innerHTML = ''; notifWrapBoss.style.display = 'none'; }
+
+    // 이전 일반 스테이지 클리어에서 남은 "다음 구절 학습" 버튼 제거
+    const bossExistingNextBtn = document.getElementById('result-modal')?.querySelector('#btn-next-stage');
+    if (bossExistingNextBtn) bossExistingNextBtn.remove();
 
     triggerConfetti();
     SoundEffect.playClear();
