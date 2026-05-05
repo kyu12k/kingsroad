@@ -7584,17 +7584,8 @@ function loadStep() {
             card.appendChild(span);
         });
 
-        // Step 1 안내 버튼을 battle-control 박스 바깥(위)에 삽입
         let existingInfoWrap = document.getElementById('step1-info-wrap');
         if (existingInfoWrap) existingInfoWrap.remove();
-        const infoWrap = document.createElement('div');
-        infoWrap.id = 'step1-info-wrap';
-        infoWrap.style.cssText = 'padding: 4px 12px; background: transparent;';
-        infoWrap.innerHTML = `
-            <button class="hardship-endurance-info-btn" id="btn-step1-info" onclick="toggleStep1Info()">${t('step1_info_title')}</button>
-            <div id="step1-info-panel" class="hardship-endurance-info-panel" style="display:none;">${t('step1_info_body')}</div>
-        `;
-        control.parentNode.insertBefore(infoWrap, control);
         control.style.paddingTop = '12px';
         control.style.paddingBottom = 'max(12px, env(safe-area-inset-bottom))';
 
@@ -16525,14 +16516,6 @@ function createStepAudioPanel(cNum, vNum) {
 }
 // ─────────────────────────────────────────────────────────────────────────
 
-function toggleStep1Info() {
-    const panel = document.getElementById('step1-info-panel');
-    const btn = document.getElementById('btn-step1-info');
-    if (!panel || !btn) return;
-    const isOpen = panel.style.display !== 'none';
-    panel.style.display = isOpen ? 'none' : 'block';
-    btn.textContent = isOpen ? t('step1_info_title') : '▲ ' + t('step1_info_title');
-}
 
 function toggleHardshipEnduranceInfo() {
     hardshipState.showInfo = !hardshipState.showInfo;
