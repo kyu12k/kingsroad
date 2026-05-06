@@ -126,14 +126,14 @@ const LANG = {
         label_next_part: '다음 파트: {count}단어',
         label_chapter_header: '요한계시록 {num}장',
         stage_title_normal: '{ch}장 {v}절',
-        stage_title_midboss: '🛡️ 중간 점검 ({ch}장 {start}~{end}절)',
+        stage_title_midboss: '📜 중간 점검 ({ch}장 {start}~{end}절)',
         stage_title_boss: '🐲 BOSS: {ch}장 완전 정복',
         stage_desc_midboss: '{hp}개 절을 한 번에 복습 또는 학습합니다.',
         stage_desc_boss: '붉은 용을 물리치고 {ch}장을 완성하라!',
         label_this_word: '이 말씀',
         label_free: '무료',
         msg_boss_clear: '🐲 [드래곤 토벌] {total}개 스테이지 복습! ({eligible}개 단계 상승)',
-        msg_midboss_clear: '🛡️ [중간 점검] {total}개 스테이지 복습! ({eligible}개 단계 상승)',
+        msg_midboss_clear: '📜 [중간 점검] {total}개 스테이지 복습! ({eligible}개 단계 상승)',
 
         // alert 메시지
         alert_ios_install: 'iOS에서는 사파리 브라우저의 공유 버튼(아래 화살표) → "홈 화면에 추가"를 직접 눌러주세요!',
@@ -488,7 +488,7 @@ const LANG = {
         // 토스트 메시지
         toast_read_aloud: '🗣️ 소리내어 읽으면 암기 효과가 2배!',
         toast_read_aloud_quick: '💡 소리내어 읽으면 암기 효과가 2배!',
-        toast_boss_mid: '🛡️ 소리 내어 읽으며 용을 물리칩시다!',
+        toast_boss_mid: '📜 소리 내어 읽으며 용을 물리칩시다!',
         toast_boss_normal: '⚔️ 진리를 나팔같이 외쳐 용을 잡으세요!',
         toast_training_repeat: '⚔️ 집중 훈련: Step {step} 반복 모드',
         toast_hardship_start: '{icon} {title} 시작',
@@ -824,14 +824,14 @@ const LANG = {
         label_next_part: 'Next part: {count} words',
         label_chapter_header: 'Revelation {num}',
         stage_title_normal: 'Rev {ch}:{v}',
-        stage_title_midboss: '🛡️ Checkpoint (Rev {ch}:{start}–{end})',
+        stage_title_midboss: '📜 Checkpoint (Rev {ch}:{start}–{end})',
         stage_title_boss: '🐲 BOSS: Conquer Revelation {ch}',
         stage_desc_midboss: 'Review or study {hp} verses at once.',
         stage_desc_boss: 'Defeat the red dragon and complete chapter {ch}!',
         label_this_word: 'this verse',
         label_free: 'Free',
         msg_boss_clear: '🐲 [Dragon Defeated] Reviewed {total} stages! ({eligible} step(s) advanced)',
-        msg_midboss_clear: '🛡️ [Checkpoint] Reviewed {total} stages! ({eligible} step(s) advanced)',
+        msg_midboss_clear: '📜 [Checkpoint] Reviewed {total} stages! ({eligible} step(s) advanced)',
 
         // alert 메시지
         alert_ios_install: 'On iOS Safari, tap the Share button (↑) → "Add to Home Screen".',
@@ -1189,7 +1189,7 @@ const LANG = {
         // 토스트 메시지
         toast_read_aloud: '🗣️ Reading aloud doubles your memorization!',
         toast_read_aloud_quick: '💡 Reading aloud doubles your memorization!',
-        toast_boss_mid: '🛡️ Read aloud and defeat the dragon!',
+        toast_boss_mid: '📜 Read aloud and defeat the dragon!',
         toast_boss_normal: '⚔️ Shout the truth like a trumpet and catch the dragon!',
         toast_training_repeat: '⚔️ Focused Training: Step {step} repeat mode',
         toast_hardship_start: '{icon} {title} start',
@@ -4027,6 +4027,7 @@ function getStageTitle(stage) {
     if (stage.type === 'mid-boss') {
         const parts = stage.id.split('-');
         const ch = parts[0];
+        if (stage.subtitle) return `📜 ${stage.subtitle}`;
         return t('stage_title_midboss', { ch, start: stage.rangeStart, end: stage.rangeEnd });
     }
     if (stage.type === 'boss') {
@@ -4040,6 +4041,11 @@ function getStageTitle(stage) {
 
 function getStageDesc(stage) {
     if (stage.type === 'mid-boss') {
+        if (stage.rangeStart && stage.rangeEnd) {
+            const parts = stage.id.split('-');
+            const ch = parts[0];
+            return `${ch}장 ${stage.rangeStart}~${stage.rangeEnd}절 · ${stage.targetVerseCount}개 절`;
+        }
         return t('stage_desc_midboss', { hp: stage.targetVerseCount });
     }
     if (stage.type === 'boss') {
@@ -4077,39 +4083,33 @@ for (let i = 1; i <= 22; i++) {
         const totalVerses = chapterVerses.length;
 
         // -------------------------------------------------------
-        // [1] 중간 점검 구간(Range) 미리 계산하기 (3~7개 규칙 적용)
+        // [1] 중간 점검 구간(Range) — 소제목 기반 하드코딩 (계시록 신학 단위 반영)
         // -------------------------------------------------------
-        let midBossRanges = [];
-        let start = 1;
-
-        while (start <= totalVerses) {
-            let end = start + 4; // 기본 5개씩 (예: 1~5)
-
-            // 남은 구절 개수 확인 (전체 길이 - 현재 끝번호)
-            let remaining = totalVerses - end;
-
-            // [규칙 1] 남은 게 3개 미만이면(1, 2개), 현재 구간에 흡수시킨다. (예: 10장 6~10 + 11 -> 6~11)
-            if (remaining > 0 && remaining < 3) {
-                end = totalVerses;
-            }
-
-            // [규칙 2] 계산된 끝번호가 전체보다 크면 전체로 맞춤
-            if (end > totalVerses) {
-                end = totalVerses;
-            }
-
-            // [생성 조건 수정]
-            // 1. 구간의 길이가 최소 3개 이상이어야 함.
-            // 2. '1절부터 끝절까지' 한 번에 다루는 구간은 제외 (그건 최종 보스니까)
-            const isRangeValid = (end - start + 1) >= 3;
-            const isWholeChapter = (start === 1 && end === totalVerses);
-
-            if (isRangeValid && !isWholeChapter) {
-                midBossRanges.push({ start: start, end: end });
-            }
-
-            start = end + 1; // 다음 구간 시작점
-        }
+        const MIDBOSS_RANGES = {
+            1:  [{start:1,  end:8,  subtitle:'계시와 복'},                              {start:9,  end:20, subtitle:'하나님의 보좌와 일곱 별의 비밀'}],
+            2:  [{start:1,  end:7,  subtitle:'에베소 교회'},                             {start:8,  end:11, subtitle:'서머나 교회'},          {start:12, end:17, subtitle:'버가모 교회'},         {start:18, end:25, subtitle:'두아디라 교회 — 이세벨과 행위'}, {start:26, end:29, subtitle:'두아디라 교회 — 이기는 자의 약속'}],
+            3:  [{start:1,  end:6,  subtitle:'사데 교회'},                               {start:7,  end:13, subtitle:'빌라델비아 교회'},       {start:14, end:22, subtitle:'라오디게아 교회'}],
+            4:  [{start:1,  end:5,  subtitle:'하나님의 보좌와 이십사 장로'},              {start:6,  end:11, subtitle:'유리바다와 네 생물'}],
+            5:  [{start:1,  end:7,  subtitle:'일곱 인 봉한 책과 어린 양'},               {start:8,  end:14, subtitle:'성도의 기도와 새 노래'}],
+            6:  [{start:1,  end:8,  subtitle:'첫째~넷째 인'},                            {start:9,  end:14, subtitle:'다섯째~여섯째 인'},      {start:15, end:17, subtitle:'어린 양의 진노의 심판'}],
+            7:  [{start:1,  end:8,  subtitle:'하나님의 인과 십사만 사천'},               {start:9,  end:17, subtitle:'흰 옷 입은 큰 무리와 큰 환난'}],
+            8:  [{start:1,  end:5,  subtitle:'일곱 천사의 일곱 나팔'},                   {start:6,  end:13, subtitle:'첫째~넷째 나팔 재앙'}],
+            9:  [{start:1,  end:6,  subtitle:'다섯째 나팔과 황충의 등장'},               {start:7,  end:11, subtitle:'황충들의 모습'},         {start:12, end:16, subtitle:'여섯째 나팔과 이억 군대'}, {start:17, end:21, subtitle:'말들의 모습과 회개치 않는 선민'}],
+            10: [{start:1,  end:7,  subtitle:'열린 책과 일곱째 나팔의 비밀'},            {start:8,  end:11, subtitle:'책을 먹은 요한의 사명'}],
+            11: [{start:1,  end:5,  subtitle:'성전과 두 증인의 등장'},                   {start:6,  end:10, subtitle:'재앙과 두 증인의 죽음'}, {start:11, end:19, subtitle:'부활과 일곱째 나팔'}],
+            12: [{start:1,  end:6,  subtitle:'하늘 이적과 만국을 다스릴 남자'},          {start:7,  end:12, subtitle:'하늘 전쟁과 하나님 나라'}, {start:13, end:17, subtitle:'용에게 핍박받는 여자'}],
+            13: [{start:1,  end:5,  subtitle:'바다 짐승과 용'},                          {start:6,  end:10, subtitle:'짐승에게 패배하는 장막 백성'}, {start:11, end:18, subtitle:'두 짐승과 짐승의 표 666'}],
+            14: [{start:1,  end:8,  subtitle:'시온산 십사만 사천과 복음'},               {start:9,  end:16, subtitle:'심판과 익은 곡식 추수'}, {start:17, end:20, subtitle:'심판받는 포도'}],
+            15: [{start:1,  end:4,  subtitle:'큰 이적과 두 노래'},                       {start:5,  end:8,  subtitle:'증거장막 성전과 진노의 대접'}],
+            16: [{start:1,  end:7,  subtitle:'첫째~셋째 대접'},                          {start:8,  end:16, subtitle:'넷째~여섯째 대접과 아마겟돈'}, {start:17, end:21, subtitle:'일곱째 대접과 바벨론 심판'}],
+            17: [{start:1,  end:6,  subtitle:'큰 음녀의 비밀'},                          {start:7,  end:13, subtitle:'짐승의 비밀'},           {start:14, end:18, subtitle:'주 재림의 유월절'}],
+            18: [{start:1,  end:8,  subtitle:'귀신의 처소와 탈출 명령'},                 {start:9,  end:14, subtitle:'왕들과 상고들의 애통'}, {start:15, end:20, subtitle:'바다의 선장·선객과 애통'}, {start:21, end:24, subtitle:'심판받는 바벨론'}],
+            19: [{start:1,  end:6,  subtitle:'허다한 무리의 할렐루야'},                  {start:7,  end:10, subtitle:'어린 양의 혼인 기약'},  {start:11, end:16, subtitle:'백마 탄 자와 이한 검'},   {start:17, end:21, subtitle:'공중의 새들과 짐승의 심판'}],
+            20: [{start:1,  end:6,  subtitle:'무저갱에 갇히는 용과 첫째 부활'},          {start:7,  end:15, subtitle:'천년 후 심판과 영생·영벌'}],
+            21: [{start:1,  end:8,  subtitle:'새 하늘 새 땅과 아들의 유업'},             {start:9,  end:17, subtitle:'하늘에서 내려오는 거룩한 성'}, {start:18, end:21, subtitle:'열두 보석과 열두 진주 문'}, {start:22, end:27, subtitle:'밤이 없는 거룩한 성'}],
+            22: [{start:1,  end:5,  subtitle:'생명나무와 종들'},                         {start:6,  end:13, subtitle:'대언자와 행위대로 받는 상벌'}, {start:14, end:21, subtitle:'거룩한 성의 자격과 가감의 결과'}],
+        };
+        const midBossRanges = MIDBOSS_RANGES[i] || [];
 
         // -------------------------------------------------------
         // [2] 스테이지 객체 생성
@@ -4143,11 +4143,13 @@ for (let i = 1; i <= 22; i++) {
             if (range) {
                 // 동적 HP 계산 (끝 - 시작 + 1)
                 const hp = range.end - range.start + 1;
+                const subtitle = range.subtitle || '';
 
                 chapterObj.stages.push({
                     id: `${i}-mid-${range.end}`, // ID는 끝 번호 기준
-                    title: `🛡️ 중간 점검 (${i}장 ${range.start}~${range.end}절)`,
-                    desc: `${hp}개 절을 한 번에 복습 또는 학습합니다.`,
+                    title: `📜 ${subtitle}`,
+                    desc: `${i}장 ${range.start}~${range.end}절 · ${hp}개 절`,
+                    subtitle: subtitle,
                     type: "mid-boss",
                     targetVerseCount: hp, // ★ 실제 개수만큼 HP 설정!
                     rangeStart: range.start,
@@ -5374,7 +5376,7 @@ function openStageSheet(chapterData) {
         // 아이콘
         let iconChar = "🌱";
         if (stage.type === 'boss') iconChar = "🐲";
-        else if (stage.type === 'mid-boss') iconChar = "🛡️";
+        else if (stage.type === 'mid-boss') iconChar = "📜";
         if (isCleared) iconChar = "🌳";
 
         // 2. ★ 쿨타임(숙성) 여부 확인 ★
