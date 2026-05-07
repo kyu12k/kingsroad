@@ -1929,6 +1929,7 @@ body, html {
     font-weight: bold;
     color: #f1c40f;
     margin-bottom: 10px;
+    min-height: 2.2em;
 }
 
 .addr-chapter-grid {
