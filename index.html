@@ -718,6 +718,18 @@
             <script>
                 const NOTICES = [
                     {
+                        date: '2026-05-08',
+                        title: '버그 수정 및 보상 지급 안내',
+                        titleEn: 'Bug Fix & Gem Compensation',
+                        hasMigration: true,
+                        content: `<p style="font-weight:bold; margin-bottom:8px;">보스전 최초 클리어 보석 미지급 버그 수정</p>
+<p style="margin-bottom:12px; color:#555;">보스전을 최초 클리어할 때 약속된 <strong>보석(구절 수 × 50)</strong>이 실제로는 지급되지 않는 버그가 있었습니다. 해당 버그를 수정하였으며, 이미 보스전을 클리어하신 분들께 미지급된 보석을 보상으로 드립니다.</p>
+<div id="migration-gem-area" style="text-align:center; margin-top:12px;"></div>`,
+                        contentEn: `<p style="font-weight:bold; margin-bottom:8px;">Boss First-Clear Gem Bug Fixed</p>
+<p style="margin-bottom:12px; color:#555;">There was a bug where the promised <strong>gems (verses × 50)</strong> were not awarded on first boss clear. This has been fixed, and compensation gems are available for players who already cleared boss stages.</p>
+<div id="migration-gem-area" style="text-align:center; margin-top:12px;"></div>`,
+                    },
+                    {
                         date: '2026-04-28',
                         title: '업데이트 안내',
                         titleEn: 'Update Notice',
@@ -877,11 +889,17 @@
                     }
                 ];
 
-                function openNoticeModal() {
+                function openNoticeModal(autoOpen) {
                     renderNotices();
                     document.getElementById('notice-modal').style.display = 'flex';
                     var menuPanel = document.getElementById('menu-panel');
                     if (menuPanel) menuPanel.style.display = 'none';
+                    // 최신 공지 자동 펼침
+                    if (autoOpen) toggleNotice(0);
+                    // 열람 날짜 기록
+                    localStorage.setItem('lastSeenNoticeDate', NOTICES[0].date);
+                    // 마이그레이션 버튼 렌더링 (열린 직후)
+                    setTimeout(renderMigrationArea, 50);
                 }
                 function closeNoticeModal() {
                     document.getElementById('notice-modal').style.display = 'none';
@@ -910,6 +928,53 @@
                     var isOpen = body.style.display !== 'none';
                     body.style.display = isOpen ? 'none' : 'block';
                     arrow.textContent = isOpen ? '▼' : '▲';
+                    if (!isOpen && NOTICES[i] && NOTICES[i].hasMigration) renderMigrationArea();
+                }
+                function renderMigrationArea() {
+                    var area = document.getElementById('migration-gem-area');
+                    if (!area) return;
+                    if (typeof getBossMigrationGems !== 'function') return;
+                    var result = getBossMigrationGems();
+                    var lang = (typeof currentLang !== 'undefined') ? currentLang : (localStorage.getItem('lang') || 'ko');
+                    if (result.total > 0) {
+                        var label = lang === 'en'
+                            ? '💎 Unclaimed gems: <strong>' + result.total + '</strong>'
+                            : '💎 미수령 보석: <strong>' + result.total + '개</strong>';
+                        var btnLabel = lang === 'en' ? '보석 받기' : '보석 받기';
+                        area.innerHTML = '<p style="margin-bottom:10px;">' + label + '</p>' +
+                            '<button onclick="handleMigrationClaim()" style="background:#f1c40f; border:none; border-radius:20px; padding:10px 28px; font-size:1rem; font-weight:bold; cursor:pointer;">💎 ' + btnLabel + '</button>';
+                    } else {
+                        var doneMsg = lang === 'en' ? '✅ All compensation gems have been claimed.' : '✅ 보상 보석을 모두 수령하였습니다.';
+                        area.innerHTML = '<p style="color:#27ae60; font-weight:bold;">' + doneMsg + '</p>';
+                    }
+                }
+                function handleMigrationClaim() {
+                    if (typeof claimBossMigrationGems !== 'function') return;
+                    var earned = claimBossMigrationGems();
+                    var lang = (typeof currentLang !== 'undefined') ? currentLang : (localStorage.getItem('lang') || 'ko');
+                    var msg = lang === 'en'
+                        ? '💎 ' + earned + ' gems have been added!'
+                        : '💎 보석 ' + earned + '개가 지급되었습니다!';
+                    alert(msg);
+                    renderMigrationArea();
+                }
+                // 새 공지 자동 노출 (게임 로드 완료 후 실행)
+                function checkAndShowNewNotice() {
+                    var lastSeen = localStorage.getItem('lastSeenNoticeDate') || '';
+                    if (NOTICES.length === 0 || NOTICES[0].date <= lastSeen) return;
+                    // 기억 퀴즈 오버레이가 열려있으면 잠시 대기
+                    var quizOverlay = document.getElementById('memory-quiz-overlay');
+                    if (quizOverlay && quizOverlay.style.display !== 'none') {
+                        var obs = new MutationObserver(function() {
+                            if (quizOverlay.style.display === 'none') {
+                                obs.disconnect();
+                                setTimeout(checkAndShowNewNotice, 300);
+                            }
+                        });
+                        obs.observe(quizOverlay, { attributes: true, attributeFilter: ['style'] });
+                        return;
+                    }
+                    openNoticeModal(true);
                 }
             </script>
 
