@@ -1914,6 +1914,12 @@ body, html {
 }
 
 /* 장/절 버튼 그리드 (주소의 고난 & 기억하시나요 공용) */
+#quiz-addr-input {
+    min-height: 340px;
+    display: flex;
+    align-items: flex-start;
+}
+
 .addr-grid-wrap {
     width: 100%;
     max-width: 480px;
