@@ -1847,6 +1847,48 @@ loadGameData = function () {
             kingsRoadData.startTimestamp = parsed.kingsMode.startTimestamp || (kingsRoadData.stepHistory.length > 0 ? kingsRoadData.stepHistory[0].timestamp : null);
             kingsRoadData.manualBonus = parsed.kingsMode.manualBonus || 0;
         }
+
+        // [마이그레이션] 중간점검 개편으로 바뀐 mid-boss ID를 신버전으로 이전
+        {
+            const MID_BOSS_ID_MAP = {
+                '2-mid-5': '2-mid-7',
+                '2-mid-10': '2-mid-11',
+                '2-mid-15': '2-mid-17',
+                '2-mid-20': '2-mid-25',
+                '3-mid-5': '3-mid-6',
+                '3-mid-10': '3-mid-13',
+                '3-mid-15': '3-mid-22',
+            };
+            const migrateMidBossIds = (mastery, clearDate, lastClear, reviewStep, nextReviewTime) => {
+                let migrated = false;
+                for (const [oldId, newId] of Object.entries(MID_BOSS_ID_MAP)) {
+                    const dicts = [mastery, clearDate, lastClear, reviewStep, nextReviewTime];
+                    let anyOldExists = dicts.some(d => d && d[oldId] !== undefined);
+                    if (!anyOldExists) continue;
+                    migrated = true;
+                    for (const dict of dicts) {
+                        if (!dict || dict[oldId] === undefined) continue;
+                        if (dict[newId] === undefined || dict[oldId] > dict[newId]) {
+                            dict[newId] = dict[oldId];
+                        }
+                        delete dict[oldId];
+                    }
+                    // clearDate가 있으면 mastery도 최소 1 보장 (부분 저장 불일치 복구)
+                    if (mastery && clearDate && clearDate[newId] && !mastery[newId]) {
+                        mastery[newId] = 1;
+                    }
+                }
+                return migrated;
+            };
+            // 자유여행 데이터
+            const freeMigrated = migrateMidBossIds(stageMastery, stageClearDate, stageLastClear, stageReviewStep, stageNextReviewTime);
+            // 왕의 길 데이터
+            const kingsMigrated = migrateMidBossIds(kingsRoadData.mastery, kingsRoadData.clearDate, kingsRoadData.lastClear, kingsRoadData.reviewStep, kingsRoadData.nextReviewTime);
+            if (freeMigrated || kingsMigrated) {
+                console.log('🔄 mid-boss ID 마이그레이션 완료 (중간점검 개편)');
+            }
+        }
+
         // 마지막으로 선택한 모드 복원 (기본값 'free')
         activeMode = parsed.activeMode || 'free';
         // 자유여행 데이터를 백업 변수에도 저장
