@@ -955,15 +955,16 @@
                     });
                     if (unclaimed.length === 0) { renderMigrationArea(); return; }
                     // 수령 처리
+                    var actualTotal = unclaimed.reduce(function(sum, p) { return sum + (p.bonus || 0); }, 0);
                     unclaimed.forEach(function(p) { bossFirstClearClaimed.add(p.sId); });
-                    myGems += total;
-                    if (typeof updateStats === 'function') updateStats('gem_get', total);
+                    myGems += actualTotal;
+                    if (typeof updateStats === 'function') updateStats('gem_get', actualTotal);
                     if (typeof saveGameData === 'function') saveGameData();
                     if (typeof updateHeaderResources === 'function') updateHeaderResources();
                     var lang = (typeof currentLang !== 'undefined') ? currentLang : (localStorage.getItem('lang') || 'ko');
                     var msg = lang === 'en'
-                        ? '💎 ' + total + ' gems have been added!'
-                        : '💎 보석 ' + total + '개가 지급되었습니다!';
+                        ? '💎 ' + actualTotal + ' gems have been added!'
+                        : '💎 보석 ' + actualTotal + '개가 지급되었습니다!';
                     alert(msg);
                     renderMigrationArea();
                 }
