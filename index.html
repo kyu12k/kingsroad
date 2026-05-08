@@ -940,21 +940,30 @@
                         var label = lang === 'en'
                             ? '💎 Unclaimed gems: <strong>' + result.total + '</strong>'
                             : '💎 미수령 보석: <strong>' + result.total + '개</strong>';
-                        var btnLabel = lang === 'en' ? '보석 받기' : '보석 받기';
                         area.innerHTML = '<p style="margin-bottom:10px;">' + label + '</p>' +
-                            '<button onclick="handleMigrationClaim()" style="background:#f1c40f; border:none; border-radius:20px; padding:10px 28px; font-size:1rem; font-weight:bold; cursor:pointer;">💎 ' + btnLabel + '</button>';
+                            '<button onclick="handleMigrationClaim(' + result.total + ', ' + JSON.stringify(result.pending) + ')" style="background:#f1c40f; border:none; border-radius:20px; padding:10px 28px; font-size:1rem; font-weight:bold; cursor:pointer;">💎 보석 받기</button>';
                     } else {
                         var doneMsg = lang === 'en' ? '✅ All compensation gems have been claimed.' : '✅ 보상 보석을 모두 수령하였습니다.';
                         area.innerHTML = '<p style="color:#27ae60; font-weight:bold;">' + doneMsg + '</p>';
                     }
                 }
-                function handleMigrationClaim() {
-                    if (typeof claimBossMigrationGems !== 'function') return;
-                    var earned = claimBossMigrationGems();
+                function handleMigrationClaim(total, pending) {
+                    if (typeof myGems === 'undefined' || total <= 0) return;
+                    // 이미 수령된 항목 걸러내기
+                    var unclaimed = (pending || []).filter(function(p) {
+                        return typeof bossFirstClearClaimed === 'undefined' || !bossFirstClearClaimed.has(p.sId);
+                    });
+                    if (unclaimed.length === 0) { renderMigrationArea(); return; }
+                    // 수령 처리
+                    unclaimed.forEach(function(p) { bossFirstClearClaimed.add(p.sId); });
+                    myGems += total;
+                    if (typeof updateStats === 'function') updateStats('gem_get', total);
+                    if (typeof saveGameData === 'function') saveGameData();
+                    if (typeof updateHeaderResources === 'function') updateHeaderResources();
                     var lang = (typeof currentLang !== 'undefined') ? currentLang : (localStorage.getItem('lang') || 'ko');
                     var msg = lang === 'en'
-                        ? '💎 ' + earned + ' gems have been added!'
-                        : '💎 보석 ' + earned + '개가 지급되었습니다!';
+                        ? '💎 ' + total + ' gems have been added!'
+                        : '💎 보석 ' + total + '개가 지급되었습니다!';
                     alert(msg);
                     renderMigrationArea();
                 }
