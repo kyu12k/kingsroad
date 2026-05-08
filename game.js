@@ -329,6 +329,10 @@ const LANG = {
         mission_daily_2_desc: '중간 점검 또는 보스를 완료하세요.',
         mission_daily_hardship_title: '왕의 고난 1회 완주',
         mission_daily_hardship_desc: '어떤 장이든 왕의 고난을 완주하세요.',
+        mission_daily_hardship_address_title: '주소의 고난 1회 완주',
+        mission_daily_hardship_address_desc: '어떤 장이든 주소의 고난을 완주하세요.',
+        mission_daily_hardship_memory_title: '망각의 고난 1회 완주',
+        mission_daily_hardship_memory_desc: '어떤 장이든 망각의 고난을 완주하세요.',
         mission_daily_3_title: '데이터 기록 보관',
         mission_daily_3_desc: '텍스트 파일로 기록을 안전하게 보관하세요.',
         mission_weekly_0_title: '주 5일 출석하기',
@@ -1027,6 +1031,10 @@ const LANG = {
         mission_daily_2_desc: 'Complete a checkpoint or boss.',
         mission_daily_hardship_title: "Complete King's Hardship ×1",
         mission_daily_hardship_desc: "Complete any chapter's King's Hardship.",
+        mission_daily_hardship_address_title: "Complete Trial of Address ×1",
+        mission_daily_hardship_address_desc: "Complete any chapter's Trial of Address.",
+        mission_daily_hardship_memory_title: "Complete Trial of Memory ×1",
+        mission_daily_hardship_memory_desc: "Complete any chapter's Trial of Memory.",
         mission_daily_3_title: 'Back Up Your Data',
         mission_daily_3_desc: 'Save your records safely as a text file.',
         mission_weekly_0_title: 'Log In 5 Days',
@@ -1806,8 +1814,11 @@ loadGameData = function () {
         if (typeof missionData.daily.differentStages !== 'number') missionData.daily.differentStages = 0;
         if (typeof missionData.daily.checkpointBoss !== 'number') missionData.daily.checkpointBoss = 0;
         if (typeof missionData.daily.hardship !== 'number') missionData.daily.hardship = 0;
+        if (typeof missionData.daily.hardshipAddress !== 'number') missionData.daily.hardshipAddress = 0;
+        if (typeof missionData.daily.hardshipMemory !== 'number') missionData.daily.hardshipMemory = 0;
         if (missionData.daily.claimed.length < 4) missionData.daily.claimed.push(false);
         if (missionData.daily.claimed.length < 5) missionData.daily.claimed.push(false);
+        if (missionData.daily.claimed.length < 6) missionData.daily.claimed.push(false);
         if (typeof missionData.daily.backup === 'undefined') missionData.daily.backup = 0;
         if (typeof missionData.weekly.attendance !== 'number') missionData.weekly.attendance = 0;
         if (!Array.isArray(missionData.weekly.attendanceLog)) missionData.weekly.attendanceLog = [];
@@ -2351,8 +2362,10 @@ function checkMissions() {
             differentStages: 0,
             checkpointBoss: 0,
             hardship: 0,
+            hardshipAddress: 0,
+            hardshipMemory: 0,
             backup: 0,
-            claimed: [false, false, false, false, false]
+            claimed: [false, false, false, false, false, false]
         };
         missionData.daily.loginReward = 1; // 접속 시 즉시 완료
         console.log("📅 새로운 하루가 시작되어 일일 미션이 초기화되었습니다.");
@@ -2461,6 +2474,14 @@ function updateMissionProgress(type, extraData) {
         missionData.daily.hardship = (missionData.daily.hardship || 0) + 1;
         missionData.weekly.hardship = (missionData.weekly.hardship || 0) + 1;
     }
+    else if (type === 'hardshipAddress') {
+        missionData.daily.hardshipAddress = (missionData.daily.hardshipAddress || 0) + 1;
+        missionData.weekly.hardship = (missionData.weekly.hardship || 0) + 1;
+    }
+    else if (type === 'hardshipMemory') {
+        missionData.daily.hardshipMemory = (missionData.daily.hardshipMemory || 0) + 1;
+        missionData.weekly.hardship = (missionData.weekly.hardship || 0) + 1;
+    }
     // 4. 주간 미션: 중보/보스 처치 (용 사냥)
     else if (type === 'dragon') {
         missionData.weekly.dragonKill++;
@@ -2522,14 +2543,25 @@ function updateMissionUI() {
             type: 'daily'
         },
         {
-            desc: t('mission_daily_hardship_title'),
-            current: missionData.daily.hardship || 0,
+            desc: t('mission_daily_hardship_address_title'),
+            current: missionData.daily.hardshipAddress || 0,
             target: 1,
             rewardText: "💎 500",
             rewardType: "gem",
             val1: 500, val2: 0,
             claimed: missionData.daily.claimed[4],
             index: 4,
+            type: 'daily'
+        },
+        {
+            desc: t('mission_daily_hardship_memory_title'),
+            current: missionData.daily.hardshipMemory || 0,
+            target: 1,
+            rewardText: "💎 1,000",
+            rewardType: "gem",
+            val1: 1000, val2: 0,
+            claimed: missionData.daily.claimed[5],
+            index: 5,
             type: 'daily'
         }
     ];
@@ -2594,7 +2626,7 @@ function updateMissionUI() {
     const _checkMastery = [stageMastery, kingsRoadData && kingsRoadData.mastery].filter(Boolean);
     const anyBossCleared = _checkMastery.some(m => Object.keys(m).some(id => id.endsWith('-boss') && m[id] > 0));
     dailyMissions.forEach(m => {
-        if (m.index === 4 && !anyBossCleared) return;
+        if ((m.index === 4 || m.index === 5) && !anyBossCleared) return;
         createMissionElement(list, m);
     });
 
@@ -9550,14 +9582,25 @@ function renderMissionList(tabName) {
             },
             {
                 id: 4,
-                title: t('mission_daily_hardship_title'),
-                desc: t('mission_daily_hardship_desc'),
+                title: t('mission_daily_hardship_address_title'),
+                desc: t('mission_daily_hardship_address_desc'),
                 target: 1,
-                current: missionData.daily.hardship || 0,
+                current: missionData.daily.hardshipAddress || 0,
                 reward: "💎 500",
                 rewardType: 'gem',
                 val1: 500, val2: 0,
                 claimed: missionData.daily.claimed[4]
+            },
+            {
+                id: 5,
+                title: t('mission_daily_hardship_memory_title'),
+                desc: t('mission_daily_hardship_memory_desc'),
+                target: 1,
+                current: missionData.daily.hardshipMemory || 0,
+                reward: "💎 1,000",
+                rewardType: 'gem',
+                val1: 1000, val2: 0,
+                claimed: missionData.daily.claimed[5]
             }
         ];
     } else {
@@ -9608,7 +9651,7 @@ function renderMissionList(tabName) {
     if (tabName === 'daily') {
         const _cm = [stageMastery, kingsRoadData && kingsRoadData.mastery].filter(Boolean);
         const _anyBoss = _cm.some(m => Object.keys(m).some(id => id.endsWith('-boss') && m[id] > 0));
-        if (!_anyBoss) missions = missions.filter(m => m.id !== 4);
+        if (!_anyBoss) missions = missions.filter(m => m.id !== 4 && m.id !== 5);
     }
     if (tabName === 'weekly') {
         const _cm2 = [stageMastery, kingsRoadData && kingsRoadData.mastery].filter(Boolean);
@@ -14221,7 +14264,8 @@ function updateNotificationBadges() {
         if (missionData.daily.checkpointBoss >= 1 && !missionData.daily.claimed[2]) hasMissionReward = true;
         const _checkMastery2 = [stageMastery, kingsRoadData && kingsRoadData.mastery].filter(Boolean);
         const _anyBossCleared = _checkMastery2.some(m => Object.keys(m).some(id => id.endsWith('-boss') && m[id] > 0));
-        if (_anyBossCleared && (missionData.daily.hardship || 0) >= 1 && !missionData.daily.claimed[4]) hasMissionReward = true;
+        if (_anyBossCleared && (missionData.daily.hardshipAddress || 0) >= 1 && !missionData.daily.claimed[4]) hasMissionReward = true;
+        if (_anyBossCleared && (missionData.daily.hardshipMemory || 0) >= 1 && !missionData.daily.claimed[5]) hasMissionReward = true;
         // 주간 미션 고난 체크 (같은 스코프에서 _anyBossCleared 재사용)
         if (missionData.weekly && _anyBossCleared && (missionData.weekly.hardship || 0) >= 10 && !missionData.weekly.claimed[3]) hasMissionReward = true;
     }
@@ -17842,7 +17886,7 @@ function finishHardshipSession(reason) {
             if (!hardshipAddressClearHistory[ch]) hardshipAddressClearHistory[ch] = [];
             hardshipAddressClearHistory[ch].push(record);
             if (hardshipAddressClearHistory[ch].length > 10) hardshipAddressClearHistory[ch].shift();
-            updateMissionProgress('hardship');
+            updateMissionProgress('hardshipAddress');
             saveGameData();
             syncToFirestore(); // [Firestore] 주소 고난 완주 기록
 
@@ -17910,7 +17954,7 @@ function finishHardshipSession(reason) {
             if (!hardshipMemoryClearHistory[ch]) hardshipMemoryClearHistory[ch] = [];
             hardshipMemoryClearHistory[ch].push(record);
             if (hardshipMemoryClearHistory[ch].length > 10) hardshipMemoryClearHistory[ch].shift();
-            updateMissionProgress('hardship');
+            updateMissionProgress('hardshipMemory');
             saveGameData();
             syncToFirestore(); // [Firestore] 망각 고난 완주 기록
 
