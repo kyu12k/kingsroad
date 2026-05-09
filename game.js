@@ -3745,8 +3745,8 @@ function recalculateMaxHearts() {
     // 2. 최종 체력 = 구매한 체력 + 보너스
     maxPlayerHearts = purchasedMaxHearts + bonus;
 
-    // 3. UI 갱신 (화면의 하트 숫자 바꾸기)
-    if (typeof updateBattleUI !== 'undefined') updateBattleUI();
+    // 3. UI 갱신 (playerHearts가 초기화된 이후에만 호출)
+    if (typeof updateBattleUI !== 'undefined' && typeof playerHearts !== 'undefined') updateBattleUI();
 }
 
 // 1. 리그 및 부스터 데이터 초기화
