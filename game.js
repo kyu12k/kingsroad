@@ -10683,6 +10683,12 @@ function loadWeeklyHallOfFame() {
             }
 
             const data = doc.data();
+
+            if (data.notice) {
+                list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">${data.notice}</div>`;
+                return;
+            }
+
             const ranks = data.ranks || [];
 
             // 💾 캐시 저장

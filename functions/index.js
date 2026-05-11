@@ -792,3 +792,14 @@ exports.sendReviewNotifications = functions
         }
     });
 
+// 일회성: W19 명예의 전당 준비 중 안내
+exports.clearW19HallOfFame = functions.https.onRequest(async (req, res) => {
+    await db.collection('ranking_snapshots').doc('2026-W19').collection('tribes').doc('zion').set({
+        weekId: '2026-W19',
+        tribeId: 'zion',
+        ranks: [],
+        notice: '이번 주 명예의 전당은 시스템 점검으로 인해 준비 중입니다. 🛠️',
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    res.send('완료');
+});
