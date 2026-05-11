@@ -11267,6 +11267,14 @@ function checkDailyLogin() {
         leagueData.prevWeekId = leagueData.weekId || getLastWeekId();
         leagueData.prevWeekScore = leagueData.myScore || 0;
 
+        // 주간 히스토리에 누적 (최근 12주 보존)
+        if (!leagueData.weeklyHistory) leagueData.weeklyHistory = {};
+        if (leagueData.prevWeekId && leagueData.prevWeekScore > 0) {
+            leagueData.weeklyHistory[leagueData.prevWeekId] = leagueData.prevWeekScore;
+            const keys = Object.keys(leagueData.weeklyHistory).sort().reverse();
+            if (keys.length > 12) keys.slice(12).forEach(k => delete leagueData.weeklyHistory[k]);
+        }
+
         leagueData.weekId = currentWeekId;
         leagueData.myScore = 0;
         leagueData.stageLog = {};
@@ -14537,6 +14545,11 @@ function saveMyScoreToServer() {
     if (leagueData.prevWeekId && leagueData.prevWeekScore > 0) {
         payload.prevWeekId = leagueData.prevWeekId;
         payload.prevWeekScore = leagueData.prevWeekScore;
+    }
+
+    // 주간 히스토리 서버 전송 (수동 복구용)
+    if (leagueData.weeklyHistory && Object.keys(leagueData.weeklyHistory).length > 0) {
+        payload.weeklyHistory = leagueData.weeklyHistory;
     }
 
     if (typeof lastScorePayloadKey === 'undefined' || lastScorePayloadKey === null) {
