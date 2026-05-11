@@ -10488,9 +10488,19 @@ function showRankingScreenReal() {
 }
 
 /* [추가] 지파/시온성 랭킹 로드 */
+function isMondayMorning() {
+    const now = new Date();
+    return now.getDay() === 1 && now.getHours() < 12;
+}
+
 function loadTribeRanking() {
     const list = document.getElementById('ranking-list');
     if (!list) return;
+
+    if (isMondayMorning()) {
+        list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">⏳ 주간 랭킹은 매주 월요일 정오부터 표시됩니다.</div>`;
+        return;
+    }
 
     const tribeName = (TRIBE_DATA[myTribe] && TRIBE_DATA[myTribe].name) ? getTribeName(TRIBE_DATA[myTribe]) : t('label_my_tribe');
     list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">${t('ranking_loading_tribe', { name: tribeName })}</div>`;
@@ -10502,6 +10512,11 @@ function loadTribeRanking() {
 function loadZionRanking() {
     const list = document.getElementById('ranking-list');
     if (!list) return;
+
+    if (isMondayMorning()) {
+        list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">⏳ 주간 랭킹은 매주 월요일 정오부터 표시됩니다.</div>`;
+        return;
+    }
 
     list.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">${t('ranking_loading_zion')}</div>`;
 
