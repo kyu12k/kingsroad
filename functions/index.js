@@ -349,13 +349,41 @@ exports.archiveWeeklyRankings = functions.pubsub
             // ① 시온성(전체) Top100 (중복 포함 여유분 조회)
             const zionSnapshot = await baseQuery.limit(200).get();
 
-            if (zionSnapshot.empty) {
+            // 주 전환 직후 앱을 켠 유저는 weekId가 이미 새 주차로 바뀌어 위 쿼리에 누락될 수 있음.
+            // prevWeekId 백업 필드로 보존된 데이터를 fallback으로 추가 조회.
+            const fallbackWeekSnapshot = await db.collection('leaderboard')
+                .where('prevWeekId', '==', lastWeekId)
+                .where('prevWeekScore', '>', 0)
+                .orderBy('prevWeekScore', 'desc')
+                .limit(200)
+                .get();
+
+            // 두 결과 병합 (tag 기준 중복 제거, 점수 높은 쪽 우선)
+            const weekCombinedMap = new Map();
+            zionSnapshot.docs.forEach(doc => {
+                const d = doc.data();
+                weekCombinedMap.set(doc.id, { doc, score: d.score || 0 });
+            });
+            fallbackWeekSnapshot.docs.forEach(doc => {
+                if (!weekCombinedMap.has(doc.id)) {
+                    const d = doc.data();
+                    // prevWeekScore를 score처럼 사용할 수 있도록 데이터 보정
+                    const patched = { ...d, score: d.prevWeekScore || 0, weekId: lastWeekId };
+                    weekCombinedMap.set(doc.id, { doc: { id: doc.id, data: () => patched }, score: d.prevWeekScore || 0 });
+                }
+            });
+
+            const mergedWeekDocs = Array.from(weekCombinedMap.values())
+                .sort((a, b) => b.score - a.score)
+                .map(v => v.doc);
+
+            if (mergedWeekDocs.length === 0) {
                 console.log('⚠️ 아카이빙할 데이터 없음');
                 return null;
             }
 
             // tag 기준 중복 제거 후 Top100 확정
-            const zionDocs = deduplicateByTag(zionSnapshot.docs).slice(0, 100);
+            const zionDocs = deduplicateByTag(mergedWeekDocs).slice(0, 100);
 
             // ② 주간 히스토리 보관 (기존 로직)
             const archiveBatch = db.batch();
@@ -372,17 +400,43 @@ exports.archiveWeeklyRankings = functions.pubsub
             await archiveBatch.commit();
             console.log(`✅ ${zionDocs.length}명 주간 랭킹 보관 완료 (${lastWeekId})`);
 
-            // ③ 지파별 Top100 병렬 조회 (중복 포함 여유분 조회)
+            // ③ 지파별 Top100 병렬 조회 (중복 포함 여유분 조회 + prevWeekId fallback 병합)
             const tribeJobs = [];
             for (let i = 0; i < TRIBE_COUNT; i++) {
                 tribeJobs.push(
-                    db.collection('leaderboard')
-                        .where('weekId', '==', lastWeekId)
-                        .where('tribe', '==', i)
-                        .where('score', '>', 0)
-                        .orderBy('score', 'desc')
-                        .limit(200)
-                        .get()
+                    Promise.all([
+                        db.collection('leaderboard')
+                            .where('weekId', '==', lastWeekId)
+                            .where('tribe', '==', i)
+                            .where('score', '>', 0)
+                            .orderBy('score', 'desc')
+                            .limit(200)
+                            .get(),
+                        db.collection('leaderboard')
+                            .where('prevWeekId', '==', lastWeekId)
+                            .where('tribe', '==', i)
+                            .where('prevWeekScore', '>', 0)
+                            .orderBy('prevWeekScore', 'desc')
+                            .limit(200)
+                            .get()
+                    ]).then(([mainSnap, fallbackSnap]) => {
+                        const tribeMap = new Map();
+                        mainSnap.docs.forEach(doc => {
+                            tribeMap.set(doc.id, { doc, score: doc.data().score || 0 });
+                        });
+                        fallbackSnap.docs.forEach(doc => {
+                            if (!tribeMap.has(doc.id)) {
+                                const d = doc.data();
+                                const patched = { ...d, score: d.prevWeekScore || 0, weekId: lastWeekId };
+                                tribeMap.set(doc.id, { doc: { id: doc.id, data: () => patched }, score: d.prevWeekScore || 0 });
+                            }
+                        });
+                        // deduplicateByTag가 docs 배열을 기대하므로 형태를 맞춰 반환
+                        const merged = Array.from(tribeMap.values())
+                            .sort((a, b) => b.score - a.score)
+                            .map(v => v.doc);
+                        return { docs: merged };
+                    })
                 );
             }
             const tribeSnapshots = await Promise.all(tribeJobs);

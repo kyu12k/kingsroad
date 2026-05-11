@@ -11241,6 +11241,11 @@ function checkDailyLogin() {
     // 🌟 (2) 승점 주간 초기화 (미션과 완전히 독립적으로 따로 검사!)
     if (leagueData.weekId !== currentWeekId) {
         console.log("🔄 승점 주간 리셋 (엇박자 치료 완료!)");
+
+        // 지난주 점수를 백업 필드에 보존 (CF 아카이빙 경쟁조건 방어)
+        leagueData.prevWeekId = leagueData.weekId || getLastWeekId();
+        leagueData.prevWeekScore = leagueData.myScore || 0;
+
         leagueData.weekId = currentWeekId;
         leagueData.myScore = 0;
         leagueData.stageLog = {};
@@ -14505,6 +14510,12 @@ function saveMyScoreToServer() {
     if (leagueData.prevMonthId && leagueData.prevMonthlyScore > 0) {
         payload.prevMonthId = leagueData.prevMonthId;
         payload.prevMonthlyScore = leagueData.prevMonthlyScore;
+    }
+
+    // 주 전환 시 이전주 백업 데이터가 있으면 함께 전송 (CF 아카이빙 경쟁조건 방어)
+    if (leagueData.prevWeekId && leagueData.prevWeekScore > 0) {
+        payload.prevWeekId = leagueData.prevWeekId;
+        payload.prevWeekScore = leagueData.prevWeekScore;
     }
 
     if (typeof lastScorePayloadKey === 'undefined' || lastScorePayloadKey === null) {
