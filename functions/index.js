@@ -397,6 +397,29 @@ exports.archiveWeeklyRankings = functions.pubsub
                     archivedAt: admin.firestore.FieldValue.serverTimestamp()
                 });
             });
+            // 명예의 전당 스냅샷도 최종 데이터로 덮어쓰기 (updateWeeklyCounts의 18시 스냅샷보다 정확한 값)
+            const zionRankingData = zionDocs.map((doc, index) => {
+                const row = doc.data();
+                return {
+                    rank: index + 1,
+                    name: row.nickname || "이름없음",
+                    score: row.score || 0,
+                    tribe: row.tribe !== undefined ? row.tribe : 0,
+                    dept: row.dept !== undefined ? row.dept : 0,
+                    tag: row.tag || "",
+                    castle: row.castleLv || 0
+                };
+            });
+            const zionSnapshotRef = db.collection('ranking_snapshots').doc(lastWeekId)
+                .collection('tribes').doc('zion');
+            archiveBatch.set(zionSnapshotRef, {
+                weekId: lastWeekId,
+                tribeId: 'zion',
+                ranks: zionRankingData,
+                count: zionRankingData.length,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+
             await archiveBatch.commit();
             console.log(`✅ ${zionDocs.length}명 주간 랭킹 보관 완료 (${lastWeekId})`);
 
