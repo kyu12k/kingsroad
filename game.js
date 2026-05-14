@@ -15477,7 +15477,7 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, 
         };
     }
 
-    let isLooping = isVoiceRepeat;
+    let isLooping = false;
     audioObj.loop = isLooping;
 
     if (repeatBtn) {
@@ -15565,17 +15565,26 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, 
                 tl.resume();
             };
 
-            const playPromise = audioObj.play();
+            const doPlay = () => {
+                if (isSkipped) return;
+                const playPromise = audioObj.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch((error) => {
+                        console.warn("오디오 재생 불가:", error);
+                        if (pauseBtn) pauseBtn.style.display = "none";
+                        fallbackTimer = setTimeout(() => {
+                            if (isSkipped) return;
+                            tl.resume();
+                        }, readTime * 1000);
+                    });
+                }
+            };
 
-            if (playPromise !== undefined) {
-                playPromise.catch((error) => {
-                    console.warn("오디오 재생 불가:", error);
-                    if (pauseBtn) pauseBtn.style.display = "none";
-                    fallbackTimer = setTimeout(() => {
-                        if (isSkipped) return;
-                        tl.resume();
-                    }, readTime * 1000);
-                });
+            const _ctx = SoundEffect.ctx;
+            if (_ctx && _ctx.state !== 'running') {
+                _ctx.resume().then(doPlay).catch(doPlay);
+            } else {
+                doPlay();
             }
 
             if (pauseBtn) {
@@ -16897,28 +16906,28 @@ function createStepAudioPanel(cNum, vNum) {
     panel.appendChild(voiceBtn);
     document.body.appendChild(panel);
 
-    // 오디오 로드
-    function loadAudio() {
-        if (_stepAudio) { _stepAudio.pause(); _stepAudio.src = ''; }
-        _stepAudio = new Audio(getAudioUrl(cNum, vNum, selectedVoice));
-        _stepAudio.preload = 'auto';
-        if (typeof connectVoiceToAudioContext === 'function') connectVoiceToAudioContext(_stepAudio);
-        _stepAudio.muted = isGlobalMuted;
-        _stepAudio.onended = () => {
-            _stepAudioPlaying = false;
-            playBtn.innerHTML = '▶';
-            playBtn.style.background = '#2980b9';
-        };
-        _stepAudio.onerror = () => {
-            if (selectedVoice === 2) {
-                selectedVoice = 1;
-                localStorage.setItem('selectedVoice', '1');
-                voiceBtn.innerHTML = '음성1';
-                loadAudio();
+    // 두 음성 오디오를 미리 생성 (전환 시 new Audio() 재생성 불필요)
+    const audioPool = {};
+    function buildAudio(voice) {
+        const a = new Audio(getAudioUrl(cNum, vNum, voice));
+        a.preload = 'auto';
+        a.muted = isGlobalMuted;
+        if (typeof connectVoiceToAudioContext === 'function') connectVoiceToAudioContext(a);
+        a.onended = () => {
+            if (_stepAudio === a) {
+                _stepAudioPlaying = false;
+                playBtn.innerHTML = '▶';
+                playBtn.style.background = '#2980b9';
             }
         };
+        a.onerror = () => {
+            if (voice === 2) voiceBtn.style.display = 'none';
+        };
+        return a;
     }
-    loadAudio();
+    audioPool[1] = buildAudio(1);
+    audioPool[2] = buildAudio(2);
+    _stepAudio = audioPool[selectedVoice];
 
     playBtn.addEventListener('click', () => {
         if (_wasDragging) return;
@@ -16940,23 +16949,24 @@ function createStepAudioPanel(cNum, vNum) {
 
     voiceBtn.addEventListener('click', () => {
         if (_wasDragging) return;
-        const wasPlaying = _stepAudioPlaying;
-        const currentTime = _stepAudio ? _stepAudio.currentTime : 0;
-        if (_stepAudio) { _stepAudio.pause(); }
-        _stepAudioPlaying = false;
+        const prevAudio = _stepAudio;
+        const savedTime = prevAudio ? prevAudio.currentTime : 0;
+        if (prevAudio) prevAudio.pause();
+
         selectedVoice = selectedVoice === 1 ? 2 : 1;
         localStorage.setItem('selectedVoice', String(selectedVoice));
         voiceBtn.innerHTML = `음성${selectedVoice}`;
-        loadAudio();
-        if (wasPlaying) {
-            _stepAudio.addEventListener('canplay', () => {
-                _stepAudio.currentTime = currentTime;
-                _stepAudio.play().catch(() => {});
-                _stepAudioPlaying = true;
-                playBtn.innerHTML = '⏸';
-                playBtn.style.background = '#e74c3c';
-            }, { once: true });
-        }
+
+        _stepAudio = audioPool[selectedVoice];
+        _stepAudio.muted = isGlobalMuted;
+        _stepAudio.currentTime = savedTime;
+
+        const _ctx = SoundEffect.ctx;
+        if (_ctx && _ctx.state === 'suspended') _ctx.resume();
+        _stepAudio.play().catch(() => {});
+        _stepAudioPlaying = true;
+        playBtn.innerHTML = '⏸';
+        playBtn.style.background = '#e74c3c';
     });
 
     // 드래그: pointerdown 위치 기록만 하고, pointermove에서 threshold 넘으면 그때 캡처
