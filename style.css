@@ -2305,6 +2305,12 @@ body, html {
     border-color: var(--primary-color);
     box-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
 }
+.tab-btn.tab-advanced.active {
+    background: #8e44ad;
+    color: #fff;
+    border-color: #8e44ad;
+    box-shadow: 0 0 10px rgba(142, 68, 173, 0.5);
+}
 
 /* [생명책 카드 스타일] */
 .card-item {

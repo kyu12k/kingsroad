@@ -747,10 +747,72 @@
                             style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
                     </div>
                     <div id="notice-list"></div>
+                    <div style="margin-top:16px; text-align:center; border-top:1px solid #eee; padding-top:14px;">
+                        <button onclick="setNoticeHide3Days()" style="background:none; border:1px solid #bdc3c7; color:#95a5a6; border-radius:16px; padding:7px 20px; font-size:0.85rem; cursor:pointer;">3일간 보지 않기</button>
+                    </div>
                 </div>
             </div>
             <script>
                 const NOTICES = [
+                    {
+                        date: '2026-05-14',
+                        title: '미션 시스템 업데이트 안내',
+                        titleEn: 'Mission System Update',
+                        content: `
+<p style="font-weight:bold; margin-bottom:12px;">1. 심화 일일 미션 추가</p>
+<p style="margin-bottom:8px; color:#555;">미션 탭에 <strong>⚔️ 심화</strong> 카테고리가 새로 추가되었습니다. 보스를 한 번이라도 클리어하면 열립니다.</p>
+<ul style="padding-left:18px; margin:8px 0;">
+  <li><strong>주소의 고난 누적</strong>: 오늘 서로 다른 장을 클리어할수록 보상이 쌓입니다. (2번째 장부터, 최대 22장)<br>
+    <span style="color:#888; font-size:0.9em;">2~6장: 💎500 / 7~12장: 💎800 / 13~22장: 💎1,200</span></li>
+  <li style="margin-top:6px;"><strong>망각의 고난 누적</strong>: 오늘 서로 다른 장을 클리어할수록 보상이 쌓입니다. (2번째 장부터, 최대 5장)<br>
+    <span style="color:#888; font-size:0.9em;">2~5장: 💎1,500</span></li>
+  <li style="margin-top:6px;">미수령 보상이 여러 개일 때 <strong>모두 받기</strong> 버튼으로 한 번에 수령할 수 있습니다.</li>
+  <li style="margin-top:6px;">심화 미션도 매일 자정에 초기화됩니다.</li>
+</ul>
+
+<p style="font-weight:bold; margin-top:16px; margin-bottom:8px;">2. 주간 미션 추가</p>
+<ul style="padding-left:18px; margin:8px 0;">
+  <li><strong>일일 미션 20회 클리어</strong>가 추가되었습니다. (보상: 💎2,000)<br>
+    <span style="color:#888; font-size:0.9em;">하루 4개 이상 × 5일이면 달성 가능합니다.</span></li>
+</ul>
+
+<p style="font-weight:bold; margin-top:16px; margin-bottom:8px;">3. 버그 수정</p>
+<ul style="padding-left:18px; margin:8px 0;">
+  <li>여러 장을 묶어서 고난을 완주하는 <strong>범위 세션</strong>에서 일일 미션 카운트가 올라가지 않던 버그가 수정되었습니다.</li>
+</ul>
+
+<div style="margin-top:20px; padding:14px; background:rgba(231,76,60,0.1); border-left:4px solid #e74c3c; border-radius:4px;">
+  <p style="font-weight:bold; color:#e74c3c; margin:0 0 6px;">⚠️ 오류 발생 가능성 안내</p>
+  <p style="margin:0; color:#555; font-size:0.93em;">이번 업데이트는 미션 시스템에 큰 변화가 있었습니다. 예상치 못한 오류가 발생할 수 있으니, 이상한 점을 발견하시면 <strong>적극적으로 제보</strong>해 주세요! 여러분의 제보가 앱을 더 좋게 만듭니다. 🙏</p>
+</div>`,
+                        contentEn: `
+<p style="font-weight:bold; margin-bottom:12px;">1. Advanced Daily Missions Added</p>
+<p style="margin-bottom:8px; color:#555;">A new <strong>⚔️ Advanced</strong> tab has been added to the mission screen. Available after your first boss clear.</p>
+<ul style="padding-left:18px; margin:8px 0;">
+  <li><strong>Address Trial Cumulative</strong>: Earn rewards for each new chapter cleared today. (From 2nd chapter, max 22)<br>
+    <span style="color:#888; font-size:0.9em;">Ch.2–6: 💎500 / Ch.7–12: 💎800 / Ch.13–22: 💎1,200</span></li>
+  <li style="margin-top:6px;"><strong>Memory Trial Cumulative</strong>: Earn rewards for each new chapter cleared today. (From 2nd chapter, max 5)<br>
+    <span style="color:#888; font-size:0.9em;">Ch.2–5: 💎1,500</span></li>
+  <li style="margin-top:6px;">Use the <strong>Claim All</strong> button to collect multiple unclaimed rewards at once.</li>
+  <li style="margin-top:6px;">Advanced missions reset at midnight daily.</li>
+</ul>
+
+<p style="font-weight:bold; margin-top:16px; margin-bottom:8px;">2. New Weekly Mission</p>
+<ul style="padding-left:18px; margin:8px 0;">
+  <li><strong>Clear 20 Daily Missions</strong> added. (Reward: 💎2,000)<br>
+    <span style="color:#888; font-size:0.9em;">Achievable by completing 4+ missions/day × 5 days.</span></li>
+</ul>
+
+<p style="font-weight:bold; margin-top:16px; margin-bottom:8px;">3. Bug Fix</p>
+<ul style="padding-left:18px; margin:8px 0;">
+  <li>Fixed a bug where daily mission count was not increasing when completing a <strong>range session</strong> (multiple chapters at once).</li>
+</ul>
+
+<div style="margin-top:20px; padding:14px; background:rgba(231,76,60,0.1); border-left:4px solid #e74c3c; border-radius:4px;">
+  <p style="font-weight:bold; color:#e74c3c; margin:0 0 6px;">⚠️ Possible Issues</p>
+  <p style="margin:0; color:#555; font-size:0.93em;">This update includes major changes to the mission system. Unexpected bugs may occur — please <strong>report any issues</strong> you encounter! Your feedback helps make the app better. 🙏</p>
+</div>`,
+                    },
                     {
                         date: '2026-05-08',
                         title: '버그 수정 및 보상 지급 안내',
@@ -925,13 +987,16 @@
 
                 function openNoticeModal(autoOpen) {
                     renderNotices();
-                    document.getElementById('notice-modal').style.display = 'flex';
+                    var modal = document.getElementById('notice-modal');
+                    modal.style.display = 'flex';
+                    // 바깥 클릭 시 닫기
+                    modal.onclick = function(e) {
+                        if (e.target === modal) closeNoticeModal();
+                    };
                     var menuPanel = document.getElementById('menu-panel');
                     if (menuPanel) menuPanel.style.display = 'none';
                     // 최신 공지 자동 펼침
                     if (autoOpen) toggleNotice(0);
-                    // 열람 날짜 기록
-                    localStorage.setItem('lastSeenNoticeDate', NOTICES[0].date);
                     // 마이그레이션 버튼 렌더링 (열린 직후)
                     setTimeout(renderMigrationArea, 50);
                 }
@@ -1003,9 +1068,14 @@
                     renderMigrationArea();
                 }
                 // 새 공지 자동 노출 (게임 로드 완료 후 실행)
+                var _noticeShown = false;
                 function checkAndShowNewNotice() {
-                    var lastSeen = localStorage.getItem('lastSeenNoticeDate') || '';
-                    if (NOTICES.length === 0 || NOTICES[0].date <= lastSeen) return;
+                    if (NOTICES.length === 0) return;
+                    if (_noticeShown) return;
+                    _noticeShown = true;
+                    // 3일간 보지 않기 체크
+                    var hideUntil = localStorage.getItem('noticeHideUntil') || '';
+                    if (hideUntil && new Date().toISOString() < hideUntil) return;
                     // 기억 퀴즈 오버레이가 열려있으면 잠시 대기
                     var quizOverlay = document.getElementById('memory-quiz-overlay');
                     if (quizOverlay && quizOverlay.style.display !== 'none') {
@@ -1019,6 +1089,16 @@
                         return;
                     }
                     openNoticeModal(true);
+                }
+                // 게임 초기화와 무관하게 페이지 로드 후 공지 표시
+                window.addEventListener('load', function() {
+                    setTimeout(checkAndShowNewNotice, 1500);
+                });
+                function setNoticeHide3Days() {
+                    var until = new Date();
+                    until.setDate(until.getDate() + 3);
+                    localStorage.setItem('noticeHideUntil', until.toISOString());
+                    closeNoticeModal();
                 }
             </script>
 
