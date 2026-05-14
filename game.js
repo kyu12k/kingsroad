@@ -3034,6 +3034,14 @@ function connectVoiceToAudioContext(audioElem) {
     }
 }
 
+// 이어폰 뽑기 등 오디오 장치 변경 시 AudioContext를 자동으로 resume
+if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+    navigator.mediaDevices.addEventListener('devicechange', () => {
+        const ctx = SoundEffect.ctx;
+        if (ctx && ctx.state === 'suspended') ctx.resume();
+    });
+}
+
 /* [시스템] 12지파 설정 데이터 (보석 이름 복구 완료) */
 const TRIBE_DATA = [
     { id: 0, name: "요한", nameEn: "John", core: "#57E3B6", glow: "#009651", gem: "녹보석" },
@@ -15435,6 +15443,8 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, 
                         updateVoiceRepeatButtonState(repeatBtn);
                     };
                     if (pauseBtn) pauseBtn.onclick = () => {
+                        const _ctx = SoundEffect.ctx;
+                        if (_ctx && _ctx.state === 'suspended') _ctx.resume();
                         if (audioObj.paused) { audioObj.play(); pauseBtn.innerText = "⏸"; }
                         else { audioObj.pause(); pauseBtn.innerText = "▶"; }
                     };
@@ -16918,6 +16928,8 @@ function createStepAudioPanel(cNum, vNum) {
             playBtn.innerHTML = '▶';
             playBtn.style.background = '#2980b9';
         } else if (_stepAudio) {
+            const _ctx = SoundEffect.ctx;
+            if (_ctx && _ctx.state === 'suspended') _ctx.resume();
             _stepAudio.muted = isGlobalMuted;
             _stepAudio.play().catch(() => {});
             _stepAudioPlaying = true;
