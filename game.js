@@ -7731,7 +7731,6 @@ function loadStep() {
     control.style.paddingBottom = '';
     const _oldInfoWrap = document.getElementById('step1-info-wrap');
     if (_oldInfoWrap) _oldInfoWrap.remove();
-    removeStepAudioPanel();
 
     // 👉 [개선된 코드] 현재 스테이지 ID에서 장과 절을 더 안전하게 뽑아냅니다.
     let verseLabel = "";
@@ -7753,7 +7752,10 @@ function loadStep() {
             }
         }
     }
-    createStepAudioPanel(_audioCNum, _audioVNum);
+    // 같은 스테이지 안에서 스텝이 넘어갈 때는 패널을 유지해 오디오가 이어지도록 함
+    if (!document.getElementById('step-audio-panel')) {
+        createStepAudioPanel(_audioCNum, _audioVNum);
+    }
 
     // ----------------------------------------------------
     // [Step 1] 각인 모드 (속도 조절: 낭독 속도 + 초성 힌트)
@@ -8868,6 +8870,7 @@ function finishTraining() {
             window._lastClearOutcome = 'waiting';
         }
     }
+    removeStepAudioPanel();
     showClearScreen();
 }
 
@@ -9065,8 +9068,8 @@ function showClearScreen() {
                     ? 10 * 60 * 1000
                     : getReviewWaitMs(nextStatus.step + 1);
                 const rawHr = rawDelayMs / 3600000;
-                // 10분(0.17hr), 1시간, 6시간만 버튼 표시
-                const isShortDelay = rawHr <= 6.5;
+                // 10분(0.17hr), 1시간만 버튼 표시 (6시간은 PWA 미지원으로 제외)
+                const isShortDelay = rawHr < 2;
                 if (isShortDelay) {
                     let waitLabel;
                     if (rawHr < 1) waitLabel = `${Math.round(rawDelayMs / 60000)}분`;
