@@ -15480,7 +15480,7 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, 
         };
     }
 
-    let isLooping = false;
+    let isLooping = isVoiceRepeat;
     audioObj.loop = isLooping;
 
     if (repeatBtn) {
