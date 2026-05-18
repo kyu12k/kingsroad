@@ -11418,6 +11418,7 @@ function closeMoreMenu() {
 
 function openShopFromMenu() { closeMoreMenu(); openShop(); }
 function openAchievementFromMenu() { closeMoreMenu(); openAchievement(); }
+function openMemoryReportFromMenu() { closeMoreMenu(); openMemoryReport(); }
 
 
 // 팝업 외부 클릭 시 닫기
@@ -14303,6 +14304,126 @@ function triggerConfetti() {
 /* ========================================
    [정식 배포 버전 - 디버그 기능 제거됨]
    ======================================== */
+
+/* =========================================
+   [시스템: 암기 분석 리포트]
+   ========================================= */
+
+function buildChapterMemoryRows() {
+    const chapterMap = {};
+    gameData.forEach(ch => {
+        if (!ch || !ch.stages) return;
+        const chNum = ch.chapter || ch.id;
+        const normals = ch.stages.filter(s => s.type === 'normal');
+        if (!normals.length) return;
+        let totalStep = 0, cleared = 0, totalStrength = 0;
+        normals.forEach(s => {
+            const step = (stageReviewStep && stageReviewStep[s.id]) || 0;
+            if (step > 0) {
+                totalStep += step;
+                cleared++;
+                totalStrength += getMemoryStrength(s.id);
+            }
+        });
+        chapterMap[chNum] = { total: normals.length, cleared, avgStrength: cleared ? totalStrength / cleared : 0, avgStep: cleared ? totalStep / cleared : 0 };
+    });
+
+    return Object.entries(chapterMap).map(([ch, d]) => {
+        const pct = Math.round(d.avgStrength * 100);
+        const fillColor = pct >= 80 ? '#27ae60' : pct >= 60 ? '#f1c40f' : pct >= 40 ? '#e67e22' : '#e74c3c';
+        const clearPct = d.total ? Math.round(d.cleared / d.total * 100) : 0;
+        return `<div class="mr-chapter-row">
+  <div class="mr-chapter-label"><span class="mr-ch-num">${ch}장</span><span class="mr-ch-stats">${d.cleared}/${d.total} 스테이지 · 기억강도 ${pct}%</span></div>
+  <div class="mr-progress-bar"><div class="mr-progress-fill" style="width:${clearPct}%;background:${fillColor}"></div></div>
+</div>`;
+    }).join('');
+}
+
+function buildHardshipRows() {
+    const types = [
+        { key: 'address', label: '📍 주소의 고난', data: hardshipAddressClearHistory },
+        { key: 'memory', label: '🧠 망각의 고난', data: hardshipMemoryClearHistory }
+    ];
+    return types.map(t => {
+        const entries = Object.entries(t.data || {});
+        if (!entries.length) return `<div class="mr-hardship-box"><div class="mr-hardship-type">${t.label}</div><div class="mr-hardship-empty">기록 없음</div></div>`;
+        const rows = entries.map(([ch, records]) => {
+            const best = records.reduce((b, r) => (!b || r.score > b.score ? r : b), null);
+            if (!best) return '';
+            const acc = best.total ? Math.round(best.correct / best.total * 100) : 0;
+            const sec = best.duration ? Math.round(best.duration) : 0;
+            const mm = Math.floor(sec / 60), ss = String(sec % 60).padStart(2, '0');
+            return `<div class="mr-hardship-entry"><span class="mr-h-ch">${ch}장</span><span class="mr-h-score">${best.score}점</span><span class="mr-h-acc">${acc}%</span><span class="mr-h-time">${mm}:${ss}</span></div>`;
+        }).filter(Boolean).join('');
+        return `<div class="mr-hardship-box"><div class="mr-hardship-type">${t.label}</div>${rows || '<div class="mr-hardship-empty">기록 없음</div>'}</div>`;
+    }).join('');
+}
+
+function buildSummaryStats() {
+    const totalSec = getTotalPlaySecondsNow();
+    const hh = Math.floor(totalSec / 3600), mm = Math.floor((totalSec % 3600) / 60);
+    const playStr = hh > 0 ? `${hh}시간 ${mm}분` : `${mm}분`;
+    const streak = parseInt(localStorage.getItem('streakDays') || '0', 10);
+
+    let clearedCount = 0, strengthSum = 0;
+    gameData.forEach(ch => {
+        if (!ch || !ch.stages) return;
+        ch.stages.filter(s => s.type === 'normal').forEach(s => {
+            const step = stageReviewStep && stageReviewStep[s.id];
+            if (step > 0) { clearedCount++; strengthSum += getMemoryStrength(s.id); }
+        });
+    });
+    const avgStr = clearedCount ? Math.round(strengthSum / clearedCount * 100) : 0;
+
+    return `<div class="mr-summary-grid">
+  <div class="mr-stat-box"><div class="mr-stat-val">${clearedCount}</div><div class="mr-stat-label">클리어 스테이지</div></div>
+  <div class="mr-stat-box"><div class="mr-stat-val">${avgStr}%</div><div class="mr-stat-label">평균 기억강도</div></div>
+  <div class="mr-stat-box"><div class="mr-stat-val">${playStr}</div><div class="mr-stat-label">총 플레이</div></div>
+  <div class="mr-stat-box"><div class="mr-stat-val">${streak}일</div><div class="mr-stat-label">연속 학습</div></div>
+</div>`;
+}
+
+function openMemoryReport() {
+    const existing = document.getElementById('memory-report-overlay');
+    if (existing) { existing.remove(); return; }
+
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')}`;
+    const nickname = myNickname || '순례자';
+
+    const chapterRows = buildChapterMemoryRows();
+    const summaryStats = buildSummaryStats();
+    const hardshipRows = buildHardshipRows();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'memory-report-overlay';
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+<div class="memory-report-card" id="memory-report-card">
+  <button class="mr-close-btn" onclick="document.getElementById('memory-report-overlay').remove()">✕</button>
+  <div class="mr-header">
+    <div class="mr-crown">👑</div>
+    <div class="mr-nickname">${nickname}</div>
+    <div class="mr-date">암기 리포트 · ${dateStr}</div>
+  </div>
+  <div class="mr-section">
+    <div class="mr-section-title">📖 킹스로드 챕터별 암기 현황</div>
+    ${chapterRows || '<div class="mr-empty">아직 클리어한 스테이지가 없습니다.</div>'}
+  </div>
+  <div class="mr-section">
+    <div class="mr-section-title">📈 나의 암기 요약</div>
+    ${summaryStats}
+  </div>
+  <div class="mr-section">
+    <div class="mr-section-title">⚔️ 역경 최고 기록</div>
+    <div class="mr-hardship-grid">${hardshipRows}</div>
+  </div>
+  <div class="mr-footer">King's Road · 말씀 암기 여정</div>
+</div>`;
+
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
+}
 
 /* =========================================
    [시스템: 업적(나의 기록실) UI 및 로직]
