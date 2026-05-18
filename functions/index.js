@@ -338,7 +338,10 @@ exports.archiveWeeklyRankings = functions.pubsub
         try {
             console.log('📜 주간 랭킹 아카이빙 시작');
 
-            const lastWeekId = getWeekId(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+            // CF는 월요일 00:05 KST(= 일요일 15:05 UTC)에 실행됨.
+            // 서버 시간은 UTC이므로 setHours(0,0,0,0) 기준으로 아직 ISO 이전 주에 해당함.
+            // getWeekId()를 인수 없이 호출하면 UTC 기준 "지난 주" ID를 정확히 반환함.
+            const lastWeekId = getWeekId();
             console.log(`🗓️ 아카이빙 대상: ${lastWeekId}`);
 
             const baseQuery = db.collection('leaderboard')
@@ -802,4 +805,81 @@ exports.clearW19HallOfFame = functions.https.onRequest(async (req, res) => {
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
     res.send('완료');
+});
+
+// 일회성: W20 주간 랭킹 복구 (CF lastWeekId 계산 버그로 누락된 데이터 재아카이빙)
+exports.recoverW20Rankings = functions.https.onRequest(async (req, res) => {
+    try {
+        const targetWeekId = '2026-W20';
+        console.log(`🔧 W20 복구 시작: ${targetWeekId}`);
+
+        // 메인 쿼리: 아직 W20에 머물러 있는 유저
+        const mainSnap = await db.collection('leaderboard')
+            .where('weekId', '==', targetWeekId)
+            .where('score', '>', 0)
+            .orderBy('score', 'desc')
+            .limit(200)
+            .get();
+
+        // Fallback 쿼리: 이미 W21로 리셋했지만 prevWeekId=W20 으로 백업된 유저
+        const fallbackSnap = await db.collection('leaderboard')
+            .where('prevWeekId', '==', targetWeekId)
+            .where('prevWeekScore', '>', 0)
+            .orderBy('prevWeekScore', 'desc')
+            .limit(200)
+            .get();
+
+        // 병합 (tag 기준, 점수 높은 쪽 우선)
+        const combinedMap = new Map();
+        mainSnap.docs.forEach(doc => {
+            combinedMap.set(doc.id, { doc, score: doc.data().score || 0 });
+        });
+        fallbackSnap.docs.forEach(doc => {
+            if (!combinedMap.has(doc.id)) {
+                const d = doc.data();
+                const patched = { ...d, score: d.prevWeekScore || 0, weekId: targetWeekId };
+                combinedMap.set(doc.id, { doc: { id: doc.id, data: () => patched }, score: d.prevWeekScore || 0 });
+            }
+        });
+
+        const mergedDocs = Array.from(combinedMap.values())
+            .sort((a, b) => b.score - a.score)
+            .map(v => v.doc);
+
+        if (mergedDocs.length === 0) {
+            res.send('⚠️ 복구할 데이터 없음');
+            return;
+        }
+
+        const zionDocs = deduplicateByTag(mergedDocs).slice(0, 100);
+
+        const rankingData = zionDocs.map((doc, index) => {
+            const row = doc.data();
+            return {
+                rank: index + 1,
+                name: row.nickname || '이름없음',
+                score: row.score || 0,
+                tribe: row.tribe !== undefined ? row.tribe : 0,
+                dept: row.dept !== undefined ? row.dept : 0,
+                tag: row.tag || '',
+                castle: row.castleLv || 0
+            };
+        });
+
+        await db.collection('ranking_snapshots').doc(targetWeekId)
+            .collection('tribes').doc('zion')
+            .set({
+                weekId: targetWeekId,
+                tribeId: 'zion',
+                ranks: rankingData,
+                count: rankingData.length,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+
+        console.log(`✅ W20 복구 완료: ${rankingData.length}명`);
+        res.send(`✅ W20 복구 완료: ${rankingData.length}명\n1등: ${rankingData[0]?.name} (${rankingData[0]?.score}점)`);
+    } catch (e) {
+        console.error('❌ W20 복구 실패:', e);
+        res.status(500).send(`❌ 실패: ${e.message}`);
+    }
 });
