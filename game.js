@@ -2405,15 +2405,6 @@ function checkMissions() {
 
         // 날짜 변경 시 초기화 (stageDailyAttempts 제거)
 
-        // ★ [보상 지급] 전에 예약된 '다음 날' 보상이 있다면 지금 지급
-        if (boosterData.nextLoginReward) {
-            const reward = boosterData.nextLoginReward;
-            activateBooster(reward.multi, reward.min);
-            alert(t('alert_mission_reward', { multi: reward.multi, min: reward.min }));
-            boosterData.nextLoginReward = null; // 지급 완료 후 삭제
-            saveGameData();
-        }
-
         // 주간 출석 체크 (하루에 한 번만)
         updateWeeklyAttendance(today, currentWeekId);
     }
@@ -2770,15 +2761,6 @@ function claimReward(type, index, rewardType, value1, value2) {
         updateGemDisplay(); // 상단 보석 UI 갱신 함수
         alert(t('alert_gems_received', { count: value1 }));
         // playSound('coin'); // 효과음이 있다면 주석 해제
-    }
-    else if (rewardType === 'xp_boost') {
-        // 즉시 승점 부스터 발동
-        activateBooster(value1, value2); // (배율, 분)
-    }
-    else if (rewardType === 'next_day_xp') {
-        // 내일 보상 예약
-        boosterData.nextLoginReward = { multi: value1, min: value2 };
-        alert(t('alert_booster_reserved', { multi: value1, min: value2 }));
     }
 
     // 4. 저장 및 화면 갱신
@@ -4153,8 +4135,7 @@ function consumeTimedBonus(stageId) {
 let boosterData = {
     active: false,
     endTime: 0,
-    multiplier: 1,
-    nextLoginReward: null // { multi: 3, min: 15 } 형태 (내일 보상 저장용)
+    multiplier: 1
 };
 
 /* ✨ [캐시] 랭킹 데이터 클라이언트 캐싱 (1시간 유지) */
@@ -10316,6 +10297,7 @@ function calculateScore(stageId, type, verseCount, hearts, isForgotten) {
         bonus: bonus,
         isRetry: isRetry,
         blocked: false,
+        boosterMultiplier: boosterData.active ? boosterData.multiplier : 1,
     };
 }
 
@@ -11829,14 +11811,16 @@ stageClear = function (type) {
             if (perfectBonus > 0) {
                 msg += `${t('clear_perfect_bonus', { gem: perfectBonus })}\n`;
             }
-            msg += `${t('clear_score', { score: scoreResult.score })}\n`;
+            const scoreLabel = scoreResult.boosterMultiplier > 1 ? `${scoreResult.score} ⚡×${scoreResult.boosterMultiplier}` : scoreResult.score;
+            msg += `${t('clear_score', { score: scoreLabel })}\n`;
             msg += `${t('clear_total_gem', { gem: totalGem })}`;
         } else {
             msg += `${t('clear_repeat_accuracy', { pct: accPercent, wrong: adjustedWrongCount })}\n`;
             if (perfectBonus > 0) {
                 msg += `${t('clear_repeat_perfect', { gem: perfectBonus })}\n`;
             }
-            msg += `${t('clear_score', { score: scoreResult.score })}\n`;
+            const scoreLabel = scoreResult.boosterMultiplier > 1 ? `${scoreResult.score} ⚡×${scoreResult.boosterMultiplier}` : scoreResult.score;
+            msg += `${t('clear_score', { score: scoreLabel })}\n`;
             msg += `${t('clear_repeat_gem', { gem: totalGem, castle: castleBonusGem })}`;
         }
         if (typeof triggerConfetti === 'function') triggerConfetti();
@@ -16362,6 +16346,7 @@ function createEmptyHardshipState() {
         studiedCount: 0,
         answeredCount: 0,
         score: 0,
+        boosterMultiplier: 1,
         feedback: null,
         locked: false,
         pendingTimeoutId: null,
@@ -17451,13 +17436,18 @@ function backToHardshipChapter() {
 function awardHardshipScore(points) {
     if (!points || points <= 0) return;
 
-    hardshipState.score += points;
+    checkBoosterStatus();
+    const multiplier = boosterData.active ? boosterData.multiplier : 1;
+    const finalPoints = Math.floor(points * multiplier);
+    if (multiplier > 1) hardshipState.boosterMultiplier = multiplier;
+
+    hardshipState.score += finalPoints;
     if (hardshipState.trainingMode) return; // 집중 훈련소 망각의 고난: 승점 미지급
-    leagueData.myScore = (leagueData.myScore || 0) + points;
-    leagueData.myMonthlyScore = (leagueData.myMonthlyScore || 0) + points;
-    leagueData.totalScore = (leagueData.totalScore || 0) + points;
-    leagueData.yearlyScore = (leagueData.yearlyScore || 0) + points;
-    userStats.totalScoreEarned = (userStats.totalScoreEarned || 0) + points;
+    leagueData.myScore = (leagueData.myScore || 0) + finalPoints;
+    leagueData.myMonthlyScore = (leagueData.myMonthlyScore || 0) + finalPoints;
+    leagueData.totalScore = (leagueData.totalScore || 0) + finalPoints;
+    leagueData.yearlyScore = (leagueData.yearlyScore || 0) + finalPoints;
+    userStats.totalScoreEarned = (userStats.totalScoreEarned || 0) + finalPoints;
 
     if (typeof updateMyScorePanel === 'function') updateMyScorePanel();
     saveGameData();
@@ -18117,9 +18107,12 @@ function finishHardshipSession(reason) {
             : `${accuracy}%`;
     }
     if (resultExp) {
-        resultExp.innerText = hardshipState.trainingMode
-            ? '—'
-            : (hardshipState.mode === 'endurance' ? `${hardshipState.score}` : `${hardshipState.score}`);
+        if (hardshipState.trainingMode) {
+            resultExp.innerText = '—';
+        } else {
+            const m = hardshipState.boosterMultiplier;
+            resultExp.innerText = m > 1 ? `${hardshipState.score} ⚡×${m}` : `${hardshipState.score}`;
+        }
     }
 
     // 암송의 고난 완주 시 평균 80% 이상이면 해당 장 하위 스테이지 클리어 + 보스 클리어 효과
