@@ -2017,11 +2017,31 @@ body, html {
     color: #f1c40f;
 }
 
-#memory-quiz-overlay .addr-grid-label {
+#memory-quiz-overlay .addr-grid-label,
+#saved-verses-overlay .addr-grid-label {
     color: rgba(241, 196, 15, 1.0);
 }
 
-#memory-quiz-overlay .addr-selected-chapter {
+#memory-quiz-overlay .addr-selected-chapter,
+#saved-verses-overlay .addr-selected-chapter {
+    color: #f1c40f;
+}
+
+#saved-verses-overlay .addr-ch-btn,
+#saved-verses-overlay .addr-v-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(241, 196, 15, 0.3);
+    color: #f1c40f;
+    box-shadow: none;
+}
+
+#saved-verses-overlay .addr-ch-btn:active,
+#saved-verses-overlay .addr-v-btn:active {
+    background: rgba(241, 196, 15, 0.2);
+}
+
+#saved-verses-overlay .addr-back-btn {
+    border-color: rgba(241, 196, 15, 0.3);
     color: #f1c40f;
 }
 
@@ -4605,7 +4625,7 @@ body, html {
     perspective: 900px;
     width: 85vw;
     max-width: 400px;
-    margin: 0 auto 18px;
+    margin: 0 auto 12px;
 }
 .quiz-card {
     position: relative;
@@ -4615,6 +4635,16 @@ body, html {
 }
 .quiz-card.flipped {
     transform: rotateY(180deg);
+}
+/* 뒤집혔을 때 카드 높이를 뒷면 내용에 맞게 확보 */
+.quiz-card.flipped .quiz-card-front {
+    visibility: hidden;
+}
+.quiz-card.flipped .quiz-card-back {
+    position: relative;
+    transform: rotateY(180deg);
+    top: auto;
+    left: auto;
 }
 .quiz-card-front,
 .quiz-card-back {
@@ -4652,6 +4682,21 @@ body, html {
 .quiz-card-back.incorrect {
     background: rgba(231, 76, 60, 0.15);
     border: 1px solid rgba(231, 76, 60, 0.45);
+}
+.quiz-wrong-card {
+    width: 85vw;
+    max-width: 400px;
+    margin: 0 auto;
+    border-radius: 12px;
+    padding: 12px 18px;
+    box-sizing: border-box;
+    font-size: 0.92em;
+    line-height: 1.6;
+    color: #e74c3c;
+    word-break: keep-all;
+    text-align: center;
+    background: rgba(231, 76, 60, 0.10);
+    border: 1px solid rgba(231, 76, 60, 0.35);
 }
 
 /* ============================================================

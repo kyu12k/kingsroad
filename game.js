@@ -11643,6 +11643,7 @@ function closeMoreMenu() {
 function openShopFromMenu() { closeMoreMenu(); openShop(); }
 function openAchievementFromMenu() { closeMoreMenu(); openAchievement(); }
 function openMemoryReportFromMenu() { closeMoreMenu(); openMemoryReport(); }
+function openSavedVersesFromMenu() { closeMoreMenu(); if (typeof openSavedVersesQuiz === 'function') openSavedVersesQuiz(); }
 
 
 // 팝업 외부 클릭 시 닫기
@@ -14330,6 +14331,7 @@ window.onload = function () {
     updateStats('login');
     startKingsRoadInfoTimer();
     updateNotificationBadges();
+    if (typeof updateSavedVersesBadge === 'function') updateSavedVersesBadge();
 
     // 4. 화면 UI 갱신
     updateGemDisplay();
@@ -18963,8 +18965,12 @@ function renderGuidePage() {
         // 컨트롤 표시, 결과 숨김
         var controls = document.getElementById('quiz-controls');
         var resultArea = document.getElementById('quiz-result-area');
+        var wrongWrap = document.getElementById('quiz-wrong-card-wrap');
         if (controls) controls.style.display = '';
         if (resultArea) resultArea.style.display = 'none';
+        if (wrongWrap) wrongWrap.style.display = 'none';
+        var rt = document.getElementById('memory-quiz-result-text');
+        if (rt) rt.style.display = '';
 
         // 남은 퀴즈 개수 표시 (push 전에 계산된 값을 caller에서 전달받음)
         var remaining = (remainingCount !== undefined) ? remainingCount : getEligibleQuizVerses().length + 1;
@@ -19010,23 +19016,32 @@ function renderGuidePage() {
         if (resultArea) resultArea.style.display = 'flex';
 
         var resultText = document.getElementById('memory-quiz-result-text');
+        // 오답 카드 초기화
+        var wrongWrap = document.getElementById('quiz-wrong-card-wrap');
+        if (wrongWrap) wrongWrap.style.display = 'none';
+
         if (isCorrect) {
             myGems += 10;
             updateGemDisplay();
             if (typeof saveGameData === 'function') saveGameData();
             markQuizCorrect(_currentQuizStageId);
+            resultText.style.display = '';
             resultText.innerHTML =
-                '<span style="color:#f1c40f; font-size:1.8em;">\u2736</span><br>' +
-                '<span style="color:#f1c40f;">\uc815\ub2f5\uc785\ub2c8\ub2e4!</span><br>' +
+                '<span style="color:#f1c40f; font-size:1.8em;">✶</span><br>' +
+                '<span style="color:#f1c40f;">정답입니다!</span><br>' +
                 '<span style="font-size:0.95em; color:#f1c40f;">💎 보석 10개 획득</span>';
         } else {
-            resultText.innerHTML =
-                '<span style="color:#e74c3c; font-size:1.2em;">\uc544\uc26c\uc6b4\ub370\uc694</span><br>' +
-                '<span style="font-size:0.88em; color:#aaa;">\ub0b4\uac00 \uc120\ud0dd: \uacc4\uc2dc\ub85d ' + selectedChapter + '\uc7a5 ' + selectedVerse + '\uc808</span>';
+            resultText.style.display = 'none';
+            var wvd = bibleData[selectedChapter] && bibleData[selectedChapter][selectedVerse - 1];
+            if (wrongWrap && wvd) {
+                document.getElementById('quiz-wrong-verse').textContent = '“' + wvd.text + '”';
+                document.getElementById('quiz-wrong-address').textContent = t('label_revelation_ref', { ch: selectedChapter, v: selectedVerse });
+                wrongWrap.style.display = '';
+            }
         }
     };
 
-    window.handleMemoryQuizContinue = function () {
+        window.handleMemoryQuizContinue = function () {
         var eligible = getEligibleQuizVerses();
         if (eligible.length === 0) {
             window.handleMemoryQuizStop();
@@ -19040,6 +19055,253 @@ function renderGuidePage() {
 
     window.handleMemoryQuizStop = function () {
         var overlay = document.getElementById('memory-quiz-overlay');
+        if (overlay) overlay.style.display = 'none';
+        if (typeof goMap === 'function') goMap();
+    };
+
+    // ── 저장 버튼 토글 (기억하시나요 결과 화면에서) ─────────────────────────
+    function getSavedVerses() {
+        try { return JSON.parse(localStorage.getItem('kingsRoad_savedVerses') || '[]'); } catch (e) { return []; }
+    }
+    function setSavedVerses(arr) {
+        localStorage.setItem('kingsRoad_savedVerses', JSON.stringify(arr));
+        updateSavedVersesBadge();
+    }
+    function updateSavedVersesBadge() {
+        var badge = document.getElementById('badge-saved-verses');
+        if (!badge) return;
+        var count = getSavedVerses().length;
+        badge.textContent = count > 0 ? count : '';
+        badge.style.display = count > 0 ? '' : 'none';
+    }
+    window.updateSavedVersesBadge = updateSavedVersesBadge;
+
+    window.toggleSavedVerse = function () {
+        var id = _currentQuizStageId;
+        if (!id) return;
+        var saved = getSavedVerses();
+        var idx = saved.indexOf(id);
+        var btn = document.getElementById('quiz-save-btn');
+        if (idx === -1) {
+            saved.push(id);
+            setSavedVerses(saved);
+            if (btn) { btn.textContent = '🔖 저장됨'; btn.style.color = '#f1c40f'; btn.style.borderColor = '#f1c40f'; }
+        } else {
+            saved.splice(idx, 1);
+            setSavedVerses(saved);
+            if (btn) { btn.textContent = '🔖 저장하기'; btn.style.color = '#aaa'; btn.style.borderColor = '#555'; }
+        }
+    };
+
+    // 결과 화면 열릴 때 저장 버튼 상태 동기화
+    var _origHandleMemoryQuizSubmit = window.handleMemoryQuizSubmit;
+    window.handleMemoryQuizSubmit = function () {
+        _origHandleMemoryQuizSubmit();
+        var btn = document.getElementById('quiz-save-btn');
+        if (!btn) return;
+        var saved = getSavedVerses();
+        if (saved.indexOf(_currentQuizStageId) !== -1) {
+            btn.textContent = '🔖 저장됨'; btn.style.color = '#f1c40f'; btn.style.borderColor = '#f1c40f';
+        } else {
+            btn.textContent = '🔖 저장하기'; btn.style.color = '#aaa'; btn.style.borderColor = '#555';
+        }
+    };
+})();
+
+// ── 저장된 구절 퀴즈 ────────────────────────────────────────────────────────
+(function () {
+    var _savedQuizPhase = 'chapter';
+    var _savedQuizChapter = 1;
+    var _savedQuizVerse = 1;
+    var _savedQuizGroupBorderOn = true;
+    var _currentSavedQuizId = null;
+    var _savedQuizUsed = [];
+
+    function getSaved() {
+        try { return JSON.parse(localStorage.getItem('kingsRoad_savedVerses') || '[]'); } catch (e) { return []; }
+    }
+
+    function renderSavedQuizAddressControl() {
+        var container = document.getElementById('saved-quiz-addr-input');
+        if (!container) return;
+        if (_savedQuizPhase === 'chapter') {
+            var btns = '';
+            for (var ch = 1; ch <= 22; ch++) {
+                btns += '<button class="addr-ch-btn" onclick="selectSavedQuizChapter(' + ch + ')">' + ch + '장</button>';
+            }
+            container.innerHTML = '<div class="addr-grid-wrap"><div class="addr-grid-label">계시록 몇 장인가요?</div><div class="addr-chapter-grid">' + btns + '</div></div>';
+        } else {
+            var verseCount = (bibleData[_savedQuizChapter] && bibleData[_savedQuizChapter].length) || 1;
+            var groups = TOPIC_GROUPS[_savedQuizChapter] || [];
+            var verseHtml = '';
+            if (_savedQuizGroupBorderOn && groups.length > 0) {
+                groups.forEach(function (g, idx) {
+                    var color = GROUP_COLORS[idx % GROUP_COLORS.length];
+                    var btns = '';
+                    for (var v = g.start; v <= Math.min(g.end, verseCount); v++) {
+                        btns += '<button class="addr-v-btn" onclick="selectSavedQuizVerse(' + v + ')">' + v + '절</button>';
+                    }
+                    verseHtml += '<div style="border:1.5px solid ' + color + '; border-radius:10px; padding:6px 6px 4px; margin-bottom:6px;"><div class="addr-verse-grid">' + btns + '</div></div>';
+                });
+            } else {
+                var vbtns = '';
+                for (var v = 1; v <= verseCount; v++) {
+                    vbtns += '<button class="addr-v-btn" onclick="selectSavedQuizVerse(' + v + ')">' + v + '절</button>';
+                }
+                verseHtml = '<div class="addr-verse-grid">' + vbtns + '</div>';
+            }
+            container.innerHTML = '<div class="addr-grid-wrap"><div class="addr-grid-label"><button class="addr-back-btn" onclick="backToSavedQuizChapter()">←</button>계시록 <span class="addr-selected-chapter" style="cursor:pointer;" onclick="backToSavedQuizChapter()">' + _savedQuizChapter + '장</span> 몇 절인가요?</div>' + verseHtml + '</div>';
+        }
+    }
+
+    window.selectSavedQuizChapter = function (ch) { _savedQuizChapter = ch; _savedQuizPhase = 'verse'; renderSavedQuizAddressControl(); };
+    window.selectSavedQuizVerse = function (v) { _savedQuizVerse = v; handleSavedQuizSubmit(); };
+    window.backToSavedQuizChapter = function () { _savedQuizPhase = 'chapter'; renderSavedQuizAddressControl(); };
+    window.toggleSavedQuizGroupBorder = function () {
+        _savedQuizGroupBorderOn = !_savedQuizGroupBorderOn;
+        var btn = document.getElementById('saved-quiz-border-toggle');
+        if (btn) btn.textContent = _savedQuizGroupBorderOn ? '테두리 끄기' : '테두리 켜기';
+        renderSavedQuizAddressControl();
+    };
+
+    function renderSavedQuizQuestion(stageId) {
+        _currentSavedQuizId = stageId;
+        var parts = stageId.split('-');
+        var chapter = parseInt(parts[0]);
+        var verse = parseInt(parts[1]);
+        var vd = bibleData[chapter] && bibleData[chapter][verse - 1];
+        var text = vd ? vd.text : '';
+        var CHURCH_NAMES = { '2-29': '두아디라 교회', '3-6': '사데 교회', '3-13': '빌라델비아 교회', '3-22': '라오디게아 교회' };
+        if (CHURCH_NAMES[stageId]) text = text + ' (' + CHURCH_NAMES[stageId] + ')';
+
+        document.getElementById('saved-quiz-verse-text').textContent = '“' + text + '”';
+
+        var card = document.getElementById('saved-quiz-card');
+        if (card) card.classList.remove('flipped');
+        var backEl = document.getElementById('saved-quiz-card-back');
+        if (backEl) backEl.classList.remove('correct', 'incorrect');
+
+        var controls = document.getElementById('saved-quiz-controls');
+        var resultArea = document.getElementById('saved-quiz-result-area');
+        var wrongWrap2 = document.getElementById('saved-quiz-wrong-card-wrap');
+        if (controls) controls.style.display = '';
+        if (resultArea) resultArea.style.display = 'none';
+        if (wrongWrap2) wrongWrap2.style.display = 'none';
+        var rt2 = document.getElementById('saved-quiz-result-text');
+        if (rt2) rt2.style.display = '';
+
+        var saved = getSaved();
+        var remEl = document.getElementById('saved-quiz-remaining');
+        var remaining = saved.length - _savedQuizUsed.length + 1;
+        if (remEl) remEl.textContent = '저장된 구절: ' + saved.length + '개' + (remaining <= 1 ? ' (마지막)' : '');
+
+        _savedQuizPhase = 'chapter'; _savedQuizChapter = 1; _savedQuizVerse = 1;
+        renderSavedQuizAddressControl();
+    }
+
+    window.openSavedVersesQuiz = function () {
+        var saved = getSaved();
+        var overlay = document.getElementById('saved-verses-overlay');
+        var qPanel = document.getElementById('saved-quiz-question-panel');
+        var emptyEl = document.getElementById('saved-verses-empty');
+        if (!overlay) return;
+        overlay.style.display = 'flex';
+        _savedQuizUsed = [];
+        if (saved.length === 0) {
+            if (qPanel) qPanel.style.display = 'none';
+            if (emptyEl) emptyEl.style.display = '';
+            return;
+        }
+        if (qPanel) qPanel.style.display = '';
+        if (emptyEl) emptyEl.style.display = 'none';
+        var stageId = saved[Math.floor(Math.random() * saved.length)];
+        _savedQuizUsed.push(stageId);
+        renderSavedQuizQuestion(stageId);
+    };
+
+    function handleSavedQuizSubmit() {
+        var correctChapter = parseInt(_currentSavedQuizId.split('-')[0]);
+        var correctVerse = parseInt(_currentSavedQuizId.split('-')[1]);
+        var isCorrect = (_savedQuizChapter === correctChapter && _savedQuizVerse === correctVerse);
+
+        var vd = bibleData[correctChapter] && bibleData[correctChapter][correctVerse - 1];
+        document.getElementById('saved-quiz-back-verse').textContent = '“' + (vd ? vd.text : '') + '”';
+        document.getElementById('saved-quiz-back-address').textContent = t('label_revelation_ref', { ch: correctChapter, v: correctVerse });
+
+        var card = document.getElementById('saved-quiz-card');
+        var backEl = document.getElementById('saved-quiz-card-back');
+        if (card) card.classList.add('flipped');
+        if (backEl) { backEl.classList.remove('correct', 'incorrect'); backEl.classList.add(isCorrect ? 'correct' : 'incorrect'); }
+
+        var controls = document.getElementById('saved-quiz-controls');
+        var resultArea = document.getElementById('saved-quiz-result-area');
+        if (controls) controls.style.display = 'none';
+        if (resultArea) resultArea.style.display = 'flex';
+
+        // 오답 카드 초기화
+        var wrongWrap = document.getElementById('saved-quiz-wrong-card-wrap');
+        if (wrongWrap) wrongWrap.style.display = 'none';
+
+        var resultText = document.getElementById('saved-quiz-result-text');
+        if (isCorrect) {
+            resultText.style.display = '';
+            resultText.innerHTML = '<span style="color:#f1c40f; font-size:1.8em;">✶</span><br><span style="color:#f1c40f;">정답입니다!</span>';
+        } else {
+            resultText.style.display = 'none';
+            var wvd = bibleData[_savedQuizChapter] && bibleData[_savedQuizChapter][_savedQuizVerse - 1];
+            if (wrongWrap && wvd) {
+                document.getElementById('saved-quiz-wrong-verse').textContent = '“' + wvd.text + '”';
+                document.getElementById('saved-quiz-wrong-address').textContent = t('label_revelation_ref', { ch: _savedQuizChapter, v: _savedQuizVerse });
+                wrongWrap.style.display = '';
+            }
+        }
+
+        // 저장 해제 버튼 상태 동기화
+        var unsaveBtn = document.getElementById('saved-quiz-unsave-btn');
+        if (unsaveBtn) {
+            var saved = getSaved();
+            if (saved.indexOf(_currentSavedQuizId) !== -1) {
+                unsaveBtn.textContent = '🔖 저장 해제';
+            } else {
+                unsaveBtn.textContent = '🔖 저장하기';
+            }
+        }
+    }
+    window.handleSavedQuizSubmit = handleSavedQuizSubmit;
+
+    window.toggleSavedVerseFromSavedQuiz = function () {
+        var id = _currentSavedQuizId;
+        if (!id) return;
+        var saved = getSaved();
+        var idx = saved.indexOf(id);
+        var btn = document.getElementById('saved-quiz-unsave-btn');
+        if (idx === -1) {
+            saved.push(id);
+            localStorage.setItem('kingsRoad_savedVerses', JSON.stringify(saved));
+            if (btn) { btn.textContent = '🔖 저장 해제'; btn.style.color = '#aaa'; btn.style.borderColor = '#555'; }
+        } else {
+            saved.splice(idx, 1);
+            localStorage.setItem('kingsRoad_savedVerses', JSON.stringify(saved));
+            if (btn) { btn.textContent = '🔖 저장하기'; btn.style.color = '#aaa'; btn.style.borderColor = '#555'; }
+        }
+        if (typeof updateSavedVersesBadge === 'function') updateSavedVersesBadge();
+    };
+
+    window.handleSavedQuizContinue = function () {
+        var saved = getSaved();
+        var remaining = saved.filter(function (id) { return _savedQuizUsed.indexOf(id) === -1; });
+        if (remaining.length === 0) {
+            _savedQuizUsed = [];
+            remaining = saved;
+        }
+        if (remaining.length === 0) { handleSavedQuizStop(); return; }
+        var stageId = remaining[Math.floor(Math.random() * remaining.length)];
+        _savedQuizUsed.push(stageId);
+        renderSavedQuizQuestion(stageId);
+    };
+
+    window.handleSavedQuizStop = function () {
+        var overlay = document.getElementById('saved-verses-overlay');
         if (overlay) overlay.style.display = 'none';
         if (typeof goMap === 'function') goMap();
     };

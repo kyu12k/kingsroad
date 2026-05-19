@@ -9,7 +9,7 @@
 영어 단어 암기 게임. 에빙하우스 스페이스드 리피티션 기반의 복습 시스템을 핵심으로 한다.
 
 - **파일 구조**: `game.js` (전체 로직), `style.css`, `index.html`
-- **저장소**: `localStorage` 키 `kingsRoadSave` (버전 `1.1.0`)
+- **저장소**: `localStorage` 키 `kingsRoadSave` (버전 `1.1.0`), `kingsRoad_savedVerses` (저장된 구절 stageId 배열)
 
 ---
 
@@ -58,6 +58,9 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `stageClear()` | game.js:7529 | 스테이지 클리어 처리 전체 |
 | `saveGameData()` | game.js:4091 | localStorage에 저장 |
 | `showBossHistoryModal()` | game.js:~6370 | 보스전 이전 파트/구절 보기 모달 표시/토글 |
+| `toggleSavedVerse()` | game.js:~19065 | 기억하시나요 결과에서 구절 저장/해제 토글 |
+| `openSavedVersesQuiz()` | game.js:~19184 | 저장된 구절 퀴즈 오버레이 열기 |
+| `updateSavedVersesBadge()` | game.js:~19056 | 더보기 메뉴의 저장된 구절 배지 갱신 |
 
 ---
 
