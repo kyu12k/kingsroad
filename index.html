@@ -623,8 +623,12 @@
                 <div id="quiz-controls">
                     <div id="quiz-addr-input"></div>
                     <br>
-                    <button onclick="handleMemoryQuizStop()"
-                        style="background:transparent; color:#888; font-size:0.88rem; border:none; cursor:pointer; padding:6px 20px; text-decoration:underline;">건너뛰기</button>
+                    <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin-top:4px;">
+                        <button onclick="handleMemoryQuizStop()"
+                            style="background:transparent; color:#888; font-size:0.88rem; border:none; cursor:pointer; padding:6px 20px; text-decoration:underline;">건너뛰기</button>
+                        <button id="quiz-border-toggle" onclick="toggleQuizGroupBorder()"
+                            style="background:transparent; color:#888; font-size:0.78rem; border:1px solid #555; border-radius:20px; cursor:pointer; padding:4px 12px;">테두리 끄기</button>
+                    </div>
                 </div>
                 <!-- 결과 (뒤집은 후) -->
                 <div id="quiz-result-area" style="display:none; flex-direction:column; align-items:center;">

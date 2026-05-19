@@ -10010,7 +10010,7 @@ function openLifeBook() {
                     </div>
             </div>
 
-            <div id="card-grid" style="flex: 1; overflow-y: auto; padding:15px; display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; align-content: start;">
+            <div id="card-grid" style="flex: 1; overflow-y: auto; padding:15px; display:block;">
                 </div>
 
             <div class="button-area-static">
@@ -10030,6 +10030,197 @@ function openLifeBook() {
 }
 
 /* [시스템: 생명책 (도감) 로직 - 업데이트 버전] */
+
+const TOPIC_GROUPS = {
+    1: [
+        { title: '인사와 개요', start: 1, end: 3 },
+        { title: '일곱 교회에 보내는 문안', start: 4, end: 8 },
+        { title: '밧모 섬의 요한', start: 9, end: 11 },
+        { title: '예수님의 신령한 모습', start: 12, end: 16 },
+        { title: '요한의 반응과 일곱 별의 비밀', start: 17, end: 20 },
+    ],
+    2: [
+        { title: '에베소 교회에 보내는 편지', start: 1, end: 7 },
+        { title: '서머나 교회에 보내는 편지', start: 8, end: 11 },
+        { title: '버가모 교회에 보내는 편지', start: 12, end: 17 },
+        { title: '두아디라 교회에 보내는 편지', start: 18, end: 29 },
+    ],
+    3: [
+        { title: '사데 교회에 보내는 편지', start: 1, end: 6 },
+        { title: '빌라델비아 교회에 보내는 편지', start: 7, end: 13 },
+        { title: '라오디게아 교회에 보내는 편지', start: 14, end: 22 },
+    ],
+    4: [
+        { title: '하늘 문이 열림과 보좌', start: 1, end: 3 },
+        { title: '이십사 장로와 보좌의 현상', start: 4, end: 5 },
+        { title: '유리 바다와 네 생물', start: 6, end: 8 },
+        { title: '이십사 장로의 경배', start: 9, end: 11 },
+    ],
+    5: [
+        { title: '일곱 인으로 봉한 두루마리', start: 1, end: 4 },
+        { title: '유다 지파의 사자, 어린양', start: 5, end: 7 },
+        { title: '어린양께 드리는 새 노래', start: 8, end: 10 },
+        { title: '만물의 찬송', start: 11, end: 14 },
+    ],
+    6: [
+        { title: '첫째 인 — 흰 말', start: 1, end: 2 },
+        { title: '둘째 인 — 붉은 말', start: 3, end: 4 },
+        { title: '셋째 인 — 검은 말', start: 5, end: 6 },
+        { title: '넷째 인 — 청황색 말', start: 7, end: 8 },
+        { title: '다섯째 인 — 제단 아래 영혼들', start: 9, end: 11 },
+        { title: '여섯째 인 — 우주적 진동', start: 12, end: 17 },
+    ],
+    7: [
+        { title: '네 바람을 붙잡은 천사들', start: 1, end: 3 },
+        { title: '하나님의 인과 14만 4천', start: 4, end: 4 },
+        { title: '인 맞은 열두 지파 목록', start: 5, end: 8 },
+        { title: '흰 옷 입은 큰 무리', start: 9, end: 12 },
+        { title: '큰 환난에서 나온 자들', start: 13, end: 17 },
+    ],
+    8: [
+        { title: '일곱째 인과 일곱 나팔 천사', start: 1, end: 2 },
+        { title: '향로와 성도의 기도', start: 3, end: 5 },
+        { title: '첫째 나팔 — 땅', start: 6, end: 7 },
+        { title: '둘째 나팔 — 바다', start: 8, end: 9 },
+        { title: '셋째 나팔 — 강과 물 근원', start: 10, end: 11 },
+        { title: '넷째 나팔 — 해·달·별', start: 12, end: 13 },
+    ],
+    9: [
+        { title: '다섯째 나팔 — 황충(첫째 화)', start: 1, end: 6 },
+        { title: '황충의 모습', start: 7, end: 11 },
+        { title: '첫째 화의 종결과 여섯째 나팔', start: 12, end: 16 },
+        { title: '마병대와 회개치 않음', start: 17, end: 21 },
+    ],
+    10: [
+        { title: '작은 두루마리를 든 힘센 천사', start: 1, end: 4 },
+        { title: '시간의 끝과 비밀의 성취', start: 5, end: 7 },
+        { title: '작은 두루마리를 먹으라', start: 8, end: 11 },
+    ],
+    11: [
+        { title: '성전 측량과 두 증인의 등장', start: 1, end: 6 },
+        { title: '두 증인의 죽음과 부활', start: 7, end: 13 },
+        { title: '둘째 화의 종결', start: 14, end: 14 },
+        { title: '일곱째 나팔 — 하나님의 나라', start: 15, end: 19 },
+    ],
+    12: [
+        { title: '해를 입은 여자와 용', start: 1, end: 6 },
+        { title: '하늘 전쟁: 미가엘 vs 용', start: 7, end: 12 },
+        { title: '용이 여자를 핍박함', start: 13, end: 17 },
+    ],
+    13: [
+        { title: '바다에서 올라온 짐승', start: 1, end: 4 },
+        { title: '짐승의 권세와 핍박', start: 5, end: 10 },
+        { title: '땅에서 올라온 두 번째 짐승', start: 11, end: 14 },
+        { title: '짐승의 표(666)', start: 15, end: 18 },
+    ],
+    14: [
+        { title: '14만 4천과 어린양', start: 1, end: 5 },
+        { title: '세 천사의 메시지', start: 6, end: 12 },
+        { title: '성도의 복', start: 13, end: 13 },
+        { title: '추수와 포도 수확', start: 14, end: 20 },
+    ],
+    15: [
+        { title: '마지막 일곱 재앙과 이긴 자들의 노래', start: 1, end: 4 },
+        { title: '진노의 일곱 대접을 받는 천사들', start: 5, end: 8 },
+    ],
+    16: [
+        { title: '첫째 대접 — 땅 (악성 종기)', start: 1, end: 2 },
+        { title: '둘째 대접 — 바다 (피)', start: 3, end: 3 },
+        { title: '셋째 대접 — 강과 물 근원 (피)', start: 4, end: 7 },
+        { title: '넷째 대접 — 해 (불사름)', start: 8, end: 9 },
+        { title: '다섯째 대접 — 짐승의 왕좌 (어둠)', start: 10, end: 11 },
+        { title: '여섯째 대접 — 유브라데 (아마겟돈 준비)', start: 12, end: 16 },
+        { title: '일곱째 대접 — 공중 (다 이루었다)', start: 17, end: 21 },
+    ],
+    17: [
+        { title: '큰 음녀와 짐승', start: 1, end: 6 },
+        { title: '짐승과 일곱 머리, 열 뿔의 비밀', start: 7, end: 14 },
+        { title: '음녀의 멸망', start: 15, end: 18 },
+    ],
+    18: [
+        { title: '바벨론의 멸망 선포', start: 1, end: 3 },
+        { title: '내 백성아 거기서 나오라', start: 4, end: 8 },
+        { title: '땅의 왕들의 애통', start: 9, end: 10 },
+        { title: '상인들의 애통과 상품 목록', start: 11, end: 17 },
+        { title: '선원들의 애통', start: 18, end: 19 },
+        { title: '하늘의 즐거워하라와 맷돌의 비유', start: 20, end: 24 },
+    ],
+    19: [
+        { title: '하늘의 할렐루야 송영', start: 1, end: 5 },
+        { title: '어린양의 혼인 잔치', start: 6, end: 10 },
+        { title: '백마 탄 자 — 만왕의 왕', start: 11, end: 16 },
+        { title: '짐승과 거짓 선지자의 패배', start: 17, end: 21 },
+    ],
+    20: [
+        { title: '사탄을 천 년 결박', start: 1, end: 3 },
+        { title: '천 년 왕국과 첫째 부활', start: 4, end: 6 },
+        { title: '사탄의 마지막 패배', start: 7, end: 10 },
+        { title: '크고 흰 보좌 심판', start: 11, end: 15 },
+    ],
+    21: [
+        { title: '새 하늘과 새 땅', start: 1, end: 4 },
+        { title: '만물을 새롭게 하시는 선언', start: 5, end: 6 },
+        { title: '이기는 자와 두려워하는 자', start: 7, end: 8 },
+        { title: '새 예루살렘의 외관과 성벽', start: 9, end: 14 },
+        { title: '성의 측량과 크기', start: 15, end: 17 },
+        { title: '성벽의 열두 보석 기초석', start: 18, end: 21 },
+        { title: '성 안의 영광과 빛', start: 22, end: 27 },
+    ],
+    22: [
+        { title: '생명수 강과 생명나무', start: 1, end: 5 },
+        { title: '진실되고 참된 말씀, 속히 오심', start: 6, end: 7 },
+        { title: '천사 경배 금지와 두루마리 봉인 말라', start: 8, end: 11 },
+        { title: '알파와 오메가의 약속', start: 12, end: 16 },
+        { title: '성령과 신부의 초청', start: 17, end: 17 },
+        { title: '예언의 책에 더하거나 빼지 말라', start: 18, end: 19 },
+        { title: '마지막 약속과 축도', start: 20, end: 21 },
+    ],
+};
+
+const GROUP_COLORS = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c'];
+
+function showLifeBookVerseModal(ch, v, topicTitle, topicStart, topicEnd, text) {
+    const existing = document.getElementById('lb-verse-modal');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'lb-verse-modal';
+    overlay.style.cssText = `
+        position:fixed; inset:0; z-index:9999;
+        background:rgba(0,0,0,0.7);
+        display:flex; align-items:center; justify-content:center;
+        padding:20px;
+    `;
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+    const rangeLabel = (topicStart === topicEnd)
+        ? `${ch}장 ${topicStart}절`
+        : `${ch}장 ${topicStart}~${topicEnd}절`;
+
+    const panel = document.createElement('div');
+    panel.style.cssText = `
+        background:#2c3e50; color:#eee;
+        width:100%; max-width:420px;
+        border-radius:16px;
+        padding:24px 20px 20px;
+        box-shadow:0 8px 32px rgba(0,0,0,0.5);
+        position:relative;
+        max-height:80vh; overflow-y:auto;
+    `;
+    panel.innerHTML = `
+        <button onclick="document.getElementById('lb-verse-modal').remove()" style="
+            position:absolute; top:12px; right:14px;
+            background:none; border:none; color:#aaa; font-size:1.4rem; cursor:pointer; line-height:1;
+        ">✕</button>
+        <div style="font-size:1.05rem; font-weight:bold; color:#f1c40f; margin-bottom:4px;">${topicTitle}</div>
+        <div style="font-size:0.82rem; color:#95a5a6; margin-bottom:2px;">계 ${ch}장 ${v}절</div>
+        <div style="font-size:0.78rem; color:#7f8c8d; margin-bottom:14px;">묶음: ${rangeLabel}</div>
+        <div style="border-top:1px dashed rgba(255,255,255,0.1); padding-top:14px; font-size:0.95rem; line-height:1.9; color:#ecf0f1;">${text}</div>
+    `;
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+}
+
 function renderLifeBook() {
     // 1. 챕터 선택 버튼 그리기 (기존과 동일)
     const selector = document.getElementById('lb-chapter-selector');
@@ -10101,27 +10292,75 @@ function renderLifeBook() {
         rankBuff.innerHTML = buffText;
     }
 
-    // 5. 카드 그리드 그리기 (기존과 동일)
+    // 5. 카드 그리드 그리기 (주제 묶음 그룹화)
     const grid = document.getElementById('card-grid');
     grid.innerHTML = "";
     let targetData = bibleData[currentLifeBookChapter] || [];
 
     if (targetData.length === 0) {
-        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:50px; color:#7f8c8d;">${t('library_preparing')}</div>`;
+        grid.innerHTML = `<div style="text-align:center; padding:50px; color:#7f8c8d;">${t('library_preparing')}</div>`;
     } else {
+        // 장 제목
+        const chapterHeader = document.createElement('div');
+        chapterHeader.className = 'lb-chapter-title-header';
+        chapterHeader.textContent = `요한계시록 ${currentLifeBookChapter}장`;
+        grid.appendChild(chapterHeader);
+
+        const groups = TOPIC_GROUPS[currentLifeBookChapter] || [];
+        // 그룹별 DOM 컨테이너 맵
+        const groupContainers = new Map(); // groupIndex → cardsDiv
+
+        const getOrCreateGroup = (groupIndex, group) => {
+            if (groupContainers.has(groupIndex)) return groupContainers.get(groupIndex);
+            const color = GROUP_COLORS[groupIndex % GROUP_COLORS.length];
+            const wrapper = document.createElement('div');
+            wrapper.className = 'lb-topic-group';
+            wrapper.style.borderColor = color;
+            const label = document.createElement('div');
+            label.className = 'lb-topic-label';
+            label.style.color = color;
+            label.textContent = group.title;
+            const cardsDiv = document.createElement('div');
+            cardsDiv.className = 'lb-topic-cards';
+            wrapper.appendChild(label);
+            wrapper.appendChild(cardsDiv);
+            grid.appendChild(wrapper);
+            groupContainers.set(groupIndex, cardsDiv);
+            return cardsDiv;
+        };
+
+        // 미분류 절용 컨테이너 (늦게 생성)
+        let ungroupedCards = null;
+        const getUngrouped = () => {
+            if (ungroupedCards) return ungroupedCards;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'lb-topic-group';
+            wrapper.style.borderColor = '#7f8c8d';
+            const cardsDiv = document.createElement('div');
+            cardsDiv.className = 'lb-topic-cards';
+            wrapper.appendChild(cardsDiv);
+            grid.appendChild(wrapper);
+            ungroupedCards = cardsDiv;
+            return cardsDiv;
+        };
+
         targetData.forEach((verse, index) => {
             const verseNum = index + 1;
             const stageId = `${currentLifeBookChapter}-${verseNum}`;
             const count = stageMastery[stageId] || 0;
+
+            const groupIndex = groups.findIndex(g => verseNum >= g.start && verseNum <= g.end);
+            const group = groupIndex >= 0 ? groups[groupIndex] : null;
+            const targetContainer = group ? getOrCreateGroup(groupIndex, group) : getUngrouped();
 
             if (count === 0) {
                 const div = document.createElement('div');
                 div.className = 'card-item';
                 div.style.background = '#34495e';
                 div.style.border = '2px dashed #7f8c8d';
-                div.innerHTML = `<div style="font-size:2rem;">🔒</div><div style="color:#7f8c8d; font-size:0.8rem; margin-top:5px;">${t('label_verse', { num: verseNum })}</div>`;
+                div.innerHTML = `<div style="font-size:1.5rem;">🔒</div><div style="color:#7f8c8d; font-size:0.7rem; margin-top:4px;">${t('label_verse', { num: verseNum })}</div>`;
                 div.onclick = () => alert(t('alert_locked_first_clear'));
-                grid.appendChild(div);
+                targetContainer.appendChild(div);
                 return;
             }
 
@@ -10135,12 +10374,15 @@ function renderLifeBook() {
             card.innerHTML = `
                 <div class="card-num">${currentLifeBookChapter}:${verseNum}</div>
                 <div class="card-tier-label">${tierName}</div>
-                <div style="font-size:0.7rem; color:#555; margin-top:5px;">${t('library_mastery', { count })}</div>
+                <div style="font-size:0.65rem; color:#555; margin-top:4px;">${t('library_mastery', { count })}</div>
             `;
             card.onclick = () => {
-                alert(t('alert_life_book_verse', { ch: currentLifeBookChapter, v: verseNum, text: verse.text }));
+                const topicTitle = group ? group.title : `${currentLifeBookChapter}장 ${verseNum}절`;
+                const topicStart = group ? group.start : verseNum;
+                const topicEnd = group ? group.end : verseNum;
+                showLifeBookVerseModal(currentLifeBookChapter, verseNum, topicTitle, topicStart, topicEnd, verse.text);
             };
-            grid.appendChild(card);
+            targetContainer.appendChild(card);
         });
     }
 }
@@ -18597,6 +18839,14 @@ function renderGuidePage() {
     var _quizPhase = 'chapter';
     var _selectedQuizChapter = 1;
     var _selectedQuizVerse = 1;
+    var _quizGroupBorderOn = true;
+
+    window.toggleQuizGroupBorder = function() {
+        _quizGroupBorderOn = !_quizGroupBorderOn;
+        var btn = document.getElementById('quiz-border-toggle');
+        if (btn) btn.textContent = _quizGroupBorderOn ? '테두리 끄기' : '테두리 켜기';
+        renderMemoryQuizAddressControl();
+    };
 
     function renderMemoryQuizAddressControl() {
         var container = document.getElementById('quiz-addr-input');
@@ -18614,17 +18864,36 @@ function renderGuidePage() {
                 '</div>';
         } else {
             var verseCount = (bibleData[_selectedQuizChapter] && bibleData[_selectedQuizChapter].length) || 1;
-            var vbtns = '';
-            for (var v = 1; v <= verseCount; v++) {
-                vbtns += '<button class="addr-v-btn" onclick="selectMemoryQuizVerse(' + v + ')">' + v + '절</button>';
+            var groups = TOPIC_GROUPS[_selectedQuizChapter] || [];
+            var verseHtml = '';
+
+            if (_quizGroupBorderOn && groups.length > 0) {
+                groups.forEach(function(g, idx) {
+                    var color = GROUP_COLORS[idx % GROUP_COLORS.length];
+                    var btns = '';
+                    for (var v = g.start; v <= Math.min(g.end, verseCount); v++) {
+                        btns += '<button class="addr-v-btn" onclick="selectMemoryQuizVerse(' + v + ')">' + v + '절</button>';
+                    }
+                    verseHtml +=
+                        '<div style="border:1.5px solid ' + color + '; border-radius:10px; padding:6px 6px 4px; margin-bottom:6px;">' +
+                        '<div class="addr-verse-grid">' + btns + '</div>' +
+                        '</div>';
+                });
+            } else {
+                var vbtns = '';
+                for (var v = 1; v <= verseCount; v++) {
+                    vbtns += '<button class="addr-v-btn" onclick="selectMemoryQuizVerse(' + v + ')">' + v + '절</button>';
+                }
+                verseHtml = '<div class="addr-verse-grid">' + vbtns + '</div>';
             }
+
             container.innerHTML =
                 '<div class="addr-grid-wrap">' +
                 '<div class="addr-grid-label">' +
                 '<button class="addr-back-btn" onclick="backToMemoryQuizChapter()">←</button>' +
                 '계시록 <span class="addr-selected-chapter" style="cursor:pointer;" onclick="backToMemoryQuizChapter()">' + _selectedQuizChapter + '장</span> 몇 절인가요?' +
                 '</div>' +
-                '<div class="addr-verse-grid">' + vbtns + '</div>' +
+                verseHtml +
                 '</div>';
         }
     }
@@ -18689,6 +18958,7 @@ function renderGuidePage() {
         if (card) card.classList.remove('flipped');
         var backEl = document.getElementById('quiz-card-back');
         if (backEl) backEl.classList.remove('correct', 'incorrect');
+
 
         // 컨트롤 표시, 결과 숨김
         var controls = document.getElementById('quiz-controls');
