@@ -10821,6 +10821,7 @@ function openRankingScreen() {
         screen.className = 'screen';
         screen.style.background = "#2c3e50";
         screen.style.overflowY = "auto";
+        screen.style.paddingTop = "max(env(safe-area-inset-top, 0px), 28px)";
         screen.innerHTML = `
     <div class="map-header" style="flex-direction:column; justify-content:center; border-bottom:1px solid rgba(255,255,255,0.1); padding:15px 10px;">
         <div style="font-weight:bold; font-size:1.2rem; color:white; margin-bottom:5px;">${t('ranking_board_title')}</div>
@@ -10927,6 +10928,7 @@ function openRankingScreen() {
         document.body.appendChild(screen);
     }
     screen.classList.add('active');
+    screen.scrollTop = 0;
     startSeasonTimer();
     loadWeeklyRankCounts();
     updateMyScorePanel();
