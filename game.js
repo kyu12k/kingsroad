@@ -19024,11 +19024,11 @@ function renderGuidePage() {
         if (resultArea) resultArea.style.display = 'none';
         if (wrongWrap) wrongWrap.style.display = 'none';
 
-        // 패딩·설명 텍스트 복원
-        var overlay = document.getElementById('memory-quiz-overlay');
-        if (overlay) overlay.style.paddingTop = '12vh';
-        var descText = document.getElementById('quiz-desc-text');
-        if (descText) descText.style.display = '';
+        // 앞면/뒷면 스타일 복원
+        var front = document.querySelector('.quiz-card-front');
+        if (front) { front.style.height = ''; front.style.padding = ''; front.style.overflow = ''; front.style.minHeight = ''; }
+        var back = document.getElementById('quiz-card-back');
+        if (back) { back.style.position = ''; back.style.transform = ''; }
         var rt = document.getElementById('memory-quiz-result-text');
         if (rt) rt.style.display = '';
 
@@ -19075,11 +19075,13 @@ function renderGuidePage() {
         if (controls) controls.style.display = 'none';
         if (resultArea) resultArea.style.display = 'flex';
 
-        // 결과 화면: 상단 여백 줄이고 설명 텍스트 숨김
-        var overlay = document.getElementById('memory-quiz-overlay');
-        if (overlay) overlay.style.paddingTop = '4vh';
-        var descText = document.getElementById('quiz-desc-text');
-        if (descText) descText.style.display = 'none';
+        // 앞면 높이를 제거해 카드 뒷면이 바로 보이도록
+        setTimeout(function () {
+            var front = document.querySelector('.quiz-card-front');
+            if (front) { front.style.height = '0'; front.style.padding = '0'; front.style.overflow = 'hidden'; front.style.minHeight = '0'; }
+            var back = document.getElementById('quiz-card-back');
+            if (back) { back.style.position = 'static'; back.style.transform = 'none'; }
+        }, 600);
 
         var resultText = document.getElementById('memory-quiz-result-text');
         // 오답 카드 초기화
