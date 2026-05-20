@@ -3890,6 +3890,11 @@ body, html {
     text-align: left;
 }
 
+.hardship-mode-btn.selected {
+    outline: 3px solid #5b5ef4;
+    outline-offset: 2px;
+}
+
 .hardship-mode-a {
     background: linear-gradient(135deg, #fef6e4 0%, #f4e2b3 100%);
     border-color: #d4a94f;

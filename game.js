@@ -379,6 +379,8 @@ const LANG = {
         hardship_order_random_desc: '구절을 무작위로 섞어 출제합니다',
         hardship_order_seq_title: '순서대로',
         hardship_order_seq_desc: '1장 1절부터 차례로 출제합니다',
+        hardship_ultimate_toggle_label: '궁극의 암기 모드',
+        hardship_ultimate_toggle_desc: '힌트 없이 전체 타이핑 · 승점 ×3',
         hardship_chapter_option: '{num}장',
         hardship_endurance_title: '암송의 고난',
         hardship_endurance_summary: '소리내어 말씀을 암송하세요.',
@@ -1081,6 +1083,8 @@ const LANG = {
         hardship_order_random_desc: 'Verses shuffled randomly',
         hardship_order_seq_title: 'Sequential',
         hardship_order_seq_desc: 'From Ch.1 v.1 in order',
+        hardship_ultimate_toggle_label: 'Ultimate Recall Mode',
+        hardship_ultimate_toggle_desc: 'No hints, full typing · Score ×3',
         hardship_chapter_option: 'Ch.{num}',
         hardship_endurance_title: 'Trial of Recitation',
         hardship_endurance_summary: 'Recite each verse aloud.',
@@ -16616,6 +16620,7 @@ function createEmptyHardshipState() {
 let hardshipState = createEmptyHardshipState();
 let selectedHardshipConfigMode = 'endurance';
 let selectedHardshipOrderType = 'random'; // 'random' | 'sequential'
+let selectedHardshipUltimate = false;
 
 const HARDSHIP_VERSES = [];
 for (let hardshipChapter = 1; hardshipChapter <= 22; hardshipChapter++) {
@@ -16700,7 +16705,6 @@ function proceedHardshipToNextVerse() {
 
     hardshipState.awaitingNext = false;
     hardshipState.wrongSlots = [];
-    hardshipState.ultimateMemoryMode = false;
 
     if (playerHearts <= 0 && hardshipState.mode !== 'endurance') {
         finishHardshipSession('hearts');
@@ -16954,6 +16958,13 @@ function openHardshipConfigModal(mode) {
 
     updateHardshipConfigRangeUI();
 
+    // 궁극의 암기 토글 초기화
+    selectedHardshipUltimate = false;
+    const cb = document.getElementById('hardship-config-ultimate-checkbox');
+    if (cb) cb.checked = false;
+    const wrap = document.getElementById('hardship-config-ultimate-wrap');
+    if (wrap) wrap.style.borderColor = 'transparent';
+
     const modal = document.getElementById('hardship-config-modal');
     if (modal) modal.style.display = 'flex';
 }
@@ -16964,7 +16975,18 @@ function closeHardshipConfigModal() {
 }
 
 function openHardshipOrderModal(mode) {
-    selectedHardshipConfigMode = mode;
+    if (mode !== undefined) selectedHardshipConfigMode = mode;
+    selectedHardshipUltimate = false;
+    const confirmArea = document.getElementById('hardship-order-confirm-area');
+    if (confirmArea) confirmArea.style.display = 'none';
+    const cb = document.getElementById('hardship-ultimate-checkbox');
+    if (cb) cb.checked = false;
+    const wrap = document.getElementById('hardship-ultimate-toggle-wrap');
+    if (wrap) wrap.style.borderColor = 'transparent';
+    ['hardship-order-btn-random', 'hardship-order-btn-sequential'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.classList.remove('selected');
+    });
     const modal = document.getElementById('hardship-order-modal');
     if (modal) modal.style.display = 'flex';
 }
@@ -16975,23 +16997,54 @@ function closeHardshipOrderModal() {
     if (modal) modal.style.display = 'none';
 }
 
-function selectHardshipOrder(orderType) {
-    selectedHardshipOrderType = orderType;
-    const pendingChapter = window.hardshipPendingForcedChapter; // closeHardshipOrderModal이 초기화하기 전에 저장
-    closeHardshipOrderModal();
+function toggleHardshipOrderUltimate(e) {
+    if (e) e.preventDefault();
+    selectedHardshipUltimate = !selectedHardshipUltimate;
+    const cb = document.getElementById('hardship-ultimate-checkbox');
+    if (cb) cb.checked = selectedHardshipUltimate;
+    const wrap = document.getElementById('hardship-ultimate-toggle-wrap');
+    if (wrap) wrap.style.borderColor = selectedHardshipUltimate ? '#8b5cf6' : 'transparent';
+}
 
-    if (pendingChapter != null) {
-        // 맵 경로: forced chapter 소비 후 바로 세션 시작
-        const verseIds = getHardshipVerseIdsByChapterRange(pendingChapter, pendingChapter);
-        if (verseIds.length === 0) {
-            alert(t('alert_training_no_data', { ch: pendingChapter }));
-            return;
-        }
-        startHardshipSession(selectedHardshipConfigMode, verseIds, pendingChapter);
+function toggleHardshipConfigUltimate(e) {
+    if (e) e.preventDefault();
+    selectedHardshipUltimate = !selectedHardshipUltimate;
+    const cb = document.getElementById('hardship-config-ultimate-checkbox');
+    if (cb) cb.checked = selectedHardshipUltimate;
+    const wrap = document.getElementById('hardship-config-ultimate-wrap');
+    if (wrap) wrap.style.borderColor = selectedHardshipUltimate ? '#8b5cf6' : 'transparent';
+}
+
+function selectHardshipOrderOnly(orderType) {
+    selectedHardshipOrderType = orderType;
+
+    // 버튼 하이라이트
+    ['random', 'sequential'].forEach(type => {
+        const btn = document.getElementById(`hardship-order-btn-${type}`);
+        if (btn) btn.classList.toggle('selected', type === orderType);
+    });
+
+    if (window.hardshipPendingForcedChapter != null) {
+        // 맵 경로: confirm-area 표시 (토글 + 시작 버튼)
+        const confirmArea = document.getElementById('hardship-order-confirm-area');
+        if (confirmArea) confirmArea.style.display = 'block';
     } else {
         // 홈 경로: config 모달로 이동
+        closeHardshipOrderModal();
         openHardshipConfigModal(selectedHardshipConfigMode);
     }
+}
+
+function confirmHardshipOrder() {
+    const pendingChapter = window.hardshipPendingForcedChapter;
+    closeHardshipOrderModal();
+    if (pendingChapter == null) return;
+    const verseIds = getHardshipVerseIdsByChapterRange(pendingChapter, pendingChapter);
+    if (verseIds.length === 0) {
+        alert(t('alert_training_no_data', { ch: pendingChapter }));
+        return;
+    }
+    startHardshipSession(selectedHardshipConfigMode, verseIds, pendingChapter);
 }
 
 function startHardshipFromModal(mode) {
@@ -17052,6 +17105,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
     hardshipState = createEmptyHardshipState();
     hardshipState.active = true;
     hardshipState.mode = mode;
+    hardshipState.ultimateMemoryMode = (mode === 'memory') ? selectedHardshipUltimate : false;
     hardshipState.applyToFree = (window.hardshipOrigin !== 'map');
     hardshipState.rewardBlocked = false; // 세션 중 쿨다운 확정 후 세팅
     if (forcedChapter != null) hardshipState.forcedChapter = forcedChapter;
@@ -17796,9 +17850,7 @@ function renderHardshipMemoryVerse() {
     `;
 
     control.innerHTML = `
-        <div class="hardship-ultimate-row" style="${hardshipState.awaitingNext ? 'display:none;' : ''}">
-            <button id="btn-hardship-ultimate" class="btn-hardship-ultimate${ultimateActive ? ' active' : ''}" onclick="toggleHardshipUltimateMode()" ${hardshipState.locked ? 'disabled' : ''}>${ultimateActive ? t('btn_ultimate_memory_off') : t('btn_ultimate_memory')}</button>
-        </div>
+        ${ultimateActive ? `<div class="hardship-ultimate-row"><span class="btn-hardship-ultimate active" style="pointer-events:none; opacity:0.85;">${t('btn_ultimate_memory')}</span></div>` : ''}
         <div class="hardship-control-row">
             <button id="hardship-memory-submit-btn" class="btn-attack" onclick="submitHardshipMemoryGuess()" style="${hardshipState.awaitingNext ? 'display:none;' : ''}" ${hardshipState.locked ? 'disabled' : ''}>${t('hardship_btn_submit')}</button>
             <button id="hardship-next-btn" class="btn-attack" onclick="proceedHardshipToNextVerse()" style="background:#2ecc71; ${hardshipState.awaitingNext ? '' : 'display:none;'}">${t('hardship_btn_next')}</button>
@@ -18219,7 +18271,7 @@ function submitHardshipMemoryGuess() {
     }
 
     if (isCorrect) {
-        const earnedPoints = playerHearts * 2;
+        const earnedPoints = hardshipState.ultimateMemoryMode ? playerHearts * 3 : playerHearts * 2;
         awardHardshipScore(earnedPoints);
         hardshipState.studiedCount += 1;
         hardshipState.wrongSlots = [];

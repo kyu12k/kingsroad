@@ -1724,6 +1724,14 @@
 
             <div id="hardship-config-summary" class="hardship-config-summary" data-i18n="hardship_config_summary_all">전장 404절에서 무작위 출제됩니다.</div>
 
+            <label id="hardship-config-ultimate-wrap" style="display:flex; align-items:center; gap:12px; padding:12px 14px; background:#f3eaff; border-radius:10px; cursor:pointer; border:2px solid transparent; transition:border-color 0.2s; margin-bottom:10px;" onclick="toggleHardshipConfigUltimate(event)">
+                <input type="checkbox" id="hardship-config-ultimate-checkbox" style="width:18px; height:18px; accent-color:#8b5cf6; cursor:pointer; pointer-events:none;">
+                <div>
+                    <div style="font-weight:bold; color:#6d28d9; font-size:0.95rem;" data-i18n="hardship_ultimate_toggle_label">궁극의 암기 모드</div>
+                    <div style="color:#7c3aed; font-size:0.82rem; margin-top:2px;" data-i18n="hardship_ultimate_toggle_desc">힌트 없이 전체 타이핑 · 승점 ×3</div>
+                </div>
+            </label>
+
             <button class="hardship-config-start-btn" onclick="startHardshipFromConfig()" data-i18n="hardship_config_start_btn">고난 길 시작</button>
         </div>
     </div>
@@ -1738,22 +1746,32 @@
                 <h2 style="margin:0; color:#2c3e50;" data-i18n="hardship_order_title">출제 순서</h2>
                 <p style="color:#7f8c8d; font-size:0.95rem; margin-top:8px;" data-i18n="hardship_order_subtitle">모드 C · 망각의 고난</p>
             </div>
-            <button class="mode-btn hardship-mode-btn hardship-mode-c"
-                    onclick="selectHardshipOrder('random')">
+            <button id="hardship-order-btn-random" class="mode-btn hardship-mode-btn hardship-mode-c"
+                    onclick="selectHardshipOrderOnly('random')">
                 <div class="mode-icon">🔀</div>
                 <div class="mode-info">
                     <div class="mode-title" data-i18n="hardship_order_random_title">무작위 순서</div>
                     <div class="mode-desc" data-i18n="hardship_order_random_desc">구절을 무작위로 섞어 출제합니다</div>
                 </div>
             </button>
-            <button class="mode-btn hardship-mode-btn hardship-mode-a"
-                    onclick="selectHardshipOrder('sequential')">
+            <button id="hardship-order-btn-sequential" class="mode-btn hardship-mode-btn hardship-mode-a"
+                    onclick="selectHardshipOrderOnly('sequential')">
                 <div class="mode-icon">📖</div>
                 <div class="mode-info">
                     <div class="mode-title" data-i18n="hardship_order_seq_title">순서대로</div>
                     <div class="mode-desc" data-i18n="hardship_order_seq_desc">1장 1절부터 차례로 출제합니다</div>
                 </div>
             </button>
+            <div id="hardship-order-confirm-area" style="display:none; margin-top:14px;">
+                <label id="hardship-ultimate-toggle-wrap" style="display:flex; align-items:center; gap:12px; padding:12px 14px; background:#f3eaff; border-radius:10px; cursor:pointer; border:2px solid transparent; transition:border-color 0.2s; margin-bottom:10px;" onclick="toggleHardshipOrderUltimate(event)">
+                    <input type="checkbox" id="hardship-ultimate-checkbox" style="width:18px; height:18px; accent-color:#8b5cf6; cursor:pointer; pointer-events:none;">
+                    <div>
+                        <div style="font-weight:bold; color:#6d28d9; font-size:0.95rem;" data-i18n="hardship_ultimate_toggle_label">궁극의 암기 모드</div>
+                        <div style="color:#7c3aed; font-size:0.82rem; margin-top:2px;" data-i18n="hardship_ultimate_toggle_desc">힌트 없이 전체 타이핑 · 승점 ×3</div>
+                    </div>
+                </label>
+                <button class="hardship-config-start-btn" onclick="confirmHardshipOrder()" data-i18n="hardship_config_start_btn">고난 길 시작</button>
+            </div>
         </div>
     </div>
 
