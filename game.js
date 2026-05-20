@@ -19023,6 +19023,12 @@ function renderGuidePage() {
         if (controls) controls.style.display = '';
         if (resultArea) resultArea.style.display = 'none';
         if (wrongWrap) wrongWrap.style.display = 'none';
+
+        // 패딩·설명 텍스트 복원
+        var overlay = document.getElementById('memory-quiz-overlay');
+        if (overlay) overlay.style.paddingTop = '12vh';
+        var descText = document.getElementById('quiz-desc-text');
+        if (descText) descText.style.display = '';
         var rt = document.getElementById('memory-quiz-result-text');
         if (rt) rt.style.display = '';
 
@@ -19068,6 +19074,12 @@ function renderGuidePage() {
         var resultArea = document.getElementById('quiz-result-area');
         if (controls) controls.style.display = 'none';
         if (resultArea) resultArea.style.display = 'flex';
+
+        // 결과 화면: 상단 여백 줄이고 설명 텍스트 숨김
+        var overlay = document.getElementById('memory-quiz-overlay');
+        if (overlay) overlay.style.paddingTop = '4vh';
+        var descText = document.getElementById('quiz-desc-text');
+        if (descText) descText.style.display = 'none';
 
         var resultText = document.getElementById('memory-quiz-result-text');
         // 오답 카드 초기화
