@@ -4641,9 +4641,12 @@ body, html {
 .quiz-card.flipped {
     transform: rotateY(180deg);
 }
-/* 뒤집혔을 때 카드 높이를 뒷면 내용에 맞게 확보 */
+/* 뒤집혔을 때 앞면 높이 제거 → 뒷면 높이만 남김 */
 .quiz-card.flipped .quiz-card-front {
     visibility: hidden;
+    height: 0;
+    padding: 0;
+    overflow: hidden;
 }
 .quiz-card.flipped .quiz-card-back {
     position: relative;
