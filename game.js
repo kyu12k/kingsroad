@@ -18304,14 +18304,21 @@ function submitHardshipMemoryGuess() {
     if (hardshipState.wrongSlots.length > 0 && hardshipState.wrongSlots.length <= allowedTypos) {
         const typoCount = hardshipState.wrongSlots.length;
         const earnedPoints = hardshipState.ultimateMemoryMode ? playerHearts * 3 : playerHearts * 2;
+        // 오타 정보 수집 (슬롯 초기화 전에)
+        const typoPairs = hardshipState.wrongSlots.map(idx => ({
+            typed: hardshipState.memorySlots[idx] || '',
+            answer: text.charAt(idx)
+        }));
         awardHardshipScore(earnedPoints);
         hardshipState.studiedCount += 1;
         hardshipState.wrongSlots = [];
+        const typoDetail = typoPairs.map(p => `<span class="typo-wrong">${p.typed || '?'}</span>→<span class="typo-answer">${p.answer}</span>`).join(' ');
         hardshipState.feedback = {
             type: 'success',
-            message: hardshipState.trainingMode
+            message: (hardshipState.trainingMode
                 ? t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) + ' · 오타 보정'
-                : t('hardship_feedback_typo_corrected', { pts: earnedPoints, n: typoCount })
+                : t('hardship_feedback_typo_corrected', { pts: earnedPoints, n: typoCount }))
+                + `<span class="typo-detail"> (${typoDetail})</span>`
         };
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
         renderHardshipMemoryVerse();
