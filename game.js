@@ -427,6 +427,7 @@ const LANG = {
         hardship_feedback_correct: '정답입니다. {label} · +{pts}점',
         hardship_feedback_wrong_address: '오답입니다. 정답은 {label}입니다.',
         hardship_feedback_wrong_memory: '오답입니다. 정답 말씀: {text}',
+        hardship_feedback_typo_corrected: '오타 보정! +{pts}점 ({n}글자 오타)',
         hardship_step1_indicator: 'Step 1. 한 단어씩 읽으며 \'읽기\'를 눌러 외운 말씀을 확인하세요.<br>확실히 외웠다는 생각이 들 때까지 반복하세요.',
         step1_tip_text: '하나씩 말하며 \'읽기\' 버튼을 눌러보세요',
         step1_voice_btn: '음성인식',
@@ -1134,6 +1135,7 @@ const LANG = {
         hardship_feedback_correct: 'Correct! {label} · +{pts} pts',
         hardship_feedback_wrong_address: 'Wrong. The answer is {label}.',
         hardship_feedback_wrong_memory: 'Wrong. Correct verse: {text}',
+        hardship_feedback_typo_corrected: 'Typo corrected! +{pts} pts ({n} typo(s))',
         hardship_step1_indicator: 'Step 1. Read each word aloud and tap \'Read\' to confirm.<br>Repeat until you are confident you have memorized it.',
         step1_tip_text: 'Say each word aloud and tap the \'Read\' button.',
         step1_voice_btn: '🎤 Speak it',
@@ -18290,6 +18292,31 @@ function submitHardshipMemoryGuess() {
         if (!hardshipCharsMatch(hardshipState.memorySlots[index] || '', answerChar)) {
             hardshipState.wrongSlots.push(index);
         }
+    }
+
+    // 도감 오타 보정: wrongSlots 수가 wrongCorrection 이하면 정답 처리
+    const rankBuff = (function() {
+        const score = getCurrentCollectionScore();
+        return getCollectionRank(score);
+    })();
+    const allowedTypos = (!hardshipState.trainingMode && rankBuff) ? (rankBuff.wrongCorrection || 0) : 0;
+
+    if (hardshipState.wrongSlots.length > 0 && hardshipState.wrongSlots.length <= allowedTypos) {
+        const typoCount = hardshipState.wrongSlots.length;
+        const earnedPoints = hardshipState.ultimateMemoryMode ? playerHearts * 3 : playerHearts * 2;
+        awardHardshipScore(earnedPoints);
+        hardshipState.studiedCount += 1;
+        hardshipState.wrongSlots = [];
+        hardshipState.feedback = {
+            type: 'success',
+            message: hardshipState.trainingMode
+                ? t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) + ' · 오타 보정'
+                : t('hardship_feedback_typo_corrected', { pts: earnedPoints, n: typoCount })
+        };
+        if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
+        renderHardshipMemoryVerse();
+        updateBattleUI();
+        return;
     }
 
     playerHearts = Math.max(0, playerHearts - 1);
