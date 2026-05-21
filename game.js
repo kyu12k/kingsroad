@@ -17868,7 +17868,7 @@ function renderHardshipMemoryVerse() {
 function focusHardshipMemoryHiddenInput() {
     const input = document.getElementById('hidden-typing-input');
     if (!input || hardshipState.locked) return;
-    input.focus();
+    input.focus({ preventScroll: true });
     moveHardshipMemoryCursorToEnd(input);
 }
 
@@ -18085,12 +18085,6 @@ function handleHardshipMemoryInput(event) {
     updateHardshipMemoryBoard();
     moveHardshipMemoryCursorToEnd(input);
 
-    if (currentText.length === targetLength) {
-        const submitButton = document.getElementById('hardship-memory-submit-btn');
-        if (submitButton && typeof submitButton.scrollIntoView === 'function') {
-            submitButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }
 }
 
 function resetHardshipMemoryInputs() {
