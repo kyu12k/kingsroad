@@ -14591,7 +14591,8 @@ function buildHardshipRows() {
             const mm = Math.floor(sec / 60), ss = String(sec % 60).padStart(2, '0');
             return `<div class="mr-hardship-entry"><span class="mr-h-ch">${ch}장</span><span class="mr-h-score">${best.score}점</span><span class="mr-h-acc">${acc}%</span><span class="mr-h-time">${mm}:${ss}</span></div>`;
         }).filter(Boolean).join('');
-        return `<div class="mr-hardship-box"><div class="mr-hardship-type">${t.label}</div>${rows || '<div class="mr-hardship-empty">기록 없음</div>'}</div>`;
+        const header = `<div class="mr-hardship-entry mr-hardship-header"><span class="mr-h-ch">장</span><span class="mr-h-score">점수</span><span class="mr-h-acc">정확도</span><span class="mr-h-time">시간</span></div>`;
+        return `<div class="mr-hardship-box"><div class="mr-hardship-type">${t.label}</div>${rows ? header + rows : '<div class="mr-hardship-empty">기록 없음</div>'}</div>`;
     }).join('');
 }
 

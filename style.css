@@ -5077,6 +5077,11 @@ body, html {
     border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 .mr-hardship-entry:last-child { border-bottom: none; }
+.mr-hardship-header { color: rgba(255,255,255,0.4); font-size: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.15) !important; margin-bottom: 2px; }
+.mr-hardship-header .mr-h-ch,
+.mr-hardship-header .mr-h-score,
+.mr-hardship-header .mr-h-acc,
+.mr-hardship-header .mr-h-time { color: rgba(255,255,255,0.4); font-weight: 400; }
 .mr-h-ch { font-weight: 600; color: #f1c40f; min-width: 30px; }
 .mr-h-score { color: #2ecc71; }
 .mr-h-acc { color: #3498db; }
