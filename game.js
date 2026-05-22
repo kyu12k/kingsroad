@@ -16813,6 +16813,7 @@ function openHardshipModeSelect() {
 function closeHardshipModeSelect() {
     const modal = document.getElementById('hardship-mode-modal');
     if (modal) modal.style.display = 'none';
+    window.hardshipForcedChapter = null;
 }
 
 function isHardshipChapterDoneToday(mode, ch) {
@@ -16828,10 +16829,7 @@ function isHardshipChapterDoneToday(mode, ch) {
     const d = new Date(last.date);
     const lastStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     const now = new Date();
-    const ref = now.getHours() < 6
-        ? new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
-        : now;
-    const todayStr = `${ref.getFullYear()}-${String(ref.getMonth()+1).padStart(2,'0')}-${String(ref.getDate()).padStart(2,'0')}`;
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
     return lastStr === todayStr;
 }
 
@@ -16961,12 +16959,15 @@ function openHardshipConfigModal(mode) {
 
     updateHardshipConfigRangeUI();
 
-    // 궁극의 암기 토글 초기화
+    // 궁극의 암기 토글 초기화 (망각의 고난에서만 표시)
     selectedHardshipUltimate = false;
     const cb = document.getElementById('hardship-config-ultimate-checkbox');
     if (cb) cb.checked = false;
     const wrap = document.getElementById('hardship-config-ultimate-wrap');
-    if (wrap) wrap.style.borderColor = 'transparent';
+    if (wrap) {
+        wrap.style.borderColor = 'transparent';
+        wrap.style.display = mode === 'memory' ? 'flex' : 'none';
+    }
 
     const modal = document.getElementById('hardship-config-modal');
     if (modal) modal.style.display = 'flex';
