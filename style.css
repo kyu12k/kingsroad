@@ -137,6 +137,10 @@ button,
 .more-menu-item:hover {
     background: rgba(212, 168, 83, 0.15);
 }
+.more-menu-item.shop-highlight {
+    background: rgba(255, 180, 50, 0.1);
+    color: #ffd080;
+}
 .more-menu-item + .more-menu-item {
     border-top: 1px solid rgba(255,255,255,0.08);
 }

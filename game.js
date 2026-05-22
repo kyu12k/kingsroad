@@ -14928,10 +14928,10 @@ function updateNotificationBadges() {
 
     // 3. 상점 알림 체크 (일일 무료 생명의 떡)
     const hasFreeLifeBread = (typeof isLifeBreadFreeAvailable === 'function') && isLifeBreadFreeAvailable();
-    const shopBadge = document.getElementById('badge-shop');
-    if (shopBadge) {
-        if (hasFreeLifeBread) shopBadge.classList.add('active');
-        else shopBadge.classList.remove('active');
+    const shopMenuItem = document.getElementById('shop-menu-item');
+    if (shopMenuItem) {
+        if (hasFreeLifeBread) shopMenuItem.classList.add('shop-highlight');
+        else shopMenuItem.classList.remove('shop-highlight');
     }
 
     // 4. 더보기 알림 체크 (상점 무료 생명의 떡 포함)
@@ -18930,10 +18930,11 @@ function renderGuidePage() {
     var _quizPhase = 'chapter';
     var _selectedQuizChapter = 1;
     var _selectedQuizVerse = 1;
-    var _quizGroupBorderOn = true;
+    var _quizGroupBorderOn = localStorage.getItem('kingsRoad_quizGroupBorder') !== 'off';
 
     window.toggleQuizGroupBorder = function() {
         _quizGroupBorderOn = !_quizGroupBorderOn;
+        localStorage.setItem('kingsRoad_quizGroupBorder', _quizGroupBorderOn ? 'on' : 'off');
         var btn = document.getElementById('quiz-border-toggle');
         if (btn) btn.textContent = _quizGroupBorderOn ? '테두리 끄기' : '테두리 켜기';
         renderMemoryQuizAddressControl();
