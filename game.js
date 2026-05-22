@@ -16816,6 +16816,11 @@ function closeHardshipModeSelect() {
     window.hardshipForcedChapter = null;
 }
 
+function _hideHardshipModeModal() {
+    const modal = document.getElementById('hardship-mode-modal');
+    if (modal) modal.style.display = 'none';
+}
+
 function isHardshipChapterDoneToday(mode, ch) {
     const historyMap = {
         endurance: hardshipEnduranceClearHistory,
@@ -17052,7 +17057,7 @@ function confirmHardshipOrder() {
 }
 
 function startHardshipFromModal(mode) {
-    closeHardshipModeSelect();
+    _hideHardshipModeModal();
 
     if (mode === 'memory') {
         // 순서 선택 모달 삽입 (forced chapter 있으면 보존)
