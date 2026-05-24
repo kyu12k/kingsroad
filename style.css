@@ -1761,6 +1761,20 @@ body, html {
     font-weight: bold;
 }
 
+.no-reward-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    background: #e74c3c;
+    color: #fff;
+    font-size: 0.75em;
+    font-weight: bold;
+    border-radius: 5px;
+    letter-spacing: 0.03em;
+    vertical-align: middle;
+    opacity: 0.9;
+}
+
 .hardship-endurance-reading {
     display: flex;
     flex-wrap: wrap;

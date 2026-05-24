@@ -380,14 +380,14 @@ const LANG = {
         hardship_order_seq_title: '순서대로',
         hardship_order_seq_desc: '1장 1절부터 차례로 출제합니다',
         hardship_ultimate_toggle_label: '궁극의 암기 모드',
-        hardship_ultimate_toggle_desc: '힌트 없이 전체 타이핑 · 승점 ×3',
+        hardship_ultimate_toggle_desc: '힌트 없이 전체 타이핑 · 승점 ×5',
         hardship_chapter_option: '{num}장',
         hardship_endurance_title: '암송의 고난',
         hardship_endurance_summary: '소리내어 말씀을 암송하세요.',
         hardship_address_title: '주소의 고난',
         hardship_address_summary: '내용을 보고 장과 절을 맞힙니다.',
         hardship_memory_title: '망각의 고난',
-        hardship_memory_summary: '주소만 보고 전체 구절을 인출합니다.',
+        hardship_memory_summary: '주소만 보고 전체 구절을 인출합니다. · 정답 시 승점 ×4',
         hardship_endurance_indicator: '[{label}] 소리내어 말씀을 암송하세요',
         hardship_endurance_speak_btn: '음성인식',
         hardship_endurance_speak_prompt: '아래 버튼을 눌러 말씀을 소리내어 암송하세요.',
@@ -398,6 +398,8 @@ const LANG = {
         hardship_session_endurance_speech: '이번 세션에서 {count}절을 암송했습니다.',
         hardship_cooldown_today: '오늘 이미 보상을 받은 장입니다. 연습은 가능하지만 보상은 내일부터 다시 받을 수 있어요.',
         hardship_cooldown_result: '오늘 이미 완주한 장입니다. 보상은 내일부터 다시 받을 수 있어요.',
+        hardship_memory_cooldown_warn: '이 장은 오늘 이미 망각의 고난을 완주했습니다.\n승점은 하루에 한 번만 지급됩니다.\n\n계속 진행하면 승점 없이 연습만 됩니다. 진행하시겠습니까?',
+        hardship_no_reward_badge: '승점 획득 불가',
         hardship_endurance_info_title: '📋 암송의 고난 안내',
         hardship_endurance_info_body: '• 말이 끊기면 인식이 종료됩니다. 한 호흡으로 암송하세요.<br>• 정확한 발음이 일치율에 영향을 줍니다.<br>• 80% 이상 → 통과 (만점 승점)<br>• 50~79% → 부분 승점 (절반)<br>• 50% 미만 → 승점 없음<br>• 전체 평균 80% 이상이면 해당 장 스테이지가 클리어됩니다.',
         hardship_endurance_retry: '🔄 다시 읽기',
@@ -425,9 +427,11 @@ const LANG = {
         hardship_kings_btn: '🔥 왕의 고난',
         hardship_endurance_count: '누적 확인 {n}절째입니다.',
         hardship_feedback_correct: '정답입니다. {label} · +{pts}점',
+        hardship_feedback_correct_no_reward: '정답입니다. {label} · 승점 없음',
         hardship_feedback_wrong_address: '오답입니다. 정답은 {label}입니다.',
         hardship_feedback_wrong_memory: '오답입니다. 정답 말씀: {text}',
         hardship_feedback_typo_corrected: '오타 보정! +{pts}점 ({n}글자 오타)',
+        hardship_feedback_typo_corrected_no_reward: '오타 보정! 승점 없음 ({n}글자 오타)',
         hardship_step1_indicator: 'Step 1. 한 단어씩 읽으며 \'읽기\'를 눌러 외운 말씀을 확인하세요.<br>확실히 외웠다는 생각이 들 때까지 반복하세요.',
         step1_tip_text: '하나씩 말하며 \'읽기\' 버튼을 눌러보세요',
         step1_voice_btn: '음성인식',
@@ -1085,14 +1089,14 @@ const LANG = {
         hardship_order_seq_title: 'Sequential',
         hardship_order_seq_desc: 'From Ch.1 v.1 in order',
         hardship_ultimate_toggle_label: 'Ultimate Recall Mode',
-        hardship_ultimate_toggle_desc: 'No hints, full typing · Score ×3',
+        hardship_ultimate_toggle_desc: 'No hints, full typing · Score ×5',
         hardship_chapter_option: 'Ch.{num}',
         hardship_endurance_title: 'Trial of Recitation',
         hardship_endurance_summary: 'Recite each verse aloud.',
         hardship_address_title: 'Trial of Address',
         hardship_address_summary: 'Read the text and identify the chapter & verse.',
         hardship_memory_title: 'Trial of Forgetting',
-        hardship_memory_summary: 'See the reference and recall the full verse.',
+        hardship_memory_summary: 'See the reference and recall the full verse. · Score ×4 per correct answer',
         hardship_endurance_indicator: '[{label}] Recite the verse aloud',
         hardship_endurance_speak_btn: '🎤 Speak',
         hardship_endurance_speak_prompt: 'Tap the button below and recite the verse aloud.',
@@ -1103,6 +1107,8 @@ const LANG = {
         hardship_session_endurance_speech: 'You recited {count} verses.',
         hardship_cooldown_today: 'You already received rewards for this chapter today. You can practice, but rewards reset tomorrow.',
         hardship_cooldown_result: 'You already completed this chapter today. Rewards are available again tomorrow.',
+        hardship_memory_cooldown_warn: 'You already completed the Trial of Memory for this chapter today.\nScore points are only awarded once per day.\n\nContinuing will let you practice without earning points. Proceed?',
+        hardship_no_reward_badge: 'No Points',
         hardship_endurance_info_title: '📋 Trial of Recitation Guide',
         hardship_endurance_info_body: '• Recognition stops when you pause. Recite in one breath.<br>• Accurate pronunciation affects your match rate.<br>• 80%+ → Pass (full score)<br>• 50–79% → Partial score (half)<br>• Under 50% → No score<br>• Average 80%+ clears all stages in the chapter.',
         hardship_endurance_retry: '🔄 Try Again',
@@ -1133,9 +1139,11 @@ const LANG = {
         hardship_kings_btn: '🔥 King\'s Trial',
         hardship_endurance_count: 'Confirmed {n} verse(s) so far.',
         hardship_feedback_correct: 'Correct! {label} · +{pts} pts',
+        hardship_feedback_correct_no_reward: 'Correct! {label} · No points',
         hardship_feedback_wrong_address: 'Wrong. The answer is {label}.',
         hardship_feedback_wrong_memory: 'Wrong. Correct verse: {text}',
         hardship_feedback_typo_corrected: 'Typo corrected! +{pts} pts ({n} typo(s))',
+        hardship_feedback_typo_corrected_no_reward: 'Typo corrected! No points ({n} typo(s))',
         hardship_step1_indicator: 'Step 1. Read each word aloud and tap \'Read\' to confirm.<br>Repeat until you are confident you have memorized it.',
         step1_tip_text: 'Say each word aloud and tap the \'Read\' button.',
         step1_voice_btn: '🎤 Speak it',
@@ -17116,7 +17124,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
     hardshipState.mode = mode;
     hardshipState.ultimateMemoryMode = (mode === 'memory') ? selectedHardshipUltimate : false;
     hardshipState.applyToFree = (window.hardshipOrigin !== 'map');
-    hardshipState.rewardBlocked = false; // 세션 중 쿨다운 확정 후 세팅
+    hardshipState.rewardBlocked = false;
     if (forcedChapter != null) hardshipState.forcedChapter = forcedChapter;
     const baseIds = Array.isArray(selectedVerseIds) && selectedVerseIds.length > 0
         ? selectedVerseIds
@@ -17893,6 +17901,12 @@ function bindHardshipMemoryInputGuards() {
     if (!input || input.dataset.guardsBound === 'true') return;
 
     const blockArrowNavigation = (event) => {
+        // Ctrl+V / Cmd+V 붙여넣기 차단
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') {
+            event.preventDefault();
+            return;
+        }
+
         if (event.key === 'Enter') {
             event.preventDefault();
             event.stopPropagation();
@@ -17929,7 +17943,13 @@ function bindHardshipMemoryInputGuards() {
         moveHardshipMemoryCursorToEnd(input);
     };
 
+    const blockPaste = (event) => {
+        event.preventDefault();
+    };
+
     input.addEventListener('keydown', blockArrowNavigation);
+    input.addEventListener('paste', blockPaste);
+    input.addEventListener('drop', blockPaste);
     input.addEventListener('click', forceCursorToEnd);
     input.addEventListener('touchend', forceCursorToEnd);
     input.addEventListener('focus', forceCursorToEnd);
@@ -18274,15 +18294,18 @@ function submitHardshipMemoryGuess() {
     }
 
     if (isCorrect) {
-        const earnedPoints = hardshipState.ultimateMemoryMode ? playerHearts * 3 : playerHearts * 2;
-        awardHardshipScore(earnedPoints);
+        const basePoints = hardshipState.ultimateMemoryMode ? playerHearts * 5 : playerHearts * 4;
+        const earnedPoints = hardshipState.rewardBlocked ? 0 : basePoints;
+        if (earnedPoints > 0) awardHardshipScore(earnedPoints);
         hardshipState.studiedCount += 1;
         hardshipState.wrongSlots = [];
         hardshipState.feedback = {
             type: 'success',
             message: hardshipState.trainingMode
                 ? t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) + ' · 정답'
-                : t('hardship_feedback_correct', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }), pts: earnedPoints })
+                : hardshipState.rewardBlocked
+                    ? t('hardship_feedback_correct_no_reward', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) })
+                    : t('hardship_feedback_correct', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }), pts: earnedPoints })
         };
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
         renderHardshipMemoryVerse();
@@ -18310,13 +18333,14 @@ function submitHardshipMemoryGuess() {
 
     if (hardshipState.wrongSlots.length > 0 && hardshipState.wrongSlots.length <= allowedTypos) {
         const typoCount = hardshipState.wrongSlots.length;
-        const earnedPoints = hardshipState.ultimateMemoryMode ? playerHearts * 3 : playerHearts * 2;
+        const basePoints = hardshipState.ultimateMemoryMode ? playerHearts * 5 : playerHearts * 4;
+        const earnedPoints = hardshipState.rewardBlocked ? 0 : basePoints;
         // 오타 정보 수집 (슬롯 초기화 전에)
         const typoPairs = hardshipState.wrongSlots.map(idx => ({
             typed: hardshipState.memorySlots[idx] || '',
             answer: text.charAt(idx)
         }));
-        awardHardshipScore(earnedPoints);
+        if (earnedPoints > 0) awardHardshipScore(earnedPoints);
         hardshipState.studiedCount += 1;
         hardshipState.wrongSlots = [];
         const typoDetail = typoPairs.map(p => `<span class="typo-wrong">${p.typed || '?'}</span>→<span class="typo-answer">${p.answer}</span>`).join(' ');
@@ -18324,7 +18348,9 @@ function submitHardshipMemoryGuess() {
             type: 'success',
             message: (hardshipState.trainingMode
                 ? t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) + ' · 오타 보정'
-                : t('hardship_feedback_typo_corrected', { pts: earnedPoints, n: typoCount }))
+                : hardshipState.rewardBlocked
+                    ? t('hardship_feedback_typo_corrected_no_reward', { n: typoCount })
+                    : t('hardship_feedback_typo_corrected', { pts: earnedPoints, n: typoCount }))
                 + `<span class="typo-detail"> (${typoDetail})</span>`
         };
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
