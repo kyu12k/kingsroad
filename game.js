@@ -343,7 +343,7 @@ const LANG = {
         mission_weekly_2_desc: '(주간)누적 15회 학습.',
         mission_weekly_hardship_title: '왕의 고난 10회 완주',
         mission_weekly_hardship_desc: '(주간)어떤 장이든 왕의 고난을 10회 완주하세요.',
-        mission_weekly_daily_clear_title: '일일 미션 30회 클리어',
+        mission_weekly_daily_clear_title: '일일 미션 20회 클리어',
         mission_weekly_daily_clear_desc: '(주간)일일 미션 보상을 20회 수령하세요. 하루 4개 × 5일 달성 가능.',
         mission_tab_advanced: '⚔️ 심화',
         mission_reset_advanced: '매일 자정에 초기화됩니다.',
@@ -14924,7 +14924,7 @@ function updateNotificationBadges() {
         if (missionData.weekly.attendance >= 5 && !missionData.weekly.claimed[0]) hasMissionReward = true;
         if (missionData.weekly.dragonKill >= 5 && !missionData.weekly.claimed[1]) hasMissionReward = true;
         if (missionData.weekly.stageClear >= 15 && !missionData.weekly.claimed[2]) hasMissionReward = true;
-        if ((missionData.weekly.dailyMissionClearCount || 0) >= 30 && !missionData.weekly.claimed[4]) hasMissionReward = true;
+        if ((missionData.weekly.dailyMissionClearCount || 0) >= 20 && !missionData.weekly.claimed[4]) hasMissionReward = true;
     }
 
     // 배지 켜기/끄기
