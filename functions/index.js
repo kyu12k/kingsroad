@@ -49,6 +49,15 @@ function deduplicateByTag(docs) {
 }
 
 async function updateWeeklyCountsImpl() {
+    const now = new Date();
+    // KST Mon 00:00–08:59 = UTC Sun 15:00–23:59: 주간 전환 보호 구간
+    // 이 시간대에 실행하면 00:05 archiveWeeklyRankings가 만든 올바른 지난 주 스냅샷을
+    // 이미 새 주차로 리셋한 유저들이 빠진 불완전한 데이터로 덮어쓰게 됨.
+    if (now.getUTCDay() === 0 && now.getUTCHours() >= 15) {
+        console.log('⏭️ 주간 전환 보호 구간 (UTC Sun 15-24시) — 스냅샷 업데이트 건너뜀');
+        return;
+    }
+
     const currentWeekId = getWeekId();
     console.log(`📊 주간 카운트 집계 + Snapshot 생성 시작: ${currentWeekId}`);
 
@@ -880,6 +889,83 @@ exports.recoverW20Rankings = functions.https.onRequest(async (req, res) => {
         res.send(`✅ W20 복구 완료: ${rankingData.length}명\n1등: ${rankingData[0]?.name} (${rankingData[0]?.score}점)`);
     } catch (e) {
         console.error('❌ W20 복구 실패:', e);
+        res.status(500).send(`❌ 실패: ${e.message}`);
+    }
+});
+
+// 일회성: W21 주간 랭킹 복구 (월요일 00:05-06:00 KST 구간 사용자 누락 버그로 인한 재아카이빙)
+exports.recoverW21Rankings = functions.https.onRequest(async (req, res) => {
+    try {
+        const targetWeekId = '2026-W21';
+        console.log(`🔧 W21 복구 시작: ${targetWeekId}`);
+
+        // 메인 쿼리: 아직 W21에 머물러 있는 유저
+        const mainSnap = await db.collection('leaderboard')
+            .where('weekId', '==', targetWeekId)
+            .where('score', '>', 0)
+            .orderBy('score', 'desc')
+            .limit(200)
+            .get();
+
+        // Fallback 쿼리: 이미 W22로 리셋했지만 prevWeekId=W21 으로 백업된 유저
+        const fallbackSnap = await db.collection('leaderboard')
+            .where('prevWeekId', '==', targetWeekId)
+            .where('prevWeekScore', '>', 0)
+            .orderBy('prevWeekScore', 'desc')
+            .limit(200)
+            .get();
+
+        // 병합 (tag 기준, 점수 높은 쪽 우선)
+        const combinedMap = new Map();
+        mainSnap.docs.forEach(doc => {
+            combinedMap.set(doc.id, { doc, score: doc.data().score || 0 });
+        });
+        fallbackSnap.docs.forEach(doc => {
+            if (!combinedMap.has(doc.id)) {
+                const d = doc.data();
+                const patched = { ...d, score: d.prevWeekScore || 0, weekId: targetWeekId };
+                combinedMap.set(doc.id, { doc: { id: doc.id, data: () => patched }, score: d.prevWeekScore || 0 });
+            }
+        });
+
+        const mergedDocs = Array.from(combinedMap.values())
+            .sort((a, b) => b.score - a.score)
+            .map(v => v.doc);
+
+        if (mergedDocs.length === 0) {
+            res.send('⚠️ 복구할 데이터 없음');
+            return;
+        }
+
+        const zionDocs = deduplicateByTag(mergedDocs).slice(0, 100);
+
+        const rankingData = zionDocs.map((doc, index) => {
+            const row = doc.data();
+            return {
+                rank: index + 1,
+                name: row.nickname || '이름없음',
+                score: row.score || 0,
+                tribe: row.tribe !== undefined ? row.tribe : 0,
+                dept: row.dept !== undefined ? row.dept : 0,
+                tag: row.tag || '',
+                castle: row.castleLv || 0
+            };
+        });
+
+        await db.collection('ranking_snapshots').doc(targetWeekId)
+            .collection('tribes').doc('zion')
+            .set({
+                weekId: targetWeekId,
+                tribeId: 'zion',
+                ranks: rankingData,
+                count: rankingData.length,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+
+        console.log(`✅ W21 복구 완료: ${rankingData.length}명`);
+        res.send(`✅ W21 복구 완료: ${rankingData.length}명\n1등: ${rankingData[0]?.name} (${rankingData[0]?.score}점)`);
+    } catch (e) {
+        console.error('❌ W21 복구 실패:', e);
         res.status(500).send(`❌ 실패: ${e.message}`);
     }
 });
