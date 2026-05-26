@@ -9063,21 +9063,20 @@ function showClearScreen() {
                     ? 10 * 60 * 1000
                     : getReviewWaitMs(nextStatus.step + 1);
                 const rawHr = rawDelayMs / 3600000;
-                // 10분(0.17hr), 1시간만 버튼 표시 (6시간은 PWA 미지원으로 제외)
-                const isShortDelay = rawHr < 2;
-                if (isShortDelay) {
-                    let waitLabel;
-                    if (rawHr < 1) waitLabel = `${Math.round(rawDelayMs / 60000)}분`;
-                    else waitLabel = `${Math.round(rawHr)}시간`;
+                // 10분 / 1시간 / 6시간 모두 버튼 표시
+                if (rawHr <= 7) {
+                    const fireTime = new Date(Date.now() + rawDelayMs);
+                    const hh = String(fireTime.getHours()).padStart(2, '0');
+                    const mm = String(fireTime.getMinutes()).padStart(2, '0');
+                    const timeLabel = `${hh}:${mm}`;
                     // 스테이지 제목 가져오기
                     const chData = getChapterDataByStageId(sId);
                     const stageObj = chData && chData.stages ? chData.stages.find(s => s.id === sId) : null;
                     const stageTitle = stageObj ? getStageTitle(stageObj) : t('label_this_word');
                     notifWrap.innerHTML = `
-                        <p style="font-size:0.85rem; color:#7f8c8d; margin:0 0 6px;">${t('notif_ask', { wait: waitLabel })}</p>
                         <button onclick="scheduleReviewNotification(${rawDelayMs}, '${stageTitle.replace(/'/g, "\\'")}', this)"
                             style="background:#e8a020; color:white; border:none; padding:9px 20px; border-radius:20px; font-weight:bold; font-size:0.9rem; cursor:pointer;">
-                            ${t('notif_btn')}
+                            🔔 ${timeLabel}에 알림
                         </button>`;
                     notifWrap.style.display = 'block';
                 }
@@ -13653,6 +13652,8 @@ function startNotificationCheck() {
 // ── 매일 알림 시간 체크 끝 ────────────────────────────────────────────────────
 
 // ── 복습 알림 예약 (결과 창 일회성 알림) ────────────────────────────────────
+const REVIEW_NOTIF_MAX = 5;
+
 async function scheduleReviewNotification(delayMs, stageTitle, btn) {
     if (!('Notification' in window)) {
         showToast(t('toast_notif_unsupported'));
@@ -13664,45 +13665,59 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
         return;
     }
 
-    // 로딩 상태 표시
     if (btn) {
         btn.disabled = true;
         btn.innerHTML = `<span class="kr-spinner"></span>${t('notif_scheduling')}`;
         btn.style.background = '#b0b0b0';
     }
 
-    const hr = delayMs / 3600000;
-    const label = hr < 1 ? t('label_minutes_unit', { n: Math.round(delayMs / 60000) }) : t('label_hours_unit', { n: Math.round(hr) });
+    const notifAt = new Date(Date.now() + delayMs);
+    const hh = String(notifAt.getHours()).padStart(2, '0');
+    const mm = String(notifAt.getMinutes()).padStart(2, '0');
+    const timeLabel = `${hh}:${mm}`;
 
     // FCM 서버 예약 (앱이 꺼져도 작동)
     if (myTag && db) {
         try {
-            // 항상 브라우저에서 최신 토큰을 직접 취득 (만료 토큰 재사용 방지)
             _fcmToken = null;
             await initFCM().catch(e => console.warn('[복습알림] initFCM 실패:', e));
+            if (!_fcmToken) throw new Error('FCM 토큰 없음');
 
-            if (!_fcmToken) {
-                // 토큰을 끝내 못 얻으면 SW 폴백으로 진행
-                throw new Error('FCM 토큰 없음');
+            const docRef = db.collection('leaderboard').doc(String(myTag));
+
+            // 기존 배열 확인 후 상한선 체크
+            const snap = await docRef.get();
+            const existing = (snap.exists && snap.data().reviewNotifications) || [];
+            const nowMs = Date.now();
+            // 이미 지난 항목 제외하고 유효한 것만 카운트
+            const active = existing.filter(n => n.at && n.at.toMillis() > nowMs);
+            if (active.length >= REVIEW_NOTIF_MAX) {
+                showToast(`알림이 이미 ${REVIEW_NOTIF_MAX}개 예약되어 있습니다.`);
+                if (btn) { btn.disabled = false; btn.innerHTML = `🔔 ${timeLabel}에 알림`; btn.style.background = '#e8a020'; }
+                return;
             }
 
-            const notifAt = new Date(Date.now() + delayMs);
-            console.log('[복습알림] Firestore 저장 시도. 예약 시각:', notifAt.toLocaleString());
-            await db.collection('leaderboard').doc(String(myTag)).set(
-                { nextReviewNotifAt: notifAt, nextReviewStage: stageTitle, fcmToken: _fcmToken },
-                { merge: true }
-            );
-            console.log('[복습알림] ✅ Firestore 저장 완료 (FCM 경로)');
+            const newItem = { at: notifAt, stage: stageTitle };
+            // reviewNotifEarliest: 쿼리용 필드 (배열 중 가장 이른 시각)
+            const allActive = [...active, newItem];
+            const earliest = allActive.reduce((min, n) => {
+                const ms = n.at instanceof Date ? n.at.getTime() : n.at.toMillis();
+                return ms < min ? ms : min;
+            }, Infinity);
 
-            if (btn) {
-                btn.innerHTML = '✅ 예약됨';
-                btn.disabled = true;
-                btn.style.background = '#27ae60';
-            }
-            showToast(t('toast_remind_later', { label }));
+            await docRef.set({
+                reviewNotifications: firebase.firestore.FieldValue.arrayUnion(newItem),
+                reviewNotifEarliest: new Date(earliest),
+                fcmToken: _fcmToken
+            }, { merge: true });
+
+            console.log('[복습알림] ✅ 저장 완료. 예약 시각:', notifAt.toLocaleString());
+
+            if (btn) { btn.innerHTML = `✅ ${timeLabel} 예약됨`; btn.style.background = '#27ae60'; }
+            showToast(`🔔 ${timeLabel}에 알림을 드릴게요!`);
             return;
         } catch (e) {
-            console.warn('[복습알림] FCM 복습 알림 예약 실패, 로컬 폴백:', e);
+            console.warn('[복습알림] FCM 예약 실패, SW 폴백:', e);
         }
     }
 
@@ -13715,16 +13730,9 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
             if (reg.active) reg.active.postMessage({ type: 'SCHEDULE_NOTIFICATION', delayMs, title, body, tag: notifTag });
         }).catch(() => {});
     }
-    setTimeout(() => {
-        try { new Notification(title, { body, icon: '/icon-192.png', tag: notifTag }); } catch(e) {}
-    }, delayMs);
 
-    if (btn) {
-        btn.innerHTML = '✅ 예약됨';
-        btn.disabled = true;
-        btn.style.background = '#27ae60';
-    }
-    showToast(t('toast_remind_later', { label }));
+    if (btn) { btn.innerHTML = `✅ ${timeLabel} 예약됨`; btn.style.background = '#27ae60'; }
+    showToast(`🔔 ${timeLabel}에 알림을 드릴게요!`);
 }
 // ── 복습 알림 예약 끝 ────────────────────────────────────────────────────────
 

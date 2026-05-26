@@ -720,82 +720,70 @@ exports.sendReviewNotifications = functions
     .onRun(async () => {
         try {
             const now = admin.firestore.Timestamp.now();
+            const nowMs = now.toMillis();
 
             const snap = await db.collection('leaderboard')
-                .where('nextReviewNotifAt', '<=', now)
+                .where('reviewNotifEarliest', '<=', now)
                 .get();
 
             if (snap.empty) return null;
 
-            const messages = [];
-            const clearBatch = db.batch();
-
-            const docRefs = []; // messages 와 1:1 대응
-            snap.docs.forEach(doc => {
-                const data = doc.data();
-                if (!data.fcmToken) return;
-
-                const stageTitle = data.nextReviewStage || '말씀';
-                const notifTitle = '킹스로드 복습 알림';
-                const notifBody = `"${stageTitle}" 복습할 시간입니다!`;
-                messages.push({
-                    token: data.fcmToken,
-                    data: {
-                        title: notifTitle,
-                        body: notifBody,
-                        link: 'https://kings-road-rank.web.app'
-                    }
-                });
-                docRefs.push(doc.ref);
-            });
-
-            if (messages.length === 0) return null;
-
-            // FCM 최대 500개씩 배치 발송
-            const chunks = [];
-            const refChunks = [];
-            for (let i = 0; i < messages.length; i += 500) {
-                chunks.push(messages.slice(i, i + 500));
-                refChunks.push(docRefs.slice(i, i + 500));
-            }
-            const results = await Promise.all(chunks.map(chunk =>
-                admin.messaging().sendEach(chunk)
-            ));
-
-            // 성공한 메시지만 필드 삭제 (실패한 건 다음 분에 재시도)
-            // 토큰 만료/무효 에러 시 fcmToken도 함께 삭제 (재등록 유도)
             const INVALID_TOKEN_ERRORS = [
                 'registration-token-not-registered',
                 'invalid-registration-token',
                 'invalid-argument'
             ];
-            results.forEach((result, ci) => {
-                result.responses.forEach((resp, ri) => {
-                    if (resp.success) {
-                        clearBatch.update(refChunks[ci][ri], {
-                            nextReviewNotifAt: admin.firestore.FieldValue.delete(),
-                            nextReviewStage: admin.firestore.FieldValue.delete()
-                        });
-                    } else if (resp.error) {
-                        const code = resp.error.code || '';
-                        console.warn(`[복습알림] 발송 실패 doc=${refChunks[ci][ri].id} code=${code}`);
-                        if (INVALID_TOKEN_ERRORS.some(e => code.includes(e))) {
-                            // 토큰 무효 → 삭제해서 다음 앱 실행 시 재취득하게 함
-                            clearBatch.update(refChunks[ci][ri], {
-                                nextReviewNotifAt: admin.firestore.FieldValue.delete(),
-                                nextReviewStage: admin.firestore.FieldValue.delete(),
-                                fcmToken: admin.firestore.FieldValue.delete()
-                            });
-                        }
-                    }
-                });
-            });
 
-            await clearBatch.commit();
+            // 각 doc을 독립적으로 처리 (doc마다 배열 항목이 여러 개일 수 있음)
+            await Promise.all(snap.docs.map(async doc => {
+                const data = doc.data();
+                if (!data.fcmToken) return;
 
-            const totalSent = results.reduce((sum, r) => sum + r.successCount, 0);
-            const totalFailed = results.reduce((sum, r) => sum + r.failureCount, 0);
-            console.log(`✅ 복습 알림 발송 완료: 성공 ${totalSent}, 실패 ${totalFailed}`);
+                const allItems = data.reviewNotifications || [];
+                // 발송 대상: at <= now
+                const dueItems = allItems.filter(n => n.at && n.at.toMillis() <= nowMs);
+                if (dueItems.length === 0) return;
+
+                // 발송 대상 중 가장 최근 것 1개만 알림 (여러 개면 마지막 제목 사용)
+                const lastItem = dueItems[dueItems.length - 1];
+                const stageTitle = lastItem.stage || '말씀';
+                const notifTitle = '킹스로드 복습 알림';
+                const notifBody = `"${stageTitle}" 복습할 시간입니다!`;
+
+                let tokenValid = true;
+                try {
+                    const result = await admin.messaging().send({
+                        token: data.fcmToken,
+                        data: { title: notifTitle, body: notifBody, link: 'https://kings-road-rank.web.app' }
+                    });
+                    console.log(`[복습알림] ✅ 발송 성공 doc=${doc.id} result=${result}`);
+                } catch (e) {
+                    const code = e.code || e.errorInfo?.code || '';
+                    console.warn(`[복습알림] 발송 실패 doc=${doc.id} code=${code}`);
+                    if (INVALID_TOKEN_ERRORS.some(ec => code.includes(ec))) tokenValid = false;
+                }
+
+                // 발송한 항목 배열에서 제거, reviewNotifEarliest 재계산
+                const remaining = allItems.filter(n => !n.at || n.at.toMillis() > nowMs);
+                const updateData = {
+                    reviewNotifications: remaining,
+                };
+                if (remaining.length === 0) {
+                    updateData.reviewNotifEarliest = admin.firestore.FieldValue.delete();
+                } else {
+                    const earliestMs = remaining.reduce((min, n) => {
+                        const ms = n.at ? n.at.toMillis() : Infinity;
+                        return ms < min ? ms : min;
+                    }, Infinity);
+                    updateData.reviewNotifEarliest = admin.firestore.Timestamp.fromMillis(earliestMs);
+                }
+                if (!tokenValid) updateData.fcmToken = admin.firestore.FieldValue.delete();
+
+                await doc.ref.update(updateData);
+            }));
+
+            const totalSent = snap.docs.length;
+            console.log(`✅ 복습 알림 처리 완료: ${totalSent}건`);
 
             return null;
         } catch (error) {
