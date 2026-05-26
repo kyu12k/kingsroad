@@ -15354,6 +15354,21 @@ function startSessionGuard() {
             // 누군가 다른 기기에서 '여정 시작'을 눌러서 서버 출입증을 갱신했다는 뜻!
             if (serverData.sessionToken && window.currentSessionToken && serverData.sessionToken !== window.currentSessionToken) {
 
+                // [같은 기기 탭 충돌 감지]
+                // localStorage는 같은 브라우저 탭끼리 공유됨.
+                // 다른 탭이 새 토큰을 발급했다면 localStorage가 이미 덮어씌워져 있으므로
+                // localStorage.sessionToken ≠ window.currentSessionToken이 됨.
+                // 반면 진짜 다른 기기라면 localStorage는 아직 내 토큰을 갖고 있음.
+                try {
+                    const localSave = JSON.parse(localStorage.getItem('kingsRoadSave') || '{}');
+                    if (localSave.sessionToken && localSave.sessionToken !== window.currentSessionToken) {
+                        // 같은 기기의 다른 탭이 세션을 가져간 것 → 데이터 초기화 없이 reload만
+                        console.log("🔄 같은 기기의 다른 탭에서 여정 시작 감지. 새로고침합니다.");
+                        window.location.reload();
+                        return;
+                    }
+                } catch(e) {}
+
                 console.log("🚨 다른 기기 로그인 감지! 현재 기기를 초기화합니다.");
 
                 // 초기화 전 현재 데이터를 pendingRecovery에 백업 (나중에 태그 입력으로 복구 가능)
