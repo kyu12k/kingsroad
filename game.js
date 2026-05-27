@@ -8808,10 +8808,10 @@ function nextStep() {
     // 🌟 훈련 모드일 때는 스텝을 고정하고 구절만 다음으로 넘깁니다!
     if (window.isTrainingMode) {
         if (window.currentVerseIdx < window.currentBattleData.length - 1) {
-            
+
             window.currentVerseIdx++; // 다음 구절로 인덱스 이동
             syncTrainingVerseState();
-            
+            removeStepAudioPanel(); // 구절 바뀔 때 이전 오디오 패널 제거
             loadStep(); // 화면 다시 그리기
         } else if (currentTrainingCycle < trainingRepeatCount) {
             currentTrainingCycle++;
@@ -8819,6 +8819,7 @@ function nextStep() {
             window.currentVerseIdx = 0;
             playerHearts = (typeof maxPlayerHearts !== 'undefined') ? maxPlayerHearts : playerHearts;
             syncTrainingVerseState();
+            removeStepAudioPanel(); // 구절 바뀔 때 이전 오디오 패널 제거
             loadStep();
         } else {
             // 모든 구절을 다 돌았다면 훈련 종료!
