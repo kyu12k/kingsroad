@@ -16836,10 +16836,48 @@ function openChapterHardship(chapterNum) {
     window.hardshipOrigin = 'map'; // 맵에서 진입했으므로 'home'을 덮어씀
 }
 
+function getHardshipModeLastPlayed(mode) {
+    const map = { endurance: hardshipEnduranceClearHistory, address: hardshipAddressClearHistory, memory: hardshipMemoryClearHistory };
+    const history = map[mode] || {};
+    let latest = 0;
+    for (const ch of Object.keys(history)) {
+        const arr = history[ch];
+        if (!arr || !arr.length) continue;
+        const last = arr[arr.length - 1];
+        if (last && last.date && last.date > latest) latest = last.date;
+    }
+    return latest || null;
+}
+
+function formatHardshipElapsed(ts) {
+    if (!ts) return '';
+    const sec = Math.floor((Date.now() - ts) / 1000);
+    if (sec < 60) return '방금';
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `${min}분 전`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr}시간 전`;
+    const day = Math.floor(hr / 24);
+    if (day < 31) return `${day}일 전`;
+    const month = Math.floor(day / 30);
+    return `${month}달 전`;
+}
+
+function updateHardshipLastPlayedBadges() {
+    const modes = ['endurance', 'address', 'memory'];
+    for (const mode of modes) {
+        const el = document.getElementById(`hardship-last-${mode}`);
+        if (!el) continue;
+        const ts = getHardshipModeLastPlayed(mode);
+        el.textContent = ts ? `마지막: ${formatHardshipElapsed(ts)}` : '';
+    }
+}
+
 function openHardshipModeSelect() {
     window.hardshipOrigin = 'home'; // 기본: 홈 진입
     const modal = document.getElementById('hardship-mode-modal');
     if (modal) modal.style.display = 'flex';
+    updateHardshipLastPlayedBadges();
 }
 
 function closeHardshipModeSelect() {

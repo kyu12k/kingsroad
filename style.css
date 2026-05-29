@@ -3236,6 +3236,7 @@ body, html {
 .mode-info { flex: 1; }
 .mode-title { font-weight: bold; font-size: 1.1rem; margin-bottom: 3px; }
 .mode-desc { font-size: 0.8rem; opacity: 0.8; }
+.mode-last-played { font-size: 0.72rem; opacity: 0.6; margin-top: 3px; }
 .mode-tag {
     font-size: 0.7rem; font-weight: bold;
     padding: 2px 6px; border-radius: 4px;
