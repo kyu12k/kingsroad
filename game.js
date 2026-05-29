@@ -4236,7 +4236,7 @@ for (let i = 1; i <= 22; i++) {
             6:  [{start:1,  end:8,  subtitle:'첫째~넷째 인'},                            {start:9,  end:14, subtitle:'다섯째~여섯째 인'},      {start:15, end:17, subtitle:'어린 양의 진노의 심판'}],
             7:  [{start:1,  end:8,  subtitle:'하나님의 인과 십사만 사천'},               {start:9,  end:17, subtitle:'흰 옷 입은 큰 무리와 큰 환난'}],
             8:  [{start:1,  end:5,  subtitle:'일곱 천사의 일곱 나팔'},                   {start:6,  end:13, subtitle:'첫째~넷째 나팔 재앙'}],
-            9:  [{start:1,  end:6,  subtitle:'다섯째 나팔과 황충의 등장'},               {start:7,  end:11, subtitle:'황충들의 모습'},         {start:12, end:16, subtitle:'여섯째 나팔과 천천만만 군대'}, {start:17, end:21, subtitle:'말들의 모습과 회개치 않는 선민'}],
+            9:  [{start:1,  end:6,  subtitle:'다섯째 나팔과 황충의 등장'},               {start:7,  end:11, subtitle:'황충들의 모습'},         {start:12, end:16, subtitle:'여섯째 나팔과 이만만의 마병대'}, {start:17, end:21, subtitle:'말들의 모습과 회개치 않는 선민'}],
             10: [{start:1,  end:7,  subtitle:'열린 책과 일곱째 나팔의 비밀'},            {start:8,  end:11, subtitle:'책을 먹은 요한의 사명'}],
             11: [{start:1,  end:5,  subtitle:'성전과 두 증인의 등장'},                   {start:6,  end:10, subtitle:'재앙과 두 증인의 죽음'}, {start:11, end:19, subtitle:'부활과 일곱째 나팔'}],
             12: [{start:1,  end:6,  subtitle:'하늘 이적과 만국을 다스릴 남자'},          {start:7,  end:12, subtitle:'하늘 전쟁과 하나님 나라'}, {start:13, end:17, subtitle:'용에게 핍박받는 여자'}],
