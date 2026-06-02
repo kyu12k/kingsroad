@@ -566,8 +566,10 @@ exports.archiveMonthlyRankings = functions.pubsub
             console.log('📜 월간 랭킹 아카이빙 시작');
 
             // 지난달 ID 계산
+            // CF는 KST 자정에 실행되므로 new Date()는 UTC 기준 전달 마지막 날을 반환함.
+            // getMonth() 자체가 이미 "지난달"을 가리키므로 - 1 불필요.
             const today = new Date();
-            const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            const lastMonth = new Date(today.getFullYear(), today.getMonth(), 1);
             const lastMonthId = getMonthId(lastMonth);
             console.log(`🗓️ 아카이빙 대상: ${lastMonthId}`);
 
