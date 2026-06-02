@@ -13933,15 +13933,6 @@ function processImportData(inputString) {
 
         if (parsedData.gems === undefined) throw new Error("올바른 세이브 데이터가 아닙니다.");
 
-        // 남의 코드 차단: 내 태그가 확정된 상태에서 다른 태그의 코드를 막음
-        const isFreshAccount = !myTag || myTag === '0000';
-        const isSameTag = parsedData.tag && parsedData.tag === myTag;
-        const isSamePlayer = parsedData.playerId && parsedData.playerId === myPlayerId;
-        if (!isFreshAccount && !isSameTag && !isSamePlayer) {
-            alert(t('alert_wrong_account'));
-            return;
-        }
-
         if (confirm("⚠️ 현재 진행 상황을 덮어쓰고,\n선택한 기록으로 되돌리시겠습니까?\n\n(다른 기기의 데이터일 경우 기존 기기의 진행 상황은 지워집니다!)")) {
 
             if (typeof GAME_VERSION !== 'undefined') parsedData.version = GAME_VERSION;
