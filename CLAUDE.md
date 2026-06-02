@@ -58,6 +58,9 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `stageClear()` | game.js:7529 | 스테이지 클리어 처리 전체 |
 | `saveGameData()` | game.js:4091 | localStorage에 저장 |
 | `showBossHistoryModal()` | game.js:~6370 | 보스전 이전 파트/구절 보기 모달 표시/토글 |
+| `generateVerseChoices(verse)` | game.js:~17908 | 구절의 고난용 4지선다 생성 (같은 장 2개 + 다른 장 1개) |
+| `renderHardshipVerseVerse()` | game.js:~17933 | 구절의 고난 문제 렌더링 (주소 표시 + 4지선다) |
+| `submitHardshipVerseGuess(idx)` | game.js:~17962 | 구절의 고난 선택지 제출 처리 |
 | `toggleSavedVerse()` | game.js:~19065 | 기억하시나요 결과에서 구절 저장/해제 토글 |
 | `openSavedVersesQuiz()` | game.js:~19184 | 저장된 구절 퀴즈 오버레이 열기 |
 | `updateSavedVersesBadge()` | game.js:~19056 | 더보기 메뉴의 저장된 구절 배지 갱신 |
@@ -96,6 +99,24 @@ Step 1에 선택적 음성인식 기능 추가. 클릭(읽기) 방식과 병행 
   - **< 80%**: 점수 + 재시도/건너뛰기 버튼 표시 (재시도: 무제한, 건너뛰기: 전체 공개 후 완료)
 - **완료 시**: `finishStep1Effect()` 내에서 mic 버튼 + 피드백 영역 자동 숨김
 - 보상/젬 없음 — 단순 학습 보조 기능
+
+---
+
+## 고난 길 모드
+
+| 모드 | 키 | 아이콘 | 설명 |
+|------|----|--------|------|
+| 암송의 고난 | `endurance` | 🕊️ | 말씀을 소리내어 암송, 음성인식 채점 |
+| 주소의 고난 | `address` | 🎯 | 구절 보고 장·절 맞히기 |
+| 망각의 고난 | `memory` | ⌨️ | 주소 보고 전체 구절 타이핑 |
+| 구절의 고난 | `verse` | 📖 | 주소 보고 4지선다로 정확한 구절 선택 |
+
+- 구절의 고난 선택지: 같은 장 2개 + 다른 장 1개 + 정답 1개 (섞어 표시)
+- `HARDSHIP_MODES` 상수에 등록, `createEmptyHardshipState()`에 `verseChoices: []` 포함
+- 히스토리: `hardshipVerseClearHistory` (장별 `{correct, total, score, date, duration}`)
+- 왕의 고난 버튼: 4개 모드 기준 0/1~3/4 완료 구분 (`_doneModes.length === 4` 이면 `all-done`)
+- 일일 미션 인덱스: address=4, memory=5, endurance=6, verse=7 (`missionData.daily.claimed`)
+- 심화 미션 `claimed` 인덱스: `[address, memory, endurance, verse]` (길이 4)
 
 ---
 

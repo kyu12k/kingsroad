@@ -1024,6 +1024,59 @@ body, html {
         .chapter-hardship-btn.hardship-btn-all-done:hover {
             box-shadow: 0 6px 14px rgba(0,0,0,0.5), 0 0 20px rgba(105,240,174,0.7);
         }
+
+        /* 구절의 고난 주소 표시 */
+        .hardship-verse-address-display {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #f1c40f;
+            text-align: center;
+            padding: 18px 10px 10px;
+            letter-spacing: 0.04em;
+        }
+
+        /* 구절의 고난 4지선다 그리드 */
+        .verse-choices-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 10px 4px 14px;
+            width: 100%;
+        }
+
+        .verse-choice-btn {
+            background: rgba(44, 62, 80, 0.85);
+            border: 2px solid #4a6fa5;
+            border-radius: 12px;
+            color: #ecf0f1;
+            font-size: 0.82rem;
+            line-height: 1.45;
+            padding: 10px 10px;
+            text-align: left;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, transform 0.1s;
+            max-height: 110px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            word-break: keep-all;
+        }
+
+        .verse-choice-btn:hover:not(:disabled) {
+            background: rgba(74, 111, 165, 0.5);
+            border-color: #74b9ff;
+            transform: scale(1.02);
+        }
+
+        .verse-choice-btn:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+
+        .verse-choice-btn:disabled {
+            opacity: 0.65;
+            cursor: default;
+        }
+
+
         /* [5. 스테이지 시트 (Bottom Sheet)] */
         #stage-sheet {
             position: absolute; bottom: 0; left: 0; width: 100%; height: 70%;
@@ -3946,6 +3999,12 @@ body, html {
     background: linear-gradient(135deg, #eefaf2 0%, #ccefd8 100%);
     border-color: #3aa66b;
     color: #1d6a43;
+}
+
+.hardship-mode-d {
+    background: linear-gradient(135deg, #f3eeff 0%, #ddd0ff 100%);
+    border-color: #8b5cf6;
+    color: #4c1d95;
 }
 
 @media (max-width: 600px) {
