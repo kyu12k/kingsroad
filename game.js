@@ -4443,6 +4443,13 @@ function updateKingsStepBtn() {
     }
 }
 
+// startTs ~ endTs 사이에 오전 6시 경계가 몇 번 지났는지 반환
+// 타임라인을 6시간 앞당겨 오전 6시가 자정처럼 동작하게 함
+function count6AMBoundaries(startTs, endTs) {
+    const offset = 6 * 3600000;
+    return Math.max(0, Math.floor((endTs - offset) / 86400000) - Math.floor((startTs - offset) / 86400000));
+}
+
 // 현재 해금된 일반 스테이지 수 반환
 function getKingsRoadUnlockedCount() {
     const history = kingsRoadData.stepHistory;
@@ -4455,7 +4462,7 @@ function getKingsRoadUnlockedCount() {
         // 구버전 호환: baseCount 필드가 있으면 해당 구간 이전 누적분을 직접 사용
         // (단계 변경 이력이 없는 저장 데이터)
         if (entry.baseCount !== undefined && i === 0 && history.length === 1) {
-            const daysElapsed = Math.floor((now - entry.timestamp) / 86400000);
+            const daysElapsed = count6AMBoundaries(entry.timestamp, now);
             const bonus = entry.isInitial
                 ? (daysElapsed + 1) * entry.step
                 : daysElapsed * entry.step;
@@ -4464,7 +4471,7 @@ function getKingsRoadUnlockedCount() {
         }
         // 이 구간이 끝나는 시점: 다음 항목의 timestamp, 없으면 현재
         const endTs = i + 1 < history.length ? history[i + 1].timestamp : now;
-        const daysInPeriod = Math.floor((endTs - entry.timestamp) / 86400000);
+        const daysInPeriod = count6AMBoundaries(entry.timestamp, endTs);
         // 최초 설정: 첫날 즉시 1×step 해금 → (days + 1) * step
         // 단계 변경: 변경 당일 보너스 없고 내일부터 → days * step
         total += entry.isInitial
@@ -4575,16 +4582,18 @@ function isKingsRoadLocked(stageId) {
 // === 왕의 길 해금 정보 UI ===
 
 // 다음 해금까지 남은 ms 반환 (전부 해금됐으면 -1)
+// 해금은 매일 오전 6시에 발생
 function getKingsRoadNextUnlockMs() {
     const history = kingsRoadData.stepHistory;
     if (!history || history.length === 0) return -1;
     const total = getTotalNormalStageCount();
     const current = getKingsRoadUnlockedCount();
     if (current >= total) return -1;
-    const last = history[history.length - 1];
-    const daysElapsed = Math.floor((Date.now() - last.timestamp) / 86400000);
-    const nextUnlockTime = last.timestamp + (daysElapsed + 1) * 86400000;
-    return Math.max(0, nextUnlockTime - Date.now());
+    const now = new Date();
+    const next6AM = new Date(now);
+    next6AM.setHours(6, 0, 0, 0);
+    if (next6AM.getTime() <= Date.now()) next6AM.setDate(next6AM.getDate() + 1);
+    return next6AM.getTime() - Date.now();
 }
 
 // 해금됐지만 한 번도 클리어하지 않은 일반 스테이지 수 반환
