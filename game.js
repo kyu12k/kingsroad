@@ -13825,52 +13825,7 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
     const mm = String(notifAt.getMinutes()).padStart(2, '0');
     const timeLabel = `${hh}:${mm}`;
 
-    // FCM 서버 예약 (앱이 꺼져도 작동)
-    if (myTag && db) {
-        try {
-            _fcmToken = null;
-            await initFCM().catch(e => console.warn('[복습알림] initFCM 실패:', e));
-            if (!_fcmToken) throw new Error('FCM 토큰 없음');
-
-            const docRef = db.collection('leaderboard').doc(String(myTag));
-
-            // 기존 배열 확인 후 상한선 체크
-            const snap = await docRef.get();
-            const existing = (snap.exists && snap.data().reviewNotifications) || [];
-            const nowMs = Date.now();
-            // 이미 지난 항목 제외하고 유효한 것만 카운트
-            const active = existing.filter(n => n.at && n.at.toMillis() > nowMs);
-            if (active.length >= REVIEW_NOTIF_MAX) {
-                showToast(`알림이 이미 ${REVIEW_NOTIF_MAX}개 예약되어 있습니다.`);
-                if (btn) { btn.disabled = false; btn.innerHTML = `🔔 ${timeLabel}에 알림`; btn.style.background = '#e8a020'; }
-                return;
-            }
-
-            const newItem = { at: notifAt, stage: stageTitle };
-            // reviewNotifEarliest: 쿼리용 필드 (배열 중 가장 이른 시각)
-            const allActive = [...active, newItem];
-            const earliest = allActive.reduce((min, n) => {
-                const ms = n.at instanceof Date ? n.at.getTime() : n.at.toMillis();
-                return ms < min ? ms : min;
-            }, Infinity);
-
-            await docRef.set({
-                reviewNotifications: firebase.firestore.FieldValue.arrayUnion(newItem),
-                reviewNotifEarliest: new Date(earliest),
-                fcmToken: _fcmToken
-            }, { merge: true });
-
-            console.log('[복습알림] ✅ 저장 완료. 예약 시각:', notifAt.toLocaleString());
-
-            if (btn) { btn.innerHTML = `✅ ${timeLabel} 예약됨`; btn.style.background = '#27ae60'; }
-            showToast(`🔔 ${timeLabel}에 알림을 드릴게요!`);
-            return;
-        } catch (e) {
-            console.warn('[복습알림] FCM 예약 실패, SW 폴백:', e);
-        }
-    }
-
-    // 폴백: 로그인 안 됐거나 Firestore 실패 시 (앱이 열려있을 때만 작동)
+    // SW TimestampTrigger로 OS 레벨 예약 (토큰 의존 없음, 앱 꺼져도 작동)
     const title = t('notif_title');
     const body = t('notif_review_body', { title: stageTitle });
     const notifTag = `review-${Date.now()}`;
