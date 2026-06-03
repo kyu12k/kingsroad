@@ -13873,14 +13873,36 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
     const mm = String(notifAt.getMinutes()).padStart(2, '0');
     const timeLabel = `${hh}:${mm}`;
 
-    // SW TimestampTrigger로 OS 레벨 예약 (토큰 의존 없음, 앱 꺼져도 작동)
     const title = t('notif_title');
     const body = t('notif_review_body', { title: stageTitle });
     const notifTag = `review-${Date.now()}`;
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.ready.then(reg => {
-            if (reg.active) reg.active.postMessage({ type: 'SCHEDULE_NOTIFICATION', delayMs, title, body, tag: notifTag });
-        }).catch(() => {});
+
+    if ('TimestampTrigger' in window) {
+        // Android Chrome 등 TimestampTrigger 지원 환경: SW OS 레벨 예약
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(reg => {
+                if (reg.active) reg.active.postMessage({ type: 'SCHEDULE_NOTIFICATION', delayMs, title, body, tag: notifTag });
+            }).catch(() => {});
+        }
+    } else {
+        // iOS 등 TimestampTrigger 미지원: Firestore에 저장 → 서버 Cloud Function이 FCM으로 발송
+        if (myTag && db) {
+            try {
+                const atTimestamp = firebase.firestore.Timestamp.fromMillis(Date.now() + delayMs);
+                const docRef = db.collection('leaderboard').doc(String(myTag));
+                const doc = await docRef.get();
+                const existing = doc.exists ? (doc.data().reviewNotifications || []) : [];
+                const newItem = { at: atTimestamp, stage: stageTitle };
+                const updated = [...existing, newItem].slice(-REVIEW_NOTIF_MAX);
+                const earliestMs = Math.min(...updated.map(n => n.at.toMillis()));
+                await docRef.set({
+                    reviewNotifications: updated,
+                    reviewNotifEarliest: firebase.firestore.Timestamp.fromMillis(earliestMs)
+                }, { merge: true });
+            } catch (e) {
+                console.warn('복습 알림 Firestore 저장 실패:', e);
+            }
+        }
     }
 
     if (btn) { btn.innerHTML = `✅ ${timeLabel} 예약됨`; btn.style.background = '#27ae60'; }
