@@ -1,8 +1,34 @@
 // ========================================
 // King's Road - Service Worker
-// 게임 비활성화 상태에서도 복습 알림 표시
+// 게임 비활성화 상태에서도 복습 알림 표시 + FCM 백그라운드 메시지 처리
 // ========================================
-// FCM 백그라운드 알림은 firebase-messaging-sw.js에서 처리합니다.
+
+importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
+
+firebase.initializeApp({
+    apiKey: "AIzaSyAcbA0mVWA1PPXL3UvjNWaG4Ks3kt83WHQ",
+    authDomain: "kings-road-rank.firebaseapp.com",
+    projectId: "kings-road-rank",
+    storageBucket: "kings-road-rank.firebasestorage.app",
+    messagingSenderId: "1081566937897",
+    appId: "1:1081566937897:web:a01c9c7bee29772cd6ad38"
+});
+
+const messaging = firebase.messaging();
+
+messaging.onBackgroundMessage((payload) => {
+    const title = payload.data?.title || '킹스로드 말씀 복습';
+    const body = payload.data?.body || '복습할 말씀이 있습니다.';
+    self.registration.showNotification(title, {
+        body,
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        tag: 'review-notif',
+        renotify: true,
+        data: payload.data || {}
+    });
+});
 
 const CACHE_NAME = 'kingsroad-v3';
 const urlsToCache = [

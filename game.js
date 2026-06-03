@@ -13538,6 +13538,45 @@ function openDataSettings() {
 
 // ── 알림 설정 ──────────────────────────────────────────────────────────────
 
+function isIOSNonPWA() {
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone = window.navigator.standalone === true ||
+                         window.matchMedia('(display-mode: standalone)').matches;
+    return isIOS && !isStandalone;
+}
+
+function showIOSInstallGuide() {
+    const menuPanel = document.getElementById('menu-panel');
+    if (menuPanel) menuPanel.style.display = 'none';
+
+    let modal = document.getElementById('ios-install-guide-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'ios-install-guide-modal';
+        modal.className = 'modal-overlay';
+        modal.style.zIndex = '9999';
+        modal.innerHTML = `
+            <div class="result-card" style="max-width:320px; text-align:center; background:white; color:#2c3e50;">
+                <div style="font-size:2rem; margin-bottom:10px;">📲</div>
+                <div style="font-size:1.15rem; font-weight:bold; margin-bottom:12px;">홈 화면에 추가 필요</div>
+                <p style="font-size:0.88rem; color:#555; text-align:left; line-height:1.7; margin-bottom:18px;">
+                    아이폰에서 알림을 받으려면 앱을 홈 화면에 추가해야 해요.<br><br>
+                    1. 하단 공유 버튼(□↑) 탭<br>
+                    2. <b>'홈 화면에 추가'</b> 선택<br>
+                    3. 홈 화면 아이콘으로 앱 실행<br>
+                    4. 알림 설정에서 시간 설정
+                </p>
+                <button onclick="document.getElementById('ios-install-guide-modal').style.display='none'"
+                    style="width:100%; background:#3498db; color:white; border:none; padding:12px; border-radius:30px; cursor:pointer; font-weight:bold; font-size:1rem;">
+                    확인
+                </button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    modal.style.display = 'flex';
+}
+
 const FCM_VAPID_KEY = 'BABLNeK2ZuUV6zqT4JwtDNnS1uhSKJY66RD2usuqooL3LpSI0Qlr82qa3PkrWHMcgJNa39TVWOF4GqyixAzN5Yc';
 let _fcmToken = null; // 캐시된 토큰
 
@@ -13545,12 +13584,16 @@ async function initFCM() {
     if (typeof firebase === 'undefined' || !firebase.messaging) return null;
     if (_fcmToken) return _fcmToken; // 이미 취득한 토큰 재사용
     try {
-        // firebase-messaging-sw.js가 active 상태가 될 때까지 대기
+        let swReg = null;
         if ('serviceWorker' in navigator) {
+            // sw.js를 FCM SW로 명시적으로 지정 (iOS 포함 모든 환경에서 단일 SW 사용)
+            swReg = await navigator.serviceWorker.register('./sw.js');
             await navigator.serviceWorker.ready;
         }
         const messaging = firebase.messaging();
-        const token = await messaging.getToken({ vapidKey: FCM_VAPID_KEY });
+        const tokenOptions = { vapidKey: FCM_VAPID_KEY };
+        if (swReg) tokenOptions.serviceWorkerRegistration = swReg;
+        const token = await messaging.getToken(tokenOptions);
         if (token) {
             _fcmToken = token;
             await saveFCMTokenToFirestore(token);
@@ -13609,6 +13652,11 @@ function startFCMTokenRefreshListener() {
 }
 
 async function openNotificationSettings() {
+    if (isIOSNonPWA()) {
+        showIOSInstallGuide();
+        return;
+    }
+
     // 메뉴 닫기
     const menuPanel = document.getElementById('menu-panel');
     if (menuPanel) menuPanel.style.display = 'none';
