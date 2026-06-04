@@ -19868,14 +19868,32 @@ function openStudyHistoryOverlay() {
 
     const now = Date.now();
 
+    // 모드별 데이터 맵 반환
+    function getModeData(mode) {
+        if (mode === 'kings') {
+            return {
+                lastClear:  activeMode === 'kings' ? stageLastClear  : (kingsRoadData.lastClear  || {}),
+                mastery:    activeMode === 'kings' ? stageMastery     : (kingsRoadData.mastery    || {}),
+                reviewStep: activeMode === 'kings' ? stageReviewStep  : (kingsRoadData.reviewStep || {}),
+                clearDate:  activeMode === 'kings' ? stageClearDate   : (kingsRoadData.clearDate  || {}),
+            };
+        } else {
+            return {
+                lastClear:  activeMode === 'kings' ? _freeStageLastClear  : stageLastClear,
+                mastery:    activeMode === 'kings' ? _freeStageMastery    : stageMastery,
+                reviewStep: activeMode === 'kings' ? _freeStageReviewStep : stageReviewStep,
+                clearDate:  activeMode === 'kings' ? _freeStageClearDate  : stageClearDate,
+            };
+        }
+    }
+
     function tsToQuizDate(ts) {
         const d = new Date(ts);
         if (d.getHours() < 6) d.setDate(d.getDate() - 1);
         return d.toISOString().split('T')[0];
     }
 
-    function getDotColor(id) {
-        const ts = stageLastClear[id];
+    function getDotColor(ts) {
         if (!ts) return '#2a2a3a';
         const days = (now - ts) / 86400000;
         if (days <= 1)  return '#27ae60';
@@ -19884,28 +19902,8 @@ function openStudyHistoryOverlay() {
         return '#c0392b';
     }
 
-    const todayStr = getMemoryQuizDate();
-    let studied = 0, studiedToday = 0;
     const total = getTotalNormalStageCount();
-
-    gameData.forEach(ch => ch.stages.forEach(s => {
-        if (s.type !== 'normal') return;
-        if (stageMastery[s.id] > 0) studied++;
-        if (stageLastClear[s.id] && tsToQuizDate(stageLastClear[s.id]) === todayStr) studiedToday++;
-    }));
-
-    let gridHtml = '';
-    for (const chapter of gameData) {
-        const normals = chapter.stages.filter(s => s.type === 'normal');
-        if (!normals.length) continue;
-        gridHtml += `<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:5px;">`;
-        gridHtml += `<div style="color:#666;font-size:0.7rem;min-width:24px;padding-top:4px;text-align:right;flex-shrink:0;">${chapter.id}장</div>`;
-        gridHtml += `<div style="display:flex;flex-wrap:wrap;gap:3px;">`;
-        for (const stage of normals) {
-            gridHtml += `<div data-id="${stage.id}" style="width:20px;height:20px;border-radius:3px;background:${getDotColor(stage.id)};cursor:pointer;flex-shrink:0;"></div>`;
-        }
-        gridHtml += `</div></div>`;
-    }
+    const kingsStarted = kingsRoadData.stepHistory && kingsRoadData.stepHistory.length > 0;
 
     const legendHtml = [['#2a2a3a','미학습'],['#27ae60','1일 이내'],['#2980b9','2-7일'],['#d68910','8-30일'],['#c0392b','31일+']].map(
         ([c, l]) => `<span style="display:flex;align-items:center;gap:3px;color:#888;font-size:0.7rem;"><span style="width:10px;height:10px;border-radius:2px;background:${c};display:inline-block;border:1px solid #444;"></span>${l}</span>`
@@ -19915,59 +19913,117 @@ function openStudyHistoryOverlay() {
     overlay.id = 'study-history-overlay';
     overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#0d1526;z-index:9500;display:flex;flex-direction:column;';
     overlay.innerHTML = `
-        <div style="padding:16px 16px 10px;flex-shrink:0;border-bottom:1px solid #1e2d45;">
+        <div style="padding:14px 16px 10px;flex-shrink:0;border-bottom:1px solid #1e2d45;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
                 <div style="font-size:1.05rem;font-weight:700;color:#f1c40f;">${t('menu_study_history')}</div>
                 <button id="sh-close-btn" style="background:none;border:none;color:#888;font-size:1.3rem;cursor:pointer;padding:4px 8px;line-height:1;">✕</button>
             </div>
-            <div style="display:flex;gap:20px;margin-bottom:10px;font-size:0.82rem;">
-                <span style="color:#aaa;">전체 <b style="color:#fff;">${total}</b>절</span>
-                <span style="color:#aaa;">학습 완료 <b style="color:#27ae60;">${studied}</b>절</span>
-                <span style="color:#aaa;">오늘 <b style="color:#f1c40f;">${studiedToday}</b>절</span>
+            <div style="display:flex;gap:4px;margin-bottom:10px;">
+                <button data-sh-tab="free"  style="flex:1;padding:6px 0;border-radius:8px;border:none;font-size:0.82rem;font-weight:700;cursor:pointer;background:#1e2d45;color:#aaa;">🗺 자유여행</button>
+                <button data-sh-tab="kings" style="flex:1;padding:6px 0;border-radius:8px;border:none;font-size:0.82rem;font-weight:700;cursor:pointer;background:#1e2d45;color:#aaa;">👑 왕의 길</button>
             </div>
+            <div id="sh-stats" style="display:flex;gap:20px;margin-bottom:10px;font-size:0.82rem;"></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">${legendHtml}</div>
         </div>
-        <div id="sh-grid" style="flex:1;overflow-y:auto;padding:10px 16px 8px;">${gridHtml}</div>
+        <div id="sh-grid" style="flex:1;overflow-y:auto;padding:10px 16px 8px;"></div>
         <div style="flex-shrink:0;background:#111c30;border-top:1px solid #1e2d45;padding:12px 16px;min-height:72px;">
             <div id="sh-detail" style="color:#555;font-size:0.82rem;text-align:center;">구절을 탭하면 상세 정보가 표시됩니다</div>
         </div>
     `;
     document.body.appendChild(overlay);
 
-    document.getElementById('sh-close-btn').addEventListener('click', () => overlay.remove());
-
+    let _currentTab = activeMode; // 현재 플레이 중인 모드를 기본 탭으로
     let _selectedDot = null;
-    overlay.querySelectorAll('[data-id]').forEach(dot => {
-        dot.addEventListener('click', () => {
-            const id = dot.dataset.id;
-            const [ch, v] = id.split('-').map(Number);
-            const verseData = bibleData[ch] && bibleData[ch][v - 1];
-            const text = verseData ? verseData.text : '';
-            const ts = stageLastClear[id];
-            const mastery = stageMastery[id] || 0;
-            const step = stageReviewStep[id] || 0;
 
-            let lastHtml;
-            if (!ts) {
-                lastHtml = '<span style="color:#555;">미학습</span>';
-            } else {
-                const days = Math.floor((now - ts) / 86400000);
-                const d = new Date(ts);
-                const dateStr = `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
-                const ago = days === 0 ? '오늘' : days === 1 ? '어제' : `${days}일 전`;
-                lastHtml = `${dateStr} <b style="color:#f1c40f;">(${ago})</b>`;
-            }
+    function renderTab(mode) {
+        _currentTab = mode;
+        _selectedDot = null;
 
-            document.getElementById('sh-detail').innerHTML = `
-                <div style="font-weight:700;color:#eee;margin-bottom:3px;font-size:0.85rem;">계시록 ${ch}장 ${v}절</div>
-                <div style="font-size:0.78rem;color:#7fb3d8;margin-bottom:5px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">"${text}"</div>
-                <div style="font-size:0.75rem;color:#aaa;">마지막 학습: ${lastHtml}${mastery > 0 ? ` &nbsp;·&nbsp; ${mastery}회 &nbsp;·&nbsp; ${step}단계` : ''}</div>
-            `;
-
-            if (_selectedDot) { _selectedDot.style.outline = ''; _selectedDot.style.outlineOffset = ''; }
-            dot.style.outline = '2px solid #f1c40f';
-            dot.style.outlineOffset = '1px';
-            _selectedDot = dot;
+        // 탭 활성화 스타일
+        overlay.querySelectorAll('[data-sh-tab]').forEach(btn => {
+            const active = btn.dataset.shTab === mode;
+            btn.style.background = active ? '#f1c40f' : '#1e2d45';
+            btn.style.color = active ? '#0d1526' : '#aaa';
         });
+
+        const data = getModeData(mode);
+        const todayStr = getMemoryQuizDate();
+        let studied = 0, studiedToday = 0;
+
+        // 통계
+        gameData.forEach(ch => ch.stages.forEach(s => {
+            if (s.type !== 'normal') return;
+            if (data.mastery[s.id] > 0) studied++;
+            if (data.lastClear[s.id] && tsToQuizDate(data.lastClear[s.id]) === todayStr) studiedToday++;
+        }));
+        document.getElementById('sh-stats').innerHTML = `
+            <span style="color:#aaa;">전체 <b style="color:#fff;">${total}</b>절</span>
+            <span style="color:#aaa;">학습 완료 <b style="color:#27ae60;">${studied}</b>절</span>
+            <span style="color:#aaa;">오늘 <b style="color:#f1c40f;">${studiedToday}</b>절</span>
+        `;
+
+        // 그리드
+        if (mode === 'kings' && !kingsStarted) {
+            document.getElementById('sh-grid').innerHTML = '<div style="text-align:center;color:#555;padding:40px 0;font-size:0.88rem;">왕의 길을 시작하면 이력이 표시됩니다</div>';
+            document.getElementById('sh-detail').innerHTML = '<div style="color:#555;font-size:0.82rem;text-align:center;">구절을 탭하면 상세 정보가 표시됩니다</div>';
+            return;
+        }
+
+        let gridHtml = '';
+        for (const chapter of gameData) {
+            const normals = chapter.stages.filter(s => s.type === 'normal');
+            if (!normals.length) continue;
+            gridHtml += `<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:5px;">`;
+            gridHtml += `<div style="color:#666;font-size:0.7rem;min-width:24px;padding-top:4px;text-align:right;flex-shrink:0;">${chapter.id}장</div>`;
+            gridHtml += `<div style="display:flex;flex-wrap:wrap;gap:3px;">`;
+            for (const stage of normals) {
+                gridHtml += `<div data-id="${stage.id}" style="width:20px;height:20px;border-radius:3px;background:${getDotColor(data.lastClear[stage.id])};cursor:pointer;flex-shrink:0;"></div>`;
+            }
+            gridHtml += `</div></div>`;
+        }
+        document.getElementById('sh-grid').innerHTML = gridHtml;
+        document.getElementById('sh-detail').innerHTML = '<div style="color:#555;font-size:0.82rem;text-align:center;">구절을 탭하면 상세 정보가 표시됩니다</div>';
+
+        // 도트 클릭
+        overlay.querySelectorAll('[data-id]').forEach(dot => {
+            dot.addEventListener('click', () => {
+                const id = dot.dataset.id;
+                const [ch, v] = id.split('-').map(Number);
+                const verseData = bibleData[ch] && bibleData[ch][v - 1];
+                const text = verseData ? verseData.text : '';
+                const ts = data.lastClear[id];
+                const mastery = data.mastery[id] || 0;
+                const step = data.reviewStep[id] || 0;
+
+                let lastHtml;
+                if (!ts) {
+                    lastHtml = '<span style="color:#555;">미학습</span>';
+                } else {
+                    const days = Math.floor((now - ts) / 86400000);
+                    const d = new Date(ts);
+                    const dateStr = `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+                    const ago = days === 0 ? '오늘' : days === 1 ? '어제' : `${days}일 전`;
+                    lastHtml = `${dateStr} <b style="color:#f1c40f;">(${ago})</b>`;
+                }
+
+                document.getElementById('sh-detail').innerHTML = `
+                    <div style="font-weight:700;color:#eee;margin-bottom:3px;font-size:0.85rem;">계시록 ${ch}장 ${v}절</div>
+                    <div style="font-size:0.78rem;color:#7fb3d8;margin-bottom:5px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">"${text}"</div>
+                    <div style="font-size:0.75rem;color:#aaa;">마지막 학습: ${lastHtml}${mastery > 0 ? ` &nbsp;·&nbsp; ${mastery}회 &nbsp;·&nbsp; ${step}단계` : ''}</div>
+                `;
+
+                if (_selectedDot) { _selectedDot.style.outline = ''; _selectedDot.style.outlineOffset = ''; }
+                dot.style.outline = '2px solid #f1c40f';
+                dot.style.outlineOffset = '1px';
+                _selectedDot = dot;
+            });
+        });
+    }
+
+    document.getElementById('sh-close-btn').addEventListener('click', () => overlay.remove());
+    overlay.querySelectorAll('[data-sh-tab]').forEach(btn => {
+        btn.addEventListener('click', () => renderTab(btn.dataset.shTab));
     });
+
+    renderTab(_currentTab);
 }
