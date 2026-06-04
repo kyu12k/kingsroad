@@ -35,6 +35,7 @@ const LANG = {
         menu_home_add: '📱 홈 화면에 추가',
         menu_survey: '📝 설문조사',
         menu_notice: '📢 공지사항',
+        menu_study_history: '📊 학습 현황',
         menu_report: '🐞 불편 신고',
         menu_data: '💾 기기 변경',
 
@@ -767,6 +768,7 @@ const LANG = {
         menu_home_add: '📱 Add to Home Screen',
         menu_survey: '📝 Survey',
         menu_notice: '📢 Notices',
+        menu_study_history: '📊 Study History',
         menu_report: '🐞 Report Issue',
         menu_data: '💾 Change Device',
 
@@ -19855,3 +19857,117 @@ function renderGuidePage() {
         if (typeof goMap === 'function') goMap();
     };
 })();
+
+// ── 구절 학습 현황 ──────────────────────────────────────────────────────────────
+function openStudyHistoryOverlay() {
+    const menuPanel = document.getElementById('menu-panel');
+    if (menuPanel) menuPanel.style.display = 'none';
+
+    const existing = document.getElementById('study-history-overlay');
+    if (existing) { existing.remove(); return; }
+
+    const now = Date.now();
+
+    function tsToQuizDate(ts) {
+        const d = new Date(ts);
+        if (d.getHours() < 6) d.setDate(d.getDate() - 1);
+        return d.toISOString().split('T')[0];
+    }
+
+    function getDotColor(id) {
+        const ts = stageLastClear[id];
+        if (!ts) return '#2a2a3a';
+        const days = (now - ts) / 86400000;
+        if (days <= 1)  return '#27ae60';
+        if (days <= 7)  return '#2980b9';
+        if (days <= 30) return '#d68910';
+        return '#c0392b';
+    }
+
+    const todayStr = getMemoryQuizDate();
+    let studied = 0, studiedToday = 0;
+    const total = getTotalNormalStageCount();
+
+    gameData.forEach(ch => ch.stages.forEach(s => {
+        if (s.type !== 'normal') return;
+        if (stageMastery[s.id] > 0) studied++;
+        if (stageLastClear[s.id] && tsToQuizDate(stageLastClear[s.id]) === todayStr) studiedToday++;
+    }));
+
+    let gridHtml = '';
+    for (const chapter of gameData) {
+        const normals = chapter.stages.filter(s => s.type === 'normal');
+        if (!normals.length) continue;
+        gridHtml += `<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:5px;">`;
+        gridHtml += `<div style="color:#666;font-size:0.7rem;min-width:24px;padding-top:4px;text-align:right;flex-shrink:0;">${chapter.id}장</div>`;
+        gridHtml += `<div style="display:flex;flex-wrap:wrap;gap:3px;">`;
+        for (const stage of normals) {
+            gridHtml += `<div data-id="${stage.id}" style="width:20px;height:20px;border-radius:3px;background:${getDotColor(stage.id)};cursor:pointer;flex-shrink:0;"></div>`;
+        }
+        gridHtml += `</div></div>`;
+    }
+
+    const legendHtml = [['#2a2a3a','미학습'],['#27ae60','1일 이내'],['#2980b9','2-7일'],['#d68910','8-30일'],['#c0392b','31일+']].map(
+        ([c, l]) => `<span style="display:flex;align-items:center;gap:3px;color:#888;font-size:0.7rem;"><span style="width:10px;height:10px;border-radius:2px;background:${c};display:inline-block;border:1px solid #444;"></span>${l}</span>`
+    ).join('');
+
+    const overlay = document.createElement('div');
+    overlay.id = 'study-history-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#0d1526;z-index:9500;display:flex;flex-direction:column;';
+    overlay.innerHTML = `
+        <div style="padding:16px 16px 10px;flex-shrink:0;border-bottom:1px solid #1e2d45;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div style="font-size:1.05rem;font-weight:700;color:#f1c40f;">${t('menu_study_history')}</div>
+                <button id="sh-close-btn" style="background:none;border:none;color:#888;font-size:1.3rem;cursor:pointer;padding:4px 8px;line-height:1;">✕</button>
+            </div>
+            <div style="display:flex;gap:20px;margin-bottom:10px;font-size:0.82rem;">
+                <span style="color:#aaa;">전체 <b style="color:#fff;">${total}</b>절</span>
+                <span style="color:#aaa;">학습 완료 <b style="color:#27ae60;">${studied}</b>절</span>
+                <span style="color:#aaa;">오늘 <b style="color:#f1c40f;">${studiedToday}</b>절</span>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">${legendHtml}</div>
+        </div>
+        <div id="sh-grid" style="flex:1;overflow-y:auto;padding:10px 16px 8px;">${gridHtml}</div>
+        <div style="flex-shrink:0;background:#111c30;border-top:1px solid #1e2d45;padding:12px 16px;min-height:72px;">
+            <div id="sh-detail" style="color:#555;font-size:0.82rem;text-align:center;">구절을 탭하면 상세 정보가 표시됩니다</div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    document.getElementById('sh-close-btn').addEventListener('click', () => overlay.remove());
+
+    let _selectedDot = null;
+    overlay.querySelectorAll('[data-id]').forEach(dot => {
+        dot.addEventListener('click', () => {
+            const id = dot.dataset.id;
+            const [ch, v] = id.split('-').map(Number);
+            const verseData = bibleData[ch] && bibleData[ch][v - 1];
+            const text = verseData ? verseData.text : '';
+            const ts = stageLastClear[id];
+            const mastery = stageMastery[id] || 0;
+            const step = stageReviewStep[id] || 0;
+
+            let lastHtml;
+            if (!ts) {
+                lastHtml = '<span style="color:#555;">미학습</span>';
+            } else {
+                const days = Math.floor((now - ts) / 86400000);
+                const d = new Date(ts);
+                const dateStr = `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+                const ago = days === 0 ? '오늘' : days === 1 ? '어제' : `${days}일 전`;
+                lastHtml = `${dateStr} <b style="color:#f1c40f;">(${ago})</b>`;
+            }
+
+            document.getElementById('sh-detail').innerHTML = `
+                <div style="font-weight:700;color:#eee;margin-bottom:3px;font-size:0.85rem;">계시록 ${ch}장 ${v}절</div>
+                <div style="font-size:0.78rem;color:#7fb3d8;margin-bottom:5px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">"${text}"</div>
+                <div style="font-size:0.75rem;color:#aaa;">마지막 학습: ${lastHtml}${mastery > 0 ? ` &nbsp;·&nbsp; ${mastery}회 &nbsp;·&nbsp; ${step}단계` : ''}</div>
+            `;
+
+            if (_selectedDot) { _selectedDot.style.outline = ''; _selectedDot.style.outlineOffset = ''; }
+            dot.style.outline = '2px solid #f1c40f';
+            dot.style.outlineOffset = '1px';
+            _selectedDot = dot;
+        });
+    });
+}
