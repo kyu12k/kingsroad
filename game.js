@@ -4533,11 +4533,15 @@ function updateKingsStepBtn() {
     }
 }
 
-// startTs ~ endTs 사이에 오전 6시 경계가 몇 번 지났는지 반환
-// 타임라인을 6시간 앞당겨 오전 6시가 자정처럼 동작하게 함
+// startTs ~ endTs 사이에 오전 6시(로컬) 경계가 몇 번 지났는지 반환
 function count6AMBoundaries(startTs, endTs) {
-    const offset = 6 * 3600000;
-    return Math.max(0, Math.floor((endTs - offset) / 86400000) - Math.floor((startTs - offset) / 86400000));
+    function to6AMDay(ts) {
+        const d = new Date(ts);
+        if (d.getHours() < 6) d.setDate(d.getDate() - 1);
+        d.setHours(6, 0, 0, 0);
+        return d.getTime();
+    }
+    return Math.max(0, Math.round((to6AMDay(endTs) - to6AMDay(startTs)) / 86400000));
 }
 
 // 현재 해금된 일반 스테이지 수 반환
