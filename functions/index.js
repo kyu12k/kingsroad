@@ -314,20 +314,20 @@ exports.updateWeeklyCounts = functions.pubsub
  */
 // 순위 → 시온성 보석 환산
 function calcZionGems(rank) {
-    if (rank === 1)          return 500;
-    if (rank <= 3)           return 300;
-    if (rank <= 10)          return 200;
-    if (rank <= 30)          return 120;
-    return 60; // 31~100
+    if (rank === 1)          return 10000;
+    if (rank <= 3)           return 6000;
+    if (rank <= 10)          return 3500;
+    if (rank <= 30)          return 2000;
+    return 1000; // 31~100
 }
 
 // 순위 → 지파 보석 환산
 function calcTribeGems(rank) {
-    if (rank === 1)          return 300;
-    if (rank <= 3)           return 180;
-    if (rank <= 10)          return 120;
-    if (rank <= 30)          return 70;
-    return 30; // 31~100
+    if (rank === 1)          return 7000;
+    if (rank <= 3)           return 4000;
+    if (rank <= 10)          return 2500;
+    if (rank <= 30)          return 1500;
+    return 700; // 31~100
 }
 
 // Firestore batch 500개 제한 안전하게 커밋
