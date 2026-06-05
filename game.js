@@ -6957,6 +6957,78 @@ function showBossHistoryModal() {
     document.body.appendChild(overlay);
 }
 
+/* 주간 순위 보상 안내 모달 */
+function showRankingRewardInfo() {
+    const existing = document.getElementById('ranking-reward-info-modal');
+    if (existing) { existing.remove(); return; }
+
+    const isEn = (typeof currentLang !== 'undefined' && currentLang === 'en');
+
+    const overlay = document.createElement('div');
+    overlay.id = 'ranking-reward-info-modal';
+    overlay.style.cssText = `
+        position:fixed; inset:0; z-index:9999;
+        background:rgba(0,0,0,0.65);
+        display:flex; align-items:flex-end; justify-content:center;
+    `;
+
+    const panel = document.createElement('div');
+    panel.style.cssText = `
+        background:#1a252f; color:#eee;
+        width:100%; max-width:500px;
+        max-height:80vh; overflow-y:auto;
+        border-radius:16px 16px 0 0;
+        padding:20px 16px 36px;
+        box-sizing:border-box;
+    `;
+
+    const rows = [
+        { rank: isEn ? '🥇 1st'    : '🥇 1위',     zion: 10000, tribe: 7000  },
+        { rank: isEn ? '🥈 2–3rd'  : '🥈 2~3위',   zion: 6000,  tribe: 4000  },
+        { rank: isEn ? '🏅 4–10th' : '🏅 4~10위',  zion: 3500,  tribe: 2500  },
+        { rank: isEn ? '11–30th'   : '11~30위',    zion: 2000,  tribe: 1500  },
+        { rank: isEn ? '31–100th'  : '31~100위',   zion: 1000,  tribe: 700   },
+    ];
+
+    const tableRows = rows.map(r => `
+        <tr>
+            <td style="padding:8px 10px; font-weight:bold; color:#ccc;">${r.rank}</td>
+            <td style="padding:8px 10px; text-align:center; color:#f1c40f; font-weight:bold;">💎 ${r.zion.toLocaleString()}</td>
+            <td style="padding:8px 10px; text-align:center; color:#85c1e9; font-weight:bold;">💎 ${r.tribe.toLocaleString()}</td>
+        </tr>
+    `).join('');
+
+    panel.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <span style="font-weight:bold; font-size:1rem;">🎁 ${isEn ? 'Weekly Ranking Rewards' : '주간 순위 보상'}</span>
+            <button onclick="document.getElementById('ranking-reward-info-modal').remove()"
+                style="background:none; border:none; color:#aaa; font-size:1.3rem; cursor:pointer; padding:0 4px;">✕</button>
+        </div>
+        <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+            <thead>
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.12);">
+                    <th style="padding:6px 10px; text-align:left; color:#7f8c8d; font-size:0.78rem; font-weight:normal;">${isEn ? 'Rank' : '순위'}</th>
+                    <th style="padding:6px 10px; text-align:center; color:#f1c40f; font-size:0.78rem; font-weight:normal;">👑 ${isEn ? 'Zion' : '시온성'}</th>
+                    <th style="padding:6px 10px; text-align:center; color:#85c1e9; font-size:0.78rem; font-weight:normal;">🧭 ${isEn ? 'Tribe' : '지파'}</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${tableRows}
+            </tbody>
+        </table>
+        <div style="margin-top:16px; padding:12px; background:rgba(255,255,255,0.05); border-radius:10px; font-size:0.8rem; color:#7f8c8d; line-height:1.6;">
+            ${isEn
+                ? '• Zion rewards require <strong style="color:#bdc3c7;">100+ total participants</strong>.<br>• Tribe rewards require <strong style="color:#bdc3c7;">100+ members</strong> in your tribe.<br>• Rewards are distributed every <strong style="color:#bdc3c7;">Monday at midnight (KST)</strong>.'
+                : '• 시온성 보상은 전체 참여자 <strong style="color:#bdc3c7;">100명 이상</strong>이어야 지급됩니다.<br>• 지파 보상은 해당 지파 참여자 <strong style="color:#bdc3c7;">100명 이상</strong>이어야 지급됩니다.<br>• 보상은 매주 <strong style="color:#bdc3c7;">월요일 자정(KST)</strong>에 지급됩니다.'
+            }
+        </div>
+    `;
+
+    overlay.appendChild(panel);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
+}
+
 /* [수정] UI 업데이트 함수 (분할 체력바 + 개선된 보스 표시) */
 function updateBattleUI() {
     updateHintButtonLabels();
@@ -11025,7 +11097,7 @@ function openRankingScreen() {
         </div>
     </div>
 
-    <div id="yearly-swipe-area" style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap:15px; padding:15px 10px 20px 10px; margin-top:10px; border-bottom:1px solid rgba(255,255,255,0.1); scrollbar-width: none; align-items:flex-start; flex-shrink:0; width:100%; box-sizing:border-box;">
+    <div id="yearly-swipe-area" style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; gap:15px; padding:15px 10px 20px 10px; margin-top:10px; border-bottom:1px solid rgba(255,255,255,0.1); scrollbar-width: none; align-items:flex-start; flex-shrink:0; width:100%; max-width:560px; box-sizing:border-box; margin-left:auto; margin-right:auto;">
             <div style="min-width:85%; flex:0 0 auto; scroll-snap-align:center; background:linear-gradient(135deg, #2c3e50, #1a252f); border:2px solid #f39c12; border-radius:15px; padding:15px; box-shadow:0 8px 15px rgba(0,0,0,0.5); position:relative;">
                 <div style="position:absolute; top:-10px; right:-15px; font-size:6rem; opacity:0.05; pointer-events:none;">🏆</div>
                 <div style="text-align:center; font-weight:bold; color:#f1c40f; font-size:1.15rem; margin-bottom:5px; letter-spacing:-0.5px;">${t('ranking_yearly_battle')}</div>
@@ -11045,9 +11117,7 @@ function openRankingScreen() {
             </div>
     </div>
 
-    <div style="background:#1a252f; padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.07); text-align:center;">
-        <span style="font-size:0.78rem; color:#7f8c8d; line-height:1.5;">${t('ranking_reward_notice')}</span>
-    </div>
+    <button onclick="showRankingRewardInfo()" style="position:fixed; bottom:80px; right:16px; z-index:800; width:52px; height:52px; border-radius:50%; border:none; background:linear-gradient(135deg,#f39c12,#e67e22); color:white; font-size:0.72rem; font-weight:bold; cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,0.4); line-height:1.3; display:flex; align-items:center; justify-content:center;">보상</button>
     <div id="sticky-tabs-container" style="padding:12px 12px 14px; border-top:1px solid rgba(255,255,255,0.08); border-bottom:1px solid rgba(255,255,255,0.08);">
         <div style="font-size:0.7rem; color:#7f8c8d; font-weight:bold; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:7px; padding-left:2px;">${t('ranking_tab_group_current')}</div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:14px;">
@@ -12422,7 +12492,7 @@ updateShopUI = function () {
 
     // [굳건한 마음] 가격 계산 수정
     const heartPrice = (purchasedMaxHearts - 4) * 3000;
-    const isMax = purchasedMaxHearts >= 30;
+    const isMax = purchasedMaxHearts >= 100;
 
     const heartDiv = document.createElement('div');
     heartDiv.className = 'shop-item';
