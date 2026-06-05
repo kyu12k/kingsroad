@@ -11932,10 +11932,15 @@ function checkDailyLogin() {
         updateWeeklyAttendance(today, currentWeekId);
 
         // ★ 일일 미션 초기화
+        missionData.daily.loginReward = 1; // 접속 시 즉시 완료
         missionData.daily.newClear = 0;
         missionData.daily.differentStages = 0;
         missionData.daily.checkpointBoss = 0;
         missionData.daily.hardship = 0;
+        missionData.daily.hardshipAddress = 0;
+        missionData.daily.hardshipMemory = 0;
+        missionData.daily.hardshipEndurance = 0;
+        missionData.daily.hardshipVerse = 0;
         missionData.daily.backup = 0;
         missionData.daily.claimed = [false, false, false, false, false, false, false, false];
         missionData.lastLoginDate = today; // ★ [버그 수정] checkMissions()와 동기화

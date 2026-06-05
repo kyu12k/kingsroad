@@ -757,14 +757,18 @@
 
             <!-- 공지사항 모달 -->
             <div id="notice-modal" class="modal-overlay" style="z-index: 9999; display:none;">
-                <div class="result-card" style="max-width: 400px; max-height: 80vh; overflow-y: auto;">
-                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                <div class="result-card" style="max-width: 400px; max-height: 80vh; display:flex; flex-direction:column; overflow:hidden;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-shrink:0;">
                         <h2 style="margin:0; color:#2c3e50;" data-i18n="notice_modal_title">📢 공지사항</h2>
                         <button onclick="closeNoticeModal()"
                             style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
                     </div>
-                    <div id="notice-list"></div>
-                    <div style="margin-top:16px; text-align:center; border-top:1px solid #eee; padding-top:14px;">
+                    <div style="display:flex; gap:8px; margin-bottom:12px; flex-shrink:0;">
+                        <button id="notice-tab-btn-notice" onclick="switchNoticeTab('notice')" style="flex:1; padding:8px; border:2px solid #3498db; background:#3498db; color:white; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.88rem;">📢 공지사항</button>
+                        <button id="notice-tab-btn-patch" onclick="switchNoticeTab('patch')" style="flex:1; padding:8px; border:2px solid #ddd; background:#f5f5f5; color:#888; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.88rem;">🔧 패치노트</button>
+                    </div>
+                    <div id="notice-list" style="overflow-y:auto; flex:1;"></div>
+                    <div style="margin-top:12px; text-align:center; border-top:1px solid #eee; padding-top:12px; flex-shrink:0;">
                         <button onclick="setNoticeHide3Days()" style="background:none; border:1px solid #bdc3c7; color:#95a5a6; border-radius:16px; padding:7px 20px; font-size:0.85rem; cursor:pointer;">3일간 보지 않기</button>
                     </div>
                 </div>
@@ -816,6 +820,7 @@
                     },
                     {
                         date: '2026-05-25',
+                        type: 'notice',
                         title: '주간 명예의 전당 순위 오류 안내 [처리 완료]',
                         titleEn: 'Weekly Hall of Fame Ranking Issue [Resolved]',
                         content: `
@@ -952,6 +957,7 @@
                     },
                     {
                         date: '2026-05-18',
+                        type: 'notice',
                         title: '주간 명예의 전당 오류 안내',
                         titleEn: 'Weekly Hall of Fame Issue',
                         content: `
@@ -1185,6 +1191,7 @@
                     },
                     {
                         date: '2026-04-03',
+                        type: 'notice',
                         title: '베타테스트 안내',
                         titleEn: 'Beta Test Notice',
                         content: `<p>현재 킹스로드는 <strong>베타테스트 중</strong>입니다.</p>
@@ -1204,8 +1211,21 @@
                     }
                 ];
 
-                function openNoticeModal(autoOpen) {
+                var currentNoticeTab = 'notice';
+                function switchNoticeTab(tab) {
+                    currentNoticeTab = tab;
+                    var activeStyle = 'flex:1; padding:8px; border:2px solid #3498db; background:#3498db; color:white; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.88rem;';
+                    var inactiveStyle = 'flex:1; padding:8px; border:2px solid #ddd; background:#f5f5f5; color:#888; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.88rem;';
+                    var btnNotice = document.getElementById('notice-tab-btn-notice');
+                    var btnPatch = document.getElementById('notice-tab-btn-patch');
+                    if (btnNotice) btnNotice.style.cssText = (tab === 'notice') ? activeStyle : inactiveStyle;
+                    if (btnPatch) btnPatch.style.cssText = (tab === 'patch') ? activeStyle : inactiveStyle;
                     renderNotices();
+                }
+                function openNoticeModal(autoOpen) {
+                    // autoOpen이면 최신 업데이트가 있는 패치노트 탭으로
+                    if (autoOpen) currentNoticeTab = 'patch';
+                    switchNoticeTab(currentNoticeTab);
                     var modal = document.getElementById('notice-modal');
                     modal.style.display = 'flex';
                     // 바깥 클릭 시 닫기
@@ -1214,8 +1234,8 @@
                     };
                     var menuPanel = document.getElementById('menu-panel');
                     if (menuPanel) menuPanel.style.display = 'none';
-                    // 최신 공지 자동 펼침
-                    if (autoOpen) toggleNotice(0);
+                    // 최신 항목 자동 펼침
+                    if (autoOpen) toggleNotice(0, 'patch');
                     // 마이그레이션 버튼 렌더링 (열린 직후)
                     setTimeout(renderMigrationArea, 50);
                 }
@@ -1225,28 +1245,39 @@
                 function renderNotices() {
                     var lang = (typeof currentLang !== 'undefined') ? currentLang : (localStorage.getItem('lang') || 'ko');
                     var list = document.getElementById('notice-list');
-                    list.innerHTML = NOTICES.map(function(n, i) {
+                    var filtered = NOTICES.filter(function(n) {
+                        return (n.type || 'patch') === currentNoticeTab;
+                    });
+                    if (filtered.length === 0) {
+                        list.innerHTML = '<div style="text-align:center; color:#bdc3c7; padding:30px 0;">내용이 없습니다.</div>';
+                        return;
+                    }
+                    list.innerHTML = filtered.map(function(n, i) {
                         var title = (lang === 'en' && n.titleEn) ? n.titleEn : n.title;
                         var content = (lang === 'en' && n.contentEn) ? n.contentEn : n.content;
                         return '<div class="notice-item">' +
-                            '<button class="notice-header" onclick="toggleNotice(' + i + ')">' +
+                            '<button class="notice-header" onclick="toggleNotice(' + i + ', \'' + currentNoticeTab + '\')">' +
                                 '<span class="notice-date">' + n.date + '</span>' +
                                 '<span class="notice-title">' + title + '</span>' +
-                                '<span class="notice-arrow" id="notice-arrow-' + i + '">▼</span>' +
+                                '<span class="notice-arrow" id="notice-arrow-' + currentNoticeTab + '-' + i + '">▼</span>' +
                             '</button>' +
-                            '<div class="notice-body" id="notice-body-' + i + '" style="display:none;">' +
+                            '<div class="notice-body" id="notice-body-' + currentNoticeTab + '-' + i + '" style="display:none;">' +
                                 content +
                             '</div>' +
                         '</div>';
                     }).join('');
                 }
-                function toggleNotice(i) {
-                    var body = document.getElementById('notice-body-' + i);
-                    var arrow = document.getElementById('notice-arrow-' + i);
+                function toggleNotice(i, tab) {
+                    tab = tab || currentNoticeTab;
+                    var body = document.getElementById('notice-body-' + tab + '-' + i);
+                    var arrow = document.getElementById('notice-arrow-' + tab + '-' + i);
+                    if (!body) return;
                     var isOpen = body.style.display !== 'none';
                     body.style.display = isOpen ? 'none' : 'block';
                     arrow.textContent = isOpen ? '▼' : '▲';
-                    if (!isOpen && NOTICES[i] && NOTICES[i].hasMigration) renderMigrationArea();
+                    // hasMigration 처리
+                    var filtered = NOTICES.filter(function(n) { return (n.type || 'patch') === tab; });
+                    if (!isOpen && filtered[i] && filtered[i].hasMigration) renderMigrationArea();
                 }
                 function renderMigrationArea() {
                     var area = document.getElementById('migration-gem-area');
