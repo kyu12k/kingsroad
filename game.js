@@ -178,7 +178,7 @@ const LANG = {
         alert_booster_extended: '🔥 부스터 시간이 {min}분 연장되었습니다!',
         alert_booster_started: '⚡ {min}분간 승점 {multi}배 부스터 발동!',
         alert_ranking_out: '현재 랭킹 Top 100 안에 들지 못했습니다.\n분발하세요, 순례자여! 🔥',
-        alert_hearts_max_reached: '더 이상 체력을 늘릴 수 없습니다 (순수 최대치 30 도달).',
+        alert_hearts_max_reached: '더 이상 체력을 늘릴 수 없습니다 (순수 최대치 100 도달).',
         alert_buy_hearts_no_gems: '💎 보석이 부족합니다! (필요: {cost})',
         alert_buy_hearts_success: '❤️ 최대 체력이 {max}칸으로 늘어났습니다!',
         alert_buy_no_gems: '💎 보석이 부족합니다!',
@@ -911,7 +911,7 @@ const LANG = {
         alert_booster_extended: '🔥 Booster time extended by {min} minutes!',
         alert_booster_started: '⚡ Score ×{multi} booster active for {min} minutes!',
         alert_ranking_out: 'You are not in the Top 100 ranking.\nKeep going, pilgrim! 🔥',
-        alert_hearts_max_reached: 'Cannot increase hearts further (max 30 reached).',
+        alert_hearts_max_reached: 'Cannot increase hearts further (max 100 reached).',
         alert_buy_hearts_no_gems: '💎 Not enough gems! (Required: {cost})',
         alert_buy_hearts_success: '❤️ Max hearts increased to {max}!',
         alert_buy_no_gems: '💎 Not enough gems!',
@@ -12321,7 +12321,7 @@ function buyItem(itemType) {
     // ------------------------------------------
     if (itemType === 'heart') {
         // 1. 최대치 제한 확인 (30칸)
-        if (purchasedMaxHearts >= 30) {
+        if (purchasedMaxHearts >= 100) {
             alert(t('alert_hearts_max_reached'));
             return;
         }
