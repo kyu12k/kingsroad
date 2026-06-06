@@ -1750,6 +1750,10 @@ let hardshipVerseClearHistory = {}; // 장별 구절의 고난 클리어 기록 
 // ★ [학습 모드 설정]
 let studyModePreference = 'ask'; // 'ask' | 'quick' | 'full'
 
+// ★ [보스전/중간점검 모드 설정]
+let bossDifficultyMode = 'hard'; // 'normal' | 'hard'
+let bossOrderMode = 'sequential'; // 'sequential' | 'random'
+
 // ★ [게임 모드 시스템]
 let activeMode = 'free'; // 'free' | 'kings'
 // 자유여행 데이터 백업 (모드 스왑용)
@@ -1833,6 +1837,8 @@ loadGameData = function () {
         stageReviewStep = parsed.reviewStep || {};
         stageNextReviewTime = parsed.nextReviewTime || {};
         studyModePreference = parsed.studyModePreference || 'ask';
+        bossDifficultyMode = parsed.bossDifficultyMode || 'hard';
+        bossOrderMode = parsed.bossOrderMode || 'sequential';
         // 마이그레이션: 신규 키가 없고 구버전 데이터가 있으면 변환
         if (Object.keys(stageReviewStep).length === 0 && Object.keys(stageMemoryLevels).length > 0) {
             migrateToSerialReview(parsed);
@@ -4320,7 +4326,7 @@ for (let i = 1; i <= 22; i++) {
         // [1] 중간 점검 구간(Range) — 소제목 기반 하드코딩 (계시록 신학 단위 반영)
         // -------------------------------------------------------
         const MIDBOSS_RANGES = {
-            1:  [{start:1,  end:8,  subtitle:'계시와 복'},                              {start:9,  end:20, subtitle:'하나님의 보좌와 일곱 별의 비밀'}],
+            1:  [{start:1,  end:8,  subtitle:'계시와 복'}, {start:9, end:12, subtitle:'밧모섬에서 받은 계시'}, {start:13, end:16, subtitle:'인자의 영광스러운 모습'}, {start:17, end:20, subtitle:'예수님의 지시'}],
             2:  [{start:1,  end:7,  subtitle:'에베소 교회'},                             {start:8,  end:11, subtitle:'서머나 교회'},          {start:12, end:17, subtitle:'버가모 교회'},         {start:18, end:25, subtitle:'두아디라 교회 — 이세벨과 행위'}, {start:26, end:29, subtitle:'두아디라 교회 — 이기는 자의 약속'}],
             3:  [{start:1,  end:6,  subtitle:'사데 교회'},                               {start:7,  end:13, subtitle:'빌라델비아 교회'},       {start:14, end:22, subtitle:'라오디게아 교회'}],
             4:  [{start:1,  end:5,  subtitle:'하나님의 보좌와 이십사 장로'},              {start:6,  end:11, subtitle:'유리바다와 네 생물'}],
@@ -5747,7 +5753,7 @@ function openStageSheet(chapterData) {
             }
 
             if (stage.type === 'boss' || stage.type === 'mid-boss') {
-                startBossBattle(stage.targetVerseCount);
+                openBossSetupModal(stage);
             } else if (canChooseReviewMode) {
                 // 모드 선택 창을 띄웁니다.
                 // (여기는 일단 그대로 둡니다. 나중에 모드 버튼 안쪽에 애니메이션을 걸어줄 거예요!)
@@ -6160,6 +6166,70 @@ let currentBossHp, maxBossHp, playerHearts, currentVerseIdx, currentVerseData;
 let currentBossParts, currentBossPartIndex, currentBossChunks;
 let bossHistory = []; // { verseLabel, partLabel, chunks } 완료된 파트/구절 이력
 
+//[1] 보스전/중간점검 설정 모달//
+function openBossSetupModal(stage) {
+    document.getElementById('boss-setup-modal')?.remove();
+    window._pendingBossStage = stage;
+
+    const isMid = String(stage.id).includes('mid');
+    const overlay = document.createElement('div');
+    overlay.id = 'boss-setup-modal';
+    overlay.className = 'boss-setup-overlay';
+    overlay.innerHTML = `
+        <div class="boss-setup-sheet">
+            <div class="boss-setup-title">
+                <h3>${isMid ? '중간점검 설정' : '보스전 설정'}</h3>
+                <button class="boss-setup-close" onclick="document.getElementById('boss-setup-modal').remove()">✕</button>
+            </div>
+            <div class="boss-setup-section">
+                <div class="boss-setup-label">난이도</div>
+                <div class="bso-toggle">
+                    <button class="bso-btn${bossDifficultyMode==='normal'?' active':''}" id="bso-normal" onclick="setBossSetupOpt('difficulty','normal')">보통</button>
+                    <button class="bso-btn${bossDifficultyMode==='hard'?' active':''}" id="bso-hard" onclick="setBossSetupOpt('difficulty','hard')">어려움</button>
+                </div>
+                <div class="bso-desc" id="bso-diff-desc">${_getBossDiffDesc()}</div>
+            </div>
+            <div class="boss-setup-section">
+                <div class="boss-setup-label">진행 순서</div>
+                <div class="bso-toggle">
+                    <button class="bso-btn${bossOrderMode==='sequential'?' active':''}" id="bso-seq" onclick="setBossSetupOpt('order','sequential')">순서대로</button>
+                    <button class="bso-btn${bossOrderMode==='random'?' active':''}" id="bso-rand" onclick="setBossSetupOpt('order','random')">무작위</button>
+                </div>
+            </div>
+            <button class="boss-setup-start" onclick="confirmBossSetup()">시작</button>
+        </div>
+    `;
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
+}
+
+function _getBossDiffDesc() {
+    return bossDifficultyMode === 'normal'
+        ? '단어 버튼을 눌러 순서대로 배열 (보상 70%)'
+        : '초성 힌트만 보고 단어 배열 — 기존 방식';
+}
+
+function setBossSetupOpt(type, value) {
+    if (type === 'difficulty') {
+        bossDifficultyMode = value;
+        document.getElementById('bso-normal').classList.toggle('active', value === 'normal');
+        document.getElementById('bso-hard').classList.toggle('active', value === 'hard');
+        document.getElementById('bso-diff-desc').textContent = _getBossDiffDesc();
+    } else {
+        bossOrderMode = value;
+        document.getElementById('bso-seq').classList.toggle('active', value === 'sequential');
+        document.getElementById('bso-rand').classList.toggle('active', value === 'random');
+    }
+    saveGameData();
+}
+
+function confirmBossSetup() {
+    const stage = window._pendingBossStage;
+    document.getElementById('boss-setup-modal')?.remove();
+    window._pendingBossStage = null;
+    if (stage) startBossBattle(stage.targetVerseCount);
+}
+
 //[2] 보스전 시작 함수 (하트 버그 수정 + 구간 자동 탐지 + 연출 콜백 분리)//
 function startBossBattle() {
     window.isGamePlaying = true; // ★ 게임 시작! 스위치 ON
@@ -6214,9 +6284,10 @@ function startBossBattle() {
     window.currentBattleData = fullChapterData.slice(startIndex, endIndex).map((verse, i) => {
         const enVerse = (typeof bibleDataEn !== 'undefined' && bibleDataEn[chapterNum])
             ? bibleDataEn[chapterNum][startIndex + i] : null;
+        const base = { _verseNum: startIndex + i + 1 }; // 셔플 후에도 절 번호 유지
         return enVerse
-            ? Object.assign({}, verse, { textEn: enVerse.text, chunksEn: enVerse.chunks })
-            : verse;
+            ? Object.assign({}, base, verse, { textEn: enVerse.text, chunksEn: enVerse.chunks })
+            : Object.assign({}, base, verse);
     });
     maxBossHp = window.currentBattleData.length;
     window.currentBattleChapter = chapterNum;
@@ -6263,6 +6334,12 @@ function startBossBattle() {
             currentBossHp = maxBossHp;
             playerHearts = maxPlayerHearts;
             currentBossPartIndex = 0;
+            if (bossOrderMode === 'random') {
+                for (let i = window.currentBattleData.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [window.currentBattleData[i], window.currentBattleData[j]] = [window.currentBattleData[j], window.currentBattleData[i]];
+                }
+            }
         }
 
         updateBattleUI();
@@ -6375,8 +6452,9 @@ function loadNextVerse() {
                 // 저장 데이터 삭제
                 clearCheckpoint();
 
-                if (sId.includes('mid')) stageClear('mid-boss');
-                else stageClear('boss');
+                const _bossMultiplier = (bossDifficultyMode === 'normal') ? 0.7 : 1;
+                if (sId.includes('mid')) stageClear('mid-boss', _bossMultiplier);
+                else stageClear('boss', _bossMultiplier);
 
                 // 보스 클리어 결과 모달 표시
                 showBossClearScreen(clearedStageId);
@@ -6423,7 +6501,9 @@ function loadNextVerse() {
 
     function updateVerseIndicator() {
         const chapterNum = window.currentBattleChapter || 1;
-        const verseNum = (window.currentBattleStartIndex || 0) + currentVerseIdx + 1;
+        const verseNum = (currentVerseData && currentVerseData._verseNum)
+            ? currentVerseData._verseNum
+            : (window.currentBattleStartIndex || 0) + currentVerseIdx + 1;
         let label = `${t('label_chapter_header', { num: chapterNum })} ${t('label_verse', { num: verseNum })}`;
         if (currentBossParts && currentBossParts.length > 1) {
             label += ` (${t('label_part', { cur: currentBossPartIndex + 1, total: currentBossParts.length })})`;
@@ -6610,16 +6690,23 @@ function loadNextVerse() {
         pool.innerHTML = '';
         selectedBlock = null;
 
+        const isNormalMode = (bossDifficultyMode === 'normal');
         const shuffled = [...chunks].sort((a, b) => a.localeCompare(b, currentLang === 'en' ? 'en' : 'ko'));
         shuffled.forEach((word, i) => {
             const btn = document.createElement('div');
             btn.className = 'word-block';
-            btn.innerText = getChosung(word);
+            btn.innerText = isNormalMode ? word : getChosung(word);
             btn.dataset.original = word;
             btn.dataset.poolIndex = String(i);
-            btn.style.backgroundColor = "#e74c3c"; // 붉은색 계열
-            btn.style.color = "#fff";
-            btn.style.border = "1px solid #c0392b";
+            if (isNormalMode) {
+                btn.style.backgroundColor = '#2c5fa8';
+                btn.style.color = '#fff';
+                btn.style.border = '1px solid #1a4080';
+            } else {
+                btn.style.backgroundColor = '#e74c3c';
+                btn.style.color = '#fff';
+                btn.style.border = '1px solid #c0392b';
+            }
             btn.onclick = () => handleBossBlockClick(btn);
             pool.appendChild(btn);
         });
@@ -6663,11 +6750,14 @@ function loadNextVerse() {
         }
 
         let errorCount = 0;
+        const isNormalMode = (bossDifficultyMode === 'normal');
         currentBlocks.forEach((btn, index) => {
             const visibleText = btn.innerText;
-            const targetChosung = getChosung(correctChunks[index]);
+            const isCorrect = isNormalMode
+                ? (visibleText === correctChunks[index])
+                : (visibleText === getChosung(correctChunks[index]));
 
-            if (visibleText === targetChosung) {
+            if (isCorrect) {
                 btn.classList.add('correct-block');
                 btn.classList.remove('error-block');
             } else {
@@ -6700,7 +6790,9 @@ function loadNextVerse() {
             // ── 이력에 현재 파트 저장 ──
             const saveCurrentPartToHistory = () => {
                 const chapterNum = window.currentBattleChapter || 1;
-                const verseNum = (window.currentBattleStartIndex || 0) + currentVerseIdx + 1;
+                const verseNum = (currentVerseData && currentVerseData._verseNum)
+                    ? currentVerseData._verseNum
+                    : (window.currentBattleStartIndex || 0) + currentVerseIdx + 1;
                 const verseLabel = `${t('label_chapter_header', { num: chapterNum })} ${t('label_verse', { num: verseNum })}`;
                 const partLabel = (currentBossParts && currentBossParts.length > 1)
                     ? ` (${t('label_part', { cur: currentBossPartIndex + 1, total: currentBossParts.length })})`
@@ -6727,7 +6819,7 @@ function loadNextVerse() {
                     attackBtn.style.pointerEvents = 'auto';
                     attackBtn.style.opacity = '1';
                     const hBtn = document.getElementById('btn-boss-history');
-                    if (hBtn && bossHistory.length > 0) hBtn.style.display = '';
+                    if (hBtn && bossHistory.length > 0 && bossOrderMode !== 'random') hBtn.style.display = '';
                 }, 700);
                 return;
             }
@@ -6832,7 +6924,7 @@ function loadNextVerse() {
         cursor: pointer;
         line-height: 1.4;
         z-index: 10;
-        display: ${bossHistory.length > 0 ? '' : 'none'};
+        display: ${bossHistory.length > 0 && bossOrderMode !== 'random' ? '' : 'none'};
     `;
     historyBtn.onclick = () => {
         showBossHistoryModal();
@@ -7486,6 +7578,8 @@ function saveGameData() {
             manualBonus: kingsRoadData.manualBonus
         },
         studyModePreference: studyModePreference,
+        bossDifficultyMode: bossDifficultyMode,
+        bossOrderMode: bossOrderMode,
         bossFirstClearClaimed: [...bossFirstClearClaimed],
         updatedAt: Date.now() // [Firestore] 충돌 해결용 타임스탬프
     };
@@ -9405,7 +9499,8 @@ function showBossClearScreen(clearedStageId) {
 
     document.getElementById('result-time').innerText = `${minutes}:${seconds}`;
     document.getElementById('result-accuracy').innerText = `${accuracy}%`;
-    document.getElementById('result-exp').innerText = t('result_boss_defeated');
+    const expBox = document.getElementById('result-exp-label')?.closest('.stat-box');
+    if (expBox) expBox.style.display = 'none';
 
     const bossResultModal = document.getElementById('result-modal');
     const existingBossHistory = bossResultModal && bossResultModal.querySelector('.hardship-history-wrap');
@@ -9416,6 +9511,8 @@ function showBossClearScreen(clearedStageId) {
 /* [보스 클리어 모달 닫기] */
 function closeBossClearModal(clearedStageId) {
     document.getElementById('result-modal').classList.remove('active');
+    const expBox = document.getElementById('result-exp-label')?.closest('.stat-box');
+    if (expBox) expBox.style.display = '';
     // 계속하기 버튼을 기본 핸들러로 복원
     const btn = document.getElementById('result-continue-btn');
     if (btn) btn.onclick = closeResultModal;
@@ -12036,7 +12133,7 @@ function checkDailyLogin() {
 }
 
 // [3] 스테이지 클리어 함수 (수정됨)
-stageClear = function (type) {
+stageClear = function (type, rewardMultiplier = 1) {
     try {
         // 🌟 [핵심 수술] 훈련 모드 철벽 방어막!
         // 훈련 모드일 때는 보석 계산도, 승점 계산도, 저장도 하지 않고 그냥 함수를 조용히 끝냅니다.
@@ -12208,6 +12305,11 @@ stageClear = function (type) {
 
         // 🌟 '오늘 완료' 뱃지를 위해 클리어 시각은 무조건 갱신
         stageLastClear[sId] = Date.now();
+
+        // ★ [보통 모드 보상 배율 적용]
+        if (rewardMultiplier !== 1) {
+            baseGem = Math.floor(baseGem * rewardMultiplier);
+        }
 
         // ★ [깨달음의 경지 보너스 적용]
         const collectionScore = getCurrentCollectionScore();

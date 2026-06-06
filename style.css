@@ -5177,3 +5177,49 @@ body, html {
     margin-top: 18px;
     letter-spacing: 0.05em;
 }
+
+/* ── 보스전/중간점검 설정 모달 ── */
+.boss-setup-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 9000;
+    display: flex; align-items: flex-end; justify-content: center;
+}
+.boss-setup-sheet {
+    background: #1a1a2e;
+    border-radius: 20px 20px 0 0;
+    width: 100%; max-width: 480px;
+    padding: 24px 20px 36px;
+    color: white;
+}
+.boss-setup-title {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 24px;
+}
+.boss-setup-title h3 { margin: 0; font-size: 1.1rem; font-weight: 700; }
+.boss-setup-close {
+    background: none; border: none; color: #aaa;
+    font-size: 1.3rem; cursor: pointer; line-height: 1;
+}
+.boss-setup-section { margin-bottom: 20px; }
+.boss-setup-label { font-size: 0.82rem; color: #aaa; margin-bottom: 10px; }
+.bso-toggle { display: flex; gap: 8px; }
+.bso-btn {
+    flex: 1; border: none; border-radius: 10px;
+    padding: 11px 0; font-size: 0.95rem; font-weight: 600;
+    cursor: pointer; background: #2a2a3e; color: #888;
+    transition: background 0.15s, color 0.15s;
+}
+.bso-btn.active { background: #6c63ff; color: white; }
+.bso-desc {
+    font-size: 0.78rem; color: #888;
+    margin-top: 8px; line-height: 1.5; min-height: 1.2em;
+}
+.boss-setup-start {
+    width: 100%; padding: 14px; border: none; border-radius: 12px;
+    background: linear-gradient(135deg, #6c63ff, #4a90d9);
+    color: white; font-size: 1rem; font-weight: 700;
+    cursor: pointer; margin-top: 8px;
+    transition: opacity 0.15s;
+}
+.boss-setup-start:active { opacity: 0.85; }

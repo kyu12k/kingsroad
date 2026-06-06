@@ -55,7 +55,10 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `buildReviewBadgeHtml(id)` | game.js:2010 | 복습 단계 배지 HTML 생성 |
 | `openStageSheet()` | game.js:2809 | 스테이지 시트 열기 + 목록 렌더링 |
 | `updateSheetTimers()` | game.js:~2956 | 60초마다 타이머 + 기억 강도 바 업데이트 |
-| `stageClear()` | game.js:7529 | 스테이지 클리어 처리 전체 |
+| `stageClear(type, rewardMultiplier=1)` | game.js:~12127 | 스테이지 클리어 처리 전체. `rewardMultiplier`로 보상 배율 조정 (보통 모드: 0.7) |
+| `openBossSetupModal(stage)` | game.js:~6170 | 보스/중간점검 진입 전 설정 모달 (난이도·순서 선택) |
+| `setBossSetupOpt(type, value)` | game.js:~6218 | 모달 토글 클릭 핸들러 (type: 'difficulty'|'order') |
+| `confirmBossSetup()` | game.js:~6228 | 모달 확인 → `startBossBattle()` 호출 |
 | `saveGameData()` | game.js:4091 | localStorage에 저장 |
 | `showBossHistoryModal()` | game.js:~6370 | 보스전 이전 파트/구절 보기 모달 표시/토글 |
 | `generateVerseChoices(verse)` | game.js:~17908 | 구절의 고난용 4지선다 생성 (같은 장 2개 + 다른 장 1개) |
@@ -143,6 +146,21 @@ Step 1에 선택적 음성인식 기능 추가. 클릭(읽기) 방식과 병행 
 - 보석 = eligible 서브스테이지 각각의 `baseGem` 합산
 - 승점 = eligible 서브스테이지 수 × hearts × 1
 - 대기 중인 서브스테이지는 스텝/타이머 완전 무시
+
+---
+
+## 보스전/중간점검 설정 모달
+
+보스·중간점검 클릭 시 `startBossBattle()` 대신 `openBossSetupModal(stage)`가 먼저 호출됨.
+
+- **변수**: `bossDifficultyMode` (`'normal'|'hard'`, 기본 `'hard'`), `bossOrderMode` (`'sequential'|'random'`, 기본 `'sequential'`)
+- 두 변수 모두 `kingsRoadSave`에 저장/로드됨
+- **보통 모드**: 단어 버튼에 전체 단어 표시 (파란 색상), 정답 판정도 전체 단어 비교, 보상 70%
+- **어려움 모드**: 기존 초성 힌트 방식 (빨간 색상), 보상 100%
+- **무작위 모드**: 세션 시작 시 `currentBattleData` Fisher-Yates 셔플, 히스토리 버튼 숨김
+- `renderBossBlocks()` 내부에서 `bossDifficultyMode` 분기 처리
+- `stageClear()` 호출 시 보통 모드면 `rewardMultiplier = 0.7` 전달
+- 클리어 처리(스테이지 일괄 클리어, 미션, 최초 클리어 보너스)는 난이도 무관 동일 적용
 
 ---
 
