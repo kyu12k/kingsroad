@@ -2164,6 +2164,9 @@
                     // [Firestore 동기화] 인증 완료 후 마이그레이션 및 최신 데이터 적용
                     if (typeof initFirestoreSync === 'function') initFirestoreSync();
 
+                    // 지난 주 랭킹 보상 버튼 표시 (여정 시작 전에도 홈에서 바로 보이게)
+                    if (typeof checkPendingReward === 'function') checkPendingReward();
+
                     // 🌟 [중복 랭킹 방지] 임포트된 구 기기의 Firestore 문서 삭제
                     const _importedOldId = localStorage.getItem('kingsroad_import_old_playerid');
                     if (_importedOldId && _importedOldId !== myPlayerId && typeof db !== 'undefined' && db) {
@@ -2186,6 +2189,9 @@
 
                             // [Firestore 동기화] 신규 로그인 후 마이그레이션 및 최신 데이터 적용
                             if (typeof initFirestoreSync === 'function') initFirestoreSync();
+
+                            // 지난 주 랭킹 보상 버튼 표시
+                            if (typeof checkPendingReward === 'function') checkPendingReward();
 
                             // 🌟 [중복 랭킹 방지] 임포트된 구 기기의 Firestore 문서 삭제
                             const _importedOldId = localStorage.getItem('kingsroad_import_old_playerid');
