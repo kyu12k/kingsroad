@@ -349,7 +349,7 @@ const LANG = {
         mission_weekly_hardship_title: '왕의 고난 10회 완주',
         mission_weekly_hardship_desc: '(주간)어떤 장이든 왕의 고난을 10회 완주하세요.',
         mission_weekly_daily_clear_title: '일일 미션 20회 클리어',
-        mission_weekly_daily_clear_desc: '(주간)일일 미션 보상을 20회 수령하세요. 하루 4개 × 5일 달성 가능.',
+        mission_weekly_daily_clear_desc: '(주간)일일 미션 보상을 20회 수령하세요. 주간 총 20회.',
         mission_tab_advanced: '⚔️ 심화',
         mission_reset_advanced: '매일 자정에 초기화됩니다.',
         mission_advanced_locked: '보스를 처음 클리어하면 심화 일일 미션이 열립니다.',
@@ -15454,10 +15454,12 @@ window.addEventListener("beforeunload", () => {
     if (typeof saveMyScoreToServer === 'function') saveMyScoreToServer();
 });
 
-// 앱 백그라운드 전환 시 저장
+// 앱 백그라운드 전환 시 저장, 포그라운드 복귀 시 미션 날짜/주차 체크
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === 'hidden') {
         saveGameData();
+    } else if (document.visibilityState === 'visible') {
+        checkMissions();
     }
 });
 
