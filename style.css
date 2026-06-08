@@ -1801,6 +1801,26 @@ body, html {
     color: #21618c;
 }
 
+.hardship-verse-revealed-text {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.06);
+    border-left: 3px solid rgba(189, 195, 199, 0.4);
+    border-radius: 6px;
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: #ecf0f1;
+    text-align: left;
+}
+
+.hardship-verse-wrong-choice {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: #e74c3c;
+    opacity: 0.85;
+    text-align: right;
+}
+
 .typo-detail {
     font-size: 0.88em;
     opacity: 0.85;

@@ -18284,12 +18284,22 @@ function renderHardshipVerseVerse() {
         hardshipState.verseChoices = generateVerseChoices(cv);
     }
 
+    const revealedVerseHtml = hardshipState.awaitingNext ? (() => {
+        const verseText = (currentLang === 'en' && cv.textEn) ? cv.textEn : (cv.displayText || cv.text);
+        const wrongChoice = hardshipState.selectedWrongChoice;
+        const wrongAddrHtml = wrongChoice
+            ? `<div class="hardship-verse-wrong-choice">내 선택: ${t('label_revelation_ref', { ch: wrongChoice.chapter, v: wrongChoice.verse })}</div>`
+            : '';
+        return `<div class="hardship-verse-revealed-text">${verseText}</div>${wrongAddrHtml}`;
+    })() : '';
+
     field.innerHTML = `
         <div class="verse-indicator">${t('hardship_verse_indicator')}</div>
         <div class="hardship-verse-card">
             <div class="hardship-mode-tag">${getHardshipModeMeta('verse').icon} ${getHardshipModeMeta('verse').summary}</div>
             <div class="hardship-verse-address-display">${label}</div>
             ${buildHardshipFeedbackHtml()}
+            ${revealedVerseHtml}
         </div>
     `;
 
@@ -18324,6 +18334,7 @@ function submitHardshipVerseGuess(choiceIdx) {
         const earnedPoints = playerHearts;
         awardHardshipScore(earnedPoints);
         hardshipState.studiedCount += 1;
+        hardshipState.selectedWrongChoice = null;
         hardshipState.feedback = {
             type: 'success',
             message: hardshipState.trainingMode
@@ -18334,6 +18345,7 @@ function submitHardshipVerseGuess(choiceIdx) {
     } else {
         playerHearts = Math.max(0, playerHearts - 1);
         wrongCount += 1;
+        hardshipState.selectedWrongChoice = choice || null;
         hardshipState.feedback = {
             type: 'error',
             message: t('hardship_feedback_wrong_address', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) })
