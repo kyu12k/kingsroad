@@ -443,6 +443,7 @@ const LANG = {
         hardship_feedback_correct: '정답입니다. {label} · +{pts}점',
         hardship_feedback_correct_no_reward: '정답입니다. {label} · 승점 없음',
         hardship_feedback_wrong_address: '오답입니다. 정답은 {label}입니다.',
+        hardship_feedback_wrong_verse: '오답입니다.',
         hardship_feedback_wrong_memory: '오답입니다. 정답 말씀: {text}',
         hardship_feedback_typo_corrected: '오타 보정! +{pts}점 ({n}글자 오타)',
         hardship_feedback_typo_corrected_no_reward: '오타 보정! 승점 없음 ({n}글자 오타)',
@@ -1173,6 +1174,7 @@ const LANG = {
         hardship_feedback_correct: 'Correct! {label} · +{pts} pts',
         hardship_feedback_correct_no_reward: 'Correct! {label} · No points',
         hardship_feedback_wrong_address: 'Wrong. The answer is {label}.',
+        hardship_feedback_wrong_verse: 'Wrong.',
         hardship_feedback_wrong_memory: 'Wrong. Correct verse: {text}',
         hardship_feedback_typo_corrected: 'Typo corrected! +{pts} pts ({n} typo(s))',
         hardship_feedback_typo_corrected_no_reward: 'Typo corrected! No points ({n} typo(s))',
@@ -18348,7 +18350,7 @@ function submitHardshipVerseGuess(choiceIdx) {
         hardshipState.selectedWrongChoice = choice || null;
         hardshipState.feedback = {
             type: 'error',
-            message: t('hardship_feedback_wrong_address', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) })
+            message: t('hardship_feedback_wrong_verse')
         };
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playHeartLoss) SoundEffect.playHeartLoss();
