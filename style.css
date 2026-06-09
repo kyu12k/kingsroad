@@ -1821,6 +1821,82 @@ body, html {
     text-align: right;
 }
 
+/* ─── 말씀 읽기 오버레이 ─────────────────────────────────────────────────── */
+#bible-reading-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: #12192b;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.bible-reading-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    background: #0d1424;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+}
+
+.bible-reading-title {
+    font-size: 1.15rem;
+    font-weight: bold;
+    color: #ecf0f1;
+}
+
+.bible-reading-close-btn {
+    background: none;
+    border: none;
+    color: #7f8c8d;
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.bible-reading-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 20px 40px;
+}
+
+.bible-reading-verse {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 13px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.bible-reading-verse-num {
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #f1c40f;
+    min-width: 22px;
+    padding-top: 4px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.bible-reading-verse-text {
+    flex: 1;
+    font-size: 1.05rem;
+    line-height: 1.85;
+    color: #dfe6e9;
+}
+
+.bible-reading-verse-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    margin-top: 8px;
+    flex-shrink: 0;
+}
+
 .typo-detail {
     font-size: 0.88em;
     opacity: 0.85;

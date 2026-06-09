@@ -5561,6 +5561,51 @@ function getChapterMidBossIds(chapterNum) {
 
 let currentOpenChapterData = null;
 
+/* ─── 말씀 읽기 오버레이 ─────────────────────────────────────────────────── */
+function openBibleReadingOverlay() {
+    const chapterNum = currentOpenChapterData && currentOpenChapterData.id;
+    if (!chapterNum) return;
+    const verses = bibleData[chapterNum];
+    if (!verses || verses.length === 0) return;
+
+    const existing = document.getElementById('bible-reading-overlay');
+    if (existing) existing.remove();
+
+    const versesHtml = verses.map((v, idx) => {
+        const verseNum = idx + 1;
+        const stageId = `${chapterNum}-${verseNum}`;
+        const mastery = stageMastery[stageId] || 0;
+        let dotColor = '#5d6d7e';
+        if (mastery > 0) {
+            const s = getMemoryStrength(stageId);
+            dotColor = s >= 0.8 ? '#2ecc71' : s >= 0.6 ? '#f1c40f' : s >= 0.4 ? '#e67e22' : '#e74c3c';
+        }
+        const text = (currentLang === 'en' && typeof bibleDataEn !== 'undefined' && bibleDataEn[chapterNum] && bibleDataEn[chapterNum][idx])
+            ? bibleDataEn[chapterNum][idx].text : v.text;
+        return `<div class="bible-reading-verse">
+            <span class="bible-reading-verse-num">${verseNum}</span>
+            <span class="bible-reading-verse-text">${text}</span>
+            <span class="bible-reading-verse-dot" style="background:${dotColor};"></span>
+        </div>`;
+    }).join('');
+
+    const overlay = document.createElement('div');
+    overlay.id = 'bible-reading-overlay';
+    overlay.innerHTML = `
+        <div class="bible-reading-header">
+            <span class="bible-reading-title">${t('label_chapter_header', { num: chapterNum })}</span>
+            <button class="bible-reading-close-btn" onclick="closeBibleReadingOverlay()">✕</button>
+        </div>
+        <div class="bible-reading-body">${versesHtml}</div>
+    `;
+    document.body.appendChild(overlay);
+}
+
+function closeBibleReadingOverlay() {
+    const el = document.getElementById('bible-reading-overlay');
+    if (el) el.remove();
+}
+
 /* [수정] 스테이지 시트 열기 (각 버튼별 타이머 적용) */
 function openStageSheet(chapterData) {
     currentOpenChapterData = chapterData;
