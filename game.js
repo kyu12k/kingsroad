@@ -5606,6 +5606,162 @@ function closeBibleReadingOverlay() {
     if (el) el.remove();
 }
 
+/* ─── 스테이지 아이템 엘리먼트 빌더 (accordion/flat 공용) ───────────────── */
+function buildStageItemEl(stage, chData, kingsUnlockedSet) {
+    const item = document.createElement('div');
+    const isCleared = (stageMastery[stage.id] || 0) > 0;
+    const chNum = parseInt(stage.id.split('-')[0]);
+    let itemClass = `stage-item ${stage.type === 'boss' ? 'boss' : ''}`;
+    if (isCleared) itemClass += ' cleared';
+    const lastTime = stageLastClear[stage.id] || 0;
+    const isTodayClear = new Date(lastTime).toDateString() === new Date().toDateString();
+    const stageReviewStatusUI = getReviewStatus(stage.id);
+    let statusBadgeHtml = '';
+    if (isTodayClear) {
+        itemClass += ' today-clear';
+        statusBadgeHtml = `<div class="today-badge">${t('status_today_done')}</div>`;
+    }
+    const memLevelUI = getMemoryLevelFromStep(stageReviewStatusUI.step);
+    let levelBadgeHtml = '';
+    if (memLevelUI > 0 && stage.type !== 'mid-boss') {
+        const colorClass = memLevelUI >= 5 ? 'mem-lv-high' : memLevelUI >= 3 ? 'mem-lv-mid' : 'mem-lv-low';
+        levelBadgeHtml = `<span class="mem-badge ${colorClass}">Lv.${memLevelUI}</span>`;
+    }
+    item.className = itemClass;
+    let iconChar = '🌱';
+    if (stage.type === 'boss') iconChar = '🐲';
+    else if (stage.type === 'mid-boss') iconChar = '📜';
+    if (isCleared) iconChar = '🌳';
+    const progress = getStageProgressSnapshot(stage.id);
+    const isFullStepsComplete = isStageFullyLearned(stage.id, stage);
+    const isCoolingDown = !isFullStepsComplete && progress && progress.unlockTime > Date.now();
+    const isNormalStage = (stage.type !== 'boss' && stage.type !== 'mid-boss');
+    const canChooseReviewMode = isNormalStage;
+    let rightSideContent = '';
+    if (canChooseReviewMode) {
+        rightSideContent = `<div style="font-size:1.2rem; color:#bdc3c7;">⚙️</div>`;
+    } else if (isCoolingDown) {
+        rightSideContent = `<div class="live-timer" data-unlock="${progress.unlockTime}" style="font-size:0.9rem; color:#e74c3c; font-weight:bold; background:#fff0f0; padding:4px 8px; border-radius:12px; border:1px solid #e74c3c;">⏳ 계산중</div>`;
+    } else {
+        rightSideContent = `<div style="font-size:1.2rem; color:#f1c40f;">▶</div>`;
+    }
+    let rewardInfo = isNormalStage ? buildReviewBadgeHtml(stage.id) : '';
+    if (stage.type === 'boss' && !isCleared) {
+        const firstClearGem = (stage.targetVerseCount || 0) * 50;
+        rewardInfo = `<div class="boss-first-clear-gem">💎 최초 클리어 시 보석 ${firstClearGem}개 지급</div>`;
+    }
+    let memoryBarHtml = '';
+    if (isCleared && isNormalStage) {
+        const strength = getMemoryStrength(stage.id);
+        if (strength !== null) {
+            const pct = Math.round(strength * 100);
+            const colorClass = pct >= 80 ? 'mem-strength-green' : pct >= 60 ? 'mem-strength-yellow' : pct >= 40 ? 'mem-strength-orange' : 'mem-strength-red';
+            const flameIcon = pct >= 60 ? '🔥' : pct >= 40 ? '🕯️' : '💀';
+            const flameClass = pct >= 80 ? 'flame-alive' : pct >= 60 ? 'flame-dim' : pct >= 40 ? 'flame-low' : 'flame-ash';
+            memoryBarHtml = `<div class="mem-strength-bar-wrap" data-stage-id="${stage.id}"><div class="mem-strength-label"><span class="flame-icon ${flameClass}">${flameIcon}</span> <span class="mem-strength-pct">${pct}%</span></div><div class="mem-strength-track"><div class="mem-strength-fill ${colorClass}" style="width:${pct}%"></div></div></div>`;
+        }
+    } else if (stage.type === 'mid-boss') {
+        const avgStrength = getMidBossAvgStrength(chData, stage);
+        if (avgStrength !== null) {
+            const pct = Math.round(avgStrength * 100);
+            const colorClass = pct >= 80 ? 'mem-strength-green' : pct >= 60 ? 'mem-strength-yellow' : pct >= 40 ? 'mem-strength-orange' : 'mem-strength-red';
+            const flameIcon = pct >= 60 ? '🔥' : pct >= 40 ? '🕯️' : '💀';
+            const flameClass = pct >= 80 ? 'flame-alive' : pct >= 60 ? 'flame-dim' : pct >= 40 ? 'flame-low' : 'flame-ash';
+            memoryBarHtml = `<div class="mem-strength-bar-wrap" data-mid-boss-id="${stage.id}"><div class="mem-strength-label"><span class="flame-icon ${flameClass}">${flameIcon}</span> 평균 <span class="mem-strength-pct">${pct}%</span></div><div class="mem-strength-track"><div class="mem-strength-fill ${colorClass}" style="width:${pct}%"></div></div></div>`;
+        }
+    }
+    item.innerHTML = `
+    ${statusBadgeHtml}
+    <div class="stage-icon">${iconChar}</div>
+    <div class="stage-info">
+        <div class="stage-title">${levelBadgeHtml} ${getStageTitle(stage)}</div>
+        <div class="stage-desc">${getStageDesc(stage)}</div>
+        ${rewardInfo}
+        ${memoryBarHtml}
+    </div>
+    ${rightSideContent}
+    `;
+    if (kingsUnlockedSet && !kingsUnlockedSet.has(stage.id)) {
+        item.classList.add('kings-locked');
+        item.innerHTML += `<span class="kings-locked-badge">🔒</span>`;
+        if (stage.type === 'normal') {
+            item.onclick = () => {
+                const nextId = getNextKingsRoadStageId();
+                if (stage.id !== nextId) { alert(t('alert_kings_unlock_order')); return; }
+                if (confirm(t('alert_kings_unlock_next_confirm'))) {
+                    kingsRoadData.manualBonus = (kingsRoadData.manualBonus || 0) + 1;
+                    saveGameData();
+                    openStageSheet(currentOpenChapterData);
+                }
+            };
+        } else {
+            item.onclick = () => alert(t('alert_verse_locked'));
+        }
+        return item;
+    }
+    item.onclick = () => {
+        window.currentStageId = stage.id;
+        if (stage.type !== 'boss' && stage.type !== 'mid-boss') {
+            const _m = String(stage.id).match(/^(\d+)(?:-(\d+))?/);
+            const _cn = _m ? parseInt(_m[1], 10) : 0;
+            const _vn = (_m && _m[2]) ? parseInt(_m[2], 10) : 1;
+            const _preload = new Audio(getAudioUrl(_cn, _vn));
+            _preload.preload = 'auto';
+            _preload.load();
+            connectVoiceToAudioContext(_preload);
+            window._preloadedStageAudio = _preload;
+            window._preloadedStageAudioVoice = selectedVoice;
+        }
+        if (stage.type === 'boss' || stage.type === 'mid-boss') {
+            openBossSetupModal(stage);
+        } else if (canChooseReviewMode) {
+            openModeSelect(stage.id);
+        } else {
+            startTraining(stage.id, 'full-new');
+        }
+    };
+    return item;
+}
+
+/* ─── 중간점검 범위 기준으로 스테이지 그루핑 ─────────────────────────────── */
+function groupStagesByMidBoss(chData) {
+    const stages = chData.stages;
+    const midBosses = stages.filter(s => s.type === 'mid-boss')
+        .sort((a, b) => (a.rangeStart || 0) - (b.rangeStart || 0));
+    if (midBosses.length === 0) return null;
+
+    const boss = stages.find(s => s.type === 'boss');
+    const normalStages = stages.filter(s => s.type === 'normal');
+
+    const covered = new Set();
+    midBosses.forEach(mb => {
+        for (let v = mb.rangeStart; v <= mb.rangeEnd; v++) covered.add(v);
+    });
+
+    const groups = [];
+
+    // 첫 번째 중간점검 이전 절 (예: 1~8절)
+    const before = normalStages.filter(s => {
+        const v = parseInt(s.id.split('-')[1]);
+        return !covered.has(v) && v < midBosses[0].rangeStart;
+    });
+    if (before.length > 0) {
+        const vs = before.map(s => parseInt(s.id.split('-')[1]));
+        groups.push({ rangeStart: Math.min(...vs), rangeEnd: Math.max(...vs), subtitle: null, stages: before, midBoss: null });
+    }
+
+    // 중간점검별 그룹
+    midBosses.forEach(mb => {
+        const inRange = normalStages.filter(s => {
+            const v = parseInt(s.id.split('-')[1]);
+            return v >= mb.rangeStart && v <= mb.rangeEnd;
+        });
+        groups.push({ rangeStart: mb.rangeStart, rangeEnd: mb.rangeEnd, subtitle: mb.subtitle || null, stages: inRange, midBoss: mb });
+    });
+
+    return { groups, boss };
+}
+
 /* [수정] 스테이지 시트 열기 (각 버튼별 타이머 적용) */
 function openStageSheet(chapterData) {
     currentOpenChapterData = chapterData;
@@ -5638,180 +5794,49 @@ function openStageSheet(chapterData) {
     // ★ 왕의 길 모드: 해금 set 미리 계산
     const kingsUnlockedSet = (activeMode === 'kings') ? getKingsRoadUnlockedSet() : null;
 
-    chapterData.stages.forEach(stage => {
-        const item = document.createElement('div');
+    const grouped = groupStagesByMidBoss(chapterData);
+    if (grouped) {
+        grouped.groups.forEach(group => {
+            const rangeLabel = `${group.rangeStart}~${group.rangeEnd}절`;
+            const subtitleHtml = group.subtitle
+                ? `<span class="stage-group-subtitle">${group.subtitle}</span>` : '';
+            const hasReview = group.stages.some(s => {
+                const rs = getReviewStatus(s.id);
+                return rs.isEligible && rs.step > 1;
+            });
+            const reviewDotHtml = hasReview ? `<span class="stage-group-review-dot"></span>` : '';
 
-        // 1. 상태 정보 확인
-        const isCleared = (stageMastery[stage.id] || 0) > 0; // stage.cleared는 로드 시에만 갱신되므로 실시간 확인
-        const chNum = parseInt(stage.id.split('-')[0]);
+            const groupEl = document.createElement('div');
+            groupEl.className = 'stage-group';
+            const headerEl = document.createElement('div');
+            headerEl.className = 'stage-group-header';
+            headerEl.innerHTML = `
+                <div class="stage-group-header-left">
+                    <span class="stage-group-range">${rangeLabel}</span>
+                    ${subtitleHtml}
+                </div>
+                <div class="stage-group-header-right">
+                    ${reviewDotHtml}
+                    <span class="stage-group-arrow">›</span>
+                </div>
+            `;
+            headerEl.onclick = () => groupEl.classList.toggle('open');
 
-        // 배지 및 스타일
-        let itemClass = `stage-item ${stage.type === 'boss' ? 'boss' : ''}`;
-        if (isCleared) itemClass += ' cleared';
+            const contentEl = document.createElement('div');
+            contentEl.className = 'stage-group-content';
+            group.stages.forEach(s => contentEl.appendChild(buildStageItemEl(s, chapterData, kingsUnlockedSet)));
+            if (group.midBoss) contentEl.appendChild(buildStageItemEl(group.midBoss, chapterData, kingsUnlockedSet));
 
-        const lastTime = stageLastClear[stage.id] || 0;
-        let isTodayClear = new Date(lastTime).toDateString() === new Date().toDateString();
-
-        // ★ [v1.1.0] 복습 상태 조회
-        const stageReviewStatusUI = getReviewStatus(stage.id);
-        const isForgotten = stageReviewStatusUI.isEligible && stageReviewStatusUI.step > 1; // 복습 가능 타이밍
-
-        let statusBadgeHtml = "";
-
-        // 1. 오늘 완료 배지
-        if (isTodayClear) {
-            itemClass += ' today-clear';
-            statusBadgeHtml = `<div class="today-badge">${t('status_today_done')}</div>`;
-        }
-        // 2. 기억 다지기 배지 제거 — review badge strip으로 대체됨
-
-        // 3. 말씀 숙련도 배지 (중간점검은 자체 스텝 없으므로 미표시)
-        const memLevelUI = getMemoryLevelFromStep(stageReviewStatusUI.step);
-        let levelBadgeHtml = "";
-        if (memLevelUI > 0 && stage.type !== 'mid-boss') {
-            let colorClass = "mem-lv-low"; // 초록 (Lv.1~2)
-            if (memLevelUI >= 5) colorClass = "mem-lv-high"; // 빨강 (Lv.5+)
-            else if (memLevelUI >= 3) colorClass = "mem-lv-mid"; // 파랑 (Lv.3~4)
-
-            levelBadgeHtml = `<span class="mem-badge ${colorClass}">Lv.${memLevelUI}</span>`;
-        }
-
-        item.className = itemClass;
-
-        // 아이콘
-        let iconChar = "🌱";
-        if (stage.type === 'boss') iconChar = "🐲";
-        else if (stage.type === 'mid-boss') iconChar = "📜";
-        if (isCleared) iconChar = "🌳";
-
-        // 2. ★ 쿨타임(숙성) 여부 확인 ★
-        const progress = getStageProgressSnapshot(stage.id);
-        const progressPhase = progress ? progress.phase : 0;
-        const isFullStepsComplete = isStageFullyLearned(stage.id, stage);
-        const isCoolingDown = !isFullStepsComplete && progress && progress.unlockTime > Date.now();
-        const isNormalStage = (stage.type !== 'boss' && stage.type !== 'mid-boss');
-        const canChooseReviewMode = isNormalStage;
-
-        // 3. 버튼 오른쪽 표시 (톱니바퀴 vs 재생버튼 vs 타이머)
-        let rightSideContent = "";
-        let rewardInfo = "";
-
-        if (canChooseReviewMode) {
-            rightSideContent = `<div style="font-size:1.2rem; color:#bdc3c7;">⚙️</div>`;
-        }
-        else if (isCoolingDown) {
-            rightSideContent = `<div class="live-timer" data-unlock="${progress.unlockTime}" style="font-size:0.9rem; color:#e74c3c; font-weight:bold; background:#fff0f0; padding:4px 8px; border-radius:12px; border:1px solid #e74c3c;">⏳ 계산중</div>`;
-        }
-        else {
-            rightSideContent = `<div style="font-size:1.2rem; color:#f1c40f;">▶</div>`;
-        }
-
-        // ★ [v1.1.0] 복습 단계 배지 (일반 스테이지에만 표시)
-        rewardInfo = isNormalStage ? buildReviewBadgeHtml(stage.id) : "";
-
-        // ★ 보스 최초 클리어 보석 안내
-        if (stage.type === 'boss' && !isCleared) {
-            const firstClearGem = (stage.targetVerseCount || 0) * 50;
-            rewardInfo = `<div class="boss-first-clear-gem">💎 최초 클리어 시 보석 ${firstClearGem}개 지급</div>`;
-        }
-
-        // ★ [에빙하우스] 기억 강도 바
-        let memoryBarHtml = "";
-        if (isCleared && isNormalStage) {
-            const strength = getMemoryStrength(stage.id);
-            if (strength !== null) {
-                const pct = Math.round(strength * 100);
-                const colorClass = pct >= 80 ? 'mem-strength-green'
-                                 : pct >= 60 ? 'mem-strength-yellow'
-                                 : pct >= 40 ? 'mem-strength-orange'
-                                 : 'mem-strength-red';
-                const flameIcon  = pct >= 60 ? '🔥' : pct >= 40 ? '🕯️' : '💀';
-                const flameClass = pct >= 80 ? 'flame-alive' : pct >= 60 ? 'flame-dim' : pct >= 40 ? 'flame-low' : 'flame-ash';
-                memoryBarHtml = `<div class="mem-strength-bar-wrap" data-stage-id="${stage.id}"><div class="mem-strength-label"><span class="flame-icon ${flameClass}">${flameIcon}</span> <span class="mem-strength-pct">${pct}%</span></div><div class="mem-strength-track"><div class="mem-strength-fill ${colorClass}" style="width:${pct}%"></div></div></div>`;
-            }
-        } else if (stage.type === 'mid-boss') {
-            // 중간점검: 소속 서브스테이지 평균 기억 강도 표시
-            const avgStrength = getMidBossAvgStrength(chapterData, stage);
-            if (avgStrength !== null) {
-                const pct = Math.round(avgStrength * 100);
-                const colorClass = pct >= 80 ? 'mem-strength-green'
-                                 : pct >= 60 ? 'mem-strength-yellow'
-                                 : pct >= 40 ? 'mem-strength-orange'
-                                 : 'mem-strength-red';
-                const flameIcon  = pct >= 60 ? '🔥' : pct >= 40 ? '🕯️' : '💀';
-                const flameClass = pct >= 80 ? 'flame-alive' : pct >= 60 ? 'flame-dim' : pct >= 40 ? 'flame-low' : 'flame-ash';
-                memoryBarHtml = `<div class="mem-strength-bar-wrap" data-mid-boss-id="${stage.id}"><div class="mem-strength-label"><span class="flame-icon ${flameClass}">${flameIcon}</span> 평균 <span class="mem-strength-pct">${pct}%</span></div><div class="mem-strength-track"><div class="mem-strength-fill ${colorClass}" style="width:${pct}%"></div></div></div>`;
-            }
-        }
-
-        // 4. HTML 조립
-        item.innerHTML = `
-    ${statusBadgeHtml}
-    <div class="stage-icon">${iconChar}</div>
-    <div class="stage-info">
-        <div class="stage-title">
-            ${levelBadgeHtml} ${getStageTitle(stage)}  </div>
-        <div class="stage-desc">${getStageDesc(stage)}</div>
-        ${rewardInfo}
-        ${memoryBarHtml}
-    </div>
-    ${rightSideContent}
-        `;
-
-        // ★ 왕의 길 잠금 처리
-        if (kingsUnlockedSet && !kingsUnlockedSet.has(stage.id)) {
-            item.classList.add('kings-locked');
-            item.innerHTML += `<span class="kings-locked-badge">🔒</span>`;
-            if (stage.type === 'normal') {
-                item.onclick = () => {
-                    const nextId = getNextKingsRoadStageId();
-                    if (stage.id !== nextId) {
-                        alert(t('alert_kings_unlock_order'));
-                        return;
-                    }
-                    if (confirm(t('alert_kings_unlock_next_confirm'))) {
-                        kingsRoadData.manualBonus = (kingsRoadData.manualBonus || 0) + 1;
-                        saveGameData();
-                        openStageSheet(currentOpenChapterData); // 시트 새로고침
-                    }
-                };
-            } else {
-                item.onclick = () => alert(t('alert_verse_locked'));
-            }
-            list.appendChild(item);
-            return; // 나머지 클릭 이벤트 설정 건너뜀
-        }
-
-        // 5. 클릭 이벤트
-        item.onclick = () => {
-            window.currentStageId = stage.id;
-
-            // [성능] 일반 스테이지 클릭 시 오디오를 미리 로드 (startStageWithTransition 도착 전에 준비)
-            if (stage.type !== 'boss' && stage.type !== 'mid-boss') {
-                const _m = String(stage.id).match(/^(\d+)(?:-(\d+))?/);
-                const _cn = _m ? parseInt(_m[1], 10) : 0;
-                const _vn = (_m && _m[2]) ? parseInt(_m[2], 10) : 1;
-                const _preload = new Audio(getAudioUrl(_cn, _vn));
-                _preload.preload = 'auto';
-                _preload.load();
-                connectVoiceToAudioContext(_preload);
-                window._preloadedStageAudio = _preload;
-                window._preloadedStageAudioVoice = selectedVoice;
-            }
-
-            if (stage.type === 'boss' || stage.type === 'mid-boss') {
-                openBossSetupModal(stage);
-            } else if (canChooseReviewMode) {
-                // 모드 선택 창을 띄웁니다.
-                // (여기는 일단 그대로 둡니다. 나중에 모드 버튼 안쪽에 애니메이션을 걸어줄 거예요!)
-                openModeSelect(stage.id);
-            } else {
-                startTraining(stage.id, 'full-new');
-            }
-        };
-
-        list.appendChild(item);
-    });
+            groupEl.appendChild(headerEl);
+            groupEl.appendChild(contentEl);
+            list.appendChild(groupEl);
+        });
+        if (grouped.boss) list.appendChild(buildStageItemEl(grouped.boss, chapterData, kingsUnlockedSet));
+    } else {
+        chapterData.stages.forEach(stage => {
+            list.appendChild(buildStageItemEl(stage, chapterData, kingsUnlockedSet));
+        });
+    }
 
     sheet.classList.add('open');
 
