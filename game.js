@@ -4328,7 +4328,7 @@ for (let i = 1; i <= 22; i++) {
         // [1] 중간 점검 구간(Range) — 소제목 기반 하드코딩 (계시록 신학 단위 반영)
         // -------------------------------------------------------
         const MIDBOSS_RANGES = {
-            1:  [{start:1,  end:8,  subtitle:'계시와 복'}, {start:9, end:12, subtitle:'밧모섬에서 받은 계시'}, {start:13, end:16, subtitle:'인자의 영광스러운 모습'}, {start:17, end:20, subtitle:'예수님의 지시'}],
+            1:  [{start:1,  end:3,  subtitle:'예수 그리스도의 계시'}, {start:4, end:8, subtitle:'알파와 오메가'}, {start:9, end:12, subtitle:'밧모섬에서 받은 계시'}, {start:13, end:16, subtitle:'인자의 영광스러운 모습'}, {start:17, end:20, subtitle:'예수님의 지시'}],
             2:  [{start:1,  end:7,  subtitle:'에베소 교회'},                             {start:8,  end:11, subtitle:'서머나 교회'},          {start:12, end:17, subtitle:'버가모 교회'},         {start:18, end:25, subtitle:'두아디라 교회 — 이세벨과 행위'}, {start:26, end:29, subtitle:'두아디라 교회 — 이기는 자의 약속'}],
             3:  [{start:1,  end:6,  subtitle:'사데 교회'},                               {start:7,  end:13, subtitle:'빌라델비아 교회'},       {start:14, end:22, subtitle:'라오디게아 교회'}],
             4:  [{start:1,  end:5,  subtitle:'하나님의 보좌와 이십사 장로'},              {start:6,  end:11, subtitle:'유리바다와 네 생물'}],
