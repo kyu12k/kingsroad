@@ -1872,6 +1872,16 @@ body, html {
     background: #e74c3c;
 }
 
+.stage-group-new-badge {
+    font-size: 0.72rem;
+    font-weight: bold;
+    color: #fff;
+    background: #27ae60;
+    padding: 2px 7px;
+    border-radius: 10px;
+    letter-spacing: 0.02em;
+}
+
 .stage-group-arrow {
     font-size: 1.4rem;
     color: #bdc3c7;

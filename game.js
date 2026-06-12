@@ -5805,9 +5805,14 @@ function openStageSheet(chapterData) {
                 return rs.isEligible && rs.step > 1;
             });
             const reviewDotHtml = hasReview ? `<span class="stage-group-review-dot"></span>` : '';
+            const hasNewVerse = kingsUnlockedSet && group.stages.some(s =>
+                kingsUnlockedSet.has(s.id) && (stageMastery[s.id] || 0) === 0
+            );
+            const newBadgeHtml = hasNewVerse ? `<span class="stage-group-new-badge">새 구절</span>` : '';
 
             const groupEl = document.createElement('div');
             groupEl.className = 'stage-group';
+            if (hasNewVerse) groupEl.classList.add('open');
             const headerEl = document.createElement('div');
             headerEl.className = 'stage-group-header';
             headerEl.innerHTML = `
@@ -5816,6 +5821,7 @@ function openStageSheet(chapterData) {
                     ${subtitleHtml}
                 </div>
                 <div class="stage-group-header-right">
+                    ${newBadgeHtml}
                     ${reviewDotHtml}
                     <span class="stage-group-arrow">›</span>
                 </div>
