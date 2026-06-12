@@ -19101,61 +19101,8 @@ function finishHardshipSession(reason) {
         }
     }
 
-    // 암송의 고난 완주 시 평균 80% 이상이면 해당 장 하위 스테이지 클리어 + 보스 클리어 효과
-    if (reason === 'completed' && hardshipState.mode === 'endurance' && enduranceAvgScore >= 80) {
-        const _enduranceNeedSwap = hardshipState.applyToFree && activeMode === 'kings';
-        if (_enduranceNeedSwap) switchMode('free');
-        const _enduranceChapters = hardshipState.forcedChapter != null
-            ? [hardshipState.forcedChapter]
-            : [...new Set(hardshipState.queue.map(id => parseInt(id.split('-')[0], 10)))].sort((a, b) => a - b);
-        let _enduranceGemGrand = 0, _enduranceEligGrand = 0, _enduranceTotalGrand = 0, _enduranceAllCooldown = true;
-        for (const chNum of _enduranceChapters) {
-            if (isHardshipChapterDoneToday('endurance', chNum)) continue;
-            _enduranceAllCooldown = false;
-            const chData = gameData.find(c => c.id === chNum);
-            if (!chData || !chData.stages) continue;
-            let subGemTotal = 0, eligibleSubCount = 0, totalSubCount = 0;
-            chData.stages.forEach(targetStage => {
-                if (targetStage.type !== 'normal') return;
-                const subId = targetStage.id;
-                if (!stageMastery[subId]) stageMastery[subId] = 0;
-                if (!stageClearDate[subId]) stageClearDate[subId] = getMemoryQuizDate();
-                targetStage.cleared = true;
-                totalSubCount++;
-                const subStatus = getReviewStatus(subId);
-                if (subStatus.isEligible) {
-                    const { earnedGem: earned } = advanceReviewStep(subId);
-                    stageLastClear[subId] = Date.now();
-                    stageMastery[subId]++;
-                    subGemTotal += earned;
-                    eligibleSubCount++;
-                } else {
-                    stageLastClear[subId] = Date.now();
-                    stageMastery[subId]++;
-                    subGemTotal += 10;
-                }
-            });
-            // 보스 클리어 효과
-            const bossId = `${chNum}-boss`;
-            if (!stageMastery[bossId]) stageMastery[bossId] = 0;
-            stageMastery[bossId]++;
-            myGems += subGemTotal;
-            _enduranceGemGrand += subGemTotal;
-            _enduranceEligGrand += eligibleSubCount;
-            _enduranceTotalGrand += totalSubCount;
-        }
-        saveGameData();
-        syncToFirestore(); // [Firestore] 암송의 고난 클리어
-        if (_enduranceNeedSwap) switchMode('kings');
-        if (_enduranceAllCooldown) {
-            if (resultStreakText) resultStreakText.innerHTML += `<br><span style="font-size:13px;color:#f39c12;">${t('hardship_cooldown_result')}</span>`;
-        } else if (_enduranceTotalGrand > 0 && resultStreakText) {
-            resultStreakText.innerHTML += `<br><span style="font-size:13px;color:#aad4ff;">${t('hardship_gem_summary', { gem: _enduranceGemGrand, total: _enduranceTotalGrand, eligible: _enduranceEligGrand })}</span>`;
-        }
-    }
-
-    // 주소의 고난 / 망각의 고난 완주 시 해당 장 하위 스테이지 클리어 (보스 클리어와 동일 처리)
-    if (reason === 'completed' && (hardshipState.mode === 'address' || hardshipState.mode === 'memory' || hardshipState.mode === 'verse') && !hardshipState.trainingMode) {
+    // 망각의 고난 / 구절의 고난 완주 시 해당 장 하위 스테이지 클리어 (보스 클리어와 동일 처리)
+    if (reason === 'completed' && (hardshipState.mode === 'memory' || hardshipState.mode === 'verse') && !hardshipState.trainingMode) {
         const _hardshipNeedSwap = hardshipState.applyToFree && activeMode === 'kings';
         if (_hardshipNeedSwap) switchMode('free');
         const _hardshipChapters = hardshipState.forcedChapter != null
