@@ -18956,6 +18956,17 @@ function useHardshipMemoryHint() {
     renderHardshipMemoryVerse();
 }
 
+function showCorrectAnswerEffect() {
+    const existing = document.getElementById('correct-answer-popup');
+    if (existing) existing.remove();
+    const el = document.createElement('div');
+    el.id = 'correct-answer-popup';
+    el.className = 'correct-answer-popup';
+    el.textContent = '정답!';
+    document.body.appendChild(el);
+    setTimeout(() => { if (el.parentNode) el.remove(); }, 1000);
+}
+
 function submitHardshipMemoryGuess() {
     if (!window.isHardshipMode || hardshipState.mode !== 'memory' || hardshipState.locked || !hardshipState.currentVerse) return;
 
@@ -19002,6 +19013,7 @@ function submitHardshipMemoryGuess() {
                     : t('hardship_feedback_correct', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }), pts: earnedPoints })
         };
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
+        showCorrectAnswerEffect();
         renderHardshipMemoryVerse();
         updateBattleUI();
         return;
@@ -19048,6 +19060,7 @@ function submitHardshipMemoryGuess() {
                 + `<span class="typo-detail"> (${typoDetail})</span>`
         };
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
+        showCorrectAnswerEffect();
         renderHardshipMemoryVerse();
         updateBattleUI();
         return;
