@@ -1978,6 +1978,42 @@ body, html {
     flex-shrink: 0;
 }
 
+.bible-read-btn {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(46,204,113,0.5);
+    background: rgba(46,204,113,0.12);
+    color: #2ecc71;
+    cursor: pointer;
+    white-space: nowrap;
+    align-self: center;
+    transition: background 0.15s;
+}
+
+.bible-read-btn:hover:not(:disabled) {
+    background: rgba(46,204,113,0.25);
+}
+
+.bible-read-btn.bible-read-done {
+    border-color: rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.05);
+    color: #7f8c8d;
+    cursor: default;
+}
+
+.bible-read-toast {
+    text-align: center;
+    font-size: 0.85rem;
+    color: #f39c12;
+    background: rgba(243,156,18,0.12);
+    border-bottom: 1px solid rgba(243,156,18,0.25);
+    padding: 8px 16px;
+    flex-shrink: 0;
+}
+
 .typo-detail {
     font-size: 0.88em;
     opacity: 0.85;
