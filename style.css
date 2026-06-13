@@ -4160,22 +4160,42 @@ body, html {
     outline-offset: 2px;
 }
 
-.hardship-mode-a {
-    background: linear-gradient(135deg, #fef6e4 0%, #f4e2b3 100%);
-    border-color: #d4a94f;
-    color: #7a5b20;
+.hardship-mission-reward {
+    font-size: 0.72rem;
+    font-weight: bold;
+    white-space: nowrap;
+    padding: 3px 8px;
+    background: rgba(0, 0, 0, 0.07);
+    border-radius: 10px;
+    align-self: center;
+    flex-shrink: 0;
+    margin-left: 4px;
 }
 
-.hardship-mode-b {
+.hardship-cascade-notice {
+    text-align: center;
+    font-size: 0.78rem;
+    color: #95a5a6;
+    margin: 8px 0 0;
+    line-height: 1.5;
+}
+
+.hardship-mode-a {
     background: linear-gradient(135deg, #edf4ff 0%, #cfe1ff 100%);
     border-color: #5b8def;
     color: #214a9b;
 }
 
-.hardship-mode-c {
+.hardship-mode-b {
     background: linear-gradient(135deg, #eefaf2 0%, #ccefd8 100%);
     border-color: #3aa66b;
     color: #1d6a43;
+}
+
+.hardship-mode-c {
+    background: linear-gradient(135deg, #fef6e4 0%, #f4e2b3 100%);
+    border-color: #d4a94f;
+    color: #7a5b20;
 }
 
 .hardship-mode-d {

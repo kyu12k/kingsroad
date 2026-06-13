@@ -1999,41 +1999,47 @@
                 <p style="color:#7f8c8d; font-size:0.95rem; margin-top:8px; line-height:1.5;" data-i18n="hardship_subtitle">모드를 고른 뒤 출제 범위를 설정하고 시작합니다.</p>
             </div>
 
-            <button class="mode-btn hardship-mode-btn hardship-mode-a" onclick="startHardshipFromModal('endurance')">
-                <div class="mode-icon">🕊️</div>
-                <div class="mode-info">
-                    <div class="mode-title" data-i18n="hardship_mode_a_title">모드 A · 인내의 고난</div>
-                    <div class="mode-desc" data-i18n="hardship_mode_a_desc">Step 1 방식으로 확인만 하기</div>
-                    <div class="mode-last-played" id="hardship-last-endurance"></div>
-                </div>
-            </button>
-
-            <button class="mode-btn hardship-mode-btn hardship-mode-b" onclick="startHardshipFromModal('address')">
+            <button class="mode-btn hardship-mode-btn hardship-mode-a" onclick="startHardshipFromModal('address')">
                 <div class="mode-icon">🎯</div>
                 <div class="mode-info">
-                    <div class="mode-title" data-i18n="hardship_mode_b_title">모드 B · 주소의 고난</div>
-                    <div class="mode-desc" data-i18n="hardship_mode_b_desc">내용을 보고 장·절 맞히기</div>
+                    <div class="mode-title" data-i18n="hardship_mode_a_title">Lv.1 · 주소의 고난</div>
+                    <div class="mode-desc" data-i18n="hardship_mode_a_desc">내용을 보고 장·절 맞히기</div>
                     <div class="mode-last-played" id="hardship-last-address"></div>
                 </div>
+                <div class="hardship-mission-reward">미션 💎 500</div>
             </button>
 
-            <button class="mode-btn hardship-mode-btn hardship-mode-c" onclick="startHardshipFromModal('memory')">
-                <div class="mode-icon">⌨️</div>
-                <div class="mode-info">
-                    <div class="mode-title" data-i18n="hardship_mode_c_title">모드 C · 망각의 고난</div>
-                    <div class="mode-desc" data-i18n="hardship_mode_c_desc">장·절을 보고 전체 말씀을 입력하기</div>
-                    <div class="mode-last-played" id="hardship-last-memory"></div>
-                </div>
-            </button>
-
-            <button class="mode-btn hardship-mode-btn hardship-mode-d" onclick="startHardshipFromModal('verse')">
+            <button class="mode-btn hardship-mode-btn hardship-mode-b" onclick="startHardshipFromModal('verse')">
                 <div class="mode-icon">📖</div>
                 <div class="mode-info">
-                    <div class="mode-title" data-i18n="hardship_mode_d_title">모드 D · 구절의 고난</div>
-                    <div class="mode-desc" data-i18n="hardship_mode_d_desc">장·절을 보고 정확한 구절을 4지선다로 찾기</div>
+                    <div class="mode-title" data-i18n="hardship_mode_b_title">Lv.2 · 구절의 고난</div>
+                    <div class="mode-desc" data-i18n="hardship_mode_b_desc">장·절을 보고 정확한 구절을 4지선다로 찾기</div>
                     <div class="mode-last-played" id="hardship-last-verse"></div>
                 </div>
+                <div class="hardship-mission-reward">미션 💎 700</div>
             </button>
+
+            <button class="mode-btn hardship-mode-btn hardship-mode-c" onclick="startHardshipFromModal('endurance')">
+                <div class="mode-icon">🕊️</div>
+                <div class="mode-info">
+                    <div class="mode-title" data-i18n="hardship_mode_c_title">Lv.3 · 암송의 고난</div>
+                    <div class="mode-desc" data-i18n="hardship_mode_c_desc">소리내어 말씀을 암송하고 채점받기</div>
+                    <div class="mode-last-played" id="hardship-last-endurance"></div>
+                </div>
+                <div class="hardship-mission-reward">미션 💎 900</div>
+            </button>
+
+            <button class="mode-btn hardship-mode-btn hardship-mode-d" onclick="startHardshipFromModal('memory')">
+                <div class="mode-icon">⌨️</div>
+                <div class="mode-info">
+                    <div class="mode-title" data-i18n="hardship_mode_d_title">Lv.4 · 망각의 고난</div>
+                    <div class="mode-desc" data-i18n="hardship_mode_d_desc">장·절을 보고 전체 말씀을 입력하기</div>
+                    <div class="mode-last-played" id="hardship-last-memory"></div>
+                </div>
+                <div class="hardship-mission-reward">미션 💎 1,500</div>
+            </button>
+
+            <p class="hardship-cascade-notice">상위 고난 클리어 시 하위 미션도 자동 달성됩니다</p>
         </div>
     </div>
 

@@ -356,7 +356,7 @@ const LANG = {
         mission_advanced_address_title: '주소의 고난 누적',
         mission_advanced_address_desc: '오늘 서로 다른 장을 클리어할수록 보상이 쌓입니다. (2번째 장부터 보상)',
         mission_advanced_memory_title: '망각의 고난 누적',
-        mission_advanced_memory_desc: '오늘 서로 다른 장을 클리어할수록 보상이 쌓입니다. (2번째 장부터 보상, 최대 5장)',
+        mission_advanced_memory_desc: '오늘 서로 다른 장을 클리어할수록 보상이 쌓입니다. (2번째 장부터 보상)',
         mission_advanced_endurance_title: '암송의 고난 누적',
         mission_advanced_endurance_desc: '오늘 서로 다른 장을 클리어할수록 보상이 쌓입니다. (2번째 장부터 보상)',
         mission_advanced_verse_title: '구절의 고난 누적',
@@ -366,14 +366,14 @@ const LANG = {
         // 고난 길 모달
         hardship_title: '고난 길',
         hardship_subtitle: '모드를 고른 뒤 출제 범위를 설정하고 시작합니다.',
-        hardship_mode_a_title: '모드 A · 암송의 고난',
-        hardship_mode_a_desc: '소리내어 말씀을 암송하고 채점받기',
-        hardship_mode_b_title: '모드 B · 주소의 고난',
-        hardship_mode_b_desc: '내용을 보고 장·절 맞히기',
-        hardship_mode_c_title: '모드 C · 망각의 고난',
-        hardship_mode_c_desc: '장·절을 보고 전체 말씀을 입력하기',
-        hardship_mode_d_title: '모드 D · 구절의 고난',
-        hardship_mode_d_desc: '장·절을 보고 정확한 구절을 4지선다로 찾기',
+        hardship_mode_a_title: 'Lv.1 · 주소의 고난',
+        hardship_mode_a_desc: '내용을 보고 장·절 맞히기',
+        hardship_mode_b_title: 'Lv.2 · 구절의 고난',
+        hardship_mode_b_desc: '장·절을 보고 정확한 구절을 4지선다로 찾기',
+        hardship_mode_c_title: 'Lv.3 · 암송의 고난',
+        hardship_mode_c_desc: '소리내어 말씀을 암송하고 채점받기',
+        hardship_mode_d_title: 'Lv.4 · 망각의 고난',
+        hardship_mode_d_desc: '장·절을 보고 전체 말씀을 입력하기',
         hardship_config_title: '고난 길 설정',
         hardship_config_placeholder: '모드를 선택하세요.',
         hardship_config_range_label: '출제 범위',
@@ -1094,14 +1094,14 @@ const LANG = {
         // 고난 길 모달
         hardship_title: 'Hardship Road',
         hardship_subtitle: 'Select a mode, set the range, and begin.',
-        hardship_mode_a_title: 'Mode A · Trial of Recitation',
-        hardship_mode_a_desc: 'Recite verses aloud and get scored',
-        hardship_mode_b_title: 'Mode B · Trial of Address',
-        hardship_mode_b_desc: 'Read the text and guess the chapter & verse',
-        hardship_mode_c_title: 'Mode C · Trial of Forgetting',
-        hardship_mode_c_desc: 'See the reference and type the full verse',
-        hardship_mode_d_title: 'Mode D · Trial of Verse',
-        hardship_mode_d_desc: 'See the reference and pick the correct verse from 4 choices',
+        hardship_mode_a_title: 'Lv.1 · Trial of Address',
+        hardship_mode_a_desc: 'Read the text and guess the chapter & verse',
+        hardship_mode_b_title: 'Lv.2 · Trial of Verse',
+        hardship_mode_b_desc: 'See the reference and pick the correct verse from 4 choices',
+        hardship_mode_c_title: 'Lv.3 · Trial of Recitation',
+        hardship_mode_c_desc: 'Recite verses aloud and get scored',
+        hardship_mode_d_title: 'Lv.4 · Trial of Forgetting',
+        hardship_mode_d_desc: 'See the reference and type the full verse',
         hardship_config_title: 'Hardship Road Settings',
         hardship_config_placeholder: 'Select a mode.',
         hardship_config_range_label: 'Range',
@@ -2573,14 +2573,23 @@ function updateMissionProgress(type, extraData) {
     }
     else if (type === 'hardshipMemory') {
         missionData.daily.hardshipMemory = (missionData.daily.hardshipMemory || 0) + 1;
+        // Lv.4 완주 → 하위 고난(Lv.1~3) 미션 자동 달성
+        if (!missionData.daily.hardshipEndurance) missionData.daily.hardshipEndurance = 1;
+        if (!missionData.daily.hardshipVerse) missionData.daily.hardshipVerse = 1;
+        if (!missionData.daily.hardshipAddress) missionData.daily.hardshipAddress = 1;
         missionData.weekly.hardship = (missionData.weekly.hardship || 0) + 1;
     }
     else if (type === 'hardshipEndurance') {
         missionData.daily.hardshipEndurance = (missionData.daily.hardshipEndurance || 0) + 1;
+        // Lv.3 완주 → 하위 고난(Lv.1~2) 미션 자동 달성
+        if (!missionData.daily.hardshipVerse) missionData.daily.hardshipVerse = 1;
+        if (!missionData.daily.hardshipAddress) missionData.daily.hardshipAddress = 1;
         missionData.weekly.hardship = (missionData.weekly.hardship || 0) + 1;
     }
     else if (type === 'hardshipVerse') {
         missionData.daily.hardshipVerse = (missionData.daily.hardshipVerse || 0) + 1;
+        // Lv.2 완주 → 하위 고난(Lv.1) 미션 자동 달성
+        if (!missionData.daily.hardshipAddress) missionData.daily.hardshipAddress = 1;
         missionData.weekly.hardship = (missionData.weekly.hardship || 0) + 1;
     }
     // 심화 일일 미션: 서로 다른 장 추적 (chapter = 장 번호)
@@ -2594,7 +2603,7 @@ function updateMissionProgress(type, extraData) {
     else if (type === 'advancedMemory') {
         const ch = arguments[1];
         if (!missionData.advanced) missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], claimed: [0, 0, 0, 0], lastResetDate: '' };
-        if (ch != null && !missionData.advanced.hardshipMemoryChapters.includes(ch) && missionData.advanced.hardshipMemoryChapters.length < 5) {
+        if (ch != null && !missionData.advanced.hardshipMemoryChapters.includes(ch) && missionData.advanced.hardshipMemoryChapters.length < 22) {
             missionData.advanced.hardshipMemoryChapters.push(ch);
         }
     }
@@ -2689,9 +2698,9 @@ function updateMissionUI() {
             desc: t('mission_daily_hardship_memory_title'),
             current: missionData.daily.hardshipMemory || 0,
             target: 1,
-            rewardText: "💎 1,000",
+            rewardText: "💎 1,500",
             rewardType: "gem",
-            val1: 1000, val2: 0,
+            val1: 1500, val2: 0,
             claimed: missionData.daily.claimed[5],
             index: 5,
             type: 'daily'
@@ -2700,9 +2709,9 @@ function updateMissionUI() {
             desc: t('mission_daily_hardship_endurance_title'),
             current: missionData.daily.hardshipEndurance || 0,
             target: 1,
-            rewardText: "💎 500",
+            rewardText: "💎 900",
             rewardType: "gem",
-            val1: 500, val2: 0,
+            val1: 900, val2: 0,
             claimed: missionData.daily.claimed[6],
             index: 6,
             type: 'daily'
@@ -2711,9 +2720,9 @@ function updateMissionUI() {
             desc: t('mission_daily_hardship_verse_title'),
             current: missionData.daily.hardshipVerse || 0,
             target: 1,
-            rewardText: "💎 500",
+            rewardText: "💎 700",
             rewardType: "gem",
-            val1: 500, val2: 0,
+            val1: 700, val2: 0,
             claimed: missionData.daily.claimed[7],
             index: 7,
             type: 'daily'
@@ -9934,7 +9943,9 @@ const ADVANCED_ADDRESS_REWARDS = [
     { from: 13, to: 22, gem: 1200 }
 ];
 const ADVANCED_MEMORY_REWARDS = [
-    { from: 2, to: 5, gem: 1500 }
+    { from: 2, to: 6,  gem: 1500 },
+    { from: 7, to: 12, gem: 2500 },
+    { from: 13, to: 22, gem: 4000 }
 ];
 const ADVANCED_ENDURANCE_REWARDS = [
     { from: 2, to: 6,  gem: 500 },
@@ -10082,16 +10093,16 @@ function renderAdvancedMissionList(listArea) {
         adv.hardshipAddressChapters, 22, ADVANCED_ADDRESS_REWARDS, 0, 'address'
     ));
     listArea.appendChild(buildMissionBlock(
-        'mission_advanced_memory_title', 'mission_advanced_memory_desc',
-        adv.hardshipMemoryChapters, 5, ADVANCED_MEMORY_REWARDS, 1, 'memory'
+        'mission_advanced_verse_title', 'mission_advanced_verse_desc',
+        adv.hardshipVerseChapters || [], 22, ADVANCED_VERSE_REWARDS, 3, 'verse'
     ));
     listArea.appendChild(buildMissionBlock(
         'mission_advanced_endurance_title', 'mission_advanced_endurance_desc',
         adv.hardshipEnduranceChapters || [], 22, ADVANCED_ENDURANCE_REWARDS, 2, 'endurance'
     ));
     listArea.appendChild(buildMissionBlock(
-        'mission_advanced_verse_title', 'mission_advanced_verse_desc',
-        adv.hardshipVerseChapters || [], 22, ADVANCED_VERSE_REWARDS, 3, 'verse'
+        'mission_advanced_memory_title', 'mission_advanced_memory_desc',
+        adv.hardshipMemoryChapters, 22, ADVANCED_MEMORY_REWARDS, 1, 'memory'
     ));
 }
 
@@ -10188,15 +10199,15 @@ function renderMissionList(tabName) {
                 claimed: missionData.daily.claimed[4]
             },
             {
-                id: 5,
-                title: t('mission_daily_hardship_memory_title'),
-                desc: t('mission_daily_hardship_memory_desc'),
+                id: 7,
+                title: t('mission_daily_hardship_verse_title'),
+                desc: t('mission_daily_hardship_verse_desc'),
                 target: 1,
-                current: missionData.daily.hardshipMemory || 0,
-                reward: "💎 1,000",
+                current: missionData.daily.hardshipVerse || 0,
+                reward: "💎 700",
                 rewardType: 'gem',
-                val1: 1000, val2: 0,
-                claimed: missionData.daily.claimed[5]
+                val1: 700, val2: 0,
+                claimed: missionData.daily.claimed[7]
             },
             {
                 id: 6,
@@ -10204,21 +10215,21 @@ function renderMissionList(tabName) {
                 desc: t('mission_daily_hardship_endurance_desc'),
                 target: 1,
                 current: missionData.daily.hardshipEndurance || 0,
-                reward: "💎 500",
+                reward: "💎 900",
                 rewardType: 'gem',
-                val1: 500, val2: 0,
+                val1: 900, val2: 0,
                 claimed: missionData.daily.claimed[6]
             },
             {
-                id: 7,
-                title: t('mission_daily_hardship_verse_title'),
-                desc: t('mission_daily_hardship_verse_desc'),
+                id: 5,
+                title: t('mission_daily_hardship_memory_title'),
+                desc: t('mission_daily_hardship_memory_desc'),
                 target: 1,
-                current: missionData.daily.hardshipVerse || 0,
-                reward: "💎 500",
+                current: missionData.daily.hardshipMemory || 0,
+                reward: "💎 1,500",
                 rewardType: 'gem',
-                val1: 500, val2: 0,
-                claimed: missionData.daily.claimed[7]
+                val1: 1500, val2: 0,
+                claimed: missionData.daily.claimed[5]
             }
         ];
     } else {
