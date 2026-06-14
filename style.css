@@ -4217,6 +4217,22 @@ body, html {
 }
 
 
+.bible-gem-tip {
+    position: absolute;
+    transform: translateX(-50%);
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #27ae60;
+    pointer-events: none;
+    z-index: 9999;
+    animation: gemTipAnim 0.9s ease forwards;
+}
+
+@keyframes gemTipAnim {
+    0%   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-28px); }
+}
+
 .correct-answer-popup {
     position: fixed;
     top: 50%;

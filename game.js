@@ -5678,6 +5678,14 @@ function markVerseAsRead(chapterNum, verseNum, btnEl) {
         btnEl.textContent = '완료';
         btnEl.classList.add('bible-read-done');
         btnEl.disabled = true;
+        const rect = btnEl.getBoundingClientRect();
+        const tip = document.createElement('div');
+        tip.className = 'bible-gem-tip';
+        tip.textContent = '+💎10';
+        tip.style.left = (rect.left + rect.width / 2) + 'px';
+        tip.style.top = (rect.top + window.scrollY) + 'px';
+        document.body.appendChild(tip);
+        setTimeout(() => { if (tip.parentNode) tip.remove(); }, 900);
     }
 }
 
