@@ -338,6 +338,8 @@ const LANG = {
         mission_daily_hardship_endurance_desc: '어떤 장이든 암송의 고난을 완주하세요.',
         mission_daily_hardship_verse_title: '구절의 고난 1회 완주',
         mission_daily_hardship_verse_desc: '어떤 장이든 구절의 고난을 완주하세요.',
+        mission_daily_bible_read_title: '📖 성경 읽기',
+        mission_daily_bible_read_desc: '10구절 읽을 때마다 💎100 자동 수령 (최대 40회)',
         mission_daily_3_title: '데이터 기록 보관',
         mission_daily_3_desc: '텍스트 파일로 기록을 안전하게 보관하세요.',
         mission_weekly_0_title: '주 5일 출석하기',
@@ -1073,6 +1075,8 @@ const LANG = {
         mission_daily_hardship_endurance_desc: "Complete any chapter's Trial of Recitation.",
         mission_daily_hardship_verse_title: "Complete Trial of Verse ×1",
         mission_daily_hardship_verse_desc: "Complete any chapter's Trial of Verse.",
+        mission_daily_bible_read_title: '📖 Bible Reading',
+        mission_daily_bible_read_desc: 'Auto-receive 💎100 every 10 verses read (max 40 times)',
         mission_daily_3_title: 'Back Up Your Data',
         mission_daily_3_desc: 'Save your records safely as a text file.',
         mission_weekly_0_title: 'Log In 5 Days',
@@ -1091,6 +1095,8 @@ const LANG = {
         mission_daily_hardship_endurance_desc: "Complete any chapter's Trial of Recitation.",
         mission_daily_hardship_verse_title: "Complete Trial of Verse ×1",
         mission_daily_hardship_verse_desc: "Complete any chapter's Trial of Verse.",
+        mission_daily_bible_read_title: '📖 Bible Reading',
+        mission_daily_bible_read_desc: 'Auto-receive 💎100 every 10 verses read (max 40 times)',
 
         // 고난 길 모달
         hardship_title: 'Hardship Road',
@@ -1892,6 +1898,7 @@ loadGameData = function () {
         if (missionData.daily.claimed.length < 7) missionData.daily.claimed.push(false);
         if (missionData.daily.claimed.length < 8) missionData.daily.claimed.push(false);
         if (typeof missionData.daily.backup === 'undefined') missionData.daily.backup = 0;
+        if (typeof missionData.daily.bibleReadClaimed !== 'number') missionData.daily.bibleReadClaimed = 0;
         if (typeof missionData.weekly.attendance !== 'number') missionData.weekly.attendance = 0;
         if (!Array.isArray(missionData.weekly.attendanceLog)) missionData.weekly.attendanceLog = [];
         if (typeof missionData.weekly.dragonKill !== 'number') missionData.weekly.dragonKill = 0;
@@ -5396,7 +5403,11 @@ function renderChapterMap() {
         if (isChapterClear) {
             const hardshipBtn = document.createElement('button');
             try {
-                const _doneModes = ['endurance', 'address', 'memory', 'verse'].filter(m => isHardshipChapterDoneToday(m, chapter.id));
+                const _doneSet = new Set(['endurance', 'address', 'memory', 'verse'].filter(m => isHardshipChapterDoneToday(m, chapter.id)));
+                if (_doneSet.has('memory'))    { _doneSet.add('endurance'); _doneSet.add('verse'); _doneSet.add('address'); }
+                if (_doneSet.has('endurance')) { _doneSet.add('verse'); _doneSet.add('address'); }
+                if (_doneSet.has('verse'))     { _doneSet.add('address'); }
+                const _doneModes = [..._doneSet];
                 const _allDone = _doneModes.length === 4;
                 const _anyDone = _doneModes.length > 0;
                 hardshipBtn.className = 'chapter-hardship-btn' + (_allDone ? ' hardship-btn-all-done' : _anyDone ? ' hardship-btn-partial-done' : '');
@@ -5668,6 +5679,20 @@ function markVerseAsRead(chapterNum, verseNum, btnEl) {
         btnEl.classList.add('bible-read-done');
         btnEl.disabled = true;
     }
+}
+
+function claimBibleReadReward() {
+    const today = new Date().toDateString();
+    const totalRead = Object.values(bibleReadLog[today] || {}).reduce((s, a) => s + a.length, 0);
+    const milestone = Math.min(40, Math.floor(totalRead / 10));
+    const prevClaimed = missionData.daily.bibleReadClaimed || 0;
+    if (milestone <= prevClaimed) return;
+    const bonus = (milestone - prevClaimed) * 100;
+    myGems += bonus;
+    missionData.daily.bibleReadClaimed = milestone;
+    updateGemDisplay();
+    saveGameData();
+    openMission();
 }
 
 function closeBibleReadingOverlay() {
@@ -10291,7 +10316,27 @@ function renderMissionList(tabName) {
                 rewardType: 'gem',
                 val1: 1500, val2: 0,
                 claimed: missionData.daily.claimed[5]
-            }
+            },
+            (function() {
+                const _today = new Date().toDateString();
+                const _totalRead = Math.min(400, Object.values((bibleReadLog[_today] || {})).reduce((s, a) => s + a.length, 0));
+                const _claimed = missionData.daily.bibleReadClaimed || 0;
+                const _claimable = Math.min(40, Math.floor(_totalRead / 10)) - _claimed;
+                return {
+                    id: 8,
+                    title: t('mission_daily_bible_read_title'),
+                    desc: t('mission_daily_bible_read_desc'),
+                    target: 400,
+                    current: _totalRead,
+                    reward: "💎 100×40",
+                    rewardType: 'gem',
+                    val1: 0, val2: 0,
+                    claimed: false,
+                    bibleRead: true,
+                    milestone: _claimed,
+                    claimable: _claimable
+                };
+            })()
         ];
     } else {
         missions = [
@@ -10370,7 +10415,15 @@ function renderMissionList(tabName) {
 
         // 버튼 상태 결정
         let btnHtml = "";
-        if (m.claimed) {
+        if (m.bibleRead) {
+            if (m.milestone >= 40) {
+                btnHtml = `<button class="btn-claim done">${t('mission_btn_done')}</button>`;
+            } else if (m.claimable > 0) {
+                btnHtml = `<button class="btn-claim ready" onclick="claimBibleReadReward()">수령 💎${m.claimable * 100}</button>`;
+            } else {
+                btnHtml = `<button class="btn-claim" disabled>${m.milestone}/40회</button>`;
+            }
+        } else if (m.claimed) {
             btnHtml = `<button class="btn-claim done">${t('mission_btn_done')}</button>`;
         } else if (isComplete) {
             btnHtml = `<button class="btn-claim ready" onclick="claimReward('${tabName}', ${m.id}, '${m.rewardType}', ${m.val1 || 0}, ${m.val2 || 0})">${t('mission_btn_claim')}</button>`;
@@ -12259,6 +12312,7 @@ function checkDailyLogin() {
         missionData.daily.hardshipEndurance = 0;
         missionData.daily.hardshipVerse = 0;
         missionData.daily.backup = 0;
+        missionData.daily.bibleReadClaimed = 0;
         missionData.daily.claimed = [false, false, false, false, false, false, false, false];
         missionData.lastLoginDate = today; // ★ [버그 수정] checkMissions()와 동기화
         // 심화 일일 미션 리셋
