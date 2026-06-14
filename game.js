@@ -10042,14 +10042,14 @@ const ADVANCED_MEMORY_REWARDS = [
     { from: 13, to: 22, gem: 4000 }
 ];
 const ADVANCED_ENDURANCE_REWARDS = [
-    { from: 2, to: 6,  gem: 500 },
-    { from: 7, to: 12, gem: 800 },
-    { from: 13, to: 22, gem: 1200 }
+    { from: 2, to: 6,  gem: 900 },
+    { from: 7, to: 12, gem: 1400 },
+    { from: 13, to: 22, gem: 2200 }
 ];
 const ADVANCED_VERSE_REWARDS = [
-    { from: 2, to: 6,  gem: 500 },
-    { from: 7, to: 12, gem: 800 },
-    { from: 13, to: 22, gem: 1200 }
+    { from: 2, to: 6,  gem: 700 },
+    { from: 7, to: 12, gem: 1100 },
+    { from: 13, to: 22, gem: 1700 }
 ];
 
 function getAdvancedRewardGem(rewardTable, clearIndex) {
