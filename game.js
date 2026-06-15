@@ -10527,50 +10527,98 @@ function renderMissionList(tabName) {
     });
 }
 
-function buildWeeklyStudyWidget() {
-    _accumulateSessionTime(); // 현재 세션 시간 먼저 반영
-    const today = new Date();
-    const dow = today.getDay(); // 0=일
-    const monday = new Date(today);
-    monday.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
-    monday.setHours(0, 0, 0, 0);
-
+function _buildWeekChart(mondayDate, todayStr) {
     const dayLabels = ['월', '화', '수', '목', '금', '토', '일'];
-    const todayStr = _getLocalDateStr(today);
     const dayData = dayLabels.map((label, i) => {
-        const d = new Date(monday);
-        d.setDate(monday.getDate() + i);
+        const d = new Date(mondayDate);
+        d.setDate(mondayDate.getDate() + i);
         const key = _getLocalDateStr(d);
-        const ms = (sessionTimeLog[key] || 0);
-        return { label, ms, isToday: key === todayStr, isFuture: d > today };
+        const ms = sessionTimeLog[key] || 0;
+        return { label, ms, isToday: key === todayStr, isFuture: key > todayStr };
     });
-
-    const maxMs = Math.max(...dayData.map(d => d.ms), 1);
+    const maxMs = Math.max(...dayData.filter(d => !d.isFuture).map(d => d.ms), 1);
     const fmt = ms => {
-        if (ms < 60000) return '—';
+        if (ms < 60000) return '0분';
         const m = Math.floor(ms / 60000);
         if (m < 60) return `${m}분`;
         const h = Math.floor(m / 60), rm = m % 60;
         return rm > 0 ? `${h}h ${rm}분` : `${h}시간`;
     };
+    return `<div class="weekly-study-days">
+        ${dayData.map(d => `
+            <div class="weekly-day-cell${d.isToday ? ' today' : ''}">
+                <div class="weekly-day-label">${d.label}</div>
+                <div class="weekly-day-bar-wrap">
+                    <div class="weekly-day-bar" style="height:${d.ms >= 60000 && !d.isFuture ? Math.max(4, Math.round((d.ms / maxMs) * 36)) : 0}px"></div>
+                </div>
+                <div class="weekly-day-time">${d.isFuture ? '' : fmt(d.ms)}</div>
+            </div>
+        `).join('')}
+    </div>`;
+}
+
+function buildWeeklyStudyWidget() {
+    _accumulateSessionTime();
+    const today = new Date();
+    const dow = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
+    monday.setHours(0, 0, 0, 0);
+    const lastMonday = new Date(monday);
+    lastMonday.setDate(monday.getDate() - 7);
+    const todayStr = _getLocalDateStr(today);
 
     const el = document.createElement('div');
     el.className = 'weekly-study-widget';
     el.innerHTML = `
         <div class="weekly-study-title">📅 이번 주 학습 시간</div>
-        <div class="weekly-study-days">
-            ${dayData.map(d => `
-                <div class="weekly-day-cell${d.isToday ? ' today' : ''}">
-                    <div class="weekly-day-label">${d.label}</div>
-                    <div class="weekly-day-bar-wrap">
-                        <div class="weekly-day-bar" style="height:${d.ms >= 60000 ? Math.max(4, Math.round((d.ms / maxMs) * 36)) : 0}px"></div>
-                    </div>
-                    <div class="weekly-day-time">${d.isFuture ? '' : fmt(d.ms)}</div>
-                </div>
-            `).join('')}
-        </div>
+        ${_buildWeekChart(monday, todayStr)}
+        <div class="weekly-study-title" style="margin-top:14px;">지난 주</div>
+        ${_buildWeekChart(lastMonday, todayStr)}
     `;
     return el;
+}
+
+function openWeeklyStudyModal() {
+    let modal = document.getElementById('weekly-study-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'weekly-study-modal';
+        modal.innerHTML = `
+            <div class="weekly-study-modal-card">
+                <div style="font-size:1rem; font-weight:bold; color:#f1c40f; margin-bottom:14px;">📅 이번 주 학습 시간</div>
+                <div id="weekly-study-modal-body"></div>
+                <button onclick="closeWeeklyStudyModal()" style="margin-top:18px; background:#f1c40f; color:#1a2636; border:none; border-radius:10px; padding:10px 32px; font-size:0.95rem; font-weight:bold; cursor:pointer;">확인</button>
+            </div>
+        `;
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeWeeklyStudyModal();
+        });
+        document.body.appendChild(modal);
+    }
+    const body = document.getElementById('weekly-study-modal-body');
+    if (body) {
+        const widget = buildWeeklyStudyWidget();
+        widget.querySelector('.weekly-study-title').remove();
+        body.innerHTML = '';
+        body.appendChild(widget);
+    }
+    modal.classList.add('open');
+}
+
+function closeWeeklyStudyModal() {
+    const modal = document.getElementById('weekly-study-modal');
+    if (modal) modal.classList.remove('open');
+}
+
+
+function _checkFirstDailyWeeklyStudy() {
+    const todayStr = _getLocalDateStr(new Date());
+    const stored = localStorage.getItem('kingsRoad_weeklyShownDate');
+    if (stored !== todayStr) {
+        localStorage.setItem('kingsRoad_weeklyShownDate', todayStr);
+        setTimeout(openWeeklyStudyModal, 800);
+    }
 }
 
 /* [UI: 미션 화면 (하단 버튼 디자인 적용)] */
@@ -13987,6 +14035,7 @@ renderChapterMap(); // 2. 그 내용을 바탕으로 지도를 그림
 updateCastleView(); // 3. 성전 모습 업데이트
 initBgm();          // 4. BGM 초기화 (홈 화면 배경음악)
 updateKingsStepBtn(); // 5. 왕의 길 단계 버튼 상태 초기화
+_checkFirstDailyWeeklyStudy(); // 6. 오늘 첫 접속 시 주간 학습 시간 표시
 
 /* =========================================
    [시스템: 텍스트 파일 백업 및 불러오기 (.txt)]
