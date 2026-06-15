@@ -363,6 +363,8 @@ const LANG = {
         mission_advanced_endurance_desc: '오늘 서로 다른 장을 클리어할수록 보상이 쌓입니다. (2번째 장부터 보상)',
         mission_advanced_verse_title: '구절의 고난 누적',
         mission_advanced_verse_desc: '오늘 서로 다른 장을 클리어할수록 보상이 쌓입니다. (2번째 장부터 보상)',
+        mission_advanced_checkpoint_boss_title: '중간점검/보스전 누적',
+        mission_advanced_checkpoint_boss_desc: '오늘 서로 다른 중간점검 또는 보스를 클리어할수록 보상이 쌓입니다. (2번째부터 보상)',
         mission_btn_claim_all: '모두 받기',
 
         // 고난 길 모달
@@ -1091,6 +1093,8 @@ const LANG = {
         mission_advanced_endurance_desc: 'Earn rewards for each additional chapter cleared today. (From 2nd chapter)',
         mission_advanced_verse_title: 'Trial of Verse (Cumulative)',
         mission_advanced_verse_desc: 'Earn rewards for each additional chapter cleared today. (From 2nd chapter)',
+        mission_advanced_checkpoint_boss_title: 'Checkpoint/Boss (Cumulative)',
+        mission_advanced_checkpoint_boss_desc: 'Earn rewards for each additional checkpoint or boss cleared today. (From 2nd)',
         mission_daily_hardship_endurance_title: "Complete Trial of Recitation ×1",
         mission_daily_hardship_endurance_desc: "Complete any chapter's Trial of Recitation.",
         mission_daily_hardship_verse_title: "Complete Trial of Verse ×1",
@@ -1757,6 +1761,26 @@ let hardshipEnduranceClearHistory = {}; // 장별 인내의 고난 클리어 기
 let hardshipVerseClearHistory = {}; // 장별 구절의 고난 클리어 기록 { "1": [{correct, total, score, date, duration}, ...] }
 let bibleReadLog = {};             // 날짜 → 챕터 → 읽은 절 번호 배열 { "Mon Jun 14 2026": { 1: [1,2,3] } }
 let _lastBibleReadClickTime = 0;   // 3초 쿨다운용
+let sessionTimeLog = {};           // "YYYY-MM-DD" → ms (이번 주 학습 시간)
+let _sessionVisibleStart = Date.now(); // 현재 탭이 보이기 시작한 시각
+
+function _getLocalDateStr(d) {
+    const dt = d || new Date();
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+}
+function _accumulateSessionTime() {
+    const elapsed = Date.now() - _sessionVisibleStart;
+    _sessionVisibleStart = Date.now();
+    if (elapsed > 0 && elapsed < 8 * 3600 * 1000) {
+        const key = _getLocalDateStr();
+        sessionTimeLog[key] = (sessionTimeLog[key] || 0) + elapsed;
+    }
+}
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) _accumulateSessionTime();
+    else _sessionVisibleStart = Date.now();
+});
+window.addEventListener('beforeunload', _accumulateSessionTime);
 
 // ★ [학습 모드 설정]
 let studyModePreference = 'ask'; // 'ask' | 'quick' | 'full'
@@ -1915,15 +1939,17 @@ loadGameData = function () {
         if (!Array.isArray(missionData.advanced.hardshipMemoryChapters)) missionData.advanced.hardshipMemoryChapters = [];
         if (!Array.isArray(missionData.advanced.hardshipEnduranceChapters)) missionData.advanced.hardshipEnduranceChapters = [];
         if (!Array.isArray(missionData.advanced.hardshipVerseChapters)) missionData.advanced.hardshipVerseChapters = [];
-        if (!Array.isArray(missionData.advanced.claimed)) missionData.advanced.claimed = [0, 0, 0, 0]; // [address, memory, endurance, verse]
+        if (!Array.isArray(missionData.advanced.checkpointBossStages)) missionData.advanced.checkpointBossStages = [];
+        if (!Array.isArray(missionData.advanced.claimed)) missionData.advanced.claimed = [0, 0, 0, 0, 0]; // [address, memory, endurance, verse, checkpointBoss]
         if (missionData.advanced.claimed.length < 3) missionData.advanced.claimed.push(0);
         if (missionData.advanced.claimed.length < 4) missionData.advanced.claimed.push(0);
+        if (missionData.advanced.claimed.length < 5) missionData.advanced.claimed.push(0);
         if (!missionData.advanced.lastResetDate) missionData.advanced.lastResetDate = '';
         // 날짜가 바뀐 경우 심화 미션 리셋 (로드 시점에서 체크)
         {
             const _today = new Date().toDateString();
             if (missionData.advanced.lastResetDate !== _today) {
-                missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], claimed: [0, 0, 0, 0], lastResetDate: _today };
+                missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], checkpointBossStages: [], claimed: [0, 0, 0, 0, 0], lastResetDate: _today };
             }
         }
 
@@ -1948,8 +1974,17 @@ loadGameData = function () {
         bossFirstClearClaimed = new Set(parsed.bossFirstClearClaimed || []);
         if (parsed.bibleReadLog) {
             const _today = new Date().toDateString();
-            // 오늘 날짜만 유지 (누적 방지)
             bibleReadLog = parsed.bibleReadLog[_today] ? { [_today]: parsed.bibleReadLog[_today] } : {};
+        }
+        if (parsed.sessionTimeLog) {
+            // 최근 14일치만 유지
+            const _cutoff = new Date();
+            _cutoff.setDate(_cutoff.getDate() - 14);
+            const _cutoffStr = _getLocalDateStr(_cutoff);
+            sessionTimeLog = {};
+            for (const [k, v] of Object.entries(parsed.sessionTimeLog)) {
+                if (k >= _cutoffStr) sessionTimeLog[k] = v;
+            }
         }
 
         // ★ [게임 모드] 왕의 길 데이터 복구
@@ -2481,7 +2516,7 @@ function checkMissions() {
             hardshipMemoryChapters: [],
             hardshipEnduranceChapters: [],
             hardshipVerseChapters: [],
-            claimed: [0, 0, 0, 0],
+            claimed: [0, 0, 0, 0, 0],
             lastResetDate: today
         };
         console.log("📅 새로운 하루가 시작되어 일일 미션이 초기화되었습니다.");
@@ -2610,14 +2645,14 @@ function updateMissionProgress(type, extraData) {
     // 심화 일일 미션: 서로 다른 장 추적 (chapter = 장 번호)
     else if (type === 'advancedAddress') {
         const ch = arguments[1];
-        if (!missionData.advanced) missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], claimed: [0, 0, 0, 0], lastResetDate: '' };
+        if (!missionData.advanced) missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], checkpointBossStages: [], claimed: [0, 0, 0, 0, 0], lastResetDate: '' };
         const _adv = missionData.advanced;
         if (!Array.isArray(_adv.hardshipAddressChapters)) _adv.hardshipAddressChapters = [];
         if (ch != null && !_adv.hardshipAddressChapters.includes(ch) && _adv.hardshipAddressChapters.length < 22) _adv.hardshipAddressChapters.push(ch);
     }
     else if (type === 'advancedMemory') {
         const ch = arguments[1];
-        if (!missionData.advanced) missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], claimed: [0, 0, 0, 0], lastResetDate: '' };
+        if (!missionData.advanced) missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], checkpointBossStages: [], claimed: [0, 0, 0, 0, 0], lastResetDate: '' };
         const _adv = missionData.advanced;
         if (!Array.isArray(_adv.hardshipMemoryChapters)) _adv.hardshipMemoryChapters = [];
         if (ch != null && !_adv.hardshipMemoryChapters.includes(ch) && _adv.hardshipMemoryChapters.length < 22) _adv.hardshipMemoryChapters.push(ch);
@@ -2631,7 +2666,7 @@ function updateMissionProgress(type, extraData) {
     }
     else if (type === 'advancedEndurance') {
         const ch = arguments[1];
-        if (!missionData.advanced) missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], claimed: [0, 0, 0, 0], lastResetDate: '' };
+        if (!missionData.advanced) missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], checkpointBossStages: [], claimed: [0, 0, 0, 0, 0], lastResetDate: '' };
         const _adv = missionData.advanced;
         if (!Array.isArray(_adv.hardshipEnduranceChapters)) _adv.hardshipEnduranceChapters = [];
         if (ch != null && !_adv.hardshipEnduranceChapters.includes(ch) && _adv.hardshipEnduranceChapters.length < 22) _adv.hardshipEnduranceChapters.push(ch);
@@ -2643,13 +2678,20 @@ function updateMissionProgress(type, extraData) {
     }
     else if (type === 'advancedVerse') {
         const ch = arguments[1];
-        if (!missionData.advanced) missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], claimed: [0, 0, 0, 0], lastResetDate: '' };
+        if (!missionData.advanced) missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], checkpointBossStages: [], claimed: [0, 0, 0, 0, 0], lastResetDate: '' };
         const _adv = missionData.advanced;
         if (!Array.isArray(_adv.hardshipVerseChapters)) _adv.hardshipVerseChapters = [];
         if (ch != null && !_adv.hardshipVerseChapters.includes(ch) && _adv.hardshipVerseChapters.length < 22) _adv.hardshipVerseChapters.push(ch);
         // Cascade: Lv.2 → Lv.1
         if (!Array.isArray(_adv.hardshipAddressChapters)) _adv.hardshipAddressChapters = [];
         if (ch != null && !_adv.hardshipAddressChapters.includes(ch) && _adv.hardshipAddressChapters.length < 22) _adv.hardshipAddressChapters.push(ch);
+    }
+    else if (type === 'advancedCheckpointBoss') {
+        const stageId = arguments[1];
+        if (!missionData.advanced) missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], checkpointBossStages: [], claimed: [0, 0, 0, 0, 0], lastResetDate: '' };
+        const _adv = missionData.advanced;
+        if (!Array.isArray(_adv.checkpointBossStages)) _adv.checkpointBossStages = [];
+        if (stageId != null && !_adv.checkpointBossStages.includes(stageId) && _adv.checkpointBossStages.length < 22) _adv.checkpointBossStages.push(stageId);
     }
     // 4. 주간 미션: 중보/보스 처치 (용 사냥)
     else if (type === 'dragon') {
@@ -2889,6 +2931,17 @@ function createMissionElement(parent, m) {
     }
 }
 
+function showGemToast(count) {
+    const existing = document.getElementById('gem-reward-toast');
+    if (existing) existing.remove();
+    const el = document.createElement('div');
+    el.id = 'gem-reward-toast';
+    el.className = 'gem-reward-toast';
+    el.textContent = `💎 보석 ${count.toLocaleString()}개 획득`;
+    document.body.appendChild(el);
+    setTimeout(() => { if (el.parentNode) el.remove(); }, 2800);
+}
+
 /* [시스템: 보상 수령 처리 함수] */
 function claimReward(type, index, rewardType, value1, value2) {
     // 1. 중복 수령 방지
@@ -2909,8 +2962,8 @@ function claimReward(type, index, rewardType, value1, value2) {
     if (rewardType === 'gem') {
         // 보석 지급
         myGems += value1;
-        updateGemDisplay(); // 상단 보석 UI 갱신 함수
-        alert(t('alert_gems_received', { count: value1 }));
+        updateGemDisplay();
+        showGemToast(value1);
         // playSound('coin'); // 효과음이 있다면 주석 해제
     }
 
@@ -5699,6 +5752,7 @@ function claimBibleReadReward() {
     myGems += bonus;
     missionData.daily.bibleReadClaimed = milestone;
     updateGemDisplay();
+    showGemToast(bonus);
     saveGameData();
     openMission();
 }
@@ -7746,6 +7800,7 @@ function saveGameData() {
         hardshipEnduranceClearHistory: hardshipEnduranceClearHistory,
         hardshipVerseClearHistory: hardshipVerseClearHistory,
         bibleReadLog: bibleReadLog,
+        sessionTimeLog: sessionTimeLog,
         // ★ [게임 모드]
         activeMode: activeMode,
         kingsMode: {
@@ -10051,6 +10106,11 @@ const ADVANCED_VERSE_REWARDS = [
     { from: 7, to: 12, gem: 1100 },
     { from: 13, to: 22, gem: 1700 }
 ];
+const ADVANCED_CHECKPOINT_BOSS_REWARDS = [
+    { from: 2, to: 6,  gem: 500 },
+    { from: 7, to: 12, gem: 800 },
+    { from: 13, to: 22, gem: 1200 }
+];
 
 function getAdvancedRewardGem(rewardTable, clearIndex) {
     // clearIndex: 0-based (0 = 2번째 장)
@@ -10064,16 +10124,17 @@ function getAdvancedRewardGem(rewardTable, clearIndex) {
 function claimAdvancedReward(missionKey, upToIndex) {
     // missionKey: 'address' | 'memory' | 'endurance' | 'verse'
     if (!missionData.advanced) return;
-    const claimedIdxMap = { address: 0, memory: 1, endurance: 2, verse: 3 };
+    const claimedIdxMap = { address: 0, memory: 1, endurance: 2, verse: 3, checkpointBoss: 4 };
     const claimedIdx = claimedIdxMap[missionKey] ?? 0;
     const chaptersMap = {
         address: missionData.advanced.hardshipAddressChapters,
         memory: missionData.advanced.hardshipMemoryChapters,
         endurance: missionData.advanced.hardshipEnduranceChapters || [],
-        verse: missionData.advanced.hardshipVerseChapters || []
+        verse: missionData.advanced.hardshipVerseChapters || [],
+        checkpointBoss: missionData.advanced.checkpointBossStages || []
     };
     const chapters = chaptersMap[missionKey] || [];
-    const rewardTableMap = { address: ADVANCED_ADDRESS_REWARDS, memory: ADVANCED_MEMORY_REWARDS, endurance: ADVANCED_ENDURANCE_REWARDS, verse: ADVANCED_VERSE_REWARDS };
+    const rewardTableMap = { address: ADVANCED_ADDRESS_REWARDS, memory: ADVANCED_MEMORY_REWARDS, endurance: ADVANCED_ENDURANCE_REWARDS, verse: ADVANCED_VERSE_REWARDS, checkpointBoss: ADVANCED_CHECKPOINT_BOSS_REWARDS };
     const rewardTable = rewardTableMap[missionKey] || ADVANCED_ADDRESS_REWARDS;
     const maxClaimable = Math.max(0, chapters.length - 1); // 2번째 장부터
     const currentClaimed = missionData.advanced.claimed[claimedIdx] || 0;
@@ -10089,9 +10150,8 @@ function claimAdvancedReward(missionKey, upToIndex) {
 
     missionData.advanced.claimed[claimedIdx] = claimTo;
     myGems += totalGem;
-    // 주간 일일미션 클리어 카운트에는 심화 미션 수령 포함하지 않음 (별도 카테고리)
     updateGemDisplay();
-    alert(t('alert_gems_received', { count: totalGem }));
+    showGemToast(totalGem);
     saveGameData();
     syncToFirestore();
     updateNotificationBadges();
@@ -10099,7 +10159,7 @@ function claimAdvancedReward(missionKey, upToIndex) {
 }
 
 function renderAdvancedMissionList(listArea) {
-    if (!missionData.advanced) missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], claimed: [0, 0, 0, 0], lastResetDate: '' };
+    if (!missionData.advanced) missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], checkpointBossStages: [], claimed: [0, 0, 0, 0, 0], lastResetDate: '' };
     const adv = missionData.advanced;
 
     const anyBoss = [stageMastery, kingsRoadData && kingsRoadData.mastery].filter(Boolean)
@@ -10112,6 +10172,11 @@ function renderAdvancedMissionList(listArea) {
         listArea.appendChild(msg);
         return;
     }
+
+    const tagline = document.createElement('div');
+    tagline.style.cssText = 'text-align:center; color:#f1c40f; font-size:0.88rem; margin-bottom:14px; opacity:0.85;';
+    tagline.textContent = '오늘 얼마나 학습할 수 있는지 도전해보세요';
+    listArea.appendChild(tagline);
 
     // 보상 테이블 헬퍼
     function buildMissionBlock(titleKey, descKey, chapters, maxChapters, rewardTable, claimedIdx, missionKey) {
@@ -10197,6 +10262,10 @@ function renderAdvancedMissionList(listArea) {
     listArea.appendChild(buildMissionBlock(
         'mission_advanced_memory_title', 'mission_advanced_memory_desc',
         adv.hardshipMemoryChapters, 22, ADVANCED_MEMORY_REWARDS, 1, 'memory'
+    ));
+    listArea.appendChild(buildMissionBlock(
+        'mission_advanced_checkpoint_boss_title', 'mission_advanced_checkpoint_boss_desc',
+        adv.checkpointBossStages || [], 22, ADVANCED_CHECKPOINT_BOSS_REWARDS, 4, 'checkpointBoss'
     ));
 }
 
@@ -10458,6 +10527,52 @@ function renderMissionList(tabName) {
     });
 }
 
+function buildWeeklyStudyWidget() {
+    _accumulateSessionTime(); // 현재 세션 시간 먼저 반영
+    const today = new Date();
+    const dow = today.getDay(); // 0=일
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
+    monday.setHours(0, 0, 0, 0);
+
+    const dayLabels = ['월', '화', '수', '목', '금', '토', '일'];
+    const todayStr = _getLocalDateStr(today);
+    const dayData = dayLabels.map((label, i) => {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        const key = _getLocalDateStr(d);
+        const ms = (sessionTimeLog[key] || 0);
+        return { label, ms, isToday: key === todayStr, isFuture: d > today };
+    });
+
+    const maxMs = Math.max(...dayData.map(d => d.ms), 1);
+    const fmt = ms => {
+        if (ms < 60000) return '—';
+        const m = Math.floor(ms / 60000);
+        if (m < 60) return `${m}분`;
+        const h = Math.floor(m / 60), rm = m % 60;
+        return rm > 0 ? `${h}h ${rm}분` : `${h}시간`;
+    };
+
+    const el = document.createElement('div');
+    el.className = 'weekly-study-widget';
+    el.innerHTML = `
+        <div class="weekly-study-title">📅 이번 주 학습 시간</div>
+        <div class="weekly-study-days">
+            ${dayData.map(d => `
+                <div class="weekly-day-cell${d.isToday ? ' today' : ''}">
+                    <div class="weekly-day-label">${d.label}</div>
+                    <div class="weekly-day-bar-wrap">
+                        <div class="weekly-day-bar" style="height:${d.ms >= 60000 ? Math.max(4, Math.round((d.ms / maxMs) * 36)) : 0}px"></div>
+                    </div>
+                    <div class="weekly-day-time">${d.isFuture ? '' : fmt(d.ms)}</div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    return el;
+}
+
 /* [UI: 미션 화면 (하단 버튼 디자인 적용)] */
 function openMission() {
     // 화면 전환
@@ -10497,6 +10612,10 @@ function openMission() {
     const listArea = document.getElementById('mission-list-area');
 
     // 탭 버튼 영역 생성 (매번 새로 그려서 탭 추가/변경 반영)
+    const existingWidget = screen.querySelector('.weekly-study-widget');
+    if (existingWidget) existingWidget.remove();
+    screen.insertBefore(buildWeeklyStudyWidget(), listArea);
+
     const existingTabs = screen.querySelector('.mission-tabs');
     if (existingTabs) existingTabs.remove();
     const tabContainer = document.createElement('div');
@@ -12329,7 +12448,7 @@ function checkDailyLogin() {
             hardshipMemoryChapters: [],
             hardshipEnduranceChapters: [],
             hardshipVerseChapters: [],
-            claimed: [0, 0, 0, 0],
+            claimed: [0, 0, 0, 0, 0],
             lastResetDate: today
         };
 
@@ -12427,6 +12546,7 @@ stageClear = function (type, rewardMultiplier = 1) {
 
             // ★ 미션 업데이트: 보스 처치
             updateMissionProgress('checkpointBoss'); // 일일 미션
+            updateMissionProgress('advancedCheckpointBoss', sId); // 심화 미션
             updateMissionProgress('dragon'); // 주간 미션
         }
         // [B] 일반 / 중간점검
@@ -12476,6 +12596,7 @@ stageClear = function (type, rewardMultiplier = 1) {
                 // ★ 미션 업데이트: 중보 처치
                 if (!isAlreadyClearedToday) {
                     updateMissionProgress('checkpointBoss'); // 일일 미션
+                    updateMissionProgress('advancedCheckpointBoss', sId); // 심화 미션
                 }
                 updateMissionProgress('dragon'); // 주간 미션 (중보/보스)
             }

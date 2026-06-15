@@ -4217,6 +4217,89 @@ body, html {
 }
 
 
+.weekly-study-widget {
+    padding: 12px 16px 8px;
+    flex-shrink: 0;
+}
+.weekly-study-title {
+    font-size: 0.82rem;
+    color: #bdc3c7;
+    margin-bottom: 8px;
+    text-align: center;
+}
+.weekly-study-days {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    gap: 4px;
+}
+.weekly-day-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    min-width: 36px;
+}
+.weekly-day-cell.today .weekly-day-label {
+    color: #f1c40f;
+    font-weight: bold;
+}
+.weekly-day-cell.today .weekly-day-time {
+    color: #f1c40f;
+    font-weight: bold;
+}
+.weekly-day-label {
+    font-size: 0.75rem;
+    color: #95a5a6;
+}
+.weekly-day-bar-wrap {
+    width: 22px;
+    height: 36px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+.weekly-day-bar {
+    width: 14px;
+    background: #3498db;
+    border-radius: 3px 3px 0 0;
+    transition: height 0.3s ease;
+    min-height: 0;
+}
+.weekly-day-cell.today .weekly-day-bar {
+    background: #f1c40f;
+}
+.weekly-day-time {
+    font-size: 0.68rem;
+    color: #7f8c8d;
+    white-space: nowrap;
+}
+
+.gem-reward-toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(30, 30, 30, 0.92);
+    color: #f1c40f;
+    padding: 12px 24px;
+    border-radius: 24px;
+    font-size: 1rem;
+    font-weight: bold;
+    z-index: 9999;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    animation: gemToastAnim 2.8s ease forwards;
+}
+
+@keyframes gemToastAnim {
+    0%   { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    12%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+    75%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+}
+
 .bible-gem-tip {
     position: absolute;
     transform: translateX(-50%);
