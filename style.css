@@ -2411,6 +2411,15 @@ body, html {
     border-bottom-color: #e74c3c;
     background: rgba(231, 76, 60, 0.18);
     border-radius: 8px 8px 0 0;
+    flex-direction: column;
+    gap: 0;
+    min-height: 44px;
+}
+.wrong-answer-hint {
+    font-size: 0.62rem;
+    color: #2ecc71;
+    font-weight: bold;
+    line-height: 1;
 }
 
 #hidden-typing-input {

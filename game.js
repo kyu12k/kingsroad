@@ -17380,6 +17380,7 @@ function createEmptyHardshipState() {
         selectedVerse: 1,
         memorySlots: [],
         revealedHints: [],
+        totalHintsUsed: 0,
         memoryTypedText: '',
         awaitingNext: false,
         speechScores: [],
@@ -17577,12 +17578,18 @@ function openChapterHardship(chapterNum) {
     window.hardshipOrigin = 'map'; // 맵에서 진입했으므로 'home'을 덮어씀
 }
 
-function getHardshipModeLastPlayed(mode) {
+function getHardshipModeLastPlayed(mode, ch) {
     const map = { endurance: hardshipEnduranceClearHistory, address: hardshipAddressClearHistory, memory: hardshipMemoryClearHistory, verse: hardshipVerseClearHistory };
     const history = map[mode] || {};
-    let latest = 0;
-    for (const ch of Object.keys(history)) {
+    if (ch != null) {
         const arr = history[ch];
+        if (!arr || !arr.length) return null;
+        const last = arr[arr.length - 1];
+        return (last && last.date) ? last.date : null;
+    }
+    let latest = 0;
+    for (const key of Object.keys(history)) {
+        const arr = history[key];
         if (!arr || !arr.length) continue;
         const last = arr[arr.length - 1];
         if (last && last.date && last.date > latest) latest = last.date;
@@ -17606,11 +17613,13 @@ function formatHardshipElapsed(ts) {
 
 function updateHardshipLastPlayedBadges() {
     const modes = ['endurance', 'address', 'memory', 'verse'];
+    const ch = window.hardshipForcedChapter != null ? window.hardshipForcedChapter : null;
     for (const mode of modes) {
         const el = document.getElementById(`hardship-last-${mode}`);
         if (!el) continue;
-        const ts = getHardshipModeLastPlayed(mode);
-        el.textContent = ts ? `마지막: ${formatHardshipElapsed(ts)}` : '';
+        const ts = getHardshipModeLastPlayed(mode, ch);
+        const prefix = ch != null ? `${ch}장 마지막: ` : '마지막: ';
+        el.textContent = ts ? `${prefix}${formatHardshipElapsed(ts)}` : '';
     }
 }
 
@@ -18743,7 +18752,8 @@ function renderHardshipMemoryVerse() {
     initializeHardshipMemorySlots();
     const activeValidSlotIndex = getHardshipActiveValidSlotIndex();
 
-    const typingBoardHtml = getHardshipActiveText(hardshipState.currentVerse).split('').map((character, index) => {
+    const _activeText = getHardshipActiveText(hardshipState.currentVerse);
+    const typingBoardHtml = _activeText.split('').map((character, index) => {
         if (!isHardshipTypingTargetChar(character)) {
             const extraClass = character === ' ' ? ' space' : '';
             const displayChar = character === ' ' ? '&nbsp;' : character;
@@ -18765,7 +18775,9 @@ function renderHardshipMemoryVerse() {
             !isHintRevealed && activeValidSlotIndex === validSlotIndex ? 'active' : ''
         ].filter(Boolean).join(' ');
         const displayValue = currentValue || '&nbsp;';
-        return `<button type="button" class="${slotClasses}" data-index="${index}" onclick="focusHardshipMemoryHiddenInput()" ontouchstart="focusHardshipMemoryHiddenInput()" ${hardshipState.locked ? 'disabled' : ''}>${displayValue}</button>`;
+        const wrongHint = (isWrong && hardshipState.awaitingNext)
+            ? `<span class="wrong-answer-hint">${_activeText.charAt(index)}</span>` : '';
+        return `<button type="button" class="${slotClasses}" data-index="${index}" onclick="focusHardshipMemoryHiddenInput()" ontouchstart="focusHardshipMemoryHiddenInput()" ${hardshipState.locked ? 'disabled' : ''}>${displayValue}${wrongHint}</button>`;
     }).join('');
 
     const hiddenInputMaxLength = getHardshipFillableVerseLength();
@@ -19181,6 +19193,7 @@ function useHardshipMemoryHint() {
 
     if (hardshipState.revealedHints.indexOf(hintIndex) === -1) {
         hardshipState.revealedHints.push(hintIndex);
+        hardshipState.totalHintsUsed = (hardshipState.totalHintsUsed || 0) + 1;
     }
 
     updateGemDisplay();
@@ -19680,7 +19693,8 @@ function finishHardshipSession(reason) {
             total: hardshipState.queue.length,
             score: hardshipState.score,
             date: Date.now(),
-            duration: sessionDuration
+            duration: sessionDuration,
+            hints: hardshipState.totalHintsUsed || 0
         };
 
         const ch = hardshipState.forcedChapter;
@@ -19703,12 +19717,13 @@ function finishHardshipSession(reason) {
                     <td class="hardship-history-score">${r.correct}/${r.total}</td>
                     <td>${r.score}점</td>
                     <td>${timeStr}</td>
+                    <td>${r.hints != null ? r.hints + '회' : '-'}</td>
                 </tr>`;
             }).join('');
             return `<div class="hardship-history-wrap">
                 <div class="hardship-history-title">⌨️ ${ch}장 망각의 고난 · 최근 ${history.length}회</div>
                 <table class="hardship-history-table">
-                    <thead><tr><th></th><th>맞힌 수</th><th>승점</th><th>클리어 시간</th></tr></thead>
+                    <thead><tr><th></th><th>맞힌 수</th><th>승점</th><th>클리어 시간</th><th>힌트</th></tr></thead>
                     <tbody>${rows}</tbody>
                 </table>
             </div>`;
@@ -19733,11 +19748,12 @@ function finishHardshipSession(reason) {
             return `<div class="hardship-history-wrap">
                 <div class="hardship-history-title">⌨️ ${rangeLabel} 망각의 고난 범위 세션</div>
                 <table class="hardship-history-table">
-                    <thead><tr><th>맞힌 수</th><th>승점</th><th>시간</th></tr></thead>
+                    <thead><tr><th>맞힌 수</th><th>승점</th><th>시간</th><th>힌트</th></tr></thead>
                     <tbody><tr class="hardship-history-current">
                         <td class="hardship-history-score">${record.correct}/${record.total}</td>
                         <td>${record.score}점</td>
                         <td>${timeStr}</td>
+                        <td>${record.hints}회</td>
                     </tr></tbody>
                 </table>
             </div>`;
