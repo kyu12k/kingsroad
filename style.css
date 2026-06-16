@@ -718,6 +718,7 @@ body, html {
             cursor: pointer;
             z-index: 60;
             transition: transform 0.08s ease, box-shadow 0.08s ease;
+            white-space: nowrap;
         }
         .btn-back:active { transform: translateX(-50%) translateY(3px); box-shadow: none; }
 
@@ -2868,6 +2869,7 @@ body, html {
     cursor: pointer;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     transition: transform 0.1s;
+    white-space: nowrap;
 }
 
 /* 눌렀을 때 쫀득한 느낌 */
