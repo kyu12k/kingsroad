@@ -5787,6 +5787,142 @@ function closeBibleReadingOverlay() {
     if (el) el.remove();
 }
 
+/* ─── 챕터 오디오 플레이어 ───────────────────────────────────────────────── */
+let _chapAudio = null;
+let _chapAudioRaf = null;
+
+function openChapterAudioPlayer() {
+    const chapterNum = currentOpenChapterData && currentOpenChapterData.id;
+    if (!chapterNum) return;
+
+    const existing = document.getElementById('chapter-audio-modal');
+    if (existing) return; // 이미 열림
+
+    const mp3Url = `../bjtest/bjtest${chapterNum}/mp3/${chapterNum}.mp3`;
+
+    if (_chapAudio) { _chapAudio.pause(); _chapAudio = null; }
+    _chapAudio = new Audio(mp3Url);
+    _chapAudio.loop = false;
+
+    const modal = document.createElement('div');
+    modal.id = 'chapter-audio-modal';
+    modal.innerHTML = `
+        <div class="chap-audio-card">
+            <div class="chap-audio-header">
+                <span class="chap-audio-title">🎧 계시록 ${chapterNum}장</span>
+                <button class="chap-audio-close-btn" onclick="closeChapterAudioPlayer()">✕</button>
+            </div>
+            <div class="chap-audio-time-row">
+                <span id="chap-audio-cur">0:00</span>
+                <span id="chap-audio-dur">-:--</span>
+            </div>
+            <div class="chap-audio-progress-wrap" id="chap-audio-prog" onclick="seekChapterAudio(event,this)">
+                <div class="chap-audio-progress-fill" id="chap-audio-fill"></div>
+                <div class="chap-audio-progress-thumb" id="chap-audio-thumb"></div>
+            </div>
+            <div class="chap-audio-btns">
+                <button class="chap-audio-skip" onclick="skipChapterAudio(-10)">-10s</button>
+                <button class="chap-audio-play-btn" id="chap-audio-play" onclick="toggleChapterAudio()">▶</button>
+                <button class="chap-audio-skip" onclick="skipChapterAudio(10)">+10s</button>
+            </div>
+            <div class="chap-audio-options">
+                <div class="chap-audio-speed-group" id="chap-audio-speed-group">
+                    <button class="chap-speed-btn" data-rate="0.75" onclick="setChapterAudioSpeed(0.75)">0.75×</button>
+                    <button class="chap-speed-btn active" data-rate="1" onclick="setChapterAudioSpeed(1)">1×</button>
+                    <button class="chap-speed-btn" data-rate="1.25" onclick="setChapterAudioSpeed(1.25)">1.25×</button>
+                    <button class="chap-speed-btn" data-rate="1.5" onclick="setChapterAudioSpeed(1.5)">1.5×</button>
+                    <button class="chap-speed-btn" data-rate="2" onclick="setChapterAudioSpeed(2)">2×</button>
+                </div>
+                <button class="chap-audio-repeat-btn" id="chap-audio-repeat" onclick="toggleChapterAudioRepeat()">🔁 반복</button>
+            </div>
+            <div id="chap-audio-error" style="display:none; color:#e74c3c; font-size:0.85rem; text-align:center; padding:8px 0;"></div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    const audio = _chapAudio;
+
+    audio.addEventListener('loadedmetadata', _chapAudioUpdateUI);
+    audio.addEventListener('timeupdate', _chapAudioUpdateUI);
+    audio.addEventListener('ended', () => {
+        const btn = document.getElementById('chap-audio-play');
+        if (btn) btn.textContent = '▶';
+    });
+    audio.addEventListener('error', () => {
+        const err = document.getElementById('chap-audio-error');
+        if (err) { err.style.display = 'block'; err.textContent = '오디오 파일을 불러올 수 없습니다.'; }
+    });
+
+    audio.play().then(() => {
+        const btn = document.getElementById('chap-audio-play');
+        if (btn) btn.textContent = '⏸';
+    }).catch(() => {});
+}
+
+function _chapAudioFmtTime(sec) {
+    if (!isFinite(sec) || sec < 0) return '-:--';
+    const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function _chapAudioUpdateUI() {
+    const audio = _chapAudio;
+    if (!audio) return;
+    const cur = document.getElementById('chap-audio-cur');
+    const dur = document.getElementById('chap-audio-dur');
+    const fill = document.getElementById('chap-audio-fill');
+    const thumb = document.getElementById('chap-audio-thumb');
+    if (cur) cur.textContent = _chapAudioFmtTime(audio.currentTime);
+    if (dur) dur.textContent = _chapAudioFmtTime(audio.duration);
+    const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+    if (fill) fill.style.width = pct + '%';
+    if (thumb) thumb.style.left = pct + '%';
+}
+
+function toggleChapterAudio() {
+    if (!_chapAudio) return;
+    const btn = document.getElementById('chap-audio-play');
+    if (_chapAudio.paused) {
+        _chapAudio.play().catch(() => {});
+        if (btn) btn.textContent = '⏸';
+    } else {
+        _chapAudio.pause();
+        if (btn) btn.textContent = '▶';
+    }
+}
+
+function skipChapterAudio(sec) {
+    if (!_chapAudio) return;
+    _chapAudio.currentTime = Math.max(0, Math.min(_chapAudio.duration || 0, _chapAudio.currentTime + sec));
+}
+
+function seekChapterAudio(e, el) {
+    if (!_chapAudio || !_chapAudio.duration) return;
+    const rect = el.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    _chapAudio.currentTime = ratio * _chapAudio.duration;
+}
+
+function setChapterAudioSpeed(rate) {
+    if (_chapAudio) _chapAudio.playbackRate = rate;
+    document.querySelectorAll('.chap-speed-btn').forEach(b => {
+        b.classList.toggle('active', parseFloat(b.dataset.rate) === rate);
+    });
+}
+
+function toggleChapterAudioRepeat() {
+    if (!_chapAudio) return;
+    _chapAudio.loop = !_chapAudio.loop;
+    const btn = document.getElementById('chap-audio-repeat');
+    if (btn) btn.classList.toggle('active', _chapAudio.loop);
+}
+
+function closeChapterAudioPlayer() {
+    if (_chapAudio) { _chapAudio.pause(); _chapAudio = null; }
+    const modal = document.getElementById('chapter-audio-modal');
+    if (modal) modal.remove();
+}
+
 /* ─── 스테이지 아이템 엘리먼트 빌더 (accordion/flat 공용) ───────────────── */
 function buildStageItemEl(stage, chData, kingsUnlockedSet) {
     const item = document.createElement('div');

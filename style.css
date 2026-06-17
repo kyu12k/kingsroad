@@ -5774,3 +5774,85 @@ body, html {
     transition: opacity 0.15s;
 }
 .boss-setup-start:active { opacity: 0.85; }
+
+/* ─── 챕터 오디오 플레이어 모달 ─────────────────────────────────────────── */
+#chapter-audio-modal {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 20000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+}
+.chap-audio-card {
+    background: #1a1a2e;
+    border-radius: 20px;
+    padding: 24px 20px 20px;
+    width: 100%; max-width: 360px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    border: 1px solid rgba(155,89,182,0.3);
+}
+.chap-audio-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+}
+.chap-audio-title { color: #9b59b6; font-size: 1rem; font-weight: 700; }
+.chap-audio-close-btn {
+    background: rgba(255,255,255,0.08); border: none; color: #aaa;
+    border-radius: 50%; width: 28px; height: 28px; font-size: 0.9rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.chap-audio-time-row {
+    display: flex; justify-content: space-between;
+    font-size: 0.8rem; color: #7f8c8d; margin-bottom: 6px;
+}
+.chap-audio-progress-wrap {
+    position: relative; height: 6px; background: rgba(255,255,255,0.12);
+    border-radius: 3px; cursor: pointer; margin-bottom: 24px;
+}
+.chap-audio-progress-fill {
+    height: 100%; background: #9b59b6; border-radius: 3px;
+    width: 0%; pointer-events: none;
+}
+.chap-audio-progress-thumb {
+    position: absolute; top: 50%; transform: translate(-50%, -50%);
+    width: 14px; height: 14px; background: #fff;
+    border-radius: 50%; left: 0%; pointer-events: none;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+.chap-audio-btns {
+    display: flex; align-items: center; justify-content: center; gap: 20px;
+    margin-bottom: 20px;
+}
+.chap-audio-skip {
+    background: rgba(255,255,255,0.08); border: none; color: #bdc3c7;
+    border-radius: 20px; padding: 8px 14px; font-size: 0.85rem;
+    cursor: pointer; font-weight: 600;
+}
+.chap-audio-play-btn {
+    background: #9b59b6; border: none; color: #fff;
+    border-radius: 50%; width: 56px; height: 56px; font-size: 1.4rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(155,89,182,0.5);
+}
+.chap-audio-options {
+    display: flex; flex-direction: column; gap: 12px;
+}
+.chap-audio-speed-group {
+    display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;
+}
+.chap-speed-btn {
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);
+    color: #bdc3c7; border-radius: 20px; padding: 5px 10px;
+    font-size: 0.78rem; cursor: pointer;
+}
+.chap-speed-btn.active {
+    background: #9b59b6; border-color: #9b59b6; color: #fff; font-weight: 700;
+}
+.chap-audio-repeat-btn {
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);
+    color: #bdc3c7; border-radius: 20px; padding: 8px 20px;
+    font-size: 0.85rem; cursor: pointer; width: 100%; font-weight: 600;
+}
+.chap-audio-repeat-btn.active {
+    background: rgba(155,89,182,0.2); border-color: #9b59b6; color: #9b59b6;
+}
