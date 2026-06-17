@@ -20853,7 +20853,7 @@ function openFriendScreen() {
                 <button class="friend-close-btn" onclick="closeFriendScreen()">✕</button>
             </div>
             <div class="friend-add-row">
-                <input id="friend-tag-input" class="friend-tag-input" placeholder="#ABCD12 코드 입력" maxlength="7" />
+                <input id="friend-tag-input" class="friend-tag-input" placeholder="코드 입력 (#ABCD12)" maxlength="7" />
                 <button class="friend-add-btn" onclick="_submitFriendRequest()">신청</button>
             </div>
             <div id="friend-screen-body" class="friend-screen-body">
@@ -20941,7 +20941,10 @@ async function _submitFriendRequest() {
     const input = document.getElementById('friend-tag-input');
     if (!input) return;
     const raw = input.value.trim().replace(/^#/, '').toUpperCase();
-    if (!raw || raw.length !== 6) { showGemToast(0, '6자리 코드를 정확히 입력하세요.', true); return; }
+    const is6Char = raw.length === 6;
+    const is4Digit = raw.length === 4 && /^\d{4}$/.test(raw);
+    if (!is6Char && !is4Digit) { showGemToast(0, '올바른 코드를 입력하세요.', true); return; }
+    if (raw === '0000') { showGemToast(0, '존재하지 않는 코드입니다.', true); return; }
 
     const btn = document.querySelector('.friend-add-btn');
     if (btn) { btn.disabled = true; btn.textContent = '…'; }
