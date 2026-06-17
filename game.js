@@ -20918,7 +20918,7 @@ async function _renderFriendScreen() {
             html += `<div class="friend-list-item" onclick="openFriendProfile('${tag}')">
                 <div class="friend-list-info">
                     <span class="friend-list-tag">#${tag}</span>
-                    ${memo ? `<span class="friend-list-memo">${memo}</span>` : ''}
+                    ${memo ? `<span class="friend-list-memo">· ${memo}</span>` : ''}
                 </div>
                 <span class="friend-list-arrow">▶</span>
             </div>`;
