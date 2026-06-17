@@ -5798,7 +5798,7 @@ function openChapterAudioPlayer() {
     const existing = document.getElementById('chapter-audio-modal');
     if (existing) return; // 이미 열림
 
-    const mp3Url = `../bjtest/bjtest${chapterNum}/mp3/${chapterNum}.mp3`;
+    const mp3Url = `https://kyu12k.github.io/bjtest/bjtest${chapterNum}/mp3/${chapterNum}.mp3`;
 
     if (_chapAudio) { _chapAudio.pause(); _chapAudio = null; }
     _chapAudio = new Audio(mp3Url);
