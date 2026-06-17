@@ -20761,6 +20761,12 @@ async function cheerFriend(friendTag) {
     const friendData = await _getFriendDoc(friendTag);
     if (!friendData) return { ok: false, msg: '친구를 찾을 수 없습니다.' };
 
+    // 이전 응원이 아직 수령되지 않았으면 추가 전송 차단 (친구당 1회분만 누적)
+    const pendingCheers = friendData.pendingCheers || [];
+    if (pendingCheers.some(c => c.fromTag === myTag)) {
+        return { ok: false, msg: `${friendData.nickname || '친구'}님이 아직 응원을 받지 못했습니다.` };
+    }
+
     await Promise.all([
         _friendRef(friendTag).set({
             pendingCheers: firebase.firestore.FieldValue.arrayUnion(
