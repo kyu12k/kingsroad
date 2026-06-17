@@ -20635,6 +20635,26 @@ const FRIEND_REQUEST_MAX = 20;
 const FRIEND_REQUEST_TTL_MS = 24 * 60 * 60 * 1000; // 1일
 const CHEER_GEM_AMOUNT = 50;
 
+// --- 친구 메모 (로컬 저장) ---
+function _loadFriendMemos() {
+    try { return JSON.parse(localStorage.getItem('kingsRoad_friendMemos') || '{}'); } catch { return {}; }
+}
+function _saveFriendMemos(memos) {
+    try { localStorage.setItem('kingsRoad_friendMemos', JSON.stringify(memos)); } catch {}
+}
+function getFriendMemo(tag) { return _loadFriendMemos()[tag] || ''; }
+function setFriendMemo(tag, text) {
+    const memos = _loadFriendMemos();
+    if (text.trim()) memos[tag] = text.trim();
+    else delete memos[tag];
+    _saveFriendMemos(memos);
+}
+function deleteFriendMemo(tag) {
+    const memos = _loadFriendMemos();
+    delete memos[tag];
+    _saveFriendMemos(memos);
+}
+
 // --- Firestore 헬퍼 ---
 
 function _friendRef(tag) {
@@ -20891,8 +20911,12 @@ async function _renderFriendScreen() {
         html += `<div class="friend-empty">아직 친구가 없습니다.<br>코드로 친구를 추가해보세요!</div>`;
     } else {
         friends.forEach(tag => {
+            const memo = getFriendMemo(tag);
             html += `<div class="friend-list-item" onclick="openFriendProfile('${tag}')">
-                <span class="friend-list-tag">#${tag}</span>
+                <div class="friend-list-info">
+                    <span class="friend-list-tag">#${tag}</span>
+                    ${memo ? `<span class="friend-list-memo">${memo}</span>` : ''}
+                </div>
                 <span class="friend-list-arrow">▶</span>
             </div>`;
         });
@@ -20989,6 +21013,12 @@ async function openFriendProfile(tag) {
             <button class="friend-cheer-btn${alreadyCheered ? ' cheered' : ''}" onclick="_cheerFriend('${tag}', this)" ${alreadyCheered ? 'disabled' : ''}>
                 ${alreadyCheered ? '💛 오늘 응원 완료' : '💛 응원하기 (+💎50)'}
             </button>
+            <div class="friend-memo-wrap">
+                <input id="friend-memo-input" class="friend-memo-input" type="text"
+                    placeholder="메모 (나만 보임)" maxlength="20"
+                    value="${getFriendMemo(tag).replace(/"/g, '&quot;')}" />
+                <button class="friend-memo-save" onclick="_saveMemo('${tag}')">저장</button>
+            </div>
             <div class="friend-danger-btns">
                 <button class="friend-btn-unfriend" onclick="_removeFriend('${tag}')">친구 끊기</button>
                 <button class="friend-btn-block" onclick="_blockUser('${tag}')">차단</button>
@@ -21012,9 +21042,17 @@ async function _cheerFriend(tag, btn) {
     else if (!result.ok && btn) { btn.disabled = false; btn.textContent = '💛 응원하기 (+💎50)'; }
 }
 
+function _saveMemo(tag) {
+    const input = document.getElementById('friend-memo-input');
+    if (!input) return;
+    setFriendMemo(tag, input.value);
+    showGemToast(0, '메모가 저장되었습니다.', true);
+}
+
 async function _removeFriend(tag) {
     if (!confirm('친구를 끊으시겠습니까?')) return;
     await removeFriend(tag);
+    deleteFriendMemo(tag);
     closeFriendProfile();
     _renderFriendScreen();
     showGemToast(0, '친구 관계가 해제되었습니다.', true);
@@ -21023,6 +21061,7 @@ async function _removeFriend(tag) {
 async function _blockUser(tag) {
     if (!confirm('이 사용자를 차단하시겠습니까?\n차단하면 친구 관계도 해제됩니다.')) return;
     await blockUser(tag);
+    deleteFriendMemo(tag);
     closeFriendProfile();
     _renderFriendScreen();
     showGemToast(0, '차단되었습니다.', true);
