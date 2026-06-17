@@ -4419,6 +4419,21 @@ body, html {
 .friend-list-memo { font-size: 0.8rem; color: #7f8c8d; }
 .friend-list-arrow { color: #7f8c8d; font-size: 0.85rem; }
 .friend-empty { text-align: center; color: #7f8c8d; font-size: 0.9rem; padding: 24px 16px; line-height: 1.8; }
+.friend-cheer-received-wrap { padding: 0 16px 4px; display: flex; flex-direction: column; gap: 6px; }
+.friend-cheer-received-item {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(241,196,15,0.07); border-radius: 10px; padding: 8px 12px;
+}
+.friend-cheer-from { font-size: 0.9rem; color: #ecf0f1; font-weight: bold; flex: 1; }
+.friend-cheer-from-sub { font-size: 0.75rem; color: #7f8c8d; }
+.friend-cheer-gem { font-size: 0.85rem; color: #f1c40f; font-weight: bold; }
+.friend-claim-btn {
+    display: block; margin: 10px 16px 4px;
+    background: #f1c40f; color: #1a2636; border: none;
+    border-radius: 12px; padding: 11px; width: calc(100% - 32px);
+    font-size: 0.95rem; font-weight: bold; cursor: pointer;
+}
+.friend-claim-btn:disabled { opacity: 0.6; }
 
 /* 친구 프로필 모달 */
 .friend-profile-modal {

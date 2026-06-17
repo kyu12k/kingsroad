@@ -20674,9 +20674,11 @@ async function updateFriendBadge() {
         const data = await _getFriendDoc(myTag);
         const received = (data && data.pendingReceived) || [];
         const now = Date.now();
-        const valid = received.filter(r => (now - r.sentAt) < FRIEND_REQUEST_TTL_MS);
-        badge.textContent = valid.length > 0 ? valid.length : '';
-        badge.style.display = valid.length > 0 ? '' : 'none';
+        const validRequests = (data.pendingReceived || []).filter(r => (now - r.sentAt) < FRIEND_REQUEST_TTL_MS);
+        const pendingCheers = (data.pendingCheers || []).length;
+        const total = validRequests.length + pendingCheers;
+        badge.textContent = total > 0 ? total : '';
+        badge.style.display = total > 0 ? '' : 'none';
     } catch (e) { badge.style.display = 'none'; }
 }
 
@@ -20819,20 +20821,6 @@ async function checkFriendEvents() {
             promises.push(_friendRef(myTag).set({ pendingReceived: validReceived, pendingSent: validSent }, { merge: true }));
         }
 
-        // 2. 받은 응원 수령 (배열 → 합산)
-        const cheers = data.pendingCheers || [];
-        if (cheers.length > 0) {
-            const totalGems = cheers.reduce((sum, c) => sum + (c.gems || CHEER_GEM_AMOUNT), 0);
-            myGems += totalGems;
-            updateGemDisplay();
-            saveGameData();
-            promises.push(_friendRef(myTag).set({ pendingCheers: firebase.firestore.FieldValue.delete() }, { merge: true }));
-            const senderMsg = cheers.length === 1
-                ? `${cheers[0].from || '친구'}님의 응원`
-                : `${cheers[0].from || '친구'} 외 ${cheers.length - 1}명의 응원`;
-            showGemToast(totalGems, `💛 ${senderMsg} (+💎${totalGems})`);
-        }
-
         if (promises.length > 0) await Promise.all(promises);
         updateFriendBadge();
     } catch (e) { console.warn('[checkFriendEvents]', e); }
@@ -20884,8 +20872,28 @@ async function _renderFriendScreen() {
     const now = Date.now();
     const received = (data.pendingReceived || []).filter(r => (now - r.sentAt) < FRIEND_REQUEST_TTL_MS);
     const friends = data.friends || [];
+    const pendingCheers = data.pendingCheers || [];
 
     let html = '';
+
+    // 받은 응원 목록
+    if (pendingCheers.length > 0) {
+        const totalGems = pendingCheers.reduce((sum, c) => sum + (c.gems || CHEER_GEM_AMOUNT), 0);
+        html += `<div class="friend-section-title">💛 받은 응원 (${pendingCheers.length}명)</div>`;
+        html += `<div class="friend-cheer-received-wrap">`;
+        pendingCheers.forEach(c => {
+            const memo = getFriendMemo(c.fromTag || '');
+            const label = memo || c.from || '친구';
+            const sub = memo ? c.from || '' : (c.fromTag ? `#${c.fromTag}` : '');
+            html += `<div class="friend-cheer-received-item">
+                <span class="friend-cheer-from">${label}</span>
+                ${sub ? `<span class="friend-cheer-from-sub">${sub}</span>` : ''}
+                <span class="friend-cheer-gem">+💎${c.gems || CHEER_GEM_AMOUNT}</span>
+            </div>`;
+        });
+        html += `</div>`;
+        html += `<button class="friend-claim-btn" onclick="_claimAllCheers()">💎${totalGems} 일괄 수령</button>`;
+    }
 
     // 친구 신청 목록
     if (received.length > 0) {
@@ -20938,6 +20946,25 @@ async function _renderFriendScreen() {
     }
 
     updateFriendBadge();
+}
+
+async function _claimAllCheers() {
+    const btn = document.querySelector('.friend-claim-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '수령 중…'; }
+    try {
+        const data = await _getFriendDoc(myTag);
+        const cheers = data?.pendingCheers || [];
+        if (cheers.length === 0) { _renderFriendScreen(); return; }
+        const totalGems = cheers.reduce((sum, c) => sum + (c.gems || CHEER_GEM_AMOUNT), 0);
+        myGems += totalGems;
+        updateGemDisplay();
+        saveGameData();
+        await _friendRef(myTag).set({ pendingCheers: firebase.firestore.FieldValue.delete() }, { merge: true });
+        showGemToast(totalGems, `💛 응원 수령 완료! (+💎${totalGems})`);
+        _renderFriendScreen();
+    } catch (e) {
+        if (btn) { btn.disabled = false; btn.textContent = '다시 시도'; }
+    }
 }
 
 async function _submitFriendRequest() {
