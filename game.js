@@ -20795,7 +20795,10 @@ async function cheerFriend(friendTag) {
         }, { merge: true }),
         _friendRef(myTag).set({ lastCheerSent: todayStr }, { merge: true })
     ]);
-    return { ok: true, msg: `${friendData.nickname || '친구'}님을 응원했습니다! 💛` };
+    myGems += CHEER_GEM_AMOUNT;
+    updateGemDisplay();
+    saveGameData();
+    return { ok: true, msg: `${friendData.nickname || '친구'}님을 응원했습니다! (+💎${CHEER_GEM_AMOUNT})` };
 }
 
 // 접속 시 만료 신청 정리 + 받은 응원 수령
