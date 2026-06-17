@@ -20662,7 +20662,7 @@ async function updateFriendBadge() {
 
 // 친구 신청 보내기
 async function sendFriendRequest(targetTag) {
-    if (!db || !myTag) return { ok: false, msg: '로그인 필요' };
+    if (!db || !myTag || myTag === '0000') return { ok: false, msg: '먼저 닉네임을 설정해주세요.' };
     if (targetTag === myTag) return { ok: false, msg: '나 자신에게 신청할 수 없습니다.' };
 
     const [myData, targetData] = await Promise.all([_getFriendDoc(myTag), _getFriendDoc(targetTag)]);
@@ -20693,15 +20693,19 @@ async function sendFriendRequest(targetTag) {
 
 // 친구 신청 수락
 async function acceptFriendRequest(senderTag) {
-    if (!db || !myTag) return;
+    if (!db || !myTag || myTag === '0000') return;
     const [myData, senderData] = await Promise.all([_getFriendDoc(myTag), _getFriendDoc(senderTag)]);
 
     const myFriends = myData?.friends || [];
     const senderFriends = senderData?.friends || [];
     if (myFriends.includes(senderTag) || senderFriends.includes(myTag)) return;
 
-    const newMyFriends = myFriends.length < FRIEND_MAX ? [...myFriends, senderTag] : myFriends;
-    const newSenderFriends = senderFriends.length < FRIEND_MAX ? [...senderFriends, myTag] : senderFriends;
+    // 양쪽 모두 공간이 있을 때만 수락 처리
+    if (myFriends.length >= FRIEND_MAX) { showGemToast(0, `친구 목록이 가득 찼습니다. (최대 ${FRIEND_MAX}명)`, true); return; }
+    if (senderFriends.length >= FRIEND_MAX) { showGemToast(0, '상대방 친구 목록이 가득 찼습니다.', true); return; }
+
+    const newMyFriends = [...myFriends, senderTag];
+    const newSenderFriends = [...senderFriends, myTag];
     const newReceived = (myData?.pendingReceived || []).filter(r => r.tag !== senderTag);
     const newSenderSent = (senderData?.pendingSent || []).filter(r => r.tag !== myTag);
 
@@ -20733,13 +20737,18 @@ async function removeFriend(friendTag) {
 
 // 차단
 async function blockUser(targetTag) {
-    if (!db || !myTag) return;
-    await removeFriend(targetTag);
-    const myData = await _getFriendDoc(myTag);
-    const blocked = myData?.blocked || [];
+    if (!db || !myTag || myTag === '0000') return;
+    // 친구 끊기와 차단을 단일 fetch로 처리
+    const [myData, friendData] = await Promise.all([_getFriendDoc(myTag), _getFriendDoc(targetTag)]);
+    const newMyFriends = (myData?.friends || []).filter(t => t !== targetTag);
+    const newFriendFriends = (friendData?.friends || []).filter(t => t !== myTag);
+    const blocked = [...(myData?.blocked || [])];
     if (!blocked.includes(targetTag)) blocked.push(targetTag);
     const newReceived = (myData?.pendingReceived || []).filter(r => r.tag !== targetTag);
-    await _friendRef(myTag).set({ blocked, pendingReceived: newReceived }, { merge: true });
+    await Promise.all([
+        _friendRef(myTag).set({ friends: newMyFriends, blocked, pendingReceived: newReceived }, { merge: true }),
+        _friendRef(targetTag).set({ friends: newFriendFriends }, { merge: true })
+    ]);
 }
 
 // 응원하기
@@ -20752,6 +20761,7 @@ async function cheerFriend(friendTag) {
     const friendData = await _getFriendDoc(friendTag);
     if (!friendData) return { ok: false, msg: '친구를 찾을 수 없습니다.' };
 
+    // 주의: pendingCheer는 단일 필드라 여러 명이 동시에 응원하면 마지막 것만 남음
     await Promise.all([
         _friendRef(friendTag).set({
             pendingCheer: { from: myNickname, fromTag: myTag, gems: CHEER_GEM_AMOUNT, sentAt: Date.now() }
@@ -20763,7 +20773,7 @@ async function cheerFriend(friendTag) {
 
 // 접속 시 만료 신청 정리 + 받은 응원 수령
 async function checkFriendEvents() {
-    if (!db || !myTag) return;
+    if (!db || !myTag || myTag === '0000') return;
     try {
         const data = await _getFriendDoc(myTag);
         if (!data) return;
@@ -20798,6 +20808,7 @@ async function checkFriendEvents() {
 
 function openFriendScreen() {
     closeMoreMenu();
+    if (!myTag || myTag === '0000') { showGemToast(0, '닉네임을 먼저 설정해주세요.', true); return; }
     let overlay = document.getElementById('friend-screen-overlay');
     if (overlay) { overlay.style.display = 'flex'; _renderFriendScreen(); return; }
 
@@ -20895,7 +20906,7 @@ async function _submitFriendRequest() {
     const input = document.getElementById('friend-tag-input');
     if (!input) return;
     const raw = input.value.trim().replace(/^#/, '').toUpperCase();
-    if (!raw || raw.length < 4) { showGemToast(0, '올바른 코드를 입력하세요.', true); return; }
+    if (!raw || raw.length !== 6) { showGemToast(0, '6자리 코드를 정확히 입력하세요.', true); return; }
 
     const btn = document.querySelector('.friend-add-btn');
     if (btn) { btn.disabled = true; btn.textContent = '…'; }
