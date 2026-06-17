@@ -20778,7 +20778,8 @@ async function cheerFriend(friendTag) {
     if (!db || !myTag) return { ok: false, msg: '로그인 필요' };
     const todayStr = _getLocalDateStr(new Date());
     const myData = await _getFriendDoc(myTag);
-    if (myData?.lastCheerSent === todayStr) return { ok: false, msg: '오늘은 이미 응원했습니다.' };
+    const cheerMap = (typeof myData?.lastCheerSent === 'object' && myData.lastCheerSent) ? myData.lastCheerSent : {};
+    if (cheerMap[friendTag] === todayStr) return { ok: false, msg: '오늘은 이미 응원했습니다.' };
 
     const friendData = await _getFriendDoc(friendTag);
     if (!friendData) return { ok: false, msg: '친구를 찾을 수 없습니다.' };
@@ -20795,7 +20796,7 @@ async function cheerFriend(friendTag) {
                 { from: myNickname, fromTag: myTag, gems: CHEER_GEM_AMOUNT, sentAt: Date.now() }
             )
         }, { merge: true }),
-        _friendRef(myTag).set({ lastCheerSent: todayStr }, { merge: true })
+        _friendRef(myTag).set({ lastCheerSent: { ...cheerMap, [friendTag]: todayStr } }, { merge: true })
     ]);
     myGems += CHEER_GEM_AMOUNT;
     updateGemDisplay();
@@ -21023,7 +21024,8 @@ async function openFriendProfile(tag) {
 
         const todayStr = _getLocalDateStr(new Date());
         const myData = await _getFriendDoc(myTag);
-        const alreadyCheered = myData?.lastCheerSent === todayStr;
+        const cheerMap2 = (typeof myData?.lastCheerSent === 'object' && myData.lastCheerSent) ? myData.lastCheerSent : {};
+        const alreadyCheered = cheerMap2[tag] === todayStr;
 
         card.innerHTML = `
             <button class="friend-profile-close" onclick="closeFriendProfile()">✕</button>
