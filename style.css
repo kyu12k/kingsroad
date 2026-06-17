@@ -4336,6 +4336,133 @@ body, html {
     100% { opacity: 0; transform: translateX(-50%) translateY(-8px); }
 }
 
+.gem-toast-info { color: #bdc3c7; }
+
+/* ── 친구 시스템 ── */
+.friend-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65);
+    z-index: 8500;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+.friend-panel {
+    background: #1a2636;
+    border-radius: 20px 20px 0 0;
+    width: min(480px, 100vw);
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.friend-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+}
+.friend-panel-title { font-size: 1.1rem; font-weight: bold; color: #ecf0f1; }
+.friend-close-btn {
+    background: none; border: none; color: #95a5a6;
+    font-size: 1.4rem; cursor: pointer; padding: 0 4px;
+}
+.friend-add-row {
+    display: flex; gap: 8px; padding: 12px 16px;
+    flex-shrink: 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.friend-tag-input {
+    flex: 1; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px; color: #ecf0f1; padding: 8px 12px;
+    font-size: 0.95rem; outline: none;
+}
+.friend-add-btn {
+    background: #3498db; color: white; border: none;
+    border-radius: 10px; padding: 8px 16px; font-weight: bold;
+    font-size: 0.9rem; cursor: pointer;
+}
+.friend-my-code {
+    padding: 4px 16px 8px; font-size: 0.8rem; color: #7f8c8d; flex-shrink: 0;
+}
+.friend-my-code strong { color: #bdc3c7; }
+.friend-screen-body { flex: 1; overflow-y: auto; padding: 8px 0 20px; }
+.friend-section-title {
+    font-size: 0.8rem; color: #7f8c8d; font-weight: bold;
+    padding: 12px 16px 6px; letter-spacing: 0.05em;
+}
+.friend-request-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.friend-req-info { display: flex; flex-direction: column; gap: 2px; }
+.friend-req-name { font-size: 0.95rem; color: #ecf0f1; font-weight: bold; }
+.friend-req-meta { font-size: 0.75rem; color: #7f8c8d; }
+.friend-req-btns { display: flex; gap: 6px; }
+.friend-btn-accept {
+    background: #27ae60; color: white; border: none;
+    border-radius: 8px; padding: 6px 12px; font-size: 0.82rem; cursor: pointer;
+}
+.friend-btn-reject {
+    background: rgba(231,76,60,0.2); color: #e74c3c; border: 1px solid rgba(231,76,60,0.4);
+    border-radius: 8px; padding: 6px 12px; font-size: 0.82rem; cursor: pointer;
+}
+.friend-list-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 16px; border-bottom: 1px solid rgba(255,255,255,0.05);
+    cursor: pointer;
+}
+.friend-list-item:active { background: rgba(255,255,255,0.05); }
+.friend-list-tag { font-size: 0.95rem; color: #ecf0f1; }
+.friend-list-arrow { color: #7f8c8d; font-size: 0.85rem; }
+.friend-empty { text-align: center; color: #7f8c8d; font-size: 0.9rem; padding: 24px 16px; line-height: 1.8; }
+
+/* 친구 프로필 모달 */
+.friend-profile-modal {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65);
+    z-index: 8600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.friend-profile-card {
+    background: #1a2636;
+    border: 1.5px solid rgba(255,255,255,0.1);
+    border-radius: 18px;
+    width: min(340px, 90vw);
+    padding: 28px 24px 24px;
+    position: relative;
+}
+.friend-profile-close {
+    position: absolute; top: 12px; right: 14px;
+    background: none; border: none; color: #95a5a6;
+    font-size: 1.3rem; cursor: pointer;
+}
+.friend-profile-name { font-size: 1.2rem; font-weight: bold; color: #ecf0f1; text-align: center; margin-bottom: 4px; }
+.friend-profile-meta { font-size: 0.82rem; color: #7f8c8d; text-align: center; margin-bottom: 20px; }
+.friend-profile-scores { display: flex; gap: 10px; margin-bottom: 20px; }
+.friend-score-box {
+    flex: 1; background: rgba(255,255,255,0.06); border-radius: 12px;
+    padding: 10px 8px; text-align: center;
+}
+.friend-score-label { font-size: 0.72rem; color: #7f8c8d; margin-bottom: 4px; }
+.friend-score-val { font-size: 0.95rem; font-weight: bold; color: #f1c40f; }
+.friend-cheer-btn {
+    width: 100%; background: #f1c40f; color: #1a2636;
+    border: none; border-radius: 12px; padding: 12px;
+    font-size: 0.95rem; font-weight: bold; cursor: pointer; margin-bottom: 12px;
+}
+.friend-cheer-btn.cheered { background: rgba(255,255,255,0.1); color: #7f8c8d; }
+.friend-danger-btns { display: flex; gap: 8px; }
+.friend-btn-unfriend, .friend-btn-block {
+    flex: 1; background: none; border: 1px solid rgba(255,255,255,0.15);
+    color: #95a5a6; border-radius: 10px; padding: 9px;
+    font-size: 0.82rem; cursor: pointer;
+}
+.friend-btn-block { border-color: rgba(231,76,60,0.3); color: #e74c3c; }
+
 .bible-gem-tip {
     position: absolute;
     transform: translateX(-50%);

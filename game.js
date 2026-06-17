@@ -2931,13 +2931,13 @@ function createMissionElement(parent, m) {
     }
 }
 
-function showGemToast(count) {
+function showGemToast(count, customMsg, isInfo) {
     const existing = document.getElementById('gem-reward-toast');
     if (existing) existing.remove();
     const el = document.createElement('div');
     el.id = 'gem-reward-toast';
-    el.className = 'gem-reward-toast';
-    el.textContent = `💎 보석 ${count.toLocaleString()}개 획득`;
+    el.className = 'gem-reward-toast' + (isInfo ? ' gem-toast-info' : '');
+    el.textContent = customMsg || `💎 보석 ${count.toLocaleString()}개 획득`;
     document.body.appendChild(el);
     setTimeout(() => { if (el.parentNode) el.remove(); }, 2800);
 }
@@ -14036,6 +14036,7 @@ updateCastleView(); // 3. 성전 모습 업데이트
 initBgm();          // 4. BGM 초기화 (홈 화면 배경음악)
 updateKingsStepBtn(); // 5. 왕의 길 단계 버튼 상태 초기화
 _checkFirstDailyWeeklyStudy(); // 6. 오늘 첫 접속 시 주간 학습 시간 표시
+setTimeout(() => { if (typeof checkFriendEvents === 'function') checkFriendEvents(); }, 2000); // 7. 친구 이벤트 처리
 
 /* =========================================
    [시스템: 텍스트 파일 백업 및 불러오기 (.txt)]
@@ -20624,3 +20625,384 @@ function openStudyHistoryOverlay() {
 
     renderTab(_currentTab);
 }
+
+// =====================================================================
+// 👥 친구 시스템
+// =====================================================================
+
+const FRIEND_MAX = 20;
+const FRIEND_REQUEST_MAX = 20;
+const FRIEND_REQUEST_TTL_MS = 24 * 60 * 60 * 1000; // 1일
+const CHEER_GEM_AMOUNT = 50;
+
+// --- Firestore 헬퍼 ---
+
+function _friendRef(tag) {
+    return db.collection('leaderboard').doc(String(tag));
+}
+
+async function _getFriendDoc(tag) {
+    const snap = await _friendRef(tag).get();
+    return snap.exists ? snap.data() : null;
+}
+
+// 배지 갱신
+async function updateFriendBadge() {
+    const badge = document.getElementById('badge-friend');
+    if (!badge || !db || !myTag) return;
+    try {
+        const data = await _getFriendDoc(myTag);
+        const received = (data && data.pendingReceived) || [];
+        const now = Date.now();
+        const valid = received.filter(r => (now - r.sentAt) < FRIEND_REQUEST_TTL_MS);
+        badge.textContent = valid.length > 0 ? valid.length : '';
+        badge.style.display = valid.length > 0 ? '' : 'none';
+    } catch (e) { badge.style.display = 'none'; }
+}
+
+// 친구 신청 보내기
+async function sendFriendRequest(targetTag) {
+    if (!db || !myTag) return { ok: false, msg: '로그인 필요' };
+    if (targetTag === myTag) return { ok: false, msg: '나 자신에게 신청할 수 없습니다.' };
+
+    const [myData, targetData] = await Promise.all([_getFriendDoc(myTag), _getFriendDoc(targetTag)]);
+    if (!targetData) return { ok: false, msg: '존재하지 않는 코드입니다.' };
+
+    const myFriends = myData?.friends || [];
+    if (myFriends.includes(targetTag)) return { ok: false, msg: '이미 친구입니다.' };
+    if (myFriends.length >= FRIEND_MAX) return { ok: false, msg: `친구는 최대 ${FRIEND_MAX}명입니다.` };
+
+    const blocked = targetData?.blocked || [];
+    if (blocked.includes(myTag)) return { ok: false, msg: '신청할 수 없습니다.' };
+
+    const targetReceived = (targetData?.pendingReceived || []).filter(r => (Date.now() - r.sentAt) < FRIEND_REQUEST_TTL_MS);
+    if (targetReceived.length >= FRIEND_REQUEST_MAX) return { ok: false, msg: '상대방의 신청 목록이 가득 찼습니다.' };
+    if (targetReceived.some(r => r.tag === myTag)) return { ok: false, msg: '이미 신청을 보냈습니다.' };
+
+    const mySent = (myData?.pendingSent || []).filter(r => (Date.now() - r.sentAt) < FRIEND_REQUEST_TTL_MS);
+
+    const newRequest = { tag: myTag, nickname: myNickname, tribe: myTribe, sentAt: Date.now() };
+    const newSent = { tag: targetTag, sentAt: Date.now() };
+
+    await Promise.all([
+        _friendRef(targetTag).set({ pendingReceived: [...targetReceived, newRequest] }, { merge: true }),
+        _friendRef(myTag).set({ pendingSent: [...mySent, newSent] }, { merge: true })
+    ]);
+    return { ok: true, msg: `${targetData.nickname || '상대방'}님에게 친구 신청을 보냈습니다.` };
+}
+
+// 친구 신청 수락
+async function acceptFriendRequest(senderTag) {
+    if (!db || !myTag) return;
+    const [myData, senderData] = await Promise.all([_getFriendDoc(myTag), _getFriendDoc(senderTag)]);
+
+    const myFriends = myData?.friends || [];
+    const senderFriends = senderData?.friends || [];
+    if (myFriends.includes(senderTag) || senderFriends.includes(myTag)) return;
+
+    const newMyFriends = myFriends.length < FRIEND_MAX ? [...myFriends, senderTag] : myFriends;
+    const newSenderFriends = senderFriends.length < FRIEND_MAX ? [...senderFriends, myTag] : senderFriends;
+    const newReceived = (myData?.pendingReceived || []).filter(r => r.tag !== senderTag);
+    const newSenderSent = (senderData?.pendingSent || []).filter(r => r.tag !== myTag);
+
+    await Promise.all([
+        _friendRef(myTag).set({ friends: newMyFriends, pendingReceived: newReceived }, { merge: true }),
+        _friendRef(senderTag).set({ friends: newSenderFriends, pendingSent: newSenderSent }, { merge: true })
+    ]);
+}
+
+// 친구 신청 거절
+async function rejectFriendRequest(senderTag) {
+    if (!db || !myTag) return;
+    const myData = await _getFriendDoc(myTag);
+    const newReceived = (myData?.pendingReceived || []).filter(r => r.tag !== senderTag);
+    await _friendRef(myTag).set({ pendingReceived: newReceived }, { merge: true });
+}
+
+// 친구 끊기 (양방향)
+async function removeFriend(friendTag) {
+    if (!db || !myTag) return;
+    const [myData, friendData] = await Promise.all([_getFriendDoc(myTag), _getFriendDoc(friendTag)]);
+    const newMyFriends = (myData?.friends || []).filter(t => t !== friendTag);
+    const newFriendFriends = (friendData?.friends || []).filter(t => t !== myTag);
+    await Promise.all([
+        _friendRef(myTag).set({ friends: newMyFriends }, { merge: true }),
+        _friendRef(friendTag).set({ friends: newFriendFriends }, { merge: true })
+    ]);
+}
+
+// 차단
+async function blockUser(targetTag) {
+    if (!db || !myTag) return;
+    await removeFriend(targetTag);
+    const myData = await _getFriendDoc(myTag);
+    const blocked = myData?.blocked || [];
+    if (!blocked.includes(targetTag)) blocked.push(targetTag);
+    const newReceived = (myData?.pendingReceived || []).filter(r => r.tag !== targetTag);
+    await _friendRef(myTag).set({ blocked, pendingReceived: newReceived }, { merge: true });
+}
+
+// 응원하기
+async function cheerFriend(friendTag) {
+    if (!db || !myTag) return { ok: false, msg: '로그인 필요' };
+    const todayStr = _getLocalDateStr(new Date());
+    const myData = await _getFriendDoc(myTag);
+    if (myData?.lastCheerSent === todayStr) return { ok: false, msg: '오늘은 이미 응원했습니다.' };
+
+    const friendData = await _getFriendDoc(friendTag);
+    if (!friendData) return { ok: false, msg: '친구를 찾을 수 없습니다.' };
+
+    await Promise.all([
+        _friendRef(friendTag).set({
+            pendingCheer: { from: myNickname, fromTag: myTag, gems: CHEER_GEM_AMOUNT, sentAt: Date.now() }
+        }, { merge: true }),
+        _friendRef(myTag).set({ lastCheerSent: todayStr }, { merge: true })
+    ]);
+    return { ok: true, msg: `${friendData.nickname || '친구'}님을 응원했습니다! 💛` };
+}
+
+// 접속 시 만료 신청 정리 + 받은 응원 수령
+async function checkFriendEvents() {
+    if (!db || !myTag) return;
+    try {
+        const data = await _getFriendDoc(myTag);
+        if (!data) return;
+
+        const now = Date.now();
+        const promises = [];
+
+        // 1. 만료된 신청 정리
+        const validReceived = (data.pendingReceived || []).filter(r => (now - r.sentAt) < FRIEND_REQUEST_TTL_MS);
+        const validSent = (data.pendingSent || []).filter(r => (now - r.sentAt) < FRIEND_REQUEST_TTL_MS);
+        if (validReceived.length !== (data.pendingReceived || []).length ||
+            validSent.length !== (data.pendingSent || []).length) {
+            promises.push(_friendRef(myTag).set({ pendingReceived: validReceived, pendingSent: validSent }, { merge: true }));
+        }
+
+        // 2. 받은 응원 수령
+        if (data.pendingCheer && data.pendingCheer.from) {
+            const cheer = data.pendingCheer;
+            myGems += cheer.gems || CHEER_GEM_AMOUNT;
+            updateGemDisplay();
+            saveGameData();
+            promises.push(_friendRef(myTag).set({ pendingCheer: null }, { merge: true }));
+            showGemToast(cheer.gems || CHEER_GEM_AMOUNT, `💛 ${cheer.from}님의 응원`);
+        }
+
+        if (promises.length > 0) await Promise.all(promises);
+        updateFriendBadge();
+    } catch (e) { console.warn('[checkFriendEvents]', e); }
+}
+
+// --- 친구 화면 UI ---
+
+function openFriendScreen() {
+    closeMoreMenu();
+    let overlay = document.getElementById('friend-screen-overlay');
+    if (overlay) { overlay.style.display = 'flex'; _renderFriendScreen(); return; }
+
+    overlay = document.createElement('div');
+    overlay.id = 'friend-screen-overlay';
+    overlay.className = 'friend-overlay';
+    overlay.innerHTML = `
+        <div class="friend-panel">
+            <div class="friend-panel-header">
+                <span class="friend-panel-title">👥 친구</span>
+                <button class="friend-close-btn" onclick="closeFriendScreen()">✕</button>
+            </div>
+            <div class="friend-add-row">
+                <input id="friend-tag-input" class="friend-tag-input" placeholder="#ABCD12 코드 입력" maxlength="7" />
+                <button class="friend-add-btn" onclick="_submitFriendRequest()">신청</button>
+            </div>
+            <div id="friend-screen-body" class="friend-screen-body">
+                <div style="text-align:center; color:#95a5a6; padding:30px;">불러오는 중…</div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    _renderFriendScreen();
+}
+
+function closeFriendScreen() {
+    const overlay = document.getElementById('friend-screen-overlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+async function _renderFriendScreen() {
+    const body = document.getElementById('friend-screen-body');
+    if (!body || !db || !myTag) return;
+    body.innerHTML = '<div style="text-align:center; color:#95a5a6; padding:30px;">불러오는 중…</div>';
+
+    const data = await _getFriendDoc(myTag);
+    if (!data) { body.innerHTML = '<div style="text-align:center; color:#e74c3c; padding:20px;">데이터를 불러올 수 없습니다.</div>'; return; }
+
+    const now = Date.now();
+    const received = (data.pendingReceived || []).filter(r => (now - r.sentAt) < FRIEND_REQUEST_TTL_MS);
+    const friends = data.friends || [];
+
+    let html = '';
+
+    // 친구 신청 목록
+    if (received.length > 0) {
+        html += `<div class="friend-section-title">📬 친구 신청 (${received.length})</div>`;
+        received.forEach(r => {
+            const tribe = (TRIBE_DATA[r.tribe] && TRIBE_DATA[r.tribe].name) ? TRIBE_DATA[r.tribe].name : '';
+            const elapsed = Math.floor((now - r.sentAt) / 3600000);
+            const timeStr = elapsed < 1 ? '방금' : `${elapsed}시간 전`;
+            html += `
+                <div class="friend-request-item">
+                    <div class="friend-req-info">
+                        <span class="friend-req-name">${r.nickname || '순례자'}</span>
+                        <span class="friend-req-meta">${tribe ? tribe + ' · ' : ''}#${r.tag} · ${timeStr}</span>
+                    </div>
+                    <div class="friend-req-btns">
+                        <button class="friend-btn-accept" onclick="_acceptRequest('${r.tag}')">수락</button>
+                        <button class="friend-btn-reject" onclick="_rejectRequest('${r.tag}')">거절</button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    // 친구 목록
+    html += `<div class="friend-section-title">👤 친구 목록 (${friends.length}/${FRIEND_MAX})</div>`;
+    if (friends.length === 0) {
+        html += `<div class="friend-empty">아직 친구가 없습니다.<br>코드로 친구를 추가해보세요!</div>`;
+    } else {
+        friends.forEach(tag => {
+            html += `<div class="friend-list-item" onclick="openFriendProfile('${tag}')">
+                <span class="friend-list-tag">#${tag}</span>
+                <span class="friend-list-arrow">▶</span>
+            </div>`;
+        });
+    }
+
+    body.innerHTML = html;
+
+    // 내 코드 표시
+    const input = document.getElementById('friend-tag-input');
+    if (input && !input.dataset.hint) {
+        input.dataset.hint = '1';
+        const myCodeEl = document.createElement('div');
+        myCodeEl.className = 'friend-my-code';
+        myCodeEl.innerHTML = `내 코드: <strong>#${myTag}</strong>`;
+        input.parentElement.insertAdjacentElement('afterend', myCodeEl);
+    }
+
+    updateFriendBadge();
+}
+
+async function _submitFriendRequest() {
+    const input = document.getElementById('friend-tag-input');
+    if (!input) return;
+    const raw = input.value.trim().replace(/^#/, '').toUpperCase();
+    if (!raw || raw.length < 4) { showGemToast(0, '올바른 코드를 입력하세요.', true); return; }
+
+    const btn = document.querySelector('.friend-add-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '…'; }
+    const result = await sendFriendRequest(raw);
+    if (btn) { btn.disabled = false; btn.textContent = '신청'; }
+
+    showGemToast(0, result.msg, !result.ok);
+    if (result.ok) { input.value = ''; _renderFriendScreen(); }
+}
+
+async function _acceptRequest(senderTag) {
+    await acceptFriendRequest(senderTag);
+    _renderFriendScreen();
+}
+
+async function _rejectRequest(senderTag) {
+    await rejectFriendRequest(senderTag);
+    _renderFriendScreen();
+}
+
+// --- 친구 프로필 모달 ---
+
+async function openFriendProfile(tag) {
+    let modal = document.getElementById('friend-profile-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'friend-profile-modal';
+        modal.className = 'friend-profile-modal';
+        modal.innerHTML = `<div class="friend-profile-card" id="friend-profile-card"></div>`;
+        modal.addEventListener('click', e => { if (e.target === modal) closeFriendProfile(); });
+        document.body.appendChild(modal);
+    }
+    modal.style.display = 'flex';
+    const card = document.getElementById('friend-profile-card');
+    card.innerHTML = '<div style="text-align:center; padding:30px; color:#95a5a6;">불러오는 중…</div>';
+
+    try {
+        const data = await _getFriendDoc(tag);
+        if (!data) { card.innerHTML = '<div style="text-align:center; padding:20px; color:#e74c3c;">정보를 불러올 수 없습니다.</div>'; return; }
+
+        const tribe = (TRIBE_DATA[data.tribe] && TRIBE_DATA[data.tribe].name) ? TRIBE_DATA[data.tribe].name : '';
+        const weeklyScore = data.score || 0;
+        const lastWeekId = getLastWeekId();
+        const lastWeekScore = (data.weeklyHistory && data.weeklyHistory[lastWeekId]) || data.prevWeekScore || 0;
+        const totalScore = data.totalScore || 0;
+
+        const todayStr = _getLocalDateStr(new Date());
+        const myData = await _getFriendDoc(myTag);
+        const alreadyCheered = myData?.lastCheerSent === todayStr;
+
+        card.innerHTML = `
+            <button class="friend-profile-close" onclick="closeFriendProfile()">✕</button>
+            <div class="friend-profile-name">${data.nickname || '순례자'}</div>
+            <div class="friend-profile-meta">${tribe ? tribe + ' · ' : ''}#${tag}</div>
+            <div class="friend-profile-scores">
+                <div class="friend-score-box">
+                    <div class="friend-score-label">이번 주</div>
+                    <div class="friend-score-val">${weeklyScore.toLocaleString()}점</div>
+                </div>
+                <div class="friend-score-box">
+                    <div class="friend-score-label">지난 주</div>
+                    <div class="friend-score-val">${lastWeekScore.toLocaleString()}점</div>
+                </div>
+                <div class="friend-score-box">
+                    <div class="friend-score-label">누적</div>
+                    <div class="friend-score-val">${totalScore.toLocaleString()}점</div>
+                </div>
+            </div>
+            <button class="friend-cheer-btn${alreadyCheered ? ' cheered' : ''}" onclick="_cheerFriend('${tag}', this)" ${alreadyCheered ? 'disabled' : ''}>
+                ${alreadyCheered ? '💛 오늘 응원 완료' : '💛 응원하기 (+💎50)'}
+            </button>
+            <div class="friend-danger-btns">
+                <button class="friend-btn-unfriend" onclick="_removeFriend('${tag}')">친구 끊기</button>
+                <button class="friend-btn-block" onclick="_blockUser('${tag}')">차단</button>
+            </div>
+        `;
+    } catch (e) {
+        card.innerHTML = '<div style="text-align:center; padding:20px; color:#e74c3c;">오류가 발생했습니다.</div>';
+    }
+}
+
+function closeFriendProfile() {
+    const modal = document.getElementById('friend-profile-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+async function _cheerFriend(tag, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = '…'; }
+    const result = await cheerFriend(tag);
+    showGemToast(0, result.msg, !result.ok);
+    if (result.ok && btn) { btn.textContent = '💛 오늘 응원 완료'; btn.classList.add('cheered'); }
+    else if (!result.ok && btn) { btn.disabled = false; btn.textContent = '💛 응원하기 (+💎50)'; }
+}
+
+async function _removeFriend(tag) {
+    if (!confirm('친구를 끊으시겠습니까?')) return;
+    await removeFriend(tag);
+    closeFriendProfile();
+    _renderFriendScreen();
+    showGemToast(0, '친구 관계가 해제되었습니다.', true);
+}
+
+async function _blockUser(tag) {
+    if (!confirm('이 사용자를 차단하시겠습니까?\n차단하면 친구 관계도 해제됩니다.')) return;
+    await blockUser(tag);
+    closeFriendProfile();
+    _renderFriendScreen();
+    showGemToast(0, '차단되었습니다.', true);
+}
+// =====================================================================
