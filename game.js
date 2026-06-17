@@ -20761,10 +20761,11 @@ async function cheerFriend(friendTag) {
     const friendData = await _getFriendDoc(friendTag);
     if (!friendData) return { ok: false, msg: '친구를 찾을 수 없습니다.' };
 
-    // 주의: pendingCheer는 단일 필드라 여러 명이 동시에 응원하면 마지막 것만 남음
     await Promise.all([
         _friendRef(friendTag).set({
-            pendingCheer: { from: myNickname, fromTag: myTag, gems: CHEER_GEM_AMOUNT, sentAt: Date.now() }
+            pendingCheers: firebase.firestore.FieldValue.arrayUnion(
+                { from: myNickname, fromTag: myTag, gems: CHEER_GEM_AMOUNT, sentAt: Date.now() }
+            )
         }, { merge: true }),
         _friendRef(myTag).set({ lastCheerSent: todayStr }, { merge: true })
     ]);
@@ -20789,14 +20790,18 @@ async function checkFriendEvents() {
             promises.push(_friendRef(myTag).set({ pendingReceived: validReceived, pendingSent: validSent }, { merge: true }));
         }
 
-        // 2. 받은 응원 수령
-        if (data.pendingCheer && data.pendingCheer.from) {
-            const cheer = data.pendingCheer;
-            myGems += cheer.gems || CHEER_GEM_AMOUNT;
+        // 2. 받은 응원 수령 (배열 → 합산)
+        const cheers = data.pendingCheers || [];
+        if (cheers.length > 0) {
+            const totalGems = cheers.reduce((sum, c) => sum + (c.gems || CHEER_GEM_AMOUNT), 0);
+            myGems += totalGems;
             updateGemDisplay();
             saveGameData();
-            promises.push(_friendRef(myTag).set({ pendingCheer: null }, { merge: true }));
-            showGemToast(cheer.gems || CHEER_GEM_AMOUNT, `💛 ${cheer.from}님의 응원`);
+            promises.push(_friendRef(myTag).set({ pendingCheers: firebase.firestore.FieldValue.delete() }, { merge: true }));
+            const senderMsg = cheers.length === 1
+                ? `${cheers[0].from || '친구'}님의 응원`
+                : `${cheers[0].from || '친구'} 외 ${cheers.length - 1}명의 응원`;
+            showGemToast(totalGems, `💛 ${senderMsg} (+💎${totalGems})`);
         }
 
         if (promises.length > 0) await Promise.all(promises);
