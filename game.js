@@ -5802,9 +5802,10 @@ function buildStageItemEl(stage, chData, kingsUnlockedSet) {
         itemClass += ' today-clear';
         statusBadgeHtml = `<div class="today-badge">${t('status_today_done')}</div>`;
     }
+    const isNormalStage = (stage.type !== 'boss' && stage.type !== 'mid-boss');
     const memLevelUI = getMemoryLevelFromStep(stageReviewStatusUI.step);
     let levelBadgeHtml = '';
-    if (memLevelUI > 0 && stage.type !== 'mid-boss') {
+    if (memLevelUI > 0 && isNormalStage) {
         const colorClass = memLevelUI >= 5 ? 'mem-lv-high' : memLevelUI >= 3 ? 'mem-lv-mid' : 'mem-lv-low';
         levelBadgeHtml = `<span class="mem-badge ${colorClass}">Lv.${memLevelUI}</span>`;
     }
@@ -5816,7 +5817,6 @@ function buildStageItemEl(stage, chData, kingsUnlockedSet) {
     const progress = getStageProgressSnapshot(stage.id);
     const isFullStepsComplete = isStageFullyLearned(stage.id, stage);
     const isCoolingDown = !isFullStepsComplete && progress && progress.unlockTime > Date.now();
-    const isNormalStage = (stage.type !== 'boss' && stage.type !== 'mid-boss');
     const canChooseReviewMode = isNormalStage;
     let rightSideContent = '';
     if (canChooseReviewMode) {
@@ -6387,6 +6387,10 @@ function calculateBossBaseGem(chapterNum) {
 
 /* [기억 상태 확인 함수] stageNextEligibleTime 기준으로 판단 (반복 클리어 시 타이머 초기화 방지) */
 function checkMemoryStatus(stageId) {
+    // 보스/중간점검 스테이지는 기억 레벨 없음
+    if (String(stageId).endsWith('-boss') || String(stageId).includes('-mid-')) {
+        return { level: 0, isForgotten: false, remainTime: null };
+    }
     // 한 번도 안 깬 경우
     if (!stageLastClear[stageId]) {
         return { level: 0, isForgotten: false, remainTime: null };
