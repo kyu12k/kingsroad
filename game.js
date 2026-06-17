@@ -8002,34 +8002,73 @@ async function checkPendingRecovery() {
  * - 네트워크가 없거나 db/myPlayerId 미준비 시 조용히 종료.
  * - 기존 saveGameData()는 localStorage 캐시 역할을 계속 수행.
  */
+// 일시적 오류 코드 (재시도 대상)
+const _SYNC_TRANSIENT_CODES = new Set(['unavailable', 'deadline-exceeded', 'internal']);
+
+// 오류 코드 → 사용자 친화적 메시지
+const _SYNC_ERROR_MSG = {
+    'unauthenticated':   '로그인이 만료되었습니다. 앱을 다시 시작해주세요.',
+    'unavailable':       '서버에 일시적으로 연결할 수 없습니다.',
+    'deadline-exceeded': '서버 응답이 지연되었습니다. 잠시 후 자동으로 재시도합니다.',
+    'internal':          '서버 오류가 발생했습니다. 잠시 후 자동으로 재시도합니다.',
+    'resource-exhausted':'요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
+    'permission-denied': '저장 권한 오류입니다. 앱을 다시 시작해주세요.',
+};
+
+function _showSyncFailToast(e) {
+    const code = (e && e.code) ? String(e.code).replace('functions/', '') : '';
+    const friendly = _SYNC_ERROR_MSG[code] || '네트워크를 확인 후 다시 시도해주세요.';
+    console.warn('[syncToFirestore] 저장 실패:', code, e && e.message);
+    const existing = document.getElementById('sync-fail-toast');
+    if (existing) existing.remove();
+    const toast = document.createElement('div');
+    toast.id = 'sync-fail-toast';
+    toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#c0392b;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:99999;text-align:center;max-width:90vw;';
+    toast.textContent = `⚠️ 서버 저장 실패: ${friendly}`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 8000);
+}
+
+async function _callSaveFunction() {
+    const raw = localStorage.getItem('kingsRoadSave');
+    if (!raw) return;
+    const saveData = JSON.parse(raw);
+    const fn = firebase.app().functions('asia-northeast3').httpsCallable('saveGameDataSecure');
+    await fn(saveData);
+}
+
+let _syncRetryTimer = null;
+
 async function syncToFirestore() {
     if (typeof firebase === 'undefined') return;
     if (typeof myPlayerId === 'undefined' || !myPlayerId) return;
-
-    // saveGameData()가 localStorage에 방금 저장한 데이터를 재활용
     const raw = localStorage.getItem('kingsRoadSave');
     if (!raw) return;
-
-    let saveData;
-    try { saveData = JSON.parse(raw); } catch (e) { return; }
+    try { JSON.parse(raw); } catch (e) { return; }
 
     try {
-        const saveGameDataSecure = firebase.app().functions('asia-northeast3').httpsCallable('saveGameDataSecure');
-        await saveGameDataSecure(saveData);
+        await _callSaveFunction();
+        // 성공 시 예약된 재시도 취소
+        if (_syncRetryTimer) { clearTimeout(_syncRetryTimer); _syncRetryTimer = null; }
     } catch (e) {
-        const errMsg = (e && (e.message || e.code)) ? `${e.code || ''} ${e.message || ''}`.trim() : String(e);
-        console.warn('[syncToFirestore] 저장 실패:', errMsg);
-        // FCM/push subscription 에러는 데이터 손실과 무관하므로 토스트 생략
-        if (errMsg.includes('push subscription') || errMsg.includes('service worker')) return;
-        // 저장 실패 시 사용자에게 알림 (데이터 유실 방지)
-        const existing = document.getElementById('sync-fail-toast');
-        if (existing) existing.remove();
-        const toast = document.createElement('div');
-        toast.id = 'sync-fail-toast';
-        toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#c0392b;color:#fff;padding:10px 18px;border-radius:8px;font-size:12px;z-index:99999;text-align:center;max-width:90vw;word-break:break-all;';
-        toast.textContent = t('toast_server_save_fail_short', { msg: errMsg });
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 8000);
+        const msg = (e && e.message) ? e.message : '';
+        // FCM/push 관련 에러는 무시
+        if (msg.includes('push subscription') || msg.includes('service worker')) return;
+
+        const code = (e && e.code) ? String(e.code).replace('functions/', '') : '';
+        if (_SYNC_TRANSIENT_CODES.has(code) || msg.includes('network')) {
+            // 일시적 오류: 8초 후 1회 자동 재시도 (중복 예약 방지)
+            console.warn('[syncToFirestore] 일시 오류, 8초 후 재시도:', code);
+            if (_syncRetryTimer) return; // 이미 재시도 예약됨
+            _syncRetryTimer = setTimeout(async () => {
+                _syncRetryTimer = null;
+                try { await _callSaveFunction(); }
+                catch (e2) { _showSyncFailToast(e2); }
+            }, 8000);
+        } else {
+            // 영구 오류: 즉시 토스트
+            _showSyncFailToast(e);
+        }
     }
 }
 
