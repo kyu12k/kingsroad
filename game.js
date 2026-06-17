@@ -2989,6 +2989,13 @@ const SoundEffect = {
     // ★ [수정] 저장된 설정이 'true'이면 음소거(true), 아니면 기본값 해제(false)
     isMuted: localStorage.getItem('setting_sfx_mute') === 'true',
 
+    // iOS: ctx가 running 상태일 때만 true 반환. suspended면 resume 시도 후 false
+    _ready: function() {
+        if (this.ctx.state === 'running') return true;
+        this.ctx.resume().catch(() => {});
+        return false;
+    },
+
     toggleMute: function () {
         this.isMuted = !this.isMuted;
 
@@ -3000,7 +3007,7 @@ const SoundEffect = {
 
     // 소리 재생의 기초 함수
     playTone: function (freq, type, duration, vol = 0.1) {
-        if (this.isMuted) return;
+        if (this.isMuted || !this._ready()) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
 
@@ -3035,6 +3042,7 @@ const SoundEffect = {
 
     // 내부용 오실레이터 생성기
     createOsc: function (freq, type, time, dur) {
+        if (!this._ready()) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = type;
@@ -3049,7 +3057,7 @@ const SoundEffect = {
 
     // 3. 오답 소리 (삐-! 둔탁하게)
     playWrong: function () {
-        if (this.isMuted) return;
+        if (this.isMuted || !this._ready()) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
 
@@ -3068,7 +3076,7 @@ const SoundEffect = {
 
     // 4. 공격 소리 (슈우웅-쾅!)
     playAttack: function () {
-        if (this.isMuted) return;
+        if (this.isMuted || !this._ready()) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
 
@@ -3113,7 +3121,7 @@ const SoundEffect = {
 
     // 8. 구절 공개 소리 - 인내의 고난 (부드러운 페이지 넘김)
     playReveal: function () {
-        if (this.isMuted) return;
+        if (this.isMuted || !this._ready()) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         const now = this.ctx.currentTime;
@@ -3134,7 +3142,7 @@ const SoundEffect = {
 
     // 9. 하트 소모 소리 - 주소/망각의 고난 (둔탁한 충격음)
     playHeartLoss: function () {
-        if (this.isMuted) return;
+        if (this.isMuted || !this._ready()) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         const now = this.ctx.currentTime;
@@ -3163,7 +3171,7 @@ const SoundEffect = {
     // 11. 타이핑 소리 - 망각의 고난 (짧은 키보드 클릭, 디바운스 15ms)
     _lastKeystrokeTime: 0,
     playKeyStroke: function () {
-        if (this.isMuted) return;
+        if (this.isMuted || !this._ready()) return;
         const now = Date.now();
         if (now - this._lastKeystrokeTime < 15) return;
         this._lastKeystrokeTime = now;
@@ -3227,6 +3235,23 @@ if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
         if (ctx && ctx.state === 'suspended') ctx.resume();
     });
 }
+
+// iOS: 첫 터치/클릭에서 AudioContext를 즉시 unlock (suspended → running)
+// iOS Safari는 유저 인터랙션 없이 생성된 AudioContext를 suspended 상태로 유지하며,
+// resume 하지 않으면 예약된 소리가 큐에 쌓였다가 나중에 한꺼번에 재생됨
+(function _iosAudioUnlock() {
+    const ctx = SoundEffect.ctx;
+    if (!ctx) return;
+    const unlock = () => {
+        if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+        document.removeEventListener('touchstart', unlock);
+        document.removeEventListener('touchend', unlock);
+        document.removeEventListener('click', unlock);
+    };
+    document.addEventListener('touchstart', unlock, { passive: true });
+    document.addEventListener('touchend', unlock, { passive: true });
+    document.addEventListener('click', unlock, { passive: true });
+}());
 
 /* [시스템] 12지파 설정 데이터 (보석 이름 복구 완료) */
 const TRIBE_DATA = [
