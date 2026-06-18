@@ -1695,7 +1695,8 @@ let purchasedMaxHearts = 5; // 상점에서 구매한 순수 체력 (이걸 저�
 let maxPlayerHearts = 5;    // 버프가 포함된 실제 게임 체력
 
 let inventory = {
-    lifeBread: 0,  // 생명의 떡 개수
+    lifeBread: 0,    // 생명의 떡 개수
+    faithShield: 0,  // 믿음의 방패 개수
 };
 
 // [BGM]
@@ -1846,13 +1847,14 @@ loadGameData = function () {
         myCastleLevel = parsed.level || 0;
         preloadCastleImage(myCastleLevel);
         myGems = parsed.gems || 0;
-        inventory = parsed.inv || { lifeBread: 0 };
+        inventory = parsed.inv || { lifeBread: 0, faithShield: 0 };
         if (inventory) {
             if (typeof inventory.lifeBread === 'undefined' && typeof inventory.potion !== 'undefined') {
                 inventory.lifeBread = inventory.potion;
                 delete inventory.potion;
             }
             if (typeof inventory.lifeBread === 'undefined') inventory.lifeBread = 0;
+            if (typeof inventory.faithShield === 'undefined') inventory.faithShield = 0;
         }
         purchasedMaxHearts = parsed.maxHearts || 5;
         myNickname = parsed.nickname || "순례자";
@@ -7243,16 +7245,17 @@ function loadNextVerse() {
         } else {
             // 🔴 실패 로직
             SoundEffect.playWrong();
-            playerHearts--;
-            wrongCount++;
-            updateBattleUI();
-
-            alert(t('alert_attack_fail', { count: errorCount }));
-
-            if (playerHearts <= 0) {
-                showReviveModal();
+            if (_tryUseShield()) {
+                updateBattleUI();
+                deselect();
+            } else {
+                playerHearts--;
+                wrongCount++;
+                updateBattleUI();
+                alert(t('alert_attack_fail', { count: errorCount }));
+                if (playerHearts <= 0) { showReviveModal(); }
+                deselect();
             }
-            deselect();
         }
     }; // <-- 공격 버튼 onclick 끝
 
@@ -7575,16 +7578,20 @@ function updateBattleUI() {
 
     // 2. 데이터 준비
     const lifeBreadCnt = (typeof inventory !== 'undefined' && inventory.lifeBread) ? inventory.lifeBread : 0;
+    const faithShieldCnt = (typeof inventory !== 'undefined' && inventory.faithShield) ? inventory.faithShield : 0;
     const heartIcon = playerHearts > 0 ? "❤️" : "💔";
     const isDanger = (playerHearts <= 2);
 
-    // 생명의 떡 버튼 HTML (보스전 전용 - 흰색 숫자)
+    // 아이템 버튼 HTML
     const lifeBreadBtnHtml = `
         <span class="hardship-life-bread-btn" onclick="event.stopPropagation(); useBattleItem('lifeBread')"
               style="margin-left:6px;">
             🍞 <span style="margin-left:4px; font-weight:bold; color:#fff;">${lifeBreadCnt}</span>
         </span>
     `;
+    const shieldBtnHtml = faithShieldCnt > 0
+        ? `<span style="margin-left:6px; font-size:0.85rem; color:#a29bfe; font-weight:bold;">🛡️ ${faithShieldCnt}</span>`
+        : '';
 
     // 3. UI 렌더링
 
@@ -7593,10 +7600,10 @@ function updateBattleUI() {
     if (heartDisplay) {
         heartDisplay.innerHTML = `
             <div style="display:flex; align-items:center; justify-content:center;">
-                <span style="font-size:1.2rem;">${heartIcon}</span> 
+                <span style="font-size:1.2rem;">${heartIcon}</span>
                 <span id="player-hearts" style="font-weight:bold; margin-left:5px;">${playerHearts}</span>
                 <span style="font-size:0.8rem; color:#bdc3c7; margin-left:3px;"> / ${maxPlayerHearts}</span>
-                ${lifeBreadBtnHtml}
+                ${lifeBreadBtnHtml}${shieldBtnHtml}
             </div>
         `;
         applyDangerEffect(heartDisplay, isDanger);
@@ -7615,6 +7622,7 @@ function updateBattleUI() {
             parent.innerHTML = `
                 ${heartIcon} <span id="training-hearts" style="margin-left:5px; font-weight:bold; color:#2c3e50;">${playerHearts}</span>
                 <span class="hardship-life-bread-btn" onclick="event.stopPropagation(); useBattleItem('lifeBread')" style="margin-left:6px;">🍞 <span style="margin-left:4px; font-weight:bold; color:#111;">${lifeBreadCnt}</span></span>
+                ${faithShieldCnt > 0 ? `<span style="margin-left:6px; font-size:0.85rem; color:#6c5ce7; font-weight:bold;">🛡️ ${faithShieldCnt}</span>` : ''}
             `;
             applyDangerEffect(parent, isDanger);
         }
@@ -8231,17 +8239,17 @@ async function loadFromFirestore() {
 function updateGemDisplay() {
     // 1. 인벤토리 파악
     const lifeBreadCnt = (typeof inventory !== 'undefined' && inventory.lifeBread) ? inventory.lifeBread : 0;
+    const faithShieldCntMap = (typeof inventory !== 'undefined' && inventory.faithShield) ? inventory.faithShield : 0;
 
     // 2. 현재 내 지파 정보 가져오기 (색상 적용을 위해)
     const currentTribe = TRIBE_DATA[myTribe] || TRIBE_DATA[0];
 
     // 3. 지파 색상에 맞춘 보석 아이콘 생성 (네온 효과)
-    // '💎' 대신 지파의 고유 색상(core)으로 빛나는 '✦' 아이콘 사용
     const gemIcon = `<span style="color:${currentTribe.core}; text-shadow:0 0 5px ${currentTribe.glow}; font-size:1.1rem;">💎</span>`;
 
-    // 4. 표시할 HTML 구성 (지파 보석 + 숫자)
-    // toLocaleString()을 써서 1,000 단위 쉼표 추가
-    const resourceHtml = `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> 🍞 ${lifeBreadCnt} <span style="opacity:0.3; margin:0 3px;">|</span> ❤️ ${maxPlayerHearts}`;
+    // 4. 표시할 HTML 구성
+    const shieldMapPart = faithShieldCntMap > 0 ? ` <span style="opacity:0.3; margin:0 3px;">|</span> 🛡️ ${faithShieldCntMap}` : '';
+    const resourceHtml = `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> 🍞 ${lifeBreadCnt}${shieldMapPart} <span style="opacity:0.3; margin:0 3px;">|</span> ❤️ ${maxPlayerHearts}`;
 
     // 5. [맵 화면] 헤더 업데이트 (ID로 안전하게 찾기)
     const mapRes = document.getElementById('header-resources');
@@ -9001,27 +9009,32 @@ function loadStep() {
                 } else {
                     // 🔴 [실패] 오답일 때
                     SoundEffect.playWrong();
-                    playerHearts--;
-                    wrongCount++;
-                    updateBattleUI();
-
-                    this.classList.add('error-block', 'shake-effect');
-
-                    // 정답 입력칸(초성 표시 영역) 테두리 오답 피드백
                     const displayEl = document.getElementById('initials-display');
-                    if (displayEl) {
-                        displayEl.style.outline = '2px solid #e05c3a';
-                        displayEl.style.transition = 'outline 0.3s';
-                    }
-
-                    const self = this;
-                    setTimeout(() => {
-                        self.classList.remove('error-block', 'shake-effect');
-                        if (displayEl) displayEl.style.outline = '';
-                    }, 500);
-
-                    if (playerHearts <= 0) {
-                        setTimeout(() => showReviveModal(), 100);
+                    if (_tryUseShield()) {
+                        // 방패 발동: 체력 유지, 시각 피드백만 보여주고 재시도
+                        this.classList.add('error-block', 'shake-effect');
+                        if (displayEl) { displayEl.style.outline = '2px solid #e05c3a'; }
+                        const self = this;
+                        setTimeout(() => {
+                            self.classList.remove('error-block', 'shake-effect');
+                            if (displayEl) displayEl.style.outline = '';
+                        }, 500);
+                        updateBattleUI();
+                    } else {
+                        playerHearts--;
+                        wrongCount++;
+                        updateBattleUI();
+                        this.classList.add('error-block', 'shake-effect');
+                        if (displayEl) {
+                            displayEl.style.outline = '2px solid #e05c3a';
+                            displayEl.style.transition = 'outline 0.3s';
+                        }
+                        const self = this;
+                        setTimeout(() => {
+                            self.classList.remove('error-block', 'shake-effect');
+                            if (displayEl) displayEl.style.outline = '';
+                        }, 500);
+                        if (playerHearts <= 0) { setTimeout(() => showReviveModal(), 100); }
                     }
                 }
             };
@@ -9391,12 +9404,21 @@ function loadStep() {
                 }
             } else {
                 SoundEffect.playWrong();
-                playerHearts--;
-                updateBattleUI();
-                wrongCount++;
-                showRemoveErrorBtn();
-                if (playerHearts <= 0) {
-                    setTimeout(showReviveModal, 100);
+                if (_tryUseShield()) {
+                    // 방패 발동: 오답 블록 자동 제거 후 재시도
+                    const errorBlocks = Array.from(zone.querySelectorAll('.error-block'));
+                    errorBlocks.forEach(ab => {
+                        if (ab._poolBtn) ab._poolBtn.style.visibility = 'visible';
+                        ab.remove();
+                    });
+                    Array.from(zone.querySelectorAll('.correct-block')).forEach(b => b.classList.remove('correct-block'));
+                    updateBattleUI();
+                } else {
+                    playerHearts--;
+                    updateBattleUI();
+                    wrongCount++;
+                    showRemoveErrorBtn();
+                    if (playerHearts <= 0) { setTimeout(showReviveModal, 100); }
                 }
             }
         }
@@ -10025,6 +10047,33 @@ function updateItemButtons() {
     // 훈련 모드 버튼
     const pBtnT = document.getElementById('btn-potion-cnt-t');
     if (pBtnT) pBtnT.innerText = inventory.lifeBread;
+
+    // 방패는 updateBattleUI에서 함께 갱신됨
+    updateBattleUI();
+}
+
+function _tryUseShield() {
+    if (!inventory || !inventory.faithShield || inventory.faithShield <= 0) return false;
+    inventory.faithShield--;
+    saveGameData();
+    showShieldEffect();
+    return true;
+}
+
+function showShieldEffect() {
+    const el = document.createElement('div');
+    el.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:3.5rem;z-index:99999;pointer-events:none;';
+    el.textContent = '🛡️';
+    document.body.appendChild(el);
+    const anim = el.animate(
+        [
+            { opacity: 0, transform: 'translate(-50%,-50%) scale(0.4)' },
+            { opacity: 1, transform: 'translate(-50%,-50%) scale(1.3)' },
+            { opacity: 0, transform: 'translate(-50%,-50%) scale(1.0)' }
+        ],
+        { duration: 700, easing: 'ease-out' }
+    );
+    anim.onfinish = () => el.remove();
 }
 
 // 1. 생명의 떡 사용하기 (누르면 바로 회복)
@@ -13053,6 +13102,7 @@ function calculateProgressiveReward(chNum, count, startVerse = 1) {
 // 일반 아이템 목록 (가격 고정)
 const SHOP_ITEMS = {
     "lifeBread": { name: "생명의 떡", nameEn: "Bread of Life", price: 50, desc: "체력 2칸 회복", descEn: "Restore 2 hearts", icon: "🍞" },
+    "faithShield": { name: "믿음의 방패", nameEn: "Shield of Faith", price: 50, desc: "오답 1회 차단 + 재시도 기회", descEn: "Block 1 wrong answer, retry", icon: "🛡️" },
     "booster": { name: "승점 부스터", nameEn: "Score Booster", price: 500, desc: "30분간 승점 2배", descEn: "Score ×2 for 30 min", icon: "⚡" },
     "booster3": { name: "승점 부스터+", nameEn: "Score Booster+", price: 1200, desc: "30분간 승점 3배", descEn: "Score ×3 for 30 min", icon: "⚡" }
 };
@@ -13196,7 +13246,7 @@ updateShopUI = function () {
     list.appendChild(heartDiv);
 
     // [일반 아이템]
-    ['lifeBread', 'booster', 'booster3'].forEach(key => {
+    ['lifeBread', 'faithShield', 'booster', 'booster3'].forEach(key => {
         const item = SHOP_ITEMS[key];
         const count = (inventory && inventory[key]) ? inventory[key] : 0;
         const div = document.createElement('div');
@@ -14127,10 +14177,12 @@ function checkScrollCollision() {
         if (scrollGame.isColliding) return;
         scrollGame.isColliding = true;
 
-        // 1. 체력 감소
+        // 1. 체력 감소 (방패 있으면 차단)
         if (typeof playerHearts !== 'undefined') {
-            playerHearts--;
-            wrongCount++;
+            if (!_tryUseShield()) {
+                playerHearts--;
+                wrongCount++;
+            }
             if (typeof updateBattleUI === 'function') updateBattleUI();
         }
 
@@ -14192,8 +14244,10 @@ function handleScrollCardClick(btn, word) {
     } else {
         // [오답 로직 수정됨]
         if (typeof playerHearts !== 'undefined') {
-            playerHearts--;
-            wrongCount++;
+            if (!_tryUseShield()) {
+                playerHearts--;
+                wrongCount++;
+            }
             if (typeof updateBattleUI === 'function') updateBattleUI();
         }
 
