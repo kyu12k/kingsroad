@@ -7275,11 +7275,11 @@ function loadNextVerse() {
             deselect();
         } else {
             // 🔴 실패 로직
-            SoundEffect.playWrong();
             if (_tryUseShield()) {
                 updateBattleUI();
                 deselect();
             } else {
+                SoundEffect.playWrong();
                 playerHearts--;
                 wrongCount++;
                 updateBattleUI();
@@ -9039,7 +9039,6 @@ function loadStep() {
 
                 } else {
                     // 🔴 [실패] 오답일 때
-                    SoundEffect.playWrong();
                     const displayEl = document.getElementById('initials-display');
                     if (_tryUseShield()) {
                         // 방패 발동: 체력 유지, 시각 피드백만 보여주고 재시도
@@ -9052,6 +9051,7 @@ function loadStep() {
                         }, 500);
                         updateBattleUI();
                     } else {
+                        SoundEffect.playWrong();
                         playerHearts--;
                         wrongCount++;
                         updateBattleUI();
@@ -9434,7 +9434,6 @@ function loadStep() {
                     }, 500);
                 }
             } else {
-                SoundEffect.playWrong();
                 if (_tryUseShield()) {
                     // 방패 발동: 오답 블록 자동 제거 후 재시도
                     if (removeErrorBtn) { removeErrorBtn.remove(); removeErrorBtn = null; }
@@ -9446,6 +9445,7 @@ function loadStep() {
                     Array.from(zone.querySelectorAll('.correct-block')).forEach(b => b.classList.remove('correct-block'));
                     updateBattleUI();
                 } else {
+                    SoundEffect.playWrong();
                     playerHearts--;
                     updateBattleUI();
                     wrongCount++;
@@ -14277,17 +14277,21 @@ function handleScrollCardClick(btn, word) {
 
     } else {
         // [오답 로직 수정됨]
+        let _shieldedClick = false;
         if (typeof playerHearts !== 'undefined') {
-            if (!_tryUseShield()) {
+            _shieldedClick = _tryUseShield();
+            if (!_shieldedClick) {
                 playerHearts--;
                 wrongCount++;
             }
             if (typeof updateBattleUI === 'function') updateBattleUI();
         }
 
-        // ★ 오답 시에도 하트 연출 추가
-        showDamageEffect();
-        if (typeof SoundEffect !== 'undefined') SoundEffect.playWrong();
+        // 방패 발동 시 데미지 연출·오답음 생략
+        if (!_shieldedClick) {
+            showDamageEffect();
+            if (typeof SoundEffect !== 'undefined') SoundEffect.playWrong();
+        }
 
         btn.style.backgroundColor = "#e74c3c";
         setTimeout(() => btn.style.backgroundColor = "#ecf0f1", 300);
