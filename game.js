@@ -9406,6 +9406,7 @@ function loadStep() {
                 SoundEffect.playWrong();
                 if (_tryUseShield()) {
                     // 방패 발동: 오답 블록 자동 제거 후 재시도
+                    if (removeErrorBtn) { removeErrorBtn.remove(); removeErrorBtn = null; }
                     const errorBlocks = Array.from(zone.querySelectorAll('.error-block'));
                     errorBlocks.forEach(ab => {
                         if (ab._poolBtn) ab._poolBtn.style.visibility = 'visible';
@@ -10047,9 +10048,6 @@ function updateItemButtons() {
     // 훈련 모드 버튼
     const pBtnT = document.getElementById('btn-potion-cnt-t');
     if (pBtnT) pBtnT.innerText = inventory.lifeBread;
-
-    // 방패는 updateBattleUI에서 함께 갱신됨
-    updateBattleUI();
 }
 
 function _tryUseShield() {
@@ -14178,17 +14176,21 @@ function checkScrollCollision() {
         scrollGame.isColliding = true;
 
         // 1. 체력 감소 (방패 있으면 차단)
+        let _shieldedCollision = false;
         if (typeof playerHearts !== 'undefined') {
-            if (!_tryUseShield()) {
+            _shieldedCollision = _tryUseShield();
+            if (!_shieldedCollision) {
                 playerHearts--;
                 wrongCount++;
             }
             if (typeof updateBattleUI === 'function') updateBattleUI();
         }
 
-        // 2. 연출
-        showDamageEffect();
-        if (typeof SoundEffect !== 'undefined') SoundEffect.playWrong();
+        // 2. 연출 (방패 발동 시 데미지 연출 생략)
+        if (!_shieldedCollision) {
+            showDamageEffect();
+            if (typeof SoundEffect !== 'undefined') SoundEffect.playWrong();
+        }
 
         // 3. 밀어내기
         const safeDistance = 250;
