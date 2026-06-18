@@ -10943,10 +10943,6 @@ function openMission() {
     const listArea = document.getElementById('mission-list-area');
 
     // 탭 버튼 영역 생성 (매번 새로 그려서 탭 추가/변경 반영)
-    const existingWidget = screen.querySelector('.weekly-study-widget');
-    if (existingWidget) existingWidget.remove();
-    screen.insertBefore(buildWeeklyStudyWidget(), listArea);
-
     const existingTabs = screen.querySelector('.mission-tabs');
     if (existingTabs) existingTabs.remove();
     const tabContainer = document.createElement('div');
