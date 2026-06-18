@@ -4418,6 +4418,22 @@ body, html {
 .friend-list-tag { font-size: 0.95rem; color: #ecf0f1; }
 .friend-list-memo { font-size: 0.8rem; color: #7f8c8d; }
 .friend-list-arrow { color: #7f8c8d; font-size: 0.85rem; }
+.friend-list-actions { display: flex; align-items: center; gap: 8px; }
+.friend-cheer-list-btn {
+    background: rgba(255,215,0,0.12); border: 1px solid rgba(255,215,0,0.3);
+    color: #f1c40f; border-radius: 16px; padding: 4px 10px;
+    font-size: 0.85rem; cursor: pointer; line-height: 1;
+}
+.friend-cheer-list-btn.done {
+    background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1);
+    color: #7f8c8d; cursor: default;
+}
+.friend-cheer-all-btn {
+    background: rgba(255,215,0,0.15); border: 1px solid rgba(255,215,0,0.4);
+    color: #f1c40f; border-radius: 16px; padding: 5px 12px;
+    font-size: 0.8rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.friend-cheer-all-btn:disabled { opacity: 0.5; cursor: default; }
 .friend-empty { text-align: center; color: #7f8c8d; font-size: 0.9rem; padding: 24px 16px; line-height: 1.8; }
 .friend-cheer-received-wrap { padding: 0 16px 4px; display: flex; flex-direction: column; gap: 6px; }
 .friend-cheer-received-item {

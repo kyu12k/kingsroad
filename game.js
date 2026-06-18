@@ -21122,18 +21122,28 @@ async function _renderFriendScreen() {
     }
 
     // 친구 목록
-    html += `<div class="friend-section-title">👤 친구 목록 (${friends.length}/${FRIEND_MAX})</div>`;
+    const todayStr = _getLocalDateStr(new Date());
+    const cheerMap = (typeof data.lastCheerSent === 'object' && data.lastCheerSent) ? data.lastCheerSent : {};
+    const cheerableCount = friends.filter(tag => cheerMap[tag] !== todayStr).length;
+    html += `<div class="friend-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>👤 친구 목록 (${friends.length}/${FRIEND_MAX})</span>
+        ${cheerableCount > 0 ? `<button id="friend-cheer-all-btn" class="friend-cheer-all-btn" onclick="_cheerAllFriends()">💛 모두 응원 (${cheerableCount})</button>` : ''}
+    </div>`;
     if (friends.length === 0) {
         html += `<div class="friend-empty">아직 친구가 없습니다.<br>코드로 친구를 추가해보세요!</div>`;
     } else {
         friends.forEach(tag => {
             const memo = getFriendMemo(tag);
+            const cheered = cheerMap[tag] === todayStr;
             html += `<div class="friend-list-item" onclick="openFriendProfile('${tag}')">
                 <div class="friend-list-info">
                     <span class="friend-list-tag">#${tag}</span>
                     ${memo ? `<span class="friend-list-memo">· ${memo}</span>` : ''}
                 </div>
-                <span class="friend-list-arrow">▶</span>
+                <div class="friend-list-actions" onclick="event.stopPropagation()">
+                    <button class="friend-cheer-list-btn${cheered ? ' done' : ''}" onclick="_cheerFriendFromList('${tag}',this)" ${cheered ? 'disabled' : ''}>${cheered ? '✓' : '💛'}</button>
+                    <span class="friend-list-arrow">▶</span>
+                </div>
             </div>`;
         });
     }
@@ -21279,6 +21289,82 @@ async function _cheerFriend(tag, btn) {
     showGemToast(0, result.msg, !result.ok);
     if (result.ok && btn) { btn.textContent = '💛 오늘 응원 완료'; btn.classList.add('cheered'); }
     else if (!result.ok && btn) { btn.disabled = false; btn.textContent = '💛 응원하기 (+💎50)'; }
+}
+
+async function _cheerFriendFromList(tag, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = '…'; }
+    const result = await cheerFriend(tag);
+    if (result.ok) {
+        if (btn) { btn.textContent = '✓'; btn.classList.add('done'); }
+        // 모두 응원 버튼 카운트 갱신
+        const allBtn = document.getElementById('friend-cheer-all-btn');
+        if (allBtn) {
+            const m = allBtn.textContent.match(/\((\d+)\)/);
+            const n = m ? parseInt(m[1]) - 1 : 0;
+            if (n <= 0) allBtn.remove();
+            else allBtn.textContent = `💛 모두 응원 (${n})`;
+        }
+        showGemToast(CHEER_GEM_AMOUNT);
+    } else {
+        if (btn) { btn.disabled = false; btn.textContent = '💛'; }
+        showGemToast(0, result.msg, true);
+    }
+}
+
+async function _cheerAllFriends() {
+    const allBtn = document.getElementById('friend-cheer-all-btn');
+    if (allBtn) { allBtn.disabled = true; allBtn.textContent = '보내는 중…'; }
+
+    const myData = await _getFriendDoc(myTag);
+    if (!myData) { if (allBtn) { allBtn.disabled = false; } return; }
+
+    const todayStr = _getLocalDateStr(new Date());
+    const cheerMap = (typeof myData.lastCheerSent === 'object' && myData.lastCheerSent) ? myData.lastCheerSent : {};
+    const friends = myData.friends || [];
+
+    // 오늘 아직 응원 안 한 친구만
+    const targets = friends.filter(tag => cheerMap[tag] !== todayStr);
+    if (targets.length === 0) {
+        showGemToast(0, '오늘은 모든 친구에게 이미 응원을 보냈습니다.', true);
+        if (allBtn) allBtn.remove();
+        return;
+    }
+
+    // 대상 친구 doc 병렬 읽기
+    const friendDocs = await Promise.all(targets.map(tag => _getFriendDoc(tag).then(d => ({ tag, data: d }))));
+
+    // 미수령 응원이 없는 친구만 (친구당 1회분 누적 제한)
+    const eligible = friendDocs.filter(({ data }) =>
+        data && !(data.pendingCheers || []).some(c => c.fromTag === myTag)
+    );
+
+    if (eligible.length === 0) {
+        showGemToast(0, '모든 친구에게 아직 수령 안 된 응원이 있습니다.', true);
+        if (allBtn) { allBtn.disabled = false; allBtn.textContent = '💛 모두 응원 (0)'; allBtn.disabled = true; }
+        return;
+    }
+
+    const newCheerMap = { ...cheerMap };
+    const sentAt = Date.now();
+    const writes = eligible.map(({ tag }) => {
+        newCheerMap[tag] = todayStr;
+        return _friendRef(tag).set({
+            pendingCheers: firebase.firestore.FieldValue.arrayUnion(
+                { from: myNickname, fromTag: myTag, gems: CHEER_GEM_AMOUNT, sentAt }
+            )
+        }, { merge: true });
+    });
+    writes.push(_friendRef(myTag).set({ lastCheerSent: newCheerMap }, { merge: true }));
+    await Promise.all(writes);
+
+    const totalGems = eligible.length * CHEER_GEM_AMOUNT;
+    myGems += totalGems;
+    updateGemDisplay();
+    saveGameData();
+    syncToFirestore();
+
+    showGemToast(totalGems, `${eligible.length}명에게 응원을 보냈습니다!`);
+    _renderFriendScreen();
 }
 
 function _saveMemo(tag) {
