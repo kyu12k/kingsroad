@@ -3191,6 +3191,37 @@ const SoundEffect = {
         gain.connect(this.ctx.destination);
         osc.start(t);
         osc.stop(t + 0.025);
+    },
+
+    // 방패 막기 소리 (퉁! 금속 충격 + 짧은 울림)
+    playShield: function () {
+        if (this.isMuted || !this._ready()) return;
+        const t = this.ctx.currentTime;
+
+        // 저음 충격 (둔탁한 방패 타격)
+        const osc1 = this.ctx.createOscillator();
+        const gain1 = this.ctx.createGain();
+        osc1.type = 'triangle';
+        osc1.frequency.setValueAtTime(320, t);
+        osc1.frequency.exponentialRampToValueAtTime(180, t + 0.18);
+        gain1.gain.setValueAtTime(0.22, t);
+        gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+        osc1.connect(gain1);
+        gain1.connect(this.ctx.destination);
+        osc1.start(t);
+        osc1.stop(t + 0.22);
+
+        // 고음 울림 (금속 반향)
+        const osc2 = this.ctx.createOscillator();
+        const gain2 = this.ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(860, t);
+        gain2.gain.setValueAtTime(0.07, t);
+        gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+        osc2.connect(gain2);
+        gain2.connect(this.ctx.destination);
+        osc2.start(t);
+        osc2.stop(t + 0.18);
     }
 };
 
@@ -10054,6 +10085,7 @@ function _tryUseShield() {
     if (!inventory || !inventory.faithShield || inventory.faithShield <= 0) return false;
     inventory.faithShield--;
     saveGameData();
+    SoundEffect.playShield();
     showShieldEffect();
     return true;
 }
