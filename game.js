@@ -12915,9 +12915,11 @@ function _renderGuildHome(body, guild, myStatus = {}) {
         });
     }
 
-    // 친구 초대 (길드원이 아닌 친구 목록)
-    html += `<div class="guild-section-title" style="margin-top:18px;">친구 초대</div>`;
-    html += `<div id="guild-invite-area"><button class="guild-btn-secondary" onclick="_loadGuildInviteList()">친구 목록 보기</button></div>`;
+    // 친구 초대 (길드장만)
+    if (isLeader) {
+        html += `<div class="guild-section-title" style="margin-top:18px;">친구 초대</div>`;
+        html += `<div id="guild-invite-area"><button class="guild-btn-secondary" onclick="_loadGuildInviteList()">친구 목록 보기</button></div>`;
+    }
 
     html += `<div style="margin-top:24px; text-align:center;">
         <button class="guild-btn-leave" onclick="_leaveGuild()">${isLeader && guild.members.length <= 1 ? '길드 해산' : isLeader ? '길드장 위임 후 탈퇴' : '길드 탈퇴'}</button>
