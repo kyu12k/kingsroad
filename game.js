@@ -2575,6 +2575,7 @@ function updateMissionProgress(type, extraData) {
     if (isFocusedTrainingSession()) return;
     if (type === 'training') type = 'new';
     if (type === 'dragonKill') type = 'dragon';
+    _addGuildRaidDamage(type, extraData);
     if (type === 'review') return;
 
     // 모든 도감이 열렸는지 체크 (하루 1회만 인정)
@@ -2708,9 +2709,6 @@ function updateMissionProgress(type, extraData) {
     if (type === 'new') {
         missionData.weekly.stageClear++;
     }
-
-    // 6. 길드 레이드 대미지 누적
-    _addGuildRaidDamage(type, extraData);
 
     saveGameData();
     updateMissionUI();
@@ -12685,44 +12683,14 @@ function _addGuildRaidDamage(type, extraData) {
 async function _flushGuildRaidDamage() {
     _guildRaidFlushTimer = null;
     if (!myGuildId || _guildRaidPendingDmg <= 0) return;
-    if (!db || !myTag) return;
+    if (!myTag) return;
     const dmg = _guildRaidPendingDmg;
     _guildRaidPendingDmg = 0;
     try {
-        const guildRef = db.collection('guilds').doc(myGuildId);
-        await db.runTransaction(async tx => {
-            const doc = await tx.get(guildRef);
-            if (!doc.exists) { myGuildId = null; return; }
-            const guild = doc.data();
-            const weekId = _getGuildWeekId();
-            const contributions = guild.raidContributions || {};
-            // 주차 리셋 감지
-            const newContribs = guild.raidWeekId !== weekId ? {} : { ...contributions };
-            newContribs[myTag] = (newContribs[myTag] || 0) + dmg;
-            const newHp = Math.max(0, (guild.raidDragonCurrentHp || 0) - dmg);
-            const cleared = newHp <= 0;
-            tx.update(guildRef, {
-                raidContributions: newContribs,
-                raidDragonCurrentHp: newHp,
-                raidStatus: cleared ? 'cleared' : 'active',
-                raidWeekId: weekId
-            });
-        });
+        await _callGuildFn('reportRaidDamage', { damage: dmg });
     } catch (e) {
         _guildRaidPendingDmg += dmg; // 실패 시 복구
     }
-}
-
-function _getGuildWeekId() {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    const day = (d.getDay() + 6) % 7;
-    d.setDate(d.getDate() - day + 3);
-    const firstThursday = new Date(d.getFullYear(), 0, 4);
-    const firstDay = (firstThursday.getDay() + 6) % 7;
-    firstThursday.setDate(firstThursday.getDate() - firstDay + 3);
-    const weekNumber = 1 + Math.round((d - firstThursday) / (7 * 24 * 60 * 60 * 1000));
-    return `${d.getFullYear()}-W${String(weekNumber).padStart(2, '0')}`;
 }
 
 async function _callGuildFn(fnName, data) {

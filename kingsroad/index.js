@@ -305,3 +305,36 @@ exports.inviteToGuild = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     });
     return { ok: true };
 });
+
+exports.reportRaidDamage = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { damage, myTag } = request.data;
+    if (typeof damage !== 'number' || damage <= 0 || damage > 2000)
+        throw new HttpsError('invalid-argument', '유효하지 않은 대미지 값입니다.');
+
+    const userData = await verifyTag(request.auth.uid, myTag);
+    if (!userData.guildId) return { ok: false };
+
+    const guildRef = db.collection('guilds').doc(userData.guildId);
+    await db.runTransaction(async tx => {
+        const doc = await tx.get(guildRef);
+        if (!doc.exists) return;
+        const guild = doc.data();
+
+        const currentWeekId = getWeekId();
+        const contributions = guild.raidWeekId === currentWeekId
+            ? (guild.raidContributions || {})
+            : {};
+        const newContribs = { ...contributions };
+        newContribs[myTag] = (newContribs[myTag] || 0) + damage;
+
+        const newHp = Math.max(0, (guild.raidDragonCurrentHp || 0) - damage);
+        tx.update(guildRef, {
+            raidContributions: newContribs,
+            raidDragonCurrentHp: newHp,
+            raidStatus: newHp <= 0 ? 'cleared' : 'active',
+            raidWeekId: currentWeekId
+        });
+    });
+    return { ok: true };
+});
