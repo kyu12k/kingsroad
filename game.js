@@ -14993,7 +14993,22 @@ function startFCMForegroundListener() {
             if (Notification.permission !== 'granted') return;
             const title = payload.data?.title || '킹스로드 복습 알림';
             const body = payload.data?.body || '';
-            new Notification(title, { body, icon: '/icon-192.png', tag: 'review-notif', renotify: true });
+            // 모바일에서 new Notification()은 포그라운드에서 표시 안 됨
+            // → SW를 통해 showNotification() 호출해야 함
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(reg => {
+                    reg.showNotification(title, {
+                        body,
+                        icon: '/icon-192.png',
+                        tag: 'review-notif',
+                        renotify: true
+                    });
+                }).catch(() => {
+                    new Notification(title, { body, icon: '/icon-192.png', tag: 'review-notif', renotify: true });
+                });
+            } else {
+                new Notification(title, { body, icon: '/icon-192.png', tag: 'review-notif', renotify: true });
+            }
         });
     } catch (e) {}
 }
