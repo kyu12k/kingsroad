@@ -5980,6 +5980,15 @@ body, html {
     color: #e74c3c; border-radius: 8px; padding: 5px 12px;
     font-size: 0.82rem; cursor: pointer;
 }
+.guild-invite-card {
+    background: rgba(255,255,255,0.06); border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 16px;
+}
+.guild-invite-card-name { font-size: 1rem; font-weight: 700; color: #ecf0f1; margin-bottom: 4px; }
+.guild-invite-card-from { font-size: 0.8rem; color: #95a5a6; margin-bottom: 12px; }
+.guild-invite-card-actions { display: flex; gap: 8px; }
+.guild-invite-card-actions .guild-btn-primary,
+.guild-invite-card-actions .guild-btn-secondary { flex: 1; }
 .guild-invite-row {
     display: flex; align-items: center; justify-content: space-between;
     padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);

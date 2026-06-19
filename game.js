@@ -12747,7 +12747,7 @@ async function _renderGuildScreen() {
 
         if (!myGuildId) {
             if (prevGuildId) showGemToast(0, '길드에서 추방되었거나 길드가 해산되었습니다.', true);
-            _renderGuildNoGuild(body);
+            _renderGuildNoGuild(body, myLbData.pendingInvite || null);
             return;
         }
 
@@ -12755,7 +12755,7 @@ async function _renderGuildScreen() {
         if (!guildDoc.exists) {
             myGuildId = null;
             if (prevGuildId) showGemToast(0, '길드가 해산되었습니다.', true);
-            _renderGuildNoGuild(body);
+            _renderGuildNoGuild(body, myLbData.pendingInvite || null);
             return;
         }
         _guildData = { id: myGuildId, ...guildDoc.data() };
@@ -12773,13 +12773,29 @@ async function _renderGuildScreen() {
     }
 }
 
-function _renderGuildNoGuild(body) {
+function _renderGuildNoGuild(body, pendingInvite) {
+    let inviteHtml = '';
+    if (pendingInvite && pendingInvite.guildId) {
+        const elapsed = Math.floor((Date.now() - pendingInvite.sentAt) / 3600000);
+        const timeStr = elapsed < 1 ? '방금' : `${elapsed}시간 전`;
+        inviteHtml = `
+        <div class="guild-section-title" style="margin-top:0;">📨 길드 초대</div>
+        <div class="guild-invite-card">
+            <div class="guild-invite-card-name">⚔️ ${pendingInvite.guildName}</div>
+            <div class="guild-invite-card-from">${pendingInvite.invitedBy}번 길드장이 초대 · ${timeStr}</div>
+            <div class="guild-invite-card-actions">
+                <button class="guild-btn-primary" onclick="_respondGuildInvite(true)">수락</button>
+                <button class="guild-btn-secondary" onclick="_respondGuildInvite(false)">거절</button>
+            </div>
+        </div>`;
+    }
     body.innerHTML = `
         <div class="guild-no-guild">
             <div class="guild-no-guild-icon">⚔️</div>
             <div class="guild-no-guild-msg">소속된 길드가 없습니다.</div>
         </div>
-        <div class="guild-section-title">길드 만들기</div>
+        ${inviteHtml}
+        <div class="guild-section-title" style="margin-top:${inviteHtml ? 18 : 0}px;">길드 만들기</div>
         <div class="guild-create-wrap">
             <input id="guild-name-input" class="guild-input" type="text" maxlength="12" placeholder="길드 이름 (2~12자)">
             <button class="guild-btn-primary" onclick="_submitCreateGuild()">만들기</button>
@@ -12789,6 +12805,21 @@ function _renderGuildNoGuild(body) {
             <input id="guild-code-input" class="guild-input" type="text" maxlength="6" placeholder="가입 코드 6자리" style="text-transform:uppercase;">
             <button class="guild-btn-secondary" onclick="_submitJoinGuild()">신청</button>
         </div>`;
+}
+
+async function _respondGuildInvite(accept) {
+    try {
+        const res = await _callGuildFn('respondInvite', { accept });
+        if (accept) {
+            myGuildId = res.guildId;
+            showGemToast(0, `"${res.guildName}" 길드에 가입되었습니다! 🎉`);
+        } else {
+            showGemToast(0, '초대를 거절했습니다.');
+        }
+        _renderGuildScreen();
+    } catch (e) {
+        showGemToast(0, e.message || '처리 실패', true);
+    }
 }
 
 function _renderGuildHome(body, guild, myStatus = {}) {
