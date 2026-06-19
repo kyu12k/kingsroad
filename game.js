@@ -12927,39 +12927,60 @@ async function _respondGuildRequest(targetTag, accept) {
     }
 }
 
+function _guildConfirm(message, onConfirm) {
+    let overlay = document.getElementById('guild-confirm-overlay');
+    if (overlay) overlay.remove();
+    overlay = document.createElement('div');
+    overlay.id = 'guild-confirm-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10000;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `
+        <div style="background:#1e1e2e;border-radius:14px;padding:24px 20px;max-width:300px;width:88%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+            <div style="color:#e8e0f0;font-size:15px;line-height:1.6;margin-bottom:20px;">${message}</div>
+            <div style="display:flex;gap:10px;justify-content:center;">
+                <button id="guild-confirm-cancel" style="flex:1;padding:10px;border-radius:8px;border:none;background:#3a3a5c;color:#b0a8d0;font-size:14px;cursor:pointer;">취소</button>
+                <button id="guild-confirm-ok" style="flex:1;padding:10px;border-radius:8px;border:none;background:#c0392b;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">확인</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#guild-confirm-cancel').onclick = () => overlay.remove();
+    overlay.querySelector('#guild-confirm-ok').onclick = () => { overlay.remove(); onConfirm(); };
+}
+
 async function _kickGuildMember(targetTag) {
-    if (!confirm(`#${targetTag} 을(를) 길드에서 추방하시겠습니까?`)) return;
-    try {
-        await _callGuildFn('kickGuildMember', { targetTag });
-        showGemToast(0, `#${targetTag} 을(를) 추방했습니다.`);
-        _renderGuildScreen();
-    } catch (e) {
-        showGemToast(0, e.message || '추방 실패', true);
-    }
+    _guildConfirm(`정말 #${targetTag} 을(를)<br>길드에서 추방하시겠습니까?`, async () => {
+        try {
+            await _callGuildFn('kickGuildMember', { targetTag });
+            showGemToast(0, `#${targetTag} 을(를) 추방했습니다.`);
+            _renderGuildScreen();
+        } catch (e) {
+            showGemToast(0, e.message || '추방 실패', true);
+        }
+    });
 }
 
 async function _leaveGuild() {
     const isLeader = _guildData && _guildData.leaderId === myTag;
     const memberCount = _guildData ? _guildData.members.length : 1;
     const msg = isLeader && memberCount > 1
-        ? '길드장을 다음 멤버에게 자동으로 위임하고 탈퇴합니다. 계속하시겠습니까?'
+        ? '정말 탈퇴하시겠습니까?<br><small style="color:#a080c0;">길드장이 다음 멤버에게 자동 위임됩니다.</small>'
         : isLeader
-        ? '길드를 해산합니다. 계속하시겠습니까?'
-        : '길드를 탈퇴합니다. 계속하시겠습니까?';
-    if (!confirm(msg)) return;
-    try {
-        await _callGuildFn('leaveGuild', {});
-        const leaveMsg = isLeader && memberCount > 1
-            ? '길드장을 위임하고 탈퇴했습니다.'
-            : isLeader
-            ? '길드를 해산했습니다.'
-            : '길드를 탈퇴했습니다.';
-        myGuildId = null; _guildData = null;
-        showGemToast(0, leaveMsg);
-        _renderGuildScreen();
-    } catch (e) {
-        showGemToast(0, e.message || '탈퇴 실패', true);
-    }
+        ? '정말 길드를 해산하시겠습니까?<br><small style="color:#a080c0;">모든 멤버가 길드에서 제거됩니다.</small>'
+        : '정말 길드를 탈퇴하시겠습니까?';
+    _guildConfirm(msg, async () => {
+        try {
+            await _callGuildFn('leaveGuild', {});
+            const leaveMsg = isLeader && memberCount > 1
+                ? '길드장을 위임하고 탈퇴했습니다.'
+                : isLeader
+                ? '길드를 해산했습니다.'
+                : '길드를 탈퇴했습니다.';
+            myGuildId = null; _guildData = null;
+            showGemToast(0, leaveMsg);
+            _renderGuildScreen();
+        } catch (e) {
+            showGemToast(0, e.message || '탈퇴 실패', true);
+        }
+    });
 }
 
 async function _loadGuildInviteList() {
