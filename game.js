@@ -12831,21 +12831,36 @@ function _renderGuildHome(body, guild) {
     });
     html += `</div>`;
 
-    // 길드장: 가입 신청 목록
-    if (isLeader && pendingReqs.length > 0) {
-        html += `<div class="guild-section-title">📬 가입 신청 (${pendingReqs.length})</div>`;
-        pendingReqs.forEach(r => {
+    // 길드장: 가입 신청 목록 (초대 발송 항목 제외)
+    const joinReqs = pendingReqs.filter(r => !r.invitedBy);
+    const sentInvites = pendingReqs.filter(r => !!r.invitedBy);
+    if (isLeader && joinReqs.length > 0) {
+        html += `<div class="guild-section-title">📬 가입 신청 (${joinReqs.length})</div>`;
+        joinReqs.forEach(r => {
             const elapsed = Math.floor((Date.now() - r.sentAt) / 3600000);
             const timeStr = elapsed < 1 ? '방금' : `${elapsed}시간 전`;
-            const invitedLabel = r.invitedBy ? ` · 초대됨` : '';
             html += `<div class="guild-request-row">
                 <div class="guild-request-info">
                     <span class="guild-request-name">${r.nickname || '순례자'}</span>
-                    <span class="guild-request-meta">#${r.tag} · ${timeStr}${invitedLabel}</span>
+                    <span class="guild-request-meta">#${r.tag} · ${timeStr}</span>
                 </div>
                 <div class="guild-request-btns">
                     <button class="guild-btn-accept" onclick="_respondGuildRequest('${r.tag}', true)">수락</button>
                     <button class="guild-btn-reject" onclick="_respondGuildRequest('${r.tag}', false)">거절</button>
+                </div>
+            </div>`;
+        });
+    }
+    // 대기 중인 초대 목록
+    if (sentInvites.length > 0) {
+        html += `<div class="guild-section-title">✉️ 초대 발송 (${sentInvites.length})</div>`;
+        sentInvites.forEach(r => {
+            const elapsed = Math.floor((Date.now() - r.sentAt) / 3600000);
+            const timeStr = elapsed < 1 ? '방금' : `${elapsed}시간 전`;
+            html += `<div class="guild-request-row">
+                <div class="guild-request-info">
+                    <span class="guild-request-name">${r.nickname || '순례자'}</span>
+                    <span class="guild-request-meta">#${r.tag} · ${timeStr} · 수락 대기 중</span>
                 </div>
             </div>`;
         });
