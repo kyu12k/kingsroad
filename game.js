@@ -12900,7 +12900,15 @@ async function _submitJoinGuild() {
     input.disabled = true;
     try {
         const res = await _callGuildFn('joinGuildRequest', { code });
-        if (res.ok) { showGemToast(0, `"${res.guildName}" 가입 신청 완료! 길드장의 수락을 기다려주세요.`); }
+        if (res.ok) {
+            if (res.autoAccepted) {
+                myGuildId = res.guildId || null;
+                showGemToast(0, `"${res.guildName}" 길드에 가입되었습니다! 🎉`);
+                _renderGuildScreen();
+            } else {
+                showGemToast(0, `"${res.guildName}" 가입 신청 완료! 길드장의 수락을 기다려주세요.`);
+            }
+        }
     } catch (e) {
         showGemToast(0, e.message || '가입 신청에 실패했습니다.', true);
         input.disabled = false;

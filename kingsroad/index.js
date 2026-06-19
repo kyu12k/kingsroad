@@ -174,7 +174,24 @@ exports.joinGuildRequest = onCall({ cors: ALLOWED_ORIGINS }, async (request) => 
     const maxMembers = GUILD_MAX_MEMBERS[guild.level] || 5;
     if (guild.members.length >= maxMembers)
         throw new HttpsError('resource-exhausted', '길드 인원이 가득 찼습니다.');
-    if ((guild.pendingRequests || []).some(r => r.tag === myTag))
+
+    const pending = guild.pendingRequests || [];
+    const inviteEntry = pending.find(r => r.tag === myTag && r.invitedBy);
+    if (inviteEntry) {
+        // 초대받은 사람이 코드로 가입 시도 → 양측 의사 확인됨, 자동 수락
+        const newPending = pending.filter(r => r.tag !== myTag);
+        const batch = db.batch();
+        batch.update(guildDoc.ref, {
+            pendingRequests: newPending,
+            members: admin.firestore.FieldValue.arrayUnion(myTag),
+            [`memberNicknames.${myTag}`]: userData.nickname || '순례자'
+        });
+        batch.update(db.collection('leaderboard').doc(String(myTag)), { guildId: guildDoc.id });
+        await batch.commit();
+        return { ok: true, guildName: guild.name, autoAccepted: true, guildId: guildDoc.id };
+    }
+
+    if (pending.some(r => r.tag === myTag))
         throw new HttpsError('already-exists', '이미 가입 신청 중입니다.');
 
     await guildDoc.ref.update({
