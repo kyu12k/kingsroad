@@ -12733,10 +12733,12 @@ async function _renderGuildScreen() {
         if (!db || !myTag) { body.innerHTML = '<div class="guild-error">서버 연결이 필요합니다.</div>'; return; }
 
         // 내 길드 ID 확인
+        const prevGuildId = myGuildId;
         const myDoc = await db.collection('leaderboard').doc(myTag).get();
         myGuildId = myDoc.exists ? (myDoc.data().guildId || null) : null;
 
         if (!myGuildId) {
+            if (prevGuildId) showGemToast(0, '길드에서 추방되었거나 길드가 해산되었습니다.', true);
             _renderGuildNoGuild(body);
             return;
         }
@@ -12744,6 +12746,7 @@ async function _renderGuildScreen() {
         const guildDoc = await db.collection('guilds').doc(myGuildId).get();
         if (!guildDoc.exists) {
             myGuildId = null;
+            if (prevGuildId) showGemToast(0, '길드가 해산되었습니다.', true);
             _renderGuildNoGuild(body);
             return;
         }
@@ -12928,6 +12931,7 @@ async function _kickGuildMember(targetTag) {
     if (!confirm(`#${targetTag} 을(를) 길드에서 추방하시겠습니까?`)) return;
     try {
         await _callGuildFn('kickGuildMember', { targetTag });
+        showGemToast(0, `#${targetTag} 을(를) 추방했습니다.`);
         _renderGuildScreen();
     } catch (e) {
         showGemToast(0, e.message || '추방 실패', true);
@@ -12945,7 +12949,13 @@ async function _leaveGuild() {
     if (!confirm(msg)) return;
     try {
         await _callGuildFn('leaveGuild', {});
+        const leaveMsg = isLeader && memberCount > 1
+            ? '길드장을 위임하고 탈퇴했습니다.'
+            : isLeader
+            ? '길드를 해산했습니다.'
+            : '길드를 탈퇴했습니다.';
         myGuildId = null; _guildData = null;
+        showGemToast(0, leaveMsg);
         _renderGuildScreen();
     } catch (e) {
         showGemToast(0, e.message || '탈퇴 실패', true);
@@ -14674,6 +14684,14 @@ initBgm();          // 4. BGM 초기화 (홈 화면 배경음악)
 updateKingsStepBtn(); // 5. 왕의 길 단계 버튼 상태 초기화
 _checkFirstDailyWeeklyStudy(); // 6. 오늘 첫 접속 시 주간 학습 시간 표시
 setTimeout(() => { if (typeof checkFriendEvents === 'function') checkFriendEvents(); }, 2000); // 7. 친구 이벤트 처리
+setTimeout(async () => { // 8. 길드 ID 로드 (레이드 대미지 누적용)
+    if (db && myTag && myTag !== '0000') {
+        try {
+            const doc = await db.collection('leaderboard').doc(myTag).get();
+            myGuildId = doc.exists ? (doc.data().guildId || null) : null;
+        } catch (e) {}
+    }
+}, 3000);
 
 /* =========================================
    [시스템: 텍스트 파일 백업 및 불러오기 (.txt)]
