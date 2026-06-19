@@ -320,6 +320,7 @@ exports.inviteToGuild = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     if (!guildDoc.exists) throw new HttpsError('not-found', '길드를 찾을 수 없습니다.');
 
     const guild = guildDoc.data();
+    if (guild.leaderId !== myTag) throw new HttpsError('permission-denied', '길드장만 초대할 수 있습니다.');
     const maxMembers = GUILD_MAX_MEMBERS[guild.level] || 5;
     if (guild.members.length >= maxMembers)
         throw new HttpsError('resource-exhausted', '길드 인원이 가득 찼습니다.');
