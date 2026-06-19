@@ -441,7 +441,7 @@ exports.guildAttend = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     batch.update(guildRef, { level, xp });
     batch.update(db.collection('leaderboard').doc(String(myTag)), { lastGuildAttend: today });
     await batch.commit();
-    return { ok: true, alreadyDone: false, xpGained: GUILD_ATTEND_XP, levelUp, newLevel: level };
+    return { ok: true, alreadyDone: false, xpGained: GUILD_ATTEND_XP, levelUp, newLevel: level, newXp: xp };
 });
 
 // ── 일일 보석 기부 ─────────────────────────────────────────────────────────────
@@ -468,7 +468,7 @@ exports.guildDonate = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     batch.update(guildRef, { level, xp });
     batch.update(db.collection('leaderboard').doc(String(myTag)), { guildDonateInfo: { date: today, count: newCount } });
     await batch.commit();
-    return { ok: true, alreadyDone: false, xpGained: GUILD_DONATE_XP, levelUp, newLevel: level, todayCount: newCount, guildXp: xp, guildLevel: level };
+    return { ok: true, alreadyDone: false, xpGained: GUILD_DONATE_XP, levelUp, newLevel: level, newXp: xp, todayCount: newCount };
 });
 
 // ── 레이드 보상 수령 ───────────────────────────────────────────────────────────

@@ -1704,6 +1704,7 @@ let inventory = {
 // [길드]
 let myGuildId = null;
 let _guildData = null;
+let _myGuildStatus = {};
 
 // [BGM]
 let bgmAudio = null;
@@ -12761,12 +12762,12 @@ async function _renderGuildScreen() {
         const todayStr = new Date().toISOString().slice(0, 10);
         const donateInfo = myLbData.guildDonateInfo || { date: '', count: 0 };
         const donateCountToday = donateInfo.date === todayStr ? donateInfo.count : 0;
-        const myGuildStatus = {
+        _myGuildStatus = {
             pendingReward: myLbData.pendingRaidReward || null,
             attendedToday: myLbData.lastGuildAttend === todayStr,
             donateCountToday,
         };
-        _renderGuildHome(body, _guildData, myGuildStatus);
+        _renderGuildHome(body, _guildData, _myGuildStatus);
     } catch (e) {
         body.innerHTML = `<div class="guild-error">오류가 발생했습니다.<br>${e.message || ''}</div>`;
     }
@@ -13029,13 +13030,18 @@ async function _leaveGuild() {
 }
 
 async function _guildAttend() {
+    const btn = document.querySelector('#guild-screen-body .guild-btn-secondary');
+    if (btn) btn.disabled = true;
     try {
         const res = await _callGuildFn('guildAttend', {});
-        if (res.alreadyDone) { showGemToast(0, '오늘 이미 출석했습니다.', true); return; }
+        if (res.alreadyDone) { showGemToast(0, '오늘 이미 출석했습니다.', true); if (btn) btn.disabled = false; return; }
         if (res.levelUp) showGemToast(0, `길드 레벨 업! Lv.${res.newLevel} 🎉`);
         else showGemToast(0, `출석 완료! 길드 경험치 +${res.xpGained} XP`);
-        _renderGuildScreen();
-    } catch (e) { showGemToast(0, e.message || '출석 실패', true); }
+        _myGuildStatus.attendedToday = true;
+        if (_guildData) { _guildData.xp = res.newXp; _guildData.level = res.newLevel; }
+        const body = document.getElementById('guild-screen-body');
+        if (body) _renderGuildHome(body, _guildData, _myGuildStatus);
+    } catch (e) { showGemToast(0, e.message || '출석 실패', true); if (btn) btn.disabled = false; }
 }
 
 function _guildDonate() {
@@ -13048,7 +13054,10 @@ function _guildDonate() {
             saveGameData();
             if (res.levelUp) showGemToast(0, `길드 레벨 업! Lv.${res.newLevel} 🎉`);
             else showGemToast(0, `기부 완료! 길드 경험치 +1 XP`);
-            _renderGuildScreen();
+            _myGuildStatus.donateCountToday = res.todayCount;
+            if (_guildData) { _guildData.xp = res.newXp; _guildData.level = res.newLevel; }
+            const body = document.getElementById('guild-screen-body');
+            if (body) _renderGuildHome(body, _guildData, _myGuildStatus);
         } catch (e) { showGemToast(0, e.message || '기부 실패', true); }
     });
 }
