@@ -102,11 +102,13 @@ async function generateUniqueGuildCode() {
 }
 
 async function verifyTag(uid, tag) {
-    const doc = await db.collection('leaderboard').doc(String(tag)).get();
-    if (!doc.exists || doc.data().playerId !== uid) {
+    const saveDoc = await db.collection('saves').doc(uid).get();
+    if (!saveDoc.exists || String(saveDoc.data().tag) !== String(tag)) {
         throw new HttpsError('permission-denied', '태그가 인증 정보와 일치하지 않습니다.');
     }
-    return doc.data();
+    // leaderboard 문서에서 guildId, friends 등 부가 데이터 병합
+    const lbDoc = await db.collection('leaderboard').doc(String(tag)).get();
+    return { ...saveDoc.data(), ...(lbDoc.exists ? lbDoc.data() : {}) };
 }
 
 exports.createGuild = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
