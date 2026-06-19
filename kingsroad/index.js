@@ -339,7 +339,9 @@ exports.inviteToGuild = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
         })
     });
     batch.update(db.collection('leaderboard').doc(String(friendTag)), {
-        pendingInvite: { guildId: userData.guildId, guildName: guild.name, invitedBy: myTag, sentAt }
+        pendingInvites: admin.firestore.FieldValue.arrayUnion(
+            { guildId: userData.guildId, guildName: guild.name, invitedBy: myTag, sentAt }
+        )
     });
     await batch.commit();
     return { ok: true };
@@ -347,21 +349,23 @@ exports.inviteToGuild = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
 
 exports.respondInvite = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
-    const { accept, myTag } = request.data;
+    const { accept, guildId, myTag } = request.data;
+    if (!guildId) throw new HttpsError('invalid-argument', 'guildId가 필요합니다.');
 
     const userData = await verifyTag(request.auth.uid, myTag);
     if (userData.guildId) throw new HttpsError('already-exists', '이미 길드에 가입되어 있습니다.');
 
-    const invite = userData.pendingInvite;
-    if (!invite || !invite.guildId) throw new HttpsError('not-found', '대기 중인 초대가 없습니다.');
+    const invites = userData.pendingInvites || [];
+    const invite = invites.find(i => i.guildId === guildId);
+    if (!invite) throw new HttpsError('not-found', '해당 초대를 찾을 수 없습니다.');
 
-    const guildRef = db.collection('guilds').doc(invite.guildId);
+    const guildRef = db.collection('guilds').doc(guildId);
     const lbRef = db.collection('leaderboard').doc(String(myTag));
     const guildDoc = await guildRef.get();
 
+    const newInvites = invites.filter(i => i.guildId !== guildId);
     const batch = db.batch();
-    // 항상 leaderboard에서 pendingInvite 제거
-    batch.update(lbRef, { pendingInvite: admin.firestore.FieldValue.delete() });
+    batch.update(lbRef, { pendingInvites: newInvites });
 
     if (!guildDoc.exists) {
         await batch.commit();
@@ -376,16 +380,17 @@ exports.respondInvite = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
         const maxMembers = GUILD_MAX_MEMBERS[guild.level] || 5;
         if (guild.members.length >= maxMembers)
             throw new HttpsError('resource-exhausted', '길드 인원이 가득 찼습니다.');
+        // 수락 시 다른 모든 초대도 일괄 제거
+        batch.update(lbRef, { pendingInvites: [], guildId });
         batch.update(guildRef, {
             pendingRequests: newPending,
             members: admin.firestore.FieldValue.arrayUnion(myTag),
             [`memberNicknames.${myTag}`]: userData.nickname || '순례자'
         });
-        batch.update(lbRef, { guildId: invite.guildId });
     }
 
     await batch.commit();
-    return { ok: true, guildName: guild.name, guildId: accept ? invite.guildId : null };
+    return { ok: true, guildName: guild.name, guildId: accept ? guildId : null };
 });
 
 exports.reportRaidDamage = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
