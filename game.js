@@ -1685,6 +1685,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // [시스템: 경제 및 인벤토리]
 let myGems = 0;           // 현재 보유 보석
+let myDragonScales = 0;   // 용 비늘 (레이드 재화)
+let myDragonClaws = 0;    // 용 발톱 (레이드 특별 재화)
 let myNickname = "순례자";
 let myTag = "";
 let myPlayerId = "";
@@ -1851,6 +1853,8 @@ loadGameData = function () {
         myCastleLevel = parsed.level || 0;
         preloadCastleImage(myCastleLevel);
         myGems = parsed.gems || 0;
+        myDragonScales = parsed.dragonScales || 0;
+        myDragonClaws = parsed.dragonClaws || 0;
         inventory = parsed.inv || { lifeBread: 0, faithShield: 0 };
         if (inventory) {
             if (typeof inventory.lifeBread === 'undefined' && typeof inventory.potion !== 'undefined') {
@@ -7972,6 +7976,8 @@ function saveGameData() {
         version: GAME_VERSION, // ★ [정식 배포] 버전 정보 추가
         level: myCastleLevel,
         gems: myGems,
+        dragonScales: myDragonScales,
+        dragonClaws: myDragonClaws,
         maxHearts: purchasedMaxHearts, // 순수 체력만 저장
 
         // ★ 닉네임 / 지파 정보 추가
@@ -12732,10 +12738,11 @@ async function _renderGuildScreen() {
     try {
         if (!db || !myTag) { body.innerHTML = '<div class="guild-error">서버 연결이 필요합니다.</div>'; return; }
 
-        // 내 길드 ID 확인
+        // 내 길드 ID + 개인 상태 확인
         const prevGuildId = myGuildId;
         const myDoc = await db.collection('leaderboard').doc(myTag).get();
-        myGuildId = myDoc.exists ? (myDoc.data().guildId || null) : null;
+        const myLbData = myDoc.exists ? myDoc.data() : {};
+        myGuildId = myLbData.guildId || null;
 
         if (!myGuildId) {
             if (prevGuildId) showGemToast(0, '길드에서 추방되었거나 길드가 해산되었습니다.', true);
@@ -12751,7 +12758,13 @@ async function _renderGuildScreen() {
             return;
         }
         _guildData = { id: myGuildId, ...guildDoc.data() };
-        _renderGuildHome(body, _guildData);
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const myGuildStatus = {
+            pendingReward: myLbData.pendingRaidReward || null,
+            attendedToday: myLbData.lastGuildAttend === todayStr,
+            donatedToday: myLbData.lastGuildDonate === todayStr,
+        };
+        _renderGuildHome(body, _guildData, myGuildStatus);
     } catch (e) {
         body.innerHTML = `<div class="guild-error">오류가 발생했습니다.<br>${e.message || ''}</div>`;
     }
@@ -12775,17 +12788,37 @@ function _renderGuildNoGuild(body) {
         </div>`;
 }
 
-function _renderGuildHome(body, guild) {
+function _renderGuildHome(body, guild, myStatus = {}) {
     const isLeader = guild.leaderId === myTag;
     const maxMembers = [0, 5, 10, 15, 20, 25][guild.level] || 5;
     const levelXpNeeded = [0, 300, 1000, 3000, 8000][guild.level] || 9999;
     const xpPct = guild.level >= 5 ? 100 : Math.min(100, Math.round((guild.xp / levelXpNeeded) * 100));
+    const dragonLevel = guild.raidCurrentDragonLevel || guild.raidDragonLevel || 1;
+    const clearedCount = guild.raidClearedCount || 0;
     const dragonPct = guild.raidDragonMaxHp > 0
         ? Math.max(0, Math.round((guild.raidDragonCurrentHp / guild.raidDragonMaxHp) * 100))
         : 0;
+    const hpDealtPct = 100 - dragonPct;
 
     const pendingReqs = guild.pendingRequests || [];
     const nicknames = guild.memberNicknames || {};
+
+    // 보상 수령 버튼
+    const pr = myStatus.pendingReward;
+    const rewardHtml = pr ? `
+        <div class="guild-section-title">🎁 보상 수령 가능</div>
+        <div class="guild-reward-row">
+            <span>🐉 용 발톱 ×${pr.claws} &nbsp; 🪨 용 비늘 ×${pr.scales}</span>
+            <button class="guild-btn-primary" onclick="_claimRaidReward()">수령</button>
+        </div>` : '';
+
+    // 일일 활동 버튼
+    const attendBtn = myStatus.attendedToday
+        ? `<button class="guild-btn-secondary" disabled>출석 완료 ✓</button>`
+        : `<button class="guild-btn-secondary" onclick="_guildAttend()">출석 체크 (+10 XP)</button>`;
+    const donateBtn = myStatus.donatedToday
+        ? `<button class="guild-btn-secondary" disabled>기부 완료 ✓</button>`
+        : `<button class="guild-btn-secondary" onclick="_guildDonate()">💎 10개 기부 (+50 XP)</button>`;
 
     let html = `
         <div class="guild-home-header">
@@ -12797,10 +12830,18 @@ function _renderGuildHome(body, guild) {
             <div class="guild-xp-bar"><div class="guild-xp-fill" style="width:${xpPct}%"></div></div>
         </div>
 
-        <div class="guild-section-title">🐉 레이드 · Lv.${guild.raidDragonLevel} 용</div>
+        ${rewardHtml}
+
+        <div class="guild-section-title">🐉 레이드 · Lv.${dragonLevel} 용 &nbsp;<span style="font-weight:400;font-size:12px;color:#a080c0;">이번 주 ${clearedCount}마리 처치</span></div>
         <div class="guild-raid-hp-wrap">
-            <div class="guild-raid-hp-label">${guild.raidDragonCurrentHp.toLocaleString()} / ${guild.raidDragonMaxHp.toLocaleString()} HP (${dragonPct}%)</div>
+            <div class="guild-raid-hp-label">${guild.raidDragonCurrentHp.toLocaleString()} / ${guild.raidDragonMaxHp.toLocaleString()} HP (${hpDealtPct}% 피해)</div>
             <div class="guild-raid-hp-bar"><div class="guild-raid-hp-fill" style="width:${dragonPct}%"></div></div>
+        </div>
+
+        <div class="guild-section-title" style="margin-top:14px;">📅 일일 활동</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;padding:0 4px;">
+            ${attendBtn}
+            ${donateBtn}
         </div>`;
 
     // 기여도 상위 표시
@@ -12981,6 +13022,41 @@ async function _leaveGuild() {
             showGemToast(0, e.message || '탈퇴 실패', true);
         }
     });
+}
+
+async function _guildAttend() {
+    try {
+        const res = await _callGuildFn('guildAttend', {});
+        if (res.alreadyDone) { showGemToast(0, '오늘 이미 출석했습니다.', true); return; }
+        if (res.levelUp) showGemToast(0, `길드 레벨 업! Lv.${res.newLevel} 🎉`);
+        else showGemToast(0, `출석 완료! 길드 +${res.xpGained} XP`);
+        _renderGuildScreen();
+    } catch (e) { showGemToast(0, e.message || '출석 실패', true); }
+}
+
+async function _guildDonate() {
+    if (myGems < 10) { showGemToast(0, '보석이 부족합니다. (필요: 💎10)', true); return; }
+    try {
+        const res = await _callGuildFn('guildDonate', { gems: 10 });
+        if (res.alreadyDone) { showGemToast(0, '오늘 이미 기부했습니다.', true); return; }
+        myGems -= 10;
+        saveGameData();
+        if (res.levelUp) showGemToast(0, `길드 레벨 업! Lv.${res.newLevel} 🎉`);
+        else showGemToast(0, `💎 10개 기부 완료! 길드 +${res.xpGained} XP`);
+        _renderGuildScreen();
+    } catch (e) { showGemToast(0, e.message || '기부 실패', true); }
+}
+
+async function _claimRaidReward() {
+    try {
+        const res = await _callGuildFn('claimRaidReward', {});
+        if (!res.ok || (!res.claws && !res.scales)) { showGemToast(0, '수령할 보상이 없습니다.', true); return; }
+        myDragonClaws += res.claws || 0;
+        myDragonScales += res.scales || 0;
+        saveGameData();
+        showGemToast(0, `보상 수령 완료! 🐉 용 발톱 +${res.claws} · 🪨 용 비늘 +${res.scales}`);
+        _renderGuildScreen();
+    } catch (e) { showGemToast(0, e.message || '수령 실패', true); }
 }
 
 async function _loadGuildInviteList() {

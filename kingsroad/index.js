@@ -1,4 +1,5 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const admin = require("firebase-admin");
 
@@ -353,19 +354,182 @@ exports.reportRaidDamage = onCall({ cors: ALLOWED_ORIGINS }, async (request) => 
         const guild = doc.data();
 
         const currentWeekId = getWeekId();
-        const contributions = guild.raidWeekId === currentWeekId
-            ? (guild.raidContributions || {})
-            : {};
+        const isNewWeek = guild.raidWeekId !== currentWeekId;
+
+        // 새 주차 시작 시 초기화
+        const contributions = isNewWeek ? {} : (guild.raidContributions || {});
+        const clearedCount = isNewWeek ? 0 : (guild.raidClearedCount || 0);
+        const currentLevel = isNewWeek ? 1 : (guild.raidCurrentDragonLevel || guild.raidDragonLevel || 1);
+        const currentHp = isNewWeek ? calcDragonMaxHp(1) : (guild.raidDragonCurrentHp || calcDragonMaxHp(currentLevel));
+        const currentMaxHp = isNewWeek ? calcDragonMaxHp(1) : (guild.raidDragonMaxHp || calcDragonMaxHp(currentLevel));
+
         const newContribs = { ...contributions };
         newContribs[myTag] = (newContribs[myTag] || 0) + damage;
 
-        const newHp = Math.max(0, (guild.raidDragonCurrentHp || 0) - damage);
-        tx.update(guildRef, {
-            raidContributions: newContribs,
-            raidDragonCurrentHp: newHp,
-            raidStatus: newHp <= 0 ? 'cleared' : 'active',
-            raidWeekId: currentWeekId
-        });
+        const newHp = Math.max(0, currentHp - damage);
+
+        if (newHp <= 0) {
+            // 용 처치 → 다음 레벨 등장
+            const newClearedCount = clearedCount + 1;
+            const nextLevel = currentLevel + 1;
+            const nextMaxHp = calcDragonMaxHp(nextLevel);
+            tx.update(guildRef, {
+                raidContributions: newContribs,
+                raidCurrentDragonLevel: nextLevel,
+                raidDragonMaxHp: nextMaxHp,
+                raidDragonCurrentHp: nextMaxHp,
+                raidClearedCount: newClearedCount,
+                raidStatus: 'active',
+                raidWeekId: currentWeekId,
+            });
+        } else {
+            tx.update(guildRef, {
+                raidContributions: newContribs,
+                raidCurrentDragonLevel: currentLevel,
+                raidDragonMaxHp: currentMaxHp,
+                raidDragonCurrentHp: newHp,
+                raidStatus: 'active',
+                raidWeekId: currentWeekId,
+            });
+        }
     });
     return { ok: true };
+});
+
+// ── 길드 XP 헬퍼 ──────────────────────────────────────────────────────────────
+const GUILD_ATTEND_XP = 10;
+const GUILD_DONATE_XP = 50;
+const GUILD_DONATE_GEMS = 10;
+const RAID_SCALES_BY_TIER = [0, 2, 4, 6, 10, 0]; // tier 0~4 (0%/20%/40%/60%/80%+)
+
+function calcGuildXpResult(currentLevel, currentXp, gained) {
+    const XP_TABLE = [0, 300, 1000, 3000, 8000];
+    let level = currentLevel;
+    let xp = currentXp + gained;
+    let levelUp = false;
+    while (level < 5 && xp >= XP_TABLE[level]) {
+        xp -= XP_TABLE[level];
+        level++;
+        levelUp = true;
+    }
+    if (level >= 5) xp = 0;
+    return { level, xp, levelUp };
+}
+
+function todayKst() {
+    const kst = new Date(Date.now() + 9 * 3600000);
+    return kst.toISOString().slice(0, 10);
+}
+
+// ── 일일 출석 체크 ─────────────────────────────────────────────────────────────
+exports.guildAttend = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { myTag } = request.data;
+    const userData = await verifyTag(request.auth.uid, myTag);
+    if (!userData.guildId) throw new HttpsError('not-found', '가입한 길드가 없습니다.');
+
+    const today = todayKst();
+    if (userData.lastGuildAttend === today) return { ok: true, alreadyDone: true };
+
+    const guildRef = db.collection('guilds').doc(userData.guildId);
+    const guildDoc = await guildRef.get();
+    if (!guildDoc.exists) throw new HttpsError('not-found', '길드를 찾을 수 없습니다.');
+
+    const { level, xp, levelUp } = calcGuildXpResult(guildDoc.data().level, guildDoc.data().xp, GUILD_ATTEND_XP);
+    const batch = db.batch();
+    batch.update(guildRef, { level, xp });
+    batch.update(db.collection('leaderboard').doc(String(myTag)), { lastGuildAttend: today });
+    await batch.commit();
+    return { ok: true, alreadyDone: false, xpGained: GUILD_ATTEND_XP, levelUp, newLevel: level };
+});
+
+// ── 일일 보석 기부 ─────────────────────────────────────────────────────────────
+exports.guildDonate = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { myTag, gems } = request.data;
+    if (gems !== GUILD_DONATE_GEMS) throw new HttpsError('invalid-argument', '기부 금액이 올바르지 않습니다.');
+
+    const userData = await verifyTag(request.auth.uid, myTag);
+    if (!userData.guildId) throw new HttpsError('not-found', '가입한 길드가 없습니다.');
+
+    const today = todayKst();
+    if (userData.lastGuildDonate === today) return { ok: true, alreadyDone: true };
+
+    const guildRef = db.collection('guilds').doc(userData.guildId);
+    const guildDoc = await guildRef.get();
+    if (!guildDoc.exists) throw new HttpsError('not-found', '길드를 찾을 수 없습니다.');
+
+    const { level, xp, levelUp } = calcGuildXpResult(guildDoc.data().level, guildDoc.data().xp, GUILD_DONATE_XP);
+    const batch = db.batch();
+    batch.update(guildRef, { level, xp });
+    batch.update(db.collection('leaderboard').doc(String(myTag)), { lastGuildDonate: today });
+    await batch.commit();
+    return { ok: true, alreadyDone: false, xpGained: GUILD_DONATE_XP, levelUp, newLevel: level };
+});
+
+// ── 레이드 보상 수령 ───────────────────────────────────────────────────────────
+exports.claimRaidReward = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { myTag } = request.data;
+    await verifyTag(request.auth.uid, myTag);
+
+    const lbRef = db.collection('leaderboard').doc(String(myTag));
+    const lbDoc = await lbRef.get();
+    const reward = lbDoc.exists ? lbDoc.data().pendingRaidReward : null;
+    if (!reward) return { ok: false };
+
+    await lbRef.update({ pendingRaidReward: admin.firestore.FieldValue.delete() });
+    return { ok: true, claws: reward.claws || 0, scales: reward.scales || 0 };
+});
+
+// ── 주간 레이드 리셋 (매주 월요일 00:00 KST) ──────────────────────────────────
+exports.weeklyRaidReset = onSchedule({
+    schedule: '0 0 * * 1',
+    timeZone: 'Asia/Seoul',
+    region: 'asia-northeast3',
+}, async () => {
+    const currentWeekId = getWeekId();
+    const guildsSnap = await db.collection('guilds').get();
+
+    for (const guildDoc of guildsSnap.docs) {
+        const guild = guildDoc.data();
+        if (guild.raidWeekId === currentWeekId) continue;
+
+        const clearedCount = guild.raidClearedCount || 0;
+        const maxHp = guild.raidDragonMaxHp || calcDragonMaxHp(guild.raidCurrentDragonLevel || 1);
+        const currentHp = guild.raidDragonCurrentHp || maxHp;
+        const hpDealtPct = maxHp > 0 ? Math.round(((maxHp - currentHp) / maxHp) * 100) : 0;
+
+        let scalesTier = 0;
+        if (hpDealtPct >= 80) scalesTier = 4;
+        else if (hpDealtPct >= 60) scalesTier = 3;
+        else if (hpDealtPct >= 40) scalesTier = 2;
+        else if (hpDealtPct >= 20) scalesTier = 1;
+
+        const scales = RAID_SCALES_BY_TIER[scalesTier];
+        const claws = clearedCount;
+        const members = guild.members || [];
+        const batch = db.batch();
+
+        for (const tag of members) {
+            if (claws > 0 || scales > 0) {
+                batch.set(db.collection('leaderboard').doc(String(tag)), {
+                    pendingRaidReward: { weekId: guild.raidWeekId || '', claws, scales, scalesTier }
+                }, { merge: true });
+            }
+        }
+
+        batch.update(guildDoc.ref, {
+            raidCurrentDragonLevel: 1,
+            raidDragonMaxHp: calcDragonMaxHp(1),
+            raidDragonCurrentHp: calcDragonMaxHp(1),
+            raidClearedCount: 0,
+            raidContributions: {},
+            raidStatus: 'active',
+            raidWeekId: currentWeekId,
+        });
+
+        await batch.commit();
+        console.log(`[weeklyRaidReset] 길드 ${guildDoc.id}: claws=${claws} scales=${scales} tier=${scalesTier}`);
+    }
 });
