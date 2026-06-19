@@ -397,7 +397,7 @@ exports.reportRaidDamage = onCall({ cors: ALLOWED_ORIGINS }, async (request) => 
 });
 
 // ── 길드 XP 헬퍼 ──────────────────────────────────────────────────────────────
-const GUILD_ATTEND_XP = 10;
+const GUILD_ATTEND_XP = 5;
 const GUILD_DONATE_XP = 1;
 const GUILD_DONATE_GEMS = 100;
 const GUILD_DONATE_MAX_DAILY = 5;

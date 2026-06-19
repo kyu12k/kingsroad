@@ -12815,13 +12815,13 @@ function _renderGuildHome(body, guild, myStatus = {}) {
         </div>` : '';
 
     // 일일 활동 버튼
+    const donateLeft = 5 - (myStatus.donateCountToday || 0);
     const attendBtn = myStatus.attendedToday
         ? `<button class="guild-btn-secondary" disabled>출석 완료 ✓</button>`
-        : `<button class="guild-btn-secondary" onclick="_guildAttend()">출석 체크 (+10 XP)</button>`;
-    const donateLeft = 5 - (myStatus.donateCountToday || 0);
+        : `<button class="guild-btn-secondary" onclick="_guildAttend()">출석 체크</button>`;
     const donateBtn = donateLeft <= 0
         ? `<button class="guild-btn-secondary" disabled>기부 완료 (5/5) ✓</button>`
-        : `<button class="guild-btn-secondary" onclick="_guildDonate()">💎 100개 기부 (+1 XP) · ${5 - (myStatus.donateCountToday||0)}회 남음</button>`;
+        : `<button class="guild-btn-secondary" onclick="_guildDonate()">기부</button>`;
 
     let html = `
         <div class="guild-home-header">
@@ -12833,24 +12833,25 @@ function _renderGuildHome(body, guild, myStatus = {}) {
             <div class="guild-xp-bar"><div class="guild-xp-fill" style="width:${xpPct}%"></div></div>
         </div>
 
+        <div class="guild-section-title">📅 일일 활동</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;padding:0 4px;">
+            ${attendBtn}
+            ${donateBtn}
+        </div>
+
         ${rewardHtml}
 
         <div class="guild-section-title">🐉 레이드 · Lv.${dragonLevel} 용 &nbsp;<span style="font-weight:400;font-size:12px;color:#a080c0;">이번 주 ${clearedCount}마리 처치</span></div>
         <div class="guild-raid-hp-wrap">
             <div class="guild-raid-hp-label">${guild.raidDragonCurrentHp.toLocaleString()} / ${guild.raidDragonMaxHp.toLocaleString()} HP (${hpDealtPct}% 피해)</div>
             <div class="guild-raid-hp-bar"><div class="guild-raid-hp-fill" style="width:${dragonPct}%"></div></div>
-        </div>
-
-        <div class="guild-section-title" style="margin-top:14px;">📅 일일 활동</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;padding:0 4px;">
-            ${attendBtn}
-            ${donateBtn}
         </div>`;
 
     // 기여도 상위 표시
     const contribs = guild.raidContributions || {};
     const contribList = Object.entries(contribs).sort((a, b) => b[1] - a[1]);
     if (contribList.length > 0) {
+        html += `<div class="guild-section-title">⚔️ 레이드 기여도</div>`;
         html += `<div class="guild-contrib-wrap">`;
         contribList.slice(0, 5).forEach(([tag, dmg], i) => {
             const nick = nicknames[tag] || tag;
@@ -13032,26 +13033,24 @@ async function _guildAttend() {
         const res = await _callGuildFn('guildAttend', {});
         if (res.alreadyDone) { showGemToast(0, '오늘 이미 출석했습니다.', true); return; }
         if (res.levelUp) showGemToast(0, `길드 레벨 업! Lv.${res.newLevel} 🎉`);
-        else showGemToast(0, `출석 완료! 길드 +${res.xpGained} XP`);
+        else showGemToast(0, `출석 완료! 길드 경험치 +${res.xpGained} XP`);
         _renderGuildScreen();
     } catch (e) { showGemToast(0, e.message || '출석 실패', true); }
 }
 
-async function _guildDonate() {
+function _guildDonate() {
     if (myGems < 100) { showGemToast(0, '보석이 부족합니다. (필요: 💎100)', true); return; }
-    try {
-        const res = await _callGuildFn('guildDonate', { gems: 100 });
-        if (res.alreadyDone) { showGemToast(0, '오늘 기부 횟수를 모두 사용했습니다. (5/5)', true); return; }
-        myGems -= 100;
-        saveGameData();
-        if (res.levelUp) {
-            showGemToast(0, `길드 레벨 업! Lv.${res.newLevel} 🎉`);
-        } else {
-            const remaining = 5 - res.todayCount;
-            showGemToast(0, `💎 100개 기부 완료! 길드 XP +1 (오늘 ${remaining}회 남음)`);
-        }
-        _renderGuildScreen();
-    } catch (e) { showGemToast(0, e.message || '기부 실패', true); }
+    _guildConfirm('보석 100개를 기부하시겠습니까?', async () => {
+        try {
+            const res = await _callGuildFn('guildDonate', { gems: 100 });
+            if (res.alreadyDone) { showGemToast(0, '오늘 기부 횟수를 모두 사용했습니다. (5/5)', true); return; }
+            myGems -= 100;
+            saveGameData();
+            if (res.levelUp) showGemToast(0, `길드 레벨 업! Lv.${res.newLevel} 🎉`);
+            else showGemToast(0, `기부 완료! 길드 경험치 +1 XP`);
+            _renderGuildScreen();
+        } catch (e) { showGemToast(0, e.message || '기부 실패', true); }
+    });
 }
 
 async function _claimRaidReward() {
