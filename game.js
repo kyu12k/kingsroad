@@ -20112,7 +20112,7 @@ function submitHardshipMemoryGuess() {
         }));
         if (earnedPoints > 0) awardHardshipScore(earnedPoints);
         hardshipState.studiedCount += 1;
-        hardshipState.wrongSlots = [];
+        // wrongSlots 유지 → 오타 위치를 빨간색으로 표시 (다음 구절로 넘어갈 때 초기화)
         const typoDetail = typoPairs.map(p => `<span class="typo-wrong">${p.typed || '?'}</span>→<span class="typo-answer">${p.answer}</span>`).join(' ');
         hardshipState.feedback = {
             type: 'success',

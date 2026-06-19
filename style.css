@@ -2401,9 +2401,9 @@ body, html {
 }
 
 .hardship-char-slot.hint-revealed {
-    color: #d35400;
-    border-bottom-color: #f39c12;
-    background: rgba(241, 196, 15, 0.14);
+    color: #27ae60;
+    border-bottom-color: #2ecc71;
+    background: rgba(46, 204, 113, 0.14);
     border-radius: 8px 8px 0 0;
 }
 
