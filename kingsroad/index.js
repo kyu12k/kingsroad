@@ -79,6 +79,18 @@ exports.saveGameDataSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
 
 // ── 길드 시스템 ────────────────────────────────────────────────────────────────
 
+function getWeekId() {
+    const now = new Date();
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const day = (d.getUTCDay() + 6) % 7;
+    d.setUTCDate(d.getUTCDate() - day + 3);
+    const firstThursday = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+    const firstDay = (firstThursday.getUTCDay() + 6) % 7;
+    firstThursday.setUTCDate(firstThursday.getUTCDate() - firstDay + 3);
+    const weekNumber = 1 + Math.round((d - firstThursday) / (7 * 24 * 60 * 60 * 1000));
+    return `${d.getUTCFullYear()}-W${String(weekNumber).padStart(2, '0')}`;
+}
+
 const GUILD_CODE_CHARS   = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const GUILD_LEVEL_XP     = [0, 300, 1000, 3000, 8000]; // index=레벨, 값=다음 레벨 필요 XP
 const GUILD_MAX_MEMBERS  = [0, 5, 10, 15, 20, 25];    // index=레벨, 값=최대 인원
