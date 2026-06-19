@@ -1699,6 +1699,10 @@ let inventory = {
     faithShield: 0,  // 믿음의 방패 개수
 };
 
+// [길드]
+let myGuildId = null;
+let _guildData = null;
+
 // [BGM]
 let bgmAudio = null;
 let bgmEnabled = (localStorage.getItem('kingsRoadBgmOn') !== 'false'); // 기본값: 켜짐
@@ -2704,6 +2708,9 @@ function updateMissionProgress(type, extraData) {
     if (type === 'new') {
         missionData.weekly.stageClear++;
     }
+
+    // 6. 길드 레이드 대미지 누적
+    _addGuildRaidDamage(type, extraData);
 
     saveGameData();
     updateMissionUI();
@@ -12649,6 +12656,353 @@ document.addEventListener('click', function(e) {
     }
 });
 // ===== 더보기 팝업 메뉴 끝 =====
+
+// ===== 길드 시스템 =====
+
+const GUILD_RAID_DAMAGE = {
+    new:             15,  // 첫 학습
+    checkpointBoss:  20,  // 중간점검
+    dragon:          30,  // 보스전
+    hardshipAddress: 20,
+    hardshipVerse:   40,  // 구절(Lv.2): 20×2
+    hardshipEndurance: 60, // 암송(Lv.3): 20×3
+    hardshipMemory:  80,  // 망각(Lv.4): 20×4
+    review:          10,  // 복습
+};
+
+let _guildRaidPendingDmg = 0;
+let _guildRaidFlushTimer = null;
+
+function _addGuildRaidDamage(type, extraData) {
+    if (!myGuildId) return;
+    const dmg = GUILD_RAID_DAMAGE[type];
+    if (!dmg) return;
+    _guildRaidPendingDmg += dmg;
+    if (_guildRaidFlushTimer) clearTimeout(_guildRaidFlushTimer);
+    _guildRaidFlushTimer = setTimeout(_flushGuildRaidDamage, 5000);
+}
+
+async function _flushGuildRaidDamage() {
+    _guildRaidFlushTimer = null;
+    if (!myGuildId || _guildRaidPendingDmg <= 0) return;
+    if (!db || !myTag) return;
+    const dmg = _guildRaidPendingDmg;
+    _guildRaidPendingDmg = 0;
+    try {
+        const guildRef = db.collection('guilds').doc(myGuildId);
+        await db.runTransaction(async tx => {
+            const doc = await tx.get(guildRef);
+            if (!doc.exists) { myGuildId = null; return; }
+            const guild = doc.data();
+            const weekId = _getGuildWeekId();
+            const contributions = guild.raidContributions || {};
+            // 주차 리셋 감지
+            const newContribs = guild.raidWeekId !== weekId ? {} : { ...contributions };
+            newContribs[myTag] = (newContribs[myTag] || 0) + dmg;
+            const newHp = Math.max(0, (guild.raidDragonCurrentHp || 0) - dmg);
+            const cleared = newHp <= 0;
+            tx.update(guildRef, {
+                raidContributions: newContribs,
+                raidDragonCurrentHp: newHp,
+                raidStatus: cleared ? 'cleared' : 'active',
+                raidWeekId: weekId
+            });
+        });
+    } catch (e) {
+        _guildRaidPendingDmg += dmg; // 실패 시 복구
+    }
+}
+
+function _getGuildWeekId() {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    const day = (d.getDay() + 6) % 7;
+    d.setDate(d.getDate() - day + 3);
+    const firstThursday = new Date(d.getFullYear(), 0, 4);
+    const firstDay = (firstThursday.getDay() + 6) % 7;
+    firstThursday.setDate(firstThursday.getDate() - firstDay + 3);
+    const weekNumber = 1 + Math.round((d - firstThursday) / (7 * 24 * 60 * 60 * 1000));
+    return `${d.getFullYear()}-W${String(weekNumber).padStart(2, '0')}`;
+}
+
+async function _callGuildFn(fnName, data) {
+    const fn = firebase.app().functions('asia-northeast3').httpsCallable(fnName);
+    const res = await fn({ ...data, myTag });
+    return res.data;
+}
+
+function openGuildScreen() {
+    closeMoreMenu();
+    if (!myTag || myTag === '0000') { showGemToast(0, '닉네임을 먼저 설정해주세요.', true); return; }
+    let overlay = document.getElementById('guild-screen-overlay');
+    if (overlay) { overlay.style.display = 'flex'; _renderGuildScreen(); return; }
+
+    overlay = document.createElement('div');
+    overlay.id = 'guild-screen-overlay';
+    overlay.innerHTML = `
+        <div class="guild-screen-card">
+            <div class="guild-screen-header">
+                <span class="guild-screen-title">⚔️ 길드</span>
+                <button class="guild-screen-close" onclick="closeGuildScreen()">✕</button>
+            </div>
+            <div id="guild-screen-body" class="guild-screen-body"></div>
+        </div>`;
+    document.body.appendChild(overlay);
+    _renderGuildScreen();
+}
+
+function closeGuildScreen() {
+    const overlay = document.getElementById('guild-screen-overlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+async function _renderGuildScreen() {
+    const body = document.getElementById('guild-screen-body');
+    if (!body) return;
+    body.innerHTML = '<div class="guild-loading">불러오는 중…</div>';
+
+    try {
+        if (!db || !myTag) { body.innerHTML = '<div class="guild-error">서버 연결이 필요합니다.</div>'; return; }
+
+        // 내 길드 ID 확인
+        const myDoc = await db.collection('leaderboard').doc(myTag).get();
+        myGuildId = myDoc.exists ? (myDoc.data().guildId || null) : null;
+
+        if (!myGuildId) {
+            _renderGuildNoGuild(body);
+            return;
+        }
+
+        const guildDoc = await db.collection('guilds').doc(myGuildId).get();
+        if (!guildDoc.exists) {
+            myGuildId = null;
+            _renderGuildNoGuild(body);
+            return;
+        }
+        _guildData = { id: myGuildId, ...guildDoc.data() };
+        _renderGuildHome(body, _guildData);
+    } catch (e) {
+        body.innerHTML = `<div class="guild-error">오류가 발생했습니다.<br>${e.message || ''}</div>`;
+    }
+}
+
+function _renderGuildNoGuild(body) {
+    body.innerHTML = `
+        <div class="guild-no-guild">
+            <div class="guild-no-guild-icon">⚔️</div>
+            <div class="guild-no-guild-msg">소속된 길드가 없습니다.</div>
+        </div>
+        <div class="guild-section-title">길드 만들기</div>
+        <div class="guild-create-wrap">
+            <input id="guild-name-input" class="guild-input" type="text" maxlength="12" placeholder="길드 이름 (2~12자)">
+            <button class="guild-btn-primary" onclick="_submitCreateGuild()">만들기</button>
+        </div>
+        <div class="guild-section-title" style="margin-top:18px;">코드로 가입 신청</div>
+        <div class="guild-create-wrap">
+            <input id="guild-code-input" class="guild-input" type="text" maxlength="6" placeholder="가입 코드 6자리" style="text-transform:uppercase;">
+            <button class="guild-btn-secondary" onclick="_submitJoinGuild()">신청</button>
+        </div>`;
+}
+
+function _renderGuildHome(body, guild) {
+    const isLeader = guild.leaderId === myTag;
+    const maxMembers = [0, 5, 10, 15, 20, 25][guild.level] || 5;
+    const levelXpNeeded = [0, 300, 1000, 3000, 8000][guild.level] || 9999;
+    const xpPct = guild.level >= 5 ? 100 : Math.min(100, Math.round((guild.xp / levelXpNeeded) * 100));
+    const dragonPct = guild.raidDragonMaxHp > 0
+        ? Math.max(0, Math.round((guild.raidDragonCurrentHp / guild.raidDragonMaxHp) * 100))
+        : 0;
+
+    const pendingReqs = guild.pendingRequests || [];
+    const nicknames = guild.memberNicknames || {};
+
+    let html = `
+        <div class="guild-home-header">
+            <div class="guild-home-name">${guild.name}</div>
+            <div class="guild-home-meta">Lv.${guild.level} · ${guild.members.length}/${maxMembers}명 · 코드: <strong>${guild.code}</strong></div>
+        </div>
+        <div class="guild-xp-wrap">
+            <div class="guild-xp-label">${guild.level >= 5 ? 'MAX' : `${guild.xp} / ${levelXpNeeded} XP`}</div>
+            <div class="guild-xp-bar"><div class="guild-xp-fill" style="width:${xpPct}%"></div></div>
+        </div>
+
+        <div class="guild-section-title">🐉 레이드 · Lv.${guild.raidDragonLevel} 용</div>
+        <div class="guild-raid-hp-wrap">
+            <div class="guild-raid-hp-label">${guild.raidDragonCurrentHp.toLocaleString()} / ${guild.raidDragonMaxHp.toLocaleString()} HP (${dragonPct}%)</div>
+            <div class="guild-raid-hp-bar"><div class="guild-raid-hp-fill" style="width:${dragonPct}%"></div></div>
+        </div>`;
+
+    // 기여도 상위 표시
+    const contribs = guild.raidContributions || {};
+    const contribList = Object.entries(contribs).sort((a, b) => b[1] - a[1]);
+    if (contribList.length > 0) {
+        html += `<div class="guild-contrib-wrap">`;
+        contribList.slice(0, 5).forEach(([tag, dmg], i) => {
+            const nick = nicknames[tag] || tag;
+            html += `<div class="guild-contrib-row">
+                <span class="guild-contrib-rank">${i + 1}</span>
+                <span class="guild-contrib-name">${nick}<span class="guild-contrib-tag"> #${tag}</span></span>
+                <span class="guild-contrib-dmg">${dmg.toLocaleString()} dmg</span>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+
+    // 멤버 목록
+    html += `<div class="guild-section-title">👤 멤버 (${guild.members.length}/${maxMembers})</div>`;
+    html += `<div class="guild-member-list">`;
+    guild.members.forEach(tag => {
+        const nick = nicknames[tag] || tag;
+        const isThisLeader = tag === guild.leaderId;
+        html += `<div class="guild-member-row">
+            <span class="guild-member-name">${nick}<span class="guild-member-tag"> #${tag}</span>${isThisLeader ? ' <span class="guild-leader-badge">길드장</span>' : ''}</span>
+            ${isLeader && tag !== myTag
+                ? `<button class="guild-btn-kick" onclick="_kickGuildMember('${tag}')">추방</button>`
+                : ''}
+        </div>`;
+    });
+    html += `</div>`;
+
+    // 길드장: 가입 신청 목록
+    if (isLeader && pendingReqs.length > 0) {
+        html += `<div class="guild-section-title">📬 가입 신청 (${pendingReqs.length})</div>`;
+        pendingReqs.forEach(r => {
+            const elapsed = Math.floor((Date.now() - r.sentAt) / 3600000);
+            const timeStr = elapsed < 1 ? '방금' : `${elapsed}시간 전`;
+            const invitedLabel = r.invitedBy ? ` · 초대됨` : '';
+            html += `<div class="guild-request-row">
+                <div class="guild-request-info">
+                    <span class="guild-request-name">${r.nickname || '순례자'}</span>
+                    <span class="guild-request-meta">#${r.tag} · ${timeStr}${invitedLabel}</span>
+                </div>
+                <div class="guild-request-btns">
+                    <button class="guild-btn-accept" onclick="_respondGuildRequest('${r.tag}', true)">수락</button>
+                    <button class="guild-btn-reject" onclick="_respondGuildRequest('${r.tag}', false)">거절</button>
+                </div>
+            </div>`;
+        });
+    }
+
+    // 친구 초대 (길드원이 아닌 친구 목록)
+    html += `<div class="guild-section-title" style="margin-top:18px;">친구 초대</div>`;
+    html += `<div id="guild-invite-area"><button class="guild-btn-secondary" onclick="_loadGuildInviteList()">친구 목록 보기</button></div>`;
+
+    html += `<div style="margin-top:24px; text-align:center;">
+        <button class="guild-btn-leave" onclick="_leaveGuild()">${isLeader && guild.members.length <= 1 ? '길드 해산' : isLeader ? '길드장 위임 후 탈퇴' : '길드 탈퇴'}</button>
+    </div>`;
+
+    body.innerHTML = html;
+}
+
+async function _submitCreateGuild() {
+    const input = document.getElementById('guild-name-input');
+    if (!input) return;
+    const name = input.value.trim();
+    if (name.length < 2) { showGemToast(0, '길드 이름을 2자 이상 입력해주세요.', true); return; }
+    input.disabled = true;
+    try {
+        const res = await _callGuildFn('createGuild', { name });
+        if (res.ok) { showGemToast(0, `길드 "${name}" 생성 완료! 코드: ${res.code}`); _renderGuildScreen(); }
+    } catch (e) {
+        showGemToast(0, e.message || '길드 생성에 실패했습니다.', true);
+        input.disabled = false;
+    }
+}
+
+async function _submitJoinGuild() {
+    const input = document.getElementById('guild-code-input');
+    if (!input) return;
+    const code = input.value.trim().toUpperCase();
+    if (code.length !== 6) { showGemToast(0, '코드는 6자리입니다.', true); return; }
+    input.disabled = true;
+    try {
+        const res = await _callGuildFn('joinGuildRequest', { code });
+        if (res.ok) { showGemToast(0, `"${res.guildName}" 가입 신청 완료! 길드장의 수락을 기다려주세요.`); }
+    } catch (e) {
+        showGemToast(0, e.message || '가입 신청에 실패했습니다.', true);
+        input.disabled = false;
+    }
+}
+
+async function _respondGuildRequest(targetTag, accept) {
+    try {
+        await _callGuildFn('respondJoinRequest', { guildId: myGuildId, targetTag, accept });
+        _renderGuildScreen();
+    } catch (e) {
+        showGemToast(0, e.message || '처리 실패', true);
+    }
+}
+
+async function _kickGuildMember(targetTag) {
+    if (!confirm(`#${targetTag} 을(를) 길드에서 추방하시겠습니까?`)) return;
+    try {
+        await _callGuildFn('kickGuildMember', { targetTag });
+        _renderGuildScreen();
+    } catch (e) {
+        showGemToast(0, e.message || '추방 실패', true);
+    }
+}
+
+async function _leaveGuild() {
+    const isLeader = _guildData && _guildData.leaderId === myTag;
+    const memberCount = _guildData ? _guildData.members.length : 1;
+    const msg = isLeader && memberCount > 1
+        ? '길드장을 다음 멤버에게 자동으로 위임하고 탈퇴합니다. 계속하시겠습니까?'
+        : isLeader
+        ? '길드를 해산합니다. 계속하시겠습니까?'
+        : '길드를 탈퇴합니다. 계속하시겠습니까?';
+    if (!confirm(msg)) return;
+    try {
+        await _callGuildFn('leaveGuild', {});
+        myGuildId = null; _guildData = null;
+        _renderGuildScreen();
+    } catch (e) {
+        showGemToast(0, e.message || '탈퇴 실패', true);
+    }
+}
+
+async function _loadGuildInviteList() {
+    const area = document.getElementById('guild-invite-area');
+    if (!area) return;
+    area.innerHTML = '<div class="guild-loading">불러오는 중…</div>';
+    try {
+        const myDoc = await db.collection('leaderboard').doc(myTag).get();
+        const friends = myDoc.data()?.friends || [];
+        const guildMembers = new Set(_guildData?.members || []);
+        const nonMemberFriends = friends.filter(f => !guildMembers.has(f));
+        if (nonMemberFriends.length === 0) {
+            area.innerHTML = '<div class="guild-empty-msg">초대 가능한 친구가 없습니다.</div>';
+            return;
+        }
+        const nicknames = _guildData?.memberNicknames || {};
+        let html = '';
+        for (const tag of nonMemberFriends) {
+            const memo = getFriendMemo(tag);
+            const label = memo || `#${tag}`;
+            html += `<div class="guild-invite-row">
+                <span class="guild-invite-name">${label}</span>
+                <button class="guild-btn-invite" onclick="_inviteToGuild('${tag}', this)">초대</button>
+            </div>`;
+        }
+        area.innerHTML = html;
+    } catch (e) {
+        area.innerHTML = `<div class="guild-error">불러오기 실패</div>`;
+    }
+}
+
+async function _inviteToGuild(friendTag, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = '발송 중…'; }
+    try {
+        await _callGuildFn('inviteToGuild', { friendTag });
+        if (btn) { btn.textContent = '✓ 발송'; }
+        showGemToast(0, '초대를 발송했습니다.');
+    } catch (e) {
+        showGemToast(0, e.message || '초대 실패', true);
+        if (btn) { btn.disabled = false; btn.textContent = '초대'; }
+    }
+}
+
+// ===== 길드 시스템 끝 =====
 
 /* [시스템] 지난주 ID 구하기 */
 function getLastWeekId() {

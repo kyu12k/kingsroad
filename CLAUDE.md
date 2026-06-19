@@ -70,6 +70,64 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `count6AMBoundaries(startTs, endTs)` | game.js:4538 | startTs~endTs 사이 로컬 오전 6시 경계 횟수 반환. **로컬 시간** 기준이므로 UTC 오프셋 무관 |
 | `getKingsRoadUnlockedCount()` | game.js:4544 | 현재 해금된 일반 스테이지 수 (count6AMBoundaries 기반) |
 | `getKingsRoadNextUnlockMs()` | game.js:4676 | 다음 해금까지 남은 ms. 로컬 오전 6시 기준 |
+| `openGuildScreen()` | game.js:~12660 | 길드 오버레이 열기 |
+| `_renderGuildScreen()` | game.js:~12680 | 길드 화면 렌더링 (소속 여부에 따라 분기) |
+| `_addGuildRaidDamage(type)` | game.js:~12655 | updateMissionProgress에서 호출, 레이드 대미지 누적 |
+| `_flushGuildRaidDamage()` | game.js:~12665 | 5초 디바운스 후 Firestore에 대미지 반영 (트랜잭션) |
+
+---
+
+## 길드 시스템
+
+### Firestore 구조
+- `guilds/{guildId}`: 길드 문서
+- `leaderboard/{tag}.guildId`: 유저의 소속 길드 ID
+
+### 길드 문서 필드
+```js
+{
+  name, code,           // 길드 이름, 가입 코드 (6자 영문대문자)
+  leaderId,             // 길드장 tag
+  level, xp,            // 길드 레벨(1~5), 누적 XP
+  members: string[],    // tag 배열
+  memberNicknames: {},  // tag → 닉네임
+  pendingRequests: [{tag, nickname, sentAt, invitedBy?}],
+  raidDragonLevel,      // 현재 용 단계
+  raidDragonMaxHp,      // 용 최대 HP
+  raidDragonCurrentHp,  // 용 현재 HP (주간 이월, 주당 20% 회복)
+  raidWeekId,           // 현재 주차 ('YYYY-WXX')
+  raidContributions: {tag: damage},  // 이번 주 기여 대미지
+  raidStatus: 'active'|'cleared'
+}
+```
+
+### 길드 레벨
+| 레벨 | 최대 인원 | 필요 XP |
+|------|-----------|---------|
+| 1 | 5명 | — |
+| 2 | 10명 | 300 |
+| 3 | 15명 | 1,000 |
+| 4 | 20명 | 3,000 |
+| 5 | 25명 | 8,000 |
+
+### 레이드 대미지 테이블 (`GUILD_RAID_DAMAGE`)
+| 액션 | 대미지 |
+|------|--------|
+| 첫 학습(new) | 15 |
+| 복습(review) | 10 |
+| 중간점검(checkpointBoss) | 20 |
+| 보스전(dragon) | 30 |
+| 주소의 고난 | 20 |
+| 구절의 고난 | 40 |
+| 암송의 고난 | 60 |
+| 망각의 고난 | 80 |
+
+### Cloud Functions (kingsroad/index.js, asia-northeast3)
+- `createGuild`, `joinGuildRequest`, `respondJoinRequest`, `leaveGuild`, `kickGuildMember`, `inviteToGuild`
+
+### 레이드 보상 6단계 (0~19%: 없음 / 20~39% / 40~59% / 60~79% / 80~99% / 100% 완전 토벌)
+- 완전 토벌 시 전용 아이템 추가 지급
+- HP 이월: 주간 리셋 시 잔여 HP의 20% 회복 (강등 없음, 같은 단계 재도전)
 
 ---
 
