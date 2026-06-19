@@ -12759,10 +12759,12 @@ async function _renderGuildScreen() {
         }
         _guildData = { id: myGuildId, ...guildDoc.data() };
         const todayStr = new Date().toISOString().slice(0, 10);
+        const donateInfo = myLbData.guildDonateInfo || { date: '', count: 0 };
+        const donateCountToday = donateInfo.date === todayStr ? donateInfo.count : 0;
         const myGuildStatus = {
             pendingReward: myLbData.pendingRaidReward || null,
             attendedToday: myLbData.lastGuildAttend === todayStr,
-            donatedToday: myLbData.lastGuildDonate === todayStr,
+            donateCountToday,
         };
         _renderGuildHome(body, _guildData, myGuildStatus);
     } catch (e) {
@@ -12816,9 +12818,10 @@ function _renderGuildHome(body, guild, myStatus = {}) {
     const attendBtn = myStatus.attendedToday
         ? `<button class="guild-btn-secondary" disabled>출석 완료 ✓</button>`
         : `<button class="guild-btn-secondary" onclick="_guildAttend()">출석 체크 (+10 XP)</button>`;
-    const donateBtn = myStatus.donatedToday
-        ? `<button class="guild-btn-secondary" disabled>기부 완료 ✓</button>`
-        : `<button class="guild-btn-secondary" onclick="_guildDonate()">💎 10개 기부 (+50 XP)</button>`;
+    const donateLeft = 5 - (myStatus.donateCountToday || 0);
+    const donateBtn = donateLeft <= 0
+        ? `<button class="guild-btn-secondary" disabled>기부 완료 (5/5) ✓</button>`
+        : `<button class="guild-btn-secondary" onclick="_guildDonate()">💎 100개 기부 (+1 XP) · ${5 - (myStatus.donateCountToday||0)}회 남음</button>`;
 
     let html = `
         <div class="guild-home-header">
@@ -13035,14 +13038,18 @@ async function _guildAttend() {
 }
 
 async function _guildDonate() {
-    if (myGems < 10) { showGemToast(0, '보석이 부족합니다. (필요: 💎10)', true); return; }
+    if (myGems < 100) { showGemToast(0, '보석이 부족합니다. (필요: 💎100)', true); return; }
     try {
-        const res = await _callGuildFn('guildDonate', { gems: 10 });
-        if (res.alreadyDone) { showGemToast(0, '오늘 이미 기부했습니다.', true); return; }
-        myGems -= 10;
+        const res = await _callGuildFn('guildDonate', { gems: 100 });
+        if (res.alreadyDone) { showGemToast(0, '오늘 기부 횟수를 모두 사용했습니다. (5/5)', true); return; }
+        myGems -= 100;
         saveGameData();
-        if (res.levelUp) showGemToast(0, `길드 레벨 업! Lv.${res.newLevel} 🎉`);
-        else showGemToast(0, `💎 10개 기부 완료! 길드 +${res.xpGained} XP`);
+        if (res.levelUp) {
+            showGemToast(0, `길드 레벨 업! Lv.${res.newLevel} 🎉`);
+        } else {
+            const remaining = 5 - res.todayCount;
+            showGemToast(0, `💎 100개 기부 완료! 길드 XP +1 (오늘 ${remaining}회 남음)`);
+        }
         _renderGuildScreen();
     } catch (e) { showGemToast(0, e.message || '기부 실패', true); }
 }

@@ -398,8 +398,9 @@ exports.reportRaidDamage = onCall({ cors: ALLOWED_ORIGINS }, async (request) => 
 
 // ── 길드 XP 헬퍼 ──────────────────────────────────────────────────────────────
 const GUILD_ATTEND_XP = 10;
-const GUILD_DONATE_XP = 50;
-const GUILD_DONATE_GEMS = 10;
+const GUILD_DONATE_XP = 1;
+const GUILD_DONATE_GEMS = 100;
+const GUILD_DONATE_MAX_DAILY = 5;
 const RAID_SCALES_BY_TIER = [0, 2, 4, 6, 10, 0]; // tier 0~4 (0%/20%/40%/60%/80%+)
 
 function calcGuildXpResult(currentLevel, currentXp, gained) {
@@ -453,18 +454,21 @@ exports.guildDonate = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     if (!userData.guildId) throw new HttpsError('not-found', '가입한 길드가 없습니다.');
 
     const today = todayKst();
-    if (userData.lastGuildDonate === today) return { ok: true, alreadyDone: true };
+    const donateInfo = userData.guildDonateInfo || { date: '', count: 0 };
+    const todayCount = donateInfo.date === today ? donateInfo.count : 0;
+    if (todayCount >= GUILD_DONATE_MAX_DAILY) return { ok: true, alreadyDone: true, todayCount };
 
     const guildRef = db.collection('guilds').doc(userData.guildId);
     const guildDoc = await guildRef.get();
     if (!guildDoc.exists) throw new HttpsError('not-found', '길드를 찾을 수 없습니다.');
 
     const { level, xp, levelUp } = calcGuildXpResult(guildDoc.data().level, guildDoc.data().xp, GUILD_DONATE_XP);
+    const newCount = todayCount + 1;
     const batch = db.batch();
     batch.update(guildRef, { level, xp });
-    batch.update(db.collection('leaderboard').doc(String(myTag)), { lastGuildDonate: today });
+    batch.update(db.collection('leaderboard').doc(String(myTag)), { guildDonateInfo: { date: today, count: newCount } });
     await batch.commit();
-    return { ok: true, alreadyDone: false, xpGained: GUILD_DONATE_XP, levelUp, newLevel: level };
+    return { ok: true, alreadyDone: false, xpGained: GUILD_DONATE_XP, levelUp, newLevel: level, todayCount: newCount, guildXp: xp, guildLevel: level };
 });
 
 // ── 레이드 보상 수령 ───────────────────────────────────────────────────────────
@@ -484,7 +488,7 @@ exports.claimRaidReward = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
 
 // ── 주간 레이드 리셋 (매주 월요일 00:00 KST) ──────────────────────────────────
 exports.weeklyRaidReset = onSchedule({
-    schedule: '0 0 * * 1',
+    schedule: '0 6 * * 1',
     timeZone: 'Asia/Seoul',
     region: 'asia-northeast3',
 }, async () => {
