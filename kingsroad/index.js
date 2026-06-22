@@ -96,6 +96,7 @@ const GUILD_CODE_CHARS   = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const GUILD_LEVEL_XP     = [0, 300, 1000, 3000, 8000];
 const GUILD_MAX_MEMBERS  = [0, 5, 10, 15, 20, 25];
 const GUILD_DRAGON_BASE_HP = [0, 2000, 5000, 12000, 25000, 50000, 100000, 200000];
+const GUILD_DRAGON_MAX_LEVEL = GUILD_DRAGON_BASE_HP.length - 1; // 확장 시 GUILD_DRAGON_BASE_HP 배열만 늘리면 됨
 
 // 길드 장비 — index = 레벨(0~5)
 const GUILD_EQUIP_CHAIN_REDUCTION = [0, 3, 6, 10, 15, 20];   // 용 최대 HP 감소(%)
@@ -109,7 +110,7 @@ const PERSONAL_EQUIP_COST = [0, 4, 8, 24, 72, 216]; // 증분 비늘 비용
 const PERSONAL_EQUIP_KEYS = ['sword','breastplate','helmet','shield','belt','shoes'];
 
 function calcDragonMaxHp(dragonLevel) {
-    if (dragonLevel >= 1 && dragonLevel <= 7) return GUILD_DRAGON_BASE_HP[dragonLevel];
+    if (dragonLevel >= 1 && dragonLevel <= GUILD_DRAGON_MAX_LEVEL) return GUILD_DRAGON_BASE_HP[dragonLevel];
     return Math.round(200000 * Math.pow(2, dragonLevel - 7));
 }
 
@@ -445,8 +446,7 @@ exports.reportRaidDamage = onCall({ cors: ALLOWED_ORIGINS }, async (request) => 
             // 용 처치 + 초과 데미지 처리
             const overflowDamage = adjustedDamage - effectiveCurrentHp;
             const newClearedCount = clearedCount + 1;
-            const MAX_DRAGON_LEVEL = 7;
-            const nextLevel = Math.min(currentLevel + 1, MAX_DRAGON_LEVEL);
+            const nextLevel = Math.min(currentLevel + 1, GUILD_DRAGON_MAX_LEVEL);
             const nextMaxHp = calcDragonMaxHp(nextLevel);
             // 다음 용에도 쇠사슬 적용 후 초과 데미지 — 연속 처치 방지(최소 1)
             const nextEffectiveMaxHp = Math.round(nextMaxHp * (1 - chainReduction));
@@ -596,7 +596,7 @@ exports.weeklyRaidReset = onSchedule({
         const judgmentBonus  = GUILD_EQUIP_JUDGMENT_BONUS[guildEquip.judgment || 0] / 100;
         const baseScales = clearedCount * 10 + RAID_SCALES_BY_TIER[scalesTier];
         const scales = Math.round((baseScales + clearedCount * winepressBonus) * (1 + judgmentBonus));
-        const claws = clearedCount * 2;
+        const claws = clearedCount;
 
         const members = guild.members || [];
         const batch = db.batch();
