@@ -436,21 +436,28 @@ exports.reportRaidDamage = onCall({ cors: ALLOWED_ORIGINS }, async (request) => 
         const newContribs = { ...contributions };
         newContribs[myTag] = (newContribs[myTag] || 0) + adjustedDamage;
 
-        // 쇠사슬: 용 최대 HP 감소 적용
+        // 쇠사슬: 용 최대 HP 감소 적용 후 실질 HP 계산
         const chainReduction = GUILD_EQUIP_CHAIN_REDUCTION[guildEquip.chain || 0] / 100;
         const effectiveMaxHp = Math.round(currentMaxHp * (1 - chainReduction));
         const effectiveCurrentHp = Math.min(currentHp, effectiveMaxHp);
-        const newHp = Math.max(0, effectiveCurrentHp - adjustedDamage);
 
-        if (newHp <= 0) {
+        if (adjustedDamage >= effectiveCurrentHp) {
+            // 용 처치 + 초과 데미지 처리
+            const overflowDamage = adjustedDamage - effectiveCurrentHp;
             const newClearedCount = clearedCount + 1;
-            const nextLevel = currentLevel + 1;
+            const MAX_DRAGON_LEVEL = 7;
+            const nextLevel = Math.min(currentLevel + 1, MAX_DRAGON_LEVEL);
             const nextMaxHp = calcDragonMaxHp(nextLevel);
+            // 다음 용에도 쇠사슬 적용 후 초과 데미지 — 연속 처치 방지(최소 1)
+            const nextEffectiveMaxHp = Math.round(nextMaxHp * (1 - chainReduction));
+            const nextHp = overflowDamage > 0
+                ? Math.max(1, nextEffectiveMaxHp - overflowDamage)
+                : nextEffectiveMaxHp;
             tx.update(guildRef, {
                 raidContributions: newContribs,
                 raidCurrentDragonLevel: nextLevel,
                 raidDragonMaxHp: nextMaxHp,
-                raidDragonCurrentHp: nextMaxHp,
+                raidDragonCurrentHp: nextHp,
                 raidClearedCount: newClearedCount,
                 raidStatus: 'active',
                 raidWeekId: currentWeekId,
@@ -460,7 +467,7 @@ exports.reportRaidDamage = onCall({ cors: ALLOWED_ORIGINS }, async (request) => 
                 raidContributions: newContribs,
                 raidCurrentDragonLevel: currentLevel,
                 raidDragonMaxHp: currentMaxHp,
-                raidDragonCurrentHp: newHp,
+                raidDragonCurrentHp: effectiveCurrentHp - adjustedDamage,
                 raidStatus: 'active',
                 raidWeekId: currentWeekId,
             });
@@ -589,7 +596,7 @@ exports.weeklyRaidReset = onSchedule({
         const judgmentBonus  = GUILD_EQUIP_JUDGMENT_BONUS[guildEquip.judgment || 0] / 100;
         const baseScales = clearedCount * 10 + RAID_SCALES_BY_TIER[scalesTier];
         const scales = Math.round((baseScales + clearedCount * winepressBonus) * (1 + judgmentBonus));
-        const claws = clearedCount;
+        const claws = clearedCount * 2;
 
         const members = guild.members || [];
         const batch = db.batch();
