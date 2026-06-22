@@ -72,8 +72,12 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `getKingsRoadNextUnlockMs()` | game.js:4676 | 다음 해금까지 남은 ms. 로컬 오전 6시 기준 |
 | `openGuildScreen()` | game.js:~12660 | 길드 오버레이 열기 |
 | `_renderGuildScreen()` | game.js:~12680 | 길드 화면 렌더링 (소속 여부에 따라 분기) |
-| `_addGuildRaidDamage(type)` | game.js:~12655 | updateMissionProgress에서 호출, 레이드 대미지 누적 |
-| `_flushGuildRaidDamage()` | game.js:~12665 | 5초 디바운스 후 Firestore에 대미지 반영 (트랜잭션) |
+| `_renderGuildHome(body, guild, myStatus)` | game.js:~12950 | 길드 홈 HTML 생성 (레이드·장비·멤버 포함) |
+| `_addGuildRaidDamage(type)` | game.js:~12716 | updateMissionProgress에서 호출, 개인장비 보너스 적용 후 대미지 누적 |
+| `_flushGuildRaidDamage()` | game.js:~12730 | 5초 디바운스 후 Firestore에 대미지 반영 (트랜잭션) |
+| `_buyPersonalEquipment(itemKey)` | game.js:~12887 | 비늘 차감 + personalEquipment 레벨 증가 CF 호출 |
+| `_buyGuildEquipment(itemKey)` | game.js:~12900 | 발톱 차감 + guildEquipment 레벨 증가 CF 호출 |
+| `_respondGuildInvite(accept, guildId)` | game.js:~12872 | 길드 초대 수락/거절 CF 호출 |
 
 ---
 
@@ -92,12 +96,25 @@ step 7+: 이후 지수 증가 (약 2배씩)
   members: string[],    // tag 배열
   memberNicknames: {},  // tag → 닉네임
   pendingRequests: [{tag, nickname, sentAt, invitedBy?}],
-  raidDragonLevel,      // 현재 용 단계
-  raidDragonMaxHp,      // 용 최대 HP
-  raidDragonCurrentHp,  // 용 현재 HP (주간 이월, 주당 20% 회복)
-  raidWeekId,           // 현재 주차 ('YYYY-WXX')
+  raidCurrentDragonLevel, // 현재 용 단계 (1~GUILD_DRAGON_MAX_LEVEL)
+  raidDragonMaxHp,        // 현재 용 원본 최대 HP (쇠사슬 감소 미적용)
+  raidDragonCurrentHp,    // 현재 용 HP
+  raidClearedCount,       // 이번 주 처치 횟수
+  raidWeekId,             // 현재 주차 ('YYYY-WXX')
   raidContributions: {tag: damage},  // 이번 주 기여 대미지
-  raidStatus: 'active'|'cleared'
+  raidStatus: 'active',
+  guildEquipment: { chain, blade, judgment, winepress }, // 각 0~5
+}
+```
+
+### leaderboard 유저 문서 추가 필드
+```js
+{
+  personalEquipment: { sword, breastplate, helmet, shield, belt, shoes }, // 각 0~5
+  dragonScales,      // 비늘 (개인 장비 구매 재화)
+  dragonClaws,       // 발톱 (길드 장비 구매 재화)
+  pendingInvites: [{guildId, guildName, invitedBy, sentAt}], // 복수 초대
+  pendingRaidReward: { weekId, scales, claws, scalesTier }, // 미수령 주간 보상
 }
 ```
 
@@ -123,11 +140,66 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | 망각의 고난 | 80 |
 
 ### Cloud Functions (kingsroad/index.js, asia-northeast3)
-- `createGuild`, `joinGuildRequest`, `respondJoinRequest`, `leaveGuild`, `kickGuildMember`, `inviteToGuild`
+- `createGuild`, `joinGuildRequest`, `respondJoinRequest`, `leaveGuild`, `kickGuildMember`
+- `inviteToGuild`, `respondInvite`
+- `reportRaidDamage`, `weeklyRaidReset`, `guildAttend`, `guildDonate`, `claimRaidReward`
+- `buyPersonalEquipment`, `buyGuildEquipment`
 
-### 레이드 보상 6단계 (0~19%: 없음 / 20~39% / 40~59% / 60~79% / 80~99% / 100% 완전 토벌)
-- 완전 토벌 시 전용 아이템 추가 지급
-- HP 이월: 주간 리셋 시 잔여 HP의 20% 회복 (강등 없음, 같은 단계 재도전)
+### 레이드 용 HP 테이블 (`GUILD_DRAGON_BASE_HP`, 확장 시 배열 끝에 추가)
+| 레벨 | HP |
+|------|----|
+| 1 | 2,000 |
+| 2 | 5,000 |
+| 3 | 12,000 |
+| 4 | 25,000 |
+| 5 | 50,000 |
+| 6 | 100,000 |
+| 7 | 200,000 |
+
+`GUILD_DRAGON_MAX_LEVEL = GUILD_DRAGON_BASE_HP.length - 1` (자동 연동)
+
+### 레이드 동작
+- 용 처치 시 즉시 다음 레벨 용으로 전환, 초과 데미지 이어받음 (연속 처치 불가, 최소 HP 1)
+- 쇠사슬 감소는 현재 용과 다음 용 모두 적용 후 초과 계산
+- 주간 리셋 시: 비늘(처치×10 + 진행도 티어) + 발톱(처치×1) 전원 지급, 용 레벨 1로 초기화
+
+### 레이드 주간 비늘 티어 (`RAID_SCALES_BY_TIER`)
+| 진행도 | 추가 비늘 |
+|--------|----------|
+| 0~19% | 0 |
+| 20~39% | 2 |
+| 40~59% | 4 |
+| 60~79% | 6 |
+| 80%+ | 10 |
+
+### 장비 시스템
+
+#### 개인 장비 (에베소서 6장, `leaderboard/{tag}.personalEquipment`)
+| 키 | 이름 | 효과 타입 |
+|----|------|----------|
+| sword | 성령의 검 | 모든 레이드 대미지 |
+| breastplate | 의의 흉배 | 첫 학습 대미지 |
+| helmet | 구원의 투구 | 복습 대미지 |
+| shield | 믿음의 방패 | 보스전·중간점검 대미지 |
+| belt | 진리의 허리띠 | 고난 길 대미지 |
+| shoes | 평안의 복음의 신 | 출석한 날 모든 대미지 |
+
+- 레벨 0 = 망가진 상태, 1~5성
+- 효과: `PERSONAL_EQUIP_EFFECT = [0, 2, 5, 10, 17, 26]` (%)
+- 비용: `PERSONAL_EQUIP_COST = [0, 4, 8, 24, 72, 216]` (비늘)
+
+#### 길드 장비 (계시록, `guilds/{guildId}.guildEquipment`)
+| 키 | 이름 | 효과 |
+|----|------|------|
+| chain | 큰 쇠사슬 | 용 최대 HP 감소 (서버 적용) |
+| blade | 이한 검 | 전체 대미지 증가 (서버 적용) |
+| judgment | 심판하는 권세 | 주간 비늘 보상 증가 |
+| winepress | 맹렬한 진노의 포도주 틀 | 처치당 추가 비늘 |
+
+- 레벨 0~5, 처음엔 미구매 상태
+- 효과 테이블: `GUILD_EQUIP_CHAIN_REDUCTION/BLADE_BONUS = [0,3,6,10,15,20](%)`
+- `GUILD_EQUIP_JUDGMENT_BONUS = [0,10,20,30,40,50](%)`, `GUILD_EQUIP_WINEPRESS_BONUS = [0,1,2,3,4,5](비늘/처치)`
+- 비용: `GUILD_EQUIP_CLAW_COST = [0,1,2,4,7,12]` (발톱)
 
 ---
 
