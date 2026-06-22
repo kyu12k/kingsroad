@@ -95,8 +95,15 @@ function getWeekId() {
 const GUILD_CODE_CHARS   = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const GUILD_LEVEL_XP     = [0, 300, 1000, 3000, 8000];
 const GUILD_MAX_MEMBERS  = [0, 5, 10, 15, 20, 25];
-const GUILD_DRAGON_BASE_HP = [0, 2000, 5000, 12000, 25000, 50000, 100000, 200000];
-const GUILD_DRAGON_MAX_LEVEL = GUILD_DRAGON_BASE_HP.length - 1; // 확장 시 GUILD_DRAGON_BASE_HP 배열만 늘리면 됨
+// 뿔 1-10 (index 1-10), 머리 1-7 (index 11-17). 확장 시 배열 끝에 추가.
+const GUILD_DRAGON_BASE_HP = [
+    0,
+    2000, 5000, 12000, 25000, 50000, 100000, 200000, // 뿔 1-7
+    400000, 800000, 1500000,                          // 뿔 8-10
+    3000000, 6000000, 12000000, 25000000, 50000000, 100000000, 200000000, // 머리 1-7
+];
+const GUILD_DRAGON_MAX_LEVEL = GUILD_DRAGON_BASE_HP.length - 1; // = 17
+const GUILD_DRAGON_HEAD_START = 11; // 머리 시작 레벨
 
 // 길드 장비 — index = 레벨(0~5)
 const GUILD_EQUIP_CHAIN_REDUCTION = [0, 3, 6, 10, 15, 20];   // 용 최대 HP 감소(%)
@@ -425,6 +432,7 @@ exports.reportRaidDamage = onCall({ cors: ALLOWED_ORIGINS }, async (request) => 
 
         const contributions = isNewWeek ? {} : (guild.raidContributions || {});
         const clearedCount = isNewWeek ? 0 : (guild.raidClearedCount || 0);
+        const headClearedCount = isNewWeek ? 0 : (guild.raidHeadClearedCount || 0);
         const currentLevel = isNewWeek ? 1 : (guild.raidCurrentDragonLevel || guild.raidDragonLevel || 1);
         const currentHp = isNewWeek ? calcDragonMaxHp(1) : (guild.raidDragonCurrentHp || calcDragonMaxHp(currentLevel));
         const currentMaxHp = isNewWeek ? calcDragonMaxHp(1) : (guild.raidDragonMaxHp || calcDragonMaxHp(currentLevel));
@@ -442,10 +450,13 @@ exports.reportRaidDamage = onCall({ cors: ALLOWED_ORIGINS }, async (request) => 
         const effectiveMaxHp = Math.round(currentMaxHp * (1 - chainReduction));
         const effectiveCurrentHp = Math.min(currentHp, effectiveMaxHp);
 
+        const isHeadKill = currentLevel >= GUILD_DRAGON_HEAD_START;
+
         if (adjustedDamage >= effectiveCurrentHp) {
             // 용 처치 + 초과 데미지 처리
             const overflowDamage = adjustedDamage - effectiveCurrentHp;
             const newClearedCount = clearedCount + 1;
+            const newHeadClearedCount = headClearedCount + (isHeadKill ? 1 : 0);
             const nextLevel = Math.min(currentLevel + 1, GUILD_DRAGON_MAX_LEVEL);
             const nextMaxHp = calcDragonMaxHp(nextLevel);
             // 다음 용에도 쇠사슬 적용 후 초과 데미지 — 연속 처치 방지(최소 1)
@@ -459,18 +470,21 @@ exports.reportRaidDamage = onCall({ cors: ALLOWED_ORIGINS }, async (request) => 
                 raidDragonMaxHp: nextMaxHp,
                 raidDragonCurrentHp: nextHp,
                 raidClearedCount: newClearedCount,
+                raidHeadClearedCount: newHeadClearedCount,
                 raidStatus: 'active',
                 raidWeekId: currentWeekId,
             });
         } else {
-            tx.update(guildRef, {
+            const update = {
                 raidContributions: newContribs,
                 raidCurrentDragonLevel: currentLevel,
                 raidDragonMaxHp: currentMaxHp,
                 raidDragonCurrentHp: effectiveCurrentHp - adjustedDamage,
                 raidStatus: 'active',
                 raidWeekId: currentWeekId,
-            });
+            };
+            if (isNewWeek) update.raidHeadClearedCount = 0;
+            tx.update(guildRef, update);
         }
     });
     return { ok: true };
@@ -563,7 +577,7 @@ exports.claimRaidReward = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     if (!reward) return { ok: false };
 
     await lbRef.update({ pendingRaidReward: admin.firestore.FieldValue.delete() });
-    return { ok: true, claws: reward.claws || 0, scales: reward.scales || 0 };
+    return { ok: true, hornFragments: reward.hornFragments || 0, headSkins: reward.headSkins || 0, scales: reward.scales || 0 };
 });
 
 // ── 주간 레이드 리셋 (매주 월요일 00:00 KST) ──────────────────────────────────
@@ -580,6 +594,7 @@ exports.weeklyRaidReset = onSchedule({
         if (guild.raidWeekId === currentWeekId) continue;
 
         const clearedCount = guild.raidClearedCount || 0;
+        const headClearedCount = guild.raidHeadClearedCount || 0;
         const maxHp = guild.raidDragonMaxHp || calcDragonMaxHp(guild.raidCurrentDragonLevel || 1);
         const currentHp = guild.raidDragonCurrentHp || maxHp;
         const hpDealtPct = maxHp > 0 ? Math.round(((maxHp - currentHp) / maxHp) * 100) : 0;
@@ -596,15 +611,17 @@ exports.weeklyRaidReset = onSchedule({
         const judgmentBonus  = GUILD_EQUIP_JUDGMENT_BONUS[guildEquip.judgment || 0] / 100;
         const baseScales = clearedCount * 10 + RAID_SCALES_BY_TIER[scalesTier];
         const scales = Math.round((baseScales + clearedCount * winepressBonus) * (1 + judgmentBonus));
-        const claws = clearedCount;
+        // 뿔조각 = 전체 처치 + 머리 처치 보너스(+1), 머릿가죽 = 머리 처치
+        const hornFragments = clearedCount + headClearedCount;
+        const headSkins = headClearedCount;
 
         const members = guild.members || [];
         const batch = db.batch();
 
         for (const tag of members) {
-            if (claws > 0 || scales > 0) {
+            if (hornFragments > 0 || headSkins > 0 || scales > 0) {
                 batch.set(db.collection('leaderboard').doc(String(tag)), {
-                    pendingRaidReward: { weekId: guild.raidWeekId || '', claws, scales, scalesTier }
+                    pendingRaidReward: { weekId: guild.raidWeekId || '', hornFragments, headSkins, scales, scalesTier }
                 }, { merge: true });
             }
         }
@@ -614,13 +631,14 @@ exports.weeklyRaidReset = onSchedule({
             raidDragonMaxHp: calcDragonMaxHp(1),
             raidDragonCurrentHp: calcDragonMaxHp(1),
             raidClearedCount: 0,
+            raidHeadClearedCount: 0,
             raidContributions: {},
             raidStatus: 'active',
             raidWeekId: currentWeekId,
         });
 
         await batch.commit();
-        console.log(`[weeklyRaidReset] 길드 ${guildDoc.id}: claws=${claws} scales=${scales} tier=${scalesTier}`);
+        console.log(`[weeklyRaidReset] 길드 ${guildDoc.id}: hornFragments=${hornFragments} headSkins=${headSkins} scales=${scales} tier=${scalesTier}`);
     }
 });
 
@@ -679,15 +697,15 @@ exports.contributeGuildEquipment = onCall({ cors: ALLOWED_ORIGINS }, async (requ
         const currentLevel = guildEquip[itemKey] || 0;
         if (currentLevel >= 5) throw new HttpsError('already-exists', '이미 최고 레벨입니다.');
 
-        const currentClaws = (lbDoc.data() || {}).dragonClaws || 0;
-        if (currentClaws < amount)
-            throw new HttpsError('resource-exhausted', `발톱이 부족합니다. (필요: ${amount}, 보유: ${currentClaws})`);
+        const currentHornFragments = (lbDoc.data() || {}).dragonHornFragments || 0;
+        if (currentHornFragments < amount)
+            throw new HttpsError('resource-exhausted', `뿔조각이 부족합니다. (필요: ${amount}, 보유: ${currentHornFragments})`);
 
         const fund = guild.guildEquipmentFund || {};
         const newFund = (fund[itemKey] || 0) + amount;
         const cost = GUILD_EQUIP_CLAW_COST[currentLevel + 1];
 
-        tx.update(lbRef, { dragonClaws: currentClaws - amount });
+        tx.update(lbRef, { dragonHornFragments: currentHornFragments - amount });
 
         if (newFund >= cost) {
             // 강화 달성 — 초과분 다음 레벨 기금으로 이월
@@ -696,10 +714,10 @@ exports.contributeGuildEquipment = onCall({ cors: ALLOWED_ORIGINS }, async (requ
                 [`guildEquipment.${itemKey}`]: nextLevel,
                 [`guildEquipmentFund.${itemKey}`]: newFund - cost,
             });
-            result = { upgraded: true, newLevel: nextLevel, newFund: newFund - cost, newClaws: currentClaws - amount };
+            result = { upgraded: true, newLevel: nextLevel, newFund: newFund - cost, newHornFragments: currentHornFragments - amount };
         } else {
             tx.update(guildRef, { [`guildEquipmentFund.${itemKey}`]: newFund });
-            result = { upgraded: false, newFund, newClaws: currentClaws - amount };
+            result = { upgraded: false, newFund, newHornFragments: currentHornFragments - amount };
         }
     });
     return result;

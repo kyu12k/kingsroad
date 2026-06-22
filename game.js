@@ -17,7 +17,7 @@ const LANG = {
         btn_next: '다음 ▶',
         btn_prev: '◀ 이전',
         btn_revive: '부활하기',
-        btn_give_up: '🏳️ 포기하기',
+        btn_give_up: '🏳️ 포기',
         btn_resume: '게임 계속하기',
         btn_start: '시작하기',
         btn_retry: '다시 도전',
@@ -1685,8 +1685,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // [시스템: 경제 및 인벤토리]
 let myGems = 0;           // 현재 보유 보석
-let myDragonScales = 0;   // 용 비늘 (레이드 재화)
-let myDragonClaws = 0;    // 용 발톱 (레이드 특별 재화)
+let myDragonScales = 0;        // 용 비늘 (개인 장비 구매 재화)
+let myDragonHornFragments = 0; // 용 뿔조각 (길드 장비 구매 재화, 뿔 처치 드랍)
+let myDragonHeadSkins = 0;     // 용 머릿가죽 (길드 장비 진화 재화, 머리 처치 드랍)
 let myNickname = "순례자";
 let myTag = "";
 let myPlayerId = "";
@@ -1855,7 +1856,8 @@ loadGameData = function () {
         preloadCastleImage(myCastleLevel);
         myGems = parsed.gems || 0;
         myDragonScales = parsed.dragonScales || 0;
-        myDragonClaws = parsed.dragonClaws || 0;
+        myDragonHornFragments = parsed.dragonHornFragments || 0;
+        myDragonHeadSkins = parsed.dragonHeadSkins || 0;
         inventory = parsed.inv || { lifeBread: 0, faithShield: 0 };
         if (inventory) {
             if (typeof inventory.lifeBread === 'undefined' && typeof inventory.potion !== 'undefined') {
@@ -7978,7 +7980,8 @@ function saveGameData() {
         level: myCastleLevel,
         gems: myGems,
         dragonScales: myDragonScales,
-        dragonClaws: myDragonClaws,
+        dragonHornFragments: myDragonHornFragments,
+        dragonHeadSkins: myDragonHeadSkins,
         maxHearts: purchasedMaxHearts, // 순수 체력만 저장
 
         // ★ 닉네임 / 지파 정보 추가
@@ -12666,14 +12669,23 @@ document.addEventListener('click', function(e) {
 
 const GUILD_RAID_DAMAGE = {
     new:             15,  // 첫 학습
-    checkpointBoss:  20,  // 중간점검
-    dragon:          30,  // 보스전
-    hardshipAddress: 20,
-    hardshipVerse:   40,  // 구절(Lv.2): 20×2
-    hardshipEndurance: 60, // 암송(Lv.3): 20×3
-    hardshipMemory:  80,  // 망각(Lv.4): 20×4
-    review:          10,  // 복습
+    checkpointBoss:  30,  // 중간점검
+    dragon:          50,  // 보스전
+    hardshipAddress: 15,
+    hardshipVerse:   30,
+    hardshipEndurance: 80,
+    hardshipMemory:  150,
+    review:           5,  // 복습
 };
+
+const GUILD_DRAGON_HEAD_START = 11; // 머리 시작 레벨 (1-10: 뿔, 11-17: 머리)
+const _HORN_NAMES = ['첫째','둘째','셋째','넷째','다섯째','여섯째','일곱째','여덟째','아홉째','열째'];
+const _HEAD_NAMES = ['첫째','둘째','셋째','넷째','다섯째','여섯째','일곱째'];
+function getDragonLevelName(level) {
+    if (!level || level < 1) return '첫째 뿔';
+    if (level < GUILD_DRAGON_HEAD_START) return `${_HORN_NAMES[level - 1] || level + '째'} 뿔`;
+    return `${_HEAD_NAMES[level - GUILD_DRAGON_HEAD_START] || (level - 10) + '째'} 머리`;
+}
 
 // 개인 장비 (에베소서 6장) — index = 성(0=망가진, 1~5)
 const PERSONAL_EQUIP_DEFS = {
@@ -12713,10 +12725,21 @@ let myPersonalEquipment = {}; // { sword:0, breastplate:0, ... }
 let _guildRaidPendingDmg = 0;
 let _guildRaidFlushTimer = null;
 
-function _addGuildRaidDamage(type) {
+function _addGuildRaidDamage(type, dedupId) {
     if (!myGuildId) return;
     const base = GUILD_RAID_DAMAGE[type];
     if (!base) return;
+
+    if (dedupId != null) {
+        const today = new Date().toLocaleDateString('sv');
+        let log;
+        try { log = JSON.parse(localStorage.getItem('kingsRoad_raidDailyDmg') || '{}'); } catch(e) { log = {}; }
+        if (log.date !== today) log = { date: today, done: [] };
+        const key = `${dedupId}:${type}`;
+        if (log.done.includes(key)) return;
+        log.done.push(key);
+        localStorage.setItem('kingsRoad_raidDailyDmg', JSON.stringify(log));
+    }
 
     let dmg = base;
     const eq = myPersonalEquipment;
@@ -12801,8 +12824,9 @@ async function _renderGuildScreen() {
         const myLbData = myDoc.exists ? myDoc.data() : {};
         myGuildId = myLbData.guildId || null;
         myPersonalEquipment = myLbData.personalEquipment || {};
-        myDragonScales = myLbData.dragonScales || 0;
-        myDragonClaws  = myLbData.dragonClaws  || 0;
+        myDragonScales        = myLbData.dragonScales        || 0;
+        myDragonHornFragments = myLbData.dragonHornFragments || 0;
+        myDragonHeadSkins     = myLbData.dragonHeadSkins     || 0;
 
         if (!myGuildId) {
             if (prevGuildId) showGemToast(0, '길드에서 추방되었거나 길드가 해산되었습니다.', true);
@@ -12906,15 +12930,15 @@ async function _contributeGuildEquipment(itemKey) {
         const cost = GUILD_EQUIP_CLAW_COST[guildEquipLevel + 1];
         const fund = (_guildData?.guildEquipmentFund?.[itemKey]) || 0;
         const remaining = cost - fund;
-        const amount = Math.min(myDragonClaws, remaining);
+        const amount = Math.min(myDragonHornFragments, remaining);
         if (amount <= 0) return;
         const def = GUILD_EQUIP_DEFS[itemKey];
         const res = await _callGuildFn('contributeGuildEquipment', { itemKey, amount });
-        myDragonClaws = res.newClaws;
+        myDragonHornFragments = res.newHornFragments;
         if (res.upgraded) {
-            showGemToast(0, `${def.name} Lv.${res.newLevel} 달성! (🦴${res.newClaws} 남음)`);
+            showGemToast(0, `${def.name} Lv.${res.newLevel} 달성! (🦷${res.newHornFragments} 남음)`);
         } else {
-            showGemToast(0, `🦴${amount} 기여 완료! (${res.newFund}/${cost} 적립)`);
+            showGemToast(0, `🦷${amount} 기여 완료! (${res.newFund}/${cost} 적립)`);
         }
         _renderGuildScreen();
     } catch (e) {
@@ -12939,21 +12963,27 @@ function _renderGuildHome(body, guild, myStatus = {}) {
 
     // 보상 수령 버튼
     const pr = myStatus.pendingReward;
-    const rewardHtml = pr ? `
+    const rewardHtml = pr ? (() => {
+        const parts = [];
+        if (pr.scales)        parts.push(`🪨 비늘 ×${pr.scales}`);
+        if (pr.hornFragments) parts.push(`🦷 뿔조각 ×${pr.hornFragments}`);
+        if (pr.headSkins)     parts.push(`🐉 머릿가죽 ×${pr.headSkins}`);
+        return `
         <div class="guild-section-title">🎁 보상 수령 가능</div>
         <div class="guild-reward-row">
-            <span>🐉 용 발톱 ×${pr.claws} &nbsp; 🪨 용 비늘 ×${pr.scales}</span>
+            <span>${parts.join(' &nbsp; ')}</span>
             <button class="guild-btn-primary" onclick="_claimRaidReward()">수령</button>
-        </div>` : '';
+        </div>`;
+    })() : '';
 
     // 일일 활동 버튼
     const donateLeft = 5 - (myStatus.donateCountToday || 0);
     const attendBtn = myStatus.attendedToday
         ? `<button class="guild-btn-secondary" disabled>출석 완료 ✓</button>`
-        : `<button class="guild-btn-secondary" onclick="_guildAttend()">출석 체크</button>`;
+        : `<button id="guild-attend-btn" class="guild-btn-secondary" onclick="_guildAttend()">출석 체크</button>`;
     const donateBtn = donateLeft <= 0
         ? `<button class="guild-btn-secondary" disabled>기부 완료 (5/5) ✓</button>`
-        : `<button class="guild-btn-secondary" onclick="_guildDonate()">기부</button>`;
+        : `<button id="guild-donate-btn" class="guild-btn-secondary" onclick="_guildDonate()">기부</button>`;
 
     let html = `
         <div class="guild-home-header">
@@ -12962,7 +12992,8 @@ function _renderGuildHome(body, guild, myStatus = {}) {
         </div>
         <div class="guild-currency-row">
             <span class="guild-currency-item">🪨 비늘 <strong>${myDragonScales}</strong></span>
-            <span class="guild-currency-item">🦴 발톱 <strong>${myDragonClaws}</strong></span>
+            <span class="guild-currency-item">🦷 뿔조각 <strong>${myDragonHornFragments}</strong></span>
+            <span class="guild-currency-item">🐉 머릿가죽 <strong>${myDragonHeadSkins}</strong></span>
         </div>
         <div class="guild-xp-wrap">
             <div class="guild-xp-label">${guild.level >= 5 ? 'MAX' : `${guild.xp} / ${levelXpNeeded} XP`}</div>
@@ -12977,7 +13008,7 @@ function _renderGuildHome(body, guild, myStatus = {}) {
 
         ${rewardHtml}
 
-        <div class="guild-section-title">🐉 레이드 · Lv.${dragonLevel} 용 &nbsp;<span style="font-weight:400;font-size:12px;color:#a080c0;">이번 주 ${clearedCount}마리 처치</span></div>
+        <div class="guild-section-title">🐉 레이드 · ${getDragonLevelName(dragonLevel)} &nbsp;<span style="font-weight:400;font-size:12px;color:#a080c0;">이번 주 ${clearedCount}마리 처치</span></div>
         <div class="guild-raid-hp-wrap">
             <div class="guild-raid-hp-label">${guild.raidDragonCurrentHp.toLocaleString()} / ${guild.raidDragonMaxHp.toLocaleString()} HP (${hpDealtPct}% 피해)</div>
             <div class="guild-raid-hp-bar"><div class="guild-raid-hp-fill" style="width:${dragonPct}%"></div></div>
@@ -13034,7 +13065,7 @@ function _renderGuildHome(body, guild, myStatus = {}) {
         const nextCost = isMax ? null : GUILD_EQUIP_CLAW_COST[level + 1];
         const fund = guildFund[key] || 0;
         const remaining = isMax ? 0 : nextCost - fund;
-        const canContribute = !isMax && myDragonClaws > 0;
+        const canContribute = !isMax && myDragonHornFragments > 0;
         const effectValues = { chain: GUILD_EQUIP_CHAIN_REDUCTION, blade: GUILD_EQUIP_BLADE_BONUS, judgment: GUILD_EQUIP_JUDGMENT_BONUS, winepress: GUILD_EQUIP_WINEPRESS_BONUS };
         const effectVal = effectValues[key][level];
         const effectUnit = key === 'winepress' ? `+${effectVal}비늘/처치` : `${key === 'chain' ? '-' : '+'}${effectVal}%`;
@@ -13043,7 +13074,7 @@ function _renderGuildHome(body, guild, myStatus = {}) {
             <div class="guild-equip-fund-bar" style="width:${fundPct}%"></div>
             <span class="guild-equip-fund-label">🦴${fund}/${nextCost}</span>
         </div>`;
-        const btnLabel = isMax ? 'MAX' : `기여하기 (🦴${Math.min(myDragonClaws, remaining)})`;
+        const btnLabel = isMax ? 'MAX' : `기여하기 (🦷${Math.min(myDragonHornFragments, remaining)})`;
         html += `<div class="guild-equip-card${level === 0 ? ' broken' : ''}">
             <div class="guild-equip-icon">${def.icon}</div>
             <div class="guild-equip-name">${def.name}</div>
@@ -13166,7 +13197,7 @@ async function _respondGuildRequest(targetTag, accept) {
     }
 }
 
-function _guildConfirm(message, onConfirm) {
+function _guildConfirm(message, onConfirm, onCancel) {
     let overlay = document.getElementById('guild-confirm-overlay');
     if (overlay) overlay.remove();
     overlay = document.createElement('div');
@@ -13181,7 +13212,7 @@ function _guildConfirm(message, onConfirm) {
             </div>
         </div>`;
     document.body.appendChild(overlay);
-    overlay.querySelector('#guild-confirm-cancel').onclick = () => overlay.remove();
+    overlay.querySelector('#guild-confirm-cancel').onclick = () => { overlay.remove(); if (onCancel) onCancel(); };
     overlay.querySelector('#guild-confirm-ok').onclick = () => { overlay.remove(); onConfirm(); };
 }
 
@@ -13223,26 +13254,28 @@ async function _leaveGuild() {
 }
 
 async function _guildAttend() {
-    const btn = document.querySelector('#guild-screen-body .guild-btn-secondary');
-    if (btn) btn.disabled = true;
+    const btn = document.getElementById('guild-attend-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '출석 중...'; }
     try {
         const res = await _callGuildFn('guildAttend', {});
-        if (res.alreadyDone) { showGemToast(0, '오늘 이미 출석했습니다.', true); if (btn) btn.disabled = false; return; }
+        if (res.alreadyDone) { showGemToast(0, '오늘 이미 출석했습니다.', true); if (btn) { btn.disabled = false; btn.textContent = '출석 체크'; } return; }
         if (res.levelUp) showGemToast(0, `길드 레벨 업! Lv.${res.newLevel} 🎉`);
         else showGemToast(0, `출석 완료! 길드 경험치 +${res.xpGained} XP`);
         _myGuildStatus.attendedToday = true;
         if (_guildData) { _guildData.xp = res.newXp; _guildData.level = res.newLevel; }
         const body = document.getElementById('guild-screen-body');
         if (body) _renderGuildHome(body, _guildData, _myGuildStatus);
-    } catch (e) { showGemToast(0, e.message || '출석 실패', true); if (btn) btn.disabled = false; }
+    } catch (e) { showGemToast(0, e.message || '출석 실패', true); if (btn) { btn.disabled = false; btn.textContent = '출석 체크'; } }
 }
 
 function _guildDonate() {
     if (myGems < 100) { showGemToast(0, '보석이 부족합니다. (필요: 💎100)', true); return; }
+    const btn = document.getElementById('guild-donate-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '기부 중...'; }
     _guildConfirm('보석 100개를 기부하시겠습니까?', async () => {
         try {
             const res = await _callGuildFn('guildDonate', { gems: 100 });
-            if (res.alreadyDone) { showGemToast(0, '오늘 기부 횟수를 모두 사용했습니다. (5/5)', true); return; }
+            if (res.alreadyDone) { showGemToast(0, '오늘 기부 횟수를 모두 사용했습니다. (5/5)', true); if (btn) { btn.disabled = false; btn.textContent = '기부'; } return; }
             myGems -= 100;
             saveGameData();
             if (res.levelUp) showGemToast(0, `길드 레벨 업! Lv.${res.newLevel} 🎉`);
@@ -13251,18 +13284,23 @@ function _guildDonate() {
             if (_guildData) { _guildData.xp = res.newXp; _guildData.level = res.newLevel; }
             const body = document.getElementById('guild-screen-body');
             if (body) _renderGuildHome(body, _guildData, _myGuildStatus);
-        } catch (e) { showGemToast(0, e.message || '기부 실패', true); }
-    });
+        } catch (e) { showGemToast(0, e.message || '기부 실패', true); if (btn) { btn.disabled = false; btn.textContent = '기부'; } }
+    }, () => { if (btn) { btn.disabled = false; btn.textContent = '기부'; } });
 }
 
 async function _claimRaidReward() {
     try {
         const res = await _callGuildFn('claimRaidReward', {});
-        if (!res.ok || (!res.claws && !res.scales)) { showGemToast(0, '수령할 보상이 없습니다.', true); return; }
-        myDragonClaws += res.claws || 0;
-        myDragonScales += res.scales || 0;
+        if (!res.ok || (!res.hornFragments && !res.headSkins && !res.scales)) { showGemToast(0, '수령할 보상이 없습니다.', true); return; }
+        myDragonHornFragments += res.hornFragments || 0;
+        myDragonHeadSkins     += res.headSkins     || 0;
+        myDragonScales        += res.scales        || 0;
         saveGameData();
-        showGemToast(0, `보상 수령 완료! 🐉 용 발톱 +${res.claws} · 🪨 용 비늘 +${res.scales}`);
+        const rewardParts = [];
+        if (res.scales)        rewardParts.push(`🪨 비늘 +${res.scales}`);
+        if (res.hornFragments) rewardParts.push(`🦷 뿔조각 +${res.hornFragments}`);
+        if (res.headSkins)     rewardParts.push(`🐉 머릿가죽 +${res.headSkins}`);
+        showGemToast(0, `보상 수령 완료! ${rewardParts.join(' · ')}`);
         _renderGuildScreen();
     } catch (e) { showGemToast(0, e.message || '수령 실패', true); }
 }
@@ -13532,9 +13570,8 @@ stageClear = function (type, rewardMultiplier = 1) {
             msg += t('msg_boss_clear', { total: totalSubCount, eligible: eligibleSubCount }) + '\n';
 
             // ★ 미션 업데이트: 보스 처치
-            updateMissionProgress('checkpointBoss'); // 일일 미션
             updateMissionProgress('advancedCheckpointBoss', sId); // 심화 미션
-            updateMissionProgress('dragon'); // 주간 미션
+            updateMissionProgress('dragon', sId); // 레이드 대미지 + 주간 미션
         }
         // [B] 일반 / 중간점검
         else {
@@ -13582,10 +13619,9 @@ stageClear = function (type, rewardMultiplier = 1) {
 
                 // ★ 미션 업데이트: 중보 처치
                 if (!isAlreadyClearedToday) {
-                    updateMissionProgress('checkpointBoss'); // 일일 미션
+                    updateMissionProgress('checkpointBoss', sId); // 레이드 대미지 + 일일 미션
                     updateMissionProgress('advancedCheckpointBoss', sId); // 심화 미션
                 }
-                updateMissionProgress('dragon'); // 주간 미션 (중보/보스)
             }
             else {
                 // ★ [v1.1.0] 일반 스테이지: 직렬 복습 시스템 적용
@@ -13612,7 +13648,7 @@ stageClear = function (type, rewardMultiplier = 1) {
 
                 // ★ 미션 업데이트
                 // 복습 모드, 전체 학습 모드, 신규 모드 모두 카운트
-                updateMissionProgress('new'); // 스테이지 클리어 시 무조건 카운트
+                updateMissionProgress('new', sId); // 스테이지 클리어 시 무조건 카운트
 
                 // 다양성 미션: 오늘 처음 클리어하는 스테이지라면 (복습/전체학습/신규 모두 적용)
                 if (!isAlreadyClearedToday) {
@@ -20524,7 +20560,7 @@ function finishHardshipSession(reason) {
             hardshipEnduranceClearHistory[ch].push(record);
             if (hardshipEnduranceClearHistory[ch].length > 10) hardshipEnduranceClearHistory[ch].shift();
             updateMissionProgress('hardship');
-            updateMissionProgress('hardshipEndurance');
+            updateMissionProgress('hardshipEndurance', ch);
             updateMissionProgress('advancedEndurance', ch);
             saveGameData();
             syncToFirestore(); // [Firestore] 인내의 고난 완주 기록
@@ -20562,7 +20598,7 @@ function finishHardshipSession(reason) {
             }
             if (savedCount > 0) {
                 updateMissionProgress('hardship');
-                updateMissionProgress('hardshipEndurance');
+                chapters.forEach(chNum => updateMissionProgress('hardshipEndurance', chNum));
                 chapters.forEach(chNum => updateMissionProgress('advancedEndurance', chNum));
                 saveGameData();
                 syncToFirestore(); // [Firestore] 인내의 고난 범위 완주 기록
@@ -20604,7 +20640,7 @@ function finishHardshipSession(reason) {
             if (!hardshipAddressClearHistory[ch]) hardshipAddressClearHistory[ch] = [];
             hardshipAddressClearHistory[ch].push(record);
             if (hardshipAddressClearHistory[ch].length > 10) hardshipAddressClearHistory[ch].shift();
-            updateMissionProgress('hardshipAddress');
+            updateMissionProgress('hardshipAddress', ch);
             updateMissionProgress('advancedAddress', ch);
             saveGameData();
             syncToFirestore(); // [Firestore] 주소 고난 완주 기록
@@ -20638,7 +20674,7 @@ function finishHardshipSession(reason) {
                 savedCount++;
             }
             if (savedCount > 0) {
-                updateMissionProgress('hardshipAddress');
+                chapters.forEach(chNum => updateMissionProgress('hardshipAddress', chNum));
                 chapters.forEach(chNum => updateMissionProgress('advancedAddress', chNum));
                 saveGameData(); syncToFirestore();
             } // [Firestore] 주소 고난 범위 완주
@@ -20678,7 +20714,7 @@ function finishHardshipSession(reason) {
             if (!hardshipMemoryClearHistory[ch]) hardshipMemoryClearHistory[ch] = [];
             hardshipMemoryClearHistory[ch].push(record);
             if (hardshipMemoryClearHistory[ch].length > 10) hardshipMemoryClearHistory[ch].shift();
-            updateMissionProgress('hardshipMemory');
+            updateMissionProgress('hardshipMemory', ch);
             updateMissionProgress('advancedMemory', ch);
             saveGameData();
             syncToFirestore(); // [Firestore] 망각 고난 완주 기록
@@ -20713,7 +20749,7 @@ function finishHardshipSession(reason) {
                 savedCount++;
             }
             if (savedCount > 0) {
-                updateMissionProgress('hardshipMemory');
+                chapters.forEach(chNum => updateMissionProgress('hardshipMemory', chNum));
                 chapters.forEach(chNum => updateMissionProgress('advancedMemory', chNum));
                 saveGameData(); syncToFirestore();
             } // [Firestore] 망각 고난 범위 완주
@@ -20763,7 +20799,7 @@ function finishHardshipSession(reason) {
                 if (!hardshipVerseClearHistory[ch]) hardshipVerseClearHistory[ch] = [];
                 hardshipVerseClearHistory[ch].push(record);
                 if (hardshipVerseClearHistory[ch].length > 10) hardshipVerseClearHistory[ch].shift();
-                updateMissionProgress('hardshipVerse');
+                updateMissionProgress('hardshipVerse', ch);
                 updateMissionProgress('advancedVerse', ch);
                 saveGameData();
                 syncToFirestore();
@@ -20796,7 +20832,7 @@ function finishHardshipSession(reason) {
                     savedCount++;
                 }
                 if (savedCount > 0) {
-                    updateMissionProgress('hardshipVerse');
+                    chapters.forEach(chNum => updateMissionProgress('hardshipVerse', chNum));
                     chapters.forEach(chNum => updateMissionProgress('advancedVerse', chNum));
                     saveGameData(); syncToFirestore();
                 }

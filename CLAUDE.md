@@ -99,7 +99,8 @@ step 7+: 이후 지수 증가 (약 2배씩)
   raidCurrentDragonLevel, // 현재 용 단계 (1~GUILD_DRAGON_MAX_LEVEL)
   raidDragonMaxHp,        // 현재 용 원본 최대 HP (쇠사슬 감소 미적용)
   raidDragonCurrentHp,    // 현재 용 HP
-  raidClearedCount,       // 이번 주 처치 횟수
+  raidClearedCount,       // 이번 주 전체 처치 횟수
+  raidHeadClearedCount,   // 이번 주 머리 단계(레벨 11+) 처치 횟수
   raidWeekId,             // 현재 주차 ('YYYY-WXX')
   raidContributions: {tag: damage},  // 이번 주 기여 대미지
   raidStatus: 'active',
@@ -111,10 +112,11 @@ step 7+: 이후 지수 증가 (약 2배씩)
 ```js
 {
   personalEquipment: { sword, breastplate, helmet, shield, belt, shoes }, // 각 0~5
-  dragonScales,      // 비늘 (개인 장비 구매 재화)
-  dragonClaws,       // 발톱 (길드 장비 구매 재화)
+  dragonScales,         // 비늘 (개인 장비 구매 재화)
+  dragonHornFragments,  // 뿔조각 (길드 장비 구매 재화, 뿔 처치 드랍)
+  dragonHeadSkins,      // 머릿가죽 (길드 장비 진화 재화, 머리 처치 드랍)
   pendingInvites: [{guildId, guildName, invitedBy, sentAt}], // 복수 초대
-  pendingRaidReward: { weekId, scales, claws, scalesTier }, // 미수령 주간 보상
+  pendingRaidReward: { weekId, scales, hornFragments, headSkins, scalesTier }, // 미수령 주간 보상
 }
 ```
 
@@ -131,13 +133,13 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | 액션 | 대미지 |
 |------|--------|
 | 첫 학습(new) | 15 |
-| 복습(review) | 10 |
-| 중간점검(checkpointBoss) | 20 |
-| 보스전(dragon) | 30 |
-| 주소의 고난 | 20 |
-| 구절의 고난 | 40 |
-| 암송의 고난 | 60 |
-| 망각의 고난 | 80 |
+| 복습(review) | 5 |
+| 중간점검(checkpointBoss) | 30 |
+| 보스전(dragon) | 50 |
+| 주소의 고난 | 15 |
+| 구절의 고난 | 30 |
+| 암송의 고난 | 80 |
+| 망각의 고난 | 150 |
 
 ### Cloud Functions (kingsroad/index.js, asia-northeast3)
 - `createGuild`, `joinGuildRequest`, `respondJoinRequest`, `leaveGuild`, `kickGuildMember`
@@ -146,22 +148,26 @@ step 7+: 이후 지수 증가 (약 2배씩)
 - `buyPersonalEquipment`, `buyGuildEquipment`
 
 ### 레이드 용 HP 테이블 (`GUILD_DRAGON_BASE_HP`, 확장 시 배열 끝에 추가)
-| 레벨 | HP |
-|------|----|
-| 1 | 2,000 |
-| 2 | 5,000 |
-| 3 | 12,000 |
-| 4 | 25,000 |
-| 5 | 50,000 |
-| 6 | 100,000 |
-| 7 | 200,000 |
+| 레벨 | 이름 | HP |
+|------|------|----|
+| 1~7 | 첫째~일곱째 뿔 | 2,000 / 5,000 / 12,000 / 25,000 / 50,000 / 100,000 / 200,000 |
+| 8 | 여덟째 뿔 | 400,000 |
+| 9 | 아홉째 뿔 | 800,000 |
+| 10 | 열째 뿔 | 1,500,000 |
+| 11 | 첫째 머리 | 3,000,000 |
+| 12 | 둘째 머리 | 6,000,000 |
+| 13 | 셋째 머리 | 12,000,000 |
+| 14 | 넷째 머리 | 25,000,000 |
+| 15 | 다섯째 머리 | 50,000,000 |
+| 16 | 여섯째 머리 | 100,000,000 |
+| 17 | 일곱째 머리 | 200,000,000 |
 
-`GUILD_DRAGON_MAX_LEVEL = GUILD_DRAGON_BASE_HP.length - 1` (자동 연동)
+`GUILD_DRAGON_MAX_LEVEL = 17` (자동 연동), `GUILD_DRAGON_HEAD_START = 11`
 
 ### 레이드 동작
 - 용 처치 시 즉시 다음 레벨 용으로 전환, 초과 데미지 이어받음 (연속 처치 불가, 최소 HP 1)
 - 쇠사슬 감소는 현재 용과 다음 용 모두 적용 후 초과 계산
-- 주간 리셋 시: 비늘(처치×10 + 진행도 티어) + 발톱(처치×1) 전원 지급, 용 레벨 1로 초기화
+- 주간 리셋 시: 비늘(처치×10 + 진행도 티어) + 뿔조각(처치×1 + 머리처치×1 보너스) + 머릿가죽(머리처치×1) 전원 지급, 용 레벨 1로 초기화
 
 ### 레이드 주간 비늘 티어 (`RAID_SCALES_BY_TIER`)
 | 진행도 | 추가 비늘 |
