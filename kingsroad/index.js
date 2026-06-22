@@ -93,9 +93,20 @@ function getWeekId() {
 }
 
 const GUILD_CODE_CHARS   = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-const GUILD_LEVEL_XP     = [0, 300, 1000, 3000, 8000]; // index=레벨, 값=다음 레벨 필요 XP
-const GUILD_MAX_MEMBERS  = [0, 5, 10, 15, 20, 25];    // index=레벨, 값=최대 인원
+const GUILD_LEVEL_XP     = [0, 300, 1000, 3000, 8000];
+const GUILD_MAX_MEMBERS  = [0, 5, 10, 15, 20, 25];
 const GUILD_DRAGON_BASE_HP = [0, 2000, 5000, 12000, 25000, 50000, 100000, 200000];
+
+// 길드 장비 — index = 레벨(0~5)
+const GUILD_EQUIP_CHAIN_REDUCTION = [0, 3, 6, 10, 15, 20];   // 용 최대 HP 감소(%)
+const GUILD_EQUIP_BLADE_BONUS     = [0, 3, 6, 10, 15, 20];   // 전체 대미지 증가(%)
+const GUILD_EQUIP_JUDGMENT_BONUS  = [0, 10, 20, 30, 40, 50]; // 주간 비늘 보상 증가(%)
+const GUILD_EQUIP_WINEPRESS_BONUS = [0, 1, 2, 3, 4, 5];      // 처치당 추가 비늘
+const GUILD_EQUIP_CLAW_COST       = [0, 1, 2, 4, 7, 12];     // 해당 레벨 도달 증분 발톱
+
+// 개인 장비 — index = 성(0~5)
+const PERSONAL_EQUIP_COST = [0, 4, 8, 24, 72, 216]; // 증분 비늘 비용
+const PERSONAL_EQUIP_KEYS = ['sword','breastplate','helmet','shield','belt','shoes'];
 
 function calcDragonMaxHp(dragonLevel) {
     if (dragonLevel >= 1 && dragonLevel <= 7) return GUILD_DRAGON_BASE_HP[dragonLevel];
@@ -396,7 +407,7 @@ exports.respondInvite = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
 exports.reportRaidDamage = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
     const { damage, myTag } = request.data;
-    if (typeof damage !== 'number' || damage <= 0 || damage > 2000)
+    if (typeof damage !== 'number' || damage <= 0 || damage > 5000)
         throw new HttpsError('invalid-argument', '유효하지 않은 대미지 값입니다.');
 
     const userData = await verifyTag(request.auth.uid, myTag);
@@ -411,20 +422,27 @@ exports.reportRaidDamage = onCall({ cors: ALLOWED_ORIGINS }, async (request) => 
         const currentWeekId = getWeekId();
         const isNewWeek = guild.raidWeekId !== currentWeekId;
 
-        // 새 주차 시작 시 초기화
         const contributions = isNewWeek ? {} : (guild.raidContributions || {});
         const clearedCount = isNewWeek ? 0 : (guild.raidClearedCount || 0);
         const currentLevel = isNewWeek ? 1 : (guild.raidCurrentDragonLevel || guild.raidDragonLevel || 1);
         const currentHp = isNewWeek ? calcDragonMaxHp(1) : (guild.raidDragonCurrentHp || calcDragonMaxHp(currentLevel));
         const currentMaxHp = isNewWeek ? calcDragonMaxHp(1) : (guild.raidDragonMaxHp || calcDragonMaxHp(currentLevel));
 
-        const newContribs = { ...contributions };
-        newContribs[myTag] = (newContribs[myTag] || 0) + damage;
+        // 이한 검: 길드 장비 서버 측 대미지 보너스
+        const guildEquip = guild.guildEquipment || {};
+        const bladeBonus = GUILD_EQUIP_BLADE_BONUS[guildEquip.blade || 0] / 100;
+        const adjustedDamage = Math.round(damage * (1 + bladeBonus));
 
-        const newHp = Math.max(0, currentHp - damage);
+        const newContribs = { ...contributions };
+        newContribs[myTag] = (newContribs[myTag] || 0) + adjustedDamage;
+
+        // 쇠사슬: 용 최대 HP 감소 적용
+        const chainReduction = GUILD_EQUIP_CHAIN_REDUCTION[guildEquip.chain || 0] / 100;
+        const effectiveMaxHp = Math.round(currentMaxHp * (1 - chainReduction));
+        const effectiveCurrentHp = Math.min(currentHp, effectiveMaxHp);
+        const newHp = Math.max(0, effectiveCurrentHp - adjustedDamage);
 
         if (newHp <= 0) {
-            // 용 처치 → 다음 레벨 등장
             const newClearedCount = clearedCount + 1;
             const nextLevel = currentLevel + 1;
             const nextMaxHp = calcDragonMaxHp(nextLevel);
@@ -565,8 +583,14 @@ exports.weeklyRaidReset = onSchedule({
         else if (hpDealtPct >= 40) scalesTier = 2;
         else if (hpDealtPct >= 20) scalesTier = 1;
 
-        const scales = RAID_SCALES_BY_TIER[scalesTier];
+        // 비늘 = 처치 수×10 + 현재 용 진행도 티어
+        const guildEquip = guild.guildEquipment || {};
+        const winepressBonus = GUILD_EQUIP_WINEPRESS_BONUS[guildEquip.winepress || 0];
+        const judgmentBonus  = GUILD_EQUIP_JUDGMENT_BONUS[guildEquip.judgment || 0] / 100;
+        const baseScales = clearedCount * 10 + RAID_SCALES_BY_TIER[scalesTier];
+        const scales = Math.round((baseScales + clearedCount * winepressBonus) * (1 + judgmentBonus));
         const claws = clearedCount;
+
         const members = guild.members || [];
         const batch = db.batch();
 
@@ -591,4 +615,67 @@ exports.weeklyRaidReset = onSchedule({
         await batch.commit();
         console.log(`[weeklyRaidReset] 길드 ${guildDoc.id}: claws=${claws} scales=${scales} tier=${scalesTier}`);
     }
+});
+
+exports.buyPersonalEquipment = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { itemKey, myTag } = request.data;
+    if (!PERSONAL_EQUIP_KEYS.includes(itemKey))
+        throw new HttpsError('invalid-argument', '유효하지 않은 장비입니다.');
+
+    const lbRef = db.collection('leaderboard').doc(String(myTag));
+    await db.runTransaction(async tx => {
+        const doc = await tx.get(lbRef);
+        if (!doc.exists) throw new HttpsError('not-found', '유저 정보를 찾을 수 없습니다.');
+        await verifyTag(request.auth.uid, myTag);
+
+        const data = doc.data();
+        const equip = data.personalEquipment || {};
+        const currentLevel = equip[itemKey] || 0;
+        if (currentLevel >= 5) throw new HttpsError('already-exists', '이미 최고 등급입니다.');
+
+        const cost = PERSONAL_EQUIP_COST[currentLevel + 1];
+        const currentScales = data.dragonScales || 0;
+        if (currentScales < cost)
+            throw new HttpsError('resource-exhausted', `비늘이 부족합니다. (필요: ${cost}, 보유: ${currentScales})`);
+
+        tx.update(lbRef, {
+            dragonScales: currentScales - cost,
+            [`personalEquipment.${itemKey}`]: currentLevel + 1,
+        });
+    });
+    return { ok: true };
+});
+
+exports.buyGuildEquipment = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { itemKey, myTag } = request.data;
+    const validKeys = ['chain', 'blade', 'judgment', 'winepress'];
+    if (!validKeys.includes(itemKey))
+        throw new HttpsError('invalid-argument', '유효하지 않은 길드 장비입니다.');
+
+    const userData = await verifyTag(request.auth.uid, myTag);
+    if (!userData.guildId) throw new HttpsError('not-found', '길드에 가입되어 있지 않습니다.');
+
+    const guildRef = db.collection('guilds').doc(userData.guildId);
+    const lbRef = db.collection('leaderboard').doc(String(myTag));
+
+    await db.runTransaction(async tx => {
+        const [guildDoc, lbDoc] = await Promise.all([tx.get(guildRef), tx.get(lbRef)]);
+        if (!guildDoc.exists) throw new HttpsError('not-found', '길드를 찾을 수 없습니다.');
+
+        const guild = guildDoc.data();
+        const guildEquip = guild.guildEquipment || {};
+        const currentLevel = guildEquip[itemKey] || 0;
+        if (currentLevel >= 5) throw new HttpsError('already-exists', '이미 최고 레벨입니다.');
+
+        const cost = GUILD_EQUIP_CLAW_COST[currentLevel + 1];
+        const currentClaws = (lbDoc.data() || {}).dragonClaws || 0;
+        if (currentClaws < cost)
+            throw new HttpsError('resource-exhausted', `발톱이 부족합니다. (필요: ${cost}, 보��: ${currentClaws})`);
+
+        tx.update(lbRef, { dragonClaws: currentClaws - cost });
+        tx.update(guildRef, { [`guildEquipment.${itemKey}`]: currentLevel + 1 });
+    });
+    return { ok: true };
 });

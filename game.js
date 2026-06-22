@@ -12675,14 +12675,70 @@ const GUILD_RAID_DAMAGE = {
     review:          10,  // 복습
 };
 
+// 개인 장비 (에베소서 6장) — index = 성(0=망가진, 1~5)
+const PERSONAL_EQUIP_DEFS = {
+    sword:       { name: '성령의 검',         icon: '⚔️',  type: 'all' },
+    breastplate: { name: '의의 흉배',          icon: '🛡️',  type: 'new' },
+    helmet:      { name: '구원의 투구',         icon: '⛑️',  type: 'review' },
+    shield:      { name: '믿음의 방패',         icon: '🔰',  type: 'boss' },
+    belt:        { name: '진리의 허리띠',       icon: '📿',  type: 'hardship' },
+    shoes:       { name: '평안의 복음의 신',    icon: '👟',  type: 'attend' },
+};
+const PERSONAL_EQUIP_TYPE_DESC = {
+    all: '모든 레이드 대미지',
+    new: '첫 학습 대미지',
+    review: '복습 대미지',
+    boss: '보스전·중간점검 대미지',
+    hardship: '고난 길 대미지',
+    attend: '출석한 날 당일 모든 대미지',
+};
+const PERSONAL_EQUIP_EFFECT = [0, 2, 5, 10, 17, 26]; // 성별 효과(%)
+const PERSONAL_EQUIP_COST   = [0, 4, 8, 24, 72, 216]; // 해당 성에 도달하는 증분 비늘
+
+// 길드 장비 (계시록) — index = 레벨(0~5)
+const GUILD_EQUIP_DEFS = {
+    chain:     { name: '큰 쇠사슬',               icon: '⛓️',  desc: '용 최대 HP 감소' },
+    blade:     { name: '이한 검',                  icon: '🗡️',  desc: '길드원 전체 대미지 증가' },
+    judgment:  { name: '심판하는 권세',             icon: '⚖️',  desc: '주간 비늘 보상 증가' },
+    winepress: { name: '맹렬한 진노의 포도주 틀',   icon: '🍇',  desc: '용 처치당 추가 비늘' },
+};
+const GUILD_EQUIP_CHAIN_REDUCTION = [0, 3, 6, 10, 15, 20];      // 용 HP 감소(%)
+const GUILD_EQUIP_BLADE_BONUS     = [0, 3, 6, 10, 15, 20];      // 전체 대미지 증가(%)
+const GUILD_EQUIP_JUDGMENT_BONUS  = [0, 10, 20, 30, 40, 50];    // 주간 비늘 보상 증가(%)
+const GUILD_EQUIP_WINEPRESS_BONUS = [0, 1, 2, 3, 4, 5];         // 처치당 추가 비늘
+const GUILD_EQUIP_CLAW_COST       = [0, 1, 2, 4, 7, 12];        // 해당 레벨 도달 증분 발톱
+
+let myPersonalEquipment = {}; // { sword:0, breastplate:0, ... }
+
 let _guildRaidPendingDmg = 0;
 let _guildRaidFlushTimer = null;
 
-function _addGuildRaidDamage(type, extraData) {
+function _addGuildRaidDamage(type) {
     if (!myGuildId) return;
-    const dmg = GUILD_RAID_DAMAGE[type];
-    if (!dmg) return;
-    _guildRaidPendingDmg += dmg;
+    const base = GUILD_RAID_DAMAGE[type];
+    if (!base) return;
+
+    let dmg = base;
+    const eq = myPersonalEquipment;
+
+    // 성령의 검: 모든 대미지
+    dmg *= (1 + PERSONAL_EQUIP_EFFECT[eq.sword || 0] / 100);
+
+    // 유형별 장비
+    if (type === 'new')
+        dmg *= (1 + PERSONAL_EQUIP_EFFECT[eq.breastplate || 0] / 100);
+    else if (type === 'review')
+        dmg *= (1 + PERSONAL_EQUIP_EFFECT[eq.helmet || 0] / 100);
+    else if (type === 'dragon' || type === 'checkpointBoss')
+        dmg *= (1 + PERSONAL_EQUIP_EFFECT[eq.shield || 0] / 100);
+    else if (type.startsWith('hardship'))
+        dmg *= (1 + PERSONAL_EQUIP_EFFECT[eq.belt || 0] / 100);
+
+    // 평안의 복음의 신: 출석한 날 당일
+    if (_myGuildStatus.attendedToday)
+        dmg *= (1 + PERSONAL_EQUIP_EFFECT[eq.shoes || 0] / 100);
+
+    _guildRaidPendingDmg += Math.round(dmg);
     if (_guildRaidFlushTimer) clearTimeout(_guildRaidFlushTimer);
     _guildRaidFlushTimer = setTimeout(_flushGuildRaidDamage, 5000);
 }
@@ -12744,6 +12800,9 @@ async function _renderGuildScreen() {
         const myDoc = await db.collection('leaderboard').doc(myTag).get();
         const myLbData = myDoc.exists ? myDoc.data() : {};
         myGuildId = myLbData.guildId || null;
+        myPersonalEquipment = myLbData.personalEquipment || {};
+        myDragonScales = myLbData.dragonScales || 0;
+        myDragonClaws  = myLbData.dragonClaws  || 0;
 
         if (!myGuildId) {
             if (prevGuildId) showGemToast(0, '길드에서 추방되었거나 길드가 해산되었습니다.', true);
@@ -12825,6 +12884,36 @@ async function _respondGuildInvite(accept, guildId) {
     }
 }
 
+async function _buyPersonalEquipment(itemKey) {
+    try {
+        const level = myPersonalEquipment[itemKey] || 0;
+        const cost = PERSONAL_EQUIP_COST[level + 1];
+        const actionLabel = level === 0 ? '수리' : '강화';
+        await _callGuildFn('buyPersonalEquipment', { itemKey });
+        myPersonalEquipment[itemKey] = level + 1;
+        myDragonScales -= cost;
+        showGemToast(0, `${PERSONAL_EQUIP_DEFS[itemKey].name} ${actionLabel} 완료! (🪨${myDragonScales} 남음)`);
+        _renderGuildScreen();
+    } catch (e) {
+        showGemToast(0, e.message || '구매 실패', true);
+    }
+}
+
+async function _buyGuildEquipment(itemKey) {
+    try {
+        const guildEquipLevel = (_guildData?.guildEquipment?.[itemKey]) || 0;
+        const cost = GUILD_EQUIP_CLAW_COST[guildEquipLevel + 1];
+        const def = GUILD_EQUIP_DEFS[itemKey];
+        const actionLabel = guildEquipLevel === 0 ? '구매' : '강화';
+        await _callGuildFn('buyGuildEquipment', { itemKey });
+        myDragonClaws -= cost;
+        showGemToast(0, `${def.name} ${actionLabel} 완료! (🦴${myDragonClaws} 남음)`);
+        _renderGuildScreen();
+    } catch (e) {
+        showGemToast(0, e.message || '구매 실패', true);
+    }
+}
+
 function _renderGuildHome(body, guild, myStatus = {}) {
     const isLeader = guild.leaderId === myTag;
     const maxMembers = [0, 5, 10, 15, 20, 25][guild.level] || 5;
@@ -12863,6 +12952,10 @@ function _renderGuildHome(body, guild, myStatus = {}) {
             <div class="guild-home-name">${guild.name}</div>
             <div class="guild-home-meta">Lv.${guild.level} · ${guild.members.length}/${maxMembers}명 · 코드: <strong>${guild.code}</strong></div>
         </div>
+        <div class="guild-currency-row">
+            <span class="guild-currency-item">🪨 비늘 <strong>${myDragonScales}</strong></span>
+            <span class="guild-currency-item">🦴 발톱 <strong>${myDragonClaws}</strong></span>
+        </div>
         <div class="guild-xp-wrap">
             <div class="guild-xp-label">${guild.level >= 5 ? 'MAX' : `${guild.xp} / ${levelXpNeeded} XP`}</div>
             <div class="guild-xp-bar"><div class="guild-xp-fill" style="width:${xpPct}%"></div></div>
@@ -12898,6 +12991,53 @@ function _renderGuildHome(body, guild, myStatus = {}) {
         });
         html += `</div>`;
     }
+
+    // 개인 장비
+    html += `<div class="guild-section-title">🧰 개인 장비</div>`;
+    html += `<div class="guild-equip-grid">`;
+    Object.entries(PERSONAL_EQUIP_DEFS).forEach(([key, def]) => {
+        const level = (myPersonalEquipment[key] || 0);
+        const isBroken = level === 0;
+        const isMax = level >= 5;
+        const effect = PERSONAL_EQUIP_EFFECT[level];
+        const nextCost = isMax ? null : PERSONAL_EQUIP_COST[level + 1];
+        const canAfford = nextCost !== null && myDragonScales >= nextCost;
+        const levelLabel = isBroken ? '망가진' : `${level}성`;
+        const btnLabel = isBroken ? `수리 (🪨${nextCost})` : isMax ? 'MAX' : `강화 (🪨${nextCost})`;
+        html += `<div class="guild-equip-card${isBroken ? ' broken' : ''}">
+            <div class="guild-equip-icon">${def.icon}</div>
+            <div class="guild-equip-name">${def.name}</div>
+            <div class="guild-equip-level">${levelLabel}</div>
+            <div class="guild-equip-effect">${PERSONAL_EQUIP_TYPE_DESC[def.type]} +${effect}%</div>
+            <button class="guild-equip-btn" ${isMax || !canAfford ? 'disabled' : ''}
+                onclick="_buyPersonalEquipment('${key}')">${btnLabel}</button>
+        </div>`;
+    });
+    html += `</div>`;
+
+    // 길드 장비
+    const guildEquip = guild.guildEquipment || {};
+    html += `<div class="guild-section-title">🏰 길드 장비</div>`;
+    html += `<div class="guild-equip-grid">`;
+    Object.entries(GUILD_EQUIP_DEFS).forEach(([key, def]) => {
+        const level = guildEquip[key] || 0;
+        const isMax = level >= 5;
+        const nextCost = isMax ? null : GUILD_EQUIP_CLAW_COST[level + 1];
+        const canAfford = nextCost !== null && myDragonClaws >= nextCost;
+        const effectValues = { chain: GUILD_EQUIP_CHAIN_REDUCTION, blade: GUILD_EQUIP_BLADE_BONUS, judgment: GUILD_EQUIP_JUDGMENT_BONUS, winepress: GUILD_EQUIP_WINEPRESS_BONUS };
+        const effectVal = effectValues[key][level];
+        const effectUnit = key === 'winepress' ? `+${effectVal}비늘/처치` : `${key === 'chain' ? '-' : '+'}${effectVal}%`;
+        const btnLabel = level === 0 ? `구매 (🦴${nextCost})` : isMax ? 'MAX' : `강화 (🦴${nextCost})`;
+        html += `<div class="guild-equip-card${level === 0 ? ' broken' : ''}">
+            <div class="guild-equip-icon">${def.icon}</div>
+            <div class="guild-equip-name">${def.name}</div>
+            <div class="guild-equip-level">${level === 0 ? '미구매' : `Lv.${level}`}</div>
+            <div class="guild-equip-effect">${def.desc} ${effectUnit}</div>
+            <button class="guild-equip-btn" ${isMax || !canAfford ? 'disabled' : ''}
+                onclick="_buyGuildEquipment('${key}')">${btnLabel}</button>
+        </div>`;
+    });
+    html += `</div>`;
 
     // 멤버 목록
     html += `<div class="guild-section-title">👤 멤버 (${guild.members.length}/${maxMembers})</div>`;
