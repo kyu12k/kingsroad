@@ -630,11 +630,11 @@ exports.buyPersonalEquipment = onCall({ cors: ALLOWED_ORIGINS }, async (request)
     if (!PERSONAL_EQUIP_KEYS.includes(itemKey))
         throw new HttpsError('invalid-argument', '유효하지 않은 장비입니다.');
 
+    await verifyTag(request.auth.uid, myTag);
     const lbRef = db.collection('leaderboard').doc(String(myTag));
     await db.runTransaction(async tx => {
         const doc = await tx.get(lbRef);
         if (!doc.exists) throw new HttpsError('not-found', '유저 정보를 찾을 수 없습니다.');
-        await verifyTag(request.auth.uid, myTag);
 
         const data = doc.data();
         const equip = data.personalEquipment || {};
