@@ -654,12 +654,14 @@ exports.buyPersonalEquipment = onCall({ cors: ALLOWED_ORIGINS }, async (request)
     return { ok: true };
 });
 
-exports.buyGuildEquipment = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+exports.contributeGuildEquipment = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
-    const { itemKey, myTag } = request.data;
+    const { itemKey, amount, myTag } = request.data;
     const validKeys = ['chain', 'blade', 'judgment', 'winepress'];
     if (!validKeys.includes(itemKey))
         throw new HttpsError('invalid-argument', '유효하지 않은 길드 장비입니다.');
+    if (typeof amount !== 'number' || amount < 1 || !Number.isInteger(amount))
+        throw new HttpsError('invalid-argument', '유효하지 않은 기여량입니다.');
 
     const userData = await verifyTag(request.auth.uid, myTag);
     if (!userData.guildId) throw new HttpsError('not-found', '길드에 가입되어 있지 않습니다.');
@@ -667,6 +669,7 @@ exports.buyGuildEquipment = onCall({ cors: ALLOWED_ORIGINS }, async (request) =>
     const guildRef = db.collection('guilds').doc(userData.guildId);
     const lbRef = db.collection('leaderboard').doc(String(myTag));
 
+    let result = {};
     await db.runTransaction(async tx => {
         const [guildDoc, lbDoc] = await Promise.all([tx.get(guildRef), tx.get(lbRef)]);
         if (!guildDoc.exists) throw new HttpsError('not-found', '길드를 찾을 수 없습니다.');
@@ -676,13 +679,28 @@ exports.buyGuildEquipment = onCall({ cors: ALLOWED_ORIGINS }, async (request) =>
         const currentLevel = guildEquip[itemKey] || 0;
         if (currentLevel >= 5) throw new HttpsError('already-exists', '이미 최고 레벨입니다.');
 
-        const cost = GUILD_EQUIP_CLAW_COST[currentLevel + 1];
         const currentClaws = (lbDoc.data() || {}).dragonClaws || 0;
-        if (currentClaws < cost)
-            throw new HttpsError('resource-exhausted', `발톱이 부족합니다. (필요: ${cost}, 보��: ${currentClaws})`);
+        if (currentClaws < amount)
+            throw new HttpsError('resource-exhausted', `발톱이 부족합니다. (필요: ${amount}, 보유: ${currentClaws})`);
 
-        tx.update(lbRef, { dragonClaws: currentClaws - cost });
-        tx.update(guildRef, { [`guildEquipment.${itemKey}`]: currentLevel + 1 });
+        const fund = guild.guildEquipmentFund || {};
+        const newFund = (fund[itemKey] || 0) + amount;
+        const cost = GUILD_EQUIP_CLAW_COST[currentLevel + 1];
+
+        tx.update(lbRef, { dragonClaws: currentClaws - amount });
+
+        if (newFund >= cost) {
+            // 강화 달성 — 초과분 다음 레벨 기금으로 이월
+            const nextLevel = currentLevel + 1;
+            tx.update(guildRef, {
+                [`guildEquipment.${itemKey}`]: nextLevel,
+                [`guildEquipmentFund.${itemKey}`]: newFund - cost,
+            });
+            result = { upgraded: true, newLevel: nextLevel, newFund: newFund - cost, newClaws: currentClaws - amount };
+        } else {
+            tx.update(guildRef, { [`guildEquipmentFund.${itemKey}`]: newFund });
+            result = { upgraded: false, newFund, newClaws: currentClaws - amount };
+        }
     });
-    return { ok: true };
+    return result;
 });

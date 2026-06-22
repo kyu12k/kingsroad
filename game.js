@@ -12899,18 +12899,26 @@ async function _buyPersonalEquipment(itemKey) {
     }
 }
 
-async function _buyGuildEquipment(itemKey) {
+async function _contributeGuildEquipment(itemKey) {
     try {
         const guildEquipLevel = (_guildData?.guildEquipment?.[itemKey]) || 0;
+        if (guildEquipLevel >= 5) return;
         const cost = GUILD_EQUIP_CLAW_COST[guildEquipLevel + 1];
+        const fund = (_guildData?.guildEquipmentFund?.[itemKey]) || 0;
+        const remaining = cost - fund;
+        const amount = Math.min(myDragonClaws, remaining);
+        if (amount <= 0) return;
         const def = GUILD_EQUIP_DEFS[itemKey];
-        const actionLabel = guildEquipLevel === 0 ? '구매' : '강화';
-        await _callGuildFn('buyGuildEquipment', { itemKey });
-        myDragonClaws -= cost;
-        showGemToast(0, `${def.name} ${actionLabel} 완료! (🦴${myDragonClaws} 남음)`);
+        const res = await _callGuildFn('contributeGuildEquipment', { itemKey, amount });
+        myDragonClaws = res.newClaws;
+        if (res.upgraded) {
+            showGemToast(0, `${def.name} Lv.${res.newLevel} 달성! (🦴${res.newClaws} 남음)`);
+        } else {
+            showGemToast(0, `🦴${amount} 기여 완료! (${res.newFund}/${cost} 적립)`);
+        }
         _renderGuildScreen();
     } catch (e) {
-        showGemToast(0, e.message || '구매 실패', true);
+        showGemToast(0, e.message || '기여 실패', true);
     }
 }
 
@@ -13017,24 +13025,33 @@ function _renderGuildHome(body, guild, myStatus = {}) {
 
     // 길드 장비
     const guildEquip = guild.guildEquipment || {};
+    const guildFund = guild.guildEquipmentFund || {};
     html += `<div class="guild-section-title">🏰 길드 장비</div>`;
     html += `<div class="guild-equip-grid">`;
     Object.entries(GUILD_EQUIP_DEFS).forEach(([key, def]) => {
         const level = guildEquip[key] || 0;
         const isMax = level >= 5;
         const nextCost = isMax ? null : GUILD_EQUIP_CLAW_COST[level + 1];
-        const canAfford = nextCost !== null && myDragonClaws >= nextCost;
+        const fund = guildFund[key] || 0;
+        const remaining = isMax ? 0 : nextCost - fund;
+        const canContribute = !isMax && myDragonClaws > 0;
         const effectValues = { chain: GUILD_EQUIP_CHAIN_REDUCTION, blade: GUILD_EQUIP_BLADE_BONUS, judgment: GUILD_EQUIP_JUDGMENT_BONUS, winepress: GUILD_EQUIP_WINEPRESS_BONUS };
         const effectVal = effectValues[key][level];
         const effectUnit = key === 'winepress' ? `+${effectVal}비늘/처치` : `${key === 'chain' ? '-' : '+'}${effectVal}%`;
-        const btnLabel = level === 0 ? `구매 (🦴${nextCost})` : isMax ? 'MAX' : `강화 (🦴${nextCost})`;
+        const fundPct = isMax ? 100 : Math.round((fund / nextCost) * 100);
+        const fundBar = isMax ? '' : `<div class="guild-equip-fund-wrap">
+            <div class="guild-equip-fund-bar" style="width:${fundPct}%"></div>
+            <span class="guild-equip-fund-label">🦴${fund}/${nextCost}</span>
+        </div>`;
+        const btnLabel = isMax ? 'MAX' : `기여하기 (🦴${Math.min(myDragonClaws, remaining)})`;
         html += `<div class="guild-equip-card${level === 0 ? ' broken' : ''}">
             <div class="guild-equip-icon">${def.icon}</div>
             <div class="guild-equip-name">${def.name}</div>
             <div class="guild-equip-level">${level === 0 ? '미구매' : `Lv.${level}`}</div>
             <div class="guild-equip-effect">${def.desc} ${effectUnit}</div>
-            <button class="guild-equip-btn" ${isMax || !canAfford ? 'disabled' : ''}
-                onclick="_buyGuildEquipment('${key}')">${btnLabel}</button>
+            ${fundBar}
+            <button class="guild-equip-btn" ${isMax || !canContribute ? 'disabled' : ''}
+                onclick="_contributeGuildEquipment('${key}')">${btnLabel}</button>
         </div>`;
     });
     html += `</div>`;
