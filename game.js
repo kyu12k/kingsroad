@@ -12731,7 +12731,7 @@ function _addGuildRaidDamage(type, dedupId) {
     if (!base) return;
 
     if (dedupId != null) {
-        const today = new Date().toLocaleDateString('sv');
+        const today = new Date(Date.now() - 6 * 3600000).toLocaleDateString('sv');
         let log;
         try { log = JSON.parse(localStorage.getItem('kingsRoad_raidDailyDmg') || '{}'); } catch(e) { log = {}; }
         if (log.date !== today) log = { date: today, done: [] };
@@ -13012,7 +13012,8 @@ function _renderGuildHome(body, guild, myStatus = {}) {
         <div class="guild-raid-hp-wrap">
             <div class="guild-raid-hp-label">${guild.raidDragonCurrentHp.toLocaleString()} / ${guild.raidDragonMaxHp.toLocaleString()} HP (${hpDealtPct}% 피해)</div>
             <div class="guild-raid-hp-bar"><div class="guild-raid-hp-fill" style="width:${dragonPct}%"></div></div>
-        </div>`;
+        </div>
+        <button onclick="_showRaidDamageTable()" style="margin-top:6px;background:none;border:1px solid #6040a0;border-radius:6px;color:#b090e0;font-size:12px;padding:4px 12px;cursor:pointer;width:100%;">대미지 📊</button>`;
 
     // 기여도 상위 표시
     const contribs = guild.raidContributions || {};
@@ -13195,6 +13196,41 @@ async function _respondGuildRequest(targetTag, accept) {
     } catch (e) {
         showGemToast(0, e.message || '처리 실패', true);
     }
+}
+
+function _showRaidDamageTable() {
+    let overlay = document.getElementById('raid-damage-table-overlay');
+    if (overlay) { overlay.remove(); return; }
+    overlay = document.createElement('div');
+    overlay.id = 'raid-damage-table-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10000;display:flex;align-items:center;justify-content:center;';
+    const rows = [
+        ['첫 학습',    15,  '스테이지당'],
+        ['복습',        5,  '스테이지당'],
+        ['중간점검',   30,  '중간점검당'],
+        ['보스전',     50,  '보스당'],
+        ['주소의 고난', 15, '장당'],
+        ['구절의 고난', 30, '장당'],
+        ['암송의 고난', 80, '장당'],
+        ['망각의 고난', 150,'장당'],
+    ].map(([name, dmg, limit]) =>
+        `<tr><td>${name}</td><td style="text-align:right;font-weight:700;color:#e8c060;">${dmg}</td><td style="text-align:center;color:#8888aa;font-size:11px;">일 1회/${limit}</td></tr>`
+    ).join('');
+    overlay.innerHTML = `
+        <div style="background:#1e1e2e;border-radius:14px;padding:20px;max-width:280px;width:88%;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+            <div style="color:#c8b8e8;font-size:14px;font-weight:700;margin-bottom:12px;">⚔️ 레이드 대미지</div>
+            <table style="width:100%;border-collapse:collapse;font-size:13px;color:#e0d8f0;">
+                <thead><tr style="color:#9080b0;font-size:11px;">
+                    <th style="text-align:left;padding-bottom:6px;">액션</th>
+                    <th style="text-align:right;padding-bottom:6px;">대미지</th>
+                    <th style="text-align:center;padding-bottom:6px;">제한</th>
+                </tr></thead>
+                <tbody>${rows}</tbody>
+            </table>
+            <button onclick="document.getElementById('raid-damage-table-overlay').remove()" style="margin-top:16px;width:100%;padding:9px;border-radius:8px;border:none;background:#3a3a5c;color:#b0a8d0;font-size:14px;cursor:pointer;">닫기</button>
+        </div>`;
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
 }
 
 function _guildConfirm(message, onConfirm, onCancel) {
