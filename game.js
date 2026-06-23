@@ -10446,6 +10446,14 @@ function claimAdvancedReward(missionKey, upToIndex) {
     }
     if (totalGem <= 0) return;
 
+    // 고난 길 장비 젬 보너스 (고난 심화 미션 수령 시)
+    if (missionKey === 'endurance' || missionKey === 'memory' || missionKey === 'address' || missionKey === 'verse') {
+        const eq = myPersonalEquipment || {};
+        let mult = 1 + PERSONAL_EQUIP_EFFECT[eq.sword || 0] / 100 + PERSONAL_EQUIP_EFFECT[eq.belt || 0] / 100;
+        if (_myGuildStatus && _myGuildStatus.attendedToday) mult += PERSONAL_EQUIP_EFFECT[eq.shoes || 0] / 100;
+        totalGem = Math.floor(totalGem * mult);
+    }
+
     missionData.advanced.claimed[claimedIdx] = claimTo;
     myGems += totalGem;
     updateGemDisplay();
@@ -12701,7 +12709,7 @@ const PERSONAL_EQUIP_TYPE_DESC = {
     new: '첫 학습 대미지 · 첫 학습 젬',
     review: '복습 대미지 · 복습 젬',
     boss: '보스전·중간점검 대미지 · 보스전·중간점검 젬',
-    hardship: '고난 길 대미지 · 고난 길 젬',
+    hardship: '고난 길 대미지',
     attend: '출석한 날 당일 모든 대미지 · 모든 젬',
 };
 const PERSONAL_EQUIP_EFFECT = [0, 2, 5, 10, 17, 26]; // 성별 효과(%)
@@ -20487,122 +20495,6 @@ function finishHardshipSession(reason) {
         } else {
             const m = hardshipState.boosterMultiplier;
             resultExp.innerText = m > 1 ? `${hardshipState.score} ⚡×${m}` : `${hardshipState.score}`;
-        }
-    }
-
-    // 암송의 고난 완주 시 평균 80% 이상이면 해당 장 하위 스테이지 클리어 + 보스 클리어 효과
-    if (reason === 'completed' && hardshipState.mode === 'endurance' && enduranceAvgScore >= 80) {
-        const _enduranceNeedSwap = hardshipState.applyToFree && activeMode === 'kings';
-        if (_enduranceNeedSwap) switchMode('free');
-        const _enduranceChapters = hardshipState.forcedChapter != null
-            ? [hardshipState.forcedChapter]
-            : [...new Set(hardshipState.queue.map(id => parseInt(id.split('-')[0], 10)))].sort((a, b) => a - b);
-        let _enduranceGemGrand = 0, _enduranceEligGrand = 0, _enduranceTotalGrand = 0, _enduranceAllCooldown = true;
-        const _enduranceEq = myPersonalEquipment || {};
-        const _enduranceEquipMult = (() => {
-            let m = 1 + PERSONAL_EQUIP_EFFECT[_enduranceEq.sword || 0] / 100 + PERSONAL_EQUIP_EFFECT[_enduranceEq.belt || 0] / 100;
-            if (_myGuildStatus && _myGuildStatus.attendedToday) m += PERSONAL_EQUIP_EFFECT[_enduranceEq.shoes || 0] / 100;
-            return m;
-        })();
-        for (const chNum of _enduranceChapters) {
-            if (isHardshipChapterDoneToday('endurance', chNum)) continue;
-            _enduranceAllCooldown = false;
-            const chData = gameData.find(c => c.id === chNum);
-            if (!chData || !chData.stages) continue;
-            let subGemTotal = 0, eligibleSubCount = 0, totalSubCount = 0;
-            chData.stages.forEach(targetStage => {
-                if (targetStage.type !== 'normal') return;
-                const subId = targetStage.id;
-                if (!stageMastery[subId]) stageMastery[subId] = 0;
-                if (!stageClearDate[subId]) stageClearDate[subId] = getMemoryQuizDate();
-                targetStage.cleared = true;
-                totalSubCount++;
-                const subStatus = getReviewStatus(subId);
-                if (subStatus.isEligible) {
-                    const { earnedGem: earned } = advanceReviewStep(subId);
-                    stageLastClear[subId] = Date.now();
-                    stageMastery[subId]++;
-                    subGemTotal += earned;
-                    eligibleSubCount++;
-                } else {
-                    stageLastClear[subId] = Date.now();
-                    stageMastery[subId]++;
-                    subGemTotal += 10;
-                }
-            });
-            // 보스 클리어 효과
-            const bossId = `${chNum}-boss`;
-            if (!stageMastery[bossId]) stageMastery[bossId] = 0;
-            stageMastery[bossId]++;
-            subGemTotal = Math.floor(subGemTotal * _enduranceEquipMult);
-            myGems += subGemTotal;
-            _enduranceGemGrand += subGemTotal;
-            _enduranceEligGrand += eligibleSubCount;
-            _enduranceTotalGrand += totalSubCount;
-        }
-        saveGameData();
-        syncToFirestore(); // [Firestore] 암송의 고난 클리어
-        if (_enduranceNeedSwap) switchMode('kings');
-        if (_enduranceAllCooldown) {
-            if (resultStreakText) resultStreakText.innerHTML += `<br><span style="font-size:13px;color:#f39c12;">${t('hardship_cooldown_result')}</span>`;
-        } else if (_enduranceTotalGrand > 0 && resultStreakText) {
-            resultStreakText.innerHTML += `<br><span style="font-size:13px;color:#aad4ff;">${t('hardship_gem_summary', { gem: _enduranceGemGrand, total: _enduranceTotalGrand, eligible: _enduranceEligGrand })}</span>`;
-        }
-    }
-
-    // 망각의 고난 완주 시 해당 장 하위 스테이지 클리어 (보스 클리어와 동일 처리)
-    if (reason === 'completed' && hardshipState.mode === 'memory' && !hardshipState.trainingMode) {
-        const _hardshipNeedSwap = hardshipState.applyToFree && activeMode === 'kings';
-        if (_hardshipNeedSwap) switchMode('free');
-        const _hardshipChapters = hardshipState.forcedChapter != null
-            ? [hardshipState.forcedChapter]
-            : [...new Set(hardshipState.queue.map(id => parseInt(id.split('-')[0], 10)))].sort((a, b) => a - b);
-        let _hardshipGemGrand = 0, _hardshipEligGrand = 0, _hardshipTotalGrand = 0, _hardshipAllCooldown = true;
-        const _hardshipEq = myPersonalEquipment || {};
-        const _hardshipEquipMult = (() => {
-            let m = 1 + PERSONAL_EQUIP_EFFECT[_hardshipEq.sword || 0] / 100 + PERSONAL_EQUIP_EFFECT[_hardshipEq.belt || 0] / 100;
-            if (_myGuildStatus && _myGuildStatus.attendedToday) m += PERSONAL_EQUIP_EFFECT[_hardshipEq.shoes || 0] / 100;
-            return m;
-        })();
-        for (const chNum of _hardshipChapters) {
-            if (isHardshipChapterDoneToday(hardshipState.mode, chNum)) continue;
-            _hardshipAllCooldown = false;
-            const chData = gameData.find(c => c.id === chNum);
-            if (!chData || !chData.stages) continue;
-            let subGemTotal = 0, eligibleSubCount = 0, totalSubCount = 0;
-            chData.stages.forEach(targetStage => {
-                if (targetStage.type !== 'normal') return;
-                const subId = targetStage.id;
-                if (!stageMastery[subId]) stageMastery[subId] = 0;
-                if (!stageClearDate[subId]) stageClearDate[subId] = getMemoryQuizDate();
-                targetStage.cleared = true;
-                totalSubCount++;
-                const subStatus = getReviewStatus(subId);
-                if (subStatus.isEligible) {
-                    const { earnedGem: earned } = advanceReviewStep(subId);
-                    stageLastClear[subId] = Date.now();
-                    stageMastery[subId]++;
-                    subGemTotal += earned;
-                    eligibleSubCount++;
-                } else {
-                    stageLastClear[subId] = Date.now();
-                    stageMastery[subId]++;
-                    subGemTotal += 10;
-                }
-            });
-            subGemTotal = Math.floor(subGemTotal * _hardshipEquipMult);
-            myGems += subGemTotal;
-            _hardshipGemGrand += subGemTotal;
-            _hardshipEligGrand += eligibleSubCount;
-            _hardshipTotalGrand += totalSubCount;
-        }
-        saveGameData();
-        syncToFirestore(); // [Firestore] 하드십 클리어
-        if (_hardshipNeedSwap) switchMode('kings');
-        if (_hardshipAllCooldown) {
-            if (resultStreakText) resultStreakText.innerHTML += `<br><span style="font-size:13px;color:#f39c12;">${t('hardship_cooldown_result')}</span>`;
-        } else if (_hardshipTotalGrand > 0 && resultStreakText) {
-            resultStreakText.innerHTML += `<br><span style="font-size:13px;color:#aad4ff;">${t('hardship_gem_summary', { gem: _hardshipGemGrand, total: _hardshipTotalGrand, eligible: _hardshipEligGrand })}</span>`;
         }
     }
 
