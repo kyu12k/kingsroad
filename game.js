@@ -12697,12 +12697,12 @@ const PERSONAL_EQUIP_DEFS = {
     shoes:       { name: '평안의 복음의 신',    icon: '👟',  type: 'attend' },
 };
 const PERSONAL_EQUIP_TYPE_DESC = {
-    all: '모든 레이드 대미지',
-    new: '첫 학습 대미지',
-    review: '복습 대미지',
-    boss: '보스전·중간점검 대미지',
-    hardship: '고난 길 대미지',
-    attend: '출석한 날 당일 모든 대미지',
+    all: '모든 레이드 대미지 · 모든 젬',
+    new: '첫 학습 대미지 · 첫 학습 젬',
+    review: '복습 대미지 · 복습 젬',
+    boss: '보스전·중간점검 대미지 · 보스전·중간점검 젬',
+    hardship: '고난 길 대미지 · 고난 길 젬',
+    attend: '출석한 날 당일 모든 대미지 · 모든 젬',
 };
 const PERSONAL_EQUIP_EFFECT = [0, 2, 5, 10, 17, 26]; // 성별 효과(%)
 const PERSONAL_EQUIP_COST   = [0, 4, 8, 24, 72, 216]; // 해당 성에 도달하는 증분 비늘
@@ -13701,6 +13701,22 @@ stageClear = function (type, rewardMultiplier = 1) {
         // ★ [보통 모드 보상 배율 적용]
         if (rewardMultiplier !== 1) {
             baseGem = Math.floor(baseGem * rewardMultiplier);
+        }
+
+        // ★ [개인 장비 젬 보너스]
+        {
+            const eq = myPersonalEquipment || {};
+            let equipGemMult = 1 + PERSONAL_EQUIP_EFFECT[eq.sword || 0] / 100;
+            if (type === 'boss' || type === 'mid-boss')
+                equipGemMult += PERSONAL_EQUIP_EFFECT[eq.shield || 0] / 100;
+            else if (isEligible && reviewStatus.step === 1)
+                equipGemMult += PERSONAL_EQUIP_EFFECT[eq.breastplate || 0] / 100;
+            else if (isEligible && reviewStatus.step > 1)
+                equipGemMult += PERSONAL_EQUIP_EFFECT[eq.helmet || 0] / 100;
+            if (_myGuildStatus && _myGuildStatus.attendedToday)
+                equipGemMult += PERSONAL_EQUIP_EFFECT[eq.shoes || 0] / 100;
+            if (equipGemMult > 1)
+                baseGem = Math.floor(baseGem * equipGemMult);
         }
 
         // ★ [깨달음의 경지 보너스 적용]
@@ -20482,6 +20498,12 @@ function finishHardshipSession(reason) {
             ? [hardshipState.forcedChapter]
             : [...new Set(hardshipState.queue.map(id => parseInt(id.split('-')[0], 10)))].sort((a, b) => a - b);
         let _enduranceGemGrand = 0, _enduranceEligGrand = 0, _enduranceTotalGrand = 0, _enduranceAllCooldown = true;
+        const _enduranceEq = myPersonalEquipment || {};
+        const _enduranceEquipMult = (() => {
+            let m = 1 + PERSONAL_EQUIP_EFFECT[_enduranceEq.sword || 0] / 100 + PERSONAL_EQUIP_EFFECT[_enduranceEq.belt || 0] / 100;
+            if (_myGuildStatus && _myGuildStatus.attendedToday) m += PERSONAL_EQUIP_EFFECT[_enduranceEq.shoes || 0] / 100;
+            return m;
+        })();
         for (const chNum of _enduranceChapters) {
             if (isHardshipChapterDoneToday('endurance', chNum)) continue;
             _enduranceAllCooldown = false;
@@ -20512,6 +20534,7 @@ function finishHardshipSession(reason) {
             const bossId = `${chNum}-boss`;
             if (!stageMastery[bossId]) stageMastery[bossId] = 0;
             stageMastery[bossId]++;
+            subGemTotal = Math.floor(subGemTotal * _enduranceEquipMult);
             myGems += subGemTotal;
             _enduranceGemGrand += subGemTotal;
             _enduranceEligGrand += eligibleSubCount;
@@ -20535,6 +20558,12 @@ function finishHardshipSession(reason) {
             ? [hardshipState.forcedChapter]
             : [...new Set(hardshipState.queue.map(id => parseInt(id.split('-')[0], 10)))].sort((a, b) => a - b);
         let _hardshipGemGrand = 0, _hardshipEligGrand = 0, _hardshipTotalGrand = 0, _hardshipAllCooldown = true;
+        const _hardshipEq = myPersonalEquipment || {};
+        const _hardshipEquipMult = (() => {
+            let m = 1 + PERSONAL_EQUIP_EFFECT[_hardshipEq.sword || 0] / 100 + PERSONAL_EQUIP_EFFECT[_hardshipEq.belt || 0] / 100;
+            if (_myGuildStatus && _myGuildStatus.attendedToday) m += PERSONAL_EQUIP_EFFECT[_hardshipEq.shoes || 0] / 100;
+            return m;
+        })();
         for (const chNum of _hardshipChapters) {
             if (isHardshipChapterDoneToday(hardshipState.mode, chNum)) continue;
             _hardshipAllCooldown = false;
@@ -20561,6 +20590,7 @@ function finishHardshipSession(reason) {
                     subGemTotal += 10;
                 }
             });
+            subGemTotal = Math.floor(subGemTotal * _hardshipEquipMult);
             myGems += subGemTotal;
             _hardshipGemGrand += subGemTotal;
             _hardshipEligGrand += eligibleSubCount;
