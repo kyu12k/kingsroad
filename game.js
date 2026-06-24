@@ -12364,7 +12364,65 @@ function openRankingModal(tabName, titleText) {
         if (typeof loadTotalHallRanking === 'function') loadTotalHallRanking();
     } else if (tabName === 'yearly-hall') {
         if (typeof loadYearlyHallOfFame === 'function') loadYearlyHallOfFame();
+    } else if (tabName === 'guild-raid') {
+        loadGuildRaidLeaderboard();
     }
+}
+
+function loadGuildRaidLeaderboard() {
+    const list = document.getElementById('ranking-list');
+    if (typeof db === 'undefined' || !db) {
+        if (list) list.innerHTML = `<div style="text-align:center;padding:50px;color:#bdc3c7;">오프라인 상태입니다.</div>`;
+        return;
+    }
+    db.collection('guilds').get().then(snapshot => {
+        const currentWeekId = typeof getWeekId === 'function' ? getWeekId() : null;
+        const guilds = [];
+        snapshot.forEach(doc => {
+            const g = doc.data();
+            if (currentWeekId && g.raidWeekId !== currentWeekId) return;
+            const cleared = g.raidClearedCount || 0;
+            const maxHp = g.raidDragonMaxHp || 1;
+            const curHp = g.raidDragonCurrentHp != null ? g.raidDragonCurrentHp : maxHp;
+            const dmgDealt = maxHp - curHp;
+            if (cleared === 0 && dmgDealt <= 0) return;
+            guilds.push({
+                id: doc.id,
+                name: g.name || '(이름 없음)',
+                members: (g.members || []).length,
+                cleared,
+                level: g.raidCurrentDragonLevel || 1,
+                dmgPct: Math.round((dmgDealt / maxHp) * 100),
+                headCleared: g.raidHeadClearedCount || 0,
+            });
+        });
+        guilds.sort((a, b) => b.cleared !== a.cleared ? b.cleared - a.cleared : b.dmgPct - a.dmgPct);
+
+        if (guilds.length === 0) {
+            list.innerHTML = `<div style="text-align:center;padding:50px;color:#7f8c8d;">이번 주 레이드 기록이 없습니다.</div>`;
+            return;
+        }
+        const medals = ['🥇', '🥈', '🥉'];
+        list.innerHTML = guilds.map((g, i) => {
+            const rank = i + 1;
+            const medal = rank <= 3 ? medals[i] : `<span style="color:#95a5a6;">${rank}</span>`;
+            const isMyGuild = g.id === myGuildId;
+            const levelName = typeof getDragonLevelName === 'function' ? getDragonLevelName(g.level) : `Lv.${g.level}`;
+            return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;margin-bottom:8px;background:${isMyGuild ? 'rgba(80,60,160,0.3)' : 'rgba(255,255,255,0.04)'};border:1px solid ${isMyGuild ? 'rgba(120,90,220,0.5)' : 'rgba(255,255,255,0.07)'};">
+                <span style="font-size:${rank <= 3 ? '1.4rem' : '0.9rem'};width:28px;text-align:center;">${medal}</span>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:bold;color:#ecf0f1;font-size:0.9rem;">${g.name}${isMyGuild ? ' <span style="font-size:0.7rem;color:#a080e0;">내 길드</span>' : ''}</div>
+                    <div style="font-size:0.75rem;color:#7f8c8d;margin-top:2px;">👤 ${g.members}명 &nbsp;·&nbsp; ${levelName} &nbsp;·&nbsp; HP ${g.dmgPct}% 피해</div>
+                </div>
+                <div style="text-align:right;flex-shrink:0;">
+                    <div style="font-weight:bold;color:#e88;font-size:0.95rem;">${g.cleared}마리 처치</div>
+                    ${g.headCleared > 0 ? `<div style="font-size:0.72rem;color:#a080e0;">머리 ${g.headCleared}마리</div>` : ''}
+                </div>
+            </div>`;
+        }).join('');
+    }).catch(() => {
+        if (list) list.innerHTML = `<div style="text-align:center;padding:50px;color:#e74c3c;">불러오기에 실패했습니다.</div>`;
+    });
 }
 
 /* [추가] 랭킹 팝업창 닫기 */
@@ -12640,6 +12698,34 @@ function getWeekId(dateObj) {
     return `${d.getFullYear()}-W${String(weekNumber).padStart(2, '0')}`;
 }
 
+// ===== 랭킹 팝업 메뉴 =====
+function toggleRankingMenu(btn) {
+    const popup = document.getElementById('ranking-menu-popup');
+    if (!popup) return;
+    const isOpen = popup.classList.toggle('open');
+    if (isOpen) closeMoreMenu();
+}
+
+function closeRankingMenu() {
+    const popup = document.getElementById('ranking-menu-popup');
+    if (popup) popup.classList.remove('open');
+}
+
+function openGuildRankingDirect() {
+    closeRankingMenu();
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    let screen = document.getElementById('ranking-screen');
+    if (!screen) {
+        openRankingScreen();
+        showRankingScreenReal();
+    } else {
+        screen.classList.add('active');
+        const overlay = document.getElementById('ranking-overlay');
+        if (overlay) overlay.style.display = 'none';
+    }
+    openRankingModal('guild-raid', '🐉 길드 레이드 순위');
+}
+
 // ===== 더보기 팝업 메뉴 =====
 function toggleMoreMenu(btn) {
     const popup = document.getElementById('more-menu-popup');
@@ -12668,6 +12754,13 @@ document.addEventListener('click', function(e) {
     if (popup && popup.classList.contains('open')) {
         if (!popup.contains(e.target) && btn && !btn.contains(e.target)) {
             closeMoreMenu();
+        }
+    }
+    const rankPopup = document.getElementById('ranking-menu-popup');
+    const rankBtn = document.getElementById('nav-ranking-btn');
+    if (rankPopup && rankPopup.classList.contains('open')) {
+        if (!rankPopup.contains(e.target) && rankBtn && !rankBtn.contains(e.target)) {
+            closeRankingMenu();
         }
     }
 });

@@ -1957,7 +1957,7 @@
             <div class="nav-badge"></div>
             <span>🏰</span><span data-i18n="nav_home">홈</span>
         </div>
-        <div class="nav-item" onclick="openRankingScreen()">
+        <div class="nav-item" id="nav-ranking-btn" onclick="toggleRankingMenu(this)">
             <div class="nav-badge"></div>
             <span>🏆</span><span data-i18n="nav_ranking">랭킹</span>
         </div>
@@ -1968,6 +1968,15 @@
         <div class="nav-item" id="nav-more-btn" onclick="toggleMoreMenu(this)">
             <div id="badge-more" class="nav-badge"></div>
             <span id="nav-more-icon">▲</span>
+        </div>
+    </div>
+
+    <div id="ranking-menu-popup">
+        <div class="more-menu-item" onclick="openRankingScreen(); closeRankingMenu();">
+            🏆 승점 순위
+        </div>
+        <div class="more-menu-item" onclick="openGuildRankingDirect();">
+            🐉 길드 레이드
         </div>
     </div>
 

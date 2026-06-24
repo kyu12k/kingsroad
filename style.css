@@ -95,6 +95,26 @@ button,
     display: grid !important;
 }
 
+/* 랭킹 팝업 */
+#ranking-menu-popup {
+    display: none;
+    flex-direction: column;
+    position: fixed;
+    bottom: var(--nav-h);
+    left: 25%;
+    width: 25%;
+    background: rgba(28, 46, 74, 0.97);
+    border: 0.5px solid #1d3550;
+    border-radius: 12px 12px 0 0;
+    padding: 8px 0;
+    z-index: 1201;
+    box-shadow: -4px -4px 16px rgba(0,0,0,0.35);
+    backdrop-filter: blur(10px);
+}
+#ranking-menu-popup.open {
+    display: flex;
+}
+
 /* 더보기 팔업 */
 #more-menu-popup {
     display: none;
