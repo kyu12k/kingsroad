@@ -13099,14 +13099,18 @@ function _renderGuildHome(body, guild, myStatus = {}) {
     // 멤버 목록
     html += `<div class="guild-section-title">👤 멤버 (${guild.members.length}/${maxMembers})</div>`;
     html += `<div class="guild-member-list">`;
+    const _memos = _getMemberMemos();
     guild.members.forEach(tag => {
         const nick = nicknames[tag] || tag;
         const isThisLeader = tag === guild.leaderId;
-        html += `<div class="guild-member-row">
+        const memo = _memos[tag] || '';
+        html += `<div class="guild-member-row" style="flex-wrap:wrap;gap:2px;">
             <span class="guild-member-name">${nick}<span class="guild-member-tag"> #${tag}</span>${isThisLeader ? ' <span class="guild-leader-badge">길드장</span>' : ''}</span>
-            ${isLeader && tag !== myTag
-                ? `<button class="guild-btn-kick" onclick="_kickGuildMember('${tag}')">추방</button>`
-                : ''}
+            <span style="display:flex;align-items:center;gap:4px;margin-left:auto;">
+                ${isLeader && tag !== myTag ? `<button class="guild-btn-kick" onclick="_kickGuildMember('${tag}')">추방</button>` : ''}
+                <button onclick="_editMemberMemo('${tag}','${nick.replace(/'/g, "\\'")}')" style="background:none;border:1px solid #4a4a6a;border-radius:5px;color:${memo ? '#f1c40f' : '#7070a0'};font-size:11px;padding:2px 6px;cursor:pointer;" title="${memo || '메모 없음'}">📝</button>
+            </span>
+            ${memo ? `<div style="width:100%;font-size:11px;color:#a090c0;padding:2px 2px 0;white-space:pre-wrap;word-break:break-all;">${memo}</div>` : ''}
         </div>`;
     });
     html += `</div>`;
@@ -13204,6 +13208,44 @@ async function _respondGuildRequest(targetTag, accept) {
     } catch (e) {
         showGemToast(0, e.message || '처리 실패', true);
     }
+}
+
+function _getMemberMemos() {
+    try { return JSON.parse(localStorage.getItem('kingsRoad_memberMemos') || '{}'); } catch(e) { return {}; }
+}
+
+function _editMemberMemo(tag, nick) {
+    let overlay = document.getElementById('member-memo-overlay');
+    if (overlay) overlay.remove();
+    const memos = _getMemberMemos();
+    const current = memos[tag] || '';
+    overlay = document.createElement('div');
+    overlay.id = 'member-memo-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10000;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `
+        <div style="background:#1e1e2e;border-radius:14px;padding:20px;max-width:300px;width:88%;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+            <div style="color:#c8b8e8;font-size:14px;font-weight:700;margin-bottom:12px;">📝 ${nick} 메모</div>
+            <textarea id="member-memo-input" style="width:100%;box-sizing:border-box;height:80px;background:#12121e;border:1px solid #4a4a6a;border-radius:8px;color:#e0d8f0;font-size:13px;padding:8px;resize:none;" placeholder="나만 보이는 메모">${current}</textarea>
+            <div style="display:flex;gap:8px;margin-top:12px;">
+                <button onclick="_saveMemberMemo('${tag}')" style="flex:1;padding:9px;border-radius:8px;border:none;background:#5040a0;color:#fff;font-size:14px;cursor:pointer;">저장</button>
+                <button onclick="document.getElementById('member-memo-overlay').remove()" style="flex:1;padding:9px;border-radius:8px;border:none;background:#3a3a5c;color:#b0a8d0;font-size:14px;cursor:pointer;">취소</button>
+            </div>
+        </div>`;
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
+    document.getElementById('member-memo-input').focus();
+}
+
+function _saveMemberMemo(tag) {
+    const input = document.getElementById('member-memo-input');
+    if (!input) return;
+    const memos = _getMemberMemos();
+    const text = input.value.trim();
+    if (text) memos[tag] = text;
+    else delete memos[tag];
+    localStorage.setItem('kingsRoad_memberMemos', JSON.stringify(memos));
+    document.getElementById('member-memo-overlay')?.remove();
+    _renderGuildScreen();
 }
 
 function _showRaidDamageTable() {
@@ -19836,6 +19878,7 @@ function renderHardshipMemoryVerse() {
         const isHintRevealed = hardshipState.revealedHints.indexOf(index) !== -1;
         const validSlotIndex = getHardshipValidSlotIndexByVerseIndex(index);
         const isWrong = hardshipState.wrongSlots && hardshipState.wrongSlots.indexOf(index) !== -1;
+        const isSpaceWrong = !isHintRevealed && character === ' ' && !!currentValue && currentValue !== ' ';
         const slotClasses = [
             'char-slot',
             'hardship-char-slot',
@@ -19843,7 +19886,7 @@ function renderHardshipMemoryVerse() {
             character === ' ' ? 'is-space' : '',
             isHintRevealed ? 'hint-revealed' : '',
             currentValue ? 'filled' : '',
-            isWrong ? 'wrong' : '',
+            (isWrong || isSpaceWrong) ? 'wrong' : '',
             !isHintRevealed && activeValidSlotIndex === validSlotIndex ? 'active' : ''
         ].filter(Boolean).join(' ');
         const displayValue = currentValue || '&nbsp;';
@@ -20060,17 +20103,26 @@ function updateHardshipMemoryBoard() {
 
     const text = String(hardshipState.memoryTypedText || '');
     const slots = document.querySelectorAll('.char-slot.is-valid');
+    const activeText = getHardshipActiveText(hardshipState.currentVerse);
     let targetScrollSlot = null;
 
     slots.forEach((slot, index) => {
-        if (index < text.length) {
-            slot.innerText = text[index];
+        const charValue = index < text.length ? text[index] : '';
+        if (charValue) {
+            slot.innerText = charValue;
             slot.classList.add('filled');
         } else {
             slot.innerText = '';
             slot.classList.remove('filled');
         }
         slot.classList.remove('active');
+
+        const verseIndex = parseInt(slot.dataset.index, 10);
+        if (!isNaN(verseIndex) && activeText.charAt(verseIndex) === ' ' && charValue !== '' && charValue !== ' ') {
+            slot.classList.add('wrong');
+        } else {
+            slot.classList.remove('wrong');
+        }
     });
 
     if (text.length < slots.length && slots[text.length]) {
@@ -20190,55 +20242,77 @@ function getNextHardshipHintIndex() {
 
 function getHardshipMemoryHintPlan() {
     if (!hardshipState.currentVerse) {
-        return { autoSpaces: '', hintIndex: -1 };
+        return { memoryTextMods: [], hintIndex: -1 };
     }
 
     const verseText = getHardshipActiveText(hardshipState.currentVerse);
-    let simulatedTypedText = String(hardshipState.memoryTypedText || '');
+    let simulatedTypedArr = Array.from(String(hardshipState.memoryTypedText || ''));
     const revealedHintSet = new Set(hardshipState.revealedHints || []);
+    const memoryTextMods = [];
+
+    const getTypedIdxFor = (verseIdx) => {
+        let ti = 0;
+        for (let i = 0; i < verseIdx; i++) {
+            if (!isHardshipTypingTargetChar(verseText.charAt(i))) continue;
+            if (revealedHintSet.has(i)) continue;
+            ti++;
+        }
+        return ti;
+    };
 
     const findNextIndex = () => {
         let typedIndex = 0;
-
         for (let index = 0; index < verseText.length; index++) {
             const character = verseText.charAt(index);
             if (!isHardshipTypingTargetChar(character)) continue;
-
             let currentValue = '';
             if (revealedHintSet.has(index)) {
                 currentValue = character;
             } else {
-                currentValue = typedIndex < simulatedTypedText.length ? simulatedTypedText.charAt(typedIndex) : '';
-                typedIndex += 1;
+                currentValue = typedIndex < simulatedTypedArr.length ? simulatedTypedArr[typedIndex] : '';
+                typedIndex++;
             }
-
             if (!hardshipCharsMatch(currentValue, character)) {
                 return index;
             }
         }
-
         return -1;
     };
 
-    let autoSpaces = '';
     let hintIndex = findNextIndex();
 
+    // 공백 슬롯의 오타를 교체하거나 삽입 (무한루프 없이 처리)
     while (hintIndex !== -1 && verseText.charAt(hintIndex) === ' ') {
-        autoSpaces += ' ';
-        simulatedTypedText += ' ';
+        const ti = getTypedIdxFor(hintIndex);
+        if (ti < simulatedTypedArr.length) {
+            memoryTextMods.push({ typedIndex: ti, action: 'replace', char: ' ' });
+            simulatedTypedArr[ti] = ' ';
+        } else {
+            while (simulatedTypedArr.length < ti) simulatedTypedArr.push('');
+            memoryTextMods.push({ typedIndex: ti, action: 'insert', char: ' ' });
+            simulatedTypedArr.splice(ti, 0, ' ');
+        }
         hintIndex = findNextIndex();
     }
 
-    return { autoSpaces, hintIndex };
+    // 비공백 오타 슬롯: 기존에 틀린 글자가 있으면 제거 (push 방지)
+    if (hintIndex !== -1) {
+        const ti = getTypedIdxFor(hintIndex);
+        if (ti < simulatedTypedArr.length && simulatedTypedArr[ti] !== '') {
+            memoryTextMods.push({ typedIndex: ti, action: 'remove', char: '' });
+        }
+    }
+
+    return { memoryTextMods, hintIndex };
 }
 
 function useHardshipMemoryHint() {
     if (!window.isHardshipMode || hardshipState.mode !== 'memory' || hardshipState.locked) return;
 
     const hiddenInput = document.getElementById('hidden-typing-input');
-    const { autoSpaces, hintIndex } = getHardshipMemoryHintPlan();
+    const { memoryTextMods, hintIndex } = getHardshipMemoryHintPlan();
 
-    if (hintIndex === -1) {
+    if (hintIndex === -1 && memoryTextMods.length === 0) {
         alert(t('alert_blank_all_filled'));
         return;
     }
@@ -20254,16 +20328,26 @@ function useHardshipMemoryHint() {
 
     myGems -= HINT_COST;
     if (typeof SoundEffect !== 'undefined' && SoundEffect.playHint) SoundEffect.playHint();
-    if (autoSpaces) {
-        hardshipState.memoryTypedText = `${String(hardshipState.memoryTypedText || '')}${autoSpaces}`;
 
+    if (memoryTextMods.length > 0) {
+        const typedArr = Array.from(String(hardshipState.memoryTypedText || ''));
+        for (const mod of memoryTextMods) {
+            if (mod.action === 'replace') {
+                if (mod.typedIndex < typedArr.length) typedArr[mod.typedIndex] = mod.char;
+            } else if (mod.action === 'insert') {
+                while (typedArr.length < mod.typedIndex) typedArr.push('');
+                typedArr.splice(mod.typedIndex, 0, mod.char);
+            } else if (mod.action === 'remove') {
+                if (mod.typedIndex < typedArr.length) typedArr.splice(mod.typedIndex, 1);
+            }
+        }
+        hardshipState.memoryTypedText = typedArr.join('');
         if (hiddenInput) {
             hiddenInput.value = hardshipState.memoryTypedText;
-            hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
     }
 
-    if (hardshipState.revealedHints.indexOf(hintIndex) === -1) {
+    if (hintIndex !== -1 && hardshipState.revealedHints.indexOf(hintIndex) === -1) {
         hardshipState.revealedHints.push(hintIndex);
         hardshipState.totalHintsUsed = (hardshipState.totalHintsUsed || 0) + 1;
     }
