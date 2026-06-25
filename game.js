@@ -2788,9 +2788,9 @@ function updateMissionUI() {
             desc: t('mission_daily_hardship_memory_title'),
             current: missionData.daily.hardshipMemory || 0,
             target: 1,
-            rewardText: "💎 1,500",
+            rewardText: "💎 2,250",
             rewardType: "gem",
-            val1: 1500, val2: 0,
+            val1: 2250, val2: 0,
             claimed: missionData.daily.claimed[5],
             index: 5,
             type: 'daily'
@@ -2799,9 +2799,9 @@ function updateMissionUI() {
             desc: t('mission_daily_hardship_endurance_title'),
             current: missionData.daily.hardshipEndurance || 0,
             target: 1,
-            rewardText: "💎 900",
+            rewardText: "💎 2,500",
             rewardType: "gem",
-            val1: 900, val2: 0,
+            val1: 2500, val2: 0,
             claimed: missionData.daily.claimed[6],
             index: 6,
             type: 'daily'
@@ -2810,9 +2810,9 @@ function updateMissionUI() {
             desc: t('mission_daily_hardship_verse_title'),
             current: missionData.daily.hardshipVerse || 0,
             target: 1,
-            rewardText: "💎 700",
+            rewardText: "💎 750",
             rewardType: "gem",
-            val1: 700, val2: 0,
+            val1: 750, val2: 0,
             claimed: missionData.daily.claimed[7],
             index: 7,
             type: 'daily'
@@ -10396,19 +10396,19 @@ const ADVANCED_ADDRESS_REWARDS = [
     { from: 13, to: 22, gem: 1200 }
 ];
 const ADVANCED_MEMORY_REWARDS = [
-    { from: 2, to: 6,  gem: 1500 },
-    { from: 7, to: 12, gem: 2500 },
-    { from: 13, to: 22, gem: 4000 }
+    { from: 2, to: 6,  gem: 2250 },
+    { from: 7, to: 12, gem: 3600 },
+    { from: 13, to: 22, gem: 5400 }
 ];
 const ADVANCED_ENDURANCE_REWARDS = [
-    { from: 2, to: 6,  gem: 900 },
-    { from: 7, to: 12, gem: 1400 },
-    { from: 13, to: 22, gem: 2200 }
+    { from: 2, to: 6,  gem: 2500 },
+    { from: 7, to: 12, gem: 4000 },
+    { from: 13, to: 22, gem: 6000 }
 ];
 const ADVANCED_VERSE_REWARDS = [
-    { from: 2, to: 6,  gem: 700 },
-    { from: 7, to: 12, gem: 1100 },
-    { from: 13, to: 22, gem: 1700 }
+    { from: 2, to: 6,  gem: 750 },
+    { from: 7, to: 12, gem: 1200 },
+    { from: 13, to: 22, gem: 1800 }
 ];
 const ADVANCED_CHECKPOINT_BOSS_REWARDS = [
     { from: 2, to: 6,  gem: 500 },
@@ -10679,9 +10679,9 @@ function renderMissionList(tabName) {
                 desc: t('mission_daily_hardship_verse_desc'),
                 target: 1,
                 current: missionData.daily.hardshipVerse || 0,
-                reward: "💎 700",
+                reward: "💎 750",
                 rewardType: 'gem',
-                val1: 700, val2: 0,
+                val1: 750, val2: 0,
                 claimed: missionData.daily.claimed[7]
             },
             {
@@ -10690,9 +10690,9 @@ function renderMissionList(tabName) {
                 desc: t('mission_daily_hardship_endurance_desc'),
                 target: 1,
                 current: missionData.daily.hardshipEndurance || 0,
-                reward: "💎 900",
+                reward: "💎 2,500",
                 rewardType: 'gem',
-                val1: 900, val2: 0,
+                val1: 2500, val2: 0,
                 claimed: missionData.daily.claimed[6]
             },
             {
@@ -10701,9 +10701,9 @@ function renderMissionList(tabName) {
                 desc: t('mission_daily_hardship_memory_desc'),
                 target: 1,
                 current: missionData.daily.hardshipMemory || 0,
-                reward: "💎 1,500",
+                reward: "💎 2,250",
                 rewardType: 'gem',
-                val1: 1500, val2: 0,
+                val1: 2250, val2: 0,
                 claimed: missionData.daily.claimed[5]
             },
             (function() {
