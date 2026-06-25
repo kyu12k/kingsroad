@@ -12769,15 +12769,17 @@ document.addEventListener('click', function(e) {
 // ===== 길드 시스템 =====
 
 const GUILD_RAID_DAMAGE = {
-    new:             15,  // 첫 학습
-    checkpointBoss:  30,  // 중간점검
-    dragon:          50,  // 보스전
-    hardshipAddress: 15,
-    hardshipVerse:   30,
-    hardshipEndurance: 80,
-    hardshipMemory:  150,
-    review:           5,  // 복습
+    new:               15, // 고정
+    review:             5, // 고정
+    checkpointBoss:     5, // × 구절 수
+    dragon:             7, // × 구절 수
+    hardshipAddress:    2, // × 구절 수
+    hardshipVerse:      3, // × 구절 수
+    hardshipEndurance:  9, // × 구절 수
+    hardshipMemory:    10, // × 구절 수
 };
+// 구절 수 기반으로 대미지를 계산하는 타입
+const GUILD_RAID_DAMAGE_PER_VERSE = new Set(['checkpointBoss','dragon','hardshipAddress','hardshipVerse','hardshipEndurance','hardshipMemory']);
 
 const GUILD_DRAGON_HEAD_START = 11; // 머리 시작 레벨 (1-10: 뿔, 11-17: 머리)
 const _HORN_NAMES = ['첫째','둘째','셋째','넷째','다섯째','여섯째','일곱째','여덟째','아홉째','열째'];
@@ -12842,7 +12844,14 @@ function _addGuildRaidDamage(type, dedupId) {
         localStorage.setItem('kingsRoad_raidDailyDmg', JSON.stringify(log));
     }
 
+    // 구절 수 기반 배율 적용
     let dmg = base;
+    if (GUILD_RAID_DAMAGE_PER_VERSE.has(type) && dedupId != null) {
+        const chNum = typeof dedupId === 'number' ? dedupId : parseInt(String(dedupId).split('-')[0]);
+        const verseCount = (typeof bibleData !== 'undefined' && bibleData[chNum]) ? bibleData[chNum].length : 20;
+        dmg = base * verseCount;
+    }
+
     const eq = myPersonalEquipment;
 
     // 성령의 검: 모든 대미지
@@ -13348,14 +13357,14 @@ function _showRaidDamageTable() {
     overlay.id = 'raid-damage-table-overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10000;display:flex;align-items:center;justify-content:center;';
     const rows = [
-        ['첫 학습',    15,  '스테이지당'],
-        ['복습',        5,  '스테이지당'],
-        ['중간점검',   30,  '중간점검당'],
-        ['보스전',     50,  '보스당'],
-        ['주소의 고난', 15, '장당'],
-        ['구절의 고난', 30, '장당'],
-        ['암송의 고난', 80, '장당'],
-        ['망각의 고난', 150,'장당'],
+        ['첫 학습',     '15',       '스테이지당'],
+        ['복습',         '5',       '스테이지당'],
+        ['중간점검',    '5×절수',   '장당'],
+        ['보스전',      '7×절수',   '장당'],
+        ['주소의 고난', '2×절수',   '장당'],
+        ['구절의 고난', '3×절수',   '장당'],
+        ['암송의 고난', '9×절수',   '장당'],
+        ['망각의 고난', '10×절수',  '장당'],
     ].map(([name, dmg, limit]) =>
         `<tr><td>${name}</td><td style="text-align:right;font-weight:700;color:#e8c060;">${dmg}</td><td style="text-align:center;color:#8888aa;font-size:11px;">일 1회/${limit}</td></tr>`
     ).join('');
@@ -13715,7 +13724,6 @@ stageClear = function (type, rewardMultiplier = 1) {
                     if (!stageMastery[subId]) stageMastery[subId] = 0;
                     if (!stageClearDate[subId]) stageClearDate[subId] = getMemoryQuizDate();
                     targetStage.cleared = true;
-                    stageLastClear[subId] = Date.now(); // 기억 강도 100% 리셋
                     totalSubCount++;
 
                     // 복습 보상
@@ -13775,7 +13783,6 @@ stageClear = function (type, rewardMultiplier = 1) {
                         if (!stageMastery[subId]) stageMastery[subId] = 0;
                         if (!stageClearDate[subId]) stageClearDate[subId] = getMemoryQuizDate();
                         targetStage.cleared = true;
-                        stageLastClear[subId] = Date.now(); // 기억 강도 100% 리셋 (실제 복습했으므로 항상 적용)
                         totalSubCount++;
 
                         // 복습 보상
