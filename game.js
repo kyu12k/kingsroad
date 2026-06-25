@@ -1777,6 +1777,12 @@ function _getLocalDateStr(d) {
     const dt = d || new Date();
     return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
 }
+// 오전 6시 기준 날짜 문자열 (6시 이전이면 전날로 취급)
+function _get6AMDayStr() {
+    const now = new Date();
+    const boundary = new Date(now); boundary.setHours(6, 0, 0, 0);
+    return _getLocalDateStr(now < boundary ? new Date(now - 86400000) : now);
+}
 function _accumulateSessionTime() {
     const elapsed = Date.now() - _sessionVisibleStart;
     _sessionVisibleStart = Date.now();
@@ -12952,12 +12958,12 @@ async function _renderGuildScreen() {
             return;
         }
         _guildData = { id: myGuildId, ...guildDoc.data() };
-        const todayStr = new Date().toISOString().slice(0, 10);
+        const todayStr = _getLocalDateStr();
         const donateInfo = myLbData.guildDonateInfo || { date: '', count: 0 };
         const donateCountToday = donateInfo.date === todayStr ? donateInfo.count : 0;
         _myGuildStatus = {
             pendingReward: myLbData.pendingRaidReward || null,
-            attendedToday: myLbData.lastGuildAttend === todayStr,
+            attendedToday: myLbData.lastGuildAttend === _get6AMDayStr(),
             donateCountToday,
         };
         _renderGuildHome(body, _guildData, _myGuildStatus);

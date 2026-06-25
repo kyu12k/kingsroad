@@ -513,6 +513,8 @@ function calcGuildXpResult(currentLevel, currentXp, gained) {
 
 function todayKst() {
     const kst = new Date(Date.now() + 9 * 3600000);
+    // 오전 6시 이전이면 전날로 취급
+    if (kst.getUTCHours() < 6) kst.setUTCDate(kst.getUTCDate() - 1);
     return kst.toISOString().slice(0, 10);
 }
 
