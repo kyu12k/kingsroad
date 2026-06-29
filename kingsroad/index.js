@@ -512,9 +512,14 @@ function calcGuildXpResult(currentLevel, currentXp, gained) {
     return { level, xp, levelUp };
 }
 
+// 자정 기준 KST 날짜 (기부 등 일반 일일 초기화용)
 function todayKst() {
     const kst = new Date(Date.now() + 9 * 3600000);
-    // 오전 6시 이전이면 전날로 취급
+    return kst.toISOString().slice(0, 10);
+}
+// 오전 6시 기준 KST 날짜 (출석·레이드 주간 리셋용)
+function today6AmKst() {
+    const kst = new Date(Date.now() + 9 * 3600000);
     if (kst.getUTCHours() < 6) kst.setUTCDate(kst.getUTCDate() - 1);
     return kst.toISOString().slice(0, 10);
 }
@@ -526,7 +531,7 @@ exports.guildAttend = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     const userData = await verifyTag(request.auth.uid, myTag);
     if (!userData.guildId) throw new HttpsError('not-found', '가입한 길드가 없습니다.');
 
-    const today = todayKst();
+    const today = today6AmKst();
     if (userData.lastGuildAttend === today) return { ok: true, alreadyDone: true };
 
     const guildRef = db.collection('guilds').doc(userData.guildId);
