@@ -1,4 +1,4 @@
-const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onCall, onRequest, HttpsError } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const admin = require("firebase-admin");
@@ -81,8 +81,9 @@ exports.saveGameDataSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
 // ── 길드 시스템 ────────────────────────────────────────────────────────────────
 
 function getWeekId() {
-    const now = new Date();
-    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    // KST(UTC+9) 기준 — 스케줄(월요일 06:00 KST)과 일치시키기 위해 KST 날짜 사용
+    const kst = new Date(Date.now() + 9 * 3600000);
+    const d = new Date(Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate()));
     const day = (d.getUTCDay() + 6) % 7;
     d.setUTCDate(d.getUTCDate() - day + 3);
     const firstThursday = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
@@ -642,6 +643,58 @@ exports.weeklyRaidReset = onSchedule({
         await batch.commit();
         console.log(`[weeklyRaidReset] 길드 ${guildDoc.id}: hornFragments=${hornFragments} headSkins=${headSkins} scales=${scales} tier=${scalesTier}`);
     }
+});
+
+// ── 레이드 수동 리셋 (임시, 관리자용) ─────────────────────────────────────────
+exports.manualRaidReset = onRequest({ region: 'asia-northeast3' }, async (req, res) => {
+    if (req.query.secret !== 'kingsroad-admin-2026') { res.status(403).send('Forbidden'); return; }
+    const guildsSnap = await db.collection('guilds').get();
+    const currentWeekId = getWeekId();
+    let resetCount = 0;
+    for (const guildDoc of guildsSnap.docs) {
+        const guild = guildDoc.data();
+        if (guild.raidWeekId === currentWeekId) continue;
+        const clearedCount = guild.raidClearedCount || 0;
+        const headClearedCount = guild.raidHeadClearedCount || 0;
+        const maxHp = guild.raidDragonMaxHp || calcDragonMaxHp(guild.raidCurrentDragonLevel || 1);
+        const currentHp = guild.raidDragonCurrentHp || maxHp;
+        const hpDealtPct = maxHp > 0 ? Math.round(((maxHp - currentHp) / maxHp) * 100) : 0;
+        let scalesTier = 0;
+        if (hpDealtPct >= 80) scalesTier = 4;
+        else if (hpDealtPct >= 60) scalesTier = 3;
+        else if (hpDealtPct >= 40) scalesTier = 2;
+        else if (hpDealtPct >= 20) scalesTier = 1;
+        const guildEquip = guild.guildEquipment || {};
+        const winepressBonus = GUILD_EQUIP_WINEPRESS_BONUS[guildEquip.winepress || 0];
+        const judgmentBonus  = GUILD_EQUIP_JUDGMENT_BONUS[guildEquip.judgment || 0] / 100;
+        const baseScales = clearedCount * 10 + RAID_SCALES_BY_TIER[scalesTier];
+        const scales = Math.round((baseScales + clearedCount * winepressBonus) * (1 + judgmentBonus));
+        const hornFragments = clearedCount + headClearedCount;
+        const headSkins = headClearedCount;
+        const members = guild.members || [];
+        const batch = db.batch();
+        for (const tag of members) {
+            if (hornFragments > 0 || headSkins > 0 || scales > 0) {
+                batch.set(db.collection('leaderboard').doc(String(tag)), {
+                    pendingRaidReward: { weekId: guild.raidWeekId || '', hornFragments, headSkins, scales, scalesTier }
+                }, { merge: true });
+            }
+        }
+        batch.update(guildDoc.ref, {
+            raidCurrentDragonLevel: 1,
+            raidDragonMaxHp: calcDragonMaxHp(1),
+            raidDragonCurrentHp: calcDragonMaxHp(1),
+            raidClearedCount: 0,
+            raidHeadClearedCount: 0,
+            raidContributions: {},
+            raidStatus: 'active',
+            raidWeekId: currentWeekId,
+        });
+        await batch.commit();
+        resetCount++;
+        console.log(`[manualRaidReset] 길드 ${guildDoc.id}: scales=${scales} hornFragments=${hornFragments} headSkins=${headSkins}`);
+    }
+    res.send(`리셋 완료: ${resetCount}개 길드`);
 });
 
 exports.buyPersonalEquipment = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
