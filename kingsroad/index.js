@@ -584,7 +584,11 @@ exports.claimRaidReward = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     const reward = lbDoc.exists ? lbDoc.data().pendingRaidReward : null;
     if (!reward) return { ok: false };
 
-    await lbRef.update({ pendingRaidReward: admin.firestore.FieldValue.delete() });
+    const updates = { pendingRaidReward: admin.firestore.FieldValue.delete() };
+    if (reward.scales)        updates.dragonScales        = admin.firestore.FieldValue.increment(reward.scales);
+    if (reward.hornFragments) updates.dragonHornFragments = admin.firestore.FieldValue.increment(reward.hornFragments);
+    if (reward.headSkins)     updates.dragonHeadSkins     = admin.firestore.FieldValue.increment(reward.headSkins);
+    await lbRef.update(updates);
     return { ok: true, hornFragments: reward.hornFragments || 0, headSkins: reward.headSkins || 0, scales: reward.scales || 0 };
 });
 
