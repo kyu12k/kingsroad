@@ -19973,23 +19973,26 @@ function renderHardshipMemoryVerse() {
     const activeValidSlotIndex = getHardshipActiveValidSlotIndex();
 
     const _activeText = getHardshipActiveText(hardshipState.currentVerse);
-    const typingBoardHtml = _activeText.split('').map((character, index) => {
+    const ultimateActive = !!hardshipState.ultimateMemoryMode;
+
+    const charParts = _activeText.split('').map((character, index) => {
+        const isSpaceChar = character === ' ';
         if (!isHardshipTypingTargetChar(character)) {
-            const extraClass = character === ' ' ? ' space' : '';
-            const displayChar = character === ' ' ? '&nbsp;' : character;
-            return `<span class="hardship-fixed-char${extraClass}">${displayChar}</span>`;
+            const extraClass = isSpaceChar ? ' space' : '';
+            const displayChar = isSpaceChar ? '&nbsp;' : character;
+            return { html: `<span class="hardship-fixed-char${extraClass}">${displayChar}</span>`, isSpaceChar };
         }
 
         const currentValue = hardshipState.memorySlots[index] || '';
         const isHintRevealed = hardshipState.revealedHints.indexOf(index) !== -1;
         const validSlotIndex = getHardshipValidSlotIndexByVerseIndex(index);
         const isWrong = hardshipState.wrongSlots && hardshipState.wrongSlots.indexOf(index) !== -1;
-        const isSpaceWrong = !isHintRevealed && character === ' ' && !!currentValue && currentValue !== ' ';
+        const isSpaceWrong = !isHintRevealed && isSpaceChar && !!currentValue && currentValue !== ' ';
         const slotClasses = [
             'char-slot',
             'hardship-char-slot',
             !isHintRevealed ? 'is-valid' : '',
-            character === ' ' ? 'is-space' : '',
+            isSpaceChar ? 'is-space' : '',
             isHintRevealed ? 'hint-revealed' : '',
             currentValue ? 'filled' : '',
             (isWrong || isSpaceWrong) ? 'wrong' : '',
@@ -19998,12 +20001,37 @@ function renderHardshipMemoryVerse() {
         const displayValue = currentValue || '&nbsp;';
         const wrongHint = (isWrong && hardshipState.awaitingNext)
             ? `<span class="wrong-answer-hint">${_activeText.charAt(index)}</span>` : '';
-        return `<button type="button" class="${slotClasses}" data-index="${index}" onclick="focusHardshipMemoryHiddenInput()" ontouchstart="focusHardshipMemoryHiddenInput()" ${hardshipState.locked ? 'disabled' : ''}>${displayValue}${wrongHint}</button>`;
-    }).join('');
+        return {
+            html: `<button type="button" class="${slotClasses}" data-index="${index}" onclick="focusHardshipMemoryHiddenInput()" ontouchstart="focusHardshipMemoryHiddenInput()" ${hardshipState.locked ? 'disabled' : ''}>${displayValue}${wrongHint}</button>`,
+            isSpaceChar
+        };
+    });
+
+    let typingBoardHtml;
+    if (ultimateActive) {
+        let result = '';
+        let wordBuffer = [];
+        const flushWord = () => {
+            if (wordBuffer.length > 0) {
+                result += `<span class="hardship-word">${wordBuffer.join('')}</span>`;
+                wordBuffer = [];
+            }
+        };
+        charParts.forEach(({ html, isSpaceChar }) => {
+            if (isSpaceChar) {
+                flushWord();
+                result += html;
+            } else {
+                wordBuffer.push(html);
+            }
+        });
+        flushWord();
+        typingBoardHtml = result;
+    } else {
+        typingBoardHtml = charParts.map(p => p.html).join('');
+    }
 
     const hiddenInputMaxLength = getHardshipFillableVerseLength();
-
-    const ultimateActive = !!hardshipState.ultimateMemoryMode;
 
     field.innerHTML = `
         <div class="verse-indicator">${t('hardship_memory_indicator')}</div>

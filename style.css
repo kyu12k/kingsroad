@@ -2205,14 +2205,33 @@ body, html {
     cursor: default;
 }
 
-/* 궁극의 암기 모드: 빈 슬롯과 고정 문자 숨김 */
-.hardship-typing-board.hardship-ultimate-active .hardship-char-slot:not(.filled):not(.hint-revealed),
-.hardship-typing-board.hardship-ultimate-active .hardship-fixed-char {
-    visibility: hidden;
+/* 궁극의 암기 모드: 단어 단위 밑줄, 개별 슬롯 경계 숨김 */
+.hardship-typing-board.hardship-ultimate-active .hardship-word {
+    display: inline-flex;
+    align-items: flex-end;
+    border-bottom: 2px solid rgba(127, 140, 141, 0.5);
 }
 
-.hardship-typing-board.hardship-ultimate-active .hardship-char-slot.filled {
+.hardship-typing-board.hardship-ultimate-active .hardship-word .hardship-char-slot {
+    border-bottom: none;
+}
+
+.hardship-typing-board.hardship-ultimate-active .hardship-word .hardship-char-slot.wrong {
+    border-bottom: 2px solid #e74c3c;
+}
+
+.hardship-typing-board.hardship-ultimate-active .hardship-word .hardship-char-slot.hint-revealed {
+    border-bottom: 2px solid #2ecc71;
+}
+
+/* 공백 슬롯: 단어 사이 간격만, 테두리 없음 */
+.hardship-typing-board.hardship-ultimate-active .hardship-char-slot.is-space {
+    border-bottom: none;
     visibility: visible;
+}
+
+.hardship-typing-board.hardship-ultimate-active .hardship-char-slot.is-space.wrong {
+    border-bottom: 2px solid #e74c3c;
 }
 
 .hardship-not-filled-alert {
