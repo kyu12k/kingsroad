@@ -13763,6 +13763,9 @@ stageClear = function (type, rewardMultiplier = 1) {
             msg += t('msg_boss_clear', { total: totalSubCount, eligible: eligibleSubCount }) + '\n';
 
             // ★ 미션 업데이트: 보스 처치
+            if (!isAlreadyClearedToday) {
+                updateMissionProgress('checkpointBoss', sId); // 일일 미션
+            }
             updateMissionProgress('advancedCheckpointBoss', sId); // 심화 미션
             updateMissionProgress('dragon', sId); // 레이드 대미지 + 주간 미션
         }
