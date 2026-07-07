@@ -3861,15 +3861,19 @@ body, html {
     flex-direction: column;
     overflow: hidden;
 }
-/* 회전하는 광채 (Sunburst) */
+/* 은은하게 맥동하는 축하 글로우 */
 .sunburst {
     position: absolute;
-    width: 200vmax; height: 200vmax;
-    background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.1) 0deg, rgba(255, 255, 255, 0.1) 15deg, transparent 15deg, transparent 30deg);
-    animation: rotate-sunburst 20s linear infinite;
+    width: 150vmax; height: 150vmax;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.15) 30%, transparent 70%);
+    animation: pulse-glow 2.5s ease-in-out infinite;
     z-index: 0;
 }
-@keyframes rotate-sunburst { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes pulse-glow {
+    0%, 100% { transform: scale(0.85); opacity: 0.7; }
+    50% { transform: scale(1.05); opacity: 1; }
+}
 
 /* 메달 카드 및 애니메이션 */
 .milestone-card {
