@@ -21,6 +21,21 @@ const ALLOWED_ORIGINS = [
 // 필수 필드 목록
 const REQUIRED_FIELDS = ["version", "gems", "level", "nickname", "tag", "playerId"];
 
+// ── 점수·젬 조작 방지 상한 (정상 플레이보다 훨씬 넉넉 — 무한/즉시 조작만 차단. 필요시 조정) ──
+const GEM_ABS_MAX          = 100000000; // 젬 절대 상한
+const GEM_DAILY_GAIN_MAX   = 100000;    // 하루 최대 젬 증가폭
+const SCORE_ABS_MAX        = 20000000;  // 점수 필드 절대 상한
+const SCORE_DAILY_GAIN_MAX = 100000;    // 하루 최대 점수 증가폭(yearlyScore 델타 기준)
+const DAY_MS               = 24 * 60 * 60 * 1000;
+// 클라이언트가 제출한 점수 저장 시 검증할 점수 필드
+const SCORE_FIELDS = ['score', 'myMonthlyScore', 'totalScore', 'yearlyScore', 'prevWeekScore', 'prevMonthlyScore'];
+// submitScoreSecure가 leaderboard에 쓸 수 있는 필드 화이트리스트 (재화 필드 주입 차단)
+const SCORE_WRITE_WHITELIST = [
+    ...SCORE_FIELDS,
+    'nickname', 'castleLv', 'tribe', 'dept', 'tag',
+    'weekId', 'monthId', 'prevWeekId', 'prevMonthId', 'maxHearts', 'weeklyHistory',
+];
+
 /**
  * 게임 데이터 저장 검증 Cloud Function
  * 클라이언트가 직접 Firestore에 쓰는 대신 이 함수를 통해 저장
@@ -47,7 +62,7 @@ exports.saveGameDataSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
     }
 
     // 4. 기본 타입 검증
-    if (typeof newData.gems !== "number" || newData.gems < 0) {
+    if (typeof newData.gems !== "number" || newData.gems < 0 || newData.gems > GEM_ABS_MAX) {
         throw new HttpsError("invalid-argument", "젬 값이 유효하지 않습니다.");
     }
     if (typeof newData.level !== "number" || newData.level < 0 || newData.level > 50) {
@@ -60,6 +75,17 @@ exports.saveGameDataSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
         throw new HttpsError("invalid-argument", "updatedAt이 서버 시간보다 미래입니다.");
     }
 
+    // 6. 젬 하루 증가폭 상한 (무한 젬 생성 방지). 기존 문서가 없으면(첫 저장) 부트스트랩으로 통과.
+    const prevSaveSnap = await db.collection("saves").doc(uid).get();
+    if (prevSaveSnap.exists && typeof prevSaveSnap.data().gems === "number") {
+        const gemGain = Math.max(0, newData.gems - prevSaveSnap.data().gems);
+        if (gemGain > 0) {
+            await enforceRateLimit(uid, "gemGain", {
+                maxCalls: 100000, windowMs: DAY_MS,
+                maxSum: GEM_DAILY_GAIN_MAX, sumValue: gemGain,
+            });
+        }
+    }
 
     // 7. 검증 통과 — 서버 타임스탬프로 덮어써서 저장
     const dataToSave = {
@@ -76,6 +102,57 @@ exports.saveGameDataSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
     }
 
     return { success: true, updatedAt: serverNow };
+});
+
+/**
+ * 점수 저장 검증 Cloud Function
+ * 클라이언트가 leaderboard.score를 직접 쓰는 대신 이 함수로만 제출한다.
+ * (firestore.rules에서 점수 필드 직접 쓰기를 차단해야 실효성 있음)
+ */
+exports.submitScoreSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const p = request.data || {};
+    const { myTag } = p;
+
+    await verifyTag(request.auth.uid, myTag);
+
+    // 점수 필드 타입·범위 검증 (정수, 0 이상, 절대 상한 이하 — '즉시 1억' 류 차단)
+    for (const f of SCORE_FIELDS) {
+        if (p[f] === undefined) continue;
+        if (typeof p[f] !== 'number' || !Number.isInteger(p[f]) || p[f] < 0 || p[f] > SCORE_ABS_MAX) {
+            throw new HttpsError('invalid-argument', '점수 값이 유효하지 않습니다.');
+        }
+    }
+
+    const lbRef = db.collection('leaderboard').doc(String(myTag));
+    const oldSnap = await lbRef.get();
+    const old = oldSnap.exists ? oldSnap.data() : {};
+
+    // 하루 점수 증가폭 상한 — yearlyScore(단조 증가)의 델타 기준.
+    // 서버에 기존 yearlyScore가 없으면(첫 저장·구 스키마) 부트스트랩으로 통과(절대 상한만 적용).
+    if (typeof old.yearlyScore === 'number' && typeof p.yearlyScore === 'number') {
+        const gain = Math.max(0, p.yearlyScore - old.yearlyScore);
+        if (gain > 0) {
+            await enforceRateLimit(request.auth.uid, 'scoreGain', {
+                maxCalls: 100000, windowMs: DAY_MS,
+                maxSum: SCORE_DAILY_GAIN_MAX, sumValue: gain,
+            });
+        }
+    }
+
+    // 화이트리스트 필드만 저장 (재화·길드 필드 주입 차단)
+    // updatedAt은 기존 leaderboard 관례(Timestamp)에 맞춰 서버 타임스탬프로 기록
+    const dataToSave = { updatedAt: admin.firestore.FieldValue.serverTimestamp(), savedByServer: true };
+    for (const k of SCORE_WRITE_WHITELIST) {
+        if (p[k] !== undefined) dataToSave[k] = p[k];
+    }
+    if (typeof dataToSave.nickname === 'string' && dataToSave.nickname.length > 20) {
+        dataToSave.nickname = dataToSave.nickname.slice(0, 20);
+    }
+    dataToSave.tag = String(myTag); // 항상 본인 태그로 고정
+
+    await lbRef.set(dataToSave, { merge: true });
+    return { ok: true };
 });
 
 // ── 길드 시스템 ────────────────────────────────────────────────────────────────

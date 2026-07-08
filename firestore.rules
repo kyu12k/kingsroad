@@ -8,11 +8,14 @@ service cloud.firestore {
     match /leaderboard/{userId} {
       allow read: if true;
 
-      // 클라이언트가 절대 직접 쓰면 안 되는 서버 전용(재화·장비·길드·보상) 필드
+      // 클라이언트가 절대 직접 쓰면 안 되는 서버 전용 필드
+      // (재화·장비·길드·보상 + 점수. 점수는 submitScoreSecure CF로만 기록)
       function serverOnlyKeys() {
         return ['dragonScales', 'dragonHornFragments', 'dragonHeadSkins',
                 'personalEquipment', 'pendingRaidReward', 'pendingInvites',
-                'guildId', 'guildDonateInfo', 'lastGuildAttend'];
+                'guildId', 'guildDonateInfo', 'lastGuildAttend',
+                'score', 'myMonthlyScore', 'totalScore', 'yearlyScore',
+                'prevWeekScore', 'prevMonthlyScore'];
       }
 
       // 생성: 로그인 상태 + 재화/보상 필드를 포함하지 않아야 함

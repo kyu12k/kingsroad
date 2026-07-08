@@ -17177,10 +17177,9 @@ function saveMyScoreToServer() {
     // ★ 진짜로 서버에 데이터를 보낼 때만 로그를 띄우도록 위치 변경
     console.log("📡 점수 변동 감지! 서버에 주간 점수 저장 중...");
 
-    db.collection("leaderboard").doc(myTag).set({
-        ...payload,
-        updatedAt: new Date()
-    }, { merge: true })
+    // 점수는 직접 쓰지 않고 검증 CF(submitScoreSecure)로만 제출한다 (조작 방지).
+    const _submitScore = firebase.app().functions('asia-northeast3').httpsCallable('submitScoreSecure');
+    _submitScore({ ...payload, myTag })
         .then(() => {
             lastScorePayloadKey = nextKey;
             try {
