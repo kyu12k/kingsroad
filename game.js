@@ -6779,6 +6779,14 @@ function startBossBattle() {
             playerHearts = savedData.hp;
             currentBossHp = savedData.bossHp;
             currentBossPartIndex = (typeof savedData.partIndex === 'number') ? savedData.partIndex : 0;
+            // ★ [버그 픽스] 무작위 모드로 저장했다면, 이어할 때도 저장된 순서 그대로 복원
+            if (Array.isArray(savedData.order) && savedData.order.length === window.currentBattleData.length) {
+                const byVerseNum = new Map(window.currentBattleData.map(v => [v._verseNum, v]));
+                const reordered = savedData.order.map(num => byVerseNum.get(num)).filter(Boolean);
+                if (reordered.length === window.currentBattleData.length) {
+                    window.currentBattleData = reordered;
+                }
+            }
         } else {
             currentVerseIdx = 0;
             currentBossHp = maxBossHp;
@@ -7810,6 +7818,10 @@ function saveBattleCheckpoint() {
         hp: playerHearts,                 // ★ 현재 체력 그대로 저장
         maxHp: maxPlayerHearts,
         bossHp: currentBossHp,
+        // ★ [버그 픽스] 무작위 모드일 때 셔플된 구절 순서도 함께 저장 (이어하기 시 순서대로로 바뀌는 문제 방지)
+        order: (bossOrderMode === 'random' && Array.isArray(window.currentBattleData))
+            ? window.currentBattleData.map(v => v._verseNum)
+            : null,
         timestamp: Date.now()
     };
 
