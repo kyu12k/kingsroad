@@ -7798,6 +7798,13 @@ function revivePlayer() {
 /* [시스템] 자동 저장 및 불러오기 기능 */
 
 // 1. 토스트 알림 띄우기
+// [보안] 사용자 입력(닉네임·길드명·메모 등)을 HTML에 삽입하기 전 이스케이프 — 저장형 XSS 방지
+function escapeHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, ch => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+    ));
+}
+
 function showToast(message) {
     const toast = document.getElementById("toast-notification");
     toast.innerText = message;
@@ -12429,7 +12436,7 @@ function loadGuildRaidLeaderboard() {
             return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;margin-bottom:8px;background:${isMyGuild ? 'rgba(80,60,160,0.3)' : 'rgba(255,255,255,0.04)'};border:1px solid ${isMyGuild ? 'rgba(120,90,220,0.5)' : 'rgba(255,255,255,0.07)'};">
                 <span style="font-size:${rank <= 3 ? '1.4rem' : '0.9rem'};width:28px;text-align:center;">${medal}</span>
                 <div style="flex:1;min-width:0;">
-                    <div style="font-weight:bold;color:#ecf0f1;font-size:0.9rem;">${g.name}${isMyGuild ? ' <span style="font-size:0.7rem;color:#a080e0;">내 길드</span>' : ''}</div>
+                    <div style="font-weight:bold;color:#ecf0f1;font-size:0.9rem;">${escapeHtml(g.name)}${isMyGuild ? ' <span style="font-size:0.7rem;color:#a080e0;">내 길드</span>' : ''}</div>
                     <div style="font-size:0.75rem;color:#7f8c8d;margin-top:2px;">👤 ${g.members}명 &nbsp;·&nbsp; ${levelName} &nbsp;·&nbsp; HP ${g.dmgPct}% 피해</div>
                 </div>
                 <div style="text-align:right;flex-shrink:0;">
@@ -12511,7 +12518,7 @@ function renderHallOfFameList(data, title) {
                     ${medalText}
                 </div>
                 <div style="font-size:1.2rem; font-weight:bold; color:white; margin-bottom:5px; display:flex; justify-content:center; align-items:center;">
-                    ${getTribeIcon(user.tribe || 0)}${getDeptTag(user.dept)} ${user.name}
+                    ${getTribeIcon(user.tribe || 0)}${getDeptTag(user.dept)} ${escapeHtml(user.name)}
                     <span style="font-size:0.8rem; color:#bdc3c7; font-weight:normal; margin-left:6px;">#${user.tag || "0000"}</span>
                 </div>
                 <div style="font-size:1rem; color:${trophyColor}; font-weight:bold;">
@@ -12533,7 +12540,7 @@ function renderHallOfFameList(data, title) {
                     ${rank <= 10 ? '⭐' : ''}${rank}
                 </div>
                 <div style="flex:1; margin-left:10px;">
-                    ${getTribeIcon(user.tribe || 0)}${getDeptTag(user.dept)} ${user.name}
+                    ${getTribeIcon(user.tribe || 0)}${getDeptTag(user.dept)} ${escapeHtml(user.name)}
                     <span style="font-size:0.8rem; color:#7f8c8d; margin-left:4px;">#${user.tag || "0000"}</span>
                 </div>
                 <div style="font-weight:bold; color:#ecf0f1;">${user.score.toLocaleString()}</div>
@@ -12600,7 +12607,7 @@ function renderRankingList(data) {
             <div style="flex:1;">
                 <div style="display:flex; align-items:center; margin-bottom:4px;">
                     <span style="font-weight:bold; font-size:1.05rem; display:flex; align-items:center; color:#fff;">
-                        ${getTribeIcon(userTribe)}${getDeptTag(user.dept)} ${user.name}
+                        ${getTribeIcon(userTribe)}${getDeptTag(user.dept)} ${escapeHtml(user.name)}
                     </span>
                 </div>
                 <div style="font-size:0.8rem; color:#bdc3c7;">
@@ -12993,7 +13000,7 @@ function _renderGuildNoGuild(body, pendingInvites) {
             const gid = inv.guildId.replace(/'/g, '');
             return `
             <div class="guild-invite-card">
-                <div class="guild-invite-card-name">⚔️ ${inv.guildName}</div>
+                <div class="guild-invite-card-name">⚔️ ${escapeHtml(inv.guildName)}</div>
                 <div class="guild-invite-card-from">${inv.invitedBy}번 길드장이 초대 · ${timeStr}</div>
                 <div class="guild-invite-card-actions">
                     <button class="guild-btn-primary" onclick="_respondGuildInvite(true,'${gid}')">수락</button>
@@ -13115,7 +13122,7 @@ function _renderGuildHome(body, guild, myStatus = {}) {
 
     let html = `
         <div class="guild-home-header">
-            <div class="guild-home-name">${guild.name}</div>
+            <div class="guild-home-name">${escapeHtml(guild.name)}</div>
             <div class="guild-home-meta">Lv.${guild.level} · ${guild.members.length}/${maxMembers}명 · 코드: <strong>${guild.code}</strong></div>
         </div>
         <div class="guild-currency-row">
@@ -13153,7 +13160,7 @@ function _renderGuildHome(body, guild, myStatus = {}) {
             const nick = nicknames[tag] || tag;
             html += `<div class="guild-contrib-row">
                 <span class="guild-contrib-rank">${i + 1}</span>
-                <span class="guild-contrib-name">${nick}<span class="guild-contrib-tag"> #${tag}</span></span>
+                <span class="guild-contrib-name">${escapeHtml(nick)}<span class="guild-contrib-tag"> #${tag}</span></span>
                 <span class="guild-contrib-dmg">${dmg.toLocaleString()} dmg</span>
             </div>`;
         });
@@ -13225,12 +13232,12 @@ function _renderGuildHome(body, guild, myStatus = {}) {
         const isThisLeader = tag === guild.leaderId;
         const memo = _memos[tag] || '';
         html += `<div class="guild-member-row" style="flex-wrap:wrap;gap:2px;">
-            <span class="guild-member-name">${nick}<span class="guild-member-tag"> #${tag}</span>${isThisLeader ? ' <span class="guild-leader-badge">길드장</span>' : ''}</span>
+            <span class="guild-member-name">${escapeHtml(nick)}<span class="guild-member-tag"> #${tag}</span>${isThisLeader ? ' <span class="guild-leader-badge">길드장</span>' : ''}</span>
             <span style="display:flex;align-items:center;gap:4px;margin-left:auto;">
                 ${isLeader && tag !== myTag ? `<button class="guild-btn-kick" onclick="_kickGuildMember('${tag}')">추방</button>` : ''}
-                <button onclick="_editMemberMemo('${tag}','${nick.replace(/'/g, "\\'")}')" style="background:none;border:1px solid #4a4a6a;border-radius:5px;color:${memo ? '#f1c40f' : '#7070a0'};font-size:11px;padding:2px 6px;cursor:pointer;" title="${memo || '메모 없음'}">📝</button>
+                <button onclick="_editMemberMemo('${tag}')" style="background:none;border:1px solid #4a4a6a;border-radius:5px;color:${memo ? '#f1c40f' : '#7070a0'};font-size:11px;padding:2px 6px;cursor:pointer;" title="${escapeHtml(memo || '메모 없음')}">📝</button>
             </span>
-            ${memo ? `<div style="width:100%;font-size:11px;color:#a090c0;padding:2px 2px 0;white-space:pre-wrap;word-break:break-all;">${memo}</div>` : ''}
+            ${memo ? `<div style="width:100%;font-size:11px;color:#a090c0;padding:2px 2px 0;white-space:pre-wrap;word-break:break-all;">${escapeHtml(memo)}</div>` : ''}
         </div>`;
     });
     html += `</div>`;
@@ -13245,7 +13252,7 @@ function _renderGuildHome(body, guild, myStatus = {}) {
             const timeStr = elapsed < 1 ? '방금' : `${elapsed}시간 전`;
             html += `<div class="guild-request-row">
                 <div class="guild-request-info">
-                    <span class="guild-request-name">${r.nickname || '순례자'}</span>
+                    <span class="guild-request-name">${escapeHtml(r.nickname || '순례자')}</span>
                     <span class="guild-request-meta">#${r.tag} · ${timeStr}</span>
                 </div>
                 <div class="guild-request-btns">
@@ -13263,7 +13270,7 @@ function _renderGuildHome(body, guild, myStatus = {}) {
             const timeStr = elapsed < 1 ? '방금' : `${elapsed}시간 전`;
             html += `<div class="guild-request-row">
                 <div class="guild-request-info">
-                    <span class="guild-request-name">${r.nickname || '순례자'}</span>
+                    <span class="guild-request-name">${escapeHtml(r.nickname || '순례자')}</span>
                     <span class="guild-request-meta">#${r.tag} · ${timeStr} · 수락 대기 중</span>
                 </div>
             </div>`;
@@ -13334,7 +13341,9 @@ function _getMemberMemos() {
     try { return JSON.parse(localStorage.getItem('kingsRoad_memberMemos') || '{}'); } catch(e) { return {}; }
 }
 
-function _editMemberMemo(tag, nick) {
+function _editMemberMemo(tag) {
+    // 닉네임은 인자로 받지 않고 길드 데이터에서 조회 (onclick 문맥 주입 방지)
+    const nick = (typeof _guildData !== 'undefined' && _guildData && _guildData.memberNicknames && _guildData.memberNicknames[tag]) || tag;
     let overlay = document.getElementById('member-memo-overlay');
     if (overlay) overlay.remove();
     const memos = _getMemberMemos();
@@ -13344,8 +13353,8 @@ function _editMemberMemo(tag, nick) {
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10000;display:flex;align-items:center;justify-content:center;';
     overlay.innerHTML = `
         <div style="background:#1e1e2e;border-radius:14px;padding:20px;max-width:300px;width:88%;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
-            <div style="color:#c8b8e8;font-size:14px;font-weight:700;margin-bottom:12px;">📝 ${nick} 메모</div>
-            <textarea id="member-memo-input" style="width:100%;box-sizing:border-box;height:80px;background:#12121e;border:1px solid #4a4a6a;border-radius:8px;color:#e0d8f0;font-size:13px;padding:8px;resize:none;" placeholder="나만 보이는 메모">${current}</textarea>
+            <div style="color:#c8b8e8;font-size:14px;font-weight:700;margin-bottom:12px;">📝 ${escapeHtml(nick)} 메모</div>
+            <textarea id="member-memo-input" style="width:100%;box-sizing:border-box;height:80px;background:#12121e;border:1px solid #4a4a6a;border-radius:8px;color:#e0d8f0;font-size:13px;padding:8px;resize:none;" placeholder="나만 보이는 메모">${escapeHtml(current)}</textarea>
             <div style="display:flex;gap:8px;margin-top:12px;">
                 <button onclick="_saveMemberMemo('${tag}')" style="flex:1;padding:9px;border-radius:8px;border:none;background:#5040a0;color:#fff;font-size:14px;cursor:pointer;">저장</button>
                 <button onclick="document.getElementById('member-memo-overlay').remove()" style="flex:1;padding:9px;border-radius:8px;border:none;background:#3a3a5c;color:#b0a8d0;font-size:14px;cursor:pointer;">취소</button>
@@ -22108,7 +22117,7 @@ async function _renderFriendScreen() {
             html += `
                 <div class="friend-request-item">
                     <div class="friend-req-info">
-                        <span class="friend-req-name">${r.nickname || '순례자'}</span>
+                        <span class="friend-req-name">${escapeHtml(r.nickname || '순례자')}</span>
                         <span class="friend-req-meta">${tribe ? tribe + ' · ' : ''}#${r.tag} · ${timeStr}</span>
                     </div>
                     <div class="friend-req-btns">
@@ -22136,7 +22145,7 @@ async function _renderFriendScreen() {
             html += `<div class="friend-list-item" onclick="openFriendProfile('${tag}')">
                 <div class="friend-list-info">
                     <span class="friend-list-tag">#${tag}</span>
-                    ${memo ? `<span class="friend-list-memo">· ${memo}</span>` : ''}
+                    ${memo ? `<span class="friend-list-memo">· ${escapeHtml(memo)}</span>` : ''}
                 </div>
                 <div class="friend-list-actions" onclick="event.stopPropagation()">
                     <button class="friend-cheer-list-btn${cheered ? ' done' : ''}" onclick="_cheerFriendFromList('${tag}',this)" ${cheered ? 'disabled' : ''}>${cheered ? '✓' : '💛'}</button>
@@ -22241,7 +22250,7 @@ async function openFriendProfile(tag) {
 
         card.innerHTML = `
             <button class="friend-profile-close" onclick="closeFriendProfile()">✕</button>
-            <div class="friend-profile-name">${data.nickname || '순례자'}</div>
+            <div class="friend-profile-name">${escapeHtml(data.nickname || '순례자')}</div>
             <div class="friend-profile-meta">${tribe ? tribe + ' · ' : ''}#${tag}</div>
             <div class="friend-profile-scores">
                 <div class="friend-score-box">
