@@ -98,7 +98,7 @@ exports.saveGameDataSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
         await db.collection("saves").doc(uid).set(dataToSave);
     } catch (e) {
         console.error(`[saveGameDataSecure] Firestore set 실패 uid=${uid}`, e);
-        throw new HttpsError("internal", `Firestore 저장 실패: ${e.message}`);
+        throw new HttpsError("internal", "저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
     }
 
     return { success: true, updatedAt: serverNow };
