@@ -144,6 +144,34 @@ async function verifyTag(uid, tag) {
     return { ...saveDoc.data(), ...(lbDoc.exists ? lbDoc.data() : {}) };
 }
 
+// ── 레이트 리밋 (Firestore 기반, 사용자별 슬라이딩 윈도우) ─────────────────────
+// rate_limits/{uid} 문서에 키별로 { count, sum, windowStart } 저장.
+// maxCalls: 윈도우 내 최대 호출 수 / maxSum: 윈도우 내 sumValue 누적 상한(선택).
+// rate_limits 컬렉션은 보안 규칙에 없어 클라이언트는 쓸 수 없고(기본 거부), CF만 admin으로 갱신한다.
+async function enforceRateLimit(uid, key, { maxCalls, windowMs, maxSum = null, sumValue = 0 }) {
+    const ref = db.collection('rate_limits').doc(uid);
+    await db.runTransaction(async tx => {
+        const snap = await tx.get(ref);
+        const now = Date.now();
+        const all = snap.exists ? snap.data() : {};
+        let e = all[key];
+        if (!e || now - (e.windowStart || 0) > windowMs) {
+            e = { count: 0, sum: 0, windowStart: now };
+        }
+        e.count += 1;
+        e.sum += sumValue;
+        if (e.count > maxCalls || (maxSum !== null && e.sum > maxSum)) {
+            throw new HttpsError('resource-exhausted', '요청이 너무 잦습니다. 잠시 후 다시 시도해주세요.');
+        }
+        tx.set(ref, { [key]: e }, { merge: true });
+    });
+}
+
+// 레이드 대미지 일일 상한 (정상 플레이보다 훨씬 넉넉 — 무한 조작만 차단. 필요시 조정 가능)
+const RAID_DMG_WINDOW_MS   = 24 * 60 * 60 * 1000; // 24시간
+const RAID_DMG_MAX_CALLS   = 5000;                // 하루 최대 보고 횟수
+const RAID_DMG_MAX_SUM     = 300000;              // 하루 최대 누적 대미지(클라이언트 신고 기준)
+
 exports.createGuild = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
     const { name, myTag } = request.data;
@@ -439,6 +467,14 @@ exports.reportRaidDamage = onCall({ cors: ALLOWED_ORIGINS }, async (request) => 
 
     const userData = await verifyTag(request.auth.uid, myTag);
     if (!userData.guildId) return { ok: false };
+
+    // 레이트 리밋: 사용자별 하루 누적 대미지/호출 상한 (무한 호출로 레이드·보상 조작 방지)
+    await enforceRateLimit(request.auth.uid, 'raidDmg', {
+        maxCalls: RAID_DMG_MAX_CALLS,
+        windowMs: RAID_DMG_WINDOW_MS,
+        maxSum: RAID_DMG_MAX_SUM,
+        sumValue: damage,
+    });
 
     const guildRef = db.collection('guilds').doc(userData.guildId);
     await db.runTransaction(async tx => {
