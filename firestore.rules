@@ -1,30 +1,66 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // 랭킹 데이터: 모두 읽기 가능, 인증된 유저만 본인 데이터 쓰기
+
+    // 랭킹 데이터: 모두 읽기 가능. 쓰기는 "로그인 필요 + 재화/보상 필드는 서버(CF)만" 으로 제한.
+    // (game.js는 점수·닉네임·알림·친구 필드만 직접 쓰고, 재화/장비/길드 필드는 Cloud Function만 씀.
+    //  Cloud Function은 admin 권한이라 아래 규칙을 우회하므로 정상 동작한다.)
     match /leaderboard/{userId} {
       allow read: if true;
-      // 실제 배포 시에는 request.auth.uid == userId로 제한 권장
-      allow write: if true; // 임시로 모두 허용 (익명 인증 사용 중)
+
+      // 클라이언트가 절대 직접 쓰면 안 되는 서버 전용(재화·장비·길드·보상) 필드
+      function serverOnlyKeys() {
+        return ['dragonScales', 'dragonHornFragments', 'dragonHeadSkins',
+                'personalEquipment', 'pendingRaidReward', 'pendingInvites',
+                'guildId', 'guildDonateInfo', 'lastGuildAttend'];
+      }
+
+      // 생성: 로그인 상태 + 재화/보상 필드를 포함하지 않아야 함
+      allow create: if request.auth != null
+                    && !request.resource.data.keys().hasAny(serverOnlyKeys())
+                    && !('pendingReward' in request.resource.data);
+
+      // 수정: 로그인 상태 + 재화 필드를 건드리지 않아야 함 +
+      //       주간 보상(pendingReward)은 '삭제(수령)'만 허용하고 새로 만들거나 값 변경은 금지
+      allow update: if request.auth != null
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(serverOnlyKeys())
+                    && (
+                         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['pendingReward'])
+                         || !('pendingReward' in request.resource.data)
+                       );
+
+      // 문서 통째 삭제 금지 (남의 데이터 삭제/그리핑 방지). 필요한 삭제는 CF가 처리.
+      allow delete: if false;
     }
-    
+
     // 명예의 전당: 읽기만 가능 (Cloud Functions에서만 쓰기)
     match /history/{docId} {
       allow read: if true;
       allow write: if false;
     }
-    
+
     // 시스템 메타데이터: 읽기만 가능 (Cloud Functions에서만 쓰기)
     match /system_meta/{docId} {
       allow read: if true;
       allow write: if false;
     }
-    
-    // 캐시 데이터: 모두 읽기 가능, 인증된 유저만 쓰기
+
+    // 캐시 데이터: 모두 읽기 가능, 로그인한 유저만 쓰기
     match /system_cache/{docId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if request.auth != null;
+    }
+
+    // 랭킹 스냅샷: 읽기만 가능 (Cloud Functions에서만 쓰기)
+    match /ranking_snapshots/{docId}/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // 길드: 인증된 유저만 읽기, 쓰기는 Cloud Functions에서만
+    match /guilds/{guildId} {
+      allow read: if request.auth != null;
+      allow write: if false;
     }
   }
 }
