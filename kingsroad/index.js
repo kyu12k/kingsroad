@@ -23,7 +23,10 @@ const REQUIRED_FIELDS = ["version", "gems", "level", "nickname", "tag", "playerI
 
 // ── 점수·젬 조작 방지 상한 (정상 플레이보다 훨씬 넉넉 — 무한/즉시 조작만 차단. 필요시 조정) ──
 const GEM_ABS_MAX          = 100000000; // 젬 절대 상한
-const GEM_DAILY_GAIN_MAX   = 100000;    // 하루 최대 젬 증가폭
+const GEM_DAILY_GAIN_MAX   = 300000;    // 하루 최대 젬 증가폭 (백업 파일 복원 시 보유 젬 전체가 증가폭으로 잡히므로 넉넉히)
+// 한 번의 저장에서 이 값을 넘는 젬 증가는 정상 플레이로 보기 어렵다 → 복원 여부를 확인(같은 태그 기준선 조회).
+// 정상 저장은 델타가 수천 이하라 이 경로를 타지 않으므로 추가 쿼리 비용이 사실상 없다.
+const GEM_RESTORE_PROBE    = 20000;
 const SCORE_ABS_MAX        = 20000000;  // 점수 필드 절대 상한
 const SCORE_DAILY_GAIN_MAX = 100000;    // 하루 최대 점수 증가폭(yearlyScore 델타 기준)
 const DAY_MS               = 24 * 60 * 60 * 1000;
@@ -78,7 +81,24 @@ exports.saveGameDataSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
     // 6. 젬 하루 증가폭 상한 (무한 젬 생성 방지). 기존 문서가 없으면(첫 저장) 부트스트랩으로 통과.
     const prevSaveSnap = await db.collection("saves").doc(uid).get();
     if (prevSaveSnap.exists && typeof prevSaveSnap.data().gems === "number") {
-        const gemGain = Math.max(0, newData.gems - prevSaveSnap.data().gems);
+        let gemGain = Math.max(0, newData.gems - prevSaveSnap.data().gems);
+
+        // [백업 복원 보정] 백업 파일로 복원하면 보유 젬 전체가 증가폭으로 잡혀 상한에 걸린다.
+        // (예: 새 기기의 임시 계정 젬 50 → 복원 후 28만 → 매 저장마다 차단되어 영구 복구 불가)
+        // 증가폭이 비정상적으로 클 때만, 같은 태그로 서버에 이미 존재하는 세이브의 최대 젬을 기준선으로 재계산한다.
+        // 서버가 과거에 인정한 잔액까지는 복원을 허용하되, 그 이상은 그대로 차단 → 조작 방어는 유지.
+        // 미지정 태그('0000')는 여러 계정이 공유하므로 남의 잔액을 기준선으로 삼지 않도록 제외한다.
+        const tagForLookup = String(newData.tag || "");
+        if (gemGain > GEM_RESTORE_PROBE && tagForLookup && tagForLookup !== "0000") {
+            const sameTagSnap = await db.collection("saves").where("tag", "==", newData.tag).get();
+            let baseline = prevSaveSnap.data().gems;
+            sameTagSnap.forEach(d => {
+                const g = d.data().gems;
+                if (typeof g === "number" && g > baseline) baseline = g;
+            });
+            gemGain = Math.max(0, newData.gems - baseline);
+        }
+
         if (gemGain > 0) {
             await enforceRateLimit(uid, "gemGain", {
                 maxCalls: 100000, windowMs: DAY_MS,
