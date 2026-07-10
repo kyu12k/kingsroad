@@ -8230,16 +8230,16 @@ const _SYNC_ERROR_MSG = {
     'permission-denied': '저장 권한 오류입니다. 앱을 다시 시작해주세요.',
 };
 
-function _showSyncFailToast(e) {
+function _showSyncFailToast(e, label = '서버 저장 실패') {
     const code = (e && e.code) ? String(e.code).replace('functions/', '') : '';
     const friendly = _SYNC_ERROR_MSG[code] || '네트워크를 확인 후 다시 시도해주세요.';
-    console.warn('[syncToFirestore] 저장 실패:', code, e && e.message);
+    console.warn(`[${label}]`, code, e && e.message);
     const existing = document.getElementById('sync-fail-toast');
     if (existing) existing.remove();
     const toast = document.createElement('div');
     toast.id = 'sync-fail-toast';
     toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#c0392b;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:99999;text-align:center;max-width:90vw;';
-    toast.textContent = `⚠️ 서버 저장 실패: ${friendly}`;
+    toast.textContent = `⚠️ ${label}: ${friendly}`;
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 8000);
 }
@@ -8284,6 +8284,29 @@ async function syncToFirestore() {
             // 영구 오류: 즉시 토스트
             _showSyncFailToast(e);
         }
+    }
+}
+
+/**
+ * verifyTag 기반 Cloud Function(길드·점수) 호출 래퍼.
+ *
+ * 익명 UID는 재설치·저장소 정리 등으로 종종 새로 발급된다. 새 UID의
+ * saves/{uid} 문서는 첫 저장이 성공해야 생기는데, 서버의 verifyTag는
+ * 그 문서를 읽어 태그를 대조하므로 문서가 없으면 permission-denied
+ * ('태그가 인증 정보와 일치하지 않습니다')를 던진다. 그 결과 첫 저장
+ * 전까지 길드 기능이 막히고 점수 제출이 조용히 실패한다.
+ *
+ * → permission-denied면 서버 저장을 먼저 밀어넣어 문서를 만든 뒤 1회만 재시도한다.
+ */
+async function _callWithSaveDocRetry(call) {
+    try {
+        return await call();
+    } catch (e) {
+        const code = (e && e.code) ? String(e.code).replace('functions/', '') : '';
+        if (code !== 'permission-denied') throw e;
+        console.warn('[CF] permission-denied → saves 문서 생성 후 1회 재시도');
+        await syncToFirestore();
+        return await call();
     }
 }
 
@@ -12916,7 +12939,7 @@ async function _flushGuildRaidDamage() {
 
 async function _callGuildFn(fnName, data) {
     const fn = firebase.app().functions('asia-northeast3').httpsCallable(fnName);
-    const res = await fn({ ...data, myTag });
+    const res = await _callWithSaveDocRetry(() => fn({ ...data, myTag }));
     return res.data;
 }
 
@@ -17179,7 +17202,7 @@ function saveMyScoreToServer() {
 
     // 점수는 직접 쓰지 않고 검증 CF(submitScoreSecure)로만 제출한다 (조작 방지).
     const _submitScore = firebase.app().functions('asia-northeast3').httpsCallable('submitScoreSecure');
-    _submitScore({ ...payload, myTag })
+    _callWithSaveDocRetry(() => _submitScore({ ...payload, myTag }))
         .then(() => {
             lastScorePayloadKey = nextKey;
             try {
@@ -17209,6 +17232,8 @@ function saveMyScoreToServer() {
         })
         .catch((error) => {
             console.error("❌ 점수 저장 실패:", error);
+            // 조용히 실패하면 유저는 랭킹 점수가 안 올라간 걸 알 수 없다.
+            _showSyncFailToast(error, '점수 반영 실패');
         });
 }
 
