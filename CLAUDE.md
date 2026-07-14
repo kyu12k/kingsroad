@@ -320,3 +320,13 @@ Step 1에 선택적 음성인식 기능 추가. 클릭(읽기) 방식과 병행 
 - `mem-lv-low/mid/high`: 기억 레벨 (Lv.1~5+, 일반 스테이지만)
 - `mem-strength-bar-wrap[data-stage-id]`: 기억 강도 바 (일반 스테이지)
 - `mem-strength-bar-wrap[data-mid-boss-id]`: 평균 기억 강도 바 (중간점검)
+
+---
+
+## 복습 타이밍 자동 팝업 (`openForgottenStagesOverlay`, game.js:6464)
+
+왕의 길/자유여행 진입("아멘" 클릭) 시, 복습 가능한 스테이지가 있으면 자동으로 1회 표시됨.
+
+- `amenAndStartGame()`에서 `window._pendingReviewPopupCheck = true` 예약 → `goMap()` 마지막에 `maybeAutoShowReviewPopup()`이 소비(1회성 플래그라 다른 `goMap()` 호출에는 영향 없음)
+- 표시 조건: `isReviewPopupHiddenToday()`가 false **AND** `getForgottenStages().length > 0`
+- 오버레이 내 체크박스("오늘은 보지 않기") 체크 시 `kingsRoad_hideReviewPopupDate`(localStorage)에 오늘 날짜(`getMemoryQuizDate()` 기준, 오전 6시 경계) 저장 → 당일 자동 팝업만 억제, 우측 하단 플로팅 버튼(`#forgotten-stages-floating-btn`)으로 수동 여는 것은 항상 가능

@@ -524,6 +524,7 @@ const LANG = {
         forgotten_overlay_title: '🕑 복습하기 좋은 때',
         forgotten_overlay_subtitle: '스테이지를 복습해서 <br>기억을 다지세요!',
         forgotten_overlay_close: '닫기',
+        forgotten_overlay_hide_today: '오늘은 보지 않기',
 
         // 토스트 메시지
         toast_read_aloud: '🗣️ 소리내어 읽으면 암기 효과가 2배!',
@@ -1262,6 +1263,7 @@ const LANG = {
         forgotten_overlay_title: '🕑 Good Time to Review',
         forgotten_overlay_subtitle: 'Revisit these stages<br>to strengthen your memory!',
         forgotten_overlay_close: 'Close',
+        forgotten_overlay_hide_today: "Don't show today",
 
         // 토스트 메시지
         toast_read_aloud: '🗣️ Reading aloud doubles your memorization!',
@@ -5081,6 +5083,9 @@ function startGame() {
 }
 
 function amenAndStartGame() {
+    // ★ 여정 진입 시 1회 복습 타이밍 팝업 체크 예약 (goMap()에서 소비됨)
+    window._pendingReviewPopupCheck = true;
+
     const overlay = document.getElementById('journey-overlay');
     const amenBtn = document.getElementById('amen-btn');
     // 시각적 피드백만 즉시 처리 (INP 개선: 브라우저가 먼저 페인트할 수 있도록)
@@ -5325,6 +5330,9 @@ function goMap() {
     if (typeof updateResourceUI === 'function') updateResourceUI();
     // BGM 정지
     stopBgm();
+
+    // ★ 여정 진입 직후라면(amenAndStartGame에서 예약됨) 복습 타이밍 팝업 1회 체크
+    if (typeof maybeAutoShowReviewPopup === 'function') maybeAutoShowReviewPopup();
 }
 
 // 백버튼(돌아가기) 표시를 현재 활성 화면에 따라 제어
@@ -6392,6 +6400,30 @@ function getForgottenStages() {
     return forgottenList;
 }
 
+// "오늘은 보지 않기" 체크 여부 (오전 6시 기준 날짜 경계)
+function isReviewPopupHiddenToday() {
+    const today = (typeof getMemoryQuizDate === 'function') ? getMemoryQuizDate() : new Date().toISOString().split('T')[0];
+    return localStorage.getItem('kingsRoad_hideReviewPopupDate') === today;
+}
+
+function toggleHideReviewPopupToday(checked) {
+    if (checked) {
+        const today = (typeof getMemoryQuizDate === 'function') ? getMemoryQuizDate() : new Date().toISOString().split('T')[0];
+        localStorage.setItem('kingsRoad_hideReviewPopupDate', today);
+    } else {
+        localStorage.removeItem('kingsRoad_hideReviewPopupDate');
+    }
+}
+
+// 왕의 길/자유여행 진입 시 1회 자동으로 복습 타이밍 팝업을 띄움 (amenAndStartGame에서 예약, goMap()에서 소비)
+function maybeAutoShowReviewPopup() {
+    if (!window._pendingReviewPopupCheck) return;
+    window._pendingReviewPopupCheck = false;
+    if (isReviewPopupHiddenToday()) return;
+    if (getForgottenStages().length === 0) return;
+    openForgottenStagesOverlay();
+}
+
 // 특정 모드의 복습 대기 구절 수를 반환 (모드 전환 없이 조회)
 function getReviewCountForMode(mode) {
     let reviewStepMap, nextReviewTimeMap;
@@ -6441,12 +6473,18 @@ function openForgottenStagesOverlay() {
                 </div>
                 <div id="forgotten-stages-list" style="background:rgba(0,0,0,0.3); padding:20px; border-radius:15px; width:90vw; max-width:600px; min-width:220px; margin-bottom:30px; max-height:50vh; overflow-y:auto; flex-shrink: 0;">
                 </div>
+                <label style="display:flex; align-items:center; gap:8px; color:#bdc3c7; font-size:0.9rem; margin-bottom:20px; cursor:pointer; flex-shrink: 0;">
+                    <input type="checkbox" id="forgotten-hide-today-checkbox" onchange="toggleHideReviewPopupToday(this.checked)" style="width:18px; height:18px; cursor:pointer;">
+                    ${t('forgotten_overlay_hide_today')}
+                </label>
                 <button onclick="closeForgottenStagesOverlay()" style="background: #f1c40f; color: #2c3e50; font-size:1.1rem; font-weight:bold; padding: 10px 32px; border-radius: 30px; border:none; box-shadow:0 2px 10px #2224; cursor:pointer; margin-top:0; flex-shrink: 0;">${t('forgotten_overlay_close')}</button>
             `;
         document.body.appendChild(overlay);
     } else {
         overlay.style.display = 'flex';
     }
+    const hideCheckbox = document.getElementById('forgotten-hide-today-checkbox');
+    if (hideCheckbox) hideCheckbox.checked = isReviewPopupHiddenToday();
     // 리스트 렌더링
     const listDiv = document.getElementById('forgotten-stages-list');
     const forgottenList = getForgottenStages();
