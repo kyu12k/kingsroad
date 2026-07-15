@@ -705,10 +705,16 @@ exports.weeklyRaidReset = onSchedule({
 }, async () => {
     const currentWeekId = getWeekId();
     const guildsSnap = await db.collection('guilds').get();
+    let processed = 0, skipped = 0;
+    console.log(`[weeklyRaidReset] 시작 weekId=${currentWeekId} 전체 길드=${guildsSnap.size}`);
 
     for (const guildDoc of guildsSnap.docs) {
         const guild = guildDoc.data();
-        if (guild.raidWeekId === currentWeekId) continue;
+        if (guild.raidWeekId === currentWeekId) {
+            skipped++;
+            console.log(`[weeklyRaidReset] 건너뜀(이미 리셋됨): ${guildDoc.id}(${guild.name}) weekId=${guild.raidWeekId}`);
+            continue;
+        }
 
         const clearedCount = guild.raidClearedCount || 0;
         const headClearedCount = guild.raidHeadClearedCount || 0;
@@ -755,8 +761,10 @@ exports.weeklyRaidReset = onSchedule({
         });
 
         await batch.commit();
-        console.log(`[weeklyRaidReset] 길드 ${guildDoc.id}: hornFragments=${hornFragments} headSkins=${headSkins} scales=${scales} tier=${scalesTier}`);
+        processed++;
+        console.log(`[weeklyRaidReset] 처리 완료 ${guildDoc.id}(${guild.name}): scales=${scales} hornFragments=${hornFragments} headSkins=${headSkins} tier=${scalesTier} 멤버=${members.length}`);
     }
+    console.log(`[weeklyRaidReset] 완료 weekId=${currentWeekId} 처리=${processed} 건너뜀=${skipped}`);
 });
 
 exports.buyPersonalEquipment = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
