@@ -330,3 +330,16 @@ Step 1에 선택적 음성인식 기능 추가. 클릭(읽기) 방식과 병행 
 - `amenAndStartGame()`에서 `window._pendingReviewPopupCheck = true` 예약 → `goMap()` 마지막에 `maybeAutoShowReviewPopup()`이 소비(1회성 플래그라 다른 `goMap()` 호출에는 영향 없음)
 - 표시 조건: `isReviewPopupHiddenToday()`가 false **AND** `getForgottenStages().length > 0`
 - 오버레이 내 체크박스("오늘은 보지 않기") 체크 시 `kingsRoad_hideReviewPopupDate`(localStorage)에 오늘 날짜(`getMemoryQuizDate()` 기준, 오전 6시 경계) 저장 → 당일 자동 팝업만 억제, 우측 하단 플로팅 버튼(`#forgotten-stages-floating-btn`)으로 수동 여는 것은 항상 가능
+
+---
+
+## 미션 포인트 시스템 (`missionData.points`, game.js:2527 부근)
+
+일일/주간 퀘스트를 클리어(`claimReward()`)하면 기존 보석 보상과 별개로 **미션 포인트**가 적립되고, 마일스톤 도달 시 추가 보석 보상을 준다. 리그 순위표에 쓰이는 `leagueData.myScore`와는 완전히 분리된 시스템(그쪽은 서버 검증·일일 상한이 걸린 민감한 값이라 건드리지 않음).
+
+- **완전 분리**: 일일 포인트(`missionData.points.daily`)와 주간 포인트(`.weekly`)는 서로 전혀 영향을 주지 않음 — 일일 미션 클리어는 daily에만, 주간 미션 클리어는 weekly에만 적립
+- **고정 포인트 + 보스 클리어 시 만점 확장**: 클리어 1회당 `POINTS_PER_MISSION_CLEAR`(25점) 고정 적립. 보스를 한 번도 못 깼을 땐 기본 미션 4개뿐이라 만점이 100점(`getDailyPointMax()`/`getWeeklyPointMax()`가 `hasAnyBossCleared()` 기준으로 반환), 보스를 클리어해 고난 계열 미션이 열리면 만점 자체가 늘어남 — 일일은 100→200(4개 추가), 주간은 100→125(1개 추가)
+  - 성경읽기 미션(`claimBibleReadReward()`)과 심화 미션(`claimAdvancedReward()`)은 별도 함수라 이 포인트 시스템에 포함되지 않음 (의도적으로 제외)
+- **마일스톤**: `DAILY_POINT_MILESTONES_BASE`(40/70/100점) + 보스 클리어 후에만 추가되는 `DAILY_POINT_MILESTONES_EXPANDED`(150/200점), 주간도 동일 구조(`WEEKLY_POINT_MILESTONES_BASE` 40/70/100 + `_EXPANDED` 125). `getDailyPointMilestones()`/`getWeeklyPointMilestones()`가 `hasAnyBossCleared()`에 따라 BASE 또는 BASE+EXPANDED를 반환 — concat 순서가 고정이라 배열 인덱스로 중복 지급을 막을 수 있음. `checkMissionPointMilestones()`가 매 클리어마다 확인해 보석 지급 (달성 티어 인덱스는 `dailyClaimedTiers`/`weeklyClaimedTiers`에 기록)
+- **리셋**: 기존 일일/주간 미션(자정·`getWeekId()` 기준)과 달리, 미션 포인트는 **오전 6시 경계** 기준으로 별도 리셋됨 — `checkMissionPointsReset()`이 `getMemoryQuizDate()`(일일)와 `getMissionPointWeekId()`(주간, 월요일 6시 기준)로 키를 비교해 날짜/주차가 바뀌면 초기화. `checkMissions()` 호출 시와 `claimReward()` 호출 시 둘 다 체크됨
+- **UI**: `renderMissionList()`(실제 미션 화면, `#mission-list-area`)에서 `buildMissionPointSummaryHtml()`로 일일/주간 목록 상단에 현재 포인트와 다음 목표를 요약 표시. (레거시 `updateMissionUI()`는 `#mission-list`를 찾는데 이 엘리먼트가 DOM에 없어 항상 조기 반환되는 죽은 함수이므로 여기엔 UI를 추가하지 않음)

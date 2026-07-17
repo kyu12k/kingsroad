@@ -319,6 +319,11 @@ const LANG = {
         mission_tab_weekly: '주간 미션',
         mission_reset_daily: '🕒 매일 자정에 초기화됩니다',
         mission_reset_weekly: '🕒 매주 월요일 자정에 초기화됩니다',
+        mission_point_daily_label: '🎯 오늘의 미션 포인트',
+        mission_point_weekly_label: '🏆 이번 주 미션 포인트',
+        mission_point_next: '{cur}점 · 다음 {n}점 달성 시 💎{gem}',
+        mission_point_maxed: '이번 목표 모두 달성! 🎉',
+        mission_point_milestone_toast: '🎯 미션 포인트 목표 달성! 💎 {gem}개 획득',
         mission_btn_done: '완료',
         mission_btn_claim: '보상 받기',
         mission_btn_goto: '바로가기',
@@ -1059,6 +1064,11 @@ const LANG = {
         mission_tab_weekly: 'Weekly',
         mission_reset_daily: '🕒 Resets every day at midnight',
         mission_reset_weekly: '🕒 Resets every Monday at midnight',
+        mission_point_daily_label: "🎯 Today's Mission Points",
+        mission_point_weekly_label: '🏆 This Week\'s Mission Points',
+        mission_point_next: '{cur} pts · Reach {n} for 💎{gem}',
+        mission_point_maxed: 'All goals reached! 🎉',
+        mission_point_milestone_toast: '🎯 Point goal reached! +💎 {gem}',
         mission_btn_done: 'Done',
         mission_btn_claim: 'Claim',
         mission_btn_goto: 'Go',
@@ -1954,6 +1964,13 @@ loadGameData = function () {
         if (missionData.weekly.claimed.length < 5) missionData.weekly.claimed.push(false);
         if (typeof missionData.weekly.dailyMissionClearCount !== 'number') missionData.weekly.dailyMissionClearCount = 0;
 
+        // 미션 포인트 데이터 보정 (구버전 호환)
+        if (!missionData.points) missionData.points = { dailyKey: '', weeklyKey: '', daily: 0, weekly: 0, dailyClaimedTiers: [], weeklyClaimedTiers: [] };
+        if (typeof missionData.points.daily !== 'number') missionData.points.daily = 0;
+        if (typeof missionData.points.weekly !== 'number') missionData.points.weekly = 0;
+        if (!Array.isArray(missionData.points.dailyClaimedTiers)) missionData.points.dailyClaimedTiers = [];
+        if (!Array.isArray(missionData.points.weeklyClaimedTiers)) missionData.points.weeklyClaimedTiers = [];
+
         // 심화 일일 미션 데이터 보정
         if (!missionData.advanced) missionData.advanced = {};
         if (!Array.isArray(missionData.advanced.hardshipAddressChapters)) missionData.advanced.hardshipAddressChapters = [];
@@ -2505,14 +2522,120 @@ let missionData = {
         stageClear: 0,      // 스테이지 15개 완료 횟수
         hardship: 0,        // 왕의 고난 완주 횟수
         claimed: [false, false, false, false]
+    },
+
+    // 미션 포인트 (일일/주간 미션 클리어 시 적립, 오전 6시 기준 별도 리셋)
+    points: {
+        dailyKey: '',           // getMemoryQuizDate() 값 — 바뀌면 daily 리셋
+        weeklyKey: '',          // getMissionPointWeekId() 값 — 바뀌면 weekly 리셋
+        daily: 0,               // 오늘 누적 포인트
+        weekly: 0,              // 이번 주 누적 포인트
+        dailyClaimedTiers: [],  // 오늘 수령한 마일스톤 인덱스
+        weeklyClaimedTiers: []  // 이번 주 수령한 마일스톤 인덱스
     }
 };
+
+// 미션 포인트: 클리어 1회당 고정 25점 (일일/주간 완전히 분리, 서로 영향 없음)
+// 보스를 한 번도 못 깼을 땐 기본 미션 4개 = 100점 만점. 보스를 클리어해 고난 계열 미션이
+// 열리면 그만큼 만점 자체가 확장된다 (일일: 100→200, 주간: 100→125).
+const POINTS_PER_MISSION_CLEAR = 25;
+
+// 포인트 마일스톤: 임계값 도달 시 1회씩 보석 추가 지급. *_EXPANDED는 보스 클리어로 만점이
+// 늘어난 뒤에만 추가로 열리는 상위 티어.
+const DAILY_POINT_MILESTONES_BASE = [
+    { threshold: 40, reward: 100 },
+    { threshold: 70, reward: 200 },
+    { threshold: 100, reward: 400 },
+];
+const DAILY_POINT_MILESTONES_EXPANDED = [
+    { threshold: 150, reward: 700 },
+    { threshold: 200, reward: 1200 },
+];
+const WEEKLY_POINT_MILESTONES_BASE = [
+    { threshold: 40, reward: 300 },
+    { threshold: 70, reward: 600 },
+    { threshold: 100, reward: 1200 },
+];
+const WEEKLY_POINT_MILESTONES_EXPANDED = [
+    { threshold: 125, reward: 2000 },
+];
+
+// 보스(또는 중간점검)를 한 번이라도 클리어했는지 — 클리어 시 고난 계열 일일/주간 미션이 추가로 열림
+function hasAnyBossCleared() {
+    const _cm = [stageMastery, typeof kingsRoadData !== 'undefined' && kingsRoadData && kingsRoadData.mastery].filter(Boolean);
+    return _cm.some(m => Object.keys(m).some(id => id.endsWith('-boss') && m[id] > 0));
+}
+
+// 보스 클리어 여부에 따라 현재 적용되는 마일스톤 목록/만점을 반환
+function getDailyPointMilestones() {
+    return hasAnyBossCleared() ? DAILY_POINT_MILESTONES_BASE.concat(DAILY_POINT_MILESTONES_EXPANDED) : DAILY_POINT_MILESTONES_BASE;
+}
+function getWeeklyPointMilestones() {
+    return hasAnyBossCleared() ? WEEKLY_POINT_MILESTONES_BASE.concat(WEEKLY_POINT_MILESTONES_EXPANDED) : WEEKLY_POINT_MILESTONES_BASE;
+}
+function getDailyPointMax() {
+    return hasAnyBossCleared() ? 200 : 100;
+}
+function getWeeklyPointMax() {
+    return hasAnyBossCleared() ? 125 : 100;
+}
+
+// 주간 포인트 리셋 기준 주차 ID (오전 6시 경계로 날짜를 보정한 뒤 ISO 주차 계산)
+function getMissionPointWeekId() {
+    const now = new Date();
+    const shifted = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (now.getHours() < 6) shifted.setDate(shifted.getDate() - 1);
+    return getWeekId(shifted);
+}
+
+// 날짜/주차가 바뀌었으면 미션 포인트를 리셋 (오전 6시 기준)
+function checkMissionPointsReset() {
+    if (!missionData.points) {
+        missionData.points = { dailyKey: '', weeklyKey: '', daily: 0, weekly: 0, dailyClaimedTiers: [], weeklyClaimedTiers: [] };
+    }
+    const todayKey = (typeof getMemoryQuizDate === 'function') ? getMemoryQuizDate() : new Date().toISOString().split('T')[0];
+    if (missionData.points.dailyKey !== todayKey) {
+        missionData.points.dailyKey = todayKey;
+        missionData.points.daily = 0;
+        missionData.points.dailyClaimedTiers = [];
+    }
+    const weekKey = getMissionPointWeekId();
+    if (missionData.points.weeklyKey !== weekKey) {
+        missionData.points.weeklyKey = weekKey;
+        missionData.points.weekly = 0;
+        missionData.points.weeklyClaimedTiers = [];
+    }
+}
+
+// 미션 포인트 마일스톤 달성 여부 확인 후 보석 지급
+// (인덱스 0~2 = 기본 티어, 그 뒤 = 보스 클리어 후 확장 티어 — concat 순서가 고정이라 인덱스로 중복 지급 방지 가능)
+function checkMissionPointMilestones() {
+    getDailyPointMilestones().forEach((tier, i) => {
+        if (missionData.points.daily >= tier.threshold && !missionData.points.dailyClaimedTiers.includes(i)) {
+            missionData.points.dailyClaimedTiers.push(i);
+            myGems += tier.reward;
+            updateGemDisplay();
+            showGemToast(tier.reward, t('mission_point_milestone_toast', { gem: tier.reward }));
+        }
+    });
+    getWeeklyPointMilestones().forEach((tier, i) => {
+        if (missionData.points.weekly >= tier.threshold && !missionData.points.weeklyClaimedTiers.includes(i)) {
+            missionData.points.weeklyClaimedTiers.push(i);
+            myGems += tier.reward;
+            updateGemDisplay();
+            showGemToast(tier.reward, t('mission_point_milestone_toast', { gem: tier.reward }));
+        }
+    });
+}
 
 /* [시스템: 미션 상태 확인 및 초기화] */
 function checkMissions() {
     const today = new Date().toDateString(); // "Mon Jan 01 2024"
     const currentWeekId = getWeekId();       // 주차 계산 함수 필요
     let lastMissionDate = localStorage.getItem('lastMissionCheckDate');
+
+    // 미션 포인트는 오전 6시 기준으로 별도 리셋 (일일 미션 자체의 자정 리셋과 무관)
+    checkMissionPointsReset();
 
     // 1. 일일 미션 초기화 (날짜가 바뀌었으면)
     if (missionData.lastLoginDate !== today) {
@@ -2906,6 +3029,17 @@ function updateMissionUI() {
     });
 }
 
+// [보조] 미션 포인트 진행 요약 HTML 만들기
+function buildMissionPointSummaryHtml(label, current, milestones, claimedTiers) {
+    const nextIdx = milestones.findIndex((tier, i) => !claimedTiers.includes(i));
+    const progressText = (nextIdx === -1)
+        ? t('mission_point_maxed')
+        : t('mission_point_next', { cur: Math.round(current), n: milestones[nextIdx].threshold, gem: milestones[nextIdx].reward });
+    return `<div style="background:rgba(241,196,15,0.08); border:1px solid rgba(241,196,15,0.3); border-radius:8px; padding:8px 12px; margin-bottom:10px; font-size:0.8rem; color:#f1c40f; display:flex; justify-content:space-between; align-items:center; gap:10px;">
+        <span style="font-weight:bold; white-space:nowrap;">${label}</span><span style="color:#eee;">${progressText}</span>
+    </div>`;
+}
+
 // [보조] 미션 항목 HTML 만들기
 function createMissionElement(parent, m) {
     const item = document.createElement('div');
@@ -2988,6 +3122,15 @@ function claimReward(type, index, rewardType, value1, value2) {
         showGemToast(value1);
         // playSound('coin'); // 효과음이 있다면 주석 해제
     }
+
+    // 3-1. 미션 포인트 적립 + 마일스톤 확인 (일일/주간 완전히 별개로 누적 — 서로 영향 없음)
+    checkMissionPointsReset();
+    if (type === 'daily') {
+        missionData.points.daily = Math.min(getDailyPointMax(), missionData.points.daily + POINTS_PER_MISSION_CLEAR);
+    } else {
+        missionData.points.weekly = Math.min(getWeeklyPointMax(), missionData.points.weekly + POINTS_PER_MISSION_CLEAR);
+    }
+    checkMissionPointMilestones();
 
     // 4. 저장 및 화면 갱신
     saveGameData();
@@ -10697,6 +10840,18 @@ function renderMissionList(tabName) {
     if (tabName === 'advanced') {
         renderAdvancedMissionList(listArea);
         return;
+    }
+
+    // ★ 미션 포인트 진행 요약 (일일/주간 클리어 시 적립되는 별도 포인트)
+    checkMissionPointsReset();
+    if (tabName === 'weekly') {
+        listArea.insertAdjacentHTML('beforeend', buildMissionPointSummaryHtml(
+            t('mission_point_weekly_label'), missionData.points.weekly, getWeeklyPointMilestones(), missionData.points.weeklyClaimedTiers
+        ));
+    } else {
+        listArea.insertAdjacentHTML('beforeend', buildMissionPointSummaryHtml(
+            t('mission_point_daily_label'), missionData.points.daily, getDailyPointMilestones(), missionData.points.dailyClaimedTiers
+        ));
     }
 
     if (tabName === 'daily') {
