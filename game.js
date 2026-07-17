@@ -2610,22 +2610,91 @@ function checkMissionPointsReset() {
 // 미션 포인트 마일스톤 달성 여부 확인 후 보석 지급
 // (인덱스 0~2 = 기본 티어, 그 뒤 = 보스 클리어 후 확장 티어 — concat 순서가 고정이라 인덱스로 중복 지급 방지 가능)
 function checkMissionPointMilestones() {
-    getDailyPointMilestones().forEach((tier, i) => {
-        if (missionData.points.daily >= tier.threshold && !missionData.points.dailyClaimedTiers.includes(i)) {
-            missionData.points.dailyClaimedTiers.push(i);
-            myGems += tier.reward;
-            updateGemDisplay();
-            showGemToast(tier.reward, t('mission_point_milestone_toast', { gem: tier.reward }));
+    // 수령은 미션 포인트 바의 상자 클릭으로 처리 (claimMissionPointTier)
+}
+
+function claimMissionPointTier(type, idx) {
+    checkMissionPointsReset();
+    const isDaily = type === 'daily';
+    const claimedTiers = isDaily ? missionData.points.dailyClaimedTiers : missionData.points.weeklyClaimedTiers;
+    if (claimedTiers.includes(idx)) return;
+    const milestones = isDaily ? getDailyPointMilestones() : getWeeklyPointMilestones();
+    const current = isDaily ? missionData.points.daily : missionData.points.weekly;
+    const tier = milestones[idx];
+    if (!tier || current < tier.threshold) return;
+    claimedTiers.push(idx);
+    myGems += tier.reward;
+    updateGemDisplay();
+    showGemToast(tier.reward, t('mission_point_milestone_toast', { gem: tier.reward }));
+    saveGameData();
+    renderMissionList(currentMissionTab);
+}
+
+function buildMissionPointBarHtml(type) {
+    if (!document.getElementById('mpp-style')) {
+        const s = document.createElement('style');
+        s.id = 'mpp-style';
+        s.textContent = `
+            @keyframes mppPulse {
+                0%,100%{transform:translateX(-50%) scale(1);filter:drop-shadow(0 0 5px #f1c40f);}
+                50%{transform:translateX(-50%) scale(1.18);filter:drop-shadow(0 0 12px #f1c40f) drop-shadow(0 0 22px rgba(241,196,15,0.55));}
+            }
+            @keyframes mppPulseLast {
+                0%,100%{transform:translateX(-100%) scale(1);filter:drop-shadow(0 0 5px #f1c40f);}
+                50%{transform:translateX(-100%) scale(1.18);filter:drop-shadow(0 0 12px #f1c40f) drop-shadow(0 0 22px rgba(241,196,15,0.55));}
+            }
+        `;
+        document.head.appendChild(s);
+    }
+    const isDaily = type === 'daily';
+    const current = isDaily ? missionData.points.daily : missionData.points.weekly;
+    const milestones = isDaily ? getDailyPointMilestones() : getWeeklyPointMilestones();
+    const claimedTiers = isDaily ? missionData.points.dailyClaimedTiers : missionData.points.weeklyClaimedTiers;
+    const max = isDaily ? getDailyPointMax() : getWeeklyPointMax();
+    const label = t(isDaily ? 'mission_point_daily_label' : 'mission_point_weekly_label');
+    const pct = Math.min(100, Math.round((current / max) * 100));
+
+    const chestsHtml = milestones.map((tier, i) => {
+        const pos = Math.round((tier.threshold / max) * 100);
+        const isLast = pos >= 100;
+        const claimed = claimedTiers.includes(i);
+        const ready = current >= tier.threshold && !claimed;
+
+        let icon, bg, border, animStyle, cursor, onclickAttr;
+        if (claimed) {
+            icon = '📦'; bg = 'rgba(50,80,50,0.7)'; border = '1px solid rgba(80,160,80,0.35)';
+            animStyle = ''; cursor = 'default'; onclickAttr = '';
+        } else if (ready) {
+            icon = '🎁'; bg = 'linear-gradient(135deg,#b8860b,#f1c40f)'; border = '2px solid #f1c40f';
+            animStyle = `animation:${isLast ? 'mppPulseLast' : 'mppPulse'} 1.1s ease-in-out infinite;`;
+            cursor = 'pointer'; onclickAttr = `onclick="claimMissionPointTier('${type}',${i})"`;
+        } else {
+            icon = '🔒'; bg = 'rgba(40,30,70,0.85)'; border = '1px solid rgba(100,70,180,0.25)';
+            animStyle = ''; cursor = 'default'; onclickAttr = '';
         }
-    });
-    getWeeklyPointMilestones().forEach((tier, i) => {
-        if (missionData.points.weekly >= tier.threshold && !missionData.points.weeklyClaimedTiers.includes(i)) {
-            missionData.points.weeklyClaimedTiers.push(i);
-            myGems += tier.reward;
-            updateGemDisplay();
-            showGemToast(tier.reward, t('mission_point_milestone_toast', { gem: tier.reward }));
-        }
-    });
+        const labelColor = claimed ? '#5a9' : ready ? '#f1c40f' : '#555';
+        const posStyle = isLast
+            ? `right:-2px;top:0;transform:translateX(-100%);`
+            : `left:${pos}%;top:0;transform:translateX(-50%);`;
+
+        return `<div style="position:absolute;${posStyle}cursor:${cursor};" ${onclickAttr}>
+            <div style="width:34px;height:34px;background:${bg};border:${border};border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;${animStyle}">${icon}</div>
+            <div style="text-align:center;font-size:9px;color:${labelColor};margin-top:2px;white-space:nowrap;">💎${tier.reward >= 1000 ? (tier.reward/1000).toFixed(1).replace('.0','')+'k' : tier.reward}</div>
+        </div>`;
+    }).join('');
+
+    return `<div style="margin-bottom:16px;padding:10px 12px 18px;background:rgba(70,30,130,0.18);border:1px solid rgba(130,80,220,0.28);border-radius:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <span style="font-size:0.82rem;font-weight:bold;color:#c0a0ff;">${label}</span>
+            <span style="font-size:0.82rem;color:#ccc;">${current} / ${max}pt</span>
+        </div>
+        <div style="position:relative;height:44px;margin:0 4px;">
+            <div style="position:absolute;top:10px;left:0;right:0;height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;">
+                <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#5020a0,#a060f0);border-radius:4px;transition:width 0.5s ease;"></div>
+            </div>
+            ${chestsHtml}
+        </div>
+    </div>`;
 }
 
 /* [시스템: 미션 상태 확인 및 초기화] */
@@ -10842,17 +10911,9 @@ function renderMissionList(tabName) {
         return;
     }
 
-    // ★ 미션 포인트 진행 요약 (일일/주간 클리어 시 적립되는 별도 포인트)
+    // ★ 미션 포인트 바 (일일/주간 클리어 시 적립, 상자 클릭으로 수령)
     checkMissionPointsReset();
-    if (tabName === 'weekly') {
-        listArea.insertAdjacentHTML('beforeend', buildMissionPointSummaryHtml(
-            t('mission_point_weekly_label'), missionData.points.weekly, getWeeklyPointMilestones(), missionData.points.weeklyClaimedTiers
-        ));
-    } else {
-        listArea.insertAdjacentHTML('beforeend', buildMissionPointSummaryHtml(
-            t('mission_point_daily_label'), missionData.points.daily, getDailyPointMilestones(), missionData.points.dailyClaimedTiers
-        ));
-    }
+    listArea.insertAdjacentHTML('beforeend', buildMissionPointBarHtml(tabName === 'weekly' ? 'weekly' : 'daily'));
 
     if (tabName === 'daily') {
         missions = [
