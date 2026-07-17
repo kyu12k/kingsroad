@@ -317,8 +317,8 @@ const LANG = {
         shop_owned: '보유: {count}개',
         mission_tab_daily: '일일 미션',
         mission_tab_weekly: '주간 미션',
-        mission_reset_daily: '🕒 매일 자정에 초기화됩니다',
-        mission_reset_weekly: '🕒 매주 월요일 자정에 초기화됩니다',
+        mission_reset_daily: '🕒 매일 오전 6시에 초기화됩니다',
+        mission_reset_weekly: '🕒 매주 월요일 오전 6시에 초기화됩니다',
         mission_point_daily_label: '🎯 오늘의 미션 포인트',
         mission_point_weekly_label: '🏆 이번 주 미션 포인트',
         mission_point_next: '{cur}점 · 다음 {n}점 달성 시 💎{gem}',
@@ -1062,8 +1062,8 @@ const LANG = {
         mission_tab_daily: 'Daily',
         mission_tab_advanced: '⚔️ Daily Advanced',
         mission_tab_weekly: 'Weekly',
-        mission_reset_daily: '🕒 Resets every day at midnight',
-        mission_reset_weekly: '🕒 Resets every Monday at midnight',
+        mission_reset_daily: '🕒 Resets every day at 6 AM',
+        mission_reset_weekly: '🕒 Resets every Monday at 6 AM',
         mission_point_daily_label: "🎯 Today's Mission Points",
         mission_point_weekly_label: '🏆 This Week\'s Mission Points',
         mission_point_next: '{cur} pts · Reach {n} for 💎{gem}',
@@ -2699,11 +2699,10 @@ function buildMissionPointBarHtml(type) {
 
 /* [시스템: 미션 상태 확인 및 초기화] */
 function checkMissions() {
-    const today = new Date().toDateString(); // "Mon Jan 01 2024"
-    const currentWeekId = getWeekId();       // 주차 계산 함수 필요
+    const today = getMemoryQuizDate();      // 오전 6시 기준 날짜 (YYYY-MM-DD)
+    const currentWeekId = getMissionPointWeekId(); // 오전 6시 기준 주차
     let lastMissionDate = localStorage.getItem('lastMissionCheckDate');
 
-    // 미션 포인트는 오전 6시 기준으로 별도 리셋 (일일 미션 자체의 자정 리셋과 무관)
     checkMissionPointsReset();
 
     // 1. 일일 미션 초기화 (날짜가 바뀌었으면)
@@ -11751,8 +11750,8 @@ function getNextCollectionRank(score) {
 
 /* [시스템: 일일 보급 (Daily Reward)] */
 function checkDailyReward() {
-    // 1. 오늘 날짜 구하기 (YYYY-MM-DD 형식)
-    const today = new Date().toISOString().split('T')[0];
+    // 1. 오늘 날짜 구하기 (오전 6시 기준)
+    const today = getMemoryQuizDate();
     const lastDate = localStorage.getItem('kingsRoad_lastLoginDate');
 
     // 2. 이미 오늘 보상을 받았으면 패스
