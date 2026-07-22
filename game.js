@@ -5620,8 +5620,6 @@ function renderChapterMap() {
         const m = String(lastPlayedStageId).match(/^(\d+)/);
         if (m) lastPlayedChapterId = parseInt(m[1]);
     }
-    // 이전 화살표 제거
-    document.querySelectorAll('.map-last-played-arrow').forEach(el => el.remove());
 
     // 1. 컨테이너 초기화
     container.className = 'river-map-container';
@@ -5791,45 +5789,6 @@ function renderChapterMap() {
         landArea.appendChild(wrapper);
     });
 
-    // 마지막 플레이 챕터 방향 화살표
-    if (lastPlayedChapterId !== null) {
-        const targetNode = document.querySelector('.stage-node.last-played-chapter');
-        if (targetNode) {
-            const mapScreen = document.getElementById('map-screen');
-            const arrowUp = document.createElement('button');
-            arrowUp.className = 'map-last-played-arrow map-arrow-up';
-            arrowUp.innerHTML = '👣 ▲ 마지막 완료';
-            arrowUp.onclick = () => targetNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            mapScreen.appendChild(arrowUp);
-
-            const arrowDown = document.createElement('button');
-            arrowDown.className = 'map-last-played-arrow map-arrow-down';
-            arrowDown.innerHTML = '👣 ▼ 마지막 완료';
-            arrowDown.onclick = () => targetNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            mapScreen.appendChild(arrowDown);
-
-            if (renderChapterMap._lastPlayedObserver) renderChapterMap._lastPlayedObserver.disconnect();
-            const obs = new IntersectionObserver(entries => {
-                const entry = entries[0];
-                const mapActive = document.getElementById('map-screen').classList.contains('active');
-                if (!mapActive || entry.isIntersecting) {
-                    arrowUp.style.display = 'none';
-                    arrowDown.style.display = 'none';
-                } else {
-                    const rect = targetNode.getBoundingClientRect();
-                    if (rect.top < 0) {
-                        arrowUp.style.display = 'flex';
-                        arrowDown.style.display = 'none';
-                    } else {
-                        arrowUp.style.display = 'none';
-                        arrowDown.style.display = 'flex';
-                    }
-                }
-            }, { threshold: 0.5 });
-            obs.observe(targetNode);
-            renderChapterMap._lastPlayedObserver = obs;
-        }
-    }
 
     // 3. 강물 그리기 (디바운스 150ms, 이전 리스너 제거 후 재등록)
     if (renderChapterMap._resizeHandler) {

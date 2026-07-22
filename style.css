@@ -3607,28 +3607,6 @@ body, html {
     text-shadow: 0 1px 1px rgba(0,0,0,0.2);
 }
 
-/* 맵 화면 방향 화살표 */
-.map-last-played-arrow {
-    position: fixed;
-    left: 50%;
-    transform: translateX(-50%);
-    top: 68px;
-    background: rgba(41, 128, 185, 0.92);
-    color: #fff;
-    border: none;
-    padding: 8px 20px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: bold;
-    cursor: pointer;
-    z-index: 200;
-    display: none;
-    align-items: center;
-    gap: 6px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-    white-space: nowrap;
-}
-#map-screen:not(.active) .map-last-played-arrow { display: none !important; }
 
 .last-played-badge {
     position: absolute;
