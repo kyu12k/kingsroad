@@ -1775,6 +1775,7 @@ let stageTimedBonus = {}; // 각인 주기 기반 보너스 (때를 따른 양�
 // ★ [v1.1.0 직렬 복습 시스템]
 let stageReviewStep = {};      // 각 스테이지의 현재 복습 단계 (1-based)
 let stageNextReviewTime = {};  // 다음 복습 가능 시각 (timestamp, 0이면 즉시 가능)
+let lastPlayedStageId = null; // 마지막으로 직접 플레이한 스테이지 ID
 let bossFirstClearClaimed = new Set(); // 최초 클리어 보너스를 수령한 보스 스테이지 ID
 let hardshipAddressClearHistory = {}; // 장별 주소의 고난 클리어 기록 { "1": [{correct, total, score, date, duration}, ...] }
 let hardshipMemoryClearHistory = {};  // 장별 망각의 고난 클리어 기록 { "1": [{correct, total, score, date, duration}, ...] }
@@ -1905,6 +1906,7 @@ loadGameData = function () {
         studyModePreference = parsed.studyModePreference || 'ask';
         bossDifficultyMode = parsed.bossDifficultyMode || 'hard';
         bossOrderMode = parsed.bossOrderMode || 'sequential';
+        lastPlayedStageId = parsed.lastPlayedStageId || null;
         // 마이그레이션: 신규 키가 없고 구버전 데이터가 있으면 변환
         if (Object.keys(stageReviewStep).length === 0 && Object.keys(stageMemoryLevels).length > 0) {
             migrateToSerialReview(parsed);
@@ -5612,16 +5614,12 @@ function renderChapterMap() {
         kingsHeader.style.display = 'none';
     }
 
-    // 마지막 플레이 챕터 계산
+    // 마지막 플레이 챕터 (진입 시점 기록 기준)
     let lastPlayedChapterId = null;
-    let lastPlayedChapterTime = 0;
-    Object.keys(stageLastClear).forEach(stageId => {
-        const ts = stageLastClear[stageId] || 0;
-        if (ts > lastPlayedChapterTime) {
-            const m = String(stageId).match(/^(\d+)/);
-            if (m) { lastPlayedChapterTime = ts; lastPlayedChapterId = parseInt(m[1]); }
-        }
-    });
+    if (lastPlayedStageId) {
+        const m = String(lastPlayedStageId).match(/^(\d+)/);
+        if (m) lastPlayedChapterId = parseInt(m[1]);
+    }
     // 이전 화살표 제거
     document.querySelectorAll('.map-last-played-arrow').forEach(el => el.remove());
 
@@ -6444,13 +6442,12 @@ function openStageSheet(chapterData) {
     // ★ 왕의 길 모드: 해금 set 미리 계산
     const kingsUnlockedSet = (activeMode === 'kings') ? getKingsRoadUnlockedSet() : null;
 
-    // 현재 챕터에서 마지막으로 클리어한 스테이지 찾기
-    let lastPlayedId = null;
-    let lastPlayedTime = 0;
-    chapterData.stages.forEach(s => {
-        const t = stageLastClear[s.id] || 0;
-        if (t > lastPlayedTime) { lastPlayedTime = t; lastPlayedId = s.id; }
-    });
+    // 마지막으로 직접 플레이한 스테이지 (진입 시점 기록 기준)
+    const chNum = chapterData.id;
+    const lastPlayedId = (lastPlayedStageId &&
+        String(lastPlayedStageId).match(/^(\d+)/) &&
+        parseInt(String(lastPlayedStageId).match(/^(\d+)/)[1]) === chNum)
+        ? lastPlayedStageId : null;
 
     const grouped = groupStagesByMidBoss(chapterData);
     if (grouped) {
@@ -7015,6 +7012,7 @@ function confirmBossSetup() {
 //[2] 보스전 시작 함수 (하트 버그 수정 + 구간 자동 탐지 + 연출 콜백 분리)//
 function startBossBattle() {
     window.isGamePlaying = true; // ★ 게임 시작! 스위치 ON
+    lastPlayedStageId = window.currentStageId || lastPlayedStageId;
     bossHistory = [];
 
     // 1. 이어하기 데이터 확인
@@ -8393,6 +8391,7 @@ function saveGameData() {
         bossDifficultyMode: bossDifficultyMode,
         bossOrderMode: bossOrderMode,
         bossFirstClearClaimed: [...bossFirstClearClaimed],
+        lastPlayedStageId: lastPlayedStageId,
         updatedAt: Date.now() // [Firestore] 충돌 해결용 타임스탬프
     };
 
@@ -8714,6 +8713,7 @@ function normalizeChunkText(text) {
 /* [수정] 훈련 시작 함수 (phase 시스템 제거) */
 function startTraining(stageId, mode = 'normal') {
     window.isGamePlaying = true; // ★ 게임 시작! 스위치 ON
+    lastPlayedStageId = stageId;
     const isForceFullNew = (mode === 'full-new');
     // ★ chNum을 여기서 미리 정의 (함수 전체에서 쓰임)
     const m = String(stageId).match(/^(\d+)(?:-(\d+|.+))?/);
