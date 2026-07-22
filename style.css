@@ -3585,6 +3585,25 @@ body, html {
     text-shadow: 0 1px 1px rgba(0,0,0,0.2);
 }
 
+.last-played-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 4px 10px;
+    border-bottom-left-radius: 10px;
+    box-shadow: -2px 2px 5px rgba(0,0,0,0.1);
+    z-index: 1;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+}
+
+.stage-item.last-played {
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.35);
+}
+
 /* [잊혀가는 말씀 스타일] */
 .stage-item.forgotten-clear {
     border: 2px solid #9b59b6 !important; /* 보라색 테두리 */

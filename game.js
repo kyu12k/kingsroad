@@ -6194,7 +6194,7 @@ function closeChapterAudioPlayer() {
 }
 
 /* ─── 스테이지 아이템 엘리먼트 빌더 (accordion/flat 공용) ───────────────── */
-function buildStageItemEl(stage, chData, kingsUnlockedSet) {
+function buildStageItemEl(stage, chData, kingsUnlockedSet, lastPlayedId) {
     const item = document.createElement('div');
     const isCleared = (stageMastery[stage.id] || 0) > 0;
     const chNum = parseInt(stage.id.split('-')[0]);
@@ -6207,6 +6207,12 @@ function buildStageItemEl(stage, chData, kingsUnlockedSet) {
     if (isTodayClear) {
         itemClass += ' today-clear';
         statusBadgeHtml = `<div class="today-badge">${t('status_today_done')}</div>`;
+    }
+    const isLastPlayed = !isTodayClear && lastPlayedId && stage.id === lastPlayedId;
+    let lastPlayedBadgeHtml = '';
+    if (isLastPlayed) {
+        itemClass += ' last-played';
+        lastPlayedBadgeHtml = `<div class="last-played-badge">👣 여기까지</div>`;
     }
     const isNormalStage = (stage.type !== 'boss' && stage.type !== 'mid-boss');
     const memLevelUI = getMemoryLevelFromStep(stageReviewStatusUI.step);
@@ -6259,6 +6265,7 @@ function buildStageItemEl(stage, chData, kingsUnlockedSet) {
     }
     item.innerHTML = `
     ${statusBadgeHtml}
+    ${lastPlayedBadgeHtml}
     <div class="stage-icon">${iconChar}</div>
     <div class="stage-info">
         <div class="stage-title">${levelBadgeHtml} ${getStageTitle(stage)}</div>
@@ -6268,6 +6275,7 @@ function buildStageItemEl(stage, chData, kingsUnlockedSet) {
     </div>
     ${rightSideContent}
     `;
+    if (isLastPlayed) item.dataset.lastPlayed = 'true';
     if (kingsUnlockedSet && !kingsUnlockedSet.has(stage.id)) {
         item.classList.add('kings-locked');
         item.innerHTML += `<span class="kings-locked-badge">🔒</span>`;
@@ -6381,6 +6389,14 @@ function openStageSheet(chapterData) {
     // ★ 왕의 길 모드: 해금 set 미리 계산
     const kingsUnlockedSet = (activeMode === 'kings') ? getKingsRoadUnlockedSet() : null;
 
+    // 현재 챕터에서 마지막으로 클리어한 스테이지 찾기
+    let lastPlayedId = null;
+    let lastPlayedTime = 0;
+    chapterData.stages.forEach(s => {
+        const t = stageLastClear[s.id] || 0;
+        if (t > lastPlayedTime) { lastPlayedTime = t; lastPlayedId = s.id; }
+    });
+
     const grouped = groupStagesByMidBoss(chapterData);
     if (grouped) {
         grouped.groups.forEach(group => {
@@ -6396,10 +6412,14 @@ function openStageSheet(chapterData) {
                 kingsUnlockedSet.has(s.id) && (stageMastery[s.id] || 0) === 0
             );
             const newBadgeHtml = hasNewVerse ? `<span class="stage-group-new-badge">새 구절</span>` : '';
+            const hasLastPlayed = lastPlayedId && (
+                group.stages.some(s => s.id === lastPlayedId) ||
+                (group.midBoss && group.midBoss.id === lastPlayedId)
+            );
 
             const groupEl = document.createElement('div');
             groupEl.className = 'stage-group';
-            if (hasNewVerse) groupEl.classList.add('open');
+            if (hasNewVerse || hasLastPlayed) groupEl.classList.add('open');
             const headerEl = document.createElement('div');
             headerEl.className = 'stage-group-header';
             headerEl.innerHTML = `
@@ -6417,21 +6437,29 @@ function openStageSheet(chapterData) {
 
             const contentEl = document.createElement('div');
             contentEl.className = 'stage-group-content';
-            group.stages.forEach(s => contentEl.appendChild(buildStageItemEl(s, chapterData, kingsUnlockedSet)));
-            if (group.midBoss) contentEl.appendChild(buildStageItemEl(group.midBoss, chapterData, kingsUnlockedSet));
+            group.stages.forEach(s => contentEl.appendChild(buildStageItemEl(s, chapterData, kingsUnlockedSet, lastPlayedId)));
+            if (group.midBoss) contentEl.appendChild(buildStageItemEl(group.midBoss, chapterData, kingsUnlockedSet, lastPlayedId));
 
             groupEl.appendChild(headerEl);
             groupEl.appendChild(contentEl);
             list.appendChild(groupEl);
         });
-        if (grouped.boss) list.appendChild(buildStageItemEl(grouped.boss, chapterData, kingsUnlockedSet));
+        if (grouped.boss) list.appendChild(buildStageItemEl(grouped.boss, chapterData, kingsUnlockedSet, lastPlayedId));
     } else {
         chapterData.stages.forEach(stage => {
-            list.appendChild(buildStageItemEl(stage, chapterData, kingsUnlockedSet));
+            list.appendChild(buildStageItemEl(stage, chapterData, kingsUnlockedSet, lastPlayedId));
         });
     }
 
     sheet.classList.add('open');
+
+    // 마지막 플레이 스테이지로 스크롤
+    if (lastPlayedId) {
+        setTimeout(() => {
+            const lastEl = list.querySelector('[data-last-played="true"]');
+            if (lastEl) lastEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }, 80);
+    }
 
     // ★ 6. 타이머 작동 시작 (즉시 1회 실행 후 1분마다 갱신) ★
     function updateSheetTimers() {
