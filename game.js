@@ -5745,7 +5745,7 @@ function renderChapterMap() {
                 ${fruitHTML}
             </div>
             <div class="stage-label">${t('label_chapter_header', { num: chapter.id })}</div>
-            ${isLastPlayedChapter ? '<span class="chapter-last-badge">👣 여기까지</span>' : ''}
+            ${isLastPlayedChapter ? '<span class="chapter-last-badge">👣 마지막 완료</span>' : ''}
         `;
 
         node.onclick = () => {
@@ -5795,17 +5795,18 @@ function renderChapterMap() {
     if (lastPlayedChapterId !== null) {
         const targetNode = document.querySelector('.stage-node.last-played-chapter');
         if (targetNode) {
+            const mapScreen = document.getElementById('map-screen');
             const arrowUp = document.createElement('button');
             arrowUp.className = 'map-last-played-arrow map-arrow-up';
-            arrowUp.innerHTML = '👣 ▲ 여기까지';
+            arrowUp.innerHTML = '👣 ▲ 마지막 완료';
             arrowUp.onclick = () => targetNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            document.body.appendChild(arrowUp);
+            mapScreen.appendChild(arrowUp);
 
             const arrowDown = document.createElement('button');
             arrowDown.className = 'map-last-played-arrow map-arrow-down';
-            arrowDown.innerHTML = '👣 ▼ 여기까지';
+            arrowDown.innerHTML = '👣 ▼ 마지막 완료';
             arrowDown.onclick = () => targetNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            document.body.appendChild(arrowDown);
+            mapScreen.appendChild(arrowDown);
 
             if (renderChapterMap._lastPlayedObserver) renderChapterMap._lastPlayedObserver.disconnect();
             const obs = new IntersectionObserver(entries => {
@@ -6265,7 +6266,7 @@ function buildStageItemEl(stage, chData, kingsUnlockedSet, lastPlayedId) {
     let lastPlayedBadgeHtml = '';
     if (isLastPlayed) {
         itemClass += ' last-played';
-        lastPlayedBadgeHtml = `<div class="last-played-badge">👣 여기까지</div>`;
+        lastPlayedBadgeHtml = `<div class="last-played-badge">👣 마지막 완료</div>`;
     }
     const isNormalStage = (stage.type !== 'boss' && stage.type !== 'mid-boss');
     const memLevelUI = getMemoryLevelFromStep(stageReviewStatusUI.step);

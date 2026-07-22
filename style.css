@@ -3612,6 +3612,7 @@ body, html {
     position: fixed;
     left: 50%;
     transform: translateX(-50%);
+    top: 68px;
     background: rgba(41, 128, 185, 0.92);
     color: #fff;
     border: none;
@@ -3627,8 +3628,7 @@ body, html {
     box-shadow: 0 2px 10px rgba(0,0,0,0.3);
     white-space: nowrap;
 }
-.map-arrow-up { top: 68px; }
-.map-arrow-down { bottom: 80px; }
+#map-screen:not(.active) .map-last-played-arrow { display: none !important; }
 
 .last-played-badge {
     position: absolute;
