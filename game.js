@@ -6261,7 +6261,7 @@ function buildStageItemEl(stage, chData, kingsUnlockedSet, lastPlayedId) {
         itemClass += ' today-clear';
         statusBadgeHtml = `<div class="today-badge">${t('status_today_done')}</div>`;
     }
-    const isLastPlayed = !isTodayClear && lastPlayedId && stage.id === lastPlayedId;
+    const isLastPlayed = lastPlayedId && stage.id === lastPlayedId;
     let lastPlayedBadgeHtml = '';
     if (isLastPlayed) {
         itemClass += ' last-played';
