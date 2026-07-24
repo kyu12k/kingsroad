@@ -358,7 +358,7 @@ const LANG = {
         mission_weekly_daily_clear_title: '일일 미션 20회 클리어',
         mission_weekly_daily_clear_desc: '(주간)일일 미션 보상을 20회 수령하세요. 주간 총 20회.',
         mission_tab_advanced: '⚔️ 일일 심화',
-        mission_reset_advanced: '매일 자정에 초기화됩니다.',
+        mission_reset_advanced: '매일 오전 6시에 초기화됩니다.',
         mission_advanced_locked: '보스를 처음 클리어하면 심화 일일 미션이 열립니다.',
         mission_advanced_address_title: '주소의 고난 누적',
         mission_advanced_address_desc: '오늘 서로 다른 장을 클리어할수록 보상이 쌓입니다. (2번째 장부터 보상)',
@@ -807,7 +807,7 @@ const LANG = {
         guide_p3_title: '⏰ Review Bonus Timing',
         guide_p3_html: `<p style="font-size:13px; color:#888;">The more you review, the <b>bigger the gem reward.</b> Timing is everything!</p><div style="font-size:14px; line-height:1; margin:16px 0;"><div style="padding:10px 12px; border-radius:8px; background:rgba(149,165,166,0.1); margin-bottom:8px;"><span style="color:#95a5a6;">📖 <b>First Clear</b> → Base gems (×1)</span></div><div style="padding:10px 12px; border-radius:8px; background:rgba(142,68,173,0.1); margin-bottom:8px;"><span style="color:#8e44ad; font-weight:bold;">🔱 Review after 10 min → gems ×1.5</span></div><div style="padding:10px 12px; border-radius:8px; background:rgba(41,128,185,0.1); margin-bottom:8px;"><span style="color:#2980b9; font-weight:bold;">⚔️ Review after 1 hr → gems ×2</span></div><div style="padding:10px 12px; border-radius:8px; background:rgba(230,126,34,0.1); margin-bottom:8px;"><span style="color:#e67e22; font-weight:bold;">🎁 Review after 6 hrs → gems ×5</span><br><span style="font-size:12px; color:#aaa;">Must wait the full cooldown to earn the bonus!</span></div></div><p style="font-size:12px; color:#aaa;">💡 The 'Review Timing' button on the map screen will notify you when a cooldown is up!</p>`,
         guide_p4_title: '💎 Gems & Missions',
-        guide_p4_html: `<p><b>How to earn gems:</b></p><ul style="padding-left:18px; line-height:1.9; font-size:14px;"><li>Complete studies & reviews (bonus multipliers apply)</li><li>+10% bonus for a perfect run</li><li>Clear daily / weekly missions</li><li>Unlock achievements</li><li>Temple auto-production</li></ul><p style="margin-top:12px;"><b>Mission reset:</b></p><div style="font-size:13px; color:#666; line-height:1.9;">📅 Daily missions — reset at midnight<br>📆 Weekly missions — reset every Monday</div>`,
+        guide_p4_html: `<p><b>How to earn gems:</b></p><ul style="padding-left:18px; line-height:1.9; font-size:14px;"><li>Complete studies & reviews (bonus multipliers apply)</li><li>+10% bonus for a perfect run</li><li>Clear daily / weekly missions</li><li>Unlock achievements</li><li>Temple auto-production</li></ul><p style="margin-top:12px;"><b>Mission reset:</b></p><div style="font-size:13px; color:#666; line-height:1.9;">📅 Daily missions — reset at 6 AM<br>📆 Weekly missions — reset every Monday 6 AM</div>`,
         guide_p5_title: '🏰 Temple & Achievements',
         guide_p5_html: `<p><b>Temple Construction:</b> Upgrade the temple with gems to increase idle gem production.</p><p style="margin-top:12px;"><b>7 Achievement types:</b></p><ul style="padding-left:18px; line-height:1.9; font-size:13px;"><li>🗓️ Total attendance</li><li>📖 Verses recited</li><li>🐲 Boss victories</li><li>💎 Total gems earned</li><li>✨ Perfect recitations</li><li>🏰 Temple build level</li><li>🌅 Early-morning recitation (before 7 AM)</li></ul>`,
 
@@ -13918,7 +13918,7 @@ function isFirstDayOfMonth() {
 
 /* [시스템] 출석 및 주간 리그 결산 (핵심 로직) */
 function checkDailyLogin() {
-    const today = new Date().toDateString();
+    const today = getMemoryQuizDate(); // 오전 6시 기준
     const lastDate = localStorage.getItem('lastPlayedDate');
 
     // 이 스위치가 true가 되면 마지막에 무조건 저장을 실행합니다.
@@ -17740,16 +17740,16 @@ document.addEventListener("visibilitychange", () => {
         }
     }
 });
-// ⏰ 자정 지킴이 (1분마다 몰래 날짜가 바뀌었는지 확인합니다)
+// ⏰ 날짜 지킴이 (1분마다 오전 6시 기준 날짜가 바뀌었는지 확인합니다)
 setInterval(() => {
     // 🌟 전투 중(게임 플레이 중)에는 방해하지 않고, 맵 화면에 있을 때만 검사!
     if (!window.isGamePlaying) {
-        const today = new Date().toDateString();
+        const today = getMemoryQuizDate(); // 오전 6시 기준
         const lastDate = localStorage.getItem('lastPlayedDate');
 
-        // 저장된 날짜와 지금 실제 날짜가 다르다? = 자정이 지났다!
+        // 저장된 날짜와 오전 6시 기준 오늘이 다르다? = 새 하루가 시작됐다!
         if (lastDate && lastDate !== today) {
-            console.log("🕛 자정이 지났습니다! 날짜 변경선 및 주간 리셋을 적용합니다.");
+            console.log("🌅 새 하루가 시작되었습니다! 날짜 변경선 및 주간 리셋을 적용합니다.");
 
             // 우리가 완벽하게 고쳐둔 출석체크/리셋 함수 실행
             if (typeof checkDailyLogin === 'function') {
