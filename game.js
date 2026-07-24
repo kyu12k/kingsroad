@@ -8423,9 +8423,20 @@ async function initFirestoreSync() {
     const localUpdatedAt  = (localData  && localData.updatedAt)  ? localData.updatedAt  : 0;
     const remoteUpdatedAt = (remoteData && remoteData.updatedAt) ? remoteData.updatedAt : 0;
 
-    if (localUpdatedAt > remoteUpdatedAt) {
+    // lastLoginDate 비교: 로컬 날짜가 더 최신이면 (오늘 클리어한 미션 정보 보호)
+    // serverTimestamp 특성상 Firestore updatedAt이 항상 로컬보다 약간 크므로
+    // lastLoginDate 기준 보조 비교가 필요.
+    const localLastLoginDate  = localData  && localData.missions && localData.missions.lastLoginDate;
+    const remoteLastLoginDate = remoteData && remoteData.missions && remoteData.missions.lastLoginDate;
+    const localDateIsNewer = localLastLoginDate && remoteLastLoginDate && localLastLoginDate > remoteLastLoginDate;
+
+    if (localUpdatedAt > remoteUpdatedAt || localDateIsNewer) {
         // 로컬이 더 최신 (게임 시작 직후 행동 등) → Firestore로 업로드
-        console.log('[Firestore] 로컬 데이터가 더 최신 → Firestore 업로드');
+        if (localDateIsNewer) {
+            console.log(`[Firestore] 로컬 lastLoginDate(${localLastLoginDate}) > 서버(${remoteLastLoginDate}) → 로컬 우선 업로드`);
+        } else {
+            console.log('[Firestore] 로컬 데이터가 더 최신 → Firestore 업로드');
+        }
         window.firestoreSyncPending = false;
         await syncToFirestore();
         return;
@@ -8439,15 +8450,21 @@ async function initFirestoreSync() {
     if (typeof renderChapterMap === 'function') renderChapterMap();
     if (typeof updateCastleView  === 'function') updateCastleView();
 
-    // 서버 데이터에 stale weekId가 있을 경우 즉시 주간 리셋 후 Firestore 재동기화.
-    // 이 처리가 없으면: 서버 데이터가 이전 주의 weekId/score를 담고 있을 때
-    // loadGameData()로 메모리에 적용된 뒤 checkDailyLogin이 호출되지 않아
-    // 이후 syncToFirestore가 stale weekId를 leaderboard에 계속 기록하는 버그 발생.
+    // 서버 데이터에 stale weekId 또는 stale lastLoginDate가 있을 경우 즉시 리셋 후 재동기화.
+    // weekId: 이전 주의 데이터가 있으면 주간 리셋 누락 방지
+    // lastLoginDate: 이전 날의 데이터가 있으면 일일 리셋 누락 방지
     if (typeof checkDailyLogin === 'function') {
         const remoteWeekId = (remoteData.leagueData && remoteData.leagueData.weekId) || null;
         const currentWeekId = (typeof getWeekId === 'function') ? getWeekId() : null;
-        if (currentWeekId && remoteWeekId !== currentWeekId) {
-            console.log(`[Firestore] 서버 데이터의 weekId(${remoteWeekId})가 현재 주(${currentWeekId})와 다름 → 주간 리셋 후 재업로드`);
+        const weekChanged = currentWeekId && remoteWeekId !== currentWeekId;
+
+        const remoteMissLastLogin = (remoteData.missions && remoteData.missions.lastLoginDate) || null;
+        const currentDate = (typeof getMemoryQuizDate === 'function') ? getMemoryQuizDate() : null;
+        const dayChanged = currentDate && remoteMissLastLogin && remoteMissLastLogin !== currentDate;
+
+        if (weekChanged || dayChanged) {
+            if (weekChanged) console.log(`[Firestore] 서버 weekId(${remoteWeekId}) ≠ 현재(${currentWeekId}) → 주간 리셋`);
+            if (dayChanged) console.log(`[Firestore] 서버 lastLoginDate(${remoteMissLastLogin}) ≠ 오늘(${currentDate}) → 일일 리셋 후 재업로드`);
             checkDailyLogin();
             await syncToFirestore();
         }
