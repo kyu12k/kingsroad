@@ -8429,7 +8429,10 @@ async function initFirestoreSync() {
     // lastLoginDate 비교: 로컬 날짜가 더 최신이면 (오늘 클리어한 미션 정보 보호)
     // serverTimestamp 특성상 Firestore updatedAt이 항상 로컬보다 약간 크므로
     // lastLoginDate 기준 보조 비교가 필요.
-    const localLastLoginDate  = localData  && localData.missions && localData.missions.lastLoginDate;
+    // ★ 메모리(missionData) 우선: checkMissions()가 localStorage 저장 전에 메모리에만 오늘 날짜를
+    //   설정하는 타이밍 이슈를 방지. 메모리가 없으면 localStorage fallback.
+    const localLastLoginDate  = (typeof missionData !== 'undefined' && missionData && missionData.lastLoginDate)
+                              || (localData && localData.missions && localData.missions.lastLoginDate);
     const remoteLastLoginDate = remoteData && remoteData.missions && remoteData.missions.lastLoginDate;
     const localDateIsNewer = localLastLoginDate && remoteLastLoginDate && localLastLoginDate > remoteLastLoginDate;
 
@@ -8451,7 +8454,8 @@ async function initFirestoreSync() {
     // 미션 claimed/포인트 OR/MAX 병합: serverTimestamp로 인해 updatedAt이 항상 서버가 크므로
     // 오래된 스냅샷이 로컬을 덮어쓰더라도 이미 클리어된 미션 상태를 보존
     {
-        const lm = localData && localData.missions;
+        // ★ 메모리(missionData) 우선: localStorage에 저장 전인 최신 상태를 반영
+        const lm = (typeof missionData !== 'undefined' && missionData) || (localData && localData.missions);
         const rm = remoteData && remoteData.missions;
         if (lm && rm) {
             // 일일: lastLoginDate가 같을 때만 병합
