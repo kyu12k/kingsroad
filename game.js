@@ -8355,10 +8355,13 @@ function saveGameData() {
         updatedAt: Date.now() // [Firestore] 충돌 해결용 타임스탬프
     };
 
+    // localStorage는 즉시 저장 — syncToFirestore()가 바로 뒤에 호출될 때
+    // 최신 데이터를 읽도록 setTimeout 밖에 위치해야 함
+    localStorage.setItem('kingsRoadSave', JSON.stringify(saveData));
+
+    // UI 업데이트만 debounce (연속 호출 시 렌더링 최적화)
     clearTimeout(window._saveDebounceTimer);
     window._saveDebounceTimer = setTimeout(() => {
-        localStorage.setItem('kingsRoadSave', JSON.stringify(saveData));
-
         const missionModal = document.getElementById('mission-modal');
         const missionScreen = document.getElementById('mission-screen');
         const isMissionOpen = !!(
@@ -8444,6 +8447,43 @@ async function initFirestoreSync() {
 
     // Firestore가 권위(authority) — Firestore 데이터를 적용
     console.log('[Firestore] 서버 데이터 적용 중...');
+
+    // 미션 claimed/포인트 OR/MAX 병합: serverTimestamp로 인해 updatedAt이 항상 서버가 크므로
+    // 오래된 스냅샷이 로컬을 덮어쓰더라도 이미 클리어된 미션 상태를 보존
+    {
+        const lm = localData && localData.missions;
+        const rm = remoteData && remoteData.missions;
+        if (lm && rm) {
+            // 일일: lastLoginDate가 같을 때만 병합
+            if (lm.lastLoginDate && rm.lastLoginDate && lm.lastLoginDate === rm.lastLoginDate) {
+                if (lm.daily && rm.daily && Array.isArray(lm.daily.claimed) && Array.isArray(rm.daily.claimed)) {
+                    rm.daily.claimed = rm.daily.claimed.map((v, i) => v || (lm.daily.claimed[i] || false));
+                }
+                if (lm.advanced && rm.advanced && Array.isArray(lm.advanced.claimed) && Array.isArray(rm.advanced.claimed)) {
+                    rm.advanced.claimed = rm.advanced.claimed.map((v, i) => v || (lm.advanced.claimed[i] || false));
+                }
+                if (lm.points && rm.points) {
+                    if (typeof lm.points.daily === 'number') rm.points.daily = Math.max(rm.points.daily || 0, lm.points.daily);
+                    if (Array.isArray(lm.points.dailyClaimedTiers) && Array.isArray(rm.points.dailyClaimedTiers)) {
+                        rm.points.dailyClaimedTiers = [...new Set([...rm.points.dailyClaimedTiers, ...lm.points.dailyClaimedTiers])];
+                    }
+                }
+            }
+            // 주간: weekId가 같을 때만 병합
+            if (lm.weekId && rm.weekId && lm.weekId === rm.weekId) {
+                if (lm.weekly && rm.weekly && Array.isArray(lm.weekly.claimed) && Array.isArray(rm.weekly.claimed)) {
+                    rm.weekly.claimed = rm.weekly.claimed.map((v, i) => v || (lm.weekly.claimed[i] || false));
+                }
+                if (lm.points && rm.points) {
+                    if (typeof lm.points.weekly === 'number') rm.points.weekly = Math.max(rm.points.weekly || 0, lm.points.weekly);
+                    if (Array.isArray(lm.points.weeklyClaimedTiers) && Array.isArray(rm.points.weeklyClaimedTiers)) {
+                        rm.points.weeklyClaimedTiers = [...new Set([...rm.points.weeklyClaimedTiers, ...lm.points.weeklyClaimedTiers])];
+                    }
+                }
+            }
+        }
+    }
+
     localStorage.setItem('kingsRoadSave', JSON.stringify(remoteData));
     window.firestoreSyncPending = false;
     loadGameData();
@@ -8466,6 +8506,12 @@ async function initFirestoreSync() {
             if (weekChanged) console.log(`[Firestore] 서버 weekId(${remoteWeekId}) ≠ 현재(${currentWeekId}) → 주간 리셋`);
             if (dayChanged) console.log(`[Firestore] 서버 lastLoginDate(${remoteMissLastLogin}) ≠ 오늘(${currentDate}) → 일일 리셋 후 재업로드`);
             checkDailyLogin();
+            // dayChanged: checkDailyLogin은 lastPlayedDate 기준이라 오늘 이미 접속했으면
+            // missionData.lastLoginDate를 업데이트하지 않는다. 이후 checkMissions() 호출 시
+            // lastLoginDate가 구 날짜로 남아 재초기화되는 것을 방지.
+            if (dayChanged && missionData && missionData.lastLoginDate !== currentDate) {
+                missionData.lastLoginDate = currentDate;
+            }
             await syncToFirestore();
         }
     }
