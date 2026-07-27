@@ -2101,7 +2101,15 @@ loadGameData = function () {
         if (parsed.lastClaimTime) lastClaimTime = parsed.lastClaimTime;
         else { lastClaimTime = Date.now(); saveGameData(); }
 
-        if (parsed.lastPlayed) localStorage.setItem('lastPlayedDate', parsed.lastPlayed);
+        if (parsed.lastPlayed) {
+            const currentLastPlayedDate = localStorage.getItem('lastPlayedDate');
+            const todayKey = (typeof getMemoryQuizDate === 'function') ? getMemoryQuizDate() : null;
+            // 이미 오늘 날짜가 로컬에 있으면 Firestore 구버전 값으로 덮어쓰지 않음
+            // (initFirestoreSync에서 loadGameData 호출 시 lastPlayedDate가 과거로 되돌아가는 것 방지)
+            if (currentLastPlayedDate !== todayKey) {
+                localStorage.setItem('lastPlayedDate', parsed.lastPlayed);
+            }
+        }
         if (parsed.streak) localStorage.setItem('streakDays', parsed.streak);
 
         // [게임 로직 반영]
@@ -10338,24 +10346,27 @@ function goToNextStage(nextId) {
 
 // 스트릭 계산 로직
 function updateStreak() {
-    const today = new Date().toDateString(); // "Wed Jan 08 2026" 형식
+    // getMemoryQuizDate()와 동일한 "YYYY-MM-DD" 형식 사용
+    // (이전 new Date().toDateString() 형식은 checkDailyLogin과 불일치하여 매번 미션 초기화 버그 유발)
+    const today = (typeof getMemoryQuizDate === 'function')
+        ? getMemoryQuizDate()
+        : new Date().toISOString().split('T')[0];
     let lastPlayed = localStorage.getItem('lastPlayedDate');
     let streak = parseInt(localStorage.getItem('streakDays') || 0);
 
     if (lastPlayed !== today) {
-        // 오늘 처음 깸
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
+        // 어제 날짜를 "YYYY-MM-DD" 형식으로 계산
+        const todayParts = today.split('-');
+        const d = new Date(parseInt(todayParts[0]), parseInt(todayParts[1]) - 1, parseInt(todayParts[2]));
+        d.setDate(d.getDate() - 1);
+        const yesterday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-        if (lastPlayed === yesterday.toDateString()) {
-            // 어제 하고 오늘 또 함 -> 스트릭 증가!
+        if (lastPlayed === yesterday) {
             streak++;
         } else {
-            // 하루 빼먹음 or 처음 -> 1일부터 시작
             streak = 1;
         }
 
-        // 저장
         localStorage.setItem('lastPlayedDate', today);
         localStorage.setItem('streakDays', streak);
     }
