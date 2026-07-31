@@ -14235,6 +14235,7 @@ stageClear = function (type, rewardMultiplier = 1) {
                     updateMissionProgress('checkpointBoss', sId); // 레이드 대미지 + 일일 미션
                     updateMissionProgress('advancedCheckpointBoss', sId); // 심화 미션
                 }
+                updateMissionProgress('dragon', sId); // 레이드 대미지 + 주간 미션
             }
             else {
                 // ★ [v1.1.0] 일반 스테이지: 직렬 복습 시스템 적용

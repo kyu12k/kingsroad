@@ -130,16 +130,18 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | 5 | 25명 | 8,000 |
 
 ### 레이드 대미지 테이블 (`GUILD_RAID_DAMAGE`)
-| 액션 | 대미지 |
-|------|--------|
-| 첫 학습(new) | 15 |
-| 복습(review) | 5 |
-| 중간점검(checkpointBoss) | 30 |
-| 보스전(dragon) | 50 |
-| 주소의 고난 | 15 |
-| 구절의 고난 | 30 |
-| 암송의 고난 | 80 |
-| 망각의 고난 | 150 |
+| 액션 | 기본값 | 비고 |
+|------|--------|------|
+| 첫 학습(new) | 15 | 고정 |
+| 복습(review) | 5 | 고정 |
+| 중간점검(checkpointBoss) | 5 | × 장 구절 수 |
+| 보스전(dragon) | 7 | × 장 구절 수 |
+| 주소의 고난(hardshipAddress) | 2 | × 장 구절 수 |
+| 구절의 고난(hardshipVerse) | 3 | × 장 구절 수 |
+| 암송의 고난(hardshipEndurance) | 9 | × 장 구절 수 |
+| 망각의 고난(hardshipMemory) | 10 | × 장 구절 수 |
+
+중간점검 클리어 시: `checkpointBoss`(일일 첫 클리어만) + `dragon`(항상) 둘 다 호출 — 보스전과 동일 구조
 
 ### Cloud Functions (kingsroad/index.js, asia-northeast3)
 - `createGuild`, `joinGuildRequest`, `respondJoinRequest`, `leaveGuild`, `kickGuildMember`
