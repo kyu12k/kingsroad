@@ -20044,6 +20044,7 @@ function startHardshipEnduranceSpeech() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
         hardshipState.locked = true;
+        pauseHardshipTimer();
         hardshipState.lastTranscript = '';
         hardshipState.speechScores.push(0);
         hardshipState.studiedCount += 1;
