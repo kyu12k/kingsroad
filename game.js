@@ -19033,7 +19033,9 @@ function createEmptyHardshipState() {
         showInfo: false,
         ultimateMemoryMode: false,
         trainingMode: false,
-        verseChoices: []
+        verseChoices: [],
+        pausedMs: 0,
+        _pauseStart: null
     };
 }
 
@@ -19120,9 +19122,23 @@ function clearHardshipPendingTimeout() {
     }
 }
 
+function pauseHardshipTimer() {
+    if (hardshipState._pauseStart == null) {
+        hardshipState._pauseStart = Date.now();
+    }
+}
+
+function resumeHardshipTimer() {
+    if (hardshipState._pauseStart != null) {
+        hardshipState.pausedMs += Date.now() - hardshipState._pauseStart;
+        hardshipState._pauseStart = null;
+    }
+}
+
 function proceedHardshipToNextVerse() {
     if (!window.isHardshipMode || !hardshipState.active || !hardshipState.awaitingNext) return;
 
+    resumeHardshipTimer();
     hardshipState.awaitingNext = false;
     hardshipState.wrongSlots = [];
 
@@ -20077,6 +20093,7 @@ function submitHardshipEnduranceSpeech(transcript) {
 
     hardshipState.lastTranscript = hardshipState.currentVerseTranscript;
     hardshipState.locked = true;
+    pauseHardshipTimer();
 
     const bestScore = hardshipState.currentVerseScore;
     const feedbackType = bestScore >= 80 ? 'correct' : bestScore >= 50 ? 'info' : 'wrong';
@@ -20095,6 +20112,7 @@ function submitHardshipEnduranceSpeech(transcript) {
 
 function retryHardshipEnduranceSpeech() {
     if (!hardshipState.locked) return;
+    resumeHardshipTimer();
     hardshipState.locked = false;
     hardshipState.feedback = null;
     renderHardshipEnduranceVerse();
@@ -20103,6 +20121,7 @@ function retryHardshipEnduranceSpeech() {
 
 function confirmHardshipEnduranceVerse() {
     // 현재 구절 점수를 확정하고 승점 적용 후 다음 구절로
+    resumeHardshipTimer();
     const score = hardshipState.currentVerseScore ?? 0;
     hardshipState.speechScores.push(score);
     hardshipState.studiedCount += 1;
@@ -20237,6 +20256,7 @@ function submitHardshipAddressGuess() {
 
     hardshipState.locked = true;
     hardshipState.awaitingNext = true;
+    pauseHardshipTimer();
     hardshipState.answeredCount += 1;
 
     const guessedChapter = hardshipState.selectedChapter;
@@ -20354,6 +20374,7 @@ function submitHardshipVerseGuess(choiceIdx) {
 
     hardshipState.locked = true;
     hardshipState.awaitingNext = true;
+    pauseHardshipTimer();
     hardshipState.answeredCount += 1;
 
     const choice = hardshipState.verseChoices[choiceIdx];
@@ -20943,6 +20964,7 @@ function submitHardshipMemoryGuess() {
 
     hardshipState.locked = true;
     hardshipState.awaitingNext = true;
+    pauseHardshipTimer();
     hardshipState.answeredCount += 1;
 
     const text = getHardshipActiveText(hardshipState.currentVerse);
@@ -21143,7 +21165,7 @@ function finishHardshipSession(reason) {
     const enduranceHistoryHtml = (() => {
         if (reason !== 'completed' || hardshipState.mode !== 'endurance') return '';
         const avg = enduranceAvgScore ?? 0;
-        const sessionDuration = Math.floor((Date.now() - stageStartTime) / 1000);
+        const sessionDuration = Math.floor((Date.now() - stageStartTime - hardshipState.pausedMs) / 1000);
         const record = {
             avgScore: avg,
             total: hardshipState.queue.length,
@@ -21225,7 +21247,7 @@ function finishHardshipSession(reason) {
     // 주소의 고난 완주: 기록 저장 및 결과 화면에 히스토리 표시 (단일 장 및 범위 세션)
     const addressHistoryHtml = (() => {
         if (reason !== 'completed' || hardshipState.mode !== 'address') return '';
-        const sessionDuration = Math.floor((Date.now() - stageStartTime) / 1000);
+        const sessionDuration = Math.floor((Date.now() - stageStartTime - hardshipState.pausedMs) / 1000);
         const record = {
             correct: hardshipState.studiedCount,
             total: hardshipState.queue.length,
@@ -21298,7 +21320,7 @@ function finishHardshipSession(reason) {
     // 망각의 고난 완주: 기록 저장 및 결과 화면에 히스토리 표시 (단일 장 및 범위 세션)
     const memoryHistoryHtml = (() => {
         if (reason !== 'completed' || hardshipState.mode !== 'memory' || hardshipState.trainingMode) return '';
-        const sessionDuration = Math.floor((Date.now() - stageStartTime) / 1000);
+        const sessionDuration = Math.floor((Date.now() - stageStartTime - hardshipState.pausedMs) / 1000);
         const record = {
             correct: hardshipState.studiedCount,
             total: hardshipState.queue.length,
@@ -21385,7 +21407,7 @@ function finishHardshipSession(reason) {
         if (existingHistory) existingHistory.remove();
         const verseHistoryHtml = (() => {
             if (reason !== 'completed' || hardshipState.mode !== 'verse') return '';
-            const sessionDuration = Math.floor((Date.now() - stageStartTime) / 1000);
+            const sessionDuration = Math.floor((Date.now() - stageStartTime - hardshipState.pausedMs) / 1000);
             const record = {
                 correct: hardshipState.studiedCount,
                 total: hardshipState.queue.length,
