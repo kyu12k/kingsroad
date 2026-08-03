@@ -8452,6 +8452,15 @@ async function initFirestoreSync() {
             console.log('[Firestore] 로컬 데이터가 더 최신 → Firestore 업로드');
         }
         window.firestoreSyncPending = false;
+        // 주간 리셋 체크: 로컬 우선 경로에서도 weekId가 구 주차면 리셋 후 업로드
+        if (typeof checkDailyLogin === 'function') {
+            const remoteWeekId = (remoteData.leagueData && remoteData.leagueData.weekId) || null;
+            const currentWeekId = (typeof getWeekId === 'function') ? getWeekId() : null;
+            if (currentWeekId && leagueData.weekId !== currentWeekId) {
+                console.log(`[Firestore] 로컬 우선 경로에서 weekId 불일치(${leagueData.weekId} → ${currentWeekId}) → 주간 리셋`);
+                checkDailyLogin();
+            }
+        }
         await syncToFirestore();
         return;
     }
