@@ -793,3 +793,35 @@ exports.sendReviewNotifications = functions
             return null;
         }
     });
+
+// ── saves 문서 정리: 새 문서 생성 시 같은 tag의 오래된 문서를 삭제 ──────────────
+// 최근 3개만 남기고 나머지 삭제 (백업 목적으로 2개 보존)
+exports.cleanupOldSaveDocs = functions
+    .region('asia-northeast3')
+    .firestore.document('saves/{uid}')
+    .onCreate(async (snap, context) => {
+        const data = snap.data();
+        const tag = data.tag;
+        if (!tag || tag === '0000') return null;
+
+        try {
+            const allDocs = await db.collection('saves')
+                .where('tag', '==', tag)
+                .orderBy('updatedAt', 'desc')
+                .get();
+
+            const KEEP = 3;
+            const toDelete = allDocs.docs.slice(KEEP);
+            if (toDelete.length === 0) return null;
+
+            const batch = db.batch();
+            for (const doc of toDelete) {
+                batch.delete(doc.ref);
+            }
+            await batch.commit();
+            console.log(`🧹 ${tag}: ${toDelete.length}개 오래된 saves 삭제 (${allDocs.docs.length}개 → ${KEEP}개)`);
+        } catch (e) {
+            console.error(`cleanupOldSaveDocs 실패 (${tag}):`, e.message);
+        }
+        return null;
+    });
