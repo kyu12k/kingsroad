@@ -8366,6 +8366,7 @@ function saveGameData() {
     // localStorage는 즉시 저장 — syncToFirestore()가 바로 뒤에 호출될 때
     // 최신 데이터를 읽도록 setTimeout 밖에 위치해야 함
     localStorage.setItem('kingsRoadSave', JSON.stringify(saveData));
+    window._syncDirty = true;
 
     // UI 업데이트만 debounce (연속 호출 시 렌더링 최적화)
     clearTimeout(window._saveDebounceTimer);
@@ -8505,6 +8506,38 @@ async function initFirestoreSync() {
         }
     }
 
+    // 고난 히스토리 병합: serverTimestamp로 Firestore가 이겨도 로컬의 신기록/최신 기록을 보존
+    // 고난 기록은 누적 append-only 데이터라 통째 덮어쓰면 새 기록이 사라질 수 있음
+    {
+        const hardshipPairs = [
+            ['hardshipAddressClearHistory',   typeof hardshipAddressClearHistory   !== 'undefined' ? hardshipAddressClearHistory   : null],
+            ['hardshipMemoryClearHistory',    typeof hardshipMemoryClearHistory    !== 'undefined' ? hardshipMemoryClearHistory    : null],
+            ['hardshipEnduranceClearHistory', typeof hardshipEnduranceClearHistory !== 'undefined' ? hardshipEnduranceClearHistory : null],
+            ['hardshipVerseClearHistory',     typeof hardshipVerseClearHistory     !== 'undefined' ? hardshipVerseClearHistory     : null],
+        ];
+        let anyMerged = false;
+        for (const [key, memHist] of hardshipPairs) {
+            const lh = (memHist && Object.keys(memHist).length > 0 ? memHist : null)
+                    || (localData && localData[key]) || {};
+            const rh = (remoteData && remoteData[key]) || {};
+            if (!Object.keys(lh).length) continue;
+            const merged = { ...rh };
+            for (const ch of Object.keys(lh)) {
+                const lRecs = Array.isArray(lh[ch]) ? lh[ch] : [];
+                const rRecs = Array.isArray(rh[ch]) ? rh[ch] : [];
+                const rDates = new Set(rRecs.map(r => r.date));
+                const added = lRecs.filter(r => !rDates.has(r.date));
+                if (!added.length) continue;
+                const combined = [...rRecs, ...added];
+                combined.sort((a, b) => (b.date || 0) - (a.date || 0));
+                merged[ch] = combined.slice(0, 10);
+                anyMerged = true;
+            }
+            remoteData[key] = merged;
+        }
+        if (anyMerged) window._syncDirty = true;
+    }
+
     localStorage.setItem('kingsRoadSave', JSON.stringify(remoteData));
     window.firestoreSyncPending = false;
     loadGameData();
@@ -8535,6 +8568,14 @@ async function initFirestoreSync() {
             }
             await syncToFirestore();
         }
+    }
+
+    // 5분마다 변경 있으면 자동 동기화
+    if (!window._periodicSyncStarted) {
+        window._periodicSyncStarted = true;
+        setInterval(() => {
+            if (window._syncDirty) syncToFirestore();
+        }, 5 * 60 * 1000);
     }
 }
 
@@ -8638,6 +8679,7 @@ async function syncToFirestore() {
 
     try {
         await _callSaveFunction();
+        window._syncDirty = false;
         // 성공 시 예약된 재시도 취소
         if (_syncRetryTimer) { clearTimeout(_syncRetryTimer); _syncRetryTimer = null; }
     } catch (e) {
