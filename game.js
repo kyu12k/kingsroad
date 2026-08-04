@@ -8453,6 +8453,80 @@ async function initFirestoreSync() {
             console.log('[Firestore] 로컬 데이터가 더 최신 → Firestore 업로드');
         }
         window.firestoreSyncPending = false;
+
+        // 로컬 우선 경로에서도 Firestore의 고난 기록·심화챕터·미션 보상을 병합
+        // (어드민 보상 / 다른 기기 기록이 로컬 업로드에 묻히지 않도록)
+        if (remoteData) {
+            // 1) 고난 히스토리: Firestore에만 있는 날짜의 기록을 로컬에 추가
+            const _hardshipKeys = ['hardshipAddressClearHistory','hardshipMemoryClearHistory','hardshipEnduranceClearHistory','hardshipVerseClearHistory'];
+            let _localChanged = false;
+            for (const _key of _hardshipKeys) {
+                const _lh = localData[_key] || {};
+                const _rh = remoteData[_key] || {};
+                for (const _ch of Object.keys(_rh)) {
+                    const _lRecs = Array.isArray(_lh[_ch]) ? _lh[_ch] : [];
+                    const _rRecs = Array.isArray(_rh[_ch]) ? _rh[_ch] : [];
+                    const _lDates = new Set(_lRecs.map(r => r.date));
+                    const _added = _rRecs.filter(r => !_lDates.has(r.date));
+                    if (_added.length) {
+                        const _combined = [..._lRecs, ..._added];
+                        _combined.sort((a, b) => (b.date || 0) - (a.date || 0));
+                        _lh[_ch] = _combined.slice(0, 10);
+                        _localChanged = true;
+                    }
+                }
+                localData[_key] = _lh;
+            }
+            // 2) 심화 미션 챕터: Firestore 챕터를 로컬에 union
+            const _advKeys = ['hardshipAddressChapters','hardshipMemoryChapters','hardshipEnduranceChapters','hardshipVerseChapters','checkpointBossStages'];
+            const _lAdv = (localData.missions && localData.missions.advanced) || {};
+            const _rAdv = (remoteData.missions && remoteData.missions.advanced) || {};
+            if (_rAdv.lastResetDate && _lAdv.lastResetDate === _rAdv.lastResetDate) {
+                for (const _k of _advKeys) {
+                    const _union = [...new Set([...(_lAdv[_k] || []), ...(_rAdv[_k] || [])])];
+                    if (_union.length > (_lAdv[_k] || []).length) { _lAdv[_k] = _union; _localChanged = true; }
+                }
+                if (localData.missions) localData.missions.advanced = _lAdv;
+            }
+            // 3) daily.claimed: OR 병합 (한쪽이 true면 true 유지)
+            const _lDaily = (localData.missions && localData.missions.daily) || {};
+            const _rDaily = (remoteData.missions && remoteData.missions.daily) || {};
+            if (_lDaily.lastLoginDate && _rDaily.lastLoginDate && _lDaily.lastLoginDate === _rDaily.lastLoginDate) {
+                if (Array.isArray(_lDaily.claimed) && Array.isArray(_rDaily.claimed)) {
+                    const _merged = _lDaily.claimed.map((v, i) => v || (_rDaily.claimed[i] || false));
+                    if (_merged.some((v, i) => v && !_lDaily.claimed[i])) { _lDaily.claimed = _merged; _localChanged = true; }
+                    if (localData.missions) localData.missions.daily = _lDaily;
+                }
+            }
+            // 4) pendingCompensation: Firestore에 어드민이 넣은 보상을 로컬에 적용 후 소비
+            if (remoteData.pendingCompensation) {
+                const _pc = remoteData.pendingCompensation;
+                const _pcDate = _pc.date || '';
+                const _today = typeof getMemoryQuizDate === 'function' ? getMemoryQuizDate() : new Date().toDateString();
+                if (_pcDate === _today) {
+                    if (_pc.gems)  { localData.gems  = (localData.gems  || 0) + _pc.gems;  _localChanged = true; }
+                    if (_pc.score) {
+                        if (localData.leagueData) {
+                            localData.leagueData.myScore        = (localData.leagueData.myScore        || 0) + _pc.score;
+                            localData.leagueData.myMonthlyScore = (localData.leagueData.myMonthlyScore || 0) + _pc.score;
+                            localData.leagueData.totalScore     = (localData.leagueData.totalScore     || 0) + _pc.score;
+                            localData.leagueData.yearlyScore    = (localData.leagueData.yearlyScore    || 0) + _pc.score;
+                        }
+                        _localChanged = true;
+                    }
+                    console.log('[Firestore] pendingCompensation 적용:', _pc);
+                }
+                // 소비 완료 — 업로드 시 pendingCompensation 제거
+                delete localData.pendingCompensation;
+                _localChanged = true;
+            }
+            if (_localChanged) {
+                localData.updatedAt = Date.now();
+                localStorage.setItem('kingsRoadSave', JSON.stringify(localData));
+                loadGameData();
+            }
+        }
+
         // 주간 리셋 체크: 로컬 우선 경로에서도 weekId가 구 주차면 리셋 후 업로드
         if (typeof checkDailyLogin === 'function') {
             const remoteWeekId = (remoteData.leagueData && remoteData.leagueData.weekId) || null;
