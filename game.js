@@ -18468,14 +18468,20 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, 
             const doPlay = () => {
                 if (isSkipped) return;
                 const playPromise = audioObj.play();
+                // 루프 모드이거나 오디오 재생 실패 시에도 최대 readTime(최대 12초) 후 강제 진행
+                const _fallbackMs = Math.min(readTime * 1000, 12000);
+                if (audioObj.loop) {
+                    fallbackTimer = setTimeout(() => { if (!isSkipped) tl.resume(); }, _fallbackMs);
+                }
                 if (playPromise !== undefined) {
                     playPromise.catch((error) => {
                         console.warn("오디오 재생 불가:", error);
                         if (pauseBtn) pauseBtn.style.display = "none";
+                        clearTimeout(fallbackTimer);
                         fallbackTimer = setTimeout(() => {
                             if (isSkipped) return;
                             tl.resume();
-                        }, readTime * 1000);
+                        }, _fallbackMs);
                     });
                 }
             };
