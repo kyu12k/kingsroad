@@ -1796,6 +1796,12 @@ function _get6AMDayStr() {
     const boundary = new Date(now); boundary.setHours(6, 0, 0, 0);
     return _getLocalDateStr(now < boundary ? new Date(now - 86400000) : now);
 }
+// 특정 타임스탬프를 오전 6시 기준 날짜 문자열로 변환 (isHardshipChapterDoneToday 등 공용)
+function _tsTo6AMDateStr(ts) {
+    const d = new Date(ts);
+    const boundary = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 6, 0, 0, 0);
+    return _getLocalDateStr(d < boundary ? new Date(+d - 86400000) : d);
+}
 function _accumulateSessionTime() {
     const elapsed = Date.now() - _sessionVisibleStart;
     _sessionVisibleStart = Date.now();
@@ -1985,9 +1991,9 @@ loadGameData = function () {
         if (missionData.advanced.claimed.length < 4) missionData.advanced.claimed.push(0);
         if (missionData.advanced.claimed.length < 5) missionData.advanced.claimed.push(0);
         if (!missionData.advanced.lastResetDate) missionData.advanced.lastResetDate = '';
-        // 날짜가 바뀐 경우 심화 미션 리셋 (로드 시점에서 체크)
+        // 날짜가 바뀐 경우 심화 미션 리셋 (로드 시점에서 체크, 오전 6시 기준)
         {
-            const _today = new Date().toDateString();
+            const _today = _get6AMDayStr();
             if (missionData.advanced.lastResetDate !== _today) {
                 missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], checkpointBossStages: [], claimed: [0, 0, 0, 0, 0], lastResetDate: _today };
             }
@@ -2013,8 +2019,15 @@ loadGameData = function () {
         if (parsed.hardshipVerseClearHistory) hardshipVerseClearHistory = parsed.hardshipVerseClearHistory;
         bossFirstClearClaimed = new Set(parsed.bossFirstClearClaimed || []);
         if (parsed.bibleReadLog) {
-            const _today = new Date().toDateString();
-            bibleReadLog = parsed.bibleReadLog[_today] ? { [_today]: parsed.bibleReadLog[_today] } : {};
+            const _today = _get6AMDayStr();
+            const _todayOld = new Date().toDateString(); // 구 키 형식(toDateString) 마이그레이션용
+            if (parsed.bibleReadLog[_today]) {
+                bibleReadLog = { [_today]: parsed.bibleReadLog[_today] };
+            } else if (parsed.bibleReadLog[_todayOld]) {
+                bibleReadLog = { [_today]: parsed.bibleReadLog[_todayOld] };
+            } else {
+                bibleReadLog = {};
+            }
         }
         if (parsed.sessionTimeLog) {
             // 최근 14일치만 유지
@@ -5950,7 +5963,7 @@ function getUnreceivedMidBossVerses(chapterNum) {
     chData.stages.forEach(stage => {
         if (stage.type === 'mid-boss') {
             const lastTime = stageLastClear[stage.id] || 0;
-            const isClearedToday = lastTime && new Date(lastTime).toDateString() === new Date().toDateString();
+            const isClearedToday = lastTime && _tsTo6AMDateStr(lastTime) === _get6AMDayStr();
             // 초회를 못 받은 mid-boss = 아직 오늘 클리어하지 않은 것
             if (!isClearedToday) {
                 unreceived += stage.targetVerseCount || 0;
@@ -5981,7 +5994,7 @@ function openBibleReadingOverlay() {
     const existing = document.getElementById('bible-reading-overlay');
     if (existing) existing.remove();
 
-    const today = new Date().toDateString();
+    const today = _get6AMDayStr();
     const todayRead = (bibleReadLog[today] && bibleReadLog[today][chapterNum]) || [];
 
     const versesHtml = verses.map((v, idx) => {
@@ -6033,7 +6046,7 @@ function markVerseAsRead(chapterNum, verseNum, btnEl) {
     }
     _lastBibleReadClickTime = now;
 
-    const today = new Date().toDateString();
+    const today = _get6AMDayStr();
     if (!bibleReadLog[today]) bibleReadLog[today] = {};
     if (!bibleReadLog[today][chapterNum]) bibleReadLog[today][chapterNum] = [];
     if (bibleReadLog[today][chapterNum].includes(verseNum)) return;
@@ -6059,7 +6072,7 @@ function markVerseAsRead(chapterNum, verseNum, btnEl) {
 }
 
 function claimBibleReadReward() {
-    const today = new Date().toDateString();
+    const today = _get6AMDayStr();
     const totalRead = Object.values(bibleReadLog[today] || {}).reduce((s, a) => s + a.length, 0);
     const milestone = Math.min(40, Math.floor(totalRead / 10));
     const prevClaimed = missionData.daily.bibleReadClaimed || 0;
@@ -6222,7 +6235,7 @@ function buildStageItemEl(stage, chData, kingsUnlockedSet, lastPlayedId) {
     let itemClass = `stage-item ${stage.type === 'boss' ? 'boss' : ''}`;
     if (isCleared) itemClass += ' cleared';
     const lastTime = stageLastClear[stage.id] || 0;
-    const isTodayClear = new Date(lastTime).toDateString() === new Date().toDateString();
+    const isTodayClear = lastTime && _tsTo6AMDateStr(lastTime) === _get6AMDayStr();
     const stageReviewStatusUI = getReviewStatus(stage.id);
     let statusBadgeHtml = '';
     if (isTodayClear) {
@@ -11248,7 +11261,7 @@ function renderMissionList(tabName) {
                 claimed: missionData.daily.claimed[5]
             },
             (function() {
-                const _today = new Date().toDateString();
+                const _today = _get6AMDayStr();
                 const _totalRead = Math.min(400, Object.values((bibleReadLog[_today] || {})).reduce((s, a) => s + a.length, 0));
                 const _claimed = missionData.daily.bibleReadClaimed || 0;
                 const _claimable = Math.min(40, Math.floor(_totalRead / 10)) - _claimed;
@@ -16160,7 +16173,7 @@ function startNotificationCheck() {
         if (!times.length) return;
         const now = new Date();
         const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-        const todayKey = `notif_shown_${now.toDateString()}`;
+        const todayKey = `notif_shown_${_get6AMDayStr()}`;
         let shownToday;
         try { shownToday = JSON.parse(localStorage.getItem(todayKey) || '[]'); } catch (e) { shownToday = []; }
         times.forEach(timeStr => {
@@ -19436,11 +19449,7 @@ function isHardshipChapterDoneToday(mode, ch) {
     if (!history || !history.length) return false;
     const last = history[history.length - 1];
     if (!last || !last.date) return false;
-    const d = new Date(last.date);
-    const lastStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-    return lastStr === todayStr;
+    return _tsTo6AMDateStr(last.date) === _get6AMDayStr();
 }
 
 function refreshHardshipCooldownBadges() {
