@@ -1992,8 +1992,9 @@ loadGameData = function () {
         if (missionData.advanced.claimed.length < 5) missionData.advanced.claimed.push(0);
         if (!missionData.advanced.lastResetDate) missionData.advanced.lastResetDate = '';
         // 날짜가 바뀐 경우 심화 미션 리셋 (로드 시점에서 체크, 오전 6시 기준)
+        // getMemoryQuizDate()와 동일한 형식을 사용해야 checkMissions()와 일치함
         {
-            const _today = _get6AMDayStr();
+            const _today = (typeof getMemoryQuizDate === 'function') ? getMemoryQuizDate() : _get6AMDayStr();
             if (missionData.advanced.lastResetDate !== _today) {
                 missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], checkpointBossStages: [], claimed: [0, 0, 0, 0, 0], lastResetDate: _today };
             }
