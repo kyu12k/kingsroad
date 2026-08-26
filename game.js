@@ -13656,9 +13656,23 @@ function _renderGuildHome(body, guild, myStatus = {}) {
         ? `<button class="guild-btn-secondary" disabled>기부 완료 (5/5) ✓</button>`
         : `<button id="guild-donate-btn" class="guild-btn-secondary" onclick="_guildDonate()">기부</button>`;
 
+    // 길드 이름 변경 버튼 (길드장 전용)
+    let renameBtn = '';
+    if (isLeader) {
+        const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+        const lastChangeMs = guild.lastNameChangeAt ? guild.lastNameChangeAt.toMillis() : 0;
+        const cooldownRemain = sevenDaysMs - (Date.now() - lastChangeMs);
+        if (cooldownRemain > 0) {
+            const remainDays = Math.ceil(cooldownRemain / 86400000);
+            renameBtn = `<button class="guild-rename-btn" disabled title="${remainDays}일 후 변경 가능" style="opacity:0.4;">✏️</button>`;
+        } else {
+            renameBtn = `<button class="guild-rename-btn" onclick="_openRenameGuildModal()">✏️</button>`;
+        }
+    }
+
     let html = `
         <div class="guild-home-header">
-            <div class="guild-home-name">${escapeHtml(guild.name)}</div>
+            <div class="guild-home-name">${escapeHtml(guild.name)}${renameBtn}</div>
             <div class="guild-home-meta">Lv.${guild.level} · ${guild.members.length}/${maxMembers}명 · 코드: <strong>${guild.code}</strong></div>
         </div>
         <div class="guild-currency-row">
@@ -14094,6 +14108,49 @@ async function _inviteToGuild(friendTag, btn) {
     } catch (e) {
         showGemToast(0, e.message || '초대 실패', true);
         if (btn) { btn.disabled = false; btn.textContent = '초대'; }
+    }
+}
+
+function _openRenameGuildModal() {
+    const currentName = _guildData ? escapeHtml(_guildData.name) : '';
+    const overlay = document.createElement('div');
+    overlay.id = 'guild-rename-modal';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;';
+    overlay.innerHTML = `
+        <div style="background:#1a0e2e;border:1px solid #5a3a8a;border-radius:14px;padding:24px;width:90%;max-width:340px;">
+            <div style="font-size:17px;font-weight:700;color:#e0c0ff;margin-bottom:16px;">길드 이름 변경</div>
+            <div style="color:#9070b0;font-size:13px;margin-bottom:10px;">현재: ${currentName}</div>
+            <input id="guild-rename-input" style="width:100%;box-sizing:border-box;background:#0d0720;border:1px solid #5a3a8a;border-radius:8px;padding:10px 12px;color:#e0c0ff;font-size:15px;margin-bottom:6px;outline:none;" type="text" maxlength="10" placeholder="새 이름 (한글 10자 이하)">
+            <div id="guild-rename-hint" style="font-size:12px;color:#9070b0;min-height:18px;margin-bottom:16px;">최대 10자 · 중복 불허 · 7일 쿨다운</div>
+            <div style="display:flex;gap:8px;">
+                <button class="guild-btn-primary" onclick="_confirmRenameGuild()">변경</button>
+                <button class="guild-btn-secondary" onclick="document.getElementById('guild-rename-modal').remove()">취소</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+    const inp = overlay.querySelector('#guild-rename-input');
+    if (inp) inp.focus();
+}
+
+async function _confirmRenameGuild() {
+    const input = document.getElementById('guild-rename-input');
+    const hint = document.getElementById('guild-rename-hint');
+    const modal = document.getElementById('guild-rename-modal');
+    if (!input) return;
+    const newName = input.value.trim();
+    if ([...newName].length < 2) { if (hint) { hint.textContent = '2자 이상 입력해주세요.'; hint.style.color = '#e05050'; } return; }
+    if ([...newName].length > 10) { if (hint) { hint.textContent = '10자를 초과할 수 없습니다.'; hint.style.color = '#e05050'; } return; }
+    const btns = modal ? modal.querySelectorAll('button') : [];
+    btns.forEach(b => b.disabled = true);
+    if (hint) { hint.textContent = '변경 중…'; hint.style.color = '#9070b0'; }
+    try {
+        const res = await _callGuildFn('renameGuild', { newName });
+        if (modal) modal.remove();
+        showGemToast(0, `길드 이름이 '${res.newName}'으로 변경되었습니다.`);
+        _renderGuildScreen();
+    } catch (e) {
+        if (hint) { hint.textContent = e.message || '변경 실패'; hint.style.color = '#e05050'; }
+        btns.forEach(b => b.disabled = false);
     }
 }
 

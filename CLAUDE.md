@@ -73,6 +73,8 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `openGuildScreen()` | game.js:~12660 | 길드 오버레이 열기 |
 | `_renderGuildScreen()` | game.js:~12680 | 길드 화면 렌더링 (소속 여부에 따라 분기) |
 | `_renderGuildHome(body, guild, myStatus)` | game.js:~12950 | 길드 홈 HTML 생성 (레이드·장비·멤버 포함) |
+| `_openRenameGuildModal()` | game.js:~14100 | 길드 이름 변경 모달 열기 (길드장 전용) |
+| `_confirmRenameGuild()` | game.js:~14120 | 이름 변경 확인 → `renameGuild` CF 호출 후 화면 재렌더 |
 | `_addGuildRaidDamage(type)` | game.js:~12716 | updateMissionProgress에서 호출, 개인장비 보너스 적용 후 대미지 누적 |
 | `_flushGuildRaidDamage()` | game.js:~12730 | 5초 디바운스 후 Firestore에 대미지 반영 (트랜잭션) |
 | `_buyPersonalEquipment(itemKey)` | game.js:~12887 | 비늘 차감 + personalEquipment 레벨 증가 CF 호출 |
@@ -146,6 +148,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 ### Cloud Functions (kingsroad/index.js, asia-northeast3)
 - `createGuild`, `joinGuildRequest`, `respondJoinRequest`, `leaveGuild`, `kickGuildMember`
 - `inviteToGuild`, `respondInvite`
+- `renameGuild` (길드장 전용, 2~10자, 중복 불허, 7일 쿨다운, `guild.lastNameChangeAt` serverTimestamp)
 - `reportRaidDamage`, `weeklyRaidReset`, `guildAttend`, `guildDonate`, `claimRaidReward`
 - `buyPersonalEquipment`, `buyGuildEquipment`
 

@@ -5999,7 +5999,9 @@ body, html {
     font-weight: 600; cursor: pointer; white-space: nowrap;
 }
 .guild-home-header { margin-bottom: 4px; }
-.guild-home-name { font-size: 1.2rem; font-weight: 700; color: #f1c40f; margin-bottom: 4px; }
+.guild-home-name { font-size: 1.2rem; font-weight: 700; color: #f1c40f; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+.guild-rename-btn { background: none; border: none; cursor: pointer; font-size: 0.85rem; padding: 2px 4px; opacity: 0.7; line-height: 1; flex-shrink: 0; }
+.guild-rename-btn:hover:not(:disabled) { opacity: 1; }
 .guild-home-meta { font-size: 0.82rem; color: #7f8c8d; }
 .guild-xp-wrap { margin: 8px 0 4px; }
 .guild-xp-label { font-size: 0.78rem; color: #95a5a6; margin-bottom: 4px; }

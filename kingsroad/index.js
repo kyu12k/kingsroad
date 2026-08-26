@@ -847,3 +847,42 @@ exports.contributeGuildEquipment = onCall({ cors: ALLOWED_ORIGINS }, async (requ
     });
     return result;
 });
+
+exports.renameGuild = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { newName, myTag } = request.data;
+    const trimmedName = (newName || '').trim();
+    const nameLen = [...trimmedName].length;
+    if (nameLen < 2 || nameLen > 10)
+        throw new HttpsError('invalid-argument', '길드 이름은 2~10자여야 합니다.');
+
+    const userData = await verifyTag(request.auth.uid, myTag);
+    if (!userData.guildId) throw new HttpsError('not-found', '소속 길드가 없습니다.');
+
+    const guildRef = db.collection('guilds').doc(userData.guildId);
+    const guildDoc = await guildRef.get();
+    if (!guildDoc.exists) throw new HttpsError('not-found', '길드를 찾을 수 없습니다.');
+    const guild = guildDoc.data();
+
+    if (guild.leaderId !== myTag) throw new HttpsError('permission-denied', '길드장만 이름을 변경할 수 있습니다.');
+    if (guild.name === trimmedName) throw new HttpsError('already-exists', '현재 길드 이름과 동일합니다.');
+
+    if (guild.lastNameChangeAt) {
+        const lastChangeMs = guild.lastNameChangeAt.toMillis();
+        const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+        const remainMs = sevenDaysMs - (Date.now() - lastChangeMs);
+        if (remainMs > 0) {
+            const remainDays = Math.ceil(remainMs / 86400000);
+            throw new HttpsError('resource-exhausted', `${remainDays}일 후에 다시 변경할 수 있습니다.`);
+        }
+    }
+
+    const dupSnap = await db.collection('guilds').where('name', '==', trimmedName).limit(1).get();
+    if (!dupSnap.empty) throw new HttpsError('already-exists', '이미 사용 중인 길드 이름입니다.');
+
+    await guildRef.update({
+        name: trimmedName,
+        lastNameChangeAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return { ok: true, newName: trimmedName };
+});
