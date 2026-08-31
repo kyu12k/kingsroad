@@ -6985,11 +6985,8 @@ function startBossBattle() {
     if (savedRaw) {
         savedData = JSON.parse(savedRaw);
         if (savedData.stageId === window.currentStageId) {
-            if (confirm(`💾 지난 기록이 있습니다.\n\n[${savedData.index + 1}번째 구절]부터 이어하시겠습니까?\n(체력: ${savedData.hp} / ${savedData.maxHp})`)) {
-                resumeMode = true;
-            } else {
-                clearCheckpoint();
-            }
+            resumeMode = true;
+            showGemToast(0, `💾 ${savedData.index + 1}번째 구절부터 이어합니다 (체력 ${savedData.hp}/${savedData.maxHp})`, false);
         }
     }
 
@@ -7601,7 +7598,7 @@ function loadNextVerse() {
                 playerHearts--;
                 wrongCount++;
                 updateBattleUI();
-                alert(t('alert_attack_fail', { count: errorCount }));
+                showGemToast(0, t('alert_attack_fail', { count: errorCount }), true);
                 if (playerHearts <= 0) { showReviveModal(); }
                 deselect();
             }
@@ -8043,7 +8040,6 @@ function showReviveModal() {
 
 function giveUpBattle() {
     document.getElementById('revive-modal').style.display = 'none';
-    alert(t('alert_defeat'));
     quitGame(isFocusedTrainingSession() ? 'home' : 'map');
 }
 
@@ -8054,7 +8050,7 @@ function revivePlayer() {
 
     // 1. 보석 부족 체크
     if (myGems < cost) {
-        alert(t('alert_revive_no_gems', { cost }));
+        showGemToast(0, t('alert_revive_no_gems', { cost }), true);
         return;
     }
 
@@ -8084,7 +8080,7 @@ function revivePlayer() {
         SoundEffect.playLevelUp();
     }
 
-    alert(t('alert_revive_success', { cost }));
+    showGemToast(0, t('alert_revive_success', { cost }), false);
 }
 
 /* [시스템] 자동 저장 및 불러오기 기능 */
@@ -10661,11 +10657,11 @@ function showShieldEffect() {
 // 1. 생명의 떡 사용하기 (누르면 바로 회복)
 function useLifeBread() {
     if (inventory.lifeBread <= 0) {
-        alert(t('alert_no_bread'));
+        showGemToast(0, t('alert_no_bread'), true);
         return;
     }
     if (playerHearts >= maxPlayerHearts) {
-        alert(t('alert_hearts_full'));
+        showGemToast(0, t('alert_hearts_full'), true);
         return;
     }
 
@@ -10674,7 +10670,7 @@ function useLifeBread() {
     playerHearts = Math.min(playerHearts + 3, maxPlayerHearts); // 3칸 회복
 
     SoundEffect.playCorrect(); // 띠링! 소리
-    alert(t('alert_hearts_restored', { cur: playerHearts }));
+    showGemToast(0, t('alert_hearts_restored', { cur: playerHearts }), false);
 
     updateBattleUI();   // 하트 UI 갱신
     updateItemButtons(); // 생명의 떡 개수 UI 갱신
@@ -10745,11 +10741,9 @@ function useHint() {
         return;
     }
 
-    // 안내 문구
+    // 안내 문구 (confirm 대신 차감 후 토스트로 알림)
     if (hintCost > 0) {
-        if (!confirm(t('hint_confirm', { cost: hintCost }))) {
-            return;
-        }
+        showGemToast(0, t('hint_confirm', { cost: hintCost }), false);
     }
 
     // 보석 차감 및 입력 비활성화
@@ -12024,7 +12018,7 @@ function checkDailyReward() {
 
         // 환영 메시지
         setTimeout(() => {
-            alert(t('alert_daily_bonus', { count: dailyBonus, total: myGems }));
+            showGemToast(dailyBonus, t('alert_daily_bonus', { count: dailyBonus, total: myGems }), false);
         }, 500);
     } else {
         // 성도가 아니더라도 날짜는 갱신
