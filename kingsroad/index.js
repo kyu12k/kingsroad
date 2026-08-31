@@ -186,12 +186,13 @@ async function generateUniqueGuildCode() {
 }
 
 async function verifyTag(uid, tag) {
-    const saveDoc = await db.collection('saves').doc(uid).get();
+    const [saveDoc, lbDoc] = await Promise.all([
+        db.collection('saves').doc(uid).get(),
+        db.collection('leaderboard').doc(String(tag)).get(),
+    ]);
     if (!saveDoc.exists || String(saveDoc.data().tag) !== String(tag)) {
         throw new HttpsError('permission-denied', '태그가 인증 정보와 일치하지 않습니다.');
     }
-    // leaderboard 문서에서 guildId, friends 등 부가 데이터 병합
-    const lbDoc = await db.collection('leaderboard').doc(String(tag)).get();
     return { ...saveDoc.data(), ...(lbDoc.exists ? lbDoc.data() : {}) };
 }
 
@@ -640,15 +641,17 @@ exports.guildAttend = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     if (userData.lastGuildAttend === today) return { ok: true, alreadyDone: true };
 
     const guildRef = db.collection('guilds').doc(userData.guildId);
-    const guildDoc = await guildRef.get();
-    if (!guildDoc.exists) throw new HttpsError('not-found', '길드를 찾을 수 없습니다.');
-
-    const { level, xp, levelUp } = calcGuildXpResult(guildDoc.data().level, guildDoc.data().xp, GUILD_ATTEND_XP);
-    const batch = db.batch();
-    batch.update(guildRef, { level, xp });
-    batch.update(db.collection('leaderboard').doc(String(myTag)), { lastGuildAttend: today });
-    await batch.commit();
-    return { ok: true, alreadyDone: false, xpGained: GUILD_ATTEND_XP, levelUp, newLevel: level, newXp: xp };
+    const lbRef = db.collection('leaderboard').doc(String(myTag));
+    let result;
+    await db.runTransaction(async (tx) => {
+        const guildDoc = await tx.get(guildRef);
+        if (!guildDoc.exists) throw new HttpsError('not-found', '길드를 찾을 수 없습니다.');
+        const { level, xp, levelUp } = calcGuildXpResult(guildDoc.data().level, guildDoc.data().xp, GUILD_ATTEND_XP);
+        tx.update(guildRef, { level, xp });
+        tx.update(lbRef, { lastGuildAttend: today });
+        result = { level, xp, levelUp };
+    });
+    return { ok: true, alreadyDone: false, xpGained: GUILD_ATTEND_XP, levelUp: result.levelUp, newLevel: result.level, newXp: result.xp };
 });
 
 // ── 일일 보석 기부 ─────────────────────────────────────────────────────────────
@@ -666,27 +669,28 @@ exports.guildDonate = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     if (todayCount >= GUILD_DONATE_MAX_DAILY) return { ok: true, alreadyDone: true, todayCount };
 
     const guildRef = db.collection('guilds').doc(userData.guildId);
-    const guildDoc = await guildRef.get();
-    if (!guildDoc.exists) throw new HttpsError('not-found', '길드를 찾을 수 없습니다.');
-
-    const { level, xp, levelUp } = calcGuildXpResult(guildDoc.data().level, guildDoc.data().xp, GUILD_DONATE_XP);
+    const lbRef = db.collection('leaderboard').doc(String(myTag));
     const newCount = todayCount + 1;
-    const batch = db.batch();
-    batch.update(guildRef, { level, xp });
-    batch.update(db.collection('leaderboard').doc(String(myTag)), { guildDonateInfo: { date: today, count: newCount } });
-    await batch.commit();
-    return { ok: true, alreadyDone: false, xpGained: GUILD_DONATE_XP, levelUp, newLevel: level, newXp: xp, todayCount: newCount };
+    let result;
+    await db.runTransaction(async (tx) => {
+        const guildDoc = await tx.get(guildRef);
+        if (!guildDoc.exists) throw new HttpsError('not-found', '길드를 찾을 수 없습니다.');
+        const { level, xp, levelUp } = calcGuildXpResult(guildDoc.data().level, guildDoc.data().xp, GUILD_DONATE_XP);
+        tx.update(guildRef, { level, xp });
+        tx.update(lbRef, { guildDonateInfo: { date: today, count: newCount } });
+        result = { level, xp, levelUp };
+    });
+    return { ok: true, alreadyDone: false, xpGained: GUILD_DONATE_XP, levelUp: result.levelUp, newLevel: result.level, newXp: result.xp, todayCount: newCount };
 });
 
 // ── 레이드 보상 수령 ───────────────────────────────────────────────────────────
 exports.claimRaidReward = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
     const { myTag } = request.data;
-    await verifyTag(request.auth.uid, myTag);
+    const userData = await verifyTag(request.auth.uid, myTag);
 
     const lbRef = db.collection('leaderboard').doc(String(myTag));
-    const lbDoc = await lbRef.get();
-    const reward = lbDoc.exists ? lbDoc.data().pendingRaidReward : null;
+    const reward = userData.pendingRaidReward || null;
     if (!reward) return { ok: false };
 
     const updates = { pendingRaidReward: admin.firestore.FieldValue.delete() };
