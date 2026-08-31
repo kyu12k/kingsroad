@@ -16967,64 +16967,104 @@ window.onload = function () {
             setTimeout(openProfileSettings, 1000);
         } else {
             // 자동 초기화(세션 충돌 등) 시에만 복구 팝업 제공
-            setTimeout(() => {
-                const wantRecover = confirm("👋 처음 오셨나요?\n\n이전에 플레이한 기록이 있다면 '확인'을 눌러 복구할 수 있습니다.\n(새로 시작하려면 '취소')");
-                if (wantRecover) {
-                    openTagRecovery();
-                } else {
-                    openProfileSettings();
-                }
-            }, 1000);
+            setTimeout(_showNewUserModal, 1000);
         }
     }
 };
+
+function _showNewUserModal() {
+    const overlay = document.createElement('div');
+    overlay.id = 'new-user-modal';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;box-sizing:border-box;';
+    overlay.innerHTML = `
+        <div style="background:#1a0e2e;border:1px solid #5a3a8a;border-radius:16px;padding:28px 24px;width:100%;max-width:340px;text-align:center;">
+            <div style="font-size:2rem;margin-bottom:12px;">👋</div>
+            <div style="font-size:18px;font-weight:700;color:#e0c0ff;margin-bottom:10px;">처음 오셨나요?</div>
+            <div style="font-size:14px;color:#9070b0;margin-bottom:24px;line-height:1.6;">이전에 플레이한 기록이 있다면<br>태그로 복구할 수 있습니다.</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <button onclick="document.getElementById('new-user-modal').remove();openTagRecovery();"
+                    style="background:#5a3a8a;border:none;border-radius:10px;padding:13px;color:#e0c0ff;font-size:15px;font-weight:600;cursor:pointer;">이전 기록 복구하기</button>
+                <button onclick="document.getElementById('new-user-modal').remove();openProfileSettings();"
+                    style="background:#2a1a4a;border:1px solid #5a3a8a;border-radius:10px;padding:13px;color:#9070b0;font-size:15px;cursor:pointer;">새로 시작하기</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+}
 
 /**
  * 이전 계정 태그로 데이터 복구
  * pendingRecovery/{tag} 문서를 조회해 현재 계정으로 복원한다.
  */
-async function openTagRecovery() {
+function openTagRecovery() {
     if (typeof db === 'undefined' || !db) {
-        alert(t('alert_server_disconnect'));
+        showGemToast(0, '서버 연결이 필요합니다.', true);
         openProfileSettings();
         return;
     }
+    const overlay = document.createElement('div');
+    overlay.id = 'tag-recovery-modal';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;box-sizing:border-box;';
+    overlay.innerHTML = `
+        <div style="background:#1a0e2e;border:1px solid #5a3a8a;border-radius:16px;padding:28px 24px;width:100%;max-width:340px;">
+            <div style="font-size:17px;font-weight:700;color:#e0c0ff;margin-bottom:8px;">🔍 계정 복구</div>
+            <div style="font-size:13px;color:#9070b0;margin-bottom:14px;line-height:1.5;">이전 계정의 태그를 입력하세요.<br>(예: KWXMKY — # 없이 영문 6자리)</div>
+            <input id="tag-recovery-input" style="width:100%;box-sizing:border-box;background:#0d0720;border:1px solid #5a3a8a;border-radius:8px;padding:10px 12px;color:#e0c0ff;font-size:17px;text-transform:uppercase;letter-spacing:3px;text-align:center;outline:none;margin-bottom:6px;" type="text" maxlength="6" placeholder="XXXXXX" autocomplete="off">
+            <div id="tag-recovery-hint" style="font-size:12px;color:#9070b0;min-height:18px;margin-bottom:14px;"></div>
+            <div style="display:flex;gap:8px;">
+                <button id="tag-recovery-confirm" onclick="_confirmTagRecovery()" style="flex:1;background:#5a3a8a;border:none;border-radius:10px;padding:12px;color:#e0c0ff;font-size:15px;font-weight:600;cursor:pointer;">복구하기</button>
+                <button onclick="document.getElementById('tag-recovery-modal').remove();openProfileSettings();" style="flex:1;background:#2a1a4a;border:1px solid #5a3a8a;border-radius:10px;padding:12px;color:#9070b0;font-size:15px;cursor:pointer;">취소</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+    const inp = overlay.querySelector('#tag-recovery-input');
+    if (inp) {
+        inp.focus();
+        inp.addEventListener('input', e => { e.target.value = e.target.value.toUpperCase(); });
+    }
+}
 
-    const tag = prompt('🔍 이전 계정의 태그를 입력하세요.\n(예: KWXMKY — # 없이 영문 6자리)');
-    if (!tag || tag.trim() === '') {
-        openProfileSettings();
+async function _confirmTagRecovery() {
+    const input = document.getElementById('tag-recovery-input');
+    const hint = document.getElementById('tag-recovery-hint');
+    const btn = document.getElementById('tag-recovery-confirm');
+    if (!input) return;
+    const cleanTag = input.value.trim().toUpperCase();
+    if (cleanTag.length !== 6) {
+        if (hint) { hint.textContent = '태그는 영문 6자리입니다.'; hint.style.color = '#e05050'; }
         return;
     }
-
-    const cleanTag = tag.trim().toUpperCase();
-
+    if (btn) btn.disabled = true;
+    if (hint) { hint.textContent = '복구 중…'; hint.style.color = '#9070b0'; }
     try {
         const doc = await db.collection('pendingRecovery').doc(cleanTag).get();
         if (!doc.exists) {
-            alert(t('alert_tag_not_found'));
-            openProfileSettings();
+            if (hint) { hint.textContent = t('alert_tag_not_found') || '해당 태그를 찾을 수 없습니다.'; hint.style.color = '#e05050'; }
+            if (btn) btn.disabled = false;
             return;
         }
-
         const recoveryData = doc.data();
         delete recoveryData.pendingRecovery;
         delete recoveryData.recoveryCreatedAt;
-
         recoveryData.playerId = myPlayerId;
         recoveryData.sessionToken = window.currentSessionToken || recoveryData.sessionToken;
         if (typeof GAME_VERSION !== 'undefined') recoveryData.version = GAME_VERSION;
-
         localStorage.setItem('kingsRoadSave', JSON.stringify(recoveryData));
         localStorage.setItem('forceSyncAfterLoad', 'true');
-
         await db.collection('pendingRecovery').doc(cleanTag).delete();
-
-        alert(t('alert_recovery_ok', { nick: recoveryData.nickname, tag: recoveryData.tag }));
-        location.reload();
+        const modal = document.getElementById('tag-recovery-modal');
+        if (modal) {
+            modal.querySelector('div').innerHTML = `
+                <div style="text-align:center;">
+                    <div style="font-size:2rem;margin-bottom:12px;">✅</div>
+                    <div style="font-size:17px;font-weight:700;color:#e0c0ff;margin-bottom:10px;">복구 완료!</div>
+                    <div style="font-size:14px;color:#9070b0;margin-bottom:20px;line-height:1.6;">${escapeHtml(recoveryData.nickname || '')} (${escapeHtml(String(recoveryData.tag || cleanTag))}) 님의<br>기록을 불러왔습니다.</div>
+                    <button onclick="location.reload();" style="background:#5a3a8a;border:none;border-radius:10px;padding:13px 28px;color:#e0c0ff;font-size:15px;font-weight:600;cursor:pointer;">시작하기 ▶</button>
+                </div>`;
+        }
     } catch (e) {
         console.error('[openTagRecovery]', e);
-        alert(t('alert_recovery_error'));
-        openProfileSettings();
+        if (hint) { hint.textContent = t('alert_recovery_error') || '복구 중 오류가 발생했습니다.'; hint.style.color = '#e05050'; }
+        if (btn) btn.disabled = false;
     }
 }
 
