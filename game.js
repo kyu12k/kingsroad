@@ -5337,28 +5337,8 @@ function amenAndStartGame() {
 
     // 무거운 작업은 다음 태스크로 미뤄 브라우저가 먼저 페인트하게 함
     setTimeout(() => {
-        // 🌟 4. [핵심 수술 2] 여정 시작 시 (Lazy Authentication)
-        // 비로소 새로운 출입증을 발급받고 서버에 등록하여 다른 공기계의 접속을 차단합니다!
-        try {
-            if (typeof db !== 'undefined' && typeof myTag !== 'undefined' && myTag) {
-                const newSessionToken = "session_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
-                window.currentSessionToken = newSessionToken;
-
-                // 변경된 출입증을 기기에 즉시 저장
-                if (typeof saveGameData === 'function') saveGameData();
-
-                // 서버에 새 출입증 신고 (기존 기기 쫓아내기)
-                db.collection("leaderboard").doc(myTag).set({
-                    sessionToken: newSessionToken,
-                    updatedAt: new Date()
-                }, { merge: true }).then(() => {
-                    if (typeof startSessionGuard === 'function') startSessionGuard();
-                    checkPendingReward();
-                }).catch(err => console.error("출입증 갱신 지연:", err));
-            }
-        } catch(e) {
-            console.error("출입증 발급 오류 (무시하고 진행):", e && e.message || e);
-        }
+        // 🌟 4. 보류 중인 보상 확인
+        checkPendingReward();
 
         // 5. 기억 퀴즈 시도 후 맵 화면으로 이동
         if (typeof showMemoryQuizOverlay === 'function') showMemoryQuizOverlay();
