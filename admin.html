@@ -23,6 +23,8 @@
     --dim:      #3a3f5c;
   }
 
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
   body {
     font-family: 'Inter', system-ui, sans-serif;
     background: var(--bg);
@@ -34,102 +36,105 @@
   .container { max-width: 960px; margin: 0 auto; }
 
   /* ── Header ── */
-  .header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    margin-bottom: 28px;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
+  .header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
   .header-left h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
   .header-left .subtitle { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
   .header-right { display: flex; align-items: center; gap: 12px; }
   .updated-at { font-size: 0.75rem; color: var(--muted); }
-  .btn-refresh {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 6px 14px;
-    border-radius: 6px;
-    font-size: 0.78rem;
-    font-family: inherit;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
+  .btn-refresh { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 6px 14px; border-radius: 6px; font-size: 0.78rem; font-family: inherit; cursor: pointer; transition: background 0.15s; }
   .btn-refresh:hover { background: var(--dim); }
   .btn-refresh:disabled { opacity: 0.45; cursor: default; }
 
-  /* ── Status bar ── */
+  /* ── Status ── */
   .status-bar { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--muted); margin-bottom: 20px; min-height: 18px; }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
   .dot.loading { background: var(--amber); animation: pulse 1s ease-in-out infinite; }
   .dot.error   { background: var(--red); }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
-  /* ── KPI Cards ── */
-  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
-  @media (max-width: 640px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+  /* ── KPI grids ── */
+  .kpi-grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px; }
+  .kpi-grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 640px) {
+    .kpi-grid4 { grid-template-columns: repeat(2, 1fr); }
+    .kpi-grid3 { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 420px) {
+    .kpi-grid3 { grid-template-columns: 1fr 1fr; }
+  }
 
-  .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 16px 14px; }
-  .kpi-label { font-size: 0.72rem; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
-  .kpi-value { font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; color: var(--text); }
+  .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 16px 12px; }
+  .kpi-label { font-size: 0.7rem; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 7px; }
+  .kpi-value { font-size: 1.9rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; color: var(--text); }
   .kpi-value.accent { color: var(--accent); }
   .kpi-value.green  { color: var(--green); }
   .kpi-value.amber  { color: var(--amber); }
   .kpi-value.red    { color: var(--red); }
-  .kpi-sub { font-size: 0.72rem; color: var(--muted); margin-top: 6px; }
-
-  /* ── Two-col layout ── */
-  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-  @media (max-width: 640px) { .row2 { grid-template-columns: 1fr; } }
+  .kpi-sub { font-size: 0.7rem; color: var(--muted); margin-top: 5px; }
 
   /* ── Cards ── */
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 18px 16px; }
-  .card-title { font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  @media (max-width: 600px) { .row2 { grid-template-columns: 1fr; } }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 18px 16px; margin-bottom: 12px; }
+  .card-title { font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; }
 
   /* ── Daily bar chart ── */
-  .bar-chart { display: flex; align-items: flex-end; gap: 5px; height: 120px; }
+  .bar-chart { display: flex; align-items: flex-end; gap: 5px; height: 110px; }
   .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
-  .bar-fill { width: 100%; border-radius: 3px 3px 0 0; min-height: 3px; transition: height 0.4s ease; position: relative; }
+  .bar-fill { width: 100%; border-radius: 3px 3px 0 0; min-height: 3px; position: relative; }
   .bar-fill.today  { background: var(--accent); }
   .bar-fill.recent { background: var(--accent-lo); }
   .bar-fill.older  { background: var(--dim); }
   .bar-fill:hover::after {
-    content: attr(data-tip);
-    position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+    content: attr(data-tip); position: absolute; bottom: calc(100% + 5px); left: 50%; transform: translateX(-50%);
     background: #2a2d45; border: 1px solid var(--border); border-radius: 5px;
-    padding: 4px 7px; font-size: 0.7rem; white-space: nowrap; color: var(--text);
-    z-index: 10; pointer-events: none;
+    padding: 3px 7px; font-size: 0.68rem; white-space: nowrap; color: var(--text); z-index: 10; pointer-events: none;
   }
-  .bar-label { font-size: 0.58rem; color: var(--dim); white-space: nowrap; }
+  .bar-label { font-size: 0.56rem; color: var(--dim); white-space: nowrap; }
   .bar-label.today-lbl { color: var(--accent); font-weight: 600; }
+
+  /* ── Hour distribution ── */
+  .hour-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .hour-block { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 10px; text-align: center; }
+  .hour-icon { font-size: 1.3rem; margin-bottom: 6px; }
+  .hour-label { font-size: 0.65rem; color: var(--muted); margin-bottom: 4px; }
+  .hour-count { font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .hour-count.peak { color: var(--accent); }
+  .hour-pct { font-size: 0.65rem; color: var(--muted); margin-top: 2px; }
 
   /* ── Score distribution ── */
   .dist-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-  .dist-label { font-size: 0.72rem; color: var(--muted); width: 76px; flex-shrink: 0; text-align: right; }
+  .dist-label { font-size: 0.7rem; color: var(--muted); width: 76px; flex-shrink: 0; text-align: right; }
   .dist-track { flex: 1; height: 22px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
-  .dist-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; display: flex; align-items: center; padding-left: 8px; }
-  .dist-count { font-size: 0.7rem; font-weight: 600; color: rgba(255,255,255,0.85); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .dist-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; transition: width 0.5s ease; }
+  .dist-count { font-size: 0.68rem; font-weight: 600; color: rgba(255,255,255,0.85); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-  /* ── Top 10 table ── */
+  /* ── Guild bar ── */
+  .guild-bar-wrap { background: var(--surface2); border-radius: 8px; height: 28px; overflow: hidden; margin-bottom: 8px; }
+  .guild-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent-lo), var(--accent)); border-radius: 8px; display: flex; align-items: center; padding-left: 10px; transition: width 0.6s ease; }
+  .guild-bar-text { font-size: 0.72rem; font-weight: 600; color: #fff; white-space: nowrap; }
+  .guild-stat { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--muted); }
+
+  /* ── Top 10 ── */
   .table-wrap { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-  thead th { text-align: left; padding: 6px 12px; font-size: 0.7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--border); }
+  thead th { text-align: left; padding: 6px 12px; font-size: 0.68rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--border); }
   tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
   tbody tr:last-child { border-bottom: none; }
   tbody tr:hover { background: var(--surface2); }
-  tbody td { padding: 10px 12px; font-variant-numeric: tabular-nums; }
-  .rank-cell { color: var(--muted); font-size: 0.75rem; }
+  tbody td { padding: 9px 12px; font-variant-numeric: tabular-nums; }
   .rank-1 { color: #fbbf24; font-weight: 700; }
   .rank-2 { color: #cbd5e1; font-weight: 600; }
   .rank-3 { color: #c07840; font-weight: 600; }
-  .tag-badge { display: inline-block; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; font-size: 0.68rem; color: var(--muted); }
+  .rank-n { color: var(--muted); font-size: 0.75rem; }
+  .tag-badge { display: inline-block; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; font-size: 0.67rem; color: var(--muted); }
   .score-cell { color: var(--accent); font-weight: 600; }
 </style>
 </head>
 <body>
 <div class="container">
+
   <div class="header">
     <div class="header-left">
       <h1>⚔️ 킹스로드 대시보드</h1>
@@ -146,7 +151,8 @@
     <span id="status-text">데이터 불러오는 중...</span>
   </div>
 
-  <div class="kpi-grid">
+  <!-- KPI 행 1: 전체 현황 -->
+  <div class="kpi-grid4">
     <div class="kpi-card">
       <div class="kpi-label">전체 플레이어</div>
       <div class="kpi-value accent" id="k-total">—</div>
@@ -165,62 +171,123 @@
     <div class="kpi-card">
       <div class="kpi-label">재방문율</div>
       <div class="kpi-value" id="k-retention">—</div>
-      <div class="kpi-sub" id="k-retention-sub">지난주 → 이번주 활성</div>
+      <div class="kpi-sub" id="k-retention-sub">지난주 → 이번주</div>
     </div>
   </div>
 
+  <!-- KPI 행 2: 변화 지표 -->
+  <div class="kpi-grid3">
+    <div class="kpi-card">
+      <div class="kpi-label">이탈 (이번 주)</div>
+      <div class="kpi-value red" id="k-churned">—</div>
+      <div class="kpi-sub">지난주 했지만 이번주 안 함</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">주간 성장률</div>
+      <div class="kpi-value" id="k-growth">—</div>
+      <div class="kpi-sub" id="k-growth-sub">지난주 대비</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">길드 참여율</div>
+      <div class="kpi-value accent" id="k-guild">—</div>
+      <div class="kpi-sub" id="k-guild-sub">전체 플레이어 중</div>
+    </div>
+  </div>
+
+  <!-- 차트 행 1: 일별 활성 + 시간대 -->
   <div class="row2">
-    <div class="card">
+    <div class="card" style="margin-bottom:0">
       <div class="card-title">최근 14일 일별 활성 유저</div>
       <div class="bar-chart" id="daily-chart"></div>
     </div>
-    <div class="card">
-      <div class="card-title">누적 점수 분포</div>
-      <div id="dist-chart"></div>
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title">시간대별 활성 (최근 14일, KST)</div>
+      <div class="hour-grid" id="hour-chart"></div>
     </div>
   </div>
 
-  <div class="card">
+  <!-- 여백 -->
+  <div style="height:12px"></div>
+
+  <!-- 차트 행 2: 점수 분포 + 길드 상세 -->
+  <div class="row2">
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title">누적 점수 분포</div>
+      <div id="dist-chart"></div>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title">길드 현황</div>
+      <div class="guild-bar-wrap">
+        <div class="guild-bar-fill" id="guild-bar" style="width:0%">
+          <span class="guild-bar-text" id="guild-bar-text"></span>
+        </div>
+      </div>
+      <div class="guild-stat">
+        <span id="guild-in">길드 있음 — 명</span>
+        <span id="guild-out">없음 — 명</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:12px"></div>
+
+  <!-- TOP 10 -->
+  <div class="card" style="margin-bottom:0">
     <div class="card-title">누적 점수 TOP 10</div>
     <div class="table-wrap">
       <table>
-        <thead>
-          <tr>
-            <th style="width:40px">순위</th>
-            <th>태그</th>
-            <th>닉네임</th>
-            <th style="text-align:right">누적 점수</th>
-          </tr>
-        </thead>
+        <thead><tr>
+          <th style="width:40px">순위</th>
+          <th>태그</th>
+          <th>닉네임</th>
+          <th style="text-align:right">누적 점수</th>
+        </tr></thead>
         <tbody id="top10-body"></tbody>
       </table>
     </div>
   </div>
-</div>
 
+</div>
 <script>
 const API = 'https://asia-northeast3-kings-road-rank.cloudfunctions.net/getAnalytics';
 const DIST_COLORS = ['#4ade80','#7c6eff','#fbbf24','#f87171','#c084fc'];
+const HOUR_ICONS  = ['🌙','☀️','🌤️','🌆'];
 
 function fmt(n) { return Number(n).toLocaleString('ko-KR'); }
 
 function setStatus(state, text) {
-  const dot = document.getElementById('status-dot');
-  dot.className = 'dot' + (state !== 'ok' ? ' ' + state : '');
+  document.getElementById('status-dot').className = 'dot' + (state !== 'ok' ? ' ' + state : '');
   document.getElementById('status-text').textContent = text;
 }
 
-function renderKpi(data) {
-  document.getElementById('k-total').textContent = fmt(data.totalUsers);
-  document.getElementById('k-active').textContent = fmt(data.activeThisWeek);
-  document.getElementById('k-active-sub').textContent = data.weekId + ' 기준';
-  document.getElementById('k-new').textContent = fmt(data.newThisWeek);
-  const ret = data.retentionRate;
+function renderKpi(d) {
+  document.getElementById('k-total').textContent  = fmt(d.totalUsers);
+  document.getElementById('k-active').textContent = fmt(d.activeThisWeek);
+  document.getElementById('k-active-sub').textContent = d.weekId + ' 기준';
+  document.getElementById('k-new').textContent    = fmt(d.newThisWeek);
+
+  const ret = d.retentionRate;
   const retEl = document.getElementById('k-retention');
   retEl.textContent = ret + '%';
   retEl.className = 'kpi-value ' + (ret >= 70 ? 'green' : ret >= 40 ? 'amber' : 'red');
-  document.getElementById('k-retention-sub').textContent =
-    data.retained + '명 / ' + data.activeThisWeek + '명 활성';
+  document.getElementById('k-retention-sub').textContent = d.retained + '명 / ' + d.activeThisWeek + '명';
+
+  document.getElementById('k-churned').textContent = fmt(d.churned);
+
+  const gEl = document.getElementById('k-growth');
+  if (d.growthRate === null) {
+    gEl.textContent = '—';
+    gEl.className = 'kpi-value';
+  } else {
+    const sign = d.growthDiff >= 0 ? '+' : '';
+    gEl.textContent = sign + d.growthRate + '%';
+    gEl.className = 'kpi-value ' + (d.growthDiff >= 0 ? 'green' : 'red');
+    document.getElementById('k-growth-sub').textContent =
+      '지난주 ' + fmt(d.lastWeekActive) + '명 → 이번주 ' + fmt(d.activeThisWeek) + '명';
+  }
+
+  document.getElementById('k-guild').textContent = d.guildRate + '%';
+  document.getElementById('k-guild-sub').textContent = fmt(d.inGuild) + '명 / ' + fmt(d.totalUsers) + '명';
 }
 
 function renderDailyChart(dailyActive) {
@@ -233,26 +300,43 @@ function renderDailyChart(dailyActive) {
   entries.forEach(([date, count]) => {
     const pct = Math.max((count / max) * 100, count > 0 ? 5 : 2);
     const isToday = date === today;
-    const isRecent = date >= sevenAgo;
-    const colorClass = isToday ? 'today' : isRecent ? 'recent' : 'older';
     const col = document.createElement('div');
     col.className = 'bar-col';
     const fill = document.createElement('div');
-    fill.className = 'bar-fill ' + colorClass;
+    fill.className = 'bar-fill ' + (isToday ? 'today' : date >= sevenAgo ? 'recent' : 'older');
     fill.style.height = pct + '%';
     fill.setAttribute('data-tip', date.slice(5) + ' · ' + count + '명');
     const lbl = document.createElement('div');
     lbl.className = 'bar-label' + (isToday ? ' today-lbl' : '');
     lbl.textContent = isToday ? '오늘' : date.slice(8);
-    col.appendChild(fill);
-    col.appendChild(lbl);
+    col.appendChild(fill); col.appendChild(lbl);
     chart.appendChild(col);
+  });
+}
+
+function renderHourChart(hourDist) {
+  const entries = Object.entries(hourDist);
+  const total = entries.reduce((s,[,v]) => s + v, 0) || 1;
+  const maxVal = Math.max(...entries.map(([,v]) => v));
+  const container = document.getElementById('hour-chart');
+  container.innerHTML = '';
+  entries.forEach(([label, count], i) => {
+    const pct = Math.round(count / total * 100);
+    const isPeak = count === maxVal && count > 0;
+    const block = document.createElement('div');
+    block.className = 'hour-block';
+    block.innerHTML =
+      '<div class="hour-icon">' + HOUR_ICONS[i] + '</div>' +
+      '<div class="hour-label">' + label + '</div>' +
+      '<div class="hour-count' + (isPeak ? ' peak' : '') + '">' + count + '</div>' +
+      '<div class="hour-pct">' + pct + '%</div>';
+    container.appendChild(block);
   });
 }
 
 function renderDist(dist) {
   const entries = Object.entries(dist);
-  const total = entries.reduce((s, [, v]) => s + v, 0) || 1;
+  const total = entries.reduce((s,[,v]) => s + v, 0) || 1;
   const container = document.getElementById('dist-chart');
   container.innerHTML = '';
   entries.forEach(([label, count], i) => {
@@ -268,17 +352,24 @@ function renderDist(dist) {
   });
 }
 
+function renderGuild(d) {
+  const pct = d.guildRate;
+  document.getElementById('guild-bar').style.width = Math.max(pct, 3) + '%';
+  document.getElementById('guild-bar-text').textContent = pct + '%';
+  document.getElementById('guild-in').textContent  = '길드 있음 ' + fmt(d.inGuild) + '명';
+  document.getElementById('guild-out').textContent = '없음 ' + fmt(d.totalUsers - d.inGuild) + '명';
+}
+
 function renderTop10(top10) {
   const medals = ['🥇','🥈','🥉'];
   const tbody = document.getElementById('top10-body');
   tbody.innerHTML = '';
   top10.forEach((u, i) => {
     const rank = i + 1;
-    const rankClass = rank <= 3 ? 'rank-' + rank : 'rank-cell';
-    const rankDisplay = rank <= 3 ? medals[rank - 1] : rank;
+    const rankClass = rank <= 3 ? 'rank-' + rank : 'rank-n';
     const tr = document.createElement('tr');
     tr.innerHTML =
-      '<td class="' + rankClass + '">' + rankDisplay + '</td>' +
+      '<td class="' + rankClass + '">' + (rank <= 3 ? medals[rank-1] : rank) + '</td>' +
       '<td><span class="tag-badge">#' + u.tag + '</span></td>' +
       '<td>' + u.nickname + '</td>' +
       '<td style="text-align:right" class="score-cell">' + fmt(u.totalScore) + '</td>';
@@ -295,10 +386,14 @@ async function loadData() {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
+
     renderKpi(data);
     renderDailyChart(data.dailyActive);
+    renderHourChart(data.hourDistribution);
     renderDist(data.scoreDistribution);
+    renderGuild(data);
     renderTop10(data.top10);
+
     const kst = new Date(new Date(data.generatedAt).getTime() + 9 * 3600000);
     document.getElementById('updated-at').textContent =
       '갱신: ' + kst.toISOString().slice(11, 16) + ' KST';
