@@ -5452,8 +5452,8 @@ function amenAndStartGame() {
 
     // 무거운 작업은 다음 태스크로 미뤄 브라우저가 먼저 페인트하게 함
     setTimeout(() => {
-        // 🌟 4. 보류 중인 보상 확인
-        checkPendingReward();
+        // 🌟 4. 보류 중인 보상 — 맵 진입 후 자동 팝업 예약
+        window._pendingRewardAutoPopup = true;
 
         // 5. 기억 퀴즈 시도 후 맵 화면으로 이동
         if (typeof showMemoryQuizOverlay === 'function') showMemoryQuizOverlay();
@@ -5664,6 +5664,14 @@ function goMap() {
 
     // ★ 여정 진입 직후라면(amenAndStartGame에서 예약됨) 복습 타이밍 팝업 1회 체크
     if (typeof maybeAutoShowReviewPopup === 'function') maybeAutoShowReviewPopup();
+
+    // ★ 아멘 진입 직후라면 주간 랭킹 보상 자동 팝업 (복습 팝업보다 늦게)
+    if (window._pendingRewardAutoPopup) {
+        window._pendingRewardAutoPopup = false;
+        setTimeout(() => {
+            if (typeof openLastWeekRewardModal === 'function') openLastWeekRewardModal();
+        }, 1500);
+    }
 }
 
 // 백버튼(돌아가기) 표시를 현재 활성 화면에 따라 제어
@@ -16775,14 +16783,27 @@ function resetGameData() {
 function _doResetGameData() {
     window.isResetting = true;
     sessionStorage.setItem('manualReset', 'true');
+    // 리셋 전 태그 저장 — 서버 orphan 항목 삭제용
+    const _oldTag = (typeof myTag !== 'undefined' && myTag && myTag !== '0000') ? myTag : null;
     localStorage.clear();
     if (typeof myPlayerId !== 'undefined') myPlayerId = "";
     window.currentSessionToken = "";
-    if (typeof firebase !== 'undefined' && firebase.auth) {
-        firebase.auth().signOut()
-            .finally(() => location.reload());
+
+    const _doSignOut = () => {
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+            firebase.auth().signOut().finally(() => location.reload());
+        } else {
+            location.reload();
+        }
+    };
+
+    // leaderboard/{tag} 삭제 시도 (규칙 제한 시 조용히 무시)
+    if (_oldTag && typeof db !== 'undefined' && db) {
+        db.collection('leaderboard').doc(_oldTag).delete()
+            .catch(() => {})
+            .finally(_doSignOut);
     } else {
-        location.reload();
+        _doSignOut();
     }
 }
 
@@ -18127,7 +18148,7 @@ function openStageSheetForStageId(stageId) {
    ========================================= */
 let lastScorePayloadKey = null;
 function saveMyScoreToServer() {
-    if (typeof db === 'undefined' || !db || !myTag) return;
+    if (typeof db === 'undefined' || !db || !myTag || myTag === '0000') return;
 
     const currentWeekId = leagueData.weekId || getWeekId();
     const currentScore = leagueData.myScore || 0;

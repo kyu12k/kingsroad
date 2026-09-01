@@ -1674,8 +1674,14 @@
                     renderNotices();
                 }
                 function openNoticeModal(autoOpen) {
-                    // autoOpen이면 최신 업데이트가 있는 패치노트 탭으로
-                    if (autoOpen) currentNoticeTab = 'patch';
+                    // autoOpen이면 날짜 기준으로 더 최신인 탭을 선택
+                    if (autoOpen) {
+                        var latestDate = function(tab) {
+                            return NOTICES.filter(function(n) { return (n.type || 'patch') === tab; })
+                                .reduce(function(max, n) { return n.date > max ? n.date : max; }, '');
+                        };
+                        currentNoticeTab = (latestDate('notice') >= latestDate('patch')) ? 'notice' : 'patch';
+                    }
                     switchNoticeTab(currentNoticeTab);
                     var modal = document.getElementById('notice-modal');
                     modal.style.display = 'flex';
@@ -1686,7 +1692,7 @@
                     var menuPanel = document.getElementById('menu-panel');
                     if (menuPanel) menuPanel.style.display = 'none';
                     // 최신 항목 자동 펼침
-                    if (autoOpen) toggleNotice(0, 'patch');
+                    if (autoOpen) toggleNotice(0, currentNoticeTab);
                     // 마이그레이션 버튼 렌더링 (열린 직후)
                     setTimeout(renderMigrationArea, 50);
                 }
