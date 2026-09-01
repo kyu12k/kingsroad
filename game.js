@@ -1656,35 +1656,44 @@ window.addEventListener('beforeinstallprompt', (e) => {
     deferredPrompt = e;
     const btn = document.getElementById('add-to-home-btn');
     if (btn) btn.style.display = 'flex';
+    const homeBtn = document.getElementById('home-pwa-install-btn');
+    if (homeBtn) homeBtn.style.display = 'flex';
 });
 
 window.addEventListener('DOMContentLoaded', () => {
     applyI18nToStaticHTML();
 
+    const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    function _pwaInstallClick() {
+        if (isIOS && isSafari) {
+            alert(t('alert_ios_install'));
+        } else if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(({ outcome }) => {
+                if (outcome === 'accepted') {
+                    [document.getElementById('add-to-home-btn'), document.getElementById('home-pwa-install-btn')]
+                        .forEach(b => { if (b) b.style.display = 'none'; });
+                }
+                deferredPrompt = null;
+            });
+        } else {
+            alert(t('alert_no_prompt'));
+        }
+    }
+
     const btn = document.getElementById('add-to-home-btn');
     if (btn) {
-        // iOS Safari 환경 감지
-        const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-        if (isIOS && isSafari) {
-            btn.style.display = 'flex';
-            btn.onclick = function () {
-                alert(t('alert_ios_install'));
-            };
-        } else {
-            btn.onclick = async function () {
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    const { outcome } = await deferredPrompt.userChoice;
-                    if (outcome === 'accepted') {
-                        btn.style.display = 'none';
-                    }
-                    deferredPrompt = null;
-                } else {
-                    alert(t('alert_no_prompt'));
-                }
-            };
-        }
+        if (!isStandalone && isIOS && isSafari) btn.style.display = 'flex';
+        btn.onclick = _pwaInstallClick;
+    }
+
+    const homeBtn = document.getElementById('home-pwa-install-btn');
+    if (homeBtn && !isStandalone) {
+        if (isIOS && isSafari) homeBtn.style.display = 'flex';
+        homeBtn.onclick = _pwaInstallClick;
     }
 
     const repeatBtn = document.getElementById('repeat-toggle-btn');
@@ -11620,7 +11629,7 @@ function _checkFirstDailyWeeklyStudy() {
     const stored = localStorage.getItem('kingsRoad_weeklyShownDate');
     if (stored !== todayStr) {
         localStorage.setItem('kingsRoad_weeklyShownDate', todayStr);
-        setTimeout(openWeeklyStudyModal, 800);
+        if (myNickname !== '순례자') setTimeout(openWeeklyStudyModal, 800);
     }
 }
 
@@ -17261,6 +17270,8 @@ function updatePreviewText() {
 
 /* [기능] 프로필 확정 (저장) + 지파 이적 페널티 */
 async function confirmProfile() {
+    const _isFirstProfile = (myNickname === '순례자'); // 닉네임 변경 전 신규 유저 여부 캡처
+
     // 🌟 [핵심 방어막] 최초 가입이 아닌 유저가 지파를 바꿀 때 경고!
     if (myNickname !== "순례자" && myTribe !== window.tempTribe) {
         const warnMsg = t('profile_tribe_warn');
@@ -17299,12 +17310,21 @@ async function confirmProfile() {
     const tribeName = getTribeName(TRIBE_DATA[myTribe]);
     alert(t('alert_welcome_tribe', { tribe: tribeName, nick: myNickname }));
 
+    // 신규 유저 최초 프로필 완료 → 억제됐던 공지사항 표시
+    if (_isFirstProfile) {
+        setTimeout(() => {
+            if (typeof checkAndShowNewNotice === 'function') checkAndShowNewNotice();
+        }, 600);
+    }
 }
 
 /* [시스템] 데이터 경고 팝업 제어 */
 function checkDataWarning() {
     // '다시 보지 않기'가 체크되어 있는지 확인
     const isHidden = localStorage.getItem("hideDataWarning");
+
+    // 신규 유저(프로필 미설정)에게는 억제 — 온보딩 흐름 보호
+    if (myNickname === '순례자') return;
 
     // 저장된 값이 없으면 팝업을 보여줌
     if (!isHidden) {
