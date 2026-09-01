@@ -15933,11 +15933,11 @@ function _showGoogleAlreadyUsedModal() {
     el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10000;padding:20px;box-sizing:border-box;';
     el.innerHTML = `
         <div style="background:#1a0e2e;border:1px solid #5a3a8a;border-radius:16px;padding:28px 24px;width:100%;max-width:340px;text-align:center;">
-            <div style="font-size:2rem;margin-bottom:12px;">ℹ️</div>
-            <div style="font-size:17px;font-weight:700;color:#e0c0ff;margin-bottom:12px;">다른 기기에 연결된 계정</div>
+            <div style="font-size:2rem;margin-bottom:12px;">☁️</div>
+            <div style="font-size:17px;font-weight:700;color:#e0c0ff;margin-bottom:12px;">저장된 기록 발견</div>
             <div style="font-size:14px;color:#9070b0;margin-bottom:20px;line-height:1.7;">
-                이 Google 계정은 이미 다른 기기의 기록과 연결되어 있습니다.<br><br>
-                그 기록을 이 기기로 가져오시겠습니까?
+                이 Google 계정으로 저장된 게임 기록이 있습니다.<br><br>
+                이 기기로 가져오시겠습니까?
             </div>
             <div style="display:flex;flex-direction:column;gap:10px;">
                 <button onclick="document.getElementById('google-already-used').remove();signInWithGoogleAndLoad();"
