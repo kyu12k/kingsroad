@@ -10728,7 +10728,7 @@ function useHint() {
     if (!window.isTrainingMode && !window.isHardshipMode) bossHintCount++;
 
     if (hintCost > 0 && myGems < hintCost) {
-        alert(t('alert_hint_no_gems', { cost: hintCost }));
+        showGemToast(0, t('alert_hint_no_gems', { cost: hintCost }), true);
         return;
     }
 
@@ -10736,14 +10736,10 @@ function useHint() {
     const isTraining = screen.classList.contains('mode-training');
 
     if (isTraining && currentStep === 1) {
-        alert(t('alert_hint_read_aloud'));
+        showGemToast(0, t('alert_hint_read_aloud'), true);
         return;
     }
 
-    // 안내 문구 (confirm 대신 차감 후 토스트로 알림)
-    if (hintCost > 0) {
-        showGemToast(0, t('hint_confirm', { cost: hintCost }), false);
-    }
 
     // 보석 차감 및 입력 비활성화
     if (hintCost > 0) {
@@ -21102,11 +21098,7 @@ function useHardshipMemoryHint() {
     }
 
     if (myGems < HINT_COST) {
-        alert(t('alert_blank_hint_no_gems', { cost: HINT_COST }));
-        return;
-    }
-
-    if (!confirm(t('hardship_hint_confirm', { cost: HINT_COST }))) {
+        showGemToast(0, t('alert_blank_hint_no_gems', { cost: HINT_COST }), true);
         return;
     }
 
