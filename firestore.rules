@@ -65,5 +65,11 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow write: if false;
     }
+
+    // 게임 세이브: 본인 문서만 읽기 허용, 쓰기는 saveGameDataSecure CF만
+    match /saves/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
   }
 }

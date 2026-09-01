@@ -16114,7 +16114,10 @@ async function _doSignInWithGoogle() {
     }
 
     // 길드 자동 탈퇴: sign-in 전이라 아직 구 UID로 인증된 상태
-    if (typeof myGuildId !== 'undefined' && myGuildId &&
+    // 텍스트 파일 복구 직후 Google 연동 시도인 경우, 같은 사용자의 실제 길드이므로 탈퇴 건너뜀
+    const _fromTextFile = localStorage.getItem('kingsroad_dataFromTextFile') === 'true';
+    localStorage.removeItem('kingsroad_dataFromTextFile');
+    if (!_fromTextFile && typeof myGuildId !== 'undefined' && myGuildId &&
         typeof myTag !== 'undefined' && myTag && myTag !== '0000') {
         try {
             await _callGuildFn('leaveGuild', {});
@@ -16939,6 +16942,8 @@ function processImportData(inputString) {
 
             // 🌟 [추가] 화면이 새로고침된 직후 자동으로 서버에 점수를 동기화하도록 예약
             localStorage.setItem('forceSyncAfterLoad', 'true');
+            // 텍스트 파일 복구 후 Google 연동 시도 시 길드 자동 탈퇴 방지용 플래그
+            localStorage.setItem('kingsroad_dataFromTextFile', 'true');
 
             // 파이어베이스 통신 없이 즉시 새로고침 (오류 원인 원천 차단!)
             alert(t('alert_restore_ok'));
