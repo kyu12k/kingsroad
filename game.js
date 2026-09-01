@@ -8407,6 +8407,14 @@ async function initFirestoreSync() {
     }
 
     if (!remoteData) {
+        // 케이스 2: Google 로그인 후인데 서버에 데이터가 없는 경우 — 로컬 업로드 금지
+        const _forceRemoteCheck = localStorage.getItem('kingsroad_forceRemoteSync') === 'true';
+        if (_forceRemoteCheck) {
+            localStorage.removeItem('kingsroad_forceRemoteSync');
+            showGemToast(0, 'Google 계정에 연결된 데이터가 없습니다. 기존 기기에서 먼저 "Google 계정 연결하기"를 해주세요.', true);
+            return;
+        }
+
         // pendingRecovery 확인: 세션 충돌로 초기화된 유저 자동 복구
         const recovered = await checkPendingRecovery();
         if (recovered) return;
@@ -15863,7 +15871,7 @@ async function linkGoogleAccount() {
                 showGemToast(0, 'Google 연결 실패: ' + (e2.message || e2.code), true);
             }
         } else if (e.code === 'auth/credential-already-in-use') {
-            showGemToast(0, '이 Google 계정은 이미 다른 기기에 연결되어 있습니다.', true);
+            _showGoogleAlreadyUsedModal();
         } else {
             showGemToast(0, 'Google 연결 실패: ' + (e.message || e.code), true);
         }
@@ -15875,6 +15883,60 @@ async function signInWithGoogleAndLoad() {
         showGemToast(0, '서버 연결이 필요합니다.', true);
         return;
     }
+    // 케이스 1: 현재 기기에 플레이 데이터가 있으면 덮어쓰임 경고
+    const localRaw = localStorage.getItem('kingsRoadSave');
+    const localSave = localRaw ? (() => { try { return JSON.parse(localRaw); } catch(e) { return null; } })() : null;
+    if (localSave && localSave.tag) {
+        _showGoogleSignInConfirm(localSave.tag);
+        return;
+    }
+    await _doSignInWithGoogle();
+}
+
+function _showGoogleSignInConfirm(existingTag) {
+    const el = document.createElement('div');
+    el.id = 'google-signin-confirm';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10000;padding:20px;box-sizing:border-box;';
+    el.innerHTML = `
+        <div style="background:#1a0e2e;border:1px solid #e05050;border-radius:16px;padding:28px 24px;width:100%;max-width:340px;text-align:center;">
+            <div style="font-size:2rem;margin-bottom:12px;">⚠️</div>
+            <div style="font-size:17px;font-weight:700;color:#e0c0ff;margin-bottom:12px;">현재 기기 데이터 교체</div>
+            <div style="font-size:14px;color:#9070b0;margin-bottom:20px;line-height:1.7;">
+                이 기기의 기록 <strong style="color:#e0c0ff;">#${escapeHtml(existingTag)}</strong>이<br>
+                Google 계정의 데이터로 교체됩니다.<br>
+                <span style="color:#e05050;font-size:13px;">이 기기의 기록은 사라집니다.</span>
+            </div>
+            <div style="display:flex;gap:10px;">
+                <button onclick="document.getElementById('google-signin-confirm').remove();_doSignInWithGoogle();"
+                    style="flex:1;background:#e05050;border:none;border-radius:10px;padding:12px;color:white;font-size:15px;font-weight:600;cursor:pointer;">계속하기</button>
+                <button onclick="document.getElementById('google-signin-confirm').remove();"
+                    style="flex:1;background:#2a1a4a;border:1px solid #5a3a8a;border-radius:10px;padding:12px;color:#9070b0;font-size:15px;cursor:pointer;">취소</button>
+            </div>
+        </div>`;
+    document.body.appendChild(el);
+}
+
+function _showGoogleAlreadyUsedModal() {
+    const el = document.createElement('div');
+    el.id = 'google-already-used';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10000;padding:20px;box-sizing:border-box;';
+    el.innerHTML = `
+        <div style="background:#1a0e2e;border:1px solid #5a3a8a;border-radius:16px;padding:28px 24px;width:100%;max-width:340px;text-align:center;">
+            <div style="font-size:2rem;margin-bottom:12px;">ℹ️</div>
+            <div style="font-size:17px;font-weight:700;color:#e0c0ff;margin-bottom:12px;">이미 연결된 계정</div>
+            <div style="font-size:14px;color:#9070b0;margin-bottom:20px;line-height:1.7;">
+                이 Google 계정은 다른 기기에서 이미 연결되어 있습니다.<br><br>
+                다른 기기의 데이터를 이 기기로 가져오려면<br>
+                <strong style="color:#e0c0ff;">새로 시작 화면</strong>에서<br>
+                "Google로 이어하기"를 선택하세요.
+            </div>
+            <button onclick="document.getElementById('google-already-used').remove();"
+                style="width:100%;background:#5a3a8a;border:none;border-radius:10px;padding:12px;color:#e0c0ff;font-size:15px;font-weight:600;cursor:pointer;">확인</button>
+        </div>`;
+    document.body.appendChild(el);
+}
+
+async function _doSignInWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     try {
         localStorage.setItem('kingsroad_forceRemoteSync', 'true');
@@ -17039,14 +17101,18 @@ function _showNewUserModal() {
     const overlay = document.createElement('div');
     overlay.id = 'new-user-modal';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;box-sizing:border-box;';
+    // 케이스 4: 이미 Google 연결된 기기에서는 "Google로 이어하기" 버튼 숨김
+    // (signInWithGoogleAndLoad가 forceRemoteSync를 세팅해 로컬 우선 데이터를 덮어쓸 위험 방지)
+    const googleBtn = isGoogleLinked() ? '' : `
+        <button onclick="document.getElementById('new-user-modal').remove();signInWithGoogleAndLoad();"
+            style="background:#4285f4;border:none;border-radius:10px;padding:13px;color:white;font-size:15px;font-weight:600;cursor:pointer;">🔵 Google로 이어하기</button>`;
     overlay.innerHTML = `
         <div style="background:#1a0e2e;border:1px solid #5a3a8a;border-radius:16px;padding:28px 24px;width:100%;max-width:340px;text-align:center;">
             <div style="font-size:2rem;margin-bottom:12px;">👋</div>
             <div style="font-size:18px;font-weight:700;color:#e0c0ff;margin-bottom:10px;">처음 오셨나요?</div>
             <div style="font-size:14px;color:#9070b0;margin-bottom:24px;line-height:1.6;">이전에 플레이한 기록이 있다면<br>태그로 복구할 수 있습니다.</div>
             <div style="display:flex;flex-direction:column;gap:10px;">
-                <button onclick="document.getElementById('new-user-modal').remove();signInWithGoogleAndLoad();"
-                    style="background:#4285f4;border:none;border-radius:10px;padding:13px;color:white;font-size:15px;font-weight:600;cursor:pointer;">🔵 Google로 이어하기</button>
+                ${googleBtn}
                 <button onclick="document.getElementById('new-user-modal').remove();openTagRecovery();"
                     style="background:#5a3a8a;border:none;border-radius:10px;padding:13px;color:#e0c0ff;font-size:15px;font-weight:600;cursor:pointer;">태그로 복구하기</button>
                 <button onclick="document.getElementById('new-user-modal').remove();openProfileSettings();"
