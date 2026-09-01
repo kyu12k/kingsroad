@@ -8857,7 +8857,7 @@ function _showRemoteNewerBanner() {
     ].join(';');
     el.innerHTML = `
         <span>📱 다른 기기에서 저장된 기록이 있어요</span>
-        <button onclick="location.reload()"
+        <button onclick="localStorage.setItem('kingsroad_forceRemoteSync','true');location.reload()"
             style="background:#4285f4;color:#fff;border:none;border-radius:8px;
                    padding:5px 12px;cursor:pointer;font-size:0.82rem;font-weight:bold;">
             새로고침

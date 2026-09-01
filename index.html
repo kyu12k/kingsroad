@@ -2601,6 +2601,11 @@
             }
         });
 
+        // 오프라인 → 온라인 복귀 시 미반영 데이터 Firestore에 재동기화
+        window.addEventListener('online', () => {
+            if (typeof initFirestoreSync === 'function') initFirestoreSync();
+        });
+
 
         /* [시스템] 스마트 랭킹 로드 (호환성 수정 버전) */
         var leagueTotalCounts = {};
