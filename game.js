@@ -18311,32 +18311,8 @@ function startSessionGuard() {
                     }
                 } catch(e) {}
 
-                console.log("🚨 다른 기기 로그인 감지! 현재 기기를 초기화합니다.");
-
-                // 초기화 전 현재 데이터를 pendingRecovery에 백업 (나중에 태그 입력으로 복구 가능)
-                try {
-                    if (typeof db !== 'undefined' && db && typeof myTag !== 'undefined' && myTag && myTag !== '0000') {
-                        const localRaw = localStorage.getItem('kingsRoadSave');
-                        if (localRaw) {
-                            const backupData = JSON.parse(localRaw);
-                            backupData.pendingRecovery = true;
-                            backupData.recoveryCreatedAt = new Date().toISOString();
-                            db.collection('pendingRecovery').doc(myTag).set(backupData).catch(() => {});
-                        }
-                    }
-                } catch(e) {}
-
-                window.isResetting = true;
-                localStorage.clear();
-
-                if (typeof firebase !== 'undefined' && firebase.auth) {
-                    firebase.auth().signOut().catch(e => console.log(e));
-                }
-
-                myPlayerId = "";
-                window.currentSessionToken = "";
-                alert(t('alert_multi_device'));
-                window.location.replace(window.location.href.split('?')[0]);
+                console.log("🔔 다른 기기 로그인 감지 — 원격 데이터 확인 중");
+                checkRemoteIsNewer();
             }
         }
     });
