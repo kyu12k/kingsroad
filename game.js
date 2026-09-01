@@ -16022,13 +16022,83 @@ function _updateGoogleLinkUI() {
 }
 
 async function forceLoadFromServer() {
-    showGemToast(0, '서버에서 데이터를 불러오는 중...', false);
+    showGemToast(0, '서버 데이터 확인 중...', false);
+    const remoteData = await loadFromFirestore();
+    if (!remoteData) {
+        showGemToast(0, '서버에 저장된 데이터가 없습니다.', true);
+        return;
+    }
+    const localRaw = localStorage.getItem('kingsRoadSave');
+    const localData = localRaw ? (() => { try { return JSON.parse(localRaw); } catch(e) { return null; } })() : null;
+
+    // 태그가 다르면 — 두 기기의 서로 다른 데이터가 충돌한 상황
+    if (localData && localData.tag && remoteData.tag && localData.tag !== remoteData.tag) {
+        const modal = document.getElementById('data-modal');
+        if (modal) modal.style.display = 'none';
+        _showDataConflictModal(localData, remoteData);
+        return;
+    }
+
+    // 같은 태그 or 로컬 데이터 없음 → 바로 적용
     localStorage.setItem('kingsroad_forceRemoteSync', 'true');
     await initFirestoreSync();
     const modal = document.getElementById('data-modal');
     if (modal) modal.style.display = 'none';
     showGemToast(0, '✅ 완료! 잠시 후 새로고침됩니다.', false);
     setTimeout(() => location.reload(), 1500);
+}
+
+function _showDataConflictModal(localData, remoteData) {
+    const stageCount = (d) => d.stageMastery ? Object.keys(d.stageMastery).length : 0;
+    const gems = (d) => d.myGems || 0;
+    const label = (d) => `#${d.tag || '?'} · ${d.nickname || ''}`;
+
+    const el = document.createElement('div');
+    el.id = 'data-conflict-modal';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:10000;padding:20px;box-sizing:border-box;';
+    el.innerHTML = `
+        <div style="background:#1a0e2e;border:1px solid #5a3a8a;border-radius:16px;padding:28px 24px;width:100%;max-width:360px;text-align:center;">
+            <div style="font-size:1.8rem;margin-bottom:10px;">⚖️</div>
+            <div style="font-size:17px;font-weight:700;color:#e0c0ff;margin-bottom:8px;">두 기기의 기록이 달라요</div>
+            <div style="font-size:13px;color:#9070b0;margin-bottom:20px;">어느 기록을 사용할지 선택해주세요.</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <button onclick="document.getElementById('data-conflict-modal').remove();_applyConflictChoice('remote');"
+                    style="background:#2a1a4a;border:2px solid #4285f4;border-radius:12px;padding:14px 12px;color:#e0c0ff;text-align:left;cursor:pointer;">
+                    <div style="font-size:13px;color:#7ab4f8;margin-bottom:4px;">☁️ 서버 기록 (다른 기기)</div>
+                    <div style="font-size:15px;font-weight:700;">${escapeHtml(label(remoteData))}</div>
+                    <div style="font-size:12px;color:#9070b0;margin-top:4px;">💎 ${gems(remoteData).toLocaleString()} · 클리어 ${stageCount(remoteData)}스테이지</div>
+                </button>
+                <button onclick="document.getElementById('data-conflict-modal').remove();_applyConflictChoice('local');"
+                    style="background:#2a1a4a;border:2px solid #5a3a8a;border-radius:12px;padding:14px 12px;color:#e0c0ff;text-align:left;cursor:pointer;">
+                    <div style="font-size:13px;color:#c0a0e0;margin-bottom:4px;">📱 이 기기 기록</div>
+                    <div style="font-size:15px;font-weight:700;">${escapeHtml(label(localData))}</div>
+                    <div style="font-size:12px;color:#9070b0;margin-top:4px;">💎 ${gems(localData).toLocaleString()} · 클리어 ${stageCount(localData)}스테이지</div>
+                </button>
+                <button onclick="document.getElementById('data-conflict-modal').remove();"
+                    style="background:transparent;border:none;color:#6050a0;font-size:14px;padding:8px;cursor:pointer;">취소</button>
+            </div>
+        </div>`;
+    document.body.appendChild(el);
+    // 원격 데이터를 임시 보관 (선택 시 사용)
+    window._pendingRemoteData = remoteData;
+}
+
+async function _applyConflictChoice(choice) {
+    if (choice === 'remote') {
+        const remoteData = window._pendingRemoteData;
+        if (!remoteData) { showGemToast(0, '데이터를 찾을 수 없습니다.', true); return; }
+        remoteData.playerId = myPlayerId;
+        localStorage.setItem('kingsRoadSave', JSON.stringify(remoteData));
+        localStorage.setItem('forceSyncAfterLoad', 'true');
+        showGemToast(0, '✅ 서버 기록을 적용했습니다. 새로고침됩니다.', false);
+        setTimeout(() => location.reload(), 1500);
+    } else {
+        // 이 기기 기록 유지 → 서버에 업로드
+        localStorage.setItem('forceSyncAfterLoad', 'true');
+        showGemToast(0, '✅ 이 기기 기록을 유지합니다. 새로고침됩니다.', false);
+        setTimeout(() => location.reload(), 1500);
+    }
+    window._pendingRemoteData = null;
 }
 
 /* =========================================
