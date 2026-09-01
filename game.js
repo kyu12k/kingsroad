@@ -5357,7 +5357,8 @@ function amenAndStartGame() {
 function checkPendingReward() {
     if (typeof db === 'undefined' || !db || !myTag) return;
 
-    db.collection('leaderboard').doc(myTag).get().then(doc => {
+    // enablePersistence 캐시 우회: 다른 기기의 수령 여부를 항상 서버에서 확인
+    db.collection('leaderboard').doc(myTag).get({ source: 'server' }).then(doc => {
         if (!doc.exists) return;
         const reward = doc.data().pendingReward;
         if (!reward || !reward.weekId) return;
@@ -5372,7 +5373,7 @@ function checkPendingReward() {
 function openLastWeekRewardModal() {
     if (typeof db === 'undefined' || !db || !myTag) return;
 
-    db.collection('leaderboard').doc(myTag).get().then(doc => {
+    db.collection('leaderboard').doc(myTag).get({ source: 'server' }).then(doc => {
         if (!doc.exists) return;
         const reward = doc.data().pendingReward;
         if (!reward) return;
@@ -5468,8 +5469,8 @@ function closeLastWeekRewardModal() {
 function claimWeeklyReward() {
     if (typeof db === 'undefined' || !db || !myTag) return;
 
-    // 서버에서 pendingReward 읽어 최종 확인 후 보석 지급
-    db.collection('leaderboard').doc(myTag).get().then(doc => {
+    // 서버에서 pendingReward 읽어 최종 확인 후 보석 지급 (캐시 우회)
+    db.collection('leaderboard').doc(myTag).get({ source: 'server' }).then(doc => {
         if (!doc.exists) return;
         const reward = doc.data().pendingReward;
         if (!reward) return;
