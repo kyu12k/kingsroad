@@ -2507,28 +2507,24 @@
                     // 이미 로그인 되어 있음 (파이어베이스가 진짜 신분증을 줌)
                     myServerUid = user.uid;
 
-                    // UID 불일치 감지: 로컬 데이터가 다른 UID 소유면 서버 우선 로드
-                    // (Google 로그인으로 계정 전환 시 빈 로컬이 서버를 덮어쓰는 버그 방지)
+                    // UID 불일치 감지: localStorage의 playerId가 현재 Firebase UID와 다르면
+                    // localStorage도 즉시 업데이트 (재로드 후 다시 구 UID로 돌아가는 버그 방지)
                     try {
                         const _ls = localStorage.getItem('kingsRoadSave');
                         const _ld = _ls ? JSON.parse(_ls) : null;
                         if (_ld && _ld.playerId && _ld.playerId !== user.uid) {
-                            localStorage.setItem('kingsroad_forceRemoteSync', 'true');
+                            _ld.playerId = user.uid;
+                            localStorage.setItem('kingsRoadSave', JSON.stringify(_ld));
+                            console.log('[Auth] playerId를 현재 UID로 업데이트:', user.uid);
                         }
                     } catch(e) {}
 
-                    // 🌟 [추가된 마법의 코드] 구형 ID 이사 로직
+                    // 구형 ID 이사 로직 (user_ 접두사)
                     if (typeof myPlayerId !== 'undefined' && myPlayerId.startsWith('user_')) {
                         console.log("🔄 구형 임시 ID 감지! 진짜 UID로 데이터 이사 시작...");
-
-                        // 1. 내 ID를 진짜 신분증으로 덮어씁니다.
                         myPlayerId = myServerUid;
-
-                        // 2. 개발자님이 만들어둔 저장 함수 실행!
-                        // -> 로컬 스토리지에 새 ID가 저장되고, 서버에도 새 이름표로 데이터가 복사됩니다!
                         if (typeof saveGameData === 'function') saveGameData();
                     } else {
-                        // 이미 이사를 마쳤거나 원래 진짜 UID를 쓰던 정상 유저
                         if (typeof myPlayerId !== 'undefined') myPlayerId = myServerUid;
                     }
 
