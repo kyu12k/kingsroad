@@ -15916,6 +15916,9 @@ function _showGoogleSignInConfirm(existingTag) {
                 이 기기의 기록 <strong style="color:#e0c0ff;">#${escapeHtml(existingTag)}</strong>이<br>
                 Google 계정의 데이터로 교체됩니다.<br>
                 <span style="color:#e05050;font-size:13px;">이 기기의 기록은 사라집니다.</span>
+                ${(typeof myGuildId !== 'undefined' && myGuildId)
+                    ? '<br><span style="color:#a0c0ff;font-size:12px;margin-top:6px;display:block;">※ 길드는 자동으로 탈퇴 처리됩니다.</span>'
+                    : ''}
             </div>
             <div style="display:flex;gap:10px;">
                 <button onclick="document.getElementById('google-signin-confirm').remove();_doSignInWithGoogle();"
@@ -15950,6 +15953,23 @@ function _showGoogleAlreadyUsedModal() {
 }
 
 async function _doSignInWithGoogle() {
+    // 구 태그 저장 → onAuthStateChanged에서 leaderboard 문서 자동 삭제
+    if (typeof myTag !== 'undefined' && myTag && myTag !== '0000') {
+        localStorage.setItem('kingsroad_import_old_playerid', myTag);
+    }
+
+    // 길드 자동 탈퇴: sign-in 전이라 아직 구 UID로 인증된 상태
+    if (typeof myGuildId !== 'undefined' && myGuildId &&
+        typeof myTag !== 'undefined' && myTag && myTag !== '0000') {
+        try {
+            await _callGuildFn('leaveGuild', {});
+            myGuildId = null; _guildData = null;
+            console.log('[Google 이어하기] 길드 자동 탈퇴 완료');
+        } catch (e) {
+            console.warn('[Google 이어하기] 길드 탈퇴 실패:', e);
+        }
+    }
+
     const provider = new firebase.auth.GoogleAuthProvider();
     try {
         localStorage.setItem('kingsroad_forceRemoteSync', 'true');
