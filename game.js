@@ -20051,7 +20051,7 @@ function openHardshipOrderModal(mode) {
     }
     // 암송은 궁극의 암기 토글 불필요
     const ultimateWrap = document.getElementById('hardship-ultimate-toggle-wrap');
-    if (ultimateWrap) ultimateWrap.style.display = selectedHardshipConfigMode === 'endurance' ? 'none' : '';
+    if (ultimateWrap) ultimateWrap.style.display = selectedHardshipConfigMode === 'endurance' ? 'none' : 'flex';
 
     // 무작위 버튼에 승점 보너스 표시
     const randomDesc = document.querySelector('#hardship-order-btn-random .mode-desc');
