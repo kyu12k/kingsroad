@@ -7492,7 +7492,7 @@ function loadNextVerse() {
 
         // 개수 체크
         if (currentBlocks.length !== correctChunks.length) {
-            alert(t('alert_spell_incomplete', { cur: currentBlocks.length, need: correctChunks.length }));
+            showGemToast(0, t('alert_spell_incomplete', { cur: currentBlocks.length, need: correctChunks.length }), true);
             return;
         }
 
