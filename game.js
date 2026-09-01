@@ -15934,15 +15934,17 @@ function _showGoogleAlreadyUsedModal() {
     el.innerHTML = `
         <div style="background:#1a0e2e;border:1px solid #5a3a8a;border-radius:16px;padding:28px 24px;width:100%;max-width:340px;text-align:center;">
             <div style="font-size:2rem;margin-bottom:12px;">ℹ️</div>
-            <div style="font-size:17px;font-weight:700;color:#e0c0ff;margin-bottom:12px;">이미 연결된 계정</div>
+            <div style="font-size:17px;font-weight:700;color:#e0c0ff;margin-bottom:12px;">다른 기기에 연결된 계정</div>
             <div style="font-size:14px;color:#9070b0;margin-bottom:20px;line-height:1.7;">
-                이 Google 계정은 다른 기기에서 이미 연결되어 있습니다.<br><br>
-                다른 기기의 데이터를 이 기기로 가져오려면<br>
-                <strong style="color:#e0c0ff;">새로 시작 화면</strong>에서<br>
-                "Google로 이어하기"를 선택하세요.
+                이 Google 계정은 이미 다른 기기의 기록과 연결되어 있습니다.<br><br>
+                그 기록을 이 기기로 가져오시겠습니까?
             </div>
-            <button onclick="document.getElementById('google-already-used').remove();"
-                style="width:100%;background:#5a3a8a;border:none;border-radius:10px;padding:12px;color:#e0c0ff;font-size:15px;font-weight:600;cursor:pointer;">확인</button>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <button onclick="document.getElementById('google-already-used').remove();signInWithGoogleAndLoad();"
+                    style="background:#4285f4;border:none;border-radius:10px;padding:13px;color:white;font-size:15px;font-weight:600;cursor:pointer;">🔵 기록 가져오기</button>
+                <button onclick="document.getElementById('google-already-used').remove();"
+                    style="background:#2a1a4a;border:1px solid #5a3a8a;border-radius:10px;padding:12px;color:#9070b0;font-size:14px;cursor:pointer;">취소</button>
+            </div>
         </div>`;
     document.body.appendChild(el);
 }
