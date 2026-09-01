@@ -125,6 +125,12 @@ exports.submitScoreSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =>
     }
     dataToSave.tag = String(myTag); // 항상 본인 태그로 고정
 
+    // 신규 문서에만 createdAt 추가 (분석용)
+    const existing = await lbRef.get();
+    if (!existing.exists || !existing.data().createdAt) {
+        dataToSave.createdAt = admin.firestore.FieldValue.serverTimestamp();
+    }
+
     await lbRef.set(dataToSave, { merge: true });
     return { ok: true };
 });
@@ -889,4 +895,79 @@ exports.renameGuild = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
         lastNameChangeAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     return { ok: true, newName: trimmedName };
+});
+
+// ── 대시보드 분석 데이터 ────────────────────────────────────────────────────────
+exports.getAnalytics = onRequest({ cors: true }, async (req, res) => {
+    try {
+        const now = new Date();
+        const currentWeekId = getWeekId();
+        const MS_7D  = 7  * 24 * 60 * 60 * 1000;
+        const MS_14D = 14 * 24 * 60 * 60 * 1000;
+        const cutoff7  = admin.firestore.Timestamp.fromMillis(now - MS_7D);
+        const cutoff14 = admin.firestore.Timestamp.fromMillis(now - MS_14D);
+
+        // 전체 수집 후 코드에서 필터링 (복합 인덱스 불필요)
+        const [allSnap, newSnap] = await Promise.all([
+            db.collection('leaderboard').get(),
+            db.collection('leaderboard').where('createdAt', '>=', cutoff7).get(),
+        ]);
+
+        const allData = allSnap.docs.map(d => d.data());
+        const realUsers = allData.filter(d => (d.totalScore || 0) > 0);
+
+        // 이번 주 활성 (weekId 일치 + score > 0)
+        const activeData = allData.filter(d => d.weekId === currentWeekId && (d.score || 0) > 0);
+        const activeThisWeek = activeData.length;
+
+        // 재방문율: 이번 주 활성 중 지난 주도 했던 비율
+        const retained = activeData.filter(d => (d.prevWeekScore || 0) > 0).length;
+
+        // 최근 14일 일별 활성 (updatedAt 기준 버킷)
+        const dailyBuckets = {};
+        for (let i = 0; i < 14; i++) {
+            const d = new Date(now - i * 24 * 60 * 60 * 1000);
+            dailyBuckets[d.toISOString().slice(0, 10)] = 0;
+        }
+        for (const d of allData) {
+            if (!d.updatedAt || (d.totalScore || 0) === 0) continue;
+            const ms = d.updatedAt.toMillis();
+            if (ms < now - MS_14D) continue;
+            const dateStr = new Date(ms).toISOString().slice(0, 10);
+            if (dateStr in dailyBuckets) dailyBuckets[dateStr]++;
+        }
+
+        // 점수 구간 분포 (totalScore 기준)
+        const buckets = { '1~99': 0, '100~499': 0, '500~1999': 0, '2000~9999': 0, '10000+': 0 };
+        for (const d of realUsers) {
+            const ts = d.totalScore || 0;
+            if (ts < 100) buckets['1~99']++;
+            else if (ts < 500) buckets['100~499']++;
+            else if (ts < 2000) buckets['500~1999']++;
+            else if (ts < 10000) buckets['2000~9999']++;
+            else buckets['10000+']++;
+        }
+
+        // 상위 10명
+        const top10 = realUsers
+            .map(d => ({ tag: d.tag, nickname: d.nickname, totalScore: d.totalScore || 0 }))
+            .sort((a, b) => b.totalScore - a.totalScore)
+            .slice(0, 10);
+
+        res.json({
+            weekId: currentWeekId,
+            generatedAt: now.toISOString(),
+            totalUsers: realUsers.length,
+            activeThisWeek,
+            newThisWeek: newSnap.size,
+            retained,
+            retentionRate: activeThisWeek > 0 ? Math.round(retained / activeThisWeek * 100) : 0,
+            dailyActive: dailyBuckets,
+            scoreDistribution: buckets,
+            top10,
+        });
+    } catch (e) {
+        console.error('getAnalytics 오류:', e);
+        res.status(500).json({ error: e.message });
+    }
 });
