@@ -15849,6 +15849,10 @@ function isGoogleLinked() {
     return user ? user.providerData.some(p => p.providerId === 'google.com') : false;
 }
 
+function _isInAppBrowser() {
+    return /Telegram|FBAN|FBAV|Instagram|Line|KakaoTalk/i.test(navigator.userAgent);
+}
+
 async function linkGoogleAccount() {
     if (typeof auth === 'undefined' || !auth || !auth.currentUser) {
         showGemToast(0, '서버 연결이 필요합니다.', true);
@@ -15859,6 +15863,13 @@ async function linkGoogleAccount() {
         return;
     }
     const provider = new firebase.auth.GoogleAuthProvider();
+    // 텔레그램 인앱 브라우저 등 팝업 차단 환경은 처음부터 redirect
+    if (_isInAppBrowser()) {
+        try { await auth.currentUser.linkWithRedirect(provider); } catch (e) {
+            showGemToast(0, 'Google 연결 실패: ' + (e.message || e.code), true);
+        }
+        return;
+    }
     try {
         await auth.currentUser.linkWithPopup(provider);
         showGemToast(0, '✅ Google 계정 연결 완료! 다른 기기에서 Google로 이어할 수 있습니다.', false);
@@ -15959,19 +15970,27 @@ async function _doSignInWithGoogle() {
 }
 
 function _updateGoogleLinkUI() {
-    const btn = document.getElementById('google-link-btn');
-    if (!btn) return;
-    if (isGoogleLinked()) {
-        btn.textContent = '✅ Google 연결됨';
-        btn.disabled = true;
-        btn.style.opacity = '0.6';
-        btn.style.cursor = 'default';
-    } else {
-        btn.textContent = '🔵 Google 계정 연결하기';
-        btn.disabled = false;
-        btn.style.opacity = '1';
-        btn.style.cursor = 'pointer';
+    const linked = isGoogleLinked();
+
+    // 기기 변경 모달 안 버튼
+    const modalBtn = document.getElementById('google-link-btn');
+    if (modalBtn) {
+        if (linked) {
+            modalBtn.textContent = '✅ Google 연결됨';
+            modalBtn.disabled = true;
+            modalBtn.style.opacity = '0.6';
+            modalBtn.style.cursor = 'default';
+        } else {
+            modalBtn.textContent = '🔵 Google 계정 연결하기';
+            modalBtn.disabled = false;
+            modalBtn.style.opacity = '1';
+            modalBtn.style.cursor = 'pointer';
+        }
     }
+
+    // 홈 화면 상단 고정 버튼 — 연결 전에만 표시
+    const homeBtn = document.getElementById('google-home-link-btn');
+    if (homeBtn) homeBtn.style.display = linked ? 'none' : 'block';
 }
 
 /* =========================================
