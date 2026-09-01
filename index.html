@@ -2507,6 +2507,16 @@
                     // 이미 로그인 되어 있음 (파이어베이스가 진짜 신분증을 줌)
                     myServerUid = user.uid;
 
+                    // UID 불일치 감지: 로컬 데이터가 다른 UID 소유면 서버 우선 로드
+                    // (Google 로그인으로 계정 전환 시 빈 로컬이 서버를 덮어쓰는 버그 방지)
+                    try {
+                        const _ls = localStorage.getItem('kingsRoadSave');
+                        const _ld = _ls ? JSON.parse(_ls) : null;
+                        if (_ld && _ld.playerId && _ld.playerId !== user.uid) {
+                            localStorage.setItem('kingsroad_forceRemoteSync', 'true');
+                        }
+                    } catch(e) {}
+
                     // 🌟 [추가된 마법의 코드] 구형 ID 이사 로직
                     if (typeof myPlayerId !== 'undefined' && myPlayerId.startsWith('user_')) {
                         console.log("🔄 구형 임시 ID 감지! 진짜 UID로 데이터 이사 시작...");

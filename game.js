@@ -16010,9 +16010,23 @@ function _updateGoogleLinkUI() {
         }
     }
 
+    // 기기 변경 모달: 연결됐을 때 "다른 기기 데이터 불러오기" 버튼 표시
+    const loadBtn = document.getElementById('google-load-from-server-btn');
+    if (loadBtn) loadBtn.style.display = linked ? 'block' : 'none';
+
     // 홈 화면 상단 고정 버튼 — 연결 전에만 표시
     const homeBtn = document.getElementById('google-home-link-btn');
     if (homeBtn) homeBtn.style.display = linked ? 'none' : 'block';
+}
+
+async function forceLoadFromServer() {
+    showGemToast(0, '서버에서 데이터를 불러오는 중...', false);
+    localStorage.setItem('kingsroad_forceRemoteSync', 'true');
+    await initFirestoreSync();
+    const modal = document.getElementById('data-modal');
+    if (modal) modal.style.display = 'none';
+    showGemToast(0, '✅ 완료! 잠시 후 새로고침됩니다.', false);
+    setTimeout(() => location.reload(), 1500);
 }
 
 /* =========================================
@@ -16040,6 +16054,9 @@ function openDataSettings() {
                     </p>
                     <button id="google-link-btn" onclick="linkGoogleAccount()" style="width:100%; background:#4285f4; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor:pointer; box-shadow:0 3px 0 #1a73e8; font-size:0.95rem;">
                         🔵 Google 계정 연결하기
+                    </button>
+                    <button id="google-load-from-server-btn" onclick="forceLoadFromServer()" style="display:none; width:100%; margin-top:8px; background:#1a73e8; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:0.95rem;">
+                        ☁️ 다른 기기 데이터 불러오기
                     </button>
                 </div>
 
