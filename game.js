@@ -7598,7 +7598,6 @@ function loadNextVerse() {
                 playerHearts--;
                 wrongCount++;
                 updateBattleUI();
-                showGemToast(0, t('alert_attack_fail', { count: errorCount }), true);
                 if (playerHearts <= 0) { showReviveModal(); }
                 deselect();
             }
