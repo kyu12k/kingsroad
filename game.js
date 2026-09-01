@@ -16570,39 +16570,45 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
 
 // [기능 4] 데이터 완전 초기화 로직 (새로 추가)
 function resetGameData() {
-    // 1차 경고
-    if (confirm("⚠️ 정말로 기기에 저장된 모든 데이터를 삭제하시겠습니까?\n\n(※ 한 번 삭제된 데이터는 파일을 미리 보관해두지 않은 이상 절대 복구할 수 없습니다.)")) {
-        // 2차 경고 (실수 방지)
-        if (confirm("마지막으로 확인합니다.\n정말로 모든 진행 상황을 지우고 태그 발급부터 다시 시작하시겠습니까?")) {
+    const el = document.createElement('div');
+    el.id = 'reset-confirm-modal';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10000;padding:20px;box-sizing:border-box;';
+    el.innerHTML = `
+        <div style="background:#1a0e2e;border:1px solid #e74c3c;border-radius:16px;padding:28px 24px;width:100%;max-width:340px;text-align:center;">
+            <div style="font-size:2rem;margin-bottom:12px;">⚠️</div>
+            <div style="font-size:17px;font-weight:700;color:#e0c0ff;margin-bottom:12px;">데이터 완전 초기화</div>
+            <div style="font-size:14px;color:#9070b0;margin-bottom:8px;line-height:1.7;">
+                이 기기의 모든 진행 기록이 삭제됩니다.<br>
+                <span style="color:#e05050;">파일로 미리 보관하지 않은 이상<br>복구할 수 없습니다.</span>
+            </div>
+            <div id="reset-confirm-step1" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+                <button onclick="document.getElementById('reset-confirm-step1').style.display='none';document.getElementById('reset-confirm-step2').style.display='flex';"
+                    style="background:#e74c3c;border:none;border-radius:10px;padding:12px;color:white;font-size:15px;font-weight:600;cursor:pointer;">계속하기</button>
+                <button onclick="document.getElementById('reset-confirm-modal').remove();"
+                    style="background:#2a1a4a;border:1px solid #5a3a8a;border-radius:10px;padding:12px;color:#9070b0;font-size:15px;cursor:pointer;">취소</button>
+            </div>
+            <div id="reset-confirm-step2" style="display:none;flex-direction:column;gap:10px;margin-top:20px;">
+                <div style="font-size:13px;color:#e05050;margin-bottom:4px;">정말로 삭제하시겠습니까?</div>
+                <button onclick="document.getElementById('reset-confirm-modal').remove();_doResetGameData();"
+                    style="background:#c0392b;border:none;border-radius:10px;padding:12px;color:white;font-size:15px;font-weight:700;cursor:pointer;">네, 모두 삭제합니다</button>
+                <button onclick="document.getElementById('reset-confirm-modal').remove();"
+                    style="background:#2a1a4a;border:1px solid #5a3a8a;border-radius:10px;padding:12px;color:#9070b0;font-size:15px;cursor:pointer;">취소</button>
+            </div>
+        </div>`;
+    document.body.appendChild(el);
+}
 
-            window.isResetting = true;
-            sessionStorage.setItem('manualReset', 'true'); // 수동 초기화 표시 (복구 팝업 비활성화)
-
-            // 1. 하드디스크(로컬 스토리지) 완벽 소각!
-            localStorage.clear();
-
-            // 2. 혹시 모를 로컬 변수 찌꺼기 비우기
-            if (typeof myPlayerId !== 'undefined') myPlayerId = "";
-            window.currentSessionToken = "";
-
-            // 🌟 3. [핵심 수술] 파이어베이스 익명 로그인 기록(투명 신분증) 소각!
-            if (typeof firebase !== 'undefined' && firebase.auth) {
-                // signOut()이 완전히 끝난 뒤에(then) 화면을 새로고침 하도록 기다립니다.
-                firebase.auth().signOut().then(() => {
-                    alert(t('alert_data_reset'));
-                    location.reload();
-                }).catch((error) => {
-                    console.error("로그아웃 에러:", error);
-                    // 혹시 에러가 나도 일단 강제 진행
-                    alert(t('alert_data_reset'));
-                    location.reload();
-                });
-            } else {
-                // 파이어베이스가 연결되지 않은 환경이라면 즉시 새로고침
-                alert(t('alert_data_reset'));
-                location.reload();
-            }
-        }
+function _doResetGameData() {
+    window.isResetting = true;
+    sessionStorage.setItem('manualReset', 'true');
+    localStorage.clear();
+    if (typeof myPlayerId !== 'undefined') myPlayerId = "";
+    window.currentSessionToken = "";
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+        firebase.auth().signOut()
+            .finally(() => location.reload());
+    } else {
+        location.reload();
     }
 }
 
