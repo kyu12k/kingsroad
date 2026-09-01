@@ -17306,7 +17306,7 @@ function _showNewUserModal() {
             <div style="display:flex;flex-direction:column;gap:10px;">
                 ${googleBtn}
                 <button onclick="document.getElementById('new-user-modal').remove();openProfileSettings();"
-                    style="background:#2a1a4a;border:1px solid #5a3a8a;border-radius:10px;padding:13px;color:#9070b0;font-size:15px;cursor:pointer;">새로 시작하기</button>
+                    style="background:#2a1a4a;border:1px solid #5a3a8a;border-radius:10px;padding:13px;color:#9070b0;font-size:15px;cursor:pointer;">계정 없이 시작하기</button>
             </div>
         </div>`;
     document.body.appendChild(overlay);
