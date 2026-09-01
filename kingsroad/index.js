@@ -897,9 +897,9 @@ exports.renameGuild = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     return { ok: true, newName: trimmedName };
 });
 
-// ── 지난 주 ID 계산 ──────────────────────────────────────────────────────────
-function getLastWeekId() {
-    const kst = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 9 * 3600000);
+// ── N주 전 주 ID 계산 (offsetWeeks=0: 이번 주, 1: 지난 주, ...) ──────────────
+function getWeekIdOffset(offsetWeeks) {
+    const kst = new Date(Date.now() - offsetWeeks * 7 * 24 * 60 * 60 * 1000 + 9 * 3600000);
     const d = new Date(Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate()));
     const day = (d.getUTCDay() + 6) % 7;
     d.setUTCDate(d.getUTCDate() - day + 3);
@@ -909,6 +909,7 @@ function getLastWeekId() {
     const weekNumber = 1 + Math.round((d - firstThursday) / (7 * 24 * 60 * 60 * 1000));
     return `${d.getUTCFullYear()}-W${String(weekNumber).padStart(2, '0')}`;
 }
+function getLastWeekId() { return getWeekIdOffset(1); }
 
 // ── 대시보드 분석 데이터 ────────────────────────────────────────────────────────
 exports.getAnalytics = onRequest({ cors: true }, async (req, res) => {
@@ -939,10 +940,24 @@ exports.getAnalytics = onRequest({ cors: true }, async (req, res) => {
         // ① 이탈: 지난주엔 했는데 이번 주에 안 한 사람
         const churned = allData.filter(d => d.weekId === lastWeekId && (d.score || 0) > 0).length;
 
-        // ② 성장률: 지난주 활성(retained + churned) 대비 이번주 활성 증감
+        // 지난주 활성 (이탈 + 재방문)
         const lastWeekActive = retained + churned;
-        const growthDiff = activeThisWeek - lastWeekActive;
-        const growthRate = lastWeekActive > 0 ? Math.round(growthDiff / lastWeekActive * 100) : null;
+
+        // 최근 8주 활성 추이 (weeklyHistory 기반, 오래된 순)
+        const trendWeekIds = Array.from({ length: 8 }, (_, i) => getWeekIdOffset(7 - i));
+        const weeklyTrend = {};
+        for (const wid of trendWeekIds) weeklyTrend[wid] = 0;
+        for (const d of allData) {
+            if ((d.totalScore || 0) === 0) continue;
+            const history = d.weeklyHistory || {};
+            for (const wid of trendWeekIds) {
+                if (wid === currentWeekId) {
+                    if (d.weekId === currentWeekId && (d.score || 0) > 0) weeklyTrend[wid]++;
+                } else {
+                    if ((history[wid] || 0) > 0) weeklyTrend[wid]++;
+                }
+            }
+        }
 
         // 최근 14일 일별 활성 (updatedAt 기준 버킷)
         const dailyBuckets = {};
@@ -1000,8 +1015,7 @@ exports.getAnalytics = onRequest({ cors: true }, async (req, res) => {
             retentionRate: activeThisWeek > 0 ? Math.round(retained / activeThisWeek * 100) : 0,
             churned,
             lastWeekActive,
-            growthDiff,
-            growthRate,
+            weeklyTrend,
             hourDistribution: hourBuckets,
             inGuild,
             guildRate,
