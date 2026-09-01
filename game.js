@@ -15998,7 +15998,9 @@ function _updateGoogleLinkUI() {
     const modalBtn = document.getElementById('google-link-btn');
     if (modalBtn) {
         if (linked) {
-            modalBtn.textContent = '✅ Google 연결됨';
+            const googleProvider = auth.currentUser.providerData.find(p => p.providerId === 'google.com');
+            const email = googleProvider ? googleProvider.email : '';
+            modalBtn.textContent = '✅ Google 연결됨' + (email ? ' · ' + email : '');
             modalBtn.disabled = true;
             modalBtn.style.opacity = '0.6';
             modalBtn.style.cursor = 'default';
