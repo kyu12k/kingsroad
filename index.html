@@ -2594,6 +2594,13 @@
             console.error("파이어베이스 초기화 오류 (키를 확인하세요):", e);
         }
 
+        // 탭이 다시 활성화될 때 다른 기기에서 새로운 저장이 있었는지 확인
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && typeof checkRemoteIsNewer === 'function') {
+                checkRemoteIsNewer();
+            }
+        });
+
 
         /* [시스템] 스마트 랭킹 로드 (호환성 수정 버전) */
         var leagueTotalCounts = {};

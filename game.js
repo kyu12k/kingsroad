@@ -8820,6 +8820,54 @@ async function loadFromFirestore() {
     }
 }
 
+// 탭이 다시 활성화될 때 다른 기기에서 새로운 저장이 있었는지 확인
+let _lastRemoteCheck = 0;
+async function checkRemoteIsNewer() {
+    if (typeof db === 'undefined' || !db) return;
+    if (typeof myPlayerId === 'undefined' || !myPlayerId) return;
+    // 1분 쿨다운 — 탭 전환이 빈번해도 Firestore를 과호출하지 않음
+    const now = Date.now();
+    if (now - _lastRemoteCheck < 60000) return;
+    _lastRemoteCheck = now;
+
+    try {
+        const doc = await db.collection('saves').doc(myPlayerId).get();
+        if (!doc.exists) return;
+        const remoteUpdatedAt = doc.data().updatedAt || 0;
+        const localData = JSON.parse(localStorage.getItem('kingsRoadSave') || 'null');
+        const localUpdatedAt = (localData && localData.updatedAt) ? localData.updatedAt : 0;
+        // 5초 마진: serverTimestamp는 로컬보다 약간 크므로 오차 흡수
+        if (remoteUpdatedAt > localUpdatedAt + 5000) {
+            _showRemoteNewerBanner();
+        }
+    } catch (e) { /* 조용히 실패 */ }
+}
+
+function _showRemoteNewerBanner() {
+    if (document.getElementById('remote-newer-banner')) return;
+    const el = document.createElement('div');
+    el.id = 'remote-newer-banner';
+    el.style.cssText = [
+        'position:fixed', 'bottom:72px', 'left:50%', 'transform:translateX(-50%)',
+        'background:#1a3a5c', 'color:#7ab4f8', 'border:1.5px solid #4285f4',
+        'border-radius:12px', 'padding:10px 16px', 'z-index:99999',
+        'display:flex', 'align-items:center', 'gap:10px',
+        'font-size:0.85rem', 'font-weight:bold', 'box-shadow:0 4px 16px rgba(0,0,0,0.5)',
+        'white-space:nowrap'
+    ].join(';');
+    el.innerHTML = `
+        <span>📱 다른 기기에서 저장된 기록이 있어요</span>
+        <button onclick="location.reload()"
+            style="background:#4285f4;color:#fff;border:none;border-radius:8px;
+                   padding:5px 12px;cursor:pointer;font-size:0.82rem;font-weight:bold;">
+            새로고침
+        </button>
+        <button onclick="this.parentElement.remove()"
+            style="background:transparent;color:#7ab4f8;border:none;
+                   cursor:pointer;font-size:1rem;padding:0 2px;">✕</button>`;
+    document.body.appendChild(el);
+}
+
 
 /* [수정됨] 통합 자원 UI 업데이트 (지파 색상 반영) */
 function updateGemDisplay() {
