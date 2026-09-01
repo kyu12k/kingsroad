@@ -19237,6 +19237,7 @@ function createEmptyHardshipState() {
         currentVerseTranscript: '',
         showInfo: false,
         ultimateMemoryMode: false,
+        isRandomOrder: false,
         trainingMode: false,
         verseChoices: [],
         pausedMs: 0,
@@ -19677,6 +19678,22 @@ function openHardshipOrderModal(mode) {
         const btn = document.getElementById(id);
         if (btn) btn.classList.remove('selected');
     });
+
+    // 모드별 서브타이틀
+    const subtitle = document.querySelector('#hardship-order-modal [data-i18n="hardship_order_subtitle"]');
+    if (subtitle) {
+        subtitle.textContent = selectedHardshipConfigMode === 'endurance'
+            ? '모드 D · 암송의 고난'
+            : '모드 C · 망각의 고난';
+    }
+    // 암송은 궁극의 암기 토글 불필요
+    const ultimateWrap = document.getElementById('hardship-ultimate-toggle-wrap');
+    if (ultimateWrap) ultimateWrap.style.display = selectedHardshipConfigMode === 'endurance' ? 'none' : '';
+
+    // 무작위 버튼에 승점 보너스 표시
+    const randomDesc = document.querySelector('#hardship-order-btn-random .mode-desc');
+    if (randomDesc) randomDesc.textContent = '구절을 무작위로 섞어 출제합니다 · 승점 ×2 보너스';
+
     const modal = document.getElementById('hardship-order-modal');
     if (modal) modal.style.display = 'flex';
 }
@@ -19740,7 +19757,7 @@ function confirmHardshipOrder() {
 function startHardshipFromModal(mode) {
     _hideHardshipModeModal();
 
-    if (mode === 'memory') {
+    if (mode === 'memory' || mode === 'endurance') {
         // 순서 선택 모달 삽입 (forced chapter 있으면 보존)
         if (window.hardshipForcedChapter != null) {
             window.hardshipPendingForcedChapter = window.hardshipForcedChapter;
@@ -19796,13 +19813,14 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
     hardshipState.active = true;
     hardshipState.mode = mode;
     hardshipState.ultimateMemoryMode = (mode === 'memory') ? selectedHardshipUltimate : false;
+    hardshipState.isRandomOrder = (selectedHardshipOrderType === 'random');
     hardshipState.applyToFree = (window.hardshipOrigin !== 'map');
     hardshipState.rewardBlocked = false;
     if (forcedChapter != null) hardshipState.forcedChapter = forcedChapter;
     const baseIds = Array.isArray(selectedVerseIds) && selectedVerseIds.length > 0
         ? selectedVerseIds
         : HARDSHIP_VERSES.map(verse => verse.id);
-    hardshipState.queue = (mode === 'memory' && selectedHardshipOrderType === 'sequential')
+    hardshipState.queue = ((mode === 'memory' || mode === 'endurance') && selectedHardshipOrderType === 'sequential')
         ? baseIds.slice()
         : shuffleHardshipQueue(baseIds);
 
@@ -20335,8 +20353,9 @@ function confirmHardshipEnduranceVerse() {
 
     let earned = 0;
     if (!hardshipState.rewardBlocked) {
-        if (score >= 80) earned = playerHearts;
-        else if (score >= 50) earned = Math.round(playerHearts * 0.5);
+        const orderMult = hardshipState.isRandomOrder ? 2 : 1;
+        if (score >= 80) earned = playerHearts * 3 * orderMult;
+        else if (score >= 50) earned = Math.round(playerHearts * 1.5 * orderMult);
         if (earned > 0) awardHardshipScore(earned);
     }
 
@@ -21177,7 +21196,8 @@ function submitHardshipMemoryGuess() {
     }
 
     if (isCorrect) {
-        const basePoints = hardshipState.ultimateMemoryMode ? playerHearts * 5 : playerHearts * 4;
+        const orderMult = hardshipState.isRandomOrder ? 2 : 1;
+        const basePoints = (hardshipState.ultimateMemoryMode ? playerHearts * 5 : playerHearts * 4) * orderMult;
         const earnedPoints = hardshipState.rewardBlocked ? 0 : basePoints;
         if (earnedPoints > 0) awardHardshipScore(earnedPoints);
         hardshipState.studiedCount += 1;
@@ -21217,7 +21237,8 @@ function submitHardshipMemoryGuess() {
 
     if (hardshipState.wrongSlots.length > 0 && hardshipState.wrongSlots.length <= allowedTypos) {
         const typoCount = hardshipState.wrongSlots.length;
-        const basePoints = hardshipState.ultimateMemoryMode ? playerHearts * 5 : playerHearts * 4;
+        const orderMult = hardshipState.isRandomOrder ? 2 : 1;
+        const basePoints = (hardshipState.ultimateMemoryMode ? playerHearts * 5 : playerHearts * 4) * orderMult;
         const earnedPoints = hardshipState.rewardBlocked ? 0 : basePoints;
         // 오타 정보 수집 (슬롯 초기화 전에)
         const typoPairs = hardshipState.wrongSlots.map(idx => ({
