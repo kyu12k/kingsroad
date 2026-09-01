@@ -5295,6 +5295,17 @@ function onClickFreeJourney() {
 
 // 기존 여정 오버레이 + amen 버튼 흐름 진행
 function proceedToJourneyOverlay() {
+    if (!localStorage.getItem('kingsRoad_introSeen')) {
+        showIntroSlides(() => {
+            localStorage.setItem('kingsRoad_introSeen', '1');
+            _showJourneyOverlay();
+        });
+        return;
+    }
+    _showJourneyOverlay();
+}
+
+function _showJourneyOverlay() {
     const overlay = document.getElementById('journey-overlay');
     const amenBtn = document.getElementById('amen-btn');
     if (overlay) overlay.style.display = 'flex';
@@ -5308,6 +5319,101 @@ function proceedToJourneyOverlay() {
         }, 1000);
         amenBtn.onclick = amenAndStartGame;
     }
+}
+
+function showIntroSlides(onDone) {
+    const SLIDES = [
+        {
+            icon: '📖',
+            title: '말씀을 배워요',
+            body: '계시록 말씀을 구절 단위로 배웁니다.\n초성 힌트로 시작해, 점점 혼자서\n완성해 나가는 방식이에요.',
+        },
+        {
+            icon: '🧠',
+            title: '잊기 전에 복습해요',
+            body: '처음엔 10분 후, 그 다음은 1시간,\n6시간, 하루, 3일…\n간격을 늘리며 장기 기억으로 만들어요.',
+        },
+        {
+            icon: '⚔️',
+            title: '구역과 함께 용 사냥',
+            body: '스테이지를 클리어할 때마다\n구역의 용 사냥에 기여합니다.\n함께 말씀을 완성해 나가요.',
+        },
+    ];
+
+    // CSS (한 번만 주입)
+    if (!document.getElementById('intro-slides-style')) {
+        const s = document.createElement('style');
+        s.id = 'intro-slides-style';
+        s.textContent = `
+#intro-slides-overlay {
+    position:fixed;z-index:10000;inset:0;
+    background:rgba(15,22,35,0.98);
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    padding:32px 24px 40px;box-sizing:border-box;
+}
+#intro-slides-overlay .is-icon {
+    font-size:3.2rem;margin-bottom:18px;
+    animation:is-pop .32s cubic-bezier(.34,1.56,.64,1) both;
+}
+#intro-slides-overlay .is-title {
+    font-size:1.3rem;font-weight:700;
+    color:#f1c40f;margin-bottom:14px;text-align:center;
+    animation:is-pop .32s cubic-bezier(.34,1.56,.64,1) .05s both;
+}
+#intro-slides-overlay .is-body {
+    font-size:0.93rem;color:#dce8f5;line-height:1.85;
+    text-align:center;white-space:pre-line;max-width:280px;
+    animation:is-pop .32s cubic-bezier(.34,1.56,.64,1) .1s both;
+}
+#intro-slides-overlay .is-dots {
+    display:flex;gap:8px;margin:28px 0 0;
+}
+#intro-slides-overlay .is-dot {
+    width:8px;height:8px;border-radius:50%;
+    background:rgba(255,255,255,0.25);transition:background .25s;
+}
+#intro-slides-overlay .is-dot.active { background:#f1c40f; }
+#intro-slides-overlay .is-btn {
+    margin-top:20px;background:#f1c40f;color:#2c3e50;
+    font-size:1rem;font-weight:700;
+    padding:12px 44px;border-radius:30px;border:none;cursor:pointer;
+    box-shadow:0 4px 18px rgba(241,196,15,.3);
+}
+@keyframes is-pop {
+    from{opacity:0;transform:translateY(14px);}
+    to{opacity:1;transform:none;}
+}`;
+        document.head.appendChild(s);
+    }
+
+    let current = 0;
+
+    const el = document.createElement('div');
+    el.id = 'intro-slides-overlay';
+    document.body.appendChild(el);
+
+    function render(idx) {
+        const slide = SLIDES[idx];
+        const isLast = idx === SLIDES.length - 1;
+        el.innerHTML = `
+            <div class="is-icon">${slide.icon}</div>
+            <div class="is-title">${slide.title}</div>
+            <div class="is-body">${slide.body}</div>
+            <div class="is-dots">${SLIDES.map((_, i) => `<div class="is-dot${i === idx ? ' active' : ''}"></div>`).join('')}</div>
+            <button class="is-btn">${isLast ? '시작하기' : '다음'}</button>`;
+        el.querySelector('.is-btn').onclick = () => {
+            if (isLast) {
+                el.remove();
+                onDone();
+            } else {
+                current++;
+                render(current);
+            }
+        };
+    }
+
+    render(0);
 }
 
 // ============================================================
