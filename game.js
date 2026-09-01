@@ -17297,7 +17297,7 @@ function _showNewUserModal() {
     // (signInWithGoogleAndLoad가 forceRemoteSync를 세팅해 로컬 우선 데이터를 덮어쓸 위험 방지)
     const googleBtn = isGoogleLinked() ? '' : `
         <button onclick="document.getElementById('new-user-modal').remove();signInWithGoogleAndLoad();"
-            style="background:#4285f4;border:none;border-radius:10px;padding:13px;color:white;font-size:15px;font-weight:600;cursor:pointer;">🔵 Google로 이어하기</button>`;
+            style="background:#4285f4;border:none;border-radius:10px;padding:13px;color:white;font-size:15px;font-weight:600;cursor:pointer;">🔵 Google로 시작하기</button>`;
     overlay.innerHTML = `
         <div style="background:#1a0e2e;border:1px solid #5a3a8a;border-radius:16px;padding:28px 24px;width:100%;max-width:340px;text-align:center;">
             <div style="font-size:2rem;margin-bottom:12px;">👋</div>
