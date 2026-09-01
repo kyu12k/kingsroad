@@ -15973,14 +15973,21 @@ async function _doSignInWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     try {
         localStorage.setItem('kingsroad_forceRemoteSync', 'true');
+        // signInWithPopup 도중 onAuthStateChanged(null)이 발생해 signInAnonymously가
+        // forceRemoteSync 플래그를 소비하는 경쟁 조건 방지
+        window._googleSignInInProgress = true;
         await auth.signInWithPopup(provider);
+        window._googleSignInInProgress = false;
         // onAuthStateChanged → initFirestoreSync이 forceRemoteSync를 보고 서버 데이터 적용
     } catch (e) {
+        window._googleSignInInProgress = false;
         if (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user') {
             // iOS Safari 팝업 차단 → 리다이렉트로 재시도 (forceRemoteSync는 이미 세팅됨)
+            window._googleSignInInProgress = true; // redirect 완료까지 플래그 유지
             try {
                 await auth.signInWithRedirect(provider);
             } catch (e2) {
+                window._googleSignInInProgress = false;
                 localStorage.removeItem('kingsroad_forceRemoteSync');
                 showGemToast(0, 'Google 로그인 실패: ' + (e2.message || e2.code), true);
             }

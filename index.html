@@ -2552,6 +2552,12 @@
                             .catch(e => console.warn("⚠️ 구 랭킹 항목 삭제 실패:", e));
                     }
                 } else {
+                    // Google signInWithPopup 진행 중엔 onAuthStateChanged(null)이 잠깐 발생하므로
+                    // signInAnonymously를 건너뜀 — Google 로그인 완료 후 다시 user 상태로 돌아옴
+                    if (window._googleSignInInProgress) {
+                        console.log('[Auth] Google 로그인 진행 중 — signInAnonymously 스킵');
+                        return;
+                    }
                     // 로그인 안 되어 있으면 새로 로그인
                     auth.signInAnonymously()
                         .then((credential) => {
