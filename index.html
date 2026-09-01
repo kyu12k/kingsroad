@@ -2477,6 +2477,26 @@
             db.enablePersistence({ synchronizeTabs: false }).catch(() => {});
             auth = firebase.auth();
 
+            // Google 리다이렉트 결과 처리 (iOS signInWithRedirect / linkWithRedirect 완료)
+            auth.getRedirectResult().then(result => {
+                if (result && result.user) {
+                    if (result.operationType === 'link') {
+                        // linkWithRedirect 완료 — Google 연결 성공
+                        setTimeout(() => {
+                            if (typeof showGemToast === 'function') showGemToast(0, '✅ Google 계정 연결 완료!', false);
+                            if (typeof _updateGoogleLinkUI === 'function') _updateGoogleLinkUI();
+                        }, 1000);
+                    }
+                    // signInWithRedirect 완료: forceRemoteSync가 localStorage에 남아 있으므로
+                    // onAuthStateChanged → initFirestoreSync가 서버 데이터를 자동 적용
+                }
+            }).catch(e => {
+                if (e.code && e.code !== 'auth/no-current-user') {
+                    localStorage.removeItem('kingsroad_forceRemoteSync');
+                    console.warn('[Google Redirect 오류]', e.code, e.message);
+                }
+            });
+
             // 3. 익명 로그인 (게임 켜자마자 자동 실행)
             auth.onAuthStateChanged((user) => {
                 if (user) {

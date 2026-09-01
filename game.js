@@ -8424,6 +8424,10 @@ async function initFirestoreSync() {
     const localUpdatedAt  = (localData  && localData.updatedAt)  ? localData.updatedAt  : 0;
     const remoteUpdatedAt = (remoteData && remoteData.updatedAt) ? remoteData.updatedAt : 0;
 
+    // Google 로그인 후 새 기기: 빈 로컬이 서버 데이터를 덮어쓰지 않도록 강제 원격 우선
+    const forceRemote = localStorage.getItem('kingsroad_forceRemoteSync') === 'true';
+    if (forceRemote) localStorage.removeItem('kingsroad_forceRemoteSync');
+
     // lastLoginDate 비교: 로컬 날짜가 더 최신이면 (오늘 클리어한 미션 정보 보호)
     // serverTimestamp 특성상 Firestore updatedAt이 항상 로컬보다 약간 크므로
     // lastLoginDate 기준 보조 비교가 필요.
@@ -8434,7 +8438,7 @@ async function initFirestoreSync() {
     const remoteLastLoginDate = remoteData && remoteData.missions && remoteData.missions.lastLoginDate;
     const localDateIsNewer = localLastLoginDate && remoteLastLoginDate && localLastLoginDate > remoteLastLoginDate;
 
-    if (localUpdatedAt > remoteUpdatedAt || localDateIsNewer) {
+    if (!forceRemote && (localUpdatedAt > remoteUpdatedAt || localDateIsNewer)) {
         // 로컬이 더 최신 (게임 시작 직후 행동 등) → Firestore로 업로드
         if (localDateIsNewer) {
             console.log(`[Firestore] 로컬 lastLoginDate(${localLastLoginDate}) > 서버(${remoteLastLoginDate}) → 로컬 우선 업로드`);
@@ -15830,6 +15834,85 @@ setTimeout(async () => { // 8. 길드 ID 로드 (레이드 대미지 누적용)
 }, 3000);
 
 /* =========================================
+   [Google 계정 연동]
+   ========================================= */
+function isGoogleLinked() {
+    const user = typeof auth !== 'undefined' && auth ? auth.currentUser : null;
+    return user ? user.providerData.some(p => p.providerId === 'google.com') : false;
+}
+
+async function linkGoogleAccount() {
+    if (typeof auth === 'undefined' || !auth || !auth.currentUser) {
+        showGemToast(0, '서버 연결이 필요합니다.', true);
+        return;
+    }
+    if (isGoogleLinked()) {
+        showGemToast(0, '이미 Google 계정이 연결되어 있습니다.', false);
+        return;
+    }
+    const provider = new firebase.auth.GoogleAuthProvider();
+    try {
+        await auth.currentUser.linkWithPopup(provider);
+        showGemToast(0, '✅ Google 계정 연결 완료! 다른 기기에서 Google로 이어할 수 있습니다.', false);
+        _updateGoogleLinkUI();
+    } catch (e) {
+        if (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user') {
+            try {
+                await auth.currentUser.linkWithRedirect(provider);
+            } catch (e2) {
+                showGemToast(0, 'Google 연결 실패: ' + (e2.message || e2.code), true);
+            }
+        } else if (e.code === 'auth/credential-already-in-use') {
+            showGemToast(0, '이 Google 계정은 이미 다른 기기에 연결되어 있습니다.', true);
+        } else {
+            showGemToast(0, 'Google 연결 실패: ' + (e.message || e.code), true);
+        }
+    }
+}
+
+async function signInWithGoogleAndLoad() {
+    if (typeof auth === 'undefined' || !auth) {
+        showGemToast(0, '서버 연결이 필요합니다.', true);
+        return;
+    }
+    const provider = new firebase.auth.GoogleAuthProvider();
+    try {
+        localStorage.setItem('kingsroad_forceRemoteSync', 'true');
+        await auth.signInWithPopup(provider);
+        // onAuthStateChanged → initFirestoreSync이 forceRemoteSync를 보고 서버 데이터 적용
+    } catch (e) {
+        if (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user') {
+            // iOS Safari 팝업 차단 → 리다이렉트로 재시도 (forceRemoteSync는 이미 세팅됨)
+            try {
+                await auth.signInWithRedirect(provider);
+            } catch (e2) {
+                localStorage.removeItem('kingsroad_forceRemoteSync');
+                showGemToast(0, 'Google 로그인 실패: ' + (e2.message || e2.code), true);
+            }
+        } else {
+            localStorage.removeItem('kingsroad_forceRemoteSync');
+            showGemToast(0, 'Google 로그인 실패: ' + (e.message || e.code), true);
+        }
+    }
+}
+
+function _updateGoogleLinkUI() {
+    const btn = document.getElementById('google-link-btn');
+    if (!btn) return;
+    if (isGoogleLinked()) {
+        btn.textContent = '✅ Google 연결됨';
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+        btn.style.cursor = 'default';
+    } else {
+        btn.textContent = '🔵 Google 계정 연결하기';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+    }
+}
+
+/* =========================================
    [시스템: 텍스트 파일 백업 및 불러오기 (.txt)]
    ========================================= */
 function openDataSettings() {
@@ -15845,6 +15928,16 @@ function openDataSettings() {
             <div class="result-card" style="max-width:350px; text-align:left; background:white; color:#2c3e50; max-height:90vh; overflow-y:auto;">
                 <div class="result-header" style="font-size:1.4rem; text-align:center; color:#2c3e50; margin-bottom:5px;">
                     ${t('data_modal_title')}
+                </div>
+
+                <div style="margin-bottom:20px; padding:15px; background:#e8f0fe; border-radius:10px; border:1px solid #4285f4;">
+                    <h3 style="color:#1a73e8; margin:0 0 5px 0; font-size:1.1rem;">🔵 Google 계정 연동</h3>
+                    <p style="font-size:0.9rem; color:#7f8c8d; margin-bottom:10px;">
+                        Google 계정을 연결하면 다른 기기에서도 같은 기록으로 이어할 수 있습니다.
+                    </p>
+                    <button id="google-link-btn" onclick="linkGoogleAccount()" style="width:100%; background:#4285f4; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor:pointer; box-shadow:0 3px 0 #1a73e8; font-size:0.95rem;">
+                        🔵 Google 계정 연결하기
+                    </button>
                 </div>
 
                 <div style="margin-bottom:20px; padding:15px; background:#fef9e7; border-radius:10px; border:1px solid #f1c40f;">
@@ -15891,6 +15984,7 @@ function openDataSettings() {
         document.body.appendChild(modal);
     }
     modal.style.display = 'flex';
+    _updateGoogleLinkUI();
 }
 
 // ── 알림 설정 ──────────────────────────────────────────────────────────────
@@ -16951,8 +17045,10 @@ function _showNewUserModal() {
             <div style="font-size:18px;font-weight:700;color:#e0c0ff;margin-bottom:10px;">처음 오셨나요?</div>
             <div style="font-size:14px;color:#9070b0;margin-bottom:24px;line-height:1.6;">이전에 플레이한 기록이 있다면<br>태그로 복구할 수 있습니다.</div>
             <div style="display:flex;flex-direction:column;gap:10px;">
+                <button onclick="document.getElementById('new-user-modal').remove();signInWithGoogleAndLoad();"
+                    style="background:#4285f4;border:none;border-radius:10px;padding:13px;color:white;font-size:15px;font-weight:600;cursor:pointer;">🔵 Google로 이어하기</button>
                 <button onclick="document.getElementById('new-user-modal').remove();openTagRecovery();"
-                    style="background:#5a3a8a;border:none;border-radius:10px;padding:13px;color:#e0c0ff;font-size:15px;font-weight:600;cursor:pointer;">이전 기록 복구하기</button>
+                    style="background:#5a3a8a;border:none;border-radius:10px;padding:13px;color:#e0c0ff;font-size:15px;font-weight:600;cursor:pointer;">태그로 복구하기</button>
                 <button onclick="document.getElementById('new-user-modal').remove();openProfileSettings();"
                     style="background:#2a1a4a;border:1px solid #5a3a8a;border-radius:10px;padding:13px;color:#9070b0;font-size:15px;cursor:pointer;">새로 시작하기</button>
             </div>
