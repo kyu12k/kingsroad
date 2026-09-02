@@ -16311,8 +16311,10 @@ function openDataSettings() {
 
         // 기존 UI에 '데이터 완전 초기화' 구역(빨간색 박스)을 추가했습니다.
         modal.innerHTML = `
-            <div class="result-card" style="max-width:350px; text-align:left; background:white; color:#2c3e50; max-height:90vh; overflow-y:auto;">
-                <div class="result-header" style="font-size:1.4rem; text-align:center; color:#2c3e50; margin-bottom:5px;">
+            <div class="result-card" style="max-width:350px; text-align:left; background:white; color:#2c3e50; max-height:90vh; overflow:hidden; display:flex; flex-direction:column; padding:0; position:relative;">
+                <button onclick="document.getElementById('data-modal').style.display='none'" style="position:absolute; top:12px; right:14px; background:none; border:none; color:#aaa; font-size:1.5rem; cursor:pointer; line-height:1; padding:0; z-index:2;">✕</button>
+                <div style="overflow-y:auto; flex:1; padding:30px 20px;">
+                <div class="result-header" style="font-size:1.4rem; text-align:center; color:#2c3e50; margin-bottom:5px; padding-right:20px;">
                     ${t('data_modal_title')}
                 </div>
 
@@ -16365,9 +16367,7 @@ function openDataSettings() {
                     </button>
                 </div>
 
-                <button onclick="document.getElementById('data-modal').style.display='none'" style="width:100%; background:#95a5a6; color:white; border:none; padding:12px; border-radius:30px; cursor:pointer; font-weight:bold;">
-                    ${t('btn_close')}
-                </button>
+                </div>
             </div>
         `;
         document.body.appendChild(modal);
