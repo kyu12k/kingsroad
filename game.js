@@ -5437,6 +5437,9 @@ function startGame() {
 }
 
 function amenAndStartGame() {
+    // 오늘 아멘 완료 기록 (하루 1회 자동 스킵용, 오전 6시 경계 기준)
+    localStorage.setItem('kingsRoad_lastAmenDate', getMemoryQuizDate());
+
     // ★ 여정 진입 시 1회 복습 타이밍 팝업 체크 예약 (goMap()에서 소비됨)
     window._pendingReviewPopupCheck = true;
 
@@ -16007,6 +16010,14 @@ updateCastleView(); // 3. 성전 모습 업데이트
 initBgm();          // 4. BGM 초기화 (홈 화면 배경음악)
 updateKingsStepBtn(); // 5. 왕의 길 단계 버튼 상태 초기화
 _checkFirstDailyWeeklyStudy(); // 6. 오늘 첫 접속 시 주간 학습 시간 표시
+
+// 하루 1회 아멘 자동 스킵: 오늘 이미 아멘 했으면 홈 화면 건너뛰고 바로 진입
+setTimeout(() => {
+    if (localStorage.getItem('kingsRoad_introSeen') &&
+        localStorage.getItem('kingsRoad_lastAmenDate') === getMemoryQuizDate()) {
+        amenAndStartGame();
+    }
+}, 300);
 setTimeout(() => { if (typeof checkFriendEvents === 'function') checkFriendEvents(); }, 2000); // 7. 친구 이벤트 처리
 setTimeout(async () => { // 8. 길드 ID 로드 (레이드 대미지 누적용)
     if (db && myTag && myTag !== '0000') {
