@@ -8888,6 +8888,8 @@ async function syncToFirestore() {
         window._syncDirty = false;
         // 성공 시 예약된 재시도 취소
         if (_syncRetryTimer) { clearTimeout(_syncRetryTimer); _syncRetryTimer = null; }
+        // 업로드 직후 원격 체크 쿨다운 리셋 — 내가 올린 데이터를 "다른 기기 기록"으로 오인 방지
+        _lastRemoteCheck = Date.now();
     } catch (e) {
         const msg = (e && e.message) ? e.message : '';
         // FCM/push 관련 에러는 무시
