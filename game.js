@@ -8888,8 +8888,16 @@ async function syncToFirestore() {
         window._syncDirty = false;
         // 성공 시 예약된 재시도 취소
         if (_syncRetryTimer) { clearTimeout(_syncRetryTimer); _syncRetryTimer = null; }
-        // 업로드 직후 원격 체크 쿨다운 리셋 — 내가 올린 데이터를 "다른 기기 기록"으로 오인 방지
+        // 업로드 완료 시각으로 로컬 updatedAt 갱신 — 서버 타임스탬프와 동기화해 "다른 기기 기록" 오탐 방지
         _lastRemoteCheck = Date.now();
+        try {
+            const _raw = localStorage.getItem('kingsRoadSave');
+            if (_raw) {
+                const _d = JSON.parse(_raw);
+                _d.updatedAt = Date.now();
+                localStorage.setItem('kingsRoadSave', JSON.stringify(_d));
+            }
+        } catch(_e) {}
     } catch (e) {
         const msg = (e && e.message) ? e.message : '';
         // FCM/push 관련 에러는 무시
