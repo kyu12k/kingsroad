@@ -370,8 +370,10 @@ const LANG = {
         mission_advanced_endurance_desc: '오늘 서로 다른 장을 클리어할수록 보상이 쌓입니다. (2번째 장부터 보상)',
         mission_advanced_verse_title: '구절의 고난 누적',
         mission_advanced_verse_desc: '오늘 서로 다른 장을 클리어할수록 보상이 쌓입니다. (2번째 장부터 보상)',
-        mission_advanced_checkpoint_boss_title: '중간점검/보스전 누적',
-        mission_advanced_checkpoint_boss_desc: '오늘 서로 다른 중간점검 또는 보스를 클리어할수록 보상이 쌓입니다. (2번째부터 보상)',
+        mission_advanced_checkpoint_boss_title: '보스전 누적',
+        mission_advanced_checkpoint_boss_desc: '오늘 서로 다른 보스를 클리어할수록 보상이 쌓입니다. (2번째부터 보상)',
+        mission_advanced_mid_boss_title: '중간점검 누적',
+        mission_advanced_mid_boss_desc: '오늘 서로 다른 중간점검을 클리어할수록 보상이 쌓입니다. (2번째부터 보상)',
         mission_btn_claim_all: '모두 받기',
 
         // 고난 길 모달
@@ -1108,8 +1110,10 @@ const LANG = {
         mission_advanced_endurance_desc: 'Earn rewards for each additional chapter cleared today. (From 2nd chapter)',
         mission_advanced_verse_title: 'Trial of Verse (Cumulative)',
         mission_advanced_verse_desc: 'Earn rewards for each additional chapter cleared today. (From 2nd chapter)',
-        mission_advanced_checkpoint_boss_title: 'Checkpoint/Boss (Cumulative)',
-        mission_advanced_checkpoint_boss_desc: 'Earn rewards for each additional checkpoint or boss cleared today. (From 2nd)',
+        mission_advanced_checkpoint_boss_title: 'Boss Battles (Cumulative)',
+        mission_advanced_checkpoint_boss_desc: 'Earn rewards for each additional boss cleared today. (From 2nd)',
+        mission_advanced_mid_boss_title: 'Checkpoints (Cumulative)',
+        mission_advanced_mid_boss_desc: 'Earn rewards for each additional checkpoint cleared today. (From 2nd)',
         mission_daily_hardship_endurance_title: "Complete Trial of Recitation ×1",
         mission_daily_hardship_endurance_desc: "Complete any chapter's Trial of Recitation.",
         mission_daily_hardship_verse_title: "Complete Trial of Verse ×1",
@@ -1999,17 +2003,29 @@ loadGameData = function () {
         if (!Array.isArray(missionData.advanced.hardshipEnduranceChapters)) missionData.advanced.hardshipEnduranceChapters = [];
         if (!Array.isArray(missionData.advanced.hardshipVerseChapters)) missionData.advanced.hardshipVerseChapters = [];
         if (!Array.isArray(missionData.advanced.checkpointBossStages)) missionData.advanced.checkpointBossStages = [];
-        if (!Array.isArray(missionData.advanced.claimed)) missionData.advanced.claimed = [0, 0, 0, 0, 0]; // [address, memory, endurance, verse, checkpointBoss]
+        if (!Array.isArray(missionData.advanced.midBossStages)) missionData.advanced.midBossStages = [];
+        // [마이그레이션] 용 사냥 미션이 중간점검까지 함께 세던 시절의 기록 분리
+        {
+            const _cb = missionData.advanced.checkpointBossStages;
+            const _mixed = _cb.filter(id => /-mid-/.test(String(id)));
+            if (_mixed.length > 0) {
+                missionData.advanced.checkpointBossStages = _cb.filter(id => !/-mid-/.test(String(id)));
+                const _mb = missionData.advanced.midBossStages;
+                _mixed.forEach(id => { if (!_mb.includes(id)) _mb.push(id); });
+            }
+        }
+        if (!Array.isArray(missionData.advanced.claimed)) missionData.advanced.claimed = [0, 0, 0, 0, 0, 0]; // [address, memory, endurance, verse, checkpointBoss, midBoss]
         if (missionData.advanced.claimed.length < 3) missionData.advanced.claimed.push(0);
         if (missionData.advanced.claimed.length < 4) missionData.advanced.claimed.push(0);
         if (missionData.advanced.claimed.length < 5) missionData.advanced.claimed.push(0);
+        if (missionData.advanced.claimed.length < 6) missionData.advanced.claimed.push(0);
         if (!missionData.advanced.lastResetDate) missionData.advanced.lastResetDate = '';
         // 날짜가 바뀐 경우 심화 미션 리셋 (로드 시점에서 체크, 오전 6시 기준)
         // getMemoryQuizDate()와 동일한 형식을 사용해야 checkMissions()와 일치함
         {
             const _today = (typeof getMemoryQuizDate === 'function') ? getMemoryQuizDate() : _get6AMDayStr();
             if (missionData.advanced.lastResetDate !== _today) {
-                missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], checkpointBossStages: [], claimed: [0, 0, 0, 0, 0], lastResetDate: _today };
+                missionData.advanced = createEmptyAdvancedMissionData(_today);
             }
         }
 
@@ -2826,6 +2842,21 @@ function updateWeeklyAttendance(today, currentWeek) {
 
 /* [시스템: 미션 진행도 업데이트 (핵심 기능)] */
 // type: 'new'(신규), 'review'(복습), 'dragon'(용)
+/* 심화 미션 데이터 기본값 — 여러 곳에서 초기화하므로 한 곳에서 생성한다
+   claimed 인덱스: [address, memory, endurance, verse, checkpointBoss, midBoss] */
+function createEmptyAdvancedMissionData(lastResetDate = '') {
+    return {
+        hardshipAddressChapters: [],
+        hardshipMemoryChapters: [],
+        hardshipEnduranceChapters: [],
+        hardshipVerseChapters: [],
+        checkpointBossStages: [],
+        midBossStages: [],
+        claimed: [0, 0, 0, 0, 0, 0],
+        lastResetDate
+    };
+}
+
 function updateMissionProgress(type, extraData) {
     if (isFocusedTrainingSession()) return;
     if (type === 'training') type = 'new';
@@ -2907,14 +2938,14 @@ function updateMissionProgress(type, extraData) {
     // 심화 일일 미션: 서로 다른 장 추적 (chapter = 장 번호)
     else if (type === 'advancedAddress') {
         const ch = arguments[1];
-        if (!missionData.advanced) missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], checkpointBossStages: [], claimed: [0, 0, 0, 0, 0], lastResetDate: '' };
+        if (!missionData.advanced) missionData.advanced = createEmptyAdvancedMissionData();
         const _adv = missionData.advanced;
         if (!Array.isArray(_adv.hardshipAddressChapters)) _adv.hardshipAddressChapters = [];
         if (ch != null && !_adv.hardshipAddressChapters.includes(ch) && _adv.hardshipAddressChapters.length < 22) _adv.hardshipAddressChapters.push(ch);
     }
     else if (type === 'advancedMemory') {
         const ch = arguments[1];
-        if (!missionData.advanced) missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], checkpointBossStages: [], claimed: [0, 0, 0, 0, 0], lastResetDate: '' };
+        if (!missionData.advanced) missionData.advanced = createEmptyAdvancedMissionData();
         const _adv = missionData.advanced;
         if (!Array.isArray(_adv.hardshipMemoryChapters)) _adv.hardshipMemoryChapters = [];
         if (ch != null && !_adv.hardshipMemoryChapters.includes(ch) && _adv.hardshipMemoryChapters.length < 22) _adv.hardshipMemoryChapters.push(ch);
@@ -2928,7 +2959,7 @@ function updateMissionProgress(type, extraData) {
     }
     else if (type === 'advancedEndurance') {
         const ch = arguments[1];
-        if (!missionData.advanced) missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], checkpointBossStages: [], claimed: [0, 0, 0, 0, 0], lastResetDate: '' };
+        if (!missionData.advanced) missionData.advanced = createEmptyAdvancedMissionData();
         const _adv = missionData.advanced;
         if (!Array.isArray(_adv.hardshipEnduranceChapters)) _adv.hardshipEnduranceChapters = [];
         if (ch != null && !_adv.hardshipEnduranceChapters.includes(ch) && _adv.hardshipEnduranceChapters.length < 22) _adv.hardshipEnduranceChapters.push(ch);
@@ -2940,7 +2971,7 @@ function updateMissionProgress(type, extraData) {
     }
     else if (type === 'advancedVerse') {
         const ch = arguments[1];
-        if (!missionData.advanced) missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], checkpointBossStages: [], claimed: [0, 0, 0, 0, 0], lastResetDate: '' };
+        if (!missionData.advanced) missionData.advanced = createEmptyAdvancedMissionData();
         const _adv = missionData.advanced;
         if (!Array.isArray(_adv.hardshipVerseChapters)) _adv.hardshipVerseChapters = [];
         if (ch != null && !_adv.hardshipVerseChapters.includes(ch) && _adv.hardshipVerseChapters.length < 22) _adv.hardshipVerseChapters.push(ch);
@@ -2948,13 +2979,21 @@ function updateMissionProgress(type, extraData) {
         if (!Array.isArray(_adv.hardshipAddressChapters)) _adv.hardshipAddressChapters = [];
         if (ch != null && !_adv.hardshipAddressChapters.includes(ch) && _adv.hardshipAddressChapters.length < 22) _adv.hardshipAddressChapters.push(ch);
     }
+    // 심화 미션: 용 사냥 — 보스전 전용 (보스는 장당 1개라 상한 22 = 전체 장 수)
     else if (type === 'advancedCheckpointBoss') {
         const stageId = arguments[1];
-        if (!missionData.advanced) missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], checkpointBossStages: [], claimed: [0, 0, 0, 0, 0], lastResetDate: '' };
+        if (!missionData.advanced) missionData.advanced = createEmptyAdvancedMissionData();
         const _adv = missionData.advanced;
         if (!Array.isArray(_adv.checkpointBossStages)) _adv.checkpointBossStages = [];
-        // 상한은 전체 체크포인트 수 — 실제로 존재하는 개수보다 많이 쌓이는 것만 방지
-        if (stageId != null && !_adv.checkpointBossStages.includes(stageId) && _adv.checkpointBossStages.length < getTotalCheckpointStageCount()) _adv.checkpointBossStages.push(stageId);
+        if (stageId != null && !_adv.checkpointBossStages.includes(stageId) && _adv.checkpointBossStages.length < 22) _adv.checkpointBossStages.push(stageId);
+    }
+    // 심화 미션: 중간점검 전용 — 상한은 실제 존재하는 중간점검 수
+    else if (type === 'advancedMidBoss') {
+        const stageId = arguments[1];
+        if (!missionData.advanced) missionData.advanced = createEmptyAdvancedMissionData();
+        const _adv = missionData.advanced;
+        if (!Array.isArray(_adv.midBossStages)) _adv.midBossStages = [];
+        if (stageId != null && !_adv.midBossStages.includes(stageId) && _adv.midBossStages.length < getTotalMidBossCount()) _adv.midBossStages.push(stageId);
     }
     // 4. 주간 미션: 중보/보스 처치 (용 사냥)
     else if (type === 'dragon') {
@@ -4767,14 +4806,14 @@ function buildMidBossRanges(totalVerses, targetSize = MIDBOSS_TARGET_VERSES) {
     return ranges;
 }
 
-/* 전체 체크포인트(중간점검 + 보스) 스테이지 수 — 심화 미션 상한으로 사용
+/* 전체 중간점검 수 — 중간점검 심화 미션의 상한으로 사용
    구간 분할이 바뀌어도 자동으로 따라가도록 gameData에서 직접 센다 */
-function getTotalCheckpointStageCount() {
+function getTotalMidBossCount() {
     let n = 0;
     gameData.forEach(ch => (ch.stages || []).forEach(s => {
-        if (s.type === 'mid-boss' || s.type === 'boss') n++;
+        if (s.type === 'mid-boss') n++;
     }));
-    // bibleData 로드 실패로 gameData가 비면 0이 되어 보상/상한이 무력화되므로 구버전 값(22)을 하한으로 둔다
+    // bibleData 로드 실패로 gameData가 비면 0이 되어 상한이 무력화되므로 하한을 둔다
     return Math.max(22, n);
 }
 
@@ -8686,7 +8725,7 @@ async function initFirestoreSync() {
                 localData[_key] = _lh;
             }
             // 2) 심화 미션 챕터: Firestore 챕터를 로컬에 union
-            const _advKeys = ['hardshipAddressChapters','hardshipMemoryChapters','hardshipEnduranceChapters','hardshipVerseChapters','checkpointBossStages'];
+            const _advKeys = ['hardshipAddressChapters','hardshipMemoryChapters','hardshipEnduranceChapters','hardshipVerseChapters','checkpointBossStages','midBossStages'];
             const _lAdv = (localData.missions && localData.missions.advanced) || {};
             const _rAdv = (remoteData.missions && remoteData.missions.advanced) || {};
             if (_rAdv.lastResetDate && _lAdv.lastResetDate === _rAdv.lastResetDate) {
@@ -11207,14 +11246,20 @@ const ADVANCED_VERSE_REWARDS = [
     { from: 7, to: 12, gem: 1200 },
     { from: 13, to: 22, gem: 1800 }
 ];
-// 중간점검/보스 심화 미션: 개수 상한 없이 전체 체크포인트까지 누적
-// 13번째부터는 단가를 평탄하게 유지 — 많이 학습할수록 단가가 떨어지면 오히려 학습을 억제하므로.
-// (제한의 목적은 같은 구절 반복 방지이지 학습량 억제가 아님)
-// 하루 최대 = 2,500 + 4,800 + 121×1,100 = 140,400젬 (성전 최대 강화 총비용 144,000 미만)
+// 용 사냥(보스전) 심화 미션 — 보스는 장당 1개라 상한 22가 곧 전체 장 수
+// 하루 최대 = 2,500 + 4,800 + 12,000 = 19,300젬
 const ADVANCED_CHECKPOINT_BOSS_REWARDS = [
     { from: 2, to: 6,  gem: 500 },
     { from: 7, to: 12, gem: 800 },
-    { from: 13, to: getTotalCheckpointStageCount(), gem: 1100 }
+    { from: 13, to: 22, gem: 1200 }
+];
+// 중간점검 심화 미션 — 전체 111개 완주 시 보스전 완주(19,300)와 같은 수준이 되도록 설계
+// 2~40: 39회×120 + 41~80: 40회×180 + 81~111: 31회×240 = 19,320젬
+// 보스전과 동일하게 상승형 곡선 — 많이 할수록 단가가 떨어지면 학습량을 억제하게 되므로
+const ADVANCED_MID_BOSS_REWARDS = [
+    { from: 2,  to: 40, gem: 120 },
+    { from: 41, to: 80, gem: 180 },
+    { from: 81, to: getTotalMidBossCount(), gem: 240 }
 ];
 
 function getAdvancedRewardGem(rewardTable, clearIndex) {
@@ -11229,17 +11274,18 @@ function getAdvancedRewardGem(rewardTable, clearIndex) {
 function claimAdvancedReward(missionKey, upToIndex) {
     // missionKey: 'address' | 'memory' | 'endurance' | 'verse'
     if (!missionData.advanced) return;
-    const claimedIdxMap = { address: 0, memory: 1, endurance: 2, verse: 3, checkpointBoss: 4 };
+    const claimedIdxMap = { address: 0, memory: 1, endurance: 2, verse: 3, checkpointBoss: 4, midBoss: 5 };
     const claimedIdx = claimedIdxMap[missionKey] ?? 0;
     const chaptersMap = {
         address: missionData.advanced.hardshipAddressChapters,
         memory: missionData.advanced.hardshipMemoryChapters,
         endurance: missionData.advanced.hardshipEnduranceChapters || [],
         verse: missionData.advanced.hardshipVerseChapters || [],
-        checkpointBoss: missionData.advanced.checkpointBossStages || []
+        checkpointBoss: missionData.advanced.checkpointBossStages || [],
+        midBoss: missionData.advanced.midBossStages || []
     };
     const chapters = chaptersMap[missionKey] || [];
-    const rewardTableMap = { address: ADVANCED_ADDRESS_REWARDS, memory: ADVANCED_MEMORY_REWARDS, endurance: ADVANCED_ENDURANCE_REWARDS, verse: ADVANCED_VERSE_REWARDS, checkpointBoss: ADVANCED_CHECKPOINT_BOSS_REWARDS };
+    const rewardTableMap = { address: ADVANCED_ADDRESS_REWARDS, memory: ADVANCED_MEMORY_REWARDS, endurance: ADVANCED_ENDURANCE_REWARDS, verse: ADVANCED_VERSE_REWARDS, checkpointBoss: ADVANCED_CHECKPOINT_BOSS_REWARDS, midBoss: ADVANCED_MID_BOSS_REWARDS };
     const rewardTable = rewardTableMap[missionKey] || ADVANCED_ADDRESS_REWARDS;
     const maxClaimable = Math.max(0, chapters.length - 1); // 2번째 장부터
     const currentClaimed = missionData.advanced.claimed[claimedIdx] || 0;
@@ -11272,7 +11318,7 @@ function claimAdvancedReward(missionKey, upToIndex) {
 }
 
 function renderAdvancedMissionList(listArea) {
-    if (!missionData.advanced) missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], checkpointBossStages: [], claimed: [0, 0, 0, 0, 0], lastResetDate: '' };
+    if (!missionData.advanced) missionData.advanced = createEmptyAdvancedMissionData();
     const adv = missionData.advanced;
 
     const anyBoss = [stageMastery, kingsRoadData && kingsRoadData.mastery].filter(Boolean)
@@ -11378,7 +11424,11 @@ function renderAdvancedMissionList(listArea) {
     ));
     listArea.appendChild(buildMissionBlock(
         'mission_advanced_checkpoint_boss_title', 'mission_advanced_checkpoint_boss_desc',
-        adv.checkpointBossStages || [], getTotalCheckpointStageCount(), ADVANCED_CHECKPOINT_BOSS_REWARDS, 4, 'checkpointBoss', '개'
+        adv.checkpointBossStages || [], 22, ADVANCED_CHECKPOINT_BOSS_REWARDS, 4, 'checkpointBoss', '개'
+    ));
+    listArea.appendChild(buildMissionBlock(
+        'mission_advanced_mid_boss_title', 'mission_advanced_mid_boss_desc',
+        adv.midBossStages || [], getTotalMidBossCount(), ADVANCED_MID_BOSS_REWARDS, 5, 'midBoss', '개'
     ));
 }
 
@@ -14692,7 +14742,7 @@ stageClear = function (type, rewardMultiplier = 1) {
                 // ★ 미션 업데이트: 중보 처치
                 if (!isAlreadyClearedToday) {
                     updateMissionProgress('checkpointBoss', sId); // 레이드 대미지 + 일일 미션
-                    updateMissionProgress('advancedCheckpointBoss', sId); // 심화 미션
+                    updateMissionProgress('advancedMidBoss', sId); // 심화 미션 (중간점검 전용)
                 }
                 updateMissionProgress('dragon', sId); // 레이드 대미지 + 주간 미션
             }

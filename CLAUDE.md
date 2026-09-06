@@ -271,25 +271,32 @@ Step 1에 선택적 음성인식 기능 추가. 클릭(읽기) 방식과 병행 
 - 히스토리: `hardshipVerseClearHistory` (장별 `{correct, total, score, date, duration}`)
 - 왕의 고난 버튼: 4개 모드 기준 0/1~3/4 완료 구분 (`_doneModes.length === 4` 이면 `all-done`)
 - 일일 미션 인덱스: address=4, memory=5, endurance=6, verse=7 (`missionData.daily.claimed`)
-- 심화 미션 `claimed` 인덱스: `[address, memory, endurance, verse, checkpointBoss]` (길이 5)
+- 심화 미션 `claimed` 인덱스: `[address, memory, endurance, verse, checkpointBoss, midBoss]` (길이 6)
 
 ---
 
-## 심화 미션 — 중간점검/보스 (`checkpointBossStages`)
+## 심화 미션 — 보스전 / 중간점검 (별도 미션)
 
-"오늘 서로 다른 중간점검 또는 보스를 클리어할수록 보상 누적" (2번째부터 지급).
+보스전과 중간점검은 **규모가 전혀 다르므로 미션을 분리**한다. 둘 다 "오늘 서로 다른 것을 클리어할수록 보상 누적"(2번째부터).
 
-- 상한은 **`getTotalCheckpointStageCount()`**(중간점검 111 + 보스 22 = **133**). 구간 분할이 바뀌면 자동으로 따라감
-- 상한의 목적은 **실제 존재하는 개수보다 많이 쌓이는 것만 방지**하는 것 (중복은 `includes()`가 이미 차단)
-- 보상 `ADVANCED_CHECKPOINT_BOSS_REWARDS`: 2~6번째 500젬 / 7~12번째 800젬 / **13~133번째 1,100젬 고정**
-- 하루 최대 **140,400젬** — 성전 최대 강화 총비용(144,000) 미만으로 맞춤
+| 미션 | 저장 필드 | `claimed` 인덱스 | 대상 | 상한 | 보상 테이블 | 하루 최대 |
+|------|----------|-----------------|------|------|------------|----------|
+| 보스전 누적 | `checkpointBossStages` | 4 | 보스전만 | 22 (= 장 수) | `ADVANCED_CHECKPOINT_BOSS_REWARDS`<br>2~6: 500 / 7~12: 800 / 13~22: 1,200 | **19,300** |
+| 중간점검 누적 | `midBossStages` | 5 | 중간점검만 | `getTotalMidBossCount()` (111) | `ADVANCED_MID_BOSS_REWARDS`<br>2~40: 120 / 41~80: 180 / 81~111: 240 | **19,320** |
 
-> 13번째부터 단가를 평탄하게 두는 이유: 많이 학습할수록 단가가 떨어지면 오히려 학습량을 억제하게 된다.
-> 보상 제한의 목적은 **같은 구절 반복 방지**이지 학습량 억제가 아니므로, 하루에 전체 완주에 도전해도 끝까지 동일 단가를 준다.
-> `getAdvancedRewardGem()`은 테이블 범위 밖이면 0을 반환하므로, 상한을 올릴 때 **보상 테이블의 마지막 `to`도 반드시 함께 올려야 한다.**
-> (2026-09-06: 기존 상한 22 → 전체 체크포인트 수로 해제)
+- 두 미션 모두 404절 전체를 덮으므로 완주 보상을 같은 수준(≈19,300)으로 맞췄다
+- 곡선은 둘 다 **상승형** — 많이 학습할수록 단가가 떨어지면 오히려 학습량을 억제하게 되므로 체감형을 쓰지 않는다. 보상 제한의 목적은 **같은 구절 반복 방지**이지 학습량 억제가 아니다
+- 클리어 시 호출: 보스전 → `advancedCheckpointBoss`, 중간점검 → `advancedMidBoss`
+- 상한의 목적은 실제 존재하는 개수보다 많이 쌓이는 것만 방지 (중복은 `includes()`가 차단)
 
-`buildMissionBlock(..., unit = '장')` — 이 미션만 `'개'`를 넘겨 "133장"으로 잘못 표시되는 것을 막는다.
+> `getAdvancedRewardGem()`은 테이블 범위 밖이면 **0을 반환**하므로, 상한을 바꿀 때 **보상 테이블의 마지막 `to`도 반드시 함께 바꿔야 한다.**
+
+`createEmptyAdvancedMissionData(lastResetDate)` — 심화 미션 기본값은 이 헬퍼 한 곳에서 생성한다.
+(이전에는 같은 객체 리터럴이 7군데에 복사돼 있어 필드를 추가할 때 누락되기 쉬웠다.)
+
+`buildMissionBlock(..., unit = '장')` — 이 두 미션만 `'개'`를 넘겨 "111장"으로 잘못 표시되는 것을 막는다.
+
+새 필드는 `_advKeys`(Firestore 병합 목록)에도 반드시 추가할 것.
 
 ---
 
