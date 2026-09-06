@@ -136,14 +136,20 @@ step 7+: 이후 지수 증가 (약 2배씩)
 |------|--------|------|
 | 첫 학습(new) | 15 | 고정 |
 | 복습(review) | 5 | 고정 |
-| 중간점검(checkpointBoss) | 5 | × 장 구절 수 |
-| 보스전(dragon) | 7 | × 장 구절 수 |
+| 중간점검(checkpointBoss) | 5 | × 스테이지 `targetVerseCount` |
+| 보스전(dragon) | 7 | × 스테이지 `targetVerseCount` |
 | 주소의 고난(hardshipAddress) | 2 | × 장 구절 수 |
 | 구절의 고난(hardshipVerse) | 3 | × 장 구절 수 |
 | 암송의 고난(hardshipEndurance) | 9 | × 장 구절 수 |
 | 망각의 고난(hardshipMemory) | 10 | × 장 구절 수 |
 
-중간점검 클리어 시: `checkpointBoss`(일일 첫 클리어만) + `dragon`(항상) 둘 다 호출 — 보스전과 동일 구조
+중간점검 클리어 시: `checkpointBoss`(일일 첫 클리어만) + `dragon`(항상) 둘 다 호출 — 보스전과 동일 구조.
+즉 `checkpointBoss`/`dragon`은 스테이지 종류가 아니라 **중간점검·보스전 양쪽이 함께 발생시키는 두 대미지 항목**이며, 각각 하루 1회 중복 제거됨(`kingsRoad_raidDailyDmg`).
+
+배율은 `_addGuildRaidDamage()`에서 **해당 스테이지의 `targetVerseCount`**(중간점검 = 자기 구간 절수, 보스전 = 장 전체 절수)를 사용.
+고난 4종은 `dedupId`로 **장 번호(숫자)** 를 넘기므로 장 전체 절 수가 적용된다.
+
+> 과거에는 스테이지 ID에서 장 번호만 떼어내 `bibleData[장].length`를 곱했기 때문에, 중간점검이 자기 크기와 무관하게 항상 장 전체 절수를 곱해 대미지가 부풀어 있었다(3장 기준 6·7·9절 중간점검이 모두 동일하게 22를 곱함). 2026-09-06 수정.
 
 ### Cloud Functions (kingsroad/index.js, asia-northeast3)
 - `createGuild`, `joinGuildRequest`, `respondJoinRequest`, `leaveGuild`, `kickGuildMember`

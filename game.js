@@ -13583,8 +13583,21 @@ function _addGuildRaidDamage(type, dedupId) {
     // 구절 수 기반 배율 적용
     let dmg = base;
     if (GUILD_RAID_DAMAGE_PER_VERSE.has(type) && dedupId != null) {
-        const chNum = typeof dedupId === 'number' ? dedupId : parseInt(String(dedupId).split('-')[0]);
-        const verseCount = (typeof bibleData !== 'undefined' && bibleData[chNum]) ? bibleData[chNum].length : 20;
+        let verseCount = null;
+        // 스테이지 ID면 그 스테이지가 실제로 다루는 절 수를 사용
+        // (중간점검 = 자기 구간, 보스전 = 장 전체 → targetVerseCount가 둘 다 올바른 값을 가짐)
+        if (typeof dedupId !== 'number') {
+            const sid = String(dedupId);
+            const cNum = parseInt(sid.split('-')[0]);
+            const chData = (typeof gameData !== 'undefined') ? gameData.find(c => c.id === cNum) : null;
+            const stage = (chData && chData.stages) ? chData.stages.find(s => s.id === sid) : null;
+            if (stage && stage.targetVerseCount) verseCount = stage.targetVerseCount;
+        }
+        // 고난 길 등 장 단위 호출(dedupId가 장 번호)은 장 전체 절 수
+        if (verseCount == null) {
+            const chNum = typeof dedupId === 'number' ? dedupId : parseInt(String(dedupId).split('-')[0]);
+            verseCount = (typeof bibleData !== 'undefined' && bibleData[chNum]) ? bibleData[chNum].length : 20;
+        }
         dmg = base * verseCount;
     }
 
