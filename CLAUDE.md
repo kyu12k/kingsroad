@@ -48,6 +48,8 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `getReviewStatus(id)` | game.js:1927 | 현재 스텝, 복습 가능 여부, 남은 시간 |
 | `advanceReviewStep(id)` | game.js:1939 | 복습 완료 시 스텝 증가 + 다음 시간 계산 |
 | `getMemoryStrength(id)` | game.js:~1949 | 에빙하우스 공식으로 현재 기억 강도(0~1) 반환 |
+| `buildMidBossRanges(totalVerses, targetSize)` | game.js:4751 | 장 절 수를 균등 분할해 중간점검 구간 배열 반환 |
+| `migrateMidBossRanges(...)` | game.js:4769 | 구간 개편 시 구 기록 이전 + 고아 키 정리 |
 | `getSubStagesOfMidBoss(chData, stage)` | game.js:~1983 | 중간점검 소속 서브스테이지 목록 반환 |
 | `getMidBossAvgStrength(chData, stage)` | game.js:~1991 | 중간점검 소속 서브스테이지 평균 기억 강도 반환 |
 | `getMemoryLevelFromStep(step)` | game.js:~2003 | 스텝 → 레벨(0~5) 변환 |
@@ -269,7 +271,25 @@ Step 1에 선택적 음성인식 기능 추가. 클릭(읽기) 방식과 병행 
 - 히스토리: `hardshipVerseClearHistory` (장별 `{correct, total, score, date, duration}`)
 - 왕의 고난 버튼: 4개 모드 기준 0/1~3/4 완료 구분 (`_doneModes.length === 4` 이면 `all-done`)
 - 일일 미션 인덱스: address=4, memory=5, endurance=6, verse=7 (`missionData.daily.claimed`)
-- 심화 미션 `claimed` 인덱스: `[address, memory, endurance, verse]` (길이 4)
+- 심화 미션 `claimed` 인덱스: `[address, memory, endurance, verse, checkpointBoss]` (길이 5)
+
+---
+
+## 심화 미션 — 중간점검/보스 (`checkpointBossStages`)
+
+"오늘 서로 다른 중간점검 또는 보스를 클리어할수록 보상 누적" (2번째부터 지급).
+
+- 상한은 **`getTotalCheckpointStageCount()`**(중간점검 111 + 보스 22 = **133**). 구간 분할이 바뀌면 자동으로 따라감
+- 상한의 목적은 **실제 존재하는 개수보다 많이 쌓이는 것만 방지**하는 것 (중복은 `includes()`가 이미 차단)
+- 보상 `ADVANCED_CHECKPOINT_BOSS_REWARDS`: 2~6번째 500젬 / 7~12번째 800젬 / **13~133번째 1,100젬 고정**
+- 하루 최대 **140,400젬** — 성전 최대 강화 총비용(144,000) 미만으로 맞춤
+
+> 13번째부터 단가를 평탄하게 두는 이유: 많이 학습할수록 단가가 떨어지면 오히려 학습량을 억제하게 된다.
+> 보상 제한의 목적은 **같은 구절 반복 방지**이지 학습량 억제가 아니므로, 하루에 전체 완주에 도전해도 끝까지 동일 단가를 준다.
+> `getAdvancedRewardGem()`은 테이블 범위 밖이면 0을 반환하므로, 상한을 올릴 때 **보상 테이블의 마지막 `to`도 반드시 함께 올려야 한다.**
+> (2026-09-06: 기존 상한 22 → 전체 체크포인트 수로 해제)
+
+`buildMissionBlock(..., unit = '장')` — 이 미션만 `'개'`를 넘겨 "133장"으로 잘못 표시되는 것을 막는다.
 
 ---
 
@@ -282,6 +302,26 @@ Step 1에 선택적 음성인식 기능 추가. 클릭(읽기) 방식과 병행 
 - **버튼 정렬**: 가나다순 (`localeCompare('ko')`)
 - **파트 라벨**: 2파트 이상일 때 상단에 `(파트 1/2 · 다음 파트: 12단어)` 표시, 마지막 파트엔 "다음 파트" 미표시
 - 보스전(`loadNextVerse`)은 `currentBossParts` / `currentBossPartIndex` 변수로 파트 관리
+
+---
+
+## 중간점검(mid-boss) 구간 생성
+
+구간은 하드코딩이 아니라 **절 수 기준 균등 분할**로 생성된다 (`buildMidBossRanges()`).
+
+- `MIDBOSS_TARGET_VERSES = 4` — 중간점검 1개가 담당할 목표 절 수
+- 분배 방식은 `splitChunksIntoParts()`와 동일 (앞쪽 구간이 1절씩 더 가져감)
+- 예: 22절 → 4·4·4·4·3·3 / 29절 → 4·4·4·4·4·3·3·3
+- 결과: 전체 **111개**, 구간 크기 3~4절, 404절 전부를 빈틈없이 덮음
+- ID는 `{장}-mid-{끝절}`, 스테이지 객체에 `rangeStart`/`rangeEnd`/`targetVerseCount` 보유
+- **소제목 없음** — `getStageTitle()`이 `stage_title_midboss`('📜 중간 점검 (3장 7~10절)')로 폴백
+
+> 이전에는 신학적 소제목 기반으로 하드코딩되어 구간 크기가 3~9절로 들쭉날쭉했다.
+> 소제목이 눈에 잘 띄지 않고, 임의 작명의 오해 소지와 애매한 경계 문제가 있어 2026-09-06 균등 분할로 전환.
+
+구간을 바꾸면 `migrateMidBossRanges()`가 구 기록을 **끝 절을 포함하는 새 구간**으로 이전하고 고아 키를 삭제한다.
+고아 키를 남기면 `getStageClearCounts()`/`getTotalMemoryLevel()`이 키를 순회하며 수치를 부풀리므로 반드시 정리해야 한다.
+(절 단위 기록은 ID가 `{장}-{절}`이라 구간 변경의 영향을 받지 않는다.)
 
 ---
 

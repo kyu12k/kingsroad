@@ -2107,6 +2107,18 @@ loadGameData = function () {
             }
         }
 
+        // [마이그레이션] 중간점검 균등 분할 개편 — 구 구간 기록 이전 + 고아 키 정리
+        {
+            const freeRangeMigrated = migrateMidBossRanges(stageMastery, stageClearDate, stageLastClear, stageReviewStep, stageNextReviewTime);
+            const kingsRangeMigrated = migrateMidBossRanges(kingsRoadData.mastery, kingsRoadData.clearDate, kingsRoadData.lastClear, kingsRoadData.reviewStep, kingsRoadData.nextReviewTime);
+            if (freeRangeMigrated || kingsRangeMigrated) {
+                // 구간이 바뀌었으므로 진행 중이던 전투 체크포인트는 폐기
+                // (ID가 우연히 겹쳐도 절 수가 달라져 저장된 인덱스가 범위를 벗어날 수 있음)
+                try { localStorage.removeItem('kingsRoad_checkpoint'); } catch (e) {}
+                console.log('🔄 중간점검 구간 마이그레이션 완료 (균등 분할 개편)');
+            }
+        }
+
         // 마지막으로 선택한 모드 복원 (기본값 'free')
         activeMode = parsed.activeMode || 'free';
         // 자유여행 데이터를 백업 변수에도 저장
@@ -2941,7 +2953,8 @@ function updateMissionProgress(type, extraData) {
         if (!missionData.advanced) missionData.advanced = { hardshipAddressChapters: [], hardshipMemoryChapters: [], hardshipEnduranceChapters: [], hardshipVerseChapters: [], checkpointBossStages: [], claimed: [0, 0, 0, 0, 0], lastResetDate: '' };
         const _adv = missionData.advanced;
         if (!Array.isArray(_adv.checkpointBossStages)) _adv.checkpointBossStages = [];
-        if (stageId != null && !_adv.checkpointBossStages.includes(stageId) && _adv.checkpointBossStages.length < 22) _adv.checkpointBossStages.push(stageId);
+        // 상한은 전체 체크포인트 수 — 실제로 존재하는 개수보다 많이 쌓이는 것만 방지
+        if (stageId != null && !_adv.checkpointBossStages.includes(stageId) && _adv.checkpointBossStages.length < getTotalCheckpointStageCount()) _adv.checkpointBossStages.push(stageId);
     }
     // 4. 주간 미션: 중보/보스 처치 (용 사냥)
     else if (type === 'dragon') {
@@ -4733,6 +4746,90 @@ for (let j = 1; j <= 22; j++) {
     }
 }
 
+// 중간점검 1개가 담당할 목표 절 수
+const MIDBOSS_TARGET_VERSES = 4;
+
+/* 장의 절 수를 목표 크기 기준으로 균등 분할해 중간점검 구간 배열 반환
+   분배 방식은 splitChunksIntoParts()와 동일 (앞쪽 구간이 1절씩 더 가져감)
+   예: 22절 → 4·4·4·4·3·3 / 29절 → 4·4·4·4·4·3·3·3 */
+function buildMidBossRanges(totalVerses, targetSize = MIDBOSS_TARGET_VERSES) {
+    if (!totalVerses || totalVerses < 1) return [];
+    const numParts = Math.max(1, Math.ceil(totalVerses / targetSize));
+    const base = Math.floor(totalVerses / numParts);
+    const extra = totalVerses % numParts;
+    const ranges = [];
+    let start = 1;
+    for (let i = 0; i < numParts; i++) {
+        const size = base + (i < extra ? 1 : 0);
+        ranges.push({ start, end: start + size - 1 });
+        start += size;
+    }
+    return ranges;
+}
+
+/* 전체 체크포인트(중간점검 + 보스) 스테이지 수 — 심화 미션 상한으로 사용
+   구간 분할이 바뀌어도 자동으로 따라가도록 gameData에서 직접 센다 */
+function getTotalCheckpointStageCount() {
+    let n = 0;
+    gameData.forEach(ch => (ch.stages || []).forEach(s => {
+        if (s.type === 'mid-boss' || s.type === 'boss') n++;
+    }));
+    // bibleData 로드 실패로 gameData가 비면 0이 되어 보상/상한이 무력화되므로 구버전 값(22)을 하한으로 둔다
+    return Math.max(22, n);
+}
+
+/* 중간점검 구간 개편 마이그레이션
+   구 기록을 '그 끝 절을 포함하는 새 중간점검'으로 이전하고, 현재 구간에 없는 고아 키는 삭제한다.
+   고아 키를 남기면 getStageClearCounts()/getTotalMemoryLevel()이 키를 순회하며 수치를 부풀림. */
+function migrateMidBossRanges(mastery, clearDate, lastClear, reviewStep, nextReviewTime) {
+    const dicts = [mastery, clearDate, lastClear, reviewStep, nextReviewTime].filter(Boolean);
+    if (dicts.length === 0) return false;
+
+    // 현재 유효한 중간점검 목록
+    const validIds = new Set();
+    const midBossesByChapter = {};
+    gameData.forEach(ch => {
+        (ch.stages || []).forEach(s => {
+            if (s.type !== 'mid-boss') return;
+            validIds.add(s.id);
+            (midBossesByChapter[ch.id] = midBossesByChapter[ch.id] || []).push(s);
+        });
+    });
+    if (validIds.size === 0) return false; // gameData 미생성 시 안전 탈출
+
+    // 더 이상 존재하지 않는 중간점검 키 수집
+    const staleIds = new Set();
+    dicts.forEach(d => {
+        Object.keys(d).forEach(id => {
+            if (/^\d+-mid-\d+$/.test(id) && !validIds.has(id)) staleIds.add(id);
+        });
+    });
+    if (staleIds.size === 0) return false;
+
+    staleIds.forEach(oldId => {
+        const m = oldId.match(/^(\d+)-mid-(\d+)$/);
+        const chNum = parseInt(m[1]);
+        const endVerse = parseInt(m[2]);
+        const target = (midBossesByChapter[chNum] || [])
+            .find(s => endVerse >= s.rangeStart && endVerse <= s.rangeEnd);
+        dicts.forEach(d => {
+            if (d[oldId] === undefined) return;
+            if (target && (d[target.id] === undefined || d[oldId] > d[target.id])) {
+                d[target.id] = d[oldId];
+            }
+            delete d[oldId];
+        });
+    });
+
+    // clearDate가 있으면 mastery 최소 1 보장 (부분 저장 불일치 복구)
+    if (mastery && clearDate) {
+        validIds.forEach(id => {
+            if (clearDate[id] && !mastery[id]) mastery[id] = 1;
+        });
+    }
+    return true;
+}
+
 // 1장부터 22장까지 반복
 for (let i = 1; i <= 22; i++) {
     const chapterVerses = bibleData[i];
@@ -4741,33 +4838,9 @@ for (let i = 1; i <= 22; i++) {
         const totalVerses = chapterVerses.length;
 
         // -------------------------------------------------------
-        // [1] 중간 점검 구간(Range) — 소제목 기반 하드코딩 (계시록 신학 단위 반영)
+        // [1] 중간 점검 구간(Range) — 절 수 기준 균등 분할
         // -------------------------------------------------------
-        const MIDBOSS_RANGES = {
-            1:  [{start:1,  end:3,  subtitle:'예수 그리스도의 계시'}, {start:4, end:8, subtitle:'알파와 오메가'}, {start:9, end:12, subtitle:'밧모섬에서 받은 계시'}, {start:13, end:16, subtitle:'인자의 영광스러운 모습'}, {start:17, end:20, subtitle:'예수님의 지시'}],
-            2:  [{start:1,  end:7,  subtitle:'에베소 교회'},                             {start:8,  end:11, subtitle:'서머나 교회'},          {start:12, end:17, subtitle:'버가모 교회'},         {start:18, end:25, subtitle:'두아디라 교회 — 이세벨과 행위'}, {start:26, end:29, subtitle:'두아디라 교회 — 이기는 자의 약속'}],
-            3:  [{start:1,  end:6,  subtitle:'사데 교회'},                               {start:7,  end:13, subtitle:'빌라델비아 교회'},       {start:14, end:22, subtitle:'라오디게아 교회'}],
-            4:  [{start:1,  end:5,  subtitle:'하나님의 보좌와 이십사 장로'},              {start:6,  end:11, subtitle:'유리바다와 네 생물'}],
-            5:  [{start:1,  end:7,  subtitle:'일곱 인 봉한 책과 어린 양'},               {start:8,  end:14, subtitle:'성도의 기도와 새 노래'}],
-            6:  [{start:1,  end:8,  subtitle:'첫째~넷째 인'},                            {start:9,  end:14, subtitle:'다섯째~여섯째 인'},      {start:15, end:17, subtitle:'어린 양의 진노의 심판'}],
-            7:  [{start:1,  end:8,  subtitle:'하나님의 인과 십사만 사천'},               {start:9,  end:17, subtitle:'흰 옷 입은 큰 무리와 큰 환난'}],
-            8:  [{start:1,  end:5,  subtitle:'일곱 천사의 일곱 나팔'},                   {start:6,  end:13, subtitle:'첫째~넷째 나팔 재앙'}],
-            9:  [{start:1,  end:6,  subtitle:'다섯째 나팔과 황충의 등장'},               {start:7,  end:11, subtitle:'황충들의 모습'},         {start:12, end:16, subtitle:'여섯째 나팔과 이만만의 마병대'}, {start:17, end:21, subtitle:'말들의 모습과 회개치 않는 선민'}],
-            10: [{start:1,  end:7,  subtitle:'열린 책과 일곱째 나팔의 비밀'},            {start:8,  end:11, subtitle:'책을 먹은 요한의 사명'}],
-            11: [{start:1,  end:5,  subtitle:'성전과 두 증인의 등장'},                   {start:6,  end:10, subtitle:'재앙과 두 증인의 죽음'}, {start:11, end:19, subtitle:'부활과 일곱째 나팔'}],
-            12: [{start:1,  end:6,  subtitle:'하늘 이적과 만국을 다스릴 남자'},          {start:7,  end:12, subtitle:'하늘 전쟁과 하나님 나라'}, {start:13, end:17, subtitle:'용에게 핍박받는 여자'}],
-            13: [{start:1,  end:5,  subtitle:'바다 짐승과 용'},                          {start:6,  end:10, subtitle:'짐승에게 패배하는 장막 백성'}, {start:11, end:18, subtitle:'두 짐승과 짐승의 표 666'}],
-            14: [{start:1,  end:8,  subtitle:'시온산 십사만 사천과 복음'},               {start:9,  end:16, subtitle:'심판과 익은 곡식 추수'}, {start:17, end:20, subtitle:'심판받는 포도'}],
-            15: [{start:1,  end:4,  subtitle:'큰 이적과 두 노래'},                       {start:5,  end:8,  subtitle:'증거장막 성전과 진노의 대접'}],
-            16: [{start:1,  end:7,  subtitle:'첫째~셋째 대접'},                          {start:8,  end:16, subtitle:'넷째~여섯째 대접과 아마겟돈'}, {start:17, end:21, subtitle:'일곱째 대접과 바벨론 심판'}],
-            17: [{start:1,  end:6,  subtitle:'큰 음녀의 비밀'},                          {start:7,  end:13, subtitle:'짐승의 비밀'},           {start:14, end:18, subtitle:'주 재림의 유월절'}],
-            18: [{start:1,  end:8,  subtitle:'귀신의 처소와 탈출 명령'},                 {start:9,  end:14, subtitle:'왕들과 상고들의 애통'}, {start:15, end:20, subtitle:'바다의 선장·선객과 애통'}, {start:21, end:24, subtitle:'심판받는 바벨론'}],
-            19: [{start:1,  end:6,  subtitle:'허다한 무리의 할렐루야'},                  {start:7,  end:10, subtitle:'어린 양의 혼인 기약'},  {start:11, end:16, subtitle:'백마 탄 자와 이한 검'},   {start:17, end:21, subtitle:'공중의 새들과 짐승의 심판'}],
-            20: [{start:1,  end:6,  subtitle:'무저갱에 갇히는 용과 첫째 부활'},          {start:7,  end:15, subtitle:'천년 후 심판과 영생·영벌'}],
-            21: [{start:1,  end:8,  subtitle:'새 하늘 새 땅과 아들의 유업'},             {start:9,  end:17, subtitle:'하늘에서 내려오는 거룩한 성'}, {start:18, end:21, subtitle:'열두 보석과 열두 진주 문'}, {start:22, end:27, subtitle:'밤이 없는 거룩한 성'}],
-            22: [{start:1,  end:5,  subtitle:'생명나무와 종들'},                         {start:6,  end:13, subtitle:'대언자와 행위대로 받는 상벌'}, {start:14, end:21, subtitle:'거룩한 성의 자격과 가감의 결과'}],
-        };
-        const midBossRanges = MIDBOSS_RANGES[i] || [];
+        const midBossRanges = buildMidBossRanges(totalVerses);
 
         // -------------------------------------------------------
         // [2] 스테이지 객체 생성
@@ -4801,13 +4874,11 @@ for (let i = 1; i <= 22; i++) {
             if (range) {
                 // 동적 HP 계산 (끝 - 시작 + 1)
                 const hp = range.end - range.start + 1;
-                const subtitle = range.subtitle || '';
 
                 chapterObj.stages.push({
                     id: `${i}-mid-${range.end}`, // ID는 끝 번호 기준
-                    title: `📜 ${subtitle}`,
+                    title: t('stage_title_midboss', { ch: i, start: range.start, end: range.end }),
                     desc: `${i}장 ${range.start}~${range.end}절 · ${hp}개 절`,
-                    subtitle: subtitle,
                     type: "mid-boss",
                     targetVerseCount: hp, // ★ 실제 개수만큼 HP 설정!
                     rangeStart: range.start,
@@ -11136,10 +11207,14 @@ const ADVANCED_VERSE_REWARDS = [
     { from: 7, to: 12, gem: 1200 },
     { from: 13, to: 22, gem: 1800 }
 ];
+// 중간점검/보스 심화 미션: 개수 상한 없이 전체 체크포인트까지 누적
+// 13번째부터는 단가를 평탄하게 유지 — 많이 학습할수록 단가가 떨어지면 오히려 학습을 억제하므로.
+// (제한의 목적은 같은 구절 반복 방지이지 학습량 억제가 아님)
+// 하루 최대 = 2,500 + 4,800 + 121×1,100 = 140,400젬 (성전 최대 강화 총비용 144,000 미만)
 const ADVANCED_CHECKPOINT_BOSS_REWARDS = [
     { from: 2, to: 6,  gem: 500 },
     { from: 7, to: 12, gem: 800 },
-    { from: 13, to: 22, gem: 1200 }
+    { from: 13, to: getTotalCheckpointStageCount(), gem: 1100 }
 ];
 
 function getAdvancedRewardGem(rewardTable, clearIndex) {
@@ -11217,7 +11292,7 @@ function renderAdvancedMissionList(listArea) {
     listArea.appendChild(tagline);
 
     // 보상 테이블 헬퍼
-    function buildMissionBlock(titleKey, descKey, chapters, maxChapters, rewardTable, claimedIdx, missionKey) {
+    function buildMissionBlock(titleKey, descKey, chapters, maxChapters, rewardTable, claimedIdx, missionKey, unit = '장') {
         const cleared = chapters.length; // 오늘 클리어한 서로 다른 장 수
         const claimed = adv.claimed[claimedIdx] || 0;
         const claimable = Math.max(0, cleared - 1); // 2번째부터 보상
@@ -11239,19 +11314,19 @@ function renderAdvancedMissionList(listArea) {
         const allDone = claimed >= maxChapters - 1; // 최대 수령 완료
         const pct = allDone ? 100 : Math.min(100, Math.floor((progressCurrent / nextTarget) * 100));
         const progressLabel = allDone
-            ? `완료 (${cleared}장 클리어)`
+            ? `완료 (${cleared}${unit} 클리어)`
             : unclaimed > 0
                 ? `다음 보상 준비됨 · 미수령 ${unclaimed}회`
-                : `다음 보상까지: ${cleared}/${nextTarget}장`;
-        const rewardPreview = rewardTable.map(r => `${r.from}${r.to > r.from ? '~' + r.to : ''}장: 💎${r.gem.toLocaleString()}`).join(' / ');
+                : `다음 보상까지: ${cleared}/${nextTarget}${unit}`;
+        const rewardPreview = rewardTable.map(r => `${r.from}${r.to > r.from ? '~' + r.to : ''}${unit}: 💎${r.gem.toLocaleString()}`).join(' / ');
 
         infoDiv.innerHTML = `
             <div class="mission-title" style="color:#ecf0f1;">${t(titleKey)} <span style="font-size:0.8rem;color:#e67e22;font-weight:normal;">(${rewardPreview})</span></div>
             <div class="mission-desc" style="color:#bdc3c7;">${t(descKey)}</div>
             <div style="font-size:0.8rem;color:#bdc3c7;margin:6px 0 4px;">
                 ${unclaimed > 0
-                    ? `<span style="color:#2ecc71;font-weight:bold;">💎 미수령 ${unclaimed}회</span> · 오늘 ${cleared}장 클리어`
-                    : `오늘 <b style="color:#f1c40f">${cleared}장</b> 클리어${claimed > 0 ? ` · 수령 완료 ${claimed}회` : ''}`}
+                    ? `<span style="color:#2ecc71;font-weight:bold;">💎 미수령 ${unclaimed}회</span> · 오늘 ${cleared}${unit} 클리어`
+                    : `오늘 <b style="color:#f1c40f">${cleared}${unit}</b> 클리어${claimed > 0 ? ` · 수령 완료 ${claimed}회` : ''}`}
             </div>
             <div style="font-size:0.78rem;color:#95a5a6;margin-bottom:4px;">${progressLabel}</div>
             <div class="mission-progress-bg"><div class="mission-progress-bar" style="width:${pct}%"></div></div>
@@ -11303,7 +11378,7 @@ function renderAdvancedMissionList(listArea) {
     ));
     listArea.appendChild(buildMissionBlock(
         'mission_advanced_checkpoint_boss_title', 'mission_advanced_checkpoint_boss_desc',
-        adv.checkpointBossStages || [], 22, ADVANCED_CHECKPOINT_BOSS_REWARDS, 4, 'checkpointBoss'
+        adv.checkpointBossStages || [], getTotalCheckpointStageCount(), ADVANCED_CHECKPOINT_BOSS_REWARDS, 4, 'checkpointBoss', '개'
     ));
 }
 
