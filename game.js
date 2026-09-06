@@ -1863,6 +1863,20 @@ let kingsRoadData = {
 
 /* ============================================= */
 
+/* [동기화] 부팅 시점의 로컬 updatedAt 스냅샷
+   window.onload에서 updateStats('login') 등이 saveGameData()를 호출하면 updatedAt이 현재 시각으로
+   갱신되는데, 그 뒤 인증이 끝나고 initFirestoreSync()가 비교할 때 오래된 로컬 데이터가
+   원격보다 최신으로 오인되어 다른 기기의 진행을 덮어쓰는 사고가 있었다.
+   시작 시 자동 저장은 '진행'이 아니므로 비교 기준에서 제외한다.
+   (모듈 로드 시점이라 onload보다 먼저 실행된다) */
+try {
+    const _bootSave = JSON.parse(localStorage.getItem('kingsRoadSave') || 'null');
+    window._bootLocalUpdatedAt = (_bootSave && _bootSave.updatedAt) ? _bootSave.updatedAt : 0;
+} catch (e) {
+    window._bootLocalUpdatedAt = 0;
+}
+window._bootAt = Date.now();
+
 /* (주의) saveGameData의 통합 구현은 아래의 선언부(function saveGameData)에서 관리합니다. */
 // 2. 게임 불러오기 (데이터가 없어도 에러 안 나게 방어)
 loadGameData = function () {
@@ -2788,14 +2802,7 @@ function checkMissions() {
         };
         missionData.daily.loginReward = 1; // 접속 시 즉시 완료
         // 심화 일일 미션 리셋
-        missionData.advanced = {
-            hardshipAddressChapters: [],
-            hardshipMemoryChapters: [],
-            hardshipEnduranceChapters: [],
-            hardshipVerseChapters: [],
-            claimed: [0, 0, 0, 0, 0],
-            lastResetDate: today
-        };
+        missionData.advanced = createEmptyAdvancedMissionData(today);
         console.log("📅 새로운 하루가 시작되어 일일 미션이 초기화되었습니다.");
 
         // 날짜 변경 시 초기화 (stageDailyAttempts 제거)
@@ -8675,8 +8682,18 @@ async function initFirestoreSync() {
     }
 
     // 타임스탬프 비교: 로컬이 더 최신이면 Firestore 덮어쓰기 건너뜀
-    const localUpdatedAt  = (localData  && localData.updatedAt)  ? localData.updatedAt  : 0;
+    // ★ 부팅 직후(60초 이내)라면 부팅 시점 스냅샷을 쓴다 — 시작 시 자동 저장(updateStats('login') 등)이
+    //   updatedAt을 현재 시각으로 갱신해 오래된 로컬이 원격을 덮어쓰는 것을 막기 위함.
+    //   60초가 지난 호출은 실제 플레이가 반영된 값이므로 현재 값을 그대로 신뢰한다.
+    const _liveLocalUpdatedAt = (localData && localData.updatedAt) ? localData.updatedAt : 0;
+    const _bootSnapshotFresh = typeof window._bootAt === 'number'
+        && typeof window._bootLocalUpdatedAt === 'number'
+        && (Date.now() - window._bootAt) < 60000;
+    const localUpdatedAt  = _bootSnapshotFresh ? window._bootLocalUpdatedAt : _liveLocalUpdatedAt;
     const remoteUpdatedAt = (remoteData && remoteData.updatedAt) ? remoteData.updatedAt : 0;
+    if (_bootSnapshotFresh && _liveLocalUpdatedAt !== localUpdatedAt) {
+        console.log(`[Firestore] 부팅 스냅샷 기준 비교: local=${localUpdatedAt} (현재값 ${_liveLocalUpdatedAt}은 시작 시 자동 저장분)`);
+    }
 
     // Google 로그인 후 새 기기: 빈 로컬이 서버 데이터를 덮어쓰지 않도록 강제 원격 우선
     const forceRemote = localStorage.getItem('kingsroad_forceRemoteSync') === 'true';
@@ -14589,14 +14606,7 @@ function checkDailyLogin() {
         missionData.daily.claimed = [false, false, false, false, false, false, false, false];
         missionData.lastLoginDate = today; // ★ [버그 수정] checkMissions()와 동기화
         // 심화 일일 미션 리셋
-        missionData.advanced = {
-            hardshipAddressChapters: [],
-            hardshipMemoryChapters: [],
-            hardshipEnduranceChapters: [],
-            hardshipVerseChapters: [],
-            claimed: [0, 0, 0, 0, 0],
-            lastResetDate: today
-        };
+        missionData.advanced = createEmptyAdvancedMissionData(today);
 
         localStorage.setItem('lastPlayedDate', today);
         needsSave = true; // 🌟 출석했으니 저장 필수!
