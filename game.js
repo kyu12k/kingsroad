@@ -13812,6 +13812,41 @@ async function _callGuildFn(fnName, data) {
     return res.data;
 }
 
+/* Cloud Function 호출처럼 지연이 있는 버튼에 로딩 상태를 씌운다.
+   버튼을 비활성화하므로 응답 대기 중 중복 클릭도 함께 막힌다.
+   성공 시에는 대개 화면을 다시 그려 버튼이 사라지므로, 아직 DOM에 붙어 있을 때만 원래 상태로 되돌린다. */
+async function _withButtonLoading(btn, loadingLabel, task) {
+    const prevHtml = btn ? btn.innerHTML : null;
+    const prevDisabled = btn ? btn.disabled : false;
+    const prevMinWidth = btn ? btn.style.minWidth : '';
+    // 같은 줄의 형제 버튼(수락/거절 등)도 함께 잠가 이중 실행을 막는다.
+    // 원래 비활성이던 버튼은 제외해야 복원 시 되살아나지 않는다.
+    const siblings = (btn && btn.parentElement)
+        ? Array.from(btn.parentElement.querySelectorAll('button')).filter(b => b !== btn && !b.disabled)
+        : [];
+    if (btn) {
+        // 원래 폭을 유지해 로딩 중 줄 배치가 흔들리지 않게 한다
+        const w = btn.offsetWidth;
+        if (w) btn.style.minWidth = w + 'px';
+        btn.disabled = true;
+        // 라벨이 비면 스피너만 — 폭이 좁은 버튼(추방·수락·거절)용
+        btn.innerHTML = loadingLabel
+            ? `<span class="kr-spinner-btn"></span>${loadingLabel}`
+            : `<span class="kr-spinner-btn" style="margin-right:0;"></span>`;
+    }
+    siblings.forEach(b => { b.disabled = true; });
+    try {
+        return await task();
+    } finally {
+        if (btn && btn.isConnected) {
+            btn.disabled = prevDisabled;
+            btn.innerHTML = prevHtml;
+            btn.style.minWidth = prevMinWidth;
+        }
+        siblings.forEach(b => { if (b.isConnected) b.disabled = false; });
+    }
+}
+
 function openGuildScreen() {
     closeMoreMenu();
     if (!myTag || myTag === '0000') { showGemToast(0, '닉네임을 먼저 설정해주세요.', true); return; }
@@ -13895,8 +13930,8 @@ function _renderGuildNoGuild(body, pendingInvites) {
                 <div class="guild-invite-card-name">⚔️ ${escapeHtml(inv.guildName)}</div>
                 <div class="guild-invite-card-from">${inv.invitedBy}번 길드장이 초대 · ${timeStr}</div>
                 <div class="guild-invite-card-actions">
-                    <button class="guild-btn-primary" onclick="_respondGuildInvite(true,'${gid}')">수락</button>
-                    <button class="guild-btn-secondary" onclick="_respondGuildInvite(false,'${gid}')">거절</button>
+                    <button class="guild-btn-primary" onclick="_respondGuildInvite(true,'${gid}',this)">수락</button>
+                    <button class="guild-btn-secondary" onclick="_respondGuildInvite(false,'${gid}',this)">거절</button>
                 </div>
             </div>`;
         }).join('');
@@ -13911,66 +13946,71 @@ function _renderGuildNoGuild(body, pendingInvites) {
         <div class="guild-section-title" style="margin-top:${inviteHtml ? 18 : 0}px;">길드 만들기</div>
         <div class="guild-create-wrap">
             <input id="guild-name-input" class="guild-input" type="text" maxlength="12" placeholder="길드 이름 (2~12자)">
-            <button class="guild-btn-primary" onclick="_submitCreateGuild()">만들기</button>
+            <button class="guild-btn-primary" onclick="_submitCreateGuild(this)">만들기</button>
         </div>
         <div class="guild-section-title" style="margin-top:18px;">코드로 가입 신청</div>
         <div class="guild-create-wrap">
             <input id="guild-code-input" class="guild-input" type="text" maxlength="6" placeholder="가입 코드 6자리" style="text-transform:uppercase;">
-            <button class="guild-btn-secondary" onclick="_submitJoinGuild()">신청</button>
+            <button class="guild-btn-secondary" onclick="_submitJoinGuild(this)">신청</button>
         </div>`;
 }
 
-async function _respondGuildInvite(accept, guildId) {
-    try {
-        const res = await _callGuildFn('respondInvite', { accept, guildId });
-        if (accept) {
-            myGuildId = res.guildId;
-            showGemToast(0, `"${res.guildName}" 길드에 가입되었습니다! 🎉`);
-        } else {
-            showGemToast(0, '초대를 거절했습니다.');
+async function _respondGuildInvite(accept, guildId, btn) {
+    await _withButtonLoading(btn, '처리 중…', async () => {
+        try {
+            const res = await _callGuildFn('respondInvite', { accept, guildId });
+            if (accept) {
+                myGuildId = res.guildId;
+                showGemToast(0, `"${res.guildName}" 길드에 가입되었습니다! 🎉`);
+            } else {
+                showGemToast(0, '초대를 거절했습니다.');
+            }
+            _renderGuildScreen();
+        } catch (e) {
+            showGemToast(0, e.message || '처리 실패', true);
         }
-        _renderGuildScreen();
-    } catch (e) {
-        showGemToast(0, e.message || '처리 실패', true);
-    }
+    });
 }
 
-async function _buyPersonalEquipment(itemKey) {
-    try {
-        const level = myPersonalEquipment[itemKey] || 0;
-        const cost = PERSONAL_EQUIP_COST[level + 1];
-        const actionLabel = level === 0 ? '수리' : '강화';
-        await _callGuildFn('buyPersonalEquipment', { itemKey });
-        myPersonalEquipment[itemKey] = level + 1;
-        myDragonScales -= cost;
-        showGemToast(0, `${PERSONAL_EQUIP_DEFS[itemKey].name} ${actionLabel} 완료! (🪨${myDragonScales} 남음)`);
-        _renderGuildScreen();
-    } catch (e) {
-        showGemToast(0, e.message || '구매 실패', true);
-    }
+async function _buyPersonalEquipment(itemKey, btn) {
+    await _withButtonLoading(btn, '처리 중…', async () => {
+        try {
+            const level = myPersonalEquipment[itemKey] || 0;
+            const cost = PERSONAL_EQUIP_COST[level + 1];
+            const actionLabel = level === 0 ? '수리' : '강화';
+            await _callGuildFn('buyPersonalEquipment', { itemKey });
+            myPersonalEquipment[itemKey] = level + 1;
+            myDragonScales -= cost;
+            showGemToast(0, `${PERSONAL_EQUIP_DEFS[itemKey].name} ${actionLabel} 완료! (🪨${myDragonScales} 남음)`);
+            _renderGuildScreen();
+        } catch (e) {
+            showGemToast(0, e.message || '구매 실패', true);
+        }
+    });
 }
 
-async function _contributeGuildEquipment(itemKey) {
-    try {
-        const guildEquipLevel = (_guildData?.guildEquipment?.[itemKey]) || 0;
-        if (guildEquipLevel >= 5) return;
-        const cost = GUILD_EQUIP_CLAW_COST[guildEquipLevel + 1];
-        const fund = (_guildData?.guildEquipmentFund?.[itemKey]) || 0;
-        const remaining = cost - fund;
-        const amount = Math.min(myDragonHornFragments, remaining);
-        if (amount <= 0) return;
-        const def = GUILD_EQUIP_DEFS[itemKey];
-        const res = await _callGuildFn('contributeGuildEquipment', { itemKey, amount });
-        myDragonHornFragments = res.newHornFragments;
-        if (res.upgraded) {
-            showGemToast(0, `${def.name} Lv.${res.newLevel} 달성! (🦷${res.newHornFragments} 남음)`);
-        } else {
-            showGemToast(0, `🦷${amount} 기여 완료! (${res.newFund}/${cost} 적립)`);
+async function _contributeGuildEquipment(itemKey, btn) {
+    const guildEquipLevel = (_guildData?.guildEquipment?.[itemKey]) || 0;
+    if (guildEquipLevel >= 5) return;
+    const cost = GUILD_EQUIP_CLAW_COST[guildEquipLevel + 1];
+    const fund = (_guildData?.guildEquipmentFund?.[itemKey]) || 0;
+    const amount = Math.min(myDragonHornFragments, cost - fund);
+    if (amount <= 0) return;
+    await _withButtonLoading(btn, '기여 중…', async () => {
+        try {
+            const def = GUILD_EQUIP_DEFS[itemKey];
+            const res = await _callGuildFn('contributeGuildEquipment', { itemKey, amount });
+            myDragonHornFragments = res.newHornFragments;
+            if (res.upgraded) {
+                showGemToast(0, `${def.name} Lv.${res.newLevel} 달성! (🦷${res.newHornFragments} 남음)`);
+            } else {
+                showGemToast(0, `🦷${amount} 기여 완료! (${res.newFund}/${cost} 적립)`);
+            }
+            _renderGuildScreen();
+        } catch (e) {
+            showGemToast(0, e.message || '기여 실패', true);
         }
-        _renderGuildScreen();
-    } catch (e) {
-        showGemToast(0, e.message || '기여 실패', true);
-    }
+    });
 }
 
 function _renderGuildHome(body, guild, myStatus = {}) {
@@ -13999,7 +14039,7 @@ function _renderGuildHome(body, guild, myStatus = {}) {
         <div class="guild-section-title">🎁 보상 수령 가능</div>
         <div class="guild-reward-row">
             <span>${parts.join(' &nbsp; ')}</span>
-            <button class="guild-btn-primary" onclick="_claimRaidReward()">수령</button>
+            <button class="guild-btn-primary" onclick="_claimRaidReward(this)">수령</button>
         </div>`;
     })() : '';
 
@@ -14007,10 +14047,10 @@ function _renderGuildHome(body, guild, myStatus = {}) {
     const donateLeft = 5 - (myStatus.donateCountToday || 0);
     const attendBtn = myStatus.attendedToday
         ? `<button class="guild-btn-secondary" disabled>출석 완료 ✓</button>`
-        : `<button id="guild-attend-btn" class="guild-btn-secondary" onclick="_guildAttend()">출석 체크</button>`;
+        : `<button id="guild-attend-btn" class="guild-btn-secondary" onclick="_guildAttend(this)">출석 체크</button>`;
     const donateBtn = donateLeft <= 0
         ? `<button class="guild-btn-secondary" disabled>기부 완료 (5/5) ✓</button>`
-        : `<button id="guild-donate-btn" class="guild-btn-secondary" onclick="_guildDonate()">기부</button>`;
+        : `<button id="guild-donate-btn" class="guild-btn-secondary" onclick="_guildDonate(this)">기부</button>`;
 
     // 길드 이름 변경 버튼 (길드장 전용)
     let renameBtn = '';
@@ -14091,7 +14131,7 @@ function _renderGuildHome(body, guild, myStatus = {}) {
             <div class="guild-equip-level">${levelLabel}</div>
             <div class="guild-equip-effect">${PERSONAL_EQUIP_TYPE_DESC[def.type]} +${effect}%</div>
             <button class="guild-equip-btn" ${isMax || !canAfford ? 'disabled' : ''}
-                onclick="_buyPersonalEquipment('${key}')">${btnLabel}</button>
+                onclick="_buyPersonalEquipment('${key}',this)">${btnLabel}</button>
         </div>`;
     });
     html += `</div>`;
@@ -14124,7 +14164,7 @@ function _renderGuildHome(body, guild, myStatus = {}) {
             <div class="guild-equip-effect">${def.desc} ${effectUnit}</div>
             ${fundBar}
             <button class="guild-equip-btn" ${isMax || !canContribute ? 'disabled' : ''}
-                onclick="_contributeGuildEquipment('${key}')">${btnLabel}</button>
+                onclick="_contributeGuildEquipment('${key}',this)">${btnLabel}</button>
         </div>`;
     });
     html += `</div>`;
@@ -14140,7 +14180,7 @@ function _renderGuildHome(body, guild, myStatus = {}) {
         html += `<div class="guild-member-row" style="flex-wrap:wrap;gap:2px;">
             <span class="guild-member-name">${escapeHtml(nick)}<span class="guild-member-tag"> #${tag}</span>${isThisLeader ? ' <span class="guild-leader-badge">길드장</span>' : ''}</span>
             <span style="display:flex;align-items:center;gap:4px;margin-left:auto;">
-                ${isLeader && tag !== myTag ? `<button class="guild-btn-kick" onclick="_kickGuildMember('${tag}')">추방</button>` : ''}
+                ${isLeader && tag !== myTag ? `<button class="guild-btn-kick" onclick="_kickGuildMember('${tag}',this)">추방</button>` : ''}
                 <button onclick="_editMemberMemo('${tag}')" style="background:none;border:1px solid #4a4a6a;border-radius:5px;color:${memo ? '#f1c40f' : '#7070a0'};font-size:11px;padding:2px 6px;cursor:pointer;" title="${escapeHtml(memo || '메모 없음')}">📝</button>
             </span>
             ${memo ? `<div style="width:100%;font-size:11px;color:#a090c0;padding:2px 2px 0;white-space:pre-wrap;word-break:break-all;">${escapeHtml(memo)}</div>` : ''}
@@ -14162,8 +14202,8 @@ function _renderGuildHome(body, guild, myStatus = {}) {
                     <span class="guild-request-meta">#${r.tag} · ${timeStr}</span>
                 </div>
                 <div class="guild-request-btns">
-                    <button class="guild-btn-accept" onclick="_respondGuildRequest('${r.tag}', true)">수락</button>
-                    <button class="guild-btn-reject" onclick="_respondGuildRequest('${r.tag}', false)">거절</button>
+                    <button class="guild-btn-accept" onclick="_respondGuildRequest('${r.tag}', true, this)">수락</button>
+                    <button class="guild-btn-reject" onclick="_respondGuildRequest('${r.tag}', false, this)">거절</button>
                 </div>
             </div>`;
         });
@@ -14190,57 +14230,63 @@ function _renderGuildHome(body, guild, myStatus = {}) {
     }
 
     html += `<div style="margin-top:24px; text-align:center;">
-        <button class="guild-btn-leave" onclick="_leaveGuild()">${isLeader && guild.members.length <= 1 ? '길드 해산' : isLeader ? '길드장 위임 후 탈퇴' : '길드 탈퇴'}</button>
+        <button class="guild-btn-leave" onclick="_leaveGuild(this)">${isLeader && guild.members.length <= 1 ? '길드 해산' : isLeader ? '길드장 위임 후 탈퇴' : '길드 탈퇴'}</button>
     </div>`;
 
     body.innerHTML = html;
 }
 
-async function _submitCreateGuild() {
+async function _submitCreateGuild(btn) {
     const input = document.getElementById('guild-name-input');
     if (!input) return;
     const name = input.value.trim();
     if (name.length < 2) { showGemToast(0, '길드 이름을 2자 이상 입력해주세요.', true); return; }
     input.disabled = true;
-    try {
-        const res = await _callGuildFn('createGuild', { name });
-        if (res.ok) { showGemToast(0, `길드 "${name}" 생성 완료! 코드: ${res.code}`); _renderGuildScreen(); }
-    } catch (e) {
-        showGemToast(0, e.message || '길드 생성에 실패했습니다.', true);
-        input.disabled = false;
-    }
+    await _withButtonLoading(btn, '생성 중…', async () => {
+        try {
+            const res = await _callGuildFn('createGuild', { name });
+            if (res.ok) { showGemToast(0, `길드 "${name}" 생성 완료! 코드: ${res.code}`); _renderGuildScreen(); }
+        } catch (e) {
+            showGemToast(0, e.message || '길드 생성에 실패했습니다.', true);
+            input.disabled = false;
+        }
+    });
 }
 
-async function _submitJoinGuild() {
+async function _submitJoinGuild(btn) {
     const input = document.getElementById('guild-code-input');
     if (!input) return;
     const code = input.value.trim().toUpperCase();
     if (code.length !== 6) { showGemToast(0, '코드는 6자리입니다.', true); return; }
     input.disabled = true;
-    try {
-        const res = await _callGuildFn('joinGuildRequest', { code });
-        if (res.ok) {
-            if (res.autoAccepted) {
-                myGuildId = res.guildId || null;
-                showGemToast(0, `"${res.guildName}" 길드에 가입되었습니다! 🎉`);
-                _renderGuildScreen();
-            } else {
-                showGemToast(0, `"${res.guildName}" 가입 신청 완료! 길드장의 수락을 기다려주세요.`);
+    await _withButtonLoading(btn, '신청 중…', async () => {
+        try {
+            const res = await _callGuildFn('joinGuildRequest', { code });
+            if (res.ok) {
+                if (res.autoAccepted) {
+                    myGuildId = res.guildId || null;
+                    showGemToast(0, `"${res.guildName}" 길드에 가입되었습니다! 🎉`);
+                    _renderGuildScreen();
+                } else {
+                    showGemToast(0, `"${res.guildName}" 가입 신청 완료! 길드장의 수락을 기다려주세요.`);
+                }
             }
+        } catch (e) {
+            showGemToast(0, e.message || '가입 신청에 실패했습니다.', true);
+            input.disabled = false;
         }
-    } catch (e) {
-        showGemToast(0, e.message || '가입 신청에 실패했습니다.', true);
-        input.disabled = false;
-    }
+    });
 }
 
-async function _respondGuildRequest(targetTag, accept) {
-    try {
-        await _callGuildFn('respondJoinRequest', { guildId: myGuildId, targetTag, accept });
-        _renderGuildScreen();
-    } catch (e) {
-        showGemToast(0, e.message || '처리 실패', true);
-    }
+async function _respondGuildRequest(targetTag, accept, btn) {
+    await _withButtonLoading(btn, '', async () => {
+        try {
+            await _callGuildFn('respondJoinRequest', { guildId: myGuildId, targetTag, accept });
+            _renderGuildScreen();
+        } catch (e) {
+            showGemToast(0, e.message || '처리 실패', true);
+        }
+    });
 }
 
 function _getMemberMemos() {
@@ -14337,19 +14383,21 @@ function _guildConfirm(message, onConfirm, onCancel) {
     overlay.querySelector('#guild-confirm-ok').onclick = () => { overlay.remove(); onConfirm(); };
 }
 
-async function _kickGuildMember(targetTag) {
+async function _kickGuildMember(targetTag, btn) {
     _guildConfirm(`정말 #${targetTag} 을(를)<br>길드에서 추방하시겠습니까?`, async () => {
-        try {
-            await _callGuildFn('kickGuildMember', { targetTag });
-            showGemToast(0, `#${targetTag} 을(를) 추방했습니다.`);
-            _renderGuildScreen();
-        } catch (e) {
-            showGemToast(0, e.message || '추방 실패', true);
-        }
+        await _withButtonLoading(btn, '', async () => {
+            try {
+                await _callGuildFn('kickGuildMember', { targetTag });
+                showGemToast(0, `#${targetTag} 을(를) 추방했습니다.`);
+                _renderGuildScreen();
+            } catch (e) {
+                showGemToast(0, e.message || '추방 실패', true);
+            }
+        });
     });
 }
 
-async function _leaveGuild() {
+async function _leaveGuild(btn) {
     const isLeader = _guildData && _guildData.leaderId === myTag;
     const memberCount = _guildData ? _guildData.members.length : 1;
     const msg = isLeader && memberCount > 1
@@ -14358,72 +14406,77 @@ async function _leaveGuild() {
         ? '정말 길드를 해산하시겠습니까?<br><small style="color:#a080c0;">모든 멤버가 길드에서 제거됩니다.</small>'
         : '정말 길드를 탈퇴하시겠습니까?';
     _guildConfirm(msg, async () => {
-        try {
-            await _callGuildFn('leaveGuild', {});
-            const leaveMsg = isLeader && memberCount > 1
-                ? '길드장을 위임하고 탈퇴했습니다.'
-                : isLeader
-                ? '길드를 해산했습니다.'
-                : '길드를 탈퇴했습니다.';
-            myGuildId = null; _guildData = null;
-            showGemToast(0, leaveMsg);
-            _renderGuildScreen();
-        } catch (e) {
-            showGemToast(0, e.message || '탈퇴 실패', true);
-        }
+        await _withButtonLoading(btn, '처리 중…', async () => {
+            try {
+                await _callGuildFn('leaveGuild', {});
+                const leaveMsg = isLeader && memberCount > 1
+                    ? '길드장을 위임하고 탈퇴했습니다.'
+                    : isLeader
+                    ? '길드를 해산했습니다.'
+                    : '길드를 탈퇴했습니다.';
+                myGuildId = null; _guildData = null;
+                showGemToast(0, leaveMsg);
+                _renderGuildScreen();
+            } catch (e) {
+                showGemToast(0, e.message || '탈퇴 실패', true);
+            }
+        });
     });
 }
 
-async function _guildAttend() {
-    const btn = document.getElementById('guild-attend-btn');
-    if (btn) { btn.disabled = true; btn.textContent = '출석 중...'; }
-    try {
-        const res = await _callGuildFn('guildAttend', {});
-        if (res.alreadyDone) { showGemToast(0, '오늘 이미 출석했습니다.', true); if (btn) { btn.disabled = false; btn.textContent = '출석 체크'; } return; }
-        if (res.levelUp) showGemToast(0, `길드 레벨 업! Lv.${res.newLevel} 🎉`);
-        else showGemToast(0, `출석 완료! 길드 경험치 +${res.xpGained} XP`);
-        _myGuildStatus.attendedToday = true;
-        if (_guildData) { _guildData.xp = res.newXp; _guildData.level = res.newLevel; }
-        const body = document.getElementById('guild-screen-body');
-        if (body) _renderGuildHome(body, _guildData, _myGuildStatus);
-    } catch (e) { showGemToast(0, e.message || '출석 실패', true); if (btn) { btn.disabled = false; btn.textContent = '출석 체크'; } }
-}
-
-function _guildDonate() {
-    if (myGems < 100) { showGemToast(0, '보석이 부족합니다. (필요: 💎100)', true); return; }
-    const btn = document.getElementById('guild-donate-btn');
-    if (btn) { btn.disabled = true; btn.textContent = '기부 중...'; }
-    _guildConfirm('보석 100개를 기부하시겠습니까?', async () => {
+async function _guildAttend(btn) {
+    await _withButtonLoading(btn, '출석 중…', async () => {
         try {
-            const res = await _callGuildFn('guildDonate', { gems: 100 });
-            if (res.alreadyDone) { showGemToast(0, '오늘 기부 횟수를 모두 사용했습니다. (5/5)', true); if (btn) { btn.disabled = false; btn.textContent = '기부'; } return; }
-            myGems -= 100;
-            saveGameData();
+            const res = await _callGuildFn('guildAttend', {});
+            if (res.alreadyDone) { showGemToast(0, '오늘 이미 출석했습니다.', true); return; }
             if (res.levelUp) showGemToast(0, `길드 레벨 업! Lv.${res.newLevel} 🎉`);
-            else showGemToast(0, `기부 완료! 길드 경험치 +1 XP`);
-            _myGuildStatus.donateCountToday = res.todayCount;
+            else showGemToast(0, `출석 완료! 길드 경험치 +${res.xpGained} XP`);
+            _myGuildStatus.attendedToday = true;
             if (_guildData) { _guildData.xp = res.newXp; _guildData.level = res.newLevel; }
             const body = document.getElementById('guild-screen-body');
             if (body) _renderGuildHome(body, _guildData, _myGuildStatus);
-        } catch (e) { showGemToast(0, e.message || '기부 실패', true); if (btn) { btn.disabled = false; btn.textContent = '기부'; } }
-    }, () => { if (btn) { btn.disabled = false; btn.textContent = '기부'; } });
+        } catch (e) { showGemToast(0, e.message || '출석 실패', true); }
+    });
 }
 
-async function _claimRaidReward() {
-    try {
-        const res = await _callGuildFn('claimRaidReward', {});
-        if (!res.ok || (!res.hornFragments && !res.headSkins && !res.scales)) { showGemToast(0, '수령할 보상이 없습니다.', true); return; }
-        myDragonHornFragments += res.hornFragments || 0;
-        myDragonHeadSkins     += res.headSkins     || 0;
-        myDragonScales        += res.scales        || 0;
-        saveGameData();
-        const rewardParts = [];
-        if (res.scales)        rewardParts.push(`🪨 비늘 +${res.scales}`);
-        if (res.hornFragments) rewardParts.push(`🦷 뿔조각 +${res.hornFragments}`);
-        if (res.headSkins)     rewardParts.push(`🐉 머릿가죽 +${res.headSkins}`);
-        showGemToast(0, `보상 수령 완료! ${rewardParts.join(' · ')}`);
-        _renderGuildScreen();
-    } catch (e) { showGemToast(0, e.message || '수령 실패', true); }
+function _guildDonate(btn) {
+    if (myGems < 100) { showGemToast(0, '보석이 부족합니다. (필요: 💎100)', true); return; }
+    // 로딩 표시는 확인을 누른 뒤에 — 확인 대화상자가 떠 있는 동안 "기부 중"이 보이면 오해를 준다
+    _guildConfirm('보석 100개를 기부하시겠습니까?', async () => {
+        await _withButtonLoading(btn, '기부 중…', async () => {
+            try {
+                const res = await _callGuildFn('guildDonate', { gems: 100 });
+                if (res.alreadyDone) { showGemToast(0, '오늘 기부 횟수를 모두 사용했습니다. (5/5)', true); return; }
+                myGems -= 100;
+                saveGameData();
+                if (res.levelUp) showGemToast(0, `길드 레벨 업! Lv.${res.newLevel} 🎉`);
+                else showGemToast(0, `기부 완료! 길드 경험치 +1 XP`);
+                _myGuildStatus.donateCountToday = res.todayCount;
+                if (_guildData) { _guildData.xp = res.newXp; _guildData.level = res.newLevel; }
+                const body = document.getElementById('guild-screen-body');
+                if (body) _renderGuildHome(body, _guildData, _myGuildStatus);
+            } catch (e) { showGemToast(0, e.message || '기부 실패', true); }
+        });
+    });
+}
+
+async function _claimRaidReward(btn) {
+    await _withButtonLoading(btn, '수령 중…', async () => {
+        try {
+            const res = await _callGuildFn('claimRaidReward', {});
+            if (!res.ok || (!res.hornFragments && !res.headSkins && !res.scales)) { showGemToast(0, '수령할 보상이 없습니다.', true); return; }
+            myDragonHornFragments += res.hornFragments || 0;
+            myDragonHeadSkins     += res.headSkins     || 0;
+            myDragonScales        += res.scales        || 0;
+            saveGameData();
+            const rewardParts = [];
+            if (res.scales)        rewardParts.push(`🪨 비늘 +${res.scales}`);
+            if (res.hornFragments) rewardParts.push(`🦷 뿔조각 +${res.hornFragments}`);
+            if (res.headSkins)     rewardParts.push(`🐉 머릿가죽 +${res.headSkins}`);
+            showGemToast(0, `보상 수령 완료! ${rewardParts.join(' · ')}`);
+            _renderGuildScreen();
+        } catch (e) { showGemToast(0, e.message || '수령 실패', true); }
+    });
 }
 
 async function _loadGuildInviteList() {
@@ -14456,7 +14509,7 @@ async function _loadGuildInviteList() {
 }
 
 async function _inviteToGuild(friendTag, btn) {
-    if (btn) { btn.disabled = true; btn.textContent = '발송 중…'; }
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="kr-spinner-btn"></span>발송 중…'; }
     try {
         await _callGuildFn('inviteToGuild', { friendTag });
         if (btn) { btn.textContent = '✓ 발송'; }

@@ -158,6 +158,24 @@ step 7+: 이후 지수 증가 (약 2배씩)
 
 > 과거에는 스테이지 ID에서 장 번호만 떼어내 `bibleData[장].length`를 곱했기 때문에, 중간점검이 자기 크기와 무관하게 항상 장 전체 절수를 곱해 대미지가 부풀어 있었다(3장 기준 6·7·9절 중간점검이 모두 동일하게 22를 곱함). 2026-09-06 수정.
 
+### 버튼 로딩 상태 (`_withButtonLoading`)
+
+길드 화면의 Cloud Function 호출 버튼은 모두 `_withButtonLoading(btn, label, task)`을 거친다.
+CF 왕복에 수 초가 걸려 아무 반응이 없으면 사용자가 실패로 오해하거나 중복 클릭하기 때문.
+
+- 버튼을 비활성화하므로 **응답 대기 중 중복 클릭이 함께 막힌다**
+- **같은 부모의 형제 버튼도 잠근다** (수락/거절 쌍에서 둘 다 눌리는 것 방지). 원래 비활성이던 버튼은 복원 대상에서 제외
+- 성공 시 대개 `_renderGuildScreen()`으로 버튼이 사라지므로 **`isConnected`일 때만** 원상복구 (실패 시에만 복구되는 셈)
+- 로딩 중 `minWidth`로 원래 폭을 고정해 줄 배치가 흔들리지 않게 한다
+- **라벨을 빈 문자열로 주면 스피너만** 표시 — 폭이 좁은 버튼(추방·가입 수락/거절)용
+- 스피너는 `.kr-spinner-btn`(style.css). 기존 `.kr-spinner`는 흰색 고정이라 노란 `guild-btn-primary`에서 보이지 않아 `currentColor`를 쓰는 변형을 따로 만들었다
+
+> 확인 대화상자가 있는 동작(기부·추방·탈퇴)은 **`_guildConfirm`의 확인을 누른 뒤에** 로딩을 건다.
+> 이전에는 기부가 확인 전에 "기부 중"으로 바뀌어 오해를 줬다. 2026-09-07 정리.
+
+`_confirmRenameGuild`(모달 버튼 전체 잠금 + 힌트 문구)와 `_inviteToGuild`(성공 시 '✓ 발송' 유지)는
+고유한 완료 표시가 있어 헬퍼를 쓰지 않고 스피너만 맞췄다.
+
 ### Cloud Functions (kingsroad/index.js, asia-northeast3)
 - `createGuild`, `joinGuildRequest`, `respondJoinRequest`, `leaveGuild`, `kickGuildMember`
 - `inviteToGuild`, `respondInvite`

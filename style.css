@@ -28,6 +28,20 @@
     vertical-align: middle;
     margin-right: 6px;
 }
+/* 버튼 안에서 쓰는 스피너 — currentColor라 밝은 배경(노란 primary)에서도 보인다.
+   _withButtonLoading()이 사용. */
+.kr-spinner-btn {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: kr-spin 0.7s linear infinite;
+    vertical-align: -2px;
+    margin-right: 6px;
+    opacity: 0.85;
+}
 
 * {
     box-sizing: border-box; /* 🌟 모든 요소의 너비 계산에 여백/테두리를 포함 */
