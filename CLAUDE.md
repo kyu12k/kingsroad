@@ -203,6 +203,25 @@ CF 왕복에 수 초가 걸려 아무 반응이 없으면 사용자가 실패로
 ### 레이드 동작
 - 용 처치 시 즉시 다음 레벨 용으로 전환, 초과 데미지 이어받음 (연속 처치 불가, 최소 HP 1)
 - 쇠사슬 감소는 현재 용과 다음 용 모두 적용 후 초과 계산
+
+### 큰 쇠사슬 HP 감소와 표시 (`_getRaidHpView`)
+
+쇠사슬은 HP를 **미리 깎아두지 않고, 서버가 대미지 계산 시점에 곱해서 적용**한다
+([kingsroad/index.js](kingsroad/index.js) `reportRaidDamage`):
+
+```js
+const effectiveMaxHp     = Math.round(currentMaxHp * (1 - chainReduction));
+const effectiveCurrentHp = Math.min(currentHp, effectiveMaxHp);  // 강화 시 진행 중인 용도 즉시 감소
+```
+
+그 결과 Firestore에는 **`raidDragonMaxHp` = 원본, `raidDragonCurrentHp` = 감소 반영값**이 저장된다.
+
+> 이 둘을 그대로 나누면 **아무도 때리지 않은 용이 "20% 피해"로 표시**되고,
+> 길드 랭킹 진행률도 쇠사슬 감소분을 '입힌 피해'로 세어 부풀었다. 2026-09-07 수정.
+
+- 클라이언트는 `_getRaidHpView(guild)`로 서버와 **같은 식**을 다시 적용해 실질 최대 HP 기준을 맞춘다
+- 길드 홈 HP 바와 길드 레이드 랭킹 진행률 **둘 다** 이 헬퍼를 쓴다 — 새 표시를 추가할 때도 반드시 경유할 것
+- 쇠사슬이 있으면 `⛓️ 큰 쇠사슬 -N% · 원본 X HP`를 따로 적어 감소분과 실제 피해를 구분한다
 - 주간 리셋 시: 비늘(처치×10 + 진행도 티어) + 뿔조각(처치×1 + 머리처치×1 보너스) + 머릿가죽(머리처치×1) 전원 지급, 용 레벨 1로 초기화
 
 ### 레이드 주간 비늘 티어 (`RAID_SCALES_BY_TIER`)
@@ -479,6 +498,36 @@ playerHearts × (궁극의 암기 ? 5 : 4) × (무작위 순서 ? 2 : 1) × 부�
 - `amenAndStartGame()`에서 `window._pendingReviewPopupCheck = true` 예약 → `goMap()` 마지막에 `maybeAutoShowReviewPopup()`이 소비(1회성 플래그라 다른 `goMap()` 호출에는 영향 없음)
 - 표시 조건: `isReviewPopupHiddenToday()`가 false **AND** `getForgottenStages().length > 0`
 - 오버레이 내 체크박스("오늘은 보지 않기") 체크 시 `kingsRoad_hideReviewPopupDate`(localStorage)에 오늘 날짜(`getMemoryQuizDate()` 기준, 오전 6시 경계) 저장 → 당일 자동 팝업만 억제, 우측 하단 플로팅 버튼(`#forgotten-stages-floating-btn`)으로 수동 여는 것은 항상 가능
+
+---
+
+## 친구 기능
+
+### 메모 (`kingsRoad_friendMemos` / `kingsRoad_memberMemos`)
+
+메모는 localStorage에 저장되지만 **`saveGameData()` payload에도 함께 실린다**(`friendMemos`/`memberMemos`).
+
+> 예전에는 localStorage에만 있어서 **기기를 바꾸거나 백업을 복원하면 사라졌다.**
+> 백업 파일은 `kingsRoadSave`만 내보내므로 메모가 빠졌고, Firestore 동기화 대상도 아니었다.
+> (`localStorage.clear()`는 "모두 삭제" 리셋에서만 호출되므로 유실 원인이 아니다.) 2026-09-07 수정.
+
+- 로드 시 `_mergeMemos()`가 **이 기기의 메모를 우선하고 저장본에만 있는 항목만 보충**한다 — 양쪽 어느 것도 잃지 않는 합집합
+- 이 방향 때문에 한쪽에서 지운 메모가 다른 기기에 남아 있으면 되살아날 수 있다 (파괴적이지 않아 허용)
+
+### 친구 목록 정렬 (`_renderFriendScreen`)
+
+목록은 **지난주 점수 내림차순**으로 정렬하고, 각 항목을 2줄로 표시한다.
+
+```
+닉네임                     1,200점  💛 ▶
+#1234 · 메모
+```
+
+- 지난주 점수 = `weeklyHistory[getLastWeekId()] || prevWeekScore || 0` (친구 프로필과 동일한 계산)
+- 정렬하려면 전체 점수를 알아야 하므로 렌더 전에 `Promise.all`로 친구 문서를 병렬 조회한다.
+  `FRIEND_MAX = 20`이라 조회량이 제한적이고, 실패한 친구는 0점·닉네임 없음으로 처리해 목록 자체는 항상 그려진다
+- 닉네임도 이 조회 결과에서 가져오므로 추가 비용이 없다
+- 클래스: `.friend-list-name`(닉네임) / `.friend-list-sub`(#태그·메모) / `.friend-list-score`(지난주 점수)
 
 ---
 

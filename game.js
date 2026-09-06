@@ -2137,6 +2137,27 @@ loadGameData = function () {
             }
         }
 
+        // [복원] 친구·길드원 메모
+        // localStorage에만 두면 기기 변경·백업 복원 시 사라지므로 저장 데이터에도 싣는다.
+        // 이 기기의 메모를 우선하고 저장본에만 있는 항목만 보충 — 양쪽 어느 것도 잃지 않게 합친다.
+        {
+            const _mergeMemos = (lsKey, incoming) => {
+                if (!incoming || typeof incoming !== 'object') return;
+                let local = {};
+                try { local = JSON.parse(localStorage.getItem(lsKey) || '{}'); } catch (e) { local = {}; }
+                let added = 0;
+                for (const _tag of Object.keys(incoming)) {
+                    if (local[_tag] === undefined && incoming[_tag]) { local[_tag] = incoming[_tag]; added++; }
+                }
+                if (added > 0) {
+                    try { localStorage.setItem(lsKey, JSON.stringify(local)); } catch (e) {}
+                    console.log(`🔄 메모 ${added}건 복원 (${lsKey})`);
+                }
+            };
+            _mergeMemos('kingsRoad_friendMemos', parsed.friendMemos);
+            _mergeMemos('kingsRoad_memberMemos', parsed.memberMemos);
+        }
+
         // [복구] 고난 히스토리 정렬 정상화
         // 과거 동기화 병합이 내림차순으로 정렬해 배열 순서가 뒤집힌 기록이 있다.
         // push/shift/표시 로직이 모두 오름차순을 전제하므로 날짜순으로 되돌린다.
@@ -8625,6 +8646,9 @@ function saveGameData() {
         bossOrderMode: bossOrderMode,
         bossFirstClearClaimed: [...bossFirstClearClaimed],
         lastPlayedStageId: lastPlayedStageId,
+        // 친구·길드원 메모 — 예전에는 localStorage에만 있어 기기를 바꾸거나 백업을 복원하면 사라졌다
+        friendMemos: (typeof _loadFriendMemos === 'function') ? _loadFriendMemos() : {},
+        memberMemos: (typeof _getMemberMemos === 'function') ? _getMemberMemos() : {},
         updatedAt: Date.now() // [Firestore] 충돌 해결용 타임스탬프
     };
 
@@ -13286,9 +13310,9 @@ function loadGuildRaidLeaderboard() {
             const g = doc.data();
             if (currentWeekId && g.raidWeekId !== currentWeekId) return;
             const cleared = g.raidClearedCount || 0;
-            const maxHp = g.raidDragonMaxHp || 1;
-            const curHp = g.raidDragonCurrentHp != null ? g.raidDragonCurrentHp : maxHp;
-            const dmgDealt = maxHp - curHp;
+            // 쇠사슬 감소분을 '입힌 피해'로 세지 않도록 실질 HP 기준으로 진행률을 낸다
+            const hpView = _getRaidHpView(g);
+            const dmgDealt = hpView.effectiveMax - hpView.cur;
             if (cleared === 0 && dmgDealt <= 0) return;
             guilds.push({
                 id: doc.id,
@@ -13296,7 +13320,7 @@ function loadGuildRaidLeaderboard() {
                 members: (g.members || []).length,
                 cleared,
                 level: g.raidCurrentDragonLevel || 1,
-                dmgPct: Math.round((dmgDealt / maxHp) * 100),
+                dmgPct: hpView.dealtPct,
                 headCleared: g.raidHeadClearedCount || 0,
             });
         });
@@ -13727,6 +13751,22 @@ const GUILD_EQUIP_JUDGMENT_BONUS  = [0, 10, 20, 30, 40, 50];    // 주간 비늘
 const GUILD_EQUIP_WINEPRESS_BONUS = [0, 1, 2, 3, 4, 5];         // 처치당 추가 비늘
 const GUILD_EQUIP_CLAW_COST       = [0, 1, 2, 4, 7, 12];        // 해당 레벨 도달 증분 발톱
 
+/* 레이드 HP 표시값 계산
+   큰 쇠사슬은 용 HP를 미리 깎아두지 않고, 서버가 대미지를 넣는 시점에 곱해서 적용한다.
+   그래서 raidDragonMaxHp에는 '원본'이, raidDragonCurrentHp에는 '감소가 반영된 값'이 저장된다.
+   이 둘을 그대로 나누면 아무도 때리지 않은 용이 "20% 피해"로 보이므로,
+   서버(kingsroad/index.js의 effectiveMaxHp)와 같은 식으로 실질 최대 HP를 구해 기준을 맞춘다. */
+function _getRaidHpView(guild) {
+    const maxHp = guild.raidDragonMaxHp || 0;
+    const rawCur = guild.raidDragonCurrentHp != null ? guild.raidDragonCurrentHp : maxHp;
+    const chainLv = (guild.guildEquipment && guild.guildEquipment.chain) || 0;
+    const reductionPct = GUILD_EQUIP_CHAIN_REDUCTION[chainLv] || 0;
+    const effectiveMax = Math.round(maxHp * (1 - reductionPct / 100));
+    const cur = Math.max(0, Math.min(rawCur, effectiveMax)); // 서버의 Math.min 클램프와 동일
+    const remainPct = effectiveMax > 0 ? Math.max(0, Math.round((cur / effectiveMax) * 100)) : 0;
+    return { originalMax: maxHp, effectiveMax, cur, remainPct, dealtPct: 100 - remainPct, chainLv, reductionPct };
+}
+
 let myPersonalEquipment = {}; // { sword:0, breastplate:0, ... }
 
 let _guildRaidPendingDmg = 0;
@@ -14020,10 +14060,10 @@ function _renderGuildHome(body, guild, myStatus = {}) {
     const xpPct = guild.level >= 5 ? 100 : Math.min(100, Math.round((guild.xp / levelXpNeeded) * 100));
     const dragonLevel = guild.raidCurrentDragonLevel || guild.raidDragonLevel || 1;
     const clearedCount = guild.raidClearedCount || 0;
-    const dragonPct = guild.raidDragonMaxHp > 0
-        ? Math.max(0, Math.round((guild.raidDragonCurrentHp / guild.raidDragonMaxHp) * 100))
-        : 0;
-    const hpDealtPct = 100 - dragonPct;
+    // 쇠사슬 감소를 반영한 실질 HP 기준 (원본 HP로 나누면 안 때린 용도 피해 입은 것처럼 보인다)
+    const hpView = _getRaidHpView(guild);
+    const dragonPct = hpView.remainPct;
+    const hpDealtPct = hpView.dealtPct;
 
     const pendingReqs = guild.pendingRequests || [];
     const nicknames = guild.memberNicknames || {};
@@ -14091,8 +14131,9 @@ function _renderGuildHome(body, guild, myStatus = {}) {
 
         <div class="guild-section-title">🐉 레이드 · ${getDragonLevelName(dragonLevel)} &nbsp;<span style="font-weight:400;font-size:12px;color:#a080c0;">이번 주 ${clearedCount}마리 처치</span></div>
         <div class="guild-raid-hp-wrap">
-            <div class="guild-raid-hp-label">${guild.raidDragonCurrentHp.toLocaleString()} / ${guild.raidDragonMaxHp.toLocaleString()} HP (${hpDealtPct}% 피해)</div>
+            <div class="guild-raid-hp-label">${hpView.cur.toLocaleString()} / ${hpView.effectiveMax.toLocaleString()} HP (${hpDealtPct}% 피해)</div>
             <div class="guild-raid-hp-bar"><div class="guild-raid-hp-fill" style="width:${dragonPct}%"></div></div>
+            ${hpView.reductionPct > 0 ? `<div class="guild-raid-chain-note">⛓️ 큰 쇠사슬 -${hpView.reductionPct}% · 원본 ${hpView.originalMax.toLocaleString()} HP</div>` : ''}
         </div>
         <button onclick="_showRaidDamageTable()" style="margin-top:6px;background:none;border:1px solid #6040a0;border-radius:6px;color:#b090e0;font-size:12px;padding:4px 12px;cursor:pointer;width:100%;">대미지 📊</button>`;
 
@@ -23440,20 +23481,35 @@ async function _renderFriendScreen() {
     const cheerMap = (typeof data.lastCheerSent === 'object' && data.lastCheerSent) ? data.lastCheerSent : {};
     const cheerableCount = friends.filter(tag => cheerMap[tag] !== todayStr).length;
     html += `<div class="friend-section-title" style="display:flex;align-items:center;justify-content:space-between;">
-        <span>👤 친구 목록 (${friends.length}/${FRIEND_MAX})</span>
+        <span>👤 친구 목록 (${friends.length}/${FRIEND_MAX})${friends.length > 1 ? ' <span class="friend-list-sort-hint">· 지난주 점수순</span>' : ''}</span>
         ${cheerableCount > 0 ? `<button id="friend-cheer-all-btn" class="friend-cheer-all-btn" onclick="_cheerAllFriends()">💛 모두 응원 (${cheerableCount})</button>` : ''}
     </div>`;
     if (friends.length === 0) {
         html += `<div class="friend-empty">아직 친구가 없습니다.<br>코드로 친구를 추가해보세요!</div>`;
     } else {
-        friends.forEach(tag => {
+        // 친구별 지난주 점수를 미리 조회한다 — 목록에 표시하고 내림차순 정렬하기 위함.
+        // 최대 20명(FRIEND_MAX)이라 병렬 조회로 충분하며, 실패한 친구는 0점으로 둔다.
+        const _lastWeekId = getLastWeekId();
+        const _docs = await Promise.all(friends.map(tag => _getFriendDoc(tag).catch(() => null)));
+        const friendRows = friends.map((tag, i) => {
+            const d = _docs[i];
+            return {
+                tag,
+                nickname: (d && d.nickname) || '',
+                lastWeekScore: d ? ((d.weeklyHistory && d.weeklyHistory[_lastWeekId]) || d.prevWeekScore || 0) : 0
+            };
+        });
+        friendRows.sort((a, b) => b.lastWeekScore - a.lastWeekScore);
+
+        friendRows.forEach(({ tag, nickname, lastWeekScore }) => {
             const memo = getFriendMemo(tag);
             const cheered = cheerMap[tag] === todayStr;
             html += `<div class="friend-list-item" onclick="openFriendProfile('${tag}')">
                 <div class="friend-list-info">
-                    <span class="friend-list-tag">#${tag}</span>
-                    ${memo ? `<span class="friend-list-memo">· ${escapeHtml(memo)}</span>` : ''}
+                    <span class="friend-list-name">${escapeHtml(nickname || '순례자')}</span>
+                    <span class="friend-list-sub">#${tag}${memo ? ` · ${escapeHtml(memo)}` : ''}</span>
                 </div>
+                <span class="friend-list-score">${lastWeekScore.toLocaleString()}점</span>
                 <div class="friend-list-actions" onclick="event.stopPropagation()">
                     <button class="friend-cheer-list-btn${cheered ? ' done' : ''}" onclick="_cheerFriendFromList('${tag}',this)" ${cheered ? 'disabled' : ''}>${cheered ? '✓' : '💛'}</button>
                     <span class="friend-list-arrow">▶</span>

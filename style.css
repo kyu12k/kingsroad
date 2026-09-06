@@ -4508,9 +4508,25 @@ body, html {
     cursor: pointer;
 }
 .friend-list-item:active { background: rgba(255,255,255,0.05); }
-.friend-list-info { display: flex; flex-direction: row; align-items: center; gap: 6px; }
-.friend-list-tag { font-size: 0.95rem; color: #ecf0f1; }
-.friend-list-memo { font-size: 0.8rem; color: #7f8c8d; }
+/* 2줄 구성: 닉네임 / #태그 · 메모 */
+.friend-list-info {
+    display: flex; flex-direction: column; align-items: flex-start;
+    gap: 2px; flex: 1; min-width: 0;
+}
+.friend-list-name {
+    font-size: 0.95rem; color: #ecf0f1; max-width: 100%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.friend-list-sub {
+    font-size: 0.76rem; color: #7f8c8d; max-width: 100%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* 지난주 점수 — 목록 정렬 기준이자 표시값 */
+.friend-list-score {
+    font-size: 0.82rem; color: #f1c40f; font-variant-numeric: tabular-nums;
+    white-space: nowrap; margin-right: 10px; flex-shrink: 0;
+}
+.friend-list-sort-hint { font-size: 0.72rem; color: #7f8c8d; font-weight: normal; }
 .friend-list-arrow { color: #7f8c8d; font-size: 0.85rem; }
 .friend-list-actions { display: flex; align-items: center; gap: 8px; }
 .friend-cheer-list-btn {
@@ -6110,6 +6126,9 @@ body, html {
 .guild-btn-secondary:disabled { opacity: 0.45; cursor: default; }
 
 /* 장비 시스템 */
+.guild-raid-chain-note {
+    margin-top: 4px; font-size: 0.72rem; color: #a080c0; text-align: right;
+}
 .guild-currency-row {
     display: flex; gap: 16px; align-items: center;
     padding: 10px 0 4px; font-size: 0.9rem; color: #ecf0f1;
