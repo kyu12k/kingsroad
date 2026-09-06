@@ -2137,6 +2137,29 @@ loadGameData = function () {
             }
         }
 
+        // [복구] 고난 히스토리 정렬 정상화
+        // 과거 동기화 병합이 내림차순으로 정렬해 배열 순서가 뒤집힌 기록이 있다.
+        // push/shift/표시 로직이 모두 오름차순을 전제하므로 날짜순으로 되돌린다.
+        {
+            const _histVars = [hardshipAddressClearHistory, hardshipMemoryClearHistory,
+                               hardshipEnduranceClearHistory, hardshipVerseClearHistory];
+            let _reordered = 0;
+            for (const _hist of _histVars) {
+                if (!_hist || typeof _hist !== 'object') continue;
+                for (const _ch of Object.keys(_hist)) {
+                    const _recs = _hist[_ch];
+                    if (!Array.isArray(_recs) || _recs.length < 2) continue;
+                    const _wasSorted = _recs.every((r, i) =>
+                        i === 0 || (_recs[i - 1].date || 0) <= (r.date || 0));
+                    if (_wasSorted) continue;
+                    _recs.sort((a, b) => (a.date || 0) - (b.date || 0));
+                    _hist[_ch] = _recs.slice(-10);
+                    _reordered++;
+                }
+            }
+            if (_reordered > 0) console.log(`🔄 고난 히스토리 ${_reordered}건 정렬 복구`);
+        }
+
         // [마이그레이션] 중간점검 균등 분할 개편 — 구 구간 기록 이전 + 고아 키 정리
         {
             const freeRangeMigrated = migrateMidBossRanges(stageMastery, stageClearDate, stageLastClear, stageReviewStep, stageNextReviewTime);
@@ -8734,8 +8757,11 @@ async function initFirestoreSync() {
                     const _added = _rRecs.filter(r => !_lDates.has(r.date));
                     if (_added.length) {
                         const _combined = [..._lRecs, ..._added];
-                        _combined.sort((a, b) => (b.date || 0) - (a.date || 0));
-                        _lh[_ch] = _combined.slice(0, 10);
+                        // ★ 반드시 오름차순(오래된 것이 앞) — push()가 뒤에 붙이고 shift()가 앞을 버리며
+                        //   표시할 때 reverse()하는 구조라, 내림차순으로 두면 회차 번호가 뒤집히고
+                        //   shift()가 최신 기록을 지운다.
+                        _combined.sort((a, b) => (a.date || 0) - (b.date || 0));
+                        _lh[_ch] = _combined.slice(-10); // 최신 10개 유지
                         _localChanged = true;
                     }
                 }
@@ -19917,6 +19943,16 @@ function resumeHardshipTimer() {
     }
 }
 
+/* 고난 세션의 순수 풀이 시간(초)
+   답 제출 후 정답 확인 화면을 보는 구간은 타이머가 멈추므로 제외된다.
+   결과 화면 상단과 히스토리 기록이 서로 다른 값을 쓰지 않도록 여기 한 곳에서만 계산한다. */
+function getHardshipElapsedSeconds() {
+    let paused = hardshipState.pausedMs || 0;
+    // 일시정지 상태로 세션이 끝난 경우, 아직 닫히지 않은 구간도 포함
+    if (hardshipState._pauseStart != null) paused += Date.now() - hardshipState._pauseStart;
+    return Math.max(0, Math.floor((Date.now() - stageStartTime - paused) / 1000));
+}
+
 function proceedHardshipToNextVerse() {
     if (!window.isHardshipMode || !hardshipState.active || !hardshipState.awaitingNext) return;
 
@@ -21886,7 +21922,8 @@ function finishHardshipSession(reason) {
 
     clearHardshipPendingTimeout();
 
-    const duration = Math.floor((Date.now() - stageStartTime) / 1000);
+    // 히스토리 기록과 같은 기준(일시정지 제외)을 써서 상단 시간과 표의 클리어 시간이 어긋나지 않게 한다
+    const duration = getHardshipElapsedSeconds();
     const minutes = String(Math.floor(duration / 60)).padStart(2, '0');
     const seconds = String(duration % 60).padStart(2, '0');
     const accuracy = hardshipState.answeredCount > 0
@@ -21960,7 +21997,7 @@ function finishHardshipSession(reason) {
     const enduranceHistoryHtml = (() => {
         if (reason !== 'completed' || hardshipState.mode !== 'endurance') return '';
         const avg = enduranceAvgScore ?? 0;
-        const sessionDuration = Math.floor((Date.now() - stageStartTime - hardshipState.pausedMs) / 1000);
+        const sessionDuration = getHardshipElapsedSeconds();
         const record = {
             avgScore: avg,
             total: hardshipState.queue.length,
@@ -22042,7 +22079,7 @@ function finishHardshipSession(reason) {
     // 주소의 고난 완주: 기록 저장 및 결과 화면에 히스토리 표시 (단일 장 및 범위 세션)
     const addressHistoryHtml = (() => {
         if (reason !== 'completed' || hardshipState.mode !== 'address') return '';
-        const sessionDuration = Math.floor((Date.now() - stageStartTime - hardshipState.pausedMs) / 1000);
+        const sessionDuration = getHardshipElapsedSeconds();
         const record = {
             correct: hardshipState.studiedCount,
             total: hardshipState.queue.length,
@@ -22115,7 +22152,7 @@ function finishHardshipSession(reason) {
     // 망각의 고난 완주: 기록 저장 및 결과 화면에 히스토리 표시 (단일 장 및 범위 세션)
     const memoryHistoryHtml = (() => {
         if (reason !== 'completed' || hardshipState.mode !== 'memory' || hardshipState.trainingMode) return '';
-        const sessionDuration = Math.floor((Date.now() - stageStartTime - hardshipState.pausedMs) / 1000);
+        const sessionDuration = getHardshipElapsedSeconds();
         const record = {
             correct: hardshipState.studiedCount,
             total: hardshipState.queue.length,
@@ -22202,7 +22239,7 @@ function finishHardshipSession(reason) {
         if (existingHistory) existingHistory.remove();
         const verseHistoryHtml = (() => {
             if (reason !== 'completed' || hardshipState.mode !== 'verse') return '';
-            const sessionDuration = Math.floor((Date.now() - stageStartTime - hardshipState.pausedMs) / 1000);
+            const sessionDuration = getHardshipElapsedSeconds();
             const record = {
                 correct: hardshipState.studiedCount,
                 total: hardshipState.queue.length,
