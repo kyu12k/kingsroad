@@ -574,6 +574,34 @@ playerHearts × (궁극의 암기 ? 5 : 4) × (무작위 순서 ? 2 : 1) × 부�
 
 ---
 
+## 복습 알림 (`syncReviewNotification`)
+
+간격 반복은 **제때 돌아오게 만드는 것이 전부**이므로, 복습 시각 알림이 이 앱의 핵심 장치다.
+
+**모델: "다음에 올 복습" 한 건만 서버에 유지한다.**
+
+- `_computeNextReviewNotif()`가 자유여행·왕의 길의 `nextReviewTime`을 모두 훑어 **아직 오지 않은 것 중 가장 이른 하나**를 고른다
+- `syncReviewNotification()`이 이를 `leaderboard/{tag}.reviewNotifications`(1건) + `reviewNotifEarliest`에 기록
+- **`syncToFirestore()` 성공 시마다 호출**되므로 진도가 바뀌면 자동으로 따라간다. 값이 그대로면 쓰지 않아 Firestore 쓰기가 늘지 않는다
+- 서버 `sendReviewNotifications`(functions/index.js, 매분)가 `reviewNotifEarliest <= now`를 훑어 FCM 발송
+
+> **예전 방식의 문제 (2026-09-07 개편)**
+> ① 결과 화면 버튼을 **매번 손으로 눌러야만** 예약됐다
+> ② 버튼이 `rawHr <= 7` 조건이라 **23시간·3일·7일 복습에는 알림을 걸 방법이 아예 없었다.**
+>    정작 잊어버리는 건 긴 간격 쪽인데 짧은 간격에만 알림이 있었다
+> ③ `REVIEW_NOTIF_MAX = 5`로 최근 5건만 남아 나머지는 조용히 버려졌다
+> ④ `TimestampTrigger` 지원 환경(안드로이드 크롬)은 **서버에 저장하지 않고** SW 예약만 걸었는데,
+>    `sw.js` 폴백이 `setTimeout`이라 서비스워커가 종료되면 사라지고 서버가 대신 보내줄 수도 없었다
+
+- 지금은 OS 예약과 서버 예약을 **둘 다** 건다 (한쪽이 실패해도 다른 쪽이 발송)
+- 결과 화면 버튼은 '알림 켜기' 입구 역할 — 권한 요청 + `initFCM()` 후 `syncReviewNotification()`에 위임.
+  이미 켜져 있으면 버튼 대신 "🔔 ~에 복습 알림을 보내드릴게요" 안내만 표시
+- **끄기**: 알림 설정 모달의 `복습 시간 알림` 체크박스(`toggleReviewNotif`). 꺼짐은 `kingsRoad_reviewNotifOff`(localStorage).
+  끄면 서버의 예약도 함께 지워 잔여 알림이 오지 않게 한다
+- 권한이 없으면 켜져 있어도 서버 예약을 지운다 — 서버는 `fcmToken` 없는 문서를 건너뛰므로 `initFCM()`으로 토큰 확보가 선행되어야 한다
+
+---
+
 ## 미션 포인트 시스템 (`missionData.points`, game.js:2527 부근)
 
 일일/주간 퀘스트를 클리어(`claimReward()`)하면 기존 보석 보상과 별개로 **미션 포인트**가 적립되고, 마일스톤 도달 시 추가 보석 보상을 준다. 리그 순위표에 쓰이는 `leagueData.myScore`와는 완전히 분리된 시스템(그쪽은 서버 검증·일일 상한이 걸린 민감한 값이라 건드리지 않음).

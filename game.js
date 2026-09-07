@@ -9218,6 +9218,8 @@ async function syncToFirestore() {
                 localStorage.setItem('kingsRoadSave', JSON.stringify(_d));
             }
         } catch(_e) {}
+        // 진도가 바뀌었을 수 있으므로 다음 복습 알림을 갱신한다 (값이 그대로면 쓰지 않음)
+        if (typeof syncReviewNotification === 'function') syncReviewNotification();
     } catch (e) {
         const msg = (e && e.message) ? e.message : '';
         // FCM/push 관련 에러는 무시
@@ -10905,22 +10907,31 @@ function showClearScreen() {
                 const rawDelayMs = nextStatus.step === 1
                     ? 10 * 60 * 1000
                     : getReviewWaitMs(nextStatus.step + 1);
-                const rawHr = rawDelayMs / 3600000;
-                // 10분 / 1시간 / 6시간 모두 버튼 표시
-                if (rawHr <= 7) {
+                // 간격 제한 없음 — 23시간·3일·7일처럼 긴 간격이야말로 알림이 필요하다.
+                // (예전에는 7시간 이하만 버튼이 떠서 정작 잊어버리는 구간에 알림을 걸 수 없었다)
+                {
                     const fireTime = new Date(Date.now() + rawDelayMs);
                     const hh = String(fireTime.getHours()).padStart(2, '0');
                     const mm = String(fireTime.getMinutes()).padStart(2, '0');
-                    const timeLabel = `${hh}:${mm}`;
-                    // 스테이지 제목 가져오기
-                    const chData = getChapterDataByStageId(sId);
-                    const stageObj = chData && chData.stages ? chData.stages.find(s => s.id === sId) : null;
-                    const stageTitle = stageObj ? getStageTitle(stageObj) : t('label_this_word');
-                    notifWrap.innerHTML = `
-                        <button onclick="scheduleReviewNotification(${rawDelayMs}, '${stageTitle.replace(/'/g, "\\'")}', this)"
-                            style="background:#e8a020; color:white; border:none; padding:9px 20px; border-radius:20px; font-weight:bold; font-size:0.9rem; cursor:pointer;">
-                            🔔 ${timeLabel}에 알림
-                        </button>`;
+                    const dayGap = Math.floor((new Date(fireTime).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000);
+                    const dayLabel = dayGap === 0 ? '' : dayGap === 1 ? '내일 ' : `${dayGap}일 뒤 `;
+                    const timeLabel = `${dayLabel}${hh}:${mm}`;
+
+                    const notifOn = ('Notification' in window) && Notification.permission === 'granted' && !isReviewNotifOff();
+                    if (notifOn) {
+                        // 이미 켜져 있으면 자동 예약되므로 안내만 보여준다
+                        notifWrap.innerHTML = `
+                            <div style="color:#7f8c8d; font-size:0.85rem;">🔔 ${timeLabel}에 복습 알림을 보내드릴게요</div>`;
+                    } else {
+                        const chData = getChapterDataByStageId(sId);
+                        const stageObj = chData && chData.stages ? chData.stages.find(s => s.id === sId) : null;
+                        const stageTitle = stageObj ? getStageTitle(stageObj) : t('label_this_word');
+                        notifWrap.innerHTML = `
+                            <button onclick="scheduleReviewNotification(${rawDelayMs}, '${stageTitle.replace(/'/g, "\\'")}', this)"
+                                style="background:#e8a020; color:white; border:none; padding:9px 20px; border-radius:20px; font-weight:bold; font-size:0.9rem; cursor:pointer;">
+                                🔔 ${timeLabel}에 알림
+                            </button>`;
+                    }
                     notifWrap.style.display = 'block';
                 }
             }
@@ -16956,6 +16967,13 @@ async function openNotificationSettings() {
                 <p style="font-size:0.9rem; color:#7f8c8d; margin-bottom:16px;">
                     ${t('notif_modal_desc')}
                 </p>
+                <label style="display:flex; align-items:center; gap:10px; padding:12px; background:#f4f6f7; border-radius:10px; margin-bottom:16px; cursor:pointer;">
+                    <input type="checkbox" id="review-notif-toggle" onchange="toggleReviewNotif(this)" style="width:18px; height:18px; cursor:pointer;">
+                    <span style="flex:1;">
+                        <span style="font-weight:bold; display:block;">복습 시간 알림</span>
+                        <span style="font-size:0.8rem; color:#7f8c8d;">각 구절의 복습 시점에 자동으로 알려드립니다</span>
+                    </span>
+                </label>
                 <div id="notif-time-list" style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;"></div>
                 <button id="notif-add-btn" onclick="notifAddTime()" style="width:100%; background:#3498db; color:white; border:none; padding:11px; border-radius:10px; font-weight:bold; cursor:pointer; margin-bottom:10px;">
                     ${t('notif_add_time')}
@@ -16978,6 +16996,13 @@ async function openNotificationSettings() {
     try {
         savedTimes = JSON.parse(localStorage.getItem('notifTimes') || '[]');
     } catch (e) { /* 무시 */ }
+
+    // 복습 알림 토글 상태 반영 (권한이 없으면 켜져 있어도 실제로는 안 오므로 꺼짐으로 표시)
+    const reviewToggle = document.getElementById('review-notif-toggle');
+    if (reviewToggle) {
+        const granted = ('Notification' in window) && Notification.permission === 'granted';
+        reviewToggle.checked = granted && !isReviewNotifOff();
+    }
 
     const list = document.getElementById('notif-time-list');
     list.innerHTML = '';
@@ -17129,9 +17154,96 @@ function startNotificationCheck() {
 }
 // ── 매일 알림 시간 체크 끝 ────────────────────────────────────────────────────
 
-// ── 복습 알림 예약 (결과 창 일회성 알림) ────────────────────────────────────
-const REVIEW_NOTIF_MAX = 5;
+/* ── 복습 알림 자동 예약 ──────────────────────────────────────────────────────
+   예전에는 결과 화면의 버튼을 매번 눌러야만 예약됐고, 그마저도 7시간 이하 간격에서만
+   버튼이 떠서 23시간·3일·7일 복습에는 알림을 걸 방법이 아예 없었다.
+   정작 잊어버리는 건 긴 간격 쪽인데도.
 
+   이제는 "다음에 올 복습" 하나만 서버에 유지한다.
+   - 여러 건을 쌓지 않으니 상한(구 REVIEW_NOTIF_MAX=5)에 밀려 사라지는 일이 없다
+   - 모든 모드(자유여행/왕의 길)와 모든 간격을 자동으로 포함한다
+   - 저장할 때마다 다시 계산하므로 진도가 바뀌면 알아서 따라간다
+   서버(functions/index.js sendReviewNotifications)는 매분 reviewNotifEarliest를 훑어 발송한다. */
+const REVIEW_NOTIF_OFF_KEY = 'kingsRoad_reviewNotifOff';
+
+function isReviewNotifOff() {
+    try { return localStorage.getItem(REVIEW_NOTIF_OFF_KEY) === '1'; } catch (e) { return false; }
+}
+
+/* 아직 오지 않은 복습 중 가장 이른 것 하나를 찾는다. 없으면 null. */
+function _computeNextReviewNotif() {
+    const now = Date.now();
+    let best = null;
+    const scan = (nextTimes) => {
+        if (!nextTimes) return;
+        for (const id of Object.keys(nextTimes)) {
+            const at = nextTimes[id];
+            if (typeof at !== 'number' || at <= now) continue;
+            if (!best || at < best.at) best = { at, id };
+        }
+    };
+    scan(typeof stageNextReviewTime !== 'undefined' ? stageNextReviewTime : null);
+    scan(typeof _freeStageNextReviewTime !== 'undefined' ? _freeStageNextReviewTime : null);
+    scan((typeof kingsRoadData !== 'undefined' && kingsRoadData) ? kingsRoadData.nextReviewTime : null);
+    if (!best) return null;
+
+    let stageTitle = t('label_this_word');
+    try {
+        const chData = getChapterDataByStageId(best.id);
+        const stageObj = chData && chData.stages ? chData.stages.find(s => s.id === best.id) : null;
+        if (stageObj) stageTitle = getStageTitle(stageObj);
+    } catch (e) {}
+    return { at: best.at, stage: stageTitle };
+}
+
+let _lastReviewNotifAt = -1; // 같은 값을 반복해서 쓰지 않도록 (Firestore 쓰기 절약)
+
+/* 다음 복습 알림을 서버에 반영한다. 값이 그대로면 아무것도 하지 않는다. */
+async function syncReviewNotification() {
+    if (!myTag || myTag === '0000' || typeof db === 'undefined' || !db) return;
+
+    // 꺼져 있거나 알림 권한이 없으면 서버에 남은 예약을 지운다
+    const off = isReviewNotifOff();
+    const noPermission = !('Notification' in window) || Notification.permission !== 'granted';
+    if (off || noPermission) {
+        if (_lastReviewNotifAt !== 0) {
+            _lastReviewNotifAt = 0;
+            try {
+                await db.collection('leaderboard').doc(String(myTag)).set({
+                    reviewNotifications: [],
+                    reviewNotifEarliest: firebase.firestore.FieldValue.delete()
+                }, { merge: true });
+            } catch (e) { /* 조용히 실패 */ }
+        }
+        return;
+    }
+
+    const next = _computeNextReviewNotif();
+    const at = next ? next.at : 0;
+    if (at === _lastReviewNotifAt) return; // 변화 없음
+
+    try {
+        const docRef = db.collection('leaderboard').doc(String(myTag));
+        if (!next) {
+            await docRef.set({
+                reviewNotifications: [],
+                reviewNotifEarliest: firebase.firestore.FieldValue.delete()
+            }, { merge: true });
+        } else {
+            const ts = firebase.firestore.Timestamp.fromMillis(next.at);
+            await docRef.set({
+                reviewNotifications: [{ at: ts, stage: next.stage }],
+                reviewNotifEarliest: ts
+            }, { merge: true });
+        }
+        _lastReviewNotifAt = at;
+    } catch (e) {
+        console.warn('복습 알림 동기화 실패:', e);
+    }
+}
+
+/* 결과 화면의 알림 버튼 — 이제는 '알림 켜기' 입구 역할이다.
+   권한을 받고 FCM 토큰을 확보한 뒤, 실제 예약은 syncReviewNotification()에 맡긴다. */
 async function scheduleReviewNotification(delayMs, stageTitle, btn) {
     if (!('Notification' in window)) {
         showToast(t('toast_notif_unsupported'));
@@ -17149,45 +17261,61 @@ async function scheduleReviewNotification(delayMs, stageTitle, btn) {
         btn.style.background = '#b0b0b0';
     }
 
+    // 버튼으로 켠 경우 꺼짐 설정을 해제한다
+    try { localStorage.removeItem(REVIEW_NOTIF_OFF_KEY); } catch (e) {}
+
     const notifAt = new Date(Date.now() + delayMs);
     const hh = String(notifAt.getHours()).padStart(2, '0');
     const mm = String(notifAt.getMinutes()).padStart(2, '0');
     const timeLabel = `${hh}:${mm}`;
 
-    const title = t('notif_title');
-    const body = t('notif_review_body', { title: stageTitle });
-    const notifTag = `review-${Date.now()}`;
+    // 서버 발송을 위해 FCM 토큰 확보 (없으면 서버가 그 유저를 건너뛴다)
+    if (typeof initFCM === 'function') { try { await initFCM(); } catch (e) {} }
 
-    if ('TimestampTrigger' in window) {
-        // Android Chrome 등 TimestampTrigger 지원 환경: SW OS 레벨 예약
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.ready.then(reg => {
-                if (reg.active) reg.active.postMessage({ type: 'SCHEDULE_NOTIFICATION', delayMs, title, body, tag: notifTag });
-            }).catch(() => {});
-        }
-    } else {
-        // iOS 등 TimestampTrigger 미지원: Firestore에 저장 → 서버 Cloud Function이 FCM으로 발송
-        if (myTag && db) {
-            try {
-                const atTimestamp = firebase.firestore.Timestamp.fromMillis(Date.now() + delayMs);
-                const docRef = db.collection('leaderboard').doc(String(myTag));
-                const doc = await docRef.get();
-                const existing = doc.exists ? (doc.data().reviewNotifications || []) : [];
-                const newItem = { at: atTimestamp, stage: stageTitle };
-                const updated = [...existing, newItem].slice(-REVIEW_NOTIF_MAX);
-                const earliestMs = Math.min(...updated.map(n => n.at.toMillis()));
-                await docRef.set({
-                    reviewNotifications: updated,
-                    reviewNotifEarliest: firebase.firestore.Timestamp.fromMillis(earliestMs)
-                }, { merge: true });
-            } catch (e) {
-                console.warn('복습 알림 Firestore 저장 실패:', e);
-            }
-        }
+    // OS 레벨 예약과 서버 예약을 함께 건다.
+    // 예전에는 TimestampTrigger 지원 환경이면 서버에 저장하지 않았는데,
+    // sw.js의 폴백이 setTimeout이라 서비스워커가 종료되면 알림이 사라지고
+    // 서버에는 기록이 없어 대신 보내줄 수도 없었다.
+    if ('TimestampTrigger' in window && 'serviceWorker' in navigator) {
+        const title = t('notif_title');
+        const body = t('notif_review_body', { title: stageTitle });
+        navigator.serviceWorker.ready.then(reg => {
+            if (reg.active) reg.active.postMessage({
+                type: 'SCHEDULE_NOTIFICATION', delayMs, title, body, tag: `review-${Date.now()}`
+            });
+        }).catch(() => {});
     }
+    _lastReviewNotifAt = -1; // 강제로 다시 쓰게 한다
+    await syncReviewNotification();
 
     if (btn) { btn.innerHTML = `✅ ${timeLabel} 예약됨`; btn.style.background = '#27ae60'; }
     showToast(`🔔 ${timeLabel}에 알림을 드릴게요!`);
+}
+
+/* 알림 설정 모달의 복습 알림 켜기/끄기 */
+async function toggleReviewNotif(el) {
+    const on = !!(el && el.checked);
+    try {
+        if (on) localStorage.removeItem(REVIEW_NOTIF_OFF_KEY);
+        else localStorage.setItem(REVIEW_NOTIF_OFF_KEY, '1');
+    } catch (e) {}
+
+    if (on) {
+        if (!('Notification' in window)) { showToast(t('toast_notif_unsupported')); if (el) el.checked = false; return; }
+        if (Notification.permission !== 'granted') {
+            const p = await Notification.requestPermission();
+            if (p !== 'granted') {
+                showToast(t('toast_notif_permission'));
+                try { localStorage.setItem(REVIEW_NOTIF_OFF_KEY, '1'); } catch (e) {}
+                if (el) el.checked = false;
+                return;
+            }
+        }
+        if (typeof initFCM === 'function') { try { await initFCM(); } catch (e) {} }
+    }
+    _lastReviewNotifAt = -1;
+    await syncReviewNotification();
+    showToast(on ? '🔔 복습 알림을 켰습니다' : '🔕 복습 알림을 껐습니다');
 }
 // ── 복습 알림 예약 끝 ────────────────────────────────────────────────────────
 
