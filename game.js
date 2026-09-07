@@ -9196,12 +9196,23 @@ async function _callSaveFunction() {
 
 let _syncRetryTimer = null;
 
+/* 업로드 직렬화
+   syncToFirestore()는 20여 곳에서 대부분 await 없이 호출된다.
+   두 요청이 동시에 뜨면 나중 것이 낡은 baseUpdatedAt을 들고 가 서버에 거절당하고,
+   같은 기기인데도 "다른 기기 기록" 배너가 뜬다.
+   진행 중이면 새로 보내지 않고, 끝난 뒤 한 번만 이어서 돌린다(합쳐서 1회). */
+let _syncInFlight = false;
+let _syncQueuedAgain = false;
+
 async function syncToFirestore() {
     if (typeof firebase === 'undefined') return;
     if (typeof myPlayerId === 'undefined' || !myPlayerId) return;
     const raw = localStorage.getItem('kingsRoadSave');
     if (!raw) return;
     try { JSON.parse(raw); } catch (e) { return; }
+
+    if (_syncInFlight) { _syncQueuedAgain = true; return; }
+    _syncInFlight = true;
 
     try {
         const confirmed = await _callSaveFunction();
@@ -9241,14 +9252,21 @@ async function syncToFirestore() {
             // 일시적 오류: 8초 후 1회 자동 재시도 (중복 예약 방지)
             console.warn('[syncToFirestore] 일시 오류, 8초 후 재시도:', code);
             if (_syncRetryTimer) return; // 이미 재시도 예약됨
-            _syncRetryTimer = setTimeout(async () => {
+            // _callSaveFunction()을 직접 부르면 직렬화 가드를 우회하므로 syncToFirestore로 되돌아간다
+            _syncRetryTimer = setTimeout(() => {
                 _syncRetryTimer = null;
-                try { await _callSaveFunction(); }
-                catch (e2) { _showSyncFailToast(e2); }
+                syncToFirestore();
             }, 8000);
         } else {
             // 영구 오류: 즉시 토스트
             _showSyncFailToast(e);
+        }
+    } finally {
+        _syncInFlight = false;
+        // 진행 중에 들어온 요청이 있었으면 최신 상태로 한 번 더 올린다
+        if (_syncQueuedAgain) {
+            _syncQueuedAgain = false;
+            setTimeout(() => syncToFirestore(), 0);
         }
     }
 }
@@ -9308,10 +9326,17 @@ async function checkRemoteIsNewer() {
         const doc = await db.collection('saves').doc(myPlayerId).get();
         if (!doc.exists) return;
         const remoteUpdatedAt = doc.data().updatedAt || 0;
-        const localData = JSON.parse(localStorage.getItem('kingsRoadSave') || 'null');
-        const localUpdatedAt = (localData && localData.updatedAt) ? localData.updatedAt : 0;
-        // 5초 마진: serverTimestamp는 로컬보다 약간 크므로 오차 흡수
-        if (remoteUpdatedAt > localUpdatedAt + 5000) {
+        // ★ 서버 시각끼리 비교한다.
+        //   저장본의 updatedAt은 saveGameData()가 로컬 저장마다 '기기 시계'로 덮어쓰므로,
+        //   기기 시계가 서버보다 조금만 느려도 한 기기만 쓰는 사람에게 오탐 배너가 떴다.
+        //   _serverUpdatedAt은 서버 응답에서만 받은 값이라 remoteUpdatedAt과 같은 시계다.
+        let base = (typeof _serverUpdatedAt === 'number' && _serverUpdatedAt > 0) ? _serverUpdatedAt : 0;
+        if (!base) {
+            const localData = JSON.parse(localStorage.getItem('kingsRoadSave') || 'null');
+            base = (localData && localData.updatedAt) ? localData.updatedAt : 0;
+        }
+        // 5초 마진: 왕복 지연 등 미세 오차 흡수
+        if (remoteUpdatedAt > base + 5000) {
             _showRemoteNewerBanner();
         }
     } catch (e) { /* 조용히 실패 */ }
