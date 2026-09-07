@@ -8698,6 +8698,91 @@ function saveGameData() {
  * Firestore 데이터와 localStorage 데이터를 비교해 더 최신 데이터를 적용하고,
  * Firestore에 데이터가 없으면 localStorage 데이터를 마이그레이션(1회 업로드)한다.
  */
+/* ── 암기 진행도 필드 단위 병합 ──────────────────────────────────────────────
+   두 기기가 각자 진도를 냈을 때, 한쪽을 통째로 버리지 않고 스테이지별로 앞선 쪽을 취한다.
+
+   ★ 반드시 스테이지 단위로 통째 선택해야 한다.
+     한 스테이지의 다섯 필드(mastery/clearDate/lastClear/reviewStep/nextReviewTime)는 서로 맞물려 있어서,
+     복습 스텝만 A에서 다음 복습 시각만 B에서 가져오면 복습 일정 자체가 깨진다.
+
+   앞선 쪽 판정: 복습 스텝 > 마지막 클리어 시각 > 클리어 횟수 순.
+   단 clearDate(최초 클리어 날짜)만은 예외로 '이른 쪽'을 남긴다 — 최초 기록이니까. */
+const _PROGRESS_KEYS = ['mastery', 'clearDate', 'lastClear', 'reviewStep', 'nextReviewTime'];
+
+function _mergeProgressSet(a, b) {
+    const pick = (src, id) => ({
+        mastery:        (src.mastery        || {})[id],
+        clearDate:      (src.clearDate      || {})[id],
+        lastClear:      (src.lastClear      || {})[id],
+        reviewStep:     (src.reviewStep     || {})[id],
+        nextReviewTime: (src.nextReviewTime || {})[id],
+    });
+
+    const ids = new Set();
+    for (const side of [a, b]) {
+        for (const k of _PROGRESS_KEYS) Object.keys((side && side[k]) || {}).forEach(id => ids.add(id));
+    }
+
+    const out = {};
+    for (const k of _PROGRESS_KEYS) out[k] = {};
+    let tookFromB = 0;
+
+    ids.forEach(id => {
+        const A = pick(a || {}, id);
+        const B = pick(b || {}, id);
+        const hasA = A.reviewStep !== undefined || A.mastery !== undefined || A.lastClear !== undefined;
+        const hasB = B.reviewStep !== undefined || B.mastery !== undefined || B.lastClear !== undefined;
+
+        let win;
+        if (!hasA) { win = B; if (hasB) tookFromB++; }
+        else if (!hasB) { win = A; }
+        else {
+            const sA = A.reviewStep || 0, sB = B.reviewStep || 0;
+            if (sA !== sB) win = sA > sB ? A : B;
+            else {
+                const lA = A.lastClear || 0, lB = B.lastClear || 0;
+                if (lA !== lB) win = lA > lB ? A : B;
+                else win = (A.mastery || 0) >= (B.mastery || 0) ? A : B;
+            }
+            if (win === B) tookFromB++;
+        }
+
+        for (const k of _PROGRESS_KEYS) {
+            if (win[k] !== undefined) out[k][id] = win[k];
+        }
+        // 최초 클리어 날짜는 이른 쪽을 남긴다 ('YYYY-MM-DD'라 문자열 비교로 충분)
+        const cdA = A.clearDate, cdB = B.clearDate;
+        if (cdA && cdB) out.clearDate[id] = (cdA < cdB) ? cdA : cdB;
+        else if (cdA || cdB) out.clearDate[id] = cdA || cdB;
+    });
+
+    return { merged: out, tookFromOther: tookFromB };
+}
+
+/* 저장본 두 개(local/remote)의 자유여행·왕의 길 진행도를 모두 병합해 target에 반영한다.
+   반환값은 상대편에서 가져온 스테이지 수 — 0이면 병합으로 바뀐 게 없다는 뜻. */
+function _mergeSaveProgress(target, other) {
+    if (!target || !other) return 0;
+    let took = 0;
+
+    // 1) 자유여행 — 최상위 필드
+    {
+        const r = _mergeProgressSet(target, other);
+        for (const k of _PROGRESS_KEYS) target[k] = r.merged[k];
+        took += r.tookFromOther;
+    }
+    // 2) 왕의 길 — kingsMode 하위 필드
+    {
+        const tk = target.kingsMode || {};
+        const ok = other.kingsMode || {};
+        const r = _mergeProgressSet(tk, ok);
+        target.kingsMode = Object.assign({}, ok, tk);
+        for (const k of _PROGRESS_KEYS) target.kingsMode[k] = r.merged[k];
+        took += r.tookFromOther;
+    }
+    return took;
+}
+
 async function initFirestoreSync() {
     if (typeof db === 'undefined' || !db) return;
     if (typeof myPlayerId === 'undefined' || !myPlayerId) return;
@@ -8783,9 +8868,18 @@ async function initFirestoreSync() {
         // 로컬 우선 경로에서도 Firestore의 고난 기록·심화챕터·미션 보상을 병합
         // (어드민 보상 / 다른 기기 기록이 로컬 업로드에 묻히지 않도록)
         if (remoteData) {
+            // 0) 암기 진행도: 스테이지별로 앞선 쪽을 취해 합친다
+            //    (로컬이 최신이라도 서버에만 있는 스테이지 진도가 묻히지 않도록)
+            let _localChanged = false;
+            {
+                const _took = _mergeSaveProgress(localData, remoteData);
+                if (_took > 0) {
+                    console.log(`[Firestore] 서버 쪽이 앞선 스테이지 ${_took}건 병합`);
+                    _localChanged = true;
+                }
+            }
             // 1) 고난 히스토리: Firestore에만 있는 날짜의 기록을 로컬에 추가
             const _hardshipKeys = ['hardshipAddressClearHistory','hardshipMemoryClearHistory','hardshipEnduranceClearHistory','hardshipVerseClearHistory'];
-            let _localChanged = false;
             for (const _key of _hardshipKeys) {
                 const _lh = localData[_key] || {};
                 const _rh = remoteData[_key] || {};
@@ -8871,6 +8965,13 @@ async function initFirestoreSync() {
 
     // Firestore가 권위(authority) — Firestore 데이터를 적용
     console.log('[Firestore] 서버 데이터 적용 중...');
+
+    // 암기 진행도: 서버 데이터를 적용하기 전에 로컬이 앞선 스테이지를 흡수한다.
+    // 이게 없으면 오프라인에서 쌓은 복습 진도가 서버 적용과 함께 통째로 사라진다.
+    if (localData) {
+        const _took = _mergeSaveProgress(remoteData, localData);
+        if (_took > 0) console.log(`[Firestore] 로컬 쪽이 앞선 스테이지 ${_took}건 보존`);
+    }
 
     // 미션 claimed/포인트 OR/MAX 병합: serverTimestamp로 인해 updatedAt이 항상 서버가 크므로
     // 오래된 스냅샷이 로컬을 덮어쓰더라도 이미 클리어된 미션 상태를 보존
