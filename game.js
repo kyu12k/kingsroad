@@ -1877,6 +1877,12 @@ try {
 }
 window._bootAt = Date.now();
 
+/* [동기화] 서버가 확정한 updatedAt — 낙관적 동시성 제어의 '기준 버전'.
+   저장본의 updatedAt은 saveGameData()가 로컬 저장마다 Date.now()로 덮어써서 서버 값에서 멀어지므로,
+   서버 응답에서 받은 값만 담는 별도 상태가 필요하다.
+   값 갱신은 _setServerUpdatedAt(), 전송은 _callSaveFunction()에서 baseUpdatedAt으로. */
+let _serverUpdatedAt = 0;
+
 /* (주의) saveGameData의 통합 구현은 아래의 선언부(function saveGameData)에서 관리합니다. */
 // 2. 게임 불러오기 (데이터가 없어도 에러 안 나게 방어)
 loadGameData = function () {
@@ -2135,6 +2141,11 @@ loadGameData = function () {
             if (freeMigrated || kingsMigrated) {
                 console.log('🔄 mid-boss ID 마이그레이션 완료 (중간점검 개편)');
             }
+        }
+
+        // 동시성 제어 기준 버전 복원 (서버가 확정한 값만 담긴다)
+        if (typeof parsed.serverUpdatedAt === 'number' && parsed.serverUpdatedAt > 0) {
+            _serverUpdatedAt = parsed.serverUpdatedAt;
         }
 
         // [복원] 친구·길드원 메모
@@ -8701,6 +8712,10 @@ async function initFirestoreSync() {
         window.firestoreSyncPending = false;
         if (localData) {
             console.log('[Firestore] 백업 복원 후 강제 업로드: localStorage → Firestore');
+            // 사용자가 명시적으로 "이 데이터로 덮어쓴다"를 선택한 경로다.
+            // 복원한 백업의 기준 버전은 낡아 있으므로 그대로 두면 동시성 검사에 거절당한다.
+            // 기준을 비워 서버가 검사를 건너뛰게 한다.
+            _serverUpdatedAt = 0;
             await syncToFirestore();
         }
         return;
@@ -8928,6 +8943,8 @@ async function initFirestoreSync() {
 
     localStorage.setItem('kingsRoadSave', JSON.stringify(remoteData));
     window.firestoreSyncPending = false;
+    // 이제부터 이 서버 버전이 기준 — 다음 저장은 이 값 위에서 이뤄진다
+    _setServerUpdatedAt(remoteData.updatedAt);
     loadGameData();
     if (typeof renderChapterMap === 'function') renderChapterMap();
     if (typeof updateCastleView  === 'function') updateCastleView();
@@ -9048,12 +9065,32 @@ function _showSyncFailToast(e, label = '서버 저장 실패') {
     setTimeout(() => toast.remove(), 8000);
 }
 
+/* _serverUpdatedAt 선언은 loadGameData()보다 앞에 있어야 하므로 파일 상단(부팅 스냅샷 옆)에 둔다 */
+function _setServerUpdatedAt(v) {
+    if (typeof v !== 'number' || !(v > 0)) return;
+    _serverUpdatedAt = v;
+    // 새로고침 후에도 기준 버전이 유지되도록 저장본에도 남긴다
+    try {
+        const raw = localStorage.getItem('kingsRoadSave');
+        if (raw) {
+            const d = JSON.parse(raw);
+            d.serverUpdatedAt = v;
+            localStorage.setItem('kingsRoadSave', JSON.stringify(d));
+        }
+    } catch (e) {}
+}
+
 async function _callSaveFunction() {
     const raw = localStorage.getItem('kingsRoadSave');
     if (!raw) return;
     const saveData = JSON.parse(raw);
+    // 이 저장이 어느 서버 버전 위에서 만들어졌는지 알린다 (서버가 그보다 최신이면 거절)
+    if (_serverUpdatedAt > 0) saveData.baseUpdatedAt = _serverUpdatedAt;
     const fn = firebase.app().functions('asia-northeast3').httpsCallable('saveGameDataSecure');
-    await fn(saveData);
+    const res = await fn(saveData);
+    const confirmed = res && res.data && res.data.updatedAt;
+    if (confirmed) _setServerUpdatedAt(confirmed);
+    return confirmed;
 }
 
 let _syncRetryTimer = null;
@@ -9066,17 +9103,17 @@ async function syncToFirestore() {
     try { JSON.parse(raw); } catch (e) { return; }
 
     try {
-        await _callSaveFunction();
+        const confirmed = await _callSaveFunction();
         window._syncDirty = false;
         // 성공 시 예약된 재시도 취소
         if (_syncRetryTimer) { clearTimeout(_syncRetryTimer); _syncRetryTimer = null; }
-        // 업로드 완료 시각으로 로컬 updatedAt 갱신 — 서버 타임스탬프와 동기화해 "다른 기기 기록" 오탐 방지
+        // 서버가 확정한 시각으로 로컬 updatedAt을 맞춘다 — "다른 기기 기록" 오탐 방지
         _lastRemoteCheck = Date.now();
         try {
             const _raw = localStorage.getItem('kingsRoadSave');
             if (_raw) {
                 const _d = JSON.parse(_raw);
-                _d.updatedAt = Date.now();
+                _d.updatedAt = confirmed || Date.now();
                 localStorage.setItem('kingsRoadSave', JSON.stringify(_d));
             }
         } catch(_e) {}
@@ -9086,6 +9123,17 @@ async function syncToFirestore() {
         if (msg.includes('push subscription') || msg.includes('service worker')) return;
 
         const code = (e && e.code) ? String(e.code).replace('functions/', '') : '';
+
+        // 낡은 버전 위의 저장이라 서버가 거절함 — 다른 기기가 더 최근에 저장했다는 뜻.
+        // 재시도하면 같은 이유로 계속 거절되므로 사용자에게 알리고 선택을 맡긴다.
+        // (_syncDirty는 true로 남아 있어 로컬 변경이 조용히 버려지지 않는다)
+        if (code === 'aborted') {
+            console.warn('[syncToFirestore] 다른 기기의 최신 저장이 있어 업로드가 거절됨');
+            if (_syncRetryTimer) { clearTimeout(_syncRetryTimer); _syncRetryTimer = null; }
+            if (typeof _showRemoteNewerBanner === 'function') _showRemoteNewerBanner();
+            return;
+        }
+
         if (_SYNC_TRANSIENT_CODES.has(code) || msg.includes('network')) {
             // 일시적 오류: 8초 후 1회 자동 재시도 (중복 예약 방지)
             console.warn('[syncToFirestore] 일시 오류, 8초 후 재시도:', code);
