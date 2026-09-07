@@ -81,10 +81,43 @@ exports.saveGameDataSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
         updatedAt: serverNow,
         savedByServer: true
     };
+    // baseUpdatedAt은 동시성 검사용 메타 필드이므로 문서에는 남기지 않는다
+    delete dataToSave.baseUpdatedAt;
+
+    // 7. 낙관적 동시성 제어
+    // 클라이언트는 자신이 기준으로 삼은 서버 updatedAt을 baseUpdatedAt으로 보낸다.
+    // 그 사이 다른 기기가 더 최근에 저장했다면 이 저장은 '낡은 버전 위의 쓰기'이므로 거절한다.
+    // (이 장치가 없어 오래된 기기가 다른 기기의 진행을 통째로 덮어쓴 사고가 있었다. 2026-09-06)
+    //
+    // ★ baseUpdatedAt을 보내지 않는 구버전 클라이언트는 검사를 건너뛴다.
+    //   덕분에 서버/클라이언트 배포 순서와 무관하게 안전하며, 이 함수만 되돌리면 검사가 사라진다.
+    const docRef = db.collection("saves").doc(uid);
+    const hasBase = typeof newData.baseUpdatedAt === "number";
 
     try {
-        await db.collection("saves").doc(uid).set(dataToSave);
+        await db.runTransaction(async (tx) => {
+            if (hasBase) {
+                const snap = await tx.get(docRef);
+                if (snap.exists) {
+                    const serverUpdatedAt = snap.data().updatedAt || 0;
+                    if (serverUpdatedAt > newData.baseUpdatedAt) {
+                        const staleErr = new Error("stale-write");
+                        staleErr._staleServerUpdatedAt = serverUpdatedAt;
+                        throw staleErr;
+                    }
+                }
+            }
+            tx.set(docRef, dataToSave);
+        });
     } catch (e) {
+        if (e && e._staleServerUpdatedAt !== undefined) {
+            console.log(`[saveGameDataSecure] 낡은 쓰기 거절 uid=${uid} base=${newData.baseUpdatedAt} server=${e._staleServerUpdatedAt}`);
+            throw new HttpsError(
+                "aborted",
+                "다른 기기에서 더 최근에 저장했습니다.",
+                { serverUpdatedAt: e._staleServerUpdatedAt }
+            );
+        }
         console.error(`[saveGameDataSecure] Firestore set 실패 uid=${uid}`, e);
         throw new HttpsError("internal", "저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
     }
