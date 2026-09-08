@@ -4469,13 +4469,40 @@ function updateNicknamePreview() {
     }
 }
 
+/* 도감 점수 계산 — 구절별 누적 클리어 횟수에 따라 10/20/30/50점.
+   예전에는 이 계산이 renderLifeBook() 안에 인라인으로 박혀 있어서 도감 화면을 열어야만 값이 생겼고,
+   그 변수는 함수 지역(let)이라 recalculateMaxHearts()에서는 스코프상 아예 보이지 않았다.
+   → 도감 15,000점 +3 체력 보너스가 한 번도 발동한 적이 없다. 2026-09-08 수정. */
+function getCollectionScoreOf(mastery) {
+    if (!mastery || typeof bibleData === 'undefined') return 0;
+    let total = 0;
+    for (let ch = 1; ch <= 22; ch++) {
+        if (!bibleData[ch]) continue;
+        bibleData[ch].forEach((v, idx) => {
+            const count = mastery[`${ch}-${idx + 1}`] || 0;
+            if (count >= 20) total += 50;
+            else if (count >= 10) total += 30;
+            else if (count >= 5) total += 20;
+            else if (count >= 1) total += 10;
+        });
+    }
+    return total;
+}
+
+/* 체력 보너스 판정용 — 자유여행과 왕의 길을 합산한다.
+   활성 모드일 때 stageMastery가 그 모드의 데이터를 가리키므로 자유여행 쪽은 백업본에서 읽는다. */
+function getTotalCollectionScore() {
+    const freeMastery = (activeMode === 'kings') ? _freeStageMastery : stageMastery;
+    const kingsMastery = (typeof kingsRoadData !== 'undefined') ? kingsRoadData.mastery : null;
+    return getCollectionScoreOf(freeMastery) + getCollectionScoreOf(kingsMastery);
+}
+
 /* [추가] 최종 체력 계산 함수 (버프 적용용) */
 function recalculateMaxHearts() {
-    // 1. 도감 점수 확인 (15,000점 이상이면 +3 보너스)
+    // 1. 도감 점수 확인 (자유여행 + 왕의 길 합산 15,000점 이상이면 +3 보너스)
     let bonus = 0;
 
-    // 아직 점수 변수가 안 만들어졌을 수도 있으니 안전하게 확인
-    if (typeof grandTotalScore !== 'undefined' && grandTotalScore >= 15000) {
+    if (getTotalCollectionScore() >= 15000) {
         bonus = 3;
     }
 
@@ -12508,20 +12535,8 @@ function renderLifeBook() {
     const activeBtn = selector.querySelector('.active');
     if (activeBtn) activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
 
-    // 2. 전체 통합 점수 계산
-    let grandTotalScore = 0;
-    for (let ch = 1; ch <= 22; ch++) {
-        if (bibleData[ch]) {
-            bibleData[ch].forEach((v, idx) => {
-                const sId = `${ch}-${idx + 1}`;
-                const count = stageMastery[sId] || 0;
-                if (count >= 20) grandTotalScore += 50;
-                else if (count >= 10) grandTotalScore += 30;
-                else if (count >= 5) grandTotalScore += 20;
-                else if (count >= 1) grandTotalScore += 10;
-            });
-        }
-    }
+    // 2. 전체 통합 점수 계산 (표시는 현재 모드 기준 — 체력 보너스는 두 모드 합산)
+    const grandTotalScore = getCollectionScoreOf(stageMastery);
 
     // 3. ★ 다음 경지까지 남은 점수 계산 ★
     const nextRank = getNextCollectionRank(grandTotalScore);
