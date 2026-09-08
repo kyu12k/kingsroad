@@ -167,6 +167,8 @@ const LANG = {
         alert_hint_no_gems: '💎 보석이 부족합니다! (필요: {cost})',
         alert_hint_read_aloud: '이 단계에서는 큰 소리로 읽는 것이 정답입니다! 📣',
         alert_hint_load_error: '이 구절의 힌트 데이터를 불러올 수 없습니다.',
+        alert_hint_locked: '먼저 한 번 시도해 보세요. 틀린 뒤에 힌트가 열립니다. 🔒',
+        alert_hint_locked_typing: '한 글자라도 입력해 보세요. 그 뒤에 힌트가 열립니다. 🔒',
         hint_btn_label: '💡 힌트',
         hint_confirm: '💎 보석 {cost}개를 소모하여 힌트를 보시겠습니까?',
         hint_modal_header: '💡 힌트 사용 💎{cost}',
@@ -921,6 +923,8 @@ const LANG = {
         alert_hint_no_gems: '💎 Not enough gems! (Required: {cost})',
         alert_hint_read_aloud: 'At this stage, reading aloud is the correct answer! 📣',
         alert_hint_load_error: 'Could not load hint data for this verse.',
+        alert_hint_locked: 'Give it a try first. Hints unlock after a wrong answer. 🔒',
+        alert_hint_locked_typing: 'Type at least one character first. Then the hint unlocks. 🔒',
         hint_btn_label: '💡 Hint',
         hint_confirm: 'Use {cost} 💎 gems for a hint?',
         hint_modal_header: '💡 Hint 💎{cost}',
@@ -7496,6 +7500,7 @@ function createVictoryParticles() {
 /* [수정] loadNextVerse (축하 이펙트 강화 버전) */
 function loadNextVerse() {
     if (!window.isGamePlaying) return; // ★ 추가: 나갔으면 중단! (보스전 타이머 방어)
+    resetHintLock(); // 구절이 바뀌면 힌트를 다시 잠근다
     // 1. 전투 종료 체크 (승리!)
     if (currentVerseIdx >= window.currentBattleData.length) {
 
@@ -7920,6 +7925,7 @@ function loadNextVerse() {
             deselect();
         } else {
             // 🔴 실패 로직
+            markHintAttempt();
             if (_tryUseShield()) {
                 updateBattleUI();
                 deselect();
@@ -9601,6 +9607,7 @@ function loadStep() {
         clearTimeout(window._step1FinishTimer);
         window._step1FinishTimer = null;
     }
+    resetHintLock(); // 스텝이 바뀌면 힌트를 다시 잠근다
     const currentOrder = sequenceIndex + 1;
     const totalCount = stepSequence.length || 1; // 0으로 나누기 방지
 
@@ -10187,6 +10194,7 @@ function loadStep() {
                 } else {
                     // 🔴 [실패] 오답일 때
                     const displayEl = document.getElementById('initials-display');
+                    markHintAttempt();
                     if (_tryUseShield()) {
                         // 방패 발동: 체력 유지, 시각 피드백만 보여주고 재시도
                         this.classList.add('error-block', 'shake-effect');
@@ -10581,6 +10589,7 @@ function loadStep() {
                     }, 500);
                 }
             } else {
+                markHintAttempt();
                 if (_tryUseShield()) {
                     // 방패 발동: 오답 블록 자동 제거 후 재시도
                     if (removeErrorBtn) { removeErrorBtn.remove(); removeErrorBtn = null; }
@@ -11290,9 +11299,39 @@ function useLifeBread() {
 let isHintModalOpen = false;
 const HINT_COST = 10; // ★ 비용이 증가하지 않도록 상수로 고정합니다.
 
+// ★ 힌트 잠금 — "먼저 스스로 인출을 시도한 뒤에 도움"
+// 힌트를 먼저 보면 인출(retrieval)이 사라지고 단순 재학습(restudy)이 되어 기억에 남지 않는다.
+// 시도를 강제하면 같은 힌트가 '지름길'이 아니라 '회복 도구'가 된다.
+let hintAttemptMade = false;
+
+// 오답이 발생한 모든 지점에서 호출 (방패로 막힌 오답도 '시도'로 인정)
+function markHintAttempt() {
+    if (hintAttemptMade) return;
+    hintAttemptMade = true;
+    if (typeof updateHintButtonLabels === 'function') updateHintButtonLabels();
+}
+
+// 문제 단위(훈련=스텝, 보스전=구절)로 다시 잠근다
+function resetHintLock() {
+    hintAttemptMade = false;
+    if (typeof updateHintButtonLabels === 'function') updateHintButtonLabels();
+}
+
+function isHintUnlocked() {
+    if (window.isHardshipMode) {
+        if (!hardshipState || hardshipState.mode !== 'memory') return false;
+        // 망각의 고난은 한 글자씩 공개하는 점진적 단서라 무료지만,
+        // 백지 상태에서 바로 열면 시도 자체가 없어지므로 입력을 한 글자 이상 요구한다.
+        return String(hardshipState.memoryTypedText || '').replace(/\s/g, '').length > 0;
+    }
+    return hintAttemptMade;
+}
+
 function getCurrentHintCost() {
     if (window.isHardshipMode) {
-        return hardshipState.mode === 'memory' ? HINT_COST : 0;
+        // 망각의 고난 힌트는 무료 — 한 글자씩만 공개하는 점진적 단서라
+        // 반복 인출 시도를 만들어내는 쪽에 가깝다. 비용이 이를 억제할 이유가 없다.
+        return 0;
     }
 
     return isFocusedTrainingSession() ? 0 : HINT_COST;
@@ -11307,6 +11346,12 @@ function updateHintButtonLabels() {
     const hintLabel = hintCost > 0 ? '' : `(${t('label_free')})`;
     const btnLabel = t('hint_btn_label');
 
+    // 잠금 상태는 흐리게만 표시하고 클릭은 막지 않는다 — 눌러야 이유를 안내할 수 있다
+    const locked = !isHintUnlocked();
+    const setLockStyle = (btn) => {
+        if (btn) btn.classList.toggle('hint-locked', locked);
+    };
+
     const setHintBtn = (btnId, costId) => {
         const btn = document.getElementById(btnId);
         const costSpan = document.getElementById(costId);
@@ -11315,6 +11360,7 @@ function updateHintButtonLabels() {
             const textNode = [...btn.childNodes].find(n => n.nodeType === 3);
             if (textNode) textNode.textContent = btnLabel + ' ';
         }
+        setLockStyle(btn);
         if (costSpan) costSpan.textContent = hintLabel;
     };
 
@@ -11325,6 +11371,7 @@ function updateHintButtonLabels() {
     if (hardshipHintCost) hardshipHintCost.textContent = hintLabel;
     const hardshipHintLabelSpan = document.getElementById('common-hardship-hint-label');
     if (hardshipHintLabelSpan) hardshipHintLabelSpan.textContent = btnLabel;
+    setLockStyle(document.getElementById('common-hardship-hint-btn'));
 }
 
 function useHint() {
@@ -11336,6 +11383,20 @@ function useHint() {
         return;
     }
 
+    const screen = document.getElementById('game-screen');
+    const isTraining = screen.classList.contains('mode-training');
+
+    if (isTraining && currentStep === 1) {
+        showGemToast(0, t('alert_hint_read_aloud'), true);
+        return;
+    }
+
+    // ★ 먼저 한 번 틀려봐야 열린다 (markHintAttempt)
+    if (!isHintUnlocked()) {
+        showGemToast(0, t('alert_hint_locked'), true);
+        return;
+    }
+
     const hintCost = getCurrentHintCost();
     battleHintCount++; // 힌트 사용 횟수 누적
     // 보스전(훈련/고난 아닐 때)에만 bossHintCount 증가
@@ -11343,14 +11404,6 @@ function useHint() {
 
     if (hintCost > 0 && myGems < hintCost) {
         showGemToast(0, t('alert_hint_no_gems', { cost: hintCost }), true);
-        return;
-    }
-
-    const screen = document.getElementById('game-screen');
-    const isTraining = screen.classList.contains('mode-training');
-
-    if (isTraining && currentStep === 1) {
-        showGemToast(0, t('alert_hint_read_aloud'), true);
         return;
     }
 
@@ -15787,6 +15840,7 @@ function handleTowerChoice(btn, selectedWord, correctWord) {
 
     } else {
         // [오답]
+        markHintAttempt();
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
 
         // 버튼 중심 좌표
@@ -16398,6 +16452,7 @@ function checkScrollCollision() {
 
         if (scrollGame.isColliding) return;
         scrollGame.isColliding = true;
+        markHintAttempt();
 
         // 1. 체력 감소 (방패 있으면 차단)
         let _shieldedCollision = false;
@@ -16469,6 +16524,7 @@ function handleScrollCardClick(btn, word) {
 
     } else {
         // [오답 로직 수정됨]
+        markHintAttempt();
         let _shieldedClick = false;
         if (typeof playerHearts !== 'undefined') {
             _shieldedClick = _tryUseShield();
@@ -21992,6 +22048,9 @@ function updateHardshipMemoryBoard() {
         submitBtn.disabled = false;
     }
 
+    // 첫 글자를 입력하는 순간 힌트 잠금이 풀리므로 버튼 표시를 따라가게 한다
+    if (typeof updateHintButtonLabels === 'function') updateHintButtonLabels();
+
     if (targetScrollSlot && !hardshipState.isComposing) {
         clearTimeout(updateHardshipMemoryBoard._scrollTimer);
         const slotToScroll = targetScrollSlot;
@@ -22164,6 +22223,12 @@ function getHardshipMemoryHintPlan() {
 function useHardshipMemoryHint() {
     if (!window.isHardshipMode || hardshipState.mode !== 'memory' || hardshipState.locked) return;
 
+    // ★ 백지 상태에서는 잠김 — 한 글자라도 시도한 뒤에 단서를 준다
+    if (!isHintUnlocked()) {
+        showGemToast(0, t('alert_hint_locked_typing'), true);
+        return;
+    }
+
     const hiddenInput = document.getElementById('hidden-typing-input');
     const { memoryTextMods, hintIndex } = getHardshipMemoryHintPlan();
 
@@ -22172,12 +22237,7 @@ function useHardshipMemoryHint() {
         return;
     }
 
-    if (myGems < HINT_COST) {
-        showGemToast(0, t('alert_blank_hint_no_gems', { cost: HINT_COST }), true);
-        return;
-    }
-
-    myGems -= HINT_COST;
+    // 비용 없음 — getCurrentHintCost()가 고난 모드에서 0을 반환하는 것과 같은 이유
     if (typeof SoundEffect !== 'undefined' && SoundEffect.playHint) SoundEffect.playHint();
 
     if (memoryTextMods.length > 0) {
