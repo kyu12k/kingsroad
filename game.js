@@ -698,6 +698,8 @@ const LANG = {
         library_help_score_items: '• 구절 1회 클리어: 10점<br>• 구절 5회 이상: 20점<br>• 구절 10회 이상: 30점<br>• 구절 20회 이상: 50점',
         library_help_rank_title: '⭐ 깨달음의 경지 보너스',
         library_help_rank_items: '• 1000점: 보석 5% 추가 획득<br>• 2500점: 오답 1회 무시<br>• 6000점: 보석 10%, 승점 5% 추가<br>• 14000점: 보석 15%, 오답 2회<br>• 20000점: 보석 15% + 오답 3회 + 승점 15%',
+        library_help_hearts_title: '❤️ 최대 체력 보너스',
+        library_help_hearts_desc: '자유여행과 왕의 길 도감 점수를 <strong>합쳐 15,000점</strong> 이상이면 최대 체력이 <strong>+3</strong> 됩니다.<br><span style="color:#95a5a6; font-size:0.95em;">※ 위의 경지 보너스는 현재 모드의 점수만으로 판정됩니다.</span>',
         library_current_score: '현재 도감 점수',
         library_rank_label: '깨달음의 경지',
         library_no_buff: '아직 효과 없음',
@@ -1456,6 +1458,8 @@ const LANG = {
         library_help_score_items: '• 1st clear: 10 pts<br>• 5+ clears: 20 pts<br>• 10+ clears: 30 pts<br>• 20+ clears: 50 pts',
         library_help_rank_title: '⭐ Enlightenment Rank Bonuses',
         library_help_rank_items: '• 1000 pts: +5% gems<br>• 2500 pts: 1 wrong forgiven<br>• 6000 pts: +10% gems, +5% score<br>• 14000 pts: +15% gems, 2 wrong forgiven<br>• 20000 pts: +15% gems, 3 wrong forgiven, +15% score',
+        library_help_hearts_title: '❤️ Max Hearts Bonus',
+        library_help_hearts_desc: 'Reach <strong>15,000 points combined</strong> across Free Journey and King\'s Road for <strong>+3 max hearts</strong>.<br><span style="color:#95a5a6; font-size:0.95em;">Note: the rank bonuses above use only your current mode\'s score.</span>',
         library_current_score: 'Collection Score',
         library_rank_label: 'Enlightenment Rank',
         library_no_buff: 'No effect yet',
@@ -8239,6 +8243,10 @@ function showLibraryHelpModal() {
             <div style="margin-top:14px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:14px;">
                 <div style="margin-bottom:8px;"><strong style="color:#f1c40f;">${t('library_help_rank_title')}</strong></div>
                 <div style="font-size:0.85rem;">${t('library_help_rank_items')}</div>
+            </div>
+            <div style="margin-top:14px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:14px;">
+                <div style="margin-bottom:8px;"><strong style="color:#f1c40f;">${t('library_help_hearts_title')}</strong></div>
+                <div style="font-size:0.85rem;">${t('library_help_hearts_desc')}</div>
             </div>
         </div>
     `;
