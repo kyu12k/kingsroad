@@ -11258,7 +11258,11 @@ function getCurrentHintCost() {
 
 function updateHintButtonLabels() {
     const hintCost = getCurrentHintCost();
-    const hintLabel = hintCost > 0 ? `(💎${hintCost})` : `(${t('label_free')})`;
+    // 유료 비용(💎10)은 표시하지 않는다 — 고정값이라 한 번 알면 되는 정보인데
+    // 좁은 배틀 헤더에서 자리를 많이 차지해 다른 버튼을 밀어냈다.
+    // 부족하면 누를 때 alert_hint_no_gems 토스트로 안내된다.
+    // 반면 '무료'는 모드에 따라 달라지는 정보이므로 그때만 남긴다.
+    const hintLabel = hintCost > 0 ? '' : `(${t('label_free')})`;
     const btnLabel = t('hint_btn_label');
 
     const setHintBtn = (btnId, costId) => {

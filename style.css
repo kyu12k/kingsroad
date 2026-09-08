@@ -1412,6 +1412,14 @@ body, html {
         }
         .btn-pause { background: none; border: 1px solid #7f8c8d; color: #bdc3c7; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
         .battle-header .item-btn { padding: 5px 8px !important; font-size: 0.85rem !important; min-width: 0 !important; }
+        /* 배틀 헤더 컨트롤은 줄바꿈·찌그러짐 방지.
+           .item-btn(힌트)에는 white-space:nowrap이 있는데 .btn-pause(포기)에는 없어서,
+           체력이 '44 / 44'처럼 길어지면 포기 버튼만 눌려 '포/기'로 줄바꿈됐다. */
+        .battle-header .btn-pause,
+        .battle-header .battle-sfx-btn {
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
         /* Step5 오답 빼기 버튼 */
         .btn-remove-errors {
             display: block;
