@@ -167,6 +167,13 @@ const LANG = {
         alert_hint_no_gems: '💎 보석이 부족합니다! (필요: {cost})',
         alert_hint_read_aloud: '이 단계에서는 큰 소리로 읽는 것이 정답입니다! 📣',
         alert_hint_load_error: '이 구절의 힌트 데이터를 불러올 수 없습니다.',
+        embed_title_midboss_blank: '중간 점검 · 빈칸',
+        embed_title_midboss_none: '중간 점검 · 백지',
+        embed_title_verse_check: '백지 확인',
+        blank_check_btn: '백지로 확인해보기',
+        blank_check_again: '한 번 더 백지로',
+        blank_check_hint: '지금이 가장 잘 떠오를 때예요',
+        blank_check_first_bonus: '✨ 이 구절을 처음 백지로 써냈습니다! 💎 +{gem}',
         alert_hint_locked: '먼저 한 번 시도해 보세요. 틀린 뒤에 힌트가 열립니다. 🔒',
         alert_hint_locked_typing: '한 글자라도 입력해 보세요. 그 뒤에 힌트가 열립니다. 🔒',
         hint_btn_label: '💡 힌트',
@@ -923,6 +930,13 @@ const LANG = {
         alert_hint_no_gems: '💎 Not enough gems! (Required: {cost})',
         alert_hint_read_aloud: 'At this stage, reading aloud is the correct answer! 📣',
         alert_hint_load_error: 'Could not load hint data for this verse.',
+        embed_title_midboss_blank: 'Checkpoint · Blanks',
+        embed_title_midboss_none: 'Checkpoint · Blank Page',
+        embed_title_verse_check: 'Memory Check',
+        blank_check_btn: 'Try it from memory',
+        blank_check_again: 'From memory again',
+        blank_check_hint: 'Right now is when it comes back most easily',
+        blank_check_first_bonus: '✨ First time writing this verse from memory! 💎 +{gem}',
         alert_hint_locked: 'Give it a try first. Hints unlock after a wrong answer. 🔒',
         alert_hint_locked_typing: 'Type at least one character first. Then the hint unlocks. 🔒',
         hint_btn_label: '💡 Hint',
@@ -1823,6 +1837,11 @@ let hardshipVerseClearHistory = {}; // 장별 구절의 고난 클리어 기록 
    - firstPass/lastPass: 간격을 두고 두 번 이상 성공했는지(정착) 판정용 */
 let verseRecall = {};
 const ENDURANCE_PASS_SCORE = 80; // 암송의 고난 통과선 (승점 만점 구간과 동일)
+// 한 구절을 처음 백지로 써냈을 때 1회만 주는 보석. 404절 전부라도 총 12,120으로
+// 심화 미션 하루치(약 19,300)보다 작아 경제에 미치는 영향이 제한적이다.
+const VERSE_FIRST_RECALL_GEM = 30;
+// 다른 콘텐츠가 고난 엔진을 빌려 쓸 때의 진입 정보. startHardshipSession()이 소비한다.
+let _pendingHardshipEmbed = null;
 
 /* 온보딩 이탈 지점 (2026-09-08)
    활성 사용자의 절반이 한 구절도 클리어하지 않는데, 어디서 멈추는지 서버에 남는 게 없었다.
@@ -5943,6 +5962,16 @@ function goMap() {
     }
 }
 
+/* 아직 첫 스테이지를 한 번도 깨지 않은 상태인가.
+   기존 사용자에게 영향이 가지 않도록 온보딩 표식이 아니라 '클리어 기록이 전무한가'로 판단한다
+   (표식은 이번 배포부터 쌓이므로, 그것만 보면 기존 사용자도 세션 초반에 걸린다). */
+function _isPreFirstClear() {
+    if (onboardStep === 'cleared') return false;
+    const freeCount = Object.keys(stageMastery || {}).length;
+    const kingsCount = Object.keys((typeof kingsRoadData !== 'undefined' && kingsRoadData.mastery) || {}).length;
+    return freeCount === 0 && kingsCount === 0;
+}
+
 /* 첫 구절 안내 대상인가 — 자유여행이고, 클리어 기록이 전무하고, 아직 안내한 적 없을 때만 */
 function _shouldGuideFirstStage() {
     if (activeMode !== 'free') return false; // 왕의 길은 stepHistory 설정이 선행되어야 함
@@ -7315,6 +7344,11 @@ function openBossSetupModal(stage) {
     window._pendingBossStage = stage;
 
     const isMid = String(stage.id).includes('mid');
+    // 중간점검에서 고른 빈칸·백지가 보스전 모달로 새어 들어오지 않게 되돌린다
+    if (!isMid && _isBlankDifficulty(bossDifficultyMode)) bossDifficultyMode = 'hard';
+    const blankBtns = isMid ? `
+                    <button class="bso-btn${bossDifficultyMode==='blank'?' active':''}" id="bso-blank" onclick="setBossSetupOpt('difficulty','blank')">빈칸</button>
+                    <button class="bso-btn${bossDifficultyMode==='none'?' active':''}" id="bso-none" onclick="setBossSetupOpt('difficulty','none')">백지</button>` : '';
     const overlay = document.createElement('div');
     overlay.id = 'boss-setup-modal';
     overlay.className = 'boss-setup-overlay';
@@ -7326,9 +7360,9 @@ function openBossSetupModal(stage) {
             </div>
             <div class="boss-setup-section">
                 <div class="boss-setup-label">난이도</div>
-                <div class="bso-toggle">
+                <div class="bso-toggle bso-toggle-wrap">
                     <button class="bso-btn${bossDifficultyMode==='normal'?' active':''}" id="bso-normal" onclick="setBossSetupOpt('difficulty','normal')">보통</button>
-                    <button class="bso-btn${bossDifficultyMode==='hard'?' active':''}" id="bso-hard" onclick="setBossSetupOpt('difficulty','hard')">어려움</button>
+                    <button class="bso-btn${bossDifficultyMode==='hard'?' active':''}" id="bso-hard" onclick="setBossSetupOpt('difficulty','hard')">어려움</button>${blankBtns}
                 </div>
                 <div class="bso-desc" id="bso-diff-desc">${_getBossDiffDesc()}</div>
             </div>
@@ -7347,16 +7381,29 @@ function openBossSetupModal(stage) {
 }
 
 function _getBossDiffDesc() {
-    return bossDifficultyMode === 'normal'
-        ? '단어 버튼을 눌러 순서대로 배열 (보상 70%)'
-        : '초성 힌트만 보고 단어 배열 — 기존 방식';
+    switch (bossDifficultyMode) {
+        case 'normal': return '단어 버튼을 눌러 순서대로 배열 (보상 70%)';
+        case 'blank':  return '글자 칸만 보고 직접 타이핑 · 막히면 힌트 무료';
+        case 'none':   return '아무 단서 없이 통째로 타이핑 · 가장 정확한 확인';
+        default:       return '초성 힌트만 보고 단어 배열 — 기존 방식';
+    }
+}
+
+/* 빈칸·백지는 단어 버튼이 아니라 타이핑이라 중간점검(3~4절)에서만 연다.
+   보스전은 한 장 전체(최대 29절)라 타이핑으로는 부담이 너무 크고,
+   그 규모는 망각의 고난이 이미 담당한다. */
+function _isBlankDifficulty(mode) {
+    return mode === 'blank' || mode === 'none';
 }
 
 function setBossSetupOpt(type, value) {
     if (type === 'difficulty') {
         bossDifficultyMode = value;
-        document.getElementById('bso-normal').classList.toggle('active', value === 'normal');
-        document.getElementById('bso-hard').classList.toggle('active', value === 'hard');
+        [['bso-normal', 'normal'], ['bso-hard', 'hard'], ['bso-blank', 'blank'], ['bso-none', 'none']]
+            .forEach(([id, v]) => {
+                const el = document.getElementById(id); // 빈칸·백지는 보스전 모달엔 없다
+                if (el) el.classList.toggle('active', value === v);
+            });
         document.getElementById('bso-diff-desc').textContent = _getBossDiffDesc();
     } else {
         bossOrderMode = value;
@@ -7370,7 +7417,71 @@ function confirmBossSetup() {
     const stage = window._pendingBossStage;
     document.getElementById('boss-setup-modal')?.remove();
     window._pendingBossStage = null;
-    if (stage) startBossBattle(stage.targetVerseCount);
+    if (!stage) return;
+    // 빈칸·백지는 보스전 화면 대신 망각의 고난 엔진을 그대로 쓴다 (타이핑 UI·힌트·기록 전부 재사용)
+    if (_isBlankDifficulty(bossDifficultyMode)) {
+        _startMidBossBlank(stage, bossDifficultyMode === 'none');
+        return;
+    }
+    startBossBattle(stage.targetVerseCount);
+}
+
+/* 결과 화면의 '백지로 확인해보기' — 방금 학습한 그 한 구절만 백지로 써본다.
+   메뉴에 두면 아무도 찾아오지 않으므로 학습 흐름 끝에 붙였다.
+   중간점검과 달리 stageClear는 부르지 않는다 — 클리어는 이미 처리됐고 여기선 '확인'만 한다. */
+function _startVerseBlankCheck(stageId) {
+    const sId = String(stageId);
+    if (!/^\d+-\d+$/.test(sId)) return;
+    const chNum = parseInt(sId.split('-')[0], 10);
+    const isFirstLearn = (window.trainingMode === 'full-new');
+
+    // 결과 화면을 정상 종료시킨다 — stageClear('normal')이 여기서 실행되므로 반드시 거쳐야 한다.
+    // 다만 스테이지 시트는 다시 열지 않는다(고난 화면 위에 남는다).
+    if (typeof closeResultModal === 'function') closeResultModal(true);
+
+    window.hardshipOrigin = 'map';
+    selectedHardshipOrderType = 'sequential';
+    selectedHardshipUltimate = false; // 글자 칸은 남긴다 — 문턱을 낮춰야 실제로 한다
+
+    _pendingHardshipEmbed = {
+        label: t('embed_title_verse_check'),
+        verseCheckStageId: sId,
+        isLearn: isFirstLearn
+    };
+    startHardshipSession('memory', [sId]);
+}
+
+/* 중간점검 빈칸·백지 — 그 구간의 구절들로 망각의 고난 세션을 연다.
+   타이핑 보드·점진 힌트·verseRecall 기록이 전부 그대로 동작하고,
+   세션을 마치면 finishHardshipSession()이 중간점검 클리어로 이어붙인다.
+   (보스전 화면에 타이핑 UI를 이식하는 것보다 훨씬 적은 코드로 같은 결과를 얻는다) */
+function _startMidBossBlank(stage, ultimate) {
+    const chNum = parseInt(String(stage.id).split('-')[0], 10);
+    const chData = (typeof gameData !== 'undefined') ? gameData.find(c => c.id === chNum) : null;
+    if (!chData) return;
+
+    // getSubStagesOfMidBoss는 뒤에서 앞으로 훑으므로 뒤집어 앞 절부터 오게 한다
+    const verseIds = getSubStagesOfMidBoss(chData, stage)
+        .slice().reverse()
+        .map(s => String(s.id))
+        .filter(id => /^\d+-\d+$/.test(id));
+    if (verseIds.length === 0) return;
+
+    window.currentStageId = stage.id;
+    window.hardshipOrigin = 'map';   // 끝나면 지도로 복귀
+    selectedHardshipOrderType = (bossOrderMode === 'random') ? 'random' : 'sequential';
+    selectedHardshipUltimate = !!ultimate;   // startHardshipSession이 이 값을 읽는다
+
+    _pendingHardshipEmbed = {
+        label: t(ultimate ? 'embed_title_midboss_none' : 'embed_title_midboss_blank'),
+        midBossStageId: stage.id
+    };
+    // forcedChapter는 넘기지 않는다 — 넘기면 장 단위 세션으로 취급돼 망각의 고난 히스토리에 섞인다
+    startHardshipSession('memory', verseIds);
+
+    // rewardBlocked는 쓰지 않는다 — 승점은 고난 체계대로 지급하고(구절당 hearts×4),
+    // 대신 stageClear 쪽 승점을 0으로 만든다. 이 플래그를 켜면 결과 피드백이
+    // "보상 없음"으로 잘못 표시된다.
 }
 
 //[2] 보스전 시작 함수 (하트 버그 수정 + 구간 자동 탐지 + 연출 콜백 분리)//
@@ -11035,6 +11146,28 @@ function showClearScreen() {
         quoteEl.style.display = quoteText ? 'block' : 'none';
     }
 
+    // ★ 백지 확인 권유 — 학습을 막 끝낸 지금이 가장 잘 떠오르는 시점이다.
+    // 메뉴 어딘가가 아니라 흐름 안에 두어야 실제로 하게 된다.
+    const blankWrap = document.getElementById('result-blank-wrap');
+    if (blankWrap) {
+        blankWrap.innerHTML = '';
+        blankWrap.style.display = 'none';
+        const bId = window.currentStageId;
+        if (!isTraining && !window.isHardshipMode && bId && /^\d+-\d+$/.test(String(bId))) {
+            const rec = verseRecall[bId];
+            const confirmed = rec && rec.pass > 0;
+            blankWrap.style.display = 'block';
+            blankWrap.innerHTML = confirmed
+                ? `<button class="btn-blank-check is-done" onclick="_startVerseBlankCheck('${bId}')">
+                       ⌨️ ${t('blank_check_again')}
+                   </button>`
+                : `<button class="btn-blank-check" onclick="_startVerseBlankCheck('${bId}')">
+                       ⌨️ ${t('blank_check_btn')}
+                   </button>
+                   <div class="blank-check-hint">${t('blank_check_hint')}</div>`;
+        }
+    }
+
     // 알림 예약 버튼 (10분/1시간/6시간 대기 복습만)
     const notifWrap = document.getElementById('result-notif-wrap');
     if (notifWrap) {
@@ -11253,7 +11386,7 @@ function closeBossClearModal(clearedStageId) {
 
 // 모달 닫고 나가기
 // 모달 닫고 나가기 (🌟 훈련 모드 조기 퇴근 완벽 적용판)
-function closeResultModal() {
+function closeResultModal(skipSheetReopen) {
     document.getElementById('result-modal').classList.remove('active');
 
     // 🌟 [훈련 모드 전용 퇴근 루트]
@@ -11274,6 +11407,11 @@ function closeResultModal() {
     const clearedStageId = window.currentStageId;
     stageClear('normal'); // 보석과 승점 계산!
     quitGame();
+
+    // ★ skipSheetReopen: '백지로 확인해보기'처럼 곧바로 다른 화면으로 넘어갈 때는
+    // 시트를 다시 열지 않는다. 열어두면 고난 화면 위에 시트가 남는다.
+    if (skipSheetReopen) return;
+
     openStageSheetForStageId(clearedStageId);
     setTimeout(tryShowMilestone, 500);
 
@@ -15296,6 +15434,10 @@ stageClear = function (type, rewardMultiplier = 1) {
         // 재도전 보너스가 자동으로 포함됨 (calculateScore 내부에서 보너스 소진)
         const scoreResult = calculateScore(sId, scoreType, verseCnt, playerHearts, isForgotten);
 
+        // ★ 중간점검 빈칸·백지: 승점은 고난 엔진이 구절 단위로 이미 지급했다.
+        // 여기서 또 주면 같은 한 번의 암송에 두 번 지급된다. 보석은 정상 지급.
+        if (window._midBossBlankClear) scoreResult.score = 0;
+
         // ★ 월말 23시 이후 승점 차단 체크
         if (scoreResult.blocked) {
             msg += `\n⚠️ ${scoreResult.blockReason}\n\n`;
@@ -15390,7 +15532,8 @@ stageClear = function (type, rewardMultiplier = 1) {
             updateStats('verse_clear', 1);
         }
 
-        alert(msg);
+        // 중간점검 빈칸·백지는 고난 결과 화면이 이어서 뜨므로 클리어 alert을 겹치지 않는다
+        if (!window._suppressClearAlert) alert(msg);
         updateGemDisplay();
         saveGameData();
         syncToFirestore(); // [Firestore] 스테이지 클리어
@@ -18784,6 +18927,15 @@ function tryShowMilestone() {
         return;
     }
 
+    // ★ 첫 스테이지를 깨기 전에는 보류한다.
+    // 접속만 해도 '누적 출석 Lv.1'이 즉시 달성돼, 가입 직후 모달이 겹치고
+    // 아무것도 안 한 상태에서 보상이 와 성취감도 약했다.
+    // 첫 클리어 뒤 quitGame()의 플러시가 이 대기열을 이어받는다.
+    if (_isPreFirstClear()) {
+        console.log("🌱 첫 스테이지 클리어 전이라 업적 알림을 보류합니다.");
+        return;
+    }
+
     // 3. 팝업 표시 시작
     isMilestoneShowing = true;
     const item = milestoneQueue.shift(); // 대기열에서 하나 꺼냄
@@ -20404,6 +20556,10 @@ function createEmptyHardshipState() {
         currentVerseTranscript: '',
         showInfo: false,
         ultimateMemoryMode: false,
+        midBossStageId: null,   // 중간점검 빈칸·백지로 열린 세션이면 그 스테이지 id
+        verseCheckStageId: null, // 결과 화면의 '백지로 확인해보기'로 열린 1구절 세션
+        verseCheckIsLearn: false, // 그 확인이 초학습 직후였는가 (증거 가치가 낮아 구분해 기록)
+        displayTitle: '',       // 헤더·시작 토스트에 쓸 이름 (비면 고난 모드 이름을 쓴다)
         isRandomOrder: false,
         trainingMode: false,
         verseChoices: [],
@@ -20985,8 +21141,26 @@ function startHardshipFromConfig() {
 function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
     const modeMeta = getHardshipModeMeta(mode);
 
+    // ★ 스테이지 시트를 반드시 닫는다.
+    // 보스전 경로(startBossBattle)는 인트로 연출 콜백 안에서 닫는데, 고난 세션은 연출을 거치지 않는다.
+    // 중간점검 빈칸과 결과 화면의 백지 확인에서 시트가 열린 채로 남는 문제가 각각 났으므로,
+    // 개별 진입점이 아니라 여기서 한 번에 막는다. (닫혀 있을 때 불러도 무해)
+    if (typeof closeStageSheet === 'function') closeStageSheet();
+
     clearHardshipPendingTimeout();
     hardshipState = createEmptyHardshipState();
+
+    // ★ 다른 콘텐츠(중간점검 빈칸, 결과 화면 백지 확인)가 이 엔진을 빌려 쓸 때의 진입 정보.
+    // 호출 뒤에 하나씩 대입하면 그 사이에 도는 토스트·헤더가 '망각의 고난'으로 뜬다.
+    const embed = _pendingHardshipEmbed;
+    _pendingHardshipEmbed = null;
+    if (embed) {
+        hardshipState.midBossStageId = embed.midBossStageId || null;
+        hardshipState.verseCheckStageId = embed.verseCheckStageId || null;
+        hardshipState.verseCheckIsLearn = !!embed.isLearn;
+        hardshipState.displayTitle = embed.label || '';
+    }
+
     hardshipState.active = true;
     hardshipState.mode = mode;
     hardshipState.ultimateMemoryMode = (mode === 'memory') ? selectedHardshipUltimate : false;
@@ -21031,7 +21205,10 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
     loadNextHardshipVerse();
 
     if (typeof showReadAloudToast === 'function') {
-        showReadAloudToast(t('toast_hardship_start', { icon: modeMeta.icon, title: modeMeta.title }));
+        showReadAloudToast(t('toast_hardship_start', {
+            icon: modeMeta.icon,
+            title: hardshipState.displayTitle || modeMeta.title
+        }));
     }
 
     if (window._hardshipEnterHandler) {
@@ -21072,7 +21249,8 @@ function updateHardshipHeader() {
         : hardshipState.answeredCount;
 
     if (commonHeader) commonHeader.style.display = 'flex';
-    if (titleEl) titleEl.textContent = modeMeta.title;
+    // 중간점검·백지 확인으로 열린 세션은 그 이름을 쓴다 ('망각의 고난'으로 뜨면 혼란스럽다)
+    if (titleEl) titleEl.textContent = hardshipState.displayTitle || modeMeta.title;
     if (progressEl) progressEl.textContent = t('label_progress_verses', { cur: progressCount, total: totalCount });
 
     if (scoreEl) {
@@ -22343,11 +22521,24 @@ function recordVerseRecall(stageId, ok, hints, mode) {
     // 집중 훈련은 학습 보조라 증거로 세지 않는다
     if (hardshipState && hardshipState.trainingMode) return;
 
+    // ★ 초학습 직후 확인은 증거 가치가 낮다 — 방금 다섯 단계에 걸쳐 본 구절이라 통과가 당연하다.
+    // 버리지는 않고 표시만 달리해, 나중에 분석에서 가려낼 수 있게 한다.
+    if (hardshipState && hardshipState.verseCheckIsLearn) mode = 'learn';
+
     const now = Date.now();
     const r = verseRecall[stageId] || { pass: 0, fail: 0, firstPass: 0, lastPass: 0, lastAt: 0, lastOk: false, hints: 0, lastHints: 0, lastMode: '' };
     if (ok) {
         r.pass += 1;
-        if (!r.firstPass) r.firstPass = now;
+        if (!r.firstPass) {
+            r.firstPass = now;
+            // 첫 통과 보너스 — 아직 안 해본 구절로 끌어당긴다 (반복 파밍은 되지 않는다)
+            if (mode !== 'learn' && typeof addGems === 'function') {
+                addGems(VERSE_FIRST_RECALL_GEM);
+                if (typeof showToast === 'function') {
+                    showToast(t('blank_check_first_bonus', { gem: VERSE_FIRST_RECALL_GEM }));
+                }
+            }
+        }
         r.lastPass = now;
     } else {
         r.fail += 1;
@@ -22523,6 +22714,21 @@ function finishHardshipSession(reason) {
             showReadAloudToast(t('toast_training_repeat', { step: nextCycle }));
         }
         return;
+    }
+
+    // ★ 중간점검 빈칸·백지 세션을 끝냈다면 중간점검 클리어로 이어붙인다.
+    // stageClear는 화면을 그리지 않고 보석·미션·레이드 대미지·복습 스텝만 처리하므로,
+    // 아래에서 그려지는 고난 결과 화면과 충돌하지 않는다. (클리어 alert만 억제)
+    if (reason === 'completed' && hardshipState.midBossStageId) {
+        window.currentStageId = hardshipState.midBossStageId;
+        window._suppressClearAlert = true;
+        window._midBossBlankClear = true;   // 승점 이중 지급 차단 (고난 쪽에서 이미 지급됨)
+        try {
+            stageClear('mid-boss', 1);
+        } finally {
+            window._suppressClearAlert = false;
+            window._midBossBlankClear = false;
+        }
     }
 
     // result-notif-wrap 초기화 (이전 결과 화면의 알림 버튼 잔상 제거)
@@ -22760,7 +22966,10 @@ function finishHardshipSession(reason) {
 
     // 망각의 고난 완주: 기록 저장 및 결과 화면에 히스토리 표시 (단일 장 및 범위 세션)
     const memoryHistoryHtml = (() => {
-        if (reason !== 'completed' || hardshipState.mode !== 'memory' || hardshipState.trainingMode) return '';
+        // 중간점검에서 열린 세션은 망각의 고난 히스토리에 남기지 않는다 (별개 콘텐츠의 기록이 섞이면 통계가 왜곡됨)
+        if (reason !== 'completed' || hardshipState.mode !== 'memory' ||
+            hardshipState.trainingMode || hardshipState.midBossStageId ||
+            hardshipState.verseCheckStageId) return '';
         const sessionDuration = getHardshipElapsedSeconds();
         const record = {
             correct: hardshipState.studiedCount,
