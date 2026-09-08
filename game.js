@@ -11323,6 +11323,8 @@ function showBossClearScreen(clearedStageId) {
     // result-notif-wrap 초기화 (이전 결과 화면의 알림 버튼 잔상 제거)
     const notifWrapBoss = document.getElementById('result-notif-wrap');
     if (notifWrapBoss) { notifWrapBoss.innerHTML = ''; notifWrapBoss.style.display = 'none'; }
+    const blankWrapBoss = document.getElementById('result-blank-wrap');
+    if (blankWrapBoss) { blankWrapBoss.innerHTML = ''; blankWrapBoss.style.display = 'none'; }
 
     // 이전 일반 스테이지 클리어에서 남은 "다음 구절 학습" 버튼 제거
     const bossExistingNextBtn = document.getElementById('result-modal')?.querySelector('#btn-next-stage');
@@ -22095,6 +22097,12 @@ function renderHardshipMemoryVerse() {
     bindHardshipMemoryInputGuards();
 
     if (!hardshipState.locked) {
+        // ★ 반드시 동기로 먼저 부른다.
+        // 모바일은 사용자 제스처가 살아 있는 동안에만 키보드를 띄우는데,
+        // setTimeout 콜백은 별도 태스크라 제스처 밖이다 → 포커스는 잡히지만 키보드가 안 뜬다.
+        // (진입 경로가 onclick부터 이 렌더까지 전부 동기라 여기서도 제스처가 유효하다)
+        focusHardshipMemoryHiddenInput();
+        // 레이아웃이 늦게 잡히는 경우를 위한 폴백
         setTimeout(() => focusHardshipMemoryHiddenInput(), 0);
     }
 }
@@ -22559,6 +22567,36 @@ function recordVerseRecall(stageId, ok, hints, mode) {
     verseRecall[stageId] = r;
 }
 
+/* 백지 인출 승점 배율 — 분량과 위험이 다르면 보상도 달라야 한다.
+   망각의 고난: 한 장(최대 29절)을 무작위로, 체력이 이어진 채로 끝까지  → 1.0
+   중간점검 빈칸·백지: 3~4절 묶음, 체력은 이어지지만 짧다              → 0.5
+   백지 확인: 1구절, 사실상 위험이 없다                                → 0.25 */
+function getHardshipScoreScale() {
+    if (!hardshipState) return 1;
+    if (hardshipState.verseCheckStageId) return 0.25;
+    if (hardshipState.midBossStageId) return 0.5;
+    return 1;
+}
+
+/* 같은 구절의 백지 승점은 하루 한 번만 준다.
+   1구절·3~4절 단위는 반복 진입이 쉬워 그대로 두면 승점 파밍 경로가 된다.
+   기록(verseRecall)은 반복해도 계속 쌓인다 — 막는 것은 승점뿐이다.
+   망각의 고난은 한 장을 통으로 하는 진입 비용이 있어 제한하지 않는다(기존 보상 유지). */
+function _blankScoreAlreadyToday(stageId) {
+    if (!stageId || !hardshipState) return false;
+    if (!hardshipState.verseCheckStageId && !hardshipState.midBossStageId) return false;
+    const r = verseRecall[stageId];
+    if (!r || !r.lastScoredAt) return false;
+    return _tsTo6AMDateStr(r.lastScoredAt) === _get6AMDayStr();
+}
+
+function _markBlankScored(stageId) {
+    if (!stageId) return;
+    const r = verseRecall[stageId] || { pass: 0, fail: 0, firstPass: 0, lastPass: 0, lastAt: 0, lastOk: false, hints: 0, lastHints: 0, lastMode: '' };
+    r.lastScoredAt = Date.now();
+    verseRecall[stageId] = r;
+}
+
 /* 현재 고난 구절의 스테이지 ID ('{장}-{절}') */
 function _currentHardshipStageId() {
     const v = hardshipState && hardshipState.currentVerse;
@@ -22611,9 +22649,13 @@ function submitHardshipMemoryGuess() {
 
     if (isCorrect) {
         const orderMult = hardshipState.isRandomOrder ? 2 : 1;
-        const basePoints = (hardshipState.ultimateMemoryMode ? playerHearts * 5 : playerHearts * 4) * orderMult;
+        const _blankSid = _currentHardshipStageId();
+        const _rawPoints = (hardshipState.ultimateMemoryMode ? playerHearts * 5 : playerHearts * 4) * orderMult;
+        const basePoints = _blankScoreAlreadyToday(_blankSid)
+            ? 0
+            : Math.round(_rawPoints * getHardshipScoreScale());
         const earnedPoints = hardshipState.rewardBlocked ? 0 : basePoints;
-        if (earnedPoints > 0) awardHardshipScore(earnedPoints);
+        if (earnedPoints > 0) { awardHardshipScore(earnedPoints); _markBlankScored(_blankSid); }
         // 백지 산출 성공 — revealedHints는 구절마다 초기화되므로 이 구절에 쓴 힌트 수다
         recordVerseRecall(_currentHardshipStageId(), true, (hardshipState.revealedHints || []).length, 'memory');
         hardshipState.studiedCount += 1;
@@ -22654,14 +22696,18 @@ function submitHardshipMemoryGuess() {
     if (hardshipState.wrongSlots.length > 0 && hardshipState.wrongSlots.length <= allowedTypos) {
         const typoCount = hardshipState.wrongSlots.length;
         const orderMult = hardshipState.isRandomOrder ? 2 : 1;
-        const basePoints = (hardshipState.ultimateMemoryMode ? playerHearts * 5 : playerHearts * 4) * orderMult;
+        const _blankSid = _currentHardshipStageId();
+        const _rawPoints = (hardshipState.ultimateMemoryMode ? playerHearts * 5 : playerHearts * 4) * orderMult;
+        const basePoints = _blankScoreAlreadyToday(_blankSid)
+            ? 0
+            : Math.round(_rawPoints * getHardshipScoreScale());
         const earnedPoints = hardshipState.rewardBlocked ? 0 : basePoints;
         // 오타 정보 수집 (슬롯 초기화 전에)
         const typoPairs = hardshipState.wrongSlots.map(idx => ({
             typed: hardshipState.memorySlots[idx] || '',
             answer: text.charAt(idx)
         }));
-        if (earnedPoints > 0) awardHardshipScore(earnedPoints);
+        if (earnedPoints > 0) { awardHardshipScore(earnedPoints); _markBlankScored(_blankSid); }
         // 오타 보정으로 통과한 것도 산출 성공으로 본다 (내용은 떠올렸고 표기만 어긋난 경우)
         recordVerseRecall(_currentHardshipStageId(), true, (hardshipState.revealedHints || []).length, 'memory');
         hardshipState.studiedCount += 1;
@@ -22742,6 +22788,10 @@ function finishHardshipSession(reason) {
     // result-notif-wrap 초기화 (이전 결과 화면의 알림 버튼 잔상 제거)
     const notifWrapHs = document.getElementById('result-notif-wrap');
     if (notifWrapHs) { notifWrapHs.innerHTML = ''; notifWrapHs.style.display = 'none'; }
+    // 백지 확인 버튼도 함께 지운다 — 안 지우면 직전 스테이지 결과 화면의 버튼이 남아
+    // 백지 확인을 끝낸 화면에서 또 '백지로 확인해보기'가 떠 같은 구절을 반복하게 된다
+    const blankWrapHs = document.getElementById('result-blank-wrap');
+    if (blankWrapHs) { blankWrapHs.innerHTML = ''; blankWrapHs.style.display = 'none'; }
 
     clearHardshipPendingTimeout();
 
@@ -22767,10 +22817,12 @@ function finishHardshipSession(reason) {
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
     }
 
+    // 중간점검·백지 확인으로 열린 세션은 그 이름으로 표시한다 ('망각의 고난 완주'로 뜨면 혼란스럽다)
+    const _resultLabel = hardshipState.displayTitle || modeMeta.title;
     if (resultTitle) {
-        if (reason === 'completed') resultTitle.innerText = t('hardship_result_completed', { title: modeMeta.title });
-        else if (reason === 'hearts') resultTitle.innerText = t('hardship_result_hearts_end', { title: modeMeta.title });
-        else resultTitle.innerText = t('hardship_result_ended', { title: modeMeta.title });
+        if (reason === 'completed') resultTitle.innerText = t('hardship_result_completed', { title: _resultLabel });
+        else if (reason === 'hearts') resultTitle.innerText = t('hardship_result_hearts_end', { title: _resultLabel });
+        else resultTitle.innerText = t('hardship_result_ended', { title: _resultLabel });
     }
 
     const enduranceAvgScore = hardshipState.mode === 'endurance' && hardshipState.speechScores.length > 0
@@ -22795,6 +22847,33 @@ function finishHardshipSession(reason) {
 
     if (resultContinueBtn) {
         resultContinueBtn.innerText = t('hardship_result_back');
+    }
+
+    // ★ 백지 확인을 끝냈다면 '다음 구절'로 바로 이어갈 수 있게 한다.
+    // 일반 결과 화면에는 이미 같은 버튼이 있는데(#btn-next-stage) 고난 화면에는 없어
+    // 여기서 끊기고 맵으로 나가야 했다.
+    {
+        const rm = document.getElementById('result-modal');
+        const oldNext = rm && rm.querySelector('#btn-next-stage');
+        if (oldNext) oldNext.remove();
+        if (rm && reason === 'completed' && hardshipState.verseCheckStageId) {
+            const nextId = getNextNormalStageId(hardshipState.verseCheckStageId);
+            if (nextId) {
+                const nextBtn = document.createElement('button');
+                nextBtn.id = 'btn-next-stage';
+                nextBtn.className = 'btn-continue';
+                nextBtn.style.cssText = 'margin-top:8px; background:linear-gradient(135deg,#27ae60,#2ecc71); box-shadow:0 4px 0 #1e8449; color:#fff;';
+                nextBtn.textContent = currentLang === 'en' ? 'Next Verse ▶' : '다음 구절 학습 ▶';
+                // goToNextStage()와 달리 stageClear를 부르지 않는다 —
+                // 이 스테이지의 클리어 처리는 백지 확인에 들어올 때 이미 끝났다
+                nextBtn.onclick = () => {
+                    rm.classList.remove('active');
+                    quitGame('map');
+                    openModeSelect(nextId);
+                };
+                if (resultContinueBtn) resultContinueBtn.insertAdjacentElement('afterend', nextBtn);
+            }
+        }
     }
 
     const hsStatLabels = document.getElementById('result-modal').querySelectorAll('.stat-label');
