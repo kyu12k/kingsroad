@@ -292,11 +292,16 @@ const LANG = {
         result_msg_good_timing: '\n🟡 위험했어요! 기억을 간신히 살려냈습니다.',
         result_msg_miss_timing: '\n🔴 기억이 많이 희미해졌네요. 꾸준히 복습하면 곧 강해집니다.',
         result_msg_no_gem: '📖 [훈련] 완료! (보석 없음 - 대기 중)',
-        quote_first_clear: '말씀을 잊지 않고 싶으시다면<br>10분 후 다시 만나보세요.',
-        quote_perfect: '적절한 복습 간격입니다.<br>{wait} 후에 복습하세요!(기억 레벨이 오릅니다)',
+        // ★ 복습 시점은 아래 '다음 복습' 줄이 전담한다.
+        //   문구에도 시점을 넣으면 같은 정보가 위아래로 두 번 나온다.
+        quote_first_clear: '기억이 사라지기 전에<br>다시 만나는 것이 중요해요.',
+        quote_perfect: '적절한 복습 간격이었어요.<br>기억 레벨이 올라갑니다!',
         quote_good: '거의 다 왔어요!<br>다음 단계로 진행합니다.',
         quote_miss: '꾸준히 복습하면 기억이 강해집니다.<br>다음 단계로 진행합니다.',
         notif_ask: '{wait} 뒤 알려드릴까요?',
+        label_next_review: '다음 복습',
+        label_notif_will_send: '알림을 보내드릴게요',
+        label_notif_get: '알림 받기',
         notif_btn: '🔔 알림 예약',
         boss_quote_perfect: ['이 말씀이 이제 당신 안에 있습니다.', '외운 것이 아니라 새긴 것입니다.', '말씀이 마음판에 기록되었습니다.'],
         boss_quote_good: ['거의 다 새겨졌습니다. 조금만 더요.', '윤곽이 보입니다. 다음엔 더 선명해질 거예요.'],
@@ -1041,11 +1046,14 @@ const LANG = {
         result_msg_good_timing: "\n🟡 Close call! You barely held on to the memory.",
         result_msg_miss_timing: "\n🔴 The memory has faded quite a bit. Consistent review will strengthen it.",
         result_msg_no_gem: '📖 [Training] Complete! (no gems — waiting)',
-        quote_first_clear: 'Want to remember this verse?<br>Come back in 10 minutes.',
-        quote_perfect: 'Great timing!<br>Review again in {wait}. (Memory level goes up!)',
+        quote_first_clear: 'Meeting it again before you forget<br>is what makes it stick.',
+        quote_perfect: 'Great timing!<br>Your memory level goes up.',
         quote_good: 'Almost there!<br>Moving to the next stage.',
         quote_miss: 'Keep reviewing and your memory will grow stronger.<br>Moving to the next stage.',
         notif_ask: 'Want a reminder in {wait}?',
+        label_next_review: 'Next review',
+        label_notif_will_send: "We'll remind you",
+        label_notif_get: 'Remind me',
         notif_btn: '🔔 Set Reminder',
         boss_quote_perfect: ['This Word is now within you.', 'Not memorized — engraved.', 'The Word has been inscribed on your heart.'],
         boss_quote_good: ['Almost engraved. Just a little more.', 'The outline is forming. It will become clearer next time.'],
@@ -10901,13 +10909,8 @@ function showClearScreen() {
                     // advanceReviewStep 호출 전이므로 step이 아직 1
                     quoteText = t('quote_first_clear');
                 } else if (outcome === 'perfect') {
-                    const waitMs = getReviewWaitMs(nextStatus.step + 1); // advanceReviewStep 호출 전이므로 +1
-                    const hr = waitMs / 3600000;
-                    let waitLabel;
-                    if (hr < 1) waitLabel = currentLang === 'en' ? `${Math.round(waitMs / 60000)} min` : `${Math.round(waitMs / 60000)}분`;
-                    else if (hr < 24) waitLabel = currentLang === 'en' ? `${Math.round(hr)} hr` : `${Math.round(hr)}시간`;
-                    else waitLabel = currentLang === 'en' ? `${Math.round(hr / 24)} day(s)` : `${Math.round(hr / 24)}일`;
-                    quoteText = t('quote_perfect', { wait: waitLabel });
+                    // 복습 시점은 아래 '다음 복습' 줄이 전담하므로 여기서는 결과만 말한다
+                    quoteText = t('quote_perfect');
                 } else if (outcome === 'good') {
                     quoteText = t('quote_good');
                 } else if (outcome === 'miss') {
@@ -10944,19 +10947,22 @@ function showClearScreen() {
                     const dayLabel = dayGap === 0 ? '' : dayGap === 1 ? '내일 ' : `${dayGap}일 뒤 `;
                     const timeLabel = `${dayLabel}${hh}:${mm}`;
 
+                    // 이 줄이 '다음 복습이 언제인지'를 전담한다 (위 문구는 결과만 말한다).
+                    // 알림이 꺼져 있어도 시점은 항상 보이고, 버튼은 알림 여부만 다룬다.
+                    const whenHtml = `${t('label_next_review')} <b style="color:#e8a020;">${timeLabel}</b>`;
                     const notifOn = ('Notification' in window) && Notification.permission === 'granted' && !isReviewNotifOff();
                     if (notifOn) {
-                        // 이미 켜져 있으면 자동 예약되므로 안내만 보여준다
                         notifWrap.innerHTML = `
-                            <div style="color:#7f8c8d; font-size:0.85rem;">🔔 ${timeLabel}에 복습 알림을 보내드릴게요</div>`;
+                            <div style="color:#7f8c8d; font-size:0.85rem;">${whenHtml} · 🔔 ${t('label_notif_will_send')}</div>`;
                     } else {
                         const chData = getChapterDataByStageId(sId);
                         const stageObj = chData && chData.stages ? chData.stages.find(s => s.id === sId) : null;
                         const stageTitle = stageObj ? getStageTitle(stageObj) : t('label_this_word');
                         notifWrap.innerHTML = `
+                            <div style="color:#7f8c8d; font-size:0.85rem; margin-bottom:8px;">${whenHtml}</div>
                             <button onclick="scheduleReviewNotification(${rawDelayMs}, '${stageTitle.replace(/'/g, "\\'")}', this)"
                                 style="background:#e8a020; color:white; border:none; padding:9px 20px; border-radius:20px; font-weight:bold; font-size:0.9rem; cursor:pointer;">
-                                🔔 ${timeLabel}에 알림
+                                🔔 ${t('label_notif_get')}
                             </button>`;
                     }
                     notifWrap.style.display = 'block';
