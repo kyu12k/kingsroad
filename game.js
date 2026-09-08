@@ -221,7 +221,7 @@ const LANG = {
         alert_restore_ok: '✅ 기록 복원 완료!\n게임을 다시 시작합니다.',
         alert_wrong_pwd: '❌ 비밀번호가 틀렸습니다!',
         alert_restore_fail: '❌ 데이터 복구 실패!\n파일이 손상되었거나 복사 과정에서 코드가 일부 누락되었습니다.',
-        alert_welcome_tribe: '[{tribe} 지파]의 {nick}님,\n환영합니다! 🙏',
+        alert_welcome_tribe: '[{tribe} 지파]의 {nick}님, 환영합니다! 🙏',
         alert_server_disconnect: '서버에 연결되지 않았습니다. 잠시 후 다시 시도해주세요.',
         alert_tag_not_found: '❌ 해당 태그의 복구 데이터를 찾을 수 없습니다.\n태그를 다시 확인하거나 새 계정으로 시작해주세요.',
         alert_recovery_ok: '✅ 복구 완료!\n\n닉네임: {nick}\n태그: #{tag}\n\n게임을 다시 시작합니다.',
@@ -977,7 +977,7 @@ const LANG = {
         alert_restore_ok: '✅ Data restored!\nRestarting the game.',
         alert_wrong_pwd: '❌ Wrong password!',
         alert_restore_fail: '❌ Data recovery failed!\nThe file may be corrupted or the code is incomplete.',
-        alert_welcome_tribe: 'Welcome, {nick} of the [{tribe}] tribe!\n🙏',
+        alert_welcome_tribe: 'Welcome, {nick} of the [{tribe}] tribe! 🙏',
         alert_server_disconnect: 'Could not connect to server. Please try again later.',
         alert_tag_not_found: '❌ No recovery data found for that tag.\nCheck the tag or start a new account.',
         alert_recovery_ok: '✅ Recovery complete!\n\nNickname: {nick}\nTag: #{tag}\n\nRestarting the game.',
@@ -1823,6 +1823,19 @@ let hardshipVerseClearHistory = {}; // 장별 구절의 고난 클리어 기록 
    - firstPass/lastPass: 간격을 두고 두 번 이상 성공했는지(정착) 판정용 */
 let verseRecall = {};
 const ENDURANCE_PASS_SCORE = 80; // 암송의 고난 통과선 (승점 만점 구간과 동일)
+
+/* 온보딩 이탈 지점 (2026-09-08)
+   활성 사용자의 절반이 한 구절도 클리어하지 않는데, 어디서 멈추는지 서버에 남는 게 없었다.
+   앞으로만 진행하는 단계 표식 하나로 다음 집계 때 추측 없이 확인한다. */
+let onboardStep = '';
+const _ONBOARD_ORDER = ['profile', 'map', 'stage', 'cleared'];
+function markOnboardStep(step) {
+    const next = _ONBOARD_ORDER.indexOf(step);
+    if (next < 0) return;
+    if (next <= _ONBOARD_ORDER.indexOf(onboardStep)) return; // 되돌아가지 않는다
+    onboardStep = step;
+    if (typeof saveGameData === 'function') saveGameData();
+}
 let bibleReadLog = {};             // 날짜 → 챕터 → 읽은 절 번호 배열 { "Mon Jun 14 2026": { 1: [1,2,3] } }
 let _lastBibleReadClickTime = 0;   // 3초 쿨다운용
 let sessionTimeLog = {};           // "YYYY-MM-DD" → ms (이번 주 학습 시간)
@@ -2093,6 +2106,7 @@ loadGameData = function () {
         if (parsed.hardshipEnduranceClearHistory) hardshipEnduranceClearHistory = parsed.hardshipEnduranceClearHistory;
         if (parsed.hardshipVerseClearHistory) hardshipVerseClearHistory = parsed.hardshipVerseClearHistory;
         if (parsed.verseRecall && typeof parsed.verseRecall === 'object') verseRecall = parsed.verseRecall;
+        if (typeof parsed.onboardStep === 'string') onboardStep = parsed.onboardStep;
         bossFirstClearClaimed = new Set(parsed.bossFirstClearClaimed || []);
         if (parsed.bibleReadLog) {
             const _today = _get6AMDayStr();
@@ -5529,10 +5543,12 @@ function _showJourneyOverlay() {
         amenBtn.style.display = 'block';
         amenBtn.style.opacity = '0';
         amenBtn.style.pointerEvents = 'none';
+        // 페이드인만 남기고 대기를 없앤다 — 1초 동안 아무것도 누를 수 없는 구간이
+        // 온보딩에서 특히 길게 느껴진다. 연출은 CSS 트랜지션이 이어받는다.
         setTimeout(() => {
             amenBtn.style.opacity = '1';
             amenBtn.style.pointerEvents = 'auto';
-        }, 1000);
+        }, 120);
         amenBtn.onclick = amenAndStartGame;
     }
 }
@@ -5645,6 +5661,8 @@ function amenAndStartGame() {
 
     // ★ 여정 진입 시 1회 복습 타이밍 팝업 체크 예약 (goMap()에서 소비됨)
     window._pendingReviewPopupCheck = true;
+    // ★ 신규 유저 첫 구절 안내 예약 (goMap()에서 소비, 조건은 _shouldGuideFirstStage)
+    window._pendingFirstStageStart = true;
 
     const overlay = document.getElementById('journey-overlay');
     const amenBtn = document.getElementById('amen-btn');
@@ -5882,6 +5900,29 @@ function goMap() {
             if (typeof openLastWeekRewardModal === 'function') openLastWeekRewardModal();
         }, 1500);
     }
+
+    markOnboardStep('map');
+
+    // ★ 첫 구절 안내 — 아직 아무것도 클리어하지 않은 신규 유저는 지도에서 헤매지 않도록
+    // 1장 1절로 바로 데려간다. 한 번만 하고, 이후에는 평소처럼 지도가 나온다.
+    if (window._pendingFirstStageStart) {
+        window._pendingFirstStageStart = false;
+        if (_shouldGuideFirstStage()) {
+            try { localStorage.setItem('kingsRoad_firstStageGuided', '1'); } catch (e) {}
+            setTimeout(() => {
+                if (typeof startTraining === 'function') startTraining('1-1', 'full-new');
+            }, 500); // 지도를 한 번 보여주고 넘어간다 (어디에 있는지 인지시키기)
+        }
+    }
+}
+
+/* 첫 구절 안내 대상인가 — 자유여행이고, 클리어 기록이 전무하고, 아직 안내한 적 없을 때만 */
+function _shouldGuideFirstStage() {
+    if (activeMode !== 'free') return false; // 왕의 길은 stepHistory 설정이 선행되어야 함
+    try { if (localStorage.getItem('kingsRoad_firstStageGuided')) return false; } catch (e) {}
+    const freeCount = Object.keys(stageMastery || {}).length;
+    const kingsCount = Object.keys((typeof kingsRoadData !== 'undefined' && kingsRoadData.mastery) || {}).length;
+    return freeCount === 0 && kingsCount === 0;
 }
 
 // 백버튼(돌아가기) 표시를 현재 활성 화면에 따라 제어
@@ -8666,6 +8707,7 @@ function saveGameData() {
         hardshipEnduranceClearHistory: hardshipEnduranceClearHistory,
         hardshipVerseClearHistory: hardshipVerseClearHistory,
         verseRecall: verseRecall, // 구절별 백지 산출 기록 (망각·암송의 고난)
+        onboardStep: onboardStep, // 온보딩 이탈 지점 (profile→map→stage→cleared)
         bibleReadLog: bibleReadLog,
         sessionTimeLog: sessionTimeLog,
         // ★ [게임 모드]
@@ -9472,6 +9514,7 @@ function normalizeChunkText(text) {
 function startTraining(stageId, mode = 'normal') {
     window.isGamePlaying = true; // ★ 게임 시작! 스위치 ON
     lastPlayedStageId = stageId;
+    markOnboardStep('stage');
     const isForceFullNew = (mode === 'full-new');
     // ★ chNum을 여기서 미리 정의 (함수 전체에서 쓰임)
     const m = String(stageId).match(/^(\d+)(?:-(\d+|.+))?/);
@@ -15033,6 +15076,7 @@ stageClear = function (type, rewardMultiplier = 1) {
             return; // ➔ 여기서 함수가 즉시 종료됩니다! (아래 계산 코드 무시)
         }
         // 🌟 ---------------------------------------------------------
+        markOnboardStep('cleared');
         const sId = String(window.currentStageId);
 
         // 변수 호이스팅 문제 방지용 선언
@@ -18009,6 +18053,8 @@ async function confirmProfile() {
     // 신규 유저(tag 없음)에 한해 중복 없는 tag 생성
     if (!myTag) myTag = await generateUniqueTag();
 
+    markOnboardStep('profile');
+
     // 저장 및 갱신
     saveGameData();
     syncToFirestore(); // [Firestore] 프로필 변경
@@ -18025,13 +18071,19 @@ async function confirmProfile() {
     }
 
     const tribeName = getTribeName(TRIBE_DATA[myTribe]);
-    alert(t('alert_welcome_tribe', { tribe: tribeName, nick: myNickname }));
+    // 네이티브 alert 대신 토스트 — 온보딩 한복판에서 시스템 대화상자는 이질적이고,
+    // 브라우저에 따라 "이 사이트가 다시 알림을 표시하지 못하게 하기" 체크박스가 붙는다.
+    showToast(t('alert_welcome_tribe', { tribe: tribeName, nick: myNickname }));
 
-    // 신규 유저 최초 프로필 완료 → 억제됐던 공지사항 표시
+    // ★ 신규 유저에게는 기존 공지를 띄우지 않는다.
+    // 예전에는 여기서 checkAndShowNewNotice()를 불러 '억제됐던 공지'를 보여줬는데,
+    // 그 결과 **가입 직후 두 번째 화면이 과거 패치노트와 데이터 손실 사과문**이 됐다.
+    // 겪지도 않은 사고를 첫인상으로 주는 셈이라, 3일간 억제해 온보딩을 마친 뒤 보게 한다.
     if (_isFirstProfile) {
-        setTimeout(() => {
-            if (typeof checkAndShowNewNotice === 'function') checkAndShowNewNotice();
-        }, 600);
+        try {
+            localStorage.setItem('noticeHideUntil',
+                new Date(Date.now() + 3 * 86400000).toISOString());
+        } catch (e) { /* 저장 실패해도 온보딩에는 영향 없음 */ }
     }
 }
 
