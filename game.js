@@ -1809,6 +1809,16 @@ let hardshipAddressClearHistory = {}; // 장별 주소의 고난 클리어 기�
 let hardshipMemoryClearHistory = {};  // 장별 망각의 고난 클리어 기록 { "1": [{correct, total, score, date, duration}, ...] }
 let hardshipEnduranceClearHistory = {}; // 장별 인내의 고난 클리어 기록 { "1": [{avgScore, total, score, date, duration}, ...] }
 let hardshipVerseClearHistory = {}; // 장별 구절의 고난 클리어 기록 { "1": [{correct, total, score, date, duration}, ...] }
+
+/* 구절별 '백지 산출' 기록 — 망각의 고난(타이핑)·암송의 고난(음성)만 기록한다.
+   왜 이 둘만인가: Step 2/5의 단어 버튼은 답이 화면에 있는 '재구성'이라
+   단서 없이 산출할 수 있는지를 증명하지 못한다. 복습 스텝이 올라가도
+   백지에서는 안 나올 수 있으므로, 진짜 암기 여부는 이 기록으로만 판정한다.
+   { "1-1": { pass, fail, firstPass, lastPass, lastAt, lastOk, hints, lastHints, lastMode } }
+   - hints: 누적 힌트 사용 수. 통과했더라도 힌트가 많으면 아직 막히는 구절이다
+   - firstPass/lastPass: 간격을 두고 두 번 이상 성공했는지(정착) 판정용 */
+let verseRecall = {};
+const ENDURANCE_PASS_SCORE = 80; // 암송의 고난 통과선 (승점 만점 구간과 동일)
 let bibleReadLog = {};             // 날짜 → 챕터 → 읽은 절 번호 배열 { "Mon Jun 14 2026": { 1: [1,2,3] } }
 let _lastBibleReadClickTime = 0;   // 3초 쿨다운용
 let sessionTimeLog = {};           // "YYYY-MM-DD" → ms (이번 주 학습 시간)
@@ -2078,6 +2088,7 @@ loadGameData = function () {
         if (parsed.hardshipMemoryClearHistory) hardshipMemoryClearHistory = parsed.hardshipMemoryClearHistory;
         if (parsed.hardshipEnduranceClearHistory) hardshipEnduranceClearHistory = parsed.hardshipEnduranceClearHistory;
         if (parsed.hardshipVerseClearHistory) hardshipVerseClearHistory = parsed.hardshipVerseClearHistory;
+        if (parsed.verseRecall && typeof parsed.verseRecall === 'object') verseRecall = parsed.verseRecall;
         bossFirstClearClaimed = new Set(parsed.bossFirstClearClaimed || []);
         if (parsed.bibleReadLog) {
             const _today = _get6AMDayStr();
@@ -8648,6 +8659,7 @@ function saveGameData() {
         hardshipMemoryClearHistory: hardshipMemoryClearHistory,
         hardshipEnduranceClearHistory: hardshipEnduranceClearHistory,
         hardshipVerseClearHistory: hardshipVerseClearHistory,
+        verseRecall: verseRecall, // 구절별 백지 산출 기록 (망각·암송의 고난)
         bibleReadLog: bibleReadLog,
         sessionTimeLog: sessionTimeLog,
         // ★ [게임 모드]
@@ -8771,9 +8783,31 @@ function _mergeProgressSet(a, b) {
 
 /* 저장본 두 개(local/remote)의 자유여행·왕의 길 진행도를 모두 병합해 target에 반영한다.
    반환값은 상대편에서 가져온 스테이지 수 — 0이면 병합으로 바뀐 게 없다는 뜻. */
+/* 구절별 백지 산출 기록 병합 — 누적 기록이라 시도 횟수가 많은 쪽이 더 나중 상태다.
+   진행도와 달리 '앞선 쪽'이 아니라 '더 많이 쌓인 쪽'을 취한다. */
+function _mergeVerseRecall(target, other) {
+    const a = (target && target.verseRecall) || {};
+    const b = (other && other.verseRecall) || {};
+    const ids = new Set([...Object.keys(a), ...Object.keys(b)]);
+    const out = {};
+    let took = 0;
+    ids.forEach(id => {
+        const ra = a[id], rb = b[id];
+        if (!ra) { out[id] = rb; took++; return; }
+        if (!rb) { out[id] = ra; return; }
+        const tryA = (ra.pass || 0) + (ra.fail || 0);
+        const tryB = (rb.pass || 0) + (rb.fail || 0);
+        if (tryB > tryA) { out[id] = rb; took++; }
+        else out[id] = ra;
+    });
+    if (target) target.verseRecall = out;
+    return took;
+}
+
 function _mergeSaveProgress(target, other) {
     if (!target || !other) return 0;
     let took = 0;
+    took += _mergeVerseRecall(target, other);
 
     // 1) 자유여행 — 최상위 필드
     {
@@ -21363,6 +21397,8 @@ function confirmHardshipEnduranceVerse() {
     // 현재 구절 점수를 확정하고 승점 적용 후 다음 구절로
     resumeHardshipTimer();
     const score = hardshipState.currentVerseScore ?? 0;
+    // 음성 암송도 단서 없는 산출이므로 기록한다. 힌트 개념이 없어 0.
+    recordVerseRecall(_currentHardshipStageId(), score >= ENDURANCE_PASS_SCORE, 0, 'endurance');
     hardshipState.speechScores.push(score);
     hardshipState.studiedCount += 1;
 
@@ -22172,6 +22208,38 @@ function useHardshipMemoryHint() {
     renderHardshipMemoryVerse();
 }
 
+/* 구절 하나의 백지 산출 시도를 기록한다.
+   mode: 'memory'(타이핑) | 'endurance'(음성) — 둘 다 단서 없이 산출하는 형태다.
+   hints: 이 구절에서 쓴 힌트 수. 통과해도 힌트가 많으면 아직 막히는 구절이므로 함께 남긴다. */
+function recordVerseRecall(stageId, ok, hints, mode) {
+    if (!stageId) return;
+    // 집중 훈련은 학습 보조라 증거로 세지 않는다
+    if (hardshipState && hardshipState.trainingMode) return;
+
+    const now = Date.now();
+    const r = verseRecall[stageId] || { pass: 0, fail: 0, firstPass: 0, lastPass: 0, lastAt: 0, lastOk: false, hints: 0, lastHints: 0, lastMode: '' };
+    if (ok) {
+        r.pass += 1;
+        if (!r.firstPass) r.firstPass = now;
+        r.lastPass = now;
+    } else {
+        r.fail += 1;
+    }
+    r.lastAt = now;
+    r.lastOk = !!ok;
+    r.lastHints = hints || 0;
+    r.hints = (r.hints || 0) + (hints || 0);
+    r.lastMode = mode || '';
+    verseRecall[stageId] = r;
+}
+
+/* 현재 고난 구절의 스테이지 ID ('{장}-{절}') */
+function _currentHardshipStageId() {
+    const v = hardshipState && hardshipState.currentVerse;
+    if (!v || v.chapter == null || v.verse == null) return null;
+    return `${v.chapter}-${v.verse}`;
+}
+
 function showCorrectAnswerEffect() {
     const existing = document.getElementById('correct-answer-popup');
     if (existing) existing.remove();
@@ -22220,6 +22288,8 @@ function submitHardshipMemoryGuess() {
         const basePoints = (hardshipState.ultimateMemoryMode ? playerHearts * 5 : playerHearts * 4) * orderMult;
         const earnedPoints = hardshipState.rewardBlocked ? 0 : basePoints;
         if (earnedPoints > 0) awardHardshipScore(earnedPoints);
+        // 백지 산출 성공 — revealedHints는 구절마다 초기화되므로 이 구절에 쓴 힌트 수다
+        recordVerseRecall(_currentHardshipStageId(), true, (hardshipState.revealedHints || []).length, 'memory');
         hardshipState.studiedCount += 1;
         hardshipState.wrongSlots = [];
         hardshipState.feedback = {
@@ -22266,6 +22336,8 @@ function submitHardshipMemoryGuess() {
             answer: text.charAt(idx)
         }));
         if (earnedPoints > 0) awardHardshipScore(earnedPoints);
+        // 오타 보정으로 통과한 것도 산출 성공으로 본다 (내용은 떠올렸고 표기만 어긋난 경우)
+        recordVerseRecall(_currentHardshipStageId(), true, (hardshipState.revealedHints || []).length, 'memory');
         hardshipState.studiedCount += 1;
         // wrongSlots 유지 → 오타 위치를 빨간색으로 표시 (다음 구절로 넘어갈 때 초기화)
         const typoDetail = typoPairs.map(p => `<span class="typo-wrong">${p.typed || '?'}</span>→<span class="typo-answer">${p.answer}</span>`).join(' ');
@@ -22285,6 +22357,8 @@ function submitHardshipMemoryGuess() {
         return;
     }
 
+    // 백지 산출 실패 — 이 구절은 아직 단서 없이 나오지 않는다
+    recordVerseRecall(_currentHardshipStageId(), false, (hardshipState.revealedHints || []).length, 'memory');
     playerHearts = Math.max(0, playerHearts - 1);
     wrongCount += 1;
     hardshipState.feedback = {
