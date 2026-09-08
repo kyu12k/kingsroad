@@ -18,6 +18,8 @@ const LANG = {
         btn_prev: '◀ 이전',
         btn_revive: '부활하기',
         btn_give_up: '🏳️ 포기',
+        // 배틀 헤더 전용 — 좁은 공간이라 아이콘만. 눌러도 확인 모달이 떠서 오탭 위험이 없다
+        btn_give_up_icon: '🏳️',
         btn_resume: '게임 계속하기',
         btn_start: '시작하기',
         btn_retry: '다시 도전',
@@ -766,6 +768,7 @@ const LANG = {
         btn_prev: '◀ Prev',
         btn_revive: 'Revive',
         btn_give_up: '🏳️ Give Up',
+        btn_give_up_icon: '🏳️',
         btn_resume: 'Resume Game',
         btn_start: 'Start',
         btn_retry: 'Try Again',
@@ -8255,7 +8258,6 @@ function updateBattleUI() {
             <div style="display:flex; align-items:center; justify-content:center;">
                 <span style="font-size:1.2rem;">${heartIcon}</span>
                 <span id="player-hearts" style="font-weight:bold; margin-left:5px;">${playerHearts}</span>
-                <span style="font-size:0.8rem; color:#bdc3c7; margin-left:3px;"> / ${maxPlayerHearts}</span>
                 ${lifeBreadBtnHtml}${shieldBtnHtml}
             </div>
         `;
