@@ -2134,7 +2134,16 @@ loadGameData = function () {
         if (parsed.hardshipMemoryClearHistory) hardshipMemoryClearHistory = parsed.hardshipMemoryClearHistory;
         if (parsed.hardshipEnduranceClearHistory) hardshipEnduranceClearHistory = parsed.hardshipEnduranceClearHistory;
         if (parsed.hardshipVerseClearHistory) hardshipVerseClearHistory = parsed.hardshipVerseClearHistory;
-        if (parsed.verseRecall && typeof parsed.verseRecall === 'object') verseRecall = parsed.verseRecall;
+        if (parsed.verseRecall && typeof parsed.verseRecall === 'object') {
+            verseRecall = parsed.verseRecall;
+            // typedPass 도입 이전 기록 보정 — 없으면 pass로 채운다.
+            // 이미 보너스를 받은 구절에 다시 주지 않는 것이 우선이고,
+            // 음성으로만 통과했던 소수는 한 번 더 승급 상태로 남지만 곧 실제 기록으로 갱신된다.
+            Object.keys(verseRecall).forEach(k => {
+                const rec = verseRecall[k];
+                if (rec && typeof rec.typedPass !== 'number') rec.typedPass = rec.pass || 0;
+            });
+        }
         if (typeof parsed.onboardStep === 'string') onboardStep = parsed.onboardStep;
         bossFirstClearClaimed = new Set(parsed.bossFirstClearClaimed || []);
         if (parsed.bibleReadLog) {
@@ -7440,7 +7449,7 @@ function confirmBossSetup() {
    승급은 사용자가 스스로 해낸 뒤에만 붙으므로, 못 하는 것을 강요하지 않는다. */
 function _isBlankPromoted(stageId) {
     const r = verseRecall[stageId];
-    return !!(r && r.pass > 0);
+    return !!(r && r.typedPass > 0);
 }
 
 /* 빠른 모드 백지 승급 — 백지 세션을 먼저 열고, 끝나면 훈련 코스로 되돌아간다.
@@ -22693,20 +22702,29 @@ function recordVerseRecall(stageId, ok, hints, mode) {
     if (hardshipState && hardshipState.verseCheckIsLearn) mode = 'learn';
 
     const now = Date.now();
-    const r = verseRecall[stageId] || { pass: 0, fail: 0, firstPass: 0, lastPass: 0, lastAt: 0, lastOk: false, hints: 0, lastHints: 0, lastMode: '' };
+    const r = verseRecall[stageId] || { pass: 0, typedPass: 0, fail: 0, firstPass: 0, lastPass: 0, lastAt: 0, lastOk: false, hints: 0, lastHints: 0, lastMode: '' };
     if (ok) {
         r.pass += 1;
-        if (!r.firstPass) {
-            r.firstPass = now;
-            // 첫 통과 보너스 — 아직 안 해본 구절로 끌어당긴다 (반복 파밍은 되지 않는다)
-            if (mode !== 'learn' && typeof addGems === 'function') {
-                addGems(VERSE_FIRST_RECALL_GEM);
-                if (typeof showToast === 'function') {
-                    showToast(t('blank_check_first_bonus', { gem: VERSE_FIRST_RECALL_GEM }));
+        if (!r.firstPass) r.firstPass = now;
+        r.lastPass = now;
+
+        // ★ '단서 없이 써낸' 통과만 따로 센다 (typedPass).
+        // 암송의 고난은 음성인식 80점이 통과선이라 타이핑 완전 일치보다 기준이 훨씬 느슨하고,
+        // 초학습 직후 확인('learn')은 방금 본 구절이라 증거 가치가 낮다.
+        // 이 값이 첫 통과 보너스와 빠른 모드 백지 승급의 공통 기준이 된다 —
+        // 음성으로 통과한 구절이 승급돼 타이핑 백지를 요구받으면 판정과 요구가 어긋난다.
+        if (mode === 'memory') {
+            if (!r.typedPass) {
+                // 첫 통과 보너스 — 아직 안 써본 구절로 끌어당긴다 (구절당 평생 1회)
+                if (typeof addGems === 'function') {
+                    addGems(VERSE_FIRST_RECALL_GEM);
+                    if (typeof showToast === 'function') {
+                        showToast(t('blank_check_first_bonus', { gem: VERSE_FIRST_RECALL_GEM }));
+                    }
                 }
             }
+            r.typedPass = (r.typedPass || 0) + 1;
         }
-        r.lastPass = now;
     } else {
         r.fail += 1;
     }
@@ -22748,7 +22766,7 @@ function _blankScoreAlreadyToday(stageId) {
 
 function _markBlankScored(stageId) {
     if (!stageId) return;
-    const r = verseRecall[stageId] || { pass: 0, fail: 0, firstPass: 0, lastPass: 0, lastAt: 0, lastOk: false, hints: 0, lastHints: 0, lastMode: '' };
+    const r = verseRecall[stageId] || { pass: 0, typedPass: 0, fail: 0, firstPass: 0, lastPass: 0, lastAt: 0, lastOk: false, hints: 0, lastHints: 0, lastMode: '' };
     r.lastScoredAt = Date.now();
     verseRecall[stageId] = r;
 }

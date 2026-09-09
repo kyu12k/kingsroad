@@ -817,8 +817,15 @@ playerHearts × (궁극의 암기 ? 5 : 4) × (무작위 순서 ? 2 : 1) × 부�
 **"외웠다"의 유일한 증거**를 구절 단위로 남긴다. 망각의 고난(타이핑)·암송의 고난(음성)에서만 기록한다.
 
 ```js
-verseRecall['1-1'] = { pass, fail, firstPass, lastPass, lastAt, lastOk, hints, lastHints, lastMode }
+verseRecall['1-1'] = { pass, typedPass, fail, firstPass, lastPass, lastAt, lastOk, hints, lastHints, lastMode, lastScoredAt }
 ```
+
+> **`pass`와 `typedPass`는 다르다.** `pass`는 모든 백지 산출 성공, `typedPass`는 **타이핑으로 써낸 것만**(`mode === 'memory'`).
+> 암송의 고난은 음성인식 80점이 통과선이라 타이핑 완전 일치보다 기준이 훨씬 느슨하고,
+> 초학습 직후 확인(`'learn'`)은 방금 본 구절이라 증거 가치가 낮다.
+> **첫 통과 보너스와 빠른 모드 백지 승급은 둘 다 `typedPass`를 기준으로 한다** —
+> 음성으로 통과한 구절이 승급돼 타이핑 백지를 요구받으면 판정과 요구가 어긋나기 때문.
+> `typedPass`가 없는 옛 기록은 로드 시 `pass`로 채운다(이미 받은 보너스를 다시 주지 않는 쪽을 우선).
 
 > **왜 복습 스텝으로는 안 되는가**
 > Step 2/5의 단어 버튼은 **답이 화면에 다 있는 재구성**이라, 단서 없이 산출할 수 있는지를 증명하지 못한다.
