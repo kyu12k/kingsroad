@@ -23330,9 +23330,10 @@ function finishHardshipSession(reason) {
         const quoteEl = document.getElementById('result-quote');
         if (quoteEl) { quoteEl.innerHTML = ''; quoteEl.style.display = 'none'; }
 
-        // 이전 일반 스테이지 클리어 시 추가된 '다음 구절 학습' 버튼 제거
-        const existingNextBtn = resultModal.querySelector('#btn-next-stage');
-        if (existingNextBtn) existingNextBtn.remove();
+        // ★ 여기서 '#btn-next-stage'를 지우면 안 된다.
+        // 이전 일반 스테이지 결과 화면의 잔여 버튼을 치우려던 코드인데,
+        // 백지 확인·중간점검용 '다음 구절' 버튼을 위에서 이미 붙인 뒤라 그것까지 지워버렸다.
+        // 잔여 버튼 정리는 그 삽입 블록 첫머리에서 이미 하고 있다.
 
         const existingHistory = resultModal.querySelector('.hardship-history-wrap');
         if (existingHistory) existingHistory.remove();
