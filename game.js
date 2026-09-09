@@ -170,6 +170,8 @@ const LANG = {
         embed_title_midboss_blank: '중간 점검 · 빈칸',
         embed_title_midboss_none: '중간 점검 · 백지',
         embed_title_verse_check: '백지 확인',
+        embed_title_quick_blank: '백지 복습',
+        hardship_btn_giveup: '모르겠어요',
         blank_check_btn: '백지로 확인해보기',
         blank_check_again: '한 번 더 백지로',
         blank_check_hint: '지금이 가장 잘 떠오를 때예요',
@@ -471,6 +473,7 @@ const LANG = {
         hardship_endurance_count: '누적 확인 {n}절째입니다.',
         hardship_feedback_correct: '정답입니다. {label} · +{pts}점',
         hardship_feedback_correct_no_reward: '정답입니다. {label} · 승점 없음',
+        hardship_feedback_correct_quick: '정답입니다. {label} · 초성 조립을 건너뜁니다',
         hardship_feedback_wrong_address: '오답입니다. 정답은 {label}입니다.',
         hardship_feedback_wrong_verse: '오답입니다.',
         hardship_feedback_wrong_memory: '오답입니다. 정답 말씀: {text}',
@@ -935,6 +938,8 @@ const LANG = {
         embed_title_midboss_blank: 'Checkpoint · Blanks',
         embed_title_midboss_none: 'Checkpoint · Blank Page',
         embed_title_verse_check: 'Memory Check',
+        embed_title_quick_blank: 'Memory Review',
+        hardship_btn_giveup: "I don't know",
         blank_check_btn: 'Try it from memory',
         blank_check_again: 'From memory again',
         blank_check_hint: 'Right now is when it comes back most easily',
@@ -1234,6 +1239,7 @@ const LANG = {
         hardship_endurance_count: 'Confirmed {n} verse(s) so far.',
         hardship_feedback_correct: 'Correct! {label} · +{pts} pts',
         hardship_feedback_correct_no_reward: 'Correct! {label} · No points',
+        hardship_feedback_correct_quick: 'Correct! {label} · Skipping the word-assembly step',
         hardship_feedback_wrong_address: 'Wrong. The answer is {label}.',
         hardship_feedback_wrong_verse: 'Wrong.',
         hardship_feedback_wrong_memory: 'Wrong. Correct verse: {text}',
@@ -7430,6 +7436,29 @@ function confirmBossSetup() {
     startBossBattle(stage.targetVerseCount);
 }
 
+/* 백지 승급 대상인가 — 한 번이라도 백지로 써낸 적 있는 구절.
+   승급은 사용자가 스스로 해낸 뒤에만 붙으므로, 못 하는 것을 강요하지 않는다. */
+function _isBlankPromoted(stageId) {
+    const r = verseRecall[stageId];
+    return !!(r && r.pass > 0);
+}
+
+/* 빠른 모드 백지 승급 — 백지 세션을 먼저 열고, 끝나면 훈련 코스로 되돌아간다.
+   통과하면 [1](읽기 확인)만, 막히면 [1,5](초성 조립까지). */
+function _startQuickBlank(stageId) {
+    const sId = String(stageId);
+    window.currentStageId = sId;
+    window.hardshipOrigin = 'map';
+    selectedHardshipOrderType = 'sequential';
+    selectedHardshipUltimate = false;
+
+    _pendingHardshipEmbed = {
+        label: t('embed_title_quick_blank'),
+        quickReviewStageId: sId
+    };
+    startHardshipSession('memory', [sId]);
+}
+
 /* 결과 화면의 '백지로 확인해보기' — 방금 학습한 그 한 구절만 백지로 써본다.
    메뉴에 두면 아무도 찾아오지 않으므로 학습 흐름 끝에 붙였다.
    중간점검과 달리 stageClear는 부르지 않는다 — 클리어는 이미 처리됐고 여기선 '확인'만 한다. */
@@ -9658,6 +9687,12 @@ function normalizeChunkText(text) {
 
 /* [수정] 훈련 시작 함수 (phase 시스템 제거) */
 function startTraining(stageId, mode = 'normal') {
+    // ★ 백지 승급 — 이미 백지로 써낸 적 있는 구절은 빠른 모드에서 백지부터 시작한다.
+    // 사용자가 스스로 증명한 구절에만 적용되므로 '할 수 있는 것을 시키는' 구조다.
+    if (mode === 'quick' && _isBlankPromoted(stageId)) {
+        _startQuickBlank(stageId);
+        return;
+    }
     window.isGamePlaying = true; // ★ 게임 시작! 스위치 ON
     lastPlayedStageId = stageId;
     markOnboardStep('stage');
@@ -9691,6 +9726,9 @@ function startTraining(stageId, mode = 'normal') {
     // ============================================
     const courses = {
         'quick': [1, 5],
+        // 백지 승급 뒤 이어지는 코스 — 통과했으면 읽기로 확인만, 막혔으면 초성 조립까지
+        'quick-after-pass': [1],
+        'quick-after-fail': [1, 5],
         'full': [1, 2, 3, 4, 5],
         'normal': [1, 2, 3, 4, 5],
         'full-new': [1, 2, 3, 4, 5]
@@ -9699,8 +9737,8 @@ function startTraining(stageId, mode = 'normal') {
         stepSequence = courses[mode] || courses['full'];
     } else {
         // 미완료 스테이지: quick은 [1,5], 그 외는 전체
-        if (mode === 'quick') {
-            stepSequence = [1, 5];
+        if (mode === 'quick' || mode === 'quick-after-pass' || mode === 'quick-after-fail') {
+            stepSequence = courses[mode] || [1, 5];
         } else {
             mode = 'full-new';
             stepSequence = [1, 2, 3, 4, 5];
@@ -9763,7 +9801,7 @@ function startTraining(stageId, mode = 'normal') {
 
             console.log("4. ✅ 게임 시작 완료! 토스트 띄우기");
             if (typeof mode !== 'undefined') {
-                if (mode === 'quick') {
+                if (mode === 'quick' || mode === 'quick-after-pass' || mode === 'quick-after-fail') {
                     showReadAloudToast(t('toast_read_aloud_quick'));
                 } else {
                     showReadAloudToast(t('toast_read_aloud'));
@@ -9784,6 +9822,14 @@ function startTraining(stageId, mode = 'normal') {
     if (_gameScreen) {
         _gameScreen.classList.add('active');
         _gameScreen.classList.add('mode-training');
+    }
+
+    // ★ 백지 승급 뒤 이어지는 코스는 인트로 연출을 건너뛴다.
+    // 방금 백지로 인출을 마치고 온 참이고, 바로 뒤 step 1(읽기)이 같은 구절을 다시 보여준다.
+    // 여기서 두루마리 연출까지 끼면 같은 구절을 세 번 연속 보여주는 셈이 된다.
+    if (mode === 'quick-after-pass' || mode === 'quick-after-fail') {
+        startStageAction();
+        return;
     }
 
     // 🌟 마지막으로, 잘 싼 보따리를 애니메이션 함수에 던져줍니다.
@@ -20634,6 +20680,7 @@ function createEmptyHardshipState() {
         ultimateMemoryMode: false,
         midBossStageId: null,   // 중간점검 빈칸·백지로 열린 세션이면 그 스테이지 id
         verseCheckStageId: null, // 결과 화면의 '백지로 확인해보기'로 열린 1구절 세션
+        quickReviewStageId: null, // 빠른 모드 백지 승급으로 열린 1구절 세션 (끝나면 훈련으로 복귀)
         verseCheckIsLearn: false, // 그 확인이 초학습 직후였는가 (증거 가치가 낮아 구분해 기록)
         displayTitle: '',       // 헤더·시작 토스트에 쓸 이름 (비면 고난 모드 이름을 쓴다)
         isRandomOrder: false,
@@ -21233,6 +21280,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
     if (embed) {
         hardshipState.midBossStageId = embed.midBossStageId || null;
         hardshipState.verseCheckStageId = embed.verseCheckStageId || null;
+        hardshipState.quickReviewStageId = embed.quickReviewStageId || null;
         hardshipState.verseCheckIsLearn = !!embed.isLearn;
         hardshipState.displayTitle = embed.label || '';
     }
@@ -22157,6 +22205,7 @@ function renderHardshipMemoryVerse() {
             <button id="hardship-memory-submit-btn" class="btn-attack" onclick="submitHardshipMemoryGuess()" style="${hardshipState.awaitingNext ? 'display:none;' : ''}" ${hardshipState.locked ? 'disabled' : ''}>${t('hardship_btn_submit')}</button>
             <button id="hardship-next-btn" class="btn-attack" onclick="proceedHardshipToNextVerse()" style="background:#2ecc71; ${hardshipState.awaitingNext ? '' : 'display:none;'}">${t('hardship_btn_next')}</button>
             <button class="btn-reset-step5" onclick="resetHardshipMemoryInputs()" style="${hardshipState.awaitingNext ? 'display:none;' : ''}" ${hardshipState.locked ? 'disabled' : ''}>${t('hardship_btn_reset_input')}</button>
+            ${_isEmbeddedBlankSession() && !hardshipState.awaitingNext ? `<button class="btn-reset-step5 btn-hardship-giveup" onclick="giveUpHardshipMemoryVerse()" ${hardshipState.locked ? 'disabled' : ''}>${t('hardship_btn_giveup')}</button>` : ''}
         </div>
     `;
 
@@ -22171,6 +22220,42 @@ function renderHardshipMemoryVerse() {
         // 레이아웃이 늦게 잡히는 경우를 위한 폴백
         setTimeout(() => focusHardshipMemoryHiddenInput(), 0);
     }
+}
+
+/* 다른 콘텐츠가 빌려 쓰는 백지 세션인가 (진짜 망각의 고난이 아닌가) */
+function _isEmbeddedBlankSession() {
+    return !!(hardshipState && (hardshipState.verseCheckStageId ||
+                                hardshipState.midBossStageId ||
+                                hardshipState.quickReviewStageId));
+}
+
+/* 「모르겠어요」 — 이번 판만 포기하고 정답을 확인한다.
+   실패로 기록하되 **체력은 깎지 않는다**. 벌을 주면 정직하게 누르는 대신 아무거나 찍게 되고,
+   그러면 우리가 알고 싶은 '이 구절이 백지에서 나오는가'가 오염된다.
+   승급은 영구가 아니라 이번 판에만 풀리므로, 다음에 들어오면 다시 백지를 만난다. */
+function giveUpHardshipMemoryVerse() {
+    if (!window.isHardshipMode || hardshipState.mode !== 'memory' ||
+        hardshipState.locked || !hardshipState.currentVerse) return;
+
+    const hiddenInput = document.getElementById('hidden-typing-input');
+    if (hiddenInput && typeof hiddenInput.blur === 'function') hiddenInput.blur();
+
+    hardshipState.locked = true;
+    hardshipState.awaitingNext = true;
+    pauseHardshipTimer();
+    hardshipState.answeredCount += 1;
+
+    recordVerseRecall(_currentHardshipStageId(), false, (hardshipState.revealedHints || []).length, 'memory');
+    wrongCount += 1;
+    hardshipState.feedback = {
+        type: 'error',
+        message: t('hardship_feedback_wrong_memory', {
+            text: (currentLang === 'en' && hardshipState.currentVerse.textEn)
+                ? hardshipState.currentVerse.textEn : hardshipState.currentVerse.text
+        })
+    };
+    renderHardshipMemoryVerse();
+    updateBattleUI();
 }
 
 function focusHardshipMemoryHiddenInput() {
@@ -22639,6 +22724,11 @@ function recordVerseRecall(stageId, ok, hints, mode) {
    백지 확인: 1구절, 사실상 위험이 없다                                → 0.25 */
 function getHardshipScoreScale() {
     if (!hardshipState) return 1;
+    // 빠른 모드 백지 승급: 평소 복습을 형태만 바꿔 하는 것이고,
+    // 이어지는 훈련 코스가 끝나면 stageClear가 복습 승점을 정상 지급한다.
+    // 여기서 또 주면 같은 복습에 두 번 주는 셈이다.
+    // (어려운 형태의 보상은 승점이 아니라 '통과하면 코스가 짧아지는 것'이다)
+    if (hardshipState.quickReviewStageId) return 0;
     if (hardshipState.verseCheckStageId) return 0.25;
     if (hardshipState.midBossStageId) return 0.5;
     return 1;
@@ -22650,7 +22740,7 @@ function getHardshipScoreScale() {
    망각의 고난은 한 장을 통으로 하는 진입 비용이 있어 제한하지 않는다(기존 보상 유지). */
 function _blankScoreAlreadyToday(stageId) {
     if (!stageId || !hardshipState) return false;
-    if (!hardshipState.verseCheckStageId && !hardshipState.midBossStageId) return false;
+    if (!_isEmbeddedBlankSession()) return false;
     const r = verseRecall[stageId];
     if (!r || !r.lastScoredAt) return false;
     return _tsTo6AMDateStr(r.lastScoredAt) === _get6AMDayStr();
@@ -22730,9 +22820,11 @@ function submitHardshipMemoryGuess() {
             type: 'success',
             message: hardshipState.trainingMode
                 ? t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) + ' · 정답'
-                : hardshipState.rewardBlocked
-                    ? t('hardship_feedback_correct_no_reward', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) })
-                    : t('hardship_feedback_correct', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }), pts: earnedPoints })
+                : hardshipState.quickReviewStageId
+                    ? t('hardship_feedback_correct_quick', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) })
+                    : (hardshipState.rewardBlocked || earnedPoints <= 0)
+                        ? t('hardship_feedback_correct_no_reward', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) })
+                        : t('hardship_feedback_correct', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }), pts: earnedPoints })
         };
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
         showCorrectAnswerEffect();
@@ -22783,7 +22875,7 @@ function submitHardshipMemoryGuess() {
             type: 'success',
             message: (hardshipState.trainingMode
                 ? t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) + ' · 오타 보정'
-                : hardshipState.rewardBlocked
+                : (hardshipState.rewardBlocked || earnedPoints <= 0)
                     ? t('hardship_feedback_typo_corrected_no_reward', { n: typoCount })
                     : t('hardship_feedback_typo_corrected', { pts: earnedPoints, n: typoCount }))
                 + `<span class="typo-detail"> (${typoDetail})</span>`
@@ -22833,6 +22925,18 @@ function finishHardshipSession(reason) {
         if (typeof showReadAloudToast === 'function') {
             showReadAloudToast(t('toast_training_repeat', { step: nextCycle }));
         }
+        return;
+    }
+
+    // ★ 빠른 모드 백지 승급은 결과 화면을 띄우지 않고 훈련 코스로 되돌아간다.
+    // 여기서 결과 화면을 한 번 보여주면 한 구절 복습에 결과창이 두 번 뜬다.
+    if (hardshipState.quickReviewStageId) {
+        const _qSid = hardshipState.quickReviewStageId;
+        const _passed = hardshipState.studiedCount > 0; // 1구절 세션이라 성공 여부와 같다
+        clearHardshipPendingTimeout();
+        window.isHardshipMode = false;
+        resetHardshipSessionState();
+        startTraining(_qSid, _passed ? 'quick-after-pass' : 'quick-after-fail');
         return;
     }
 
