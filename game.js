@@ -21404,9 +21404,10 @@ function updateHardshipHeader() {
     if (lifeBreadCountEl) lifeBreadCountEl.textContent = String(lifeBreadCnt);
 
     if (hintBtn) {
-        const shouldShowHint = currentMode === 'memory';
-        hintBtn.style.display = shouldShowHint ? 'inline-flex' : 'none';
-        hintBtn.disabled = !shouldShowHint;
+        // 힌트는 입력 보드 아래 액션 행으로 옮겼다 — 타이핑 중 시선이 가는 자리에 있어야
+        // '힌트가 있는 줄 모르고 포기'하는 일이 줄어든다. 헤더는 이미 칩이 빽빽하기도 하다.
+        hintBtn.style.display = 'none';
+        hintBtn.disabled = true;
     }
 
     updateHintButtonLabels();
@@ -22214,6 +22215,7 @@ function renderHardshipMemoryVerse() {
             <button id="hardship-memory-submit-btn" class="btn-attack" onclick="submitHardshipMemoryGuess()" style="${hardshipState.awaitingNext ? 'display:none;' : ''}" ${hardshipState.locked ? 'disabled' : ''}>${t('hardship_btn_submit')}</button>
             <button id="hardship-next-btn" class="btn-attack" onclick="proceedHardshipToNextVerse()" style="background:#2ecc71; ${hardshipState.awaitingNext ? '' : 'display:none;'}">${t('hardship_btn_next')}</button>
             <button class="btn-reset-step5" onclick="resetHardshipMemoryInputs()" style="${hardshipState.awaitingNext ? 'display:none;' : ''}" ${hardshipState.locked ? 'disabled' : ''}>${t('hardship_btn_reset_input')}</button>
+            ${!hardshipState.awaitingNext ? `<button id="hardship-inline-hint-btn" class="btn-reset-step5 btn-hardship-hint" onclick="useHint()" ${hardshipState.locked ? 'disabled' : ''}>${t('hint_btn_label')} (${t('label_free')})</button>` : ''}
             ${_isEmbeddedBlankSession() && !hardshipState.awaitingNext ? `<button class="btn-reset-step5 btn-hardship-giveup" onclick="giveUpHardshipMemoryVerse()" ${hardshipState.locked ? 'disabled' : ''}>${t('hardship_btn_giveup')}</button>` : ''}
         </div>
     `;
@@ -22229,6 +22231,22 @@ function renderHardshipMemoryVerse() {
         // 레이아웃이 늦게 잡히는 경우를 위한 폴백
         setTimeout(() => focusHardshipMemoryHiddenInput(), 0);
     }
+    armHardshipHintNudge();
+}
+
+/* 유휴 안내 — 일정 시간 입력이 없으면 힌트 버튼을 은은하게 강조한다.
+   백지 앞에서 막힌 사람이 '힌트가 있는 줄 모르고' 그만두는 것을 막는 게 목적이다.
+   입력이 있을 때마다 다시 건다 — 중간에 막히는 경우도 잡기 위해. */
+const HARDSHIP_HINT_NUDGE_MS = 8000;
+function armHardshipHintNudge() {
+    clearTimeout(window._hsHintNudgeTimer);
+    const btn = document.getElementById('hardship-inline-hint-btn');
+    if (btn) btn.classList.remove('hint-nudge');
+    if (!hardshipState || hardshipState.awaitingNext || hardshipState.locked) return;
+    window._hsHintNudgeTimer = setTimeout(() => {
+        const b = document.getElementById('hardship-inline-hint-btn');
+        if (b && !hardshipState.awaitingNext && !hardshipState.locked) b.classList.add('hint-nudge');
+    }, HARDSHIP_HINT_NUDGE_MS);
 }
 
 /* 다른 콘텐츠가 빌려 쓰는 백지 세션인가 (진짜 망각의 고난이 아닌가) */
@@ -22468,6 +22486,8 @@ function updateHardshipMemoryBoard() {
     if (submitBtn && !hardshipState.locked && !hardshipState.awaitingNext) {
         submitBtn.disabled = false;
     }
+
+    armHardshipHintNudge();
 
     if (targetScrollSlot && !hardshipState.isComposing) {
         clearTimeout(updateHardshipMemoryBoard._scrollTimer);
