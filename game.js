@@ -177,7 +177,6 @@ const LANG = {
         blank_check_hint: '지금이 가장 잘 떠오를 때예요',
         blank_check_first_bonus: '✨ 이 구절을 처음 백지로 써냈습니다! 💎 +{gem}',
         alert_hint_locked: '먼저 한 번 시도해 보세요. 틀린 뒤에 힌트가 열립니다. 🔒',
-        alert_hint_locked_typing: '한 글자라도 입력해 보세요. 그 뒤에 힌트가 열립니다. 🔒',
         hint_btn_label: '💡 힌트',
         hint_confirm: '💎 보석 {cost}개를 소모하여 힌트를 보시겠습니까?',
         hint_modal_header: '💡 힌트 사용 💎{cost}',
@@ -945,7 +944,6 @@ const LANG = {
         blank_check_hint: 'Right now is when it comes back most easily',
         blank_check_first_bonus: '✨ First time writing this verse from memory! 💎 +{gem}',
         alert_hint_locked: 'Give it a try first. Hints unlock after a wrong answer. 🔒',
-        alert_hint_locked_typing: 'Type at least one character first. Then the hint unlocks. 🔒',
         hint_btn_label: '💡 Hint',
         hint_confirm: 'Use {cost} 💎 gems for a hint?',
         hint_modal_header: '💡 Hint 💎{cost}',
@@ -11658,10 +11656,12 @@ function resetHintLock() {
 
 function isHintUnlocked() {
     if (window.isHardshipMode) {
-        if (!hardshipState || hardshipState.mode !== 'memory') return false;
-        // 망각의 고난은 한 글자씩 공개하는 점진적 단서라 무료지만,
-        // 백지 상태에서 바로 열면 시도 자체가 없어지므로 입력을 한 글자 이상 요구한다.
-        return String(hardshipState.memoryTypedText || '').replace(/\s/g, '').length > 0;
+        // ★ 타이핑 백지에는 잠금을 걸지 않는다.
+        // 단어 버튼 모드의 힌트는 구절 전체를 보여주므로 먼저 보면 인출이 사라지지만,
+        // 여기 힌트는 한 글자씩 여는 점진적 단서라 오히려 반복 인출 시도를 만들어낸다.
+        // 게다가 '한 글자 입력'을 요구해봤자 아무 글자나 쳐서 열 수 있어
+        // 시도를 강제하지도 못하면서 입력만 더럽혔다.
+        return !!(hardshipState && hardshipState.mode === 'memory');
     }
     return hintAttemptMade;
 }
@@ -22469,9 +22469,6 @@ function updateHardshipMemoryBoard() {
         submitBtn.disabled = false;
     }
 
-    // 첫 글자를 입력하는 순간 힌트 잠금이 풀리므로 버튼 표시를 따라가게 한다
-    if (typeof updateHintButtonLabels === 'function') updateHintButtonLabels();
-
     if (targetScrollSlot && !hardshipState.isComposing) {
         clearTimeout(updateHardshipMemoryBoard._scrollTimer);
         const slotToScroll = targetScrollSlot;
@@ -22643,12 +22640,6 @@ function getHardshipMemoryHintPlan() {
 
 function useHardshipMemoryHint() {
     if (!window.isHardshipMode || hardshipState.mode !== 'memory' || hardshipState.locked) return;
-
-    // ★ 백지 상태에서는 잠김 — 한 글자라도 시도한 뒤에 단서를 준다
-    if (!isHintUnlocked()) {
-        showGemToast(0, t('alert_hint_locked_typing'), true);
-        return;
-    }
 
     const hiddenInput = document.getElementById('hidden-typing-input');
     const { memoryTextMods, hintIndex } = getHardshipMemoryHintPlan();
