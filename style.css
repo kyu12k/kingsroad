@@ -5903,23 +5903,24 @@ body, html {
 }
 .boss-setup-section { margin-bottom: 20px; }
 .boss-setup-label { font-size: 0.82rem; color: #aaa; margin-bottom: 10px; }
-/* 힌트 — 입력 보드 아래, 「모르겠어요」보다 앞에. 무료라는 걸 색으로도 알린다 */
-.btn-hardship-hint {
-    background: rgba(241, 196, 15, 0.16);
-    border-color: rgba(241, 196, 15, 0.55);
+/* 힌트(헤더 우측 상단) — 무료라는 걸 색으로도 알린다.
+   보드 아래로 내려봤다가 되돌렸다: 모바일에서 키보드가 그 영역을 덮어 더 안 보였다. */
+#common-hardship-hint-btn {
+    background: rgba(241, 196, 15, 0.18);
+    border-color: rgba(241, 196, 15, 0.6);
     color: #f1c40f;
     font-weight: 700;
 }
 /* 일정 시간 입력이 없으면 은은하게 맥동 — 있는 줄 모르고 포기하는 걸 막는다 */
-.btn-hardship-hint.hint-nudge {
+#common-hardship-hint-btn.hint-nudge {
     animation: hardshipHintNudge 1.6s ease-in-out infinite;
 }
 @keyframes hardshipHintNudge {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.45); }
-    50%      { box-shadow: 0 0 0 7px rgba(241, 196, 15, 0); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.5); }
+    50%      { box-shadow: 0 0 0 8px rgba(241, 196, 15, 0); }
 }
 @media (prefers-reduced-motion: reduce) {
-    .btn-hardship-hint.hint-nudge { animation: none; border-color: #f1c40f; }
+    #common-hardship-hint-btn.hint-nudge { animation: none; border-color: #f1c40f; background: rgba(241, 196, 15, 0.32); }
 }
 
 /* 「모르겠어요」 — 다시 입력 옆에, 더 조용하게. 벌이 아니라 정직한 탈출구다 */
