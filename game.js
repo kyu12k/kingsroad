@@ -11237,6 +11237,9 @@ function showClearScreen() {
     // 다음 구절 바로 학습 버튼 (일반 모드 전용)
     const existingNextBtn = resultModalEl.querySelector('#btn-next-stage');
     if (existingNextBtn) existingNextBtn.remove();
+    // 중간점검 결과 화면에서 남은 버튼 정리 (결과 모달은 하나를 돌려 쓴다)
+    const existingNextMid = resultModalEl.querySelector('#btn-next-midboss');
+    if (existingNextMid) existingNextMid.remove();
     const _curStageId = window.currentStageId;
     const _curChData = _curStageId ? getChapterDataByStageId(_curStageId) : null;
     const _curStage = _curChData && _curChData.stages ? _curChData.stages.find(s => s.id === _curStageId) : null;
@@ -11276,6 +11279,66 @@ function getNextNormalStageId(currentId) {
         }
     }
     return null;
+}
+
+/* 다음 중간점검 ID — 장 경계를 넘어 이어간다.
+   중간점검 하나가 3~4절이라 한 장을 훑으려면 맵을 여러 번 왕복해야 했다. */
+function getNextMidBossStageId(currentId) {
+    if (!currentId) return null;
+    const unlockedSet = activeMode === 'kings' ? getKingsRoadUnlockedSet() : null;
+    let found = false;
+    for (const chapter of gameData) {
+        for (const stage of chapter.stages) {
+            if (found && stage.type === 'mid-boss') {
+                // 왕의 길: 소속 구절이 하나라도 해금돼 있어야 의미가 있다
+                if (unlockedSet) {
+                    const subs = getSubStagesOfMidBoss(chapter, stage);
+                    if (!subs.some(s => unlockedSet.has(s.id))) return null;
+                }
+                return stage.id;
+            }
+            if (stage.id === currentId) found = true;
+        }
+    }
+    return null;
+}
+
+/* 설정 모달을 다시 띄우지 않고 방금 쓰던 난이도·순서 그대로 다음 중간점검을 연다.
+   모달을 거치면 '이어하기'의 목적인 마찰 제거가 사라진다. */
+function goToNextMidBoss(nextStageId) {
+    const chData = getChapterDataByStageId(nextStageId);
+    const stage = chData && chData.stages ? chData.stages.find(s => s.id === nextStageId) : null;
+    if (!stage) return;
+
+    const rm = document.getElementById('result-modal');
+    if (rm) rm.classList.remove('active');
+    quitGame('map');
+
+    window.currentStageId = nextStageId;
+    if (_isBlankDifficulty(bossDifficultyMode)) {
+        _startMidBossBlank(stage, bossDifficultyMode === 'none');
+    } else {
+        startBossBattle(stage.targetVerseCount);
+    }
+}
+
+/* 결과 화면에 '다음 중간점검' 버튼을 붙인다 (초성·단어 경로와 빈칸·백지 경로 공용) */
+function _attachNextMidBossBtn(anchorBtn, currentMidBossId) {
+    const rm = document.getElementById('result-modal');
+    if (!rm) return;
+    const old = rm.querySelector('#btn-next-midboss');
+    if (old) old.remove();
+    if (!anchorBtn || !currentMidBossId) return;
+    const nextId = getNextMidBossStageId(currentMidBossId);
+    if (!nextId) return;
+
+    const btn = document.createElement('button');
+    btn.id = 'btn-next-midboss';
+    btn.className = 'btn-continue';
+    btn.style.cssText = 'margin-top:8px; background:linear-gradient(135deg,#8e44ad,#9b59b6); box-shadow:0 4px 0 #6c3483; color:#fff;';
+    btn.textContent = currentLang === 'en' ? 'Next Checkpoint ▶' : '다음 중간점검 ▶';
+    btn.onclick = () => goToNextMidBoss(nextId);
+    anchorBtn.insertAdjacentElement('afterend', btn);
 }
 
 // 결과 모달에서 다음 스테이지로 바로 이동
@@ -11361,6 +11424,9 @@ function showBossClearScreen(clearedStageId) {
         resultContinueBtn.innerText = t('result_continue');
         resultContinueBtn.onclick = () => closeBossClearModal(clearedStageId);
     }
+    // 중간점검이면 '다음 중간점검'으로 바로 이어간다 (맵 왕복 제거)
+    _attachNextMidBossBtn(resultContinueBtn,
+        String(clearedStageId).includes('mid') ? clearedStageId : null);
     if (quoteEl) {
         quoteEl.textContent = quoteText;
         quoteEl.style.display = 'block';
@@ -22856,8 +22922,11 @@ function finishHardshipSession(reason) {
         const rm = document.getElementById('result-modal');
         const oldNext = rm && rm.querySelector('#btn-next-stage');
         if (oldNext) oldNext.remove();
-        if (rm && reason === 'completed' && hardshipState.verseCheckStageId) {
-            const nextId = getNextNormalStageId(hardshipState.verseCheckStageId);
+        // 백지 확인(1구절)과 중간점검 빈칸·백지 둘 다에서 이어갈 수 있게 한다.
+        // 중간점검은 그 구간 다음의 일반 스테이지가 기준이 된다.
+        const _nextAnchor = hardshipState.verseCheckStageId || hardshipState.midBossStageId;
+        if (rm && reason === 'completed' && _nextAnchor) {
+            const nextId = getNextNormalStageId(_nextAnchor);
             if (nextId) {
                 const nextBtn = document.createElement('button');
                 nextBtn.id = 'btn-next-stage';
@@ -22874,6 +22943,9 @@ function finishHardshipSession(reason) {
                 if (resultContinueBtn) resultContinueBtn.insertAdjacentElement('afterend', nextBtn);
             }
         }
+        // 중간점검 빈칸·백지였다면 '다음 중간점검'도 함께
+        _attachNextMidBossBtn(resultContinueBtn,
+            (reason === 'completed') ? hardshipState.midBossStageId : null);
     }
 
     const hsStatLabels = document.getElementById('result-modal').querySelectorAll('.stat-label');
