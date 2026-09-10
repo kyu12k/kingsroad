@@ -9057,7 +9057,57 @@ function _mergeSaveProgress(target, other) {
     return took;
 }
 
+/* 동기화가 끝난 뒤에 태그 발급을 확인한다.
+   본체는 반환 지점이 여러 곳이라 안쪽에 넣으면 경로마다 빠뜨리게 되므로 감싼다.
+   호출부(index.html 3곳, linkGoogleAccount)는 그대로 두어도 전부 이 경로를 탄다. */
 async function initFirestoreSync() {
+    try {
+        await _initFirestoreSyncCore();
+    } finally {
+        try { await ensureTagAssigned(); } catch (e) { /* 조용히 */ }
+    }
+}
+
+/* ── '0000'에 갇힌 계정 구제 ──────────────────────────────────────────────────
+   저장본에 tag가 없으면 loadGameData()가 myTag를 **'0000'으로 채운다**(위 loadGameData).
+   그런데 태그를 만들어주는 유일한 지점(confirmProfile)의 조건이 `if (!myTag)`였고
+   **'0000'은 truthy**라 한 번 박히면 영원히 걸리지 않았다.
+   → 프로필(지파·이름)을 끝까지 채운 사람도 번호를 못 받은 채 남았다.
+     친구 추가를 누르면 "닉네임을 먼저 설정해주세요"가 뜨는데 닉네임은 이미 있다.
+   2026-09-10 실측: tag='0000' 1,557개 중 332개가 닉네임 보유(그중 127개가 암기 진도 보유).
+
+   ★ 닉네임이 '순례자'인 사람에게는 발급하지 않는다.
+     프로필을 만든 적이 없는 사람을 조용히 랭킹에 올리는 것이 되기 때문.
+     그쪽은 안내를 띄워 직접 정하게 한다(별도 작업). */
+let _tagFixInFlight = false;
+async function ensureTagAssigned() {
+    if (_tagFixInFlight) return;
+    if (typeof db === 'undefined' || !db) return;
+    if (typeof myTag === 'undefined' || myTag !== '0000') return;
+    if (typeof myNickname === 'undefined' || !myNickname || myNickname === '순례자') return;
+
+    _tagFixInFlight = true;
+    try {
+        const newTag = await generateUniqueTag();
+        if (!newTag || newTag === '0000') return;
+        myTag = newTag;
+        console.log('🔧 번호가 없던 계정에 태그 발급:', myTag);
+        saveGameData();
+        // ★ saves/{uid}.tag가 **먼저** 서버에 올라가야 한다.
+        //   submitScoreSecure의 verifyTag()가 그 값으로 본인 확인을 하고,
+        //   leaderboard 규칙의 소유권 검사도 같은 값을 본다.
+        await syncToFirestore();
+        if (typeof saveMyScoreToServer === 'function') saveMyScoreToServer();
+        if (typeof updateProfileUI === 'function') updateProfileUI();
+    } catch (e) {
+        // 실패해도 조용히 둔다 — 다음 접속에 다시 시도된다
+        console.warn('태그 발급 실패:', e);
+    } finally {
+        _tagFixInFlight = false;
+    }
+}
+
+async function _initFirestoreSyncCore() {
     if (typeof db === 'undefined' || !db) return;
     if (typeof myPlayerId === 'undefined' || !myPlayerId) return;
 
@@ -18341,8 +18391,11 @@ async function confirmProfile() {
     if (window.tempTribe !== undefined) myTribe = window.tempTribe;
     if (window.tempDept !== undefined) myDept = window.tempDept;
 
-    // 신규 유저(tag 없음)에 한해 중복 없는 tag 생성
-    if (!myTag) myTag = await generateUniqueTag();
+    // 신규 유저(tag 없음)에 한해 중복 없는 tag 생성.
+    // ★ '0000'도 '없음'이다 — loadGameData()가 tag 없는 저장본을 '0000'으로 채우는데
+    //   truthy라서 !myTag로는 걸리지 않는다. 이 한 줄 때문에 프로필을 다 채우고도
+    //   번호를 못 받은 사람이 생겼다 (ensureTagAssigned 주석 참고).
+    if (!myTag || myTag === '0000') myTag = await generateUniqueTag();
 
     markOnboardStep('profile');
 
