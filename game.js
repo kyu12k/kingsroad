@@ -22973,6 +22973,28 @@ function recordVerseRecall(stageId, ok, hints, mode) {
     r.lastHints = hints || 0;
     r.hints = (r.hints || 0) + (hints || 0);
     r.lastMode = mode || '';
+
+    /* ★ 첫 힌트의 위치 — '어디서 막히는가'를 판별하는 유일한 단서. (2026-09-10)
+       힌트는 **막힌 지점부터 순서대로** 열리므로(`getHardshipMemoryHintPlan`),
+       `revealedHints[0]`이 곧 그 시도에서 처음 막힌 글자 위치다.
+       개수(`hints`)만으로는 "머리에서 막혔다"와 "군데군데 막혔다"를 구분할 수 없다.
+
+       왜 재는가: 구절 암송은 사슬 구조라 각 마디가 다음 마디의 단서가 되는데
+       **첫 마디만은 앞에 아무것도 없다**(유일한 단서가 주소다). 백지 실패가
+       '구절을 모른다'가 아니라 '주소 → 첫 마디 연결이 약하다'라면,
+       처방은 전체를 쉽게 하는 것이 아니라 **첫 마디만 세우는 단계**가 된다.
+       이 값이 0~2에 몰리면 그 가설이 맞고, 흩어지면 다른 처방이 필요하다.
+
+       `lastVerseLen`을 함께 남기는 이유: 짧은 구절에서는 index 2도 중간일 수 있어
+       위치만으로는 '앞쪽'인지 판단할 수 없다. 비율로 봐야 한다. */
+    if (mode === 'memory' || mode === 'learn') {
+        const _rev = (hardshipState && hardshipState.revealedHints) || [];
+        r.lastFirstHintIdx = _rev.length ? _rev[0] : -1;   // -1 = 힌트를 쓰지 않음
+        const _txt = (hardshipState && hardshipState.currentVerse && typeof getHardshipActiveText === 'function')
+            ? (getHardshipActiveText(hardshipState.currentVerse) || '') : '';
+        r.lastVerseLen = _txt.length;
+    }
+
     verseRecall[stageId] = r;
 }
 
