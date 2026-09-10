@@ -18,18 +18,54 @@ service cloud.firestore {
                 'prevWeekScore', 'prevMonthlyScore'];
       }
 
-      // 생성: 로그인 상태 + 재화/보상 필드를 포함하지 않아야 함
+      // 친구 기능은 '상대방 문서에 직접 쓰는' 구조라(신청·수락·응원·삭제)
+      // 남의 쓰기를 전면 금지할 수 없다. 대신 남이 건드릴 수 있는 범위를 이 넷으로 못박는다.
+      //  - pendingReceived : 친구 신청 보내기 (상대 문서)
+      //  - pendingSent     : 수락 시 신청자 문서의 보낸 목록 정리
+      //  - friends         : 수락·삭제·차단 시 양쪽 목록
+      //  - pendingCheers   : 응원 보내기
+      // 나머지(nickname·tribe·sessionToken·fcmToken·notificationTimes·maxHearts·
+      //        weeklyHistory·blocked·lastCheerSent 등)는 전부 본인만 쓸 수 있다.
+      function friendWritableKeys() {
+        return ['friends', 'pendingReceived', 'pendingSent', 'pendingCheers'];
+      }
+
+      // 문서 ID는 uid가 아니라 태그('8648')라 request.auth.uid와 직접 비교할 수 없다.
+      // uid → 태그의 유일한 권위 매핑은 saves/{uid}.tag 이고,
+      // 서버(kingsroad/index.js verifyTag)도 이미 같은 근거로 판단한다.
+      // saves/{uid}는 saveGameDataSecure CF만 쓸 수 있으므로(아래 saves 규칙) 위조 불가.
+      function saveDoc() {
+        return get(/databases/$(database)/documents/saves/$(request.auth.uid));
+      }
+      function isOwner() {
+        return request.auth != null
+               && saveDoc() != null
+               && 'tag' in saveDoc().data
+               && string(saveDoc().data.tag) == userId;
+      }
+
+      function affectedKeys() {
+        return request.resource.data.diff(resource.data).affectedKeys();
+      }
+
+      // 생성: 본인 문서만. + 재화/보상 필드를 포함하지 않아야 함
       allow create: if request.auth != null
+                    && isOwner()
                     && !request.resource.data.keys().hasAny(serverOnlyKeys())
                     && !('pendingReward' in request.resource.data);
 
-      // 수정: 로그인 상태 + 재화 필드를 건드리지 않아야 함 +
-      //       주간 보상(pendingReward)은 '삭제(수령)'만 허용하고 새로 만들거나 값 변경은 금지
+      // 수정: 재화 필드 금지 +
+      //       주간 보상(pendingReward)은 '삭제(수령)'만 허용하고 새로 만들거나 값 변경은 금지 +
+      //       본인이 아니면 친구 관련 4개 필드 외에는 아무것도 못 건드림
       allow update: if request.auth != null
-                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(serverOnlyKeys())
+                    && !affectedKeys().hasAny(serverOnlyKeys())
                     && (
-                         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['pendingReward'])
+                         !affectedKeys().hasAny(['pendingReward'])
                          || !('pendingReward' in request.resource.data)
+                       )
+                    && (
+                         isOwner()
+                         || affectedKeys().hasOnly(friendWritableKeys())
                        );
 
       // 문서 통째 삭제 금지 (남의 데이터 삭제/그리핑 방지). 필요한 삭제는 CF가 처리.

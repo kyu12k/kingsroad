@@ -796,6 +796,72 @@ playerHearts × (궁극의 암기 ? 5 : 4) × (무작위 순서 ? 2 : 1) × 부�
 
 ---
 
+## Firestore 보안 규칙 — leaderboard 소유권 (2026-09-10)
+
+`leaderboard/{tag}`의 `allow update`에 **소유권 검사가 없어서, 로그인한 아무나(익명 게스트 포함)
+남의 문서의 비(非)서버필드를 고칠 수 있었다.** `nickname`·`tribe`·`friends`·`fcmToken`·
+`notificationTimes`·`weeklyHistory`·`maxHearts`, 그리고 **`sessionToken`** 까지.
+
+> `sessionToken`이 특히 나빴다. [game.js:19417](game.js#L19417)의 세션 감시가
+> `serverData.sessionToken !== window.currentSessionToken`이면 '다른 기기 로그인'으로 판정하므로,
+> 남의 문서에 아무 값이나 써넣으면 **그 사용자를 계속 강제 새로고침·원격 확인 흐름에 빠뜨릴 수 있었다.**
+> (점수·재화는 `serverOnlyKeys()`가 막고 있어 랭킹 조작은 불가능했다.)
+
+### 왜 '전면 금지'가 아니라 '필드 화이트리스트'인가
+
+**친구 기능이 구조적으로 남의 문서에 직접 쓴다.** CF를 거치지 않는다:
+
+| 동작 | 상대 문서에 쓰는 필드 |
+|------|----------------------|
+| 친구 신청 | `pendingReceived` |
+| 신청 수락 | `friends`, `pendingSent` (신청자 문서) |
+| 친구 삭제·차단 | `friends` |
+| 응원 보내기 | `pendingCheers` |
+
+그래서 소유권 검사를 통째로 걸면 친구 기능 전체가 죽는다.
+→ **`friendWritableKeys()` 4개(`friends`/`pendingReceived`/`pendingSent`/`pendingCheers`)만 남에게 열어두고,
+그 외 전부는 본인만** 쓰게 했다. 남은 위험은 친구 목록 훼손 정도로, CF로 옮기지 않는 한 남는다.
+
+### 소유권 판정 — `saves/{uid}.tag`
+
+문서 ID가 uid가 아니라 태그(`'8648'`)라 `request.auth.uid`와 직접 비교할 수 없다.
+uid → 태그의 **유일한 권위 매핑은 `saves/{uid}.tag`** 이고, 서버도 이미 같은 근거로 판단한다
+(`kingsroad/index.js` `verifyTag()`). `saves/`는 규칙상 클라이언트 쓰기가 금지(`allow write: if false`)라
+위조할 수 없다.
+
+```
+function isOwner() {
+  return request.auth != null
+      && saveDoc() != null
+      && 'tag' in saveDoc().data
+      && string(saveDoc().data.tag) == userId;
+}
+```
+
+- 같은 `get()`은 한 번의 평가 안에서 캐시되므로 **쓰기당 문서 읽기 1회**만 추가된다.
+  leaderboard 쓰기는 알림 동기화·FCM 토큰·보상 수령 정도라 빈도가 낮다
+- `exists()`를 따로 부르지 않는다 — `exists()`도 읽기 1회로 과금되므로 `get() != null`로 합쳤다
+- **`saves/{uid}`가 아직 없으면 본인 쓰기도 거절된다.** 하지만 `submitScoreSecure`가 이미
+  `verifyTag`로 같은 조건을 요구하므로, **점수가 올라간 적 있는 사용자는 반드시 saves 문서를 갖고 있다.**
+  아직 없는 신규/게스트는 실패해도 다음 시도에 다시 쓴다
+  (`syncReviewNotification`은 성공했을 때만 `_lastReviewNotifAt`을 갱신하므로 재시도가 막히지 않는다)
+- `create`에도 같은 검사를 건다 — 남의 태그 자리를 선점하는 것을 막는다
+
+### 남겨둔 것
+
+- **`leaderboard`의 전체 공개 읽기(`allow read: if true`)는 유지.** 랭킹 표시에 필요하다.
+  `sessionToken`이 함께 노출되지만 **서버는 이 값을 인증에 쓰지 않는다**
+  (`kingsroad/index.js`·`functions/index.js`에 사용처 없음) — 읽혀도 계정 탈취로 이어지지 않는다.
+  위험은 읽기가 아니라 쓰기 쪽이었고, 그쪽을 막았다
+- **`system_cache`는 로그인 사용자 쓰기 유지** — [index.html:3139](index.html#L3139)이 랭킹 캐시를 직접 쓴다.
+  오염되면 랭킹 표시가 잠시 틀릴 뿐이라 우선순위가 낮다
+- **`allow delete: if false`** 때문에 [game.js:17831](game.js#L17831)의 옛 태그 문서 삭제는 조용히 실패한다
+  (유령 문서가 남는 원인 중 하나로 의심됨 — 미확인)
+
+배포: `firebase deploy --only firestore:rules` (게임 배포와 별개)
+
+---
+
 ## 친구 기능
 
 ### 메모 (`kingsRoad_friendMemos` / `kingsRoad_memberMemos`)
