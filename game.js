@@ -19680,12 +19680,34 @@ function startSessionGuard() {
 let toastTimeout;
 
 // 📢 토스트 알림 띄우기 함수
+/* 토스트를 **하단 버튼 상자 바로 위**에 앉힌다.
+   원래 `top: 15%` 고정이라 Step 1의 읽기 카드(단어 칸) 윗줄을 가렸다 —
+   정작 그 토스트가 "읽으라"고 말하는 대상이 그 글자들이다.
+   `.battle-control`(읽기·음성인식 줄)의 윗변을 기준으로 잡고,
+   모바일 키보드가 열려 있으면 보이는 영역의 아래끝이 자연히 이긴다(힌트 FAB와 같은 방식). */
+function _positionReadAloudToast(toast) {
+    if (!toast) return;
+    const MARGIN = 14;
+    const vv = window.visualViewport;
+    let limit = vv ? (vv.offsetTop + vv.height) : window.innerHeight;
+    const control = document.querySelector('.battle-control');
+    if (control && control.offsetHeight > 0) {
+        limit = Math.min(limit, control.getBoundingClientRect().top);
+    }
+    toast.style.top = Math.max(MARGIN, limit - toast.offsetHeight - MARGIN) + 'px';
+    toast.style.bottom = 'auto';
+}
+
 function showReadAloudToast(message = "🗣️ 소리 내어 읽으면 기억에 2배 더 오래 남아요!") {
     const toast = document.getElementById('read-aloud-toast');
     if (!toast) return;
 
     toast.innerHTML = message;
+    // 문구를 넣은 **뒤에** 재야 한다 — 높이가 내용에 따라 달라진다
+    _positionReadAloudToast(toast);
     toast.classList.add('show');
+    // 진입 직후엔 레이아웃이 아직 안 잡혔을 수 있다 (보스전·고난 세션 시작 경로)
+    requestAnimationFrame(() => _positionReadAloudToast(toast));
 
     // 기존에 작동 중인 타이머가 있다면 캔슬 (연속해서 뜰 때 깜빡임 방지)
     if (toastTimeout) clearTimeout(toastTimeout);
