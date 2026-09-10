@@ -11711,6 +11711,8 @@ function updateHintButtonLabels() {
     const hardshipHintLabelSpan = document.getElementById('common-hardship-hint-label');
     if (hardshipHintLabelSpan) hardshipHintLabelSpan.textContent = btnLabel;
     setLockStyle(document.getElementById('common-hardship-hint-btn'));
+    // 라벨이 바뀌면 폭도 바뀌므로 다시 앉힌다 (오른쪽 끝 정렬이라 폭이 위치를 정한다)
+    if (typeof positionHardshipHintFab === 'function') positionHardshipHintFab();
 }
 
 function useHint() {
@@ -20864,6 +20866,7 @@ function resetHardshipSessionState() {
     const hardshipHintBtn = document.getElementById('common-hardship-hint-btn');
     if (hardshipHintBtn) {
         hardshipHintBtn.style.display = 'none';
+        hardshipHintBtn.classList.remove('hint-fab-on', 'hint-nudge');
         hardshipHintBtn.disabled = false;
     }
 
@@ -21404,11 +21407,15 @@ function updateHardshipHeader() {
     if (lifeBreadCountEl) lifeBreadCountEl.textContent = String(lifeBreadCnt);
 
     if (hintBtn) {
-        // 힌트는 헤더에 둔다. 입력 보드 아래로 내렸더니 **모바일에서 키보드가 덮어** 더 안 보였다.
-        // 헤더는 flex-shrink:0으로 상단에 남아 키보드가 올라와도 계속 보인다.
+        // 힌트는 화면에 떠서 따라다닌다 (positionHardshipHintFab 주석 참고)
         const shouldShowHint = currentMode === 'memory';
         hintBtn.style.display = shouldShowHint ? 'inline-flex' : 'none';
+        hintBtn.classList.toggle('hint-fab-on', shouldShowHint);
         hintBtn.disabled = !shouldShowHint;
+        if (shouldShowHint) {
+            ensureHardshipHintFabListeners();
+            positionHardshipHintFab();
+        }
     }
 
     updateHintButtonLabels();
@@ -21640,7 +21647,7 @@ function toggleHardshipEnduranceInfo() {
 
 function renderHardshipEnduranceVerse() {
     const hintBtn = document.getElementById('common-hardship-hint-btn');
-    if (hintBtn) hintBtn.style.display = 'none';
+    if (hintBtn) { hintBtn.style.display = 'none'; hintBtn.classList.remove('hint-fab-on'); }
     const field = document.querySelector('.battle-field');
     const control = document.querySelector('.battle-control');
     if (!field || !control || !hardshipState.currentVerse) return;
@@ -21860,7 +21867,7 @@ function confirmHardshipEnduranceVerse() {
 
 function renderHardshipAddressVerse() {
     const hintBtn = document.getElementById('common-hardship-hint-btn');
-    if (hintBtn) hintBtn.style.display = 'none';
+    if (hintBtn) { hintBtn.style.display = 'none'; hintBtn.classList.remove('hint-fab-on'); }
     const field = document.querySelector('.battle-field');
     const control = document.querySelector('.battle-control');
     if (!field || !control || !hardshipState.currentVerse) return;
@@ -22031,7 +22038,7 @@ function generateVerseChoices(currentVerse) {
 
 function renderHardshipVerseVerse() {
     const hintBtn = document.getElementById('common-hardship-hint-btn');
-    if (hintBtn) hintBtn.style.display = 'none';
+    if (hintBtn) { hintBtn.style.display = 'none'; hintBtn.classList.remove('hint-fab-on'); }
     const field = document.querySelector('.battle-field');
     const control = document.querySelector('.battle-control');
     if (!field || !control || !hardshipState.currentVerse) return;
@@ -22232,12 +22239,65 @@ function renderHardshipMemoryVerse() {
         setTimeout(() => focusHardshipMemoryHiddenInput(), 0);
     }
     armHardshipHintNudge();
+    // 제출 줄의 높이가 상태마다 달라진다(제출 ↔ 다음 구절, 궁극 배지 유무) → 렌더 후 다시 앉힌다
+    positionHardshipHintFab();
 }
 
-/* 유휴 안내 — 일정 시간 입력이 없으면 헤더의 힌트 버튼을 은은하게 강조한다.
+/* ── 힌트 FAB 위치 ────────────────────────────────────────────────────────────
+   힌트는 '보이는 화면'을 따라다녀야 한다. 헤더에 두면 안 되는 이유:
+   모바일에서 키보드가 열리면 레이아웃 높이(100dvh)는 그대로인 채 **보이는 영역만** 줄고,
+   브라우저가 입력칸을 드러내려고 화면을 밀어 올린다 → flex-shrink:0인 헤더도 위로 사라진다.
+   반대로 보드 아래 액션 행에 두면 키보드가 그 위를 덮는다. 그래서 어느 쪽에도 매지 않는다.
+
+   position:fixed의 기준은 '레이아웃 뷰포트'이고 getBoundingClientRect()도 같은 기준이라
+   visualViewport의 offset/size와 그대로 섞어 계산할 수 있다. */
+function positionHardshipHintFab() {
+    const fab = document.getElementById('common-hardship-hint-btn');
+    if (!fab || fab.offsetWidth === 0) return; // display:none이면 offsetWidth가 0
+
+    const MARGIN = 14;
+    const vv = window.visualViewport;
+    const visibleBottom = vv ? (vv.offsetTop + vv.height) : window.innerHeight;
+    const visibleRight = vv ? (vv.offsetLeft + vv.width) : window.innerWidth;
+
+    // 제출/다시 입력 줄을 가리지 않게 그 위에 앉힌다.
+    // 키보드가 열려 있으면 그 줄은 이미 보이는 영역 밖이라 visibleBottom 쪽이 자연히 이긴다.
+    let limit = visibleBottom;
+    const control = document.querySelector('.battle-control');
+    if (control && control.offsetHeight > 0) {
+        limit = Math.min(limit, control.getBoundingClientRect().top);
+    }
+
+    fab.style.top = Math.max(MARGIN, limit - fab.offsetHeight - MARGIN) + 'px';
+    fab.style.left = Math.max(MARGIN, visibleRight - fab.offsetWidth - MARGIN) + 'px';
+    fab.style.bottom = 'auto';
+    fab.style.right = 'auto';
+}
+
+/* 키보드 열림/닫힘·회전·주소창 접힘이 전부 visualViewport 이벤트로 온다.
+   한 번만 걸어두고, 버튼이 숨겨져 있으면 위 함수가 알아서 빠져나간다. */
+function ensureHardshipHintFabListeners() {
+    if (window._hsFabBound) return;
+    window._hsFabBound = true;
+    // visualViewport scroll은 스크롤 중 연속으로 떨어진다 → 프레임당 한 번으로 묶는다
+    // (매번 getBoundingClientRect로 레이아웃을 강제로 계산시키므로 저사양 기기에서 끊긴다)
+    let pending = false;
+    const reposition = () => {
+        if (pending) return;
+        pending = true;
+        requestAnimationFrame(() => { pending = false; positionHardshipHintFab(); });
+    };
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', reposition);
+        window.visualViewport.addEventListener('scroll', reposition);
+    }
+    window.addEventListener('resize', reposition);
+    window.addEventListener('orientationchange', reposition);
+}
+
+/* 유휴 안내 — 일정 시간 입력이 없으면 힌트 버튼을 은은하게 맥동시킨다.
    백지 앞에서 막힌 사람이 '힌트가 있는 줄 모르고' 그만두는 것을 막는 게 목적이다.
-   입력이 있을 때마다 다시 건다 — 중간에 막히는 경우도 잡기 위해.
-   버튼을 입력 보드 아래로 내려봤다가 되돌렸다 — 모바일에서 키보드가 그 영역을 덮는다. */
+   입력이 있을 때마다 다시 건다 — 중간에 막히는 경우도 잡기 위해. */
 const HARDSHIP_HINT_NUDGE_MS = 8000;
 function armHardshipHintNudge() {
     clearTimeout(window._hsHintNudgeTimer);

@@ -1787,18 +1787,21 @@ body, html {
     background: #fff5f3;
 }
 
-#common-hardship-hint-btn {
-    min-width: auto;
-    padding: 7px 10px;
-    margin: 0;
-    background: #f39c12;
-    border-color: #d35400;
-    color: #fff;
-}
+/* 힌트는 헤더 안이 아니라 화면 위에 떠 있다 — 생김새·위치는 아래 FAB 블록 참고.
 
-/* 망각의 고난이 아닐 때 힌트 버튼 강제 숨김 */
-#game-screen.mode-hardship:not(.mode-hardship-memory) #common-hardship-hint-btn {
-    display: none !important;
+   ★ 표시 여부를 인라인 style이 아니라 클래스(.hint-fab-on)로 잡는다.
+   `.item-btn`에 `display: inline-flex !important`가 있어서 **스타일시트의 !important가
+   JS의 인라인 display:none을 이긴다.** 헤더 안에 있을 땐 부모(#common-hardship-header)가
+   display:none이라 가려졌지만, 화면에 띄운 지금은 그 보호막이 없다
+   → 그대로 두면 일반 훈련 화면에도 힌트가 떠 있게 된다. */
+#common-hardship-hint-btn { display: none !important; }
+#game-screen.mode-hardship-memory #common-hardship-hint-btn.hint-fab-on {
+    display: inline-flex !important;
+}
+/* FAB가 떠 있는 만큼 아래 여백을 준다 — 없으면 긴 구절의 마지막 줄이 버튼에 가린 채
+   더 스크롤할 곳이 없어진다 */
+#game-screen.mode-hardship-memory .battle-field {
+    padding-bottom: 72px;
 }
 
 #common-hardship-close-btn {
@@ -2547,9 +2550,9 @@ body, html {
         font-size: 0.94rem;
     }
 
+    /* 힌트 버튼은 헤더를 떠났으므로 여기 넣지 않는다 (FAB 블록에서 따로 잡는다) */
     .common-hardship-progress,
     .common-hardship-chip,
-    #common-hardship-hint-btn,
     #common-hardship-close-btn {
         font-size: 0.78rem;
     }
@@ -2592,12 +2595,10 @@ body, html {
 
     .common-hardship-progress,
     .common-hardship-chip,
-    #common-hardship-hint-btn,
     #common-hardship-close-btn {
         font-size: 0.8rem !important;
     }
 
-    #common-hardship-hint-btn,
     .common-hardship-chip,
     #common-hardship-close-btn {
         padding: 5px 7px !important;
@@ -5903,24 +5904,39 @@ body, html {
 }
 .boss-setup-section { margin-bottom: 20px; }
 .boss-setup-label { font-size: 0.82rem; color: #aaa; margin-bottom: 10px; }
-/* 힌트(헤더 우측 상단) — 무료라는 걸 색으로도 알린다.
-   보드 아래로 내려봤다가 되돌렸다: 모바일에서 키보드가 그 영역을 덮어 더 안 보였다. */
+/* 힌트 FAB — 화면(보이는 영역)을 따라다니는 떠 있는 버튼.
+   헤더 우측 상단에 뒀다가 옮겼다: 모바일에서 키보드가 열리면 레이아웃 높이는 그대로인 채
+   '보이는 영역'만 줄고, 브라우저가 입력칸을 드러내려 화면을 밀어 올려서 헤더가 위로 사라진다.
+   보드 아래 액션 행도 안 된다 — 그쪽은 키보드가 덮는다.
+   → 어느 쪽에도 매지 않고, JS가 visualViewport 기준으로 매번 다시 앉힌다.
+   top/left는 positionHardshipHintFab()이 덮어쓰고, 아래 bottom/right는 그 전까지의 폴백. */
 #common-hardship-hint-btn {
-    background: rgba(241, 196, 15, 0.18);
-    border-color: rgba(241, 196, 15, 0.6);
-    color: #f1c40f;
-    font-weight: 700;
+    position: fixed;
+    right: 14px;
+    bottom: 96px;
+    z-index: 60;
+    margin: 0;
+    /* .item-btn의 min-width/padding이 !important라 여기서도 !important로 되받아야 한다 */
+    min-width: auto !important;
+    padding: 11px 16px !important;
+    border-radius: 999px;
+    background: #f1c40f;
+    border: 1px solid #f6d55c;
+    color: #1b2430;
+    font-weight: 800;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
 }
-/* 일정 시간 입력이 없으면 은은하게 맥동 — 있는 줄 모르고 포기하는 걸 막는다 */
+/* 일정 시간 입력이 없으면 은은하게 맥동 — 있는 줄 모르고 포기하는 걸 막는다.
+   그림자를 keyframes에도 넣어야 한다 — box-shadow는 통째로 대체되므로 빼면 뜬 느낌이 사라진다 */
 #common-hardship-hint-btn.hint-nudge {
     animation: hardshipHintNudge 1.6s ease-in-out infinite;
 }
 @keyframes hardshipHintNudge {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.5); }
-    50%      { box-shadow: 0 0 0 8px rgba(241, 196, 15, 0); }
+    0%, 100% { box-shadow: 0 6px 18px rgba(0,0,0,0.4), 0 0 0 0 rgba(241, 196, 15, 0.55); }
+    50%      { box-shadow: 0 6px 18px rgba(0,0,0,0.4), 0 0 0 10px rgba(241, 196, 15, 0); }
 }
 @media (prefers-reduced-motion: reduce) {
-    #common-hardship-hint-btn.hint-nudge { animation: none; border-color: #f1c40f; background: rgba(241, 196, 15, 0.32); }
+    #common-hardship-hint-btn.hint-nudge { animation: none; border-color: #fff; }
 }
 
 /* 「모르겠어요」 — 다시 입력 옆에, 더 조용하게. 벌이 아니라 정직한 탈출구다 */

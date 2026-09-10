@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
     <!-- image_0.webp is inlined below; preload removed -->
-    <link rel="stylesheet" href="style.css?v=20260909j">
+    <link rel="stylesheet" href="style.css?v=20260910a">
 
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-TEVW49QB45"></script>
@@ -2599,17 +2599,18 @@
                         🍞 <span id="common-hardship-life-bread-count">0</span>
                     </button>
                 </div>
-                <!-- 승점 + 힌트: 세로 2줄 -->
-                <div class="hardship-hud-group">
-                    <div id="common-hardship-score" class="common-hardship-chip common-hardship-score">승점 0</div>
-                    <button type="button" onclick="useHint()" class="item-btn" id="common-hardship-hint-btn" style="display:none;">
-                        <span id="common-hardship-hint-label">💡 힌트</span> <span id="common-hardship-hint-cost" style="font-size:0.7rem; margin-left:2px;"></span>
-                    </button>
-                </div>
+                <div id="common-hardship-score" class="common-hardship-chip common-hardship-score">승점 0</div>
                 <button type="button" onclick="toggleSound()" class="sfx-toggle-btn btn-pause" style="padding:6px 10px; font-size:1.1rem;">🔊</button>
                 <button type="button" id="common-hardship-close-btn" class="btn-pause" onclick="confirmQuit()">✕</button>
             </div>
         </div>
+
+        <!-- 힌트: 헤더가 아니라 화면에 떠서 따라다닌다.
+             모바일에서 키보드가 열리면 브라우저가 화면을 밀어 올려 헤더가 위로 사라지기 때문.
+             위치는 positionHardshipHintFab()이 visualViewport 기준으로 매번 다시 잡는다. -->
+        <button type="button" onclick="useHint()" class="item-btn" id="common-hardship-hint-btn" style="display:none;">
+            <span id="common-hardship-hint-label">💡 힌트</span> <span id="common-hardship-hint-cost" style="font-size:0.7rem; margin-left:2px;"></span>
+        </button>
 
         <div class="battle-header">
             <div class="boss-status">
@@ -2886,7 +2887,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="bible_en.js"></script>
-    <script src="game.js?v=20260909j"></script>
+    <script src="game.js?v=20260910a"></script>
     <script>
 
         /* =========================================

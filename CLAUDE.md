@@ -497,14 +497,39 @@ Step 1에 선택적 음성인식 기능 추가. 클릭(읽기) 방식과 병행 
 | 망각의 고난(`memory`) 계열 타이핑 | **무료** | **잠금 없음** (2026-09-09 해제) |
 | 일반 스테이지·중간점검·보스전·집중 훈련 | 💎10 (집중 훈련은 무료) | **그 문제에서 한 번 오답** |
 
-**힌트 버튼은 헤더 우측 상단(`#common-hardship-hint-btn`)에 둔다.**
+**힌트 버튼(`#common-hardship-hint-btn`)은 화면에 떠서 따라다닌다** — `position: fixed` FAB.
 `armHardshipHintNudge()`가 **8초간 입력이 없으면 은은하게 맥동**시킨다 —
 힌트가 있는 줄 모르고 그만두는 것을 막는 게 목적이라 입력이 있을 때마다 다시 건다.
-(`prefers-reduced-motion`에서는 테두리·배경 강조로 대체)
+(`prefers-reduced-motion`에서는 테두리 강조로 대체)
 
-> **입력 보드 아래 액션 행으로 내리면 안 된다.** 「모르겠어요」 옆이 시선에 가깝다고 옮겼다가 되돌렸다 —
-> **모바일에서 온스크린 키보드가 그 영역을 덮어** 오히려 안 보인다.
-> 헤더는 `flex-shrink: 0`이라 `.battle-field`가 스크롤해도 상단에 남는다.
+### 왜 헤더도 액션 행도 아닌가 (2026-09-10)
+
+**모바일 키보드가 열리면 `100dvh`는 그대로인 채 '보이는 영역'만 줄어든다.**
+브라우저는 포커스된 입력칸을 드러내려고 화면 전체를 위로 밀어 올리므로,
+**`flex-shrink: 0`인 헤더도 보이는 영역 위로 밀려나간다.** 두 번 다 같은 이유로 실패했다:
+
+| 위치 | 결과 |
+|------|------|
+| 입력 보드 아래 액션 행 | 키보드가 **아래를** 덮는다 |
+| 헤더 우측 상단 | 키보드가 화면을 밀어 올려 **위로** 사라진다 |
+
+→ 어느 쪽에도 매지 않고 `positionHardshipHintFab()`이 **`visualViewport` 기준으로 매번 다시 앉힌다.**
+
+```js
+const visibleBottom = vv.offsetTop + vv.height;          // 키보드 위 경계
+limit = Math.min(visibleBottom, control.getBoundingClientRect().top);
+fab.style.top = limit - fab.offsetHeight - MARGIN;
+```
+
+- **`position: fixed`의 기준은 레이아웃 뷰포트이고 `getBoundingClientRect()`도 같은 기준**이라
+  `visualViewport`의 offset/size와 그대로 섞어 계산할 수 있다
+- `.battle-control`(제출·다시 입력·모르겠어요) 위에 앉힌다. **키보드가 열리면 그 줄은 이미 화면 밖이라
+  `visibleBottom` 쪽이 자연히 이긴다** — 상태 분기가 필요 없다
+- 다시 앉히는 시점 4곳: `visualViewport` resize·scroll(키보드·주소창·회전) / `updateHardshipHud`(표시 전환) /
+  `renderHardshipMemoryVerse`(제출 줄 높이가 상태마다 다름) / `updateHintButtonLabels`(라벨 폭이 위치를 정함)
+- `z-index: 60` — 결과 모달(2000~99999)보다 **아래**라 세션이 끝나면 자연히 가려진다
+- 헤더용 모바일 미디어쿼리(`padding: 5px 7px !important` 등)의 선택자 목록에서 **뺐다.**
+  `!important`라 FAB 스타일을 이기기 때문
 
 > **타이핑 백지에는 잠금을 걸지 않는다.** 처음에는 '한 글자 이상 입력'을 요구했으나,
 > ① 한 글자 치는 것은 오답이 아니라 시도로 볼 수 없고 ② 아무 글자나 쳐서 열 수 있어
