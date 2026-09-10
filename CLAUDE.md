@@ -479,14 +479,23 @@ reviewSamples = [ { s: '13-8', c: 2, ms: 41300, at: 1781... }, ... ]  // 최근 
 보스전에는 진작 이어하기가 있었는데(`saveBattleCheckpoint`) **고난 엔진에는 없었다.**
 이용률 5.8%의 원인 중 하나로 의심된다 — '16분짜리를 시작할 마음이 안 든다'.
 
-`localStorage['kingsRoad_hardshipCheckpoint']` 한 건. 보스전과 같은 구조다.
+`localStorage['kingsRoad_hardshipCheckpoint']` — **배열로 최대 5건**(`HARDSHIP_CKPT_MAX`).
+
+> ★ **보스전처럼 한 건만 두면 안 된다.** 22장을 하다 나간 뒤 **21장을 잠깐 열기만 해도**
+> 22장 기록이 덮여 사라진다(첫 구절만 띄워도 저장이 돌기 때문). 16분짜리를 잃는 것이
+> 바로 우리가 고치려던 문제이므로 여기서는 범위별로 따로 둔다. 한 건이 ~600바이트라 5건이어도 3KB다.
 
 | 시점 | 동작 |
 |------|------|
-| `loadNextHardshipVerse()` 끝 | `_saveHardshipCheckpoint()` — 구절 경계마다 |
+| `loadNextHardshipVerse()` 끝 | `_saveHardshipCheckpoint()` — 구절 경계마다. 같은 범위의 옛 기록만 밀어낸다 |
 | `startHardshipSession()` | `_takeHardshipResume()` — 같은 묶음이면 **꺼내면서 지운다** |
-| `finishHardshipSession()` | `_clearHardshipCheckpoint()` — 완주·체력소진 둘 다 |
+| `finishHardshipSession()` | `_clearHardshipCheckpoint()` — **그 세션 기록만.** 다른 장은 건드리지 않는다 |
 | **✕로 나가기** | **지우지 않는다** ← 이어하기의 목적 |
+
+- 매칭은 `_sameHardshipRange()` — 모드 + **구절 집합**(정렬해 비교). 순서는 무작위일 수 있으므로
+  집합으로 판단하고, 실제 순서는 저장된 것을 따른다
+- 상한을 넘으면 **가장 오래된 것부터** 밀려난다(`slice(-MAX)`)
+- 초기 버전(2026-09-10 당일 배포)의 **단일 객체 형식도 읽는다** — `_readHardshipCheckpoints()`가 감싼다
 
 > ★ **`cursor - 1`을 저장한다.** 체크포인트는 구절을 **띄우는 순간** 찍히므로 `cursor`는
 > '화면에 떠 있는(아직 안 끝낸) 구절'까지 센 값이다. 그대로 저장하면 이어할 때 **그 구절을 건너뛴다.**

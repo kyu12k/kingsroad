@@ -21631,11 +21631,39 @@ function _isResumableHardshipSession() {
         && !hardshipState.quickReviewStageId);
 }
 
+/* ★ 체크포인트를 **여러 건** 보관한다 (보스전은 한 건뿐이다).
+   한 건만 두면 22장을 하다 나간 뒤 21장을 잠깐 열기만 해도 22장 기록이 덮여 사라진다.
+   16분짜리를 잃는 것이 바로 우리가 고치려던 문제이므로, 여기서는 장별로 따로 둔다.
+   한 건이 ~600바이트라 5건이어도 3KB다. */
+const HARDSHIP_CKPT_MAX = 5;
+
+function _readHardshipCheckpoints() {
+    let raw = null;
+    try { raw = JSON.parse(localStorage.getItem(HARDSHIP_CKPT_KEY) || 'null'); } catch (e) { return []; }
+    if (Array.isArray(raw)) return raw;
+    // 단일 객체로 저장하던 초기 버전(2026-09-10 당일) 호환 — 버리지 않고 감싼다
+    if (raw && raw.mode) return [raw];
+    return [];
+}
+
+function _writeHardshipCheckpoints(list) {
+    try {
+        localStorage.setItem(HARDSHIP_CKPT_KEY, JSON.stringify(list.slice(-HARDSHIP_CKPT_MAX)));
+    } catch (e) { /* 용량 초과 등은 조용히 무시 — 이어하기는 부가 기능이다 */ }
+}
+
+/* 같은 묶음인가 — 순서는 다를 수 있으므로(무작위) 구절 집합으로 판단한다 */
+function _sameHardshipRange(entry, mode, verseIds) {
+    return !!(entry && entry.mode === mode
+        && Array.isArray(entry.queue) && entry.queue.length === verseIds.length
+        && entry.queue.slice().sort().join(',') === verseIds.slice().sort().join(','));
+}
+
 function _saveHardshipCheckpoint() {
     if (!_isResumableHardshipSession()) return;
     if (!Array.isArray(hardshipState.queue) || hardshipState.queue.length < 2) return; // 1구절은 이어할 게 없다
     try {
-        localStorage.setItem(HARDSHIP_CKPT_KEY, JSON.stringify({
+        const entry = ({
             mode: hardshipState.mode,
             queue: hardshipState.queue,          // 무작위 순서도 그대로 살린다
             /* ★ `cursor - 1`을 저장한다. 체크포인트는 구절을 **띄우는 순간** 찍히므로
@@ -21658,24 +21686,32 @@ function _saveHardshipCheckpoint() {
             // 세션 시간을 이어붙인다 — 안 그러면 히스토리에 '3분 만에 한 장'처럼 남는다
             elapsedMs: Math.max(0, Date.now() - stageStartTime - (hardshipState.pausedMs || 0)),
             at: Date.now()
-        }));
+        });
+        // 같은 범위의 옛 기록은 밀어내고 맨 뒤에 붙인다 (오래된 것부터 밀려난다)
+        const list = _readHardshipCheckpoints()
+            .filter(e => !_sameHardshipRange(e, entry.mode, entry.queue));
+        list.push(entry);
+        _writeHardshipCheckpoints(list);
     } catch (e) { /* 용량 초과 등은 조용히 무시 — 이어하기는 부가 기능이다 */ }
 }
 
+/* 지금 세션에 해당하는 기록만 지운다. **다른 장의 기록은 건드리지 않는다.** */
 function _clearHardshipCheckpoint() {
-    try { localStorage.removeItem(HARDSHIP_CKPT_KEY); } catch (e) {}
+    if (!hardshipState || !Array.isArray(hardshipState.queue) || !hardshipState.queue.length) return;
+    const list = _readHardshipCheckpoints()
+        .filter(e => !_sameHardshipRange(e, hardshipState.mode, hardshipState.queue));
+    _writeHardshipCheckpoints(list);
 }
 
 /* 저장된 세션이 지금 시작하려는 것과 같은가. 같으면 **꺼내면서 지운다**(두 번 쓰이지 않게). */
 function _takeHardshipResume(mode, verseIds) {
-    let saved = null;
-    try { saved = JSON.parse(localStorage.getItem(HARDSHIP_CKPT_KEY) || 'null'); } catch (e) { return null; }
-    if (!saved || saved.mode !== mode || !Array.isArray(saved.queue)) return null;
-    if (saved.queue.length !== verseIds.length) return null;
-    // 순서는 다를 수 있다(무작위) — 같은 구절 묶음인지로 판단하고, 순서는 저장된 것을 따른다
-    if (saved.queue.slice().sort().join(',') !== verseIds.slice().sort().join(',')) return null;
+    const list = _readHardshipCheckpoints();
+    const idx = list.findIndex(e => _sameHardshipRange(e, mode, verseIds));
+    if (idx === -1) return null;
+    const saved = list[idx];
     if (!(saved.cursor > 0) || saved.cursor >= saved.queue.length) return null; // 시작 전이거나 이미 끝난 것
-    _clearHardshipCheckpoint();
+    list.splice(idx, 1);
+    _writeHardshipCheckpoints(list);
     return saved;
 }
 
