@@ -281,6 +281,14 @@ const LANG = {
         profile_confirm: '✅ 등록 완료',
         profile_tribe_warn: "⚠️ [경고] 지파를 변경하시면 올해 모은 '12지파 대항전 기여도(연간 승점)'가 0점으로 초기화됩니다!\n\n(개인의 누적 승점은 보존되지만, 새로운 지파에서의 기여도는 0부터 다시 쌓아야 합니다.)\n\n정말로 지파를 변경하시겠습니까?",
 
+        // 프로필 안내 (번호 없이 외우고 있는 사람에게 주 1회)
+        nudge_title: '이 기록을 지켜두시겠어요?',
+        nudge_body_verses: '지금까지 <b>{n}절</b>을 외우셨어요.<br>그런데 이 기록은 <b>지금 쓰는 브라우저에만</b> 있어요.',
+        nudge_body_risk: '기록을 지우거나 기기를 바꾸면 되찾을 방법이 없어요.',
+        nudge_body_gain: '이름을 정하시면 다른 기기에서도 이어서 하실 수 있고,<br>친구·길드·랭킹에도 함께하실 수 있어요.',
+        nudge_confirm: '이름 정하기',
+        nudge_later: '나중에',
+
         // 결과 화면
         result_training_title: '⚔️ 집중 훈련 완료!',
         result_stage_clear: '🎉 STAGE CLEAR!',
@@ -1047,6 +1055,14 @@ const LANG = {
         profile_tribe_label: 'Select Tribe',
         profile_confirm: '✅ Confirm',
         profile_tribe_warn: "⚠️ [Warning] Changing your tribe will reset this year's 12-Tribe Battle contribution (yearly score) to 0!\n\n(Your personal accumulated score is preserved, but your contribution in the new tribe starts from 0.)\n\nAre you sure you want to change tribes?",
+
+        // 프로필 안내 (번호 없이 외우고 있는 사람에게 주 1회)
+        nudge_title: 'Keep this progress safe?',
+        nudge_body_verses: "You've memorized <b>{n} verse(s)</b> so far.<br>But it lives <b>only in this browser</b>.",
+        nudge_body_risk: 'If you clear your data or switch devices, there is no way to get it back.',
+        nudge_body_gain: 'Choose a name and you can continue on any device,<br>and join friends, guilds, and the rankings.',
+        nudge_confirm: 'Choose a name',
+        nudge_later: 'Later',
 
         // 결과 화면
         result_training_title: '⚔️ Training Complete!',
@@ -11593,6 +11609,8 @@ function closeResultModal(skipSheetReopen) {
 
     openStageSheetForStageId(clearedStageId);
     setTimeout(tryShowMilestone, 500);
+    // 프로필 안내 — '방금 한 구절을 얻은' 순간에만 묻는다 (주 1회, maybeShowProfileNudge 주석 참고)
+    setTimeout(maybeShowProfileNudge, 1400);
 
 }
 
@@ -19760,6 +19778,103 @@ function cancelProfileRegistration() {
         setTimeout(() => {
             modalEl.remove();
         }, 200);
+    }
+}
+
+/* ── 프로필 안내 — 번호(#태그) 없이 외우고 있는 사람에게 주 1회 ────────────────
+   2026-09-10 실측: 프로필을 만든 적 없는(닉네임 '순례자') 저장본 1,225개 중
+   **125개가 실제 암기 진도를 갖고 있고 44개는 5절 이상**이다.
+   이들은 랭킹·친구·길드에 보이지 않고, 무엇보다 **번호가 없으면 복구 수단이 없어
+   브라우저 기록을 지우거나 기기를 바꾸면 진도가 통째로 사라진다.**
+
+   ★ 접속 직후가 아니라 **한 구절을 클리어한 직후**에 띄운다.
+     방금 무언가를 얻은 순간이라 "이걸 지키자"는 말이 설득력을 갖는다.
+     접속 직후는 아직 잃을 것이 없는 시점이라 그냥 닫히는 광고가 된다.
+   ★ 막아 세우지 않는다 — 「나중에」로 닫히고 다음 주에 다시 묻는다.
+     강제하면 '그냥 시작할 수 있다'는 게스트의 장점 자체가 사라진다.
+   ★ 닉네임이 있는 사람은 대상이 아니다 — 그쪽은 발급 버그의 피해자이고
+     ensureTagAssigned()가 조용히 번호를 준다. 물어볼 것이 없다. */
+const PROFILE_NUDGE_WEEK_KEY = 'kingsRoad_profileNudgeWeek';
+
+/* 자유여행 + 왕의 길을 합쳐 실제로 클리어한 '절'의 개수.
+   중간점검 id('3-mid-10')는 정규식에서 걸러진다. */
+function _getClearedVerseCount() {
+    const seen = new Set();
+    const add = (m) => {
+        if (!m) return;
+        Object.keys(m).forEach(k => { if (/^\d+-\d+$/.test(k) && m[k] > 0) seen.add(k); });
+    };
+    // activeMode가 'kings'면 stageMastery가 왕의 길을 가리키므로 자유여행은 _freeStageMastery에서 읽는다
+    add((activeMode === 'kings') ? _freeStageMastery : stageMastery);
+    add((typeof kingsRoadData !== 'undefined' && kingsRoadData) ? kingsRoadData.mastery : null);
+    return seen.size;
+}
+
+function _needsProfileNudge() {
+    if (typeof myTag !== 'undefined' && myTag && myTag !== '0000') return false;
+    if (typeof myNickname !== 'undefined' && myNickname && myNickname !== '순례자') return false;
+    if (_getClearedVerseCount() < 1) return false; // 지킬 것이 생긴 뒤에 묻는다
+    try {
+        return localStorage.getItem(PROFILE_NUDGE_WEEK_KEY) !== getMissionPointWeekId();
+    } catch (e) {
+        // 기억할 수 없으면 묻지 않는다 — 매 클리어마다 뜨는 것이 훨씬 나쁘다
+        return false;
+    }
+}
+
+function maybeShowProfileNudge(attempt) {
+    attempt = attempt || 0;
+    if (!_needsProfileNudge()) return;
+    // 업적 팝업 등 다른 모달과 겹치지 않게 잠깐 양보한다 (#stage-sheet는 modal-overlay가 아니라 걸리지 않음)
+    const busy = (typeof isMilestoneShowing !== 'undefined' && isMilestoneShowing)
+        || document.querySelector('.modal-overlay.active')
+        || document.getElementById('profile-nudge-modal');
+    if (busy) {
+        if (attempt < 4) setTimeout(() => maybeShowProfileNudge(attempt + 1), 2500);
+        return;
+    }
+    showProfileNudge();
+}
+
+function showProfileNudge() {
+    // 띄우는 시점에 표시해 둔다 — 어떻게 닫든 이번 주엔 다시 묻지 않는다
+    try { localStorage.setItem(PROFILE_NUDGE_WEEK_KEY, getMissionPointWeekId()); } catch (e) {}
+
+    const n = _getClearedVerseCount();
+    const modal = document.createElement('div');
+    modal.id = 'profile-nudge-modal';
+    modal.className = 'modal-overlay';
+    modal.style.zIndex = '9998';
+    modal.innerHTML = `
+        <div class="result-card" style="max-width:330px; background:#fff; color:#2c3e50; text-align:center; padding-bottom:22px;">
+            <div style="font-size:2.6rem; line-height:1; margin-bottom:10px;">🕊️</div>
+            <h2 style="color:#2c3e50; margin:0 0 14px; font-size:1.25rem;">${t('nudge_title')}</h2>
+            <p style="color:#2c3e50; font-size:0.95rem; line-height:1.65; margin:0 0 10px;">${t('nudge_body_verses', { n })}</p>
+            <p style="color:#c0392b; font-size:0.88rem; line-height:1.6; margin:0 0 14px;">${t('nudge_body_risk')}</p>
+            <p style="color:#7f8c8d; font-size:0.88rem; line-height:1.6; margin:0 0 20px;">${t('nudge_body_gain')}</p>
+            <button onclick="closeProfileNudge(true)" style="width:100%; background:#f1c40f; color:#2c3e50; border:none; padding:13px; border-radius:30px; font-weight:bold; cursor:pointer; font-size:1.05rem; box-shadow:0 4px 0 #d35400;">
+                ${t('nudge_confirm')}
+            </button>
+            <button onclick="closeProfileNudge(false)" style="width:100%; background:none; border:none; color:#95a5a6; padding:14px 0 0; font-size:0.9rem; cursor:pointer;">
+                ${t('nudge_later')}
+            </button>
+        </div>
+    `;
+    // 바깥을 눌러도 '나중에'와 같게 — 가둬두는 인상을 주지 않는다
+    modal.onclick = (e) => { if (e.target === modal) closeProfileNudge(false); };
+    document.body.appendChild(modal);
+    setTimeout(() => modal.classList.add('active'), 10);
+}
+
+function closeProfileNudge(openProfile) {
+    const modal = document.getElementById('profile-nudge-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => modal.remove(), 200);
+    }
+    // 이 모달이 사라진 뒤에 열어야 프로필 모달과 겹치지 않는다
+    if (openProfile) {
+        setTimeout(() => { if (typeof openProfileSettings === 'function') openProfileSettings(); }, 220);
     }
 }
 function getAudioUrl(cNum, vNum, voice) {
