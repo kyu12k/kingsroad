@@ -473,6 +473,52 @@ reviewSamples = [ { s: '13-8', c: 2, ms: 41300, at: 1781... }, ... ]  // 최근 
 
 ---
 
+## 고난 세션 이어하기 (2026-09-10)
+
+한 장 29절 × 33초 ≈ **16분.** 그동안 전화 한 통이면 통째로 사라졌다.
+보스전에는 진작 이어하기가 있었는데(`saveBattleCheckpoint`) **고난 엔진에는 없었다.**
+이용률 5.8%의 원인 중 하나로 의심된다 — '16분짜리를 시작할 마음이 안 든다'.
+
+`localStorage['kingsRoad_hardshipCheckpoint']` 한 건. 보스전과 같은 구조다.
+
+| 시점 | 동작 |
+|------|------|
+| `loadNextHardshipVerse()` 끝 | `_saveHardshipCheckpoint()` — 구절 경계마다 |
+| `startHardshipSession()` | `_takeHardshipResume()` — 같은 묶음이면 **꺼내면서 지운다** |
+| `finishHardshipSession()` | `_clearHardshipCheckpoint()` — 완주·체력소진 둘 다 |
+| **✕로 나가기** | **지우지 않는다** ← 이어하기의 목적 |
+
+> ★ **`cursor - 1`을 저장한다.** 체크포인트는 구절을 **띄우는 순간** 찍히므로 `cursor`는
+> '화면에 떠 있는(아직 안 끝낸) 구절'까지 센 값이다. 그대로 저장하면 이어할 때 **그 구절을 건너뛴다.**
+> 한 구절을 다시 푸는 쪽이 통째로 빠뜨리는 쪽보다 낫다.
+
+> ★ **`window.hardshipOrigin !== 'training'`을 함께 봐야 한다.**
+> `startHardshipSessionInTraining()`은 `trainingMode` 플래그를 **호출이 끝난 뒤에** 세우는데
+> `loadNextHardshipVerse()`는 호출 **안에서** 이미 돈다. `trainingMode`만 보면
+> 집중 훈련의 첫 구절이 체크포인트를 남기고 복원까지 타버린다.
+
+**빌려 쓰는 세션은 저장하지 않는다** — 중간점검 빈칸·결과 화면 백지 확인·빠른 모드 승급.
+짧고(1~4절), 끝난 뒤 `stageClear`나 훈련 코스 복귀 같은 **후속 흐름이 얽혀 있어** 중간 복원이 위험하다.
+1구절짜리(`queue.length < 2`)도 이어할 것이 없어 제외한다.
+
+### 복원하는 것과 안 하는 것
+
+- **복원**: `queue`(무작위 순서 그대로) · `cursor` · `score` · `studiedCount`/`answeredCount` ·
+  `totalHintsUsed` · `speechScores` · `boosterMultiplier` · **체력** · **누적 세션 시간**
+- **체력을 되살리지 않는 이유**: 오답으로 깎인 체력이 회복되면 승점 공식(`playerHearts` 사용)이
+  뒤집혀 **이미 잃은 손해를 무르는** 셈이 된다. `Math.min(저장값, maxPlayerHearts)`로 상한만 맞춘다
+- **세션 시간은 이어붙인다** (`stageStartTime = Date.now() - elapsedMs`).
+  안 그러면 히스토리에 '3분 만에 한 장'처럼 남아 기록이 오염된다
+- **승점 중복 지급은 없다** — `awardHardshipScore()`가 구절마다 `leagueData`에 **즉시** 넣는다.
+  `hardshipState.score`는 표시·히스토리용 집계일 뿐이다
+
+### 나가기 안내 문구
+
+`getHardshipQuitNoticeText()`가 이어하기가 걸리는 세션이면 `hardship_quit_notice_resume`을 쓴다 —
+기존 *"현재 진행 순서는 저장되지 않습니다"*가 **이제 거짓**이기 때문.
+
+---
+
 ## 난이도 추천 — '지금 너에게 맞음' (2026-09-10)
 
 난이도 네 칸은 **이름만 있고 "지금 나에게 맞는가"를 말해주지 않았다.**

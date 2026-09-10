@@ -474,6 +474,7 @@ const LANG = {
         hardship_quit_title: '{title}을 종료하시겠습니까?',
         hardship_quit_notice_endurance: '현재 진행 순서는 저장되지 않습니다.',
         hardship_quit_notice_scored: '지금까지 획득한 승점은 저장됩니다. 현재 진행 순서는 저장되지 않습니다.',
+        hardship_quit_notice_resume: '여기까지의 진행이 저장됩니다. 다음에 같은 범위로 들어오면 이어서 하실 수 있어요.',
         hardship_back_quit_endurance: '지금 나가면 진행 상황이 저장되지 않을 수 있습니다.',
         hardship_back_quit_scored: '지금까지 얻은 승점은 저장되나 진행 상황은 저장되지 않습니다.',
         hardship_kings_btn: '🔥 왕의 고난',
@@ -1247,6 +1248,7 @@ const LANG = {
         hardship_quit_title: 'Quit {title}?',
         hardship_quit_notice_endurance: 'Your current progress order will not be saved.',
         hardship_quit_notice_scored: 'Your score so far will be saved. Your current progress order will not be saved.',
+        hardship_quit_notice_resume: 'Your progress so far will be saved. Come back to the same range to continue.',
         hardship_back_quit_endurance: 'Leaving now may not save your progress.',
         hardship_back_quit_scored: 'Your score will be saved, but your current progress will not.',
         hardship_kings_btn: '🔥 King\'s Trial',
@@ -16215,6 +16217,13 @@ function getQuitModalTitleText() {
 function getHardshipQuitNoticeText() {
     if (!window.isHardshipMode) return '';
 
+    // 이어하기가 걸리는 세션이면 문구가 달라진다 — '저장되지 않습니다'는 이제 거짓이다
+    if (_isResumableHardshipSession()
+        && Array.isArray(hardshipState.queue) && hardshipState.queue.length >= 2
+        && hardshipState.cursor > 0) {
+        return t('hardship_quit_notice_resume');
+    }
+
     if (hardshipState.mode === 'endurance') {
         return t('hardship_quit_notice_endurance');
     }
@@ -21598,6 +21607,78 @@ function startHardshipFromConfig() {
     startHardshipSession(selectedHardshipConfigMode, selectedVerseIds);
 }
 
+/* ── 고난 세션 이어하기 (2026-09-10) ────────────────────────────────────────────
+   한 장 29절 × 33초 ≈ **16분.** 그동안 전화 한 통이면 통째로 사라졌다.
+   보스전에는 진작 이어하기가 있었는데(`saveBattleCheckpoint`) 고난 엔진에는 없었다.
+   이용률 5.8%의 원인 중 하나로 의심된다 — '16분짜리를 시작할 마음이 안 든다'.
+
+   ★ **빌려 쓰는 세션은 저장하지 않는다.**
+   중간점검 빈칸·결과 화면 백지 확인·빠른 모드 승급은 짧고(1~4절),
+   끝난 뒤 `stageClear`나 훈련 코스 복귀 같은 **후속 흐름이 얽혀 있어** 중간 복원이 위험하다.
+   집중 훈련도 제외한다 — 사이클 반복 구조라 상태가 더 복잡하고, 증거로 세지도 않는다. */
+const HARDSHIP_CKPT_KEY = 'kingsRoad_hardshipCheckpoint';
+
+function _isResumableHardshipSession() {
+    return !!(hardshipState && hardshipState.active
+        // ★ `trainingMode`만으로는 부족하다 — startHardshipSessionInTraining()은 그 플래그를
+        //   **호출이 끝난 뒤에** 세우는데, loadNextHardshipVerse()는 호출 안에서 이미 돈다.
+        //   그래서 집중 훈련의 첫 구절이 체크포인트를 남기고, 복원까지 타버린다.
+        //   진입 직전에 세워지는 window.hardshipOrigin으로 함께 막는다.
+        && !hardshipState.trainingMode
+        && window.hardshipOrigin !== 'training'
+        && !hardshipState.midBossStageId
+        && !hardshipState.verseCheckStageId
+        && !hardshipState.quickReviewStageId);
+}
+
+function _saveHardshipCheckpoint() {
+    if (!_isResumableHardshipSession()) return;
+    if (!Array.isArray(hardshipState.queue) || hardshipState.queue.length < 2) return; // 1구절은 이어할 게 없다
+    try {
+        localStorage.setItem(HARDSHIP_CKPT_KEY, JSON.stringify({
+            mode: hardshipState.mode,
+            queue: hardshipState.queue,          // 무작위 순서도 그대로 살린다
+            /* ★ `cursor - 1`을 저장한다. 체크포인트는 구절을 **띄우는 순간** 찍히므로
+               `cursor`는 '화면에 떠 있는(아직 안 끝낸) 구절'까지 센 값이다.
+               그대로 저장하면 이어할 때 그 구절을 **건너뛴다.**
+               한 구절을 다시 푸는 쪽이 통째로 빠뜨리는 쪽보다 낫다. */
+            cursor: Math.max(0, hardshipState.cursor - 1),
+            forcedChapter: (hardshipState.forcedChapter != null) ? hardshipState.forcedChapter : null,
+            isRandomOrder: !!hardshipState.isRandomOrder,
+            ultimate: !!hardshipState.ultimateMemoryMode,
+            applyToFree: !!hardshipState.applyToFree,
+            score: hardshipState.score || 0,
+            studiedCount: hardshipState.studiedCount || 0,
+            answeredCount: hardshipState.answeredCount || 0,
+            totalHintsUsed: hardshipState.totalHintsUsed || 0,
+            speechScores: hardshipState.speechScores || [],
+            boosterMultiplier: hardshipState.boosterMultiplier || 1,
+            hearts: playerHearts,
+            maxHearts: maxPlayerHearts,
+            // 세션 시간을 이어붙인다 — 안 그러면 히스토리에 '3분 만에 한 장'처럼 남는다
+            elapsedMs: Math.max(0, Date.now() - stageStartTime - (hardshipState.pausedMs || 0)),
+            at: Date.now()
+        }));
+    } catch (e) { /* 용량 초과 등은 조용히 무시 — 이어하기는 부가 기능이다 */ }
+}
+
+function _clearHardshipCheckpoint() {
+    try { localStorage.removeItem(HARDSHIP_CKPT_KEY); } catch (e) {}
+}
+
+/* 저장된 세션이 지금 시작하려는 것과 같은가. 같으면 **꺼내면서 지운다**(두 번 쓰이지 않게). */
+function _takeHardshipResume(mode, verseIds) {
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(HARDSHIP_CKPT_KEY) || 'null'); } catch (e) { return null; }
+    if (!saved || saved.mode !== mode || !Array.isArray(saved.queue)) return null;
+    if (saved.queue.length !== verseIds.length) return null;
+    // 순서는 다를 수 있다(무작위) — 같은 구절 묶음인지로 판단하고, 순서는 저장된 것을 따른다
+    if (saved.queue.slice().sort().join(',') !== verseIds.slice().sort().join(',')) return null;
+    if (!(saved.cursor > 0) || saved.cursor >= saved.queue.length) return null; // 시작 전이거나 이미 끝난 것
+    _clearHardshipCheckpoint();
+    return saved;
+}
+
 function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
     const modeMeta = getHardshipModeMeta(mode);
 
@@ -21662,8 +21743,33 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
     const bossAvatar = document.querySelector('.boss-avatar');
     if (bossAvatar) bossAvatar.style.display = 'none';
 
+    /* ★ 이어하기 복원은 여기서 — 위에서 playerHearts와 stageStartTime을 새로 잡으므로 그 뒤여야 하고,
+       loadNextHardshipVerse()가 cursor를 읽어 다음 구절을 꺼내므로 그 앞이어야 한다. */
+    const _resume = _isResumableHardshipSession() ? _takeHardshipResume(mode, baseIds) : null;
+    if (_resume) {
+        hardshipState.queue = _resume.queue.slice();
+        hardshipState.cursor = _resume.cursor;
+        hardshipState.score = _resume.score || 0;
+        hardshipState.studiedCount = _resume.studiedCount || 0;
+        hardshipState.answeredCount = _resume.answeredCount || 0;
+        hardshipState.totalHintsUsed = _resume.totalHintsUsed || 0;
+        hardshipState.speechScores = Array.isArray(_resume.speechScores) ? _resume.speechScores : [];
+        hardshipState.boosterMultiplier = _resume.boosterMultiplier || 1;
+        hardshipState.isRandomOrder = !!_resume.isRandomOrder;
+        hardshipState.ultimateMemoryMode = !!_resume.ultimate;
+        // 체력은 그때 값 그대로 — 오답으로 깎인 체력이 되살아나면 승점을 되돌리는 셈이 된다
+        playerHearts = Math.min(_resume.hearts, maxPlayerHearts);
+        // 세션 시간 이어붙이기 (pausedMs는 0으로 두고 시작 시각을 뒤로 민다)
+        stageStartTime = Date.now() - (_resume.elapsedMs || 0);
+        hardshipState.pausedMs = 0;
+    }
+
     updateBattleUI();
     loadNextHardshipVerse();
+
+    if (_resume && typeof showGemToast === 'function') {
+        showGemToast(0, `💾 ${_resume.cursor}번째까지 마친 기록에서 이어합니다 (체력 ${playerHearts}/${maxPlayerHearts})`, false);
+    }
 
     if (typeof showReadAloudToast === 'function') {
         showReadAloudToast(t('toast_hardship_start', {
@@ -21781,6 +21887,8 @@ function loadNextHardshipVerse() {
 
     renderCurrentHardshipVerse();
     updateBattleUI();
+    // 구절 경계마다 저장 — 보스전의 saveBattleCheckpoint()와 같은 지점이다
+    _saveHardshipCheckpoint();
 }
 
 function renderCurrentHardshipVerse() {
@@ -23339,6 +23447,8 @@ function submitHardshipMemoryGuess() {
 }
 
 function finishHardshipSession(reason) {
+    // 세션이 끝났으므로 이어하기 기록은 버린다 (끝난 세션을 되살리면 안 된다)
+    _clearHardshipCheckpoint();
     // 집중 훈련소 망각의 고난: 사이클 남아있으면 결과 화면 없이 재시작
     if (reason === 'completed' && hardshipState.trainingMode &&
         hardshipState.trainingCurrentCycle < hardshipState.trainingRepeatCount) {
