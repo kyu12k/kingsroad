@@ -7427,9 +7427,24 @@ function openBossSetupModal(stage) {
     const isMid = String(stage.id).includes('mid');
     // 중간점검에서 고른 빈칸·백지가 보스전 모달로 새어 들어오지 않게 되돌린다
     if (!isMid && _isBlankDifficulty(bossDifficultyMode)) bossDifficultyMode = 'hard';
-    const blankBtns = isMid ? `
-                    <button class="bso-btn${bossDifficultyMode==='blank'?' active':''}" id="bso-blank" onclick="setBossSetupOpt('difficulty','blank')">빈칸</button>
-                    <button class="bso-btn${bossDifficultyMode==='none'?' active':''}" id="bso-none" onclick="setBossSetupOpt('difficulty','none')">백지</button>` : '';
+
+    /* 추천 표시는 중간점검에만 붙인다 — 보스전은 칸이 둘뿐이고 둘 다 단서가 있어
+       "알맞음"을 말할 여지가 거의 없다. 빈칸·백지가 보스전에 생기면 그때 함께 붙인다. */
+    const fitInfo = isMid ? _getMidBossRecallInfo(stage) : null;
+    const fitTag = (mode) => {
+        if (!fitInfo) return '';
+        const f = _getDiffFitLabel(mode, fitInfo.tier);
+        return f ? `<span class="bso-fit ${f.cls}">${f.text}</span>` : '';
+    };
+    const btn = (mode, label) =>
+        `<button class="bso-btn${bossDifficultyMode===mode?' active':''}" id="bso-${mode}" onclick="setBossSetupOpt('difficulty','${mode}')">` +
+        `<span class="bso-name">${label}</span>${fitTag(mode)}</button>`;
+
+    const blankBtns = isMid ? btn('blank', '빈칸') + btn('none', '백지') : '';
+    // 근거를 한 줄로 밝힌다 — 라벨만 있으면 마법처럼 보이고, 무엇을 하면 등급이 오르는지도 안 보인다
+    const fitNote = fitInfo
+        ? `<div class="bso-fit-note">이 구간 ${fitInfo.total}절 중 <b>${fitInfo.written}절</b>을 백지로 써봤어요</div>`
+        : '';
     const overlay = document.createElement('div');
     overlay.id = 'boss-setup-modal';
     overlay.className = 'boss-setup-overlay';
@@ -7442,9 +7457,9 @@ function openBossSetupModal(stage) {
             <div class="boss-setup-section">
                 <div class="boss-setup-label">난이도</div>
                 <div class="bso-toggle bso-toggle-wrap">
-                    <button class="bso-btn${bossDifficultyMode==='normal'?' active':''}" id="bso-normal" onclick="setBossSetupOpt('difficulty','normal')">보통</button>
-                    <button class="bso-btn${bossDifficultyMode==='hard'?' active':''}" id="bso-hard" onclick="setBossSetupOpt('difficulty','hard')">어려움</button>${blankBtns}
+                    ${btn('normal', '보통')}${btn('hard', '어려움')}${blankBtns}
                 </div>
+                ${fitNote}
                 <div class="bso-desc" id="bso-diff-desc">${_getBossDiffDesc()}</div>
             </div>
             <div class="boss-setup-section">
@@ -7512,6 +7527,74 @@ function confirmBossSetup() {
 function _isBlankPromoted(stageId) {
     const r = verseRecall[stageId];
     return !!(r && r.typedPass > 0);
+}
+
+/* ── 난이도 추천 (2026-09-10) ─────────────────────────────────────────────────
+   난이도 네 칸은 **이름만 있고 "지금 나에게 맞는가"를 말해주지 않는다.**
+   그래서 사람들은 기억 상태가 아니라 **부담**으로 고른다 —
+   보스전 경험자 72명 중 54%가 '보통'이다. 29절을 초성으로 하는 것이 버거워 내려간 것이지,
+   그게 자기 기억 상태에 맞아서가 아니다.
+
+   ★ 판단 근거는 **`typedPass` 하나뿐이다.**
+   - 복습 스텝·클리어 횟수는 '화면에 답이 있는 상태에서 재구성한 횟수'라
+     단서 없이 나오는지를 증명하지 못한다. 쉬운 성공의 반복은 오히려 과신을 키운다
+   - **기억 강도는 더 위험하다.** 시간이 지나면 떨어지는 값이라 이걸 쓰면
+     "오래됐으니 쉽게 해드릴게요"가 되는데, 가물가물할 때가 인출 연습의 가치가 가장 큰 순간이다.
+     정확히 거꾸로 쓰는 셈이라 **일부러 뺐다**
+   - 단 `lastOk === false`(마지막 백지 시도에서 막힘)는 시간 추정이 아니라
+     **직접 관찰한 실패**이므로 한 칸 강등한다 */
+const HINT_OK_RATIO = 0.2; // 통과 시 힌트가 글자 수의 이 비율 이하면 '혼자 써냈다'로 본다.
+                           // ※ 잠정값(미확정 — 다음 주 데이터로 정할 것 중 하나).
+                           //    라벨은 보상을 한 푼도 바꾸지 않으므로 틀려도 손해가 '권유가 조금 어긋남'뿐이다.
+
+function _getVerseRecallTier(stageId) {
+    const r = verseRecall[stageId];
+    if (!r || !(r.typedPass > 0)) return 0;   // 아직 백지에서 나온 적 없음
+    let tier = 1;
+    const len = r.lastVerseLen || 0;
+    if (len > 0) {
+        if ((r.lastHints || 0) <= Math.ceil(len * HINT_OK_RATIO)) tier = 2;
+    } else if (!(r.lastHints > 0)) {
+        // lastVerseLen 도입(2026-09-10) 이전 기록 — 길이를 모르므로 '힌트 0'만 인정한다
+        tier = 2;
+    }
+    if (r.lastOk === false) tier = Math.max(0, tier - 1);
+    return tier;
+}
+
+/* 구간 등급 = 소속 구절 등급의 **최솟값**(가장 약한 고리).
+   중간점검은 3~4절뿐이라 한 절이 막히면 거기서 전체가 멈춘다.
+   평균을 쓰면 그 한 절이 숨어 "알맞다고 해서 갔는데 벽이었다"가 된다.
+   (보스전은 최대 29절이라 최솟값을 쓰면 영원히 0에 머물러 무의미해진다 → 비율을 써야 한다. 미착수) */
+function _getMidBossRecallInfo(stage) {
+    const chNum = parseInt(String(stage.id).split('-')[0], 10);
+    const chData = (typeof gameData !== 'undefined') ? gameData.find(c => c.id === chNum) : null;
+    if (!chData) return null;
+    const ids = getSubStagesOfMidBoss(chData, stage)
+        .map(s => String(s.id))
+        .filter(id => /^\d+-\d+$/.test(id));
+    if (!ids.length) return null;
+    let tier = 2, written = 0;
+    ids.forEach(id => {
+        const t = _getVerseRecallTier(id);
+        if (t < tier) tier = t;
+        if (_isBlankPromoted(id)) written += 1;
+    });
+    return { tier: tier, total: ids.length, written: written };
+}
+
+/* 난이도 칸의 순서 = 요구하는 인출의 강도 순. 추천 지점은 `등급 + 1`이다.
+   등급 0(한 절이라도 백지로 못 씀) → 어려움 / 1 → 빈칸 / 2 → 백지 */
+const BSO_DIFF_ORDER = ['normal', 'hard', 'blank', 'none'];
+
+function _getDiffFitLabel(mode, tier) {
+    const i = BSO_DIFF_ORDER.indexOf(mode);
+    const rec = tier + 1;
+    if (i < 0) return null;
+    if (i < rec)      return { text: '😌 쉬움',      cls: 'fit-easy' };
+    if (i === rec)    return { text: '⭐ 알맞음',    cls: 'fit-best' };
+    if (i === rec + 1) return { text: '🔥 도전',      cls: 'fit-hard' };
+    return { text: '🔒 아직 일러요', cls: 'fit-lock' };
 }
 
 /* 빠른 모드 백지 승급 — 백지 세션을 먼저 열고, 끝나면 훈련 코스로 되돌아간다.

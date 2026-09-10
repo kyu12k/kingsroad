@@ -5973,6 +5973,37 @@ body, html {
     transition: background 0.15s, color 0.15s;
 }
 .bso-btn.active { background: #6c63ff; color: white; }
+
+/* 난이도 칸의 '지금 너에게 맞음' 표시 — 이름 아래 한 줄.
+   버튼은 원래 글자만 들어 있었으므로 세로 정렬로 바꾼다.
+   순서(순서대로/무작위) 토글도 같은 클래스를 쓰지만 자식이 맨 텍스트라 그대로 가운데 정렬된다. */
+.bso-btn {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 3px;
+}
+.bso-name { line-height: 1.2; }
+.bso-fit {
+    font-size: 0.68rem; font-weight: 700; letter-spacing: -0.2px;
+    line-height: 1.2; opacity: 0.95;
+}
+/* 활성(보라 배경) 상태에서도 읽히도록 색은 배경 대비로 따로 잡는다 */
+.fit-easy { color: #7f8c8d; }
+.fit-best { color: #f1c40f; }
+.fit-hard { color: #e67e22; }
+.fit-lock { color: #95a5a6; }
+.bso-btn.active .fit-easy { color: #d8d8e8; }
+.bso-btn.active .fit-best { color: #ffe680; }
+.bso-btn.active .fit-hard { color: #ffc07a; }
+.bso-btn.active .fit-lock { color: #d8d8e8; }
+
+/* 근거 한 줄 — 라벨만 있으면 마법처럼 보이고, 무엇을 하면 등급이 오르는지가 안 보인다 */
+.bso-fit-note {
+    margin-top: 10px; font-size: 0.78rem; line-height: 1.5;
+    color: #b9b0c9; background: rgba(108, 99, 255, 0.12);
+    border: 1px solid rgba(108, 99, 255, 0.28);
+    border-radius: 8px; padding: 7px 10px;
+}
+.bso-fit-note b { color: #f1c40f; }
 .bso-desc {
     font-size: 0.78rem; color: #888;
     margin-top: 8px; line-height: 1.5; min-height: 1.2em;
