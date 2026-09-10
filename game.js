@@ -1864,6 +1864,51 @@ const ENDURANCE_PASS_SCORE = 80; // 암송의 고난 통과선 (승점 만점 �
 // 한 구절을 처음 백지로 써냈을 때 1회만 주는 보석. 404절 전부라도 총 12,120으로
 // 심화 미션 하루치(약 19,300)보다 작아 경제에 미치는 영향이 제한적이다.
 const VERSE_FIRST_RECALL_GEM = 30;
+
+/* ── 복습 소요 시간 표본 (2026-09-10) ──────────────────────────────────────────
+   **백지 승급이 정말 복습을 짧게 만드는가**를 판정하기 위한 기록.
+
+   백지 승급을 넣을 때 내세운 근거가 "잘 아는 구절일수록 복습이 짧아진다"였는데,
+   빠른 모드는 이미 2단계(`[1,5]`)라 **백지(타이핑) + `[1]`이 더 짧다는 보장이 없다.**
+   막히면 백지 + `[1,5]`가 되어 확실히 길어진다. 지금까지 아무도 재본 적이 없다.
+
+   구절 단위가 아니라 **표본 배열**인 이유: 승급된 구절은 앞으로 늘 승급되므로
+   같은 구절 안에서 전/후 비교가 불가능하다. 승급된 구절과 아닌 구절을 **가로질러**
+   비교해야 하는데, 승급되지 않은 구절에는 `verseRecall` 항목 자체가 없다.
+   `verseRecall`을 404절 전체로 넓히면 저장본이 그만큼 커지므로 별도 고리버퍼로 둔다.
+
+   표본: `{ s: 스테이지id, c: 코스, ms: 소요시간, at: 기록시각 }`
+   코스 c — 0=전체학습 / 1=빠른모드(비승급) / 2=백지승급 통과 / 3=백지승급 막힘 */
+const REVIEW_SAMPLE_MAX = 80;                 // 약 3.6KB. 분포를 보기엔 충분하다
+const REVIEW_SAMPLE_MIN_MS = 1000;
+const REVIEW_SAMPLE_MAX_MS = 15 * 60 * 1000;  // 1구절에 15분이면 자리를 비운 것이다
+let reviewSamples = [];
+
+/* 복습 한 판의 **시작 지점**을 잡는다.
+   ★ 백지 승급은 '백지 세션 → 훈련 코스'로 두 번에 나뉘어 도는데,
+   이어지는 코스(`quick-after-*`)에서 다시 시작 시각을 잡으면 **백지에 쓴 시간이 통째로 빠져
+   승급이 실제보다 유리하게 보인다.** 그래서 이어지는 코스는 코스 표시만 갱신한다. */
+function _beginReviewRun(stageId, mode) {
+    if (mode === 'quick-after-pass') { window._reviewRunCourse = 2; return; }
+    if (mode === 'quick-after-fail') { window._reviewRunCourse = 3; return; }
+    window._reviewRunStart = Date.now();
+    window._reviewRunStage = String(stageId);
+    window._reviewRunCourse = (mode === 'quick') ? 1 : 0;
+}
+
+function _recordReviewSample(stageId) {
+    if (!window._reviewRunStart) return;
+    // 다른 스테이지로 건너뛴 경우(중단 후 다른 구절 진입 등)는 버린다
+    if (window._reviewRunStage !== String(stageId)) { window._reviewRunStart = 0; return; }
+    const ms = Date.now() - window._reviewRunStart;
+    window._reviewRunStart = 0;
+    // 너무 짧으면 오작동, 너무 길면 자리를 비운 것 — 둘 다 '소요 시간'이 아니다
+    if (ms < REVIEW_SAMPLE_MIN_MS || ms > REVIEW_SAMPLE_MAX_MS) return;
+    reviewSamples.push({ s: String(stageId), c: window._reviewRunCourse || 0, ms: ms, at: Date.now() });
+    if (reviewSamples.length > REVIEW_SAMPLE_MAX) {
+        reviewSamples = reviewSamples.slice(-REVIEW_SAMPLE_MAX);
+    }
+}
 // 다른 콘텐츠가 고난 엔진을 빌려 쓸 때의 진입 정보. startHardshipSession()이 소비한다.
 let _pendingHardshipEmbed = null;
 
@@ -2157,6 +2202,9 @@ loadGameData = function () {
                 const rec = verseRecall[k];
                 if (rec && typeof rec.typedPass !== 'number') rec.typedPass = rec.pass || 0;
             });
+        }
+        if (Array.isArray(parsed.reviewSamples)) {
+            reviewSamples = parsed.reviewSamples.slice(-REVIEW_SAMPLE_MAX);
         }
         if (typeof parsed.onboardStep === 'string') onboardStep = parsed.onboardStep;
         bossFirstClearClaimed = new Set(parsed.bossFirstClearClaimed || []);
@@ -8905,6 +8953,7 @@ function saveGameData() {
         hardshipEnduranceClearHistory: hardshipEnduranceClearHistory,
         hardshipVerseClearHistory: hardshipVerseClearHistory,
         verseRecall: verseRecall, // 구절별 백지 산출 기록 (망각·암송의 고난)
+        reviewSamples: reviewSamples, // 복습 소요 시간 표본 (백지 승급이 실제로 짧은지 판정용)
         onboardStep: onboardStep, // 온보딩 이탈 지점 (profile→map→stage→cleared)
         bibleReadLog: bibleReadLog,
         sessionTimeLog: sessionTimeLog,
@@ -9050,10 +9099,29 @@ function _mergeVerseRecall(target, other) {
     return took;
 }
 
+/* 복습 시간 표본에는 '앞선 쪽'이 없다 — 두 기기의 기록을 **합쳐야** 분포가 온전해진다.
+   `at`(기록 시각)으로 중복을 지우고 시간순 정렬 후 최근 것만 남긴다.
+   (`_mergeVerseRecall`처럼 한쪽을 통째로 고르면 다른 기기에서 잰 표본이 통째로 사라진다.) */
+function _mergeReviewSamples(target, other) {
+    const a = Array.isArray(target && target.reviewSamples) ? target.reviewSamples : [];
+    const b = Array.isArray(other && other.reviewSamples) ? other.reviewSamples : [];
+    if (!b.length) return 0;
+    const seen = new Set(a.map(r => r && r.at));
+    const added = b.filter(r => r && !seen.has(r.at));
+    if (!added.length) return 0;
+    if (target) {
+        target.reviewSamples = [...a, ...added]
+            .sort((x, y) => (x.at || 0) - (y.at || 0))
+            .slice(-REVIEW_SAMPLE_MAX);
+    }
+    return added.length;
+}
+
 function _mergeSaveProgress(target, other) {
     if (!target || !other) return 0;
     let took = 0;
     took += _mergeVerseRecall(target, other);
+    took += _mergeReviewSamples(target, other);
 
     // 1) 자유여행 — 최상위 필드
     {
@@ -9760,6 +9828,8 @@ function normalizeChunkText(text) {
 
 /* [수정] 훈련 시작 함수 (phase 시스템 제거) */
 function startTraining(stageId, mode = 'normal') {
+    // ★ 반드시 아래 백지 승급 가로채기보다 **먼저** — 백지에 쓴 시간도 복습 시간이다
+    _beginReviewRun(stageId, mode);
     // ★ 백지 승급 — 이미 백지로 써낸 적 있는 구절은 빠른 모드에서 백지부터 시작한다.
     // 사용자가 스스로 증명한 구절에만 적용되므로 '할 수 있는 것을 시키는' 구조다.
     if (mode === 'quick' && _isBlankPromoted(stageId)) {
@@ -15432,6 +15502,10 @@ stageClear = function (type, rewardMultiplier = 1) {
         // 🌟 ---------------------------------------------------------
         markOnboardStep('cleared');
         const sId = String(window.currentStageId);
+
+        // 복습 소요 시간 표본 — 일반 스테이지만. 중간점검·보스전은 단위가 달라 섞으면 안 된다.
+        // (집중 훈련은 위 `isTrainingMode` 방어막에서 이미 걸러졌다)
+        if (type === 'normal') _recordReviewSample(sId);
 
         // 변수 호이스팅 문제 방지용 선언
         let verseCnt = 1;
