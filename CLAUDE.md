@@ -845,6 +845,27 @@ fab.style.top = limit - fab.offsetHeight - MARGIN;
 
 ---
 
+## 화면 위 알림(토스트) 규칙
+
+> ★ **알리기만 하는 팝업은 반드시 `pointer-events: none`.**
+> 가리는 것은 괜찮아도 **막는 것은 안 된다.**
+> `#toast-notification`(`showToast`)에 이것이 빠져 있어 '저장되었습니다'가 뜨는 2초 동안
+> 그 아래 초성·낱말 버튼이 눌리지 않았다 — `bottom:190px` + `min-width:250px` + `z-index:99999`라
+> 하필 단어 버튼 영역을 정통으로 덮는다. `#sync-fail-toast`는 **8초**나 떠 있었다. (2026-09-11 수정)
+
+| 요소 | 클릭 | 이유 |
+|------|------|------|
+| `#toast-notification`, `#read-aloud-toast`, `.gem-reward-toast`, `#sync-fail-toast`, `#tribe-toast`, `#castle-desc-toast` | **통과** | 누를 것이 없는 안내 |
+| `#remote-newer-banner` | **받음** | 「새로고침」·「✕」 버튼이 있다 |
+| `.modal-overlay` 계열 | **받음** | 결정을 요구하는 화면 |
+
+**위치**: `#read-aloud-toast`는 `_positionReadAloudToast()`가 **`.battle-control` 윗변 바로 위**에 앉힌다.
+예전의 `top: 15%` 고정은 Step 1의 읽기 카드를 덮었다 —
+**정작 그 토스트가 "읽으라"고 말하는 대상이 그 글자들이었다.**
+키보드가 열려 있으면 보이는 영역의 아래끝이 자연히 이긴다(힌트 FAB와 같은 계산).
+
+---
+
 ## 고난 길 모드
 
 | 모드 | 키 | 아이콘 | 설명 |

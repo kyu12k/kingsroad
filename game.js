@@ -9653,7 +9653,8 @@ function _showSyncFailToast(e, label = '서버 저장 실패') {
     if (existing) existing.remove();
     const toast = document.createElement('div');
     toast.id = 'sync-fail-toast';
-    toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#c0392b;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:99999;text-align:center;max-width:90vw;';
+    // pointer-events:none — 8초나 떠 있으므로 그동안 아래 버튼이 막히면 안 된다 (누를 것이 없는 안내다)
+    toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#c0392b;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:99999;text-align:center;max-width:90vw;pointer-events:none;';
     toast.textContent = `⚠️ ${label}: ${friendly}`;
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 8000);
