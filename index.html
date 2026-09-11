@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
     <!-- image_0.webp is inlined below; preload removed -->
-    <link rel="stylesheet" href="style.css?v=20260911e">
+    <link rel="stylesheet" href="style.css?v=20260911f">
 
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-TEVW49QB45"></script>
@@ -2750,11 +2750,14 @@
                 <div class="mode-icon">⌨️</div>
                 <div class="mode-info">
                     <div class="mode-title" data-i18n="hardship_mode_d_title">Lv.4 · 망각의 고난</div>
-                    <div class="mode-desc" data-i18n="hardship_mode_d_desc">장·절을 보고 전체 말씀을 입력하기</div>
+                    <div class="mode-desc" data-i18n="hardship_mode_d_desc">장·절을 보고 전체 말씀을 입력하기 · 백지 + 무작위</div>
                     <div class="mode-last-played" id="hardship-last-memory"></div>
                 </div>
                 <div class="hardship-mission-reward">미션 💎 1,500</div>
             </button>
+
+            <!-- 망각의 고난이 백지+무작위 고정이라 물러설 곳을 함께 보여준다 (장이 정해졌을 때만) -->
+            <button type="button" id="hardship-easier-link" class="hardship-easier-link" style="display:none;"></button>
 
             <p class="hardship-cascade-notice">상위 고난 클리어 시 하위 미션도 자동 달성됩니다</p>
         </div>
@@ -2887,7 +2890,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="bible_en.js"></script>
-    <script src="game.js?v=20260911e"></script>
+    <script src="game.js?v=20260911f"></script>
     <script>
 
         /* =========================================

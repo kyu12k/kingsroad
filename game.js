@@ -7471,15 +7471,28 @@ function openBossSetupModal(stage) {
             <div class="boss-setup-section">
                 <div class="boss-setup-label">진행 순서</div>
                 <div class="bso-toggle">
-                    <button class="bso-btn${bossOrderMode==='sequential'?' active':''}" id="bso-seq" onclick="setBossSetupOpt('order','sequential')">순서대로</button>
-                    <button class="bso-btn${bossOrderMode==='random'?' active':''}" id="bso-rand" onclick="setBossSetupOpt('order','random')">무작위</button>
+                    <button class="bso-btn${_bsoSeqActive()?' active':''}" id="bso-seq" onclick="setBossSetupOpt('order','sequential')">순서대로</button>
+                    <button class="bso-btn${_bsoRandActive()?' active':''}${_isBlankDifficulty(bossDifficultyMode)?' bso-btn-locked':''}" id="bso-rand" onclick="setBossSetupOpt('order','random')">무작위</button>
                 </div>
+                <div class="bso-desc" id="bso-order-desc">${_getBossOrderDesc()}</div>
             </div>
             <button class="boss-setup-start" onclick="confirmBossSetup()">시작</button>
         </div>
     `;
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
     document.body.appendChild(overlay);
+}
+
+/* 빈칸·백지에서는 무작위를 못 고른다 — 무작위는 망각의 고난 전용이다.
+   저장값(bossOrderMode)은 건드리지 않는다. 초성·단어로 되돌아가면 원래 설정이 살아나야 한다. */
+function _bsoSeqActive()  { return _isBlankDifficulty(bossDifficultyMode) || bossOrderMode === 'sequential'; }
+function _bsoRandActive() { return !_isBlankDifficulty(bossDifficultyMode) && bossOrderMode === 'random'; }
+
+function _getBossOrderDesc() {
+    if (_isBlankDifficulty(bossDifficultyMode)) {
+        return '빈칸·백지는 순서대로만 진행합니다 — 무작위는 ⌨️ 망각의 고난에서';
+    }
+    return '';
 }
 
 function _getBossDiffDesc() {
@@ -7508,12 +7521,26 @@ function setBossSetupOpt(type, value) {
                 if (el) el.classList.toggle('active', value === v);
             });
         document.getElementById('bso-diff-desc').textContent = _getBossDiffDesc();
+        // 난이도가 바뀌면 순서 칸의 잠금·활성 표시도 따라가야 한다
+        _syncBsoOrderButtons();
     } else {
+        if (_isBlankDifficulty(bossDifficultyMode) && value === 'random') return; // 잠긴 칸
         bossOrderMode = value;
-        document.getElementById('bso-seq').classList.toggle('active', value === 'sequential');
-        document.getElementById('bso-rand').classList.toggle('active', value === 'random');
+        _syncBsoOrderButtons();
     }
     saveGameData();
+}
+
+function _syncBsoOrderButtons() {
+    const seq = document.getElementById('bso-seq');
+    const rand = document.getElementById('bso-rand');
+    const desc = document.getElementById('bso-order-desc');
+    if (seq) seq.classList.toggle('active', _bsoSeqActive());
+    if (rand) {
+        rand.classList.toggle('active', _bsoRandActive());
+        rand.classList.toggle('bso-btn-locked', _isBlankDifficulty(bossDifficultyMode));
+    }
+    if (desc) desc.textContent = _getBossOrderDesc();
 }
 
 function confirmBossSetup() {
@@ -7686,7 +7713,9 @@ function _startBossBlank(stage, ultimate) {
 
     window.currentStageId = stage.id;
     window.hardshipOrigin = 'map';
-    selectedHardshipOrderType = (bossOrderMode === 'random') ? 'random' : 'sequential';
+    // ★ 무작위는 **망각의 고난 전용**이다 — 그래야 둘의 난도가 정확히 갈린다.
+    //   보스전 빈칸·백지는 순서대로만. (보통·초성은 기존대로 무작위를 고를 수 있다)
+    selectedHardshipOrderType = 'sequential';
     selectedHardshipUltimate = !!ultimate;
 
     _pendingHardshipEmbed = {
@@ -7715,7 +7744,7 @@ function _startMidBossBlank(stage, ultimate) {
 
     window.currentStageId = stage.id;
     window.hardshipOrigin = 'map';   // 끝나면 지도로 복귀
-    selectedHardshipOrderType = (bossOrderMode === 'random') ? 'random' : 'sequential';
+    selectedHardshipOrderType = 'sequential';  // 무작위는 망각의 고난 전용 (위 _startBossBlank 주석 참고)
     selectedHardshipUltimate = !!ultimate;   // startHardshipSession이 이 값을 읽는다
 
     _pendingHardshipEmbed = {
@@ -21338,6 +21367,26 @@ function resetHardshipSessionState() {
     }
 }
 
+/* 「좀 더 쉬운 단계로」 — 그 장의 보스전을 **빈칸**으로 예약해 설정 모달을 연다.
+   망각의 고난이 백지+무작위 고정이 되면서 문턱이 올라갔으므로, 물러설 곳을 명시한다.
+   승점 배율이 같아(빈칸 ×4) 내려와도 손해가 없고 복습 처리까지 붙는다.
+   바로 시작하지 않고 설정 모달을 여는 이유: 난이도 라벨(😌⭐🔥🔒)을 보고 고르게 하기 위함. */
+function goToChapterBossBlank(chapterNum) {
+    const ch = (chapterNum != null) ? chapterNum : window.hardshipForcedChapter;
+    if (ch == null) return;
+    const chData = (typeof gameData !== 'undefined') ? gameData.find(c => c.id === ch) : null;
+    const bossStage = chData && chData.stages ? chData.stages.find(st => st.type === 'boss') : null;
+    if (!bossStage) return;
+
+    if (typeof closeHardshipModeSelect === 'function') closeHardshipModeSelect();
+    const rm = document.getElementById('result-modal');
+    if (rm) rm.classList.remove('active');
+    if (window.isHardshipMode && typeof quitGame === 'function') quitGame('map');
+
+    bossDifficultyMode = 'blank';
+    openBossSetupModal(bossStage);
+}
+
 function openChapterHardship(chapterNum) {
     // 장별 고난 길: 해당 챕터를 강제 고정하고 모드 선택 모달을 엽니다.
     window.hardshipForcedChapter = chapterNum;
@@ -21387,6 +21436,18 @@ function updateHardshipLastPlayedBadges() {
         const ts = getHardshipModeLastPlayed(mode, ch);
         const prefix = ch != null ? `${ch}장 마지막: ` : '마지막: ';
         el.textContent = ts ? `${prefix}${formatHardshipElapsed(ts)}` : '';
+    }
+
+    // 망각의 고난이 백지+무작위 고정이라 물러설 곳을 함께 보여준다 (장이 정해졌을 때만)
+    const easier = document.getElementById('hardship-easier-link');
+    if (easier) {
+        if (ch != null) {
+            easier.style.display = '';
+            easier.innerHTML = `아직 어려우세요? <b>${ch}장 보스전(빈칸)</b>으로 →`;
+            easier.onclick = () => goToChapterBossBlank(ch);
+        } else {
+            easier.style.display = 'none';
+        }
     }
 }
 
@@ -21656,10 +21717,36 @@ function confirmHardshipOrder() {
     startHardshipSession(selectedHardshipConfigMode, verseIds, pendingChapter);
 }
 
+/* 망각의 고난은 **백지 + 무작위 고정**이다 (2026-09-11).
+   보스전에 빈칸·백지가 생기면서 둘의 난도가 같아졌으므로, 고난 쪽을 확실히 위로 올린다.
+   순서대로·글자 칸으로 하고 싶은 사람은 **보스전**에서 하면 된다 —
+   승점 배율이 같아(빈칸 ×4 / 백지 ×5) 옮겨도 손해가 없고, 복습 처리까지 얹힌다.
+   ★ 이 고정은 **고난 메뉴로 들어온 세션에만** 건다.
+     중간점검·보스전·결과 화면 확인이 이 엔진을 빌려 쓸 때는 각자 값을 따로 세팅한다. */
+function _forceHardshipMemorySettings() {
+    selectedHardshipOrderType = 'random';
+    selectedHardshipUltimate = true;
+}
+
 function startHardshipFromModal(mode) {
     _hideHardshipModeModal();
 
-    if (mode === 'memory' || mode === 'endurance') {
+    // 망각의 고난: 순서 선택 모달을 건너뛴다 (고정이므로 물어볼 것이 없다)
+    if (mode === 'memory') {
+        _forceHardshipMemorySettings();
+        if (window.hardshipForcedChapter != null) {
+            const ch = window.hardshipForcedChapter;
+            const verseIds = getHardshipVerseIdsByChapterRange(ch, ch);
+            window.hardshipForcedChapter = null;
+            if (verseIds.length === 0) { alert(t('alert_training_no_data', { ch })); return; }
+            startHardshipSession('memory', verseIds, ch);
+        } else {
+            openHardshipConfigModal('memory');
+        }
+        return;
+    }
+
+    if (mode === 'endurance') {
         // 순서 선택 모달 삽입 (forced chapter 있으면 보존)
         if (window.hardshipForcedChapter != null) {
             window.hardshipPendingForcedChapter = window.hardshipForcedChapter;
@@ -21704,6 +21791,7 @@ function startHardshipFromConfig() {
     }
 
     closeHardshipConfigModal();
+    if (selectedHardshipConfigMode === 'memory') _forceHardshipMemorySettings();
     startHardshipSession(selectedHardshipConfigMode, selectedVerseIds);
 }
 
@@ -22732,7 +22820,29 @@ function renderHardshipMemoryVerse() {
         const isHintRevealed = hardshipState.revealedHints.indexOf(index) !== -1;
         const validSlotIndex = getHardshipValidSlotIndexByVerseIndex(index);
         const isWrong = hardshipState.wrongSlots && hardshipState.wrongSlots.indexOf(index) !== -1;
-        const isSpaceWrong = !isHintRevealed && isSpaceChar && !!currentValue && currentValue !== ' ';
+
+        /* ★ 오답 표시는 **3칸 지나간 뒤에만** 켠다. (2026-09-11)
+
+           예전에는 띄어쓰기 자리에 글자를 넣으면 그 칸이 **즉시** 빨개졌다.
+           그러면 한 글자씩 찍어보며 지우기만 해도 단어 경계가 다 드러나고,
+           곧 각 단어의 글자 수를 셀 수 있다 — **궁극의 암기가 감추려던 바로 그 단서다.**
+
+           3칸을 유예하면 탐색 비용이 '치고 확인하고 지우기' 한 번에서
+           **네 번 치고 네 번 지우기**로 뛰어 실질적으로 쓸 수 없게 된다.
+           동시에 **진짜 오타는 3글자 안에 잡혀** 40글자를 밀린 채 다 쓰는 참사가 없다
+           (입력이 칸을 순서대로 채우는 구조라 한 칸 어긋나면 뒤가 전부 밀린다).
+
+           띄어쓰기만이 아니라 **모든 오답**에 적용한다 — 예전에는 띄어쓰기만 실시간이고
+           나머지는 제출할 때까지 몰랐는데, 그 비대칭이 오히려 띄어쓰기 탐색을 값싸게 만들었다. */
+        const _wrongGapOk = (() => {
+            if (isHintRevealed || !currentValue) return false;
+            if (hardshipCharsMatch(currentValue, character)) return false;
+            if (validSlotIndex < 0) return false;
+            // 다 채웠으면(-1) 커서가 끝에 있는 것으로 본다
+            const cursor = (activeValidSlotIndex < 0) ? getHardshipInputTargetCount() : activeValidSlotIndex;
+            return (cursor - validSlotIndex) >= WRONG_REVEAL_GAP;
+        })();
+        const isSpaceWrong = _wrongGapOk;
         const slotClasses = [
             'char-slot',
             'hardship-char-slot',
@@ -22879,6 +22989,9 @@ function ensureHardshipHintFabListeners() {
 /* 유휴 안내 — 일정 시간 입력이 없으면 힌트 버튼을 은은하게 맥동시킨다.
    백지 앞에서 막힌 사람이 '힌트가 있는 줄 모르고' 그만두는 것을 막는 게 목적이다.
    입력이 있을 때마다 다시 건다 — 중간에 막히는 경우도 잡기 위해. */
+/* 오답을 빨갛게 보여주기까지 지나가야 하는 칸 수 (renderHardshipMemoryVerse 주석 참고) */
+const WRONG_REVEAL_GAP = 3;
+
 const HARDSHIP_HINT_NUDGE_MS = 8000;
 function armHardshipHintNudge() {
     clearTimeout(window._hsHintNudgeTimer);
@@ -23346,6 +23459,17 @@ function useHardshipMemoryHint() {
 /* 구절 하나의 백지 산출 시도를 기록한다.
    mode: 'memory'(타이핑) | 'endurance'(음성) — 둘 다 단서 없이 산출하는 형태다.
    hints: 이 구절에서 쓴 힌트 수. 통과해도 힌트가 많으면 아직 막히는 구절이므로 함께 남긴다. */
+/* 기록의 출처 — 'hs'(망각의 고난, 무작위) / 'boss'(보스전 빈칸·백지, 순차) /
+   'mid'(중간점검) / 'vc'(결과 화면 확인) / 'quick'(빠른 모드 승급) */
+function _hardshipRecallCtx() {
+    if (!hardshipState) return '';
+    if (hardshipState.quickReviewStageId) return 'quick';
+    if (hardshipState.verseCheckStageId) return 'vc';
+    if (hardshipState.midBossStageId) return 'mid';
+    if (hardshipState.bossStageId) return 'boss';
+    return 'hs';
+}
+
 function recordVerseRecall(stageId, ok, hints, mode) {
     if (!stageId) return;
     // 집중 훈련은 학습 보조라 증거로 세지 않는다
@@ -23387,6 +23511,14 @@ function recordVerseRecall(stageId, ok, hints, mode) {
     r.lastHints = hints || 0;
     r.hints = (r.hints || 0) + (hints || 0);
     r.lastMode = mode || '';
+
+    /* ★ 어느 콘텐츠에서 나온 기록인가 (2026-09-11 추가).
+       `lastMode`는 'memory'/'learn'/'endurance'뿐이라 **망각의 고난·중간점검·보스전·
+       결과 화면 확인이 전부 'memory'로 뭉뚱그려져** 있었다. 그래서 「첫 힌트 위치」를 봐도
+       그게 어떤 상황의 기록인지 알 수 없었다.
+       특히 망각의 고난은 무작위 고정, 보스전 빈칸·백지는 순서대로 고정이므로
+       **이 표식만으로 '순서의 영향'까지 분리해 볼 수 있다.** */
+    r.lastCtx = _hardshipRecallCtx();
 
     /* ★ 첫 힌트의 위치 — '어디서 막히는가'를 판별하는 유일한 단서. (2026-09-10)
        힌트는 **막힌 지점부터 순서대로** 열리므로(`getHardshipMemoryHintPlan`),
@@ -23773,6 +23905,24 @@ function finishHardshipSession(reason) {
         // 중간점검 빈칸·백지였다면 '다음 중간점검'도 함께
         _attachNextMidBossBtn(resultContinueBtn,
             (reason === 'completed') ? hardshipState.midBossStageId : null);
+
+        /* 체력이 다 떨어져 끝난 순수 망각의 고난이면 물러설 곳을 준다 —
+           방금 벽에 부딪힌 순간이 가장 설득력 있는 시점이다.
+           장이 특정되는 세션(forcedChapter)에서만 띄운다. */
+        const rmEasy = document.getElementById('result-modal');
+        const oldEasy = rmEasy && rmEasy.querySelector('#btn-easier-boss');
+        if (oldEasy) oldEasy.remove();
+        if (reason === 'hearts' && _hardshipRecallCtx() === 'hs'
+            && hardshipState.mode === 'memory' && hardshipState.forcedChapter != null && resultContinueBtn) {
+            const _ch = hardshipState.forcedChapter;
+            const eb = document.createElement('button');
+            eb.id = 'btn-easier-boss';
+            eb.className = 'btn-continue';
+            eb.style.cssText = 'margin-top:8px; background:linear-gradient(135deg,#2980b9,#3498db); box-shadow:0 4px 0 #1f618d; color:#fff;';
+            eb.textContent = `😌 ${_ch}장 보스전(빈칸)으로 →`;
+            eb.onclick = () => goToChapterBossBlank(_ch);
+            resultContinueBtn.insertAdjacentElement('afterend', eb);
+        }
     }
 
     const hsStatLabels = document.getElementById('result-modal').querySelectorAll('.stat-label');

@@ -5982,6 +5982,10 @@ body, html {
     transition: background 0.15s, color 0.15s;
 }
 .bso-btn.active { background: #6c63ff; color: white; }
+/* 빈칸·백지에서는 무작위를 못 고른다 (무작위는 망각의 고난 전용).
+   막힌 버튼도 클릭은 받는다 — 눌러야 이유를 안내할 수 있다는 원칙은 힌트 잠금과 같다.
+   여기서는 아래 설명줄이 항상 보이므로 흐리게만 둔다. */
+.bso-btn.bso-btn-locked { opacity: 0.35; cursor: default; }
 
 /* 난이도 칸의 '지금 너에게 맞음' 표시 — 이름 아래 한 줄.
    버튼은 원래 글자만 들어 있었으므로 세로 정렬로 바꾼다.
@@ -6303,3 +6307,15 @@ body, html {
     display: flex; align-items: center; justify-content: center;
     font-size: 0.62rem; font-weight: 700; color: #ecf0f1;
 }
+
+
+/* 「좀 더 쉬운 단계로」 — 망각의 고난이 백지+무작위 고정이 되면서 생긴 물러설 곳.
+   모드 버튼과 구분되게 테두리만 있는 조용한 형태로 둔다 (권유이지 주된 선택지가 아니다) */
+.hardship-easier-link {
+    display: block; width: 100%; margin-top: 4px;
+    background: none; border: 1px dashed rgba(52, 152, 219, 0.55);
+    color: #2980b9; border-radius: 12px; padding: 10px 12px;
+    font-size: 0.86rem; cursor: pointer; text-align: center;
+}
+.hardship-easier-link b { color: #1f618d; }
+.hardship-easier-link:active { background: rgba(52, 152, 219, 0.08); }
