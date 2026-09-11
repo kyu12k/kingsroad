@@ -150,8 +150,24 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | 암송의 고난(hardshipEndurance) | 9 | × 장 구절 수 |
 | 망각의 고난(hardshipMemory) | 10 | × 장 구절 수 |
 
-중간점검 클리어 시: `checkpointBoss`(일일 첫 클리어만) + `dragon`(항상) 둘 다 호출 — 보스전과 동일 구조.
-즉 `checkpointBoss`/`dragon`은 스테이지 종류가 아니라 **중간점검·보스전 양쪽이 함께 발생시키는 두 대미지 항목**이며, 각각 하루 1회 중복 제거됨(`kingsRoad_raidDailyDmg`).
+### ★ 미션 호출은 둘, 대미지는 하나 (2026-09-11 수정)
+
+보스전·중간점검은 **미션 때문에** `updateMissionProgress`를 두 번 부른다 —
+`checkpointBoss`(일일 미션, `!isAlreadyClearedToday`일 때만) + `dragon`(주간 미션, 항상).
+
+> **그런데 `updateMissionProgress`는 맨 앞에서 무조건 `_addGuildRaidDamage`를 부른다.**
+> 그래서 한 번의 클리어에 **두 항목이 모두 발동**해, 22절 장의 보스를 잡으면
+> (5+7)×22 = **264**가 들어갔다. 의도는 **보스전 7×절 / 중간점검 5×절** 하나씩이다.
+> (이전 문서는 이 이중 발동을 '의도된 구조'라고 적어뒀으나 **잘못된 서술**이었다.)
+
+수정: `_addGuildRaidDamage`에서 **`checkpointBoss`는 대미지를 내지 않고**(미션 전용),
+**`dragon` 한 곳에서 스테이지 종류로 갈라 쓴다** — id에 `-mid-`가 있으면 5×구간절수, 없으면 7×장절수.
+
+> **왜 `dragon`에 매다는가**: 이쪽은 **조건 없이 항상** 호출된다.
+> `checkpointBoss`는 `!isAlreadyClearedToday`(**자정** 경계)일 때만 불리는데
+> 레이드 중복 제거는 **오전 6시** 경계라, 그 사이 구간에서 대미지가 통째로 누락된다.
+
+중복 제거는 `kingsRoad_raidDailyDmg`에 `{dedupId}:{type}`로 하루 1회.
 
 배율은 `_addGuildRaidDamage()`에서 **해당 스테이지의 `targetVerseCount`**(중간점검 = 자기 구간 절수, 보스전 = 장 전체 절수)를 사용.
 고난 4종은 `dedupId`로 **장 번호(숫자)** 를 넘기므로 장 전체 절 수가 적용된다.

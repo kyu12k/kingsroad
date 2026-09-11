@@ -14668,6 +14668,25 @@ let _guildRaidFlushTimer = null;
 
 function _addGuildRaidDamage(type, dedupId) {
     if (!myGuildId) return;
+
+    /* ★ 보스전·중간점검은 **미션 때문에** `checkpointBoss`(일일)와 `dragon`(주간)을 둘 다 부른다.
+       그런데 레이드 대미지는 한 번의 클리어에 **한 항목만** 나가야 한다.
+       그대로 두면 22절 장의 보스를 잡을 때 (5+7)×22 = 264가 들어갔다 — 의도는 7×22 = 154다.
+       (2026-09-11 수정. 이전 CLAUDE.md는 이 이중 발동을 '의도된 구조'로 적어뒀으나 잘못이었다.)
+
+       → `checkpointBoss`는 대미지를 내지 않고, **`dragon` 한 곳에서 스테이지 종류로 갈라 쓴다.**
+         중간점검 = 5 × 구간 절수 / 보스전 = 7 × 장 절수.
+
+       왜 `dragon`에 매다는가: 이쪽은 **조건 없이 항상** 호출된다.
+       `checkpointBoss`는 `!isAlreadyClearedToday`(자정 경계)일 때만 불리는데
+       레이드 중복 제거는 오전 6시 경계라, 그 사이 구간에서 대미지가 통째로 누락된다. */
+    let effType = type;
+    if (type === 'checkpointBoss') return; // 미션 전용 — 대미지는 dragon 쪽에서 한 번만
+    if (type === 'dragon' && typeof dedupId === 'string' && dedupId.includes('-mid-')) {
+        effType = 'checkpointBoss'; // 중간점검 몫 (5 × 구간 절수)
+    }
+    type = effType;
+
     const base = GUILD_RAID_DAMAGE[type];
     if (!base) return;
 
