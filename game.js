@@ -481,6 +481,8 @@ const LANG = {
         hardship_endurance_count: '누적 확인 {n}절째입니다.',
         hardship_feedback_correct: '정답입니다. {label} · +{pts}점',
         hardship_feedback_correct_no_reward: '정답입니다. {label} · 승점 없음',
+        hardship_feedback_correct_scored_today: '정답입니다. {label} · 오늘 이미 받은 승점',
+        hardship_feedback_typo_corrected_scored_today: '오타 보정! 오늘 이미 받은 승점 ({n}글자 오타)',
         hardship_feedback_correct_quick: '정답입니다. {label} · 초성 조립을 건너뜁니다',
         hardship_feedback_wrong_address: '오답입니다. 정답은 {label}입니다.',
         hardship_feedback_wrong_verse: '오답입니다.',
@@ -1255,6 +1257,8 @@ const LANG = {
         hardship_endurance_count: 'Confirmed {n} verse(s) so far.',
         hardship_feedback_correct: 'Correct! {label} · +{pts} pts',
         hardship_feedback_correct_no_reward: 'Correct! {label} · No points',
+        hardship_feedback_correct_scored_today: 'Correct! {label} · Already earned today',
+        hardship_feedback_typo_corrected_scored_today: 'Typo corrected! Already earned today ({n} typo(s))',
         hardship_feedback_correct_quick: 'Correct! {label} · Skipping the word-assembly step',
         hardship_feedback_wrong_address: 'Wrong. The answer is {label}.',
         hardship_feedback_wrong_verse: 'Wrong.',
@@ -23338,22 +23342,39 @@ function getHardshipScoreScale() {
     return 1;
 }
 
-/* 같은 구절의 백지 승점은 하루 한 번만 준다.
-   1구절·3~4절 단위는 반복 진입이 쉬워 그대로 두면 승점 파밍 경로가 된다.
+/* 백지 승점은 **같은 구절을 같은 콘텐츠로** 다시 할 때만 하루 한 번으로 막는다.
+   반복 진입이 쉬운 1구절·3~4절 단위가 그대로면 승점 파밍 경로가 되기 때문.
    기록(verseRecall)은 반복해도 계속 쌓인다 — 막는 것은 승점뿐이다.
-   망각의 고난은 한 장을 통으로 하는 진입 비용이 있어 제한하지 않는다(기존 보상 유지). */
+   망각의 고난은 한 장을 통으로 하는 진입 비용이 있어 제한하지 않는다(기존 보상 유지).
+
+   ★ **콘텐츠를 구분하지 않으면 정상적인 학습 순서를 벌하게 된다.** (2026-09-11 수정)
+   구절을 하나씩 복습하며 결과 화면에서 백지로 확인하고, 그 다음 그 구간의 중간점검을
+   백지로 이어서 하는 것 — 이게 우리가 권하는 순서인데,
+   예전에는 그러면 **중간점검이 반드시 전부 0점**이 됐다. 어뷰징을 막으려다 복습을 막은 셈.
+   같은 중간점검을 두 번 하는 것만 막으면 되고, 다른 콘텐츠는 각자 한 번씩 쳐야 한다. */
+function _blankScoreKind() {
+    if (!hardshipState) return null;
+    if (hardshipState.midBossStageId) return 'mid';   // 중간점검 빈칸·백지
+    if (hardshipState.verseCheckStageId) return 'vc'; // 결과 화면 '백지로 확인해보기'
+    return null; // 망각의 고난·빠른 모드 승급은 제한 없음 (승급은 배율 0이라 무관)
+}
+
 function _blankScoreAlreadyToday(stageId) {
-    if (!stageId || !hardshipState) return false;
-    if (!_isEmbeddedBlankSession()) return false;
+    const kind = _blankScoreKind();
+    if (!stageId || !kind) return false;
     const r = verseRecall[stageId];
-    if (!r || !r.lastScoredAt) return false;
-    return _tsTo6AMDateStr(r.lastScoredAt) === _get6AMDayStr();
+    const at = r && r.scoredBy && r.scoredBy[kind];
+    if (!at) return false;
+    return _tsTo6AMDateStr(at) === _get6AMDayStr();
 }
 
 function _markBlankScored(stageId) {
-    if (!stageId) return;
+    const kind = _blankScoreKind();
+    if (!stageId || !kind) return;
     const r = verseRecall[stageId] || { pass: 0, typedPass: 0, fail: 0, firstPass: 0, lastPass: 0, lastAt: 0, lastOk: false, hints: 0, lastHints: 0, lastMode: '' };
-    r.lastScoredAt = Date.now();
+    if (!r.scoredBy) r.scoredBy = {};
+    r.scoredBy[kind] = Date.now();
+    r.lastScoredAt = r.scoredBy[kind]; // 표시·분석용으로만 남긴다 (판정은 scoredBy가 한다)
     verseRecall[stageId] = r;
 }
 
@@ -23426,9 +23447,12 @@ function submitHardshipMemoryGuess() {
                 ? t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) + ' · 정답'
                 : hardshipState.quickReviewStageId
                     ? t('hardship_feedback_correct_quick', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) })
-                    : (hardshipState.rewardBlocked || earnedPoints <= 0)
+                    : hardshipState.rewardBlocked
                         ? t('hardship_feedback_correct_no_reward', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) })
-                        : t('hardship_feedback_correct', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }), pts: earnedPoints })
+                        // 여기서 0이면 이유는 하나뿐 — 오늘 같은 콘텐츠로 이 구절 승점을 이미 받았다
+                        : (earnedPoints <= 0)
+                            ? t('hardship_feedback_correct_scored_today', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) })
+                            : t('hardship_feedback_correct', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }), pts: earnedPoints })
         };
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
         showCorrectAnswerEffect();
@@ -23479,9 +23503,12 @@ function submitHardshipMemoryGuess() {
             type: 'success',
             message: (hardshipState.trainingMode
                 ? t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) + ' · 오타 보정'
-                : (hardshipState.rewardBlocked || earnedPoints <= 0)
+                : hardshipState.rewardBlocked
                     ? t('hardship_feedback_typo_corrected_no_reward', { n: typoCount })
-                    : t('hardship_feedback_typo_corrected', { pts: earnedPoints, n: typoCount }))
+                    // 0이면 이유는 하나뿐 — 오늘 같은 콘텐츠로 이 구절 승점을 이미 받았다
+                    : (earnedPoints <= 0)
+                        ? t('hardship_feedback_typo_corrected_scored_today', { n: typoCount })
+                        : t('hardship_feedback_typo_corrected', { pts: earnedPoints, n: typoCount }))
                 + `<span class="typo-detail"> (${typoDetail})</span>`
         };
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
