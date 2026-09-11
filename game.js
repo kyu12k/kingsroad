@@ -167,6 +167,8 @@ const LANG = {
         alert_hint_no_gems: '💎 보석이 부족합니다! (필요: {cost})',
         alert_hint_read_aloud: '이 단계에서는 큰 소리로 읽는 것이 정답입니다! 📣',
         alert_hint_load_error: '이 구절의 힌트 데이터를 불러올 수 없습니다.',
+        embed_title_boss_blank: '보스전 · 빈칸',
+        embed_title_boss_none: '보스전 · 백지',
         embed_title_midboss_blank: '중간 점검 · 빈칸',
         embed_title_midboss_none: '중간 점검 · 백지',
         embed_title_verse_check: '백지 확인',
@@ -945,6 +947,8 @@ const LANG = {
         alert_hint_no_gems: '💎 Not enough gems! (Required: {cost})',
         alert_hint_read_aloud: 'At this stage, reading aloud is the correct answer! 📣',
         alert_hint_load_error: 'Could not load hint data for this verse.',
+        embed_title_boss_blank: 'Boss · Blanks',
+        embed_title_boss_none: 'Boss · Blank Page',
         embed_title_midboss_blank: 'Checkpoint · Blanks',
         embed_title_midboss_none: 'Checkpoint · Blank Page',
         embed_title_verse_check: 'Memory Check',
@@ -7431,12 +7435,8 @@ function openBossSetupModal(stage) {
     window._pendingBossStage = stage;
 
     const isMid = String(stage.id).includes('mid');
-    // 중간점검에서 고른 빈칸·백지가 보스전 모달로 새어 들어오지 않게 되돌린다
-    if (!isMid && _isBlankDifficulty(bossDifficultyMode)) bossDifficultyMode = 'hard';
-
-    /* 추천 표시는 중간점검에만 붙인다 — 보스전은 칸이 둘뿐이고 둘 다 단서가 있어
-       "알맞음"을 말할 여지가 거의 없다. 빈칸·백지가 보스전에 생기면 그때 함께 붙인다. */
-    const fitInfo = isMid ? _getMidBossRecallInfo(stage) : null;
+    // 빈칸·백지는 이제 보스전에도 열린다 (2026-09-11) — 되돌리던 코드는 필요 없다
+    const fitInfo = isMid ? _getMidBossRecallInfo(stage) : _getBossRecallInfo(stage);
     const fitTag = (mode) => {
         if (!fitInfo) return '';
         const f = _getDiffFitLabel(mode, fitInfo.tier);
@@ -7446,10 +7446,10 @@ function openBossSetupModal(stage) {
         `<button class="bso-btn${bossDifficultyMode===mode?' active':''}" id="bso-${mode}" onclick="setBossSetupOpt('difficulty','${mode}')">` +
         `<span class="bso-name">${label}</span>${fitTag(mode)}</button>`;
 
-    const blankBtns = isMid ? btn('blank', '빈칸') + btn('none', '백지') : '';
+    const blankBtns = btn('blank', '빈칸') + btn('none', '백지');
     // 근거를 한 줄로 밝힌다 — 라벨만 있으면 마법처럼 보이고, 무엇을 하면 등급이 오르는지도 안 보인다
     const fitNote = fitInfo
-        ? `<div class="bso-fit-note">이 구간 ${fitInfo.total}절 중 <b>${fitInfo.written}절</b>을 백지로 써봤어요</div>`
+        ? `<div class="bso-fit-note">${isMid ? '이 구간' : '이 장'} ${fitInfo.total}절 중 <b>${fitInfo.written}절</b>을 백지로 써봤어요</div>`
         : '';
     const overlay = document.createElement('div');
     overlay.id = 'boss-setup-modal';
@@ -7491,9 +7491,10 @@ function _getBossDiffDesc() {
     }
 }
 
-/* 빈칸·백지는 단어 버튼이 아니라 타이핑이라 중간점검(3~4절)에서만 연다.
-   보스전은 한 장 전체(최대 29절)라 타이핑으로는 부담이 너무 크고,
-   그 규모는 망각의 고난이 이미 담당한다. */
+/* 빈칸·백지는 단어 버튼이 아니라 타이핑이다. 중간점검(3~4절)과 보스전(한 장) 양쪽에 있다.
+   한때 "보스전은 최대 29절이라 타이핑 부담이 크다"고 보스전에서 뺐으나,
+   망각의 고난이 이미 같은 29절을 타이핑시키고 있어(32명·정답률 96.5%) 근거가 성립하지 않았다.
+   2026-09-11에 이어하기를 먼저 넣고 열었다. */
 function _isBlankDifficulty(mode) {
     return mode === 'blank' || mode === 'none';
 }
@@ -7522,7 +7523,8 @@ function confirmBossSetup() {
     if (!stage) return;
     // 빈칸·백지는 보스전 화면 대신 망각의 고난 엔진을 그대로 쓴다 (타이핑 UI·힌트·기록 전부 재사용)
     if (_isBlankDifficulty(bossDifficultyMode)) {
-        _startMidBossBlank(stage, bossDifficultyMode === 'none');
+        if (String(stage.id).includes('mid')) _startMidBossBlank(stage, bossDifficultyMode === 'none');
+        else _startBossBlank(stage, bossDifficultyMode === 'none');
         return;
     }
     startBossBattle(stage.targetVerseCount);
@@ -7589,6 +7591,28 @@ function _getMidBossRecallInfo(stage) {
     return { tier: tier, total: ids.length, written: written };
 }
 
+/* 보스전(한 장)은 **비율**로 판정한다 — 최솟값을 쓰면 29절 중 하나만 약해도 영원히 0에 머물러
+   표시가 무의미해진다. 중간점검(3~4절)은 반대로 한 절이 전체를 막으므로 최솟값이 맞다. */
+function _getBossRecallInfo(stage) {
+    const chNum = parseInt(String(stage.id).split('-')[0], 10);
+    const chData = (typeof gameData !== 'undefined') ? gameData.find(c => c.id === chNum) : null;
+    if (!chData) return null;
+    const ids = chData.stages.map(s => String(s.id)).filter(id => /^\d+-\d+$/.test(id));
+    if (!ids.length) return null;
+
+    let written = 0, solid = 0;
+    ids.forEach(id => {
+        const t = _getVerseRecallTier(id);
+        if (t >= 1) written += 1;
+        if (t >= 2) solid += 1;
+    });
+    // 8할이 힌트 없이 나오면 백지, 절반이 백지에서 나오면 빈칸, 그 아래는 초성
+    let tier = 0;
+    if (solid / ids.length >= 0.8) tier = 2;
+    else if (written / ids.length >= 0.5) tier = 1;
+    return { tier: tier, total: ids.length, written: written };
+}
+
 /* 난이도 칸의 순서 = 요구하는 인출의 강도 순. 추천 지점은 `등급 + 1`이다.
    등급 0(한 절이라도 백지로 못 씀) → 어려움 / 1 → 빈칸 / 2 → 백지 */
 const BSO_DIFF_ORDER = ['normal', 'hard', 'blank', 'none'];
@@ -7642,6 +7666,35 @@ function _startVerseBlankCheck(stageId) {
         isLearn: isFirstLearn
     };
     startHardshipSession('memory', [sId]);
+}
+
+/* 보스전 빈칸·백지 (2026-09-11) — 그 장의 구절 전체로 망각의 고난 세션을 연다.
+
+   예전에는 "한 장 최대 29절이라 타이핑 부담이 크다"는 이유로 중간점검에만 열어뒀는데,
+   **망각의 고난이 이미 똑같은 29절을 타이핑시키고 있다**(32명이 하고 정답률 96.5%).
+   부담이 진짜 이유였다면 고난도 아무도 못 했을 것이다. 근거가 무너져 열었다.
+   전제조건이던 이어하기는 먼저 넣었다 — 16분짜리가 전화 한 통에 사라지면 안 된다. */
+function _startBossBlank(stage, ultimate) {
+    const chNum = parseInt(String(stage.id).split('-')[0], 10);
+    const chData = (typeof gameData !== 'undefined') ? gameData.find(c => c.id === chNum) : null;
+    if (!chData) return;
+
+    const verseIds = chData.stages
+        .map(s => String(s.id))
+        .filter(id => /^\d+-\d+$/.test(id));
+    if (verseIds.length === 0) return;
+
+    window.currentStageId = stage.id;
+    window.hardshipOrigin = 'map';
+    selectedHardshipOrderType = (bossOrderMode === 'random') ? 'random' : 'sequential';
+    selectedHardshipUltimate = !!ultimate;
+
+    _pendingHardshipEmbed = {
+        label: t(ultimate ? 'embed_title_boss_none' : 'embed_title_boss_blank'),
+        bossStageId: stage.id
+    };
+    // forcedChapter는 넘기지 않는다 — 넘기면 장 단위 세션으로 취급돼 망각의 고난 히스토리에 섞인다
+    startHardshipSession('memory', verseIds);
 }
 
 /* 중간점검 빈칸·백지 — 그 구간의 구절들로 망각의 고난 세션을 연다.
@@ -21050,6 +21103,7 @@ function createEmptyHardshipState() {
         currentVerseTranscript: '',
         showInfo: false,
         ultimateMemoryMode: false,
+        bossStageId: null,      // 보스전 빈칸·백지로 열린 세션이면 그 스테이지 id
         midBossStageId: null,   // 중간점검 빈칸·백지로 열린 세션이면 그 스테이지 id
         verseCheckStageId: null, // 결과 화면의 '백지로 확인해보기'로 열린 1구절 세션
         quickReviewStageId: null, // 빠른 모드 백지 승급으로 열린 1구절 세션 (끝나면 훈련으로 복귀)
@@ -21653,6 +21707,8 @@ function _isResumableHardshipSession() {
         //   진입 직전에 세워지는 window.hardshipOrigin으로 함께 막는다.
         && !hardshipState.trainingMode
         && window.hardshipOrigin !== 'training'
+        // 보스전 빈칸·백지(bossStageId)는 **허용한다** — 최대 29절·16분짜리라 이어하기가 가장 필요한 곳이고,
+        // 후속 흐름(stageClear)은 'completed'에서만 돌아 중간 복원과 충돌하지 않는다.
         && !hardshipState.midBossStageId
         && !hardshipState.verseCheckStageId
         && !hardshipState.quickReviewStageId);
@@ -21679,9 +21735,17 @@ function _writeHardshipCheckpoints(list) {
     } catch (e) { /* 용량 초과 등은 조용히 무시 — 이어하기는 부가 기능이다 */ }
 }
 
-/* 같은 묶음인가 — 순서는 다를 수 있으므로(무작위) 구절 집합으로 판단한다 */
-function _sameHardshipRange(entry, mode, verseIds) {
+/* 같은 세션인가 — 순서는 다를 수 있으므로(무작위) 구절 **집합**으로 판단한다.
+   ★ `kind`도 함께 본다. 보스전 백지와 그 장의 망각의 고난은 **구절 묶음이 완전히 같아서**,
+   kind가 없으면 망각의 고난을 하다 나간 진행이 보스전 백지로 이어져 버린다.
+   내용은 같아도 끝난 뒤 처리(보스전은 stageClear로 장 전체를 복습 처리)가 다르다. */
+function _hardshipCkptKind() {
+    return (hardshipState && hardshipState.bossStageId) ? ('boss:' + hardshipState.bossStageId) : 'free';
+}
+
+function _sameHardshipRange(entry, mode, verseIds, kind) {
     return !!(entry && entry.mode === mode
+        && (entry.kind || 'free') === (kind || 'free')
         && Array.isArray(entry.queue) && entry.queue.length === verseIds.length
         && entry.queue.slice().sort().join(',') === verseIds.slice().sort().join(','));
 }
@@ -21692,6 +21756,7 @@ function _saveHardshipCheckpoint() {
     try {
         const entry = ({
             mode: hardshipState.mode,
+            kind: _hardshipCkptKind(),
             queue: hardshipState.queue,          // 무작위 순서도 그대로 살린다
             /* ★ `cursor - 1`을 저장한다. 체크포인트는 구절을 **띄우는 순간** 찍히므로
                `cursor`는 '화면에 떠 있는(아직 안 끝낸) 구절'까지 센 값이다.
@@ -21716,7 +21781,7 @@ function _saveHardshipCheckpoint() {
         });
         // 같은 범위의 옛 기록은 밀어내고 맨 뒤에 붙인다 (오래된 것부터 밀려난다)
         const list = _readHardshipCheckpoints()
-            .filter(e => !_sameHardshipRange(e, entry.mode, entry.queue));
+            .filter(e => !_sameHardshipRange(e, entry.mode, entry.queue, entry.kind));
         list.push(entry);
         _writeHardshipCheckpoints(list);
     } catch (e) { /* 용량 초과 등은 조용히 무시 — 이어하기는 부가 기능이다 */ }
@@ -21726,14 +21791,14 @@ function _saveHardshipCheckpoint() {
 function _clearHardshipCheckpoint() {
     if (!hardshipState || !Array.isArray(hardshipState.queue) || !hardshipState.queue.length) return;
     const list = _readHardshipCheckpoints()
-        .filter(e => !_sameHardshipRange(e, hardshipState.mode, hardshipState.queue));
+        .filter(e => !_sameHardshipRange(e, hardshipState.mode, hardshipState.queue, _hardshipCkptKind()));
     _writeHardshipCheckpoints(list);
 }
 
 /* 저장된 세션이 지금 시작하려는 것과 같은가. 같으면 **꺼내면서 지운다**(두 번 쓰이지 않게). */
 function _takeHardshipResume(mode, verseIds) {
     const list = _readHardshipCheckpoints();
-    const idx = list.findIndex(e => _sameHardshipRange(e, mode, verseIds));
+    const idx = list.findIndex(e => _sameHardshipRange(e, mode, verseIds, _hardshipCkptKind()));
     if (idx === -1) return null;
     const saved = list[idx];
     if (!(saved.cursor > 0) || saved.cursor >= saved.queue.length) return null; // 시작 전이거나 이미 끝난 것
@@ -21759,6 +21824,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
     const embed = _pendingHardshipEmbed;
     _pendingHardshipEmbed = null;
     if (embed) {
+        hardshipState.bossStageId = embed.bossStageId || null;
         hardshipState.midBossStageId = embed.midBossStageId || null;
         hardshipState.verseCheckStageId = embed.verseCheckStageId || null;
         hardshipState.quickReviewStageId = embed.quickReviewStageId || null;
@@ -22810,6 +22876,7 @@ function armHardshipHintNudge() {
 function _isEmbeddedBlankSession() {
     return !!(hardshipState && (hardshipState.verseCheckStageId ||
                                 hardshipState.midBossStageId ||
+                                hardshipState.bossStageId ||
                                 hardshipState.quickReviewStageId));
 }
 
@@ -23339,6 +23406,8 @@ function getHardshipScoreScale() {
     if (hardshipState.quickReviewStageId) return 0;
     if (hardshipState.verseCheckStageId) return 0.25;
     if (hardshipState.midBossStageId) return 0.5;
+    // 보스전 빈칸·백지는 **한 장 전체**라 망각의 고난과 분량·위험이 같다 → 깎지 않는다
+    if (hardshipState.bossStageId) return 1;
     return 1;
 }
 
@@ -23355,6 +23424,7 @@ function getHardshipScoreScale() {
 function _blankScoreKind() {
     if (!hardshipState) return null;
     if (hardshipState.midBossStageId) return 'mid';   // 중간점검 빈칸·백지
+    if (hardshipState.bossStageId) return 'boss';     // 보스전 빈칸·백지
     if (hardshipState.verseCheckStageId) return 'vc'; // 결과 화면 '백지로 확인해보기'
     return null; // 망각의 고난·빠른 모드 승급은 제한 없음 (승급은 배율 0이라 무관)
 }
@@ -23576,12 +23646,13 @@ function finishHardshipSession(reason) {
     // ★ 중간점검 빈칸·백지 세션을 끝냈다면 중간점검 클리어로 이어붙인다.
     // stageClear는 화면을 그리지 않고 보석·미션·레이드 대미지·복습 스텝만 처리하므로,
     // 아래에서 그려지는 고난 결과 화면과 충돌하지 않는다. (클리어 alert만 억제)
-    if (reason === 'completed' && hardshipState.midBossStageId) {
-        window.currentStageId = hardshipState.midBossStageId;
+    if (reason === 'completed' && (hardshipState.midBossStageId || hardshipState.bossStageId)) {
+        const _isBoss = !!hardshipState.bossStageId;
+        window.currentStageId = _isBoss ? hardshipState.bossStageId : hardshipState.midBossStageId;
         window._suppressClearAlert = true;
         window._midBossBlankClear = true;   // 승점 이중 지급 차단 (고난 쪽에서 이미 지급됨)
         try {
-            stageClear('mid-boss', 1);
+            stageClear(_isBoss ? 'boss' : 'mid-boss', 1);
         } finally {
             window._suppressClearAlert = false;
             window._midBossBlankClear = false;
