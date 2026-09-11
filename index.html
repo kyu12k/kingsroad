@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
     <!-- image_0.webp is inlined below; preload removed -->
-    <link rel="stylesheet" href="style.css?v=20260911g">
+    <link rel="stylesheet" href="style.css?v=20260911h">
 
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-TEVW49QB45"></script>
@@ -790,6 +790,60 @@
             </div>
             <script>
                 const NOTICES = [
+                    {
+                        date: '2026-09-11',
+                        type: 'patch',
+                        title: '보스전에서도 백지로 · 망각의 고난은 더 고난답게',
+                        titleEn: 'Blank Mode in Boss Battles · A Harder Trial of Forgetting',
+                        content: `
+<div style="padding:4px 0; line-height:1.8;">
+  <p style="color:#555; margin-bottom:14px;"><strong>보스전 난이도가 네 칸이 되었습니다.</strong> 단어 → 초성에 더해 <strong>빈칸</strong>(글자 칸만 보고 입력)과 <strong>백지</strong>(아무 단서 없이 입력)로도 도전할 수 있습니다.</p>
+  <p style="color:#555; margin-bottom:14px;">난이도마다 <strong>지금 나에게 맞는지</strong>를 함께 보여드립니다. 그 구간에서 백지로 써낸 구절이 몇 개인지에 따라 😌 쉬움 · ⭐ 알맞음 · 🔥 도전 · 🔒 아직 일러요로 표시됩니다. <em>표시일 뿐이니 어느 것이든 고르실 수 있습니다.</em></p>
+  <p style="color:#555; margin-bottom:14px;"><strong>망각의 고난은 백지 + 무작위 순서로 고정</strong>됩니다. 보스전과 난이도가 겹치지 않도록 가장 어려운 형태만 남겼습니다. 순서 선택 창은 사라집니다.</p>
+  <div style="background:#f4f6f7; border-radius:12px; padding:12px 14px; margin-bottom:14px;">
+    <p style="color:#555; margin:0 0 8px; font-weight:bold;">💎 승점은 그대로입니다</p>
+    <p style="color:#666; font-size:0.92em; margin:0;">기존에 <strong>순서대로 · 글자 칸</strong>으로 하시던 분은 <strong>보스전 빈칸</strong>에서 같은 승점을 받으시고, <strong>순서대로 · 백지</strong>로 하시던 분은 <strong>보스전 백지</strong>에서 같은 승점을 받으십니다. 여기에 <strong>그 장의 복습 처리와 보석</strong>이 더해집니다.</p>
+    <p style="color:#666; font-size:0.92em; margin:8px 0 0;">망각의 고난에 남으시면 승점이 <strong>두 배</strong>가 됩니다.</p>
+  </div>
+  <p style="color:#555; margin-bottom:14px;">망각의 고난이 버거우실 때를 위해 <strong>「아직 어려우세요? N장 보스전으로 →」</strong> 안내를 두었습니다. 장별 고난 화면과, 체력이 다 떨어진 결과 화면에서 보실 수 있습니다.</p>
+  <p style="color:#555; margin-bottom:0;"><strong>틀린 글자 표시가 바로 뜨지 않습니다.</strong> 세 칸을 더 지나갈 때까지 고치지 않으시면 그때 빨갛게 표시됩니다. 띄어쓰기 자리도 마찬가지입니다. 한 글자씩 눌러보며 단어 길이를 짐작하지 못하도록 한 것이며, 진짜 오타는 세 글자 안에 알아채실 수 있습니다.</p>
+</div>`,
+                        contentEn: `
+<div style="padding:4px 0; line-height:1.8;">
+  <p style="color:#555; margin-bottom:14px;"><strong>Boss battles now have four difficulty levels.</strong> Along with Words and Initials, you can take on <strong>Blanks</strong> (character slots only) and <strong>Blank Page</strong> (no cues at all).</p>
+  <p style="color:#555; margin-bottom:14px;">Each level now shows <strong>whether it suits you right now</strong> — 😌 Easy · ⭐ Just right · 🔥 Challenge · 🔒 Not yet — based on how many verses in that range you have written from blank. <em>It is only a label; you may pick any of them.</em></p>
+  <p style="color:#555; margin-bottom:14px;">The <strong>Trial of Forgetting is now fixed to Blank Page + random order</strong>, so it no longer overlaps with boss battles. The order selection screen is gone.</p>
+  <div style="background:#f4f6f7; border-radius:12px; padding:12px 14px; margin-bottom:14px;">
+    <p style="color:#555; margin:0 0 8px; font-weight:bold;">💎 Your score stays the same</p>
+    <p style="color:#666; font-size:0.92em; margin:0;">If you played <strong>in order with character slots</strong>, <strong>Boss · Blanks</strong> pays the same. If you played <strong>in order on a blank page</strong>, <strong>Boss · Blank Page</strong> pays the same — plus review progress and gems for the whole chapter.</p>
+    <p style="color:#666; font-size:0.92em; margin:8px 0 0;">Staying with the Trial of Forgetting now pays <strong>double</strong>.</p>
+  </div>
+  <p style="color:#555; margin-bottom:14px;">If the Trial feels too hard, a link — <strong>"Too hard? Try Chapter N's boss battle →"</strong> — appears on the chapter trial screen and on the result screen when you run out of hearts.</p>
+  <p style="color:#555; margin-bottom:0;"><strong>Mistakes no longer turn red immediately.</strong> They are marked once you move three slots past them without fixing them — spaces included. This prevents probing letter by letter to guess word lengths, while real typos still surface within three characters.</p>
+</div>`,
+                    },
+                    {
+                        date: '2026-09-11',
+                        type: 'patch',
+                        title: '이어하기 · 힌트 버튼 · 승점 중복 정리',
+                        titleEn: 'Resume · Hint Button · Score Fixes',
+                        content: `
+<div style="padding:4px 0; line-height:1.8;">
+  <p style="color:#555; margin-bottom:14px;"><strong>고난을 중간에 나가셔도 이어서 하실 수 있습니다.</strong> 한 장을 통으로 하면 15분이 넘게 걸리는데, 그동안은 전화 한 통에 처음부터 다시 해야 했습니다. 같은 범위로 다시 들어오시면 풀던 자리부터, 체력과 승점까지 그대로 이어집니다. 여러 장을 동시에 벌여두셔도 됩니다.</p>
+  <p style="color:#555; margin-bottom:14px;"><strong>힌트 버튼이 화면을 따라다닙니다.</strong> 키보드가 올라오면 그 위에, 내려가면 입력 버튼 위에 놓입니다. 그동안은 위쪽에 고정되어 있어 타이핑 중에는 보이지 않았습니다.</p>
+  <p style="color:#555; margin-bottom:14px;"><strong>「저장되었습니다」 같은 알림이 버튼을 막지 않습니다.</strong> 알림이 떠 있는 동안 그 아래 초성·낱말 버튼이 눌리지 않던 문제를 고쳤습니다.</p>
+  <p style="color:#555; margin-bottom:14px;"><strong>백지 승점이 부당하게 0이 되던 문제를 고쳤습니다.</strong> 구절을 하나씩 복습하며 백지로 확인하신 뒤 그 구간의 중간점검을 백지로 이어서 하시면, 그동안은 중간점검 승점이 전부 0이었습니다. 이제 다른 활동이면 각각 받으십니다. <em>같은 것을 반복하실 때만 하루 한 번으로 제한됩니다.</em></p>
+  <p style="color:#e67e22; font-size:0.93em; margin-bottom:0;">📌 길드 레이드 대미지가 <strong>보스전·중간점검에서 두 번 들어가던 문제</strong>를 바로잡았습니다. 이제 설계대로 보스전은 절당 7, 중간점검은 절당 5만 들어갑니다. 그동안 실제보다 높게 반영되어 있었습니다.</p>
+</div>`,
+                        contentEn: `
+<div style="padding:4px 0; line-height:1.8;">
+  <p style="color:#555; margin-bottom:14px;"><strong>You can now resume a trial you left partway.</strong> A full chapter takes over 15 minutes, and until now a single phone call meant starting over. Re-enter the same range and you continue where you stopped, with hearts and score intact. Several chapters can be left in progress at once.</p>
+  <p style="color:#555; margin-bottom:14px;"><strong>The hint button now follows the screen</strong> — just above the keyboard when it is open, above the input buttons when it is closed. It used to be pinned at the top, out of sight while typing.</p>
+  <p style="color:#555; margin-bottom:14px;"><strong>Toasts like "Saved" no longer block buttons</strong> underneath them.</p>
+  <p style="color:#555; margin-bottom:14px;"><strong>Fixed blank-writing scores being zeroed unfairly.</strong> If you reviewed verses one by one with a blank check and then did that range's checkpoint on blank, the checkpoint used to award nothing. Different activities now each award once. <em>The daily limit applies only to repeating the same one.</em></p>
+  <p style="color:#e67e22; font-size:0.93em; margin-bottom:0;">📌 Guild raid damage was <strong>counted twice</strong> on boss battles and checkpoints. It is now as designed — 7 per verse for bosses, 5 per verse for checkpoints. Previously it was higher than intended.</p>
+</div>`,
+                    },
                     {
                         date: '2026-09-08',
                         type: 'notice',
@@ -2890,7 +2944,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="bible_en.js"></script>
-    <script src="game.js?v=20260911g"></script>
+    <script src="game.js?v=20260911h"></script>
     <script>
 
         /* =========================================
