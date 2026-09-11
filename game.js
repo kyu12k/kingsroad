@@ -22821,28 +22821,10 @@ function renderHardshipMemoryVerse() {
         const validSlotIndex = getHardshipValidSlotIndexByVerseIndex(index);
         const isWrong = hardshipState.wrongSlots && hardshipState.wrongSlots.indexOf(index) !== -1;
 
-        /* ★ 오답 표시는 **3칸 지나간 뒤에만** 켠다. (2026-09-11)
-
-           예전에는 띄어쓰기 자리에 글자를 넣으면 그 칸이 **즉시** 빨개졌다.
-           그러면 한 글자씩 찍어보며 지우기만 해도 단어 경계가 다 드러나고,
-           곧 각 단어의 글자 수를 셀 수 있다 — **궁극의 암기가 감추려던 바로 그 단서다.**
-
-           3칸을 유예하면 탐색 비용이 '치고 확인하고 지우기' 한 번에서
-           **네 번 치고 네 번 지우기**로 뛰어 실질적으로 쓸 수 없게 된다.
-           동시에 **진짜 오타는 3글자 안에 잡혀** 40글자를 밀린 채 다 쓰는 참사가 없다
-           (입력이 칸을 순서대로 채우는 구조라 한 칸 어긋나면 뒤가 전부 밀린다).
-
-           띄어쓰기만이 아니라 **모든 오답**에 적용한다 — 예전에는 띄어쓰기만 실시간이고
-           나머지는 제출할 때까지 몰랐는데, 그 비대칭이 오히려 띄어쓰기 탐색을 값싸게 만들었다. */
-        const _wrongGapOk = (() => {
-            if (isHintRevealed || !currentValue) return false;
-            if (hardshipCharsMatch(currentValue, character)) return false;
-            if (validSlotIndex < 0) return false;
-            // 다 채웠으면(-1) 커서가 끝에 있는 것으로 본다
-            const cursor = (activeValidSlotIndex < 0) ? getHardshipInputTargetCount() : activeValidSlotIndex;
-            return (cursor - validSlotIndex) >= WRONG_REVEAL_GAP;
-        })();
-        const isSpaceWrong = _wrongGapOk;
+        // 오답 표시는 3칸 유예 — 규칙은 _shouldRevealWrong() 한 곳에만 있다
+        const _cursor = (activeValidSlotIndex < 0) ? getHardshipInputTargetCount() : activeValidSlotIndex;
+        const isSpaceWrong = !isHintRevealed
+            && _shouldRevealWrong(currentValue, character, validSlotIndex, _cursor);
         const slotClasses = [
             'char-slot',
             'hardship-char-slot',
@@ -22989,8 +22971,26 @@ function ensureHardshipHintFabListeners() {
 /* 유휴 안내 — 일정 시간 입력이 없으면 힌트 버튼을 은은하게 맥동시킨다.
    백지 앞에서 막힌 사람이 '힌트가 있는 줄 모르고' 그만두는 것을 막는 게 목적이다.
    입력이 있을 때마다 다시 건다 — 중간에 막히는 경우도 잡기 위해. */
-/* 오답을 빨갛게 보여주기까지 지나가야 하는 칸 수 (renderHardshipMemoryVerse 주석 참고) */
+/* 오답을 빨갛게 보여주기까지 지나가야 하는 칸 수 (_shouldRevealWrong 주석 참고) */
 const WRONG_REVEAL_GAP = 3;
+
+/* ★ 오답을 지금 드러낼 것인가 — **렌더와 키입력 갱신이 반드시 같은 규칙을 써야 한다.**
+   예전에는 이 판정이 `renderHardshipMemoryVerse()`와 `updateHardshipMemoryBoard()`에
+   **각자 복사본으로** 들어 있었다. 그래서 렌더 쪽만 고쳐 배포했더니
+   매 키 입력마다 도는 `updateHardshipMemoryBoard()`가 옛 규칙으로 도로 덮어썼고,
+   심지어 else 가지에서 `wrong`을 제거해 렌더가 붙인 표시까지 지웠다.
+   (2026-09-11: 그래서 한 함수로 뽑았다. 새 호출처가 생겨도 여기만 쓸 것.)
+
+   규칙: 틀린 글자는 **커서가 3칸 지나간 뒤에야** 빨개진다.
+   즉시 보여주면 한 글자씩 찍어보며 지우는 것만으로 단어 경계와 글자 수를 역산할 수 있는데,
+   그건 궁극의 암기가 감추려던 바로 그 단서다. 3칸 유예는 그 비용을 네 배로 올리면서
+   진짜 오타는 3글자 안에 잡아준다(칸을 순서대로 채우는 구조라 한 칸 밀리면 뒤가 전부 밀린다). */
+function _shouldRevealWrong(typedChar, answerChar, slotIndex, cursorIndex) {
+    if (!typedChar || !answerChar) return false;
+    if (hardshipCharsMatch(typedChar, answerChar)) return false;
+    if (slotIndex < 0) return false;
+    return (cursorIndex - slotIndex) >= WRONG_REVEAL_GAP;
+}
 
 const HARDSHIP_HINT_NUDGE_MS = 8000;
 function armHardshipHintNudge() {
@@ -23223,12 +23223,14 @@ function updateHardshipMemoryBoard() {
         }
         slot.classList.remove('active');
 
+        // ★ 렌더와 **같은 규칙**을 써야 한다 (_shouldRevealWrong 주석 참고).
+        //   slots는 .is-valid만 모은 것이라 index가 곧 입력 칸 순번이고, text.length가 커서다.
         const verseIndex = parseInt(slot.dataset.index, 10);
-        if (!isNaN(verseIndex) && activeText.charAt(verseIndex) === ' ' && charValue !== '' && charValue !== ' ') {
-            slot.classList.add('wrong');
-        } else {
-            slot.classList.remove('wrong');
-        }
+        const answerChar = isNaN(verseIndex) ? '' : activeText.charAt(verseIndex);
+        const submittedWrong = Array.isArray(hardshipState.wrongSlots)
+            && hardshipState.wrongSlots.indexOf(verseIndex) !== -1;
+        slot.classList.toggle('wrong',
+            submittedWrong || _shouldRevealWrong(charValue, answerChar, index, text.length));
     });
 
     if (text.length < slots.length && slots[text.length]) {

@@ -459,6 +459,13 @@ reviewSamples = [ { s: '13-8', c: 2, ms: 41300, at: 1781... }, ... ]  // 최근 
 **띄어쓰기만이 아니라 모든 오답에 적용한다.** 예전의 비대칭(띄어쓰기만 실시간)이
 오히려 띄어쓰기 탐색을 값싸게 만들었다.
 
+> ★ **판정은 `_shouldRevealWrong()` 한 곳에만 둔다.**
+> 이 규칙은 원래 `renderHardshipMemoryVerse()`와 `updateHardshipMemoryBoard()`에
+> **각자 복사본으로** 들어 있었다. 그래서 렌더 쪽만 고쳐 배포했더니
+> **매 키 입력마다 도는 `updateHardshipMemoryBoard()`가 옛 규칙으로 도로 덮어썼고**,
+> else 가지에서 `wrong`을 제거해 렌더가 붙인 표시까지 지웠다 —
+> 화면에는 예전과 똑같이 띄어쓰기만 빨갛게 나왔다. 새 호출처가 생겨도 반드시 이 함수를 쓸 것.
+
 ### 측정 — `verseRecall[].lastCtx`
 
 `lastMode`가 `'memory'/'learn'/'endurance'`뿐이라 **망각의 고난·중간점검·보스전·결과 화면 확인이
