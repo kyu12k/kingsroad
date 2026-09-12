@@ -8805,7 +8805,7 @@ function updateBattleUI() {
         // 베타(밭): 배율은 세션 중 불변이라 '현재/최대'도 떡·방패도 없다. 🌾 밭 N 하나.
         heartDisplay.innerHTML = _BETA ? `
             <div style="display:flex; align-items:center; justify-content:center;">
-                <span style="font-size:1.2rem;">🌾</span>
+                <span style="font-size:1.2rem;">${_fieldIcon(maxPlayerHearts)}</span>
                 <span id="player-hearts" style="font-weight:bold; margin-left:5px;">${maxPlayerHearts}</span>
             </div>
         ` : `
@@ -8829,7 +8829,7 @@ function updateBattleUI() {
 
             // ★ 핵심: 갱신할 때 id="training-hearts"를 반드시 다시 적어줘야 다음에도 찾을 수 있습니다.
             parent.innerHTML = _BETA ? `
-                🌾 <span id="training-hearts" style="margin-left:5px; font-weight:bold; color:#2c3e50;">${maxPlayerHearts}</span>
+                ${_fieldIcon(maxPlayerHearts)} <span id="training-hearts" style="margin-left:5px; font-weight:bold; color:#2c3e50;">${maxPlayerHearts}</span>
             ` : `
                 ${heartIcon} <span id="training-hearts" style="margin-left:5px; font-weight:bold; color:#2c3e50;">${playerHearts}</span>
                 <span class="hardship-life-bread-btn" onclick="event.stopPropagation(); useBattleItem('lifeBread')" style="margin-left:6px;">🍞 <span style="margin-left:4px; font-weight:bold; color:#111;">${lifeBreadCnt}</span></span>
@@ -10040,7 +10040,7 @@ function updateGemDisplay() {
     const _fieldCost = (purchasedMaxHearts - 4) * 3000;
     const _canGrow = purchasedMaxHearts < 100 && myGems >= _fieldCost;
     const resourceHtml = _BETA
-        ? `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> <span id="field-chip" class="field-chip${_canGrow ? ' can-grow' : ''}" onclick="openFieldScreen()">🌾 ${t('field_label')} ${maxPlayerHearts}</span>`
+        ? `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> <span id="field-chip" class="field-chip${_canGrow ? ' can-grow' : ''}" onclick="openFieldScreen()">${_fieldIcon(maxPlayerHearts)} ${t('field_label')} ${maxPlayerHearts}</span>`
         : `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> 🍞 ${lifeBreadCnt}${shieldMapPart} <span style="opacity:0.3; margin:0 3px;">|</span> ❤️ ${maxPlayerHearts}`;
 
     // 5. [맵 화면] 헤더 업데이트 (ID로 안전하게 찾기)
@@ -11959,6 +11959,21 @@ const FIELD_MILESTONES = [
     { at: 60,  key: 'field_ms_60' },
     { at: 100, key: 'field_ms_100' }
 ];
+/* 외형 — 자라는 씨의 비유(막 4:28) "처음에는 싹이요 다음에는 이삭이요 그 다음에는 충실한 곡식".
+   이정표를 지나면 아이콘이 자란다. 헤더·밭 화면·랭킹 배지가 전부 이 함수를 쓴다. */
+function _fieldIcon(level) {
+    if (level >= 60) return '🌾';   // 충실한 곡식
+    if (level >= 30) return '🌿';   // 이삭
+    return '🌱';                    // 싹
+}
+
+/* 랭킹·프로필의 이름 옆 배지. 이정표를 지나야 붙는다 (30 미만은 아무것도 없음) */
+function _fieldBadgeHtml(level) {
+    const cur = _fieldCurrentTitle(level || 0);
+    if (!cur) return '';
+    return `<span class="field-badge">${_fieldIcon(level)} ${t(cur.key)}</span>`;
+}
+
 function _fieldNextMilestone(level) {
     return FIELD_MILESTONES.find(m => level < m.at) || null;
 }
@@ -11985,7 +12000,7 @@ function openFieldScreen() {
     overlay.style.zIndex = '9998';
     overlay.innerHTML = `
         <div class="result-card" style="max-width:340px; background:#fff; color:#2c3e50; text-align:center; padding-bottom:22px;">
-            <div style="font-size:2.8rem; line-height:1; margin-bottom:6px;">🌾</div>
+            <div style="font-size:2.8rem; line-height:1; margin-bottom:6px;">${_fieldIcon(maxPlayerHearts)}</div>
             <div style="font-size:1.6rem; font-weight:800; margin-bottom:2px;">${t('field_label')} ${maxPlayerHearts}</div>
             ${title ? `<div style="color:#e67e22; font-weight:700; font-size:0.9rem; margin-bottom:10px;">${t(title.key)}</div>` : '<div style="margin-bottom:10px;"></div>'}
             <p style="color:#7f8c8d; font-size:0.88rem; line-height:1.6; margin:0 0 14px;">${t('field_desc')}</p>
@@ -14070,6 +14085,7 @@ function loadTribeLeaderboard(tribeId, callback) {
                     dept: row.dept !== undefined ? row.dept : 0,
                     tag: row.tag || "",
                     castle: row.castle || 0,
+                    field: row.field || 0,   // 서버 스냅샷이 실어준 밭 (없으면 0 → 배지 없음)
                     isMe: ((row.name === myNickname || row.nickname === myNickname) && row.tag === myTag)
                 };
             });
@@ -14129,6 +14145,7 @@ function loadZionLeaderboard(callback) {
                     dept: row.dept !== undefined ? row.dept : 0,
                     tag: row.tag || "",
                     castle: row.castle || 0,
+                    field: row.field || 0,   // 서버 스냅샷이 실어준 밭 (없으면 0 → 배지 없음)
                     isMe: ((row.name === myNickname || row.nickname === myNickname) && row.tag === myTag)
                 };
             });
@@ -14601,7 +14618,7 @@ function renderRankingList(data) {
             <div style="flex:1;">
                 <div style="display:flex; align-items:center; margin-bottom:4px;">
                     <span style="font-weight:bold; font-size:1.05rem; display:flex; align-items:center; color:#fff;">
-                        ${getTribeIcon(userTribe)}${getDeptTag(user.dept)} ${escapeHtml(user.name)}
+                        ${getTribeIcon(userTribe)}${getDeptTag(user.dept)} ${escapeHtml(user.name)}${_BETA ? _fieldBadgeHtml(user.field) : ''}
                     </span>
                 </div>
                 <div style="font-size:0.8rem; color:#bdc3c7;">
@@ -18536,14 +18553,14 @@ function updateProfileUI() {
     if (display) {
         const tag = (typeof myTag !== 'undefined' && myTag) ? myTag : "0000";
         // ★ getTribeIcon 사용
-        display.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname} <span style="opacity:0.6; font-size:0.85em;">#${tag}</span>`;
+        display.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname} <span style="opacity:0.6; font-size:0.85em;">#${tag}</span>${_BETA ? _fieldBadgeHtml(maxPlayerHearts) : ''}`;
     }
 
     // 2. 상단 작은 닉네임
     const subDisplay = document.getElementById('sub-profile-name');
     if (subDisplay) {
         // 지파 아이콘과 닉네임만 표시 (지파 이름 텍스트 제거)
-        subDisplay.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname}`;
+        subDisplay.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname}${_BETA ? _fieldBadgeHtml(maxPlayerHearts) : ''}`;
     }
 
     applyHomeThemeByTribe(myTribe);
@@ -20065,6 +20082,7 @@ function loadTotalHallRanking() {
                     dept: row.dept !== undefined ? row.dept : 0,
                     tag: row.tag || "",
                     castle: row.castle || 0,
+                    field: row.field || 0,   // 서버 스냅샷이 실어준 밭 (없으면 0 → 배지 없음)
                     isMe: ((row.name === myNickname || row.nickname === myNickname) && row.tag === myTag)
                 };
             });
@@ -22239,7 +22257,7 @@ function updateHardshipHeader() {
         heartWrap.classList.toggle('is-danger', _BETA ? false : isDanger);
         // 베타(밭): ❤️ → 🌾, '/최대' 없음, 생명의 떡 칩 숨김
         const _ico = heartWrap.firstChild;
-        if (_ico && _ico.nodeType === 3) _ico.textContent = _BETA ? '🌾 ' : '❤️ ';
+        if (_ico && _ico.nodeType === 3) _ico.textContent = _BETA ? (_fieldIcon(maxPlayerHearts) + ' ') : '❤️ ';
     }
     if (heartCountEl) heartCountEl.textContent = String(_BETA ? maxPlayerHearts : playerHearts);
     if (heartMaxEl) heartMaxEl.textContent = _BETA ? '' : `/${maxPlayerHearts}`;

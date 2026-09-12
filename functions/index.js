@@ -100,7 +100,8 @@ async function updateWeeklyCountsImpl() {
                         tribe: row.tribe !== undefined ? row.tribe : 0,
                         dept: row.dept !== undefined ? row.dept : 0,
                         tag: row.tag || "",
-                        castle: row.castleLv || 0
+                        castle: row.castleLv || 0,
+                        field: row.maxHearts || 5   // 밭(구 최대 체력) — 랭킹 배지용 (2026-09-13)
                     };
                 });
 
@@ -136,7 +137,8 @@ async function updateWeeklyCountsImpl() {
             tribe: row.tribe !== undefined ? row.tribe : 0,
             dept: row.dept !== undefined ? row.dept : 0,
             tag: row.tag || "",
-            castle: row.castleLv || 0
+            castle: row.castleLv || 0,
+                        field: row.maxHearts || 5   // 밭(구 최대 체력) — 랭킹 배지용 (2026-09-13)
         };
     });
 
@@ -169,7 +171,8 @@ async function updateWeeklyCountsImpl() {
             tribe: row.tribe !== undefined ? row.tribe : 0,
             dept: row.dept !== undefined ? row.dept : 0,
             tag: row.tag || "",
-            castle: row.castleLv || 0
+            castle: row.castleLv || 0,
+                        field: row.maxHearts || 5   // 밭(구 최대 체력) — 랭킹 배지용 (2026-09-13)
         };
     });
 
@@ -419,7 +422,8 @@ exports.archiveWeeklyRankings = functions.pubsub
                     tribe: row.tribe !== undefined ? row.tribe : 0,
                     dept: row.dept !== undefined ? row.dept : 0,
                     tag: row.tag || "",
-                    castle: row.castleLv || 0
+                    castle: row.castleLv || 0,
+                        field: row.maxHearts || 5   // 밭(구 최대 체력) — 랭킹 배지용 (2026-09-13)
                 };
             });
             const zionSnapshotRef = db.collection('ranking_snapshots').doc(lastWeekId)

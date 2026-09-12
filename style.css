@@ -6010,6 +6010,17 @@ body, html {
     .field-chip.can-grow { animation: none; background: rgba(241, 196, 15, 0.18); }
 }
 
+/* 이정표 배지 — 랭킹·프로필의 이름 옆. 삼십 배부터 붙는다 */
+.field-badge {
+    display: inline-flex; align-items: center; gap: 2px;
+    margin-left: 6px; padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 0.7em; font-weight: 700; letter-spacing: -0.2px;
+    color: #b9770e; background: rgba(241, 196, 15, 0.18);
+    border: 1px solid rgba(241, 196, 15, 0.45);
+    vertical-align: middle; white-space: nowrap;
+}
+
 /* 난이도 칸의 '지금 너에게 맞음' 표시 — 이름 아래 한 줄.
    버튼은 원래 글자만 들어 있었으므로 세로 정렬로 바꾼다.
    순서(순서대로/무작위) 토글도 같은 클래스를 쓰지만 자식이 맨 텍스트라 그대로 가운데 정렬된다. */

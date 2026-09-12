@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
     <!-- image_0.webp is inlined below; preload removed -->
-    <link rel="stylesheet" href="style.css?v=20260913c">
+    <link rel="stylesheet" href="style.css?v=20260913d">
 
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-TEVW49QB45"></script>
@@ -2944,7 +2944,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="bible_en.js"></script>
-    <script src="game.js?v=20260913c"></script>
+    <script src="game.js?v=20260913d"></script>
     <script>
 
         /* =========================================
@@ -3164,6 +3164,7 @@
                                         tribe: (data.tribe !== undefined) ? data.tribe : 0,
                                         score: data.score,
                                         castle: data.castleLv,
+                                        field: data.maxHearts || 0,
                                         tag: data.tag || "0000",
                                         tier: data.tier,
                                         uid: originDoc.id,
@@ -3228,7 +3229,7 @@
                     let rankList = [];
                     snapshot.forEach((doc) => {
                         const d = doc.data();
-                        rankList.push({ name: d.nickname, tribe: d.tribe || 0, score: d.score, castle: d.castleLv, tag: d.tag || "0000", tier: d.tier, isMe: (doc.id === myServerUid) });
+                        rankList.push({ name: d.nickname, tribe: d.tribe || 0, score: d.score, castle: d.castleLv, field: d.maxHearts || 0, tag: d.tag || "0000", tier: d.tier, isMe: (doc.id === myServerUid) });
                     });
                     if (callback) callback(rankList);
 
@@ -3278,6 +3279,7 @@
                             name: data.nickname,
                             score: data.score,
                             castle: data.castleLv,
+                                        field: data.maxHearts || 0,
                             tag: data.tag || "0000",
                             tier: data.tier,
                             tribe: data.tribe,
