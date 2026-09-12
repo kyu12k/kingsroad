@@ -6020,6 +6020,14 @@ body, html {
     border: 1px solid rgba(241, 196, 15, 0.45);
     vertical-align: middle; white-space: nowrap;
 }
+/* 백 배 — 이모지는 🌾 그대로, 금색으로 구분 (추수를 나타낼 이모지가 없다) */
+.field-badge.field-max,
+.field-chip.field-max {
+    color: #7d5a00;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.42), rgba(241, 196, 15, 0.22));
+    border-color: #f1c40f;
+    box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.35), 0 0 8px rgba(255, 215, 0, 0.35);
+}
 
 /* 난이도 칸의 '지금 너에게 맞음' 표시 — 이름 아래 한 줄.
    버튼은 원래 글자만 들어 있었으므로 세로 정렬로 바꾼다.

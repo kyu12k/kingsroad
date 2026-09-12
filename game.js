@@ -10040,7 +10040,7 @@ function updateGemDisplay() {
     const _fieldCost = (purchasedMaxHearts - 4) * 3000;
     const _canGrow = purchasedMaxHearts < 100 && myGems >= _fieldCost;
     const resourceHtml = _BETA
-        ? `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> <span id="field-chip" class="field-chip${_canGrow ? ' can-grow' : ''}" onclick="openFieldScreen()">${_fieldIcon(maxPlayerHearts)} ${t('field_label')} ${maxPlayerHearts}</span>`
+        ? `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> <span id="field-chip" class="field-chip${_canGrow ? ' can-grow' : ''}${maxPlayerHearts >= 100 ? ' field-max' : ''}" onclick="openFieldScreen()">${_fieldIcon(maxPlayerHearts)} ${t('field_label')} ${maxPlayerHearts}</span>`
         : `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> 🍞 ${lifeBreadCnt}${shieldMapPart} <span style="opacity:0.3; margin:0 3px;">|</span> ❤️ ${maxPlayerHearts}`;
 
     // 5. [맵 화면] 헤더 업데이트 (ID로 안전하게 찾기)
@@ -11971,7 +11971,8 @@ function _fieldIcon(level) {
 function _fieldBadgeHtml(level) {
     const cur = _fieldCurrentTitle(level || 0);
     if (!cur) return '';
-    return `<span class="field-badge">${_fieldIcon(level)} ${t(cur.key)}</span>`;
+    // 백 배는 이모지가 같아서(🌾) 금색으로 구분한다 — 추수(막 4:29)를 나타낼 이모지가 마땅치 않다
+    return `<span class="field-badge${level >= 100 ? ' field-max' : ''}">${_fieldIcon(level)} ${t(cur.key)}</span>`;
 }
 
 function _fieldNextMilestone(level) {
