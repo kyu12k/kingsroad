@@ -14195,6 +14195,14 @@ function openRankingModal(tabName, titleText) {
 
     if (!overlay || !titleEl || !listEl) return;
 
+    /* 랭킹 화면 방문 수 (2026-09-13 추가). `stats`에 실려 저장·동기화된다.
+       부스터 개편의 전제가 "사람들이 승점을 원한다"인데, 부스터 사용자가 1명뿐이라
+       그게 '몰라서'인지 '관심이 없어서'인지 가려야 한다. 랭킹을 보지도 않는다면 후자다. */
+    if (typeof userStats === 'object' && userStats) {
+        userStats.rankingViews = (userStats.rankingViews || 0) + 1;
+        userStats.lastRankingViewAt = Date.now();
+    }
+
     // 창 제목을 바꾸고, 팝업을 화면에 띄웁니다.
     titleEl.innerHTML = titleText;
     listEl.innerHTML = `<div style="text-align:center; padding:50px; color:#bdc3c7;">${t('ranking_loading')}</div>`;
