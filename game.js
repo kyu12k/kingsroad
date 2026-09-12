@@ -99,6 +99,26 @@ const LANG = {
         label_hint: '힌트',
         label_cycle: '사이클',
         label_hearts: '체력',
+        label_hearts__field: '밭',
+        // 밭 (2026-09-13 베타) — 씨 × 밭 = 열매
+        field_label: '밭',
+        field_desc: '밭이 좋을수록 열매가 많습니다.<br>구절마다 <b>씨(난도) × 밭</b>만큼 승점을 거둡니다.',
+        field_bonus_note: '도감 보너스 +{n} 포함',
+        field_ms_30: '삼십 배 땅',
+        field_ms_60: '육십 배 땅',
+        field_ms_100: '백 배 땅',
+        field_ms_100_done: '🌾 백 배 땅에 이르렀습니다',
+        field_next_ms: '<b>{name}</b>까지 {n}',
+        field_grow_title: '밭 넓히기 {from} → {to}',
+        field_grow_btn: '넓히기',
+        field_grown: '🌾 밭이 {n}이 되었습니다',
+        field_ms_reached: '🌾 {name}에 이르렀습니다!',
+        field_no_bread: '이제 체력이 줄지 않아 회복할 것이 없어요',
+        shop_heart_desc__field: '밭을 넓혀 열매를 더 거둡니다',
+        library_help_hearts_title__field: '🌾 밭 보너스',
+        library_help_hearts_desc__field: '자유여행과 왕의 길 도감 점수를 <strong>합쳐 15,000점</strong> 이상이면 밭이 <strong>+3</strong> 됩니다.<br><span style="color:#95a5a6; font-size:0.95em;">※ 위의 경지 보너스는 현재 모드의 점수만으로 판정됩니다.</span>',
+        alert_buy_hearts_success__field: '🌾 밭이 {max}이 되었습니다!',
+        nav_shop__field: '밭',
         label_gems: '보석',
         label_kings_road: '왕의 길',
         label_kings_road_desc: '계시록 순서대로 매일 암기하는 여정',
@@ -977,6 +997,25 @@ const LANG = {
         alert_hearts_max_reached: 'Cannot increase hearts further (max 100 reached).',
         alert_buy_hearts_no_gems: '💎 Not enough gems! (Required: {cost})',
         alert_buy_hearts_success: '❤️ Max hearts increased to {max}!',
+        label_hearts__field: 'Field',
+        field_label: 'Field',
+        field_desc: 'The better the soil, the more fruit.<br>Each verse yields <b>seed (difficulty) × field</b> points.',
+        field_bonus_note: 'includes +{n} collection bonus',
+        field_ms_30: 'Thirtyfold Ground',
+        field_ms_60: 'Sixtyfold Ground',
+        field_ms_100: 'Hundredfold Ground',
+        field_ms_100_done: '🌾 You have reached Hundredfold Ground',
+        field_next_ms: '{n} to <b>{name}</b>',
+        field_grow_title: 'Widen the field {from} → {to}',
+        field_grow_btn: 'Widen',
+        field_grown: '🌾 Your field is now {n}',
+        field_ms_reached: '🌾 You reached {name}!',
+        field_no_bread: 'Hearts no longer drop — nothing to restore',
+        shop_heart_desc__field: 'Widen your field to reap more fruit',
+        library_help_hearts_title__field: '🌾 Field Bonus',
+        library_help_hearts_desc__field: "If your Free Travel and King's Road collection scores <strong>add up to 15,000+</strong>, your field gets <strong>+3</strong>.<br><span style=\"color:#95a5a6; font-size:0.95em;\">※ The rank bonus above is judged by the current mode only.</span>",
+        alert_buy_hearts_success__field: '🌾 Your field is now {max}!',
+        nav_shop__field: 'Field',
         alert_buy_no_gems: '💎 Not enough gems!',
         alert_buy_success: '✅ [{name}] purchased! (Owned: {count})',
         alert_item_none: 'No items! Purchase from the supply depot.',
@@ -1566,7 +1605,33 @@ const LANG = {
 
 let currentLang = localStorage.getItem('lang') || 'ko';
 
+/* ── 베타 스위치 (2026-09-13) ──────────────────────────────────────────────
+   테스트 서버 대신: `localStorage.kingsRoad_beta = '1'`인 기기에서만 새 기능이 보인다.
+   배포는 전원에게 나가고, 확인되면 조건을 지우고 한 번 더 배포한다.
+   태그를 코드에 박지 않는 이유 — 다른 기기·게스트로도 켜볼 수 있어야 하고, 지울 때 뒤질 곳이 하나여야 한다.
+   ★ 저장 데이터 형식이 바뀌는 부분은 스위치 뒤에 숨겨도 Firestore로 올라간다.
+     옛 클라이언트가 읽어도 깨지지 않게 만들 것. */
+let _BETA = false;
+try { _BETA = localStorage.getItem('kingsRoad_beta') === '1'; } catch (e) {}
+function isBeta() { return _BETA; }
+
+/* ── 체력 감소 (2026-09-13 베타: 밭 개편) ──────────────────────────────────
+   베타에서는 **오답이 체력을 깎지 않는다.** 체력은 '목숨'이 아니라 승점 배율(밭)이고,
+   오답의 대가는 그 구절 0점(백지)이거나 다시 풀기(초성·단어)로 이미 충분하다.
+   3칸 유예 도입 뒤 체력을 잃을 일이 거의 없어져 목숨·부활·회복·방패가 전부 빈 껍데기가 됐다.
+   확인되면 이 함수의 호출처를 전부 지운다. */
+function _loseHeart() {
+    if (_BETA) return;
+    playerHearts = Math.max(0, playerHearts - 1);
+}
+
 function t(key, vars) {
+    // 베타: 같은 키에 `__field` 변형이 있으면 그것을 쓴다 (체력 → 밭 문구 전환용).
+    // 확인되면 `__field` 문구를 본 키로 옮기고 이 분기를 지운다.
+    if (_BETA) {
+        const fk = key + '__field';
+        if ((LANG[currentLang] && LANG[currentLang][fk] !== undefined) || LANG['ko'][fk] !== undefined) key = fk;
+    }
     let str = (LANG[currentLang] && LANG[currentLang][key] !== undefined)
         ? LANG[currentLang][key]
         : (LANG['ko'][key] !== undefined ? LANG['ko'][key] : key);
@@ -8385,7 +8450,7 @@ function loadNextVerse() {
                 deselect();
             } else {
                 SoundEffect.playWrong();
-                playerHearts--;
+                _loseHeart();
                 wrongCount++;
                 updateBattleUI();
                 if (playerHearts <= 0) { showReviveModal(); }
@@ -8737,14 +8802,20 @@ function updateBattleUI() {
     // [A] 보스전 화면 (아이디 player-hearts 유지 중요!)
     const heartDisplay = document.querySelector('.heart-display');
     if (heartDisplay) {
-        heartDisplay.innerHTML = `
+        // 베타(밭): 배율은 세션 중 불변이라 '현재/최대'도 떡·방패도 없다. 🌾 밭 N 하나.
+        heartDisplay.innerHTML = _BETA ? `
+            <div style="display:flex; align-items:center; justify-content:center;">
+                <span style="font-size:1.2rem;">🌾</span>
+                <span id="player-hearts" style="font-weight:bold; margin-left:5px;">${maxPlayerHearts}</span>
+            </div>
+        ` : `
             <div style="display:flex; align-items:center; justify-content:center;">
                 <span style="font-size:1.2rem;">${heartIcon}</span>
                 <span id="player-hearts" style="font-weight:bold; margin-left:5px;">${playerHearts}</span>
                 ${lifeBreadBtnHtml}${shieldBtnHtml}
             </div>
         `;
-        applyDangerEffect(heartDisplay, isDanger);
+        applyDangerEffect(heartDisplay, _BETA ? false : isDanger);
     }
 
     // [B] 훈련 모드 헤더 (아이디 training-hearts 유지 중요!)
@@ -8757,12 +8828,14 @@ function updateBattleUI() {
             parent.style.justifyContent = "center";
 
             // ★ 핵심: 갱신할 때 id="training-hearts"를 반드시 다시 적어줘야 다음에도 찾을 수 있습니다.
-            parent.innerHTML = `
+            parent.innerHTML = _BETA ? `
+                🌾 <span id="training-hearts" style="margin-left:5px; font-weight:bold; color:#2c3e50;">${maxPlayerHearts}</span>
+            ` : `
                 ${heartIcon} <span id="training-hearts" style="margin-left:5px; font-weight:bold; color:#2c3e50;">${playerHearts}</span>
                 <span class="hardship-life-bread-btn" onclick="event.stopPropagation(); useBattleItem('lifeBread')" style="margin-left:6px;">🍞 <span style="margin-left:4px; font-weight:bold; color:#111;">${lifeBreadCnt}</span></span>
                 ${faithShieldCnt > 0 ? `<span style="margin-left:6px; font-size:0.85rem; color:#6c5ce7; font-weight:bold;">🛡️ ${faithShieldCnt}</span>` : ''}
             `;
-            applyDangerEffect(parent, isDanger);
+            applyDangerEffect(parent, _BETA ? false : isDanger);
         }
     }
 }
@@ -9962,7 +10035,13 @@ function updateGemDisplay() {
 
     // 4. 표시할 HTML 구성
     const shieldMapPart = faithShieldCntMap > 0 ? ` <span style="opacity:0.3; margin:0 3px;">|</span> 🛡️ ${faithShieldCntMap}` : '';
-    const resourceHtml = `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> 🍞 ${lifeBreadCnt}${shieldMapPart} <span style="opacity:0.3; margin:0 3px;">|</span> ❤️ ${maxPlayerHearts}`;
+    // 베타(밭): 떡·방패 칸을 없애고 🌾 밭 N을 **눌러서 넓히는 입구**로 만든다 (상점 대체).
+    // 살 수 있을 만큼 보석이 모이면 간헐적으로 반짝인다 — 상시 강조는 초반(3,000젬)에 늘 켜져 무시된다.
+    const _fieldCost = (purchasedMaxHearts - 4) * 3000;
+    const _canGrow = purchasedMaxHearts < 100 && myGems >= _fieldCost;
+    const resourceHtml = _BETA
+        ? `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> <span id="field-chip" class="field-chip${_canGrow ? ' can-grow' : ''}" onclick="openFieldScreen()">🌾 ${t('field_label')} ${maxPlayerHearts}</span>`
+        : `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> 🍞 ${lifeBreadCnt}${shieldMapPart} <span style="opacity:0.3; margin:0 3px;">|</span> ❤️ ${maxPlayerHearts}`;
 
     // 5. [맵 화면] 헤더 업데이트 (ID로 안전하게 찾기)
     const mapRes = document.getElementById('header-resources');
@@ -10757,7 +10836,7 @@ function loadStep() {
                         updateBattleUI();
                     } else {
                         SoundEffect.playWrong();
-                        playerHearts--;
+                        _loseHeart();
                         wrongCount++;
                         updateBattleUI();
                         this.classList.add('error-block', 'shake-effect');
@@ -11152,7 +11231,7 @@ function loadStep() {
                     updateBattleUI();
                 } else {
                     SoundEffect.playWrong();
-                    playerHearts--;
+                    _loseHeart();
                     updateBattleUI();
                     wrongCount++;
                     showRemoveErrorBtn();
@@ -11870,7 +11949,87 @@ function toggleSound() {
 // 배경음악 제거됨 - 함수 유지 (버튼 참조 오류 방지)
 
 /* [시스템: 성전 보급소 로직] */
+/* ── 밭 (2026-09-13 베타) ──────────────────────────────────────────────────
+   "체력"의 실체는 처음부터 승점 배율이었다. 목숨·부활·회복·방패는 3칸 유예 뒤 빈 껍데기가 됐고,
+   랭킹은 '얼마나 오래 투자했는가'를 보여주는 곳이라 배율은 의도된 설계다.
+   씨 뿌리는 자의 비유(막 4:8)로 옮긴다 — 씨(난도 4/5/10) × 밭(내 스탯 5~100) = 열매(승점).
+   상한 100 = 백 배. 이정표는 본문의 30·60·100. */
+const FIELD_MILESTONES = [
+    { at: 30,  key: 'field_ms_30' },
+    { at: 60,  key: 'field_ms_60' },
+    { at: 100, key: 'field_ms_100' }
+];
+function _fieldNextMilestone(level) {
+    return FIELD_MILESTONES.find(m => level < m.at) || null;
+}
+function _fieldCurrentTitle(level) {
+    let cur = null;
+    for (const m of FIELD_MILESTONES) if (level >= m.at) cur = m;
+    return cur;
+}
+
+function openFieldScreen() {
+    const _old = document.getElementById('field-modal');
+    if (_old) _old.remove();
+    const level = purchasedMaxHearts;                       // 구매로 올린 밭 (도감 +3은 별도 표시)
+    const bonus = maxPlayerHearts - purchasedMaxHearts;     // 도감 보너스
+    const cost = (level - 4) * 3000;
+    const isMax = level >= 100;
+    const canGrow = !isMax && myGems >= cost;
+    const next = _fieldNextMilestone(level);
+    const title = _fieldCurrentTitle(level);
+
+    const overlay = document.createElement('div');
+    overlay.id = 'field-modal';
+    overlay.className = 'modal-overlay';
+    overlay.style.zIndex = '9998';
+    overlay.innerHTML = `
+        <div class="result-card" style="max-width:340px; background:#fff; color:#2c3e50; text-align:center; padding-bottom:22px;">
+            <div style="font-size:2.8rem; line-height:1; margin-bottom:6px;">🌾</div>
+            <div style="font-size:1.6rem; font-weight:800; margin-bottom:2px;">${t('field_label')} ${maxPlayerHearts}</div>
+            ${title ? `<div style="color:#e67e22; font-weight:700; font-size:0.9rem; margin-bottom:10px;">${t(title.key)}</div>` : '<div style="margin-bottom:10px;"></div>'}
+            <p style="color:#7f8c8d; font-size:0.88rem; line-height:1.6; margin:0 0 14px;">${t('field_desc')}</p>
+            ${bonus > 0 ? `<p style="color:#27ae60; font-size:0.82rem; margin:0 0 10px;">${t('field_bonus_note', { n: bonus })}</p>` : ''}
+            ${next ? `<div style="background:#f4f6f7; border-radius:12px; padding:10px 12px; margin-bottom:14px; font-size:0.88rem; color:#555;">
+                ${t('field_next_ms', { name: t(next.key), n: next.at - level })}
+            </div>` : `<div style="background:#fff8e1; border-radius:12px; padding:10px 12px; margin-bottom:14px; font-size:0.88rem; color:#b9770e; font-weight:700;">${t('field_ms_100_done')}</div>`}
+            ${isMax ? '' : `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#f4f6f7; border-radius:12px; padding:12px 14px; margin-bottom:14px;">
+                <div style="text-align:left;">
+                    <div style="font-weight:700;">${t('field_grow_title', { from: level, to: level + 1 })}</div>
+                    <div style="font-size:0.82rem; color:${canGrow ? '#27ae60' : '#95a5a6'};">💎 ${cost.toLocaleString()}</div>
+                </div>
+                <button onclick="growField()" ${canGrow ? '' : 'disabled'}
+                    style="background:${canGrow ? '#f1c40f' : '#d5d8dc'}; color:#2c3e50; border:none; padding:10px 16px; border-radius:24px; font-weight:800; cursor:${canGrow ? 'pointer' : 'default'}; box-shadow:${canGrow ? '0 3px 0 #d35400' : 'none'};">
+                    ${t('field_grow_btn')}
+                </button>
+            </div>`}
+            <button onclick="document.getElementById('field-modal').remove()" style="width:100%; background:none; border:none; color:#95a5a6; padding:6px 0 0; font-size:0.9rem; cursor:pointer;">${t('btn_close')}</button>
+        </div>
+    `;
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+    document.body.appendChild(overlay);
+    setTimeout(() => overlay.classList.add('active'), 10);
+}
+
+/* 밭 넓히기 — buyItem('heart')와 같은 회계, 문구만 다르다. 확인 대화상자는 없앤다(모달 자체가 확인이다) */
+function growField() {
+    if (purchasedMaxHearts >= 100) return;
+    const cost = (purchasedMaxHearts - 4) * 3000;
+    if (myGems < cost) { showGemToast(0, t('alert_buy_hearts_no_gems', { cost }), true); return; }
+    myGems -= cost;
+    purchasedMaxHearts++;
+    recalculateMaxHearts();
+    updateGemDisplay();
+    saveGameData();
+    if (typeof SoundEffect !== 'undefined' && SoundEffect.playLevelUp) SoundEffect.playLevelUp();
+    const reached = FIELD_MILESTONES.find(m => m.at === purchasedMaxHearts);
+    showGemToast(0, reached ? t('field_ms_reached', { name: t(reached.key) }) : t('field_grown', { n: maxPlayerHearts }), false);
+    openFieldScreen(); // 새 값으로 다시 그린다
+}
+
 function openShop() {
+    if (_BETA) { openFieldScreen(); return; } // 밭 개편: 상점 대신 밭 화면
     // 화면 전환
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('shop-screen').classList.add('active');
@@ -11895,6 +12054,7 @@ function updateItemButtons() {
 }
 
 function _tryUseShield() {
+    if (_BETA) return false; // 밭 개편: 체력이 안 깎이므로 막을 것이 없다
     if (!inventory || !inventory.faithShield || inventory.faithShield <= 0) return false;
     inventory.faithShield--;
     saveGameData();
@@ -16230,6 +16390,7 @@ updateShopUI = function () {
 
 // 3. 전투 중 아이템 사용 함수
 function useBattleItem(itemType) {
+    if (_BETA && itemType === 'lifeBread') { showGemToast(0, t('field_no_bread'), true); return; }
     if (itemType === 'potion') itemType = 'lifeBread';
     if (!inventory || !inventory[itemType] || inventory[itemType] <= 0) {
         alert(t('alert_item_none'));
@@ -17142,7 +17303,7 @@ function checkScrollCollision() {
         if (typeof playerHearts !== 'undefined') {
             _shieldedCollision = _tryUseShield();
             if (!_shieldedCollision) {
-                playerHearts--;
+                _loseHeart();
                 wrongCount++;
             }
             if (typeof updateBattleUI === 'function') updateBattleUI();
@@ -17212,7 +17373,7 @@ function handleScrollCardClick(btn, word) {
         if (typeof playerHearts !== 'undefined') {
             _shieldedClick = _tryUseShield();
             if (!_shieldedClick) {
-                playerHearts--;
+                _loseHeart();
                 wrongCount++;
             }
             if (typeof updateBattleUI === 'function') updateBattleUI();
@@ -22075,11 +22236,16 @@ function updateHardshipHeader() {
 
     if (heartWrap) {
         heartWrap.style.display = 'inline-flex';
-        heartWrap.classList.toggle('is-danger', isDanger);
+        heartWrap.classList.toggle('is-danger', _BETA ? false : isDanger);
+        // 베타(밭): ❤️ → 🌾, '/최대' 없음, 생명의 떡 칩 숨김
+        const _ico = heartWrap.firstChild;
+        if (_ico && _ico.nodeType === 3) _ico.textContent = _BETA ? '🌾 ' : '❤️ ';
     }
-    if (heartCountEl) heartCountEl.textContent = String(playerHearts);
-    if (heartMaxEl) heartMaxEl.textContent = `/${maxPlayerHearts}`;
+    if (heartCountEl) heartCountEl.textContent = String(_BETA ? maxPlayerHearts : playerHearts);
+    if (heartMaxEl) heartMaxEl.textContent = _BETA ? '' : `/${maxPlayerHearts}`;
     if (lifeBreadCountEl) lifeBreadCountEl.textContent = String(lifeBreadCnt);
+    const _breadBtn = document.getElementById('common-hardship-life-bread-btn');
+    if (_breadBtn) _breadBtn.style.display = _BETA ? 'none' : '';
 
     if (hintBtn) {
         // 힌트는 화면에 떠서 따라다닌다 (positionHardshipHintFab 주석 참고)
@@ -22676,7 +22842,7 @@ function submitHardshipAddressGuess() {
         return;
     }
 
-    playerHearts = Math.max(0, playerHearts - 1);
+    _loseHeart();
     wrongCount += 1;
     hardshipState.feedback = {
         type: 'error',
@@ -22790,7 +22956,7 @@ function submitHardshipVerseGuess(choiceIdx) {
         };
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
     } else {
-        playerHearts = Math.max(0, playerHearts - 1);
+        _loseHeart();
         wrongCount += 1;
         hardshipState.selectedWrongChoice = choice || null;
         hardshipState.feedback = {
@@ -23751,7 +23917,7 @@ function submitHardshipMemoryGuess() {
 
     // 백지 산출 실패 — 이 구절은 아직 단서 없이 나오지 않는다
     recordVerseRecall(_currentHardshipStageId(), false, (hardshipState.revealedHints || []).length, 'memory');
-    playerHearts = Math.max(0, playerHearts - 1);
+    _loseHeart();
     wrongCount += 1;
     hardshipState.feedback = {
         type: 'error',

@@ -5987,6 +5987,29 @@ body, html {
    여기서는 아래 설명줄이 항상 보이므로 흐리게만 둔다. */
 .bso-btn.bso-btn-locked { opacity: 0.35; cursor: default; }
 
+/* ── 밭 칩 (지도 헤더, 베타) ─────────────────────────────────────────────
+   상점을 대신하는 입구. 눌러서 밭 화면을 연다.
+   살 수 있을 만큼 보석이 모이면 **간헐적으로** 반짝인다 — 상시 강조는 초반(3,000젬)에
+   늘 켜져 있어 무시되고, 한 번만 반짝이면 놓친다. 20초에 한 번 2초간. */
+.field-chip {
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 12px;
+    transition: background 0.2s;
+}
+.field-chip:active { background: rgba(241, 196, 15, 0.18); }
+.field-chip.can-grow {
+    animation: fieldGlow 20s ease-in-out infinite;
+}
+@keyframes fieldGlow {
+    0%, 100% { background: transparent; box-shadow: none; }
+    3%       { background: rgba(241, 196, 15, 0.28); box-shadow: 0 0 0 4px rgba(241, 196, 15, 0.25); }
+    10%      { background: transparent; box-shadow: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .field-chip.can-grow { animation: none; background: rgba(241, 196, 15, 0.18); }
+}
+
 /* 난이도 칸의 '지금 너에게 맞음' 표시 — 이름 아래 한 줄.
    버튼은 원래 글자만 들어 있었으므로 세로 정렬로 바꾼다.
    순서(순서대로/무작위) 토글도 같은 클래스를 쓰지만 자식이 맨 텍스트라 그대로 가운데 정렬된다. */
