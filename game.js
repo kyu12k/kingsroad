@@ -115,6 +115,7 @@ const LANG = {
         field_ms_reached: '🌾 {name}에 이르렀습니다!',
         field_no_bread: '이제 체력이 줄지 않아 회복할 것이 없어요',
         // 단비 (2026-09-13 베타)
+        item_refund_toast: '🍞 떡 {bread}개 · 🛡️ 방패 {shield}개를 💎 {gems}으로 돌려드렸어요',
         rain_name: '단비',
         sun_name: '햇살',
         rain_promise: '🌧️ 내일 단비가 내립니다',
@@ -1036,6 +1037,7 @@ const LANG = {
         field_grown: '🌾 Your field is now {n}',
         field_ms_reached: '🌾 You reached {name}!',
         field_no_bread: 'Hearts no longer drop — nothing to restore',
+        item_refund_toast: '🍞 {bread} bread · 🛡️ {shield} shields refunded as 💎 {gems}',
         rain_name: 'Rain',
         sun_name: 'Sunshine',
         rain_promise: '🌧️ Rain comes tomorrow',
@@ -1657,8 +1659,10 @@ let currentLang = localStorage.getItem('lang') || 'ko';
    태그를 코드에 박지 않는 이유 — 다른 기기·게스트로도 켜볼 수 있어야 하고, 지울 때 뒤질 곳이 하나여야 한다.
    ★ 저장 데이터 형식이 바뀌는 부분은 스위치 뒤에 숨겨도 Firestore로 올라간다.
      옛 클라이언트가 읽어도 깨지지 않게 만들 것. */
-let _BETA = false;
-try { _BETA = localStorage.getItem('kingsRoad_beta') === '1'; } catch (e) {}
+/* 2026-09-14 전원 적용 — 스위치를 항상 켠다. 옛 경로(체력 감소·부활·상점·떡·방패·부스터 구매)는
+   아직 코드에 남아 있고 `_BETA` 분기로만 죽어 있다. 한 주 돌려본 뒤 「확인 후 정리할 것」대로 지운다.
+   문제가 생기면 이 한 줄을 `localStorage` 판독으로 되돌리면 전원이 옛 동작으로 돌아간다. */
+let _BETA = true;
 function isBeta() { return _BETA; }
 
 /* ── 체력 감소 (2026-09-13 베타: 밭 개편) ──────────────────────────────────
@@ -2194,6 +2198,7 @@ loadGameData = function () {
         myDragonHornFragments = parsed.dragonHornFragments || 0;
         myDragonHeadSkins = parsed.dragonHeadSkins || 0;
         inventory = parsed.inv || { lifeBread: 0, faithShield: 0 };
+        itemRefund = parsed.itemRefund || null;
         if (inventory) {
             if (typeof inventory.lifeBread === 'undefined' && typeof inventory.potion !== 'undefined') {
                 inventory.lifeBread = inventory.potion;
@@ -2555,6 +2560,24 @@ loadGameData = function () {
             } else {
                 boosterData.active = false;
                 boosterData.multiplier = 1;
+            }
+        }
+
+        // 밭 개편(2026-09-14 전원 적용): 떡·방패는 쓸 곳이 없어졌다 → 50젬씩 환급하고 재고 0.
+        // 표식(itemRefund)을 저장본에 남겨 1회만. (원격 저장본이 이긴 뒤 다시 로드돼도 표식이 같이 온다.
+        //  표식 없는 옛 저장본이 나중에 이기면 한 번 더 환급될 수 있으나, 최대 8,500젬이라 감수한다)
+        if (_BETA && inventory && !itemRefund) {
+            const _b = inventory.lifeBread || 0, _s = inventory.faithShield || 0;
+            if (_b + _s > 0) {
+                const _gems = (_b + _s) * ITEM_REFUND_GEM;
+                myGems += _gems;
+                inventory.lifeBread = 0;
+                inventory.faithShield = 0;
+                itemRefund = { at: Date.now(), bread: _b, shield: _s, gems: _gems };
+                setTimeout(() => {
+                    if (typeof showGemToast === 'function') showGemToast(_gems, t('item_refund_toast', { bread: _b, shield: _s, gems: _gems.toLocaleString() }), false);
+                }, 2500);
+                setTimeout(() => { if (typeof saveGameData === 'function') saveGameData(); }, 100);
             }
         }
 
@@ -5122,6 +5145,9 @@ let boosterData = {
    내일 햇살이 된다 — 듀오링고의 "미션 N개 → 내일 3배"("적어도 이만큼은"). 지금은 꺼둠(0).
 
    타이머는 기존 boosterData(active/multiplier/endTime)를 그대로 쓴다 — 승점 계산이 이미 그걸 본다. */
+const ITEM_REFUND_GEM = 50;   // 떡·방패 환급 단가 (상점가와 같다)
+let itemRefund = null;        // { at, bread, shield, gems } — 환급했으면 존재
+
 const RAIN_MINUTES = 20;
 const RAIN_TIERS = { 1: { mult: 2, icon: '🌧️', nameKey: 'rain_name' }, 2: { mult: 3, icon: '☀️', nameKey: 'sun_name' } };
 const SUN_DAILY_POINTS = 0;   // 0 = 햇살 꺼짐
@@ -9360,6 +9386,7 @@ function saveGameData() {
 
         // 나머지 데이터 유지 (항상 자유여행 데이터 저장)
         inv: inventory,
+        itemRefund: itemRefund, // 떡·방패 환급 표식 (밭 개편, 1회)
         missions: missionData,
         mastery: activeMode === 'kings' ? _freeStageMastery : stageMastery,
         clearDate: activeMode === 'kings' ? _freeStageClearDate : stageClearDate,
