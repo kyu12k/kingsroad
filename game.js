@@ -200,6 +200,7 @@ const LANG = {
         blank_check_first_bonus: '✨ 이 구절을 처음 백지로 써냈습니다! 💎 +{gem}',
         alert_hint_locked: '먼저 한 번 시도해 보세요. 틀린 뒤에 힌트가 열립니다. 🔒',
         hint_btn_label: '💡 힌트',
+        hint_cooldown_sec: '{n}초',
         hint_confirm: '💎 보석 {cost}개를 소모하여 힌트를 보시겠습니까?',
         hint_modal_header: '💡 힌트 사용 💎{cost}',
         hint_modal_header_free: '💡 힌트 사용 <span style="color:#27ae60; font-weight:bold;">무료</span>',
@@ -980,6 +981,7 @@ const LANG = {
         blank_check_first_bonus: '✨ First time writing this verse from memory! 💎 +{gem}',
         alert_hint_locked: 'Give it a try first. Hints unlock after a wrong answer. 🔒',
         hint_btn_label: '💡 Hint',
+        hint_cooldown_sec: '{n}s',
         hint_confirm: 'Use {cost} 💎 gems for a hint?',
         hint_modal_header: '💡 Hint 💎{cost}',
         hint_modal_header_free: '💡 Hint <span style="color:#27ae60; font-weight:bold;">Free</span>',
@@ -12192,11 +12194,15 @@ function updateHintButtonLabels() {
     setHintBtn('training-hint-btn', 'training-hint-cost');
     setHintBtn('battle-hint-btn', 'battle-hint-cost');
 
+    // 힌트 간격 중이면 '(무료)' 자리에 남은 초를 보여준다 — 문구 대신 버튼이 직접 말한다
+    const cdLeft = (window.isHardshipMode && typeof _hardshipHintCooldownLeft === 'function') ? _hardshipHintCooldownLeft() : 0;
     const hardshipHintCost = document.getElementById('common-hardship-hint-cost');
-    if (hardshipHintCost) hardshipHintCost.textContent = hintLabel;
+    if (hardshipHintCost) hardshipHintCost.textContent = cdLeft > 0 ? t('hint_cooldown_sec', { n: Math.ceil(cdLeft / 1000) }) : hintLabel;
     const hardshipHintLabelSpan = document.getElementById('common-hardship-hint-label');
     if (hardshipHintLabelSpan) hardshipHintLabelSpan.textContent = btnLabel;
-    setLockStyle(document.getElementById('common-hardship-hint-btn'));
+    const hardshipFab = document.getElementById('common-hardship-hint-btn');
+    setLockStyle(hardshipFab);
+    if (hardshipFab) hardshipFab.classList.toggle('hint-cooldown', cdLeft > 0);
     // 라벨이 바뀌면 폭도 바뀌므로 다시 앉힌다 (오른쪽 끝 정렬이라 폭이 위치를 정한다)
     if (typeof positionHardshipHintFab === 'function') positionHardshipHintFab();
 }
@@ -23609,8 +23615,33 @@ function getHardshipMemoryHintPlan() {
     return { memoryTextMods, hintIndex };
 }
 
+/* ★ 힌트 간격 — 한 글자 열면 3초 뒤에야 다음 글자가 열린다. (2026-09-13)
+   힌트가 무료라 연타하면 구절 전체를 열고 '통과'로 기록될 수 있었다. 60자 구절이면
+   연타로 3분 — 직접 쓰는 33초보다 훨씬 느려져 전략으로서 죽는다.
+   반면 진짜 막힌 사람에게 3초는 "이 글자로 다음이 떠오르나" 해보는 시간이다 —
+   그게 점진적 단서의 목적이므로 이 간격은 벌이 아니라 그 목적을 강제하는 장치다.
+   안내 문구는 없다 — 버튼 자체가 초를 센다(updateHintButtonLabels). */
+const HARDSHIP_HINT_COOLDOWN_MS = 3000;
+let _hsHintReadyAt = 0;
+function _hardshipHintCooldownLeft() {
+    return Math.max(0, _hsHintReadyAt - Date.now());
+}
+function _startHardshipHintCooldown() {
+    _hsHintReadyAt = Date.now() + HARDSHIP_HINT_COOLDOWN_MS;
+    clearInterval(window._hsHintCooldownTimer);
+    window._hsHintCooldownTimer = setInterval(() => {
+        if (_hardshipHintCooldownLeft() <= 0) {
+            clearInterval(window._hsHintCooldownTimer);
+            window._hsHintCooldownTimer = null;
+        }
+        updateHintButtonLabels();
+    }, 250);
+    updateHintButtonLabels();
+}
+
 function useHardshipMemoryHint() {
     if (!window.isHardshipMode || hardshipState.mode !== 'memory' || hardshipState.locked) return;
+    if (_hardshipHintCooldownLeft() > 0) return; // 버튼이 남은 초를 보여주고 있다
 
     const hiddenInput = document.getElementById('hidden-typing-input');
     const { memoryTextMods, hintIndex } = getHardshipMemoryHintPlan();
@@ -23646,6 +23677,7 @@ function useHardshipMemoryHint() {
         hardshipState.totalHintsUsed = (hardshipState.totalHintsUsed || 0) + 1;
     }
 
+    _startHardshipHintCooldown();
     updateGemDisplay();
     saveGameData();
     renderHardshipMemoryVerse();

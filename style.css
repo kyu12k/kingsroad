@@ -5947,6 +5947,19 @@ body, html {
 @media (prefers-reduced-motion: reduce) {
     #common-hardship-hint-btn.hint-nudge { animation: none; border-color: #fff; }
 }
+/* 힌트 간격(3초) 동안 — 눌러도 안 열리니 눌리지 않는 모양으로. 남은 초는 cost span에 뜬다 */
+#common-hardship-hint-btn.hint-cooldown {
+    background: #d5d8dc;
+    border-color: #c0c4c8;
+    color: #6b7580;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+    animation: none;
+}
+#common-hardship-hint-btn.hint-cooldown #common-hardship-hint-cost {
+    font-weight: 800;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+}
 
 /* 「모르겠어요」 — 다시 입력 옆에, 더 조용하게. 벌이 아니라 정직한 탈출구다 */
 .btn-hardship-giveup {
