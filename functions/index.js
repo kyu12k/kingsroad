@@ -316,22 +316,31 @@ exports.updateWeeklyCounts = functions.pubsub
  * 매주 월요일 00:00에 지난주 Top 100을 history 컬렉션에 보관
  */
 // 순위 → 시온성 보석 환산
+// 2026-09-13 3배 인상. 주간 미션 수입이 활발한 사람 기준 약 10만이라 예전 표(1등 17,000)는
+// 그 17%, 31등 밑은 1.7%로 있는지도 모를 크기였다. 경쟁이 실제로 일어나는 10등·30등 경계의
+// 안/밖 차이(8,000·4,800)를 하루 미션치에 맞춰, "한 장만 더 하면"이 성립하게 했다.
+// 클라이언트 표(game.js showRankingRewardInfo)와 반드시 같이 바꿀 것.
 function calcZionGems(rank) {
-    if (rank === 1)          return 10000;
-    if (rank <= 3)           return 6000;
-    if (rank <= 10)          return 3500;
-    if (rank <= 30)          return 2000;
-    return 1000; // 31~100
+    if (rank === 1)          return 30000;
+    if (rank <= 3)           return 20000;
+    if (rank <= 10)          return 10000;
+    if (rank <= 30)          return 5000;
+    return 2000; // 31~100
 }
 
 // 순위 → 지파 보석 환산
 function calcTribeGems(rank) {
-    if (rank === 1)          return 7000;
-    if (rank <= 3)           return 4000;
-    if (rank <= 10)          return 2500;
-    if (rank <= 30)          return 1500;
-    return 700; // 31~100
+    if (rank === 1)          return 20000;
+    if (rank <= 3)           return 12000;
+    if (rank <= 10)          return 6000;
+    if (rank <= 30)          return 3000;
+    return 1200; // 31~100
 }
+
+// 지파 보상 최소 참가자. 예전엔 시온성·지파 모두 100명이었는데 주간 참가자가 46~64명이라
+// 한 번도 지급된 적이 없었다 (2026-09-13 확인). 시온성은 조건을 없애고, 지파는 10명으로 —
+// 4~5명짜리 지파에서 참가만으로 전원이 받는 것은 경쟁이 아니다.
+const TRIBE_REWARD_MIN_PARTICIPANTS = 10;
 
 // Firestore batch 500개 제한 안전하게 커밋
 async function commitInChunks(updates) {
@@ -485,7 +494,7 @@ exports.archiveWeeklyRankings = functions.pubsub
             const rewardMap = new Map();
 
             // 시온성 보상 (zionDocs는 이미 중복 제거 + Top100 확정)
-            const zionQualified = zionDocs.length >= 100;
+            const zionQualified = zionDocs.length > 0; // 참가자 수 조건 없음 (TRIBE_REWARD_MIN_PARTICIPANTS 주석 참고)
             zionDocs.forEach((doc, idx) => {
                 const tag = doc.data().tag || doc.id;
                 const rank = idx + 1;
@@ -504,7 +513,7 @@ exports.archiveWeeklyRankings = functions.pubsub
             // 지파 보상 병합 (지파별로 중복 제거 후 Top100 확정)
             tribeSnapshots.forEach((snapshot) => {
                 const tribeDocs = deduplicateByTag(snapshot.docs).slice(0, 100);
-                const tribeQualified = tribeDocs.length >= 100;
+                const tribeQualified = tribeDocs.length >= TRIBE_REWARD_MIN_PARTICIPANTS;
                 tribeDocs.forEach((doc, idx) => {
                     const tag = doc.data().tag || doc.id;
                     const rank = idx + 1;

@@ -649,7 +649,7 @@ const LANG = {
         label_zion: '시온성',
         label_zion_ranking: '시온성 랭킹',
         ranking_top_percent: '상위<br>{pct}%',
-        reward_no_reward_msg: '지파 또는 시온성 랭킹의 참여 인원이<br>100명 미만이어서 이번 주 보상이 없습니다.',
+        reward_no_reward_msg: '지파 참여 인원이 10명 미만이어서<br>이번 주 지파 보상이 없습니다.',
         reward_confirm_btn: '확인',
         reward_last_week_title: '지난 주 랭킹 결과',
         reward_score_label: '승점',
@@ -662,7 +662,7 @@ const LANG = {
         ranking_snapshot_waiting: '📡 스냅샷을 기다리는 중입니다...',
         ranking_glory_coming: '다가올 영광',
         ranking_glory_desc: '내년 연말정산 이후,<br>이곳에 위대한 역사가 보존됩니다.',
-        ranking_reward_notice: '🎁 지파 순위 보상은 해당 주에 <strong style="color:#bdc3c7;">지파원 100명 이상</strong>이 참여해야 지급됩니다.<br>시온성 랭킹 보상은 전체 100명 이상 참여 시 지급됩니다.',
+        ranking_reward_notice: '🎁 시온성 순위 보상은 <strong style="color:#bdc3c7;">100위 안</strong>이면 누구나 받습니다.<br>지파 순위 보상은 해당 주에 지파원 <strong style="color:#bdc3c7;">10명 이상</strong>이 참여해야 지급됩니다.',
         ranking_tab_group_current: '현재 랭킹',
         ranking_tab_group_hall: '명예의 전당',
         ranking_tab_weekly: '주간 명예',
@@ -1447,7 +1447,7 @@ const LANG = {
         label_zion: 'Zion',
         label_zion_ranking: 'Zion Ranking',
         ranking_top_percent: 'Top<br>{pct}%',
-        reward_no_reward_msg: 'Fewer than 100 participants in the tribe or Zion ranking this week — no rewards issued.',
+        reward_no_reward_msg: 'Fewer than 10 participants in your tribe this week — no tribe reward issued.',
         reward_confirm_btn: 'OK',
         reward_last_week_title: "Last Week's Results",
         reward_score_label: 'Score',
@@ -1460,7 +1460,7 @@ const LANG = {
         ranking_snapshot_waiting: '📡 Waiting for snapshot...',
         ranking_glory_coming: 'Glory to Come',
         ranking_glory_desc: 'After next year\'s year-end,<br>great history will be preserved here.',
-        ranking_reward_notice: '🎁 Tribe ranking rewards require <strong style="color:#bdc3c7;">100+ members</strong> from your tribe to participate that week.<br>Zion ranking rewards require 100+ total participants.',
+        ranking_reward_notice: '🎁 Zion ranking rewards go to everyone in the <strong style="color:#bdc3c7;">Top 100</strong>.<br>Tribe ranking rewards require <strong style="color:#bdc3c7;">10+ participants</strong> from your tribe that week.',
         ranking_tab_group_current: 'Current Rankings',
         ranking_tab_group_hall: 'Hall of Fame',
         ranking_tab_weekly: 'Weekly Hall',
@@ -8682,12 +8682,13 @@ function showRankingRewardInfo() {
         box-sizing:border-box;
     `;
 
+    // 서버(functions/index.js calcZionGems/calcTribeGems)와 같은 표여야 한다. 2026-09-13 3배 인상
     const rows = [
-        { rank: isEn ? '🥇 1st'    : '🥇 1위',     zion: 10000, tribe: 7000  },
-        { rank: isEn ? '🥈 2–3rd'  : '🥈 2~3위',   zion: 6000,  tribe: 4000  },
-        { rank: isEn ? '🏅 4–10th' : '🏅 4~10위',  zion: 3500,  tribe: 2500  },
-        { rank: isEn ? '11–30th'   : '11~30위',    zion: 2000,  tribe: 1500  },
-        { rank: isEn ? '31–100th'  : '31~100위',   zion: 1000,  tribe: 700   },
+        { rank: isEn ? '🥇 1st'    : '🥇 1위',     zion: 30000, tribe: 20000 },
+        { rank: isEn ? '🥈 2–3rd'  : '🥈 2~3위',   zion: 20000, tribe: 12000 },
+        { rank: isEn ? '🏅 4–10th' : '🏅 4~10위',  zion: 10000, tribe: 6000  },
+        { rank: isEn ? '11–30th'   : '11~30위',    zion: 5000,  tribe: 3000  },
+        { rank: isEn ? '31–100th'  : '31~100위',   zion: 2000,  tribe: 1200  },
     ];
 
     const tableRows = rows.map(r => `
@@ -8718,8 +8719,8 @@ function showRankingRewardInfo() {
         </table>
         <div style="margin-top:16px; padding:12px; background:rgba(255,255,255,0.05); border-radius:10px; font-size:0.8rem; color:#7f8c8d; line-height:1.6;">
             ${isEn
-                ? '• Zion rewards require <strong style="color:#bdc3c7;">100+ total participants</strong>.<br>• Tribe rewards require <strong style="color:#bdc3c7;">100+ members</strong> in your tribe.<br>• Rewards are distributed every <strong style="color:#bdc3c7;">Monday at midnight (KST)</strong>.'
-                : '• 시온성 보상은 전체 참여자 <strong style="color:#bdc3c7;">100명 이상</strong>이어야 지급됩니다.<br>• 지파 보상은 해당 지파 참여자 <strong style="color:#bdc3c7;">100명 이상</strong>이어야 지급됩니다.<br>• 보상은 매주 <strong style="color:#bdc3c7;">월요일 자정(KST)</strong>에 지급됩니다.'
+                ? '• Zion rewards go to everyone in the <strong style="color:#bdc3c7;">Top 100</strong>.<br>• Tribe rewards require <strong style="color:#bdc3c7;">10+ participants</strong> in your tribe that week.<br>• Rewards are distributed every <strong style="color:#bdc3c7;">Monday at midnight (KST)</strong>.'
+                : '• 시온성 보상은 <strong style="color:#bdc3c7;">100위 안</strong>이면 누구나 받습니다.<br>• 지파 보상은 그 주에 해당 지파 참여자가 <strong style="color:#bdc3c7;">10명 이상</strong>이어야 지급됩니다.<br>• 보상은 매주 <strong style="color:#bdc3c7;">월요일 자정(KST)</strong>에 지급됩니다.'
             }
         </div>
     `;
