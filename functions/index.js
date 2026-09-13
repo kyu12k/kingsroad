@@ -347,9 +347,9 @@ const TRIBE_REWARD_MIN_PARTICIPANTS = 10;
 
 // 실시간 암송왕(recallCount — 밭이 안 곱해지는 주간 순위) 보상. 2026-09-14
 // 지파 1~3위: 🥇🥈🥉 암송왕 칭호 + 보석. 시온성 1~3위: 칭호에 빛나는 효과 + 보석.
-// 승점 랭킹보다 작게 — 인출에 값을 치르되 주된 판은 승점. 지파는 같은 10명 조건.
-const RECALL_ZION_GEMS  = [6000, 4000, 2000];
-const RECALL_TRIBE_GEMS = [3000, 2000, 1000];
+// 승점 랭킹 보상(calcZionGems/calcTribeGems 1~3위)의 **절반** — 인출에 값을 치르되 주된 판은 승점. 지파는 같은 10명 조건.
+const RECALL_ZION_GEMS  = [15000, 10000, 10000];
+const RECALL_TRIBE_GEMS = [10000, 6000, 6000];
 
 // Firestore batch 500개 제한 안전하게 커밋
 async function commitInChunks(updates) {

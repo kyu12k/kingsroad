@@ -1636,13 +1636,15 @@ verseRecall['1-1'] = { pass, typedPass, fail, firstPass, lastPass, lastAt, lastO
 - 리그로 안 나눈 이유: 주간 참가자 50~60명이라 나눌 수가 없고, 밭이 안 곱해져 분포가 좁아 리그가 풀려던 문제가 없다.
   100명을 넘기면 30명 방으로. 하단 내비에 🏟️ 리그(준비 중) 자리만 먼저 냈다
 
-### 보상·칭호 (2026-09-14, 첫 지급 2026-09-22 월 00:05)
+### 보상·칭호 (2026-09-14, 첫 지급 2026-09-21 월 00:05)
 
 `archiveWeeklyRankings`가 승점 보상 계산 뒤 ④-b에서 지난주 `recallCount` 순위를 뽑는다.
 
 | | 지파 (참가 10명 이상 — 승점 보상과 같은 조건) | 시온성 |
 |---|---|---|
-| 1·2·3위 | 🥇🥈🥉 **암송왕 칭호** + 3,000 / 2,000 / 1,000 (`RECALL_TRIBE_GEMS`) | 칭호에 빛나는 테두리(`.recall-zion`) + 6,000 / 4,000 / 2,000 (`RECALL_ZION_GEMS`) |
+| 1·2·3위 | 🥇🥈🥉 **암송왕 칭호** + 10,000 / 6,000 / 6,000 (`RECALL_TRIBE_GEMS`) | 칭호에 빛나는 테두리(`.recall-zion`) + 15,000 / 10,000 / 10,000 (`RECALL_ZION_GEMS`) |
+
+액수는 **승점 순위 보상 1~3위의 절반** (시온 30k/20k/20k → 15k/10k/10k, 지파 20k/12k/12k → 10k/6k/6k). 표를 바꾸면 같이 맞출 것
 
 - 보석은 `pendingReward.recallGems`로 승점 보상과 **같은 🏆 버튼**에서 받는다(`totalGems`에 합산). 모달에 「🖊️ 실시간 암송왕 · N절 / 지파 2위 · 시온성 3위」 줄
 - 칭호는 `leaderboard/{tag}.recallTitle = {weekId(지난주), zionRank, tribeRank}` — pendingReward와 별개로 남긴다.
