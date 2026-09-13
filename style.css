@@ -800,6 +800,17 @@ body, html {
             justify-content: center;
             font-size: 13px;
         }
+        /* 단비·오늘 구절 줄 (베타). 조용한 한 줄 — 상태지 버튼이 아니다 */
+        .map-header-row3 {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 11.5px;
+            opacity: 0.8;
+            white-space: nowrap;
+        }
+        .header-today-sep { opacity: 0.4; }
 
 
         #life-book-screen {

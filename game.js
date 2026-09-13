@@ -114,6 +114,18 @@ const LANG = {
         field_grown: '🌾 밭이 {n}이 되었습니다',
         field_ms_reached: '🌾 {name}에 이르렀습니다!',
         field_no_bread: '이제 체력이 줄지 않아 회복할 것이 없어요',
+        // 단비 (2026-09-13 베타)
+        rain_name: '단비',
+        sun_name: '햇살',
+        rain_promise: '🌧️ 내일 단비가 내립니다',
+        sun_promise: '☀️ 내일은 햇살입니다',
+        rain_started: '{icon} {name}이 내립니다 — {min}분간 승점 ×{multi}',
+        rain_active: '{name} ×{multi} ({time})',
+        header_today: '🌱 오늘 뿌린 씨 {today} · 어제 {yday}',
+        header_rain_now: '{icon} {name} 내리는 중',
+        header_rain_ready: '{icon} 오늘 {name} — 시작하면 내려요',
+        header_rain_tomorrow: '{icon} 내일 {name}',
+        header_rain_hint: '☁️ 오늘 한 절이면 내일 단비',
         shop_heart_desc__field: '밭을 넓혀 열매를 더 거둡니다',
         library_help_hearts_title__field: '🌾 밭 보너스',
         library_help_hearts_desc__field: '자유여행과 왕의 길 도감 점수를 <strong>합쳐 15,000점</strong> 이상이면 밭이 <strong>+3</strong> 됩니다.<br><span style="color:#95a5a6; font-size:0.95em;">※ 위의 경지 보너스는 현재 모드의 점수만으로 판정됩니다.</span>',
@@ -549,6 +561,7 @@ const LANG = {
         clear_wait_mins: '{m}분',
         clear_buff_gem: '💎 깨달음 보석 보너스(+{n}%)',
         clear_buff_score: '✨ 깨달음 승점 보너스(+{n}%)',
+        clear_review_mult: '⏳ 제때 복습 승점 ×{n}',
         clear_buff_wrong: '👼 깨달음 오답 보정({n}회)',
         clear_base_gem_verse: '💎 초회 기본: {gem}개 ({cnt}절 × 10)',
         clear_base_gem: '💎 초회 기본: {gem}개',
@@ -1023,6 +1036,17 @@ const LANG = {
         field_grown: '🌾 Your field is now {n}',
         field_ms_reached: '🌾 You reached {name}!',
         field_no_bread: 'Hearts no longer drop — nothing to restore',
+        rain_name: 'Rain',
+        sun_name: 'Sunshine',
+        rain_promise: '🌧️ Rain comes tomorrow',
+        sun_promise: '☀️ Tomorrow brings sunshine',
+        rain_started: '{icon} {name} is falling — score ×{multi} for {min} min',
+        rain_active: '{name} ×{multi} ({time})',
+        header_today: '🌱 Seeds today {today} · yesterday {yday}',
+        header_rain_now: '{icon} {name} falling',
+        header_rain_ready: '{icon} {name} today — starts when you play',
+        header_rain_tomorrow: '{icon} {name} tomorrow',
+        header_rain_hint: '☁️ One verse today, rain tomorrow',
         shop_heart_desc__field: 'Widen your field to reap more fruit',
         library_help_hearts_title__field: '🌾 Field Bonus',
         library_help_hearts_desc__field: "If your Free Travel and King's Road collection scores <strong>add up to 15,000+</strong>, your field gets <strong>+3</strong>.<br><span style=\"color:#95a5a6; font-size:0.95em;\">※ The rank bonus above is judged by the current mode only.</span>",
@@ -1357,6 +1381,7 @@ const LANG = {
         clear_wait_mins: '{m}m',
         clear_buff_gem: '💎 Enlightenment gem bonus (+{n}%)',
         clear_buff_score: '✨ Enlightenment score bonus (+{n}%)',
+        clear_review_mult: '⏳ On-time review score ×{n}',
         clear_buff_wrong: '👼 Enlightenment wrong correction ({n})',
         clear_base_gem_verse: '💎 Base: {gem} ({cnt} verses × 10)',
         clear_base_gem: '💎 Base: {gem}',
@@ -2224,6 +2249,11 @@ loadGameData = function () {
         }
         if (parsed.missions) missionData = parsed.missions;
         if (parsed.boosterData) boosterData = parsed.boosterData;
+        if (parsed.rain && typeof parsed.rain === 'object') {
+            rain = { earnedFor: String(parsed.rain.earnedFor || ''), tier: parseInt(parsed.rain.tier, 10) || 0,
+                     promisedOn: String(parsed.rain.promisedOn || ''), startedOn: String(parsed.rain.startedOn || '') };
+        }
+        if (parsed.dailySeeds && typeof parsed.dailySeeds === 'object') dailySeeds = parsed.dailySeeds;
 
         // 미션 데이터 구조 보정 (구버전 호환)
         if (!missionData) missionData = {};
@@ -5078,6 +5108,106 @@ let boosterData = {
     multiplier: 1
 };
 
+/* ── 단비 (2026-09-13 베타) ─────────────────────────────────────────────────
+   **오늘 한 절이라도 하면, 내일 단비가 내린다.** 20분간 승점 ×2. 그게 전부다.
+   듀오링고의 '오늘 하면 내일 부스터'를 그대로 가져왔다 — 조건이 없어야 배울 것이 없다.
+   원래 B 설계(미션 보상으로 받기·로그인 화면·햇살 구매·소멸 규칙)는 전부 뺐고, 부스터 구매도 없앤다.
+   하루에 많이 할 사람은 부스터 없이도 많이 하고, 암송은 몰아서보다 매일이 중요하다.
+
+   하는 일: ① 돌아오게 한다("어제 했으니 오늘 비"는 안 오면 아까운 것 — 스트릭의 힘, 벌은 없음)
+           ② 내일이 곧 제때다 — 오늘 배운 구절의 23시간 복습이 내일 돌아오고, 비가 그때 와 있다
+           ③ 복습이 없는 완주자도 매일 하니 매일 비
+
+   연장 장치: RAIN_TIERS[2] = 햇살(×3). SUN_DAILY_POINTS를 켜면 그날 일일 미션 포인트가 그 이상일 때
+   내일 햇살이 된다 — 듀오링고의 "미션 N개 → 내일 3배"("적어도 이만큼은"). 지금은 꺼둠(0).
+
+   타이머는 기존 boosterData(active/multiplier/endTime)를 그대로 쓴다 — 승점 계산이 이미 그걸 본다. */
+const RAIN_MINUTES = 20;
+const RAIN_TIERS = { 1: { mult: 2, icon: '🌧️', nameKey: 'rain_name' }, 2: { mult: 3, icon: '☀️', nameKey: 'sun_name' } };
+const SUN_DAILY_POINTS = 0;   // 0 = 햇살 꺼짐
+let rain = { earnedFor: '', tier: 0, promisedOn: '', startedOn: '' };   // 날짜는 전부 오전 6시 경계 키
+let dailySeeds = {};    // 6시 경계 날짜 → 오늘 뿌린 씨 (최근 7일). "어제에 비해 얼마나 했나"
+/* 씨 = 승점 ÷ 밭 (단비 배율 전). 구절 수로 세면 주소의 고난 22절(1분)과 망각의 고난 22절(12분)이 같은 22가 되는데,
+   씨는 난도가 곧 무게라 1 : 10 — 실측 시간비(구절당 3초 : 30초)와 거의 같다. 새 가중치 표 없이 승점 체계를 그대로 쓴다.
+   알고 둘 것: 초학습도 1이다(승점 체계가 초학습을 승점이 아니라 보석으로 쳐주는 구조). 자기 비교라 그대로 둔다. */
+
+function _shift6AMDayStr(base, days) {
+    const [y, m, d] = String(base).split('-').map(Number);
+    return _getLocalDateStr(new Date(y, m - 1, d + days));
+}
+function _noteDailySeeds(seeds) {
+    if (!seeds || seeds <= 0) return;
+    const k = _get6AMDayStr();
+    dailySeeds[k] = (dailySeeds[k] || 0) + seeds;
+    const keys = Object.keys(dailySeeds).sort();
+    while (keys.length > 7) delete dailySeeds[keys.shift()];
+    _promiseRain();
+    if (typeof updateHeaderToday === 'function') updateHeaderToday();
+}
+/* 오늘 첫 구절 → 내일 비를 예약. 하루 한 번만 말한다 */
+function _promiseRain() {
+    if (!_BETA) return;
+    const today = _get6AMDayStr();
+    if (rain.promisedOn !== today) {
+        rain.promisedOn = today;
+        rain.earnedFor = _shift6AMDayStr(today, 1);
+        rain.tier = 1;
+        if (typeof showToast === 'function') showToast(t('rain_promise'));
+    }
+    // 연장 장치 — 햇살
+    if (SUN_DAILY_POINTS > 0 && rain.tier < 2 && rain.earnedFor === _shift6AMDayStr(today, 1) &&
+        typeof missionData !== 'undefined' && missionData.points && (missionData.points.daily || 0) >= SUN_DAILY_POINTS) {
+        rain.tier = 2;
+        if (typeof showToast === 'function') showToast(t('sun_promise'));
+    }
+}
+/* 오늘 첫 스테이지에 들어가는 순간 켠다. 버튼 없음. 랭킹만 보고 나가면 안 켜지고 남는다 */
+function _maybeStartRain() {
+    if (!_BETA) return;
+    const today = _get6AMDayStr();
+    if (rain.earnedFor !== today || rain.startedOn === today) return;
+    rain.startedOn = today;
+    const tier = RAIN_TIERS[rain.tier] || RAIN_TIERS[1];
+    boosterData.active = true;
+    boosterData.multiplier = tier.mult;
+    boosterData.endTime = Date.now() + RAIN_MINUTES * 60 * 1000;
+    saveGameData();
+    if (typeof startBoosterTimer === 'function') startBoosterTimer();
+    if (typeof showToast === 'function') showToast(t('rain_started', { icon: tier.icon, name: t(tier.nameKey), min: RAIN_MINUTES, multi: tier.mult }));
+    if (typeof updateHeaderToday === 'function') updateHeaderToday();
+}
+/* 지도 헤더 셋째 줄 — 📖 오늘 5절 · 어제 9절 · 🌧️ 내일 단비 */
+function updateHeaderToday() {
+    const row2 = document.querySelector('.map-header-row2');
+    if (!row2) return;
+    let row3 = document.getElementById('header-today');
+    if (!_BETA) { if (row3) row3.remove(); return; }
+    if (!row3) {
+        row3 = document.createElement('div');
+        row3.id = 'header-today';
+        row3.className = 'map-header-row3';
+        row2.insertAdjacentElement('afterend', row3);
+    }
+    const today = _get6AMDayStr();
+    const yday = _shift6AMDayStr(today, -1);
+    const tCnt = Math.round(dailySeeds[today] || 0);
+    const yCnt = Math.round(dailySeeds[yday] || 0);
+    let rainTxt;
+    if (boosterData.active && Date.now() < boosterData.endTime) {
+        const tier = RAIN_TIERS[rain.tier] || RAIN_TIERS[1];
+        rainTxt = t('header_rain_now', { icon: tier.icon, name: t(tier.nameKey) });
+    } else if (rain.earnedFor === today && rain.startedOn !== today) {
+        const tier = RAIN_TIERS[rain.tier] || RAIN_TIERS[1];
+        rainTxt = t('header_rain_ready', { icon: tier.icon, name: t(tier.nameKey) });
+    } else if (rain.promisedOn === today) {
+        const tier = RAIN_TIERS[rain.tier] || RAIN_TIERS[1];
+        rainTxt = t('header_rain_tomorrow', { icon: tier.icon, name: t(tier.nameKey) });
+    } else {
+        rainTxt = t('header_rain_hint');
+    }
+    row3.innerHTML = `<span>${t('header_today', { today: tCnt, yday: yCnt })}</span><span class="header-today-sep">·</span><span>${rainTxt}</span>`;
+}
+
 /* ✨ [캐시] 랭킹 데이터 클라이언트 캐싱 (1시간 유지) */
 let rankingCache = {
     tribes: {}, // { tribeId: { data, timestamp }, ... }
@@ -7881,6 +8011,7 @@ function _startMidBossBlank(stage, ultimate) {
 
 //[2] 보스전 시작 함수 (하트 버그 수정 + 구간 자동 탐지 + 연출 콜백 분리)//
 function startBossBattle() {
+    _maybeStartRain();
     window.isGamePlaying = true; // ★ 게임 시작! 스위치 ON
     lastPlayedStageId = window.currentStageId || lastPlayedStageId;
     bossHistory = [];
@@ -9248,6 +9379,8 @@ function saveGameData() {
         streak: localStorage.getItem('streakDays'),
         leagueData: leagueData,
         boosterData: boosterData,
+        rain: rain,               // 단비 예약 상태
+        dailySeeds: dailySeeds,   // 날짜별 뿌린 씨 (오늘·어제 비교)
         hardshipAddressClearHistory: hardshipAddressClearHistory,
         hardshipMemoryClearHistory: hardshipMemoryClearHistory,
         hardshipEnduranceClearHistory: hardshipEnduranceClearHistory,
@@ -10118,6 +10251,7 @@ function updateGemDisplay() {
     // 5. [맵 화면] 헤더 업데이트 (ID로 안전하게 찾기)
     const mapRes = document.getElementById('header-resources');
     if (mapRes) mapRes.innerHTML = resourceHtml;
+    if (typeof updateHeaderToday === 'function') updateHeaderToday();
 
     // 6. [상점 화면] 내 보석 업데이트
     const shopRes = document.getElementById('shop-user-gems');
@@ -10151,6 +10285,7 @@ function normalizeChunkText(text) {
 
 /* [수정] 훈련 시작 함수 (phase 시스템 제거) */
 function startTraining(stageId, mode = 'normal') {
+    _maybeStartRain();
     // ★ 반드시 아래 백지 승급 가로채기보다 **먼저** — 백지에 쓴 시간도 복습 시간이다
     _beginReviewRun(stageId, mode);
     // ★ 백지 승급 — 이미 백지로 써낸 적 있는 구절은 빠른 모드에서 백지부터 시작한다.
@@ -13619,17 +13754,20 @@ function calculateScore(stageId, type, verseCount, hearts, isForgotten) {
         baseScore = hearts * 1;  // 일반: hearts × 1
     }
 
-    // ★ [v1.1.0] 복습 타이밍 점수 보너스 (isEligible = 복습 가능 타이밍)
-    // isForgotten 파라미터가 true이면 복습 가능 타이밍으로 판단
+    // ★ 복습 배율 — 보석 표(REVIEW_SEQUENCE)와 같은 곡선. (2026-09-13)
+    //   예전에는 스텝 4부터 ×1.5로 고정이라 6시간 복습과 한 달 복습이 같은 값이었다.
+    //   보석 ÷ 10 = 스텝 1:×1 · 2:×1.5 · 3:×2 · 4:×5 · 5:×6 · 6:×9 · 7:×10 · 8+:+1씩.
+    //   제때가 곧 점수다 — 오래 붙든 구절을 제 시간에 돌아와 다시 꺼내는 것이 이 앱이 가장 원하는 행동이고,
+    //   스텝 7 복습은 일주일에 한 번밖에 안 오므로 몰아서 만들 수 없다(파밍 불가).
+    //   백지 승급 구절이면 백지 + 긴 간격이 겹쳐 자연히 최고가 된다.
+    let reviewMultiplier = 1;
     if (isForgotten) {
         const reviewSt = getReviewStatus(stageId);
         const step = reviewSt.step > 1 ? reviewSt.step - 1 : 1; // 방금 advanceReviewStep 했으므로 -1
-        if (step >= 4) {
-            baseScore = baseScore * 1.5; // 6시간 이상 기다린 복습: 점수 보너스
-            isRetry = true;
-        } else {
-            isRetry = true;
-        }
+        reviewMultiplier = getReviewBaseGem(step) / REVIEW_SEQUENCE[0].baseGem;
+        if (reviewMultiplier < 1) reviewMultiplier = 1;
+        baseScore = baseScore * reviewMultiplier;
+        isRetry = true;
     }
 
     // ... (이하 부스터 적용 및 저장 로직 그대로 유지) ...
@@ -13637,28 +13775,33 @@ function calculateScore(stageId, type, verseCount, hearts, isForgotten) {
     checkBoosterStatus();
     const finalScore = Math.floor(baseScore * boosterData.multiplier);
 
-    // 🎯 깨끗하게 정리된 누적 로직: 방금 얻은 승점만 순수하게 더해줍니다.
-    leagueData.myScore = (leagueData.myScore || 0) + finalScore;
-    leagueData.myMonthlyScore = (leagueData.myMonthlyScore || 0) + finalScore;
-
-    // 🌟 [핵심 수술 2단계: 양손잡이 점수 획득]
-    leagueData.totalScore = (leagueData.totalScore || 0) + finalScore; // 누적 점수도 영원히 오름!
-    // 🌟 [추가] 연간 대항전 기여도에도 점수 더하기!
-    leagueData.yearlyScore = (leagueData.yearlyScore || 0) + finalScore;
-
-    if (typeof userStats !== 'undefined') {
-        userStats.totalScoreEarned = (userStats.totalScoreEarned || 0) + finalScore;
-    }
-
-    saveGameData();
+    // ★ 여기서 leagueData에 더하지 않는다 — stageClear가 이 값을 더 다듬은 뒤(중간점검·보스전 빈칸의 0 처리,
+    //   경지 승점 보너스) _addLeagueScore()로 한 번에 적립한다. (2026-09-13 수정 — 아래 주석 참고)
 
     return {
         score: finalScore,
+        seeds: hearts > 0 ? baseScore / hearts : 0,   // 씨 = 밭·단비를 곱하기 전 값 (오늘 뿌린 씨 집계용)
+        reviewMultiplier: reviewMultiplier,           // 결과 화면 표시용 (⏳ 복습 ×6)
         bonus: bonus,
         isRetry: isRetry,
         blocked: false,
         boosterMultiplier: boosterData.active ? boosterData.multiplier : 1,
     };
+}
+
+/* 승점 적립 — 일반·중간점검·보스전은 여기 한 곳. (고난은 awardHardshipScore가 구절 단위로 따로 적립)
+   ★ 예전에는 calculateScore 안에서 먼저 더해졌다. 그래서 stageClear가 그 뒤에 하던
+   `scoreResult.score = 0`(중간점검·보스전 빈칸·백지 — 고난 쪽에서 이미 지급)과
+   경지 승점 보너스(`rankBuff.scoreBonus`)가 **표시에만** 반영되고 실제 점수엔 들어가지 않았다.
+   즉 빈칸·백지 보스전은 승점이 두 번 들어갔고, 경지 보너스는 한 번도 지급된 적이 없었다. */
+function _addLeagueScore(n) {
+    n = Math.floor(n || 0);
+    if (n <= 0) return;
+    leagueData.myScore = (leagueData.myScore || 0) + n;
+    leagueData.myMonthlyScore = (leagueData.myMonthlyScore || 0) + n;
+    leagueData.totalScore = (leagueData.totalScore || 0) + n;
+    leagueData.yearlyScore = (leagueData.yearlyScore || 0) + n;
+    if (typeof userStats !== 'undefined') userStats.totalScoreEarned = (userStats.totalScoreEarned || 0) + n;
 }
 
 // 4. 부스터 활성화 함수
@@ -13783,7 +13926,7 @@ function updateBoosterDisplay() {
             boosterData.active = false;
             boosterData.multiplier = 1;
             saveGameData();
-            // 필요하다면 알림: alert("부스터 효과가 종료되었습니다.");
+            if (typeof updateHeaderToday === 'function') updateHeaderToday();
         }
 
         // 숨기기
@@ -13799,14 +13942,19 @@ function updateBoosterDisplay() {
     // B. 부스터 진행 중
     const min = Math.floor(remain / 60000);
     const sec = Math.floor((remain % 60000) / 1000).toString().padStart(2, '0');
-    const text = `승점 ${boosterData.multiplier}배 (${min}:${sec})`;
+    const _tier = _BETA ? (RAIN_TIERS[rain.tier] || RAIN_TIERS[1]) : null;
+    const text = _tier
+        ? t('rain_active', { name: t(_tier.nameKey), multi: boosterData.multiplier, time: `${min}:${sec}` })
+        : `승점 ${boosterData.multiplier}배 (${min}:${sec})`;
 
     // 플로팅 패널에만 표시
     const floatRoot = document.getElementById('booster-float');
     const floatPanel = document.getElementById('booster-float-panel');
+    const floatBtn = document.getElementById('booster-float-btn');
     if (floatRoot && floatPanel) {
         floatRoot.style.display = 'flex';
         floatPanel.textContent = text;
+        if (floatBtn) floatBtn.textContent = _tier ? _tier.icon : '⚡';
     }
 
     return true; // 계속 실행
@@ -16277,6 +16425,15 @@ stageClear = function (type, rewardMultiplier = 1) {
             scoreResult.score = Math.floor(scoreResult.score * (1 + rankBuff.scoreBonus / 100));
             buffMsg += `${t('clear_buff_score', { n: rankBuff.scoreBonus })}\n`;
         }
+        // 복습 배율 표시 — 예전 ×1.5는 어디에도 안 보였다
+        if (scoreResult.reviewMultiplier > 1) {
+            buffMsg += `${t('clear_review_mult', { n: (Math.round(scoreResult.reviewMultiplier * 10) / 10) })}
+`;
+        }
+        // ★ 승점 적립은 여기서 한 번 (_addLeagueScore 주석 참고)
+        _addLeagueScore(scoreResult.score);
+        // 오늘 뿌린 씨 — 중간점검·보스전 빈칸·백지는 고난 엔진이 구절마다 이미 셌다
+        if (!window._midBossBlankClear) _noteDailySeeds(scoreResult.seeds);
 
         // 정확도 보너스
         let adjustedWrongCount = Math.max(0, wrongCount - rankBuff.wrongCorrection);
@@ -22281,6 +22438,7 @@ function _takeHardshipResume(mode, verseIds) {
 }
 
 function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
+    _maybeStartRain();
     const modeMeta = getHardshipModeMeta(mode);
 
     // ★ 스테이지 시트를 반드시 닫는다.
@@ -22993,6 +23151,10 @@ function backToHardshipChapter() {
 
 function awardHardshipScore(points) {
     if (!points || points <= 0) return;
+    // 오늘 뿌린 씨 — 결과 화면 백지 확인·빠른 모드 승급은 방금 stageClear가 센 같은 구절이라 뺀다
+    if (!hardshipState.trainingMode && !hardshipState.verseCheckStageId && !hardshipState.quickReviewStageId && playerHearts > 0) {
+        _noteDailySeeds(points / playerHearts);
+    }
 
     checkBoosterStatus();
     const multiplier = boosterData.active ? boosterData.multiplier : 1;
