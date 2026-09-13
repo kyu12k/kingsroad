@@ -488,8 +488,10 @@ reviewSamples = [ { s: '13-8', c: 2, ms: 41300, at: 1781... }, ... ]  // 최근 
 하는 일: ① 돌아오게 한다 — "어제 했으니 오늘 비"는 안 오면 아까운 것. ② **내일이 곧 제때다** — 오늘 배운 구절의
 23시간 복습이 내일 돌아오고 비가 그때 와 있다. ③ 복습이 없는 완주자도 매일 하니 매일 비.
 
-- **연장 장치** `RAIN_TIERS[2]` = 햇살(×3). `SUN_DAILY_POINTS`(지금 0 = 꺼짐)를 켜면 그날 일일 미션 포인트가 그 이상일 때
-  내일 햇살 — 듀오링고의 "미션 N개 → 내일 3배"("적어도 이만큼은"). 추가 학습은 부스터가 아니라 **리그(실시간 암송왕)가** 끈다
+- **햇살 (×3)** — `RAIN_TIERS[2]`. 그날 **일일 미션 `SUN_DAILY_MISSIONS`(4)개**를 완료하면 내일 햇살(2026-09-14 켬).
+  기본 4개(로그인·새 구절·중간점검·백업)는 보스전 전이라도 완료할 수 있다 — 듀오링고의 "미션 N개 → 내일 3배"("적어도 이만큼은").
+  검사 시점은 씨를 뿌릴 때(`_promiseRain`)와 미션 수령 직후(`claimReward`). 헤더 줄이 「🌧️ 내일 단비 · 미션 2개 더 하면 ☀️ 햇살」로 안내.
+  추가 학습은 부스터가 아니라 **리그(실시간 암송왕)가** 끈다
 - **「🌱 오늘 뿌린 씨 120 · 어제 95 · 🌧️ 내일 단비」** — 지도 헤더 셋째 줄(`updateHeaderToday`, `.map-header-row3`).
   "어제에 비해 얼마나 했나". 단위는 **씨 = 승점 ÷ 밭 (단비 배율 전)** — `dailySeeds[6시키]`, 최근 7일.
   > 구절 수로 세면 주소의 고난 22절(1분)과 망각의 고난 22절(12분)이 같은 22가 된다. 씨는 난도가 곧 무게라
@@ -498,6 +500,17 @@ reviewSamples = [ { s: '13-8', c: 2, ms: 41300, at: 1781... }, ... ]  // 최근 
   `calculateScore`가 `seeds`(= baseScore ÷ hearts)를 돌려주고 stageClear가 센다; 고난은 `awardHardshipScore(points)`에서 `points ÷ playerHearts`.
   중간점검·보스전 빈칸·백지는 고난 쪽만, 결과 화면 백지 확인·빠른 모드 승급은 stageClear 쪽만 센다 — 같은 구절을 두 번 세지 않도록
 - 저장본에 `rain`·`dailySeeds`가 실린다(옛 클라이언트는 무시)
+
+### 밭 칩 9단계 (`_fieldTier` / `_fieldRingHtml`, 2026-09-14)
+
+이모지 글자에는 테두리를 못 그린다(색이 박힌 그림 글꼴이라 `text-stroke`가 안 먹고 안드로이드는 비트맵).
+→ 이모지를 **원 안에 넣고 원에 테두리**(`.field-ring`). 아이콘 3종마다 구간을 셋으로 나눠 흙(`tier-1`) → 초록 → 하늘,
+100은 금 테두리 + 번쩍임(`.field-max`). `FIELD_BANDS = [[5,29],[30,59],[60,99]]`, 구간 안에서 3등분.
+랭킹·프로필(칩만, 이정표 이름은 툴팁)·지도 헤더·밭 화면(`.field-ring-lg`)이 전부 이 함수를 쓴다.
+- 밭 화면에 「도감 합산 16,200 / 15,000 → 도감 보너스 +3」 한 줄(`field_collection_line`) —
+  도감 화면은 현재 모드 점수만 보여주는데 +3 판정은 합산이라 보는 숫자와 판정 숫자가 달랐다
+- 하단 내비 셋째 칸은 **🏟️ 리그(준비 중)** — 만들 예정임을 드러내기 위해 자리를 먼저 냈다(`openLeagueComingSoon`).
+  미션은 더보기 메뉴 맨 위로(`openMissionFromMenu`), 미션 배지는 더보기 배지에도 비친다
 
 ### 복습 배율 — 보석 표와 같은 곡선 (2026-09-13)
 
@@ -1621,7 +1634,22 @@ verseRecall['1-1'] = { pass, typedPass, fail, firstPass, lastPass, lastAt, lastO
 - 내 줄은 서버 값과 로컬 `recallWeek.count` 중 큰 쪽을 보여준다 — 세션 직후 아직 안 올라갔어도 내 숫자는 맞아야 한다.
   100위 밖이거나 아직 서버에 없으면 목록 아래 「내 기록 (곧 반영)」 한 줄
 - 리그로 안 나눈 이유: 주간 참가자 50~60명이라 나눌 수가 없고, 밭이 안 곱해져 분포가 좁아 리그가 풀려던 문제가 없다.
-  100명을 넘기면 30명 방으로
+  100명을 넘기면 30명 방으로. 하단 내비에 🏟️ 리그(준비 중) 자리만 먼저 냈다
+
+### 보상·칭호 (2026-09-14, 첫 지급 2026-09-22 월 00:05)
+
+`archiveWeeklyRankings`가 승점 보상 계산 뒤 ④-b에서 지난주 `recallCount` 순위를 뽑는다.
+
+| | 지파 (참가 10명 이상 — 승점 보상과 같은 조건) | 시온성 |
+|---|---|---|
+| 1·2·3위 | 🥇🥈🥉 **암송왕 칭호** + 3,000 / 2,000 / 1,000 (`RECALL_TRIBE_GEMS`) | 칭호에 빛나는 테두리(`.recall-zion`) + 6,000 / 4,000 / 2,000 (`RECALL_ZION_GEMS`) |
+
+- 보석은 `pendingReward.recallGems`로 승점 보상과 **같은 🏆 버튼**에서 받는다(`totalGems`에 합산). 모달에 「🖊️ 실시간 암송왕 · N절 / 지파 2위 · 시온성 3위」 줄
+- 칭호는 `leaderboard/{tag}.recallTitle = {weekId(지난주), zionRank, tribeRank}` — pendingReward와 별개로 남긴다.
+  다른 사람 줄에도 보여야 하므로 **스냅샷 4곳이 실어가고**(`recallTitle`), 실시간 암송왕 목록은 문서에서 직접 읽는다
+- 클라이언트 `_recallTitleHtml(rt)`는 `rt.weekId === getLastWeekId()`일 때만 그린다 — 오래된 칭호가 남지 않는다.
+  내 칭호는 `checkPendingReward`의 같은 조회에서 `_myRecallTitle`로 받아 프로필에 붙인다
+- 규칙: `recallTitle`은 `serverOnlyKeys`
 
 ---
 
@@ -1649,6 +1677,23 @@ verseRecall['1-1'] = { pass, typedPass, fail, firstPass, lastPass, lastAt, lastO
 - 표는 **서버(`calcZionGems`/`calcTribeGems`)와 클라이언트(`showRankingRewardInfo`) 두 곳**에 있다. 반드시 같이 바꿀 것
 - 31~100위 2,000은 사실상 참가상이다(30등이 43점). 첫 지급이라 그대로 두었고, 랭킹 보상 전체를 볼 때 손본다
 - 배포: `FUNCTIONS_DISCOVERY_TIMEOUT=120 firebase deploy --only "functions:default:archiveWeeklyRankings"`
+
+---
+
+## 미션 자동 완료 (2026-09-14)
+
+듀오링고처럼 **미션은 완료되는 순간 보상을 주고 알린다.** 미션 화면에 들어가 「받기」를 누를 필요가 없다.
+미션 화면은 어떤 미션이 있고 무엇을 끝냈는지 **보는 용도**로 남는다(버튼 코드는 남아 있으나 사실상 안 뜬다).
+알림은 **긴 토스트**(`showMissionToast`, 4초, 위쪽에 쌓임, `#mission-toast-stack`) — 스테이지 결과 화면 직후에 완료되는데
+거기서 또 모달을 띄우면 확인 버튼이 두 번이고, 「화면 위 알림 규칙」(알리기만 하는 건 막지 않는다)에도 맞다.
+
+- `_buildMissionDefs(tab)` — 일일·주간 미션 정의를 `renderMissionList`에서 떼어냈다. 화면과 자동 완료가 **같은 목록**을 본다
+- `_autoClaimMissions()` — ① 일일·주간 미션(`claimReward(..., silent=true)`) ② 포인트 상자(`claimMissionPointTier(..., silent)`)
+  ③ 성경 읽기(`claimBibleReadReward(true)`) ④ 심화 미션(`claimAdvancedReward(key, null, true)`). `_autoClaimBusy`로 재진입 방지
+- 진입점: `updateMissionProgress` 끝 / `checkMissions` 1.2초 뒤(로그인 미션) / 백업 저장 / 성경 한 절 읽을 때마다
+- `silent`면 각 함수는 보석 토스트·재렌더를 생략하고, 호출한 쪽이 미션 화면이 떠 있을 때만 한 번 다시 그린다
+- 보스전 전이라 숨겨진 미션(id 4~7, 주간 3)은 정의에서 빠지므로 자동 완료도 안 된다 — 화면과 같은 필터
+- 하단 내비의 미션 칸은 🏟️ 리그(준비 중)가 차지하고, 미션은 **더보기 메뉴 맨 위**(`openMissionFromMenu`). 미션 배지는 더보기 배지에도 비친다
 
 ---
 

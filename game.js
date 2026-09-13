@@ -104,6 +104,9 @@ const LANG = {
         field_label: '밭',
         field_desc: '밭이 좋을수록 열매가 많습니다.<br>구절마다 <b>씨(난도) × 밭</b>만큼 승점을 거둡니다.',
         field_bonus_note: '도감 보너스 +{n} 포함',
+        field_collection_line: '도감 합산 {sum} / {need}',
+        league_coming_soon: '🏟️ 리그는 준비 중이에요',
+        nav_league: '리그',
         field_ms_30: '삼십 배',
         field_ms_60: '육십 배',
         field_ms_100: '백 배',
@@ -127,6 +130,7 @@ const LANG = {
         header_rain_ready: '{icon} 오늘 {name} — 시작하면 내려요',
         header_rain_tomorrow: '{icon} 내일 {name}',
         header_rain_hint: '☁️ 오늘 한 절이면 내일 단비',
+        header_rain_tomorrow_sun_hint: '{icon} 내일 {name} · 미션 {left}개 더 하면 ☀️ 햇살',
         shop_heart_desc__field: '밭을 넓혀 열매를 더 거둡니다',
         library_help_hearts_title__field: '🌾 밭 보너스',
         library_help_hearts_desc__field: '자유여행과 왕의 길 도감 점수를 <strong>합쳐 15,000점</strong> 이상이면 밭이 <strong>+3</strong> 됩니다.<br><span style="color:#95a5a6; font-size:0.95em;">※ 위의 경지 보너스는 현재 모드의 점수만으로 판정됩니다.</span>',
@@ -686,6 +690,11 @@ const LANG = {
         ranking_recall_empty: '아직 아무도 없어요.<br>백지나 빈칸으로 한 절을 써내면 여기에 올라갑니다.',
         ranking_recall_mine_pending: '내 기록 (곧 반영)',
         ranking_recall_opens_monday: '월요일 0시에 열려요',
+        recall_title: '암송왕',
+        recall_title_tip_tribe: '지난주 지파 암송왕 {rank}위',
+        recall_title_tip_zion: '지난주 시온성 암송왕 {rank}위',
+        recall_reward_tribe: '지파 {rank}위',
+        recall_reward_zion: '시온성 {rank}위',
         ranking_offline: '오프라인 상태입니다.',
         ranking_load_failed: '불러오기에 실패했습니다.',
         ranking_tab_group_hall: '명예의 전당',
@@ -1027,6 +1036,9 @@ const LANG = {
         field_label: 'Field',
         field_desc: 'The better the soil, the more fruit.<br>Each verse yields <b>seed (difficulty) × field</b> points.',
         field_bonus_note: 'includes +{n} collection bonus',
+        field_collection_line: 'Collection total {sum} / {need}',
+        league_coming_soon: '🏟️ League is coming soon',
+        nav_league: 'League',
         field_ms_30: 'Thirtyfold',
         field_ms_60: 'Sixtyfold',
         field_ms_100: 'Hundredfold',
@@ -1049,6 +1061,7 @@ const LANG = {
         header_rain_ready: '{icon} {name} today — starts when you play',
         header_rain_tomorrow: '{icon} {name} tomorrow',
         header_rain_hint: '☁️ One verse today, rain tomorrow',
+        header_rain_tomorrow_sun_hint: '{icon} {name} tomorrow · {left} more missions for ☀️ sunshine',
         shop_heart_desc__field: 'Widen your field to reap more fruit',
         library_help_hearts_title__field: '🌾 Field Bonus',
         library_help_hearts_desc__field: "If your Free Travel and King's Road collection scores <strong>add up to 15,000+</strong>, your field gets <strong>+3</strong>.<br><span style=\"color:#95a5a6; font-size:0.95em;\">※ The rank bonus above is judged by the current mode only.</span>",
@@ -1506,6 +1519,11 @@ const LANG = {
         ranking_recall_empty: 'Nobody yet.<br>Write one verse from blank and you will appear here.',
         ranking_recall_mine_pending: 'My count (syncing)',
         ranking_recall_opens_monday: 'Opens Monday at midnight',
+        recall_title: 'Recall King',
+        recall_title_tip_tribe: "Last week's tribe Recall King #{rank}",
+        recall_title_tip_zion: "Last week's Zion Recall King #{rank}",
+        recall_reward_tribe: 'Tribe #{rank}',
+        recall_reward_zion: 'Zion #{rank}',
         ranking_offline: 'You are offline.',
         ranking_load_failed: 'Failed to load.',
         ranking_tab_group_hall: 'Hall of Fame',
@@ -3069,7 +3087,7 @@ function checkMissionPointMilestones() {
     // 수령은 미션 포인트 바의 상자 클릭으로 처리 (claimMissionPointTier)
 }
 
-function claimMissionPointTier(type, idx) {
+function claimMissionPointTier(type, idx, silent) {
     checkMissionPointsReset();
     const isDaily = type === 'daily';
     const claimedTiers = isDaily ? missionData.points.dailyClaimedTiers : missionData.points.weeklyClaimedTiers;
@@ -3081,8 +3099,9 @@ function claimMissionPointTier(type, idx) {
     claimedTiers.push(idx);
     myGems += tier.reward;
     updateGemDisplay();
-    showGemToast(tier.reward, t('mission_point_milestone_toast', { gem: tier.reward }));
     saveGameData();
+    if (silent) return;
+    showGemToast(tier.reward, t('mission_point_milestone_toast', { gem: tier.reward }));
     renderMissionList(currentMissionTab);
 }
 
@@ -3209,6 +3228,8 @@ function checkMissions() {
     }
 
     updateMissionUI();
+    // 로그인 미션 등 — 완료된 것은 바로 지급 (약간 뒤: 로드 직후 UI가 준비된 뒤에)
+    setTimeout(() => { if (typeof _autoClaimMissions === 'function') _autoClaimMissions(); }, 1200);
 }
 
 // [보조] 주간 출석 체크 로직 (버그 수정됨)
@@ -3390,6 +3411,7 @@ function updateMissionProgress(type, extraData) {
     }
 
     saveGameData();
+    _autoClaimMissions();
     updateMissionUI();
     // 🌟 [추가 1] 카운트가 올랐으니 배지 상태도 즉시 새로고침!
     if (typeof updateNotificationBadges === 'function') updateNotificationBadges();
@@ -3640,7 +3662,79 @@ function showGemToast(count, customMsg, isInfo) {
 }
 
 /* [시스템: 보상 수령 처리 함수] */
-function claimReward(type, index, rewardType, value1, value2) {
+/* ── 미션 자동 완료 (2026-09-14) ─────────────────────────────────────────────
+   듀오링고처럼 미션은 **완료되는 순간 보상을 주고 알린다.** 미션 화면에 들어가 「받기」를 누를 필요가 없다.
+   미션 화면은 어떤 미션이 있고 무엇을 끝냈는지 **보는 용도**로 남는다.
+   알림은 모달이 아니라 **긴 토스트**(4초, 위로 쌓임) — 스테이지 결과 화면 직후에 완료되는데
+   거기서 또 모달을 띄우면 확인 버튼이 두 번이고, 우리 규칙("알리기만 하는 건 막지 않는다")에도 맞다.
+   진입점: updateMissionProgress 끝 / checkMissions(로그인) / 백업 미션 / 성경 읽기 / 심화 미션. */
+function showMissionToast(title, rewardText) {
+    let stack = document.getElementById('mission-toast-stack');
+    if (!stack) {
+        stack = document.createElement('div');
+        stack.id = 'mission-toast-stack';
+        document.body.appendChild(stack);
+    }
+    const el = document.createElement('div');
+    el.className = 'mission-toast';
+    el.innerHTML = `<span class="mission-toast-check">✅</span><span class="mission-toast-title">${title}</span><span class="mission-toast-reward">${rewardText}</span>`;
+    stack.appendChild(el);
+    if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
+    setTimeout(() => el.classList.add('out'), 3600);
+    setTimeout(() => { if (el.parentNode) el.remove(); if (stack.childElementCount === 0 && stack.parentNode) stack.remove(); }, 4000);
+}
+
+let _autoClaimBusy = false;
+function _autoClaimMissions() {
+    if (_autoClaimBusy) return;            // claimReward → renderMissionList 재진입 방지
+    if (typeof missionData === 'undefined' || !missionData || !missionData.daily) return;
+    _autoClaimBusy = true;
+    try {
+        // 1) 일일·주간 미션 — 화면과 같은 정의를 본다
+        for (const tab of ['daily', 'weekly']) {
+            const defs = (typeof _buildMissionDefs === 'function') ? _buildMissionDefs(tab) : [];
+            for (const m of defs) {
+                if (m.bibleRead || m.claimed) continue;
+                if ((m.current || 0) < m.target) continue;
+                claimReward(tab, m.id, m.rewardType, m.val1 || 0, m.val2 || 0, true);
+                showMissionToast(m.title, m.reward);
+            }
+        }
+        // 2) 포인트 상자 — 문턱을 넘은 것은 바로 연다
+        for (const type of ['daily', 'weekly']) {
+            const isDaily = type === 'daily';
+            const milestones = isDaily ? getDailyPointMilestones() : getWeeklyPointMilestones();
+            const claimedTiers = isDaily ? missionData.points.dailyClaimedTiers : missionData.points.weeklyClaimedTiers;
+            const current = isDaily ? missionData.points.daily : missionData.points.weekly;
+            milestones.forEach((tier, i) => {
+                if (claimedTiers.includes(i) || current < tier.threshold) return;
+                claimMissionPointTier(type, i, true);
+                showMissionToast(t(isDaily ? 'mission_point_daily_label' : 'mission_point_weekly_label') + ' ' + tier.threshold + 'pt', `💎 ${tier.reward.toLocaleString()}`);
+            });
+        }
+        // 3) 성경 읽기 (10절마다 100)
+        if (typeof claimBibleReadReward === 'function') claimBibleReadReward(true);
+        // 4) 심화 미션 — 새 장이 늘 때마다
+        if (missionData.advanced && typeof claimAdvancedReward === 'function') {
+            for (const key of ['address', 'memory', 'endurance', 'verse', 'checkpointBoss', 'midBoss']) {
+                claimAdvancedReward(key, null, true);
+            }
+        }
+    } finally {
+        _autoClaimBusy = false;
+    }
+    // 미션 화면이 떠 있으면 한 번만 다시 그린다
+    const listArea = document.getElementById('mission-list-area');
+    const missionScreen = document.getElementById('mission-screen');
+    if (listArea && missionScreen && missionScreen.classList.contains('active') && typeof renderMissionList === 'function') {
+        renderMissionList(currentMissionTab);
+    }
+    if (typeof updateNotificationBadges === 'function') updateNotificationBadges();
+}
+
+function claimReward(type, index, rewardType, value1, value2, silent) {
+    // 햇살 승격 검사 — 수령 처리 뒤에 돈다 (아래 setTimeout). 오늘 이미 한 절을 해서 promisedOn이 있을 때만 의미가 있다
+    setTimeout(() => { if (typeof _promiseRain === 'function' && rain.promisedOn === _get6AMDayStr()) _promiseRain(); }, 0);
     // 1. 중복 수령 방지
     let isAlreadyClaimed = (type === 'daily') ? missionData.daily.claimed[index] : missionData.weekly.claimed[index];
     if (isAlreadyClaimed) return;
@@ -3660,8 +3754,7 @@ function claimReward(type, index, rewardType, value1, value2) {
         // 보석 지급
         myGems += value1;
         updateGemDisplay();
-        showGemToast(value1);
-        // playSound('coin'); // 효과음이 있다면 주석 해제
+        if (!silent) showGemToast(value1);
     }
 
     // 3-1. 미션 포인트 적립 + 마일스톤 확인 (일일/주간 완전히 별개로 누적 — 서로 영향 없음)
@@ -3676,6 +3769,7 @@ function claimReward(type, index, rewardType, value1, value2) {
     // 4. 저장 및 화면 갱신
     saveGameData();
     syncToFirestore(); // [Firestore] 미션 보상 청구
+    if (silent) return; // 자동 완료: 호출한 쪽이 한 번에 그린다
     updateNotificationBadges();
     // ✅ [수정됨] 현재 보고 있는 탭의 화면을 다시 그립니다.
     if (typeof renderMissionList === 'function') {
@@ -5141,8 +5235,8 @@ let boosterData = {
            ② 내일이 곧 제때다 — 오늘 배운 구절의 23시간 복습이 내일 돌아오고, 비가 그때 와 있다
            ③ 복습이 없는 완주자도 매일 하니 매일 비
 
-   연장 장치: RAIN_TIERS[2] = 햇살(×3). SUN_DAILY_POINTS를 켜면 그날 일일 미션 포인트가 그 이상일 때
-   내일 햇살이 된다 — 듀오링고의 "미션 N개 → 내일 3배"("적어도 이만큼은"). 지금은 꺼둠(0).
+   연장 장치: RAIN_TIERS[2] = 햇살(×3). 그날 일일 미션을 SUN_DAILY_MISSIONS(4)개 완료하면 내일 햇살이 된다 —
+   듀오링고의 "미션 N개 → 내일 3배"("적어도 이만큼은"). 기본 4개는 보스전 전이라도 완료할 수 있다.
 
    타이머는 기존 boosterData(active/multiplier/endTime)를 그대로 쓴다 — 승점 계산이 이미 그걸 본다. */
 const ITEM_REFUND_GEM = 50;   // 떡·방패 환급 단가 (상점가와 같다)
@@ -5150,7 +5244,14 @@ let itemRefund = null;        // { at, bread, shield, gems } — 환급했으면
 
 const RAIN_MINUTES = 20;
 const RAIN_TIERS = { 1: { mult: 2, icon: '🌧️', nameKey: 'rain_name' }, 2: { mult: 3, icon: '☀️', nameKey: 'sun_name' } };
-const SUN_DAILY_POINTS = 0;   // 0 = 햇살 꺼짐
+const SUN_DAILY_MISSIONS = 4; // 그날 일일 미션을 이만큼 완료하면 내일 햇살(×3). 0 = 꺼짐
+function _dailyMissionsDone() {
+    if (typeof missionData === 'undefined' || !missionData || !missionData.daily) return 0;
+    const c = missionData.daily.claimed || [];
+    let n = 0;
+    for (let i = 0; i < c.length; i++) if (c[i]) n++;
+    return n;
+}
 let rain = { earnedFor: '', tier: 0, promisedOn: '', startedOn: '' };   // 날짜는 전부 오전 6시 경계 키
 let dailySeeds = {};    // 6시 경계 날짜 → 오늘 뿌린 씨 (최근 7일). "어제에 비해 얼마나 했나"
 /* 씨 = 승점 ÷ 밭 (단비 배율 전). 구절 수로 세면 주소의 고난 22절(1분)과 망각의 고난 22절(12분)이 같은 22가 되는데,
@@ -5180,11 +5281,12 @@ function _promiseRain() {
         rain.tier = 1;
         if (typeof showToast === 'function') showToast(t('rain_promise'));
     }
-    // 연장 장치 — 햇살
-    if (SUN_DAILY_POINTS > 0 && rain.tier < 2 && rain.earnedFor === _shift6AMDayStr(today, 1) &&
-        typeof missionData !== 'undefined' && missionData.points && (missionData.points.daily || 0) >= SUN_DAILY_POINTS) {
+    // 연장 장치 — 햇살. 기본 4개(로그인·새 구절·중간점검·백업)는 보스전 전이라도 완료할 수 있다 ("적어도 이만큼은")
+    if (SUN_DAILY_MISSIONS > 0 && rain.tier < 2 && rain.earnedFor === _shift6AMDayStr(today, 1) &&
+        _dailyMissionsDone() >= SUN_DAILY_MISSIONS) {
         rain.tier = 2;
         if (typeof showToast === 'function') showToast(t('sun_promise'));
+        if (typeof updateHeaderToday === 'function') updateHeaderToday();
     }
 }
 /* 오늘 첫 스테이지에 들어가는 순간 켠다. 버튼 없음. 랭킹만 보고 나가면 안 켜지고 남는다 */
@@ -5227,7 +5329,10 @@ function updateHeaderToday() {
         rainTxt = t('header_rain_ready', { icon: tier.icon, name: t(tier.nameKey) });
     } else if (rain.promisedOn === today) {
         const tier = RAIN_TIERS[rain.tier] || RAIN_TIERS[1];
-        rainTxt = t('header_rain_tomorrow', { icon: tier.icon, name: t(tier.nameKey) });
+        const left = SUN_DAILY_MISSIONS - _dailyMissionsDone();
+        rainTxt = (rain.tier < 2 && SUN_DAILY_MISSIONS > 0 && left > 0)
+            ? t('header_rain_tomorrow_sun_hint', { icon: tier.icon, name: t(tier.nameKey), left })
+            : t('header_rain_tomorrow', { icon: tier.icon, name: t(tier.nameKey) });
     } else {
         rainTxt = t('header_rain_hint');
     }
@@ -6116,6 +6221,9 @@ function checkPendingReward() {
     // enablePersistence 캐시 우회: 다른 기기의 수령 여부를 항상 서버에서 확인
     db.collection('leaderboard').doc(myTag).get({ source: 'server' }).then(doc => {
         if (!doc.exists) return;
+        // 내 암송왕 칭호 — 프로필 표시용 (같은 조회에서 얻는다)
+        _myRecallTitle = doc.data().recallTitle || null;
+        if (_myRecallTitle && typeof updateProfileUI === 'function') updateProfileUI();
         const reward = doc.data().pendingReward;
         if (!reward || !reward.weekId) return;
 
@@ -6198,6 +6306,14 @@ function _showLastWeekRewardModal(reward) {
             </div>
             ${rewardRow(t('label_zion_ranking'), zionRank, zionGems, zionQ)}
             ${rewardRow(t('label_my_tribe_ranking'), tribeRank, tribeGems, tribeQ)}
+            ${(reward.recallZionRank || reward.recallTribeRank) ? `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.08);">
+                <div>
+                    <div style="font-size:0.8rem; color:#95a5a6;">🖊️ ${t('ranking_tab_recall')} · ${t('ranking_recall_unit', { n: (reward.recallCount || 0).toLocaleString() })}</div>
+                    <div style="font-size:1.05rem; font-weight:bold; color:white;">${reward.recallTribeRank ? t('recall_reward_tribe', { rank: reward.recallTribeRank }) : ''}${reward.recallTribeRank && reward.recallZionRank ? ' · ' : ''}${reward.recallZionRank ? t('recall_reward_zion', { rank: reward.recallZionRank }) : ''}</div>
+                </div>
+                <div style="text-align:right;"><span style="color:#f1c40f; font-weight:bold;">+${(reward.recallGems || 0).toLocaleString()}💎</span></div>
+            </div>` : ''}
             ${noRewardMsg}
             ${claimSection}
         </div>`;
@@ -6834,6 +6950,7 @@ function markVerseAsRead(chapterNum, verseNum, btnEl) {
     myGems += 10;
     updateGemDisplay();
     saveGameData();
+    if (typeof claimBibleReadReward === 'function') claimBibleReadReward(true);
 
     if (btnEl) {
         btnEl.textContent = '완료';
@@ -6850,7 +6967,7 @@ function markVerseAsRead(chapterNum, verseNum, btnEl) {
     }
 }
 
-function claimBibleReadReward() {
+function claimBibleReadReward(silent) {
     const today = _get6AMDayStr();
     const totalRead = Object.values(bibleReadLog[today] || {}).reduce((s, a) => s + a.length, 0);
     const milestone = Math.min(40, Math.floor(totalRead / 10));
@@ -6860,8 +6977,9 @@ function claimBibleReadReward() {
     myGems += bonus;
     missionData.daily.bibleReadClaimed = milestone;
     updateGemDisplay();
-    showGemToast(bonus);
     saveGameData();
+    if (silent) { showMissionToast(t('mission_daily_bible_read_title') + ` ${milestone * 10}절`, `💎 ${bonus.toLocaleString()}`); return; }
+    showGemToast(bonus);
     openMission();
 }
 
@@ -10272,7 +10390,7 @@ function updateGemDisplay() {
     const _fieldCost = (purchasedMaxHearts - 4) * 3000;
     const _canGrow = purchasedMaxHearts < 100 && myGems >= _fieldCost;
     const resourceHtml = _BETA
-        ? `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> <span id="field-chip" class="field-chip${_canGrow ? ' can-grow' : ''}${maxPlayerHearts >= 100 ? ' field-max' : ''}" onclick="openFieldScreen()">${_fieldIcon(maxPlayerHearts)} ${t('field_label')} ${maxPlayerHearts}</span>`
+        ? `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> <span id="field-chip" class="field-chip${_canGrow ? ' can-grow' : ''}${maxPlayerHearts >= 100 ? ' field-max' : ''}" onclick="openFieldScreen()">${_fieldRingHtml(maxPlayerHearts)} ${t('field_label')} ${maxPlayerHearts}</span>`
         : `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> 🍞 ${lifeBreadCnt}${shieldMapPart} <span style="opacity:0.3; margin:0 3px;">|</span> ❤️ ${maxPlayerHearts}`;
 
     // 5. [맵 화면] 헤더 업데이트 (ID로 안전하게 찾기)
@@ -12202,11 +12320,46 @@ function _fieldIcon(level) {
 }
 
 /* 랭킹·프로필의 이름 옆 배지. 이정표를 지나야 붙는다 (30 미만은 아무것도 없음) */
-function _fieldBadgeHtml(level) {
+/* 밭 칩 — 이모지를 원 안에 넣고 원에 색 테두리 (2026-09-14).
+   이모지 글자 자체에는 테두리를 못 그린다(색이 박힌 그림 글꼴이라 text-stroke가 안 먹고, 안드로이드는 비트맵).
+   아이콘 3종(🌱 5~29 / 🌿 30~59 / 🌾 60~99)마다 구간을 셋으로 나눠 테두리 색이 흙 → 초록 → 하늘로 바뀐다.
+   100은 금 테두리 + 번쩍임(.field-max). 랭킹·프로필·헤더·밭 화면이 전부 이 함수를 쓴다. */
+const FIELD_BANDS = [[5, 29], [30, 59], [60, 99]];
+function _fieldTier(level) {
+    level = Math.max(5, level || 5);
+    if (level >= 100) return { stage: 3, max: true };
+    for (const [lo, hi] of FIELD_BANDS) {
+        if (level >= lo && level <= hi) {
+            const stage = Math.min(3, 1 + Math.floor((level - lo) / ((hi - lo + 1) / 3)));
+            return { stage, max: false };
+        }
+    }
+    return { stage: 1, max: false };
+}
+function _fieldRingHtml(level, extraClass) {
+    const tier = _fieldTier(level);
     const cur = _fieldCurrentTitle(level || 0);
-    if (!cur) return '';
-    // 백 배는 이모지가 같아서(🌾) 금색으로 구분한다 — 추수(막 4:29)를 나타낼 이모지가 마땅치 않다
-    return `<span class="field-badge${level >= 100 ? ' field-max' : ''}">${_fieldIcon(level)} ${t(cur.key)}</span>`;
+    const title = cur ? t(cur.key) : `${t('field_label')} ${level}`;
+    return `<span class="field-ring tier-${tier.stage}${tier.max ? ' field-max' : ''}${extraClass ? ' ' + extraClass : ''}" title="${title}"><span class="field-ring-ico">${_fieldIcon(level)}</span></span>`;
+}
+/* 실시간 암송왕 칭호 — 지난주 지파 1~3위 🥇🥈🥉, 시온성 1~3위는 빛나는 테두리. 이번 주 동안만 (2026-09-14).
+   서버(archiveWeeklyRankings)가 leaderboard 문서에 recallTitle{weekId,zionRank,tribeRank}로 남기고 스냅샷이 실어온다.
+   weekId가 '지난주'일 때만 보여준다 — 오래된 칭호가 남지 않게. */
+function _recallTitleHtml(rt) {
+    if (!rt || !rt.weekId || typeof getLastWeekId !== 'function' || rt.weekId !== getLastWeekId()) return '';
+    const rank = rt.tribeRank || rt.zionRank;
+    if (!rank || rank > 3) return '';
+    const medal = ['🥇', '🥈', '🥉'][rank - 1];
+    const zion = rt.zionRank && rt.zionRank <= 3;
+    const tip = zion ? t('recall_title_tip_zion', { rank: rt.zionRank }) : t('recall_title_tip_tribe', { rank: rt.tribeRank });
+    return `<span class="recall-title r${rank}${zion ? ' recall-zion' : ''}" title="${tip}">${medal} ${t('recall_title')}</span>`;
+}
+let _myRecallTitle = null;
+
+/* 랭킹·프로필의 이름 옆 — 칩만 (글자 없음). 이정표 이름은 툴팁과 밭 화면에 */
+function _fieldBadgeHtml(level) {
+    if (!level || level < 5) return '';
+    return _fieldRingHtml(level, 'field-badge-ring');
 }
 
 function _fieldNextMilestone(level) {
@@ -12235,11 +12388,16 @@ function openFieldScreen() {
     overlay.style.zIndex = '9998';
     overlay.innerHTML = `
         <div class="result-card" style="max-width:340px; background:#fff; color:#2c3e50; text-align:center; padding-bottom:22px;">
-            <div style="font-size:2.8rem; line-height:1; margin-bottom:6px;">${_fieldIcon(maxPlayerHearts)}</div>
+            <div style="line-height:1; margin-bottom:8px; display:flex; justify-content:center;">${_fieldRingHtml(maxPlayerHearts, 'field-ring-lg')}</div>
             <div style="font-size:1.6rem; font-weight:800; margin-bottom:2px;">${t('field_label')} ${maxPlayerHearts}</div>
             ${title ? `<div style="color:#e67e22; font-weight:700; font-size:0.9rem; margin-bottom:10px;">${t(title.key)}</div>` : '<div style="margin-bottom:10px;"></div>'}
             <p style="color:#7f8c8d; font-size:0.88rem; line-height:1.6; margin:0 0 14px;">${t('field_desc')}</p>
-            ${bonus > 0 ? `<p style="color:#27ae60; font-size:0.82rem; margin:0 0 10px;">${t('field_bonus_note', { n: bonus })}</p>` : ''}
+            ${(() => {
+                // 도감 점수는 화면마다 '현재 모드'만 보이지만 +3 판정은 두 모드 합산이라 보는 숫자와 판정 숫자가 달랐다.
+                // 여기서 합산을 그대로 보여준다.
+                const _sum = (typeof getTotalCollectionScore === 'function') ? getTotalCollectionScore() : 0;
+                return `<p style="color:${bonus > 0 ? '#27ae60' : '#95a5a6'}; font-size:0.82rem; margin:0 0 10px;">${t('field_collection_line', { sum: _sum.toLocaleString(), need: (15000).toLocaleString() })}${bonus > 0 ? ' → ' + t('field_bonus_note', { n: bonus }) : ''}</p>`;
+            })()}
             ${next ? `<div style="background:#f4f6f7; border-radius:12px; padding:10px 12px; margin-bottom:14px; font-size:0.88rem; color:#555;">
                 ${t('field_next_ms', { name: t(next.key), n: next.at - level })}
             </div>` : `<div style="background:#fff8e1; border-radius:12px; padding:10px 12px; margin-bottom:14px; font-size:0.88rem; color:#b9770e; font-weight:700;">${t('field_ms_100_done')}</div>`}
@@ -12687,7 +12845,7 @@ function getAdvancedRewardGem(rewardTable, clearIndex) {
     return 0;
 }
 
-function claimAdvancedReward(missionKey, upToIndex) {
+function claimAdvancedReward(missionKey, upToIndex, silent) {
     // missionKey: 'address' | 'memory' | 'endurance' | 'verse'
     if (!missionData.advanced) return;
     const claimedIdxMap = { address: 0, memory: 1, endurance: 2, verse: 3, checkpointBoss: 4, midBoss: 5 };
@@ -12726,9 +12884,16 @@ function claimAdvancedReward(missionKey, upToIndex) {
     missionData.advanced.claimed[claimedIdx] = claimTo;
     myGems += totalGem;
     updateGemDisplay();
-    showGemToast(totalGem);
     saveGameData();
     syncToFirestore();
+    if (silent) {
+        const titleKeyMap = { address: 'mission_advanced_address_title', memory: 'mission_advanced_memory_title', endurance: 'mission_advanced_endurance_title', verse: 'mission_advanced_verse_title', checkpointBoss: 'mission_advanced_checkpoint_boss_title', midBoss: 'mission_advanced_mid_boss_title' };
+        const _tk = titleKeyMap[missionKey];
+        const _title = (_tk && LANG[currentLang] && LANG[currentLang][_tk] !== undefined) ? t(_tk) : t('mission_tab_advanced');
+        showMissionToast(`${_title} ${claimTo + 1}`, `💎 ${totalGem.toLocaleString()}`);
+        return;
+    }
+    showGemToast(totalGem);
     updateNotificationBadges();
     renderMissionList('advanced');
 }
@@ -12849,47 +13014,9 @@ function renderAdvancedMissionList(listArea) {
 }
 
 /* [수정] 미션 목록 렌더링 (초기화 안내 문구 추가) */
-function renderMissionList(tabName) {
-    const listArea = document.getElementById('mission-list-area');
-    if (!listArea) return;
-
-    listArea.innerHTML = ""; // 기존 목록 초기화
-
-    // 1. [추가됨] 초기화 안내 문구 삽입
-    const resetInfoText = tabName === 'weekly' ? t('mission_reset_weekly') : tabName === 'advanced' ? t('mission_reset_advanced') : t('mission_reset_daily');
-
-    const infoDiv = document.createElement('div');
-    infoDiv.style.textAlign = "center";
-    infoDiv.style.fontSize = "0.85rem";
-    infoDiv.style.color = "#7f8c8d"; // 은은한 회색
-    infoDiv.style.marginBottom = "15px"; // 목록과의 간격
-    infoDiv.style.padding = "5px";
-    infoDiv.style.backgroundColor = "rgba(0,0,0,0.1)"; // 살짝 어두운 배경
-    infoDiv.style.borderRadius = "10px";
-    infoDiv.style.display = "inline-block"; // 글자 크기만큼만 배경 차지
-
-    // 가운데 정렬을 위한 래퍼(Wrapper) 생성
-    const wrapperDiv = document.createElement('div');
-    wrapperDiv.style.textAlign = "center";
-    wrapperDiv.style.width = "100%";
-
-    infoDiv.innerText = resetInfoText;
-    wrapperDiv.appendChild(infoDiv);
-    listArea.appendChild(wrapperDiv);
-
-
-    // 2. 미션 내용 정의
+/* 일일·주간 미션 정의 — 화면(renderMissionList)과 자동 완료(_autoClaimMissions)가 같은 목록을 본다 (2026-09-14 분리) */
+function _buildMissionDefs(tabName) {
     let missions = [];
-
-    if (tabName === 'advanced') {
-        renderAdvancedMissionList(listArea);
-        return;
-    }
-
-    // ★ 미션 포인트 바 (일일/주간 클리어 시 적립, 상자 클릭으로 수령)
-    checkMissionPointsReset();
-    listArea.insertAdjacentHTML('beforeend', buildMissionPointBarHtml(tabName === 'weekly' ? 'weekly' : 'daily'));
-
     if (tabName === 'daily') {
         missions = [
             {
@@ -13063,6 +13190,51 @@ function renderMissionList(tabName) {
         const _anyBoss2 = _cm2.some(m => Object.keys(m).some(id => id.endsWith('-boss') && m[id] > 0));
         if (!_anyBoss2) missions = missions.filter(m => m.id !== 3);
     }
+    return missions;
+}
+
+function renderMissionList(tabName) {
+    const listArea = document.getElementById('mission-list-area');
+    if (!listArea) return;
+
+    listArea.innerHTML = ""; // 기존 목록 초기화
+
+    // 1. [추가됨] 초기화 안내 문구 삽입
+    const resetInfoText = tabName === 'weekly' ? t('mission_reset_weekly') : tabName === 'advanced' ? t('mission_reset_advanced') : t('mission_reset_daily');
+
+    const infoDiv = document.createElement('div');
+    infoDiv.style.textAlign = "center";
+    infoDiv.style.fontSize = "0.85rem";
+    infoDiv.style.color = "#7f8c8d"; // 은은한 회색
+    infoDiv.style.marginBottom = "15px"; // 목록과의 간격
+    infoDiv.style.padding = "5px";
+    infoDiv.style.backgroundColor = "rgba(0,0,0,0.1)"; // 살짝 어두운 배경
+    infoDiv.style.borderRadius = "10px";
+    infoDiv.style.display = "inline-block"; // 글자 크기만큼만 배경 차지
+
+    // 가운데 정렬을 위한 래퍼(Wrapper) 생성
+    const wrapperDiv = document.createElement('div');
+    wrapperDiv.style.textAlign = "center";
+    wrapperDiv.style.width = "100%";
+
+    infoDiv.innerText = resetInfoText;
+    wrapperDiv.appendChild(infoDiv);
+    listArea.appendChild(wrapperDiv);
+
+
+    // 2. 미션 내용 정의
+    let missions = [];
+
+    if (tabName === 'advanced') {
+        renderAdvancedMissionList(listArea);
+        return;
+    }
+
+    // ★ 미션 포인트 바 (일일/주간 클리어 시 적립, 상자 클릭으로 수령)
+    checkMissionPointsReset();
+    listArea.insertAdjacentHTML('beforeend', buildMissionPointBarHtml(tabName === 'weekly' ? 'weekly' : 'daily'));
+
+    missions = _buildMissionDefs(tabName);
 
     missions.forEach(m => {
         // 진행도 계산 (100% 넘지 않게)
@@ -13205,6 +13377,15 @@ function _checkFirstDailyWeeklyStudy() {
 }
 
 /* [UI: 미션 화면 (하단 버튼 디자인 적용)] */
+/* 리그 — 아직 없다. 자리를 먼저 낸다: 만들 예정이라는 것을 드러내기 위해 (2026-09-14) */
+function openLeagueComingSoon() {
+    if (typeof showToast === 'function') showToast(t('league_coming_soon'));
+}
+function openMissionFromMenu() {
+    if (typeof closeMoreMenu === 'function') closeMoreMenu();
+    openMission();
+}
+
 function openMission() {
     // 화면 전환
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -14345,6 +14526,7 @@ function loadTribeLeaderboard(tribeId, callback) {
                     tag: row.tag || "",
                     castle: row.castle || 0,
                     field: row.field || 0,   // 서버 스냅샷이 실어준 밭 (없으면 0 → 배지 없음)
+                    recallTitle: row.recallTitle || null, // 지난주 실시간 암송왕 칭호
                     isMe: ((row.name === myNickname || row.nickname === myNickname) && row.tag === myTag)
                 };
             });
@@ -14405,6 +14587,7 @@ function loadZionLeaderboard(callback) {
                     tag: row.tag || "",
                     castle: row.castle || 0,
                     field: row.field || 0,   // 서버 스냅샷이 실어준 밭 (없으면 0 → 배지 없음)
+                    recallTitle: row.recallTitle || null, // 지난주 실시간 암송왕 칭호
                     isMe: ((row.name === myNickname || row.nickname === myNickname) && row.tag === myTag)
                 };
             });
@@ -14705,7 +14888,7 @@ function loadRecallLeaderboard() {
                 const tag = String(d.tag || doc.id);
                 if (!tag || tag === '0000' || seen.has(tag)) return;
                 seen.add(tag);
-                rows.push({ name: d.nickname || '이름없음', tag, tribe: d.tribe || 0, dept: d.dept, count: d.recallCount || 0 });
+                rows.push({ name: d.nickname || '이름없음', tag, tribe: d.tribe || 0, dept: d.dept, count: d.recallCount || 0, field: d.maxHearts || 0, recallTitle: d.recallTitle || null });
             });
             rankingCache.recall = { data: rows, weekId, timestamp: Date.now() };
             renderRecallRankingList(rows, weekId);
@@ -14738,7 +14921,7 @@ function renderRecallRankingList(rows, weekId) {
         html += `<div ${isMe ? 'id="my-ranking-card"' : ''} style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;margin-bottom:8px;${isMe ? 'border:2px solid #2ecc71;background:rgba(46,204,113,0.14);' : 'border:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.3);'}">
             <div style="font-size:1.4rem;width:34px;text-align:center;">${badge}</div>
             <div style="flex:1;min-width:0;">
-                <div style="font-weight:bold;color:#fff;font-size:1rem;">${getTribeIcon(u.tribe)}${getDeptTag(u.dept)} ${escapeHtml(u.name)}</div>
+                <div style="font-weight:bold;color:#fff;font-size:1rem;display:flex;align-items:center;">${getTribeIcon(u.tribe)}${getDeptTag(u.dept)} ${escapeHtml(u.name)}${_fieldBadgeHtml(u.field)}${_recallTitleHtml(u.recallTitle)}</div>
                 <div style="font-size:0.78rem;color:#95a5a6;">#${u.tag}</div>
             </div>
             <div style="font-weight:800;color:#7ee2a8;font-size:1.05rem;white-space:nowrap;">${t('ranking_recall_unit', { n: shown.toLocaleString() })}</div>
@@ -14967,7 +15150,7 @@ function renderRankingList(data) {
             <div style="flex:1;">
                 <div style="display:flex; align-items:center; margin-bottom:4px;">
                     <span style="font-weight:bold; font-size:1.05rem; display:flex; align-items:center; color:#fff;">
-                        ${getTribeIcon(userTribe)}${getDeptTag(user.dept)} ${escapeHtml(user.name)}${_BETA ? _fieldBadgeHtml(user.field) : ''}
+                        ${getTribeIcon(userTribe)}${getDeptTag(user.dept)} ${escapeHtml(user.name)}${_BETA ? _fieldBadgeHtml(user.field) : ''}${_recallTitleHtml(user.recallTitle)}
                     </span>
                 </div>
                 <div style="font-size:0.8rem; color:#bdc3c7;">
@@ -18760,7 +18943,7 @@ function shareSaveCodeAndGetReward() {
         if (missionData.daily.backup < 1 || !missionData.daily.backup) {
             missionData.daily.backup = 1;
             saveGameData();
-            if (typeof updateMissionUI === 'function') updateMissionUI();
+            if (typeof _autoClaimMissions === 'function') _autoClaimMissions();
             alert(t('alert_file_saved_share'));
         } else {
             alert(t('alert_file_saved'));
@@ -18913,14 +19096,14 @@ function updateProfileUI() {
     if (display) {
         const tag = (typeof myTag !== 'undefined' && myTag) ? myTag : "0000";
         // ★ getTribeIcon 사용
-        display.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname} <span style="opacity:0.6; font-size:0.85em;">#${tag}</span>${_BETA ? _fieldBadgeHtml(maxPlayerHearts) : ''}`;
+        display.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname} <span style="opacity:0.6; font-size:0.85em;">#${tag}</span>${_BETA ? _fieldBadgeHtml(maxPlayerHearts) : ''}${_recallTitleHtml(_myRecallTitle)}`;
     }
 
     // 2. 상단 작은 닉네임
     const subDisplay = document.getElementById('sub-profile-name');
     if (subDisplay) {
         // 지파 아이콘과 닉네임만 표시 (지파 이름 텍스트 제거)
-        subDisplay.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname}${_BETA ? _fieldBadgeHtml(maxPlayerHearts) : ''}`;
+        subDisplay.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname}${_BETA ? _fieldBadgeHtml(maxPlayerHearts) : ''}${_recallTitleHtml(_myRecallTitle)}`;
     }
 
     applyHomeThemeByTribe(myTribe);
@@ -19891,10 +20074,10 @@ function updateNotificationBadges() {
         else shopMenuItem.classList.remove('shop-highlight');
     }
 
-    // 4. 더보기 알림 체크 (상점 무료 생명의 떡 포함)
+    // 4. 더보기 알림 — 미션이 더보기로 들어갔으므로(2026-09-14) 미션 배지를 여기에도 비춘다. 떡은 이제 없다
     const moreBadge = document.getElementById('badge-more');
     if (moreBadge) {
-        if (hasFreeLifeBread) moreBadge.classList.add('active');
+        if (hasMissionReward) moreBadge.classList.add('active');
         else moreBadge.classList.remove('active');
     }
 }
@@ -20446,6 +20629,7 @@ function loadTotalHallRanking() {
                     tag: row.tag || "",
                     castle: row.castle || 0,
                     field: row.field || 0,   // 서버 스냅샷이 실어준 밭 (없으면 0 → 배지 없음)
+                    recallTitle: row.recallTitle || null, // 지난주 실시간 암송왕 칭호
                     isMe: ((row.name === myNickname || row.nickname === myNickname) && row.tag === myTag)
                 };
             });

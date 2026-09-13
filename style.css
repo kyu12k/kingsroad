@@ -4445,6 +4445,38 @@ body, html {
     white-space: nowrap;
 }
 
+/* 미션 자동 완료 토스트 — 위쪽에 쌓인다. 알리기만 하므로 pointer-events 없음 */
+#mission-toast-stack {
+    position: fixed;
+    top: max(12px, env(safe-area-inset-top));
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 99998;
+    pointer-events: none;
+    width: min(92vw, 380px);
+}
+.mission-toast {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(22, 28, 36, 0.94);
+    color: #ecf0f1;
+    border: 1px solid rgba(46, 204, 113, 0.45);
+    border-radius: 14px;
+    padding: 10px 14px;
+    font-size: 0.92rem;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+    animation: missionToastIn 0.35s ease-out;
+}
+.mission-toast.out { animation: missionToastOut 0.4s ease-in forwards; }
+.mission-toast-check { font-size: 1rem; flex-shrink: 0; }
+.mission-toast-title { flex: 1; min-width: 0; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mission-toast-reward { color: #f1c40f; font-weight: 800; white-space: nowrap; flex-shrink: 0; }
+@keyframes missionToastIn  { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: none; } }
+@keyframes missionToastOut { to { opacity: 0; transform: translateY(-8px); } }
+@media (prefers-reduced-motion: reduce) {
+    .mission-toast, .mission-toast.out { animation: none; }
+}
+
 .gem-reward-toast {
     position: fixed;
     bottom: 80px;
@@ -6034,7 +6066,64 @@ body, html {
     .field-chip.can-grow { animation: none; background: rgba(241, 196, 15, 0.18); }
 }
 
-/* 이정표 배지 — 랭킹·프로필의 이름 옆. 삼십 배부터 붙는다 */
+/* 밭 칩 — 이모지를 원 안에, 원에 색 테두리. 1단계 흙 → 2단계 초록 → 3단계 하늘, 100은 금 + 번쩍임 */
+.field-ring {
+    --ring: #a97c50;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.55em; height: 1.55em;
+    border-radius: 50%;
+    border: 2px solid var(--ring);
+    background: rgba(20, 30, 40, 0.28);
+    box-sizing: border-box;
+    vertical-align: middle;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.field-ring-ico { font-size: 0.9em; line-height: 1; transform: translateY(0.02em); }
+.field-ring.tier-1 { --ring: #a97c50; }   /* 흙 */
+.field-ring.tier-2 { --ring: #2ecc71; }   /* 초록 */
+.field-ring.tier-3 { --ring: #5dade2; }   /* 하늘 */
+.field-ring.field-max {
+    --ring: #f1c40f;
+    background: radial-gradient(circle at 35% 30%, rgba(255, 244, 180, 0.55), rgba(120, 90, 0, 0.35));
+    box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.55), 0 0 8px rgba(255, 215, 0, 0.55);
+    animation: fieldMaxShine 2.4s ease-in-out infinite;
+}
+@keyframes fieldMaxShine {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.55), 0 0 6px rgba(255, 215, 0, 0.45); filter: brightness(1); }
+    50%      { box-shadow: 0 0 0 2px rgba(255, 235, 120, 0.9), 0 0 16px rgba(255, 215, 0, 0.95); filter: brightness(1.25); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .field-ring.field-max { animation: none; }
+}
+.field-badge-ring { margin-left: 6px; }
+
+/* 실시간 암송왕 칭호 — 지난주 지파 1~3위. 시온성 1~3위는 빛나는 테두리 */
+.recall-title {
+    display: inline-flex; align-items: center; gap: 2px;
+    margin-left: 6px; padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 0.68em; font-weight: 800; letter-spacing: -0.2px;
+    vertical-align: middle; white-space: nowrap;
+    border: 1px solid transparent;
+}
+.recall-title.r1 { color: #7d5a00; background: rgba(255, 215, 0, 0.28);  border-color: rgba(255, 215, 0, 0.6); }
+.recall-title.r2 { color: #4a5560; background: rgba(200, 210, 220, 0.35); border-color: rgba(190, 200, 210, 0.7); }
+.recall-title.r3 { color: #7a3f12; background: rgba(205, 127, 50, 0.28);  border-color: rgba(205, 127, 50, 0.65); }
+.recall-title.recall-zion {
+    box-shadow: 0 0 0 1px rgba(46, 204, 113, 0.6), 0 0 8px rgba(46, 204, 113, 0.7);
+    animation: recallZionShine 2.2s ease-in-out infinite;
+}
+@keyframes recallZionShine {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(46, 204, 113, 0.5), 0 0 6px rgba(46, 204, 113, 0.5); }
+    50%      { box-shadow: 0 0 0 2px rgba(120, 240, 170, 0.9), 0 0 14px rgba(46, 204, 113, 0.95); }
+}
+@media (prefers-reduced-motion: reduce) { .recall-title.recall-zion { animation: none; } }
+.field-ring-lg { width: 3.2em; height: 3.2em; font-size: 1.4rem; border-width: 3px; }
+.field-ring-lg .field-ring-ico { font-size: 1.15em; }
+.field-chip .field-ring { margin-right: 2px; font-size: 0.95em; }
+
+/* 이정표 배지 — 랭킹·프로필의 이름 옆. 삼십 배부터 붙는다 (현재는 .field-ring 칩으로 대체, 밭 화면 문구에만 남음) */
 .field-badge {
     display: inline-flex; align-items: center; gap: 2px;
     margin-left: 6px; padding: 1px 7px;
