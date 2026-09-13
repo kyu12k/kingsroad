@@ -17591,7 +17591,9 @@ function handleScrollCardClick(btn, word) {
 function showDamageEffect() {
     // 1. 하트 요소 생성
     const el = document.createElement('div');
-    el.innerText = "💔"; // 깨진 하트 (혹은 그냥 ❤️)
+    // 밭 개편(베타)에서는 잃는 체력이 없다 — 깨진 하트는 없는 일을 말하므로 '틀렸다'만 뜻하는 ❌로.
+    // 다른 스텝(초성·조립·타워)은 원래 흔들림 + 빨간 표시뿐이라 이쪽만 하트를 띄우고 있었다.
+    el.innerText = _BETA ? "❌" : "💔";
     el.className = "damage-heart-effect";
     document.body.appendChild(el);
 
