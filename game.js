@@ -121,8 +121,8 @@ const LANG = {
         item_refund_toast: '🍞 떡 {bread}개 · 🛡️ 방패 {shield}개를 💎 {gems}으로 돌려드렸어요',
         rain_name: '단비',
         sun_name: '햇살',
-        rain_promise: '🌧️ 내일 단비가 내립니다',
-        sun_promise: '☀️ 내일은 햇살입니다',
+        rain_promise: '🌧️ 내일 첫 스테이지를 시작하면 단비(승점 2배, 20분)가 내립니다',
+        sun_promise: '☀️ 미션 4개 완료! 내일 첫 스테이지를 시작하면 햇살(승점 3배, 20분)이 내립니다',
         rain_started: '{icon} {name}이 내립니다 — {min}분간 승점 ×{multi}',
         rain_active: '{name} ×{multi} ({time})',
         header_today: '🌱 오늘 뿌린 씨 {today} · 어제 {yday}',
@@ -214,7 +214,7 @@ const LANG = {
         blank_check_btn: '백지로 확인해보기',
         blank_check_again: '한 번 더 백지로',
         blank_check_hint: '지금이 가장 잘 떠오를 때예요',
-        blank_check_first_bonus: '✨ 이 구절을 처음 백지로 써냈습니다! 💎 +{gem}',
+        blank_check_first_bonus: '✨ 첫 백지 통과 💎 +{gem}',
         alert_hint_locked: '먼저 한 번 시도해 보세요. 틀린 뒤에 힌트가 열립니다. 🔒',
         hint_btn_label: '💡 힌트',
         hint_cooldown_sec: '{n}초',
@@ -261,7 +261,7 @@ const LANG = {
         alert_error_msg: '오류 발생: {msg}',
         alert_no_save_data: '저장할 기록이 없습니다.',
         alert_encrypt_error: '암호화 중 오류가 발생했습니다.',
-        alert_file_saved_share: '📥 파일이 기기의 \'다운로드\' 폴더에 저장되었습니다!\n텔레그램이나 카카오톡으로 이 파일을 공유해 보관하세요.\n\n(일일 미션 달성! 보상을 받으세요 🎁)',
+        alert_file_saved_share: '📥 파일이 기기의 \'다운로드\' 폴더에 저장되었습니다!\n텔레그램이나 카카오톡으로 이 파일을 공유해 보관하세요.\n\n(일일 미션 「기록 보관」 완료 💎 100)',
         alert_file_saved: '📥 파일이 기기의 \'다운로드\' 폴더에 안전하게 저장되었습니다!\n텔레그램이나 카카오톡으로 이 파일을 공유해 보관하세요.',
         alert_no_code: '입력된 코드가 없습니다.',
         alert_pwd_cancelled: '비밀번호 입력이 취소되었습니다.',
@@ -1011,7 +1011,7 @@ const LANG = {
         blank_check_btn: 'Try it from memory',
         blank_check_again: 'From memory again',
         blank_check_hint: 'Right now is when it comes back most easily',
-        blank_check_first_bonus: '✨ First time writing this verse from memory! 💎 +{gem}',
+        blank_check_first_bonus: '✨ First blank pass 💎 +{gem}',
         alert_hint_locked: 'Give it a try first. Hints unlock after a wrong answer. 🔒',
         hint_btn_label: '💡 Hint',
         hint_cooldown_sec: '{n}s',
@@ -1052,8 +1052,8 @@ const LANG = {
         item_refund_toast: '🍞 {bread} bread · 🛡️ {shield} shields refunded as 💎 {gems}',
         rain_name: 'Rain',
         sun_name: 'Sunshine',
-        rain_promise: '🌧️ Rain comes tomorrow',
-        sun_promise: '☀️ Tomorrow brings sunshine',
+        rain_promise: '🌧️ Start your first stage tomorrow and rain falls (score ×2, 20 min)',
+        sun_promise: '☀️ 4 missions done! Start your first stage tomorrow and sunshine falls (score ×3, 20 min)',
         rain_started: '{icon} {name} is falling — score ×{multi} for {min} min',
         rain_active: '{name} ×{multi} ({time})',
         header_today: '🌱 Seeds today {today} · yesterday {yday}',
@@ -1093,7 +1093,7 @@ const LANG = {
         alert_error_msg: 'Error: {msg}',
         alert_no_save_data: 'No saved data to export.',
         alert_encrypt_error: 'Encryption error occurred.',
-        alert_file_saved_share: '📥 File saved to your Downloads folder!\nShare it via Telegram or KakaoTalk to keep it safe.\n\n(Daily mission complete! Claim your reward 🎁)',
+        alert_file_saved_share: '📥 File saved to your Downloads folder!\nShare it via Telegram or KakaoTalk to keep it safe.\n\n(Daily mission "Backup" complete 💎 100)',
         alert_file_saved: '📥 File safely saved to your Downloads folder!\nShare it via Telegram or KakaoTalk to keep it safe.',
         alert_no_code: 'No code entered.',
         alert_pwd_cancelled: 'Password entry was cancelled.',
@@ -23362,10 +23362,8 @@ function backToHardshipChapter() {
 
 function awardHardshipScore(points) {
     if (!points || points <= 0) return;
-    // 오늘 뿌린 씨 — 결과 화면 백지 확인·빠른 모드 승급은 방금 stageClear가 센 같은 구절이라 뺀다
-    if (!hardshipState.trainingMode && !hardshipState.verseCheckStageId && !hardshipState.quickReviewStageId && playerHearts > 0) {
-        _noteDailySeeds(points / playerHearts);
-    }
+    // 오늘 뿌린 씨 = 승점 ÷ 밭. 결과 화면 백지 확인도 승점(×0.25)을 받으니 그만큼 씨다 — 같은 구절이라도 노동은 따로다
+    if (!hardshipState.trainingMode && playerHearts > 0) _noteDailySeeds(points / playerHearts);
 
     checkBoosterStatus();
     const multiplier = boosterData.active ? boosterData.multiplier : 1;
