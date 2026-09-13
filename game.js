@@ -121,9 +121,9 @@ const LANG = {
         item_refund_toast: '🍞 떡 {bread}개 · 🛡️ 방패 {shield}개를 💎 {gems}으로 돌려드렸어요',
         rain_name: '단비',
         sun_name: '햇살',
-        rain_promise: '🌧️ 내일 첫 스테이지를 시작하면 단비(승점 2배, 20분)가 내립니다',
-        sun_promise: '☀️ 미션 4개 완료! 내일 첫 스테이지를 시작하면 햇살(승점 3배, 20분)이 내립니다',
-        rain_started: '{icon} {name}이 내립니다 — {min}분간 승점 ×{multi}',
+        rain_promise: '🌧️ 내일 첫 스테이지를 시작하면\n단비가 내립니다 (승점 2배 · 20분)',
+        sun_promise: '☀️ 미션 4개 완료!\n내일 첫 스테이지를 시작하면 햇살이 내립니다 (승점 3배 · 20분)',
+        rain_started: '{icon} {name}이 내립니다\n{min}분간 승점 ×{multi}',
         rain_active: '{name} ×{multi} ({time})',
         header_today: '🌱 오늘 뿌린 씨 {today} · 어제 {yday}',
         header_rain_now: '{icon} {name} 내리는 중',
@@ -1052,9 +1052,9 @@ const LANG = {
         item_refund_toast: '🍞 {bread} bread · 🛡️ {shield} shields refunded as 💎 {gems}',
         rain_name: 'Rain',
         sun_name: 'Sunshine',
-        rain_promise: '🌧️ Start your first stage tomorrow and rain falls (score ×2, 20 min)',
-        sun_promise: '☀️ 4 missions done! Start your first stage tomorrow and sunshine falls (score ×3, 20 min)',
-        rain_started: '{icon} {name} is falling — score ×{multi} for {min} min',
+        rain_promise: '🌧️ Start your first stage tomorrow\nand rain falls (score ×2 · 20 min)',
+        sun_promise: '☀️ 4 missions done!\nStart your first stage tomorrow and sunshine falls (score ×3 · 20 min)',
+        rain_started: '{icon} {name} is falling\nscore ×{multi} for {min} min',
         rain_active: '{name} ×{multi} ({time})',
         header_today: '🌱 Seeds today {today} · yesterday {yday}',
         header_rain_now: '{icon} {name} falling',
@@ -9291,13 +9291,15 @@ function escapeHtml(value) {
 
 function showToast(message) {
     const toast = document.getElementById("toast-notification");
-    toast.innerText = message;
+    toast.innerText = message;   // '\n'은 CSS white-space: pre-line 덕에 줄바꿈이 된다 — 긴 문구는 문구가 자를 자리를 정한다
     toast.className = "show";
 
-    // 2초 뒤에 사라짐
-    setTimeout(function () {
+    // 짧은 건 2초, 긴 문장은 읽을 만큼 (최대 4.5초)
+    const ms = Math.min(4500, 2000 + Math.max(0, String(message).length - 18) * 60);
+    clearTimeout(window._toastHideTimer);
+    window._toastHideTimer = setTimeout(function () {
         toast.className = toast.className.replace("show", "");
-    }, 2000);
+    }, ms);
 }
 
 // 2. 체크포인트 저장 (5구절마다)
