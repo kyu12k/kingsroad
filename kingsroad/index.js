@@ -34,7 +34,10 @@ const SCORE_WRITE_WHITELIST = [
     ...SCORE_FIELDS,
     'nickname', 'castleLv', 'tribe', 'dept', 'tag',
     'weekId', 'monthId', 'prevWeekId', 'prevMonthId', 'maxHearts', 'weeklyHistory',
+    'recallWeekId', 'recallCount', // 실시간 암송왕 (2026-09-13) — 이번 주 백지로 써낸 구절 수
 ];
+// 실시간 암송왕 상한: 404절 × 7일 (같은 구절 하루 1회 규칙의 이론상 최대)
+const RECALL_COUNT_MAX = 404 * 7;
 
 /**
  * 게임 데이터 저장 검증 Cloud Function
@@ -143,6 +146,16 @@ exports.submitScoreSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =>
         if (typeof p[f] !== 'number' || !Number.isInteger(p[f]) || p[f] < 0 || p[f] > SCORE_ABS_MAX) {
             throw new HttpsError('invalid-argument', '점수 값이 유효하지 않습니다.');
         }
+    }
+
+    // 실시간 암송왕 — 정수 0~2,828, 주차는 'YYYY-Www' 형식만
+    if (p.recallCount !== undefined) {
+        if (typeof p.recallCount !== 'number' || !Number.isInteger(p.recallCount) || p.recallCount < 0 || p.recallCount > RECALL_COUNT_MAX) {
+            throw new HttpsError('invalid-argument', '암송 집계 값이 유효하지 않습니다.');
+        }
+    }
+    if (p.recallWeekId !== undefined && !/^\d{4}-W\d{2}$/.test(String(p.recallWeekId))) {
+        throw new HttpsError('invalid-argument', '암송 집계 주차가 유효하지 않습니다.');
     }
 
     const lbRef = db.collection('leaderboard').doc(String(myTag));

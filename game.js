@@ -664,6 +664,16 @@ const LANG = {
         ranking_glory_desc: '내년 연말정산 이후,<br>이곳에 위대한 역사가 보존됩니다.',
         ranking_reward_notice: '🎁 시온성 순위 보상은 <strong style="color:#bdc3c7;">100위 안</strong>이면 누구나 받습니다.<br>지파 순위 보상은 해당 주에 지파원 <strong style="color:#bdc3c7;">10명 이상</strong>이 참여해야 지급됩니다.',
         ranking_tab_group_current: '현재 랭킹',
+        // 실시간 암송왕 (2026-09-13)
+        ranking_tab_recall: '실시간 암송왕',
+        ranking_recall_title: '🖊️ 실시간 암송왕',
+        ranking_recall_desc: '이번 주 <b>백지·빈칸으로 써낸 구절 수</b><br>밭·부스터와 상관없이 한 절은 1',
+        ranking_recall_unit: '{n}절',
+        ranking_recall_empty: '아직 아무도 없어요.<br>백지나 빈칸으로 한 절을 써내면 여기에 올라갑니다.',
+        ranking_recall_mine_pending: '내 기록 (곧 반영)',
+        ranking_recall_opens_monday: '월요일 0시에 열려요',
+        ranking_offline: '오프라인 상태입니다.',
+        ranking_load_failed: '불러오기에 실패했습니다.',
         ranking_tab_group_hall: '명예의 전당',
         ranking_tab_weekly: '주간 명예',
         ranking_tab_monthly: '월간 명예',
@@ -1462,6 +1472,15 @@ const LANG = {
         ranking_glory_desc: 'After next year\'s year-end,<br>great history will be preserved here.',
         ranking_reward_notice: '🎁 Zion ranking rewards go to everyone in the <strong style="color:#bdc3c7;">Top 100</strong>.<br>Tribe ranking rewards require <strong style="color:#bdc3c7;">10+ participants</strong> from your tribe that week.',
         ranking_tab_group_current: 'Current Rankings',
+        ranking_tab_recall: 'Live Recall Kings',
+        ranking_recall_title: '🖊️ Live Recall Kings',
+        ranking_recall_desc: 'Verses <b>written from blank this week</b><br>Field and boosters do not count — one verse is 1',
+        ranking_recall_unit: '{n} verses',
+        ranking_recall_empty: 'Nobody yet.<br>Write one verse from blank and you will appear here.',
+        ranking_recall_mine_pending: 'My count (syncing)',
+        ranking_recall_opens_monday: 'Opens Monday at midnight',
+        ranking_offline: 'You are offline.',
+        ranking_load_failed: 'Failed to load.',
         ranking_tab_group_hall: 'Hall of Fame',
         ranking_tab_weekly: 'Weekly Hall',
         ranking_tab_monthly: 'Monthly Hall',
@@ -1961,6 +1980,32 @@ const REVIEW_SAMPLE_MIN_MS = 1000;
 const REVIEW_SAMPLE_MAX_MS = 15 * 60 * 1000;  // 1구절에 15분이면 자리를 비운 것이다
 let reviewSamples = [];
 
+/* ── 실시간 암송왕 (2026-09-13) ──────────────────────────────────────────────
+   이번 주 백지·빈칸으로 써낸 구절 수. **밭·부스터·순서·콘텐츠 종류를 아무것도 곱하지 않는다.**
+   승점 랭킹은 절 수 × 밭이라 같은 노력이 200배 다른 점수가 되고(W37: 중앙값 85 / 최고 87만),
+   "비슷한 사람과 겨룬다"가 성립하지 않았다. 이 판은 노력 한 단위 = 1이다.
+   세는 기준은 typedPass와 같다(타이핑 통과, 'learn' 제외) + 힌트 20% 이하 + 같은 구절 하루 1회. */
+let recallWeek = { weekId: '', count: 0, seen: {} };   // seen: stageId → 마지막으로 센 날(6시 경계)
+const RECALL_WEEK_MAX = 404 * 7;                        // 서버 상한과 같다 (kingsroad/index.js)
+/* 시작 주차. 일요일 저녁(2026-09-13)에 배포했는데 그대로 켜면 W37 판은 '오늘 밤 몇 시간 백지를 한 사람'만
+   올라가고 이번 주 내내 했던 사람은 0이다. 자정에 맞춰 손으로 배포하는 대신 여기서 게이트를 건다 —
+   집계도 순위표도 모두에게 같은 순간(월요일 0시)에 열린다. 문자열 비교로 충분하다('YYYY-Www'). */
+const RECALL_START_WEEK = '2026-W38';
+function _recallBoardOpen() { return getWeekId() >= RECALL_START_WEEK; }
+
+function _countRecallForWeek(stageId, hints, verseLen) {
+    if (!_recallBoardOpen()) return false;
+    const wk = getWeekId();
+    if (recallWeek.weekId !== wk) recallWeek = { weekId: wk, count: 0, seen: {} };
+    // 힌트가 무료라 다 열고 써도 통과가 된다 — 난이도 라벨과 같은 잣대(HINT_OK_RATIO)로 거른다
+    if (verseLen > 0 && (hints || 0) > Math.ceil(verseLen * HINT_OK_RATIO)) return false;
+    const day = _get6AMDayStr();
+    if (recallWeek.seen[stageId] === day) return false;   // 같은 구절은 하루 1회 (승점 제한과 같은 경계)
+    recallWeek.seen[stageId] = day;
+    recallWeek.count = Math.min(RECALL_WEEK_MAX, recallWeek.count + 1);
+    return true;
+}
+
 /* 복습 한 판의 **시작 지점**을 잡는다.
    ★ 백지 승급은 '백지 세션 → 훈련 코스'로 두 번에 나뉘어 도는데,
    이어지는 코스(`quick-after-*`)에서 다시 시작 시각을 잡으면 **백지에 쓴 시간이 통째로 빠져
@@ -2282,6 +2327,13 @@ loadGameData = function () {
         }
         if (Array.isArray(parsed.reviewSamples)) {
             reviewSamples = parsed.reviewSamples.slice(-REVIEW_SAMPLE_MAX);
+        }
+        if (parsed.recallWeek && typeof parsed.recallWeek === 'object') {
+            recallWeek = {
+                weekId: String(parsed.recallWeek.weekId || ''),
+                count: Math.max(0, parseInt(parsed.recallWeek.count, 10) || 0),
+                seen: (parsed.recallWeek.seen && typeof parsed.recallWeek.seen === 'object') ? parsed.recallWeek.seen : {}
+            };
         }
         if (typeof parsed.onboardStep === 'string') onboardStep = parsed.onboardStep;
         bossFirstClearClaimed = new Set(parsed.bossFirstClearClaimed || []);
@@ -5031,7 +5083,8 @@ let rankingCache = {
     tribes: {}, // { tribeId: { data, timestamp }, ... }
     zion: { data: null, timestamp: 0 },
     weeklyHall: { data: null, timestamp: 0 },
-    monthlyHall: { data: null, timestamp: 0 }
+    monthlyHall: { data: null, timestamp: 0 },
+    recall: { data: null, weekId: '', timestamp: 0 } // 실시간 암송왕 (5분)
 };
 
 const RANKING_CACHE_DURATION = 60 * 60 * 1000; // 1시간(ms)
@@ -9201,6 +9254,7 @@ function saveGameData() {
         hardshipVerseClearHistory: hardshipVerseClearHistory,
         verseRecall: verseRecall, // 구절별 백지 산출 기록 (망각·암송의 고난)
         reviewSamples: reviewSamples, // 복습 소요 시간 표본 (백지 승급이 실제로 짧은지 판정용)
+        recallWeek: recallWeek, // 실시간 암송왕 — 이번 주 써낸 구절 수
         onboardStep: onboardStep, // 온보딩 이탈 지점 (profile→map→stage→cleared)
         bibleReadLog: bibleReadLog,
         sessionTimeLog: sessionTimeLog,
@@ -9364,11 +9418,26 @@ function _mergeReviewSamples(target, other) {
     return added.length;
 }
 
+/* 실시간 암송왕 주간 집계 — 더 최근 주, 같은 주면 더 많이 센 쪽을 통째로 취한다.
+   seen을 합집합으로 합치면 count와 어긋나므로(하루 1회 규칙이 기기마다 따로 돌았다) 통째로 고른다.
+   두 기기에서 같은 주에 각각 센 만큼은 일부 잃지만, 다음 통과에서 다시 쌓인다. */
+function _mergeRecallWeek(target, other) {
+    const a = (target && target.recallWeek) || null;
+    const b = (other && other.recallWeek) || null;
+    if (!b || !b.weekId) return 0;
+    if (!a || !a.weekId || b.weekId > a.weekId || (b.weekId === a.weekId && (b.count || 0) > (a.count || 0))) {
+        if (target) target.recallWeek = b;
+        return 1;
+    }
+    return 0;
+}
+
 function _mergeSaveProgress(target, other) {
     if (!target || !other) return 0;
     let took = 0;
     took += _mergeVerseRecall(target, other);
     took += _mergeReviewSamples(target, other);
+    took += _mergeRecallWeek(target, other);
 
     // 1) 자유여행 — 최상위 필드
     {
@@ -13939,6 +14008,13 @@ function openRankingScreen() {
                 <span style="font-size:1.05rem;">👑</span><span>Zion</span>
             </button>
         </div>
+        ${_recallBoardOpen() ? `
+        <button id="tab-recall" onclick="openRankingModal('recall', t('ranking_recall_title'))" style="width:100%; padding:11px 6px; border-radius:10px; border:1px solid rgba(46,204,113,0.4); background:linear-gradient(145deg, rgba(46,204,113,0.16), rgba(39,174,96,0.06)); color:#7ee2a8; font-weight:bold; cursor:pointer; font-size:0.9rem; display:flex; justify-content:center; align-items:center; gap:7px; margin-bottom:14px;">
+            <span style="font-size:1.1rem;">🖊️</span><span>${t('ranking_tab_recall')}</span>
+        </button>` : `
+        <div style="width:100%; padding:10px 6px; border-radius:10px; border:1px dashed rgba(46,204,113,0.35); color:#7f8c8d; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:7px; margin-bottom:14px; box-sizing:border-box;">
+            <span style="font-size:1rem; opacity:0.6;">🖊️</span><span>${t('ranking_tab_recall')} · ${t('ranking_recall_opens_monday')}</span>
+        </div>`}
         <div style="font-size:0.7rem; color:#7f8c8d; font-weight:bold; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:7px; padding-left:2px;">${t('ranking_tab_group_hall')}</div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:7px;">
             <button id="tab-weekly-hall" onclick="openRankingModal('weekly-hall', t('ranking_tab_weekly_full'))" style="padding:10px 6px; border-radius:10px; border:1px solid rgba(241,196,15,0.25); background:linear-gradient(145deg, rgba(241,196,15,0.1), rgba(243,156,18,0.05)); color:#f0d060; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:6px;">
@@ -14410,7 +14486,97 @@ function openRankingModal(tabName, titleText) {
         if (typeof loadYearlyHallOfFame === 'function') loadYearlyHallOfFame();
     } else if (tabName === 'guild-raid') {
         loadGuildRaidLeaderboard();
+    } else if (tabName === 'recall') {
+        loadRecallLeaderboard();
     }
+}
+
+/* ── 실시간 암송왕 목록 ─────────────────────────────────────────────────────
+   6시간 스냅샷이 아니라 **바로 조회**한다 — 색인(recallWeekId ASC, recallCount DESC)이 있어
+   조건에 맞는 상위 100건만 읽는다. 전체 사용자 수와 무관하게 한 번 열면 최대 100건.
+   그래도 열 때마다 나가므로 5분 캐시. 하루 수천 번 열리는 규모가 되면 시온성처럼 스냅샷으로 옮긴다.
+   리그로 나누지 않는 이유: 이 지표는 밭이 안 곱해져 분포가 좁다 — 리그가 풀려던 문제가 애초에 없다.
+   주간 참가자가 100명을 넘기면 그때 30명 방으로 나눈다. */
+const RECALL_RANK_CACHE_MS = 5 * 60 * 1000;
+function loadRecallLeaderboard() {
+    const list = document.getElementById('ranking-list');
+    if (!list) return;
+    if (!_recallBoardOpen()) {
+        list.innerHTML = `<div style="text-align:center;padding:50px;color:#bdc3c7;">${t('ranking_recall_opens_monday')}</div>`;
+        return;
+    }
+    if (typeof db === 'undefined' || !db) {
+        list.innerHTML = `<div style="text-align:center;padding:50px;color:#bdc3c7;">${t('ranking_offline')}</div>`;
+        return;
+    }
+    const weekId = getWeekId();
+    const c = rankingCache.recall;
+    if (c && c.data && c.weekId === weekId && (Date.now() - c.timestamp) < RECALL_RANK_CACHE_MS) {
+        renderRecallRankingList(c.data, weekId);
+        return;
+    }
+    list.innerHTML = `<div style="text-align:center;padding:50px;color:#bdc3c7;">${t('ranking_loading')}</div>`;
+    db.collection('leaderboard')
+        .where('recallWeekId', '==', weekId)
+        .where('recallCount', '>', 0)
+        .orderBy('recallCount', 'desc')
+        .limit(100)
+        .get()
+        .then(snap => {
+            const rows = [];
+            const seen = new Set();
+            snap.forEach(doc => {
+                const d = doc.data();
+                const tag = String(d.tag || doc.id);
+                if (!tag || tag === '0000' || seen.has(tag)) return;
+                seen.add(tag);
+                rows.push({ name: d.nickname || '이름없음', tag, tribe: d.tribe || 0, dept: d.dept, count: d.recallCount || 0 });
+            });
+            rankingCache.recall = { data: rows, weekId, timestamp: Date.now() };
+            renderRecallRankingList(rows, weekId);
+        })
+        .catch(err => {
+            console.warn('실시간 암송왕 조회 실패:', err);
+            list.innerHTML = `<div style="text-align:center;padding:50px;color:#e74c3c;">${t('ranking_load_failed')}</div>`;
+        });
+}
+
+function renderRecallRankingList(rows, weekId) {
+    const list = document.getElementById('ranking-list');
+    if (!list) return;
+    // 내 값은 서버 문서가 아니라 로컬을 쓴다 — 세션 직후 아직 안 올라갔어도 내 줄은 맞아야 한다
+    const myCount = (recallWeek.weekId === weekId) ? (recallWeek.count || 0) : 0;
+    let html = `<div style="padding:12px 15px; color:#bdc3c7; font-size:0.85rem; text-align:center; border-bottom:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.2); line-height:1.5;">
+        ${t('ranking_recall_desc')}<br><span style="opacity:0.6; font-size:0.8rem;">${weekId}</span>
+    </div>`;
+    if (!rows.length) {
+        html += `<div style="text-align:center; padding:30px; color:#7f8c8d; line-height:1.6;">${t('ranking_recall_empty')}</div>`;
+    }
+    const medals = ['🥇', '🥈', '🥉'];
+    let foundMe = false;
+    rows.forEach((u, i) => {
+        const rank = i + 1;
+        const isMe = u.tag === myTag;
+        if (isMe) foundMe = true;
+        const shown = isMe ? Math.max(u.count, myCount) : u.count;
+        const badge = rank <= 3 ? medals[i] : `<span style="font-size:1rem;color:#bdc3c7;font-weight:bold;">${rank}</span>`;
+        html += `<div ${isMe ? 'id="my-ranking-card"' : ''} style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;margin-bottom:8px;${isMe ? 'border:2px solid #2ecc71;background:rgba(46,204,113,0.14);' : 'border:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.3);'}">
+            <div style="font-size:1.4rem;width:34px;text-align:center;">${badge}</div>
+            <div style="flex:1;min-width:0;">
+                <div style="font-weight:bold;color:#fff;font-size:1rem;">${getTribeIcon(u.tribe)}${getDeptTag(u.dept)} ${escapeHtml(u.name)}</div>
+                <div style="font-size:0.78rem;color:#95a5a6;">#${u.tag}</div>
+            </div>
+            <div style="font-weight:800;color:#7ee2a8;font-size:1.05rem;white-space:nowrap;">${t('ranking_recall_unit', { n: shown.toLocaleString() })}</div>
+        </div>`;
+    });
+    if (!foundMe && myCount > 0) {
+        html += `<div style="margin-top:6px;padding:10px 14px;border-radius:12px;border:1px dashed rgba(46,204,113,0.5);color:#bdc3c7;font-size:0.85rem;display:flex;justify-content:space-between;">
+            <span>${t('ranking_recall_mine_pending')}</span><span style="color:#7ee2a8;font-weight:800;">${t('ranking_recall_unit', { n: myCount.toLocaleString() })}</span>
+        </div>`;
+    }
+    list.innerHTML = html;
+    const footer = document.getElementById('modal-my-rank-footer');
+    if (footer) footer.style.display = 'none';
 }
 
 function loadGuildRaidLeaderboard() {
@@ -19757,7 +19923,10 @@ function saveMyScoreToServer() {
         myMonthlyScore: currentMonthlyScore,
         totalScore: currentTotalScore, // 👉 누적 승점 항목 추가!
         yearlyScore: currentYearlyScore, // 🌟 추가 (이걸 바탕으로 서버가 지파 합산을 합니다)
-        maxHearts: maxPlayerHearts
+        maxHearts: maxPlayerHearts,
+        // 실시간 암송왕 — recallWeek이 지난 주 것이면 지난 주 id가 그대로 가서 이번 주 조회에 안 잡힌다 (의도)
+        recallWeekId: recallWeek.weekId || currentWeekId,
+        recallCount: recallWeek.count || 0
     };
 
     // 월 전환 시 이전달 백업 데이터가 있으면 함께 전송 (CF 아카이빙 경쟁조건 방어)
@@ -23769,6 +23938,9 @@ function recordVerseRecall(stageId, ok, hints, mode) {
         r.lastVerseLen = _txt.length;
     }
 
+    // 실시간 암송왕 집계 — 'learn'은 위에서 mode가 바뀌어 자연히 빠진다
+    if (ok && mode === 'memory') _countRecallForWeek(stageId, hints || 0, r.lastVerseLen || 0);
+
     verseRecall[stageId] = r;
 }
 
@@ -23984,6 +24156,9 @@ function submitHardshipMemoryGuess() {
 function finishHardshipSession(reason) {
     // 세션이 끝났으므로 이어하기 기록은 버린다 (끝난 세션을 되살리면 안 된다)
     _clearHardshipCheckpoint();
+    // 실시간 암송왕 — 점수 제출은 평소 화면을 벗어날 때만 돌아서, 세션이 끝날 때 한 번 올린다
+    // (구절마다가 아니라 세션마다 1회. 값이 그대로면 saveMyScoreToServer가 알아서 안 보낸다)
+    if (typeof saveMyScoreToServer === 'function') setTimeout(saveMyScoreToServer, 0);
     // 집중 훈련소 망각의 고난: 사이클 남아있으면 결과 화면 없이 재시작
     if (reason === 'completed' && hardshipState.trainingMode &&
         hardshipState.trainingCurrentCycle < hardshipState.trainingRepeatCount) {

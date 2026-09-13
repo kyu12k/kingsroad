@@ -1522,6 +1522,40 @@ verseRecall['1-1'] = { pass, typedPass, fail, firstPass, lastPass, lastAt, lastO
 
 ---
 
+## 실시간 암송왕 (`recallWeek`, 2026-09-13)
+
+**밭이 안 곱해지는 두 번째 순위표.** 승점 랭킹은 `절 수 × 밭 (× 망각 10)`이라 같은 노력이 200배 다른 점수가 되고
+(W37: 중앙값 85 / 최고 874,261 — 1만 배), 듀오링고식 "비슷한 사람과 겨룬다"가 성립하지 않았다.
+리그로 나눠도 못 고친다 — 문제는 인원이 아니라 분포다. 이 판은 **노력 한 단위 = 1**이다.
+
+| 규칙 | 값 | 왜 |
+|---|---|---|
+| 뭘 세나 | 타이핑 통과 (`recordVerseRecall`에서 `ok && mode==='memory'`) | `typedPass`와 같은 기준. 음성·`'learn'` 제외 |
+| 힌트 | `hints <= ceil(len × HINT_OK_RATIO)` (20%) | 힌트가 무료라 다 열고 써도 통과가 된다. 3초 간격은 늦출 뿐 못 막는다 |
+| 같은 구절 | 하루 1회 (`_get6AMDayStr`, `seen[stageId]`) | 승점 하루 제한과 같은 경계. 이론상 최대 404×7 = 2,828 (`RECALL_WEEK_MAX`) |
+| 주 경계 | `getWeekId()` (월요일 0시) | 승점 랭킹과 같은 주를 본다 |
+| 보상 | **없음** | 보상을 걸면 다시 "보상이 행동을 정하는" 문제. 순수한 판 |
+
+- **시작 주차 게이트** `RECALL_START_WEEK = '2026-W38'` (`_recallBoardOpen()`). 일요일 저녁에 배포했는데 그대로 켜면
+  W37 판은 그날 밤 몇 시간 백지를 한 사람만 올라가고 이번 주 내내 했던 사람은 0이 된다.
+  자정 배포 대신 코드로 막아 **집계·순위표가 모두에게 같은 순간에** 열리게 했다. 그 전엔 버튼 자리에 「월요일 0시에 열려요」.
+  W38이 지나면 이 상수와 분기는 지워도 된다
+- 저장: `recallWeek = { weekId, count, seen }` — 저장본에 실려 동기화된다. 병합은 `_mergeRecallWeek`(더 최근 주 > 같은 주면 더 큰 count, **통째로**).
+  seen을 합집합으로 합치면 count와 어긋나므로 통째로 고른다
+- 서버: `saveMyScoreToServer` payload에 `recallWeekId`/`recallCount` → `submitScoreSecure` 화이트리스트 + 검증(0~2,828, `YYYY-Www`).
+  규칙상 `serverOnlyKeys`라 클라이언트 직접 쓰기 불가. 옛 클라이언트는 이 필드를 안 보내므로 배포 순서 무관
+- **제출 시점**: 점수 제출은 원래 화면을 벗어날 때(`visibilitychange`·`beforeunload`)만 돌아서, `finishHardshipSession`에서 한 번 더 부른다
+  (구절마다가 아니라 세션마다 1회. 값이 같으면 `lastScorePayloadKey`가 걸러 안 보낸다)
+- **조회**: `loadRecallLeaderboard` — 6시간 스냅샷이 아니라 **바로 조회**. 색인 `(recallWeekId ASC, recallCount DESC)`가
+  `firestore.indexes.json`에 있다. 조건에 맞는 상위 100건만 읽으므로 전체 사용자 수와 무관. 클라이언트 5분 캐시(`rankingCache.recall`).
+  하루 수천 번 열리는 규모가 되면 시온성처럼 스냅샷으로 옮긴다
+- 내 줄은 서버 값과 로컬 `recallWeek.count` 중 큰 쪽을 보여준다 — 세션 직후 아직 안 올라갔어도 내 숫자는 맞아야 한다.
+  100위 밖이거나 아직 서버에 없으면 목록 아래 「내 기록 (곧 반영)」 한 줄
+- 리그로 안 나눈 이유: 주간 참가자 50~60명이라 나눌 수가 없고, 밭이 안 곱해져 분포가 좁아 리그가 풀려던 문제가 없다.
+  100명을 넘기면 30명 방으로
+
+---
+
 ## 주간 랭킹 보상 (`archiveWeeklyRankings`, functions/index.js — 매주 월요일 00:05 KST)
 
 지난주 시온성·지파 Top100을 `weekly_history`에 보관하고 `leaderboard/{tag}.pendingReward`에 보상을 적는다.

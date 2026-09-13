@@ -15,7 +15,8 @@ service cloud.firestore {
                 'personalEquipment', 'pendingRaidReward', 'pendingInvites',
                 'guildId', 'guildDonateInfo', 'lastGuildAttend',
                 'score', 'myMonthlyScore', 'totalScore', 'yearlyScore',
-                'prevWeekScore', 'prevMonthlyScore'];
+                'prevWeekScore', 'prevMonthlyScore',
+                'recallWeekId', 'recallCount'];
       }
 
       // 친구 기능은 '상대방 문서에 직접 쓰는' 구조라(신청·수락·응원·삭제)
