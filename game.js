@@ -711,6 +711,8 @@ const LANG = {
         ranking_recall_empty: '아직 아무도 없어요.<br>백지로 한 절을 써내면 여기에 올라갑니다.',
         ranking_recall_mine_pending: '내 기록 (곧 반영)',
         ranking_recall_opens_monday: '월요일 0시에 열려요',
+        ranking_recall_rules_btn: '규칙과 보상 보기',
+        ranking_recall_rules: '<b>세는 것</b> — 망각의 고난·보스전 백지·중간점검 백지에서 <b>백지(아무 단서 없이)</b>로 써낸 구절. 빈칸(글자 칸이 보이는 방식)·초성·음성은 세지 않아요.<br><b>힌트</b> — 구절 글자 수의 20%까지는 써도 세어져요. 넘으면 그 구절은 0.<br><b>같은 구절</b> — 하루(오전 6시 기준)에 한 번만. 하루 최대 404절.<br><b>안 곱하는 것</b> — 밭·단비·햇살·순서·난도. 누구에게나 한 절은 1.<br><b>보상</b> — 매주 월요일, 지난주 지파 1~3위는 🥇🥈🥉 암송왕 칭호(한 주간 이름 옆) + 💎 10,000 / 6,000 / 6,000, 시온성 1~3위는 칭호가 빛나고 💎 15,000 / 10,000 / 10,000을 더. 지파는 그 주 10명 이상 참여했을 때. 🏆 지난 주 보상 버튼으로 받아요.',
         recall_title: '암송왕',
         recall_title_tip_tribe: '지난주 지파 암송왕 {rank}위',
         recall_title_tip_zion: '지난주 시온성 암송왕 {rank}위',
@@ -1561,6 +1563,8 @@ const LANG = {
         ranking_recall_empty: 'Nobody yet.<br>Write one verse on a blank page and you will appear here.',
         ranking_recall_mine_pending: 'My count (syncing)',
         ranking_recall_opens_monday: 'Opens Monday at midnight',
+        ranking_recall_rules_btn: 'Rules & rewards',
+        ranking_recall_rules: '<b>What counts</b> — verses written on a <b>blank page (no cues)</b> in the Trial of Forgetting, boss battles or checkpoints. Blanks mode (letter slots), initials and voice do not count.<br><b>Hints</b> — hints up to 20% of the letters are fine; more and that verse is 0.<br><b>Same verse</b> — once per day (6 a.m. boundary). At most 404 a day.<br><b>Not multiplied</b> — field, rain, sunshine, order, difficulty. One verse is 1 for everyone.<br><b>Rewards</b> — every Monday, the tribe top 3 of last week get a 🥇🥈🥉 Recall King title (by your name for a week) + 💎 10,000 / 6,000 / 6,000; the Zion top 3 get a glowing title and 💎 15,000 / 10,000 / 10,000 more. Tribe titles need 10+ participants that week. Claim with the 🏆 reward button on the home screen.',
         recall_title: 'Recall King',
         recall_title_tip_tribe: "Last week's tribe Recall King #{rank}",
         recall_title_tip_zion: "Last week's Zion Recall King #{rank}",
@@ -15056,6 +15060,10 @@ function renderRecallRankingList(rows, weekId) {
     const myCount = (recallWeek.weekId === weekId) ? (recallWeek.count || 0) : 0;
     let html = `<div style="padding:12px 15px; color:#bdc3c7; font-size:0.85rem; text-align:center; border-bottom:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.2); line-height:1.5;">
         ${t('ranking_recall_desc')}<br><span style="opacity:0.6; font-size:0.8rem;">${weekId}</span>
+        <details style="margin-top:8px; text-align:left; font-size:0.8rem; color:#95a5a6;">
+            <summary style="cursor:pointer; text-align:center; color:#7ee2a8; font-weight:700; list-style:none;">${t('ranking_recall_rules_btn')}</summary>
+            <div style="margin-top:8px; line-height:1.6; background:rgba(0,0,0,0.25); border-radius:10px; padding:10px 12px;">${t('ranking_recall_rules')}</div>
+        </details>
     </div>`;
     if (!rows.length) {
         html += `<div style="text-align:center; padding:30px; color:#7f8c8d; line-height:1.6;">${t('ranking_recall_empty')}</div>`;
@@ -15148,6 +15156,15 @@ function closeRankingModal() {
     const overlay = document.getElementById('ranking-modal-overlay');
     if (overlay) {
         overlay.style.display = 'none';
+    }
+    // 길드 레이드 순위처럼 바로 연 모달이면 오던 화면으로 돌아간다
+    if (_rankingModalReturnTo) {
+        const back = document.getElementById(_rankingModalReturnTo);
+        _rankingModalReturnTo = null;
+        if (back) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            back.classList.add('active');
+        }
     }
 }
 /* [기능] 명예의 전당 리스트 그리기 */
@@ -15429,8 +15446,13 @@ function closeRankingMenu() {
     if (popup) popup.classList.remove('open');
 }
 
+let _rankingModalReturnTo = null;   // 랭킹 화면을 거치지 않고 모달만 열었을 때, 닫으면 돌아갈 화면 id
 function openGuildRankingDirect() {
     closeRankingMenu();
+    // 모달은 랭킹 화면 안에 있어 그 화면을 깔아야 하는데, 닫았을 때 승점 랭킹이 남아 있으면 "왜 여기?"가 된다.
+    // 오던 화면을 기억해 두고 닫을 때 돌려보낸다 (2026-09-14)
+    const _prev = document.querySelector('.screen.active');
+    _rankingModalReturnTo = (_prev && _prev.id !== 'ranking-screen') ? _prev.id : null;
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     let screen = document.getElementById('ranking-screen');
     if (!screen) {
