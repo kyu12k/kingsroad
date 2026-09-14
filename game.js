@@ -105,6 +105,13 @@ const LANG = {
         field_desc: '밭이 좋을수록 열매가 많습니다.<br>구절마다 <b>씨(난도) × 밭</b>만큼 승점을 거둡니다.',
         field_bonus_note: '도감 보너스 +{n} 포함',
         field_collection_line: '도감 합산 {sum} / {need}',
+        sun_buy_title: '햇살 사기',
+        sun_buy_today: '오늘 {used}/{slots}',
+        sun_buy_effect: '{min}분간 승점 ×3',
+        sun_buy_btn: '사기',
+        sun_buy_done: '오늘은 끝',
+        sun_buy_locked: '햇살은 삼십 배부터 하루 1번, 육십 배 2번, 백 배 3번 살 수 있어요',
+        sun_bought: '☀️ 햇살이 내립니다\n{min}분간 승점 ×3',
         league_coming_soon: '🏟️ 리그는 준비 중이에요',
         nav_league: '리그',
         field_ms_30: '삼십 배',
@@ -1037,6 +1044,13 @@ const LANG = {
         field_desc: 'The better the soil, the more fruit.<br>Each verse yields <b>seed (difficulty) × field</b> points.',
         field_bonus_note: 'includes +{n} collection bonus',
         field_collection_line: 'Collection total {sum} / {need}',
+        sun_buy_title: 'Buy Sunshine',
+        sun_buy_today: 'today {used}/{slots}',
+        sun_buy_effect: 'score ×3 for {min} min',
+        sun_buy_btn: 'Buy',
+        sun_buy_done: 'Done today',
+        sun_buy_locked: 'Sunshine can be bought from Thirtyfold: 1/day, Sixtyfold 2, Hundredfold 3',
+        sun_bought: '☀️ Sunshine is falling\nscore ×3 for {min} min',
         league_coming_soon: '🏟️ League is coming soon',
         nav_league: 'League',
         field_ms_30: 'Thirtyfold',
@@ -2277,6 +2291,7 @@ loadGameData = function () {
                      promisedOn: String(parsed.rain.promisedOn || ''), startedOn: String(parsed.rain.startedOn || '') };
         }
         if (parsed.dailySeeds && typeof parsed.dailySeeds === 'object') dailySeeds = parsed.dailySeeds;
+        if (parsed.sunBuy && typeof parsed.sunBuy === 'object') sunBuy = { day: String(parsed.sunBuy.day || ''), count: parseInt(parsed.sunBuy.count, 10) || 0 };
 
         // 미션 데이터 구조 보정 (구버전 호환)
         if (!missionData) missionData = {};
@@ -5245,6 +5260,52 @@ let itemRefund = null;        // { at, bread, shield, gems } — 환급했으면
 const RAIN_MINUTES = 20;
 const RAIN_TIERS = { 1: { mult: 2, icon: '🌧️', nameKey: 'rain_name' }, 2: { mult: 3, icon: '☀️', nameKey: 'sun_name' } };
 const SUN_DAILY_MISSIONS = 4; // 그날 일일 미션을 이만큼 완료하면 내일 햇살(×3). 0 = 꺼짐
+
+/* ── 햇살 사기 — 이정표의 쓸모 (2026-09-14) ─────────────────────────────────
+   밭 30 → 하루 1회, 60 → 2회, 100 → 3회. 2,000젬에 20분 ×3 (이미 켜져 있으면 ×3으로 올리고 20분 더).
+   이정표가 처음으로 기능을 갖고, 밭 100 뒤에도 보석 쓸 곳이 생긴다.
+   "부스터 구매를 없앤다"와 어긋나 보이지만 대상이 다르다 — 그때 없앤 건 누구나 사는 부스터,
+   이건 백만 젬 넘게 심은 사람의 혜택이다. 승점 랭킹은 원래 '투자' 판이고 실시간 암송왕은 영향이 없다. */
+const SUN_BUY_GEM = 2000;
+let sunBuy = { day: '', count: 0 };   // 오늘(6시 경계) 몇 번 샀나
+function _sunBuySlots(level) {
+    if (level >= 100) return 3;
+    if (level >= 60) return 2;
+    if (level >= 30) return 1;
+    return 0;
+}
+function _sunBuyUsedToday() {
+    return sunBuy.day === _get6AMDayStr() ? (sunBuy.count || 0) : 0;
+}
+/* 지금 켜진 날씨 — 배율로 판단한다 (미션 햇살이든 산 햇살이든 ×3이면 ☀️) */
+function _activeWeatherTier() {
+    return (boosterData.active && boosterData.multiplier >= 3) ? RAIN_TIERS[2] : RAIN_TIERS[1];
+}
+function buySun() {
+    const slots = _sunBuySlots(maxPlayerHearts);
+    const used = _sunBuyUsedToday();
+    if (slots <= 0 || used >= slots) return;
+    if (myGems < SUN_BUY_GEM) { showGemToast(0, t('alert_buy_hearts_no_gems', { cost: SUN_BUY_GEM }), true); return; }
+    myGems -= SUN_BUY_GEM;
+    sunBuy = { day: _get6AMDayStr(), count: used + 1 };
+    const now = Date.now();
+    const dur = RAIN_MINUTES * 60 * 1000;
+    if (boosterData.active && now < boosterData.endTime) {
+        boosterData.multiplier = Math.max(3, boosterData.multiplier);
+        boosterData.endTime += dur;
+    } else {
+        boosterData.active = true;
+        boosterData.multiplier = 3;
+        boosterData.endTime = now + dur;
+    }
+    updateGemDisplay();
+    saveGameData();
+    if (typeof startBoosterTimer === 'function') startBoosterTimer();
+    if (typeof SoundEffect !== 'undefined' && SoundEffect.playLevelUp) SoundEffect.playLevelUp();
+    showToast(t('sun_bought', { min: RAIN_MINUTES }));
+    if (typeof updateHeaderToday === 'function') updateHeaderToday();
+    openFieldScreen();
+}
 function _dailyMissionsDone() {
     if (typeof missionData === 'undefined' || !missionData || !missionData.daily) return 0;
     const c = missionData.daily.claimed || [];
@@ -5322,7 +5383,7 @@ function updateHeaderToday() {
     const yCnt = Math.round(dailySeeds[yday] || 0);
     let rainTxt;
     if (boosterData.active && Date.now() < boosterData.endTime) {
-        const tier = RAIN_TIERS[rain.tier] || RAIN_TIERS[1];
+        const tier = _activeWeatherTier();
         rainTxt = t('header_rain_now', { icon: tier.icon, name: t(tier.nameKey) });
     } else if (rain.earnedFor === today && rain.startedOn !== today) {
         const tier = RAIN_TIERS[rain.tier] || RAIN_TIERS[1];
@@ -9527,6 +9588,7 @@ function saveGameData() {
         leagueData: leagueData,
         boosterData: boosterData,
         rain: rain,               // 단비 예약 상태
+        sunBuy: sunBuy,           // 햇살 구매 (오늘 횟수)
         dailySeeds: dailySeeds,   // 날짜별 뿌린 씨 (오늘·어제 비교)
         hardshipAddressClearHistory: hardshipAddressClearHistory,
         hardshipMemoryClearHistory: hardshipMemoryClearHistory,
@@ -12414,6 +12476,25 @@ function openFieldScreen() {
                     ${t('field_grow_btn')}
                 </button>
             </div>`}
+            ${(() => {
+                const slots = _sunBuySlots(maxPlayerHearts);
+                const used = _sunBuyUsedToday();
+                if (slots <= 0) {
+                    return `<div style="background:#f4f6f7; border-radius:12px; padding:10px 12px; margin-bottom:14px; font-size:0.82rem; color:#95a5a6; line-height:1.5;">☀️ ${t('sun_buy_locked')}</div>`;
+                }
+                const left = slots - used;
+                const can = left > 0 && myGems >= SUN_BUY_GEM;
+                return `<div style="display:flex; justify-content:space-between; align-items:center; background:#fff8e1; border-radius:12px; padding:12px 14px; margin-bottom:14px;">
+                    <div style="text-align:left;">
+                        <div style="font-weight:700;">☀️ ${t('sun_buy_title')} <span style="font-weight:400; color:#7f8c8d; font-size:0.85rem;">${t('sun_buy_today', { used, slots })}</span></div>
+                        <div style="font-size:0.82rem; color:${can ? '#b9770e' : '#95a5a6'};">💎 ${SUN_BUY_GEM.toLocaleString()} · ${t('sun_buy_effect', { min: RAIN_MINUTES })}</div>
+                    </div>
+                    <button onclick="buySun()" ${can ? '' : 'disabled'}
+                        style="background:${can ? '#f1c40f' : '#d5d8dc'}; color:#2c3e50; border:none; padding:10px 16px; border-radius:24px; font-weight:800; cursor:${can ? 'pointer' : 'default'}; box-shadow:${can ? '0 3px 0 #d35400' : 'none'};">
+                        ${left > 0 ? t('sun_buy_btn') : t('sun_buy_done')}
+                    </button>
+                </div>`;
+            })()}
             <button onclick="document.getElementById('field-modal').remove()" style="width:100%; background:none; border:none; color:#95a5a6; padding:6px 0 0; font-size:0.9rem; cursor:pointer;">${t('btn_close')}</button>
         </div>
     `;
@@ -14152,7 +14233,7 @@ function updateBoosterDisplay() {
     // B. 부스터 진행 중
     const min = Math.floor(remain / 60000);
     const sec = Math.floor((remain % 60000) / 1000).toString().padStart(2, '0');
-    const _tier = _BETA ? (RAIN_TIERS[rain.tier] || RAIN_TIERS[1]) : null;
+    const _tier = _BETA ? _activeWeatherTier() : null;
     const text = _tier
         ? t('rain_active', { name: t(_tier.nameKey), multi: boosterData.multiplier, time: `${min}:${sec}` })
         : `승점 ${boosterData.multiplier}배 (${min}:${sec})`;
