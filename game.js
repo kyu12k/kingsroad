@@ -1933,8 +1933,13 @@ let myPlayerId = "";
 
 
 /* [수정] 체력 변수 분리 (충돌 방지용) */
-let purchasedMaxHearts = 5; // 상점에서 구매한 순수 체력 (이걸 저장합니다)
-let maxPlayerHearts = 5;    // 버프가 포함된 실제 게임 체력
+/* 밭의 시작값은 1 (2026-09-14). 5는 '목숨 다섯 개'였던 체력 시절의 흔적이라 체력이 사라지면 근거도 사라진다.
+   저장본에 maxHearts가 있는 기존 유저는 그 값(5 이상) 그대로 — 1→5를 이미 산 것으로 친다.
+   비용은 _fieldGrowCost(): max(밭×600, (밭−4)×3000) — 1~4는 600·1,200·1,800·2,400(합 6,000, 사흘치),
+   5부터는 예전 공식과 정확히 이어진다(3,000·6,000·…). */
+let purchasedMaxHearts = 1; // 넓힌 밭 (이걸 저장합니다)
+function _fieldGrowCost(level) { return Math.max(level * 600, (level - 4) * 3000); }
+let maxPlayerHearts = 1;    // 도감 보너스가 포함된 실제 밭
 
 let inventory = {
     lifeBread: 0,    // 생명의 떡 개수
@@ -2239,7 +2244,7 @@ loadGameData = function () {
             if (typeof inventory.lifeBread === 'undefined') inventory.lifeBread = 0;
             if (typeof inventory.faithShield === 'undefined') inventory.faithShield = 0;
         }
-        purchasedMaxHearts = parsed.maxHearts || 5;
+        purchasedMaxHearts = parsed.maxHearts || 5; // 저장본에 값이 없는 옛 유저만 5 (체력 시절 기본값). 신규는 저장 전이라 여기 안 옴
         myNickname = parsed.nickname || "순례자";
         myTribe = (parsed.tribe !== undefined) ? parsed.tribe : 0;
         myDept = (parsed.dept !== undefined) ? parsed.dept : 0;
@@ -10451,7 +10456,7 @@ function updateGemDisplay() {
     const shieldMapPart = faithShieldCntMap > 0 ? ` <span style="opacity:0.3; margin:0 3px;">|</span> 🛡️ ${faithShieldCntMap}` : '';
     // 베타(밭): 떡·방패 칸을 없애고 🌾 밭 N을 **눌러서 넓히는 입구**로 만든다 (상점 대체).
     // 살 수 있을 만큼 보석이 모이면 간헐적으로 반짝인다 — 상시 강조는 초반(3,000젬)에 늘 켜져 무시된다.
-    const _fieldCost = (purchasedMaxHearts - 4) * 3000;
+    const _fieldCost = _fieldGrowCost(purchasedMaxHearts);
     const _canGrow = purchasedMaxHearts < 100 && myGems >= _fieldCost;
     const resourceHtml = _BETA
         ? `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> <span id="field-chip" class="field-chip${_canGrow ? ' can-grow' : ''}${maxPlayerHearts >= 100 ? ' field-max' : ''}" onclick="openFieldScreen()">${_fieldRingHtml(maxPlayerHearts)} ${t('field_label')} ${maxPlayerHearts}</span>`
@@ -12388,9 +12393,9 @@ function _fieldIcon(level) {
    이모지 글자 자체에는 테두리를 못 그린다(색이 박힌 그림 글꼴이라 text-stroke가 안 먹고, 안드로이드는 비트맵).
    아이콘 3종(🌱 5~29 / 🌿 30~59 / 🌾 60~99)마다 구간을 셋으로 나눠 테두리 색이 흙 → 초록 → 하늘로 바뀐다.
    100은 금 테두리 + 번쩍임(.field-max). 랭킹·프로필·헤더·밭 화면이 전부 이 함수를 쓴다. */
-const FIELD_BANDS = [[5, 29], [30, 59], [60, 99]];
+const FIELD_BANDS = [[1, 29], [30, 59], [60, 99]];
 function _fieldTier(level) {
-    level = Math.max(5, level || 5);
+    level = Math.max(1, level || 1);
     if (level >= 100) return { stage: 3, max: true };
     for (const [lo, hi] of FIELD_BANDS) {
         if (level >= lo && level <= hi) {
@@ -12422,7 +12427,7 @@ let _myRecallTitle = null;
 
 /* 랭킹·프로필의 이름 옆 — 칩만 (글자 없음). 이정표 이름은 툴팁과 밭 화면에 */
 function _fieldBadgeHtml(level) {
-    if (!level || level < 5) return '';
+    if (!level || level < 1) return '';
     return _fieldRingHtml(level, 'field-badge-ring');
 }
 
@@ -12440,7 +12445,7 @@ function openFieldScreen() {
     if (_old) _old.remove();
     const level = purchasedMaxHearts;                       // 구매로 올린 밭 (도감 +3은 별도 표시)
     const bonus = maxPlayerHearts - purchasedMaxHearts;     // 도감 보너스
-    const cost = (level - 4) * 3000;
+    const cost = _fieldGrowCost(level);
     const isMax = level >= 100;
     const canGrow = !isMax && myGems >= cost;
     const next = _fieldNextMilestone(level);
@@ -12506,7 +12511,7 @@ function openFieldScreen() {
 /* 밭 넓히기 — buyItem('heart')와 같은 회계, 문구만 다르다. 확인 대화상자는 없앤다(모달 자체가 확인이다) */
 function growField() {
     if (purchasedMaxHearts >= 100) return;
-    const cost = (purchasedMaxHearts - 4) * 3000;
+    const cost = _fieldGrowCost(purchasedMaxHearts);
     if (myGems < cost) { showGemToast(0, t('alert_buy_hearts_no_gems', { cost }), true); return; }
     myGems -= cost;
     purchasedMaxHearts++;
@@ -16886,7 +16891,7 @@ function buyItem(itemType) {
         }
 
         // ★ 가격 계산 수정: (현재 - 4) * 3,000
-        const heartPrice = (purchasedMaxHearts - 4) * 3000;
+        const heartPrice = _fieldGrowCost(purchasedMaxHearts);
 
         // 2. 보석 부족 확인
         if (myGems < heartPrice) {
@@ -16980,7 +16985,7 @@ updateShopUI = function () {
     list.innerHTML = "";
 
     // [굳건한 마음] 가격 계산 수정
-    const heartPrice = (purchasedMaxHearts - 4) * 3000;
+    const heartPrice = _fieldGrowCost(purchasedMaxHearts);
     const isMax = purchasedMaxHearts >= 100;
 
     const heartDiv = document.createElement('div');
