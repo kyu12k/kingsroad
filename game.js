@@ -105,6 +105,19 @@ const LANG = {
         field_desc: '밭이 좋을수록 열매가 많습니다.<br>구절마다 <b>씨(난도) × 밭</b>만큼 승점을 거둡니다.',
         field_bonus_note: '도감 보너스 +{n} 포함',
         field_collection_line: '도감 합산 {sum} / {need}',
+        field_help_title: '🌾 밭이란?',
+        field_help_p1: '구절마다 <b>씨</b>(난도)를 뿌리고, <b>밭</b>이 좋을수록 <b>열매</b>(승점)를 많이 거둡니다. 승점 = 씨 × 밭.',
+        field_help_seed_boss: '일반 학습 · 보스전 초성 (구절당)',
+        field_help_seed_blank: '빈칸 · 백지',
+        field_help_seed_memory: '망각의 고난',
+        field_help_seed_review: '제때 돌아온 복습',
+        field_help_example_title: '망각의 고난 한 장(22절)을 하면',
+        field_help_example_now: '지금 밭 {n} → {pts}점',
+        field_help_example_next: '밭 {n}이면 → {pts}점',
+        field_help_example_ms: '밭 {n}이면 → {pts}점',
+        field_help_ms: '<b>삼십 배 · 육십 배 · 백 배</b>(막 4:8)에 이르면 이름 옆 칩이 🌿 🌾 금빛으로 바뀌고, <b>햇살(20분 ×3)을 하루 1 · 2 · 3번</b> 살 수 있습니다.',
+        field_help_collection: '자유여행과 왕의 길 도감 점수를 합쳐 15,000점이 넘으면 밭이 <b>+3</b> 됩니다.',
+        field_help_never_drops: '밭은 줄지 않습니다. 틀려도, 세션 중에도 그대로입니다.',
         sun_buy_title: '햇살 사기',
         sun_buy_today: '오늘 {used}/{slots}',
         sun_buy_effect: '{min}분간 승점 ×3',
@@ -1044,6 +1057,19 @@ const LANG = {
         field_desc: 'The better the soil, the more fruit.<br>Each verse yields <b>seed (difficulty) × field</b> points.',
         field_bonus_note: 'includes +{n} collection bonus',
         field_collection_line: 'Collection total {sum} / {need}',
+        field_help_title: '🌾 What is the field?',
+        field_help_p1: 'Each verse sows <b>seed</b> (difficulty); the better the <b>field</b>, the more <b>fruit</b> (score). Score = seed × field.',
+        field_help_seed_boss: 'Regular stage · boss initials (per verse)',
+        field_help_seed_blank: 'Blanks · blank page',
+        field_help_seed_memory: 'Trial of Forgetting',
+        field_help_seed_review: 'On-time review',
+        field_help_example_title: 'One chapter (22 verses) of the Trial of Forgetting',
+        field_help_example_now: 'Field {n} now → {pts} pts',
+        field_help_example_next: 'At field {n} → {pts} pts',
+        field_help_example_ms: 'At field {n} → {pts} pts',
+        field_help_ms: 'At <b>Thirtyfold · Sixtyfold · Hundredfold</b> (Mark 4:8) the chip by your name turns 🌿 🌾 gold, and you can buy <b>sunshine (×3, 20 min) 1 · 2 · 3 times a day</b>.',
+        field_help_collection: 'If your Free Travel and King\'s Road collection scores add up to 15,000+, your field gets <b>+3</b>.',
+        field_help_never_drops: 'The field never shrinks — not on mistakes, not during a session.',
         sun_buy_title: 'Buy Sunshine',
         sun_buy_today: 'today {used}/{slots}',
         sun_buy_effect: 'score ×3 for {min} min',
@@ -12456,7 +12482,9 @@ function openFieldScreen() {
     overlay.className = 'modal-overlay';
     overlay.style.zIndex = '9998';
     overlay.innerHTML = `
-        <div class="result-card" style="max-width:340px; background:#fff; color:#2c3e50; text-align:center; padding-bottom:22px;">
+        <div class="result-card" style="max-width:340px; background:#fff; color:#2c3e50; text-align:center; padding-bottom:22px; position:relative;">
+            <button onclick="toggleFieldHelp()" aria-label="help" style="position:absolute; top:10px; right:12px; width:28px; height:28px; border-radius:50%; border:1px solid #d5d8dc; background:#f4f6f7; color:#7f8c8d; font-weight:800; cursor:pointer; font-size:0.95rem; line-height:1;">?</button>
+            <div id="field-help" style="display:none; text-align:left; background:#f8f9fa; border-radius:12px; padding:12px 14px; margin:8px 0 14px; font-size:0.84rem; line-height:1.65; color:#444;"></div>
             <div style="line-height:1; margin-bottom:8px; display:flex; justify-content:center;">${_fieldRingHtml(maxPlayerHearts, 'field-ring-lg')}</div>
             <div style="font-size:1.6rem; font-weight:800; margin-bottom:2px;">${t('field_label')} ${maxPlayerHearts}</div>
             ${title ? `<div style="color:#e67e22; font-weight:700; font-size:0.9rem; margin-bottom:10px;">${t(title.key)}</div>` : '<div style="margin-bottom:10px;"></div>'}
@@ -12506,6 +12534,38 @@ function openFieldScreen() {
     overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
     document.body.appendChild(overlay);
     setTimeout(() => overlay.classList.add('active'), 10);
+}
+
+/* 밭 도움말 — ? 버튼. 동기는 숫자에서 나오므로 '지금 내 밭'과 '몇 칸 뒤'를 나란히 보여준다 (2026-09-14) */
+function toggleFieldHelp() {
+    const box = document.getElementById('field-help');
+    if (!box) return;
+    if (box.style.display !== 'none') { box.style.display = 'none'; return; }
+    const n = maxPlayerHearts;
+    const next = Math.min(100, n < 30 ? 30 : n < 60 ? 60 : 100);   // 다음 이정표
+    const step = Math.min(100, n + 5);
+    const chapterSeeds = 22 * 10;   // 망각의 고난 한 장(22절) = 씨 220
+    const fmt = (x) => x.toLocaleString();
+    box.innerHTML = `
+        <div style="font-weight:800; margin-bottom:6px;">${t('field_help_title')}</div>
+        <p style="margin:0 0 10px;">${t('field_help_p1')}</p>
+        <table style="width:100%; border-collapse:collapse; margin-bottom:10px; font-size:0.82rem;">
+            <tr><td style="padding:2px 0; color:#7f8c8d;">${t('field_help_seed_boss')}</td><td style="text-align:right; font-weight:700;">1</td></tr>
+            <tr><td style="padding:2px 0; color:#7f8c8d;">${t('field_help_seed_blank')}</td><td style="text-align:right; font-weight:700;">4 · 5</td></tr>
+            <tr><td style="padding:2px 0; color:#7f8c8d;">${t('field_help_seed_memory')}</td><td style="text-align:right; font-weight:700;">10</td></tr>
+            <tr><td style="padding:2px 0; color:#7f8c8d;">${t('field_help_seed_review')}</td><td style="text-align:right; font-weight:700;">×1.5 ~ ×10</td></tr>
+        </table>
+        <div style="background:#fff; border:1px solid #e5e8eb; border-radius:10px; padding:8px 10px; margin-bottom:10px;">
+            <div style="font-weight:700; margin-bottom:4px;">${t('field_help_example_title')}</div>
+            <div>${t('field_help_example_now', { n, pts: fmt(chapterSeeds * n) })}</div>
+            ${step > n ? `<div style="color:#27ae60; font-weight:700;">${t('field_help_example_next', { n: step, pts: fmt(chapterSeeds * step) })}</div>` : ''}
+            ${next > step ? `<div style="color:#b9770e; font-weight:700;">${t('field_help_example_ms', { n: next, pts: fmt(chapterSeeds * next) })}</div>` : ''}
+        </div>
+        <p style="margin:0 0 6px;">${t('field_help_ms')}</p>
+        <p style="margin:0 0 6px;">${t('field_help_collection')}</p>
+        <p style="margin:0; color:#7f8c8d;">${t('field_help_never_drops')}</p>
+    `;
+    box.style.display = 'block';
 }
 
 /* 밭 넓히기 — buyItem('heart')와 같은 회계, 문구만 다르다. 확인 대화상자는 없앤다(모달 자체가 확인이다) */
