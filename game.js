@@ -136,6 +136,12 @@ const LANG = {
         field_grow_btn: '넓히기',
         field_grown: '🌾 밭이 {n}이 되었습니다',
         field_ms_reached: '🌾 {name}에 이르렀습니다!',
+        field_ms_modal_eyebrow: '이정표에 이르렀습니다',
+        field_ms_modal_verse: '"좋은 땅에 떨어지매 자라 무성하여 결실하였으니 삼십 배나 육십 배나 백 배가 되었느니라" (막 4:8)',
+        field_ms_modal_sun: '햇살을 하루 {n}번 살 수 있어요 (20분 ×3)',
+        field_ms_modal_chip: '이름 옆 칩이 새 모습이 됐어요',
+        field_ms_modal_chip_max: '이름 옆 칩이 금빛으로 빛나요',
+        field_ms_modal_next: '다음 이정표 {name} — 밭 {n}',
         field_no_bread: '이제 체력이 줄지 않아 회복할 것이 없어요',
         // 단비 (2026-09-13 베타)
         item_refund_toast: '🍞 떡 {bread}개 · 🛡️ 방패 {shield}개를 💎 {gems}으로 돌려드렸어요',
@@ -1091,6 +1097,12 @@ const LANG = {
         field_grow_btn: 'Widen',
         field_grown: '🌾 Your field is now {n}',
         field_ms_reached: '🌾 You reached {name}!',
+        field_ms_modal_eyebrow: 'A MILESTONE',
+        field_ms_modal_verse: '"Other seed fell on good soil, grew up and produced a crop, thirty, sixty, a hundredfold." (Mark 4:8)',
+        field_ms_modal_sun: 'You can buy sunshine {n} time(s) a day (×3, 20 min)',
+        field_ms_modal_chip: 'The chip by your name has a new look',
+        field_ms_modal_chip_max: 'The chip by your name now shines gold',
+        field_ms_modal_next: 'Next milestone {name} — field {n}',
         field_no_bread: 'Hearts no longer drop — nothing to restore',
         item_refund_toast: '🍞 {bread} bread · 🛡️ {shield} shields refunded as 💎 {gems}',
         rain_name: 'Rain',
@@ -12626,8 +12638,45 @@ function growField() {
     saveGameData();
     if (typeof SoundEffect !== 'undefined' && SoundEffect.playLevelUp) SoundEffect.playLevelUp();
     const reached = FIELD_MILESTONES.find(m => m.at === purchasedMaxHearts);
-    showGemToast(0, reached ? t('field_ms_reached', { name: t(reached.key) }) : t('field_grown', { n: maxPlayerHearts }), false);
+    if (reached) {
+        // 세 번뿐인 순간 — 토스트 2초는 약하다. 밭 화면을 닫고 연출 모달로 (2026-09-14)
+        const _fm = document.getElementById('field-modal'); if (_fm) _fm.remove();
+        showFieldMilestoneModal(reached);
+        return;
+    }
+    showGemToast(0, t('field_grown', { n: maxPlayerHearts }), false);
     openFieldScreen(); // 새 값으로 다시 그린다
+}
+
+/* 이정표 도달 연출 — 큰 칩 + 폭죽 + 막 4:8 한 줄 + 이 이정표가 주는 것. 닫으면 밭 화면으로 돌아간다 */
+function showFieldMilestoneModal(ms) {
+    const old = document.getElementById('field-ms-modal');
+    if (old) old.remove();
+    const level = purchasedMaxHearts;
+    const slots = _sunBuySlots(level);
+    const isMax = level >= 100;
+    const overlay = document.createElement('div');
+    overlay.id = 'field-ms-modal';
+    overlay.className = 'modal-overlay';
+    overlay.style.zIndex = '9999';
+    overlay.innerHTML = `
+        <div class="result-card" style="max-width:340px; background:linear-gradient(160deg, #fffdf5, #fff3c4); color:#2c3e50; text-align:center; padding:26px 22px 22px; border:2px solid ${isMax ? '#f1c40f' : '#e8d7a0'}; box-shadow:0 12px 40px rgba(0,0,0,0.35)${isMax ? ', 0 0 24px rgba(255,215,0,0.55)' : ''};">
+            <div style="font-size:0.78rem; letter-spacing:0.12em; color:#b9770e; font-weight:800; margin-bottom:10px;">${t('field_ms_modal_eyebrow')}</div>
+            <div style="display:flex; justify-content:center; margin-bottom:10px;">${_fieldRingHtml(level, 'field-ring-xl', true)}</div>
+            <div style="font-size:1.9rem; font-weight:900; margin-bottom:4px; color:${isMax ? '#7d5a00' : '#2c3e50'};">${t(ms.key)}</div>
+            <div style="color:#7f8c8d; font-size:0.9rem; margin-bottom:14px;">${t('field_label')} ${level}</div>
+            <p style="font-size:0.92rem; line-height:1.7; color:#555; margin:0 0 14px; font-style:italic;">${t('field_ms_modal_verse')}</p>
+            <div style="background:rgba(255,255,255,0.75); border-radius:12px; padding:10px 12px; text-align:left; font-size:0.86rem; line-height:1.7; color:#444; margin-bottom:16px;">
+                <div>☀️ ${t('field_ms_modal_sun', { n: slots })}</div>
+                <div>${_fieldIcon(level)} ${t(isMax ? 'field_ms_modal_chip_max' : 'field_ms_modal_chip')}</div>
+                ${isMax ? '' : `<div style="color:#95a5a6;">${t('field_ms_modal_next', { name: t((_fieldNextMilestone(level) || ms).key), n: (_fieldNextMilestone(level) || ms).at })}</div>`}
+            </div>
+            <button onclick="document.getElementById('field-ms-modal').remove(); openFieldScreen();" style="width:100%; background:#f1c40f; color:#2c3e50; border:none; padding:12px; border-radius:24px; font-weight:800; font-size:1rem; cursor:pointer; box-shadow:0 3px 0 #d35400;">${t('btn_confirm')}</button>
+        </div>`;
+    document.body.appendChild(overlay);
+    setTimeout(() => overlay.classList.add('active'), 10);
+    if (typeof triggerConfetti === 'function') triggerConfetti();
+    if (typeof SoundEffect !== 'undefined' && SoundEffect.playLevelUp) setTimeout(() => SoundEffect.playLevelUp(), 250);
 }
 
 function openShop() {

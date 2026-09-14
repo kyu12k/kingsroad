@@ -6135,6 +6135,10 @@ body, html {
 }
 @media (prefers-reduced-motion: reduce) { .recall-title.recall-zion { animation: none; } }
 .field-ring-lg { width: 3.2em; height: 3.2em; font-size: 1.4rem; border-width: 3px; }
+.field-ring-xl { width: 3.4em; height: 3.4em; font-size: 2rem; border-width: 4px; animation: fieldMsPop 0.6s cubic-bezier(.2,1.4,.4,1); }
+.field-ring-xl .field-ring-ico { font-size: 1.15em; }
+@keyframes fieldMsPop { from { transform: scale(0.3); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .field-ring-xl { animation: none; } }
 .field-ring-lg .field-ring-ico { font-size: 1.15em; }
 .field-chip .field-ring { margin-right: 2px; font-size: 0.95em; }
 
