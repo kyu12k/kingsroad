@@ -541,6 +541,7 @@ const LANG = {
         hardship_endurance_count: '누적 확인 {n}절째입니다.',
         hardship_feedback_correct: '정답입니다. {label} · +{pts}점',
         hardship_feedback_correct_no_reward: '정답입니다. {label} · 승점 없음',
+        hardship_repeat_notice: '오늘 이 장을 이미 했어요\n같은 고난 반복은 승점 {pct}%',
         hardship_feedback_correct_scored_today: '정답입니다. {label} · 오늘 이미 받은 승점',
         hardship_feedback_typo_corrected_scored_today: '오타 보정! 오늘 이미 받은 승점 ({n}글자 오타)',
         hardship_feedback_correct_quick: '정답입니다. {label} · 초성 조립을 건너뜁니다',
@@ -1391,6 +1392,7 @@ const LANG = {
         hardship_endurance_count: 'Confirmed {n} verse(s) so far.',
         hardship_feedback_correct: 'Correct! {label} · +{pts} pts',
         hardship_feedback_correct_no_reward: 'Correct! {label} · No points',
+        hardship_repeat_notice: 'You already did this chapter today\nRepeating the same trial pays {pct}%',
         hardship_feedback_correct_scored_today: 'Correct! {label} · Already earned today',
         hardship_feedback_typo_corrected_scored_today: 'Typo corrected! Already earned today ({n} typo(s))',
         hardship_feedback_correct_quick: 'Correct! {label} · Skipping the word-assembly step',
@@ -22351,6 +22353,25 @@ function _hideHardshipModeModal() {
     if (modal) modal.style.display = 'none';
 }
 
+/* 같은 장 같은 고난, 오늘 두 번째부터 승점 절반 (2026-09-14).
+   W37에 1등을 가른 것은 일요일의 '1장 ×6' 반복(+ ×3 부스터)이었다 — 반복분이 망각 점수의 53%.
+   하드캡(0)이 아니라 절반인 이유: 약한 장을 오늘 한 번 더 복습하는 진짜 연습은 보상이 남아야 한다.
+   여섯 번 돌아도 합이 2배를 못 넘으니(1+½+¼+…) 막판 몰아치기의 힘은 사라진다.
+   고난 4종 모두 같은 규칙 — 예전엔 암송의 고난만 "오늘 했으면 0"이고 나머지는 제한이 없었다.
+   중간점검·보스전 빈칸·백지 확인은 별도의 '구절당 하루 1회'(scoredBy)가 이미 있어 여기 안 걸린다. */
+function _hardshipRepeatFactor(mode, ch) {
+    const historyMap = {
+        endurance: hardshipEnduranceClearHistory,
+        address: hardshipAddressClearHistory,
+        memory: hardshipMemoryClearHistory,
+        verse: hardshipVerseClearHistory
+    };
+    const history = ((historyMap[mode] || {})[ch]) || [];
+    const today = _get6AMDayStr();
+    const k = history.filter(r => r && r.date && _tsTo6AMDateStr(r.date) === today).length;
+    return Math.pow(0.5, k);
+}
+
 function isHardshipChapterDoneToday(mode, ch) {
     const historyMap = {
         endurance: hardshipEnduranceClearHistory,
@@ -22829,6 +22850,14 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
     hardshipState.applyToFree = (window.hardshipOrigin !== 'map');
     hardshipState.rewardBlocked = false;
     if (forcedChapter != null) hardshipState.forcedChapter = forcedChapter;
+    // 같은 장 같은 고난 반복 계수 — 장 단위 진짜 고난에만. 세션 시작 때 한 번 정한다
+    hardshipState.repeatFactor = 1;
+    if (forcedChapter != null && !embed) {
+        hardshipState.repeatFactor = _hardshipRepeatFactor(mode, forcedChapter);
+        if (hardshipState.repeatFactor < 1) {
+            setTimeout(() => { if (typeof showToast === 'function') showToast(t('hardship_repeat_notice', { pct: Math.round(hardshipState.repeatFactor * 100) })); }, 400);
+        }
+    }
     const baseIds = Array.isArray(selectedVerseIds) && selectedVerseIds.length > 0
         ? selectedVerseIds
         : HARDSHIP_VERSES.map(verse => verse.id);
@@ -23402,16 +23431,13 @@ function confirmHardshipEnduranceVerse() {
     hardshipState.speechScores.push(score);
     hardshipState.studiedCount += 1;
 
-    // 쿨다운 체크 (forcedChapter 기준, 첫 확정 시 1회만 판단)
-    if (!hardshipState.rewardBlocked && hardshipState.forcedChapter != null) {
-        hardshipState.rewardBlocked = isHardshipChapterDoneToday('endurance', hardshipState.forcedChapter);
-    }
-
+    // 같은 장 반복은 rewardBlocked(0)가 아니라 repeatFactor(절반씩)로 — 고난 4종 공통 규칙 (2026-09-14)
     let earned = 0;
     if (!hardshipState.rewardBlocked) {
         const orderMult = hardshipState.isRandomOrder ? 2 : 1;
-        if (score >= 80) earned = playerHearts * 3 * orderMult;
-        else if (score >= 50) earned = Math.round(playerHearts * 1.5 * orderMult);
+        const rf = hardshipState.repeatFactor || 1;
+        if (score >= 80) earned = Math.round(playerHearts * 3 * orderMult * rf);
+        else if (score >= 50) earned = Math.round(playerHearts * 1.5 * orderMult * rf);
         if (earned > 0) awardHardshipScore(earned);
     }
 
@@ -23543,7 +23569,7 @@ function submitHardshipAddressGuess() {
     const isCorrect = guessedChapter === hardshipState.currentVerse.chapter && guessedVerse === hardshipState.currentVerse.verse;
 
     if (isCorrect) {
-        const earnedPoints = playerHearts;
+        const earnedPoints = Math.max(1, Math.round(playerHearts * (hardshipState.repeatFactor || 1)));
         awardHardshipScore(earnedPoints);
         hardshipState.studiedCount += 1;
         hardshipState.feedback = {
@@ -23660,7 +23686,7 @@ function submitHardshipVerseGuess(choiceIdx) {
     const isCorrect = choice && choice.isCorrect;
 
     if (isCorrect) {
-        const earnedPoints = playerHearts;
+        const earnedPoints = Math.max(1, Math.round(playerHearts * (hardshipState.repeatFactor || 1)));
         awardHardshipScore(earnedPoints);
         hardshipState.studiedCount += 1;
         hardshipState.selectedWrongChoice = null;
@@ -24576,7 +24602,7 @@ function submitHardshipMemoryGuess() {
         const _rawPoints = (hardshipState.ultimateMemoryMode ? playerHearts * 5 : playerHearts * 4) * orderMult;
         const basePoints = _blankScoreAlreadyToday(_blankSid)
             ? 0
-            : Math.round(_rawPoints * getHardshipScoreScale());
+            : Math.round(_rawPoints * getHardshipScoreScale() * (hardshipState.repeatFactor || 1));
         const earnedPoints = hardshipState.rewardBlocked ? 0 : basePoints;
         if (earnedPoints > 0) { awardHardshipScore(earnedPoints); _markBlankScored(_blankSid); }
         // 백지 산출 성공 — revealedHints는 구절마다 초기화되므로 이 구절에 쓴 힌트 수다
@@ -24628,7 +24654,7 @@ function submitHardshipMemoryGuess() {
         const _rawPoints = (hardshipState.ultimateMemoryMode ? playerHearts * 5 : playerHearts * 4) * orderMult;
         const basePoints = _blankScoreAlreadyToday(_blankSid)
             ? 0
-            : Math.round(_rawPoints * getHardshipScoreScale());
+            : Math.round(_rawPoints * getHardshipScoreScale() * (hardshipState.repeatFactor || 1));
         const earnedPoints = hardshipState.rewardBlocked ? 0 : basePoints;
         // 오타 정보 수집 (슬롯 초기화 전에)
         const typoPairs = hardshipState.wrongSlots.map(idx => ({
