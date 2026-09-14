@@ -6101,6 +6101,17 @@ body, html {
     .field-ring.field-max { animation: none; }
 }
 .field-badge-ring { margin-left: 6px; }
+[data-tip] { cursor: pointer; }
+/* 칩 말풍선 */
+#chip-tip {
+    position: fixed; display: none;
+    z-index: 100000;
+    background: rgba(22, 28, 36, 0.96); color: #ecf0f1;
+    padding: 6px 10px; border-radius: 10px;
+    font-size: 0.78rem; font-weight: 700; white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+    pointer-events: none;
+}
 
 /* 실시간 암송왕 칭호 — 지난주 지파 1~3위. 시온성 1~3위는 빛나는 테두리 */
 .recall-title {

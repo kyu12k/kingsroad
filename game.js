@@ -10491,7 +10491,7 @@ function updateGemDisplay() {
     const _fieldCost = _fieldGrowCost(purchasedMaxHearts);
     const _canGrow = purchasedMaxHearts < 100 && myGems >= _fieldCost;
     const resourceHtml = _BETA
-        ? `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> <span id="field-chip" class="field-chip${_canGrow ? ' can-grow' : ''}${maxPlayerHearts >= 100 ? ' field-max' : ''}" onclick="openFieldScreen()">${_fieldRingHtml(maxPlayerHearts)} ${t('field_label')} ${maxPlayerHearts}</span>`
+        ? `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> <span id="field-chip" class="field-chip${_canGrow ? ' can-grow' : ''}${maxPlayerHearts >= 100 ? ' field-max' : ''}" onclick="openFieldScreen()">${_fieldRingHtml(maxPlayerHearts, '', true)} ${t('field_label')} ${maxPlayerHearts}</span>`
         : `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> 🍞 ${lifeBreadCnt}${shieldMapPart} <span style="opacity:0.3; margin:0 3px;">|</span> ❤️ ${maxPlayerHearts}`;
 
     // 5. [맵 화면] 헤더 업데이트 (ID로 안전하게 찾기)
@@ -12437,11 +12437,12 @@ function _fieldTier(level) {
     }
     return { stage: 1, max: false };
 }
-function _fieldRingHtml(level, extraClass) {
+function _fieldRingHtml(level, extraClass, noTip) {
     const tier = _fieldTier(level);
     const cur = _fieldCurrentTitle(level || 0);
-    const title = cur ? t(cur.key) : `${t('field_label')} ${level}`;
-    return `<span class="field-ring tier-${tier.stage}${tier.max ? ' field-max' : ''}${extraClass ? ' ' + extraClass : ''}" title="${title}"><span class="field-ring-ico">${_fieldIcon(level)}</span></span>`;
+    // 말풍선은 숫자가 옆에 없는 곳(랭킹·프로필 배지)에만. 헤더 칩·밭 화면은 숫자가 이미 보이고, 헤더는 누르면 밭 화면이 열려야 한다
+    const tip = noTip ? '' : ` data-tip="${_fieldIcon(level)} ${t('field_label')} ${level}${cur ? ' · ' + t(cur.key) : ''}"`;
+    return `<span class="field-ring tier-${tier.stage}${tier.max ? ' field-max' : ''}${extraClass ? ' ' + extraClass : ''}"${tip}><span class="field-ring-ico">${_fieldIcon(level)}</span></span>`;
 }
 /* 실시간 암송왕 칭호 — 지난주 지파 1~3위 🥇🥈🥉, 시온성 1~3위는 빛나는 테두리. 이번 주 동안만 (2026-09-14).
    서버(archiveWeeklyRankings)가 leaderboard 문서에 recallTitle{weekId,zionRank,tribeRank}로 남기고 스냅샷이 실어온다.
@@ -12453,9 +12454,48 @@ function _recallTitleHtml(rt) {
     const medal = ['🥇', '🥈', '🥉'][rank - 1];
     const zion = rt.zionRank && rt.zionRank <= 3;
     const tip = zion ? t('recall_title_tip_zion', { rank: rt.zionRank }) : t('recall_title_tip_tribe', { rank: rt.tribeRank });
-    return `<span class="recall-title r${rank}${zion ? ' recall-zion' : ''}" title="${tip}">${medal} ${t('recall_title')}</span>`;
+    return `<span class="recall-title r${rank}${zion ? ' recall-zion' : ''}" data-tip="${tip}">${medal} ${t('recall_title')}</span>`;
 }
 let _myRecallTitle = null;
+
+/* 칩 말풍선 — data-tip이 있는 요소를 누르거나(모바일) 올리면(데스크톱) 바로 뜬다 (2026-09-14).
+   브라우저 기본 title은 데스크톱에서만, 그것도 1초 뒤에 떠서 모바일 사용자는 밭 숫자를 볼 길이 없었다. */
+(function _initChipTip() {
+    let tipEl = null, hideTimer = null;
+    function show(target) {
+        const text = target.getAttribute('data-tip');
+        if (!text) return;
+        if (!tipEl) {
+            tipEl = document.createElement('div');
+            tipEl.id = 'chip-tip';
+            document.body.appendChild(tipEl);
+        }
+        tipEl.textContent = text;
+        tipEl.style.display = 'block';
+        const r = target.getBoundingClientRect();
+        const w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+        let left = r.left + r.width / 2 - w / 2;
+        left = Math.max(8, Math.min(window.innerWidth - w - 8, left));
+        let top = r.top - h - 8;
+        if (top < 8) top = r.bottom + 8;
+        tipEl.style.left = left + 'px';
+        tipEl.style.top = top + 'px';
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(hide, 1600);
+    }
+    function hide() { if (tipEl) tipEl.style.display = 'none'; }
+    document.addEventListener('click', (e) => {
+        const el = e.target.closest && e.target.closest('[data-tip]');
+        if (!el) return;
+        e.stopPropagation();   // 밭 칩은 헤더에서 밭 화면 열기 안에 있다 — 말풍선만 띄우고 화면은 그대로
+        show(el);
+    }, true);
+    document.addEventListener('mouseover', (e) => {
+        const el = e.target.closest && e.target.closest('[data-tip]');
+        if (el && window.matchMedia && window.matchMedia('(hover: hover)').matches) show(el);
+    });
+    document.addEventListener('scroll', hide, true);
+})();
 
 /* 랭킹·프로필의 이름 옆 — 칩만 (글자 없음). 이정표 이름은 툴팁과 밭 화면에 */
 function _fieldBadgeHtml(level) {
@@ -12491,7 +12531,7 @@ function openFieldScreen() {
         <div class="result-card" style="max-width:340px; background:#fff; color:#2c3e50; text-align:center; padding-bottom:22px; position:relative;">
             <button onclick="toggleFieldHelp()" aria-label="help" style="position:absolute; top:10px; right:12px; width:28px; height:28px; border-radius:50%; border:1px solid #d5d8dc; background:#f4f6f7; color:#7f8c8d; font-weight:800; cursor:pointer; font-size:0.95rem; line-height:1;">?</button>
             <div id="field-help" style="display:none; text-align:left; background:#f8f9fa; border-radius:12px; padding:12px 14px; margin:8px 0 14px; font-size:0.84rem; line-height:1.65; color:#444;"></div>
-            <div style="line-height:1; margin-bottom:8px; display:flex; justify-content:center;">${_fieldRingHtml(maxPlayerHearts, 'field-ring-lg')}</div>
+            <div style="line-height:1; margin-bottom:8px; display:flex; justify-content:center;">${_fieldRingHtml(maxPlayerHearts, 'field-ring-lg', true)}</div>
             <div style="font-size:1.6rem; font-weight:800; margin-bottom:2px;">${t('field_label')} ${maxPlayerHearts}</div>
             ${title ? `<div style="color:#e67e22; font-weight:700; font-size:0.9rem; margin-bottom:10px;">${t(title.key)}</div>` : '<div style="margin-bottom:10px;"></div>'}
             <p style="color:#7f8c8d; font-size:0.88rem; line-height:1.6; margin:0 0 14px;">${t('field_desc')}</p>
