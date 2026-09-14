@@ -1641,7 +1641,7 @@ verseRecall['1-1'] = { pass, typedPass, fail, firstPass, lastPass, lastAt, lastO
 
 | 규칙 | 값 | 왜 |
 |---|---|---|
-| 뭘 세나 | 타이핑 통과 (`recordVerseRecall`에서 `ok && mode==='memory'`) | `typedPass`와 같은 기준. 음성·`'learn'` 제외 |
+| 뭘 세나 | **백지(궁극)** 타이핑 통과 (`ok && mode==='memory' && ultimateMemoryMode`) | 빈칸은 **안 센다**(2026-09-14) — 같이 세면 모두가 빈칸만 하게 돼 판이 '인출'에서 '빈칸 채우기 속도'로 옮겨간다. 음성·`'learn'`·결과 화면 백지 확인(글자 칸 방식)도 제외 |
 | 힌트 | `hints <= ceil(len × HINT_OK_RATIO)` (20%) | 힌트가 무료라 다 열고 써도 통과가 된다. 3초 간격은 늦출 뿐 못 막는다 |
 | 같은 구절 | 하루 1회 (`_get6AMDayStr`, `seen[stageId]`) | 승점 하루 제한과 같은 경계. 이론상 최대 404×7 = 2,828 (`RECALL_WEEK_MAX`) |
 | 주 경계 | `getWeekId()` (월요일 0시) | 승점 랭킹과 같은 주를 본다 |

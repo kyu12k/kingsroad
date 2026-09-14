@@ -706,9 +706,9 @@ const LANG = {
         // 실시간 암송왕 (2026-09-13)
         ranking_tab_recall: '실시간 암송왕',
         ranking_recall_title: '🖊️ 실시간 암송왕',
-        ranking_recall_desc: '이번 주 <b>백지·빈칸으로 써낸 구절 수</b><br>밭·부스터와 상관없이 한 절은 1',
+        ranking_recall_desc: '이번 주 <b>백지로 써낸 구절 수</b> (아무 단서 없이)<br>밭·부스터와 상관없이 한 절은 1',
         ranking_recall_unit: '{n}절',
-        ranking_recall_empty: '아직 아무도 없어요.<br>백지나 빈칸으로 한 절을 써내면 여기에 올라갑니다.',
+        ranking_recall_empty: '아직 아무도 없어요.<br>백지로 한 절을 써내면 여기에 올라갑니다.',
         ranking_recall_mine_pending: '내 기록 (곧 반영)',
         ranking_recall_opens_monday: '월요일 0시에 열려요',
         recall_title: '암송왕',
@@ -1556,9 +1556,9 @@ const LANG = {
         ranking_tab_group_current: 'Current Rankings',
         ranking_tab_recall: 'Live Recall Kings',
         ranking_recall_title: '🖊️ Live Recall Kings',
-        ranking_recall_desc: 'Verses <b>written from blank this week</b><br>Field and boosters do not count — one verse is 1',
+        ranking_recall_desc: 'Verses <b>written on a blank page this week</b> (no cues at all)<br>Field and boosters do not count — one verse is 1',
         ranking_recall_unit: '{n} verses',
-        ranking_recall_empty: 'Nobody yet.<br>Write one verse from blank and you will appear here.',
+        ranking_recall_empty: 'Nobody yet.<br>Write one verse on a blank page and you will appear here.',
         ranking_recall_mine_pending: 'My count (syncing)',
         ranking_recall_opens_monday: 'Opens Monday at midnight',
         recall_title: 'Recall King',
@@ -2078,7 +2078,7 @@ let reviewSamples = [];
    이번 주 백지·빈칸으로 써낸 구절 수. **밭·부스터·순서·콘텐츠 종류를 아무것도 곱하지 않는다.**
    승점 랭킹은 절 수 × 밭이라 같은 노력이 200배 다른 점수가 되고(W37: 중앙값 85 / 최고 87만),
    "비슷한 사람과 겨룬다"가 성립하지 않았다. 이 판은 노력 한 단위 = 1이다.
-   세는 기준은 typedPass와 같다(타이핑 통과, 'learn' 제외) + 힌트 20% 이하 + 같은 구절 하루 1회. */
+   세는 기준: 타이핑 통과 중 **백지(궁극)만**('learn' 제외, 빈칸 제외) + 힌트 20% 이하 + 같은 구절 하루 1회. */
 let recallWeek = { weekId: '', count: 0, seen: {} };   // seen: stageId → 마지막으로 센 날(6시 경계)
 const RECALL_WEEK_MAX = 404 * 7;                        // 서버 상한과 같다 (kingsroad/index.js)
 /* 시작 주차. 일요일 저녁(2026-09-13)에 배포했는데 그대로 켜면 W37 판은 '오늘 밤 몇 시간 백지를 한 사람'만
@@ -24485,8 +24485,12 @@ function recordVerseRecall(stageId, ok, hints, mode) {
         r.lastVerseLen = _txt.length;
     }
 
-    // 실시간 암송왕 집계 — 'learn'은 위에서 mode가 바뀌어 자연히 빠진다
-    if (ok && mode === 'memory') _countRecallForWeek(stageId, hints || 0, r.lastVerseLen || 0);
+    // 실시간 암송왕 집계 — 'learn'은 위에서 mode가 바뀌어 자연히 빠진다.
+    // ★ 백지(궁극)만 센다 (2026-09-14). 빈칸(글자 칸 보임)을 같이 세면 모두가 빈칸만 하게 돼
+    //   판이 '인출'에서 '빈칸 채우기 속도'로 옮겨간다. "암송왕 = 아무 단서 없이 써낸 구절 수".
+    if (ok && mode === 'memory' && hardshipState && hardshipState.ultimateMemoryMode) {
+        _countRecallForWeek(stageId, hints || 0, r.lastVerseLen || 0);
+    }
 
     verseRecall[stageId] = r;
 }
