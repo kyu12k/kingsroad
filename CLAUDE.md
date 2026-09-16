@@ -1725,7 +1725,9 @@ verseRecall['1-1'] = { pass, typedPass, fail, firstPass, lastPass, lastAt, lastO
 - **진행** `eventProgress[eventId][stageId] = { normal, hard, blank, none: ts }` (저장본). 준비 상태 = 통과한 최고 난이도,
   이벤트 밖의 백지 통과(`verseRecall.typedPass`)도 인정
 - 끝나면 `quitGame`이 `window._returnToEvent`로 이벤트 화면을 다시 연다
-- 미션·레이드·보스 클리어와 무관(스테이지가 아니다). 보상은 미정
+- 미션·레이드·보스 클리어와 무관(스테이지가 아니다)
+- **보상**: 오늘 전 절을 백지(`none`)로 통과하면 💎`EVENT_ALL_BLANK_GEM`(1,000), 하루 1회(`eventProgress[id]._rewardDay`).
+  모의고사 한 번이든 문항 다섯 개 따로든. 10절 백지 ≈ 5분이라 망각 미션(22절 2,250)과 비율이 비슷
 
 ---
 

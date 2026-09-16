@@ -734,6 +734,9 @@ const LANG = {
         event_note: '준비 = 백지로 써낸 절. 시험은 백지니까 백지까지 가보세요. 같은 절·같은 난이도는 하루 한 번 승점.',
         event_cleared: '📝 시험 문항 · {name} 통과',
         event_scored_today: '오늘 이미 받은 승점',
+        event_reward_hint: '🎁 오늘 {n}절을 모두 백지로 쓰면 💎{gem} (하루 1회)',
+        event_reward_done: '✅ 오늘 전부 백지로 통과 · 💎{gem} 받음',
+        event_all_blank_done: '📝 시험 문항 전부 백지 통과!',
         ranking_read_title: '📖 실시간 통독왕',
         ranking_read_desc: '이번 주 <b>읽음을 누른 구절 수</b><br>장을 다 읽으면 다시 읽을 수 있어요',
         ranking_read_empty: '아직 아무도 없어요.<br>장을 열어 「읽음」을 누르면 여기에 올라갑니다.',
@@ -1616,6 +1619,9 @@ const LANG = {
         event_note: 'Ready = written from a blank page. The exam is blank page, so aim for that. Same verse, same level: score once a day.',
         event_cleared: '📝 Exam question · {name} passed',
         event_scored_today: 'already scored today',
+        event_reward_hint: '🎁 Write all {n} verses from a blank page today for 💎{gem} (once a day)',
+        event_reward_done: '✅ All passed from blank today · 💎{gem} received',
+        event_all_blank_done: '📝 Every exam question passed from blank!',
         ranking_read_title: '📖 Live Reading Kings',
         ranking_read_desc: 'Verses <b>marked as read this week</b><br>Finish a chapter and you can read it again',
         ranking_read_empty: 'Nobody yet.<br>Open a chapter and press "Read" to appear here.',
@@ -15299,6 +15305,18 @@ function _eventReadiness(e) {
     const done = ids.filter(id => _eventVerseRung(e.id, id) >= 4).length;
     return { done, total: ids.length };
 }
+const EVENT_ALL_BLANK_GEM = 1000;   // 오늘 전 문항을 백지로 통과하면 하루 1회
+function _eventAllBlankToday(ev) {
+    const today = _get6AMDayStr();
+    return _eventVerseIds(ev).every(id => {
+        const p = (eventProgress[ev.id] || {})[id];
+        return !!(p && p.none && _tsTo6AMDateStr(p.none) === today);
+    });
+}
+function _eventRewardedToday(eventId) {
+    const p = eventProgress[eventId] || {};
+    return p._rewardDay === _get6AMDayStr();
+}
 function _recordEventClear(eventId, stageIds, rung) {
     if (!eventId || !Array.isArray(stageIds)) return;
     if (!eventProgress[eventId]) eventProgress[eventId] = {};
@@ -15306,6 +15324,14 @@ function _recordEventClear(eventId, stageIds, rung) {
         if (!eventProgress[eventId][id]) eventProgress[eventId][id] = {};
         eventProgress[eventId][id][rung] = Date.now();
     });
+    // 보상 — 오늘 10절 전부 백지로 통과했으면 💎1,000, 하루 1회. 모의고사 한 번이든 문항 다섯 개 따로든
+    const ev = (krEvents || []).find(e => e.id === eventId);
+    if (rung === 'none' && ev && !_eventRewardedToday(eventId) && _eventAllBlankToday(ev)) {
+        eventProgress[eventId]._rewardDay = _get6AMDayStr();
+        myGems += EVENT_ALL_BLANK_GEM;
+        updateGemDisplay();
+        setTimeout(() => { if (typeof showMissionToast === 'function') showMissionToast(t('event_all_blank_done'), `💎 ${EVENT_ALL_BLANK_GEM.toLocaleString()}`); }, 800);
+    }
     saveGameData();
     if (typeof updateEventStrip === 'function') updateEventStrip();
 }
@@ -15396,6 +15422,7 @@ function openEventScreen(eventId) {
             <div class="event-modes">${modeBtn('normal', t('event_mode_normal'))}${modeBtn('hard', t('event_mode_hard'))}${modeBtn('blank', t('event_mode_blank'))}${modeBtn('none', t('event_mode_none'))}</div>
             <div class="event-list">${rows}</div>
             <button class="event-all" onclick="startEventAll('${ev.id}')">${t('event_mock', { n: _eventVerseIds(ev).length })}</button>
+            <div class="event-reward${_eventRewardedToday(ev.id) ? ' done' : ''}">${_eventRewardedToday(ev.id) ? t('event_reward_done', { gem: EVENT_ALL_BLANK_GEM.toLocaleString() }) : t('event_reward_hint', { gem: EVENT_ALL_BLANK_GEM.toLocaleString(), n: _eventVerseIds(ev).length })}</div>
             <p class="event-note">${t('event_note')}</p>
             <button onclick="document.getElementById('event-modal').remove()" class="event-close">${t('btn_close')}</button>
         </div>`;
