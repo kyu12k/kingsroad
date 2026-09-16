@@ -12775,31 +12775,19 @@ function resetHintLock() {
     if (typeof updateHintButtonLabels === 'function') updateHintButtonLabels();
 }
 
+/* 힌트는 언제나 열려 있다 (2026-09-16). 예전의 '먼저 한 번 틀려야 열림' 잠금을 전부 뺐다.
+   힌트를 보고 전문을 읽어도 다음 판엔 힌트가 없으니 결국 스스로 꺼내야 하고,
+   시도 자체를 막아 "너무 어려워서 안 하게 되는" 손해가 베끼기의 손해보다 훨씬 크다.
+   (고난의 타이핑 힌트는 mode==='memory'일 때만 있다 — 그건 '있느냐'지 '잠겼느냐'가 아니다) */
 function isHintUnlocked() {
-    if (window.isHardshipMode) {
-        // ★ 타이핑 백지에는 잠금을 걸지 않는다.
-        // 단어 버튼 모드의 힌트는 구절 전체를 보여주므로 먼저 보면 인출이 사라지지만,
-        // 여기 힌트는 한 글자씩 여는 점진적 단서라 오히려 반복 인출 시도를 만들어낸다.
-        // 게다가 '한 글자 입력'을 요구해봤자 아무 글자나 쳐서 열 수 있어
-        // 시도를 강제하지도 못하면서 입력만 더럽혔다.
-        return !!(hardshipState && hardshipState.mode === 'memory');
-    }
-    // 보스전 어려움(초성)은 잠그지 않는다 (2026-09-16). 한 장 29절을 초성만 보고 이어가는 중에
-    // 막힌 구절마다 '일부러 한 번 틀리고' 힌트를 여는 절차가 흐름을 끊었다. 비용(💎10)은 그대로.
-    if (!window.isTrainingMode && !window.isHardshipMode && typeof bossDifficultyMode !== 'undefined' && bossDifficultyMode === 'hard') {
-        return true;
-    }
-    return hintAttemptMade;
+    if (window.isHardshipMode) return !!(hardshipState && hardshipState.mode === 'memory');
+    return true;
 }
 
+/* 힌트는 전부 무료 (2026-09-16). 10젬은 상징값이었고(일일 미션 하루 7,000), 그 상징이 하는 일은
+   "힌트는 나쁜 것"이라는 인상뿐이었다. 거리낌 없이 열어야 도전하고 반복한다. */
 function getCurrentHintCost() {
-    if (window.isHardshipMode) {
-        // 망각의 고난 힌트는 무료 — 한 글자씩만 공개하는 점진적 단서라
-        // 반복 인출 시도를 만들어내는 쪽에 가깝다. 비용이 이를 억제할 이유가 없다.
-        return 0;
-    }
-
-    return isFocusedTrainingSession() ? 0 : HINT_COST;
+    return 0;
 }
 
 function updateHintButtonLabels() {
@@ -12808,7 +12796,7 @@ function updateHintButtonLabels() {
     // 좁은 배틀 헤더에서 자리를 많이 차지해 다른 버튼을 밀어냈다.
     // 부족하면 누를 때 alert_hint_no_gems 토스트로 안내된다.
     // 반면 '무료'는 모드에 따라 달라지는 정보이므로 그때만 남긴다.
-    const hintLabel = hintCost > 0 ? '' : `(${t('label_free')})`;
+    const hintLabel = ''; // 전부 무료라 '(무료)'는 정보가 아니다. 이 자리는 힌트 간격 초 표시에만 쓴다
     const btnLabel = t('hint_btn_label');
 
     // 잠금 상태는 흐리게만 표시하고 클릭은 막지 않는다 — 눌러야 이유를 안내할 수 있다
