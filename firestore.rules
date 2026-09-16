@@ -5,6 +5,12 @@ service cloud.firestore {
     // 랭킹 데이터: 모두 읽기 가능. 쓰기는 "로그인 필요 + 재화/보상 필드는 서버(CF)만" 으로 제한.
     // (game.js는 점수·닉네임·알림·친구 필드만 직접 쓰고, 재화/장비/길드 필드는 Cloud Function만 씀.
     //  Cloud Function은 admin 권한이라 아래 규칙을 우회하므로 정상 동작한다.)
+    // 기간 한정 이벤트(시험 준비) — 문항·기간. 관리자가 admin SDK로 쓴다
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /leaderboard/{userId} {
       allow read: if true;
 

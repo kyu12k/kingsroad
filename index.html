@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
     <!-- image_0.webp is inlined below; preload removed -->
-    <link rel="stylesheet" href="style.css?v=20260916g">
+    <link rel="stylesheet" href="style.css?v=20260916h">
 
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-TEVW49QB45"></script>
@@ -465,7 +465,7 @@
             style="position:fixed; top:20px; right:20px; background:rgba(44,62,80,0.95); border:1.5px solid #f1c40f; color:#fff; width:44px; height:44px; border-radius:50%; font-size:1.5rem; cursor:pointer; z-index:3000; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 16px rgba(44,62,80,0.18); transition:all 0.3s;">
             <span style="font-size:1.5em;">☰</span>
         </button>
-        <a href="https://bjtest.pages.dev" target="_blank"
+        <a id="exam-prep-link" href="https://bjtest.pages.dev" target="_blank"
             style="position:fixed; top:74px; right:20px; background:rgba(44,62,80,0.95); border:1.5px solid #f1c40f; color:#f1c40f; padding:6px 12px; border-radius:10px; font-size:0.8rem; font-weight:bold; cursor:pointer; z-index:3000; text-decoration:none; box-shadow:0 4px 16px rgba(44,62,80,0.18); white-space:nowrap;">
             시험준비
         </a>
@@ -790,6 +790,34 @@
             </div>
             <script>
                 const NOTICES = [
+                    {
+                        date: '2026-09-16',
+                        type: 'patch',
+                        title: '📝 9월 시험 준비 — 기간 한정 스테이지',
+                        titleEn: '📝 September Exam Prep — Limited-Time Stage',
+                        content: `
+<div style="padding:4px 0; line-height:1.8;">
+  <p style="color:#555; margin-bottom:14px;"><strong>9월 20일(주일) 시험 문항을 킹스로드 안에서 연습할 수 있습니다.</strong> 홈의 「📝 시험준비」 버튼과 지도 위 띠를 누르면 열립니다. 시험이 끝나면 사라집니다.</p>
+  <div style="background:#fff8e1; border-radius:12px; padding:12px 14px; margin-bottom:14px;">
+    <p style="color:#666; font-size:0.92em; margin:0;">• 문항 5개 — 계 3:12~13 · 12:10~11 · 15:4~5 · 18:7~8 · 22:15~16</p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 보통 · 어려움 · 빈칸 · 백지, 보스전과 같은 네 단계. 문항 하나씩 또는 <strong>전체 모의고사</strong>(10절)</p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 문항마다 어디까지 통과했는지 보입니다. <strong>준비 = 백지로 써낸 절</strong> — 시험이 백지니까 백지까지 가보세요</p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 승점은 보스전·중간점검과 같은 규칙(같은 절·같은 난이도는 하루 한 번). 백지 통과는 실시간 암송왕에도 셉니다</p>
+  </div>
+  <p style="color:#555; margin-bottom:0;">앞으로 시험이 있을 때마다 이렇게 열립니다. 보상은 정해지면 알려드리겠습니다.</p>
+</div>`,
+                        contentEn: `
+<div style="padding:4px 0; line-height:1.8;">
+  <p style="color:#555; margin-bottom:14px;"><strong>Practice the Sept 20 (Sunday) exam questions inside King's Road.</strong> Open it from the 📝 Exam prep button on the home screen or the strip above the map. It disappears after the exam.</p>
+  <div style="background:#fff8e1; border-radius:12px; padding:12px 14px; margin-bottom:14px;">
+    <p style="color:#666; font-size:0.92em; margin:0;">• 5 questions — Rev 3:12–13 · 12:10–11 · 15:4–5 · 18:7–8 · 22:15–16</p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• Words · Initials · Blanks · Blank page, the same four levels as boss battles. One question at a time or the <strong>full mock exam</strong> (10 verses)</p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• Each question shows how far you have passed. <strong>Ready = written from a blank page</strong> — the exam is blank page, so aim for it</p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• Score follows boss/checkpoint rules (same verse, same level: once a day). Blank-page passes also count for Live Recall Kings</p>
+  </div>
+  <p style="color:#555; margin-bottom:0;">This will open whenever there is an exam. Rewards will be announced once decided.</p>
+</div>`,
+                    },
                     {
                         date: '2026-09-16',
                         type: 'patch',
@@ -3143,7 +3171,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="bible_en.js"></script>
-    <script src="game.js?v=20260916g"></script>
+    <script src="game.js?v=20260916h"></script>
     <script>
 
         /* =========================================

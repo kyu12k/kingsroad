@@ -1705,6 +1705,30 @@ verseRecall['1-1'] = { pass, typedPass, fail, firstPass, lastPass, lastAt, lastO
 
 ---
 
+## 기간 한정 이벤트 스테이지 — 시험 준비 (2026-09-16)
+
+교회에서 주기적으로 2절 묶음을 백지로 쓰는 시험을 친다. 외부 링크(bjtest.pages.dev)는 '찾아가야 하는 것'이라
+안 쓰이므로 **앱 안의 기간 한정 스테이지**로 들였다. 첫 이벤트: `events/2026-09-20` (9월 시험, 9/16~20).
+
+- **문항은 Firestore `events/{id}`** — `{ title, examDate, start, end, questions:['3-12,3-13', ...] }`.
+  Firestore는 배열 속 배열을 못 담아 문항 하나를 `'3-12,3-13'` 문자열로 둔다(`_eventQuestions()`가 푼다).
+  규칙: 읽기 공개, 쓰기 금지 — admin SDK로 넣는다(scratchpad `mkevent.js`). 배포 없이 시험마다 바꾸기 위해서
+- 부팅 시 `loadKrEvents()`(`checkPendingReward`와 같은 시점) → `krEvents`. `end >= 오늘`인 것만
+- **입구 둘**: 홈의 「시험준비」 링크(`#exam-prep-link`)가 이벤트 중엔 앱 화면을 열고 「📝 D-4 시험준비」로, 없으면 외부 링크 그대로 /
+  지도 헤더 아래 띠 `#event-strip`(D-day · 준비 n/10). 둘 다 `updateEventStrip()`이 그린다(`updateGemDisplay`마다)
+- **화면** `openEventScreen(id)`: 난이도 4칸(기본 백지 — 시험이 백지니까) + 문항 목록(상태·도전) + 전체 모의고사
+- **엔진**: 빈칸·백지 → 고난 엔진 `_startEventBlank`(embed `{eventId}`, 순서대로). 보통·어려움 → 보스전 엔진 `startEventBattle`
+  — 장 하나가 아니라 임의 구절 목록이라 절마다 `_chapter`를 싣고 `updateVerseIndicator`가 그걸 쓴다.
+  `window._eventBattle`이 있으면 완주 시 `stageClear`를 타지 않고 `_finishEventBattle`(승점 밭×1, 보통 ×0.7, 같은 절·난이도 하루 1회)
+  · `saveBattleCheckpoint` 건너뜀 · 나가면 보스 설정(`bossDifficultyMode`/`bossOrderMode`) 복원
+- 고난 쪽: `hardshipState.eventId` — `lastCtx 'event'`, `scoredBy 'event'`, 배율 0.5(중간점검과 같은 크기), 망각 히스토리·미션 제외, 이어하기 제외
+- **진행** `eventProgress[eventId][stageId] = { normal, hard, blank, none: ts }` (저장본). 준비 상태 = 통과한 최고 난이도,
+  이벤트 밖의 백지 통과(`verseRecall.typedPass`)도 인정
+- 끝나면 `quitGame`이 `window._returnToEvent`로 이벤트 화면을 다시 연다
+- 미션·레이드·보스 클리어와 무관(스테이지가 아니다). 보상은 미정
+
+---
+
 ## 실시간 통독왕 (`readWeek`, 2026-09-16)
 
 암송왕과 같은 구조의 두 번째 실시간 판. **장 화면 「읽기」에서 「읽음」을 누른 구절 수**(회독 포함).

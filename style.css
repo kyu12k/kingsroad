@@ -6101,6 +6101,37 @@ body, html {
     .field-ring.field-max { animation: none; }
 }
 .field-badge-ring { margin-left: 6px; }
+/* 이벤트 스테이지 (시험 준비) */
+#event-strip {
+    display: flex; align-items: center; gap: 8px;
+    margin: 0 12px 6px; padding: 8px 12px;
+    border-radius: 12px; cursor: pointer;
+    background: linear-gradient(135deg, rgba(241,196,15,0.18), rgba(230,126,34,0.12));
+    border: 1px solid rgba(241,196,15,0.45);
+    font-size: 0.82rem; color: #f5e6b3;
+}
+.event-strip-title { font-weight: 800; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.event-strip-dday { font-weight: 800; color: #f1c40f; }
+.event-strip-ready { opacity: 0.85; white-space: nowrap; }
+.event-strip-arrow { opacity: 0.6; }
+.event-card { max-width: 380px; background: #fffdf5; color: #2c3e50; text-align: left; padding: 20px 18px 16px; }
+.event-head { text-align: center; margin-bottom: 12px; }
+.event-eyebrow { font-size: 0.72rem; letter-spacing: 0.12em; color: #e67e22; font-weight: 800; }
+.event-title { font-size: 1.35rem; font-weight: 900; margin-top: 2px; }
+.event-sub { font-size: 0.85rem; color: #7f8c8d; margin-top: 4px; }
+.event-modes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
+.event-mode-btn { padding: 8px 4px; border-radius: 10px; border: 1px solid #e0d6b8; background: #fff; color: #7f8c8d; font-weight: 700; font-size: 0.82rem; cursor: pointer; }
+.event-mode-btn.on { background: #f1c40f; border-color: #f1c40f; color: #2c3e50; box-shadow: 0 2px 0 #d35400; }
+.event-list { display: flex; flex-direction: column; gap: 6px; max-height: 42vh; overflow-y: auto; }
+.event-q { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #efe6c8; border-radius: 12px; padding: 9px 12px; }
+.event-q-main { flex: 1; min-width: 0; }
+.event-q-title { font-weight: 800; font-size: 0.95rem; }
+.event-q-status { font-size: 0.78rem; color: #7f8c8d; margin-top: 1px; }
+.event-q-go { background: #f1c40f; color: #2c3e50; border: none; padding: 8px 14px; border-radius: 20px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 0 #d35400; flex-shrink: 0; }
+.event-all { width: 100%; margin-top: 10px; padding: 11px; border-radius: 12px; border: 1px solid #e67e22; background: #fff3e0; color: #b9770e; font-weight: 800; cursor: pointer; }
+.event-note { font-size: 0.76rem; color: #95a5a6; line-height: 1.5; margin: 10px 0 4px; text-align: center; }
+.event-close { width: 100%; background: none; border: none; color: #95a5a6; padding: 6px 0 0; font-size: 0.9rem; cursor: pointer; }
+
 /* 읽기 오버레이 — 회독·이번 주 통독 수 한 줄 */
 .bible-read-pass { text-align: center; font-size: 0.78rem; color: #f7c873; opacity: 0.9; padding: 4px 0 2px; }
 [data-tip] { cursor: pointer; }

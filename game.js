@@ -719,6 +719,21 @@ const LANG = {
         ranking_recall_opens_monday: '월요일 0시에 열려요',
         ranking_recall_rules_btn: '규칙과 보상 보기',
         ranking_tab_read: '실시간 통독왕',
+        event_prep: '시험준비',
+        event_mode_normal: '보통', event_mode_hard: '어려움', event_mode_blank: '빈칸', event_mode_none: '백지',
+        event_default_title: '시험',
+        event_eyebrow: '기간 한정',
+        event_exam_date: '시험 {date}',
+        event_over: '끝',
+        event_ready: '준비 {done}/{total}절',
+        event_go: '도전',
+        event_mock: '전체 모의고사 · {n}절',
+        event_mock_label: '모의고사',
+        event_status_none: '아직 안 해봤어요',
+        event_status_passed: '{name} 통과',
+        event_note: '준비 = 백지로 써낸 절. 시험은 백지니까 백지까지 가보세요. 같은 절·같은 난이도는 하루 한 번 승점.',
+        event_cleared: '📝 시험 문항 · {name} 통과',
+        event_scored_today: '오늘 이미 받은 승점',
         ranking_read_title: '📖 실시간 통독왕',
         ranking_read_desc: '이번 주 <b>읽음을 누른 구절 수</b><br>장을 다 읽으면 다시 읽을 수 있어요',
         ranking_read_empty: '아직 아무도 없어요.<br>장을 열어 「읽음」을 누르면 여기에 올라갑니다.',
@@ -1586,6 +1601,21 @@ const LANG = {
         ranking_recall_opens_monday: 'Opens Monday at midnight',
         ranking_recall_rules_btn: 'Rules & rewards',
         ranking_tab_read: 'Live Reading Kings',
+        event_prep: 'Exam prep',
+        event_mode_normal: 'Words', event_mode_hard: 'Initials', event_mode_blank: 'Blanks', event_mode_none: 'Blank page',
+        event_default_title: 'Exam',
+        event_eyebrow: 'LIMITED TIME',
+        event_exam_date: 'Exam {date}',
+        event_over: 'Ended',
+        event_ready: 'Ready {done}/{total}',
+        event_go: 'Go',
+        event_mock: 'Full mock exam · {n} verses',
+        event_mock_label: 'Mock exam',
+        event_status_none: 'Not tried yet',
+        event_status_passed: '{name} passed',
+        event_note: 'Ready = written from a blank page. The exam is blank page, so aim for that. Same verse, same level: score once a day.',
+        event_cleared: '📝 Exam question · {name} passed',
+        event_scored_today: 'already scored today',
         ranking_read_title: '📖 Live Reading Kings',
         ranking_read_desc: 'Verses <b>marked as read this week</b><br>Finish a chapter and you can read it again',
         ranking_read_empty: 'Nobody yet.<br>Open a chapter and press "Read" to appear here.',
@@ -2499,6 +2529,7 @@ loadGameData = function () {
             bibleReadPasses = (parsed.bibleReadPasses && parsed.bibleReadPasses[_today]) ? { [_today]: parsed.bibleReadPasses[_today] } : {};
             bibleReadTotal = (parsed.bibleReadTotal && parsed.bibleReadTotal[_today] != null) ? { [_today]: parsed.bibleReadTotal[_today] } : {};
         }
+        if (parsed.eventProgress && typeof parsed.eventProgress === 'object') eventProgress = parsed.eventProgress;
         if (parsed.readWeek && typeof parsed.readWeek === 'object') {
             readWeek = { weekId: String(parsed.readWeek.weekId || ''), count: Math.max(0, parseInt(parsed.readWeek.count, 10) || 0) };
         }
@@ -6364,6 +6395,7 @@ function amenAndStartGame() {
    [지난 주 보상] pendingReward 확인 → 홈 버튼 표시
    ===================================================== */
 function checkPendingReward() {
+    if (typeof loadKrEvents === 'function') loadKrEvents();   // 이벤트도 같은 시점(인증 뒤)에 한 번
     if (typeof db === 'undefined' || !db || !myTag) return;
 
     // enablePersistence 캐시 우회: 다른 기기의 수령 여부를 항상 서버에서 확인
@@ -8573,6 +8605,9 @@ function loadNextVerse() {
 
             // 4. 애니메이션 시간(2초) 뒤에 진짜 승리 처리
             setTimeout(() => {
+                // 이벤트 스테이지(보통·어려움)는 스테이지 클리어가 아니다
+                if (window._eventBattle) { clearCheckpoint(); _finishEventBattle(); return; }
+
                 const clearedStageId = window.currentStageId;
                 const sId = String(window.currentStageId);
 
@@ -8627,7 +8662,7 @@ function loadNextVerse() {
     currentBossChunks = currentBossParts[currentBossPartIndex];
 
     function updateVerseIndicator() {
-        const chapterNum = window.currentBattleChapter || 1;
+        const chapterNum = (currentVerseData && currentVerseData._chapter) || window.currentBattleChapter || 1;
         const verseNum = (currentVerseData && currentVerseData._verseNum)
             ? currentVerseData._verseNum
             : (window.currentBattleStartIndex || 0) + currentVerseIdx + 1;
@@ -9500,6 +9535,7 @@ function showToast(message) {
 
 // 2. 체크포인트 저장 (5구절마다)
 function saveBattleCheckpoint() {
+    if (window._eventBattle) return;   // 이벤트 스테이지는 이어하기 없음 (2절짜리)
     const saveData = {
         stageId: window.currentStageId,   // 현재 스테이지
         index: currentVerseIdx,           // 현재 몇 번째 구절인지
@@ -9583,6 +9619,17 @@ function quitGame(destination = 'map') {
                 renderChapterMap(currentChapterId || window.currentBattleChapter || 1);
             }
         }
+    }
+
+    // 이벤트 전투를 중간에 나갔으면 보스 설정을 되돌린다
+    if (window._eventBattle) {
+        bossDifficultyMode = window._eventBattle.prevDifficulty; bossOrderMode = window._eventBattle.prevOrder;
+        window._eventBattle = null;
+    }
+    // 이벤트에서 왔으면 이벤트 화면으로 돌아간다
+    if (window._returnToEvent) {
+        const _evId = window._returnToEvent; window._returnToEvent = null;
+        setTimeout(() => { if (typeof openEventScreen === 'function') openEventScreen(_evId); }, 400);
     }
 
     // ★ [NEW] 7. 전투 종료 후 밀린 업적 팝업이 있다면 보여줘!
@@ -9737,6 +9784,7 @@ function saveGameData() {
         bibleReadPasses: bibleReadPasses, // 오늘 장별 완독 회수
         bibleReadTotal: bibleReadTotal,   // 오늘 읽음 수 (회독 포함)
         readWeek: readWeek,               // 실시간 통독왕
+        eventProgress: eventProgress,     // 이벤트 스테이지 진행
         sessionTimeLog: sessionTimeLog,
         // ★ [게임 모드]
         activeMode: activeMode,
@@ -10611,6 +10659,7 @@ function updateGemDisplay() {
     const mapRes = document.getElementById('header-resources');
     if (mapRes) mapRes.innerHTML = resourceHtml;
     if (typeof updateHeaderToday === 'function') updateHeaderToday();
+    if (typeof updateEventStrip === 'function') updateEventStrip();
 
     // 6. [상점 화면] 내 보석 업데이트
     const shopRes = document.getElementById('shop-user-gems');
@@ -15199,6 +15248,251 @@ function openRankingModal(tabName, titleText) {
    그래도 열 때마다 나가므로 5분 캐시. 하루 수천 번 열리는 규모가 되면 시온성처럼 스냅샷으로 옮긴다.
    리그로 나누지 않는 이유: 이 지표는 밭이 안 곱해져 분포가 좁다 — 리그가 풀려던 문제가 애초에 없다.
    주간 참가자가 100명을 넘기면 그때 30명 방으로 나눈다. */
+/* ══════════════════════════════════════════════════════════════════════════
+   기간 한정 이벤트 스테이지 — 교회 시험 준비 (2026-09-16)
+   교회에서 주기적으로 "계 3:12~13 · 12:10~11 …" 2절 묶음을 백지로 쓰는 시험을 친다.
+   외부 링크(bjtest.pages.dev)는 '찾아가야 하는 것'이라 안 쓰이므로 앱 안의 기간 한정 스테이지로 들인다.
+   문항은 Firestore `events/{id}`에 둔다 — 시험마다 배포 없이 바꿀 수 있어야 한다.
+     { title, examDate:'YYYY-MM-DD', start:'YYYY-MM-DD', end:'YYYY-MM-DD', questions:['3-12,3-13', ...] }
+     (Firestore는 배열 안의 배열을 못 담아 문항 하나를 '3-12,3-13' 문자열로 둔다. _eventQuestions()가 배열로 푼다)
+   네 난이도 전부: 보통·어려움은 보스전 엔진(startEventBattle), 빈칸·백지는 고난 엔진(_startEventBlank).
+   진행은 eventProgress[eventId][stageId] = { normal, hard, blank, none: ts }로 남긴다.
+   ══════════════════════════════════════════════════════════════════════════ */
+let krEvents = [];                 // 활성 이벤트 (end >= 오늘)
+let eventProgress = {};            // eventId → stageId → { normal, hard, blank, none }
+const EVENT_RUNGS = ['normal', 'hard', 'blank', 'none'];
+
+function _todayStr() { return _getLocalDateStr(new Date()); }
+function _activeEvents() {
+    const today = _todayStr();
+    return (krEvents || []).filter(e => e && e.start <= today && e.end >= today && _eventQuestions(e).length);
+}
+function _eventDday(e) {
+    const [y, m, d] = String(e.examDate || e.end).split('-').map(Number);
+    const exam = new Date(y, m - 1, d); const now = new Date(); now.setHours(0, 0, 0, 0);
+    return Math.round((exam - now) / 86400000);
+}
+function _eventQuestions(e) {
+    return (e.questions || []).map(q => Array.isArray(q) ? q.map(String) : (q && q.ids) ? q.ids.map(String) : String(q).split(',').map(x => x.trim()).filter(Boolean));
+}
+function _eventVerseIds(e) { return _eventQuestions(e).flat(); }
+function _eventVerseLabel(stageId) {
+    const [c, v] = String(stageId).split('-');
+    return `${c}:${v}`;
+}
+function _eventQuestionLabel(q) {
+    const [c] = String(q[0]).split('-');
+    return `계 ${c}:${q.map(id => String(id).split('-')[1]).join('~')}`;
+}
+/* 절의 준비 상태: 0 없음 / 1 보통 / 2 어려움 / 3 빈칸 / 4 백지 (통과한 최고 난이도) */
+function _eventVerseRung(eventId, stageId) {
+    const p = (eventProgress[eventId] || {})[stageId] || {};
+    let r = 0;
+    EVENT_RUNGS.forEach((k, i) => { if (p[k]) r = i + 1; });
+    // 이벤트 밖에서(보스전·망각) 백지로 써낸 기록도 인정 — 준비된 것은 준비된 것
+    const vr = (typeof verseRecall !== 'undefined' && verseRecall[stageId]) || null;
+    if (vr && vr.typedPass > 0 && vr.lastOk !== false) r = Math.max(r, 4);
+    return r;
+}
+function _eventReadiness(e) {
+    const ids = _eventVerseIds(e);
+    const done = ids.filter(id => _eventVerseRung(e.id, id) >= 4).length;
+    return { done, total: ids.length };
+}
+function _recordEventClear(eventId, stageIds, rung) {
+    if (!eventId || !Array.isArray(stageIds)) return;
+    if (!eventProgress[eventId]) eventProgress[eventId] = {};
+    stageIds.forEach(id => {
+        if (!eventProgress[eventId][id]) eventProgress[eventId][id] = {};
+        eventProgress[eventId][id][rung] = Date.now();
+    });
+    saveGameData();
+    if (typeof updateEventStrip === 'function') updateEventStrip();
+}
+
+/* 부팅 시 한 번 읽는다. 실패해도 조용히 — 이벤트가 없는 것과 같다 */
+function loadKrEvents() {
+    if (typeof db === 'undefined' || !db) return Promise.resolve();
+    const today = _todayStr();
+    return db.collection('events').where('end', '>=', today).get().then(snap => {
+        krEvents = [];
+        snap.forEach(doc => krEvents.push(Object.assign({ id: doc.id }, doc.data())));
+        krEvents.sort((a, b) => String(a.examDate || a.end).localeCompare(String(b.examDate || b.end)));
+        if (typeof updateEventStrip === 'function') updateEventStrip();
+    }).catch(err => console.warn('이벤트 조회 실패:', err));
+}
+
+/* 지도 헤더 아래 띠 + 홈의 「시험준비」 버튼. 이벤트가 없으면 띠는 없고 버튼은 외부 링크로 남는다 */
+function updateEventStrip() {
+    const ev = _activeEvents()[0] || null;
+    // 홈 버튼
+    const link = document.getElementById('exam-prep-link');
+    if (link) {
+        if (ev) {
+            link.setAttribute('href', '#');
+            link.setAttribute('target', '');
+            link.onclick = (e) => { e.preventDefault(); openEventScreen(ev.id); };
+            const dd = _eventDday(ev);
+            link.textContent = (dd > 0 ? `📝 D-${dd}` : dd === 0 ? '📝 D-Day' : '📝') + ' ' + t('event_prep');
+        } else {
+            link.setAttribute('href', 'https://bjtest.pages.dev');
+            link.setAttribute('target', '_blank');
+            link.onclick = null;
+            link.textContent = t('event_prep');
+        }
+    }
+    // 지도 띠
+    const header = document.querySelector('#map-screen .map-header');
+    let strip = document.getElementById('event-strip');
+    if (!ev) { if (strip) strip.remove(); return; }
+    if (!header) return;
+    if (!strip) {
+        strip = document.createElement('div');
+        strip.id = 'event-strip';
+        strip.onclick = () => openEventScreen(ev.id);
+        header.insertAdjacentElement('afterend', strip);
+    }
+    const dd = _eventDday(ev);
+    const r = _eventReadiness(ev);
+    strip.innerHTML = `<span class="event-strip-title">📝 ${escapeHtml(ev.title || t('event_default_title'))}</span>
+        <span class="event-strip-dday">${dd > 0 ? 'D-' + dd : dd === 0 ? 'D-Day' : t('event_over')}</span>
+        <span class="event-strip-ready">${t('event_ready', { done: r.done, total: r.total })}</span>
+        <span class="event-strip-arrow">▶</span>`;
+}
+
+let _eventMode = 'none';   // 이벤트 화면에서 고른 난이도. 백지가 기본 — 시험이 백지니까
+function openEventScreen(eventId) {
+    const ev = (krEvents || []).find(e => e.id === eventId) || _activeEvents()[0];
+    if (!ev) return;
+    const old = document.getElementById('event-modal'); if (old) old.remove();
+    const dd = _eventDday(ev);
+    const r = _eventReadiness(ev);
+    const rungIcon = ['·', '😌', '🙂', '⭐', '🏆'];
+    const rungName = ['', t('event_mode_normal'), t('event_mode_hard'), t('event_mode_blank'), t('event_mode_none')];
+    const modeBtn = (m, label) => `<button class="event-mode-btn${_eventMode === m ? ' on' : ''}" onclick="_eventMode='${m}'; openEventScreen('${ev.id}')">${label}</button>`;
+    const rows = _eventQuestions(ev).map((q, i) => {
+        const rungs = q.map(id => _eventVerseRung(ev.id, id));
+        const minR = Math.min(...rungs);
+        return `<div class="event-q">
+            <div class="event-q-main">
+                <div class="event-q-title">${i + 1}. ${_eventQuestionLabel(q)}</div>
+                <div class="event-q-status">${rungIcon[minR]} ${minR ? t('event_status_passed', { name: rungName[minR] }) : t('event_status_none')}</div>
+            </div>
+            <button class="event-q-go" onclick="startEventQuestion('${ev.id}', ${i})">${t('event_go')}</button>
+        </div>`;
+    }).join('');
+    const overlay = document.createElement('div');
+    overlay.id = 'event-modal';
+    overlay.className = 'modal-overlay';
+    overlay.style.zIndex = '9998';
+    overlay.innerHTML = `
+        <div class="result-card event-card">
+            <div class="event-head">
+                <div class="event-eyebrow">${t('event_eyebrow')}</div>
+                <div class="event-title">📝 ${escapeHtml(ev.title || t('event_default_title'))}</div>
+                <div class="event-sub">${ev.examDate ? t('event_exam_date', { date: ev.examDate }) + ' · ' : ''}${dd > 0 ? 'D-' + dd : dd === 0 ? 'D-Day' : t('event_over')} · ${t('event_ready', { done: r.done, total: r.total })}</div>
+            </div>
+            <div class="event-modes">${modeBtn('normal', t('event_mode_normal'))}${modeBtn('hard', t('event_mode_hard'))}${modeBtn('blank', t('event_mode_blank'))}${modeBtn('none', t('event_mode_none'))}</div>
+            <div class="event-list">${rows}</div>
+            <button class="event-all" onclick="startEventAll('${ev.id}')">${t('event_mock', { n: _eventVerseIds(ev).length })}</button>
+            <p class="event-note">${t('event_note')}</p>
+            <button onclick="document.getElementById('event-modal').remove()" class="event-close">${t('btn_close')}</button>
+        </div>`;
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+    document.body.appendChild(overlay);
+    setTimeout(() => overlay.classList.add('active'), 10);
+}
+
+function startEventQuestion(eventId, qIdx) {
+    const ev = (krEvents || []).find(e => e.id === eventId); if (!ev) return;
+    const q = _eventQuestions(ev)[qIdx]; if (!q) return;
+    _startEventRun(ev, q.slice(), `${t('event_default_title')} ${qIdx + 1}`);
+}
+function startEventAll(eventId) {
+    const ev = (krEvents || []).find(e => e.id === eventId); if (!ev) return;
+    _startEventRun(ev, _eventVerseIds(ev), t('event_mock_label'));
+}
+function _startEventRun(ev, verseIds, label) {
+    const m = document.getElementById('event-modal'); if (m) m.remove();
+    window._returnToEvent = ev.id;
+    if (_eventMode === 'blank' || _eventMode === 'none') _startEventBlank(ev.id, verseIds, _eventMode === 'none', label);
+    else startEventBattle(ev.id, verseIds, _eventMode === 'hard' ? 'hard' : 'normal');
+}
+
+/* 빈칸·백지 — 고난 엔진 (보스전 빈칸·백지와 같은 방식) */
+function _startEventBlank(eventId, verseIds, ultimate, label) {
+    window.hardshipOrigin = 'home';
+    selectedHardshipOrderType = 'sequential';
+    selectedHardshipUltimate = !!ultimate;
+    _pendingHardshipEmbed = { label: `📝 ${label}`, eventId };
+    startHardshipSession('memory', verseIds);
+}
+
+/* 보통·어려움 — 보스전 엔진. 장 하나가 아니라 임의 구절 목록이라 절마다 _chapter를 싣는다 */
+function startEventBattle(eventId, verseIds, difficulty) {
+    const data = [];
+    verseIds.forEach(id => {
+        const [c, v] = String(id).split('-').map(Number);
+        const verse = (bibleData[c] || [])[v - 1]; if (!verse) return;
+        const en = (typeof bibleDataEn !== 'undefined' && bibleDataEn[c]) ? bibleDataEn[c][v - 1] : null;
+        const base = { _verseNum: v, _chapter: c };
+        data.push(en ? Object.assign({}, base, verse, { textEn: en.text, chunksEn: en.chunks }) : Object.assign({}, base, verse));
+    });
+    if (!data.length) return;
+    window._eventBattle = { eventId, verseIds: verseIds.slice(), difficulty, prevDifficulty: bossDifficultyMode, prevOrder: bossOrderMode };
+    bossDifficultyMode = difficulty;
+    bossOrderMode = 'sequential';
+    window.isGamePlaying = true;
+    window.currentStageId = 'event-' + eventId;
+    bossHistory = [];
+    clearCheckpoint();
+    window.currentBattleData = data;
+    maxBossHp = data.length;
+    window.currentBattleChapter = data[0]._chapter;
+    window.currentBattleStartIndex = data[0]._verseNum - 1;
+    _maybeStartRain();
+
+    closeStageSheet();
+    document.querySelectorAll('.screen').forEach(sc => sc.classList.remove('active'));
+    const gs = document.getElementById('game-screen');
+    gs.classList.add('active');
+    gs.classList.remove('mode-training', 'is-training-mode', 'mode-hardship');
+    const bossAvatar = document.querySelector('.boss-avatar');
+    if (bossAvatar) { bossAvatar.classList.remove('boss-die-effect', 'boss-hit-effect'); bossAvatar.style.display = ''; bossAvatar.style.opacity = '1'; bossAvatar.style.transform = 'scaleX(-1)'; }
+    const field = document.querySelector('.battle-field');
+    const control = document.querySelector('.battle-control');
+    field.innerHTML = `<div class="verse-indicator" id="verse-index">${t('label_preparing')}</div><div class="answer-zone" id="answer-zone"><span class="placeholder-text" id="placeholder-text">...</span></div>`;
+    control.innerHTML = `<div class="block-pool" id="block-pool"></div>`;
+    wrongCount = 0; battleHintCount = 0; bossHintCount = 0; bossStartTime = Date.now();
+    currentVerseIdx = 0; currentBossHp = maxBossHp; playerHearts = maxPlayerHearts; currentBossPartIndex = 0;
+    updateBattleUI();
+    loadNextVerse();
+    if (typeof showReadAloudToast === 'function') showReadAloudToast(t('toast_boss_normal'));
+}
+
+/* 보통·어려움 완주 — stageClear를 타지 않는다(스테이지가 아니다). 승점은 보스전 초성과 같은 밭×1(보통 ×0.7), 구절당 하루 1회 */
+function _finishEventBattle() {
+    const eb = window._eventBattle; if (!eb) return;
+    const rung = eb.difficulty === 'hard' ? 'hard' : 'normal';
+    let pts = 0;
+    eb.verseIds.forEach(id => {
+        if (_eventScoredToday(eb.eventId, id, rung)) return;
+        pts += Math.floor(playerHearts * (rung === 'hard' ? 1 : 0.7));
+    });
+    if (pts > 0) { _addLeagueScore(pts); _noteDailySeeds(pts / Math.max(1, playerHearts)); }
+    _recordEventClear(eb.eventId, eb.verseIds, rung);
+    bossDifficultyMode = eb.prevDifficulty; bossOrderMode = eb.prevOrder;
+    window._eventBattle = null;
+    saveGameData();
+    if (typeof showMissionToast === 'function') showMissionToast(t('event_cleared', { name: t(rung === 'hard' ? 'bso_hard' : 'bso_normal') }), pts > 0 ? `+${pts.toLocaleString()}pt` : t('event_scored_today'));
+    quitGame('home');
+}
+/* 같은 절·같은 난이도는 하루 1회만 승점 — eventProgress의 시각으로 판단 */
+function _eventScoredToday(eventId, stageId, rung) {
+    const p = (eventProgress[eventId] || {})[stageId];
+    return !!(p && p[rung] && _tsTo6AMDateStr(p[rung]) === _get6AMDayStr());
+}
+
 const RECALL_RANK_CACHE_MS = 5 * 60 * 1000;
 /* 실시간 판 — 암송왕·통독왕이 같은 로더·렌더러를 쓴다. 다른 건 필드 이름과 문구·색뿐 */
 const LIVE_BOARDS = {
@@ -23074,6 +23368,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
         hardshipState.verseCheckStageId = embed.verseCheckStageId || null;
         hardshipState.quickReviewStageId = embed.quickReviewStageId || null;
         hardshipState.verseCheckIsLearn = !!embed.isLearn;
+        hardshipState.eventId = embed.eventId || null;
         hardshipState.displayTitle = embed.label || '';
     }
 
@@ -24159,6 +24454,7 @@ function _isEmbeddedBlankSession() {
     return !!(hardshipState && (hardshipState.verseCheckStageId ||
                                 hardshipState.midBossStageId ||
                                 hardshipState.bossStageId ||
+                                hardshipState.eventId ||
                                 hardshipState.quickReviewStageId));
 }
 
@@ -24645,6 +24941,7 @@ function _hardshipRecallCtx() {
     if (hardshipState.verseCheckStageId) return 'vc';
     if (hardshipState.midBossStageId) return 'mid';
     if (hardshipState.bossStageId) return 'boss';
+    if (hardshipState.eventId) return 'event';
     return 'hs';
 }
 
@@ -24742,6 +25039,8 @@ function getHardshipScoreScale() {
     if (hardshipState.quickReviewStageId) return 0;
     if (hardshipState.verseCheckStageId) return 0.25;
     if (hardshipState.midBossStageId) return 0.5;
+    if (hardshipState.eventId) return 0.5;   // 이벤트 문항 = 2절 묶음, 중간점검과 같은 크기
+
     // 보스전 빈칸·백지는 **한 장 전체**라 망각의 고난과 분량·위험이 같다 → 깎지 않는다
     if (hardshipState.bossStageId) return 1;
     return 1;
@@ -24762,6 +25061,7 @@ function _blankScoreKind() {
     if (hardshipState.midBossStageId) return 'mid';   // 중간점검 빈칸·백지
     if (hardshipState.bossStageId) return 'boss';     // 보스전 빈칸·백지
     if (hardshipState.verseCheckStageId) return 'vc'; // 결과 화면 '백지로 확인해보기'
+    if (hardshipState.eventId) return 'event';         // 이벤트 스테이지 빈칸·백지
     return null; // 망각의 고난·빠른 모드 승급은 제한 없음 (승급은 배율 0이라 무관)
 }
 
@@ -24980,6 +25280,11 @@ function finishHardshipSession(reason) {
         resetHardshipSessionState();
         startTraining(_qSid, _passed ? 'quick-after-pass' : 'quick-after-fail');
         return;
+    }
+
+    // 이벤트 스테이지 빈칸·백지 완주 — 진행 기록만 (스테이지가 아니라 stageClear는 없다)
+    if (reason === 'completed' && hardshipState.eventId) {
+        _recordEventClear(hardshipState.eventId, hardshipState.queue.slice(), hardshipState.ultimateMemoryMode ? 'none' : 'blank');
     }
 
     // ★ 중간점검 빈칸·백지 세션을 끝냈다면 중간점검 클리어로 이어붙인다.
@@ -25298,7 +25603,7 @@ function finishHardshipSession(reason) {
         if (reason !== 'completed' || hardshipState.mode !== 'memory' ||
             hardshipState.trainingMode || hardshipState.midBossStageId ||
             hardshipState.bossStageId || hardshipState.verseCheckStageId ||
-            hardshipState.quickReviewStageId) return '';
+            hardshipState.eventId || hardshipState.quickReviewStageId) return '';
         const sessionDuration = getHardshipElapsedSeconds();
         const record = {
             correct: hardshipState.studiedCount,
