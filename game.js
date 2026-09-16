@@ -16631,7 +16631,15 @@ function checkDailyLogin() {
         const currentWeekId = getWeekId();
         updateWeeklyAttendance(today, currentWeekId);
 
-        // ★ 일일 미션 초기화
+        localStorage.setItem('lastPlayedDate', today);
+        needsSave = true;
+    }
+    // ★ 일일 미션 초기화 — checkMissions()와 **같은 키(missionData.lastLoginDate)** 로 판단한다. (2026-09-16 수정)
+    //   예전에는 이 블록이 localStorage의 lastPlayedDate만 보고 돌아서, 부팅 때 checkMissions()가 이미 리셋하고
+    //   1.2초 뒤 로그인 미션을 자동 수령(+25pt, +100젬)한 다음, Firestore 동기화가 끝나면서 여기가 **한 번 더**
+    //   claimed를 전부 false로 지웠다. 포인트는 남고 미션은 '미수령'으로 돌아가 다음 진행 때 로그인 미션이
+    //   두 번째로 수령됐다 — 66명 중 31명이 포인트 = 수령×25 + 25 (2026-09-16 실측). 자동 수령 전엔 드러나지 않던 이중 리셋.
+    if (missionData.lastLoginDate !== today) {
         missionData.daily.loginReward = 1; // 접속 시 즉시 완료
         missionData.daily.newClear = 0;
         missionData.daily.differentStages = 0;
@@ -16647,10 +16655,9 @@ function checkDailyLogin() {
         missionData.lastLoginDate = today; // ★ [버그 수정] checkMissions()와 동기화
         // 심화 일일 미션 리셋
         missionData.advanced = createEmptyAdvancedMissionData(today);
-
-        localStorage.setItem('lastPlayedDate', today);
         needsSave = true; // 🌟 출석했으니 저장 필수!
-
+        // 리셋했으면 로그인 미션을 바로 수령 (checkMissions()와 같은 처리)
+        setTimeout(() => { if (typeof _autoClaimMissions === 'function') _autoClaimMissions(); }, 1200);
     }
 
     // [버그 수정] needsSave가 true이면 반드시 저장 (자정 지킴이에서 호출 시 데이터 유실 방지)

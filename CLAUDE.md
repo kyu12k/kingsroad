@@ -1729,6 +1729,13 @@ verseRecall['1-1'] = { pass, typedPass, fail, firstPass, lastPass, lastAt, lastO
 - 진입점: `updateMissionProgress` 끝 / `checkMissions` 1.2초 뒤(로그인 미션) / 백업 저장 / 성경 한 절 읽을 때마다
 - `silent`면 각 함수는 보석 토스트·재렌더를 생략하고, 호출한 쪽이 미션 화면이 떠 있을 때만 한 번 다시 그린다
 - 보스전 전이라 숨겨진 미션(id 4~7, 주간 3)은 정의에서 빠지므로 자동 완료도 안 된다 — 화면과 같은 필터
+
+> ★ **일일 리셋은 두 함수가 한다 — `checkMissions()`(키: `missionData.lastLoginDate`)와 `checkDailyLogin()`(키: localStorage `lastPlayedDate`).**
+> 자동 수령 전엔 둘이 같은 날 두 번 리셋해도 티가 안 났다(둘 다 claimed를 false로). 자동 수령이 들어오자
+> 부팅 → `checkMissions` 리셋 → 1.2초 뒤 로그인 미션 수령 → Firestore 동기화 끝 → `checkDailyLogin`이 **claimed를 다시 지움**
+> → 포인트만 남고 미션은 미수령 → 다음 진행 때 로그인 미션 **두 번째 수령**(+25pt, +100젬).
+> 2026-09-16 실측: 66명 중 31명이 포인트 = 수령×25 + 25. → `checkDailyLogin`의 미션 리셋 블록도
+> `missionData.lastLoginDate !== today`로 판단하게 고쳤다(출석·`lastPlayedDate`는 그대로). 리셋했으면 자동 수령도 부른다
 - 하단 내비의 미션 칸은 🏟️ 리그(준비 중)가 차지하고, 미션은 **더보기 메뉴 맨 위**(`openMissionFromMenu`). 미션 배지는 더보기 배지에도 비친다
 
 ---
