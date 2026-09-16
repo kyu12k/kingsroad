@@ -25174,10 +25174,15 @@ function finishHardshipSession(reason) {
 
     // 망각의 고난 완주: 기록 저장 및 결과 화면에 히스토리 표시 (단일 장 및 범위 세션)
     const memoryHistoryHtml = (() => {
-        // 중간점검에서 열린 세션은 망각의 고난 히스토리에 남기지 않는다 (별개 콘텐츠의 기록이 섞이면 통계가 왜곡됨)
+        // 중간점검·보스전·백지 확인·빠른 모드에서 빌려 쓴 세션은 망각의 고난 히스토리·미션에 남기지 않는다
+        // (별개 콘텐츠의 기록이 섞이면 통계가 왜곡됨).
+        // ★ bossStageId가 빠져 있었다 (2026-09-11~16): 보스전 백지가 '범위 세션'으로 분류돼 보스 클리어에 더해
+        //   망각 히스토리·일일 미션(+하위 고난 3개 자동 완료)·심화 「망각 누적」·레이드 10×절까지 **둘 다** 받았다.
+        //   망각의 고난과 서열을 나누려던 설계가 정반대로 돌아가 있었고, 같은 날 그 장의 망각은 절반 규칙에 걸렸다.
         if (reason !== 'completed' || hardshipState.mode !== 'memory' ||
             hardshipState.trainingMode || hardshipState.midBossStageId ||
-            hardshipState.verseCheckStageId) return '';
+            hardshipState.bossStageId || hardshipState.verseCheckStageId ||
+            hardshipState.quickReviewStageId) return '';
         const sessionDuration = getHardshipElapsedSeconds();
         const record = {
             correct: hardshipState.studiedCount,
