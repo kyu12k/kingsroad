@@ -1690,11 +1690,14 @@ verseRecall['1-1'] = { pass, typedPass, fail, firstPass, lastPass, lastAt, lastO
   `window._eventBattle`이 있으면 완주 시 `stageClear`를 타지 않고 `_finishEventBattle`(승점 밭×1, 보통 ×0.7, 같은 절·난이도 하루 1회)
   · `saveBattleCheckpoint` 건너뜀 · 나가면 보스 설정(`bossDifficultyMode`/`bossOrderMode`) 복원
 - 고난 쪽: `hardshipState.eventId` — `lastCtx 'event'`, `scoredBy 'event'`, 배율 0.5(중간점검과 같은 크기), 망각 히스토리·미션 제외, 이어하기 제외
+  > ★ 이어하기 제외가 **`_isResumableHardshipSession()`에 빠져 있었다** (9/16~17). 이벤트 세션이 `'free'` kind로 저장·복원돼
+  > 모의고사가 지난 세션의 난이도(빈칸)와 위치(2절부터)를 물려받았다. 2026-09-17 `eventId`를 제외 목록에 추가.
+  > 빌려 쓰는 세션을 새로 만들면 이 함수의 제외 목록에 **반드시** 넣을 것 — 여기 빠지면 kind 없는 'free'로 섞인다
 - **진행** `eventProgress[eventId][stageId] = { normal, hard, blank, none: ts }` (저장본). 준비 상태 = 통과한 최고 난이도,
   이벤트 밖의 백지 통과(`verseRecall.typedPass`)도 인정
 - 끝나면 `quitGame`이 `window._returnToEvent`로 이벤트 화면을 다시 연다
 - 미션·레이드·보스 클리어와 무관(스테이지가 아니다)
-- **보상**: 오늘 전 절을 백지(`none`)로 통과하면 💎`EVENT_ALL_BLANK_GEM`(1,000), 하루 1회(`eventProgress[id]._rewardDay`).
+- **보상**: 오늘 전 절을 백지(`none`)로 통과하면 💎`EVENT_ALL_BLANK_GEM`(1,000), 하루 1회(`eventProgress[id]._rewardDay`, **오전 6시 경계** — '오늘 통과' 판정도 `_tsTo6AMDateStr`).
   모의고사 한 번이든 문항 다섯 개 따로든. 10절 백지 ≈ 5분이라 망각 미션(22절 2,250)과 비율이 비슷
 
 ---

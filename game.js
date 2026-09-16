@@ -22627,6 +22627,9 @@ function _isResumableHardshipSession() {
         // 후속 흐름(stageClear)은 'completed'에서만 돌아 중간 복원과 충돌하지 않는다.
         && !hardshipState.midBossStageId
         && !hardshipState.verseCheckStageId
+        // 이벤트 스테이지(eventId)도 제외 — 빠져 있어서 'free' kind로 저장·복원됐고, 모의고사가 지난 세션의
+        // 난이도(빈칸)와 위치(2절부터)를 물려받았다 (2026-09-17). 2~10절짜리라 이어할 것도 없다
+        && !hardshipState.eventId
         && !hardshipState.quickReviewStageId);
 }
 
@@ -22826,7 +22829,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
     loadNextHardshipVerse();
 
     if (_resume && typeof showGemToast === 'function') {
-        showGemToast(0, `💾 ${_resume.cursor}번째까지 마친 기록에서 이어합니다 (체력 ${playerHearts}/${maxPlayerHearts})`, false);
+        showGemToast(0, `💾 ${_resume.cursor}번째까지 마친 기록에서 이어합니다`, false);
     }
 
     if (typeof showReadAloudToast === 'function') {
