@@ -6134,7 +6134,7 @@ body, html {
 .event-all { width: 100%; margin-top: 10px; padding: 11px; border-radius: 12px; border: 1px solid #e67e22; background: #fff3e0; color: #b9770e; font-weight: 800; cursor: pointer; }
 .event-reward { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: #fff3e0; color: #b9770e; font-size: 0.82rem; font-weight: 700; text-align: center; }
 .event-reward.done { background: #eafaf1; color: #1e8449; }
-.event-note { font-size: 0.76rem; color: #95a5a6; line-height: 1.5; margin: 10px 0 4px; text-align: center; }
+.event-note { font-size: 0.78rem; color: #7f8c8d; line-height: 1.6; margin: 10px 0 4px; text-align: left; word-break: keep-all; }
 .event-close { width: 100%; background: none; border: none; color: #95a5a6; padding: 6px 0 0; font-size: 0.9rem; cursor: pointer; }
 
 /* 읽기 오버레이 — 회독·이번 주 통독 수 한 줄 */
