@@ -15369,7 +15369,8 @@ function openEventScreen(eventId) {
     const r = _eventReadiness(ev);
     const rungIcon = ['·', '😌', '🙂', '⭐', '🏆'];
     const rungName = ['', t('event_mode_normal'), t('event_mode_hard'), t('event_mode_blank'), t('event_mode_none')];
-    const modeBtn = (m, label) => `<button class="event-mode-btn${_eventMode === m ? ' on' : ''}" onclick="_eventMode='${m}'; openEventScreen('${ev.id}')">${label}</button>`;
+    // 난이도는 어느 엔진으로 갈지만 정한다 — 목록은 안 바뀌니 모달을 다시 그리지 않고 칸만 바꾼다 (다시 그리면 번쩍인다)
+    const modeBtn = (m, label) => `<button class="event-mode-btn${_eventMode === m ? ' on' : ''}" data-mode="${m}" onclick="setEventMode('${m}')">${label}</button>`;
     const rows = _eventQuestions(ev).map((q, i) => {
         const rungs = q.map(id => _eventVerseRung(ev.id, id));
         const minR = Math.min(...rungs);
@@ -15401,6 +15402,11 @@ function openEventScreen(eventId) {
     overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
     document.body.appendChild(overlay);
     setTimeout(() => overlay.classList.add('active'), 10);
+}
+
+function setEventMode(m) {
+    _eventMode = m;
+    document.querySelectorAll('#event-modal .event-mode-btn').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
 }
 
 function startEventQuestion(eventId, qIdx) {

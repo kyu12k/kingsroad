@@ -6120,7 +6120,7 @@ body, html {
 .event-title { font-size: 1.35rem; font-weight: 900; margin-top: 2px; }
 .event-sub { font-size: 0.85rem; color: #7f8c8d; margin-top: 4px; }
 .event-modes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
-.event-mode-btn { padding: 8px 4px; border-radius: 10px; border: 1px solid #e0d6b8; background: #fff; color: #7f8c8d; font-weight: 700; font-size: 0.82rem; cursor: pointer; }
+.event-mode-btn { padding: 8px 4px; border-radius: 10px; border: 1px solid #e0d6b8; background: #fff; color: #7f8c8d; font-weight: 700; font-size: 0.82rem; cursor: pointer; transition: background 0.18s, color 0.18s, box-shadow 0.18s, border-color 0.18s; }
 .event-mode-btn.on { background: #f1c40f; border-color: #f1c40f; color: #2c3e50; box-shadow: 0 2px 0 #d35400; }
 .event-list { display: flex; flex-direction: column; gap: 6px; max-height: 42vh; overflow-y: auto; }
 .event-q { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #efe6c8; border-radius: 12px; padding: 9px 12px; }
