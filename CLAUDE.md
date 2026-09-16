@@ -1711,8 +1711,11 @@ verseRecall['1-1'] = { pass, typedPass, fail, firstPass, lastPass, lastAt, lastO
 "통독은 죽 읽는 것에 불과하지만 그거라도 하는 게 어디냐." 읽지 않고 누르는 어뷰징은 못 막지만 얻는 게 사실상 없어 양심에 맡긴다.
 
 - **한 장을 다 읽으면 그 장의 버튼이 초기화**돼 다시 읽을 수 있다(`bibleReadPasses[6시키][장]` +1, `bibleReadLog[6시키][장] = []`).
-  회독마다 `readWeek.count` +1. 3초 간격(`_lastBibleReadClickTime`)은 그대로 → 상한 28,800/일, `READ_WEEK_MAX = 200,000`
-- **💎10은 그날 그 장의 첫 회독(passes === 0)에만.** 회독마다 주면 시간당 12,000젬 수도꼭지가 된다
+  회독마다 `readWeek.count` +1. `READ_WEEK_MAX = 200,000`
+- **간격 = 보석 = 그 절을 읽는 초** (`_verseReadSeconds` = 글자 수(공백 제외) ÷ `BIBLE_READ_CPS`(5), 최소 3).
+  계시록 404절 18,754자 → 평균 46자 = 9초·💎9, 최소 13자 = 3초·💎3, 최대 119자 = 24초·💎24. 한 바퀴 ≈ 62분 ≈ 3,900젬.
+  회독마다 같은 규칙 — "읽었다"를 버튼이 아니라 시간이 증명한다. (처음엔 3초 고정 + 첫 회독만 💎10이었는데,
+  0젬은 아쉽고 3초 고정에 회독마다 10젬이면 시간당 12,000젬이라 길이 기반으로 바꿨다.) 영어면 영어 본문 길이
 - 성경 읽기 미션(10절마다 100, 400절 상한)은 `bibleReadTotal[6시키]`(회독 포함 누른 수)를 본다 —
   회독으로 장 목록이 비워지면 예전 합산 방식은 값이 줄어든다
 - 서버 `readWeekId`/`readCount` — `submitScoreSecure` 화이트리스트 + 검증, `serverOnlyKeys`, 색인 `(readWeekId ASC, readCount DESC)`.

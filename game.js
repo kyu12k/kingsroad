@@ -722,7 +722,8 @@ const LANG = {
         ranking_read_title: '📖 실시간 통독왕',
         ranking_read_desc: '이번 주 <b>읽음을 누른 구절 수</b><br>장을 다 읽으면 다시 읽을 수 있어요',
         ranking_read_empty: '아직 아무도 없어요.<br>장을 열어 「읽음」을 누르면 여기에 올라갑니다.',
-        ranking_read_rules: '<b>세는 것</b> — 장 화면의 「읽기」에서 「읽음」을 누른 구절. 한 장을 다 읽으면 그 장의 버튼이 초기화돼 다시 읽을 수 있고, 회독마다 다 세어요.<br><b>간격</b> — 한 번 누르면 3초 뒤에 다음을 누를 수 있어요. 정독해주세요.<br><b>보석</b> — 💎10은 그날 그 장의 <b>첫 회독</b>에만. 두 번째 회독부터는 보석 없이 수만 올라요.<br><b>안 곱하는 것</b> — 밭·단비·햇살. 누구에게나 한 절은 1.<br><b>보상</b> — 아직 없어요. 순위표만 있습니다.',
+        ranking_read_rules: '<b>세는 것</b> — 장 화면의 「읽기」에서 「읽음」을 누른 구절. 한 장을 다 읽으면 그 장의 버튼이 초기화돼 다시 읽을 수 있고, 회독마다 다 세어요.<br><b>간격과 보석</b> — 절마다 <b>읽는 데 걸리는 시간</b>(글자 수 ÷ 5초, 최소 3초)이 있어요. 그 초가 지나야 다음 절을 누를 수 있고, 그 초만큼 💎을 받아요. 46자 절이면 9초·💎9. 회독마다 똑같이.<br><b>안 곱하는 것</b> — 밭·단비·햇살. 누구에게나 한 절은 1.<br><b>보상</b> — 아직 없어요. 순위표만 있습니다.',
+        bible_read_wait: '정독해주세요 · {n}초',
         bible_read_pass_done: '📖 {ch}장 {n}회독 완료 — 다시 읽을 수 있어요',
         bible_read_pass_n: '오늘 {n}회독',
         bible_read_week_count: '이번 주 통독 {n}절',
@@ -1588,7 +1589,8 @@ const LANG = {
         ranking_read_title: '📖 Live Reading Kings',
         ranking_read_desc: 'Verses <b>marked as read this week</b><br>Finish a chapter and you can read it again',
         ranking_read_empty: 'Nobody yet.<br>Open a chapter and press "Read" to appear here.',
-        ranking_read_rules: '<b>What counts</b> — every verse you mark as read in a chapter\'s Read view. When a whole chapter is marked, its buttons reset so you can read it again; every pass counts.<br><b>Gap</b> — 3 seconds between presses. Please actually read.<br><b>Gems</b> — 💎10 only on the first pass of a chapter each day; later passes add to the count only.<br><b>Not multiplied</b> — field, rain, sunshine. One verse is 1 for everyone.<br><b>Rewards</b> — none yet. Just the board.',
+        ranking_read_rules: '<b>What counts</b> — every verse you mark as read in the Read view. When a whole chapter is marked, its buttons reset so you can read it again; every pass counts.<br><b>Gap and gems</b> — each verse has a <b>reading time</b> (letters ÷ 5 sec, at least 3). You can press the next verse after that time, and you get that many 💎. A 46-letter verse: 9 sec, 💎9. Same on every pass.<br><b>Not multiplied</b> — field, rain, sunshine. One verse is 1 for everyone.<br><b>Rewards</b> — none yet. Just the board.',
+        bible_read_wait: 'Please read · {n}s',
         bible_read_pass_done: '📖 Chapter {ch} read {n}× — you can read it again',
         bible_read_pass_n: '{n} pass(es) today',
         bible_read_week_count: '{n} verses read this week',
@@ -2176,11 +2178,11 @@ let bibleReadLog = {};             // 날짜 → 챕터 → 읽은 절 번호 �
 /* ── 실시간 통독왕 (2026-09-16) ──────────────────────────────────────────────
    한 장을 다 읽으면(읽음 버튼을 모두 누르면) 그 장의 버튼이 초기화돼 다시 읽을 수 있고,
    이번 주에 '읽음'을 누른 구절 수로 겨룬다. 통독은 죽 읽는 것에 불과하지만 그거라도 하는 게 어디냐.
-   보석 +10은 그날 그 장의 **첫 회독**에만 — 회독을 거듭해도 보석은 안 나온다(3초 간격이라 시간당 1,200절 = 12,000젬이 된다).
+   보석은 그 절을 읽는 데 걸리는 초(글자 수 ÷ 5, 최소 3)만큼 — 간격도 같은 초다. 회독마다 같은 규칙. 한 바퀴 62분 ≈ 3,900젬.
    읽지 않고 누르기만 하는 어뷰징은 막을 수 없지만, 얻는 것이 사실상 없어 양심에 맡긴다. */
 let readWeek = { weekId: '', count: 0 };
 const READ_WEEK_MAX = 200000;      // 3초 간격 상한(28,800/일 × 7). 서버 검증과 같다
-let bibleReadPasses = {};          // 6시 날짜 → 장 → 오늘 완독 회수 (보석은 0회독일 때만)
+let bibleReadPasses = {};          // 6시 날짜 → 장 → 오늘 완독 회수 (표시용)
 let bibleReadTotal = {};           // 6시 날짜 → 오늘 누른 '읽음' 수 (회독 포함) — 성경 읽기 미션이 이걸 본다
 function _noteReadForWeek() {
     const wk = getWeekId();
@@ -7075,11 +7077,26 @@ function openBibleReadingOverlay() {
     document.body.appendChild(overlay);
 }
 
+/* 한 절을 읽는 데 걸리는 시간(초) = 글자 수(공백 제외) ÷ 5, 최소 3초. 정독 속도 분당 300자.
+   이 초가 곧 **간격**이고 곧 **보석**이다 — 46자 절은 9초 기다리고 9젬, 13자 절은 3초·3젬, 119자 절은 24초·24젬.
+   404절 한 바퀴 ≈ 62분 · 약 3,900젬. 회독마다 같은 규칙이라 "읽었다"를 버튼이 아니라 시간이 증명한다. (2026-09-16) */
+const BIBLE_READ_CPS = 5;
+function _verseReadSeconds(chapterNum, verseNum) {
+    const v = (bibleData[chapterNum] || [])[verseNum - 1];
+    const en = (currentLang === 'en' && typeof bibleDataEn !== 'undefined' && bibleDataEn[chapterNum] && bibleDataEn[chapterNum][verseNum - 1]) ? bibleDataEn[chapterNum][verseNum - 1].text : '';
+    const text = en || (v && v.text) || '';
+    const len = text.replace(/\s+/g, '').length;
+    return Math.max(3, Math.ceil(len / BIBLE_READ_CPS));
+}
+
 function markVerseAsRead(chapterNum, verseNum, btnEl) {
     const now = Date.now();
-    if (now - _lastBibleReadClickTime < 3000) {
+    const needSec = _verseReadSeconds(chapterNum, verseNum);
+    if (now - _lastBibleReadClickTime < needSec * 1000) {
         const toast = document.getElementById('bible-read-toast');
         if (toast) {
+            const left = Math.ceil((needSec * 1000 - (now - _lastBibleReadClickTime)) / 1000);
+            toast.textContent = t('bible_read_wait', { n: left });
             toast.style.display = 'block';
             clearTimeout(toast._hideTimer);
             toast._hideTimer = setTimeout(() => { toast.style.display = 'none'; }, 2000);
@@ -7096,8 +7113,8 @@ function markVerseAsRead(chapterNum, verseNum, btnEl) {
     bibleReadLog[today][chapterNum].push(verseNum);
     if (!bibleReadPasses[today]) bibleReadPasses[today] = {};
     const passes = bibleReadPasses[today][chapterNum] || 0;
-    const paysGem = passes === 0;                 // 그날 그 장의 첫 회독만 보석
-    if (paysGem) myGems += 10;
+    const gem = needSec;                          // 읽는 데 걸린 초 = 보석. 회독마다 같다
+    myGems += gem;
     bibleReadTotal[today] = (bibleReadTotal[today] || 0) + 1;
     _noteReadForWeek();
     updateGemDisplay();
@@ -7111,7 +7128,7 @@ function markVerseAsRead(chapterNum, verseNum, btnEl) {
         const rect = btnEl.getBoundingClientRect();
         const tip = document.createElement('div');
         tip.className = 'bible-gem-tip';
-        tip.textContent = paysGem ? '+💎10' : '+1';
+        tip.textContent = `+💎${gem}`;
         tip.style.left = (rect.left + rect.width / 2) + 'px';
         tip.style.top = (rect.top + window.scrollY) + 'px';
         document.body.appendChild(tip);
