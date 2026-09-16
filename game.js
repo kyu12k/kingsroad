@@ -720,6 +720,7 @@ const LANG = {
         ranking_recall_rules_btn: '규칙과 보상 보기',
         ranking_tab_read: '실시간 통독왕',
         event_prep: '시험준비',
+        event_mode_btn_label: '기간 한정 · 시험 준비',
         event_mode_normal: '보통', event_mode_hard: '어려움', event_mode_blank: '빈칸', event_mode_none: '백지',
         event_default_title: '시험',
         event_eyebrow: '기간 한정',
@@ -1605,6 +1606,7 @@ const LANG = {
         ranking_recall_rules_btn: 'Rules & rewards',
         ranking_tab_read: 'Live Reading Kings',
         event_prep: 'Exam prep',
+        event_mode_btn_label: 'Limited time · Exam prep',
         event_mode_normal: 'Words', event_mode_hard: 'Initials', event_mode_blank: 'Blanks', event_mode_none: 'Blank page',
         event_default_title: 'Exam',
         event_eyebrow: 'LIMITED TIME',
@@ -6172,6 +6174,31 @@ function openModeSelectOverlay() {
     if (el) el.style.display = 'flex';
     updateKingsRoadHomeInfo();
     updateModeSelectReviewCounts();
+    _renderModeSelectEventBtn();
+}
+
+/* 「여정을 선택하세요」에 이벤트 기간 동안만 세 번째 버튼 — 기간 한정 스테이지 (2026-09-16).
+   모두가 반드시 거치는 화면이라 캐러셀·홈 띠보다 세고, 홈 공간을 안 건드린다. 시험이 왕의 길·자유여행과 같은 급의 목적지가 된다 */
+function _renderModeSelectEventBtn() {
+    const card = document.querySelector('#mode-select-overlay .mode-select-card');
+    if (!card) return;
+    const old = document.getElementById('mode-event-btn');
+    const ev = (typeof _activeEvents === 'function') ? (_activeEvents()[0] || null) : null;
+    if (!ev) { if (old) old.remove(); return; }
+    const dd = _eventDday(ev);
+    const r = _eventReadiness(ev);
+    const html = `<span class="mode-btn-icon">📝</span>
+        <div class="mode-btn-text">
+            <span class="mode-btn-label">${t('event_mode_btn_label')} <span class="mode-event-dday">${dd > 0 ? 'D-' + dd : dd === 0 ? 'D-Day' : ''}</span></span>
+            <span class="mode-btn-desc">${escapeHtml(ev.title || t('event_default_title'))} · ${t('event_ready', { done: r.done, total: r.total })}</span>
+        </div>`;
+    if (old) { old.innerHTML = html; return; }
+    const btn = document.createElement('button');
+    btn.id = 'mode-event-btn';
+    btn.className = 'mode-journey-btn event-btn';
+    btn.onclick = () => { closeModeSelectOverlay(); openEventScreen(ev.id); };
+    btn.innerHTML = html;
+    card.appendChild(btn);
 }
 
 // 왕의 길 모드 선택 오버레이 닫기

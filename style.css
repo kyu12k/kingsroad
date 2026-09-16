@@ -6102,6 +6102,9 @@ body, html {
 }
 .field-badge-ring { margin-left: 6px; }
 /* 이벤트 스테이지 (시험 준비) */
+.mode-journey-btn.event-btn { border-color: rgba(241,196,15,0.7); background: linear-gradient(135deg, rgba(241,196,15,0.16), rgba(230,126,34,0.10)); }
+.mode-journey-btn.event-btn .mode-btn-label { color: #f7c873; }
+.mode-event-dday { font-size: 0.78em; font-weight: 800; color: #f1c40f; margin-left: 4px; }
 #event-strip {
     display: flex; align-items: center; gap: 8px;
     margin: 0 12px 6px; padding: 8px 12px;
