@@ -732,7 +732,7 @@ const LANG = {
         event_mock_label: '모의고사',
         event_status_none: '아직 안 해봤어요',
         event_status_passed: '{name} 통과',
-        event_note: '「준비 n/10절」은 아무 단서 없이 백지로 써낸 절의 수예요.<br>시험은 백지로 쓰니까, 문항마다 백지까지 가보세요.<br>같은 절을 같은 난이도로 다시 하면 승점은 하루 한 번만이에요.',
+        event_note: '「준비」는 {total}절 가운데 아무 단서 없이 백지로 써낸 절이 몇 개인지예요.<br>시험은 백지로 쓰니까, 문항마다 백지까지 가보세요.<br>같은 절을 같은 난이도로 다시 하면 승점은 하루 한 번만이에요.',
         event_cleared: '📝 시험 문항 · {name} 통과',
         event_scored_today: '오늘 이미 받은 승점',
         event_reward_hint: '🎁 오늘 {n}절을 모두 백지로 쓰면 💎{gem} (하루 1회)',
@@ -1618,7 +1618,7 @@ const LANG = {
         event_mock_label: 'Mock exam',
         event_status_none: 'Not tried yet',
         event_status_passed: '{name} passed',
-        event_note: '"Ready n/10" is how many verses you have written from a blank page, with no cues.<br>The exam is written from blank, so take each question up to Blank page.<br>Repeating the same verse at the same level scores only once a day.',
+        event_note: '"Ready" is how many of the {total} verses you have written from a blank page, with no cues.<br>The exam is written from blank, so take each question up to Blank page.<br>Repeating the same verse at the same level scores only once a day.',
         event_cleared: '📝 Exam question · {name} passed',
         event_scored_today: 'already scored today',
         event_reward_hint: '🎁 Write all {n} verses from a blank page today for 💎{gem} (once a day)',
@@ -15450,7 +15450,7 @@ function openEventScreen(eventId) {
             <div class="event-list">${rows}</div>
             <button class="event-all" onclick="startEventAll('${ev.id}')">${t('event_mock', { n: _eventVerseIds(ev).length })}</button>
             <div class="event-reward${_eventRewardedToday(ev.id) ? ' done' : ''}">${_eventRewardedToday(ev.id) ? t('event_reward_done', { gem: EVENT_ALL_BLANK_GEM.toLocaleString() }) : t('event_reward_hint', { gem: EVENT_ALL_BLANK_GEM.toLocaleString(), n: _eventVerseIds(ev).length })}</div>
-            <p class="event-note">${t('event_note')}</p>
+            <p class="event-note">${t('event_note', { total: _eventVerseIds(ev).length })}</p>
             <button onclick="document.getElementById('event-modal').remove()" class="event-close">${t('btn_close')}</button>
         </div>`;
     overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
