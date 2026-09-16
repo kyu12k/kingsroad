@@ -718,6 +718,14 @@ const LANG = {
         ranking_recall_mine_pending: '내 기록 (곧 반영)',
         ranking_recall_opens_monday: '월요일 0시에 열려요',
         ranking_recall_rules_btn: '규칙과 보상 보기',
+        ranking_tab_read: '실시간 통독왕',
+        ranking_read_title: '📖 실시간 통독왕',
+        ranking_read_desc: '이번 주 <b>읽음을 누른 구절 수</b><br>장을 다 읽으면 다시 읽을 수 있어요',
+        ranking_read_empty: '아직 아무도 없어요.<br>장을 열어 「읽음」을 누르면 여기에 올라갑니다.',
+        ranking_read_rules: '<b>세는 것</b> — 장 화면의 「읽기」에서 「읽음」을 누른 구절. 한 장을 다 읽으면 그 장의 버튼이 초기화돼 다시 읽을 수 있고, 회독마다 다 세어요.<br><b>간격</b> — 한 번 누르면 3초 뒤에 다음을 누를 수 있어요. 정독해주세요.<br><b>보석</b> — 💎10은 그날 그 장의 <b>첫 회독</b>에만. 두 번째 회독부터는 보석 없이 수만 올라요.<br><b>안 곱하는 것</b> — 밭·단비·햇살. 누구에게나 한 절은 1.<br><b>보상</b> — 아직 없어요. 순위표만 있습니다.',
+        bible_read_pass_done: '📖 {ch}장 {n}회독 완료 — 다시 읽을 수 있어요',
+        bible_read_pass_n: '오늘 {n}회독',
+        bible_read_week_count: '이번 주 통독 {n}절',
         ranking_recall_rules: '<b>세는 것</b> — 망각의 고난·보스전 백지·중간점검 백지에서 <b>백지(아무 단서 없이)</b>로 써낸 구절. 빈칸(글자 칸이 보이는 방식)·초성·음성은 세지 않아요.<br><b>힌트</b> — 구절 글자 수의 20%까지는 써도 세어져요. 넘으면 그 구절은 0.<br><b>같은 구절</b> — 하루(오전 6시 기준)에 한 번만. 하루 최대 404절.<br><b>안 곱하는 것</b> — 밭·단비·햇살·순서·난도. 누구에게나 한 절은 1.<br><b>보상</b> — 매주 월요일, 지난주 지파 1~3위는 🥇🥈🥉 암송왕 칭호(한 주간 이름 옆) + 💎 10,000 / 6,000 / 6,000, 시온성 1~3위는 칭호가 빛나고 💎 15,000 / 10,000 / 10,000을 더. 지파는 그 주 10명 이상 참여했을 때. 🏆 지난 주 보상 버튼으로 받아요.',
         recall_title: '암송왕',
         recall_title_tip_tribe: '지난주 지파 암송왕 {rank}위',
@@ -1576,6 +1584,14 @@ const LANG = {
         ranking_recall_mine_pending: 'My count (syncing)',
         ranking_recall_opens_monday: 'Opens Monday at midnight',
         ranking_recall_rules_btn: 'Rules & rewards',
+        ranking_tab_read: 'Live Reading Kings',
+        ranking_read_title: '📖 Live Reading Kings',
+        ranking_read_desc: 'Verses <b>marked as read this week</b><br>Finish a chapter and you can read it again',
+        ranking_read_empty: 'Nobody yet.<br>Open a chapter and press "Read" to appear here.',
+        ranking_read_rules: '<b>What counts</b> — every verse you mark as read in a chapter\'s Read view. When a whole chapter is marked, its buttons reset so you can read it again; every pass counts.<br><b>Gap</b> — 3 seconds between presses. Please actually read.<br><b>Gems</b> — 💎10 only on the first pass of a chapter each day; later passes add to the count only.<br><b>Not multiplied</b> — field, rain, sunshine. One verse is 1 for everyone.<br><b>Rewards</b> — none yet. Just the board.',
+        bible_read_pass_done: '📖 Chapter {ch} read {n}× — you can read it again',
+        bible_read_pass_n: '{n} pass(es) today',
+        bible_read_week_count: '{n} verses read this week',
         ranking_recall_rules: '<b>What counts</b> — verses written on a <b>blank page (no cues)</b> in the Trial of Forgetting, boss battles or checkpoints. Blanks mode (letter slots), initials and voice do not count.<br><b>Hints</b> — hints up to 20% of the letters are fine; more and that verse is 0.<br><b>Same verse</b> — once per day (6 a.m. boundary). At most 404 a day.<br><b>Not multiplied</b> — field, rain, sunshine, order, difficulty. One verse is 1 for everyone.<br><b>Rewards</b> — every Monday, the tribe top 3 of last week get a 🥇🥈🥉 Recall King title (by your name for a week) + 💎 10,000 / 6,000 / 6,000; the Zion top 3 get a glowing title and 💎 15,000 / 10,000 / 10,000 more. Tribe titles need 10+ participants that week. Claim with the 🏆 reward button on the home screen.',
         recall_title: 'Recall King',
         recall_title_tip_tribe: "Last week's tribe Recall King #{rank}",
@@ -2157,6 +2173,20 @@ function markOnboardStep(step) {
     if (typeof saveGameData === 'function') saveGameData();
 }
 let bibleReadLog = {};             // 날짜 → 챕터 → 읽은 절 번호 배열 { "Mon Jun 14 2026": { 1: [1,2,3] } }
+/* ── 실시간 통독왕 (2026-09-16) ──────────────────────────────────────────────
+   한 장을 다 읽으면(읽음 버튼을 모두 누르면) 그 장의 버튼이 초기화돼 다시 읽을 수 있고,
+   이번 주에 '읽음'을 누른 구절 수로 겨룬다. 통독은 죽 읽는 것에 불과하지만 그거라도 하는 게 어디냐.
+   보석 +10은 그날 그 장의 **첫 회독**에만 — 회독을 거듭해도 보석은 안 나온다(3초 간격이라 시간당 1,200절 = 12,000젬이 된다).
+   읽지 않고 누르기만 하는 어뷰징은 막을 수 없지만, 얻는 것이 사실상 없어 양심에 맡긴다. */
+let readWeek = { weekId: '', count: 0 };
+const READ_WEEK_MAX = 200000;      // 3초 간격 상한(28,800/일 × 7). 서버 검증과 같다
+let bibleReadPasses = {};          // 6시 날짜 → 장 → 오늘 완독 회수 (보석은 0회독일 때만)
+let bibleReadTotal = {};           // 6시 날짜 → 오늘 누른 '읽음' 수 (회독 포함) — 성경 읽기 미션이 이걸 본다
+function _noteReadForWeek() {
+    const wk = getWeekId();
+    if (readWeek.weekId !== wk) readWeek = { weekId: wk, count: 0 };
+    readWeek.count = Math.min(READ_WEEK_MAX, (readWeek.count || 0) + 1);
+}
 let _lastBibleReadClickTime = 0;   // 3초 쿨다운용
 let sessionTimeLog = {};           // "YYYY-MM-DD" → ms (이번 주 학습 시간)
 let _sessionVisibleStart = Date.now(); // 현재 탭이 보이기 시작한 시각
@@ -2464,6 +2494,11 @@ loadGameData = function () {
             } else {
                 bibleReadLog = {};
             }
+            bibleReadPasses = (parsed.bibleReadPasses && parsed.bibleReadPasses[_today]) ? { [_today]: parsed.bibleReadPasses[_today] } : {};
+            bibleReadTotal = (parsed.bibleReadTotal && parsed.bibleReadTotal[_today] != null) ? { [_today]: parsed.bibleReadTotal[_today] } : {};
+        }
+        if (parsed.readWeek && typeof parsed.readWeek === 'object') {
+            readWeek = { weekId: String(parsed.readWeek.weekId || ''), count: Math.max(0, parseInt(parsed.readWeek.count, 10) || 0) };
         }
         if (parsed.sessionTimeLog) {
             // 최근 14일치만 유지
@@ -5455,7 +5490,8 @@ let rankingCache = {
     zion: { data: null, timestamp: 0 },
     weeklyHall: { data: null, timestamp: 0 },
     monthlyHall: { data: null, timestamp: 0 },
-    recall: { data: null, weekId: '', timestamp: 0 } // 실시간 암송왕 (5분)
+    recall: { data: null, weekId: '', timestamp: 0 }, // 실시간 암송왕 (5분)
+    read:   { data: null, weekId: '', timestamp: 0 }  // 실시간 통독왕 (5분)
 };
 
 const RANKING_CACHE_DURATION = 60 * 60 * 1000; // 1시간(ms)
@@ -7015,8 +7051,8 @@ function openBibleReadingOverlay() {
             ? bibleDataEn[chapterNum][idx].text : v.text;
         const alreadyRead = todayRead.includes(verseNum);
         const btnHtml = alreadyRead
-            ? `<button class="bible-read-btn bible-read-done" disabled>완료</button>`
-            : `<button class="bible-read-btn" onclick="markVerseAsRead(${chapterNum},${verseNum},this)">읽음</button>`;
+            ? `<button class="bible-read-btn bible-read-done" data-v="${verseNum}" onclick="markVerseAsRead(${chapterNum},${verseNum},this)" disabled>완료</button>`
+            : `<button class="bible-read-btn" data-v="${verseNum}" onclick="markVerseAsRead(${chapterNum},${verseNum},this)">읽음</button>`;
         return `<div class="bible-reading-verse">
             <span class="bible-reading-verse-num">${verseNum}</span>
             <span class="bible-reading-verse-text">${text}</span>
@@ -7033,6 +7069,7 @@ function openBibleReadingOverlay() {
             <button class="bible-reading-close-btn" onclick="closeBibleReadingOverlay()">✕</button>
         </div>
         <div id="bible-read-toast" class="bible-read-toast" style="display:none;">정독해주세요</div>
+        <div id="bible-read-pass" class="bible-read-pass">${_bibleReadPassLabel(chapterNum)}</div>
         <div class="bible-reading-body">${versesHtml}</div>
     `;
     document.body.appendChild(overlay);
@@ -7057,7 +7094,12 @@ function markVerseAsRead(chapterNum, verseNum, btnEl) {
     if (bibleReadLog[today][chapterNum].includes(verseNum)) return;
 
     bibleReadLog[today][chapterNum].push(verseNum);
-    myGems += 10;
+    if (!bibleReadPasses[today]) bibleReadPasses[today] = {};
+    const passes = bibleReadPasses[today][chapterNum] || 0;
+    const paysGem = passes === 0;                 // 그날 그 장의 첫 회독만 보석
+    if (paysGem) myGems += 10;
+    bibleReadTotal[today] = (bibleReadTotal[today] || 0) + 1;
+    _noteReadForWeek();
     updateGemDisplay();
     saveGameData();
     if (typeof claimBibleReadReward === 'function') claimBibleReadReward(true);
@@ -7069,17 +7111,42 @@ function markVerseAsRead(chapterNum, verseNum, btnEl) {
         const rect = btnEl.getBoundingClientRect();
         const tip = document.createElement('div');
         tip.className = 'bible-gem-tip';
-        tip.textContent = '+💎10';
+        tip.textContent = paysGem ? '+💎10' : '+1';
         tip.style.left = (rect.left + rect.width / 2) + 'px';
         tip.style.top = (rect.top + window.scrollY) + 'px';
         document.body.appendChild(tip);
         setTimeout(() => { if (tip.parentNode) tip.remove(); }, 900);
     }
+
+    // 한 장을 다 읽었으면 → 회독 +1, 버튼 초기화. 다시 읽을 수 있다
+    const total = (bibleData[chapterNum] || []).length;
+    if (total > 0 && bibleReadLog[today][chapterNum].length >= total) {
+        bibleReadPasses[today][chapterNum] = passes + 1;
+        bibleReadLog[today][chapterNum] = [];
+        saveGameData();
+        setTimeout(() => {
+            document.querySelectorAll('#bible-reading-overlay .bible-read-btn').forEach(b => {
+                b.disabled = false; b.textContent = '읽음'; b.classList.remove('bible-read-done');
+            });
+            const passEl = document.getElementById('bible-read-pass');
+            if (passEl) passEl.textContent = _bibleReadPassLabel(chapterNum);
+            if (typeof showToast === 'function') showToast(t('bible_read_pass_done', { ch: chapterNum, n: passes + 1 }));
+        }, 600);
+    }
+}
+
+function _bibleReadPassLabel(chapterNum) {
+    const today = _get6AMDayStr();
+    const passes = (bibleReadPasses[today] && bibleReadPasses[today][chapterNum]) || 0;
+    const wk = (readWeek.weekId === getWeekId()) ? (readWeek.count || 0) : 0;
+    return (passes > 0 ? t('bible_read_pass_n', { n: passes }) + ' · ' : '') + t('bible_read_week_count', { n: wk.toLocaleString() });
 }
 
 function claimBibleReadReward(silent) {
     const today = _get6AMDayStr();
-    const totalRead = Object.values(bibleReadLog[today] || {}).reduce((s, a) => s + a.length, 0);
+    // 회독으로 장 목록이 비워져도 오늘 읽은 수는 bibleReadTotal에 남는다 (없으면 옛 방식으로 합산)
+    const totalRead = (bibleReadTotal[today] != null) ? bibleReadTotal[today]
+        : Object.values(bibleReadLog[today] || {}).reduce((s, a) => s + a.length, 0);
     const milestone = Math.min(40, Math.floor(totalRead / 10));
     const prevClaimed = missionData.daily.bibleReadClaimed || 0;
     if (milestone <= prevClaimed) return;
@@ -7096,6 +7163,8 @@ function claimBibleReadReward(silent) {
 function closeBibleReadingOverlay() {
     const el = document.getElementById('bible-reading-overlay');
     if (el) el.remove();
+    // 실시간 통독왕 — 읽기를 마치면 한 번 올린다 (값이 같으면 안 보낸다)
+    if (typeof saveMyScoreToServer === 'function') setTimeout(saveMyScoreToServer, 0);
 }
 
 /* ─── 챕터 오디오 플레이어 ───────────────────────────────────────────────── */
@@ -9648,6 +9717,9 @@ function saveGameData() {
         recallWeek: recallWeek, // 실시간 암송왕 — 이번 주 써낸 구절 수
         onboardStep: onboardStep, // 온보딩 이탈 지점 (profile→map→stage→cleared)
         bibleReadLog: bibleReadLog,
+        bibleReadPasses: bibleReadPasses, // 오늘 장별 완독 회수
+        bibleReadTotal: bibleReadTotal,   // 오늘 읽음 수 (회독 포함)
+        readWeek: readWeek,               // 실시간 통독왕
         sessionTimeLog: sessionTimeLog,
         // ★ [게임 모드]
         activeMode: activeMode,
@@ -9823,12 +9895,24 @@ function _mergeRecallWeek(target, other) {
     return 0;
 }
 
+function _mergeReadWeek(target, other) {
+    const a = (target && target.readWeek) || null;
+    const b = (other && other.readWeek) || null;
+    if (!b || !b.weekId) return 0;
+    if (!a || !a.weekId || b.weekId > a.weekId || (b.weekId === a.weekId && (b.count || 0) > (a.count || 0))) {
+        if (target) target.readWeek = b;
+        return 1;
+    }
+    return 0;
+}
+
 function _mergeSaveProgress(target, other) {
     if (!target || !other) return 0;
     let took = 0;
     took += _mergeVerseRecall(target, other);
     took += _mergeReviewSamples(target, other);
     took += _mergeRecallWeek(target, other);
+    took += _mergeReadWeek(target, other);
 
     // 1) 자유여행 — 최상위 필드
     {
@@ -13342,7 +13426,7 @@ function _buildMissionDefs(tabName) {
             },
             (function() {
                 const _today = _get6AMDayStr();
-                const _totalRead = Math.min(400, Object.values((bibleReadLog[_today] || {})).reduce((s, a) => s + a.length, 0));
+                const _totalRead = Math.min(400, (bibleReadTotal[_today] != null) ? bibleReadTotal[_today] : Object.values((bibleReadLog[_today] || {})).reduce((s, a) => s + a.length, 0));
                 const _claimed = missionData.daily.bibleReadClaimed || 0;
                 const _claimable = Math.min(40, Math.floor(_totalRead / 10)) - _claimed;
                 return {
@@ -14600,13 +14684,18 @@ function openRankingScreen() {
                 <span style="font-size:1.05rem;">👑</span><span>Zion</span>
             </button>
         </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:14px;">
         ${_recallBoardOpen() ? `
-        <button id="tab-recall" onclick="openRankingModal('recall', t('ranking_recall_title'))" style="width:100%; padding:11px 6px; border-radius:10px; border:1px solid rgba(46,204,113,0.4); background:linear-gradient(145deg, rgba(46,204,113,0.16), rgba(39,174,96,0.06)); color:#7ee2a8; font-weight:bold; cursor:pointer; font-size:0.9rem; display:flex; justify-content:center; align-items:center; gap:7px; margin-bottom:14px;">
-            <span style="font-size:1.1rem;">🖊️</span><span>${t('ranking_tab_recall')}</span>
+        <button id="tab-recall" onclick="openRankingModal('recall', t('ranking_recall_title'))" style="padding:11px 6px; border-radius:10px; border:1px solid rgba(46,204,113,0.4); background:linear-gradient(145deg, rgba(46,204,113,0.16), rgba(39,174,96,0.06)); color:#7ee2a8; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:6px;">
+            <span style="font-size:1.05rem;">🖊️</span><span>${t('ranking_tab_recall')}</span>
         </button>` : `
-        <div style="width:100%; padding:10px 6px; border-radius:10px; border:1px dashed rgba(46,204,113,0.35); color:#7f8c8d; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:7px; margin-bottom:14px; box-sizing:border-box;">
-            <span style="font-size:1rem; opacity:0.6;">🖊️</span><span>${t('ranking_tab_recall')} · ${t('ranking_recall_opens_monday')}</span>
+        <div style="padding:10px 6px; border-radius:10px; border:1px dashed rgba(46,204,113,0.35); color:#7f8c8d; font-size:0.8rem; display:flex; justify-content:center; align-items:center; gap:6px; box-sizing:border-box;">
+            <span style="font-size:1rem; opacity:0.6;">🖊️</span><span>${t('ranking_tab_recall')}</span>
         </div>`}
+        <button id="tab-read" onclick="openRankingModal('read', t('ranking_read_title'))" style="padding:11px 6px; border-radius:10px; border:1px solid rgba(243,156,18,0.4); background:linear-gradient(145deg, rgba(243,156,18,0.16), rgba(211,84,0,0.06)); color:#f7c873; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:6px;">
+            <span style="font-size:1.05rem;">📖</span><span>${t('ranking_tab_read')}</span>
+        </button>
+        </div>
         <div style="font-size:0.7rem; color:#7f8c8d; font-weight:bold; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:7px; padding-left:2px;">${t('ranking_tab_group_hall')}</div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:7px;">
             <button id="tab-weekly-hall" onclick="openRankingModal('weekly-hall', t('ranking_tab_weekly_full'))" style="padding:10px 6px; border-radius:10px; border:1px solid rgba(241,196,15,0.25); background:linear-gradient(145deg, rgba(241,196,15,0.1), rgba(243,156,18,0.05)); color:#f0d060; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:6px;">
@@ -15081,7 +15170,9 @@ function openRankingModal(tabName, titleText) {
     } else if (tabName === 'guild-raid') {
         loadGuildRaidLeaderboard();
     } else if (tabName === 'recall') {
-        loadRecallLeaderboard();
+        loadRecallLeaderboard('recall');
+    } else if (tabName === 'read') {
+        loadRecallLeaderboard('read');
     }
 }
 
@@ -15092,10 +15183,19 @@ function openRankingModal(tabName, titleText) {
    리그로 나누지 않는 이유: 이 지표는 밭이 안 곱해져 분포가 좁다 — 리그가 풀려던 문제가 애초에 없다.
    주간 참가자가 100명을 넘기면 그때 30명 방으로 나눈다. */
 const RECALL_RANK_CACHE_MS = 5 * 60 * 1000;
-function loadRecallLeaderboard() {
+/* 실시간 판 — 암송왕·통독왕이 같은 로더·렌더러를 쓴다. 다른 건 필드 이름과 문구·색뿐 */
+const LIVE_BOARDS = {
+    recall: { weekField: 'recallWeekId', countField: 'recallCount', local: () => recallWeek, color: '#7ee2a8', border: 'rgba(46,204,113,0.5)', bg: 'rgba(46,204,113,0.14)',
+              desc: 'ranking_recall_desc', rulesBtn: 'ranking_recall_rules_btn', rules: 'ranking_recall_rules', empty: 'ranking_recall_empty', unit: 'ranking_recall_unit', pending: 'ranking_recall_mine_pending', log: '실시간 암송왕' },
+    read:   { weekField: 'readWeekId',   countField: 'readCount',   local: () => readWeek,   color: '#f7c873', border: 'rgba(243,156,18,0.5)', bg: 'rgba(243,156,18,0.14)',
+              desc: 'ranking_read_desc',   rulesBtn: 'ranking_recall_rules_btn', rules: 'ranking_read_rules',   empty: 'ranking_read_empty',   unit: 'ranking_recall_unit', pending: 'ranking_recall_mine_pending', log: '실시간 통독왕' }
+};
+function loadRecallLeaderboard(kind) {
+    kind = kind || 'recall';
+    const B = LIVE_BOARDS[kind];
     const list = document.getElementById('ranking-list');
     if (!list) return;
-    if (!_recallBoardOpen()) {
+    if (kind === 'recall' && !_recallBoardOpen()) {
         list.innerHTML = `<div style="text-align:center;padding:50px;color:#bdc3c7;">${t('ranking_recall_opens_monday')}</div>`;
         return;
     }
@@ -15104,16 +15204,16 @@ function loadRecallLeaderboard() {
         return;
     }
     const weekId = getWeekId();
-    const c = rankingCache.recall;
+    const c = rankingCache[kind];
     if (c && c.data && c.weekId === weekId && (Date.now() - c.timestamp) < RECALL_RANK_CACHE_MS) {
-        renderRecallRankingList(c.data, weekId);
+        renderRecallRankingList(c.data, weekId, kind);
         return;
     }
     list.innerHTML = `<div style="text-align:center;padding:50px;color:#bdc3c7;">${t('ranking_loading')}</div>`;
     db.collection('leaderboard')
-        .where('recallWeekId', '==', weekId)
-        .where('recallCount', '>', 0)
-        .orderBy('recallCount', 'desc')
+        .where(B.weekField, '==', weekId)
+        .where(B.countField, '>', 0)
+        .orderBy(B.countField, 'desc')
         .limit(100)
         .get()
         .then(snap => {
@@ -15124,31 +15224,34 @@ function loadRecallLeaderboard() {
                 const tag = String(d.tag || doc.id);
                 if (!tag || tag === '0000' || seen.has(tag)) return;
                 seen.add(tag);
-                rows.push({ name: d.nickname || '이름없음', tag, tribe: d.tribe || 0, dept: d.dept, count: d.recallCount || 0, field: d.maxHearts || 0, recallTitle: d.recallTitle || null });
+                rows.push({ name: d.nickname || '이름없음', tag, tribe: d.tribe || 0, dept: d.dept, count: d[B.countField] || 0, field: d.maxHearts || 0, recallTitle: d.recallTitle || null });
             });
-            rankingCache.recall = { data: rows, weekId, timestamp: Date.now() };
-            renderRecallRankingList(rows, weekId);
+            rankingCache[kind] = { data: rows, weekId, timestamp: Date.now() };
+            renderRecallRankingList(rows, weekId, kind);
         })
         .catch(err => {
-            console.warn('실시간 암송왕 조회 실패:', err);
+            console.warn(B.log + ' 조회 실패:', err);
             list.innerHTML = `<div style="text-align:center;padding:50px;color:#e74c3c;">${t('ranking_load_failed')}</div>`;
         });
 }
 
-function renderRecallRankingList(rows, weekId) {
+function renderRecallRankingList(rows, weekId, kind) {
+    kind = kind || 'recall';
+    const B = LIVE_BOARDS[kind];
     const list = document.getElementById('ranking-list');
     if (!list) return;
     // 내 값은 서버 문서가 아니라 로컬을 쓴다 — 세션 직후 아직 안 올라갔어도 내 줄은 맞아야 한다
-    const myCount = (recallWeek.weekId === weekId) ? (recallWeek.count || 0) : 0;
+    const _loc = B.local();
+    const myCount = (_loc.weekId === weekId) ? (_loc.count || 0) : 0;
     let html = `<div style="padding:12px 15px; color:#bdc3c7; font-size:0.85rem; text-align:center; border-bottom:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.2); line-height:1.5;">
-        ${t('ranking_recall_desc')}<br><span style="opacity:0.6; font-size:0.8rem;">${weekId}</span>
+        ${t(B.desc)}<br><span style="opacity:0.6; font-size:0.8rem;">${weekId}</span>
         <details style="margin-top:8px; text-align:left; font-size:0.8rem; color:#95a5a6;">
-            <summary style="cursor:pointer; text-align:center; color:#7ee2a8; font-weight:700; list-style:none;">${t('ranking_recall_rules_btn')}</summary>
-            <div style="margin-top:8px; line-height:1.6; background:rgba(0,0,0,0.25); border-radius:10px; padding:10px 12px;">${t('ranking_recall_rules')}</div>
+            <summary style="cursor:pointer; text-align:center; color:${B.color}; font-weight:700; list-style:none;">${t(B.rulesBtn)}</summary>
+            <div style="margin-top:8px; line-height:1.6; background:rgba(0,0,0,0.25); border-radius:10px; padding:10px 12px;">${t(B.rules)}</div>
         </details>
     </div>`;
     if (!rows.length) {
-        html += `<div style="text-align:center; padding:30px; color:#7f8c8d; line-height:1.6;">${t('ranking_recall_empty')}</div>`;
+        html += `<div style="text-align:center; padding:30px; color:#7f8c8d; line-height:1.6;">${t(B.empty)}</div>`;
     }
     const medals = ['🥇', '🥈', '🥉'];
     let foundMe = false;
@@ -15158,18 +15261,18 @@ function renderRecallRankingList(rows, weekId) {
         if (isMe) foundMe = true;
         const shown = isMe ? Math.max(u.count, myCount) : u.count;
         const badge = rank <= 3 ? medals[i] : `<span style="font-size:1rem;color:#bdc3c7;font-weight:bold;">${rank}</span>`;
-        html += `<div ${isMe ? 'id="my-ranking-card"' : ''} style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;margin-bottom:8px;${isMe ? 'border:2px solid #2ecc71;background:rgba(46,204,113,0.14);' : 'border:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.3);'}">
+        html += `<div ${isMe ? 'id="my-ranking-card"' : ''} style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;margin-bottom:8px;${isMe ? `border:2px solid ${B.color};background:${B.bg};` : 'border:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.3);'}">
             <div style="font-size:1.4rem;width:34px;text-align:center;">${badge}</div>
             <div style="flex:1;min-width:0;">
                 <div style="font-weight:bold;color:#fff;font-size:1rem;display:flex;align-items:center;">${getTribeIcon(u.tribe)}${getDeptTag(u.dept)} ${escapeHtml(u.name)}${_fieldBadgeHtml(u.field)}${_recallTitleHtml(u.recallTitle)}</div>
                 <div style="font-size:0.78rem;color:#95a5a6;">#${u.tag}</div>
             </div>
-            <div style="font-weight:800;color:#7ee2a8;font-size:1.05rem;white-space:nowrap;">${t('ranking_recall_unit', { n: shown.toLocaleString() })}</div>
+            <div style="font-weight:800;color:${B.color};font-size:1.05rem;white-space:nowrap;">${t(B.unit, { n: shown.toLocaleString() })}</div>
         </div>`;
     });
     if (!foundMe && myCount > 0) {
-        html += `<div style="margin-top:6px;padding:10px 14px;border-radius:12px;border:1px dashed rgba(46,204,113,0.5);color:#bdc3c7;font-size:0.85rem;display:flex;justify-content:space-between;">
-            <span>${t('ranking_recall_mine_pending')}</span><span style="color:#7ee2a8;font-weight:800;">${t('ranking_recall_unit', { n: myCount.toLocaleString() })}</span>
+        html += `<div style="margin-top:6px;padding:10px 14px;border-radius:12px;border:1px dashed ${B.border};color:#bdc3c7;font-size:0.85rem;display:flex;justify-content:space-between;">
+            <span>${t(B.pending)}</span><span style="color:${B.color};font-weight:800;">${t(B.unit, { n: myCount.toLocaleString() })}</span>
         </div>`;
     }
     list.innerHTML = html;
@@ -20556,7 +20659,10 @@ function saveMyScoreToServer() {
         maxHearts: maxPlayerHearts,
         // 실시간 암송왕 — recallWeek이 지난 주 것이면 지난 주 id가 그대로 가서 이번 주 조회에 안 잡힌다 (의도)
         recallWeekId: recallWeek.weekId || currentWeekId,
-        recallCount: recallWeek.count || 0
+        recallCount: recallWeek.count || 0,
+        // 실시간 통독왕
+        readWeekId: readWeek.weekId || currentWeekId,
+        readCount: readWeek.count || 0
     };
 
     // 월 전환 시 이전달 백업 데이터가 있으면 함께 전송 (CF 아카이빙 경쟁조건 방어)

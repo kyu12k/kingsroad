@@ -6101,6 +6101,8 @@ body, html {
     .field-ring.field-max { animation: none; }
 }
 .field-badge-ring { margin-left: 6px; }
+/* 읽기 오버레이 — 회독·이번 주 통독 수 한 줄 */
+.bible-read-pass { text-align: center; font-size: 0.78rem; color: #f7c873; opacity: 0.9; padding: 4px 0 2px; }
 [data-tip] { cursor: pointer; }
 /* 칩 말풍선 */
 #chip-tip {

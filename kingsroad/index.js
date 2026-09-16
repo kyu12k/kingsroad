@@ -35,7 +35,9 @@ const SCORE_WRITE_WHITELIST = [
     'nickname', 'castleLv', 'tribe', 'dept', 'tag',
     'weekId', 'monthId', 'prevWeekId', 'prevMonthId', 'maxHearts', 'weeklyHistory',
     'recallWeekId', 'recallCount', // 실시간 암송왕 (2026-09-13) — 이번 주 백지로 써낸 구절 수
+    'readWeekId', 'readCount',     // 실시간 통독왕 (2026-09-16) — 이번 주 읽음을 누른 구절 수
 ];
+const READ_COUNT_MAX = 200000; // 3초 간격 상한 28,800/일 × 7
 // 실시간 암송왕 상한: 404절 × 7일 (같은 구절 하루 1회 규칙의 이론상 최대)
 const RECALL_COUNT_MAX = 404 * 7;
 
@@ -156,6 +158,14 @@ exports.submitScoreSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =>
     }
     if (p.recallWeekId !== undefined && !/^\d{4}-W\d{2}$/.test(String(p.recallWeekId))) {
         throw new HttpsError('invalid-argument', '암송 집계 주차가 유효하지 않습니다.');
+    }
+    if (p.readCount !== undefined) {
+        if (typeof p.readCount !== 'number' || !Number.isInteger(p.readCount) || p.readCount < 0 || p.readCount > READ_COUNT_MAX) {
+            throw new HttpsError('invalid-argument', '통독 집계 값이 유효하지 않습니다.');
+        }
+    }
+    if (p.readWeekId !== undefined && !/^\d{4}-W\d{2}$/.test(String(p.readWeekId))) {
+        throw new HttpsError('invalid-argument', '통독 집계 주차가 유효하지 않습니다.');
     }
 
     const lbRef = db.collection('leaderboard').doc(String(myTag));

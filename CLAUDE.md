@@ -1705,6 +1705,24 @@ verseRecall['1-1'] = { pass, typedPass, fail, firstPass, lastPass, lastAt, lastO
 
 ---
 
+## 실시간 통독왕 (`readWeek`, 2026-09-16)
+
+암송왕과 같은 구조의 두 번째 실시간 판. **장 화면 「읽기」에서 「읽음」을 누른 구절 수**(회독 포함).
+"통독은 죽 읽는 것에 불과하지만 그거라도 하는 게 어디냐." 읽지 않고 누르는 어뷰징은 못 막지만 얻는 게 사실상 없어 양심에 맡긴다.
+
+- **한 장을 다 읽으면 그 장의 버튼이 초기화**돼 다시 읽을 수 있다(`bibleReadPasses[6시키][장]` +1, `bibleReadLog[6시키][장] = []`).
+  회독마다 `readWeek.count` +1. 3초 간격(`_lastBibleReadClickTime`)은 그대로 → 상한 28,800/일, `READ_WEEK_MAX = 200,000`
+- **💎10은 그날 그 장의 첫 회독(passes === 0)에만.** 회독마다 주면 시간당 12,000젬 수도꼭지가 된다
+- 성경 읽기 미션(10절마다 100, 400절 상한)은 `bibleReadTotal[6시키]`(회독 포함 누른 수)를 본다 —
+  회독으로 장 목록이 비워지면 예전 합산 방식은 값이 줄어든다
+- 서버 `readWeekId`/`readCount` — `submitScoreSecure` 화이트리스트 + 검증, `serverOnlyKeys`, 색인 `(readWeekId ASC, readCount DESC)`.
+  오버레이를 닫을 때 `saveMyScoreToServer`
+- 순위표: `LIVE_BOARDS` 표로 암송왕과 **같은 로더·렌더러**(`loadRecallLeaderboard(kind)`/`renderRecallRankingList(rows, weekId, kind)`).
+  다른 건 필드 이름·문구·색뿐. 랭킹 화면에서 암송왕 옆 2열
+- 보상 없음(아직). 첫 주는 수요일 시작이라 모두 같다. 나중에 암송왕처럼 칭호·보석을 붙이려면 `archiveWeeklyRankings`에 ④-c를 추가
+
+---
+
 ## 주간 랭킹 보상 (`archiveWeeklyRankings`, functions/index.js — 매주 월요일 00:05 KST)
 
 지난주 시온성·지파 Top100을 `weekly_history`에 보관하고 `leaderboard/{tag}.pendingReward`에 보상을 적는다.
