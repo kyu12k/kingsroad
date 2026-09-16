@@ -171,10 +171,6 @@ button,
 .more-menu-item:hover {
     background: rgba(212, 168, 83, 0.15);
 }
-.more-menu-item.shop-highlight {
-    background: rgba(255, 180, 50, 0.1);
-    color: #ffd080;
-}
 .more-menu-item + .more-menu-item {
     border-top: 1px solid rgba(255,255,255,0.08);
 }
@@ -449,11 +445,6 @@ button,
 
         /* ── 공통 배경 ── */
 /* ── 돌아가기 버튼 (.btn-back / .btn-gray 조합) ── */
-/* ──────────────────────────────
-           상점 (shop-screen)
-           ────────────────────────────── */
-/* "내 보석" 표시 박스 */
-/* 상품 카드 */
 /* ──────────────────────────────
            미션 (mission-screen)
            ────────────────────────────── */
@@ -757,7 +748,6 @@ body, html {
         .btn-back:active { transform: translateX(-50%) translateY(3px); box-shadow: none; }
 
         /* 허용: 아래 화면들에서만 돌아가기 버튼을 표시 */
-        #shop-screen .btn-back,
         #ranking-screen .btn-back,
         #mission-screen .btn-back,
         #life-book-screen .btn-back,
@@ -1672,13 +1662,6 @@ body, html {
 }
 .item-btn:active { transform: scale(0.95); }
 
-/* 힌트 잠금 — 먼저 시도해야 열린다.
-   버튼은 살려두고(눌러야 이유를 안내할 수 있다) 흐리게만 표시한다.
-   인라인 style로 배경색이 박혀 있어 opacity/filter처럼 인라인에 없는 속성을 쓴다. */
-.item-btn.hint-locked {
-    opacity: 0.45;
-    filter: grayscale(0.7);
-}
 /* 훈련 모드에서는 글자색이 어두우니 배경을 다르게 */
 .training-header .item-btn {
     background: #fff;
@@ -1792,12 +1775,6 @@ body, html {
     color: #f8c54a;
 }
 
-.common-hardship-hearts.is-danger {
-    color: #c0392b;
-    border-color: rgba(192, 57, 43, 0.28);
-    background: #fff5f3;
-}
-
 /* 힌트는 헤더 안이 아니라 화면 위에 떠 있다 — 생김새·위치는 아래 FAB 블록 참고.
 
    ★ 표시 여부를 인라인 style이 아니라 클래스(.hint-fab-on)로 잡는다.
@@ -1821,15 +1798,6 @@ body, html {
     border-color: #bdc3c7;
     background: #fff;
     margin: 0;
-}
-
-.hardship-life-bread-btn {
-    cursor: pointer;
-    transition: transform 0.1s, box-shadow 0.1s;
-}
-
-.hardship-life-bread-btn:active {
-    transform: scale(0.97);
 }
 
 .hardship-hud-group {
@@ -4890,7 +4858,7 @@ body, html {
 }
 
 /* 2. 상점, 미션, 도감 등에서 내용이 네비바에 가려지지 않게 하단 여백 추가 */
-#shop-screen, #mission-screen, #life-book-screen, #ranking-screen {
+#mission-screen, #life-book-screen, #ranking-screen {
     padding-bottom: 10px !important;
 }
 

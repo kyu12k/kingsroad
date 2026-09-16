@@ -75,7 +75,7 @@ const LANG = {
         nav_home: '홈',
         nav_ranking: '랭킹',
         nav_mission: '미션',
-        nav_shop: '상점',
+        nav_shop: '밭',
         nav_library: '도감',
         nav_records: '기록실',
         btn_review_timing: '복습 타이밍',
@@ -98,8 +98,7 @@ const LANG = {
         label_score: '승점',
         label_hint: '힌트',
         label_cycle: '사이클',
-        label_hearts: '체력',
-        label_hearts__field: '밭',
+        label_hearts: '밭',
         // 밭 (2026-09-13 베타) — 씨 × 밭 = 열매
         field_label: '밭',
         field_desc: '밭이 좋을수록 열매가 많습니다.<br>구절마다 <b>씨(난도) × 밭</b>만큼 승점을 거둡니다.',
@@ -142,7 +141,6 @@ const LANG = {
         field_ms_modal_chip: '이름 옆 칩이 새 모습이 됐어요',
         field_ms_modal_chip_max: '이름 옆 칩이 금빛으로 빛나요',
         field_ms_modal_next: '다음 이정표 {name} — 밭 {n}',
-        field_no_bread: '이제 체력이 줄지 않아 회복할 것이 없어요',
         // 단비 (2026-09-13 베타)
         item_refund_toast: '🍞 떡 {bread}개 · 🛡️ 방패 {shield}개를 💎 {gems}으로 돌려드렸어요',
         rain_name: '단비',
@@ -157,11 +155,6 @@ const LANG = {
         header_rain_tomorrow: '{icon} 내일 {name}',
         header_rain_hint: '☁️ 오늘 한 절이면 내일 단비',
         header_rain_tomorrow_sun_hint: '{icon} 내일 {name} · 미션 {left}개 더 하면 ☀️ 햇살',
-        shop_heart_desc__field: '밭을 넓혀 열매를 더 거둡니다',
-        library_help_hearts_title__field: '🌾 밭 보너스',
-        library_help_hearts_desc__field: '자유여행과 왕의 길 도감 점수를 <strong>합쳐 15,000점</strong> 이상이면 밭이 <strong>+3</strong> 됩니다.<br><span style="color:#95a5a6; font-size:0.95em;">※ 위의 경지 보너스는 현재 모드의 점수만으로 판정됩니다.</span>',
-        alert_buy_hearts_success__field: '🌾 밭이 {max}이 되었습니다!',
-        nav_shop__field: '밭',
         label_gems: '보석',
         label_kings_road: '왕의 길',
         label_kings_road_desc: '계시록 순서대로 매일 암기하는 여정',
@@ -219,14 +212,9 @@ const LANG = {
         alert_spell_incomplete: '주문이 완성되지 않았습니다!\n(현재: {cur} / 필요: {need})',
         alert_attack_fail: '❌ 공격 실패!\n{count}군데가 틀렸습니다.',
         alert_defeat: '💔 패배... 눈앞이 캄캄해집니다.',
-        alert_revive_no_gems: '💎 보석이 부족합니다... 부활하려면 {cost}개가 필요합니다.',
-        alert_revive_success: '✨ 기적적으로 회복했습니다!\n(보석 -{cost})',
         alert_data_recovered: '✅ 이전 계정 데이터가 자동으로 복구되었습니다!\n\n닉네임: {nick}\n태그: #{tag}',
         alert_data_load_error: '데이터 로드 오류',
         alert_game_switch_error: '게임 전환 중 오류가 발생했습니다. 브라우저 콘솔(F12)을 확인해주세요.',
-        alert_no_bread: '🥖 생명의 떡이 없습니다.\n상점에서 구매하세요!',
-        alert_hearts_full: '체력이 이미 가득 찼습니다.',
-        alert_hearts_restored: '체력이 회복되었습니다. (현재: {cur})',
         alert_hint_no_gems: '💎 보석이 부족합니다! (필요: {cost})',
         alert_hint_read_aloud: '이 단계에서는 큰 소리로 읽는 것이 정답입니다! 📣',
         alert_hint_load_error: '이 구절의 힌트 데이터를 불러올 수 없습니다.',
@@ -241,7 +229,6 @@ const LANG = {
         blank_check_again: '한 번 더 백지로',
         blank_check_hint: '지금이 가장 잘 떠오를 때예요',
         blank_check_first_bonus: '✨ 첫 백지 통과 💎 +{gem}',
-        alert_hint_locked: '먼저 한 번 시도해 보세요. 틀린 뒤에 힌트가 열립니다. 🔒',
         hint_btn_label: '💡 힌트',
         hint_cooldown_sec: '{n}초',
         hint_confirm: '💎 보석 {cost}개를 소모하여 힌트를 보시겠습니까?',
@@ -254,18 +241,9 @@ const LANG = {
         hint_boss_current_part: '현재 풀어야 할 파트',
         alert_locked_first_clear: '해당 구절을 1회 이상 클리어하여 잠금을 해제하세요.',
         alert_daily_bonus: '🕊️ [일용할 양식]\n\n성도의 직분을 가진 자에게\n보석 {count}개가 지급되었습니다! 💎\n(현재 보석: {total})',
-        alert_booster_stronger: '🔥 더 강력한 {multi}배 부스터가 적용되었습니다!',
-        alert_booster_extended: '🔥 부스터 시간이 {min}분 연장되었습니다!',
-        alert_booster_started: '⚡ {min}분간 승점 {multi}배 부스터 발동!',
         alert_ranking_out: '현재 랭킹 Top 100 안에 들지 못했습니다.\n분발하세요, 순례자여! 🔥',
-        alert_hearts_max_reached: '더 이상 체력을 늘릴 수 없습니다 (순수 최대치 100 도달).',
         alert_buy_hearts_no_gems: '💎 보석이 부족합니다! (필요: {cost})',
-        alert_buy_hearts_success: '❤️ 최대 체력이 {max}칸으로 늘어났습니다!',
-        alert_buy_no_gems: '💎 보석이 부족합니다!',
-        alert_buy_success: '✅ [{name}] 구매 완료! (보유: {count}개)',
-        alert_item_none: '아이템이 없습니다! 보급소에서 구매하세요.',
-        alert_item_hearts_full: '이미 체력이 가득 찼습니다!',
-        alert_item_bread_used: '🍞 생명의 떡을 먹었습니다! (체력 +2)',
+        alert_buy_hearts_success: '🌾 밭이 {max}이 되었습니다!',
         alert_castle_max: '이미 하나님 나라가 완성되었습니다!',
         alert_castle_built: '🎉 건축 완료!\n\n[Lv.{lv} {name}]\n"{desc}"',
         alert_castle_no_gems: '보석이 부족합니다.\n(필요: {need}개 / 보유: {have}개)',
@@ -397,17 +375,6 @@ const LANG = {
         mission_subtitle: '성실함이 곧 왕의 자질입니다',
 
         // 상점
-        shop_title: '⛺ 시온 마트',
-        shop_subtitle: '여정에 필요한 물품을 구비하세요',
-        shop_my_gems: '내 보석',
-        shop_heart_name: '굳건한 마음',
-        shop_heart_desc: '최대 체력 영구 증가',
-        shop_heart_sold_out: '품절 (MAX)',
-        shop_heart_done: '완료',
-        shop_btn_buy: '구매',
-        shop_btn_free: '무료',
-        shop_free_once: '무료 1회',
-        shop_owned: '보유: {count}개',
         mission_tab_daily: '일일 미션',
         mission_tab_weekly: '주간 미션',
         mission_reset_daily: '🕒 매일 오전 6시에 초기화됩니다',
@@ -716,7 +683,6 @@ const LANG = {
         ranking_recall_unit: '{n}절',
         ranking_recall_empty: '아직 아무도 없어요.<br>백지로 한 절을 써내면 여기에 올라갑니다.',
         ranking_recall_mine_pending: '내 기록 (곧 반영)',
-        ranking_recall_opens_monday: '월요일 0시에 열려요',
         ranking_recall_rules_btn: '규칙과 보상 보기',
         ranking_tab_read: '실시간 통독왕',
         event_prep: '시험준비',
@@ -827,8 +793,8 @@ const LANG = {
         library_help_score_items: '• 구절 1회 클리어: 10점<br>• 구절 5회 이상: 20점<br>• 구절 10회 이상: 30점<br>• 구절 20회 이상: 50점',
         library_help_rank_title: '⭐ 깨달음의 경지 보너스',
         library_help_rank_items: '• 1000점: 보석 5% 추가 획득<br>• 2500점: 오답 1회 무시<br>• 6000점: 보석 10%, 승점 5% 추가<br>• 14000점: 보석 15%, 오답 2회<br>• 20000점: 보석 15% + 오답 3회 + 승점 15%',
-        library_help_hearts_title: '❤️ 최대 체력 보너스',
-        library_help_hearts_desc: '자유여행과 왕의 길 도감 점수를 <strong>합쳐 15,000점</strong> 이상이면 최대 체력이 <strong>+3</strong> 됩니다.<br><span style="color:#95a5a6; font-size:0.95em;">※ 위의 경지 보너스는 현재 모드의 점수만으로 판정됩니다.</span>',
+        library_help_hearts_title: '🌾 밭 보너스',
+        library_help_hearts_desc: '자유여행과 왕의 길 도감 점수를 <strong>합쳐 15,000점</strong> 이상이면 밭이 <strong>+3</strong> 됩니다.<br><span style="color:#95a5a6; font-size:0.95em;">※ 위의 경지 보너스는 현재 모드의 점수만으로 판정됩니다.</span>',
         library_current_score: '현재 도감 점수',
         library_rank_label: '깨달음의 경지',
         library_no_buff: '아직 효과 없음',
@@ -881,7 +847,6 @@ const LANG = {
 
         // 고난 결과
         hardship_result_completed: '🏁 {title} 완주',
-        hardship_result_hearts_end: '💀 {title} 종료',
         hardship_result_ended: '⛰️ {title} 종료',
         hardship_session_endurance: '이번 세션에서 {count}절을 확인했습니다.',
         hardship_session_score: '이번 세션 승점 {score}점',
@@ -969,7 +934,7 @@ const LANG = {
         nav_home: 'Home',
         nav_ranking: 'Ranking',
         nav_mission: 'Mission',
-        nav_shop: 'Shop',
+        nav_shop: 'Field',
         nav_library: 'Library',
         nav_records: 'Records',
         btn_review_timing: 'Review Timing',
@@ -992,7 +957,7 @@ const LANG = {
         label_score: 'Score',
         label_hint: 'Hint',
         label_cycle: 'Cycle',
-        label_hearts: 'Hearts',
+        label_hearts: 'Field',
         label_gems: 'Gems',
         label_kings_road: "King's Road",
         label_kings_road_desc: 'A daily memorization journey through Revelation',
@@ -1050,14 +1015,9 @@ const LANG = {
         alert_spell_incomplete: 'Spell not complete!\n(Current: {cur} / Required: {need})',
         alert_attack_fail: '❌ Attack failed!\n{count} mistake(s) found.',
         alert_defeat: '💔 Defeated... Everything goes dark.',
-        alert_revive_no_gems: '💎 Not enough gems. You need {cost} gems to revive.',
-        alert_revive_success: '✨ Miraculously recovered!\n(Gems -{cost})',
         alert_data_recovered: '✅ Previous account data restored!\n\nNickname: {nick}\nTag: #{tag}',
         alert_data_load_error: 'Data load error',
         alert_game_switch_error: 'Error switching game. Check the browser console (F12).',
-        alert_no_bread: '🥖 No Bread of Life.\nPurchase one from the shop!',
-        alert_hearts_full: 'Hearts are already full.',
-        alert_hearts_restored: 'Hearts restored. (Current: {cur})',
         alert_hint_no_gems: '💎 Not enough gems! (Required: {cost})',
         alert_hint_read_aloud: 'At this stage, reading aloud is the correct answer! 📣',
         alert_hint_load_error: 'Could not load hint data for this verse.',
@@ -1072,7 +1032,6 @@ const LANG = {
         blank_check_again: 'From memory again',
         blank_check_hint: 'Right now is when it comes back most easily',
         blank_check_first_bonus: '✨ First blank pass 💎 +{gem}',
-        alert_hint_locked: 'Give it a try first. Hints unlock after a wrong answer. 🔒',
         hint_btn_label: '💡 Hint',
         hint_cooldown_sec: '{n}s',
         hint_confirm: 'Use {cost} 💎 gems for a hint?',
@@ -1085,14 +1044,9 @@ const LANG = {
         hint_boss_current_part: 'Current part to solve',
         alert_locked_first_clear: 'Clear this verse at least once to unlock.',
         alert_daily_bonus: '🕊️ [Daily Bread]\n\nAs a servant of the saints,\nyou received {count} gems! 💎\n(Current gems: {total})',
-        alert_booster_stronger: '🔥 A stronger ×{multi} booster has been applied!',
-        alert_booster_extended: '🔥 Booster time extended by {min} minutes!',
-        alert_booster_started: '⚡ Score ×{multi} booster active for {min} minutes!',
         alert_ranking_out: 'You are not in the Top 100 ranking.\nKeep going, pilgrim! 🔥',
-        alert_hearts_max_reached: 'Cannot increase hearts further (max 100 reached).',
         alert_buy_hearts_no_gems: '💎 Not enough gems! (Required: {cost})',
-        alert_buy_hearts_success: '❤️ Max hearts increased to {max}!',
-        label_hearts__field: 'Field',
+        alert_buy_hearts_success: '🌾 Your field is now {max}!',
         field_label: 'Field',
         field_desc: 'The better the soil, the more fruit.<br>Each verse yields <b>seed (difficulty) × field</b> points.',
         field_bonus_note: 'includes +{n} collection bonus',
@@ -1134,7 +1088,6 @@ const LANG = {
         field_ms_modal_chip: 'The chip by your name has a new look',
         field_ms_modal_chip_max: 'The chip by your name now shines gold',
         field_ms_modal_next: 'Next milestone {name} — field {n}',
-        field_no_bread: 'Hearts no longer drop — nothing to restore',
         item_refund_toast: '🍞 {bread} bread · 🛡️ {shield} shields refunded as 💎 {gems}',
         rain_name: 'Rain',
         sun_name: 'Sunshine',
@@ -1148,16 +1101,6 @@ const LANG = {
         header_rain_tomorrow: '{icon} {name} tomorrow',
         header_rain_hint: '☁️ One verse today, rain tomorrow',
         header_rain_tomorrow_sun_hint: '{icon} {name} tomorrow · {left} more missions for ☀️ sunshine',
-        shop_heart_desc__field: 'Widen your field to reap more fruit',
-        library_help_hearts_title__field: '🌾 Field Bonus',
-        library_help_hearts_desc__field: "If your Free Travel and King's Road collection scores <strong>add up to 15,000+</strong>, your field gets <strong>+3</strong>.<br><span style=\"color:#95a5a6; font-size:0.95em;\">※ The rank bonus above is judged by the current mode only.</span>",
-        alert_buy_hearts_success__field: '🌾 Your field is now {max}!',
-        nav_shop__field: 'Field',
-        alert_buy_no_gems: '💎 Not enough gems!',
-        alert_buy_success: '✅ [{name}] purchased! (Owned: {count})',
-        alert_item_none: 'No items! Purchase from the supply depot.',
-        alert_item_hearts_full: 'Hearts are already full!',
-        alert_item_bread_used: '🍞 Used Bread of Life! (Hearts +2)',
         alert_castle_max: 'The Kingdom of God is already complete!',
         alert_castle_built: '🎉 Construction complete!\n\n[Lv.{lv} {name}]\n"{desc}"',
         alert_castle_no_gems: 'Not enough gems.\n(Required: {need} / Owned: {have})',
@@ -1287,17 +1230,6 @@ const LANG = {
         mission_subtitle: 'Faithfulness is the mark of a king',
 
         // 상점
-        shop_title: '⛺ Zion Mart',
-        shop_subtitle: 'Stock up for your journey',
-        shop_my_gems: 'My Gems',
-        shop_heart_name: 'Steadfast Heart',
-        shop_heart_desc: 'Permanently increase max hearts',
-        shop_heart_sold_out: 'Sold Out (MAX)',
-        shop_heart_done: 'Done',
-        shop_btn_buy: 'Buy',
-        shop_btn_free: 'Free',
-        shop_free_once: 'Free ×1',
-        shop_owned: 'Owned: {count}',
         mission_tab_daily: 'Daily',
         mission_tab_advanced: '⚔️ Daily Advanced',
         mission_tab_weekly: 'Weekly',
@@ -1605,7 +1537,6 @@ const LANG = {
         ranking_recall_unit: '{n} verses',
         ranking_recall_empty: 'Nobody yet.<br>Write one verse on a blank page and you will appear here.',
         ranking_recall_mine_pending: 'My count (syncing)',
-        ranking_recall_opens_monday: 'Opens Monday at midnight',
         ranking_recall_rules_btn: 'Rules & rewards',
         ranking_tab_read: 'Live Reading Kings',
         event_prep: 'Exam prep',
@@ -1713,8 +1644,8 @@ const LANG = {
         library_help_score_items: '• 1st clear: 10 pts<br>• 5+ clears: 20 pts<br>• 10+ clears: 30 pts<br>• 20+ clears: 50 pts',
         library_help_rank_title: '⭐ Enlightenment Rank Bonuses',
         library_help_rank_items: '• 1000 pts: +5% gems<br>• 2500 pts: 1 wrong forgiven<br>• 6000 pts: +10% gems, +5% score<br>• 14000 pts: +15% gems, 2 wrong forgiven<br>• 20000 pts: +15% gems, 3 wrong forgiven, +15% score',
-        library_help_hearts_title: '❤️ Max Hearts Bonus',
-        library_help_hearts_desc: 'Reach <strong>15,000 points combined</strong> across Free Journey and King\'s Road for <strong>+3 max hearts</strong>.<br><span style="color:#95a5a6; font-size:0.95em;">Note: the rank bonuses above use only your current mode\'s score.</span>',
+        library_help_hearts_title: '🌾 Field Bonus',
+        library_help_hearts_desc: "If your Free Travel and King's Road collection scores <strong>add up to 15,000+</strong>, your field gets <strong>+3</strong>.<br><span style=\"color:#95a5a6; font-size:0.95em;\">※ The rank bonus above is judged by the current mode only.</span>",
         library_current_score: 'Collection Score',
         library_rank_label: 'Enlightenment Rank',
         library_no_buff: 'No effect yet',
@@ -1767,7 +1698,6 @@ const LANG = {
 
         // 고난 결과
         hardship_result_completed: '🏁 {title} Completed',
-        hardship_result_hearts_end: '💀 {title} Ended',
         hardship_result_ended: '⛰️ {title} Ended',
         hardship_session_endurance: 'You confirmed {count} verses this session.',
         hardship_session_endurance_speech: 'You recited {count} verses. Average accuracy: {avg}',
@@ -1791,35 +1721,7 @@ const LANG = {
 
 let currentLang = localStorage.getItem('lang') || 'ko';
 
-/* ── 베타 스위치 (2026-09-13) ──────────────────────────────────────────────
-   테스트 서버 대신: `localStorage.kingsRoad_beta = '1'`인 기기에서만 새 기능이 보인다.
-   배포는 전원에게 나가고, 확인되면 조건을 지우고 한 번 더 배포한다.
-   태그를 코드에 박지 않는 이유 — 다른 기기·게스트로도 켜볼 수 있어야 하고, 지울 때 뒤질 곳이 하나여야 한다.
-   ★ 저장 데이터 형식이 바뀌는 부분은 스위치 뒤에 숨겨도 Firestore로 올라간다.
-     옛 클라이언트가 읽어도 깨지지 않게 만들 것. */
-/* 2026-09-14 전원 적용 — 스위치를 항상 켠다. 옛 경로(체력 감소·부활·상점·떡·방패·부스터 구매)는
-   아직 코드에 남아 있고 `_BETA` 분기로만 죽어 있다. 한 주 돌려본 뒤 「확인 후 정리할 것」대로 지운다.
-   문제가 생기면 이 한 줄을 `localStorage` 판독으로 되돌리면 전원이 옛 동작으로 돌아간다. */
-let _BETA = true;
-function isBeta() { return _BETA; }
-
-/* ── 체력 감소 (2026-09-13 베타: 밭 개편) ──────────────────────────────────
-   베타에서는 **오답이 체력을 깎지 않는다.** 체력은 '목숨'이 아니라 승점 배율(밭)이고,
-   오답의 대가는 그 구절 0점(백지)이거나 다시 풀기(초성·단어)로 이미 충분하다.
-   3칸 유예 도입 뒤 체력을 잃을 일이 거의 없어져 목숨·부활·회복·방패가 전부 빈 껍데기가 됐다.
-   확인되면 이 함수의 호출처를 전부 지운다. */
-function _loseHeart() {
-    if (_BETA) return;
-    playerHearts = Math.max(0, playerHearts - 1);
-}
-
 function t(key, vars) {
-    // 베타: 같은 키에 `__field` 변형이 있으면 그것을 쓴다 (체력 → 밭 문구 전환용).
-    // 확인되면 `__field` 문구를 본 키로 옮기고 이 분기를 지운다.
-    if (_BETA) {
-        const fk = key + '__field';
-        if ((LANG[currentLang] && LANG[currentLang][fk] !== undefined) || LANG['ko'][fk] !== undefined) key = fk;
-    }
     let str = (LANG[currentLang] && LANG[currentLang][key] !== undefined)
         ? LANG[currentLang][key]
         : (LANG['ko'][key] !== undefined ? LANG['ko'][key] : key);
@@ -1857,8 +1759,6 @@ function setLang(lang) {
     if (lifeBookScreen) lifeBookScreen.remove();
     const achievementScreen = document.getElementById('achievement-screen');
     if (achievementScreen) achievementScreen.remove();
-    const shopScreen = document.getElementById('shop-screen');
-    if (shopScreen && typeof updateShopUI === 'function') updateShopUI();
     applyI18nToStaticHTML();
     if (typeof renderChapterMap === 'function') renderChapterMap();
     if (typeof updateKingsRoadHomeInfo === 'function') updateKingsRoadHomeInfo();
@@ -2159,14 +2059,7 @@ let reviewSamples = [];
    세는 기준: 타이핑 통과 중 **백지(궁극)만**('learn' 제외, 빈칸 제외) + 힌트 20% 이하 + 같은 구절 하루 1회. */
 let recallWeek = { weekId: '', count: 0, seen: {} };   // seen: stageId → 마지막으로 센 날(6시 경계)
 const RECALL_WEEK_MAX = 404 * 7;                        // 서버 상한과 같다 (kingsroad/index.js)
-/* 시작 주차. 일요일 저녁(2026-09-13)에 배포했는데 그대로 켜면 W37 판은 '오늘 밤 몇 시간 백지를 한 사람'만
-   올라가고 이번 주 내내 했던 사람은 0이다. 자정에 맞춰 손으로 배포하는 대신 여기서 게이트를 건다 —
-   집계도 순위표도 모두에게 같은 순간(월요일 0시)에 열린다. 문자열 비교로 충분하다('YYYY-Www'). */
-const RECALL_START_WEEK = '2026-W38';
-function _recallBoardOpen() { return getWeekId() >= RECALL_START_WEEK; }
-
 function _countRecallForWeek(stageId, hints, verseLen) {
-    if (!_recallBoardOpen()) return false;
     const wk = getWeekId();
     if (recallWeek.weekId !== wk) recallWeek = { weekId: wk, count: 0, seen: {} };
     // 힌트가 무료라 다 열고 써도 통과가 된다 — 난이도 라벨과 같은 잣대(HINT_OK_RATIO)로 거른다
@@ -2730,7 +2623,7 @@ loadGameData = function () {
         // 밭 개편(2026-09-14 전원 적용): 떡·방패는 쓸 곳이 없어졌다 → 50젬씩 환급하고 재고 0.
         // 표식(itemRefund)을 저장본에 남겨 1회만. (원격 저장본이 이긴 뒤 다시 로드돼도 표식이 같이 온다.
         //  표식 없는 옛 저장본이 나중에 이기면 한 번 더 환급될 수 있으나, 최대 8,500젬이라 감수한다)
-        if (_BETA && inventory && !itemRefund) {
+        if (inventory && !itemRefund) {
             const _b = inventory.lifeBread || 0, _s = inventory.faithShield || 0;
             if (_b + _s > 0) {
                 const _gems = (_b + _s) * ITEM_REFUND_GEM;
@@ -5465,7 +5358,6 @@ function _noteDailySeeds(seeds) {
 }
 /* 오늘 첫 구절 → 내일 비를 예약. 하루 한 번만 말한다 */
 function _promiseRain() {
-    if (!_BETA) return;
     const today = _get6AMDayStr();
     if (rain.promisedOn !== today) {
         rain.promisedOn = today;
@@ -5483,7 +5375,6 @@ function _promiseRain() {
 }
 /* 오늘 첫 스테이지에 들어가는 순간 켠다. 버튼 없음. 랭킹만 보고 나가면 안 켜지고 남는다 */
 function _maybeStartRain() {
-    if (!_BETA) return;
     const today = _get6AMDayStr();
     if (rain.earnedFor !== today || rain.startedOn === today) return;
     rain.startedOn = today;
@@ -5501,7 +5392,6 @@ function updateHeaderToday() {
     const row2 = document.querySelector('.map-header-row2');
     if (!row2) return;
     let row3 = document.getElementById('header-today');
-    if (!_BETA) { if (row3) row3.remove(); return; }
     if (!row3) {
         row3 = document.createElement('div');
         row3.id = 'header-today';
@@ -8625,7 +8515,7 @@ function createVictoryParticles() {
 /* [수정] loadNextVerse (축하 이펙트 강화 버전) */
 function loadNextVerse() {
     if (!window.isGamePlaying) return; // ★ 추가: 나갔으면 중단! (보스전 타이머 방어)
-    resetHintLock(); // 구절이 바뀌면 힌트를 다시 잠근다
+    if (typeof updateHintButtonLabels === 'function') updateHintButtonLabels();
     // 1. 전투 종료 체크 (승리!)
     if (currentVerseIdx >= window.currentBattleData.length) {
 
@@ -9052,19 +8942,11 @@ function loadNextVerse() {
             }, 1000);
             deselect();
         } else {
-            // 🔴 실패 로직
-            markHintAttempt();
-            if (_tryUseShield()) {
-                updateBattleUI();
-                deselect();
-            } else {
-                SoundEffect.playWrong();
-                _loseHeart();
-                wrongCount++;
-                updateBattleUI();
-                if (playerHearts <= 0) { showReviveModal(); }
-                deselect();
-            }
+            // 🔴 실패 — 밭은 세션 중 안 변한다. 오답의 대가는 다시 풀기뿐
+            SoundEffect.playWrong();
+            wrongCount++;
+            updateBattleUI();
+            deselect();
         }
     }; // <-- 공격 버튼 onclick 끝
 
@@ -9390,42 +9272,18 @@ function updateBattleUI() {
         if (bossText) bossText.innerText = `${currentBossHp} / ${maxBossHp}`;
     }
 
-    // 2. 데이터 준비
-    const lifeBreadCnt = (typeof inventory !== 'undefined' && inventory.lifeBread) ? inventory.lifeBread : 0;
-    const faithShieldCnt = (typeof inventory !== 'undefined' && inventory.faithShield) ? inventory.faithShield : 0;
-    const heartIcon = playerHearts > 0 ? "❤️" : "💔";
-    const isDanger = (playerHearts <= 2);
-
-    // 아이템 버튼 HTML
-    const lifeBreadBtnHtml = `
-        <span class="hardship-life-bread-btn" onclick="event.stopPropagation(); useBattleItem('lifeBread')"
-              style="margin-left:6px;">
-            🍞 <span style="margin-left:4px; font-weight:bold; color:#fff;">${lifeBreadCnt}</span>
-        </span>
-    `;
-    const shieldBtnHtml = faithShieldCnt > 0
-        ? `<span style="margin-left:6px; font-size:0.85rem; color:#a29bfe; font-weight:bold;">🛡️ ${faithShieldCnt}</span>`
-        : '';
-
     // 3. UI 렌더링
 
     // [A] 보스전 화면 (아이디 player-hearts 유지 중요!)
     const heartDisplay = document.querySelector('.heart-display');
     if (heartDisplay) {
-        // 베타(밭): 배율은 세션 중 불변이라 '현재/최대'도 떡·방패도 없다. 🌾 밭 N 하나.
-        heartDisplay.innerHTML = _BETA ? `
+        // 밭: 배율은 세션 중 불변이라 '현재/최대'가 없다. 🌾 밭 N 하나.
+        heartDisplay.innerHTML = `
             <div style="display:flex; align-items:center; justify-content:center;">
                 <span style="font-size:1.2rem;">${_fieldIcon(maxPlayerHearts)}</span>
                 <span id="player-hearts" style="font-weight:bold; margin-left:5px;">${maxPlayerHearts}</span>
             </div>
-        ` : `
-            <div style="display:flex; align-items:center; justify-content:center;">
-                <span style="font-size:1.2rem;">${heartIcon}</span>
-                <span id="player-hearts" style="font-weight:bold; margin-left:5px;">${playerHearts}</span>
-                ${lifeBreadBtnHtml}${shieldBtnHtml}
-            </div>
         `;
-        applyDangerEffect(heartDisplay, _BETA ? false : isDanger);
     }
 
     // [B] 훈련 모드 헤더 (아이디 training-hearts 유지 중요!)
@@ -9438,125 +9296,13 @@ function updateBattleUI() {
             parent.style.justifyContent = "center";
 
             // ★ 핵심: 갱신할 때 id="training-hearts"를 반드시 다시 적어줘야 다음에도 찾을 수 있습니다.
-            parent.innerHTML = _BETA ? `
+            parent.innerHTML = `
                 ${_fieldIcon(maxPlayerHearts)} <span id="training-hearts" style="margin-left:5px; font-weight:bold; color:#2c3e50;">${maxPlayerHearts}</span>
-            ` : `
-                ${heartIcon} <span id="training-hearts" style="margin-left:5px; font-weight:bold; color:#2c3e50;">${playerHearts}</span>
-                <span class="hardship-life-bread-btn" onclick="event.stopPropagation(); useBattleItem('lifeBread')" style="margin-left:6px;">🍞 <span style="margin-left:4px; font-weight:bold; color:#111;">${lifeBreadCnt}</span></span>
-                ${faithShieldCnt > 0 ? `<span style="margin-left:6px; font-size:0.85rem; color:#6c5ce7; font-weight:bold;">🛡️ ${faithShieldCnt}</span>` : ''}
             `;
-            applyDangerEffect(parent, _BETA ? false : isDanger);
         }
     }
 }
 
-// [보조] 위기 상황 효과 함수
-function applyDangerEffect(element, isDanger) {
-    if (!element) return;
-    if (isDanger && playerHearts > 0) {
-        element.style.animation = "pulse 0.5s infinite";
-        if (element.querySelector('#player-hearts')) element.querySelector('#player-hearts').style.color = "#ff4757";
-        if (element.querySelector('#training-hearts')) element.querySelector('#training-hearts').style.color = "#ff4757";
-    } else {
-        element.style.animation = "none";
-        if (element.querySelector('#player-hearts')) element.querySelector('#player-hearts').style.color = "";
-        if (element.querySelector('#training-hearts')) element.querySelector('#training-hearts').style.color = "#2c3e50";
-    }
-}
-
-/* [시스템] 부활 관련 함수 (비용 차등 적용) */
-let currentReviveCost = 300; // 현재 부활 비용 저장용 변수
-
-/* [수정] 부활 모달 표시 함수 (ID 불일치 문제 해결) */
-function showReviveModal() {
-    // 1. 현재 스테이지 ID 확인
-    const sId = String(window.currentStageId);
-
-    // 2. 비용 계산 (일반:150, 중간:300, 보스:500)
-    if (sId.includes('mid')) {
-        currentReviveCost = 300;
-    } else if (sId.includes('boss')) {
-        currentReviveCost = 500;
-    } else {
-        currentReviveCost = 150;
-    }
-
-    // 3. UI 텍스트 업데이트 (계산원이 가격표를 바꿔치는 부분)
-
-    // (A) 설명글 업데이트
-    const descText = document.getElementById('revive-cost-text');
-    if (descText) {
-        descText.innerText = currentReviveCost;
-
-        // 색상 강조
-        if (currentReviveCost >= 500) descText.style.color = "#e74c3c"; // 빨강
-        else if (currentReviveCost >= 300) descText.style.color = "#e67e22"; // 주황
-        else descText.style.color = "#2c3e50"; // 기본
-    }
-
-    // (B) 버튼 텍스트 업데이트 (이 부분이 핵심!)
-    const btnText = document.getElementById('revive-btn-cost');
-    if (btnText) {
-        btnText.innerText = currentReviveCost;
-    }
-
-    // 4. 모달 창 띄우기
-    const modal = document.getElementById('revive-modal');
-    if (modal) {
-        modal.style.display = 'flex';
-        // 부드럽게 나타나는 효과
-        modal.style.opacity = '0';
-        setTimeout(() => {
-            modal.style.opacity = '1';
-            modal.style.transition = 'opacity 0.3s';
-        }, 10);
-    }
-}
-
-function giveUpBattle() {
-    document.getElementById('revive-modal').style.display = 'none';
-    quitGame(isFocusedTrainingSession() ? 'home' : 'map');
-}
-
-/* [수정] 부활 함수 (Step 4 재시동 기능 탑재) */
-function revivePlayer() {
-    // 안전장치: 혹시라도 변수가 정의되지 않았을 경우 기본값 300
-    const cost = (typeof currentReviveCost !== 'undefined') ? currentReviveCost : 300;
-
-    // 1. 보석 부족 체크
-    if (myGems < cost) {
-        showGemToast(0, t('alert_revive_no_gems', { cost }), true);
-        return;
-    }
-
-    // 2. 결제 및 부활 처리
-    myGems -= cost;
-    updateGemDisplay();
-
-    // 체력 완전 회복
-    playerHearts = maxPlayerHearts;
-    updateBattleUI();
-
-    // 모달(팝업) 닫기
-    const modal = document.getElementById('revive-modal');
-    if (modal) modal.style.display = 'none';
-
-    // ====================================================
-    // [★ 핵심 수리] 멈춰있던 Step 4 엔진 다시 켜기
-    // ====================================================
-    if (currentStep === 4) {
-        // 이미 0.1초 딜레이 같은 건 필요 없으니 바로 출발시킵니다.
-        // 이 함수가 두루마리를 다시 내려오게 만듭니다.
-        startScrollStep();
-    }
-
-    // 효과음 재생
-    if (typeof SoundEffect !== 'undefined' && SoundEffect.playLevelUp) {
-        SoundEffect.playLevelUp();
-    }
-
-    showGemToast(0, t('alert_revive_success', { cost }), false);
-}
 
 /* [시스템] 자동 저장 및 불러오기 기능 */
 
@@ -10683,10 +10429,6 @@ function _showRemoteNewerBanner() {
 
 /* [수정됨] 통합 자원 UI 업데이트 (지파 색상 반영) */
 function updateGemDisplay() {
-    // 1. 인벤토리 파악
-    const lifeBreadCnt = (typeof inventory !== 'undefined' && inventory.lifeBread) ? inventory.lifeBread : 0;
-    const faithShieldCntMap = (typeof inventory !== 'undefined' && inventory.faithShield) ? inventory.faithShield : 0;
-
     // 2. 현재 내 지파 정보 가져오기 (색상 적용을 위해)
     const currentTribe = TRIBE_DATA[myTribe] || TRIBE_DATA[0];
 
@@ -10694,24 +10436,17 @@ function updateGemDisplay() {
     const gemIcon = `<span style="color:${currentTribe.core}; text-shadow:0 0 5px ${currentTribe.glow}; font-size:1.1rem;">💎</span>`;
 
     // 4. 표시할 HTML 구성
-    const shieldMapPart = faithShieldCntMap > 0 ? ` <span style="opacity:0.3; margin:0 3px;">|</span> 🛡️ ${faithShieldCntMap}` : '';
-    // 베타(밭): 떡·방패 칸을 없애고 🌾 밭 N을 **눌러서 넓히는 입구**로 만든다 (상점 대체).
+    // 🌾 밭 N은 **눌러서 넓히는 입구**다 (옛 상점 대체).
     // 살 수 있을 만큼 보석이 모이면 간헐적으로 반짝인다 — 상시 강조는 초반(3,000젬)에 늘 켜져 무시된다.
     const _fieldCost = _fieldGrowCost(purchasedMaxHearts);
     const _canGrow = purchasedMaxHearts < 100 && myGems >= _fieldCost;
-    const resourceHtml = _BETA
-        ? `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> <span id="field-chip" class="field-chip${_canGrow ? ' can-grow' : ''}${maxPlayerHearts >= 100 ? ' field-max' : ''}" onclick="openFieldScreen()">${_fieldRingHtml(maxPlayerHearts, '', true)} ${t('field_label')} ${maxPlayerHearts}</span>`
-        : `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> 🍞 ${lifeBreadCnt}${shieldMapPart} <span style="opacity:0.3; margin:0 3px;">|</span> ❤️ ${maxPlayerHearts}`;
+    const resourceHtml = `${gemIcon} ${myGems.toLocaleString()} <span style="opacity:0.3; margin:0 3px;">|</span> <span id="field-chip" class="field-chip${_canGrow ? ' can-grow' : ''}${maxPlayerHearts >= 100 ? ' field-max' : ''}" onclick="openFieldScreen()">${_fieldRingHtml(maxPlayerHearts, '', true)} ${t('field_label')} ${maxPlayerHearts}</span>`;
 
     // 5. [맵 화면] 헤더 업데이트 (ID로 안전하게 찾기)
     const mapRes = document.getElementById('header-resources');
     if (mapRes) mapRes.innerHTML = resourceHtml;
     if (typeof updateHeaderToday === 'function') updateHeaderToday();
     if (typeof updateEventStrip === 'function') updateEventStrip();
-
-    // 6. [상점 화면] 내 보석 업데이트
-    const shopRes = document.getElementById('shop-user-gems');
-    if (shopRes) shopRes.innerHTML = `${gemIcon} ${myGems.toLocaleString()}`;
 
     // 7. [홈 화면] 성전 뷰도 같이 갱신 (켜져 있다면)
     const homeScreen = document.getElementById('home-screen');
@@ -10899,7 +10634,7 @@ function loadStep() {
         clearTimeout(window._step1FinishTimer);
         window._step1FinishTimer = null;
     }
-    resetHintLock(); // 스텝이 바뀌면 힌트를 다시 잠근다
+    if (typeof updateHintButtonLabels === 'function') updateHintButtonLabels();
     const currentOrder = sequenceIndex + 1;
     const totalCount = stepSequence.length || 1; // 0으로 나누기 방지
 
@@ -11486,34 +11221,19 @@ function loadStep() {
                 } else {
                     // 🔴 [실패] 오답일 때
                     const displayEl = document.getElementById('initials-display');
-                    markHintAttempt();
-                    if (_tryUseShield()) {
-                        // 방패 발동: 체력 유지, 시각 피드백만 보여주고 재시도
-                        this.classList.add('error-block', 'shake-effect');
-                        if (displayEl) { displayEl.style.outline = '2px solid #e05c3a'; }
-                        const self = this;
-                        setTimeout(() => {
-                            self.classList.remove('error-block', 'shake-effect');
-                            if (displayEl) displayEl.style.outline = '';
-                        }, 500);
-                        updateBattleUI();
-                    } else {
-                        SoundEffect.playWrong();
-                        _loseHeart();
-                        wrongCount++;
-                        updateBattleUI();
-                        this.classList.add('error-block', 'shake-effect');
-                        if (displayEl) {
-                            displayEl.style.outline = '2px solid #e05c3a';
-                            displayEl.style.transition = 'outline 0.3s';
-                        }
-                        const self = this;
-                        setTimeout(() => {
-                            self.classList.remove('error-block', 'shake-effect');
-                            if (displayEl) displayEl.style.outline = '';
-                        }, 500);
-                        if (playerHearts <= 0) { setTimeout(() => showReviveModal(), 100); }
+                    SoundEffect.playWrong();
+                    wrongCount++;
+                    updateBattleUI();
+                    this.classList.add('error-block', 'shake-effect');
+                    if (displayEl) {
+                        displayEl.style.outline = '2px solid #e05c3a';
+                        displayEl.style.transition = 'outline 0.3s';
                     }
+                    const self = this;
+                    setTimeout(() => {
+                        self.classList.remove('error-block', 'shake-effect');
+                        if (displayEl) displayEl.style.outline = '';
+                    }, 500);
                 }
             };
 
@@ -11881,25 +11601,10 @@ function loadStep() {
                     }, 500);
                 }
             } else {
-                markHintAttempt();
-                if (_tryUseShield()) {
-                    // 방패 발동: 오답 블록 자동 제거 후 재시도
-                    if (removeErrorBtn) { removeErrorBtn.remove(); removeErrorBtn = null; }
-                    const errorBlocks = Array.from(zone.querySelectorAll('.error-block'));
-                    errorBlocks.forEach(ab => {
-                        if (ab._poolBtn) ab._poolBtn.style.visibility = 'visible';
-                        ab.remove();
-                    });
-                    Array.from(zone.querySelectorAll('.correct-block')).forEach(b => b.classList.remove('correct-block'));
-                    updateBattleUI();
-                } else {
-                    SoundEffect.playWrong();
-                    _loseHeart();
-                    updateBattleUI();
-                    wrongCount++;
-                    showRemoveErrorBtn();
-                    if (playerHearts <= 0) { setTimeout(showReviveModal, 100); }
-                }
+                SoundEffect.playWrong();
+                updateBattleUI();
+                wrongCount++;
+                showRemoveErrorBtn();
             }
         }
 
@@ -12832,7 +12537,7 @@ function toggleFieldHelp() {
     box.style.display = 'block';
 }
 
-/* 밭 넓히기 — buyItem('heart')와 같은 회계, 문구만 다르다. 확인 대화상자는 없앤다(모달 자체가 확인이다) */
+/* 밭 넓히기 — 옛 상점의 체력 구매와 같은 회계, 문구만 다르다. 확인 대화상자는 없앤다(모달 자체가 확인이다) */
 function growField() {
     if (purchasedMaxHearts >= 100) return;
     const cost = _fieldGrowCost(purchasedMaxHearts);
@@ -12885,110 +12590,13 @@ function showFieldMilestoneModal(ms) {
     if (typeof SoundEffect !== 'undefined' && SoundEffect.playLevelUp) setTimeout(() => SoundEffect.playLevelUp(), 250);
 }
 
-function openShop() {
-    if (_BETA) { openFieldScreen(); return; } // 밭 개편: 상점 대신 밭 화면
-    // 화면 전환
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById('shop-screen').classList.add('active');
-
-    updateShopUI();
-    ensureBackButton(document.getElementById('shop-screen'));
-    // 백버튼 가시성 갱신 (상점에서는 보여야 함)
-    if (typeof updateBackButtonVisibility === 'function') updateBackButtonVisibility();
-}
-
-/* [시스템: 아이템 사용 로직] */
-
-// 화면에 아이템 개수 갱신하기 (훈련/보스전 모두)
-function updateItemButtons() {
-    // 보스전 버튼
-    const pBtn = document.getElementById('btn-potion-cnt');
-    if (pBtn) pBtn.innerText = inventory.lifeBread;
-
-    // 훈련 모드 버튼
-    const pBtnT = document.getElementById('btn-potion-cnt-t');
-    if (pBtnT) pBtnT.innerText = inventory.lifeBread;
-}
-
-function _tryUseShield() {
-    if (_BETA) return false; // 밭 개편: 체력이 안 깎이므로 막을 것이 없다
-    if (!inventory || !inventory.faithShield || inventory.faithShield <= 0) return false;
-    inventory.faithShield--;
-    saveGameData();
-    SoundEffect.playShield();
-    showShieldEffect();
-    return true;
-}
-
-function showShieldEffect() {
-    const el = document.createElement('div');
-    el.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:3.5rem;z-index:99999;pointer-events:none;';
-    el.textContent = '🛡️';
-    document.body.appendChild(el);
-    const anim = el.animate(
-        [
-            { opacity: 0, transform: 'translate(-50%,-50%) scale(0.4)' },
-            { opacity: 1, transform: 'translate(-50%,-50%) scale(1.3)' },
-            { opacity: 0, transform: 'translate(-50%,-50%) scale(1.0)' }
-        ],
-        { duration: 700, easing: 'ease-out' }
-    );
-    anim.onfinish = () => el.remove();
-}
-
-// 1. 생명의 떡 사용하기 (누르면 바로 회복)
-function useLifeBread() {
-    if (inventory.lifeBread <= 0) {
-        showGemToast(0, t('alert_no_bread'), true);
-        return;
-    }
-    if (playerHearts >= maxPlayerHearts) {
-        showGemToast(0, t('alert_hearts_full'), true);
-        return;
-    }
-
-    // 사용 처리
-    inventory.lifeBread--;
-    playerHearts = Math.min(playerHearts + 3, maxPlayerHearts); // 3칸 회복
-
-    SoundEffect.playCorrect(); // 띠링! 소리
-    showGemToast(0, t('alert_hearts_restored', { cur: playerHearts }), false);
-
-    updateBattleUI();   // 하트 UI 갱신
-    updateItemButtons(); // 생명의 떡 개수 UI 갱신
-    saveGameData();     // 저장
-}
-
 // 2. 힌트 사용하기 (비용 고정 버전)
 let isHintModalOpen = false;
 const HINT_COST = 10; // ★ 비용이 증가하지 않도록 상수로 고정합니다.
 
-// ★ 힌트 잠금 — "먼저 스스로 인출을 시도한 뒤에 도움"
-// 힌트를 먼저 보면 인출(retrieval)이 사라지고 단순 재학습(restudy)이 되어 기억에 남지 않는다.
-// 시도를 강제하면 같은 힌트가 '지름길'이 아니라 '회복 도구'가 된다.
-let hintAttemptMade = false;
-
-// 오답이 발생한 모든 지점에서 호출 (방패로 막힌 오답도 '시도'로 인정)
-function markHintAttempt() {
-    if (hintAttemptMade) return;
-    hintAttemptMade = true;
-    if (typeof updateHintButtonLabels === 'function') updateHintButtonLabels();
-}
-
-// 문제 단위(훈련=스텝, 보스전=구절)로 다시 잠근다
-function resetHintLock() {
-    hintAttemptMade = false;
-    if (typeof updateHintButtonLabels === 'function') updateHintButtonLabels();
-}
-
-/* 힌트는 언제나 열려 있다 (2026-09-16). 예전의 '먼저 한 번 틀려야 열림' 잠금을 전부 뺐다.
+/* 힌트는 언제나 열려 있다 (2026-09-16). 예전의 '먼저 한 번 틀려야 열림' 잠금은 지웠다.
    힌트를 보고 전문을 읽어도 다음 판엔 힌트가 없으니 결국 스스로 꺼내야 하고,
-   시도 자체를 막아 "너무 어려워서 안 하게 되는" 손해가 베끼기의 손해보다 훨씬 크다.
-   (고난의 타이핑 힌트는 mode==='memory'일 때만 있다 — 그건 '있느냐'지 '잠겼느냐'가 아니다) */
-function isHintUnlocked() {
-    if (window.isHardshipMode) return !!(hardshipState && hardshipState.mode === 'memory');
-    return true;
-}
+   시도 자체를 막아 "너무 어려워서 안 하게 되는" 손해가 베끼기의 손해보다 훨씬 크다. */
 
 /* 힌트는 전부 무료 (2026-09-16). 10젬은 상징값이었고(일일 미션 하루 7,000), 그 상징이 하는 일은
    "힌트는 나쁜 것"이라는 인상뿐이었다. 거리낌 없이 열어야 도전하고 반복한다. */
@@ -13005,12 +12613,6 @@ function updateHintButtonLabels() {
     const hintLabel = ''; // 전부 무료라 '(무료)'는 정보가 아니다. 이 자리는 힌트 간격 초 표시에만 쓴다
     const btnLabel = t('hint_btn_label');
 
-    // 잠금 상태는 흐리게만 표시하고 클릭은 막지 않는다 — 눌러야 이유를 안내할 수 있다
-    const locked = !isHintUnlocked();
-    const setLockStyle = (btn) => {
-        if (btn) btn.classList.toggle('hint-locked', locked);
-    };
-
     const setHintBtn = (btnId, costId) => {
         const btn = document.getElementById(btnId);
         const costSpan = document.getElementById(costId);
@@ -13019,7 +12621,6 @@ function updateHintButtonLabels() {
             const textNode = [...btn.childNodes].find(n => n.nodeType === 3);
             if (textNode) textNode.textContent = btnLabel + ' ';
         }
-        setLockStyle(btn);
         if (costSpan) costSpan.textContent = hintLabel;
     };
 
@@ -13033,7 +12634,6 @@ function updateHintButtonLabels() {
     const hardshipHintLabelSpan = document.getElementById('common-hardship-hint-label');
     if (hardshipHintLabelSpan) hardshipHintLabelSpan.textContent = btnLabel;
     const hardshipFab = document.getElementById('common-hardship-hint-btn');
-    setLockStyle(hardshipFab);
     if (hardshipFab) hardshipFab.classList.toggle('hint-cooldown', cdLeft > 0);
     // 라벨이 바뀌면 폭도 바뀌므로 다시 앉힌다 (오른쪽 끝 정렬이라 폭이 위치를 정한다)
     if (typeof positionHardshipHintFab === 'function') positionHardshipHintFab();
@@ -13053,12 +12653,6 @@ function useHint() {
 
     if (isTraining && currentStep === 1) {
         showGemToast(0, t('alert_hint_read_aloud'), true);
-        return;
-    }
-
-    // ★ 먼저 한 번 틀려봐야 열린다 (markHintAttempt)
-    if (!isHintUnlocked()) {
-        showGemToast(0, t('alert_hint_locked'), true);
         return;
     }
 
@@ -14519,32 +14113,6 @@ function initBoosterFloat() {
     });
 }
 
-// 1. 부스터 활성화 함수 (기존 activateBooster 대체)
-function activateBooster(multiplier, minutes) {
-    const duration = minutes * 60 * 1000;
-    const now = Date.now();
-
-    // 이미 켜져 있으면 시간 연장
-    if (boosterData.active && now < boosterData.endTime) {
-        if (multiplier > boosterData.multiplier) {
-            boosterData.multiplier = multiplier;
-            alert(t('alert_booster_stronger', { multi: multiplier }));
-        } else {
-            alert(t('alert_booster_extended', { min: minutes }));
-        }
-        boosterData.endTime += duration;
-    } else {
-        // 새로 시작
-        boosterData.active = true;
-        boosterData.multiplier = multiplier;
-        boosterData.endTime = now + duration;
-        alert(t('alert_booster_started', { min: minutes, multi: multiplier }));
-    }
-
-    saveGameData();
-    startBoosterTimer(); // 타이머 시작!
-}
-
 // 2. 타이머 시작 및 UI 갱신 (핵심 함수)
 function startBoosterTimer() {
     // 기존 타이머가 돌고 있다면 정지 (중복 방지)
@@ -14592,7 +14160,7 @@ function updateBoosterDisplay() {
     // B. 부스터 진행 중
     const min = Math.floor(remain / 60000);
     const sec = Math.floor((remain % 60000) / 1000).toString().padStart(2, '0');
-    const _tier = _BETA ? _activeWeatherTier() : null;
+    const _tier = _activeWeatherTier();
     const text = _tier
         ? t('rain_active', { name: t(_tier.nameKey), multi: boosterData.multiplier, time: `${min}:${sec}` })
         : `승점 ${boosterData.multiplier}배 (${min}:${sec})`;
@@ -14807,13 +14375,9 @@ function openRankingScreen() {
             </button>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:14px;">
-        ${_recallBoardOpen() ? `
         <button id="tab-recall" onclick="openRankingModal('recall', t('ranking_recall_title'))" style="padding:11px 6px; border-radius:10px; border:1px solid rgba(46,204,113,0.4); background:linear-gradient(145deg, rgba(46,204,113,0.16), rgba(39,174,96,0.06)); color:#7ee2a8; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:6px;">
             <span style="font-size:1.05rem;">🖊️</span><span>${t('ranking_tab_recall')}</span>
-        </button>` : `
-        <div style="padding:10px 6px; border-radius:10px; border:1px dashed rgba(46,204,113,0.35); color:#7f8c8d; font-size:0.8rem; display:flex; justify-content:center; align-items:center; gap:6px; box-sizing:border-box;">
-            <span style="font-size:1rem; opacity:0.6;">🖊️</span><span>${t('ranking_tab_recall')}</span>
-        </div>`}
+        </button>
         <button id="tab-read" onclick="openRankingModal('read', t('ranking_read_title'))" style="padding:11px 6px; border-radius:10px; border:1px solid rgba(243,156,18,0.4); background:linear-gradient(145deg, rgba(243,156,18,0.16), rgba(211,84,0,0.06)); color:#f7c873; font-weight:bold; cursor:pointer; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:6px;">
             <span style="font-size:1.05rem;">📖</span><span>${t('ranking_tab_read')}</span>
         </button>
@@ -15591,10 +15155,6 @@ function loadRecallLeaderboard(kind) {
     const B = LIVE_BOARDS[kind];
     const list = document.getElementById('ranking-list');
     if (!list) return;
-    if (kind === 'recall' && !_recallBoardOpen()) {
-        list.innerHTML = `<div style="text-align:center;padding:50px;color:#bdc3c7;">${t('ranking_recall_opens_monday')}</div>`;
-        return;
-    }
     if (typeof db === 'undefined' || !db) {
         list.innerHTML = `<div style="text-align:center;padding:50px;color:#bdc3c7;">${t('ranking_offline')}</div>`;
         return;
@@ -15898,7 +15458,7 @@ function renderRankingList(data) {
             <div style="flex:1;">
                 <div style="display:flex; align-items:center; margin-bottom:4px;">
                     <span style="font-weight:bold; font-size:1.05rem; display:flex; align-items:center; color:#fff;">
-                        ${getTribeIcon(userTribe)}${getDeptTag(user.dept)} ${escapeHtml(user.name)}${_BETA ? _fieldBadgeHtml(user.field) : ''}${_liveTitlesHtml(user)}
+                        ${getTribeIcon(userTribe)}${getDeptTag(user.dept)} ${escapeHtml(user.name)}${_fieldBadgeHtml(user.field)}${_liveTitlesHtml(user)}
                     </span>
                 </div>
                 <div style="font-size:0.8rem; color:#bdc3c7;">
@@ -16062,7 +15622,7 @@ function closeMoreMenu() {
     if (icon) icon.textContent = '▲';
 }
 
-function openShopFromMenu() { closeMoreMenu(); openShop(); }
+function openShopFromMenu() { closeMoreMenu(); openFieldScreen(); }
 function openAchievementFromMenu() { closeMoreMenu(); openAchievement(); }
 function openMemoryReportFromMenu() { closeMoreMenu(); openMemoryReport(); }
 function openSavedVersesFromMenu() { closeMoreMenu(); if (typeof openSavedVersesQuiz === 'function') openSavedVersesQuiz(); }
@@ -17525,212 +17085,6 @@ function calculateProgressiveReward(chNum, count, startVerse = 1) {
 }
 
 /* =========================================
-   [시스템: 통합 아이템 상점 (최종_완성본)]
-   ========================================= */
-
-// 일반 아이템 목록 (가격 고정)
-const SHOP_ITEMS = {
-    "lifeBread": { name: "생명의 떡", nameEn: "Bread of Life", price: 50, desc: "체력 2칸 회복", descEn: "Restore 2 hearts", icon: "🍞" },
-    "faithShield": { name: "믿음의 방패", nameEn: "Shield of Faith", price: 50, desc: "오답 1회 차단 + 재시도 기회", descEn: "Block 1 wrong answer, retry", icon: "🛡️" },
-    "booster": { name: "승점 부스터", nameEn: "Score Booster", price: 500, desc: "30분간 승점 2배", descEn: "Score ×2 for 30 min", icon: "⚡" },
-    "booster3": { name: "승점 부스터+", nameEn: "Score Booster+", price: 1200, desc: "30분간 승점 3배", descEn: "Score ×3 for 30 min", icon: "⚡" }
-};
-
-function getShopTodayKey() {
-    return new Date().toDateString();
-}
-
-function isLifeBreadFreeAvailable() {
-    const lastFreeDate = localStorage.getItem("kingsroad_free_lifebread_date");
-    return lastFreeDate !== getShopTodayKey();
-}
-
-function markLifeBreadFreeUsed() {
-    localStorage.setItem("kingsroad_free_lifebread_date", getShopTodayKey());
-}
-
-/* [수정] 통합 상점 구매 함수 (최종 수정판) */
-function buyItem(itemType) {
-    if (itemType === 'potion') itemType = 'lifeBread';
-    // ------------------------------------------
-    // [1] 체력 구매 (굳건한 마음) - 가격 3,000 적용
-    // ------------------------------------------
-    if (itemType === 'heart') {
-        // 1. 최대치 제한 확인 (30칸)
-        if (purchasedMaxHearts >= 100) {
-            alert(t('alert_hearts_max_reached'));
-            return;
-        }
-
-        // ★ 가격 계산 수정: (현재 - 4) * 3,000
-        const heartPrice = _fieldGrowCost(purchasedMaxHearts);
-
-        // 2. 보석 부족 확인
-        if (myGems < heartPrice) {
-            alert(t('alert_buy_hearts_no_gems', { cost: heartPrice }));
-            return;
-        }
-
-        // 3. 구매 진행
-        if (confirm(`💎 ${heartPrice} 보석으로 [굳건한 마음]을 구매하시겠습니까?\n(최대 체력 +1 증가)`)) {
-            myGems -= heartPrice;    // 보석 차감
-            purchasedMaxHearts++;    // 체력 증가
-
-            recalculateMaxHearts();  // 보너스 포함 최종 체력 재계산
-
-            updateGemDisplay();      // UI 갱신
-            updateShopUI();          // 상점 UI 갱신 (가격표 업데이트)
-            saveGameData();          // 저장
-
-            alert(t('alert_buy_hearts_success', { max: maxPlayerHearts }));
-        }
-        return; // 체력 구매 후 함수 종료
-    }
-
-    // ------------------------------------------
-    // [2] 일반 아이템 (생명의 떡, 부스터) 구매
-    // ------------------------------------------
-    // SHOP_ITEMS에 정의된 아이템인지 확인
-    const item = SHOP_ITEMS[itemType];
-    if (!item) return;
-
-    const isFreeLifeBread = (itemType === 'lifeBread') && isLifeBreadFreeAvailable();
-    const price = isFreeLifeBread ? 0 : item.price;
-    const confirmMsg = isFreeLifeBread
-        ? `오늘 무료 1회로 [${item.name}]을 구매하시겠습니까?`
-        : `💎 ${price} 보석으로 [${item.name}]을 구매하시겠습니까?`;
-
-    // 가격 확인
-    if (price > 0 && myGems < price) {
-        alert(t('alert_buy_no_gems'));
-        return;
-    }
-
-    // 구매 진행
-    if (confirm(confirmMsg)) {
-        if (price > 0) myGems -= price;
-
-        // 부스터는 즉시 사용, 나머지는 인벤토리에 추가
-        if (itemType === 'booster') {
-            activateBooster(2, 30); // 2배, 30분
-        } else if (itemType === 'booster3') {
-            activateBooster(3, 30); // 3배, 30분
-        } else {
-            if (!inventory) inventory = {};
-            inventory[itemType] = (inventory[itemType] || 0) + 1;
-            alert(t('alert_buy_success', { name: item.name, count: inventory[itemType] }));
-        }
-
-        if (isFreeLifeBread) {
-            markLifeBreadFreeUsed();
-        }
-
-        updateGemDisplay();
-        updateShopUI();
-        saveGameData();
-        updateResourceUI();
-        if (typeof updateNotificationBadges === 'function') updateNotificationBadges();
-    }
-}
-
-/* [수정] 상점 UI 업데이트 (오류 수정됨) */
-updateShopUI = function () {
-    let shopScreen = document.getElementById('shop-screen');
-    if (!shopScreen) {
-        // 화면 생성 로직 (기존과 동일)
-        shopScreen = document.createElement('div');
-        shopScreen.id = 'shop-screen';
-        shopScreen.className = 'screen';
-        shopScreen.innerHTML = `
-            <div class="map-header" style="justify-content: center;">
-                <div style="font-weight:bold; font-size:1.3rem;">${t('shop_title')}</div>
-            </div>
-            <div class="shop-list" style="flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 20px;"></div>
-            <div class="button-area-static">
-                <button class="btn-gray btn-back" onclick="goMap()">${t('btn_go_back')}</button>
-            </div>
-        `;
-        document.body.appendChild(shopScreen);
-    }
-
-    const list = shopScreen.querySelector('.shop-list');
-    list.innerHTML = "";
-
-    // [굳건한 마음] 가격 계산 수정
-    const heartPrice = _fieldGrowCost(purchasedMaxHearts);
-    const isMax = purchasedMaxHearts >= 100;
-
-    const heartDiv = document.createElement('div');
-    heartDiv.className = 'shop-item';
-    heartDiv.style.cssText = "background:white; padding:15px; border-radius:15px; display:flex; align-items:center; color:black; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:10px;";
-    heartDiv.innerHTML = `
-        <div style="font-size:2.5rem; margin-right:15px;">❤️</div>
-        <div style="flex:1;">
-            <div style="font-weight:bold; font-size:1.1rem;">${t('shop_heart_name')}</div>
-            <div style="font-size:0.8rem; color:#7f8c8d;">${t('shop_heart_desc')}</div>
-            <div style="color:#e67e22; font-weight:bold; margin-top:5px;">${isMax ? t('shop_heart_sold_out') : `💎 ${heartPrice}`}</div>
-        </div>
-        <button onclick="buyItem('heart')" style="background:${isMax ? '#95a5a6' : '#2ecc71'}; border:none; color:white; padding:8px 15px; border-radius:20px; font-weight:bold; cursor:${isMax ? 'default' : 'pointer'};" ${isMax ? 'disabled' : ''}>${isMax ? t('shop_heart_done') : t('shop_btn_buy')}</button>
-    `;
-    list.appendChild(heartDiv);
-
-    // [일반 아이템]
-    ['lifeBread', 'faithShield', 'booster', 'booster3'].forEach(key => {
-        const item = SHOP_ITEMS[key];
-        const count = (inventory && inventory[key]) ? inventory[key] : 0;
-        const div = document.createElement('div');
-        div.className = 'shop-item';
-        div.style.cssText = "background:white; padding:15px; border-radius:15px; display:flex; align-items:center; color:black; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:10px;";
-        const isFreeLifeBread = (key === 'lifeBread') && isLifeBreadFreeAvailable();
-        const priceText = isFreeLifeBread ? t('shop_free_once') : `💎 ${item.price}`;
-
-        let countHtml = (key === 'booster' || key === 'booster3') ? '' : `<div style="font-size:0.8rem; color:#2ecc71; font-weight:bold;">${t('shop_owned', { count })}</div>`;
-
-        const buttonText = (key === 'lifeBread' && isFreeLifeBread) ? t('shop_btn_free') : t('shop_btn_buy');
-        const itemName = currentLang === 'en' ? (item.nameEn || item.name) : item.name;
-        const itemDesc = currentLang === 'en' ? (item.descEn || item.desc) : item.desc;
-
-        div.innerHTML = `
-            <div style="font-size:2.5rem; margin-right:15px;">${item.icon}</div>
-            <div style="flex:1;">
-                <div style="font-weight:bold; font-size:1.1rem;">${itemName}</div>
-                <div style="font-size:0.8rem; color:#7f8c8d;">${itemDesc}</div>
-                <div style="color:#e67e22; font-weight:bold; margin-top:5px;">${priceText}</div>
-                ${countHtml}
-            </div>
-            <button onclick="buyItem('${key}')" style="background:#f1c40f; border:none; color:#2c3e50; padding:8px 15px; border-radius:20px; font-weight:bold; cursor:pointer;">${buttonText}</button>
-        `;
-        list.appendChild(div);
-    });
-
-    if (typeof updateNotificationBadges === 'function') updateNotificationBadges();
-};
-
-// 3. 전투 중 아이템 사용 함수
-function useBattleItem(itemType) {
-    if (_BETA && itemType === 'lifeBread') { showGemToast(0, t('field_no_bread'), true); return; }
-    if (itemType === 'potion') itemType = 'lifeBread';
-    if (!inventory || !inventory[itemType] || inventory[itemType] <= 0) {
-        alert(t('alert_item_none'));
-        return;
-    }
-
-    if (itemType === "lifeBread") {
-        if (playerHearts >= maxPlayerHearts) {
-            alert(t('alert_item_hearts_full'));
-            return;
-        }
-        playerHearts = Math.min(playerHearts + 2, maxPlayerHearts); // 2칸 회복
-        inventory[itemType]--;
-        updateResourceUI();
-        alert(t('alert_item_bread_used'));
-    }
-
-    saveGameData();
-    updateBattleUI(); // 화면 갱신
-}
-
-/* =========================================
    [시스템: 뒤로가기 방지 및 종료 팝업]
    ========================================= */
 
@@ -18002,7 +17356,6 @@ function handleTowerChoice(btn, selectedWord, correctWord) {
 
     } else {
         // [오답]
-        markHintAttempt();
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
 
         // 버튼 중심 좌표
@@ -18614,24 +17967,12 @@ function checkScrollCollision() {
 
         if (scrollGame.isColliding) return;
         scrollGame.isColliding = true;
-        markHintAttempt();
+        wrongCount++;
+        if (typeof updateBattleUI === 'function') updateBattleUI();
 
-        // 1. 체력 감소 (방패 있으면 차단)
-        let _shieldedCollision = false;
-        if (typeof playerHearts !== 'undefined') {
-            _shieldedCollision = _tryUseShield();
-            if (!_shieldedCollision) {
-                _loseHeart();
-                wrongCount++;
-            }
-            if (typeof updateBattleUI === 'function') updateBattleUI();
-        }
-
-        // 2. 연출 (방패 발동 시 데미지 연출 생략)
-        if (!_shieldedCollision) {
-            showDamageEffect();
-            if (typeof SoundEffect !== 'undefined') SoundEffect.playWrong();
-        }
+        // 2. 연출
+        showDamageEffect();
+        if (typeof SoundEffect !== 'undefined') SoundEffect.playWrong();
 
         // 3. 밀어내기
         const safeDistance = 250;
@@ -18648,13 +17989,6 @@ function checkScrollCollision() {
             track.style.transition = "none";
             scrollGame.isColliding = false;
         }, 500);
-
-        // 5. 게임 오버 체크
-        if (typeof playerHearts !== 'undefined' && playerHearts <= 0) {
-            scrollGame.isOver = true;
-            cancelAnimationFrame(scrollGame.animId);
-            if (typeof showReviveModal === 'function') setTimeout(showReviveModal, 100);
-        }
     }
 }
 
@@ -18685,42 +18019,22 @@ function handleScrollCardClick(btn, word) {
         }
 
     } else {
-        // [오답 로직 수정됨]
-        markHintAttempt();
-        let _shieldedClick = false;
-        if (typeof playerHearts !== 'undefined') {
-            _shieldedClick = _tryUseShield();
-            if (!_shieldedClick) {
-                _loseHeart();
-                wrongCount++;
-            }
-            if (typeof updateBattleUI === 'function') updateBattleUI();
-        }
-
-        // 방패 발동 시 데미지 연출·오답음 생략
-        if (!_shieldedClick) {
-            showDamageEffect();
-            if (typeof SoundEffect !== 'undefined') SoundEffect.playWrong();
-        }
+        // [오답]
+        wrongCount++;
+        if (typeof updateBattleUI === 'function') updateBattleUI();
+        showDamageEffect();
+        if (typeof SoundEffect !== 'undefined') SoundEffect.playWrong();
 
         btn.style.backgroundColor = "#e74c3c";
         setTimeout(() => btn.style.backgroundColor = "#ecf0f1", 300);
-
-        if (typeof playerHearts !== 'undefined' && playerHearts <= 0) {
-            scrollGame.isOver = true;
-            cancelAnimationFrame(scrollGame.animId);
-            if (typeof showReviveModal === 'function') setTimeout(showReviveModal, 100);
-        }
     }
 }
 
-// [하트 감소 연출 함수]
+// [오답 연출 함수]
 function showDamageEffect() {
-    // 1. 하트 요소 생성
+    // 1. 표시 요소 생성 — 잃는 체력이 없으니 '틀렸다'만 뜻하는 ❌ (옛 💔는 없는 일을 말했다)
     const el = document.createElement('div');
-    // 밭 개편(베타)에서는 잃는 체력이 없다 — 깨진 하트는 없는 일을 말하므로 '틀렸다'만 뜻하는 ❌로.
-    // 다른 스텝(초성·조립·타워)은 원래 흔들림 + 빨간 표시뿐이라 이쪽만 하트를 띄우고 있었다.
-    el.innerText = _BETA ? "❌" : "💔";
+    el.innerText = "❌";
     el.className = "damage-heart-effect";
     document.body.appendChild(el);
 
@@ -19856,14 +19170,14 @@ function updateProfileUI() {
     if (display) {
         const tag = (typeof myTag !== 'undefined' && myTag) ? myTag : "0000";
         // ★ getTribeIcon 사용
-        display.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname} <span style="opacity:0.6; font-size:0.85em;">#${tag}</span>${_BETA ? _fieldBadgeHtml(maxPlayerHearts) : ''}${_recallTitleHtml(_myRecallTitle)}${_recallTitleHtml(_myReadTitle, 'read')}`;
+        display.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname} <span style="opacity:0.6; font-size:0.85em;">#${tag}</span>${_fieldBadgeHtml(maxPlayerHearts)}${_recallTitleHtml(_myRecallTitle)}${_recallTitleHtml(_myReadTitle, 'read')}`;
     }
 
     // 2. 상단 작은 닉네임
     const subDisplay = document.getElementById('sub-profile-name');
     if (subDisplay) {
         // 지파 아이콘과 닉네임만 표시 (지파 이름 텍스트 제거)
-        subDisplay.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname}${_BETA ? _fieldBadgeHtml(maxPlayerHearts) : ''}${_recallTitleHtml(_myRecallTitle)}${_recallTitleHtml(_myReadTitle, 'read')}`;
+        subDisplay.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname}${_fieldBadgeHtml(maxPlayerHearts)}${_recallTitleHtml(_myRecallTitle)}${_recallTitleHtml(_myReadTitle, 'read')}`;
     }
 
     applyHomeThemeByTribe(myTribe);
@@ -20826,15 +20140,7 @@ function updateNotificationBadges() {
         else misBadge.classList.remove('active');
     }
 
-    // 3. 상점 알림 체크 (일일 무료 생명의 떡)
-    const hasFreeLifeBread = (typeof isLifeBreadFreeAvailable === 'function') && isLifeBreadFreeAvailable();
-    const shopMenuItem = document.getElementById('shop-menu-item');
-    if (shopMenuItem) {
-        if (hasFreeLifeBread) shopMenuItem.classList.add('shop-highlight');
-        else shopMenuItem.classList.remove('shop-highlight');
-    }
-
-    // 4. 더보기 알림 — 미션이 더보기로 들어갔으므로(2026-09-14) 미션 배지를 여기에도 비춘다. 떡은 이제 없다
+    // 3. 더보기 알림 — 미션이 더보기로 들어갔으므로(2026-09-14) 미션 배지를 여기에도 비춘다. 떡은 이제 없다
     const moreBadge = document.getElementById('badge-more');
     if (moreBadge) {
         if (hasMissionReward) moreBadge.classList.add('active');
@@ -22776,11 +22082,6 @@ function proceedHardshipToNextVerse() {
     hardshipState.awaitingNext = false;
     hardshipState.wrongSlots = [];
 
-    if (playerHearts <= 0 && hardshipState.mode !== 'endurance') {
-        finishHardshipSession('hearts');
-        return;
-    }
-
     loadNextHardshipVerse();
 }
 
@@ -22832,19 +22133,10 @@ function resetHardshipSessionState() {
     }
 
     const hardshipHeartWrap = document.getElementById('common-hardship-heart-wrap');
-    if (hardshipHeartWrap) {
-        hardshipHeartWrap.style.display = 'inline-flex';
-        hardshipHeartWrap.classList.remove('is-danger');
-    }
+    if (hardshipHeartWrap) hardshipHeartWrap.style.display = 'inline-flex';
 
     const hardshipHeartCount = document.getElementById('common-hardship-heart-count');
-    if (hardshipHeartCount) hardshipHeartCount.textContent = '5';
-
-    const hardshipHeartMax = document.getElementById('common-hardship-heart-max');
-    if (hardshipHeartMax) hardshipHeartMax.textContent = '/5';
-
-    const hardshipBreadCount = document.getElementById('common-hardship-life-bread-count');
-    if (hardshipBreadCount) hardshipBreadCount.textContent = String((inventory && inventory.lifeBread) || 0);
+    if (hardshipHeartCount) hardshipHeartCount.textContent = String(maxPlayerHearts);
 
     const trainingHeartWrap = document.getElementById('training-heart-wrap');
     if (trainingHeartWrap) {
@@ -23563,8 +22855,6 @@ function updateHardshipHeader() {
     const scoreEl = document.getElementById('common-hardship-score');
     const heartWrap = document.getElementById('common-hardship-heart-wrap');
     const heartCountEl = document.getElementById('common-hardship-heart-count');
-    const heartMaxEl = document.getElementById('common-hardship-heart-max');
-    const lifeBreadCountEl = document.getElementById('common-hardship-life-bread-count');
     const hintBtn = document.getElementById('common-hardship-hint-btn');
 
     if (!window.isHardshipMode || !hardshipState.active) {
@@ -23574,8 +22864,6 @@ function updateHardshipHeader() {
 
     const currentMode = window.currentHardshipMode || hardshipState.mode;
     const modeMeta = getHardshipModeMeta(currentMode);
-    const lifeBreadCnt = (typeof inventory !== 'undefined' && inventory.lifeBread) ? inventory.lifeBread : 0;
-    const isDanger = playerHearts <= 2;
     const totalCount = hardshipState.queue.length || HARDSHIP_VERSES.length;
     const progressCount = currentMode === 'endurance'
         ? hardshipState.studiedCount
@@ -23597,16 +22885,11 @@ function updateHardshipHeader() {
 
     if (heartWrap) {
         heartWrap.style.display = 'inline-flex';
-        heartWrap.classList.toggle('is-danger', _BETA ? false : isDanger);
-        // 베타(밭): ❤️ → 🌾, '/최대' 없음, 생명의 떡 칩 숨김
+        // 🌾 밭 N — 세션 중 안 변한다
         const _ico = heartWrap.firstChild;
-        if (_ico && _ico.nodeType === 3) _ico.textContent = _BETA ? (_fieldIcon(maxPlayerHearts) + ' ') : '❤️ ';
+        if (_ico && _ico.nodeType === 3) _ico.textContent = _fieldIcon(maxPlayerHearts) + ' ';
     }
-    if (heartCountEl) heartCountEl.textContent = String(_BETA ? maxPlayerHearts : playerHearts);
-    if (heartMaxEl) heartMaxEl.textContent = _BETA ? '' : `/${maxPlayerHearts}`;
-    if (lifeBreadCountEl) lifeBreadCountEl.textContent = String(lifeBreadCnt);
-    const _breadBtn = document.getElementById('common-hardship-life-bread-btn');
-    if (_breadBtn) _breadBtn.style.display = _BETA ? 'none' : '';
+    if (heartCountEl) heartCountEl.textContent = String(maxPlayerHearts);
 
     if (hintBtn) {
         // 힌트는 화면에 떠서 따라다닌다 (positionHardshipHintFab 주석 참고)
@@ -24202,14 +23485,12 @@ function submitHardshipAddressGuess() {
         return;
     }
 
-    _loseHeart();
     wrongCount += 1;
     hardshipState.feedback = {
         type: 'error',
         message: t('hardship_feedback_wrong_address', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) })
     };
     if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
-    if (typeof SoundEffect !== 'undefined' && SoundEffect.playHeartLoss) SoundEffect.playHeartLoss();
     renderHardshipAddressVerse();
     updateBattleUI();
 }
@@ -24316,7 +23597,6 @@ function submitHardshipVerseGuess(choiceIdx) {
         };
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
     } else {
-        _loseHeart();
         wrongCount += 1;
         hardshipState.selectedWrongChoice = choice || null;
         hardshipState.feedback = {
@@ -24324,7 +23604,6 @@ function submitHardshipVerseGuess(choiceIdx) {
             message: t('hardship_feedback_wrong_verse')
         };
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
-        if (typeof SoundEffect !== 'undefined' && SoundEffect.playHeartLoss) SoundEffect.playHeartLoss();
     }
 
     renderHardshipVerseVerse();
@@ -25315,14 +24594,12 @@ function submitHardshipMemoryGuess() {
 
     // 백지 산출 실패 — 이 구절은 아직 단서 없이 나오지 않는다
     recordVerseRecall(_currentHardshipStageId(), false, (hardshipState.revealedHints || []).length, 'memory');
-    _loseHeart();
     wrongCount += 1;
     hardshipState.feedback = {
         type: 'error',
         message: t('hardship_feedback_wrong_memory', { text: (currentLang === 'en' && hardshipState.currentVerse.textEn) ? hardshipState.currentVerse.textEn : hardshipState.currentVerse.text })
     };
     if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
-    if (typeof SoundEffect !== 'undefined' && SoundEffect.playHeartLoss) SoundEffect.playHeartLoss();
     renderHardshipMemoryVerse();
     updateBattleUI();
 }
@@ -25419,16 +24696,13 @@ function finishHardshipSession(reason) {
     const resultAccuracy = document.getElementById('result-accuracy');
     const resultExp = document.getElementById('result-exp');
 
-    if (reason !== 'hearts') {
-        if (typeof triggerConfetti === 'function') triggerConfetti();
-        if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
-    }
+    if (typeof triggerConfetti === 'function') triggerConfetti();
+    if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
 
     // 중간점검·백지 확인으로 열린 세션은 그 이름으로 표시한다 ('망각의 고난 완주'로 뜨면 혼란스럽다)
     const _resultLabel = hardshipState.displayTitle || modeMeta.title;
     if (resultTitle) {
         if (reason === 'completed') resultTitle.innerText = t('hardship_result_completed', { title: _resultLabel });
-        else if (reason === 'hearts') resultTitle.innerText = t('hardship_result_hearts_end', { title: _resultLabel });
         else resultTitle.innerText = t('hardship_result_ended', { title: _resultLabel });
     }
 
@@ -25488,23 +24762,6 @@ function finishHardshipSession(reason) {
         _attachNextMidBossBtn(resultContinueBtn,
             (reason === 'completed') ? hardshipState.midBossStageId : null);
 
-        /* 체력이 다 떨어져 끝난 순수 망각의 고난이면 물러설 곳을 준다 —
-           방금 벽에 부딪힌 순간이 가장 설득력 있는 시점이다.
-           장이 특정되는 세션(forcedChapter)에서만 띄운다. */
-        const rmEasy = document.getElementById('result-modal');
-        const oldEasy = rmEasy && rmEasy.querySelector('#btn-easier-boss');
-        if (oldEasy) oldEasy.remove();
-        if (reason === 'hearts' && _hardshipRecallCtx() === 'hs'
-            && hardshipState.mode === 'memory' && hardshipState.forcedChapter != null && resultContinueBtn) {
-            const _ch = hardshipState.forcedChapter;
-            const eb = document.createElement('button');
-            eb.id = 'btn-easier-boss';
-            eb.className = 'btn-continue';
-            eb.style.cssText = 'margin-top:8px; background:linear-gradient(135deg,#2980b9,#3498db); box-shadow:0 4px 0 #1f618d; color:#fff;';
-            eb.textContent = `😌 ${_ch}장 보스전(빈칸)으로 →`;
-            eb.onclick = () => goToChapterBossBlank(_ch);
-            resultContinueBtn.insertAdjacentElement('afterend', eb);
-        }
     }
 
     const hsStatLabels = document.getElementById('result-modal').querySelectorAll('.stat-label');
