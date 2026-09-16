@@ -12784,6 +12784,11 @@ function isHintUnlocked() {
         // 시도를 강제하지도 못하면서 입력만 더럽혔다.
         return !!(hardshipState && hardshipState.mode === 'memory');
     }
+    // 보스전 어려움(초성)은 잠그지 않는다 (2026-09-16). 한 장 29절을 초성만 보고 이어가는 중에
+    // 막힌 구절마다 '일부러 한 번 틀리고' 힌트를 여는 절차가 흐름을 끊었다. 비용(💎10)은 그대로.
+    if (!window.isTrainingMode && !window.isHardshipMode && typeof bossDifficultyMode !== 'undefined' && bossDifficultyMode === 'hard') {
+        return true;
+    }
     return hintAttemptMade;
 }
 
