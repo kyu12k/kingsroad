@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
     <!-- image_0.webp is inlined below; preload removed -->
-    <link rel="stylesheet" href="style.css?v=20260916b">
+    <link rel="stylesheet" href="style.css?v=20260916c">
 
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-TEVW49QB45"></script>
@@ -790,6 +790,34 @@
             </div>
             <script>
                 const NOTICES = [
+                    {
+                        date: '2026-09-16',
+                        type: 'patch',
+                        title: '보스전 백지가 망각의 고난까지 완료 처리하던 오류를 고쳤습니다',
+                        titleEn: 'Fixed: Boss Blank Page Was Also Completing the Trial of Forgetting',
+                        content: `
+<div style="padding:4px 0; line-height:1.8;">
+  <p style="color:#555; margin-bottom:14px;"><strong>9월 11일부터 오늘까지, 보스전을 백지로 깨면 망각의 고난까지 함께 완료된 것으로 처리되고 있었습니다.</strong> 망각의 고난 일일 미션(과 그 아래 고난 3개), 심화 미션 「망각의 고난 누적」, 길드 레이드 대미지(절당 10)가 보스전 몫에 더해 한 번 더 들어갔습니다. 의도한 것이 아니라 오류였습니다.</p>
+  <p style="color:#555; margin-bottom:14px;">보스전 백지와 망각의 고난은 원래 다른 콘텐츠입니다 — 보스전은 순서대로·승점 ×5, 망각의 고난은 무작위·승점 ×10에 미션과 레이드 대미지도 더 큽니다. 오늘부터 보스전 백지는 <strong>보스전 몫만</strong> 받습니다. 망각의 고난 보상은 망각의 고난에서만 받습니다.</p>
+  <div style="background:#f4f6f7; border-radius:12px; padding:12px 14px; margin-bottom:14px;">
+    <p style="color:#666; font-size:0.92em; margin:0;">• 그동안 받으신 보석·미션·대미지는 <strong>회수하지 않습니다.</strong></p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 같은 장을 보스전 백지로도, 망각의 고난으로도 하면 <strong>각각 승점</strong>을 받습니다. 서로 영향이 없습니다.</p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 실시간 암송왕 집계는 둘 다 똑같이 세며, 이번 수정과 무관합니다.</p>
+  </div>
+  <p style="color:#555; margin-bottom:0;">함께 고친 것: 어제까지 <strong>로그인 미션이 하루에 두 번</strong> 지급되는 경우가 있었습니다(일일 리셋이 두 번 돌던 문제). 이것도 회수하지 않습니다. 갑자기 줄어든 것처럼 느껴지는 부분이 있다면 이 두 가지 때문입니다 — 불편을 드려 죄송합니다.</p>
+</div>`,
+                        contentEn: `
+<div style="padding:4px 0; line-height:1.8;">
+  <p style="color:#555; margin-bottom:14px;"><strong>From Sept 11 until today, clearing a boss battle in Blank Page mode also counted as completing the Trial of Forgetting.</strong> The Trial of Forgetting daily mission (plus the three trials below it), the advanced "Forgetting" mission and guild raid damage (10 per verse) were added on top of the boss battle rewards. This was a bug, not a design.</p>
+  <p style="color:#555; margin-bottom:14px;">Boss Blank Page and the Trial of Forgetting are different content — boss is in order at ×5, the Trial is random order at ×10 with bigger missions and raid damage. From today, Boss Blank Page pays <strong>only the boss battle rewards</strong>. Trial of Forgetting rewards come only from the Trial itself.</p>
+  <div style="background:#f4f6f7; border-radius:12px; padding:12px 14px; margin-bottom:14px;">
+    <p style="color:#666; font-size:0.92em; margin:0;">• Gems, missions and damage already received are <strong>not taken back.</strong></p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• Doing the same chapter as Boss Blank Page and as the Trial of Forgetting pays <strong>both scores</strong>, independently.</p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• Live Recall Kings counts both the same and is unaffected.</p>
+  </div>
+  <p style="color:#555; margin-bottom:0;">Also fixed: until yesterday the <strong>login mission could pay twice a day</strong> (the daily reset ran twice). Not taken back either. If something seems to have dropped suddenly, it is one of these two — sorry for the trouble.</p>
+</div>`,
+                    },
                     {
                         date: '2026-09-14',
                         type: 'patch',
@@ -3087,7 +3115,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="bible_en.js"></script>
-    <script src="game.js?v=20260916b"></script>
+    <script src="game.js?v=20260916c"></script>
     <script>
 
         /* =========================================
