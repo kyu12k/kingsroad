@@ -741,13 +741,16 @@ const LANG = {
         ranking_read_title: '📖 실시간 통독왕',
         ranking_read_desc: '이번 주 <b>읽음을 누른 구절 수</b><br>장을 다 읽으면 다시 읽을 수 있어요',
         ranking_read_empty: '아직 아무도 없어요.<br>장을 열어 「읽음」을 누르면 여기에 올라갑니다.',
-        ranking_read_rules: '<b>세는 것</b> — 장 화면의 「읽기」에서 「읽음」을 누른 구절. 한 장을 다 읽으면 그 장의 버튼이 초기화돼 다시 읽을 수 있고, 회독마다 다 세어요.<br><b>간격과 보석</b> — 절마다 <b>읽는 데 걸리는 시간</b>(글자 수 ÷ 5초, 최소 3초)이 있어요. 그 초가 지나야 다음 절을 누를 수 있고, 그 초만큼 💎을 받아요. 46자 절이면 9초·💎9. 회독마다 똑같이.<br><b>안 곱하는 것</b> — 밭·단비·햇살. 누구에게나 한 절은 1.<br><b>보상</b> — 아직 없어요. 순위표만 있습니다.',
+        ranking_read_rules: '<b>세는 것</b> — 장 화면의 「읽기」에서 「읽음」을 누른 구절. 한 장을 다 읽으면 그 장의 버튼이 초기화돼 다시 읽을 수 있고, 회독마다 다 세어요.<br><b>간격과 보석</b> — 절마다 <b>읽는 데 걸리는 시간</b>(글자 수 ÷ 5초, 최소 3초)이 있어요. 그 초가 지나야 다음 절을 누를 수 있고, 그 초만큼 💎을 받아요. 46자 절이면 9초·💎9. 회독마다 똑같이.<br><b>안 곱하는 것</b> — 밭·단비·햇살. 누구에게나 한 절은 1.<br><b>보상</b> — 매주 월요일, 지난주 지파 1~3위는 🥇🥈🥉 통독왕 칭호(한 주간 이름 옆) + 💎 5,000 / 3,000 / 3,000, 시온성 1~3위는 칭호가 빛나고 💎 7,500 / 5,000 / 5,000을 더. 지파는 그 주 10명 이상 참여했을 때. 🏆 지난 주 보상 버튼으로 받아요.',
         bible_read_wait: '정독해주세요 · {n}초',
         bible_read_pass_done: '📖 {ch}장 {n}회독 완료 — 다시 읽을 수 있어요',
         bible_read_pass_n: '오늘 {n}회독',
         bible_read_week_count: '이번 주 통독 {n}절',
         ranking_recall_rules: '<b>세는 것</b> — 망각의 고난·보스전 백지·중간점검 백지에서 <b>백지(아무 단서 없이)</b>로 써낸 구절. 빈칸(글자 칸이 보이는 방식)·초성·음성은 세지 않아요.<br><b>힌트</b> — 구절 글자 수의 20%까지는 써도 세어져요. 넘으면 그 구절은 0.<br><b>같은 구절</b> — 하루(오전 6시 기준)에 한 번만. 하루 최대 404절.<br><b>안 곱하는 것</b> — 밭·단비·햇살·순서·난도. 누구에게나 한 절은 1.<br><b>보상</b> — 매주 월요일, 지난주 지파 1~3위는 🥇🥈🥉 암송왕 칭호(한 주간 이름 옆) + 💎 10,000 / 6,000 / 6,000, 시온성 1~3위는 칭호가 빛나고 💎 15,000 / 10,000 / 10,000을 더. 지파는 그 주 10명 이상 참여했을 때. 🏆 지난 주 보상 버튼으로 받아요.',
         recall_title: '암송왕',
+        read_title: '통독왕',
+        read_title_tip_tribe: '지난주 지파 통독왕 {rank}위',
+        read_title_tip_zion: '지난주 시온성 통독왕 {rank}위',
         recall_title_tip_tribe: '지난주 지파 암송왕 {rank}위',
         recall_title_tip_zion: '지난주 시온성 암송왕 {rank}위',
         recall_reward_tribe: '지파 {rank}위',
@@ -1627,13 +1630,16 @@ const LANG = {
         ranking_read_title: '📖 Live Reading Kings',
         ranking_read_desc: 'Verses <b>marked as read this week</b><br>Finish a chapter and you can read it again',
         ranking_read_empty: 'Nobody yet.<br>Open a chapter and press "Read" to appear here.',
-        ranking_read_rules: '<b>What counts</b> — every verse you mark as read in the Read view. When a whole chapter is marked, its buttons reset so you can read it again; every pass counts.<br><b>Gap and gems</b> — each verse has a <b>reading time</b> (letters ÷ 5 sec, at least 3). You can press the next verse after that time, and you get that many 💎. A 46-letter verse: 9 sec, 💎9. Same on every pass.<br><b>Not multiplied</b> — field, rain, sunshine. One verse is 1 for everyone.<br><b>Rewards</b> — none yet. Just the board.',
+        ranking_read_rules: '<b>What counts</b> — every verse you mark as read in the Read view. When a whole chapter is marked, its buttons reset so you can read it again; every pass counts.<br><b>Gap and gems</b> — each verse has a <b>reading time</b> (letters ÷ 5 sec, at least 3). You can press the next verse after that time, and you get that many 💎. A 46-letter verse: 9 sec, 💎9. Same on every pass.<br><b>Not multiplied</b> — field, rain, sunshine. One verse is 1 for everyone.<br><b>Rewards</b> — every Monday, the tribe top 3 of last week get a 🥇🥈🥉 Reading King title (by your name for a week) + 💎 5,000 / 3,000 / 3,000; the Zion top 3 get a glowing title and 💎 7,500 / 5,000 / 5,000 more. Tribe titles need 10+ participants that week. Claim with the 🏆 reward button on the home screen.',
         bible_read_wait: 'Please read · {n}s',
         bible_read_pass_done: '📖 Chapter {ch} read {n}× — you can read it again',
         bible_read_pass_n: '{n} pass(es) today',
         bible_read_week_count: '{n} verses read this week',
         ranking_recall_rules: '<b>What counts</b> — verses written on a <b>blank page (no cues)</b> in the Trial of Forgetting, boss battles or checkpoints. Blanks mode (letter slots), initials and voice do not count.<br><b>Hints</b> — hints up to 20% of the letters are fine; more and that verse is 0.<br><b>Same verse</b> — once per day (6 a.m. boundary). At most 404 a day.<br><b>Not multiplied</b> — field, rain, sunshine, order, difficulty. One verse is 1 for everyone.<br><b>Rewards</b> — every Monday, the tribe top 3 of last week get a 🥇🥈🥉 Recall King title (by your name for a week) + 💎 10,000 / 6,000 / 6,000; the Zion top 3 get a glowing title and 💎 15,000 / 10,000 / 10,000 more. Tribe titles need 10+ participants that week. Claim with the 🏆 reward button on the home screen.',
         recall_title: 'Recall King',
+        read_title: 'Reading King',
+        read_title_tip_tribe: "Last week tribe Reading King #{rank}",
+        read_title_tip_zion: "Last week Zion Reading King #{rank}",
         recall_title_tip_tribe: "Last week's tribe Recall King #{rank}",
         recall_title_tip_zion: "Last week's Zion Recall King #{rank}",
         recall_reward_tribe: 'Tribe #{rank}',
@@ -6436,7 +6442,8 @@ function checkPendingReward() {
         if (!doc.exists) return;
         // 내 암송왕 칭호 — 프로필 표시용 (같은 조회에서 얻는다)
         _myRecallTitle = doc.data().recallTitle || null;
-        if (_myRecallTitle && typeof updateProfileUI === 'function') updateProfileUI();
+        _myReadTitle = doc.data().readTitle || null;
+        if ((_myRecallTitle || _myReadTitle) && typeof updateProfileUI === 'function') updateProfileUI();
         const reward = doc.data().pendingReward;
         if (!reward || !reward.weekId) return;
 
@@ -6519,6 +6526,14 @@ function _showLastWeekRewardModal(reward) {
             </div>
             ${rewardRow(t('label_zion_ranking'), zionRank, zionGems, zionQ)}
             ${rewardRow(t('label_my_tribe_ranking'), tribeRank, tribeGems, tribeQ)}
+            ${(reward.readZionRank || reward.readTribeRank) ? `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.08);">
+                <div>
+                    <div style="font-size:0.8rem; color:#95a5a6;">📖 ${t('ranking_tab_read')} · ${t('ranking_recall_unit', { n: (reward.readCount || 0).toLocaleString() })}</div>
+                    <div style="font-size:1.05rem; font-weight:bold; color:white;">${reward.readTribeRank ? t('recall_reward_tribe', { rank: reward.readTribeRank }) : ''}${reward.readTribeRank && reward.readZionRank ? ' · ' : ''}${reward.readZionRank ? t('recall_reward_zion', { rank: reward.readZionRank }) : ''}</div>
+                </div>
+                <div style="text-align:right;"><span style="color:#f1c40f; font-weight:bold;">+${(reward.readGems || 0).toLocaleString()}💎</span></div>
+            </div>` : ''}
             ${(reward.recallZionRank || reward.recallTribeRank) ? `
             <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.08);">
                 <div>
@@ -12642,16 +12657,24 @@ function _fieldRingHtml(level, extraClass, noTip) {
 /* 실시간 암송왕 칭호 — 지난주 지파 1~3위 🥇🥈🥉, 시온성 1~3위는 빛나는 테두리. 이번 주 동안만 (2026-09-14).
    서버(archiveWeeklyRankings)가 leaderboard 문서에 recallTitle{weekId,zionRank,tribeRank}로 남기고 스냅샷이 실어온다.
    weekId가 '지난주'일 때만 보여준다 — 오래된 칭호가 남지 않게. */
-function _recallTitleHtml(rt) {
+function _recallTitleHtml(rt, kind) {
+    kind = kind || 'recall';
     if (!rt || !rt.weekId || typeof getLastWeekId !== 'function' || rt.weekId !== getLastWeekId()) return '';
     const rank = rt.tribeRank || rt.zionRank;
     if (!rank || rank > 3) return '';
     const medal = ['🥇', '🥈', '🥉'][rank - 1];
     const zion = rt.zionRank && rt.zionRank <= 3;
-    const tip = zion ? t('recall_title_tip_zion', { rank: rt.zionRank }) : t('recall_title_tip_tribe', { rank: rt.tribeRank });
-    return `<span class="recall-title r${rank}${zion ? ' recall-zion' : ''}" data-tip="${tip}">${medal} ${t('recall_title')}</span>`;
+    const tipKey = kind === 'read' ? (zion ? 'read_title_tip_zion' : 'read_title_tip_tribe') : (zion ? 'recall_title_tip_zion' : 'recall_title_tip_tribe');
+    const tip = t(tipKey, { rank: zion ? rt.zionRank : rt.tribeRank });
+    return `<span class="recall-title r${rank}${zion ? ' recall-zion' : ''}${kind === 'read' ? ' read-title' : ''}" data-tip="${tip}">${medal} ${t(kind === 'read' ? 'read_title' : 'recall_title')}</span>`;
+}
+/* 이름 옆 칭호 둘 다 — 암송왕 + 통독왕 */
+function _liveTitlesHtml(row) {
+    if (!row) return '';
+    return _recallTitleHtml(row.recallTitle, 'recall') + _recallTitleHtml(row.readTitle, 'read');
 }
 let _myRecallTitle = null;
+let _myReadTitle = null;
 
 /* 칩 말풍선 — data-tip이 있는 요소를 누르거나(모바일) 올리면(데스크톱) 바로 뜬다 (2026-09-14).
    브라우저 기본 title은 데스크톱에서만, 그것도 1초 뒤에 떠서 모바일 사용자는 밭 숫자를 볼 길이 없었다. */
@@ -14951,6 +14974,7 @@ function loadTribeLeaderboard(tribeId, callback) {
                     castle: row.castle || 0,
                     field: row.field || 0,   // 서버 스냅샷이 실어준 밭 (없으면 0 → 배지 없음)
                     recallTitle: row.recallTitle || null, // 지난주 실시간 암송왕 칭호
+                    readTitle: row.readTitle || null,     // 지난주 실시간 통독왕 칭호
                     isMe: ((row.name === myNickname || row.nickname === myNickname) && row.tag === myTag)
                 };
             });
@@ -15012,6 +15036,7 @@ function loadZionLeaderboard(callback) {
                     castle: row.castle || 0,
                     field: row.field || 0,   // 서버 스냅샷이 실어준 밭 (없으면 0 → 배지 없음)
                     recallTitle: row.recallTitle || null, // 지난주 실시간 암송왕 칭호
+                    readTitle: row.readTitle || null,     // 지난주 실시간 통독왕 칭호
                     isMe: ((row.name === myNickname || row.nickname === myNickname) && row.tag === myTag)
                 };
             });
@@ -15595,7 +15620,7 @@ function loadRecallLeaderboard(kind) {
                 const tag = String(d.tag || doc.id);
                 if (!tag || tag === '0000' || seen.has(tag)) return;
                 seen.add(tag);
-                rows.push({ name: d.nickname || '이름없음', tag, tribe: d.tribe || 0, dept: d.dept, count: d[B.countField] || 0, field: d.maxHearts || 0, recallTitle: d.recallTitle || null });
+                rows.push({ name: d.nickname || '이름없음', tag, tribe: d.tribe || 0, dept: d.dept, count: d[B.countField] || 0, field: d.maxHearts || 0, recallTitle: d.recallTitle || null, readTitle: d.readTitle || null });
             });
             rankingCache[kind] = { data: rows, weekId, timestamp: Date.now() };
             renderRecallRankingList(rows, weekId, kind);
@@ -15635,7 +15660,7 @@ function renderRecallRankingList(rows, weekId, kind) {
         html += `<div ${isMe ? 'id="my-ranking-card"' : ''} style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;margin-bottom:8px;${isMe ? `border:2px solid ${B.color};background:${B.bg};` : 'border:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.3);'}">
             <div style="font-size:1.4rem;width:34px;text-align:center;">${badge}</div>
             <div style="flex:1;min-width:0;">
-                <div style="font-weight:bold;color:#fff;font-size:1rem;display:flex;align-items:center;">${getTribeIcon(u.tribe)}${getDeptTag(u.dept)} ${escapeHtml(u.name)}${_fieldBadgeHtml(u.field)}${_recallTitleHtml(u.recallTitle)}</div>
+                <div style="font-weight:bold;color:#fff;font-size:1rem;display:flex;align-items:center;">${getTribeIcon(u.tribe)}${getDeptTag(u.dept)} ${escapeHtml(u.name)}${_fieldBadgeHtml(u.field)}${_liveTitlesHtml(u)}</div>
                 <div style="font-size:0.78rem;color:#95a5a6;">#${u.tag}</div>
             </div>
             <div style="font-weight:800;color:${B.color};font-size:1.05rem;white-space:nowrap;">${t(B.unit, { n: shown.toLocaleString() })}</div>
@@ -15873,7 +15898,7 @@ function renderRankingList(data) {
             <div style="flex:1;">
                 <div style="display:flex; align-items:center; margin-bottom:4px;">
                     <span style="font-weight:bold; font-size:1.05rem; display:flex; align-items:center; color:#fff;">
-                        ${getTribeIcon(userTribe)}${getDeptTag(user.dept)} ${escapeHtml(user.name)}${_BETA ? _fieldBadgeHtml(user.field) : ''}${_recallTitleHtml(user.recallTitle)}
+                        ${getTribeIcon(userTribe)}${getDeptTag(user.dept)} ${escapeHtml(user.name)}${_BETA ? _fieldBadgeHtml(user.field) : ''}${_liveTitlesHtml(user)}
                     </span>
                 </div>
                 <div style="font-size:0.8rem; color:#bdc3c7;">
@@ -19831,14 +19856,14 @@ function updateProfileUI() {
     if (display) {
         const tag = (typeof myTag !== 'undefined' && myTag) ? myTag : "0000";
         // ★ getTribeIcon 사용
-        display.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname} <span style="opacity:0.6; font-size:0.85em;">#${tag}</span>${_BETA ? _fieldBadgeHtml(maxPlayerHearts) : ''}${_recallTitleHtml(_myRecallTitle)}`;
+        display.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname} <span style="opacity:0.6; font-size:0.85em;">#${tag}</span>${_BETA ? _fieldBadgeHtml(maxPlayerHearts) : ''}${_recallTitleHtml(_myRecallTitle)}${_recallTitleHtml(_myReadTitle, 'read')}`;
     }
 
     // 2. 상단 작은 닉네임
     const subDisplay = document.getElementById('sub-profile-name');
     if (subDisplay) {
         // 지파 아이콘과 닉네임만 표시 (지파 이름 텍스트 제거)
-        subDisplay.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname}${_BETA ? _fieldBadgeHtml(maxPlayerHearts) : ''}${_recallTitleHtml(_myRecallTitle)}`;
+        subDisplay.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname}${_BETA ? _fieldBadgeHtml(maxPlayerHearts) : ''}${_recallTitleHtml(_myRecallTitle)}${_recallTitleHtml(_myReadTitle, 'read')}`;
     }
 
     applyHomeThemeByTribe(myTribe);
@@ -21368,6 +21393,7 @@ function loadTotalHallRanking() {
                     castle: row.castle || 0,
                     field: row.field || 0,   // 서버 스냅샷이 실어준 밭 (없으면 0 → 배지 없음)
                     recallTitle: row.recallTitle || null, // 지난주 실시간 암송왕 칭호
+                    readTitle: row.readTitle || null,     // 지난주 실시간 통독왕 칭호
                     isMe: ((row.name === myNickname || row.nickname === myNickname) && row.tag === myTag)
                 };
             });

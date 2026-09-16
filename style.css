@@ -6172,6 +6172,16 @@ body, html {
     50%      { box-shadow: 0 0 0 2px rgba(120, 240, 170, 0.9), 0 0 14px rgba(46, 204, 113, 0.95); }
 }
 @media (prefers-reduced-motion: reduce) { .recall-title.recall-zion { animation: none; } }
+/* 통독왕 — 같은 배지, 호박색 계열. 시온 빛은 주황 */
+.recall-title.read-title.recall-zion {
+    box-shadow: 0 0 0 1px rgba(243, 156, 18, 0.6), 0 0 8px rgba(243, 156, 18, 0.7);
+    animation: readZionShine 2.2s ease-in-out infinite;
+}
+@keyframes readZionShine {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(243, 156, 18, 0.5), 0 0 6px rgba(243, 156, 18, 0.5); }
+    50%      { box-shadow: 0 0 0 2px rgba(255, 200, 100, 0.9), 0 0 14px rgba(243, 156, 18, 0.95); }
+}
+@media (prefers-reduced-motion: reduce) { .recall-title.read-title.recall-zion { animation: none; } }
 .field-ring-lg { width: 3.2em; height: 3.2em; font-size: 1.4rem; border-width: 3px; }
 .field-ring-xl { width: 3.4em; height: 3.4em; font-size: 2rem; border-width: 4px; animation: fieldMsPop 0.6s cubic-bezier(.2,1.4,.4,1); }
 .field-ring-xl .field-ring-ico { font-size: 1.15em; }

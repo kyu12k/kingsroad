@@ -1749,7 +1749,11 @@ verseRecall['1-1'] = { pass, typedPass, fail, firstPass, lastPass, lastAt, lastO
   오버레이를 닫을 때 `saveMyScoreToServer`
 - 순위표: `LIVE_BOARDS` 표로 암송왕과 **같은 로더·렌더러**(`loadRecallLeaderboard(kind)`/`renderRecallRankingList(rows, weekId, kind)`).
   다른 건 필드 이름·문구·색뿐. 랭킹 화면에서 암송왕 옆 2열
-- 보상 없음(아직). 첫 주는 수요일 시작이라 모두 같다. 나중에 암송왕처럼 칭호·보석을 붙이려면 `archiveWeeklyRankings`에 ④-c를 추가
+- **보상 (2026-09-16, 첫 지급 9/21)**: 암송왕의 절반 — 시온 7,500/5,000/5,000 (`READ_ZION_GEMS`), 지파(10명↑) 5,000/3,000/3,000 (`READ_TRIBE_GEMS`).
+  📖 통독왕 칭호(`readTitle`, `.recall-title.read-title`, 시온은 주황 빛). 서버는 `computeLiveBoardTitles()` 헬퍼 하나로 암송왕·통독왕을 같이 계산(④-b/④-c),
+  `pendingReward.read*`·`readTitle`, 스냅샷 4곳이 `readTitle`을 실어간다. 클라이언트 `_recallTitleHtml(rt, kind)` / `_liveTitlesHtml(row)`
+- **서열** 승점 > 암송왕 > 통독왕 = 1 : ½ : ¼ — 노동에 비례. 셋 다 1위여도 8만으로 주간 미션(10만)을 넘지 않는다.
+  지파 10명 조건은 세 판 공통(B안, 2026-09-16) — 판마다 규칙이 다르면 설명이 길어진다
 
 ---
 

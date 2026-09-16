@@ -102,7 +102,8 @@ async function updateWeeklyCountsImpl() {
                         tag: row.tag || "",
                         castle: row.castleLv || 0,
                         field: row.maxHearts || 5,  // 밭(구 최대 체력) — 랭킹 배지용 (2026-09-13)
-                        recallTitle: row.recallTitle || null // 지난주 실시간 암송왕 칭호 (2026-09-14)
+                        recallTitle: row.recallTitle || null, // 지난주 실시간 암송왕 칭호 (2026-09-14)
+                        readTitle: row.readTitle || null      // 지난주 실시간 통독왕 칭호 (2026-09-16)
                     };
                 });
 
@@ -140,7 +141,8 @@ async function updateWeeklyCountsImpl() {
             tag: row.tag || "",
             castle: row.castleLv || 0,
                         field: row.maxHearts || 5,  // 밭(구 최대 체력) — 랭킹 배지용 (2026-09-13)
-                        recallTitle: row.recallTitle || null // 지난주 실시간 암송왕 칭호 (2026-09-14)
+                        recallTitle: row.recallTitle || null, // 지난주 실시간 암송왕 칭호 (2026-09-14)
+                        readTitle: row.readTitle || null      // 지난주 실시간 통독왕 칭호 (2026-09-16)
         };
     });
 
@@ -175,7 +177,8 @@ async function updateWeeklyCountsImpl() {
             tag: row.tag || "",
             castle: row.castleLv || 0,
                         field: row.maxHearts || 5,  // 밭(구 최대 체력) — 랭킹 배지용 (2026-09-13)
-                        recallTitle: row.recallTitle || null // 지난주 실시간 암송왕 칭호 (2026-09-14)
+                        recallTitle: row.recallTitle || null, // 지난주 실시간 암송왕 칭호 (2026-09-14)
+                        readTitle: row.readTitle || null      // 지난주 실시간 통독왕 칭호 (2026-09-16)
         };
     });
 
@@ -350,6 +353,44 @@ const TRIBE_REWARD_MIN_PARTICIPANTS = 10;
 // 승점 랭킹 보상(calcZionGems/calcTribeGems 1~3위)의 **절반** — 인출에 값을 치르되 주된 판은 승점. 지파는 같은 10명 조건.
 const RECALL_ZION_GEMS  = [15000, 10000, 10000];
 const RECALL_TRIBE_GEMS = [10000, 6000, 6000];
+// 실시간 통독왕 — 암송왕의 절반 (2026-09-16). 서열: 승점 > 암송왕 > 통독왕 = 1 : ½ : ¼ (노동에 비례)
+const READ_ZION_GEMS    = [7500, 5000, 5000];
+const READ_TRIBE_GEMS   = [5000, 3000, 3000];
+
+/* 실시간 판(암송왕·통독왕) 지난주 1~3위 — 시온성 + 지파(TRIBE_REWARD_MIN_PARTICIPANTS 이상). 둘 다 같은 규칙 */
+async function computeLiveBoardTitles(weekField, countField, lastWeekId, zionGems, tribeGems, label) {
+    const titles = new Map(); // tag → { zionRank, tribeRank, gems, count }
+    try {
+        const snap = await db.collection('leaderboard')
+            .where(weekField, '==', lastWeekId)
+            .where(countField, '>', 0)
+            .orderBy(countField, 'desc')
+            .limit(400)
+            .get();
+        const docs = deduplicateByTag(snap.docs);
+        const tagOf = (doc) => String(doc.data().tag || doc.id);
+        const entry = (doc) => titles.get(tagOf(doc)) || { zionRank: null, tribeRank: null, gems: 0, count: doc.data()[countField] || 0 };
+        docs.slice(0, 3).forEach((doc, idx) => {
+            const r = entry(doc); r.zionRank = idx + 1; r.gems += zionGems[idx]; titles.set(tagOf(doc), r);
+        });
+        const byTribe = new Map();
+        docs.forEach(doc => {
+            const tr = doc.data().tribe !== undefined ? doc.data().tribe : 0;
+            if (!byTribe.has(tr)) byTribe.set(tr, []);
+            byTribe.get(tr).push(doc);
+        });
+        byTribe.forEach((tdocs) => {
+            if (tdocs.length < TRIBE_REWARD_MIN_PARTICIPANTS) return;
+            tdocs.slice(0, 3).forEach((doc, idx) => {
+                const r = entry(doc); r.tribeRank = idx + 1; r.gems += tribeGems[idx]; titles.set(tagOf(doc), r);
+            });
+        });
+        console.log(`${label}: 참가 ${docs.length}명, 칭호 ${titles.size}명`);
+    } catch (e) {
+        console.error(`${label} 집계 실패 (승점 보상은 계속):`, e);
+    }
+    return titles;
+}
 
 // Firestore batch 500개 제한 안전하게 커밋
 async function commitInChunks(updates) {
@@ -442,7 +483,8 @@ exports.archiveWeeklyRankings = functions.pubsub
                     tag: row.tag || "",
                     castle: row.castleLv || 0,
                         field: row.maxHearts || 5,  // 밭(구 최대 체력) — 랭킹 배지용 (2026-09-13)
-                        recallTitle: row.recallTitle || null // 지난주 실시간 암송왕 칭호 (2026-09-14)
+                        recallTitle: row.recallTitle || null, // 지난주 실시간 암송왕 칭호 (2026-09-14)
+                        readTitle: row.readTitle || null      // 지난주 실시간 통독왕 칭호 (2026-09-16)
                 };
             });
             const zionSnapshotRef = db.collection('ranking_snapshots').doc(lastWeekId)
@@ -544,61 +586,31 @@ exports.archiveWeeklyRankings = functions.pubsub
                 });
             });
 
-            // ④-b 실시간 암송왕 — 지난주 recallCount 순위 (밭 무관). 시온성 1~3 / 지파(10명↑) 1~3
-            const recallTitles = new Map(); // tag → { zionRank, tribeRank, gems, count }
-            try {
-                const recallSnap = await db.collection('leaderboard')
-                    .where('recallWeekId', '==', lastWeekId)
-                    .where('recallCount', '>', 0)
-                    .orderBy('recallCount', 'desc')
-                    .limit(400)
-                    .get();
-                const recallDocs = deduplicateByTag(recallSnap.docs);
-                const tagOf = (doc) => String(doc.data().tag || doc.id);
-                recallDocs.slice(0, 3).forEach((doc, idx) => {
-                    const tag = tagOf(doc);
-                    const r = recallTitles.get(tag) || { zionRank: null, tribeRank: null, gems: 0, count: doc.data().recallCount || 0 };
-                    r.zionRank = idx + 1;
-                    r.gems += RECALL_ZION_GEMS[idx];
-                    recallTitles.set(tag, r);
-                });
-                const byTribe = new Map();
-                recallDocs.forEach(doc => {
-                    const tr = doc.data().tribe !== undefined ? doc.data().tribe : 0;
-                    if (!byTribe.has(tr)) byTribe.set(tr, []);
-                    byTribe.get(tr).push(doc);
-                });
-                byTribe.forEach((docs) => {
-                    if (docs.length < TRIBE_REWARD_MIN_PARTICIPANTS) return;
-                    docs.slice(0, 3).forEach((doc, idx) => {
-                        const tag = tagOf(doc);
-                        const r = recallTitles.get(tag) || { zionRank: null, tribeRank: null, gems: 0, count: doc.data().recallCount || 0 };
-                        r.tribeRank = idx + 1;
-                        r.gems += RECALL_TRIBE_GEMS[idx];
-                        recallTitles.set(tag, r);
-                    });
-                });
-                console.log(`🖊️ 실시간 암송왕: 참가 ${recallDocs.length}명, 칭호 ${recallTitles.size}명`);
-            } catch (e) {
-                console.error('실시간 암송왕 집계 실패 (승점 보상은 계속):', e);
-            }
+            // ④-b 실시간 암송왕 / ④-c 실시간 통독왕 — 지난주 1~3위 (밭 무관). 같은 헬퍼
+            const recallTitles = await computeLiveBoardTitles('recallWeekId', 'recallCount', lastWeekId, RECALL_ZION_GEMS, RECALL_TRIBE_GEMS, '🖊️ 실시간 암송왕');
+            const readTitles   = await computeLiveBoardTitles('readWeekId',   'readCount',   lastWeekId, READ_ZION_GEMS,   READ_TRIBE_GEMS,   '📖 실시간 통독왕');
+            const baseReward = (tag) => rewardMap.get(tag) || {
+                docId: tag, score: 0,
+                zionRank: null, zionGems: 0, zionQualified,
+                tribeRank: null, tribeGems: 0, tribeQualified: false
+            };
             recallTitles.forEach((r, tag) => {
-                const existing = rewardMap.get(tag) || {
-                    docId: tag, score: 0,
-                    zionRank: null, zionGems: 0, zionQualified,
-                    tribeRank: null, tribeGems: 0, tribeQualified: false
-                };
-                existing.recallZionRank = r.zionRank;
-                existing.recallTribeRank = r.tribeRank;
-                existing.recallGems = r.gems;
-                existing.recallCount = r.count;
+                const existing = baseReward(tag);
+                existing.recallZionRank = r.zionRank; existing.recallTribeRank = r.tribeRank;
+                existing.recallGems = r.gems; existing.recallCount = r.count;
+                rewardMap.set(tag, existing);
+            });
+            readTitles.forEach((r, tag) => {
+                const existing = baseReward(tag);
+                existing.readZionRank = r.zionRank; existing.readTribeRank = r.tribeRank;
+                existing.readGems = r.gems; existing.readCount = r.count;
                 rewardMap.set(tag, existing);
             });
 
             // ⑤ pendingReward 일괄 기록 (tag 기반 문서에 저장)
             const updates = [];
             rewardMap.forEach((reward) => {
-                const totalGems = reward.zionGems + reward.tribeGems + (reward.recallGems || 0);
+                const totalGems = reward.zionGems + reward.tribeGems + (reward.recallGems || 0) + (reward.readGems || 0);
                 const data = {
                     pendingReward: {
                         weekId: lastWeekId,
@@ -613,6 +625,10 @@ exports.archiveWeeklyRankings = functions.pubsub
                         recallTribeRank: reward.recallTribeRank || null,
                         recallGems: reward.recallGems || 0,
                         recallCount: reward.recallCount || 0,
+                        readZionRank: reward.readZionRank || null,
+                        readTribeRank: reward.readTribeRank || null,
+                        readGems: reward.readGems || 0,
+                        readCount: reward.readCount || 0,
                         totalGems
                     }
                 };
@@ -620,6 +636,9 @@ exports.archiveWeeklyRankings = functions.pubsub
                 // 지난주 weekId를 달아두고 클라이언트가 '지난주 것'일 때만 표시한다
                 if (reward.recallZionRank || reward.recallTribeRank) {
                     data.recallTitle = { weekId: lastWeekId, zionRank: reward.recallZionRank || null, tribeRank: reward.recallTribeRank || null };
+                }
+                if (reward.readZionRank || reward.readTribeRank) {
+                    data.readTitle = { weekId: lastWeekId, zionRank: reward.readZionRank || null, tribeRank: reward.readTribeRank || null };
                 }
                 updates.push({ ref: db.collection('leaderboard').doc(reward.docId), data });
             });
