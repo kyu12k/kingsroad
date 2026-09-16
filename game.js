@@ -23337,8 +23337,11 @@ function _writeHardshipCheckpoints(list) {
    ★ `kind`도 함께 본다. 보스전 백지와 그 장의 망각의 고난은 **구절 묶음이 완전히 같아서**,
    kind가 없으면 망각의 고난을 하다 나간 진행이 보스전 백지로 이어져 버린다.
    내용은 같아도 끝난 뒤 처리(보스전은 stageClear로 장 전체를 복습 처리)가 다르다. */
+/* 이어하기 묶음 키. 보스전은 **빈칸과 백지를 따로** 둔다 (2026-09-16 수정) — 구절 묶음이 완전히 같아서
+   백지로 1절만 하고 나온 뒤 빈칸을 열면 2절부터 이어지던 문제. 난이도가 다르면 다른 세션이다 */
 function _hardshipCkptKind() {
-    return (hardshipState && hardshipState.bossStageId) ? ('boss:' + hardshipState.bossStageId) : 'free';
+    if (!hardshipState || !hardshipState.bossStageId) return 'free';
+    return 'boss:' + hardshipState.bossStageId + (hardshipState.ultimateMemoryMode ? ':none' : ':blank');
 }
 
 function _sameHardshipRange(entry, mode, verseIds, kind) {
