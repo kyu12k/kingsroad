@@ -1194,6 +1194,18 @@ fab.style.top = limit - fab.offsetHeight - MARGIN;
 
 ---
 
+## 지도 헤더 정리 — 카드 두 장을 칩 둘로 (2026-09-17)
+
+왕의 길 지도는 헤더 세 줄 아래에 **카드 두 장**(이벤트 띠 + 「👑 왕의 길 N단계 · D+N일 · M구절 해금」)이 더 쌓여 지도가 90px쯤 내려가 있었다.
+- 왕의 길 카드 삭제. `D+일`은 행동으로 이어지지 않고 해금 수는 지도가 보여준다. 의미 있는 건 **단계**뿐이라
+  헤더 첫 줄 이름 옆 칩 「👑 3단계」(`#kings-step-chip`, `updateKingsStepChip` — `renderChapterMap`이 부른다)로. 자유여행에선 안 보여 모드 구분도 된다.
+  누르면 단계 선택 오버레이(`openKingsStepSelectFromMap` → `_kingsStepFromMap`) — 지도에서 연 것이면 `onSelectKingsStep`이 여정 연출 없이 지도만 다시 그리고 토스트
+- 이벤트 띠 → 둘째 줄 밭 옆 칩 「📝 D-3 · 7/10」(`#event-chip`). 입구는 여정 선택 모달이 맡는다
+- 이벤트 빈칸·백지 승점 kind를 `'event:blank'`/`'event:none'`으로 나눴다 — 안내 문구("난이도마다 하루 한 번")와 달리 둘이 `'event'` 하나를 공유해
+  빈칸 뒤 백지가 0점이었다. 보통·어려움은 원래 `eventProgress[rung]`으로 따로였다
+
+---
+
 ## 서버 시각 보정 (`clock.js`, 2026-09-17)
 
 앱의 '오늘'(일일 미션·6시 해금·단비·이벤트 보상·하루 1회 승점·주차)은 전부 `Date`로 정해지는데 `Date`는 **기기 시계**다.
@@ -1714,7 +1726,8 @@ verseRecall['1-1'] = { pass, typedPass, fail, firstPass, lastPass, lastAt, lastO
   규칙: 읽기 공개, 쓰기 금지 — admin SDK로 넣는다(scratchpad `mkevent.js`). 배포 없이 시험마다 바꾸기 위해서
 - 부팅 시 `loadKrEvents()`(`checkPendingReward`와 같은 시점) → `krEvents`. `end >= 오늘`인 것만
 - **입구 둘**: 홈의 「시험준비」 링크(`#exam-prep-link`)가 이벤트 중엔 앱 화면을 열고 「📝 D-4 시험준비」로, 없으면 외부 링크 그대로 /
-  지도 헤더 아래 띠 `#event-strip`(D-day · 준비 n/10). 둘 다 `updateEventStrip()`이 그린다(`updateGemDisplay`마다)
+  지도 헤더 둘째 줄의 칩 `#event-chip`(📝 D-3 · 7/10). 둘 다 `updateEventStrip()`이 그린다(`updateGemDisplay`마다).
+  처음엔 헤더 아래 띠(카드)였는데 왕의 길 카드와 겹쳐 지도가 답답해져 칩으로 줄였다(2026-09-17, 아래 「지도 헤더 정리」)
 - **화면** `openEventScreen(id)`: 난이도 4칸(기본 백지 — 시험이 백지니까) + 문항 목록(상태·도전) + 전체 모의고사
 - **엔진**: 빈칸·백지 → 고난 엔진 `_startEventBlank`(embed `{eventId}`, 순서대로). 보통·어려움 → 보스전 엔진 `startEventBattle`
   — 장 하나가 아니라 임의 구절 목록이라 절마다 `_chapter`를 싣고 `updateVerseIndicator`가 그걸 쓴다.

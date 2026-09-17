@@ -5709,27 +5709,20 @@ body, html {
 .mode-back-btn:hover { color: #bdc3c7; }
 
 /* 왕의 길 맵 헤더 */
-.kings-road-map-header {
-    background: linear-gradient(135deg, rgba(241,196,15,0.15), rgba(255,215,0,0.08));
-    border: 1.5px solid rgba(241,196,15,0.4);
-    border-radius: 14px;
-    padding: 10px 16px;
-    margin: 8px 16px 4px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-.kings-road-map-header .kh-title {
+/* 지도 헤더 첫 줄 「👑 N단계」 칩 — 왕의 길에서만. 지도 위 카드를 대신한다 (2026-09-17) */
+.kings-step-chip {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(241,196,15,0.5);
+    background: rgba(241,196,15,0.12);
     color: #f1c40f;
-    font-size: 0.95rem;
-    font-weight: bold;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
 }
-.kings-road-map-header .kh-info {
-    color: #bdc3c7;
-    font-size: 0.82rem;
-}
+.kings-step-chip:active { background: rgba(241,196,15,0.28); }
 
 /* 왕의 길 잠금 스테이지 */
 .stage-item.kings-locked {
@@ -6073,18 +6066,16 @@ body, html {
 .mode-journey-btn.event-btn { border-color: rgba(241,196,15,0.7); background: linear-gradient(135deg, rgba(241,196,15,0.16), rgba(230,126,34,0.10)); }
 .mode-journey-btn.event-btn .mode-btn-label { color: #f7c873; }
 .mode-event-dday { font-size: 0.78em; font-weight: 800; color: #f1c40f; margin-left: 4px; }
-#event-strip {
-    display: flex; align-items: center; gap: 8px;
-    margin: 0 12px 6px; padding: 8px 12px;
-    border-radius: 12px; cursor: pointer;
-    background: linear-gradient(135deg, rgba(241,196,15,0.18), rgba(230,126,34,0.12));
-    border: 1px solid rgba(241,196,15,0.45);
-    font-size: 0.82rem; color: #f5e6b3;
+/* 지도 헤더 둘째 줄 「📝 D-3 · 7/10」 칩 — 예전 띠 대신 (2026-09-17) */
+.event-chip {
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 12px;
+    color: #f5e6b3;
+    white-space: nowrap;
+    transition: background 0.2s;
 }
-.event-strip-title { font-weight: 800; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.event-strip-dday { font-weight: 800; color: #f1c40f; }
-.event-strip-ready { opacity: 0.85; white-space: nowrap; }
-.event-strip-arrow { opacity: 0.6; }
+.event-chip:active { background: rgba(241,196,15,0.18); }
 .event-card { max-width: 380px; background: #fffdf5; color: #2c3e50; text-align: left; padding: 20px 18px 16px; }
 .event-head { text-align: center; margin-bottom: 12px; }
 .event-eyebrow { font-size: 0.72rem; letter-spacing: 0.12em; color: #e67e22; font-weight: 800; }

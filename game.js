@@ -179,8 +179,8 @@ const LANG = {
         btn_amen: '아멘',
         ranking_verse: '"운동장에서 달음질하는 자들이<br>다 달아날찌라도<br>오직 상 얻는 자는 하나인 줄을<br>너희가 알지 못하느냐<br>너희도 얻도록 이와 같이 달음질하라"',
         ranking_verse_ref: '(고전 9:24)',
-        kings_header_title: '👑 왕의 길 {step}단계',
-        kings_header_info: 'D+{day}일 · {count}구절 해금',
+        kings_step_chip: '👑 {step}단계',
+        kings_step_changed_toast: '👑 왕의 길 {step}단계 — 하루 {step}구절씩 열립니다',
         label_mid_boss: '중간점검',
         label_boss: '보스전',
         label_hardship: '고난',
@@ -982,8 +982,8 @@ const LANG = {
         btn_amen: 'Amen',
         ranking_verse: '"Do you not know that in a race all the runners run,<br>but only one gets the prize?<br>Run in such a way<br>as to get the prize."',
         ranking_verse_ref: '(1 Cor 9:24)',
-        kings_header_title: "👑 King's Road Level {step}",
-        kings_header_info: 'Day {day} · {count} verses unlocked',
+        kings_step_chip: '👑 Lv {step}',
+        kings_step_changed_toast: '👑 King\'s Road level {step} — {step} verse(s) unlock per day',
         label_mid_boss: 'Checkpoint',
         label_boss: 'Boss Battle',
         label_hardship: 'Trial',
@@ -5787,6 +5787,35 @@ function updateKingsStepBtn() {
     }
 }
 
+/* 지도 헤더 첫 줄의 「👑 N단계」 칩 — 왕의 길에서만. 누르면 단계 선택.
+   예전의 지도 위 카드(D+N일 · M구절 해금)를 대신한다: D+일은 행동으로 이어지지 않고, 해금 수는 지도가 이미 보여준다 (2026-09-17) */
+function updateKingsStepChip() {
+    const row1 = document.querySelector('#map-screen .map-header-row1');
+    if (!row1) return;
+    let chip = document.getElementById('kings-step-chip');
+    const show = activeMode === 'kings' && kingsRoadData.stepHistory.length > 0;
+    if (!show) { if (chip) chip.style.display = 'none'; return; }
+    if (!chip) {
+        chip = document.createElement('span');
+        chip.id = 'kings-step-chip';
+        chip.className = 'kings-step-chip';
+        chip.onclick = openKingsStepSelectFromMap;
+        const name = document.getElementById('sub-profile-name');
+        if (name) name.insertAdjacentElement('afterend', chip); else row1.appendChild(chip);
+    }
+    const step = kingsRoadData.stepHistory[kingsRoadData.stepHistory.length - 1].step;
+    chip.textContent = t('kings_step_chip', { step });
+    chip.style.display = '';
+}
+function openKingsStepSelectFromMap() {
+    window._kingsStepFromMap = true;
+    const el = document.getElementById('kings-step-select-overlay');
+    if (!el) return;
+    const back = el.querySelector('.mode-back-btn');
+    if (back) back.style.display = 'none';   // 지도에서 열었으니 '돌아가기'(모드 선택)는 없다
+    el.style.display = 'flex';
+}
+
 // startTs ~ endTs 사이에 오전 6시(로컬) 경계가 몇 번 지났는지 반환
 function count6AMBoundaries(startTs, endTs) {
     function to6AMDay(ts) {
@@ -6128,7 +6157,12 @@ function openKingsStepSelectOverlay() {
 // 왕의 길 단계 선택 오버레이 닫기
 function closeKingsStepSelectOverlay() {
     const el = document.getElementById('kings-step-select-overlay');
-    if (el) el.style.display = 'none';
+    if (el) {
+        el.style.display = 'none';
+        const back = el.querySelector('.mode-back-btn');
+        if (back) back.style.display = '';
+    }
+    window._kingsStepFromMap = false;
 }
 
 // '왕의 길' 버튼 클릭 시
@@ -6148,6 +6182,13 @@ function onClickKingsRoad() {
 function onSelectKingsStep(step) {
     closeKingsStepSelectOverlay();
     setKingsRoadStep(step);
+    if (window._kingsStepFromMap) {
+        // 지도의 칩에서 바꾼 것 — 여정 연출 없이 지도만 다시 그린다
+        window._kingsStepFromMap = false;
+        if (typeof renderChapterMap === 'function') renderChapterMap();
+        if (typeof showToast === 'function') showToast(t('kings_step_changed_toast', { step }));
+        return;
+    }
     switchMode('kings');
     proceedToJourneyOverlay();
 }
@@ -6639,29 +6680,8 @@ function ensureBackButton(screen) {
 function renderChapterMap() {
     const container = document.getElementById('chapter-list-area');
 
-    // ★ 왕의 길 모드 헤더 표시/갱신
-    let kingsHeader = document.getElementById('kings-road-map-header');
-    const mapScreen = document.getElementById('map-screen');
-    if (activeMode === 'kings' && mapScreen) {
-        if (!kingsHeader) {
-            kingsHeader = document.createElement('div');
-            kingsHeader.id = 'kings-road-map-header';
-            kingsHeader.className = 'kings-road-map-header';
-            mapScreen.insertBefore(kingsHeader, container);
-        }
-        const step = kingsRoadData.stepHistory.length > 0
-            ? kingsRoadData.stepHistory[kingsRoadData.stepHistory.length - 1].step : '?';
-        const startTs = kingsRoadData.startTimestamp || (kingsRoadData.stepHistory.length > 0 ? kingsRoadData.stepHistory[0].timestamp : Date.now());
-        const dayNum = Math.floor((Date.now() - startTs) / 86400000);
-        const unlockedCount = getKingsRoadUnlockedCount();
-        kingsHeader.innerHTML = `
-            <span class="kh-title">${t('kings_header_title', { step })}</span>
-            <span class="kh-info">${t('kings_header_info', { day: dayNum, count: unlockedCount })}</span>
-        `;
-        kingsHeader.style.display = 'flex';
-    } else if (kingsHeader) {
-        kingsHeader.style.display = 'none';
-    }
+    // ★ 왕의 길이면 헤더 첫 줄에 「👑 N단계」 칩 (2026-09-17 — 지도 위 카드를 없애고 이 칩 하나로)
+    updateKingsStepChip();
 
     // 마지막 플레이 챕터 (진입 시점 기록 기준)
     let lastPlayedChapterId = null;
@@ -14998,23 +15018,21 @@ function updateEventStrip() {
             link.textContent = t('event_prep');
         }
     }
-    // 지도 띠
-    const header = document.querySelector('#map-screen .map-header');
-    let strip = document.getElementById('event-strip');
-    if (!ev) { if (strip) strip.remove(); return; }
-    if (!header) return;
-    if (!strip) {
-        strip = document.createElement('div');
-        strip.id = 'event-strip';
-        strip.onclick = () => openEventScreen(ev.id);
-        header.insertAdjacentElement('afterend', strip);
-    }
+    // 지도 헤더 둘째 줄의 칩 「📝 D-3 · 7/10」 — 예전의 지도 위 띠를 대신한다 (2026-09-17).
+    // 입구는 여정 선택 모달의 세 번째 버튼이 맡고, 여기선 잊지 않게 하는 것과 진행도만
+    const res = document.getElementById('header-resources');
+    const old = document.getElementById('event-chip');
+    if (old) old.remove();
+    if (!ev || !res) return;
     const dd = _eventDday(ev);
     const r = _eventReadiness(ev);
-    strip.innerHTML = `<span class="event-strip-title">📝 ${escapeHtml(ev.title || t('event_default_title'))}</span>
-        <span class="event-strip-dday">${dd > 0 ? 'D-' + dd : dd === 0 ? 'D-Day' : t('event_over')}</span>
-        <span class="event-strip-ready">${t('event_ready', { done: r.done, total: r.total })}</span>
-        <span class="event-strip-arrow">▶</span>`;
+    const chip = document.createElement('span');
+    chip.id = 'event-chip';
+    chip.className = 'event-chip';
+    chip.onclick = () => openEventScreen(ev.id);
+    chip.innerHTML = `📝 ${dd > 0 ? 'D-' + dd : dd === 0 ? 'D-Day' : t('event_over')} · ${r.done}/${r.total}`;
+    res.insertAdjacentHTML('beforeend', ' <span style="opacity:0.3; margin:0 3px;">|</span> ');
+    res.appendChild(chip);
 }
 
 let _eventMode = 'none';   // 이벤트 화면에서 고른 난이도. 백지가 기본 — 시험이 백지니까
@@ -24447,7 +24465,7 @@ function _blankScoreKind() {
     if (hardshipState.midBossStageId) return 'mid';   // 중간점검 빈칸·백지
     if (hardshipState.bossStageId) return 'boss';     // 보스전 빈칸·백지
     if (hardshipState.verseCheckStageId) return 'vc'; // 결과 화면 '백지로 확인해보기'
-    if (hardshipState.eventId) return 'event';         // 이벤트 스테이지 빈칸·백지
+    if (hardshipState.eventId) return hardshipState.ultimateMemoryMode ? 'event:none' : 'event:blank'; // 이벤트 — 빈칸·백지 따로 하루 1회
     return null; // 망각의 고난·빠른 모드 승급은 제한 없음 (승급은 배율 0이라 무관)
 }
 
