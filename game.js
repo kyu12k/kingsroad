@@ -15394,12 +15394,21 @@ async function openDailyRecorder() {
             <button class="cam-btn cam-close" onclick="closeDailyRecorder()">${t('daily_cam_close')}</button>
         </div>`;
     document.body.appendChild(el);
+    if (!(await _camAcquire())) return;
+    _cam.mime = _camPickMime();
+    _camApplyPrefUI();
+    document.getElementById('cam-status').textContent = t('daily_cam_hint');
+    document.getElementById('cam-rec-btn').disabled = false;
+    try { if (navigator.wakeLock) _cam.wake = await navigator.wakeLock.request('screen'); } catch (e) {}
+}
+/* 카메라·마이크 켜기 + 캔버스 그리기 시작. 실패하면 안내하고 닫는다 */
+async function _camAcquire() {
     try {
         _cam.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true });
     } catch (e) {
         console.warn('[cam] getUserMedia failed', e);
         showGemToast(0, (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError')) ? t('daily_cam_denied') : t('daily_cam_unsupported'), true);
-        closeDailyRecorder(); return;
+        closeDailyRecorder(); return false;
     }
     const pv = document.getElementById('cam-preview');
     _cam.video = pv;
@@ -15407,12 +15416,15 @@ async function openDailyRecorder() {
     try { await pv.play(); } catch (e) {}
     _cam.canvas = document.getElementById('cam-canvas');
     _cam.ctx = _cam.canvas.getContext('2d');
-    _cam.mime = _camPickMime();
-    _camApplyPrefUI();
-    _camDrawLoop();
-    document.getElementById('cam-status').textContent = t('daily_cam_hint');
-    document.getElementById('cam-rec-btn').disabled = false;
-    try { if (navigator.wakeLock) _cam.wake = await navigator.wakeLock.request('screen'); } catch (e) {}
+    if (!_cam.raf) _camDrawLoop();
+    return true;
+}
+/* 카메라·마이크 끄기 — 재생 전에 반드시. 안드로이드 크롬은 마이크가 켜져 있으면 소리를 '통화' 경로로 보내
+   재생 음량이 미디어가 아니라 벨소리·통화 음량을 따른다 (2026-09-17 실측) */
+function _camRelease() {
+    if (_cam.raf) { cancelAnimationFrame(_cam.raf); _cam.raf = 0; }
+    if (_cam.stream) { _cam.stream.getTracks().forEach(tr => { try { tr.stop(); } catch (e) {} }); _cam.stream = null; }
+    const pv = document.getElementById('cam-preview'); if (pv) { try { pv.srcObject = null; } catch (e) {} }
 }
 function _camApplyPrefUI() {
     const p = _camPrefs();
@@ -15509,6 +15521,7 @@ function _camToggle() {
     _cam.rec.onstop = () => {
         _cam.blob = new Blob(_cam.chunks, { type: _cam.rec.mimeType || _cam.mime || 'video/webm' });
         clearInterval(_cam.timer); _cam.timer = null;
+        _camRelease();   // 마이크를 끄고 재생해야 미디어 음량으로 나온다
         const cv = document.getElementById('cam-canvas'), pb = document.getElementById('cam-playback'), card = document.getElementById('cam-card'), opts = document.getElementById('cam-opts');
         if (cv) cv.style.display = 'none';
         if (card) card.style.display = 'none';
@@ -15525,7 +15538,7 @@ function _camToggle() {
     const tm = document.getElementById('cam-timer');
     _cam.timer = setInterval(() => { const s = Math.floor((Date.now() - _cam.startedAt) / 1000); tm.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }, 250);
 }
-function _camRetake() {
+async function _camRetake() {
     const cv = document.getElementById('cam-canvas'), pb = document.getElementById('cam-playback'), opts = document.getElementById('cam-opts');
     if (pb) { pb.pause(); if (pb.src) URL.revokeObjectURL(pb.src); pb.removeAttribute('src'); pb.style.display = 'none'; }
     if (cv) cv.style.display = '';
@@ -15534,8 +15547,11 @@ function _camRetake() {
     _cam.blob = null; _cam.chunks = [];
     document.getElementById('cam-after').style.display = 'none';
     document.getElementById('cam-controls').style.display = '';
-    const btn = document.getElementById('cam-rec-btn'); btn.textContent = t('daily_cam_start'); btn.classList.remove('on');
+    const btn = document.getElementById('cam-rec-btn'); btn.textContent = t('daily_cam_start'); btn.classList.remove('on'); btn.disabled = true;
     document.getElementById('cam-timer').textContent = '';
+    document.getElementById('cam-status').textContent = t('daily_cam_preparing');
+    if (!_cam.stream) { if (!(await _camAcquire())) return; }   // 재생을 위해 껐던 카메라·마이크를 다시 켠다
+    btn.disabled = false;
     document.getElementById('cam-status').textContent = t('daily_cam_hint');
 }
 function _camFile() {
@@ -15576,8 +15592,7 @@ function _camSave() {
 function closeDailyRecorder() {
     try { if (_cam.rec && _cam.rec.state === 'recording') _cam.rec.stop(); } catch (e) {}
     clearInterval(_cam.timer); _cam.timer = null;
-    if (_cam.raf) { cancelAnimationFrame(_cam.raf); _cam.raf = 0; }
-    if (_cam.stream) { _cam.stream.getTracks().forEach(tr => { try { tr.stop(); } catch (e) {} }); _cam.stream = null; }
+    _camRelease();
     if (_cam.wake) { try { _cam.wake.release(); } catch (e) {} _cam.wake = null; }
     const pb = document.getElementById('cam-playback'); if (pb && pb.src) { try { URL.revokeObjectURL(pb.src); } catch (e) {} }
     const el = document.getElementById('daily-cam'); if (el) el.remove();
