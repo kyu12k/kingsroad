@@ -101,6 +101,7 @@ const LANG = {
         label_hearts: '밭',
         // 밭 (2026-09-13 베타) — 씨 × 밭 = 열매
         field_label: '밭',
+        clock_adjusted: '⏰ 기기 시계가 실제 시각과 {h}시간 달라 서버 시각을 기준으로 합니다',
         field_desc: '밭이 좋을수록 열매가 많습니다.<br>구절마다 <b>씨(난도) × 밭</b>만큼 승점을 거둡니다.',
         field_bonus_note: '도감 보너스 +{n} 포함',
         field_collection_line: '도감 합산 {sum} / {need}',
@@ -1048,6 +1049,7 @@ const LANG = {
         alert_buy_hearts_no_gems: '💎 Not enough gems! (Required: {cost})',
         alert_buy_hearts_success: '🌾 Your field is now {max}!',
         field_label: 'Field',
+        clock_adjusted: '⏰ Your device clock is {h}h off; using server time instead',
         field_desc: 'The better the soil, the more fruit.<br>Each verse yields <b>seed (difficulty) × field</b> points.',
         field_bonus_note: 'includes +{n} collection bonus',
         field_collection_line: 'Collection total {sum} / {need}',
@@ -5387,6 +5389,19 @@ function _maybeStartRain() {
     if (typeof showToast === 'function') showToast(t('rain_started', { icon: tier.icon, name: t(tier.nameKey), min: RAIN_MINUTES, multi: tier.mult }));
     if (typeof updateHeaderToday === 'function') updateHeaderToday();
 }
+/* 서버 시각 보정(clock.js)이 기기 시계와 1시간 넘게 어긋난 것을 알아채면 한 번 알린다.
+   '오늘'이 폰 날짜와 다르게 보일 수 있으니 이유를 말해준다. 보정 자체는 clock.js가 이미 끝냈다 */
+function _onClockChanged(detail) {
+    const off = (detail && detail.offset) || 0;
+    if (Math.abs(off) < 3600000) return;
+    const h = Math.round(Math.abs(off) / 3600000);
+    console.warn('[clock] device clock off by', off, 'ms');
+    if (typeof showToast === 'function') showToast(t('clock_adjusted', { h }));
+}
+document.addEventListener('kr-clock-changed', (e) => _onClockChanged(e.detail));
+// HEAD 응답이 game.js 파싱보다 먼저 올 수 있다(1MB) — 그때는 이벤트를 놓치므로 기록을 본다
+if (window._krClock && window._krClock.lastChange) setTimeout(() => _onClockChanged(window._krClock.lastChange), 3000);
+
 /* 지도 헤더 셋째 줄 — 📖 오늘 5절 · 어제 9절 · 🌧️ 내일 단비 */
 function updateHeaderToday() {
     const row2 = document.querySelector('.map-header-row2');

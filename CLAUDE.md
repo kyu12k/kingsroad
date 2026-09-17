@@ -1189,6 +1189,32 @@ fab.style.top = limit - fab.offsetHeight - MARGIN;
 
 ---
 
+## 서버 시각 보정 (`clock.js`, 2026-09-17)
+
+앱의 '오늘'(일일 미션·6시 해금·단비·이벤트 보상·하루 1회 승점·주차)은 전부 `Date`로 정해지는데 `Date`는 **기기 시계**다.
+폰 시계를 하루 돌리면 그 모든 '하루'가 다시 열렸다 — 이벤트 보상 1,000만이 아니라 일일 미션 7,000까지.
+
+- **`clock.js`가 `<head>` 첫 스크립트**로 전역 `Date`를 바꿔 끼운다. 페이지가 뜨자마자 `HEAD bible_en.js?clock=`으로
+  Cloudflare 응답의 `Date` 헤더를 읽어 "기기 시계 − 서버 시각"(`kingsRoad_clockOffset`)을 재고, `new Date()`/`Date.now()`가
+  그만큼 보정된 값을 돌려준다. 날짜 함수가 190곳이라 하나씩 고치면 빠뜨리므로 한 곳에서 막는다. 서버 코드 변경 없음
+- 인스턴스는 **진짜 Date**다(생성자가 `new RealDate(...)`를 반환하고 prototype을 공유) — Firebase SDK·GA·gsap가 `instanceof Date`를
+  써도 어긋나지 않는다. 그래서 Firebase보다 먼저 로드돼야 한다
+- 30초 안쪽 차이는 0. 앱이 다시 보일 때마다 다시 잰다. 1시간 넘게 어긋나면 토스트 `clock_adjusted` 한 번(`_onClockChanged`)
+- **하한** `kingsRoad_clockFloor` = 마지막 서버 시각. 진짜 시간은 그보다 앞설 수 없으니 오프라인에서 시계를 어제로 돌려도 `now()`가 내려가지 않는다
+  (세션 안에서는 `performance.now`로 흐른다). 배터리 방전으로 1970년이 된 기기도 여기에 걸려 살아난다
+- **못 막는 것**: 오프라인에서 시계를 **앞으로** 돌려 하는 것(다음 접속 때 바로잡히지만 그 사이 받은 건 남는다), **시간대 조작**
+  (날짜 문자열은 기기 시간대로 만든다). 비코어 경로에 HEAD를 보내는 이유: 코어 자산은 SW가 `cache.put`을 하는데 HEAD는 Cache API가 못 넣는다
+- 되돌리기: index.html에서 스크립트 한 줄. `game.js`는 `window._krClock`이 없어도 돈다
+
+### 젬 장부 (`saves/{uid}.gemLedger`, 서버 전용)
+
+`saveGameDataSecure`가 저장마다 옛 문서를 읽어 **KST 날짜별 젬 증가량**을 적는다 — `{ day, gained, flags, flaggedAt, flaggedDay }`.
+`GEM_DAILY_FLAG`(30만)를 넘으면 `flags`를 올리고 로그를 남길 뿐 **차단하지 않는다.** 2026-07-09~10에 증가폭 차단이 백업 복원과
+상위권 정상 플레이를 막은 이력이 있다(함수 상단 주석). 정상 최대치는 바쁜 날 ~10만, 월요일(랭킹 3판 보상 8.75만 + 미션) ~19만.
+분석 때 `flags > 0`인 문서를 훑어본다. 클라이언트가 echo한 `gemLedger`는 서버 값으로 덮인다
+
+---
+
 ## 기기 간 동기화 (`initFirestoreSync`)
 
 `saves/{uid}` 문서 하나를 모든 기기가 공유한다. 저장은 CF `saveGameDataSecure`를 거치며

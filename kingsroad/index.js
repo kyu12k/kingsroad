@@ -26,6 +26,10 @@ const REQUIRED_FIELDS = ["version", "gems", "level", "nickname", "tag", "playerI
 // 조작을 막지 못하고 며칠에 나눠 올리도록 늦출 뿐인데, 정상 유저의 백업 복원과
 // 상위권 정상 플레이를 실제로 차단했다(2026-07-09~10). 절대 상한만 남긴다.
 const GEM_ABS_MAX          = 100000000; // 젬 절대 상한
+// 하루 젬 증가량 **표식**(차단 아님, 2026-09-17). 위 이력대로 차단은 정상 유저를 잡으므로 서버가 KST 날짜별
+// 증가량을 saves/{uid}.gemLedger에 적어두고, 문턱을 넘으면 flags를 올려 로그만 남긴다. 분석 때 훑어본다.
+// 정상 최대치: 바쁜 날 ~10만, 월요일(랭킹 3판 보상 8.75만 + 미션) ~19만 → 30만.
+const GEM_DAILY_FLAG       = 300000;
 const SCORE_ABS_MAX        = 20000000;  // 점수 필드 절대 상한
 // 클라이언트가 제출한 점수 저장 시 검증할 점수 필드
 const SCORE_FIELDS = ['score', 'myMonthlyScore', 'totalScore', 'yearlyScore', 'prevWeekScore', 'prevMonthlyScore'];
@@ -101,17 +105,33 @@ exports.saveGameDataSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
 
     try {
         await db.runTransaction(async (tx) => {
-            if (hasBase) {
-                const snap = await tx.get(docRef);
-                if (snap.exists) {
-                    const serverUpdatedAt = snap.data().updatedAt || 0;
-                    if (serverUpdatedAt > newData.baseUpdatedAt) {
-                        const staleErr = new Error("stale-write");
-                        staleErr._staleServerUpdatedAt = serverUpdatedAt;
-                        throw staleErr;
-                    }
+            // 젬 장부 때문에 늘 읽는다 (저장당 읽기 1회)
+            const snap = await tx.get(docRef);
+            const old = snap.exists ? snap.data() : null;
+            if (hasBase && old) {
+                const serverUpdatedAt = old.updatedAt || 0;
+                if (serverUpdatedAt > newData.baseUpdatedAt) {
+                    const staleErr = new Error("stale-write");
+                    staleErr._staleServerUpdatedAt = serverUpdatedAt;
+                    throw staleErr;
                 }
             }
+            // 젬 장부 — 서버만 쓴다. 클라이언트가 echo한 gemLedger는 여기서 덮인다
+            const kstDay = new Date(serverNow + 9 * 3600 * 1000).toISOString().slice(0, 10);
+            const led = (old && old.gemLedger && typeof old.gemLedger === "object") ? old.gemLedger : {};
+            const prevGems = (old && typeof old.gems === "number") ? old.gems : null;
+            let gained = led.day === kstDay ? (led.gained || 0) : 0;
+            if (prevGems !== null && newData.gems > prevGems) gained += newData.gems - prevGems;
+            const ledger = { day: kstDay, gained, flags: led.flags || 0, flaggedAt: led.flaggedAt || null };
+            if (gained > GEM_DAILY_FLAG && led.flaggedDay !== kstDay) {
+                ledger.flags += 1;
+                ledger.flaggedAt = serverNow;
+                ledger.flaggedDay = kstDay;
+                console.warn(`[gemLedger] uid=${uid} tag=${newData.tag} day=${kstDay} gained=${gained} gems=${newData.gems} (prev ${prevGems})`);
+            } else if (led.flaggedDay) {
+                ledger.flaggedDay = led.flaggedDay;
+            }
+            dataToSave.gemLedger = ledger;
             tx.set(docRef, dataToSave);
         });
     } catch (e) {
