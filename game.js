@@ -15368,14 +15368,17 @@ async function openDailyRecorder() {
     const el = document.createElement('div');
     el.id = 'daily-cam';
     el.innerHTML = `
-        <video id="cam-preview" autoplay muted playsinline style="opacity:0;"></video>
-        <canvas id="cam-canvas"></canvas>
-        <video id="cam-playback" playsinline controls style="display:none;"></video>
-        <div class="cam-card" id="cam-card" style="font-size:${prefs.font}px;">
-            <div class="cam-card-head"><span>📅 ${escapeHtml(_cam.label)}</span>
-                <span class="cam-font"><button onclick="_camFont(-2)">A−</button><button onclick="_camFont(2)">A+</button></span></div>
-            ${versesHtml}
+        <div class="cam-stage">
+            <video id="cam-preview" autoplay muted playsinline style="opacity:0;"></video>
+            <canvas id="cam-canvas"></canvas>
+            <video id="cam-playback" playsinline controls style="display:none;"></video>
+            <div class="cam-card" id="cam-card" style="font-size:${prefs.font}px;">
+                <div class="cam-card-head"><span>📅 ${escapeHtml(_cam.label)}</span>
+                    <span class="cam-font"><button onclick="_camFont(-2)">A−</button><button onclick="_camFont(2)">A+</button></span></div>
+                ${versesHtml}
+            </div>
         </div>
+        <div class="cam-panel">
         <div class="cam-opts" id="cam-opts">
             <button class="cam-opt" id="cam-opt-frame" onclick="_camSetPref('frame', !_camPrefs().frame)">🖼️ 액자</button>
             <button class="cam-opt" id="cam-opt-soft" onclick="_camSetPref('soft', !_camPrefs().soft)">✨ 보정</button>
@@ -15392,6 +15395,7 @@ async function openDailyRecorder() {
             <button class="cam-btn cam-primary" onclick="_camShare()">${t('daily_cam_share')}</button>
             <button class="cam-btn" onclick="_camSave()">${t('daily_cam_save')}</button>
             <button class="cam-btn cam-close" onclick="closeDailyRecorder()">${t('daily_cam_close')}</button>
+        </div>
         </div>`;
     document.body.appendChild(el);
     if (!(await _camAcquire())) return;
