@@ -15304,7 +15304,7 @@ function openDailyScreen() {
         <div class="result-card event-card daily-card">
             <div class="event-head">
                 <div class="event-eyebrow">${t('daily_eyebrow')} · ${ev.mine ? t('daily_source_mine') : t('daily_source_church')}</div>
-                <div class="event-title">📅 ${ev.rest ? t('daily_title') : escapeHtml(_dailyLabel(ids))}</div>
+                <div class="event-title" onclick="_camSecretTap()">📅 ${ev.rest ? t('daily_title') : escapeHtml(_dailyLabel(ids))}</div>
                 <div class="event-sub">${dateLabel}</div>
             </div>
             ${body}
@@ -15324,7 +15324,19 @@ function openDailyScreen() {
 function _camEnabled() {
     try { return localStorage.getItem('kingsRoad_camBeta') === '1'; } catch (e) { return false; }
 }
-// 켜기: 주소 뒤에 ?cam=1 을 붙여 한 번 열면 이 기기에 남는다 (?cam=0 으로 끔)
+// 켜기: 주소 뒤에 ?cam=1 을 붙여 한 번 열면 이 기기에 남는다 (?cam=0 으로 끔).
+// 아이폰 설치 앱(PWA)은 사파리와 저장소가 달라 주소로는 못 켜므로, 오늘의 암송 화면 제목을 5번 연속 탭해도 켜고 끈다
+let _camTaps = 0, _camTapAt = 0;
+function _camSecretTap() {
+    const now = Date.now();
+    _camTaps = (now - _camTapAt < 1500) ? _camTaps + 1 : 1; _camTapAt = now;
+    if (_camTaps < 5) return;
+    _camTaps = 0;
+    const on = !_camEnabled();
+    try { if (on) localStorage.setItem('kingsRoad_camBeta', '1'); else localStorage.removeItem('kingsRoad_camBeta'); } catch (e) {}
+    showGemToast(0, on ? '🎥 촬영 기능 켬 (테스트)' : '🎥 촬영 기능 끔', false);
+    openDailyScreen();
+}
 try { const _q = new URLSearchParams(location.search); if (_q.get('cam') === '1') localStorage.setItem('kingsRoad_camBeta', '1'); else if (_q.get('cam') === '0') localStorage.removeItem('kingsRoad_camBeta'); } catch (e) {}
 let _cam = { stream: null, rec: null, chunks: [], blob: null, mime: '', timer: null, startedAt: 0, wake: null };
 function _camPickMime() {

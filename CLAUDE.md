@@ -1793,7 +1793,8 @@ verseRecall['1-1'] = { pass, typedPass, fail, firstPass, lastPass, lastAt, lastO
   + ● 녹화/■ 정지 → 재생 확인 → 「📤 보내기」(Web Share API, 파일 공유 — 텔레그램 등 공유 시트) / 「💾 저장」(다운로드) / 다시 찍기.
   백지로 오늘 구절을 마친 뒤에만 열린다(`daily-cam-btn.locked`). 영상은 서버에 안 올린다. Wake Lock으로 화면 유지.
   mime은 `_camPickMime()` — 아이폰 mp4, 안드로이드 webm. 카톡·텔레그램 안의 웹뷰(`_camIsInApp`)는 카메라가 안 돼 브라우저로 열라고 안내.
-  **스위치** `kingsRoad_camBeta` — 주소에 `?cam=1`을 붙여 열면 켜지고 `?cam=0`이면 꺼진다(`_camEnabled`). 기기 확인 뒤 스위치를 지우고 전원에게
+  **스위치** `kingsRoad_camBeta` — 주소에 `?cam=1`을 붙여 열면 켜지고 `?cam=0`이면 꺼진다(`_camEnabled`).
+  아이폰 설치 앱은 사파리와 저장소가 달라 주소로는 못 켜므로 **오늘의 암송 화면 제목을 5번 연속 탭**해도 켜고 끈다(`_camSecretTap`). 기기 확인 뒤 스위치를 지우고 전원에게
 
 ---
 
