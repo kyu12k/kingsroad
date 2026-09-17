@@ -19273,7 +19273,7 @@ function startFCMForegroundListener() {
     try {
         const messaging = firebase.messaging();
         messaging.onMessage((payload) => {
-            if (Notification.permission !== 'granted') return;
+            if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
             const title = payload.data?.title || '킹스로드 복습 알림';
             const body = payload.data?.body || '';
             // 모바일에서 new Notification()은 포그라운드에서 표시 안 됨
@@ -19435,6 +19435,7 @@ async function notifSave() {
         }
 
         // 알림 권한 요청
+        if (typeof Notification === 'undefined') { showToast(t('toast_notif_unsupported')); return; }
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') {
             showToast(t('toast_notif_permission'));
@@ -21293,7 +21294,9 @@ if ('serviceWorker' in navigator) {
 startNotificationCheck();
 
 // FCM 토큰 미리 취득 + 갱신 리스너 시작
-if (Notification.permission === 'granted') {
+// ★ 아이폰 사파리(설치 안 한 상태)엔 Notification 자체가 없다. 최상위에서 그냥 참조하면 ReferenceError로
+//   여기서 스크립트가 멈춰 뒤의 초기화 5,000줄(고난·훈련 변수 선언 포함)이 안 돌았다 — 2026-03-23부터 09-17까지.
+if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
     // SW가 준비된 후 실행 (getToken이 SW active 상태를 요구함)
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.ready.then(() => {
