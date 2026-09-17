@@ -15485,8 +15485,17 @@ function _camDrawLoop() {
         ctx.save();
         // 셀피처럼 좌우 반전 — 화면과 영상이 같아야 하고, 글자 띠는 반전 뒤에 따로 그린다
         ctx.translate(vw, 0); ctx.scale(-1, 1);
-        if (p.soft && 'filter' in ctx) ctx.filter = 'brightness(1.06) contrast(0.94) saturate(1.06) blur(0.7px)';
-        ctx.drawImage(v, 0, 0, vw, vh);
+        if (p.soft && 'filter' in ctx) {
+            // 소프트 포커스(Orton) — 밝게 한 원본 위에 흐린 사본을 반투명으로 겹친다. 피부 결은 뭉개지고 윤곽은 남는다
+            ctx.filter = 'brightness(1.10) contrast(0.90) saturate(1.08)';
+            ctx.drawImage(v, 0, 0, vw, vh);
+            ctx.filter = 'blur(6px) brightness(1.15) saturate(1.05)';
+            ctx.globalAlpha = 0.55;
+            ctx.drawImage(v, 0, 0, vw, vh);
+            ctx.globalAlpha = 1;
+        } else {
+            ctx.drawImage(v, 0, 0, vw, vh);
+        }
         ctx.restore();
         if (p.frame) _camDrawFrame(ctx, vw, vh, p);
     }
