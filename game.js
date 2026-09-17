@@ -15439,10 +15439,13 @@ function _camRetake() {
 }
 function _camFile() {
     if (!_cam.blob) return null;
-    const ext = /mp4/.test(_cam.blob.type) ? 'mp4' : 'webm';
+    // 'video/webm;codecs=vp9,opus'처럼 코덱이 붙은 형식은 크롬의 파일 공유 허용 목록에 없어 거부된다 → 기본 형식만
+    const isMp4 = /mp4/.test(_cam.blob.type);
+    const type = isMp4 ? 'video/mp4' : 'video/webm';
+    const ext = isMp4 ? 'mp4' : 'webm';
     const ev = _dailyEvent(); const ids = ev ? _eventVerseIds(ev) : [];
     const name = `암송_${_get6AMDayStr()}_${_dailyLabel(ids).replace(/^계 /, '').replace(/[:~, ]/g, '-')}.${ext}`;
-    try { return new File([_cam.blob], name, { type: _cam.blob.type }); } catch (e) { return null; }
+    try { return new File([_cam.blob], name, { type }); } catch (e) { return null; }
 }
 async function _camShare() {
     const file = _camFile(); if (!file) return;
