@@ -5498,6 +5498,24 @@ function _maybeStartRain() {
 }
 /* 서버 시각 보정(clock.js)이 기기 시계와 1시간 넘게 어긋난 것을 알아채면 한 번 알린다.
    '오늘'이 폰 날짜와 다르게 보일 수 있으니 이유를 말해준다. 보정 자체는 clock.js가 이미 끝냈다 */
+/* 잡히지 않은 오류를 화면 위에 띄운다 (2026-09-17). 아이폰은 콘솔을 볼 수 없어 "모달이 그냥 닫혀요"로만 전해진다.
+   세션당 첫 오류 하나, 우리 파일(game.js·index.html)에서 난 것만. 스크린샷으로 원인을 받기 위한 것 */
+let _errShown = false;
+function _showUncaughtError(msg, src, line) {
+    if (_errShown) return;
+    if (src && !/kingsload|game\.js|index\.html|clock\.js/.test(String(src))) return;
+    _errShown = true;
+    try {
+        const el = document.createElement('div');
+        el.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:99999;max-width:92vw;background:#7b1e1e;color:#fff;padding:10px 14px;border-radius:10px;font-size:12px;line-height:1.5;word-break:break-all;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.4);';
+        el.textContent = `⚠️ 오류: ${String(msg).slice(0, 160)}${line ? ` (${String(src || '').split('/').pop().split('?')[0]}:${line})` : ''}`;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 12000);
+    } catch (e) {}
+}
+window.addEventListener('error', (ev) => _showUncaughtError(ev.message || (ev.error && ev.error.message) || 'error', ev.filename, ev.lineno));
+window.addEventListener('unhandledrejection', (ev) => { const r = ev.reason; _showUncaughtError((r && (r.message || r.code)) || String(r), 'game.js', 0); });
+
 function _onClockChanged(detail) {
     const off = (detail && detail.offset) || 0;
     if (Math.abs(off) < 3600000) return;
@@ -10389,7 +10407,7 @@ function _showSyncFailToast(e, label = '서버 저장 실패') {
     toast.id = 'sync-fail-toast';
     // pointer-events:none — 8초나 떠 있으므로 그동안 아래 버튼이 막히면 안 된다 (누를 것이 없는 안내다)
     toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#c0392b;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:99999;text-align:center;max-width:90vw;pointer-events:none;';
-    toast.textContent = `⚠️ ${label}: ${friendly}`;
+    toast.textContent = `⚠️ ${label}: ${friendly}` + (code ? ` (${code})` : (e && e.message ? ` (${String(e.message).slice(0, 80)})` : ''));
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 8000);
 }
