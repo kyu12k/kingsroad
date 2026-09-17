@@ -6115,15 +6115,19 @@ body, html {
 .daily-cam-btn { width: 100%; margin-top: 8px; padding: 11px; border-radius: 12px; border: 1px solid #8e44ad; background: #f5eefb; color: #6c3483; font-weight: 800; cursor: pointer; }
 .daily-cam-btn.locked { opacity: 0.5; }
 #daily-cam { position: fixed; inset: 0; z-index: 9990; background: #000; display: flex; flex-direction: column; }
-#daily-cam video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; }
+#daily-cam video, #daily-cam canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; }
+.cam-opts { position: absolute; left: 0; right: 0; bottom: calc(118px + env(safe-area-inset-bottom, 0px)); display: flex; justify-content: center; align-items: center; gap: 8px; }
+.cam-opt { padding: 7px 12px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.35); background: rgba(0,0,0,0.45); color: #ddd; font-weight: 700; font-size: 0.85rem; cursor: pointer; }
+.cam-opt.on { background: #f1c40f; border-color: #f1c40f; color: #2c3e50; }
+.cam-opts .cam-font button { background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.35); color: #fff; border-radius: 18px; padding: 7px 10px; font-size: 0.85rem; cursor: pointer; }
 #cam-playback { top: 0; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); height: auto; object-fit: contain; }
-#cam-preview { transform: scaleX(-1); }
+#cam-preview { pointer-events: none; }   /* 원본은 숨기고 캔버스가 보인다 (반전은 캔버스에서) */
 .cam-card { position: absolute; left: 10px; right: 10px; top: calc(10px + env(safe-area-inset-top, 0px)); background: rgba(0,0,0,0.62); color: #fff; border-radius: 14px; padding: 12px 14px; line-height: 1.55; word-break: keep-all; max-height: 55vh; overflow-y: auto; }
 .cam-card-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.8em; color: #f1c40f; font-weight: 800; margin-bottom: 6px; }
 .cam-font button { background: rgba(255,255,255,0.15); border: none; color: #fff; border-radius: 8px; padding: 3px 8px; margin-left: 4px; font-size: 0.9em; cursor: pointer; }
 .cam-verse { margin: 4px 0; }
 .cam-ref { color: #f1c40f; font-weight: 800; margin-right: 4px; }
-.cam-status { position: absolute; left: 0; right: 0; bottom: calc(92px + env(safe-area-inset-bottom, 0px)); text-align: center; color: #eee; font-size: 0.85rem; text-shadow: 0 1px 3px #000; padding: 0 16px; }
+.cam-status { position: absolute; left: 0; right: 0; bottom: calc(160px + env(safe-area-inset-bottom, 0px)); text-align: center; color: #eee; font-size: 0.85rem; text-shadow: 0 1px 3px #000; padding: 0 16px; }
 .cam-controls { position: absolute; left: 0; right: 0; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; padding: 0 12px; }
 .cam-btn { padding: 12px 18px; border-radius: 26px; border: 1px solid rgba(255,255,255,0.35); background: rgba(0,0,0,0.5); color: #fff; font-weight: 800; font-size: 0.95rem; cursor: pointer; }
 .cam-btn.cam-rec { background: #e74c3c; border-color: #e74c3c; padding: 14px 26px; font-size: 1.05rem; }

@@ -1789,12 +1789,18 @@ verseRecall['1-1'] = { pass, typedPass, fail, firstPass, lastPass, lastAt, lastO
   - **📅 암송완료** — 이번 주 진도일(월~토에서 쉬는 날 뺀 것)을 전부 마치면 마지막 진도일에 `dailyWeekDone = weekId`(`_dailyCheckWeekDone`).
     `weeklyDoneWeek`로 올라가고, 이번 주·지난주 것이면 칭호처럼 표시(`.daily-week-title`). 보석 없음
   - 서버: 화이트리스트 + 형식 검증(kingsroad), 스냅샷 4곳(functions), 규칙 `serverOnlyKeys`. 클라이언트 변환 3곳(index.html)
-- **3단계 🎥 촬영 (같은 날, 스위치 뒤)** — `openDailyRecorder()`: 전면 카메라 미리보기(좌우 반전) + 위에 오늘 구절 큐카드(글씨 크기 A−/A+, `kingsRoad_camFont`)
-  + ● 녹화/■ 정지 → 재생 확인 → 「📤 보내기」(Web Share API, 파일 공유 — 텔레그램 등 공유 시트) / 「💾 저장」(다운로드) / 다시 찍기.
-  백지로 오늘 구절을 마친 뒤에만 열린다(`daily-cam-btn.locked`). 영상은 서버에 안 올린다. Wake Lock으로 화면 유지.
-  mime은 `_camPickMime()` — 아이폰 mp4, 안드로이드 webm. 카톡·텔레그램 안의 웹뷰(`_camIsInApp`)는 카메라가 안 돼 브라우저로 열라고 안내.
-  **스위치** `kingsRoad_camBeta` — 주소에 `?cam=1`을 붙여 열면 켜지고 `?cam=0`이면 꺼진다(`_camEnabled`).
-  아이폰 설치 앱은 사파리와 저장소가 달라 주소로는 못 켜므로 **오늘의 암송 화면 제목을 5번 연속 탭**해도 켜고 끈다(`_camSecretTap`). 기기 확인 뒤 스위치를 지우고 전원에게
+- **3단계 🎥 촬영 (같은 날 전원 공개)** — `openDailyRecorder()`: 전면 카메라 프레임을 **캔버스에 그려**(좌우 반전) 그 위에
+  **액자**(위 띠: 📅 구절·날짜, 아래 띠: 본문 — 가슴 아래를 덮어 옷이 안 나온다)와 **보정**(밝기·소프트, `ctx.filter`)을 얹고
+  `canvas.captureStream(30)` + 마이크 트랙을 MediaRecorder에 넣는다 → 화면에 보이는 그대로 영상에 박힌다. 액자를 끄면 화면 위 큐카드만.
+  옵션(`kingsRoad_camPrefs` {frame, soft, font})은 녹화 중엔 못 바꾼다. 캔버스 녹화가 안 되는 기기는 원본 스트림으로 폴백.
+  ● 녹화/■ 정지 → 재생 확인(브라우저 컨트롤이 버튼 줄에 안 가리게 위쪽 영역만) → 「📤 보내기」(Web Share, 제목 "계 16:13~15 암송 (9/17)") / 「💾 저장」 / 다시 찍기.
+  백지로 오늘 구절을 마친 뒤에만 열린다(`daily-cam-btn.locked`). 영상은 서버에 안 올린다. Wake Lock.
+  - ★ **Web Share의 파일 공유는 `video/webm;codecs=vp9,opus`처럼 코덱이 붙은 MIME을 거부**한다 → `_camFile()`이 `video/webm`·`video/mp4`로 File을 만든다.
+    처음엔 이것 때문에 공유가 늘 실패해 다운로드로 빠졌고, 토스트는 촬영 화면(z 10001) 뒤에 가려 이유도 안 보였다(z를 9990으로).
+    실패 사유는 토스트에 그대로 찍는다(기기 진단용)
+  - 카톡·텔레그램 안의 웹뷰(`_camIsInApp`)는 카메라가 안 돼 브라우저로 열라고 안내. 안드로이드 크롬 PWA 확인(9/17), **아이폰 미확인**
+  - 비상 스위치: `localStorage.kingsRoad_camOff = '1'`이면 버튼이 안 뜬다. 테스트용 `?cam=1`·제목 5번 탭은 공개하면서 지웠다
+  - 하지 않은 것: 배경 흐림·가상 배경(사람 분리 모델 — 어르신 폰에서 발열·배터리), 얼굴 인식 보정(모델 부담 + 품질). 액자의 아래 띠가 '옷 가리기'를 대신한다
 
 ---
 

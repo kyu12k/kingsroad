@@ -15304,7 +15304,7 @@ function openDailyScreen() {
         <div class="result-card event-card daily-card">
             <div class="event-head">
                 <div class="event-eyebrow">${t('daily_eyebrow')} · ${ev.mine ? t('daily_source_mine') : t('daily_source_church')}</div>
-                <div class="event-title" onclick="_camSecretTap()">📅 ${ev.rest ? t('daily_title') : escapeHtml(_dailyLabel(ids))}</div>
+                <div class="event-title">📅 ${ev.rest ? t('daily_title') : escapeHtml(_dailyLabel(ids))}</div>
                 <div class="event-sub">${dateLabel}</div>
             </div>
             ${body}
@@ -15316,29 +15316,33 @@ function openDailyScreen() {
     setTimeout(() => overlay.classList.add('active'), 10);
 }
 
-/* ── 🎥 암송 촬영 (2026-09-17, 3단계) ─────────────────────────────────────
+/* ── 🎥 암송 촬영 (2026-09-17, 3단계 → 같은 날 전원 공개 + 액자·보정) ────────────────
    교회는 하루 3절을 외우는 영상을 찍어 보낸다. 대부분 자기 폰으로 혼자 찍으므로 카메라 앱을 켜면 답지를 볼 수 없다
-   → 앱 안에서 전면 카메라를 켜고, 오늘 구절을 큐카드로 위에 얹은 채 녹화한다. 끝나면 공유 시트(텔레그램 등)로 보내거나 저장.
+   → 앱 안에서 전면 카메라를 켜고, 오늘 구절을 위에 얹은 채 녹화한다. 끝나면 공유 시트(텔레그램 등)로 보내거나 저장.
    영상은 서버에 안 올라간다 — 폰에만. 백지로 오늘 구절을 마친 뒤에만 열린다("먼저 외우고, 그다음 찍는다").
-   기기 편차(iOS PWA 카메라 권한·webm/mp4)가 있어 스위치(kingsRoad_camBeta) 뒤에 두고 확인 뒤 연다. */
+
+   녹화 경로는 캔버스다: 카메라 프레임을 캔버스에 그리고(좌우 반전) 그 위에 액자(위 띠: 구절·날짜, 아래 띠: 본문)와
+   보정(밝기·소프트)을 얹은 뒤 canvas.captureStream + 마이크 트랙을 MediaRecorder에 넣는다.
+   그래서 화면에 보이는 그대로 영상에 박혀 나간다 — 받는 쪽도 어느 구절·언제인지 영상만 보고 알고, 아래 띠가 가슴 아래를 덮어 옷이 안 나온다.
+   액자를 끄면 예전처럼 화면에만 큐카드가 뜬다(영상엔 안 박힘).
+   Web Share의 파일 공유는 'video/webm;codecs=…'처럼 코덱이 붙은 MIME을 거부하므로 기본 형식으로 File을 만든다.
+   기기 편차(iOS PWA 카메라 권한·webm/mp4)는 안내 문구로 받는다. 안드로이드 크롬 PWA에서 확인(9/17), 아이폰은 미확인.
+   끄기: localStorage kingsRoad_camOff = '1' (문제가 생겼을 때 기기별 비상 스위치) */
 function _camEnabled() {
-    try { return localStorage.getItem('kingsRoad_camBeta') === '1'; } catch (e) { return false; }
+    try { return localStorage.getItem('kingsRoad_camOff') !== '1'; } catch (e) { return true; }
 }
-// 켜기: 주소 뒤에 ?cam=1 을 붙여 한 번 열면 이 기기에 남는다 (?cam=0 으로 끔).
-// 아이폰 설치 앱(PWA)은 사파리와 저장소가 달라 주소로는 못 켜므로, 오늘의 암송 화면 제목을 5번 연속 탭해도 켜고 끈다
-let _camTaps = 0, _camTapAt = 0;
-function _camSecretTap() {
-    const now = Date.now();
-    _camTaps = (now - _camTapAt < 1500) ? _camTaps + 1 : 1; _camTapAt = now;
-    if (_camTaps < 5) return;
-    _camTaps = 0;
-    const on = !_camEnabled();
-    try { if (on) localStorage.setItem('kingsRoad_camBeta', '1'); else localStorage.removeItem('kingsRoad_camBeta'); } catch (e) {}
-    showGemToast(0, on ? '🎥 촬영 기능 켬 (테스트)' : '🎥 촬영 기능 끔', false);
-    openDailyScreen();
+let _cam = { stream: null, rec: null, chunks: [], blob: null, mime: '', timer: null, startedAt: 0, wake: null, raf: 0, canvas: null, ctx: null, video: null, verses: [], label: '' };
+const CAM_PREFS_KEY = 'kingsRoad_camPrefs';
+function _camPrefs() {
+    let p = { frame: true, soft: false, font: 20 };
+    try { Object.assign(p, JSON.parse(localStorage.getItem(CAM_PREFS_KEY) || '{}')); } catch (e) {}
+    return p;
 }
-try { const _q = new URLSearchParams(location.search); if (_q.get('cam') === '1') localStorage.setItem('kingsRoad_camBeta', '1'); else if (_q.get('cam') === '0') localStorage.removeItem('kingsRoad_camBeta'); } catch (e) {}
-let _cam = { stream: null, rec: null, chunks: [], blob: null, mime: '', timer: null, startedAt: 0, wake: null };
+function _camSetPref(k, v) {
+    const p = _camPrefs(); p[k] = v;
+    try { localStorage.setItem(CAM_PREFS_KEY, JSON.stringify(p)); } catch (e) {}
+    _camApplyPrefUI();
+}
 function _camPickMime() {
     if (typeof MediaRecorder === 'undefined') return '';
     const cands = ['video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
@@ -15357,17 +15361,25 @@ async function openDailyRecorder() {
     const ids = _eventVerseIds(ev);
     const old = document.getElementById('daily-cam'); if (old) old.remove();
     const m = document.getElementById('event-modal'); if (m) m.remove();
-    let fs = 20; try { fs = parseInt(localStorage.getItem('kingsRoad_camFont'), 10) || 20; } catch (e) {}
-    const verses = ids.map(id => { const [c, v] = String(id).split('-').map(Number); const text = ((bibleData[c] || [])[v - 1] || {}).text || ''; return `<div class="cam-verse"><span class="cam-ref">${c}:${v}</span> ${escapeHtml(text)}</div>`; }).join('');
+    const prefs = _camPrefs();
+    _cam.verses = ids.map(id => { const [c, v] = String(id).split('-').map(Number); return { ref: `${c}:${v}`, text: ((bibleData[c] || [])[v - 1] || {}).text || '' }; });
+    _cam.label = _dailyLabel(ids);
+    const versesHtml = _cam.verses.map(v => `<div class="cam-verse"><span class="cam-ref">${v.ref}</span> ${escapeHtml(v.text)}</div>`).join('');
     const el = document.createElement('div');
     el.id = 'daily-cam';
     el.innerHTML = `
-        <video id="cam-preview" autoplay muted playsinline></video>
+        <video id="cam-preview" autoplay muted playsinline style="opacity:0;"></video>
+        <canvas id="cam-canvas"></canvas>
         <video id="cam-playback" playsinline controls style="display:none;"></video>
-        <div class="cam-card" id="cam-card" style="font-size:${fs}px;">
-            <div class="cam-card-head"><span>📅 ${escapeHtml(_dailyLabel(ids))}</span>
+        <div class="cam-card" id="cam-card" style="font-size:${prefs.font}px;">
+            <div class="cam-card-head"><span>📅 ${escapeHtml(_cam.label)}</span>
                 <span class="cam-font"><button onclick="_camFont(-2)">A−</button><button onclick="_camFont(2)">A+</button></span></div>
-            ${verses}
+            ${versesHtml}
+        </div>
+        <div class="cam-opts" id="cam-opts">
+            <button class="cam-opt" id="cam-opt-frame" onclick="_camSetPref('frame', !_camPrefs().frame)">🖼️ 액자</button>
+            <button class="cam-opt" id="cam-opt-soft" onclick="_camSetPref('soft', !_camPrefs().soft)">✨ 보정</button>
+            <span class="cam-font"><button onclick="_camFont(-2)">A−</button><button onclick="_camFont(2)">A+</button></span>
         </div>
         <div class="cam-status" id="cam-status">${t('daily_cam_preparing')}</div>
         <div class="cam-controls" id="cam-controls">
@@ -15390,31 +15402,117 @@ async function openDailyRecorder() {
         closeDailyRecorder(); return;
     }
     const pv = document.getElementById('cam-preview');
+    _cam.video = pv;
     pv.srcObject = _cam.stream;
     try { await pv.play(); } catch (e) {}
+    _cam.canvas = document.getElementById('cam-canvas');
+    _cam.ctx = _cam.canvas.getContext('2d');
     _cam.mime = _camPickMime();
+    _camApplyPrefUI();
+    _camDrawLoop();
     document.getElementById('cam-status').textContent = t('daily_cam_hint');
     document.getElementById('cam-rec-btn').disabled = false;
     try { if (navigator.wakeLock) _cam.wake = await navigator.wakeLock.request('screen'); } catch (e) {}
 }
+function _camApplyPrefUI() {
+    const p = _camPrefs();
+    const f = document.getElementById('cam-opt-frame'), s = document.getElementById('cam-opt-soft');
+    if (f) f.classList.toggle('on', !!p.frame);
+    if (s) s.classList.toggle('on', !!p.soft);
+    // 액자를 켜면 구절이 영상 안에 박히므로 화면 위 큐카드는 숨긴다 (겹치면 두 번 보인다)
+    const card = document.getElementById('cam-card');
+    if (card) { card.style.display = p.frame ? 'none' : ''; card.style.fontSize = p.font + 'px'; }
+}
 function _camFont(d) {
-    const card = document.getElementById('cam-card'); if (!card) return;
-    let fs = parseInt(card.style.fontSize, 10) || 20; fs = Math.max(14, Math.min(34, fs + d));
-    card.style.fontSize = fs + 'px';
-    try { localStorage.setItem('kingsRoad_camFont', String(fs)); } catch (e) {}
+    const p = _camPrefs();
+    _camSetPref('font', Math.max(14, Math.min(34, (p.font || 20) + d)));
+}
+/* 캔버스에 글을 줄바꿈해 그린다. 반환: 그린 줄 수 */
+function _camWrapText(ctx, text, x, y, maxW, lineH, maxLines) {
+    const words = String(text).split(/(\s+)/).filter(w => w.length);
+    let line = '', n = 0;
+    for (let i = 0; i < words.length; i++) {
+        const test = line + words[i];
+        if (ctx.measureText(test).width > maxW && line) {
+            ctx.fillText(line.trim(), x, y + n * lineH); n++; line = words[i].trim() ? words[i] : '';
+            if (maxLines && n >= maxLines) return n;
+        } else line = test;
+    }
+    if (line.trim()) { ctx.fillText(line.trim(), x, y + n * lineH); n++; }
+    return n;
+}
+function _camDrawLoop() {
+    const v = _cam.video, c = _cam.canvas, ctx = _cam.ctx;
+    if (!v || !c || !ctx || !_cam.stream) return;
+    const vw = v.videoWidth, vh = v.videoHeight;
+    if (vw && vh) {
+        if (c.width !== vw || c.height !== vh) { c.width = vw; c.height = vh; }
+        const p = _camPrefs();
+        ctx.save();
+        // 셀피처럼 좌우 반전 — 화면과 영상이 같아야 하고, 글자 띠는 반전 뒤에 따로 그린다
+        ctx.translate(vw, 0); ctx.scale(-1, 1);
+        if (p.soft && 'filter' in ctx) ctx.filter = 'brightness(1.06) contrast(0.94) saturate(1.06) blur(0.7px)';
+        ctx.drawImage(v, 0, 0, vw, vh);
+        ctx.restore();
+        if (p.frame) _camDrawFrame(ctx, vw, vh, p);
+    }
+    _cam.raf = requestAnimationFrame(_camDrawLoop);
+}
+/* 액자 — 위 띠(구절·날짜), 아래 띠(본문, 가슴 아래를 덮는다) */
+function _camDrawFrame(ctx, w, h, p) {
+    const S = w / 720;                      // 720 기준 배율 — 해상도가 달라도 같은 비율
+    const pad = 22 * S;
+    const [, mm, dd] = _get6AMDayStr().split('-').map(Number);
+    // 위 띠
+    const topH = 74 * S;
+    ctx.fillStyle = 'rgba(0,0,0,0.62)'; ctx.fillRect(0, 0, w, topH);
+    ctx.fillStyle = '#f1c40f'; ctx.font = `800 ${30 * S}px "Gowun Dodum", sans-serif`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    ctx.fillText(`📅 ${_cam.label}`, pad, topH / 2);
+    ctx.fillStyle = '#fff'; ctx.font = `700 ${22 * S}px "Gowun Dodum", sans-serif`; ctx.textAlign = 'right';
+    ctx.fillText(`${mm}/${dd} 오늘의 암송`, w - pad, topH / 2);
+    // 아래 띠 — 본문. 글씨 크기는 설정값(20~34px 기준)을 배율로
+    const fs = (p.font || 20) * 1.15 * S, lh = fs * 1.5;
+    ctx.font = `600 ${fs}px "Gowun Dodum", sans-serif`; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    // 먼저 줄 수를 재서 띠 높이를 정한다 (투명 캔버스에 그려보지 않고 measureText로만)
+    const maxW = w - pad * 2;
+    let lines = 0;
+    const measure = (text) => { const words = String(text).split(/(\s+)/).filter(x => x.length); let line = '', n = 0; for (const wd of words) { const tst = line + wd; if (ctx.measureText(tst).width > maxW && line) { n++; line = wd.trim() ? wd : ''; } else line = tst; } return n + (line.trim() ? 1 : 0); };
+    _cam.verses.forEach(vv => { lines += measure(`${vv.ref} ${vv.text}`); });
+    const bandH = Math.min(h * 0.55, Math.max(h * 0.42, lines * lh + pad * 2));
+    const y0 = h - bandH;
+    ctx.fillStyle = 'rgba(0,0,0,0.72)'; ctx.fillRect(0, y0, w, bandH);
+    let y = y0 + pad;
+    for (const vv of _cam.verses) {
+        ctx.fillStyle = '#fff';
+        const n = _camWrapText(ctx, `${vv.ref} ${vv.text}`, pad, y, maxW, lh, 0);
+        // 주소만 노란색으로 덧그린다
+        ctx.fillStyle = '#f1c40f'; ctx.fillText(vv.ref, pad, y);
+        y += n * lh + lh * 0.35;
+        if (y > h - pad) break;
+    }
 }
 function _camToggle() {
     if (_cam.rec && _cam.rec.state === 'recording') { _cam.rec.stop(); return; }
-    if (!_cam.stream) return;
+    if (!_cam.stream || !_cam.canvas) return;
     _cam.chunks = []; _cam.blob = null;
-    try { _cam.rec = _cam.mime ? new MediaRecorder(_cam.stream, { mimeType: _cam.mime }) : new MediaRecorder(_cam.stream); }
-    catch (e) { showGemToast(0, t('daily_cam_unsupported'), true); return; }
+    let mixed;
+    try {
+        const cs = _cam.canvas.captureStream(30);
+        mixed = new MediaStream([...cs.getVideoTracks(), ..._cam.stream.getAudioTracks()]);
+        _cam.rec = _cam.mime ? new MediaRecorder(mixed, { mimeType: _cam.mime }) : new MediaRecorder(mixed);
+    } catch (e) {
+        console.warn('[cam] canvas record failed, falling back to raw stream', e);
+        try { _cam.rec = _cam.mime ? new MediaRecorder(_cam.stream, { mimeType: _cam.mime }) : new MediaRecorder(_cam.stream); }
+        catch (e2) { showGemToast(0, t('daily_cam_unsupported'), true); return; }
+    }
     _cam.rec.ondataavailable = (e) => { if (e.data && e.data.size) _cam.chunks.push(e.data); };
     _cam.rec.onstop = () => {
         _cam.blob = new Blob(_cam.chunks, { type: _cam.rec.mimeType || _cam.mime || 'video/webm' });
         clearInterval(_cam.timer); _cam.timer = null;
-        const pv = document.getElementById('cam-preview'), pb = document.getElementById('cam-playback');
-        if (pv) pv.style.display = 'none';
+        const cv = document.getElementById('cam-canvas'), pb = document.getElementById('cam-playback'), card = document.getElementById('cam-card'), opts = document.getElementById('cam-opts');
+        if (cv) cv.style.display = 'none';
+        if (card) card.style.display = 'none';
+        if (opts) opts.style.display = 'none';
         if (pb) { pb.src = URL.createObjectURL(_cam.blob); pb.style.display = ''; }
         document.getElementById('cam-controls').style.display = 'none';
         document.getElementById('cam-after').style.display = '';
@@ -15422,14 +15520,17 @@ function _camToggle() {
     };
     _cam.rec.start(1000);
     _cam.startedAt = Date.now();
+    const opts = document.getElementById('cam-opts'); if (opts) opts.style.display = 'none';   // 녹화 중엔 설정을 못 바꾼다 (영상 중간에 띠가 바뀌면 이상하다)
     const btn = document.getElementById('cam-rec-btn'); btn.textContent = t('daily_cam_stop'); btn.classList.add('on');
     const tm = document.getElementById('cam-timer');
     _cam.timer = setInterval(() => { const s = Math.floor((Date.now() - _cam.startedAt) / 1000); tm.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }, 250);
 }
 function _camRetake() {
-    const pv = document.getElementById('cam-preview'), pb = document.getElementById('cam-playback');
+    const cv = document.getElementById('cam-canvas'), pb = document.getElementById('cam-playback'), opts = document.getElementById('cam-opts');
     if (pb) { pb.pause(); if (pb.src) URL.revokeObjectURL(pb.src); pb.removeAttribute('src'); pb.style.display = 'none'; }
-    if (pv) pv.style.display = '';
+    if (cv) cv.style.display = '';
+    if (opts) opts.style.display = '';
+    _camApplyPrefUI();
     _cam.blob = null; _cam.chunks = [];
     document.getElementById('cam-after').style.display = 'none';
     document.getElementById('cam-controls').style.display = '';
@@ -15443,8 +15544,7 @@ function _camFile() {
     const isMp4 = /mp4/.test(_cam.blob.type);
     const type = isMp4 ? 'video/mp4' : 'video/webm';
     const ext = isMp4 ? 'mp4' : 'webm';
-    const ev = _dailyEvent(); const ids = ev ? _eventVerseIds(ev) : [];
-    const name = `암송_${_get6AMDayStr()}_${_dailyLabel(ids).replace(/^계 /, '').replace(/[:~, ]/g, '-')}.${ext}`;
+    const name = `암송_${_get6AMDayStr()}_${_cam.label.replace(/^계 /, '').replace(/[:~, ]/g, '-')}.${ext}`;
     try { return new File([_cam.blob], name, { type }); } catch (e) { return null; }
 }
 async function _camShare() {
@@ -15455,9 +15555,8 @@ async function _camShare() {
     else {
         const can = navigator.canShare ? navigator.canShare({ files: [file] }) : null;
         // 공유 창의 제목은 구절로 — '암송 촬영'보다 "계 16:13~15 암송"이 받는 쪽에서 바로 읽힌다
-        const ev = _dailyEvent(); const label = ev ? _dailyLabel(_eventVerseIds(ev)) : '';
         const [, mm, dd] = _get6AMDayStr().split('-').map(Number);
-        const title = label ? `${label} 암송 (${mm}/${dd})` : t('daily_cam_title');
+        const title = _cam.label ? `${_cam.label} 암송 (${mm}/${dd})` : t('daily_cam_title');
         try { await navigator.share({ files: [file], title, text: title }); showGemToast(0, t('daily_cam_shared'), false); return; }
         catch (e) {
             if (e && e.name === 'AbortError') return;   // 사용자가 공유 창을 닫음
@@ -15477,11 +15576,12 @@ function _camSave() {
 function closeDailyRecorder() {
     try { if (_cam.rec && _cam.rec.state === 'recording') _cam.rec.stop(); } catch (e) {}
     clearInterval(_cam.timer); _cam.timer = null;
+    if (_cam.raf) { cancelAnimationFrame(_cam.raf); _cam.raf = 0; }
     if (_cam.stream) { _cam.stream.getTracks().forEach(tr => { try { tr.stop(); } catch (e) {} }); _cam.stream = null; }
     if (_cam.wake) { try { _cam.wake.release(); } catch (e) {} _cam.wake = null; }
     const pb = document.getElementById('cam-playback'); if (pb && pb.src) { try { URL.revokeObjectURL(pb.src); } catch (e) {} }
     const el = document.getElementById('daily-cam'); if (el) el.remove();
-    _cam.rec = null; _cam.blob = null; _cam.chunks = [];
+    _cam.rec = null; _cam.blob = null; _cam.chunks = []; _cam.canvas = null; _cam.ctx = null; _cam.video = null;
     openDailyScreen();
 }
 
