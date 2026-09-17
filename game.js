@@ -705,6 +705,32 @@ const LANG = {
         event_reward_hint: '🎁 오늘 {n}절을 모두 백지로 쓰면 💎{gem} (하루 1회)',
         event_reward_done: '✅ 오늘 전부 백지로 통과 · 💎{gem} 받음',
         event_all_blank_done: '📝 시험 문항 전부 백지 통과!',
+        daily_title: '오늘의 암송',
+        daily_eyebrow: '하루 암송',
+        daily_mode_btn_label: '오늘의 암송',
+        daily_mode_btn_desc_church: '교회 진도 · {label}',
+        daily_mode_btn_desc_mine: '내 진도 · {label}',
+        daily_done_short: '오늘 암송함',
+        daily_rest: '오늘은 쉬는 날이에요',
+        daily_rest_desc: '일요일과 연휴에는 진도가 나가지 않아요. 내일 다시 만나요.',
+        daily_source_church: '교회 진도',
+        daily_source_mine: '내 진도',
+        daily_go: '오늘 {n}절 도전',
+        daily_status_done: '✅ 오늘 암송 완료 — 백지로 {n}절을 써냈어요',
+        daily_status_todo: '백지로 {n}절을 써내면 「오늘 암송함」이 돼요',
+        daily_note: '교회에서 매일 외우는 그 구절이에요. 보통·어려움·빈칸으로 연습하고, 마지막엔 백지로 써보세요.<br>난이도마다 하루 한 번씩 승점을 받아요.',
+        daily_settings: '⚙️ 내 진도 설정',
+        daily_settings_title: '내 진도 설정',
+        daily_settings_desc: '교회와 다른 곳을 외우고 있다면 오늘 시작 구절과 하루 절 수를 정하세요. 쉬는 날은 교회와 같아요.',
+        daily_settings_start: '오늘 시작 구절',
+        daily_settings_per_day: '하루 절 수',
+        daily_settings_save: '저장',
+        daily_settings_reset: '교회 진도로 돌아가기',
+        daily_settings_saved: '내 진도를 저장했어요 · 오늘 {label}',
+        daily_settings_reset_done: '교회 진도로 돌아왔어요',
+        daily_cleared: '📅 오늘의 암송 · {name} 통과',
+        daily_all_done_toast: '✅ 오늘 암송 완료!',
+        daily_none: '오늘의 암송이 아직 준비되지 않았어요',
         ranking_read_title: '📖 실시간 통독왕',
         ranking_read_desc: '이번 주 <b>읽음을 누른 구절 수</b><br>장을 다 읽으면 다시 읽을 수 있어요',
         ranking_read_empty: '아직 아무도 없어요.<br>장을 열어 「읽음」을 누르면 여기에 올라갑니다.',
@@ -1560,6 +1586,32 @@ const LANG = {
         event_reward_hint: '🎁 Write all {n} verses from a blank page today for 💎{gem} (once a day)',
         event_reward_done: '✅ All passed from blank today · 💎{gem} received',
         event_all_blank_done: '📝 Every exam question passed from blank!',
+        daily_title: 'Verses of the Day',
+        daily_eyebrow: 'DAILY',
+        daily_mode_btn_label: 'Verses of the Day',
+        daily_mode_btn_desc_church: 'Church plan · {label}',
+        daily_mode_btn_desc_mine: 'My plan · {label}',
+        daily_done_short: 'Recited today',
+        daily_rest: 'Rest day',
+        daily_rest_desc: 'No new verses on Sundays and holidays. See you tomorrow.',
+        daily_source_church: 'Church plan',
+        daily_source_mine: 'My plan',
+        daily_go: 'Try today\'s {n} verses',
+        daily_status_done: '✅ Recited today — {n} verses from a blank page',
+        daily_status_todo: 'Write {n} verses from a blank page to mark today as recited',
+        daily_note: 'The verses your church memorizes each day. Practice with Words · Initials · Blanks, then finish with Blank page.<br>Each level scores once a day.',
+        daily_settings: '⚙️ My plan',
+        daily_settings_title: 'My plan',
+        daily_settings_desc: 'Memorizing a different part? Set today\'s starting verse and verses per day. Rest days follow the church.',
+        daily_settings_start: 'Starting verse today',
+        daily_settings_per_day: 'Verses per day',
+        daily_settings_save: 'Save',
+        daily_settings_reset: 'Back to church plan',
+        daily_settings_saved: 'Plan saved · today {label}',
+        daily_settings_reset_done: 'Back to the church plan',
+        daily_cleared: '📅 Verses of the Day · {name} passed',
+        daily_all_done_toast: '✅ Recited today!',
+        daily_none: 'Verses of the Day is not ready yet',
         ranking_read_title: '📖 Live Reading Kings',
         ranking_read_desc: 'Verses <b>marked as read this week</b><br>Finish a chapter and you can read it again',
         ranking_read_empty: 'Nobody yet.<br>Open a chapter and press "Read" to appear here.',
@@ -2439,6 +2491,14 @@ loadGameData = function () {
             bibleReadTotal = (parsed.bibleReadTotal && parsed.bibleReadTotal[_today] != null) ? { [_today]: parsed.bibleReadTotal[_today] } : {};
         }
         if (parsed.eventProgress && typeof parsed.eventProgress === 'object') eventProgress = parsed.eventProgress;
+        if (parsed.dailyRecite && typeof parsed.dailyRecite === 'object' && parsed.dailyRecite.anchorVerse) dailyRecite = parsed.dailyRecite;
+        if (parsed.dailyReciteDone && typeof parsed.dailyReciteDone === 'object') dailyReciteDone = parsed.dailyReciteDone;
+        // 오늘의 암송 진행은 날마다 새 id라 60일 지난 것은 버린다 (저장본이 자라지 않게)
+        try {
+            const _cut = _shift6AMDayStr(_get6AMDayStr(), -60);
+            Object.keys(eventProgress).forEach(k => { if (k.startsWith('daily:') && k.slice(6) < _cut) delete eventProgress[k]; });
+            Object.keys(dailyReciteDone).forEach(k => { if (k < _cut) delete dailyReciteDone[k]; });
+        } catch (e) {}
         if (parsed.readWeek && typeof parsed.readWeek === 'object') {
             readWeek = { weekId: String(parsed.readWeek.weekId || ''), count: Math.max(0, parseInt(parsed.readWeek.count, 10) || 0) };
         }
@@ -6122,6 +6182,7 @@ function openModeSelectOverlay() {
 function _renderModeSelectEventBtn() {
     const card = document.querySelector('#mode-select-overlay .mode-select-card');
     if (!card) return;
+    _renderModeSelectDailyBtn(card);
     const old = document.getElementById('mode-event-btn');
     const ev = (typeof _activeEvents === 'function') ? (_activeEvents()[0] || null) : null;
     if (!ev) { if (old) old.remove(); return; }
@@ -6139,6 +6200,29 @@ function _renderModeSelectEventBtn() {
     btn.onclick = () => { closeModeSelectOverlay(); openEventScreen(ev.id); };
     btn.innerHTML = html;
     card.appendChild(btn);
+}
+
+/* 「여정을 선택하세요」의 「📅 오늘의 암송」 — 달력이 있고 쉬는 날이 아닐 때만 */
+function _renderModeSelectDailyBtn(card) {
+    const old = document.getElementById('mode-daily-btn');
+    const dev = (typeof _dailyEvent === 'function') ? _dailyEvent() : null;
+    if (!dev || dev.rest) { if (old) old.remove(); return; }
+    const ids = _eventVerseIds(dev);
+    const done = _dailyDoneToday();
+    const html = `<span class="mode-btn-icon">📅</span>
+        <div class="mode-btn-text">
+            <span class="mode-btn-label">${t('daily_mode_btn_label')} ${done ? '<span class="mode-event-dday">✅ ' + t('daily_done_short') + '</span>' : ''}</span>
+            <span class="mode-btn-desc">${t(dev.mine ? 'daily_mode_btn_desc_mine' : 'daily_mode_btn_desc_church', { label: escapeHtml(_dailyLabel(ids)) })}</span>
+        </div>`;
+    if (old) { old.innerHTML = html; return; }
+    const btn = document.createElement('button');
+    btn.id = 'mode-daily-btn';
+    btn.className = 'mode-journey-btn event-btn daily-btn';
+    btn.onclick = () => { closeModeSelectOverlay(); openDailyScreen(); };
+    btn.innerHTML = html;
+    // 왕의 길·자유여행 다음, 시험 버튼 앞
+    const evBtn = document.getElementById('mode-event-btn');
+    if (evBtn) card.insertBefore(btn, evBtn); else card.appendChild(btn);
 }
 
 // 왕의 길 모드 선택 오버레이 닫기
@@ -9613,7 +9697,9 @@ function saveGameData() {
         bibleReadPasses: bibleReadPasses, // 오늘 장별 완독 회수
         bibleReadTotal: bibleReadTotal,   // 오늘 읽음 수 (회독 포함)
         readWeek: readWeek,               // 실시간 통독왕
-        eventProgress: eventProgress,     // 이벤트 스테이지 진행
+        eventProgress: eventProgress,     // 이벤트 스테이지 진행 (오늘의 암송은 'daily:YYYY-MM-DD')
+        dailyRecite: dailyRecite,         // 오늘의 암송 개인 진도 (null = 교회 진도)
+        dailyReciteDone: dailyReciteDone, // 오늘의 암송 완료일 → ts
         sessionTimeLog: sessionTimeLog,
         // ★ [게임 모드]
         activeMode: activeMode,
@@ -14920,6 +15006,11 @@ let eventProgress = {};            // eventId → stageId → { normal, hard, bl
 const EVENT_RUNGS = ['normal', 'hard', 'blank', 'none'];
 
 function _todayStr() { return _getLocalDateStr(new Date()); }
+/* id로 이벤트를 찾는다 — Firestore 이벤트 또는 오늘의 암송(합성 이벤트) */
+function _findEvent(eventId) {
+    if (String(eventId).startsWith('daily:')) { const d = _dailyEvent(); return (d && d.id === eventId) ? d : null; }
+    return (krEvents || []).find(e => e.id === eventId) || null;
+}
 function _activeEvents() {
     const today = _todayStr();
     return (krEvents || []).filter(e => e && e.start <= today && e.end >= today && _eventQuestions(e).length);
@@ -14976,8 +15067,9 @@ function _recordEventClear(eventId, stageIds, rung) {
         eventProgress[eventId][id][rung] = Date.now();
     });
     // 보상 — 오늘 10절 전부 백지로 통과했으면 💎1,000, 하루 1회. 모의고사 한 번이든 문항 다섯 개 따로든
-    const ev = (krEvents || []).find(e => e.id === eventId);
-    if (rung === 'none' && ev && !_eventRewardedToday(eventId) && _eventAllBlankToday(ev)) {
+    const ev = _findEvent(eventId);
+    if (rung === 'none' && ev && ev.daily) _noteDailyDone(ev);
+    if (rung === 'none' && ev && !ev.daily && !_eventRewardedToday(eventId) && _eventAllBlankToday(ev)) {
         eventProgress[eventId]._rewardDay = _get6AMDayStr();
         myGems += EVENT_ALL_BLANK_GEM;
         updateGemDisplay();
@@ -14985,6 +15077,213 @@ function _recordEventClear(eventId, stageIds, rung) {
     }
     saveGameData();
     if (typeof updateEventStrip === 'function') updateEventStrip();
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   오늘의 암송 — 일일 한정 스테이지 (2026-09-17)
+   교회가 월~토 하루 3절씩 외운다(일요일·연휴는 쉼). 그 달력을 앱에 들여 "오늘 계 16:13~15"를 매일 자동 생성되는
+   이벤트('daily:YYYY-MM-DD')로 낸다. 왕의 길(복습 스케줄)에 묶지 않는다 — 달력이 자주 바뀌어서(추석·대체공휴일) 복습이 흔들린다.
+   달력은 Firestore daily_schedule/main 하나: { anchorDate, anchorVerse, perDay, restWeekdays:[0], holidays:['YYYY-MM-DD'] }.
+   오늘 구절 = 기준일부터 쉬는 날을 뺀 일수 × 하루 절 수만큼 앞. 교회가 어긋나면 기준을 오늘로 다시 찍는다(과거는 안 건드림).
+   개인 설정(dailyRecite)은 위치와 절 수만 다르고 쉬는 날은 교회와 같다.
+   ══════════════════════════════════════════════════════════════════════════ */
+let dailySchedule = null;          // Firestore daily_schedule/main
+let dailyRecite = null;            // { anchorDate, anchorVerse, perDay } — 개인 진도. null이면 교회
+let dailyReciteDone = {};          // 6시 날짜 → ts (그날 전 절을 백지로 통과)
+const DAILY_PER_DAY_MIN = 1, DAILY_PER_DAY_MAX = 5;
+
+let _allVerseIdsCache = null;
+function _allVerseIds() {
+    if (_allVerseIdsCache) return _allVerseIdsCache;
+    const out = [];
+    for (let c = 1; c <= 22; c++) { const arr = bibleData[c] || []; for (let v = 1; v <= arr.length; v++) out.push(`${c}-${v}`); }
+    _allVerseIdsCache = out; return out;
+}
+function _dailyIsRest(dateStr, sched) {
+    const [y, m, d] = String(dateStr).split('-').map(Number);
+    const wd = new Date(y, m - 1, d).getDay();
+    const rest = Array.isArray(sched.restWeekdays) ? sched.restWeekdays : [0];
+    if (rest.includes(wd)) return true;
+    return Array.isArray(sched.holidays) && sched.holidays.includes(dateStr);
+}
+/* anchorDate 다음 날부터 dateStr까지 진도가 나간 날 수 (dateStr 자체 포함). 음수 방향은 뒤로 */
+function _dailyActiveDaysBetween(anchorDate, dateStr, sched) {
+    if (anchorDate === dateStr) return 0;
+    const step = anchorDate < dateStr ? 1 : -1;
+    let cur = anchorDate, n = 0, guard = 0;
+    while (cur !== dateStr && guard++ < 2000) {
+        if (step > 0) { cur = _shift6AMDayStr(cur, 1); if (!_dailyIsRest(cur, sched)) n++; }
+        else { if (!_dailyIsRest(cur, sched)) n--; cur = _shift6AMDayStr(cur, -1); }
+    }
+    return n;
+}
+/* 그날의 구절 목록. 쉬는 날이면 null. plan = { anchorDate, anchorVerse, perDay } */
+function _dailyVersesFor(dateStr, plan, sched) {
+    if (!plan || !plan.anchorVerse || !sched) return null;
+    if (_dailyIsRest(dateStr, sched)) return null;
+    const all = _allVerseIds();
+    const idx0 = all.indexOf(String(plan.anchorVerse));
+    if (idx0 < 0) return null;
+    const per = Math.max(DAILY_PER_DAY_MIN, Math.min(DAILY_PER_DAY_MAX, parseInt(plan.perDay, 10) || 3));
+    const days = _dailyActiveDaysBetween(String(plan.anchorDate), dateStr, sched);
+    const start = ((idx0 + days * per) % all.length + all.length) % all.length;
+    const ids = [];
+    for (let i = 0; i < per; i++) ids.push(all[(start + i) % all.length]);
+    return ids;
+}
+function _dailyPlan() {
+    if (dailyRecite && dailyRecite.anchorVerse) return dailyRecite;
+    return dailySchedule ? { anchorDate: dailySchedule.anchorDate, anchorVerse: dailySchedule.anchorVerse, perDay: dailySchedule.perDay || 3 } : null;
+}
+/* 오늘의 암송을 이벤트 모양으로 — 기존 이벤트 엔진(난이도 4칸·승점·진행)을 그대로 쓴다 */
+function _dailyEvent() {
+    if (!dailySchedule) return null;
+    const day = _get6AMDayStr();
+    const ids = _dailyVersesFor(day, _dailyPlan(), dailySchedule);
+    if (!ids) return { id: 'daily:' + day, daily: true, rest: true, title: t('daily_title'), questions: [], start: day, end: day };
+    return { id: 'daily:' + day, daily: true, title: t('daily_title'), questions: [ids.join(',')], start: day, end: day, mine: !!(dailyRecite && dailyRecite.anchorVerse) };
+}
+/* "계 16:13~15" / 장을 넘으면 "계 16:21, 17:1~2" */
+function _dailyLabel(ids) {
+    if (!ids || !ids.length) return '';
+    const groups = [];
+    ids.forEach(id => { const [c, v] = String(id).split('-').map(Number); const g = groups[groups.length - 1]; if (g && g.c === c) g.v.push(v); else groups.push({ c, v: [v] }); });
+    return '계 ' + groups.map(g => `${g.c}:${g.v.length > 1 ? g.v[0] + '~' + g.v[g.v.length - 1] : g.v[0]}`).join(', ');
+}
+function _dailyDoneToday() { return !!dailyReciteDone[_get6AMDayStr()]; }
+/* 오늘의 암송은 '오늘 한 것'만 센다 — 이벤트와 달리 예전 백지 기록(verseRecall)을 인정하지 않는다. id가 날마다 새로우니 그 안의 기록은 전부 오늘 것 */
+function _dailyVerseRung(eventId, stageId) {
+    const p = (eventProgress[eventId] || {})[stageId] || {};
+    let r = 0; EVENT_RUNGS.forEach((k, i) => { if (p[k]) r = i + 1; }); return r;
+}
+function _noteDailyDone(ev) {
+    if (!ev || !ev.daily || !_eventAllBlankToday(ev)) return;
+    const day = _get6AMDayStr();
+    if (dailyReciteDone[day]) return;
+    dailyReciteDone[day] = Date.now();
+    setTimeout(() => { if (typeof showMissionToast === 'function') showMissionToast(t('daily_all_done_toast'), _dailyLabel(_eventVerseIds(ev))); }, 900);
+}
+
+function loadDailySchedule() {
+    if (typeof db === 'undefined' || !db) return Promise.resolve();
+    return db.collection('daily_schedule').doc('main').get().then(doc => {
+        dailySchedule = doc.exists ? doc.data() : null;
+        if (typeof updateEventStrip === 'function') updateEventStrip();
+    }).catch(err => console.warn('오늘의 암송 달력 조회 실패:', err));
+}
+
+function openDailyScreen() {
+    const ev = _dailyEvent();
+    if (!ev) { showGemToast(0, t('daily_none'), true); return; }
+    const old = document.getElementById('event-modal'); if (old) old.remove();
+    const ids = _eventVerseIds(ev);
+    const [y, m, d] = _get6AMDayStr().split('-').map(Number);
+    const wdKo = ['일', '월', '화', '수', '목', '금', '토'][new Date(y, m - 1, d).getDay()];
+    const dateLabel = `${m}/${d} (${wdKo})`;
+    const rungIcon = ['·', '😌', '🙂', '⭐', '🏆'];
+    const rungName = ['', t('event_mode_normal'), t('event_mode_hard'), t('event_mode_blank'), t('event_mode_none')];
+    const modeBtn = (mm, label) => `<button class="event-mode-btn${_eventMode === mm ? ' on' : ''}" data-mode="${mm}" onclick="setEventMode('${mm}')">${label}</button>`;
+    let body;
+    if (ev.rest) {
+        body = `<div class="daily-rest"><div style="font-size:2rem;">🌿</div><div class="daily-rest-title">${t('daily_rest')}</div><div class="daily-rest-desc">${t('daily_rest_desc')}</div></div>`;
+    } else {
+        const rows = ids.map(id => {
+            const r = _dailyVerseRung(ev.id, id);
+            const [c, v] = String(id).split('-').map(Number);
+            const text = ((bibleData[c] || [])[v - 1] || {}).text || '';
+            return `<div class="event-q daily-q"><div class="event-q-main"><div class="event-q-title">계 ${c}:${v} <span class="daily-q-rung">${rungIcon[r]} ${r ? t('event_status_passed', { name: rungName[r] }) : t('event_status_none')}</span></div><div class="daily-q-text">${escapeHtml(text)}</div></div></div>`;
+        }).join('');
+        const done = _dailyDoneToday();
+        body = `
+            <div class="event-modes">${modeBtn('normal', t('event_mode_normal'))}${modeBtn('hard', t('event_mode_hard'))}${modeBtn('blank', t('event_mode_blank'))}${modeBtn('none', t('event_mode_none'))}</div>
+            <div class="event-list">${rows}</div>
+            <button class="event-all daily-go" onclick="startEventAll('${ev.id}')">${t('daily_go', { n: ids.length })}</button>
+            <div class="event-reward${done ? ' done' : ''}">${done ? t('daily_status_done', { n: ids.length }) : t('daily_status_todo', { n: ids.length })}</div>
+            <p class="event-note">${t('daily_note')}</p>`;
+    }
+    const overlay = document.createElement('div');
+    overlay.id = 'event-modal';
+    overlay.className = 'modal-overlay';
+    overlay.style.zIndex = '9998';
+    overlay.innerHTML = `
+        <div class="result-card event-card daily-card">
+            <div class="event-head">
+                <div class="event-eyebrow">${t('daily_eyebrow')} · ${ev.mine ? t('daily_source_mine') : t('daily_source_church')}</div>
+                <div class="event-title">📅 ${ev.rest ? t('daily_title') : escapeHtml(_dailyLabel(ids))}</div>
+                <div class="event-sub">${dateLabel}</div>
+            </div>
+            ${body}
+            <button class="daily-settings-btn" onclick="openDailySettings()">${t('daily_settings')}</button>
+            <button onclick="document.getElementById('event-modal').remove()" class="event-close">${t('btn_close')}</button>
+        </div>`;
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+    document.body.appendChild(overlay);
+    setTimeout(() => overlay.classList.add('active'), 10);
+}
+
+/* 내 진도 설정 — 오늘 시작 구절(장·절)과 하루 절 수만. 쉬는 날은 교회 달력을 따른다 */
+function openDailySettings() {
+    const old = document.getElementById('daily-settings-modal'); if (old) old.remove();
+    const plan = _dailyPlan() || { anchorDate: _get6AMDayStr(), anchorVerse: '1-1', perDay: 3 };
+    const todayIds = dailySchedule ? (_dailyVersesFor(_get6AMDayStr(), plan, dailySchedule) || []) : [];
+    const [curC, curV] = String(todayIds[0] || plan.anchorVerse || '1-1').split('-').map(Number);
+    const per = Math.max(DAILY_PER_DAY_MIN, Math.min(DAILY_PER_DAY_MAX, parseInt(plan.perDay, 10) || 3));
+    const chOpts = Array.from({ length: 22 }, (_, i) => `<option value="${i + 1}"${i + 1 === curC ? ' selected' : ''}>${i + 1}장</option>`).join('');
+    const perOpts = Array.from({ length: DAILY_PER_DAY_MAX - DAILY_PER_DAY_MIN + 1 }, (_, i) => { const n = DAILY_PER_DAY_MIN + i; return `<option value="${n}"${n === per ? ' selected' : ''}>${n}절</option>`; }).join('');
+    const overlay = document.createElement('div');
+    overlay.id = 'daily-settings-modal';
+    overlay.className = 'modal-overlay';
+    overlay.style.zIndex = '9999';
+    overlay.innerHTML = `
+        <div class="result-card event-card" style="max-width:340px;">
+            <div class="event-head"><div class="event-title" style="font-size:1.15rem;">${t('daily_settings_title')}</div></div>
+            <p class="event-note" style="margin-top:0;">${t('daily_settings_desc')}</p>
+            <div class="daily-set-row"><label>${t('daily_settings_start')}</label>
+                <div class="daily-set-pick"><select id="daily-set-ch" onchange="_dailySettingsFillVerses()">${chOpts}</select><select id="daily-set-v"></select></div></div>
+            <div class="daily-set-row"><label>${t('daily_settings_per_day')}</label><select id="daily-set-per">${perOpts}</select></div>
+            <button class="event-all" onclick="saveDailySettings()">${t('daily_settings_save')}</button>
+            ${dailyRecite ? `<button class="daily-settings-btn" onclick="resetDailySettings()">${t('daily_settings_reset')}</button>` : ''}
+            <button onclick="document.getElementById('daily-settings-modal').remove()" class="event-close">${t('btn_close')}</button>
+        </div>`;
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+    document.body.appendChild(overlay);
+    _dailySettingsFillVerses(curV);
+    setTimeout(() => overlay.classList.add('active'), 10);
+}
+function _dailySettingsFillVerses(selectV) {
+    const ch = parseInt(document.getElementById('daily-set-ch').value, 10);
+    const sel = document.getElementById('daily-set-v');
+    const n = (bibleData[ch] || []).length;
+    const cur = selectV || 1;
+    sel.innerHTML = Array.from({ length: n }, (_, i) => `<option value="${i + 1}"${i + 1 === cur ? ' selected' : ''}>${i + 1}절</option>`).join('');
+}
+function saveDailySettings() {
+    const ch = parseInt(document.getElementById('daily-set-ch').value, 10);
+    const v = parseInt(document.getElementById('daily-set-v').value, 10);
+    const per = parseInt(document.getElementById('daily-set-per').value, 10);
+    const day = _get6AMDayStr();
+    // 오늘이 쉬는 날이면 다음 진도일에 이 구절부터 — 기준일을 오늘로 두면 계산상 다음 진도일에 시작한다
+    dailyRecite = { anchorDate: day, anchorVerse: `${ch}-${v}`, perDay: Math.max(DAILY_PER_DAY_MIN, Math.min(DAILY_PER_DAY_MAX, per || 3)) };
+    // 기준일이 쉬는 날이면 첫 진도일 = 기준 구절이 되도록 한 칸 당긴다
+    if (dailySchedule && _dailyIsRest(day, dailySchedule)) {
+        // _dailyActiveDaysBetween이 다음 진도일에 1을 세므로 기준 구절을 per만큼 뒤로
+        const all = _allVerseIds(); const i = all.indexOf(dailyRecite.anchorVerse);
+        dailyRecite.anchorVerse = all[((i - dailyRecite.perDay) % all.length + all.length) % all.length];
+    }
+    saveGameData();
+    const m = document.getElementById('daily-settings-modal'); if (m) m.remove();
+    const ids = dailySchedule ? _dailyVersesFor(_get6AMDayStr(), _dailyPlan(), dailySchedule) : null;
+    showGemToast(0, t('daily_settings_saved', { label: ids ? _dailyLabel(ids) : '-' }), false);
+    if (typeof updateEventStrip === 'function') updateEventStrip();
+    openDailyScreen();
+}
+function resetDailySettings() {
+    dailyRecite = null;
+    saveGameData();
+    const m = document.getElementById('daily-settings-modal'); if (m) m.remove();
+    showGemToast(0, t('daily_settings_reset_done'), false);
+    if (typeof updateEventStrip === 'function') updateEventStrip();
+    openDailyScreen();
 }
 
 /* 부팅 시 한 번 읽는다. 실패해도 조용히 — 이벤트가 없는 것과 같다 */
@@ -14996,7 +15295,7 @@ function loadKrEvents() {
         snap.forEach(doc => krEvents.push(Object.assign({ id: doc.id }, doc.data())));
         krEvents.sort((a, b) => String(a.examDate || a.end).localeCompare(String(b.examDate || b.end)));
         if (typeof updateEventStrip === 'function') updateEventStrip();
-    }).catch(err => console.warn('이벤트 조회 실패:', err));
+    }).catch(err => console.warn('이벤트 조회 실패:', err)).then(() => loadDailySchedule());
 }
 
 /* 지도 헤더 아래 띠 + 홈의 「시험준비」 버튼. 이벤트가 없으면 띠는 없고 버튼은 외부 링크로 남는다 */
@@ -15023,20 +15322,38 @@ function updateEventStrip() {
     const res = document.getElementById('header-resources');
     const old = document.getElementById('event-chip');
     if (old) old.remove();
-    if (!ev || !res) return;
-    const dd = _eventDday(ev);
-    const r = _eventReadiness(ev);
-    const chip = document.createElement('span');
-    chip.id = 'event-chip';
-    chip.className = 'event-chip';
-    chip.onclick = () => openEventScreen(ev.id);
-    chip.innerHTML = `📝 ${dd > 0 ? 'D-' + dd : dd === 0 ? 'D-Day' : t('event_over')} · ${r.done}/${r.total}`;
-    res.insertAdjacentHTML('beforeend', ' <span style="opacity:0.3; margin:0 3px;">|</span> ');
-    res.appendChild(chip);
+    const oldD = document.getElementById('daily-chip');
+    if (oldD) oldD.remove();
+    if (!res) return;
+    if (ev) {
+        const dd = _eventDday(ev);
+        const r = _eventReadiness(ev);
+        const chip = document.createElement('span');
+        chip.id = 'event-chip';
+        chip.className = 'event-chip';
+        chip.onclick = () => openEventScreen(ev.id);
+        chip.innerHTML = `📝 ${dd > 0 ? 'D-' + dd : dd === 0 ? 'D-Day' : t('event_over')} · ${r.done}/${r.total}`;
+        res.insertAdjacentHTML('beforeend', ' <span style="opacity:0.3; margin:0 3px;">|</span> ');
+        res.appendChild(chip);
+    }
+    // 오늘의 암송 칩 「📅 16:13~15 · 2/3」 — 쉬는 날엔 없다
+    const dev = (typeof _dailyEvent === 'function') ? _dailyEvent() : null;
+    if (dev && !dev.rest) {
+        const ids = _eventVerseIds(dev);
+        const done = ids.filter(id => _dailyVerseRung(dev.id, id) >= 4).length;
+        const chip = document.createElement('span');
+        chip.id = 'daily-chip';
+        chip.className = 'event-chip daily-chip' + (_dailyDoneToday() ? ' done' : '');
+        chip.onclick = () => openDailyScreen();
+        chip.innerHTML = `📅 ${escapeHtml(_dailyLabel(ids).replace(/^계 /, ''))} · ${_dailyDoneToday() ? '✅' : done + '/' + ids.length}`;
+        res.insertAdjacentHTML('beforeend', ' <span style="opacity:0.3; margin:0 3px;">|</span> ');
+        res.appendChild(chip);
+    }
 }
 
 let _eventMode = 'none';   // 이벤트 화면에서 고른 난이도. 백지가 기본 — 시험이 백지니까
 function openEventScreen(eventId) {
+    if (String(eventId).startsWith('daily:')) { openDailyScreen(); return; }
     const ev = (krEvents || []).find(e => e.id === eventId) || _activeEvents()[0];
     if (!ev) return;
     const old = document.getElementById('event-modal'); if (old) old.remove();
@@ -15086,12 +15403,12 @@ function setEventMode(m) {
 }
 
 function startEventQuestion(eventId, qIdx) {
-    const ev = (krEvents || []).find(e => e.id === eventId); if (!ev) return;
+    const ev = _findEvent(eventId); if (!ev) return;
     const q = _eventQuestions(ev)[qIdx]; if (!q) return;
     _startEventRun(ev, q.slice(), `${t('event_default_title')} ${qIdx + 1}`);
 }
 function startEventAll(eventId) {
-    const ev = (krEvents || []).find(e => e.id === eventId); if (!ev) return;
+    const ev = _findEvent(eventId); if (!ev) return;
     _startEventRun(ev, _eventVerseIds(ev), t('event_mock_label'));
 }
 function _startEventRun(ev, verseIds, label) {
@@ -15106,7 +15423,7 @@ function _startEventBlank(eventId, verseIds, ultimate, label) {
     window.hardshipOrigin = 'home';
     selectedHardshipOrderType = 'sequential';
     selectedHardshipUltimate = !!ultimate;
-    _pendingHardshipEmbed = { label: `📝 ${label}`, eventId };
+    _pendingHardshipEmbed = { label: `${String(eventId).startsWith('daily:') ? '📅' : '📝'} ${label}`, eventId };
     startHardshipSession('memory', verseIds);
 }
 
@@ -15166,7 +15483,7 @@ function _finishEventBattle() {
     bossDifficultyMode = eb.prevDifficulty; bossOrderMode = eb.prevOrder;
     window._eventBattle = null;
     saveGameData();
-    if (typeof showMissionToast === 'function') showMissionToast(t('event_cleared', { name: t(rung === 'hard' ? 'event_mode_hard' : 'event_mode_normal') }), pts > 0 ? `+${pts.toLocaleString()}pt` : t('event_scored_today'));
+    if (typeof showMissionToast === 'function') showMissionToast(t(String(eb.eventId).startsWith('daily:') ? 'daily_cleared' : 'event_cleared', { name: t(rung === 'hard' ? 'event_mode_hard' : 'event_mode_normal') }), pts > 0 ? `+${pts.toLocaleString()}pt` : t('event_scored_today'));
     quitGame('home');
 }
 /* 같은 절·같은 난이도는 하루 1회만 승점 — eventProgress의 시각으로 판단 */

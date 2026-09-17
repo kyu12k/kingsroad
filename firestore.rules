@@ -6,6 +6,12 @@ service cloud.firestore {
     // (game.js는 점수·닉네임·알림·친구 필드만 직접 쓰고, 재화/장비/길드 필드는 Cloud Function만 씀.
     //  Cloud Function은 admin 권한이라 아래 규칙을 우회하므로 정상 동작한다.)
     // 기간 한정 이벤트(시험 준비) — 문항·기간. 관리자가 admin SDK로 쓴다
+    // 오늘의 암송 달력 (2026-09-17) — 읽기 공개, 쓰기는 admin SDK
+    match /daily_schedule/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /events/{eventId} {
       allow read: if true;
       allow write: if false;

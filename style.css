@@ -6095,6 +6095,22 @@ body, html {
 .event-reward.done { background: #eafaf1; color: #1e8449; }
 .event-note { font-size: 0.78rem; color: #7f8c8d; line-height: 1.6; margin: 10px 0 4px; text-align: left; word-break: keep-all; }
 .event-close { width: 100%; background: none; border: none; color: #95a5a6; padding: 6px 0 0; font-size: 0.9rem; cursor: pointer; }
+/* 오늘의 암송 (2026-09-17) — 이벤트 카드를 그대로 쓰고 구절 본문 줄만 더한다 */
+.daily-q { align-items: flex-start; }
+.daily-q-rung { font-weight: 600; font-size: 0.78rem; color: #7f8c8d; margin-left: 6px; }
+.daily-q-text { font-size: 0.86rem; color: #444; line-height: 1.55; margin-top: 4px; word-break: keep-all; }
+.daily-go { border-color: #27ae60; background: #eafaf1; color: #1e8449; }
+.daily-rest { text-align: center; padding: 18px 6px 8px; }
+.daily-rest-title { font-weight: 800; font-size: 1.05rem; margin-top: 6px; }
+.daily-rest-desc { font-size: 0.85rem; color: #7f8c8d; margin-top: 4px; }
+.daily-settings-btn { width: 100%; margin-top: 8px; padding: 9px; border-radius: 10px; border: 1px solid #e0d6b8; background: #fff; color: #7f8c8d; font-weight: 700; font-size: 0.85rem; cursor: pointer; }
+.daily-set-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 10px 0; font-size: 0.9rem; }
+.daily-set-row label { color: #555; font-weight: 700; }
+.daily-set-pick { display: flex; gap: 6px; }
+.daily-set-row select { padding: 8px 10px; border-radius: 10px; border: 1px solid #e0d6b8; background: #fff; color: #2c3e50; font-size: 0.95rem; }
+.event-chip.daily-chip.done { color: #7ee2a8; }
+.mode-journey-btn.daily-btn { border-color: rgba(46,204,113,0.6); background: linear-gradient(135deg, rgba(46,204,113,0.16), rgba(39,174,96,0.08)); }
+.mode-journey-btn.daily-btn .mode-btn-label { color: #7ee2a8; }
 
 /* 읽기 오버레이 — 회독·이번 주 통독 수 한 줄 */
 .bible-read-pass { text-align: center; font-size: 0.78rem; color: #f7c873; opacity: 0.9; padding: 4px 0 2px; }
