@@ -18208,9 +18208,7 @@ function _showGoogleSignInConfirm(existingTag) {
                 이 기기의 기록 <strong style="color:#e0c0ff;">#${escapeHtml(existingTag)}</strong>이<br>
                 Google 계정의 데이터로 교체됩니다.<br>
                 <span style="color:#e05050;font-size:13px;">이 기기의 기록은 사라집니다.</span>
-                ${(typeof myGuildId !== 'undefined' && myGuildId)
-                    ? '<br><span style="color:#a0c0ff;font-size:12px;margin-top:6px;display:block;">※ 다른 멤버가 있는 길드는 자동으로 탈퇴 처리됩니다.<br>혼자인 길드는 그대로 남습니다.</span>'
-                    : ''}
+
             </div>
             <div style="display:flex;gap:10px;">
                 <button onclick="document.getElementById('google-signin-confirm').remove();_doSignInWithGoogle();"
@@ -18250,23 +18248,11 @@ async function _doSignInWithGoogle() {
         localStorage.setItem('kingsroad_import_old_playerid', myTag);
     }
 
-    // 길드 자동 탈퇴: sign-in 전이라 아직 구 UID로 인증된 상태.
-    // 이 기기의 태그가 버려지고 Google 계정의 데이터(다른 태그일 수 있음)로 바뀌므로 유령 멤버를 남기지 않으려는 것.
-    // ★ 혼자 남은 길드장이면 서버가 해산하지 않고 건너뛴다(auto: true, 2026-09-17) — 같은 태그로 이어지면 길드도 그대로 써야 한다.
-    //   예전엔 이 경로가 「길드 해산」과 같은 코드를 타서 기기 변경 중에 길드가 통째로 사라졌다(황금 나팔 #NGCTUB)
-    // 텍스트 파일 복구 직후 Google 연동 시도인 경우, 같은 사용자의 실제 길드이므로 탈퇴 건너뜀
-    const _fromTextFile = localStorage.getItem('kingsroad_dataFromTextFile') === 'true';
-    localStorage.removeItem('kingsroad_dataFromTextFile');
-    if (!_fromTextFile && typeof myGuildId !== 'undefined' && myGuildId &&
-        typeof myTag !== 'undefined' && myTag && myTag !== '0000') {
-        try {
-            const r = await _callGuildFn('leaveGuild', { auto: true });
-            if (!(r && r.skipped)) { myGuildId = null; _guildData = null; }
-            console.log('[Google 이어하기] 길드 자동 탈퇴', r && r.skipped ? '건너뜀(혼자 남은 길드장)' : '완료');
-        } catch (e) {
-            console.warn('[Google 이어하기] 길드 탈퇴 실패:', e);
-        }
-    }
+    // ★ 길드 자동 탈퇴는 없앴다 (2026-09-01 도입 → 09-17 삭제).
+    //   "이 기기의 태그가 버려지니 유령 멤버를 남기지 말자"는 전제였는데, 번호 복구·텍스트 파일·Google 이어하기를 거치면
+    //   태그가 그대로인 경우가 흔해서 정작 본인을 자기 길드에서 쫓아냈다 — 길드장 위임(8648, 9/1)·1인 길드 해산(#NGCTUB).
+    //   태그가 실제로 바뀌는 드문 경우 옛 태그가 유령 멤버로 남지만, 자리 하나일 뿐이고 길드장이 추방하면 된다.
+    localStorage.removeItem('kingsroad_dataFromTextFile');   // 옛 플래그 정리
 
     const provider = new firebase.auth.GoogleAuthProvider();
     try {
@@ -19212,8 +19198,6 @@ function processImportData(inputString) {
 
             // 🌟 [추가] 화면이 새로고침된 직후 자동으로 서버에 점수를 동기화하도록 예약
             localStorage.setItem('forceSyncAfterLoad', 'true');
-            // 텍스트 파일 복구 후 Google 연동 시도 시 길드 자동 탈퇴 방지용 플래그
-            localStorage.setItem('kingsroad_dataFromTextFile', 'true');
 
             // 파이어베이스 통신 없이 즉시 새로고침 (오류 원인 원천 차단!)
             alert(t('alert_restore_ok'));
