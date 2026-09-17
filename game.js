@@ -15477,7 +15477,7 @@ function _camDrawFrame(ctx, w, h, p) {
     const [, mm, dd] = _get6AMDayStr().split('-').map(Number);
     // 위 띠
     const topH = 74 * S;
-    ctx.fillStyle = 'rgba(0,0,0,0.62)'; ctx.fillRect(0, 0, w, topH);
+    ctx.fillStyle = '#0d0d12'; ctx.fillRect(0, 0, w, topH);
     ctx.fillStyle = '#f1c40f'; ctx.font = `800 ${30 * S}px "Gowun Dodum", sans-serif`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
     ctx.fillText(`📅 ${_cam.label}`, pad, topH / 2);
     ctx.fillStyle = '#fff'; ctx.font = `700 ${22 * S}px "Gowun Dodum", sans-serif`; ctx.textAlign = 'right';
@@ -15492,7 +15492,7 @@ function _camDrawFrame(ctx, w, h, p) {
     _cam.verses.forEach(vv => { lines += measure(`${vv.ref} ${vv.text}`); });
     const bandH = Math.min(h * 0.55, Math.max(h * 0.42, lines * lh + pad * 2));
     const y0 = h - bandH;
-    ctx.fillStyle = 'rgba(0,0,0,0.72)'; ctx.fillRect(0, y0, w, bandH);
+    ctx.fillStyle = '#0d0d12'; ctx.fillRect(0, y0, w, bandH);   // 불투명 — 반투명이면 옷이 비쳐 가리는 뜻이 없다
     let y = y0 + pad;
     for (const vv of _cam.verses) {
         ctx.fillStyle = '#fff';
