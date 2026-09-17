@@ -15311,7 +15311,7 @@ function openDailyScreen() {
             <div class="event-list">${rows}</div>
             <button class="event-all daily-go" onclick="startEventAll('${ev.id}')">${t('daily_go', { n: ids.length })}</button>
             <div class="event-reward${done ? ' done' : ''}">${done ? t('daily_status_done', { n: ids.length }) : t('daily_status_todo', { n: ids.length })}</div>
-            ${_camEnabled() ? `<button class="daily-cam-btn${done ? '' : ' locked'}" onclick="${done ? 'openDailyRecorder()' : "showGemToast(0, t('daily_cam_locked'), true)"}">${t('daily_cam_btn')}</button>` : ''}
+            ${_camEnabled() ? `<button class="daily-cam-btn" onclick="openDailyRecorder()">${t('daily_cam_btn')}</button>` : ''}
             <p class="event-note">${t('daily_note')}</p>`;
     }
     const overlay = document.createElement('div');

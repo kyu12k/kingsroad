@@ -1800,7 +1800,7 @@ verseRecall['1-1'] = { pass, typedPass, fail, firstPass, lastPass, lastAt, lastO
   `canvas.captureStream(30)` + 마이크 트랙을 MediaRecorder에 넣는다 → 화면에 보이는 그대로 영상에 박힌다. 액자를 끄면 화면 위 큐카드만.
   옵션(`kingsRoad_camPrefs` {frame, soft, font})은 녹화 중엔 못 바꾼다. 캔버스 녹화가 안 되는 기기는 원본 스트림으로 폴백.
   ● 녹화/■ 정지 → 재생 확인(브라우저 컨트롤이 버튼 줄에 안 가리게 위쪽 영역만) → 「📤 보내기」(Web Share, 제목 "계 16:13~15 암송 (9/17)") / 「💾 저장」 / 다시 찍기.
-  백지로 오늘 구절을 마친 뒤에만 열린다(`daily-cam-btn.locked`). 영상은 서버에 안 올린다. Wake Lock.
+  처음엔 백지로 마친 뒤에만 열었는데 "암송 스타일이 다르다"(백지 없이 바로 찍는 사람)로 **언제나 열린다**(같은 날). 영상은 서버에 안 올린다. Wake Lock.
   - ★ **Web Share의 파일 공유는 `video/webm;codecs=vp9,opus`처럼 코덱이 붙은 MIME을 거부**한다 → `_camFile()`이 `video/webm`·`video/mp4`로 File을 만든다.
     처음엔 이것 때문에 공유가 늘 실패해 다운로드로 빠졌고, 토스트는 촬영 화면(z 10001) 뒤에 가려 이유도 안 보였다(z를 9990으로).
     실패 사유는 토스트에 그대로 찍는다(기기 진단용)
