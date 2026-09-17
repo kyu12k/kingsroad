@@ -15446,11 +15446,19 @@ function _camFile() {
 }
 async function _camShare() {
     const file = _camFile(); if (!file) return;
-    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    // canShare가 false여도 일단 시도한다 — 파일 공유 판정이 틀리는 브라우저가 있다. 실패 사유는 토스트에 그대로 (기기별 진단용)
+    let why = '';
+    if (!navigator.share) why = 'no navigator.share';
+    else {
+        const can = navigator.canShare ? navigator.canShare({ files: [file] }) : null;
         try { await navigator.share({ files: [file], title: t('daily_cam_title') }); showGemToast(0, t('daily_cam_shared'), false); return; }
-        catch (e) { if (e && e.name === 'AbortError') return; console.warn('[cam] share failed', e); }
+        catch (e) {
+            if (e && e.name === 'AbortError') return;   // 사용자가 공유 창을 닫음
+            console.warn('[cam] share failed', e);
+            why = `${e && e.name || 'error'}: ${e && e.message || ''} (canShare=${can}, ${file.type}, ${Math.round(file.size / 1048576)}MB, standalone=${!!(window.navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches))})`;
+        }
     }
-    showGemToast(0, t('daily_cam_share_fail'), true);
+    showGemToast(0, t('daily_cam_share_fail') + ' — ' + why, true);
     _camSave();
 }
 function _camSave() {
