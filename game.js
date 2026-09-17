@@ -15454,7 +15454,11 @@ async function _camShare() {
     if (!navigator.share) why = 'no navigator.share';
     else {
         const can = navigator.canShare ? navigator.canShare({ files: [file] }) : null;
-        try { await navigator.share({ files: [file], title: t('daily_cam_title') }); showGemToast(0, t('daily_cam_shared'), false); return; }
+        // 공유 창의 제목은 구절로 — '암송 촬영'보다 "계 16:13~15 암송"이 받는 쪽에서 바로 읽힌다
+        const ev = _dailyEvent(); const label = ev ? _dailyLabel(_eventVerseIds(ev)) : '';
+        const [, mm, dd] = _get6AMDayStr().split('-').map(Number);
+        const title = label ? `${label} 암송 (${mm}/${dd})` : t('daily_cam_title');
+        try { await navigator.share({ files: [file], title, text: title }); showGemToast(0, t('daily_cam_shared'), false); return; }
         catch (e) {
             if (e && e.name === 'AbortError') return;   // 사용자가 공유 창을 닫음
             console.warn('[cam] share failed', e);
