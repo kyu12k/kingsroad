@@ -737,6 +737,23 @@ const LANG = {
         daily_week_done_toast: '📅 이번 주 암송완료! 다음 주 동안 이름 옆에 칭호가 붙어요',
         mission_daily_recite_title: '📅 오늘의 암송',
         mission_daily_recite_desc: '오늘 구절을 백지로 모두 써내기',
+        daily_cam_btn: '🎥 촬영하기',
+        daily_cam_locked: '먼저 오늘 구절을 백지로 써내면 촬영이 열려요',
+        daily_cam_title: '암송 촬영',
+        daily_cam_hint: '눈을 감고 외우세요. 막히면 위의 구절을 보면 돼요.',
+        daily_cam_start: '● 녹화',
+        daily_cam_stop: '■ 정지',
+        daily_cam_retake: '다시 찍기',
+        daily_cam_share: '📤 보내기',
+        daily_cam_save: '💾 저장',
+        daily_cam_close: '닫기',
+        daily_cam_preparing: '카메라를 켜는 중…',
+        daily_cam_denied: '카메라·마이크 권한이 필요해요. 브라우저 설정에서 허용해 주세요.',
+        daily_cam_unsupported: '이 브라우저에서는 촬영이 안 돼요. 사파리(아이폰)나 크롬(안드로이드)으로 열어주세요.',
+        daily_cam_inapp: '카톡·텔레그램 안에서 열린 창에서는 카메라를 쓸 수 없어요. 브라우저로 열어주세요.',
+        daily_cam_shared: '보냈어요',
+        daily_cam_saved: '영상을 저장했어요',
+        daily_cam_share_fail: '공유 창을 열 수 없어 저장으로 대신할게요',
         ranking_read_title: '📖 실시간 통독왕',
         ranking_read_desc: '이번 주 <b>읽음을 누른 구절 수</b><br>장을 다 읽으면 다시 읽을 수 있어요',
         ranking_read_empty: '아직 아무도 없어요.<br>장을 열어 「읽음」을 누르면 여기에 올라갑니다.',
@@ -1624,6 +1641,23 @@ const LANG = {
         daily_week_done_toast: '📅 Week complete! The title stays by your name next week',
         mission_daily_recite_title: '📅 Verses of the Day',
         mission_daily_recite_desc: 'Write all of today\'s verses from a blank page',
+        daily_cam_btn: '🎥 Record',
+        daily_cam_locked: 'Write today\'s verses from a blank page first to unlock recording',
+        daily_cam_title: 'Record recitation',
+        daily_cam_hint: 'Close your eyes and recite. Peek at the verses above if you get stuck.',
+        daily_cam_start: '● Record',
+        daily_cam_stop: '■ Stop',
+        daily_cam_retake: 'Retake',
+        daily_cam_share: '📤 Share',
+        daily_cam_save: '💾 Save',
+        daily_cam_close: 'Close',
+        daily_cam_preparing: 'Starting camera…',
+        daily_cam_denied: 'Camera and microphone permission is needed. Allow it in your browser settings.',
+        daily_cam_unsupported: 'Recording is not supported in this browser. Open in Safari (iPhone) or Chrome (Android).',
+        daily_cam_inapp: 'The camera cannot be used inside a chat app window. Open in your browser.',
+        daily_cam_shared: 'Shared',
+        daily_cam_saved: 'Video saved',
+        daily_cam_share_fail: 'Could not open the share sheet — saving instead',
         ranking_read_title: '📖 Live Reading Kings',
         ranking_read_desc: 'Verses <b>marked as read this week</b><br>Finish a chapter and you can read it again',
         ranking_read_empty: 'Nobody yet.<br>Open a chapter and press "Read" to appear here.',
@@ -15259,6 +15293,7 @@ function openDailyScreen() {
             <div class="event-list">${rows}</div>
             <button class="event-all daily-go" onclick="startEventAll('${ev.id}')">${t('daily_go', { n: ids.length })}</button>
             <div class="event-reward${done ? ' done' : ''}">${done ? t('daily_status_done', { n: ids.length }) : t('daily_status_todo', { n: ids.length })}</div>
+            ${_camEnabled() ? `<button class="daily-cam-btn${done ? '' : ' locked'}" onclick="${done ? 'openDailyRecorder()' : "showGemToast(0, t('daily_cam_locked'), true)"}">${t('daily_cam_btn')}</button>` : ''}
             <p class="event-note">${t('daily_note')}</p>`;
     }
     const overlay = document.createElement('div');
@@ -15279,6 +15314,148 @@ function openDailyScreen() {
     overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
     document.body.appendChild(overlay);
     setTimeout(() => overlay.classList.add('active'), 10);
+}
+
+/* ── 🎥 암송 촬영 (2026-09-17, 3단계) ─────────────────────────────────────
+   교회는 하루 3절을 외우는 영상을 찍어 보낸다. 대부분 자기 폰으로 혼자 찍으므로 카메라 앱을 켜면 답지를 볼 수 없다
+   → 앱 안에서 전면 카메라를 켜고, 오늘 구절을 큐카드로 위에 얹은 채 녹화한다. 끝나면 공유 시트(텔레그램 등)로 보내거나 저장.
+   영상은 서버에 안 올라간다 — 폰에만. 백지로 오늘 구절을 마친 뒤에만 열린다("먼저 외우고, 그다음 찍는다").
+   기기 편차(iOS PWA 카메라 권한·webm/mp4)가 있어 스위치(kingsRoad_camBeta) 뒤에 두고 확인 뒤 연다. */
+function _camEnabled() {
+    try { return localStorage.getItem('kingsRoad_camBeta') === '1'; } catch (e) { return false; }
+}
+// 켜기: 주소 뒤에 ?cam=1 을 붙여 한 번 열면 이 기기에 남는다 (?cam=0 으로 끔)
+try { const _q = new URLSearchParams(location.search); if (_q.get('cam') === '1') localStorage.setItem('kingsRoad_camBeta', '1'); else if (_q.get('cam') === '0') localStorage.removeItem('kingsRoad_camBeta'); } catch (e) {}
+let _cam = { stream: null, rec: null, chunks: [], blob: null, mime: '', timer: null, startedAt: 0, wake: null };
+function _camPickMime() {
+    if (typeof MediaRecorder === 'undefined') return '';
+    const cands = ['video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+    for (const m of cands) { try { if (MediaRecorder.isTypeSupported(m)) return m; } catch (e) {} }
+    return '';
+}
+function _camIsInApp() {
+    const ua = navigator.userAgent || '';
+    return /KAKAOTALK|Telegram|FBAN|FBAV|Instagram|Line\//i.test(ua);
+}
+async function openDailyRecorder() {
+    const ev = _dailyEvent();
+    if (!ev || ev.rest) return;
+    if (_camIsInApp()) { showGemToast(0, t('daily_cam_inapp'), true); return; }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') { showGemToast(0, t('daily_cam_unsupported'), true); return; }
+    const ids = _eventVerseIds(ev);
+    const old = document.getElementById('daily-cam'); if (old) old.remove();
+    const m = document.getElementById('event-modal'); if (m) m.remove();
+    let fs = 20; try { fs = parseInt(localStorage.getItem('kingsRoad_camFont'), 10) || 20; } catch (e) {}
+    const verses = ids.map(id => { const [c, v] = String(id).split('-').map(Number); const text = ((bibleData[c] || [])[v - 1] || {}).text || ''; return `<div class="cam-verse"><span class="cam-ref">${c}:${v}</span> ${escapeHtml(text)}</div>`; }).join('');
+    const el = document.createElement('div');
+    el.id = 'daily-cam';
+    el.innerHTML = `
+        <video id="cam-preview" autoplay muted playsinline></video>
+        <video id="cam-playback" playsinline controls style="display:none;"></video>
+        <div class="cam-card" id="cam-card" style="font-size:${fs}px;">
+            <div class="cam-card-head"><span>📅 ${escapeHtml(_dailyLabel(ids))}</span>
+                <span class="cam-font"><button onclick="_camFont(-2)">A−</button><button onclick="_camFont(2)">A+</button></span></div>
+            ${verses}
+        </div>
+        <div class="cam-status" id="cam-status">${t('daily_cam_preparing')}</div>
+        <div class="cam-controls" id="cam-controls">
+            <button class="cam-btn cam-close" onclick="closeDailyRecorder()">${t('daily_cam_close')}</button>
+            <button class="cam-btn cam-rec" id="cam-rec-btn" onclick="_camToggle()" disabled>${t('daily_cam_start')}</button>
+            <span class="cam-timer" id="cam-timer"></span>
+        </div>
+        <div class="cam-controls" id="cam-after" style="display:none;">
+            <button class="cam-btn" onclick="_camRetake()">${t('daily_cam_retake')}</button>
+            <button class="cam-btn cam-primary" onclick="_camShare()">${t('daily_cam_share')}</button>
+            <button class="cam-btn" onclick="_camSave()">${t('daily_cam_save')}</button>
+            <button class="cam-btn cam-close" onclick="closeDailyRecorder()">${t('daily_cam_close')}</button>
+        </div>`;
+    document.body.appendChild(el);
+    try {
+        _cam.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true });
+    } catch (e) {
+        console.warn('[cam] getUserMedia failed', e);
+        showGemToast(0, (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError')) ? t('daily_cam_denied') : t('daily_cam_unsupported'), true);
+        closeDailyRecorder(); return;
+    }
+    const pv = document.getElementById('cam-preview');
+    pv.srcObject = _cam.stream;
+    try { await pv.play(); } catch (e) {}
+    _cam.mime = _camPickMime();
+    document.getElementById('cam-status').textContent = t('daily_cam_hint');
+    document.getElementById('cam-rec-btn').disabled = false;
+    try { if (navigator.wakeLock) _cam.wake = await navigator.wakeLock.request('screen'); } catch (e) {}
+}
+function _camFont(d) {
+    const card = document.getElementById('cam-card'); if (!card) return;
+    let fs = parseInt(card.style.fontSize, 10) || 20; fs = Math.max(14, Math.min(34, fs + d));
+    card.style.fontSize = fs + 'px';
+    try { localStorage.setItem('kingsRoad_camFont', String(fs)); } catch (e) {}
+}
+function _camToggle() {
+    if (_cam.rec && _cam.rec.state === 'recording') { _cam.rec.stop(); return; }
+    if (!_cam.stream) return;
+    _cam.chunks = []; _cam.blob = null;
+    try { _cam.rec = _cam.mime ? new MediaRecorder(_cam.stream, { mimeType: _cam.mime }) : new MediaRecorder(_cam.stream); }
+    catch (e) { showGemToast(0, t('daily_cam_unsupported'), true); return; }
+    _cam.rec.ondataavailable = (e) => { if (e.data && e.data.size) _cam.chunks.push(e.data); };
+    _cam.rec.onstop = () => {
+        _cam.blob = new Blob(_cam.chunks, { type: _cam.rec.mimeType || _cam.mime || 'video/webm' });
+        clearInterval(_cam.timer); _cam.timer = null;
+        const pv = document.getElementById('cam-preview'), pb = document.getElementById('cam-playback');
+        if (pv) pv.style.display = 'none';
+        if (pb) { pb.src = URL.createObjectURL(_cam.blob); pb.style.display = ''; }
+        document.getElementById('cam-controls').style.display = 'none';
+        document.getElementById('cam-after').style.display = '';
+        document.getElementById('cam-status').textContent = `${Math.round(_cam.blob.size / 1048576 * 10) / 10} MB`;
+    };
+    _cam.rec.start(1000);
+    _cam.startedAt = Date.now();
+    const btn = document.getElementById('cam-rec-btn'); btn.textContent = t('daily_cam_stop'); btn.classList.add('on');
+    const tm = document.getElementById('cam-timer');
+    _cam.timer = setInterval(() => { const s = Math.floor((Date.now() - _cam.startedAt) / 1000); tm.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }, 250);
+}
+function _camRetake() {
+    const pv = document.getElementById('cam-preview'), pb = document.getElementById('cam-playback');
+    if (pb) { pb.pause(); if (pb.src) URL.revokeObjectURL(pb.src); pb.removeAttribute('src'); pb.style.display = 'none'; }
+    if (pv) pv.style.display = '';
+    _cam.blob = null; _cam.chunks = [];
+    document.getElementById('cam-after').style.display = 'none';
+    document.getElementById('cam-controls').style.display = '';
+    const btn = document.getElementById('cam-rec-btn'); btn.textContent = t('daily_cam_start'); btn.classList.remove('on');
+    document.getElementById('cam-timer').textContent = '';
+    document.getElementById('cam-status').textContent = t('daily_cam_hint');
+}
+function _camFile() {
+    if (!_cam.blob) return null;
+    const ext = /mp4/.test(_cam.blob.type) ? 'mp4' : 'webm';
+    const ev = _dailyEvent(); const ids = ev ? _eventVerseIds(ev) : [];
+    const name = `암송_${_get6AMDayStr()}_${_dailyLabel(ids).replace(/^계 /, '').replace(/[:~, ]/g, '-')}.${ext}`;
+    try { return new File([_cam.blob], name, { type: _cam.blob.type }); } catch (e) { return null; }
+}
+async function _camShare() {
+    const file = _camFile(); if (!file) return;
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: t('daily_cam_title') }); showGemToast(0, t('daily_cam_shared'), false); return; }
+        catch (e) { if (e && e.name === 'AbortError') return; console.warn('[cam] share failed', e); }
+    }
+    showGemToast(0, t('daily_cam_share_fail'), true);
+    _camSave();
+}
+function _camSave() {
+    const file = _camFile(); if (!file) return;
+    const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+    showGemToast(0, t('daily_cam_saved'), false);
+}
+function closeDailyRecorder() {
+    try { if (_cam.rec && _cam.rec.state === 'recording') _cam.rec.stop(); } catch (e) {}
+    clearInterval(_cam.timer); _cam.timer = null;
+    if (_cam.stream) { _cam.stream.getTracks().forEach(tr => { try { tr.stop(); } catch (e) {} }); _cam.stream = null; }
+    if (_cam.wake) { try { _cam.wake.release(); } catch (e) {} _cam.wake = null; }
+    const pb = document.getElementById('cam-playback'); if (pb && pb.src) { try { URL.revokeObjectURL(pb.src); } catch (e) {} }
+    const el = document.getElementById('daily-cam'); if (el) el.remove();
+    _cam.rec = null; _cam.blob = null; _cam.chunks = [];
+    openDailyScreen();
 }
 
 /* 내 진도 설정 — 오늘 시작 구절(장·절)과 하루 절 수만. 쉬는 날은 교회 달력을 따른다 */

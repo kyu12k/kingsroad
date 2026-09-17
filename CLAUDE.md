@@ -1789,7 +1789,11 @@ verseRecall['1-1'] = { pass, typedPass, fail, firstPass, lastPass, lastAt, lastO
   - **📅 암송완료** — 이번 주 진도일(월~토에서 쉬는 날 뺀 것)을 전부 마치면 마지막 진도일에 `dailyWeekDone = weekId`(`_dailyCheckWeekDone`).
     `weeklyDoneWeek`로 올라가고, 이번 주·지난주 것이면 칭호처럼 표시(`.daily-week-title`). 보석 없음
   - 서버: 화이트리스트 + 형식 검증(kingsroad), 스냅샷 4곳(functions), 규칙 `serverOnlyKeys`. 클라이언트 변환 3곳(index.html)
-- **다음**: ③ 🎥 앱 안 촬영 (전면 카메라 + 큐카드 오버레이 + 공유 시트; 스위치 뒤에 배포해 기기 테스트 후 켬)
+- **3단계 🎥 촬영 (같은 날, 스위치 뒤)** — `openDailyRecorder()`: 전면 카메라 미리보기(좌우 반전) + 위에 오늘 구절 큐카드(글씨 크기 A−/A+, `kingsRoad_camFont`)
+  + ● 녹화/■ 정지 → 재생 확인 → 「📤 보내기」(Web Share API, 파일 공유 — 텔레그램 등 공유 시트) / 「💾 저장」(다운로드) / 다시 찍기.
+  백지로 오늘 구절을 마친 뒤에만 열린다(`daily-cam-btn.locked`). 영상은 서버에 안 올린다. Wake Lock으로 화면 유지.
+  mime은 `_camPickMime()` — 아이폰 mp4, 안드로이드 webm. 카톡·텔레그램 안의 웹뷰(`_camIsInApp`)는 카메라가 안 돼 브라우저로 열라고 안내.
+  **스위치** `kingsRoad_camBeta` — 주소에 `?cam=1`을 붙여 열면 켜지고 `?cam=0`이면 꺼진다(`_camEnabled`). 기기 확인 뒤 스위치를 지우고 전원에게
 
 ---
 
