@@ -731,6 +731,12 @@ const LANG = {
         daily_cleared: '📅 오늘의 암송 · {name} 통과',
         daily_all_done_toast: '✅ 오늘 암송 완료!',
         daily_none: '오늘의 암송이 아직 준비되지 않았어요',
+        daily_badge_tip: '오늘의 암송을 백지로 마쳤어요',
+        daily_week_title: '암송완료',
+        daily_week_tip: '지난주 오늘의 암송을 하루도 빠짐없이 마쳤어요',
+        daily_week_done_toast: '📅 이번 주 암송완료! 다음 주 동안 이름 옆에 칭호가 붙어요',
+        mission_daily_recite_title: '📅 오늘의 암송',
+        mission_daily_recite_desc: '오늘 구절을 백지로 모두 써내기',
         ranking_read_title: '📖 실시간 통독왕',
         ranking_read_desc: '이번 주 <b>읽음을 누른 구절 수</b><br>장을 다 읽으면 다시 읽을 수 있어요',
         ranking_read_empty: '아직 아무도 없어요.<br>장을 열어 「읽음」을 누르면 여기에 올라갑니다.',
@@ -1612,6 +1618,12 @@ const LANG = {
         daily_cleared: '📅 Verses of the Day · {name} passed',
         daily_all_done_toast: '✅ Recited today!',
         daily_none: 'Verses of the Day is not ready yet',
+        daily_badge_tip: 'Finished today\'s verses from a blank page',
+        daily_week_title: 'Week complete',
+        daily_week_tip: 'Finished every Verses of the Day last week',
+        daily_week_done_toast: '📅 Week complete! The title stays by your name next week',
+        mission_daily_recite_title: '📅 Verses of the Day',
+        mission_daily_recite_desc: 'Write all of today\'s verses from a blank page',
         ranking_read_title: '📖 Live Reading Kings',
         ranking_read_desc: 'Verses <b>marked as read this week</b><br>Finish a chapter and you can read it again',
         ranking_read_empty: 'Nobody yet.<br>Open a chapter and press "Read" to appear here.',
@@ -2493,6 +2505,7 @@ loadGameData = function () {
         if (parsed.eventProgress && typeof parsed.eventProgress === 'object') eventProgress = parsed.eventProgress;
         if (parsed.dailyRecite && typeof parsed.dailyRecite === 'object' && parsed.dailyRecite.anchorVerse) dailyRecite = parsed.dailyRecite;
         if (parsed.dailyReciteDone && typeof parsed.dailyReciteDone === 'object') dailyReciteDone = parsed.dailyReciteDone;
+        if (typeof parsed.dailyWeekDone === 'string') dailyWeekDone = parsed.dailyWeekDone;
         // 오늘의 암송 진행은 날마다 새 id라 60일 지난 것은 버린다 (저장본이 자라지 않게)
         try {
             const _cut = _shift6AMDayStr(_get6AMDayStr(), -60);
@@ -9700,6 +9713,7 @@ function saveGameData() {
         eventProgress: eventProgress,     // 이벤트 스테이지 진행 (오늘의 암송은 'daily:YYYY-MM-DD')
         dailyRecite: dailyRecite,         // 오늘의 암송 개인 진도 (null = 교회 진도)
         dailyReciteDone: dailyReciteDone, // 오늘의 암송 완료일 → ts
+        dailyWeekDone: dailyWeekDone,     // 오늘의 암송 주간 완료 주차
         sessionTimeLog: sessionTimeLog,
         // ★ [게임 모드]
         activeMode: activeMode,
@@ -13218,6 +13232,17 @@ function _buildMissionDefs(tabName) {
                 claimed: missionData.daily.claimed[3]
             },
             {
+                id: 9,
+                title: t('mission_daily_recite_title'),
+                desc: t('mission_daily_recite_desc'),
+                target: 1,
+                current: _dailyDoneToday() ? 1 : 0,
+                reward: "💎 500",
+                rewardType: 'gem',
+                val1: 500, val2: 0,
+                claimed: missionData.daily.claimed[9]
+            },
+            {
                 id: 4,
                 title: t('mission_daily_hardship_address_title'),
                 desc: t('mission_daily_hardship_address_desc'),
@@ -13341,6 +13366,9 @@ function _buildMissionDefs(tabName) {
         const _cm = [stageMastery, kingsRoadData && kingsRoadData.mastery].filter(Boolean);
         const _anyBoss = _cm.some(m => Object.keys(m).some(id => id.endsWith('-boss') && m[id] > 0));
         if (!_anyBoss) missions = missions.filter(m => m.id !== 4 && m.id !== 5 && m.id !== 6 && m.id !== 7);
+        // 오늘의 암송은 달력이 있고 쉬는 날이 아닐 때만 (쉬는 날엔 할 수 없는 미션을 보여주지 않는다)
+        const _dev = (typeof _dailyEvent === 'function') ? _dailyEvent() : null;
+        if (!_dev || _dev.rest) missions = missions.filter(m => m.id !== 9);
     }
     if (tabName === 'weekly') {
         const _cm2 = [stageMastery, kingsRoadData && kingsRoadData.mastery].filter(Boolean);
@@ -15151,6 +15179,35 @@ function _dailyLabel(ids) {
     return '계 ' + groups.map(g => `${g.c}:${g.v.length > 1 ? g.v[0] + '~' + g.v[g.v.length - 1] : g.v[0]}`).join(', ');
 }
 function _dailyDoneToday() { return !!dailyReciteDone[_get6AMDayStr()]; }
+let dailyWeekDone = '';            // 월~토(쉬는 날 제외) 전부 마친 주차 'YYYY-Www' — 다음 주 동안 「암송완료」 칭호
+/* 이번 주의 진도일(월~토에서 쉬는 날 뺀 것) 중 오늘까지가 전부 완료됐고, 오늘이 이번 주 마지막 진도일이면 완료 */
+function _dailyCheckWeekDone() {
+    if (!dailySchedule) return;
+    const today = _get6AMDayStr();
+    const wk = getWeekId();
+    if (dailyWeekDone === wk) return;
+    // 이번 주 월요일부터 토요일까지
+    const [y, m, d] = today.split('-').map(Number);
+    const dt = new Date(y, m - 1, d); const wd = dt.getDay();
+    const mon = _shift6AMDayStr(today, -((wd + 6) % 7));
+    const days = [];
+    for (let i = 0; i < 6; i++) { const ds = _shift6AMDayStr(mon, i); if (!_dailyIsRest(ds, dailySchedule)) days.push(ds); }
+    if (!days.length) return;
+    if (days[days.length - 1] !== today) return;           // 마지막 진도일에만 판정
+    if (!days.every(ds => dailyReciteDone[ds])) return;
+    dailyWeekDone = wk;
+    setTimeout(() => { if (typeof showMissionToast === 'function') showMissionToast(t('daily_week_done_toast'), '📅'); }, 1600);
+}
+/* 이름 옆 표시 — ✅(오늘 암송함, 그날만) · 「📅 암송완료」(지난주 또는 이번 주에 완료, 칭호처럼) */
+function _dailyBadgeHtml(row, opts) {
+    if (!row) return '';
+    opts = opts || {};
+    let h = '';
+    if (opts.daily && row.dailyDoneDate && row.dailyDoneDate === _get6AMDayStr()) h += `<span class="daily-badge" data-tip="${t('daily_badge_tip')}">✅</span>`;
+    const w = row.weeklyDoneWeek;
+    if (w && typeof getLastWeekId === 'function' && (w === getLastWeekId() || w === getWeekId())) h += `<span class="recall-title daily-week-title" data-tip="${t('daily_week_tip')}">📅 ${t('daily_week_title')}</span>`;
+    return h;
+}
 /* 오늘의 암송은 '오늘 한 것'만 센다 — 이벤트와 달리 예전 백지 기록(verseRecall)을 인정하지 않는다. id가 날마다 새로우니 그 안의 기록은 전부 오늘 것 */
 function _dailyVerseRung(eventId, stageId) {
     const p = (eventProgress[eventId] || {})[stageId] || {};
@@ -15162,6 +15219,9 @@ function _noteDailyDone(ev) {
     if (dailyReciteDone[day]) return;
     dailyReciteDone[day] = Date.now();
     setTimeout(() => { if (typeof showMissionToast === 'function') showMissionToast(t('daily_all_done_toast'), _dailyLabel(_eventVerseIds(ev))); }, 900);
+    _dailyCheckWeekDone();
+    if (typeof _autoClaimMissions === 'function') setTimeout(_autoClaimMissions, 300);   // 일일 미션 「오늘의 암송」
+    if (typeof saveMyScoreToServer === 'function') setTimeout(saveMyScoreToServer, 1500); // ✅가 남에게 보이게
 }
 
 function loadDailySchedule() {
@@ -15530,7 +15590,7 @@ function loadRecallLeaderboard(kind) {
                 const tag = String(d.tag || doc.id);
                 if (!tag || tag === '0000' || seen.has(tag)) return;
                 seen.add(tag);
-                rows.push({ name: d.nickname || '이름없음', tag, tribe: d.tribe || 0, dept: d.dept, count: d[B.countField] || 0, field: d.maxHearts || 0, recallTitle: d.recallTitle || null, readTitle: d.readTitle || null });
+                rows.push({ name: d.nickname || '이름없음', tag, tribe: d.tribe || 0, dept: d.dept, count: d[B.countField] || 0, field: d.maxHearts || 0, recallTitle: d.recallTitle || null, readTitle: d.readTitle || null, weeklyDoneWeek: d.weeklyDoneWeek || '' });
             });
             rankingCache[kind] = { data: rows, weekId, timestamp: Date.now() };
             renderRecallRankingList(rows, weekId, kind);
@@ -15570,7 +15630,7 @@ function renderRecallRankingList(rows, weekId, kind) {
         html += `<div ${isMe ? 'id="my-ranking-card"' : ''} style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;margin-bottom:8px;${isMe ? `border:2px solid ${B.color};background:${B.bg};` : 'border:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.3);'}">
             <div style="font-size:1.4rem;width:34px;text-align:center;">${badge}</div>
             <div style="flex:1;min-width:0;">
-                <div style="font-weight:bold;color:#fff;font-size:1rem;display:flex;align-items:center;">${getTribeIcon(u.tribe)}${getDeptTag(u.dept)} ${escapeHtml(u.name)}${_fieldBadgeHtml(u.field)}${_liveTitlesHtml(u)}</div>
+                <div style="font-weight:bold;color:#fff;font-size:1rem;display:flex;align-items:center;">${getTribeIcon(u.tribe)}${getDeptTag(u.dept)} ${escapeHtml(u.name)}${_fieldBadgeHtml(u.field)}${_liveTitlesHtml(u)}${_dailyBadgeHtml(u)}</div>
                 <div style="font-size:0.78rem;color:#95a5a6;">#${u.tag}</div>
             </div>
             <div style="font-weight:800;color:${B.color};font-size:1.05rem;white-space:nowrap;">${t(B.unit, { n: shown.toLocaleString() })}</div>
@@ -15808,7 +15868,7 @@ function renderRankingList(data) {
             <div style="flex:1;">
                 <div style="display:flex; align-items:center; margin-bottom:4px;">
                     <span style="font-weight:bold; font-size:1.05rem; display:flex; align-items:center; color:#fff;">
-                        ${getTribeIcon(userTribe)}${getDeptTag(user.dept)} ${escapeHtml(user.name)}${_fieldBadgeHtml(user.field)}${_liveTitlesHtml(user)}
+                        ${getTribeIcon(userTribe)}${getDeptTag(user.dept)} ${escapeHtml(user.name)}${_fieldBadgeHtml(user.field)}${_liveTitlesHtml(user)}${_dailyBadgeHtml(user, { daily: (window.currentRankingMode || 'tribe') === 'tribe' })}
                     </span>
                 </div>
                 <div style="font-size:0.8rem; color:#bdc3c7;">
@@ -19537,14 +19597,14 @@ function updateProfileUI() {
     if (display) {
         const tag = (typeof myTag !== 'undefined' && myTag) ? myTag : "0000";
         // ★ getTribeIcon 사용
-        display.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname} <span style="opacity:0.6; font-size:0.85em;">#${tag}</span>${_fieldBadgeHtml(maxPlayerHearts)}${_recallTitleHtml(_myRecallTitle)}${_recallTitleHtml(_myReadTitle, 'read')}`;
+        display.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname} <span style="opacity:0.6; font-size:0.85em;">#${tag}</span>${_fieldBadgeHtml(maxPlayerHearts)}${_recallTitleHtml(_myRecallTitle)}${_recallTitleHtml(_myReadTitle, 'read')}${_dailyBadgeHtml({ dailyDoneDate: _dailyDoneToday() ? _get6AMDayStr() : '', weeklyDoneWeek: dailyWeekDone }, { daily: true })}`;
     }
 
     // 2. 상단 작은 닉네임
     const subDisplay = document.getElementById('sub-profile-name');
     if (subDisplay) {
         // 지파 아이콘과 닉네임만 표시 (지파 이름 텍스트 제거)
-        subDisplay.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname}${_fieldBadgeHtml(maxPlayerHearts)}${_recallTitleHtml(_myRecallTitle)}${_recallTitleHtml(_myReadTitle, 'read')}`;
+        subDisplay.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname}${_fieldBadgeHtml(maxPlayerHearts)}${_recallTitleHtml(_myRecallTitle)}${_recallTitleHtml(_myReadTitle, 'read')}${_dailyBadgeHtml({ dailyDoneDate: _dailyDoneToday() ? _get6AMDayStr() : '', weeklyDoneWeek: dailyWeekDone }, { daily: true })}`;
     }
 
     applyHomeThemeByTribe(myTribe);
@@ -20731,7 +20791,10 @@ function saveMyScoreToServer() {
         recallCount: recallWeek.count || 0,
         // 실시간 통독왕
         readWeekId: readWeek.weekId || currentWeekId,
-        readCount: readWeek.count || 0
+        readCount: readWeek.count || 0,
+        // 오늘의 암송 — ✅(오늘 마친 날짜)·📅 암송완료(주차). 없으면 빈 문자열
+        dailyDoneDate: _dailyDoneToday() ? _get6AMDayStr() : '',
+        weeklyDoneWeek: dailyWeekDone || ''
     };
 
     // 월 전환 시 이전달 백업 데이터가 있으면 함께 전송 (CF 아카이빙 경쟁조건 방어)
@@ -26571,17 +26634,20 @@ async function _renderFriendScreen() {
             return {
                 tag,
                 nickname: (d && d.nickname) || '',
-                lastWeekScore: d ? ((d.weeklyHistory && d.weeklyHistory[_lastWeekId]) || d.prevWeekScore || 0) : 0
+                lastWeekScore: d ? ((d.weeklyHistory && d.weeklyHistory[_lastWeekId]) || d.prevWeekScore || 0) : 0,
+                dailyDoneDate: (d && d.dailyDoneDate) || '',
+                weeklyDoneWeek: (d && d.weeklyDoneWeek) || ''
             };
         });
         friendRows.sort((a, b) => b.lastWeekScore - a.lastWeekScore);
 
-        friendRows.forEach(({ tag, nickname, lastWeekScore }) => {
+        friendRows.forEach((fr) => {
+            const { tag, nickname, lastWeekScore } = fr;
             const memo = getFriendMemo(tag);
             const cheered = cheerMap[tag] === todayStr;
             html += `<div class="friend-list-item" onclick="openFriendProfile('${tag}')">
                 <div class="friend-list-info">
-                    <span class="friend-list-name">${escapeHtml(nickname || '순례자')}</span>
+                    <span class="friend-list-name">${escapeHtml(nickname || '순례자')}${_dailyBadgeHtml(fr, { daily: true })}</span>
                     <span class="friend-list-sub">#${tag}${memo ? ` · ${escapeHtml(memo)}` : ''}</span>
                 </div>
                 <span class="friend-list-score">${lastWeekScore.toLocaleString()}점</span>

@@ -29,7 +29,7 @@ service cloud.firestore {
                 'score', 'myMonthlyScore', 'totalScore', 'yearlyScore',
                 'prevWeekScore', 'prevMonthlyScore',
                 'recallWeekId', 'recallCount', 'recallTitle',
-                'readWeekId', 'readCount', 'readTitle'];
+                'readWeekId', 'readCount', 'readTitle', 'dailyDoneDate', 'weeklyDoneWeek'];
       }
 
       // 친구 기능은 '상대방 문서에 직접 쓰는' 구조라(신청·수락·응원·삭제)

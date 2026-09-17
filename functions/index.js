@@ -103,7 +103,9 @@ async function updateWeeklyCountsImpl() {
                         castle: row.castleLv || 0,
                         field: row.maxHearts || 5,  // 밭(구 최대 체력) — 랭킹 배지용 (2026-09-13)
                         recallTitle: row.recallTitle || null, // 지난주 실시간 암송왕 칭호 (2026-09-14)
-                        readTitle: row.readTitle || null      // 지난주 실시간 통독왕 칭호 (2026-09-16)
+                        readTitle: row.readTitle || null,     // 지난주 실시간 통독왕 칭호 (2026-09-16)
+                        dailyDoneDate: row.dailyDoneDate || '', // 오늘의 암송 ✅ (2026-09-17)
+                        weeklyDoneWeek: row.weeklyDoneWeek || '' // 📅 암송완료 주차
                     };
                 });
 
@@ -142,7 +144,9 @@ async function updateWeeklyCountsImpl() {
             castle: row.castleLv || 0,
                         field: row.maxHearts || 5,  // 밭(구 최대 체력) — 랭킹 배지용 (2026-09-13)
                         recallTitle: row.recallTitle || null, // 지난주 실시간 암송왕 칭호 (2026-09-14)
-                        readTitle: row.readTitle || null      // 지난주 실시간 통독왕 칭호 (2026-09-16)
+                        readTitle: row.readTitle || null,     // 지난주 실시간 통독왕 칭호 (2026-09-16)
+                        dailyDoneDate: row.dailyDoneDate || '', // 오늘의 암송 ✅ (2026-09-17)
+                        weeklyDoneWeek: row.weeklyDoneWeek || '' // 📅 암송완료 주차
         };
     });
 
@@ -178,7 +182,9 @@ async function updateWeeklyCountsImpl() {
             castle: row.castleLv || 0,
                         field: row.maxHearts || 5,  // 밭(구 최대 체력) — 랭킹 배지용 (2026-09-13)
                         recallTitle: row.recallTitle || null, // 지난주 실시간 암송왕 칭호 (2026-09-14)
-                        readTitle: row.readTitle || null      // 지난주 실시간 통독왕 칭호 (2026-09-16)
+                        readTitle: row.readTitle || null,     // 지난주 실시간 통독왕 칭호 (2026-09-16)
+                        dailyDoneDate: row.dailyDoneDate || '', // 오늘의 암송 ✅ (2026-09-17)
+                        weeklyDoneWeek: row.weeklyDoneWeek || '' // 📅 암송완료 주차
         };
     });
 
@@ -484,7 +490,9 @@ exports.archiveWeeklyRankings = functions.pubsub
                     castle: row.castleLv || 0,
                         field: row.maxHearts || 5,  // 밭(구 최대 체력) — 랭킹 배지용 (2026-09-13)
                         recallTitle: row.recallTitle || null, // 지난주 실시간 암송왕 칭호 (2026-09-14)
-                        readTitle: row.readTitle || null      // 지난주 실시간 통독왕 칭호 (2026-09-16)
+                        readTitle: row.readTitle || null,     // 지난주 실시간 통독왕 칭호 (2026-09-16)
+                        dailyDoneDate: row.dailyDoneDate || '', // 오늘의 암송 ✅ (2026-09-17)
+                        weeklyDoneWeek: row.weeklyDoneWeek || '' // 📅 암송완료 주차
                 };
             });
             const zionSnapshotRef = db.collection('ranking_snapshots').doc(lastWeekId)

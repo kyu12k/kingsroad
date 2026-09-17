@@ -6109,6 +6109,8 @@ body, html {
 .daily-set-pick { display: flex; gap: 6px; }
 .daily-set-row select { padding: 8px 10px; border-radius: 10px; border: 1px solid #e0d6b8; background: #fff; color: #2c3e50; font-size: 0.95rem; }
 .event-chip.daily-chip.done { color: #7ee2a8; }
+.daily-badge { margin-left: 4px; font-size: 0.85em; cursor: default; }
+.recall-title.daily-week-title { border-color: rgba(46,204,113,0.6); background: rgba(46,204,113,0.14); color: #7ee2a8; }
 .mode-journey-btn.daily-btn { border-color: rgba(46,204,113,0.6); background: linear-gradient(135deg, rgba(46,204,113,0.16), rgba(39,174,96,0.08)); }
 .mode-journey-btn.daily-btn .mode-btn-label { color: #7ee2a8; }
 
