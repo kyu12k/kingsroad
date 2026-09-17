@@ -18209,7 +18209,7 @@ function _showGoogleSignInConfirm(existingTag) {
                 Google 계정의 데이터로 교체됩니다.<br>
                 <span style="color:#e05050;font-size:13px;">이 기기의 기록은 사라집니다.</span>
                 ${(typeof myGuildId !== 'undefined' && myGuildId)
-                    ? '<br><span style="color:#a0c0ff;font-size:12px;margin-top:6px;display:block;">※ 길드는 자동으로 탈퇴 처리됩니다.</span>'
+                    ? '<br><span style="color:#a0c0ff;font-size:12px;margin-top:6px;display:block;">※ 다른 멤버가 있는 길드는 자동으로 탈퇴 처리됩니다.<br>혼자인 길드는 그대로 남습니다.</span>'
                     : ''}
             </div>
             <div style="display:flex;gap:10px;">
@@ -18250,16 +18250,19 @@ async function _doSignInWithGoogle() {
         localStorage.setItem('kingsroad_import_old_playerid', myTag);
     }
 
-    // 길드 자동 탈퇴: sign-in 전이라 아직 구 UID로 인증된 상태
+    // 길드 자동 탈퇴: sign-in 전이라 아직 구 UID로 인증된 상태.
+    // 이 기기의 태그가 버려지고 Google 계정의 데이터(다른 태그일 수 있음)로 바뀌므로 유령 멤버를 남기지 않으려는 것.
+    // ★ 혼자 남은 길드장이면 서버가 해산하지 않고 건너뛴다(auto: true, 2026-09-17) — 같은 태그로 이어지면 길드도 그대로 써야 한다.
+    //   예전엔 이 경로가 「길드 해산」과 같은 코드를 타서 기기 변경 중에 길드가 통째로 사라졌다(황금 나팔 #NGCTUB)
     // 텍스트 파일 복구 직후 Google 연동 시도인 경우, 같은 사용자의 실제 길드이므로 탈퇴 건너뜀
     const _fromTextFile = localStorage.getItem('kingsroad_dataFromTextFile') === 'true';
     localStorage.removeItem('kingsroad_dataFromTextFile');
     if (!_fromTextFile && typeof myGuildId !== 'undefined' && myGuildId &&
         typeof myTag !== 'undefined' && myTag && myTag !== '0000') {
         try {
-            await _callGuildFn('leaveGuild', {});
-            myGuildId = null; _guildData = null;
-            console.log('[Google 이어하기] 길드 자동 탈퇴 완료');
+            const r = await _callGuildFn('leaveGuild', { auto: true });
+            if (!(r && r.skipped)) { myGuildId = null; _guildData = null; }
+            console.log('[Google 이어하기] 길드 자동 탈퇴', r && r.skipped ? '건너뜀(혼자 남은 길드장)' : '완료');
         } catch (e) {
             console.warn('[Google 이어하기] 길드 탈퇴 실패:', e);
         }

@@ -452,7 +452,9 @@ exports.respondJoinRequest = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
 
 exports.leaveGuild = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
-    const { myTag } = request.data;
+    // auto: 기기 변경(Google 이어하기)이 부르는 자동 탈퇴. 혼자 남은 길드장이면 **해산하지 않고 그대로 둔다** (2026-09-17).
+    // 태그가 그대로면 길드도 그대로 써야 하는데, 이 경로가 해산까지 해버려 황금 나팔(#NGCTUB)의 길드가 사라졌다
+    const { myTag, auto } = request.data;
 
     const userData = await verifyTag(request.auth.uid, myTag);
     if (!userData.guildId) throw new HttpsError('not-found', '가입한 길드가 없습니다.');
@@ -471,6 +473,10 @@ exports.leaveGuild = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     let action = 'leave', extra = {};
     if (guild.leaderId === myTag) {
         if (guild.members.length <= 1) {
+            if (auto) {
+                await guildLog('leave-skip', { guildId: userData.guildId, name: guild.name, tag: myTag, uid: request.auth.uid, reason: 'auto-sole-leader' });
+                return { ok: true, skipped: 'sole-leader' };
+            }
             batch.delete(guildRef);
             action = 'dissolve';
             extra = { snapshot: guild };   // 복구용 사본 — 이름·레벨·xp·장비·레이드 상태
