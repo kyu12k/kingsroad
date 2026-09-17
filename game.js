@@ -15166,7 +15166,7 @@ function _finishEventBattle() {
     bossDifficultyMode = eb.prevDifficulty; bossOrderMode = eb.prevOrder;
     window._eventBattle = null;
     saveGameData();
-    if (typeof showMissionToast === 'function') showMissionToast(t('event_cleared', { name: t(rung === 'hard' ? 'bso_hard' : 'bso_normal') }), pts > 0 ? `+${pts.toLocaleString()}pt` : t('event_scored_today'));
+    if (typeof showMissionToast === 'function') showMissionToast(t('event_cleared', { name: t(rung === 'hard' ? 'event_mode_hard' : 'event_mode_normal') }), pts > 0 ? `+${pts.toLocaleString()}pt` : t('event_scored_today'));
     quitGame('home');
 }
 /* 같은 절·같은 난이도는 하루 1회만 승점 — eventProgress의 시각으로 판단 */
