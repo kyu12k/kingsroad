@@ -110,6 +110,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // 길드 감사 로그 (서버만 쓴다, 2026-09-17). 읽기도 막는다 — 해산 사본에 다른 사람 태그가 들어 있다
+    match /guild_log/{logId} {
+      allow read, write: if false;
+    }
+    // 지난주 레이드 결과 보관 (서버만 쓴다). 순위표를 만들 수 있게 로그인 사용자는 읽는다
+    match /raid_history/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
     // 게임 세이브: 본인 문서만 읽기 허용, 쓰기는 saveGameDataSecure CF만
     match /saves/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;

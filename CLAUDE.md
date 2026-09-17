@@ -197,6 +197,17 @@ CF 왕복에 수 초가 걸려 아무 반응이 없으면 사용자가 실패로
 `_confirmRenameGuild`(모달 버튼 전체 잠금 + 힌트 문구)와 `_inviteToGuild`(성공 시 '✓ 발송' 유지)는
 고유한 완료 표시가 있어 헬퍼를 쓰지 않고 스피너만 맞췄다.
 
+### 길드 감사 로그 · 레이드 보관 · 해산 확인 (2026-09-17)
+
+황금 나팔(#NGCTUB)의 길드가 흔적 없이 사라졌다는 문의에 답할 수 없었다 — 길드 문서를 지우는 경로는 **혼자 남은 길드장의
+「길드 해산」**뿐이고(규칙상 클라이언트는 `guilds`를 못 쓴다), 함수는 아무 로그도 남기지 않았다.
+- `guild_log` 컬렉션(서버 전용, 읽기도 금지): `create`·`join-accept`·`join-invite`·`leave`·`leave-transfer`·`kick`·`dissolve` — `{action, at, guildId, name, tag, uid, …}`.
+  **해산은 문서 사본(`snapshot`)까지** 남겨 복구할 수 있다. `guildLog()` 헬퍼
+- `raid_history/{weekId}_{guildId}`(로그인 사용자 읽기 가능): `weeklyRaidReset`이 리셋 직전에 처치 수·진행도·기여도·멤버를 보관한다.
+  "지난주 몇 등"은 읽는 쪽이 처치 수 → 진행도로 정렬. 순위 화면은 아직 없다(다음 월요일 6시부터 쌓인다)
+- 클라이언트 「길드 해산」은 `_guildConfirmTyped` — **길드 이름을 그대로 입력**해야 버튼이 켜진다. 13개 길드 중 10개가 1인이라
+  해산 버튼이 거의 모든 길드장에게 늘 보인다
+
 ### Cloud Functions (kingsroad/index.js, asia-northeast3)
 - `createGuild`, `joinGuildRequest`, `respondJoinRequest`, `leaveGuild`, `kickGuildMember`
 - `inviteToGuild`, `respondInvite`

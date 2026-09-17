@@ -16429,6 +16429,33 @@ function _guildConfirm(message, onConfirm, onCancel) {
     overlay.querySelector('#guild-confirm-ok').onclick = () => { overlay.remove(); onConfirm(); };
 }
 
+/* 되돌릴 수 없는 동작(길드 해산)용 — 길드 이름을 그대로 쳐야 확인이 켜진다 (2026-09-17).
+   한 길드가 흔적 없이 사라진 뒤에 넣었다. 혼자인 길드가 대부분이라 해산 버튼이 거의 모든 길드장에게 늘 보인다 */
+function _guildConfirmTyped(message, requiredText, onConfirm) {
+    let overlay = document.getElementById('guild-confirm-overlay');
+    if (overlay) overlay.remove();
+    overlay = document.createElement('div');
+    overlay.id = 'guild-confirm-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10000;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `
+        <div style="background:#1e1e2e;border-radius:14px;padding:24px 20px;max-width:300px;width:88%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+            <div style="color:#e8e0f0;font-size:15px;line-height:1.6;margin-bottom:12px;">${message}</div>
+            <div style="color:#a080c0;font-size:13px;margin-bottom:8px;">확인하려면 길드 이름 <b style="color:#f1c40f;">${escapeHtml(requiredText)}</b> 을(를) 그대로 입력하세요</div>
+            <input id="guild-confirm-input" type="text" autocomplete="off" placeholder="${escapeHtml(requiredText)}" style="width:100%;box-sizing:border-box;padding:10px;border-radius:8px;border:1px solid #3a3a5c;background:#12121c;color:#fff;font-size:15px;text-align:center;margin-bottom:14px;">
+            <div style="display:flex;gap:10px;justify-content:center;">
+                <button id="guild-confirm-cancel" style="flex:1;padding:10px;border-radius:8px;border:none;background:#3a3a5c;color:#b0a8d0;font-size:14px;cursor:pointer;">취소</button>
+                <button id="guild-confirm-ok" disabled style="flex:1;padding:10px;border-radius:8px;border:none;background:#c0392b;color:#fff;font-size:14px;font-weight:700;cursor:pointer;opacity:0.4;">해산</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+    const input = overlay.querySelector('#guild-confirm-input');
+    const ok = overlay.querySelector('#guild-confirm-ok');
+    input.oninput = () => { const match = input.value.trim() === String(requiredText).trim(); ok.disabled = !match; ok.style.opacity = match ? '1' : '0.4'; };
+    overlay.querySelector('#guild-confirm-cancel').onclick = () => overlay.remove();
+    ok.onclick = () => { if (ok.disabled) return; overlay.remove(); onConfirm(); };
+    setTimeout(() => input.focus(), 50);
+}
+
 async function _kickGuildMember(targetTag, btn) {
     _guildConfirm(`정말 #${targetTag} 을(를)<br>길드에서 추방하시겠습니까?`, async () => {
         await _withButtonLoading(btn, '', async () => {
@@ -16451,7 +16478,7 @@ async function _leaveGuild(btn) {
         : isLeader
         ? '정말 길드를 해산하시겠습니까?<br><small style="color:#a080c0;">모든 멤버가 길드에서 제거됩니다.</small>'
         : '정말 길드를 탈퇴하시겠습니까?';
-    _guildConfirm(msg, async () => {
+    const run = async () => {
         await _withButtonLoading(btn, '처리 중…', async () => {
             try {
                 await _callGuildFn('leaveGuild', {});
@@ -16467,7 +16494,10 @@ async function _leaveGuild(btn) {
                 showGemToast(0, e.message || '탈퇴 실패', true);
             }
         });
-    });
+    };
+    // 해산은 되돌릴 수 없다 — 길드 이름을 직접 쳐야 한다
+    if (isLeader && memberCount <= 1) _guildConfirmTyped(msg + '<br><small style="color:#e74c3c;">되돌릴 수 없습니다.</small>', _guildData.name || '', run);
+    else _guildConfirm(msg, run);
 }
 
 async function _guildAttend(btn) {

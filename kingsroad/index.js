@@ -306,6 +306,15 @@ const RAID_DMG_WINDOW_MS   = 24 * 60 * 60 * 1000; // 24시간
 const RAID_DMG_MAX_CALLS   = 5000;                // 하루 최대 보고 횟수
 const RAID_DMG_MAX_SUM     = 300000;              // 하루 최대 누적 대미지(클라이언트 신고 기준)
 
+/* 길드 감사 로그 (2026-09-17). 한 길드가 흔적 없이 사라져 "무슨 일이 있었나"에 답할 수 없었다 —
+   생성·가입·탈퇴·해산·추방을 guild_log 컬렉션에 남긴다. 해산 때는 문서 사본까지(복구용). 규칙상 클라이언트는 못 쓴다 */
+async function guildLog(action, data) {
+    try {
+        await db.collection('guild_log').add({ action, at: admin.firestore.FieldValue.serverTimestamp(), ...data });
+        console.log(`[guild] ${action} ${JSON.stringify(data)}`);
+    } catch (e) { console.warn('[guild] log failed', e && e.message); }
+}
+
 exports.createGuild = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
     const { name, myTag } = request.data;
@@ -338,6 +347,7 @@ exports.createGuild = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     });
     batch.update(db.collection('leaderboard').doc(myTag), { guildId: guildRef.id });
     await batch.commit();
+    await guildLog('create', { guildId: guildRef.id, name: trimmedName, tag: myTag, uid: request.auth.uid });
     return { ok: true, guildId: guildRef.id, code };
 });
 
@@ -436,6 +446,7 @@ exports.respondJoinRequest = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
     });
 
     if (alreadyInGuild) return { ok: false, msg: '이미 다른 길드에 가입한 사용자입니다.' };
+    if (accept) await guildLog('join-accept', { guildId, tag: targetTag, by: myTag, uid: request.auth.uid });
     return { ok: true };
 });
 
@@ -457,21 +468,27 @@ exports.leaveGuild = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     const batch = db.batch();
     batch.update(db.collection('leaderboard').doc(myTag), { guildId: admin.firestore.FieldValue.delete() });
 
+    let action = 'leave', extra = {};
     if (guild.leaderId === myTag) {
         if (guild.members.length <= 1) {
             batch.delete(guildRef);
+            action = 'dissolve';
+            extra = { snapshot: guild };   // 복구용 사본 — 이름·레벨·xp·장비·레이드 상태
         } else {
             const newLeader = guild.members.find(m => m !== myTag);
             batch.update(guildRef, {
                 leaderId: newLeader,
                 members: admin.firestore.FieldValue.arrayRemove(myTag)
             });
+            action = 'leave-transfer';
+            extra = { newLeader };
         }
     } else {
         batch.update(guildRef, { members: admin.firestore.FieldValue.arrayRemove(myTag) });
     }
 
     await batch.commit();
+    await guildLog(action, { guildId: userData.guildId, name: guild.name, tag: myTag, uid: request.auth.uid, ...extra });
     return { ok: true };
 });
 
@@ -492,6 +509,7 @@ exports.kickGuildMember = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     batch.update(guildRef, { members: admin.firestore.FieldValue.arrayRemove(targetTag) });
     batch.update(db.collection('leaderboard').doc(targetTag), { guildId: admin.firestore.FieldValue.delete() });
     await batch.commit();
+    await guildLog('kick', { guildId: userData.guildId, name: guildDoc.data().name, tag: myTag, targetTag, uid: request.auth.uid });
     return { ok: true };
 });
 
@@ -590,6 +608,7 @@ exports.respondInvite = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
         });
     });
 
+    if (accept) await guildLog('join-invite', { guildId, name: guildName, tag: myTag, uid: request.auth.uid });
     return { ok: true, guildName, guildId: accept ? guildId : null };
 });
 
@@ -834,6 +853,20 @@ exports.weeklyRaidReset = onSchedule({
                 }, { merge: true });
             }
         }
+
+        // 지난주 레이드 결과 보관 (2026-09-17) — 리셋하면 기여도·처치 수가 사라져 "지난주 몇 등이었나"에 답할 수 없었다.
+        // 문서 하나가 한 길드의 한 주. 순위는 읽는 쪽이 처치 수 → 진행도로 정렬해 매긴다
+        batch.set(db.collection('raid_history').doc(`${guild.raidWeekId || 'unknown'}_${guildDoc.id}`), {
+            weekId: guild.raidWeekId || '',
+            guildId: guildDoc.id,
+            name: guild.name || '',
+            level: guild.level || 1,
+            dragonLevel: guild.raidCurrentDragonLevel || 1,
+            clearedCount, headClearedCount, hpDealtPct,
+            scales, hornFragments, headSkins, scalesTier,
+            members, contributions: guild.raidContributions || {},
+            archivedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
 
         batch.update(guildDoc.ref, {
             raidCurrentDragonLevel: 1,
