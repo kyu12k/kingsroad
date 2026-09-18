@@ -201,6 +201,34 @@
     </div>
   </div>
 
+  <!-- KPI 행 3: 새 콘텐츠 참여 -->
+  <div class="card">
+    <div class="card-title">새 콘텐츠 참여 (오늘의 암송 · 시험 준비 · 실시간 판)</div>
+    <div class="kpi-grid4" style="margin-bottom:0">
+      <div class="kpi-card">
+        <div class="kpi-label">📅 오늘 암송함</div>
+        <div class="kpi-value green" id="f-daily">—</div>
+        <div class="kpi-sub" id="f-daily-sub">어제 —명 · 오전 6시 경계</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">📅 암송완료 (이번 주)</div>
+        <div class="kpi-value accent" id="f-week">—</div>
+        <div class="kpi-sub" id="f-week-sub">지난주 —명 · 토요일에 확정</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">🖊️ 암송왕 참가</div>
+        <div class="kpi-value" id="f-recall">—</div>
+        <div class="kpi-sub">이번 주 백지 1절 이상</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">📖 통독왕 참가</div>
+        <div class="kpi-value amber" id="f-read">—</div>
+        <div class="kpi-sub">이번 주 읽음 1절 이상</div>
+      </div>
+    </div>
+    <div id="f-events" style="margin-top:12px"></div>
+  </div>
+
   <!-- 8주 추이 (전체 너비) -->
   <div class="card">
     <div class="card-title">주간 활성 유저 추이 (최근 8주)</div>
@@ -385,6 +413,26 @@ function renderGuild(d) {
   document.getElementById('guild-out').textContent = '없음 ' + fmt(d.totalUsers - d.inGuild) + '명';
 }
 
+function renderFeatures(f) {
+  if (!f) return;
+  document.getElementById('f-daily').textContent = fmt(f.dailyDoneToday);
+  document.getElementById('f-daily-sub').textContent = '어제 ' + fmt(f.dailyDoneYesterday) + '명 · 오전 6시 경계';
+  document.getElementById('f-week').textContent = fmt(f.weekDoneThisWeek);
+  document.getElementById('f-week-sub').textContent = '지난주 ' + fmt(f.weekDoneLastWeek) + '명 · 토요일에 확정';
+  document.getElementById('f-recall').textContent = fmt(f.recallThisWeek);
+  document.getElementById('f-read').textContent = fmt(f.readThisWeek);
+  const box = document.getElementById('f-events');
+  const ids = Object.keys(f.events || {}).sort().reverse();
+  if (!ids.length) { box.innerHTML = '<div class="kpi-sub">진행 중인 시험 준비 이벤트 없음 (앱을 연 사람이 올린 값 기준)</div>'; return; }
+  box.innerHTML = ids.map(id => {
+    const e = f.events[id];
+    const pct = e.tried ? Math.round(e.ready / e.tried * 100) : 0;
+    return '<div class="dist-row"><div class="dist-label">📝 ' + id + '</div>' +
+      '<div class="dist-track"><div class="dist-fill" style="width:' + Math.max(pct, e.ready > 0 ? 4 : 0) + '%;background:#4ade80">' +
+      '<span class="dist-count">참여 ' + e.tried + '명 · 전 절(' + e.total + ') 준비 ' + e.ready + '명 (' + pct + '%)</span></div></div></div>';
+  }).join('');
+}
+
 function renderTop10(top10) {
   const medals = ['🥇','🥈','🥉'];
   const tbody = document.getElementById('top10-body');
@@ -419,6 +467,7 @@ async function loadData() {
     renderDist(data.scoreDistribution);
     renderGuild(data);
     renderTop10(data.top10);
+    renderFeatures(data.features);
 
     const kst = new Date(new Date(data.generatedAt).getTime() + 9 * 3600000);
     document.getElementById('updated-at').textContent =

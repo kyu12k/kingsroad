@@ -1770,6 +1770,11 @@ verseRecall['1-1'] = { pass, typedPass, blankPass, fail, firstPass, lastPass, la
   이벤트 밖의 통과도 인정 — `verseRecall.blankPass`면 🏆(백지), `typedPass`만이면 ⭐(빈칸) (2026-09-18)
 - 끝나면 `quitGame`이 `window._returnToEvent`로 이벤트 화면을 다시 연다
 - 미션·레이드·보스 클리어와 무관(스테이지가 아니다)
+- **대시보드 집계 (2026-09-18)**: `saveMyScoreToServer`가 `_eventStatForServer()`로 활성 이벤트 하나의 요약을 올린다 —
+  `eventId`/`eventTried`(이벤트 안에서 통과한 절 수)/`eventReady`(준비된 절 수, 밖의 기록 포함)/`eventTotal`. `submitScoreSecure` 화이트리스트·검증(0~100), 규칙 `serverOnlyKeys`.
+  `getAnalytics.features`가 leaderboard만 훑어 `events[id] = {tried, ready(전 절 준비), total}`·`dailyDoneToday/Yesterday`·`weekDoneThisWeek/LastWeek`·`recallThisWeek`·`readThisWeek`를 낸다(admin.html 「새 콘텐츠 참여」).
+  saves(7천 건)는 안 읽는다 — 그래서 **앱을 다시 연 사람의 값만** 잡히고, `dailyDoneDate`는 최신 하루만 남아 '어제'는 오늘 안 한 사람만 센다.
+  정밀 집계는 scratchpad `newfeat.js`(saves 전수)
 - **보상**: 오늘 전 절을 백지(`none`)로 통과하면 💎`EVENT_ALL_BLANK_GEM`(1,000), 하루 1회(`eventProgress[id]._rewardDay`, **오전 6시 경계** — '오늘 통과' 판정도 `_tsTo6AMDateStr`).
   모의고사 한 번이든 문항 다섯 개 따로든. 10절 백지 ≈ 5분이라 망각 미션(22절 2,250)과 비율이 비슷
 

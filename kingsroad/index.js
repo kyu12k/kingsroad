@@ -41,6 +41,7 @@ const SCORE_WRITE_WHITELIST = [
     'recallWeekId', 'recallCount', // 실시간 암송왕 (2026-09-13) — 이번 주 백지로 써낸 구절 수
     'readWeekId', 'readCount',     // 실시간 통독왕 (2026-09-16) — 이번 주 읽음을 누른 구절 수
     'dailyDoneDate', 'weeklyDoneWeek', // 오늘의 암송 ✅·📅 암송완료 (2026-09-17)
+    'eventId', 'eventTried', 'eventReady', 'eventTotal', // 시험 준비 참여 요약 — 대시보드 집계용 (2026-09-18)
 ];
 const READ_COUNT_MAX = 200000; // 3초 간격 상한 28,800/일 × 7
 // 실시간 암송왕 상한: 404절 × 7일 (같은 구절 하루 1회 규칙의 이론상 최대)
@@ -194,6 +195,15 @@ exports.submitScoreSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =>
     }
     if (p.weeklyDoneWeek !== undefined && p.weeklyDoneWeek !== '' && !/^\d{4}-W\d{2}$/.test(String(p.weeklyDoneWeek))) {
         throw new HttpsError('invalid-argument', '암송완료 주차가 유효하지 않습니다.');
+    }
+    // 시험 준비 참여 요약 — id는 짧은 문자열, 절 수는 0~100 정수
+    if (p.eventId !== undefined && (typeof p.eventId !== 'string' || p.eventId.length > 40)) {
+        throw new HttpsError('invalid-argument', '이벤트 id가 유효하지 않습니다.');
+    }
+    for (const k of ['eventTried', 'eventReady', 'eventTotal']) {
+        if (p[k] !== undefined && (!Number.isInteger(p[k]) || p[k] < 0 || p[k] > 100)) {
+            throw new HttpsError('invalid-argument', `${k} 값이 유효하지 않습니다.`);
+        }
     }
 
     const lbRef = db.collection('leaderboard').doc(String(myTag));
@@ -1122,6 +1132,30 @@ exports.getAnalytics = onRequest({ cors: true }, async (req, res) => {
         const inGuild = realUsers.filter(d => d.guildId).length;
         const guildRate = realUsers.length > 0 ? Math.round(inGuild / realUsers.length * 100) : 0;
 
+        // ⑥ 새 콘텐츠 참여 (leaderboard 필드만으로 — saves는 7천 건이라 안 훑는다)
+        //    하루 경계는 앱과 같은 오전 6시(KST): 6시간을 빼고 KST 날짜를 취한다
+        const day6 = (ms) => new Date(ms + 9 * 3600000 - 6 * 3600000).toISOString().slice(0, 10);
+        const today6 = day6(now.getTime()), yday6 = day6(now.getTime() - 86400000);
+        const features = {
+            dailyDoneToday: 0, dailyDoneYesterday: 0,   // 📅 오늘의 암송 — ✅ 오늘 암송함
+            weekDoneThisWeek: 0, weekDoneLastWeek: 0,   // 📅 암송완료 (주간)
+            recallThisWeek: 0, readThisWeek: 0,         // 실시간 암송왕·통독왕 참가자 (1절 이상)
+            events: {},                                 // eventId → { tried, ready, total }
+        };
+        for (const d of allData) {
+            if (d.dailyDoneDate === today6) features.dailyDoneToday++;
+            else if (d.dailyDoneDate === yday6) features.dailyDoneYesterday++;
+            if (d.weeklyDoneWeek === currentWeekId) features.weekDoneThisWeek++;
+            else if (d.weeklyDoneWeek === lastWeekId) features.weekDoneLastWeek++;
+            if (d.recallWeekId === currentWeekId && (d.recallCount || 0) > 0) features.recallThisWeek++;
+            if (d.readWeekId === currentWeekId && (d.readCount || 0) > 0) features.readThisWeek++;
+            if (d.eventId && (d.eventTried || 0) > 0) {
+                const ev = features.events[d.eventId] || (features.events[d.eventId] = { tried: 0, ready: 0, total: d.eventTotal || 0 });
+                ev.tried++;
+                if ((d.eventReady || 0) >= (d.eventTotal || 0) && (d.eventTotal || 0) > 0) ev.ready++;
+            }
+        }
+
         // 상위 10명
         const top10 = realUsers
             .map(d => ({ tag: d.tag, nickname: d.nickname, totalScore: d.totalScore || 0 }))
@@ -1145,6 +1179,7 @@ exports.getAnalytics = onRequest({ cors: true }, async (req, res) => {
             dailyActive: dailyBuckets,
             scoreDistribution: buckets,
             top10,
+            features,
         });
     } catch (e) {
         console.error('getAnalytics 오류:', e);

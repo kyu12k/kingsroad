@@ -15133,6 +15133,18 @@ function _eventReadiness(e) {
     const done = ids.filter(id => _eventVerseRung(e.id, id) >= 4).length;
     return { done, total: ids.length };
 }
+/* 대시보드용 요약 — { eventId, eventTried(이벤트 안에서 한 번이라도 통과한 절 수), eventReady(준비된 절 수), eventTotal }.
+   활성 이벤트가 없으면 null(필드를 안 보내 서버 값이 남는다 — 지난 이벤트 기록이 유지된다) */
+function _eventStatForServer() {
+    try {
+        const ev = _activeEvents()[0];
+        if (!ev) return null;
+        const ids = _eventVerseIds(ev);
+        const prog = eventProgress[ev.id] || {};
+        const tried = ids.filter(id => { const p = prog[id]; return !!(p && EVENT_RUNGS.some(k => p[k])); }).length;
+        return { eventId: String(ev.id), eventTried: tried, eventReady: _eventReadiness(ev).done, eventTotal: ids.length };
+    } catch (e) { return null; }
+}
 const EVENT_ALL_BLANK_GEM = 1000;   // 오늘 전 문항을 백지로 통과하면 하루 1회
 function _eventAllBlankToday(ev) {
     const today = _get6AMDayStr();
@@ -15899,6 +15911,7 @@ function _finishEventBattle() {
     bossDifficultyMode = eb.prevDifficulty; bossOrderMode = eb.prevOrder;
     window._eventBattle = null;
     saveGameData();
+    try { saveMyScoreToServer(); } catch (e) {}   // 이벤트 참여 요약(eventTried 등)을 바로 올린다
     if (typeof showMissionToast === 'function') showMissionToast(t(String(eb.eventId).startsWith('daily:') ? 'daily_cleared' : 'event_cleared', { name: t(rung === 'hard' ? 'event_mode_hard' : 'event_mode_normal') }), pts > 0 ? `+${pts.toLocaleString()}pt` : t('event_scored_today'));
     quitGame('home');
 }
@@ -21153,6 +21166,9 @@ function saveMyScoreToServer() {
         dailyDoneDate: _dailyDoneToday() ? _get6AMDayStr() : '',
         weeklyDoneWeek: dailyWeekDone || ''
     };
+    // 시험 준비 참여 — 대시보드 집계용 (saves를 훑지 않고 leaderboard에서 세려고). 활성 이벤트 하나만
+    const _evStat = _eventStatForServer();
+    if (_evStat) Object.assign(payload, _evStat);
 
     // 월 전환 시 이전달 백업 데이터가 있으면 함께 전송 (CF 아카이빙 경쟁조건 방어)
     if (leagueData.prevMonthId && leagueData.prevMonthlyScore > 0) {
