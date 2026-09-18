@@ -730,7 +730,7 @@ W37 1등을 가른 것은 일요일의 **'1장 ×6' 반복(+ ×3 부스터)** �
 > 메뉴 안의 고난은 진행자의 3.4%만 4종을 다 써봤다.)
 > 흐름에 넣으면 하는 쪽이 기본이 되고 건너뛰는 쪽에 행동이 필요해진다.
 
-- 글자 칸은 남긴다(`selectedHardshipUltimate = false`) — 문턱을 낮춰야 실제로 한다
+- 글자 칸은 남긴다(`selectedHardshipUltimate = false`) — 문턱을 낮춰야 실제로 한다. 그래서 이건 **빈칸**이고 이름도 「빈칸으로 확인해보기」(2026-09-18, 그 전엔 '백지'라 불러 혼동)
 - **첫 통과 보너스** `VERSE_FIRST_RECALL_GEM`(30) — 처음 백지로 써낸 구절에만 1회. 404절 전부라도 12,120으로 심화 미션 하루치(약 19,300)보다 작다
 - **초학습 직후 확인은 `lastMode: 'learn'`으로 구분**하고 보너스를 주지 않는다.
   방금 다섯 단계를 거친 구절이라 통과가 당연해 증거 가치가 낮고,
@@ -873,9 +873,9 @@ W37 1등을 가른 것은 일요일의 **'1장 ×6' 반복(+ ×3 부스터)** �
 
 | 등급 | 조건 |
 |------|------|
-| 0 | `typedPass === 0` — 아직 백지에서 나온 적 없음 |
-| 1 | `typedPass >= 1` |
-| 2 | `typedPass >= 1` **AND** `lastHints <= ceil(lastVerseLen × 0.2)` |
+| 0 | `typedPass === 0` — 아직 타이핑으로 써낸 적 없음 |
+| 1 | `typedPass >= 1` (빈칸 포함) |
+| 2 | `blankPass >= 1`(진짜 백지, 2026-09-18) **AND** `lastHints <= ceil(lastVerseLen × 0.2)` |
 
 `lastOk === false`(마지막 백지 시도에서 막힘)면 **한 칸 강등.**
 
@@ -1593,10 +1593,17 @@ function isOwner() {
 **"외웠다"의 유일한 증거**를 구절 단위로 남긴다. 망각의 고난(타이핑)·암송의 고난(음성)에서만 기록한다.
 
 ```js
-verseRecall['1-1'] = { pass, typedPass, fail, firstPass, lastPass, lastAt, lastOk,
+verseRecall['1-1'] = { pass, typedPass, blankPass, fail, firstPass, lastPass, lastAt, lastOk,
                        hints, lastHints, lastMode, lastScoredAt,
                        lastFirstHintIdx, lastVerseLen }
 ```
+
+> ★ **'백지'라는 말이 두 뜻으로 쓰이고 있었다 (2026-09-18 정리).** 결과 화면 「백지로 확인해보기」와 빠른 모드 승급은
+> 사실 **빈칸**(글자 칸 있음, `selectedHardshipUltimate=false`)인데 이름만 백지였고, 그 통과가 `typedPass`에 섞여
+> 난이도 추천의 백지 ⭐·시험 준비됨 🏆까지 붙었다. 반면 암송왕·오늘 암송함은 진짜 백지만 셌다.
+> → `blankPass`(칸 없이 써낸 통과, `ultimateMemoryMode`일 때만)를 따로 두고, **백지를 요구하는 자리는 `blankPass`를 본다**:
+> 난이도 등급 2(백지 ⭐)·시험 준비됨 🏆. `typedPass`(빈칸 포함)는 첫 통과 보너스·빠른 모드 승급·등급 1(빈칸 ⭐)에 남는다.
+> 이름도 「빈칸으로 확인해보기」·「빈칸 복습」으로. 옛 기록엔 `blankPass`가 없어 **빈칸으로 간주**된다 — 백지로 한 번 더 쓰면 올라간다.
 
 ### `lastFirstHintIdx` — 어디서 막히는가 (2026-09-10 추가)
 
@@ -1760,7 +1767,7 @@ verseRecall['1-1'] = { pass, typedPass, fail, firstPass, lastPass, lastAt, lastO
   > 모의고사가 지난 세션의 난이도(빈칸)와 위치(2절부터)를 물려받았다. 2026-09-17 `eventId`를 제외 목록에 추가.
   > 빌려 쓰는 세션을 새로 만들면 이 함수의 제외 목록에 **반드시** 넣을 것 — 여기 빠지면 kind 없는 'free'로 섞인다
 - **진행** `eventProgress[eventId][stageId] = { normal, hard, blank, none: ts }` (저장본). 준비 상태 = 통과한 최고 난이도,
-  이벤트 밖의 백지 통과(`verseRecall.typedPass`)도 인정
+  이벤트 밖의 통과도 인정 — `verseRecall.blankPass`면 🏆(백지), `typedPass`만이면 ⭐(빈칸) (2026-09-18)
 - 끝나면 `quitGame`이 `window._returnToEvent`로 이벤트 화면을 다시 연다
 - 미션·레이드·보스 클리어와 무관(스테이지가 아니다)
 - **보상**: 오늘 전 절을 백지(`none`)로 통과하면 💎`EVENT_ALL_BLANK_GEM`(1,000), 하루 1회(`eventProgress[id]._rewardDay`, **오전 6시 경계** — '오늘 통과' 판정도 `_tsTo6AMDateStr`).

@@ -223,13 +223,13 @@ const LANG = {
         embed_title_boss_none: '보스전 · 백지',
         embed_title_midboss_blank: '중간 점검 · 빈칸',
         embed_title_midboss_none: '중간 점검 · 백지',
-        embed_title_verse_check: '백지 확인',
-        embed_title_quick_blank: '백지 복습',
+        embed_title_verse_check: '빈칸 확인',
+        embed_title_quick_blank: '빈칸 복습',
         hardship_btn_giveup: '모르겠어요',
-        blank_check_btn: '백지로 확인해보기',
-        blank_check_again: '한 번 더 백지로',
+        blank_check_btn: '빈칸으로 확인해보기',
+        blank_check_again: '한 번 더 빈칸으로',
         blank_check_hint: '지금이 가장 잘 떠오를 때예요',
-        blank_check_first_bonus: '✨ 첫 백지 통과 💎 +{gem}',
+        blank_check_first_bonus: '✨ 처음 스스로 써냈어요 💎 +{gem}',
         hint_btn_label: '💡 힌트',
         hint_cooldown_sec: '{n}초',
         hint_confirm: '💎 보석 {cost}개를 소모하여 힌트를 보시겠습니까?',
@@ -1075,13 +1075,13 @@ const LANG = {
         embed_title_boss_none: 'Boss · Blank Page',
         embed_title_midboss_blank: 'Checkpoint · Blanks',
         embed_title_midboss_none: 'Checkpoint · Blank Page',
-        embed_title_verse_check: 'Memory Check',
-        embed_title_quick_blank: 'Memory Review',
+        embed_title_verse_check: 'Blanks check',
+        embed_title_quick_blank: 'Blanks review',
         hardship_btn_giveup: "I don't know",
-        blank_check_btn: 'Try it from memory',
-        blank_check_again: 'From memory again',
+        blank_check_btn: 'Try it with blanks',
+        blank_check_again: 'Blanks again',
         blank_check_hint: 'Right now is when it comes back most easily',
-        blank_check_first_bonus: '✨ First blank pass 💎 +{gem}',
+        blank_check_first_bonus: '✨ First time written by yourself 💎 +{gem}',
         hint_btn_label: '💡 Hint',
         hint_cooldown_sec: '{n}s',
         hint_confirm: 'Use {cost} 💎 gems for a hint?',
@@ -8193,7 +8193,7 @@ function openBossSetupModal(stage) {
     const blankBtns = btn('blank', '빈칸') + btn('none', '백지');
     // 근거를 한 줄로 밝힌다 — 라벨만 있으면 마법처럼 보이고, 무엇을 하면 등급이 오르는지도 안 보인다
     const fitNote = fitInfo
-        ? `<div class="bso-fit-note">${isMid ? '이 구간' : '이 장'} ${fitInfo.total}절 중 <b>${fitInfo.written}절</b>을 백지로 써봤어요</div>`
+        ? `<div class="bso-fit-note">${isMid ? '이 구간' : '이 장'} ${fitInfo.total}절 중 <b>${fitInfo.written}절</b>을 스스로 써봤어요</div>`
         : '';
     const overlay = document.createElement('div');
     overlay.id = 'boss-setup-modal';
@@ -8328,14 +8328,17 @@ const HINT_OK_RATIO = 0.2; // 통과 시 힌트가 글자 수의 이 비율 이�
 
 function _getVerseRecallTier(stageId) {
     const r = verseRecall[stageId];
-    if (!r || !(r.typedPass > 0)) return 0;   // 아직 백지에서 나온 적 없음
-    let tier = 1;
-    const len = r.lastVerseLen || 0;
-    if (len > 0) {
-        if ((r.lastHints || 0) <= Math.ceil(len * HINT_OK_RATIO)) tier = 2;
-    } else if (!(r.lastHints > 0)) {
-        // lastVerseLen 도입(2026-09-10) 이전 기록 — 길이를 모르므로 '힌트 0'만 인정한다
-        tier = 2;
+    if (!r || !(r.typedPass > 0)) return 0;   // 아직 타이핑으로 써낸 적 없음
+    let tier = 1;                              // 빈칸(글자 칸)으로는 써냈다
+    // 등급 2(백지 ⭐)는 **진짜 백지(칸 없음)** 통과가 있어야 한다 (2026-09-18).
+    // 그 전엔 빈칸 통과도 typedPass에 섞여 백지 ⭐가 붙었다. 옛 기록엔 blankPass가 없어 빈칸으로 간주된다 — 백지로 한 번 더 쓰면 올라간다
+    if (r.blankPass > 0) {
+        const len = r.lastVerseLen || 0;
+        if (len > 0) {
+            if ((r.lastHints || 0) <= Math.ceil(len * HINT_OK_RATIO)) tier = 2;
+        } else if (!(r.lastHints > 0)) {
+            tier = 2;
+        }
     }
     if (r.lastOk === false) tier = Math.max(0, tier - 1);
     return tier;
@@ -15117,9 +15120,12 @@ function _eventVerseRung(eventId, stageId) {
     const p = (eventProgress[eventId] || {})[stageId] || {};
     let r = 0;
     EVENT_RUNGS.forEach((k, i) => { if (p[k]) r = i + 1; });
-    // 이벤트 밖에서(보스전·망각) 백지로 써낸 기록도 인정 — 준비된 것은 준비된 것
+    // 이벤트 밖에서(보스전·망각) 써낸 기록도 인정 — 준비된 것은 준비된 것. 진짜 백지면 🏆, 빈칸까지면 ⭐ (2026-09-18)
     const vr = (typeof verseRecall !== 'undefined' && verseRecall[stageId]) || null;
-    if (vr && vr.typedPass > 0 && vr.lastOk !== false) r = Math.max(r, 4);
+    if (vr && vr.lastOk !== false) {
+        if (vr.blankPass > 0) r = Math.max(r, 4);
+        else if (vr.typedPass > 0) r = Math.max(r, 3);
+    }
     return r;
 }
 function _eventReadiness(e) {
@@ -25121,6 +25127,9 @@ function recordVerseRecall(stageId, ok, hints, mode) {
         // 이 값이 첫 통과 보너스와 빠른 모드 백지 승급의 공통 기준이 된다 —
         // 음성으로 통과한 구절이 승급돼 타이핑 백지를 요구받으면 판정과 요구가 어긋난다.
         if (mode === 'memory') {
+            // ★ 진짜 백지(칸 없음) 통과는 따로 — typedPass는 빈칸(글자 칸)까지 포함한다.
+            //   '백지'를 요구하는 자리(백지 ⭐·시험 준비됨 🏆)는 blankPass를 본다 (2026-09-18)
+            if (hardshipState && hardshipState.ultimateMemoryMode) r.blankPass = (r.blankPass || 0) + 1;
             if (!r.typedPass) {
                 // 첫 통과 보너스 — 아직 안 써본 구절로 끌어당긴다 (구절당 평생 1회)
                 if (typeof addGems === 'function') {
