@@ -7231,17 +7231,20 @@ function openBibleReadingOverlay() {
     document.body.appendChild(overlay);
 }
 
-/* 한 절을 읽는 데 걸리는 시간(초) = 글자 수(공백 제외) ÷ 5, 최소 3초. 정독 속도 분당 300자.
-   이 초가 곧 **간격**이고 곧 **보석**이다 — 46자 절은 9초 기다리고 9젬, 13자 절은 3초·3젬, 119자 절은 24초·24젬.
-   404절 한 바퀴 ≈ 62분 · 약 3,900젬. 회독마다 같은 규칙이라 "읽었다"를 버튼이 아니라 시간이 증명한다. (2026-09-16) */
-const BIBLE_READ_CPS = 5;
-function _verseReadSeconds(chapterNum, verseNum) {
+/* 한 절의 보석 = 글자 수(공백 제외) ÷ 5, 최소 3 — 46자 절은 9젬, 13자 절은 3젬, 119자 절은 24젬. 404절 한 바퀴 ≈ 3,900젬.
+   기다리는 시간은 글자 수 ÷ 7(분당 420자, 묵독 속도), 최소 2초 — 119자 절이면 17초. (2026-09-21: 처음엔 둘 다 ÷5였는데
+   "긴 절일수록 너무 길다"는 체감이 있어 간격만 낮췄다. 묵독은 분당 400~600자라 5자/초는 낭독 속도였다.)
+   회독마다 같은 규칙이라 "읽었다"를 버튼이 아니라 시간이 증명한다. (2026-09-16) */
+const BIBLE_READ_GEM_CPS = 5;
+const BIBLE_READ_WAIT_CPS = 7;
+function _verseReadLen(chapterNum, verseNum) {
     const v = (bibleData[chapterNum] || [])[verseNum - 1];
     const en = (currentLang === 'en' && typeof bibleDataEn !== 'undefined' && bibleDataEn[chapterNum] && bibleDataEn[chapterNum][verseNum - 1]) ? bibleDataEn[chapterNum][verseNum - 1].text : '';
     const text = en || (v && v.text) || '';
-    const len = text.replace(/\s+/g, '').length;
-    return Math.max(3, Math.ceil(len / BIBLE_READ_CPS));
+    return text.replace(/\s+/g, '').length;
 }
+function _verseReadGems(chapterNum, verseNum) { return Math.max(3, Math.ceil(_verseReadLen(chapterNum, verseNum) / BIBLE_READ_GEM_CPS)); }
+function _verseReadSeconds(chapterNum, verseNum) { return Math.max(2, Math.ceil(_verseReadLen(chapterNum, verseNum) / BIBLE_READ_WAIT_CPS)); }
 
 function markVerseAsRead(chapterNum, verseNum, btnEl) {
     const now = Date.now();
@@ -7267,10 +7270,13 @@ function markVerseAsRead(chapterNum, verseNum, btnEl) {
     bibleReadLog[today][chapterNum].push(verseNum);
     if (!bibleReadPasses[today]) bibleReadPasses[today] = {};
     const passes = bibleReadPasses[today][chapterNum] || 0;
-    const gem = needSec;                          // 읽는 데 걸린 초 = 보석. 회독마다 같다
+    const gem = _verseReadGems(chapterNum, verseNum);   // 글자 수 기준. 회독마다 같다
     myGems += gem;
     bibleReadTotal[today] = (bibleReadTotal[today] || 0) + 1;
     _noteReadForWeek();
+    // 「이번 주 통독 N절」은 절마다 바로 갱신 — 예전엔 한 장을 다 읽은 뒤에만 다시 그렸다 (2026-09-21)
+    const passLabelEl = document.getElementById('bible-read-pass');
+    if (passLabelEl) passLabelEl.textContent = _bibleReadPassLabel(chapterNum);
     updateGemDisplay();
     saveGameData();
     if (typeof claimBibleReadReward === 'function') claimBibleReadReward(true);
@@ -24522,6 +24528,7 @@ function renderHardshipMemoryVerse() {
     `;
 
     bindHardshipMemoryInputGuards();
+    _alignHardshipHiddenInput(field.querySelector('.char-slot.active') || field.querySelector('.char-slot.is-valid'));
 
     if (!hardshipState.locked) {
         // ★ 반드시 동기로 먼저 부른다.
@@ -24868,31 +24875,45 @@ function updateHardshipMemoryBoard() {
     }
 
     armHardshipHintNudge();
+    _alignHardshipHiddenInput(targetScrollSlot);
 
     if (targetScrollSlot && !hardshipState.isComposing) {
         clearTimeout(updateHardshipMemoryBoard._scrollTimer);
         const slotToScroll = targetScrollSlot;
         updateHardshipMemoryBoard._scrollTimer = setTimeout(() => {
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            if (isIOS && window.visualViewport) {
-                // iOS: visualViewport로 키보드 높이 반영한 수동 스크롤
-                const container = slotToScroll.closest('.battle-field');
-                if (container) {
-                    const slotRect = slotToScroll.getBoundingClientRect();
-                    const vvTop = window.visualViewport.offsetTop;
-                    const vvHeight = window.visualViewport.height;
-                    const slotCenter = slotRect.top + slotRect.height / 2;
-                    const targetCenter = vvTop + vvHeight / 2;
-                    const diff = slotCenter - targetCenter;
-                    if (Math.abs(diff) > 40) {
-                        container.scrollTop += diff;
-                    }
+            const container = slotToScroll.closest('.battle-field');
+            if (window.visualViewport && container) {
+                // 키보드가 열리면 '보이는 영역'은 visualViewport뿐이다 — scrollIntoView(레이아웃 뷰포트 기준)는
+                // 키보드 뒤를 '보인다'고 치거나 그 뒤로 가운데를 맞춘다. 보이는 띠 밖에 있을 때만 그 가운데로 옮긴다.
+                // (2026-09-21: 예전엔 iOS만 이 경로였고 안드로이드는 매 키마다 scrollIntoView center — 긴 절에서 진동)
+                const slotRect = slotToScroll.getBoundingClientRect();
+                const vvTop = window.visualViewport.offsetTop;
+                const vvHeight = window.visualViewport.height;
+                const margin = Math.min(60, vvHeight * 0.15);
+                const slotCenter = slotRect.top + slotRect.height / 2;
+                if (slotRect.top < vvTop + margin || slotRect.bottom > vvTop + vvHeight - margin) {
+                    container.scrollTop += slotCenter - (vvTop + vvHeight / 2);
                 }
             } else if (typeof slotToScroll.scrollIntoView === 'function') {
-                slotToScroll.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                slotToScroll.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
         }, 80);
     }
+}
+
+/* ★ 숨은 입력칸을 **지금 치는 칸 위에** 앉힌다 (2026-09-21).
+   입력칸은 카드 전체를 덮는 absolute 요소였다. 브라우저는 글자가 들어올 때마다 **입력칸의 캐럿**(입력칸 세로 중앙)이
+   보이도록 스크롤하고, 우리는 80ms 뒤 **활성 칸**을 가운데로 스크롤한다. 짧은 절은 둘이 한 화면 안이라 티가 안 났지만
+   20:4처럼 카드가 화면보다 큰 절은 두 목표가 달라 키를 칠 때마다 위아래로 흔들렸다. 입력칸을 활성 칸 높이에 두면
+   두 스크롤이 같은 곳을 향한다. 위치는 카드(position:relative) 기준. */
+function _alignHardshipHiddenInput(slot) {
+    const input = document.getElementById('hidden-typing-input');
+    if (!input) return;
+    const card = input.closest('.hardship-verse-card');
+    if (!slot || !card) { input.style.top = ''; input.style.height = ''; return; }
+    const c = card.getBoundingClientRect(), s = slot.getBoundingClientRect();
+    input.style.top = Math.max(0, s.top - c.top) + 'px';
+    input.style.height = Math.max(1, s.height) + 'px';
 }
 
 function handleHardshipMemoryInput(event) {

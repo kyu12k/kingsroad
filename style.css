@@ -2066,14 +2066,23 @@ body, html {
     cursor: default;
 }
 
+/* 「정독해주세요 · N초」— 흐름 밖에 띄운다. 흐름 안(display:block)에 두면 본문이 8px씩 밀려 읽던 줄을 놓친다 (2026-09-21) */
 .bible-read-toast {
+    position: absolute;
+    top: 76px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    pointer-events: none;
+    white-space: nowrap;
     text-align: center;
     font-size: 0.85rem;
-    color: #f39c12;
-    background: rgba(243,156,18,0.12);
-    border-bottom: 1px solid rgba(243,156,18,0.25);
-    padding: 8px 16px;
-    flex-shrink: 0;
+    font-weight: 700;
+    color: #f7c873;
+    background: rgba(30, 24, 10, 0.94);
+    border: 1px solid rgba(243,156,18,0.45);
+    border-radius: 999px;
+    padding: 7px 16px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.35);
 }
 
 .typo-detail {
