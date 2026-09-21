@@ -6554,3 +6554,11 @@ body, html {
 }
 .hardship-easier-link b { color: #1f618d; }
 .hardship-easier-link:active { background: rgba(52, 152, 219, 0.08); }
+
+/* 랭킹 줄 — 이름은 한 줄(넘치면 …), 칭호·✅는 둘째 줄로 (2026-09-21).
+   칭호가 둘(암송왕·통독왕)에 밭 칩·✅까지 이름 옆에 붙자 이름이 세로로 한 글자씩 깨지고 점수가 잘렸다 */
+.rank-name-line { display: flex; align-items: center; min-width: 0; font-weight: bold; color: #fff; font-size: 1rem; margin-bottom: 3px; }
+.rank-name-line .rank-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; word-break: keep-all; }
+.rank-sub-line { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 4px; font-size: 0.8rem; color: #bdc3c7; }
+.rank-sub-line .recall-title { margin-left: 2px; font-size: 0.72rem; }
+.rank-sub-line .daily-badge { margin-left: 2px; font-size: 0.9rem; }

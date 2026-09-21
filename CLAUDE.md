@@ -1750,6 +1750,8 @@ verseRecall['1-1'] = { pass, typedPass, blankPass, fail, firstPass, lastPass, la
 - 클라이언트 `_recallTitleHtml(rt)`는 `rt.weekId === getLastWeekId()`일 때만 그린다 — 오래된 칭호가 남지 않는다.
   내 칭호는 `checkPendingReward`의 같은 조회에서 `_myRecallTitle`로 받아 프로필에 붙인다
 - 규칙: `recallTitle`은 `serverOnlyKeys`
+- **랭킹 줄 배치 (2026-09-21)**: 칭호 둘(암송왕·통독왕)+밭 칩+✅가 이름 옆에 붙자 이름이 세로로 한 글자씩 깨지고 점수가 잘렸다.
+  → 첫 줄은 지파·부서·이름·밭 칩만(`.rank-name-line`, 이름은 `…` 말줄임), **칭호·✅·📅는 둘째 줄**(`.rank-sub-line`, 성전 Lv·#태그 옆, 줄바꿈 허용). 승점 랭킹·실시간 판 공통
 
 ---
 

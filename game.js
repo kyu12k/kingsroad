@@ -16005,8 +16005,8 @@ function renderRecallRankingList(rows, weekId, kind) {
         html += `<div ${isMe ? 'id="my-ranking-card"' : ''} style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;margin-bottom:8px;${isMe ? `border:2px solid ${B.color};background:${B.bg};` : 'border:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.3);'}">
             <div style="font-size:1.4rem;width:34px;text-align:center;">${badge}</div>
             <div style="flex:1;min-width:0;">
-                <div style="font-weight:bold;color:#fff;font-size:1rem;display:flex;align-items:center;">${getTribeIcon(u.tribe)}${getDeptTag(u.dept)} ${escapeHtml(u.name)}${_fieldBadgeHtml(u.field)}${_liveTitlesHtml(u)}${_dailyBadgeHtml(u)}</div>
-                <div style="font-size:0.78rem;color:#95a5a6;">#${u.tag}</div>
+                <div class="rank-name-line">${getTribeIcon(u.tribe)}${getDeptTag(u.dept)} <span class="rank-name">${escapeHtml(u.name)}</span>${_fieldBadgeHtml(u.field)}</div>
+                <div class="rank-sub-line"><span>#${u.tag}</span>${_liveTitlesHtml(u)}${_dailyBadgeHtml(u)}</div>
             </div>
             <div style="font-weight:800;color:${B.color};font-size:1.05rem;white-space:nowrap;">${t(B.unit, { n: shown.toLocaleString() })}</div>
         </div>`;
@@ -16240,17 +16240,15 @@ function renderRankingList(data) {
 
         item.innerHTML = `
             <div style="font-size:1.5rem; margin-right:12px; width:35px; text-align:center;">${rankBadge}</div>
-            <div style="flex:1;">
-                <div style="display:flex; align-items:center; margin-bottom:4px;">
-                    <span style="font-weight:bold; font-size:1.05rem; display:flex; align-items:center; color:#fff;">
-                        ${getTribeIcon(userTribe)}${getDeptTag(user.dept)} ${escapeHtml(user.name)}${_fieldBadgeHtml(user.field)}${_liveTitlesHtml(user)}${_dailyBadgeHtml(user, { daily: (window.currentRankingMode || 'tribe') === 'tribe' })}
-                    </span>
+            <div style="flex:1; min-width:0;">
+                <div class="rank-name-line" style="font-size:1.05rem;">
+                    ${getTribeIcon(userTribe)}${getDeptTag(user.dept)} <span class="rank-name">${escapeHtml(user.name)}</span>${_fieldBadgeHtml(user.field)}
                 </div>
-                <div style="font-size:0.8rem; color:#bdc3c7;">
-                    ${t('ranking_castle_lv', { lv: user.castle || 0 })} <span style="opacity:0.5; margin:0 3px;">|</span> <span style="opacity:0.7;">#${user.tag}</span>
+                <div class="rank-sub-line">
+                    <span>${t('ranking_castle_lv', { lv: user.castle || 0 })} <span style="opacity:0.5; margin:0 3px;">|</span> <span style="opacity:0.7;">#${user.tag}</span></span>${_liveTitlesHtml(user)}${_dailyBadgeHtml(user, { daily: (window.currentRankingMode || 'tribe') === 'tribe' })}
                 </div>
             </div>
-            <div style="text-align:right;">
+            <div style="text-align:right; flex-shrink:0; margin-left:8px;">
                 <div style="font-weight:bold; color:#f1c40f; font-size:1.1rem;">
                     ${user.score ? user.score.toLocaleString() : 0}
                 </div>
