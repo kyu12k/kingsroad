@@ -1285,6 +1285,15 @@ fab.style.top = limit - fab.offsetHeight - MARGIN;
   **`gems`/`lastClaimTime`/스테이지 진행도는 병합되지 않는다** — 판정이 틀리면 그대로 소실
 - 백업 파일 복원은 `forceSyncAfterLoad` 플래그로 비교를 건너뛰고 강제 업로드한다
 
+### 어드민 보상 (`saves/{uid}.pendingCompensation`, 2026-09-22 정리)
+
+`{ until:'YYYY-MM-DD' | date, gems, score, sunSlots, note }` — `_applyPendingCompensation()`이 **로컬 우선·원격 우선 두 경로 모두**에서 적용하고 필드를 지운다.
+예전엔 로컬 우선 경로에만 있어서 어드민이 문서를 쓴 직후(원격이 더 최신)엔 필드가 로컬로 내려와 되올라가기만 하고 적용되지 않았고,
+`date`가 그날(6시 키)과 다르면 **적용 없이 버려졌다**. `until`(그날까지 포함)이 있으면 `date`는 옛 클라이언트용 호환 필드.
+`sunSlots`는 오늘 햇살 구매 횟수를 되돌린다(`sunBuy.day`가 오늘일 때만). 적용되면 다음 부팅 토스트(`kingsRoad_pendingCompToast`).
+admin SDK로 `update({ pendingCompensation })`만 — `updatedAt`은 건드리지 않는다(동시성 검사에 안 걸리게). 30개 문서 중 **`updatedAt`이 최신인 uid**에 쓴다.
+첫 사용: 황금 나팔 #NGCTUB 승점 14,400 + 2,000젬 + 햇살 1회 (단비가 햇살을 덮어쓴 버그 보상)
+
 ### 낙관적 동시성 제어 (2026-09-07)
 
 클라이언트는 **자신이 기준으로 삼은 서버 `updatedAt`** 을 `baseUpdatedAt`으로 함께 보내고,

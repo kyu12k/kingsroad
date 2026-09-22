@@ -10004,6 +10004,20 @@ async function initFirestoreSync() {
         await _initFirestoreSyncCore();
     } finally {
         try { await ensureTagAssigned(); } catch (e) { /* 조용히 */ }
+        // 어드민 보상이 적용됐으면 알린다 — 조용히 늘어나면 "젬이 왜 늘었지"가 된다
+        try {
+            const raw = localStorage.getItem('kingsRoad_pendingCompToast');
+            if (raw) {
+                localStorage.removeItem('kingsRoad_pendingCompToast');
+                const c = JSON.parse(raw);
+                const parts = [];
+                if (c.score) parts.push(`승점 +${Number(c.score).toLocaleString()}`);
+                if (c.gems) parts.push(`💎 +${Number(c.gems).toLocaleString()}`);
+                if (c.sunSlots) parts.push(`☀️ 햇살 구매 기회 +${c.sunSlots}`);
+                if (typeof showMissionToast === 'function') setTimeout(() => showMissionToast(c.note || '🎁 보상이 적용되었습니다', parts.join(' · ')), 1500);
+                if (typeof updateGemDisplay === 'function') updateGemDisplay();
+            }
+        } catch (e) {}
     }
 }
 
@@ -10044,6 +10058,28 @@ async function ensureTagAssigned() {
     } finally {
         _tagFixInFlight = false;
     }
+}
+
+/* 어드민 보상(saves/{uid}.pendingCompensation) 적용 — { date | until, gems, score, sunSlots, note }.
+   date: 그날(오전 6시 키)에만 / until: 그날까지(포함). 둘 다 없으면 무조건. 지나면 조용히 버린다.
+   sunSlots: 오늘 햇살 구매 횟수를 그만큼 되돌린다(잘못 소진된 기회 복구). 저장본 객체를 직접 고친다 */
+function _applyPendingCompensation(data, pc) {
+    if (!data || !pc) return false;
+    const today = typeof getMemoryQuizDate === 'function' ? getMemoryQuizDate() : '';
+    // until이 있으면 date는 옛 클라이언트용(그날만 적용) 호환 필드로 보고 무시한다
+    if (pc.until) { if (today > pc.until) { console.log('[Firestore] pendingCompensation 기한 지남(until)', pc); return false; } }
+    else if (pc.date && pc.date !== today) { console.log('[Firestore] pendingCompensation 기한 지남(date)', pc); return false; }
+    if (pc.gems) data.gems = (data.gems || 0) + pc.gems;
+    if (pc.score && data.leagueData) {
+        for (const k of ['myScore', 'myMonthlyScore', 'totalScore', 'yearlyScore']) data.leagueData[k] = (data.leagueData[k] || 0) + pc.score;
+    }
+    if (pc.sunSlots) {
+        const sb = data.sunBuy || { day: '', count: 0 };
+        if (sb.day === today) data.sunBuy = { day: today, count: Math.max(0, (sb.count || 0) - pc.sunSlots) };
+    }
+    try { localStorage.setItem('kingsRoad_pendingCompToast', JSON.stringify({ gems: pc.gems || 0, score: pc.score || 0, sunSlots: pc.sunSlots || 0, note: pc.note || '' })); } catch (e) {}
+    console.log('[Firestore] pendingCompensation 적용:', pc);
+    return true;
 }
 
 async function _initFirestoreSyncCore() {
@@ -10186,23 +10222,7 @@ async function _initFirestoreSyncCore() {
             }
             // 4) pendingCompensation: Firestore에 어드민이 넣은 보상을 로컬에 적용 후 소비
             if (remoteData.pendingCompensation) {
-                const _pc = remoteData.pendingCompensation;
-                const _pcDate = _pc.date || '';
-                const _today = typeof getMemoryQuizDate === 'function' ? getMemoryQuizDate() : new Date().toDateString();
-                if (_pcDate === _today) {
-                    if (_pc.gems)  { localData.gems  = (localData.gems  || 0) + _pc.gems;  _localChanged = true; }
-                    if (_pc.score) {
-                        if (localData.leagueData) {
-                            localData.leagueData.myScore        = (localData.leagueData.myScore        || 0) + _pc.score;
-                            localData.leagueData.myMonthlyScore = (localData.leagueData.myMonthlyScore || 0) + _pc.score;
-                            localData.leagueData.totalScore     = (localData.leagueData.totalScore     || 0) + _pc.score;
-                            localData.leagueData.yearlyScore    = (localData.leagueData.yearlyScore    || 0) + _pc.score;
-                        }
-                        _localChanged = true;
-                    }
-                    console.log('[Firestore] pendingCompensation 적용:', _pc);
-                }
-                // 소비 완료 — 업로드 시 pendingCompensation 제거
+                _applyPendingCompensation(localData, remoteData.pendingCompensation);
                 delete localData.pendingCompensation;
                 _localChanged = true;
             }
@@ -10305,6 +10325,13 @@ async function _initFirestoreSyncCore() {
         if (anyMerged) window._syncDirty = true;
     }
 
+    // 어드민 보상은 원격 우선 경로에서도 소비한다 — 예전엔 로컬 우선 경로에만 있어서, 어드민이 문서를 쓴 직후(원격이 더 최신)엔
+    // 필드가 그대로 로컬로 내려와 되올라가기만 하고 적용되지 않았다 (2026-09-22)
+    if (remoteData.pendingCompensation) {
+        _applyPendingCompensation(remoteData, remoteData.pendingCompensation);
+        delete remoteData.pendingCompensation;
+        window._syncDirty = true;
+    }
     localStorage.setItem('kingsRoadSave', JSON.stringify(remoteData));
     window.firestoreSyncPending = false;
     // 이제부터 이 서버 버전이 기준 — 다음 저장은 이 값 위에서 이뤄진다
