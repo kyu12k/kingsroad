@@ -5488,9 +5488,18 @@ function _maybeStartRain() {
     if (rain.earnedFor !== today || rain.startedOn === today) return;
     rain.startedOn = today;
     const tier = RAIN_TIERS[rain.tier] || RAIN_TIERS[1];
-    boosterData.active = true;
-    boosterData.multiplier = tier.mult;
-    boosterData.endTime = Date.now() + RAIN_MINUTES * 60 * 1000;
+    const now = Date.now();
+    const dur = RAIN_MINUTES * 60 * 1000;
+    // ★ 이미 날씨가 켜져 있으면(첫 스테이지 전에 햇살을 산 경우) 덮어쓰지 않고 buySun과 같은 규칙으로 얹는다 —
+    //   배율은 큰 쪽, 시간은 20분 연장. 예전엔 무조건 ×2·20분으로 덮어써서 2,000젬 햇살이 단비로 내려갔다 (2026-09-22)
+    if (boosterData.active && now < boosterData.endTime) {
+        boosterData.multiplier = Math.max(boosterData.multiplier || 1, tier.mult);
+        boosterData.endTime += dur;
+    } else {
+        boosterData.active = true;
+        boosterData.multiplier = tier.mult;
+        boosterData.endTime = now + dur;
+    }
     saveGameData();
     if (typeof startBoosterTimer === 'function') startBoosterTimer();
     if (typeof showToast === 'function') showToast(t('rain_started', { icon: tier.icon, name: t(tier.nameKey), min: RAIN_MINUTES, multi: tier.mult }));
