@@ -6563,3 +6563,16 @@ body, html {
 .rank-sub-line { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 4px; font-size: 0.8rem; color: #bdc3c7; }
 .rank-sub-line .recall-title { margin-left: 2px; font-size: 0.72rem; }
 .rank-sub-line .daily-badge { margin-left: 2px; font-size: 0.9rem; }
+
+/* 빈칸만 반복하는 사람에게 백지를 권하는 줄 (2026-09-27) — 눌러서 바로 백지로 바뀐다.
+   초록(권유)으로 잡아 위의 보라색 근거 줄(.bso-fit-note)과 역할을 구분한다 */
+.bso-blank-nudge {
+    margin-top: 8px; padding: 9px 11px;
+    font-size: 0.78rem; line-height: 1.55;
+    color: #cfe9d6; background: rgba(46, 204, 113, 0.13);
+    border: 1px solid rgba(46, 204, 113, 0.42);
+    border-radius: 8px; cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+.bso-blank-nudge:hover, .bso-blank-nudge:active { background: rgba(46, 204, 113, 0.22); border-color: rgba(46, 204, 113, 0.7); }
+.bso-blank-nudge b { color: #7ee2a8; }

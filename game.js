@@ -515,6 +515,7 @@ const LANG = {
         hardship_endurance_count: '누적 확인 {n}절째입니다.',
         hardship_feedback_correct: '정답입니다. {label} · +{pts}점',
         hardship_feedback_correct_no_reward: '정답입니다. {label} · 승점 없음',
+        hardship_blank_hint_notice: '💡 막히면 힌트를 누르세요 — 한 글자씩만 열려요',
         hardship_repeat_notice: '오늘 이 장을 이미 했어요\n같은 고난 반복은 승점 {pct}%',
         hardship_feedback_correct_scored_today: '정답입니다. {label} · 오늘 이미 받은 승점',
         hardship_feedback_typo_corrected_scored_today: '오타 보정! 오늘 이미 받은 승점 ({n}글자 오타)',
@@ -1420,6 +1421,7 @@ const LANG = {
         hardship_endurance_count: 'Confirmed {n} verse(s) so far.',
         hardship_feedback_correct: 'Correct! {label} · +{pts} pts',
         hardship_feedback_correct_no_reward: 'Correct! {label} · No points',
+        hardship_blank_hint_notice: '💡 Stuck? Tap the hint — it opens one letter at a time',
         hardship_repeat_notice: 'You already did this chapter today\nRepeating the same trial pays {pct}%',
         hardship_feedback_correct_scored_today: 'Correct! {label} · Already earned today',
         hardship_feedback_typo_corrected_scored_today: 'Typo corrected! Already earned today ({n} typo(s))',
@@ -8210,6 +8212,22 @@ function openBossSetupModal(stage) {
     const fitNote = fitInfo
         ? `<div class="bso-fit-note">${isMid ? '이 구간' : '이 장'} ${fitInfo.total}절 중 <b>${fitInfo.written}절</b>을 스스로 써봤어요</div>`
         : '';
+    /* 빈칸으로는 여러 번 써냈는데 **백지는 한 번도** 안 해본 사람에게 다음 칸을 권한다 (2026-09-27).
+       실측: 378절을 클리어하고 78번 통과했는데 진짜 백지가 0절인 사람이 있었다 — 난이도 추천만으로는
+       영원히 「빈칸 ⭐」에 머물러 스스로 올라갈 계기가 없다.
+       ★ 권유의 근거로 **힌트**를 내세운다. 힌트를 쓴 시도도 93%가 통과했고(안 쓴 것 97%와 거의 같다),
+         쓰는 양도 글자의 1~10%뿐이며, 같은 구절을 다섯 번 넘게 쓴 뒤엔 사용률이 12%→5%로 스스로 준다.
+         힌트는 목발이 아니라 **처음 부딪히게 해주는 발판**이라 문턱을 낮추는 말로 쓰는 것이 맞다 */
+    // ★ 조건은 **등급 1 이상**이어야 한다. 절 수로만 재면 백지 칸에 🔒(아직 일러요)가 뜬 채
+    //   옆에서 "해볼 만해요"라고 말하는 모순이 생긴다 — 등급 1 = 백지 칸이 🔥(도전)인 상태라 말이 맞는다.
+    //   이미 백지를 고른 사람에겐 권할 것이 없으므로 뺀다.
+    const suggestBlank = !!(fitInfo && fitInfo.tier >= 1 && fitInfo.blank === 0 &&
+        bossDifficultyMode !== 'none' && _isBlankNovice());
+    const blankNudge = suggestBlank
+        ? `<div class="bso-blank-nudge" onclick="setBossSetupOpt('difficulty','none')">` +
+          `빈칸으로 <b>${fitInfo.written}절</b>을 써냈어요 — 이제 <b>백지</b>도 해볼 만해요.<br>` +
+          `막히면 💡 힌트로 한 글자씩 열 수 있어요. 조금 열고 끝까지 가도 통과예요</div>`
+        : '';
     const overlay = document.createElement('div');
     overlay.id = 'boss-setup-modal';
     overlay.className = 'boss-setup-overlay';
@@ -8224,7 +8242,7 @@ function openBossSetupModal(stage) {
                 <div class="bso-toggle bso-toggle-wrap">
                     ${btn('normal', '보통')}${btn('hard', '어려움')}${blankBtns}
                 </div>
-                ${fitNote}
+                ${fitNote}${blankNudge}
                 <div class="bso-desc" id="bso-diff-desc">${_getBossDiffDesc()}</div>
             </div>
             <div class="boss-setup-section">
@@ -8341,6 +8359,19 @@ const HINT_OK_RATIO = 0.2; // 통과 시 힌트가 글자 수의 이 비율 이�
                            // ※ 잠정값(미확정 — 다음 주 데이터로 정할 것 중 하나).
                            //    라벨은 보상을 한 푼도 바꾸지 않으므로 틀려도 손해가 '권유가 조금 어긋남'뿐이다.
 
+/* 백지를 아직 거의 안 해본 사람인가 (2026-09-27).
+   권유·안내 문구를 여기에만 건다 — 전체로는 백지를 332절 해본 사람도 특정 장에서는 0절이라,
+   구간만 보고 권하면 베테랑에게 초보 취급하는 말이 간다. 404절 중 10절(2.5%)을 문턱으로 둔다. */
+const BLANK_NOVICE_MAX = 10;
+function _isBlankNovice() {
+    if (typeof verseRecall === 'undefined' || !verseRecall) return true;
+    let n = 0;
+    for (const id in verseRecall) {
+        if (verseRecall[id] && verseRecall[id].blankPass > 0) { n += 1; if (n >= BLANK_NOVICE_MAX) return false; }
+    }
+    return true;
+}
+
 function _getVerseRecallTier(stageId) {
     const r = verseRecall[stageId];
     if (!r || !(r.typedPass > 0)) return 0;   // 아직 타이핑으로 써낸 적 없음
@@ -8371,13 +8402,14 @@ function _getMidBossRecallInfo(stage) {
         .map(s => String(s.id))
         .filter(id => /^\d+-\d+$/.test(id));
     if (!ids.length) return null;
-    let tier = 2, written = 0;
+    let tier = 2, written = 0, blank = 0;
     ids.forEach(id => {
         const t = _getVerseRecallTier(id);
         if (t < tier) tier = t;
         if (_isBlankPromoted(id)) written += 1;
+        if (verseRecall[id] && verseRecall[id].blankPass > 0) blank += 1;
     });
-    return { tier: tier, total: ids.length, written: written };
+    return { tier: tier, total: ids.length, written: written, blank: blank };
 }
 
 /* 보스전(한 장)은 **비율**로 판정한다 — 최솟값을 쓰면 29절 중 하나만 약해도 영원히 0에 머물러
@@ -8389,17 +8421,18 @@ function _getBossRecallInfo(stage) {
     const ids = chData.stages.map(s => String(s.id)).filter(id => /^\d+-\d+$/.test(id));
     if (!ids.length) return null;
 
-    let written = 0, solid = 0;
+    let written = 0, solid = 0, blank = 0;
     ids.forEach(id => {
         const t = _getVerseRecallTier(id);
         if (t >= 1) written += 1;
         if (t >= 2) solid += 1;
+        if (verseRecall[id] && verseRecall[id].blankPass > 0) blank += 1;
     });
     // 8할이 힌트 없이 나오면 백지, 절반이 백지에서 나오면 빈칸, 그 아래는 초성
     let tier = 0;
     if (solid / ids.length >= 0.8) tier = 2;
     else if (written / ids.length >= 0.5) tier = 1;
-    return { tier: tier, total: ids.length, written: written };
+    return { tier: tier, total: ids.length, written: written, blank: blank };
 }
 
 /* 난이도 칸의 순서 = 요구하는 인출의 강도 순. 추천 지점은 `등급 + 1`이다.
@@ -23638,6 +23671,18 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
     hardshipState.queue = ((mode === 'memory' || mode === 'endurance') && selectedHardshipOrderType === 'sequential')
         ? baseIds.slice()
         : shuffleHardshipQueue(baseIds);
+
+    /* 백지로 처음 들어온 세션에는 힌트를 **막히기 전에** 알린다 (2026-09-27).
+       지금은 8초간 입력이 없어야 버튼이 맥동하는데, 그 8초를 "나는 못 하는구나"로 보내는 사람이 있다.
+       힌트는 조금만 쓰고 끝까지 가는 도구로 실제로 쓰이고 있다(실측 통과율 93%, 사용량 글자의 1~10%). */
+    if (mode === 'memory' && hardshipState.ultimateMemoryMode && typeof verseRecall !== 'undefined') {
+        const _noBlankYet = _isBlankNovice() &&
+            hardshipState.queue.every(id => !(verseRecall[id] && verseRecall[id].blankPass > 0));
+        if (_noBlankYet) {
+            const _d = hardshipState.repeatFactor < 1 ? 2600 : 900;   // 반복 안내 토스트와 겹치지 않게
+            setTimeout(() => { if (typeof showToast === 'function') showToast(t('hardship_blank_hint_notice')); }, _d);
+        }
+    }
 
     if (typeof recalculateMaxHearts === 'function') {
         recalculateMaxHearts();
