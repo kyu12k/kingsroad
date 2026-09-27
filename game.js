@@ -11231,13 +11231,21 @@ function loadStep() {
         controlsContainer.appendChild(micBtn);
         // ── 음성인식 섹션 끝 ────────────────────────────────────
 
-        const finishStep1Effect = () => {
+        const finishStep1Effect = (instant) => {
             stopAutoFill();
             revealBtn.disabled = true;
 
             micBtn.style.display = 'none';
             chosungBtn.style.display = 'none';
             voiceFeedbackDiv.innerHTML = '';
+
+            // ★ 이미 다 열린 채로 들어온 확인 코스: 연출·대기 없이 바로 「다음」 (2026-09-27)
+            if (instant) {
+                revealBtn.style.display = 'none';
+                const _nb = document.getElementById('btn-step1-next');
+                if (_nb) _nb.style.display = 'block';
+                return;
+            }
 
             card.style.transition = "box-shadow 0.5s, background 0.5s";
             card.style.boxShadow = "0 0 30px #f1c40f";
@@ -11282,6 +11290,14 @@ function loadStep() {
                 pouringLight.style.opacity = "0";
             }, 1500);
         };
+
+        // ★ 빈칸을 스스로 통과하고 이어진 확인 코스는 **처음부터 전부 열어둔다** (2026-09-27)
+        //   방금 써낸 구절을 다시 한 덩이씩 두드리게 할 이유가 없다 — 읽고 넘어가기만 하면 된다.
+        //   막힌 쪽(quick-after-fail)은 그대로 둔다. 거기서는 한 덩이씩 여는 것이 곧 다시 배우는 과정이다.
+        if (window.trainingMode === 'quick-after-pass') {
+            revealAll();
+            finishStep1Effect(true);
+        }
     }
 
     // ----------------------------------------------------
