@@ -517,6 +517,7 @@ const LANG = {
         hardship_feedback_correct_no_reward: '정답입니다. {label} · 승점 없음',
         hardship_blank_hint_notice: '💡 막히면 힌트를 누르세요 — 한 글자씩만 열려요',
         embed_title_quick_blank_none: '백지 복습',
+        hint_trace_tip: '힌트 {n}회 사용 · 최근 3번 중',
         blank_lv_up: '✍️ 백지 Lv{from}→{to} · 제때 꺼냈어요 +{pts}',
         blank_lv_up_quick: '✍️ 백지 Lv{from}→{to} · 제때 꺼냈어요',
         blank_lv_enter: '✍️ 백지 Lv{to} 시작 · {days}일 뒤 차례',
@@ -1441,6 +1442,7 @@ const LANG = {
         hardship_feedback_correct_no_reward: 'Correct! {label} · No points',
         hardship_blank_hint_notice: '💡 Stuck? Tap the hint — it opens one letter at a time',
         embed_title_quick_blank_none: 'Blank review',
+        hint_trace_tip: 'Hint used {n}× · last 3 tries',
         blank_lv_up: '✍️ Blank Lv{from}→{to} · right on time +{pts}',
         blank_lv_up_quick: '✍️ Blank Lv{from}→{to} · right on time',
         blank_lv_enter: '✍️ Blank Lv{to} started · due in {days}d',
@@ -8575,7 +8577,8 @@ function _markTraceChars(str, offset, counts) {
     for (let j = 0; j < str.length; j++) {
         const n = counts.get(offset + j);
         const ch = _escHtml(str[j]);
-        if (n) { out += `<span class="hint-trace ht${Math.min(3, n)}">${ch}</span>`; any = true; } else out += ch;
+        // 누르면 「힌트 N회 사용」 — 기존 말풍선(_initChipTip)이 캡처 단계에서 받아, 1단계 카드의 '다시 가리기' 클릭도 막는다
+        if (n) { out += `<span class="hint-trace ht${Math.min(3, n)}" data-tip="${t('hint_trace_tip', { n })}">${ch}</span>`; any = true; } else out += ch;
     }
     return any ? out : null;
 }
