@@ -8453,6 +8453,11 @@ function confirmBossSetup() {
     document.getElementById('boss-setup-modal')?.remove();
     window._pendingBossStage = null;
     if (!stage) return;
+    // ★ 보통·어려움 보스전(startBossBattle)은 window.currentStageId를 보고 장·구간을 정한다.
+    //   지도에서 스테이지를 누르는 길은 누르는 순간 채우지만, 왕의 고난의 「보스전(빈칸)으로」 링크(goToChapterBossBlank)는
+    //   채우지 않아서, 거기서 보통·어려움으로 바꿔 시작하면 비어 있어 조용히 멈추거나 **마지막에 한 다른 구절의 장**이 열렸다.
+    //   (빈칸·백지는 _startBossBlank가 스스로 채워서 멀쩡했다.) 시작 버튼 한 곳에서 채워 모든 입구를 막는다 (2026-09-28)
+    window.currentStageId = stage.id;
     // 빈칸·백지는 보스전 화면 대신 망각의 고난 엔진을 그대로 쓴다 (타이핑 UI·힌트·기록 전부 재사용)
     if (_isBlankDifficulty(bossDifficultyMode)) {
         if (String(stage.id).includes('mid')) _startMidBossBlank(stage, bossDifficultyMode === 'none');
