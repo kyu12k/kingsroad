@@ -6899,11 +6899,8 @@ function renderChapterMap() {
         <div id="map-land-area"></div> <svg id="river-svg">
             <path id="river-bank"  class="river-bank"  d="" />
             <path id="river-path"  class="river-path"  d="" />
-            <path id="river-hl-1"  class="river-hl river-hl-1" d="" />
-            <path id="river-hl-2"  class="river-hl river-hl-2" d="" />
-            <path id="river-hl-3"  class="river-hl river-hl-3" d="" />
-            <path id="river-hl-4"  class="river-hl river-hl-4" d="" />
         </svg>
+        <div id="river-flow-layer"></div>
     `;
 
     const landArea = document.getElementById('map-land-area');
@@ -7131,13 +7128,91 @@ function drawRiver() {
     if (bank) bank.setAttribute('d', basePath);
     path.setAttribute('d', basePath);
 
-    // 물결 4개: 강폭(-16~+16) 안에서 고르게 분산
-    const hlOffsets = [-13, -5, +5, +13];
-    hlOffsets.forEach((ox, i) => {
-        const hl = document.getElementById(`river-hl-${i + 1}`);
-        if (hl) hl.setAttribute('d', buildPath(ox));
-    });
+    _buildRiverFlow(points, scrollH);
 }
+
+/* [강물 흐름 (2026-09-28 부활)]
+   3월엔 물결 4가닥을 지도 전체 높이(≈5,000px) 한 SVG에서 점선 밀기(stroke-dashoffset)로 움직여,
+   빛 번짐(drop-shadow)이 걸린 강 전체를 매 프레임 다시 그렸다 → 렉으로 중단(5e2f7b9).
+   이제: 번짐 있는 강 바탕(#river-svg)은 멈춰 있고, 물결은 **장 사이 구간마다 작은 SVG 조각**으로 나눠
+   번짐 없이 그리며, **화면에 들어온 조각만** 흐른다(IntersectionObserver). 흐르는 조각은 자기 레이어라 아래 번짐을 다시 그리지 않는다.
+   조각 경계에서 물결이 끊겨 보이지 않게, 가닥마다 앞 조각까지의 길이만큼 점선 위상을 이어 붙이고 모든 조각이 같은 시계(startTime 0)를 쓴다. */
+const RIVER_STRANDS = [
+    { ox: -13, period: 50, ms: 3200 },
+    { ox: -5,  period: 50, ms: 5500 },
+    { ox: +5,  period: 40, ms: 4100 },
+    { ox: +13, period: 52, ms: 6800 },
+];
+function _buildRiverFlow(points, scrollH) {
+    const layer = document.getElementById('river-flow-layer');
+    if (!layer) return;
+    if (window._riverFlowObserver) { try { window._riverFlowObserver.disconnect(); } catch (e) { } }
+    layer.querySelectorAll('.river-flow-tile').forEach(t => (t._anims || []).forEach(a => a.cancel()));
+    layer.innerHTML = '';
+
+    // 구간: [맨 위 → 첫 나무], [나무 i → 나무 i+1] …, [마지막 나무 → 맨 아래]
+    const segs = [];
+    const first = points[0], last = points[points.length - 1];
+    segs.push({ top: 0, bottom: first.y, d: (ox, y0) => `M ${first.x + ox} ${0 - y0} L ${first.x + ox} ${first.y - y0}` });
+    for (let i = 0; i < points.length - 1; i++) {
+        const p1 = points[i], p2 = points[i + 1], midY = (p1.y + p2.y) / 2;
+        segs.push({ top: Math.min(p1.y, p2.y), bottom: Math.max(p1.y, p2.y),
+            d: (ox, y0) => `M ${p1.x + ox} ${p1.y - y0} C ${p1.x + ox} ${midY - y0}, ${p2.x + ox} ${midY - y0}, ${p2.x + ox} ${p2.y - y0}` });
+    }
+    segs.push({ top: last.y, bottom: scrollH, d: (ox, y0) => `M ${last.x + ox} ${last.y - y0} L ${last.x + ox} ${scrollH - y0}` });
+
+    const NS = 'http://www.w3.org/2000/svg';
+    const cum = RIVER_STRANDS.map(() => 0);   // 가닥별로 지금까지 흘러온 길이
+    segs.forEach(seg => {
+        if (seg.bottom - seg.top < 1) return;
+        const y0 = seg.top - 3;
+        const svg = document.createElementNS(NS, 'svg');
+        svg.setAttribute('class', 'river-flow-tile');
+        svg.style.top = `${y0}px`;
+        svg.style.height = `${seg.bottom - seg.top + 6}px`;
+        svg._paths = [];
+        RIVER_STRANDS.forEach((st, k) => {
+            const p = document.createElementNS(NS, 'path');
+            p.setAttribute('class', `river-hl river-hl-${k + 1}`);
+            p.setAttribute('d', seg.d(st.ox, y0));
+            svg.appendChild(p);
+            svg._paths.push({ el: p, base: cum[k] % st.period, st });
+        });
+        layer.appendChild(svg);
+        svg._paths.forEach((o, k) => { try { cum[k] += o.el.getTotalLength(); } catch (e) { } });
+    });
+
+    const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce || typeof IntersectionObserver === 'undefined') return;
+    const flowing = _riverFlowTick.tiles;
+    flowing.clear();
+    window._riverFlowObserver = new IntersectionObserver(entries => {
+        entries.forEach(en => {
+            if (en.isIntersecting) { flowing.add(en.target); en.target.classList.add('flowing'); }
+            else { flowing.delete(en.target); en.target.classList.remove('flowing'); }
+        });
+        if (flowing.size && !_riverFlowTick.raf) _riverFlowTick.raf = requestAnimationFrame(_riverFlowTick);
+    }, { rootMargin: '60px 0px' });
+    layer.querySelectorAll('.river-flow-tile').forEach(t => window._riverFlowObserver.observe(t));
+}
+
+// 점선 밀기는 폰 그래픽 칩이 대신 못 해 매 프레임 스타일·그리기 비용이 든다(PC 6배 감속 실측: 60fps면 4초 중 2~3초가 일).
+// 물결은 초당 10~15px로 느려서 초당 15번만 옮겨도 한 번에 1px 안팎 — 눈엔 똑같이 매끄럽다. 보이는 조각이 없으면 루프가 선다
+function _riverFlowTick(now) {
+    const self = _riverFlowTick;
+    if (!self.tiles.size) { self.raf = 0; return; }
+    self.raf = requestAnimationFrame(self);
+    if (now - self.last < 66) return;
+    self.last = now;
+    self.tiles.forEach(tile => tile._paths.forEach(o => {
+        // 모든 조각이 같은 시계(now)를 쓰고, 점선 위상은 앞 조각에서 이어받는다 — 줄어드는 방향이 하류(아래)로 흐르는 방향
+        const phase = (now % o.st.ms) / o.st.ms;
+        o.el.setAttribute('stroke-dashoffset', (o.base + o.st.period * (1 - phase)).toFixed(1));
+    }));
+}
+_riverFlowTick.tiles = new Set();
+_riverFlowTick.raf = 0;
+_riverFlowTick.last = 0;
 
 // 전역 변수로 타이머 관리 (창 닫을 때 끄기 위해)
 var stageSheetTimer = null;
