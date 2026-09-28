@@ -16082,7 +16082,27 @@ const CAM_BG_LIST = [
     { id: 'door',    ko: '열린 문',   en: 'Open door',    ref: '계 4:1' },
     { id: 'rainbow', ko: '무지개',    en: 'Rainbow',      ref: '계 4:3' },
 ];
-let _camSeg = { inst: null, loading: null, mask: null, busy: false, person: null, small: null, bgCache: {} };
+let _camSeg = { inst: null, loading: null, mask: null, busy: false, person: null, small: null, bgCache: {}, input: null, maskCv: null, model: -1 };
+/* 마스크 경계 다듬기 — 모델이 주는 확신도(0~1)에서 애매한 띠를 좁힌다. 0.45 아래는 배경, 0.8 위는 사람, 그 사이만 부드럽게.
+   (처음엔 가장자리를 blur(2px)로 더 풀었는데, 그 반투명 띠로 진짜 방 배경이 비쳐 머리카락 주변이 번져 보였다 — 9/29 폰 실측) */
+const CAM_MASK_LO = 0.45, CAM_MASK_HI = 0.8;
+const _camMaskLUT = (() => { const a = new Uint8ClampedArray(256); for (let i = 0; i < 256; i++) { const x = Math.min(1, Math.max(0, (i / 255 - CAM_MASK_LO) / (CAM_MASK_HI - CAM_MASK_LO))); a[i] = Math.round(x * x * (3 - 2 * x) * 255); } return a; })();
+function _camRefineMask(img) {
+    const w = img.width, h = img.height;
+    if (!w || !h) return img;
+    if (!_camSeg.maskCv) _camSeg.maskCv = document.createElement('canvas');
+    const mc = _camSeg.maskCv;
+    if (mc.width !== w || mc.height !== h) { mc.width = w; mc.height = h; }
+    const mctx = mc.getContext('2d', { willReadFrequently: true });
+    mctx.clearRect(0, 0, w, h);
+    mctx.drawImage(img, 0, 0, w, h);
+    try {
+        const d = mctx.getImageData(0, 0, w, h), px = d.data;
+        for (let i = 3; i < px.length; i += 4) { px[i] = _camMaskLUT[px[i]]; px[i - 3] = px[i - 2] = px[i - 1] = 255; }
+        mctx.putImageData(d, 0, 0);
+    } catch (e) { /* 읽기가 막힌 기기는 다듬지 않은 마스크 그대로 */ }
+    return mc;
+}
 
 function _camSegLoad() {
     if (_camSeg.inst) return Promise.resolve(_camSeg.inst);
@@ -16096,8 +16116,9 @@ function _camSegLoad() {
         document.head.appendChild(s);
     }).then(async () => {
         const seg = new SelfieSegmentation({ locateFile: f => CAM_SEG_BASE + f });
-        seg.setOptions({ modelSelection: 1 });   // 1 = 가로형(가벼움) — 폰에서 프레임을 덜 먹는다
-        seg.onResults(r => { _camSeg.mask = r.segmentationMask; _camSeg.busy = false; });
+        seg.setOptions({ modelSelection: 0 });   // 모델은 _camDrawWithBg에서 화면 방향에 맞춰 다시 고른다
+        _camSeg.model = 0;
+        seg.onResults(r => { _camSeg.mask = _camRefineMask(r.segmentationMask); _camSeg.busy = false; });
         await seg.initialize();
         _camSeg.inst = seg;
         return seg;
@@ -16219,8 +16240,16 @@ function _camBgCanvas(id, w, h) {
 function _camDrawWithBg(ctx, v, vw, vh, p) {
     if (!_camSeg.inst) return false;
     if (!_camSeg.busy) {
+        // 세로 영상(폰)은 정사각 입력 모델(0), 가로는 가로형(1) — 가로형에 세로 영상을 넣으면 눌려서 윤곽이 뭉개졌다
+        const want = vh > vw ? 0 : 1;
+        if (_camSeg.model !== want) { try { _camSeg.inst.setOptions({ modelSelection: want }); _camSeg.model = want; } catch (e) {} }
+        // 모델은 어차피 256px로 줄여 본다 — 원본(1280px)을 통째로 넘기면 매 프레임 복사 비용만 크다
+        if (!_camSeg.input) _camSeg.input = document.createElement('canvas');
+        const ic = _camSeg.input, k = 256 / Math.max(vw, vh), iw = Math.round(vw * k), ih = Math.round(vh * k);
+        if (ic.width !== iw || ic.height !== ih) { ic.width = iw; ic.height = ih; }
+        ic.getContext('2d').drawImage(v, 0, 0, iw, ih);
         _camSeg.busy = true;
-        _camSeg.inst.send({ image: v }).catch(() => { _camSeg.busy = false; });
+        _camSeg.inst.send({ image: ic }).catch(() => { _camSeg.busy = false; });
     }
     const mask = _camSeg.mask;
     if (!mask) return false;
@@ -16243,9 +16272,9 @@ function _camDrawWithBg(ctx, v, vw, vh, p) {
     const pctx = pc.getContext('2d');
     pctx.save();
     pctx.clearRect(0, 0, vw, vh);
-    if ('filter' in pctx) pctx.filter = 'blur(2px)';   // 가장자리를 살짝 풀어 오려낸 티를 줄인다 (지원하는 곳만)
+    pctx.imageSmoothingEnabled = true; pctx.imageSmoothingQuality = 'high';   // 작은 마스크를 키울 때 계단이 지지 않게
     pctx.drawImage(mask, 0, 0, vw, vh);
-    if ('filter' in pctx) pctx.filter = p.soft ? 'brightness(1.10) contrast(0.90) saturate(1.08)' : 'none';
+    if (p.soft && 'filter' in pctx) pctx.filter = 'brightness(1.10) contrast(0.90) saturate(1.08)';
     pctx.globalCompositeOperation = 'source-in';
     pctx.drawImage(v, 0, 0, vw, vh);
     pctx.restore();
