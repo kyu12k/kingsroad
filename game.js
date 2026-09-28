@@ -16085,7 +16085,7 @@ const CAM_BG_LIST = [
 let _camSeg = { inst: null, loading: null, mask: null, busy: false, person: null, small: null, bgCache: {}, input: null, maskCv: null, model: -1 };
 /* 마스크 경계 다듬기 — 모델이 주는 확신도(0~1)에서 애매한 띠를 좁힌다. 0.45 아래는 배경, 0.8 위는 사람, 그 사이만 부드럽게.
    (처음엔 가장자리를 blur(2px)로 더 풀었는데, 그 반투명 띠로 진짜 방 배경이 비쳐 머리카락 주변이 번져 보였다 — 9/29 폰 실측) */
-const CAM_MASK_LO = 0.45, CAM_MASK_HI = 0.8;
+const CAM_MASK_LO = 0.55, CAM_MASK_HI = 0.85;   // 9/29 두 번째 실측 후 좁힘 (처음 0.45~0.8)
 const _camMaskLUT = (() => { const a = new Uint8ClampedArray(256); for (let i = 0; i < 256; i++) { const x = Math.min(1, Math.max(0, (i / 255 - CAM_MASK_LO) / (CAM_MASK_HI - CAM_MASK_LO))); a[i] = Math.round(x * x * (3 - 2 * x) * 255); } return a; })();
 function _camRefineMask(img) {
     const w = img.width, h = img.height;
@@ -16239,7 +16239,10 @@ function _camBgCanvas(id, w, h) {
 /* 배경을 깔고 오려낸 사람을 얹는다. 반환 false면 아직 준비 전(원본을 그린다). 반전 좌표계 안에서 불린다 */
 function _camDrawWithBg(ctx, v, vw, vh, p) {
     if (!_camSeg.inst) return false;
-    if (!_camSeg.busy) {
+    // 인물 분리는 초당 12번 정도면 충분하다 — 사이 프레임은 직전 마스크를 쓴다 (끝나는 대로 곧장 다시 돌리면 폰이 버거웠다)
+    const _now = performance.now();
+    if (!_camSeg.busy && _now - (_camSeg.lastSend || 0) >= 80) {
+        _camSeg.lastSend = _now;
         // 세로 영상(폰)은 정사각 입력 모델(0), 가로는 가로형(1) — 가로형에 세로 영상을 넣으면 눌려서 윤곽이 뭉개졌다
         const want = vh > vw ? 0 : 1;
         if (_camSeg.model !== want) { try { _camSeg.inst.setOptions({ modelSelection: want }); _camSeg.model = want; } catch (e) {} }
@@ -16282,9 +16285,12 @@ function _camDrawWithBg(ctx, v, vw, vh, p) {
     return true;
 }
 
-function _camDrawLoop() {
+function _camDrawLoop(now) {
     const v = _cam.video, c = _cam.canvas, ctx = _cam.ctx;
     if (!v || !c || !ctx || !_cam.stream) return;
+    // 카메라는 초당 30장 — 화면(60번)마다 다시 그리면 같은 장면을 두 번 그린다. 30번으로 맞춘다
+    if (now && _cam.lastDraw && now - _cam.lastDraw < 28) { _cam.raf = requestAnimationFrame(_camDrawLoop); return; }
+    if (now) _cam.lastDraw = now;
     const vw = v.videoWidth, vh = v.videoHeight;
     if (vw && vh) {
         if (c.width !== vw || c.height !== vh) { c.width = vw; c.height = vh; }
