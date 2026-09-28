@@ -30,7 +30,11 @@ const GEM_ABS_MAX          = 100000000; // 젬 절대 상한
 // 증가량을 saves/{uid}.gemLedger에 적어두고, 문턱을 넘으면 flags를 올려 로그만 남긴다. 분석 때 훑어본다.
 // 정상 최대치: 바쁜 날 ~10만, 월요일(랭킹 3판 보상 8.75만 + 미션) ~19만 → 30만.
 const GEM_DAILY_FLAG       = 300000;
-const SCORE_ABS_MAX        = 20000000;  // 점수 필드 절대 상한
+const SCORE_ABS_MAX        = 100000000;   // 주간·월간 점수 절대 상한 ('즉시 1억' 류 차단)
+// 누적·연간은 쌓이기만 하므로 따로 — 2천만 하나로 묶었다가 1위(흠없는 어린양, 누적 19,999,236)가 닿아
+// 그 뒤 모든 점수 제출이 invalid-argument로 거절됐다 (2026-09-29)
+const SCORE_ABS_MAX_TOTAL  = 2000000000;
+const SCORE_TOTAL_FIELDS   = new Set(['totalScore', 'yearlyScore']);
 // 클라이언트가 제출한 점수 저장 시 검증할 점수 필드
 const SCORE_FIELDS = ['score', 'myMonthlyScore', 'totalScore', 'yearlyScore', 'prevWeekScore', 'prevMonthlyScore'];
 // submitScoreSecure가 leaderboard에 쓸 수 있는 필드 화이트리스트 (재화 필드 주입 차단)
@@ -167,7 +171,8 @@ exports.submitScoreSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =>
     // 점수 필드 타입·범위 검증 (정수, 0 이상, 절대 상한 이하 — '즉시 1억' 류 차단)
     for (const f of SCORE_FIELDS) {
         if (p[f] === undefined) continue;
-        if (typeof p[f] !== 'number' || !Number.isInteger(p[f]) || p[f] < 0 || p[f] > SCORE_ABS_MAX) {
+        const cap = SCORE_TOTAL_FIELDS.has(f) ? SCORE_ABS_MAX_TOTAL : SCORE_ABS_MAX;
+        if (typeof p[f] !== 'number' || !Number.isInteger(p[f]) || p[f] < 0 || p[f] > cap) {
             throw new HttpsError('invalid-argument', '점수 값이 유효하지 않습니다.');
         }
     }

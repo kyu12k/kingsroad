@@ -123,6 +123,7 @@ firebase deploy --only firestore:rules    # 보안 규칙
 - Firebase 프로젝트: **`kings-road-rank`** (`.firebaserc`)
 - Hosting은 이 폴더를 통째로 올린다. `functions/`·`kingsroad/`·`assets`·`images`는 제외 (`firebase.json`의 ignore)
 - **Cloud Functions가 두 벌이다**: `functions/`(default) · `kingsroad/`(codebase kingsroad, asia-northeast3). 고친 쪽을 배포해야 한다
+- 함수 배포가 `User code failed to load ... Timeout after 10000`으로 멈추면 `FUNCTIONS_DISCOVERY_TIMEOUT=120`을 붙인다 (OneDrive 폴더라 로딩이 느리다). 배포 전 해당 폴더에 `npm ci`
 - 규칙: `firestore.rules` · 색인: `firestore.indexes.json` — 새 랭킹 쿼리를 만들면 색인도 함께 추가
 - **배포 전에 맨 위 경고 네 개를 다시 볼 것.** 캐시 버스팅과 인라인 스크립트 문법 검사는 실제로 하루씩 날린 적이 있다
 
