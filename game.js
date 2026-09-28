@@ -3357,20 +3357,8 @@ function checkMissions() {
         updateWeeklyAttendance(today, currentWeekId);
     }
 
-    // 2. 주간 미션 초기화 (주차가 바뀌었으면: 월요일 기준)
-    if (missionData.weekId !== currentWeekId) {
-        missionData.weekId = currentWeekId;
-        missionData.weekly = {
-            attendance: 1,          // 월요일 첫 접속이므로 1일 출석
-            attendanceLog: [today], // 오늘 날짜 기록
-            dragonKill: 0,
-            stageClear: 0,
-            hardship: 0,
-            dailyMissionClearCount: 0,
-            claimed: [false, false, false, false, false]
-        };
-        console.log("📅 새로운 주가 시작되어 주간 미션이 초기화되었습니다.");
-    }
+    // 2. 주간 미션 초기화 — 리셋은 _resetWeeklyMissionsIfNeeded 한 곳에서만 (아래 주석)
+    _resetWeeklyMissionsIfNeeded(today);
 
     // 기존 세이브 데이터에 loginReward 필드 없을 때 보정
     if (missionData.daily.loginReward === undefined) {
@@ -3380,6 +3368,31 @@ function checkMissions() {
     updateMissionUI();
     // 로그인 미션 등 — 완료된 것은 바로 지급 (약간 뒤: 로드 직후 UI가 준비된 뒤에)
     setTimeout(() => { if (typeof _autoClaimMissions === 'function') _autoClaimMissions(); }, 1200);
+}
+
+/* ★ 주간 미션 리셋은 **여기 한 곳에서, 오전 6시 기준 주차로만** 한다 (2026-09-28).
+   checkMissions()(월요일 6시)와 checkDailyLogin()(월요일 **자정**)이 서로 다른 경계로 각자 리셋해서,
+   월요일 00~06시에 둘이 번갈아 missionData.weekId를 뒤집었다 — 자정에 한 번, 6시에 또 한 번.
+   게다가 자정 쪽은 **일부만** 지웠다: claimed를 4칸으로 만들고(미션은 5개) dailyMissionClearCount를 남겨,
+   지난주 「일일 미션 20회」가 새 주의 것처럼 다시 수령 가능해졌다(자동 수령이 2,000젬을 한 번 더 지급).
+   출석도 0으로 두고 오늘을 안 넣었다. 저장본 7,086개 중 854개에 4칸 흔적이 남아 있었다.
+   9/16에 일일 리셋에서 잡은 '두 함수가 따로 리셋' 버그의 주간판이다.
+   승점(leagueData) 주간 리셋은 서버 랭킹 주차(월요일 0시)를 따르므로 checkDailyLogin에 그대로 둔다 — 그건 다른 시계다 */
+function _resetWeeklyMissionsIfNeeded(today) {
+    const wk = getMissionPointWeekId();
+    if (missionData.weekId === wk) return false;
+    missionData.weekId = wk;
+    missionData.weekly = {
+        attendance: 1,          // 새 주 첫 접속이므로 1일 출석
+        attendanceLog: [today],
+        dragonKill: 0,
+        stageClear: 0,
+        hardship: 0,
+        dailyMissionClearCount: 0,
+        claimed: [false, false, false, false, false]
+    };
+    console.log("📅 새로운 주가 시작되어 주간 미션이 초기화되었습니다.");
+    return true;
 }
 
 // [보조] 주간 출석 체크 로직 (버그 수정됨)
@@ -17523,19 +17536,11 @@ function checkDailyLogin() {
     if (!missionData.weekly) missionData.weekly = { attendance: 0, claimed: [false, false, false] };
 
     // 2. 주간 초기화 (새로운 주가 시작되었는지 확인)
-    const currentWeekId = getWeekId();
+    const currentWeekId = getWeekId();   // ← 승점(랭킹) 주차 — 월요일 0시
 
-    // 🌟 (1) 미션 주간 초기화 (따로 검사)
-    if (missionData.weekId !== currentWeekId) {
-        console.log("🔄 미션 주간 리셋");
-        missionData.weekId = currentWeekId;
-        missionData.weekly.attendance = 0;
-        missionData.weekly.claimed = [false, false, false, false];
-        missionData.weekly.dragonKill = 0;
-        missionData.weekly.stageClear = 0;
-        missionData.weekly.hardship = 0;
-        needsSave = true;
-    }
+    // 🌟 (1) 미션 주간 초기화 — checkMissions()와 **같은 함수·같은 6시 경계**로 (2026-09-28)
+    //   예전엔 여기서 자정 기준으로 따로(그것도 일부만) 리셋해 월요일 새벽에 두 번 리셋됐다
+    if (_resetWeeklyMissionsIfNeeded(today)) needsSave = true;
 
     // 🌟 (2) 승점 주간 초기화 (미션과 완전히 독립적으로 따로 검사!)
     if (leagueData.weekId !== currentWeekId) {
