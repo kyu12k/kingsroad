@@ -886,6 +886,35 @@ body, html {
             line-height: 1;
         }
 
+        /* 바람에 흔들리는 꽃·풀·열매 (2026-09-28 부활)
+           3월엔 22장 × 수백 개가 화면 밖에서도 전부 흔들리고, 하나하나 will-change로 따로 레이어를 잡아 렉이 났다.
+           이제 화면에 들어온 장(.in-view — renderChapterMap의 IntersectionObserver)만 흔들고 will-change는 쓰지 않는다 */
+        .garden-flower, .barren-grass { transform-origin: 50% 100%; }
+        .zone-wrapper.in-view .garden-flower { animation: map-sway 4s ease-in-out infinite; }
+        .zone-wrapper.in-view .barren-grass  { animation: map-sway 5.5s ease-in-out infinite; }
+        .zone-wrapper.in-view .fruit         { animation: map-fruit 3s ease-in-out infinite; }
+        .zone-wrapper.in-view .fruit.f1      { animation-name: map-fruit-top; }
+        .zone-wrapper.in-view .fruit.f2 { animation-delay: 0.5s; }
+        .zone-wrapper.in-view .fruit.f3 { animation-delay: 1s; }
+        .zone-wrapper.in-view .fruit.f4 { animation-delay: 1.5s; }
+        @keyframes map-sway {
+            0%, 100% { transform: rotate(-7deg); }
+            50%      { transform: rotate(7deg); }
+        }
+        @keyframes map-fruit {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-3px); }
+        }
+        @keyframes map-fruit-top {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50%      { transform: translateX(-50%) translateY(-3px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .zone-wrapper.in-view .garden-flower,
+            .zone-wrapper.in-view .barren-grass,
+            .zone-wrapper.in-view .fruit { animation: none; }
+        }
+
         /* 강물 (2층 - 땅 위, 나무 아래) */
         #river-svg {
             position: absolute;

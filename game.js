@@ -6908,6 +6908,14 @@ function renderChapterMap() {
 
     const landArea = document.getElementById('map-land-area');
 
+    // 화면에 들어온 장만 꽃·풀·열매가 흔들린다 (2026-09-28) — 다시 그릴 때마다 옛 관찰자는 끊는다
+    if (window._mapSwayObserver) { try { window._mapSwayObserver.disconnect(); } catch (e) { } }
+    window._mapSwayObserver = (typeof IntersectionObserver !== 'undefined')
+        ? new IntersectionObserver(entries => {
+            entries.forEach(en => en.target.classList.toggle('in-view', en.isIntersecting));
+        }, { rootMargin: '40px 0px' })
+        : null;
+
     // 2. 챕터별 구역 생성
     gameData.forEach((chapter, index) => {
         // A. 상태 확인
@@ -7060,6 +7068,7 @@ function renderChapterMap() {
         }
 
         landArea.appendChild(wrapper);
+        if (window._mapSwayObserver) window._mapSwayObserver.observe(wrapper);
     });
 
 
