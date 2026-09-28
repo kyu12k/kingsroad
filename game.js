@@ -500,6 +500,7 @@ const LANG = {
         hardship_address_v_btn: '{v}절',
         hardship_memory_indicator: '주소만 보고 전체 구절을 인출합니다',
         hardship_btn_submit: '정답 확인',
+        booster_partial: '({n}/{total}절)',
         sfx_state_on: '🔊 효과음 켬',
         sfx_state_nokey: '🔉 타자음만 끔',
         sfx_state_off: '🔇 효과음 끔',
@@ -1431,6 +1432,7 @@ const LANG = {
         btn_ultimate_memory_off: 'Show Hints',
         hardship_memory_not_filled: 'Please fill in all characters before checking.',
         hardship_btn_submit: 'Check Answer',
+        booster_partial: '({n}/{total} verses)',
         sfx_state_on: '🔊 Sound effects on',
         sfx_state_nokey: '🔉 Typing sounds off',
         sfx_state_off: '🔇 Sound effects off',
@@ -23607,6 +23609,8 @@ function createEmptyHardshipState() {
         answeredCount: 0,
         score: 0,
         boosterMultiplier: 1,
+        boostedKeys: [],   // 햇살 배율이 붙은 절 — 판 도중 햇살이 끝나면 「⚡×3 (8/11절)」로 보여준다
+        scoredKeys: [],    // 승점을 받은 절
         feedback: null,
         locked: false,
         pendingTimeoutId: null,
@@ -24365,6 +24369,8 @@ function _saveHardshipCheckpoint() {
             totalHintsUsed: hardshipState.totalHintsUsed || 0,
             speechScores: hardshipState.speechScores || [],
             boosterMultiplier: hardshipState.boosterMultiplier || 1,
+            boostedKeys: hardshipState.boostedKeys || [],
+            scoredKeys: hardshipState.scoredKeys || [],
             hearts: playerHearts,
             maxHearts: maxPlayerHearts,
             // 세션 시간을 이어붙인다 — 안 그러면 히스토리에 '3분 만에 한 장'처럼 남는다
@@ -24498,6 +24504,8 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
         hardshipState.totalHintsUsed = _resume.totalHintsUsed || 0;
         hardshipState.speechScores = Array.isArray(_resume.speechScores) ? _resume.speechScores : [];
         hardshipState.boosterMultiplier = _resume.boosterMultiplier || 1;
+        hardshipState.boostedKeys = Array.isArray(_resume.boostedKeys) ? _resume.boostedKeys : [];
+        hardshipState.scoredKeys = Array.isArray(_resume.scoredKeys) ? _resume.scoredKeys : [];
         hardshipState.isRandomOrder = !!_resume.isRandomOrder;
         hardshipState.ultimateMemoryMode = !!_resume.ultimate;
         // 체력은 그때 값 그대로 — 오답으로 깎인 체력이 되살아나면 승점을 되돌리는 셈이 된다
@@ -25131,6 +25139,14 @@ function awardHardshipScore(points) {
     const multiplier = boosterData.active ? boosterData.multiplier : 1;
     const finalPoints = Math.floor(points * multiplier);
     if (multiplier > 1) hardshipState.boosterMultiplier = multiplier;
+    const _cv = hardshipState.currentVerse;
+    const _vk = _cv ? String(_cv.stageId || `${_cv.chapter}-${_cv.verse}`) : '';
+    if (_vk) {
+        if (!Array.isArray(hardshipState.scoredKeys)) hardshipState.scoredKeys = [];
+        if (!Array.isArray(hardshipState.boostedKeys)) hardshipState.boostedKeys = [];
+        if (!hardshipState.scoredKeys.includes(_vk)) hardshipState.scoredKeys.push(_vk);
+        if (multiplier > 1 && !hardshipState.boostedKeys.includes(_vk)) hardshipState.boostedKeys.push(_vk);
+    }
 
     hardshipState.score += finalPoints;
     if (hardshipState.trainingMode) return; // 집중 훈련소 망각의 고난: 승점 미지급
@@ -26607,7 +26623,10 @@ function finishHardshipSession(reason) {
             resultExp.innerText = '—';
         } else {
             const m = hardshipState.boosterMultiplier;
-            resultExp.innerText = m > 1 ? `${hardshipState.score} ⚡×${m}` : `${hardshipState.score}`;
+            // 판 도중 햇살이 끝났으면 몇 절에 붙었는지 함께 — 「⚡×3」만 보이면 왜 점수가 적은지 알 수 없었다 (9/29 문의)
+            const nb = (hardshipState.boostedKeys || []).length, ns = (hardshipState.scoredKeys || []).length;
+            const part = (m > 1 && ns > 0 && nb < ns) ? ` ${t('booster_partial', { n: nb, total: ns })}` : '';
+            resultExp.innerText = m > 1 ? `${hardshipState.score} ⚡×${m}${part}` : `${hardshipState.score}`;
         }
     }
 
