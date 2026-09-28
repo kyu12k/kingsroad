@@ -105,7 +105,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `_buildNotifSchedule()` | game.js:~19800 | 푸시 일정 — 복습 1건 + 백지 차례(최소 3시간·밤 피함) |
 | `_reviewOverlayHeadHtml(list)` | game.js:~8100 | 복습 목록 맨 위 — 오늘 백지 차례 · 중간점검/보스전으로 한 번에 |
 | `_chapterBlankStats(chapter)` · `_mapBlankRingHtml(chapter)` | game.js:~7717 | 장별 백지 증거 집계(시트 헤더·지도 공용) · 지도 나무 둘레 백지 고리 |
-| `_buildRiverFlow(points, scrollH)` · `_riverFlowTick` | game.js:~7145 | 지도 강물 물결 — 구간별 SVG 조각, 보이는 조각만 초당 15번 흐름 |
+| `_buildRiverFlow(points, scrollH)` · `_riverFlowTick` · `_riverGlintStep` | game.js:~7145 | 지도 강물 물결 — 구간별 SVG 조각, 보이는 조각만 초당 15번 흐름 · 가끔 빛줄기 |
 | `SoundEffect` | game.js:~3987 | 효과음 신디사이저 — 종소리 `_note`, 출력 `_bus`, 잠든 오디오 깨우기 `_play`, 진동 `_buzz` |
 
 ---

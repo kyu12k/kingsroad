@@ -940,6 +940,10 @@ body, html {
             pointer-events: none;
         }
         .river-flow-tile.flowing { will-change: transform; }
+        /* 강을 따라 흐르는 빛줄기 — 흐린 테(halo) 위에 밝은 심(core). 번짐 필터 없이 두 겹으로 부드럽게 */
+        .river-glint { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .river-glint-halo { stroke: rgba(190, 245, 255, 0.28); stroke-width: 10px; }
+        .river-glint-core { stroke: rgba(255, 255, 255, 0.85); stroke-width: 3px; }
 
 /* [강물 3-레이어 스타일] */
         /* 1층: 강둑 (흙빛 테두리) */

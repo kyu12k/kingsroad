@@ -7163,6 +7163,8 @@ function _buildRiverFlow(points, scrollH) {
 
     const NS = 'http://www.w3.org/2000/svg';
     const cum = RIVER_STRANDS.map(() => 0);   // 가닥별로 지금까지 흘러온 길이
+    let cumC = 0;                              // 한가운데 선(빛줄기) 누적 길이
+    const order = [];                          // 위→아래 순서의 조각
     segs.forEach(seg => {
         if (seg.bottom - seg.top < 1) return;
         const y0 = seg.top - 3;
@@ -7178,9 +7180,27 @@ function _buildRiverFlow(points, scrollH) {
             svg.appendChild(p);
             svg._paths.push({ el: p, base: cum[k] % st.period, st });
         });
+        // 빛줄기 자리 2개(한 조각에 두 줄기가 동시에 지날 수 있다) — 평소엔 숨김, 지나갈 때만 점선 한 토막을 보인다
+        svg._glints = [0, 1].map(() => ['halo', 'core'].map(kind => {
+            const g = document.createElementNS(NS, 'path');
+            g.setAttribute('class', `river-glint river-glint-${kind}`);
+            g.setAttribute('d', seg.d(0, y0));
+            g.setAttribute('stroke-dasharray', `${RIVER_GLINT[kind]} 100000`);
+            g.setAttribute('visibility', 'hidden');
+            svg.appendChild(g);
+            return g;
+        }));
+        svg._glintOn = [false, false];
         layer.appendChild(svg);
         svg._paths.forEach((o, k) => { try { cum[k] += o.el.getTotalLength(); } catch (e) { } });
+        svg._start = cumC;   // 강 한가운데 선을 따라 이 조각이 시작하는 거리
+        try { svg._len = svg._glints[0][1].getTotalLength(); } catch (e) { svg._len = seg.bottom - seg.top; }
+        cumC += svg._len;
+        order.push(svg);
     });
+    _riverFlowTick.order = order;
+    _riverFlowTick.streaks = [];
+    _riverFlowTick.nextGlint = 0;
 
     const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduce || typeof IntersectionObserver === 'undefined') return;
@@ -7202,6 +7222,7 @@ function _riverFlowTick(now) {
     const self = _riverFlowTick;
     if (!self.tiles.size) { self.raf = 0; return; }
     self.raf = requestAnimationFrame(self);
+    _riverGlintStep(now);   // 빛줄기는 빨라서 지나가는 동안만 매 프레임
     if (now - self.last < 66) return;
     self.last = now;
     self.tiles.forEach(tile => tile._paths.forEach(o => {
@@ -7213,6 +7234,49 @@ function _riverFlowTick(now) {
 _riverFlowTick.tiles = new Set();
 _riverFlowTick.raf = 0;
 _riverFlowTick.last = 0;
+_riverFlowTick.order = [];
+_riverFlowTick.streaks = [];
+_riverFlowTick.nextGlint = 0;
+
+/* [강을 따라 흐르는 빛줄기 (2026-09-28)]
+   3~6초마다 화면에 보이는 강의 윗끝에서 빛줄기 하나(가끔 둘)가 하류로 달려 내려간다.
+   조각마다 숨겨 둔 점선 한 토막(dasharray "길이 100000")의 위치만 옮긴다 — 지나가는 2~3초 동안만, 한두 줄만 움직인다 */
+const RIVER_GLINT = { core: 34, halo: 62, speed: 260, gapMin: 3000, gapMax: 6000 };
+function _riverGlintStep(now) {
+    const self = _riverFlowTick;
+    const order = self.order;
+    if (!order.length) return;
+    let lo = Infinity, hi = -Infinity;
+    self.tiles.forEach(t => { lo = Math.min(lo, t._start); hi = Math.max(hi, t._start + t._len); });
+    if (!self.nextGlint) self.nextGlint = now + 1500;
+    if (now >= self.nextGlint && self.streaks.length === 0 && isFinite(lo)) {
+        self.streaks.push({ t0: now, s0: lo - 20 });
+        if (Math.random() < 0.45) self.streaks.push({ t0: now + 380, s0: lo - 20 });   // 가끔 한 줄기가 뒤따른다
+        self.nextGlint = now + RIVER_GLINT.gapMin + Math.random() * (RIVER_GLINT.gapMax - RIVER_GLINT.gapMin);
+    }
+    // 빛줄기 머리 위치(한가운데 선을 따른 거리). 화면 아래로 빠지면 끝
+    const heads = self.streaks.map(st => now < st.t0 ? null : st.s0 + (now - st.t0) / 1000 * RIVER_GLINT.speed);
+    self.streaks = self.streaks.filter((st, i) => heads[i] === null || heads[i] - RIVER_GLINT.halo < hi + 40);
+    const live = heads.filter(h => h !== null && h - RIVER_GLINT.halo < hi + 40);
+    if (!live.length && !order.some(t => t._glintOn[0] || t._glintOn[1])) return;
+    order.forEach(tile => {
+        [0, 1].forEach(slot => {
+            const h = live[slot];
+            const local = h === undefined ? null : h - tile._start;
+            const on = local !== null && local > 0 && local - RIVER_GLINT.halo < tile._len;
+            if (on !== tile._glintOn[slot]) {
+                tile._glints[slot].forEach(g => g.setAttribute('visibility', on ? 'visible' : 'hidden'));
+                tile._glintOn[slot] = on;
+            }
+            if (!on) return;
+            // 점선 한 토막이 [local - 길이, local]에 오도록: offset = 길이 - local
+            tile._glints[slot].forEach((g, i) => {
+                const len = i === 0 ? RIVER_GLINT.halo : RIVER_GLINT.core;
+                g.setAttribute('stroke-dashoffset', (len - local).toFixed(1));
+            });
+        });
+    });
+}
 
 // 전역 변수로 타이머 관리 (창 닫을 때 끄기 위해)
 var stageSheetTimer = null;
