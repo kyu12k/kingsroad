@@ -141,6 +141,7 @@ firebase deploy --only firestore:rules    # 보안 규칙
 **3. 암기 진행도는 필드 단위로 병합한다 (`_mergeSaveProgress`)**
 두 기기가 각자 진도를 냈을 때 한쪽을 통째로 버리지 않고 스테이지별로 앞선 쪽을 취한다. **로컬 우선·원격 우선 두 경로 모두**에 적용되어야 한다 — 원격 우선 경로가 빠져서 오프라인 복습 진도가 통째로 사라진 적이 있다.
 앞선 쪽 판정: `reviewStep` → `lastClear` → `mastery` 순.
+**저장본에 진행 필드를 새로 넣으면 `_mergeSaveProgress`에도 넣을 것** — 빠진 필드는 다른 기기의 저장이 통째로 덮어쓴다. 오늘의 암송(`eventProgress`·`dailyReciteDone`)이 9/17에 들어와 9/28까지 빠져 있었다(`_mergeEventProgress`).
 
 **4. 서버가 정하는 값은 클라이언트가 못 쓴다**
 랭킹·점수 관련 필드는 `submitScoreSecure`의 화이트리스트를 거치고, 보안 규칙의 `serverOnlyKeys`가 직접 쓰기를 막는다. 새 랭킹 지표를 추가하면 **클라이언트 전송 · 함수 화이트리스트 · 규칙 · 색인 네 곳을 모두** 손봐야 한다. 자세한 내용은 `docs/저장과-동기화.md`.

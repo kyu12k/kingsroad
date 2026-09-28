@@ -10419,6 +10419,48 @@ function _mergeReadWeek(target, other) {
     return 0;
 }
 
+/* 이벤트·오늘의 암송 진행 병합 (2026-09-28)
+   eventProgress[이벤트][절][난이도] = 통과 시각 · dailyReciteDone[6시 날짜] = 시각 · dailyWeekDone = 주차.
+   전엔 병합 대상에 없어서 한 기기에서 오늘의 암송을 마쳐도 다른 기기의 저장이 통째로 덮어써 사라졌다
+   (9/28 실측: 랭킹엔 ✅인데 저장본엔 그날 기록이 없는 계정 2곳). 통과 기록은 쌓이기만 하므로 합집합 */
+function _mergeEventProgress(target, other) {
+    let took = 0;
+    const oe = other.eventProgress;
+    if (oe && typeof oe === 'object') {
+        if (!target.eventProgress || typeof target.eventProgress !== 'object') target.eventProgress = {};
+        const te = target.eventProgress;
+        for (const evId of Object.keys(oe)) {
+            const o = oe[evId];
+            if (!o || typeof o !== 'object') continue;
+            if (!te[evId] || typeof te[evId] !== 'object') { te[evId] = JSON.parse(JSON.stringify(o)); took++; continue; }
+            const tv = te[evId];
+            for (const k of Object.keys(o)) {
+                if (k === '_rewardDay') {   // 보상 받은 날 — 늦은 쪽(한쪽에서 받았으면 다른 쪽에서 또 받지 않게)
+                    if (typeof o[k] === 'string' && (!tv[k] || o[k] > tv[k])) { tv[k] = o[k]; took++; }
+                    continue;
+                }
+                const os = o[k];
+                if (!os || typeof os !== 'object') continue;
+                if (!tv[k] || typeof tv[k] !== 'object') { tv[k] = Object.assign({}, os); took++; continue; }
+                for (const rung of Object.keys(os)) {
+                    if (!tv[k][rung] && os[rung]) { tv[k][rung] = os[rung]; took++; }
+                }
+            }
+        }
+    }
+    const od = other.dailyReciteDone;
+    if (od && typeof od === 'object') {
+        if (!target.dailyReciteDone || typeof target.dailyReciteDone !== 'object') target.dailyReciteDone = {};
+        for (const day of Object.keys(od)) {
+            if (!target.dailyReciteDone[day] && od[day]) { target.dailyReciteDone[day] = od[day]; took++; }
+        }
+    }
+    if (typeof other.dailyWeekDone === 'string' && other.dailyWeekDone > (target.dailyWeekDone || '')) {
+        target.dailyWeekDone = other.dailyWeekDone; took++;
+    }
+    return took;
+}
+
 function _mergeSaveProgress(target, other) {
     if (!target || !other) return 0;
     let took = 0;
@@ -10426,6 +10468,7 @@ function _mergeSaveProgress(target, other) {
     took += _mergeReviewSamples(target, other);
     took += _mergeRecallWeek(target, other);
     took += _mergeReadWeek(target, other);
+    took += _mergeEventProgress(target, other);
 
     // 1) 자유여행 — 최상위 필드
     {
@@ -10703,7 +10746,10 @@ async function _initFirestoreSyncCore() {
     // 이게 없으면 오프라인에서 쌓은 복습 진도가 서버 적용과 함께 통째로 사라진다.
     if (localData) {
         const _took = _mergeSaveProgress(remoteData, localData);
-        if (_took > 0) console.log(`[Firestore] 로컬 쪽이 앞선 스테이지 ${_took}건 보존`);
+        if (_took > 0) {
+            console.log(`[Firestore] 로컬 쪽이 앞선 스테이지 ${_took}건 보존`);
+            window._syncDirty = true;   // 흡수한 로컬 진행을 서버에도 올린다 (다음 저장을 기다리지 않게)
+        }
     }
 
     // 미션 claimed/포인트 OR/MAX 병합: serverTimestamp로 인해 updatedAt이 항상 서버가 크므로
@@ -13110,18 +13156,22 @@ let _myReadTitle = null;
         tipEl.style.left = left + 'px';
         tipEl.style.top = top + 'px';
         clearTimeout(hideTimer);
-        hideTimer = setTimeout(hide, 1600);
+        // 긴 설명은 읽을 시간을 준다 (글자당 70ms, 최대 9초) — 1.6초 고정이면 긴 문장은 다 못 읽고 사라졌다
+        hideTimer = setTimeout(hide, Math.min(9000, 1600 + text.length * 70));
     }
     function hide() { if (tipEl) tipEl.style.display = 'none'; }
+    // 커서만 올려도 뜨는 건 짧은 칩 이름(밭 숫자 등)만. 긴 설명은 눌러야 뜬다 (2026-09-28 — 백지 증거 줄의 긴 설명이 커서만 스쳐도 열렸다)
+    const HOVER_TIP_MAX = 40;
     document.addEventListener('click', (e) => {
         const el = e.target.closest && e.target.closest('[data-tip]');
-        if (!el) return;
+        if (!el) { hide(); return; }
         e.stopPropagation();   // 밭 칩은 헤더에서 밭 화면 열기 안에 있다 — 말풍선만 띄우고 화면은 그대로
         show(el);
     }, true);
     document.addEventListener('mouseover', (e) => {
         const el = e.target.closest && e.target.closest('[data-tip]');
-        if (el && window.matchMedia && window.matchMedia('(hover: hover)').matches) show(el);
+        if (el && (el.getAttribute('data-tip') || '').length <= HOVER_TIP_MAX
+            && window.matchMedia && window.matchMedia('(hover: hover)').matches) show(el);
     });
     document.addEventListener('scroll', hide, true);
 })();
