@@ -1007,6 +1007,53 @@ body, html {
 
         .stage-node.locked .tree-icon { opacity: 0.5; background: #333; }
 
+        /* 백지 고리 — 나무 둘레가 백지로 써낸 절 비율만큼 차오른다 (2026-09-28)
+           색은 시트 헤더 증거 한 줄과 같다: 일부 = 호박색, 전부 = 초록 */
+        .stage-node .tree-icon { position: relative; z-index: 1; }
+        .map-blank-ring {
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            background: conic-gradient(#ffc86b calc(var(--p) * 1%), rgba(20, 24, 32, 0.45) 0);
+            -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+                    mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+            pointer-events: none;
+            z-index: 0;
+        }
+        .map-blank-ring.all {
+            background: #7ee2a8;
+            filter: drop-shadow(0 0 4px rgba(126, 226, 168, 0.8));
+        }
+        /* 나무 위쪽 모서리 바깥 — 가운데 위 「마지막 완료」 배지(아래끝 -6px)보다 낮게 두어 겹치지 않는다.
+           왼쪽 나무는 오른쪽 모서리, 오른쪽 나무는 화면 끝에 잘리지 않게 왼쪽 모서리 */
+        .map-blank-count {
+            position: absolute;
+            top: -2px;
+            left: calc(100% - 4px);
+            z-index: 12;
+            background: rgba(20, 24, 32, 0.82);
+            color: #ffd894;
+            font-size: 0.62rem;
+            font-weight: 800;
+            padding: 1px 6px;
+            border-radius: 9px;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+        }
+        .zone-wrapper.right .map-blank-count { left: auto; right: calc(100% - 4px); }
+        .map-blank-count.all { color: #7ee2a8; }
+        .map-blank-count.due::after {
+            /* 오늘 백지 차례가 있으면 빨간 점 */
+            content: '';
+            position: absolute;
+            top: -2px; right: -2px;
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: #ff6b5a;
+            box-shadow: 0 0 0 2px rgba(20, 24, 32, 0.82);
+        }
+
         /* 마지막 플레이 챕터 */
         .stage-node.last-played-chapter {
             box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.75), 0 4px 14px rgba(0,0,0,0.2);
@@ -1388,7 +1435,8 @@ body, html {
         .word-block { background-color: #ecf0f1; color: #2c3e50; padding: 10px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 3px 0 #bdc3c7; transition: transform 0.1s; align-self: flex-start; }
         .word-block:active { transform: translateY(3px); box-shadow: none; }
         .answer-zone .word-block { background-color: var(--primary-color); box-shadow: 0 3px 0 #d35400; }
-        .btn-attack { width: 100%; padding: 15px; background-color: #e74c3c; color: white; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 0 #c0392b; transition: background 0.15s; }
+        /* 누르라는 버튼은 초록, 빨강은 틀림·삭제에만 (2026-09-28) */
+        .btn-attack { width: 100%; padding: 15px; background-color: #27ae60; color: white; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 0 #1e8449; transition: background 0.15s; }
         .btn-attack:active { transform: translateY(4px); box-shadow: none; }
 
         /* Step5 다시하기 버튼 */
@@ -2205,6 +2253,8 @@ body, html {
 }
 
 .hardship-mic-btn {
+    background-color: #8e44ad;   /* 음성은 보라 — 1단계 음성인식 버튼과 같은 색 */
+    box-shadow: 0 4px 0 #6c3483;
     font-size: 1.05rem;
     letter-spacing: 0.02em;
 }

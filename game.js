@@ -500,6 +500,9 @@ const LANG = {
         hardship_address_v_btn: '{v}절',
         hardship_memory_indicator: '주소만 보고 전체 구절을 인출합니다',
         hardship_btn_submit: '정답 확인',
+        sfx_state_on: '🔊 효과음 켬',
+        sfx_state_nokey: '🔉 타자음만 끔',
+        sfx_state_off: '🔇 효과음 끔',
         hardship_btn_reset_input: '입력 초기화',
         hardship_hint_confirm: '💎 보석 {cost}개를 사용해 글자 하나를 보시겠습니까?',
         quit_modal_title: '전장을 떠나시겠습니까?',
@@ -1425,6 +1428,9 @@ const LANG = {
         btn_ultimate_memory_off: 'Show Hints',
         hardship_memory_not_filled: 'Please fill in all characters before checking.',
         hardship_btn_submit: 'Check Answer',
+        sfx_state_on: '🔊 Sound effects on',
+        sfx_state_nokey: '🔉 Typing sounds off',
+        sfx_state_off: '🔇 Sound effects off',
         hardship_btn_reset_input: 'Reset Input',
         hardship_hint_confirm: '💎 Use {cost} gems to reveal one character?',
         quit_modal_title: 'Leave the battle?',
@@ -3824,7 +3830,7 @@ function createMissionElement(parent, m) {
     if (m.claimed) {
         btnHtml = `<button style="background:#7f8c8d; color:#bdc3c7; border:none; padding:5px 10px; border-radius:5px;" disabled>${t('mission_btn_done')}</button>`;
     } else if (isCompleted) {
-        btnHtml = `<button id="btn-${m.type}-${m.index}" class="btn-claim-active" style="background:#e74c3c; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-weight:bold; animation: pulse 1s infinite;">${t('mission_btn_claim')}</button>`;
+        btnHtml = `<button id="btn-${m.type}-${m.index}" class="btn-claim-active" style="background:#f39c12; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-weight:bold; animation: pulse 1s infinite;">${t('mission_btn_claim')}</button>`;
     } else {
         btnHtml = `<button style="background:transparent; color:#7f8c8d; border:1px solid #7f8c8d; padding:5px 10px; border-radius:5px;" disabled>${m.current}/${m.target}</button>`;
     }
@@ -3983,12 +3989,21 @@ function claimReward(type, index, rewardType, value1, value2, silent) {
 /* =========================================
    [시스템: 사운드 효과 (Web Audio API)]
    용량 0KB로 효과음을 생성하는 신디사이저입니다.
+   ★ 2026-09-28 음색 개편 — 8비트 삑소리(사각파·톱니파)를 둥근 종소리로.
+     · 모든 음은 사인파 + 배음 2개(종·차임 느낌), 6ms 어택 → 지수 감쇠. 뚝 끊기는 딸깍 잡음 없음
+     · 짧은 울림(에코 한 겹)과 압축기를 거쳐 한 공간에서 나는 소리처럼
+     · 보상의 크기가 귀로 구분되게: 정답(2음) < 레벨업(4음 오름) < 백지레벨 오름(화음이 피어남+반짝) < 클리어(오름+긴 화음)
+     · 틀림은 벌칙 버저가 아니라 낮고 부드러운 「툭」 — 백지에서 틀리는 건 흔하고, 틀려야 기억에 남는다
+     · 아이폰: 잠든 오디오를 깨우는 동안 첫 소리가 씹히던 것 — 깨어나면 곧바로(0.25초 안) 재생
+     · 효과음 버튼: 🔊 전부 → 🔉 타자음만 끔 → 🔇 전부 끔
    ========================================= */
 const SoundEffect = {
     ctx: new (window.AudioContext || window.webkitAudioContext)(),
 
     // ★ [수정] 저장된 설정이 'true'이면 음소거(true), 아니면 기본값 해제(false)
     isMuted: localStorage.getItem('setting_sfx_mute') === 'true',
+    // 타자음만 끔 (2026-09-28)
+    keyMuted: localStorage.getItem('setting_key_sfx_off') === 'true',
 
     // iOS: ctx가 running 상태일 때만 true 반환. suspended면 resume 시도 후 false
     _ready: function() {
@@ -3997,230 +4012,207 @@ const SoundEffect = {
         return false;
     },
 
+    // 🔊 → 🔉(타자음 끔) → 🔇 → 🔊
     toggleMute: function () {
-        this.isMuted = !this.isMuted;
-
-        // ★ [추가] 변경된 설정을 저장합니다.
+        if (this.isMuted) { this.isMuted = false; this.keyMuted = false; }
+        else if (!this.keyMuted) { this.keyMuted = true; }
+        else { this.isMuted = true; }
         localStorage.setItem('setting_sfx_mute', this.isMuted);
-
+        localStorage.setItem('setting_key_sfx_off', this.keyMuted);
         return this.isMuted;
     },
 
-    // 소리 재생의 기초 함수
+    // 출력 버스: 음 → (마스터) → 압축기 → 스피커, 마스터에서 짧은 울림을 한 겹 곁들인다
+    _out: null,
+    _bus: function () {
+        if (this._out) return this._out;
+        const c = this.ctx;
+        const master = c.createGain();
+        master.gain.value = 0.9;
+        const comp = c.createDynamicsCompressor();
+        comp.threshold.value = -16; comp.knee.value = 12; comp.ratio.value = 4;
+        comp.attack.value = 0.003; comp.release.value = 0.2;
+        const dly = c.createDelay(0.5);
+        dly.delayTime.value = 0.12;
+        const fb = c.createGain(); fb.gain.value = 0.3;
+        const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2400;
+        const wet = c.createGain(); wet.gain.value = 0.22;
+        master.connect(comp);
+        master.connect(dly); dly.connect(lp); lp.connect(fb); fb.connect(dly); lp.connect(wet); wet.connect(comp);
+        comp.connect(c.destination);
+        this._out = master;
+        return master;
+    },
+
+    // 잠들어 있으면 깨운 뒤 재생 (0.25초 안에 깨어날 때만 — 늦게 울리면 엉뚱한 순간에 들린다)
+    _play: function (fn) {
+        if (this.isMuted) return;
+        const c = this.ctx;
+        if (c.state === 'running') { try { fn(c.currentTime + 0.005); } catch (e) { } return; }
+        const asked = Date.now();
+        c.resume().then(() => {
+            if (Date.now() - asked < 250) { try { fn(c.currentTime + 0.005); } catch (e) { } }
+        }).catch(() => {});
+    },
+
+    // 종소리 한 음: partials = [[배수, 세기, 감쇠비율], ...]
+    _BELL: [[1, 1, 1], [2, 0.32, 0.55], [3, 0.1, 0.3]],
+    _PURE: [[1, 1, 1]],
+    _note: function (freq, t, dur, vol, opt) {
+        const c = this.ctx, out = this._bus();
+        const o = opt || {};
+        (o.partials || this._BELL).forEach(([m, a, dm]) => {
+            const osc = c.createOscillator();
+            const g = c.createGain();
+            osc.type = o.wave || 'sine';
+            osc.frequency.setValueAtTime(freq * m, t);
+            if (o.glideTo) osc.frequency.exponentialRampToValueAtTime(o.glideTo * m, t + dur);
+            const d = Math.max(0.02, dur * dm);
+            const atk = Math.min(o.attack || 0.006, d * 0.5);
+            g.gain.setValueAtTime(0.0001, t);
+            g.gain.linearRampToValueAtTime(Math.max(0.0002, vol * a), t + atk);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+            osc.connect(g); g.connect(out);
+            osc.start(t); osc.stop(t + d + 0.03);
+        });
+    },
+
+    // 짧은 바람 소리(잡음 + 대역 필터 훑기) — 공격
+    _noise: null,
+    _whoosh: function (t, dur, vol, from, to) {
+        const c = this.ctx;
+        if (!this._noise) {
+            const len = Math.floor(c.sampleRate * 0.5);
+            const buf = c.createBuffer(1, len, c.sampleRate);
+            const d = buf.getChannelData(0);
+            for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+            this._noise = buf;
+        }
+        const src = c.createBufferSource(); src.buffer = this._noise;
+        const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.2;
+        bp.frequency.setValueAtTime(from, t);
+        bp.frequency.exponentialRampToValueAtTime(to, t + dur);
+        const g = c.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(vol, t + dur * 0.25);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        src.connect(bp); bp.connect(g); g.connect(this._bus());
+        src.start(t); src.stop(t + dur + 0.02);
+    },
+
+    // 진동 (안드로이드만 — 아이폰 웹앱은 지원하지 않는다). 효과음을 끄면 진동도 끈다
+    _buzz: function (pattern) {
+        if (this.isMuted) return;
+        try { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(pattern); } catch (e) { }
+    },
+
+    // 소리 재생의 기초 함수 (예전 호출부 호환 — 파형 인자는 무시하고 종소리로)
     playTone: function (freq, type, duration, vol = 0.1) {
-        if (this.isMuted || !this._ready()) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-
-        osc.type = type; // sine, square, sawtooth, triangle
-        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-
-        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-
-        osc.start();
-        osc.stop(this.ctx.currentTime + duration);
+        this._play(t => this._note(freq, t, Math.max(0.12, duration * 1.6), vol * 0.8));
     },
 
-    // 1. 블록 선택/클릭 소리 (틱!)
-    playClick: function () {
-        this.playTone(800, 'sine', 0.05, 0.05);
-    },
-
-    // 2. 정답 소리 (딩동댕!)
-    playCorrect: function () {
-        if (this.isMuted) return;
-        const now = this.ctx.currentTime;
-
-        // 도-미-솔 (화음 느낌)
-        this.createOsc(523.25, 'sine', now, 0.1); // C5
-        this.createOsc(659.25, 'sine', now + 0.1, 0.1); // E5
-        this.createOsc(783.99, 'sine', now + 0.2, 0.2); // G5
-    },
-
-    // 내부용 오실레이터 생성기
+    // 내부용 (예전 호출부 호환)
     createOsc: function (freq, type, time, dur) {
-        if (!this._ready()) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, time);
-        gain.gain.setValueAtTime(0.1, time);
-        gain.gain.exponentialRampToValueAtTime(0.01, time + dur);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(time);
-        osc.stop(time + dur);
+        this._play(() => this._note(freq, Math.max(time, this.ctx.currentTime), Math.max(0.12, dur * 1.6), 0.08));
     },
 
-    // 3. 오답 소리 (삐-! 둔탁하게)
+    // 1. 블록 선택/클릭 소리 (톡)
+    playClick: function () {
+        this._play(t => this._note(1320, t, 0.05, 0.035, { partials: this._PURE }));
+    },
+
+    // 2. 정답 소리 (딩-동, 5도 위로)
+    playCorrect: function () {
+        this._play(t => {
+            this._note(783.99, t, 0.45, 0.085);          // G5
+            this._note(1046.50, t + 0.09, 0.7, 0.085);   // C6
+        });
+        this._buzz(12);
+    },
+
+    // 3. 오답 소리 (낮고 부드러운 「툭」 — 벌칙 버저가 아니다)
     playWrong: function () {
-        if (this.isMuted || !this._ready()) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-
-        osc.type = 'sawtooth'; // 톱니파 (거친 소리)
-        osc.frequency.setValueAtTime(150, this.ctx.currentTime); // 낮은음
-        osc.frequency.linearRampToValueAtTime(100, this.ctx.currentTime + 0.3); // 더 낮아짐
-
-        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.3);
+        this._play(t => {
+            this._note(220, t, 0.26, 0.13, { glideTo: 174.6, partials: [[1, 1, 1], [2, 0.12, 0.4]] });
+        });
+        this._buzz([25, 40, 25]);
     },
 
-    // 4. 공격 소리 (슈우웅-쾅!)
+    // 4. 공격 소리 (휙- 바람 + 낮은 울림)
     playAttack: function () {
-        if (this.isMuted || !this._ready()) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(800, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.15); // 급격히 떨어짐
-
-        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.15);
+        this._play(t => {
+            this._whoosh(t, 0.2, 0.16, 2600, 500);
+            this._note(146.8, t + 0.08, 0.3, 0.1, { partials: [[1, 1, 1], [2, 0.25, 0.5]] });
+        });
     },
 
-    // 5. 클리어 팡파레 (빠바밤!)
+    // 5. 클리어 (도미솔도 오름 + 길게 울리는 화음 + 반짝)
     playClear: function () {
-        if (this.isMuted) return;
-        const now = this.ctx.currentTime;
-        // 멜로디
-        this.createOsc(523.25, 'square', now, 0.1);       // C5
-        this.createOsc(523.25, 'square', now + 0.15, 0.1); // C5
-        this.createOsc(523.25, 'square', now + 0.30, 0.1); // C5
-        this.createOsc(659.25, 'square', now + 0.45, 0.4); // E5 (길게)
-    },
-    // 6. 레벨업/퍼펙트 효과음 (띠로리링~)
-    playLevelUp: function () {
-        if (this.isMuted) return;
-        const now = this.ctx.currentTime;
-        this.createOsc(523.25, 'sine', now, 0.1); // 도
-        this.createOsc(659.25, 'sine', now + 0.1, 0.1); // 미
-        this.createOsc(783.99, 'sine', now + 0.2, 0.1); // 솔
-        this.createOsc(1046.50, 'sine', now + 0.3, 0.4); // 높은 도
+        this._play(t => {
+            [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => this._note(f, t + i * 0.1, 0.9, 0.075));
+            [523.25, 659.25, 783.99, 1046.50].forEach(f => this._note(f, t + 0.48, 2.0, 0.05));
+            this._note(2093.0, t + 0.62, 0.9, 0.025, { partials: this._PURE });
+        });
+        this._buzz([20, 40, 20, 40, 50]);
     },
 
-    // 7. 보석 획득 소리 (칭!)
+    // 6. 레벨업/퍼펙트 (도미솔도 빠른 오름)
+    playLevelUp: function () {
+        this._play(t => {
+            [523.25, 659.25, 783.99, 1046.50].forEach((f, i) =>
+                this._note(f, t + i * 0.075, i === 3 ? 0.9 : 0.45, 0.075));
+        });
+        this._buzz(18);
+    },
+
+    // 6-1. 백지레벨 오름 (2026-09-28) — 따뜻한 화음이 천천히 피어나고 위에서 세 번 반짝
+    playBlankLevelUp: function () {
+        this._play(t => {
+            [261.63, 392.00, 523.25, 659.25].forEach(f =>
+                this._note(f, t, 1.6, 0.05, { attack: 0.14, partials: [[1, 1, 1], [2, 0.2, 0.6]] }));
+            [1318.5, 1568.0, 2093.0].forEach((f, i) =>
+                this._note(f, t + 0.22 + i * 0.12, 0.8, 0.04));
+        });
+        this._buzz([15, 30, 15, 30, 60]);
+    },
+
+    // 7. 보석 획득 소리 (찰랑)
     playGetGem: function () {
-        if (this.isMuted) return;
-        this.playTone(1200, 'sine', 0.1, 0.1);
+        this._play(t => {
+            this._note(1318.5, t, 0.3, 0.05);
+            this._note(1975.5, t + 0.05, 0.4, 0.045);
+        });
     },
 
     // 8. 구절 공개 소리 - 인내의 고난 (부드러운 페이지 넘김)
     playReveal: function () {
-        if (this.isMuted || !this._ready()) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        const now = this.ctx.currentTime;
-
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(400, now);
-        osc.frequency.linearRampToValueAtTime(600, now + 0.12);
-
-        gain.gain.setValueAtTime(0.001, now);
-        gain.gain.linearRampToValueAtTime(0.08, now + 0.04);
-        gain.gain.linearRampToValueAtTime(0.001, now + 0.12);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.12);
+        this._play(t => this._note(520, t, 0.18, 0.05, { glideTo: 700, attack: 0.03, partials: this._PURE }));
     },
 
-    // 9. 하트 소모 소리 - 주소/망각의 고난 (둔탁한 충격음)
-    playHeartLoss: function () {
-        if (this.isMuted || !this._ready()) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        const now = this.ctx.currentTime;
-
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(200, now);
-        osc.frequency.exponentialRampToValueAtTime(80, now + 0.25);
-
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.linearRampToValueAtTime(0.001, now + 0.25);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.25);
-    },
-
-    // 10. 힌트 사용 소리 - 망각의 고난 (밝은 동전/벨)
+    // 10. 힌트 사용 소리 - 망각의 고난 (작은 방울)
     playHint: function () {
-        if (this.isMuted) return;
-        const now = this.ctx.currentTime;
-        this.createOsc(900, 'sine', now, 0.08);
-        this.createOsc(1200, 'sine', now + 0.07, 0.12);
+        this._play(t => {
+            this._note(880, t, 0.3, 0.055);
+            this._note(1174.7, t + 0.07, 0.4, 0.055);
+        });
     },
 
-    // 11. 타이핑 소리 - 망각의 고난 (짧은 키보드 클릭, 디바운스 15ms)
+    // 11. 타이핑 소리 - 망각의 고난 (아주 작은 톡, 디바운스 15ms). 🔉에서는 이것만 꺼진다
     _lastKeystrokeTime: 0,
     playKeyStroke: function () {
-        if (this.isMuted || !this._ready()) return;
+        if (this.isMuted || this.keyMuted || !this._ready()) return;
         const now = Date.now();
         if (now - this._lastKeystrokeTime < 15) return;
         this._lastKeystrokeTime = now;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        const t = this.ctx.currentTime;
-
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(1000, t);
-
-        gain.gain.setValueAtTime(0.05, t);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.025);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(t);
-        osc.stop(t + 0.025);
+        this._note(1900, this.ctx.currentTime, 0.022, 0.02, { wave: 'triangle', partials: this._PURE });
     },
 
     // 방패 막기 소리 (퉁! 금속 충격 + 짧은 울림)
     playShield: function () {
-        if (this.isMuted || !this._ready()) return;
-        const t = this.ctx.currentTime;
-
-        // 저음 충격 (둔탁한 방패 타격)
-        const osc1 = this.ctx.createOscillator();
-        const gain1 = this.ctx.createGain();
-        osc1.type = 'triangle';
-        osc1.frequency.setValueAtTime(320, t);
-        osc1.frequency.exponentialRampToValueAtTime(180, t + 0.18);
-        gain1.gain.setValueAtTime(0.22, t);
-        gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
-        osc1.connect(gain1);
-        gain1.connect(this.ctx.destination);
-        osc1.start(t);
-        osc1.stop(t + 0.22);
-
-        // 고음 울림 (금속 반향)
-        const osc2 = this.ctx.createOscillator();
-        const gain2 = this.ctx.createGain();
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(860, t);
-        gain2.gain.setValueAtTime(0.07, t);
-        gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
-        osc2.connect(gain2);
-        gain2.connect(this.ctx.destination);
-        osc2.start(t);
-        osc2.stop(t + 0.18);
+        this._play(t => {
+            this._note(320, t, 0.25, 0.14, { glideTo: 180, wave: 'triangle', partials: this._PURE });
+            this._note(860, t, 0.2, 0.05, { partials: this._PURE });
+        });
     }
 };
 
@@ -7018,6 +7010,7 @@ function renderChapterMap() {
         }
 
         node.innerHTML = `
+            ${_mapBlankRingHtml(chapter)}
             <div class="tree-icon">
                 ${iconChar}
                 ${fruitHTML}
@@ -7714,12 +7707,11 @@ function groupStagesByMidBoss(chData) {
    16장 21절을 11~13회씩 깨고 레벨 5를 찍었는데 백지는 0절인 실제 사례가 이 표시의 계기다.
    → 난이도 모달에만 있던 증거를 **매일 지나는 자리**로 끌어낸다. verseRecall은 모드로 나뉘지 않으므로
      자유여행·왕의 길 어느 쪽에서 써냈든 같은 증거로 센다. */
-function _renderSheetBlankEvidence(chapterData) {
-    const el = document.getElementById('sheet-blank-evidence');
-    if (!el) return;
-    const ids = (chapterData.stages || []).map(s => String(s.id)).filter(id => /^\d+-\d+$/.test(id));
-    if (!ids.length || typeof verseRecall === 'undefined') { el.style.display = 'none'; return; }
+// 장 하나의 백지 증거 집계 — 시트 헤더 한 줄과 지도 고리가 같이 쓴다
+function _chapterBlankStats(chapterData) {
+    const ids = ((chapterData && chapterData.stages) || []).map(s => String(s.id)).filter(id => /^\d+-\d+$/.test(id));
     let blank = 0, typed = 0, top = 0, due = 0;
+    if (typeof verseRecall === 'undefined') return { total: ids.length, blank, typed, top, due, ids };
     const now = Date.now();
     ids.forEach(id => {
         const r = verseRecall[id];
@@ -7729,6 +7721,26 @@ function _renderSheetBlankEvidence(chapterData) {
         if (r.bx === 5) top += 1;
         if (r.bx && r.bxDue && r.bxDue <= now) due += 1;
     });
+    return { total: ids.length, blank, typed, top, due, ids };
+}
+
+// 지도 나무 둘레의 백지 고리 — 백지로 써낸 절의 비율만큼 차오른다 (2026-09-28)
+function _mapBlankRingHtml(chapter) {
+    if (!chapter || chapter.locked) return '';
+    const s = _chapterBlankStats(chapter);
+    if (!s.total) return '';
+    const pct = Math.round(s.blank / s.total * 100);
+    const cls = 'map-blank-ring' + (s.blank >= s.total ? ' all' : '');
+    const tip = `백지로 써낸 절 ${s.blank} / ${s.total}` + (s.due ? ` · 오늘 차례 ${s.due}절` : '');
+    return `<div class="${cls}" style="--p:${pct}" aria-hidden="true"></div>` +
+        (s.blank > 0 ? `<span class="map-blank-count${s.blank >= s.total ? ' all' : ''}${s.due ? ' due' : ''}" title="${tip}">✍️${s.blank}/${s.total}</span>` : '');
+}
+
+function _renderSheetBlankEvidence(chapterData) {
+    const el = document.getElementById('sheet-blank-evidence');
+    if (!el) return;
+    const { ids, blank, typed, top, due } = _chapterBlankStats(chapterData);
+    if (!ids.length || typeof verseRecall === 'undefined') { el.style.display = 'none'; return; }
     const all = blank >= ids.length;
     el.className = 'sheet-blank-evidence' + (all ? ' all-done' : (blank > 0 ? ' partial' : ' none'));
     el.setAttribute('data-tip', '복습 레벨은 「몇 번 복습했나」, 백지레벨은 「간격을 두고 단서 없이 꺼냈나」입니다. 1일·3일·1주·2주·한 달 간격으로 백지로 써낼 때마다 오릅니다');
@@ -12845,13 +12857,16 @@ function closeResultModal(skipSheetReopen) {
 
 // 소리 토글 함수
 function syncSfxButtons() {
-    const icon = SoundEffect.isMuted ? "🔇" : "🔊";
+    const icon = SoundEffect.isMuted ? "🔇" : (SoundEffect.keyMuted ? "🔉" : "🔊");
     document.querySelectorAll('.sfx-toggle-btn').forEach(b => b.innerText = icon);
 }
 
+// 🔊 전부 → 🔉 타자음만 끔 → 🔇 전부 끔 (2026-09-28)
 function toggleSound() {
     SoundEffect.toggleMute();
     syncSfxButtons();
+    const key = SoundEffect.isMuted ? 'sfx_state_off' : (SoundEffect.keyMuted ? 'sfx_state_nokey' : 'sfx_state_on');
+    if (typeof showToast === 'function') showToast(t(key));
 }
 
 // 배경음악 제거됨 - 함수 유지 (버튼 참조 오류 방지)
@@ -21225,7 +21240,7 @@ function renderAchievementList() {
             btnDiv.innerHTML = `<button disabled style="background:#2ecc71; color:white; border:none; padding:8px 12px; border-radius:10px; font-weight:bold; font-size:0.8rem;">${t('achievement_conquered')}</button>`;
         } else if (myValue >= target) {
             // 보상 받기 가능
-            btnDiv.innerHTML = `<button onclick="claimAchievementReward('${key}')" class="btn-pulse" style="background:#e74c3c; color:white; border:none; padding:8px 15px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:0.85rem; box-shadow:0 3px 0 #c0392b;">💎 ${reward}<br>${t('achievement_claim')}</button>`;
+            btnDiv.innerHTML = `<button onclick="claimAchievementReward('${key}')" class="btn-pulse" style="background:#f39c12; color:white; border:none; padding:8px 15px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:0.85rem; box-shadow:0 3px 0 #d68910;">💎 ${reward}<br>${t('achievement_claim')}</button>`;
         } else {
             // 진행 중
             btnDiv.innerHTML = `<button disabled style="background:#ecf0f1; color:#bdc3c7; border:1px solid #bdc3c7; padding:8px 12px; border-radius:10px; font-size:0.8rem;">${t('achievement_in_progress')}</button>`;
@@ -25669,6 +25684,10 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
             }
         }
         if (hardshipState) hardshipState._blankLvNote = _blankLvNoteText(_res, _pts, _quick);
+        // 백지레벨이 오르거나 처음 들어가면 전용 소리 — 정답음이 먼저 울리니 조금 뒤에
+        if (_res && (_res.kind === 'up' || _res.kind === 'enter') && typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) {
+            setTimeout(() => SoundEffect.playBlankLevelUp(), 420);
+        }
     }
 
     // 실시간 암송왕 집계 — 'learn'은 위에서 mode가 바뀌어 자연히 빠진다.
