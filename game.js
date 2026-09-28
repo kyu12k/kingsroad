@@ -538,6 +538,7 @@ const LANG = {
         rv_route_due: '복습 {n}절',
         rv_route_mid: '중간점검 {n}개 ({ranges}절)',
         rv_route_boss: '보스전 한 번 ({total}절)',
+        rv_list_title: '📖 복습할 구절 {n}',
         hardship_repeat_notice: '오늘 이 장을 이미 했어요\n같은 고난 반복은 승점 {pct}%',
         hardship_feedback_correct_scored_today: '정답입니다. {label} · 오늘 이미 받은 승점',
         hardship_feedback_typo_corrected_scored_today: '오타 보정! 오늘 이미 받은 승점 ({n}글자 오타)',
@@ -619,7 +620,7 @@ const LANG = {
         forgotten_empty: '구절을 잊을만 할 때 알려드립니다!',
         forgotten_review_step: '- {step}회차 복습 시점',
         forgotten_overlay_title: '🕑 복습하기 좋은 때',
-        forgotten_overlay_subtitle: '스테이지를 복습해서 <br>기억을 다지세요!',
+        forgotten_overlay_subtitle: '스테이지를 복습해서 기억을 다지세요!',
         forgotten_overlay_close: '닫기',
         forgotten_overlay_hide_today: '오늘은 보지 않기',
 
@@ -1466,6 +1467,7 @@ const LANG = {
         rv_route_due: '{n} reviews',
         rv_route_mid: '{n} checkpoint(s) (v.{ranges})',
         rv_route_boss: 'one boss battle ({total} verses)',
+        rv_list_title: '📖 Verses to review ({n})',
         hardship_repeat_notice: 'You already did this chapter today\nRepeating the same trial pays {pct}%',
         hardship_feedback_correct_scored_today: 'Correct! {label} · Already earned today',
         hardship_feedback_typo_corrected_scored_today: 'Typo corrected! Already earned today ({n} typo(s))',
@@ -1547,7 +1549,7 @@ const LANG = {
         forgotten_empty: "We'll let you know when it's time to review!",
         forgotten_review_step: '- Review #{step}',
         forgotten_overlay_title: '🕑 Good Time to Review',
-        forgotten_overlay_subtitle: 'Revisit these stages<br>to strengthen your memory!',
+        forgotten_overlay_subtitle: 'Revisit these stages to strengthen your memory!',
         forgotten_overlay_close: 'Close',
         forgotten_overlay_hide_today: "Don't show today",
 
@@ -8250,10 +8252,10 @@ function openForgottenStagesOverlay() {
         overlay.id = 'forgotten-stages-overlay';
         overlay.style = 'display:flex; position:fixed; z-index:9999; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.97); color:#f1c40f; flex-direction:column; align-items:center; justify-content:center; font-size:1.2rem; text-align:center;';
         overlay.innerHTML = `
-                <div style="max-width:90vw; font-size:1.1em; line-height:1.7; font-weight:bold; color:#fff; text-shadow:0 2px 8px #222; margin-bottom:30px; flex-shrink: 0;">
-                    ${t('forgotten_overlay_title')}<br><span style="font-size:0.95em; color:#f1c40f;">${t('forgotten_overlay_subtitle')}</span>
+                <div style="max-width:90vw; font-size:1.1em; line-height:1.5; font-weight:bold; color:#fff; text-shadow:0 2px 8px #222; margin-bottom:18px; flex-shrink: 0;">
+                    ${t('forgotten_overlay_title')}<br><span style="font-size:0.72em; font-weight:600; color:#cfd8dc;">${t('forgotten_overlay_subtitle')}</span>
                 </div>
-                <div id="forgotten-stages-list" style="background:rgba(0,0,0,0.3); padding:20px; border-radius:15px; width:90vw; max-width:600px; min-width:220px; margin-bottom:30px; max-height:50vh; overflow-y:auto; flex-shrink: 0;">
+                <div id="forgotten-stages-list" style="background:rgba(0,0,0,0.3); padding:16px; border-radius:15px; width:90vw; max-width:600px; min-width:220px; margin-bottom:22px; max-height:60vh; overflow-y:auto; flex-shrink: 0;">
                 </div>
                 <label style="display:flex; align-items:center; gap:8px; color:#bdc3c7; font-size:0.9rem; margin-bottom:20px; cursor:pointer; flex-shrink: 0;">
                     <input type="checkbox" id="forgotten-hide-today-checkbox" onchange="toggleHideReviewPopupToday(this.checked)" style="width:18px; height:18px; cursor:pointer;">
@@ -8275,11 +8277,12 @@ function openForgottenStagesOverlay() {
         listDiv.innerHTML = headHtml || `<div style="color:#bdc3c7;">${t('forgotten_empty')}</div>`;
         return;
     }
-    listDiv.innerHTML = headHtml;
+    // 구절 목록은 차분한 줄로 — 맨 위 백지 차례만 상자로 강조한다 (2026-09-28)
+    listDiv.innerHTML = headHtml + `<div class="rv-sec">${t('rv_list_title', { n: forgottenList.length })}</div>`;
     for (const item of forgottenList) {
         const btn = document.createElement('button');
-        btn.innerHTML = `<span style="font-weight:bold; color:#f1c40f;">${item.label}</span><span style="color:#bdc3c7; margin-left:8px;">${t('forgotten_review_step', { step: item.step })}</span>`;
-        btn.style = 'display:block; width:100%; background:rgba(241,196,15,0.12); border:1px solid #f1c40f; color:#fff; padding:12px 0; border-radius:12px; margin-bottom:10px; font-size:1.05rem; cursor:pointer; transition:background 0.2s;';
+        btn.className = 'rv-verse-row';
+        btn.innerHTML = `<span class="rv-verse-label">${item.label}</span><span class="rv-verse-step">${t('forgotten_review_step', { step: item.step })}</span><span class="rv-verse-go">›</span>`;
         btn.onclick = function () {
             closeForgottenStagesOverlay();
             openModeSelect(item.stageId);
@@ -8325,7 +8328,7 @@ function _reviewOverlayHeadHtml(forgottenList) {
             : t('rv_route_boss', { total });
         rows.push(`<button class="rv-route-row" onclick="closeForgottenStagesOverlay(); openStageSheetForStageId('${c}-1')"><b>${chLabel(c)}</b> ${t('rv_route_due', { n: vs.length })} → ${how}</button>`);
     });
-    if (rows.length) html += `<div class="rv-head rv-route"><div class="rv-head-title">${t('rv_route_title')}</div>${rows.join('')}</div>`;
+    if (rows.length) html += `<div class="rv-sec">${t('rv_route_title')}</div><div class="rv-route">${rows.join('')}</div>`;
     return html;
 }
 

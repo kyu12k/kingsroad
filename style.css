@@ -358,6 +358,21 @@ button,
             --home-accent-strong-rgb: 52, 152, 219;
             --home-btn-a-rgb: 241, 196, 15;
             --home-btn-b-rgb: 52, 152, 219;
+
+            /* 색의 뜻 (2026-09-28) — 새로 칠할 땐 이 이름을 쓴다. 규칙은 docs/UX-결정기록.md 「색의 뜻」
+               한꺼번에 바꾸지 않고, 고치는 곳부터 조금씩 옮긴다 */
+            --c-action: #27ae60;          /* 누르라는 버튼 */
+            --c-action-edge: #1e8449;
+            --c-voice: #8e44ad;           /* 음성 */
+            --c-voice-edge: #6c3483;
+            --c-reward: #f39c12;          /* 보상 받기 */
+            --c-reward-edge: #d68910;
+            --c-wrong: #e74c3c;           /* 틀림·삭제·되돌리기 어려운 일 (누르라는 버튼엔 쓰지 않는다) */
+            --c-blank: #ffc86b;           /* 백지로 써낸 것(일부) */
+            --c-blank-all: #7ee2a8;       /* 백지로 전부 */
+            --c-due: #ff8a7a;             /* 오늘 차례 (어두운 배경용) */
+            --c-card-dark: #243a5c;       /* 어두운 시트 위 카드 */
+            --c-text-dim: #9fb0c8;        /* 어두운 배경의 보조 글자 */
         }
 
         /* [라이트 모드] — 아래에 색상 변수 오버라이드를 채워주세요 */
@@ -1064,14 +1079,14 @@ body, html {
             position: absolute;
             inset: -8px;
             border-radius: 50%;
-            background: conic-gradient(#ffc86b calc(var(--p) * 1%), rgba(20, 24, 32, 0.45) 0);
+            background: conic-gradient(var(--c-blank) calc(var(--p) * 1%), rgba(20, 24, 32, 0.45) 0);
             -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
                     mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
             pointer-events: none;
             z-index: 0;
         }
         .map-blank-ring.all {
-            background: #7ee2a8;
+            background: var(--c-blank-all);
             filter: drop-shadow(0 0 4px rgba(126, 226, 168, 0.8));
         }
         /* 나무 위쪽 모서리 바깥 — 가운데 위 「마지막 완료」 배지(아래끝 -6px)보다 낮게 두어 겹치지 않는다.
@@ -1092,7 +1107,7 @@ body, html {
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
         }
         .zone-wrapper.right .map-blank-count { left: auto; right: calc(100% - 4px); }
-        .map-blank-count.all { color: #7ee2a8; }
+        .map-blank-count.all { color: var(--c-blank-all); }
         .map-blank-count.due::after {
             /* 오늘 백지 차례가 있으면 빨간 점 */
             content: '';
@@ -1486,7 +1501,7 @@ body, html {
         .word-block:active { transform: translateY(3px); box-shadow: none; }
         .answer-zone .word-block { background-color: var(--primary-color); box-shadow: 0 3px 0 #d35400; }
         /* 누르라는 버튼은 초록, 빨강은 틀림·삭제에만 (2026-09-28) */
-        .btn-attack { width: 100%; padding: 15px; background-color: #27ae60; color: white; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 0 #1e8449; transition: background 0.15s; }
+        .btn-attack { width: 100%; padding: 15px; background-color: var(--c-action); color: white; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 0 var(--c-action-edge); transition: background 0.15s; }
         .btn-attack:active { transform: translateY(4px); box-shadow: none; }
 
         /* Step5 다시하기 버튼 */
@@ -2303,8 +2318,8 @@ body, html {
 }
 
 .hardship-mic-btn {
-    background-color: #8e44ad;   /* 음성은 보라 — 1단계 음성인식 버튼과 같은 색 */
-    box-shadow: 0 4px 0 #6c3483;
+    background-color: var(--c-voice);   /* 음성은 보라 — 1단계 음성인식 버튼과 같은 색 */
+    box-shadow: 0 4px 0 var(--c-voice-edge);
     font-size: 1.05rem;
     letter-spacing: 0.02em;
 }
@@ -6719,7 +6734,6 @@ body, html {
 /* 복습 목록 맨 위 — 백지 차례 · 복습을 한 번에 */
 .rv-head { text-align: left; border-radius: 12px; padding: 11px 12px; margin-bottom: 12px; }
 .rv-head.rv-blank { background: rgba(155,89,182,0.18); border: 1px solid rgba(187,143,206,0.55); }
-.rv-head.rv-route { background: rgba(46,204,113,0.12); border: 1px solid rgba(46,204,113,0.45); }
 .rv-head-title { font-size: 0.95rem; font-weight: 800; color: #fff; margin-bottom: 8px; }
 .rv-head-sub { font-size: 0.78rem; color: #cfd8dc; margin-top: 8px; line-height: 1.5; font-weight: 500; }
 .rv-chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -6727,9 +6741,83 @@ body, html {
     background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.35); color: #fff;
     border-radius: 999px; padding: 6px 12px; font-size: 0.88rem; font-weight: 700; cursor: pointer;
 }
+.rv-route { margin-bottom: 14px; }
 .rv-route-row {
     display: block; width: 100%; text-align: left;
-    background: rgba(0,0,0,0.18); border: 1px solid rgba(46,204,113,0.35); color: #eafaf1;
+    background: rgba(46,204,113,0.1); border: none; color: #eafaf1;
     border-radius: 10px; padding: 9px 11px; margin-top: 6px; font-size: 0.88rem; line-height: 1.45; cursor: pointer;
 }
 .rv-route-row b { color: #7ee2a8; }
+
+/* 구역 이름 — 상자 대신 작은 제목으로 나눈다 (맨 위 백지 차례만 상자) */
+.rv-sec { text-align: left; font-size: 0.8rem; font-weight: 800; color: var(--c-text-dim); letter-spacing: 0.02em; margin: 4px 2px 2px; }
+/* 복습할 구절 줄 — 예전엔 줄마다 노란 테 상자라 모두가 똑같이 소리쳤다 */
+.rv-verse-row {
+    display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+    background: rgba(255,255,255,0.06); border: none; color: #fff;
+    padding: 11px 12px; border-radius: 10px; margin-top: 6px; font-size: 1rem; cursor: pointer;
+}
+.rv-verse-row:active { background: rgba(255,255,255,0.12); }
+.rv-verse-label { font-weight: 800; color: #f1c40f; }
+.rv-verse-step { color: #aab7c4; font-size: 0.88rem; flex: 1; }
+.rv-verse-go { color: #7d8fa9; font-size: 1.2rem; line-height: 1; }
+
+/* ─── 스테이지 시트 목록을 어두운 시트에 맞춘다 (2026-09-28) ─────────────────
+   흰 카드·옅은 회색 그룹 머리가 어두운 네이비 시트(--bg-panel #1c2e4a) 위에서 혼자 튀었다.
+   시트 안(#stage-list-area)에만 적용 — 같은 부품이 다른 곳(밝은 배경)에서도 쓰이므로 범위를 좁힌다.
+   색 뜻은 그대로: 오늘 완료 = 금, 보스 = 붉은 용, 잊혀감 = 보라, 백지레벨 = 단계별 색 */
+#stage-list-area .stage-group { border-bottom: 1px solid rgba(255,255,255,0.06); }
+#stage-list-area .stage-group-header { background: #22375a; }
+#stage-list-area .stage-group-header:hover { background: #28406a; }
+#stage-list-area .stage-group-range { color: #e6eef8; }
+#stage-list-area .stage-group-subtitle { color: var(--c-text-dim); }
+#stage-list-area .stage-group-arrow { color: #7d8fa9; }
+
+#stage-list-area .stage-item {
+    background: var(--c-card-dark);
+    border: 1px solid rgba(255,255,255,0.07);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+#stage-list-area .stage-info { color: #e6eef8; }
+#stage-list-area .stage-desc { color: #a9b8cc; }
+#stage-list-area .stage-icon { background: #34496d; }
+
+#stage-list-area .stage-item.boss {
+    background: linear-gradient(135deg, #3d2436 0%, #2b2a44 100%);
+    border: 2px solid #e74c3c;
+}
+#stage-list-area .stage-item.today-clear {
+    background: linear-gradient(to right, #243a5c, #3b3a2a);
+    box-shadow: 0 0 14px rgba(241,196,15,0.28);
+}
+#stage-list-area .stage-item.forgotten-clear {
+    background: linear-gradient(135deg, #243a5c 0%, #372c55 100%);
+}
+#stage-list-area .live-timer { background: rgba(231,76,60,0.15) !important; }
+
+/* 복습 단계 줄 */
+#stage-list-area .review-dot.done    { background: rgba(46,204,113,0.16); color: #7ee2a8; opacity: 0.75; }
+#stage-list-area .review-dot.current { background: rgba(241,196,15,0.18); color: #ffd866; border-color: #f1c40f; }
+#stage-list-area .review-dot.future  { background: rgba(255,255,255,0.06); color: #8595ad; }
+#stage-list-area .review-dot-sep { color: #6c7d96; }
+#stage-list-area .review-timer { color: var(--c-due); }
+#stage-list-area .review-ready { color: #5fd68f; }
+
+/* 기억 강도 막대 */
+#stage-list-area .mem-strength-label { color: #9fb0c8; }
+#stage-list-area .mem-strength-pct { color: #e6eef8; }
+#stage-list-area .mem-strength-track { background: rgba(255,255,255,0.1); }
+
+/* 백지레벨 배지 — 밝은 배경용 진한 글자를 어두운 배경용 밝은 글자로 */
+#stage-list-area .blank-lv-badge.lv0 { color: #b9b0c9; }
+#stage-list-area .blank-lv-badge.lv1 { color: #f0a36b; }
+#stage-list-area .blank-lv-badge.lv2 { color: #f4d35e; }
+#stage-list-area .blank-lv-badge.lv3 { color: #7ee2a8; }
+#stage-list-area .blank-lv-badge.lv4 { color: #7cc4f0; }
+#stage-list-area .blank-lv-badge.lv5 { color: #d3a8f0; }
+#stage-list-area .blank-lv-badge.due b { color: #ff8a7a; }
+#stage-list-area .stage-item.boss .stage-icon { background: #e74c3c; }
+
+/* 설치 안내 띠는 홈 화면에서만 (2026-09-28) — 지도에선 하단 메뉴·「알림 설정」「복습 타이밍」을 덮었고,
+   z-index 999999라 복습 창·시트 위에도 떴다. 이제 1400(시트 1500·창 9999 아래)이고 홈이 아니면 숨긴다 */
+body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !important; }

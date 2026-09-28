@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <!-- ★ 반드시 첫 스크립트: 전역 Date를 서버 시각으로 보정한다 (clock.js 주석 참조) -->
-    <script src="clock.js?v=20260928j"></script>
+    <script src="clock.js?v=20260928k"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>King's Road - 요한계시록 암송</title>
 
@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
     <!-- image_0.webp is inlined below; preload removed -->
-    <link rel="stylesheet" href="style.css?v=20260928j">
+    <link rel="stylesheet" href="style.css?v=20260928k">
 
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-TEVW49QB45"></script>
@@ -40,11 +40,15 @@
 
         // PWA 설치 배너
         let _pwaPrompt = null;
+        // ✕로 닫으면 7일 동안 다시 띄우지 않는다 (2026-09-28 — 전엔 앱을 열 때마다 다시 떴다)
+        const PWA_BANNER_SNOOZE_MS = 7 * 24 * 3600 * 1000;
         window.addEventListener('beforeinstallprompt', e => {
             e.preventDefault();
             _pwaPrompt = e;
+            let snoozed = false;
+            try { snoozed = Date.now() - parseInt(localStorage.getItem('kingsRoad_pwaBannerDismissedAt') || '0', 10) < PWA_BANNER_SNOOZE_MS; } catch (err) { }
             const banner = document.getElementById('pwa-install-banner');
-            if (banner) banner.style.display = 'flex';
+            if (banner && !snoozed) banner.style.display = 'flex';
         });
         window.addEventListener('appinstalled', () => {
             const banner = document.getElementById('pwa-install-banner');
@@ -59,13 +63,14 @@
         }
         function dismissPwaBanner() {
             document.getElementById('pwa-install-banner').style.display = 'none';
+            try { localStorage.setItem('kingsRoad_pwaBannerDismissedAt', String(Date.now())); } catch (err) { }
         }
     </script>
 </head>
 
 <body>
     <!-- PWA 설치 배너 (Android Chrome) -->
-    <div id="pwa-install-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:999999; background:#1e2d45; border-top:2px solid #f1c40f; padding:14px 16px; align-items:center; gap:12px; box-shadow:0 -4px 20px rgba(0,0,0,0.5);">
+    <div id="pwa-install-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:1400; background:#1e2d45; border-top:2px solid #f1c40f; padding:14px 16px; align-items:center; gap:12px; box-shadow:0 -4px 20px rgba(0,0,0,0.5);">
         <img src="icon-192.png" style="width:44px; height:44px; border-radius:10px; flex-shrink:0;">
         <div style="flex:1; color:#fff; font-family:'Gowun Dodum',sans-serif;">
             <div style="font-size:14px; font-weight:bold;">킹스로드 앱으로 설치하기</div>
@@ -3268,7 +3273,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="bible_en.js"></script>
-    <script src="game.js?v=20260928j"></script>
+    <script src="game.js?v=20260928k"></script>
     <script>
 
         /* =========================================
