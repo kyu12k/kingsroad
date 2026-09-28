@@ -132,5 +132,20 @@ service cloud.firestore {
       allow read: if request.auth != null && request.auth.uid == userId;
       allow write: if false;
     }
+
+    // 암송 일지 (2026-09-28) — 백지·빈칸·음성 시도 하나하나. 기억 연구 재료.
+    // 본인 uid 아래에만 쓰고, 읽기는 관리자(admin SDK)만. 지우기 금지.
+    // 필드를 셋으로 못박고 하루 문서 크기를 제한한다(문서 한도 1MB, 시도 1건 ≈ 250B)
+    match /recall_log/{uid} {
+      allow read, write: if false;
+      match /days/{day} {
+        allow read, delete: if false;
+        allow create, update: if request.auth != null
+                              && request.auth.uid == uid
+                              && request.resource.data.keys().hasOnly(['tag', 'attempts', 'updatedAt'])
+                              && request.resource.data.attempts is list
+                              && request.resource.data.attempts.size() <= 3000;
+      }
+    }
   }
 }

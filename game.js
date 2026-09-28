@@ -10080,6 +10080,7 @@ async function initFirestoreSync() {
         await _initFirestoreSyncCore();
     } finally {
         try { await ensureTagAssigned(); } catch (e) { /* 조용히 */ }
+        try { _flushRecallLog(); } catch (e) {}   // 지난번에 못 올린 일지
         // 어드민 보상이 적용됐으면 알린다 — 조용히 늘어나면 "젬이 왜 늘었지"가 된다
         try {
             const raw = localStorage.getItem('kingsRoad_pendingCompToast');
@@ -23863,6 +23864,7 @@ function loadNextHardshipVerse() {
     const nextVerseId = hardshipState.queue[hardshipState.cursor];
     hardshipState.cursor += 1;
     hardshipState.currentVerse = HARDSHIP_VERSE_MAP[nextVerseId] || null;
+    hardshipState.verseStartedAt = Date.now();   // 일지(recall_log)의 구절당 소요 시간
     hardshipState.feedback = null;
     hardshipState.locked = false;
     hardshipState.awaitingNext = false;
@@ -24272,7 +24274,7 @@ function confirmHardshipEnduranceVerse() {
     resumeHardshipTimer();
     const score = hardshipState.currentVerseScore ?? 0;
     // 음성 암송도 단서 없는 산출이므로 기록한다. 힌트 개념이 없어 0.
-    recordVerseRecall(_currentHardshipStageId(), score >= ENDURANCE_PASS_SCORE, 0, 'endurance');
+    recordVerseRecall(_currentHardshipStageId(), score >= ENDURANCE_PASS_SCORE, 0, 'endurance', { score });
     hardshipState.speechScores.push(score);
     hardshipState.studiedCount += 1;
 
@@ -24787,7 +24789,7 @@ function giveUpHardshipMemoryVerse() {
     pauseHardshipTimer();
     hardshipState.answeredCount += 1;
 
-    recordVerseRecall(_currentHardshipStageId(), false, (hardshipState.revealedHints || []).length, 'memory');
+    recordVerseRecall(_currentHardshipStageId(), false, (hardshipState.revealedHints || []).length, 'memory', { giveUp: true });
     wrongCount += 1;
     hardshipState.feedback = {
         type: 'error',
@@ -25272,10 +25274,13 @@ function _hardshipRecallCtx() {
     return 'hs';
 }
 
-function recordVerseRecall(stageId, ok, hints, mode) {
+function recordVerseRecall(stageId, ok, hints, mode, extra) {
     if (!stageId) return;
-    // 집중 훈련은 학습 보조라 증거로 세지 않는다
-    if (hardshipState && hardshipState.trainingMode) return;
+    // 집중 훈련은 학습 보조라 증거로 세지 않는다 — 일지에는 표시(tr)를 달아 남긴다(연구 재료)
+    if (hardshipState && hardshipState.trainingMode) {
+        _logRecallAttempt(stageId, ok, hints, mode, extra, verseRecall[stageId] || null, true);
+        return;
+    }
 
     // ★ 초학습 직후 확인은 증거 가치가 낮다 — 방금 다섯 단계에 걸쳐 본 구절이라 통과가 당연하다.
     // 버리지는 않고 표시만 달리해, 나중에 분석에서 가려낼 수 있게 한다.
@@ -25283,6 +25288,9 @@ function recordVerseRecall(stageId, ok, hints, mode) {
 
     const now = Date.now();
     const r = verseRecall[stageId] || { pass: 0, typedPass: 0, fail: 0, firstPass: 0, lastPass: 0, lastAt: 0, lastOk: false, hints: 0, lastHints: 0, lastMode: '' };
+    // 일지는 '이번 시도 직전' 상태가 필요하다 (직전 백지 성공으로부터 며칠 — 주기 연구의 핵심)
+    const _prev = { lastPass: r.lastPass || 0, lastAt: r.lastAt || 0, lastBlankPass: r.lastBlankPass || 0,
+                    blankPass: r.blankPass || 0, typedPass: r.typedPass || 0, fail: r.fail || 0 };
     if (ok) {
         r.pass += 1;
         if (!r.firstPass) r.firstPass = now;
@@ -25296,7 +25304,7 @@ function recordVerseRecall(stageId, ok, hints, mode) {
         if (mode === 'memory') {
             // ★ 진짜 백지(칸 없음) 통과는 따로 — typedPass는 빈칸(글자 칸)까지 포함한다.
             //   '백지'를 요구하는 자리(백지 ⭐·시험 준비됨 🏆)는 blankPass를 본다 (2026-09-18)
-            if (hardshipState && hardshipState.ultimateMemoryMode) r.blankPass = (r.blankPass || 0) + 1;
+            if (hardshipState && hardshipState.ultimateMemoryMode) { r.blankPass = (r.blankPass || 0) + 1; r.lastBlankPass = now; }
             if (!r.typedPass) {
                 // 첫 통과 보너스 — 아직 안 써본 구절로 끌어당긴다 (구절당 평생 1회)
                 if (typeof addGems === 'function') {
@@ -25354,7 +25362,89 @@ function recordVerseRecall(stageId, ok, hints, mode) {
     }
 
     verseRecall[stageId] = r;
+    _logRecallAttempt(stageId, ok, hints, mode, extra, _prev, false);
 }
+
+/* ── 암송 일지 (`recall_log`, 2026-09-28) ──────────────────────────────────────
+   킹스로드는 '계시록 404절 전문 암송'에 관한 기억 실험이기도 하다. verseRecall은 **요약본**(첫·마지막 성공, 횟수)이라
+   "백지로 써내고 며칠 뒤까지 다시 나오나"를 계산할 수 없다 → **시도 하나하나를 그대로** 남긴다.
+   이걸로 백지 축의 상자 간격(내일·3일·1주·2주·한 달)을 한 달 뒤 데이터로 고친다.
+   ★ 저장본(saves)에 넣지 않는다 — 동기화 사고 이력이 있는 문서라 무거워지면 안 된다. 별도 컬렉션에 쌓는다:
+     recall_log/{uid}/days/{6시키} = { tag, attempts: [...] }  (본인만 쓰기, 읽기는 관리자만 — firestore.rules)
+   ★ 전송 실패·오프라인에도 잃지 않게 localStorage에 버퍼를 두고, 세션이 끝날 때·화면을 벗어날 때·부팅 뒤에 올린다.
+   필드는 짧은 키로 (하루 수백 건이 한 문서에 쌓인다):
+     v 구절 · t 시각 · ok 성공 · g 「모르겠어요」 · h 힌트 수 · f 첫 힌트 위치 · L 글자 수 · w 틀린 글자 · d 구절 소요(ms)
+     m 모드(memory/learn/endurance) · u 백지(1)/빈칸(0) · c 출처(hs/boss/mid/vc/quick/event) · o 무작위(1) · p 세션 안 순번 · n 세션 크기
+     s 음성 점수 · rs 복습 스텝 · am 모드(k 왕의 길/f 자유) · ms 기억 강도 · tr 집중 훈련
+     lp/la/lb 직전 성공·시도·백지성공 시각 · bp/tp/fl 직전 백지·빈칸 통과·실패 횟수 · ev 이벤트 id · sv 스키마 */
+const RECALL_LOG_KEY = 'kingsRoad_recallLogBuf';
+const RECALL_LOG_MAX = 2000;           // 버퍼 상한 — 오래 못 올려도 localStorage가 넘치지 않게
+let _recallLogFlushing = false;
+function _readRecallLogBuf() {
+    try { const a = JSON.parse(localStorage.getItem(RECALL_LOG_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+}
+function _writeRecallLogBuf(a) {
+    try { localStorage.setItem(RECALL_LOG_KEY, JSON.stringify(a.slice(-RECALL_LOG_MAX))); } catch (e) {}
+}
+function _logRecallAttempt(stageId, ok, hints, mode, extra, prev, training) {
+    try {
+        const hs = (typeof hardshipState !== 'undefined' && hardshipState) ? hardshipState : {};
+        const now = Date.now();
+        const txt = (hs.currentVerse && typeof getHardshipActiveText === 'function') ? (getHardshipActiveText(hs.currentVerse) || '') : '';
+        const rev = hs.revealedHints || [];
+        const e = {
+            sv: 1, v: String(stageId), t: now, ok: ok ? 1 : 0, h: hints || 0,
+            f: rev.length ? rev[0] : -1, L: txt.length, w: (hs.wrongSlots || []).length,
+            d: hs.verseStartedAt ? Math.max(0, now - hs.verseStartedAt) : null,
+            m: mode || '', u: hs.ultimateMemoryMode ? 1 : 0,
+            c: (typeof _hardshipRecallCtx === 'function') ? _hardshipRecallCtx() : '',
+            o: hs.isRandomOrder ? 1 : 0, p: hs.cursor || 0, n: (hs.queue || []).length,
+            rs: (typeof stageReviewStep !== 'undefined' && stageReviewStep) ? (stageReviewStep[stageId] || 0) : null,
+            am: (typeof activeMode !== 'undefined' && activeMode === 'kings') ? 'k' : 'f',
+            ms: (typeof getMemoryStrength === 'function') ? Math.round((getMemoryStrength(stageId) || 0) * 1000) / 1000 : null
+        };
+        if (extra && extra.giveUp) e.g = 1;
+        if (extra && typeof extra.score === 'number') e.s = extra.score;
+        if (hs.eventId) e.ev = String(hs.eventId);
+        if (training) e.tr = 1;
+        if (prev) {
+            e.lp = prev.lastPass || 0; e.la = prev.lastAt || 0; e.lb = prev.lastBlankPass || 0;
+            e.bp = prev.blankPass || 0; e.tp = prev.typedPass || 0; e.fl = prev.fail || 0;
+        }
+        const buf = _readRecallLogBuf();
+        buf.push(e);
+        _writeRecallLogBuf(buf);
+    } catch (err) { /* 일지는 부가 기능 — 어떤 경우에도 암송을 막지 않는다 */ }
+}
+async function _flushRecallLog() {
+    if (_recallLogFlushing) return;
+    if (typeof db === 'undefined' || !db || typeof auth === 'undefined' || !auth || !auth.currentUser) return;
+    const buf = _readRecallLogBuf();
+    if (!buf.length) return;
+    _recallLogFlushing = true;
+    try {
+        const uid = auth.currentUser.uid;
+        const byDay = {};
+        buf.forEach(e => { const k = _tsTo6AMDateStr(e.t); (byDay[k] = byDay[k] || []).push(e); });
+        const sent = new Set();
+        for (const day of Object.keys(byDay)) {
+            const list = byDay[day];
+            await db.collection('recall_log').doc(uid).collection('days').doc(day).set({
+                tag: String(myTag || ''),
+                attempts: firebase.firestore.FieldValue.arrayUnion(...list),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            list.forEach(e => sent.add(e.t + '|' + e.v));
+        }
+        // 올리는 사이 새로 쌓인 것은 남긴다
+        _writeRecallLogBuf(_readRecallLogBuf().filter(e => !sent.has(e.t + '|' + e.v)));
+    } catch (err) {
+        console.warn('[recall_log] 전송 실패 — 버퍼에 남겨 다음에 다시', err && (err.code || err.message));
+    } finally {
+        _recallLogFlushing = false;
+    }
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') _flushRecallLog(); });
 
 /* 백지 인출 승점 배율 — 분량과 위험이 다르면 보상도 달라야 한다.
    망각의 고난: 한 장(최대 29절)을 무작위로, 체력이 이어진 채로 끝까지  → 1.0
@@ -25567,6 +25657,7 @@ function submitHardshipMemoryGuess() {
 }
 
 function finishHardshipSession(reason) {
+    setTimeout(() => { if (typeof _flushRecallLog === 'function') _flushRecallLog(); }, 1500);
     // 세션이 끝났으므로 이어하기 기록은 버린다 (끝난 세션을 되살리면 안 된다)
     _clearHardshipCheckpoint();
     // 실시간 암송왕 — 점수 제출은 평소 화면을 벗어날 때만 돌아서, 세션이 끝날 때 한 번 올린다
