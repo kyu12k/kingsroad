@@ -6824,3 +6824,19 @@ body, html {
 /* 설치 안내 띠는 홈 화면에서만 (2026-09-28) — 지도에선 하단 메뉴·「알림 설정」「복습 타이밍」을 덮었고,
    z-index 999999라 복습 창·시트 위에도 떴다. 이제 1400(시트 1500·창 9999 아래)이고 홈이 아니면 숨긴다 */
 body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !important; }
+
+/* 촬영 배경 견본 줄 (2026-09-28) — 가로로 넘겨 고른다 */
+.cam-bg-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.cam-bg-row::-webkit-scrollbar { display: none; }
+.cam-bg-sw {
+    flex: 0 0 auto; width: 58px; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    background: none; border: none; padding: 0; cursor: pointer; color: #ccc;
+}
+.cam-bg-sw img, .cam-bg-face {
+    width: 48px; height: 64px; border-radius: 10px; object-fit: cover; display: flex; align-items: center; justify-content: center;
+    border: 2px solid rgba(255,255,255,0.25); background: #2a2f3a; font-size: 1.4rem; box-sizing: border-box;
+}
+.cam-bg-blur { filter: blur(2px); background: linear-gradient(135deg, #556, #889); }
+.cam-bg-name { font-size: 0.68rem; font-weight: 700; white-space: nowrap; }
+.cam-bg-sw.on img, .cam-bg-sw.on .cam-bg-face { border-color: #f1c40f; box-shadow: 0 0 0 2px rgba(241,196,15,0.35); }
+.cam-bg-sw.on .cam-bg-name { color: #f1c40f; }

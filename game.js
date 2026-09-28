@@ -765,6 +765,8 @@ const LANG = {
         daily_cam_locked: '먼저 오늘 구절을 백지로 써내면 촬영이 열려요',
         daily_cam_title: '암송 촬영',
         daily_cam_hint: '눈을 감고 외우세요. 막히면 위의 구절을 보면 돼요.',
+        daily_cam_bg_loading: '배경 준비 중… 처음 한 번 약 6MB를 받아요',
+        daily_cam_bg_fail: '배경 기능을 불러오지 못했어요. 원본으로 찍어요',
         daily_cam_start: '● 녹화',
         daily_cam_stop: '■ 정지',
         daily_cam_retake: '다시 찍기',
@@ -1693,6 +1695,8 @@ const LANG = {
         daily_cam_locked: 'Write today\'s verses from a blank page first to unlock recording',
         daily_cam_title: 'Record recitation',
         daily_cam_hint: 'Close your eyes and recite. Peek at the verses above if you get stuck.',
+        daily_cam_bg_loading: 'Preparing background… about 6MB, first time only',
+        daily_cam_bg_fail: 'Could not load backgrounds. Recording the original',
         daily_cam_start: '● Record',
         daily_cam_stop: '■ Stop',
         daily_cam_retake: 'Retake',
@@ -15936,7 +15940,7 @@ function _camEnabled() {
 let _cam = { stream: null, rec: null, chunks: [], blob: null, mime: '', timer: null, startedAt: 0, wake: null, raf: 0, canvas: null, ctx: null, video: null, verses: [], label: '' };
 const CAM_PREFS_KEY = 'kingsRoad_camPrefs';
 function _camPrefs() {
-    let p = { frame: true, soft: false, font: 20 };
+    let p = { frame: true, soft: false, font: 20, bg: 'none' };
     try { Object.assign(p, JSON.parse(localStorage.getItem(CAM_PREFS_KEY) || '{}')); } catch (e) {}
     return p;
 }
@@ -15986,6 +15990,7 @@ async function openDailyRecorder() {
             <button class="cam-opt" id="cam-opt-soft" onclick="_camSetPref('soft', !_camPrefs().soft)">✨ 보정</button>
             <span class="cam-font"><button onclick="_camFont(-2)">A−</button><button onclick="_camFont(2)">A+</button></span>
         </div>
+        <div class="cam-bg-row" id="cam-bg-row">${_camBgSwatchesHtml()}</div>
         <div class="cam-status" id="cam-status">${t('daily_cam_preparing')}</div>
         <div class="cam-controls" id="cam-controls">
             <button class="cam-btn cam-close" onclick="closeDailyRecorder()">${t('daily_cam_close')}</button>
@@ -16005,6 +16010,7 @@ async function openDailyRecorder() {
     _camApplyPrefUI();
     document.getElementById('cam-status').textContent = t('daily_cam_hint');
     document.getElementById('cam-rec-btn').disabled = false;
+    if (prefs.bg && prefs.bg !== 'none') _camPickBg(prefs.bg);   // 지난번 고른 배경 — 모델을 다시 준비
     try { if (navigator.wakeLock) _cam.wake = await navigator.wakeLock.request('screen'); } catch (e) {}
 }
 /* 카메라·마이크 켜기 + 캔버스 그리기 시작. 실패하면 안내하고 닫는다 */
@@ -16037,6 +16043,7 @@ function _camApplyPrefUI() {
     const f = document.getElementById('cam-opt-frame'), s = document.getElementById('cam-opt-soft');
     if (f) f.classList.toggle('on', !!p.frame);
     if (s) s.classList.toggle('on', !!p.soft);
+    document.querySelectorAll('.cam-bg-sw').forEach(b => b.classList.toggle('on', b.dataset.bg === (p.bg || 'none')));
     // 액자를 켜면 구절이 영상 안에 박히므로 화면 위 큐카드는 숨긴다 (겹치면 두 번 보인다)
     const card = document.getElementById('cam-card');
     if (card) { card.style.display = p.frame ? 'none' : ''; card.style.fontSize = p.font + 'px'; }
@@ -16059,6 +16066,193 @@ function _camWrapText(ctx, text, x, y, maxW, lineH, maxLines) {
     if (line.trim()) { ctx.fillText(line.trim(), x, y + n * lineH); n++; }
     return n;
 }
+/* ── 촬영 배경 바꾸기 (2026-09-28) ─────────────────────────────────────────────
+   MediaPipe 인물 분리(selfie_segmentation, 구글 공개 모델)로 사람만 오려 배경 위에 얹는다. 영상은 폰 안에서만 처리된다.
+   모델(약 6MB)은 배경을 처음 고를 때만 jsdelivr에서 받는다. 실패하면 원본으로 돌아간다.
+   흐림은 ctx.filter 대신 '작게 줄였다 키우기' — 아이폰 사파리는 캔버스 filter가 없고, 이쪽이 더 가볍다.
+   단색·그림 배경은 코드로 그린다(파일 없음). 액자를 켜면 위아래 띠가 덮으므로 그림의 볼거리는 가운데(머리 뒤)에 모았다 */
+const CAM_SEG_BASE = 'https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1.1675465747/';
+const CAM_BG_LIST = [
+    { id: 'none',    ko: '원본',      en: 'Original' },
+    { id: 'blur',    ko: '흐림',      en: 'Blur' },
+    { id: 'navy',    ko: '밤하늘',    en: 'Night' },
+    { id: 'dawn',    ko: '새벽빛',    en: 'Dawn' },
+    { id: 'white',   ko: '흰빛',      en: 'Light' },
+    { id: 'glass',   ko: '유리 바다', en: 'Sea of glass', ref: '계 4:6' },
+    { id: 'door',    ko: '열린 문',   en: 'Open door',    ref: '계 4:1' },
+    { id: 'rainbow', ko: '무지개',    en: 'Rainbow',      ref: '계 4:3' },
+];
+let _camSeg = { inst: null, loading: null, mask: null, busy: false, person: null, small: null, bgCache: {} };
+
+function _camSegLoad() {
+    if (_camSeg.inst) return Promise.resolve(_camSeg.inst);
+    if (_camSeg.loading) return _camSeg.loading;
+    _camSeg.loading = new Promise((res, rej) => {
+        if (typeof SelfieSegmentation !== 'undefined') return res();
+        const s = document.createElement('script');
+        s.src = CAM_SEG_BASE + 'selfie_segmentation.js';
+        s.crossOrigin = 'anonymous';
+        s.onload = () => res(); s.onerror = () => rej(new Error('script'));
+        document.head.appendChild(s);
+    }).then(async () => {
+        const seg = new SelfieSegmentation({ locateFile: f => CAM_SEG_BASE + f });
+        seg.setOptions({ modelSelection: 1 });   // 1 = 가로형(가벼움) — 폰에서 프레임을 덜 먹는다
+        seg.onResults(r => { _camSeg.mask = r.segmentationMask; _camSeg.busy = false; });
+        await seg.initialize();
+        _camSeg.inst = seg;
+        return seg;
+    }).catch(e => { _camSeg.loading = null; throw e; });
+    return _camSeg.loading;
+}
+
+/* 배경을 고르면 모델부터 준비. 준비 중엔 원본이 보이고, 실패하면 원본으로 되돌린다 */
+function _camPickBg(id) {
+    _camSetPref('bg', id);
+    if (id === 'none') return;
+    const st = document.getElementById('cam-status');
+    if (_camSeg.inst) return;
+    if (st) st.textContent = t('daily_cam_bg_loading');
+    _camSegLoad().then(() => {
+        const s2 = document.getElementById('cam-status');
+        if (s2 && !(_cam.rec && _cam.rec.state === 'recording')) s2.textContent = t('daily_cam_hint');
+    }).catch(e => {
+        console.warn('[cam] segmentation load failed', e);
+        showGemToast(0, t('daily_cam_bg_fail'), true);
+        _camSetPref('bg', 'none');
+        const s2 = document.getElementById('cam-status'); if (s2) s2.textContent = t('daily_cam_hint');
+    });
+}
+
+/* 배경 견본 — 그림·단색은 작은 캔버스로 미리보기, 원본·흐림은 글자 */
+function _camBgSwatchesHtml() {
+    const cur = _camPrefs().bg || 'none';
+    return CAM_BG_LIST.map(b => {
+        let face = '';
+        if (b.id === 'none') face = '<span class="cam-bg-face">🙂</span>';
+        else if (b.id === 'blur') face = '<span class="cam-bg-face cam-bg-blur">🙂</span>';
+        else { try { face = `<img alt="" src="${_camBgCanvas(b.id, 60, 80).toDataURL('image/jpeg', 0.8)}">`; } catch (e) {} }
+        const name = currentLang === 'en' ? b.en : b.ko;
+        return `<button class="cam-bg-sw${b.id === cur ? ' on' : ''}" data-bg="${b.id}" onclick="_camPickBg('${b.id}')" title="${b.ref || ''}">${face}<span class="cam-bg-name">${name}</span></button>`;
+    }).join('');
+}
+
+/* 결정적 난수 — 별·물결 위치가 매번 같게 */
+function _camRand(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+/* 단색·그림 배경을 w×h 캔버스로 그린다 (크기별로 한 번만) */
+function _camBgCanvas(id, w, h) {
+    const key = `${id}:${w}x${h}`;
+    if (_camSeg.bgCache[key]) return _camSeg.bgCache[key];
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const g = c.getContext('2d');
+    const M = Math.min(w, h), cx = w / 2;
+    const lin = (stops, y0 = 0, y1 = h) => { const gr = g.createLinearGradient(0, y0, 0, y1); stops.forEach(([o, col]) => gr.addColorStop(o, col)); return gr; };
+    const rad = (x, y, r0, r1, stops) => { const gr = g.createRadialGradient(x, y, r0, x, y, r1); stops.forEach(([o, col]) => gr.addColorStop(o, col)); return gr; };
+    const rnd = _camRand(id.length * 7919 + w + h);
+    if (id === 'navy') {
+        g.fillStyle = lin([[0, '#070d1f'], [0.55, '#15264a'], [1, '#243b66']]); g.fillRect(0, 0, w, h);
+        for (let i = 0; i < 90; i++) {   // 옅은 별
+            const x = rnd() * w, y = rnd() * h * 0.7, r = (0.4 + rnd() * 1.4) * M / 720;
+            g.fillStyle = `rgba(255,255,255,${0.25 + rnd() * 0.5})`; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+        }
+        g.fillStyle = rad(cx, h * 0.3, 0, M * 0.7, [[0, 'rgba(120,150,220,0.25)'], [1, 'rgba(120,150,220,0)']]); g.fillRect(0, 0, w, h);
+    } else if (id === 'dawn') {
+        g.fillStyle = lin([[0, '#fbe3b6'], [0.5, '#f2b880'], [1, '#c8795a']]); g.fillRect(0, 0, w, h);
+        g.fillStyle = rad(cx, h * 0.28, 0, M * 0.8, [[0, 'rgba(255,250,235,0.95)'], [0.35, 'rgba(255,236,190,0.5)'], [1, 'rgba(255,220,170,0)']]); g.fillRect(0, 0, w, h);
+    } else if (id === 'white') {
+        g.fillStyle = lin([[0, '#f7f9fc'], [1, '#d5dde8']]); g.fillRect(0, 0, w, h);
+        g.fillStyle = rad(cx, h * 0.3, 0, M * 0.75, [[0, 'rgba(255,255,255,1)'], [1, 'rgba(255,255,255,0)']]); g.fillRect(0, 0, w, h);
+    } else if (id === 'glass') {
+        // 계 4:6 「보좌 앞에 수정과 같은 유리 바다」 — 하늘 · 수평선의 빛 · 반짝이는 바다
+        const hz = h * 0.4;   // 액자 띠 사이(대략 위 6%~아래 50%)에 하늘과 바다가 함께 보이게
+        g.fillStyle = lin([[0, '#5d6fb0'], [0.6, '#c7b8e0'], [1, '#fde9c4']], 0, hz); g.fillRect(0, 0, w, hz);
+        g.fillStyle = lin([[0, '#bfe6f0'], [0.25, '#6fb6cf'], [1, '#1f4f78']], hz, h); g.fillRect(0, hz, w, h - hz);
+        g.fillStyle = rad(cx, hz, 0, M * 0.6, [[0, 'rgba(255,252,235,1)'], [0.25, 'rgba(255,240,200,0.6)'], [1, 'rgba(255,240,200,0)']]); g.fillRect(0, 0, w, h);
+        g.fillStyle = lin([[0, 'rgba(255,250,230,0.75)'], [1, 'rgba(255,250,230,0)']], hz, h);   // 물에 비친 빛기둥
+        g.beginPath(); g.moveTo(cx - M * 0.05, hz); g.lineTo(cx + M * 0.05, hz); g.lineTo(cx + M * 0.22, h); g.lineTo(cx - M * 0.22, h); g.closePath(); g.fill();
+        g.lineCap = 'round';
+        for (let i = 0; i < 70; i++) {   // 수정 같은 물결 반짝임 — 수평선에 가까울수록 짧고 촘촘하게
+            const t = rnd(), y = hz + (h - hz) * Math.pow(t, 1.6), len = (8 + 60 * t) * M / 720;
+            const x = rnd() * w;
+            g.strokeStyle = `rgba(255,255,255,${0.25 + rnd() * 0.45})`; g.lineWidth = (0.6 + 1.6 * t) * M / 720;
+            g.beginPath(); g.moveTo(x - len / 2, y); g.lineTo(x + len / 2, y); g.stroke();
+        }
+    } else if (id === 'door') {
+        // 계 4:1 「하늘에 열린 문이 있는데」 — 어두운 하늘, 머리 뒤로 빛이 쏟아지는 문
+        g.fillStyle = lin([[0, '#1a1537'], [0.6, '#2f2a5c'], [1, '#4a3e6e']]); g.fillRect(0, 0, w, h);
+        const dw = M * 0.34, dh = M * 0.62, dx = cx - dw / 2, dy = h * 0.14;
+        g.save(); g.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 14; i++) {   // 문에서 퍼지는 빛줄기
+            const a = -Math.PI / 2 + (i - 6.5) * 0.2, L = M * 1.6;
+            g.fillStyle = `rgba(255,225,160,${0.05 + (i % 3) * 0.025})`;
+            g.beginPath(); g.moveTo(cx, dy + dh * 0.45);
+            g.lineTo(cx + Math.cos(a - 0.05) * L, dy + dh * 0.45 - Math.sin(a - 0.05) * -L);
+            g.lineTo(cx + Math.cos(a + 0.05) * L, dy + dh * 0.45 - Math.sin(a + 0.05) * -L);
+            g.closePath(); g.fill();
+        }
+        g.restore();
+        g.fillStyle = rad(cx, dy + dh * 0.45, 0, M * 0.7, [[0, 'rgba(255,236,190,0.75)'], [1, 'rgba(255,236,190,0)']]); g.fillRect(0, 0, w, h);
+        g.fillStyle = lin([[0, '#fffaf0'], [1, '#ffd98a']], dy, dy + dh);   // 문 (위가 둥근 아치)
+        g.beginPath(); g.moveTo(dx, dy + dh); g.lineTo(dx, dy + dw / 2); g.arc(cx, dy + dw / 2, dw / 2, Math.PI, 0); g.lineTo(dx + dw, dy + dh); g.closePath(); g.fill();
+        for (let i = 0; i < 9; i++) {   // 아래 구름
+            const x = (i / 8) * w, y = h * (0.82 + rnd() * 0.08), r = M * (0.18 + rnd() * 0.12);
+            g.fillStyle = rad(x, y, 0, r, [[0, 'rgba(200,190,230,0.55)'], [1, 'rgba(200,190,230,0)']]); g.fillRect(x - r, y - r, r * 2, r * 2);
+        }
+    } else if (id === 'rainbow') {
+        // 계 4:3 「무지개가 있어 보좌에 둘렸는데 그 모양이 녹보석 같더라」 — 녹보석(에메랄드) 빛 무지개 고리
+        g.fillStyle = lin([[0, '#062a2a'], [0.6, '#0d4a44'], [1, '#12362f']]); g.fillRect(0, 0, w, h);
+        const ry = h * 0.42, R = M * 0.46;
+        g.fillStyle = rad(cx, ry, 0, R * 1.3, [[0, 'rgba(255,250,225,0.9)'], [0.35, 'rgba(210,255,225,0.35)'], [1, 'rgba(210,255,225,0)']]); g.fillRect(0, 0, w, h);
+        const bands = ['rgba(46,204,113,0.55)', 'rgba(26,188,156,0.5)', 'rgba(130,230,170,0.45)', 'rgba(22,160,133,0.45)', 'rgba(180,255,210,0.35)'];
+        g.lineWidth = M * 0.028;
+        bands.forEach((col, i) => { g.strokeStyle = col; g.beginPath(); g.arc(cx, ry, R + i * g.lineWidth * 0.95, 0, Math.PI * 2); g.stroke(); });
+        for (let i = 0; i < 40; i++) {   // 보석 같은 반짝임
+            const a = rnd() * Math.PI * 2, rr = R + rnd() * g.lineWidth * 5, x = cx + Math.cos(a) * rr, y = ry + Math.sin(a) * rr;
+            g.fillStyle = `rgba(230,255,240,${0.3 + rnd() * 0.5})`; g.beginPath(); g.arc(x, y, (0.6 + rnd() * 1.6) * M / 720, 0, Math.PI * 2); g.fill();
+        }
+    }
+    _camSeg.bgCache = { [key]: c, ...Object.fromEntries(Object.entries(_camSeg.bgCache).slice(-6)) };   // 몇 장만 남긴다
+    return c;
+}
+
+/* 배경을 깔고 오려낸 사람을 얹는다. 반환 false면 아직 준비 전(원본을 그린다). 반전 좌표계 안에서 불린다 */
+function _camDrawWithBg(ctx, v, vw, vh, p) {
+    if (!_camSeg.inst) return false;
+    if (!_camSeg.busy) {
+        _camSeg.busy = true;
+        _camSeg.inst.send({ image: v }).catch(() => { _camSeg.busy = false; });
+    }
+    const mask = _camSeg.mask;
+    if (!mask) return false;
+    // 1) 배경
+    if (p.bg === 'blur') {
+        if (!_camSeg.small) _camSeg.small = document.createElement('canvas');
+        const sm = _camSeg.small, sw = Math.max(16, Math.round(vw / 14)), sh = Math.max(16, Math.round(vh / 14));
+        if (sm.width !== sw || sm.height !== sh) { sm.width = sw; sm.height = sh; }
+        const sctx = sm.getContext('2d');
+        sctx.imageSmoothingEnabled = true; sctx.drawImage(v, 0, 0, sw, sh);
+        ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(sm, 0, 0, vw, vh);
+    } else {
+        ctx.drawImage(_camBgCanvas(p.bg, vw, vh), 0, 0, vw, vh);
+    }
+    // 2) 사람 — 마스크 모양대로 원본을 오려 낸다 (마스크는 한두 프레임 늦을 수 있다)
+    if (!_camSeg.person) _camSeg.person = document.createElement('canvas');
+    const pc = _camSeg.person;
+    if (pc.width !== vw || pc.height !== vh) { pc.width = vw; pc.height = vh; }
+    const pctx = pc.getContext('2d');
+    pctx.save();
+    pctx.clearRect(0, 0, vw, vh);
+    if ('filter' in pctx) pctx.filter = 'blur(2px)';   // 가장자리를 살짝 풀어 오려낸 티를 줄인다 (지원하는 곳만)
+    pctx.drawImage(mask, 0, 0, vw, vh);
+    if ('filter' in pctx) pctx.filter = p.soft ? 'brightness(1.10) contrast(0.90) saturate(1.08)' : 'none';
+    pctx.globalCompositeOperation = 'source-in';
+    pctx.drawImage(v, 0, 0, vw, vh);
+    pctx.restore();
+    ctx.drawImage(pc, 0, 0);
+    return true;
+}
+
 function _camDrawLoop() {
     const v = _cam.video, c = _cam.canvas, ctx = _cam.ctx;
     if (!v || !c || !ctx || !_cam.stream) return;
@@ -16069,7 +16263,9 @@ function _camDrawLoop() {
         ctx.save();
         // 셀피처럼 좌우 반전 — 화면과 영상이 같아야 하고, 글자 띠는 반전 뒤에 따로 그린다
         ctx.translate(vw, 0); ctx.scale(-1, 1);
-        if (p.soft && 'filter' in ctx) {
+        if (p.bg && p.bg !== 'none' && _camDrawWithBg(ctx, v, vw, vh, p)) {
+            // 배경 모드 — 위에서 다 그렸다
+        } else if (p.soft && 'filter' in ctx) {
             // 소프트 포커스(Orton) — 밝게 한 원본 위에 흐린 사본을 반투명으로 겹친다. 피부 결은 뭉개지고 윤곽은 남는다
             ctx.filter = 'brightness(1.10) contrast(0.90) saturate(1.08)';
             ctx.drawImage(v, 0, 0, vw, vh);
@@ -16141,6 +16337,7 @@ function _camToggle() {
         if (cv) cv.style.display = 'none';
         if (card) card.style.display = 'none';
         if (opts) opts.style.display = 'none';
+        const bgr = document.getElementById('cam-bg-row'); if (bgr) bgr.style.display = 'none';
         if (pb) { pb.src = URL.createObjectURL(_cam.blob); pb.style.display = ''; }
         document.getElementById('cam-controls').style.display = 'none';
         document.getElementById('cam-after').style.display = '';
@@ -16149,6 +16346,7 @@ function _camToggle() {
     _cam.rec.start(1000);
     _cam.startedAt = Date.now();
     const opts = document.getElementById('cam-opts'); if (opts) opts.style.display = 'none';   // 녹화 중엔 설정을 못 바꾼다 (영상 중간에 띠가 바뀌면 이상하다)
+    const bgr = document.getElementById('cam-bg-row'); if (bgr) bgr.style.display = 'none';
     const btn = document.getElementById('cam-rec-btn'); btn.textContent = t('daily_cam_stop'); btn.classList.add('on');
     const tm = document.getElementById('cam-timer');
     _cam.timer = setInterval(() => { const s = Math.floor((Date.now() - _cam.startedAt) / 1000); tm.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }, 250);
@@ -16158,6 +16356,7 @@ async function _camRetake() {
     if (pb) { pb.pause(); if (pb.src) URL.revokeObjectURL(pb.src); pb.removeAttribute('src'); pb.style.display = 'none'; }
     if (cv) cv.style.display = '';
     if (opts) opts.style.display = '';
+    const bgr = document.getElementById('cam-bg-row'); if (bgr) bgr.style.display = '';
     _camApplyPrefUI();
     _cam.blob = null; _cam.chunks = [];
     document.getElementById('cam-after').style.display = 'none';
