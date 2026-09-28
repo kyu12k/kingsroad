@@ -6576,3 +6576,18 @@ body, html {
 }
 .bso-blank-nudge:hover, .bso-blank-nudge:active { background: rgba(46, 204, 113, 0.22); border-color: rgba(46, 204, 113, 0.7); }
 .bso-blank-nudge b { color: #7ee2a8; }
+
+/* 장 헤더의 백지 증거 한 줄 (2026-09-27) — 복습 레벨과 "진짜 외웠나"는 다른 것을 잰다 */
+.sheet-blank-evidence {
+    margin: 0 16px 6px; padding: 7px 11px;
+    font-size: 0.8rem; line-height: 1.4; font-weight: 600;
+    border-radius: 9px; border: 1px solid transparent; cursor: pointer;
+}
+.sheet-blank-evidence b { font-weight: 800; }
+.sheet-blank-evidence .sbe-sub { font-weight: 600; opacity: 0.75; }
+.sheet-blank-evidence.none    { color: #b9b0c9; background: rgba(155,142,180,0.12); border-color: rgba(155,142,180,0.3); }
+.sheet-blank-evidence.none b  { color: #e8e2f2; }
+.sheet-blank-evidence.partial { color: #f7d9a0; background: rgba(243,156,18,0.12); border-color: rgba(243,156,18,0.35); }
+.sheet-blank-evidence.partial b { color: #ffc86b; }
+.sheet-blank-evidence.all-done { color: #cfe9d6; background: rgba(46,204,113,0.13); border-color: rgba(46,204,113,0.4); }
+.sheet-blank-evidence.all-done b { color: #7ee2a8; }

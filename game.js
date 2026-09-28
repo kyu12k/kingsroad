@@ -7669,10 +7669,40 @@ function groupStagesByMidBoss(chData) {
 }
 
 /* [수정] 스테이지 시트 열기 (각 버튼별 타이머 적용) */
+/* ── 장 헤더의 백지 증거 한 줄 (2026-09-27) ───────────────────────────────────
+   **복습 레벨과 "진짜 외웠는가"는 다른 것을 잰다.** 레벨은 '몇 번, 얼마나 규칙적으로 복습했나'이고
+   Step 2/5의 단어 버튼은 답이 화면에 다 있는 재구성이라 단서 없이 나오는지를 증명하지 못한다(Bjork: 인출 강도 ≠ 저장 강도).
+   실측(2026-09-27): 기억레벨 5인 스테이지 3,144개 중 **56%가 백지로 써낸 적이 없다.**
+   16장 21절을 11~13회씩 깨고 레벨 5를 찍었는데 백지는 0절인 실제 사례가 이 표시의 계기다.
+   → 난이도 모달에만 있던 증거를 **매일 지나는 자리**로 끌어낸다. verseRecall은 모드로 나뉘지 않으므로
+     자유여행·왕의 길 어느 쪽에서 써냈든 같은 증거로 센다. */
+function _renderSheetBlankEvidence(chapterData) {
+    const el = document.getElementById('sheet-blank-evidence');
+    if (!el) return;
+    const ids = (chapterData.stages || []).map(s => String(s.id)).filter(id => /^\d+-\d+$/.test(id));
+    if (!ids.length || typeof verseRecall === 'undefined') { el.style.display = 'none'; return; }
+    let blank = 0, typed = 0;
+    ids.forEach(id => {
+        const r = verseRecall[id];
+        if (!r) return;
+        if (r.blankPass > 0) blank += 1;
+        else if (r.typedPass > 0) typed += 1;   // 빈칸까지만 써본 절
+    });
+    const all = blank >= ids.length;
+    el.className = 'sheet-blank-evidence' + (all ? ' all-done' : (blank > 0 ? ' partial' : ' none'));
+    el.setAttribute('data-tip', '복습 레벨은 「몇 번 복습했나」이고, 백지는 「단서 없이 나오나」입니다. 둘은 다른 것을 재요');
+    el.innerHTML = all
+        ? `✍️ 이 장 ${ids.length}절을 <b>모두 백지로</b> 써냈어요`
+        : `✍️ 백지로 써낸 절 <b>${blank}</b> / ${ids.length}` +
+          (typed > 0 ? ` <span class="sbe-sub">· 빈칸까지 ${typed}절</span>` : '');
+    el.style.display = '';
+}
+
 function openStageSheet(chapterData) {
     currentOpenChapterData = chapterData;
     const sheet = document.getElementById('stage-sheet');
     document.getElementById('sheet-chapter-title').innerText = t('label_chapter_header', { num: chapterData.id });
+    _renderSheetBlankEvidence(chapterData);
 
     const list = document.getElementById('stage-list-area');
     list.innerHTML = "";
