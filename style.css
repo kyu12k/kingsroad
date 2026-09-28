@@ -6591,3 +6591,45 @@ body, html {
 .sheet-blank-evidence.partial b { color: #ffc86b; }
 .sheet-blank-evidence.all-done { color: #cfe9d6; background: rgba(46,204,113,0.13); border-color: rgba(46,204,113,0.4); }
 .sheet-blank-evidence.all-done b { color: #7ee2a8; }
+
+/* ── 백지레벨 (2026-09-28) ─────────────────────────────── */
+.blank-lv-row { margin-top: 3px; }
+.blank-lv-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 0.7rem; font-weight: 800; line-height: 1.2;
+    padding: 1px 7px; border-radius: 9px; border: 1px solid transparent; cursor: pointer;
+}
+.blank-lv-badge.lv0 { color: #8a7fa3; background: rgba(155,142,180,0.12); border-color: rgba(155,142,180,0.35); }
+.blank-lv-badge.lv1 { color: #b36b3a; background: rgba(230,126,34,0.12); border-color: rgba(230,126,34,0.4); }
+.blank-lv-badge.lv2 { color: #9a7d0a; background: rgba(241,196,15,0.14); border-color: rgba(241,196,15,0.45); }
+.blank-lv-badge.lv3 { color: #1e8449; background: rgba(46,204,113,0.13); border-color: rgba(46,204,113,0.45); }
+.blank-lv-badge.lv4 { color: #1f6f9a; background: rgba(52,152,219,0.13); border-color: rgba(52,152,219,0.45); }
+.blank-lv-badge.lv5 { color: #6c3483; background: rgba(155,89,182,0.14); border-color: rgba(155,89,182,0.5); }
+.blank-lv-badge.due { box-shadow: 0 0 0 2px rgba(231,76,60,0.35); }
+.blank-lv-badge.due b { color: #e74c3c; font-weight: 800; }
+.hardship-feedback .blank-lv-note { margin-top: 6px; font-size: 0.85em; font-weight: 700; opacity: 0.95; }
+.sheet-blank-evidence .sbe-due { font-weight: 800; color: #ff8a7a; }
+
+/* 힌트 흔적 — 답이 보이는 곳에서만. 여러 번 막힌 자리일수록 진하게 */
+.hint-trace { text-decoration: underline dotted; text-underline-offset: 4px; text-decoration-thickness: 2px; }
+.hint-trace.ht1 { text-decoration-color: rgba(230,126,34,0.55); }
+.hint-trace.ht2 { text-decoration-color: rgba(230,126,34,0.85); }
+.hint-trace.ht3 { text-decoration-color: #e74c3c; text-decoration-style: solid; }
+
+/* 복습 목록 맨 위 — 백지 차례 · 복습을 한 번에 */
+.rv-head { text-align: left; border-radius: 12px; padding: 11px 12px; margin-bottom: 12px; }
+.rv-head.rv-blank { background: rgba(155,89,182,0.18); border: 1px solid rgba(187,143,206,0.55); }
+.rv-head.rv-route { background: rgba(46,204,113,0.12); border: 1px solid rgba(46,204,113,0.45); }
+.rv-head-title { font-size: 0.95rem; font-weight: 800; color: #fff; margin-bottom: 8px; }
+.rv-head-sub { font-size: 0.78rem; color: #cfd8dc; margin-top: 8px; line-height: 1.5; font-weight: 500; }
+.rv-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rv-chip {
+    background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.35); color: #fff;
+    border-radius: 999px; padding: 6px 12px; font-size: 0.88rem; font-weight: 700; cursor: pointer;
+}
+.rv-route-row {
+    display: block; width: 100%; text-align: left;
+    background: rgba(0,0,0,0.18); border: 1px solid rgba(46,204,113,0.35); color: #eafaf1;
+    border-radius: 10px; padding: 9px 11px; margin-top: 6px; font-size: 0.88rem; line-height: 1.45; cursor: pointer;
+}
+.rv-route-row b { color: #7ee2a8; }

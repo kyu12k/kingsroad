@@ -516,6 +516,24 @@ const LANG = {
         hardship_feedback_correct: '정답입니다. {label} · +{pts}점',
         hardship_feedback_correct_no_reward: '정답입니다. {label} · 승점 없음',
         hardship_blank_hint_notice: '💡 막히면 힌트를 누르세요 — 한 글자씩만 열려요',
+        embed_title_quick_blank_none: '백지 복습',
+        blank_lv_up: '✍️ 백지 Lv{from}→{to} · 제때 꺼냈어요 +{pts}',
+        blank_lv_up_quick: '✍️ 백지 Lv{from}→{to} · 제때 꺼냈어요',
+        blank_lv_enter: '✍️ 백지 Lv{to} 시작 · {days}일 뒤 차례',
+        blank_lv_early: '✍️ 백지 Lv{lv} · 차례는 {days}일 뒤',
+        blank_lv_stay_hint: '✍️ 힌트를 많이 써서 백지 Lv{lv} 그대로',
+        blank_lv_down: '✍️ 백지 Lv1 — 내일 다시 차례',
+        blank_badge_tip: '백지 Lv{lv} · {days}일 뒤 차례',
+        blank_badge_tip_due: '백지 차례 — 지금 백지로 써내면 Lv{lv}에서 한 칸 올라요',
+        blank_badge_tip_legacy: '백지로 써낸 적 있음 — 다음에 백지로 써내면 Lv2부터 시작',
+        clear_blank_lv_mult: '✍️ 백지 Lv{lv} 제때 승점 ×{n}',
+        blank_notif_body: '「{label}」 백지로 꺼내볼 시간이에요 ✍️',
+        rv_blank_title: '✍️ 오늘 백지 차례',
+        rv_blank_sub: '그 장을 백지로(보스전·중간점검·망각의 고난) 써내면 백지레벨이 올라요',
+        rv_route_title: '💡 복습을 한 번에',
+        rv_route_due: '복습 {n}절',
+        rv_route_mid: '중간점검 {n}개 ({ranges}절)',
+        rv_route_boss: '보스전 한 번 ({total}절)',
         hardship_repeat_notice: '오늘 이 장을 이미 했어요\n같은 고난 반복은 승점 {pct}%',
         hardship_feedback_correct_scored_today: '정답입니다. {label} · 오늘 이미 받은 승점',
         hardship_feedback_typo_corrected_scored_today: '오타 보정! 오늘 이미 받은 승점 ({n}글자 오타)',
@@ -1422,6 +1440,24 @@ const LANG = {
         hardship_feedback_correct: 'Correct! {label} · +{pts} pts',
         hardship_feedback_correct_no_reward: 'Correct! {label} · No points',
         hardship_blank_hint_notice: '💡 Stuck? Tap the hint — it opens one letter at a time',
+        embed_title_quick_blank_none: 'Blank review',
+        blank_lv_up: '✍️ Blank Lv{from}→{to} · right on time +{pts}',
+        blank_lv_up_quick: '✍️ Blank Lv{from}→{to} · right on time',
+        blank_lv_enter: '✍️ Blank Lv{to} started · due in {days}d',
+        blank_lv_early: '✍️ Blank Lv{lv} · due in {days}d',
+        blank_lv_stay_hint: '✍️ Many hints — Blank Lv{lv} unchanged',
+        blank_lv_down: '✍️ Blank Lv1 — due again tomorrow',
+        blank_badge_tip: 'Blank Lv{lv} · due in {days}d',
+        blank_badge_tip_due: 'Due — write it from blank now to go up from Lv{lv}',
+        blank_badge_tip_legacy: 'Written from blank before — next blank pass starts at Lv2',
+        clear_blank_lv_mult: '✍️ Blank Lv{lv} on-time points ×{n}',
+        blank_notif_body: '"{label}" — time to write it from blank ✍️',
+        rv_blank_title: '✍️ Blank review due today',
+        rv_blank_sub: 'Write that chapter from blank (boss, checkpoint, or trial) to raise its blank level',
+        rv_route_title: '💡 Finish reviews in one go',
+        rv_route_due: '{n} reviews',
+        rv_route_mid: '{n} checkpoint(s) (v.{ranges})',
+        rv_route_boss: 'one boss battle ({total} verses)',
         hardship_repeat_notice: 'You already did this chapter today\nRepeating the same trial pays {pct}%',
         hardship_feedback_correct_scored_today: 'Correct! {label} · Already earned today',
         hardship_feedback_typo_corrected_scored_today: 'Typo corrected! Already earned today ({n} typo(s))',
@@ -7235,7 +7271,7 @@ function openBibleReadingOverlay() {
             : `<button class="bible-read-btn" data-v="${verseNum}" onclick="markVerseAsRead(${chapterNum},${verseNum},this)">읽음</button>`;
         return `<div class="bible-reading-verse">
             <span class="bible-reading-verse-num">${verseNum}</span>
-            <span class="bible-reading-verse-text">${text}</span>
+            <span class="bible-reading-verse-text">${_hintTraceTextHtml(stageId, text) || text}</span>
             <span class="bible-reading-verse-dot" style="background:${dotColor};"></span>
             ${btnHtml}
         </div>`;
@@ -7549,7 +7585,7 @@ function buildStageItemEl(stage, chData, kingsUnlockedSet, lastPlayedId) {
     } else {
         rightSideContent = `<div style="font-size:1.2rem; color:#f1c40f;">▶</div>`;
     }
-    let rewardInfo = isNormalStage ? buildReviewBadgeHtml(stage.id) : '';
+    let rewardInfo = isNormalStage ? (buildReviewBadgeHtml(stage.id) + _blankLvBadgeHtml(stage.id)) : '';
     if (stage.type === 'boss' && !isCleared) {
         const firstClearGem = (stage.targetVerseCount || 0) * 50;
         rewardInfo = `<div class="boss-first-clear-gem">💎 최초 클리어 시 보석 ${firstClearGem}개 지급</div>`;
@@ -7681,20 +7717,25 @@ function _renderSheetBlankEvidence(chapterData) {
     if (!el) return;
     const ids = (chapterData.stages || []).map(s => String(s.id)).filter(id => /^\d+-\d+$/.test(id));
     if (!ids.length || typeof verseRecall === 'undefined') { el.style.display = 'none'; return; }
-    let blank = 0, typed = 0;
+    let blank = 0, typed = 0, top = 0, due = 0;
+    const now = Date.now();
     ids.forEach(id => {
         const r = verseRecall[id];
         if (!r) return;
-        if (r.blankPass > 0) blank += 1;
+        if (r.blankPass > 0 || r.bx > 0) blank += 1;
         else if (r.typedPass > 0) typed += 1;   // 빈칸까지만 써본 절
+        if (r.bx === 5) top += 1;
+        if (r.bx && r.bxDue && r.bxDue <= now) due += 1;
     });
     const all = blank >= ids.length;
     el.className = 'sheet-blank-evidence' + (all ? ' all-done' : (blank > 0 ? ' partial' : ' none'));
-    el.setAttribute('data-tip', '복습 레벨은 「몇 번 복습했나」이고, 백지는 「단서 없이 나오나」입니다. 둘은 다른 것을 재요');
-    el.innerHTML = all
+    el.setAttribute('data-tip', '복습 레벨은 「몇 번 복습했나」, 백지레벨은 「간격을 두고 단서 없이 꺼냈나」입니다. 1일·3일·1주·2주·한 달 간격으로 백지로 써낼 때마다 오릅니다');
+    el.innerHTML = (all
         ? `✍️ 이 장 ${ids.length}절을 <b>모두 백지로</b> 써냈어요`
         : `✍️ 백지로 써낸 절 <b>${blank}</b> / ${ids.length}` +
-          (typed > 0 ? ` <span class="sbe-sub">· 빈칸까지 ${typed}절</span>` : '');
+          (typed > 0 ? ` <span class="sbe-sub">· 빈칸까지 ${typed}절</span>` : '')) +
+        (top > 0 ? ` <span class="sbe-sub">· Lv5 ${top}절</span>` : '') +
+        (due > 0 ? ` <span class="sbe-due">· 오늘 차례 ${due}절</span>` : '');
     el.style.display = '';
 }
 
@@ -7999,7 +8040,7 @@ function maybeAutoShowReviewPopup() {
     if (!window._pendingReviewPopupCheck) return;
     window._pendingReviewPopupCheck = false;
     if (isReviewPopupHiddenToday()) return;
-    if (getForgottenStages().length === 0) return;
+    if (getForgottenStages().length === 0 && _blankDueIds().length === 0) return;
     openForgottenStagesOverlay();
 }
 
@@ -8067,11 +8108,12 @@ function openForgottenStagesOverlay() {
     // 리스트 렌더링
     const listDiv = document.getElementById('forgotten-stages-list');
     const forgottenList = getForgottenStages();
+    const headHtml = _reviewOverlayHeadHtml(forgottenList);
     if (forgottenList.length === 0) {
-        listDiv.innerHTML = `<div style="color:#bdc3c7;">${t('forgotten_empty')}</div>`;
+        listDiv.innerHTML = headHtml || `<div style="color:#bdc3c7;">${t('forgotten_empty')}</div>`;
         return;
     }
-    listDiv.innerHTML = '';
+    listDiv.innerHTML = headHtml;
     for (const item of forgottenList) {
         const btn = document.createElement('button');
         btn.innerHTML = `<span style="font-weight:bold; color:#f1c40f;">${item.label}</span><span style="color:#bdc3c7; margin-left:8px;">${t('forgotten_review_step', { step: item.step })}</span>`;
@@ -8082,6 +8124,47 @@ function openForgottenStagesOverlay() {
         };
         listDiv.appendChild(btn);
     }
+}
+
+/* 복습 목록 맨 위 — ① 오늘 백지 차례(장별로 묶어) ② 복습을 한 번에 끝내는 길 (2026-09-28).
+   ② 판단: 한 장에 복습 차례가 2절 이상이면, 차례인 절이 걸친 중간점검 구간들의 절 수를 더해
+   **장 전체의 80% 미만이면 중간점검, 이상이면 보스전**. 보스전은 차례가 6절이어도 장 전체를 써야 하고,
+   중간점검은 걸친 구간(3~4절)만 쓰면 된다 — 대개 중간점검이 이긴다. 둘 다 클리어하면 차례인 절의 복습이 한꺼번에 처리된다. */
+function _reviewOverlayHeadHtml(forgottenList) {
+    let html = '';
+    const chLabel = (c) => currentLang === 'en' ? `Ch.${c}` : `${c}장`;
+    // ① 백지 차례
+    const dueIds = _blankDueIds();
+    if (dueIds.length) {
+        const byCh = {};
+        dueIds.forEach(id => { const c = parseInt(id.split('-')[0], 10); byCh[c] = (byCh[c] || 0) + 1; });
+        const chips = Object.keys(byCh).map(Number).sort((a, b) => a - b)
+            .map(c => `<button class="rv-chip" onclick="closeForgottenStagesOverlay(); openStageSheetForStageId('${c}-1')">${chLabel(c)} ${byCh[c]}절</button>`).join('');
+        html += `<div class="rv-head rv-blank"><div class="rv-head-title">${t('rv_blank_title')}</div><div class="rv-chips">${chips}</div><div class="rv-head-sub">${t('rv_blank_sub')}</div></div>`;
+    }
+    // ② 복습을 한 번에
+    const byChRev = {};
+    (forgottenList || []).forEach(it => {
+        const m = String(it.stageId).match(/^(\d+)-(\d+)$/);
+        if (m) (byChRev[m[1]] = byChRev[m[1]] || []).push(parseInt(m[2], 10));
+    });
+    const rows = [];
+    Object.keys(byChRev).map(Number).sort((a, b) => a - b).forEach(c => {
+        const vs = byChRev[c];
+        if (vs.length < 2) return;
+        const chData = (typeof gameData !== 'undefined') ? gameData.find(x => x.id === c) : null;
+        if (!chData || !chData.stages) return;
+        const total = chData.stages.filter(s => /^\d+-\d+$/.test(String(s.id))).length;
+        const mids = chData.stages.filter(s => s.type === 'mid-boss' && s.rangeStart && s.rangeEnd);
+        const covered = mids.filter(mb => vs.some(v => v >= mb.rangeStart && v <= mb.rangeEnd));
+        const sum = covered.reduce((a, mb) => a + (mb.rangeEnd - mb.rangeStart + 1), 0);
+        const how = (covered.length && sum < total * 0.8)
+            ? t('rv_route_mid', { n: covered.length, ranges: covered.map(mb => `${mb.rangeStart}~${mb.rangeEnd}`).join(', ') })
+            : t('rv_route_boss', { total });
+        rows.push(`<button class="rv-route-row" onclick="closeForgottenStagesOverlay(); openStageSheetForStageId('${c}-1')"><b>${chLabel(c)}</b> ${t('rv_route_due', { n: vs.length })} → ${how}</button>`);
+    });
+    if (rows.length) html += `<div class="rv-head rv-route"><div class="rv-head-title">${t('rv_route_title')}</div>${rows.join('')}</div>`;
+    return html;
 }
 
 function closeForgottenStagesOverlay() {
@@ -8402,6 +8485,121 @@ const HINT_OK_RATIO = 0.2; // 통과 시 힌트가 글자 수의 이 비율 이�
                            // ※ 잠정값(미확정 — 다음 주 데이터로 정할 것 중 하나).
                            //    라벨은 보상을 한 푼도 바꾸지 않으므로 틀려도 손해가 '권유가 조금 어긋남'뿐이다.
 
+/* ── 백지레벨 — 라이트너 5상자 (2026-09-28) ────────────────────────────────────
+   복습 레벨(스텝)은 "몇 번, 얼마나 규칙적으로 복습했나"를 잰다. 단서 없이 나오는지는 모른다 —
+   실측: 기억레벨 5인 스테이지의 56%가 백지로 써낸 적이 없다. 그래서 **두 번째 축**을 둔다.
+   복습 스텝은 그대로 두고(사용자 결정), 백지 증거로만 도는 상자를 절마다 붙인다.
+
+   상자 = 백지레벨. 상자 b에 들어가면 BLANK_BOX_DAYS[b]일 뒤가 '차례'다.
+     · 백지(칸 없음) + 통과 + 힌트 20% 이하 + **차례가 된 뒤** → 한 칸 위 + 승점 밭 × BLANK_BOX_MULT[새 칸]
+     · 같은 조건인데 **차례 전** → 그대로 (하루에 다섯 번 돌려 하루 만에 Lv5가 되는 것을 막는다 — 간격이 곧 증거다)
+     · 통과했지만 힌트 20% 초과 → 그대로 (힌트는 발판이라 벌하지 않는다. 다만 단서 없이 나온 건 아니니 올리지도 않는다)
+     · 틀림 · 「모르겠어요」 → 상자 1 (내일 다시). 빈칸에서 틀려도 내린다 — 칸이 보여도 못 쓴 것은 더 강한 망각 신호다
+   처음 백지로 써낸 절은 **상자 2(3일 뒤)**에서 시작한다 — 한 번 완벽하게 써낸 절을 내일 또 시키는 건 과하고,
+   시뮬레이션상 첫 주 부하가 절반(31→14절/일)으로 준다. 출시 전 기록은 상자에 넣지 않는다(첫날 404절이 한꺼번에 차례가 된다).
+   보너스는 **어디서 했느냐가 아니라 제때 꺼냈느냐**에 준다 — 망각의 고난·보스전·중간점검·이벤트·오늘의 암송 모두 같다.
+   빠른 복습만 예외: 복습 승점(밭 × 스텝 배율)과 비교해 **큰 쪽 하나** (stageClear, window._quickBlankBonus). */
+const BLANK_BOX_DAYS = [0, 1, 3, 7, 14, 30];
+const BLANK_BOX_MULT = [0, 0, 2, 3, 5, 8];      // 제때 써내 상자 b로 오르거나 5에 머물 때
+const BLANK_BOX_START = 2;
+const BLANK_DAY_MS = 86400000;
+const BLANK_NOTIF_GAP_MS = 3 * 3600000;         // 백지 알림끼리 최소 3시간
+function _blankDueIds(now) {
+    const out = [];
+    if (typeof verseRecall === 'undefined' || !verseRecall) return out;
+    const n = now || Date.now();
+    for (const id in verseRecall) {
+        const r = verseRecall[id];
+        if (r && r.bx && r.bxDue && r.bxDue <= n) out.push(id);
+    }
+    return out;
+}
+/* 상자 갱신. r을 직접 고치고 결과를 돌려준다 — {kind:'enter'|'up'|'early'|'stay'|'down', from, to, mult, due} */
+function _updateBlankBox(r, ok, blankMode, hintOk, now) {
+    if (!ok) {
+        if (!r.bx) return null;                           // 상자에 없던 절은 그대로(증거가 없을 뿐)
+        const from = r.bx;
+        r.bx = 1; r.bxDue = now + BLANK_BOX_DAYS[1] * BLANK_DAY_MS;
+        return { kind: 'down', from, to: 1, due: r.bxDue };
+    }
+    if (!blankMode) return null;                          // 빈칸 통과는 상자에 영향 없음
+    if (!hintOk) return r.bx ? { kind: 'stay', from: r.bx, to: r.bx, due: r.bxDue } : null;
+    if (!r.bx) {
+        r.bx = BLANK_BOX_START; r.bxDue = now + BLANK_BOX_DAYS[BLANK_BOX_START] * BLANK_DAY_MS;
+        return { kind: 'enter', from: 0, to: r.bx, due: r.bxDue };
+    }
+    if (now < (r.bxDue || 0)) return { kind: 'early', from: r.bx, to: r.bx, due: r.bxDue };
+    const from = r.bx;
+    r.bx = Math.min(5, r.bx + 1);
+    r.bxDue = now + BLANK_BOX_DAYS[r.bx] * BLANK_DAY_MS;
+    return { kind: 'up', from, to: r.bx, mult: BLANK_BOX_MULT[r.bx], due: r.bxDue };
+}
+function _blankLvNoteText(res, pts, quick) {
+    if (!res) return '';
+    const days = Math.max(1, Math.ceil(((res.due || 0) - Date.now()) / BLANK_DAY_MS));
+    if (res.kind === 'up') return quick ? t('blank_lv_up_quick', { from: res.from, to: res.to }) : t('blank_lv_up', { from: res.from, to: res.to, pts: (pts || 0).toLocaleString() });
+    if (res.kind === 'enter') return t('blank_lv_enter', { to: res.to, days });
+    if (res.kind === 'early') return t('blank_lv_early', { lv: res.to, days });
+    if (res.kind === 'stay') return t('blank_lv_stay_hint', { lv: res.to });
+    if (res.kind === 'down') return t('blank_lv_down');
+    return '';
+}
+/* 절 목록의 백지레벨 배지 */
+function _blankLvBadgeHtml(id) {
+    const r = (typeof verseRecall !== 'undefined' && verseRecall) ? verseRecall[id] : null;
+    if (!r) return '';
+    if (r.bx) {
+        const due = r.bxDue && Date.now() >= r.bxDue;
+        const tip = due ? t('blank_badge_tip_due', { lv: r.bx }) : t('blank_badge_tip', { lv: r.bx, days: Math.max(1, Math.ceil((r.bxDue - Date.now()) / BLANK_DAY_MS)) });
+        return `<div class="blank-lv-row"><span class="blank-lv-badge lv${r.bx}${due ? ' due' : ''}" data-tip="${tip}">✍️ Lv${r.bx}${due ? ' <b>차례</b>' : ''}</span></div>`;
+    }
+    if (r.blankPass > 0) return `<div class="blank-lv-row"><span class="blank-lv-badge lv0" data-tip="${t('blank_badge_tip_legacy')}">✍️</span></div>`;
+    return '';
+}
+
+/* ── 힌트 흔적 (2026-09-28) — '이 구절은 이 자리에서 힌트를 썼다'.
+   verseRecall[id].hm = 최근 3번 시도에서 연 글자 위치들, hml = 그때의 언어(위치는 그 언어 본문 기준).
+   ★ **답이 보이는 곳에서만** 보여준다(📖 읽기, step 1 읽기 카드). 백지 입력 화면에 띄우면 그게 곧 단서가 된다.
+   깨끗하게 써낸 시도도 빈 배열로 기록되므로, 한동안 힌트 없이 써내면 흔적이 저절로 사라진다. */
+function _hintTraceCounts(id, lang) {
+    const r = (typeof verseRecall !== 'undefined' && verseRecall) ? verseRecall[id] : null;
+    if (!r || !Array.isArray(r.hm) || !r.hm.length) return null;
+    if ((r.hml || 'ko') !== lang) return null;
+    const m = new Map();
+    r.hm.forEach(arr => (arr || []).forEach(i => m.set(i, (m.get(i) || 0) + 1)));
+    return m.size ? m : null;
+}
+function _escHtml(c) { return c === '<' ? '&lt;' : c === '>' ? '&gt;' : c === '&' ? '&amp;' : c; }
+function _markTraceChars(str, offset, counts) {
+    let out = '', any = false;
+    for (let j = 0; j < str.length; j++) {
+        const n = counts.get(offset + j);
+        const ch = _escHtml(str[j]);
+        if (n) { out += `<span class="hint-trace ht${Math.min(3, n)}">${ch}</span>`; any = true; } else out += ch;
+    }
+    return any ? out : null;
+}
+function _hintTraceTextHtml(id, text) {
+    const counts = _hintTraceCounts(id, currentLang === 'en' ? 'en' : 'ko');
+    return counts ? _markTraceChars(String(text || ''), 0, counts) : null;
+}
+/* step 1 카드는 덩어리(chunk) 단위로 그리므로, 본문에서 덩어리 위치를 찾아 글자 위치를 옮긴다 */
+function _hintTraceChunkHtml(id, chunks) {
+    const counts = _hintTraceCounts(id, 'ko');
+    const base = (typeof HARDSHIP_VERSE_MAP !== 'undefined' && HARDSHIP_VERSE_MAP[id]) ? HARDSHIP_VERSE_MAP[id].text : '';
+    if (!counts || !base || !Array.isArray(chunks)) return null;
+    let cursor = 0, any = false;
+    const out = chunks.map(c => {
+        const pos = base.indexOf(c, cursor);
+        if (pos < 0) return null;
+        cursor = pos + c.length;
+        const h = _markTraceChars(c, pos, counts);
+        if (h) any = true;
+        return h;
+    });
+    return any ? out : null;
+}
+
 /* 백지를 아직 거의 안 해본 사람인가 (2026-09-27).
    권유·안내 문구를 여기에만 건다 — 전체로는 백지를 332절 해본 사람도 특정 장에서는 0절이라,
    구간만 보고 권하면 베테랑에게 초보 취급하는 말이 간다. 404절 중 10절(2.5%)을 문턱으로 둔다. */
@@ -8499,10 +8697,14 @@ function _startQuickBlank(stageId) {
     window.currentStageId = sId;
     window.hardshipOrigin = 'map';
     selectedHardshipOrderType = 'sequential';
-    selectedHardshipUltimate = false;
+    // ★ 계단 (2026-09-28): 초성 → 빈칸 → **백지**. 백지로 써낸 적 있는 절(상자에 있거나 예전 백지 기록)은 백지로.
+    //   그러면 매일 하는 복습이 곧 백지레벨을 올리는 엔진이 된다 — 따로 찾아갈 곳이 필요 없다
+    const _qr = verseRecall[sId];
+    const _qBlank = !!(_qr && (_qr.bx > 0 || _qr.blankPass > 0));
+    selectedHardshipUltimate = _qBlank;
 
     _pendingHardshipEmbed = {
-        label: t('embed_title_quick_blank'),
+        label: t(_qBlank ? 'embed_title_quick_blank_none' : 'embed_title_quick_blank'),
         quickReviewStageId: sId
     };
     startHardshipSession('memory', [sId]);
@@ -10786,6 +10988,8 @@ function normalizeChunkText(text) {
 /* [수정] 훈련 시작 함수 (phase 시스템 제거) */
 function startTraining(stageId, mode = 'normal') {
     _maybeStartRain();
+    // 빠른 복습 백지의 보너스는 바로 이어지는 코스(quick-after-*)에서만 쓴다 — 그 밖엔 남은 것을 버린다
+    if (mode !== 'quick-after-pass' && mode !== 'quick-after-fail') window._quickBlankBonus = null;
     // ★ 반드시 아래 백지 승급 가로채기보다 **먼저** — 백지에 쓴 시간도 복습 시간이다
     _beginReviewRun(stageId, mode);
     // ★ 백지 승급 — 이미 백지로 써낸 적 있는 구절은 빠른 모드에서 백지부터 시작한다.
@@ -11036,6 +11240,8 @@ function loadStep() {
         const card = document.getElementById('tap-reading-card');
         window.chunksToReveal = trainingVerseData.chunks;
         window.revealedChunks = new Set();
+        // 힌트 흔적 — 열린 덩어리에만 보인다(가려진 동안은 단서가 되지 않게)
+        const _traceHtml = _hintTraceChunkHtml(String(window.currentStageId || ''), window.chunksToReveal);
         let autoFillInterval = null;
         let isChosungMode = false; // ★ 초성 모드 상태 변수
 
@@ -11046,6 +11252,7 @@ function loadStep() {
             span.dataset.original = chunk;
             span.dataset.chosung = getChosung(chunk);
             span.dataset.masked = getMasked(chunk);
+            if (_traceHtml && _traceHtml[idx]) span.dataset.traceHtml = _traceHtml[idx];
 
             span.innerText = span.dataset.masked; // 처음엔 완벽히 가림
             span.id = `chunk-${idx}`;
@@ -11103,7 +11310,7 @@ function loadStep() {
 
             const span = document.getElementById(`chunk-${nextIdx}`);
             if (span) {
-                span.innerText = span.dataset.original;
+                if (span.dataset.traceHtml) span.innerHTML = span.dataset.traceHtml; else span.innerText = span.dataset.original;
                 span.style.fontWeight = "bold";
                 span.style.opacity = "1";
                 span.style.fontSize = "1.3rem";
@@ -11216,7 +11423,7 @@ function loadStep() {
                 if (window.revealedChunks.has(i)) continue;
                 const span = document.getElementById(`chunk-${i}`);
                 if (span) {
-                    span.innerText = span.dataset.original;
+                    if (span.dataset.traceHtml) span.innerHTML = span.dataset.traceHtml; else span.innerText = span.dataset.original;
                     span.style.color = '#dce8f5';
                     span.style.fontWeight = 'bold';
                     span.style.opacity = '1';
@@ -17875,6 +18082,20 @@ stageClear = function (type, rewardMultiplier = 1) {
         // 여기서 또 주면 같은 한 번의 암송에 두 번 지급된다. 보석은 정상 지급.
         if (window._midBossBlankClear) scoreResult.score = 0;
 
+        // ★ 빠른 복습을 백지로 해서 백지레벨이 제때 올랐다면: 복습 승점(밭 × 스텝 배율)과 백지레벨 승점(밭 × 상자 배율) 중
+        //   **큰 쪽 하나만**. 같은 한 번의 시도에 두 축이 동시에 걸리는 유일한 자리라 이중 지급을 막는다 (2026-09-28)
+        let _qbShown = null;
+        if (window._quickBlankBonus && window._quickBlankBonus.sid === String(sId) && type === 'normal') {
+            const qb = window._quickBlankBonus;
+            window._quickBlankBonus = null;
+            if (qb.mult > (scoreResult.reviewMultiplier || 1)) {
+                checkBoosterStatus();
+                scoreResult.score = Math.floor(playerHearts * qb.mult * boosterData.multiplier);
+                scoreResult.seeds = qb.mult;
+                _qbShown = qb;
+            }
+        }
+
         // ★ 월말 23시 이후 승점 차단 체크
         if (scoreResult.blocked) {
             msg += `\n⚠️ ${scoreResult.blockReason}\n\n`;
@@ -17889,6 +18110,10 @@ stageClear = function (type, rewardMultiplier = 1) {
             scoreResult.score = Math.floor(scoreResult.score * (1 + rankBuff.scoreBonus / 100));
             buffMsg += `${t('clear_buff_score', { n: rankBuff.scoreBonus })}\n`;
         }
+        if (_qbShown) {
+            buffMsg += `${t('clear_blank_lv_mult', { lv: _qbShown.lv, n: _qbShown.mult })}
+`;
+        } else
         // 복습 배율 표시 — 예전 ×1.5는 어디에도 안 보였다
         if (scoreResult.reviewMultiplier > 1) {
             buffMsg += `${t('clear_review_mult', { n: (Math.round(scoreResult.reviewMultiplier * 10) / 10) })}
@@ -19726,6 +19951,56 @@ function _computeNextReviewNotif() {
 }
 
 let _lastReviewNotifAt = -1; // 같은 값을 반복해서 쓰지 않도록 (Firestore 쓰기 절약)
+let _lastReviewNotifSig = '';
+
+/* 백지 알림 일정 (2026-09-28) — 차례가 된 시각에 보내되
+   · 백지 알림끼리 최소 3시간(그 안에 또 차례가 오면 다음 알림에 묶는다)
+   · 밤 11시~아침 7시에 걸리면 아침 7시로
+   · 복습 알림과 30분 안이면 같은 시각에(서버가 한 번에 보낸다)
+   앱을 다시 열지 않아도 이어지도록 앞으로 8번 치를 미리 써 둔다. 서버(sendReviewNotifications)도 같은 규칙으로 한 번 더 막는다 */
+function _quietShift(ts) {
+    const d = new Date(ts);
+    const h = d.getHours();
+    if (h >= 23) { d.setDate(d.getDate() + 1); d.setHours(7, 0, 0, 0); }
+    else if (h < 7) d.setHours(7, 0, 0, 0);
+    return d.getTime();
+}
+function _blankNotifLabel(ids) {
+    const byCh = {};
+    ids.forEach(id => { const [c, v] = id.split('-').map(Number); (byCh[c] = byCh[c] || []).push(v); });
+    const parts = [];
+    Object.keys(byCh).map(Number).sort((a, b) => a - b).forEach(c => {
+        const total = (bibleData[c] || []).length || 1;
+        const vs = byCh[c].sort((a, b) => a - b);
+        if (vs.length * 2 > total) parts.push(currentLang === 'en' ? `Ch.${c}` : `${c}장`);   // 한 장에서 절반 넘게 → 장 이름
+        else vs.forEach(v => parts.push(`${c}:${v}`));
+    });
+    return parts.length > 3 ? parts.slice(0, 3).join(' · ') + (currentLang === 'en' ? ` +${parts.length - 3}` : ` 외 ${parts.length - 3}`) : parts.join(' · ');
+}
+function _buildNotifSchedule() {
+    const out = [];
+    const rv = _computeNextReviewNotif();
+    if (rv) out.push({ at: rv.at, stage: rv.stage });
+    const now = Date.now();
+    const items = [];
+    for (const id in (verseRecall || {})) {
+        const r = verseRecall[id];
+        if (r && r.bx && r.bxDue && r.bxDue > now) items.push({ id, t: _quietShift(r.bxDue) });
+    }
+    items.sort((a, b) => a.t - b.t);
+    let i = 0, last = -Infinity, pushes = 0;
+    while (i < items.length && pushes < 8) {
+        let at = _quietShift(Math.max(items[i].t, last + BLANK_NOTIF_GAP_MS));
+        if (rv && rv.at >= last + BLANK_NOTIF_GAP_MS && Math.abs(at - rv.at) <= 30 * 60000) at = rv.at;
+        const bundle = [];
+        while (i < items.length && items[i].t <= at) { bundle.push(items[i].id); i++; }
+        if (!bundle.length) { bundle.push(items[i].id); i++; }
+        const label = _blankNotifLabel(bundle);
+        out.push({ at, stage: label, kind: 'blank', body: t('blank_notif_body', { label }) });
+        last = at; pushes++;
+    }
+    return out;
+}
 
 /* 다음 복습 알림을 서버에 반영한다. 값이 그대로면 아무것도 하지 않는다. */
 async function syncReviewNotification() {
@@ -19737,6 +20012,7 @@ async function syncReviewNotification() {
     if (off || noPermission) {
         if (_lastReviewNotifAt !== 0) {
             _lastReviewNotifAt = 0;
+            _lastReviewNotifSig = '';
             try {
                 await db.collection('leaderboard').doc(String(myTag)).set({
                     reviewNotifications: [],
@@ -19747,25 +20023,30 @@ async function syncReviewNotification() {
         return;
     }
 
-    const next = _computeNextReviewNotif();
-    const at = next ? next.at : 0;
-    if (at === _lastReviewNotifAt) return; // 변화 없음
+    // 복습 1건 + 백지 일정(최대 8번). 서버는 목록을 그대로 두고 때가 된 것만 보낸다
+    const sched = _buildNotifSchedule();
+    const sig = sched.map(n => `${n.at}|${n.kind || ''}|${n.stage}`).join(';');
+    if (sig === _lastReviewNotifSig) return; // 변화 없음
 
     try {
         const docRef = db.collection('leaderboard').doc(String(myTag));
-        if (!next) {
+        if (!sched.length) {
             await docRef.set({
                 reviewNotifications: [],
                 reviewNotifEarliest: firebase.firestore.FieldValue.delete()
             }, { merge: true });
+            _lastReviewNotifAt = 0;
         } else {
-            const ts = firebase.firestore.Timestamp.fromMillis(next.at);
+            const earliest = Math.min(...sched.map(n => n.at));
             await docRef.set({
-                reviewNotifications: [{ at: ts, stage: next.stage }],
-                reviewNotifEarliest: ts
+                reviewNotifications: sched.map(n => Object.assign(
+                    { at: firebase.firestore.Timestamp.fromMillis(n.at), stage: n.stage },
+                    n.kind ? { kind: n.kind, body: n.body } : {})),
+                reviewNotifEarliest: firebase.firestore.Timestamp.fromMillis(earliest)
             }, { merge: true });
+            _lastReviewNotifAt = earliest;
         }
-        _lastReviewNotifAt = at;
+        _lastReviewNotifSig = sig;
     } catch (e) {
         console.warn('복습 알림 동기화 실패:', e);
     }
@@ -23021,7 +23302,8 @@ function getHardshipRemainingCount() {
 
 function buildHardshipFeedbackHtml() {
     if (!hardshipState.feedback) return '';
-    return `<div class="hardship-feedback ${hardshipState.feedback.type}">${hardshipState.feedback.message}</div>`;
+    const lv = hardshipState._blankLvNote ? `<div class="blank-lv-note">${hardshipState._blankLvNote}</div>` : '';
+    return `<div class="hardship-feedback ${hardshipState.feedback.type}">${hardshipState.feedback.message}${lv}</div>`;
 }
 
 function resetHardshipSessionState() {
@@ -23865,6 +24147,7 @@ function loadNextHardshipVerse() {
     hardshipState.cursor += 1;
     hardshipState.currentVerse = HARDSHIP_VERSE_MAP[nextVerseId] || null;
     hardshipState.verseStartedAt = Date.now();   // 일지(recall_log)의 구절당 소요 시간
+    hardshipState._blankLvNote = '';
     hardshipState.feedback = null;
     hardshipState.locked = false;
     hardshipState.awaitingNext = false;
@@ -25290,7 +25573,8 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
     const r = verseRecall[stageId] || { pass: 0, typedPass: 0, fail: 0, firstPass: 0, lastPass: 0, lastAt: 0, lastOk: false, hints: 0, lastHints: 0, lastMode: '' };
     // 일지는 '이번 시도 직전' 상태가 필요하다 (직전 백지 성공으로부터 며칠 — 주기 연구의 핵심)
     const _prev = { lastPass: r.lastPass || 0, lastAt: r.lastAt || 0, lastBlankPass: r.lastBlankPass || 0,
-                    blankPass: r.blankPass || 0, typedPass: r.typedPass || 0, fail: r.fail || 0 };
+                    blankPass: r.blankPass || 0, typedPass: r.typedPass || 0, fail: r.fail || 0,
+                    bx: r.bx || 0, bxDue: r.bxDue || 0 };
     if (ok) {
         r.pass += 1;
         if (!r.firstPass) r.firstPass = now;
@@ -25352,6 +25636,31 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
         const _txt = (hardshipState && hardshipState.currentVerse && typeof getHardshipActiveText === 'function')
             ? (getHardshipActiveText(hardshipState.currentVerse) || '') : '';
         r.lastVerseLen = _txt.length;
+        // 힌트 흔적 — 최근 3번의 시도 (깨끗한 시도는 빈 배열로 남아 흔적을 밀어낸다)
+        const _hm = (Array.isArray(r.hm) ? r.hm : []).concat([_rev.slice(0, 20)]).slice(-3);
+        if (_hm.some(a => a.length)) { r.hm = _hm; r.hml = (currentLang === 'en') ? 'en' : 'ko'; }
+        else { delete r.hm; delete r.hml; }
+    }
+
+    // 백지레벨(라이트너 상자) — 타이핑 시도만. 'learn'(초학습 직후)·음성·집중 훈련은 제외
+    if (mode === 'memory') {
+        const _len = r.lastVerseLen || 0;
+        const _hintOk = _len > 0 ? (hints || 0) <= Math.ceil(_len * HINT_OK_RATIO) : !(hints > 0);
+        const _blankMode = !!(hardshipState && hardshipState.ultimateMemoryMode);
+        const _res = _updateBlankBox(r, !!ok, _blankMode, _hintOk, now);
+        let _pts = 0;
+        const _quick = !!(hardshipState && hardshipState.quickReviewStageId);
+        if (_res && _res.kind === 'up' && _res.mult > 0) {
+            if (_quick) {
+                // 빠른 복습: 이어지는 복습 클리어에서 복습 승점과 비교해 큰 쪽 하나만 준다 (stageClear)
+                window._quickBlankBonus = { sid: String(stageId), mult: _res.mult, lv: _res.to };
+            } else {
+                _pts = Math.max(1, Math.round((playerHearts || 1) * _res.mult));
+                awardHardshipScore(_pts);
+                if (hardshipState) (hardshipState.blankUps = hardshipState.blankUps || []).push({ v: String(stageId), lv: _res.to, pts: _pts });
+            }
+        }
+        if (hardshipState) hardshipState._blankLvNote = _blankLvNoteText(_res, _pts, _quick);
     }
 
     // 실시간 암송왕 집계 — 'learn'은 위에서 mode가 바뀌어 자연히 빠진다.
@@ -25410,7 +25719,11 @@ function _logRecallAttempt(stageId, ok, hints, mode, extra, prev, training) {
         if (prev) {
             e.lp = prev.lastPass || 0; e.la = prev.lastAt || 0; e.lb = prev.lastBlankPass || 0;
             e.bp = prev.blankPass || 0; e.tp = prev.typedPass || 0; e.fl = prev.fail || 0;
+            e.bx0 = prev.bx || 0; e.bd0 = prev.bxDue || 0;           // 이번 시도 직전 백지레벨·차례 시각
         }
+        const _cur = (typeof verseRecall !== 'undefined' && verseRecall) ? verseRecall[stageId] : null;
+        if (_cur && _cur.bx) e.bx1 = _cur.bx;                           // 이번 시도 뒤 백지레벨
+        if (rev.length) e.hp = rev.slice(0, 60);                        // 힌트로 연 자리 전부 (어디서 막히나)
         const buf = _readRecallLogBuf();
         buf.push(e);
         _writeRecallLogBuf(buf);

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <!-- ★ 반드시 첫 스크립트: 전역 Date를 서버 시각으로 보정한다 (clock.js 주석 참조) -->
-    <script src="clock.js?v=20260928c"></script>
+    <script src="clock.js?v=20260928d"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>King's Road - 요한계시록 암송</title>
 
@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
     <!-- image_0.webp is inlined below; preload removed -->
-    <link rel="stylesheet" href="style.css?v=20260928c">
+    <link rel="stylesheet" href="style.css?v=20260928d">
 
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-TEVW49QB45"></script>
@@ -734,6 +734,34 @@
             </div>
             <script>
                 const NOTICES = [
+                    {
+                        date: '2026-09-28',
+                        type: 'patch',
+                        title: '✍️ 백지레벨 — 간격을 두고 꺼낼수록 오릅니다',
+                        titleEn: '✍️ Blank Level — rises when you recall it on time',
+                        content: `
+<div style="padding:4px 0; line-height:1.8;">
+  <p style="color:#555; margin-bottom:12px;">복습 레벨은 '몇 번 복습했나'를 잽니다. 그런데 여러 번 복습해도 <strong>단서 없이 나오는지</strong>는 알 수 없었어요. 그래서 구절마다 <strong>백지레벨</strong>이 생겼습니다.</p>
+  <div style="background:#f5eefb; border-radius:12px; padding:12px 14px; margin-bottom:12px;">
+    <p style="color:#666; font-size:0.92em; margin:0;">• 백지(칸 없음)로 써내면 <strong>Lv2</strong>에서 시작 → 차례가 되면 다시 백지로</p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 차례: <strong>3일 → 1주 → 2주 → 한 달</strong>. 제때 써낼 때마다 한 칸씩 오르고, 오를 때 <strong>승점 보너스(밭 × 2·3·5·8)</strong></p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 차례 전에 또 써내면 그대로, 틀리면 Lv1(내일 다시)</p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 망각의 고난·보스전·중간점검·오늘의 암송 — 어디서 써내든 똑같이 쳐줍니다</p>
+  </div>
+  <p style="color:#555; margin-bottom:8px;"><strong>함께 바뀐 것</strong></p>
+  <p style="color:#666; font-size:0.92em; margin:0;">• 백지로 써낸 적 있는 구절은 <strong>빠른 복습이 빈칸 대신 백지</strong>로 나옵니다 (초성 → 빈칸 → 백지)</p>
+  <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 「💜 복습 타이밍」 맨 위에 <strong>오늘 백지 차례</strong>와, 복습이 여러 절 몰린 장은 <strong>중간점검·보스전으로 한 번에</strong> 끝내는 길이 나옵니다</p>
+  <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 백지 차례가 되면 알림이 옵니다 (밤 11시~아침 7시는 피하고, 3시간 안엔 묶어서)</p>
+  <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 📖 읽기·1단계 읽기에서 <strong>최근 힌트를 썼던 자리에 밑줄</strong>이 보입니다</p>
+</div>`,
+                        contentEn: `
+<div style="padding:4px 0; line-height:1.8;">
+  <p style="color:#555; margin-bottom:12px;">Each verse now has a <strong>Blank Level</strong>. Write it from blank to start at Lv2, then again when it is due: <strong>3 days → 1 week → 2 weeks → 1 month</strong>. Each on-time pass raises it and earns bonus points; a miss drops it to Lv1.</p>
+  <p style="color:#666; font-size:0.92em; margin:0;">• Quick review now uses blank (no slots) for verses you have written from blank before</p>
+  <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• “💜 Review timing” shows today's blank reviews and the fastest way to clear clustered reviews</p>
+  <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• Places where you recently used hints are underlined in reading views</p>
+</div>`
+                    },
                     {
                         date: '2026-09-28',
                         type: 'patch',
@@ -3240,7 +3268,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="bible_en.js"></script>
-    <script src="game.js?v=20260928c"></script>
+    <script src="game.js?v=20260928d"></script>
     <script>
 
         /* =========================================

@@ -854,11 +854,43 @@ exports.sendReviewNotifications = functions
                 const dueItems = allItems.filter(n => n.at && n.at.toMillis() <= nowMs);
                 if (dueItems.length === 0) return;
 
-                // 발송 대상 중 가장 최근 것 1개만 알림 (여러 개면 마지막 제목 사용)
-                const lastItem = dueItems[dueItems.length - 1];
-                const stageTitle = lastItem.stage || '말씀';
-                const notifTitle = '킹스로드 복습 알림';
-                const notifBody = `"${stageTitle}" 복습할 시간입니다!`;
+                // ── 백지 차례 알림 (2026-09-28) — 항목에 kind:'blank'가 붙는다. 옛 클라이언트 항목은 kind가 없어 복습으로 본다
+                //    백지만 온 경우엔 밤(23~7시 KST)과 직전 백지 알림 3시간 안을 피해 **미룬다**(클라이언트도 같은 규칙으로 일정을 짜지만 한 번 더 막는다)
+                const blankDue = dueItems.filter(n => n.kind === 'blank');
+                const revDue = dueItems.filter(n => n.kind !== 'blank');
+                if (!revDue.length && blankDue.length) {
+                    const kst = new Date(nowMs + 9 * 3600000);
+                    const h = kst.getUTCHours();
+                    let postponeTo = 0;
+                    if (h >= 23 || h < 7) {
+                        if (h >= 23) kst.setUTCDate(kst.getUTCDate() + 1);
+                        kst.setUTCHours(7, 0, 0, 0);
+                        postponeTo = kst.getTime() - 9 * 3600000;
+                    }
+                    const lastB = data.lastBlankNotifAt && data.lastBlankNotifAt.toMillis ? data.lastBlankNotifAt.toMillis() : 0;
+                    if (lastB && nowMs - lastB < 3 * 3600000) postponeTo = Math.max(postponeTo, lastB + 3 * 3600000);
+                    if (postponeTo > nowMs) {
+                        const ts = admin.firestore.Timestamp.fromMillis(postponeTo);
+                        const moved = allItems.map(n => (n.kind === 'blank' && n.at && n.at.toMillis() <= nowMs) ? Object.assign({}, n, { at: ts }) : n);
+                        const earliestMs = moved.reduce((min, n) => { const ms = n.at ? n.at.toMillis() : Infinity; return ms < min ? ms : min; }, Infinity);
+                        await doc.ref.update({ reviewNotifications: moved, reviewNotifEarliest: admin.firestore.Timestamp.fromMillis(earliestMs) });
+                        return;
+                    }
+                }
+
+                let notifTitle, notifBody;
+                if (revDue.length) {
+                    // 발송 대상 중 가장 최근 것 1개만 알림 (여러 개면 마지막 제목 사용)
+                    const lastItem = revDue[revDue.length - 1];
+                    const stageTitle = lastItem.stage || '말씀';
+                    notifTitle = '킹스로드 복습 알림';
+                    notifBody = `"${stageTitle}" 복습할 시간입니다!`;
+                    if (blankDue.length) notifBody += ` · ✍️ ${blankDue[blankDue.length - 1].stage || ''} 백지 차례`;
+                } else {
+                    const b = blankDue[blankDue.length - 1];
+                    notifTitle = '킹스로드 백지 알림';
+                    notifBody = b.body || `「${b.stage || '말씀'}」 백지로 꺼내볼 시간이에요 ✍️`;
+                }
 
                 let tokenValid = true;
                 try {
@@ -888,6 +920,7 @@ exports.sendReviewNotifications = functions
                     updateData.reviewNotifEarliest = admin.firestore.Timestamp.fromMillis(earliestMs);
                 }
                 if (!tokenValid) updateData.fcmToken = admin.firestore.FieldValue.delete();
+                if (blankDue.length) updateData.lastBlankNotifAt = now;   // 백지 알림 최소 간격 판단용
 
                 await doc.ref.update(updateData);
             }));

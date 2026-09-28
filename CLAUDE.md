@@ -100,6 +100,10 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `_buyPersonalEquipment(itemKey)` | game.js:~12887 | 비늘 차감 + personalEquipment 레벨 증가 CF 호출 |
 | `_buyGuildEquipment(itemKey)` | game.js:~12900 | 발톱 차감 + guildEquipment 레벨 증가 CF 호출 |
 | `_respondGuildInvite(accept, guildId)` | game.js:~12872 | 길드 초대 수락/거절 CF 호출 |
+| `recordVerseRecall(id, ok, hints, mode, extra)` | game.js:~25400 | 백지·빈칸·음성 시도 1건 기록 — verseRecall 요약 + 백지레벨 + 힌트 흔적 + 일지(`_logRecallAttempt`). 시도 기록은 전부 여기를 지난다 |
+| `_updateBlankBox(r, ok, blankMode, hintOk, now)` | game.js:~8400 | 백지레벨(라이트너 5상자) 갱신. 규칙은 `docs/복습과-기억.md` |
+| `_buildNotifSchedule()` | game.js:~19800 | 푸시 일정 — 복습 1건 + 백지 차례(최소 3시간·밤 피함) |
+| `_reviewOverlayHeadHtml(list)` | game.js:~8100 | 복습 목록 맨 위 — 오늘 백지 차례 · 중간점검/보스전으로 한 번에 |
 
 ---
 
