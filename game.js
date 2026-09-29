@@ -568,6 +568,10 @@ const LANG = {
         sea_btn_leaf: '🍃 {n}장으로 소성하기',
         sea_busy_gem: '맑히는 중…',
         sea_busy_leaf: '소성하는 중…',
+        sea_3d_btn: '🌊 3D로 보기 · 바다에서 걷기',
+        nj3d_to_sea: '🌊 바다로',
+        nj3d_to_city: '🏛️ 성으로',
+        nj3d_nat_open: '🌊 바다 화면에서 소성하기',
         sea_open_from_nj: '🌊 잎사귀 {n}장 — 바다와 만국으로',
         nj3d_btn: '🏛️ 3D로 보기 · 걸어서 구경',
         nj3d_loading: '성을 불러오는 중…',
@@ -1585,6 +1589,10 @@ const LANG = {
         sea_btn_leaf: '🍃 Heal with {n}',
         sea_busy_gem: 'Clearing…',
         sea_busy_leaf: 'Healing…',
+        sea_3d_btn: '🌊 View in 3D · Walk by the sea',
+        nj3d_to_sea: '🌊 To the sea',
+        nj3d_to_city: '🏛️ To the city',
+        nj3d_nat_open: '🌊 Heal it on the sea screen',
         sea_open_from_nj: '🌊 {n} leaves — to the Sea and the Nations',
         nj3d_btn: '🏛️ View in 3D · Walk around',
         nj3d_loading: 'Loading the city…',
@@ -7483,6 +7491,7 @@ function openSea() {
         <div class="nj-head"><b>${t('sea_title')}</b><span class="sea-chip" id="sea-chip"></span><button class="nj-x" onclick="closeSea()">✕</button></div>
         <div class="nj-verse">${t('sea_verse')}</div>
         <div class="sea-stage"><canvas id="sea-canvas"></canvas><div class="sea-wallet" id="sea-wallet"></div></div>
+        <button class="nj-3d-btn sea-3d-btn" onclick="closeSea(); openNJ3DView({ start: 'sea' })">${t('sea_3d_btn')}</button>
         <div id="sea-nat"></div>
         <div class="nj-pearl" id="sea-water"></div>
         <div class="nj-pearl" id="sea-land"></div>
@@ -7770,15 +7779,15 @@ function openNewJerusalem() {
 }
 /* 3D 보기 — nj3d.js를 처음 누를 때만 불러온다(three.js도 그때). 캐시 번호는 game.js와 같게 */
 let _nj3dLoading = false;
-function openNJ3DView() {
-    if (typeof window.openNJ3D === 'function') { window.openNJ3D(); return; }
+function openNJ3DView(opts) {
+    if (typeof window.openNJ3D === 'function') { window.openNJ3D(opts); return; }
     if (_nj3dLoading) return;
     _nj3dLoading = true;
     const gs = document.querySelector('script[src*="game.js"]');
     const ver = gs && /[?&]v=([^&]+)/.test(gs.src) ? RegExp.$1 : String(Date.now());
     const sc = document.createElement('script');
     sc.src = `nj3d.js?v=${ver}`;
-    sc.onload = () => { _nj3dLoading = false; if (typeof window.openNJ3D === 'function') window.openNJ3D(); };
+    sc.onload = () => { _nj3dLoading = false; if (typeof window.openNJ3D === 'function') window.openNJ3D(opts); };
     sc.onerror = () => { _nj3dLoading = false; showGemToast(0, t('nj3d_fail'), true); };
     document.head.appendChild(sc);
 }

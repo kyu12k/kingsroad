@@ -4,6 +4,8 @@
    three.js(r128)도 이때 CDN에서 받는다. 시안(claude.ai 비공개 페이지 nj3d)에서 폰으로 검증한 코드를 옮겼다.
    1차에 든 것: 성 터·풀밭·꽃·사방으로 흐르는 강·정금 바닥과 길·보좌, 기초석(njBuilt), 진주 문(njPearls), 문 경사로,
                 내려다보기 / 걸어서 구경(흰 옷 입은 순례자, 점프, 보석으로 산 제트팩), 화질 기본/고급.
+   한 세계(9/30): 성은 높은 산 위(산마루 PL=12, 높이 14), 네 강은 비탈을 따라 내려가고 남쪽 강은 골짜기를 지나 바다 어귀로.
+                바다 2,000칸·해안 70 나라는 game.js의 _seaGeom·_seaWorld(서버 sea/world) 그대로. 「바다로/성으로」, openNJ3D({start:'sea'}).
    2차 이후(시안에 있음): 성곽 12켜와 이름 벽돌, 문 위 천사, 정금 성, 다른 순례자·인사.
    지킬 것: 창을 닫으면 루프를 멈추고 모든 자원을 버린다 · 만지지 않으면 초당 30번 · 고급에서 느리면 기본으로
    ══════════════════════════════════════════════════════════════════════════ */
@@ -26,7 +28,7 @@
 
     let cur = null;   // 열려 있는 보기 — 닫을 때 정리
 
-    window.openNJ3D = async function () {
+    window.openNJ3D = async function (opts) {
         if (cur) return;
         const ov = document.createElement('div');
         ov.id = 'nj3d';
@@ -39,6 +41,7 @@
             <div class="nj3d-stage">
                 <div class="nj3d-loading">${T('nj3d_loading')}</div>
                 <button class="nj3d-mode"></button>
+                <button class="nj3d-go"></button>
                 <div class="nj3d-walk" hidden>
                     <div class="nj3d-joy"><div class="nj3d-knob"></div></div>
                     <div class="nj3d-btns">
@@ -57,7 +60,7 @@
         ov.querySelector('.nj3d-x').onclick = () => closeNJ3D();
         try { await ensureThree(); } catch (e) { loading.textContent = T('nj3d_fail'); return; }
         if (!cur || cur.ov !== ov) return;   // 받는 사이에 닫았다
-        build(ov, stageEl, loading, cleanups);
+        build(ov, stageEl, loading, cleanups, opts || {});
     };
 
     window.closeNJ3D = function () {
@@ -68,7 +71,7 @@
         c.ov.remove();
     };
 
-    function build(ov, stageEl, loading, cleanups) {
+    function build(ov, stageEl, loading, cleanups, opts) {
         const C = cur;
         const listen = (target, ev, fn, opt) => { target.addEventListener(ev, fn, opt); cleanups.push(() => target.removeEventListener(ev, fn, opt)); };
         const found = Math.max(0, Math.min(12, (typeof njBuilt !== 'undefined' ? njBuilt : 0) | 0));
@@ -100,7 +103,7 @@
         }));
         const grad = (stops) => { const c = document.createElement('canvas'); c.width = 4; c.height = 256; const g = c.getContext('2d'); const gr = g.createLinearGradient(0, 0, 0, 256); stops.forEach(([o, col]) => gr.addColorStop(o, col)); g.fillStyle = gr; g.fillRect(0, 0, 4, 256); const tx = new THREE.CanvasTexture(c); tx.encoding = THREE.sRGBEncoding; return tx; };
         const skyTex = grad([[0, '#0f1a33'], [0.55, '#35406f'], [1, '#f3d9a0']]);
-        scene.background = skyTex; scene.fog = new THREE.Fog(0x9fb59a, 55, 120);
+        scene.background = skyTex; scene.fog = new THREE.Fog(0x9fb59a, 70, 240);   // 바다까지 보이게 (한 세계, 9/30)
         // 반사 환경 — 밝은 금빛 하늘을 구워 둔다 (머리 위가 남색이면 금속이 어둠을 비춰 검게 보였다)
         const envTex = (() => {
             const pm = new THREE.PMREMGenerator(renderer), es = new THREE.Scene();
@@ -113,11 +116,11 @@
         cleanups.push(() => envTex.dispose());
         scene.environment = HIGH ? envTex : null;
 
-        const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
+        const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 420);
         camera.position.set(15, 14, 19);
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.target.set(0, 0.5, 0); controls.enableDamping = true; controls.dampingFactor = 0.08;
-        controls.minDistance = 4; controls.maxDistance = 60; controls.maxPolarAngle = 1.38; controls.enablePan = false;
+        controls.minDistance = 4; controls.maxDistance = 110; controls.maxPolarAngle = 1.38; controls.enablePan = false;
         controls.autoRotate = true; controls.autoRotateSpeed = 0.55;
         cleanups.push(() => controls.dispose());
         const hint = ov.querySelector('.nj3d-hint');
@@ -131,18 +134,41 @@
         Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16, near: 1, far: 60 });
         const throneLight = new THREE.PointLight(0xffe7a8, 1.6, 16, 1.6); throneLight.position.set(0, 2, 0); scene.add(throneLight);
 
-        // 풀밭 — 물길 자리(두 축 둘레 RB)를 비운 네 조각. 물길은 파여 있다 (9/29 — 평평한 강은 걸어도 강 같지 않았다)
+        // 물길 — 두 축을 따라 파여 있다 (9/29 — 평평한 강은 걸어도 강 같지 않았다)
         const RW = 0.55, RB = 0.95, RD = 0.12, WL = -0.05, IN_F = 4.9;   // 물길 바닥 반폭 · 둑 끝 · 깊이 · 수면 · 정금 바닥 끝
+        // ══ 한 세계 (2026-09-30) — 성은 높은 산 위(21:10 「크고 높은 산으로 올라가 거룩한 성을 보이니」),
+        //    네 강은 비탈을 따라 내려가고 남쪽 강은 골짜기를 지나 생명수의 바다로(겔 47). 바다는 서버 진행도(sea/world) 그대로 ══
+        const PL = 12, DROP = 14, SLOPE = 26;                  // 산마루 반폭 · 산 높이 · 비탈 길이
+        const SZ = 66, SRX = 24, SRZ = 23, SEA_Y = -14.15;    // 바다 가운데(남쪽 z) · 반지름 · 수면
+        const SHORE = SZ - SRZ;                                // 강 어귀
+        const seaE = (x, z) => (x / SRX) ** 2 + ((z - SZ) / SRZ) ** 2;
+        const slopeH = d => { if (d <= PL) return 0; const q = Math.min(1, (d - PL) / SLOPE); return -DROP * q * q * (3 - 2 * q); };
+        function WT(x, z) {   // 땅 높이(물길 파임 제외)
+            const h = slopeH(Math.max(Math.abs(x), Math.abs(z))), e = seaE(x, z);
+            return e < 1 ? -DROP - (e < 0.85 ? 1 : (1 - e) / 0.15) : h;
+        }
+        const stripDip = u => u >= RB ? 0 : u <= RW ? -RD : -RD * (RB - u) / (RB - RW);
         {
-            const R = 80, gm = new THREE.MeshStandardMaterial({ color: 0x2f9e58, roughness: 0.95, side: THREE.DoubleSide });
-            const e = Math.sqrt(R * R - RB * RB), a0 = Math.asin(RB / R), sh = new THREE.Shape();
-            sh.moveTo(RB, RB); sh.lineTo(RB, e);
-            for (let n = 1; n < 24; n++) { const a = Math.PI / 2 - a0 - (Math.PI / 2 - 2 * a0) * n / 24; sh.lineTo(R * Math.cos(a), R * Math.sin(a)); }
-            sh.lineTo(e, RB); sh.closePath();
-            const qg = new THREE.ShapeGeometry(sh); qg.rotateX(Math.PI / 2);   // (x, y) → (x, 0, y)
-            [0, 1, 2, 3].forEach(q => { const m = new THREE.Mesh(qg, gm); m.rotation.y = q * Math.PI / 2; m.receiveShadow = true; scene.add(m); });
-            // 땅속 — 틈으로 하늘이 비치지 않게
-            const under = new THREE.Mesh(new THREE.CircleGeometry(80, 32), new THREE.MeshBasicMaterial({ color: 0x3a2e22 }));
+            // 네 조각(물길 띠를 비움) — 가까운 곳은 촘촘히, 먼 곳은 성기게
+            const xs = [RB]; for (let v = 1.5; v <= 20; v += 1) xs.push(v); for (let v = 22; v <= 60; v += 2) xs.push(v); for (let v = 65; v <= 150; v += 5) xs.push(v);
+            const gm = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, side: THREE.DoubleSide });
+            const cTop = new THREE.Color(0x2f9e58), cLow = new THREE.Color(0x3d8a48), cSand = new THREE.Color(0xc9b486), c = new THREE.Color();
+            const n = xs.length;
+            [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(([sx, sz]) => {
+                const pos = [], col = [], idx = [];
+                xs.forEach(zv => xs.forEach(xv => {
+                    const x = sx * xv, z = sz * zv, h = WT(x, z), e = seaE(x, z);
+                    pos.push(x, h, z);
+                    c.copy(cTop).lerp(cLow, Math.min(1, -h / DROP)); if (e < 1.5 && e > 0.75) c.lerp(cSand, 0.55);
+                    col.push(c.r, c.g, c.b);
+                }));
+                for (let j = 0; j < n - 1; j++) for (let i = 0; i < n - 1; i++) { const a = j * n + i; idx.push(a, a + n, a + 1, a + 1, a + n, a + n + 1); }
+                const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+                g.setIndex(idx); g.computeVertexNormals();
+                const m = new THREE.Mesh(g, gm); m.receiveShadow = true; scene.add(m);
+            });
+            // 산마루 밑 — 물길 틈으로 하늘이 비치지 않게
+            const under = new THREE.Mesh(new THREE.PlaneGeometry(PL * 2, PL * 2), new THREE.MeshBasicMaterial({ color: 0x3a2e22 }));
             under.rotation.x = -Math.PI / 2; under.position.y = -RD - 0.03; scene.add(under);
         }
         {
@@ -159,7 +185,7 @@
                 if (Math.abs(x) < 8 && Math.abs(z) < 8) continue;
                 if (Math.abs(x) < 1.6 || Math.abs(z) < 1.6) continue;
                 const f = new THREE.Sprite(mats[n % mats.length]);
-                const sz = 0.7 + rnd() * 0.35; f.scale.set(sz, sz, 1); f.position.set(x, sz * 0.42, z); scene.add(f);
+                const sz = 0.7 + rnd() * 0.35; f.scale.set(sz, sz, 1); f.position.set(x, WT(x, z) + sz * 0.42, z); scene.add(f);
             }
         }
         // 보좌 — 빛
@@ -176,29 +202,34 @@
         const riverCv = document.createElement('canvas'); riverCv.width = 32; riverCv.height = 128;
         { const rg = riverCv.getContext('2d'); rg.fillStyle = '#12b3cc'; rg.fillRect(0, 0, 32, 128); rg.fillStyle = 'rgba(220,250,255,0.75)'; rg.fillRect(7, 10, 2, 34); rg.fillRect(22, 60, 2, 26); rg.fillRect(14, 96, 2, 22); }
         const rivers = [];
-        // 물길 단면: 둑 비탈(RB→RW) · 바닥(깊이 RD) · 둑 비탈. s0~s1 구간을 +z 방향으로
-        const troughGeo = (s0, s1) => {
-            const us = [-RB, -RW, RW, RB], hs = [0, -RD, -RD, 0], pos = [], idx = [];
-            us.forEach((u, i) => pos.push(u, hs[i], s0, u, hs[i], s1));
-            for (let i = 0; i < 3; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
-            const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
-            return g;
+        // 물길 띠 — +z 방향 s0~s1, 단면 us(가로)·hs(높이), 바닥 높이는 hf(s)를 따라간다(비탈을 내려간다). 물결 무늬는 바깥으로 흐르게 v = -s/3
+        const ribbonGeo = (s0, s1, us, hs, step, hf) => {
+            const n = us.length, ns = Math.max(1, Math.ceil((s1 - s0) / step)), pos = [], uv = [], idx = [];
+            for (let k = 0; k <= ns; k++) { const sv = s0 + (s1 - s0) * k / ns, b = hf(sv); us.forEach((u, i) => { pos.push(u, b + hs[i], sv); uv.push(i / (n - 1), -sv / 3); }); }
+            for (let k = 0; k < ns; k++) for (let i = 0; i < n - 1; i++) { const a = k * n + i; idx.push(a, a + n, a + 1, a + 1, a + n, a + n + 1); }
+            const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+            g.setIndex(idx); g.computeVertexNormals(); return g;
         };
         const bankEarth = new THREE.MeshStandardMaterial({ color: 0x6b5238, roughness: 0.9, side: THREE.DoubleSide });
         const bankGold = new THREE.MeshStandardMaterial({ color: 0xc99a3a, metalness: 0.5, roughness: 0.35, side: THREE.DoubleSide });
         const WW = 2 * (RW + (RB - RW) * (-WL) / RD);   // 수면이 둑 비탈과 만나는 폭
-        const waterMat = (tex) => [new THREE.MeshStandardMaterial({ map: tex, emissive: 0x0a6f80, emissiveIntensity: 0.35, roughness: 0.25, metalness: 0.1 }),
-            new THREE.MeshStandardMaterial({ map: tex, emissive: 0x0a6f80, emissiveIntensity: 0.2, roughness: 0.04, metalness: 0.5, envMapIntensity: 1.8 })];
-        [0, Math.PI, Math.PI / 2, -Math.PI / 2].forEach(a => {
-            const L = 60, grp = new THREE.Group(); grp.rotation.y = a;
-            const tex = new THREE.CanvasTexture(riverCv); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(1, (L - RB) / 3); tex.encoding = THREE.sRGBEncoding;
-            const t1 = new THREE.Mesh(troughGeo(RB, IN_F), bankGold), t2 = new THREE.Mesh(troughGeo(IN_F, L), bankEarth);
+        const waterMat = (tex) => [new THREE.MeshStandardMaterial({ map: tex, emissive: 0x0a6f80, emissiveIntensity: 0.35, roughness: 0.25, metalness: 0.1, side: THREE.DoubleSide }),
+            new THREE.MeshStandardMaterial({ map: tex, emissive: 0x0a6f80, emissiveIntensity: 0.2, roughness: 0.04, metalness: 0.5, envMapIntensity: 1.8, side: THREE.DoubleSide })];
+        const TR_US = [-RB, -RW, RW, RB], TR_HS = [0, -RD, -RD, 0];
+        // 남쪽(+z)은 바다 어귀까지, 나머지 셋은 비탈을 내려가 지평선까지
+        [[0, SHORE + 0.8, sv => WT(0, sv)], [Math.PI, 150, slopeH], [Math.PI / 2, 150, slopeH], [-Math.PI / 2, 150, slopeH]].forEach(([a, end, hf]) => {
+            const grp = new THREE.Group(); grp.rotation.y = a;
+            const tex = new THREE.CanvasTexture(riverCv); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.encoding = THREE.sRGBEncoding;
+            const t1 = new THREE.Mesh(ribbonGeo(RB, IN_F, TR_US, TR_HS, 0.5, hf), bankGold), t2 = new THREE.Mesh(ribbonGeo(IN_F, end, TR_US, TR_HS, 1, hf), bankEarth);
             t1.receiveShadow = t2.receiveShadow = true; grp.add(t1); grp.add(t2);
             const [wb, wh] = waterMat(tex);
-            const water = dual(new THREE.Mesh(new THREE.PlaneGeometry(WW, L - RB)), wb, wh);
-            water.rotation.x = -Math.PI / 2; water.position.set(0, WL, RB + (L - RB) / 2); grp.add(water);
+            grp.add(dual(new THREE.Mesh(ribbonGeo(RB, end, [-WW / 2, WW / 2], [WL, WL], 1, hf)), wb, wh));
             scene.add(grp); rivers.push(tex);
         });
+        {   // 바다 건너편 남쪽 — 물길 띠 자리를 땅으로 메운다
+            const z0 = SZ + SRZ + 7, g = ribbonGeo(z0, 150, [-RB, RB], [0, 0], 5, sv => WT(0, sv));
+            scene.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0x3d8a48, roughness: 0.95, side: THREE.DoubleSide })));
+        }
         {   // 보좌 둘레 샘 — 네 물길이 만나는 네모 못
             const pool = new THREE.Mesh(new THREE.PlaneGeometry(RB * 2, RB * 2), bankGold); pool.rotation.x = -Math.PI / 2; pool.position.y = -RD; scene.add(pool);
             const tex = new THREE.CanvasTexture(riverCv); tex.encoding = THREE.sRGBEncoding;
@@ -331,6 +362,67 @@
         const ripeN = fruitList.filter(f => f.ripe).length;
         if (ripeN) showHint(T('nj_fruit_hint', { n: ripeN }), 5000);
 
+        // ── 생명수의 바다와 만국 (겔 47 · 창 10 · 계 22:2) — 지도 바다와 같은 칸·같은 순서(game.js _seaGeom), 서버 진행도 그대로 ──
+        const seaGrp = new THREE.Group(); scene.add(seaGrp);
+        const SG = (typeof _seaGeom === 'function') ? _seaGeom() : { water: [], salt: [] };
+        const toW = (x, y) => [(x - 440) / 330 * SRX, SZ + (y - 470) / 320 * SRZ];
+        const HRW = 7.75 / 330 * SRX;
+        {
+            const fl = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshBasicMaterial({ color: 0x0b2a33 }));
+            fl.rotation.x = -Math.PI / 2; fl.scale.set(SRX, SRZ, 1); fl.position.set(0, SEA_Y - 0.6, SZ); seaGrp.add(fl);
+        }
+        const cellN = SG.water.length + SG.salt.length;
+        const tiles = new THREE.InstancedMesh(new THREE.CylinderGeometry(HRW * 0.93, HRW * 0.93, 0.14, 6), new THREE.MeshStandardMaterial({ roughness: 0.25, metalness: 0.15 }), Math.max(1, cellN));
+        {
+            const m4 = new THREE.Matrix4();
+            [...SG.water, ...SG.salt].forEach((c, i) => { const [X, Z] = toW(c.x, c.y); m4.makeTranslation(X, SEA_Y - 0.07, Z); tiles.setMatrixAt(i, m4); });
+            tiles.count = cellN; seaGrp.add(tiles);
+        }
+        // 해안 70 나라 — 한 덩이(얼굴 8개씩), 누른 얼굴로 나라를 찾는다
+        const NAT_FACES = 8, natRing = (() => {
+            const pos = [], col = [], idx = [];
+            const A0 = -Math.PI / 2 + 0.13, SP = Math.PI * 2 - 0.26;
+            for (let i = 0; i < 70; i++) {
+                const a0 = A0 + SP * i / 70, a1 = A0 + SP * (i + 1) / 70, base = pos.length / 3;
+                for (let q = 0; q <= 4; q++) {
+                    const a = a0 + (a1 - a0) * q / 4;
+                    [3, 86].forEach(r => { const [X, Z] = toW(440 + Math.cos(a) * (330 + r), 470 + Math.sin(a) * (320 + r)); pos.push(X, -DROP + 0.05, Z); col.push(1, 1, 1); });
+                }
+                for (let q = 0; q < 4; q++) { const a = base + q * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+            }
+            const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+            g.setIndex(idx); g.computeVertexNormals();
+            const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, side: THREE.DoubleSide }));
+            m.receiveShadow = true; seaGrp.add(m); return m;
+        })();
+        const natTrees = new THREE.InstancedMesh(new THREE.ConeGeometry(0.45, 1.3, 6), new THREE.MeshStandardMaterial({ color: 0x2b7a3a, roughness: 0.8, flatShading: true }), 140);
+        const natHouses = new THREE.InstancedMesh(new THREE.BoxGeometry(0.7, 0.55, 0.7), new THREE.MeshStandardMaterial({ color: 0xf2e3c2, roughness: 0.7 }), 140);
+        natTrees.count = 0; natHouses.count = 0; seaGrp.add(natTrees); seaGrp.add(natHouses);
+        const natMid = (i, r) => { const A0 = -Math.PI / 2 + 0.13, SP = Math.PI * 2 - 0.26, a = A0 + SP * (i + 0.5) / 70; return toW(440 + Math.cos(a) * (330 + r), 470 + Math.sin(a) * (320 + r)); };
+        let seaW = (typeof _seaWorld !== 'undefined') ? _seaWorld : null;
+        function paintSea(w) {
+            seaW = w;
+            const clear = (w && w.clear) || 0, stages = [250, 500, 1000, 2000]; let upto = 2000; for (const n of stages) if (clear < n) { upto = n; break; }
+            const col = new THREE.Color();
+            SG.water.forEach((c, i) => { col.set(i < clear ? (i >= clear - 12 ? '#2c95aa' : '#1fb0c9') : i < upto ? '#3b4a3f' : '#26312b'); tiles.setColorAt(i, col); });
+            SG.salt.forEach((c, i) => { col.set('#d9d2c3'); tiles.setColorAt(SG.water.length + i, col); });
+            if (tiles.instanceColor) tiles.instanceColor.needsUpdate = true;
+            const LAND = ['#75674f', '#5aa962', '#3f8f4d', '#4f9b58', '#62b06a'], ca = natRing.geometry.attributes.color, m4 = new THREE.Matrix4();
+            let nt = 0, nh = 0;
+            for (let i = 0; i < 70; i++) {
+                const lv = (w && w.nations && w.nations[i] && w.nations[i].lv) || 0;
+                col.set(lv ? LAND[lv] : (i % 2 ? '#6a5c48' : '#75674f'));
+                for (let v = 0; v < 10; v++) ca.setXYZ(i * 10 + v, col.r, col.g, col.b);
+                if (lv >= 2) [30, 48].forEach(r => { const [X, Z] = natMid(i, r); m4.makeTranslation(X, -DROP + 0.7, Z); natTrees.setMatrixAt(nt++, m4); });
+                if (lv >= 3) { const [X, Z] = natMid(i, 64); m4.makeTranslation(X, -DROP + 0.3, Z); natHouses.setMatrixAt(nh++, m4); }
+                if (lv >= 4) { const [X, Z] = natMid(i, 78); m4.makeTranslation(X, -DROP + 0.3, Z); natHouses.setMatrixAt(nh++, m4); }
+            }
+            ca.needsUpdate = true; natTrees.count = nt; natHouses.count = nh;
+            natTrees.instanceMatrix.needsUpdate = true; natHouses.instanceMatrix.needsUpdate = true;
+        }
+        paintSea(seaW);
+        if (typeof _seaFetch === 'function') _seaFetch().then(w => { if (cur === C && w) paintSea(w); });
+
         // ── 고급에서만: 빛줄기 · 빛 알갱이 · 풀잎 ──
         const extras = new THREE.Group(); scene.add(extras);
         const shaft = (() => {
@@ -359,7 +451,7 @@
                 if (Math.abs(x) < 7.6 && Math.abs(z) < 7.6) continue;   // 성과 경사로 둘레는 비운다
                 const k = 0.7 + r() * 0.8;
                 e.set((r() - 0.5) * 0.5, r() * Math.PI, (r() - 0.5) * 0.5); q.setFromEuler(e);
-                v.set(x, 0.2 * k, z); sc.set(1, k, 1); m4.compose(v, q, sc); blade.setMatrixAt(n, m4);
+                v.set(x, WT(x, z) + 0.2 * k, z); sc.set(1, k, 1); m4.compose(v, q, sc); blade.setMatrixAt(n, m4);
                 col.setHSL(0.3 + r() * 0.06, 0.55 + r() * 0.2, 0.28 + r() * 0.14); blade.setColorAt(n, col);
                 n++;
             }
@@ -406,7 +498,8 @@
         }
         let ripN = 0;
         const splash = (x, z, big) => {
-            const r = ripples[ripN++ % ripples.length]; r.t = 0; r.big = big; r.m.position.set(x, WL + 0.004, z); r.m.visible = true;
+            const d = Math.max(Math.abs(x), Math.abs(z)), base = d <= PL ? 0 : WT(x, z);
+            const r = ripples[ripN++ % ripples.length]; r.t = 0; r.big = big; r.m.position.set(x, base + WL + 0.004, z); r.m.visible = true;
             if (typeof SoundEffect !== 'undefined' && SoundEffect.playSplash) SoundEffect.playSplash(big);
         };
         const jet = new THREE.Group(); body.add(jet);
@@ -447,6 +540,14 @@
         }
         // 땅 높이 — 기초석 단·경사로 > 정금 길(물길 위로는 다리) > 물길 > 정금 바닥 / 풀밭
         function terrain(x, z) {
+            const ax0 = Math.abs(x), az0 = Math.abs(z);
+            if (Math.max(ax0, az0) > PL) {   // 산마루 밖 — 비탈·벌판, 강은 파여 있고, 바다 위는 수면(들어가지는 못한다)
+                if (seaE(x, z) < 1) return SEA_Y + 0.02;
+                let dip = 0;
+                if (ax0 < RB && z < SHORE) dip = stripDip(ax0);
+                if (az0 < RB) dip = Math.min(dip, stripDip(az0));
+                return WT(x, z) + dip;
+            }
             const band = bandHeight(x, z); if (band > 0) return band;
             const ax = Math.abs(x), az = Math.abs(z), inner = ax < IN_F && az < IN_F;
             if (inner && (Math.abs(ax - GATE_GAP) < 0.275 || Math.abs(az - GATE_GAP) < 0.275)) return 0.09;
@@ -459,8 +560,20 @@
             BOXES.forEach(b => { if (x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1 && b.y1 <= y + STEP && b.y1 > g) g = b.y1; });
             return g;
         }
+        // 발이 물에 잠기는 곳(참방 소리) — 물길 바닥·비탈. 다리·기초석 위는 아니다
+        function wetAt(x, z) {
+            const ax = Math.abs(x), az = Math.abs(z);
+            if (Math.max(ax, az) > PL) {
+                if (seaE(x, z) < 1) return false;
+                return (ax < RB && z < SHORE && stripDip(ax) < -0.02) || (az < RB && stripDip(az) < -0.02);
+            }
+            if (bandHeight(x, z) > 0) return false;
+            if (ax < IN_F && az < IN_F && (Math.abs(ax - GATE_GAP) < 0.275 || Math.abs(az - GATE_GAP) < 0.275)) return false;
+            return riverDip(x, z) < -0.02;
+        }
         function blocked(x, z, y) {
-            if (Math.abs(x) > 34 || Math.abs(z) > 34) return true;
+            if (Math.abs(x) > 140 || z < -140 || z > 150) return true;
+            if (seaE(x, z) < 0.985 && y < SEA_Y + 1.5) return true;   // 바다에는 걸어 들어가지 않는다(제트팩으로 높이 날면 위로 지나간다)
             if (terrain(x, z) - y > STEP) return true;
             return BOXES.some(b => b.y1 > y + STEP && b.y0 < y + CH && x > b.x0 - CR && x < b.x1 + CR && z > b.z0 - CR && z < b.z1 + CR);
         }
@@ -501,8 +614,31 @@
         };
         let tap = null;
         listen(cvs, 'pointerdown', e => { tap = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+        const natRay = new THREE.Raycaster();
+        const showNation = (i) => {
+            const en = typeof currentLang !== 'undefined' && currentLang === 'en';
+            const N = (typeof SEA_NATIONS !== 'undefined' && SEA_NATIONS[i]) || ['', '', '', '', '', ''];
+            const lv = (seaW && seaW.nations && seaW.nations[i] && seaW.nations[i].lv) || 0;
+            const LV = (typeof SEA_LV_NAMES !== 'undefined') ? SEA_LV_NAMES[en ? 'en' : 'ko'] : [];
+            fruitPanel.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button>
+                <div class="nj3d-fruit-head"><b>🏞️ ${en ? N[2] : N[0]}</b><span>${en ? N[3] : N[1]} · ${LV[lv] || ''}</span></div>
+                <button class="nj3d-eat">${T('nj3d_nat_open')}</button>`;
+            fruitPanel.hidden = false;
+            fruitPanel.querySelector('.nj3d-fruit-x').onclick = hideFruit;
+            fruitPanel.querySelector('.nj3d-eat').onclick = () => { closeNJ3D(); if (typeof openSea === 'function') { openSea(); _seaSel = i; _seaRender(); } };
+        };
         listen(cvs, 'pointerup', e => {
-            if (!tap || !fruitPos.length) { tap = null; return; }
+            if (!tap) return;
+            if (!fruitPos.length) {   // 열매가 없으면 해안의 나라만 본다
+                const moved = Math.hypot(e.clientX - tap.x, e.clientY - tap.y), long = performance.now() - tap.t;
+                tap = null;
+                if (moved > 10 || long > 450) return;
+                const r = cvs.getBoundingClientRect();
+                natRay.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+                const hit = natRay.intersectObject(natRing);
+                if (hit.length) showNation(Math.floor(hit[0].faceIndex / NAT_FACES)); else hideFruit();
+                return;
+            }
             const moved = Math.hypot(e.clientX - tap.x, e.clientY - tap.y), long = performance.now() - tap.t;
             tap = null;
             if (moved > 10 || long > 450) return;
@@ -514,7 +650,10 @@
                 const sx = r.left + (pv.x + 1) / 2 * r.width, sy = r.top + (1 - pv.y) / 2 * r.height, d = Math.hypot(sx - e.clientX, sy - e.clientY);
                 if (d < bd) { bd = d; best = i; }
             });
-            if (best >= 0) showFruit(fruitList[best]); else hideFruit();
+            if (best >= 0) { showFruit(fruitList[best]); return; }
+            natRay.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+            const hit = natRay.intersectObject(natRing);
+            if (hit.length) showNation(Math.floor(hit[0].faceIndex / NAT_FACES)); else hideFruit();
         });
         cvs.addEventListener('pointerdown', e => { if (!walk) return; lookId = e.pointerId; lx = e.clientX; ly = e.clientY; });
         cvs.addEventListener('pointermove', e => {
@@ -551,14 +690,33 @@
 
         // ── 모드 ──
         const walkUI = ov.querySelector('.nj3d-walk'), modeBtn = ov.querySelector('.nj3d-mode');
-        const camSave = camera.position.clone();
         const ray = new THREE.Raycaster();
         const setModeLabel = () => { modeBtn.textContent = walk ? T('nj3d_overview') : T('nj3d_walk'); };
         setModeLabel();
+        // 성 ↔ 바다 (한 세계, 9/30) — 내려다보기는 보는 곳을 옮기고, 걷기는 그 자리로 옮겨 선다
+        const FOCUS = { city: { t: [0, 0.5, 0], c: [15, 14, 19] }, sea: { t: [0, -14, 64], c: [30, 22, 18] } };
+        const SPOT = { city: [1.3, 9.2, 0], sea: [-2.4, SHORE - 3.5, Math.PI] };   // x, z, 카메라 방향(바다는 남쪽을 본다)
+        let where = opts.start === 'sea' ? 'sea' : 'city';
+        const goBtn = ov.querySelector('.nj3d-go');
+        const setGoLabel = () => { goBtn.textContent = where === 'city' ? T('nj3d_to_sea') : T('nj3d_to_city'); };
+        const placeAt = (dest) => {
+            const [x, z, yaw] = SPOT[dest];
+            P.x = x; P.z = z; P.y = terrain(x, z) + 0.05; P.vy = 0; camYaw = yaw; P.face = yaw + Math.PI;
+            pilgrim.position.set(P.x, P.y, P.z);
+            if (walk) camera.position.set(P.x + Math.sin(yaw) * camDist, P.y + 0.4, P.z + Math.cos(yaw) * camDist);
+        };
+        const lookAt = (dest) => { const f = FOCUS[dest]; controls.target.set(...f.t); camera.position.set(...f.c); controls.update(); };
+        goBtn.addEventListener('click', () => {
+            where = where === 'city' ? 'sea' : 'city';
+            if (walk) placeAt(where); else { controls.autoRotate = false; lookAt(where); }
+            setGoLabel(); lastTouch = performance.now();
+        });
+        if (where === 'sea') { placeAt('sea'); lookAt('sea'); controls.autoRotate = false; }
+        setGoLabel();
         modeBtn.addEventListener('click', () => {
             walk = !walk; controls.enabled = !walk; walkUI.hidden = !walk; pilgrim.visible = true;
             if (walk) { controls.autoRotate = false; camera.fov = 62; camera.near = 0.02; showHint(T('nj3d_hint_walk'), 3500); }
-            else { camera.fov = 42; camera.near = 0.1; camera.position.copy(camSave); controls.target.set(0, 0.5, 0); }
+            else { camera.fov = 42; camera.near = 0.1; where = P.z > 25 ? 'sea' : 'city'; lookAt(where); setGoLabel(); }
             camera.updateProjectionMatrix(); setModeLabel(); lastTouch = performance.now();
         });
 
@@ -573,17 +731,17 @@
             let mx = fx * (-jy) + rx * jx, mz = fz * (-jy) + rz * jx;
             const ml = Math.hypot(mx, mz); if (ml > 1) { mx /= ml; mz /= ml; }
             const moving = ml > 0.05, wasGround = P.onGround;
-            const inWater = P.onGround && P.y < -0.02;
+            const inWater = P.onGround && wetAt(P.x, P.z);
             const run = moving && ml > 0.85 && !fly;   // 조이스틱을 끝까지 밀면 달린다
             const sp = (fly || !P.onGround) ? WALK_V * 1.35 : (run ? RUN_V : WALK_V) * (inWater ? 0.65 : 1);
             const nx = P.x + mx * sp * dt, nz = P.z + mz * sp * dt;
             if (!blocked(nx, P.z, P.y)) P.x = nx;
             if (!blocked(P.x, nz, P.y)) P.z = nz;
             if (fly) P.vy = Math.min(P.vy + 6.5 * dt, 1.4); else P.vy -= G * dt;
-            P.y = Math.min(16, P.y + P.vy * dt);
+            P.y = Math.min(18, P.y + P.vy * dt);
             const g = groundAt(P.x, P.z, P.y);
             if (P.y <= g) { P.y = g; if (P.vy < 0) P.vy = 0; P.onGround = true; } else P.onGround = false;
-            if (!wasGround && P.onGround && P.y < -0.02) splash(P.x, P.z, true);   // 물에 떨어짐
+            if (!wasGround && P.onGround && wetAt(P.x, P.z)) splash(P.x, P.z, true);   // 물에 떨어짐
             if (moving) { const want = Math.atan2(-mx, -mz); let d = want - P.face; d = Math.atan2(Math.sin(d), Math.cos(d)); P.face += d * Math.min(1, dt * 10); }
             pilgrim.position.set(P.x, P.y, P.z); pilgrim.rotation.y = P.face;
             // 자세 — 걷기·달리기는 팔다리를 엇갈려 흔들고, 공중에선 팔을 벌리고, 날 때는 다리를 모은다
