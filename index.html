@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <!-- ★ 반드시 첫 스크립트: 전역 Date를 서버 시각으로 보정한다 (clock.js 주석 참조) -->
-    <script src="clock.js?v=20260930b"></script>
+    <script src="clock.js?v=20260930c"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>King's Road - 요한계시록 암송</title>
 
@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
     <!-- image_0.webp is inlined below; preload removed -->
-    <link rel="stylesheet" href="style.css?v=20260930b">
+    <link rel="stylesheet" href="style.css?v=20260930c">
 
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-TEVW49QB45"></script>
@@ -739,6 +739,39 @@
             </div>
             <script>
                 const NOTICES = [
+                    {
+                        date: '2026-09-30',
+                        type: 'notice',
+                        title: '🌊 생명수의 바다가 열렸어요',
+                        titleEn: '🌊 The Sea of Living Water is open',
+                        content: `
+<div style="padding:4px 0; line-height:1.8;">
+  <p style="color:#777; font-size:0.9em; margin-bottom:12px;">「이 강물이 이르는 곳마다 번성하는 모든 생물이 살고 또 고기가 심히 많으리니」 (겔 47:9) · 「그 나무 잎사귀들은 만국을 소성하기 위하여 있더라」 (계 22:2)</p>
+  <p style="color:#555; margin-bottom:12px;">지도를 끝까지 내려 보세요. 22장을 지난 생명수의 강이 <strong>바다</strong>로 들어가요. 모두가 함께 되살리는 <strong>하나의 바다</strong>예요.</p>
+  <div style="background:#eef6fb; border-radius:12px; padding:12px 14px; margin-bottom:12px;">
+    <p style="color:#555; margin:0 0 4px;"><strong>💎 보석으로 바다를 맑혀요</strong></p>
+    <p style="color:#666; font-size:0.92em; margin:0;">• 강 어귀에서부터 물이 맑아지고, 물고기와 어부의 그물이 돌아와요</p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 에스겔 47장처럼 <strong>발목 → 무릎 → 허리 → 헤엄칠 물</strong> 네 단계로 차올라요</p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 매주 월요일 6시, 가장 바깥의 맑은 물 일부가 다시 흐려져요 — 꾸준히 함께 맑혀요</p>
+  </div>
+  <div style="background:#eef7ee; border-radius:12px; padding:12px 14px; margin-bottom:12px;">
+    <p style="color:#555; margin:0 0 4px;"><strong>🍃 잎사귀로 만국을 소성해요</strong></p>
+    <p style="color:#666; font-size:0.92em; margin:0;">• 바다를 두른 <strong>70 나라</strong> — 창세기 10장 「나라들의 족보」의 이름이에요</p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 메마른 땅이 풀밭 → 나무 → 집과 사람 → 성읍으로 자라요. 나라는 <strong>바다가 차오른 단계까지</strong> 자라요</p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 잎사귀는 생명나무 열매를 먹으면 생겨요. 첫 열매는 10월 6일쯤 익어요</p>
+  </div>
+  <p style="color:#666; font-size:0.92em; margin:0 0 6px;">• 맑히고 소성한 자리에는 <strong>길드 이름</strong>(길드가 없으면 내 이름)이 새겨져요. 쓴 양과 순위는 보이지 않아요</p>
+  <p style="color:#888; font-size:0.88em; margin:0;">⚠️ 바다를 맑히고 만국을 소성해도 승점·보석 같은 특별한 효과는 없어요. 모두의 바다가 되살아나는 것이 전부예요.</p>
+</div>`,
+                        contentEn: `
+<div style="padding:4px 0; line-height:1.8;">
+  <p style="color:#555; margin-bottom:12px;">Scroll to the very bottom of the map: past chapter 22 the river of life flows into <strong>one sea we all restore together</strong> (Ezek 47:9, Rev 22:2).</p>
+  <p style="color:#666; font-size:0.92em; margin:0;">• <strong>💎 Gems clear the sea</strong> from the river mouth, rising in four stages: ankle, knee, waist, swimming depth. Every Monday 6am the outermost water clouds a little</p>
+  <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• <strong>🍃 Leaves heal the 70 nations</strong> of Genesis 10 on the shore. Leaves come from eating fruit of the tree of life</p>
+  <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• Guild names (or your own) are written where you helped. No amounts, no ranking</p>
+  <p style="color:#888; font-size:0.88em; margin:6px 0 0;">⚠️ There is no special effect such as score or gems — the shared sea simply comes back to life.</p>
+</div>`
+                    },
                     {
                         date: '2026-09-29',
                         type: 'patch',
@@ -3417,7 +3450,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="bible_en.js"></script>
-    <script src="game.js?v=20260930b"></script>
+    <script src="game.js?v=20260930c"></script>
     <script>
 
         /* =========================================

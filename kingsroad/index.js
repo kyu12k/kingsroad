@@ -1191,3 +1191,157 @@ exports.getAnalytics = onRequest({ cors: true }, async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 });
+
+
+// ══ 생명수의 바다와 만국 (2026-09-30) — docs/새-예루살렘.md 「바다」 ══════════════════
+// 모두가 함께 쓰는 바다 하나: sea/world 문서. 💎 보석은 강 어귀에서부터 물칸을 맑히고(에스겔 47:3~5 네 단계),
+// 🍃 잎사귀(생명나무 열매를 먹어 얻음)는 해안의 70 나라(창 10장)를 소성한다. 나라는 바다가 차오른 단계까지만 자란다.
+// 누가(어느 길드가) 무엇을 얼마나 드렸는지는 sea/world/gifts에 전부 남긴다 — 보여주는 방식은 나중에 바꿀 수 있게.
+// 화면에는 단계마다 함께한 길드 이름(길드가 없으면 사람 이름)만, 같은 크기로. 양·순위는 보이지 않는다.
+const SEA_CELL_COST = 200000;
+const SEA_STAGES = [250, 500, 1000, 2000];   // 발목 · 무릎 · 허리 · 헤엄칠 물 (누적 칸 수)
+const SEA_MAX_CELLS = 2000;
+const SEA_NATIONS = 70;
+const SEA_LEAF_PER_LV = 50;
+const SEA_NATION_MAX_LV = 4;                 // 메마름(0) → 풀밭 → 나무 → 집·사람 → 성읍·그물(4)
+const SEA_GEM_MAX_PER_CALL = 10000000;
+const SEA_LEAF_MAX_PER_CALL = 200;
+const SEA_FRUIT_FALL_MS = 37 * 86400000;
+
+function seaStageIdx(c) { for (let i = 0; i < SEA_STAGES.length; i++) if (c < SEA_STAGES[i]) return i; return SEA_STAGES.length - 1; }
+// 나라가 자랄 수 있는 끝 — 다 채운 바다 단계 + 1 (발목을 채우는 중이면 풀밭까지). 오염으로 칸이 줄어도 한 번 채운 단계는 그대로(clearMax)
+function seaNationCap(clearMax) { return Math.min(SEA_NATION_MAX_LV, SEA_STAGES.filter(n => clearMax >= n).length + 1); }
+function seaFreshWorld() {
+    const nations = {};
+    for (let i = 0; i < SEA_NATIONS; i++) nations[i] = { lv: 0, pool: 0, g: {} };
+    return { clear: 0, clearMax: 0, pool: 0, stageG: {}, nations, totalGems: 0, totalLeaves: 0, week: { id: getWeekId(), cells: 0 }, hist: [], pollution: null };
+}
+// 저장본에서 번 잎사귀 — 클라이언트 _njLeaves()와 같은 셈: 달마다 max(접은 수, 남은 기록의 먹은 수)
+function seaLeavesEarned(sv) {
+    const fr = (sv && typeof sv.njFruits === 'object' && sv.njFruits) || {}, ar = (sv && typeof sv.njLeafArch === 'object' && sv.njLeafArch) || {};
+    const months = new Set([...Object.keys(fr), ...Object.keys(ar)]);
+    let n = 0;
+    months.forEach(m => {
+        let live = 0;
+        Object.values(fr[m] || {}).forEach(f => { if (Array.isArray(f) && f[1]) live++; });
+        n += Math.max(Number(ar[m]) | 0, live);
+    });
+    return n;
+}
+function seaAddLabel(map, key, label) {
+    const arr = Array.isArray(map[key]) ? map[key] : [];
+    if (!arr.includes(label)) arr.push(label);
+    map[key] = arr;
+}
+// 주가 바뀌었으면 지난주 맑힌 칸 수를 기록에 넘긴다 (오염량 계산용)
+function seaRollWeek(w) {
+    const wk = getWeekId();
+    if (!w.week || w.week.id !== wk) {
+        if (w.week) w.hist = [...(Array.isArray(w.hist) ? w.hist : []), w.week.cells || 0].slice(-4);
+        w.week = { id: wk, cells: 0 };
+    }
+}
+
+exports.seaGive = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const uid = request.auth.uid;
+    const { myTag, kind, giftId } = request.data || {};
+    const amount = Math.floor(Number(request.data && request.data.amount));
+    const nation = Math.floor(Number(request.data && request.data.nation));
+    if (kind !== 'gem' && kind !== 'leaf') throw new HttpsError('invalid-argument', '무엇을 쓸지 알 수 없어요.');
+    if (!(amount > 0) || amount > (kind === 'gem' ? SEA_GEM_MAX_PER_CALL : SEA_LEAF_MAX_PER_CALL)) throw new HttpsError('invalid-argument', '양이 올바르지 않아요.');
+    if (kind === 'leaf' && !(nation >= 0 && nation < SEA_NATIONS)) throw new HttpsError('invalid-argument', '나라를 알 수 없어요.');
+    if (typeof giftId !== 'string' || !/^[A-Za-z0-9_-]{8,40}$/.test(giftId)) throw new HttpsError('invalid-argument', '요청 번호가 올바르지 않아요.');
+
+    const user = await verifyTag(uid, myTag);
+    await enforceRateLimit(uid, 'seaGive', { maxCalls: 120, windowMs: 3600000 });
+    let guildName = '';
+    if (user.guildId) {
+        const gd = await db.collection('guilds').doc(String(user.guildId)).get();
+        if (gd.exists) guildName = String(gd.data().name || '');
+    }
+    // 새길 이름 — 길드면 길드 이름, 아니면 지파 보석 + 닉네임
+    const label = guildName ? `g|${guildName}` : `p|${Number.isInteger(user.tribe) ? user.tribe : ''}|${String(user.nickname || '').slice(0, 20)}`;
+
+    const worldRef = db.collection('sea').doc('world');
+    const giftRef = worldRef.collection('gifts').doc(`${uid}_${giftId}`);
+    const giverRef = worldRef.collection('givers').doc(uid);
+    const saveRef = db.collection('saves').doc(uid);
+    let out = null;
+    await db.runTransaction(async (tx) => {
+        const [wSnap, gSnap, gvSnap, svSnap] = await Promise.all([tx.get(worldRef), tx.get(giftRef), tx.get(giverRef), tx.get(saveRef)]);
+        const w = wSnap.exists ? wSnap.data() : seaFreshWorld();
+        const gv = gvSnap.exists ? gvSnap.data() : { gems: 0, leaves: 0 };
+        if (gSnap.exists) {   // 같은 요청이 두 번 온 것(재시도) — 다시 반영하지 않는다
+            out = { ok: true, dup: true, used: gSnap.data().used || 0, spentLeaves: gv.leaves || 0, givenGems: gv.gems || 0 };
+            return;
+        }
+        seaRollWeek(w);
+        const now = Date.now();
+        let used = 0, lvUp = null, stageUp = null;
+        if (kind === 'gem') {
+            // 보석은 기기가 차감한다(기초석·제트팩과 같은 신뢰 수준). 서버는 저장본 보유량만 확인한다 — 기기는 드리기 전에 저장을 올린다
+            const have = Number(svSnap.exists ? svSnap.data().gems : 0) || 0;
+            if (have < amount) throw new HttpsError('failed-precondition', '보석이 부족해요.');
+            if (w.clear >= SEA_MAX_CELLS) throw new HttpsError('failed-precondition', '바다가 모두 되살아났어요.');
+            used = amount;
+            const s0 = seaStageIdx(w.clear), before = w.clearMax || 0;
+            w.pool = (w.pool || 0) + amount;
+            let cells = 0;
+            while (w.pool >= SEA_CELL_COST && w.clear < SEA_MAX_CELLS) { w.pool -= SEA_CELL_COST; w.clear++; cells++; }
+            if (w.clear >= SEA_MAX_CELLS) w.pool = 0;
+            w.clearMax = Math.max(before, w.clear);
+            w.week.cells = (w.week.cells || 0) + cells;
+            const s1 = seaStageIdx(Math.max(0, w.clear - (cells ? 1 : 0)));
+            w.stageG = w.stageG || {};
+            for (let s = s0; s <= s1; s++) seaAddLabel(w.stageG, String(s), label);
+            const done = SEA_STAGES.findIndex(n => before < n && w.clearMax >= n);
+            if (done >= 0) stageUp = done;
+            w.totalGems = (w.totalGems || 0) + amount;
+        } else {
+            const avail = seaLeavesEarned(svSnap.exists ? svSnap.data() : {}) - (gv.leaves || 0);
+            if (avail < 1) throw new HttpsError('failed-precondition', '쓸 잎사귀가 없어요.');
+            w.nations = w.nations || {};
+            const n = w.nations[nation] || { lv: 0, pool: 0, g: {} };
+            const cap = seaNationCap(w.clearMax || 0);
+            if (n.lv >= cap) throw new HttpsError('failed-precondition', '바다가 더 차올라야 이 나라가 자랄 수 있어요.');
+            used = Math.min(amount, avail, SEA_LEAF_PER_LV - (n.pool || 0));
+            n.pool = (n.pool || 0) + used;
+            n.g = n.g || {};
+            seaAddLabel(n.g, String(n.lv), label);
+            if (n.pool >= SEA_LEAF_PER_LV) { n.lv++; n.pool = 0; n.at = Object.assign({}, n.at, { [n.lv]: now }); lvUp = n.lv; }
+            w.nations[nation] = n;
+            w.totalLeaves = (w.totalLeaves || 0) + used;
+        }
+        w.updatedAt = now;
+        const gvNew = { gems: (gv.gems || 0) + (kind === 'gem' ? used : 0), leaves: (gv.leaves || 0) + (kind === 'leaf' ? used : 0), updatedAt: now };
+        tx.set(worldRef, w);
+        tx.set(giverRef, gvNew, { merge: true });
+        tx.set(giftRef, { uid, tag: String(myTag), nick: String(user.nickname || ''), tribe: Number.isInteger(user.tribe) ? user.tribe : null,
+            guildId: user.guildId || null, guildName, kind, amount, used, nation: kind === 'leaf' ? nation : null,
+            clearAfter: w.clear, nationLv: kind === 'leaf' ? w.nations[nation].lv : null, at: now });
+        out = { ok: true, used, lvUp, stageUp, spentLeaves: gvNew.leaves, givenGems: gvNew.gems };
+    });
+    return out;
+});
+
+// 매주 월요일 06:00 KST — 가장 바깥의 맑은 물 일부가 다시 흐려진다.
+// 양은 지난 4주 동안 한 주에 맑힌 칸 평균의 30% (최소 2칸) — 사람이 늘어도 균형이 저절로 맞는다. 한 번 채운 단계(clearMax)와 나라는 그대로
+exports.seaWeekly = onSchedule({ schedule: '0 6 * * 1', timeZone: 'Asia/Seoul', region: 'asia-northeast3' }, async () => {
+    const worldRef = db.collection('sea').doc('world');
+    await db.runTransaction(async (tx) => {
+        const snap = await tx.get(worldRef);
+        if (!snap.exists) return;
+        const w = snap.data();
+        const wk = getWeekId();
+        if (w.pollution && w.pollution.week === wk) return;   // 이미 했다
+        seaRollWeek(w);
+        const hist = Array.isArray(w.hist) ? w.hist : [];
+        const avg = hist.length ? hist.reduce((a, b) => a + b, 0) / hist.length : 0;
+        const lost = Math.min(w.clear || 0, Math.max(2, Math.round(avg * 0.3)));
+        w.clear = (w.clear || 0) - lost;
+        w.pollution = { week: wk, lost, at: Date.now() };
+        tx.set(worldRef, w);
+        console.log(`[seaWeekly] ${wk} 흐려진 칸 ${lost} (지난 주 평균 ${avg.toFixed(1)}), 남은 맑은 칸 ${w.clear}`);
+    });
+});

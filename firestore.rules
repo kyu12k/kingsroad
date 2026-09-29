@@ -127,6 +127,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // 생명수의 바다와 만국 (2026-09-30) — 모두의 바다 하나(sea/world). 로그인 사용자는 읽고, 쓰기는 seaGive·seaWeekly 함수만.
+    // 드린 기록(gifts)·사람별 합계(givers)는 읽기도 막는다 — 양은 보여주지 않기로 했다
+    match /sea/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+      match /{sub=**} {
+        allow read, write: if false;
+      }
+    }
+
     // 게임 세이브: 본인 문서만 읽기 허용, 쓰기는 saveGameDataSecure CF만
     match /saves/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;

@@ -536,6 +536,37 @@ const LANG = {
         nj_fruit_eat: '🍽️ 백지로 써내고 먹기',
         nj_fruit_hint: '익은 열매 {n}개 — 나무의 열매를 눌러 보세요',
         nj_fruit_ref: '{c}장 {v}절',
+        sea_title: '🌊 생명수의 바다',
+        sea_verse: '「이 강물이 이르는 곳마다 번성하는 모든 생물이 살고 … 고기가 심히 많으리니」 (겔 47:9) · 「그 나무 잎사귀들은 만국을 소성하기 위하여 있더라」 (계 22:2)',
+        sea_stage_chip: '{n}단계 · {name}',
+        sea_zone_label: '🌊 생명수의 바다 · {stage} {pct}% · 소성된 나라 {n}',
+        sea_water_title: '💎 바다를 맑게',
+        sea_cell_line: '{name} 단계 {a} / {b}칸 · 다음 칸까지 💎 {pool} / {cost}',
+        sea_full: '바다가 모두 되살아났어요 — 헤엄칠 물',
+        sea_guilds_title: '함께 맑힌 길드들 · {n}단계 {name}',
+        sea_guilds_none: '아직 없어요 — 첫 길드가 되어 보세요',
+        sea_water_rule: '보석을 쓴 만큼 강 어귀에서부터 맑아져요. 승점·보석 같은 특별한 효과는 없어요 — 모두의 바다가 되살아나는 것이 전부예요. 매주 월요일 6시, 가장 바깥의 맑은 물 일부가 다시 흐려져요(지난 몇 주 모두가 맑힌 양에 맞춰). 가장자리 흰 칸은 끝내 소금 땅이에요 (47:11). 쓴 양은 보이지 않고, 길드 이름(길드가 없으면 내 이름)이 새겨져요.',
+        sea_last_pollution: '지난 월요일엔 {n}칸이 흐려졌어요.',
+        sea_my_gems: '내가 바다를 맑힌 보석 💎 {n}',
+        sea_land_title: '🍃 만국을 소성',
+        sea_land_num: '소성된 나라 {n} / 70 · 모두 {lv} / 280단계',
+        sea_land_rule: '해안의 나라를 눌러 잎사귀로 소성해요. 나라는 바다가 차오른 단계까지 자라요 — 바다(보석)와 땅(잎사귀)이 함께 가요. 잎사귀는 생명나무 열매를 먹으면 생겨요.',
+        sea_nat_need: '{next}까지 🍃 {a} / {b}',
+        sea_nat_full: '온전히 소성되었어요 🎉',
+        sea_nat_wait: '바다가 {name}까지 차오르면 더 자랄 수 있어요 — 바다와 땅이 함께 가요',
+        sea_nat_none: '아직 이 나라를 소성한 길드가 없어요',
+        sea_nat_rule: '한 단계를 함께 채운 길드 이름이 같은 크기로 새겨져요. 이름은 창세기 10장 「나라들의 족보」에서 왔어요.',
+        sea_no_leaves: '쓸 잎사귀가 없어요 — 생명나무 열매를 먹으면 생겨요',
+        sea_need_gems: '보석이 부족해요',
+        sea_confirm_gem: '💎 {n}개로 바다를 맑힐까요?\n\n⚠️ 바다를 맑혀도 승점·보석·칭호 같은 특별한 효과는 없어요. 모두의 바다가 되살아나고 길드(또는 내) 이름이 새겨지는 것이 전부예요.\n쓴 보석은 돌아오지 않아요.',
+        sea_gave_gem: '🌊 바다가 조금 더 맑아졌어요',
+        sea_gave_leaf: '🍃 잎사귀 {n}장으로 {name}을(를) 소성했어요',
+        sea_stage_up: '🌊 바다가 {name}까지 차올랐어요! 나라들이 한 단계 더 자랄 수 있어요',
+        sea_nat_up: '🍃 {name}이(가) {lv}(으)로 자랐어요',
+        sea_fail: '맑히지(소성하지) 못했어요. 인터넷 연결을 확인해 주세요',
+        sea_btn_gem: '💎 {n}으로 맑히기',
+        sea_btn_leaf: '🍃 {n}장으로 소성하기',
+        sea_open_from_nj: '🌊 잎사귀 {n}장 — 바다와 만국으로',
         nj3d_btn: '🏛️ 3D로 보기 · 걸어서 구경',
         nj3d_loading: '성을 불러오는 중…',
         nj3d_fail: '3D를 불러오지 못했어요. 인터넷 연결을 확인해 주세요',
@@ -1520,6 +1551,37 @@ const LANG = {
         nj_fruit_eat: '🍽️ Write it from blank and eat',
         nj_fruit_hint: '{n} ripe fruit — tap one on a tree',
         nj_fruit_ref: '{c}:{v}',
+        sea_title: '🌊 The Sea of Living Water',
+        sea_verse: '“Wherever the river goes every living creature will live … there will be very many fish” (Ezek 47:9) · “The leaves of the tree were for the healing of the nations” (Rev 22:2)',
+        sea_stage_chip: 'Stage {n} · {name}',
+        sea_zone_label: '🌊 The Sea · {stage} {pct}% · {n} nations healed',
+        sea_water_title: '💎 Clear the sea',
+        sea_cell_line: '{name}: {a} / {b} cells · next cell 💎 {pool} / {cost}',
+        sea_full: 'The whole sea lives again',
+        sea_guilds_title: 'Guilds who cleared it together · Stage {n} {name}',
+        sea_guilds_none: 'None yet — be the first guild',
+        sea_water_rule: 'Gems clear the water from the river mouth outward. There is no special effect such as score or gems — the shared sea simply comes back to life. Every Monday 6am the outermost clear water clouds a little (balanced to recent gifts). The white cells stay salt (47:11). Amounts are never shown — your guild name (or your own) is written.',
+        sea_last_pollution: 'Last Monday {n} cells clouded.',
+        sea_my_gems: 'Gems I used to clear the sea 💎 {n}',
+        sea_land_title: '🍃 Heal the nations',
+        sea_land_num: '{n} / 70 nations healed · {lv} / 280 steps',
+        sea_land_rule: 'Tap a nation on the shore to heal it with leaves. Nations grow only as far as the sea has risen — water (gems) and land (leaves) go together. Leaves come from eating fruit of the tree of life.',
+        sea_nat_need: 'To {next}: 🍃 {a} / {b}',
+        sea_nat_full: 'Fully healed 🎉',
+        sea_nat_wait: 'It can grow once the sea reaches {name}',
+        sea_nat_none: 'No guild has healed this nation yet',
+        sea_nat_rule: 'Guilds who complete a step are written at equal size. Names come from the Table of Nations (Genesis 10).',
+        sea_no_leaves: 'No leaves to use — eat fruit of the tree of life',
+        sea_need_gems: 'Not enough gems',
+        sea_confirm_gem: 'Clear the sea with 💎 {n}?\n\n⚠️ This gives no special effect — no score, gems or titles. The shared sea comes back to life and your guild (or your) name is written. That is all.\nGems used cannot be returned.',
+        sea_gave_gem: '🌊 The sea grew a little clearer',
+        sea_gave_leaf: '🍃 You healed {name} with {n} leaves',
+        sea_stage_up: '🌊 The sea has risen to {name}! Nations can grow one step more',
+        sea_nat_up: '🍃 {name} grew to {lv}',
+        sea_fail: 'Could not complete. Please check your connection',
+        sea_btn_gem: '💎 Clear with {n}',
+        sea_btn_leaf: '🍃 Heal with {n}',
+        sea_open_from_nj: '🌊 {n} leaves — to the Sea and the Nations',
         nj3d_btn: '🏛️ View in 3D · Walk around',
         nj3d_loading: 'Loading the city…',
         nj3d_fail: 'Could not load 3D. Please check your connection',
@@ -2281,7 +2343,9 @@ let njPearlLog = [];
 let njBlankDays = [];    // 진주 — 백지로 한 절이라도 통과한 날('YYYY-MM-DD', 오전 6시 기준). 진주 수는 이것에서 계산한다
 let njJetpack = false;
 let njFruits = {};       // 생명나무 열매 — { 'YYYY-MM': { 절id: [열린 때, 먹은 때(0=아직), 마지막 실패 때] } }. 지난 달은 잎사귀 수만 njLeafArch로 접는다
-let njLeafArch = {};     // 접은 달의 먹은 열매(=잎사귀) 수 { 'YYYY-MM': n }   // 3D 걸어서 구경 — 보석으로 산 제트팩 (한 번 사면 계속)
+let njLeafArch = {};
+let njLeafSpent = 0;     // 바다와 만국에 드린 잎사귀 (서버 givers가 정본 — 응답으로 받아 둔다)
+let seaGemsGiven = 0;    // 바다에 드린 보석 합 (내 기록 표시용)     // 접은 달의 먹은 열매(=잎사귀) 수 { 'YYYY-MM': n }   // 3D 걸어서 구경 — 보석으로 산 제트팩 (한 번 사면 계속)
 let lastPlayedStageId = null; // 마지막으로 직접 플레이한 스테이지 ID
 let bossFirstClearClaimed = new Set(); // 최초 클리어 보너스를 수령한 보스 스테이지 ID
 let hardshipAddressClearHistory = {}; // 장별 주소의 고난 클리어 기록 { "1": [{correct, total, score, date, duration}, ...] }
@@ -2731,6 +2795,8 @@ loadGameData = function () {
         njJetpack = !!parsed.njJetpack;
         njFruits = (parsed.njFruits && typeof parsed.njFruits === 'object') ? parsed.njFruits : {};
         njLeafArch = (parsed.njLeafArch && typeof parsed.njLeafArch === 'object') ? parsed.njLeafArch : {};
+        njLeafSpent = Math.max(0, parseInt(parsed.njLeafSpent, 10) || 0);
+        seaGemsGiven = Math.max(0, parseInt(parsed.seaGemsGiven, 10) || 0);
         // 오늘의 암송 진행은 날마다 새 id라 60일 지난 것은 버린다 (저장본이 자라지 않게)
         try {
             const _cut = _shift6AMDayStr(_get6AMDayStr(), -60);
@@ -7238,6 +7304,282 @@ function _njFruitResult(key, id, ok, now) {
     }
 }
 
+/* ══ 생명수의 바다와 만국 (2026-09-30) — docs/새-예루살렘.md 「바다」 ══
+   모두의 바다 하나(서버 sea/world). 💎 보석은 강 어귀에서부터 물칸을 맑히고(에스겔 47:3~5 발목·무릎·허리·헤엄칠 물),
+   🍃 잎사귀는 해안의 70 나라(창 10장)를 소성한다. 나라는 바다가 차오른 단계까지만 자란다.
+   드리기는 kingsroad 함수 seaGive만(규칙이 직접 쓰기를 막는다). 화면엔 단계마다 함께한 길드 이름(없으면 사람 이름) — 양·순위 없음 */
+const SEA_CELL_COST = 200000, SEA_STAGES = [250, 500, 1000, 2000], SEA_LEAF_PER_LV = 50;
+const SEA_STAGE_NAMES = { ko: ['발목', '무릎', '허리', '헤엄칠 물'], en: ['Ankle', 'Knee', 'Waist', 'Swimming depth'] };
+const SEA_LV_NAMES = { ko: ['메마름', '풀밭', '나무', '집·사람', '성읍·그물'], en: ['Barren', 'Grass', 'Trees', 'Homes', 'Towns & nets'] };
+// 창세기 10장의 70 이름 — 어귀(북)에서 시계 방향: 셈(동) 26 → 함(남) 30 → 야벳(서) 14. [이름, 계보, 영어 이름, 영어 계보]
+const SEA_NATIONS = (() => {
+    const S = [['엘람','셈의 아들','Elam','son of Shem'],['앗수르','셈의 아들','Asshur','son of Shem'],['아르박삿','셈의 아들','Arphaxad','son of Shem'],['룻','셈의 아들','Lud','son of Shem'],['아람','셈의 아들','Aram','son of Shem'],
+        ['우스','아람의 아들','Uz','son of Aram'],['훌','아람의 아들','Hul','son of Aram'],['게델','아람의 아들','Gether','son of Aram'],['마스','아람의 아들','Mash','son of Aram'],
+        ['셀라','아르박삿이 낳은','Shelah','of Arphaxad'],['에벨','셀라가 낳은','Eber','of Shelah'],['벨렉','에벨의 아들','Peleg','son of Eber'],['욕단','에벨의 아들','Joktan','son of Eber'],
+        ['알모닷','욕단이 낳은','Almodad','of Joktan'],['셀렙','욕단이 낳은','Sheleph','of Joktan'],['하살마웻','욕단이 낳은','Hazarmaveth','of Joktan'],['예라','욕단이 낳은','Jerah','of Joktan'],['하도람','욕단이 낳은','Hadoram','of Joktan'],
+        ['우살','욕단이 낳은','Uzal','of Joktan'],['디글라','욕단이 낳은','Diklah','of Joktan'],['오발','욕단이 낳은','Obal','of Joktan'],['아비마엘','욕단이 낳은','Abimael','of Joktan'],['스바','욕단이 낳은','Sheba','of Joktan'],
+        ['오빌','욕단이 낳은','Ophir','of Joktan'],['하윌라','욕단이 낳은','Havilah','of Joktan'],['요밥','욕단이 낳은','Jobab','of Joktan']].map(n => [...n, '셈', 'Shem']);
+    const H = [['구스','함의 아들','Cush','son of Ham'],['미스라임','함의 아들','Mizraim','son of Ham'],['붓','함의 아들','Put','son of Ham'],['가나안','함의 아들','Canaan','son of Ham'],
+        ['스바','구스의 아들','Seba','son of Cush'],['하윌라','구스의 아들','Havilah','son of Cush'],['삽다','구스의 아들','Sabtah','son of Cush'],['라아마','구스의 아들','Raamah','son of Cush'],['삽드가','구스의 아들','Sabteca','son of Cush'],
+        ['스바','라아마의 아들','Sheba','son of Raamah'],['드단','라아마의 아들','Dedan','son of Raamah'],['니므롯','구스가 낳은','Nimrod','of Cush'],
+        ['루딤','미스라임이 낳은','Ludim','of Mizraim'],['아나밈','미스라임이 낳은','Anamim','of Mizraim'],['르하빔','미스라임이 낳은','Lehabim','of Mizraim'],['납두힘','미스라임이 낳은','Naphtuhim','of Mizraim'],
+        ['바드루심','미스라임이 낳은','Pathrusim','of Mizraim'],['가슬루힘','미스라임이 낳은','Casluhim','of Mizraim'],['갑도림','미스라임이 낳은','Caphtorim','of Mizraim'],
+        ['시돈','가나안이 낳은','Sidon','of Canaan'],['헷','가나안이 낳은','Heth','of Canaan'],['여부스','가나안이 낳은','Jebusites','of Canaan'],['아모리','가나안이 낳은','Amorites','of Canaan'],['기르가스','가나안이 낳은','Girgashites','of Canaan'],
+        ['히위','가나안이 낳은','Hivites','of Canaan'],['알가','가나안이 낳은','Arkites','of Canaan'],['신','가나안이 낳은','Sinites','of Canaan'],['아르왓','가나안이 낳은','Arvadites','of Canaan'],['스말','가나안이 낳은','Zemarites','of Canaan'],['하맛','가나안이 낳은','Hamathites','of Canaan']].map(n => [...n, '함', 'Ham']);
+    const J = [['고멜','야벳의 아들','Gomer','son of Japheth'],['마곡','야벳의 아들','Magog','son of Japheth'],['마대','야벳의 아들','Madai','son of Japheth'],['야완','야벳의 아들','Javan','son of Japheth'],
+        ['두발','야벳의 아들','Tubal','son of Japheth'],['메섹','야벳의 아들','Meshech','son of Japheth'],['디라스','야벳의 아들','Tiras','son of Japheth'],
+        ['아스그나스','고멜의 아들','Ashkenaz','son of Gomer'],['리밧','고멜의 아들','Riphath','son of Gomer'],['도갈마','고멜의 아들','Togarmah','son of Gomer'],
+        ['엘리사','야완의 아들','Elishah','son of Javan'],['달시스','야완의 아들','Tarshish','son of Javan'],['깃딤','야완의 아들','Kittim','son of Javan'],['도다님','야완의 아들','Dodanim','son of Javan']].map(n => [...n, '야벳', 'Japheth']);
+    return [...S, ...H, ...J];
+})();
+let _seaWorld = null, _seaWorldAt = 0, _seaUnsub = null, _seaBusy = false, _seaSel = -1;
+function _seaL(o) { return currentLang === 'en' ? o.en : o.ko; }
+function _njLeavesAvail() { return Math.max(0, _njLeaves() - (njLeafSpent || 0)); }
+function _seaCompleted(w) { const m = (w && w.clearMax) || 0; return SEA_STAGES.filter(n => m >= n).length; }
+function _seaStageIdx(c) { for (let i = 0; i < SEA_STAGES.length; i++) if (c < SEA_STAGES[i]) return i; return SEA_STAGES.length - 1; }
+function _seaNationCap(w) { return Math.min(4, _seaCompleted(w) + 1); }
+function _seaNat(w, i) { const n = w && w.nations && w.nations[i]; return { lv: (n && n.lv) || 0, pool: (n && n.pool) || 0, g: (n && n.g) || {} }; }
+/* 새긴 이름 — 'g|길드' 또는 'p|지파|닉네임' */
+function _seaLabelHtml(lb) {
+    const a = String(lb).split('|');
+    if (a[0] === 'g') return `<span class="sea-name">🏰 ${_escapeHtmlSafe(a.slice(1).join('|'))}</span>`;
+    const tr = (typeof TRIBE_DATA !== 'undefined' && a[1] !== '' && TRIBE_DATA[+a[1]]) ? TRIBE_DATA[+a[1]] : null;
+    return `<span class="sea-name">${tr ? `<i style="background:${tr.glow}"></i>` : ''}${_escapeHtmlSafe(a.slice(2).join('|'))}</span>`;
+}
+function _escapeHtmlSafe(t) { return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+/* 물칸 — 880×880 기준 좌표, 한 번만 만든다. 어귀에서 가까운 순서 = 맑아지는 순서. 2,000칸을 넘는 가장자리는 소금 땅(47:11) */
+const SEA_G = { CX: 440, CY: 470, RX: 330, RY: 320, HR: 7.75, GAP: 0.13 };
+let _seaCells = null;
+function _seaGeom() {
+    if (_seaCells) return _seaCells;
+    const { CX, CY, RX, RY, HR } = SEA_G, my = CY - RY, cells = [];
+    for (let row = -60; row <= 60; row++) for (let col = -60; col <= 60; col++) {
+        const x = CX + col * HR * 1.732 + (row & 1 ? HR * 0.866 : 0), y = CY + row * HR * 1.5;
+        const ex = (x - CX) / (RX - 6), ey = (y - CY) / (RY - 6);
+        if (ex * ex + ey * ey > 1) continue;
+        cells.push({ x, y, d: Math.hypot(x - CX, (y - my) * 0.95) });
+    }
+    cells.sort((a, b) => a.d - b.d);
+    let sd = 5; const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+    cells.slice(-160).forEach(c => { if (r() < 0.14) c.salt = true; });
+    const water = cells.filter(c => !c.salt).slice(0, 2000);
+    cells.filter(c => !c.salt).slice(2000).forEach(c => c.salt = true);
+    _seaCells = { water, salt: cells.filter(c => c.salt) };
+    return _seaCells;
+}
+function _seaNatAng(i) { const A0 = -Math.PI / 2 + SEA_G.GAP, SP = Math.PI * 2 - SEA_G.GAP * 2; return [A0 + SP * i / 70, A0 + SP * (i + 1) / 70]; }
+/* 바다와 해안을 그린다 — 크기 S의 정사각형에(가운데 정렬). sel: 고른 나라 */
+function _seaDraw(cv, W, H, w, sel, noRiver) {
+    const dpr = Math.min(2.5, window.devicePixelRatio || 2);
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    const g = cv.getContext('2d'), S = Math.min(W, H), k = S / 880, ox = (W - S) / 2, oy = (H - S) / 2;
+    g.setTransform(dpr * k, 0, 0, dpr * k, dpr * ox, dpr * oy);
+    const { CX, CY, RX, RY, HR } = SEA_G, { water, salt } = _seaGeom();
+    const ring = (a, r) => [CX + Math.cos(a) * (RX + r), CY + Math.sin(a) * (RY + r)];
+    const rng = s0 => { let s1 = s0; return () => (s1 = (s1 * 16807) % 2147483647) / 2147483647; };
+    // 땅
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#2f2820'); bg.addColorStop(1, '#221d17'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    g.setTransform(dpr * k, 0, 0, dpr * k, dpr * ox, dpr * oy);
+    // 나라
+    const LAND = ['#6e604b', '#5aa962', '#3f8f4d', '#4f9b58', '#62b06a'], r2 = rng(21);
+    for (let i = 0; i < 70; i++) {
+        const [a0, a1] = _seaNatAng(i), n = _seaNat(w, i);
+        g.beginPath(); g.moveTo(...ring(a0, 3));
+        for (let q = 1; q <= 4; q++) g.lineTo(...ring(a0 + (a1 - a0) * q / 4, 3));
+        for (let q = 4; q >= 0; q--) g.lineTo(...ring(a0 + (a1 - a0) * q / 4, 86));
+        g.closePath();
+        g.fillStyle = n.lv ? LAND[n.lv] : (i % 2 ? '#6a5c48' : '#75674f'); g.fill();
+        g.strokeStyle = i === sel ? '#f6d77a' : '#1e1913'; g.lineWidth = i === sel ? 4 : 1.2; g.stroke();
+        const am = (a0 + a1) / 2;
+        if (n.lv >= 2) { const [tx, ty] = ring(am, 26 + r2() * 10); g.fillStyle = '#2b7a3a'; g.beginPath(); g.arc(tx, ty, 7, 0, 7); g.fill(); } else r2();
+        if (n.lv >= 3) { const [hx, hy] = ring(am, 54); g.fillStyle = '#f2e3c2'; g.fillRect(hx - 5, hy - 5, 10, 10); g.fillStyle = '#b5523b'; g.fillRect(hx - 6, hy - 8, 12, 4); }
+        if (n.lv >= 4) { const [hx, hy] = ring(am, 72); g.fillStyle = '#fff4d6'; g.fillRect(hx - 4, hy - 4, 8, 8); }
+        if (!n.lv) { const [tx, ty] = ring(am, 40); g.strokeStyle = '#4b4133'; g.lineWidth = 2; g.beginPath(); g.moveTo(tx - 6, ty + 4); g.lineTo(tx, ty - 5); g.lineTo(tx + 6, ty + 4); g.stroke(); }
+    }
+    // 바다
+    g.fillStyle = '#1b2626'; g.beginPath(); g.ellipse(CX, CY, RX, RY, 0, 0, 7); g.fill();
+    const clear = (w && w.clear) || 0, upto = SEA_STAGES[_seaStageIdx(clear)];
+    const hex = (x, y, r) => { g.beginPath(); for (let q = 0; q < 6; q++) { const a = Math.PI / 6 + q * Math.PI / 3; q ? g.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r) : g.moveTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } g.closePath(); };
+    water.forEach((c, i) => { hex(c.x, c.y, HR - 0.9); g.fillStyle = i < clear ? (i >= clear - 12 ? '#2c95aa' : '#1fb0c9') : i < upto ? '#3b4a3f' : '#26312b'; g.fill(); });
+    salt.forEach(c => { hex(c.x, c.y, HR - 0.9); g.fillStyle = '#d9d2c3'; g.fill(); });
+    // 물고기 · 그물
+    const r3 = rng(33);
+    for (let i = 0; i < clear; i += 9) { const c = water[i]; if (r3() > 0.5) continue; const dir = r3() < 0.5 ? 1 : -1;
+        g.fillStyle = 'rgba(233,251,255,0.85)'; g.beginPath(); g.ellipse(c.x, c.y, 5, 2.4, 0, 0, 7); g.fill(); g.beginPath(); g.moveTo(c.x - 5 * dir, c.y); g.lineTo(c.x - 9 * dir, c.y - 3); g.lineTo(c.x - 9 * dir, c.y + 3); g.fill(); }
+    for (let i = 0; i < clear; i++) { const c = water[i], ex = (c.x - CX) / RX, ey = (c.y - CY) / RY; if (ex * ex + ey * ey < 0.86 || i % 7) continue;
+        const a = Math.atan2(ey, ex), [bx, by] = ring(a, 10);
+        g.strokeStyle = 'rgba(245,230,196,0.8)'; g.setLineDash([3, 3]); g.lineWidth = 1.5; g.beginPath(); g.moveTo(c.x, c.y); g.quadraticCurveTo((c.x + bx) / 2 + 8, (c.y + by) / 2 + 8, bx, by); g.stroke(); g.setLineDash([]);
+        g.fillStyle = '#fff'; g.beginPath(); g.arc(bx, by, 4, 0, 7); g.fill(); }
+    // 강 어귀
+    const my = CY - RY, rg = g.createLinearGradient(0, -oy / k, 0, my); rg.addColorStop(0, '#7fe6f5'); rg.addColorStop(1, '#19b3cc');
+    if (!noRiver) { g.fillStyle = rg; g.beginPath(); g.moveTo(CX - 22, -oy / k); g.bezierCurveTo(CX - 18, 60, CX - 12, 90, CX - 16, my + 12); g.lineTo(CX + 16, my + 12); g.bezierCurveTo(CX + 12, 90, CX + 18, 60, CX + 22, -oy / k); g.fill(); }   // 지도에선 지도 강이 어귀까지 이어진다
+    g.textAlign = 'center'; g.font = '800 22px system-ui, sans-serif';
+    [[currentLang === 'en' ? 'Shem' : '셈', 0.1], [currentLang === 'en' ? 'Ham' : '함', Math.PI / 2], [currentLang === 'en' ? 'Japheth' : '야벳', Math.PI + 0.35]].forEach(([tx, a]) => {
+        const [x, y] = ring(a, 44); g.lineWidth = 5; g.strokeStyle = 'rgba(20,16,12,0.85)'; g.strokeText(tx, x, y + 8); g.fillStyle = '#f6d77a'; g.fillText(tx, x, y + 8); });
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    return { mouthX: W / 2, mouthY: oy + my * k, S, k, ox, oy };
+}
+/* 화면 좌표 → 나라 번호(없으면 -1) */
+function _seaHitNation(cv, e) {
+    const r = cv.getBoundingClientRect(), W = r.width, H = r.height, S = Math.min(W, H), k = S / 880;
+    const x = (e.clientX - r.left - (W - S) / 2) / k, y = (e.clientY - r.top - (H - S) / 2) / k;
+    const ex = (x - SEA_G.CX) / SEA_G.RX, ey = (y - SEA_G.CY) / SEA_G.RY, rr = Math.hypot(ex, ey);
+    if (rr <= 1.0 || rr > 1.32) return -1;
+    const A0 = -Math.PI / 2 + SEA_G.GAP, SP = Math.PI * 2 - SEA_G.GAP * 2;
+    let a = Math.atan2(ey, ex); if (a < A0) a += Math.PI * 2;
+    const i = Math.floor((a - A0) / SP * 70);
+    return (i >= 0 && i < 70) ? i : -1;
+}
+
+/* 서버 바다 읽기 — 지도는 5분에 한 번, 바다 화면은 열려 있는 동안 실시간 */
+async function _seaFetch(force) {
+    if (!force && _seaWorld && Date.now() - _seaWorldAt < 300000) return _seaWorld;
+    if (typeof db === 'undefined' || !db) return _seaWorld;
+    try { const d = await db.collection('sea').doc('world').get(); _seaWorld = d.exists ? d.data() : { clear: 0, clearMax: 0, pool: 0, nations: {}, stageG: {} }; _seaWorldAt = Date.now(); }
+    catch (e) { }
+    return _seaWorld;
+}
+
+/* 지도 맨 아래 바다 구역 — 22장을 지난 강이 여기로 들어간다. 누르면 바다 화면 */
+const SEA_ZONE_H = 360;
+function _seaZoneEl() {
+    const zone = document.createElement('div');
+    zone.className = 'zone-wrapper sea-zone';
+    zone.id = 'sea-zone';
+    zone.innerHTML = `<canvas class="sea-map-canvas"></canvas><div class="sea-zone-label"></div>`;
+    zone.onclick = () => openSea();
+    return zone;
+}
+function _seaZoneLabel() {
+    const el = document.querySelector('#sea-zone .sea-zone-label'); if (!el) return;
+    const w = _seaWorld, c = (w && w.clear) || 0, si = _seaStageIdx(c), healed = w && w.nations ? Object.values(w.nations).filter(n => n && n.lv > 0).length : 0;
+    el.textContent = t('sea_zone_label', { stage: SEA_STAGE_NAMES[currentLang === 'en' ? 'en' : 'ko'][si], pct: Math.floor(c / 20), n: healed });
+}
+/* drawRiver가 부른다 — 바다를 그리고 강이 들어갈 어귀를 컨테이너 좌표로 */
+function _seaRiverEnd(containerRect, scrollTop) {
+    const zone = document.getElementById('sea-zone'), cv = zone && zone.querySelector('canvas');
+    if (!zone || !cv) return null;
+    const W = zone.clientWidth || containerRect.width; if (!W) return null;
+    const m = _seaDraw(cv, W, SEA_ZONE_H, _seaWorld, -1, true);
+    _seaZoneLabel();
+    if (!_seaWorld || Date.now() - _seaWorldAt > 300000) _seaFetch().then(w => { if (w && document.getElementById('sea-zone')) { _seaDraw(cv, zone.clientWidth || W, SEA_ZONE_H, w, -1, true); _seaZoneLabel(); } });
+    const zr = zone.getBoundingClientRect();
+    return { x: (zr.left - containerRect.left) + m.mouthX, y: (zr.top - containerRect.top) + scrollTop + m.mouthY };
+}
+
+/* ── 바다 화면 ── */
+function openSea() {
+    const old = document.getElementById('sea-modal'); if (old) old.remove();
+    const m = document.createElement('div');
+    m.id = 'sea-modal';
+    m.onclick = (e) => { if (e.target === m) closeSea(); };
+    m.innerHTML = `<div class="nj-card sea-card">
+        <div class="nj-head"><b>${t('sea_title')}</b><span class="sea-chip" id="sea-chip"></span><button class="nj-x" onclick="closeSea()">✕</button></div>
+        <div class="nj-verse">${t('sea_verse')}</div>
+        <div class="sea-stage"><canvas id="sea-canvas"></canvas><div class="sea-wallet" id="sea-wallet"></div></div>
+        <div id="sea-nat"></div>
+        <div class="nj-pearl" id="sea-water"></div>
+        <div class="nj-pearl" id="sea-land"></div>
+    </div>`;
+    document.body.appendChild(m);
+    const cv = document.getElementById('sea-canvas');
+    cv.addEventListener('click', e => { const i = _seaHitNation(cv, e); _seaSel = i; _seaRender(); if (i >= 0) { const el = document.getElementById('sea-nat'); if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } });
+    _seaSel = -1;
+    _seaRender();
+    // 열려 있는 동안 실시간 — 다른 사람이 드린 것도 바로 보인다
+    if (typeof db !== 'undefined' && db) {
+        try {
+            if (_seaUnsub) _seaUnsub();
+            _seaUnsub = db.collection('sea').doc('world').onSnapshot(d => { _seaWorld = d.exists ? d.data() : { clear: 0, clearMax: 0, pool: 0, nations: {}, stageG: {} }; _seaWorldAt = Date.now(); _seaRender(); }, () => { });
+        } catch (e) { _seaFetch(true).then(_seaRender); }
+    }
+}
+function closeSea() {
+    if (_seaUnsub) { try { _seaUnsub(); } catch (e) { } _seaUnsub = null; }
+    const m = document.getElementById('sea-modal'); if (m) m.remove();
+    if (document.getElementById('sea-zone') && typeof drawRiver === 'function') drawRiver();
+}
+function _seaRender() {
+    const cv = document.getElementById('sea-canvas'); if (!cv) return;
+    const w = _seaWorld, lang = currentLang === 'en' ? 'en' : 'ko';
+    const Wd = Math.floor(cv.parentElement.clientWidth || 360);
+    _seaDraw(cv, Wd, Wd, w, _seaSel);
+    const clear = (w && w.clear) || 0, si = _seaStageIdx(clear), prev = si ? SEA_STAGES[si - 1] : 0, full = clear >= 2000;
+    const chip = document.getElementById('sea-chip'); if (chip) chip.textContent = t('sea_stage_chip', { n: si + 1, name: SEA_STAGE_NAMES[lang][si] });
+    const wal = document.getElementById('sea-wallet'); if (wal) wal.innerHTML = `<span>💎 ${Number(myGems || 0).toLocaleString()}</span><span>🍃 ${_njLeavesAvail()}</span>`;
+    const done = _seaCompleted(w);
+    const steps = SEA_STAGE_NAMES[lang].map((nm, i) => `<div class="${i < done ? 'done' : i === si && !full ? 'on' : ''}">${i + 1} ${nm}</div>`).join('');
+    const names = (w && w.stageG && w.stageG[si]) || [];
+    const wa = document.getElementById('sea-water');
+    if (wa) wa.innerHTML = `
+        <div class="nj-pearl-head">${t('sea_water_title')} <span class="sea-dim">${clear.toLocaleString()} / 2,000</span></div>
+        <div class="sea-steps">${steps}</div>
+        <div class="sea-bar"><i style="width:${full ? 100 : Math.min(100, (clear - prev) / (SEA_STAGES[si] - prev) * 100)}%"></i></div>
+        <div class="sea-dim">${full ? t('sea_full') : t('sea_cell_line', { name: SEA_STAGE_NAMES[lang][si], a: clear - prev, b: SEA_STAGES[si] - prev, pool: ((w && w.pool) || 0).toLocaleString(), cost: SEA_CELL_COST.toLocaleString() })}</div>
+        <div class="sea-btns">${[10000, 100000, 1000000].map(v => `<button class="sea-give gem" ${myGems < v || full || _seaBusy ? 'disabled' : ''} onclick="_seaGive('gem', ${v})">${t('sea_btn_gem', { n: v >= 1000000 ? (lang === 'en' ? '1M' : '100만') : v >= 100000 ? (lang === 'en' ? '100K' : '10만') : (lang === 'en' ? '10K' : '1만') })}</button>`).join('')}</div>
+        <div class="sea-dim">${t('sea_guilds_title', { n: si + 1, name: SEA_STAGE_NAMES[lang][si] })}</div>
+        <div class="sea-names">${names.length ? names.map(_seaLabelHtml).join('') : `<span class="sea-dim">${t('sea_guilds_none')}</span>`}</div>
+        <div class="nj-pearl-rule">${t('sea_water_rule')}${w && w.pollution ? ' ' + t('sea_last_pollution', { n: w.pollution.lost }) : ''}</div>
+        ${seaGemsGiven ? `<div class="sea-dim">${t('sea_my_gems', { n: seaGemsGiven.toLocaleString() })}</div>` : ''}`;
+    const la = document.getElementById('sea-land');
+    const healed = w && w.nations ? Object.values(w.nations).filter(n => n && n.lv > 0).length : 0;
+    const lvSum = w && w.nations ? Object.values(w.nations).reduce((a, n) => a + ((n && n.lv) || 0), 0) : 0;
+    if (la) la.innerHTML = `<div class="nj-pearl-head">${t('sea_land_title')} <span class="sea-dim">${t('sea_land_num', { n: healed, lv: lvSum })}</span></div>
+        <div class="nj-pearl-rule">${t('sea_land_rule')}</div>`;
+    // 고른 나라
+    const nat = document.getElementById('sea-nat');
+    if (!nat) return;
+    if (_seaSel < 0) { nat.innerHTML = ''; return; }
+    const N = SEA_NATIONS[_seaSel], n = _seaNat(w, _seaSel), cap = _seaNationCap(w), en = lang === 'en';
+    const lvHtml = SEA_LV_NAMES[lang].map((nm, q) => `<div class="${q < n.lv ? 'done' : q === n.lv ? 'on' : ''}">${nm}</div>`).join('');
+    const gHtml = [0, 1, 2, 3].map(q => (n.g[q] && n.g[q].length) ? `<div class="sea-dim">${SEA_LV_NAMES[lang][q + 1]} — </div><div class="sea-names">${n.g[q].map(_seaLabelHtml).join('')}</div>` : '').join('');
+    const avail = _njLeavesAvail();
+    let body;
+    if (n.lv >= 4) body = `<div class="sea-dim">${t('sea_nat_full')}</div>`;
+    else if (n.lv >= cap) body = `<div class="sea-dim">${t('sea_nat_wait', { name: SEA_STAGE_NAMES[lang][Math.min(3, cap - 1)] })}</div>`;
+    else body = `<div class="sea-bar leaf"><i style="width:${n.pool / SEA_LEAF_PER_LV * 100}%"></i></div>
+        <div class="sea-dim">${t('sea_nat_need', { next: SEA_LV_NAMES[lang][n.lv + 1], a: n.pool, b: SEA_LEAF_PER_LV })}</div>
+        <div class="sea-btns">${[1, 5, 10].map(v => `<button class="sea-give" ${avail < 1 || _seaBusy ? 'disabled' : ''} onclick="_seaGive('leaf', ${v}, ${_seaSel})">${t('sea_btn_leaf', { n: v })}</button>`).join('')}</div>
+        ${avail < 1 ? `<div class="sea-dim">${t('sea_no_leaves')}</div>` : ''}`;
+    nat.innerHTML = `<div class="nj-pearl sea-nat-card">
+        <div class="nj-pearl-head">🏞️ ${en ? N[2] : N[0]} <span class="sea-dim">${en ? N[3] : N[1]} · ${en ? N[5] : N[4]}</span><button class="nj-x sea-nat-x" onclick="_seaSel=-1;_seaRender()">✕</button></div>
+        <div class="sea-lv">${lvHtml}</div>${body}
+        ${gHtml || `<div class="sea-dim">${t('sea_nat_none')}</div>`}
+        <div class="nj-pearl-rule">${t('sea_nat_rule')}</div></div>`;
+}
+function _seaGiftId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 10); }
+async function _seaGive(kind, amount, nation) {
+    if (_seaBusy) return;
+    if (kind === 'gem') {
+        if ((myGems || 0) < amount) { showGemToast(0, t('sea_need_gems'), true); return; }
+        if (!confirm(t('sea_confirm_gem', { n: amount.toLocaleString() }))) return;
+    } else if (_njLeavesAvail() < 1) { showGemToast(0, t('sea_no_leaves'), true); return; }
+    _seaBusy = true; _seaRender();
+    try {
+        // 서버가 저장본의 보석·먹은 열매로 확인하므로 먼저 올린다
+        saveGameData();
+        try { await syncToFirestore(); } catch (e) { }
+        const res = await _callGuildFn('seaGive', { kind, amount, nation: kind === 'leaf' ? nation : null, giftId: _seaGiftId() });
+        if (kind === 'gem' && !res.dup) { myGems -= res.used; if (typeof updateGemDisplay === 'function') updateGemDisplay(); }
+        seaGemsGiven = Math.max(seaGemsGiven, res.givenGems || 0);
+        njLeafSpent = Math.max(njLeafSpent, res.spentLeaves || 0);
+        saveGameData();
+        if (typeof syncToFirestore === 'function') syncToFirestore();
+        if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear && (res.lvUp || res.stageUp != null)) SoundEffect.playClear();
+        if (res.stageUp != null) showMissionToast(t('sea_stage_up', { name: SEA_STAGE_NAMES[currentLang === 'en' ? 'en' : 'ko'][res.stageUp] }), '🌊');
+        else if (res.lvUp) showMissionToast(t('sea_nat_up', { name: currentLang === 'en' ? SEA_NATIONS[nation][2] : SEA_NATIONS[nation][0], lv: SEA_LV_NAMES[currentLang === 'en' ? 'en' : 'ko'][res.lvUp] }), '🍃');
+        else showGemToast(0, kind === 'gem' ? t('sea_gave_gem') : t('sea_gave_leaf', { n: res.used, name: currentLang === 'en' ? SEA_NATIONS[nation][2] : SEA_NATIONS[nation][0] }));
+        await _seaFetch(true);
+    } catch (e) {
+        const msg = (e && e.message) ? e.message : '';
+        showGemToast(0, msg || t('sea_fail'), true);
+    } finally {
+        _seaBusy = false; _seaRender();
+    }
+}
+
 /* 성을 그린다. 반환: 남쪽 가운데 문(지도의 강이 시작하는 곳)의 캔버스 좌표 */
 /* opts.flow: 지도 — 물결은 따로 흐르는 SVG가 그리므로 캔버스엔 고정 물결을 그리지 않는다
    opts.south: 건축 창 — 지도의 큰 강이 없으니 남쪽 물줄기도 그린다 */
@@ -7461,6 +7803,7 @@ function _njRenderModal() {
         fe.innerHTML = `<div class="nj-pearl-head">${t('nj_fruit_title', { leaves: _njLeaves() })}</div>
             <div class="nj-pearl-week">${t('nj_fruit_now', { name: _njFruitName(_njFruitKind(_njMonthKey())), n: L.length, ripe })}</div>
             ${ripe ? `<button class="nj-go-btn" onclick="openNJ3DView()">${t('nj_fruit_go', { n: ripe })}</button>` : ''}
+            <button class="nj-go-btn sub" onclick="closeNewJerusalem(); openSea()">${t('sea_open_from_nj', { n: _njLeavesAvail() })}</button>
             <div class="nj-pearl-rule">${t('nj_fruit_rule')}</div>`;
     }
     const counts = {}; [3, 4, 5].forEach(lv => { counts[lv] = _njCount(lv); });
@@ -7733,6 +8076,9 @@ function renderChapterMap() {
         if (window._mapSwayObserver) window._mapSwayObserver.observe(wrapper);
     });
 
+    // 생명수의 바다 — 지도 맨 아래, 강이 들어가는 곳 (2026-09-30)
+    landArea.appendChild(_seaZoneEl());
+
 
     // 3. 강물 그리기 (디바운스 150ms, 이전 리스너 제거 후 재등록)
     if (renderChapterMap._resizeHandler) {
@@ -7775,6 +8121,8 @@ function drawRiver() {
 
     // 새 예루살렘 남쪽 문 — 있으면 강이 거기서 시작한다
     const njStart = _njRiverStart(containerRect, scrollTop);
+    // 생명수의 바다 어귀 — 있으면 강이 거기로 들어간다
+    const seaEnd = _seaRiverEnd(containerRect, scrollTop);
 
     // 4. x 오프셋을 적용한 경로 빌더
     function buildPath(ox) {
@@ -7790,7 +8138,9 @@ function drawRiver() {
             if (i === 0 && !njStart) d += `L ${p1.x + ox} ${p1.y} `;
             d += `C ${p1.x + ox} ${midY}, ${p2.x + ox} ${midY}, ${p2.x + ox} ${p2.y} `;
         }
-        d += `L ${points[points.length - 1].x + ox} ${scrollH}`;
+        const lp = points[points.length - 1];
+        if (seaEnd) { const my = (lp.y + seaEnd.y) / 2; d += `C ${lp.x + ox} ${my}, ${seaEnd.x + ox} ${my}, ${seaEnd.x + ox} ${seaEnd.y}`; }
+        else d += `L ${lp.x + ox} ${scrollH}`;
         return d;
     }
 
@@ -7800,7 +8150,7 @@ function drawRiver() {
     if (bank) bank.setAttribute('d', basePath);
     path.setAttribute('d', basePath);
 
-    _buildRiverFlow(points, scrollH, njStart);
+    _buildRiverFlow(points, scrollH, njStart, seaEnd);
 }
 
 /* [강물 흐름 (2026-09-28 부활)]
@@ -7815,7 +8165,7 @@ const RIVER_STRANDS = [
     { ox: +5,  period: 40, ms: 4100 },
     { ox: +13, period: 52, ms: 6800 },
 ];
-function _buildRiverFlow(points, scrollH, start) {
+function _buildRiverFlow(points, scrollH, start, end) {
     const layer = document.getElementById('river-flow-layer');
     if (!layer) return;
     if (window._riverFlowObserver) { try { window._riverFlowObserver.disconnect(); } catch (e) { } }
@@ -7837,7 +8187,12 @@ function _buildRiverFlow(points, scrollH, start) {
         segs.push({ top: Math.min(p1.y, p2.y), bottom: Math.max(p1.y, p2.y),
             d: (ox, y0) => `M ${p1.x + ox} ${p1.y - y0} C ${p1.x + ox} ${midY - y0}, ${p2.x + ox} ${midY - y0}, ${p2.x + ox} ${p2.y - y0}` });
     }
-    segs.push({ top: last.y, bottom: scrollH, d: (ox, y0) => `M ${last.x + ox} ${last.y - y0} L ${last.x + ox} ${scrollH - y0}` });
+    if (end) {   // 22장에서 바다 어귀까지 굽이
+        const my = (last.y + end.y) / 2;
+        segs.push({ top: last.y, bottom: end.y, d: (ox, y0) => `M ${last.x + ox} ${last.y - y0} C ${last.x + ox} ${my - y0}, ${end.x + ox} ${my - y0}, ${end.x + ox} ${end.y - y0}` });
+    } else {
+        segs.push({ top: last.y, bottom: scrollH, d: (ox, y0) => `M ${last.x + ox} ${last.y - y0} L ${last.x + ox} ${scrollH - y0}` });
+    }
 
     const NS = 'http://www.w3.org/2000/svg';
     const cum = RIVER_STRANDS.map(() => 0);   // 가닥별로 지금까지 흘러온 길이
@@ -10927,6 +11282,8 @@ function saveGameData() {
         njJetpack: njJetpack,             // 3D 제트팩 (보석으로 산 것)
         njFruits: njFruits,               // 생명나무 열매 (열린·먹은·실패 때)
         njLeafArch: njLeafArch,           // 접은 달의 잎사귀 수
+        njLeafSpent: njLeafSpent,         // 만국에 드린 잎사귀
+        seaGemsGiven: seaGemsGiven,       // 바다에 드린 보석
         sessionTimeLog: sessionTimeLog,
         // ★ [게임 모드]
         activeMode: activeMode,
@@ -11214,6 +11571,8 @@ function _mergeNewJerusalem(target, other) {
         Object.keys(other.njLeafArch).forEach(m => { const v = other.njLeafArch[m] | 0; if (v > (ta[m] | 0)) { ta[m] = v; took++; } });
         target.njLeafArch = ta;
     }
+    // 바다에 드린 잎사귀·보석 — 늘기만 한다(서버가 정본). 큰 쪽
+    ['njLeafSpent', 'seaGemsGiven'].forEach(k => { const o = parseInt(other[k], 10) || 0; if (o > (parseInt(target[k], 10) || 0)) { target[k] = o; took++; } });
     return took;
 }
 

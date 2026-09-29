@@ -6879,6 +6879,42 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .nj-pd.on { background: #f4f0fb; border-color: #fff; box-shadow: 0 0 6px rgba(255,255,255,0.7); }
 .nj-pearl-rule { font-size: 0.72rem; color: var(--c-text-dim); margin-top: 4px; line-height: 1.45; }
 
+/* 생명수의 바다와 만국 (2026-09-30) — 지도 맨 아래 구역 + 바다 화면 */
+.zone-wrapper.sea-zone { height: 360px; display: block; cursor: pointer; position: relative; margin-bottom: 150px; }   /* 아래 떠 있는 버튼·메뉴에 안 가리게 */
+.sea-zone .sea-map-canvas { position: absolute; inset: 0; display: block; }
+.sea-zone-label { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); z-index: 2; white-space: nowrap;
+    background: rgba(7, 19, 28, 0.82); color: #d9eef3; font-size: 0.78rem; font-weight: 700; padding: 5px 12px; border-radius: 999px; pointer-events: none; }
+#sea-modal { position: fixed; inset: 0; z-index: 9995; background: rgba(4, 12, 18, 0.86); display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
+.sea-card { background: #0f2230; }
+.sea-card .nj-head { gap: 8px; }
+.sea-card .nj-head b { flex: 1; }
+.sea-chip { font-size: 0.74rem; font-weight: 700; background: #132b3c; border: 1px solid #21404f; border-radius: 999px; padding: 2px 9px; color: #d9eef3; white-space: nowrap; }
+.sea-stage { position: relative; margin-bottom: 8px; }
+.sea-stage canvas { display: block; width: 100%; border-radius: 14px; cursor: pointer; }
+.sea-wallet { position: absolute; top: 8px; right: 8px; display: flex; gap: 6px; font-size: 0.78rem; font-variant-numeric: tabular-nums; pointer-events: none; }
+.sea-wallet span { background: rgba(7, 19, 28, 0.8); border-radius: 999px; padding: 2px 9px; color: #e6f1f5; }
+.sea-card .nj-pearl { background: #132b3c; display: grid; gap: 7px; }
+.sea-dim { color: #93aab5; font-size: 0.8rem; font-weight: 400; }
+.sea-steps, .sea-lv { display: grid; gap: 4px; }
+.sea-steps { grid-template-columns: repeat(4, 1fr); }
+.sea-lv { grid-template-columns: repeat(5, 1fr); }
+.sea-steps div, .sea-lv div { font-size: 0.68rem; text-align: center; padding: 4px 0; border-radius: 8px; background: #0f2230; color: #93aab5; }
+.sea-steps div.on { background: #134a5a; color: #d9f6fb; font-weight: 700; }
+.sea-steps div.done, .sea-lv div.done { background: #1b5e3a; color: #d8f5df; }
+.sea-lv div.on { background: #2c4d27; color: #eaf7d8; font-weight: 700; outline: 1px solid #7fd28a; }
+.sea-bar { height: 9px; border-radius: 999px; background: #0a1a24; overflow: hidden; }
+.sea-bar i { display: block; height: 100%; background: linear-gradient(90deg, #19a3bb, #7fe6f5); border-radius: 999px; }
+.sea-bar.leaf i { background: linear-gradient(90deg, #4fae6c, #b5e07a); }
+.sea-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.sea-give { border: none; border-radius: 10px; padding: 8px 12px; font-weight: 800; font-size: 0.86rem; color: #fff; background: var(--c-action); box-shadow: 0 3px 0 var(--c-action-edge); cursor: pointer; }
+.sea-give.gem { background: #1b8fb0; box-shadow: 0 3px 0 #136b85; }
+.sea-give:disabled { background: #34495a; box-shadow: none; color: #9fb0bb; cursor: default; }
+.sea-names { display: flex; flex-wrap: wrap; gap: 5px; }
+.sea-name { display: inline-flex; align-items: center; gap: 5px; font-size: 0.76rem; background: #0f2230; border-radius: 999px; padding: 2px 9px; color: #e6f1f5; }
+.sea-name i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.sea-nat-card { border: 1px solid #2d5a6d; margin-bottom: 8px; position: relative; }
+.sea-nat-x { position: absolute; top: 4px; right: 6px; font-size: 1.05rem; }
+
 /* 새 예루살렘 3D 보기 (2026-09-29) — nj3d.js */
 .nj-3d-btn { display: block; width: 100%; margin-top: 8px; padding: 10px; border: none; border-radius: 10px; cursor: pointer;
     background: linear-gradient(135deg, #f6d77a, #e0b04a); color: #2a2208; font-weight: 800; font-size: 0.92rem; }

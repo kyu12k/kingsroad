@@ -114,6 +114,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `_njDraw` · `openNewJerusalem()` · `_njPlace(k)` · `_njNoteBlankDay()` · `_njPearlCalc` | game.js:~7040 | 새 예루살렘 — 지도 맨 위 성 그림 · 건축 창 · 기초석 놓기 · 진주(주 5일 백지, 못 채운 주는 -1) · 바로 가기 `_njGoHtml` (`docs/새-예루살렘.md`) |
 | `openNJ3DView()` → `nj3d.js`의 `openNJ3D()` / `closeNJ3D()` | game.js · nj3d.js | 새 예루살렘 3D 보기(별도 파일, 누를 때만 로드) — 걸어서 구경·점프·제트팩(`njJetpack`) |
 | `_njGrowFruit` · `_njFruitList` · `njEatFruit(key)` · `_njLeaves()` | game.js:~7100 | 생명나무 열매 — 백지 통과 절마다 열매, 7일 뒤 익음, 먹기 = 그 절 백지 세션(`fruitKey`) → 🍃 잎사귀 |
+| `openSea()` · `_seaDraw` · `_seaGive` · `_seaRiverEnd` | game.js · kingsroad `seaGive`·`seaWeekly` | 생명수의 바다와 만국 — 모두의 바다 `sea/world`, 💎 물칸(에스겔 네 단계)·🍃 70 나라(창 10장), 길드 이름으로 기록 |
 | `SoundEffect` | game.js:~3987 | 효과음 신디사이저 — 종소리 `_note`, 출력 `_bus`, 잠든 오디오 깨우기 `_play`, 진동 `_buzz` |
 
 ---
@@ -173,7 +174,7 @@ firebase deploy --only firestore:rules    # 보안 규칙
 | `docs/랭킹과-이벤트.md` | 실시간 암송왕·통독왕, 주간 랭킹 보상, 기간 한정 이벤트, 오늘의 암송, 미션 |
 | `docs/저장과-동기화.md` | 기기 간 동기화, 서버 시각, Firestore 보안 규칙, 태그(#번호) 발급, 친구 |
 | `docs/UX-결정기록.md` | 실측 사용률, 온보딩, 힌트 정책, 토스트 규칙, 지도 헤더 |
-| `docs/새-예루살렘.md` | (설계안) 밭 100 이후 보석 사용처 — 열두 기초석·보석 원 칭호·보석 수입 실측 |
+| `docs/새-예루살렘.md` | 밭 100 이후 — 열두 기초석·진주·생명나무 열매·바다와 만국·3D, 보석 수입 실측 |
 | `REVELATION_TOPICS.md` | 계시록 주제 분류 데이터 |
 | `DEPLOYMENT_GUIDE.md` · `README.md` | 초기 설정 안내 |
 
