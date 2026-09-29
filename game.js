@@ -500,6 +500,38 @@ const LANG = {
         hardship_address_v_btn: '{v}절',
         hardship_memory_indicator: '주소만 보고 전체 구절을 인출합니다',
         hardship_btn_submit: '정답 확인',
+        nj_title: '새 예루살렘',
+        nj_verse: '「그 성의 성곽의 기초석은 각색 보석으로 꾸몄는데」 (계 21:19)',
+        nj_hint: '보석과, 간격을 두고 백지로 꺼낸 기록(백지레벨)으로 기초석을 하나씩 놓아요',
+        nj_cond: '백지레벨 {lv} 이상 {have} / {need}절',
+        nj_place: '놓기',
+        nj_need_verses: '백지레벨 조건까지 {n}절 더',
+        nj_need_gems: '보석이 {n}개 더 필요해요',
+        nj_built_on: '{date} 놓음',
+        nj_confirm: '💎 {cost}개로 {name}을(를) 놓을까요?',
+        nj_placed_toast: '🏛️ {name}을(를) 놓았어요',
+        nj_all_done: '열두 기초석을 모두 놓았어요 — 계시록 완전 암송',
+        nj_pearl_title: '🦪 진주 문 {n} / 12 — 「그 열두 문은 열두 진주니」 (21:21)',
+        nj_pearl_week: '이번 주 백지 차례를 지킨 날 {d} / 5',
+        nj_pearl_done_week: '이번 주 진주를 받았어요 ✓',
+        nj_pearl_rule: '한 주(월~일)에 5일 이상, 백지 차례인 구절을 하나라도 백지로 써내면 진주 하나. 보석으로는 살 수 없어요',
+        nj_pearl_got: '🦪 진주를 얻었어요 — 문 하나에 진주가 얹혔어요',
+        nj3d_btn: '🏛️ 3D로 보기 · 걸어서 구경',
+        nj3d_loading: '성을 불러오는 중…',
+        nj3d_fail: '3D를 불러오지 못했어요. 인터넷 연결을 확인해 주세요',
+        nj3d_walk: '🚶 걸어서 구경',
+        nj3d_overview: '🗺️ 내려다보기',
+        nj3d_hint_orbit: '한 손가락으로 돌리고, 두 손가락으로 확대해 보세요',
+        nj3d_hint_walk: '왼쪽 동그라미로 걷고, 화면을 끌어 둘러보세요',
+        nj3d_jump: '점프',
+        nj3d_fly: '🚀 날기',
+        nj3d_jet_buy: '🚀 제트팩<br>💎 {cost}',
+        nj3d_jet_confirm: '💎 {cost}개로 제트팩을 살까요? 한 번 사면 계속 쓸 수 있어요',
+        nj3d_jet_need: '보석이 {n}개 더 필요해요',
+        nj3d_jet_got: '🚀 제트팩이 생겼어요 — 「날기」를 누르고 있으면 떠올라요',
+        nj3d_q_basic: '기본',
+        nj3d_q_high: '고급 ✦',
+        nj3d_slow: '폰이 버거워해서 기본 화질로 바꿨어요',
         booster_partial: '({n}/{total}절)',
         sfx_state_on: '🔊 효과음 켬',
         sfx_state_nokey: '🔉 타자음만 끔',
@@ -1432,6 +1464,38 @@ const LANG = {
         btn_ultimate_memory_off: 'Show Hints',
         hardship_memory_not_filled: 'Please fill in all characters before checking.',
         hardship_btn_submit: 'Check Answer',
+        nj_title: 'New Jerusalem',
+        nj_verse: '“The foundations of the city wall were adorned with every kind of precious stone” (Rev 21:19)',
+        nj_hint: 'Lay each foundation stone with gems and your blank-recall record (Blank Level)',
+        nj_cond: 'Blank Lv {lv}+ {have} / {need} verses',
+        nj_place: 'Place',
+        nj_need_verses: '{n} more verses to go',
+        nj_need_gems: 'Need {n} more gems',
+        nj_built_on: 'Placed {date}',
+        nj_confirm: 'Place {name} for 💎 {cost}?',
+        nj_placed_toast: '🏛️ {name} placed',
+        nj_all_done: 'All twelve foundations laid — Revelation fully memorized',
+        nj_pearl_title: '🦪 Pearl gates {n} / 12 — “The twelve gates were twelve pearls” (21:21)',
+        nj_pearl_week: 'Days you kept your blank reviews this week {d} / 5',
+        nj_pearl_done_week: 'Pearl earned this week ✓',
+        nj_pearl_rule: 'Keep at least one due blank review on 5 days of a week (Mon–Sun) to earn a pearl. Pearls cannot be bought with gems',
+        nj_pearl_got: '🦪 You earned a pearl — it now crowns a gate',
+        nj3d_btn: '🏛️ View in 3D · Walk around',
+        nj3d_loading: 'Loading the city…',
+        nj3d_fail: 'Could not load 3D. Please check your connection',
+        nj3d_walk: '🚶 Walk around',
+        nj3d_overview: '🗺️ Overview',
+        nj3d_hint_orbit: 'Drag to rotate, pinch to zoom',
+        nj3d_hint_walk: 'Use the left circle to walk, drag to look around',
+        nj3d_jump: 'Jump',
+        nj3d_fly: '🚀 Fly',
+        nj3d_jet_buy: '🚀 Jetpack<br>💎 {cost}',
+        nj3d_jet_confirm: 'Buy a jetpack for 💎 {cost}? It is yours to keep',
+        nj3d_jet_need: 'Need {n} more gems',
+        nj3d_jet_got: '🚀 Jetpack ready — hold Fly to rise',
+        nj3d_q_basic: 'Basic',
+        nj3d_q_high: 'High ✦',
+        nj3d_slow: 'Switched to Basic quality to keep things smooth',
         booster_partial: '({n}/{total} verses)',
         sfx_state_on: '🔊 Sound effects on',
         sfx_state_nokey: '🔉 Typing sounds off',
@@ -2167,6 +2231,14 @@ let stageTimedBonus = {}; // 각인 주기 기반 보너스 (때를 따른 양�
 // ★ [v1.1.0 직렬 복습 시스템]
 let stageReviewStep = {};      // 각 스테이지의 현재 복습 단계 (1-based)
 let stageNextReviewTime = {};  // 다음 복습 가능 시각 (timestamp, 0이면 즉시 가능)
+// 새 예루살렘 (2026-09-29) — 놓은 기초석 수(0~12)와 놓은 순간의 기록. docs/새-예루살렘.md
+let njBuilt = 0;
+let njLog = [];
+// 진주 문 — 한 주(월 6시)에 5일 이상 백지 차례를 지키면 진주 하나. 보석으로는 못 산다
+let njPearls = 0;
+let njPearlWeek = { weekId: '', days: [], granted: false };
+let njPearlLog = [];
+let njJetpack = false;   // 3D 걸어서 구경 — 보석으로 산 제트팩 (한 번 사면 계속)
 let lastPlayedStageId = null; // 마지막으로 직접 플레이한 스테이지 ID
 let bossFirstClearClaimed = new Set(); // 최초 클리어 보너스를 수령한 보스 스테이지 ID
 let hardshipAddressClearHistory = {}; // 장별 주소의 고난 클리어 기록 { "1": [{correct, total, score, date, duration}, ...] }
@@ -2594,6 +2666,12 @@ loadGameData = function () {
         if (parsed.dailyRecite && typeof parsed.dailyRecite === 'object' && parsed.dailyRecite.anchorVerse) dailyRecite = parsed.dailyRecite;
         if (parsed.dailyReciteDone && typeof parsed.dailyReciteDone === 'object') dailyReciteDone = parsed.dailyReciteDone;
         if (typeof parsed.dailyWeekDone === 'string') dailyWeekDone = parsed.dailyWeekDone;
+        njBuilt = Math.max(0, Math.min(12, parseInt(parsed.njBuilt, 10) || 0));
+        njLog = Array.isArray(parsed.njLog) ? parsed.njLog : [];
+        njPearls = Math.max(0, Math.min(12, parseInt(parsed.njPearls, 10) || 0));
+        njPearlWeek = (parsed.njPearlWeek && typeof parsed.njPearlWeek === 'object') ? Object.assign({ weekId: '', days: [], granted: false }, parsed.njPearlWeek) : { weekId: '', days: [], granted: false };
+        njPearlLog = Array.isArray(parsed.njPearlLog) ? parsed.njPearlLog : [];
+        njJetpack = !!parsed.njJetpack;
         // 오늘의 암송 진행은 날마다 새 id라 60일 지난 것은 버린다 (저장본이 자라지 않게)
         try {
             const _cut = _shift6AMDayStr(_get6AMDayStr(), -60);
@@ -6887,6 +6965,274 @@ function ensureBackButton(screen) {
     }
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   새 예루살렘 — 보석으로 짓는 성 (2026-09-29, 설계: docs/새-예루살렘.md)
+   지도 맨 위, 강의 근원. 위에서 내려다본 네모반듯한 성(21:16) · 벽옥 성곽(21:18) · 네 면에 셋씩 진주 문(21:13, 21) ·
+   성곽을 받치는 열두 기초석(21:14, 19) — 놓기 전엔 평범한 돌, 놓으면 보석. 12시(북쪽 가운데)부터 시계 방향.
+   보좌에서 강이 사방으로(22:1) — 남쪽 물줄기가 지도의 강이 되어 1장으로 이어진다(drawRiver의 시작점).
+   기초석 = 보석 + 백지레벨 조건(그 레벨 이상인 절의 수). 보상 없음(승점·칭호 없이 짓는 것 자체) — 사용자 결정 9/29
+   ══════════════════════════════════════════════════════════════════════════ */
+const NJ_STONES = [
+    // 색 = 지파 보석 색(TRIBE_DATA.glow) — 벽옥=베드로, 남보석=부산야고보 … 같은 보석은 앱 어디서나 같은 색 (9/29)
+    { ko: '벽옥',   en: 'Jasper',       color: '#00a0e9' },
+    { ko: '남보석', en: 'Sapphire',     color: '#1d2088' },
+    { ko: '옥수',   en: 'Chalcedony',   color: '#59c3e1' },
+    { ko: '녹보석', en: 'Emerald',      color: '#009651' },
+    { ko: '홍마노', en: 'Sardonyx',     color: '#eb6120' },
+    { ko: '홍보석', en: 'Carnelian',    color: '#d7005b' },
+    { ko: '황옥',   en: 'Chrysolite',   color: '#fdd000' },
+    { ko: '녹옥',   en: 'Beryl',        color: '#86cab6' },
+    { ko: '담황옥', en: 'Topaz',        color: '#e39300' },
+    { ko: '비취옥', en: 'Chrysoprase',  color: '#6FBA2C' },
+    { ko: '청옥',   en: 'Jacinth',      color: '#005dac' },
+    { ko: '자수정', en: 'Amethyst',     color: '#7f1084' },
+];
+// [백지레벨, 절 수, 보석] — 404절을 12등분, 앞 넷 Lv3 · 가운데 넷 Lv4 · 끝 넷 Lv5. 합계 900만
+const NJ_REQ = [
+    [3, 34, 200000], [3, 68, 300000], [3, 101, 400000], [3, 135, 500000],
+    [4, 168, 600000], [4, 202, 700000], [4, 236, 800000], [4, 269, 900000],
+    [5, 303, 1000000], [5, 337, 1100000], [5, 370, 1200000], [5, 404, 1300000],
+];
+const NJ_ORD_KO = ['첫째', '둘째', '셋째', '넷째', '다섯째', '여섯째', '일곱째', '여덟째', '아홉째', '열째', '열한째', '열두째'];
+const NJ_ZONE_H = 330;
+
+function _njName(k) { return currentLang === 'en' ? NJ_STONES[k].en : NJ_STONES[k].ko; }
+function _njOrd(k) { return currentLang === 'en' ? `#${k + 1}` : NJ_ORD_KO[k]; }
+/* 백지레벨이 lv 이상인 절의 수 */
+function _njCount(lv) {
+    if (typeof verseRecall === 'undefined' || !verseRecall) return 0;
+    let n = 0;
+    _allVerseIds().forEach(id => { const r = verseRecall[id]; if (r && (r.bx || 0) >= lv) n++; });
+    return n;
+}
+
+/* 진주 — 백지 차례인 구절을 백지로 써내 백지레벨이 오르면(kind 'up') 그날을 센다. 주 5일이 차는 순간 진주 하나 */
+const NJ_PEARL_DAYS = 5;
+function _njNoteDueDay() {
+    try {
+        const wk = (typeof getMissionPointWeekId === 'function') ? getMissionPointWeekId() : '';
+        const day = _get6AMDayStr();
+        if (!wk) return;
+        if (!njPearlWeek || njPearlWeek.weekId !== wk) njPearlWeek = { weekId: wk, days: [], granted: false };
+        if (!njPearlWeek.days.includes(day)) njPearlWeek.days.push(day);
+        if (!njPearlWeek.granted && njPearlWeek.days.length >= NJ_PEARL_DAYS && njPearls < 12) {
+            njPearlWeek.granted = true;
+            njPearlLog = Array.isArray(njPearlLog) ? njPearlLog : [];
+            njPearlLog.push({ k: njPearls, week: wk, at: Date.now() });
+            njPearls += 1;
+            setTimeout(() => {
+                if (typeof showMissionToast === 'function') showMissionToast(t('nj_pearl_got'), `${njPearls} / 12`);
+                if (document.getElementById('nj-zone') && typeof drawRiver === 'function') drawRiver();
+            }, 1200);
+        }
+    } catch (e) { }
+}
+
+/* 성을 그린다. 반환: 남쪽 가운데 문(지도의 강이 시작하는 곳)의 캔버스 좌표 */
+function _njDraw(cv, W, H, built, pearls) {
+    const dpr = Math.min(3, window.devicePixelRatio || 2);
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const lin = (x0, y0, x1, y1, st) => { const gr = g.createLinearGradient(x0, y0, x1, y1); st.forEach(([o, c]) => gr.addColorStop(o, c)); return gr; };
+    const rad = (x, y, r, st) => { const gr = g.createRadialGradient(x, y, 0, x, y, r); st.forEach(([o, c]) => gr.addColorStop(o, c)); return gr; };
+    const hex = (c, a) => { const n = parseInt(c.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; };
+    const S = Math.min(W - 70, H - 46), cx = W / 2, cy = H / 2 - 4, h = S / 2;
+    const FB = 14, WW = 8;
+    const x0 = cx - h, y0 = cy - h, x1 = cx + h, y1 = cy + h;
+    // 풀밭 + 성에서 번지는 은은한 빛
+    g.fillStyle = '#27ae60'; g.fillRect(0, 0, W, H);
+    g.fillStyle = rad(W * 0.2, H * 0.3, W * 0.45, [[0, 'rgba(46,204,113,0.9)'], [1, 'rgba(46,204,113,0)']]); g.fillRect(0, 0, W, H);
+    g.fillStyle = rad(W * 0.8, H * 0.75, W * 0.45, [[0, 'rgba(30,132,73,0.9)'], [1, 'rgba(30,132,73,0)']]); g.fillRect(0, 0, W, H);
+    g.fillStyle = rad(cx, cy, W * 0.62, [[0, 'rgba(255,246,215,0.55)'], [0.5, 'rgba(255,240,190,0.18)'], [1, 'rgba(255,240,190,0)']]); g.fillRect(0, 0, W, H);
+    // 성 밖 물줄기 — 북·동·서 (남쪽은 지도의 강이 이어받는다)
+    const outRiver = (ax, ay, bx, by) => {
+        g.lineCap = 'butt';
+        g.strokeStyle = 'rgba(93,64,55,0.35)'; g.lineWidth = 34; g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke();
+        g.strokeStyle = 'rgba(0,188,212,0.88)'; g.lineWidth = 22; g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke();
+        g.strokeStyle = 'rgba(210,248,255,0.55)'; g.lineWidth = 1.6; g.setLineDash([14, 12]);
+        [-5, 4].forEach(o => { const vx = ax === bx; g.beginPath(); g.moveTo(ax + (vx ? o : 0), ay + (vx ? 0 : o)); g.lineTo(bx + (vx ? o : 0), by + (vx ? 0 : o)); g.stroke(); });
+        g.setLineDash([]);
+    };
+    outRiver(cx, y0, cx, 0); outRiver(x1, cy, W, cy); outRiver(x0, cy, 0, cy);
+    // 기초석 열두 조각 — 12시부터 시계 방향. 놓기 전엔 빈 터(점선), 놓으면 보석 돌이 새로 놓인다 (3D 시안과 같게, 9/29)
+    const seq = [['N', 1], ['N', 2], ['E', 0], ['E', 1], ['E', 2], ['S', 2], ['S', 1], ['S', 0], ['W', 2], ['W', 1], ['W', 0], ['N', 0]];
+    const L = S / 3;
+    // 북쪽 면 기준 조각 모양(모서리는 액자처럼 45도로 잘라 이웃과 반씩) → 면마다 돌린다. 화면 좌표(아래가 +y)
+    const segPoly = (side, i) => {
+        const idx = (side === 'S' || side === 'W') ? 2 - i : i;
+        const ox0 = -h + idx * L, ox1 = ox0 + L, gap = 0.8;
+        const a = idx === 0 ? -h + gap : ox0 + gap, b = idx === 2 ? h - gap : ox1 - gap;
+        const ai = idx === 0 ? -h + FB + gap : ox0 + gap, bi = idx === 2 ? h - FB - gap : ox1 - gap;
+        const pts = [[a, -h], [b, -h], [bi, -h + FB], [ai, -h + FB]];
+        const rot = side === 'N' ? (p) => p : side === 'E' ? ([x, y]) => [-y, x] : side === 'S' ? ([x, y]) => [-x, -y] : ([x, y]) => [y, -x];
+        return pts.map(p => { const [rx, ry] = rot(p); return [cx + rx, cy + ry]; });
+    };
+    const path = (pts) => { g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); pts.slice(1).forEach(([px, py]) => g.lineTo(px, py)); g.closePath(); };
+    // 성 안 — 맑은 유리 같은 정금, 문과 문을 잇는 정금 길 (성곽은 다음 단계라 아직 없다)
+    const ix0 = x0 + FB, iy0 = y0 + FB, ix1 = x1 - FB, iy1 = y1 - FB;
+    g.fillStyle = lin(ix0, iy0, ix1, iy1, [[0, 'rgba(255,226,140,0.95)'], [0.5, 'rgba(255,240,190,0.95)'], [1, 'rgba(245,205,110,0.95)']]); g.fillRect(ix0, iy0, ix1 - ix0, iy1 - iy0);
+    g.strokeStyle = 'rgba(255,255,255,0.5)'; g.lineWidth = 3;
+    [0.25, 0.75].forEach(tt => { const a = x0 + S * tt, b = y0 + S * tt;
+        g.beginPath(); g.moveTo(a, iy0); g.lineTo(a, iy1); g.stroke(); g.beginPath(); g.moveTo(ix0, b); g.lineTo(ix1, b); g.stroke(); });
+    g.fillStyle = rad(cx, cy, S * 0.42, [[0, 'rgba(255,255,255,1)'], [0.18, 'rgba(255,252,235,0.95)'], [0.5, 'rgba(255,240,190,0.4)'], [1, 'rgba(255,240,190,0)']]); g.fillRect(ix0, iy0, ix1 - ix0, iy1 - iy0);
+    // 기초석
+    seq.forEach(([side, i], k) => {
+        const pts = segPoly(side, i);
+        if (k < built) {
+            const col = NJ_STONES[k].color;
+            const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+            g.fillStyle = lin(Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys), [[0, hex(col, 1)], [1, hex(col, 0.78)]]);
+            path(pts); g.fill();
+            g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = 1; g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); g.lineTo(pts[1][0], pts[1][1]); g.stroke();   // 윤기
+        } else {
+            g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = 1; g.setLineDash([3, 3]); path(pts); g.stroke(); g.setLineDash([]);
+        }
+    });
+    // 보좌에서 사방으로 흐르는 강 — 네 면의 가운데 문으로 나간다
+    const rw = 18;
+    [[cx, y1], [cx, y0], [x1, cy], [x0, cy]].forEach(([tx, ty]) => {
+        const vx = tx === cx, a = rw * 0.3, b = rw / 2;
+        g.fillStyle = lin(cx, cy, tx, ty, [[0, 'rgba(160,240,255,0.95)'], [1, 'rgba(0,188,212,0.95)']]);
+        g.beginPath();
+        if (vx) { g.moveTo(cx - a, cy); g.lineTo(cx + a, cy); g.lineTo(tx + b, ty); g.lineTo(tx - b, ty); }
+        else { g.moveTo(cx, cy - a); g.lineTo(cx, cy + a); g.lineTo(tx, ty + b); g.lineTo(tx, ty - b); }
+        g.closePath(); g.fill();
+    });
+    g.fillStyle = 'rgba(255,255,255,0.95)'; g.beginPath(); g.arc(cx, cy, 7, 0, Math.PI * 2); g.fill();   // 보좌
+    // 진주 문 — 한 면에 1/4 · 1/2 · 3/4 (모서리에 몰리지 않게). 얻은 진주만큼 12시부터 시계 방향으로 얹힌다
+    const gateAt = (side, i) => { const tt = [0.25, 0.5, 0.75][i], m = FB / 2;
+        return side === 'N' ? [x0 + S * tt, y0 + m] : side === 'S' ? [x0 + S * tt, y1 - m] : side === 'W' ? [x0 + m, y0 + S * tt] : [x1 - m, y0 + S * tt]; };
+    seq.forEach(([side, i], k) => {
+        const [gx, gy] = gateAt(side, i);
+        if (k < (pearls || 0)) {
+            g.strokeStyle = 'rgba(255,255,255,0.97)'; g.lineWidth = 3.6; g.beginPath(); g.arc(gx, gy, 8.5, 0, Math.PI * 2); g.stroke();
+            g.strokeStyle = 'rgba(190,178,225,0.9)'; g.lineWidth = 0.9; g.beginPath(); g.arc(gx, gy, 10.4, 0, Math.PI * 2); g.stroke();
+            g.fillStyle = 'rgba(255,255,255,1)'; g.beginPath(); g.arc(gx - 5, gy - 5, 1.6, 0, Math.PI * 2); g.fill();
+        } else {   // 진주가 얹힐 자리
+            g.strokeStyle = 'rgba(255,255,255,0.5)'; g.lineWidth = 1; g.setLineDash([2.5, 2.5]);
+            g.beginPath(); g.arc(gx, gy, 8.5, 0, Math.PI * 2); g.stroke(); g.setLineDash([]);
+        }
+    });
+    return { x: cx, y: y1 };
+}
+
+/* 지도 맨 위 성 구역. 누르면 건축 창 */
+function _njZoneEl() {
+    const zone = document.createElement('div');
+    zone.className = 'zone-wrapper nj-zone';
+    zone.id = 'nj-zone';
+    zone.innerHTML = '<canvas class="nj-map-canvas"></canvas>';
+    // 성(가로 15~85%, 세로 7~93%) 바깥에만 — 성 안에 꽃이 겹쳐 진주를 가렸다
+    [[5, 9, '🌸'], [92, 8, '🌼'], [4, 30, '🌿'], [94, 28, '🌷'], [4, 72, '🌺'], [94, 74, '🌷'], [7, 90, '🌻'], [91, 90, '🌹'], [16, 97, '🌸'], [82, 97, '🌼']]
+        .forEach(([x, y, e], i) => { const f = document.createElement('span'); f.className = 'garden-flower'; f.textContent = e;
+            f.style.cssText = `left:${x}%;top:${y}%;font-size:${0.85 + (i % 3) * 0.15}rem;animation-delay:${(i * 0.37) % 2}s`; zone.appendChild(f); });
+    zone.onclick = () => openNewJerusalem();
+    return zone;
+}
+/* 성을 다시 그리고, 지도 강이 시작할 점을 컨테이너 좌표로 돌려준다 (drawRiver가 부른다) */
+function _njRiverStart(containerRect, scrollTop) {
+    const zone = document.getElementById('nj-zone');
+    const cv = zone && zone.querySelector('canvas');
+    if (!zone || !cv) return null;
+    const W = zone.clientWidth || containerRect.width;
+    if (!W) return null;
+    const gate = _njDraw(cv, W, NJ_ZONE_H, njBuilt, njPearls);
+    const zr = zone.getBoundingClientRect();
+    return { x: (zr.left - containerRect.left) + gate.x, y: (zr.top - containerRect.top) + scrollTop + gate.y };
+}
+
+function openNewJerusalem() {
+    const old = document.getElementById('nj-modal'); if (old) old.remove();
+    const m = document.createElement('div');
+    m.id = 'nj-modal';
+    m.onclick = (e) => { if (e.target === m) closeNewJerusalem(); };
+    m.innerHTML = `<div class="nj-card">
+        <div class="nj-head"><b>${t('nj_title')}</b><button class="nj-x" onclick="closeNewJerusalem()">✕</button></div>
+        <div class="nj-verse">${t('nj_verse')}</div>
+        <canvas id="nj-canvas"></canvas>
+        <button class="nj-3d-btn" onclick="openNJ3DView()">${t('nj3d_btn')}</button>
+        <div class="nj-sub">${t('nj_hint')}</div>
+        <div class="nj-gems">💎 ${Number(myGems || 0).toLocaleString()}</div>
+        <div class="nj-pearl" id="nj-pearl"></div>
+        <div class="nj-list" id="nj-list"></div>
+    </div>`;
+    document.body.appendChild(m);
+    _njRenderModal();
+}
+/* 3D 보기 — nj3d.js를 처음 누를 때만 불러온다(three.js도 그때). 캐시 번호는 game.js와 같게 */
+let _nj3dLoading = false;
+function openNJ3DView() {
+    if (typeof window.openNJ3D === 'function') { window.openNJ3D(); return; }
+    if (_nj3dLoading) return;
+    _nj3dLoading = true;
+    const gs = document.querySelector('script[src*="game.js"]');
+    const ver = gs && /[?&]v=([^&]+)/.test(gs.src) ? RegExp.$1 : String(Date.now());
+    const sc = document.createElement('script');
+    sc.src = `nj3d.js?v=${ver}`;
+    sc.onload = () => { _nj3dLoading = false; if (typeof window.openNJ3D === 'function') window.openNJ3D(); };
+    sc.onerror = () => { _nj3dLoading = false; showGemToast(0, t('nj3d_fail'), true); };
+    document.head.appendChild(sc);
+}
+function closeNewJerusalem() { const m = document.getElementById('nj-modal'); if (m) m.remove(); }
+function _njRenderModal() {
+    const cv = document.getElementById('nj-canvas'), list = document.getElementById('nj-list');
+    if (!cv || !list) return;
+    const par = cv.parentElement, pcs = getComputedStyle(par);
+    const W = Math.floor(par.clientWidth - parseFloat(pcs.paddingLeft) - parseFloat(pcs.paddingRight));   // 창 안쪽 여백을 뺀 폭
+    _njDraw(cv, W, Math.round(W * 0.82), njBuilt, njPearls);
+    const gemsEl = document.querySelector('#nj-modal .nj-gems'); if (gemsEl) gemsEl.textContent = `💎 ${Number(myGems || 0).toLocaleString()}`;
+    const pe = document.getElementById('nj-pearl');
+    if (pe) {
+        const wk = (typeof getMissionPointWeekId === 'function') ? getMissionPointWeekId() : '';
+        const cur = (njPearlWeek && njPearlWeek.weekId === wk) ? njPearlWeek : { days: [], granted: false };
+        const d = Math.min(NJ_PEARL_DAYS, (cur.days || []).length);
+        const dots = Array.from({ length: NJ_PEARL_DAYS }, (_, i) => `<span class="nj-pd${i < d ? ' on' : ''}"></span>`).join('');
+        pe.innerHTML = `<div class="nj-pearl-head">${t('nj_pearl_title', { n: njPearls })}</div>
+            <div class="nj-pearl-week">${njPearls >= 12 ? '' : (cur.granted ? t('nj_pearl_done_week') : `${t('nj_pearl_week', { d })} ${dots}`)}</div>
+            <div class="nj-pearl-rule">${t('nj_pearl_rule')}</div>`;
+    }
+    const counts = {}; [3, 4, 5].forEach(lv => { counts[lv] = _njCount(lv); });
+    list.innerHTML = NJ_STONES.map((st, k) => {
+        const [lv, need, cost] = NJ_REQ[k];
+        const head = `<span class="nj-dot" style="background:${k < njBuilt ? st.color : '#a0957f'}"></span><span class="nj-name">${_njOrd(k)} · ${_njName(k)}</span>`;
+        if (k < njBuilt) {
+            const rec = (njLog || []).find(e => e && e.k === k);
+            const d = rec && rec.at ? _tsTo6AMDateStr(rec.at).slice(5).replace('-', '/') : '';
+            return `<div class="nj-row built">${head}<span class="nj-state">${d ? t('nj_built_on', { date: d }) : '✓'}</span></div>`;
+        }
+        const have = counts[lv], okV = have >= need, okG = (myGems || 0) >= cost;
+        const cond = t('nj_cond', { lv, have: Math.min(have, need), need });
+        if (k === njBuilt) {
+            const why = !okV ? t('nj_need_verses', { n: need - have }) : (!okG ? t('nj_need_gems', { n: (cost - myGems).toLocaleString() }) : '');
+            return `<div class="nj-row next">${head}
+                <div class="nj-detail"><span class="${okV ? 'ok' : ''}">${cond}</span><span class="${okG ? 'ok' : ''}">💎 ${cost.toLocaleString()}</span></div>
+                <button class="nj-place" ${okV && okG ? '' : 'disabled'} onclick="_njPlace(${k})">${t('nj_place')}</button>
+                ${why ? `<div class="nj-why">${why}</div>` : ''}</div>`;
+        }
+        return `<div class="nj-row locked">${head}<span class="nj-state">${cond} · 💎 ${cost.toLocaleString()}</span></div>`;
+    }).join('') + (njBuilt >= 12 ? `<div class="nj-done">${t('nj_all_done')}</div>` : '');
+}
+function _njPlace(k) {
+    if (k !== njBuilt || k >= 12) return;
+    const [lv, need, cost] = NJ_REQ[k];
+    const have = _njCount(lv);
+    if (have < need || (myGems || 0) < cost) { _njRenderModal(); return; }
+    if (!confirm(t('nj_confirm', { cost: cost.toLocaleString(), name: _njName(k) }))) return;
+    myGems -= cost;
+    njBuilt = k + 1;
+    // 연구 기록 — 놓는 순간의 백지레벨 분포와 백지로 써낸 절 수
+    const dist = [0, 0, 0, 0, 0, 0]; let blank = 0;
+    _allVerseIds().forEach(id => { const r = verseRecall[id]; if (!r) return; dist[Math.min(5, r.bx || 0)]++; if (r.blankPass > 0 || r.bx > 0) blank++; });
+    (njLog = Array.isArray(njLog) ? njLog : []).push({ k, at: Date.now(), gems: cost, bx: dist, blank });
+    if (typeof updateGemDisplay === 'function') updateGemDisplay();
+    saveGameData();
+    if (typeof syncToFirestore === 'function') syncToFirestore();
+    if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
+    if (typeof showMissionToast === 'function') showMissionToast(t('nj_placed_toast', { name: _njName(k) }), njBuilt >= 12 ? t('nj_all_done') : `${njBuilt} / 12`);
+    _njRenderModal();
+    if (document.getElementById('nj-zone') && typeof drawRiver === 'function') drawRiver();
+}
+
 /* [시스템: 맵 렌더링 (레이어 완벽 분리 버전)] */
 function renderChapterMap() {
     const container = document.getElementById('chapter-list-area');
@@ -6920,6 +7266,13 @@ function renderChapterMap() {
             entries.forEach(en => en.target.classList.toggle('in-view', en.isIntersecting));
         }, { rootMargin: '40px 0px' })
         : null;
+
+    // 새 예루살렘 — 지도 맨 위, 강의 근원 (2026-09-29)
+    {
+        const nz = _njZoneEl();
+        landArea.appendChild(nz);
+        if (window._mapSwayObserver) window._mapSwayObserver.observe(nz);
+    }
 
     // 2. 챕터별 구역 생성
     gameData.forEach((chapter, index) => {
@@ -7116,14 +7469,21 @@ function drawRiver() {
 
     if (points.length < 2) return;
 
+    // 새 예루살렘 남쪽 문 — 있으면 강이 거기서 시작한다
+    const njStart = _njRiverStart(containerRect, scrollTop);
+
     // 4. x 오프셋을 적용한 경로 빌더
     function buildPath(ox) {
-        let d = `M ${points[0].x + ox} 0 `;
+        let d;
+        if (njStart) {
+            const my = (njStart.y + points[0].y) / 2;
+            d = `M ${njStart.x + ox} ${njStart.y} C ${njStart.x + ox} ${my}, ${points[0].x + ox} ${my}, ${points[0].x + ox} ${points[0].y} `;
+        } else d = `M ${points[0].x + ox} 0 `;
         for (let i = 0; i < points.length - 1; i++) {
             const p1 = points[i];
             const p2 = points[i + 1];
             const midY = (p1.y + p2.y) / 2;
-            if (i === 0) d += `L ${p1.x + ox} ${p1.y} `;
+            if (i === 0 && !njStart) d += `L ${p1.x + ox} ${p1.y} `;
             d += `C ${p1.x + ox} ${midY}, ${p2.x + ox} ${midY}, ${p2.x + ox} ${p2.y} `;
         }
         d += `L ${points[points.length - 1].x + ox} ${scrollH}`;
@@ -7136,7 +7496,7 @@ function drawRiver() {
     if (bank) bank.setAttribute('d', basePath);
     path.setAttribute('d', basePath);
 
-    _buildRiverFlow(points, scrollH);
+    _buildRiverFlow(points, scrollH, njStart);
 }
 
 /* [강물 흐름 (2026-09-28 부활)]
@@ -7151,7 +7511,7 @@ const RIVER_STRANDS = [
     { ox: +5,  period: 40, ms: 4100 },
     { ox: +13, period: 52, ms: 6800 },
 ];
-function _buildRiverFlow(points, scrollH) {
+function _buildRiverFlow(points, scrollH, start) {
     const layer = document.getElementById('river-flow-layer');
     if (!layer) return;
     if (window._riverFlowObserver) { try { window._riverFlowObserver.disconnect(); } catch (e) { } }
@@ -7161,7 +7521,13 @@ function _buildRiverFlow(points, scrollH) {
     // 구간: [맨 위 → 첫 나무], [나무 i → 나무 i+1] …, [마지막 나무 → 맨 아래]
     const segs = [];
     const first = points[0], last = points[points.length - 1];
-    segs.push({ top: 0, bottom: first.y, d: (ox, y0) => `M ${first.x + ox} ${0 - y0} L ${first.x + ox} ${first.y - y0}` });
+    if (start) {   // 새 예루살렘 남쪽 문에서 1장까지 굽이
+        const my = (start.y + first.y) / 2;
+        segs.push({ top: Math.min(start.y, first.y), bottom: first.y,
+            d: (ox, y0) => `M ${start.x + ox} ${start.y - y0} C ${start.x + ox} ${my - y0}, ${first.x + ox} ${my - y0}, ${first.x + ox} ${first.y - y0}` });
+    } else {
+        segs.push({ top: 0, bottom: first.y, d: (ox, y0) => `M ${first.x + ox} ${0 - y0} L ${first.x + ox} ${first.y - y0}` });
+    }
     for (let i = 0; i < points.length - 1; i++) {
         const p1 = points[i], p2 = points[i + 1], midY = (p1.y + p2.y) / 2;
         segs.push({ top: Math.min(p1.y, p2.y), bottom: Math.max(p1.y, p2.y),
@@ -10239,6 +10605,12 @@ function saveGameData() {
         dailyRecite: dailyRecite,         // 오늘의 암송 개인 진도 (null = 교회 진도)
         dailyReciteDone: dailyReciteDone, // 오늘의 암송 완료일 → ts
         dailyWeekDone: dailyWeekDone,     // 오늘의 암송 주간 완료 주차
+        njBuilt: njBuilt,                 // 새 예루살렘 — 놓은 기초석 수
+        njLog: njLog,                     // 새 예루살렘 — 놓은 순간의 기록 (연구용)
+        njPearls: njPearls,               // 진주 문 — 얻은 진주 수
+        njPearlWeek: njPearlWeek,         // 진주 문 — 이번 주 백지 차례를 지킨 날
+        njPearlLog: njPearlLog,           // 진주 문 — 얻은 기록
+        njJetpack: njJetpack,             // 3D 제트팩 (보석으로 산 것)
         sessionTimeLog: sessionTimeLog,
         // ★ [게임 모드]
         activeMode: activeMode,
@@ -10467,6 +10839,42 @@ function _mergeEventProgress(target, other) {
     return took;
 }
 
+/* 새 예루살렘 병합 — 놓은 기초석은 사라지지 않으므로 많은 쪽, 기록은 기초석 번호로 합집합 */
+function _mergeNewJerusalem(target, other) {
+    let took = 0;
+    const ob = parseInt(other.njBuilt, 10) || 0, tb = parseInt(target.njBuilt, 10) || 0;
+    if (ob > tb) { target.njBuilt = ob; took++; }
+    if (Array.isArray(other.njLog) && other.njLog.length) {
+        const tl = Array.isArray(target.njLog) ? target.njLog : [];
+        const have = new Set(tl.map(e => e && e.k));
+        other.njLog.forEach(e => { if (e && !have.has(e.k)) { tl.push(e); took++; } });
+        tl.sort((a, b) => (a.k || 0) - (b.k || 0));
+        target.njLog = tl;
+    }
+    if (other.njJetpack && !target.njJetpack) { target.njJetpack = true; took++; }   // 제트팩 — 한쪽에서라도 샀으면 산 것
+    // 진주 — 많은 쪽, 기록은 k로 합집합, 이번 주 지킨 날은 같은 주면 합집합·다른 주면 늦은 주
+    const op = parseInt(other.njPearls, 10) || 0, tp = parseInt(target.njPearls, 10) || 0;
+    if (op > tp) { target.njPearls = op; took++; }
+    if (Array.isArray(other.njPearlLog) && other.njPearlLog.length) {
+        const tl = Array.isArray(target.njPearlLog) ? target.njPearlLog : [];
+        const have = new Set(tl.map(e => e && e.k));
+        other.njPearlLog.forEach(e => { if (e && !have.has(e.k)) { tl.push(e); took++; } });
+        tl.sort((a, b) => (a.k || 0) - (b.k || 0));
+        target.njPearlLog = tl;
+    }
+    const ow = other.njPearlWeek, tw = target.njPearlWeek;
+    if (ow && ow.weekId) {
+        if (!tw || !tw.weekId || ow.weekId > tw.weekId) { target.njPearlWeek = JSON.parse(JSON.stringify(ow)); took++; }
+        else if (ow.weekId === tw.weekId) {
+            const days = Array.isArray(tw.days) ? tw.days : [];
+            (ow.days || []).forEach(d => { if (!days.includes(d)) { days.push(d); took++; } });
+            tw.days = days;
+            if (ow.granted && !tw.granted) { tw.granted = true; took++; }
+        }
+    }
+    return took;
+}
+
 function _mergeSaveProgress(target, other) {
     if (!target || !other) return 0;
     let took = 0;
@@ -10475,6 +10883,7 @@ function _mergeSaveProgress(target, other) {
     took += _mergeRecallWeek(target, other);
     took += _mergeReadWeek(target, other);
     took += _mergeEventProgress(target, other);
+    took += _mergeNewJerusalem(target, other);
 
     // 1) 자유여행 — 최상위 필드
     {
@@ -26136,6 +26545,7 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
         }
         if (hardshipState) hardshipState._blankLvNote = _blankLvNoteText(_res, _pts, _quick);
         // 백지레벨이 오르거나 처음 들어가면 전용 소리 — 정답음이 먼저 울리니 조금 뒤에
+        if (_res && _res.kind === 'up') _njNoteDueDay();   // 새 예루살렘 진주 — 백지 차례를 지킨 날
         if (_res && (_res.kind === 'up' || _res.kind === 'enter') && typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) {
             setTimeout(() => SoundEffect.playBlankLevelUp(), 420);
         }

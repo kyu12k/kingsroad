@@ -6840,3 +6840,66 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .cam-bg-name { font-size: 0.68rem; font-weight: 700; white-space: nowrap; }
 .cam-bg-sw.on img, .cam-bg-sw.on .cam-bg-face { border-color: #f1c40f; box-shadow: 0 0 0 2px rgba(241,196,15,0.35); }
 .cam-bg-sw.on .cam-bg-name { color: #f1c40f; }
+
+/* 새 예루살렘 (2026-09-29) — 지도 맨 위 성 구역 + 건축 창 */
+.zone-wrapper.nj-zone { height: 330px; display: block; cursor: pointer; }
+.nj-zone .nj-map-canvas { position: absolute; inset: 0; display: block; }
+.nj-zone .garden-flower { z-index: 2; }
+#nj-modal { position: fixed; inset: 0; z-index: 9995; background: rgba(8, 12, 24, 0.82); display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
+.nj-card { width: min(420px, 100%); max-height: 92vh; overflow-y: auto; background: var(--bg-panel); color: #e6eef8; border-radius: 18px; padding: 14px 14px 18px; box-sizing: border-box; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+.nj-head { display: flex; justify-content: space-between; align-items: center; font-size: 1.15rem; margin-bottom: 4px; }
+.nj-head b { color: #f6d77a; }
+.nj-x { background: none; border: none; color: #9fb0c8; font-size: 1.3rem; cursor: pointer; }
+.nj-verse { font-size: 0.8rem; color: var(--c-text-dim); margin-bottom: 10px; line-height: 1.5; }
+#nj-canvas { display: block; width: 100%; border-radius: 12px; }
+.nj-sub { font-size: 0.8rem; color: #c6d2e2; margin: 10px 2px 4px; line-height: 1.5; }
+.nj-gems { font-weight: 800; color: #f6d77a; margin: 4px 2px 8px; font-variant-numeric: tabular-nums; }
+.nj-list { display: flex; flex-direction: column; gap: 6px; }
+.nj-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 9px 10px; border-radius: 10px; background: rgba(255,255,255,0.05); }
+.nj-row.next { background: rgba(246,215,122,0.10); border: 1px solid rgba(246,215,122,0.45); }
+.nj-row.locked { opacity: 0.5; }
+.nj-dot { width: 14px; height: 14px; border-radius: 4px; flex: 0 0 auto; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35); }
+.nj-name { font-weight: 800; }
+.nj-state { margin-left: auto; font-size: 0.78rem; color: var(--c-text-dim); }
+.nj-detail { width: 100%; display: flex; gap: 12px; font-size: 0.82rem; color: #d7dfea; padding-left: 22px; }
+.nj-detail .ok { color: var(--c-blank-all); }
+.nj-place { margin-left: 22px; padding: 8px 18px; border: none; border-radius: 10px; background: var(--c-action); color: #fff; font-weight: 800; cursor: pointer; box-shadow: 0 3px 0 var(--c-action-edge); }
+.nj-place:disabled { background: #4a5a73; box-shadow: none; color: #aab6c6; cursor: default; }
+.nj-why { width: 100%; padding-left: 22px; font-size: 0.75rem; color: #ffcf8a; }
+.nj-done { text-align: center; font-weight: 800; color: #f6d77a; padding: 10px; }
+.nj-pearl { background: rgba(255,255,255,0.05); border-radius: 10px; padding: 9px 10px; margin-bottom: 8px; }
+.nj-pearl-head { font-weight: 800; font-size: 0.86rem; color: #efe9fb; }
+.nj-pearl-week { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #d7dfea; margin-top: 4px; min-height: 1.1em; }
+.nj-pd { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid rgba(235,228,250,0.6); display: inline-block; }
+.nj-pd.on { background: #f4f0fb; border-color: #fff; box-shadow: 0 0 6px rgba(255,255,255,0.7); }
+.nj-pearl-rule { font-size: 0.72rem; color: var(--c-text-dim); margin-top: 4px; line-height: 1.45; }
+
+/* 새 예루살렘 3D 보기 (2026-09-29) — nj3d.js */
+.nj-3d-btn { display: block; width: 100%; margin-top: 8px; padding: 10px; border: none; border-radius: 10px; cursor: pointer;
+    background: linear-gradient(135deg, #f6d77a, #e0b04a); color: #2a2208; font-weight: 800; font-size: 0.92rem; }
+#nj3d { position: fixed; inset: 0; z-index: 9996; background: #0f1a33; display: flex; flex-direction: column; color: #e6eef8; }
+#nj3d [hidden] { display: none !important; }
+.nj3d-head { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 8px; }
+.nj3d-head b { color: #f6d77a; font-size: 1.1rem; flex: 1; }
+.nj3d-q { display: flex; gap: 3px; background: var(--bg-panel); padding: 3px; border-radius: 10px; }
+.nj3d-q button { border: none; background: none; color: #9fb0c8; font-weight: 700; font-size: 0.78rem; padding: 5px 10px; border-radius: 8px; cursor: pointer; }
+.nj3d-q button[aria-pressed="true"] { background: #f6d77a; color: #2a2208; }
+.nj3d-x { background: none; border: none; color: #c6d2e2; font-size: 1.3rem; cursor: pointer; padding: 4px 6px; }
+.nj3d-stage { position: relative; flex: 1 1 auto; min-height: 0; }
+.nj3d-stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.nj3d-loading { position: absolute; inset: 0; display: grid; place-items: center; color: #9fb0c8; }
+.nj3d-mode { position: absolute; top: 10px; left: 10px; z-index: 3; border: none; border-radius: 999px; padding: 8px 14px;
+    background: rgba(15, 26, 51, 0.78); color: #f6d77a; font-weight: 800; font-size: 0.85rem; cursor: pointer; }
+.nj3d-hint { position: absolute; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 3;
+    background: rgba(15, 26, 51, 0.78); color: #e6eef8; font-size: 0.78rem; padding: 6px 12px; border-radius: 999px;
+    max-width: calc(100% - 32px); text-align: center; pointer-events: none; opacity: 0; transition: opacity 0.6s; }
+.nj3d-walk { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.nj3d-joy { position: absolute; left: 18px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); width: 118px; height: 118px; border-radius: 50%;
+    background: rgba(15, 26, 51, 0.35); border: 2px solid rgba(255,255,255,0.35); pointer-events: auto; touch-action: none; }
+.nj3d-knob { position: absolute; left: 50%; top: 50%; width: 50px; height: 50px; margin: -25px 0 0 -25px; border-radius: 50%;
+    background: rgba(246, 215, 122, 0.85); box-shadow: 0 2px 8px rgba(0,0,0,0.35); }
+.nj3d-btns { position: absolute; right: 16px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.nj3d-wb { pointer-events: auto; touch-action: none; border: none; border-radius: 999px; width: 76px; height: 76px;
+    background: rgba(246, 215, 122, 0.9); color: #2a2208; font-weight: 800; font-size: 0.95rem; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,0.35); }
+.nj3d-wb.fly { background: rgba(255, 150, 90, 0.92); }
+.nj3d-wb.small { width: auto; height: auto; padding: 8px 12px; border-radius: 12px; font-size: 0.74rem; line-height: 1.35; background: rgba(15, 26, 51, 0.82); color: #f6d77a; }
