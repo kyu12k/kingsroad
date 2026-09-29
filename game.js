@@ -822,7 +822,7 @@ const LANG = {
         daily_title: '오늘의 암송',
         daily_eyebrow: '하루 암송',
         daily_mode_btn_label: '오늘의 암송',
-        daily_mode_btn_desc_church: '교회 진도 · {label}',
+        daily_mode_btn_desc_church: '{label}',
         daily_mode_btn_desc_mine: '내 진도 · {label}',
         daily_done_short: '오늘 암송함',
         daily_rest: '오늘은 쉬는 날이에요',
@@ -832,16 +832,16 @@ const LANG = {
         daily_go: '오늘 {n}절 도전',
         daily_status_done: '✅ 오늘 암송 완료 — 백지로 {n}절을 써냈어요',
         daily_status_todo: '백지로 {n}절을 써내면 「오늘 암송함」이 돼요',
-        daily_note: '교회에서 매일 외우는 그 구절이에요. 보통·어려움·빈칸으로 연습하고, 마지막엔 백지로 써보세요.<br>난이도마다 하루 한 번씩 승점을 받아요.',
+        daily_note: '보통·어려움·빈칸으로 연습하고, 마지막엔 백지로 써보세요.<br>백지로 오늘 구절을 모두 써내면 「오늘 암송함」이 돼요.<br>난이도마다 하루 한 번씩 승점을 받아요.',
         daily_settings: '⚙️ 내 진도 설정',
         daily_settings_title: '내 진도 설정',
-        daily_settings_desc: '교회와 다른 곳을 외우고 있다면 오늘 시작 구절과 하루 절 수를 정하세요. 쉬는 날은 교회와 같아요.',
+        daily_settings_desc: '다른 곳을 외우고 있다면 오늘 시작 구절과 하루 절 수를 정하세요. 쉬는 날(일요일·연휴)은 그대로예요.',
         daily_settings_start: '오늘 시작 구절',
         daily_settings_per_day: '하루 절 수',
         daily_settings_save: '저장',
-        daily_settings_reset: '교회 진도로 돌아가기',
+        daily_settings_reset: '기본 진도로 돌아가기',
         daily_settings_saved: '내 진도를 저장했어요 · 오늘 {label}',
-        daily_settings_reset_done: '교회 진도로 돌아왔어요',
+        daily_settings_reset_done: '기본 진도로 돌아왔어요',
         daily_cleared: '📅 오늘의 암송 · {name} 통과',
         daily_all_done_toast: '✅ 오늘 암송 완료!',
         daily_none: '오늘의 암송이 아직 준비되지 않았어요',
@@ -1842,7 +1842,7 @@ const LANG = {
         daily_title: 'Verses of the Day',
         daily_eyebrow: 'DAILY',
         daily_mode_btn_label: 'Verses of the Day',
-        daily_mode_btn_desc_church: 'Church plan · {label}',
+        daily_mode_btn_desc_church: '{label}',
         daily_mode_btn_desc_mine: 'My plan · {label}',
         daily_done_short: 'Recited today',
         daily_rest: 'Rest day',
@@ -1852,16 +1852,16 @@ const LANG = {
         daily_go: 'Try today\'s {n} verses',
         daily_status_done: '✅ Recited today — {n} verses from a blank page',
         daily_status_todo: 'Write {n} verses from a blank page to mark today as recited',
-        daily_note: 'The verses your church memorizes each day. Practice with Words · Initials · Blanks, then finish with Blank page.<br>Each level scores once a day.',
+        daily_note: 'Practice with Words · Initials · Blanks, then finish with Blank page.<br>Write all of today\'s verses from a blank page to mark today as recited.<br>Each level scores once a day.',
         daily_settings: '⚙️ My plan',
         daily_settings_title: 'My plan',
-        daily_settings_desc: 'Memorizing a different part? Set today\'s starting verse and verses per day. Rest days follow the church.',
+        daily_settings_desc: 'Memorizing a different part? Set today\'s starting verse and verses per day. Rest days (Sundays, holidays) stay the same.',
         daily_settings_start: 'Starting verse today',
         daily_settings_per_day: 'Verses per day',
         daily_settings_save: 'Save',
-        daily_settings_reset: 'Back to church plan',
+        daily_settings_reset: 'Back to the default plan',
         daily_settings_saved: 'Plan saved · today {label}',
-        daily_settings_reset_done: 'Back to the church plan',
+        daily_settings_reset_done: 'Back to the default plan',
         daily_cleared: '📅 Verses of the Day · {name} passed',
         daily_all_done_toast: '✅ Recited today!',
         daily_none: 'Verses of the Day is not ready yet',
@@ -17024,8 +17024,7 @@ function openDailyScreen() {
             <div class="event-list">${rows}</div>
             <button class="event-all daily-go" onclick="startEventAll('${ev.id}')">${t('daily_go', { n: ids.length })}</button>
             <div class="event-reward${done ? ' done' : ''}">${done ? t('daily_status_done', { n: ids.length }) : t('daily_status_todo', { n: ids.length })}</div>
-            ${_camEnabled() ? `<button class="daily-cam-btn" onclick="openDailyRecorder()">${t('daily_cam_btn')}</button>` : ''}
-            <p class="event-note">${t('daily_note')}</p>`;
+            ${_camEnabled() ? `<button class="daily-cam-btn" onclick="openDailyRecorder()">${t('daily_cam_btn')}</button>` : ''}`;
     }
     const overlay = document.createElement('div');
     overlay.id = 'event-modal';
@@ -17033,11 +17032,13 @@ function openDailyScreen() {
     overlay.style.zIndex = '9998';
     overlay.innerHTML = `
         <div class="result-card event-card daily-card">
-            <div class="event-head">
-                <div class="event-eyebrow">${t('daily_eyebrow')} · ${ev.mine ? t('daily_source_mine') : t('daily_source_church')}</div>
+            <div class="event-head daily-head">
+                <button class="daily-help-btn" aria-label="?" onclick="const h=document.getElementById('daily-help'); h.hidden=!h.hidden">?</button>
+                <div class="event-eyebrow">${t('daily_eyebrow')}${ev.mine ? ' · ' + t('daily_source_mine') : ''}</div>
                 <div class="event-title">📅 ${ev.rest ? t('daily_title') : escapeHtml(_dailyLabel(ids))}</div>
                 <div class="event-sub">${dateLabel}</div>
             </div>
+            <div class="daily-help" id="daily-help" hidden>${t('daily_note')}</div>
             ${body}
             <button class="daily-settings-btn" onclick="openDailySettings()">${t('daily_settings')}</button>
             <button onclick="document.getElementById('event-modal').remove()" class="event-close">${t('btn_close')}</button>
