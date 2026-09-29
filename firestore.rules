@@ -132,7 +132,12 @@ service cloud.firestore {
     match /sea/{docId} {
       allow read: if request.auth != null;
       allow write: if false;
-      match /{sub=**} {
+      // 내 합계(givers/{내 uid})만은 본인이 읽는다 — 기기의 njLeafSpent·seaGemsGiven을 서버 값으로 맞추려고(서버가 정본, 9/30)
+      match /givers/{uid} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow write: if false;
+      }
+      match /gifts/{gid} {
         allow read, write: if false;
       }
     }

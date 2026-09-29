@@ -7505,6 +7505,7 @@ function openSea() {
     cv.addEventListener('click', e => { const i = _seaHitNation(cv, e); _seaSel = i; _seaRender(); if (i >= 0) { const el = document.getElementById('sea-nat'); if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } });
     _seaSel = -1;
     _seaRender();
+    _seaSyncMine();
     // 열려 있는 동안 실시간 — 다른 사람이 드린 것도 바로 보인다
     if (typeof db !== 'undefined' && db) {
         try {
@@ -7512,6 +7513,17 @@ function openSea() {
             _seaUnsub = db.collection('sea').doc('world').onSnapshot(d => { _seaWorld = d.exists ? d.data() : { clear: 0, clearMax: 0, pool: 0, nations: {}, stageG: {} }; _seaWorldAt = Date.now(); _seaRender(); }, () => { });
         } catch (e) { _seaFetch(true).then(_seaRender); }
     }
+}
+/* 내가 바다에 쓴 보석·잎사귀는 서버(sea/world/givers/{uid})가 정본 — 기기 값은 병합에서 큰 쪽이 남아
+   서버에서 바로잡아도(되돌림·정리) 다시 살아났다. 바다 화면을 열 때 서버 값으로 맞춘다 (9/30) */
+async function _seaSyncMine() {
+    try {
+        if (typeof db === 'undefined' || !db || typeof firebase === 'undefined' || !firebase.auth().currentUser) return;
+        const d = await db.collection('sea').doc('world').collection('givers').doc(firebase.auth().currentUser.uid).get();
+        const gv = d.exists ? d.data() : { gems: 0, leaves: 0 };
+        const gems = Math.max(0, parseInt(gv.gems, 10) || 0), leaves = Math.max(0, parseInt(gv.leaves, 10) || 0);
+        if (gems !== seaGemsGiven || leaves !== njLeafSpent) { seaGemsGiven = gems; njLeafSpent = leaves; saveGameData(); _seaRender(); }
+    } catch (e) { }
 }
 function closeSea() {
     if (_seaUnsub) { try { _seaUnsub(); } catch (e) { } _seaUnsub = null; }
