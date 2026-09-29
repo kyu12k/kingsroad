@@ -572,6 +572,8 @@ const LANG = {
         nj3d_to_sea: '🌊 바다로',
         nj3d_to_city: '🏛️ 성으로',
         nj3d_nat_open: '🌊 바다 화면에서 소성하기',
+        nj3d_glide_on: '🪂 날개를 펼쳤어요 — 점프를 한 번 더 누르면 접혀요',
+        nj3d_glide_off: '날개를 접었어요',
         sea_open_from_nj: '🌊 잎사귀 {n}장 — 바다와 만국으로',
         nj3d_btn: '🏛️ 3D로 보기 · 걸어서 구경',
         nj3d_loading: '성을 불러오는 중…',
@@ -579,7 +581,7 @@ const LANG = {
         nj3d_walk: '🚶 걸어서 구경',
         nj3d_overview: '🗺️ 내려다보기',
         nj3d_hint_orbit: '한 손가락으로 돌리고, 두 손가락으로 확대해 보세요',
-        nj3d_hint_walk: '왼쪽 동그라미로 걷고, 화면을 끌어 둘러보세요',
+        nj3d_hint_walk: '왼쪽 동그라미로 걷고, 화면을 끌어 둘러보세요 · 점프 중에 점프를 한 번 더 누르면 활강',
         nj3d_jump: '점프',
         nj3d_fly: '🚀 날기',
         nj3d_jet_buy: '🚀 제트팩<br>💎 {cost}',
@@ -1593,6 +1595,8 @@ const LANG = {
         nj3d_to_sea: '🌊 To the sea',
         nj3d_to_city: '🏛️ To the city',
         nj3d_nat_open: '🌊 Heal it on the sea screen',
+        nj3d_glide_on: '🪂 Glider open — press Jump again to fold',
+        nj3d_glide_off: 'Glider folded',
         sea_open_from_nj: '🌊 {n} leaves — to the Sea and the Nations',
         nj3d_btn: '🏛️ View in 3D · Walk around',
         nj3d_loading: 'Loading the city…',
@@ -1600,7 +1604,7 @@ const LANG = {
         nj3d_walk: '🚶 Walk around',
         nj3d_overview: '🗺️ Overview',
         nj3d_hint_orbit: 'Drag to rotate, pinch to zoom',
-        nj3d_hint_walk: 'Use the left circle to walk, drag to look around',
+        nj3d_hint_walk: 'Use the left circle to walk, drag to look around · press Jump in mid-air to glide',
         nj3d_jump: 'Jump',
         nj3d_fly: '🚀 Fly',
         nj3d_jet_buy: '🚀 Jetpack<br>💎 {cost}',
@@ -7768,7 +7772,7 @@ function openNewJerusalem() {
         <canvas id="nj-canvas"></canvas>
         <button class="nj-3d-btn" onclick="openNJ3DView()">${t('nj3d_btn')}</button>
         <div class="nj-sub">${t('nj_hint')}</div>
-        <div class="nj-gems">💎 ${Number(myGems || 0).toLocaleString()}</div>
+        <div class="nj-gems">💎 ${Number(myGems || 0).toLocaleString()} · 🍃 ${_njLeavesAvail()}</div>
         <div class="nj-go" id="nj-go"></div>
         <div class="nj-pearl" id="nj-pearl"></div>
         <div class="nj-pearl nj-fruit" id="nj-fruit"></div>
@@ -7798,7 +7802,7 @@ function _njRenderModal() {
     const par = cv.parentElement, pcs = getComputedStyle(par);
     const W = Math.floor(par.clientWidth - parseFloat(pcs.paddingLeft) - parseFloat(pcs.paddingRight));   // 창 안쪽 여백을 뺀 폭
     _njDraw(cv, W, Math.round(W * 0.82), njBuilt, njPearls, { south: true });
-    const gemsEl = document.querySelector('#nj-modal .nj-gems'); if (gemsEl) gemsEl.textContent = `💎 ${Number(myGems || 0).toLocaleString()}`;
+    const gemsEl = document.querySelector('#nj-modal .nj-gems'); if (gemsEl) gemsEl.textContent = `💎 ${Number(myGems || 0).toLocaleString()} · 🍃 ${_njLeavesAvail()}`;   // 잎사귀도 여기서 쓴다(바다와 만국)
     const pst = _njRefreshPearls(false);
     const ge = document.getElementById('nj-go');
     if (ge) ge.innerHTML = _njGoHtml(pst);

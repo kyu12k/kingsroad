@@ -6941,6 +6941,8 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .nj3d-loading { position: absolute; inset: 0; display: grid; place-items: center; color: #9fb0c8; }
 .nj3d-mode { position: absolute; top: 10px; left: 10px; z-index: 3; border: none; border-radius: 999px; padding: 8px 14px;
     background: rgba(15, 26, 51, 0.78); color: #f6d77a; font-weight: 800; font-size: 0.85rem; cursor: pointer; }
+.nj3d-wallet { position: absolute; top: 10px; right: 10px; z-index: 3; display: flex; gap: 6px; font-size: 0.8rem; font-weight: 700; font-variant-numeric: tabular-nums; pointer-events: none; }
+.nj3d-wallet span { background: rgba(15, 26, 51, 0.78); color: #e6eef8; border-radius: 999px; padding: 5px 10px; }
 .nj3d-go { position: absolute; top: 54px; left: 10px; z-index: 3; border: none; border-radius: 999px; padding: 8px 14px;
     background: rgba(15, 26, 51, 0.78); color: #9fe6f3; font-weight: 800; font-size: 0.85rem; cursor: pointer; }
 .sea-3d-btn { margin: 0 0 8px; background: linear-gradient(135deg, #7fe6f5, #1fb0c9); color: #06303a; }

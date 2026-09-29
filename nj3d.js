@@ -51,6 +51,7 @@
                     </div>
                 </div>
                 <div class="nj3d-hint"></div>
+                <div class="nj3d-wallet"></div>
                 <div class="nj3d-fruit" hidden></div>
             </div>`;
         document.body.appendChild(ov);
@@ -371,7 +372,8 @@
         const SLOTS = [];
         for (let i = 0; i < 34; i++) {
             const y = 0.9 - (i + 0.5) / 34 * 1.45, rr = Math.sqrt(Math.max(0, 1 - y * y)), a = i * 2.39996;
-            SLOTS.push([Math.cos(a) * rr * (CANOPY_R + 0.04), y * (CANOPY_R + 0.04), Math.sin(a) * rr * (CANOPY_R + 0.04)]);
+            const R = CANOPY_R + 0.14;   // 곁가지 잎 덩이(중심에서 0.63까지)보다 바깥 — 안에 묻혀 안 보였다(9/30)
+            SLOTS.push([Math.cos(a) * rr * R, y * R, Math.sin(a) * rr * R]);
         }
         const KINDS = (typeof NJ_FRUIT_KINDS !== 'undefined') ? NJ_FRUIT_KINDS : [];
         const fruitList = (TREE_SPOTS.length && typeof _njFruitList === 'function') ? _njFruitList() : [];
@@ -382,8 +384,8 @@
             fruitList.forEach((f, i) => {
                 const [tx, tz] = TREE_SPOTS[i % 12], [ox, oy, oz] = SLOTS[Math.floor(i / 12) % 34];
                 v.set(tx + ox, CANOPY_Y + oy, tz + oz); fruitPos.push(v.clone());
-                sc.setScalar(f.ripe ? 1 : 0.62); m4.compose(v, q, sc); fruitMesh.setMatrixAt(i, m4);
-                col.set(f.ripe ? ((KINDS[f.kind] || {}).color || '#d0383a') : '#a5d66f'); fruitMesh.setColorAt(i, col);
+                sc.setScalar(f.ripe ? 1 : 0.8); m4.compose(v, q, sc); fruitMesh.setMatrixAt(i, m4);
+                col.set(f.ripe ? ((KINDS[f.kind] || {}).color || '#d0383a') : '#e4f28a'); fruitMesh.setColorAt(i, col);   // 익는 중 — 잎(진초록)과 다른 연노랑
             });
             fruitMesh.count = fruitList.length;
             fruitMesh.castShadow = true;
@@ -533,6 +535,19 @@
             const r = ripples[ripN++ % ripples.length]; r.t = 0; r.big = big; r.m.position.set(x, base + WL + 0.004, z); r.m.visible = true;
             if (typeof SoundEffect !== 'undefined' && SoundEffect.playSplash) SoundEffect.playSplash(big);
         };
+        const walletEl = ov.querySelector('.nj3d-wallet');
+        const syncWallet = () => { if (walletEl) walletEl.innerHTML = `<span>💎 ${Number(typeof myGems !== 'undefined' ? myGems : 0).toLocaleString()}</span><span>🍃 ${typeof _njLeavesAvail === 'function' ? _njLeavesAvail() : 0}</span>`; };
+        syncWallet();
+        // 글라이더 (9/30) — 점프한 채로 점프를 한 번 더: 날개가 펼쳐져 천천히 활강, 또 누르면 접힌다. 땅에 닿으면 접힌다. 값은 없다
+        const glider = (() => {
+            const g = new THREE.BufferGeometry();
+            g.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, -0.2, -0.34, 0, 0.12, 0.34, 0, 0.12, 0, 0.035, 0.05], 3));
+            g.setIndex([0, 1, 3, 0, 3, 2, 1, 2, 3]); g.computeVertexNormals();
+            const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0xf6d77a, emissive: 0x6a4a10, emissiveIntensity: 0.3, roughness: 0.4, metalness: 0.3, side: THREE.DoubleSide }));
+            m.position.set(0, 0.3, 0.01); m.castShadow = true; m.visible = false; return m;
+        })();
+        body.add(glider);
+        let gliding = false;
         const jet = new THREE.Group(); body.add(jet);
         const jm = new THREE.MeshStandardMaterial({ color: 0xd4a53a, metalness: 0.8, roughness: 0.25 });
         [-1, 1].forEach(sg => { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.075, 12), jm); c.position.set(sg * 0.018, 0.13, 0.03); jet.add(c); });
@@ -636,7 +651,7 @@
             else if (f.retryAt && now < f.retryAt) body = `<div class="nj3d-fruit-sub">${T('nj_fruit_retry')}</div>`;
             else body = `<button class="nj3d-eat">${T('nj_fruit_eat')}</button>`;
             fruitPanel.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button>
-                <div class="nj3d-fruit-head"><span class="nj3d-fruit-dot" style="background:${f.ripe ? k.color : '#a5d66f'}"></span><b>${name}</b><span>${ref}</span></div>${body}`;
+                <div class="nj3d-fruit-head"><span class="nj3d-fruit-dot" style="background:${f.ripe ? k.color : '#e4f28a'}"></span><b>${name}</b><span>${ref}</span></div>${body}`;
             fruitPanel.hidden = false;
             fruitPanel.querySelector('.nj3d-fruit-x').onclick = hideFruit;
             const eat = fruitPanel.querySelector('.nj3d-eat');
@@ -694,7 +709,13 @@
         const endLook = e => { if (e.pointerId === lookId) lookId = null; };
         cvs.addEventListener('pointerup', endLook); cvs.addEventListener('pointercancel', endLook);
         cvs.addEventListener('wheel', e => { if (walk) { camDist = Math.max(0.45, Math.min(3, camDist * (e.deltaY > 0 ? 1.1 : 0.9))); e.preventDefault(); } }, { passive: false });
-        const doJump = () => { if (P.onGround) { P.vy = JUMP_V; P.onGround = false; } };
+        const doJump = () => {
+            if (P.onGround) { P.vy = JUMP_V; P.onGround = false; return; }
+            if (jetOn) return;
+            gliding = !gliding;   // 공중에서 한 번 더 — 펼치기 / 접기
+            if (gliding && P.vy < -0.2) P.vy = -0.2;
+            showHint(T(gliding ? 'nj3d_glide_on' : 'nj3d_glide_off'), 1400);
+        };
         listen(window, 'keydown', e => { if (!walk) return; inp.keys[e.code] = true; if (e.code === 'Space') { doJump(); e.preventDefault(); } if (e.code === 'Escape') closeNJ3D(); });
         listen(window, 'keyup', e => { inp.keys[e.code] = false; });
         ov.querySelector('.nj3d-jump').addEventListener('pointerdown', e => { e.preventDefault(); doJump(); });
@@ -714,7 +735,7 @@
             if (typeof updateGemDisplay === 'function') updateGemDisplay();
             if (typeof saveGameData === 'function') saveGameData();
             if (typeof syncToFirestore === 'function') syncToFirestore();
-            syncJetUI(); showHint(T('nj3d_jet_got'), 3500);
+            syncJetUI(); syncWallet(); showHint(T('nj3d_jet_got'), 3500);
         });
         syncJetUI();
 
@@ -764,11 +785,15 @@
             const inWater = P.onGround && wetAt(P.x, P.z);
             const run = moving && ml > 0.85 && !fly;   // 조이스틱을 끝까지 밀면 달린다
             const inRiver = inWater && inWater !== 'sea';
-            const sp = (fly || !P.onGround) ? WALK_V * 1.35 : (run ? RUN_V : WALK_V) * (inRiver ? 0.65 : 1);
+            const glide = gliding && !fly && !P.onGround;
+            if (glide && !moving) { mx = -Math.sin(P.face); mz = -Math.cos(P.face); }   // 활강은 손을 떼도 바라보는 쪽으로 계속 나아간다
+            const sp = glide ? 2.6 : (fly || !P.onGround) ? WALK_V * 1.35 : (run ? RUN_V : WALK_V) * (inRiver ? 0.65 : 1);
             const nx = P.x + mx * sp * dt, nz = P.z + mz * sp * dt;
             if (!blocked(nx, P.z, P.y)) P.x = nx;
             if (!blocked(P.x, nz, P.y)) P.z = nz;
-            if (fly) P.vy = Math.min(P.vy + 6.5 * dt, 1.4); else P.vy -= G * dt;
+            if (fly) { P.vy = Math.min(P.vy + 6.5 * dt, 1.4); gliding = false; }
+            else if (glide) P.vy = Math.max(P.vy - G * 0.18 * dt, -0.42);   // 천천히 내려앉는다
+            else P.vy -= G * dt;
             P.y = Math.min(18, P.y + P.vy * dt);
             const g = groundAt(P.x, P.z, P.y);
             if (P.y <= g) { P.y = g; if (P.vy < 0) P.vy = 0; P.onGround = true; }
@@ -786,7 +811,10 @@
             }
             const amp = run ? 0.95 : 0.55, sw = Math.sin(gait);
             let hL = 0, hR = 0, aL = 0, aR = 0, zL = 0, zR = 0, lean = 0, bob = 0;
-            if (fly) { hL = 0.12; hR = 0.05; zL = -0.35; zR = 0.35; lean = -0.25; }
+            if (P.onGround) gliding = false;
+            glider.visible = gliding && !fly;
+            if (glider.visible) { hL = -0.3; hR = -0.2; zL = -2.7; zR = 2.7; lean = -0.35; }   // 두 팔로 날개를 붙잡고 몸을 앞으로
+            else if (fly) { hL = 0.12; hR = 0.05; zL = -0.35; zR = 0.35; lean = -0.25; }
             else if (!P.onGround) { hL = 0.65; hR = -0.3; aL = -0.5; aR = 0.4; zL = -0.75; zR = 0.75; }
             else if (stepping) { hL = amp * sw; hR = -amp * sw; aL = -amp * 0.85 * sw; aR = amp * 0.85 * sw; lean = run ? -0.2 : -0.05; bob = Math.abs(Math.cos(gait)) * (run ? 0.012 : 0.006); }
             const e = Math.min(1, dt * 14), L = limbs;
