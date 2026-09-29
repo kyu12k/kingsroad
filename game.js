@@ -2717,6 +2717,17 @@ loadGameData = function () {
         njPearlLog = Array.isArray(parsed.njPearlLog) ? parsed.njPearlLog : [];
         njBlankDays = Array.isArray(parsed.njBlankDays) ? parsed.njBlankDays.filter(d => typeof d === 'string') : [];
         (njPearlWeek.days || []).forEach(d => { if (typeof d === 'string' && !njBlankDays.includes(d)) njBlankDays.push(d); });
+        // 보정 (2026-09-30): 새 진주 규칙이 9/29 오후에 들어와 그 전(이번 주 9/28 월~)에 백지로 통과한 날이 빠졌다.
+        //   절마다 남아 있는 '마지막 백지 통과 시각'으로 채운다 — 그날 통과한 절을 뒤에 또 통과했으면 그날은 못 찾지만, 넣는 날은 모두 진짜다.
+        //   9/28 이전은 넣지 않는다(규칙이 생기기 전 주). 여러 번 돌아도 같은 결과
+        if (verseRecall && typeof verseRecall === 'object') {
+            for (const id in verseRecall) {
+                const r = verseRecall[id], tb = r && r.lastBlankPass;
+                if (!tb) continue;
+                const d = _tsTo6AMDateStr(tb);
+                if (d >= '2026-09-28' && !njBlankDays.includes(d)) njBlankDays.push(d);
+            }
+        }
         njJetpack = !!parsed.njJetpack;
         njFruits = (parsed.njFruits && typeof parsed.njFruits === 'object') ? parsed.njFruits : {};
         njLeafArch = (parsed.njLeafArch && typeof parsed.njLeafArch === 'object') ? parsed.njLeafArch : {};
