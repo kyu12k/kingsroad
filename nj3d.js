@@ -666,7 +666,7 @@
             const lv = (seaW && seaW.nations && seaW.nations[i] && seaW.nations[i].lv) || 0;
             const LV = (typeof SEA_LV_NAMES !== 'undefined') ? SEA_LV_NAMES[en ? 'en' : 'ko'] : [];
             fruitPanel.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button>
-                <div class="nj3d-fruit-head"><b>🏞️ ${en ? N[2] : N[0]}</b><span>${en ? N[3] : N[1]} · ${LV[lv] || ''}</span></div>
+                <div class="nj3d-fruit-head"><b>🏞️ ${en ? N[2] : N[0]}</b><span>${en ? N[5] + ' line' : N[4] + ' 가문'} · ${en ? N[3] : N[1]} · ${LV[lv] || ''}</span></div>
                 <button class="nj3d-eat">${T('nj3d_nat_open')}</button>`;
             fruitPanel.hidden = false;
             fruitPanel.querySelector('.nj3d-fruit-x').onclick = hideFruit;

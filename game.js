@@ -7561,7 +7561,7 @@ function _seaRender() {
         <div class="sea-btns">${[1, 5, 10].map(v => `<button class="sea-give${_seaBusy === 'leaf:' + v ? ' busy' : ''}" ${avail < 1 || _seaBusy ? 'disabled' : ''} onclick="_seaGive('leaf', ${v}, ${_seaSel})">${_seaBusy === 'leaf:' + v ? `<span class="sea-spin"></span>${t('sea_busy_leaf')}` : t('sea_btn_leaf', { n: v })}</button>`).join('')}</div>
         ${avail < 1 ? `<div class="sea-dim">${t('sea_no_leaves')}</div>` : ''}`;
     nat.innerHTML = `<div class="nj-pearl sea-nat-card">
-        <div class="nj-pearl-head">🏞️ ${en ? N[2] : N[0]} <span class="sea-dim">${en ? N[3] : N[1]} · ${en ? N[5] : N[4]}</span><button class="nj-x sea-nat-x" onclick="_seaSel=-1;_seaRender()">✕</button></div>
+        <div class="nj-pearl-head">🏞️ ${en ? N[2] : N[0]} <span class="sea-dim">${en ? N[5] + ' line' : N[4] + ' 가문'} · ${en ? N[3] : N[1]}</span><button class="nj-x sea-nat-x" onclick="_seaSel=-1;_seaRender()">✕</button></div>
         <div class="sea-lv">${lvHtml}</div>${body}
         ${gHtml || `<div class="sea-dim">${t('sea_nat_none')}</div>`}
         <div class="nj-pearl-rule">${t('sea_nat_rule')}</div></div>`;
