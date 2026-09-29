@@ -18,6 +18,11 @@
 > 아무에게도 안 보였고 공지 버튼도 죽어 있었다(9/17 헤드리스 크롬으로 발견). 공지를 고치면 블록마다 떼어 `node --check`를 돌리거나
 > 헤드리스 크롬(`--dump-dom --enable-logging=stderr`)으로 콘솔 `Uncaught`를 확인할 것. 영어 문구의 `'`는 `'`.
 
+> **Firestore는 배열 안에 배열을 저장하지 못한다.** 9/28에 넣은 힌트 흔적 `verseRecall[id].hm`이 `[[3,5],[],[1]]` 모양이라
+> 힌트를 한 번 쓴 사람의 서버 저장이 **통째로** 거절됐다(`Property verseRecall contains an invalid nested entity`) — 9/28 14시~9/30 새벽, 최소 6명.
+> 기기에는 남아 있어 날아가진 않았지만 다른 기기에 안 보였다. 저장본에 새 필드를 넣을 때 **배열의 배열**이면 문자열이나 객체로 바꿀 것(`_hmFix`).
+> 서버 함수 로그(`firebase functions:log --only saveGameDataSecure`)의 `set 실패`가 신호다.
+
 ---
 
 ---

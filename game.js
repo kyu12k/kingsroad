@@ -2672,6 +2672,7 @@ loadGameData = function () {
         if (parsed.hardshipVerseClearHistory) hardshipVerseClearHistory = parsed.hardshipVerseClearHistory;
         if (parsed.verseRecall && typeof parsed.verseRecall === 'object') {
             verseRecall = parsed.verseRecall;
+            _hmFix(verseRecall);   // 배열의 배열이면 서버 저장이 거절된다
             // typedPass 도입 이전 기록 보정 — 없으면 pass로 채운다.
             // 이미 보너스를 받은 구절에 다시 주지 않는 것이 우선이고,
             // 음성으로만 통과했던 소수는 한 번 더 승급 상태로 남지만 곧 실제 기록으로 갱신된다.
@@ -9401,8 +9402,15 @@ function _hintTraceCounts(id, lang) {
     if (!r || !Array.isArray(r.hm) || !r.hm.length) return null;
     if ((r.hml || 'ko') !== lang) return null;
     const m = new Map();
-    r.hm.forEach(arr => (arr || []).forEach(i => m.set(i, (m.get(i) || 0) + 1)));
+    r.hm.forEach(a => _hmParse(a).forEach(i => m.set(i, (m.get(i) || 0) + 1)));
     return m.size ? m : null;
+}
+/* ★ hm 한 칸은 문자열 "3,5,7" (2026-09-29). 처음엔 배열의 배열이었는데 **Firestore는 배열 안의 배열을 저장하지 못한다**
+   ('Property verseRecall contains an invalid nested entity') — 힌트를 한 번 쓴 사람의 서버 저장이 9/28부터 통째로 거절됐다 */
+function _hmParse(a) { return Array.isArray(a) ? a : (typeof a === 'string' && a ? a.split(',').map(Number).filter(n => n >= 0) : []); }
+function _hmFix(vr) {   // 옛 배열 형식을 문자열로 — 불러올 때와 저장 직전에
+    if (!vr || typeof vr !== 'object') return;
+    for (const id in vr) { const r = vr[id]; if (r && Array.isArray(r.hm) && r.hm.some(a => Array.isArray(a))) r.hm = r.hm.map(a => Array.isArray(a) ? a.join(',') : (a || '')); }
 }
 function _escHtml(c) { return c === '<' ? '&lt;' : c === '>' ? '&gt;' : c === '&' ? '&amp;' : c; }
 function _markTraceChars(str, offset, counts) {
@@ -10838,6 +10846,7 @@ function saveGameData() {
         console.log('저장 중단: 리셋 플래그 활성화');
         return;
     }
+    if (typeof verseRecall !== 'undefined') _hmFix(verseRecall);   // 다른 기기(옛 버전)에서 병합돼 온 배열의 배열도 여기서 고친다
 
     const saveData = {
         version: GAME_VERSION, // ★ [정식 배포] 버전 정보 추가
@@ -22692,8 +22701,13 @@ document.addEventListener("visibilitychange", () => {
         saveGameData();
     } else if (document.visibilityState === 'visible') {
         checkMissions();
+        // 다른 기기에서 더 최근에 저장했는지 (1분에 한 번까지) — 있으면 「새로고침」 안내 (2026-09-29)
+        //   예전엔 다른 기기가 '여정 시작'을 새로 눌렀을 때만 확인해서, 켜 둔 PC 탭은 폰 기록을 모른 채 있었다
+        if (typeof checkRemoteIsNewer === 'function') checkRemoteIsNewer();
     }
 });
+// PC는 탭이 보이는 채로 창만 뒤로 가 있다 돌아오는 일이 많다 — 창에 초점이 올 때도 같은 확인
+window.addEventListener('focus', () => { if (typeof checkRemoteIsNewer === 'function') checkRemoteIsNewer(); });
 
 // [시스템] 스테이지 목록 강제 새로고침 (UI 갱신용)
 function reloadCurrentChapterUI() {
@@ -26847,7 +26861,7 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
             ? (getHardshipActiveText(hardshipState.currentVerse) || '') : '';
         r.lastVerseLen = _txt.length;
         // 힌트 흔적 — 최근 3번의 시도 (깨끗한 시도는 빈 배열로 남아 흔적을 밀어낸다)
-        const _hm = (Array.isArray(r.hm) ? r.hm : []).concat([_rev.slice(0, 20)]).slice(-3);
+        const _hm = (Array.isArray(r.hm) ? r.hm.map(a => Array.isArray(a) ? a.join(',') : (a || '')) : []).concat([_rev.slice(0, 20).join(',')]).slice(-3);
         if (_hm.some(a => a.length)) { r.hm = _hm; r.hml = (currentLang === 'en') ? 'en' : 'ko'; }
         else { delete r.hm; delete r.hml; }
     }
