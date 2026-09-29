@@ -529,7 +529,7 @@
         }
         let ripN = 0;
         const splash = (x, z, big) => {
-            const d = Math.max(Math.abs(x), Math.abs(z)), base = d <= PL ? 0 : WT(x, z);
+            const d = Math.max(Math.abs(x), Math.abs(z)), base = seaE(x, z) < 1 ? SEA_Y - WL : d <= PL ? 0 : WT(x, z);
             const r = ripples[ripN++ % ripples.length]; r.t = 0; r.big = big; r.m.position.set(x, base + WL + 0.004, z); r.m.visible = true;
             if (typeof SoundEffect !== 'undefined' && SoundEffect.playSplash) SoundEffect.playSplash(big);
         };
@@ -595,7 +595,7 @@
         function wetAt(x, z) {
             const ax = Math.abs(x), az = Math.abs(z);
             if (Math.max(ax, az) > PL) {
-                if (seaE(x, z) < 1) return false;
+                if (seaE(x, z) < 1) return 'sea';   // 바다 위를 걷는다 — 발밑에 물결(느려지지는 않는다)
                 return (ax < RB && z < SHORE && stripDip(ax) < -0.02) || (az < RB && stripDip(az) < -0.02);
             }
             if (bandHeight(x, z) > 0) return false;
@@ -604,7 +604,6 @@
         }
         function blocked(x, z, y) {
             if (Math.abs(x) > 140 || z < -140 || z > 150) return true;
-            if (seaE(x, z) < 0.985 && y < SEA_Y + 1.5) return true;   // 바다에는 걸어 들어가지 않는다(제트팩으로 높이 날면 위로 지나간다)
             if (terrain(x, z) - y > STEP) return true;
             return BOXES.some(b => b.y1 > y + STEP && b.y0 < y + CH && x > b.x0 - CR && x < b.x1 + CR && z > b.z0 - CR && z < b.z1 + CR);
         }
@@ -764,14 +763,17 @@
             const moving = ml > 0.05, wasGround = P.onGround;
             const inWater = P.onGround && wetAt(P.x, P.z);
             const run = moving && ml > 0.85 && !fly;   // 조이스틱을 끝까지 밀면 달린다
-            const sp = (fly || !P.onGround) ? WALK_V * 1.35 : (run ? RUN_V : WALK_V) * (inWater ? 0.65 : 1);
+            const inRiver = inWater && inWater !== 'sea';
+            const sp = (fly || !P.onGround) ? WALK_V * 1.35 : (run ? RUN_V : WALK_V) * (inRiver ? 0.65 : 1);
             const nx = P.x + mx * sp * dt, nz = P.z + mz * sp * dt;
             if (!blocked(nx, P.z, P.y)) P.x = nx;
             if (!blocked(P.x, nz, P.y)) P.z = nz;
             if (fly) P.vy = Math.min(P.vy + 6.5 * dt, 1.4); else P.vy -= G * dt;
             P.y = Math.min(18, P.y + P.vy * dt);
             const g = groundAt(P.x, P.z, P.y);
-            if (P.y <= g) { P.y = g; if (P.vy < 0) P.vy = 0; P.onGround = true; } else P.onGround = false;
+            if (P.y <= g) { P.y = g; if (P.vy < 0) P.vy = 0; P.onGround = true; }
+            else if (!fly && wasGround && P.vy <= 0 && P.y - g < 0.45) { P.y = g; P.vy = 0; P.onGround = true; }   // 내리막은 발을 땅에 붙인다 — 한 걸음마다 살짝 떴다 떨어져 콩콩 튀었고, 늘 공중이라 점프도 안 됐다(9/30)
+            else P.onGround = false;
             if (!wasGround && P.onGround && wetAt(P.x, P.z)) splash(P.x, P.z, true);   // 물에 떨어짐
             if (moving) { const want = Math.atan2(-mx, -mz); let d = want - P.face; d = Math.atan2(Math.sin(d), Math.cos(d)); P.face += d * Math.min(1, dt * 10); }
             pilgrim.position.set(P.x, P.y, P.z); pilgrim.rotation.y = P.face;
@@ -779,7 +781,7 @@
             const stepping = moving && P.onGround;
             if (stepping) {
                 const prev = Math.sin(gait);
-                gait += dt * (run ? 15 : 9.5) * (inWater ? 0.8 : 1);
+                gait += dt * (run ? 15 : 9.5) * (inRiver ? 0.8 : 1);
                 if (inWater && Math.sign(Math.sin(gait)) !== Math.sign(prev)) splash(P.x, P.z, false);   // 발을 디딜 때마다 참방
             }
             const amp = run ? 0.95 : 0.55, sw = Math.sin(gait);
