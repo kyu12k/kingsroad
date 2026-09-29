@@ -165,6 +165,7 @@ firebase deploy --only firestore:rules    # 보안 규칙
 | `docs/랭킹과-이벤트.md` | 실시간 암송왕·통독왕, 주간 랭킹 보상, 기간 한정 이벤트, 오늘의 암송, 미션 |
 | `docs/저장과-동기화.md` | 기기 간 동기화, 서버 시각, Firestore 보안 규칙, 태그(#번호) 발급, 친구 |
 | `docs/UX-결정기록.md` | 실측 사용률, 온보딩, 힌트 정책, 토스트 규칙, 지도 헤더 |
+| `docs/새-예루살렘.md` | (설계안) 밭 100 이후 보석 사용처 — 열두 기초석·보석 원 칭호·보석 수입 실측 |
 | `REVELATION_TOPICS.md` | 계시록 주제 분류 데이터 |
 | `DEPLOYMENT_GUIDE.md` · `README.md` | 초기 설정 안내 |
 
