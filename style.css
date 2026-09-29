@@ -6919,6 +6919,8 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .sea-give.busy:not(.gem) { background: var(--c-action); }
 .sea-spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff; animation: sea-spin 0.8s linear infinite; flex: 0 0 auto; }
 @keyframes sea-spin { to { transform: rotate(360deg); } }
+.sea-give.vine { background: #6b3a8e; box-shadow: 0 3px 0 #4a2663; }
+.sea-vine { display: grid; gap: 6px; border-top: 1px dashed #2d5a6d; padding-top: 8px; }
 .sea-names { display: flex; flex-wrap: wrap; gap: 5px; }
 .sea-name { display: inline-flex; align-items: center; gap: 5px; font-size: 0.76rem; background: #0f2230; border-radius: 999px; padding: 2px 9px; color: #e6f1f5; }
 .sea-name i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }

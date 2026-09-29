@@ -566,6 +566,20 @@ const LANG = {
         sea_fail: '맑히지(소성하지) 못했어요. 인터넷 연결을 확인해 주세요',
         sea_btn_gem: '💎 {n}으로 맑히기',
         sea_btn_leaf: '🍃 {n}장으로 소성하기',
+        vine_title: '🍇 내 포도원',
+        vine_count: '{k} / {max}그루 · 🍇 {g}',
+        vine_rule: '소성된 나라(풀밭 이상)에 포도나무를 심어요. 3일 뒤 거두고, 그 사흘 동안 백지로 한 절이라도 써낸 날마다 물이 줘져요 — 거두는 양은 4 + 물 준 날 × 3.',
+        vine_ripe_some: '🍇 거둘 포도가 {n}그루 있어요 — 그 나라를 눌러 거두세요',
+        vine_here: '🍇 이 나라의 내 포도원',
+        vine_plant: '🍇 포도나무 심기 · 💎 {n}',
+        vine_confirm: '💎 {n}개로 이 나라에 포도나무를 심을까요? 3일 뒤 거둬요. 그동안 백지로 쓴 날마다 물이 줘져요.',
+        vine_planted: '🍇 포도나무를 심었어요 — 오늘 백지로 한 절을 쓰면 물이 줘져요',
+        vine_growing: '자라는 중 · {d}일 뒤 거둬요 · 물 준 날 {w}/3',
+        vine_water_today: '💧 오늘 백지로 한 절을 써내면 물이 줘져요',
+        vine_harvest: '🍇 거두기 · +{n}',
+        vine_harvested: '🍇 포도를 거뒀어요 · +{n}',
+        vine_need_healed: '이 나라가 소성되면(풀밭) 포도나무를 심을 수 있어요',
+        vine_full: '포도나무는 {n}그루까지 — 거둔 뒤에 새로 심어요',
         sea_busy_gem: '맑히는 중…',
         sea_busy_leaf: '소성하는 중…',
         sea_3d_btn: '🌊 3D로 보기 · 바다에서 걷기',
@@ -1601,6 +1615,20 @@ const LANG = {
         sea_fail: 'Could not complete. Please check your connection',
         sea_btn_gem: '💎 Clear with {n}',
         sea_btn_leaf: '🍃 Heal with {n}',
+        vine_title: '🍇 My vineyard',
+        vine_count: '{k} / {max} vines · 🍇 {g}',
+        vine_rule: 'Plant vines in healed nations (grass or better). Harvest after 3 days; each of those days you write a verse from blank waters them — yield 4 + watered days × 3.',
+        vine_ripe_some: '🍇 {n} vines ready — tap the nation to harvest',
+        vine_here: '🍇 My vine here',
+        vine_plant: '🍇 Plant a vine · 💎 {n}',
+        vine_confirm: 'Plant a vine here for 💎 {n}? Harvest in 3 days; days you write from blank water it.',
+        vine_planted: '🍇 Vine planted — write a verse from blank today to water it',
+        vine_growing: 'Growing · harvest in {d} days · watered {w}/3',
+        vine_water_today: '💧 Write one verse from blank today to water it',
+        vine_harvest: '🍇 Harvest · +{n}',
+        vine_harvested: '🍇 Harvested · +{n}',
+        vine_need_healed: 'Once this nation is healed (grass) you can plant a vine',
+        vine_full: 'Up to {n} vines — harvest before planting more',
         sea_busy_gem: 'Clearing…',
         sea_busy_leaf: 'Healing…',
         sea_3d_btn: '🌊 View in 3D · Walk by the sea',
@@ -2389,6 +2417,9 @@ let seaGemsGiven = 0;    // 바다를 맑힌 보석 합 (내 기록 표시용)
 let njFish = 0;          // 🎣 낚은 물고기 값 합(늘기만) — 예물을 받을 때 쓴다(njFishSpent)
 let njFishSpent = 0;
 let njFishCasts = 0;     // 던진 그물 수(연구·보석 흐름 실측용)
+let njVines = [];        // 🍇 포도원 — [{ id, n: 나라 번호, t: 심은 때, h: 거둔 때(0=아직), y: 거둔 양 }]
+let njGrapes = 0;        // 🍇 거둔 포도 합(늘기만) — 예물을 받을 때 쓴다(njGrapesSpent)
+let njGrapesSpent = 0;
 let njFishBag = {};      // 🎣 종류별로 낚은 수 { 'tuna': 3, ... } — 모으는 재미·예물 표시용(값은 njFish에 합산)
 let lastPlayedStageId = null; // 마지막으로 직접 플레이한 스테이지 ID
 let bossFirstClearClaimed = new Set(); // 최초 클리어 보너스를 수령한 보스 스테이지 ID
@@ -2845,6 +2876,9 @@ loadGameData = function () {
         njFishSpent = Math.max(0, parseInt(parsed.njFishSpent, 10) || 0);
         njFishCasts = Math.max(0, parseInt(parsed.njFishCasts, 10) || 0);
         njFishBag = (parsed.njFishBag && typeof parsed.njFishBag === 'object') ? parsed.njFishBag : {};
+        njVines = Array.isArray(parsed.njVines) ? parsed.njVines.filter(v => v && v.id) : [];
+        njGrapes = Math.max(0, parseInt(parsed.njGrapes, 10) || 0);
+        njGrapesSpent = Math.max(0, parseInt(parsed.njGrapesSpent, 10) || 0);
         // 오늘의 암송 진행은 날마다 새 id라 60일 지난 것은 버린다 (저장본이 자라지 않게)
         try {
             const _cut = _shift6AMDayStr(_get6AMDayStr(), -60);
@@ -7582,6 +7616,47 @@ function _njFishQuestion() {
     return null;
 }
 
+/* ══ 🍇 포도원 (2026-09-30) — docs/새-예루살렘.md 「낚시 · 농사 · 만국의 예물」 ══
+   소성된 나라(풀밭 이상)에만, 나라마다 한 그루, 한 사람 여섯 그루까지. 💎로 심고 3일 뒤 거둔다.
+   물 주기 = 그 사흘 동안 백지로 한 절이라도 써낸 날(njBlankDays — 진주와 같은 기록). 거두는 양 = 4 + 물 준 날 × 3 (매일이면 13, 한 번도 없으면 4) */
+const NJ_VINE_COST = 20000, NJ_VINE_GROW_DAYS = 3, NJ_VINE_MAX = 6;
+function _njGrapesAvail() { return Math.max(0, (njGrapes || 0) - (njGrapesSpent || 0)); }
+function _njDayPlus(ds, k) { const [y, m, d] = ds.split('-').map(Number); return _getLocalDateStr(new Date(y, m - 1, d + k)); }
+function _njVineInfo(v) {
+    const d0 = _tsTo6AMDateStr(v.t), days = [0, 1, 2].map(k => _njDayPlus(d0, k));
+    const watered = days.filter(d => (njBlankDays || []).includes(d)).length;
+    const ripeAt = v.t + NJ_VINE_GROW_DAYS * 86400000;
+    return { ripe: Date.now() >= ripeAt, ripeAt, watered, yield: 4 + watered * 3, waterToday: days.includes(_get6AMDayStr()) && !(njBlankDays || []).includes(_get6AMDayStr()) };
+}
+function _njVinesGrowing() { return (njVines || []).filter(v => v && !v.h); }
+function _njVineAt(n) { return _njVinesGrowing().find(v => v.n === n) || null; }
+function _njVinePlant(n) {
+    const w = _seaWorld, lv = (w && w.nations && w.nations[n] && w.nations[n].lv) || 0;
+    if (lv < 1) { showGemToast(0, t('vine_need_healed'), true); return; }
+    if (_njVineAt(n)) return;
+    if (_njVinesGrowing().length >= NJ_VINE_MAX) { showGemToast(0, t('vine_full', { n: NJ_VINE_MAX }), true); return; }
+    if ((myGems || 0) < NJ_VINE_COST) { showGemToast(0, t('sea_need_gems'), true); return; }
+    if (!confirm(t('vine_confirm', { n: NJ_VINE_COST.toLocaleString() }))) return;
+    myGems -= NJ_VINE_COST;
+    (njVines = Array.isArray(njVines) ? njVines : []).push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), n, t: Date.now(), h: 0, y: 0 });
+    if (typeof updateGemDisplay === 'function') updateGemDisplay();
+    saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
+    showGemToast(0, t('vine_planted'));
+    _seaRender();
+}
+function _njVineHarvest(id) {
+    const v = (njVines || []).find(x => x && x.id === id);
+    if (!v || v.h) return;
+    const info = _njVineInfo(v);
+    if (!info.ripe) return;
+    v.h = Date.now(); v.y = info.yield;
+    njGrapes = (njGrapes || 0) + info.yield;
+    saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
+    if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
+    if (typeof showMissionToast === 'function') showMissionToast(t('vine_harvested', { n: info.yield }), `🍇 ${_njGrapesAvail()}`);
+    _seaRender();
+}
+
 /* ── 바다 화면 ── */
 function openSea() {
     const old = document.getElementById('sea-modal'); if (old) old.remove();
@@ -7634,7 +7709,8 @@ function _seaRender() {
     _seaDraw(cv, Wd, Wd, w, _seaSel);
     const clear = (w && w.clear) || 0, si = _seaStageIdx(clear), prev = si ? SEA_STAGES[si - 1] : 0, full = clear >= 2000;
     const chip = document.getElementById('sea-chip'); if (chip) chip.textContent = t('sea_stage_chip', { n: si + 1, name: SEA_STAGE_NAMES[lang][si] });
-    const wal = document.getElementById('sea-wallet'); if (wal) wal.innerHTML = `<span>💎 ${Number(myGems || 0).toLocaleString()}</span><span>🍃 ${_njLeavesAvail()}</span>`;
+    const wal = document.getElementById('sea-wallet');
+    if (wal) wal.innerHTML = `<span>💎 ${Number(myGems || 0).toLocaleString()}</span><span>🍃 ${_njLeavesAvail()}</span>${_njFishAvail() ? `<span>🐟 ${_njFishAvail()}</span>` : ''}${_njGrapesAvail() ? `<span>🍇 ${_njGrapesAvail()}</span>` : ''}`;
     const done = _seaCompleted(w);
     const steps = SEA_STAGE_NAMES[lang].map((nm, i) => `<div class="${i < done ? 'done' : i === si && !full ? 'on' : ''}">${i + 1} ${nm}</div>`).join('');
     const names = (w && w.stageG && w.stageG[si]) || [];
@@ -7652,8 +7728,12 @@ function _seaRender() {
     const la = document.getElementById('sea-land');
     const healed = w && w.nations ? Object.values(w.nations).filter(n => n && n.lv > 0).length : 0;
     const lvSum = w && w.nations ? Object.values(w.nations).reduce((a, n) => a + ((n && n.lv) || 0), 0) : 0;
+    const ripeVines = _njVinesGrowing().filter(v => _njVineInfo(v).ripe).length;
     if (la) la.innerHTML = `<div class="nj-pearl-head">${t('sea_land_title')} <span class="sea-dim">${t('sea_land_num', { n: healed, lv: lvSum })}</span></div>
-        <div class="nj-pearl-rule">${t('sea_land_rule')}</div>`;
+        <div class="nj-pearl-rule">${t('sea_land_rule')}</div>
+        <div class="nj-pearl-head" style="margin-top:6px">${t('vine_title')} <span class="sea-dim">${t('vine_count', { k: _njVinesGrowing().length, max: NJ_VINE_MAX, g: _njGrapesAvail() })}</span></div>
+        ${ripeVines ? `<div class="sea-dim">${t('vine_ripe_some', { n: ripeVines })}</div>` : ''}
+        <div class="nj-pearl-rule">${t('vine_rule')}</div>`;
     // 고른 나라
     const nat = document.getElementById('sea-nat');
     if (!nat) return;
@@ -7669,10 +7749,22 @@ function _seaRender() {
         <div class="sea-dim">${t('sea_nat_need', { next: SEA_LV_NAMES[lang][n.lv + 1], a: n.pool, b: SEA_LEAF_PER_LV })}</div>
         <div class="sea-btns">${[1, 5, 10].map(v => `<button class="sea-give${_seaBusy === 'leaf:' + v ? ' busy' : ''}" ${avail < 1 || _seaBusy ? 'disabled' : ''} onclick="_seaGive('leaf', ${v}, ${_seaSel})">${_seaBusy === 'leaf:' + v ? `<span class="sea-spin"></span>${t('sea_busy_leaf')}` : t('sea_btn_leaf', { n: v })}</button>`).join('')}</div>
         ${avail < 1 ? `<div class="sea-dim">${t('sea_no_leaves')}</div>` : ''}`;
+    // 🍇 이 나라의 내 포도원
+    const vine = _njVineAt(_seaSel);
+    let vineHtml;
+    if (vine) {
+        const vi = _njVineInfo(vine);
+        vineHtml = vi.ripe
+            ? `<button class="sea-give" onclick="_njVineHarvest('${vine.id}')">${t('vine_harvest', { n: vi.yield })}</button>`
+            : `<div class="sea-dim">${t('vine_growing', { d: Math.max(1, Math.ceil((vi.ripeAt - Date.now()) / 86400000)), w: vi.watered })}</div>${vi.waterToday ? `<div class="sea-dim">${t('vine_water_today')}</div>` : ''}`;
+    } else if (n.lv < 1) vineHtml = `<div class="sea-dim">${t('vine_need_healed')}</div>`;
+    else if (_njVinesGrowing().length >= NJ_VINE_MAX) vineHtml = `<div class="sea-dim">${t('vine_full', { n: NJ_VINE_MAX })}</div>`;
+    else vineHtml = `<button class="sea-give vine" ${myGems < NJ_VINE_COST ? 'disabled' : ''} onclick="_njVinePlant(${_seaSel})">${t('vine_plant', { n: NJ_VINE_COST.toLocaleString() })}</button>`;
     nat.innerHTML = `<div class="nj-pearl sea-nat-card">
         <div class="nj-pearl-head">🏞️ ${en ? N[2] : N[0]} <span class="sea-dim">${en ? N[5] + ' line' : N[4] + ' 가문'} · ${en ? N[3] : N[1]}</span><button class="nj-x sea-nat-x" onclick="_seaSel=-1;_seaRender()">✕</button></div>
         <div class="sea-lv">${lvHtml}</div>${body}
         ${gHtml || `<div class="sea-dim">${t('sea_nat_none')}</div>`}
+        <div class="sea-vine"><div class="nj-pearl-head">${t('vine_here')}</div>${vineHtml}</div>
         <div class="nj-pearl-rule">${t('sea_nat_rule')}</div></div>`;
 }
 function _seaGiftId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 10); }
@@ -11414,6 +11506,9 @@ function saveGameData() {
         njFishSpent: njFishSpent,         // 🎣 예물에 쓴 물고기
         njFishCasts: njFishCasts,         // 🎣 던진 그물 수
         njFishBag: njFishBag,             // 🎣 종류별로 낚은 수
+        njVines: njVines,                 // 🍇 포도원
+        njGrapes: njGrapes,               // 🍇 거둔 포도 합
+        njGrapesSpent: njGrapesSpent,     // 🍇 예물에 쓴 포도
         sessionTimeLog: sessionTimeLog,
         // ★ [게임 모드]
         activeMode: activeMode,
@@ -11702,12 +11797,23 @@ function _mergeNewJerusalem(target, other) {
         target.njLeafArch = ta;
     }
     // 바다에 드린 잎사귀·보석 — 늘기만 한다(서버가 정본). 큰 쪽
-    ['njLeafSpent', 'seaGemsGiven', 'njFish', 'njFishSpent', 'njFishCasts'].forEach(k => { const o = parseInt(other[k], 10) || 0; if (o > (parseInt(target[k], 10) || 0)) { target[k] = o; took++; } });
+    ['njLeafSpent', 'seaGemsGiven', 'njFish', 'njFishSpent', 'njFishCasts', 'njGrapes', 'njGrapesSpent'].forEach(k => { const o = parseInt(other[k], 10) || 0; if (o > (parseInt(target[k], 10) || 0)) { target[k] = o; took++; } });
     // 종류별로 낚은 수 — 종류마다 큰 쪽
     if (other.njFishBag && typeof other.njFishBag === 'object') {
         const tb = (target.njFishBag && typeof target.njFishBag === 'object') ? target.njFishBag : {};
         Object.keys(other.njFishBag).forEach(k => { const v = parseInt(other.njFishBag[k], 10) || 0; if (v > (parseInt(tb[k], 10) || 0)) { tb[k] = v; took++; } });
         target.njFishBag = tb;
+    }
+    // 포도원 — id로 합집합, 거둔 때는 거둔 쪽
+    if (Array.isArray(other.njVines) && other.njVines.length) {
+        const tv = Array.isArray(target.njVines) ? target.njVines : [];
+        other.njVines.forEach(v => {
+            if (!v || !v.id) return;
+            const t0 = tv.find(x => x && x.id === v.id);
+            if (!t0) { tv.push(Object.assign({}, v)); took++; }
+            else if (v.h && !t0.h) { t0.h = v.h; t0.y = v.y; took++; }
+        });
+        target.njVines = tv;
     }
     return took;
 }

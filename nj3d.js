@@ -455,6 +455,21 @@
             ca.needsUpdate = true; natTrees.count = nt; natHouses.count = nh;
             natTrees.instanceMatrix.needsUpdate = true; natHouses.instanceMatrix.needsUpdate = true;
         }
+        // 내 포도나무 — 심은 나라 해안에 덩굴, 다 익으면 보랏빛 송이
+        const vineG = new THREE.Group(); seaGrp.add(vineG);
+        {
+            const vines = (typeof _njVinesGrowing === 'function') ? _njVinesGrowing() : [];
+            const stem = new THREE.MeshStandardMaterial({ color: 0x6b4a2a, roughness: 0.9 }), leaf = new THREE.MeshStandardMaterial({ color: 0x4f9a3a, roughness: 0.8, flatShading: true });
+            const grape = new THREE.MeshStandardMaterial({ color: 0x5b2a86, roughness: 0.35, emissive: 0x220a33, emissiveIntensity: 0.3 });
+            vines.forEach(v => {
+                const [X, Z] = natMid(v.n, 20), y = -DROP + 0.05, ripe = typeof _njVineInfo === 'function' && _njVineInfo(v).ripe;
+                [-0.5, 0, 0.5].forEach(o => {
+                    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.9, 6), stem); post.position.set(X + o, y + 0.45, Z); vineG.add(post);
+                    const bush = new THREE.Mesh(new THREE.IcosahedronGeometry(0.28, 0), leaf); bush.position.set(X + o, y + 0.85, Z); vineG.add(bush);
+                    if (ripe) [[0.12, 0.62, 0.15], [-0.14, 0.6, -0.1]].forEach(([dx, dy, dz]) => { const c = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.22, 7), grape); c.rotation.x = Math.PI; c.position.set(X + o + dx, y + dy, Z + dz); vineG.add(c); });
+                });
+            });
+        }
         paintSea(seaW);
         if (typeof _seaFetch === 'function') _seaFetch().then(w => { if (cur === C && w) paintSea(w); });
 
