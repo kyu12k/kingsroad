@@ -7029,7 +7029,10 @@ function _njNoteDueDay() {
 }
 
 /* 성을 그린다. 반환: 남쪽 가운데 문(지도의 강이 시작하는 곳)의 캔버스 좌표 */
-function _njDraw(cv, W, H, built, pearls) {
+/* opts.flow: 지도 — 물결은 따로 흐르는 SVG가 그리므로 캔버스엔 고정 물결을 그리지 않는다
+   opts.south: 건축 창 — 지도의 큰 강이 없으니 남쪽 물줄기도 그린다 */
+function _njDraw(cv, W, H, built, pearls, opts) {
+    const O = opts || {};
     const dpr = Math.min(3, window.devicePixelRatio || 2);
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.width = W + 'px'; cv.style.height = H + 'px';
     const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -7049,11 +7052,14 @@ function _njDraw(cv, W, H, built, pearls) {
         g.lineCap = 'butt';
         g.strokeStyle = 'rgba(93,64,55,0.35)'; g.lineWidth = 34; g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke();
         g.strokeStyle = 'rgba(0,188,212,0.88)'; g.lineWidth = 22; g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke();
-        g.strokeStyle = 'rgba(210,248,255,0.55)'; g.lineWidth = 1.6; g.setLineDash([14, 12]);
-        [-5, 4].forEach(o => { const vx = ax === bx; g.beginPath(); g.moveTo(ax + (vx ? o : 0), ay + (vx ? 0 : o)); g.lineTo(bx + (vx ? o : 0), by + (vx ? 0 : o)); g.stroke(); });
-        g.setLineDash([]);
+        if (!O.flow) {
+            g.strokeStyle = 'rgba(210,248,255,0.55)'; g.lineWidth = 1.6; g.setLineDash([14, 12]);
+            [-5, 4].forEach(o => { const vx = ax === bx; g.beginPath(); g.moveTo(ax + (vx ? o : 0), ay + (vx ? 0 : o)); g.lineTo(bx + (vx ? o : 0), by + (vx ? 0 : o)); g.stroke(); });
+            g.setLineDash([]);
+        }
     };
     outRiver(cx, y0, cx, 0); outRiver(x1, cy, W, cy); outRiver(x0, cy, 0, cy);
+    if (O.south) outRiver(cx, y1, cx, H);
     // 기초석 열두 조각 — 12시부터 시계 방향. 놓기 전엔 빈 터(점선), 놓으면 보석 돌이 새로 놓인다 (3D 시안과 같게, 9/29)
     const seq = [['N', 1], ['N', 2], ['E', 0], ['E', 1], ['E', 2], ['S', 2], ['S', 1], ['S', 0], ['W', 2], ['W', 1], ['W', 0], ['N', 0]];
     const L = S / 3;
@@ -7113,7 +7119,7 @@ function _njDraw(cv, W, H, built, pearls) {
             g.beginPath(); g.arc(gx, gy, 8.5, 0, Math.PI * 2); g.stroke(); g.setLineDash([]);
         }
     });
-    return { x: cx, y: y1 };
+    return { x: cx, y: y1, cx, cy, x0, x1, y0, y1 };
 }
 
 /* 지도 맨 위 성 구역. 누르면 건축 창 */
@@ -7136,9 +7142,38 @@ function _njRiverStart(containerRect, scrollTop) {
     if (!zone || !cv) return null;
     const W = zone.clientWidth || containerRect.width;
     if (!W) return null;
-    const gate = _njDraw(cv, W, NJ_ZONE_H, njBuilt, njPearls);
+    const gate = _njDraw(cv, W, NJ_ZONE_H, njBuilt, njPearls, { flow: true });
+    _njFlowSvg(zone, W, NJ_ZONE_H, gate);
     const zr = zone.getBoundingClientRect();
     return { x: (zr.left - containerRect.left) + gate.x, y: (zr.top - containerRect.top) + scrollTop + gate.y };
+}
+
+/* 성 둘레·성 안 물결이 흐른다 (2026-09-29) — 지도 큰 강과 같은 물결 가닥(RIVER_STRANDS)·같은 시계(_riverFlowTick).
+   캔버스를 다시 그리지 않고 얇은 SVG 선만 옮긴다. _buildRiverFlow가 관찰을 붙여 보이는 동안만 흐른다 */
+function _njFlowSvg(zone, W, H, gm) {
+    const old = zone.querySelector('.nj-flow'); if (old) old.remove();
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('class', 'nj-flow');
+    svg.setAttribute('width', W); svg.setAttribute('height', H);
+    svg._paths = [];
+    const add = (ax, ay, bx, by, scale, strands) => {
+        const vert = ax === bx;
+        strands.forEach(k => {
+            const st = RIVER_STRANDS[k], o = st.ox * scale;
+            const p = document.createElementNS(NS, 'path');
+            p.setAttribute('class', `river-hl river-hl-${k + 1}`);
+            p.setAttribute('d', vert ? `M ${ax + o} ${ay} L ${bx + o} ${by}` : `M ${ax} ${ay + o} L ${bx} ${by + o}`);
+            svg.appendChild(p);
+            svg._paths.push({ el: p, base: 0, st });
+        });
+    };
+    const { cx, cy, x0, x1, y0, y1 } = gm;
+    // 성 밖 — 북·동·서로 흘러 나간다 (남쪽은 지도의 큰 강)
+    add(cx, y0, cx, 0, 0.62, [0, 1, 2, 3]); add(x1, cy, W, cy, 0.62, [0, 1, 2, 3]); add(x0, cy, 0, cy, 0.62, [0, 1, 2, 3]);
+    // 성 안 — 보좌에서 네 문으로
+    [[cx, y1], [cx, y0], [x1, cy], [x0, cy]].forEach(([tx, ty]) => add(cx, cy, tx, ty, 0.3, [1, 2]));
+    const zc = zone.querySelector('canvas'); zc.after(svg);
 }
 
 function openNewJerusalem() {
@@ -7179,7 +7214,7 @@ function _njRenderModal() {
     if (!cv || !list) return;
     const par = cv.parentElement, pcs = getComputedStyle(par);
     const W = Math.floor(par.clientWidth - parseFloat(pcs.paddingLeft) - parseFloat(pcs.paddingRight));   // 창 안쪽 여백을 뺀 폭
-    _njDraw(cv, W, Math.round(W * 0.82), njBuilt, njPearls);
+    _njDraw(cv, W, Math.round(W * 0.82), njBuilt, njPearls, { south: true });
     const gemsEl = document.querySelector('#nj-modal .nj-gems'); if (gemsEl) gemsEl.textContent = `💎 ${Number(myGems || 0).toLocaleString()}`;
     const pe = document.getElementById('nj-pearl');
     if (pe) {
@@ -7588,6 +7623,7 @@ function _buildRiverFlow(points, scrollH, start) {
         if (flowing.size && !_riverFlowTick.raf) _riverFlowTick.raf = requestAnimationFrame(_riverFlowTick);
     }, { rootMargin: '60px 0px' });
     layer.querySelectorAll('.river-flow-tile').forEach(t => window._riverFlowObserver.observe(t));
+    document.querySelectorAll('#nj-zone .nj-flow').forEach(t => window._riverFlowObserver.observe(t));   // 새 예루살렘 둘레 물결
 }
 
 // 점선 밀기는 폰 그래픽 칩이 대신 못 해 매 프레임 스타일·그리기 비용이 든다(PC 6배 감속 실측: 60fps면 4초 중 2~3초가 일).
@@ -7621,7 +7657,7 @@ function _riverGlintStep(now) {
     const order = self.order;
     if (!order.length) return;
     let lo = Infinity, hi = -Infinity;
-    self.tiles.forEach(t => { lo = Math.min(lo, t._start); hi = Math.max(hi, t._start + t._len); });
+    self.tiles.forEach(t => { if (t._len == null) return; lo = Math.min(lo, t._start); hi = Math.max(hi, t._start + t._len); });   // 새 예루살렘 둘레 물결(_len 없음)은 빛줄기 범위에서 뺀다
     if (!self.nextGlint) self.nextGlint = now + 1500;
     if (now >= self.nextGlint && self.streaks.length === 0 && isFinite(lo)) {
         self.streaks.push({ t0: now, s0: lo - 20 });
