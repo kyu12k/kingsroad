@@ -566,6 +566,8 @@ const LANG = {
         sea_fail: '맑히지(소성하지) 못했어요. 인터넷 연결을 확인해 주세요',
         sea_btn_gem: '💎 {n}으로 맑히기',
         sea_btn_leaf: '🍃 {n}장으로 소성하기',
+        sea_busy_gem: '맑히는 중…',
+        sea_busy_leaf: '소성하는 중…',
         sea_open_from_nj: '🌊 잎사귀 {n}장 — 바다와 만국으로',
         nj3d_btn: '🏛️ 3D로 보기 · 걸어서 구경',
         nj3d_loading: '성을 불러오는 중…',
@@ -1581,6 +1583,8 @@ const LANG = {
         sea_fail: 'Could not complete. Please check your connection',
         sea_btn_gem: '💎 Clear with {n}',
         sea_btn_leaf: '🍃 Heal with {n}',
+        sea_busy_gem: 'Clearing…',
+        sea_busy_leaf: 'Healing…',
         sea_open_from_nj: '🌊 {n} leaves — to the Sea and the Nations',
         nj3d_btn: '🏛️ View in 3D · Walk around',
         nj3d_loading: 'Loading the city…',
@@ -7332,7 +7336,7 @@ const SEA_NATIONS = (() => {
         ['엘리사','야완의 아들','Elishah','son of Javan'],['달시스','야완의 아들','Tarshish','son of Javan'],['깃딤','야완의 아들','Kittim','son of Javan'],['도다님','야완의 아들','Dodanim','son of Javan']].map(n => [...n, '야벳', 'Japheth']);
     return [...S, ...H, ...J];
 })();
-let _seaWorld = null, _seaWorldAt = 0, _seaUnsub = null, _seaBusy = false, _seaSel = -1;
+let _seaWorld = null, _seaWorldAt = 0, _seaUnsub = null, _seaBusy = '', _seaSel = -1;
 function _seaL(o) { return currentLang === 'en' ? o.en : o.ko; }
 function _njLeavesAvail() { return Math.max(0, _njLeaves() - (njLeafSpent || 0)); }
 function _seaCompleted(w) { const m = (w && w.clearMax) || 0; return SEA_STAGES.filter(n => m >= n).length; }
@@ -7518,7 +7522,7 @@ function _seaRender() {
         <div class="sea-steps">${steps}</div>
         <div class="sea-bar"><i style="width:${full ? 100 : Math.min(100, (clear - prev) / (SEA_STAGES[si] - prev) * 100)}%"></i></div>
         <div class="sea-dim">${full ? t('sea_full') : t('sea_cell_line', { name: SEA_STAGE_NAMES[lang][si], a: clear - prev, b: SEA_STAGES[si] - prev, pool: ((w && w.pool) || 0).toLocaleString(), cost: SEA_CELL_COST.toLocaleString() })}</div>
-        <div class="sea-btns">${[10000, 100000, 1000000].map(v => `<button class="sea-give gem" ${myGems < v || full || _seaBusy ? 'disabled' : ''} onclick="_seaGive('gem', ${v})">${t('sea_btn_gem', { n: v >= 1000000 ? (lang === 'en' ? '1M' : '100만') : v >= 100000 ? (lang === 'en' ? '100K' : '10만') : (lang === 'en' ? '10K' : '1만') })}</button>`).join('')}</div>
+        <div class="sea-btns">${[10000, 100000, 1000000].map(v => `<button class="sea-give gem${_seaBusy === 'gem:' + v ? ' busy' : ''}" ${myGems < v || full || _seaBusy ? 'disabled' : ''} onclick="_seaGive('gem', ${v})">${_seaBusy === 'gem:' + v ? `<span class="sea-spin"></span>${t('sea_busy_gem')}` : t('sea_btn_gem', { n: v >= 1000000 ? (lang === 'en' ? '1M' : '100만') : v >= 100000 ? (lang === 'en' ? '100K' : '10만') : (lang === 'en' ? '10K' : '1만') })}</button>`).join('')}</div>
         <div class="sea-dim">${t('sea_guilds_title', { n: si + 1, name: SEA_STAGE_NAMES[lang][si] })}</div>
         <div class="sea-names">${names.length ? names.map(_seaLabelHtml).join('') : `<span class="sea-dim">${t('sea_guilds_none')}</span>`}</div>
         <div class="nj-pearl-rule">${t('sea_water_rule')}${w && w.pollution ? ' ' + t('sea_last_pollution', { n: w.pollution.lost }) : ''}</div>
@@ -7541,7 +7545,7 @@ function _seaRender() {
     else if (n.lv >= cap) body = `<div class="sea-dim">${t('sea_nat_wait', { name: SEA_STAGE_NAMES[lang][Math.min(3, cap - 1)] })}</div>`;
     else body = `<div class="sea-bar leaf"><i style="width:${n.pool / SEA_LEAF_PER_LV * 100}%"></i></div>
         <div class="sea-dim">${t('sea_nat_need', { next: SEA_LV_NAMES[lang][n.lv + 1], a: n.pool, b: SEA_LEAF_PER_LV })}</div>
-        <div class="sea-btns">${[1, 5, 10].map(v => `<button class="sea-give" ${avail < 1 || _seaBusy ? 'disabled' : ''} onclick="_seaGive('leaf', ${v}, ${_seaSel})">${t('sea_btn_leaf', { n: v })}</button>`).join('')}</div>
+        <div class="sea-btns">${[1, 5, 10].map(v => `<button class="sea-give${_seaBusy === 'leaf:' + v ? ' busy' : ''}" ${avail < 1 || _seaBusy ? 'disabled' : ''} onclick="_seaGive('leaf', ${v}, ${_seaSel})">${_seaBusy === 'leaf:' + v ? `<span class="sea-spin"></span>${t('sea_busy_leaf')}` : t('sea_btn_leaf', { n: v })}</button>`).join('')}</div>
         ${avail < 1 ? `<div class="sea-dim">${t('sea_no_leaves')}</div>` : ''}`;
     nat.innerHTML = `<div class="nj-pearl sea-nat-card">
         <div class="nj-pearl-head">🏞️ ${en ? N[2] : N[0]} <span class="sea-dim">${en ? N[3] : N[1]} · ${en ? N[5] : N[4]}</span><button class="nj-x sea-nat-x" onclick="_seaSel=-1;_seaRender()">✕</button></div>
@@ -7556,7 +7560,7 @@ async function _seaGive(kind, amount, nation) {
         if ((myGems || 0) < amount) { showGemToast(0, t('sea_need_gems'), true); return; }
         if (!confirm(t('sea_confirm_gem', { n: amount.toLocaleString() }))) return;
     } else if (_njLeavesAvail() < 1) { showGemToast(0, t('sea_no_leaves'), true); return; }
-    _seaBusy = true; _seaRender();
+    _seaBusy = kind + ':' + amount; _seaRender();   // 누른 버튼에 스피너 — 저장 올리기 + 서버 요청 두 번 왕복이라 1~3초 걸린다
     try {
         // 서버가 저장본의 보석·먹은 열매로 확인하므로 먼저 올린다
         saveGameData();
@@ -7576,7 +7580,7 @@ async function _seaGive(kind, amount, nation) {
         const msg = (e && e.message) ? e.message : '';
         showGemToast(0, msg || t('sea_fail'), true);
     } finally {
-        _seaBusy = false; _seaRender();
+        _seaBusy = ''; _seaRender();
     }
 }
 
