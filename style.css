@@ -6943,6 +6943,17 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
     background: rgba(15, 26, 51, 0.78); color: #f6d77a; font-weight: 800; font-size: 0.85rem; cursor: pointer; }
 .nj3d-wallet { position: absolute; top: 10px; right: 10px; z-index: 3; display: flex; gap: 6px; font-size: 0.8rem; font-weight: 700; font-variant-numeric: tabular-nums; pointer-events: none; }
 .nj3d-wallet span { background: rgba(15, 26, 51, 0.78); color: #e6eef8; border-radius: 999px; padding: 5px 10px; }
+/* 🎣 낚시 — 그물 버튼 · 빈칸 카드 (9/30) */
+.nj3d-wb.nj3d-fishbtn { background: rgba(27, 143, 176, 0.92); color: #fff; }
+.nj3d-wb.nj3d-fishbtn.dim { background: rgba(15, 26, 51, 0.72); color: #9fb0c8; }
+.nj3d-fishq { position: absolute; left: 50%; top: 104px; transform: translateX(-50%); z-index: 5; width: min(340px, calc(100% - 24px));
+    background: rgba(10, 32, 44, 0.95); border: 1px solid rgba(127, 230, 245, 0.45); border-radius: 14px; padding: 12px 14px; box-shadow: 0 6px 20px rgba(0,0,0,0.45); }
+.nj3d-fishq-head { font-weight: 800; color: #9fe6f3; font-size: 0.9rem; }
+.nj3d-fishq-ref { color: #f6d77a; font-weight: 700; font-size: 0.85rem; margin-top: 6px; }
+.nj3d-fishq-text { color: #e6eef8; font-size: 0.9rem; line-height: 1.6; margin-top: 4px; }
+.nj3d-fishq-blank { display: inline-block; min-width: 3em; border-bottom: 2px solid #7fe6f5; color: transparent; }
+.nj3d-fishq-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
+.nj3d-fishq-choices button { border: none; border-radius: 10px; padding: 9px 6px; background: #134a5a; color: #e6f7fb; font-weight: 700; font-size: 0.85rem; cursor: pointer; }
 .nj3d-go { position: absolute; top: 54px; left: 10px; z-index: 3; border: none; border-radius: 999px; padding: 8px 14px;
     background: rgba(15, 26, 51, 0.78); color: #9fe6f3; font-weight: 800; font-size: 0.85rem; cursor: pointer; }
 .sea-3d-btn { margin: 0 0 8px; background: linear-gradient(135deg, #7fe6f5, #1fb0c9); color: #06303a; }

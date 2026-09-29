@@ -47,11 +47,13 @@
                     <div class="nj3d-btns">
                         <button class="nj3d-wb small nj3d-jetbuy"></button>
                         <button class="nj3d-wb fly nj3d-fly" hidden>${T('nj3d_fly')}</button>
+                        <button class="nj3d-wb small nj3d-fishbtn" hidden></button>
                         <button class="nj3d-wb nj3d-jump">${T('nj3d_jump')}</button>
                     </div>
                 </div>
                 <div class="nj3d-hint"></div>
                 <div class="nj3d-wallet"></div>
+                <div class="nj3d-fishq" hidden></div>
                 <div class="nj3d-fruit" hidden></div>
             </div>`;
         document.body.appendChild(ov);
@@ -536,7 +538,11 @@
             if (typeof SoundEffect !== 'undefined' && SoundEffect.playSplash) SoundEffect.playSplash(big);
         };
         const walletEl = ov.querySelector('.nj3d-wallet');
-        const syncWallet = () => { if (walletEl) walletEl.innerHTML = `<span>💎 ${Number(typeof myGems !== 'undefined' ? myGems : 0).toLocaleString()}</span><span>🍃 ${typeof _njLeavesAvail === 'function' ? _njLeavesAvail() : 0}</span>`; };
+        const syncWallet = () => {
+            if (!walletEl) return;
+            const fish = typeof _njFishAvail === 'function' ? _njFishAvail() : 0;
+            walletEl.innerHTML = `<span>💎 ${Number(typeof myGems !== 'undefined' ? myGems : 0).toLocaleString()}</span><span>🍃 ${typeof _njLeavesAvail === 'function' ? _njLeavesAvail() : 0}</span>${fish ? `<span>🐟 ${fish}</span>` : ''}`;
+        };
         syncWallet();
         // 글라이더 (9/30) — 점프한 채로 점프를 한 번 더: 날개가 펼쳐져 천천히 활강, 또 누르면 접힌다. 땅에 닿으면 접힌다. 값은 없다
         const glider = (() => {
@@ -767,11 +773,119 @@
         modeBtn.addEventListener('click', () => {
             walk = !walk; controls.enabled = !walk; walkUI.hidden = !walk; pilgrim.visible = true;
             if (walk) { controls.autoRotate = false; camera.fov = 62; camera.near = 0.02; showHint(T('nj3d_hint_walk'), 3500); }
-            else { camera.fov = 42; camera.near = 0.1; where = P.z > 25 ? 'sea' : 'city'; lookAt(where); setGoLabel(); }
+            else { camera.fov = 42; camera.near = 0.1; where = P.z > 25 ? 'sea' : 'city'; lookAt(where); setGoLabel(); endFish(); fishBtn.hidden = true; }
             camera.updateProjectionMatrix(); setModeLabel(); lastTouch = performance.now();
         });
 
+        // ══ 🎣 낚시 — 맑아진 물칸 위에서 그물을 던지고, 걸리면 빈칸 하나 ══
+        const fishBtn = ov.querySelector('.nj3d-fishbtn'), fishQ = ov.querySelector('.nj3d-fishq');
+        const FISH_COST = (typeof NJ_FISH_COST !== 'undefined') ? NJ_FISH_COST : 2000;
+        const cellAt = (x, z) => {   // 발밑 물칸(880 좌표로 바꿔 가장 가까운 칸) — 번호가 곧 맑아지는 순서
+            if (seaE(x, z) >= 1) return null;
+            const px = x / SRX * 330 + 440, py = (z - SZ) / SRZ * 320 + 470;
+            let best = -1, bd = 7.75 * 1.25;
+            SG.water.forEach((c, i) => { const d = Math.hypot(c.x - px, c.y - py); if (d < bd) { bd = d; best = i; } });
+            if (best < 0) return null;
+            const clear = (seaW && seaW.clear) || 0, st = best < 250 ? 0 : best < 500 ? 1 : best < 1000 ? 2 : 3;
+            return { idx: best, clear: best < clear, stage: st };
+        };
+        const fishEmoji = (() => {
+            const c = document.createElement('canvas'); c.width = c.height = 96; const x = c.getContext('2d');
+            x.font = '76px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('🐟', 48, 54);
+            const tx = new THREE.CanvasTexture(c); tx.encoding = THREE.sRGBEncoding; return tx;
+        })();
+        const bobber = new THREE.Group();
+        {
+            const top = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 8), new THREE.MeshStandardMaterial({ color: 0xe8453c, roughness: 0.4 })); top.position.y = 0.03; bobber.add(top);
+            const bot = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 8), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 })); bot.position.y = -0.005; bobber.add(bot);
+        }
+        bobber.visible = false; scene.add(bobber);
+        const netRing = new THREE.Mesh(new THREE.RingGeometry(0.2, 0.24, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xf5e6c4, transparent: true, opacity: 0, depthWrite: false }));
+        netRing.visible = false; scene.add(netRing);
+        const caught = new THREE.Sprite(new THREE.SpriteMaterial({ map: fishEmoji, transparent: true, depthWrite: false }));
+        caught.scale.set(0.35, 0.35, 1); caught.visible = false; scene.add(caught);
+        const fish = { phase: 'idle', t: 0, wait: 0, x: 0, z: 0, stage: 0, tries: 0, q: null, jump: 0, from: null };
+        let fishCheckT = 0, fishCell = null, fishHinted = false;
+        const endFish = (msg) => { fish.phase = 'idle'; bobber.visible = false; fishQ.hidden = true; if (msg) showHint(msg, 1800); };
+        const askFish = () => {
+            const q = (typeof _njFishQuestion === 'function') ? _njFishQuestion() : null;
+            if (!q) { endFish(T('nj3d_fish_miss')); return; }
+            fish.q = q;
+            const esc = t => String(t).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+            const pot = fish.stage + (q.lenTier || 0);   // 입질 세기 — 긴 구절·먼 바다일수록 큰 물고기
+            fishQ.innerHTML = `<div class="nj3d-fishq-head">${T(fish.tries === 2 ? (pot >= 5 ? 'nj3d_fish_bite3' : pot >= 3 ? 'nj3d_fish_bite2' : 'nj3d_fish_bite') : 'nj3d_fish_again')}</div>
+                <div class="nj3d-fishq-ref">${esc(q.ref)}</div>
+                <div class="nj3d-fishq-text">${esc(q.before)} <span class="nj3d-fishq-blank">＿＿＿</span> ${esc(q.after)}</div>
+                <div class="nj3d-fishq-choices">${q.choices.map((c, i) => `<button data-i="${i}">${esc(c)}</button>`).join('')}</div>`;
+            fishQ.hidden = false;
+            fishQ.querySelectorAll('button[data-i]').forEach(b => b.onclick = () => {
+                const ok = q.choices[+b.dataset.i] === q.answer;
+                if (ok) {
+                    const r = (typeof _njFishGot === 'function') ? _njFishGot(fish.stage, q.lenTier || 0) : { value: 1, name: '', score: 0 };
+                    caught.scale.setScalar(0.28 + (r.score || 0) * 0.09);   // 큰 물고기는 크게 뛰어오른다
+                    fishQ.hidden = true; fish.phase = 'jump'; fish.jump = 0; fish.from = bobber.position.clone(); bobber.visible = false; caught.visible = true;
+                    splash(fish.x, fish.z, true); syncWallet();
+                    showHint(T('nj3d_fish_got', { name: r.name, n: r.value }), 2600);
+                    if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
+                } else {
+                    fish.tries--;
+                    if (fish.tries > 0) askFish(); else { splash(fish.x, fish.z, false); endFish(T('nj3d_fish_miss')); }
+                }
+            });
+        };
+        fishBtn.addEventListener('pointerdown', e => {
+            e.preventDefault();
+            if (fish.phase !== 'idle' || !fishCell) return;
+            if (!fishCell.clear) { showHint(T('nj3d_fish_murky'), 1600); return; }
+            const gems = (typeof myGems !== 'undefined') ? myGems : 0;
+            if (gems < FISH_COST) { showHint(T('nj3d_fish_need', { n: (FISH_COST - gems).toLocaleString() }), 2200); return; }
+            if (typeof _njFishPay !== 'function' || !_njFishPay()) return;
+            syncWallet();
+            const fx = -Math.sin(P.face), fz = -Math.cos(P.face);
+            fish.x = P.x + fx * 1.4; fish.z = P.z + fz * 1.4;
+            if (seaE(fish.x, fish.z) >= 1) { fish.x = P.x; fish.z = P.z; }
+            const cc = cellAt(fish.x, fish.z) || fishCell;
+            fish.stage = cc.stage; fish.phase = 'wait'; fish.t = 0; fish.wait = 1.6 + Math.random() * 2.2; fish.tries = 2;
+            bobber.position.set(fish.x, SEA_Y + 0.03, fish.z); bobber.visible = true;
+            netRing.position.set(fish.x, SEA_Y + 0.02, fish.z); netRing.visible = true; netRing.scale.setScalar(0.3); netRing.material.opacity = 0.8;
+            splash(fish.x, fish.z, false); showHint(T('nj3d_fish_cast'), 1600);
+        });
+        function fishUpdate(dt) {
+            // 발밑 물칸을 1초에 네 번만 본다
+            fishCheckT -= dt;
+            if (fishCheckT <= 0) {
+                fishCheckT = 0.25;
+                fishCell = (P.onGround && !gliding) ? cellAt(P.x, P.z) : null;
+                const show = !!fishCell && fish.phase === 'idle';
+                fishBtn.hidden = !show;
+                if (show) {
+                    fishBtn.innerHTML = fishCell.clear ? T('nj3d_fish_btn', { cost: FISH_COST.toLocaleString() }) : T('nj3d_fish_murky');
+                    fishBtn.classList.toggle('dim', !fishCell.clear);
+                    if (!fishHinted) { fishHinted = true; showHint(T('nj3d_fish_sea_hint'), 3000); }
+                }
+            }
+            if (netRing.visible) { const k = netRing.scale.x + dt * 3; netRing.scale.setScalar(k); netRing.material.opacity = Math.max(0, 0.8 - (k - 0.3) / 3); if (netRing.material.opacity <= 0) netRing.visible = false; }
+            if (fish.phase === 'wait' || fish.phase === 'bite') {
+                fish.t += dt;
+                if (Math.hypot(P.x - fish.x, P.z - fish.z) > 3.5) { endFish(T('nj3d_fish_left')); return; }   // 멀리 가면 그물을 거둔다
+                const bob = fish.phase === 'bite' ? Math.sin(fish.t * 18) * 0.03 - 0.02 : Math.sin(fish.t * 3) * 0.008;
+                bobber.position.y = SEA_Y + 0.03 + bob;
+                if (fish.phase === 'wait' && fish.t > fish.wait) {
+                    fish.phase = 'bite'; fish.t = 0; splash(fish.x, fish.z, false);
+                    askFish();
+                }
+            }
+            if (fish.phase === 'jump') {   // 낚은 물고기가 순례자에게로 뛰어오른다
+                fish.jump += dt / 0.8;
+                const k = Math.min(1, fish.jump), to = new THREE.Vector3(P.x, P.y + 0.3, P.z);
+                caught.position.lerpVectors(fish.from, to, k); caught.position.y += Math.sin(k * Math.PI) * 0.8;
+                caught.material.opacity = k > 0.8 ? (1 - k) * 5 : 1;
+                if (k >= 1) { caught.visible = false; fish.phase = 'idle'; }
+            }
+        }
+
         function walkUpdate(dt) {
+            fishUpdate(dt);
             walkT += dt;
             const k = inp.keys;
             const kv = (k.ControlLeft || k.ControlRight) ? 1 : 0.7;   // 키보드는 걷기, Ctrl을 누르면 달리기

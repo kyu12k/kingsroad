@@ -574,6 +574,18 @@ const LANG = {
         nj3d_nat_open: '🌊 바다 화면에서 소성하기',
         nj3d_glide_on: '🪂 날개를 펼쳤어요 — 점프를 한 번 더 누르면 접혀요',
         nj3d_glide_off: '날개를 접었어요',
+        nj3d_fish_btn: '🎣 그물 던지기<br>💎 {cost}',
+        nj3d_fish_murky: '🎣 맑은 물에서만',
+        nj3d_fish_need: '보석이 {n}개 더 필요해요',
+        nj3d_fish_cast: '🎣 그물을 던졌어요 — 찌를 지켜보세요',
+        nj3d_fish_bite: '🐟 물고기가 걸렸어요! 빈칸을 채워 끌어올려요',
+        nj3d_fish_bite2: '🐟 묵직한 입질! 빈칸을 채워 끌어올려요',
+        nj3d_fish_bite3: '🐋 아주 큰 녀석이에요! 빈칸을 채워 끌어올려요',
+        nj3d_fish_again: '놓칠 뻔했어요 — 한 번 더!',
+        nj3d_fish_miss: '물고기가 달아났어요',
+        nj3d_fish_got: '🐟 {name}을(를) 낚았어요 · 가치 {n}',
+        nj3d_fish_left: '그물을 거뒀어요',
+        nj3d_fish_sea_hint: '맑은 바다 위에 서면 그물을 던질 수 있어요 (겔 47:10)',
         sea_open_from_nj: '🌊 잎사귀 {n}장 — 바다와 만국으로',
         nj3d_btn: '🏛️ 3D로 보기 · 걸어서 구경',
         nj3d_loading: '성을 불러오는 중…',
@@ -1597,6 +1609,18 @@ const LANG = {
         nj3d_nat_open: '🌊 Heal it on the sea screen',
         nj3d_glide_on: '🪂 Glider open — press Jump again to fold',
         nj3d_glide_off: 'Glider folded',
+        nj3d_fish_btn: '🎣 Cast net<br>💎 {cost}',
+        nj3d_fish_murky: '🎣 Clear water only',
+        nj3d_fish_need: 'Need {n} more gems',
+        nj3d_fish_cast: '🎣 Net cast — watch the float',
+        nj3d_fish_bite: '🐟 A bite! Fill the blank to pull it in',
+        nj3d_fish_bite2: '🐟 A heavy bite! Fill the blank to pull it in',
+        nj3d_fish_bite3: '🐋 A huge one! Fill the blank to pull it in',
+        nj3d_fish_again: 'Almost lost it — once more!',
+        nj3d_fish_miss: 'The fish got away',
+        nj3d_fish_got: '🐟 Caught a {name} · worth {n}',
+        nj3d_fish_left: 'Net pulled in',
+        nj3d_fish_sea_hint: 'Stand on clear water to cast a net (Ezek 47:10)',
         sea_open_from_nj: '🌊 {n} leaves — to the Sea and the Nations',
         nj3d_btn: '🏛️ View in 3D · Walk around',
         nj3d_loading: 'Loading the city…',
@@ -2357,11 +2381,15 @@ let njPearls = 0;
 let njPearlWeek = { weekId: '', days: [], granted: false };
 let njPearlLog = [];
 let njBlankDays = [];    // 진주 — 백지로 한 절이라도 통과한 날('YYYY-MM-DD', 오전 6시 기준). 진주 수는 이것에서 계산한다
-let njJetpack = false;
+let njJetpack = false;   // 3D 걸어서 구경 — 보석으로 산 제트팩 (한 번 사면 계속)
 let njFruits = {};       // 생명나무 열매 — { 'YYYY-MM': { 절id: [열린 때, 먹은 때(0=아직), 마지막 실패 때] } }. 지난 달은 잎사귀 수만 njLeafArch로 접는다
-let njLeafArch = {};
+let njLeafArch = {};     // 접은 달의 먹은 열매(=잎사귀) 수 { 'YYYY-MM': n }
 let njLeafSpent = 0;     // 바다와 만국에 드린 잎사귀 (서버 givers가 정본 — 응답으로 받아 둔다)
-let seaGemsGiven = 0;    // 바다에 드린 보석 합 (내 기록 표시용)     // 접은 달의 먹은 열매(=잎사귀) 수 { 'YYYY-MM': n }   // 3D 걸어서 구경 — 보석으로 산 제트팩 (한 번 사면 계속)
+let seaGemsGiven = 0;    // 바다를 맑힌 보석 합 (내 기록 표시용)
+let njFish = 0;          // 🎣 낚은 물고기 값 합(늘기만) — 예물을 받을 때 쓴다(njFishSpent)
+let njFishSpent = 0;
+let njFishCasts = 0;     // 던진 그물 수(연구·보석 흐름 실측용)
+let njFishBag = {};      // 🎣 종류별로 낚은 수 { 'tuna': 3, ... } — 모으는 재미·예물 표시용(값은 njFish에 합산)
 let lastPlayedStageId = null; // 마지막으로 직접 플레이한 스테이지 ID
 let bossFirstClearClaimed = new Set(); // 최초 클리어 보너스를 수령한 보스 스테이지 ID
 let hardshipAddressClearHistory = {}; // 장별 주소의 고난 클리어 기록 { "1": [{correct, total, score, date, duration}, ...] }
@@ -2813,6 +2841,10 @@ loadGameData = function () {
         njLeafArch = (parsed.njLeafArch && typeof parsed.njLeafArch === 'object') ? parsed.njLeafArch : {};
         njLeafSpent = Math.max(0, parseInt(parsed.njLeafSpent, 10) || 0);
         seaGemsGiven = Math.max(0, parseInt(parsed.seaGemsGiven, 10) || 0);
+        njFish = Math.max(0, parseInt(parsed.njFish, 10) || 0);
+        njFishSpent = Math.max(0, parseInt(parsed.njFishSpent, 10) || 0);
+        njFishCasts = Math.max(0, parseInt(parsed.njFishCasts, 10) || 0);
+        njFishBag = (parsed.njFishBag && typeof parsed.njFishBag === 'object') ? parsed.njFishBag : {};
         // 오늘의 암송 진행은 날마다 새 id라 60일 지난 것은 버린다 (저장본이 자라지 않게)
         try {
             const _cut = _shift6AMDayStr(_get6AMDayStr(), -60);
@@ -7485,6 +7517,71 @@ function _seaRiverEnd(containerRect, scrollTop) {
     return { x: (zr.left - containerRect.left) + m.mouthX, y: (zr.top - containerRect.top) + scrollTop + m.mouthY };
 }
 
+/* ══ 🎣 낚시 (2026-09-30) — docs/새-예루살렘.md 「낚시 · 농사 · 만국의 예물」 ══
+   3D에서 맑아진 물칸 위에 서서 💎로 그물을 던진다(겔 47:10). 물고기가 걸리면 내가 외운 절의 한 부분을 빈칸으로 — 맞히면 낚는다(두 번까지).
+   물고기 = 구절 길이 점수(0~3) + 바다 깊이 점수(발목 0 ~ 헤엄칠 물 3) → 7단계 14종, 값 1·2·3·5·8·13·20 (사용자 9/30 — "정어리뿐인가?")
+   긴 구절을 떠올릴수록, 먼 바다로 나갈수록 큰 물고기. 종류별로 모으고(njFishBag) 값은 njFish에 합산 — 만국의 예물을 받을 때 쓴다(다음 단계)
+   이 떠올리기는 고르기(4지)라 백지레벨·일지에는 넣지 않는다(인출 기록을 흐리지 않게) */
+const NJ_FISH_COST = 10000;   // 2,000은 너무 싸다(사용자 9/30)
+// 점수(0~6)마다 두 종류 — [키, 한국어, 영어]. 값은 점수마다 같다
+const NJ_FISH_KINDS = [
+    [['anchovy', '멸치', 'anchovy'], ['smelt', '빙어', 'smelt']],
+    [['sardine', '정어리', 'sardine'], ['horsemackerel', '전갱이', 'horse mackerel']],
+    [['mackerel', '고등어', 'mackerel'], ['mullet', '숭어', 'mullet']],
+    [['hairtail', '갈치', 'hairtail'], ['seabass', '농어', 'sea bass']],
+    [['seabream', '도미', 'sea bream'], ['flounder', '광어', 'flounder']],
+    [['yellowtail', '방어', 'yellowtail'], ['salmon', '연어', 'salmon']],
+    [['tuna', '참치', 'tuna'], ['greatfish', '큰 바다의 고기', 'great-sea fish']],
+];
+const NJ_FISH_VALUE = [1, 2, 3, 5, 8, 13, 20];
+const NJ_FISH_KIND_VALUE = Object.fromEntries(NJ_FISH_KINDS.flatMap((pair, sc) => pair.map(k => [k[0], NJ_FISH_VALUE[sc]])));
+// 구절 길이 점수 — 글자 수(공백 빼고)를 404절의 네 등분으로: 짧음 <35 · 보통 <46 · 긺 <58 · 아주 긺 (각 약 100절, 9/30 실측 — 처음 30/50/75는 60·182·139·23으로 쏠렸다)
+function _njVerseLenTier(id) { const [c, v] = String(id).split('-').map(Number); const n = ((((bibleData[c] || [])[v - 1]) || {}).text || '').replace(/\s/g, '').length; return n < 35 ? 0 : n < 46 ? 1 : n < 58 ? 2 : 3; }
+function _njFishAvail() { return Math.max(0, (njFish || 0) - (njFishSpent || 0)); }
+function _njFishPay() {
+    if ((myGems || 0) < NJ_FISH_COST) return false;
+    myGems -= NJ_FISH_COST; njFishCasts = (njFishCasts || 0) + 1;
+    if (typeof updateGemDisplay === 'function') updateGemDisplay();
+    saveGameData();
+    return true;
+}
+function _njFishGot(stage, lenTier) {
+    const sc = Math.max(0, Math.min(6, (stage || 0) + (lenTier || 0)));
+    const pair = NJ_FISH_KINDS[sc], k = pair[Math.floor(Math.random() * pair.length)], v = NJ_FISH_VALUE[sc];
+    njFish = (njFish || 0) + v;
+    if (!njFishBag || typeof njFishBag !== 'object') njFishBag = {};
+    njFishBag[k[0]] = (njFishBag[k[0]] || 0) + 1;
+    saveGameData();
+    if (typeof syncToFirestore === 'function') syncToFirestore();
+    return { value: v, name: currentLang === 'en' ? k[2] : k[1], score: sc };
+}
+/* 빈칸 문제 — 백지·빈칸으로 써낸 적 있는 절 → 없으면 클리어한 절 → 없으면 1장 앞. 한두 낱말을 가리고 같은 장 다른 절의 낱말로 가짜 셋 */
+function _njFishQuestion() {
+    const known = Object.keys(verseRecall || {}).filter(id => { const r = verseRecall[id]; return /^\d+-\d+$/.test(id) && r && (r.typedPass > 0 || r.blankPass > 0); });
+    let pool = known.length ? known : Object.keys(stageClearDate || {}).filter(id => /^\d+-\d+$/.test(id));
+    if (!pool.length) pool = ['1-1', '1-2', '1-3'];
+    const words = id => { const [c, v] = id.split('-').map(Number); return ((((bibleData[c] || [])[v - 1]) || {}).text || '').split(/\s+/).filter(Boolean); };
+    for (let tries = 0; tries < 12; tries++) {
+        const id = pool[Math.floor(Math.random() * pool.length)], w = words(id);
+        if (w.length < 5) continue;
+        const len = w.length >= 9 ? 2 : 1, start = 1 + Math.floor(Math.random() * (w.length - len - 1));
+        const answer = w.slice(start, start + len).join(' ');
+        const [c] = id.split('-').map(Number), n = (bibleData[c] || []).length;
+        const fakes = [];
+        for (let k = 0; k < 40 && fakes.length < 3; k++) {
+            const ov = 1 + Math.floor(Math.random() * n), ow = words(`${c}-${ov}`);
+            if (ow.length < len + 1) continue;
+            const os = Math.floor(Math.random() * (ow.length - len + 1)), f = ow.slice(os, os + len).join(' ');
+            if (f && f !== answer && !fakes.includes(f)) fakes.push(f);
+        }
+        if (fakes.length < 3) continue;
+        const choices = [answer, ...fakes].sort(() => Math.random() - 0.5);
+        const [cc, vv] = id.split('-');
+        return { id, lenTier: _njVerseLenTier(id), ref: currentLang === 'en' ? `Rev ${cc}:${vv}` : `계 ${cc}:${vv}`, before: w.slice(0, start).join(' '), after: w.slice(start + len).join(' '), answer, choices };
+    }
+    return null;
+}
+
 /* ── 바다 화면 ── */
 function openSea() {
     const old = document.getElementById('sea-modal'); if (old) old.remove();
@@ -11312,7 +11409,11 @@ function saveGameData() {
         njFruits: njFruits,               // 생명나무 열매 (열린·먹은·실패 때)
         njLeafArch: njLeafArch,           // 접은 달의 잎사귀 수
         njLeafSpent: njLeafSpent,         // 만국에 드린 잎사귀
-        seaGemsGiven: seaGemsGiven,       // 바다에 드린 보석
+        seaGemsGiven: seaGemsGiven,       // 바다를 맑힌 보석
+        njFish: njFish,                   // 🎣 낚은 물고기 값 합
+        njFishSpent: njFishSpent,         // 🎣 예물에 쓴 물고기
+        njFishCasts: njFishCasts,         // 🎣 던진 그물 수
+        njFishBag: njFishBag,             // 🎣 종류별로 낚은 수
         sessionTimeLog: sessionTimeLog,
         // ★ [게임 모드]
         activeMode: activeMode,
@@ -11601,7 +11702,13 @@ function _mergeNewJerusalem(target, other) {
         target.njLeafArch = ta;
     }
     // 바다에 드린 잎사귀·보석 — 늘기만 한다(서버가 정본). 큰 쪽
-    ['njLeafSpent', 'seaGemsGiven'].forEach(k => { const o = parseInt(other[k], 10) || 0; if (o > (parseInt(target[k], 10) || 0)) { target[k] = o; took++; } });
+    ['njLeafSpent', 'seaGemsGiven', 'njFish', 'njFishSpent', 'njFishCasts'].forEach(k => { const o = parseInt(other[k], 10) || 0; if (o > (parseInt(target[k], 10) || 0)) { target[k] = o; took++; } });
+    // 종류별로 낚은 수 — 종류마다 큰 쪽
+    if (other.njFishBag && typeof other.njFishBag === 'object') {
+        const tb = (target.njFishBag && typeof target.njFishBag === 'object') ? target.njFishBag : {};
+        Object.keys(other.njFishBag).forEach(k => { const v = parseInt(other.njFishBag[k], 10) || 0; if (v > (parseInt(tb[k], 10) || 0)) { tb[k] = v; took++; } });
+        target.njFishBag = tb;
+    }
     return took;
 }
 
