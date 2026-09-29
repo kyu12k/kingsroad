@@ -102,8 +102,10 @@
             if (o.material) [].concat(o.material).forEach(m => { if (m.map) m.map.dispose(); m.dispose(); });
         }));
         const grad = (stops) => { const c = document.createElement('canvas'); c.width = 4; c.height = 256; const g = c.getContext('2d'); const gr = g.createLinearGradient(0, 0, 0, 256); stops.forEach(([o, col]) => gr.addColorStop(o, col)); g.fillStyle = gr; g.fillRect(0, 0, 4, 256); const tx = new THREE.CanvasTexture(c); tx.encoding = THREE.sRGBEncoding; return tx; };
-        const skyTex = grad([[0, '#0f1a33'], [0.55, '#35406f'], [1, '#f3d9a0']]);
-        scene.background = skyTex; scene.fog = new THREE.Fog(0x9fb59a, 70, 240);   // 바다까지 보이게 (한 세계, 9/30)
+        // 하늘은 밤이 아니다 — 「거기에는 밤이 없음이라」(21:25) · 「주 하나님이 그들에게 비치심이라」(22:5).
+        // 위로 갈수록 밝아지는 금빛 하늘(카메라를 따라다니는 둥근 지붕) + 성 위의 영광의 빛 + 천천히 떠오르는 빛 알갱이 (9/30, 별 하늘 대신)
+        const HAZE = new THREE.Color(0xf0d49a).convertSRGBToLinear();   // 지평선의 금빛 안개 — 색은 보이는 그대로(sRGB→선형)
+        scene.background = HAZE.clone(); scene.fog = new THREE.Fog(HAZE, 70, 240);   // 먼 땅은 빛 속으로 흐려진다
         // 반사 환경 — 밝은 금빛 하늘을 구워 둔다 (머리 위가 남색이면 금속이 어둠을 비춰 검게 보였다)
         const envTex = (() => {
             const pm = new THREE.PMREMGenerator(renderer), es = new THREE.Scene();
@@ -120,7 +122,7 @@
         camera.position.set(15, 14, 19);
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.target.set(0, 0.5, 0); controls.enableDamping = true; controls.dampingFactor = 0.08;
-        controls.minDistance = 4; controls.maxDistance = 110; controls.maxPolarAngle = 1.38; controls.enablePan = false;
+        controls.minDistance = 4; controls.maxDistance = 110; controls.maxPolarAngle = 1.5; controls.enablePan = false;
         controls.autoRotate = true; controls.autoRotateSpeed = 0.55;
         cleanups.push(() => controls.dispose());
         const hint = ov.querySelector('.nj3d-hint');
@@ -192,6 +194,35 @@
         const radial = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
             const g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(1, 'rgba(255,255,255,0)');
             x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+        // 하늘 지붕 — 지평선은 옅은 금빛, 위로 갈수록 밝아져 꼭대기는 흰빛에 가깝다
+        const skyDome = (() => {
+            const g = new THREE.SphereGeometry(350, 32, 20), pos = g.attributes.position, col = [];
+            const L = h => new THREE.Color(h).convertSRGBToLinear();
+            const stops = [[0, L(0xf0d49a)], [0.22, L(0xf2c878)], [0.55, L(0xf7dca0)], [1, L(0xfdf0cf)]], c = new THREE.Color();
+            for (let i = 0; i < pos.count; i++) {
+                const t = Math.max(0, pos.getY(i) / 350);
+                let k = 0; while (k < stops.length - 2 && t > stops[k + 1][0]) k++;
+                const [t0, c0] = stops[k], [t1, c1] = stops[k + 1];
+                c.copy(c0).lerp(c1, Math.min(1, (t - t0) / (t1 - t0))); col.push(c.r, c.g, c.b);
+            }
+            g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+            const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false, toneMapped: false }));
+            m.renderOrder = -1; scene.add(m); return m;
+        })();
+        // 성 위의 영광 — 21:11 「하나님의 영광이 있어 그 성의 빛이 지극히 귀한 보석 같고」. 바다에서 올려다보면 산 위 하늘이 빛난다
+        {
+            const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: radial, color: 0xffd98a, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: false, opacity: 0.35, toneMapped: false }));
+            glow.scale.set(170, 170, 1); glow.position.set(0, 95, 0); scene.add(glow);
+            const core = new THREE.Sprite(new THREE.SpriteMaterial({ map: radial, color: 0xfff4d8, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: false, opacity: 0.45, toneMapped: false }));
+            core.scale.set(46, 46, 1); core.position.set(0, 95, 0); scene.add(core);
+        }
+        // 떠오르는 빛 알갱이 — 카메라 둘레에서 천천히 올라가고, 꼭대기에 닿으면 아래에서 다시
+        const GLINTS = 360, glintPos = new Float32Array(GLINTS * 3), glintSpd = new Float32Array(GLINTS);
+        { let sd = 17; const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+          for (let n = 0; n < GLINTS; n++) { glintPos[n * 3] = (r() - 0.5) * 80; glintPos[n * 3 + 1] = r() * 40 - 6; glintPos[n * 3 + 2] = (r() - 0.5) * 80; glintSpd[n] = 0.25 + r() * 0.6; } }
+        const glintGeo = new THREE.BufferGeometry(); glintGeo.setAttribute('position', new THREE.BufferAttribute(glintPos, 3));
+        const glints = new THREE.Points(glintGeo, new THREE.PointsMaterial({ size: 0.32, map: radial, color: 0xffcf5a, transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending, fog: false, toneMapped: false }));
+        scene.add(glints);
         {
             const throne = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.7, 0.45, 24), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff1c9, emissiveIntensity: 0.8 }));
             throne.position.y = 0.25; scene.add(throne);
@@ -226,8 +257,8 @@
             grp.add(dual(new THREE.Mesh(ribbonGeo(RB, end, [-WW / 2, WW / 2], [WL, WL], 1, hf)), wb, wh));
             scene.add(grp); rivers.push(tex);
         });
-        {   // 바다 건너편 남쪽 — 물길 띠 자리를 땅으로 메운다
-            const z0 = SZ + SRZ + 7, g = ribbonGeo(z0, 150, [-RB, RB], [0, 0], 5, sv => WT(0, sv));
+        {   // 어귀부터 남쪽 끝까지 — 물길 띠 자리를 땅으로 메운다(바다 밑 바닥 포함). 처음엔 바다 건너편만 메워 물칸 틈으로 빈 띠가 검은 줄처럼 보였다(9/30)
+            const g = ribbonGeo(SHORE + 0.8, 150, [-RB, RB], [0, 0], 1, sv => WT(0, sv));
             scene.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0x3d8a48, roughness: 0.95, side: THREE.DoubleSide })));
         }
         {   // 보좌 둘레 샘 — 네 물길이 만나는 네모 못
@@ -658,7 +689,7 @@
         cvs.addEventListener('pointerdown', e => { if (!walk) return; lookId = e.pointerId; lx = e.clientX; ly = e.clientY; });
         cvs.addEventListener('pointermove', e => {
             if (!walk || e.pointerId !== lookId) return;
-            camYaw -= (e.clientX - lx) * 0.006; camPitch = Math.max(-0.45, Math.min(1.2, camPitch + (e.clientY - ly) * 0.005));
+            camYaw -= (e.clientX - lx) * 0.006; camPitch = Math.max(-1.25, Math.min(1.2, camPitch + (e.clientY - ly) * 0.005));   // 음수 = 카메라가 발치로 내려가 하늘을 올려다본다
             lx = e.clientX; ly = e.clientY; lastTouch = performance.now();
         });
         const endLook = e => { if (e.pointerId === lookId) lookId = null; };
@@ -772,13 +803,15 @@
             const Tg = new THREE.Vector3(P.x, P.y + 0.17, P.z);
             const dir = new THREE.Vector3(Math.sin(camYaw) * Math.cos(camPitch), Math.sin(camPitch), Math.cos(camYaw) * Math.cos(camPitch));
             let dist = camDist;
-            ray.set(Tg, dir); ray.far = camDist;
+            body.visible = camPitch > -0.75;   // 많이 올려다보면 순례자를 잠시 숨긴다(1인칭처럼) — 등이 화면을 가렸다
+            ray.set(Tg, dir); ray.far = dist;
             const hits = ray.intersectObjects(built.children, true);
             if (hits.length) dist = Math.max(0.12, hits[0].distance - 0.05);
             const cp = Tg.clone().addScaledVector(dir, dist);
             cp.y = Math.max(cp.y, groundAt(cp.x, cp.z, cp.y) + 0.03);
             camera.position.lerp(cp, Math.min(1, dt * 12));
-            camera.lookAt(Tg.x, Tg.y + 0.04, Tg.z);
+            // 늘 순례자 쪽(-dir)을 본다 — 카메라가 땅에 걸려 멈춰도 시선은 그대로 위로 들려 하늘을 본다(땅속을 보지 않는다)
+            camera.lookAt(camera.position.x - dir.x, camera.position.y - dir.y + 0.04, camera.position.z - dir.z);
         }
 
         // ── 화질 ──
@@ -825,7 +858,20 @@
                 perf.n++; if (perf.n > 20) perf.sum += dt;
                 if (perf.n === 140 && perf.sum / 120 > 0.045) { setQuality(false, false); showHint(T('nj3d_slow'), 3500); }
             }
-            if (walk) walkUpdate(dt); else controls.update();
+            if (walk) walkUpdate(dt);
+            else {
+                controls.update();
+                // 땅(바다는 수면) 위로 붙잡는다 — 산 속·바다 밑으로 꺼지지 않게
+                const cx = camera.position.x, cz = camera.position.z, d0 = Math.max(Math.abs(cx), Math.abs(cz));
+                const gy = Math.max(d0 <= PL ? 0.6 : WT(cx, cz), SEA_Y) + 0.8;
+                if (camera.position.y < gy) { camera.position.y = gy; camera.lookAt(controls.target); }
+            }
+            skyDome.position.copy(camera.position);
+            glints.position.set(camera.position.x, camera.position.y - 6, camera.position.z);
+            if (!reduce) {
+                for (let n = 0; n < GLINTS; n++) { const i = n * 3 + 1; glintPos[i] += dt * glintSpd[n]; if (glintPos[i] > 34) glintPos[i] = -6; }
+                glintGeo.attributes.position.needsUpdate = true;
+            }
             renderer.render(scene, camera);
             requestAnimationFrame(loop);
         }
