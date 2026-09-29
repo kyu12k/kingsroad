@@ -6864,6 +6864,11 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .nj-detail { width: 100%; display: flex; gap: 12px; font-size: 0.82rem; color: #d7dfea; padding-left: 22px; }
 .nj-detail .ok { color: var(--c-blank-all); }
 .nj-place { margin-left: 22px; padding: 8px 18px; border: none; border-radius: 10px; background: var(--c-action); color: #fff; font-weight: 800; cursor: pointer; box-shadow: 0 3px 0 var(--c-action-edge); }
+.nj-go { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.nj-go:empty { display: none; }
+.nj-go-btn { width: 100%; padding: 10px; border: none; border-radius: 10px; background: var(--c-action); color: #fff; font-weight: 800; font-size: 0.88rem; cursor: pointer; box-shadow: 0 3px 0 var(--c-action-edge); }
+.nj-go-btn.sub { background: rgba(255,255,255,0.1); color: #e6edf5; box-shadow: none; font-weight: 700; }
+.nj-go-note { font-size: 0.8rem; color: #d7dfea; line-height: 1.5; padding: 0 2px; }
 .nj-place:disabled { background: #4a5a73; box-shadow: none; color: #aab6c6; cursor: default; }
 .nj-why { width: 100%; padding-left: 22px; font-size: 0.75rem; color: #ffcf8a; }
 .nj-done { text-align: center; font-weight: 800; color: #f6d77a; padding: 10px; }

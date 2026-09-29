@@ -512,10 +512,17 @@ const LANG = {
         nj_placed_toast: '🏛️ {name}을(를) 놓았어요',
         nj_all_done: '열두 기초석을 모두 놓았어요 — 계시록 완전 암송',
         nj_pearl_title: '🦪 진주 문 {n} / 12 — 「그 열두 문은 열두 진주니」 (21:21)',
-        nj_pearl_week: '이번 주 백지 차례를 지킨 날 {d} / 5',
+        nj_pearl_week: '이번 주 백지로 써낸 날 {d} / 5',
         nj_pearl_done_week: '이번 주 진주를 받았어요 ✓',
-        nj_pearl_rule: '한 주(월~일)에 5일 이상, 백지 차례인 구절을 하나라도 백지로 써내면 진주 하나. 보석으로는 살 수 없어요',
+        nj_pearl_rule: '한 주(월~일)에 5일 이상 백지로 한 절이라도 통과하면 진주가 하나 얹혀요. 5일을 못 채운 주가 지나면 하나가 떨어져요. 보석으로는 살 수 없어요',
         nj_pearl_got: '🦪 진주를 얻었어요 — 문 하나에 진주가 얹혔어요',
+        nj_pearl_lost: '🦪 지난주 백지 5일을 못 채워 진주 하나가 떨어졌어요',
+        nj_go_due: '✍️ 오늘 백지 차례 {n}절 — 하러 가기',
+        nj_go_none: '오늘은 백지 차례가 없어요 · 다음 차례 {date} {n}절',
+        nj_go_first: '외운 구절을 백지로 써내면 3일 뒤 첫 차례가 와요',
+        nj_go_write: '✍️ 오늘 백지로 한 절 쓰러 가기',
+        nj_soon: 'Lv{from} {n}절이 차례를 지키면 Lv{lv}이 돼요 · 가장 빠른 날 {date}',
+        nj_today: '오늘',
         nj3d_btn: '🏛️ 3D로 보기 · 걸어서 구경',
         nj3d_loading: '성을 불러오는 중…',
         nj3d_fail: '3D를 불러오지 못했어요. 인터넷 연결을 확인해 주세요',
@@ -1476,10 +1483,17 @@ const LANG = {
         nj_placed_toast: '🏛️ {name} placed',
         nj_all_done: 'All twelve foundations laid — Revelation fully memorized',
         nj_pearl_title: '🦪 Pearl gates {n} / 12 — “The twelve gates were twelve pearls” (21:21)',
-        nj_pearl_week: 'Days you kept your blank reviews this week {d} / 5',
+        nj_pearl_week: 'Days with a blank recall this week {d} / 5',
         nj_pearl_done_week: 'Pearl earned this week ✓',
-        nj_pearl_rule: 'Keep at least one due blank review on 5 days of a week (Mon–Sun) to earn a pearl. Pearls cannot be bought with gems',
+        nj_pearl_rule: 'Pass at least one verse in blank mode on 5 days of a week (Mon–Sun) and a pearl crowns a gate. A week short of 5 days takes one away. Pearls cannot be bought with gems',
         nj_pearl_got: '🦪 You earned a pearl — it now crowns a gate',
+        nj_pearl_lost: '🦪 Last week fell short of 5 blank days — a pearl slipped away',
+        nj_go_due: '✍️ {n} blank reviews due today — go',
+        nj_go_none: 'No blank reviews due today · next {date}, {n} verses',
+        nj_go_first: 'Write a memorized verse in blank mode and its first review comes 3 days later',
+        nj_go_write: '✍️ Write one verse in blank mode today',
+        nj_soon: '{n} verses at Lv{from} reach Lv{lv} when you keep their turn · earliest {date}',
+        nj_today: 'today',
         nj3d_btn: '🏛️ View in 3D · Walk around',
         nj3d_loading: 'Loading the city…',
         nj3d_fail: 'Could not load 3D. Please check your connection',
@@ -2238,6 +2252,7 @@ let njLog = [];
 let njPearls = 0;
 let njPearlWeek = { weekId: '', days: [], granted: false };
 let njPearlLog = [];
+let njBlankDays = [];    // 진주 — 백지로 한 절이라도 통과한 날('YYYY-MM-DD', 오전 6시 기준). 진주 수는 이것에서 계산한다
 let njJetpack = false;   // 3D 걸어서 구경 — 보석으로 산 제트팩 (한 번 사면 계속)
 let lastPlayedStageId = null; // 마지막으로 직접 플레이한 스테이지 ID
 let bossFirstClearClaimed = new Set(); // 최초 클리어 보너스를 수령한 보스 스테이지 ID
@@ -2671,6 +2686,8 @@ loadGameData = function () {
         njPearls = Math.max(0, Math.min(12, parseInt(parsed.njPearls, 10) || 0));
         njPearlWeek = (parsed.njPearlWeek && typeof parsed.njPearlWeek === 'object') ? Object.assign({ weekId: '', days: [], granted: false }, parsed.njPearlWeek) : { weekId: '', days: [], granted: false };
         njPearlLog = Array.isArray(parsed.njPearlLog) ? parsed.njPearlLog : [];
+        njBlankDays = Array.isArray(parsed.njBlankDays) ? parsed.njBlankDays.filter(d => typeof d === 'string') : [];
+        (njPearlWeek.days || []).forEach(d => { if (typeof d === 'string' && !njBlankDays.includes(d)) njBlankDays.push(d); });
         njJetpack = !!parsed.njJetpack;
         // 오늘의 암송 진행은 날마다 새 id라 60일 지난 것은 버린다 (저장본이 자라지 않게)
         try {
@@ -7006,20 +7023,60 @@ function _njCount(lv) {
     return n;
 }
 
-/* 진주 — 백지 차례인 구절을 백지로 써내 백지레벨이 오르면(kind 'up') 그날을 센다. 주 5일이 차는 순간 진주 하나 */
+/* 진주 — 연속 출석처럼 (2026-09-29 개정)
+   한 주(월~일)에 백지로 한 절이라도 통과한 날이 5일 이상이면 진주 +1 (최대 12).
+   5일을 못 채운 주가 지나면 -1 (0 아래로는 안 내려간다). 12개가 된 뒤에도 같다 — 지키는 만큼 문이 빛난다.
+   진주 수는 저장하지 않고 njBlankDays에서 매번 계산한다(기기 병합이 날짜 합집합만으로 맞는다). 처음 기록한 주부터 센다 */
 const NJ_PEARL_DAYS = 5;
-function _njNoteDueDay() {
+function _njMonday(ds) {
+    const [y, m, d] = ds.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    dt.setDate(dt.getDate() - ((dt.getDay() + 6) % 7));
+    return dt;
+}
+function _njPearlCalc(days) {
+    const today = _get6AMDayStr();
+    const cnt = {}; let first = null;
+    new Set(days || []).forEach(ds => {
+        if (typeof ds !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(ds) || ds > today) return;
+        const k = _getLocalDateStr(_njMonday(ds));
+        cnt[k] = (cnt[k] || 0) + 1;
+        if (!first || k < first) first = k;
+    });
+    const cur = _getLocalDateStr(_njMonday(today));
+    const curDays = cnt[cur] || 0;
+    if (!first) return { n: 0, curDays, curDone: false };
+    let n = 0;
+    const w = _njMonday(first);
+    for (let i = 0; i < 2000; i++) {
+        const k = _getLocalDateStr(w), c = cnt[k] || 0;
+        if (k >= cur) { if (c >= NJ_PEARL_DAYS) n = Math.min(12, n + 1); break; }   // 이번 주는 채웠을 때만 센다(아직 안 끝났다)
+        n = c >= NJ_PEARL_DAYS ? Math.min(12, n + 1) : Math.max(0, n - 1);
+        w.setDate(w.getDate() + 7);
+    }
+    return { n, curDays, curDone: curDays >= NJ_PEARL_DAYS };
+}
+/* 날짜로 다시 계산. notify면 줄어든 것을 알린다(지난주를 못 채우고 돌아왔을 때) */
+function _njRefreshPearls(notify) {
+    const before = njPearls;
+    const st = _njPearlCalc(njBlankDays);
+    njPearls = st.n;
+    if (st.n !== before) {
+        if (notify && st.n < before) setTimeout(() => { if (typeof showMissionToast === 'function') showMissionToast(t('nj_pearl_lost'), `${njPearls} / 12`); }, 1500);
+        try { saveGameData(); } catch (e) { }
+    }
+    return st;
+}
+function _njNoteBlankDay() {
     try {
-        const wk = (typeof getMissionPointWeekId === 'function') ? getMissionPointWeekId() : '';
         const day = _get6AMDayStr();
-        if (!wk) return;
-        if (!njPearlWeek || njPearlWeek.weekId !== wk) njPearlWeek = { weekId: wk, days: [], granted: false };
-        if (!njPearlWeek.days.includes(day)) njPearlWeek.days.push(day);
-        if (!njPearlWeek.granted && njPearlWeek.days.length >= NJ_PEARL_DAYS && njPearls < 12) {
-            njPearlWeek.granted = true;
-            njPearlLog = Array.isArray(njPearlLog) ? njPearlLog : [];
-            njPearlLog.push({ k: njPearls, week: wk, at: Date.now() });
-            njPearls += 1;
+        if (!Array.isArray(njBlankDays)) njBlankDays = [];
+        if (njBlankDays.includes(day)) return;
+        njBlankDays.push(day);
+        const before = njPearls;
+        _njRefreshPearls(false);
+        if (njPearls > before) {
+            (njPearlLog = Array.isArray(njPearlLog) ? njPearlLog : []).push({ k: njPearls - 1, week: _getLocalDateStr(_njMonday(day)), at: Date.now() });
             setTimeout(() => {
                 if (typeof showMissionToast === 'function') showMissionToast(t('nj_pearl_got'), `${njPearls} / 12`);
                 if (document.getElementById('nj-zone') && typeof drawRiver === 'function') drawRiver();
@@ -7142,6 +7199,7 @@ function _njRiverStart(containerRect, scrollTop) {
     if (!zone || !cv) return null;
     const W = zone.clientWidth || containerRect.width;
     if (!W) return null;
+    _njRefreshPearls(true);
     const gate = _njDraw(cv, W, NJ_ZONE_H, njBuilt, njPearls, { flow: true });
     _njFlowSvg(zone, W, NJ_ZONE_H, gate);
     const zr = zone.getBoundingClientRect();
@@ -7188,6 +7246,7 @@ function openNewJerusalem() {
         <button class="nj-3d-btn" onclick="openNJ3DView()">${t('nj3d_btn')}</button>
         <div class="nj-sub">${t('nj_hint')}</div>
         <div class="nj-gems">💎 ${Number(myGems || 0).toLocaleString()}</div>
+        <div class="nj-go" id="nj-go"></div>
         <div class="nj-pearl" id="nj-pearl"></div>
         <div class="nj-list" id="nj-list"></div>
     </div>`;
@@ -7216,14 +7275,15 @@ function _njRenderModal() {
     const W = Math.floor(par.clientWidth - parseFloat(pcs.paddingLeft) - parseFloat(pcs.paddingRight));   // 창 안쪽 여백을 뺀 폭
     _njDraw(cv, W, Math.round(W * 0.82), njBuilt, njPearls, { south: true });
     const gemsEl = document.querySelector('#nj-modal .nj-gems'); if (gemsEl) gemsEl.textContent = `💎 ${Number(myGems || 0).toLocaleString()}`;
+    const pst = _njRefreshPearls(false);
+    const ge = document.getElementById('nj-go');
+    if (ge) ge.innerHTML = _njGoHtml(pst);
     const pe = document.getElementById('nj-pearl');
     if (pe) {
-        const wk = (typeof getMissionPointWeekId === 'function') ? getMissionPointWeekId() : '';
-        const cur = (njPearlWeek && njPearlWeek.weekId === wk) ? njPearlWeek : { days: [], granted: false };
-        const d = Math.min(NJ_PEARL_DAYS, (cur.days || []).length);
+        const d = Math.min(NJ_PEARL_DAYS, pst.curDays);
         const dots = Array.from({ length: NJ_PEARL_DAYS }, (_, i) => `<span class="nj-pd${i < d ? ' on' : ''}"></span>`).join('');
         pe.innerHTML = `<div class="nj-pearl-head">${t('nj_pearl_title', { n: njPearls })}</div>
-            <div class="nj-pearl-week">${njPearls >= 12 ? '' : (cur.granted ? t('nj_pearl_done_week') : `${t('nj_pearl_week', { d })} ${dots}`)}</div>
+            <div class="nj-pearl-week">${pst.curDone ? t('nj_pearl_done_week') : `${t('nj_pearl_week', { d })} ${dots}`}</div>
             <div class="nj-pearl-rule">${t('nj_pearl_rule')}</div>`;
     }
     const counts = {}; [3, 4, 5].forEach(lv => { counts[lv] = _njCount(lv); });
@@ -7238,7 +7298,12 @@ function _njRenderModal() {
         const have = counts[lv], okV = have >= need, okG = (myGems || 0) >= cost;
         const cond = t('nj_cond', { lv, have: Math.min(have, need), need });
         if (k === njBuilt) {
-            const why = !okV ? t('nj_need_verses', { n: need - have }) : (!okG ? t('nj_need_gems', { n: (cost - myGems).toLocaleString() }) : '');
+            let why = !okV ? t('nj_need_verses', { n: need - have }) : (!okG ? t('nj_need_gems', { n: (cost - myGems).toLocaleString() }) : '');
+            if (!okV) {   // 한 칸 아래에서 차례를 기다리는 절 — 기다림이 고장처럼 보이지 않게
+                let soon = 0, first = Infinity;
+                _allVerseIds().forEach(id => { const r = verseRecall[id]; if (r && r.bx === lv - 1) { soon++; if (r.bxDue && r.bxDue < first) first = r.bxDue; } });
+                if (soon) why += `<br>${t('nj_soon', { from: lv - 1, lv, n: soon, date: first <= Date.now() ? t('nj_today') : _njDayLabel(first) })}`;
+            }
             return `<div class="nj-row next">${head}
                 <div class="nj-detail"><span class="${okV ? 'ok' : ''}">${cond}</span><span class="${okG ? 'ok' : ''}">💎 ${cost.toLocaleString()}</span></div>
                 <button class="nj-place" ${okV && okG ? '' : 'disabled'} onclick="_njPlace(${k})">${t('nj_place')}</button>
@@ -7246,6 +7311,33 @@ function _njRenderModal() {
         }
         return `<div class="nj-row locked">${head}<span class="nj-state">${cond} · 💎 ${cost.toLocaleString()}</span></div>`;
     }).join('') + (njBuilt >= 12 ? `<div class="nj-done">${t('nj_all_done')}</div>` : '');
+}
+/* 건축 창 바로 가기 — ① 오늘 백지 차례가 있으면 그 장으로 ② 없으면 다음 차례 날짜(+오늘 진주 날을 아직 안 채웠으면 쓰러 가기) ③ 백지 기록이 없으면 첫 백지로 */
+function _njDayLabel(ts) {
+    const ds = _tsTo6AMDateStr(ts), [y, m, d] = ds.split('-').map(Number);
+    const wd = new Date(y, m - 1, d).getDay();
+    return currentLang === 'en' ? `${m}/${d} (${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][wd]})` : `${m}/${d}(${'일월화수목금토'[wd]})`;
+}
+function _njGoHtml(pst) {
+    const due = _blankDueIds();
+    if (due.length) {
+        const ch = Math.min(...due.map(id => parseInt(id.split('-')[0], 10)));
+        return `<button class="nj-go-btn" onclick="_njGo(${ch})">${t('nj_go_due', { n: due.length })}</button>`;
+    }
+    const lastCh = parseInt(String(lastPlayedStageId || '1').split('-')[0], 10) || 1;
+    const write = `<button class="nj-go-btn sub" onclick="_njGo(${lastCh})">${t('nj_go_write')}</button>`;
+    let next = Infinity;
+    for (const id in (verseRecall || {})) { const r = verseRecall[id]; if (r && r.bx && r.bxDue && r.bxDue < next) next = r.bxDue; }
+    if (next === Infinity) return `<div class="nj-go-note">${t('nj_go_first')}</div>${write}`;
+    const nd = _tsTo6AMDateStr(next);
+    let n = 0;
+    for (const id in verseRecall) { const r = verseRecall[id]; if (r && r.bx && r.bxDue && _tsTo6AMDateStr(r.bxDue) === nd) n++; }
+    const today = (njBlankDays || []).includes(_get6AMDayStr());
+    return `<div class="nj-go-note">${t('nj_go_none', { date: _njDayLabel(next), n })}</div>${today ? '' : write}`;
+}
+function _njGo(ch) {
+    closeNewJerusalem();
+    if (typeof openStageSheetForStageId === 'function') openStageSheetForStageId(`${ch}-1`);
 }
 function _njPlace(k) {
     if (k !== njBuilt || k >= 12) return;
@@ -10646,6 +10738,7 @@ function saveGameData() {
         njPearls: njPearls,               // 진주 문 — 얻은 진주 수
         njPearlWeek: njPearlWeek,         // 진주 문 — 이번 주 백지 차례를 지킨 날
         njPearlLog: njPearlLog,           // 진주 문 — 얻은 기록
+        njBlankDays: njBlankDays,         // 진주 문 — 백지로 통과한 날 (진주 수는 여기서 계산)
         njJetpack: njJetpack,             // 3D 제트팩 (보석으로 산 것)
         sessionTimeLog: sessionTimeLog,
         // ★ [게임 모드]
@@ -10888,9 +10981,13 @@ function _mergeNewJerusalem(target, other) {
         target.njLog = tl;
     }
     if (other.njJetpack && !target.njJetpack) { target.njJetpack = true; took++; }   // 제트팩 — 한쪽에서라도 샀으면 산 것
-    // 진주 — 많은 쪽, 기록은 k로 합집합, 이번 주 지킨 날은 같은 주면 합집합·다른 주면 늦은 주
-    const op = parseInt(other.njPearls, 10) || 0, tp = parseInt(target.njPearls, 10) || 0;
-    if (op > tp) { target.njPearls = op; took++; }
+    // 진주 — 백지로 통과한 날은 합집합. 진주 수는 날짜에서 계산하므로(늘기도 줄기도 한다) 많은 쪽을 취하지 않는다
+    if (Array.isArray(other.njBlankDays) && other.njBlankDays.length) {
+        const td = Array.isArray(target.njBlankDays) ? target.njBlankDays : [];
+        other.njBlankDays.forEach(d => { if (typeof d === 'string' && !td.includes(d)) { td.push(d); took++; } });
+        td.sort();
+        target.njBlankDays = td;
+    }
     if (Array.isArray(other.njPearlLog) && other.njPearlLog.length) {
         const tl = Array.isArray(target.njPearlLog) ? target.njPearlLog : [];
         const have = new Set(tl.map(e => e && e.k));
@@ -26581,7 +26678,7 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
         }
         if (hardshipState) hardshipState._blankLvNote = _blankLvNoteText(_res, _pts, _quick);
         // 백지레벨이 오르거나 처음 들어가면 전용 소리 — 정답음이 먼저 울리니 조금 뒤에
-        if (_res && _res.kind === 'up') _njNoteDueDay();   // 새 예루살렘 진주 — 백지 차례를 지킨 날
+        if (ok && _blankMode) _njNoteBlankDay();   // 새 예루살렘 진주 — 백지로 한 절이라도 통과한 날
         if (_res && (_res.kind === 'up' || _res.kind === 'enter') && typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) {
             setTimeout(() => SoundEffect.playBlankLevelUp(), 420);
         }
