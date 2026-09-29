@@ -4310,6 +4310,17 @@ const SoundEffect = {
         this._note(1900, this.ctx.currentTime, 0.022, 0.02, { wave: 'triangle', partials: this._PURE });
     },
 
+    // 새 예루살렘 3D — 물길을 걸을 때 참방 (잡음을 높은 데서 낮게 훑기 + 작은 물방울 톡). 발소리라 🔉에서도 꺼진다
+    // big: 점프해서 물에 떨어질 때
+    playSplash: function (big) {
+        if (this.keyMuted) return;
+        this._play(t => {
+            const v = big ? 0.2 : 0.09, j = 0.85 + Math.random() * 0.3;
+            this._whoosh(t, big ? 0.22 : 0.11, v, 2600 * j, 700 * j);
+            this._note(760 * j, t + 0.01, big ? 0.09 : 0.05, big ? 0.05 : 0.028, { glideTo: 380 * j, partials: this._PURE });
+        });
+    },
+
     // 방패 막기 소리 (퉁! 금속 충격 + 짧은 울림)
     playShield: function () {
         this._play(t => {

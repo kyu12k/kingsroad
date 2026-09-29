@@ -130,9 +130,20 @@
         Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16, near: 1, far: 60 });
         const throneLight = new THREE.PointLight(0xffe7a8, 1.6, 16, 1.6); throneLight.position.set(0, 2, 0); scene.add(throneLight);
 
-        // 풀밭과 꽃
-        const ground = new THREE.Mesh(new THREE.CircleGeometry(80, 48), new THREE.MeshStandardMaterial({ color: 0x2f9e58, roughness: 0.95 }));
-        ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+        // 풀밭 — 물길 자리(두 축 둘레 RB)를 비운 네 조각. 물길은 파여 있다 (9/29 — 평평한 강은 걸어도 강 같지 않았다)
+        const RW = 0.55, RB = 0.95, RD = 0.12, WL = -0.05, IN_F = 4.9;   // 물길 바닥 반폭 · 둑 끝 · 깊이 · 수면 · 정금 바닥 끝
+        {
+            const R = 80, gm = new THREE.MeshStandardMaterial({ color: 0x2f9e58, roughness: 0.95, side: THREE.DoubleSide });
+            const e = Math.sqrt(R * R - RB * RB), a0 = Math.asin(RB / R), sh = new THREE.Shape();
+            sh.moveTo(RB, RB); sh.lineTo(RB, e);
+            for (let n = 1; n < 24; n++) { const a = Math.PI / 2 - a0 - (Math.PI / 2 - 2 * a0) * n / 24; sh.lineTo(R * Math.cos(a), R * Math.sin(a)); }
+            sh.lineTo(e, RB); sh.closePath();
+            const qg = new THREE.ShapeGeometry(sh); qg.rotateX(Math.PI / 2);   // (x, y) → (x, 0, y)
+            [0, 1, 2, 3].forEach(q => { const m = new THREE.Mesh(qg, gm); m.rotation.y = q * Math.PI / 2; m.receiveShadow = true; scene.add(m); });
+            // 땅속 — 틈으로 하늘이 비치지 않게
+            const under = new THREE.Mesh(new THREE.CircleGeometry(80, 32), new THREE.MeshBasicMaterial({ color: 0x3a2e22 }));
+            under.rotation.x = -Math.PI / 2; under.position.y = -RD - 0.03; scene.add(under);
+        }
         {
             const mats = ['🌸', '🌼', '🌷', '🌺', '🌻'].map(e => {
                 const c = document.createElement('canvas'); c.width = c.height = 96;
@@ -164,23 +175,45 @@
         const riverCv = document.createElement('canvas'); riverCv.width = 32; riverCv.height = 128;
         { const rg = riverCv.getContext('2d'); rg.fillStyle = '#12b3cc'; rg.fillRect(0, 0, 32, 128); rg.fillStyle = 'rgba(220,250,255,0.75)'; rg.fillRect(7, 10, 2, 34); rg.fillRect(22, 60, 2, 26); rg.fillRect(14, 96, 2, 22); }
         const rivers = [];
+        // 물길 단면: 둑 비탈(RB→RW) · 바닥(깊이 RD) · 둑 비탈. s0~s1 구간을 +z 방향으로
+        const troughGeo = (s0, s1) => {
+            const us = [-RB, -RW, RW, RB], hs = [0, -RD, -RD, 0], pos = [], idx = [];
+            us.forEach((u, i) => pos.push(u, hs[i], s0, u, hs[i], s1));
+            for (let i = 0; i < 3; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+            const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+            return g;
+        };
+        const bankEarth = new THREE.MeshStandardMaterial({ color: 0x6b5238, roughness: 0.9, side: THREE.DoubleSide });
+        const bankGold = new THREE.MeshStandardMaterial({ color: 0xc99a3a, metalness: 0.5, roughness: 0.35, side: THREE.DoubleSide });
+        const WW = 2 * (RW + (RB - RW) * (-WL) / RD);   // 수면이 둑 비탈과 만나는 폭
+        const waterMat = (tex) => [new THREE.MeshStandardMaterial({ map: tex, emissive: 0x0a6f80, emissiveIntensity: 0.35, roughness: 0.25, metalness: 0.1 }),
+            new THREE.MeshStandardMaterial({ map: tex, emissive: 0x0a6f80, emissiveIntensity: 0.2, roughness: 0.04, metalness: 0.5, envMapIntensity: 1.8 })];
         [0, Math.PI, Math.PI / 2, -Math.PI / 2].forEach(a => {
             const L = 60, grp = new THREE.Group(); grp.rotation.y = a;
-            const tex = new THREE.CanvasTexture(riverCv); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(1, L / 3); tex.encoding = THREE.sRGBEncoding;
-            const bank = new THREE.Mesh(new THREE.PlaneGeometry(1.9, L), new THREE.MeshStandardMaterial({ color: 0x5d4037, transparent: true, opacity: 0.45 }));
-            bank.rotation.x = -Math.PI / 2; bank.position.set(0, 0.03, L / 2); grp.add(bank);
-            const water = dual(new THREE.Mesh(new THREE.PlaneGeometry(1.1, L)),
-                new THREE.MeshStandardMaterial({ map: tex, emissive: 0x0a6f80, emissiveIntensity: 0.35, roughness: 0.25, metalness: 0.1 }),
-                new THREE.MeshStandardMaterial({ map: tex, emissive: 0x0a6f80, emissiveIntensity: 0.2, roughness: 0.04, metalness: 0.5, envMapIntensity: 1.8 }));
-            water.rotation.x = -Math.PI / 2; water.position.set(0, 0.07, L / 2); grp.add(water);
+            const tex = new THREE.CanvasTexture(riverCv); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(1, (L - RB) / 3); tex.encoding = THREE.sRGBEncoding;
+            const t1 = new THREE.Mesh(troughGeo(RB, IN_F), bankGold), t2 = new THREE.Mesh(troughGeo(IN_F, L), bankEarth);
+            t1.receiveShadow = t2.receiveShadow = true; grp.add(t1); grp.add(t2);
+            const [wb, wh] = waterMat(tex);
+            const water = dual(new THREE.Mesh(new THREE.PlaneGeometry(WW, L - RB)), wb, wh);
+            water.rotation.x = -Math.PI / 2; water.position.set(0, WL, RB + (L - RB) / 2); grp.add(water);
             scene.add(grp); rivers.push(tex);
         });
+        {   // 보좌 둘레 샘 — 네 물길이 만나는 네모 못
+            const pool = new THREE.Mesh(new THREE.PlaneGeometry(RB * 2, RB * 2), bankGold); pool.rotation.x = -Math.PI / 2; pool.position.y = -RD; scene.add(pool);
+            const tex = new THREE.CanvasTexture(riverCv); tex.encoding = THREE.sRGBEncoding;
+            const [wb, wh] = waterMat(tex);
+            const w = dual(new THREE.Mesh(new THREE.PlaneGeometry(RB * 2, RB * 2)), wb, wh); w.rotation.x = -Math.PI / 2; w.position.y = WL; scene.add(w);
+        }
         // 정금 바닥과 길 (21:18, 21)
         {
-            const inner = dual(new THREE.Mesh(new THREE.PlaneGeometry(9.8, 9.8)),
-                new THREE.MeshStandardMaterial({ color: 0xd9a93a, metalness: 0.6, roughness: 0.3, emissive: 0x4a3208, emissiveIntensity: 0.25 }),
-                new THREE.MeshPhysicalMaterial({ color: 0xe0b04a, metalness: 0.85, roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.06, envMapIntensity: 1.2, emissive: 0x5a3c0c, emissiveIntensity: 0.3 }));
-            inner.rotation.x = -Math.PI / 2; inner.position.y = 0.04; inner.receiveShadow = true; scene.add(inner);
+            // 정금 바닥 — 물길을 비운 네 조각
+            const fB = new THREE.MeshStandardMaterial({ color: 0xd9a93a, metalness: 0.6, roughness: 0.3, emissive: 0x4a3208, emissiveIntensity: 0.25 });
+            const fH = new THREE.MeshPhysicalMaterial({ color: 0xe0b04a, metalness: 0.85, roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.06, envMapIntensity: 1.2, emissive: 0x5a3c0c, emissiveIntensity: 0.3 });
+            const fs = IN_F - RB, fc = RB + fs / 2, fg = new THREE.PlaneGeometry(fs, fs);
+            [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(([sx, sz]) => {
+                const q = dual(new THREE.Mesh(fg), fB, fH);
+                q.rotation.x = -Math.PI / 2; q.position.set(sx * fc, 0.04, sz * fc); q.receiveShadow = true; scene.add(q);
+            });
             const stB = new THREE.MeshStandardMaterial({ color: 0xfff1c4, metalness: 0.7, roughness: 0.15, emissive: 0x8a6a1c, emissiveIntensity: 0.4 });
             const stH = new THREE.MeshPhysicalMaterial({ color: 0xffe7a6, metalness: 0.85, roughness: 0.08, clearcoat: 1, envMapIntensity: 1.3, emissive: 0x7a5a18, emissiveIntensity: 0.35 });
             [-GATE_GAP, GATE_GAP].forEach(p => {
@@ -208,6 +241,7 @@
         function rebuild() {
             built.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) [].concat(o.material).forEach(m => m.dispose()); });
             while (built.children.length) built.remove(built.children[0]);
+            BOXES.length = 0; BOXES.push(THRONE_BOX);
             SEQ.forEach(([side, i], k) => {
                 const [cx, cz] = gatePos(side, i), horiz = side === 'N' || side === 'S';
                 if (k < found) {
@@ -233,19 +267,27 @@
                         mesh.receiveShadow = true; built.add(mesh);
                     });
                 }
-                // 진주 문 — 늘 열린 통로, 얻은 진주만큼 온전한 문이 선다. 아직이면 흐린 자리
-                const on = k < pearls;
-                const gm = on
-                    ? (HIGH ? new THREE.MeshPhysicalMaterial({ color: 0xfdfbff, roughness: 0.12, metalness: 0.15, clearcoat: 1, clearcoatRoughness: 0.05, envMapIntensity: 1.8, emissive: 0xd8cff5, emissiveIntensity: 0.22 })
-                            : new THREE.MeshStandardMaterial({ color: 0xfbf8ff, roughness: 0.1, metalness: 0.25, emissive: 0xcfc6f0, emissiveIntensity: 0.3 }))
-                    : new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.16 });
-                const base = k < found ? FH : 0.02, R = GATE / 2, Tk = on ? 0.14 : 0.05, postH = GATE_H - R;
+                // 진주 문 — 얻은 진주만큼 온전한 문이 선다. 아직이면 아무것도 없다(통로는 처음부터 열려 있다). 기둥과 아치는 부딪힌다
+                if (k >= pearls) return;
+                const gm = HIGH ? new THREE.MeshPhysicalMaterial({ color: 0xfdfbff, roughness: 0.12, metalness: 0.15, clearcoat: 1, clearcoatRoughness: 0.05, envMapIntensity: 1.8, emissive: 0xd8cff5, emissiveIntensity: 0.22 })
+                    : new THREE.MeshStandardMaterial({ color: 0xfbf8ff, roughness: 0.1, metalness: 0.25, emissive: 0xcfc6f0, emissiveIntensity: 0.3 });
+                const base = k < found ? FH : 0.02, R = GATE / 2, Tk = 0.14, postH = GATE_H - R;
                 const gate = new THREE.Group();
-                [-1, 1].forEach(sg => { const post = new THREE.Mesh(new THREE.CylinderGeometry(Tk, Tk, postH, 12), gm); post.position.set(sg * R, postH / 2, 0); post.castShadow = on; gate.add(post); });
+                [-1, 1].forEach(sg => {
+                    const post = new THREE.Mesh(new THREE.CylinderGeometry(Tk, Tk, postH, 12), gm); post.position.set(sg * R, postH / 2, 0); post.castShadow = true; gate.add(post);
+                    const px = horiz ? cx + sg * R : cx, pz = horiz ? cz : cz + sg * R;
+                    BOXES.push({ x0: px - Tk, x1: px + Tk, z0: pz - Tk, z1: pz + Tk, y0: base, y1: base + postH });
+                });
                 const arch = new THREE.Mesh(new THREE.TorusGeometry(R, Tk, 12, 36, Math.PI), gm); arch.position.set(0, postH, 0); gate.add(arch);
+                const aw = R + Tk;   // 아치 — 제트팩으로 날다 부딪히거나 위에 설 수 있게 대략 상자 하나
+                BOXES.push(horiz ? { x0: cx - aw, x1: cx + aw, z0: cz - Tk, z1: cz + Tk, y0: base + postH + R * 0.7, y1: base + GATE_H + Tk }
+                                 : { x0: cx - Tk, x1: cx + Tk, z0: cz - aw, z1: cz + aw, y0: base + postH + R * 0.7, y1: base + GATE_H + Tk });
                 gate.position.set(cx, base, cz); if (!horiz) gate.rotation.y = Math.PI / 2; built.add(gate);
             });
         }
+        // 부딪히는 상자 — 보좌(오르지 못한다) + rebuild가 넣는 진주 문 기둥·아치
+        const THRONE_BOX = { x0: -0.75, x1: 0.75, z0: -0.75, z1: 0.75, y0: 0, y1: 60 };
+        const BOXES = [THRONE_BOX];
 
         // ── 고급에서만: 빛줄기 · 빛 알갱이 · 풀잎 ──
         const extras = new THREE.Group(); scene.add(extras);
@@ -284,18 +326,47 @@
         extras.visible = HIGH;
 
         // ── 순례자 (계 7:9 흰 옷) — 성벽 높이의 1/14쯤 ──
-        const CH = 0.22, CR = 0.07, STEP = 0.14, G = 4.2, JUMP_V = 1.55, WALK_V = 0.95;
+        const CH = 0.22, CR = 0.07, STEP = 0.14, G = 4.2, JUMP_V = 1.55, WALK_V = 0.95, RUN_V = 1.75;
         const P = { x: 1.3, y: 0, z: 9.2, vy: 0, onGround: true, face: Math.PI };
-        let walk = false, jetOn = false, camYaw = 0, camPitch = 0.12, camDist = 0.95, walkT = 0;
+        let walk = false, jetOn = false, camYaw = 0, camPitch = 0.12, camDist = 0.95, walkT = 0, gait = 0;
+        // 팔다리가 있는 순례자 (9/29) — 엉덩이·어깨를 축으로 흔들어 걷기·달리기·점프·날기 자세를 만든다. 앞은 -z
         const pilgrim = new THREE.Group(), body = new THREE.Group(); pilgrim.add(body);
+        const limbs = {};
         {
-            const robe = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.165, 16), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 })); robe.position.y = 0.0825; body.add(robe);
-            const sash = new THREE.Mesh(new THREE.TorusGeometry(0.024, 0.006, 8, 20), new THREE.MeshStandardMaterial({ color: 0xf2c14e, metalness: 0.6, roughness: 0.3 }));
-            sash.rotation.x = Math.PI / 2; sash.position.y = 0.112; body.add(sash);
-            const head = new THREE.Mesh(new THREE.SphereGeometry(0.034, 16, 12), new THREE.MeshStandardMaterial({ color: 0xf1d3b3, roughness: 0.7 })); head.position.y = 0.19; body.add(head);
-            const hair = new THREE.Mesh(new THREE.SphereGeometry(0.036, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x3b2a20, roughness: 0.8 }));
-            hair.position.set(0, 0.195, 0.004); body.add(hair);
+            const white = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
+            const skin = new THREE.MeshStandardMaterial({ color: 0xf1d3b3, roughness: 0.7 });
+            const cloth = new THREE.MeshStandardMaterial({ color: 0xeee6d8, roughness: 0.8 });
+            const sandal = new THREE.MeshStandardMaterial({ color: 0x8a5a34, roughness: 0.8 });
+            const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.056, 0.105, 16), white); robe.position.y = 0.115; body.add(robe);
+            const sash = new THREE.Mesh(new THREE.TorusGeometry(0.036, 0.005, 8, 20), new THREE.MeshStandardMaterial({ color: 0xf2c14e, metalness: 0.6, roughness: 0.3 }));
+            sash.rotation.x = Math.PI / 2; sash.position.y = 0.128; body.add(sash);
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.031, 16, 12), skin); head.position.y = 0.195; body.add(head);
+            const hair = new THREE.Mesh(new THREE.SphereGeometry(0.033, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x3b2a20, roughness: 0.8 }));
+            hair.position.set(0, 0.2, 0.004); body.add(hair);
+            [-1, 1].forEach(sg => {
+                const hip = new THREE.Group(); hip.position.set(sg * 0.017, 0.075, 0); body.add(hip);
+                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.01, 0.07, 8), cloth); leg.position.y = -0.035; hip.add(leg);
+                const foot = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.01, 0.034), sandal); foot.position.set(0, -0.07, -0.007); hip.add(foot);
+                const sh = new THREE.Group(); sh.position.set(sg * 0.036, 0.158, 0); body.add(sh);
+                const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.009, 0.068, 8), white); arm.position.y = -0.034; sh.add(arm);
+                const hand = new THREE.Mesh(new THREE.SphereGeometry(0.01, 8, 6), skin); hand.position.y = -0.071; sh.add(hand);
+                limbs[sg < 0 ? 'hipL' : 'hipR'] = hip; limbs[sg < 0 ? 'armL' : 'armR'] = sh;
+            });
         }
+        // 물결 고리 — 물길에서 발을 디디면 퍼진다
+        const ripples = [];
+        {
+            const rg = new THREE.RingGeometry(0.03, 0.042, 24); rg.rotateX(-Math.PI / 2);
+            for (let n = 0; n < 8; n++) {
+                const m = new THREE.Mesh(rg, new THREE.MeshBasicMaterial({ color: 0xe8fbff, transparent: true, opacity: 0, depthWrite: false }));
+                m.visible = false; scene.add(m); ripples.push({ m, t: 1, big: false });
+            }
+        }
+        let ripN = 0;
+        const splash = (x, z, big) => {
+            const r = ripples[ripN++ % ripples.length]; r.t = 0; r.big = big; r.m.position.set(x, WL + 0.004, z); r.m.visible = true;
+            if (typeof SoundEffect !== 'undefined' && SoundEffect.playSplash) SoundEffect.playSplash(big);
+        };
         const jet = new THREE.Group(); body.add(jet);
         const jm = new THREE.MeshStandardMaterial({ color: 0xd4a53a, metalness: 0.8, roughness: 0.25 });
         [-1, 1].forEach(sg => { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.075, 12), jm); c.position.set(sg * 0.018, 0.13, 0.03); jet.add(c); });
@@ -324,15 +395,31 @@
             }
             return (d >= IN && d <= HALF) ? FH : 0;
         }
-        const BOXES = [{ x0: -0.75, x1: 0.75, z0: -0.75, z1: 0.75, y0: 0, y1: 60 }];   // 보좌 — 오르지 못한다
+        // 물길 깊이 — 두 축을 따라 파여 있다(보좌 둘레는 네모 샘). 0 ~ -RD
+        function riverDip(x, z) {
+            const ax = Math.abs(x), az = Math.abs(z);
+            if (ax < RB && az < RB) return -RD;
+            const u = Math.min(ax, az);
+            if (u >= RB) return 0;
+            return u <= RW ? -RD : -RD * (RB - u) / (RB - RW);
+        }
+        // 땅 높이 — 기초석 단·경사로 > 정금 길(물길 위로는 다리) > 물길 > 정금 바닥 / 풀밭
+        function terrain(x, z) {
+            const band = bandHeight(x, z); if (band > 0) return band;
+            const ax = Math.abs(x), az = Math.abs(z), inner = ax < IN_F && az < IN_F;
+            if (inner && (Math.abs(ax - GATE_GAP) < 0.275 || Math.abs(az - GATE_GAP) < 0.275)) return 0.09;
+            const dip = riverDip(x, z);
+            if (dip < 0) return dip;
+            return inner ? 0.04 : 0;
+        }
         function groundAt(x, z, y) {
-            let g = bandHeight(x, z);
+            let g = terrain(x, z);
             BOXES.forEach(b => { if (x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1 && b.y1 <= y + STEP && b.y1 > g) g = b.y1; });
             return g;
         }
         function blocked(x, z, y) {
             if (Math.abs(x) > 34 || Math.abs(z) > 34) return true;
-            if (bandHeight(x, z) - y > STEP) return true;
+            if (terrain(x, z) - y > STEP) return true;
             return BOXES.some(b => b.y1 > y + STEP && b.y0 < y + CH && x > b.x0 - CR && x < b.x1 + CR && z > b.z0 - CR && z < b.z1 + CR);
         }
 
@@ -401,13 +488,17 @@
         function walkUpdate(dt) {
             walkT += dt;
             const k = inp.keys;
-            const jx = inp.jx + ((k.KeyD || k.ArrowRight) ? 1 : 0) - ((k.KeyA || k.ArrowLeft) ? 1 : 0);
-            const jy = inp.jy + ((k.KeyS || k.ArrowDown) ? 1 : 0) - ((k.KeyW || k.ArrowUp) ? 1 : 0);
+            const kv = (k.ControlLeft || k.ControlRight) ? 1 : 0.7;   // 키보드는 걷기, Ctrl을 누르면 달리기
+            const jx = inp.jx + (((k.KeyD || k.ArrowRight) ? 1 : 0) - ((k.KeyA || k.ArrowLeft) ? 1 : 0)) * kv;
+            const jy = inp.jy + (((k.KeyS || k.ArrowDown) ? 1 : 0) - ((k.KeyW || k.ArrowUp) ? 1 : 0)) * kv;
             const fly = hasJet() && (jetOn || k.ShiftLeft || k.ShiftRight);
             const fx = -Math.sin(camYaw), fz = -Math.cos(camYaw), rx = Math.cos(camYaw), rz = -Math.sin(camYaw);
             let mx = fx * (-jy) + rx * jx, mz = fz * (-jy) + rz * jx;
             const ml = Math.hypot(mx, mz); if (ml > 1) { mx /= ml; mz /= ml; }
-            const moving = ml > 0.05, sp = WALK_V * (fly || !P.onGround ? 1.35 : 1);
+            const moving = ml > 0.05, wasGround = P.onGround;
+            const inWater = P.onGround && P.y < -0.02;
+            const run = moving && ml > 0.85 && !fly;   // 조이스틱을 끝까지 밀면 달린다
+            const sp = (fly || !P.onGround) ? WALK_V * 1.35 : (run ? RUN_V : WALK_V) * (inWater ? 0.65 : 1);
             const nx = P.x + mx * sp * dt, nz = P.z + mz * sp * dt;
             if (!blocked(nx, P.z, P.y)) P.x = nx;
             if (!blocked(P.x, nz, P.y)) P.z = nz;
@@ -415,10 +506,32 @@
             P.y = Math.min(16, P.y + P.vy * dt);
             const g = groundAt(P.x, P.z, P.y);
             if (P.y <= g) { P.y = g; if (P.vy < 0) P.vy = 0; P.onGround = true; } else P.onGround = false;
+            if (!wasGround && P.onGround && P.y < -0.02) splash(P.x, P.z, true);   // 물에 떨어짐
             if (moving) { const want = Math.atan2(-mx, -mz); let d = want - P.face; d = Math.atan2(Math.sin(d), Math.cos(d)); P.face += d * Math.min(1, dt * 10); }
             pilgrim.position.set(P.x, P.y, P.z); pilgrim.rotation.y = P.face;
-            body.position.y = (moving && P.onGround) ? Math.abs(Math.sin(walkT * 11)) * 0.008 : 0;
-            body.rotation.z = (moving && P.onGround) ? Math.sin(walkT * 11) * 0.05 : 0;
+            // 자세 — 걷기·달리기는 팔다리를 엇갈려 흔들고, 공중에선 팔을 벌리고, 날 때는 다리를 모은다
+            const stepping = moving && P.onGround;
+            if (stepping) {
+                const prev = Math.sin(gait);
+                gait += dt * (run ? 15 : 9.5) * (inWater ? 0.8 : 1);
+                if (inWater && Math.sign(Math.sin(gait)) !== Math.sign(prev)) splash(P.x, P.z, false);   // 발을 디딜 때마다 참방
+            }
+            const amp = run ? 0.95 : 0.55, sw = Math.sin(gait);
+            let hL = 0, hR = 0, aL = 0, aR = 0, zL = 0, zR = 0, lean = 0, bob = 0;
+            if (fly) { hL = 0.12; hR = 0.05; zL = -0.35; zR = 0.35; lean = -0.25; }
+            else if (!P.onGround) { hL = 0.65; hR = -0.3; aL = -0.5; aR = 0.4; zL = -0.75; zR = 0.75; }
+            else if (stepping) { hL = amp * sw; hR = -amp * sw; aL = -amp * 0.85 * sw; aR = amp * 0.85 * sw; lean = run ? -0.2 : -0.05; bob = Math.abs(Math.cos(gait)) * (run ? 0.012 : 0.006); }
+            const e = Math.min(1, dt * 14), L = limbs;
+            L.hipL.rotation.x += (hL - L.hipL.rotation.x) * e; L.hipR.rotation.x += (hR - L.hipR.rotation.x) * e;
+            L.armL.rotation.x += (aL - L.armL.rotation.x) * e; L.armR.rotation.x += (aR - L.armR.rotation.x) * e;
+            L.armL.rotation.z += (zL - L.armL.rotation.z) * e; L.armR.rotation.z += (zR - L.armR.rotation.z) * e;
+            body.rotation.x += (lean - body.rotation.x) * e; body.position.y += (bob - body.position.y) * Math.min(1, dt * 30);
+            ripples.forEach(r => {
+                if (r.t >= 1) return;
+                r.t = Math.min(1, r.t + dt / (r.big ? 0.9 : 0.6));
+                const sc = 1 + r.t * (r.big ? 9 : 5); r.m.scale.set(sc, 1, sc);
+                r.m.material.opacity = (r.big ? 0.75 : 0.55) * (1 - r.t); if (r.t >= 1) r.m.visible = false;
+            });
             flames.forEach(f => { f.visible = fly; f.scale.set(0.05, 0.08 + Math.random() * 0.04, 1); });
             if (moving || fly || !P.onGround) lastTouch = performance.now();
             const Tg = new THREE.Vector3(P.x, P.y + 0.17, P.z);
