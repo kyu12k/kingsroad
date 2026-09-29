@@ -600,6 +600,17 @@ const LANG = {
         nj3d_fish_got: '🐟 {name}을(를) 낚았어요 · 가치 {n}',
         nj3d_fish_left: '그물을 거뒀어요',
         nj3d_fish_sea_hint: '맑은 바다 위에 서면 그물을 던질 수 있어요 (겔 47:10)',
+        gift_talk: '🗣 {name}의 사신',
+        gift_title: '🎁 {name}이(가) 가져올 예물',
+        gift_intro: '「사람들이 만국의 영광과 존귀를 가지고 그리로 들어가겠고」 (계 21:26) — 🐟·🍇로 값을 치르면 예물을 싸서 성으로 가져가요.',
+        gift_have: '가진 것 🐟 {f} · 🍇 {g}',
+        gift_locked: '{ch}장 보스전을 통과하면 열려요',
+        gift_take: '🎁 받기 · {cost}',
+        gift_need: '🐟·🍇 {n} 더 필요해요',
+        gift_full: '성 둘레 자리가 다 찼어요',
+        gift_depart: '🎁 {item} — {nation}에서 출발했어요',
+        gift_arrive: '🎁 {item}이(가) 성에 도착했어요',
+        gift_skip: '건너뛰기 ⏭',
         sea_open_from_nj: '🌊 잎사귀 {n}장 — 바다와 만국으로',
         nj3d_btn: '🏛️ 3D로 보기 · 걸어서 구경',
         nj3d_loading: '성을 불러오는 중…',
@@ -1649,6 +1660,17 @@ const LANG = {
         nj3d_fish_got: '🐟 Caught a {name} · worth {n}',
         nj3d_fish_left: 'Net pulled in',
         nj3d_fish_sea_hint: 'Stand on clear water to cast a net (Ezek 47:10)',
+        gift_talk: '🗣 Envoy of {name}',
+        gift_title: '🎁 Gifts {name} can bring',
+        gift_intro: '“They shall bring the glory and honour of the nations into it” (Rev 21:26) — pay with 🐟·🍇 and the gift is wrapped and carried to the city.',
+        gift_have: 'You have 🐟 {f} · 🍇 {g}',
+        gift_locked: 'Opens when you pass the chapter {ch} boss',
+        gift_take: '🎁 Receive · {cost}',
+        gift_need: 'Need {n} more 🐟·🍇',
+        gift_full: 'All places around the city are taken',
+        gift_depart: '🎁 {item} — setting out from {nation}',
+        gift_arrive: '🎁 {item} has arrived at the city',
+        gift_skip: 'Skip ⏭',
         sea_open_from_nj: '🌊 {n} leaves — to the Sea and the Nations',
         nj3d_btn: '🏛️ View in 3D · Walk around',
         nj3d_loading: 'Loading the city…',
@@ -2420,6 +2442,7 @@ let njFishCasts = 0;     // 던진 그물 수(연구·보석 흐름 실측용)
 let njVines = [];        // 🍇 포도원 — [{ id, n: 나라 번호, t: 심은 때, h: 거둔 때(0=아직), y: 거둔 양 }]
 let njGrapes = 0;        // 🍇 거둔 포도 합(늘기만) — 예물을 받을 때 쓴다(njGrapesSpent)
 let njGrapesSpent = 0;
+let njGifts = [];        // 🎁 받은 예물 — [{ id, k: 예물 키, slot: 자리 번호, n: 가져온 나라, at }]
 let njFishBag = {};      // 🎣 종류별로 낚은 수 { 'tuna': 3, ... } — 모으는 재미·예물 표시용(값은 njFish에 합산)
 let lastPlayedStageId = null; // 마지막으로 직접 플레이한 스테이지 ID
 let bossFirstClearClaimed = new Set(); // 최초 클리어 보너스를 수령한 보스 스테이지 ID
@@ -2877,6 +2900,7 @@ loadGameData = function () {
         njFishCasts = Math.max(0, parseInt(parsed.njFishCasts, 10) || 0);
         njFishBag = (parsed.njFishBag && typeof parsed.njFishBag === 'object') ? parsed.njFishBag : {};
         njVines = Array.isArray(parsed.njVines) ? parsed.njVines.filter(v => v && v.id) : [];
+        njGifts = Array.isArray(parsed.njGifts) ? parsed.njGifts.filter(v => v && v.id) : [];
         njGrapes = Math.max(0, parseInt(parsed.njGrapes, 10) || 0);
         njGrapesSpent = Math.max(0, parseInt(parsed.njGrapesSpent, 10) || 0);
         // 오늘의 암송 진행은 날마다 새 id라 60일 지난 것은 버린다 (저장본이 자라지 않게)
@@ -7657,6 +7681,47 @@ function _njVineHarvest(id) {
     _seaRender();
 }
 
+/* ══ 🎁 만국의 예물 (2026-09-30) — docs/새-예루살렘.md ══
+   21:24, 26 「땅의 왕들이 자기 영광을 가지고 그리로 들어가리라 … 만국의 영광과 존귀를 가지고」 · 사 66:20 · 60:6, 9.
+   3D 걷기로 소성된 나라 해안의 사신에게 가서 청한다. 그 장의 보스전을 통과해야 목록에 열리고(암송 = 열쇠), 🐟·🍇로 값을 치른다(물고기부터).
+   예물은 세마포에 싸여 행렬로 성까지 온 뒤 성 둘레 자리에 선다. 처음 10가지 — 모양은 nj3d.js giftModel */
+const NJ_OFFERINGS = [
+    { k: 'whitestone', ch: 2,  ref: '2:17',  ko: '흰 돌',            en: 'White stone',               cost: 10,  size: 1 },
+    { k: 'palm',       ch: 7,  ref: '7:9',   ko: '종려 가지',        en: 'Palm branches',             cost: 20,  size: 1 },
+    { k: 'morningstar',ch: 22, ref: '22:16', ko: '광명한 새벽별',    en: 'The bright morning star',   cost: 20,  size: 1 },
+    { k: 'harp',       ch: 15, ref: '15:2',  ko: '유리 바다 가의 거문고', en: 'Harp by the sea of glass', cost: 30, size: 2 },
+    { k: 'menorah',    ch: 1,  ref: '1:12',  ko: '일곱 금 촛대',     en: 'Seven golden lampstands',   cost: 40,  size: 2 },
+    { k: 'olives',     ch: 11, ref: '11:4',  ko: '두 감람나무',      en: 'Two olive trees',           cost: 40,  size: 2 },
+    { k: 'winepress',  ch: 14, ref: '14:19', ko: '포도주 틀',        en: 'The winepress',             cost: 50,  size: 2 },
+    { k: 'rainbow',    ch: 4,  ref: '4:3',   ko: '보좌를 두른 무지개', en: 'Rainbow around the throne', cost: 60,  size: 3 },
+    { k: 'millstone',  ch: 18, ref: '18:21', ko: '바다에 던진 큰 맷돌', en: 'Great millstone cast into the sea', cost: 70, size: 3 },
+    { k: 'dragon',     ch: 20, ref: '20:2',  ko: '쇠사슬로 결박된 용', en: 'The dragon bound with a chain', cost: 100, size: 3 },
+];
+// 성 둘레 자리 16 — 산마루(성 밖 6 ~ 산마루 끝 12) 안, 물길 띠와 문 경사로를 비켜서
+const NJ_GIFT_SLOTS = (() => {
+    const out = [];
+    [[1, 1], [1, -1], [-1, -1], [-1, 1]].forEach(([sx, sz]) => [[8.4, 4.4], [4.4, 8.4], [9.2, 9.2], [10.8, 6.4]].forEach(([a, b]) => out.push([sx * a, sz * b])));
+    return out;
+})();
+function _njTreasureAvail() { return _njFishAvail() + _njGrapesAvail(); }
+function _njOfferUnlocked(o) { return (typeof stageMastery !== 'undefined' && (stageMastery[`${o.ch}-boss`] || 0) > 0); }
+function _njOfferName(o) { return currentLang === 'en' ? o.en : o.ko; }
+function _njFreeSlot() { const used = new Set((njGifts || []).map(x => x.slot)); for (let i = 0; i < NJ_GIFT_SLOTS.length; i++) if (!used.has(i)) return i; return -1; }
+/* 값을 치르고(물고기부터, 모자라면 포도) 예물을 적는다. 행렬 장면은 nj3d.js가 보여 준다 */
+function _njOfferBuy(k, nation) {
+    const o = NJ_OFFERINGS.find(x => x.k === k);
+    if (!o || !_njOfferUnlocked(o)) return null;
+    if (_njTreasureAvail() < o.cost) return null;
+    const slot = _njFreeSlot(); if (slot < 0) return null;
+    const fromFish = Math.min(o.cost, _njFishAvail());
+    njFishSpent = (njFishSpent || 0) + fromFish;
+    njGrapesSpent = (njGrapesSpent || 0) + (o.cost - fromFish);
+    const gift = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), k, slot, n: nation, at: Date.now() };
+    (njGifts = Array.isArray(njGifts) ? njGifts : []).push(gift);
+    saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
+    return gift;
+}
+
 /* ── 바다 화면 ── */
 function openSea() {
     const old = document.getElementById('sea-modal'); if (old) old.remove();
@@ -11507,6 +11572,7 @@ function saveGameData() {
         njFishCasts: njFishCasts,         // 🎣 던진 그물 수
         njFishBag: njFishBag,             // 🎣 종류별로 낚은 수
         njVines: njVines,                 // 🍇 포도원
+        njGifts: njGifts,                 // 🎁 받은 예물
         njGrapes: njGrapes,               // 🍇 거둔 포도 합
         njGrapesSpent: njGrapesSpent,     // 🍇 예물에 쓴 포도
         sessionTimeLog: sessionTimeLog,
@@ -11814,6 +11880,12 @@ function _mergeNewJerusalem(target, other) {
             else if (v.h && !t0.h) { t0.h = v.h; t0.y = v.y; took++; }
         });
         target.njVines = tv;
+    }
+    // 예물 — id로 합집합
+    if (Array.isArray(other.njGifts) && other.njGifts.length) {
+        const tg = Array.isArray(target.njGifts) ? target.njGifts : [];
+        other.njGifts.forEach(v => { if (v && v.id && !tg.some(x => x && x.id === v.id)) { tg.push(Object.assign({}, v)); took++; } });
+        target.njGifts = tg;
     }
     return took;
 }

@@ -117,6 +117,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `openSea()` · `_seaDraw` · `_seaGive` · `_seaRiverEnd` | game.js · kingsroad `seaGive`·`seaWeekly` | 생명수의 바다와 만국 — 모두의 바다 `sea/world`, 💎 물칸(에스겔 네 단계)·🍃 70 나라(창 10장), 길드 이름으로 기록 |
 | `_njFishQuestion` · `_njFishPay` · `_njFishGot` (game.js) · nj3d.js `fishUpdate` | game.js · nj3d.js | 🎣 낚시 — 맑은 물칸에서 💎로 그물, 입질 때 빈칸 4지, 🐟 = 바다 단계 값 |
 | `_njVinePlant(n)` · `_njVineHarvest(id)` · `_njVineInfo(v)` | game.js | 🍇 포도원 — 소성된 나라에 💎로 심고 3일 뒤 거둠, 백지 쓴 날이 물 주기(4 + 물 준 날 × 3) |
+| `NJ_OFFERINGS` · `_njOfferBuy(k, n)` · nj3d.js `openOffer` · `startProc` · `giftModel` | game.js · nj3d.js | 🎁 만국의 예물 — 소성된 나라 사신에게 청하고(장 보스전 = 열쇠, 🐟·🍇 = 값) 노새 행렬로 성 둘레 자리에 |
 | `SoundEffect` | game.js:~3987 | 효과음 신디사이저 — 종소리 `_note`, 출력 `_bus`, 잠든 오디오 깨우기 `_play`, 진동 `_buzz` |
 
 ---

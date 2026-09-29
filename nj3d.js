@@ -48,12 +48,16 @@
                         <button class="nj3d-wb small nj3d-jetbuy"></button>
                         <button class="nj3d-wb fly nj3d-fly" hidden>${T('nj3d_fly')}</button>
                         <button class="nj3d-wb small nj3d-fishbtn" hidden></button>
+                        <button class="nj3d-wb small nj3d-talk" hidden></button>
                         <button class="nj3d-wb nj3d-jump">${T('nj3d_jump')}</button>
                     </div>
                 </div>
                 <div class="nj3d-hint"></div>
                 <div class="nj3d-wallet"></div>
                 <div class="nj3d-fishq" hidden></div>
+                <div class="nj3d-offer" hidden></div>
+                <button class="nj3d-skip" hidden></button>
+                <button class="nj3d-rate" hidden></button>
                 <div class="nj3d-fruit" hidden></div>
             </div>`;
         document.body.appendChild(ov);
@@ -470,8 +474,89 @@
                 });
             });
         }
-        paintSea(seaW);
-        if (typeof _seaFetch === 'function') _seaFetch().then(w => { if (cur === C && w) paintSea(w); });
+        // ══ 🎁 만국의 예물 — 사신 · 예물 모양 · 성 둘레에 놓인 예물 ══
+        const mat = (color, o) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.6 }, o || {}));
+        const GOLD = mat(0xe0b04a, { metalness: 0.7, roughness: 0.3, emissive: 0x4a3208, emissiveIntensity: 0.3 });
+        const FAMILY_ROBE = { '셈': 0x3b6fb6, '함': 0xc77b2e, '야벳': 0x2e8b57 };
+        function makePerson(robeColor, hat) {   // 순례자와 같은 크기의 사람(사신·짐꾼)
+            const gp = new THREE.Group();
+            const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.065, 0.17, 12), mat(robeColor)); robe.position.y = 0.085; gp.add(robe);
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.032, 12, 10), mat(0xd9b28c)); head.position.y = 0.2; gp.add(head);
+            if (hat) { const h = new THREE.Mesh(new THREE.SphereGeometry(0.036, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat(0xf2ead8)); h.position.y = 0.205; h.scale.y = 1.3; gp.add(h); }
+            const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.26, 6), mat(0x7a5230)); staff.position.set(0.06, 0.13, -0.02); gp.add(staff);
+            return gp;
+        }
+        const envoyG = new THREE.Group(); seaGrp.add(envoyG);
+        const envoys = [];   // { i, x, z }
+        function buildEnvoys(w) {
+            while (envoyG.children.length) envoyG.remove(envoyG.children[0]);
+            envoys.length = 0;
+            for (let i = 0; i < 70; i++) {
+                const lv = (w && w.nations && w.nations[i] && w.nations[i].lv) || 0;
+                if (lv < 1) continue;
+                const N = (typeof SEA_NATIONS !== 'undefined' && SEA_NATIONS[i]) || [];
+                const [X, Z] = natMid(i, 40), e = makePerson(FAMILY_ROBE[N[4]] || 0x888888, true);
+                e.scale.setScalar(1.6); e.position.set(X, -DROP + 0.05, Z); e.lookAt(0, -DROP + 0.05, SZ); e.rotateY(Math.PI);
+                envoyG.add(e); envoys.push({ i, x: X, z: Z });
+            }
+        }
+        // 예물 모양 — 도형으로 빚는다(9/30 처음 10가지)
+        function giftModel(k) {
+            const g = new THREE.Group(), add = (m, x, y, z) => { m.position.set(x || 0, y || 0, z || 0); m.castShadow = true; g.add(m); return m; };
+            const flame = () => new THREE.Sprite(new THREE.SpriteMaterial({ map: radial, color: 0xffc860, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+            if (k === 'whitestone') { const m = add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.34, 1), mat(0xf7f5ee, { roughness: 0.3 })), 0, 0.18); m.scale.set(1, 0.55, 0.8); }
+            else if (k === 'palm') {
+                add(new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 1.4, 8), mat(0x8a6a42)), 0, 0.7);
+                for (let n = 0; n < 7; n++) { const f = add(new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.9, 4), mat(0x3f9a4a, { flatShading: true })), 0, 1.4); f.rotation.set(1.1, n / 7 * Math.PI * 2, 0); f.translateY(0.4); }
+            } else if (k === 'morningstar') {
+                add(new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.9, 10), mat(0xf2ead8)), 0, 0.45);
+                add(new THREE.Mesh(new THREE.OctahedronGeometry(0.16), mat(0xfff4c2, { emissive: 0xffe08a, emissiveIntensity: 0.9 })), 0, 1.1);
+                const f = add(flame(), 0, 1.1); f.scale.set(1.1, 1.1, 1);
+            } else if (k === 'harp') {
+                const fr = add(new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.03, 8, 24, Math.PI * 1.1), GOLD), 0, 0.5); fr.rotation.z = -0.3;
+                add(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.9, 8), GOLD), -0.32, 0.45);
+                for (let n = 0; n < 7; n++) add(new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.55 - n * 0.04, 4), mat(0xfff6dc)), -0.24 + n * 0.08, 0.45);
+            } else if (k === 'menorah') {
+                add(new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.55, 0.08, 20), GOLD), 0, 0.04);
+                for (let n = 0; n < 7; n++) { const a = n / 7 * Math.PI * 2, x = Math.cos(a) * 0.42, z = Math.sin(a) * 0.42;
+                    add(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.55, 8), GOLD), x, 0.33, z);
+                    add(new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.03, 0.06, 10), GOLD), x, 0.63, z);
+                    const f = add(flame(), x, 0.72, z); f.scale.set(0.22, 0.3, 1); }
+            } else if (k === 'olives') {
+                [-0.45, 0.45].forEach(x => { add(new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.7, 7), mat(0x7a6048)), x, 0.35);
+                    const c = add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.34, 1), mat(0x8fa36a, { flatShading: true })), x, 0.85); c.scale.y = 0.8; });
+            } else if (k === 'winepress') {
+                add(new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.55, 0.32, 18), mat(0x9a9186)), 0, 0.16);
+                add(new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.44, 0.02, 18), mat(0x5b1f4a, { roughness: 0.3 })), 0, 0.33);
+                add(new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.08, 0.08), mat(0x7a5230)), 0, 0.62);
+                [-0.55, 0.55].forEach(x => add(new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.62, 0.08), mat(0x7a5230)), x, 0.31));
+            } else if (k === 'rainbow') {
+                ['#1fae6a', '#46c28a', '#7fd6a6', '#b8ead0'].forEach((c, n) => { const r = add(new THREE.Mesh(new THREE.TorusGeometry(1.1 - n * 0.09, 0.045, 8, 36, Math.PI), mat(c, { emissive: c, emissiveIntensity: 0.25 }))); r.position.y = 0.02; });
+            } else if (k === 'millstone') {
+                const m = add(new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.22, 24), mat(0x8c857a)), 0, 0.35); m.rotation.z = 1.2;
+                const hole = add(new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.24, 12), mat(0x3a352e)), 0, 0.35); hole.rotation.z = 1.2;
+            } else if (k === 'dragon') {
+                const skin = mat(0x7a2a24, { roughness: 0.5 }), chain = mat(0x8a8f96, { metalness: 0.8, roughness: 0.3 });
+                for (let n = 0; n < 6; n++) { const b = add(new THREE.Mesh(new THREE.SphereGeometry(0.2 - n * 0.022, 10, 8), skin), -0.5 + n * 0.22, 0.17 - n * 0.01, Math.sin(n) * 0.12); b.scale.y = 0.75; }
+                const head = add(new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.36, 8), skin), -0.72, 0.15, 0); head.rotation.z = Math.PI / 2;
+                [-1, 1].forEach(sd => { const wg = add(new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.5, 3), mat(0x5a1d1a, { flatShading: true })), -0.2, 0.3, sd * 0.18); wg.rotation.set(sd * 1.2, 0, 0.4); });
+                for (let n = 0; n < 4; n++) { const l = add(new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.025, 6, 16), chain), -0.4 + n * 0.25, 0.17); l.rotation.y = Math.PI / 2; }
+            }
+            return g;
+        }
+        const giftsG = new THREE.Group(); scene.add(giftsG);
+        const slots = (typeof NJ_GIFT_SLOTS !== 'undefined') ? NJ_GIFT_SLOTS : [];
+        function placeGift(gf) {
+            const sp = slots[gf.slot]; if (!sp) return null;
+            const m = giftModel(gf.k); m.position.set(sp[0], terrain(sp[0], sp[1]), sp[1]); m.rotation.y = Math.atan2(sp[0], sp[1]);   // 성을 등지고 바깥을 본다
+            const o = (typeof NJ_OFFERINGS !== 'undefined') ? NJ_OFFERINGS.find(x => x.k === gf.k) : null;
+            m.userData.base = [1, 1, 1.3, 1.7][(o && o.size) || 1]; m.scale.setScalar(m.userData.base);   // 큰 예물은 크게
+            giftsG.add(m); return m;
+        }
+        ((typeof njGifts !== 'undefined' && Array.isArray(njGifts)) ? njGifts : []).forEach(placeGift);
+
+        paintSea(seaW); buildEnvoys(seaW);
+        if (typeof _seaFetch === 'function') _seaFetch().then(w => { if (cur === C && w) { paintSea(w); buildEnvoys(w); } });
 
         // ── 고급에서만: 빛줄기 · 빛 알갱이 · 풀잎 ──
         const extras = new THREE.Group(); scene.add(extras);
@@ -899,8 +984,207 @@
             }
         }
 
+        // ══ 🎁 사신에게 청하기 · 예물 행렬 ══
+        const talkBtn = ov.querySelector('.nj3d-talk'), offerEl = ov.querySelector('.nj3d-offer'), skipBtn = ov.querySelector('.nj3d-skip');
+        let nearEnvoy = null, envoyCheckT = 0, proc = null;
+        const natName = i => { const N = (typeof SEA_NATIONS !== 'undefined' && SEA_NATIONS[i]) || []; return (typeof currentLang !== 'undefined' && currentLang === 'en') ? (N[2] || '') : (N[0] || ''); };
+        const esc2 = t => String(t).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+        function openOffer(i) {
+            const list = (typeof NJ_OFFERINGS !== 'undefined') ? NJ_OFFERINGS : [];
+            const have = typeof _njTreasureAvail === 'function' ? _njTreasureAvail() : 0;
+            const full = typeof _njFreeSlot === 'function' && _njFreeSlot() < 0;
+            offerEl.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button>
+                <div class="nj3d-offer-head">${T('gift_title', { name: esc2(natName(i)) })}</div>
+                <div class="nj3d-offer-intro">${T('gift_intro')}</div>
+                <div class="nj3d-offer-have">${T('gift_have', { f: typeof _njFishAvail === 'function' ? _njFishAvail() : 0, g: typeof _njGrapesAvail === 'function' ? _njGrapesAvail() : 0 })}</div>
+                <div class="nj3d-offer-list">${list.map(o => {
+                    const open = typeof _njOfferUnlocked === 'function' && _njOfferUnlocked(o);
+                    const btn = !open ? `<span class="nj3d-offer-lock">${T('gift_locked', { ch: o.ch })}</span>`
+                        : full ? `<span class="nj3d-offer-lock">${T('gift_full')}</span>`
+                        : have >= o.cost ? `<button data-k="${o.k}">${T('gift_take', { cost: o.cost })}</button>`
+                        : `<span class="nj3d-offer-lock">${T('gift_need', { n: o.cost - have })} · ${o.cost}</span>`;
+                    return `<div class="nj3d-offer-row${open ? '' : ' locked'}"><div><b>${esc2(typeof _njOfferName === 'function' ? _njOfferName(o) : o.ko)}</b><span>계 ${o.ref}</span></div>${btn}</div>`;
+                }).join('')}</div>`;
+            offerEl.hidden = false;
+            offerEl.querySelector('.nj3d-fruit-x').onclick = () => { offerEl.hidden = true; };
+            offerEl.querySelectorAll('button[data-k]').forEach(b => b.onclick = () => {
+                const gf = typeof _njOfferBuy === 'function' ? _njOfferBuy(b.dataset.k, i) : null;
+                if (!gf) return;
+                offerEl.hidden = true; syncWallet(); startProc(i, gf);
+            });
+        }
+        talkBtn.addEventListener('pointerdown', e => { e.preventDefault(); if (nearEnvoy && !proc) openOffer(nearEnvoy.i); });
+        skipBtn.textContent = T('gift_skip');
+        const rateBtn = ov.querySelector('.nj3d-rate');
+        skipBtn.addEventListener('pointerdown', e => { e.preventDefault();
+            if (!proc) return;
+            if (proc.phase === 'sail') { proc.s = proc.sea.cum[proc.sea.cum.length - 1]; procUpdate(0.001); }
+            if (proc && proc.phase === 'go') proc.s = proc.land.cum[proc.land.cum.length - 1] + 2; });
+        rateBtn.addEventListener('pointerdown', e => { e.preventDefault(); if (!proc) return; proc.rate = proc.rate === 1 ? 2 : 1; rateBtn.textContent = proc.rate === 1 ? '⏩ 2×' : '▶ 1×'; });
+
+        // ── 행렬 (9/30 2단계 — 시안 「만국의 예물 행렬」에서 옮김) ──
+        // 가문과 예물 크기로 고른다: 함 = 낙타 행렬(사 60:6) · 야벳 = 다시스의 배(60:9) → 어귀부터 짐꾼 넷이 가마로 · 셈 = 말과 수레, 큰 예물은 교자(66:20)
+        // 예물은 세마포에 싸고 금줄로 묶는다(19:8). 비탈에서 짐승은 몸을 기울이고, 가마는 수평을 지키며 가마꾼마다 제 발밑에 선다
+        const LINEN = mat(0xfbf8f0, { roughness: 0.8 });
+        function wrapped(w, h, d) { const g = new THREE.Group(); g.add(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), LINEN));
+            [[w + 0.01, 0.015, d + 0.01], [0.015, h + 0.01, d + 0.01], [w + 0.01, h + 0.01, 0.015]].forEach(([a, b, c]) => g.add(new THREE.Mesh(new THREE.BoxGeometry(a, b, c), GOLD))); return g; }
+        function legs4(g, coat, pos, len, r) { const legs = []; pos.forEach(([x, z]) => { const lg = new THREE.Group(); lg.position.set(x, len, z);
+            const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.85, len, 6), coat); m.position.y = -len / 2; lg.add(m); g.add(lg); legs.push(lg); }); return legs; }
+        function makeMule() { const g = new THREE.Group(), coat = mat(0x8a6a50);
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.14, 0.13), coat); body.position.y = 0.2; g.add(body);
+            const neck = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.14, 0.07), coat); neck.position.set(0.19, 0.29, 0); neck.rotation.z = -0.5; g.add(neck);
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.07, 0.07), coat); head.position.set(0.26, 0.35, 0); g.add(head);
+            const legs = legs4(g, coat, [[0.12, 0.05], [0.12, -0.05], [-0.12, 0.05], [-0.12, -0.05]], 0.14, 0.015);
+            const w = wrapped(0.2, 0.14, 0.16); w.position.set(-0.02, 0.34, 0); g.add(w); return { g, legs }; }
+        function makeCamel(load) { const g = new THREE.Group(), coat = mat(0xc9a06a);
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.16, 0.15), coat); body.position.y = 0.34; g.add(body);
+            const hump = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), coat); hump.position.set(-0.02, 0.44, 0); hump.scale.set(1.2, 0.9, 0.9); g.add(hump);
+            const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.05, 0.3, 8), coat); neck.position.set(0.25, 0.46, 0); neck.rotation.z = -0.7; g.add(neck);
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.07, 0.07), coat); head.position.set(0.37, 0.58, 0); g.add(head);
+            const legs = legs4(g, coat, [[0.14, 0.05], [0.14, -0.05], [-0.14, 0.05], [-0.14, -0.05]], 0.28, 0.018);
+            if (load) { const w = wrapped(0.22, 0.16, 0.2); w.position.set(-0.02, 0.6, 0); g.add(w); }
+            else [-1, 1].forEach(sd => { const bag = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), sd > 0 ? GOLD : mat(0xe9dcc0)); bag.position.set(-0.05, 0.36, sd * 0.12); g.add(bag); });   // 금 · 유향
+            return { g, legs }; }
+        function makeHorse() { const g = new THREE.Group(), coat = mat(0xfbfbf6);
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.15, 0.13), coat); body.position.y = 0.28; g.add(body);
+            const neck = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.2, 0.08), coat); neck.position.set(0.2, 0.39, 0); neck.rotation.z = -0.45; g.add(neck);
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.07, 0.07), coat); head.position.set(0.29, 0.47, 0); g.add(head);
+            const mane = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.17, 0.02), GOLD); mane.position.set(0.17, 0.42, 0); mane.rotation.z = -0.45; g.add(mane);
+            const legs = legs4(g, coat, [[0.13, 0.05], [0.13, -0.05], [-0.13, 0.05], [-0.13, -0.05]], 0.22, 0.017);
+            return { g, legs }; }
+        function makeChariot() { const g = new THREE.Group(), wood = mat(0x7a5230);
+            const box = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.14, 0.22), GOLD); box.position.y = 0.18; g.add(box);
+            [-1, 1].forEach(sd => { const wh = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.018, 6, 16), wood); wh.position.set(0, 0.12, sd * 0.13); g.add(wh); });
+            const pole = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.02, 0.02), wood); pole.position.set(0.3, 0.2, 0); g.add(pole);
+            const w = wrapped(0.2, 0.16, 0.18); w.position.set(0, 0.33, 0); g.add(w); return g; }
+        function makeLitter(robe) { const g = new THREE.Group(), wood = mat(0x7a5230);
+            const base = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.04, 0.3), GOLD); base.position.y = 0.2; g.add(base);
+            [[0.19, 0.13], [0.19, -0.13], [-0.19, 0.13], [-0.19, -0.13]].forEach(([x, z]) => { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.24, 6), GOLD); p.position.set(x, 0.33, z); g.add(p); });
+            const roof = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.12, 4), mat(0x6b3a8e, { roughness: 0.5 })); roof.position.y = 0.5; roof.rotation.y = Math.PI / 4; g.add(roof);
+            [-0.1, 0.1].forEach(z => { const pole = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.02, 0.02), wood); pole.position.set(0, 0.2, z * 1.9); g.add(pole); });
+            const w = wrapped(0.22, 0.16, 0.2); w.position.set(0, 0.3, 0); g.add(w);
+            const bearers = []; [[0.35, 0.19], [0.35, -0.19], [-0.35, 0.19], [-0.35, -0.19]].forEach(([x, z]) => { const p = makePerson(robe, true); p.position.set(x, 0, z); g.add(p); bearers.push(p); });
+            return { g, bearers }; }
+        function makeShip() { const g = new THREE.Group(), wood = mat(0x7a5230);
+            const hull = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.22, 0.4), wood); hull.position.y = 0.1; g.add(hull);
+            const bow = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.4, 4), wood); bow.position.set(0.75, 0.12, 0); bow.rotation.z = -Math.PI / 2; bow.rotation.x = Math.PI / 4; g.add(bow);
+            const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.025, 1.1, 6), wood); mast.position.set(0, 0.7, 0); g.add(mast);
+            const sail = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.7), new THREE.MeshStandardMaterial({ color: 0xf2ead8, side: THREE.DoubleSide, roughness: 0.8 })); sail.position.set(0.02, 0.75, 0); sail.rotation.y = Math.PI / 2; g.add(sail);
+            const w = wrapped(0.26, 0.18, 0.24); w.position.set(-0.25, 0.3, 0); g.add(w); return g; }
+
+        const cumOf = pts => { const c = [0]; for (let k = 1; k < pts.length; k++) c.push(c[k - 1] + Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1])); return c; };
+        const pathAt = (pts, cum, sv) => { let k = 1; while (k < cum.length - 1 && cum[k] < sv) k++; const f = (sv - cum[k - 1]) / Math.max(1e-6, cum[k] - cum[k - 1]);
+            return { x: pts[k - 1][0] + (pts[k][0] - pts[k - 1][0]) * f, z: pts[k - 1][1] + (pts[k][1] - pts[k - 1][1]) * f, dx: pts[k][0] - pts[k - 1][0], dz: pts[k][1] - pts[k - 1][1] }; };
+        // 어귀 옆 둑 → 골짜기 → 성 둘레(반지름 9.5) → 자리
+        function upPath(side, slot) {
+            const pts = []; for (let z = SHORE - 3; z >= 9.5; z -= 2) pts.push([side, z]);
+            const sp = slots[slot], aS = Math.atan2(9.5, side), aE = Math.atan2(sp[1], sp[0]);
+            let dA = aE - aS; while (dA > Math.PI) dA -= Math.PI * 2; while (dA < -Math.PI) dA += Math.PI * 2;
+            const M = Math.max(2, Math.ceil(Math.abs(dA) / 0.2));
+            for (let k = 0; k <= M; k++) { const a = aS + dA * k / M; pts.push([Math.cos(a) * 9.5, Math.sin(a) * 9.5]); }
+            pts.push([sp[0], sp[1]]); return pts;
+        }
+        function landPath(i, slot) {   // 나라 해안 → 바닷가를 가까운 쪽으로 돌아 어귀 → 골짜기
+            const pts = [], A0 = -Math.PI / 2 + 0.13, SP = Math.PI * 2 - 0.26, a1 = A0 + SP * (i + 0.5) / 70;
+            const toMouth = a1 < Math.PI / 2 ? -Math.PI / 2 + 0.22 : Math.PI * 1.5 - 0.22;
+            const N = Math.max(4, Math.ceil(Math.abs(toMouth - a1) / 0.08));
+            for (let k = 0; k <= N; k++) { const a = a1 + (toMouth - a1) * k / N; pts.push(toW(440 + Math.cos(a) * (330 + 40), 470 + Math.sin(a) * (320 + 40))); }
+            return pts.concat(upPath(toMouth < 0 ? 1.7 : -1.7, slot));
+        }
+        function seaPath(i) {   // 나라 앞바다 → 어귀
+            const A0 = -Math.PI / 2 + 0.13, SP = Math.PI * 2 - 0.26, a1 = A0 + SP * (i + 0.5) / 70, [x0, z0] = toW(440 + Math.cos(a1) * 310, 470 + Math.sin(a1) * 300);
+            return [[x0, z0], [x0 * 0.5, (z0 + SHORE) / 2 + 3], [0.9, SHORE + 1.4], [1.2, SHORE + 0.5]];
+        }
+        const localGround = (obj, lx, lz) => { const S = obj.scale.x, th = obj.rotation.y, c = Math.cos(th), sn = Math.sin(th);
+            return terrain(obj.position.x + (lx * c + lz * sn) * S, obj.position.z + (-lx * sn + lz * c) * S); };
+        function startProc(i, gf) {
+            const N = (typeof SEA_NATIONS !== 'undefined' && SEA_NATIONS[i]) || [], fam = N[4] || '셈';
+            const o = (typeof NJ_OFFERINGS !== 'undefined') ? NJ_OFFERINGS.find(x => x.k === gf.k) : null, size = (o && o.size) || 1;
+            const robe = FAMILY_ROBE[fam] || 0x888888, members = [];
+            let mode = 'go', seaPts = null;
+            if (fam === '함') {
+                members.push({ obj: makePerson(robe, true), off: -0.6 });
+                const n = size, mid = Math.floor(n / 2);
+                for (let k = 0; k < n; k++) { const c = makeCamel(k === mid); members.push({ obj: c.g, legs: c.legs, off: k * 0.75 }); }
+            } else if (fam === '야벳') {
+                members.push({ obj: makeShip(), off: 0, sea: true }); mode = 'sail'; seaPts = seaPath(i);
+            } else if (size >= 3) {
+                const l = makeLitter(robe); members.push({ obj: makePerson(robe, true), off: -0.7 }); members.push({ obj: l.g, bearers: l.bearers, off: 0 });
+            } else {
+                const h = makeHorse(); members.push({ obj: h.g, legs: h.legs, off: 0 }); members.push({ obj: makeChariot(), off: 0.5 }); members.push({ obj: makePerson(robe, true), off: -0.55 });
+            }
+            const grp = new THREE.Group(); scene.add(grp);
+            members.forEach(m => { m.obj.scale.setScalar(2.2); grp.add(m.obj); });
+            const land = fam === '야벳' ? upPath(1.7, gf.slot) : landPath(i, gf.slot);
+            proc = { phase: mode, i, gf, grp, members, t: 0, s: 0, robe, rate: 1, model: null,
+                sea: seaPts ? { pts: seaPts, cum: cumOf(seaPts) } : null, land: { pts: land, cum: cumOf(land) } };
+            walkUI.hidden = true; talkBtn.hidden = true; fishBtn.hidden = true; skipBtn.hidden = false; rateBtn.hidden = false; rateBtn.textContent = '⏩ 2×';
+            proc.name = o ? (typeof _njOfferName === 'function' ? _njOfferName(o) : o.ko) : '';
+            showHint(T('gift_depart', { item: proc.name, nation: natName(i) }), 3000);
+        }
+        function placeMembers(path, sv) {
+            let head = null;
+            proc.members.forEach(m => {
+                const p = pathAt(path.pts, path.cum, Math.max(0, sv - m.off * 2.2)), y = m.sea ? SEA_Y + 0.02 : terrain(p.x, p.z);
+                m.obj.position.set(p.x, y, p.z); m.obj.rotation.y = Math.atan2(-p.dz, p.dx); m.obj.rotation.z = 0;
+                if (!m.sea && m.legs) { const yf = localGround(m.obj, 0.14, 0), yb = localGround(m.obj, -0.14, 0), S = m.obj.scale.x;
+                    m.obj.rotation.z = Math.atan2(yf - yb, 0.28 * S); m.obj.position.y = (yf + yb) / 2; }
+                (m.legs || []).forEach((lg, n) => { lg.rotation.z = Math.sin(proc.t * 14 + (n % 2 ? Math.PI : 0) + (n > 1 ? Math.PI / 2 : 0)) * 0.45; });
+                if (m.bearers) { const ys = m.bearers.map(b => localGround(m.obj, b.position.x, b.position.z)), top = Math.max(...ys), S = m.obj.scale.x;
+                    m.obj.position.y = top; m.bearers.forEach((b, n) => { b.position.y = (ys[n] - top) / S + Math.abs(Math.sin(proc.t * 10 + n)) * 0.01; }); }
+                if (m.sea) m.obj.rotation.x = Math.sin(proc.t * 2) * 0.05;
+                if (!head) head = p;
+            });
+            return head;
+        }
+        function followCam(p, y, dt, back, up) {
+            const len = Math.hypot(p.dx, p.dz) || 1, side = back * 0.45;
+            camera.position.lerp(new THREE.Vector3(p.x - p.dx / len * back + p.dz / len * side, y + up, p.z - p.dz / len * back - p.dx / len * side), Math.min(1, dt * 2.5));
+            camera.lookAt(p.x, y + 0.4, p.z);
+        }
+        function endGroup() { if (!proc || !proc.grp) return; scene.remove(proc.grp); proc.grp.traverse(o => { if (o.geometry) o.geometry.dispose(); }); proc.grp = null; }
+        function procUpdate(dt0) {
+            const pr = proc, dt = dt0 * (pr.phase === 'show' ? 1 : pr.rate); pr.t += dt;
+            if (pr.phase === 'sail') {
+                const path = pr.sea, total = path.cum[path.cum.length - 1];
+                pr.s = Math.min(total, pr.s + total / 6 * dt);
+                const p = placeMembers(path, pr.s); followCam(p, SEA_Y, dt0, 10, 4.5);
+                if (pr.s >= total) {   // 어귀에 닿으면 짐꾼 넷이 가마로 메고 오른다
+                    const ship = pr.members[0].obj, l = makeLitter(pr.robe); l.g.scale.setScalar(2.2); pr.grp.add(l.g);
+                    ship.position.set(1.2, SEA_Y + 0.02, SHORE + 0.5);
+                    pr.members = [{ obj: l.g, bearers: l.bearers, off: 0 }]; pr.phase = 'go'; pr.s = 0;
+                }
+            } else if (pr.phase === 'go') {
+                const path = pr.land, total = path.cum[path.cum.length - 1];
+                pr.s += total / (pr.sea ? 8 : 13) * dt;
+                const p = placeMembers(path, Math.min(pr.s, total)); followCam(p, terrain(p.x, p.z), dt0, 6.5, 3.2);
+                if (pr.s >= total + 1.5) {   // 도착 — 세마포를 풀고 예물이 선다
+                    endGroup();
+                    pr.model = placeGift(pr.gf); if (pr.model) pr.model.scale.setScalar(0.01);
+                    pr.phase = 'show'; pr.t = 0; skipBtn.hidden = true; rateBtn.hidden = true;
+                    if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
+                    showHint(T('gift_arrive', { item: pr.name }), 3000);
+                }
+            } else {
+                const k = Math.min(1, pr.t / 0.9);
+                if (pr.model) { pr.model.scale.setScalar(Math.max(0.01, (k < 1 ? k * (1.15 - 0.15 * k) : 1) * (pr.model.userData.base || 1)));
+                    const p = pr.model.position; camera.position.lerp(new THREE.Vector3(p.x * 1.35 + 1.2, p.y + 2.2, p.z * 1.35 + 1.2), Math.min(1, dt0 * 2)); camera.lookAt(p.x, p.y + 0.5, p.z); }
+                if (pr.t > 3.2) { proc = null; walkUI.hidden = false; syncWallet(); }
+            }
+        }
+
         function walkUpdate(dt) {
+            if (proc) { procUpdate(dt); return; }
             fishUpdate(dt);
+            envoyCheckT -= dt;
+            if (envoyCheckT <= 0) {   // 사신 곁인가 (1초에 네 번)
+                envoyCheckT = 0.25;
+                nearEnvoy = null; let bd = 1.6;
+                if (P.onGround) envoys.forEach(e => { const d = Math.hypot(e.x - P.x, e.z - P.z); if (d < bd) { bd = d; nearEnvoy = e; } });
+                talkBtn.hidden = !nearEnvoy;
+                if (nearEnvoy) talkBtn.innerHTML = T('gift_talk', { name: esc2(natName(nearEnvoy.i)) });
+                else if (!offerEl.hidden) offerEl.hidden = true;
+            }
             walkT += dt;
             const k = inp.keys;
             const kv = (k.ControlLeft || k.ControlRight) ? 1 : 0.7;   // 키보드는 걷기, Ctrl을 누르면 달리기
