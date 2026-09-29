@@ -48,6 +48,7 @@
                     </div>
                 </div>
                 <div class="nj3d-hint"></div>
+                <div class="nj3d-fruit" hidden></div>
             </div>`;
         document.body.appendChild(ov);
         const stageEl = ov.querySelector('.nj3d-stage'), loading = ov.querySelector('.nj3d-loading');
@@ -241,7 +242,7 @@
         function rebuild() {
             built.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) [].concat(o.material).forEach(m => m.dispose()); });
             while (built.children.length) built.remove(built.children[0]);
-            BOXES.length = 0; BOXES.push(THRONE_BOX);
+            BOXES.length = 0; BOXES.push(THRONE_BOX, ...TREE_BOXES);
             SEQ.forEach(([side, i], k) => {
                 const [cx, cz] = gatePos(side, i), horiz = side === 'N' || side === 'S';
                 if (k < found) {
@@ -288,6 +289,47 @@
         // 부딪히는 상자 — 보좌(오르지 못한다) + rebuild가 넣는 진주 문 기둥·아치
         const THRONE_BOX = { x0: -0.75, x1: 0.75, z0: -0.75, z1: 0.75, y0: 0, y1: 60 };
         const BOXES = [THRONE_BOX];
+
+        // ── 생명나무와 열매 (22:2) — 나무 자리는 game.js의 _njTreeSpots, 열매는 _njFruitList ──
+        const TREE_SPOTS = (typeof _njTreeSpots === 'function') ? _njTreeSpots() : [];
+        const TREE_BOXES = TREE_SPOTS.map(([x, z]) => ({ x0: x - 0.11, x1: x + 0.11, z0: z - 0.11, z1: z + 0.11, y0: 0, y1: 0.85 }));
+        const CANOPY_Y = 1.05, CANOPY_R = 0.5;
+        {
+            const trunkG = new THREE.CylinderGeometry(0.07, 0.1, 0.84, 8), trunkM = new THREE.MeshStandardMaterial({ color: 0x7a5230, roughness: 0.9 });
+            const leafG = new THREE.IcosahedronGeometry(1, 1), leafM = new THREE.MeshStandardMaterial({ color: 0x2f8f4e, roughness: 0.8, flatShading: true });
+            TREE_SPOTS.forEach(([x, z]) => {
+                const tr = new THREE.Mesh(trunkG, trunkM); tr.position.set(x, 0.46, z); tr.castShadow = true; scene.add(tr);
+                [[0, 0, 0, CANOPY_R], [0.24, -0.12, 0.1, 0.34], [-0.22, -0.1, -0.12, 0.32], [0.05, 0.26, 0, 0.33]].forEach(([dx, dy, dz, r]) => {
+                    const c = new THREE.Mesh(leafG, leafM); c.scale.setScalar(r); c.position.set(x + dx, CANOPY_Y + dy, z + dz);
+                    c.castShadow = true; c.receiveShadow = true; scene.add(c);
+                });
+            });
+        }
+        // 한 그루에 34자리 — 수관 둘레에 고르게(황금각 나선). 34 × 12 = 408 ≥ 404절
+        const SLOTS = [];
+        for (let i = 0; i < 34; i++) {
+            const y = 0.9 - (i + 0.5) / 34 * 1.45, rr = Math.sqrt(Math.max(0, 1 - y * y)), a = i * 2.39996;
+            SLOTS.push([Math.cos(a) * rr * (CANOPY_R + 0.04), y * (CANOPY_R + 0.04), Math.sin(a) * rr * (CANOPY_R + 0.04)]);
+        }
+        const KINDS = (typeof NJ_FRUIT_KINDS !== 'undefined') ? NJ_FRUIT_KINDS : [];
+        const fruitList = (TREE_SPOTS.length && typeof _njFruitList === 'function') ? _njFruitList() : [];
+        const fruitPos = [];
+        const fruitMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(0.06, 12, 8), new THREE.MeshStandardMaterial({ roughness: 0.35, metalness: 0.05 }), Math.max(1, fruitList.length));
+        {
+            const m4 = new THREE.Matrix4(), col = new THREE.Color(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), v = new THREE.Vector3();
+            fruitList.forEach((f, i) => {
+                const [tx, tz] = TREE_SPOTS[i % 12], [ox, oy, oz] = SLOTS[Math.floor(i / 12) % 34];
+                v.set(tx + ox, CANOPY_Y + oy, tz + oz); fruitPos.push(v.clone());
+                sc.setScalar(f.ripe ? 1 : 0.62); m4.compose(v, q, sc); fruitMesh.setMatrixAt(i, m4);
+                col.set(f.ripe ? ((KINDS[f.kind] || {}).color || '#d0383a') : '#a5d66f'); fruitMesh.setColorAt(i, col);
+            });
+            fruitMesh.count = fruitList.length;
+            fruitMesh.castShadow = true;
+            if (fruitList.length) scene.add(fruitMesh);
+            else { fruitMesh.geometry.dispose(); fruitMesh.material.dispose(); }
+        }
+        const ripeN = fruitList.filter(f => f.ripe).length;
+        if (ripeN) showHint(T('nj_fruit_hint', { n: ripeN }), 5000);
 
         // ── 고급에서만: 빛줄기 · 빛 알갱이 · 풀잎 ──
         const extras = new THREE.Group(); scene.add(extras);
@@ -439,6 +481,41 @@
         joy.addEventListener('pointerup', endJoy); joy.addEventListener('pointercancel', endJoy);
         let lookId = null, lx = 0, ly = 0;
         const cvs = renderer.domElement;
+        // 열매 누르기 — 짧게 톡 누른 곳에서 화면상 가장 가까운 열매(28px 안). 작은 열매도 누르기 쉽게 화면 거리로 고른다
+        const fruitPanel = ov.querySelector('.nj3d-fruit');
+        const hideFruit = () => { fruitPanel.hidden = true; };
+        const showFruit = (f) => {
+            const k = KINDS[f.kind] || { ko: '', en: '', color: '#d0383a' };
+            const name = (typeof currentLang !== 'undefined' && currentLang === 'en') ? k.en : k.ko;
+            const ref = (typeof _njVerseRef === 'function') ? _njVerseRef(f.id) : f.id, now = Date.now();
+            let body;
+            if (!f.ripe) body = `<div class="nj3d-fruit-sub">${T('nj_fruit_unripe', { d: Math.max(1, Math.ceil((f.ripeAt - now) / 86400000)) })}</div>`;
+            else if (f.retryAt && now < f.retryAt) body = `<div class="nj3d-fruit-sub">${T('nj_fruit_retry')}</div>`;
+            else body = `<button class="nj3d-eat">${T('nj_fruit_eat')}</button>`;
+            fruitPanel.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button>
+                <div class="nj3d-fruit-head"><span class="nj3d-fruit-dot" style="background:${f.ripe ? k.color : '#a5d66f'}"></span><b>${name}</b><span>${ref}</span></div>${body}`;
+            fruitPanel.hidden = false;
+            fruitPanel.querySelector('.nj3d-fruit-x').onclick = hideFruit;
+            const eat = fruitPanel.querySelector('.nj3d-eat');
+            if (eat) eat.onclick = () => { if (typeof njEatFruit === 'function') njEatFruit(f.key); };
+        };
+        let tap = null;
+        listen(cvs, 'pointerdown', e => { tap = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+        listen(cvs, 'pointerup', e => {
+            if (!tap || !fruitPos.length) { tap = null; return; }
+            const moved = Math.hypot(e.clientX - tap.x, e.clientY - tap.y), long = performance.now() - tap.t;
+            tap = null;
+            if (moved > 10 || long > 450) return;
+            const r = cvs.getBoundingClientRect(), pv = new THREE.Vector3();
+            let best = -1, bd = 28;
+            fruitPos.forEach((p, i) => {
+                pv.copy(p).project(camera);
+                if (pv.z > 1 || pv.z < -1) return;
+                const sx = r.left + (pv.x + 1) / 2 * r.width, sy = r.top + (1 - pv.y) / 2 * r.height, d = Math.hypot(sx - e.clientX, sy - e.clientY);
+                if (d < bd) { bd = d; best = i; }
+            });
+            if (best >= 0) showFruit(fruitList[best]); else hideFruit();
+        });
         cvs.addEventListener('pointerdown', e => { if (!walk) return; lookId = e.pointerId; lx = e.clientX; ly = e.clientY; });
         cvs.addEventListener('pointermove', e => {
             if (!walk || e.pointerId !== lookId) return;

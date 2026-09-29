@@ -523,6 +523,19 @@ const LANG = {
         nj_go_write: '✍️ 오늘 백지로 한 절 쓰러 가기',
         nj_soon: 'Lv{from} {n}절이 차례를 지키면 Lv{lv}이 돼요 · 가장 빠른 날 {date}',
         nj_today: '오늘',
+        nj_fruit_title: '🌳 생명나무 열매 — 🍃 잎사귀 {leaves}장',
+        nj_fruit_now: '이번 달 열매 {name} · 달린 열매 {n}개 · 익은 열매 {ripe}개',
+        nj_fruit_go: '🍽️ 익은 열매 {n}개 — 3D에서 먹으러 가기',
+        nj_fruit_rule: '그달에 백지로 통과한 절마다 열매가 하나 열려요. 7일 뒤 익으면 열매를 눌러 그 절을 백지로 써내고 먹어요 — 🍃 잎사귀 1장. 익은 뒤 30일이 지나면 떨어져요',
+        nj_fruit_embed: '🌳 {name} 먹기',
+        nj_fruit_eaten: '🍃 열매를 먹었어요 — 잎사귀 1장',
+        nj_fruit_fail: '🌳 열매가 그대로 있어요. 내일 다시 먹을 수 있어요',
+        nj_fruit_back: '🌳 생명나무로 돌아가기',
+        nj_fruit_unripe: '익는 중이에요 — {d}일 뒤 익어요',
+        nj_fruit_retry: '내일 다시 먹을 수 있어요',
+        nj_fruit_eat: '🍽️ 백지로 써내고 먹기',
+        nj_fruit_hint: '익은 열매 {n}개 — 나무의 열매를 눌러 보세요',
+        nj_fruit_ref: '{c}장 {v}절',
         nj3d_btn: '🏛️ 3D로 보기 · 걸어서 구경',
         nj3d_loading: '성을 불러오는 중…',
         nj3d_fail: '3D를 불러오지 못했어요. 인터넷 연결을 확인해 주세요',
@@ -1494,6 +1507,19 @@ const LANG = {
         nj_go_write: '✍️ Write one verse in blank mode today',
         nj_soon: '{n} verses at Lv{from} reach Lv{lv} when you keep their turn · earliest {date}',
         nj_today: 'today',
+        nj_fruit_title: '🌳 Fruit of the tree of life — 🍃 {leaves} leaves',
+        nj_fruit_now: 'This month: {name} · {n} on the trees · {ripe} ripe',
+        nj_fruit_go: '🍽️ {n} ripe — go eat them in 3D',
+        nj_fruit_rule: 'Each verse you pass in blank mode this month grows one fruit. After 7 days it ripens — tap it, write that verse from blank, and eat it for 🍃 1 leaf. Ripe fruit falls after 30 days',
+        nj_fruit_embed: '🌳 Eat the {name}',
+        nj_fruit_eaten: '🍃 You ate the fruit — 1 leaf',
+        nj_fruit_fail: '🌳 The fruit is still there. Try again tomorrow',
+        nj_fruit_back: '🌳 Back to the tree of life',
+        nj_fruit_unripe: 'Ripening — ready in {d} days',
+        nj_fruit_retry: 'You can try again tomorrow',
+        nj_fruit_eat: '🍽️ Write it from blank and eat',
+        nj_fruit_hint: '{n} ripe fruit — tap one on a tree',
+        nj_fruit_ref: '{c}:{v}',
         nj3d_btn: '🏛️ View in 3D · Walk around',
         nj3d_loading: 'Loading the city…',
         nj3d_fail: 'Could not load 3D. Please check your connection',
@@ -2253,7 +2279,9 @@ let njPearls = 0;
 let njPearlWeek = { weekId: '', days: [], granted: false };
 let njPearlLog = [];
 let njBlankDays = [];    // 진주 — 백지로 한 절이라도 통과한 날('YYYY-MM-DD', 오전 6시 기준). 진주 수는 이것에서 계산한다
-let njJetpack = false;   // 3D 걸어서 구경 — 보석으로 산 제트팩 (한 번 사면 계속)
+let njJetpack = false;
+let njFruits = {};       // 생명나무 열매 — { 'YYYY-MM': { 절id: [열린 때, 먹은 때(0=아직), 마지막 실패 때] } }. 지난 달은 잎사귀 수만 njLeafArch로 접는다
+let njLeafArch = {};     // 접은 달의 먹은 열매(=잎사귀) 수 { 'YYYY-MM': n }   // 3D 걸어서 구경 — 보석으로 산 제트팩 (한 번 사면 계속)
 let lastPlayedStageId = null; // 마지막으로 직접 플레이한 스테이지 ID
 let bossFirstClearClaimed = new Set(); // 최초 클리어 보너스를 수령한 보스 스테이지 ID
 let hardshipAddressClearHistory = {}; // 장별 주소의 고난 클리어 기록 { "1": [{correct, total, score, date, duration}, ...] }
@@ -2689,6 +2717,8 @@ loadGameData = function () {
         njBlankDays = Array.isArray(parsed.njBlankDays) ? parsed.njBlankDays.filter(d => typeof d === 'string') : [];
         (njPearlWeek.days || []).forEach(d => { if (typeof d === 'string' && !njBlankDays.includes(d)) njBlankDays.push(d); });
         njJetpack = !!parsed.njJetpack;
+        njFruits = (parsed.njFruits && typeof parsed.njFruits === 'object') ? parsed.njFruits : {};
+        njLeafArch = (parsed.njLeafArch && typeof parsed.njLeafArch === 'object') ? parsed.njLeafArch : {};
         // 오늘의 암송 진행은 날마다 새 id라 60일 지난 것은 버린다 (저장본이 자라지 않게)
         try {
             const _cut = _shift6AMDayStr(_get6AMDayStr(), -60);
@@ -7096,6 +7126,106 @@ function _njNoteBlankDay() {
     } catch (e) { }
 }
 
+/* ══ 생명나무 열매 (2026-09-29) — docs/새-예루살렘.md 「생명나무 열매」 ══
+   그달에 백지로 통과한 절 하나 = 열매 하나. 7일 뒤 익고, 익은 열매를 눌러 그 절을 백지로 써내면 먹는다 → 🍃 잎사귀 1장.
+   못 쓰면 열매가 남고 하루 뒤 다시. 익은 뒤 30일이 지나면 떨어진다(벌 없음).
+   먹기는 7일 이상 간격을 둔 백지 떠올리기라 연구 기록으로도 깨끗하다(일지 ctx 'fruit') */
+const NJ_FRUIT_RIPE_MS = 7 * 86400000, NJ_FRUIT_FALL_MS = 37 * 86400000, NJ_FRUIT_RETRY_MS = 86400000;
+// 열두 가지 열매 — 달마다 바뀐다(모양만 다르고 서열 없음). 첫 열매가 열린 2026년 9월 = 석류부터
+const NJ_FRUIT_KINDS = [
+    { ko: '석류', en: 'Pomegranate', color: '#d0383a' }, { ko: '무화과', en: 'Fig', color: '#9b4f8a' },
+    { ko: '포도', en: 'Grape', color: '#5e3aa6' }, { ko: '감람', en: 'Olive', color: '#7a8c2e' },
+    { ko: '대추야자', en: 'Date', color: '#a0522d' }, { ko: '금사과', en: 'Golden apple', color: '#ffc21a' },
+    { ko: '살구', en: 'Almond', color: '#f7a58c' }, { ko: '뽕', en: 'Mulberry', color: '#4a1f45' },
+    { ko: '합환채', en: 'Mandrake', color: '#ff8c42' }, { ko: '쥐엄', en: 'Carob', color: '#6b4423' },
+    { ko: '참외', en: 'Melon', color: '#e3d35f' }, { ko: '호두', en: 'Walnut', color: '#b08a5a' },
+];
+// 나무 12그루 자리(3D 단위, 성 한 변 12) — 물길마다 보좌 가까이 오른쪽 둑 한 그루 + 문 쪽 양쪽 둑 한 쌍. nj3d.js도 이것을 쓴다
+function _njTreeSpots() {
+    const out = [];
+    [[0, -1], [1, 0], [0, 1], [-1, 0]].forEach(([dx, dz]) => {
+        const px = -dz, pz = dx;
+        [[2.0, 1], [4.1, 1], [4.1, -1]].forEach(([d, sd]) => out.push([dx * d + px * 1.45 * sd, dz * d + pz * 1.45 * sd]));
+    });
+    return out;
+}
+function _njMonthKey(ts) { return (ts ? _tsTo6AMDateStr(ts) : _get6AMDayStr()).slice(0, 7); }
+function _njFruitKind(m) { const [y, mo] = m.split('-').map(Number); const n = (y - 2026) * 12 + (mo - 9); return ((n % 12) + 12) % 12; }
+function _njFruitName(kind) { const k = NJ_FRUIT_KINDS[kind] || NJ_FRUIT_KINDS[0]; return currentLang === 'en' ? k.en : k.ko; }
+function _njVerseRef(id) { const [c, v] = String(id).split('-'); return t('nj_fruit_ref', { c, v }); }
+/* 두 달보다 오래된 달은 잎사귀 수만 남기고 접는다(그 달 열매는 모두 떨어졌다 — 열린 뒤 37일) */
+function _njFruitPrune() {
+    const [y, mo] = _njMonthKey().split('-').map(Number);
+    const cut = new Date(y, mo - 3, 1), cutKey = `${cut.getFullYear()}-${String(cut.getMonth() + 1).padStart(2, '0')}`;
+    Object.keys(njFruits || {}).forEach(m => {
+        if (m >= cutKey) return;
+        let n = 0; Object.values(njFruits[m] || {}).forEach(f => { if (Array.isArray(f) && f[1]) n++; });
+        njLeafArch[m] = Math.max(njLeafArch[m] | 0, n);
+        delete njFruits[m];
+    });
+}
+/* 잎사귀 = 먹은 열매 수 (달마다 접은 수와 남은 기록 중 큰 쪽 — 병합 뒤 겹쳐도 두 번 세지 않는다). 쓰는 곳(만국 소성)은 다음 단계 */
+function _njLeaves() {
+    const months = new Set([...Object.keys(njLeafArch || {}), ...Object.keys(njFruits || {})]);
+    let n = 0;
+    months.forEach(m => {
+        let live = 0; Object.values((njFruits || {})[m] || {}).forEach(f => { if (Array.isArray(f) && f[1]) live++; });
+        n += Math.max((njLeafArch || {})[m] | 0, live);
+    });
+    return n;
+}
+function _njGrowFruit(id, now) {
+    if (!/^\d+-\d+$/.test(String(id))) return;
+    const m = _njMonthKey(now);
+    if (!njFruits || typeof njFruits !== 'object') njFruits = {};
+    const mm = njFruits[m] || (njFruits[m] = {});
+    if (mm[id]) return;
+    mm[id] = [now, 0, 0];
+    _njFruitPrune();
+}
+/* 달린 열매(먹지 않았고 떨어지지 않은 것) — 달·절 순서. 3D·건축 창·지도가 함께 쓴다 */
+function _njFruitList(now) {
+    const n = now || Date.now(), out = [];
+    const cmp = (a, b) => { const [a1, a2] = a.split('-').map(Number), [b1, b2] = b.split('-').map(Number); return a1 - b1 || a2 - b2; };
+    Object.keys(njFruits || {}).sort().forEach(m => {
+        const kind = _njFruitKind(m);
+        Object.keys(njFruits[m] || {}).sort(cmp).forEach(id => {
+            const f = njFruits[m][id];
+            if (!Array.isArray(f) || f[1] || n >= f[0] + NJ_FRUIT_FALL_MS) return;
+            const ripeAt = f[0] + NJ_FRUIT_RIPE_MS;
+            out.push({ key: m + '|' + id, id, m, kind, ripe: n >= ripeAt, ripeAt, retryAt: f[2] ? f[2] + NJ_FRUIT_RETRY_MS : 0 });
+        });
+    });
+    return out.slice(0, 408);
+}
+/* 먹기 — 3D·건축 창을 닫고 그 절 하나로 백지 세션을 연다 (결과 화면 '백지로 확인해보기'와 같은 엔진) */
+function njEatFruit(key) {
+    const f = _njFruitList().find(x => x.key === key);
+    if (!f || !f.ripe || (f.retryAt && Date.now() < f.retryAt)) return;
+    if (typeof closeNJ3D === 'function') closeNJ3D();
+    closeNewJerusalem();
+    window.currentStageId = f.id;
+    window.hardshipOrigin = 'map';
+    selectedHardshipOrderType = 'sequential';
+    selectedHardshipUltimate = true;
+    _pendingHardshipEmbed = { label: t('nj_fruit_embed', { name: _njFruitName(f.kind) }), fruitKey: key };
+    startHardshipSession('memory', [f.id]);
+}
+/* recordVerseRecall에서 — 열매 세션이면 먹었는지 판정 */
+function _njFruitResult(key, id, ok, now) {
+    const i = key.indexOf('|'), m = key.slice(0, i), fid = key.slice(i + 1);
+    if (fid !== String(id)) return;
+    const f = njFruits[m] && njFruits[m][fid];
+    if (!Array.isArray(f) || f[1]) return;
+    if (ok) {
+        f[1] = now;
+        setTimeout(() => { if (typeof showMissionToast === 'function') showMissionToast(t('nj_fruit_eaten'), `🍃 ${_njLeaves()}`); }, 1200);
+    } else {
+        f[2] = now;
+        setTimeout(() => { if (typeof showToast === 'function') showToast(t('nj_fruit_fail')); }, 1200);
+    }
+}
+
 /* 성을 그린다. 반환: 남쪽 가운데 문(지도의 강이 시작하는 곳)의 캔버스 좌표 */
 /* opts.flow: 지도 — 물결은 따로 흐르는 SVG가 그리므로 캔버스엔 고정 물결을 그리지 않는다
    opts.south: 건축 창 — 지도의 큰 강이 없으니 남쪽 물줄기도 그린다 */
@@ -7173,6 +7303,21 @@ function _njDraw(cv, W, H, built, pearls, opts) {
         g.closePath(); g.fill();
     });
     g.fillStyle = 'rgba(255,255,255,0.95)'; g.beginPath(); g.arc(cx, cy, 7, 0, Math.PI * 2); g.fill();   // 보좌
+    // 생명나무 12그루 (22:2) — 익은 열매가 있으면 그달 열매 색 점
+    {
+        const U = S / 12, FL = _njFruitList(), ripeCol = FL.some(f => f.ripe) ? NJ_FRUIT_KINDS[FL.find(f => f.ripe).kind].color : null;
+        const green = FL.length && !ripeCol;
+        _njTreeSpots().forEach(([tx, tz]) => {
+            const px = cx + tx * U, py = cy + tz * U, r = Math.max(3, 0.55 * U);
+            g.fillStyle = 'rgba(0,0,0,0.18)'; g.beginPath(); g.arc(px + 1, py + 1.5, r, 0, Math.PI * 2); g.fill();
+            g.fillStyle = '#2f8f4e'; g.beginPath(); g.arc(px, py, r, 0, Math.PI * 2); g.fill();
+            g.fillStyle = 'rgba(255,255,255,0.18)'; g.beginPath(); g.arc(px - r * 0.3, py - r * 0.3, r * 0.45, 0, Math.PI * 2); g.fill();
+            if (ripeCol || green) {
+                g.fillStyle = ripeCol || '#b5e07a';
+                [[0.35, -0.2], [-0.3, 0.3], [0.1, 0.45]].forEach(([ox, oy]) => { g.beginPath(); g.arc(px + ox * r, py + oy * r, Math.max(1.2, r * 0.2), 0, Math.PI * 2); g.fill(); });
+            }
+        });
+    }
     // 진주 문 — 한 면에 1/4 · 1/2 · 3/4 (모서리에 몰리지 않게). 얻은 진주만큼 12시부터 시계 방향으로 얹힌다
     const gateAt = (side, i) => { const tt = [0.25, 0.5, 0.75][i], m = FB / 2;
         return side === 'N' ? [x0 + S * tt, y0 + m] : side === 'S' ? [x0 + S * tt, y1 - m] : side === 'W' ? [x0 + m, y0 + S * tt] : [x1 - m, y0 + S * tt]; };
@@ -7259,6 +7404,7 @@ function openNewJerusalem() {
         <div class="nj-gems">💎 ${Number(myGems || 0).toLocaleString()}</div>
         <div class="nj-go" id="nj-go"></div>
         <div class="nj-pearl" id="nj-pearl"></div>
+        <div class="nj-pearl nj-fruit" id="nj-fruit"></div>
         <div class="nj-list" id="nj-list"></div>
     </div>`;
     document.body.appendChild(m);
@@ -7296,6 +7442,14 @@ function _njRenderModal() {
         pe.innerHTML = `<div class="nj-pearl-head">${t('nj_pearl_title', { n: njPearls })}</div>
             <div class="nj-pearl-week">${pst.curDone ? t('nj_pearl_done_week') : `${t('nj_pearl_week', { d })} ${dots}`}</div>
             <div class="nj-pearl-rule">${t('nj_pearl_rule')}</div>`;
+    }
+    const fe = document.getElementById('nj-fruit');
+    if (fe) {
+        const L = _njFruitList(), ripe = L.filter(f => f.ripe).length;
+        fe.innerHTML = `<div class="nj-pearl-head">${t('nj_fruit_title', { leaves: _njLeaves() })}</div>
+            <div class="nj-pearl-week">${t('nj_fruit_now', { name: _njFruitName(_njFruitKind(_njMonthKey())), n: L.length, ripe })}</div>
+            ${ripe ? `<button class="nj-go-btn" onclick="openNJ3DView()">${t('nj_fruit_go', { n: ripe })}</button>` : ''}
+            <div class="nj-pearl-rule">${t('nj_fruit_rule')}</div>`;
     }
     const counts = {}; [3, 4, 5].forEach(lv => { counts[lv] = _njCount(lv); });
     list.innerHTML = NJ_STONES.map((st, k) => {
@@ -10751,6 +10905,8 @@ function saveGameData() {
         njPearlLog: njPearlLog,           // 진주 문 — 얻은 기록
         njBlankDays: njBlankDays,         // 진주 문 — 백지로 통과한 날 (진주 수는 여기서 계산)
         njJetpack: njJetpack,             // 3D 제트팩 (보석으로 산 것)
+        njFruits: njFruits,               // 생명나무 열매 (열린·먹은·실패 때)
+        njLeafArch: njLeafArch,           // 접은 달의 잎사귀 수
         sessionTimeLog: sessionTimeLog,
         // ★ [게임 모드]
         activeMode: activeMode,
@@ -11015,6 +11171,28 @@ function _mergeNewJerusalem(target, other) {
             tw.days = days;
             if (ow.granted && !tw.granted) { tw.granted = true; took++; }
         }
+    }
+    // 생명나무 열매 — 달·절마다 열린 때는 이른 쪽, 먹은 때는 먹은 쪽(이른 쪽), 실패는 늦은 쪽. 접은 달 잎사귀 수는 큰 쪽
+    if (other.njFruits && typeof other.njFruits === 'object') {
+        const tf = (target.njFruits && typeof target.njFruits === 'object') ? target.njFruits : {};
+        Object.keys(other.njFruits).forEach(m => {
+            const om = other.njFruits[m] || {}, tm = tf[m] || (tf[m] = {});
+            Object.keys(om).forEach(id => {
+                const o = om[id], t0 = tm[id];
+                if (!Array.isArray(o)) return;
+                if (!Array.isArray(t0)) { tm[id] = o.slice(); took++; return; }
+                const g = Math.min(t0[0] || o[0], o[0] || t0[0]);
+                const e = (t0[1] && o[1]) ? Math.min(t0[1], o[1]) : (t0[1] || o[1] || 0);
+                const lf = Math.max(t0[2] || 0, o[2] || 0);
+                if (g !== t0[0] || e !== t0[1] || lf !== (t0[2] || 0)) { tm[id] = [g, e, lf]; took++; }
+            });
+        });
+        target.njFruits = tf;
+    }
+    if (other.njLeafArch && typeof other.njLeafArch === 'object') {
+        const ta = (target.njLeafArch && typeof target.njLeafArch === 'object') ? target.njLeafArch : {};
+        Object.keys(other.njLeafArch).forEach(m => { const v = other.njLeafArch[m] | 0; if (v > (ta[m] | 0)) { ta[m] = v; took++; } });
+        target.njLeafArch = ta;
     }
     return took;
 }
@@ -24185,6 +24363,7 @@ function createEmptyHardshipState() {
         midBossStageId: null,   // 중간점검 빈칸·백지로 열린 세션이면 그 스테이지 id
         verseCheckStageId: null, // 결과 화면의 '백지로 확인해보기'로 열린 1구절 세션
         quickReviewStageId: null, // 빠른 모드 백지 승급으로 열린 1구절 세션 (끝나면 훈련으로 복귀)
+        fruitKey: null,          // 새 예루살렘 생명나무 열매 먹기로 열린 1구절 백지 세션 ('YYYY-MM|절id')
         verseCheckIsLearn: false, // 그 확인이 초학습 직후였는가 (증거 가치가 낮아 구분해 기록)
         displayTitle: '',       // 헤더·시작 토스트에 쓸 이름 (비면 고난 모드 이름을 쓴다)
         isRandomOrder: false,
@@ -24857,7 +25036,8 @@ function _isResumableHardshipSession() {
         // 이벤트 스테이지(eventId)도 제외 — 빠져 있어서 'free' kind로 저장·복원됐고, 모의고사가 지난 세션의
         // 난이도(빈칸)와 위치(2절부터)를 물려받았다 (2026-09-17). 2~10절짜리라 이어할 것도 없다
         && !hardshipState.eventId
-        && !hardshipState.quickReviewStageId);
+        && !hardshipState.quickReviewStageId
+        && !hardshipState.fruitKey);
 }
 
 /* ★ 체크포인트를 **여러 건** 보관한다 (보스전은 한 건뿐이다).
@@ -24980,6 +25160,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
         hardshipState.midBossStageId = embed.midBossStageId || null;
         hardshipState.verseCheckStageId = embed.verseCheckStageId || null;
         hardshipState.quickReviewStageId = embed.quickReviewStageId || null;
+        hardshipState.fruitKey = embed.fruitKey || null;
         hardshipState.verseCheckIsLearn = !!embed.isLearn;
         hardshipState.eventId = embed.eventId || null;
         hardshipState.displayTitle = embed.label || '';
@@ -26080,7 +26261,8 @@ function _isEmbeddedBlankSession() {
                                 hardshipState.midBossStageId ||
                                 hardshipState.bossStageId ||
                                 hardshipState.eventId ||
-                                hardshipState.quickReviewStageId));
+                                hardshipState.quickReviewStageId ||
+                                hardshipState.fruitKey));
 }
 
 /* 「모르겠어요」 — 이번 판만 포기하고 정답을 확인한다.
@@ -26576,6 +26758,7 @@ function useHardshipMemoryHint() {
    'mid'(중간점검) / 'vc'(결과 화면 확인) / 'quick'(빠른 모드 승급) */
 function _hardshipRecallCtx() {
     if (!hardshipState) return '';
+    if (hardshipState.fruitKey) return 'fruit';   // 생명나무 열매 먹기 — 7일 이상 간격의 백지
     if (hardshipState.quickReviewStageId) return 'quick';
     if (hardshipState.verseCheckStageId) return 'vc';
     if (hardshipState.midBossStageId) return 'mid';
@@ -26690,6 +26873,8 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
         if (hardshipState) hardshipState._blankLvNote = _blankLvNoteText(_res, _pts, _quick);
         // 백지레벨이 오르거나 처음 들어가면 전용 소리 — 정답음이 먼저 울리니 조금 뒤에
         if (ok && _blankMode) _njNoteBlankDay();   // 새 예루살렘 진주 — 백지로 한 절이라도 통과한 날
+        if (hardshipState && hardshipState.fruitKey) _njFruitResult(hardshipState.fruitKey, stageId, !!ok && _blankMode, now);   // 열매 먹기
+        if (ok && _blankMode) _njGrowFruit(String(stageId), now);   // 생명나무 — 이번 달 열매
         if (_res && (_res.kind === 'up' || _res.kind === 'enter') && typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) {
             setTimeout(() => SoundEffect.playBlankLevelUp(), 420);
         }
@@ -26802,6 +26987,7 @@ function getHardshipScoreScale() {
     // 여기서 또 주면 같은 복습에 두 번 주는 셈이다.
     // (어려운 형태의 보상은 승점이 아니라 '통과하면 코스가 짧아지는 것'이다)
     if (hardshipState.quickReviewStageId) return 0;
+    if (hardshipState.fruitKey) return 0;   // 열매의 보상은 잎사귀 (백지레벨 보너스는 평소대로)
     if (hardshipState.verseCheckStageId) return 0.25;
     if (hardshipState.midBossStageId) return 0.5;
     if (hardshipState.eventId) return 0.5;   // 이벤트 문항 = 2절 묶음, 중간점검과 같은 크기
@@ -27156,6 +27342,16 @@ function finishHardshipSession(reason) {
                 if (resultContinueBtn) resultContinueBtn.insertAdjacentElement('afterend', nextBtn);
             }
         }
+        // 열매 먹기였다면 생명나무로 돌아가기
+        if (rm && hardshipState.fruitKey) {
+            const back = document.createElement('button');
+            back.id = 'btn-next-stage';
+            back.className = 'btn-continue';
+            back.style.cssText = 'margin-top:8px; background:linear-gradient(135deg,#27ae60,#2ecc71); box-shadow:0 4px 0 #1e8449; color:#fff;';
+            back.textContent = t('nj_fruit_back');
+            back.onclick = () => { rm.classList.remove('active'); quitGame('map'); setTimeout(() => { if (typeof openNJ3DView === 'function') openNJ3DView(); }, 250); };
+            if (resultContinueBtn) resultContinueBtn.insertAdjacentElement('afterend', back);
+        }
         // 중간점검 빈칸·백지였다면 '다음 중간점검'도 함께
         _attachNextMidBossBtn(resultContinueBtn,
             (reason === 'completed') ? hardshipState.midBossStageId : null);
@@ -27350,7 +27546,7 @@ function finishHardshipSession(reason) {
         if (reason !== 'completed' || hardshipState.mode !== 'memory' ||
             hardshipState.trainingMode || hardshipState.midBossStageId ||
             hardshipState.bossStageId || hardshipState.verseCheckStageId ||
-            hardshipState.eventId || hardshipState.quickReviewStageId) return '';
+            hardshipState.eventId || hardshipState.quickReviewStageId || hardshipState.fruitKey) return '';
         const sessionDuration = getHardshipElapsedSeconds();
         const record = {
             correct: hardshipState.studiedCount,

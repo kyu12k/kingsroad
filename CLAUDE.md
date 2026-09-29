@@ -108,6 +108,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `_buildRiverFlow(points, scrollH)` · `_riverFlowTick` · `_riverGlintStep` | game.js:~7145 | 지도 강물 물결 — 구간별 SVG 조각, 보이는 조각만 초당 15번 흐름 · 가끔 빛줄기 |
 | `_njDraw` · `openNewJerusalem()` · `_njPlace(k)` · `_njNoteBlankDay()` · `_njPearlCalc` | game.js:~7040 | 새 예루살렘 — 지도 맨 위 성 그림 · 건축 창 · 기초석 놓기 · 진주(주 5일 백지, 못 채운 주는 -1) · 바로 가기 `_njGoHtml` (`docs/새-예루살렘.md`) |
 | `openNJ3DView()` → `nj3d.js`의 `openNJ3D()` / `closeNJ3D()` | game.js · nj3d.js | 새 예루살렘 3D 보기(별도 파일, 누를 때만 로드) — 걸어서 구경·점프·제트팩(`njJetpack`) |
+| `_njGrowFruit` · `_njFruitList` · `njEatFruit(key)` · `_njLeaves()` | game.js:~7100 | 생명나무 열매 — 백지 통과 절마다 열매, 7일 뒤 익음, 먹기 = 그 절 백지 세션(`fruitKey`) → 🍃 잎사귀 |
 | `SoundEffect` | game.js:~3987 | 효과음 신디사이저 — 종소리 `_note`, 출력 `_bus`, 잠든 오디오 깨우기 `_play`, 진동 `_buzz` |
 
 ---
