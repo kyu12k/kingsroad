@@ -17370,7 +17370,7 @@ function _camEnabled() {
 let _cam = { stream: null, rec: null, chunks: [], blob: null, mime: '', timer: null, startedAt: 0, wake: null, raf: 0, canvas: null, ctx: null, video: null, verses: [], label: '' };
 const CAM_PREFS_KEY = 'kingsRoad_camPrefs';
 function _camPrefs() {
-    let p = { frame: true, soft: false, font: 20, bg: 'none' };
+    let p = { frame: true, soft: true, softAmt: 60, font: 20, bg: 'none' };   // 보정은 처음부터 켠 채(9/30 — 민낯 부담)
     try { Object.assign(p, JSON.parse(localStorage.getItem(CAM_PREFS_KEY) || '{}')); } catch (e) {}
     return p;
 }
@@ -17420,6 +17420,7 @@ async function openDailyRecorder() {
             <button class="cam-opt" id="cam-opt-soft" onclick="_camSetPref('soft', !_camPrefs().soft)">✨ 보정</button>
             <span class="cam-font"><button onclick="_camFont(-2)">A−</button><button onclick="_camFont(2)">A+</button></span>
         </div>
+        <label class="cam-soft-row" id="cam-soft-row">✨ <input type="range" id="cam-soft-amt" min="0" max="100" step="5" value="${prefs.softAmt}" oninput="_camSoftAmt(this.value)"><span id="cam-soft-val">${prefs.softAmt}</span></label>
         <div class="cam-bg-row" id="cam-bg-row">${_camBgSwatchesHtml()}</div>
         <div class="cam-status" id="cam-status">${t('daily_cam_preparing')}</div>
         <div class="cam-controls" id="cam-controls">
@@ -17473,6 +17474,10 @@ function _camApplyPrefUI() {
     const f = document.getElementById('cam-opt-frame'), s = document.getElementById('cam-opt-soft');
     if (f) f.classList.toggle('on', !!p.frame);
     if (s) s.classList.toggle('on', !!p.soft);
+    const sr = document.getElementById('cam-soft-row'), sv = document.getElementById('cam-soft-val');
+    if (sr) sr.style.display = p.soft ? '' : 'none';
+    if (sv) sv.textContent = p.softAmt;
+    const si = document.getElementById('cam-soft-amt'); if (si && Number(si.value) !== Number(p.softAmt)) si.value = p.softAmt;
     document.querySelectorAll('.cam-bg-sw').forEach(b => b.classList.toggle('on', b.dataset.bg === (p.bg || 'none')));
     // 액자를 켜면 구절이 영상 안에 박히므로 화면 위 큐카드는 숨긴다 (겹치면 두 번 보인다)
     const card = document.getElementById('cam-card');
@@ -17667,7 +17672,7 @@ function _camBgCanvas(id, w, h) {
 }
 
 /* 배경을 깔고 오려낸 사람을 얹는다. 반환 false면 아직 준비 전(원본을 그린다). 반전 좌표계 안에서 불린다 */
-function _camDrawWithBg(ctx, v, vw, vh, p) {
+function _camDrawWithBg(ctx, v, vw, vh, p, src) {
     if (!_camSeg.inst) return false;
     // 인물 분리는 초당 12번 정도면 충분하다 — 사이 프레임은 직전 마스크를 쓴다 (끝나는 대로 곧장 다시 돌리면 폰이 버거웠다)
     const _now = performance.now();
@@ -17707,14 +17712,89 @@ function _camDrawWithBg(ctx, v, vw, vh, p) {
     pctx.clearRect(0, 0, vw, vh);
     pctx.imageSmoothingEnabled = true; pctx.imageSmoothingQuality = 'high';   // 작은 마스크를 키울 때 계단이 지지 않게
     pctx.drawImage(mask, 0, 0, vw, vh);
-    if (p.soft && 'filter' in pctx) pctx.filter = 'brightness(1.10) contrast(0.90) saturate(1.08)';
+    if (p.soft && (!src || src === v) && 'filter' in pctx) pctx.filter = 'brightness(1.10) contrast(0.90) saturate(1.08)';
     pctx.globalCompositeOperation = 'source-in';
-    pctx.drawImage(v, 0, 0, vw, vh);
+    pctx.drawImage(src || v, 0, 0, vw, vh);
     pctx.restore();
     ctx.drawImage(pc, 0, 0);
     return true;
 }
 
+/* ── 촬영 보정 1단계 (2026-09-30) — 휴대폰 그래픽 칩(WebGL)으로 피부만 매끈하게 ─────────────────
+   의견: "보정 효과가 크지 않아 민낯 노출이 부담스럽다, 스노우처럼". 옛 보정은 캔버스 ctx.filter(밝게 + 흐린 사본 겹치기)였는데
+   **아이폰 사파리엔 캔버스 filter가 없어 아이폰에선 아무 효과가 없었다**. 안드로이드에서도 화면 전체가 뿌옇게 됐다.
+   이제: 카메라 프레임을 WebGL로 한 번 거쳐 ① 양방향(bilateral) 흐림 — 이웃 중 색이 비슷한 것만 섞어 잡티·결은 누그러지고 눈·입·머리카락 윤곽은 남는다
+   ② 피부색(YCbCr) 영역에만 ③ 화사하게(밝기 곡선)·혈색(따뜻하게). 강도 0~100(설정 softAmt). 결과 캔버스를 2D 캔버스에 그리므로 영상에도 그대로 박힌다.
+   WebGL이 없거나 실패하면 옛 방식(안드로이드) 또는 원본 */
+const _camBeauty = { gl: null, canvas: null, prog: null, tex: null, loc: null, failed: false };
+function _camBeautyInit() {
+    if (_camBeauty.gl || _camBeauty.failed) return !!_camBeauty.gl;
+    try {
+        const c = document.createElement('canvas');
+        const gl = c.getContext('webgl', { preserveDrawingBuffer: true, premultipliedAlpha: false, antialias: false }) || c.getContext('experimental-webgl');
+        if (!gl) throw new Error('no webgl');
+        const vs = 'attribute vec2 p; varying vec2 uv; void main(){ uv = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }';
+        const fs = `precision mediump float;
+varying vec2 uv; uniform sampler2D t; uniform vec2 px; uniform float amt;
+vec3 S(vec2 o){ return texture2D(t, uv + o * px).rgb; }
+void main(){
+  vec3 c = texture2D(t, uv).rgb;
+  // ① 양방향 흐림 — 세 둘레(반지름 1·2·3) 12방향. 색이 비슷할수록(잡티) 많이, 다를수록(윤곽) 적게 섞는다.
+  //    강도가 셀수록 '비슷하다'의 폭을 넓힌다(ek) — 작은 뾰루지·결까지 삼키되 눈·입·머리카락처럼 크게 다른 색은 남는다
+  float ek = mix(70.0, 9.0, amt);
+  vec3 sum = c; float wsum = 1.0;
+  for (int i = 0; i < 12; i++) {
+    float a = float(i) * 0.5236 + 0.26;
+    vec2 d = vec2(cos(a), sin(a));
+    vec3 s1 = S(d * 1.0); vec3 s2 = S(d * 2.0); vec3 s3 = S(d * 3.0);
+    float w1 = exp(-dot(s1 - c, s1 - c) * ek) * 0.9;
+    float w2 = exp(-dot(s2 - c, s2 - c) * ek) * 0.7;
+    float w3 = exp(-dot(s3 - c, s3 - c) * ek) * 0.5;
+    sum += s1 * w1 + s2 * w2 + s3 * w3; wsum += w1 + w2 + w3;
+  }
+  vec3 smooth = sum / wsum;
+  // ② 피부색 영역 (YCbCr) — 배경·옷·머리카락은 그대로
+  float cb = -0.1687 * c.r - 0.3313 * c.g + 0.5 * c.b + 0.5;
+  float cr = 0.5 * c.r - 0.4187 * c.g - 0.0813 * c.b + 0.5;
+  float skin = smoothstep(0.10, 0.02, abs(cb - 0.43)) * smoothstep(0.12, 0.03, abs(cr - 0.60));
+  vec3 o = mix(c, smooth, clamp(amt * (0.35 + 0.65 * skin), 0.0, 1.0));
+  // ③ 화사하게 — 어두운 쪽을 들어 올리는 곡선(하이라이트는 덜 날아감) + 살짝 따뜻하게
+  o = mix(o, 1.0 - (1.0 - o) * (1.0 - o), amt * 0.28);
+  o += vec3(0.018, 0.006, -0.004) * amt * (0.5 + skin);
+  gl_FragColor = vec4(clamp(o, 0.0, 1.0), 1.0);
+}`;
+        const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
+        const prog = gl.createProgram();
+        gl.attachShader(prog, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(prog);
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+        gl.useProgram(prog);
+        const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+        const ap = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(ap); gl.vertexAttribPointer(ap, 2, gl.FLOAT, false, 0, 0);
+        const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+        [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T].forEach(k => gl.texParameteri(gl.TEXTURE_2D, k, gl.CLAMP_TO_EDGE));   // 폰 영상 크기는 2의 거듭제곱이 아니다
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        Object.assign(_camBeauty, { gl, canvas: c, prog, tex, loc: { px: gl.getUniformLocation(prog, 'px'), amt: gl.getUniformLocation(prog, 'amt') } });
+        return true;
+    } catch (e) { console.warn('[cam] beauty init failed', e); _camBeauty.failed = true; return false; }
+}
+/* 보정한 프레임(캔버스)을 돌려준다. 못 하면 null — 부르는 쪽이 원본을 쓴다 */
+function _camBeautyFrame(v, vw, vh, amt) {
+    if (!_camBeautyInit()) return null;
+    const B = _camBeauty, gl = B.gl;
+    try {
+        if (B.canvas.width !== vw || B.canvas.height !== vh) { B.canvas.width = vw; B.canvas.height = vh; gl.viewport(0, 0, vw, vh); }
+        gl.bindTexture(gl.TEXTURE_2D, B.tex);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, v);
+        const k = Math.max(1, vw / 540) * (1.2 + amt * 2.2);   // 해상도·강도에 맞춘 흐림 반경(화소) — 한 둘레 간격
+        gl.uniform2f(B.loc.px, k / vw, k / vh);
+        gl.uniform1f(B.loc.amt, amt);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        return B.canvas;
+    } catch (e) { console.warn('[cam] beauty frame failed', e); B.failed = true; B.gl = null; return null; }
+}
+function _camSoftAmt(v) { _camSetPref('softAmt', Math.max(0, Math.min(100, Number(v) || 0))); }
 function _camDrawLoop(now) {
     const v = _cam.video, c = _cam.canvas, ctx = _cam.ctx;
     if (!v || !c || !ctx || !_cam.stream) return;
@@ -17728,9 +17808,13 @@ function _camDrawLoop(now) {
         ctx.save();
         // 셀피처럼 좌우 반전 — 화면과 영상이 같아야 하고, 글자 띠는 반전 뒤에 따로 그린다
         ctx.translate(vw, 0); ctx.scale(-1, 1);
-        if (p.bg && p.bg !== 'none' && _camDrawWithBg(ctx, v, vw, vh, p)) {
-            // 배경 모드 — 위에서 다 그렸다
-        } else if (p.soft && 'filter' in ctx) {
+        const amt = p.soft ? (p.softAmt == null ? 60 : p.softAmt) / 100 : 0;
+        const src = amt > 0 ? (_camBeautyFrame(v, vw, vh, amt) || v) : v;   // 보정한 프레임(실패하면 원본)
+        if (p.bg && p.bg !== 'none' && _camDrawWithBg(ctx, v, vw, vh, p, src)) {
+            // 배경 모드 — 위에서 다 그렸다 (인물은 보정한 프레임에서 오려 낸다)
+        } else if (src !== v) {
+            ctx.drawImage(src, 0, 0, vw, vh);
+        } else if (p.soft && 'filter' in ctx) {   // WebGL이 없을 때만 — 옛 보정(아이폰 사파리엔 filter도 없다)
             // 소프트 포커스(Orton) — 밝게 한 원본 위에 흐린 사본을 반투명으로 겹친다. 피부 결은 뭉개지고 윤곽은 남는다
             ctx.filter = 'brightness(1.10) contrast(0.90) saturate(1.08)';
             ctx.drawImage(v, 0, 0, vw, vh);

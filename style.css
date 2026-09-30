@@ -6258,6 +6258,9 @@ body, html {
 .cam-opts { display: flex; justify-content: center; align-items: center; gap: 8px; }
 .cam-opt { padding: 7px 12px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.35); background: rgba(255,255,255,0.06); color: #ddd; font-weight: 700; font-size: 0.85rem; cursor: pointer; }
 .cam-opt.on { background: #f1c40f; border-color: #f1c40f; color: #2c3e50; }
+.cam-soft-row { display: flex; align-items: center; justify-content: center; gap: 8px; color: #f1c40f; font-size: 0.85rem; font-weight: 700; margin-top: 6px; }
+.cam-soft-row input { width: 55%; max-width: 240px; accent-color: #f1c40f; }
+.cam-soft-row span { min-width: 2.2em; color: #ddd; text-align: left; }
 .cam-opts .cam-font button { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.35); color: #fff; border-radius: 18px; padding: 7px 10px; font-size: 0.85rem; cursor: pointer; }
 .cam-status { text-align: center; color: #bbb; font-size: 0.82rem; padding: 0 8px; min-height: 1.2em; }
 .cam-controls { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; }
