@@ -120,6 +120,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `NJ_OFFERINGS` · `_njOfferBuy(k, n)` · nj3d.js `openOffer` · `startProc` · `placeMembers` · `follow` | game.js · nj3d.js | 🎁 만국의 예물 — 소성된 나라 사신에게 청하고(장 보스전 = 열쇠, 🐟·🍇 = 값) 가문별 행렬(`PM` 사람·짐승 모델)로 성 둘레 자리에. 행렬 중 카메라는 끌어서 돌린다 |
 | nj3d.js `loadGift` · `giftAnim(k, root)` · `placeGift` · `models/gifts/*.glb` · `tools/blender/` | nj3d.js | 예물 모델 — 블렌더 로우폴리(스크립트로 뽑음), 움직일 부분은 이름 붙은 축 노드. 모델을 다시 뽑으면 `GIFT_V`를 올린다 |
 | `renderHomeTodo()` · `_todoSocial` · `_syncSocialBadges()` · `updateFriendBadge()` | game.js:~29250 | 홈 「오늘 할 일」(복습·백지·응원·길드 출석)과 친구/길드/더보기 배지. `updateNotificationBadges`가 함께 그린다 |
+| `_checkReturnBoost()` · `_returnBoostExtra(gem)` · `_renderReturnFloat()` · `returnBoost` | game.js:~29450 | 돌아온 순례자 — 14일 넘게 쉬면 7일간 암송 보석 2배(동기화 뒤 판정), 효과 기록 포함 (`docs/랭킹과-이벤트.md`) |
 | `openDailyRecorder()` · `_camDrawLoop` · `_camBeautyFrame(v, w, h, amt)` · `_camDrawWithBg` | game.js:~17400 | 🎥 오늘의 암송 촬영 — 캔버스에 그려 녹화, 액자·WebGL 피부 보정(강도 `softAmt`)·배경 바꾸기 |
 | `SoundEffect` | game.js:~3987 | 효과음 신디사이저 — 종소리 `_note`, 출력 `_bus`, 잠든 오디오 깨우기 `_play`, 진동 `_buzz` |
 

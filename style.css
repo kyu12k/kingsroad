@@ -4250,6 +4250,16 @@ body, html {
     display: inline-block;
 }
 
+/* 돌아온 순례자 — 햇살 버튼 아래 💎×2 (2026-09-30) */
+.return-float { position: fixed; left: 12px; top: calc(50% + 34px); display: flex; align-items: center; gap: 8px; z-index: 300; user-select: none; }
+.return-float[hidden] { display: none; }
+.return-float-btn { position: relative; width: 48px; height: 48px; border-radius: 50%; border: none; background: linear-gradient(45deg, #5fd3f3, #2e86de); font-size: 1.35rem; box-shadow: 0 4px 10px rgba(0,0,0,0.3), 0 0 0 2px rgba(255,255,255,0.35) inset; cursor: pointer; animation: returnGlow 2.4s ease-in-out infinite; }
+.return-float-btn b { position: absolute; right: -4px; bottom: -3px; font: 800 0.68rem 'Pretendard', sans-serif; color: #2c3e50; background: #f1c40f; border-radius: 999px; padding: 1px 5px; }
+.return-float-btn:active { transform: scale(0.95); }
+.return-float-panel { display: none; background: rgba(44, 62, 80, 0.95); color: #aee6ff; border: 1px solid rgba(95, 211, 243, 0.6); border-radius: 16px; padding: 6px 10px; font-size: 0.85rem; font-weight: bold; line-height: 1.35; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+.return-float.open .return-float-panel { display: inline-block; }
+@keyframes returnGlow { 0%, 100% { box-shadow: 0 4px 10px rgba(0,0,0,0.3), 0 0 0 2px rgba(255,255,255,0.35) inset; } 50% { box-shadow: 0 4px 14px rgba(46,134,222,0.7), 0 0 0 2px rgba(255,255,255,0.6) inset; } }
+
 /* 도움말 스타일 */
 .help-item {
     background: #f8f9fa;

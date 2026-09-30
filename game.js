@@ -722,6 +722,12 @@ const LANG = {
         clear_accuracy: '🎯 정확도: {pct}% (오답: {wrong}) → {gem}개',
         clear_castle_bonus: '🏰 성전 보너스: +{gem}개',
         clear_perfect_bonus: '⭐ 퍼펙트 보너스: +{gem}개',
+        clear_return_bonus: '🎁 돌아온 순례자 2배: +{gem}개',
+        return_boost_start: '🎁 {d}일 만의 귀환!',
+        return_boost_sub: '일주일간 암송 보석 2배',
+        return_boost_float: '🎁 돌아온 순례자<br>암송 보석 2배 · {left}',
+        return_left_dh: '{d}일 {h}시간 남음',
+        return_left_h: '{h}시간 남음',
         clear_score: '✨ 승점: +{score}',
         clear_total_gem: '💎 최종 획득: {gem}개',
         clear_repeat_accuracy: '🎯 정확도: {pct}% (오답: {wrong})',
@@ -1783,6 +1789,12 @@ const LANG = {
         clear_accuracy: '🎯 Accuracy: {pct}% (wrong: {wrong}) → {gem}',
         clear_castle_bonus: '🏰 Temple bonus: +{gem}',
         clear_perfect_bonus: '⭐ Perfect bonus: +{gem}',
+        clear_return_bonus: '🎁 Welcome-back ×2: +{gem}',
+        return_boost_start: '🎁 Back after {d} days!',
+        return_boost_sub: 'Memorizing gems ×2 for a week',
+        return_boost_float: '🎁 Welcome back<br>Memorizing gems ×2 · {left}',
+        return_left_dh: '{d}d {h}h left',
+        return_left_h: '{h}h left',
         clear_score: '✨ Score: +{score}',
         clear_total_gem: '💎 Total earned: {gem}',
         clear_repeat_accuracy: '🎯 Accuracy: {pct}% (wrong: {wrong})',
@@ -2342,6 +2354,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // [시스템: 경제 및 인벤토리]
 let myGems = 0;           // 현재 보유 보석
+/* 돌아온 순례자 (2026-09-30) — 2주 넘게 쉬었다 오면 1주 동안 **암송으로 버는 보석**(스테이지·복습 클리어, 첫 백지 통과)이 2배.
+   순위 보상·미션 묶음·오늘의 암송 완료 보상은 빼고. 쉰 기간 = 서버 시각 기준 지금 − max(서버 마지막 저장, 이 기기 마지막 저장).
+   효과 확인용으로 at·gap(쉰 일수)·clears·gems를 남기고, 지난 복귀는 log에 쌓는다 (docs/랭킹과-이벤트.md) */
+var returnBoost = null;   // { at, until, gap, clears, gems, log: [{ at, gap, clears, gems }] }
+const RETURN_BOOST_GAP_MS = 14 * 86400000, RETURN_BOOST_DAYS = 7;
 let myDragonScales = 0;        // 용 비늘 (개인 장비 구매 재화)
 let myDragonHornFragments = 0; // 용 뿔조각 (길드 장비 구매 재화, 뿔 처치 드랍)
 let myDragonHeadSkins = 0;     // 용 머릿가죽 (길드 장비 진화 재화, 머리 처치 드랍)
@@ -2874,6 +2891,7 @@ loadGameData = function () {
         if (parsed.dailyRecite && typeof parsed.dailyRecite === 'object' && parsed.dailyRecite.anchorVerse) dailyRecite = parsed.dailyRecite;
         if (parsed.dailyReciteDone && typeof parsed.dailyReciteDone === 'object') dailyReciteDone = parsed.dailyReciteDone;
         if (typeof parsed.dailyWeekDone === 'string') dailyWeekDone = parsed.dailyWeekDone;
+        returnBoost = (parsed.returnBoost && typeof parsed.returnBoost === 'object' && parsed.returnBoost.at) ? parsed.returnBoost : null;
         njBuilt = Math.max(0, Math.min(12, parseInt(parsed.njBuilt, 10) || 0));
         njLog = Array.isArray(parsed.njLog) ? parsed.njLog : [];
         njPearls = Math.max(0, Math.min(12, parseInt(parsed.njPearls, 10) || 0));
@@ -11572,6 +11590,7 @@ function saveGameData() {
         dailyRecite: dailyRecite,         // 오늘의 암송 개인 진도 (null = 교회 진도)
         dailyReciteDone: dailyReciteDone, // 오늘의 암송 완료일 → ts
         dailyWeekDone: dailyWeekDone,     // 오늘의 암송 주간 완료 주차
+        returnBoost: returnBoost,         // 돌아온 순례자 — 보석 2배 기간과 효과 기록
         njBuilt: njBuilt,                 // 새 예루살렘 — 놓은 기초석 수
         njLog: njLog,                     // 새 예루살렘 — 놓은 순간의 기록 (연구용)
         njPearls: njPearls,               // 진주 문 — 얻은 진주 수
@@ -11915,6 +11934,10 @@ function _mergeSaveProgress(target, other) {
     took += _mergeReadWeek(target, other);
     took += _mergeEventProgress(target, other);
     took += _mergeNewJerusalem(target, other);
+    {   // 돌아온 순례자 — 더 최근에 시작된 쪽, 같은 복귀면 더 많이 기록된 쪽
+        const a = target.returnBoost, b = other.returnBoost;
+        if (b && b.at && (!a || !a.at || b.at > a.at || (b.at === a.at && (b.clears || 0) > (a.clears || 0)))) { target.returnBoost = b; took++; }
+    }
 
     // 1) 자유여행 — 최상위 필드
     {
@@ -11941,6 +11964,7 @@ async function initFirestoreSync() {
     try {
         await _initFirestoreSyncCore();
     } finally {
+        try { _checkReturnBoost(); _renderReturnFloat(); } catch (e) { console.warn('[returnBoost]', e); }
         try { await ensureTagAssigned(); } catch (e) { /* 조용히 */ }
         try { _flushRecallLog(); } catch (e) {}   // 지난번에 못 올린 일지
         // 어드민 보상이 적용됐으면 알린다 — 조용히 늘어나면 "젬이 왜 늘었지"가 된다
@@ -12076,6 +12100,7 @@ async function _initFirestoreSyncCore() {
         && (Date.now() - window._bootAt) < 60000;
     const localUpdatedAt  = _bootSnapshotFresh ? window._bootLocalUpdatedAt : _liveLocalUpdatedAt;
     const remoteUpdatedAt = (remoteData && remoteData.updatedAt) ? remoteData.updatedAt : 0;
+    if (remoteUpdatedAt > 0) window._returnGapMs = Date.now() - Math.max(remoteUpdatedAt, localUpdatedAt || 0);   // 돌아온 순례자 판정용
     if (_bootSnapshotFresh && _liveLocalUpdatedAt !== localUpdatedAt) {
         console.log(`[Firestore] 부팅 스냅샷 기준 비교: local=${localUpdatedAt} (현재값 ${_liveLocalUpdatedAt}은 시작 시 자동 저장분)`);
     }
@@ -20204,6 +20229,8 @@ stageClear = function (type, rewardMultiplier = 1) {
             updateStats('perfect', 1);
         }
 
+        const returnExtra = _returnBoostExtra(totalGem);   // 돌아온 순례자 — 암송 보석 2배
+        totalGem += returnExtra;
         myGems += totalGem;
         updateStats('gem_get', totalGem);
         window._lastClearGem = baseGemBeforeAccuracy; // 결과 모달용 (정확도 적용 전 기본 보석 수)
@@ -20236,6 +20263,7 @@ stageClear = function (type, rewardMultiplier = 1) {
             }
             const scoreLabel = scoreResult.boosterMultiplier > 1 ? `${scoreResult.score} ⚡×${scoreResult.boosterMultiplier}` : scoreResult.score;
             msg += `${t('clear_score', { score: scoreLabel })}\n`;
+            if (returnExtra > 0) msg += `${t('clear_return_bonus', { gem: returnExtra })}\n`;
             msg += `${t('clear_total_gem', { gem: totalGem })}`;
         } else {
             msg += `${t('clear_repeat_accuracy', { pct: accPercent, wrong: adjustedWrongCount })}\n`;
@@ -20244,6 +20272,7 @@ stageClear = function (type, rewardMultiplier = 1) {
             }
             const scoreLabel = scoreResult.boosterMultiplier > 1 ? `${scoreResult.score} ⚡×${scoreResult.boosterMultiplier}` : scoreResult.score;
             msg += `${t('clear_score', { score: scoreLabel })}\n`;
+            if (returnExtra > 0) msg += `${t('clear_return_bonus', { gem: returnExtra })}\n`;
             msg += `${t('clear_repeat_gem', { gem: totalGem, castle: castleBonusGem })}`;
         }
         if (typeof triggerConfetti === 'function') triggerConfetti();
@@ -27671,9 +27700,10 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
             if (!r.typedPass) {
                 // 첫 통과 보너스 — 아직 안 써본 구절로 끌어당긴다 (구절당 평생 1회)
                 if (typeof addGems === 'function') {
-                    addGems(VERSE_FIRST_RECALL_GEM);
+                    const _fg = VERSE_FIRST_RECALL_GEM + (typeof _returnBoostExtra === 'function' ? _returnBoostExtra(VERSE_FIRST_RECALL_GEM) : 0);   // 돌아온 순례자면 2배
+                    addGems(_fg);
                     if (typeof showToast === 'function') {
-                        showToast(t('blank_check_first_bonus', { gem: VERSE_FIRST_RECALL_GEM }));
+                        showToast(t('blank_check_first_bonus', { gem: _fg }));
                     }
                 }
             }
@@ -29435,6 +29465,34 @@ function _syncSocialBadges() {
     const gb = document.getElementById('badge-guild');
     if (gb && _todoSocial) gb.classList.toggle('active', _todoSocial.inGuild && !_todoSocial.attended);
     if (typeof updateNotificationBadges === 'function') updateNotificationBadges();
+}
+function _returnBoostActive() { return !!(returnBoost && returnBoost.until && Date.now() < returnBoost.until); }
+function _checkReturnBoost() {
+    const gap = window._returnGapMs; window._returnGapMs = 0;
+    if (!(gap >= RETURN_BOOST_GAP_MS) || _returnBoostActive()) return;
+    const now = Date.now(), log = (returnBoost && Array.isArray(returnBoost.log)) ? returnBoost.log.slice(-9) : [];
+    if (returnBoost && returnBoost.at) log.push({ at: returnBoost.at, gap: returnBoost.gap, clears: returnBoost.clears || 0, gems: returnBoost.gems || 0 });
+    returnBoost = { at: now, until: now + RETURN_BOOST_DAYS * 86400000, gap: Math.round(gap / 86400000), clears: 0, gems: 0, log };
+    saveGameData();
+    setTimeout(() => { if (typeof showMissionToast === 'function') showMissionToast(t('return_boost_start', { d: returnBoost.gap }), t('return_boost_sub')); }, 2500);
+    _renderReturnFloat();
+}
+/* 햇살 버튼 아래 💎×2 — 기간 동안 늘 떠 있고, 누르면 남은 시간 */
+function _renderReturnFloat() {
+    const root = document.getElementById('return-float'); if (!root) return;
+    const on = _returnBoostActive(); root.hidden = !on; if (!on) return;
+    const ms = returnBoost.until - Date.now(), d = Math.floor(ms / 86400000), h = Math.floor(ms % 86400000 / 3600000);
+    const panel = document.getElementById('return-float-panel');
+    if (panel) panel.innerHTML = t('return_boost_float', { left: d > 0 ? t('return_left_dh', { d, h }) : t('return_left_h', { h: Math.max(1, h) }) });
+}
+setInterval(() => { try { _renderReturnFloat(); } catch (e) {} }, 60000);
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { try { _renderReturnFloat(); } catch (e) {} });
+else setTimeout(() => { try { _renderReturnFloat(); } catch (e) {} }, 0);
+/* 암송으로 번 보석에 붙는 덤 — 기간이 아니면 0. 효과 확인용으로 센다 */
+function _returnBoostExtra(gem) {
+    if (!_returnBoostActive() || !(gem > 0)) return 0;
+    returnBoost.clears = (returnBoost.clears || 0) + 1; returnBoost.gems = (returnBoost.gems || 0) + gem;
+    return gem;
 }
 function renderHomeTodo() {
     const el = document.getElementById('home-todo'), S = _todoSocial; if (!el || !S) return;
