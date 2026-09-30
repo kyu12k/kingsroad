@@ -17539,8 +17539,69 @@ function _camRefineMask(img) {
     return mc;
 }
 
+/* ── 아이폰: 새 MediaPipe Tasks(ImageSegmenter)로 (2026-09-30) ──
+   옛 selfie_segmentation(legacy solutions)은 아이폰 사파리에서 한 번도 확인된 적이 없고, 잘 안 도는 것으로 알려져 있다 — 사용자: "아이폰에서도 배경이 되게".
+   구글이 사파리를 지원한다고 밝힌 Tasks 판을 아이폰에서 먼저 쓴다(그래픽 칩 대신 CPU — 사파리의 WebGL 경로가 불안정). 안 되면 옛 판으로.
+   다른 기기는 확인된 옛 판 그대로. 시험: localStorage kingsRoad_camSegTasks = '1'이면 어느 기기든 Tasks */
+const CAM_TASKS_VER = '0.10.14';
+const CAM_TASKS_BASE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${CAM_TASKS_VER}/`;
+const CAM_TASKS_MODEL = 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite';
+function _camIsIOS() {
+    const ua = navigator.userAgent || '';
+    return /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+function _camWantTasks() {
+    try { if (localStorage.getItem('kingsRoad_camSegTasks') === '1') return true; } catch (e) {}
+    return _camIsIOS();
+}
+/* Tasks의 확신도(0~1 실수 배열)를 마스크 캔버스로 — 옛 판의 _camRefineMask와 같은 곡선 */
+function _camMaskFromFloat(arr, w, h) {
+    if (!_camSeg.maskCv) _camSeg.maskCv = document.createElement('canvas');
+    const mc = _camSeg.maskCv;
+    if (mc.width !== w || mc.height !== h) { mc.width = w; mc.height = h; }
+    const mctx = mc.getContext('2d', { willReadFrequently: true });
+    const d = mctx.createImageData(w, h), px = d.data;
+    for (let i = 0, j = 0; i < arr.length; i++, j += 4) { px[j] = px[j + 1] = px[j + 2] = 255; px[j + 3] = _camMaskLUT[Math.max(0, Math.min(255, Math.round(arr[i] * 255)))]; }
+    mctx.putImageData(d, 0, 0);
+    return mc;
+}
+async function _camSegLoadTasks() {
+    const vision = await import(CAM_TASKS_BASE + 'vision_bundle.mjs');
+    const files = await vision.FilesetResolver.forVisionTasks(CAM_TASKS_BASE + 'wasm');
+    const seg = await vision.ImageSegmenter.createFromOptions(files, {
+        baseOptions: { modelAssetPath: CAM_TASKS_MODEL, delegate: _camIsIOS() ? 'CPU' : 'GPU' },
+        runningMode: 'VIDEO', outputCategoryMask: false, outputConfidenceMasks: true,
+    });
+    let lastTs = 0;
+    _camSeg.kind = 'tasks';
+    _camSeg.run = (ic) => {
+        try {
+            const ts = Math.max(lastTs + 1, performance.now()); lastTs = ts;   // 시각은 늘 커져야 한다
+            seg.segmentForVideo(ic, ts, r => {
+                const m = r && r.confidenceMasks && r.confidenceMasks[0];
+                if (m) _camSeg.mask = _camMaskFromFloat(m.getAsFloat32Array(), m.width, m.height);
+            });
+        } catch (e) { console.warn('[cam] tasks segment failed', e); }
+        _camSeg.busy = false;
+    };
+    _camSeg.inst = seg;
+    return seg;
+}
 function _camSegLoad() {
     if (_camSeg.inst) return Promise.resolve(_camSeg.inst);
+    if (_camSeg.loading) return _camSeg.loading;
+    if (_camWantTasks()) {
+        _camSeg.loading = _camSegLoadTasks().catch(e => {
+            console.warn('[cam] tasks segmenter failed, trying legacy', e);
+            _camSeg.tasksErr = String((e && e.message) || e).slice(0, 80);
+            _camSeg.loading = null; _camSeg.kind = '';
+            return _camSegLoadLegacy();
+        });
+        return _camSeg.loading;
+    }
+    return _camSegLoadLegacy();
+}
+function _camSegLoadLegacy() {
     if (_camSeg.loading) return _camSeg.loading;
     _camSeg.loading = new Promise((res, rej) => {
         if (typeof SelfieSegmentation !== 'undefined') return res();
@@ -17555,6 +17616,8 @@ function _camSegLoad() {
         _camSeg.model = 0;
         seg.onResults(r => { _camSeg.mask = _camRefineMask(r.segmentationMask); _camSeg.busy = false; });
         await seg.initialize();
+        _camSeg.kind = 'legacy';
+        _camSeg.run = (ic) => { seg.send({ image: ic }).catch(() => { _camSeg.busy = false; }); };
         _camSeg.inst = seg;
         return seg;
     }).catch(e => { _camSeg.loading = null; throw e; });
@@ -17573,7 +17636,8 @@ function _camPickBg(id) {
         if (s2 && !(_cam.rec && _cam.rec.state === 'recording')) s2.textContent = t('daily_cam_hint');
     }).catch(e => {
         console.warn('[cam] segmentation load failed', e);
-        showGemToast(0, t('daily_cam_bg_fail'), true);
+        const why = [_camSeg.tasksErr, String((e && e.message) || e).slice(0, 80)].filter(Boolean).join(' / ');
+        showGemToast(0, `${t('daily_cam_bg_fail')}${why ? ` (${why})` : ''}`, true);   // 이유를 그대로 — 기기 진단용
         _camSetPref('bg', 'none');
         const s2 = document.getElementById('cam-status'); if (s2) s2.textContent = t('daily_cam_hint');
     });
@@ -17680,14 +17744,14 @@ function _camDrawWithBg(ctx, v, vw, vh, p, src) {
         _camSeg.lastSend = _now;
         // 세로 영상(폰)은 정사각 입력 모델(0), 가로는 가로형(1) — 가로형에 세로 영상을 넣으면 눌려서 윤곽이 뭉개졌다
         const want = vh > vw ? 0 : 1;
-        if (_camSeg.model !== want) { try { _camSeg.inst.setOptions({ modelSelection: want }); _camSeg.model = want; } catch (e) {} }
+        if (_camSeg.kind === 'legacy' && _camSeg.model !== want) { try { _camSeg.inst.setOptions({ modelSelection: want }); _camSeg.model = want; } catch (e) {} }
         // 모델은 어차피 256px로 줄여 본다 — 원본(1280px)을 통째로 넘기면 매 프레임 복사 비용만 크다
         if (!_camSeg.input) _camSeg.input = document.createElement('canvas');
         const ic = _camSeg.input, k = 256 / Math.max(vw, vh), iw = Math.round(vw * k), ih = Math.round(vh * k);
         if (ic.width !== iw || ic.height !== ih) { ic.width = iw; ic.height = ih; }
         ic.getContext('2d').drawImage(v, 0, 0, iw, ih);
         _camSeg.busy = true;
-        _camSeg.inst.send({ image: ic }).catch(() => { _camSeg.busy = false; });
+        _camSeg.run(ic);
     }
     const mask = _camSeg.mask;
     if (!mask) return false;
