@@ -662,6 +662,7 @@ const LANG = {
         clear_blank_lv_mult: '✍️ 백지 Lv{lv} 제때 승점 ×{n}',
         blank_notif_body: '「{label}」 백지로 꺼내볼 시간이에요 ✍️',
         rv_blank_title: '✍️ 오늘 백지 차례',
+        todo_title: '오늘 할 일', todo_review: '복습', todo_blank: '백지', todo_cheer: '친구 응원', todo_attend: '길드 출석',
         rv_blank_sub: '그 장을 백지로(보스전·중간점검·망각의 고난) 써내면 백지레벨이 올라요',
         rv_route_title: '💡 복습을 한 번에',
         rv_route_due: '복습 {n}절',
@@ -1722,6 +1723,7 @@ const LANG = {
         clear_blank_lv_mult: '✍️ Blank Lv{lv} on-time points ×{n}',
         blank_notif_body: '"{label}" — time to write it from blank ✍️',
         rv_blank_title: '✍️ Blank review due today',
+        todo_title: 'Today', todo_review: 'Review', todo_blank: 'Blank page', todo_cheer: 'Cheer friends', todo_attend: 'Guild check-in',
         rv_blank_sub: 'Write that chapter from blank (boss, checkpoint, or trial) to raise its blank level',
         rv_route_title: '💡 Finish reviews in one go',
         rv_route_due: '{n} reviews',
@@ -7086,6 +7088,7 @@ function goHome() {
 
     // 3. 성전 모습 업데이트
     updateCastleView();
+    if (typeof renderHomeTodo === 'function') renderHomeTodo();   // 오늘 할 일 (9/30)
 
 
     // ★ [추가] 중요! 혹시 열려있을지 모르는 스테이지 시트(하얀 박스)를 닫아줌
@@ -18928,6 +18931,7 @@ async function _renderGuildScreen() {
             attendedToday: myLbData.lastGuildAttend === _get6AMDayStr(),
             donateCountToday,
         };
+        _todoFromLb(myLbData); _syncSocialBadges();
         _renderGuildHome(body, _guildData, _myGuildStatus);
     } catch (e) {
         body.innerHTML = `<div class="guild-error">오류가 발생했습니다.<br>${e.message || ''}</div>`;
@@ -19060,13 +19064,13 @@ function _renderGuildHome(body, guild, myStatus = {}) {
     })() : '';
 
     // 일일 활동 버튼
-    const donateLeft = 5 - (myStatus.donateCountToday || 0);
+    const donateLeft = 5 - (myStatus.donateCountToday || 0);   // 저장 단위는 그대로(100 = 1) — 500 한 번이 5를 채운다
     const attendBtn = myStatus.attendedToday
         ? `<button class="guild-btn-secondary" disabled>출석 완료 ✓</button>`
         : `<button id="guild-attend-btn" class="guild-btn-secondary" onclick="_guildAttend(this)">출석 체크</button>`;
     const donateBtn = donateLeft <= 0
-        ? `<button class="guild-btn-secondary" disabled>기부 완료 (5/5) ✓</button>`
-        : `<button id="guild-donate-btn" class="guild-btn-secondary" onclick="_guildDonate(this)">기부</button>`;
+        ? `<button class="guild-btn-secondary" disabled>기부 완료 ✓</button>`
+        : `<button id="guild-donate-btn" class="guild-btn-secondary" onclick="_guildDonate(this)">기부 💎500</button>`;
 
     // 길드 이름 변경 버튼 (길드장 전용)
     let renameBtn = '';
@@ -19479,6 +19483,7 @@ async function _guildAttend(btn) {
             if (res.levelUp) showGemToast(0, `길드 레벨 업! Lv.${res.newLevel} 🎉`);
             else showGemToast(0, `출석 완료! 길드 경험치 +${res.xpGained} XP`);
             _myGuildStatus.attendedToday = true;
+            _todoSocial.attended = true; _syncSocialBadges();
             if (_guildData) { _guildData.xp = res.newXp; _guildData.level = res.newLevel; }
             const body = document.getElementById('guild-screen-body');
             if (body) _renderGuildHome(body, _guildData, _myGuildStatus);
@@ -19487,17 +19492,18 @@ async function _guildAttend(btn) {
 }
 
 function _guildDonate(btn) {
-    if (myGems < 100) { showGemToast(0, '보석이 부족합니다. (필요: 💎100)', true); return; }
+    // 하루 한 번 💎500 (9/30 — 100씩 다섯 번 누르던 것을 합쳤다)
+    if (myGems < 500) { showGemToast(0, '보석이 부족합니다. (필요: 💎500)', true); return; }
     // 로딩 표시는 확인을 누른 뒤에 — 확인 대화상자가 떠 있는 동안 "기부 중"이 보이면 오해를 준다
-    _guildConfirm('보석 100개를 기부하시겠습니까?', async () => {
+    _guildConfirm('보석 500개를 기부하시겠습니까?', async () => {
         await _withButtonLoading(btn, '기부 중…', async () => {
             try {
-                const res = await _callGuildFn('guildDonate', { gems: 100 });
-                if (res.alreadyDone) { showGemToast(0, '오늘 기부 횟수를 모두 사용했습니다. (5/5)', true); return; }
-                myGems -= 100;
+                const res = await _callGuildFn('guildDonate', { gems: 500 });
+                if (res.alreadyDone) { showGemToast(0, '오늘은 이미 기부했습니다.', true); return; }
+                myGems -= 500;
                 saveGameData();
                 if (res.levelUp) showGemToast(0, `길드 레벨 업! Lv.${res.newLevel} 🎉`);
-                else showGemToast(0, `기부 완료! 길드 경험치 +1 XP`);
+                else showGemToast(0, `기부 완료! 길드 경험치 +${res.xpGained} XP`);
                 _myGuildStatus.donateCountToday = res.todayCount;
                 if (_guildData) { _guildData.xp = res.newXp; _guildData.level = res.newLevel; }
                 const body = document.getElementById('guild-screen-body');
@@ -21110,6 +21116,7 @@ setTimeout(async () => { // 8. 길드 ID 로드 (레이드 대미지 누적용)
         try {
             const doc = await db.collection('leaderboard').doc(myTag).get();
             myGuildId = doc.exists ? (doc.data().guildId || null) : null;
+            _todoFromLb(doc.exists ? doc.data() : null); _syncSocialBadges();   // 길드 출석 배지·오늘 할 일
         } catch (e) {}
     }
 }, 3000);
@@ -23230,10 +23237,12 @@ function updateNotificationBadges() {
 
     // 3. 더보기 알림 — 미션이 더보기로 들어갔으므로(2026-09-14) 미션 배지를 여기에도 비춘다. 떡은 이제 없다
     const moreBadge = document.getElementById('badge-more');
+    const social = typeof _socialBadgeOn === 'function' && _socialBadgeOn();   // 친구 응원·길드 출석도 (9/30)
     if (moreBadge) {
-        if (hasMissionReward) moreBadge.classList.add('active');
+        if (hasMissionReward || social) moreBadge.classList.add('active');
         else moreBadge.classList.remove('active');
     }
+    if (typeof renderHomeTodo === 'function') renderHomeTodo();
 }
 
 /* [기능] 보스 타격 연출 함수 (흔들림 + 데미지 숫자) */
@@ -29231,15 +29240,51 @@ async function updateFriendBadge() {
     const badge = document.getElementById('badge-friend');
     if (!badge || !db || !myTag) return;
     try {
-        const data = await _getFriendDoc(myTag);
-        const received = (data && data.pendingReceived) || [];
+        const data = (await _getFriendDoc(myTag)) || {};
         const now = Date.now();
         const validRequests = (data.pendingReceived || []).filter(r => (now - r.sentAt) < FRIEND_REQUEST_TTL_MS);
         const pendingCheers = (data.pendingCheers || []).length;
-        const total = validRequests.length + pendingCheers;
+        // 오늘 아직 응원하지 않은 친구 (9/30) — 받은 것만 세면 보낼 차례를 놓쳤다
+        const todayStr = _getLocalDateStr(new Date());
+        const cheerMap = (typeof data.lastCheerSent === 'object' && data.lastCheerSent) ? data.lastCheerSent : {};
+        const friends = data.friends || [];
+        _todoSocial.hasFriends = friends.length > 0;
+        _todoSocial.cheerable = friends.filter(tag => cheerMap[tag] !== todayStr).length;
+        const total = validRequests.length + pendingCheers + _todoSocial.cheerable;
+        _todoSocial.friendN = total;
         badge.textContent = total > 0 ? total : '';
         badge.style.display = total > 0 ? '' : 'none';
     } catch (e) { badge.style.display = 'none'; }
+    _syncSocialBadges();
+}
+
+/* ── 오늘 할 일 · 친구/길드 배지 (2026-09-30) ──
+   응원·길드 출석은 더보기 메뉴 속 배지에만 있었고(더보기 버튼의 빨간 점은 미션만 켰다) 길드 출석은 표시가 아예 없어 놓치기 쉬웠다(사용자 의견).
+   친구 배지 = 받은 요청·응원 + 오늘 아직 응원 안 한 친구 · 길드 배지 = 오늘 출석 전. 하나라도 켜지면 더보기 점도 켠다.
+   홈 「오늘 할 일」 한 줄 — 복습 · 백지 · 친구 응원 · 길드 출석 (updateNotificationBadges가 함께 그린다) */
+// var: updateNotificationBadges가 이 줄보다 먼저(loadGameData) 불린다 — const면 TDZ로 스크립트가 멈춘다
+var _todoSocial = { friendN: 0, cheerable: 0, hasFriends: false, inGuild: false, attended: true };
+function _todoFromLb(d) {   // 리더보드 내 문서에서 길드 상태
+    if (!_todoSocial) return;
+    _todoSocial.inGuild = !!(d && d.guildId);
+    _todoSocial.attended = !!(d && d.lastGuildAttend === _get6AMDayStr());
+}
+function _socialBadgeOn() { const s = _todoSocial; return !!s && (s.friendN > 0 || (s.inGuild && !s.attended)); }
+function _syncSocialBadges() {
+    const gb = document.getElementById('badge-guild');
+    if (gb && _todoSocial) gb.classList.toggle('active', _todoSocial.inGuild && !_todoSocial.attended);
+    if (typeof updateNotificationBadges === 'function') updateNotificationBadges();
+}
+function renderHomeTodo() {
+    const el = document.getElementById('home-todo'), S = _todoSocial; if (!el || !S) return;
+    let rev = 0, blank = 0;
+    try { rev = getForgottenStages().length; } catch (e) { }
+    try { blank = _blankDueIds().length; } catch (e) { }
+    const chip = (icon, label, n, done, fn) => `<button class="home-todo-chip${done ? ' done' : ''}" onclick="${fn}">${icon} ${label}${done ? ' ✓' : n ? ` <b>${n}</b>` : ''}</button>`;
+    let h = chip('📖', t('todo_review'), rev, rev === 0, 'startGame()') + chip('✍️', t('todo_blank'), blank, blank === 0, 'startGame()');
+    if (S.hasFriends) h += chip('💛', t('todo_cheer'), S.cheerable, S.cheerable === 0, 'openFriendScreen()');
+    if (S.inGuild) h += chip('⚔️', t('todo_attend'), 0, S.attended, 'openGuildScreen()');
+    el.innerHTML = `<div class="home-todo-title">${t('todo_title')}</div><div class="home-todo-chips">${h}</div>`;
 }
 
 // 친구 신청 보내기

@@ -729,8 +729,9 @@ exports.reportRaidDamage = onCall({ cors: ALLOWED_ORIGINS }, async (request) => 
 
 // ── 길드 XP 헬퍼 ──────────────────────────────────────────────────────────────
 const GUILD_ATTEND_XP = 5;
-const GUILD_DONATE_XP = 1;
-const GUILD_DONATE_GEMS = 100;
+const GUILD_DONATE_XP = 1;          // 옛 기부(💎100) 한 번
+const GUILD_DONATE_GEMS = 100;      // 옛 앱이 보내는 값 — 배포 직후 캐시된 앱을 위해 남긴다
+const GUILD_DONATE_ONCE = 500;      // 9/30: 하루 100×5번 → 500 한 번(XP 5). 저장 단위(count)는 그대로 100 = 1
 const GUILD_DONATE_MAX_DAILY = 5;
 const RAID_SCALES_BY_TIER = [0, 2, 4, 6, 10, 0]; // tier 0~4 (0%/20%/40%/60%/80%+)
 
@@ -788,7 +789,8 @@ exports.guildAttend = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
 exports.guildDonate = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
     const { myTag, gems } = request.data;
-    if (gems !== GUILD_DONATE_GEMS) throw new HttpsError('invalid-argument', '기부 금액이 올바르지 않습니다.');
+    if (gems !== GUILD_DONATE_GEMS && gems !== GUILD_DONATE_ONCE) throw new HttpsError('invalid-argument', '기부 금액이 올바르지 않습니다.');
+    const once = gems === GUILD_DONATE_ONCE;
 
     const userData = await verifyTag(request.auth.uid, myTag);
     if (!userData.guildId) throw new HttpsError('not-found', '가입한 길드가 없습니다.');
@@ -800,17 +802,18 @@ exports.guildDonate = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
 
     const guildRef = db.collection('guilds').doc(userData.guildId);
     const lbRef = db.collection('leaderboard').doc(String(myTag));
-    const newCount = todayCount + 1;
+    const newCount = once ? GUILD_DONATE_MAX_DAILY : todayCount + 1;   // 500은 오늘 몫을 한 번에 채운다
+    const xpGain = once ? GUILD_DONATE_XP * GUILD_DONATE_MAX_DAILY : GUILD_DONATE_XP;
     let result;
     await db.runTransaction(async (tx) => {
         const guildDoc = await tx.get(guildRef);
         if (!guildDoc.exists) throw new HttpsError('not-found', '길드를 찾을 수 없습니다.');
-        const { level, xp, levelUp } = calcGuildXpResult(guildDoc.data().level, guildDoc.data().xp, GUILD_DONATE_XP);
+        const { level, xp, levelUp } = calcGuildXpResult(guildDoc.data().level, guildDoc.data().xp, xpGain);
         tx.update(guildRef, { level, xp });
         tx.update(lbRef, { guildDonateInfo: { date: today, count: newCount } });
         result = { level, xp, levelUp };
     });
-    return { ok: true, alreadyDone: false, xpGained: GUILD_DONATE_XP, levelUp: result.levelUp, newLevel: result.level, newXp: result.xp, todayCount: newCount };
+    return { ok: true, alreadyDone: false, xpGained: xpGain, levelUp: result.levelUp, newLevel: result.level, newXp: result.xp, todayCount: newCount };
 });
 
 // ── 레이드 보상 수령 ───────────────────────────────────────────────────────────
