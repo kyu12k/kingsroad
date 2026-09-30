@@ -4528,12 +4528,25 @@ const SoundEffect = {
 
     // 새 예루살렘 3D — 물길을 걸을 때 참방 (잡음을 높은 데서 낮게 훑기 + 작은 물방울 톡). 발소리라 🔉에서도 꺼진다
     // big: 점프해서 물에 떨어질 때
+    // 풀밭 발소리 — 잡음을 아래로 훑는다(예전 물소리였는데 "풀밭을 다니는 소리 같다"고 해서 풀밭으로 옮겼다, 9/30)
+    playGrass: function (run) {
+        if (this.keyMuted) return;
+        this._play(t => {
+            const j = 0.85 + Math.random() * 0.3;
+            this._whoosh(t, run ? 0.09 : 0.11, run ? 0.07 : 0.05, 2600 * j, 700 * j);
+        });
+    },
     playSplash: function (big) {
         if (this.keyMuted) return;
         this._play(t => {
-            const v = big ? 0.2 : 0.09, j = 0.85 + Math.random() * 0.3;
-            this._whoosh(t, big ? 0.22 : 0.11, v, 2600 * j, 700 * j);
-            this._note(760 * j, t + 0.01, big ? 0.09 : 0.05, big ? 0.05 : 0.028, { glideTo: 380 * j, partials: this._PURE });
+            // 물소리 = 물방울이 '퐁' 하고 올라가는 음(거품이 울리는 소리). 전엔 잡음을 아래로 훑어 풀밭을 헤치는 소리 같았다(9/30 사용자)
+            const j = 0.85 + Math.random() * 0.3, n = big ? 3 : 1 + (Math.random() < 0.4 ? 1 : 0);
+            for (let k = 0; k < n; k++) {
+                const tt = t + k * (0.04 + Math.random() * 0.03), f = (big ? 380 : 560) * j * (1 + k * 0.3 + Math.random() * 0.15);
+                this._note(f, tt, 0.06, (big ? 0.11 : 0.06) * (k ? 0.6 : 1), { glideTo: f * 2.6, partials: this._PURE, attack: 0.002 });
+            }
+            this._whoosh(t, big ? 0.06 : 0.035, big ? 0.07 : 0.03, 6000 * j, 4200 * j);   // 튀는 물 — 아주 짧고 높게
+            if (big) this._note(140 * j, t, 0.12, 0.08, { glideTo: 70 * j, partials: this._PURE, attack: 0.002 });   // 떨어질 때 '풍덩' 무게
         });
     },
 

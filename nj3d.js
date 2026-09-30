@@ -409,11 +409,27 @@
         const toW = (x, y) => [(x - 440) / 330 * SRX, SZ + (y - 470) / 320 * SRZ];
         const HRW = 7.75 / 330 * SRX;
         {
-            const fl = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshBasicMaterial({ color: 0x0b2a33 }));
+            const fl = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshBasicMaterial({ color: 0x0c3444 }));
             fl.rotation.x = -Math.PI / 2; fl.scale.set(SRX, SRZ, 1); fl.position.set(0, SEA_Y - 0.6, SZ); seaGrp.add(fl);
         }
+        // 수면 (9/30) — 칸 위에 얇게 비치는 물결 한 장. 사용자: "바다 칸이 메마른 땅 같다" — 칸만 있으면 타일 바닥처럼 보였다.
+        // 반투명이라 아래 칸 색(맑아진 정도)은 그대로 보이고, 물결 무늬가 천천히 흐른다
+        const seaTex = (() => {
+            const cv = document.createElement('canvas'); cv.width = cv.height = 128; const g = cv.getContext('2d');
+            g.fillStyle = '#3aa7c4'; g.fillRect(0, 0, 128, 128);
+            g.strokeStyle = 'rgba(225,250,255,0.55)'; g.lineCap = 'round';
+            for (let i = 0; i < 26; i++) {   // 짧은 물결 줄 — 이음매 없이 되풀이되도록 가장자리를 넘으면 반대편에도
+                const x = Math.random() * 128, y = Math.random() * 128, w = 8 + Math.random() * 14; g.lineWidth = 1 + Math.random() * 1.5;
+                [[0, 0], [-128, 0], [0, -128], [-128, -128]].forEach(([ox, oy]) => { g.beginPath(); g.moveTo(x + ox, y + oy); g.quadraticCurveTo(x + ox + w / 2, y + oy - 2.5, x + ox + w, y + oy); g.stroke(); });
+            }
+            const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(9, 9); t.encoding = THREE.sRGBEncoding; return t;
+        })();
+        {
+            const sf = new THREE.Mesh(new THREE.CircleGeometry(1, 64), new THREE.MeshStandardMaterial({ map: seaTex, color: 0xffffff, transparent: true, opacity: 0.5, roughness: 0.12, metalness: 0.2, depthWrite: false }));
+            sf.rotation.x = -Math.PI / 2; sf.scale.set(SRX * 1.02, SRZ * 1.02, 1); sf.position.set(0, SEA_Y + 0.006, SZ); sf.renderOrder = 1; seaGrp.add(sf);
+        }
         const cellN = SG.water.length + SG.salt.length;
-        const tiles = new THREE.InstancedMesh(new THREE.CylinderGeometry(HRW * 0.93, HRW * 0.93, 0.14, 6), new THREE.MeshStandardMaterial({ roughness: 0.25, metalness: 0.15 }), Math.max(1, cellN));
+        const tiles = new THREE.InstancedMesh(new THREE.CylinderGeometry(HRW * 0.985, HRW * 0.985, 0.14, 6), new THREE.MeshStandardMaterial({ roughness: 0.25, metalness: 0.15 }), Math.max(1, cellN));
         {
             const m4 = new THREE.Matrix4();
             [...SG.water, ...SG.salt].forEach((c, i) => { const [X, Z] = toW(c.x, c.y); m4.makeTranslation(X, SEA_Y - 0.07, Z); tiles.setMatrixAt(i, m4); });
@@ -445,7 +461,7 @@
             seaW = w;
             const clear = (w && w.clear) || 0, stages = [250, 500, 1000, 2000]; let upto = 2000; for (const n of stages) if (clear < n) { upto = n; break; }
             const col = new THREE.Color();
-            SG.water.forEach((c, i) => { col.set(i < clear ? (i >= clear - 12 ? '#2c95aa' : '#1fb0c9') : i < upto ? '#3b4a3f' : '#26312b'); tiles.setColorAt(i, col); });
+            SG.water.forEach((c, i) => { col.set(i < clear ? (i >= clear - 12 ? '#2c95aa' : '#1fb0c9') : i < upto ? '#2b4f58' : '#1d3a44'); tiles.setColorAt(i, col); });
             SG.salt.forEach((c, i) => { col.set('#d9d2c3'); tiles.setColorAt(SG.water.length + i, col); });
             if (tiles.instanceColor) tiles.instanceColor.needsUpdate = true;
             const LAND = ['#75674f', '#5aa962', '#3f8f4d', '#4f9b58', '#62b06a'], ca = natRing.geometry.attributes.color, m4 = new THREE.Matrix4();
@@ -979,6 +995,14 @@
             if (ax < IN_F && az < IN_F && (Math.abs(ax - GATE_GAP) < 0.275 || Math.abs(az - GATE_GAP) < 0.275)) return false;
             return riverDip(x, z) < -0.02;
         }
+        // 풀밭 — 산마루 밖 비탈·벌판(바다·강 빼고)과 성벽 안 정금 바닥 바깥. 기초석 단·상자 위는 아니다 (사각사각 소리)
+        function grassAt(x, z, y) {
+            if (wetAt(x, z)) return false;
+            if (groundAt(x, z, y) > terrain(x, z) + 0.01) return false;   // 무언가 위에 올라서 있다
+            const ax = Math.abs(x), az = Math.abs(z);
+            if (Math.max(ax, az) > PL) return true;
+            return bandHeight(x, z) <= 0 && !(ax < IN_F && az < IN_F);
+        }
         function blocked(x, z, y) {
             if (Math.abs(x) > 140 || z < -140 || z > 150) return true;
             if (terrain(x, z) - y > STEP) return true;
@@ -1481,7 +1505,10 @@
             if (stepping) {
                 const prev = Math.sin(gait);
                 gait += dt * (run ? 15 : 9.5) * (inRiver ? 0.8 : 1);
-                if (inWater && Math.sign(Math.sin(gait)) !== Math.sign(prev)) splash(P.x, P.z, false);   // 발을 디딜 때마다 참방
+                if (Math.sign(Math.sin(gait)) !== Math.sign(prev)) {   // 발을 디딜 때마다 — 물이면 참방, 풀밭이면 사각
+                    if (inWater) splash(P.x, P.z, false);
+                    else if (typeof SoundEffect !== 'undefined' && SoundEffect.playGrass && grassAt(P.x, P.z, P.y)) SoundEffect.playGrass(run);
+                }
             }
             const amp = run ? 0.95 : 0.55, sw = Math.sin(gait);
             let hL = 0, hR = 0, aL = 0, aR = 0, zL = 0, zR = 0, lean = 0, bob = 0;
@@ -1553,7 +1580,7 @@
             // 만지지 않은 지 3초가 지나면 초당 30번 — 쉬지 않고 60번 그리면 폰이 뜨거워져 스스로 느려졌다(시안 실측)
             if (!touching && now - lastTouch > 3000 && now - last < 30) { requestAnimationFrame(loop); return; }
             const dt = Math.min(0.05, (now - last) / 1000); last = now;
-            if (!reduce) rivers.forEach(tx => { tx.offset.y += dt * 0.25; });   // 보좌에서 바깥으로
+            if (!reduce) { rivers.forEach(tx => { tx.offset.y += dt * 0.25; }); seaTex.offset.x += dt * 0.012; seaTex.offset.y += dt * 0.02; }   // 강은 보좌에서 바깥으로 · 바다 물결은 천천히
             if (HIGH && !reduce) {
                 for (let n = 0; n < MOTES; n++) { const i = n * 3 + 1; motePos[i] += dt * moteSpd[n]; if (motePos[i] > 10) motePos[i] = 0; }
                 moteGeo.attributes.position.needsUpdate = true; shaft.rotation.y += dt * 0.05;
