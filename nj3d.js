@@ -12,6 +12,8 @@
 (function () {
     const THREE_URL = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
     const ORBIT_URL = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
+    const GLTF_URL = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';   // 예물 모델(.glb) — 예물을 볼 때만 받는다
+    const GIFT_V = '20260930';   // models/gifts/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/)
     const JET_COST = 300000;
     const T = (k, p) => (typeof t === 'function' ? t(k, p) : k);
 
@@ -478,14 +480,152 @@
         const mat = (color, o) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.6 }, o || {}));
         const GOLD = mat(0xe0b04a, { metalness: 0.7, roughness: 0.3, emissive: 0x4a3208, emissiveIntensity: 0.3 });
         const FAMILY_ROBE = { '셈': 0x3b6fb6, '함': 0xc77b2e, '야벳': 0x2e8b57 };
-        function makePerson(robeColor, hat) {   // 순례자와 같은 크기의 사람(사신·짐꾼)
-            const gp = new THREE.Group();
-            const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.065, 0.17, 12), mat(robeColor)); robe.position.y = 0.085; gp.add(robe);
-            const head = new THREE.Mesh(new THREE.SphereGeometry(0.032, 12, 10), mat(0xd9b28c)); head.position.y = 0.2; gp.add(head);
-            if (hat) { const h = new THREE.Mesh(new THREE.SphereGeometry(0.036, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat(0xf2ead8)); h.position.y = 0.205; h.scale.y = 1.3; gp.add(h); }
-            const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.26, 6), mat(0x7a5230)); staff.position.set(0.06, 0.13, -0.02); gp.add(staff);
-            return gp;
+        // ── 사람 · 짐승 · 수레 (9/30 그래픽 2차, 시안 「만국의 예물 행렬」에서) — 모두 +x를 바라본다. 만들면 { g, anim(t, 빠르기), animal? } ──
+        const PM = (() => {
+        const LINEN = mat(0xfbf8f0, { roughness: 0.85 });
+        const SKIN = mat(0xd9b28c), WOOD = mat(0x7a5230, { roughness: 0.8 }), SANDAL = mat(0x8a5a34);
+        const ell = (r, sx, sy, sz, m) => { const e = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), m); e.scale.set(sx, sy, sz); return e; };
+        const put = (o, x, y, z) => { o.position.set(x, y, z); return o; };
+        const cyl = (r0, r1, h, m, seg) => new THREE.Mesh(new THREE.CylinderGeometry(r0, r1, h, seg || 10), m);
+        // 사람 — 두건·겉옷·띠, 무릎 없는 다리와 팔(순례자와 같은 크기). pose: 'walk' | 'carry'(두 팔을 들어 채를 붙잡는다) | 'lead'(지팡이)
+        function person(robe, pose) {
+          const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+          const R = mat(robe, { roughness: 0.7 }), cloth = mat(0xeee6d8);
+          body.add(put(cyl(0.032, 0.058, 0.12, R, 14), 0, 0.115, 0));
+          const belt = new THREE.Mesh(new THREE.TorusGeometry(0.036, 0.006, 6, 16), GOLD); belt.rotation.x = Math.PI / 2; belt.position.y = 0.13; body.add(belt);
+          const head = new THREE.Mesh(new THREE.SphereGeometry(0.03, 14, 10), SKIN); head.position.y = 0.2; body.add(head);
+          const hood = ell(0.034, 1, 1.15, 1, cloth); hood.position.set(-0.004, 0.207, 0); body.add(hood);   // 두건
+          const band = new THREE.Mesh(new THREE.TorusGeometry(0.031, 0.005, 6, 16), R); band.rotation.x = Math.PI / 2; band.position.y = 0.214; body.add(band);
+          const tail = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.07, 8), cloth); tail.position.set(-0.03, 0.18, 0); tail.rotation.z = -0.5; body.add(tail);   // 두건 자락
+          const face = new THREE.Mesh(new THREE.SphereGeometry(0.029, 12, 8, -Math.PI / 2.4, Math.PI / 1.2, 0.5, 1.6), SKIN); face.position.set(0.004, 0.2, 0); body.add(face);
+          const limb = (x, y, z, len, r, m, foot) => { const p = new THREE.Group(); p.position.set(x, y, z); const l = cyl(r, r * 0.85, len, m, 8); l.position.y = -len / 2; p.add(l);
+            if (foot) { const f = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.01, 0.02), SANDAL); f.position.set(0.008, -len, 0); p.add(f); }
+            else { const h = new THREE.Mesh(new THREE.SphereGeometry(0.01, 8, 6), SKIN); h.position.y = -len - 0.003; p.add(h); }
+            body.add(p); return p; };
+          const hipL = limb(0, 0.07, 0.017, 0.07, 0.011, cloth, true), hipR = limb(0, 0.07, -0.017, 0.07, 0.011, cloth, true);
+          const armL = limb(0, 0.162, 0.038, 0.066, 0.011, R), armR = limb(0, 0.162, -0.038, 0.066, 0.011, R);
+          if (pose === 'lead') { const st = cyl(0.005, 0.005, 0.3, WOOD, 6); st.position.set(0.004, -0.02, 0); armR.add(st); }
+          const anim = (t, sp) => {
+            const w = Math.sin(t * 9 * (sp || 1)), a = 0.5 * w;
+            hipL.rotation.z = a; hipR.rotation.z = -a;
+            if (pose === 'carry') { armL.rotation.z = armR.rotation.z = 2.55; armL.rotation.x = -0.25; armR.rotation.x = 0.25; }
+            else if (pose === 'lead') { armL.rotation.z = -a * 0.8; armR.rotation.z = 0.5; }
+            else { armL.rotation.z = -a * 0.8; armR.rotation.z = a * 0.8; }
+            body.position.y = Math.abs(Math.cos(t * 9 * (sp || 1))) * 0.006;
+          };
+          anim(0); return { g, anim };
         }
+        // 네 발 짐승의 두 마디 다리 — 넓적다리가 흔들리고 앞으로 나올 때 무릎이 굽는다
+        function makeLegs(parent, coat, spots, upper, lower, r) {
+          const legs = spots.map(([x, z, ph]) => {
+            const hip = new THREE.Group(); hip.position.set(x, upper + lower, z); parent.add(hip);
+            const u = cyl(r, r * 0.8, upper, coat, 8); u.position.y = -upper / 2; hip.add(u);
+            const knee = new THREE.Group(); knee.position.y = -upper; hip.add(knee);
+            const l = cyl(r * 0.8, r * 0.65, lower, coat, 8); l.position.y = -lower / 2; knee.add(l);
+            const hoof = cyl(r * 0.8, r * 0.9, 0.012, mat(0x3a2e24), 8); hoof.position.y = -lower; knee.add(hoof);
+            return { hip, knee, ph };
+          });
+          return (t, sp) => legs.forEach(L => { const p = t * 11 * (sp || 1) + L.ph, s = Math.sin(p); L.hip.rotation.z = s * 0.42; L.knee.rotation.z = -Math.max(0, Math.cos(p)) * 0.7; });
+        }
+        const GAIT = [0, Math.PI, Math.PI / 2, Math.PI * 1.5];   // 앞왼·앞오·뒤왼·뒤오
+        // 세마포 예물 — 금줄 십자와 나비매듭, 늘어진 술
+        function wrapped(w, h, d) {
+          const g = new THREE.Group(); g.add(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), LINEN));
+          const fold = new THREE.Mesh(new THREE.BoxGeometry(w * 0.98, 0.006, d * 1.02), mat(0xece6d8)); fold.position.y = h * 0.18; g.add(fold);   // 천 주름
+          [[w + 0.008, 0.012, 0.018], [0.018, 0.012, d + 0.008]].forEach(([a, b, c]) => { const r = new THREE.Mesh(new THREE.BoxGeometry(a, b, c), GOLD); r.position.y = h / 2; g.add(r); });
+          [[w + 0.008, h + 0.006, 0.016], [0.016, h + 0.006, d + 0.008]].forEach(([a, b, c]) => g.add(new THREE.Mesh(new THREE.BoxGeometry(a, b, c), GOLD)));
+          [-1, 1].forEach(sd => { const loop = new THREE.Mesh(new THREE.TorusGeometry(0.022, 0.006, 6, 12), GOLD); loop.position.set(sd * 0.02, h / 2 + 0.018, 0); loop.rotation.y = Math.PI / 2; g.add(loop); });
+          const knot = new THREE.Mesh(new THREE.SphereGeometry(0.01, 8, 6), GOLD); knot.position.y = h / 2 + 0.01; g.add(knot);
+          [-1, 1].forEach(sd => { const tas = cyl(0.004, 0.009, 0.05, GOLD, 6); tas.position.set(sd * 0.012, h / 2 - 0.02, d / 2 + 0.01); g.add(tas); });
+          return g;
+        }
+        function mule() {
+          const g = new THREE.Group(), coat = mat(0x8a6a50, { roughness: 0.8 });
+          g.add(put(ell(0.1, 1.7, 0.72, 0.62, coat), 0, 0.22, 0));
+          const neck = cyl(0.03, 0.045, 0.14, coat); neck.position.set(0.16, 0.29, 0); neck.rotation.z = -0.8; g.add(neck);
+          const head = ell(0.045, 1.6, 0.8, 0.8, coat); head.position.set(0.23, 0.33, 0); head.rotation.z = -0.4; g.add(head);
+          [-1, 1].forEach(sd => { const ear = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.08, 6), coat); ear.position.set(0.21, 0.39, sd * 0.022); ear.rotation.x = sd * 0.25; g.add(ear); });
+          const tailM = cyl(0.006, 0.012, 0.1, coat, 6); tailM.position.set(-0.18, 0.2, 0); tailM.rotation.z = -0.3; g.add(tailM);
+          const saddle = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.02, 0.15), mat(0x9b3a2e)); saddle.position.set(-0.01, 0.285, 0); g.add(saddle);
+          const legsAnim = makeLegs(g, coat, [[0.1, 0.035, GAIT[0]], [0.1, -0.035, GAIT[1]], [-0.1, 0.035, GAIT[2]], [-0.1, -0.035, GAIT[3]]], 0.075, 0.075, 0.013);
+          const w = wrapped(0.18, 0.12, 0.15); w.position.set(-0.01, 0.36, 0); g.add(w);
+          return { g, animal: true, anim: (t, sp) => { legsAnim(t, sp); head.rotation.z = -0.4 + Math.sin(t * 11) * 0.05; } };
+        }
+        function camel(load) {
+          const g = new THREE.Group(), coat = mat(0xc9a06a, { roughness: 0.85 });
+          g.add(put(ell(0.13, 1.55, 0.72, 0.68, coat), 0, 0.37, 0));
+          const hump = ell(0.1, 1.15, 0.95, 0.9, coat); hump.position.set(-0.02, 0.46, 0); g.add(hump);
+          [[0.2, 0.4, -0.3, 0.05], [0.26, 0.47, -0.9, 0.042], [0.3, 0.55, -0.2, 0.036]].forEach(([x, y, rz, r]) => { const n = cyl(r * 0.85, r, 0.11, coat); n.position.set(x, y, 0); n.rotation.z = rz; g.add(n); });   // 휜 목
+          const head = ell(0.05, 1.7, 0.75, 0.75, coat); head.position.set(0.36, 0.6, 0); g.add(head);
+          [-1, 1].forEach(sd => { const ear = new THREE.Mesh(new THREE.ConeGeometry(0.01, 0.03, 6), coat); ear.position.set(0.32, 0.64, sd * 0.02); g.add(ear); });
+          const tailC = cyl(0.006, 0.01, 0.12, coat, 6); tailC.position.set(-0.2, 0.34, 0); tailC.rotation.z = -0.2; g.add(tailC);
+          // 안장 담요 — 붉은 천에 금 띠, 네 귀퉁이 술
+          const blanket = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.02, 0.24), mat(0x9b2d2d, { roughness: 0.7 })); blanket.position.set(-0.02, 0.5, 0); g.add(blanket);
+          const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.265, 0.022, 0.03), GOLD); stripe.position.copy(blanket.position); g.add(stripe);
+          [[0.12, 0.12], [0.12, -0.12], [-0.15, 0.12], [-0.15, -0.12]].forEach(([x, z]) => { const tas = new THREE.Mesh(new THREE.ConeGeometry(0.01, 0.04, 6), GOLD); tas.position.set(x, 0.47, z); tas.rotation.x = Math.PI; g.add(tas); });
+          const legsAnim = makeLegs(g, coat, [[0.13, 0.05, GAIT[0]], [0.13, -0.05, GAIT[1]], [-0.13, 0.05, GAIT[2]], [-0.13, -0.05, GAIT[3]]], 0.15, 0.15, 0.018);
+          if (load) { const w = wrapped(0.2, 0.15, 0.18); w.position.set(-0.02, 0.6, 0); g.add(w); }
+          else [-1, 1].forEach(sd => { const bag = ell(0.06, 1, 1.25, 0.7, sd > 0 ? GOLD : mat(0xe9dcc0, { roughness: 0.9 })); bag.position.set(-0.03, 0.4, sd * 0.13); g.add(bag); });   // 금 · 유향
+          return { g, animal: true, anim: (t, sp) => { legsAnim(t, (sp || 1) * 0.8); head.position.y = 0.6 + Math.sin(t * 8.8) * 0.01; } };
+        }
+        function horse() {
+          const g = new THREE.Group(), coat = mat(0xfbfbf6, { roughness: 0.6 });
+          g.add(put(ell(0.11, 1.65, 0.75, 0.62, coat), 0, 0.3, 0));
+          const neck = cyl(0.035, 0.055, 0.17, coat); neck.position.set(0.17, 0.39, 0); neck.rotation.z = -0.6; g.add(neck);
+          const head = ell(0.045, 1.8, 0.8, 0.72, coat); head.position.set(0.25, 0.46, 0); head.rotation.z = -0.55; g.add(head);
+          for (let k = 0; k < 6; k++) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.03, 0.012), GOLD); m.position.set(0.12 + k * 0.022, 0.4 + k * 0.022, 0); m.rotation.z = -0.6; g.add(m); }   // 금 갈기
+          const tailH = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.16, 8), GOLD); tailH.position.set(-0.2, 0.26, 0); tailH.rotation.z = -0.5; g.add(tailH);
+          const breast = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.008, 6, 16, Math.PI), GOLD); breast.position.set(0.13, 0.3, 0); breast.rotation.set(0, Math.PI / 2, Math.PI); g.add(breast);
+          const legsAnim = makeLegs(g, coat, [[0.12, 0.04, GAIT[0]], [0.12, -0.04, GAIT[1]], [-0.12, 0.04, GAIT[2]], [-0.12, -0.04, GAIT[3]]], 0.11, 0.11, 0.015);
+          return { g, animal: true, anim: (t, sp) => { legsAnim(t, sp); head.rotation.z = -0.55 + Math.sin(t * 11) * 0.06; } };
+        }
+        function spokedWheel(r) { const w = new THREE.Group(); w.add(new THREE.Mesh(new THREE.TorusGeometry(r, 0.012, 6, 20), WOOD));
+          for (let k = 0; k < 6; k++) { const sp = cyl(0.004, 0.004, r * 2, WOOD, 4); sp.rotation.z = k * Math.PI / 6; w.add(sp); }
+          w.add(cyl(0.018, 0.018, 0.03, GOLD, 8).rotateX(Math.PI / 2)); return w; }
+        function chariot() {
+          const g = new THREE.Group();
+          const box = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.12, 0.22), GOLD); box.position.set(-0.02, 0.2, 0); g.add(box);
+          const front = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.12, 16, 1, false, 0, Math.PI), GOLD); front.position.set(0.08, 0.2, 0); front.rotation.y = Math.PI / 2; g.add(front);
+          const wheels = [-1, 1].map(sd => { const wh = spokedWheel(0.12); wh.position.set(-0.02, 0.12, sd * 0.13); g.add(wh); return wh; });
+          const pole = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.016, 0.016), WOOD); pole.position.set(0.3, 0.22, 0); g.add(pole);
+          const w = wrapped(0.16, 0.13, 0.16); w.position.set(-0.02, 0.33, 0); g.add(w);
+          return { g, anim: (t, sp) => wheels.forEach(wh => { wh.rotation.z = -t * 9 * (sp || 1); }) };
+        }
+        function litter(robe) {
+          const g = new THREE.Group();
+          const base = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.035, 0.28), GOLD); base.position.y = 0.2; g.add(base);
+          [[0.18, 0.12], [0.18, -0.12], [-0.18, 0.12], [-0.18, -0.12]].forEach(([x, z]) => { const p = cyl(0.007, 0.007, 0.24, GOLD, 6); p.position.set(x, 0.33, z); g.add(p); });
+          const roof = new THREE.Mesh(new THREE.ConeGeometry(0.29, 0.12, 4), mat(0x6b3a8e, { roughness: 0.5 })); roof.position.y = 0.5; roof.rotation.y = Math.PI / 4; g.add(roof);
+          const fin = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 6), GOLD); fin.position.y = 0.57; g.add(fin);
+          for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, x = Math.cos(a) * 0.2, z = Math.sin(a) * 0.2; const tas = new THREE.Mesh(new THREE.ConeGeometry(0.008, 0.035, 5), GOLD); tas.position.set(x, 0.43, z); tas.rotation.x = Math.PI; g.add(tas); }   // 술 장식
+          [-1, 1].forEach(sd => { const cur = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.2), new THREE.MeshStandardMaterial({ color: 0x8e5bb0, transparent: true, opacity: 0.55, side: THREE.DoubleSide })); cur.position.set(0, 0.33, sd * 0.125); g.add(cur); });   // 휘장
+          [-0.1, 0.1].forEach(z => { const pole = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.018, 0.018), WOOD); pole.position.set(0, 0.215, z * 1.9); g.add(pole); });
+          const w = wrapped(0.2, 0.14, 0.18); w.position.set(0, 0.29, 0); g.add(w);
+          const bearers = [[0.36, 0.19], [0.36, -0.19], [-0.36, 0.19], [-0.36, -0.19]].map(([x, z], n) => { const p = person(robe, 'carry'); p.g.position.set(x, 0, z); g.add(p.g); p.ph = n * 1.3; return p; });
+          return { g, bearers, anim: (t, sp) => bearers.forEach(b => b.anim(t + b.ph, sp)) };
+        }
+        function ship() {
+          const g = new THREE.Group();
+          const prof = new THREE.Shape(); prof.moveTo(-0.62, 0.22); prof.quadraticCurveTo(-0.5, -0.02, 0, -0.04); prof.quadraticCurveTo(0.55, -0.02, 0.78, 0.3); prof.lineTo(0.62, 0.22); prof.lineTo(-0.62, 0.22);
+          const hull = new THREE.Mesh(new THREE.ExtrudeGeometry(prof, { depth: 0.34, bevelEnabled: true, bevelSize: 0.03, bevelThickness: 0.04, bevelSegments: 2 }), mat(0x7a5230, { roughness: 0.75 })); hull.position.z = -0.17; g.add(hull);
+          const rail = new THREE.Mesh(new THREE.BoxGeometry(1.24, 0.03, 0.42), GOLD); rail.position.set(0, 0.23, 0); g.add(rail);
+          const mast = cyl(0.018, 0.024, 1.15, WOOD, 8); mast.position.set(0, 0.8, 0); g.add(mast);
+          const sg = new THREE.PlaneGeometry(0.62, 0.72, 8, 8), sp = sg.attributes.position;
+          for (let i = 0; i < sp.count; i++) { const x = sp.getX(i), y = sp.getY(i); sp.setZ(i, 0.09 * Math.cos(x / 0.62 * Math.PI) * Math.cos(y / 0.72 * Math.PI * 0.8)); }   // 바람 먹은 돛
+          sg.computeVertexNormals();
+          const sail = new THREE.Mesh(sg, new THREE.MeshStandardMaterial({ color: 0xf2ead8, side: THREE.DoubleSide, roughness: 0.8 })); sail.position.set(0.03, 0.8, 0); sail.rotation.y = Math.PI / 2; g.add(sail);
+          const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 0.07), new THREE.MeshStandardMaterial({ color: 0x2e8b57, side: THREE.DoubleSide })); flag.position.set(-0.07, 1.36, 0); g.add(flag);
+          const oars = []; for (let k = 0; k < 4; k++) [-1, 1].forEach(sd => {
+            const piv = new THREE.Group(); piv.position.set(-0.35 + k * 0.22, 0.22, sd * 0.21); g.add(piv);   // 뱃전의 노걸이
+            const o = cyl(0.006, 0.006, 0.46, WOOD, 5); o.rotation.x = sd * 2.1; o.position.set(0, -0.5 * 0.23, sd * 0.85 * 0.23); piv.add(o);   // 바깥 아래 — 물 쪽으로
+            const blade = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.004, 0.09), WOOD); blade.position.set(0, -0.5 * 0.44, sd * 0.85 * 0.44); blade.rotation.x = sd * 0.55; piv.add(blade);
+            oars.push({ o: piv, sd }); });
+          const w = wrapped(0.24, 0.16, 0.22); w.position.set(-0.3, 0.33, 0); g.add(w);
+          return { g, anim: (t) => { oars.forEach(({ o, sd }) => { o.rotation.y = Math.sin(t * 3.2) * 0.45 * sd; o.rotation.x = -(Math.cos(t * 3.2) * 0.12) * sd; }); flag.rotation.y = Math.sin(t * 6) * 0.3; } };   // 노: 잠겼을 때 뒤로 밀고, 들어서 앞으로
+        }
+            return { person, mule, camel, horse, chariot, litter, ship, wrapped };
+        })();
+        const makePerson = robe => PM.person(robe, 'lead').g;   // 사신 — 지팡이 든 사람
         const envoyG = new THREE.Group(); seaGrp.add(envoyG);
         const envoys = [];   // { i, x, z }
         function buildEnvoys(w) {
@@ -495,12 +635,12 @@
                 const lv = (w && w.nations && w.nations[i] && w.nations[i].lv) || 0;
                 if (lv < 1) continue;
                 const N = (typeof SEA_NATIONS !== 'undefined' && SEA_NATIONS[i]) || [];
-                const [X, Z] = natMid(i, 40), e = makePerson(FAMILY_ROBE[N[4]] || 0x888888, true);
-                e.scale.setScalar(1.6); e.position.set(X, -DROP + 0.05, Z); e.lookAt(0, -DROP + 0.05, SZ); e.rotateY(Math.PI);
+                const [X, Z] = natMid(i, 40), e = makePerson(FAMILY_ROBE[N[4]] || 0x888888);
+                e.scale.setScalar(1.6); e.position.set(X, -DROP + 0.05, Z); e.lookAt(0, -DROP + 0.05, SZ); e.rotateY(Math.PI); e.rotateY(-Math.PI / 2);   // 사람 모델은 +x가 앞
                 envoyG.add(e); envoys.push({ i, x: X, z: Z });
             }
         }
-        // 예물 모양 — 도형으로 빚는다(9/30 처음 10가지)
+        // 예물 모양 — 블렌더 로우폴리 모델(models/gifts/*.glb, tools/blender/)을 받아 쓴다. 받기 전·실패하면 이 도형(9/30 처음 모양)
         function giftModel(k) {
             const g = new THREE.Group(), add = (m, x, y, z) => { m.position.set(x || 0, y || 0, z || 0); m.castShadow = true; g.add(m); return m; };
             const flame = () => new THREE.Sprite(new THREE.SpriteMaterial({ map: radial, color: 0xffc860, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
@@ -546,11 +686,127 @@
         }
         const giftsG = new THREE.Group(); scene.add(giftsG);
         const slots = (typeof NJ_GIFT_SLOTS !== 'undefined') ? NJ_GIFT_SLOTS : [];
+        // ── 예물의 움직임 — 블렌더에서 따로 떼어 둔 부분(축 노드)을 이름으로 찾아 매 프레임 움직인다 ──
+        const _q = new THREE.Quaternion(), _Y = new THREE.Vector3(0, 1, 0);
+        const NOTE_TEX = ['♪', '♫'].map(ch => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
+          x.font = 'bold 52px serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.shadowColor = 'rgba(120,80,0,.6)'; x.shadowBlur = 6; x.fillStyle = '#ffd86a'; x.fillText(ch, 32, 34); return new THREE.CanvasTexture(c); });
+        function giftAnim(k, root) {
+          const N = n => root.getObjectByName(n), all = [];
+          const own = o => { o.traverse(c => { if (c.isMesh) c.material = c.material.clone(); }); return o; };   // 불꽃마다 따로 깜박이게
+          const keep = o => { if (o) { o.userData.p0 = o.position.clone(); o.userData.s0 = o.scale.clone(); o.userData.q0 = o.quaternion.clone(); } return o; };
+          const mats = o => { const m = []; o.traverse(c => { if (c.isMesh) m.push(c.material); }); return m; };
+          const wave = (t, f, ph) => Math.sin(t * f + ph);
+          if (k === 'menorah') {   // 등불 — 불꽃마다 제멋대로 흔들리고 일렁인다
+            for (let i = 0; i < 7; i++) { const f = N('flame' + i); if (f) all.push([keep(own(f)), i * 1.7, mats(f)]); }
+            return t => all.forEach(([f, ph, ms]) => {
+              f.rotation.z = wave(t, 2.3, ph) * 0.12 + wave(t, 6.1, ph * 2) * 0.05; f.rotation.x = wave(t, 1.9, ph) * 0.09;
+              const sy = 1 + wave(t, 8.7, ph) * 0.08 + wave(t, 13.1, ph) * 0.04; f.scale.set(1 - (sy - 1) * 0.5, sy, 1 - (sy - 1) * 0.5);
+              ms.forEach(m => m.emissiveIntensity = 1.1 + wave(t, 11, ph) * 0.25);
+            });
+          }
+          if (k === 'morningstar') {   // 새벽별 — 천천히 돌며 이따금 반짝
+            const s = N('star'); if (!s) return null; own(s); const ms = mats(s);
+            const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: radial, color: 0xffe6a0, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); s.add(halo);
+            return t => { s.rotation.y = t * 0.5; const tw = Math.pow(Math.max(0, Math.sin(t * 3.1)), 12) + 0.5 * Math.pow(Math.max(0, Math.sin(t * 1.7 + 1)), 10);
+              s.scale.setScalar(1 + wave(t, 2.4, 0) * 0.06 + tw * 0.08); ms.forEach(m => m.emissiveIntensity = 1 + tw * 0.9);
+              halo.scale.setScalar(0.9 + tw * 0.6 + wave(t, 2.4, 0) * 0.08); halo.material.opacity = 0.55 + tw * 0.45; };
+          }
+          if (k === 'millstone') {   // 맷돌 — 제 축으로 돌고, 물보라가 일렁인다
+            const s = keep(N('stone')), sp = keep(N('splash')); if (!s || !sp) return null;
+            return t => { s.quaternion.copy(s.userData.q0).multiply(_q.setFromAxisAngle(_Y, t * 0.7));
+              sp.scale.set(1 + wave(t, 2.5, 1) * 0.05, 1 + wave(t, 2.5, 0) * 0.18, 1 + wave(t, 2.5, 1) * 0.05); };
+          }
+          if (k === 'winepress') {   // 포도주 틀 — 기둥이 비틀며 쿵 내려와 짜면 포도가 포도주 속에 잠기고, 들리면 다시 떠오른다
+            const pr = keep(N('press')), gr = keep(N('grapes')), drops = [0, 1, 2, 3].map(i => keep(N('drop' + i))).filter(Boolean); if (!pr || !gr) return null;
+            const ease = x => x * x * (3 - 2 * x);
+            return t => { const u = (t % 2.8) / 2.8;   // 한 번 짜는 데 2.8초
+              let d;   // 누름판이 내려간 깊이 0~1
+              if (u < 0.22) d = Math.pow(u / 0.22, 2.2);          // 빠르게 쿵
+              else if (u < 0.45) d = 1 + Math.sin((u - 0.22) * 60) * 0.02 * (1 - (u - 0.22) / 0.23);   // 눌러 버티며 떨림
+              else d = 1 - ease((u - 0.45) / 0.55);                // 천천히 들어 올림
+              pr.position.y = pr.userData.p0.y - 0.2 * d; pr.rotation.y = -d * 2.4;   // 나사 기둥이 돌며 내려간다
+              const bob = Math.sin(t * 3.2) * 0.012 * (1 - d);     // 들렸을 땐 포도가 둥실
+              gr.position.y = gr.userData.p0.y - 0.19 * d + bob; gr.scale.set(1 + 0.08 * d, 1 - 0.12 * d, 1 + 0.08 * d); gr.rotation.y = Math.sin(t * 0.7) * 0.15;
+              const flow = u > 0.12 && u < 0.7 ? 1 : 0.25;
+              drops.forEach((dr, i) => { const f = (t * 1.6 + i / 4) % 1;
+                dr.position.set(dr.userData.p0.x, dr.userData.p0.y - 0.132 * f * f, dr.userData.p0.z + 0.135 * f);
+                dr.scale.setScalar(Math.max(0.001, flow * (f < 0.1 ? f / 0.1 : f > 0.9 ? (1 - f) / 0.1 : 1))); }); };
+          }
+          if (k === 'palm') {   // 종려 가지 — 바람에 살랑
+            for (let i = 0; i < 5; i++) { const f = N('frond' + i); if (f) all.push([f, i * 1.3]); }
+            return t => all.forEach(([f, ph]) => { f.rotation.x = wave(t, 1.2, ph) * 0.05 + wave(t, 3.1, ph) * 0.012; f.rotation.z = wave(t, 0.9, ph * 1.3) * 0.06; });
+          }
+          if (k === 'olives') {   // 감람나무 — 잎이 바람에 흔들린다
+            [N('crown0'), N('crown1')].forEach((c, i) => c && all.push([c, i * 2.1]));
+            return t => all.forEach(([c, ph]) => { c.rotation.z = wave(t, 0.8, ph) * 0.035; c.rotation.x = wave(t, 1.1, ph) * 0.03; });
+          }
+          if (k === 'harp') {   // 거문고 — 줄을 하나씩 튕기면 떨리며 빛나고, 음표가 날아오른다
+            const strs = []; for (let i = 0; i < 7; i++) { const st = N('string' + i); if (st) { keep(own(st)); const ms = mats(st); ms.forEach(m => m.emissive.set(0xfff0b0)); strs.push({ st, ms, at: -9 }); } }
+            if (!strs.length) return null;
+            const TUNE = [0, 2, 4, 6, 4, 2, 3, 5, 6, 5, 3, 1, 2, 4, 5, 3];   // 올라갔다 내려오는 가락
+            const notes = [0, 1, 2, 3, 4, 5, 6, 7].map(n => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: NOTE_TEX[n % 2], transparent: true, depthWrite: false, opacity: 0 })); sp.scale.setScalar(0.13); root.add(sp); return { sp, age: 9, v: new THREE.Vector3() }; });
+            let next = 0, step = 0, last = 0, ni = 0;
+            return t => { const dt = Math.min(0.05, Math.max(0, t - last)); last = t;
+              if (t >= next) { const s0 = strs[TUNE[step++ % TUNE.length] % strs.length]; s0.at = t; next = t + 0.38 + (step % 4 === 0 ? 0.3 : 0);
+                const n = notes[ni++ % notes.length]; n.age = 0; n.sp.position.set(s0.st.position.x, s0.st.position.y + 0.25 + Math.random() * 0.15, s0.st.position.z + 0.04);
+                n.v.set((Math.random() - 0.5) * 0.25, 0.32 + Math.random() * 0.12, 0.12 + Math.random() * 0.1); }
+              strs.forEach(({ st, ms, at }) => { const a = t - at, e = Math.exp(-a * 5);
+                st.position.x = st.userData.p0.x + Math.sin(a * 75) * 0.006 * e; ms.forEach(m => m.emissiveIntensity = 0.9 * e); });
+              notes.forEach(n => { n.age += dt; if (n.age > 2.2) { n.sp.material.opacity = 0; return; }
+                n.sp.position.addScaledVector(n.v, dt); n.sp.position.x += Math.sin(n.age * 4 + n.v.z * 20) * 0.003;
+                n.sp.material.opacity = Math.min(1, n.age * 6) * (1 - n.age / 2.2); n.sp.scale.setScalar(0.1 + n.age * 0.03); });
+            };
+          }
+          if (k === 'rainbow') {   // 무지개 — 안쪽 띠에서 바깥 띠로 빛이 흐른다
+            for (let i = 0; i < 4; i++) { const b = N('band' + i); if (b) { own(b); const ms = mats(b); ms.forEach(m => m.emissive.set(0x3dffa8)); all.push([ms, i]); } }
+            return t => all.forEach(([ms, i]) => ms.forEach(m => m.emissiveIntensity = 0.08 + 0.3 * Math.pow(Math.max(0, Math.sin(t * 1.6 - i * 0.9)), 3)));
+          }
+          if (k === 'whitestone') {   // 흰 돌 — 새긴 글자가 이따금 금빛으로 반짝
+            const l = N('letters'); if (!l) return null; own(l); const ms = mats(l); ms.forEach(m => m.emissive.set(0xffd76a));
+            return t => ms.forEach(m => m.emissiveIntensity = 0.9 * Math.pow(Math.max(0, Math.sin(t * 0.9)), 16));
+          }
+          if (k === 'dragon') {   // 결박된 용 — 무겁게 숨 쉬고, 일곱 머리가 따로 늘어졌다가 이따금 하나씩 겨우 들다 떨군다
+            const body = keep(N('base')), heads = [];
+            for (let i = 0; i < 7; i++) { const h = keep(N('head' + i)); if (!h || !h.children[0]) continue;
+              const c = h.children[0].position, d = new THREE.Vector3(c.x, 0, c.z).normalize();
+              heads.push({ h, ph: i * 1.63, axis: new THREE.Vector3(-d.z, 0, d.x), off: i * 1.9 }); }
+            const qa = new THREE.Quaternion(), qb = new THREE.Quaternion();
+            return t => {
+              const br = 0.5 - 0.5 * Math.cos(t * 0.75);   // 느린 숨
+              if (body) body.scale.y = body.userData.s0.y * (1 + br * 0.035);
+              heads.forEach(({ h, ph, axis, off }) => {
+                // 11초마다 차례로 한 번: 1.8초에 걸쳐 겨우 들었다가, 힘이 빠져 툭 떨군다 (떨림 조금)
+                const u = (t + off) % 11; let lift = 0;
+                if (u < 1.8) lift = 0.2 * Math.pow(Math.sin(u / 1.8 * Math.PI / 2), 2) + Math.sin(t * 23 + ph) * 0.008 * (u / 1.8);
+                else if (u < 3.6) { const v = u - 1.8; lift = 0.2 * Math.exp(-v * 4) * Math.cos(v * 5); }
+                const pitch = lift + br * 0.025 - 0.01, yaw = Math.sin(t * 0.33 + ph) * 0.05;
+                h.quaternion.copy(h.userData.q0).multiply(qa.setFromAxisAngle(_Y, yaw)).multiply(qb.setFromAxisAngle(axis, pitch));
+              });
+            };
+          }
+          return null;
+        }
+        const glbCache = {};
+        function loadGift(k) {   // 한 번 받아 두고 쓸 때마다 복제
+            if (!glbCache[k]) glbCache[k] = (async () => {
+                if (!THREE.GLTFLoader) await loadScript(GLTF_URL);
+                const gl = await new Promise((res, rej) => new THREE.GLTFLoader().load(`models/gifts/${k}.glb?v=${GIFT_V}`, res, undefined, rej));
+                gl.scene.traverse(o => { if (!o.isMesh) return; o.castShadow = true; o.receiveShadow = true;
+                    // 반사할 주변 빛이 없으면(기본 화질) 금속이 검게 보인다 — 금속감을 낮춰 금빛을 살린다
+                    const m = o.material; if (m.metalness > 0.5) { m.metalness = 0.35; m.roughness = 0.38; } if (m.emissive && m.emissive.getHex()) m.emissiveIntensity = 1.2; });
+                return gl.scene;
+            })();
+            glbCache[k].catch(() => { delete glbCache[k]; });
+            return glbCache[k];
+        }
+        const GIFT_SCALE = { dragon: 0.42 };   // 용만 크게 빚었다(길이 4.2)
         function placeGift(gf) {
             const sp = slots[gf.slot]; if (!sp) return null;
-            const m = giftModel(gf.k); m.position.set(sp[0], terrain(sp[0], sp[1]), sp[1]); m.rotation.y = Math.atan2(sp[0], sp[1]);   // 성을 등지고 바깥을 본다
+            const m = new THREE.Group(); m.position.set(sp[0], terrain(sp[0], sp[1]), sp[1]); m.rotation.y = Math.atan2(sp[0], sp[1]);   // 성을 등지고 바깥을 본다
             const o = (typeof NJ_OFFERINGS !== 'undefined') ? NJ_OFFERINGS.find(x => x.k === gf.k) : null;
             m.userData.base = [1, 1, 1.3, 1.7][(o && o.size) || 1]; m.scale.setScalar(m.userData.base);   // 큰 예물은 크게
+            loadGift(gf.k).then(sc => { if (cur !== C) return; const c = sc.clone(); c.scale.setScalar(GIFT_SCALE[gf.k] || 1); m.add(c); m.userData.anim = giftAnim(gf.k, c); })
+                .catch(() => { if (cur === C) m.add(giftModel(gf.k)); });
             giftsG.add(m); return m;
         }
         ((typeof njGifts !== 'undefined' && Array.isArray(njGifts)) ? njGifts : []).forEach(placeGift);
@@ -780,6 +1036,7 @@
         };
         listen(cvs, 'pointerup', e => {
             if (!tap) return;
+            if (proc) { tap = null; return; }   // 행렬을 돌려 보는 손길 — 열매·나라 창을 띄우지 않는다
             if (!fruitPos.length) {   // 열매가 없으면 해안의 나라만 본다
                 const moved = Math.hypot(e.clientX - tap.x, e.clientY - tap.y), long = performance.now() - tap.t;
                 tap = null;
@@ -806,7 +1063,7 @@
             const hit = natRay.intersectObject(natRing);
             if (hit.length) showNation(Math.floor(hit[0].faceIndex / NAT_FACES)); else hideFruit();
         });
-        cvs.addEventListener('pointerdown', e => { if (!walk) return; lookId = e.pointerId; lx = e.clientX; ly = e.clientY; });
+        cvs.addEventListener('pointerdown', e => { if (!walk || proc) return; lookId = e.pointerId; lx = e.clientX; ly = e.clientY; });   // 행렬 중엔 행렬 카메라가 받는다
         cvs.addEventListener('pointermove', e => {
             if (!walk || e.pointerId !== lookId) return;
             camYaw -= (e.clientX - lx) * 0.006; camPitch = Math.max(-1.25, Math.min(1.2, camPitch + (e.clientY - ly) * 0.005));   // 음수 = 카메라가 발치로 내려가 하늘을 올려다본다
@@ -814,7 +1071,7 @@
         });
         const endLook = e => { if (e.pointerId === lookId) lookId = null; };
         cvs.addEventListener('pointerup', endLook); cvs.addEventListener('pointercancel', endLook);
-        cvs.addEventListener('wheel', e => { if (walk) { camDist = Math.max(0.45, Math.min(3, camDist * (e.deltaY > 0 ? 1.1 : 0.9))); e.preventDefault(); } }, { passive: false });
+        cvs.addEventListener('wheel', e => { if (walk && !proc) { camDist = Math.max(0.45, Math.min(3, camDist * (e.deltaY > 0 ? 1.1 : 0.9))); e.preventDefault(); } }, { passive: false });
         const doJump = () => {
             if (P.onGround) { P.vy = JUMP_V; P.onGround = false; return; }
             if (jetOn) return;
@@ -1018,63 +1275,24 @@
         const rateBtn = ov.querySelector('.nj3d-rate');
         skipBtn.addEventListener('pointerdown', e => { e.preventDefault();
             if (!proc) return;
-            if (proc.phase === 'sail') { proc.s = proc.sea.cum[proc.sea.cum.length - 1]; procUpdate(0.001); }
-            if (proc && proc.phase === 'go') proc.s = proc.land.cum[proc.land.cum.length - 1] + 2; });
+            if (proc.phase === 'sail') { proc.s = proc.sea.L; procUpdate(0.001); }
+            if (proc && proc.phase === 'go') proc.s = proc.land.L; });
         rateBtn.addEventListener('pointerdown', e => { e.preventDefault(); if (!proc) return; proc.rate = proc.rate === 1 ? 2 : 1; rateBtn.textContent = proc.rate === 1 ? '⏩ 2×' : '▶ 1×'; });
 
         // ── 행렬 (9/30 2단계 — 시안 「만국의 예물 행렬」에서 옮김) ──
         // 가문과 예물 크기로 고른다: 함 = 낙타 행렬(사 60:6) · 야벳 = 다시스의 배(60:9) → 어귀부터 짐꾼 넷이 가마로 · 셈 = 말과 수레, 큰 예물은 교자(66:20)
         // 예물은 세마포에 싸고 금줄로 묶는다(19:8). 비탈에서 짐승은 몸을 기울이고, 가마는 수평을 지키며 가마꾼마다 제 발밑에 선다
-        const LINEN = mat(0xfbf8f0, { roughness: 0.8 });
-        function wrapped(w, h, d) { const g = new THREE.Group(); g.add(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), LINEN));
-            [[w + 0.01, 0.015, d + 0.01], [0.015, h + 0.01, d + 0.01], [w + 0.01, h + 0.01, 0.015]].forEach(([a, b, c]) => g.add(new THREE.Mesh(new THREE.BoxGeometry(a, b, c), GOLD))); return g; }
-        function legs4(g, coat, pos, len, r) { const legs = []; pos.forEach(([x, z]) => { const lg = new THREE.Group(); lg.position.set(x, len, z);
-            const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.85, len, 6), coat); m.position.y = -len / 2; lg.add(m); g.add(lg); legs.push(lg); }); return legs; }
-        function makeMule() { const g = new THREE.Group(), coat = mat(0x8a6a50);
-            const body = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.14, 0.13), coat); body.position.y = 0.2; g.add(body);
-            const neck = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.14, 0.07), coat); neck.position.set(0.19, 0.29, 0); neck.rotation.z = -0.5; g.add(neck);
-            const head = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.07, 0.07), coat); head.position.set(0.26, 0.35, 0); g.add(head);
-            const legs = legs4(g, coat, [[0.12, 0.05], [0.12, -0.05], [-0.12, 0.05], [-0.12, -0.05]], 0.14, 0.015);
-            const w = wrapped(0.2, 0.14, 0.16); w.position.set(-0.02, 0.34, 0); g.add(w); return { g, legs }; }
-        function makeCamel(load) { const g = new THREE.Group(), coat = mat(0xc9a06a);
-            const body = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.16, 0.15), coat); body.position.y = 0.34; g.add(body);
-            const hump = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), coat); hump.position.set(-0.02, 0.44, 0); hump.scale.set(1.2, 0.9, 0.9); g.add(hump);
-            const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.05, 0.3, 8), coat); neck.position.set(0.25, 0.46, 0); neck.rotation.z = -0.7; g.add(neck);
-            const head = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.07, 0.07), coat); head.position.set(0.37, 0.58, 0); g.add(head);
-            const legs = legs4(g, coat, [[0.14, 0.05], [0.14, -0.05], [-0.14, 0.05], [-0.14, -0.05]], 0.28, 0.018);
-            if (load) { const w = wrapped(0.22, 0.16, 0.2); w.position.set(-0.02, 0.6, 0); g.add(w); }
-            else [-1, 1].forEach(sd => { const bag = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), sd > 0 ? GOLD : mat(0xe9dcc0)); bag.position.set(-0.05, 0.36, sd * 0.12); g.add(bag); });   // 금 · 유향
-            return { g, legs }; }
-        function makeHorse() { const g = new THREE.Group(), coat = mat(0xfbfbf6);
-            const body = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.15, 0.13), coat); body.position.y = 0.28; g.add(body);
-            const neck = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.2, 0.08), coat); neck.position.set(0.2, 0.39, 0); neck.rotation.z = -0.45; g.add(neck);
-            const head = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.07, 0.07), coat); head.position.set(0.29, 0.47, 0); g.add(head);
-            const mane = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.17, 0.02), GOLD); mane.position.set(0.17, 0.42, 0); mane.rotation.z = -0.45; g.add(mane);
-            const legs = legs4(g, coat, [[0.13, 0.05], [0.13, -0.05], [-0.13, 0.05], [-0.13, -0.05]], 0.22, 0.017);
-            return { g, legs }; }
-        function makeChariot() { const g = new THREE.Group(), wood = mat(0x7a5230);
-            const box = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.14, 0.22), GOLD); box.position.y = 0.18; g.add(box);
-            [-1, 1].forEach(sd => { const wh = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.018, 6, 16), wood); wh.position.set(0, 0.12, sd * 0.13); g.add(wh); });
-            const pole = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.02, 0.02), wood); pole.position.set(0.3, 0.2, 0); g.add(pole);
-            const w = wrapped(0.2, 0.16, 0.18); w.position.set(0, 0.33, 0); g.add(w); return g; }
-        function makeLitter(robe) { const g = new THREE.Group(), wood = mat(0x7a5230);
-            const base = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.04, 0.3), GOLD); base.position.y = 0.2; g.add(base);
-            [[0.19, 0.13], [0.19, -0.13], [-0.19, 0.13], [-0.19, -0.13]].forEach(([x, z]) => { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.24, 6), GOLD); p.position.set(x, 0.33, z); g.add(p); });
-            const roof = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.12, 4), mat(0x6b3a8e, { roughness: 0.5 })); roof.position.y = 0.5; roof.rotation.y = Math.PI / 4; g.add(roof);
-            [-0.1, 0.1].forEach(z => { const pole = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.02, 0.02), wood); pole.position.set(0, 0.2, z * 1.9); g.add(pole); });
-            const w = wrapped(0.22, 0.16, 0.2); w.position.set(0, 0.3, 0); g.add(w);
-            const bearers = []; [[0.35, 0.19], [0.35, -0.19], [-0.35, 0.19], [-0.35, -0.19]].forEach(([x, z]) => { const p = makePerson(robe, true); p.position.set(x, 0, z); g.add(p); bearers.push(p); });
-            return { g, bearers }; }
-        function makeShip() { const g = new THREE.Group(), wood = mat(0x7a5230);
-            const hull = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.22, 0.4), wood); hull.position.y = 0.1; g.add(hull);
-            const bow = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.4, 4), wood); bow.position.set(0.75, 0.12, 0); bow.rotation.z = -Math.PI / 2; bow.rotation.x = Math.PI / 4; g.add(bow);
-            const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.025, 1.1, 6), wood); mast.position.set(0, 0.7, 0); g.add(mast);
-            const sail = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.7), new THREE.MeshStandardMaterial({ color: 0xf2ead8, side: THREE.DoubleSide, roughness: 0.8 })); sail.position.set(0.02, 0.75, 0); sail.rotation.y = Math.PI / 2; g.add(sail);
-            const w = wrapped(0.26, 0.18, 0.24); w.position.set(-0.25, 0.3, 0); g.add(w); return g; }
+        const { person, camel, horse, chariot, litter, ship } = PM;
 
-        const cumOf = pts => { const c = [0]; for (let k = 1; k < pts.length; k++) c.push(c[k - 1] + Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1])); return c; };
-        const pathAt = (pts, cum, sv) => { let k = 1; while (k < cum.length - 1 && cum[k] < sv) k++; const f = (sv - cum[k - 1]) / Math.max(1e-6, cum[k] - cum[k - 1]);
-            return { x: pts[k - 1][0] + (pts[k][0] - pts[k - 1][0]) * f, z: pts[k - 1][1] + (pts[k][1] - pts[k - 1][1]) * f, dx: pts[k][0] - pts[k - 1][0], dz: pts[k][1] - pts[k - 1][1] }; };
+        // 매끈한 길 — 꺾인 점들을 곡선(Catmull-Rom)으로 잇고, 길이 기준으로 고르게 걷는다
+        function mkPath(pts) {
+            const c = new THREE.CatmullRomCurve3(pts.map(([x, z]) => new THREE.Vector3(x, 0, z)), false, 'centripetal');
+            c.arcLengthDivisions = 600; return { c, L: c.getLength() };
+        }
+        const _pt = new THREE.Vector3(), _tg = new THREE.Vector3();
+        const at = (path, sv) => { const u = Math.max(0, Math.min(1, sv / path.L)); path.c.getPointAt(u, _pt); path.c.getTangentAt(u, _tg); return { x: _pt.x, z: _pt.z, dx: _tg.x, dz: _tg.z }; };
+        const ease = k => 1 - Math.exp(-k);   // 프레임과 상관없이 같은 빠르기로 따라가게
+        const angLerp = (a, b, f) => { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return a + d * f; };
         // 어귀 옆 둑 → 골짜기 → 성 둘레(반지름 9.5) → 자리
         function upPath(side, slot) {
             const pts = []; for (let z = SHORE - 3; z >= 9.5; z -= 2) pts.push([side, z]);
@@ -1101,75 +1319,118 @@
             const N = (typeof SEA_NATIONS !== 'undefined' && SEA_NATIONS[i]) || [], fam = N[4] || '셈';
             const o = (typeof NJ_OFFERINGS !== 'undefined') ? NJ_OFFERINGS.find(x => x.k === gf.k) : null, size = (o && o.size) || 1;
             const robe = FAMILY_ROBE[fam] || 0x888888, members = [];
+            const add = (mdl, off, extra) => members.push(Object.assign({ obj: mdl.g, anim: mdl.anim, animal: !!mdl.animal, bearers: mdl.bearers, off, init: false }, extra || {}));
             let mode = 'go', seaPts = null;
             if (fam === '함') {
-                members.push({ obj: makePerson(robe, true), off: -0.6 });
-                const n = size, mid = Math.floor(n / 2);
-                for (let k = 0; k < n; k++) { const c = makeCamel(k === mid); members.push({ obj: c.g, legs: c.legs, off: k * 0.75 }); }
+                add(person(robe, 'lead'), -0.6);
+                const mid = Math.floor(size / 2);
+                for (let k = 0; k < size; k++) add(camel(k === mid), k * 0.75);
             } else if (fam === '야벳') {
-                members.push({ obj: makeShip(), off: 0, sea: true }); mode = 'sail'; seaPts = seaPath(i);
+                add(ship(), 0, { sea: true }); mode = 'sail'; seaPts = seaPath(i);
             } else if (size >= 3) {
-                const l = makeLitter(robe); members.push({ obj: makePerson(robe, true), off: -0.7 }); members.push({ obj: l.g, bearers: l.bearers, off: 0 });
+                add(person(robe, 'lead'), -0.7); add(litter(robe), 0);
             } else {
-                const h = makeHorse(); members.push({ obj: h.g, legs: h.legs, off: 0 }); members.push({ obj: makeChariot(), off: 0.5 }); members.push({ obj: makePerson(robe, true), off: -0.55 });
+                add(horse(), 0); add(chariot(), 0.5); add(person(robe, 'lead'), -0.55);
             }
             const grp = new THREE.Group(); scene.add(grp);
             members.forEach(m => { m.obj.scale.setScalar(2.2); grp.add(m.obj); });
             const land = fam === '야벳' ? upPath(1.7, gf.slot) : landPath(i, gf.slot);
-            proc = { phase: mode, i, gf, grp, members, t: 0, s: 0, robe, rate: 1, model: null,
-                sea: seaPts ? { pts: seaPts, cum: cumOf(seaPts) } : null, land: { pts: land, cum: cumOf(land) } };
+            proc = { phase: mode, i, gf, grp, members, t: 0, s: 0, v: 0, robe, rate: 1, model: null,
+                sea: seaPts ? mkPath(seaPts) : null, land: mkPath(land) };
+            cam.dist = 7; cam.pitch = 0.42; cam.off = 0.55; cam.ready = false;
+            loadGift(gf.k).catch(() => { });   // 도착하기 전에 모델을 받아 둔다
             walkUI.hidden = true; talkBtn.hidden = true; fishBtn.hidden = true; skipBtn.hidden = false; rateBtn.hidden = false; rateBtn.textContent = '⏩ 2×';
             proc.name = o ? (typeof _njOfferName === 'function' ? _njOfferName(o) : o.ko) : '';
             showHint(T('gift_depart', { item: proc.name, nation: natName(i) }), 3000);
         }
-        function placeMembers(path, sv) {
-            let head = null;
+        function placeMembers(path, sv, dt) {
+            let head = null, sx = 0, sy = 0, sz = 0, n = 0, lo = Infinity, hi = -Infinity;
+            const fYaw = ease(dt * 7), fY = ease(dt * 10), fP = ease(dt * 6);
             proc.members.forEach(m => {
-                const p = pathAt(path.pts, path.cum, Math.max(0, sv - m.off * 2.2)), y = m.sea ? SEA_Y + 0.02 : terrain(p.x, p.z);
-                m.obj.position.set(p.x, y, p.z); m.obj.rotation.y = Math.atan2(-p.dz, p.dx); m.obj.rotation.z = 0;
-                if (!m.sea && m.legs) { const yf = localGround(m.obj, 0.14, 0), yb = localGround(m.obj, -0.14, 0), S = m.obj.scale.x;
-                    m.obj.rotation.z = Math.atan2(yf - yb, 0.28 * S); m.obj.position.y = (yf + yb) / 2; }
-                (m.legs || []).forEach((lg, n) => { lg.rotation.z = Math.sin(proc.t * 14 + (n % 2 ? Math.PI : 0) + (n > 1 ? Math.PI / 2 : 0)) * 0.45; });
-                if (m.bearers) { const ys = m.bearers.map(b => localGround(m.obj, b.position.x, b.position.z)), top = Math.max(...ys), S = m.obj.scale.x;
-                    m.obj.position.y = top; m.bearers.forEach((b, n) => { b.position.y = (ys[n] - top) / S + Math.abs(Math.sin(proc.t * 10 + n)) * 0.01; }); }
-                if (m.sea) m.obj.rotation.x = Math.sin(proc.t * 2) * 0.05;
-                if (!head) head = p;
+                const p = at(path, Math.max(0, sv - m.off * 2.2)), yaw = Math.atan2(-p.dz, p.dx);
+                // 방향·높이·기울기를 곧장 바꾸지 않고 따라가게 — 모퉁이·울퉁불퉁한 땅에서 튀지 않는다
+                if (!m.init) { m.yaw = yaw; m.init = true; m.y = null; m.pitch = 0; }
+                m.yaw = angLerp(m.yaw, yaw, fYaw);
+                m.obj.position.x = p.x; m.obj.position.z = p.z; m.obj.rotation.y = m.yaw;
+                let ty, tp = 0;
+                if (m.sea) ty = SEA_Y + 0.02 + Math.sin(proc.t * 1.6) * 0.03;
+                else if (m.animal) { const yf = localGround(m.obj, 0.14, 0), yb = localGround(m.obj, -0.14, 0), S = m.obj.scale.x; tp = Math.atan2(yf - yb, 0.28 * S); ty = (yf + yb) / 2; }
+                else if (m.bearers) { const ys = m.bearers.map(b => localGround(m.obj, b.g.position.x, b.g.position.z)), S = m.obj.scale.x;
+                    const yf = (ys[0] + ys[1]) / 2, yb = (ys[2] + ys[3]) / 2;
+                    ty = (yf + yb) / 2 + Math.abs(yf - yb) * 0.25; tp = Math.atan2(yf - yb, 0.72 * S) * 0.6; }   // 가마는 비탈의 6할만큼만 기울인다
+                else ty = terrain(p.x, p.z);
+                m.y = m.y == null ? ty : m.y + (ty - m.y) * fY; m.pitch += (tp - m.pitch) * fP;
+                if (!m.sea && m.y < ty) m.y = ty;   // 땅 아래로는 내려가지 않는다 — 오르막에서 늦게 따라가다 산에 묻혔다(오를 땐 바로, 내려갈 때만 부드럽게)
+                m.obj.position.y = m.y; m.obj.rotation.z = m.sea ? Math.sin(proc.t * 1.6) * 0.04 : m.pitch;
+                if (m.bearers) {   // 가마꾼 — 가마의 지금 높이·기울기에서 거꾸로 풀어 발을 제 땅에, 몸은 똑바로
+                    const S = m.obj.scale.x, sp = Math.sin(m.pitch), cp = Math.cos(m.pitch);
+                    m.bearers.forEach(b => { let y = b.g.position.y;
+                        for (let it = 0; it < 3; it++) {   // 가마가 기울면 가마꾼이 서는 가로 자리도 바뀐다 — 그 자리의 땅으로 몇 번 맞춘다
+                            const gy = localGround(m.obj, b.g.position.x * cp - y * sp, b.g.position.z);
+                            y = ((gy - m.y) / S - b.g.position.x * sp) / cp; }
+                        b.g.position.y = y; b.g.rotation.z = -m.pitch; });
+                }
+                if (m.anim) m.anim(proc.t, Math.max(0.35, proc.v));   // 걸음은 빠르기에 맞춘다(출발·도착 때 천천히)
+                if (!head) head = { dx: p.dx, dz: p.dz };
+                sx += p.x; sy += m.y; sz += p.z; n++; lo = Math.min(lo, m.off); hi = Math.max(hi, m.off);
             });
-            return head;
+            // 카메라는 행렬 전체의 가운데를 보고, 행렬 길이만큼 더 물러난다(맨 앞만 따라가면 뒤 낙타들 사이에 카메라가 놓였다)
+            return { x: sx / n, y: sy / n, z: sz / n, dx: head.dx, dz: head.dz, span: (hi - lo) * 2.2 };
         }
-        function followCam(p, y, dt, back, up) {
-            const len = Math.hypot(p.dx, p.dz) || 1, side = back * 0.45;
-            camera.position.lerp(new THREE.Vector3(p.x - p.dx / len * back + p.dz / len * side, y + up, p.z - p.dz / len * back - p.dx / len * side), Math.min(1, dt * 2.5));
-            camera.lookAt(p.x, y + 0.4, p.z);
+        // 행렬 카메라 — 행렬을 따라가되, 끌어서 돌려보고 두 손가락·휠로 가까이/멀리 (걷기 카메라와 따로)
+        const cam = { off: 0.55, pitch: 0.42, dist: 7, tgt: new THREE.Vector3(), hd: new THREE.Vector3(1, 0, 0), pos: new THREE.Vector3(), ready: false };
+        {
+            const pts = new Map(); let pinch0 = 0, dist0 = 0;
+            cvs.addEventListener('pointerdown', e => { if (!proc) return; pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y); dist0 = cam.dist; } });
+            cvs.addEventListener('pointermove', e => {
+                const p0 = pts.get(e.pointerId); if (!proc || !p0) return;
+                if (pts.size === 1) { cam.off -= (e.clientX - p0.x) * 0.008; cam.pitch = Math.max(0.08, Math.min(1.35, cam.pitch + (e.clientY - p0.y) * 0.006)); }
+                pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                if (pts.size === 2 && pinch0) { const [a, b] = [...pts.values()]; cam.dist = Math.max(2.5, Math.min(30, dist0 * pinch0 / Math.max(20, Math.hypot(a.x - b.x, a.y - b.y)))); }
+                lastTouch = performance.now();
+            });
+            const up = e => { pts.delete(e.pointerId); if (pts.size < 2) pinch0 = 0; };
+            cvs.addEventListener('pointerup', up); cvs.addEventListener('pointercancel', up);
+            cvs.addEventListener('wheel', e => { if (!proc) return; cam.dist = Math.max(2.5, Math.min(30, cam.dist * (e.deltaY > 0 ? 1.1 : 0.9))); e.preventDefault(); }, { passive: false });
+        }
+        function follow(h, dt, distScale) {
+            cam.hd.lerp(new THREE.Vector3(h.dx, 0, h.dz).normalize(), ease(dt * 2.2)).normalize();   // 방향은 천천히(모퉁이에서 휙 돌지 않게)
+            cam.tgt.lerp(new THREE.Vector3(h.x, h.y + 0.45, h.z), cam.ready ? ease(dt * 6) : 1);
+            const bx = -cam.hd.x, bz = -cam.hd.z, c = Math.cos(cam.off), s = Math.sin(cam.off), d = (cam.dist + (h.span || 0) * 0.9) * (distScale || 1);
+            const want = new THREE.Vector3(cam.tgt.x + (bx * c - bz * s) * Math.cos(cam.pitch) * d, cam.tgt.y + Math.sin(cam.pitch) * d, cam.tgt.z + (bx * s + bz * c) * Math.cos(cam.pitch) * d);
+            want.y = Math.max(want.y, Math.max(terrain(want.x, want.z), SEA_Y) + 0.6);
+            cam.pos.lerp(want, cam.ready ? ease(dt * 4) : 1); cam.ready = true;
+            camera.position.copy(cam.pos); camera.lookAt(cam.tgt);
         }
         function endGroup() { if (!proc || !proc.grp) return; scene.remove(proc.grp); proc.grp.traverse(o => { if (o.geometry) o.geometry.dispose(); }); proc.grp = null; }
         function procUpdate(dt0) {
             const pr = proc, dt = dt0 * (pr.phase === 'show' ? 1 : pr.rate); pr.t += dt;
-            if (pr.phase === 'sail') {
-                const path = pr.sea, total = path.cum[path.cum.length - 1];
-                pr.s = Math.min(total, pr.s + total / 6 * dt);
-                const p = placeMembers(path, pr.s); followCam(p, SEA_Y, dt0, 10, 4.5);
-                if (pr.s >= total) {   // 어귀에 닿으면 짐꾼 넷이 가마로 메고 오른다
-                    const ship = pr.members[0].obj, l = makeLitter(pr.robe); l.g.scale.setScalar(2.2); pr.grp.add(l.g);
-                    ship.position.set(1.2, SEA_Y + 0.02, SHORE + 0.5);
-                    pr.members = [{ obj: l.g, bearers: l.bearers, off: 0 }]; pr.phase = 'go'; pr.s = 0;
-                }
-            } else if (pr.phase === 'go') {
-                const path = pr.land, total = path.cum[path.cum.length - 1];
-                pr.s += total / (pr.sea ? 8 : 13) * dt;
-                const p = placeMembers(path, Math.min(pr.s, total)); followCam(p, terrain(p.x, p.z), dt0, 6.5, 3.2);
-                if (pr.s >= total + 1.5) {   // 도착 — 세마포를 풀고 예물이 선다
-                    endGroup();
-                    pr.model = placeGift(pr.gf); if (pr.model) pr.model.scale.setScalar(0.01);
-                    pr.phase = 'show'; pr.t = 0; skipBtn.hidden = true; rateBtn.hidden = true;
-                    if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
-                    showHint(T('gift_arrive', { item: pr.name }), 3000);
+            if (pr.phase === 'sail' || pr.phase === 'go') {
+                const path = pr.phase === 'sail' ? pr.sea : pr.land, total = path.L;
+                const vmax = total / (pr.phase === 'sail' ? 6 : pr.sea ? 8 : 13);
+                // 천천히 출발해 속도를 내고, 끝에 가까우면 천천히 멈춘다
+                const target = Math.min(1, pr.t / 1.4) * Math.max(0.2, Math.min(1, (total - pr.s) / 4));
+                pr.v += (target - pr.v) * ease(dt * 3);
+                pr.s = Math.min(total, pr.s + vmax * pr.v * dt);
+                const h = placeMembers(path, pr.s, dt); follow(h, dt0, pr.phase === 'sail' ? 1.5 : 1);
+                if (pr.s >= total - 0.02) {
+                    if (pr.phase === 'sail') {   // 어귀에 닿으면 배는 머물고, 짐꾼 넷이 가마로 메고 오른다
+                        const l = litter(pr.robe); l.g.scale.setScalar(2.2); pr.grp.add(l.g);
+                        pr.members = [{ obj: l.g, anim: l.anim, bearers: l.bearers, off: 0, init: false }]; pr.phase = 'go'; pr.s = 0; pr.t = 0; pr.v = 0;
+                    } else {   // 도착 — 세마포를 풀고 예물이 선다
+                        endGroup();
+                        pr.model = placeGift(pr.gf); if (pr.model) pr.model.scale.setScalar(0.01);
+                        pr.phase = 'show'; pr.t = 0; skipBtn.hidden = true; rateBtn.hidden = true; cam.dist = 4.5;
+                        if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
+                        showHint(T('gift_arrive', { item: pr.name }), 3000);
+                    }
                 }
             } else {
-                const k = Math.min(1, pr.t / 0.9);
-                if (pr.model) { pr.model.scale.setScalar(Math.max(0.01, (k < 1 ? k * (1.15 - 0.15 * k) : 1) * (pr.model.userData.base || 1)));
-                    const p = pr.model.position; camera.position.lerp(new THREE.Vector3(p.x * 1.35 + 1.2, p.y + 2.2, p.z * 1.35 + 1.2), Math.min(1, dt0 * 2)); camera.lookAt(p.x, p.y + 0.5, p.z); }
-                if (pr.t > 3.2) { proc = null; walkUI.hidden = false; syncWallet(); }
+                const k = Math.min(1, pr.t / 0.9), sc = k < 1 ? 1 - Math.pow(1 - k, 3) * (1 - k * 0.3) : 1;   // 부드럽게 커진다
+                if (pr.model) { pr.model.scale.setScalar(Math.max(0.01, sc * (pr.model.userData.base || 1)));
+                    const p = pr.model.position; follow({ x: p.x, y: p.y + 0.3, z: p.z, dx: -p.x, dz: -p.z }, dt0, 1); }
+                if (pr.t > 4) { proc = null; walkUI.hidden = false; syncWallet(); }
             }
         }
 
@@ -1309,6 +1570,7 @@
                 const gy = Math.max(d0 <= PL ? 0.6 : WT(cx, cz), SEA_Y) + 0.8;
                 if (camera.position.y < gy) { camera.position.y = gy; camera.lookAt(controls.target); }
             }
+            { const tt = now / 1000; giftsG.children.forEach(g => { if (g.userData.anim) g.userData.anim(tt); }); }   // 등불·별·맷돌…
             skyDome.position.copy(camera.position);
             glints.position.set(camera.position.x, camera.position.y - 6, camera.position.z);
             if (!reduce) {
