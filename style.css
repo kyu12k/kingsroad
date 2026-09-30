@@ -7010,12 +7010,13 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .nj-zone .nj-flow { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 1; overflow: visible; }
 
 /* 홈 「오늘 할 일」 (9/30) — 여정 시작 아래 한 줄. 남은 것은 금빛 테두리, 끝낸 것은 흐리게 ✓ */
-.home-todo { width: 95%; max-width: 340px; margin: 8px auto 0; text-align: center; }
+.home-todo { width: 95%; max-width: 360px; margin: 8px auto 0; text-align: center; }
 .home-todo:empty { display: none; }
 .home-todo-title { font-size: 0.72rem; font-weight: 700; color: #cfd8dc; letter-spacing: 0.08em; margin-bottom: 5px; opacity: 0.85; }
-.home-todo-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.home-todo-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; }
 .home-todo-chip { font: 600 0.8rem 'Pretendard', sans-serif; color: #f6e7c1; background: rgba(0, 0, 0, 0.38); border: 1px solid rgba(241, 196, 15, 0.7);
-    border-radius: 999px; padding: 5px 11px; cursor: pointer; white-space: nowrap; }
+    border-radius: 999px; padding: 5px 9px; cursor: pointer; white-space: nowrap; }
 .home-todo-chip b { color: #f1c40f; margin-left: 2px; }
 .home-todo-chip.done { color: #aab7b8; border-color: rgba(255, 255, 255, 0.15); opacity: 0.7; }
 .home-todo-chip:active { transform: scale(0.96); }
+@media (max-width: 380px) { .home-todo-chips { gap: 4px; } .home-todo-chip { font-size: 0.74rem; padding: 4px 7px; } }   /* 좁은 폰에서도 네 칸이 한 줄에 */

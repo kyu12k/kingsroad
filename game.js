@@ -662,7 +662,7 @@ const LANG = {
         clear_blank_lv_mult: '✍️ 백지 Lv{lv} 제때 승점 ×{n}',
         blank_notif_body: '「{label}」 백지로 꺼내볼 시간이에요 ✍️',
         rv_blank_title: '✍️ 오늘 백지 차례',
-        todo_title: '오늘 할 일', todo_review: '복습', todo_blank: '백지', todo_cheer: '친구 응원', todo_attend: '길드 출석',
+        todo_title: '오늘 할 일', todo_review: '복습', todo_blank: '백지', todo_cheer: '응원', todo_attend: '출석',
         rv_blank_sub: '그 장을 백지로(보스전·중간점검·망각의 고난) 써내면 백지레벨이 올라요',
         rv_route_title: '💡 복습을 한 번에',
         rv_route_due: '복습 {n}절',
@@ -1723,7 +1723,7 @@ const LANG = {
         clear_blank_lv_mult: '✍️ Blank Lv{lv} on-time points ×{n}',
         blank_notif_body: '"{label}" — time to write it from blank ✍️',
         rv_blank_title: '✍️ Blank review due today',
-        todo_title: 'Today', todo_review: 'Review', todo_blank: 'Blank page', todo_cheer: 'Cheer friends', todo_attend: 'Guild check-in',
+        todo_title: 'Today', todo_review: 'Review', todo_blank: 'Blank', todo_cheer: 'Cheer', todo_attend: 'Check-in',
         rv_blank_sub: 'Write that chapter from blank (boss, checkpoint, or trial) to raise its blank level',
         rv_route_title: '💡 Finish reviews in one go',
         rv_route_due: '{n} reviews',
@@ -29537,12 +29537,7 @@ async function cheerFriend(friendTag) {
     const friendData = await _getFriendDoc(friendTag);
     if (!friendData) return { ok: false, msg: '친구를 찾을 수 없습니다.' };
 
-    // 이전 응원이 아직 수령되지 않았으면 추가 전송 차단 (친구당 1회분만 누적)
-    const pendingCheers = friendData.pendingCheers || [];
-    if (pendingCheers.some(c => c.fromTag === myTag)) {
-        return { ok: false, msg: `${friendData.nickname || '친구'}님이 아직 응원을 받지 못했습니다.` };
-    }
-
+    // 친구가 아직 받지 않았어도 계속 쌓인다 (9/30 — 전엔 친구당 1회분만이라, 안 들어오는 친구에겐 응원을 못 보냈다)
     await Promise.all([
         _friendRef(friendTag).set({
             pendingCheers: firebase.firestore.FieldValue.arrayUnion(
@@ -29633,16 +29628,22 @@ async function _renderFriendScreen() {
     // 받은 응원 목록
     if (pendingCheers.length > 0) {
         const totalGems = pendingCheers.reduce((sum, c) => sum + (c.gems || CHEER_GEM_AMOUNT), 0);
-        html += `<div class="friend-section-title">💛 받은 응원 (${pendingCheers.length}명)</div>`;
-        html += `<div class="friend-cheer-received-wrap">`;
+        const bySender = new Map();   // 보낸 사람별로 묶는다 — 응원이 여러 날 쌓일 수 있다
         pendingCheers.forEach(c => {
+            const k = c.fromTag || c.from || '?';
+            const g = bySender.get(k) || { c, n: 0, gems: 0 };
+            g.n++; g.gems += c.gems || CHEER_GEM_AMOUNT; bySender.set(k, g);
+        });
+        html += `<div class="friend-section-title">💛 받은 응원 (${bySender.size}명${pendingCheers.length > bySender.size ? ` · ${pendingCheers.length}번` : ''})</div>`;
+        html += `<div class="friend-cheer-received-wrap">`;
+        bySender.forEach(({ c, n, gems }) => {
             const memo = getFriendMemo(c.fromTag || '');
             const label = memo || c.from || '친구';
             const sub = memo ? c.from || '' : (c.fromTag ? `#${c.fromTag}` : '');
             html += `<div class="friend-cheer-received-item">
-                <span class="friend-cheer-from">${label}</span>
+                <span class="friend-cheer-from">${label}${n > 1 ? ` ×${n}` : ''}</span>
                 ${sub ? `<span class="friend-cheer-from-sub">${sub}</span>` : ''}
-                <span class="friend-cheer-gem">+💎${c.gems || CHEER_GEM_AMOUNT}</span>
+                <span class="friend-cheer-gem">+💎${gems}</span>
             </div>`;
         });
         html += `</div>`;
@@ -29741,7 +29742,7 @@ async function _claimAllCheers() {
         myGems += totalGems;
         updateGemDisplay();
         saveGameData();
-        await _friendRef(myTag).set({ pendingCheers: firebase.firestore.FieldValue.delete() }, { merge: true });
+        await _friendRef(myTag).set({ pendingCheers: firebase.firestore.FieldValue.arrayRemove(...cheers) }, { merge: true });   // 읽은 것만 — 그 사이 온 응원은 남는다
         showGemToast(totalGems, `💛 응원 수령 완료! (+💎${totalGems})`);
         _renderFriendScreen();
     } catch (e) {
@@ -29900,14 +29901,11 @@ async function _cheerAllFriends() {
     // 대상 친구 doc 병렬 읽기
     const friendDocs = await Promise.all(targets.map(tag => _getFriendDoc(tag).then(d => ({ tag, data: d }))));
 
-    // 미수령 응원이 없는 친구만 (친구당 1회분 누적 제한)
-    const eligible = friendDocs.filter(({ data }) =>
-        data && !(data.pendingCheers || []).some(c => c.fromTag === myTag)
-    );
-
+    // 친구가 아직 받지 않은 응원이 있어도 쌓인다 (9/30)
+    const eligible = friendDocs.filter(({ data }) => data);
     if (eligible.length === 0) {
-        showGemToast(0, '모든 친구에게 아직 수령 안 된 응원이 있습니다.', true);
-        if (allBtn) { allBtn.disabled = false; allBtn.textContent = '💛 모두 응원 (0)'; allBtn.disabled = true; }
+        showGemToast(0, '친구를 찾을 수 없습니다.', true);
+        if (allBtn) allBtn.disabled = false;
         return;
     }
 
