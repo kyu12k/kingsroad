@@ -159,7 +159,7 @@ def finish(name, out_dir, emit=(1.0, 0.75, 0.3), views=None, lens=40):
     for ob in obs + roots: ob.select_set(True)
     bpy.context.view_layer.objects.active = obs[0]
     bpy.ops.export_scene.gltf(filepath=path, export_format='GLB', use_selection=True, export_yup=True, export_vertex_color='ACTIVE')
-    print('GIFT', name, 'TRIS', tris, 'SIZE', tuple(round(v, 2) for v in size), 'GLB', os.path.getsize(path), 'PARTS', [o.name for o in obs])
+    print('GIFT', name, 'TRIS', tris, 'SIZE', tuple(round(v, 2) for v in size), 'CENTER', (round(ctr.x, 3), round(ctr.y, 3)), 'GLB', os.path.getsize(path), 'PARTS', [o.name for o in obs])   # CENTER = 원점으로 옮긴 바닥 가운데(블렌더 x, y)
     # 미리보기
     w = bpy.data.worlds.new('w'); sc.world = w; w.use_nodes = True
     w.node_tree.nodes['Background'].inputs['Color'].default_value = (0.55, 0.62, 0.72, 1); w.node_tree.nodes['Background'].inputs['Strength'].default_value = 0.7

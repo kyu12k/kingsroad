@@ -838,7 +838,12 @@
         const GIFT_SCALE = { dragon: 0.42 };   // 용만 크게 빚었다(길이 4.2)
         function placeGift(gf) {
             if (gf.st) return null;   // 보관함에 넣어 둔 예물
-            const sp = gf.x != null ? [gf.x, gf.z] : slots[gf.slot]; if (!sp) return null;   // 꾸미기로 옮겼으면 그 자리
+            let sp = gf.x != null ? [gf.x, gf.z] : slots[gf.slot]; if (!sp) return null;   // 꾸미기로 옮겼으면 그 자리
+            if (gf.x != null) {   // 성 안에는 못 둔다(꾸미기 decoSpot과 같은 규칙 — 이 함수가 먼저 돌아 여기서 직접)
+                const need = HALF + RAMP_L + 0.15 + 0.7; let [x, z] = sp;
+                if (Math.max(Math.abs(x), Math.abs(z)) < need) { if (Math.abs(x) >= Math.abs(z)) x = (x < 0 ? -1 : 1) * need; else z = (z < 0 ? -1 : 1) * need; }
+                sp = [x, z];
+            }
             const m = new THREE.Group(); m.position.set(sp[0], terrain(sp[0], sp[1]), sp[1]); m.rotation.y = gf.x != null ? (gf.r || 0) : Math.atan2(sp[0], sp[1]);   // 처음엔 성을 등지고 바깥을 본다
             m.userData.item = { kind: 'gift', id: gf.id, k: gf.k };
             const o = (typeof NJ_OFFERINGS !== 'undefined') ? NJ_OFFERINGS.find(x => x.k === gf.k) : null;
@@ -1484,7 +1489,7 @@
         // ══ 🛠️ 꾸미기 (2026-10-01) — 예물과 꾸밈 아이템을 끌어서 놓고, 돌리고, 보관함에 넣는다 ══
         //    사용자: "아무 데나 끌어서 놓되 꾸미기 전용 화면에 들어가게". 걷기·행렬과 따로 — 위에서 비스듬히 내려다보는 카메라.
         //    물건을 끌면 옮기고, 빈 곳을 끌면 화면이 움직이고, 두 손가락은 확대·돌리기. 마칠 때 바뀐 것만 저장(_njDecoSave)
-        const DECO_V = '20261001b';   // models/decor/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/decor.py)
+        const DECO_V = '20261001k';   // models/decor/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/decor.py)
         const decoCache = {};
         function loadDecor(k) {
             if (!decoCache[k]) decoCache[k] = (async () => {
@@ -1502,69 +1507,366 @@
             b.position.y = 0.15; b.castShadow = true; g.add(b); return g;
         }
         const decoG = new THREE.Group(); scene.add(decoG);
+        // 낱개로 놓였을 때의 작은 움직임 (10/1 사용자: 세트가 되기 전에도 조금씩은 다들 움직였으면) — 놓은 자리에서 벗어나지 않는다.
+        // 동물: 제자리에서 풀 뜯기·두리번·가끔 몸 돌리기 / 목자: 둘러보며 숨 / 나무·건초·천막·물부대: 바람에 살랑 / 배: 흔들 / 가로등: 불빛이 숨 쉬듯.
+        // 돌담·문·지팡이·피리·깔개·벤치처럼 단단한 것은 그대로
+        const IDLE_SWAY = { figtree: [0.025, 0.7], palmtree: [0.04, 0.55], arbor: [0.015, 0.8], hay: [0.012, 1.1], tent: [0.008, 0.9], waterskin: [0.03, 1.3], birdhouse: [0.012, 0.9],
+    olivetree: [0.02, 0.6], wildflowers: [0.06, 1.4], reeds: [0.07, 1.1], terebinth: [0.012, 0.5] };
+        function idleFx(k, c, ph) {
+            ph = ph || Math.random() * 6.28;
+            if (k === 'sheep' || k === 'blacksheep' || k === 'lamb' || k === 'dog') {
+                const hd = c.getObjectByName('head'); let turnAt = 2 + Math.random() * 4, yaw0 = 0, yaw1 = 0, turnT = 0, last = 0;
+                return t => {
+                    const dt = Math.min(0.05, Math.max(0, t - last)); last = t;
+                    const u = (t + ph) % 7, eat = k === 'dog' ? u < 2.5 : u < 4.2;   // 개는 엎드려 쉬다 고개 들고, 양은 오래 뜯는다
+                    if (hd) hd.rotation.z += ((eat ? -0.7 + Math.sin(t * 6 + ph) * 0.08 : Math.sin(t * 0.9 + ph) * 0.15) - hd.rotation.z) * Math.min(1, dt * 3);
+                    if (hd && !eat) hd.rotation.y = Math.sin(t * 0.6 + ph) * 0.35;
+                    if (t > turnAt) { turnAt = t + 5 + Math.random() * 6; yaw0 = c.rotation.y; yaw1 = yaw0 + (Math.random() - 0.5) * 1.4; turnT = 0; }
+                    if (turnT < 1) { turnT = Math.min(1, turnT + dt / 1.2); const e = turnT * turnT * (3 - 2 * turnT); c.rotation.y = yaw0 + (yaw1 - yaw0) * e; c.position.y = Math.abs(Math.sin(turnT * Math.PI * 3)) * 0.01; }
+                };
+            }
+            if (k === 'shepherd') {
+                const hd = c.getObjectByName('head');
+                return t => { if (hd) { hd.rotation.y = Math.sin(t * 0.35 + ph) * 0.45; hd.rotation.x = Math.sin(t * 0.5 + ph) * 0.05; } c.scale.y = 1 + Math.sin(t * 1.6 + ph) * 0.008; };
+            }
+            if (IDLE_SWAY[k]) {
+                const [a, f] = IDLE_SWAY[k];
+                return t => { c.rotation.z = Math.sin(t * f + ph) * a + Math.sin(t * f * 2.3 + ph) * a * 0.3; c.rotation.x = Math.sin(t * f * 0.8 + ph * 1.7) * a * 0.6; };
+            }
+            if (k === 'restsheep') {   // 누워 쉬는 양 — 숨 쉬고, 가끔 고개를 든다
+        const hd = c.getObjectByName('head');
+        return t => { c.scale.y = 1 + Math.sin(t * 1.3 + ph) * 0.015; const u = (t + ph) % 9; if (hd) hd.rotation.z = u < 2 ? Math.sin(u / 2 * Math.PI) * 0.35 : -0.08 + Math.sin(t * 0.8) * 0.03; };
+    }
+    if (k === 'butterfly') {   // 나비 — 날갯짓하며 8자로 맴돈다(놓은 자리 둘레)
+        const wl = c.getObjectByName('wingL'), wr = c.getObjectByName('wingR'); c.scale.setScalar(2.2); let last = 0;
+        return t => { const a = t * 0.9 + ph, x = Math.sin(a) * 0.22, z = Math.sin(a * 2) * 0.12, nx = Math.sin(a + 0.05) * 0.22, nz = Math.sin((a + 0.05) * 2) * 0.12;
+            c.position.set(x, 0.18 + Math.sin(t * 3 + ph) * 0.05, z); c.rotation.y = Math.atan2(-(nz - z), nx - x);
+            const f = Math.sin(t * 22) * 0.9; if (wl) wl.rotation.x = f; if (wr) wr.rotation.x = -f; };
+    }
+    if (k === 'brook') {   // 시냇물 — 물빛이 흐르듯 일렁인다
+        const wt = c.getObjectByName('water');
+        return t => { if (wt) { wt.position.x = Math.sin(t * 1.7 + ph) * 0.015; wt.scale.y = 1 + Math.sin(t * 2.3 + ph) * 0.04; } };
+    }
+    if (k === 'boat') return t => { c.position.y = Math.sin(t * 1.2 + ph) * 0.012; c.rotation.x = Math.sin(t * 0.9 + ph) * 0.05; c.rotation.z = Math.sin(t * 0.7 + ph) * 0.03; };
+            if (k === 'lamp') {
+                const ms = []; c.traverse(o => { if (o.isMesh && o.material.emissive && o.material.emissive.getHex()) { o.material = o.material.clone(); ms.push(o.material); } });
+                return t => ms.forEach(m => { m.emissiveIntensity = 1.1 + Math.sin(t * 1.4 + ph) * 0.35; });
+            }
+            return null;
+        }
         // 누르는 자리 — 모델 면으로 고르면 압축 모델에서 맞지 않고 가는 기둥·성긴 잎(포도 시렁)은 아예 안 짚혔다(10/1).
         // 물건마다 보이지 않는 상자(모델 크기, 너무 작으면 0.35)를 씌워 그 안 어디를 눌러도 골라지게. 크기는 decor.py가 찍은 SIZE(가로·깊이·높이)
         const DECO_BOX = { bench: [0.68, 0.26, 0.46], pot: [0.38, 0.38, 0.44], fence: [0.94, 0.1, 0.37], sign: [0.36, 0.27, 0.62], lamp: [0.18, 0.18, 1.06],
             flowerbed: [1.21, 0.82, 0.19], birdhouse: [0.26, 0.26, 1.0], figtree: [1.13, 1.09, 1.06], palmtree: [1.39, 1.39, 1.37], well: [0.8, 0.69, 0.92],
-            arbor: [0.98, 0.79, 0.95], bridge: [2.51, 0.52, 0.48], boat: [1.04, 0.56, 0.2], fountain: [1.1, 1.1, 1.0], gazebo: [1.36, 1.36, 1.17] };
+            arbor: [0.98, 0.79, 0.95], bridge: [2.51, 0.52, 0.48], boat: [1.04, 0.56, 0.2], fountain: [1.1, 1.1, 1.0], gazebo: [1.36, 1.36, 1.17],
+            penwall: [2.09, 2.04, 0.33], pengate: [2.06, 0.18, 0.42], sheep: [0.48, 0.25, 0.34], blacksheep: [0.49, 0.24, 0.33], lamb: [0.34, 0.16, 0.23], trough: [0.54, 0.24, 0.28], hay: [0.49, 0.4, 0.52],
+            tent: [1.05, 1.25, 0.5], campfire: [0.38, 0.36, 0.28], shepherd: [0.26, 0.29, 0.43], staff: [0.16, 0.03, 0.9], flute: [0.2, 0.02, 0.03], waterskin: [0.19, 0.15, 0.26], rug: [0.66, 0.4, 0.01], dog: [0.55, 0.13, 0.33],
+            brook: [2.26, 0.78, 0.04], steppingstones: [0.21, 0.81, 0.06], meadow: [1.13, 0.84, 0.13], restsheep: [0.5, 0.28, 0.23], wildflowers: [0.44, 0.48, 0.24], reeds: [0.23, 0.16, 0.7], olivetree: [1.04, 0.98, 1.16], rock: [0.64, 0.46, 0.38], butterfly: [0.5, 0.3, 0.4] };
         const pickMat = new THREE.MeshBasicMaterial({ visible: false });
+        // 놓을 수 있는 곳 — 산마루 안, 그리고 **성과 성문 경사로 바깥**(10/1 사용자: 성 안에는 못 놓게). 성 안엔 생명나무 열두 그루·보좌가 있고,
+        // 기초석을 다 놓으면 가장자리(4.95~6)에 띠가 서고 경사로가 6.9까지 나온다. 물건 반지름(r)만큼 더 밀어내 큰 세트도 닿지 않게
+        const DECO_CITY = HALF + RAMP_L + 0.15;
+        // ext = 물건이 차지하는 [가로 반폭, 세로 반폭](돌린 방향까지). 큰 세트(약 10×4)는 원으로 보면 산마루 밖으로 밀려나 직사각형으로 본다
+        // prev(끌기 전 자리)가 있으면 그쪽 성벽 바깥에 붙는다 — 없으면 성을 가로지를 때 반대편으로 튀었다
+        // river: 세트·큰 세트는 성 밖으로 흐르는 네 물길(폭 ±0.95)도 피한다 — 큰 세트(약 10)를 남쪽에 두면 양 우리가 강물 위에 놓였다. 낱개(다리·배)는 강 위에 둘 수 있다
+        function decoSpot(x, z, ext, prev, river) {
+            const lim = PL - 0.4; x = Math.max(-lim, Math.min(lim, x)); z = Math.max(-lim, Math.min(lim, z));
+            const [ex, ez] = Array.isArray(ext) ? ext : [ext || 0, ext || 0];
+            if (river) {   // 물길 띠를 가로지르면 가까운 쪽으로 비켜난다(가장자리에 닿으면 반대쪽)
+                const RV = RB + 0.08;
+                if (Math.abs(x) < RV + ex) { const sx = x < 0 ? -1 : 1, nx = sx * (RV + ex); x = Math.abs(nx) <= lim ? nx : -sx * (RV + ex); }
+                if (Math.abs(z) < RV + ez && Math.abs(x) < DECO_CITY + ex) { const sz = z < 0 ? -1 : 1, nz = sz * (RV + ez); z = Math.abs(nz) <= lim ? nz : -sz * (RV + ez); }
+            }
+            if (Math.abs(x) - ex < DECO_CITY && Math.abs(z) - ez < DECO_CITY) {   // 성(+경사로)과 겹친다
+                const pin = p => Math.abs(p.x) - ex >= DECO_CITY - 0.01 || Math.abs(p.z) - ez >= DECO_CITY - 0.01;
+                const ref = prev && pin(prev) ? (Math.abs(prev.x) - ex >= DECO_CITY - 0.01 ? { x: prev.x, z: 0 } : { x: 0, z: prev.z }) : { x, z };
+                if (Math.abs(ref.x) >= Math.abs(ref.z)) x = (ref.x < 0 ? -1 : 1) * Math.min(lim, DECO_CITY + ex); else z = (ref.z < 0 ? -1 : 1) * Math.min(lim, DECO_CITY + ez);
+            }
+            return [x, z];
+        }
+        const decoExt = (kind, k, r) => {
+            let w = 0.4, d = 0.4;
+            if (kind === 'big') { const B = (typeof NJ_BIG !== 'undefined') && NJ_BIG[k]; if (B) { w = B.box[0] / 2 * 1.5; d = B.box[1] / 2 * 1.5; } }
+            else if (kind === 'set') { const D = (typeof NJ_SETS !== 'undefined') && NJ_SETS[k]; if (D) { w = D.box[0] / 2 * 1.5; d = D.box[1] / 2 * 1.5; } }
+            else if (kind === 'gift') { w = d = 0.7; }
+            else { const b = DECO_BOX[k], sc = k === 'bridge' ? 1.1 : 1.5; if (b) { w = b[0] / 2 * sc; d = b[1] / 2 * sc; } }
+            const c = Math.abs(Math.cos(r || 0)), sn = Math.abs(Math.sin(r || 0));
+            return [c * w + sn * d, sn * w + c * d];
+        };
+        const kindOf = it => it.big || (it.kind === 'set' && typeof NJ_BIG !== 'undefined' && NJ_BIG[it.k]) ? 'big' : it.kind;
         function addPick(m, size) {
             const [w, d, h] = (size || [0.9, 0.9, 0.9]).map(v => Math.max(0.35, v));
             const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), pickMat); b.position.y = h / 2; m.add(b); m.userData.pick = b;
         }
         function placeDecor(it) {
-            if (!it || it.st) return null;
-            const m = new THREE.Group(); m.position.set(it.x || 0, terrain(it.x || 0, it.z || 0), it.z || 0); m.rotation.y = it.r || 0;
+            if (!it || it.st || it.in || it.sold) return null;   // 보관함 · 세트로 조립된 낱개 · 판 것은 안 놓는다
+            const [px, pz] = decoSpot(it.x || 0, it.z || 0, decoExt('decor', it.k, it.r || 0));   // 예전에 성 안에 놓은 것도 바깥으로
+            const m = new THREE.Group(); m.position.set(px, terrain(px, pz), pz); m.rotation.y = it.r || 0;
             m.userData.item = { kind: 'decor', id: it.id, k: it.k };
             m.scale.setScalar(it.k === 'bridge' ? 1.1 : 1.5);   // 성 안 나무(1.4)·예물에 맞춰 — 원래 크기로는 내려다볼 때 작았다
             addPick(m, DECO_BOX[it.k]);
             loadDecor(it.k).then(sc => { if (cur !== C) return; const c = sc.clone(); m.add(c);
                 if (it.k === 'fountain') { const wt = c.getObjectByName('water'); if (wt) m.userData.anim = t => { wt.scale.set(1 + Math.sin(t * 5.3) * 0.06, 1 + Math.sin(t * 3.7) * 0.12, 1 + Math.sin(t * 4.1 + 1) * 0.06); }; }   // 솟는 물이 일렁인다
+                else { const f = setFx(it.k, c, m, m, { parts: [] }) || idleFx(it.k, c); if (f) m.userData.anim = f; }   // 낱개 모닥불도 일렁이고, 동물·나무·배… 저마다 조금씩
             }).catch(() => { if (cur === C) m.add(decoFallback()); });
             decoG.add(m); return m;
         }
         ((typeof njDecor !== 'undefined' && Array.isArray(njDecor)) ? njDecor : []).forEach(placeDecor);
 
+        // ── 🧩 조립한 세트 (10/1) — 낱개 모델을 세트 배치(NJ_SETS.layout)대로 한 덩어리에. 동물은 안에서 거닌다(setAnim) ──
+        const setG = new THREE.Group(); scene.add(setG);
+        function setAnim(D, animals) {
+            if (!animals.length) return null;
+            const [x0, x1, z0, z1] = D.area, spots = D.spots || [];   // 머무는 자리 — 양은 구유·건초 앞, 개는 불가
+            const lead = {}; Object.entries(D.follow || {}).forEach(([k, m]) => { lead[k] = animals.find(a => a.k === m); });
+            const pick = (a) => {
+                const mom = lead[a.k];
+                if (mom) {   // 어린양은 흰 양을 졸졸
+                    const h = mom.o.rotation.y; a.tx = mom.o.position.x - Math.cos(h) * 0.22 + 0.06; a.tz = mom.o.position.z + Math.sin(h) * 0.22; a.eat = Math.random() < 0.4; return;
+                }
+                const r = Math.random();
+                if (r < 0.4 && spots.length) { const sp = spots[Math.floor(Math.random() * spots.length)]; a.tx = sp[0] + (Math.random() - 0.5) * 0.12; a.tz = sp[1] + (Math.random() - 0.5) * 0.06; a.eat = true; }
+                else {   // 아무 데서나(풀을 뜯기도) — 피할 자리(목자·불)는 다시 고른다
+                    const av = D.avoid || [];
+                    for (let k = 0; k < 8; k++) { a.tx = x0 + Math.random() * (x1 - x0); a.tz = z0 + Math.random() * (z1 - z0); if (!av.some(([ax, az, ar]) => Math.hypot(a.tx - ax, a.tz - az) < ar)) break; }
+                    a.eat = Math.random() < 0.35;
+                }
+            };
+            let last = 0;
+            return t => {
+                const dt = Math.min(0.05, Math.max(0, t - last)); last = t; if (!dt) return;
+                animals.forEach(a => {
+                    const o = a.o;
+                    if (a.wait > 0) {   // 서서 — 먹거나 두리번
+                        a.wait -= dt; o.position.y = 0;
+                        if (a.head) a.head.rotation.z += ((a.eat ? -0.75 + Math.sin(t * 6 + a.ph) * 0.1 : Math.sin(t * 0.7 + a.ph) * 0.12) - a.head.rotation.z) * Math.min(1, dt * 4);
+                        if (a.wait <= 0) pick(a);
+                        return;
+                    }
+                    const dx = a.tx - o.position.x, dz = a.tz - o.position.z, d = Math.hypot(dx, dz);
+                    if (d < 0.025) { a.wait = a.eat ? 3 + Math.random() * 4 : 1 + Math.random() * 3; return; }
+                    const st = Math.min(d, (lead[a.k] ? 0.22 : a.k === 'dog' ? 0.24 : 0.15) * dt);
+                    o.position.x += dx / d * st; o.position.z += dz / d * st;
+                    let df = Math.atan2(-dz, dx) - o.rotation.y; df = Math.atan2(Math.sin(df), Math.cos(df)); o.rotation.y += df * Math.min(1, dt * 5);
+                    o.position.y = Math.abs(Math.sin(t * 13 + a.ph)) * 0.012;   // 종종걸음
+                    if (a.head) a.head.rotation.z += (Math.sin(t * 13 + a.ph) * 0.05 - a.head.rotation.z) * Math.min(1, dt * 6);
+                });
+            };
+        }
+        // 세트 안의 작은 연출 — 모닥불 일렁임, 피리 음표, 목자가 가락 따라 고개를 끄덕
+        function setFx(k, c, h, m, D) {
+            if (k === 'campfire') {
+                const fl = c.getObjectByName('flame'); if (!fl) return null;
+                const ms = []; fl.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); ms.push(o.material); } });
+                return t => { fl.scale.set(1 + Math.sin(t * 7.3) * 0.08, 1 + Math.sin(t * 9.1) * 0.16 + Math.sin(t * 14.7) * 0.07, 1 + Math.sin(t * 6.1 + 1) * 0.08);
+                    fl.rotation.y = Math.sin(t * 1.3) * 0.4; ms.forEach(mt => { mt.emissiveIntensity = 1.2 + Math.sin(t * 11) * 0.25 + Math.sin(t * 17) * 0.15; }); };
+            }
+            if (k === 'shepherd' && D.parts.includes('flute')) {
+                const hd = c.getObjectByName('head');
+                return t => { if (hd) { hd.rotation.y = Math.sin(t * 1.1) * 0.12; hd.rotation.x = Math.sin(t * 2.2) * 0.05; } };
+            }
+            if (k === 'flute' && D.parts.includes('shepherd')) {   // 음표 — 목자가 든 피리 끝에서 하나씩 날아오른다(피리만 따로 놓으면 조용, 큰 세트에서 목자가 걸으러 가면 mute)
+                const notes = [0, 1, 2, 3, 4, 5].map(n => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: NOTE_TEX[n % 2], transparent: true, depthWrite: false, opacity: 0 }));
+                    sp.scale.setScalar(0.09); m.add(sp); return { sp, age: 9, v: new THREE.Vector3() }; });
+                let next = 0, ni = 0, last = 0;
+                return t => { const dt = Math.min(0.05, Math.max(0, t - last)); last = t;
+                    if (t >= next && !h.userData.mute) { next = t + 0.55 + Math.random() * 0.5; const n = notes[ni++ % notes.length]; n.age = 0;
+                        n.sp.position.set(h.position.x + (Math.random() - 0.5) * 0.06, h.position.y + 0.06, h.position.z + 0.1); n.v.set((Math.random() - 0.5) * 0.12, 0.22 + Math.random() * 0.08, 0.05); }
+                    notes.forEach(n => { n.age += dt; if (n.age > 2) { n.sp.material.opacity = 0; return; }
+                        n.sp.position.addScaledVector(n.v, dt); n.sp.position.x += Math.sin(n.age * 4) * 0.002;
+                        n.sp.material.opacity = Math.min(1, n.age * 5) * (1 - n.age / 2); n.sp.scale.setScalar(0.07 + n.age * 0.03); }); };
+            }
+            return null;
+        }
+        // 세트 내용(낱개 배치 · 동물 · 작은 효과)을 m 안에 — 보통 세트와 큰 세트가 같이 쓴다. noAnimals면 동물은 만들지 않는다(큰 세트가 직접 움직인다)
+        function buildSet(D, m, opt) {
+            opt = opt || {};
+            const animals = [], fx = [], holders = {};
+            const LL = Object.assign({}, D.layout, opt.layout || {});   // 큰 세트 안에선 자리를 바꿀 수 있다(override)
+            D.parts.forEach((k, i) => {
+                const L = LL[k];
+                if (!L && opt.noAnimals) return;
+                const h = new THREE.Group(); m.add(h); holders[k] = h;
+                if (L) { h.position.set(L[0], L[3] || 0, L[1]); h.rotation.y = L[2] || 0; }
+                else { const [x0, x1, z0, z1] = D.area; h.position.set(x0 + Math.random() * (x1 - x0), 0, z0 + Math.random() * (z1 - z0)); h.rotation.y = Math.random() * 6.28;
+                    animals.push({ o: h, k, wait: Math.random() * 2, tx: h.position.x, tz: h.position.z, eat: false, head: null, ph: i * 1.7 }); }
+                loadDecor(k).then(sc => { if (!(cur === C)) return; const c = sc.clone(); h.add(c); const an = animals.find(q => q.o === h); if (an) an.head = c.getObjectByName('head');
+                    const f = setFx(k, c, h, m, D) || (an ? null : idleFx(k, c)); if (f) fx.push(f); })   // 세트 안 천막·건초·물부대도 바람에
+                    .catch(() => {});
+            });
+            const walk = setAnim(D, animals);
+            return { anim: t => { if (walk) walk(t); fx.forEach(f => f(t)); }, holders };
+        }
+        // ── 🏞️ 큰 세트 「목자의 언덕」 연출 — 목자가 일어나 양 떼를 이끌고 물가로 갔다 돌아온다(요 10:4 「앞서 가면 양들이 그의 음성을 아는 고로 따라오되」) ──
+        //    한 바퀴: 앉아 피리 → 일어나 우리로 → 문 앞에 양이 모인다 → 앞서 걸으면 줄지어 따라온다 → 시냇가에서 마시고 뜯는다 → 다시 우리로 → 쉼터로 돌아가 앉는다
+        function bigShow(B, m, subs) {
+            const P = B.path, Ld = B.leads, SP = 0.42;
+            const flock = Ld.flock.map((k, i) => { const h = new THREE.Group(); m.add(h);
+                h.position.set(P.penArea[0] + Math.random() * (P.penArea[1] - P.penArea[0]), 0, P.penArea[2] + Math.random() * (P.penArea[3] - P.penArea[2]));
+                const a = { o: h, k, head: null, tx: h.position.x, tz: h.position.z, wait: Math.random() * 2, eat: false, ph: i * 1.9 };
+                loadDecor(k).then(sc => { if (!(cur === C)) return; const c = sc.clone(); h.add(c); a.head = c.getObjectByName('head'); }).catch(() => {});
+                return a; });
+            const W = new THREE.Group(); W.visible = false; m.add(W); let legs = [], wHead = null;
+            loadDecor(Ld.walker).then(sc => { if (!(cur === C)) return; const c = sc.clone(); W.add(c); legs = [c.getObjectByName('legL'), c.getObjectByName('legR')]; wHead = c.getObjectByName('head'); }).catch(() => {});
+            const seatH = subs[Ld.seatSet] && subs[Ld.seatSet].holders[Ld.seatPart], fluteH = subs[Ld.seatSet] && subs[Ld.seatSet].holders[Ld.flutePart];
+            const gateH = subs[Ld.set] && subs[Ld.set].holders.pengate; let door = null, doorA = 0;   // 우리 문짝(축 door) — 목자·양이 가까이 오면 바깥쪽으로 열린다
+            const seat = P.seat, Rt = P.routes, gth = P.gather;   // 길은 바닥(hillbase)의 흙길을 따른다
+            const S = [
+                { sit: 8, mode: 'pen' },
+                { walk: Rt.toPen, mode: 'pen', gatherAt: 0.55 },
+                { wait: 2.5, mode: 'gather' },
+                { walk: Rt.lead, mode: 'follow' },
+                { wait: 14, mode: 'graze' },
+                { walk: Rt.back, mode: 'follow' },
+                { wait: 2, mode: 'pen' },
+                { walk: Rt.home, mode: 'pen' },
+            ];
+            const lenOf = pts => { let L = 0; for (let i = 1; i < pts.length; i++) L += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); return L; };
+            S.forEach(s => { s.dur = s.walk ? lenOf(s.walk) / SP : (s.sit || s.wait); });
+            const total = S.reduce((a, s) => a + s.dur, 0);
+            const at = (pts, d) => { for (let i = 1; i < pts.length; i++) { const L = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+                if (d <= L || i === pts.length - 1) { const u = L ? Math.max(0, Math.min(1, d / L)) : 1; return [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * u, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * u]; } d -= L; } return pts[pts.length - 1]; };
+            const moveTo = (a, tx, tz, sp, dt, t) => { const o = a.o, dx = tx - o.position.x, dz = tz - o.position.z, d = Math.hypot(dx, dz);
+                if (d < 0.02) { o.position.y = 0; return true; }
+                const st = Math.min(d, sp * dt); o.position.x += dx / d * st; o.position.z += dz / d * st;
+                let df = Math.atan2(-dz, dx) - o.rotation.y; df = Math.atan2(Math.sin(df), Math.cos(df)); o.rotation.y += df * Math.min(1, dt * 6);
+                o.position.y = Math.abs(Math.sin(t * 13 + a.ph)) * 0.012; if (a.head) a.head.rotation.z += (Math.sin(t * 13) * 0.05 - a.head.rotation.z) * Math.min(1, dt * 6); return false; };
+            const headTo = (a, eat, t, dt) => { if (a.head) a.head.rotation.z += ((eat ? -0.75 + Math.sin(t * 6 + a.ph) * 0.1 : Math.sin(t * 0.7 + a.ph) * 0.12) - a.head.rotation.z) * Math.min(1, dt * 4); };
+            const penPick = a => { if (Math.random() < 0.4) { const sp = P.penSpots[Math.floor(Math.random() * P.penSpots.length)]; a.tx = sp[0]; a.tz = sp[1]; a.eat = true; }
+                else { a.tx = P.penArea[0] + Math.random() * (P.penArea[1] - P.penArea[0]); a.tz = P.penArea[2] + Math.random() * (P.penArea[3] - P.penArea[2]); a.eat = Math.random() < 0.35; } };
+            const trail = []; let last = 0, t0 = null, lastMode = 'pen';
+            return t => {
+                const dt = Math.min(0.05, Math.max(0, t - last)); last = t; if (!dt) return; if (t0 === null) t0 = t;
+                let u = (t - t0) % total, si = 0; while (u > S[si].dur && si < S.length - 1) { u -= S[si].dur; si++; }
+                const s = S[si], sitting = !!s.sit;
+                W.visible = !sitting; if (seatH) seatH.visible = sitting; if (fluteH) { fluteH.visible = sitting; fluteH.userData.mute = !sitting; }
+                let wx = seat[0], wz = seat[1], moving = false;
+                if (s.walk) { [wx, wz] = at(s.walk, u * SP); moving = u < s.dur - 0.05; const [nx, nz] = at(s.walk, u * SP + 0.05); if (Math.hypot(nx - wx, nz - wz) > 1e-4) W.rotation.y = Math.atan2(-(nz - wz), nx - wx); }
+                else if (s.wait) { const p = S[si - 1].walk; [wx, wz] = p[p.length - 1]; }
+                W.position.set(wx, moving ? Math.abs(Math.sin(t * 9)) * 0.01 : 0, wz);
+                const sw = moving ? Math.sin(t * 9) * 0.5 : 0; if (legs[0]) legs[0].rotation.z = sw; if (legs[1]) legs[1].rotation.z = -sw;
+                if (wHead) wHead.rotation.y = moving ? 0 : Math.sin(t * 0.5) * 0.4;
+                trail.push([t, wx, wz]); while (trail.length > 2 && trail[0][0] < t - 6) trail.shift();
+                if (!door && gateH) door = gateH.getObjectByName('door');
+                if (door && P.gate) {   // 문 — 목자가 다가오거나, 양이 드나드는 동안 열려 있다
+                    const g = P.gate, near = s.mode === 'gather' || Math.hypot(wx - g[0], wz - g[1]) < 0.75 ||
+                        (s.mode === 'follow' && flock.some(a => Math.hypot(a.o.position.x - g[0], a.o.position.z - g[1]) < 0.6));
+                    doorA += ((near ? 1.7 : 0) - doorA) * Math.min(1, dt * 2.5); door.rotation.y = doorA;
+                }
+                if (s.mode !== lastMode) {   // 자리·줄 순서는 바뀌는 순간의 위치로 — 미리 정해 두면 서로 가로질렀다(10/1 사용자: 시냇가에서 흰 양·검은 양이 엇갈린다)
+                    if (s.mode === 'pen') flock.forEach(a => { a.wait = 0; penPick(a); });
+                    if (s.mode === 'graze') { const sp = P.graze.slice().sort((p, q) => p[0] - q[0]); flock.slice().sort((p, q) => p.o.position.x - q.o.position.x).forEach((a, k) => { a.g = sp[k % sp.length]; }); }
+                    if (s.mode === 'follow') flock.slice().sort((p, q) => Math.hypot(p.o.position.x - wx, p.o.position.z - wz) - Math.hypot(q.o.position.x - wx, q.o.position.z - wz)).forEach((a, k) => { a.rank = k; });   // 목자에게 가까운 양이 앞
+                    lastMode = s.mode;
+                }
+                const gather = s.mode === 'gather' || (s.gatherAt && u / s.dur > s.gatherAt);
+                flock.forEach((a, i) => {
+                    if (s.mode === 'follow') {   // 목자의 발자취를 조금씩 늦게 — 줄지어 따라온다
+                        const rk = a.rank == null ? i : a.rank, lag = 0.9 * (rk + 1); let p = trail[0]; for (const q of trail) { if (q[0] <= t - lag) p = q; else break; }
+                        const off = (rk % 2 ? 1 : -1) * 0.05; if (moveTo(a, p[1] + off, p[2] + off, 0.6, dt, t)) headTo(a, false, t, dt); return;
+                    }
+                    if (gather) { if (moveTo(a, gth[0] - (i % 2) * 0.1, gth[1] + (i - 1) * 0.16, 0.35, dt, t)) headTo(a, false, t, dt); return; }
+                    if (s.mode === 'graze') { const g = a.g || P.graze[i % P.graze.length]; if (moveTo(a, g[0], g[1], 0.4, dt, t)) headTo(a, true, t, dt); return; }
+                    if (a.wait > 0) { a.wait -= dt; headTo(a, a.eat, t, dt); return; }
+                    if (moveTo(a, a.tx, a.tz, 0.15, dt, t)) { a.wait = 2 + Math.random() * 4; penPick(a); }
+                });
+            };
+        }
+        function placeBig(rec) {
+            const B = (typeof NJ_BIG !== 'undefined') ? NJ_BIG[rec.s] : null; if (!B) return null;
+            const [px, pz] = decoSpot(rec.x || 0, rec.z || 0, decoExt('big', rec.s, rec.r || 0), null, true);
+            const m = new THREE.Group(); m.position.set(px, terrain(px, pz), pz); m.rotation.y = rec.r || 0; m.scale.setScalar(1.5);
+            m.userData.item = { kind: 'set', id: rec.id, k: rec.s, big: true };
+            const subs = {}, anims = [];
+            B.sets.forEach(sk => { const [ox, oz, oy, lift] = B.offsets[sk], g = new THREE.Group(); g.position.set(ox, lift || 0, oz); g.rotation.y = oy || 0; m.add(g);
+                const b = buildSet(NJ_SETS[sk], g, { noAnimals: B.leads && B.leads.set === sk, layout: B.override && B.override[sk] }); subs[sk] = b; anims.push(b.anim); });
+            (B.extras || []).forEach(e => {   // 큰 세트만의 바닥·그늘 나무
+                const h = new THREE.Group(); h.position.set(e.at[0], e.at[3] || 0, e.at[1]); h.rotation.y = e.at[2] || 0; m.add(h);   // 바닥은 시냇물을 덮지 않게 조금 낮게
+                loadDecor(e.k).then(sc => { if (!(cur === C)) return; const c = sc.clone(); h.add(c); const f = idleFx(e.k, c); if (f) anims.push(f); }).catch(() => {});
+            });
+            const show = B.leads ? bigShow(B, m, subs) : null;
+            m.userData.anim = t => { anims.forEach(a => a(t)); if (show) show(t); };
+            setG.add(m); addPick(m, B.box); return m;
+        }
+        function placeSet(rec) {
+            if (!rec || rec.st || rec.in) return null;   // 보관함 · 큰 세트에 들어간 세트는 따로 안 놓는다
+            if (rec.big) return placeBig(rec);
+            const D = (typeof NJ_SETS !== 'undefined') ? NJ_SETS[rec.s] : null; if (!D) return null;
+            const [px, pz] = decoSpot(rec.x || 0, rec.z || 0, decoExt('set', rec.s, rec.r || 0), null, true);
+            const m = new THREE.Group(); m.position.set(px, terrain(px, pz), pz); m.rotation.y = rec.r || 0; m.scale.setScalar(1.5);
+            m.userData.item = { kind: 'set', id: rec.id, k: rec.s };
+            const b = buildSet(D, m); m.userData.anim = b.anim;
+            setG.add(m); addPick(m, D.box); return m;
+        }
+
+        ((typeof njSets !== 'undefined' && Array.isArray(njSets)) ? njSets : []).forEach(placeSet);
         const decoBtn = ov.querySelector('.nj3d-deco'), decoBar = ov.querySelector('.nj3d-decobar'), decoPanel = ov.querySelector('.nj3d-decopanel');
         decoBtn.textContent = T('deco_btn');
         const decoRing = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.5, 40), new THREE.MeshBasicMaterial({ color: 0xffd34d, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide }));
         decoRing.rotation.x = -Math.PI / 2; decoRing.visible = false; scene.add(decoRing);
-        const decoPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), decoHit = new THREE.Vector3(), DECO_LIM = PL - 0.4;
+        const decoPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), decoHit = new THREE.Vector3();
         const decoName = (it) => {
             if (it.kind === 'gift') { const o = (typeof NJ_OFFERINGS !== 'undefined') ? NJ_OFFERINGS.find(x => x.k === it.k) : null; return o ? (typeof _njOfferName === 'function' ? _njOfferName(o) : o.ko) : it.k; }
+            if (it.kind === 'set') return (kindOf(it) === 'big' ? '🏞️ ' : '🧩 ') + (typeof _njSetName === 'function' ? _njSetName(it.k) : it.k);
             const d = (typeof NJ_DECOR !== 'undefined') ? NJ_DECOR.find(x => x.k === it.k) : null; return d ? (typeof _njDecorName === 'function' ? _njDecorName(d) : d.ko) : it.k;
         };
-        const decoObjs = () => [...giftsG.children, ...decoG.children].filter(o => o.userData.item);
+        const asmReady = () => [...((typeof NJ_BIG !== 'undefined' && typeof _njBigPick === 'function') ? Object.keys(NJ_BIG).filter(k => _njBigPick(k)) : []),   // 큰 세트가 먼저
+            ...((typeof NJ_SETS !== 'undefined' && typeof _njSetPick === 'function') ? Object.keys(NJ_SETS).filter(k => _njSetPick(k)) : [])];
+        const decoObjs = () => [...giftsG.children, ...decoG.children, ...setG.children].filter(o => o.userData.item);
         const decoRoot = (o) => { while (o && !(o.userData && o.userData.item)) o = o.parent; return o; };
         const decoSel = (obj) => { deco.sel = obj; decoRing.visible = !!obj; decoPanel.hidden = true; decoRender(); };
         const decoTouch = (obj) => { if (obj && obj.userData.item) deco.touched.set(obj.userData.item.id, obj); };
         function decoRender() {
             const it = deco.sel && deco.sel.userData.item;
+            const ready = asmReady();
             decoBar.innerHTML = (it ? `<div class="nj3d-deco-sel"><b>${esc2(decoName(it))}</b>
-                    <button data-a="rot">${T('deco_rotate')}</button><button data-a="stash">${T('deco_stash')}</button></div>` : `<div class="nj3d-deco-tip">${T('deco_tip')}</div>`)
+                    <button data-a="rot">${T('deco_rotate')}</button>${it.kind === 'set' ? `<button data-a="dis">${T('deco_disasm')}</button>` : ''}<button data-a="stash">${T('deco_stash')}</button>${it.kind === 'decor' && typeof _njDecorSellPrice === 'function' ? `<button data-a="sell" class="sell">${T('deco_sell', { n: _njDecorSellPrice(it.k).toLocaleString() })}</button>` : ''}</div>`
+                    : ready.length ? `<button class="nj3d-deco-asm" data-a="asm">${T('deco_asm_ready', { name: _njSetName(ready[0]) + (ready.length > 1 ? ` +${ready.length - 1}` : '') })}</button>`
+                    : `<div class="nj3d-deco-tip">${T('deco_tip')}</div>`)
                 + `<div class="nj3d-deco-row"><button data-a="bag">${T('deco_bag', { n: deco.stash.length })}</button><button data-a="shop">${T('deco_shop')}</button><button data-a="done" class="done">${T('deco_done')}</button></div>`;
         }
         function decoPanelShow(kind) {
             decoPanel.hidden = false;
             if (kind === 'bag') {
                 decoPanel.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button><div class="nj3d-offer-head">${T('deco_bag_title')}</div>`
-                    + (deco.stash.length ? `<div class="nj3d-offer-list">${deco.stash.map((s, i) => `<div class="nj3d-offer-row"><div><b>${esc2(decoName(s))}</b><span>${s.kind === 'gift' ? T('deco_kind_gift') : T('deco_kind_decor')}</span></div><button data-i="${i}">${T('deco_place')}</button></div>`).join('')}</div>`
+                    + (deco.stash.length ? `<div class="nj3d-offer-list">${deco.stash.map((s, i) => `<div class="nj3d-offer-row"><div><b>${esc2(decoName(s))}</b><span>${s.kind === 'gift' ? T('deco_kind_gift') : s.kind === 'set' ? T('deco_kind_set') : T('deco_kind_decor')}</span></div><span class="nj3d-bag-btns">${s.kind === 'decor' && typeof _njDecorSellPrice === 'function' ? `<button class="sell" data-sell="${i}">${T('deco_sell', { n: _njDecorSellPrice(s.k).toLocaleString() })}</button>` : ''}<button data-i="${i}">${T('deco_place')}</button></span></div>`).join('')}</div>`
                         : `<div class="nj3d-offer-intro">${T('deco_bag_empty')}</div>`);
+                decoPanel.querySelectorAll('button[data-sell]').forEach(b => b.onclick = () => {
+                    if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = T('deco_sell_sure'); return; }
+                    const s = deco.stash[+b.dataset.sell]; if (!s) return;
+                    const back = typeof _njDecorSell === 'function' ? _njDecorSell(s.id) : 0;
+                    if (back) { deco.stash.splice(+b.dataset.sell, 1); deco.stashed.delete(s.id); syncWallet(); decoRender(); decoPanelShow('bag'); showHint(T('deco_sold', { n: back.toLocaleString() }), 2000); }
+                });
                 decoPanel.querySelectorAll('button[data-i]').forEach(b => b.onclick = () => {
                     const s = deco.stash.splice(+b.dataset.i, 1)[0]; if (!s) return;
-                    const x = Math.max(-DECO_LIM, Math.min(DECO_LIM, deco.tgt.x)), z = Math.max(-DECO_LIM, Math.min(DECO_LIM, deco.tgt.z));
-                    const rec = s.kind === 'gift' ? (njGifts || []).find(v => v.id === s.id) : (njDecor || []).find(v => v.id === s.id);
-                    const obj = rec ? (s.kind === 'gift' ? placeGift(Object.assign({}, rec, { x, z, r: 0, st: false })) : placeDecor(Object.assign({}, rec, { x, z, r: 0, st: false }))) : null;
+                    const [x, z] = decoSpot(deco.tgt.x, deco.tgt.z, decoExt(kindOf(s), s.k, 0), null, s.kind === 'set');
+                    const rec = ((s.kind === 'gift' ? njGifts : s.kind === 'set' ? njSets : njDecor) || []).find(v => v.id === s.id);
+                    const put = Object.assign({}, rec, { x, z, r: 0, st: false });
+                    const obj = rec ? (s.kind === 'gift' ? placeGift(put) : s.kind === 'set' ? placeSet(put) : placeDecor(put)) : null;
                     if (obj) { decoTouch(obj); decoSel(obj); }
                 });
             } else {
                 const gems = Number(typeof myGems !== 'undefined' ? myGems : 0), list = (typeof NJ_DECOR !== 'undefined') ? NJ_DECOR : [];
                 decoPanel.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button><div class="nj3d-offer-head">${T('deco_shop_title')}</div>
                     <div class="nj3d-offer-have">💎 ${gems.toLocaleString()}</div>
-                    <div class="nj3d-offer-list">${list.map(d => `<div class="nj3d-offer-row"><div><b>${esc2(typeof _njDecorName === 'function' ? _njDecorName(d) : d.ko)}</b></div>${gems >= d.cost
-                        ? `<button data-k="${d.k}">💎 ${d.cost.toLocaleString()}</button>` : `<span class="nj3d-offer-lock">💎 ${d.cost.toLocaleString()}</span>`}</div>`).join('')}</div>`;
+                    ${(() => {   // 꾸밈 / 컨셉 → 세트로 묶어서, 세트마다 몇 가지 모았는지
+                        const own = k => ((typeof njDecor !== 'undefined' && njDecor) || []).filter(v => v.k === k && !v.sold).length;
+                        const row = d => `<div class="nj3d-offer-row"><div><b>${esc2(typeof _njDecorName === 'function' ? _njDecorName(d) : d.ko)}</b>${own(d.k) ? `<span>${T('deco_owned', { n: own(d.k) })}</span>` : ''}</div>${gems >= d.cost
+                            ? `<button data-k="${d.k}">💎 ${d.cost.toLocaleString()}</button>` : `<span class="nj3d-offer-lock">💎 ${d.cost.toLocaleString()}</span>`}</div>`;
+                        let h = `<div class="nj3d-shop-sec">${T('deco_shop_plain')}</div><div class="nj3d-offer-list">${list.filter(d => !d.set).map(row).join('')}</div>`;
+                        ((typeof NJ_CONCEPTS !== 'undefined') ? NJ_CONCEPTS : []).forEach(c => {
+                            h += `<div class="nj3d-shop-sec">${esc2(currentLang === 'en' ? c.en : c.ko)} <span>${esc2(c.ref || '')}</span></div>`;
+                            if (c.big && typeof NJ_BIG !== 'undefined' && NJ_BIG[c.big]) h += `<div class="nj3d-shop-big">${T('deco_big_got', { name: esc2(_njSetName(c.big)), n: _njBigGot(c.big), m: NJ_BIG[c.big].sets.length })}</div>`;
+                            c.sets.forEach(sk => {
+                                const D = NJ_SETS[sk], got = typeof _njSetOwned === 'function' ? _njSetOwned(sk) : 0;
+                                h += `<div class="nj3d-shop-set">🧩 ${esc2(_njSetName(sk))} <span>${T('deco_set_got', { n: got, m: D.parts.length })}</span></div>
+                                    <div class="nj3d-offer-list">${list.filter(d => d.set === sk).map(row).join('')}</div>`;
+                            });
+                        });
+                        return h;
+                    })()}`;
                 decoPanel.querySelectorAll('button[data-k]').forEach(b => b.onclick = () => {
-                    const x = Math.max(-DECO_LIM, Math.min(DECO_LIM, deco.tgt.x)), z = Math.max(-DECO_LIM, Math.min(DECO_LIM, deco.tgt.z));
+                    const [x, z] = decoSpot(deco.tgt.x, deco.tgt.z, decoExt('decor', b.dataset.k, 0));
                     const it = typeof _njDecorBuy === 'function' ? _njDecorBuy(b.dataset.k, x, z) : null;
                     if (!it) { showHint(T('deco_need_gems'), 2000); return; }
                     const obj = placeDecor(it); syncWallet();
@@ -1577,10 +1879,34 @@
         decoBar.addEventListener('click', e => {
             const b = e.target.closest('button'); if (!b || !deco) return;
             const a = b.dataset.a;
-            if (a === 'rot' && deco.sel) { deco.sel.rotation.y += Math.PI / 4; decoTouch(deco.sel); }
+            if (a === 'rot' && deco.sel) {   // 돌리면 차지하는 폭이 바뀐다 — 성에 닿으면 다시 밀어낸다
+                const o = deco.sel, it = o.userData.item; o.rotation.y += Math.PI / 4;
+                const [x, z] = decoSpot(o.position.x, o.position.z, decoExt(kindOf(it), it.k, o.rotation.y), o.position, it.kind === 'set'); o.position.set(x, terrain(x, z), z); decoTouch(o);
+            }
             else if (a === 'stash' && deco.sel) {
                 const o = deco.sel, it = o.userData.item; deco.stash.push({ kind: it.kind, id: it.id, k: it.k });
                 deco.touched.delete(it.id); deco.stashed.add(it.id); o.parent.remove(o); decoSel(null);
+            }
+            else if (a === 'dis' && deco.sel) {   // 🔨 해체 — 낱개로 둘레에 내려놓는다
+                const o = deco.sel, id = o.userData.item.id, big = kindOf(o.userData.item) === 'big'; deco.touched.delete(id);
+                if (big) { const sets = typeof _njBigDisassemble === 'function' ? _njBigDisassemble(id) : []; o.parent.remove(o); decoSel(null); sets.forEach(S => placeSet(S)); }   // 큰 세트 → 세트 셋
+                else { const parts = typeof _njSetDisassemble === 'function' ? _njSetDisassemble(id) : []; o.parent.remove(o); decoSel(null); parts.forEach(v => placeDecor(v)); }
+                showHint(T('deco_disasm_done'), 2000);
+            }
+            else if (a === 'asm') {   // 🧩 조립 — 화면 가운데에 세트로
+                const ready = asmReady(); if (!ready.length) return;
+                const sk = ready[0], big = typeof NJ_BIG !== 'undefined' && !!NJ_BIG[sk], [x, z] = decoSpot(deco.tgt.x, deco.tgt.z, decoExt(big ? 'big' : 'set', sk, 0), null, true);
+                const r = big ? _njBigAssemble(sk, x, z) : _njSetAssemble(sk, x, z); if (!r) return;
+                (big ? setG : decoG).children.filter(o => o.userData.item && r.parts.includes(o.userData.item.id)).forEach(o => { deco.touched.delete(o.userData.item.id); o.parent.remove(o); });
+                deco.stash = deco.stash.filter(st => !r.parts.includes(st.id));
+                const obj = placeSet(r.rec); if (obj) decoSel(obj);
+                if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
+                showHint(T('deco_asm_done', { name: _njSetName(sk) }), 3000);
+            }
+            else if (a === 'sell' && deco.sel) {   // 💰 팔기 — 한 번 더 눌러야 판다
+                if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = T('deco_sell_sure'); return; }
+                const o = deco.sel, id = o.userData.item.id, back = typeof _njDecorSell === 'function' ? _njDecorSell(id) : 0;
+                if (back) { deco.touched.delete(id); o.parent.remove(o); decoSel(null); syncWallet(); showHint(T('deco_sold', { n: back.toLocaleString() }), 2000); }
             }
             else if (a === 'bag') decoPanelShow('bag');
             else if (a === 'shop') decoPanelShow('shop');
@@ -1591,8 +1917,9 @@
             if (walk || proc) return;
             const stash = [];
             ((typeof njGifts !== 'undefined' && njGifts) || []).forEach(g => { if (g.st) stash.push({ kind: 'gift', id: g.id, k: g.k }); });
-            ((typeof njDecor !== 'undefined' && njDecor) || []).forEach(d => { if (d.st) stash.push({ kind: 'decor', id: d.id, k: d.k }); });
-            deco = { sel: null, tgt: new THREE.Vector3(0, 0, 3), yaw: 0.5, pitch: 1.0, dist: 23, pts: new Map(), drag: null, stash, touched: new Map(), stashed: new Set() };
+            ((typeof njDecor !== 'undefined' && njDecor) || []).forEach(d => { if (d.st && !d.in && !d.sold) stash.push({ kind: 'decor', id: d.id, k: d.k }); });
+            ((typeof njSets !== 'undefined' && njSets) || []).forEach(d => { if (d.st && !d.in) stash.push({ kind: 'set', id: d.id, k: d.s, big: !!d.big }); });
+            deco = { sel: null, tgt: new THREE.Vector3(3.4, 0, 8.8), yaw: 0.5, pitch: 1.0, dist: 23, pts: new Map(), drag: null, stash, touched: new Map(), stashed: new Set() };
             controls.enabled = false; controls.autoRotate = false;
             modeBtn.hidden = goBtn.hidden = decoBtn.hidden = true; hideFruit(); offerEl.hidden = true;
             decoBar.hidden = false; ov.classList.add('deco-on'); decoRender(); showHint(T('deco_hint'), 3500); lastTouch = performance.now();
@@ -1633,7 +1960,7 @@
             } else if (d.obj) {
                 ray.setFromCamera(decoNdc(e), camera);
                 if (ray.ray.intersectPlane(decoPlane, decoHit)) {
-                    const x = Math.max(-DECO_LIM, Math.min(DECO_LIM, decoHit.x)), z = Math.max(-DECO_LIM, Math.min(DECO_LIM, decoHit.z));
+                    const it = d.obj.userData.item, [x, z] = decoSpot(decoHit.x, decoHit.z, decoExt(kindOf(it), it.k, d.obj.rotation.y), d.obj.position, it.kind === 'set');   // 성 안으로는 못 들어간다 — 끌던 쪽 성벽 바깥에 붙는다
                     d.obj.position.set(x, terrain(x, z), z); decoTouch(d.obj);
                 }
             } else if (d.pan) {
@@ -1656,7 +1983,11 @@
             const c = Math.cos(deco.pitch) * deco.dist;
             camera.position.set(deco.tgt.x + Math.sin(deco.yaw) * c, deco.tgt.y + Math.sin(deco.pitch) * deco.dist, deco.tgt.z + Math.cos(deco.yaw) * c);
             camera.lookAt(deco.tgt);
-            if (deco.sel) { const p = deco.sel.position, s = Math.max(0.7, deco.sel.scale.x); decoRing.position.set(p.x, p.y + 0.03, p.z); decoRing.scale.setScalar(s); }
+            if (deco.sel) {   // 고리는 누르는 상자 크기에 맞춘다 — 세트(양 우리)는 낱개보다 훨씬 크다
+                const p = deco.sel.position, pk = deco.sel.userData.pick, gp = pk && pk.geometry.parameters;
+                const rad = gp ? Math.max(gp.width, gp.depth) / 2 * deco.sel.scale.x : 0.5;
+                decoRing.position.set(p.x, p.y + 0.03, p.z); decoRing.scale.setScalar(Math.max(0.7, rad / 0.42));
+            }
         }
 
         function walkUpdate(dt) {
@@ -1799,7 +2130,7 @@
                 const gy = Math.max(d0 <= PL ? 0.6 : WT(cx, cz), SEA_Y) + 0.8;
                 if (camera.position.y < gy) { camera.position.y = gy; camera.lookAt(controls.target); }
             }
-            { const tt = now / 1000; giftsG.children.forEach(g => { if (g.userData.anim) g.userData.anim(tt); }); decoG.children.forEach(g => { if (g.userData.anim) g.userData.anim(tt); }); }   // 등불·별·맷돌·분수…
+            { const tt = now / 1000; giftsG.children.forEach(g => { if (g.userData.anim) g.userData.anim(tt); }); decoG.children.forEach(g => { if (g.userData.anim) g.userData.anim(tt); }); setG.children.forEach(g => { if (g.userData.anim) g.userData.anim(tt); }); }   // 등불·별·맷돌·분수·양 떼…
             skyDome.position.copy(camera.position);
             glints.position.set(camera.position.x, camera.position.y - 6, camera.position.z);
             if (!reduce) {

@@ -7047,7 +7047,7 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
     display: flex; flex-direction: column; gap: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.4); }
 .nj3d-decobar[hidden] { display: none; }
 .deco-on .nj3d-hint { bottom: calc(132px + env(safe-area-inset-bottom, 0px)); }   /* 안내가 아래 막대에 가리지 않게 */
-.nj3d-deco-sel { display: flex; align-items: center; gap: 6px; }
+.nj3d-deco-sel { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .nj3d-deco-sel b { flex: 1; color: #f6d77a; font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nj3d-deco-tip { color: #b9c6d6; font-size: 0.8rem; text-align: center; }
 .nj3d-deco-row { display: flex; gap: 6px; }
@@ -7055,9 +7055,17 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
     background: rgba(255,255,255,0.1); color: #e6eef8; }
 .nj3d-deco-row button { flex: 1; }
 .nj3d-decobar button.done { background: #f1c40f; color: #2c3e50; }
+.nj3d-decobar button.sell, .nj3d-decopanel button.sell { background: rgba(231, 76, 60, 0.22); color: #ffb3a7; }
+.nj3d-bag-btns { display: flex; gap: 6px; }
 .nj3d-decopanel { position: absolute; left: 50%; top: 58px; bottom: 140px; transform: translateX(-50%); z-index: 5; width: min(360px, calc(100% - 24px)); overflow-y: auto;
     background: rgba(24, 14, 34, 0.95); border: 1px solid rgba(246, 215, 122, 0.4); border-radius: 14px; padding: 12px 14px; box-shadow: 0 6px 20px rgba(0,0,0,0.45); }
 .nj3d-decopanel[hidden] { display: none; }
+.nj3d-decobar button.nj3d-deco-asm { width: 100%; background: linear-gradient(90deg, #f6d77a, #f1c40f); color: #2c3e50; font-weight: 800; }
+.nj3d-shop-sec { margin: 12px 0 2px; color: #f6d77a; font-weight: 800; font-size: 0.86rem; }
+.nj3d-shop-sec span { color: #b9a9c9; font-weight: 600; font-size: 0.72rem; margin-left: 4px; }
+.nj3d-shop-big { margin: 6px 0 2px; padding: 6px 8px; border-radius: 9px; background: rgba(246, 215, 122, 0.12); color: #f6d77a; font-size: 0.74rem; font-weight: 700; }
+.nj3d-shop-set { margin: 8px 0 0; color: #e6eef8; font-weight: 700; font-size: 0.8rem; }
+.nj3d-shop-set span { color: #b9c6d6; font-weight: 600; font-size: 0.72rem; margin-left: 4px; }
 .sea-3d-btn { margin: 0 0 8px; background: linear-gradient(135deg, #7fe6f5, #1fb0c9); color: #06303a; }
 .nj3d-hint { position: absolute; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 3;
     background: rgba(15, 26, 51, 0.78); color: #e6eef8; font-size: 0.78rem; padding: 6px 12px; border-radius: 999px;

@@ -624,6 +624,18 @@ const LANG = {
         deco_shop_title: '🛒 꾸밈 상점 — 사면 화면 가운데에 놓여요',
         deco_need_gems: '보석이 모자라요',
         deco_saved: '🛠️ 꾸민 모습을 저장했어요',
+        deco_disasm: '🔨 해체',
+        deco_disasm_done: '🔨 낱개로 풀었어요',
+        deco_asm_ready: '🧩 {name} 조립하기',
+        deco_asm_done: '🧩 {name}을(를) 조립했어요',
+        deco_kind_set: '세트',
+        deco_owned: '가짐 {n}',
+        deco_set_got: '{n}/{m} 모음 · 다 모으면 조립',
+        deco_shop_plain: '🪴 꾸밈',
+        deco_big_got: '🏞️ 큰 세트 {name} · 세트 {n}/{m} — 다 조립하면 하나로',
+        deco_sell: '💰 팔기 💎{n}',
+        deco_sell_sure: '한 번 더 누르면 팔아요',
+        deco_sold: '💰 팔았어요 · 💎{n} 돌려받음',
         gift_depart: '🎁 {item} — {nation}에서 출발했어요',
         gift_arrive: '🎁 {item}이(가) 성에 도착했어요',
         gift_skip: '건너뛰기 ⏭',
@@ -1707,6 +1719,18 @@ const LANG = {
         deco_shop_title: '🛒 Decor shop — new items appear in the middle of the view',
         deco_need_gems: 'Not enough gems',
         deco_saved: '🛠️ Saved your layout',
+        deco_disasm: '🔨 Take apart',
+        deco_disasm_done: '🔨 Taken apart',
+        deco_asm_ready: '🧩 Build the {name}',
+        deco_asm_done: '🧩 Built the {name}',
+        deco_kind_set: 'Set',
+        deco_owned: 'Owned {n}',
+        deco_set_got: '{n}/{m} collected · build when complete',
+        deco_shop_plain: '🪴 Decor',
+        deco_big_got: '🏞️ Grand set {name} · sets {n}/{m} — build them all to join',
+        deco_sell: '💰 Sell 💎{n}',
+        deco_sell_sure: 'Tap again to sell',
+        deco_sold: '💰 Sold · 💎{n} back',
         gift_depart: '🎁 {item} — setting out from {nation}',
         gift_arrive: '🎁 {item} has arrived at the city',
         gift_skip: 'Skip ⏭',
@@ -2497,7 +2521,8 @@ let njVines = [];        // 🍇 포도원 — [{ id, n: 나라 번호, t: 심�
 let njGrapes = 0;        // 🍇 거둔 포도 합(늘기만) — 예물을 받을 때 쓴다(njGrapesSpent)
 let njGrapesSpent = 0;
 let njGifts = [];        // 🎁 받은 예물 — [{ id, k: 예물 키, slot: 자리 번호, n: 가져온 나라, at, x?, z?, r?(꾸미기로 옮긴 자리·방향), st?(보관함), mv?(옮긴 시각) }]
-let njDecor = [];        // 🪴 꾸밈 아이템(💎로 산다) — [{ id, k, x, z, r, st, mv, at }] (10/1)
+let njDecor = [];        // 🪴 꾸밈 아이템(💎로 산다) — [{ id, k, x, z, r, st, mv, at, in?(조립된 세트 id) }] (10/1)
+let njSets = [];         // 🧩 조립한 세트 — [{ id, s: 세트 키, x, z, r, st, mv, at, parts: [꾸밈 id…] }] (10/1)
 let njFishBag = {};      // 🎣 종류별로 낚은 수 { 'tuna': 3, ... } — 모으는 재미·예물 표시용(값은 njFish에 합산)
 let lastPlayedStageId = null; // 마지막으로 직접 플레이한 스테이지 ID
 let bossFirstClearClaimed = new Set(); // 최초 클리어 보너스를 수령한 보스 스테이지 ID
@@ -2960,6 +2985,15 @@ loadGameData = function () {
         njVines = Array.isArray(parsed.njVines) ? parsed.njVines.filter(v => v && v.id) : [];
         njGifts = Array.isArray(parsed.njGifts) ? parsed.njGifts.filter(v => v && v.id) : [];
         njDecor = Array.isArray(parsed.njDecor) ? parsed.njDecor.filter(v => v && v.id) : [];
+        njSets = Array.isArray(parsed.njSets) ? parsed.njSets.filter(v => v && v.id) : [];
+        {   // 세트와 낱개를 서로 맞춘다 — 두 기기가 따로 조립·해체하면 병합 뒤 어긋날 수 있다(세트는 남았는데 낱개는 풀렸다 등)
+            const ok = S => Array.isArray(S.parts) && S.parts.length && S.parts.every(pid => njDecor.some(v => v.id === pid && v.in === S.id));
+            const okSets = njSets.filter(S => !S.big && ok(S));
+            const okBig = Bg => Array.isArray(Bg.parts) && Bg.parts.length && Bg.parts.every(pid => okSets.some(S => S.id === pid && S.in === Bg.id));   // 큰 세트 — 세트들이 다 그 큰 세트를 가리켜야
+            njSets = njSets.filter(S => S.big ? okBig(S) : okSets.includes(S));
+            njSets.forEach(S => { if (!S.big && S.in && !njSets.some(Bg => Bg.id === S.in)) S.in = null; });
+            njDecor.forEach(v => { if (v.in && !njSets.some(S => S.id === v.in)) v.in = null; });
+        }
         njGrapes = Math.max(0, parseInt(parsed.njGrapes, 10) || 0);
         njGrapesSpent = Math.max(0, parseInt(parsed.njGrapesSpent, 10) || 0);
         // 오늘의 암송 진행은 날마다 새 id라 60일 지난 것은 버린다 (저장본이 자라지 않게)
@@ -7800,7 +7834,146 @@ const NJ_DECOR = [
     { k: 'boat',      ko: '나룻배',      en: 'Rowboat',        cost: 10000 },
     { k: 'fountain',  ko: '분수',        en: 'Fountain',       cost: 20000 },
     { k: 'gazebo',    ko: '정자',        en: 'Gazebo',         cost: 20000 },
+    // 🐑 목자의 언덕 — 세트 ① 양 우리 (모델 tools/blender/shepherd.py)
+    { k: 'penwall',    ko: '돌담 (ㄷ자)', en: 'Fold wall',     cost: 6000, set: 'pen' },
+    { k: 'pengate',    ko: '우리 나무 문', en: 'Fold gate',    cost: 5000, set: 'pen' },
+    { k: 'sheep',      ko: '흰 양',       en: 'Sheep',         cost: 6000, set: 'pen' },
+    { k: 'blacksheep', ko: '검은 양',     en: 'Black sheep',   cost: 6000, set: 'pen' },
+    { k: 'lamb',       ko: '어린양',      en: 'Lamb',          cost: 6000, set: 'pen' },
+    { k: 'trough',     ko: '여물통',      en: 'Feed manger',   cost: 4000, set: 'pen' },   // 10/1까지 물 구유 — 바로 앞 시냇물과 겹쳐 먹이 구유로(키는 그대로)
+    { k: 'hay',        ko: '건초더미',    en: 'Haystack',      cost: 3000, set: 'pen' },
+    // 🐑 목자의 언덕 — 세트 ② 목자의 쉼터
+    { k: 'tent',       ko: '검은 천막',   en: 'Goat-hair tent', cost: 8000, set: 'camp' },
+    { k: 'campfire',   ko: '모닥불',      en: 'Campfire',       cost: 5000, set: 'camp' },
+    { k: 'shepherd',   ko: '피리 부는 목자', en: 'Shepherd with pipe', cost: 8000, set: 'camp' },
+    { k: 'staff',      ko: '목자의 지팡이', en: 'Shepherd’s crook', cost: 3000, set: 'camp' },
+    { k: 'flute',      ko: '갈대 피리',   en: 'Reed pipe',      cost: 3000, set: 'camp' },
+    { k: 'waterskin',  ko: '가죽 물부대', en: 'Waterskin',      cost: 3000, set: 'camp' },
+    { k: 'rug',        ko: '줄무늬 깔개', en: 'Striped rug',    cost: 4000, set: 'camp' },
+    { k: 'dog',        ko: '목양견',      en: 'Sheepdog',       cost: 6000, set: 'camp' },
+    // 🐑 목자의 언덕 — 세트 ③ 푸른 풀밭과 쉴 만한 물가 (시 23:2)
+    { k: 'brook',      ko: '시냇물',      en: 'Brook',          cost: 6000, set: 'meadow' },
+    { k: 'steppingstones', ko: '디딤돌',  en: 'Stepping stones', cost: 3000, set: 'meadow' },
+    { k: 'meadow',     ko: '푸른 풀밭',   en: 'Green pasture',  cost: 4000, set: 'meadow' },
+    { k: 'restsheep',  ko: '누워 쉬는 양', en: 'Resting sheep', cost: 6000, set: 'meadow' },
+    { k: 'wildflowers', ko: '들꽃 무리',  en: 'Wildflowers',    cost: 3000, set: 'meadow' },
+    { k: 'reeds',      ko: '갈대',        en: 'Reeds',          cost: 3000, set: 'meadow' },
+    { k: 'olivetree',  ko: '올리브나무',  en: 'Olive tree',     cost: 8000, set: 'meadow' },
+    { k: 'rock',       ko: '이끼 낀 바위', en: 'Mossy rock',    cost: 4000, set: 'meadow' },
+    { k: 'butterfly',  ko: '나비',        en: 'Butterfly',      cost: 5000, set: 'meadow' },
 ];
+/* 🧩 세트 (10/1) — 레고처럼 낱개 → 세트 → 큰 세트(사용자). 한 세트의 낱개를 다 가지면 「조립」: 정해진 배치로 한 덩어리가 되어 연출이 돈다.
+   「해체」하면 다시 낱개. 컨셉 하나에 세트 여럿, 컨셉의 세트를 다 조립하면 큰 세트(아직 — 세트 ②③을 만든 뒤).
+   layout은 세트 안 자리(게임 좌표, 세트 크기 1.5배 전) [x, z, 방향]. 동물은 layout 없이 안에서 거닌다(nj3d.js setAnim) */
+const NJ_CONCEPTS = [
+    { k: 'shepherd', ko: '🐑 목자의 언덕', en: '🐑 Shepherd’s hill', ref: '시 23 · 요 10', sets: ['pen', 'camp', 'meadow'], big: 'hill' },
+];
+const NJ_SETS = {
+    pen: { ko: '양 우리', en: 'Sheepfold', concept: 'shepherd', parts: ['penwall', 'pengate', 'sheep', 'blacksheep', 'lamb', 'trough', 'hay'],
+        box: [2.7, 2.1, 0.45], layout: { penwall: [0, 0, 0], pengate: [0, 0.9, 0], trough: [-0.5, -0.55, 0], hay: [1.28, 0.5, 0.4] },
+        animals: ['sheep', 'blacksheep', 'lamb'], area: [-0.62, 0.62, -0.58, 0.6], spots: [[-0.5, -0.35], [-0.25, -0.38]], follow: { lamb: 'sheep' } },
+    // 앞(+z)이 열린 천막, 깔개에 앉아 모닥불 곁에서 피리 부는 목자, 개는 쉼터를 돌다 불가에 엎드린다. layout [x, z, 방향, 높이]
+    camp: { ko: '목자의 쉼터', en: 'Shepherd’s camp', concept: 'shepherd', parts: ['tent', 'campfire', 'shepherd', 'staff', 'flute', 'waterskin', 'rug', 'dog'],
+        box: [2.0, 2.0, 0.6], layout: { tent: [0, -0.5, -Math.PI / 2], rug: [0.1, 0.42, 0], shepherd: [0.05, 0.4, -Math.PI / 2], flute: [0.05, 0.53, -Math.PI / 2, 0.3],
+            campfire: [-0.58, 0.38, 0], staff: [0.66, -0.02, 0.3], waterskin: [-0.5, -0.12, 0.6] },
+        animals: ['dog'], area: [-0.8, 0.8, 0.05, 0.85], spots: [[-0.32, 0.62], [-0.62, 0.72]], avoid: [[0.08, 0.42, 0.3], [-0.58, 0.38, 0.22]] },   // 목자·모닥불 자리는 피해 다닌다
+    // 가운데로 흐르는 시냇물을 디딤돌이 건너고, 풀밭엔 양이 누워 쉬고, 나비가 들꽃 사이를 맴돈다. 움직임은 낱개 움직임(idleFx) 그대로
+    meadow: { ko: '푸른 풀밭과 쉴 만한 물가', en: 'Green pastures, still waters', concept: 'shepherd',
+        parts: ['brook', 'steppingstones', 'meadow', 'restsheep', 'wildflowers', 'reeds', 'olivetree', 'rock', 'butterfly'], box: [2.3, 2.0, 1.2],
+        layout: { brook: [0, 0, 0], steppingstones: [0.25, -0.07, 0], meadow: [-0.5, 0.55, 0], restsheep: [-0.58, 0.55, 0.5, 0.02], olivetree: [0.72, -0.62, 0],
+            rock: [-0.78, -0.5, 0.4], reeds: [0.95, 0.2, 0], wildflowers: [0.35, 0.62, 0], butterfly: [0.35, 0.62, 0, 0.12] },
+        animals: [], area: [0, 0, 0, 0] },
+};
+/* 🏞️ 큰 세트 — 컨셉의 세트를 다 조립하면 하나로(레고 시리즈처럼). 세 세트가 성벽 바깥 띠에 맞게 한 줄로 서고, 큰 연출이 돈다.
+   offsets: 세트 자리(큰 세트 안, 1.5배 전) · leads: 연출(이끄는 목자와 양 떼) · path: 연출 길(큰 세트 안 좌표) — nj3d.js bigShow */
+const NJ_BIG = {
+    hill: { ko: '목자의 언덕', en: 'Shepherd’s hill', concept: 'shepherd', sets: ['pen', 'meadow', 'camp'],
+        // 한 풍경으로(10/1 사용자: 나란히 놓였을 뿐 어우러지지 않는다) — 양 우리는 왼쪽에서 문이 가운데를 보게 돌리고, 쉼터는 오른쪽 뒤, 시냇물은 앞을 가로지른다.
+        // 큰 세트만의 바닥(hillbase — 풀판·우리 문에서 쉼터까지 흙길·덤불)과 뒤 가운데 그늘 나무(terebinth). 풀밭 세트의 바위·올리브는 흙길을 막지 않게 물 건너로(override)
+        offsets: { pen: [-2.05, -0.35, Math.PI / 2], meadow: [0, 0.65, 0, 0.01], camp: [2.0, -0.45, 0] }, box: [6.7, 3.5, 1.4],
+        override: { meadow: { rock: [-0.95, 0.55, 0.4], olivetree: [0.95, 0.6, 0] } },
+        extras: [{ k: 'hillbase', at: [0.0, 0.064, 0, -0.009] }, { k: 'terebinth', at: [0.15, -1.0, 0] }],
+        leads: { set: 'pen', flock: ['sheep', 'lamb', 'blacksheep'], walker: 'shepherdwalk', seatSet: 'camp', seatPart: 'shepherd', flutePart: 'flute' },
+        path: { seat: [2.05, -0.05], gather: [-1.42, -0.35], stand: [0.45, 0.28], gate: [-1.15, -0.35],
+            routes: { toPen: [[2.05, -0.05], [1.9, 0.2], [0.4, 0.22], [-0.7, 0.2], [-0.85, -0.35]],
+                lead: [[-0.85, -0.35], [-0.7, 0.2], [0.45, 0.28]],
+                back: [[0.45, 0.28], [-0.7, 0.2], [-0.85, -0.35], [-1.15, -0.35], [-1.65, -0.35]],
+                home: [[-1.65, -0.35], [-1.15, -0.35], [-0.85, -0.35], [-0.7, 0.2], [0.4, 0.22], [1.9, 0.2], [2.05, -0.05]] },
+            graze: [[-0.5, 0.5], [-0.2, 0.45], [0.1, 0.38]], penArea: [-2.63, -1.45, -0.97, 0.27], penSpots: [[-2.4, 0.15], [-2.43, -0.1]] } },
+};
+function _njSetName(sk) { const d = NJ_SETS[sk] || NJ_BIG[sk]; return d ? (currentLang === 'en' ? d.en : d.ko) : sk; }
+/* 큰 세트를 지금 조립할 수 있나 — 다른 큰 세트에 들어가지 않은 세트를 종류마다 하나씩(보관함 것부터) */
+function _njBigPick(bk) {
+    const B = NJ_BIG[bk]; if (!B) return null;
+    const free = (njSets || []).filter(S => !S.big && !S.in), pick = [];
+    for (const sk of B.sets) {
+        const c = free.filter(S => S.s === sk && !pick.includes(S)).sort((a, b) => (b.st ? 1 : 0) - (a.st ? 1 : 0))[0];
+        if (!c) return null; pick.push(c);
+    }
+    return pick;
+}
+function _njBigGot(bk) { const B = NJ_BIG[bk]; return B ? B.sets.filter(sk => (njSets || []).some(S => S.s === sk && !S.big)).length : 0; }
+function _njBigAssemble(bk, x, z) {
+    const pick = _njBigPick(bk); if (!pick) return null;
+    const now = Date.now(), id = 'b' + now.toString(36) + Math.random().toString(36).slice(2, 5);
+    pick.forEach(S => { S.in = id; S.st = false; S.mv = now; });
+    const rec = { id, s: bk, big: true, x: Math.round((+x || 0) * 100) / 100, z: Math.round((+z || 0) * 100) / 100, r: 0, at: now, mv: now, parts: pick.map(S => S.id) };
+    njSets.push(rec);
+    saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
+    return { rec, parts: pick.map(S => S.id) };
+}
+/* 큰 세트 해체 — 세트들을 큰 세트 안 자리 그대로(돌린 방향까지) 내려놓는다 */
+function _njBigDisassemble(id) {
+    const i = (njSets || []).findIndex(v => v.id === id && v.big); if (i < 0) return [];
+    const Bg = njSets[i], B = NJ_BIG[Bg.s], now = Date.now(), r = Bg.r || 0, out = [];
+    njSets.filter(S => S.in === id).forEach(S => {
+        const [ox, oz, oy] = (B && B.offsets[S.s]) || [0, 0, 0];
+        S.in = null; S.st = false; S.mv = now; S.r = r + (oy || 0);   // 큰 세트 안에서 돌려 둔 방향(양 우리)도
+        S.x = Math.round((Bg.x + (Math.cos(r) * ox + Math.sin(r) * oz) * 1.5) * 100) / 100; S.z = Math.round((Bg.z + (-Math.sin(r) * ox + Math.cos(r) * oz) * 1.5) * 100) / 100;
+        out.push(S);
+    });
+    njSets.splice(njSets.indexOf(Bg), 1);
+    saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
+    return out;
+}
+/* 이 세트를 지금 조립할 수 있나 — 조립에 쓰이지 않은 낱개를 종류마다 하나씩(보관함에 있는 것부터). 모자라면 null */
+function _njSetPick(sk) {
+    const d = NJ_SETS[sk]; if (!d) return null;
+    const free = (njDecor || []).filter(v => !v.in && !v.sold);
+    const pick = [];
+    for (const k of d.parts) {
+        const c = free.filter(v => v.k === k && !pick.includes(v)).sort((a, b) => (b.st ? 1 : 0) - (a.st ? 1 : 0))[0];
+        if (!c) return null; pick.push(c);
+    }
+    return pick;
+}
+function _njSetOwned(sk) {   // 상점 표시용 — 가진 종류 수
+    const d = NJ_SETS[sk]; if (!d) return 0;
+    return d.parts.filter(k => (njDecor || []).some(v => v.k === k && !v.sold)).length;
+}
+function _njSetAssemble(sk, x, z) {
+    const pick = _njSetPick(sk); if (!pick) return null;
+    const now = Date.now(), id = 's' + now.toString(36) + Math.random().toString(36).slice(2, 5);
+    pick.forEach(v => { v.in = id; v.st = false; v.mv = now; });
+    const rec = { id, s: sk, x: Math.round((+x || 0) * 100) / 100, z: Math.round((+z || 0) * 100) / 100, r: 0, at: now, mv: now, parts: pick.map(v => v.id) };
+    (njSets = Array.isArray(njSets) ? njSets : []).push(rec);
+    saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
+    return { rec, parts: pick.map(v => v.id) };
+}
+/* 해체 — 낱개를 세트 자리 둘레에 내려놓는다. 돌려준 낱개 기록으로 nj3d가 다시 놓는다 */
+function _njSetDisassemble(id) {
+    const i = (njSets || []).findIndex(v => v.id === id); if (i < 0) return [];
+    const S = njSets[i], now = Date.now(), out = [];
+    (njDecor || []).filter(v => v.in === id).forEach((v, k, arr) => {
+        const a = k / arr.length * Math.PI * 2;
+        v.in = null; v.st = false; v.mv = now;
+        v.x = Math.round((S.x + Math.cos(a) * 1.8) * 100) / 100; v.z = Math.round((S.z + Math.sin(a) * 1.8) * 100) / 100; v.r = 0;
+        out.push(v);
+    });
+    njSets.splice(i, 1);
+    saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
+    return out;
+}
 function _njDecorName(d) { return currentLang === 'en' ? d.en : d.ko; }
 /* 사서 보관함 대신 바로 화면 가운데에 놓는다(x, z는 nj3d가 정해 준다) */
 function _njDecorBuy(k, x, z) {
@@ -7813,11 +7986,23 @@ function _njDecorBuy(k, x, z) {
     saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
     return it;
 }
+/* 💰 되팔기 (10/1 사용자) — 산 값의 절반. 지우지 않고 sold 표시만 남긴다: 다른 기기의 저장본과 id로 합칠 때 판 물건이 되살아나지 않게(mv로 나중 것이 이긴다).
+   세트로 조립된 낱개는 해체한 뒤에. 예물(🐟·🍇로 받은 것)은 팔지 않는다 */
+function _njDecorSellPrice(k) { const d = NJ_DECOR.find(v => v.k === k); return d ? Math.floor(d.cost / 2) : 0; }
+function _njDecorSell(id) {
+    const it = (njDecor || []).find(v => v.id === id && !v.sold && !v.in); if (!it) return 0;
+    const back = _njDecorSellPrice(it.k); if (!back) return 0;
+    it.sold = true; it.st = false; it.mv = Date.now();
+    myGems = (myGems || 0) + back;
+    if (typeof updateGemDisplay === 'function') updateGemDisplay();
+    saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
+    return back;
+}
 /* 꾸미기를 마칠 때 — 옮긴 자리·방향·보관함 여부를 한 번에 저장 */
 function _njDecoSave(changes) {
     const now = Date.now();
     (changes || []).forEach(c => {
-        const arr = c.kind === 'gift' ? njGifts : njDecor, it = (arr || []).find(v => v.id === c.id); if (!it) return;
+        const arr = c.kind === 'gift' ? njGifts : c.kind === 'set' ? njSets : njDecor, it = (arr || []).find(v => v.id === c.id); if (!it) return;
         it.x = Math.round(c.x * 100) / 100; it.z = Math.round(c.z * 100) / 100; it.r = Math.round(c.r * 1000) / 1000; it.st = !!c.st; it.mv = now;
     });
     saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
@@ -11701,6 +11886,7 @@ function saveGameData() {
         njVines: njVines,                 // 🍇 포도원
         njGifts: njGifts,                 // 🎁 받은 예물
         njDecor: njDecor,                 // 🪴 꾸밈 아이템
+        njSets: njSets,                   // 🧩 조립한 세트
         njGrapes: njGrapes,               // 🍇 거둔 포도 합
         njGrapesSpent: njGrapesSpent,     // 🍇 예물에 쓴 포도
         sessionTimeLog: sessionTimeLog,
@@ -12010,7 +12196,7 @@ function _mergeNewJerusalem(target, other) {
         target.njVines = tv;
     }
     // 예물·꾸밈 — id로 합집합, 같은 것은 나중에 옮긴 쪽(mv)
-    ['njGifts', 'njDecor'].forEach(key => {
+    ['njGifts', 'njDecor', 'njSets'].forEach(key => {
         if (!Array.isArray(other[key]) || !other[key].length) return;
         const tg = Array.isArray(target[key]) ? target[key] : [];
         other[key].forEach(v => {
