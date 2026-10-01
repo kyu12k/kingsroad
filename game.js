@@ -635,6 +635,10 @@ const LANG = {
         deco_owned: '가짐 {n}',
         deco_set_got: '{n}/{m} 모음 · 다 모으면 조립',
         deco_shop_plain: '🪴 꾸밈',
+        deco_sea_only: '🌊 바다 꾸미기에서',
+        deco_land_only: '⛰️ 성 둘레 꾸미기에서',
+        deco_sea_need: '🌊 생명수의 바다를 한 칸이라도 맑히면 강 어귀 해안이, 나라를 소성하면 그 나라와 이웃 해안이 열려요',
+        deco_sea_hint: '금빛 띠가 꾸밀 수 있는 해안이에요. 배는 물 위에 떠요 — 나라가 소성될수록 넓어져요',
         deco_big_got: '🏞️ 큰 세트 {name} · 세트 {n}/{m} — 다 조립하면 하나로',
         deco_sell: '💰 팔기 💎{n}',
         deco_part_of: '🧩 {name} 세트의 하나',
@@ -1741,6 +1745,10 @@ const LANG = {
         deco_owned: 'Owned {n}',
         deco_set_got: '{n}/{m} collected · build when complete',
         deco_shop_plain: '🪴 Decor',
+        deco_sea_only: '🌊 Decorate at the sea',
+        deco_land_only: '⛰️ Decorate around the city',
+        deco_sea_need: '🌊 Clear even one cell of the sea to open the river-mouth shore; heal a nation to open its shore and its neighbors’',
+        deco_sea_hint: 'The golden band is where you can decorate. Boats float on the water — it grows as nations are healed',
         deco_big_got: '🏞️ Grand set {name} · sets {n}/{m} — build them all to join',
         deco_sell: '💰 Sell 💎{n}',
         deco_part_of: '🧩 Part of the {name} set',
@@ -7883,12 +7891,39 @@ const NJ_DECOR = [
     { k: 'olivetree',  ko: '올리브나무',  en: 'Olive tree',     cost: 8000, set: 'meadow' },
     { k: 'rock',       ko: '이끼 낀 바위', en: 'Mossy rock',    cost: 4000, set: 'meadow' },
     { k: 'butterfly',  ko: '나비',        en: 'Butterfly',      cost: 5000, set: 'meadow' },
+    // 🎣 갈릴리 바닷가 — 생명수의 바다, 소성된 나라 해안에만(sea). 세트 ① 고깃배와 그물 (모델 tools/blender/galilee.py)
+    { k: 'galboat',    ko: '돛단 고깃배', en: 'Fishing boat',   cost: 12000, set: 'gboat', sea: true, water: true },
+    { k: 'netrack',    ko: '그물 말리는 대', en: 'Net-drying rack', cost: 5000, set: 'gboat', sea: true },
+    { k: 'netpile',    ko: '그물 더미',   en: 'Pile of nets',   cost: 3000, set: 'gboat', sea: true },
+    { k: 'fishbasket', ko: '물고기 바구니', en: 'Basket of fish', cost: 4000, set: 'gboat', sea: true },
+    { k: 'oars',       ko: '노 한 쌍',    en: 'Pair of oars',   cost: 3000, set: 'gboat', sea: true },
+    { k: 'anchorstone', ko: '닻돌',       en: 'Anchor stone',   cost: 3000, set: 'gboat', sea: true },
+    { k: 'fisherman',  ko: '그물 던지는 어부', en: 'Fisherman casting a net', cost: 8000, set: 'gboat', sea: true },
+    // 🎣 갈릴리 ② 숯불 아침 (요 21:9-13)
+    { k: 'charcoal',   ko: '숯불과 생선과 떡', en: 'Charcoal fire with fish and bread', cost: 6000, set: 'fire', sea: true },
+    { k: 'fullnet',    ko: '물고기 가득한 그물', en: 'Net full of fish', cost: 8000, set: 'fire', sea: true },
+    { k: 'breadbasket', ko: '떡 바구니',  en: 'Basket of bread', cost: 3000, set: 'fire', sea: true },
+    { k: 'woodpile',   ko: '장작더미',    en: 'Woodpile',       cost: 3000, set: 'fire', sea: true },
+    { k: 'waterjar',   ko: '물동이',      en: 'Water jar',      cost: 3000, set: 'fire', sea: true },
+    { k: 'sitlog',     ko: '앉을 통나무 둘', en: 'Pair of log seats',       cost: 3000, set: 'fire', sea: true },
+    { k: 'disciple',   ko: '둘러앉은 제자', en: 'Disciple by the fire', cost: 6000, set: 'fire', sea: true },
+    { k: 'disciple2',  ko: '둘러앉은 제자 (초록 옷)', en: 'Disciple by the fire (green)', cost: 6000, set: 'fire', sea: true },
+    // 🎣 갈릴리 ③ 부두와 어부 마을 — edge: 물가에 걸쳐 바다를 본다 · drop: 땅(물)속으로 박히는 깊이(모델 단위)
+    { k: 'pier',       ko: '나무 부두',   en: 'Wooden pier',    cost: 10000, set: 'village', sea: true, edge: true, drop: 0.35 },
+    { k: 'hut',        ko: '어부의 돌집', en: 'Fisherman’s house', cost: 12000, set: 'village', sea: true },
+    { k: 'fishdry',    ko: '생선 말리는 대', en: 'Fish-drying line', cost: 4000, set: 'village', sea: true },
+    { k: 'mooringpost', ko: '배 매는 말뚝', en: 'Mooring post',  cost: 3000, set: 'village', sea: true, edge: true, drop: 0.2 },
+    { k: 'amphorae',   ko: '항아리 셋',   en: 'Three jars',     cost: 4000, set: 'village', sea: true },
+    { k: 'crates',     ko: '나무 궤짝',   en: 'Wooden crates',  cost: 3000, set: 'village', sea: true },
+    { k: 'gulls',      ko: '갈매기 한 쌍', en: 'Pair of gulls', cost: 5000, set: 'village', sea: true },
+    { k: 'mender',     ko: '그물 깁는 어부', en: 'Fisherman mending nets', cost: 8000, set: 'village', sea: true },
 ];
 /* 🧩 세트 (10/1) — 레고처럼 낱개 → 세트 → 큰 세트(사용자). 한 세트의 낱개를 다 가지면 「조립」: 정해진 배치로 한 덩어리가 되어 연출이 돈다.
    「해체」하면 다시 낱개. 컨셉 하나에 세트 여럿, 컨셉의 세트를 다 조립하면 큰 세트(아직 — 세트 ②③을 만든 뒤).
    layout은 세트 안 자리(게임 좌표, 세트 크기 1.5배 전) [x, z, 방향]. 동물은 layout 없이 안에서 거닌다(nj3d.js setAnim) */
 const NJ_CONCEPTS = [
     { k: 'shepherd', ko: '🐑 목자의 언덕', en: '🐑 Shepherd’s hill', ref: '시 23 · 요 10', sets: ['pen', 'camp', 'meadow'], big: 'hill' },
+    { k: 'galilee', ko: '🎣 갈릴리 바닷가', en: '🎣 Shore of Galilee', ref: '요 21 · 겔 47:10', sets: ['gboat', 'fire', 'village'], big: 'tiberias', sea: true },   // 바다 꾸미기에서만
 ];
 const NJ_SETS = {
     pen: { ko: '양 우리', en: 'Sheepfold', concept: 'shepherd', parts: ['penwall', 'pengate', 'sheep', 'blacksheep', 'lamb', 'trough', 'hay'],
@@ -7900,6 +7935,24 @@ const NJ_SETS = {
             campfire: [-0.58, 0.38, 0], staff: [0.66, -0.02, 0.3], waterskin: [-0.5, -0.12, 0.6] },
         animals: ['dog'], area: [-0.8, 0.8, 0.05, 0.85], spots: [[-0.32, 0.62], [-0.62, 0.72]], avoid: [[0.08, 0.42, 0.3], [-0.58, 0.38, 0.22]] },   // 목자·모닥불 자리는 피해 다닌다
     // 가운데로 흐르는 시냇물을 디딤돌이 건너고, 풀밭엔 양이 누워 쉬고, 나비가 들꽃 사이를 맴돈다. 움직임은 낱개 움직임(idleFx) 그대로
+    // 🎣 갈릴리 ① — 바다 해안에 놓는다(+z가 바다를 보게 저절로 돈다). 배는 물 위(넷째 값 = 높이, 해안 땅보다 0.2 낮은 수면)
+    gboat: { ko: '고깃배와 그물', en: 'Boat and nets', concept: 'galilee', sea: true,
+        parts: ['galboat', 'netrack', 'netpile', 'fishbasket', 'oars', 'anchorstone', 'fisherman'], box: [2.4, 2.4, 1.9],
+        layout: { galboat: [0.1, 0.95, 0.15, -0.13], netrack: [-0.65, -0.55, 0], netpile: [0.15, -0.4, 0.3], fishbasket: [0.5, -0.05, 0],
+            oars: [0.85, -0.55, 0.4], anchorstone: [0.8, 0.3, 1.1], fisherman: [-0.4, 0.35, -Math.PI / 2] },
+        animals: [], area: [0, 0, 0, 0] },
+    // 🎣 갈릴리 ② 숯불 아침 — 숯불 둘레 통나무에 제자 둘이 앉고, 물가 쪽(+z)엔 153마리 그물
+    fire: { ko: '숯불 아침', en: 'Breakfast by the fire', concept: 'galilee', sea: true,
+        parts: ['charcoal', 'fullnet', 'breadbasket', 'woodpile', 'waterjar', 'sitlog', 'disciple', 'disciple2'], box: [2.0, 2.0, 0.6],
+        layout: { charcoal: [0, -0.1, 0], sitlog: [0, -0.1, 0], disciple: [-0.46, -0.1, 0], disciple2: [0.46, -0.1, Math.PI],
+            fullnet: [0.15, 0.62, 0.2], breadbasket: [0.05, -0.55, 0], woodpile: [-0.6, -0.62, 0.3], waterjar: [0.62, -0.55, 0] },
+        animals: [], area: [0, 0, 0, 0] },
+    // 🎣 갈릴리 ③ 부두와 어부 마을 — 바다로 뻗은 부두와 말뚝, 뒤엔 돌집, 그물 깁는 어부, 위엔 갈매기
+    village: { ko: '부두와 어부 마을', en: 'Pier and fishing village', concept: 'galilee', sea: true,
+        parts: ['pier', 'hut', 'fishdry', 'mooringpost', 'amphorae', 'crates', 'gulls', 'mender'], box: [2.4, 3.0, 1.0],
+        layout: { pier: [0.55, 0.95, 0, -0.35], hut: [-0.6, -0.72, 0], fishdry: [0.45, -0.55, 0.2], amphorae: [-0.05, -0.62, 0], crates: [0.2, -0.05, 0.4],
+            mooringpost: [-0.12, 0.62, 0, -0.2], mender: [-0.3, -0.18, -0.9],   /* 물가(z>0)는 곧 물이라 땅 쪽에 */ gulls: [0.1, 0.2, 0]   /* 높이는 갈매기 움직임이 띄운다 */ },
+        animals: [], area: [0, 0, 0, 0] },
     meadow: { ko: '푸른 풀밭과 쉴 만한 물가', en: 'Green pastures, still waters', concept: 'shepherd',
         parts: ['brook', 'steppingstones', 'meadow', 'restsheep', 'wildflowers', 'reeds', 'olivetree', 'rock', 'butterfly'], box: [2.3, 2.0, 1.2],
         layout: { brook: [0, 0, 0], steppingstones: [0.25, -0.07, 0], meadow: [-0.5, 0.55, 0], restsheep: [-0.58, 0.55, 0.5, 0.02], olivetree: [0.72, -0.62, 0],
@@ -7909,6 +7962,11 @@ const NJ_SETS = {
 /* 🏞️ 큰 세트 — 컨셉의 세트를 다 조립하면 하나로(레고 시리즈처럼). 세 세트가 성벽 바깥 띠에 맞게 한 줄로 서고, 큰 연출이 돈다.
    offsets: 세트 자리(큰 세트 안, 1.5배 전) · leads: 연출(이끄는 목자와 양 떼) · path: 연출 길(큰 세트 안 좌표) — nj3d.js bigShow */
 const NJ_BIG = {
+    // 🏞️ 갈릴리 큰 세트 — 세 세트를 해안을 따라 한 줄로(+z = 바다). 연출: 배가 나가 밤새 빈 그물 → 오른편에 던지니 가득 → 끌고 와 숯불 곁에 (요 21:3-11, nj3d.js fishShow)
+    tiberias: { ko: '디베랴 바닷가', en: 'Shore of Tiberias', concept: 'galilee', sea: true, sets: ['village', 'gboat', 'fire'],
+        offsets: { village: [-2.45, 0, 0], gboat: [0, 0, 0], fire: [2.35, 0, 0] }, box: [7.4, 3.2, 1.9],
+        fishing: { boatSet: 'gboat', boat: 'galboat', netSet: 'fire', net: 'fullnet', out: [-0.4, 2.7], back: [1.8, 1.35],
+            moor: [-1.26, 1.1], moorRot: -Math.PI / 2, tie: [-1.75, 0.2, 2.03] }   /* 쉴 때는 마을 부두(큰 세트 x −1.9, z −0.2~2.1) 곁에 나란히, 이물을 바다로 — 끝 말뚝에 밧줄 */ },
     hill: { ko: '목자의 언덕', en: 'Shepherd’s hill', concept: 'shepherd', sets: ['pen', 'meadow', 'camp'],
         // 한 풍경으로(10/1 사용자: 나란히 놓였을 뿐 어우러지지 않는다) — 양 우리는 왼쪽에서 문이 가운데를 보게 돌리고, 쉼터는 오른쪽 뒤, 시냇물은 앞을 가로지른다.
         // 큰 세트만의 바닥(hillbase — 풀판·우리 문에서 쉼터까지 흙길·덤불)과 뒤 가운데 그늘 나무(terebinth). 풀밭 세트의 바위·올리브는 흙길을 막지 않게 물 건너로(override)
