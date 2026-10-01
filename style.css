@@ -7046,6 +7046,7 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
     width: min(420px, calc(100% - 20px)); background: rgba(15, 26, 51, 0.92); border: 1px solid rgba(246, 215, 122, 0.35); border-radius: 14px; padding: 9px 10px;
     display: flex; flex-direction: column; gap: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.4); }
 .nj3d-decobar[hidden] { display: none; }
+.deco-on .nj3d-hint { bottom: calc(132px + env(safe-area-inset-bottom, 0px)); }   /* 안내가 아래 막대에 가리지 않게 */
 .nj3d-deco-sel { display: flex; align-items: center; gap: 6px; }
 .nj3d-deco-sel b { flex: 1; color: #f6d77a; font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nj3d-deco-tip { color: #b9c6d6; font-size: 0.8rem; text-align: center; }

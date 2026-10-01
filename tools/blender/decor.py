@@ -204,17 +204,17 @@ def boat():
 def fountain():
     begin(14)
     paint(loft([(0, 0, 0), (0, 0, 0.14), (0, 0, 0.16)], [0.55, 0.55, 0.5], sides=16, wob=0.01), shade(STONE, STONE_D))
-    paint(cyl((0, 0, 0.12), (0, 0, 0.135), 0.48, sides=16), solid(WATER, 0.05))
+    paint(cyl((0, 0, 0.15), (0, 0, 0.168), 0.47, sides=16), solid(WATER, 0.05))   # 아래 수반 물 — 테두리(0.16) 위로 살짝(안에 두면 돌에 묻혀 안 보였다)
     paint(loft([(0, 0, 0.13), (0, 0, 0.45), (0, 0, 0.5)], [0.08, 0.06, 0.07], sides=8), shade(STONE, STONE_D))
     paint(loft([(0, 0, 0.5), (0, 0, 0.56), (0, 0, 0.6)], [0.08, 0.24, 0.25], sides=12), shade(STONE, STONE_D))
     paint(cyl((0, 0, 0.58), (0, 0, 0.6), 0.21, sides=12), solid(WATER, 0.05))
     paint(loft([(0, 0, 0.6), (0, 0, 0.78), (0, 0, 0.82)], [0.04, 0.03, 0.05], sides=6), solid(STONE))
-    part('water', loc=(0, 0, 0.82))   # 솟는 물 — 게임에서 일렁인다
-    paint(loft([(0, 0, 0.82), (0, 0, 0.95), (0, 0, 1.0)], [0.025, 0.035, 0.0], sides=6, wob=0), solid(lin(0xd6f5ff), 0.04))
+    part('water', loc=(0, 0, 0.82))   # 솟는 물 — 게임에서 일렁인다. 하얗게 칠했더니 수반 물과 달라 어색했다(10/1) → 하늘색
+    paint(loft([(0, 0, 0.82), (0, 0, 0.95), (0, 0, 1.0)], [0.025, 0.035, 0.0], sides=6, wob=0), solid(lin(0x8fdcf0), 0.04))
     for k in range(6):
         a = k / 6 * 2 * math.pi; d = Vector((math.cos(a), math.sin(a), 0))
         path = [Vector((0, 0, 0.92)), d * 0.12 + Vector((0, 0, 0.9)), d * 0.2 + Vector((0, 0, 0.75)), d * 0.23 + Vector((0, 0, 0.6))]
-        paint(loft(crs(path, 6), 0.012, sides=4, wob=0), solid(lin(0xd6f5ff), 0.04))
+        paint(loft(crs(path, 6), 0.012, sides=4, wob=0), solid(lin(0x8fdcf0), 0.04))
     finish('fountain', OUT)
 
 # ── 정자 ──

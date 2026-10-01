@@ -91,22 +91,55 @@ def morningstar():
                 d = Vector((sx, sy, sz)).normalized(); paint(cone(c + d * 0.05, c + d * 0.17, 0.035, 3), solid(lin(0xffe39a), 0.05), GLOW)
     finish('morningstar', OUT, emit=(1.0, 0.86, 0.55))
 
-# ── 하나님의 거문고 (15:2) — 불이 섞인 유리 바다 위에 선 금 수금 ──
+# ── 하나님의 거문고 (15:2) — 불이 섞인 유리 바다 위, 눕혀 놓은 우리 거문고(10/1 사용자: 하프가 아니라 동양의 거문고로) ──
+#    오동나무 몸통 · 줄 여섯 · 괘 열여섯 · 안족 셋 · 꼬리 쪽 봉미 · 머리 쪽 현침 · 곁에 술대. 줄은 string0~5 — 하나씩 튕긴다(위아래로 떨림)
 def harp():
     begin(15)
     def sea(p, n):
         return jit(lin(0xf2a45a) if random.random() < 0.22 else lin(0xc4e6ee), 0.1)
-    paint(loft([(0, 0, 0), (0, 0, 0.05)], [0.52, 0.5], sides=14, wob=0.03), sea)
-    paint(hull([Vector((x * 0.19, y * 0.075, z)) for x in (-1, 1) for y in (-1, 1) for z in (0.05, 0.3)] + [Vector((0, 0.09, 0.18)), Vector((0, -0.09, 0.18))]), shade(WOOD, WOOD_D, k=0.1))
-    for s in (-1, 1):
-        arm = crs([(0.15 * s, 0, 0.28), (0.27 * s, 0, 0.55), (0.22 * s, 0, 0.82), (0.3 * s, 0, 1.0)], 10)
-        paint(loft(arm, [0.03 - 0.012 * i / 9 for i in range(10)], sides=6, wob=0.02), shade(GOLD, GOLD_D, k=0.08), METAL)
-    paint(cyl((-0.26, 0, 0.9), (0.26, 0, 0.9), 0.02, sides=6), shade(GOLD, GOLD_D, k=0.06), METAL)
-    for k in range(7):   # 줄 일곱 — 하나씩 튕긴다
-        x = -0.12 + k * 0.04
-        part(f'string{k}', loc=(x * 1.15, 0, 0.6))
-        paint(cyl((x, 0.0, 0.3), (x * 1.3, 0.0, 0.89), 0.0045, sides=3), solid(lin(0xfff4d8), 0.04))
-    finish('harp', OUT)
+    paint(hull([Vector((math.cos(a) * 0.82, math.sin(a) * 0.4, z)) for a in [k / 16 * 2 * math.pi for k in range(16)] for z in (0.0, 0.05)]), sea)
+    PAU, PAU_D = lin(0x7a4a26), lin(0x5a3418)   # 오동나무
+    L0, L1, W, Z0 = -0.66, 0.66, 0.12, 0.13      # 몸통 양 끝 · 반폭 · 바닥 높이
+    for x in (-0.45, 0.45):   # 낮은 받침
+        paint(hull([Vector((x + dx, y, z)) for dx in (-0.05, 0.05) for y in (-0.15, 0.15) for z in (0.05, Z0)]), shade(lin(0x3b2414), lin(0x2c1a0e)))
+    top = lambda y: 0.05 * (1 - (y / W) ** 2)   # 윗면은 둥글게 부푼다
+    pts = []
+    for x in (L0, (L0 + L1) / 2, L1):
+        for k in range(7):
+            y = -W + 2 * W * k / 6
+            pts += [Vector((x, y, Z0)), Vector((x, y, Z0 + 0.035 + top(y)))]
+    paint(hull(pts), shade(PAU, PAU_D, k=0.08))
+    paint(hull([Vector((x, y, Z0 + 0.035 + top(y) + 0.003)) for x in (L0 + 0.02, L1 - 0.02) for y in (-W * 0.92, W * 0.92)] +
+               [Vector((x, 0, Z0 + 0.035 + top(0) + 0.004)) for x in (L0 + 0.02, L1 - 0.02)]), shade(lin(0x8a5a32), PAU, k=0.1))   # 윗판(한 톤 밝게)
+    SZ = Z0 + 0.035 + top(0)   # 윗판 높이(가운데)
+    # 현침(머리 쪽, 오른쪽) — 줄을 받치는 낮은 턱
+    paint(hull([Vector((x, y, z)) for x in (L1 - 0.1, L1 - 0.07) for y in (-W * 0.9, W * 0.9) for z in (SZ - 0.01, SZ + 0.025)]), solid(lin(0xd9c49a), 0.06))
+    # 봉미(꼬리 쪽, 왼쪽) — 줄을 매고 남은 줄이 늘어지며, 끝이 살짝 들린다
+    paint(hull([Vector((L0 - 0.02 + dx, y, Z0 + dz)) for dx in (0, 0.06) for y in (-W * 0.95, W * 0.95) for dz in (0.0, 0.07)] + [Vector((L0 - 0.06, 0, Z0 + 0.08))]), shade(lin(0x3b2414), lin(0x2c1a0e)))
+    paint(hull([Vector((L0 + 0.02 + dx, y, Z0 + 0.06 + dz)) for dx in (0, 0.04) for y in (-W * 0.8, W * 0.8) for dz in (0, 0.02)]), solid(GOLD, 0.06), METAL)   # 금 띠
+    STR_Y = [-0.075 + k * 0.03 for k in range(6)]
+    for y in (-0.05, 0.05):   # 봉미에 맨 남은 줄 — 술로 늘어진다
+        paint(blob((L0 - 0.05, y, Z0 + 0.0), (0.025, 0.02, 0.05), n=10, jitter=0.15), solid(lin(0xd9c49a), 0.08))
+    # 괘 열여섯 — 가운데 셋째 줄 아래, 머리 쪽으로 갈수록 낮아진다
+    for k in range(16):
+        x = 0.28 - k * 0.045; h = 0.032 - k * 0.0013   # 줄이 몸통에 낮게 붙도록 — 높으면 줄이 천막처럼 솟았다
+        paint(hull([Vector((x + dx, y, z)) for dx in (-0.007, 0.007) for y in (-0.058, 0.026) for z in (SZ, SZ + h)]), shade(lin(0xe9d8b4), lin(0xcdb98e), k=0.06))
+    # 안족 셋 — 첫째·다섯째·여섯째 줄을 받치는 작은 받침(기러기발)
+    for y, x in ((STR_Y[0], -0.42), (STR_Y[4], -0.36), (STR_Y[5], -0.47)):
+        paint(hull([Vector((x + dx, y + dy, SZ)) for dx in (-0.025, 0.025) for dy in (-0.012, 0.012)] + [Vector((x, y, SZ + 0.042)), Vector((x + 0.006, y, SZ + 0.042))]), shade(lin(0xf2ead8), lin(0xd8cdb3), k=0.06))
+    # 술대 — 곁에 놓인 대나무 막대
+    paint(cyl((-0.25, 0.27, 0.06), (0.15, 0.31, 0.065), 0.009, sides=5), solid(lin(0xc9b26a), 0.08))
+    # 줄 여섯 — 현침에서 봉미까지 괘·안족 위로. 하나씩 튕긴다
+    ANJOK = {0: -0.42, 4: -0.36, 5: -0.47}
+    for k, y in enumerate(STR_Y):
+        path = [(L0 + 0.04, y, SZ - 0.004)]                                   # 봉미에서 나와
+        if k in ANJOK: path.append((ANJOK[k], y, SZ + 0.046))                 # 안족 위로 걸치고
+        if k in (1, 2, 3): path += [(-0.41, y, SZ + 0.016), (0.29, y, SZ + 0.036)]   # 괘 위에 얹혀(괘가 머리 쪽으로 높아진다)
+        path.append((L1 - 0.085, y, SZ + 0.03))                              # 현침에 닿는다
+        part(f'string{k}', loc=(0.0, y, SZ + 0.03))
+        paint(loft(path, 0.0042, sides=3, wob=0), solid(lin(0xfff4d8), 0.04))
+        base()
+    finish('harp', OUT, views={'a': (1.0, -1.25, 0.75), 't': (0.15, -0.5, 1.0)})
 
 # ── 순금 등대 (출 25:31~37 · 계 1:12) — 한 줄기에서 양쪽으로 가지 셋씩, 등잔 일곱 ──
 def menorah():

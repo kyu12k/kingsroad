@@ -13,7 +13,7 @@
     const THREE_URL = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
     const ORBIT_URL = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
     const GLTF_URL = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';   // 예물 모델(.glb) — 예물을 볼 때만 받는다
-    const GIFT_V = '20260930';   // models/gifts/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/)
+    const GIFT_V = '20261001';   // models/gifts/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/)
     const JET_COST = 300000;
     const T = (k, p) => (typeof t === 'function' ? t(k, p) : k);
 
@@ -776,7 +776,7 @@
             [N('crown0'), N('crown1')].forEach((c, i) => c && all.push([c, i * 2.1]));
             return t => all.forEach(([c, ph]) => { c.rotation.z = wave(t, 0.8, ph) * 0.035; c.rotation.x = wave(t, 1.1, ph) * 0.03; });
           }
-          if (k === 'harp') {   // 거문고 — 줄을 하나씩 튕기면 떨리며 빛나고, 음표가 날아오른다
+          if (k === 'harp') {   // 거문고 — 줄을 하나씩 튕기면 떨리며 빛나고, 음표가 날아오른다. 10/1부터 눕혀 놓은 우리 거문고(줄 여섯) — 떨림은 위아래, 음표는 줄 따라 여기저기서
             const strs = []; for (let i = 0; i < 7; i++) { const st = N('string' + i); if (st) { keep(own(st)); const ms = mats(st); ms.forEach(m => m.emissive.set(0xfff0b0)); strs.push({ st, ms, at: -9 }); } }
             if (!strs.length) return null;
             const TUNE = [0, 2, 4, 6, 4, 2, 3, 5, 6, 5, 3, 1, 2, 4, 5, 3];   // 올라갔다 내려오는 가락
@@ -784,10 +784,10 @@
             let next = 0, step = 0, last = 0, ni = 0;
             return t => { const dt = Math.min(0.05, Math.max(0, t - last)); last = t;
               if (t >= next) { const s0 = strs[TUNE[step++ % TUNE.length] % strs.length]; s0.at = t; next = t + 0.38 + (step % 4 === 0 ? 0.3 : 0);
-                const n = notes[ni++ % notes.length]; n.age = 0; n.sp.position.set(s0.st.position.x, s0.st.position.y + 0.25 + Math.random() * 0.15, s0.st.position.z + 0.04);
+                const n = notes[ni++ % notes.length]; n.age = 0; n.sp.position.set(s0.st.position.x + (Math.random() - 0.5) * 0.9, s0.st.position.y + 0.12 + Math.random() * 0.1, s0.st.position.z);
                 n.v.set((Math.random() - 0.5) * 0.25, 0.32 + Math.random() * 0.12, 0.12 + Math.random() * 0.1); }
               strs.forEach(({ st, ms, at }) => { const a = t - at, e = Math.exp(-a * 5);
-                st.position.x = st.userData.p0.x + Math.sin(a * 75) * 0.006 * e; ms.forEach(m => m.emissiveIntensity = 0.9 * e); });
+                st.position.y = st.userData.p0.y + Math.sin(a * 75) * 0.005 * e; ms.forEach(m => m.emissiveIntensity = 0.9 * e); });
               notes.forEach(n => { n.age += dt; if (n.age > 2.2) { n.sp.material.opacity = 0; return; }
                 n.sp.position.addScaledVector(n.v, dt); n.sp.position.x += Math.sin(n.age * 4 + n.v.z * 20) * 0.003;
                 n.sp.material.opacity = Math.min(1, n.age * 6) * (1 - n.age / 2.2); n.sp.scale.setScalar(0.1 + n.age * 0.03); });
@@ -1484,7 +1484,7 @@
         // ══ 🛠️ 꾸미기 (2026-10-01) — 예물과 꾸밈 아이템을 끌어서 놓고, 돌리고, 보관함에 넣는다 ══
         //    사용자: "아무 데나 끌어서 놓되 꾸미기 전용 화면에 들어가게". 걷기·행렬과 따로 — 위에서 비스듬히 내려다보는 카메라.
         //    물건을 끌면 옮기고, 빈 곳을 끌면 화면이 움직이고, 두 손가락은 확대·돌리기. 마칠 때 바뀐 것만 저장(_njDecoSave)
-        const DECO_V = '20261001';   // models/decor/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/decor.py)
+        const DECO_V = '20261001b';   // models/decor/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/decor.py)
         const decoCache = {};
         function loadDecor(k) {
             if (!decoCache[k]) decoCache[k] = (async () => {
@@ -1502,11 +1502,22 @@
             b.position.y = 0.15; b.castShadow = true; g.add(b); return g;
         }
         const decoG = new THREE.Group(); scene.add(decoG);
+        // 누르는 자리 — 모델 면으로 고르면 압축 모델에서 맞지 않고 가는 기둥·성긴 잎(포도 시렁)은 아예 안 짚혔다(10/1).
+        // 물건마다 보이지 않는 상자(모델 크기, 너무 작으면 0.35)를 씌워 그 안 어디를 눌러도 골라지게. 크기는 decor.py가 찍은 SIZE(가로·깊이·높이)
+        const DECO_BOX = { bench: [0.68, 0.26, 0.46], pot: [0.38, 0.38, 0.44], fence: [0.94, 0.1, 0.37], sign: [0.36, 0.27, 0.62], lamp: [0.18, 0.18, 1.06],
+            flowerbed: [1.21, 0.82, 0.19], birdhouse: [0.26, 0.26, 1.0], figtree: [1.13, 1.09, 1.06], palmtree: [1.39, 1.39, 1.37], well: [0.8, 0.69, 0.92],
+            arbor: [0.98, 0.79, 0.95], bridge: [2.51, 0.52, 0.48], boat: [1.04, 0.56, 0.2], fountain: [1.1, 1.1, 1.0], gazebo: [1.36, 1.36, 1.17] };
+        const pickMat = new THREE.MeshBasicMaterial({ visible: false });
+        function addPick(m, size) {
+            const [w, d, h] = (size || [0.9, 0.9, 0.9]).map(v => Math.max(0.35, v));
+            const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), pickMat); b.position.y = h / 2; m.add(b); m.userData.pick = b;
+        }
         function placeDecor(it) {
             if (!it || it.st) return null;
             const m = new THREE.Group(); m.position.set(it.x || 0, terrain(it.x || 0, it.z || 0), it.z || 0); m.rotation.y = it.r || 0;
             m.userData.item = { kind: 'decor', id: it.id, k: it.k };
             m.scale.setScalar(it.k === 'bridge' ? 1.1 : 1.5);   // 성 안 나무(1.4)·예물에 맞춰 — 원래 크기로는 내려다볼 때 작았다
+            addPick(m, DECO_BOX[it.k]);
             loadDecor(it.k).then(sc => { if (cur !== C) return; const c = sc.clone(); m.add(c);
                 if (it.k === 'fountain') { const wt = c.getObjectByName('water'); if (wt) m.userData.anim = t => { wt.scale.set(1 + Math.sin(t * 5.3) * 0.06, 1 + Math.sin(t * 3.7) * 0.12, 1 + Math.sin(t * 4.1 + 1) * 0.06); }; }   // 솟는 물이 일렁인다
             }).catch(() => { if (cur === C) m.add(decoFallback()); });
@@ -1584,14 +1595,14 @@
             deco = { sel: null, tgt: new THREE.Vector3(0, 0, 3), yaw: 0.5, pitch: 1.0, dist: 23, pts: new Map(), drag: null, stash, touched: new Map(), stashed: new Set() };
             controls.enabled = false; controls.autoRotate = false;
             modeBtn.hidden = goBtn.hidden = decoBtn.hidden = true; hideFruit(); offerEl.hidden = true;
-            decoBar.hidden = false; decoRender(); showHint(T('deco_hint'), 3500); lastTouch = performance.now();
+            decoBar.hidden = false; ov.classList.add('deco-on'); decoRender(); showHint(T('deco_hint'), 3500); lastTouch = performance.now();
         }
         function exitDeco() {
             const ch = [];
             deco.touched.forEach((o, id) => { const it = o.userData.item; ch.push({ kind: it.kind, id, x: o.position.x, z: o.position.z, r: o.rotation.y, st: false }); });
             deco.stash.forEach(s => { if (deco.stashed.has(s.id)) ch.push({ kind: s.kind, id: s.id, x: 0, z: 0, r: 0, st: true }); });
             if (ch.length && typeof _njDecoSave === 'function') { _njDecoSave(ch); showHint(T('deco_saved'), 2000); }
-            deco = null; decoRing.visible = false; decoBar.hidden = true; decoPanel.hidden = true;
+            deco = null; decoRing.visible = false; decoBar.hidden = true; decoPanel.hidden = true; ov.classList.remove('deco-on');
             modeBtn.hidden = goBtn.hidden = decoBtn.hidden = false; controls.enabled = true; lookAt('city'); lastTouch = performance.now();
         }
         decoBtn.addEventListener('click', enterDeco);
@@ -1605,7 +1616,7 @@
                 deco.drag = { pinch: Math.hypot(a.x - b.x, a.y - b.y), ang: Math.atan2(b.y - a.y, b.x - a.x), dist0: deco.dist, yaw0: deco.yaw }; return;
             }
             ray.setFromCamera(decoNdc(e), camera);
-            const hit = ray.intersectObjects(decoObjs(), true), obj = hit.length ? decoRoot(hit[0].object) : null;
+            const hit = ray.intersectObjects(decoObjs().map(o => { if (!o.userData.pick) addPick(o); return o.userData.pick; }), false), obj = hit.length ? decoRoot(hit[0].object) : null;   // 예물은 처음 고를 때 상자를 씌운다
             if (obj) { if (deco.sel !== obj) decoSel(obj); deco.drag = { obj }; }
             else deco.drag = { pan: true };
             touching = true; lastTouch = performance.now();
