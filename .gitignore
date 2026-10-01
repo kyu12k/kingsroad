@@ -8,3 +8,5 @@ dist/
 build/
 .firebase/
 .wrangler/
+
+__pycache__/

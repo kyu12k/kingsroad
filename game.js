@@ -608,6 +608,22 @@ const LANG = {
         gift_take: '🎁 받기 · {cost}',
         gift_need: '🐟·🍇 {n} 더 필요해요',
         gift_full: '성 둘레 자리가 다 찼어요',
+        deco_btn: '🛠️ 꾸미기',
+        deco_hint: '물건을 끌어 옮기고, 빈 곳을 끌어 둘러보세요. 두 손가락으로 확대·돌리기',
+        deco_tip: '옮길 것을 눌러 고르세요',
+        deco_rotate: '⟳ 돌리기',
+        deco_stash: '📦 넣기',
+        deco_bag: '🎒 보관함 {n}',
+        deco_shop: '🛒 꾸밈 상점',
+        deco_done: '✓ 다 했어요',
+        deco_bag_title: '🎒 보관함',
+        deco_bag_empty: '보관함이 비어 있어요. 고른 물건을 「📦 넣기」로 넣을 수 있어요',
+        deco_place: '놓기',
+        deco_kind_gift: '예물',
+        deco_kind_decor: '꾸밈',
+        deco_shop_title: '🛒 꾸밈 상점 — 사면 화면 가운데에 놓여요',
+        deco_need_gems: '보석이 모자라요',
+        deco_saved: '🛠️ 꾸민 모습을 저장했어요',
         gift_depart: '🎁 {item} — {nation}에서 출발했어요',
         gift_arrive: '🎁 {item}이(가) 성에 도착했어요',
         gift_skip: '건너뛰기 ⏭',
@@ -1675,6 +1691,22 @@ const LANG = {
         gift_take: '🎁 Receive · {cost}',
         gift_need: 'Need {n} more 🐟·🍇',
         gift_full: 'All places around the city are taken',
+        deco_btn: '🛠️ Decorate',
+        deco_hint: 'Drag items to move them, drag empty ground to look around. Two fingers to zoom and turn',
+        deco_tip: 'Tap something to pick it',
+        deco_rotate: '⟳ Turn',
+        deco_stash: '📦 Store',
+        deco_bag: '🎒 Storage {n}',
+        deco_shop: '🛒 Decor shop',
+        deco_done: '✓ Done',
+        deco_bag_title: '🎒 Storage',
+        deco_bag_empty: 'Storage is empty. Pick an item and tap 📦 Store',
+        deco_place: 'Place',
+        deco_kind_gift: 'Gift',
+        deco_kind_decor: 'Decor',
+        deco_shop_title: '🛒 Decor shop — new items appear in the middle of the view',
+        deco_need_gems: 'Not enough gems',
+        deco_saved: '🛠️ Saved your layout',
         gift_depart: '🎁 {item} — setting out from {nation}',
         gift_arrive: '🎁 {item} has arrived at the city',
         gift_skip: 'Skip ⏭',
@@ -2464,7 +2496,8 @@ let njFishCasts = 0;     // 던진 그물 수(연구·보석 흐름 실측용)
 let njVines = [];        // 🍇 포도원 — [{ id, n: 나라 번호, t: 심은 때, h: 거둔 때(0=아직), y: 거둔 양 }]
 let njGrapes = 0;        // 🍇 거둔 포도 합(늘기만) — 예물을 받을 때 쓴다(njGrapesSpent)
 let njGrapesSpent = 0;
-let njGifts = [];        // 🎁 받은 예물 — [{ id, k: 예물 키, slot: 자리 번호, n: 가져온 나라, at }]
+let njGifts = [];        // 🎁 받은 예물 — [{ id, k: 예물 키, slot: 자리 번호, n: 가져온 나라, at, x?, z?, r?(꾸미기로 옮긴 자리·방향), st?(보관함), mv?(옮긴 시각) }]
+let njDecor = [];        // 🪴 꾸밈 아이템(💎로 산다) — [{ id, k, x, z, r, st, mv, at }] (10/1)
 let njFishBag = {};      // 🎣 종류별로 낚은 수 { 'tuna': 3, ... } — 모으는 재미·예물 표시용(값은 njFish에 합산)
 let lastPlayedStageId = null; // 마지막으로 직접 플레이한 스테이지 ID
 let bossFirstClearClaimed = new Set(); // 최초 클리어 보너스를 수령한 보스 스테이지 ID
@@ -2926,6 +2959,7 @@ loadGameData = function () {
         njFishBag = (parsed.njFishBag && typeof parsed.njFishBag === 'object') ? parsed.njFishBag : {};
         njVines = Array.isArray(parsed.njVines) ? parsed.njVines.filter(v => v && v.id) : [];
         njGifts = Array.isArray(parsed.njGifts) ? parsed.njGifts.filter(v => v && v.id) : [];
+        njDecor = Array.isArray(parsed.njDecor) ? parsed.njDecor.filter(v => v && v.id) : [];
         njGrapes = Math.max(0, parseInt(parsed.njGrapes, 10) || 0);
         njGrapesSpent = Math.max(0, parseInt(parsed.njGrapesSpent, 10) || 0);
         // 오늘의 암송 진행은 날마다 새 id라 60일 지난 것은 버린다 (저장본이 자라지 않게)
@@ -7746,17 +7780,59 @@ const NJ_GIFT_SLOTS = (() => {
 function _njTreasureAvail() { return _njFishAvail() + _njGrapesAvail(); }
 function _njOfferUnlocked(o) { return (typeof stageMastery !== 'undefined' && (stageMastery[`${o.ch}-boss`] || 0) > 0); }
 function _njOfferName(o) { return currentLang === 'en' ? o.en : o.ko; }
-function _njFreeSlot() { const used = new Set((njGifts || []).map(x => x.slot)); for (let i = 0; i < NJ_GIFT_SLOTS.length; i++) if (!used.has(i)) return i; return -1; }
+function _njFreeSlot() { const used = new Set((njGifts || []).filter(x => x.x == null && !x.st).map(x => x.slot)); for (let i = 0; i < NJ_GIFT_SLOTS.length; i++) if (!used.has(i)) return i; return -1; }
+/* 🪴 꾸밈 아이템 (2026-10-01) — 계시록과 상관없는 평범한 것들로 성 둘레를 꾸민다. 💎로 바로 산다(사용자: "꽤 저렴해야").
+   예물(🐟·🍇 10~100 = 보석 수만~수십만)과 달리 그물 한 번(💎10,000) 근처. 모델은 models/decor/*.glb (tools/blender/decor.py).
+   놓기·옮기기·돌리기·치우기는 3D 「꾸미기」 화면(nj3d.js deco) — 예물도 같은 화면에서 옮긴다 */
+const NJ_DECOR = [
+    { k: 'bench',     ko: '나무 벤치',   en: 'Bench',          cost: 3000 },
+    { k: 'pot',       ko: '꽃 화분',     en: 'Flower pot',     cost: 3000 },
+    { k: 'fence',     ko: '돌 울타리',   en: 'Stone fence',    cost: 3000 },
+    { k: 'sign',      ko: '이정표',      en: 'Signpost',       cost: 3000 },
+    { k: 'lamp',      ko: '가로등',      en: 'Lamp post',      cost: 5000 },
+    { k: 'flowerbed', ko: '꽃밭',        en: 'Flower bed',     cost: 5000 },
+    { k: 'birdhouse', ko: '새집',        en: 'Birdhouse',      cost: 5000 },
+    { k: 'figtree',   ko: '무화과나무',  en: 'Fig tree',       cost: 8000 },
+    { k: 'palmtree',  ko: '종려나무',    en: 'Palm tree',      cost: 8000 },
+    { k: 'well',      ko: '우물',        en: 'Well',           cost: 12000 },
+    { k: 'arbor',     ko: '포도 시렁',   en: 'Grape arbor',    cost: 12000 },
+    { k: 'bridge',    ko: '나무다리',    en: 'Wooden bridge',  cost: 10000 },
+    { k: 'boat',      ko: '나룻배',      en: 'Rowboat',        cost: 10000 },
+    { k: 'fountain',  ko: '분수',        en: 'Fountain',       cost: 20000 },
+    { k: 'gazebo',    ko: '정자',        en: 'Gazebo',         cost: 20000 },
+];
+function _njDecorName(d) { return currentLang === 'en' ? d.en : d.ko; }
+/* 사서 보관함 대신 바로 화면 가운데에 놓는다(x, z는 nj3d가 정해 준다) */
+function _njDecorBuy(k, x, z) {
+    const d = NJ_DECOR.find(v => v.k === k); if (!d) return null;
+    if ((myGems || 0) < d.cost) return null;
+    myGems -= d.cost;
+    const it = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), k, x: +x || 0, z: +z || 0, r: 0, at: Date.now(), mv: Date.now() };
+    (njDecor = Array.isArray(njDecor) ? njDecor : []).push(it);
+    if (typeof updateGemDisplay === 'function') updateGemDisplay();
+    saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
+    return it;
+}
+/* 꾸미기를 마칠 때 — 옮긴 자리·방향·보관함 여부를 한 번에 저장 */
+function _njDecoSave(changes) {
+    const now = Date.now();
+    (changes || []).forEach(c => {
+        const arr = c.kind === 'gift' ? njGifts : njDecor, it = (arr || []).find(v => v.id === c.id); if (!it) return;
+        it.x = Math.round(c.x * 100) / 100; it.z = Math.round(c.z * 100) / 100; it.r = Math.round(c.r * 1000) / 1000; it.st = !!c.st; it.mv = now;
+    });
+    saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
+}
 /* 값을 치르고(물고기부터, 모자라면 포도) 예물을 적는다. 행렬 장면은 nj3d.js가 보여 준다 */
 function _njOfferBuy(k, nation) {
     const o = NJ_OFFERINGS.find(x => x.k === k);
     if (!o || !_njOfferUnlocked(o)) return null;
     if (_njTreasureAvail() < o.cost) return null;
-    const slot = _njFreeSlot(); if (slot < 0) return null;
+    const slot = _njFreeSlot();   // 16자리가 다 차면 -1 — 성 둘레 빈 곳에 놓는다(아래), 꾸미기에서 옮긴다
     const fromFish = Math.min(o.cost, _njFishAvail());
     njFishSpent = (njFishSpent || 0) + fromFish;
     njGrapesSpent = (njGrapesSpent || 0) + (o.cost - fromFish);
     const gift = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), k, slot, n: nation, at: Date.now() };
+    if (slot < 0) { const a = (njGifts || []).length * 0.83; gift.x = Math.round(Math.cos(a) * 10.4 * 100) / 100; gift.z = Math.round(Math.sin(a) * 10.4 * 100) / 100; gift.r = Math.atan2(gift.x, gift.z); }
     (njGifts = Array.isArray(njGifts) ? njGifts : []).push(gift);
     saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
     return gift;
@@ -11624,6 +11700,7 @@ function saveGameData() {
         njFishBag: njFishBag,             // 🎣 종류별로 낚은 수
         njVines: njVines,                 // 🍇 포도원
         njGifts: njGifts,                 // 🎁 받은 예물
+        njDecor: njDecor,                 // 🪴 꾸밈 아이템
         njGrapes: njGrapes,               // 🍇 거둔 포도 합
         njGrapesSpent: njGrapesSpent,     // 🍇 예물에 쓴 포도
         sessionTimeLog: sessionTimeLog,
@@ -11932,12 +12009,18 @@ function _mergeNewJerusalem(target, other) {
         });
         target.njVines = tv;
     }
-    // 예물 — id로 합집합
-    if (Array.isArray(other.njGifts) && other.njGifts.length) {
-        const tg = Array.isArray(target.njGifts) ? target.njGifts : [];
-        other.njGifts.forEach(v => { if (v && v.id && !tg.some(x => x && x.id === v.id)) { tg.push(Object.assign({}, v)); took++; } });
-        target.njGifts = tg;
-    }
+    // 예물·꾸밈 — id로 합집합, 같은 것은 나중에 옮긴 쪽(mv)
+    ['njGifts', 'njDecor'].forEach(key => {
+        if (!Array.isArray(other[key]) || !other[key].length) return;
+        const tg = Array.isArray(target[key]) ? target[key] : [];
+        other[key].forEach(v => {
+            if (!v || !v.id) return;
+            const i = tg.findIndex(x => x && x.id === v.id);
+            if (i < 0) { tg.push(Object.assign({}, v)); took++; }
+            else if ((v.mv || 0) > (tg[i].mv || 0)) { tg[i] = Object.assign({}, v); took++; }
+        });
+        target[key] = tg;
+    });
     return took;
 }
 

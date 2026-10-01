@@ -44,6 +44,9 @@
                 <div class="nj3d-loading">${T('nj3d_loading')}</div>
                 <button class="nj3d-mode"></button>
                 <button class="nj3d-go"></button>
+                <button class="nj3d-deco"></button>
+                <div class="nj3d-decobar" hidden></div>
+                <div class="nj3d-decopanel" hidden></div>
                 <div class="nj3d-walk" hidden>
                     <div class="nj3d-joy"><div class="nj3d-knob"></div></div>
                     <div class="nj3d-btns">
@@ -834,8 +837,10 @@
         }
         const GIFT_SCALE = { dragon: 0.42 };   // 용만 크게 빚었다(길이 4.2)
         function placeGift(gf) {
-            const sp = slots[gf.slot]; if (!sp) return null;
-            const m = new THREE.Group(); m.position.set(sp[0], terrain(sp[0], sp[1]), sp[1]); m.rotation.y = Math.atan2(sp[0], sp[1]);   // 성을 등지고 바깥을 본다
+            if (gf.st) return null;   // 보관함에 넣어 둔 예물
+            const sp = gf.x != null ? [gf.x, gf.z] : slots[gf.slot]; if (!sp) return null;   // 꾸미기로 옮겼으면 그 자리
+            const m = new THREE.Group(); m.position.set(sp[0], terrain(sp[0], sp[1]), sp[1]); m.rotation.y = gf.x != null ? (gf.r || 0) : Math.atan2(sp[0], sp[1]);   // 처음엔 성을 등지고 바깥을 본다
+            m.userData.item = { kind: 'gift', id: gf.id, k: gf.k };
             const o = (typeof NJ_OFFERINGS !== 'undefined') ? NJ_OFFERINGS.find(x => x.k === gf.k) : null;
             m.userData.base = [1, 1, 1.3, 1.7][(o && o.size) || 1]; m.scale.setScalar(m.userData.base);   // 큰 예물은 크게
             loadGift(gf.k).then(sc => { if (cur !== C) return; const c = sc.clone(); c.scale.setScalar(GIFT_SCALE[gf.k] || 1); m.add(c); m.userData.anim = giftAnim(gf.k, c); })
@@ -886,6 +891,7 @@
         // ── 순례자 (계 7:9 흰 옷) — 성벽 높이의 1/14쯤 ──
         const CH = 0.22, CR = 0.07, STEP = 0.14, G = 4.2, JUMP_V = 1.55, WALK_V = 0.95, RUN_V = 1.75;
         const P = { x: 1.3, y: 0, z: 9.2, vy: 0, onGround: true, face: Math.PI };
+        let deco = null;   // 🛠️ 꾸미기 중이면 상태(아래 「꾸미기」)
         let walk = false, jetOn = false, camYaw = 0, camPitch = 0.12, camDist = 0.95, walkT = 0, gait = 0;
         // 팔다리가 있는 순례자 (9/29) — 엉덩이·어깨를 축으로 흔들어 걷기·달리기·점프·날기 자세를 만든다. 앞은 -z
         const pilgrim = new THREE.Group(), body = new THREE.Group(); pilgrim.add(body);
@@ -1077,7 +1083,7 @@
         };
         listen(cvs, 'pointerup', e => {
             if (!tap) return;
-            if (proc) { tap = null; return; }   // 행렬을 돌려 보는 손길 — 열매·나라 창을 띄우지 않는다
+            if (proc || deco) { tap = null; return; }   // 행렬을 돌려 보는 손길·꾸미기 — 열매·나라 창을 띄우지 않는다
             if (!fruitPos.length) {   // 열매가 없으면 해안의 나라만 본다
                 const moved = Math.hypot(e.clientX - tap.x, e.clientY - tap.y), long = performance.now() - tap.t;
                 tap = null;
@@ -1290,7 +1296,7 @@
         function openOffer(i) {
             const list = (typeof NJ_OFFERINGS !== 'undefined') ? NJ_OFFERINGS : [];
             const have = typeof _njTreasureAvail === 'function' ? _njTreasureAvail() : 0;
-            const full = typeof _njFreeSlot === 'function' && _njFreeSlot() < 0;
+            const full = false;   // 꾸미기(10/1)부터 자리 제한 없음 — 16자리가 차면 성 둘레 빈 곳에 놓고 옮긴다
             offerEl.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button>
                 <div class="nj3d-offer-head">${T('gift_title', { name: esc2(natName(i)) })}</div>
                 <div class="nj3d-offer-intro">${T('gift_intro')}</div>
@@ -1475,6 +1481,173 @@
             }
         }
 
+        // ══ 🛠️ 꾸미기 (2026-10-01) — 예물과 꾸밈 아이템을 끌어서 놓고, 돌리고, 보관함에 넣는다 ══
+        //    사용자: "아무 데나 끌어서 놓되 꾸미기 전용 화면에 들어가게". 걷기·행렬과 따로 — 위에서 비스듬히 내려다보는 카메라.
+        //    물건을 끌면 옮기고, 빈 곳을 끌면 화면이 움직이고, 두 손가락은 확대·돌리기. 마칠 때 바뀐 것만 저장(_njDecoSave)
+        const DECO_V = '20261001';   // models/decor/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/decor.py)
+        const decoCache = {};
+        function loadDecor(k) {
+            if (!decoCache[k]) decoCache[k] = (async () => {
+                if (!THREE.GLTFLoader) await loadScript(GLTF_URL);
+                const gl = await new Promise((res, rej) => new THREE.GLTFLoader().load(`models/decor/${k}.glb?v=${DECO_V}`, res, undefined, rej));
+                gl.scene.traverse(o => { if (!o.isMesh) return; o.castShadow = true; o.receiveShadow = true;
+                    const m = o.material; if (m.metalness > 0.5) { m.metalness = 0.35; m.roughness = 0.38; } if (m.emissive && m.emissive.getHex()) m.emissiveIntensity = 1.2; });
+                return gl.scene;
+            })();
+            decoCache[k].catch(() => { delete decoCache[k]; });
+            return decoCache[k];
+        }
+        function decoFallback() {   // 모델을 못 받으면 나무 상자 하나
+            const g = new THREE.Group(), b = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshStandardMaterial({ color: 0xb08a5a, roughness: 0.8 }));
+            b.position.y = 0.15; b.castShadow = true; g.add(b); return g;
+        }
+        const decoG = new THREE.Group(); scene.add(decoG);
+        function placeDecor(it) {
+            if (!it || it.st) return null;
+            const m = new THREE.Group(); m.position.set(it.x || 0, terrain(it.x || 0, it.z || 0), it.z || 0); m.rotation.y = it.r || 0;
+            m.userData.item = { kind: 'decor', id: it.id, k: it.k };
+            m.scale.setScalar(it.k === 'bridge' ? 1.1 : 1.5);   // 성 안 나무(1.4)·예물에 맞춰 — 원래 크기로는 내려다볼 때 작았다
+            loadDecor(it.k).then(sc => { if (cur !== C) return; const c = sc.clone(); m.add(c);
+                if (it.k === 'fountain') { const wt = c.getObjectByName('water'); if (wt) m.userData.anim = t => { wt.scale.set(1 + Math.sin(t * 5.3) * 0.06, 1 + Math.sin(t * 3.7) * 0.12, 1 + Math.sin(t * 4.1 + 1) * 0.06); }; }   // 솟는 물이 일렁인다
+            }).catch(() => { if (cur === C) m.add(decoFallback()); });
+            decoG.add(m); return m;
+        }
+        ((typeof njDecor !== 'undefined' && Array.isArray(njDecor)) ? njDecor : []).forEach(placeDecor);
+
+        const decoBtn = ov.querySelector('.nj3d-deco'), decoBar = ov.querySelector('.nj3d-decobar'), decoPanel = ov.querySelector('.nj3d-decopanel');
+        decoBtn.textContent = T('deco_btn');
+        const decoRing = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.5, 40), new THREE.MeshBasicMaterial({ color: 0xffd34d, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide }));
+        decoRing.rotation.x = -Math.PI / 2; decoRing.visible = false; scene.add(decoRing);
+        const decoPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), decoHit = new THREE.Vector3(), DECO_LIM = PL - 0.4;
+        const decoName = (it) => {
+            if (it.kind === 'gift') { const o = (typeof NJ_OFFERINGS !== 'undefined') ? NJ_OFFERINGS.find(x => x.k === it.k) : null; return o ? (typeof _njOfferName === 'function' ? _njOfferName(o) : o.ko) : it.k; }
+            const d = (typeof NJ_DECOR !== 'undefined') ? NJ_DECOR.find(x => x.k === it.k) : null; return d ? (typeof _njDecorName === 'function' ? _njDecorName(d) : d.ko) : it.k;
+        };
+        const decoObjs = () => [...giftsG.children, ...decoG.children].filter(o => o.userData.item);
+        const decoRoot = (o) => { while (o && !(o.userData && o.userData.item)) o = o.parent; return o; };
+        const decoSel = (obj) => { deco.sel = obj; decoRing.visible = !!obj; decoPanel.hidden = true; decoRender(); };
+        const decoTouch = (obj) => { if (obj && obj.userData.item) deco.touched.set(obj.userData.item.id, obj); };
+        function decoRender() {
+            const it = deco.sel && deco.sel.userData.item;
+            decoBar.innerHTML = (it ? `<div class="nj3d-deco-sel"><b>${esc2(decoName(it))}</b>
+                    <button data-a="rot">${T('deco_rotate')}</button><button data-a="stash">${T('deco_stash')}</button></div>` : `<div class="nj3d-deco-tip">${T('deco_tip')}</div>`)
+                + `<div class="nj3d-deco-row"><button data-a="bag">${T('deco_bag', { n: deco.stash.length })}</button><button data-a="shop">${T('deco_shop')}</button><button data-a="done" class="done">${T('deco_done')}</button></div>`;
+        }
+        function decoPanelShow(kind) {
+            decoPanel.hidden = false;
+            if (kind === 'bag') {
+                decoPanel.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button><div class="nj3d-offer-head">${T('deco_bag_title')}</div>`
+                    + (deco.stash.length ? `<div class="nj3d-offer-list">${deco.stash.map((s, i) => `<div class="nj3d-offer-row"><div><b>${esc2(decoName(s))}</b><span>${s.kind === 'gift' ? T('deco_kind_gift') : T('deco_kind_decor')}</span></div><button data-i="${i}">${T('deco_place')}</button></div>`).join('')}</div>`
+                        : `<div class="nj3d-offer-intro">${T('deco_bag_empty')}</div>`);
+                decoPanel.querySelectorAll('button[data-i]').forEach(b => b.onclick = () => {
+                    const s = deco.stash.splice(+b.dataset.i, 1)[0]; if (!s) return;
+                    const x = Math.max(-DECO_LIM, Math.min(DECO_LIM, deco.tgt.x)), z = Math.max(-DECO_LIM, Math.min(DECO_LIM, deco.tgt.z));
+                    const rec = s.kind === 'gift' ? (njGifts || []).find(v => v.id === s.id) : (njDecor || []).find(v => v.id === s.id);
+                    const obj = rec ? (s.kind === 'gift' ? placeGift(Object.assign({}, rec, { x, z, r: 0, st: false })) : placeDecor(Object.assign({}, rec, { x, z, r: 0, st: false }))) : null;
+                    if (obj) { decoTouch(obj); decoSel(obj); }
+                });
+            } else {
+                const gems = Number(typeof myGems !== 'undefined' ? myGems : 0), list = (typeof NJ_DECOR !== 'undefined') ? NJ_DECOR : [];
+                decoPanel.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button><div class="nj3d-offer-head">${T('deco_shop_title')}</div>
+                    <div class="nj3d-offer-have">💎 ${gems.toLocaleString()}</div>
+                    <div class="nj3d-offer-list">${list.map(d => `<div class="nj3d-offer-row"><div><b>${esc2(typeof _njDecorName === 'function' ? _njDecorName(d) : d.ko)}</b></div>${gems >= d.cost
+                        ? `<button data-k="${d.k}">💎 ${d.cost.toLocaleString()}</button>` : `<span class="nj3d-offer-lock">💎 ${d.cost.toLocaleString()}</span>`}</div>`).join('')}</div>`;
+                decoPanel.querySelectorAll('button[data-k]').forEach(b => b.onclick = () => {
+                    const x = Math.max(-DECO_LIM, Math.min(DECO_LIM, deco.tgt.x)), z = Math.max(-DECO_LIM, Math.min(DECO_LIM, deco.tgt.z));
+                    const it = typeof _njDecorBuy === 'function' ? _njDecorBuy(b.dataset.k, x, z) : null;
+                    if (!it) { showHint(T('deco_need_gems'), 2000); return; }
+                    const obj = placeDecor(it); syncWallet();
+                    if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
+                    if (obj) decoSel(obj);
+                });
+            }
+            const x = decoPanel.querySelector('.nj3d-fruit-x'); if (x) x.onclick = () => { decoPanel.hidden = true; };
+        }
+        decoBar.addEventListener('click', e => {
+            const b = e.target.closest('button'); if (!b || !deco) return;
+            const a = b.dataset.a;
+            if (a === 'rot' && deco.sel) { deco.sel.rotation.y += Math.PI / 4; decoTouch(deco.sel); }
+            else if (a === 'stash' && deco.sel) {
+                const o = deco.sel, it = o.userData.item; deco.stash.push({ kind: it.kind, id: it.id, k: it.k });
+                deco.touched.delete(it.id); deco.stashed.add(it.id); o.parent.remove(o); decoSel(null);
+            }
+            else if (a === 'bag') decoPanelShow('bag');
+            else if (a === 'shop') decoPanelShow('shop');
+            else if (a === 'done') exitDeco();
+            lastTouch = performance.now();
+        });
+        function enterDeco() {
+            if (walk || proc) return;
+            const stash = [];
+            ((typeof njGifts !== 'undefined' && njGifts) || []).forEach(g => { if (g.st) stash.push({ kind: 'gift', id: g.id, k: g.k }); });
+            ((typeof njDecor !== 'undefined' && njDecor) || []).forEach(d => { if (d.st) stash.push({ kind: 'decor', id: d.id, k: d.k }); });
+            deco = { sel: null, tgt: new THREE.Vector3(0, 0, 3), yaw: 0.5, pitch: 1.0, dist: 23, pts: new Map(), drag: null, stash, touched: new Map(), stashed: new Set() };
+            controls.enabled = false; controls.autoRotate = false;
+            modeBtn.hidden = goBtn.hidden = decoBtn.hidden = true; hideFruit(); offerEl.hidden = true;
+            decoBar.hidden = false; decoRender(); showHint(T('deco_hint'), 3500); lastTouch = performance.now();
+        }
+        function exitDeco() {
+            const ch = [];
+            deco.touched.forEach((o, id) => { const it = o.userData.item; ch.push({ kind: it.kind, id, x: o.position.x, z: o.position.z, r: o.rotation.y, st: false }); });
+            deco.stash.forEach(s => { if (deco.stashed.has(s.id)) ch.push({ kind: s.kind, id: s.id, x: 0, z: 0, r: 0, st: true }); });
+            if (ch.length && typeof _njDecoSave === 'function') { _njDecoSave(ch); showHint(T('deco_saved'), 2000); }
+            deco = null; decoRing.visible = false; decoBar.hidden = true; decoPanel.hidden = true;
+            modeBtn.hidden = goBtn.hidden = decoBtn.hidden = false; controls.enabled = true; lookAt('city'); lastTouch = performance.now();
+        }
+        decoBtn.addEventListener('click', enterDeco);
+        // 손가락 — 물건을 짚으면 옮기기, 빈 곳이면 화면 옮기기, 두 손가락은 확대·돌리기
+        const decoNdc = (e) => { const r = cvs.getBoundingClientRect(); return new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); };
+        cvs.addEventListener('pointerdown', e => {
+            if (!deco) return;
+            deco.pts.set(e.pointerId, { x: e.clientX, y: e.clientY, t: performance.now(), x0: e.clientX, y0: e.clientY });
+            if (deco.pts.size === 2) {
+                const [a, b] = [...deco.pts.values()];
+                deco.drag = { pinch: Math.hypot(a.x - b.x, a.y - b.y), ang: Math.atan2(b.y - a.y, b.x - a.x), dist0: deco.dist, yaw0: deco.yaw }; return;
+            }
+            ray.setFromCamera(decoNdc(e), camera);
+            const hit = ray.intersectObjects(decoObjs(), true), obj = hit.length ? decoRoot(hit[0].object) : null;
+            if (obj) { if (deco.sel !== obj) decoSel(obj); deco.drag = { obj }; }
+            else deco.drag = { pan: true };
+            touching = true; lastTouch = performance.now();
+        });
+        cvs.addEventListener('pointermove', e => {
+            if (!deco) return;
+            const p = deco.pts.get(e.pointerId); if (!p) return;
+            const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
+            const d = deco.drag; if (!d) return;
+            if (d.pinch && deco.pts.size === 2) {
+                const [a, b] = [...deco.pts.values()];
+                deco.dist = Math.max(5, Math.min(32, d.dist0 * d.pinch / Math.max(20, Math.hypot(a.x - b.x, a.y - b.y))));
+                deco.yaw = d.yaw0 - (Math.atan2(b.y - a.y, b.x - a.x) - d.ang);
+            } else if (d.obj) {
+                ray.setFromCamera(decoNdc(e), camera);
+                if (ray.ray.intersectPlane(decoPlane, decoHit)) {
+                    const x = Math.max(-DECO_LIM, Math.min(DECO_LIM, decoHit.x)), z = Math.max(-DECO_LIM, Math.min(DECO_LIM, decoHit.z));
+                    d.obj.position.set(x, terrain(x, z), z); decoTouch(d.obj);
+                }
+            } else if (d.pan) {
+                const s = deco.dist * 0.0021, cy = Math.cos(deco.yaw), sy = Math.sin(deco.yaw);
+                deco.tgt.x -= (cy * dx + sy * dy) * s; deco.tgt.z -= (-sy * dx + cy * dy) * s;
+                deco.tgt.x = Math.max(-16, Math.min(16, deco.tgt.x)); deco.tgt.z = Math.max(-16, Math.min(16, deco.tgt.z));
+            }
+            lastTouch = performance.now();
+        });
+        const decoUp = e => {
+            if (!deco) return;
+            const p = deco.pts.get(e.pointerId); deco.pts.delete(e.pointerId);
+            if (p && deco.drag && deco.drag.pan && Math.hypot(e.clientX - p.x0, e.clientY - p.y0) < 8 && performance.now() - p.t < 350) decoSel(null);   // 빈 곳을 톡 — 고르기 풀기
+            if (deco.pts.size === 0) { deco.drag = null; touching = false; } else if (deco.drag && deco.drag.pinch) deco.drag = null;
+            lastTouch = performance.now();
+        };
+        cvs.addEventListener('pointerup', decoUp); cvs.addEventListener('pointercancel', decoUp);
+        cvs.addEventListener('wheel', e => { if (!deco) return; deco.dist = Math.max(5, Math.min(32, deco.dist * (e.deltaY > 0 ? 1.1 : 0.9))); e.preventDefault(); lastTouch = performance.now(); }, { passive: false });
+        function decoCam() {
+            const c = Math.cos(deco.pitch) * deco.dist;
+            camera.position.set(deco.tgt.x + Math.sin(deco.yaw) * c, deco.tgt.y + Math.sin(deco.pitch) * deco.dist, deco.tgt.z + Math.cos(deco.yaw) * c);
+            camera.lookAt(deco.tgt);
+            if (deco.sel) { const p = deco.sel.position, s = Math.max(0.7, deco.sel.scale.x); decoRing.position.set(p.x, p.y + 0.03, p.z); decoRing.scale.setScalar(s); }
+        }
+
         function walkUpdate(dt) {
             if (proc) { procUpdate(dt); return; }
             fishUpdate(dt);
@@ -1607,6 +1780,7 @@
                 if (perf.n === 140 && perf.sum / 120 > 0.045) { setQuality(false, false); showHint(T('nj3d_slow'), 3500); }
             }
             if (walk) walkUpdate(dt);
+            else if (deco) decoCam();
             else {
                 controls.update();
                 // 땅(바다는 수면) 위로 붙잡는다 — 산 속·바다 밑으로 꺼지지 않게
@@ -1614,7 +1788,7 @@
                 const gy = Math.max(d0 <= PL ? 0.6 : WT(cx, cz), SEA_Y) + 0.8;
                 if (camera.position.y < gy) { camera.position.y = gy; camera.lookAt(controls.target); }
             }
-            { const tt = now / 1000; giftsG.children.forEach(g => { if (g.userData.anim) g.userData.anim(tt); }); }   // 등불·별·맷돌…
+            { const tt = now / 1000; giftsG.children.forEach(g => { if (g.userData.anim) g.userData.anim(tt); }); decoG.children.forEach(g => { if (g.userData.anim) g.userData.anim(tt); }); }   // 등불·별·맷돌·분수…
             skyDome.position.copy(camera.position);
             glints.position.set(camera.position.x, camera.position.y - 6, camera.position.z);
             if (!reduce) {
