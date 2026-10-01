@@ -1489,7 +1489,7 @@
         // ══ 🛠️ 꾸미기 (2026-10-01) — 예물과 꾸밈 아이템을 끌어서 놓고, 돌리고, 보관함에 넣는다 ══
         //    사용자: "아무 데나 끌어서 놓되 꾸미기 전용 화면에 들어가게". 걷기·행렬과 따로 — 위에서 비스듬히 내려다보는 카메라.
         //    물건을 끌면 옮기고, 빈 곳을 끌면 화면이 움직이고, 두 손가락은 확대·돌리기. 마칠 때 바뀐 것만 저장(_njDecoSave)
-        const DECO_V = '20261001k';   // models/decor/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/decor.py)
+        const DECO_V = '20261001l';   // models/decor/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/decor.py)
         const decoCache = {};
         function loadDecor(k) {
             if (!decoCache[k]) decoCache[k] = (async () => {
@@ -1810,6 +1810,8 @@
             if (it.kind === 'set') return (kindOf(it) === 'big' ? '🏞️ ' : '🧩 ') + (typeof _njSetName === 'function' ? _njSetName(it.k) : it.k);
             const d = (typeof NJ_DECOR !== 'undefined') ? NJ_DECOR.find(x => x.k === it.k) : null; return d ? (typeof _njDecorName === 'function' ? _njDecorName(d) : d.ko) : it.k;
         };
+        const setOfK = k => { const d = (typeof NJ_DECOR !== 'undefined') ? NJ_DECOR.find(v => v.k === k) : null; return d && d.set ? d.set : null; };
+        const partNote = k => { const sk = setOfK(k); return sk && typeof _njSetName === 'function' ? T('deco_part_of', { name: esc2(_njSetName(sk)) }) : ''; };   // 「🧩 양 우리 세트의 하나」
         const asmReady = () => [...((typeof NJ_BIG !== 'undefined' && typeof _njBigPick === 'function') ? Object.keys(NJ_BIG).filter(k => _njBigPick(k)) : []),   // 큰 세트가 먼저
             ...((typeof NJ_SETS !== 'undefined' && typeof _njSetPick === 'function') ? Object.keys(NJ_SETS).filter(k => _njSetPick(k)) : [])];
         const decoObjs = () => [...giftsG.children, ...decoG.children, ...setG.children].filter(o => o.userData.item);
@@ -1819,8 +1821,8 @@
         function decoRender() {
             const it = deco.sel && deco.sel.userData.item;
             const ready = asmReady();
-            decoBar.innerHTML = (it ? `<div class="nj3d-deco-sel"><b>${esc2(decoName(it))}</b>
-                    <button data-a="rot">${T('deco_rotate')}</button>${it.kind === 'set' ? `<button data-a="dis">${T('deco_disasm')}</button>` : ''}<button data-a="stash">${T('deco_stash')}</button>${it.kind === 'decor' && typeof _njDecorSellPrice === 'function' ? `<button data-a="sell" class="sell">${T('deco_sell', { n: _njDecorSellPrice(it.k).toLocaleString() })}</button>` : ''}</div>`
+            decoBar.innerHTML = (it ? `<div class="nj3d-deco-sel"><b>${esc2(decoName(it))}${it.kind === 'decor' && partNote(it.k) ? `<small>${partNote(it.k)}</small>` : ''}</b>
+                    <button data-a="rot">${T('deco_rotate')}</button>${it.kind === 'set' ? `<button data-a="dis">${T('deco_disasm')}</button>` : ''}<button data-a="stash">${T('deco_stash')}</button>${it.kind === 'decor' && typeof _njDecorSellPrice === 'function' ? `<button data-a="sell" class="sell">${T('deco_sell', { n: _njDecorSellPrice(it.k).toLocaleString() })}</button>` : ''}${ready.length ? `<button data-a="asm" class="asm-mini" title="${T('deco_asm_title')}">🧩</button>` : ''}</div>`
                     : ready.length ? `<button class="nj3d-deco-asm" data-a="asm">${T('deco_asm_ready', { name: _njSetName(ready[0]) + (ready.length > 1 ? ` +${ready.length - 1}` : '') })}</button>`
                     : `<div class="nj3d-deco-tip">${T('deco_tip')}</div>`)
                 + `<div class="nj3d-deco-row"><button data-a="bag">${T('deco_bag', { n: deco.stash.length })}</button><button data-a="shop">${T('deco_shop')}</button><button data-a="done" class="done">${T('deco_done')}</button></div>`;
@@ -1829,7 +1831,7 @@
             decoPanel.hidden = false;
             if (kind === 'bag') {
                 decoPanel.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button><div class="nj3d-offer-head">${T('deco_bag_title')}</div>`
-                    + (deco.stash.length ? `<div class="nj3d-offer-list">${deco.stash.map((s, i) => `<div class="nj3d-offer-row"><div><b>${esc2(decoName(s))}</b><span>${s.kind === 'gift' ? T('deco_kind_gift') : s.kind === 'set' ? T('deco_kind_set') : T('deco_kind_decor')}</span></div><span class="nj3d-bag-btns">${s.kind === 'decor' && typeof _njDecorSellPrice === 'function' ? `<button class="sell" data-sell="${i}">${T('deco_sell', { n: _njDecorSellPrice(s.k).toLocaleString() })}</button>` : ''}<button data-i="${i}">${T('deco_place')}</button></span></div>`).join('')}</div>`
+                    + (deco.stash.length ? `<div class="nj3d-offer-list">${deco.stash.map((s, i) => `<div class="nj3d-offer-row"><div><b>${esc2(decoName(s))}</b><span>${s.kind === 'gift' ? T('deco_kind_gift') : s.kind === 'set' ? T('deco_kind_set') : (partNote(s.k) || T('deco_kind_decor'))}</span></div><span class="nj3d-bag-btns">${s.kind === 'decor' && typeof _njDecorSellPrice === 'function' ? `<button class="sell" data-sell="${i}">${T('deco_sell', { n: _njDecorSellPrice(s.k).toLocaleString() })}</button>` : ''}<button data-i="${i}">${T('deco_place')}</button></span></div>`).join('')}</div>`
                         : `<div class="nj3d-offer-intro">${T('deco_bag_empty')}</div>`);
                 decoPanel.querySelectorAll('button[data-sell]').forEach(b => b.onclick = () => {
                     if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = T('deco_sell_sure'); return; }
@@ -1845,13 +1847,13 @@
                     const obj = rec ? (s.kind === 'gift' ? placeGift(put) : s.kind === 'set' ? placeSet(put) : placeDecor(put)) : null;
                     if (obj) { decoTouch(obj); decoSel(obj); }
                 });
-            } else {
+            } else if (kind === 'shop') {
                 const gems = Number(typeof myGems !== 'undefined' ? myGems : 0), list = (typeof NJ_DECOR !== 'undefined') ? NJ_DECOR : [];
                 decoPanel.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button><div class="nj3d-offer-head">${T('deco_shop_title')}</div>
                     <div class="nj3d-offer-have">💎 ${gems.toLocaleString()}</div>
                     ${(() => {   // 꾸밈 / 컨셉 → 세트로 묶어서, 세트마다 몇 가지 모았는지
                         const own = k => ((typeof njDecor !== 'undefined' && njDecor) || []).filter(v => v.k === k && !v.sold).length;
-                        const row = d => `<div class="nj3d-offer-row"><div><b>${esc2(typeof _njDecorName === 'function' ? _njDecorName(d) : d.ko)}</b>${own(d.k) ? `<span>${T('deco_owned', { n: own(d.k) })}</span>` : ''}</div>${gems >= d.cost
+                        const row = d => `<div class="nj3d-offer-row"><div><b>${esc2(typeof _njDecorName === 'function' ? _njDecorName(d) : d.ko)}</b>${d.set ? `<span>${partNote(d.k)}</span>` : ''}${own(d.k) ? `<span>${T('deco_owned', { n: own(d.k) })}</span>` : ''}</div>${gems >= d.cost
                             ? `<button data-k="${d.k}">💎 ${d.cost.toLocaleString()}</button>` : `<span class="nj3d-offer-lock">💎 ${d.cost.toLocaleString()}</span>`}</div>`;
                         let h = `<div class="nj3d-shop-sec">${T('deco_shop_plain')}</div><div class="nj3d-offer-list">${list.filter(d => !d.set).map(row).join('')}</div>`;
                         ((typeof NJ_CONCEPTS !== 'undefined') ? NJ_CONCEPTS : []).forEach(c => {
@@ -1866,6 +1868,10 @@
                         return h;
                     })()}`;
                 decoPanel.querySelectorAll('button[data-k]').forEach(b => b.onclick = () => {
+                    if (b.dataset.sure !== '1') {   // 정말 살까요 — 한 번 더 눌러야 산다(10/1 사용자)
+                        decoPanel.querySelectorAll('button[data-k]').forEach(o => { if (o !== b && o.dataset.sure === '1') { o.dataset.sure = ''; o.textContent = o.dataset.label; o.classList.remove('sure'); } });
+                        b.dataset.label = b.textContent; b.dataset.sure = '1'; b.textContent = T('deco_buy_sure'); b.classList.add('sure'); return;
+                    }
                     const [x, z] = decoSpot(deco.tgt.x, deco.tgt.z, decoExt('decor', b.dataset.k, 0));
                     const it = typeof _njDecorBuy === 'function' ? _njDecorBuy(b.dataset.k, x, z) : null;
                     if (!it) { showHint(T('deco_need_gems'), 2000); return; }
@@ -1874,8 +1880,24 @@
                     if (obj) decoSel(obj);
                 });
             }
+            if (kind === 'asm') {   // 조립 확인 — 어디 있던 낱개가 몇 개 모이는지
+                const list = asmReady();
+                decoPanel.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button><div class="nj3d-offer-head">${T('deco_asm_title')}</div>
+                    <div class="nj3d-offer-intro">${T('deco_asm_note')}</div>` + list.map(sk => {
+                        const big = typeof NJ_BIG !== 'undefined' && !!NJ_BIG[sk], pick = (big ? _njBigPick(sk) : _njSetPick(sk)) || [];
+                        const out = pick.filter(v => !v.st).length, inBag = pick.length - out;
+                        return `<div class="nj3d-asm-card"><b>${big ? '🏞️' : '🧩'} ${esc2(_njSetName(sk))}</b>
+                            <span>${T(big ? 'deco_asm_count_big' : 'deco_asm_count', { out, bag: inBag })}</span>
+                            <div class="nj3d-asm-btns"><button data-a="asm-ok" data-k="${sk}">${T('deco_asm_go')}</button><button data-a="asm-no">${T('deco_cancel')}</button></div></div>`;
+                    }).join('');
+                decoPanel.querySelectorAll('button[data-a="asm-ok"], button[data-a="asm-no"]').forEach(b => b.onclick = () => {
+                    if (b.dataset.a === 'asm-no') { decoPanel.hidden = true; return; }
+                    decoPanel.hidden = true; decoBar.dispatchEvent(new CustomEvent('asm-ok', { detail: b.dataset.k }));
+                });
+            }
             const x = decoPanel.querySelector('.nj3d-fruit-x'); if (x) x.onclick = () => { decoPanel.hidden = true; };
         }
+        decoBar.addEventListener('asm-ok', e => { const fake = document.createElement('button'); fake.dataset.a = 'asm-ok'; fake.dataset.k = e.detail; decoBar.appendChild(fake); fake.click(); fake.remove(); });
         decoBar.addEventListener('click', e => {
             const b = e.target.closest('button'); if (!b || !deco) return;
             const a = b.dataset.a;
@@ -1893,9 +1915,10 @@
                 else { const parts = typeof _njSetDisassemble === 'function' ? _njSetDisassemble(id) : []; o.parent.remove(o); decoSel(null); parts.forEach(v => placeDecor(v)); }
                 showHint(T('deco_disasm_done'), 2000);
             }
-            else if (a === 'asm') {   // 🧩 조립 — 화면 가운데에 세트로
-                const ready = asmReady(); if (!ready.length) return;
-                const sk = ready[0], big = typeof NJ_BIG !== 'undefined' && !!NJ_BIG[sk], [x, z] = decoSpot(deco.tgt.x, deco.tgt.z, decoExt(big ? 'big' : 'set', sk, 0), null, true);
+            else if (a === 'asm') decoPanelShow('asm');   // 🧩 조립 — 먼저 확인 창
+            else if (a === 'asm-ok') {   // 🧩 조립 — 화면 가운데에 세트로
+                const ready = asmReady(); if (!ready.includes(b.dataset.k)) return;
+                const sk = b.dataset.k, big = typeof NJ_BIG !== 'undefined' && !!NJ_BIG[sk], [x, z] = decoSpot(deco.tgt.x, deco.tgt.z, decoExt(big ? 'big' : 'set', sk, 0), null, true);
                 const r = big ? _njBigAssemble(sk, x, z) : _njSetAssemble(sk, x, z); if (!r) return;
                 (big ? setG : decoG).children.filter(o => o.userData.item && r.parts.includes(o.userData.item.id)).forEach(o => { deco.touched.delete(o.userData.item.id); o.parent.remove(o); });
                 deco.stash = deco.stash.filter(st => !r.parts.includes(st.id));

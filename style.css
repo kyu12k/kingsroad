@@ -7063,6 +7063,16 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .nj3d-decobar button.nj3d-deco-asm { width: 100%; background: linear-gradient(90deg, #f6d77a, #f1c40f); color: #2c3e50; font-weight: 800; }
 .nj3d-shop-sec { margin: 12px 0 2px; color: #f6d77a; font-weight: 800; font-size: 0.86rem; }
 .nj3d-shop-sec span { color: #b9a9c9; font-weight: 600; font-size: 0.72rem; margin-left: 4px; }
+.nj3d-deco-sel b small { display: block; color: #c9d6e6; font-weight: 600; font-size: 0.7rem; }
+.nj3d-decobar button.asm-mini { background: linear-gradient(90deg, #f6d77a, #f1c40f); color: #2c3e50; padding: 8px 10px; }
+.nj3d-decopanel button[data-k].sure { background: #f1c40f; color: #2c3e50; }
+.nj3d-offer-row > div > span + span { margin-left: 6px; }
+.nj3d-asm-card { margin-top: 10px; padding: 10px; border-radius: 10px; background: rgba(246, 215, 122, 0.1); display: flex; flex-direction: column; gap: 6px; }
+.nj3d-asm-card b { color: #f6d77a; }
+.nj3d-asm-card span { color: #d9cfe8; font-size: 0.8rem; }
+.nj3d-asm-btns { display: flex; gap: 6px; }
+.nj3d-asm-btns button { flex: 1; border: none; border-radius: 9px; padding: 8px; font: 800 0.84rem 'Pretendard', sans-serif; cursor: pointer; background: rgba(255,255,255,0.12); color: #e6eef8; }
+.nj3d-asm-btns button[data-a="asm-ok"] { background: #f1c40f; color: #2c3e50; }
 .nj3d-shop-big { margin: 6px 0 2px; padding: 6px 8px; border-radius: 9px; background: rgba(246, 215, 122, 0.12); color: #f6d77a; font-size: 0.74rem; font-weight: 700; }
 .nj3d-shop-set { margin: 8px 0 0; color: #e6eef8; font-weight: 700; font-size: 0.8rem; }
 .nj3d-shop-set span { color: #b9c6d6; font-weight: 600; font-size: 0.72rem; margin-left: 4px; }
