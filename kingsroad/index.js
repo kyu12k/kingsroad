@@ -1355,6 +1355,8 @@ exports.seaWeekly = onSchedule({ schedule: '0 6 * * 1', timeZone: 'Asia/Seoul', 
 //  guideLinks/{초심자tag} — 동행 하나: pending → active → graduated. 졸업한 초심자는 다시 신청할 수 없다(한 사람이 한 번)
 // 졸업 = 동행 뒤 망각의 고난 한 장 통과 + 4주 연속 매주 3일 이상(동행 시작일부터 7일 묶음). 쓰기는 전부 이 함수들만(규칙 write: false).
 const GUIDE_WEEK_MS = 7 * 86400000, GUIDE_GRAD_WEEKS = 4, GUIDE_WEEK_DAYS = 3, GUIDE_MEET_REQ_MS = 2 * 86400000;
+const GUIDE_MAX_ACTIVE = 5;   // 한 인도자가 동시에 함께하는 초심자 — 받아만 두고 못 챙기지 않게(사용자 10/1). 졸업한 사람은 세지 않는다
+async function guideActiveCount(gTag) { return (await db.collection('guideLinks').where('guide', '==', gTag).where('status', '==', 'active').get()).size; }
 const _gNick = (v) => String(v || '').slice(0, 20);
 // 연속으로 3일 이상인 주(묶음) 수 — 지금 묶음이 이미 3일이면 거기까지, 아니면 바로 앞 묶음까지(아직 끊긴 게 아니다)
 // 기기는 묶음을 6시 날짜로 세서 서버의 시각 계산과 하루 어긋날 수 있다 → 지금 묶음과 그다음 묶음 둘 다에서 세어 큰 쪽
@@ -1394,6 +1396,7 @@ exports.guideRequest = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     await enforceRateLimit(request.auth.uid, 'guideRequest', { maxCalls: 10, windowMs: 86400000 });
     const gSnap = await db.collection('guides').doc(gTag).get();
     if (!gSnap.exists || !gSnap.data().passedAt) return { ok: false, why: 'notGuide' };
+    if (await guideActiveCount(gTag) >= GUIDE_MAX_ACTIVE) return { ok: false, why: 'full' };
     const ref = db.collection('guideLinks').doc(String(myTag));
     const cur = await ref.get();
     if (cur.exists && cur.data().status !== 'pending') return { ok: false, why: cur.data().status };   // active·graduated
@@ -1410,6 +1413,7 @@ exports.guideRespond = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     const snap = await ref.get();
     if (!snap.exists || snap.data().guide !== String(myTag) || snap.data().status !== 'pending') return { ok: false };
     if (!accept) { await ref.delete(); return { ok: true, accepted: false }; }
+    if (await guideActiveCount(String(myTag)) >= GUIDE_MAX_ACTIVE) return { ok: false, why: 'full' };
     await ref.update({ status: 'active', since: Date.now(), prog: {}, meets: [] });
     return { ok: true, accepted: true };
 });

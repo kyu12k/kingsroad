@@ -29675,7 +29675,7 @@ async function checkFriendEvents() {
    - 졸업하면 인도자의 거룩한 성 나무에 빨간 열매(나무마다 2D 3개까지 보이고, 수 제한은 없다)
    - 약속은 넣지 않는다(강제성). 대신 진행·함께한 날을 **보여 주기만** 해서 "만나서 돕는 게 좋겠다"를 은근히
    서버: kingsroad guidePass·guideRequest·guideRespond·guideLeave·guideProgress·guideMeet·guideGraduate (docs/인도자와-동행.md) */
-const GUIDE_WEEK_MS = 7 * 86400000, GUIDE_GRAD_WEEKS = 4, GUIDE_WEEK_DAYS = 3;
+const GUIDE_WEEK_MS = 7 * 86400000, GUIDE_GRAD_WEEKS = 4, GUIDE_WEEK_DAYS = 3, GUIDE_MAX_ACTIVE = 5;   // 동시에 함께하는 초심자 5명까지(서버도 같은 값)
 let _guideLink = null, _guideMine = [], _guideBusy = false;          // 서버에서 읽은 내 동행 · 내가 인도하는 동행들
 
 function _guideDayTs(d) { const [y, m, dd] = d.split('-').map(Number); return new Date(y, m - 1, dd, 12).getTime(); }
@@ -29834,20 +29834,17 @@ function _guideNudgeHtml(active) {
     });
     const avg = a => (a.reduce((s, v) => s + v, 0) / a.length).toFixed(1);
     if (met.length >= 2 && not.length >= 2) return `<div class="guide-nudge">📊 함께한 주엔 평균 <b>${avg(met)}일</b>, 아닌 주엔 <b>${avg(not)}일</b> 암송했어요</div>`;
-    return `<div class="guide-nudge">💡 인도자가 가장 크게 돕는 길은 만나서 함께 해 보는 거예요. 막힌 곳을 옆에서 같이 풀어 주세요.</div>`;
+    return `<div class="guide-nudge">💡 만나서 함께 해 볼 때 가장 큰 힘이 돼요</div>`;
 }
 /* ⓘ 인도자와 동행이란 — 처음 열 땐 펼쳐 두고, 한 번 본 뒤로는 접어 둔다(눌러서 다시) */
 function _guideHelpHtml() {
     let seen = false; try { seen = localStorage.getItem('kingsRoad_guideHelpSeen') === '1'; localStorage.setItem('kingsRoad_guideHelpSeen', '1'); } catch (e) {}
-    const item = (icon, title, body) => `<div class="guide-help-item"><b>${icon} ${title}</b><span>${body}</span></div>`;
+    // 한 항목 = 한 줄(10/1 사용자: "텍스트가 많아 집중해야 읽힌다") — 훑어보면 들어오게
+    const rows = [['🧭', '인도자', '새 친구 곁에서 함께 해 주는 사람'], ['📝', '되는 법', '시험을 다 맞히면 코드가 생겨요'],
+        ['🤝', '동행', '코드로 신청 → 인도자가 승낙'], ['📅', '함께한 날', '만나면 둘이 함께 눌러요'],
+        ['🌱', '졸업', '망각의 고난 한 장 + 4주 연속 주 3일'], ['🍎', '열매', '졸업하면 인도자 나무에 빨간 열매']];
     return `<details class="guide-help"${seen ? '' : ' open'}><summary>ⓘ 인도자와 동행이란?</summary>
-        ${item('🧭', '인도자', '먼저 시작한 친구가 새로 시작하는 친구 곁에서 게임을 알려 주고, 만나서 함께 해 보는 사람이에요. 꾸준히 하지 못하고 있는 성도라면 누구나 동행을 받을 수 있어요.')}
-        ${item('📝', '인도자 되기', '누구나 시험을 다 맞히면 인도자가 돼요. 틀린 문제는 해설을 보고 다시 풀어요 — 인도자가 알아야 할 것을 익히는 시간이에요.')}
-        ${item('🤝', '동행 시작', '초심자가 인도자의 코드를 넣어 신청하고, 인도자가 승낙하면 시작돼요. 처음 만난 자리에서 홈 화면에 추가하기 · 알림 켜기 · 첫 절 외우기를 함께 해 보세요.')}
-        ${item('📅', '함께한 날', '만났을 때 한 사람이 「오늘 함께했어요」를 누르고 다른 사람이 확인하면 남아요. 일주일에 한 번이라도 만나 함께 해 보는 시간이 가장 큰 힘이 돼요.')}
-        ${item('🌱', '정착 졸업', '동행한 뒤 <b>망각의 고난 한 장</b>(80% 이상)과 <b>4주 연속, 매주 3일 이상</b> 암송을 채우면 졸업해요. 한 주를 놓쳐도 괜찮아요 — 4주를 처음부터 다시 세요.')}
-        ${item('🍎', '빨간 열매', '초심자가 졸업하면 인도자의 거룩한 성 나무에 빨간 열매가 하나 열려요. 열매를 보면 몇 명과 함께 정착했는지 알 수 있어요.')}
-    </details>`;
+        <div class="guide-help-grid">${rows.map(([i, k, v]) => `<span>${i}</span><b>${k}</b><span>${v}</span>`).join('')}</div></details>`;
 }
 async function _renderGuideScreen(fetch) {
     const body = document.getElementById('guide-screen-body'); if (!body) return;
@@ -29857,36 +29854,35 @@ async function _renderGuideScreen(fetch) {
     const L = _guideLink;
     h += `<div class="friend-section-title">🚶 나의 동행</div>`;
     if (!L) {
-        h += `<div class="guide-intro">먼저 시작한 친구가 곁에서 도와줘요. 인도자에게 코드를 받아 넣어 보세요.</div>
+        h += `<div class="guide-intro">인도자에게 받은 코드를 넣어 보세요.</div>
             <div class="friend-add-row"><input id="guide-code-input" class="friend-tag-input" placeholder="인도자 코드 (#ABCD12)" maxlength="7" />
             <button class="friend-add-btn" onclick="_guideRequest(this)">신청</button></div>`;
     } else if (L.status === 'pending') {
         h += `<div class="guide-card"><div class="guide-card-head"><b>${_gEsc(L.gNick || L.guide)}</b><span class="guide-sub">인도자 #${_gEsc(L.guide)}</span></div>
-            <div class="guide-intro">신청했어요. 인도자가 승낙하면 동행이 시작돼요.</div>
+            <div class="guide-intro">승낙을 기다리는 중이에요.</div>
             <div class="guide-actions"><button class="guide-btn tiny" onclick="_guideLeave(null, this)">신청 취소</button></div></div>`;
     } else if (L.status === 'active') {
         h += _guideCardHtml(L, false);
-        h += `<div class="guide-rule">정착 졸업: 동행한 뒤 <b>망각의 고난 한 장</b>(80% 이상) + <b>4주 연속, 매주 3일 이상</b> 암송. 한 주를 놓치면 4주를 처음부터 다시 세요.</div>`;
+        h += `<div class="guide-rule">한 주를 놓쳐도 괜찮아요 — 4주를 처음부터 다시 세요.</div>`;
     } else if (L.status === 'graduated') {
         h += `<div class="guide-card grad">🎉 <b>${_gEsc(L.gNick || '인도자')}</b>님과 함께 킹스로드에 정착했어요${L.gradAt ? ` · ${_tsTo6AMDateStr(L.gradAt)}` : ''}</div>`;
     }
     // ── 인도자 ──
     h += `<div class="friend-section-title">🧭 인도자</div>`;
     if (!guideInfo.passedAt) {
-        h += `<div class="guide-intro">인도자는 새로 시작하는 친구 곁에서 게임을 알려 주고, 만나서 함께 해 보는 사람이에요.
-            누구나 될 수 있어요. 킹스로드를 얼마나 아는지 확인하는 시험을 다 맞히면 인도자 코드가 생겨요.</div>
+        h += `<div class="guide-intro">누구나 될 수 있어요. 시험을 다 맞히면 코드가 생겨요.</div>
             <button class="guide-btn main" onclick="openGuideQuiz()">📝 인도자 시험 보기</button>`;
     } else {
         const pend = _guideMine.filter(x => x.status === 'pending'), act = _guideMine.filter(x => x.status === 'active');
         h += `<div class="guide-code">내 인도자 코드 <b>#${_gEsc(myTag)}</b> <button class="guide-btn tiny" onclick="_guideCopyCode(this)">복사</button></div>
-            <div class="guide-grads">🍎 함께 정착한 사람 <b>${guideInfo.grads || 0}</b>명</div>`;
+            <div class="guide-grads">🍎 함께 정착한 사람 <b>${guideInfo.grads || 0}</b>명 · <span class="guide-dim">동행 ${act.length}/${GUIDE_MAX_ACTIVE}</span></div>`;
         pend.forEach(x => {
             h += `<div class="guide-card req"><div class="guide-card-head"><b>${_gEsc(x.bNick || x.beginner)}</b><span class="guide-sub">#${_gEsc(x.beginner)} · 동행 신청</span></div>
-                <div class="guide-actions"><button class="guide-btn main" onclick="_guideRespond('${x.beginner}', true, this)">승낙</button>
+                <div class="guide-actions">${act.length >= GUIDE_MAX_ACTIVE ? `<span class="guide-dim">동행이 ${GUIDE_MAX_ACTIVE}명 꽉 찼어요</span>` : `<button class="guide-btn main" onclick="_guideRespond('${x.beginner}', true, this)">승낙</button>`}
                 <button class="guide-btn tiny" onclick="_guideRespond('${x.beginner}', false, this)">거절</button></div></div>`;
         });
         if (act.length) { h += _guideNudgeHtml(act); act.forEach(x => { h += _guideCardHtml(x, true); }); }
-        else if (!pend.length) h += `<div class="guide-intro">아직 동행이 없어요. 새로 시작하는 친구를 만나면 코드를 알려 주고, 그 자리에서 함께 시작해 보세요.</div>`;
+        else if (!pend.length) h += `<div class="guide-intro">새 친구를 만나면 코드를 알려 주세요.</div>`;
         h += `<button class="guide-btn ghost" onclick="openGuideQuiz(true)">📝 시험 다시 보기 (복습)</button>`;
     }
     body.innerHTML = h;
@@ -29907,10 +29903,10 @@ function _guideRequest(btn) {
     if (!v) { showGemToast(0, '인도자 코드를 넣어 주세요.', true); return; }
     _guideAct(btn, 'guideRequest', { guideTag: v, nick: myNickname }, r => {
         if (r && r.ok) showGemToast(0, '🧭 동행을 신청했어요');
-        else showGemToast(0, r && r.why === 'notGuide' ? '인도자 코드가 아니에요. 다시 확인해 주세요.' : r && r.why === 'self' ? '내 코드는 넣을 수 없어요.' : '지금은 신청할 수 없어요.', true);
+        else showGemToast(0, r && r.why === 'notGuide' ? '인도자 코드가 아니에요. 다시 확인해 주세요.' : r && r.why === 'self' ? '내 코드는 넣을 수 없어요.' : r && r.why === 'full' ? `이 인도자는 이미 ${GUIDE_MAX_ACTIVE}명과 함께하고 있어요.` : '지금은 신청할 수 없어요.', true);
     });
 }
-function _guideRespond(tag, accept, btn) { _guideAct(btn, 'guideRespond', { beginnerTag: tag, accept }, r => { if (r && r.ok && accept) showGemToast(0, '🤝 동행이 시작됐어요'); }); }
+function _guideRespond(tag, accept, btn) { _guideAct(btn, 'guideRespond', { beginnerTag: tag, accept }, r => { if (r && r.ok && accept) showGemToast(0, '🤝 동행이 시작됐어요'); else if (r && r.why === 'full') showGemToast(0, `동행은 ${GUIDE_MAX_ACTIVE}명까지예요.`, true); }); }
 function _guideLeave(tag, btn) {
     if (btn && btn.dataset.sure !== '1') { btn.dataset.sure = '1'; btn.textContent = '정말요? 한 번 더 눌러 주세요'; return; }
     _guideAct(btn, 'guideLeave', tag ? { beginnerTag: tag } : {}, () => { if (!tag) guideRel = { g: '', gn: '', st: '', since: 0, days: [] }; saveGameData(); });
