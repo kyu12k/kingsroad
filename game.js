@@ -7917,6 +7917,36 @@ const NJ_DECOR = [
     { k: 'crates',     ko: '나무 궤짝',   en: 'Wooden crates',  cost: 3000, set: 'village', sea: true },
     { k: 'gulls',      ko: '갈매기 한 쌍', en: 'Pair of gulls', cost: 5000, set: 'village', sea: true },
     { k: 'mender',     ko: '그물 깁는 어부', en: 'Fisherman mending nets', cost: 8000, set: 'village', sea: true },
+    // 🌾 추수하는 들판 ① 밀밭과 일꾼 (룻 2)
+    { k: 'wheatfield', ko: '익은 밀밭', en: 'Ripe wheat field', cost: 8000, set: 'field' },
+    { k: 'reaper',  ko: '낫 든 일꾼', en: 'Reaper with a sickle', cost: 8000, set: 'field' },
+    { k: 'gleaner', ko: '이삭 줍는 여인', en: 'Gleaner (Ruth)', cost: 8000, set: 'field' },
+    { k: 'boaz',    ko: '밭 주인 보아스', en: 'Boaz, owner of the field', cost: 8000, set: 'field' },
+    { k: 'sheaves', ko: '곡식단', en: 'Sheaves', cost: 3000, set: 'field' },
+    { k: 'gleanbasket', ko: '이삭 바구니', en: 'Basket of gleanings', cost: 3000, set: 'field' },
+    { k: 'meal',    ko: '새참 (떡과 초)', en: 'Meal of bread and vinegar', cost: 4000, set: 'field' },
+    { k: 'booth',   ko: '그늘막', en: 'Shade booth', cost: 5000, set: 'field' },
+    { k: 'boundarystone', ko: '경계석', en: 'Boundary stone', cost: 3000, set: 'field' },
+    // 🌾 추수 ② 타작마당 (룻 3 · 신 25:4)
+    { k: 'threshingfloor', ko: '타작마당', en: 'Threshing floor', cost: 6000, set: 'thresh' },
+    { k: 'ox', ko: '소와 타작 썰매', en: 'Ox with threshing sled', cost: 10000, set: 'thresh' },
+    { k: 'winnower', ko: '키질하는 사람', en: 'Winnower', cost: 8000, set: 'thresh' },
+    { k: 'grainheap', ko: '곡식 더미', en: 'Heap of grain', cost: 4000, set: 'thresh' },
+    { k: 'restboaz', ko: '곡식 더미 곁에 누운 보아스', en: 'Boaz lying by the grain', cost: 6000, set: 'thresh' },
+    { k: 'strawpile', ko: '짚더미', en: 'Straw pile', cost: 3000, set: 'thresh' },
+    { k: 'sacks', ko: '곡식 자루', en: 'Sacks of grain', cost: 3000, set: 'thresh' },
+    { k: 'measure', ko: '됫박과 체', en: 'Measure and sieve', cost: 3000, set: 'thresh' },
+    { k: 'winnowtools', ko: '키와 쇠스랑', en: 'Winnowing fan and fork', cost: 3000, set: 'thresh' },
+    // 🌾 추수 ③ 곳간과 집 (마 13:30 · 룻 4)
+    { k: 'granary', ko: '돌 곳간', en: 'Stone granary', cost: 12000, set: 'barn' },
+    { k: 'cart', ko: '곡식 수레', en: 'Cart of sheaves', cost: 8000, set: 'barn' },
+    { k: 'donkey', ko: '짐 진 나귀', en: 'Laden donkey', cost: 8000, set: 'barn' },
+    { k: 'grinder', ko: '맷돌 가는 여인', en: 'Woman at the hand mill', cost: 8000, set: 'barn' },
+    { k: 'oven', ko: '진흙 화덕과 떡', en: 'Clay oven with bread', cost: 5000, set: 'barn' },
+    { k: 'storejars', ko: '저장 항아리', en: 'Storage jars', cost: 4000, set: 'barn' },
+    { k: 'hens', ko: '닭 세 마리', en: 'Three hens', cost: 5000, set: 'barn' },
+    { k: 'bethwell', ko: '베들레헴 우물', en: 'Well of Bethlehem', cost: 6000, set: 'barn' },
+    { k: 'lowwall', ko: '낮은 돌담', en: 'Low stone wall', cost: 3000, set: 'barn' },
 ];
 /* 🧩 세트 (10/1) — 레고처럼 낱개 → 세트 → 큰 세트(사용자). 한 세트의 낱개를 다 가지면 「조립」: 정해진 배치로 한 덩어리가 되어 연출이 돈다.
    「해체」하면 다시 낱개. 컨셉 하나에 세트 여럿, 컨셉의 세트를 다 조립하면 큰 세트(아직 — 세트 ②③을 만든 뒤).
@@ -7924,8 +7954,24 @@ const NJ_DECOR = [
 const NJ_CONCEPTS = [
     { k: 'shepherd', ko: '🐑 목자의 언덕', en: '🐑 Shepherd’s hill', ref: '시 23 · 요 10', sets: ['pen', 'camp', 'meadow'], big: 'hill' },
     { k: 'galilee', ko: '🎣 갈릴리 바닷가', en: '🎣 Shore of Galilee', ref: '요 21 · 겔 47:10', sets: ['gboat', 'fire', 'village'], big: 'tiberias', sea: true },   // 바다 꾸미기에서만
+    { k: 'harvest', ko: '🌾 추수하는 들판', en: '🌾 Harvest field', ref: '룻 2 · 계 14:15', sets: ['field', 'thresh', 'barn'], big: 'bethlehem' },
 ];
 const NJ_SETS = {
+    // 🌾 추수 ① 밀밭과 일꾼 (룻 2:3 「베는 자를 따라 밭에서 이삭을 줍는데」) — 뒤에 밀밭, 앞(+z)에 베는 일꾼과 그 뒤를 따라 줍는 룻, 왼쪽 그늘막에 새참, 보아스가 일꾼들을 축복한다
+    field: { ko: '밀밭과 일꾼', en: 'Wheat field and reapers', concept: 'harvest', parts: ['wheatfield', 'reaper', 'gleaner', 'boaz', 'sheaves', 'gleanbasket', 'meal', 'booth', 'boundarystone'], box: [2.4, 2.0, 0.6],
+        layout: { wheatfield: [0, -0.3, 0], reaper: [-0.3, 0.32, Math.PI / 2], gleaner: [0.28, 0.48, Math.PI / 2], gleanbasket: [0.46, 0.62, 0], sheaves: [0.95, -0.05, 0.3],
+            booth: [-0.92, 0.45, Math.PI / 2], meal: [-0.92, 0.45, Math.PI / 2], boaz: [-0.5, 0.78, 1.0], boundarystone: [0.85, -0.72, 0] },
+        animals: [], area: [0, 0, 0, 0] },
+    // 🌾 추수 ② 타작마당 (룻 3:2-7 · 신 25:4) — 가운데 둥근 마당을 소가 썰매를 끌고 돈다(circle: 가운데 x, z, 반지름, 빠르기), 오른쪽 앞 키질, 왼쪽 곡식 더미 곁에 보아스가 눕는다
+    thresh: { ko: '타작마당', en: 'Threshing floor', concept: 'harvest', parts: ['threshingfloor', 'ox', 'winnower', 'grainheap', 'restboaz', 'strawpile', 'sacks', 'measure', 'winnowtools'], box: [2.6, 2.2, 0.6],
+        layout: { threshingfloor: [0, -0.1, 0], ox: [0.45, -0.1, 0], winnower: [1.0, 0.5, -Math.PI / 2], grainheap: [-1.0, -0.55, 0], restboaz: [-1.0, 0.08, 0.15],
+            strawpile: [1.0, -0.62, 0], sacks: [-0.55, 0.82, 0], measure: [-0.18, 0.86, 0], winnowtools: [0.5, 0.86, 0] }, circle: [0, -0.1, 0.45, 0.32],
+        animals: [], area: [0, 0, 0, 0] },
+    // 🌾 추수 ③ 곳간과 집 (마 13:30 「곡식은 모아 내 곳간에 넣으라」) — 뒤에 곳간(문이 앞을 본다)과 수레, 앞마당에 맷돌·화덕·닭, 오른쪽 나귀와 우물
+    barn: { ko: '곳간과 집', en: 'Granary and home', concept: 'harvest', parts: ['granary', 'cart', 'donkey', 'grinder', 'oven', 'storejars', 'hens', 'bethwell', 'lowwall'], box: [2.6, 2.2, 0.7],
+        layout: { granary: [-0.55, -0.45, 0], storejars: [-1.05, -0.15, 0], cart: [0.42, -0.42, 0.25], donkey: [1.0, 0.3, Math.PI * 0.9], grinder: [-0.5, 0.5, 0],
+            oven: [0.05, 0.6, 0], hens: [0.48, 0.38, 0], bethwell: [1.1, -0.38, 0], lowwall: [0.5, -0.95, 0] },
+        animals: [], area: [0, 0, 0, 0] },
     pen: { ko: '양 우리', en: 'Sheepfold', concept: 'shepherd', parts: ['penwall', 'pengate', 'sheep', 'blacksheep', 'lamb', 'trough', 'hay'],
         box: [2.7, 2.1, 0.45], layout: { penwall: [0, 0, 0], pengate: [0, 0.9, 0], trough: [-0.5, -0.55, 0], hay: [1.28, 0.5, 0.4] },
         animals: ['sheep', 'blacksheep', 'lamb'], area: [-0.62, 0.62, -0.58, 0.6], spots: [[-0.5, -0.35], [-0.25, -0.38]], follow: { lamb: 'sheep' } },
@@ -7962,6 +8008,19 @@ const NJ_SETS = {
 /* 🏞️ 큰 세트 — 컨셉의 세트를 다 조립하면 하나로(레고 시리즈처럼). 세 세트가 성벽 바깥 띠에 맞게 한 줄로 서고, 큰 연출이 돈다.
    offsets: 세트 자리(큰 세트 안, 1.5배 전) · leads: 연출(이끄는 목자와 양 떼) · path: 연출 길(큰 세트 안 좌표) — nj3d.js bigShow */
 const NJ_BIG = {
+    // 🌾 추수 큰 세트 — 밭 · 타작마당 · 곳간을 한 줄로. 연출: 나귀가 수레를 끌고 곳간을 나서 밭(곡식단)과 타작마당에 들렀다 돌아오면 곳간 문이 열린다 (nj3d.js haulShow)
+    bethlehem: { ko: '베들레헴의 추수', en: 'Harvest at Bethlehem', concept: 'harvest', sets: ['field', 'thresh', 'barn'],
+        // 한 농가로(10/1 사용자: 직렬이다, 목자의 언덕처럼 어우러지게) — 가운데 타작마당을 흙길이 한 바퀴 두르고, 왼쪽에 밀밭, 오른쪽에 곳간(문이 길을 보게 돌림), 뒤에 그늘 나무.
+        // 타작마당의 곡식 더미·누운 보아스·자루는 길 앞쪽에, 짚더미·연장은 뒤쪽에. 곳간 마당 것(맷돌·화덕·닭·우물)은 길 바깥으로(override, 세트 안 좌표)
+        offsets: { field: [-2.4, -0.4, 0], thresh: [0, -0.25, 0], barn: [1.85, -0.35, -Math.PI / 2] }, box: [7.2, 3.6, 1.0],
+        override: { field: { booth: [-0.72, 0.5, Math.PI / 2], meal: [-0.72, 0.5, Math.PI / 2], boaz: [-0.35, 0.82, 1.0] },
+            thresh: { winnower: [1.6, 1.05, -Math.PI / 2], grainheap: [-0.55, 1.4, 0], restboaz: [-1.15, 1.3, 0.15], sacks: [0.35, 1.4, 0], measure: [0.8, 1.35, 0],
+                winnowtools: [0.6, -1.5, 0], strawpile: [-0.6, -1.5, 0] },
+            barn: { hens: [0.7, -0.6, 0], grinder: [0.25, -0.1, Math.PI / 2], oven: [0.95, -0.2, 0], bethwell: [1.25, -0.75, 0], storejars: [-1.05, -0.15, 0] } },
+        extras: [{ k: 'harvestbase', at: [-0.013, -0.137, 0, -0.024] }, { k: 'terebinth', at: [0.0, -1.95, 0] }],
+        haul: { set: 'barn', donkey: 'donkey', cart: 'cart', store: 'granary', speed: 0.45, gap: 0.46, doorOpen: -1.4,
+            path: [[1.12, -0.75], [0.6, -1.3], [-0.6, -1.32], [-1.25, -0.55], [-1.1, 0.35], [0.0, 0.72], [1.1, 0.3]],   /* 큰 세트 안 좌표, 닫힌 길 — harvest.py HARVEST_PATH와 같다 */
+            stops: [[0, 10], [3, 5], [5, 6]] } },   /* 곳간 앞 10초 · 밭의 곡식단 곁 5초 · 타작마당 앞(곡식 더미) 6초 */
     // 🏞️ 갈릴리 큰 세트 — 세 세트를 해안을 따라 한 줄로(+z = 바다). 연출: 배가 나가 밤새 빈 그물 → 오른편에 던지니 가득 → 끌고 와 숯불 곁에 (요 21:3-11, nj3d.js fishShow)
     tiberias: { ko: '디베랴 바닷가', en: 'Shore of Tiberias', concept: 'galilee', sea: true, sets: ['village', 'gboat', 'fire'],
         offsets: { village: [-2.45, 0, 0], gboat: [0, 0, 0], fire: [2.35, 0, 0] }, box: [7.4, 3.2, 1.9],

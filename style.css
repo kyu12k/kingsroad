@@ -7077,6 +7077,19 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .nj3d-asm-btns button { flex: 1; border: none; border-radius: 9px; padding: 8px; font: 800 0.84rem 'Pretendard', sans-serif; cursor: pointer; background: rgba(255,255,255,0.12); color: #e6eef8; }
 .nj3d-asm-btns button[data-a="asm-ok"] { background: #f1c40f; color: #2c3e50; }
 .nj3d-shop-big { margin: 6px 0 2px; padding: 6px 8px; border-radius: 9px; background: rgba(246, 215, 122, 0.12); color: #f6d77a; font-size: 0.74rem; font-weight: 700; }
+.nj3d-shop-tabs { display: flex; gap: 6px; overflow-x: auto; margin: 10px 0 4px; padding-bottom: 2px; scrollbar-width: none; }
+.nj3d-shop-tabs::-webkit-scrollbar { display: none; }
+.nj3d-shop-tabs button { flex: none; border: 1px solid rgba(246, 215, 122, 0.35); background: transparent; color: #e6eef8; border-radius: 999px; padding: 6px 11px; font: 700 0.76rem 'Pretendard', sans-serif; cursor: pointer; }
+.nj3d-shop-tabs button.on { background: #f6d77a; border-color: #f6d77a; color: #2c3e50; }
+.nj3d-shop-fold { margin: 8px 0 0; border-radius: 10px; background: rgba(255, 255, 255, 0.05); }
+.nj3d-shop-fold > summary { list-style: none; cursor: pointer; padding: 10px; display: flex; align-items: center; gap: 8px; color: #e6eef8; font-weight: 700; font-size: 0.82rem; }
+.nj3d-shop-fold > summary::-webkit-details-marker { display: none; }
+.nj3d-shop-fold > summary::after { content: '▸'; color: #b9c6d6; transition: transform 0.15s; }
+.nj3d-shop-fold[open] > summary::after { transform: rotate(90deg); }
+.nj3d-shop-meter { margin-left: auto; width: 52px; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+.nj3d-shop-meter i { display: block; height: 100%; background: #f6d77a; }
+.nj3d-shop-n { color: #b9c6d6; font-size: 0.72rem; font-weight: 700; min-width: 26px; text-align: right; font-variant-numeric: tabular-nums; }
+.nj3d-shop-fold .nj3d-offer-list { padding: 0 8px 8px; }
 .nj3d-shop-set { margin: 8px 0 0; color: #e6eef8; font-weight: 700; font-size: 0.8rem; }
 .nj3d-shop-set span { color: #b9c6d6; font-weight: 600; font-size: 0.72rem; margin-left: 4px; }
 .sea-3d-btn { margin: 0 0 8px; background: linear-gradient(135deg, #7fe6f5, #1fb0c9); color: #06303a; }
