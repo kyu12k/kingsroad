@@ -634,6 +634,13 @@ const LANG = {
         deco_kind_set: '세트',
         deco_owned: '가짐 {n}',
         deco_set_got: '{n}/{m} 모음 · 다 모으면 조립',
+        deco_buy_rest: '🧩 남은 {n}개 한꺼번에 사서 조립 · 💎 {cost}',
+        deco_build_now: '🧩 다 모았어요 — 지금 조립하기',
+        deco_buy_rest_sure: '정말 살까요? 한 번 더 누르면 사서 조립해요',
+        deco_all_got: '🎉 <b>{name}</b> 낱개를 다 모았어요! 지금 조립할까요?',
+        deco_big_ready: '🎉 <b>{name}</b>의 세트를 다 모았어요! 큰 세트로 조립할까요?',
+        deco_bag_sec_big: '🏞️ 큰 세트', deco_bag_sec_set: '🧩 세트', deco_bag_sec_item: '🪴 낱개 · 예물',
+        deco_bag_set: '낱개 {n}개가 조립된 세트', deco_bag_big: '세트 {n}개가 이어진 한 풍경',
         deco_shop_plain: '🪴 꾸밈',
         deco_sea_only: '🌊 바다 꾸미기에서',
         deco_land_only: '⛰️ 성 둘레 꾸미기에서',
@@ -1744,6 +1751,13 @@ const LANG = {
         deco_kind_set: 'Set',
         deco_owned: 'Owned {n}',
         deco_set_got: '{n}/{m} collected · build when complete',
+        deco_buy_rest: '🧩 Buy the {n} missing and build · 💎 {cost}',
+        deco_build_now: '🧩 All collected — build now',
+        deco_buy_rest_sure: 'Sure? Tap again to buy and build',
+        deco_all_got: '🎉 You have every piece of <b>{name}</b>! Build it now?',
+        deco_big_ready: '🎉 You have every set of <b>{name}</b>! Build the big set?',
+        deco_bag_sec_big: '🏞️ Big sets', deco_bag_sec_set: '🧩 Sets', deco_bag_sec_item: '🪴 Pieces · offerings',
+        deco_bag_set: 'A built set of {n} pieces', deco_bag_big: 'One scene of {n} sets',
         deco_shop_plain: '🪴 Decor',
         deco_sea_only: '🌊 Decorate at the sea',
         deco_land_only: '⛰️ Decorate around the city',
@@ -8098,6 +8112,22 @@ function _njSetAssemble(sk, x, z) {
     (njSets = Array.isArray(njSets) ? njSets : []).push(rec);
     saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
     return { rec, parts: pick.map(v => v.id) };
+}
+/* 🧩 남은 낱개 한꺼번에 사서 바로 조립 (10/1 사용자: 사고·조립하고·놓기가 번거롭다) — 이미 가진 낱개(밖에 놓은 것·보관함)는 그대로 쓰고 없는 것만 산다.
+   값은 낱개 값의 합(깎아 주지 않는다 — 하나씩 모으는 사람과 같게). 보석이 모자라면 아무것도 사지 않는다 */
+function _njSetMissing(sk) {
+    const d = NJ_SETS[sk]; if (!d) return [];
+    const free = (njDecor || []).filter(v => !v.in && !v.sold);
+    return d.parts.filter(k => !free.some(v => v.k === k));
+}
+function _njSetBuyRest(sk, x, z) {
+    const miss = _njSetMissing(sk), cost = miss.reduce((a, k) => a + ((NJ_DECOR.find(v => v.k === k) || {}).cost || 0), 0);
+    if ((myGems || 0) < cost) return null;
+    myGems -= cost;
+    const now = Date.now();
+    miss.forEach((k, i) => (njDecor = Array.isArray(njDecor) ? njDecor : []).push({ id: now.toString(36) + i + Math.random().toString(36).slice(2, 6), k, x: +x || 0, z: +z || 0, r: 0, at: now, mv: now }));
+    if (typeof updateGemDisplay === 'function') updateGemDisplay();
+    return _njSetAssemble(sk, x, z);   // 저장·동기화는 조립이 한 번에
 }
 /* 해체 — 낱개를 세트 자리 둘레에 내려놓는다. 돌려준 낱개 기록으로 nj3d가 다시 놓는다 */
 function _njSetDisassemble(id) {

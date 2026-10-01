@@ -7090,6 +7090,12 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .nj3d-shop-meter i { display: block; height: 100%; background: #f6d77a; }
 .nj3d-shop-n { color: #b9c6d6; font-size: 0.72rem; font-weight: 700; min-width: 26px; text-align: right; font-variant-numeric: tabular-nums; }
 .nj3d-shop-fold .nj3d-offer-list { padding: 0 8px 8px; }
+.nj3d-shop-rest { display: block; width: calc(100% - 16px); margin: 0 8px 6px; border: none; border-radius: 9px; padding: 9px; font: 800 0.8rem 'Pretendard', sans-serif; cursor: pointer;
+    background: linear-gradient(90deg, #f6d77a, #f1c40f); color: #2c3e50; text-align: center; }
+.nj3d-shop-rest.off { background: rgba(255, 255, 255, 0.08); color: #b9c6d6; cursor: default; font-weight: 700; }
+.nj3d-shop-rest.sure { background: #e67e22; color: #fff; }
+.nj3d-bag-setcard { border-left: 3px solid #f6d77a; background: rgba(246, 215, 122, 0.1); border-radius: 8px; padding-left: 8px; }
+.nj3d-bag-setcard b { color: #f6d77a; }
 .nj3d-shop-set { margin: 8px 0 0; color: #e6eef8; font-weight: 700; font-size: 0.8rem; }
 .nj3d-shop-set span { color: #b9c6d6; font-weight: 600; font-size: 0.72rem; margin-left: 4px; }
 .sea-3d-btn { margin: 0 0 8px; background: linear-gradient(135deg, #7fe6f5, #1fb0c9); color: #06303a; }

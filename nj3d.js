@@ -2201,12 +2201,20 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                     : `<div class="nj3d-deco-tip">${T('deco_tip')}</div>`)
                 + `<div class="nj3d-deco-row"><button data-a="bag">${T('deco_bag', { n: deco.stash.length })}</button><button data-a="shop">${T('deco_shop')}</button><button data-a="done" class="done">${T('deco_done')}</button></div>`;
         }
-        function decoPanelShow(kind) {
+        function decoPanelShow(kind, note) {
             decoPanel.hidden = false;
             if (kind === 'bag') {
                 decoPanel.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button><div class="nj3d-offer-head">${T('deco_bag_title')}</div>`
-                    + (deco.stash.length ? `<div class="nj3d-offer-list">${deco.stash.map((s, i) => `<div class="nj3d-offer-row"><div><b>${esc2(decoName(s))}</b><span>${s.kind === 'gift' ? T('deco_kind_gift') : s.kind === 'set' ? T('deco_kind_set') : (partNote(s.k) || T('deco_kind_decor'))}</span></div><span class="nj3d-bag-btns">${s.kind === 'decor' && typeof _njDecorSellPrice === 'function' ? `<button class="sell" data-sell="${i}">${T('deco_sell', { n: _njDecorSellPrice(s.k).toLocaleString() })}</button>` : ''}<button data-i="${i}">${T('deco_place')}</button></span></div>`).join('')}</div>`
-                        : `<div class="nj3d-offer-intro">${T('deco_bag_empty')}</div>`);
+                    + (deco.stash.length ? (() => {   // 10/1 사용자: 세트인 채로 들어간 것이 잘 구분되게 — 🏞️ 큰 세트 · 🧩 세트 · 🪴 낱개로 나눠, 세트는 금빛 카드
+                        const isBig = s => s.kind === 'set' && typeof NJ_BIG !== 'undefined' && !!NJ_BIG[s.k];
+                        const grp = [['deco_bag_sec_big', s => isBig(s)], ['deco_bag_sec_set', s => s.kind === 'set' && !isBig(s)], ['deco_bag_sec_item', s => s.kind !== 'set']];
+                        const one = (s, i) => {
+                            const sub = isBig(s) ? T('deco_bag_big', { n: NJ_BIG[s.k].sets.length }) : s.kind === 'set' ? T('deco_bag_set', { n: ((NJ_SETS[s.k] || {}).parts || []).length })
+                                : s.kind === 'gift' ? T('deco_kind_gift') : (partNote(s.k) || T('deco_kind_decor'));
+                            return `<div class="nj3d-offer-row${s.kind === 'set' ? ' nj3d-bag-setcard' : ''}"><div><b>${s.kind === 'set' ? (isBig(s) ? '🏞️ ' : '🧩 ') : ''}${esc2(decoName(s))}</b><span>${sub}</span></div><span class="nj3d-bag-btns">${s.kind === 'decor' && typeof _njDecorSellPrice === 'function' ? `<button class="sell" data-sell="${i}">${T('deco_sell', { n: _njDecorSellPrice(s.k).toLocaleString() })}</button>` : ''}<button data-i="${i}">${T('deco_place')}</button></span></div>`;
+                        };
+                        return grp.map(([t, f]) => { const rows = deco.stash.map((s, i) => [s, i]).filter(([s]) => f(s)); return rows.length ? `<div class="nj3d-shop-sec">${T(t)} <span>${rows.length}</span></div><div class="nj3d-offer-list">${rows.map(([s, i]) => one(s, i)).join('')}</div>` : ''; }).join('');
+                    })() : `<div class="nj3d-offer-intro">${T('deco_bag_empty')}</div>`);
                 decoPanel.querySelectorAll('button[data-sell]').forEach(b => b.onclick = () => {
                     if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = T('deco_sell_sure'); return; }
                     const s = deco.stash[+b.dataset.sell]; if (!s) return;
@@ -2252,12 +2260,30 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                             const D = NJ_SETS[sk], got = typeof _njSetOwned === 'function' ? _njSetOwned(sk) : 0, m = D.parts.length;
                             h += `<details class="nj3d-shop-fold" data-set="${sk}"${deco.shopOpen[sk] ? ' open' : ''}><summary>🧩 ${esc2(_njSetName(sk))}
                                 <span class="nj3d-shop-meter"><i style="width:${Math.round(got / m * 100)}%"></i></span><span class="nj3d-shop-n">${got >= m ? '✅' : `${got}/${m}`}</span></summary>
+                                ${(() => { const miss = typeof _njSetMissing === 'function' ? _njSetMissing(sk) : [], cost = miss.reduce((a, k) => a + ((list.find(v => v.k === k) || {}).cost || 0), 0), lk = lockOf(D);
+                                    if (lk) return '';
+                                    return !miss.length ? `<button class="nj3d-shop-rest" data-buildset="${sk}">${T('deco_build_now')}</button>`
+                                        : gems >= cost ? `<button class="nj3d-shop-rest" data-buyset="${sk}">${T('deco_buy_rest', { n: miss.length, cost: cost.toLocaleString() })}</button>`
+                                        : `<div class="nj3d-shop-rest off">${T('deco_buy_rest', { n: miss.length, cost: cost.toLocaleString() })}</div>`; })()}
                                 <div class="nj3d-offer-list">${list.filter(d => d.set === sk).map(d => row(d, true)).join('')}</div></details>`;
                         });
                         return h;
                     })()}`;
                 decoPanel.querySelectorAll('button[data-tab]').forEach(b => b.onclick = () => { deco.shopTab = b.dataset.tab; const y = 0; decoPanelShow('shop'); decoPanel.scrollTop = y; });
                 decoPanel.querySelectorAll('details[data-set]').forEach(d => d.ontoggle = () => { deco.shopOpen[d.dataset.set] = d.open; });
+                decoPanel.querySelectorAll('button[data-buildset]').forEach(b => b.onclick = () => { decoPanel.hidden = true; decoBar.dispatchEvent(new CustomEvent('asm-ok', { detail: b.dataset.buildset })); });
+                decoPanel.querySelectorAll('button[data-buyset]').forEach(b => b.onclick = () => {   // 남은 낱개 한꺼번에 사서 조립 — 한 번 더 눌러야
+                    if (b.dataset.sure !== '1') { b.dataset.label = b.textContent; b.dataset.sure = '1'; b.textContent = T('deco_buy_rest_sure'); b.classList.add('sure'); return; }
+                    const sk = b.dataset.buyset, D = NJ_SETS[sk], seaS = !!D.sea;
+                    const [x, z] = seaS ? shoreSpot(deco.tgt.x, deco.tgt.z, 0, 'edge') : decoSpot(deco.tgt.x, deco.tgt.z, decoExt('set', sk, 0), null, true);
+                    const r = typeof _njSetBuyRest === 'function' ? _njSetBuyRest(sk, x, z) : null;
+                    if (!r) { showHint(T('deco_need_gems'), 2000); return; }
+                    decoPanel.hidden = true; decoAbsorb(r);
+                    const obj = placeSet(r.rec); if (obj) decoSel(obj); syncWallet();
+                    if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
+                    showHint(T('deco_asm_done', { name: _njSetName(sk) }), 3000);
+                    decoAskBig(sk);
+                });
                 decoPanel.querySelectorAll('button[data-k]').forEach(b => b.onclick = () => {
                     if (b.dataset.sure !== '1') {   // 정말 살까요 — 한 번 더 눌러야 산다(10/1 사용자)
                         decoPanel.querySelectorAll('button[data-k]').forEach(o => { if (o !== b && o.dataset.sure === '1') { o.dataset.sure = ''; o.textContent = o.dataset.label; o.classList.remove('sure'); } });
@@ -2270,12 +2296,13 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                     const obj = placeDecor(it); syncWallet();
                     if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
                     if (obj) decoSel(obj);
+                    const sk0 = setOfK(b.dataset.k); if (sk0 && asmReady().includes(sk0)) decoPanelShow('asm', T('deco_all_got', { name: esc2(_njSetName(sk0)) }));   // 마지막 조각 — 그 자리에서 묻는다
                 });
             }
             if (kind === 'asm') {   // 조립 확인 — 어디 있던 낱개가 몇 개 모이는지
                 const list = asmReady();
                 decoPanel.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button><div class="nj3d-offer-head">${T('deco_asm_title')}</div>
-                    <div class="nj3d-offer-intro">${T('deco_asm_note')}</div>` + list.map(sk => {
+                    ${note ? `<div class="nj3d-shop-big">${note}</div>` : ''}<div class="nj3d-offer-intro">${T('deco_asm_note')}</div>` + list.map(sk => {
                         const big = typeof NJ_BIG !== 'undefined' && !!NJ_BIG[sk], pick = (big ? _njBigPick(sk) : _njSetPick(sk)) || [];
                         const out = pick.filter(v => !v.st).length, inBag = pick.length - out;
                         return `<div class="nj3d-asm-card"><b>${big ? '🏞️' : '🧩'} ${esc2(_njSetName(sk))}</b>
@@ -2289,6 +2316,17 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             }
             const x = decoPanel.querySelector('.nj3d-fruit-x'); if (x) x.onclick = () => { decoPanel.hidden = true; };
         }
+        // 조립에 들어간 낱개(또는 세트)를 화면·보관함에서 걷는다
+        const decoAbsorb = (r, big) => {
+            (big ? setG : decoG).children.filter(o => o.userData.item && r.parts.includes(o.userData.item.id)).forEach(o => { deco.touched.delete(o.userData.item.id); o.parent.remove(o); });
+            deco.stash = deco.stash.filter(st => !r.parts.includes(st.id));
+        };
+        // 세트를 조립했더니 그 세트가 든 큰 세트가 다 모였으면 — 그 자리에서 묻는다
+        const decoAskBig = sk => {
+            if (typeof NJ_BIG === 'undefined') return;
+            const bk = Object.keys(NJ_BIG).find(k => NJ_BIG[k].sets.includes(sk) && asmReady().includes(k));
+            if (bk) setTimeout(() => decoPanelShow('asm', T('deco_big_ready', { name: esc2(_njSetName(bk)) })), 400);
+        };
         decoBar.addEventListener('asm-ok', e => { const fake = document.createElement('button'); fake.dataset.a = 'asm-ok'; fake.dataset.k = e.detail; decoBar.appendChild(fake); fake.click(); fake.remove(); });
         decoBar.addEventListener('click', e => {
             const b = e.target.closest('button'); if (!b || !deco) return;
@@ -2316,11 +2354,11 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 const sk = b.dataset.k, big = typeof NJ_BIG !== 'undefined' && !!NJ_BIG[sk], seaS = !!((NJ_SETS[sk] || (big && NJ_BIG[sk]) || {}).sea);
                 const [x, z] = seaS ? shoreSpot(deco.tgt.x, deco.tgt.z, 0, 'edge') : decoSpot(deco.tgt.x, deco.tgt.z, decoExt(big ? 'big' : 'set', sk, 0), null, true);
                 const r = big ? _njBigAssemble(sk, x, z) : _njSetAssemble(sk, x, z); if (!r) return;
-                (big ? setG : decoG).children.filter(o => o.userData.item && r.parts.includes(o.userData.item.id)).forEach(o => { deco.touched.delete(o.userData.item.id); o.parent.remove(o); });
-                deco.stash = deco.stash.filter(st => !r.parts.includes(st.id));
+                decoAbsorb(r, big);
                 const obj = placeSet(r.rec); if (obj) decoSel(obj);
                 if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
                 showHint(T('deco_asm_done', { name: _njSetName(sk) }), 3000);
+                if (!big) decoAskBig(sk);
             }
             else if (a === 'sell' && deco.sel) {   // 💰 팔기 — 한 번 더 눌러야 판다
                 if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = T('deco_sell_sure'); return; }
@@ -2367,7 +2405,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 deco.drag = { pinch: Math.hypot(a.x - b.x, a.y - b.y), ang: Math.atan2(b.y - a.y, b.x - a.x), dist0: deco.dist, yaw0: deco.yaw }; return;
             }
             ray.setFromCamera(decoNdc(e), camera);
-            const hit = ray.intersectObjects(decoObjs().map(o => { if (!o.userData.pick) addPick(o); return o.userData.pick; }), false), obj = hit.length ? decoRoot(hit[0].object) : null;   // 예물은 처음 고를 때 상자를 씌운다
+            const hit = ray.intersectObjects(decoObjs().map(o => { if (!o.userData.pick) addPick(o); return o.userData.pick; }), false);   // 예물은 처음 고를 때 상자를 씌운다
+            const one = hit.find(h => { const r = decoRoot(h.object); return r && r.userData.item.kind !== 'set'; });   // 겹쳐 있으면 낱개·예물이 세트보다 먼저(10/1 사용자) — 세트 상자가 커서 위에 놓인 낱개를 가렸다
+            const obj = one ? decoRoot(one.object) : hit.length ? decoRoot(hit[0].object) : null;
             if (obj) { if (deco.sel !== obj) decoSel(obj); deco.drag = { obj }; }
             else deco.drag = { pan: true };
             touching = true; lastTouch = performance.now();
