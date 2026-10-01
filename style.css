@@ -7040,7 +7040,10 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
     background: rgba(15, 26, 51, 0.78); color: #9fe6f3; font-weight: 800; font-size: 0.85rem; cursor: pointer; }
 .nj3d-deco { position: absolute; top: 98px; left: 10px; z-index: 3; border: none; border-radius: 999px; padding: 8px 14px;
     background: rgba(15, 26, 51, 0.78); color: #f6d77a; font-weight: 800; font-size: 0.85rem; cursor: pointer; }
-.nj3d-deco[hidden], .nj3d-mode[hidden], .nj3d-go[hidden] { display: none; }
+.nj3d-holo { position: absolute; top: 142px; left: 10px; z-index: 3; border: 1px solid rgba(143, 230, 255, 0.5); border-radius: 999px; padding: 8px 14px;
+    background: rgba(15, 26, 51, 0.78); color: #aeefff; font-weight: 800; font-size: 0.85rem; cursor: pointer; }
+.nj3d-holo.on { background: #1d5a78; color: #e6fbff; }
+.nj3d-holo[hidden], .nj3d-deco[hidden], .nj3d-mode[hidden], .nj3d-go[hidden] { display: none; }
 /* 꾸미기 — 아래 막대(고른 것 · 보관함 · 상점 · 완료)와 보관함/상점 창 (2026-10-01) */
 .nj3d-decobar { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 4;
     width: min(420px, calc(100% - 20px)); background: rgba(15, 26, 51, 0.92); border: 1px solid rgba(246, 215, 122, 0.35); border-radius: 14px; padding: 9px 10px;

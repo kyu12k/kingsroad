@@ -45,6 +45,7 @@
                 <button class="nj3d-mode"></button>
                 <button class="nj3d-go"></button>
                 <button class="nj3d-deco"></button>
+                <button class="nj3d-holo" hidden></button>
                 <div class="nj3d-decobar" hidden></div>
                 <div class="nj3d-decopanel" hidden></div>
                 <div class="nj3d-walk" hidden>
@@ -369,10 +370,20 @@
             : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.08, metalness: 0.1, emissive: 0xbfe0ff, emissiveIntensity: 0.18, transparent: true, opacity: 0.85, flatShading: true });
         const rotXZ = (x, z, r) => [x * Math.cos(r) + z * Math.sin(r), -x * Math.sin(r) + z * Math.cos(r)];
         function wallPieces(idx) {   // 북쪽 면 기준 [x0, x1] 조각들 — 문 자리(가운데)와 모퉁이(망대 자리)를 비운다
-            const t0 = -HALF + idx * SEG, t1 = t0 + SEG, g = (idx - 1) * GATE_GAP, x0 = idx === 0 ? -HALF + 0.75 : t0, x1 = idx === 2 ? HALF - 0.75 : t1;
+            const t0 = -HALF + idx * SEG, t1 = t0 + SEG, g = (idx - 1) * GATE_GAP, x0 = idx === 0 ? -HALF + WALL_T : t0, x1 = idx === 2 ? HALF - WALL_T : t1;   // 모퉁이 한 칸(WALL_T)은 모퉁이 기둥이 메운다
             return [[x0, g - GATE_OPEN], [g + GATE_OPEN, x1]];
         }
         const SIDE_ROT = { N: [0, i => i], E: [-Math.PI / 2, i => i], S: [Math.PI, i => 2 - i], W: [Math.PI / 2, i => 2 - i] };
+        // 🏰 완성된 모습 미리 보기 (10/1 사용자) — 아직 놓지 않은 기초석·성벽·진주 문을 홀로그램처럼 흐릿하게. 부딪히지 않고 반짝이지 않는다
+        let preview = false;
+        const holoFill = new THREE.MeshBasicMaterial({ color: 0x2fa8d8, transparent: true, opacity: 0.07, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, toneMapped: false });
+        const holoLine = new THREE.LineBasicMaterial({ color: 0x7fdcff, transparent: true, opacity: 0.4, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false });
+        cityAnims.push(t => { const f = 0.75 + 0.25 * Math.sin(t * 2.2) + (Math.random() < 0.02 ? -0.35 : 0); holoFill.opacity = 0.07 * f; holoLine.opacity = 0.4 * f; });   // 깜박이는 빛 — 겹치면 더해져 하얗게 날아가 아주 옅게
+        function holoize(o) {   // 실제 재질을 홀로그램으로 — 면은 옅게, 모서리는 빛나는 선
+            const ms = []; o.traverse(m => { if (m.isMesh) ms.push(m); });
+            ms.forEach(m => { m.material = holoFill; m.castShadow = m.receiveShadow = false;
+                if (!m.isInstancedMesh && m.geometry) { const e = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 40), holoLine); m.add(e); } });
+        }
         function rebuild() {
             built.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) [].concat(o.material).forEach(m => m.dispose()); });
             while (built.children.length) built.remove(built.children[0]);
@@ -380,7 +391,13 @@
             BOXES.length = 0; BOXES.push(THRONE_BOX, ...TREE_BOXES);
             SEQ.forEach(([side, i], k) => {
                 const [cx, cz] = gatePos(side, i), horiz = side === 'N' || side === 'S';
-                if (k < found) {
+                const stoneReal = k < found, gateReal = k < pearls;
+                const c0 = built.children.length, b0 = BOXES.length, s0 = sparkPts.length;
+                const unholo = () => {   // 홀로그램 조각 — 재질 바꾸고, 부딪힘·반짝임은 되돌린다
+                    built.children.slice(c0).forEach(o => { o.userData.holo = true; holoize(o); });
+                    BOXES.length = b0; sparkPts.length = s0;
+                };
+                if (stoneReal || preview) {
                     const col = new THREE.Color(STONES[k]);
                     const mat = HIGH
                         ? new THREE.MeshPhysicalMaterial({ color: col, roughness: 0.1, metalness: 0.1, clearcoat: 0.6, clearcoatRoughness: 0.08, envMapIntensity: 0.9, emissive: col, emissiveIntensity: 0.12 })
@@ -412,15 +429,13 @@
                         const mg = new THREE.InstancedMesh(crystalGeo(new THREE.BoxGeometry(0.24, 0.22, WALL_T + 0.04)), wm, mer.length), m4 = new THREE.Matrix4(), q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), rot), one = new THREE.Vector3(1, 1, 1);
                         mer.forEach((x, n) => { const [wx, wz] = rotXZ(x, -HALF + WALL_T / 2, rot); m4.compose(new THREE.Vector3(wx, FH + WALL_H + 0.11, wz), q, one); mg.setMatrixAt(n, m4); });
                         mg.castShadow = true; built.add(mg);
-                        [0, 2].forEach(end => {   // 모퉁이 망대 — 그 모퉁이에 닿는 기초석이 놓이면
+                        [0, 2].forEach(end => {   // 모퉁이 — 두 면의 성벽이 맞물리는 네모 기둥(성벽과 같은 높이·성가퀴 하나). 망대는 뺐다(10/1 사용자 — 21장에 없고, 문을 닫지 않는 성 21:25)
                             if (idx(i) !== end) return;
-                            const cx2 = end === 0 ? -HALF + 0.4 : HALF - 0.4, [tx, tz] = rotXZ(cx2, -HALF + 0.4, rot);
-                            if (built.children.some(o => o.userData.tower && Math.hypot(o.position.x - tx, o.position.z - tz) < 0.1)) return;
-                            const tw = new THREE.Group(); tw.userData.tower = true; tw.position.set(tx, FH, tz); built.add(tw);
-                            const body = new THREE.Mesh(crystalGeo(new THREE.CylinderGeometry(0.5, 0.56, WALL_H + 0.55, 8)), wm); body.position.y = (WALL_H + 0.55) / 2; body.castShadow = true; tw.add(body);
-                            const cap = new THREE.Mesh(new THREE.ConeGeometry(0.62, 0.7, 8), new THREE.MeshStandardMaterial({ color: 0xe8bf4a, metalness: 0.6, roughness: 0.3, emissive: 0x5a3c0c, emissiveIntensity: 0.3, flatShading: true }));
-                            cap.position.y = WALL_H + 0.55 + 0.35; cap.castShadow = true; tw.add(cap);
-                            BOXES.push({ x0: tx - 0.5, x1: tx + 0.5, z0: tz - 0.5, z1: tz + 0.5, y0: FH, y1: FH + WALL_H + 0.9 });
+                            const [tx, tz] = rotXZ(end === 0 ? -HALF + WALL_T / 2 : HALF - WALL_T / 2, -HALF + WALL_T / 2, rot);
+                            if (built.children.some(o => o.userData.corner && Math.hypot(o.position.x - tx, o.position.z - tz) < 0.1)) return;
+                            const cn = new THREE.Mesh(crystalGeo(new THREE.BoxGeometry(WALL_T, WALL_H, WALL_T)), wm); cn.userData.corner = true; cn.position.set(tx, FH + WALL_H / 2, tz); cn.castShadow = true; built.add(cn);
+                            const cm = new THREE.Mesh(crystalGeo(new THREE.BoxGeometry(WALL_T + 0.04, 0.22, WALL_T + 0.04)), wm); cm.position.y = WALL_H / 2 + 0.11; cn.add(cm);
+                            BOXES.push({ x0: tx - WALL_T / 2, x1: tx + WALL_T / 2, z0: tz - WALL_T / 2, z1: tz + WALL_T / 2, y0: FH, y1: FH + WALL_H });
                         });
                     }
                     // 문 안팎의 경사로 — 기초석 단(0.6)은 순례자 키(0.22)보다 훨씬 높다
@@ -437,12 +452,14 @@
                         mesh.matrix.setPosition(ex - Z[0] * RAMP_W / 2, 0, ez - Z[1] * RAMP_W / 2);
                         mesh.receiveShadow = true; built.add(mesh);
                     });
+                    if (!stoneReal) unholo();
                 }
                 // 진주 문 — 얻은 진주만큼 온전한 문이 선다. 아직이면 아무것도 없다(통로는 처음부터 열려 있다). 기둥과 아치는 부딪힌다
-                if (k >= pearls) return;
+                if (!gateReal && !preview) return;
+                const g0 = built.children.length, gb0 = BOXES.length, gs0 = sparkPts.length;
                 const gm = HIGH ? new THREE.MeshPhysicalMaterial({ color: 0xfdfbff, roughness: 0.12, metalness: 0.15, clearcoat: 1, clearcoatRoughness: 0.05, envMapIntensity: 1.8, emissive: 0xd8cff5, emissiveIntensity: 0.22 })
                     : new THREE.MeshStandardMaterial({ color: 0xfbf8ff, roughness: 0.1, metalness: 0.25, emissive: 0xcfc6f0, emissiveIntensity: 0.3 });
-                const base = k < found ? FH : 0.02, R = GATE / 2, Tk = 0.14, postH = GATE_H - R;
+                const base = (stoneReal || preview) ? FH : 0.02, R = GATE / 2, Tk = 0.14, postH = GATE_H - R;
                 const gate = new THREE.Group();
                 const PC = 0.635 * GATE_SC, PT = 0.2 * GATE_SC, ARCH0 = 3.74, ARCH1 = 4.2;   // 부딪힘 — 진주 문 모델(city.py, ×GATE_SC)의 기둥 가운데·두께·아치 안쪽/바깥 높이
                 [-1, 1].forEach(sg => {
@@ -455,6 +472,7 @@
                 loadCity('pearlgate').then(sc => {
                     if (cur !== C || gate.parent !== built) return;
                     plain.forEach(o => gate.remove(o)); const c = sc.clone(); c.scale.setScalar(GATE_SC); gate.add(c);   // 높은 성벽보다 높게
+                    if (gate.userData.holo) holoize(c);
                     const wl = c.getObjectByName('wingL'), wr = c.getObjectByName('wingR'), ph = k * 0.7;
                     cityAnims.push(t => { const f = Math.sin(t * 1.4 + ph) * 0.12; if (wl) wl.rotation.y = f; if (wr) wr.rotation.y = -f; });
                 }).catch(() => {});
@@ -463,6 +481,7 @@
                                  : { x0: cx - PT, x1: cx + PT, z0: cz - aw, z1: cz + aw, y0: base + ARCH0, y1: base + ARCH1 });
                 gate.position.set(cx, base, cz); if (!horiz) gate.rotation.y = Math.PI / 2; built.add(gate);
                 [[-0.72, 1.2], [0.72, 2.2], [-0.72, 3.1], [0.0, 4.6], [0.6, 3.9]].forEach(([a, h]) => sparkPts.push([cx + (horiz ? a : 0) * GATE_SC, base + h * GATE_SC, cz + (horiz ? 0 : a) * GATE_SC]));
+                if (!gateReal) { built.children.slice(g0).forEach(o => { o.userData.holo = true; holoize(o); }); BOXES.length = gb0; sparkPts.length = gs0; }
             });
             makeSparkles();
         }
@@ -1908,6 +1927,14 @@
         ((typeof njSets !== 'undefined' && Array.isArray(njSets)) ? njSets : []).forEach(placeSet);
         const decoBtn = ov.querySelector('.nj3d-deco'), decoBar = ov.querySelector('.nj3d-decobar'), decoPanel = ov.querySelector('.nj3d-decopanel');
         decoBtn.textContent = T('deco_btn');
+        const holoBtn = ov.querySelector('.nj3d-holo');
+        if (found < 12 || pearls < 12) {   // 다 지은 사람에겐 필요 없다
+            holoBtn.hidden = false; holoBtn.textContent = T('nj3d_holo_on');
+            holoBtn.addEventListener('click', () => {
+                preview = !preview; rebuild(); holoBtn.textContent = T(preview ? 'nj3d_holo_off' : 'nj3d_holo_on'); holoBtn.classList.toggle('on', preview);
+                if (preview) showHint(T('nj3d_holo_hint'), 3500); lastTouch = performance.now();
+            });
+        }
         const decoRing = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.5, 40), new THREE.MeshBasicMaterial({ color: 0xffd34d, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide }));
         decoRing.rotation.x = -Math.PI / 2; decoRing.visible = false; scene.add(decoRing);
         const decoPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), decoHit = new THREE.Vector3();
@@ -2050,7 +2077,7 @@
             ((typeof njSets !== 'undefined' && njSets) || []).forEach(d => { if (d.st && !d.in) stash.push({ kind: 'set', id: d.id, k: d.s, big: !!d.big }); });
             deco = { sel: null, tgt: new THREE.Vector3(3.4, 0, 8.8), yaw: 0.5, pitch: 1.0, dist: 23, pts: new Map(), drag: null, stash, touched: new Map(), stashed: new Set() };
             controls.enabled = false; controls.autoRotate = false;
-            modeBtn.hidden = goBtn.hidden = decoBtn.hidden = true; hideFruit(); offerEl.hidden = true;
+            modeBtn.hidden = goBtn.hidden = decoBtn.hidden = true; holoBtn.dataset.was = holoBtn.hidden ? '1' : ''; holoBtn.hidden = true; hideFruit(); offerEl.hidden = true;
             decoBar.hidden = false; ov.classList.add('deco-on'); decoRender(); showHint(T('deco_hint'), 3500); lastTouch = performance.now();
         }
         function exitDeco() {
@@ -2059,7 +2086,7 @@
             deco.stash.forEach(s => { if (deco.stashed.has(s.id)) ch.push({ kind: s.kind, id: s.id, x: 0, z: 0, r: 0, st: true }); });
             if (ch.length && typeof _njDecoSave === 'function') { _njDecoSave(ch); showHint(T('deco_saved'), 2000); }
             deco = null; decoRing.visible = false; decoBar.hidden = true; decoPanel.hidden = true; ov.classList.remove('deco-on');
-            modeBtn.hidden = goBtn.hidden = decoBtn.hidden = false; controls.enabled = true; lookAt('city'); lastTouch = performance.now();
+            modeBtn.hidden = goBtn.hidden = decoBtn.hidden = false; holoBtn.hidden = holoBtn.dataset.was === '1'; controls.enabled = true; lookAt('city'); lastTouch = performance.now();
         }
         decoBtn.addEventListener('click', enterDeco);
         // 손가락 — 물건을 짚으면 옮기기, 빈 곳이면 화면 옮기기, 두 손가락은 확대·돌리기
