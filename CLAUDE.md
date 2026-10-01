@@ -121,6 +121,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | nj3d.js `loadGift` · `giftAnim(k, root)` · `placeGift` · `models/gifts/*.glb` · `tools/blender/` | nj3d.js | 예물 모델 — 블렌더 로우폴리(스크립트로 뽑음), 움직일 부분은 이름 붙은 축 노드. 모델을 다시 뽑으면 `GIFT_V`를 올린다 |
 | `renderHomeTodo()` · `_todoSocial` · `_syncSocialBadges()` · `updateFriendBadge()` | game.js:~29250 | 홈 「오늘 할 일」(복습·백지·응원·길드 출석)과 친구/길드/더보기 배지. `updateNotificationBadges`가 함께 그린다 |
 | `_checkReturnBoost()` · `_returnBoostExtra(gem)` · `_renderReturnFloat()` · `returnBoost` | game.js:~29450 | 돌아온 순례자 — 14일 넘게 쉬면 7일간 암송 보석 2배(동기화 뒤 판정), 효과 기록 포함 (`docs/랭킹과-이벤트.md`) |
+| `openGuideScreen()` · `openGuideQuiz()` · `_guideSync()` · `_guideNoteDay()` · `_guideTryGraduate()` · `guideInfo`·`guideRel` | game.js:~29700 · kingsroad `guide*` | 🧭 인도자와 동행 — 시험(다 맞힐 때까지) → 인도자 코드, 초심자 신청·승낙, 정착 졸업(망각의 고난 한 장 + 4주 연속 주 3일) → 성 나무에 빨간 열매 (`docs/인도자와-동행.md`) |
 | `openDailyRecorder()` · `_camDrawLoop` · `_camBeautyFrame(v, w, h, amt)` · `_camDrawWithBg` | game.js:~17400 | 🎥 오늘의 암송 촬영 — 캔버스에 그려 녹화, 액자·WebGL 피부 보정(강도 `softAmt`)·배경 바꾸기 |
 | `SoundEffect` | game.js:~3987 | 효과음 신디사이저 — 종소리 `_note`, 출력 `_bus`, 잠든 오디오 깨우기 `_play`, 진동 `_buzz` |
 
@@ -181,6 +182,7 @@ firebase deploy --only firestore:rules    # 보안 규칙
 | `docs/랭킹과-이벤트.md` | 실시간 암송왕·통독왕, 주간 랭킹 보상, 기간 한정 이벤트, 오늘의 암송, 미션 |
 | `docs/저장과-동기화.md` | 기기 간 동기화, 서버 시각, Firestore 보안 규칙, 태그(#번호) 발급, 친구 |
 | `docs/UX-결정기록.md` | 실측 사용률, 온보딩, 힌트 정책, 토스트 규칙, 지도 헤더 |
+| `docs/인도자와-동행.md` | 인도자 시험·동행·정착 지표(망각의 고난 + 4주 연속 주 3일)·빨간 열매 — 오프라인에서 초심자 곁에서 돕는 도구 |
 | `docs/새-예루살렘.md` | 밭 100 이후 — 열두 기초석·진주·생명나무 열매·바다와 만국·3D, 보석 수입 실측 |
 | `REVELATION_TOPICS.md` | 계시록 주제 분류 데이터 |
 | `DEPLOYMENT_GUIDE.md` · `README.md` | 초기 설정 안내 |

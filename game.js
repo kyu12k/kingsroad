@@ -2357,7 +2357,10 @@ let myGems = 0;           // 현재 보유 보석
 /* 돌아온 순례자 (2026-09-30) — 2주 넘게 쉬었다 오면 1주 동안 **암송으로 버는 보석**(스테이지·복습 클리어, 첫 백지 통과)이 2배.
    순위 보상·미션 묶음·오늘의 암송 완료 보상은 빼고. 쉰 기간 = 서버 시각 기준 지금 − max(서버 마지막 저장, 이 기기 마지막 저장).
    효과 확인용으로 at·gap(쉰 일수)·clears·gems를 남기고, 지난 복귀는 log에 쌓는다 (docs/랭킹과-이벤트.md) */
-var returnBoost = null;   // { at, until, gap, clears, gems, log: [{ at, gap, clears, gems }] }
+var returnBoost = null;
+/* 인도자와 동행 — 선언만 여기(loadGameData보다 앞). 나머지는 openGuideScreen 근처 */
+var guideInfo = { passedAt: 0, grads: 0 };                          // 내가 인도자일 때
+var guideRel = { g: '', gn: '', st: '', since: 0, days: [] };       // 내가 초심자일 때 — 동행 뒤 암송한 날(6시 날짜)   // { at, until, gap, clears, gems, log: [{ at, gap, clears, gems }] }
 const RETURN_BOOST_GAP_MS = 14 * 86400000, RETURN_BOOST_DAYS = 7;
 let myDragonScales = 0;        // 용 비늘 (개인 장비 구매 재화)
 let myDragonHornFragments = 0; // 용 뿔조각 (길드 장비 구매 재화, 뿔 처치 드랍)
@@ -2891,6 +2894,8 @@ loadGameData = function () {
         if (parsed.dailyRecite && typeof parsed.dailyRecite === 'object' && parsed.dailyRecite.anchorVerse) dailyRecite = parsed.dailyRecite;
         if (parsed.dailyReciteDone && typeof parsed.dailyReciteDone === 'object') dailyReciteDone = parsed.dailyReciteDone;
         if (typeof parsed.dailyWeekDone === 'string') dailyWeekDone = parsed.dailyWeekDone;
+        if (parsed.guideInfo && typeof parsed.guideInfo === 'object') guideInfo = { passedAt: parsed.guideInfo.passedAt || 0, grads: parsed.guideInfo.grads || 0 };
+        if (parsed.guideRel && typeof parsed.guideRel === 'object' && parsed.guideRel.g) guideRel = Object.assign({ g: '', gn: '', st: '', since: 0, days: [] }, parsed.guideRel);
         returnBoost = (parsed.returnBoost && typeof parsed.returnBoost === 'object' && parsed.returnBoost.at) ? parsed.returnBoost : null;
         njBuilt = Math.max(0, Math.min(12, parseInt(parsed.njBuilt, 10) || 0));
         njLog = Array.isArray(parsed.njLog) ? parsed.njLog : [];
@@ -5869,6 +5874,7 @@ function _noteDailySeeds(seeds) {
     const keys = Object.keys(dailySeeds).sort();
     while (keys.length > 7) delete dailySeeds[keys.shift()];
     _promiseRain();
+    if (typeof _guideNoteDay === 'function') _guideNoteDay();   // 동행 — 오늘 암송한 날
     if (typeof updateHeaderToday === 'function') updateHeaderToday();
 }
 /* 오늘 첫 구절 → 내일 비를 예약. 하루 한 번만 말한다 */
@@ -7977,8 +7983,8 @@ function _njDraw(cv, W, H, built, pearls, opts) {
     // 생명나무 12그루 (22:2) — 익은 열매가 있으면 그달 열매 색 점
     {
         const U = S / 12, FL = _njFruitList(), ripeCol = FL.some(f => f.ripe) ? NJ_FRUIT_KINDS[FL.find(f => f.ripe).kind].color : null;
-        const green = FL.length && !ripeCol;
-        _njTreeSpots().forEach(([tx, tz]) => {
+        const green = FL.length && !ripeCol, redN = (typeof guideInfo !== 'undefined' && guideInfo && guideInfo.grads) || 0;
+        _njTreeSpots().forEach(([tx, tz], ti) => {
             const px = cx + tx * U, py = cy + tz * U, r = Math.max(3, 0.55 * U);
             g.fillStyle = 'rgba(0,0,0,0.18)'; g.beginPath(); g.arc(px + 1, py + 1.5, r, 0, Math.PI * 2); g.fill();
             g.fillStyle = '#2f8f4e'; g.beginPath(); g.arc(px, py, r, 0, Math.PI * 2); g.fill();
@@ -7987,6 +7993,14 @@ function _njDraw(cv, W, H, built, pearls, opts) {
                 g.fillStyle = ripeCol || '#b5e07a';
                 [[0.35, -0.2], [-0.3, 0.3], [0.1, 0.45]].forEach(([ox, oy]) => { g.beginPath(); g.arc(px + ox * r, py + oy * r, Math.max(1.2, r * 0.2), 0, Math.PI * 2); g.fill(); });
             }
+            // 🍎 함께 정착한 사람 — 빨간 열매(달마다 바뀌지 않는다). 12그루에 돌아가며, 한 나무에 3개까지 보인다
+            const RN = Math.min(3, Math.floor(redN / 12) + (ti < redN % 12 ? 1 : 0)), rr = Math.max(2.2, r * 0.36);
+            [[-0.5, -0.3], [0.52, 0.22], [-0.05, -0.68]].slice(0, RN).forEach(([ox, oy]) => {
+                const fx = px + ox * r, fy = py + oy * r;
+                g.fillStyle = '#5a0a10'; g.beginPath(); g.arc(fx, fy, rr + 0.9, 0, Math.PI * 2); g.fill();   // 잎에 묻히지 않게 짙은 테
+                g.fillStyle = '#e0202c'; g.beginPath(); g.arc(fx, fy, rr, 0, Math.PI * 2); g.fill();
+                g.fillStyle = 'rgba(255,255,255,0.7)'; g.beginPath(); g.arc(fx - rr * 0.35, fy - rr * 0.35, rr * 0.32, 0, Math.PI * 2); g.fill();
+            });
         });
     }
     // 진주 문 — 한 면에 1/4 · 1/2 · 3/4 (모서리에 몰리지 않게). 얻은 진주만큼 12시부터 시계 방향으로 얹힌다
@@ -8102,7 +8116,7 @@ function _njRenderModal() {
     const par = cv.parentElement, pcs = getComputedStyle(par);
     const W = Math.floor(par.clientWidth - parseFloat(pcs.paddingLeft) - parseFloat(pcs.paddingRight));   // 창 안쪽 여백을 뺀 폭
     _njDraw(cv, W, Math.round(W * 0.82), njBuilt, njPearls, { south: true });
-    const gemsEl = document.querySelector('#nj-modal .nj-gems'); if (gemsEl) gemsEl.textContent = `💎 ${Number(myGems || 0).toLocaleString()} · 🍃 ${_njLeavesAvail()}`;   // 잎사귀도 여기서 쓴다(바다와 만국)
+    const gemsEl = document.querySelector('#nj-modal .nj-gems'); if (gemsEl) gemsEl.textContent = `💎 ${Number(myGems || 0).toLocaleString()} · 🍃 ${_njLeavesAvail()}${guideInfo && guideInfo.grads ? ` · 🍎 ${guideInfo.grads}` : ''}`;   // 잎사귀도 여기서 쓴다(바다와 만국)
     const pst = _njRefreshPearls(false);
     const ge = document.getElementById('nj-go');
     if (ge) ge.innerHTML = _njGoHtml(pst);
@@ -11591,6 +11605,8 @@ function saveGameData() {
         dailyReciteDone: dailyReciteDone, // 오늘의 암송 완료일 → ts
         dailyWeekDone: dailyWeekDone,     // 오늘의 암송 주간 완료 주차
         returnBoost: returnBoost,         // 돌아온 순례자 — 보석 2배 기간과 효과 기록
+        guideInfo: guideInfo,             // 인도자 — 시험 통과·함께 정착한 사람 수(빨간 열매)
+        guideRel: guideRel,               // 동행(초심자) — 인도자·시작일·암송한 날
         njBuilt: njBuilt,                 // 새 예루살렘 — 놓은 기초석 수
         njLog: njLog,                     // 새 예루살렘 — 놓은 순간의 기록 (연구용)
         njPearls: njPearls,               // 진주 문 — 얻은 진주 수
@@ -11934,6 +11950,7 @@ function _mergeSaveProgress(target, other) {
     took += _mergeReadWeek(target, other);
     took += _mergeEventProgress(target, other);
     took += _mergeNewJerusalem(target, other);
+    took += _mergeGuide(target, other);
     {   // 돌아온 순례자 — 더 최근에 시작된 쪽, 같은 복귀면 더 많이 기록된 쪽
         const a = target.returnBoost, b = other.returnBoost;
         if (b && b.at && (!a || !a.at || b.at > a.at || (b.at === a.at && (b.clears || 0) > (a.clears || 0)))) { target.returnBoost = b; took++; }
@@ -11965,6 +11982,7 @@ async function initFirestoreSync() {
         await _initFirestoreSyncCore();
     } finally {
         try { _checkReturnBoost(); _renderReturnFloat(); } catch (e) { console.warn('[returnBoost]', e); }
+        try { _guideSync(); } catch (e) {}   // 인도자와 동행 — 서버 상태
         try { await ensureTagAssigned(); } catch (e) { /* 조용히 */ }
         try { _flushRecallLog(); } catch (e) {}   // 지난번에 못 올린 일지
         // 어드민 보상이 적용됐으면 알린다 — 조용히 늘어나면 "젬이 왜 늘었지"가 된다
@@ -29460,7 +29478,7 @@ function _todoFromLb(d) {   // 리더보드 내 문서에서 길드 상태
     _todoSocial.inGuild = !!(d && d.guildId);
     _todoSocial.attended = !!(d && d.lastGuildAttend === _get6AMDayStr());
 }
-function _socialBadgeOn() { const s = _todoSocial; return !!s && (s.friendN > 0 || (s.inGuild && !s.attended)); }
+function _socialBadgeOn() { const s = _todoSocial; return !!s && (s.friendN > 0 || (s.inGuild && !s.attended) || s.guideN > 0); }
 function _syncSocialBadges() {
     const gb = document.getElementById('badge-guild');
     if (gb && _todoSocial) gb.classList.toggle('active', _todoSocial.inGuild && !_todoSocial.attended);
@@ -29647,6 +29665,348 @@ async function checkFriendEvents() {
 }
 
 // --- 친구 화면 UI ---
+
+/* ══ 🧭 인도자와 동행 (2026-10-01) ══════════════════════════════════════════════════════════════════
+   사용자: 초심자의 정착은 **옆에서, 오프라인에서** 돕는 사람이 있어야 된다. 보상으로 움직이게 하지 않는다.
+   - 인도자: 누구나 시험(객관식, 다 맞힐 때까지)을 통과하면 된다 — 시험이 곧 인도자 교육
+   - 동행: 초심자가 인도자 코드를 넣어 신청 → 인도자가 승낙 (서버 guideLinks/{초심자})
+   - 졸업(정착): 동행 뒤 망각의 고난 한 장 통과(80%↑) + 4주 연속 매주 3일 이상 암송(동행 시작일부터 7일 묶음).
+     반짝으로는 안 되게 — 첫 고난까지 중간값 22일, 통과자 120명 중 지금 활동 28명이라 꾸준함을 함께 본다(9/30 실측)
+   - 졸업하면 인도자의 거룩한 성 나무에 빨간 열매(나무마다 2D 3개까지 보이고, 수 제한은 없다)
+   - 약속은 넣지 않는다(강제성). 대신 진행·함께한 날을 **보여 주기만** 해서 "만나서 돕는 게 좋겠다"를 은근히
+   서버: kingsroad guidePass·guideRequest·guideRespond·guideLeave·guideProgress·guideMeet·guideGraduate (docs/인도자와-동행.md) */
+const GUIDE_WEEK_MS = 7 * 86400000, GUIDE_GRAD_WEEKS = 4, GUIDE_WEEK_DAYS = 3;
+let _guideLink = null, _guideMine = [], _guideBusy = false;          // 서버에서 읽은 내 동행 · 내가 인도하는 동행들
+
+function _guideDayTs(d) { const [y, m, dd] = d.split('-').map(Number); return new Date(y, m - 1, dd, 12).getTime(); }
+// 동행 시작한 날(6시 날짜)부터 며칠째인지 — 시각이 아니라 날짜끼리 센다(시각으로 나누면 묶음 경계에서 하루가 앞 주로 샜다)
+function _guideDayIdx(d, since) { return Math.round((_guideDayTs(d) - _guideDayTs(_tsTo6AMDateStr(since))) / 86400000); }
+function _guideWeeks(days, since) {   // 7일 묶음별 암송한 날 수
+    const wk = {};
+    (days || []).forEach(d => { const i = Math.floor(_guideDayIdx(d, since) / 7); if (i >= 0) wk[i] = (wk[i] || 0) + 1; });
+    return wk;
+}
+function _guideWeeksOk(wk, since, now) {   // 서버 guideWeeksOk와 같은 규칙
+    const cur = Math.floor(_guideDayIdx(_tsTo6AMDateStr(now), since) / 7);
+    let i = (wk[cur] || 0) >= GUIDE_WEEK_DAYS ? cur : cur - 1, n = 0;
+    while (i >= 0 && (wk[i] || 0) >= GUIDE_WEEK_DAYS) { n++; i--; }
+    return n;
+}
+function _guideHardDone(since) {
+    return Object.values(hardshipMemoryClearHistory || {}).some(arr => (arr || []).some(e => e && e.date > since && e.total > 0 && e.correct / e.total >= 0.8));
+}
+function _guideProg(link) {   // 화면용 — 인도자 쪽은 서버의 prog, 초심자 쪽은 내 기록
+    const now = Date.now(), since = link.since || now;
+    const wk = link.mine ? _guideWeeks(guideRel.days, since) : Object.fromEntries(Object.entries((link.prog && link.prog.wk) || {}).map(([k, v]) => [+k, v]));
+    const cur = Math.floor(_guideDayIdx(_tsTo6AMDateStr(now), since) / 7);
+    return { wk, cur, weeks: Math.min(GUIDE_GRAD_WEEKS, _guideWeeksOk(wk, since, now)), thisWeek: wk[cur] || 0,
+        hard: link.mine ? _guideHardDone(since) : !!(link.prog && link.prog.hard), daysTogether: Math.max(1, Math.floor((now - since) / 86400000) + 1),
+        last: link.mine ? (guideRel.days || []).slice(-1)[0] : (link.prog && link.prog.last) };
+}
+
+/* 오늘 한 절이라도 — _noteDailySeeds(단비와 같은 자리)가 부른다 */
+function _guideNoteDay() {
+    if (!guideRel || guideRel.st !== 'active') return;
+    const d = _get6AMDayStr();
+    if ((guideRel.days || []).includes(d)) return;
+    guideRel.days = (guideRel.days || []).concat([d]).slice(-120);
+    saveGameData();
+    _guideReport();
+}
+let _guideReportT = null;
+function _guideReport() {
+    clearTimeout(_guideReportT);
+    _guideReportT = setTimeout(async () => {
+        if (!guideRel || guideRel.st !== 'active' || !guideRel.since) return;
+        const p = _guideProg({ mine: true, since: guideRel.since });
+        try { await _callGuildFn('guideProgress', { wk: p.wk, last: p.last || '', hard: p.hard }); } catch (e) { console.warn('[guide] progress', e); }
+        _guideTryGraduate();
+    }, 4000);
+}
+async function _guideTryGraduate() {
+    if (!guideRel || guideRel.st !== 'active' || !guideRel.since) return;
+    const p = _guideProg({ mine: true, since: guideRel.since });
+    if (p.weeks < GUIDE_GRAD_WEEKS || !p.hard || Date.now() - guideRel.since < GUIDE_GRAD_WEEKS * GUIDE_WEEK_MS - 86400000) return;
+    try {
+        const r = await _callGuildFn('guideGraduate', {});
+        if (r && r.ok) {
+            guideRel.st = 'graduated'; guideRel.gradAt = Date.now(); saveGameData();
+            if (typeof triggerConfetti === 'function') triggerConfetti();
+            setTimeout(() => { if (typeof showMissionToast === 'function') showMissionToast('🎉 킹스로드에 정착했어요!', `🍎 ${guideRel.gn || '인도자'}님의 나무에 빨간 열매가 열렸어요`); }, 600);
+        }
+    } catch (e) { console.warn('[guide] graduate', e); }
+}
+
+/* 동기화가 끝난 뒤 — 내 동행 상태와(초심자) 내가 인도하는 동행들(인도자)을 서버에서 읽는다 */
+async function _guideSync() {
+    if (typeof db === 'undefined' || !db || !myTag || myTag === '0000') return;
+    try {
+        const ls = await db.collection('guideLinks').doc(String(myTag)).get();
+        _guideLink = ls.exists ? ls.data() : null;
+        if (_guideLink) {
+            const L = _guideLink;
+            if (guideRel.g !== L.guide || guideRel.since !== (L.since || 0)) guideRel = { g: L.guide, gn: L.gNick || '', st: L.status, since: L.since || 0, days: guideRel.g === L.guide && guideRel.since === (L.since || 0) ? guideRel.days : [] };
+            else { guideRel.st = L.status; guideRel.gn = L.gNick || guideRel.gn; }
+        } else if (guideRel.st && guideRel.st !== 'graduated') guideRel = { g: '', gn: '', st: '', since: 0, days: [] };   // 그만뒀거나 거절됨
+        if (guideInfo.passedAt) {
+            const [gs, ms] = await Promise.all([db.collection('guides').doc(String(myTag)).get(), db.collection('guideLinks').where('guide', '==', String(myTag)).get()]);
+            if (gs.exists) guideInfo.grads = gs.data().grads || 0;
+            _guideMine = ms.docs.map(d => d.data());
+        }
+        saveGameData();
+        if (typeof _todoSocial !== 'undefined' && _todoSocial) {
+            _todoSocial.guideN = _guideMine.filter(l => l.status === 'pending' || (l.status === 'active' && l.meetReq && l.meetReq.by !== String(myTag))).length
+                + (_guideLink && _guideLink.status === 'active' && _guideLink.meetReq && _guideLink.meetReq.by !== String(myTag) ? 1 : 0);
+        }
+        const b = document.getElementById('badge-guide'); if (b) b.classList.toggle('active', !!(_todoSocial && _todoSocial.guideN));
+        if (typeof updateNotificationBadges === 'function') updateNotificationBadges();
+        if (guideRel.st === 'active') _guideReport();
+    } catch (e) { console.warn('[guide] sync', e); }
+}
+function _mergeGuide(target, other) {
+    const a = target.guideInfo || {}, b = other.guideInfo || {};
+    if (b.passedAt || b.grads) target.guideInfo = { passedAt: a.passedAt || b.passedAt || 0, grads: Math.max(a.grads || 0, b.grads || 0) };
+    const x = target.guideRel, y = other.guideRel;
+    if (y && y.g) {
+        if (!x || !x.g || (y.since || 0) > (x.since || 0)) target.guideRel = y;
+        else if (x.g === y.g && x.since === y.since) {
+            x.days = [...new Set([...(x.days || []), ...(y.days || [])])].sort().slice(-120);
+            if (y.st === 'graduated') x.st = 'graduated';
+        }
+    }
+    return 0;
+}
+
+// ── 화면 ─────────────────────────────────────────────────────────────────────────────────────────
+function openGuideScreen() {
+    if (typeof closeMoreMenu === 'function') closeMoreMenu();
+    if (!myTag || myTag === '0000') { showGemToast(0, '닉네임을 먼저 설정해주세요.', true); return; }
+    let ov = document.getElementById('guide-screen-overlay');
+    if (!ov) {
+        ov = document.createElement('div');
+        ov.id = 'guide-screen-overlay'; ov.className = 'friend-overlay';
+        ov.innerHTML = `<div class="friend-panel">
+            <div class="friend-panel-header"><span class="friend-panel-title">🧭 인도자와 동행</span><button class="friend-close-btn" onclick="closeGuideScreen()">✕</button></div>
+            <div id="guide-screen-body" class="friend-screen-body guide-body"></div></div>`;
+        document.body.appendChild(ov);
+    }
+    ov.style.display = 'flex';
+    _renderGuideScreen(true);
+}
+function closeGuideScreen() { const ov = document.getElementById('guide-screen-overlay'); if (ov) ov.style.display = 'none'; }
+const _gEsc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function _guideAgo(day) {
+    if (!day) return '아직 없음';
+    const n = Math.round((_guideDayTs(_get6AMDayStr()) - _guideDayTs(day)) / 86400000);
+    return n <= 0 ? '오늘' : n === 1 ? '어제' : `${n}일 전`;
+}
+function _guideWeekDots(p) {   // 4칸 — 연속으로 채운 주
+    return `<span class="guide-weeks">${[0, 1, 2, 3].map(i => `<i class="${i < p.weeks ? 'on' : ''}"></i>`).join('')}</span>`;
+}
+function _guideMeetBtn(L, beginnerTag) {
+    const me = String(myTag), req = L.meetReq, arg = beginnerTag ? `'${beginnerTag}'` : 'null';
+    const fresh = req && Date.now() - req.at < 2 * 86400000;
+    if (fresh && req.by === me) return `<div class="guide-meet-wait">🤝 상대가 확인하면 함께한 날로 남아요</div>`;
+    if (fresh) return `<button class="guide-btn meet" onclick="_guideMeet(${arg}, this)">🤝 맞아요, 오늘 함께했어요</button>`;
+    return `<button class="guide-btn ghost" onclick="_guideMeet(${arg}, this)">🤝 오늘 함께했어요</button>`;
+}
+function _guideCardHtml(L, asGuide) {
+    const p = _guideProg(asGuide ? L : { ...L, mine: true }), meets = (L.meets || []).length;
+    const lastMeet = meets ? _guideAgo(_tsTo6AMDateStr(L.meets[meets - 1])) : '';
+    const who = asGuide ? (getFriendMemo(L.beginner) || L.bNick || '초심자') : (L.gNick || '인도자');
+    return `<div class="guide-card">
+        <div class="guide-card-head"><b>${_gEsc(who)}</b><span class="guide-sub">${asGuide ? '#' + _gEsc(L.beginner) + ' · ' : '인도자 · '}함께한 지 ${p.daysTogether}일</span></div>
+        <div class="guide-row"><span>정착까지</span>${_guideWeekDots(p)}<span class="guide-dim">${p.weeks}/4주 · 이번 주 ${p.thisWeek}/3일</span></div>
+        <div class="guide-row"><span>망각의 고난</span><span class="${p.hard ? 'guide-ok' : 'guide-dim'}">${p.hard ? '✓ 통과' : '아직 — 한 장을 80% 넘게'}</span></div>
+        <div class="guide-row"><span>마지막 암송</span><span class="guide-dim">${_guideAgo(p.last)}</span></div>
+        <div class="guide-row"><span>함께한 날</span><span class="guide-dim">${meets ? `${meets}번 · 마지막 ${lastMeet}` : '아직 없음'}</span></div>
+        <div class="guide-actions">${_guideMeetBtn(L, asGuide ? L.beginner : null)}
+            <button class="guide-btn tiny" onclick="_guideLeave(${asGuide ? `'${L.beginner}'` : 'null'}, this)">${asGuide ? '동행 놓기' : '동행 그만두기'}</button></div>
+    </div>`;
+}
+/* 은근히 — 만난 주와 아닌 주의 암송 날 수를 숫자로만 보여 준다(내 초심자들 기록). 모자라면 인도자의 역할 한 줄 */
+function _guideNudgeHtml(active) {
+    const met = [], not = [];
+    active.forEach(L => {
+        const p = _guideProg(L), since = L.since || 0;
+        const mw = new Set((L.meets || []).map(ts => Math.floor(_guideDayIdx(_tsTo6AMDateStr(ts), since) / 7)));
+        for (let i = 0; i < p.cur; i++) (mw.has(i) ? met : not).push(p.wk[i] || 0);
+    });
+    const avg = a => (a.reduce((s, v) => s + v, 0) / a.length).toFixed(1);
+    if (met.length >= 2 && not.length >= 2) return `<div class="guide-nudge">📊 함께한 주엔 평균 <b>${avg(met)}일</b>, 아닌 주엔 <b>${avg(not)}일</b> 암송했어요</div>`;
+    return `<div class="guide-nudge">💡 인도자가 가장 크게 돕는 길은 만나서 함께 해 보는 거예요. 막힌 곳을 옆에서 같이 풀어 주세요.</div>`;
+}
+/* ⓘ 인도자와 동행이란 — 처음 열 땐 펼쳐 두고, 한 번 본 뒤로는 접어 둔다(눌러서 다시) */
+function _guideHelpHtml() {
+    let seen = false; try { seen = localStorage.getItem('kingsRoad_guideHelpSeen') === '1'; localStorage.setItem('kingsRoad_guideHelpSeen', '1'); } catch (e) {}
+    const item = (icon, title, body) => `<div class="guide-help-item"><b>${icon} ${title}</b><span>${body}</span></div>`;
+    return `<details class="guide-help"${seen ? '' : ' open'}><summary>ⓘ 인도자와 동행이란?</summary>
+        ${item('🧭', '인도자', '먼저 시작한 친구가 새로 시작하는 친구 곁에서 게임을 알려 주고, 만나서 함께 해 보는 사람이에요. 꾸준히 하지 못하고 있는 성도라면 누구나 동행을 받을 수 있어요.')}
+        ${item('📝', '인도자 되기', '누구나 시험을 다 맞히면 인도자가 돼요. 틀린 문제는 해설을 보고 다시 풀어요 — 인도자가 알아야 할 것을 익히는 시간이에요.')}
+        ${item('🤝', '동행 시작', '초심자가 인도자의 코드를 넣어 신청하고, 인도자가 승낙하면 시작돼요. 처음 만난 자리에서 홈 화면에 추가하기 · 알림 켜기 · 첫 절 외우기를 함께 해 보세요.')}
+        ${item('📅', '함께한 날', '만났을 때 한 사람이 「오늘 함께했어요」를 누르고 다른 사람이 확인하면 남아요. 일주일에 한 번이라도 만나 함께 해 보는 시간이 가장 큰 힘이 돼요.')}
+        ${item('🌱', '정착 졸업', '동행한 뒤 <b>망각의 고난 한 장</b>(80% 이상)과 <b>4주 연속, 매주 3일 이상</b> 암송을 채우면 졸업해요. 한 주를 놓쳐도 괜찮아요 — 4주를 처음부터 다시 세요.')}
+        ${item('🍎', '빨간 열매', '초심자가 졸업하면 인도자의 거룩한 성 나무에 빨간 열매가 하나 열려요. 열매를 보면 몇 명과 함께 정착했는지 알 수 있어요.')}
+    </details>`;
+}
+async function _renderGuideScreen(fetch) {
+    const body = document.getElementById('guide-screen-body'); if (!body) return;
+    if (fetch) { body.innerHTML = '<div class="guide-loading">불러오는 중…</div>'; await _guideSync(); }
+    let h = _guideHelpHtml();
+    // ── 나의 동행 (초심자) ──
+    const L = _guideLink;
+    h += `<div class="friend-section-title">🚶 나의 동행</div>`;
+    if (!L) {
+        h += `<div class="guide-intro">먼저 시작한 친구가 곁에서 도와줘요. 인도자에게 코드를 받아 넣어 보세요.</div>
+            <div class="friend-add-row"><input id="guide-code-input" class="friend-tag-input" placeholder="인도자 코드 (#ABCD12)" maxlength="7" />
+            <button class="friend-add-btn" onclick="_guideRequest(this)">신청</button></div>`;
+    } else if (L.status === 'pending') {
+        h += `<div class="guide-card"><div class="guide-card-head"><b>${_gEsc(L.gNick || L.guide)}</b><span class="guide-sub">인도자 #${_gEsc(L.guide)}</span></div>
+            <div class="guide-intro">신청했어요. 인도자가 승낙하면 동행이 시작돼요.</div>
+            <div class="guide-actions"><button class="guide-btn tiny" onclick="_guideLeave(null, this)">신청 취소</button></div></div>`;
+    } else if (L.status === 'active') {
+        h += _guideCardHtml(L, false);
+        h += `<div class="guide-rule">정착 졸업: 동행한 뒤 <b>망각의 고난 한 장</b>(80% 이상) + <b>4주 연속, 매주 3일 이상</b> 암송. 한 주를 놓치면 4주를 처음부터 다시 세요.</div>`;
+    } else if (L.status === 'graduated') {
+        h += `<div class="guide-card grad">🎉 <b>${_gEsc(L.gNick || '인도자')}</b>님과 함께 킹스로드에 정착했어요${L.gradAt ? ` · ${_tsTo6AMDateStr(L.gradAt)}` : ''}</div>`;
+    }
+    // ── 인도자 ──
+    h += `<div class="friend-section-title">🧭 인도자</div>`;
+    if (!guideInfo.passedAt) {
+        h += `<div class="guide-intro">인도자는 새로 시작하는 친구 곁에서 게임을 알려 주고, 만나서 함께 해 보는 사람이에요.
+            누구나 될 수 있어요. 킹스로드를 얼마나 아는지 확인하는 시험을 다 맞히면 인도자 코드가 생겨요.</div>
+            <button class="guide-btn main" onclick="openGuideQuiz()">📝 인도자 시험 보기</button>`;
+    } else {
+        const pend = _guideMine.filter(x => x.status === 'pending'), act = _guideMine.filter(x => x.status === 'active');
+        h += `<div class="guide-code">내 인도자 코드 <b>#${_gEsc(myTag)}</b> <button class="guide-btn tiny" onclick="_guideCopyCode(this)">복사</button></div>
+            <div class="guide-grads">🍎 함께 정착한 사람 <b>${guideInfo.grads || 0}</b>명</div>`;
+        pend.forEach(x => {
+            h += `<div class="guide-card req"><div class="guide-card-head"><b>${_gEsc(x.bNick || x.beginner)}</b><span class="guide-sub">#${_gEsc(x.beginner)} · 동행 신청</span></div>
+                <div class="guide-actions"><button class="guide-btn main" onclick="_guideRespond('${x.beginner}', true, this)">승낙</button>
+                <button class="guide-btn tiny" onclick="_guideRespond('${x.beginner}', false, this)">거절</button></div></div>`;
+        });
+        if (act.length) { h += _guideNudgeHtml(act); act.forEach(x => { h += _guideCardHtml(x, true); }); }
+        else if (!pend.length) h += `<div class="guide-intro">아직 동행이 없어요. 새로 시작하는 친구를 만나면 코드를 알려 주고, 그 자리에서 함께 시작해 보세요.</div>`;
+        h += `<button class="guide-btn ghost" onclick="openGuideQuiz(true)">📝 시험 다시 보기 (복습)</button>`;
+    }
+    body.innerHTML = h;
+}
+async function _guideAct(btn, fn, data, after) {
+    if (_guideBusy) return; _guideBusy = true;
+    try {
+        await _withButtonLoading(btn, '…', async () => {
+            const r = await _callGuildFn(fn, data);
+            if (after) after(r);
+        });
+    } catch (e) { showGemToast(0, '잠시 뒤에 다시 해 주세요.', true); console.warn('[guide]', fn, e); }
+    _guideBusy = false;
+    _renderGuideScreen(true);
+}
+function _guideRequest(btn) {
+    const v = ((document.getElementById('guide-code-input') || {}).value || '').trim().replace(/^#/, '').toUpperCase();
+    if (!v) { showGemToast(0, '인도자 코드를 넣어 주세요.', true); return; }
+    _guideAct(btn, 'guideRequest', { guideTag: v, nick: myNickname }, r => {
+        if (r && r.ok) showGemToast(0, '🧭 동행을 신청했어요');
+        else showGemToast(0, r && r.why === 'notGuide' ? '인도자 코드가 아니에요. 다시 확인해 주세요.' : r && r.why === 'self' ? '내 코드는 넣을 수 없어요.' : '지금은 신청할 수 없어요.', true);
+    });
+}
+function _guideRespond(tag, accept, btn) { _guideAct(btn, 'guideRespond', { beginnerTag: tag, accept }, r => { if (r && r.ok && accept) showGemToast(0, '🤝 동행이 시작됐어요'); }); }
+function _guideLeave(tag, btn) {
+    if (btn && btn.dataset.sure !== '1') { btn.dataset.sure = '1'; btn.textContent = '정말요? 한 번 더 눌러 주세요'; return; }
+    _guideAct(btn, 'guideLeave', tag ? { beginnerTag: tag } : {}, () => { if (!tag) guideRel = { g: '', gn: '', st: '', since: 0, days: [] }; saveGameData(); });
+}
+function _guideMeet(tag, btn) { _guideAct(btn, 'guideMeet', tag ? { beginnerTag: tag } : {}, r => { if (r && r.recorded) showGemToast(0, '🤝 함께한 날로 남았어요'); }); }
+function _guideCopyCode(btn) {
+    const code = '#' + myTag;
+    try { navigator.clipboard.writeText(code).then(() => { btn.textContent = '복사됨'; }).catch(() => {}); } catch (e) {}
+}
+
+// ── 인도자 시험 — 다 맞힐 때까지. 틀리면 해설을 보여 주고, 틀린 문제만 보기를 섞어 다시 ──
+const GUIDE_QUIZ = [
+    { q: '처음 외운 구절의 첫 복습은 언제 돌아올까요?', a: '10분 뒤', w: ['1시간 뒤', '다음 날', '일주일 뒤'],
+      e: '복습 간격은 10분 → 1시간 → 6시간 → 하루 → 3일 → 7일, 그 뒤로는 두 배쯤씩 길어져요.' },
+    { q: '복습 간격이 점점 길어지는 이유는 무엇일까요?', a: '잊을 만할 때 다시 떠올려야 오래 기억에 남기 때문에', w: ['승점을 덜 주려고', '서버 부담을 줄이려고', '무작위로 정해져서'],
+      e: '잊어 갈 무렵 다시 꺼내는 것(간격 반복)이 기억을 가장 오래 붙잡아 줘요. 그래서 복습 시간을 지키는 게 중요해요.' },
+    { q: '다음 중 복습 순서로 맞는 것은?', a: '10분 → 1시간 → 6시간 → 하루 → 3일 → 7일', w: ['1시간 → 하루 → 일주일 → 한 달', '10분 → 30분 → 1시간 → 2시간', '매일 같은 시간'],
+      e: '복습이 오면 알림과 지도의 표시로 알려 줘요. 처음 며칠이 가장 촘촘해요.' },
+    { q: '「백지」로 외운다는 것은 무엇일까요?', a: '아무 단서 없이 주소만 보고 구절 전체를 써내는 것', w: ['빈칸 몇 개만 채우는 것', '소리 내어 따라 읽는 것', '보기 넷 중에서 고르는 것'],
+      e: '백지는 가장 정직한 확인이에요. 단서 없이 써낼 수 있어야 정말 외운 거예요.' },
+    { q: '힌트에 대해 맞는 것은?', a: '언제든 무료로 쓸 수 있고 벌은 없지만, 많이 쓰면 백지레벨은 오르지 않는다', w: ['보석을 내야 쓸 수 있다', '쓰면 그 문제는 틀린 것이 된다', '처음 일주일은 잠겨 있다'],
+      e: '힌트는 막혔을 때 쓰는 발판이에요. 다만 글자의 20% 넘게 힌트로 열면 「단서 없이 나왔다」로 치지 않아 백지레벨이 그대로예요.' },
+    { q: '백지로 처음 성공한 구절은 언제 다시 백지 차례가 될까요?', a: '3일 뒤', w: ['10분 뒤', '다음 날', '한 달 뒤'],
+      e: '백지레벨은 1일 → 3일 → 1주 → 2주 → 한 달로 차례가 벌어져요. 처음 성공하면 3일 칸에서 시작해요. 틀리면 다음 날로 돌아와요.' },
+    { q: '「자유여행」과 「왕의 길」의 차이는?', a: '왕의 길은 매일 아침 6시마다 정한 수만큼 새 구절이 열리고, 자유여행은 원하는 곳부터 자유롭게 한다', w: ['자유여행은 보석이 들고 왕의 길은 무료다', '왕의 길은 혼자, 자유여행은 친구와 한다', '둘은 이름만 다르고 같다'],
+      e: '처음엔 왕의 길처럼 하루 조금씩 열리는 길이 부담이 적어요. 단계에 따라 하루 열리는 구절 수가 달라요.' },
+    { q: '「망각의 고난」은 어떤 것일까요?', a: '주소를 보고 구절 전체를 타이핑한다', w: ['구절을 소리 내어 암송한다', '구절을 보고 몇 장 몇 절인지 맞힌다', '주소를 보고 보기 넷 중 맞는 구절을 고른다'],
+      e: '고난은 넷이에요 — 암송(소리)·주소(장절 맞히기)·망각(전체 타이핑)·구절(4지선다). 망각의 고난이 가장 어렵고, 정착 졸업 조건에도 들어가요.' },
+    { q: '「단비」는 언제 내릴까요?', a: '오늘 한 절이라도 하면, 내일 첫 스테이지에 들어갈 때 20분 동안 승점 2배', w: ['보석으로 사면 바로', '일주일 내내 하면 주말에', '밭이 100이 되면'],
+      e: '조건은 「오늘 한 절이라도」 하나예요. 매일 조금씩 하는 사람을 위한 선물이에요.' },
+    { q: '「밭」에 대해 맞는 것은?', a: '승점은 씨(난도) × 밭이고, 밭은 보석으로 넓히며 틀려도 줄지 않는다', w: ['틀릴 때마다 밭이 줄어든다', '밭이 0이 되면 게임이 끝난다', '밭은 친구 수만큼 넓어진다'],
+      e: '씨 뿌리는 자의 비유(막 4:8)에서 왔어요. 30·60·100배 땅이 이정표예요.' },
+    { q: '중간점검과 보스전은 무엇일까요?', a: '외운 여러 절을 이어서 확인하는 시험 — 중간점검은 몇 절 구간, 보스전은 장 전체', w: ['새 구절을 처음 배우는 곳', '친구와 겨루는 대결', '보석을 사는 상점'],
+      e: '몇 절씩 외운 뒤 중간점검으로 묶고, 장을 다 외우면 보스전으로 장 전체를 이어서 확인해요.' },
+    { q: '알림을 켜 두면 좋은 이유는?', a: '복습과 백지 차례를 제때 알려 줘서, 간격을 놓치지 않게 해 준다', w: ['알림을 켜야 보석을 받는다', '알림이 꺼져 있으면 저장이 안 된다', '친구가 내 점수를 볼 수 있게 된다'],
+      e: '간격 반복은 「제때」가 핵심이에요. 처음 시작하는 친구와 만나면 알림부터 함께 켜 주세요. 홈 화면에 추가해야 알림이 오는 폰도 있어요.' },
+    { q: '인도자가 초심자의 정착을 가장 크게 도울 수 있는 방법은?', a: '만나서 함께 해 보며 게임을 알려 주고, 막힌 곳을 같이 풀어 준다', w: ['매일 숙제를 내고 검사한다', '초심자 대신 복습을 해 준다', '코드만 알려 주고 기다린다'],
+      e: '정착은 사람이 곁에 있을 때 일어나요. 일주일에 한 번이라도 만나 함께 해 보는 시간이 가장 큰 힘이 돼요.' },
+];
+let _gq = null;
+function _gShuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function openGuideQuiz(review) {
+    _gq = { list: _gShuffle(GUIDE_QUIZ.map((_, i) => i)), pos: 0, wrong: [], round: 1, review: !!review, shown: null };
+    let ov = document.getElementById('guide-quiz-overlay');
+    if (!ov) {
+        ov = document.createElement('div'); ov.id = 'guide-quiz-overlay'; ov.className = 'friend-overlay';
+        ov.innerHTML = `<div class="friend-panel"><div class="friend-panel-header"><span class="friend-panel-title">📝 인도자 시험</span>
+            <button class="friend-close-btn" onclick="document.getElementById('guide-quiz-overlay').style.display='none'">✕</button></div>
+            <div id="guide-quiz-body" class="friend-screen-body guide-body"></div></div>`;
+        document.body.appendChild(ov);
+    }
+    ov.style.display = 'flex';
+    _guideQuizRender();
+}
+function _guideQuizRender() {
+    const body = document.getElementById('guide-quiz-body'); if (!body || !_gq) return;
+    if (_gq.pos >= _gq.list.length) {
+        if (_gq.wrong.length) {
+            body.innerHTML = `<div class="guide-quiz-end">틀린 문제 <b>${_gq.wrong.length}</b>개를 다시 풀어요.<br><span class="guide-dim">해설을 떠올리며 천천히 — 다 맞히면 끝나요.</span></div>
+                <button class="guide-btn main" onclick="_gq.list=_gShuffle(_gq.wrong);_gq.wrong=[];_gq.pos=0;_gq.round++;_guideQuizRender()">다시 풀기</button>`;
+        } else _guideQuizPass(body);
+        return;
+    }
+    const Q = GUIDE_QUIZ[_gq.list[_gq.pos]], opts = _gShuffle([Q.a, ...Q.w]);
+    _gq.shown = opts;
+    body.innerHTML = `<div class="guide-quiz-n">${_gq.round > 1 ? `다시 풀기 ${_gq.round - 1}번째 · ` : ''}${_gq.pos + 1} / ${_gq.list.length}</div>
+        <div class="guide-quiz-q">${_gEsc(Q.q)}</div>
+        <div class="guide-quiz-opts">${opts.map((o, i) => `<button class="guide-quiz-opt" onclick="_guideQuizPick(${i}, this)">${_gEsc(o)}</button>`).join('')}</div>
+        <div id="guide-quiz-fb"></div>`;
+}
+function _guideQuizPick(i, btn) {
+    const Q = GUIDE_QUIZ[_gq.list[_gq.pos]], ok = _gq.shown[i] === Q.a;
+    document.querySelectorAll('.guide-quiz-opt').forEach((b, k) => { b.disabled = true; if (_gq.shown[k] === Q.a) b.classList.add('right'); });
+    if (!ok) { btn.classList.add('wrong'); _gq.wrong.push(_gq.list[_gq.pos]); }
+    const fb = document.getElementById('guide-quiz-fb');
+    if (fb) fb.innerHTML = `<div class="guide-quiz-exp ${ok ? 'ok' : 'no'}">${ok ? '⭕ 맞아요' : '❌ 아쉬워요'} — ${_gEsc(Q.e)}</div>
+        <button class="guide-btn main" onclick="_gq.pos++;_guideQuizRender()">다음</button>`;
+}
+async function _guideQuizPass(body) {
+    if (_gq.review || guideInfo.passedAt) {
+        body.innerHTML = `<div class="guide-quiz-end">🎉 다 맞혔어요!</div><button class="guide-btn main" onclick="document.getElementById('guide-quiz-overlay').style.display='none'">닫기</button>`;
+        return;
+    }
+    body.innerHTML = `<div class="guide-quiz-end">🎉 다 맞혔어요! 인도자로 등록하는 중…</div>`;
+    try {
+        const r = await _callGuildFn('guidePass', { nick: myNickname });
+        if (r && r.ok) {
+            guideInfo.passedAt = r.passedAt; guideInfo.grads = r.grads || 0; saveGameData();
+            body.innerHTML = `<div class="guide-quiz-end">🧭 이제 인도자예요!<br><br>내 인도자 코드는 <b>#${_gEsc(myTag)}</b>예요.<br>
+                <span class="guide-dim">새로 시작하는 친구를 만나면 이 코드를 알려 주고, 그 자리에서 함께 시작해 보세요 — 홈 화면에 추가하기, 알림 켜기, 첫 절 외우기.</span></div>
+                <button class="guide-btn main" onclick="document.getElementById('guide-quiz-overlay').style.display='none';_renderGuideScreen(true)">확인</button>`;
+            return;
+        }
+    } catch (e) { console.warn('[guide] pass', e); }
+    body.innerHTML = `<div class="guide-quiz-end">등록하지 못했어요. 잠시 뒤에 다시 해 주세요.</div><button class="guide-btn main" onclick="_guideQuizPass(document.getElementById('guide-quiz-body'))">다시 등록</button>`;
+}
 
 function openFriendScreen() {
     closeMoreMenu();

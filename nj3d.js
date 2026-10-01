@@ -402,6 +402,23 @@
         }
         const ripeN = fruitList.filter(f => f.ripe).length;
         if (ripeN) showHint(T('nj_fruit_hint', { n: ripeN }), 5000);
+        // 🍎 함께 정착한 사람 — 인도자의 빨간 열매(2026-10-01). 달마다 바뀌는 열매와 따로, 수관 바깥에 조금 크고 윤기 나게.
+        //    2D는 나무마다 3개까지지만 3D는 나무마다 12개(모두 144)까지 — 그 이상은 수만 늘어난다(건축 창 「🍎 n」)
+        {
+            const redN = Math.min(144, (typeof guideInfo !== 'undefined' && guideInfo && guideInfo.grads) || 0);
+            if (redN && TREE_SPOTS.length) {
+                const red = new THREE.InstancedMesh(new THREE.SphereGeometry(0.085, 14, 10),
+                    new THREE.MeshStandardMaterial({ color: 0xd8121f, emissive: 0x5a0008, emissiveIntensity: 0.35, roughness: 0.22, metalness: 0.1 }), redN);
+                const m4 = new THREE.Matrix4(), v = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3(1, 1, 1), R = CANOPY_R + 0.1;
+                for (let i = 0; i < redN; i++) {
+                    const [tx, tz] = TREE_SPOTS[i % 12], k = Math.floor(i / 12);
+                    const y = 0.55 - (k + 0.5) / 12 * 1.1, rr = Math.sqrt(Math.max(0, 1 - y * y)), ang = k * 2.39996 + 1.2 + (i % 12) * 0.7;   // 나무마다 자리를 조금씩 돌려 똑같아 보이지 않게
+                    v.set(tx + Math.cos(ang) * rr * R, CANOPY_Y + y * R, tz + Math.sin(ang) * rr * R);
+                    m4.compose(v, q, sc); red.setMatrixAt(i, m4);
+                }
+                red.castShadow = true; scene.add(red);
+            }
+        }
 
         // ── 생명수의 바다와 만국 (겔 47 · 창 10 · 계 22:2) — 지도 바다와 같은 칸·같은 순서(game.js _seaGeom), 서버 진행도 그대로 ──
         const seaGrp = new THREE.Group(); scene.add(seaGrp);

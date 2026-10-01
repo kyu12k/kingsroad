@@ -1348,3 +1348,151 @@ exports.seaWeekly = onSchedule({ schedule: '0 6 * * 1', timeZone: 'Asia/Seoul', 
         console.log(`[seaWeekly] ${wk} 흐려진 칸 ${lost} (지난 주 평균 ${avg.toFixed(1)}), 남은 맑은 칸 ${w.clear}`);
     });
 });
+
+// ══ 🧭 인도자와 동행 (2026-10-01) ══════════════════════════════════════════════════════════════════
+// 먼저 시작한 친구(인도자)가 오프라인에서 초심자의 정착을 돕는다. 보상은 없고, 초심자가 졸업하면 인도자의 거룩한 성 나무에 빨간 열매.
+//  guides/{tag}          — 인도자: 시험 통과 시각·졸업시킨 수(grads)·졸업 명단
+//  guideLinks/{초심자tag} — 동행 하나: pending → active → graduated. 졸업한 초심자는 다시 신청할 수 없다(한 사람이 한 번)
+// 졸업 = 동행 뒤 망각의 고난 한 장 통과 + 4주 연속 매주 3일 이상(동행 시작일부터 7일 묶음). 쓰기는 전부 이 함수들만(규칙 write: false).
+const GUIDE_WEEK_MS = 7 * 86400000, GUIDE_GRAD_WEEKS = 4, GUIDE_WEEK_DAYS = 3, GUIDE_MEET_REQ_MS = 2 * 86400000;
+const _gNick = (v) => String(v || '').slice(0, 20);
+// 연속으로 3일 이상인 주(묶음) 수 — 지금 묶음이 이미 3일이면 거기까지, 아니면 바로 앞 묶음까지(아직 끊긴 게 아니다)
+// 기기는 묶음을 6시 날짜로 세서 서버의 시각 계산과 하루 어긋날 수 있다 → 지금 묶음과 그다음 묶음 둘 다에서 세어 큰 쪽
+function guideWeeksOk(wk, since, now) {
+    const run = (cur) => {
+        let i = (Number(wk && wk[cur]) || 0) >= GUIDE_WEEK_DAYS ? cur : cur - 1, n = 0;
+        while (i >= 0 && (Number(wk && wk[i]) || 0) >= GUIDE_WEEK_DAYS) { n++; i--; }
+        return n;
+    };
+    const cur = Math.floor((now - since) / GUIDE_WEEK_MS);
+    return Math.max(run(cur), run(cur + 1));
+}
+// 동행 뒤 망각의 고난을 한 장 이상 완주하고 80% 이상 맞힘 — 저장본에서 직접 본다
+function guidePassedHardship(save, since) {
+    const h = (save && save.hardshipMemoryClearHistory) || {};
+    return Object.values(h).some(arr => (arr || []).some(e => e && e.date > since && e.total > 0 && e.correct / e.total >= 0.8));
+}
+
+exports.guidePass = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { myTag, nick } = request.data || {};
+    const u = await verifyTag(request.auth.uid, myTag);
+    const ref = db.collection('guides').doc(String(myTag));
+    const snap = await ref.get();
+    const prev = snap.exists ? snap.data() : {};
+    const passedAt = prev.passedAt || Date.now();
+    await ref.set({ tag: String(myTag), nick: _gNick(nick || u.nickname), passedAt, grads: prev.grads || 0 }, { merge: true });
+    return { ok: true, passedAt, grads: prev.grads || 0 };
+});
+
+exports.guideRequest = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { myTag, guideTag, nick } = request.data || {};
+    const u = await verifyTag(request.auth.uid, myTag);
+    const gTag = String(guideTag || '').replace(/^#/, '').toUpperCase();
+    if (!gTag || gTag === String(myTag)) return { ok: false, why: 'self' };
+    await enforceRateLimit(request.auth.uid, 'guideRequest', { maxCalls: 10, windowMs: 86400000 });
+    const gSnap = await db.collection('guides').doc(gTag).get();
+    if (!gSnap.exists || !gSnap.data().passedAt) return { ok: false, why: 'notGuide' };
+    const ref = db.collection('guideLinks').doc(String(myTag));
+    const cur = await ref.get();
+    if (cur.exists && cur.data().status !== 'pending') return { ok: false, why: cur.data().status };   // active·graduated
+    const doc = { beginner: String(myTag), bNick: _gNick(nick || u.nickname), guide: gTag, gNick: _gNick(gSnap.data().nick), status: 'pending', reqAt: Date.now() };
+    await ref.set(doc);
+    return { ok: true, link: doc };
+});
+
+exports.guideRespond = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { myTag, beginnerTag, accept } = request.data || {};
+    await verifyTag(request.auth.uid, myTag);
+    const ref = db.collection('guideLinks').doc(String(beginnerTag));
+    const snap = await ref.get();
+    if (!snap.exists || snap.data().guide !== String(myTag) || snap.data().status !== 'pending') return { ok: false };
+    if (!accept) { await ref.delete(); return { ok: true, accepted: false }; }
+    await ref.update({ status: 'active', since: Date.now(), prog: {}, meets: [] });
+    return { ok: true, accepted: true };
+});
+
+// 그만두기 — 초심자는 자기 동행을, 인도자는 beginnerTag로. 졸업한 기록은 지우지 않는다
+exports.guideLeave = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { myTag, beginnerTag } = request.data || {};
+    await verifyTag(request.auth.uid, myTag);
+    const ref = db.collection('guideLinks').doc(String(beginnerTag || myTag));
+    const snap = await ref.get();
+    if (!snap.exists) return { ok: true };
+    const d = snap.data();
+    if (d.status === 'graduated') return { ok: false };
+    if (beginnerTag ? d.guide !== String(myTag) : d.beginner !== String(myTag)) return { ok: false };
+    await ref.delete();
+    return { ok: true };
+});
+
+// 초심자의 진행 — 7일 묶음별 암송한 날 수(wk) · 마지막 암송일 · 망각의 고난 통과 여부. 인도자 화면이 이것을 본다
+exports.guideProgress = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { myTag, wk, last, hard } = request.data || {};
+    await verifyTag(request.auth.uid, myTag);
+    const ref = db.collection('guideLinks').doc(String(myTag));
+    const snap = await ref.get();
+    if (!snap.exists || snap.data().status !== 'active') return { ok: false };
+    const clean = {};
+    Object.entries(wk || {}).slice(0, 80).forEach(([k, v]) => {
+        const i = parseInt(k, 10), n = Math.max(0, Math.min(7, parseInt(v, 10) || 0));
+        if (i >= 0 && i < 200) clean[i] = n;
+    });
+    await ref.update({ prog: { wk: clean, last: String(last || '').slice(0, 10), hard: !!hard, at: Date.now() } });
+    return { ok: true };
+});
+
+// 🤝 함께한 날 — 한쪽이 누르면 요청, 다른 쪽이 이틀 안에 누르면 기록(하루 한 번)
+exports.guideMeet = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { myTag, beginnerTag } = request.data || {};
+    await verifyTag(request.auth.uid, myTag);
+    const ref = db.collection('guideLinks').doc(String(beginnerTag || myTag));
+    let out = { ok: false };
+    await db.runTransaction(async tx => {
+        const snap = await tx.get(ref);
+        if (!snap.exists) return;
+        const d = snap.data(), me = String(myTag);
+        if (d.status !== 'active' || (d.guide !== me && d.beginner !== me)) return;
+        const now = Date.now(), meets = Array.isArray(d.meets) ? d.meets : [], today = todayKst();
+        const req = d.meetReq;
+        if (req && req.by !== me && now - req.at < GUIDE_MEET_REQ_MS) {
+            const already = meets.some(ts => new Date(ts + 9 * 3600000).toISOString().slice(0, 10) === today);
+            const next = already ? meets : meets.concat([now]).slice(-200);
+            tx.update(ref, { meets: next, meetReq: admin.firestore.FieldValue.delete() });
+            out = { ok: true, recorded: true, meets: next.length };
+        } else {
+            tx.update(ref, { meetReq: { by: me, at: now } });
+            out = { ok: true, recorded: false };
+        }
+    });
+    return out;
+});
+
+// 졸업 — 서버가 다시 확인한다: 동행 4주 이상 · 4주 연속 주 3일(초심자 보고) · 망각의 고난(저장본에서 직접)
+exports.guideGraduate = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { myTag } = request.data || {};
+    const u = await verifyTag(request.auth.uid, myTag);
+    const ref = db.collection('guideLinks').doc(String(myTag));
+    let out = { ok: false };
+    await db.runTransaction(async tx => {
+        const snap = await tx.get(ref);
+        if (!snap.exists) return;
+        const d = snap.data(), now = Date.now();
+        if (d.status !== 'active' || !d.since) return;
+        if (now - d.since < GUIDE_GRAD_WEEKS * GUIDE_WEEK_MS - 86400000) { out = { ok: false, why: 'tooSoon' }; return; }   // 하루 여유(6시 경계)
+        if (guideWeeksOk((d.prog || {}).wk, d.since, now) < GUIDE_GRAD_WEEKS) { out = { ok: false, why: 'weeks' }; return; }
+        if (!guidePassedHardship(u, d.since)) { out = { ok: false, why: 'hardship' }; return; }
+        const gRef = db.collection('guides').doc(d.guide);
+        tx.update(ref, { status: 'graduated', gradAt: now });
+        tx.set(gRef, { grads: admin.firestore.FieldValue.increment(1), gradList: admin.firestore.FieldValue.arrayUnion({ tag: d.beginner, nick: d.bNick || '', at: now }) }, { merge: true });
+        out = { ok: true, guide: d.guide, gNick: d.gNick || '' };
+    });
+    if (out.ok) console.log(`[guideGraduate] ${myTag} → 인도자 ${out.guide}`);
+    return out;
+});

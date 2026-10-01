@@ -4250,6 +4250,54 @@ body, html {
     display: inline-block;
 }
 
+/* 🧭 인도자와 동행 (2026-10-01) — 친구 창(.friend-panel)과 같은 틀 */
+.friend-screen-body.guide-body { padding: 4px 14px 22px; }
+.guide-help { background: rgba(241,196,15,0.07); border: 1px solid rgba(241,196,15,0.3); border-radius: 12px; padding: 9px 12px; margin: 6px 0 4px; }
+.guide-help summary { color: #f1c40f; font-weight: 700; font-size: 0.88rem; cursor: pointer; }
+.guide-help[open] summary { margin-bottom: 6px; }
+.guide-help-item { display: flex; flex-direction: column; gap: 2px; padding: 6px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+.guide-help-item b { color: #ecf0f1; font-size: 0.85rem; }
+.guide-help-item span { color: #bdc3c7; font-size: 0.8rem; line-height: 1.55; word-break: keep-all; }
+.guide-loading { text-align: center; color: #95a5a6; padding: 30px; }
+.guide-intro { color: #bdc3c7; font-size: 0.85rem; line-height: 1.55; margin: 4px 2px 10px; }
+.guide-rule { color: #8fa3b3; font-size: 0.76rem; line-height: 1.5; margin: 6px 2px 4px; }
+.guide-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 11px 12px; margin: 8px 0; color: #ecf0f1; }
+.guide-card.req { border-color: rgba(241,196,15,0.55); }
+.guide-card.grad { border-color: rgba(192,20,31,0.6); background: rgba(192,20,31,0.12); font-size: 0.9rem; line-height: 1.5; }
+.guide-card-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.guide-card-head b { font-size: 1rem; }
+.guide-sub { color: #8fa3b3; font-size: 0.75rem; }
+.guide-row { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; padding: 3px 0; }
+.guide-row > span:first-child { color: #95a5a6; min-width: 5.6em; }
+.guide-dim { color: #9aa9b5; }
+.guide-ok { color: #2ecc71; font-weight: 700; }
+.guide-weeks { display: inline-flex; gap: 4px; }
+.guide-weeks i { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.3); }
+.guide-weeks i.on { background: #c0141f; border-color: #e74c3c; box-shadow: inset -2px -2px 0 rgba(0,0,0,0.2); }
+.guide-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; align-items: center; }
+.guide-btn { border: none; border-radius: 10px; padding: 8px 13px; font: 700 0.84rem 'Pretendard', sans-serif; cursor: pointer; }
+.guide-btn.main { background: #f1c40f; color: #2c3e50; width: 100%; margin-top: 8px; padding: 11px; font-size: 0.92rem; }
+.guide-actions .guide-btn.main { width: auto; margin-top: 0; padding: 8px 18px; }
+.guide-btn.meet { background: #27ae60; color: #fff; }
+.guide-btn.ghost { background: rgba(255,255,255,0.08); color: #ecf0f1; border: 1px solid rgba(255,255,255,0.18); }
+body > #guide-screen-overlay .guide-body > .guide-btn.ghost { width: 100%; margin-top: 12px; }
+.guide-btn.tiny { background: none; color: #8fa3b3; font-weight: 600; font-size: 0.76rem; padding: 6px 8px; }
+.guide-meet-wait { color: #9be7b5; font-size: 0.8rem; }
+.guide-code { color: #ecf0f1; font-size: 0.95rem; display: flex; align-items: center; gap: 6px; margin: 4px 2px; }
+.guide-code b { color: #f1c40f; letter-spacing: 0.04em; }
+.guide-grads { color: #f5b7b1; font-size: 0.85rem; margin: 2px 2px 8px; }
+.guide-nudge { background: rgba(46,204,113,0.1); border: 1px solid rgba(46,204,113,0.3); color: #c8f2d6; border-radius: 10px; padding: 8px 10px; font-size: 0.8rem; line-height: 1.5; margin: 8px 0; }
+.guide-quiz-n { color: #8fa3b3; font-size: 0.78rem; margin: 6px 0; }
+.guide-quiz-q { color: #ecf0f1; font-size: 1.02rem; font-weight: 700; line-height: 1.5; margin-bottom: 12px; word-break: keep-all; }
+.guide-quiz-opts { display: flex; flex-direction: column; gap: 8px; }
+.guide-quiz-opt { text-align: left; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #ecf0f1; border-radius: 10px; padding: 11px 12px; font: 600 0.88rem 'Pretendard', sans-serif; line-height: 1.45; cursor: pointer; word-break: keep-all; }
+.guide-quiz-opt.right { border-color: #2ecc71; background: rgba(46,204,113,0.16); }
+.guide-quiz-opt.wrong { border-color: #e74c3c; background: rgba(231,76,60,0.16); }
+.guide-quiz-exp { margin-top: 12px; border-radius: 10px; padding: 10px 12px; font-size: 0.85rem; line-height: 1.55; color: #ecf0f1; word-break: keep-all; }
+.guide-quiz-exp.ok { background: rgba(46,204,113,0.12); }
+.guide-quiz-exp.no { background: rgba(231,76,60,0.12); }
+.guide-quiz-end { color: #ecf0f1; text-align: center; font-size: 1rem; line-height: 1.6; padding: 24px 6px 8px; word-break: keep-all; }
+
 /* 돌아온 순례자 — 햇살 버튼 아래 💎×2 (2026-09-30) */
 .return-float { position: fixed; left: 12px; top: calc(50% + 34px); display: flex; align-items: center; gap: 8px; z-index: 300; user-select: none; }
 .return-float[hidden] { display: none; }
