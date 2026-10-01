@@ -235,11 +235,33 @@
         const glintGeo = new THREE.BufferGeometry(); glintGeo.setAttribute('position', new THREE.BufferAttribute(glintPos, 3));
         const glints = new THREE.Points(glintGeo, new THREE.PointsMaterial({ size: 0.32, map: radial, color: 0xffcf5a, transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending, fog: false, toneMapped: false }));
         scene.add(glints);
-        {
-            const throne = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.7, 0.45, 24), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff1c9, emissiveIntensity: 0.8 }));
-            throne.position.y = 0.25; scene.add(throne);
-            const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: radial, color: 0xfff0c8, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
-            glow.scale.set(4.2, 4.2, 1); glow.position.y = 1.1; scene.add(glow);
+        // ── 거룩한 성 모델 (10/1 사용자: 꾸밈 아이템에 비해 성이 멋짐이 덜하다) — 보좌·진주 문은 블렌더 로우폴리(tools/blender/city.py → models/city/*.glb) ──
+        const CITY_V = '20261001b';
+        const cityCache = {}, cityAnims = [];
+        function loadCity(k) {
+            if (!cityCache[k]) cityCache[k] = (async () => {
+                if (!THREE.GLTFLoader) await loadScript(GLTF_URL);
+                const gl = await new Promise((res, rej) => new THREE.GLTFLoader().load(`models/city/${k}.glb?v=${CITY_V}`, res, undefined, rej));
+                gl.scene.traverse(o => { if (!o.isMesh) return; o.castShadow = true; o.receiveShadow = true;
+                    const m = o.material; if (m.metalness > 0.5) { m.metalness = 0.45; m.roughness = 0.3; } if (m.emissive && m.emissive.getHex()) m.emissiveIntensity = 1.3;
+                    else if (k === 'pearlgate') { m.roughness = 0.28; m.metalness = 0.12; } });   // 진줏빛은 꼭짓점 색으로 — 빛을 더하면 하얗게 날아갔다
+                return gl.scene;
+            })();
+            cityCache[k].catch(() => { delete cityCache[k]; });
+            return cityCache[k];
+        }
+        {   // 보좌 (4:2-6 · 22:1) — 세 단 위 흰 보좌, 녹보석 무지개가 천천히 돌고, 일곱 등불이 일렁인다. 못(수면 WL) 위에 선다
+            const tg = new THREE.Group(); tg.position.y = -0.05; scene.add(tg);
+            const old = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.7, 0.45, 24), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff1c9, emissiveIntensity: 0.8 }));
+            old.position.y = 0.3; tg.add(old);
+            loadCity('throne').then(sc => {
+                if (cur !== C) return; tg.remove(old); const c = sc.clone(); tg.add(c);
+                const rb = c.getObjectByName('rainbow'), lp = c.getObjectByName('lamps'), ms = [];
+                if (lp) lp.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); ms.push(o.material); } });
+                cityAnims.push(t => { if (rb) rb.rotation.y = t * 0.25; if (lp) lp.scale.y = 1 + Math.sin(t * 9) * 0.03; ms.forEach((m, i) => { m.emissiveIntensity = 1.2 + Math.sin(t * 8 + i) * 0.3; }); });
+            }).catch(() => {});
+            const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: radial, color: 0xfff0c8, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.8 }));
+            glow.material.opacity = 0.45; glow.scale.set(3, 3, 1); glow.position.y = 1.5; scene.add(glow);   // 보좌를 가리지 않게 옅게
         }
         // 생명수의 강 — 보좌에서 사방으로 (22:1)
         const riverCv = document.createElement('canvas'); riverCv.width = 32; riverCv.height = 128;
@@ -310,12 +332,51 @@
             const xo0 = i === 0 ? -OUT + gap : t0 + gap, xi0 = i === 0 ? -IN + gap * 2 : t0 + gap;
             const xo1 = i === 2 ? OUT - gap : t1 - gap, xi1 = i === 2 ? IN - gap * 2 : t1 - gap;
             const sh = new THREE.Shape(); sh.moveTo(xo0, OUT); sh.lineTo(xo1, OUT); sh.lineTo(xi1, IN); sh.lineTo(xi0, IN); sh.closePath();
-            const g = new THREE.ExtrudeGeometry(sh, { depth: FH, bevelEnabled: false }); g.rotateX(-Math.PI / 2); return g;
+            const g = new THREE.ExtrudeGeometry(sh, { depth: FH - 0.08, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.05, bevelSegments: 1 });   // 깎은 보석처럼 모서리를 깎는다
+            g.translate(0, 0, 0.04); g.rotateX(-Math.PI / 2); return g;
+        }
+        // 벽옥 성벽 (21:18 「그 성곽은 벽옥으로 쌓였고」 · 21:11 「벽옥과 수정 같이 맑더라」) — 기초석 위 바깥쪽 띠. 문 자리는 비우고 모퉁이엔 망대
+        const WALL_H = 2.4, WALL_T = 0.55, GATE_OPEN = 0.98, GATE_SC = 1.15;   // 21:12 「크고 높은 성곽」 — 처음 1.25·문 0.85배는 낮다(10/1 사용자)
+        // ✨ 반짝임 — 보석이 숨 쉬듯 빛나고, 보석·성벽·진주 문 위로 별빛이 차례로 반짝인다(10/1 사용자: 보석 같긴 한데 빛나는 효과가 있어야)
+        const STAR_TEX = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
+            const gr = x.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.25, 'rgba(255,255,255,0.5)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+            x.fillStyle = gr; x.fillRect(0, 0, 64, 64); x.fillStyle = 'rgba(255,255,255,0.95)';
+            x.beginPath(); x.moveTo(32, 2); x.lineTo(35, 29); x.lineTo(62, 32); x.lineTo(35, 35); x.lineTo(32, 62); x.lineTo(29, 35); x.lineTo(2, 32); x.lineTo(29, 29); x.closePath(); x.fill();
+            return new THREE.CanvasTexture(c); })();
+        const sparkPts = [], gemMats = [], sparkles = [];
+        cityAnims.push(t => {
+            sparkles.forEach((pt, i) => { pt.material.opacity = Math.pow(Math.max(0, Math.sin(t * 1.9 + i * 1.57)), 5); pt.material.size = 0.38 + pt.material.opacity * 0.22; });
+            gemMats.forEach((m, i) => { m.emissiveIntensity = 0.35 + 0.55 * Math.pow(Math.max(0, Math.sin(t * 1.2 + i * 0.83)), 3); });
+        });
+        function makeSparkles() {   // 반짝일 점을 넷으로 나눠 차례로 깜박인다
+            for (let g = 0; g < 4; g++) {
+                const pts = sparkPts.filter((_, n) => n % 4 === g); if (!pts.length) continue;
+                const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pts.flat(), 3));
+                const pm = new THREE.Points(geo, new THREE.PointsMaterial({ map: STAR_TEX, size: 0.45, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, color: 0xfff6dc, toneMapped: false }));
+                built.add(pm); sparkles.push(pm);
+            }
+        }
+        // 수정처럼 맑은 벽옥 (21:11 「벽옥과 수정 같이 맑더라」, 10/1 사용자) — 처음엔 '碧玉' 글자대로 초록이었다. 성경의 벽옥은 맑게 빛나는 보석으로 본다.
+        // 면마다 아주 옅은 하늘·분홍·연보라·상아를 칠해 빛을 받으면 프리즘처럼 비치고, 반투명이라 성 안이 어렴풋이 보인다
+        const CRYSTAL = ['#f6fbff', '#e6f2ff', '#fbecf6', '#eef0ff', '#fff7e6', '#eafcf6'].map(c => new THREE.Color(c));
+        function crystalGeo(g) {
+          g = g.toNonIndexed(); const n = g.attributes.position.count, col = new Float32Array(n * 3);
+          for (let i = 0; i < n; i += 3) { const c = CRYSTAL[Math.floor(Math.random() * CRYSTAL.length)]; for (let j = 0; j < 3; j++) { col[(i + j) * 3] = c.r; col[(i + j) * 3 + 1] = c.g; col[(i + j) * 3 + 2] = c.b; } }
+          g.setAttribute('color', new THREE.BufferAttribute(col, 3)); return g;
+        }
+        const wallMat = () => HIGH
+            ? new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.04, metalness: 0.0, clearcoat: 1, clearcoatRoughness: 0.02, envMapIntensity: 1.6, emissive: 0xbfe0ff, emissiveIntensity: 0.12, transparent: true, opacity: 0.82, flatShading: true })
+            : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.08, metalness: 0.1, emissive: 0xbfe0ff, emissiveIntensity: 0.18, transparent: true, opacity: 0.85, flatShading: true });
+        const rotXZ = (x, z, r) => [x * Math.cos(r) + z * Math.sin(r), -x * Math.sin(r) + z * Math.cos(r)];
+        function wallPieces(idx) {   // 북쪽 면 기준 [x0, x1] 조각들 — 문 자리(가운데)와 모퉁이(망대 자리)를 비운다
+            const t0 = -HALF + idx * SEG, t1 = t0 + SEG, g = (idx - 1) * GATE_GAP, x0 = idx === 0 ? -HALF + 0.75 : t0, x1 = idx === 2 ? HALF - 0.75 : t1;
+            return [[x0, g - GATE_OPEN], [g + GATE_OPEN, x1]];
         }
         const SIDE_ROT = { N: [0, i => i], E: [-Math.PI / 2, i => i], S: [Math.PI, i => 2 - i], W: [Math.PI / 2, i => 2 - i] };
         function rebuild() {
             built.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) [].concat(o.material).forEach(m => m.dispose()); });
             while (built.children.length) built.remove(built.children[0]);
+            sparkPts.length = 0; gemMats.length = 0; sparkles.length = 0;
             BOXES.length = 0; BOXES.push(THRONE_BOX, ...TREE_BOXES);
             SEQ.forEach(([side, i], k) => {
                 const [cx, cz] = gatePos(side, i), horiz = side === 'N' || side === 'S';
@@ -325,12 +386,47 @@
                         ? new THREE.MeshPhysicalMaterial({ color: col, roughness: 0.1, metalness: 0.1, clearcoat: 0.6, clearcoatRoughness: 0.08, envMapIntensity: 0.9, emissive: col, emissiveIntensity: 0.12 })
                         : new THREE.MeshStandardMaterial({ color: col, roughness: 0.08, metalness: 0.3, emissive: col, emissiveIntensity: 0.05 });
                     const [rot, idx] = SIDE_ROT[side];
+                    mat.flatShading = true;
                     const stone = new THREE.Mesh(foundationGeom(idx(i)), mat);
                     stone.rotation.y = rot; stone.castShadow = stone.receiveShadow = true; built.add(stone);
+                    {   // 바깥 면에 박힌 보석 — 같은 빛깔로 깎은 보석이 줄지어
+                        const t0 = -HALF + idx(i) * SEG, gm = new THREE.MeshStandardMaterial({ color: col.clone().offsetHSL(0, 0.05, 0.12), roughness: 0.05, metalness: 0.3, emissive: col, emissiveIntensity: 0.35, flatShading: true });
+                        const xs = []; for (let x = t0 + 0.35; x < t0 + SEG - 0.2; x += 0.55) { const gx = (idx(i) - 1) * GATE_GAP; if (Math.abs(x - gx) > 0.5) xs.push(x); }
+                        const gem = new THREE.InstancedMesh(new THREE.OctahedronGeometry(0.11, 0), gm, xs.length), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(1, 1.35, 0.55);
+                        xs.forEach((x, n) => { const [wx, wz] = rotXZ(x, -HALF - 0.01, rot); m4.compose(new THREE.Vector3(wx, FH * 0.5, wz), q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rot), sc); gem.setMatrixAt(n, m4);
+                            const [sx, sz] = rotXZ(x, -HALF - 0.12, rot); sparkPts.push([sx, FH * 0.5 + 0.05, sz]); });
+                        built.add(gem); gemMats.push(gm, mat);   // 박힌 보석과 기초석 판이 함께 숨 쉬듯
+                        for (let n = 0; n < 5; n++) { const [sx, sz] = rotXZ(t0 + 0.3 + Math.random() * (SEG - 0.6), -HALF - 0.6 + Math.random() * 0.5, rot); sparkPts.push([sx, FH + 0.02, sz]); }   // 기초석 윗면
+                    }
+                    {   // 성벽 — 기초석 위 바깥 띠, 위에 성가퀴
+                        const wm = wallMat(), mer = [];
+                        wallPieces(idx(i)).forEach(([a0, a1]) => {
+                            const L = a1 - a0; if (L <= 0.05) return;
+                            const w = new THREE.Mesh(crystalGeo(new THREE.BoxGeometry(L, WALL_H, WALL_T)), wm), [wx, wz] = rotXZ((a0 + a1) / 2, -HALF + WALL_T / 2, rot);
+                            w.position.set(wx, FH + WALL_H / 2, wz); w.rotation.y = rot; w.castShadow = w.receiveShadow = true; built.add(w);
+                            const c1 = rotXZ(a0, -HALF, rot), c2 = rotXZ(a1, -HALF + WALL_T, rot);
+                            BOXES.push({ x0: Math.min(c1[0], c2[0]), x1: Math.max(c1[0], c2[0]), z0: Math.min(c1[1], c2[1]), z1: Math.max(c1[1], c2[1]), y0: FH, y1: FH + WALL_H });
+                            for (let x = a0 + 0.15; x < a1 - 0.1; x += 0.42) mer.push(x);
+                            for (let n = 0; n < Math.round(L * 1.2); n++) { const [sx, sz] = rotXZ(a0 + Math.random() * L, -HALF - 0.04, rot); sparkPts.push([sx, FH + 0.3 + Math.random() * (WALL_H - 0.4), sz]); }   // 벽옥 성벽 겉면
+                        });
+                        const mg = new THREE.InstancedMesh(crystalGeo(new THREE.BoxGeometry(0.24, 0.22, WALL_T + 0.04)), wm, mer.length), m4 = new THREE.Matrix4(), q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), rot), one = new THREE.Vector3(1, 1, 1);
+                        mer.forEach((x, n) => { const [wx, wz] = rotXZ(x, -HALF + WALL_T / 2, rot); m4.compose(new THREE.Vector3(wx, FH + WALL_H + 0.11, wz), q, one); mg.setMatrixAt(n, m4); });
+                        mg.castShadow = true; built.add(mg);
+                        [0, 2].forEach(end => {   // 모퉁이 망대 — 그 모퉁이에 닿는 기초석이 놓이면
+                            if (idx(i) !== end) return;
+                            const cx2 = end === 0 ? -HALF + 0.4 : HALF - 0.4, [tx, tz] = rotXZ(cx2, -HALF + 0.4, rot);
+                            if (built.children.some(o => o.userData.tower && Math.hypot(o.position.x - tx, o.position.z - tz) < 0.1)) return;
+                            const tw = new THREE.Group(); tw.userData.tower = true; tw.position.set(tx, FH, tz); built.add(tw);
+                            const body = new THREE.Mesh(crystalGeo(new THREE.CylinderGeometry(0.5, 0.56, WALL_H + 0.55, 8)), wm); body.position.y = (WALL_H + 0.55) / 2; body.castShadow = true; tw.add(body);
+                            const cap = new THREE.Mesh(new THREE.ConeGeometry(0.62, 0.7, 8), new THREE.MeshStandardMaterial({ color: 0xe8bf4a, metalness: 0.6, roughness: 0.3, emissive: 0x5a3c0c, emissiveIntensity: 0.3, flatShading: true }));
+                            cap.position.y = WALL_H + 0.55 + 0.35; cap.castShadow = true; tw.add(cap);
+                            BOXES.push({ x0: tx - 0.5, x1: tx + 0.5, z0: tz - 0.5, z1: tz + 0.5, y0: FH, y1: FH + WALL_H + 0.9 });
+                        });
+                    }
                     // 문 안팎의 경사로 — 기초석 단(0.6)은 순례자 키(0.22)보다 훨씬 높다
                     const n = side === 'N' ? [0, -1] : side === 'S' ? [0, 1] : side === 'E' ? [1, 0] : [-1, 0];
                     const along = horiz ? [1, 0] : [0, 1], tg = (i - 1) * GATE_GAP;
-                    const rm = new THREE.MeshStandardMaterial({ color: 0xdbe6ee, roughness: 0.75, side: THREE.DoubleSide });
+                    const rm = new THREE.MeshStandardMaterial({ color: 0xf2ead8, roughness: 0.5, metalness: 0.1, side: THREE.DoubleSide });   // 경사로 — 보좌 단과 같은 흰 대리석
                     [[n, HALF], [[-n[0], -n[1]], HALF - 1.05]].forEach(([X, d]) => {
                         const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(RAMP_L, 0); sh.lineTo(0, FH); sh.closePath();
                         const geo = new THREE.ExtrudeGeometry(sh, { depth: RAMP_W, bevelEnabled: false });
@@ -348,20 +444,30 @@
                     : new THREE.MeshStandardMaterial({ color: 0xfbf8ff, roughness: 0.1, metalness: 0.25, emissive: 0xcfc6f0, emissiveIntensity: 0.3 });
                 const base = k < found ? FH : 0.02, R = GATE / 2, Tk = 0.14, postH = GATE_H - R;
                 const gate = new THREE.Group();
+                const PC = 0.635 * GATE_SC, PT = 0.2 * GATE_SC, ARCH0 = 3.74, ARCH1 = 4.2;   // 부딪힘 — 진주 문 모델(city.py, ×GATE_SC)의 기둥 가운데·두께·아치 안쪽/바깥 높이
                 [-1, 1].forEach(sg => {
                     const post = new THREE.Mesh(new THREE.CylinderGeometry(Tk, Tk, postH, 12), gm); post.position.set(sg * R, postH / 2, 0); post.castShadow = true; gate.add(post);
-                    const px = horiz ? cx + sg * R : cx, pz = horiz ? cz : cz + sg * R;
-                    BOXES.push({ x0: px - Tk, x1: px + Tk, z0: pz - Tk, z1: pz + Tk, y0: base, y1: base + postH });
+                    const px = horiz ? cx + sg * PC : cx, pz = horiz ? cz : cz + sg * PC;
+                    BOXES.push({ x0: px - PT, x1: px + PT, z0: pz - PT, z1: pz + PT, y0: base, y1: base + ARCH0 });
                 });
                 const arch = new THREE.Mesh(new THREE.TorusGeometry(R, Tk, 12, 36, Math.PI), gm); arch.position.set(0, postH, 0); gate.add(arch);
-                const aw = R + Tk;   // 아치 — 제트팩으로 날다 부딪히거나 위에 설 수 있게 대략 상자 하나
-                BOXES.push(horiz ? { x0: cx - aw, x1: cx + aw, z0: cz - Tk, z1: cz + Tk, y0: base + postH + R * 0.7, y1: base + GATE_H + Tk }
-                                 : { x0: cx - Tk, x1: cx + Tk, z0: cz - aw, z1: cz + aw, y0: base + postH + R * 0.7, y1: base + GATE_H + Tk });
+                const plain = gate.children.slice();
+                loadCity('pearlgate').then(sc => {
+                    if (cur !== C || gate.parent !== built) return;
+                    plain.forEach(o => gate.remove(o)); const c = sc.clone(); c.scale.setScalar(GATE_SC); gate.add(c);   // 높은 성벽보다 높게
+                    const wl = c.getObjectByName('wingL'), wr = c.getObjectByName('wingR'), ph = k * 0.7;
+                    cityAnims.push(t => { const f = Math.sin(t * 1.4 + ph) * 0.12; if (wl) wl.rotation.y = f; if (wr) wr.rotation.y = -f; });
+                }).catch(() => {});
+                const aw = PC + PT;   // 아치 — 제트팩으로 날다 부딪히거나 위에 설 수 있게 대략 상자 하나(안쪽 꼭대기 ~ 바깥)
+                BOXES.push(horiz ? { x0: cx - aw, x1: cx + aw, z0: cz - PT, z1: cz + PT, y0: base + ARCH0, y1: base + ARCH1 }
+                                 : { x0: cx - PT, x1: cx + PT, z0: cz - aw, z1: cz + aw, y0: base + ARCH0, y1: base + ARCH1 });
                 gate.position.set(cx, base, cz); if (!horiz) gate.rotation.y = Math.PI / 2; built.add(gate);
+                [[-0.72, 1.2], [0.72, 2.2], [-0.72, 3.1], [0.0, 4.6], [0.6, 3.9]].forEach(([a, h]) => sparkPts.push([cx + (horiz ? a : 0) * GATE_SC, base + h * GATE_SC, cz + (horiz ? 0 : a) * GATE_SC]));
             });
+            makeSparkles();
         }
         // 부딪히는 상자 — 보좌(오르지 못한다) + rebuild가 넣는 진주 문 기둥·아치
-        const THRONE_BOX = { x0: -0.75, x1: 0.75, z0: -0.75, z1: 0.75, y0: 0, y1: 60 };
+        const THRONE_BOX = { x0: -0.85, x1: 0.85, z0: -0.85, z1: 0.85, y0: 0, y1: 60 };
         const BOXES = [THRONE_BOX];
 
         // ── 생명나무와 열매 (22:2) — 나무 자리는 game.js의 _njTreeSpots, 열매는 _njFruitList ──
@@ -2153,7 +2259,7 @@
                 const gy = Math.max(d0 <= PL ? 0.6 : WT(cx, cz), SEA_Y) + 0.8;
                 if (camera.position.y < gy) { camera.position.y = gy; camera.lookAt(controls.target); }
             }
-            { const tt = now / 1000; giftsG.children.forEach(g => { if (g.userData.anim) g.userData.anim(tt); }); decoG.children.forEach(g => { if (g.userData.anim) g.userData.anim(tt); }); setG.children.forEach(g => { if (g.userData.anim) g.userData.anim(tt); }); }   // 등불·별·맷돌·분수·양 떼…
+            { const tt = now / 1000; cityAnims.forEach(f => f(tt)); giftsG.children.forEach(g => { if (g.userData.anim) g.userData.anim(tt); }); decoG.children.forEach(g => { if (g.userData.anim) g.userData.anim(tt); }); setG.children.forEach(g => { if (g.userData.anim) g.userData.anim(tt); }); }   // 등불·별·맷돌·분수·양 떼…
             skyDome.position.copy(camera.position);
             glints.position.set(camera.position.x, camera.position.y - 6, camera.position.z);
             if (!reduce) {
