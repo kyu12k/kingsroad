@@ -8272,6 +8272,41 @@ const NJ_MOUNTS = {
         coats: [['red', '빨강', 'Red', 0], ['mint', '민트', 'Mint', 2000], ['navy', '남색', 'Navy', 2500]],
         gear: [['basket', '꽃 바구니', 'Flower basket', 1500, 'bars'], ['bell', '따르릉 벨', 'Ring-ring bell', 500, 'bars'],
             ['rack', '뒤 짐받이와 상자', 'Rear rack and crate', 1200, 'body'], ['flag', '작은 깃발', 'Safety flag', 800, 'body']] },
+    // 🛵 오토바이 — 오늘의 탈것, 3배. 도는 쪽으로 몸을 기울인다(lean), 순례자는 발판에 발을(motor). 바람막이는 핸들(bars)에
+    motorcycle: { ko: '오토바이', en: 'Motorcycle', e: '🛵', ref: '', modern: true, kind: 'bike', motor: true, lean: 0.12, cost: 80000, speed: 3.0, jump: 0.7, seat: [-0.12, 0.335], wheelR: 0.13,
+        coats: [['cream', '크림 민트', 'Cream and mint', 0], ['red', '빨강', 'Red', 12000], ['black', '검정 금줄', 'Black and gold', 18000]],
+        gear: [['windshield', '앞 바람막이', 'Windshield', 2500, 'bars'], ['sidecar', '옆 사이드카', 'Sidecar', 8000, 'body'],
+            ['topbox', '뒤 짐 상자', 'Top box', 3000, 'body'], ['flags', '깃발 한 쌍', 'Pair of pennants', 2000, 'body']] },
+    // 🚗 자동차 — 오늘의 탈것, 3.5배. 지붕 없는 작은 차(운전하는 모습이 보이게), 네 바퀴(wheel0~3)·운전대(steer). 금빛 휠은 바퀴마다 붙어 함께 돈다(attach 'wheels')
+    car: { ko: '자동차', en: 'Car', e: '🚗', ref: '', modern: true, kind: 'car', cost: 200000, speed: 3.5, jump: 0.5, seat: [-0.05, 0.18], wheelR: 0.09,
+        coats: [['sky', '하늘색', 'Sky blue', 0], ['yellow', '노란색', 'Sunny yellow', 20000], ['white', '흰색', 'Classic white', 25000]],
+        gear: [['roofrack', '지붕 짐칸', 'Luggage rack', 8000, 'body'], ['weddingflowers', '꽃 장식 — 혼인 잔치 차', 'Wedding car flowers', 12000, 'body'],
+            ['wheelcaps', '반짝이는 휠', 'Golden hubcaps', 10000, 'wheels'], ['picnic', '뒷좌석 소풍 바구니', 'Picnic basket', 6000, 'body']] },
+    // 🔥 불병거와 불말 — 왕하 2:11. 가장 빠른 성경의 탈것(5배), 나는 탈것. 불말 둘(다리 leg0~7·머리 head0·1)이 공중을 달린다. 서서 고삐를 잡는다(pose 'stand', reins). 불꽃(flame)은 늘 일렁
+    chariot: { ko: '불병거와 불말', en: 'Chariot of fire', e: '🔥', ref: '왕하 2:11', camFar: 1.8, kind: 'fly', pose: 'stand', reins: true, flameAlways: true, climb: 1.6, sink: 0.5, maxY: 45, groundSpeed: 0.8, cost: 1000000, speed: 5.0, jump: 0, seat: [-0.46, 0.215], wheelR: 0.15,
+        coats: [['fire', '불꽃', 'Flame', 0], ['blue', '푸른 불', 'Blue holy fire', 100000], ['white', '흰 영광', 'White glory', 120000]],
+        gear: [['canopy', '금 차양', 'Golden canopy', 12000, 'body'], ['banners', '불꽃 깃발 둘', 'Two flame banners', 10000, 'body'],
+            ['mantle', '엘리야의 겉옷 (왕하 2:13)', "Elijah's mantle (2 Kgs 2:13)", 8000, 'body'], ['trail', '불꽃 자취', 'Trail of fire', 15000, 'body']] },
+    // 🦅 독수리 날개 — 사 40:31 「독수리가 날개치며 올라감 같을 것이요」. 나는 탈것(3배). 날개(wingL/R)를 친다 · 땅에선 접는다 · 다리(legs)는 날 때 접는다. 날개 장식은 날개 축에(attach 'wings')
+    eagle: { ko: '독수리 날개', en: 'Eagle wings', e: '🦅', ref: '사 40:31', camFar: 1.6, kind: 'fly', climb: 1.4, sink: 0.4, maxY: 45, groundSpeed: 0.5, cost: 500000, speed: 3.0, jump: 0, seat: [-0.03, 0.47],
+        coats: [['golden', '금빛 독수리', 'Golden eagle', 0], ['white', '흰 독수리', 'Snow eagle', 30000], ['dark', '검은 독수리', 'Dark eagle', 50000]],
+        gear: [['saddle', '깃털 안장', 'Feather saddle', 3000, 'body'], ['crown', '금관 깃 장식', 'Golden crest crown', 4000, 'head'],
+            ['ribbons', '날개 끝 리본', 'Wingtip ribbons', 3500, 'wings'], ['sparkle', '빛나는 깃', 'Shining feathers', 5000, 'wings']] },
+    // 🎈 열기구 — 오늘의 탈것, 나는 탈것(kind 'fly'). 점프를 누르는 동안 떠오르고(climb) 떼면 천천히 내려온다(sink). 느리지만 가장 높이(maxY). 바구니에 서서 탄다(pose 'stand')
+    balloon: { ko: '열기구', en: 'Hot-air balloon', e: '🎈', ref: '', modern: true, camFar: 2.0, kind: 'fly', pose: 'stand', climb: 0.8, sink: 0.22, maxY: 50, groundSpeed: 0.2, cost: 300000, speed: 1.5, jump: 0, seat: [0, 0.025],
+        coats: [['rainbow', '무지개', 'Rainbow', 0], ['redwhite', '빨강 흰 줄무늬', 'Red and white', 20000], ['sky', '하늘과 구름', 'Sky and clouds', 30000]],
+        gear: [['flags', '바구니 깃발 줄', 'Basket bunting', 4000, 'body'], ['sandbags', '모래주머니', 'Sandbags', 3000, 'body'],
+            ['banner', '현수막', 'Banner', 5000, 'body'], ['lanterns', '등불 줄', 'Lantern string', 8000, 'envelope']] },
+    // ✈️ 비행기 — 가장 빠른 나는 탈것(6배). 손을 떼도 앞으로 난다(cruise). 앉아서 탄다(pose 'sit')
+    plane: { ko: '비행기', en: 'Airplane', e: '✈️', ref: '', modern: true, camFar: 2.2, kind: 'fly', pose: 'sit', cruise: true, climb: 1.6, sink: 0.6, maxY: 45, groundSpeed: 0.7, cost: 1500000, speed: 6.0, jump: 0, seat: [-0.075, 0.29], wheelR: 0.068,
+        coats: [['red', '빨강', 'Red', 0], ['yellow', '노랑', 'Yellow', 60000], ['navy', '남색', 'Navy', 80000]],
+        gear: [['banner', '꼬리 현수막', 'Tail banner', 8000, 'body'], ['smoke', '비행운', 'Smoke trail', 6000, 'body'],
+            ['goggles', '조종사 고글과 목도리', 'Pilot goggles and scarf', 5000, 'body'], ['wingstripes', '날개 줄무늬', 'Wing stripes', 4000, 'body']] },
+    // 🚤 모터보트 — 오늘의 탈것, 바다에서만 3배. 프로펠러(prop)가 돌고, 빨리 달리면 뱃머리가 들리고(planing) 뒤로 하얀 물길(wake)
+    motorboat: { ko: '모터보트', en: 'Motorboat', e: '🚤', ref: '', modern: true, kind: 'boat', wake: true, planing: 0.08, cost: 100000, speed: 3.0, jump: 0, seat: [-0.165, 0.13],
+        coats: [['whiteblue', '흰 바탕 남색 띠', 'White and navy', 0], ['red', '레이싱 레드', 'Racing red', 12000], ['teal', '청록', 'Teal', 12000]],
+        gear: [['flag', '고물 깃발', 'Stern pennant', 2000, 'body'], ['buoy', '구명 튜브', 'Life ring', 2500, 'body'],
+            ['fishing', '낚싯대 두 개', 'Fishing rods', 4000, 'body'], ['searchlight', '탐조등', 'Searchlight', 3500, 'body']] },
 };
 function _njMountName(k) { const d = NJ_MOUNTS[k]; return d ? (currentLang === 'en' ? d.en : d.ko) : k; }
 function _njMountObj(k) {   // 「나귀를」·「낙타를」 — 받침이 있으면 을, 없으면 를 (영어는 이름만)
