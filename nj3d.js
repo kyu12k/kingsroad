@@ -178,6 +178,7 @@
                     const x = sx * xv, z = sz * zv, h = WT(x, z), e = seaE(x, z);
                     pos.push(x, h, z);
                     c.copy(cTop).lerp(cLow, Math.min(1, -h / DROP)); if (e < 1.5 && e > 0.75) c.lerp(cSand, 0.55);
+                    c.convertSRGBToLinear();   // 꼭짓점 색은 선형으로 — 안 바꾸면 화면에서 허옇게 바래 연한 민트로 보였다(10/2 풀밭 손질)
                     col.push(c.r, c.g, c.b);
                 }));
                 for (let j = 0; j < n - 1; j++) for (let i = 0; i < n - 1; i++) { const a = j * n + i; idx.push(a, a + n, a + 1, a + 1, a + n, a + n + 1); }
@@ -189,22 +190,34 @@
             const under = new THREE.Mesh(new THREE.PlaneGeometry(PL * 2, PL * 2), new THREE.MeshBasicMaterial({ color: 0x3a2e22 }));
             under.rotation.x = -Math.PI / 2; under.position.y = -RD - 0.03; scene.add(under);
         }
-        {
-            const mats = ['🌸', '🌼', '🌷', '🌺', '🌻'].map(e => {
-                const c = document.createElement('canvas'); c.width = c.height = 96;
-                const x = c.getContext('2d'); x.font = '76px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
-                x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(e, 48, 54);
-                const tx = new THREE.CanvasTexture(c); tx.encoding = THREE.sRGBEncoding;
-                return new THREE.SpriteMaterial({ map: tx, transparent: true, depthWrite: false });
-            });
-            let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-            for (let n = 0; n < 110; n++) {
-                const x = (rnd() - 0.5) * 50, z = (rnd() - 0.5) * 50;
-                if (Math.abs(x) < 8 && Math.abs(z) < 8) continue;
-                if (Math.abs(x) < 1.6 || Math.abs(z) < 1.6) continue;
-                const f = new THREE.Sprite(mats[n % mats.length]);
-                const sz = 0.7 + rnd() * 0.35; f.scale.set(sz, sz, 1); f.position.set(x, WT(x, z) + sz * 0.42, z); scene.add(f);
+        {   // 🌸 들꽃 (10/2 사용자: 이모지 꽃이 너무 크다 → 순례자 발치에) — 꽃잎 접시 + 노란 꽃술 + 줄기, 무리지어 핀다. 한 번에 그린다(InstancedMesh)
+            const N = 1800, petals = new THREE.CircleGeometry(0.038, 5); petals.rotateX(-Math.PI / 2);
+            const pos = petals.attributes.position;   // 다섯 꽃잎 — 꼭짓점을 들쭉날쭉하게(오각형이 아니라 꽃처럼)
+            for (let i = 1; i < pos.count; i++) { const x = pos.getX(i), z = pos.getZ(i); pos.setXYZ(i, x * 1.15, 0.006, z * 1.15); }
+            const head = new THREE.InstancedMesh(petals, new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x302820, side: THREE.DoubleSide }), N);   // 램버트 — 처음엔 꽃잎이 어둡게 나왔다
+            const ctr = new THREE.InstancedMesh(new THREE.SphereGeometry(0.011, 6, 4), new THREE.MeshStandardMaterial({ color: 0xf2c94c, roughness: 0.6 }), N);
+            const stem = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.003, 0.004, 1, 3), new THREE.MeshStandardMaterial({ color: 0x5f9a3e, roughness: 0.9 }), N);
+            const COLS = [0xf4a6c0, 0xffffff, 0xf6d77a, 0xe57a9a, 0xb7a6f0, 0xff9a7a, 0x9ad0f5];
+            let sd = 7; const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+            const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), one = new THREE.Vector3(1, 1, 1), sc = new THREE.Vector3(), col = new THREE.Color();
+            let n = 0;
+            while (n < N) {   // 무리 하나 = 한 빛깔 꽃 6~18송이
+                const a = r() * Math.PI * 2, d = 7.8 + Math.pow(r(), 0.8) * 26, cx = Math.cos(a) * d, cz = Math.sin(a) * d;
+                if (Math.abs(cx) < 1.6 || Math.abs(cz) < 1.6) continue;
+                const c0 = COLS[Math.floor(r() * COLS.length)], cnt = 6 + Math.floor(r() * 13);
+                for (let k = 0; k < cnt && n < N; k++) {
+                    const x = cx + (r() - 0.5) * 0.9, z = cz + (r() - 0.5) * 0.9;
+                    if (Math.abs(x) < 1.3 || Math.abs(z) < 1.3 || (Math.abs(x) < 7.6 && Math.abs(z) < 7.6)) continue;
+                    const h = 0.04 + r() * 0.05, gy = WT(x, z), s2 = 0.8 + r() * 0.5;
+                    e.set(0.55 + r() * 0.6, r() * 6.28, 0, 'YXZ'); q.setFromEuler(e);   // 꽃송이를 비스듬히 세운다 — 누워 있으면 낮은 시선에선 옆모습(회색 막대)만 보였다
+                    v.set(x, gy + h, z); sc.set(s2, s2, s2); m4.compose(v, q, sc); head.setMatrixAt(n, m4);
+                    v.set(x, gy + h + 0.008 * s2, z); m4.compose(v, q, sc); ctr.setMatrixAt(n, m4);
+                    v.set(x, gy + h / 2, z); sc.set(1, h, 1); m4.compose(v, new THREE.Quaternion(), sc); stem.setMatrixAt(n, m4);
+                    col.setHex(c0).offsetHSL(0, 0, (r() - 0.5) * 0.08).convertSRGBToLinear(); head.setColorAt(n, col);   // 선형으로 — 안 바꾸면 바래 보인다
+                    n++;
+                }
             }
+            [head, ctr, stem].forEach(m => { m.instanceMatrix.needsUpdate = true; scene.add(m); });
         }
         // 보좌 — 빛
         const radial = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
@@ -987,6 +1000,7 @@
 
         // ── 고급에서만: 빛줄기 · 빛 알갱이 · 풀잎 ──
         const extras = new THREE.Group(); scene.add(extras);
+        let grassFollow = null;   // 🌿 발밑 풀밭 — 보는 곳 둘레에 깐다(아래 풀포기)
         const shaft = (() => {
             const c = document.createElement('canvas'); c.width = 4; c.height = 128; const x = c.getContext('2d');
             const g = x.createLinearGradient(0, 0, 0, 128); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(255,255,255,1)');
@@ -1002,22 +1016,68 @@
             motePos[n * 3] = Math.cos(a) * d; motePos[n * 3 + 1] = r() * 10; motePos[n * 3 + 2] = Math.sin(a) * d; moteSpd[n] = 0.15 + r() * 0.35; } }
         const moteGeo = new THREE.BufferGeometry(); moteGeo.setAttribute('position', new THREE.BufferAttribute(motePos, 3));
         extras.add(new THREE.Points(moteGeo, new THREE.PointsMaterial({ size: 0.18, map: radial, color: 0xfff0c2, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })));
-        {
-            const N = 3000, blade = new THREE.InstancedMesh(new THREE.ConeGeometry(0.045, 0.42, 3), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85 }), N);
-            let sd = 5; const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
-            const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3(), col = new THREE.Color();
-            let n = 0;
-            while (n < N) {
-                const a = r() * Math.PI * 2, d = 6.6 + Math.pow(r(), 0.7) * 30, x = Math.cos(a) * d, z = Math.sin(a) * d;
-                if (Math.abs(x) < 1.25 || Math.abs(z) < 1.25) continue;
-                if (Math.abs(x) < 7.6 && Math.abs(z) < 7.6) continue;   // 성과 경사로 둘레는 비운다
-                const k = 0.7 + r() * 0.8;
-                e.set((r() - 0.5) * 0.5, r() * Math.PI, (r() - 0.5) * 0.5); q.setFromEuler(e);
-                v.set(x, WT(x, z) + 0.2 * k, z); sc.set(1, k, 1); m4.compose(v, q, sc); blade.setMatrixAt(n, m4);
-                col.setHSL(0.3 + r() * 0.06, 0.55 + r() * 0.2, 0.28 + r() * 0.14); blade.setColorAt(n, col);
-                n++;
-            }
-            blade.receiveShadow = true; extras.add(blade);
+        {   // 🌿 풀포기 (10/2 사용자: 풀이 한 가닥씩 듬성듬성 → 풀밭으로) — 가는 잎 다섯이 부채처럼 모인 작은 포기, 무리지어 촘촘히. 기본 화질 9천 · 고급 화질 1.8만
+            const tuft = (() => {
+                const P = [], I = []; let vi = 0;
+                for (let k = 0; k < 5; k++) {
+                    const a = k / 5 * Math.PI * 2 + 0.3, lean = 0.45 + (k % 2) * 0.2, w = 0.0055, h = 0.026 + (k % 3) * 0.009;   // 순례자(0.22)의 발목쯤 — 처음엔 무릎까지 와서 줄였다
+                    const dx = Math.cos(a), dz = Math.sin(a), px = -dz * w, pz = dx * w;
+                    P.push(-px, 0, -pz, px, 0, pz, dx * lean * h, h, dz * lean * h);   // 잎 하나 = 밑이 넓고 끝이 뾰족한 세모, 바깥으로 눕는다
+                    I.push(vi, vi + 1, vi + 2); vi += 3;
+                }
+                const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setIndex(I); g.computeVertexNormals(); return g;
+            })();
+            const mk = (N, seed, parent) => {
+                const m = new THREE.InstancedMesh(tuft, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, side: THREE.DoubleSide }), N);
+                let sd = seed; const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+                const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3(), col = new THREE.Color();
+                let n = 0;
+                while (n < N) {   // 풀숲 하나 = 포기 10~30
+                    const a = r() * Math.PI * 2, d = 6.8 + Math.pow(r(), 0.75) * 30, cx = Math.cos(a) * d, cz = Math.sin(a) * d;
+                    if (Math.abs(cx) < 1.4 || Math.abs(cz) < 1.4) continue;
+                    const cnt = 25 + Math.floor(r() * 40), hue = 0.27 + r() * 0.07, rad = 0.3 + r() * 0.6;
+                    for (let k = 0; k < cnt && n < N; k++) {
+                        const ang = r() * 6.28, rr = Math.sqrt(r()) * rad, x = cx + Math.cos(ang) * rr, z = cz + Math.sin(ang) * rr;
+                        if (Math.abs(x) < 1.25 || Math.abs(z) < 1.25 || (Math.abs(x) < 7.6 && Math.abs(z) < 7.6)) continue;
+                        const s2 = 0.8 + r() * 0.6;
+                        e.set(0, r() * 6.28, 0); q.setFromEuler(e); v.set(x, WT(x, z) - 0.003, z); sc.set(s2, s2 * (0.8 + r() * 0.5), s2); m4.compose(v, q, sc); m.setMatrixAt(n, m4);
+                        col.setHSL(hue + (r() - 0.5) * 0.03, 0.5 + r() * 0.2, 0.3 + r() * 0.12); m.setColorAt(n, col);
+                        n++;
+                    }
+                }
+                m.receiveShadow = true; parent.add(m); return m;
+            };
+            mk(2500, 5, scene);      // 멀리서도 보이는 풀숲 무리(기본 화질에도)
+            // 발밑 풀밭 — 세계가 넓어 전체를 촘촘히 깔 수 없다(순례자 키 0.22). 보는 곳 둘레 반지름 5에만 빽빽이 깔고, 반 칸(0.5)을 옮길 때마다 다시 깐다.
+            // 칸마다 같은 씨앗이라 돌아와도 같은 자리에 같은 풀. 고급 화질 약 1.4만 포기 · 기본 8천
+            const FN = 14000, FR = 5, CELL = 0.5;
+            const near = new THREE.InstancedMesh(tuft, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, side: THREE.DoubleSide }), FN);
+            near.setColorAt(0, new THREE.Color(0x5a8a3a));   // 색 버퍼를 처음부터 — 없이 그리면 셰이더가 색 없이 굳어 풀이 하얗게 나왔다
+            near.frustumCulled = false; near.count = 0; scene.add(near);
+            const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3(), col = new THREE.Color(), up = new THREE.Vector3(0, 1, 0);
+            let lastKey = '';
+            grassFollow = (px, pz, force) => {
+                const ix0 = Math.floor(px / CELL), iz0 = Math.floor(pz / CELL), key = ix0 + ',' + iz0 + (HIGH ? 'h' : 'b');
+                if (key === lastKey && !force) return; lastKey = key;
+                const per = HIGH ? 45 : 26, R = Math.ceil(FR / CELL); let n = 0;
+                for (let dz = -R; dz <= R && n < FN; dz++) for (let dx = -R; dx <= R && n < FN; dx++) {
+                    if (dx * dx + dz * dz > R * R) continue;
+                    const ix = ix0 + dx, iz = iz0 + dz;
+                    let sd = ((ix * 73856093) ^ (iz * 19349663)) >>> 0; sd = sd % 2147483646 + 1;
+                    const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+                    const patch = r(), k = Math.floor(per * (patch < 0.18 ? 0.15 : patch < 0.5 ? 0.7 : 1.15)), hue = 0.27 + r() * 0.06;   // 풀이 짙은 데·성긴 데
+                    for (let j = 0; j < k && n < FN; j++) {
+                        const x = (ix + r()) * CELL, z = (iz + r()) * CELL;
+                        if (Math.abs(x) < 7.6 && Math.abs(z) < 7.6) continue;   // 성과 경사로
+                        if (seaE(x, z) < 1.05 || wetAt(x, z)) continue;          // 바다·강
+                        const s2 = 0.8 + r() * 0.7;
+                        q.setFromAxisAngle(up, r() * 6.28); v.set(x, terrain(x, z) - 0.003, z); sc.set(s2, s2 * (0.8 + r() * 0.6), s2); m4.compose(v, q, sc); near.setMatrixAt(n, m4);
+                        col.setHSL(hue + (r() - 0.5) * 0.03, 0.5 + r() * 0.2, 0.3 + r() * 0.12); near.setColorAt(n, col);
+                        n++;
+                    }
+                }
+                near.count = n; near.instanceMatrix.needsUpdate = true; if (near.instanceColor) near.instanceColor.needsUpdate = true;
+            };
         }
         extras.visible = HIGH;
 
@@ -1030,23 +1090,45 @@
         const pilgrim = new THREE.Group(), body = new THREE.Group(); pilgrim.add(body);
         const limbs = {};
         {
-            const white = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
-            const skin = new THREE.MeshStandardMaterial({ color: 0xf1d3b3, roughness: 0.7 });
-            const cloth = new THREE.MeshStandardMaterial({ color: 0xeee6d8, roughness: 0.8 });
-            const sandal = new THREE.MeshStandardMaterial({ color: 0x8a5a34, roughness: 0.8 });
-            const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.056, 0.105, 16), white); robe.position.y = 0.115; body.add(robe);
-            const sash = new THREE.Mesh(new THREE.TorusGeometry(0.036, 0.005, 8, 20), new THREE.MeshStandardMaterial({ color: 0xf2c14e, metalness: 0.6, roughness: 0.3 }));
-            sash.rotation.x = Math.PI / 2; sash.position.y = 0.128; body.add(sash);
-            const head = new THREE.Mesh(new THREE.SphereGeometry(0.031, 16, 12), skin); head.position.y = 0.195; body.add(head);
-            const hair = new THREE.Mesh(new THREE.SphereGeometry(0.033, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x3b2a20, roughness: 0.8 }));
-            hair.position.set(0, 0.2, 0.004); body.add(hair);
+            // 10/2 사용자: 캐릭터도 좀 더 정성 들여 — 크기(키 0.22)·팔다리 축(hipL/R·armL/R)은 그대로, 생김새만.
+            // 아래로 퍼지는 흰 겉옷(계 7:9)과 옷깃 · 금빛 띠와 늘어진 술 · 눈·볼·앞머리 · 끝이 넓어지는 소매 · 끈 달린 샌들
+            const M = (c, r = 0.7, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: r }, o));
+            const white = M(0xfbf8f0, 0.6), whiteSh = M(0xe9e2d2, 0.7), skin = M(0xf1d3b3, 0.65), cloth = M(0xeee6d8, 0.8), sandal = M(0x8a5a34, 0.8);
+            const gold = M(0xf2c14e, 0.3, { metalness: 0.6 }), hairM = M(0x4a2f1c, 0.8), eyeM = new THREE.MeshBasicMaterial({ color: 0x2a1e18 }), cheekM = new THREE.MeshBasicMaterial({ color: 0xf2a8a0, transparent: true, opacity: 0.7 });
+            // 겉옷 — 어깨에서 밑단으로 퍼지는 돌림체, 밑단은 살짝 물결
+            const prof = [[0.026, 0.168], [0.032, 0.16], [0.034, 0.14], [0.036, 0.128], [0.042, 0.11], [0.05, 0.085], [0.058, 0.066], [0.06, 0.062]].reverse().map(([r, y]) => new THREE.Vector2(r, y));   // 밑단부터 — 위에서부터 주면 면이 안쪽을 봐 겉옷이 안 보였다
+            const robeG = new THREE.LatheGeometry(prof, 20);
+            { const pa = robeG.attributes.position; for (let i = 0; i < pa.count; i++) { const y = pa.getY(i); if (y < 0.07) { const x = pa.getX(i), z = pa.getZ(i), a = Math.atan2(z, x); pa.setY(i, y + Math.sin(a * 6) * 0.003); } } robeG.computeVertexNormals(); }
+            const robe = new THREE.Mesh(robeG, white); body.add(robe);
+            const hem = new THREE.Mesh(new THREE.TorusGeometry(0.059, 0.003, 6, 28), gold); hem.rotation.x = Math.PI / 2; hem.position.y = 0.064; body.add(hem);   // 밑단 금선
+            const collar = new THREE.Mesh(new THREE.TorusGeometry(0.022, 0.006, 8, 20), whiteSh); collar.rotation.x = Math.PI / 2; collar.position.y = 0.168; body.add(collar);
+            const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.013, 0.02, 10), skin); neck.position.y = 0.176; body.add(neck);
+            const sash = new THREE.Mesh(new THREE.TorusGeometry(0.037, 0.0055, 8, 24), gold); sash.rotation.x = Math.PI / 2; sash.position.y = 0.127; body.add(sash);
+            [-1, 1].forEach(sg => {   // 띠에서 늘어진 술 둘 — 옆구리
+                const t = new THREE.Mesh(new THREE.CylinderGeometry(0.0022, 0.0035, 0.034, 5), gold); t.position.set(sg * 0.012 + 0.03, 0.108, -0.016); t.rotation.z = sg * 0.12; body.add(t);
+                const k = new THREE.Mesh(new THREE.SphereGeometry(0.0045, 6, 4), gold); k.position.set(sg * 0.012 + 0.03, 0.09, -0.016); body.add(k);
+            });
+            // 머리 — 얼굴·눈·볼·머리카락(앞머리)
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.032, 18, 14), skin); head.position.y = 0.205; head.scale.set(1, 1.04, 1); body.add(head);
+            [-1, 1].forEach(sg => {
+                const eye = new THREE.Mesh(new THREE.SphereGeometry(0.0046, 8, 6), eyeM); eye.position.set(sg * 0.0115, 0.204, -0.0295); eye.scale.set(1, 1.3, 0.6); body.add(eye);
+                const ck = new THREE.Mesh(new THREE.CircleGeometry(0.006, 10), cheekM); ck.position.set(sg * 0.019, 0.196, -0.0282); ck.rotation.y = sg * -0.6; body.add(ck);
+                const ear = new THREE.Mesh(new THREE.SphereGeometry(0.006, 8, 6), skin); ear.position.set(sg * 0.031, 0.205, 0.002); ear.scale.set(0.6, 1, 0.8); body.add(ear);
+            });
+            const hair = new THREE.Mesh(new THREE.SphereGeometry(0.0345, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.52), hairM); hair.position.set(0, 0.207, 0.003); body.add(hair);
+            const back = new THREE.Mesh(new THREE.SphereGeometry(0.033, 14, 10, Math.PI * 0.15, Math.PI * 0.7, Math.PI * 0.4, Math.PI * 0.35), hairM); back.position.set(0, 0.207, 0.003); back.rotation.y = Math.PI; body.add(back);   // 뒷머리
+            for (let k = -2; k <= 2; k++) {   // 앞머리 — 이마에 내린 머리 다섯 갈래
+                const f = new THREE.Mesh(new THREE.ConeGeometry(0.0075, 0.011, 5), hairM); f.position.set(k * 0.0085, 0.2285 - Math.abs(k) * 0.002, -0.0275 + Math.abs(k) * 0.002);   // 처음엔 길어 눈을 덮었다 f.rotation.x = Math.PI + 0.5; f.rotation.z = -k * 0.15; body.add(f);
+            }
             [-1, 1].forEach(sg => {
                 const hip = new THREE.Group(); hip.position.set(sg * 0.017, 0.075, 0); body.add(hip);
                 const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.01, 0.07, 8), cloth); leg.position.y = -0.035; hip.add(leg);
-                const foot = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.01, 0.034), sandal); foot.position.set(0, -0.07, -0.007); hip.add(foot);
+                const foot = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.009, 0.036), sandal); foot.position.set(0, -0.07, -0.007); hip.add(foot);
+                [-0.012, 0.004].forEach(zz => { const st = new THREE.Mesh(new THREE.TorusGeometry(0.0105, 0.0018, 4, 10, Math.PI), sandal); st.position.set(0, -0.0655, -0.007 + zz); st.rotation.y = Math.PI / 2; hip.add(st); });   // 샌들 끈
                 const sh = new THREE.Group(); sh.position.set(sg * 0.036, 0.158, 0); body.add(sh);
-                const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.009, 0.068, 8), white); arm.position.y = -0.034; sh.add(arm);
-                const hand = new THREE.Mesh(new THREE.SphereGeometry(0.01, 8, 6), skin); hand.position.y = -0.071; sh.add(hand);
+                const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.016, 0.066, 10), white); arm.position.y = -0.033; sh.add(arm);   // 끝이 넓어지는 소매
+                const cuff = new THREE.Mesh(new THREE.TorusGeometry(0.0155, 0.0022, 5, 14), gold); cuff.rotation.x = Math.PI / 2; cuff.position.y = -0.064; sh.add(cuff);
+                const hand = new THREE.Mesh(new THREE.SphereGeometry(0.0098, 10, 8), skin); hand.position.y = -0.074; sh.add(hand);
                 limbs[sg < 0 ? 'hipL' : 'hipR'] = hip; limbs[sg < 0 ? 'armL' : 'armR'] = sh;
             });
         }
@@ -3031,6 +3113,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 perf.n++; if (perf.n > 20) perf.sum += dt;
                 if (perf.n === 140 && perf.sum / 120 > 0.045) { setQuality(false, false); showHint(T('nj3d_slow'), 3500); }
             }
+            if (grassFollow) { if (walk) grassFollow(P.x, P.z); else if (deco) grassFollow(deco.tgt.x, deco.tgt.z); else grassFollow(controls.target.x, controls.target.z); }
             if (walk) walkUpdate(dt);
             else if (deco) decoCam();
             else {
