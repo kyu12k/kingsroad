@@ -2067,7 +2067,8 @@
         //    사용자: "아무 데나 끌어서 놓되 꾸미기 전용 화면에 들어가게". 걷기·행렬과 따로 — 위에서 비스듬히 내려다보는 카메라.
         //    물건을 끌면 옮기고, 빈 곳을 끌면 화면이 움직이고, 두 손가락은 확대·돌리기. 마칠 때 바뀐 것만 저장(_njDecoSave)
         const DS = (typeof NJ_DECO_S !== 'undefined') ? NJ_DECO_S : 0.42;   // 꾸밈 배율(game.js)
-        const DECO_V = '20261002d';   // models/decor/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/decor.py)
+        const DIS = (typeof NJ_DECO_ITEM_S !== 'undefined') ? NJ_DECO_ITEM_S : {};   // 아이템마다 더 곱하는 배율
+        const DECO_V = '20261002e';   // models/decor/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/decor.py)
         const decoCache = {};
         function loadDecor(k) {
             if (!decoCache[k]) decoCache[k] = (async () => {
@@ -2088,8 +2089,8 @@
         // 낱개로 놓였을 때의 작은 움직임 (10/1 사용자: 세트가 되기 전에도 조금씩은 다들 움직였으면) — 놓은 자리에서 벗어나지 않는다.
         // 동물: 제자리에서 풀 뜯기·두리번·가끔 몸 돌리기 / 목자: 둘러보며 숨 / 나무·건초·천막·물부대: 바람에 살랑 / 배: 흔들 / 가로등: 불빛이 숨 쉬듯.
         // 돌담·문·지팡이·피리·깔개·벤치처럼 단단한 것은 그대로
-        const IDLE_SWAY = { figtree: [0.025, 0.7], palmtree: [0.04, 0.55], arbor: [0.015, 0.8], hay: [0.012, 1.1], tent: [0.008, 0.9], waterskin: [0.03, 1.3], birdhouse: [0.012, 0.9],
-    olivetree: [0.02, 0.6], wildflowers: [0.06, 1.4], reeds: [0.07, 1.1], terebinth: [0.012, 0.5], booth: [0.006, 0.8] };
+        const IDLE_SWAY = { figtree: [0.025, 0.7], palmtree: [0.04, 0.55], arbor: [0.015, 0.8], hay: [0.012, 1.1], tent: [0.008, 0.9], waterskin: [0.03, 1.3], 
+    olivetree: [0.02, 0.6], wildflowers: [0.06, 1.4], pot: [0.38, 0.37, 0.45], flowerbed: [1.2, 0.79, 0.21], reeds: [0.07, 1.1], terebinth: [0.012, 0.5], booth: [0.006, 0.8] };
         function idleFx(k, c, ph) {
             ph = ph || Math.random() * 6.28;
             if (k === 'sheep' || k === 'blacksheep' || k === 'lamb' || k === 'dog') {
@@ -2273,7 +2274,14 @@ if (k === 'mender') {   // 그물 깁는 어부 — 손이 바삐 오간다
             ar.rotation.z = u < 0.4 ? 0.7 * (u / 0.4) : u < 0.5 ? 0.7 - 1.3 * ((u - 0.4) / 0.1) : -0.6 + 0.6 * ((u - 0.5) / 0.5); };
     }
     if (k === 'boat') return t => { c.position.y = Math.sin(t * 1.2 + ph) * 0.012; c.rotation.x = Math.sin(t * 0.9 + ph) * 0.05; c.rotation.z = Math.sin(t * 0.7 + ph) * 0.03; };
-            if (k === 'lamp') {
+            if (k === 'birdhouse') {   // 새집 — 몸은 바람에 살랑, 새는 횃대에서 콩콩 뛰고 가끔 날개를 털며 날아올랐다 내려앉는다
+            const bd = c.getObjectByName('bird'), by = bd ? bd.position.y : 0;   // 횃대 높이 — 움직임은 그 위에 더한다
+            return t => { c.rotation.z = Math.sin(t * 0.9 + ph) * 0.012;
+                if (!bd) return; const u = (t + ph) % 7;
+                if (u < 5.6) { bd.position.y = by + Math.abs(Math.sin(u * 4)) * (u % 2 < 1 ? 0.012 : 0); bd.rotation.y = Math.sin(u * 1.3) * 0.6; bd.rotation.z = 0; }
+                else { const k2 = (u - 5.6) / 1.4; bd.position.y = by + Math.sin(k2 * Math.PI) * 0.12; bd.rotation.z = Math.sin(t * 40) * 0.25; } };
+        }
+        if (k === 'lamp') {
                 const ms = []; c.traverse(o => { if (o.isMesh && o.material.emissive && o.material.emissive.getHex()) { o.material = o.material.clone(); ms.push(o.material); } });
                 return t => ms.forEach(m => { m.emissiveIntensity = 1.1 + Math.sin(t * 1.4 + ph) * 0.35; });
             }
@@ -2281,8 +2289,8 @@ if (k === 'mender') {   // 그물 깁는 어부 — 손이 바삐 오간다
         }
         // 누르는 자리 — 모델 면으로 고르면 압축 모델에서 맞지 않고 가는 기둥·성긴 잎(포도 시렁)은 아예 안 짚혔다(10/1).
         // 물건마다 보이지 않는 상자(모델 크기, 너무 작으면 0.35)를 씌워 그 안 어디를 눌러도 골라지게. 크기는 decor.py가 찍은 SIZE(가로·깊이·높이)
-        const DECO_BOX = { bench: [0.68, 0.26, 0.46], pot: [0.38, 0.38, 0.44], fence: [0.94, 0.1, 0.37], sign: [0.36, 0.27, 0.62], lamp: [0.18, 0.18, 1.06],
-            flowerbed: [1.21, 0.82, 0.19], birdhouse: [0.26, 0.26, 1.0], figtree: [1.13, 1.09, 1.06], palmtree: [1.39, 1.39, 1.37], well: [0.8, 0.69, 0.92],
+        const DECO_BOX = { bench: [0.68, 0.26, 0.46], pot: [0.38, 0.38, 0.44], fence: [0.96, 0.14, 0.39], sign: [0.36, 0.27, 0.62], lamp: [0.17, 0.17, 1.1],
+            flowerbed: [1.21, 0.82, 0.19], birdhouse: [0.27, 0.31, 1.06], figtree: [1.13, 1.09, 1.06], palmtree: [1.39, 1.39, 1.37], well: [0.84, 0.69, 0.98],
             arbor: [0.98, 0.79, 0.95], bridge: [2.51, 0.52, 0.48], boat: [1.04, 0.56, 0.2], fountain: [1.1, 1.1, 1.0], gazebo: [1.36, 1.36, 1.17],
             penwall: [2.09, 2.04, 0.33], pengate: [2.06, 0.18, 0.42], sheep: [0.48, 0.25, 0.34], blacksheep: [0.49, 0.24, 0.33], lamb: [0.34, 0.16, 0.23], trough: [0.54, 0.24, 0.28], hay: [0.49, 0.4, 0.52],
             tent: [1.05, 1.25, 0.5], campfire: [0.38, 0.36, 0.28], shepherd: [0.26, 0.29, 0.43], staff: [0.16, 0.03, 0.9], flute: [0.2, 0.02, 0.03], waterskin: [0.19, 0.15, 0.26], rug: [0.66, 0.4, 0.01], dog: [0.55, 0.13, 0.33],
@@ -2315,7 +2323,7 @@ if (k === 'mender') {   // 그물 깁는 어부 — 손이 바삐 오간다
             if (kind === 'big') { const B = (typeof NJ_BIG !== 'undefined') && NJ_BIG[k]; if (B) { w = B.box[0] / 2 * DS; d = B.box[1] / 2 * DS; } }
             else if (kind === 'set') { const D = (typeof NJ_SETS !== 'undefined') && NJ_SETS[k]; if (D) { w = D.box[0] / 2 * DS; d = D.box[1] / 2 * DS; } }
             else if (kind === 'gift') { w = d = 0.7; }
-            else { const b = DECO_BOX[k], sc = k === 'bridge' ? 1.1 : DS; if (b) { w = b[0] / 2 * sc; d = b[1] / 2 * sc; } }
+            else { const b = DECO_BOX[k], sc = k === 'bridge' ? 1.1 : DS * (DIS[k] || 1); if (b) { w = b[0] / 2 * sc; d = b[1] / 2 * sc; } }
             const c = Math.abs(Math.cos(r || 0)), sn = Math.abs(Math.sin(r || 0));
             return [c * w + sn * d, sn * w + c * d];
         };
@@ -2367,12 +2375,13 @@ if (k === 'mender') {   // 그물 깁는 어부 — 손이 바삐 오간다
             const sp = sea ? (shoreSpot(it.x || 0, it.z || 0, Math.max(...decoExt('decor', it.k, 0)), wet ? 'water' : edge ? 'edge' : 'land') || [it.x || 0, it.z || 0])
                            : decoSpot(it.x || 0, it.z || 0, decoExt('decor', it.k, it.r || 0));   // 예전에 성 안에 놓은 것도 바깥으로
             const [px, pz] = sp;
-            const m = new THREE.Group(); m.position.set(px, (sea ? (wet ? SEA_Y : SHORE_Y) : terrain(px, pz)) - (md0.drop || 0) * DS, pz); m.rotation.y = edge ? seaFace(px, pz) : (it.r || 0); m.userData.sea = sea;   // 부두·말뚝은 물가에 걸쳐 바다를 보고 땅속으로 박힌다
+            const m = new THREE.Group(); m.position.set(px, (sea ? (wet ? SEA_Y : SHORE_Y) : terrain(px, pz)) - (md0.drop || 0) * DS * (DIS[it.k] || 1), pz); m.rotation.y = edge ? seaFace(px, pz) : (it.r || 0); m.userData.sea = sea;   // 부두·말뚝은 물가에 걸쳐 바다를 보고 땅속으로 박힌다
             m.userData.item = { kind: 'decor', id: it.id, k: it.k };
-            m.scale.setScalar(it.k === 'bridge' ? 1.1 : DS);   // 순례자 크기에 맞춰(NJ_DECO_S) — 다리는 강을 건너야 해서 그대로
+            m.scale.setScalar(it.k === 'bridge' ? 1.1 : DS * (DIS[it.k] || 1));   // 순례자 크기에 맞춰(NJ_DECO_S) — 다리는 강을 건너야 해서 그대로
             addPick(m, DECO_BOX[it.k]);
             loadDecor(it.k).then(sc => { if (cur !== C) return; const c = sc.clone(); m.add(c);
-                if (it.k === 'fountain') { const wt = c.getObjectByName('water'); if (wt) m.userData.anim = t => { wt.scale.set(1 + Math.sin(t * 5.3) * 0.06, 1 + Math.sin(t * 3.7) * 0.12, 1 + Math.sin(t * 4.1 + 1) * 0.06); }; }   // 솟는 물이 일렁인다
+                if (it.k === 'fountain') { const wt = c.getObjectByName('water'); if (wt) { const ms = []; wt.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); o.material.transparent = true; ms.push(o.material); } });
+                    m.userData.anim = t => { wt.scale.set(1 + Math.sin(t * 5.3) * 0.06, 1 + Math.sin(t * 3.7) * 0.12, 1 + Math.sin(t * 4.1 + 1) * 0.06); wt.rotation.y = t * 0.6; ms.forEach(mt => { mt.opacity = 0.75 + Math.sin(t * 7) * 0.12; }); }; } }   // 솟는 물이 일렁이고 돌며 반짝인다(10/2 — 커졌다 작아지기만 했다)
                 else { const f = setFx(it.k, c, m, m, { parts: [] }) || idleFx(it.k, c); if (f) m.userData.anim = f; }   // 낱개 모닥불도 일렁이고, 동물·나무·배… 저마다 조금씩
             }).catch(() => { if (cur === C) m.add(decoFallback()); });
             decoG.add(m); return m;
@@ -3015,7 +3024,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                     if (d.obj.userData.sea) {   // 바다 — 소성된 해안 띠(배는 물 위), 세트는 물가를 따라 바다를 보며
                         const md1 = it.kind === 'decor' ? (decoMeta(it.k) || {}) : {}, wet = !!md1.water, edge = it.kind === 'set' || !!md1.edge;
                         const sp = shoreSpot(decoHit.x, decoHit.z, Math.max(...decoExt(kindOf(it), it.k, 0)), edge ? 'edge' : wet ? 'water' : 'land');
-                        if (sp) { d.obj.position.set(sp[0], (wet ? SEA_Y : SHORE_Y) - (md1.drop || 0) * DS, sp[1]); if (edge) d.obj.rotation.y = seaFace(sp[0], sp[1]); decoTouch(d.obj); }
+                        if (sp) { d.obj.position.set(sp[0], (wet ? SEA_Y : SHORE_Y) - (md1.drop || 0) * DS * (DIS[it.k] || 1), sp[1]); if (edge) d.obj.rotation.y = seaFace(sp[0], sp[1]); decoTouch(d.obj); }
                     } else {
                         const [x, z] = decoSpot(decoHit.x, decoHit.z, decoExt(kindOf(it), it.k, d.obj.rotation.y), d.obj.position, it.kind === 'set');   // 성 안으로는 못 들어간다 — 끌던 쪽 성벽 바깥에 붙는다
                         d.obj.position.set(x, terrain(x, z), z); decoTouch(d.obj);
