@@ -104,7 +104,87 @@ def gd_donkey_baskets():   # 짐바구니 — 양옆에 걸친 갈대 바구니,
         paint(cyl((-0.02, s2 * 0.09, 0.355), (-0.02, s2 * 0.11, 0.31), 0.004, sides=3), solid(LEATHER))
     finish('gd_donkey_baskets', OUT, center=False)
 
-ALL = [mt_donkey_gray, mt_donkey_brown, mt_donkey_white, gd_donkey_rug, gd_donkey_bells, gd_donkey_garland, gd_donkey_baskets]
+# ══ 🐪 낙타 (창 24 — 리브가를 맞으러 온 낙타) ══
+# 단봉낙타 — 어깨 0.6, 혹 꼭대기 0.83, 길쭉한 다리, S자 목. 머리 축 head = 목 밑동(0.26, 0, 0.62). 다리 leg0~3(앞왼·앞오·뒤왼·뒤오) · 꼬리 tail. 앉는 자리 = 혹 위 (−0.02, 0.86)
+CAMEL_COATS = {
+    'sand':  (lin(0xd4b07a), lin(0xb08a54), lin(0xead6b0)),
+    'brown': (lin(0x8a6040), lin(0x6a4630), lin(0xb08a64)),
+    'white': (lin(0xeee4d0), lin(0xcfc2a6), lin(0xfaf4e6)),
+}
+def _camel(coat):
+    C, CD, CL = CAMEL_COATS[coat]
+    begin(421)
+    paint(loft([(-0.32, 0, 0.62), (-0.24, 0, 0.6), (-0.08, 0, 0.6), (0.1, 0, 0.6), (0.24, 0, 0.62), (0.3, 0, 0.64)], [0.06, 0.1, 0.12, 0.12, 0.1, 0.06], sides=10, ell=(0.85, 1.0), wob=0.03), shade(C, CD, k=0.06))   # 몸통
+    paint(blob((-0.03, 0, 0.72), (0.17, 0.085, 0.12), n=16, jitter=0.06), shade(C, CD, k=0.05))   # 혹
+    paint(loft([(-0.16, 0, 0.5), (0.0, 0, 0.49), (0.14, 0, 0.5)], [0.05, 0.065, 0.05], sides=8, ell=(1.0, 0.5), wob=0.02), solid(CL))   # 배
+    part('head', loc=(0.26, 0, 0.62))
+    paint(loft(crs([(0.24, 0, 0.62), (0.36, 0, 0.6), (0.45, 0, 0.66), (0.5, 0, 0.78), (0.52, 0, 0.84)], 8), [0.07, 0.062, 0.055, 0.05, 0.046, 0.044, 0.042, 0.04], sides=7, ell=(1.0, 0.8), wob=0.03), shade(C, CD))   # S자 목
+    paint(hull([V(0.5, y, z) for y in (-0.035, 0.035) for z in (0.8, 0.88)] + [V(0.66, y, z) for y in (-0.03, 0.03) for z in (0.78, 0.83)]), shade(C, CD, k=0.06))   # 머리
+    paint(blob((0.655, 0, 0.775), (0.022, 0.03, 0.018), n=8, jitter=0.15), solid(CL))   # 늘어진 입술
+    for s2 in (-1, 1):
+        paint(blob((0.56, s2 * 0.034, 0.86), (0.008, 0.005, 0.008), n=5, jitter=0), solid(lin(0x1a1410)))   # 눈
+        paint(blob((0.51, s2 * 0.03, 0.9), (0.012, 0.008, 0.016), n=5, jitter=0.1), shade(C, CD))   # 작은 귀
+    base()
+    for i, (x, y) in enumerate(((0.2, 0.055), (0.2, -0.055), (-0.22, 0.055), (-0.22, -0.055))):
+        part('leg%d' % i, loc=(x, y, 0.56))
+        paint(cyl((x, y, 0.57), (x, y, 0.3), 0.035, 0.022, sides=6), shade(C, CD))
+        paint(blob((x, y, 0.3), (0.026, 0.024, 0.03), n=6, jitter=0.1), shade(C, CD))   # 무릎
+        paint(cyl((x, y, 0.3), (x, y, 0.03), 0.02, 0.018, sides=6), shade(C, CD))
+        paint(blob((x + 0.01, y, 0.015), (0.03, 0.026, 0.015), n=6, jitter=0.1), solid(CD))   # 넓은 발
+        base()
+    part('tail', loc=(-0.31, 0, 0.64))
+    paint(loft([(-0.31, 0, 0.64), (-0.34, 0, 0.52), (-0.34, 0, 0.44)], [0.01, 0.008, 0.006], sides=4, wob=0), solid(CD))
+    paint(blob((-0.34, 0, 0.42), (0.012, 0.012, 0.03), n=6, jitter=0.2), solid(lin(0x3a3028)))
+    base()
+    finish('mt_camel_' + coat, OUT, center=False)
+
+def mt_camel_sand(): _camel('sand')
+def mt_camel_brown(): _camel('brown')
+def mt_camel_white(): _camel('white')
+
+# ── 낙타 장식 ──
+def gd_camel_cloth():   # 술 달린 안장 덮개 — 혹을 덮는 붉은·금빛 천, 아래로 술
+    begin(431)
+    cols = [lin(0x9a2a3a), lin(0xe8c25a), lin(0x9a2a3a), lin(0x2a4a8a), lin(0x9a2a3a)]
+    for i, c in enumerate(cols):
+        x0 = -0.16 + i * 0.064
+        pts = []
+        for dx in (0.0, 0.064):
+            x = x0 + dx; top = 0.72 + 0.12 * math.sqrt(max(0, 1 - ((x + 0.03) / 0.18) ** 2))
+            pts += [V(x, 0, top + 0.012), V(x, 0.07, top - 0.02), V(x, 0.105, 0.6), V(x, 0.11, 0.53), V(x, -0.07, top - 0.02), V(x, -0.105, 0.6), V(x, -0.11, 0.53)]
+        paint(hull(pts), solid(c, 0.05))
+    for s2 in (-1, 1):
+        for k in range(11): paint(cyl((-0.15 + k * 0.03, s2 * 0.112, 0.53), (-0.15 + k * 0.03, s2 * 0.114, 0.49), 0.005, sides=3), solid(lin(0xe8c25a)))
+    finish('gd_camel_cloth', OUT, center=False)
+
+def gd_camel_bells():   # 방울 줄 — 목에 늘어뜨린 금방울 줄 (머리 축에 붙는다)
+    begin(432)
+    pts = [V(0.3 + 0.2 * u, 0, 0.6 + 0.2 * u * u - 0.06 * math.sin(u * math.pi)) for u in [k / 10 for k in range(11)]]
+    paint(loft([V(p.x, 0.058 - p.x * 0.03, p.z - 0.01) for p in pts], 0.005, sides=3, wob=0), solid(lin(0x9a2a3a)))
+    for k in range(1, 10, 2):
+        p = pts[k]; paint(blob((p.x, 0.06 - p.x * 0.03, p.z - 0.035), (0.013, 0.013, 0.015), n=6, jitter=0), shade(GOLD, GOLD_D), METAL)
+    for s2 in (-1, 1): paint(blob((0.36, s2 * 0.064, 0.58), (0.016, 0.012, 0.018), n=6, jitter=0), shade(GOLD, GOLD_D), METAL)
+    finish('gd_camel_bells', OUT, center=False)
+
+def gd_camel_bundles():   # 짐 꾸러미 — 「주인의 모든 좋은 것을 가지고」(창 24:10) 양옆의 보따리와 항아리
+    begin(433)
+    for s2 in (-1, 1):
+        paint(blob((-0.2, s2 * 0.13, 0.62), (0.07, 0.04, 0.06), n=10, jitter=0.2), shade(lin(0xc8a46a), lin(0xa0804a)))
+        paint(blob((-0.12, s2 * 0.135, 0.58), (0.05, 0.035, 0.05), n=10, jitter=0.2), shade(lin(0x6a8aa8), lin(0x4a6a88)))
+        paint(loft([(-0.26, s2 * 0.13, 0.52), (-0.26, s2 * 0.13, 0.56), (-0.26, s2 * 0.13, 0.6), (-0.26, s2 * 0.13, 0.62)], [0.02, 0.032, 0.02, 0.016], sides=8, wob=0.02), shade(lin(0xc4825a), lin(0x9a6040)))
+        paint(cyl((-0.2, s2 * 0.1, 0.7), (-0.2, s2 * 0.13, 0.66), 0.005, sides=3), solid(LEATHER))
+    finish('gd_camel_bundles', OUT, center=False)
+
+def gd_camel_halter():   # 코걸이와 고삐 — 머리띠와 금 코걸이(창 24:47), 늘어진 고삐 (머리 축에 붙는다)
+    begin(434)
+    for x in (0.54, 0.62):
+        paint(loft([V(x + 0.004 * math.cos(a), 0.036 * math.sin(a), 0.83 + 0.04 * math.cos(a) - (x - 0.54) * 0.3) for a in [k / 12 * 2 * math.pi for k in range(12)]], 0.005, sides=3, closed=True, wob=0), solid(lin(0x9a2a3a)))
+    paint(loft([V(0.66, 0.012 * math.cos(a), 0.795 + 0.012 * math.sin(a)) for a in [k / 10 * 2 * math.pi for k in range(10)]], 0.003, sides=3, closed=True, wob=0), shade(GOLD, GOLD_D), METAL)
+    paint(loft([V(0.62, 0.04, 0.8), V(0.55, 0.05, 0.7), V(0.45, 0.05, 0.68), V(0.3, 0.06, 0.72)], 0.004, sides=3, wob=0), solid(LEATHER))
+    finish('gd_camel_halter', OUT, center=False)
+
+ALL = [mt_donkey_gray, mt_donkey_brown, mt_donkey_white, gd_donkey_rug, gd_donkey_bells, gd_donkey_garland, gd_donkey_baskets,
+       mt_camel_sand, mt_camel_brown, mt_camel_white, gd_camel_cloth, gd_camel_bells, gd_camel_bundles, gd_camel_halter]
 for f in ALL:
     if not ONLY or f.__name__ in ONLY: f()
 print('DONE')

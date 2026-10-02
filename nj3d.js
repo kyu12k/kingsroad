@@ -1303,6 +1303,7 @@
         cvs.addEventListener('wheel', e => { if (walk && !proc) { camDist = Math.max(0.45, Math.min(3, camDist * (e.deltaY > 0 ? 1.1 : 0.9))); e.preventDefault(); } }, { passive: false });
         const doJump = () => {
             if (ride.on) {   // 🐴 탄 채로 — 땅에선 탈것째 뛰고, 공중에서 한 번 더 누르면 뛰어내려 글라이더
+                if (kindOfMount(ride.k) === 'boat') { splash(P.x, P.z, true); return; }   // ⛵ 배에선 뛰지 않는다 — 물보라만
                 if (P.onGround) { P.vy = JUMP_V * (NJ_MOUNTS[ride.k] || {}).jump || JUMP_V; P.onGround = false; return; }
                 mountDown('leap'); return;
             }
@@ -1337,7 +1338,7 @@
 
         // ── 🐴 탈것 (10/2) — 타면 빨라지고, 점프는 탈것째, 공중에서 한 번 더 누르면 뛰어내려 글라이더(사용자 결정). 성 안에서는 내려서 걷는다.
         //    탈것은 내린 자리에서 기다린다(「타기」를 누르면 곁으로 와서 태운다). 모델은 사람 키 0.53 기준이라 순례자 키(0.22)에 맞춰 줄인다
-        const MOUNT_V = '20261002a', MOUNT_S = 0.22 / 0.53;
+        const MOUNT_V = '20261002b', MOUNT_S = 0.22 / 0.53;
         const mountCache = {};
         function loadMount(k) {
             if (!mountCache[k]) mountCache[k] = (async () => {
@@ -1349,7 +1350,8 @@
             mountCache[k].catch(() => { delete mountCache[k]; });
             return mountCache[k];
         }
-        const ride = { on: false, wait: false, k: null, obj: null, parts: null, gait: 0, lastOut: null };
+        const ride = { on: false, wait: false, k: null, obj: null, parts: null, gait: 0, lastOut: null, roll: 0, px: 0, pz: 0 };
+        const kindOfMount = k => ((typeof NJ_MOUNTS !== 'undefined' && NJ_MOUNTS[k]) || {}).kind || 'animal';   // animal · bike · boat
         const mountsOf = () => (typeof njMounts !== 'undefined' && njMounts) || {};
         const ownedMounts = () => Object.keys(typeof NJ_MOUNTS !== 'undefined' ? NJ_MOUNTS : {}).filter(k => mountsOf()[k] && mountsOf()[k].own);
         const curMount = () => { const own = ownedMounts(); return (typeof njMountSel !== 'undefined' && own.includes(njMountSel)) ? njMountSel : (own[0] || null); };
@@ -1362,9 +1364,11 @@
             for (const g of D.gear) {
                 if (!(st.on || []).includes(g[0])) continue;
                 const gm = (await loadMount('gd_' + k + '_' + g[0])).clone();
-                if (g[4] === 'head' && head) { gm.position.copy(head.position).multiplyScalar(-1); head.add(gm); } else body.add(gm);   // 머리 장식은 머리 축 아래로
+                const pv = g[4] && g[4] !== 'body' ? body.getObjectByName(g[4]) : null;   // 머리·돛·핸들에 붙는 장식은 그 축 아래로(축 위치만큼 빼서)
+                if (pv) { gm.position.copy(pv.position).multiplyScalar(-1); pv.add(gm); } else body.add(gm);
             }
-            root.userData.parts = { legs: [0, 1, 2, 3].map(i => body.getObjectByName('leg' + i)), head, tail: body.getObjectByName('tail') };
+            const nm = n => body.getObjectByName(n);
+            root.userData.parts = { legs: [0, 1, 2, 3].map(i => nm('leg' + i)), head, tail: nm('tail'), wheels: [nm('wheelF'), nm('wheelR')].filter(Boolean), crank: nm('crank'), bars: nm('bars'), sail: nm('sail'), rudder: nm('rudder') };
             return root;
         }
         async function refreshMount() {   // 털빛·장식을 바꾸면 다시 짓는다(자리는 그대로)
@@ -1385,10 +1389,15 @@
         async function mountUp() {
             const k = curMount(); if (!k) { openTack(); return; }
             if (inCity(P.x, P.z)) { showHint(T('nj3d_ride_city'), 2200); return; }
+            if (kindOfMount(k) === 'boat') {   // ⛵ 배 — 바다 위나 바닷가에서만
+                if (seaE(P.x, P.z) > 1.45) { showHint(T('nj3d_boat_shore'), 2600); return; }
+                for (let i = 0; i < 40 && seaE(P.x, P.z) > 0.95; i++) { const dx = -P.x, dz = SZ - P.z, l = Math.hypot(dx, dz) || 1; P.x += dx / l * 0.1; P.z += dz / l * 0.1; }
+                P.y = groundAt(P.x, P.z, P.y + 1);
+            }
             if (!ride.obj || ride.k !== k) await refreshMount();
             if (!ride.obj || cur !== C) return;
             ride.on = true; ride.wait = false; gliding = false; jetOn = false; ride.obj.visible = true;
-            ride.obj.position.set(P.x, P.y, P.z); ride.obj.rotation.y = P.face + Math.PI / 2;
+            ride.obj.position.set(P.x, P.y, P.z); ride.obj.rotation.y = P.face + Math.PI / 2; ride.px = P.x; ride.pz = P.z;
             syncRideUI(); showHint(T('nj3d_ride_on', { name: _njMountObj(k) }), 3200);
         }
         function mountDown(how) {   // how: 'leap'(뛰어내려 글라이더) · 'city'(성문 앞) · 그 밖(그냥 내림)
@@ -1414,9 +1423,10 @@
             const price = (n, key) => gems >= n ? `<button data-${key}>💎 ${n.toLocaleString()}</button>` : `<span class="nj3d-offer-lock">💎 ${n.toLocaleString()}</span>`;
             tackEl.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button><div class="nj3d-offer-head">${T('mount_title')}</div>
                 <div class="nj3d-offer-have">💎 ${gems.toLocaleString()}</div>${tackTabs()}<div class="nj3d-offer-intro">${T('mount_intro')}</div>`
-                + Object.keys(NJ_MOUNTS).map(k => {
+                + Object.keys(NJ_MOUNTS).sort((a, b) => !!NJ_MOUNTS[a].modern - !!NJ_MOUNTS[b].modern).map((k, i, arr) => {
+                    const sec = (i === 0 || !!NJ_MOUNTS[arr[i - 1]].modern !== !!NJ_MOUNTS[k].modern) ? `<div class="nj3d-offer-head" style="margin-top:14px;font-size:0.9rem">${T(NJ_MOUNTS[k].modern ? 'mount_sec_modern' : 'mount_sec_bible')}</div>` : '';
                     const D = NJ_MOUNTS[k], st = mountsOf()[k] || {}, own = !!st.own, sel = curMount() === k;
-                    let h = `<div class="nj3d-shop-sec">${D.e} ${esc2(_njMountName(k))} <span>${esc2(D.ref)} · ${T('mount_speed', { x: D.speed })}</span></div>`;
+                    let h = sec + `<div class="nj3d-shop-sec">${D.e} ${esc2(_njMountName(k))} <span>${esc2(D.ref)} · ${D.speedMax ? T('mount_speed2', { x: D.speed, y: D.speedMax }) : T('mount_speed', { x: D.speed })}</span></div>`;
                     if (!own) return h + `<div class="nj3d-offer-list"><div class="nj3d-offer-row"><div><b>${D.e} ${esc2(_njMountName(k))}</b></div>${gems >= D.cost ? `<button data-buy="${k}">${T('mount_buy', { cost: D.cost.toLocaleString() })}</button>` : `<span class="nj3d-offer-lock">💎 ${D.cost.toLocaleString()}</span>`}</div></div>`;
                     h += sel ? `<div class="nj3d-shop-big">${T('mount_picked')}</div>` : `<button class="nj3d-shop-rest" data-pick="${k}">${T('mount_pick')}</button>`;
                     h += `<div class="nj3d-shop-tabs">${D.coats.map(c => { const has = (st.coats || []).includes(c[0]); return `<button data-coat="${k}:${c[0]}" class="${st.coat === c[0] ? 'on' : ''}">${esc2(en ? c[2] : c[1])}${has ? '' : ` · 💎${c[3].toLocaleString()}`}</button>`; }).join('')}</div>`;
@@ -1472,12 +1482,28 @@
                     const prev = Math.sin(ride.gait); ride.gait += dt * (run ? 13 : 7);
                     if (Math.sign(Math.sin(ride.gait)) !== Math.sign(prev)) {
                         if (inWater) splash(P.x, P.z, false);
-                        else if (typeof SoundEffect !== 'undefined' && SoundEffect.playHoof) SoundEffect.playHoof(run);
+                        else if (kindOfMount(ride.k) === 'animal' && typeof SoundEffect !== 'undefined' && SoundEffect.playHoof) SoundEffect.playHoof(run);   // 발굽 소리는 짐승만
                     }
                 }
             }
             const go = ride.on && moving && P.onGround, a = run ? 0.55 : 0.32;
-            (pt.legs || []).forEach((l, i) => { if (!l) return; const want = go ? Math.sin(ride.gait + ((run ? i < 2 : (i === 0 || i === 3)) ? 0 : Math.PI)) * a : (!P.onGround && ride.on ? (i < 2 ? -0.5 : 0.5) : 0); l.rotation.z += (want - l.rotation.z) * Math.min(1, dt * 14); });
+            const KD = NJ_MOUNTS[ride.k] || {}, kind = KD.kind || 'animal';
+            if (kind === 'bike' || kind === 'boat') {   // 🚲 바퀴는 간 거리만큼 구르고 페달이 돈다 · ⛵ 배는 물결에 흔들리고 돛이 부푼다
+                const d = ride.on ? Math.hypot(P.x - ride.px, P.z - ride.pz) : 0; ride.px = P.x; ride.pz = P.z;
+                if (d < 1) ride.roll += d / (MOUNT_S * (KD.wheelR || 0.14));
+                (pt.wheels || []).forEach(wh => { wh.rotation.z = -ride.roll; });
+                if (pt.crank) pt.crank.rotation.z = -ride.roll * 0.45;
+                if (pt.bars) pt.bars.rotation.y = 0;
+                if (kind === 'boat') {
+                    o.position.y += Math.sin(t * 1.3) * 0.004; o.rotation.x = Math.sin(t * 0.9) * 0.04; o.rotation.z = Math.sin(t * 1.1) * 0.03;
+                    if (pt.sail) pt.sail.rotation.z = Math.sin(t * 0.8) * 0.08 + (moving ? 0.12 : 0);
+                    if (pt.rudder) pt.rudder.rotation.z = Math.sin(t * 0.6) * 0.15;
+                    if (ride.on && moving && Math.random() < dt * 2) splash(P.x - Math.sin(P.face) * 0.15, P.z - Math.cos(P.face) * 0.15, false);   // 뱃머리 물보라
+                }
+                return;
+            }
+            const pace = KD.gait === 'pace';   // 낙타 — 같은 쪽 다리가 함께
+            (pt.legs || []).forEach((l, i) => { if (!l) return; const want = go ? Math.sin(ride.gait + ((pace ? (i === 0 || i === 2) : run ? i < 2 : (i === 0 || i === 3)) ? 0 : Math.PI)) * a : (!P.onGround && ride.on ? (i < 2 ? -0.5 : 0.5) : 0); l.rotation.z += (want - l.rotation.z) * Math.min(1, dt * 14); });
             if (pt.head) pt.head.rotation.z = go ? Math.sin(ride.gait * 2) * (run ? 0.06 : 0.035) : (!ride.on && ((t % 9) < 3) ? -0.45 * Math.sin((t % 9) / 3 * Math.PI) : 0);
             if (pt.tail) pt.tail.rotation.x = Math.sin(t * 3) * 0.3;
         }
@@ -2828,12 +2854,16 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const glide = gliding && !fly && !P.onGround;
             if (glide && !moving) { mx = -Math.sin(P.face); mz = -Math.cos(P.face); }   // 활강은 손을 떼도 바라보는 쪽으로 계속 나아간다
             const MD = ride.on ? (NJ_MOUNTS[ride.k] || {}) : null;
+            if (MD) ride.runT = (moving && run) ? (ride.runT || 0) + dt : (P.onGround ? 0 : ride.runT || 0);   // 🐪 지구력 — 쉬지 않고 달린 시간(공중에선 이어진다)
+            const mSpd = MD ? (MD.speedMax ? MD.speed + (MD.speedMax - MD.speed) * Math.min(1, (ride.runT || 0) / (MD.ramp || 3)) : (MD.speed || 1)) : 1;
             const WG = equipWing();
-            const sp = glide ? 2.6 * (1 + (WG.bonus || 0)) : MD ? RUN_V * (MD.speed || 1) * (run ? 1 : 0.55) * (inRiver ? 0.8 : 1)   // 🐴 탄 채로 — 끝까지 밀면 달리고, 덜 밀면 걷는다(공중에서도 그 빠르기)
+            const sp = glide ? 2.6 * (1 + (WG.bonus || 0)) : MD ? RUN_V * mSpd * (run ? 1 : 0.55) * (inRiver && !MD.water ? 0.8 : 1)   // 🐴 탄 채로 — 끝까지 밀면 달리고, 덜 밀면 걷는다(공중에서도 그 빠르기)
                 : (fly || !P.onGround) ? WALK_V * 1.35 : (run ? RUN_V : WALK_V) * (inRiver ? 0.65 : 1);
             const nx = P.x + mx * sp * dt, nz = P.z + mz * sp * dt;
-            if (!blocked(nx, P.z, P.y)) P.x = nx;
-            if (!blocked(P.x, nz, P.y)) P.z = nz;
+            const boatOn = ride.on && MD && MD.kind === 'boat', seaOk = (x, z) => !boatOn || seaE(x, z) < 0.97;   // ⛵ 배는 바다 안에서만 — 해안에 닿으면 멈춘다
+            if (!blocked(nx, P.z, P.y) && seaOk(nx, P.z)) P.x = nx;
+            if (!blocked(P.x, nz, P.y) && seaOk(P.x, nz)) P.z = nz;
+            if (boatOn && moving && !seaOk(nx, nz)) { ride.edgeT = (ride.edgeT || 0) + dt; if (ride.edgeT > 0.6 && !ride.edgeHint) { ride.edgeHint = true; showHint(T('nj3d_boat_edge'), 2600); } } else { ride.edgeT = 0; if (boatOn && seaE(P.x, P.z) < 0.85) ride.edgeHint = false; }
             if (fly) { P.vy = Math.min(P.vy + 6.5 * dt, 1.4); gliding = false; }
             else if (glide) P.vy = Math.max(P.vy - G * 0.18 * dt, -(WG.sink || 0.42));   // 천천히 내려앉는다 — 좋은 날개일수록 덜 떨어진다
             else P.vy -= G * dt;
@@ -2868,13 +2898,16 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (P.onGround) gliding = false;
             const gl = gliding && !fly;
             glider.visible = gl && wingKind === 'glider';
-            backWings.visible = wingKind === 'wings';
+            backWings.visible = wingKind === 'wings' && !ride.on;   // 탈 때는 접은 날개를 감춘다(배·자전거에서 삐죽 튀어나왔다)
             if (wingKind === 'wings' && backWings.userData.p) {   // 걸을 땐 등에 접고, 활강하면 펼쳐 퍼덕인다
                 const [pR, pL] = backWings.userData.p, fl = gl ? Math.sin(walkT * 7) * 0.35 + 0.1 : -0.25, ry = gl ? 0.15 : 1.3, ek = Math.min(1, dt * 8);
                 pR.rotation.y += (-ry - pR.rotation.y) * ek; pL.rotation.y += (ry - pL.rotation.y) * ek; pR.rotation.z += (fl - pR.rotation.z) * ek; pL.rotation.z += (-fl - pL.rotation.z) * ek;
             }
             if (wingFx) wingFx(walkT, gl);
-            if (ride.on) { hL = -1.25; hR = -1.25; aL = -0.75; aR = -0.75; zL = -0.15; zR = 0.15; lean = moving && run ? -0.15 : 0; }   // 🐴 걸터앉아 고삐를 잡는다
+            const rk = ride.on ? kindOfMount(ride.k) : null;
+            if (rk === 'bike') { const c = Math.sin(ride.roll * 0.45); hL = -1.05 + c * 0.5; hR = -1.05 - c * 0.5; aL = -1.0; aR = -1.0; lean = -0.25; }   // 🚲 페달을 밟고 핸들을 잡는다
+            else if (rk === 'boat') { hL = -1.45; hR = -1.45; aL = -0.35; aR = -0.6; zL = -0.2; zR = 0.25; }   // ⛵ 앉아서 한 손은 키를
+            else if (ride.on) { hL = -1.25; hR = -1.25; aL = -0.75; aR = -0.75; zL = -0.15; zR = 0.15; lean = moving && run ? -0.15 : 0; }   // 🐴 걸터앉아 고삐를 잡는다
             else if (glider.visible) { hL = -0.3; hR = -0.2; zL = -2.7; zR = 2.7; lean = -0.35; }   // 두 팔로 날개를 붙잡고 몸을 앞으로
             else if (gl && wingKind === 'wings') { hL = -0.25; hR = -0.15; zL = -0.9; zR = 0.9; lean = -0.5; }   // 등 날개로 날 때 — 팔을 벌리고 몸을 눕힌다
             else if (fly) { hL = 0.12; hR = 0.05; zL = -0.35; zR = 0.35; lean = -0.25; }
@@ -2885,7 +2918,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             L.armL.rotation.x += (aL - L.armL.rotation.x) * e; L.armR.rotation.x += (aR - L.armR.rotation.x) * e;
             L.armL.rotation.z += (zL - L.armL.rotation.z) * e; L.armR.rotation.z += (zR - L.armR.rotation.z) * e;
             body.rotation.x += (lean - body.rotation.x) * e; body.position.y += (bob - body.position.y) * Math.min(1, dt * 30);
-            { const sz = ride.on ? 0.42 : 0; L.hipL.rotation.z += (-sz - L.hipL.rotation.z) * e; L.hipR.rotation.z += (sz - L.hipR.rotation.z) * e; }   // 탈 때는 다리를 벌린다
+            { const sz = !ride.on ? 0 : rk === 'bike' ? 0.06 : rk === 'boat' ? 0.15 : 0.42; L.hipL.rotation.z += (-sz - L.hipL.rotation.z) * e; L.hipR.rotation.z += (sz - L.hipR.rotation.z) * e; }   // 탈 때는 다리를 벌린다
             ripples.forEach(r => {
                 if (r.t >= 1) return;
                 r.t = Math.min(1, r.t + dt / (r.big ? 0.9 : 0.6));
@@ -2894,7 +2927,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             });
             flames.forEach(f => { f.visible = fly; f.scale.set(0.05, 0.08 + Math.random() * 0.04, 1); });
             if (moving || fly || !P.onGround) lastTouch = performance.now();
-            const Tg = new THREE.Vector3(P.x, P.y + (ride.on ? 0.26 : 0.17), P.z);
+            const Tg = new THREE.Vector3(P.x, P.y + (ride.on && MD ? 0.12 + (MD.seat || [0, 0.36])[1] * MOUNT_S : 0.17), P.z);   // 탈 때는 앉은 높이만큼(낙타는 높이 — 멀리 보인다)
             const dir = new THREE.Vector3(Math.sin(camYaw) * Math.cos(camPitch), Math.sin(camPitch), Math.cos(camYaw) * Math.cos(camPitch));
             let dist = camDist;
             body.visible = camPitch > -0.75;   // 많이 올려다보면 순례자를 잠시 숨긴다(1인칭처럼) — 등이 화면을 가렸다
