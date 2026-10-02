@@ -5610,7 +5610,8 @@ function getTotalCollectionScore() {
 /* ★ 기억은 하나 — 두 여정의 진도(클리어 횟수·첫 클리어 날·마지막 클리어·복습 단계·다음 복습)를 한 벌로 합친다 (2026-10-02).
    예전엔 여정마다 따로라 같은 절에 복습 시계가 둘(+ 백지레벨) 돌았고, 왕의 길에서 7일 단계까지 온 절도 자유여행에선 10분부터였다.
    여정은 이제 「길」(무엇이 열리고 어떤 순서로 가는가)만 정하고, 「기억」은 절마다 하나다.
-   - 절마다 앞선 쪽을 통째로(_mergeProgressSet — 동기화와 같은 규칙), 클리어 횟수만 큰 쪽, 첫 클리어 날은 이른 쪽
+   - 절마다 **마지막으로 복습한 쪽**을 통째로(_mergeProgressSet — 동기화와 같은 규칙), 클리어 횟수만 큰 쪽, 첫 클리어 날은 이른 쪽
+     (첫 배포(10/2 21:16)는 스텝이 높은 쪽을 골라 멈춘 기록이 이겼다 — 그날 밤 서버 스냅샷으로 되돌림)
    - 몇 번 불러도 결과가 같다(멱등) — 옛 앱이 두 벌을 따로 써 보내도 다음 불러오기에서 다시 합쳐진다
    - 저장본은 예전 모양 그대로(최상위·kingsMode 둘 다) 같은 내용을 쓴다 → 옛 앱도 그대로 읽는다
    - 처음 합칠 때 그 전 도감 점수(두 여정 합)를 collectionLegacy로 한 번 남긴다 */
@@ -5625,12 +5626,7 @@ function _unifyJourneyMemory() {
         collectionLegacy = getCollectionScoreOf(fm0) + (same ? 0 : getCollectionScoreOf(km0));
     }
     if (free.mastery === kings.mastery && free.reviewStep === kings.reviewStep) return;   // 이미 한 벌
-    const r = _mergeProgressSet(free, kings).merged;
-    const fm = free.mastery || {}, km = kings.mastery || {};
-    for (const id of new Set([...Object.keys(fm), ...Object.keys(km)])) {
-        const m = Math.max(fm[id] || 0, km[id] || 0);
-        if (m > 0) r.mastery[id] = m;
-    }
+    const r = _mergeProgressSet(free, kings).merged;   // 절마다 마지막으로 복습한 쪽 · 클리어 횟수는 큰 쪽
     stageMastery = kingsRoadData.mastery = r.mastery;
     stageClearDate = kingsRoadData.clearDate = r.clearDate;
     stageLastClear = kingsRoadData.lastClear = r.lastClear;
@@ -12418,8 +12414,17 @@ function saveGameData() {
      한 스테이지의 다섯 필드(mastery/clearDate/lastClear/reviewStep/nextReviewTime)는 서로 맞물려 있어서,
      복습 스텝만 A에서 다음 복습 시각만 B에서 가져오면 복습 일정 자체가 깨진다.
 
-   앞선 쪽 판정: 복습 스텝 > 마지막 클리어 시각 > 클리어 횟수 순.
-   단 clearDate(최초 클리어 날짜)만은 예외로 '이른 쪽'을 남긴다 — 최초 기록이니까. */
+   앞선 쪽 판정: **마지막으로 복습 단계를 올린 시각** > 복습 스텝 > 마지막 클리어 시각 순 (2026-10-02 바꿈).
+   예전엔 복습 스텝이 먼저였다. 한 갈래(같은 여정)의 기록끼리는 스텝이 높을수록 나중이라 맞았지만,
+   두 여정을 합치자(_unifyJourneyMemory) **봄에 멈춘 자유여행 기록(스텝 11, 8월부터 밀림)이 9월까지 이어 온 왕의 길 기록(스텝 10)을 이겨**
+   한 사람에게 복습 차례 30절이 갑자기 떴다. 갈래가 다르면 스텝은 비교할 수 없고, 비교할 수 있는 건 「언제 마지막으로 복습했나」다.
+   올린 시각 = 다음 복습 시각 − 그 스텝의 대기 시간(advanceReviewStep이 그렇게 정한다). 보스전·중간점검으로 올라간 절도 잡힌다(그 절의 lastClear는 안 바뀐다).
+   클리어 횟수는 큰 쪽(늘기만 하는 수), clearDate(최초 클리어 날짜)는 '이른 쪽'을 남긴다 — 최초 기록이니까. */
+function _progressRecency(R) {
+    const st = R.reviewStep || 0, nt = R.nextReviewTime || 0;
+    if (st > 1 && nt > 0) return nt - getReviewWaitMs(st);
+    return R.lastClear || 0;
+}
 const _PROGRESS_KEYS = ['mastery', 'clearDate', 'lastClear', 'reviewStep', 'nextReviewTime'];
 
 function _mergeProgressSet(a, b) {
@@ -12450,8 +12455,10 @@ function _mergeProgressSet(a, b) {
         if (!hasA) { win = B; if (hasB) tookFromB++; }
         else if (!hasB) { win = A; }
         else {
+            const rA = _progressRecency(A), rB = _progressRecency(B);
             const sA = A.reviewStep || 0, sB = B.reviewStep || 0;
-            if (sA !== sB) win = sA > sB ? A : B;
+            if (rA !== rB) win = rA > rB ? A : B;
+            else if (sA !== sB) win = sA > sB ? A : B;
             else {
                 const lA = A.lastClear || 0, lB = B.lastClear || 0;
                 if (lA !== lB) win = lA > lB ? A : B;
@@ -12463,6 +12470,8 @@ function _mergeProgressSet(a, b) {
         for (const k of _PROGRESS_KEYS) {
             if (win[k] !== undefined) out[k][id] = win[k];
         }
+        // 클리어 횟수는 큰 쪽 — 늘기만 하는 수라 어느 쪽을 골랐든 줄면 안 된다
+        if ((A.mastery || 0) || (B.mastery || 0)) out.mastery[id] = Math.max(A.mastery || 0, B.mastery || 0);
         // 최초 클리어 날짜는 이른 쪽을 남긴다 ('YYYY-MM-DD'라 문자열 비교로 충분)
         const cdA = A.clearDate, cdB = B.clearDate;
         if (cdA && cdB) out.clearDate[id] = (cdA < cdB) ? cdA : cdB;
