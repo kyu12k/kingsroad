@@ -7961,6 +7961,37 @@ const NJ_DECOR = [
     { k: 'hens', ko: '닭 세 마리', en: 'Three hens', cost: 5000, set: 'barn' },
     { k: 'bethwell', ko: '베들레헴 우물', en: 'Well of Bethlehem', cost: 6000, set: 'barn' },
     { k: 'lowwall', ko: '낮은 돌담', en: 'Low stone wall', cost: 3000, set: 'barn' },
+    // 💒 혼인 잔치 ① 잔칫상 (계 19:9 · 요 2:1-10)
+    { k: 'feasttable', ko: '긴 잔칫상', en: 'Long feast table', cost: 8000, set: 'feast' },
+    { k: 'breadfruit', ko: '떡과 과일 쟁반', en: 'Platters of bread and fruit', cost: 4000, set: 'feast' },
+    { k: 'stonejars', ko: '돌항아리 여섯', en: 'Six stone water jars', cost: 6000, set: 'feast' },
+    { k: 'winepitcher', ko: '포도주 주전자와 금잔', en: 'Wine pitcher and gold cups', cost: 4000, set: 'feast' },
+    { k: 'guestbench', ko: '손님 긴 의자', en: 'Guest bench', cost: 3000, set: 'feast' },
+    { k: 'guest1', ko: '세마포 입은 손님', en: 'Guest in fine linen', cost: 6000, set: 'feast' },
+    { k: 'guest2', ko: '너울 쓴 손님', en: 'Veiled guest', cost: 6000, set: 'feast' },
+    { k: 'garland', ko: '꽃줄 기둥', en: 'Flower garland posts', cost: 5000, set: 'feast' },
+    { k: 'servant', ko: '물 붓는 하인', en: 'Servant pouring water', cost: 7000, set: 'feast' },
+    // 💒 혼인 잔치 ② 등불 든 처녀들 (마 25:1-13)
+    { k: 'virgin1', ko: '등불 든 처녀 (흰 옷)', en: 'Maiden with a lamp (white)', cost: 7000, set: 'virgins' },
+    { k: 'virgin2', ko: '등불 든 처녀 (연보라 옷)', en: 'Maiden with a lamp (lilac)', cost: 7000, set: 'virgins' },
+    { k: 'sleepvirgin', ko: '졸다 잠든 처녀', en: 'Maiden dozing as she waits', cost: 6000, set: 'virgins' },
+    { k: 'oilflasks', ko: '기름 그릇', en: 'Vessels of oil', cost: 3000, set: 'virgins' },
+    { k: 'oiljar', ko: '기름 항아리', en: 'Jar of olive oil', cost: 3000, set: 'virgins' },
+    { k: 'lampstand', ko: '등잔대', en: 'Lampstand', cost: 5000, set: 'virgins' },
+    { k: 'oillamps', ko: '등잔 줄', en: 'Row of oil lamps', cost: 4000, set: 'virgins' },
+    { k: 'lanternpole', ko: '걸린 등불 기둥', en: 'Hanging lantern post', cost: 5000, set: 'virgins' },
+    { k: 'waitbench', ko: '기다리는 돌 의자', en: 'Stone bench for waiting', cost: 3000, set: 'virgins' },
+    { k: 'foolvirgin', ko: '등불이 꺼져가는 처녀', en: 'Maiden whose lamp is going out', cost: 6000, set: 'virgins' },   // 「우리 등불이 꺼져가니」(25:8) — 10/2 사용자: 미련한 다섯도 넣자
+    // 💒 혼인 잔치 ③ 혼인 천막과 문 (마 25:10 · 시 150:4)
+    { k: 'weddingtent', ko: '혼인 천막', en: 'Wedding canopy', cost: 10000, set: 'canopy' },
+    { k: 'flowerarch', ko: '꽃 아치 문', en: 'Flower-arch gate', cost: 9000, set: 'canopy' },
+    { k: 'drummer', ko: '소고 치는 여인', en: 'Woman with a timbrel', cost: 7000, set: 'canopy' },
+    { k: 'trumpeter', ko: '나팔 부는 사람', en: 'Trumpeter', cost: 7000, set: 'canopy' },
+    { k: 'doorkeeper', ko: '문지기', en: 'Doorkeeper', cost: 6000, set: 'canopy' },
+    { k: 'flowergirl', ko: '꽃잎 뿌리는 아이', en: 'Child scattering petals', cost: 6000, set: 'canopy' },
+    { k: 'petalpath', ko: '꽃잎 뿌린 길', en: 'Petal-strewn path', cost: 4000, set: 'canopy' },
+    { k: 'flowerurns', ko: '꽃 항아리 둘', en: 'Two flower urns', cost: 4000, set: 'canopy' },
+    { k: 'torches', ko: '횃불 한 쌍', en: 'Pair of torches', cost: 5000, set: 'canopy' },
 ];
 /* 🧩 세트 (10/1) — 레고처럼 낱개 → 세트 → 큰 세트(사용자). 한 세트의 낱개를 다 가지면 「조립」: 정해진 배치로 한 덩어리가 되어 연출이 돈다.
    「해체」하면 다시 낱개. 컨셉 하나에 세트 여럿, 컨셉의 세트를 다 조립하면 큰 세트(아직 — 세트 ②③을 만든 뒤).
@@ -7969,6 +8000,7 @@ const NJ_CONCEPTS = [
     { k: 'shepherd', ko: '🐑 목자의 언덕', en: '🐑 Shepherd’s hill', ref: '시 23 · 요 10', sets: ['pen', 'camp', 'meadow'], big: 'hill' },
     { k: 'galilee', ko: '🎣 갈릴리 바닷가', en: '🎣 Shore of Galilee', ref: '요 21 · 겔 47:10', sets: ['gboat', 'fire', 'village'], big: 'tiberias', sea: true },   // 바다 꾸미기에서만
     { k: 'harvest', ko: '🌾 추수하는 들판', en: '🌾 Harvest field', ref: '룻 2 · 계 14:15', sets: ['field', 'thresh', 'barn'], big: 'bethlehem' },
+    { k: 'wedding', ko: '💒 어린 양의 혼인 잔치', en: '💒 Wedding feast of the Lamb', ref: '계 19:7-9 · 마 25 · 요 2', sets: ['feast', 'virgins', 'canopy'], big: 'bridegroom' },
 ];
 const NJ_SETS = {
     // 🌾 추수 ① 밀밭과 일꾼 (룻 2:3 「베는 자를 따라 밭에서 이삭을 줍는데」) — 뒤에 밀밭, 앞(+z)에 베는 일꾼과 그 뒤를 따라 줍는 룻, 왼쪽 그늘막에 새참, 보아스가 일꾼들을 축복한다
@@ -7985,6 +8017,21 @@ const NJ_SETS = {
     barn: { ko: '곳간과 집', en: 'Granary and home', concept: 'harvest', parts: ['granary', 'cart', 'donkey', 'grinder', 'oven', 'storejars', 'hens', 'bethwell', 'lowwall'], box: [2.6, 2.2, 0.7],
         layout: { granary: [-0.55, -0.45, 0], storejars: [-1.05, -0.15, 0], cart: [0.42, -0.42, 0.25], donkey: [1.0, 0.3, Math.PI * 0.9], grinder: [-0.5, 0.5, 0],
             oven: [0.05, 0.6, 0], hens: [0.48, 0.38, 0], bethwell: [1.1, -0.38, 0], lowwall: [0.5, -0.95, 0] },
+        animals: [], area: [0, 0, 0, 0] },
+    // 💒 혼인 잔치 ① 잔칫상 — 흰 세마포 덮은 긴 상 뒤에 세마포 입은 손님 둘(계 19:8), 상 위에 떡·과일·포도주, 오른쪽 가나의 돌항아리 여섯에 하인이 물을 붓는다(요 2:6-7), 뒤에 꽃줄
+    feast: { ko: '잔칫상', en: 'Feast table', concept: 'wedding', parts: ['feasttable', 'breadfruit', 'stonejars', 'winepitcher', 'guestbench', 'guest1', 'guest2', 'garland', 'servant'], box: [2.4, 1.8, 0.7],
+        layout: { garland: [0, -0.62, 0], feasttable: [0, -0.1, 0], guestbench: [0, -0.42, 0], guest1: [-0.3, -0.38, -Math.PI / 2], guest2: [0.3, -0.38, -Math.PI / 2],
+            breadfruit: [-0.25, -0.1, 0, 0.212], winepitcher: [0.3, -0.12, 0, 0.212], stonejars: [0.95, 0.15, 0], servant: [0.58, 0.18, 0] },
+        animals: [], area: [0, 0, 0, 0] },
+    // 💒 혼인 잔치 ② 등불 든 처녀들 (마 25:1-13) — 돌 의자에서 졸다 잠든 처녀, 앞에 등불 들고 신랑을 기다리는 처녀 둘, 둘레에 등잔대·등잔 줄·걸린 등불, 기름 그릇과 항아리
+    virgins: { ko: '등불 든 처녀들', en: 'Maidens with lamps', concept: 'wedding', parts: ['virgin1', 'virgin2', 'sleepvirgin', 'oilflasks', 'oiljar', 'lampstand', 'oillamps', 'lanternpole', 'waitbench', 'foolvirgin'], box: [2.4, 1.9, 0.8],
+        layout: { waitbench: [-0.25, -0.4, 0], sleepvirgin: [-0.45, -0.36, -Math.PI / 2], virgin1: [0.3, 0.15, -Math.PI / 2], virgin2: [0.7, 0.0, -1.8], lampstand: [-1.0, 0.05, 0],
+            oillamps: [0.0, -0.78, 0], oilflasks: [-0.6, 0.3, 0], oiljar: [-1.0, -0.5, 0], lanternpole: [1.0, -0.55, 0], foolvirgin: [-0.2, 0.55, -1.2] },
+        animals: [], area: [0, 0, 0, 0] },
+    // 💒 혼인 잔치 ③ 혼인 천막과 문 — 앞에 꽃 아치 문(문지기), 꽃잎 뿌린 흰 길이 횃불 사이로 혼인 천막까지, 천막 양옆에 소고와 나팔, 길 위에 꽃잎 뿌리는 아이
+    canopy: { ko: '혼인 천막과 문', en: 'Wedding canopy and gate', concept: 'wedding', parts: ['weddingtent', 'flowerarch', 'drummer', 'trumpeter', 'doorkeeper', 'flowergirl', 'petalpath', 'flowerurns', 'torches'], box: [2.4, 2.2, 1.0],
+        layout: { weddingtent: [0, -0.55, 0], petalpath: [0, 0.15, 0], flowerarch: [0, 0.65, 0], torches: [0, 0.22, 0], flowerurns: [0, -1.0, 0],
+            drummer: [-0.72, -0.2, -Math.PI / 2], trumpeter: [0.75, -0.25, -2.2], doorkeeper: [0.55, 0.72, -Math.PI / 2], flowergirl: [0.0, 0.4, -Math.PI / 2] },
         animals: [], area: [0, 0, 0, 0] },
     pen: { ko: '양 우리', en: 'Sheepfold', concept: 'shepherd', parts: ['penwall', 'pengate', 'sheep', 'blacksheep', 'lamb', 'trough', 'hay'],
         box: [2.7, 2.1, 0.45], layout: { penwall: [0, 0, 0], pengate: [0, 0.9, 0], trough: [-0.5, -0.55, 0], hay: [1.28, 0.5, 0.4] },
@@ -8022,6 +8069,17 @@ const NJ_SETS = {
 /* 🏞️ 큰 세트 — 컨셉의 세트를 다 조립하면 하나로(레고 시리즈처럼). 세 세트가 성벽 바깥 띠에 맞게 한 줄로 서고, 큰 연출이 돈다.
    offsets: 세트 자리(큰 세트 안, 1.5배 전) · leads: 연출(이끄는 목자와 양 떼) · path: 연출 길(큰 세트 안 좌표) — nj3d.js bigShow */
 const NJ_BIG = {
+    // 💒 혼인 잔치 큰 세트 「보라 신랑이로다」(마 25:6) — 신랑은 사람 모양 없이 빛으로만. 연출: 빛이 다가오면 등불 든 처녀들이 따라 문 안으로, 문이 닫히고 등불 꺼진 처녀는 밖에 (nj3d.js brideShow)
+    bridegroom: { ko: '보라 신랑이로다', en: 'Here is the bridegroom', concept: 'wedding', sets: ['virgins', 'canopy', 'feast'],
+        // 꽃 울타리(바닥 weddingbase)가 안 잔치 마당과 바깥 들을 나눈다 — 밖에 기다리는 처녀들, 꽃 아치 문(x −1.2, z 0.2)을 지나 안 왼쪽에 혼인 천막, 오른쪽에 잔칫상.
+        // 처녀들 세트의 의자·등잔 줄은 문 앞 길을 비우게, 천막 세트의 문지기·꽃잎 아이는 처녀들이 지나는 길 옆으로(override, 세트 안 좌표)
+        offsets: { virgins: [-0.9, 0.95, 0], canopy: [-1.2, -0.45, 0], feast: [1.35, -0.8, 0] }, box: [6.6, 3.6, 1.0],
+        override: { virgins: { waitbench: [0.55, -0.25, 0], sleepvirgin: [0.35, -0.21, -Math.PI / 2], oillamps: [0.75, 0.55, 0] },
+            canopy: { doorkeeper: [0.5, 0.45, -Math.PI / 2], flowergirl: [0.35, 0.3, -Math.PI / 2] } },
+        extras: [{ k: 'weddingbase', at: [-0.017, 0.107, 0, -0.02] }],
+        wedding: { vset: 'virgins', walkers: ['virgin1', 'virgin2'], sleeper: 'sleepvirgin', fool: 'foolvirgin', gate: { set: 'canopy', part: 'flowerarch' },
+            routes: [[[-1.2, 0.8], [-1.2, 0.2], [-1.2, -0.3], [-1.42, -0.5]], [[-0.85, 0.95], [-1.2, 0.8], [-1.2, 0.2], [-1.2, -0.3], [-0.98, -0.5]]],
+            foolStand: [-1.2, 0.62], light: [[-1.2, 3.0, 0.75], [-1.2, 0.95, 0.6], [-1.2, -0.45, 0.6], [-1.2, -1.0, 0.8]] } },   /* 큰 세트 안 좌표 — nj3d.js brideShow */
     // 🌾 추수 큰 세트 — 밭 · 타작마당 · 곳간을 한 줄로. 연출: 나귀가 수레를 끌고 곳간을 나서 밭(곡식단)과 타작마당에 들렀다 돌아오면 곳간 문이 열린다 (nj3d.js haulShow)
     bethlehem: { ko: '베들레헴의 추수', en: 'Harvest at Bethlehem', concept: 'harvest', sets: ['field', 'thresh', 'barn'],
         // 한 농가로(10/1 사용자: 직렬이다, 목자의 언덕처럼 어우러지게) — 가운데 타작마당을 흙길이 한 바퀴 두르고, 왼쪽에 밀밭, 오른쪽에 곳간(문이 길을 보게 돌림), 뒤에 그늘 나무.
