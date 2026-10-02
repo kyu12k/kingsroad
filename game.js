@@ -722,6 +722,7 @@ const LANG = {
         blank_lv_early: '✍️ 백지 Lv{lv} · 차례는 {days}일 뒤',
         blank_lv_stay_hint: '✍️ 힌트를 많이 써서 백지 Lv{lv} 그대로',
         blank_lv_down: '✍️ 백지 Lv1 — 내일 다시 차례',
+        blank_review_credit: '📖 복습 {from}→{to}단계 +💎{gem}',
         blank_badge_tip: '백지 Lv{lv} · {days}일 뒤 차례',
         blank_badge_tip_due: '백지 차례 — 지금 백지로 써내면 Lv{lv}에서 한 칸 올라요',
         blank_badge_tip_legacy: '백지로 써낸 적 있음 — 다음에 백지로 써내면 Lv2부터 시작',
@@ -1861,6 +1862,7 @@ const LANG = {
         blank_lv_early: '✍️ Blank Lv{lv} · due in {days}d',
         blank_lv_stay_hint: '✍️ Many hints — Blank Lv{lv} unchanged',
         blank_lv_down: '✍️ Blank Lv1 — due again tomorrow',
+        blank_review_credit: '📖 Review step {from}→{to} +💎{gem}',
         blank_badge_tip: 'Blank Lv{lv} · due in {days}d',
         blank_badge_tip_due: 'Due — write it from blank now to go up from Lv{lv}',
         blank_badge_tip_legacy: 'Written from blank before — next blank pass starts at Lv2',
@@ -3228,6 +3230,7 @@ loadGameData = function () {
         // ★ 기억은 하나 (2026-10-02) — 두 여정이 진도 한 벌을 함께 쓴다
         collectionLegacy = (typeof parsed.collectionLegacy === 'number') ? parsed.collectionLegacy : null;
         _unifyJourneyMemory();
+        _resetLongUnstudied();   // 한 달 넘게 손 안 댄 절은 복습 일정을 처음으로
 
         // 마지막으로 선택한 모드 복원 (기본값 'free')
         activeMode = parsed.activeMode || 'free';
@@ -10783,6 +10786,57 @@ function _updateBlankBox(r, ok, blankMode, hintOk, now) {
     r.bxDue = now + BLANK_BOX_DAYS[r.bx] * BLANK_DAY_MS;
     return { kind: 'up', from, to: r.bx, mult: BLANK_BOX_MULT[r.bx], due: r.bxDue };
 }
+/* ★ 백지로 써낸 절은 그 절의 일반 스테이지를 클리어한 것으로 친다 (2026-10-02 사용자: "일관성").
+   보스전·중간점검 백지는 끝나면 stageClear로, 일반 스테이지 백지 복습은 이어지는 코스 뒤 stageClear로 이미 복습 단계가 올랐지만,
+   **망각의 고난 · 오늘 백지 차례 · 오늘의 암송 · 열매**에서 써낸 절은 백지레벨만 오르고 복습 단계는 그대로였다.
+   백지는 일반 클리어보다 강한 증거다 → 일반 스테이지 클리어와 같은 일을 한다:
+   차례면 복습 단계를 올리고 그 보석, 클리어 횟수 +1, 마지막 클리어 시각, 첫 클리어 날. 차례가 아니면 단계는 그대로(일반 클리어도 그렇다).
+   승점·미션·레이드는 세션 쪽 몫이라 여기선 안 준다(이중 지급 방지).
+   한 달 넘게 잊혀 처음으로 돌아간 절(_resetLongUnstudied)도 여기서 「처음 외우기」로 다시 시작한다.
+   반환: 결과 줄에 덧붙일 짧은 문구 (단계를 올렸을 때만) */
+function _blankCountsAsClear(id, now) {
+    if (!/^\d+-\d+$/.test(id)) return '';
+    const c = _hardshipRecallCtx();
+    if (!(c === 'hs' || c === 'due' || c === 'event' || c === 'fruit')) return '';   // 보스전·중간점검·빠른 복습은 stageClear가 한다 · 'vc'는 빈칸
+    const st = getReviewStatus(id);
+    let note = '';
+    if (st.isEligible) {
+        const { earnedGem } = advanceReviewStep(id);
+        if (earnedGem > 0 && typeof addGems === 'function') addGems(earnedGem);
+        note = t('blank_review_credit', { from: st.step, to: st.step + 1, gem: earnedGem });
+    }
+    stageMastery[id] = (stageMastery[id] || 0) + 1;
+    if (!stageClearDate[id]) stageClearDate[id] = getMemoryQuizDate();
+    stageLastClear[id] = now;
+    try { const ch = (typeof gameData !== 'undefined') ? gameData.find(c => c.id === parseInt(id, 10)) : null; const s0 = ch && ch.stages ? ch.stages.find(x => x.id === id) : null; if (s0) s0.cleared = true; } catch (e) { }
+    return note;
+}
+
+/* ★ 한 달 넘게 손 안 댄 절은 처음 외우기 전으로 (2026-10-02 사용자).
+   10/2 실측(최근 30일 활동 109명): 밀린 복습 8,232절 중 5,589절(68%)이 30일 넘게 밀렸고, 50절 넘게 밀린 41명은
+   최근 7일 복습이 중앙값 6절 — 숫자가 너무 커서 복습 목록을 포기한 상태였다. 잊힌 절이 11단계를 들고 있으면
+   한 번 복습에 높은 단계 보석을 받고 몇 달 뒤로 밀리는 것도 기억에 맞지 않는다.
+   → 차례가 30일 넘게 지난 절은 복습 일정만 처음(단계 1, 다음 0)으로. 복습 차례에서 빠지고, 다시 하면 「처음 외우기」부터.
+   클리어 횟수·첫 클리어 날·마지막 클리어·백지 기록(verseRecall)은 그대로 둔다 — 「외운 적은 있지만 잊힌 절」.
+   예외: 백지레벨이 살아 있는 절(백지 차례가 30일 넘게 밀리지 않음). 앱을 켤 때마다 본다. */
+const LONG_UNSTUDIED_MS = 30 * 86400000;
+function _resetLongUnstudied() {
+    const now = Date.now();
+    let n = 0;
+    for (const id in stageReviewStep) {
+        if (!/^\d+-\d+$/.test(id)) continue;
+        const step = stageReviewStep[id] || 1, next = stageNextReviewTime[id] || 0;
+        if (step <= 1 || !next || now - next <= LONG_UNSTUDIED_MS) continue;
+        const r = (typeof verseRecall !== 'undefined' && verseRecall) ? verseRecall[id] : null;
+        if (r && r.bx && r.bxDue && now - r.bxDue <= LONG_UNSTUDIED_MS) continue;
+        stageReviewStep[id] = 1;
+        stageNextReviewTime[id] = 0;
+        n++;
+    }
+    if (n) console.log(`🍂 한 달 넘게 손 안 댄 ${n}절 — 복습 일정을 처음으로`);
+    return n;
+}
+
 function _blankLvNoteText(res, pts, quick) {
     if (!res) return '';
     const days = Math.max(1, Math.ceil(((res.due || 0) - Date.now()) / BLANK_DAY_MS));
@@ -28551,6 +28605,11 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
             }
         }
         if (hardshipState) hardshipState._blankLvNote = _blankLvNoteText(_res, _pts, _quick);
+        // 백지로 단서 없이 써냈으면 그 절의 일반 스테이지를 클리어한 것으로 친다 (복습 단계·보석·클리어 횟수)
+        if (ok && _blankMode && _hintOk) {
+            const _cr = _blankCountsAsClear(String(stageId), now);
+            if (_cr && hardshipState) hardshipState._blankLvNote = [hardshipState._blankLvNote, _cr].filter(Boolean).join(' · ');
+        }
         // 백지레벨이 오르거나 처음 들어가면 전용 소리 — 정답음이 먼저 울리니 조금 뒤에
         if (ok && _blankMode) _njNoteBlankDay();   // 새 예루살렘 진주 — 백지로 한 절이라도 통과한 날
         if (hardshipState && hardshipState.fruitKey) _njFruitResult(hardshipState.fruitKey, stageId, !!ok && _blankMode, now);   // 열매 먹기
