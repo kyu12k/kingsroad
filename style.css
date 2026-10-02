@@ -6801,6 +6801,13 @@ body > #guide-screen-overlay .guide-body > .guide-btn.ghost { width: 100%; margi
 .hint-trace.ht2 { text-decoration-color: rgba(230,126,34,0.85); }
 .hint-trace.ht3 { text-decoration-color: #e74c3c; text-decoration-style: solid; }
 
+/* ✍️ 오늘 백지 차례 창 (2026-10-02) */
+.bd-desc { font-size: 0.85rem; color: #bdc3c7; line-height: 1.55; }
+.mode-journey-btn.bd-row { border-color: rgba(187,143,206,0.6); background: rgba(155,89,182,0.12); gap: 10px; }
+.mode-journey-btn.bd-row:hover { background: rgba(155,89,182,0.2); }
+.bd-count { font-size: 0.82rem; font-weight: 700; color: #d7bde2; margin-left: 4px; }
+.bd-go { flex-shrink: 0; font-size: 0.85rem; font-weight: 800; color: #fff; background: #8e44ad; border-radius: 999px; padding: 6px 12px; }
+.bd-note { font-size: 0.76rem; color: #95a5a6; line-height: 1.5; }
 /* 복습 목록 맨 위 — 백지 차례 · 복습을 한 번에 */
 .rv-head { text-align: left; border-radius: 12px; padding: 11px 12px; margin-bottom: 12px; }
 .rv-head.rv-blank { background: rgba(155,89,182,0.18); border: 1px solid rgba(187,143,206,0.55); }

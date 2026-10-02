@@ -123,6 +123,8 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `NJ_DECOR` · `_njDecorBuy(k, x, z)` · `_njDecoSave(changes)` · nj3d.js `enterDeco`·`exitDeco`·`decoCam`·`placeDecor`·`loadDecor` | game.js · nj3d.js | 🛠️ 꾸미기 — 예물·🪴 꾸밈 아이템(💎)을 끌어서 놓고 돌리고 보관함에. `njDecor`, 예물 `x·z·r·st·mv`. 모델 `models/decor/*.glb`(`tools/blender/decor.py`, `DECO_V`) |
 | nj3d.js `loadCity` · `cityAnims` · `wallPieces` · `models/city/*.glb` · `tools/blender/city.py` | nj3d.js | 거룩한 성 모델 — 보좌(녹보석 무지개·일곱 등불)·진주 문(큰 진주·천사)·깎은 기초석·벽옥 성벽. 모델을 다시 뽑으면 `CITY_V` |
 | nj3d.js `loadGift` · `giftAnim(k, root)` · `placeGift` · `models/gifts/*.glb` · `tools/blender/` | nj3d.js | 예물 모델 — 블렌더 로우폴리(스크립트로 뽑음), 움직일 부분은 이름 붙은 축 노드. 모델을 다시 뽑으면 `GIFT_V`를 올린다 |
+| `openBlankDueScreen()` · `_startBlankDue(ch)` · `openReviewFromHome()` | game.js:~30330 | 홈 ✍️ 백지 → 오늘 백지 차례 창(장별 절 범위) · 📖 복습 → 마지막 여정의 복습 목록 |
+| `_unifyJourneyMemory()` · `collectionLegacy` | game.js:~5610 | 두 여정 진도를 한 벌로(불러올 때) · 합치기 전 도감 점수 보존(체력 +3) |
 | `renderHomeTodo()` · `_todoSocial` · `_syncSocialBadges()` · `updateFriendBadge()` | game.js:~29250 | 홈 「오늘 할 일」(복습·백지·응원·길드 출석)과 친구/길드/더보기 배지. `updateNotificationBadges`가 함께 그린다 |
 | `_checkReturnBoost()` · `_returnBoostExtra(gem)` · `_renderReturnFloat()` · `returnBoost` | game.js:~29450 | 돌아온 순례자 — 14일 넘게 쉬면 7일간 암송 보석 2배(동기화 뒤 판정), 효과 기록 포함 (`docs/랭킹과-이벤트.md`) |
 | `openGuideScreen()` · `openGuideQuiz()` · `_guideSync()` · `_guideNoteDay()` · `_guideTryGraduate()` · `guideInfo`·`guideRel` | game.js:~29700 · kingsroad `guide*` | 🧭 인도자와 동행 — 시험(다 맞힐 때까지) → 인도자 코드, 초심자 신청·승낙, 정착 졸업(망각의 고난 한 장 + 4주 연속 주 3일) → 성 나무에 빨간 열매 (`docs/인도자와-동행.md`) |
@@ -163,6 +165,7 @@ firebase deploy --only firestore:rules    # 보안 규칙
 **3. 암기 진행도는 필드 단위로 병합한다 (`_mergeSaveProgress`)**
 두 기기가 각자 진도를 냈을 때 한쪽을 통째로 버리지 않고 스테이지별로 앞선 쪽을 취한다. **로컬 우선·원격 우선 두 경로 모두**에 적용되어야 한다 — 원격 우선 경로가 빠져서 오프라인 복습 진도가 통째로 사라진 적이 있다.
 앞선 쪽 판정: `reviewStep` → `lastClear` → `mastery` 순.
+**두 여정(왕의 길·자유여행)은 진도 한 벌을 같은 객체로 함께 쓴다** (`_unifyJourneyMemory`, 10/2). 진도 맵을 새 객체로 바꿔 끼우는 코드를 만들면 한쪽만 바뀌어 다시 갈라진다.
 **저장본에 진행 필드를 새로 넣으면 `_mergeSaveProgress`에도 넣을 것** — 빠진 필드는 다른 기기의 저장이 통째로 덮어쓴다. 오늘의 암송(`eventProgress`·`dailyReciteDone`)이 9/17에 들어와 9/28까지 빠져 있었다(`_mergeEventProgress`).
 
 **4. 서버가 정하는 값은 클라이언트가 못 쓴다**

@@ -517,7 +517,7 @@ const LANG = {
         nj_pearl_rule: '한 주(월~일)에 5일 이상 백지로 한 절이라도 통과하면 진주가 하나 얹혀요. 5일을 못 채운 주가 지나면 하나가 떨어져요. 보석으로는 살 수 없어요',
         nj_pearl_got: '🦪 진주를 얻었어요 — 문 하나에 진주가 얹혔어요',
         nj_pearl_lost: '🦪 지난주 백지 5일을 못 채워 진주 하나가 떨어졌어요',
-        nj_go_due: '✍️ 오늘 백지 차례 {n}절 — 하러 가기',
+        nj_go_due: '✍️ 오늘 백지 차례 {n}개 절 — 하러 가기',
         nj_go_none: '오늘은 백지 차례가 없어요 · 다음 차례 {date} {n}절',
         nj_go_first: '외운 구절을 백지로 써내면 3일 뒤 첫 차례가 와요',
         nj_go_write: '✍️ 오늘 백지로 한 절 쓰러 가기',
@@ -728,8 +728,14 @@ const LANG = {
         clear_blank_lv_mult: '✍️ 백지 Lv{lv} 제때 승점 ×{n}',
         blank_notif_body: '「{label}」 백지로 꺼내볼 시간이에요 ✍️',
         rv_blank_title: '✍️ 오늘 백지 차례',
+        bd_desc: '전에 백지로 써낸 절 중에서 다시 꺼내볼 날이 된 절이에요. 단서 없이 써내면 백지레벨이 올라요.',
+        bd_note: '중간에 나가도 써낸 절까지는 남아요',
+        bd_ch: '{ch}장', bd_count: '백지 차례 {n}개 절', bd_range: '{r}절', bd_start: '✍️ 시작',
+        bd_embed: '{ch}장 · 오늘 백지 차례', bd_back: '✍️ 남은 백지 차례 {n}개 절',
+        bd_chip: '{ch}장 · {n}개 절',
+
         todo_title: '오늘 할 일', todo_review: '복습', todo_blank: '백지', todo_cheer: '응원', todo_attend: '출석',
-        rv_blank_sub: '백지로(망각의 고난·보스전·중간점검·백지 복습·오늘의 암송·열매) 써내면 백지레벨이 올라요',
+        rv_blank_sub: '눌러서 그 장의 차례인 절만 백지로 쓸 수 있어요. 다른 백지(망각의 고난·보스전·중간점검·백지 복습·오늘의 암송·열매)로 써내도 백지레벨이 올라요',
         rv_route_title: '💡 복습을 한 번에',
         rv_route_due: '복습 {n}절',
         rv_route_mid: '중간점검 {n}개 ({ranges}절)',
@@ -990,7 +996,7 @@ const LANG = {
         bible_read_pass_done: '📖 {ch}장 {n}회독 완료 — 다시 읽을 수 있어요',
         bible_read_pass_n: '오늘 {n}회독',
         bible_read_week_count: '이번 주 통독 {n}절',
-        ranking_recall_rules: '<b>세는 것</b> — <b>백지(아무 단서 없이)</b>로 써낸 구절: 망각의 고난 · 보스전 백지 · 중간점검 백지 · 일반 스테이지 백지 복습 · 오늘의 암송 백지 · 생명나무 열매. 빈칸(글자 칸이 보이는 방식 — 결과 화면 「빈칸으로 확인해보기」 포함)·초성·음성은 세지 않아요.<br><b>힌트</b> — 구절 글자 수의 20%까지는 써도 세어져요. 넘으면 그 구절은 0.<br><b>같은 구절</b> — 하루(오전 6시 기준)에 한 번만. 하루 최대 404절.<br><b>안 곱하는 것</b> — 밭·단비·햇살·순서·난도. 누구에게나 한 절은 1.<br><b>보상</b> — 매주 월요일, 지난주 지파 1~3위는 🥇🥈🥉 암송왕 칭호(한 주간 이름 옆) + 💎 10,000 / 6,000 / 6,000, 시온성 1~3위는 칭호가 빛나고 💎 15,000 / 10,000 / 10,000을 더. 지파는 그 주 10명 이상 참여했을 때. 🏆 지난 주 보상 버튼으로 받아요.',
+        ranking_recall_rules: '<b>세는 것</b> — <b>백지(아무 단서 없이)</b>로 써낸 구절: 망각의 고난 · 보스전 백지 · 중간점검 백지 · 일반 스테이지 백지 복습 · 오늘의 암송 백지 · 생명나무 열매 · 오늘 백지 차례. 빈칸(글자 칸이 보이는 방식 — 결과 화면 「빈칸으로 확인해보기」 포함)·초성·음성은 세지 않아요.<br><b>힌트</b> — 구절 글자 수의 20%까지는 써도 세어져요. 넘으면 그 구절은 0.<br><b>같은 구절</b> — 하루(오전 6시 기준)에 한 번만. 하루 최대 404절.<br><b>안 곱하는 것</b> — 밭·단비·햇살·순서·난도. 누구에게나 한 절은 1.<br><b>보상</b> — 매주 월요일, 지난주 지파 1~3위는 🥇🥈🥉 암송왕 칭호(한 주간 이름 옆) + 💎 10,000 / 6,000 / 6,000, 시온성 1~3위는 칭호가 빛나고 💎 15,000 / 10,000 / 10,000을 더. 지파는 그 주 10명 이상 참여했을 때. 🏆 지난 주 보상 버튼으로 받아요.',
         recall_title: '암송왕',
         read_title: '통독왕',
         read_title_tip_tribe: '지난주 지파 통독왕 {rank}위',
@@ -1650,7 +1656,7 @@ const LANG = {
         nj_pearl_rule: 'Pass at least one verse in blank mode on 5 days of a week (Mon–Sun) and a pearl crowns a gate. A week short of 5 days takes one away. Pearls cannot be bought with gems',
         nj_pearl_got: '🦪 You earned a pearl — it now crowns a gate',
         nj_pearl_lost: '🦪 Last week fell short of 5 blank days — a pearl slipped away',
-        nj_go_due: '✍️ {n} blank reviews due today — go',
+        nj_go_due: '✍️ {n} verses due for blank today — go',
         nj_go_none: 'No blank reviews due today · next {date}, {n} verses',
         nj_go_first: 'Write a memorized verse in blank mode and its first review comes 3 days later',
         nj_go_write: '✍️ Write one verse in blank mode today',
@@ -1861,8 +1867,14 @@ const LANG = {
         clear_blank_lv_mult: '✍️ Blank Lv{lv} on-time points ×{n}',
         blank_notif_body: '"{label}" — time to write it from blank ✍️',
         rv_blank_title: '✍️ Blank review due today',
+        bd_desc: 'Verses you once wrote on a blank page that are due to be recalled again. Write them with no clues to raise their blank level.',
+        bd_note: 'If you stop midway, the verses you wrote are kept',
+        bd_ch: 'Ch.{ch}', bd_count: '{n} verses due', bd_range: 'vv. {r}', bd_start: '✍️ Start',
+        bd_embed: 'Ch.{ch} · Blank review due', bd_back: '✍️ {n} more blank verses due',
+        bd_chip: 'Ch.{ch} · {n} verses',
+
         todo_title: 'Today', todo_review: 'Review', todo_blank: 'Blank', todo_cheer: 'Cheer', todo_attend: 'Check-in',
-        rv_blank_sub: 'Write it on a blank page (trial, boss, checkpoint, blank review, daily recital or fruit) to raise its blank level',
+        rv_blank_sub: 'Tap to write just that chapter’s due verses on a blank page. Any other blank (trial, boss, checkpoint, blank review, daily recital or fruit) also raises its blank level',
         rv_route_title: '💡 Finish reviews in one go',
         rv_route_due: '{n} reviews',
         rv_route_mid: '{n} checkpoint(s) (v.{ranges})',
@@ -2122,7 +2134,7 @@ const LANG = {
         bible_read_pass_done: '📖 Chapter {ch} read {n}× — you can read it again',
         bible_read_pass_n: '{n} pass(es) today',
         bible_read_week_count: '{n} verses read this week',
-        ranking_recall_rules: '<b>What counts</b> — verses written on a <b>blank page (no cues)</b>: the Trial of Forgetting, boss and checkpoint blank, blank review of a stage, the daily recital on blank, and tree-of-life fruit. Blanks mode (letter slots — including “Try it with blanks” on the result screen), initials and voice do not count.<br><b>Hints</b> — hints up to 20% of the letters are fine; more and that verse is 0.<br><b>Same verse</b> — once per day (6 a.m. boundary). At most 404 a day.<br><b>Not multiplied</b> — field, rain, sunshine, order, difficulty. One verse is 1 for everyone.<br><b>Rewards</b> — every Monday, the tribe top 3 of last week get a 🥇🥈🥉 Recall King title (by your name for a week) + 💎 10,000 / 6,000 / 6,000; the Zion top 3 get a glowing title and 💎 15,000 / 10,000 / 10,000 more. Tribe titles need 10+ participants that week. Claim with the 🏆 reward button on the home screen.',
+        ranking_recall_rules: '<b>What counts</b> — verses written on a <b>blank page (no cues)</b>: the Trial of Forgetting, boss and checkpoint blank, blank review of a stage, the daily recital on blank, tree-of-life fruit, and today’s blank reviews. Blanks mode (letter slots — including “Try it with blanks” on the result screen), initials and voice do not count.<br><b>Hints</b> — hints up to 20% of the letters are fine; more and that verse is 0.<br><b>Same verse</b> — once per day (6 a.m. boundary). At most 404 a day.<br><b>Not multiplied</b> — field, rain, sunshine, order, difficulty. One verse is 1 for everyone.<br><b>Rewards</b> — every Monday, the tribe top 3 of last week get a 🥇🥈🥉 Recall King title (by your name for a week) + 💎 10,000 / 6,000 / 6,000; the Zion top 3 get a glowing title and 💎 15,000 / 10,000 / 10,000 more. Tribe titles need 10+ participants that week. Claim with the 🏆 reward button on the home screen.',
         recall_title: 'Recall King',
         read_title: 'Reading King',
         read_title_tip_tribe: "Last week tribe Reading King #{rank}",
@@ -2765,6 +2777,7 @@ let _freeStageClearDate = {};
 let _freeStageLastClear = {};
 let _freeStageReviewStep = {};
 let _freeStageNextReviewTime = {};
+let collectionLegacy = null;   // 두 여정 기억을 합치기 전 도감 점수(두 여정 합) — 체력 +3을 합치며 잃지 않게 (2026-10-02)
 // 왕의 길 전용 저장 객체
 let kingsRoadData = {
     mastery: {},
@@ -3211,6 +3224,10 @@ loadGameData = function () {
                 console.log('🔄 중간점검 구간 마이그레이션 완료 (균등 분할 개편)');
             }
         }
+
+        // ★ 기억은 하나 (2026-10-02) — 두 여정이 진도 한 벌을 함께 쓴다
+        collectionLegacy = (typeof parsed.collectionLegacy === 'number') ? parsed.collectionLegacy : null;
+        _unifyJourneyMemory();
 
         // 마지막으로 선택한 모드 복원 (기본값 'free')
         activeMode = parsed.activeMode || 'free';
@@ -5583,12 +5600,42 @@ function getCollectionScoreOf(mastery) {
     return total;
 }
 
-/* 체력 보너스 판정용 — 자유여행과 왕의 길을 합산한다.
-   활성 모드일 때 stageMastery가 그 모드의 데이터를 가리키므로 자유여행 쪽은 백업본에서 읽는다. */
+/* 체력 보너스 판정용. 예전엔 자유여행 + 왕의 길 합산이었다.
+   2026-10-02부터 두 여정이 진도 한 벌을 쓰므로 한 번만 센다 — 다만 합치기 전 점수(collectionLegacy)가 더 크면 그것을 쓴다.
+   (합치면 15,000 아래로 내려가는 사람이 3명 있었다: 두 여정에서 같은 절을 따로 쌓아 온 가장 열심인 사람들) */
 function getTotalCollectionScore() {
-    const freeMastery = (activeMode === 'kings') ? _freeStageMastery : stageMastery;
-    const kingsMastery = (typeof kingsRoadData !== 'undefined') ? kingsRoadData.mastery : null;
-    return getCollectionScoreOf(freeMastery) + getCollectionScoreOf(kingsMastery);
+    return Math.max(collectionLegacy || 0, getCollectionScoreOf(stageMastery));
+}
+
+/* ★ 기억은 하나 — 두 여정의 진도(클리어 횟수·첫 클리어 날·마지막 클리어·복습 단계·다음 복습)를 한 벌로 합친다 (2026-10-02).
+   예전엔 여정마다 따로라 같은 절에 복습 시계가 둘(+ 백지레벨) 돌았고, 왕의 길에서 7일 단계까지 온 절도 자유여행에선 10분부터였다.
+   여정은 이제 「길」(무엇이 열리고 어떤 순서로 가는가)만 정하고, 「기억」은 절마다 하나다.
+   - 절마다 앞선 쪽을 통째로(_mergeProgressSet — 동기화와 같은 규칙), 클리어 횟수만 큰 쪽, 첫 클리어 날은 이른 쪽
+   - 몇 번 불러도 결과가 같다(멱등) — 옛 앱이 두 벌을 따로 써 보내도 다음 불러오기에서 다시 합쳐진다
+   - 저장본은 예전 모양 그대로(최상위·kingsMode 둘 다) 같은 내용을 쓴다 → 옛 앱도 그대로 읽는다
+   - 처음 합칠 때 그 전 도감 점수(두 여정 합)를 collectionLegacy로 한 번 남긴다 */
+function _unifyJourneyMemory() {
+    if (typeof kingsRoadData === 'undefined' || !kingsRoadData) return;
+    const free = { mastery: stageMastery, clearDate: stageClearDate, lastClear: stageLastClear, reviewStep: stageReviewStep, nextReviewTime: stageNextReviewTime };
+    const kings = { mastery: kingsRoadData.mastery, clearDate: kingsRoadData.clearDate, lastClear: kingsRoadData.lastClear, reviewStep: kingsRoadData.reviewStep, nextReviewTime: kingsRoadData.nextReviewTime };
+    if (collectionLegacy === null) {
+        // 두 벌이 이미 같은 내용이면(합친 뒤 옛 앱이 이 필드를 빼고 저장한 경우) 한 번만 센다 — 두 번 세면 점수가 부풀어 오른다
+        const fm0 = free.mastery || {}, km0 = kings.mastery || {};
+        const same = Object.keys(fm0).length === Object.keys(km0).length && Object.keys(fm0).every(id => fm0[id] === km0[id]);
+        collectionLegacy = getCollectionScoreOf(fm0) + (same ? 0 : getCollectionScoreOf(km0));
+    }
+    if (free.mastery === kings.mastery && free.reviewStep === kings.reviewStep) return;   // 이미 한 벌
+    const r = _mergeProgressSet(free, kings).merged;
+    const fm = free.mastery || {}, km = kings.mastery || {};
+    for (const id of new Set([...Object.keys(fm), ...Object.keys(km)])) {
+        const m = Math.max(fm[id] || 0, km[id] || 0);
+        if (m > 0) r.mastery[id] = m;
+    }
+    stageMastery = kingsRoadData.mastery = r.mastery;
+    stageClearDate = kingsRoadData.clearDate = r.clearDate;
+    stageLastClear = kingsRoadData.lastClear = r.lastClear;
+    stageReviewStep = kingsRoadData.reviewStep = r.reviewStep;
+    stageNextReviewTime = kingsRoadData.nextReviewTime = r.nextReviewTime;
 }
 
 /* [추가] 최종 체력 계산 함수 (버프 적용용) */
@@ -8845,7 +8892,7 @@ function _njGoHtml(pst) {
     const due = _blankDueIds();
     if (due.length) {
         const ch = Math.min(...due.map(id => parseInt(id.split('-')[0], 10)));
-        return `<button class="nj-go-btn" onclick="_njGo(${ch})">${t('nj_go_due', { n: due.length })}</button>`;
+        return `<button class="nj-go-btn" onclick="closeNewJerusalem(); openBlankDueScreen()">${t('nj_go_due', { n: due.length })}</button>`;
     }
     const lastCh = parseInt(String(lastPlayedStageId || '1').split('-')[0], 10) || 1;
     const write = `<button class="nj-go-btn sub" onclick="_njGo(${lastCh})">${t('nj_go_write')}</button>`;
@@ -10238,7 +10285,8 @@ function toggleHideReviewPopupToday(checked) {
 function maybeAutoShowReviewPopup() {
     if (!window._pendingReviewPopupCheck) return;
     window._pendingReviewPopupCheck = false;
-    if (isReviewPopupHiddenToday()) return;
+    const forced = window._forceReviewPopup; window._forceReviewPopup = false;
+    if (!forced && isReviewPopupHiddenToday()) return;
     if (getForgottenStages().length === 0 && _blankDueIds().length === 0) return;
     openForgottenStagesOverlay();
 }
@@ -10339,7 +10387,7 @@ function _reviewOverlayHeadHtml(forgottenList) {
         const byCh = {};
         dueIds.forEach(id => { const c = parseInt(id.split('-')[0], 10); byCh[c] = (byCh[c] || 0) + 1; });
         const chips = Object.keys(byCh).map(Number).sort((a, b) => a - b)
-            .map(c => `<button class="rv-chip" onclick="closeForgottenStagesOverlay(); openStageSheetForStageId('${c}-1')">${chLabel(c)} ${byCh[c]}절</button>`).join('');
+            .map(c => `<button class="rv-chip" onclick="closeForgottenStagesOverlay(); openBlankDueScreen()">${t('bd_chip', { ch: c, n: byCh[c] })}</button>`).join('');
         html += `<div class="rv-head rv-blank"><div class="rv-head-title">${t('rv_blank_title')}</div><div class="rv-chips">${chips}</div><div class="rv-head-sub">${t('rv_blank_sub')}</div></div>`;
     }
     // ② 복습을 한 번에
@@ -12279,6 +12327,7 @@ function saveGameData() {
         returnBoost: returnBoost,         // 돌아온 순례자 — 보석 2배 기간과 효과 기록
         guideInfo: guideInfo,             // 인도자 — 시험 통과·함께 정착한 사람 수(빨간 열매)
         guideRel: guideRel,               // 동행(초심자) — 인도자·시작일·암송한 날
+        collectionLegacy: collectionLegacy, // 두 여정을 합치기 전 도감 점수 (체력 +3 유지용)
         njBuilt: njBuilt,                 // 새 예루살렘 — 놓은 기초석 수
         njLog: njLog,                     // 새 예루살렘 — 놓은 순간의 기록 (연구용)
         njPearls: njPearls,               // 진주 문 — 얻은 진주 수
@@ -12650,6 +12699,7 @@ function _mergeSaveProgress(target, other) {
     took += _mergeEventProgress(target, other);
     took += _mergeNewJerusalem(target, other);
     took += _mergeGuide(target, other);
+    if (typeof other.collectionLegacy === 'number' && !(target.collectionLegacy >= other.collectionLegacy)) { target.collectionLegacy = other.collectionLegacy; took++; }
     {   // 돌아온 순례자 — 더 최근에 시작된 쪽, 같은 복귀면 더 많이 기록된 쪽
         const a = target.returnBoost, b = other.returnBoost;
         if (b && b.at && (!a || !a.at || b.at > a.at || (b.at === a.at && (b.clears || 0) > (a.clears || 0)))) { target.returnBoost = b; took++; }
@@ -25979,6 +26029,7 @@ function createEmptyHardshipState() {
         verseCheckStageId: null, // 결과 화면의 '빈칸으로 확인해보기'로 열린 1구절 세션(빈칸)
         quickReviewStageId: null, // 빠른 모드 백지 승급으로 열린 1구절 세션 (끝나면 훈련으로 복귀)
         fruitKey: null,          // 새 예루살렘 생명나무 열매 먹기로 열린 1구절 백지 세션 ('YYYY-MM|절id')
+        blankDueCh: null,        // 「오늘 백지 차례」로 열린 세션이면 그 장 (그 장의 차례인 절만, 백지)
         verseCheckIsLearn: false, // 그 확인이 초학습 직후였는가 (증거 가치가 낮아 구분해 기록)
         displayTitle: '',       // 헤더·시작 토스트에 쓸 이름 (비면 고난 모드 이름을 쓴다)
         isRandomOrder: false,
@@ -26652,7 +26703,8 @@ function _isResumableHardshipSession() {
         // 난이도(빈칸)와 위치(2절부터)를 물려받았다 (2026-09-17). 2~10절짜리라 이어할 것도 없다
         && !hardshipState.eventId
         && !hardshipState.quickReviewStageId
-        && !hardshipState.fruitKey);
+        && !hardshipState.fruitKey
+        && !hardshipState.blankDueCh);
 }
 
 /* ★ 체크포인트를 **여러 건** 보관한다 (보스전은 한 건뿐이다).
@@ -26776,6 +26828,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
         hardshipState.verseCheckStageId = embed.verseCheckStageId || null;
         hardshipState.quickReviewStageId = embed.quickReviewStageId || null;
         hardshipState.fruitKey = embed.fruitKey || null;
+        hardshipState.blankDueCh = embed.blankDueCh || null;
         hardshipState.verseCheckIsLearn = !!embed.isLearn;
         hardshipState.eventId = embed.eventId || null;
         hardshipState.displayTitle = embed.label || '';
@@ -27877,7 +27930,8 @@ function _isEmbeddedBlankSession() {
                                 hardshipState.bossStageId ||
                                 hardshipState.eventId ||
                                 hardshipState.quickReviewStageId ||
-                                hardshipState.fruitKey));
+                                hardshipState.fruitKey ||
+                                hardshipState.blankDueCh));
 }
 
 /* 「모르겠어요」 — 이번 판만 포기하고 정답을 확인한다.
@@ -28379,6 +28433,7 @@ function _hardshipRecallCtx() {
     if (hardshipState.midBossStageId) return 'mid';
     if (hardshipState.bossStageId) return 'boss';
     if (hardshipState.eventId) return 'event';
+    if (hardshipState.blankDueCh) return 'due';   // 「오늘 백지 차례」 — 백지레벨 차례가 온 절만
     return 'hs';
 }
 
@@ -28607,6 +28662,7 @@ function getHardshipScoreScale() {
     if (hardshipState.verseCheckStageId) return 0.25;
     if (hardshipState.midBossStageId) return 0.5;
     if (hardshipState.eventId) return 0.5;   // 이벤트 문항 = 2절 묶음, 중간점검과 같은 크기
+    if (hardshipState.blankDueCh) return 0.5;   // 오늘 백지 차례 — 흩어진 몇 절. 제때 꺼내면 백지레벨 배율은 따로 붙는다
 
     // 보스전 빈칸·백지는 **한 장 전체**라 망각의 고난과 분량·위험이 같다 → 깎지 않는다
     if (hardshipState.bossStageId) return 1;
@@ -28629,6 +28685,7 @@ function _blankScoreKind() {
     if (hardshipState.bossStageId) return 'boss';     // 보스전 빈칸·백지
     if (hardshipState.verseCheckStageId) return 'vc'; // 결과 화면 '빈칸으로 확인해보기'
     if (hardshipState.eventId) return hardshipState.ultimateMemoryMode ? 'event:none' : 'event:blank'; // 이벤트 — 빈칸·백지 따로 하루 1회
+    if (hardshipState.blankDueCh) return 'due';       // 오늘 백지 차례
     return null; // 망각의 고난·빠른 모드 승급은 제한 없음 (승급은 배율 0이라 무관)
 }
 
@@ -28968,6 +29025,19 @@ function finishHardshipSession(reason) {
             back.onclick = () => { rm.classList.remove('active'); quitGame('map'); setTimeout(() => { if (typeof openNJ3DView === 'function') openNJ3DView(); }, 250); };
             if (resultContinueBtn) resultContinueBtn.insertAdjacentElement('afterend', back);
         }
+        // 오늘 백지 차례였다면 — 남은 차례가 있으면 창으로 돌아가기
+        if (rm && hardshipState.blankDueCh) {
+            const left = _blankDueIds().length;
+            if (left > 0) {
+                const back = document.createElement('button');
+                back.id = 'btn-next-stage';
+                back.className = 'btn-continue';
+                back.style.cssText = 'margin-top:8px; background:linear-gradient(135deg,#8e44ad,#9b59b6); box-shadow:0 4px 0 #6c3483; color:#fff;';
+                back.textContent = t('bd_back', { n: left });
+                back.onclick = () => { rm.classList.remove('active'); quitGame('home'); setTimeout(openBlankDueScreen, 250); };
+                if (resultContinueBtn) resultContinueBtn.insertAdjacentElement('afterend', back);
+            }
+        }
         // 중간점검 빈칸·백지였다면 '다음 중간점검'도 함께
         _attachNextMidBossBtn(resultContinueBtn,
             (reason === 'completed') ? hardshipState.midBossStageId : null);
@@ -29162,7 +29232,7 @@ function finishHardshipSession(reason) {
         if (reason !== 'completed' || hardshipState.mode !== 'memory' ||
             hardshipState.trainingMode || hardshipState.midBossStageId ||
             hardshipState.bossStageId || hardshipState.verseCheckStageId ||
-            hardshipState.eventId || hardshipState.quickReviewStageId || hardshipState.fruitKey) return '';
+            hardshipState.eventId || hardshipState.quickReviewStageId || hardshipState.fruitKey || hardshipState.blankDueCh) return '';
         const sessionDuration = getHardshipElapsedSeconds();
         const record = {
             correct: hardshipState.studiedCount,
@@ -29993,7 +30063,7 @@ function openStudyHistoryOverlay() {
                 <div style="font-size:1.05rem;font-weight:700;color:#f1c40f;">${t('menu_study_history')}</div>
                 <button id="sh-close-btn" style="background:none;border:none;color:#888;font-size:1.3rem;cursor:pointer;padding:4px 8px;line-height:1;">✕</button>
             </div>
-            <div style="display:flex;gap:4px;margin-bottom:10px;">
+            <div style="display:none;gap:4px;margin-bottom:10px;"><!-- 10/2부터 두 여정이 진도를 함께 써서 탭이 같은 것을 보여 숨김 -->
                 <button data-sh-tab="free"  style="flex:1;padding:6px 0;border-radius:8px;border:none;font-size:0.82rem;font-weight:700;cursor:pointer;background:#1e2d45;color:#aaa;">🗺 자유여행</button>
                 <button data-sh-tab="kings" style="flex:1;padding:6px 0;border-radius:8px;border:none;font-size:0.82rem;font-weight:700;cursor:pointer;background:#1e2d45;color:#aaa;">👑 왕의 길</button>
             </div>
@@ -30211,13 +30281,100 @@ function _returnBoostExtra(gem) {
     returnBoost.clears = (returnBoost.clears || 0) + 1; returnBoost.gems = (returnBoost.gems || 0) + gem;
     return gem;
 }
+/* ✍️ 오늘 백지 차례 (2026-10-02) — 홈 「오늘 할 일」의 ✍️ 백지에서 바로 연다.
+   예전엔 여정 선택(왕의 길/자유여행)이 떴다. 백지레벨(verseRecall.bx)도 복습 진도도 두 여정이 함께 쓰므로 여정을 고를 이유가 없다.
+   장마다 「2장 · 백지 차례 29개 절 / 1~12, 15, 18~33절」 — 「2장 29절」이 2:29로 읽히던 것을 바로잡음.
+   시작하면 그 장의 차례인 절만 순서대로 백지(망각의 고난 엔진). 승점은 중간점검과 같은 0.5배 + 백지레벨 배율 */
+function _verseRangeText(vs) {
+    const a = vs.slice().sort((x, y) => x - y), out = [];
+    for (let i = 0; i < a.length;) {
+        let j = i; while (j + 1 < a.length && a[j + 1] === a[j] + 1) j++;
+        out.push(j > i ? `${a[i]}${currentLang === 'en' ? '–' : '~'}${a[j]}` : `${a[i]}`);
+        i = j + 1;
+    }
+    return out.join(', ');
+}
+function _blankDueByChapter() {
+    const by = {};
+    _blankDueIds().forEach(id => {
+        const m = String(id).match(/^(\d+)-(\d+)$/);
+        if (m) (by[m[1]] = by[m[1]] || []).push(parseInt(m[2], 10));
+    });
+    return Object.keys(by).map(Number).sort((a, b) => a - b).map(ch => ({ ch, vs: by[ch].sort((a, b) => a - b) }));
+}
+function openBlankDueScreen() {
+    let ov = document.getElementById('blank-due-overlay');
+    if (!ov) {
+        ov = document.createElement('div');
+        ov.id = 'blank-due-overlay';
+        ov.className = 'modal-overlay';
+        ov.style.zIndex = '10000';
+        ov.onclick = closeBlankDueScreen;
+        document.body.appendChild(ov);
+    }
+    const list = _blankDueByChapter();
+    let body;
+    if (list.length) {
+        body = list.map(({ ch, vs }) => `<button class="mode-journey-btn bd-row" onclick="_startBlankDue(${ch})">
+                <div class="mode-btn-text" style="flex:1">
+                    <span class="mode-btn-label">${t('bd_ch', { ch })} <span class="bd-count">${t('bd_count', { n: vs.length })}</span></span>
+                    <span class="mode-btn-desc">${t('bd_range', { r: _verseRangeText(vs) })}</span>
+                </div>
+                <span class="bd-go">${t('bd_start')}</span>
+            </button>`).join('') + `<div class="bd-note">${t('bd_note')}</div>`;
+    } else {
+        // 차례가 없을 때 — 새 예루살렘 안내와 같은 말(다음 차례 날짜)
+        let next = Infinity;
+        for (const id in (verseRecall || {})) { const r = verseRecall[id]; if (r && r.bx && r.bxDue && r.bxDue < next) next = r.bxDue; }
+        if (next === Infinity) body = `<div class="bd-note">${t('nj_go_first')}</div>`;
+        else {
+            const nd = _tsTo6AMDateStr(next); let n = 0;
+            for (const id in verseRecall) { const r = verseRecall[id]; if (r && r.bx && r.bxDue && _tsTo6AMDateStr(r.bxDue) === nd) n++; }
+            body = `<div class="bd-note">${t('nj_go_none', { date: _njDayLabel(next), n })}</div>`;
+        }
+    }
+    ov.innerHTML = `<div class="result-card mode-select-card bd-card" onclick="event.stopPropagation()">
+            <div class="mode-modal-header">
+                <span class="mode-select-title">${t('rv_blank_title')}</span>
+                <button class="mode-close-btn" onclick="closeBlankDueScreen()">✕</button>
+            </div>
+            <div class="bd-desc">${t('bd_desc')}</div>
+            ${body}
+        </div>`;
+    ov.style.display = 'flex';
+}
+function closeBlankDueScreen() {
+    const ov = document.getElementById('blank-due-overlay');
+    if (ov) ov.style.display = 'none';
+}
+function _startBlankDue(ch) {
+    const it = _blankDueByChapter().find(x => x.ch === ch);
+    if (!it || !it.vs.length) { openBlankDueScreen(); return; }
+    closeBlankDueScreen();
+    const ids = it.vs.map(v => `${ch}-${v}`);
+    window.currentStageId = ids[0];
+    window.hardshipOrigin = 'home';
+    selectedHardshipOrderType = 'sequential';
+    selectedHardshipUltimate = true;
+    _pendingHardshipEmbed = { label: t('bd_embed', { ch }), blankDueCh: ch };
+    startHardshipSession('memory', ids);
+}
+
+/* 📖 홈 「복습」 — 마지막으로 쓴 여정으로 바로 들어가 복습 목록을 띄운다.
+   두 여정이 기억을 함께 쓰므로(_unifyJourneyMemory) 복습 차례는 어느 여정에서 봐도 같다 → 여정을 묻지 않는다.
+   (10/2 하루 동안 「어느 여정을 복습할까요?」를 만들었다가 기억을 합치며 뺐다) */
+function openReviewFromHome() {
+    if (getForgottenStages().length === 0) { startGame(); return; }
+    window._forceReviewPopup = true;   // 들어가자마자 복습 목록 (「오늘은 보지 않기」와 상관없이)
+    if (activeMode === 'kings' && kingsRoadData.stepHistory.length) onClickKingsRoad(); else onClickFreeJourney();
+}
 function renderHomeTodo() {
     const el = document.getElementById('home-todo'), S = _todoSocial; if (!el || !S) return;
     let rev = 0, blank = 0;
     try { rev = getForgottenStages().length; } catch (e) { }
     try { blank = _blankDueIds().length; } catch (e) { }
     const chip = (icon, label, n, done, fn) => `<button class="home-todo-chip${done ? ' done' : ''}" onclick="${fn}">${icon} ${label}${done ? ' ✓' : n ? ` <b>${n}</b>` : ''}</button>`;
-    let h = chip('📖', t('todo_review'), rev, rev === 0, 'startGame()') + chip('✍️', t('todo_blank'), blank, blank === 0, 'startGame()');
+    let h = chip('📖', t('todo_review'), rev, rev === 0, 'openReviewFromHome()') + chip('✍️', t('todo_blank'), blank, blank === 0, 'openBlankDueScreen()');
     if (S.hasFriends) h += chip('💛', t('todo_cheer'), S.cheerable, S.cheerable === 0, 'openFriendScreen()');
     if (S.inGuild) h += chip('⚔️', t('todo_attend'), 0, S.attended, 'openGuildScreen()');
     el.innerHTML = `<div class="home-todo-title">${t('todo_title')}</div><div class="home-todo-chips">${h}</div>`;
