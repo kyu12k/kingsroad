@@ -729,7 +729,7 @@ const LANG = {
         blank_notif_body: '「{label}」 백지로 꺼내볼 시간이에요 ✍️',
         rv_blank_title: '✍️ 오늘 백지 차례',
         todo_title: '오늘 할 일', todo_review: '복습', todo_blank: '백지', todo_cheer: '응원', todo_attend: '출석',
-        rv_blank_sub: '그 장을 백지로(보스전·중간점검·망각의 고난) 써내면 백지레벨이 올라요',
+        rv_blank_sub: '백지로(망각의 고난·보스전·중간점검·백지 복습·오늘의 암송·열매) 써내면 백지레벨이 올라요',
         rv_route_title: '💡 복습을 한 번에',
         rv_route_due: '복습 {n}절',
         rv_route_mid: '중간점검 {n}개 ({ranges}절)',
@@ -990,7 +990,7 @@ const LANG = {
         bible_read_pass_done: '📖 {ch}장 {n}회독 완료 — 다시 읽을 수 있어요',
         bible_read_pass_n: '오늘 {n}회독',
         bible_read_week_count: '이번 주 통독 {n}절',
-        ranking_recall_rules: '<b>세는 것</b> — 망각의 고난·보스전 백지·중간점검 백지에서 <b>백지(아무 단서 없이)</b>로 써낸 구절. 빈칸(글자 칸이 보이는 방식)·초성·음성은 세지 않아요.<br><b>힌트</b> — 구절 글자 수의 20%까지는 써도 세어져요. 넘으면 그 구절은 0.<br><b>같은 구절</b> — 하루(오전 6시 기준)에 한 번만. 하루 최대 404절.<br><b>안 곱하는 것</b> — 밭·단비·햇살·순서·난도. 누구에게나 한 절은 1.<br><b>보상</b> — 매주 월요일, 지난주 지파 1~3위는 🥇🥈🥉 암송왕 칭호(한 주간 이름 옆) + 💎 10,000 / 6,000 / 6,000, 시온성 1~3위는 칭호가 빛나고 💎 15,000 / 10,000 / 10,000을 더. 지파는 그 주 10명 이상 참여했을 때. 🏆 지난 주 보상 버튼으로 받아요.',
+        ranking_recall_rules: '<b>세는 것</b> — <b>백지(아무 단서 없이)</b>로 써낸 구절: 망각의 고난 · 보스전 백지 · 중간점검 백지 · 일반 스테이지 백지 복습 · 오늘의 암송 백지 · 생명나무 열매. 빈칸(글자 칸이 보이는 방식 — 결과 화면 「빈칸으로 확인해보기」 포함)·초성·음성은 세지 않아요.<br><b>힌트</b> — 구절 글자 수의 20%까지는 써도 세어져요. 넘으면 그 구절은 0.<br><b>같은 구절</b> — 하루(오전 6시 기준)에 한 번만. 하루 최대 404절.<br><b>안 곱하는 것</b> — 밭·단비·햇살·순서·난도. 누구에게나 한 절은 1.<br><b>보상</b> — 매주 월요일, 지난주 지파 1~3위는 🥇🥈🥉 암송왕 칭호(한 주간 이름 옆) + 💎 10,000 / 6,000 / 6,000, 시온성 1~3위는 칭호가 빛나고 💎 15,000 / 10,000 / 10,000을 더. 지파는 그 주 10명 이상 참여했을 때. 🏆 지난 주 보상 버튼으로 받아요.',
         recall_title: '암송왕',
         read_title: '통독왕',
         read_title_tip_tribe: '지난주 지파 통독왕 {rank}위',
@@ -1862,7 +1862,7 @@ const LANG = {
         blank_notif_body: '"{label}" — time to write it from blank ✍️',
         rv_blank_title: '✍️ Blank review due today',
         todo_title: 'Today', todo_review: 'Review', todo_blank: 'Blank', todo_cheer: 'Cheer', todo_attend: 'Check-in',
-        rv_blank_sub: 'Write that chapter from blank (boss, checkpoint, or trial) to raise its blank level',
+        rv_blank_sub: 'Write it on a blank page (trial, boss, checkpoint, blank review, daily recital or fruit) to raise its blank level',
         rv_route_title: '💡 Finish reviews in one go',
         rv_route_due: '{n} reviews',
         rv_route_mid: '{n} checkpoint(s) (v.{ranges})',
@@ -2122,7 +2122,7 @@ const LANG = {
         bible_read_pass_done: '📖 Chapter {ch} read {n}× — you can read it again',
         bible_read_pass_n: '{n} pass(es) today',
         bible_read_week_count: '{n} verses read this week',
-        ranking_recall_rules: '<b>What counts</b> — verses written on a <b>blank page (no cues)</b> in the Trial of Forgetting, boss battles or checkpoints. Blanks mode (letter slots), initials and voice do not count.<br><b>Hints</b> — hints up to 20% of the letters are fine; more and that verse is 0.<br><b>Same verse</b> — once per day (6 a.m. boundary). At most 404 a day.<br><b>Not multiplied</b> — field, rain, sunshine, order, difficulty. One verse is 1 for everyone.<br><b>Rewards</b> — every Monday, the tribe top 3 of last week get a 🥇🥈🥉 Recall King title (by your name for a week) + 💎 10,000 / 6,000 / 6,000; the Zion top 3 get a glowing title and 💎 15,000 / 10,000 / 10,000 more. Tribe titles need 10+ participants that week. Claim with the 🏆 reward button on the home screen.',
+        ranking_recall_rules: '<b>What counts</b> — verses written on a <b>blank page (no cues)</b>: the Trial of Forgetting, boss and checkpoint blank, blank review of a stage, the daily recital on blank, and tree-of-life fruit. Blanks mode (letter slots — including “Try it with blanks” on the result screen), initials and voice do not count.<br><b>Hints</b> — hints up to 20% of the letters are fine; more and that verse is 0.<br><b>Same verse</b> — once per day (6 a.m. boundary). At most 404 a day.<br><b>Not multiplied</b> — field, rain, sunshine, order, difficulty. One verse is 1 for everyone.<br><b>Rewards</b> — every Monday, the tribe top 3 of last week get a 🥇🥈🥉 Recall King title (by your name for a week) + 💎 10,000 / 6,000 / 6,000; the Zion top 3 get a glowing title and 💎 15,000 / 10,000 / 10,000 more. Tribe titles need 10+ participants that week. Claim with the 🏆 reward button on the home screen.',
         recall_title: 'Recall King',
         read_title: 'Reading King',
         read_title_tip_tribe: "Last week tribe Reading King #{rank}",
@@ -7581,7 +7581,7 @@ function _njFruitList(now) {
     });
     return out.slice(0, 408);
 }
-/* 먹기 — 3D·건축 창을 닫고 그 절 하나로 백지 세션을 연다 (결과 화면 '백지로 확인해보기'와 같은 엔진) */
+/* 먹기 — 3D·건축 창을 닫고 그 절 하나로 백지 세션을 연다 (결과 화면 '빈칸으로 확인해보기'와 같은 엔진, 단 이쪽은 진짜 백지) */
 function njEatFruit(key) {
     const f = _njFruitList().find(x => x.key === key);
     if (!f || !f.ripe || (f.retryAt && Date.now() < f.retryAt)) return;
@@ -10923,7 +10923,7 @@ function _startQuickBlank(stageId) {
     startHardshipSession('memory', [sId]);
 }
 
-/* 결과 화면의 '백지로 확인해보기' — 방금 학습한 그 한 구절만 백지로 써본다.
+/* 결과 화면의 '빈칸으로 확인해보기' — 방금 학습한 그 한 구절만 빈칸(글자 칸이 보이는 방식)으로 써본다. 백지가 아니다 — 백지 기록·백지레벨·진주·열매·암송왕에 세지 않는다(10/2 용어 정리).
    메뉴에 두면 아무도 찾아오지 않으므로 학습 흐름 끝에 붙였다.
    중간점검과 달리 stageClear는 부르지 않는다 — 클리어는 이미 처리됐고 여기선 '확인'만 한다. */
 function _startVerseBlankCheck(stageId) {
@@ -15229,7 +15229,7 @@ function closeResultModal(skipSheetReopen) {
     stageClear('normal'); // 보석과 승점 계산!
     quitGame();
 
-    // ★ skipSheetReopen: '백지로 확인해보기'처럼 곧바로 다른 화면으로 넘어갈 때는
+    // ★ skipSheetReopen: '빈칸으로 확인해보기'처럼 곧바로 다른 화면으로 넘어갈 때는
     // 시트를 다시 열지 않는다. 열어두면 고난 화면 위에 시트가 남는다.
     if (skipSheetReopen) return;
 
@@ -25976,7 +25976,7 @@ function createEmptyHardshipState() {
         ultimateMemoryMode: false,
         bossStageId: null,      // 보스전 빈칸·백지로 열린 세션이면 그 스테이지 id
         midBossStageId: null,   // 중간점검 빈칸·백지로 열린 세션이면 그 스테이지 id
-        verseCheckStageId: null, // 결과 화면의 '백지로 확인해보기'로 열린 1구절 세션
+        verseCheckStageId: null, // 결과 화면의 '빈칸으로 확인해보기'로 열린 1구절 세션(빈칸)
         quickReviewStageId: null, // 빠른 모드 백지 승급으로 열린 1구절 세션 (끝나면 훈련으로 복귀)
         fruitKey: null,          // 새 예루살렘 생명나무 열매 먹기로 열린 1구절 백지 세션 ('YYYY-MM|절id')
         verseCheckIsLearn: false, // 그 확인이 초학습 직후였는가 (증거 가치가 낮아 구분해 기록)
@@ -28619,7 +28619,7 @@ function getHardshipScoreScale() {
    망각의 고난은 한 장을 통으로 하는 진입 비용이 있어 제한하지 않는다(기존 보상 유지).
 
    ★ **콘텐츠를 구분하지 않으면 정상적인 학습 순서를 벌하게 된다.** (2026-09-11 수정)
-   구절을 하나씩 복습하며 결과 화면에서 백지로 확인하고, 그 다음 그 구간의 중간점검을
+   구절을 하나씩 복습하며 결과 화면에서 빈칸으로 확인하고, 그 다음 그 구간의 중간점검을
    백지로 이어서 하는 것 — 이게 우리가 권하는 순서인데,
    예전에는 그러면 **중간점검이 반드시 전부 0점**이 됐다. 어뷰징을 막으려다 복습을 막은 셈.
    같은 중간점검을 두 번 하는 것만 막으면 되고, 다른 콘텐츠는 각자 한 번씩 쳐야 한다. */
@@ -28627,7 +28627,7 @@ function _blankScoreKind() {
     if (!hardshipState) return null;
     if (hardshipState.midBossStageId) return 'mid';   // 중간점검 빈칸·백지
     if (hardshipState.bossStageId) return 'boss';     // 보스전 빈칸·백지
-    if (hardshipState.verseCheckStageId) return 'vc'; // 결과 화면 '백지로 확인해보기'
+    if (hardshipState.verseCheckStageId) return 'vc'; // 결과 화면 '빈칸으로 확인해보기'
     if (hardshipState.eventId) return hardshipState.ultimateMemoryMode ? 'event:none' : 'event:blank'; // 이벤트 — 빈칸·백지 따로 하루 1회
     return null; // 망각의 고난·빠른 모드 승급은 제한 없음 (승급은 배율 0이라 무관)
 }
@@ -28873,7 +28873,7 @@ function finishHardshipSession(reason) {
     const notifWrapHs = document.getElementById('result-notif-wrap');
     if (notifWrapHs) { notifWrapHs.innerHTML = ''; notifWrapHs.style.display = 'none'; }
     // 백지 확인 버튼도 함께 지운다 — 안 지우면 직전 스테이지 결과 화면의 버튼이 남아
-    // 백지 확인을 끝낸 화면에서 또 '백지로 확인해보기'가 떠 같은 구절을 반복하게 된다
+    // 빈칸 확인을 끝낸 화면에서 또 '빈칸으로 확인해보기'가 떠 같은 구절을 반복하게 된다
     const blankWrapHs = document.getElementById('result-blank-wrap');
     if (blankWrapHs) { blankWrapHs.innerHTML = ''; blankWrapHs.style.display = 'none'; }
 
