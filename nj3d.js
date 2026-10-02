@@ -2066,6 +2066,7 @@
         // ══ 🛠️ 꾸미기 (2026-10-01) — 예물과 꾸밈 아이템을 끌어서 놓고, 돌리고, 보관함에 넣는다 ══
         //    사용자: "아무 데나 끌어서 놓되 꾸미기 전용 화면에 들어가게". 걷기·행렬과 따로 — 위에서 비스듬히 내려다보는 카메라.
         //    물건을 끌면 옮기고, 빈 곳을 끌면 화면이 움직이고, 두 손가락은 확대·돌리기. 마칠 때 바뀐 것만 저장(_njDecoSave)
+        const DS = (typeof NJ_DECO_S !== 'undefined') ? NJ_DECO_S : 0.42;   // 꾸밈 배율(game.js)
         const DECO_V = '20261002d';   // models/decor/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/decor.py)
         const decoCache = {};
         function loadDecor(k) {
@@ -2311,10 +2312,10 @@ if (k === 'mender') {   // 그물 깁는 어부 — 손이 바삐 오간다
         }
         const decoExt = (kind, k, r) => {
             let w = 0.4, d = 0.4;
-            if (kind === 'big') { const B = (typeof NJ_BIG !== 'undefined') && NJ_BIG[k]; if (B) { w = B.box[0] / 2 * 1.5; d = B.box[1] / 2 * 1.5; } }
-            else if (kind === 'set') { const D = (typeof NJ_SETS !== 'undefined') && NJ_SETS[k]; if (D) { w = D.box[0] / 2 * 1.5; d = D.box[1] / 2 * 1.5; } }
+            if (kind === 'big') { const B = (typeof NJ_BIG !== 'undefined') && NJ_BIG[k]; if (B) { w = B.box[0] / 2 * DS; d = B.box[1] / 2 * DS; } }
+            else if (kind === 'set') { const D = (typeof NJ_SETS !== 'undefined') && NJ_SETS[k]; if (D) { w = D.box[0] / 2 * DS; d = D.box[1] / 2 * DS; } }
             else if (kind === 'gift') { w = d = 0.7; }
-            else { const b = DECO_BOX[k], sc = k === 'bridge' ? 1.1 : 1.5; if (b) { w = b[0] / 2 * sc; d = b[1] / 2 * sc; } }
+            else { const b = DECO_BOX[k], sc = k === 'bridge' ? 1.1 : DS; if (b) { w = b[0] / 2 * sc; d = b[1] / 2 * sc; } }
             const c = Math.abs(Math.cos(r || 0)), sn = Math.abs(Math.sin(r || 0));
             return [c * w + sn * d, sn * w + c * d];
         };
@@ -2366,9 +2367,9 @@ if (k === 'mender') {   // 그물 깁는 어부 — 손이 바삐 오간다
             const sp = sea ? (shoreSpot(it.x || 0, it.z || 0, Math.max(...decoExt('decor', it.k, 0)), wet ? 'water' : edge ? 'edge' : 'land') || [it.x || 0, it.z || 0])
                            : decoSpot(it.x || 0, it.z || 0, decoExt('decor', it.k, it.r || 0));   // 예전에 성 안에 놓은 것도 바깥으로
             const [px, pz] = sp;
-            const m = new THREE.Group(); m.position.set(px, (sea ? (wet ? SEA_Y : SHORE_Y) : terrain(px, pz)) - (md0.drop || 0) * 1.5, pz); m.rotation.y = edge ? seaFace(px, pz) : (it.r || 0); m.userData.sea = sea;   // 부두·말뚝은 물가에 걸쳐 바다를 보고 땅속으로 박힌다
+            const m = new THREE.Group(); m.position.set(px, (sea ? (wet ? SEA_Y : SHORE_Y) : terrain(px, pz)) - (md0.drop || 0) * DS, pz); m.rotation.y = edge ? seaFace(px, pz) : (it.r || 0); m.userData.sea = sea;   // 부두·말뚝은 물가에 걸쳐 바다를 보고 땅속으로 박힌다
             m.userData.item = { kind: 'decor', id: it.id, k: it.k };
-            m.scale.setScalar(it.k === 'bridge' ? 1.1 : 1.5);   // 성 안 나무(1.4)·예물에 맞춰 — 원래 크기로는 내려다볼 때 작았다
+            m.scale.setScalar(it.k === 'bridge' ? 1.1 : DS);   // 순례자 크기에 맞춰(NJ_DECO_S) — 다리는 강을 건너야 해서 그대로
             addPick(m, DECO_BOX[it.k]);
             loadDecor(it.k).then(sc => { if (cur !== C) return; const c = sc.clone(); m.add(c);
                 if (it.k === 'fountain') { const wt = c.getObjectByName('water'); if (wt) m.userData.anim = t => { wt.scale.set(1 + Math.sin(t * 5.3) * 0.06, 1 + Math.sin(t * 3.7) * 0.12, 1 + Math.sin(t * 4.1 + 1) * 0.06); }; }   // 솟는 물이 일렁인다
@@ -2725,7 +2726,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         function placeBig(rec) {
             const B = (typeof NJ_BIG !== 'undefined') ? NJ_BIG[rec.s] : null; if (!B) return null;
             const [px, pz] = B.sea ? (shoreSpot(rec.x || 0, rec.z || 0, 0, 'edge') || [rec.x || 0, rec.z || 0]) : decoSpot(rec.x || 0, rec.z || 0, decoExt('big', rec.s, rec.r || 0), null, true);
-            const m = new THREE.Group(); m.position.set(px, B.sea ? SHORE_Y : terrain(px, pz), pz); m.rotation.y = B.sea ? seaFace(px, pz) : (rec.r || 0); m.scale.setScalar(1.5); m.userData.sea = !!B.sea;
+            const m = new THREE.Group(); m.position.set(px, B.sea ? SHORE_Y : terrain(px, pz), pz); m.rotation.y = B.sea ? seaFace(px, pz) : (rec.r || 0); m.scale.setScalar(DS); m.userData.sea = !!B.sea;
             m.userData.item = { kind: 'set', id: rec.id, k: rec.s, big: true };
             const subs = {}, anims = [];
             B.sets.forEach(sk => { const [ox, oz, oy, lift] = B.offsets[sk], g = new THREE.Group(); g.position.set(ox, lift || 0, oz); g.rotation.y = oy || 0; m.add(g);
@@ -2743,7 +2744,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (rec.big) return placeBig(rec);
             const D = (typeof NJ_SETS !== 'undefined') ? NJ_SETS[rec.s] : null; if (!D) return null;
             const [px, pz] = D.sea ? (shoreSpot(rec.x || 0, rec.z || 0, 0, 'edge') || [rec.x || 0, rec.z || 0]) : decoSpot(rec.x || 0, rec.z || 0, decoExt('set', rec.s, rec.r || 0), null, true);
-            const m = new THREE.Group(); m.position.set(px, D.sea ? SHORE_Y : terrain(px, pz), pz); m.rotation.y = D.sea ? seaFace(px, pz) : (rec.r || 0); m.scale.setScalar(1.5); m.userData.sea = !!D.sea;
+            const m = new THREE.Group(); m.position.set(px, D.sea ? SHORE_Y : terrain(px, pz), pz); m.rotation.y = D.sea ? seaFace(px, pz) : (rec.r || 0); m.scale.setScalar(DS); m.userData.sea = !!D.sea;
             m.userData.item = { kind: 'set', id: rec.id, k: rec.s };
             const b = buildSet(D, m); m.userData.anim = b.anim;
             setG.add(m); addPick(m, D.box); return m;
@@ -2965,7 +2966,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const sea = where === 'sea', H = healedNations();
             let tgt = new THREE.Vector3(3.4, 0, 8.8);
             if (sea) { const [hx, hz] = H.length ? natMid(H[0], 10) : [0, SHORE - 2]; tgt = new THREE.Vector3(hx, SHORE_Y, hz); }   // 바다 — 첫 소성된 나라 해안
-            deco = { sea, sel: null, tgt, yaw: sea ? Math.atan2(tgt.x, tgt.z - SZ) : 0.5, pitch: 1.0, dist: sea ? 16 : 23, pts: new Map(), drag: null, stash, touched: new Map(), stashed: new Set() };
+            deco = { sea, sel: null, tgt, yaw: sea ? Math.atan2(tgt.x, tgt.z - SZ) : 0.5, pitch: 1.0, dist: sea ? 7 : 9, pts: new Map(), drag: null, stash, touched: new Map(), stashed: new Set() };
             decoPlane.constant = sea ? -SHORE_Y : 0; showOpenBand(sea);
             controls.enabled = false; controls.autoRotate = false;
             modeBtn.hidden = goBtn.hidden = decoBtn.hidden = true; holoBtn.dataset.was = holoBtn.hidden ? '1' : ''; holoBtn.hidden = true; hideFruit(); offerEl.hidden = true;
@@ -3005,7 +3006,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const d = deco.drag; if (!d) return;
             if (d.pinch && deco.pts.size === 2) {
                 const [a, b] = [...deco.pts.values()];
-                deco.dist = Math.max(5, Math.min(32, d.dist0 * d.pinch / Math.max(20, Math.hypot(a.x - b.x, a.y - b.y))));
+                deco.dist = Math.max(1.6, Math.min(32, d.dist0 * d.pinch / Math.max(20, Math.hypot(a.x - b.x, a.y - b.y))));
                 deco.yaw = d.yaw0 - (Math.atan2(b.y - a.y, b.x - a.x) - d.ang);
             } else if (d.obj) {
                 ray.setFromCamera(decoNdc(e), camera);
@@ -3014,7 +3015,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                     if (d.obj.userData.sea) {   // 바다 — 소성된 해안 띠(배는 물 위), 세트는 물가를 따라 바다를 보며
                         const md1 = it.kind === 'decor' ? (decoMeta(it.k) || {}) : {}, wet = !!md1.water, edge = it.kind === 'set' || !!md1.edge;
                         const sp = shoreSpot(decoHit.x, decoHit.z, Math.max(...decoExt(kindOf(it), it.k, 0)), edge ? 'edge' : wet ? 'water' : 'land');
-                        if (sp) { d.obj.position.set(sp[0], (wet ? SEA_Y : SHORE_Y) - (md1.drop || 0) * 1.5, sp[1]); if (edge) d.obj.rotation.y = seaFace(sp[0], sp[1]); decoTouch(d.obj); }
+                        if (sp) { d.obj.position.set(sp[0], (wet ? SEA_Y : SHORE_Y) - (md1.drop || 0) * DS, sp[1]); if (edge) d.obj.rotation.y = seaFace(sp[0], sp[1]); decoTouch(d.obj); }
                     } else {
                         const [x, z] = decoSpot(decoHit.x, decoHit.z, decoExt(kindOf(it), it.k, d.obj.rotation.y), d.obj.position, it.kind === 'set');   // 성 안으로는 못 들어간다 — 끌던 쪽 성벽 바깥에 붙는다
                         d.obj.position.set(x, terrain(x, z), z); decoTouch(d.obj);
@@ -3036,7 +3037,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             lastTouch = performance.now();
         };
         cvs.addEventListener('pointerup', decoUp); cvs.addEventListener('pointercancel', decoUp);
-        cvs.addEventListener('wheel', e => { if (!deco) return; deco.dist = Math.max(5, Math.min(32, deco.dist * (e.deltaY > 0 ? 1.1 : 0.9))); e.preventDefault(); lastTouch = performance.now(); }, { passive: false });
+        cvs.addEventListener('wheel', e => { if (!deco) return; deco.dist = Math.max(1.6, Math.min(32, deco.dist * (e.deltaY > 0 ? 1.1 : 0.9))); e.preventDefault(); lastTouch = performance.now(); }, { passive: false });
         function decoCam() {
             const c = Math.cos(deco.pitch) * deco.dist;
             camera.position.set(deco.tgt.x + Math.sin(deco.yaw) * c, deco.tgt.y + Math.sin(deco.pitch) * deco.dist, deco.tgt.z + Math.cos(deco.yaw) * c);

@@ -8115,6 +8115,8 @@ const NJ_SETS = {
 };
 /* 🏞️ 큰 세트 — 컨셉의 세트를 다 조립하면 하나로(레고 시리즈처럼). 세 세트가 성벽 바깥 띠에 맞게 한 줄로 서고, 큰 연출이 돈다.
    offsets: 세트 자리(큰 세트 안, 1.5배 전) · leads: 연출(이끄는 목자와 양 떼) · path: 연출 길(큰 세트 안 좌표) — nj3d.js bigShow */
+/* 꾸밈·세트·큰 세트를 3D에 놓는 배율 — 모델은 사람 키 0.53 기준, 순례자 키는 0.22. 처음엔 내려다보기에 맞춰 1.5배였는데 걸어 보니 일꾼·양이 순례자의 3~4배였다(10/2 사용자: 순례자에 맞춰 줄이자) */
+const NJ_DECO_S = 0.42;
 const NJ_BIG = {
     // 💒 혼인 잔치 큰 세트 「보라 신랑이로다」(마 25:6) — 신랑은 사람 모양 없이 빛으로만. 연출: 빛이 다가오면 등불 든 처녀들이 따라 문 안으로, 문이 닫히고 등불 꺼진 처녀는 밖에 (nj3d.js brideShow)
     bridegroom: { ko: '보라 신랑이로다', en: 'Here is the bridegroom', concept: 'wedding', sets: ['virgins', 'canopy', 'feast'],
@@ -8187,7 +8189,7 @@ function _njBigDisassemble(id) {
     njSets.filter(S => S.in === id).forEach(S => {
         const [ox, oz, oy] = (B && B.offsets[S.s]) || [0, 0, 0];
         S.in = null; S.st = false; S.mv = now; S.r = r + (oy || 0);   // 큰 세트 안에서 돌려 둔 방향(양 우리)도
-        S.x = Math.round((Bg.x + (Math.cos(r) * ox + Math.sin(r) * oz) * 1.5) * 100) / 100; S.z = Math.round((Bg.z + (-Math.sin(r) * ox + Math.cos(r) * oz) * 1.5) * 100) / 100;
+        S.x = Math.round((Bg.x + (Math.cos(r) * ox + Math.sin(r) * oz) * NJ_DECO_S) * 100) / 100; S.z = Math.round((Bg.z + (-Math.sin(r) * ox + Math.cos(r) * oz) * NJ_DECO_S) * 100) / 100;
         out.push(S);
     });
     njSets.splice(njSets.indexOf(Bg), 1);
