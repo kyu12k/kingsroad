@@ -126,7 +126,7 @@ def _mat(name, metal, rough, emit=None):
         b.inputs['Emission Color'].default_value = (*emit, 1); b.inputs['Emission Strength'].default_value = 1.0
     return m
 
-def finish(name, out_dir, emit=(1.0, 0.75, 0.3), views=None, lens=40):
+def finish(name, out_dir, emit=(1.0, 0.75, 0.3), views=None, lens=40, center=True):   # center=False: 원점을 그대로 둔다(탈것과 그 장식처럼 서로 맞물려야 하는 모델)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     sc = bpy.context.scene
     mats = [_mat('base', 0.0, 0.72), _mat('metal', 0.9, 0.32), _mat('glow', 0.0, 0.5, emit)]
@@ -151,7 +151,7 @@ def finish(name, out_dir, emit=(1.0, 0.75, 0.3), views=None, lens=40):
     bpy.context.view_layer.update()
     xs = [ob.matrix_world @ v.co for ob in obs for v in ob.data.vertices]
     mn = Vector((min(v.x for v in xs), min(v.y for v in xs), min(v.z for v in xs))); mx = Vector((max(v.x for v in xs), max(v.y for v in xs), max(v.z for v in xs)))
-    ctr = Vector(((mn.x + mx.x) / 2, (mn.y + mx.y) / 2, mn.z))
+    ctr = Vector(((mn.x + mx.x) / 2, (mn.y + mx.y) / 2, mn.z)) if center else Vector((0, 0, 0))
     for r in roots: r.location -= ctr
     size = mx - mn
     tris = sum(len(p.vertices) - 2 for ob in obs for p in ob.data.polygons)

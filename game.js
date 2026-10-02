@@ -587,6 +587,18 @@ const LANG = {
         nj3d_to_city: '🏛️ 성으로',
         nj3d_nat_open: '🌊 바다 화면에서 소성하기',
         nj3d_glide_on: '🪂 날개를 펼쳤어요 — 점프를 한 번 더 누르면 접혀요',
+        nj3d_ride: '{e} 타기', nj3d_unride: '🚶 내리기', nj3d_mount_shop: '🐴 탈것', nj3d_tack: '⚙️',
+        nj3d_ride_on: '{name} 탔어요 — 점프하면 함께 뛰고, 공중에서 한 번 더 누르면 뛰어내려 날개를 펴요',
+        nj3d_ride_city: '🏛️ 성 안에서는 내려서 걸어요', nj3d_ride_off_city: '🏛️ 성문 앞에서 내렸어요 — 탈것은 문 밖에서 기다려요',
+        nj3d_leap: '🪂 뛰어내려 날개를 펼쳤어요 — 탈것은 그 자리에서 기다려요',
+        mount_title: '🐴 탈것', mount_intro: '한 번 사면 계속 탈 수 있어요. 장식은 탈것마다 따로예요. 성 안에서는 내려서 걸어요.',
+        mount_buy: '💎 {cost} 사기', mount_sure: '정말 살까요? 한 번 더', mount_pick: '이걸 타기', mount_picked: '✓ 고른 탈것',
+        mount_speed: '달리기의 {x}배', mount_coat: '털빛', mount_gear: '장식 — {name} 전용', mount_gear_on: '달기', mount_gear_off: '떼기',
+        mount_need: '💎 보석이 모자라요', mount_got: '🎉 {name} 샀어요! 「타기」를 눌러 보세요',
+        mount_tab: '🐴 탈것', wing_tab: '🪂 날개', wing_intro: '공중에서 점프를 한 번 더 누르면 펼쳐져요. 좋은 날개일수록 더 빨리, 더 멀리 날아요.',
+        wing_glider: '🪂 글라이더 — 머리 위로 들고 날아요', wing_wings: '🪽 등 날개 — 걸을 땐 접혀 있다가 펼쳐요',
+        wing_stat: '활강 {b} · 덜 떨어짐 {s}', wing_base: '기본', wing_on: '✓ 끼는 중', wing_use: '끼기',
+        wing_got: '🎉 {name} 끼었어요 — 공중에서 점프를 한 번 더!',
         nj3d_glide_off: '날개를 접었어요',
         nj3d_fish_btn: '🎣 그물 던지기<br>💎 {cost}',
         nj3d_fish_murky: '🎣 맑은 물에서만',
@@ -1704,6 +1716,18 @@ const LANG = {
         nj3d_to_city: '🏛️ To the city',
         nj3d_nat_open: '🌊 Heal it on the sea screen',
         nj3d_glide_on: '🪂 Glider open — press Jump again to fold',
+        nj3d_ride: '{e} Ride', nj3d_unride: '🚶 Get off', nj3d_mount_shop: '🐴 Rides', nj3d_tack: '⚙️',
+        nj3d_ride_on: 'Riding the {name} — Jump to leap together, press again in the air to leap off and glide',
+        nj3d_ride_city: '🏛️ Walk on foot inside the city', nj3d_ride_off_city: '🏛️ You got off at the gate — your ride waits outside',
+        nj3d_leap: '🪂 You leapt off and opened your wings — your ride waits there',
+        mount_title: '🐴 Rides', mount_intro: 'Buy once, ride forever. Each ride has its own gear. Walk on foot inside the city.',
+        mount_buy: '💎 {cost} Buy', mount_sure: 'Sure? Tap again', mount_pick: 'Ride this', mount_picked: '✓ Chosen',
+        mount_speed: '{x}× running speed', mount_coat: 'Coat', mount_gear: 'Gear — {name} only', mount_gear_on: 'Put on', mount_gear_off: 'Take off',
+        mount_need: '💎 Not enough gems', mount_got: '🎉 You bought the {name}! Tap Ride',
+        mount_tab: '🐴 Rides', wing_tab: '🪂 Wings', wing_intro: 'Press Jump again in the air to spread them. Better wings fly faster and farther.',
+        wing_glider: '🪂 Gliders — held above your head', wing_wings: '🪽 Back wings — folded while walking, spread to glide',
+        wing_stat: 'Glide {b} · Falls slower {s}', wing_base: 'Base', wing_on: '✓ Equipped', wing_use: 'Equip',
+        wing_got: '🎉 {name} equipped — press Jump again in the air!',
         nj3d_glide_off: 'Glider folded',
         nj3d_fish_btn: '🎣 Cast net<br>💎 {cost}',
         nj3d_fish_murky: '🎣 Clear water only',
@@ -2554,6 +2578,9 @@ let njPearlWeek = { weekId: '', days: [], granted: false };
 let njPearlLog = [];
 let njBlankDays = [];    // 진주 — 백지로 한 절이라도 통과한 날('YYYY-MM-DD', 오전 6시 기준). 진주 수는 이것에서 계산한다
 let njJetpack = false;   // 3D 걸어서 구경 — 보석으로 산 제트팩 (한 번 사면 계속)
+let njMounts = {};      // 🐴 탈것 — { 탈것: { own, coats: [가진 털빛], coat, gear: [가진 장식], on: [단 장식], mv } }
+let njMountSel = '';    // 🐴 지금 고른 탈것
+let njWings = {};       // 🪂 글라이더·등 날개 — { own: [가진 것], on: 낀 것, mv }
 let njFruits = {};       // 생명나무 열매 — { 'YYYY-MM': { 절id: [열린 때, 먹은 때(0=아직), 마지막 실패 때] } }. 지난 달은 잎사귀 수만 njLeafArch로 접는다
 let njLeafArch = {};     // 접은 달의 먹은 열매(=잎사귀) 수 { 'YYYY-MM': n }
 let njLeafSpent = 0;     // 바다와 만국에 드린 잎사귀 (서버 givers가 정본 — 응답으로 받아 둔다)
@@ -3018,6 +3045,9 @@ loadGameData = function () {
             }
         }
         njJetpack = !!parsed.njJetpack;
+        njMounts = (parsed.njMounts && typeof parsed.njMounts === 'object') ? parsed.njMounts : {};
+        njMountSel = typeof parsed.njMountSel === 'string' ? parsed.njMountSel : '';
+        njWings = (parsed.njWings && typeof parsed.njWings === 'object') ? parsed.njWings : {};
         njFruits = (parsed.njFruits && typeof parsed.njFruits === 'object') ? parsed.njFruits : {};
         njLeafArch = (parsed.njLeafArch && typeof parsed.njLeafArch === 'object') ? parsed.njLeafArch : {};
         njLeafSpent = Math.max(0, parseInt(parsed.njLeafSpent, 10) || 0);
@@ -4669,6 +4699,15 @@ const SoundEffect = {
         this._play(t => {
             const j = 0.85 + Math.random() * 0.3;
             this._whoosh(t, run ? 0.09 : 0.11, run ? 0.07 : 0.05, 2600 * j, 700 * j);
+        });
+    },
+    // 🐴 발굽 소리 — 나무를 두드리듯 짧은 두 번 '따각'(달릴 땐 더 빠르고 가볍게). 발소리라 🔉에서도 꺼진다
+    playHoof: function (run) {
+        if (this.keyMuted) return;
+        this._play(t => {
+            const j = 0.9 + Math.random() * 0.2;
+            this._note(760 * j, t, 0.03, run ? 0.045 : 0.06, { glideTo: 420 * j, partials: this._PURE, attack: 0.001 });
+            this._note(600 * j, t + (run ? 0.045 : 0.07), 0.03, run ? 0.035 : 0.05, { glideTo: 340 * j, partials: this._PURE, attack: 0.001 });
         });
     },
     playSplash: function (big) {
@@ -8201,6 +8240,79 @@ function _njSetDisassemble(id) {
     saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
     return out;
 }
+/* 🐴 탈것 (10/2) — 3D 걸어서 구경에서 탄다. 한 번 사면 계속(다른 기기와 합침). 장식은 탈것마다 따로(사용자: 호환되지 않게)
+   speed = 달리기(RUN_V)의 배수 · jump = 점프 높이 배수 · seat = 모델 안 앉는 자리 [앞뒤, 높이](models/mounts, 사람 키 0.53 기준)
+   coats: [키, 이름, 영어, 값(0 = 탈것과 함께)] · gear: [키, 이름, 영어, 값, 붙는 곳(body | head)] — 모델 mt_<탈것>_<털빛> · gd_<탈것>_<장식> (tools/blender/mounts.py) */
+const NJ_MOUNTS = {
+    donkey: { ko: '나귀', en: 'Donkey', e: '🫏', ref: '슥 9:9', cost: 3000, speed: 1.5, jump: 0.8, seat: [-0.02, 0.36],
+        coats: [['gray', '회색', 'Gray', 0], ['brown', '갈색', 'Brown', 0], ['white', '흰 나귀 (삿 5:10)', 'White donkey (Judg 5:10)', 5000]],
+        gear: [['rug', '줄무늬 깔개', 'Striped rug', 1500, 'body'], ['bells', '방울 굴레', 'Bell bridle', 2000, 'head'],
+            ['garland', '꽃목걸이', 'Flower garland', 1500, 'head'], ['baskets', '짐바구니', 'Pack baskets', 2500, 'body']] },
+};
+function _njMountName(k) { const d = NJ_MOUNTS[k]; return d ? (currentLang === 'en' ? d.en : d.ko) : k; }
+function _njMountObj(k) {   // 「나귀를」·「낙타를」 — 받침이 있으면 을, 없으면 를 (영어는 이름만)
+    const n = _njMountName(k); if (currentLang === 'en') return n;
+    const c = n.charCodeAt(n.length - 1); return n + ((c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28) ? '을' : '를');
+}
+function _njMountSt(k) {
+    if (!njMounts || typeof njMounts !== 'object') njMounts = {};
+    const s = njMounts[k] || (njMounts[k] = { own: false, coats: [], coat: '', gear: [], on: [], mv: 0 });
+    ['coats', 'gear', 'on'].forEach(f => { if (!Array.isArray(s[f])) s[f] = []; });
+    return s;
+}
+function _njMountPay(cost) {
+    if ((myGems || 0) < cost) return false;
+    myGems -= cost; if (typeof updateGemDisplay === 'function') updateGemDisplay();
+    return true;
+}
+function _njMountSave() { saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore(); }
+function _njMountBuy(k) {   // 탈것 사기 — 값 없는 털빛은 함께 받는다
+    const D = NJ_MOUNTS[k], s = _njMountSt(k); if (!D || s.own) return false;
+    if (!_njMountPay(D.cost)) return false;
+    s.own = true; D.coats.filter(c => !c[3]).forEach(c => { if (!s.coats.includes(c[0])) s.coats.push(c[0]); });
+    s.coat = s.coat || D.coats[0][0]; s.mv = Date.now(); njMountSel = k;
+    _njMountSave(); return true;
+}
+function _njMountCoat(k, c) {   // 털빛 고르기 — 없는 것은 사서
+    const D = NJ_MOUNTS[k], s = _njMountSt(k), C = D && D.coats.find(x => x[0] === c);
+    if (!C || !s.own) return false;
+    if (!s.coats.includes(c)) { if (!_njMountPay(C[3])) return false; s.coats.push(c); }
+    s.coat = c; s.mv = Date.now(); _njMountSave(); return true;
+}
+function _njMountGear(k, g) {   // 장식 달기·떼기 — 없는 것은 사서 단다
+    const D = NJ_MOUNTS[k], s = _njMountSt(k), G = D && D.gear.find(x => x[0] === g);
+    if (!G || !s.own) return false;
+    if (!s.gear.includes(g)) { if (!_njMountPay(G[3])) return false; s.gear.push(g); s.on.push(g); }
+    else if (s.on.includes(g)) s.on = s.on.filter(x => x !== g); else s.on.push(g);
+    s.mv = Date.now(); _njMountSave(); return true;
+}
+/* 🪂 글라이더 · 등 날개 (10/2) — 같은 쓰임(공중에서 점프 한 번 더 → 활강). 고급일수록 활강이 빠르고(bonus) 덜 떨어진다(sink = 초당 최대로 내려가는 높이, 기본 0.42).
+   사용자: 고급 글라이더·고급 날개에 추가 이동속도를 붙여 기능으로도 값어치 있게. 모양은 nj3d.js makeWing(도형으로 그린다 — 모델 파일 없음) */
+const NJ_WINGS = [
+    { k: 'gold',    kind: 'glider', ko: '금빛 글라이더',   en: 'Golden glider',    ref: '',         cost: 0,      bonus: 0,    sink: 0.42 },
+    { k: 'olive',   kind: 'glider', ko: '감람 잎 글라이더', en: 'Olive-leaf glider', ref: '창 8:11',  cost: 20000,  bonus: 0.15, sink: 0.36 },
+    { k: 'rainbow', kind: 'glider', ko: '무지개 글라이더', en: 'Rainbow glider',   ref: '창 9:13',  cost: 100000, bonus: 0.3,  sink: 0.3 },
+    { k: 'fire',    kind: 'glider', ko: '불꽃 글라이더',   en: 'Flame glider',     ref: '',         cost: 400000, bonus: 0.5,  sink: 0.25 },
+    { k: 'feather', kind: 'wings',  ko: '흰 깃털 날개',    en: 'White feather wings', ref: '',      cost: 30000,  bonus: 0.15, sink: 0.36 },
+    { k: 'dawn',    kind: 'wings',  ko: '새벽 날개',       en: 'Wings of the dawn', ref: '시 139:9', cost: 150000, bonus: 0.35, sink: 0.3 },
+    { k: 'light',   kind: 'wings',  ko: '빛의 날개',       en: 'Wings of light',   ref: '',         cost: 500000, bonus: 0.6,  sink: 0.22 },
+];
+function _njWingName(w) { return currentLang === 'en' ? w.en : w.ko; }
+function _koObj(n) { if (currentLang === 'en') return n; const c = n.charCodeAt(n.length - 1); return n + ((c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28) ? '을' : '를'); }   // 목적격 조사
+function _njWingSt() {
+    if (!njWings || typeof njWings !== 'object') njWings = {};
+    if (!Array.isArray(njWings.own)) njWings.own = [];
+    if (!njWings.own.includes('gold')) njWings.own.unshift('gold');
+    if (!njWings.on || !njWings.own.includes(njWings.on)) njWings.on = 'gold';
+    return njWings;
+}
+function _njWingOn() { const s = _njWingSt(); return NJ_WINGS.find(w => w.k === s.on) || NJ_WINGS[0]; }
+function _njWingBuy(k) {   // 사서 바로 낀다 — 이미 있으면 끼기만
+    const w = NJ_WINGS.find(x => x.k === k), s = _njWingSt(); if (!w) return false;
+    if (!s.own.includes(k)) { if (!_njMountPay(w.cost)) return false; s.own.push(k); }
+    s.on = k; s.mv = Date.now(); _njMountSave(); return true;
+}
+function _njMountPick(k) { const s = _njMountSt(k); if (!s.own) return false; njMountSel = k; s.mv = Date.now(); _njMountSave(); return true; }
 function _njDecorName(d) { return currentLang === 'en' ? d.en : d.ko; }
 /* 사서 보관함 대신 바로 화면 가운데에 놓는다(x, z는 nj3d가 정해 준다) */
 function _njDecorBuy(k, x, z) {
@@ -12102,6 +12214,9 @@ function saveGameData() {
         njPearlLog: njPearlLog,           // 진주 문 — 얻은 기록
         njBlankDays: njBlankDays,         // 진주 문 — 백지로 통과한 날 (진주 수는 여기서 계산)
         njJetpack: njJetpack,             // 3D 제트팩 (보석으로 산 것)
+        njMounts: njMounts,               // 🐴 탈것 · 털빛 · 장식
+        njMountSel: njMountSel,           // 🐴 고른 탈것
+        njWings: njWings,                 // 🪂 글라이더·등 날개
         njFruits: njFruits,               // 생명나무 열매 (열린·먹은·실패 때)
         njLeafArch: njLeafArch,           // 접은 달의 잎사귀 수
         njLeafSpent: njLeafSpent,         // 만국에 드린 잎사귀
@@ -12357,6 +12472,22 @@ function _mergeNewJerusalem(target, other) {
         target.njLog = tl;
     }
     if (other.njJetpack && !target.njJetpack) { target.njJetpack = true; took++; }   // 제트팩 — 한쪽에서라도 샀으면 산 것
+    if (other.njMounts && typeof other.njMounts === 'object') {   // 🐴 탈것 — 산 것(탈것·털빛·장식)은 합집합, 고른 털빛·단 장식은 나중에 바꾼 쪽
+        const tm = (target.njMounts && typeof target.njMounts === 'object') ? target.njMounts : (target.njMounts = {});
+        Object.keys(other.njMounts).forEach(k => {
+            const o = other.njMounts[k] || {}, t = tm[k] || (tm[k] = { own: false, coats: [], coat: '', gear: [], on: [], mv: 0 });
+            if (o.own && !t.own) { t.own = true; took++; }
+            ['coats', 'gear'].forEach(f => (Array.isArray(o[f]) ? o[f] : []).forEach(x => { if (!Array.isArray(t[f])) t[f] = []; if (!t[f].includes(x)) { t[f].push(x); took++; } }));
+            if ((o.mv || 0) > (t.mv || 0)) { t.coat = o.coat || t.coat; t.on = Array.isArray(o.on) ? o.on.slice() : []; t.mv = o.mv; }
+        });
+    }
+    if (other.njMountSel && !target.njMountSel) target.njMountSel = other.njMountSel;
+    if (other.njWings && Array.isArray(other.njWings.own)) {   // 🪂 날개 — 가진 것은 합집합, 낀 것은 나중에 바꾼 쪽
+        const tw = (target.njWings && typeof target.njWings === 'object') ? target.njWings : (target.njWings = { own: [] });
+        if (!Array.isArray(tw.own)) tw.own = [];
+        other.njWings.own.forEach(x => { if (!tw.own.includes(x)) { tw.own.push(x); took++; } });
+        if ((other.njWings.mv || 0) > (tw.mv || 0)) { tw.on = other.njWings.on; tw.mv = other.njWings.mv; }
+    }
     // 진주 — 백지로 통과한 날은 합집합. 진주 수는 날짜에서 계산하므로(늘기도 줄기도 한다) 많은 쪽을 취하지 않는다
     if (Array.isArray(other.njBlankDays) && other.njBlankDays.length) {
         const td = Array.isArray(target.njBlankDays) ? target.njBlankDays : [];

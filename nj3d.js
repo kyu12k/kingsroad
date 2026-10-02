@@ -48,6 +48,7 @@
                 <button class="nj3d-holo" hidden></button>
                 <div class="nj3d-decobar" hidden></div>
                 <div class="nj3d-decopanel" hidden></div>
+                <div class="nj3d-decopanel nj3d-mountpanel" hidden></div>
                 <div class="nj3d-walk" hidden>
                     <div class="nj3d-joy"><div class="nj3d-knob"></div></div>
                     <div class="nj3d-btns">
@@ -55,6 +56,8 @@
                         <button class="nj3d-wb fly nj3d-fly" hidden>${T('nj3d_fly')}</button>
                         <button class="nj3d-wb small nj3d-fishbtn" hidden></button>
                         <button class="nj3d-wb small nj3d-talk" hidden></button>
+                        <button class="nj3d-wb small nj3d-tackbtn" hidden>${T('nj3d_tack')}</button>
+                        <button class="nj3d-wb small nj3d-ridebtn"></button>
                         <button class="nj3d-wb nj3d-jump">${T('nj3d_jump')}</button>
                     </div>
                 </div>
@@ -1070,15 +1073,64 @@
         };
         syncWallet();
         // 글라이더 (9/30) — 점프한 채로 점프를 한 번 더: 날개가 펼쳐져 천천히 활강, 또 누르면 접힌다. 땅에 닿으면 접힌다. 값은 없다
-        const glider = (() => {
-            const g = new THREE.BufferGeometry();
-            g.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, -0.2, -0.34, 0, 0.12, 0.34, 0, 0.12, 0, 0.035, 0.05], 3));
-            g.setIndex([0, 1, 3, 0, 3, 2, 1, 2, 3]); g.computeVertexNormals();
-            const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0xf6d77a, emissive: 0x6a4a10, emissiveIntensity: 0.3, roughness: 0.4, metalness: 0.3, side: THREE.DoubleSide }));
-            m.position.set(0, 0.3, 0.01); m.castShadow = true; m.visible = false; return m;
-        })();
-        body.add(glider);
-        let gliding = false;
+        // 🪂 글라이더·등 날개 (10/2) — 종류마다 모양이 다르다(도형으로 그린다, 모델 파일 없음). 글라이더는 머리 위로 들고, 등 날개는 걸을 땐 접혀 있다가 활강할 때 펼쳐 퍼덕인다
+        const glider = new THREE.Group(); glider.position.set(0, 0.3, 0.01); glider.visible = false; body.add(glider);
+        const backWings = new THREE.Group(); backWings.position.set(0, 0.155, 0.03); backWings.visible = false; body.add(backWings);
+        let gliding = false, wingK = null, wingKind = 'glider', wingFx = null;
+        const triGeo = (pts, idx) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3)); g.setIndex(idx); g.computeVertexNormals(); return g; };
+        const wingMat = (c, em, ei) => new THREE.MeshStandardMaterial({ color: c, emissive: em || 0x000000, emissiveIntensity: ei || 0, roughness: 0.45, metalness: 0.2, side: THREE.DoubleSide });
+        const wingSparks = (n, col) => {   // 반짝이는 알갱이 — 날개 뒤로 흘러 사라진다
+            const pos = new Float32Array(n * 3), g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            const p = new THREE.Points(g, new THREE.PointsMaterial({ map: radial, color: col, size: 0.03, transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending })); p.frustumCulled = false;
+            const seed = [...Array(n)].map(() => [Math.random(), (Math.random() - 0.5), Math.random()]);
+            return { p, step: (t, span, on) => { p.visible = on; if (!on) return; seed.forEach(([a, b, c], i) => { const u = (t * 0.8 + a) % 1; pos[i * 3] = b * span; pos[i * 3 + 1] = -u * 0.06 + c * 0.02; pos[i * 3 + 2] = 0.05 + u * 0.25; }); g.attributes.position.needsUpdate = true; } };
+        };
+        function makeGlider(k) {   // 머리 위 활강 날개 — 앞(−z)이 뾰족한 삼각
+            const G2 = new THREE.Group();
+            const D = [0, 0, -0.2, -0.34, 0, 0.12, 0.34, 0, 0.12, 0, 0.035, 0.05], I = [0, 1, 3, 0, 3, 2, 1, 2, 3];
+            if (k === 'olive') {   // 감람 잎(창 8:11) — 길쭉한 잎, 가운데 잎맥
+                const pts = [0, 0.03, -0.02], idx = [], N = 22;
+                for (let i = 0; i <= N; i++) { const u = i / N * Math.PI * 2, z = -0.02 - Math.cos(u) * 0.2, x = Math.sin(u) * 0.3 * Math.pow(Math.abs(Math.sin(u)), 0.15) * (1 - 0.25 * Math.cos(u)); pts.push(x, 0, z); if (i) idx.push(0, i, i + 1); }
+                G2.add(new THREE.Mesh(triGeo(pts, idx), wingMat(0x7aa34a, 0x223a10, 0.25)));
+                const vein = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.006, 0.38), wingMat(0x4f7a30)); vein.position.set(0, 0.03, -0.02); G2.add(vein);
+            } else if (k === 'rainbow') {   // 무지개(창 9:13) — 끝에서 뒤로 일곱 빛 띠
+                const cols = [0xe74c3c, 0xf39c12, 0xf1c40f, 0x2ecc71, 0x3498db, 0x5b5bd6, 0x9b59b6], A = [0, 0, -0.2], Lc = [-0.34, 0, 0.12], Rc = [0.34, 0, 0.12];
+                const at = (c, f) => [A[0] + (c[0] - A[0]) * f, 0.035 * Math.sin(f * Math.PI), A[2] + (c[2] - A[2]) * f];
+                cols.forEach((c, i) => { const f0 = i / cols.length, f1 = (i + 1) / cols.length, a = at(Lc, f0), b = at(Rc, f0), d = at(Lc, f1), e = at(Rc, f1);
+                    G2.add(new THREE.Mesh(triGeo([...a, ...b, ...d, ...e], [0, 2, 1, 1, 2, 3]), wingMat(c, c, 0.25))); });
+            } else if (k === 'fire') {   // 불꽃 — 빛나는 주황 날개, 뒤로 불티
+                G2.add(new THREE.Mesh(triGeo(D, I), wingMat(0xff8a3c, 0xff5a10, 0.9)));
+                const edge = new THREE.Mesh(triGeo([-0.34, 0.002, 0.12, 0.34, 0.002, 0.12, 0, 0.004, 0.02], [0, 1, 2]), wingMat(0xffd27a, 0xffb040, 1.2)); G2.add(edge);
+                const sp = wingSparks(24, 0xffb050); G2.add(sp.p); G2.userData.fx = (t, on) => sp.step(t, 0.6, on);
+            } else G2.add(new THREE.Mesh(triGeo(D, I), wingMat(0xf6d77a, 0x6a4a10, 0.3)));   // 금빛(기본)
+            G2.traverse(o => { if (o.isMesh) o.castShadow = true; });
+            return G2;
+        }
+        function makeBackWing(k) {   // 등 날개 한쪽(오른쪽 +x로 뻗는다) — 깃털 일곱이 부채처럼
+            const g = new THREE.Group(), N = 7;
+            for (let i = 0; i < N; i++) {
+                const a = 0.55 - i * 0.2, L = 0.21 - i * 0.017, w = 0.034, f = i / (N - 1);
+                const col = k === 'dawn' ? new THREE.Color(0xffc0d0).lerp(new THREE.Color(0xf6d77a), f) : k === 'light' ? new THREE.Color(0xffe27a) : new THREE.Color(0xf8f6f0);
+                const geo = triGeo([0, 0, 0, L * 0.35, w / 2, 0, L, 0, 0, L * 0.35, -w / 2, 0], [0, 1, 2, 0, 2, 3]);
+                const m = new THREE.Mesh(geo, wingMat(col, k === 'light' ? 0xffd060 : k === 'dawn' ? col.clone().multiplyScalar(0.3) : 0x000000, k === 'light' ? 0.9 : 0.3));
+                m.rotation.z = a; m.position.z = i * 0.002; m.castShadow = true; g.add(m);
+            }
+            return g;
+        }
+        function equipWing() {   // 낀 날개가 바뀌었으면 다시 그린다
+            const W = typeof _njWingOn === 'function' ? _njWingOn() : { k: 'gold', kind: 'glider' };
+            if (W.k === wingK) return W;
+            wingK = W.k; wingKind = W.kind; wingFx = null;
+            [...glider.children].forEach(c => glider.remove(c)); [...backWings.children].forEach(c => backWings.remove(c));
+            if (W.kind === 'glider') { const g = makeGlider(W.k); glider.add(g); wingFx = g.userData.fx || null; }
+            else {
+                const R = makeBackWing(W.k), Lw = makeBackWing(W.k); Lw.scale.x = -1;
+                const pR = new THREE.Group(), pL = new THREE.Group(); pR.position.x = 0.02; pL.position.x = -0.02; pR.add(R); pL.add(Lw); backWings.add(pR, pL);
+                backWings.userData.p = [pR, pL];
+                if (W.k === 'light') { const sp = wingSparks(28, 0xffe08a); backWings.add(sp.p); wingFx = (t, on) => sp.step(t, 0.5, on); }
+            }
+            return W;
+        }
         const jet = new THREE.Group(); body.add(jet);
         const jm = new THREE.MeshStandardMaterial({ color: 0xd4a53a, metalness: 0.8, roughness: 0.25 });
         [-1, 1].forEach(sg => { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.075, 12), jm); c.position.set(sg * 0.018, 0.13, 0.03); jet.add(c); });
@@ -1250,6 +1302,10 @@
         cvs.addEventListener('pointerup', endLook); cvs.addEventListener('pointercancel', endLook);
         cvs.addEventListener('wheel', e => { if (walk && !proc) { camDist = Math.max(0.45, Math.min(3, camDist * (e.deltaY > 0 ? 1.1 : 0.9))); e.preventDefault(); } }, { passive: false });
         const doJump = () => {
+            if (ride.on) {   // 🐴 탄 채로 — 땅에선 탈것째 뛰고, 공중에서 한 번 더 누르면 뛰어내려 글라이더
+                if (P.onGround) { P.vy = JUMP_V * (NJ_MOUNTS[ride.k] || {}).jump || JUMP_V; P.onGround = false; return; }
+                mountDown('leap'); return;
+            }
             if (P.onGround) { P.vy = JUMP_V; P.onGround = false; return; }
             if (jetOn) return;
             gliding = !gliding;   // 공중에서 한 번 더 — 펼치기 / 접기
@@ -1278,6 +1334,153 @@
             syncJetUI(); syncWallet(); showHint(T('nj3d_jet_got'), 3500);
         });
         syncJetUI();
+
+        // ── 🐴 탈것 (10/2) — 타면 빨라지고, 점프는 탈것째, 공중에서 한 번 더 누르면 뛰어내려 글라이더(사용자 결정). 성 안에서는 내려서 걷는다.
+        //    탈것은 내린 자리에서 기다린다(「타기」를 누르면 곁으로 와서 태운다). 모델은 사람 키 0.53 기준이라 순례자 키(0.22)에 맞춰 줄인다
+        const MOUNT_V = '20261002a', MOUNT_S = 0.22 / 0.53;
+        const mountCache = {};
+        function loadMount(k) {
+            if (!mountCache[k]) mountCache[k] = (async () => {
+                if (!THREE.GLTFLoader) await loadScript(GLTF_URL);
+                const gl = await new Promise((res, rej) => new THREE.GLTFLoader().load(`models/mounts/${k}.glb?v=${MOUNT_V}`, res, undefined, rej));
+                gl.scene.traverse(o => { if (!o.isMesh) return; o.castShadow = true; const m = o.material; if (m.metalness > 0.5) { m.metalness = 0.35; m.roughness = 0.38; } });
+                return gl.scene;
+            })();
+            mountCache[k].catch(() => { delete mountCache[k]; });
+            return mountCache[k];
+        }
+        const ride = { on: false, wait: false, k: null, obj: null, parts: null, gait: 0, lastOut: null };
+        const mountsOf = () => (typeof njMounts !== 'undefined' && njMounts) || {};
+        const ownedMounts = () => Object.keys(typeof NJ_MOUNTS !== 'undefined' ? NJ_MOUNTS : {}).filter(k => mountsOf()[k] && mountsOf()[k].own);
+        const curMount = () => { const own = ownedMounts(); return (typeof njMountSel !== 'undefined' && own.includes(njMountSel)) ? njMountSel : (own[0] || null); };
+        const inCity = (x, z) => Math.max(Math.abs(x), Math.abs(z)) < HALF + 0.35;
+        async function buildMountObj(k) {
+            const D = NJ_MOUNTS[k], st = mountsOf()[k] || {}, coat = st.coat || D.coats[0][0];
+            const root = new THREE.Group(), body = (await loadMount('mt_' + k + '_' + coat)).clone();
+            root.add(body); root.scale.setScalar(MOUNT_S);
+            const head = body.getObjectByName('head');
+            for (const g of D.gear) {
+                if (!(st.on || []).includes(g[0])) continue;
+                const gm = (await loadMount('gd_' + k + '_' + g[0])).clone();
+                if (g[4] === 'head' && head) { gm.position.copy(head.position).multiplyScalar(-1); head.add(gm); } else body.add(gm);   // 머리 장식은 머리 축 아래로
+            }
+            root.userData.parts = { legs: [0, 1, 2, 3].map(i => body.getObjectByName('leg' + i)), head, tail: body.getObjectByName('tail') };
+            return root;
+        }
+        async function refreshMount() {   // 털빛·장식을 바꾸면 다시 짓는다(자리는 그대로)
+            const k = curMount(); if (!k) return;
+            const old = ride.obj, pos = old ? old.position.clone() : new THREE.Vector3(P.x, P.y, P.z), rot = old ? old.rotation.y : P.face + Math.PI / 2;
+            let obj; try { obj = await buildMountObj(k); } catch (e) { return; }
+            if (cur !== C) return;
+            if (old) scene.remove(old);
+            ride.obj = obj; ride.k = k; ride.parts = obj.userData.parts;
+            obj.position.copy(pos); obj.rotation.y = rot; obj.visible = ride.on || ride.wait; scene.add(obj);
+        }
+        const rideBtn = ov.querySelector('.nj3d-ridebtn'), tackBtn = ov.querySelector('.nj3d-tackbtn'), tackEl = ov.querySelector('.nj3d-mountpanel');
+        function syncRideUI() {
+            const k = curMount();
+            rideBtn.innerHTML = !k ? T('nj3d_mount_shop') : ride.on ? T('nj3d_unride') : T('nj3d_ride', { e: NJ_MOUNTS[k].e });
+            tackBtn.hidden = false;   // 날개 창도 여기서 — 탈것이 없어도 연다
+        }
+        async function mountUp() {
+            const k = curMount(); if (!k) { openTack(); return; }
+            if (inCity(P.x, P.z)) { showHint(T('nj3d_ride_city'), 2200); return; }
+            if (!ride.obj || ride.k !== k) await refreshMount();
+            if (!ride.obj || cur !== C) return;
+            ride.on = true; ride.wait = false; gliding = false; jetOn = false; ride.obj.visible = true;
+            ride.obj.position.set(P.x, P.y, P.z); ride.obj.rotation.y = P.face + Math.PI / 2;
+            syncRideUI(); showHint(T('nj3d_ride_on', { name: _njMountObj(k) }), 3200);
+        }
+        function mountDown(how) {   // how: 'leap'(뛰어내려 글라이더) · 'city'(성문 앞) · 그 밖(그냥 내림)
+            if (!ride.on) return;
+            ride.on = false; ride.wait = true;
+            if (ride.obj) {
+                const at = how === 'city' && ride.lastOut ? ride.lastOut : [P.x, P.z];
+                ride.obj.position.set(at[0], groundAt(at[0], at[1], P.y + 0.5), at[1]);
+            }
+            if (how === 'leap') { P.vy = Math.max(P.vy, 0.9); gliding = true; showHint(T('nj3d_leap'), 2400); }
+            if (how === 'city') showHint(T('nj3d_ride_off_city'), 2600);
+            pilgrim.position.y = P.y; L0();
+            syncRideUI();
+        }
+        function L0() { const L = limbs; L.hipL.rotation.z = 0; L.hipR.rotation.z = 0; }
+        rideBtn.addEventListener('click', () => { if (!curMount()) openTack('mount'); else if (ride.on) mountDown(); else mountUp(); });
+        tackBtn.addEventListener('click', () => openTack(curMount() ? null : 'wings'));
+        let tackTab = 'mount';
+        function openTack(tab) {   // 🐴 탈것 창 — 탈것(사기·고르기·털빛·장식) | 🪂 날개(글라이더·등 날개)
+            if (tab) tackTab = tab;
+            const en = typeof currentLang !== 'undefined' && currentLang === 'en', gems = Number(typeof myGems !== 'undefined' ? myGems : 0);
+            if (tackTab === 'wings') { openWings(); return; }
+            const price = (n, key) => gems >= n ? `<button data-${key}>💎 ${n.toLocaleString()}</button>` : `<span class="nj3d-offer-lock">💎 ${n.toLocaleString()}</span>`;
+            tackEl.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button><div class="nj3d-offer-head">${T('mount_title')}</div>
+                <div class="nj3d-offer-have">💎 ${gems.toLocaleString()}</div>${tackTabs()}<div class="nj3d-offer-intro">${T('mount_intro')}</div>`
+                + Object.keys(NJ_MOUNTS).map(k => {
+                    const D = NJ_MOUNTS[k], st = mountsOf()[k] || {}, own = !!st.own, sel = curMount() === k;
+                    let h = `<div class="nj3d-shop-sec">${D.e} ${esc2(_njMountName(k))} <span>${esc2(D.ref)} · ${T('mount_speed', { x: D.speed })}</span></div>`;
+                    if (!own) return h + `<div class="nj3d-offer-list"><div class="nj3d-offer-row"><div><b>${D.e} ${esc2(_njMountName(k))}</b></div>${gems >= D.cost ? `<button data-buy="${k}">${T('mount_buy', { cost: D.cost.toLocaleString() })}</button>` : `<span class="nj3d-offer-lock">💎 ${D.cost.toLocaleString()}</span>`}</div></div>`;
+                    h += sel ? `<div class="nj3d-shop-big">${T('mount_picked')}</div>` : `<button class="nj3d-shop-rest" data-pick="${k}">${T('mount_pick')}</button>`;
+                    h += `<div class="nj3d-shop-tabs">${D.coats.map(c => { const has = (st.coats || []).includes(c[0]); return `<button data-coat="${k}:${c[0]}" class="${st.coat === c[0] ? 'on' : ''}">${esc2(en ? c[2] : c[1])}${has ? '' : ` · 💎${c[3].toLocaleString()}`}</button>`; }).join('')}</div>`;
+                    h += `<div class="nj3d-offer-intro">${T('mount_gear', { name: esc2(_njMountName(k)) })}</div><div class="nj3d-offer-list">` + D.gear.map(g => {
+                        const has = (st.gear || []).includes(g[0]), on = (st.on || []).includes(g[0]);
+                        return `<div class="nj3d-offer-row"><div><b>${esc2(en ? g[2] : g[1])}</b>${has ? '' : `<span>💎 ${g[3].toLocaleString()}</span>`}</div>${has ? `<button data-gear="${k}:${g[0]}">${on ? T('mount_gear_off') : T('mount_gear_on')}</button>` : gems >= g[3] ? `<button data-gear="${k}:${g[0]}">💎 ${g[3].toLocaleString()}</button>` : `<span class="nj3d-offer-lock">💎 ${g[3].toLocaleString()}</span>`}</div>`;
+                    }).join('') + `</div>`;
+                    return h;
+                }).join('');
+            tackEl.hidden = false; bindTabs();
+            tackEl.querySelector('.nj3d-fruit-x').onclick = () => { tackEl.hidden = true; };
+            const after = async (ok, msg) => { if (!ok) { showHint(T('mount_need'), 2000); return; } syncWallet(); syncRideUI(); await refreshMount(); openTack(); if (msg) showHint(msg, 3000);
+                if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear(); };
+            tackEl.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => {   // 탈것은 한 번 더 눌러야 산다
+                if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = T('mount_sure'); b.classList.add('sure'); return; }
+                const k = b.dataset.buy; after(_njMountBuy(k), T('mount_got', { name: _njMountObj(k) }));
+            });
+            tackEl.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => after(_njMountPick(b.dataset.pick)));
+            tackEl.querySelectorAll('[data-coat]').forEach(b => b.onclick = () => { const [k, c] = b.dataset.coat.split(':'); after(_njMountCoat(k, c)); });
+            tackEl.querySelectorAll('[data-gear]').forEach(b => b.onclick = () => { const [k, g] = b.dataset.gear.split(':'); after(_njMountGear(k, g)); });
+        }
+
+        function tackTabs() { return `<div class="nj3d-shop-tabs"><button data-tab="mount" class="${tackTab === 'mount' ? 'on' : ''}">${T('mount_tab')}</button><button data-tab="wings" class="${tackTab === 'wings' ? 'on' : ''}">${T('wing_tab')}</button></div>`; }
+        function bindTabs() { tackEl.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => openTack(b.dataset.tab)); }
+        function openWings() {   // 🪂 날개 — 사면 바로 낀다
+            const gems = Number(typeof myGems !== 'undefined' ? myGems : 0), st = typeof _njWingSt === 'function' ? _njWingSt() : { own: ['gold'], on: 'gold' };
+            const stat = w => T('wing_stat', { b: w.bonus ? '+' + Math.round(w.bonus * 100) + '%' : T('wing_base'), s: w.sink < 0.42 ? Math.round((1 - w.sink / 0.42) * 100) + '%' : T('wing_base') });
+            const row = w => { const has = st.own.includes(w.k), on = st.on === w.k;
+                return `<div class="nj3d-offer-row"><div><b>${esc2(_njWingName(w))}</b><span>${w.ref ? esc2(w.ref) + ' · ' : ''}${stat(w)}</span></div>${on ? `<span class="nj3d-offer-lock">${T('wing_on')}</span>`
+                    : has ? `<button data-wing="${w.k}">${T('wing_use')}</button>` : gems >= w.cost ? `<button data-wing="${w.k}" data-cost="1">💎 ${w.cost.toLocaleString()}</button>` : `<span class="nj3d-offer-lock">💎 ${w.cost.toLocaleString()}</span>`}</div>`; };
+            tackEl.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button><div class="nj3d-offer-head">${T('mount_title')}</div><div class="nj3d-offer-have">💎 ${gems.toLocaleString()}</div>${tackTabs()}
+                <div class="nj3d-offer-intro">${T('wing_intro')}</div>
+                <div class="nj3d-shop-sec">${T('wing_glider')}</div><div class="nj3d-offer-list">${NJ_WINGS.filter(w => w.kind === 'glider').map(row).join('')}</div>
+                <div class="nj3d-shop-sec">${T('wing_wings')}</div><div class="nj3d-offer-list">${NJ_WINGS.filter(w => w.kind === 'wings').map(row).join('')}</div>`;
+            tackEl.hidden = false; bindTabs();
+            tackEl.querySelector('.nj3d-fruit-x').onclick = () => { tackEl.hidden = true; };
+            tackEl.querySelectorAll('[data-wing]').forEach(b => b.onclick = () => {
+                if (b.dataset.cost && b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = T('mount_sure'); b.classList.add('sure'); return; }
+                const w = NJ_WINGS.find(x => x.k === b.dataset.wing);
+                if (!_njWingBuy(w.k)) { showHint(T('mount_need'), 2000); return; }
+                equipWing(); syncWallet(); openWings(); showHint(T('wing_got', { name: _koObj(_njWingName(w)) }), 3000);
+                if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
+            });
+        }
+        syncRideUI();
+        // 탄 채로 움직일 때 — 탈것을 순례자 자리로, 다리·머리·꼬리, 발굽 소리. 기다릴 때는 가끔 고개 숙여 풀을 뜯는다
+        function mountAnim(dt, moving, run, inWater) {
+            const o = ride.obj; if (!o) return;
+            const pt = ride.parts || {}, t = walkT;
+            if (ride.on) {
+                o.position.set(P.x, P.y, P.z); o.rotation.y = P.face + Math.PI / 2;
+                if (moving && P.onGround) {
+                    const prev = Math.sin(ride.gait); ride.gait += dt * (run ? 13 : 7);
+                    if (Math.sign(Math.sin(ride.gait)) !== Math.sign(prev)) {
+                        if (inWater) splash(P.x, P.z, false);
+                        else if (typeof SoundEffect !== 'undefined' && SoundEffect.playHoof) SoundEffect.playHoof(run);
+                    }
+                }
+            }
+            const go = ride.on && moving && P.onGround, a = run ? 0.55 : 0.32;
+            (pt.legs || []).forEach((l, i) => { if (!l) return; const want = go ? Math.sin(ride.gait + ((run ? i < 2 : (i === 0 || i === 3)) ? 0 : Math.PI)) * a : (!P.onGround && ride.on ? (i < 2 ? -0.5 : 0.5) : 0); l.rotation.z += (want - l.rotation.z) * Math.min(1, dt * 14); });
+            if (pt.head) pt.head.rotation.z = go ? Math.sin(ride.gait * 2) * (run ? 0.06 : 0.035) : (!ride.on && ((t % 9) < 3) ? -0.45 * Math.sin((t % 9) / 3 * Math.PI) : 0);
+            if (pt.tail) pt.tail.rotation.x = Math.sin(t * 3) * 0.3;
+        }
 
         // ── 모드 ──
         const walkUI = ov.querySelector('.nj3d-walk'), modeBtn = ov.querySelector('.nj3d-mode');
@@ -2614,6 +2817,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const jx = inp.jx + (((k.KeyD || k.ArrowRight) ? 1 : 0) - ((k.KeyA || k.ArrowLeft) ? 1 : 0)) * kv;
             const jy = inp.jy + (((k.KeyS || k.ArrowDown) ? 1 : 0) - ((k.KeyW || k.ArrowUp) ? 1 : 0)) * kv;
             const fly = hasJet() && (jetOn || k.ShiftLeft || k.ShiftRight);
+            if (fly && ride.on) mountDown();   // 날기 버튼 = 내리며 제트팩
             const fx = -Math.sin(camYaw), fz = -Math.cos(camYaw), rx = Math.cos(camYaw), rz = -Math.sin(camYaw);
             let mx = fx * (-jy) + rx * jx, mz = fz * (-jy) + rz * jx;
             const ml = Math.hypot(mx, mz); if (ml > 1) { mx /= ml; mz /= ml; }
@@ -2623,12 +2827,15 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const inRiver = inWater && inWater !== 'sea';
             const glide = gliding && !fly && !P.onGround;
             if (glide && !moving) { mx = -Math.sin(P.face); mz = -Math.cos(P.face); }   // 활강은 손을 떼도 바라보는 쪽으로 계속 나아간다
-            const sp = glide ? 2.6 : (fly || !P.onGround) ? WALK_V * 1.35 : (run ? RUN_V : WALK_V) * (inRiver ? 0.65 : 1);
+            const MD = ride.on ? (NJ_MOUNTS[ride.k] || {}) : null;
+            const WG = equipWing();
+            const sp = glide ? 2.6 * (1 + (WG.bonus || 0)) : MD ? RUN_V * (MD.speed || 1) * (run ? 1 : 0.55) * (inRiver ? 0.8 : 1)   // 🐴 탄 채로 — 끝까지 밀면 달리고, 덜 밀면 걷는다(공중에서도 그 빠르기)
+                : (fly || !P.onGround) ? WALK_V * 1.35 : (run ? RUN_V : WALK_V) * (inRiver ? 0.65 : 1);
             const nx = P.x + mx * sp * dt, nz = P.z + mz * sp * dt;
             if (!blocked(nx, P.z, P.y)) P.x = nx;
             if (!blocked(P.x, nz, P.y)) P.z = nz;
             if (fly) { P.vy = Math.min(P.vy + 6.5 * dt, 1.4); gliding = false; }
-            else if (glide) P.vy = Math.max(P.vy - G * 0.18 * dt, -0.42);   // 천천히 내려앉는다
+            else if (glide) P.vy = Math.max(P.vy - G * 0.18 * dt, -(WG.sink || 0.42));   // 천천히 내려앉는다 — 좋은 날개일수록 덜 떨어진다
             else P.vy -= G * dt;
             P.y = Math.min(18, P.y + P.vy * dt);
             const g = groundAt(P.x, P.z, P.y);
@@ -2637,9 +2844,17 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             else P.onGround = false;
             if (!wasGround && P.onGround && wetAt(P.x, P.z)) splash(P.x, P.z, true);   // 물에 떨어짐
             if (moving) { const want = Math.atan2(-mx, -mz); let d = want - P.face; d = Math.atan2(Math.sin(d), Math.cos(d)); P.face += d * Math.min(1, dt * 10); }
+            if (ride.on) {   // 성 안에서는 내린다 — 탈것은 문 밖 마지막 자리에서 기다린다
+                if (inCity(P.x, P.z)) mountDown('city'); else ride.lastOut = [P.x, P.z];
+            }
             pilgrim.position.set(P.x, P.y, P.z); pilgrim.rotation.y = P.face;
+            if (ride.on && MD) {   // 안장 위에 — 앉는 자리만큼 올리고 앞뒤로 옮긴다, 달리면 들썩
+                const s = MD.seat || [0, 0.36], fwd = s[0] * MOUNT_S;
+                pilgrim.position.set(P.x - Math.sin(P.face) * fwd, P.y + s[1] * MOUNT_S - 0.07 + (moving && P.onGround ? Math.abs(Math.sin(ride.gait)) * (run ? 0.018 : 0.008) : 0), P.z - Math.cos(P.face) * fwd);
+            }
+            mountAnim(dt, moving, run, inWater);
             // 자세 — 걷기·달리기는 팔다리를 엇갈려 흔들고, 공중에선 팔을 벌리고, 날 때는 다리를 모은다
-            const stepping = moving && P.onGround;
+            const stepping = moving && P.onGround && !ride.on;
             if (stepping) {
                 const prev = Math.sin(gait);
                 gait += dt * (run ? 15 : 9.5) * (inRiver ? 0.8 : 1);
@@ -2651,8 +2866,17 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const amp = run ? 0.95 : 0.55, sw = Math.sin(gait);
             let hL = 0, hR = 0, aL = 0, aR = 0, zL = 0, zR = 0, lean = 0, bob = 0;
             if (P.onGround) gliding = false;
-            glider.visible = gliding && !fly;
-            if (glider.visible) { hL = -0.3; hR = -0.2; zL = -2.7; zR = 2.7; lean = -0.35; }   // 두 팔로 날개를 붙잡고 몸을 앞으로
+            const gl = gliding && !fly;
+            glider.visible = gl && wingKind === 'glider';
+            backWings.visible = wingKind === 'wings';
+            if (wingKind === 'wings' && backWings.userData.p) {   // 걸을 땐 등에 접고, 활강하면 펼쳐 퍼덕인다
+                const [pR, pL] = backWings.userData.p, fl = gl ? Math.sin(walkT * 7) * 0.35 + 0.1 : -0.25, ry = gl ? 0.15 : 1.3, ek = Math.min(1, dt * 8);
+                pR.rotation.y += (-ry - pR.rotation.y) * ek; pL.rotation.y += (ry - pL.rotation.y) * ek; pR.rotation.z += (fl - pR.rotation.z) * ek; pL.rotation.z += (-fl - pL.rotation.z) * ek;
+            }
+            if (wingFx) wingFx(walkT, gl);
+            if (ride.on) { hL = -1.25; hR = -1.25; aL = -0.75; aR = -0.75; zL = -0.15; zR = 0.15; lean = moving && run ? -0.15 : 0; }   // 🐴 걸터앉아 고삐를 잡는다
+            else if (glider.visible) { hL = -0.3; hR = -0.2; zL = -2.7; zR = 2.7; lean = -0.35; }   // 두 팔로 날개를 붙잡고 몸을 앞으로
+            else if (gl && wingKind === 'wings') { hL = -0.25; hR = -0.15; zL = -0.9; zR = 0.9; lean = -0.5; }   // 등 날개로 날 때 — 팔을 벌리고 몸을 눕힌다
             else if (fly) { hL = 0.12; hR = 0.05; zL = -0.35; zR = 0.35; lean = -0.25; }
             else if (!P.onGround) { hL = 0.65; hR = -0.3; aL = -0.5; aR = 0.4; zL = -0.75; zR = 0.75; }
             else if (stepping) { hL = amp * sw; hR = -amp * sw; aL = -amp * 0.85 * sw; aR = amp * 0.85 * sw; lean = run ? -0.2 : -0.05; bob = Math.abs(Math.cos(gait)) * (run ? 0.012 : 0.006); }
@@ -2661,6 +2885,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             L.armL.rotation.x += (aL - L.armL.rotation.x) * e; L.armR.rotation.x += (aR - L.armR.rotation.x) * e;
             L.armL.rotation.z += (zL - L.armL.rotation.z) * e; L.armR.rotation.z += (zR - L.armR.rotation.z) * e;
             body.rotation.x += (lean - body.rotation.x) * e; body.position.y += (bob - body.position.y) * Math.min(1, dt * 30);
+            { const sz = ride.on ? 0.42 : 0; L.hipL.rotation.z += (-sz - L.hipL.rotation.z) * e; L.hipR.rotation.z += (sz - L.hipR.rotation.z) * e; }   // 탈 때는 다리를 벌린다
             ripples.forEach(r => {
                 if (r.t >= 1) return;
                 r.t = Math.min(1, r.t + dt / (r.big ? 0.9 : 0.6));
@@ -2669,7 +2894,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             });
             flames.forEach(f => { f.visible = fly; f.scale.set(0.05, 0.08 + Math.random() * 0.04, 1); });
             if (moving || fly || !P.onGround) lastTouch = performance.now();
-            const Tg = new THREE.Vector3(P.x, P.y + 0.17, P.z);
+            const Tg = new THREE.Vector3(P.x, P.y + (ride.on ? 0.26 : 0.17), P.z);
             const dir = new THREE.Vector3(Math.sin(camYaw) * Math.cos(camPitch), Math.sin(camPitch), Math.cos(camYaw) * Math.cos(camPitch));
             let dist = camDist;
             body.visible = camPitch > -0.75;   // 많이 올려다보면 순례자를 잠시 숨긴다(1인칭처럼) — 등이 화면을 가렸다
