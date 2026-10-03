@@ -227,7 +227,7 @@
             nearSets.push({ parts, R2: R * R });
             return parts.map(q => q.mesh);
         }
-        let nearAt = 0;
+        let nearAt = 0, shadowAt = 0;
         function nearTick(now, fx, fz) {   // 0.25초마다 — 순례자(또는 보는 곳)에서 먼 칸은 끈다
             if (now - nearAt < 250) return; nearAt = now;
             nearSets.forEach(S => S.parts.forEach(q => { const dx = q.x - fx, dz = q.z - fz; q.mesh.visible = dx * dx + dz * dz < S.R2; }));
@@ -3240,7 +3240,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         function setQuality(h, byUser) {
             HIGH = h;
             renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, h ? 2 : 1.5));
-            renderer.shadowMap.enabled = h; scene.environment = h ? envTex : null;
+            renderer.shadowMap.enabled = h; renderer.shadowMap.needsUpdate = true; scene.environment = h ? envTex : null;
             duals.forEach(d => { d.obj.material = h ? d.high : d.basic; });
             extras.visible = h; rebuild();
             scene.traverse(o => { if (o.material) [].concat(o.material).forEach(m => { m.needsUpdate = true; }); });
@@ -3282,6 +3282,13 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             }
             if (grassFollow) { if (walk) grassFollow(P.x, P.z); else if (deco) grassFollow(deco.tgt.x, deco.tgt.z); else grassFollow(controls.target.x, controls.target.z); }
             if (walk) nearTick(now, P.x, P.z); else if (deco) nearTick(now, deco.tgt.x, deco.tgt.z); else nearTick(now, controls.target.x, controls.target.z);
+            {   // 🌗 그림자 굽기 (10/4) — 해는 고정이고 그림자는 성 둘레(±16)에만 생긴다. 바다·바닷가·나라에 있을 땐 매 프레임 다시 굽는 게 헛일이었다
+                //    → 성 둘레 밖이거나 물속이면 2초에 한 번만(늦게 불러온 건물·새로 놓은 꾸밈이 빠지지 않게), 성 둘레 안에선 지금처럼 매 프레임
+                const fx = walk ? P.x : deco ? deco.tgt.x : controls.target.x, fz = walk ? P.z : deco ? deco.tgt.z : controls.target.z;
+                const live = !underView && Math.abs(fx) < 20 && Math.abs(fz) < 20;
+                renderer.shadowMap.autoUpdate = live;
+                if (!live && now - shadowAt > 2000) { shadowAt = now; renderer.shadowMap.needsUpdate = true; }
+            }
             if (walk) walkUpdate(dt);
             else if (deco) decoCam();
             else {
@@ -3299,7 +3306,6 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                     if (cu) { scene.fog.color.copy(UNDER_C); scene.fog.near = 1.5; scene.fog.far = 26; scene.background = UNDER_C.clone(); }
                     else { scene.fog.color.copy(HAZE); scene.fog.near = 70; scene.fog.far = 240; scene.background = HAZE.clone(); }
                     camera.far = cu ? 30 : 420; camera.updateProjectionMatrix();   // 물속 — 안개(26) 너머는 아예 안 그린다
-                    renderer.shadowMap.autoUpdate = !cu; if (!cu) renderer.shadowMap.needsUpdate = true;   // 물속 — 그림자 다시 굽기 멈춤(켜고 끄면 셰이더를 다시 만들어 멈칫한다)
                 }
                 reefT.value = now / 1000; if (cu) fishTick(now / 1000);   // 해초 흔들림 · 물고기는 물속을 볼 때만
                 bubbles.visible = walk && (!ride.on || kindOfMount(ride.k) === 'sub') && isUnder();
