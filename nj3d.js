@@ -195,6 +195,43 @@
             const under = new THREE.Mesh(new THREE.PlaneGeometry(PL * 2, PL * 2), new THREE.MeshBasicMaterial({ color: 0x3a2e22 }));
             under.rotation.x = -Math.PI / 2; under.position.y = -RD - 0.03; scene.add(under);
         }
+
+        /* 🔲 가까운 것만 그리기 (10/3 사용자: 폰에서 바닷가·물속이 끊긴다).
+           재 보니 한 화면에 삼각형 27만 개 — 꽃 9.5만 · 해초 5만 · 물칸 5만 · 풀 3.4만 · 산호·바위 2만. 전부 온 세상에 흩어진 InstancedMesh라
+           r128은 그 범위를 몰라(인스턴스 하나 크기로만 안다) frustumCulled = false로 **늘 통째로** 그리고 있었다 — 등 뒤·바다 건너편까지.
+           → 칸(cell)으로 쪼개 칸마다 자기 범위(경계 구)를 주면 화면 밖 칸은 three가 알아서 건너뛰고, 순례자에게서 R 넘게 먼 칸은 끈다.
+           순례자 크기에서 30 넘게 떨어진 꽃·해초는 한 점도 안 된다. */
+        const nearSets = [];
+        function chunkInstanced(src, cell, R, pad, parent) {
+            const n = src.count, buckets = new Map(), m4 = new THREE.Matrix4(), p = new THREE.Vector3(), col = new THREE.Color();
+            for (let i = 0; i < n; i++) {
+                src.getMatrixAt(i, m4); p.setFromMatrixPosition(m4);
+                const k = Math.floor(p.x / cell) + ',' + Math.floor(p.z / cell);
+                if (!buckets.has(k)) buckets.set(k, []);
+                buckets.get(k).push(i);
+            }
+            const parts = [];
+            buckets.forEach(ids => {
+                const g = src.geometry.clone(), m = new THREE.InstancedMesh(g, src.material, ids.length), box = new THREE.Box3();
+                ids.forEach((i, j) => {
+                    src.getMatrixAt(i, m4); m.setMatrixAt(j, m4); box.expandByPoint(p.setFromMatrixPosition(m4));
+                    if (src.instanceColor) { src.getColorAt(i, col); m.setColorAt(j, col); }
+                });
+                g.boundingSphere = box.getBoundingSphere(new THREE.Sphere()); g.boundingSphere.radius += pad;   // 칸의 범위 = 인스턴스 자리들 + 가장 큰 인스턴스 크기
+                m.castShadow = src.castShadow; m.receiveShadow = src.receiveShadow; m.renderOrder = src.renderOrder;
+                m.frustumCulled = true; parent.add(m);
+                parts.push({ mesh: m, x: g.boundingSphere.center.x, z: g.boundingSphere.center.z });
+            });
+            if (src.parent) src.parent.remove(src);
+            src.dispose && src.dispose();
+            nearSets.push({ parts, R2: R * R });
+            return parts.map(q => q.mesh);
+        }
+        let nearAt = 0;
+        function nearTick(now, fx, fz) {   // 0.25초마다 — 순례자(또는 보는 곳)에서 먼 칸은 끈다
+            if (now - nearAt < 250) return; nearAt = now;
+            nearSets.forEach(S => S.parts.forEach(q => { const dx = q.x - fx, dz = q.z - fz; q.mesh.visible = dx * dx + dz * dz < S.R2; }));
+        }
         {   // 🌸 들꽃 (10/2 사용자: 이모지 꽃이 너무 크다 → 순례자 발치에) — 꽃잎 접시 + 노란 꽃술 + 줄기, 무리지어 핀다. 한 번에 그린다(InstancedMesh)
             const N = 1800, petals = new THREE.CircleGeometry(0.038, 5); petals.rotateX(-Math.PI / 2);
             const pos = petals.attributes.position;   // 다섯 꽃잎 — 꼭짓점을 들쭉날쭉하게(오각형이 아니라 꽃처럼)
@@ -222,7 +259,7 @@
                     n++;
                 }
             }
-            [head, ctr, stem].forEach(m => { m.instanceMatrix.needsUpdate = true; scene.add(m); });
+            [head, ctr, stem].forEach(m => { m.instanceMatrix.needsUpdate = true; scene.add(m); chunkInstanced(m, 4, 26, 0.3, scene); });   // 가까운 꽃만
         }
         // 보좌 — 빛
         const radial = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
@@ -602,10 +639,12 @@
             sf.rotation.x = -Math.PI / 2; sf.scale.set(SRX * 1.02, SRZ * 1.02, 1); sf.position.set(0, SEA_Y + 0.006, SZ); sf.renderOrder = 1; seaGrp.add(sf);
         }
         const cellN = SG.water.length + SG.salt.length;
-        const tiles = new THREE.InstancedMesh(new THREE.CylinderGeometry(HRW * 0.985, HRW * 0.985, 0.14, 6), new THREE.MeshStandardMaterial({ roughness: 0.25, metalness: 0.15 }), Math.max(1, cellN));
+        // 물칸 — 납작한 육각 판 (10/3: 두께 0.14 기둥이던 것. 위에선 똑같이 보이고 삼각형은 24 → 6 · 물칸 2,051개라 4.9만 → 1.2만)
+        const tileG = new THREE.CircleGeometry(HRW * 0.985, 6); tileG.rotateZ(Math.PI / 2); tileG.rotateX(-Math.PI / 2);   // 기둥과 같은 방향의 육각(꼭짓점이 ±z)
+        const tiles = new THREE.InstancedMesh(tileG, new THREE.MeshStandardMaterial({ roughness: 0.25, metalness: 0.15, side: THREE.DoubleSide }), Math.max(1, cellN));
         {
             const m4 = new THREE.Matrix4();
-            [...SG.water, ...SG.salt].forEach((c, i) => { const [X, Z] = toW(c.x, c.y); m4.makeTranslation(X, SEA_Y - 0.07, Z); tiles.setMatrixAt(i, m4); });
+            [...SG.water, ...SG.salt].forEach((c, i) => { const [X, Z] = toW(c.x, c.y); m4.makeTranslation(X, SEA_Y - 0.002, Z); tiles.setMatrixAt(i, m4); });
             tiles.count = cellN; seaGrp.add(tiles);
         }
 
@@ -621,7 +660,7 @@
             for (let i = 0; i < RK; i++) { const [x, z] = inSea(0.97), s2 = 0.4 + r() * 1.6; e.set(r() * 3, r() * 3, r() * 3); qq.setFromEuler(e);
                 v.set(x, seabed(x, z) + 0.05 * s2, z); sc.set(s2, s2 * (0.5 + r() * 0.5), s2 * (0.7 + r() * 0.6)); m4.compose(v, qq, sc); rocks.setMatrixAt(i, m4);
                 col.setHSL(0.08 + r() * 0.06, 0.15 + r() * 0.15, 0.3 + r() * 0.2).convertSRGBToLinear(); rocks.setColorAt(i, col); }
-            seaGrp.add(rocks);
+            seaGrp.add(rocks); chunkInstanced(rocks, 6, 30, 1, seaGrp);
             // 해초 — 끝으로 갈수록 가늘고, 물결 따라 흔들린다(꼭짓점을 시간으로 흔드는 셰이더)
             const SW = 900, weedG = new THREE.CylinderGeometry(0.004, 0.022, 1, 4, 6); weedG.translate(0, 0.5, 0);
             const weedM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
@@ -636,7 +675,7 @@
                     const h = 0.6 + r() * 1.6; v.set(x, seabed(x, z) - 0.05, z); sc.set(1, h, 1); e.set(0, r() * 6.28, 0); qq.setFromEuler(e); m4.compose(v, qq, sc); weed.setMatrixAt(n, m4);
                     col.setHSL(hue, 0.55, 0.22 + r() * 0.12).convertSRGBToLinear(); weed.setColorAt(n, col); n++; }
             }
-            seaGrp.add(weed);
+            seaGrp.add(weed); chunkInstanced(weed, 6, 30, 2.4, seaGrp);
             // 산호 — 얕은 데(가장자리 쪽)에 분홍·주황·보라 가지
             const CR = 260, coral = new THREE.InstancedMesh(new THREE.ConeGeometry(0.06, 0.32, 5), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 }), CR * 3);
             const CC = [0xf28aa0, 0xf5a25a, 0xb58ae0, 0xf2d06a, 0xff7a7a];
@@ -645,7 +684,7 @@
                 for (let b = 0; b < 3; b++) { e.set((r() - 0.5) * 0.9, r() * 6.28, (r() - 0.5) * 0.9); qq.setFromEuler(e); const s2 = 0.6 + r() * 0.8;
                     v.set(x + (r() - 0.5) * 0.12, seabed(x, z) + 0.12 * s2, z + (r() - 0.5) * 0.12); sc.set(s2, s2, s2); m4.compose(v, qq, sc); coral.setMatrixAt(ci, m4);
                     col.setHex(c0).convertSRGBToLinear(); coral.setColorAt(ci, col); ci++; } }
-            seaGrp.add(coral);
+            seaGrp.add(coral); chunkInstanced(coral, 6, 30, 0.6, seaGrp);
             // 물고기 떼 — 떼마다 둥글게 돌며 오르내린다. 물고기 하나 = 몸통(다이아) + 꼬리
             const FPS = 9, FS = 36, fishG = (() => { const P = [0.09, 0, 0, 0, 0.03, 0, 0, -0.03, 0, 0, 0, 0.018, 0, 0, -0.018, -0.03, 0, 0, -0.07, 0.03, 0, -0.07, -0.03, 0];
                 const I = [0, 1, 3, 0, 3, 2, 0, 2, 4, 0, 4, 1, 5, 3, 1, 5, 2, 3, 5, 4, 2, 5, 1, 4, 5, 6, 7];
@@ -3242,6 +3281,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 if (perf.n === 140 && perf.sum / 120 > 0.045) { setQuality(false, false); showHint(T('nj3d_slow'), 3500); }
             }
             if (grassFollow) { if (walk) grassFollow(P.x, P.z); else if (deco) grassFollow(deco.tgt.x, deco.tgt.z); else grassFollow(controls.target.x, controls.target.z); }
+            if (walk) nearTick(now, P.x, P.z); else if (deco) nearTick(now, deco.tgt.x, deco.tgt.z); else nearTick(now, controls.target.x, controls.target.z);
             if (walk) walkUpdate(dt);
             else if (deco) decoCam();
             else {
@@ -3258,6 +3298,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                     underView = cu; underEl.hidden = !cu; skyDome.visible = !cu;
                     if (cu) { scene.fog.color.copy(UNDER_C); scene.fog.near = 1.5; scene.fog.far = 26; scene.background = UNDER_C.clone(); }
                     else { scene.fog.color.copy(HAZE); scene.fog.near = 70; scene.fog.far = 240; scene.background = HAZE.clone(); }
+                    camera.far = cu ? 30 : 420; camera.updateProjectionMatrix();   // 물속 — 안개(26) 너머는 아예 안 그린다
+                    renderer.shadowMap.autoUpdate = !cu; if (!cu) renderer.shadowMap.needsUpdate = true;   // 물속 — 그림자 다시 굽기 멈춤(켜고 끄면 셰이더를 다시 만들어 멈칫한다)
                 }
                 reefT.value = now / 1000; if (cu) fishTick(now / 1000);   // 해초 흔들림 · 물고기는 물속을 볼 때만
                 bubbles.visible = walk && (!ride.on || kindOfMount(ride.k) === 'sub') && isUnder();
