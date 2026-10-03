@@ -150,7 +150,8 @@
 
         scene.add(new THREE.HemisphereLight(0xfff4d6, 0x2e6b45, 0.75));
         const sun = new THREE.DirectionalLight(0xffffff, 0.9); sun.position.set(10, 18, 8); scene.add(sun);
-        sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024); sun.shadow.bias = -0.0006;
+        sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0005;
+        sun.shadow.autoUpdate = false; sun.shadow.needsUpdate = true;   // 🌗 굽는 그림자 (10/4) — 아래 loop에서 정한 때만 다시 굽는다. 매 프레임이 아니라서 2048로 올려도 가볍다
         Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16, near: 1, far: 60 });
         const throneLight = new THREE.PointLight(0xffe7a8, 1.6, 16, 1.6); throneLight.position.set(0, 2, 0); scene.add(throneLight);
 
@@ -1303,7 +1304,7 @@
                 const edge = new THREE.Mesh(triGeo([-0.34, 0.002, 0.12, 0.34, 0.002, 0.12, 0, 0.004, 0.02], [0, 1, 2]), wingMat(0xffd27a, 0xffb040, 1.2)); G2.add(edge);
                 const sp = wingSparks(24, 0xffb050); G2.add(sp.p); G2.userData.fx = (t, on) => sp.step(t, 0.6, on);
             } else G2.add(new THREE.Mesh(triGeo(D, I), wingMat(0xf6d77a, 0x6a4a10, 0.3)));   // 금빛(기본)
-            G2.traverse(o => { if (o.isMesh) o.castShadow = true; });
+            G2.traverse(o => { if (o.isMesh) o.castShadow = false; });   // 순례자와 함께 — 굽는 그림자에서 뺀다
             return G2;
         }
         function makeBackWing(k) {   // 등 날개 한쪽(오른쪽 +x로 뻗는다) — 깃털 일곱이 부채처럼
@@ -1313,7 +1314,7 @@
                 const col = k === 'dawn' ? new THREE.Color(0xffc0d0).lerp(new THREE.Color(0xf6d77a), f) : k === 'light' ? new THREE.Color(0xffe27a) : new THREE.Color(0xf8f6f0);
                 const geo = triGeo([0, 0, 0, L * 0.35, w / 2, 0, L, 0, 0, L * 0.35, -w / 2, 0], [0, 1, 2, 0, 2, 3]);
                 const m = new THREE.Mesh(geo, wingMat(col, k === 'light' ? 0xffd060 : k === 'dawn' ? col.clone().multiplyScalar(0.3) : 0x000000, k === 'light' ? 0.9 : 0.3));
-                m.rotation.z = a; m.position.z = i * 0.002; m.castShadow = true; g.add(m);
+                m.rotation.z = a; m.position.z = i * 0.002; m.castShadow = false; g.add(m);
             }
             return g;
         }
@@ -1383,6 +1384,42 @@
             const dip = riverDip(x, z);
             if (dip < 0) return dip;
             return inner ? 0.04 : 0;
+        }
+        /* 🌑 발밑 그림자 (10/4) — 순례자·탈것·예물 행렬처럼 빠르게 움직이고 카메라 가까이 있는 것은 굽는 그림자(초당 8번)에서 빼고
+           발밑에 둥근 그늘을 단다. 늘 매끄럽게 따라오고, 그림자가 없는 「기본」 화질에서도 땅에 붙어 보인다. 높이 뜰수록 넓고 옅어진다 */
+        const blobTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
+            const g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(0,0,0,0.62)'); g.addColorStop(0.55, 'rgba(0,0,0,0.35)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+            x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+        const blobG = new THREE.PlaneGeometry(1, 1); blobG.rotateX(-Math.PI / 2);
+        const blobs = [];
+        function addBlob(obj, d, when) {   // d = 지름(없으면 모양에서 잰다) · when() = 이때만 보인다
+            // 그리는 순서: 땅(0) → 그늘(1) → 그늘 임자(2). 그늘을 길보다 높은 풀밭 높이로 올려도 발은 그늘 위에 그려진다(10/4 스크린샷: 발을 덮었다)
+            //   투명 단계는 늘 불투명 뒤라 순서를 못 정한다 → 불투명 단계에서 직접 섞는다(CustomBlending)
+            const m = new THREE.Mesh(blobG, new THREE.MeshBasicMaterial({ map: blobTex, transparent: false, blending: THREE.CustomBlending,
+                blendSrc: THREE.SrcAlphaFactor, blendDst: THREE.OneMinusSrcAlphaFactor, depthWrite: false, fog: true }));
+            m.renderOrder = 1; m.visible = false; scene.add(m);
+            const mark = () => obj.traverse(o => { o.renderOrder = 2; if (o.isMesh) o.castShadow = false; });   // 굽는 그림자에서 빼고, 그늘 뒤에 그린다(묶음 안 묶음까지)
+            mark();
+            blobs.push({ obj, d: d || 0, when, m, mark });
+        }
+        const _bv = new THREE.Vector3(), _bb = new THREE.Box3();
+        const shownChain = o => { for (let q = o; q; q = q.parent) { if (!q.visible) return false; if (q === scene) return true; } return false; };
+        function blobTick() {
+            for (let i = blobs.length - 1; i >= 0; i--) {
+                const b = blobs[i];
+                if (!b.obj.parent) { if (++b.gone > 300) { scene.remove(b.m); b.m.material.dispose(); blobs.splice(i, 1); } else b.m.visible = false; continue; }
+                b.gone = 0;
+                if (!shownChain(b.obj) || (b.when && !b.when())) { b.m.visible = false; continue; }
+                if (!b.d) { _bb.setFromObject(b.obj); if (_bb.isEmpty()) { b.m.visible = false; continue; } b.d = Math.max(_bb.max.x - _bb.min.x, _bb.max.z - _bb.min.z) * 1.05; b.mark(); }   // 긴 쪽 — 말·낙타는 몸통이 길어 앞에서 보면 그늘이 몸에 가렸다
+                b.obj.getWorldPosition(_bv);
+                const g = groundAt(_bv.x, _bv.z, _bv.y), h = Math.max(0, _bv.y - g);
+                if (!isFinite(g) || h > 5) { b.m.visible = false; continue; }
+                const sc = b.d * (1 + h * 0.25), r = sc * 0.4;
+                let top = g;   // 그늘이 덮는 자리 중 가장 높은 땅 — 길보다 조금 높은 풀밭이 그늘 반쪽을 가리던 것(10/4 스크린샷)
+                for (const [ox, oz] of [[r, 0], [-r, 0], [0, r], [0, -r]]) { const q = groundAt(_bv.x + ox, _bv.z + oz, _bv.y); if (isFinite(q) && q > top && q - g < 0.25) top = q; }
+                b.m.scale.set(sc, 1, sc); b.m.position.set(_bv.x, top + 0.008, _bv.z);
+                b.m.material.opacity = Math.max(0, 1 - h / 5); b.m.visible = true;
+            }
         }
         function groundAt(x, z, y) {
             if (y < SEA_Y - 0.03 && seaE(x, z) < 1) return seabed(x, z);   // 🤿 물속 — 발밑은 바다 밑(수면이 아니라)
@@ -1564,6 +1601,7 @@
             return mountCache[k];
         }
         const ride = { on: false, wait: false, k: null, obj: null, parts: null, gait: 0, lastOut: null, roll: 0, px: 0, pz: 0 };
+        addBlob(pilgrim, 0.2, () => !ride.on);   // 🌑 순례자 발밑 그림자 — 탈 때는 탈것의 그늘이 대신
         const kindOfMount = k => ((typeof NJ_MOUNTS !== 'undefined' && NJ_MOUNTS[k]) || {}).kind || 'animal';   // animal · bike · boat
         const mountsOf = () => (typeof njMounts !== 'undefined' && njMounts) || {};
         const ownedMounts = () => Object.keys(typeof NJ_MOUNTS !== 'undefined' ? NJ_MOUNTS : {}).filter(k => mountsOf()[k] && mountsOf()[k].own);
@@ -1604,6 +1642,7 @@
             if (cur !== C) return;
             if (old) scene.remove(old);
             ride.obj = obj; ride.k = k; ride.parts = obj.userData.parts;
+            if (!obj.userData.blob) { obj.userData.blob = true; addBlob(obj, 0); }   // 🌑 크기는 모양에서 잰다
             obj.position.copy(pos); obj.rotation.y = rot; obj.visible = ride.on || ride.wait; scene.add(obj);
         }
         const rideBtn = ov.querySelector('.nj3d-ridebtn'), tackBtn = ov.querySelector('.nj3d-tackbtn'), tackEl = ov.querySelector('.nj3d-mountpanel');
@@ -2001,7 +2040,7 @@
                 add(horse(), 0); add(chariot(), 0.5); add(person(robe, 'lead'), -0.55);
             }
             const grp = new THREE.Group(); scene.add(grp);
-            members.forEach(m => { m.obj.scale.setScalar(2.2); grp.add(m.obj); });
+            members.forEach(m => { m.obj.scale.setScalar(2.2); grp.add(m.obj); if (!m.sea) addBlob(m.obj, 0); });
             const land = fam === '야벳' ? upPath(1.7, gf.slot) : landPath(i, gf.slot);
             proc = { phase: mode, i, gf, grp, members, t: 0, s: 0, v: 0, robe, rate: 1, model: null,
                 sea: seaPts ? mkPath(seaPts) : null, land: mkPath(land) };
@@ -3240,7 +3279,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         function setQuality(h, byUser) {
             HIGH = h;
             renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, h ? 2 : 1.5));
-            renderer.shadowMap.enabled = h; renderer.shadowMap.needsUpdate = true; scene.environment = h ? envTex : null;
+            renderer.shadowMap.enabled = h; sun.shadow.needsUpdate = true; scene.environment = h ? envTex : null;
             duals.forEach(d => { d.obj.material = h ? d.high : d.basic; });
             extras.visible = h; rebuild();
             scene.traverse(o => { if (o.material) [].concat(o.material).forEach(m => { m.needsUpdate = true; }); });
@@ -3283,11 +3322,13 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (grassFollow) { if (walk) grassFollow(P.x, P.z); else if (deco) grassFollow(deco.tgt.x, deco.tgt.z); else grassFollow(controls.target.x, controls.target.z); }
             if (walk) nearTick(now, P.x, P.z); else if (deco) nearTick(now, deco.tgt.x, deco.tgt.z); else nearTick(now, controls.target.x, controls.target.z);
             {   // 🌗 그림자 굽기 (10/4) — 해는 고정이고 그림자는 성 둘레(±16)에만 생긴다. 바다·바닷가·나라에 있을 땐 매 프레임 다시 굽는 게 헛일이었다
-                //    → 성 둘레 밖이거나 물속이면 2초에 한 번만(늦게 불러온 건물·새로 놓은 꾸밈이 빠지지 않게), 성 둘레 안에선 지금처럼 매 프레임
+                //    → 성 둘레 밖이거나 물속이면 2초에 한 번만(늦게 불러온 건물·새로 놓은 꾸밈이 빠지지 않게)
+                //    10/4: 성 둘레 안도 매 프레임 → 초당 8번. 빠른 것(순례자·탈것·행렬)은 굽는 그림자에서 빼고 발밑 그림자(blobTick)로
                 const fx = walk ? P.x : deco ? deco.tgt.x : controls.target.x, fz = walk ? P.z : deco ? deco.tgt.z : controls.target.z;
-                const live = !underView && Math.abs(fx) < 20 && Math.abs(fz) < 20;
-                renderer.shadowMap.autoUpdate = live;
-                if (!live && now - shadowAt > 2000) { shadowAt = now; renderer.shadowMap.needsUpdate = true; }
+                const near = !underView && Math.abs(fx) < 20 && Math.abs(fz) < 20;
+                const every = deco ? 0 : near ? 120 : 2000;   // 꾸미는 중(끌어 옮기는 그림자) 매 프레임 · 성 둘레 안 초당 8번 · 밖 2초에 한 번
+                if (now - shadowAt >= every) { shadowAt = now; sun.shadow.needsUpdate = true; }
+                blobTick();
             }
             if (walk) walkUpdate(dt);
             else if (deco) decoCam();
