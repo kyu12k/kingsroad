@@ -7141,7 +7141,8 @@ function amenAndStartGame() {
         window._pendingRewardAutoPopup = true;
 
         // 5. 기억 퀴즈 시도 후 맵 화면으로 이동
-        if (typeof showMemoryQuizOverlay === 'function') showMemoryQuizOverlay();
+        //    홈 📖 복습으로 들어왔으면 퀴즈를 건너뛴다 — 복습하러 왔는데 퀴즈가 먼저 뜨면 엉뚱하다 (2026-10-03)
+        if (!window._forceReviewPopup && typeof showMemoryQuizOverlay === 'function') showMemoryQuizOverlay();
         else if (typeof goMap === 'function') goMap();
 
         // 6. 새 공지 자동 노출 (한 번만)
