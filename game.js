@@ -751,6 +751,7 @@ const LANG = {
         rv_route_due: '복습 {n}절',
         rv_route_mid: '중간점검 {n}개 ({ranges}절)',
         rv_route_boss: '보스전 한 번 ({total}절)',
+        rv_route_blank: ' · <b style="white-space:nowrap">✍️ 백지로</b>', rv_row_blank: '✍️ 백지',
         rv_list_title: '📖 복습할 구절 {n}',
         hardship_repeat_notice: '오늘 이 장을 이미 했어요\n같은 고난 반복은 승점 {pct}%',
         hardship_feedback_correct_scored_today: '정답입니다. {label} · 오늘 이미 받은 승점',
@@ -1901,6 +1902,7 @@ const LANG = {
         rv_route_due: '{n} reviews',
         rv_route_mid: '{n} checkpoint(s) (v.{ranges})',
         rv_route_boss: 'one boss battle ({total} verses)',
+        rv_route_blank: ' · <b style="white-space:nowrap">✍️ on blank</b>', rv_row_blank: '✍️ blank',
         rv_list_title: '📖 Verses to review ({n})',
         hardship_repeat_notice: 'You already did this chapter today\nRepeating the same trial pays {pct}%',
         hardship_feedback_correct_scored_today: 'Correct! {label} · Already earned today',
@@ -10387,7 +10389,7 @@ function openForgottenStagesOverlay() {
     for (const item of forgottenList) {
         const btn = document.createElement('button');
         btn.className = 'rv-verse-row';
-        btn.innerHTML = `<span class="rv-verse-label">${item.label}</span><span class="rv-verse-step">${t('forgotten_review_step', { step: item.step })}</span><span class="rv-verse-go">›</span>`;
+        btn.innerHTML = `<span class="rv-verse-label">${item.label}</span><span class="rv-verse-step">${t('forgotten_review_step', { step: item.step })}${item.step >= BLANK_FIRST_STEP ? ` <span class="rv-verse-blank">${t('rv_row_blank')}</span>` : ''}</span><span class="rv-verse-go">›</span>`;
         btn.onclick = function () {
             closeForgottenStagesOverlay();
             openModeSelect(item.stageId);
@@ -10431,7 +10433,8 @@ function _reviewOverlayHeadHtml(forgottenList) {
         const how = (covered.length && sum < total * 0.8)
             ? t('rv_route_mid', { n: covered.length, ranges: covered.map(mb => `${mb.rangeStart}~${mb.rangeEnd}`).join(', ') })
             : t('rv_route_boss', { total });
-        rows.push(`<button class="rv-route-row" onclick="closeForgottenStagesOverlay(); openStageSheetForStageId('${c}-1')"><b>${chLabel(c)}</b> ${t('rv_route_due', { n: vs.length })} → ${how}</button>`);
+        const needBlank = vs.some(v => _blankFirstDue(`${c}-${v}`));   // 간격 3일 된 절은 백지로 깨야 처리된다(10/4)
+        rows.push(`<button class="rv-route-row" onclick="closeForgottenStagesOverlay(); openStageSheetForStageId('${c}-1')"><b>${chLabel(c)}</b> ${t('rv_route_due', { n: vs.length })} → ${how}${needBlank ? t('rv_route_blank') : ''}</button>`);
     });
     if (rows.length) html += `<div class="rv-sec">${t('rv_route_title')}</div><div class="rv-route">${rows.join('')}</div>`;
     return html;
@@ -11072,7 +11075,8 @@ function _startQuickBlank(stageId, force) {
 
     _pendingHardshipEmbed = {
         label: t(_qBlank ? 'embed_title_quick_blank_none' : 'embed_title_quick_blank'),
-        quickReviewStageId: sId
+        quickReviewStageId: sId,
+        blankFirst: !!force && !(_qr && (_qr.bx > 0 || _qr.blankPass > 0))   // 연구 — 원래 백지가 아니었는데 「간격 3일 → 백지」 규칙으로 백지가 된 복습
     };
     startHardshipSession('memory', [sId]);
 }
@@ -27059,6 +27063,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
         hardshipState.fruitKey = embed.fruitKey || null;
         hardshipState.blankDueCh = embed.blankDueCh || null;
         hardshipState.startLv = embed.startLv || 0;
+        hardshipState.blankFirst = !!embed.blankFirst;
         hardshipState.startLvMap = embed.startLvMap || null;
         hardshipState.fpNote = !!embed.fpNote;
         hardshipState.verseCheckIsLearn = !!embed.isLearn;
@@ -28852,7 +28857,8 @@ function _logRecallAttempt(stageId, ok, hints, mode, extra, prev, training) {
         };
         if (extra && extra.giveUp) e.g = 1;
         if (extra && typeof extra.score === 'number') e.s = extra.score;
-        if (extra && extra.lv) e.lv = extra.lv;   // 🔑 첫 마디의 고난 난이도(1 쉬움 · 2 보통 · 3 어려움) — 10/4 빠져 있던 것
+        if (extra && extra.lv) e.lv = extra.lv;
+        if (hs.blankFirst) e.bf = 1;   // 「간격 3일 → 백지」 규칙으로 백지가 된 복습(10/4~)   // 🔑 첫 마디의 고난 난이도(1 쉬움 · 2 보통 · 3 어려움) — 10/4 빠져 있던 것
         if (hs.eventId) e.ev = String(hs.eventId);
         if (training) e.tr = 1;
         if (prev) {
