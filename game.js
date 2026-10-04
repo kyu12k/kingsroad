@@ -731,6 +731,9 @@ const LANG = {
         clear_blank_lv_mult: '✍️ 백지 Lv{lv} 제때 승점 ×{n}',
         blank_notif_body: '「{label}」 백지로 꺼내볼 시간이에요 ✍️',
         rv_blank_title: '✍️ 오늘 백지 차례',
+        blank_first_intro: '✍️ 3일 넘게 지난 복습은 이제 백지로 확인해요. 막히면 💡 힌트로 한 글자씩 열 수 있어요',
+        clear_review_hold: '✍️ 이번엔 막혔으니 복습 단계는 그대로예요 — 내일 다시 백지로 확인해요',
+        bso_blank_reviews: '✍️ <b>백지</b>로 하면 복습 차례 <b>{n}절</b>이 함께 처리돼요 (3일 넘게 지난 복습은 백지로만)',
         fp_title: '첫 마디의 고난', fp_desc: '장·절을 보고 첫 마디만 쓰기 · 쉬움·보통·어려움',
         fp_pick_title: '🔑 첫 마디의 고난 · {ch}장', fp_pick_desc: '구절은 사슬처럼 외워져서, 첫 마디만 떠오르면 나머지가 따라와요. 주소만 보고 첫 마디를 써 보세요. 순서는 섞여 나와요.',
         fp_lv1: '쉬움', fp_lv2: '보통', fp_lv3: '어려움', fp_lv1_d: '첫 단어', fp_lv2_d: '앞에서 세 글자가 찰 때까지', fp_lv3_d: '앞 세 단어',
@@ -1878,6 +1881,9 @@ const LANG = {
         clear_blank_lv_mult: '✍️ Blank Lv{lv} on-time points ×{n}',
         blank_notif_body: '"{label}" — time to write it from blank ✍️',
         rv_blank_title: '✍️ Blank review due today',
+        blank_first_intro: '✍️ Reviews more than 3 days apart are now checked on a blank page. Stuck? 💡 Hints open one letter at a time',
+        clear_review_hold: '✍️ You got stuck this time, so the review step stays — we’ll check it blank again tomorrow',
+        bso_blank_reviews: '✍️ On <b>blank</b>, <b>{n}</b> due reviews are done too (reviews past 3 days count only on blank)',
         fp_title: 'Trial of the First Words', fp_desc: 'See the reference, write only the opening words · Easy · Normal · Hard',
         fp_pick_title: '🔑 Trial of the First Words · Ch.{ch}', fp_pick_desc: 'A verse is remembered like a chain — once the first words come, the rest follows. Look at the reference and write the opening words. Verses come in shuffled order.',
         fp_lv1: 'Easy', fp_lv2: 'Normal', fp_lv3: 'Hard', fp_lv1_d: 'first word', fp_lv2_d: 'first two words', fp_lv3_d: 'first three words',
@@ -10632,7 +10638,7 @@ function openBossSetupModal(stage) {
                 <div class="bso-toggle bso-toggle-wrap">
                     ${btn('normal', '보통')}${btn('hard', '어려움')}${blankBtns}
                 </div>
-                ${fitNote}${blankNudge}
+                ${fitNote}${blankNudge}${(() => { const n = _bossBlankReviewCount(stage); return n ? `<div class="bso-blank-reviews" onclick="setBossSetupOpt('difficulty','none')">${t('bso_blank_reviews', { n })}</div>` : ''; })()}
                 <div class="bso-desc" id="bso-diff-desc">${_getBossDiffDesc()}</div>
             </div>
             <div class="boss-setup-section">
@@ -11020,7 +11026,40 @@ function _getDiffFitLabel(mode, tier) {
 
 /* 빠른 모드 백지 승급 — 백지 세션을 먼저 열고, 끝나면 훈련 코스로 되돌아간다.
    통과하면 [1](읽기 확인)만, 막히면 [1,5](초성 조립까지). */
-function _startQuickBlank(stageId) {
+/* ✍️ 백지 먼저 복습 (2026-10-04 사용자) — 복습 주기는 좋았지만 복습 자체가 백지가 아니라 꺼내는 힘이 덜 자랐다.
+   실측: 처음 백지(전에 백지 성공 0) 힌트 없이 성공률이 복습 단계 2~4 → 64%, 10+ → 82% (복습 몇 달에도 다섯 중 하나는 안 나옴),
+   백지를 직접 한 번 더 쓸 때마다는 약 8%씩 오른다(0번 72 → 1번 80 → 2~3번 85 → 7번+ ≈100). 기억레벨 5의 56%가 백지 0.
+   → 초반(10분·1시간·6시간·23시간)은 지금처럼 단서 있는 코스, **3일 뒤 복습부터(단계 6+)는 어느 코스든 백지 먼저**.
+     막히면 힌트(무제한)가 발판 — 실측 복습 백지 209번 중 96%가 끝까지 써냈다(절반은 힌트 조금), 「모르겠어요」 4%.
+   「모르겠어요」·틀림이면 복습 단계를 올리지 않고 내일 다시(백지레벨과 같은 규칙).
+   보스전·중간점검은 **백지로 깼을 때만** 단계 6+ 절을 올린다(사용자: 보통으로만 깨서는 실력이 너무 느리게 는다 — 단호하게).
+   ★ 바꾼 날 2026-10-04 — 효과를 「전·후」로 볼 기준점 */
+const BLANK_FIRST_STEP = 6;
+function _blankFirstDue(stageId) {
+    if (!/^\d+-\d+$/.test(String(stageId))) return false;
+    const st = getReviewStatus(String(stageId));
+    return st.isEligible && st.step >= BLANK_FIRST_STEP;
+}
+function _next6AM(now) {   // 「내일 다시」 — 다음 아침 6시(하루 경계와 같은 기준)
+    const d = new Date(now || Date.now()); const t = new Date(d); t.setHours(6, 0, 0, 0);
+    if (t.getTime() <= d.getTime() + 3600000) t.setDate(t.getDate() + 1);
+    return t.getTime();
+}
+/* 보스전·중간점검 클리어에서 이 절의 복습 단계를 올리면 안 되는가 */
+function _bossReviewHold(subId, st) {
+    if (!st.isEligible) return false;
+    const blankRun = !!(window._midBossBlankClear && hardshipState && hardshipState.ultimateMemoryMode);
+    if (blankRun) return !!(hardshipState.failIds && hardshipState.failIds.indexOf(String(subId)) >= 0);   // 백지 판에서 막힌 절만
+    return st.step >= BLANK_FIRST_STEP;   // 보통·어려움·빈칸 — 3일 뒤 이후 복습은 백지로만
+}
+function _bossBlankReviewCount(stage) {   // 설정 창 안내 — 백지로 하면 함께 처리될 복습 수
+    try {
+        const ch = gameData.find(c => c.id === parseInt(String(stage.id), 10)); if (!ch) return 0;
+        const subs = String(stage.id).includes('mid') ? getSubStagesOfMidBoss(ch, stage) : ch.stages.filter(x => x.type === 'normal');
+        return subs.filter(x => _blankFirstDue(x.id)).length;
+    } catch (e) { return 0; }
+}
+function _startQuickBlank(stageId, force) {
     const sId = String(stageId);
     window.currentStageId = sId;
     window.hardshipOrigin = 'map';
@@ -11028,7 +11067,7 @@ function _startQuickBlank(stageId) {
     // ★ 계단 (2026-09-28): 초성 → 빈칸 → **백지**. 백지로 써낸 적 있는 절(상자에 있거나 예전 백지 기록)은 백지로.
     //   그러면 매일 하는 복습이 곧 백지레벨을 올리는 엔진이 된다 — 따로 찾아갈 곳이 필요 없다
     const _qr = verseRecall[sId];
-    const _qBlank = !!(_qr && (_qr.bx > 0 || _qr.blankPass > 0));
+    const _qBlank = !!force || !!(_qr && (_qr.bx > 0 || _qr.blankPass > 0));   // force = 3일 뒤 이후 복습(백지 먼저)
     selectedHardshipUltimate = _qBlank;
 
     _pendingHardshipEmbed = {
@@ -13530,13 +13569,18 @@ function normalizeChunkText(text) {
 function startTraining(stageId, mode = 'normal') {
     _maybeStartRain();
     // 빠른 복습 백지의 보너스는 바로 이어지는 코스(quick-after-*)에서만 쓴다 — 그 밖엔 남은 것을 버린다
-    if (mode !== 'quick-after-pass' && mode !== 'quick-after-fail') window._quickBlankBonus = null;
+    if (mode !== 'quick-after-pass' && mode !== 'quick-after-fail') { window._quickBlankBonus = null; window._reviewNoAdvance = null; }   // 이어지는 코스에서만 쓴다 — 중간에 나갔다 다시 들어오면 버린다
     // ★ 반드시 아래 백지 승급 가로채기보다 **먼저** — 백지에 쓴 시간도 복습 시간이다
     _beginReviewRun(stageId, mode);
     // ★ 백지 승급 — 이미 백지로 써낸 적 있는 구절은 빠른 모드에서 백지부터 시작한다.
     // 사용자가 스스로 증명한 구절에만 적용되므로 '할 수 있는 것을 시키는' 구조다.
     if (mode === 'quick' && _isBlankPromoted(stageId)) {
         _startQuickBlank(stageId);
+        return;
+    }
+    if ((mode === 'quick' || mode === 'full') && _blankFirstDue(stageId)) {   // ✍️ 3일 뒤 이후 복습 — 백지 먼저
+        try { if (!localStorage.getItem('kingsRoad_blankFirstSeen')) { localStorage.setItem('kingsRoad_blankFirstSeen', '1'); setTimeout(() => showToast(t('blank_first_intro')), 600); } } catch (e) { }
+        _startQuickBlank(stageId, true);
         return;
     }
     window.isGamePlaying = true; // ★ 게임 시작! 스위치 ON
@@ -20846,7 +20890,9 @@ stageClear = function (type, rewardMultiplier = 1) {
 
                     // 복습 보상
                     const subStatus = getReviewStatus(subId);
-                    if (subStatus.isEligible) {
+                    const _hold = _bossReviewHold(subId, subStatus);   // ✍️ 3일 뒤 이후 복습은 백지로만 · 백지 판에서 막힌 절
+                    if (_hold && window._midBossBlankClear) stageNextReviewTime[subId] = _next6AM();   // 막힌 절은 내일 다시
+                    if (subStatus.isEligible && !_hold) {
                         const { earnedGem: earned } = advanceReviewStep(subId);
                         stageMastery[subId]++;
                         subGemTotal += earned;
@@ -20908,7 +20954,9 @@ stageClear = function (type, rewardMultiplier = 1) {
 
                         // 복습 보상
                         const subStatus = getReviewStatus(subId);
-                        if (subStatus.isEligible) {
+                        const _hold = _bossReviewHold(subId, subStatus);   // ✍️ 3일 뒤 이후 복습은 백지로만 · 백지 판에서 막힌 절
+                        if (_hold && window._midBossBlankClear) stageNextReviewTime[subId] = _next6AM();
+                        if (subStatus.isEligible && !_hold) {
                             const { earnedGem: earned } = advanceReviewStep(subId);
                             stageMastery[subId]++;
                             subGemTotal += earned;
@@ -20935,7 +20983,12 @@ stageClear = function (type, rewardMultiplier = 1) {
                 // ★ [v1.1.0] 일반 스테이지: 직렬 복습 시스템 적용
                 verseCnt = 1;
 
-                if (isEligible) {
+                if (isEligible && window._reviewNoAdvance === sId) {   // ✍️ 백지 먼저 복습에서 막힘 — 단계 그대로, 내일 다시
+                    window._reviewNoAdvance = null;
+                    stageNextReviewTime[sId] = _next6AM();
+                    maxGem = 10;
+                    msg += `${t('clear_review_hold')}\n`;
+                } else if (isEligible) {
                     const completingStep = reviewStatus.step;
                     const advResult = advanceReviewStep(sId);
                     maxGem = advResult.earnedGem;
@@ -28634,6 +28687,8 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
         return;
     }
 
+    if (!ok && hardshipState && (hardshipState.bossStageId || hardshipState.midBossStageId)) (hardshipState.failIds = hardshipState.failIds || []).push(String(stageId));   // 이 절은 클리어 때 단계를 올리지 않는다
+
     // ★ 초학습 직후 확인은 증거 가치가 낮다 — 방금 다섯 단계에 걸쳐 본 구절이라 통과가 당연하다.
     // 버리지는 않고 표시만 달리해, 나중에 분석에서 가려낼 수 있게 한다.
     if (hardshipState && hardshipState.verseCheckIsLearn) mode = 'learn';
@@ -29099,6 +29154,7 @@ function finishHardshipSession(reason) {
     if (hardshipState.quickReviewStageId) {
         const _qSid = hardshipState.quickReviewStageId;
         const _passed = hardshipState.studiedCount > 0; // 1구절 세션이라 성공 여부와 같다
+        window._reviewNoAdvance = _passed ? null : _qSid;   // 「모르겠어요」·틀림 → 이어지는 코스 끝 클리어에서 단계를 올리지 않는다
         clearHardshipPendingTimeout();
         window.isHardshipMode = false;
         resetHardshipSessionState();

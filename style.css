@@ -7167,3 +7167,6 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .mode-journey-btn.fp-row { border-color: rgba(224,184,74,0.6); background: rgba(224,184,74,0.1); }
 .fp-note-btn { display: block; width: 100%; margin: 4px 0 10px; padding: 10px 12px; border-radius: 12px; border: 1.5px dashed #e0b84a; background: #fff8e6; color: #8a6514; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
 .fp-note-btn.wait { border-style: dotted; background: #f6f3ea; color: #9a8f74; font-weight: 600; cursor: default; }
+
+/* ✍️ 보스 설정 — 백지로 하면 함께 처리될 복습 (2026-10-04) */
+.bso-blank-reviews { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: rgba(155,89,182,0.12); border: 1px solid rgba(155,89,182,0.4); color: #6c3483; font-size: 0.82rem; line-height: 1.5; cursor: pointer; }
