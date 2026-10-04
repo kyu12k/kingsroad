@@ -589,6 +589,24 @@
         }
         const ripeN = fruitList.filter(f => f.ripe).length;
         if (ripeN) showHint(T('nj_fruit_hint', { n: ripeN }), 5000);
+        // 🎁 나눔 열매(10/4) — 받은 금빛 열매(아직 안 먹은 것, 많아야 3)를 앞쪽 나무들 수관 바로 아래에 크게, 은은히 빛나며 살랑
+        const giftList = (TREE_SPOTS.length && typeof njGiftFruits !== 'undefined' && Array.isArray(njGiftFruits)) ? njGiftFruits.filter(f => f && !f.done).slice(0, 6) : [];
+        const giftPos = [], giftObjs = [];
+        if (giftList.length) {
+            const gG = new THREE.SphereGeometry(0.1, 18, 12), gM = new THREE.MeshStandardMaterial({ color: new THREE.Color(0xd9971a).convertSRGBToLinear(), emissive: new THREE.Color(0x6a3c00).convertSRGBToLinear(), emissiveIntensity: 0.45, roughness: 0.3, metalness: 0.45 });   // 짙은 금빛 — 밝은 성 안에서 크림색으로 바래 보였다
+            const leafM2 = new THREE.MeshStandardMaterial({ color: 0x3f9b4b, roughness: 0.6, side: THREE.DoubleSide });
+            giftList.forEach((f, i) => {
+                const [tx, tz] = TREE_SPOTS[i % TREE_SPOTS.length], a = 0.6 + i * 2.1;
+                // 수관 아래·바깥으로 — 처음엔 수관 속(0.66 높이)이라 잎 덩이에 묻혀 반쯤만 보였다(10/4 스크린샷)
+                const g = new THREE.Group(); g.position.set(tx + Math.cos(a) * 0.5, CANOPY_Y - CANOPY_R - 0.1, tz + Math.sin(a) * 0.5);
+                const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.22, 4), leafM2); stem.position.y = 0.16; g.add(stem);   // 가지에서 늘어진 꼭지
+                const orb = new THREE.Mesh(gG, gM); orb.castShadow = true; g.add(orb);
+                const lf = new THREE.Mesh(new THREE.CircleGeometry(0.05, 6), leafM2); lf.position.set(0.03, 0.1, 0); lf.rotation.set(0.4, 0, 0.6); g.add(lf);
+                const ripe = !!(f.ripe && Date.now() >= f.ripe); orb.scale.setScalar(ripe ? 1.15 : 0.9);
+                scene.add(g); giftObjs.push({ g, ph: i * 1.7, ripe, a }); giftPos.push(g.position);
+            });
+            cityAnims.push(t => giftObjs.forEach(o => { o.g.rotation.z = Math.sin(t * 1.3 + o.ph) * 0.12; if (o.ripe) o.g.children[0].material.emissiveIntensity = 0.45 + Math.sin(t * 3) * 0.25; }));
+        }
         // 🍎 함께 정착한 사람 — 인도자의 빨간 열매(2026-10-01). 달마다 바뀌는 열매와 따로, 수관 바깥에 조금 크고 윤기 나게.
         //    2D는 나무마다 3개까지지만 3D는 나무마다 12개(모두 144)까지 — 그 이상은 수만 늘어난다(건축 창 「🍎 n」)
         {
@@ -1537,6 +1555,11 @@
                 if (d < bd) { bd = d; best = i; }
             });
             if (best >= 0) { showFruit(fruitList[best]); return; }
+            {   // 🎁 나눔 열매를 누르면 — 누가 보냈는지·지금 상태
+                let gb = -1, gd = 34;
+                giftPos.forEach((p, i) => { pv.copy(p).project(camera); if (pv.z > 1 || pv.z < -1) return; const sx = r.left + (pv.x + 1) / 2 * r.width, sy = r.top + (1 - pv.y) / 2 * r.height, d = Math.hypot(sx - e.clientX, sy - e.clientY); if (d < gd) { gd = d; gb = i; } });
+                if (gb >= 0) { const f = giftList[gb]; showHint(T('nj3d_gift_tap', { from: f.from || '', st: T(f.ripe && Date.now() >= f.ripe ? 'gift_st_ripe' : 'nj3d_gift_wait') }), 3000); return; }
+            }
             natRay.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
             const hit = natRay.intersectObject(natRing);
             if (hit.length) showNation(Math.floor(hit[0].faceIndex / NAT_FACES)); else hideFruit();
@@ -1859,6 +1882,12 @@
             setGoLabel(); lastTouch = performance.now();
         });
         if (where === 'sea') { placeAt('sea'); lookAt('sea'); controls.autoRotate = false; }
+        if (opts.focusGift && giftPos.length) {   // 🎁 「생명나무에서 보기」 — 받은 나눔 열매가 걸린 나무를 비춘다
+            const gi = Math.max(0, giftList.findIndex(f => f.id === opts.focusGift)), gp = giftPos[gi];
+            const ga = giftObjs[gi].a;   // 나무 바깥쪽에서, 열매 높이로 — 위에서 보면 수관이 가렸다
+            controls.autoRotate = false; controls.target.set(gp.x, gp.y + 0.1, gp.z); camera.position.set(gp.x + Math.cos(ga) * 4, gp.y + 0.6, gp.z + Math.sin(ga) * 4); controls.update();
+            showHint(T('nj3d_gift_here', { from: (giftList[gi] && giftList[gi].from) || '' }), 4500);
+        }
         setGoLabel();
         modeBtn.addEventListener('click', () => {
             walk = !walk; controls.enabled = !walk; walkUI.hidden = !walk; pilgrim.visible = true;

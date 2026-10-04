@@ -129,6 +129,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `_blankFirstDue(id)` · `_bossReviewHold` · `BLANK_FIRST_STEP` · `_reviewNoAdvance` | game.js:~11025 | ✍️ 3일 뒤 복습(단계 6+)부터 백지 먼저 · 막히면 단계 그대로 내일 다시 · 보스전·중간점검은 백지로 깼을 때만 단계 6+ 절을 올린다 (`docs/복습과-기억.md`) |
 | `_resetLongUnstudied()` · `_blankCountsAsClear(id)` | game.js:~10790 | 30일 넘게 밀린 절은 복습 일정을 처음으로 · 백지로 써낸 절 = 그 절 일반 클리어(고난·백지 차례·오늘의 암송·열매) |
 | `_unifyJourneyMemory()` · `collectionLegacy` | game.js:~5610 | 두 여정 진도를 한 벌로(불러올 때) · 합치기 전 도감 점수 보존(체력 +3) |
+| `openGiftFruit(tag, nick)` · `_giftSend` · `_giftCheckInbox` · `_giftArrive` · `_giftOnBlank` · `eatGiftFruit(id)` · `openGiftBasket()` · `njGiftFruits` | game.js:~26480 | 🎁 나눔 열매 — 내 💎로 친구·길드원·동행에게, 받은 이가 백지로 익히고 먹으면 💎 반·🍃. 받는 이 문서 `pendingFruits`·`pendingThanks` (`docs/새-예루살렘.md`) |
 | `renderHomeTodo()` · `_todoSocial` · `_syncSocialBadges()` · `updateFriendBadge()` | game.js:~29250 | 홈 「오늘 할 일」(복습·백지·응원·길드 출석)과 친구/길드/더보기 배지. `updateNotificationBadges`가 함께 그린다 |
 | `_checkReturnBoost()` · `_returnBoostExtra(gem)` · `_renderReturnFloat()` · `returnBoost` | game.js:~29450 | 돌아온 순례자 — 14일 넘게 쉬면 7일간 암송 보석 2배(동기화 뒤 판정), 효과 기록 포함 (`docs/랭킹과-이벤트.md`) |
 | `openGuideScreen()` · `openGuideQuiz()` · `_guideSync()` · `_guideNoteDay()` · `_guideTryGraduate()` · `guideInfo`·`guideRel` | game.js:~29700 · kingsroad `guide*` | 🧭 인도자와 동행 — 시험(다 맞힐 때까지) → 인도자 코드, 초심자 신청·승낙, 정착 졸업(망각의 고난 한 장 + 4주 연속 주 3일) → 성 나무에 빨간 열매 (`docs/인도자와-동행.md`) |

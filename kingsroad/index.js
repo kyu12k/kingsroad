@@ -1229,7 +1229,7 @@ function seaLeavesEarned(sv) {
         Object.values(fr[m] || {}).forEach(f => { if (Array.isArray(f) && f[1]) live++; });
         n += Math.max(Number(ar[m]) | 0, live);
     });
-    return n;
+    return n + ((sv && Number(sv.njGiftLeaves)) | 0);   // 🎁 나눔 열매로 받은 잎사귀 (2026-10-04, 클라이언트 _njLeaves와 같게)
 }
 function seaAddLabel(map, key, label) {
     const arr = Array.isArray(map[key]) ? map[key] : [];

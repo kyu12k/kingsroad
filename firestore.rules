@@ -41,8 +41,10 @@ service cloud.firestore {
       //  - pendingCheers   : 응원 보내기
       // 나머지(nickname·tribe·sessionToken·fcmToken·notificationTimes·maxHearts·
       //        weeklyHistory·blocked·lastCheerSent 등)는 전부 본인만 쓸 수 있다.
+      //  - pendingFruits   : 🎁 나눔 열매 보내기 (2026-10-04)
+      //  - pendingThanks   : 🎁 나눔 열매 감사 보내기
       function friendWritableKeys() {
-        return ['friends', 'pendingReceived', 'pendingSent', 'pendingCheers'];
+        return ['friends', 'pendingReceived', 'pendingSent', 'pendingCheers', 'pendingFruits', 'pendingThanks'];
       }
 
       // 문서 ID는 uid가 아니라 태그('8648')라 request.auth.uid와 직접 비교할 수 없다.

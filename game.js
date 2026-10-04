@@ -739,6 +739,23 @@ const LANG = {
         clear_blank_lv_mult: '✍️ 백지 Lv{lv} 제때 승점 ×{n}',
         blank_notif_body: '「{label}」 백지로 꺼내볼 시간이에요 ✍️',
         rv_blank_title: '✍️ 오늘 백지 차례',
+        gift_title: '🎁 {nick}님에게 나눔 열매', gift_desc: '내 보석으로 금빛 열매를 보내요. 받은 사람이 백지로 절을 써내면 24시간 뒤에 익고, 다시 백지로 써내며 먹으면 보석과 잎사귀를 받아요.',
+        gift_size_s: '작은 열매', gift_size_m: '큰 열매', gift_size_l: '풍성한 열매',
+        gift_size_line: '백지 {n}절 · 받는 사람 💎{half} · 🍃{n}',
+        gift_cheer_pick: '응원 한마디', gift_send: '🎁 보내기 · 💎{gem}',
+        gift_cheer_0: '함께 외워요 🙏', gift_cheer_1: '힘내요 💪', gift_cheer_2: '오늘도 말씀과 함께 📖', gift_cheer_3: '당신을 위해 기도해요 🕊️', gift_cheer_4: '한 절씩, 끝까지 ✨',
+        gift_sent: '🎁 {nick}님에게 나눔 열매를 보냈어요', gift_sent_today: '오늘은 이미 보냈어요 — 내일 다시 보낼 수 있어요',
+        gift_full: '{nick}님의 바구니가 가득 찼어요 (열매 3개) — 보석은 빠져나가지 않았어요', gift_need: '💎이 {n}개 더 필요해요', gift_fail: '보내지 못했어요. 잠시 뒤 다시 해 주세요',
+        gift_arrive_head: '🎁 나눔 열매가 도착했어요', gift_arrive_from: '<b>{from}</b>님이 보냈어요',
+        gift_arrive_rule: '백지로 <b>{n}절</b>을 써내면 24시간 뒤에 익어요 · 익으면 그 절들을 다시 백지로 써내며 먹어요 → 💎{half} · 🍃{n}',
+        gift_arrive_hang: '🌳 생명나무에 걸기', gift_arrive_go: '✍️ 백지 쓰러 가기', gift_later: '나중에',
+        gift_progress: '🎁 나눔 열매 — 백지 {have}/{n}절', gift_ripening: '🎁 {from}님의 나눔 열매가 익기 시작했어요 · 24시간 뒤',
+        gift_basket_title: '🎁 나눔 열매 바구니', gift_basket_empty: '받은 나눔 열매가 없어요. 친구·길드원·동행하는 사람에게 💛 옆 🎁로 보낼 수 있어요',
+        gift_st_grow: '백지로 {have}/{n}절 — {left}절 더 쓰면 익기 시작해요', gift_st_wait: '익는 중 · {time} 뒤', gift_st_ripe: '익었어요!', gift_st_done: '먹었어요 · 💎{half} · 🍃{n}',
+        gift_eat: '🍽️ 백지로 써내고 먹기', gift_thank: '🙏 감사 보내기', gift_thanked: '감사를 보냈어요',
+        gift_eat_embed: '🎁 {from}님의 나눔 열매', gift_eaten: '🎁 나눔 열매를 다 먹었어요 · 💎{half} · 🍃{n}',
+        gift_thanks_got: '🙏 {from}님이 나눔 열매를 먹었어요 — 백지 {n}절', gift_my_log: '나눔으로 맺힌 열매 · {n}절 · 보낸 열매 {sent}개',
+        todo_gift: '나눔', gift_see_tree: '🌳 생명나무에서 보기', nj3d_gift_here: '🎁 {from}님의 나눔 열매가 여기 걸렸어요', nj3d_gift_tap: '🎁 {from}님의 나눔 열매 · {st} (홈 「오늘 할 일」의 🎁 나눔에서 먹어요)', nj3d_gift_wait: '자라는 중',
         blank_first_intro: '✍️ 복습 간격이 3일이 된 절은 이제 백지로 확인해요. 막히면 💡 힌트로 한 글자씩 열 수 있어요',
         clear_review_hold: '✍️ 이번엔 막혔으니 복습 단계는 그대로예요 — 내일 다시 백지로 확인해요',
         bso_blank_reviews: '✍️ <b>백지</b>로 하면 복습 차례 <b>{n}절</b>이 함께 처리돼요 (복습 간격이 3일이 된 절은 백지로만)',
@@ -1898,6 +1915,23 @@ const LANG = {
         clear_blank_lv_mult: '✍️ Blank Lv{lv} on-time points ×{n}',
         blank_notif_body: '"{label}" — time to write it from blank ✍️',
         rv_blank_title: '✍️ Blank review due today',
+        gift_title: '🎁 A shared fruit for {nick}', gift_desc: 'Send a golden fruit with your gems. When they write verses on a blank page it ripens in 24 hours; eating it (writing those verses blank again) gives them gems and leaves.',
+        gift_size_s: 'Small fruit', gift_size_m: 'Large fruit', gift_size_l: 'Abundant fruit',
+        gift_size_line: '{n} blank verse(s) · they get 💎{half} · 🍃{n}',
+        gift_cheer_pick: 'A word of cheer', gift_send: '🎁 Send · 💎{gem}',
+        gift_cheer_0: 'Let’s memorize together 🙏', gift_cheer_1: 'Keep going 💪', gift_cheer_2: 'With the Word today 📖', gift_cheer_3: 'Praying for you 🕊️', gift_cheer_4: 'One verse at a time ✨',
+        gift_sent: '🎁 Sent a shared fruit to {nick}', gift_sent_today: 'Already sent today — you can send again tomorrow',
+        gift_full: '{nick}’s basket is full (3 fruits) — no gems were spent', gift_need: 'You need {n} more 💎', gift_fail: 'Couldn’t send. Please try again shortly',
+        gift_arrive_head: '🎁 A shared fruit has arrived', gift_arrive_from: 'From <b>{from}</b>',
+        gift_arrive_rule: 'Write <b>{n}</b> verse(s) on a blank page and it ripens in 24 hours · then eat it by writing them blank again → 💎{half} · 🍃{n}',
+        gift_arrive_hang: '🌳 Hang it on the tree of life', gift_arrive_go: '✍️ Go write blank', gift_later: 'Later',
+        gift_progress: '🎁 Shared fruit — blank {have}/{n}', gift_ripening: '🎁 {from}’s shared fruit is ripening · in 24 hours',
+        gift_basket_title: '🎁 Shared fruit basket', gift_basket_empty: 'No shared fruit yet. Send one with 🎁 next to 💛 to friends, guildmates or companions',
+        gift_st_grow: 'Blank {have}/{n} — {left} more to start ripening', gift_st_wait: 'Ripening · {time} left', gift_st_ripe: 'Ripe!', gift_st_done: 'Eaten · 💎{half} · 🍃{n}',
+        gift_eat: '🍽️ Write blank and eat', gift_thank: '🙏 Send thanks', gift_thanked: 'Thanks sent',
+        gift_eat_embed: '🎁 {from}’s shared fruit', gift_eaten: '🎁 Shared fruit eaten · 💎{half} · 🍃{n}',
+        gift_thanks_got: '🙏 {from} ate your shared fruit — {n} blank verse(s)', gift_my_log: 'Fruit from sharing · {n} verses · {sent} fruits sent',
+        todo_gift: 'Gifts', gift_see_tree: '🌳 See it on the tree of life', nj3d_gift_here: '🎁 {from}’s shared fruit hangs here', nj3d_gift_tap: '🎁 {from}’s shared fruit · {st} (eat it from 🎁 Gifts on the home screen)', nj3d_gift_wait: 'growing',
         blank_first_intro: '✍️ Once a verse’s review interval reaches 3 days, it’s checked on a blank page. Stuck? 💡 Hints open one letter at a time',
         clear_review_hold: '✍️ You got stuck this time, so the review step stays — we’ll check it blank again tomorrow',
         bso_blank_reviews: '✍️ On <b>blank</b>, <b>{n}</b> due reviews are done too (verses with a 3-day review interval count only on blank)',
@@ -2643,6 +2677,10 @@ let njMountSel = '';    // 🐴 지금 고른 탈것
 let njWings = {};       // 🪂 글라이더·등 날개 — { own: [가진 것], on: 낀 것, mv }
 let njFruits = {};       // 생명나무 열매 — { 'YYYY-MM': { 절id: [열린 때, 먹은 때(0=아직), 마지막 실패 때] } }. 지난 달은 잎사귀 수만 njLeafArch로 접는다
 let njLeafArch = {};     // 접은 달의 먹은 열매(=잎사귀) 수 { 'YYYY-MM': n }
+let njGiftFruits = [];   // 🎁 받은 나눔 열매 [{id, from, fromTag, size, msg, at, v:[백지로 쓴 절], ripe(익는 시각), ate:[먹은 절], done(먹은 시각), thanked}] (2026-10-04)
+let njGiftLeaves = 0;    // 🎁 나눔 열매로 받은 잎사귀 — _njLeaves()·서버 seaLeavesEarned에 더한다
+let njGiftSent = {};     // 🎁 보낸 사람 쪽 — 받는 이 태그 → 마지막으로 보낸 날(6시 날짜). 한 사람에게 하루 한 번
+let njGiftLog = { sent: 0, gems: 0, fruit: 0 };   // 🎁 보낸 수 · 보낸 💎 · 나눔으로 맺힌 열매(받은 이들이 먹은 절 수)
 let njLeafSpent = 0;     // 바다와 만국에 드린 잎사귀 (서버 givers가 정본 — 응답으로 받아 둔다)
 let seaGemsGiven = 0;    // 바다를 맑힌 보석 합 (내 기록 표시용)
 let njFish = 0;          // 🎣 낚은 물고기 값 합(늘기만) — 예물을 받을 때 쓴다(njFishSpent)
@@ -3113,6 +3151,10 @@ loadGameData = function () {
         njFruits = (parsed.njFruits && typeof parsed.njFruits === 'object') ? parsed.njFruits : {};
         njLeafArch = (parsed.njLeafArch && typeof parsed.njLeafArch === 'object') ? parsed.njLeafArch : {};
         njLeafSpent = Math.max(0, parseInt(parsed.njLeafSpent, 10) || 0);
+        njGiftFruits = Array.isArray(parsed.njGiftFruits) ? parsed.njGiftFruits.filter(f => f && f.id) : [];
+        njGiftLeaves = Math.max(0, parseInt(parsed.njGiftLeaves, 10) || 0);
+        njGiftSent = (parsed.njGiftSent && typeof parsed.njGiftSent === 'object') ? parsed.njGiftSent : {};
+        njGiftLog = Object.assign({ sent: 0, gems: 0, fruit: 0 }, (parsed.njGiftLog && typeof parsed.njGiftLog === 'object') ? parsed.njGiftLog : {});
         seaGemsGiven = Math.max(0, parseInt(parsed.seaGemsGiven, 10) || 0);
         njFish = Math.max(0, parseInt(parsed.njFish, 10) || 0);
         njFishSpent = Math.max(0, parseInt(parsed.njFishSpent, 10) || 0);
@@ -7643,7 +7685,7 @@ function _njLeaves() {
         let live = 0; Object.values((njFruits || {})[m] || {}).forEach(f => { if (Array.isArray(f) && f[1]) live++; });
         n += Math.max((njLeafArch || {})[m] | 0, live);
     });
-    return n;
+    return n + (njGiftLeaves | 0);   // 🎁 나눔 열매로 받은 잎사귀 (서버 seaLeavesEarned도 같이)
 }
 function _njGrowFruit(id, now) {
     if (!/^\d+-\d+$/.test(String(id))) return;
@@ -10843,7 +10885,7 @@ function _updateBlankBox(r, ok, blankMode, hintOk, now) {
 function _blankCountsAsClear(id, now) {
     if (!/^\d+-\d+$/.test(id)) return '';
     const c = _hardshipRecallCtx();
-    if (!(c === 'hs' || c === 'due' || c === 'event' || c === 'fruit')) return '';   // 보스전·중간점검·빠른 복습은 stageClear가 한다 · 'vc'는 빈칸
+    if (!(c === 'hs' || c === 'due' || c === 'event' || c === 'fruit' || c === 'gift')) return '';   // 보스전·중간점검·빠른 복습은 stageClear가 한다 · 'vc'는 빈칸
     const st = getReviewStatus(id);
     let note = '';
     if (st.isEligible) {
@@ -12472,6 +12514,10 @@ function saveGameData() {
         njFruits: njFruits,               // 생명나무 열매 (열린·먹은·실패 때)
         njLeafArch: njLeafArch,           // 접은 달의 잎사귀 수
         njLeafSpent: njLeafSpent,         // 만국에 드린 잎사귀
+        njGiftFruits: njGiftFruits,       // 🎁 받은 나눔 열매
+        njGiftLeaves: njGiftLeaves,       // 🎁 나눔 열매로 받은 잎사귀
+        njGiftSent: njGiftSent,           // 🎁 한 사람에게 하루 한 번
+        njGiftLog: njGiftLog,             // 🎁 보낸 수·보낸 보석·맺힌 열매
         seaGemsGiven: seaGemsGiven,       // 바다를 맑힌 보석
         njFish: njFish,                   // 🎣 낚은 물고기 값 합
         njFishSpent: njFishSpent,         // 🎣 예물에 쓴 물고기
@@ -12844,6 +12890,19 @@ function _mergeSaveProgress(target, other) {
     took += _mergeNewJerusalem(target, other);
     took += _mergeGuide(target, other);
     if (typeof other.collectionLegacy === 'number' && !(target.collectionLegacy >= other.collectionLegacy)) { target.collectionLegacy = other.collectionLegacy; took++; }
+    {   // 🎁 나눔 열매 — id로 합집합, 같은 열매는 더 나아간 쪽(쓴 절·먹은 절·다 먹음·감사)
+        const ta = Array.isArray(target.njGiftFruits) ? target.njGiftFruits : [], ob = Array.isArray(other.njGiftFruits) ? other.njGiftFruits : [];
+        const prog = f => (f.v || []).length + (f.ate || []).length * 2 + (f.done ? 50 : 0) + (f.thanked ? 1 : 0);
+        ob.forEach(f => { if (!f || !f.id) return; const i = ta.findIndex(x => x && x.id === f.id); if (i < 0) { ta.push(f); took++; } else if (prog(f) > prog(ta[i])) { ta[i] = f; took++; } });
+        target.njGiftFruits = ta;
+        if ((other.njGiftLeaves | 0) > (target.njGiftLeaves | 0)) { target.njGiftLeaves = other.njGiftLeaves; took++; }
+        const ts = (target.njGiftSent && typeof target.njGiftSent === 'object') ? target.njGiftSent : {};
+        Object.entries(other.njGiftSent || {}).forEach(([k, d]) => { if (!ts[k] || String(d) > String(ts[k])) { ts[k] = d; took++; } });
+        target.njGiftSent = ts;
+        const tl = Object.assign({ sent: 0, gems: 0, fruit: 0 }, target.njGiftLog || {}), ol = other.njGiftLog || {};
+        ['sent', 'gems', 'fruit'].forEach(k => { if ((ol[k] | 0) > (tl[k] | 0)) { tl[k] = ol[k]; took++; } });
+        target.njGiftLog = tl;
+    }
     if (other.fpRecall && typeof other.fpRecall === 'object') {   // 첫 마디 — 절마다 나중에 한 쪽
         const tf = (target.fpRecall && typeof target.fpRecall === 'object') ? target.fpRecall : {};
         Object.keys(other.fpRecall).forEach(id => { const o = other.fpRecall[id]; if (o && (!tf[id] || (o.at || 0) > (tf[id].at || 0))) { tf[id] = o; took++; } });
@@ -20312,6 +20371,7 @@ function _renderGuildHome(body, guild, myStatus = {}) {
         html += `<div class="guild-member-row" style="flex-wrap:wrap;gap:2px;">
             <span class="guild-member-name">${escapeHtml(nick)}<span class="guild-member-tag"> #${tag}</span>${isThisLeader ? ' <span class="guild-leader-badge">길드장</span>' : ''}</span>
             <span style="display:flex;align-items:center;gap:4px;margin-left:auto;">
+                ${tag !== myTag ? `<button class="guild-btn-gift" onclick="openGiftFruit('${tag}', ${JSON.stringify(nick || '').replace(/"/g, '&quot;')})">🎁</button>` : ''}
                 ${isLeader && tag !== myTag ? `<button class="guild-btn-kick" onclick="_kickGuildMember('${tag}',this)">추방</button>` : ''}
                 <button onclick="_editMemberMemo('${tag}')" style="background:none;border:1px solid #4a4a6a;border-radius:5px;color:${memo ? '#f1c40f' : '#7070a0'};font-size:11px;padding:2px 6px;cursor:pointer;" title="${escapeHtml(memo || '메모 없음')}">📝</button>
             </span>
@@ -22235,6 +22295,7 @@ _checkFirstDailyWeeklyStudy(); // 6. 오늘 첫 접속 시 주간 학습 시간 
 
 // (하루 1회 아멘 스킵은 proceedToJourneyOverlay()에서 처리됨)
 setTimeout(() => { if (typeof checkFriendEvents === 'function') checkFriendEvents(); }, 2000); // 7. 친구 이벤트 처리
+setTimeout(() => { if (typeof _giftCheckInbox === 'function') _giftCheckInbox(); }, 4000);   // 🎁 나눔 열매 받은 편지함
 setTimeout(async () => { // 8. 길드 ID 로드 (레이드 대미지 누적용)
     if (db && myTag && myTag !== '0000') {
         try {
@@ -26200,6 +26261,7 @@ function createEmptyHardshipState() {
         quickReviewStageId: null, // 빠른 모드 백지 승급으로 열린 1구절 세션 (끝나면 훈련으로 복귀)
         fruitKey: null,          // 새 예루살렘 생명나무 열매 먹기로 열린 1구절 백지 세션 ('YYYY-MM|절id')
         blankDueCh: null,        // 「오늘 백지 차례」로 열린 세션이면 그 장 (그 장의 차례인 절만, 백지)
+        giftId: null,            // 🎁 나눔 열매 먹기 세션이면 그 열매 id
         startLv: 0,              // 🔑 첫 마디의 고난이면 1·2·3(쉬움·보통·어려움) — 쳐야 할 글이 첫 마디로 잘린다
         startLvMap: null,        // 오답노트 — 절마다 막혔던 난이도
         fpNote: false,
@@ -26503,6 +26565,204 @@ function startFirstPhraseNote() {
     selectedHardshipUltimate = true;
     _pendingHardshipEmbed = { label: t('fp_note_embed'), startLv: 2, startLvMap: map, fpNote: true };
     startHardshipSession('memory', ids);
+}
+/* ── 🎁 나눔 열매 (2026-10-04 사용자) ───────────────────────────────────────────
+   꾸밈은 사면 끝(소모적)이라, 밭처럼 신경 쓰지 않아도 보석을 쓸 곳 — **내 보석으로 다른 사람의 암송을 돕는다**.
+   보내기: 친구·길드원·동행(인도자↔초심자)에게, 응원처럼 한 사람에게 하루 한 번. 크기 작은 💎1,000(백지 1절) · 큰 5,000(3절) · 풍성한 10,000(5절).
+   받기: 받은 사람이 크기만큼 아무 절이나 백지로 써내면 그때부터 24시간 뒤 익는다 → 그 절들을 다시 백지로 써내며 먹으면
+         절마다 🍃 1장, 다 먹으면 💎 보낸 것의 **반**(나머지 반은 사라진다 — 보석 값이 지켜진다).
+   보낸 사람: 물질적 대가 없음(행 20:35) — 감사 소식과 「나눔으로 맺힌 열매 n절」 기록만. 등불 같은 공개 표시는 시비를 부를 수 있어 뺐다(사용자).
+   제한: 받는 바구니 3개(아직 안 먹은 열매), 받고 7일 안에 한 절도 안 쓰면 조용히 시든다(보낸 사람에게 알리지 않는다). 받는 💎 상한 없음(사용자: 부계정으로 얻을 보석은 본계정으로도 얻는다·백지 두 번이 수고).
+   전달: 응원(pendingCheers)과 같은 구조 — 받는 이의 leaderboard 문서 pendingFruits에 넣고, 감사는 pendingThanks. 규칙 friendWritableKeys에 둘 다. */
+const NJ_GIFT_SIZES = { s: { gem: 1000, n: 1 }, m: { gem: 5000, n: 3 }, l: { gem: 10000, n: 5 } };
+const NJ_GIFT_BASKET = 3, NJ_GIFT_WITHER_MS = 7 * 86400000, NJ_GIFT_RIPEN_MS = 24 * 3600000, NJ_GIFT_CHEERS = 5;
+const _giftNeed = f => (NJ_GIFT_SIZES[f.size] || NJ_GIFT_SIZES.s).n;
+const _giftHalf = f => Math.floor((NJ_GIFT_SIZES[f.size] || NJ_GIFT_SIZES.s).gem / 2);
+const _giftActive = () => (njGiftFruits || []).filter(f => f && !f.done);
+function _giftSyncBasket() {   // 보내는 사람이 바구니가 찼는지 볼 수 있게 — 내 문서에 「아직 안 먹은 열매 수」
+    try { if (db && myTag && myTag !== '0000') _friendRef(myTag).set({ fruitBasket: _giftActive().length }, { merge: true }).catch(() => { }); } catch (e) { }
+}
+function _giftWither(now) {   // 받고 7일 안에 한 절도 안 쓴 열매는 조용히 시든다 · 다 먹은 기록은 최근 30개만
+    const n = now || Date.now(), before = njGiftFruits.length;
+    njGiftFruits = njGiftFruits.filter(f => f.done || (f.v || []).length > 0 || n - (f.at || 0) < NJ_GIFT_WITHER_MS);
+    const done = njGiftFruits.filter(f => f.done).sort((a, b) => b.done - a.done);
+    if (done.length > 30) { const drop = new Set(done.slice(30).map(f => f.id)); njGiftFruits = njGiftFruits.filter(f => !drop.has(f.id)); }
+    return before !== njGiftFruits.length;
+}
+/* 백지 통과마다 — 먹는 중이면 먹기, 아니면 가장 먼저 받은 열매를 익힌다(절 하나는 열매 하나에만) */
+function _giftOnBlank(id, now) {
+    if (!Array.isArray(njGiftFruits) || !njGiftFruits.length) return;
+    const gid = hardshipState && hardshipState.giftId;
+    if (gid) {
+        const f = njGiftFruits.find(x => x.id === gid);
+        if (!f || f.done || !(f.v || []).includes(id) || (f.ate || []).includes(id)) return;
+        (f.ate = f.ate || []).push(id); njGiftLeaves = (njGiftLeaves | 0) + 1;
+        if (f.ate.length >= _giftNeed(f)) {
+            f.done = now; const half = _giftHalf(f);
+            myGems += half; if (typeof updateGemDisplay === 'function') updateGemDisplay();
+            setTimeout(() => showGemToast(half, t('gift_eaten', { half: half.toLocaleString(), n: _giftNeed(f) })), 900);
+            _giftSyncBasket();
+        }
+        saveGameData(); return;
+    }
+    const f = _giftActive().filter(x => !x.ripe).sort((a, b) => (a.at || 0) - (b.at || 0)).find(x => !(x.v || []).includes(id) && (x.v || []).length < _giftNeed(x));
+    if (!f) return;
+    (f.v = f.v || []).push(id);
+    if (f.v.length >= _giftNeed(f)) { f.ripe = now + NJ_GIFT_RIPEN_MS; setTimeout(() => showToast(t('gift_ripening', { from: f.from || '' })), 900); }
+    else setTimeout(() => showToast(t('gift_progress', { have: f.v.length, n: _giftNeed(f) })), 900);
+    saveGameData();
+}
+/* 받은 편지함 — 앱을 열 때·바구니를 열 때. 새 열매는 바구니로 옮기고 도착 연출, 감사는 기록에 더한다 */
+let _giftChecking = false;
+async function _giftCheckInbox(silent) {
+    if (_giftChecking || !db || !myTag || myTag === '0000') return;
+    _giftChecking = true;
+    try {
+        const d = await _getFriendDoc(myTag); if (!d) return;
+        const inbox = Array.isArray(d.pendingFruits) ? d.pendingFruits : [], thanks = Array.isArray(d.pendingThanks) ? d.pendingThanks : [];
+        const fresh = [];
+        inbox.forEach(x => { if (!x || !x.id || njGiftFruits.some(f => f.id === x.id)) return;
+            const f = { id: x.id, from: x.from || '', fromTag: x.fromTag || '', size: NJ_GIFT_SIZES[x.size] ? x.size : 's', msg: Math.max(0, Math.min(NJ_GIFT_CHEERS - 1, x.msg | 0)), at: Date.now(), v: [], ate: [] };
+            njGiftFruits.push(f); fresh.push(f); });
+        const ups = {};
+        if (inbox.length) ups.pendingFruits = firebase.firestore.FieldValue.arrayRemove(...inbox);
+        if (thanks.length) ups.pendingThanks = firebase.firestore.FieldValue.arrayRemove(...thanks);
+        if (Object.keys(ups).length) await _friendRef(myTag).set(ups, { merge: true });
+        thanks.forEach(x => { njGiftLog.fruit = (njGiftLog.fruit | 0) + (x.n | 0); });
+        const withered = _giftWither();
+        if (fresh.length || thanks.length || withered) { saveGameData(); _giftSyncBasket(); }
+        if (thanks.length && !silent) thanks.forEach((x, i) => setTimeout(() => showToast(t('gift_thanks_got', { from: x.from || '', n: x.n | 0 })), 600 + i * 2600));
+        if (fresh.length && !silent) _giftArrive(fresh);
+        if (typeof renderHomeTodo === 'function') renderHomeTodo();
+    } catch (e) { console.warn('[gift] inbox', e); }
+    finally { _giftChecking = false; }
+}
+/* 도착 연출 — 하늘에서 금빛 열매가 내려오고, 누르면 생명나무로 날아가 걸린다(종소리) */
+function _giftArrive(list) {
+    if (!list || !list.length) return;
+    const f = list[0], rest = list.slice(1), n = _giftNeed(f), half = _giftHalf(f);
+    let ov = document.getElementById('gift-arrive'); if (ov) ov.remove();
+    ov = document.createElement('div'); ov.id = 'gift-arrive'; ov.className = 'gift-arrive';
+    ov.innerHTML = `<div class="gift-arrive-sky"></div>
+        <div class="gift-arrive-fruit"><span class="gift-leaf">🍃</span><span class="gift-orb"></span></div>
+        <div class="gift-arrive-card">
+            <div class="gift-arrive-head">${t('gift_arrive_head')}</div>
+            <div class="gift-arrive-from">${t('gift_arrive_from', { from: _escapeHtmlSafe(f.from || '') })} · ${t('gift_size_' + f.size)}</div>
+            <div class="gift-arrive-cheer">「${t('gift_cheer_' + (f.msg | 0))}」</div>
+            <div class="gift-arrive-rule">${t('gift_arrive_rule', { n, half: half.toLocaleString() })}</div>
+            <button class="gift-btn main" id="gift-hang">${t('gift_arrive_hang')}</button>
+        </div>`;
+    document.body.appendChild(ov);
+    requestAnimationFrame(() => ov.classList.add('in'));
+    ov.querySelector('#gift-hang').onclick = () => {
+        ov.classList.add('hang');
+        if (typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) SoundEffect.playBlankLevelUp();
+        setTimeout(() => {
+            if (rest.length) { ov.remove(); _giftArrive(rest); return; }
+            const card = ov.querySelector('.gift-arrive-card');
+            card.innerHTML = `<div class="gift-arrive-head">🌳 ${t('gift_arrive_head')}</div><div class="gift-arrive-rule">${t('gift_arrive_rule', { n, half: half.toLocaleString() })}</div>
+                <button class="gift-btn main" id="gift-go">${t('gift_arrive_go')}</button><button class="gift-btn ghost" id="gift-tree">${t('gift_see_tree')}</button><button class="gift-btn ghost" id="gift-close">${t('gift_later')}</button>`;
+            ov.classList.remove('hang'); ov.classList.add('done');
+            card.querySelector('#gift-go').onclick = () => { ov.remove(); if (typeof openBlankDueScreen === 'function') openBlankDueScreen(); };
+            card.querySelector('#gift-close').onclick = () => ov.remove();
+            card.querySelector('#gift-tree').onclick = () => { ov.remove(); if (typeof openNJ3DView === 'function') openNJ3DView({ focusGift: f.id }); };   // 3D로 — 그 열매가 걸린 나무
+        }, 1100);
+    };
+}
+/* 보내기 창 */
+let _giftPick = { size: 's', msg: 0 };
+function openGiftFruit(tag, nick) {
+    if (!tag || String(tag) === String(myTag)) return;
+    _giftPick = { size: 's', msg: 0 };
+    let ov = document.getElementById('gift-send'); if (ov) ov.remove();
+    ov = document.createElement('div'); ov.id = 'gift-send'; ov.className = 'modal-overlay'; ov.style.zIndex = '10001'; ov.style.display = 'flex';
+    ov.onclick = () => ov.remove();
+    const today = njGiftSent[tag] === _get6AMDayStr();
+    const sizeBtn = k => { const S = NJ_GIFT_SIZES[k]; return `<button class="gift-size${k === 's' ? ' on' : ''}" data-k="${k}"><b>${t('gift_size_' + k)}</b><span>💎${S.gem.toLocaleString()}</span><small>${t('gift_size_line', { n: S.n, half: (S.gem / 2).toLocaleString() })}</small></button>`; };
+    ov.innerHTML = `<div class="result-card mode-select-card gift-card" onclick="event.stopPropagation()">
+        <div class="mode-modal-header"><span class="mode-select-title">${t('gift_title', { nick: _escapeHtmlSafe(nick || ('#' + tag)) })}</span><button class="mode-close-btn" onclick="document.getElementById('gift-send').remove()">✕</button></div>
+        <div class="bd-desc">${t('gift_desc')}</div>
+        <div class="gift-sizes">${sizeBtn('s')}${sizeBtn('m')}${sizeBtn('l')}</div>
+        <div class="gift-sub">${t('gift_cheer_pick')}</div>
+        <div class="gift-cheers">${Array.from({ length: NJ_GIFT_CHEERS }, (_, i) => `<button class="gift-cheer${i === 0 ? ' on' : ''}" data-i="${i}">${t('gift_cheer_' + i)}</button>`).join('')}</div>
+        <button class="gift-btn main" id="gift-send-go" ${today ? 'disabled' : ''}>${today ? t('gift_sent_today') : t('gift_send', { gem: NJ_GIFT_SIZES.s.gem.toLocaleString() })}</button>
+    </div>`;
+    document.body.appendChild(ov);
+    const go = ov.querySelector('#gift-send-go');
+    ov.querySelectorAll('.gift-size').forEach(b => b.onclick = () => { _giftPick.size = b.dataset.k; ov.querySelectorAll('.gift-size').forEach(x => x.classList.toggle('on', x === b)); if (!today) go.textContent = t('gift_send', { gem: NJ_GIFT_SIZES[b.dataset.k].gem.toLocaleString() }); });
+    ov.querySelectorAll('.gift-cheer').forEach(b => b.onclick = () => { _giftPick.msg = +b.dataset.i; ov.querySelectorAll('.gift-cheer').forEach(x => x.classList.toggle('on', x === b)); });
+    go.onclick = async () => { go.disabled = true; const r = await _giftSend(tag, nick); if (r) ov.remove(); else go.disabled = false; };
+}
+async function _giftSend(tag, nick) {
+    const S = NJ_GIFT_SIZES[_giftPick.size] || NJ_GIFT_SIZES.s;
+    if (njGiftSent[tag] === _get6AMDayStr()) { showGemToast(0, t('gift_sent_today'), true); return false; }
+    if ((myGems || 0) < S.gem) { showGemToast(0, t('gift_need', { n: (S.gem - (myGems || 0)).toLocaleString() }), true); return false; }
+    try {
+        const d = await _getFriendDoc(tag);
+        if (!d) { showGemToast(0, t('gift_fail'), true); return false; }
+        const nk = nick || d.nickname || ('#' + tag);
+        if ((Array.isArray(d.pendingFruits) ? d.pendingFruits.length : 0) + (d.fruitBasket | 0) >= NJ_GIFT_BASKET) { showGemToast(0, t('gift_full', { nick: nk }), true); return false; }
+        const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        await _friendRef(tag).set({ pendingFruits: firebase.firestore.FieldValue.arrayUnion({ id, from: myNickname, fromTag: myTag, size: _giftPick.size, msg: _giftPick.msg, sentAt: Date.now() }) }, { merge: true });
+        myGems -= S.gem; njGiftSent[tag] = _get6AMDayStr();
+        njGiftLog.sent = (njGiftLog.sent | 0) + 1; njGiftLog.gems = (njGiftLog.gems | 0) + S.gem;
+        if (typeof updateGemDisplay === 'function') updateGemDisplay();
+        saveGameData();
+        showGemToast(0, t('gift_sent', { nick: nk }));
+        if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
+        return true;
+    } catch (e) { console.warn('[gift] send', e); showGemToast(0, t('gift_fail'), true); return false; }
+}
+/* 내 바구니 — 받은 열매의 상태 · 먹기 · 감사 */
+function openGiftBasket() {
+    _giftWither();
+    let ov = document.getElementById('gift-basket'); if (ov) ov.remove();
+    ov = document.createElement('div'); ov.id = 'gift-basket'; ov.className = 'modal-overlay'; ov.style.zIndex = '10000'; ov.style.display = 'flex';
+    ov.onclick = () => ov.remove();
+    const now = Date.now();
+    const list = njGiftFruits.filter(f => !f.done || !f.thanked).sort((a, b) => (a.done ? 1 : 0) - (b.done ? 1 : 0) || (a.at || 0) - (b.at || 0));
+    const card = f => {
+        const n = _giftNeed(f), half = _giftHalf(f), have = (f.v || []).length;
+        let st, btn = '';
+        if (f.done) { st = t('gift_st_done', { half: half.toLocaleString(), n }); btn = f.thanked ? `<span class="gift-dim">${t('gift_thanked')}</span>` : `<button class="gift-btn main" onclick="_giftThank('${f.id}', this)">${t('gift_thank')}</button>`; }
+        else if (f.ripe && now >= f.ripe) { st = `<b class="gift-ripe">${t('gift_st_ripe')}</b>`; btn = `<button class="gift-btn main" onclick="eatGiftFruit('${f.id}')">${t('gift_eat')}</button>`; }
+        else if (f.ripe) { const m = Math.ceil((f.ripe - now) / 60000); st = t('gift_st_wait', { time: m >= 60 ? `${Math.floor(m / 60)}시간 ${m % 60}분` : `${m}분` }); }
+        else { st = t('gift_st_grow', { have, n, left: n - have }); btn = `<button class="gift-btn ghost" onclick="document.getElementById('gift-basket').remove(); openBlankDueScreen()">${t('gift_arrive_go')}</button>`; }
+        const dots = Array.from({ length: n }, (_, i) => `<i class="${i < (f.ate || []).length ? 'ate' : i < have ? 'on' : ''}"></i>`).join('');
+        return `<div class="gift-item${f.ripe && now >= f.ripe && !f.done ? ' ripe' : ''}"><span class="gift-orb sm"></span>
+            <div class="gift-item-main"><div><b>${_escapeHtmlSafe(f.from || '')}</b> · ${t('gift_size_' + f.size)}</div>
+            <div class="gift-dim">「${t('gift_cheer_' + (f.msg | 0))}」</div><div class="gift-dots">${dots}</div><div class="gift-st">${st}</div></div>${btn}</div>`;
+    };
+    ov.innerHTML = `<div class="result-card mode-select-card gift-card" onclick="event.stopPropagation()">
+        <div class="mode-modal-header"><span class="mode-select-title">${t('gift_basket_title')}</span><button class="mode-close-btn" onclick="document.getElementById('gift-basket').remove()">✕</button></div>
+        ${list.length ? list.map(card).join('') : `<div class="bd-desc">${t('gift_basket_empty')}</div>`}
+        ${(njGiftLog.sent | 0) ? `<div class="gift-log">${t('gift_my_log', { n: njGiftLog.fruit | 0, sent: njGiftLog.sent | 0 })}</div>` : ''}
+    </div>`;
+    document.body.appendChild(ov);
+}
+function eatGiftFruit(id) {
+    const f = njGiftFruits.find(x => x.id === id);
+    if (!f || f.done || !f.ripe || Date.now() < f.ripe) return;
+    const ids = (f.v || []).filter(v => !(f.ate || []).includes(v));
+    if (!ids.length) return;
+    const ov = document.getElementById('gift-basket'); if (ov) ov.remove();
+    window.hardshipOrigin = 'home';
+    selectedHardshipOrderType = 'sequential';
+    selectedHardshipUltimate = true;
+    _pendingHardshipEmbed = { label: t('gift_eat_embed', { from: f.from || '' }), giftId: id };
+    startHardshipSession('memory', ids);
+}
+async function _giftThank(id, btn) {
+    const f = njGiftFruits.find(x => x.id === id);
+    if (!f || !f.done || f.thanked || !f.fromTag) return;
+    if (btn) btn.disabled = true;
+    try {
+        await _friendRef(f.fromTag).set({ pendingThanks: firebase.firestore.FieldValue.arrayUnion({ id: f.id, from: myNickname, fromTag: myTag, n: _giftNeed(f), at: Date.now() }) }, { merge: true });
+        f.thanked = Date.now(); saveGameData();
+        showToast(t('gift_thanked'));
+        if (document.getElementById('gift-basket')) openGiftBasket();
+        if (typeof renderHomeTodo === 'function') renderHomeTodo();
+    } catch (e) { console.warn('[gift] thank', e); if (btn) btn.disabled = false; showGemToast(0, t('gift_fail'), true); }
 }
 function openChapterHardship(chapterNum) {
     // 장별 고난 길: 해당 챕터를 강제 고정하고 모드 선택 모달을 엽니다.
@@ -26961,7 +27221,8 @@ function _isResumableHardshipSession() {
         && !hardshipState.quickReviewStageId
         && !hardshipState.fruitKey
         && !hardshipState.blankDueCh
-        && !hardshipState.startLv);
+        && !hardshipState.startLv
+        && !hardshipState.giftId);
 }
 
 /* ★ 체크포인트를 **여러 건** 보관한다 (보스전은 한 건뿐이다).
@@ -27087,6 +27348,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
         hardshipState.fruitKey = embed.fruitKey || null;
         hardshipState.blankDueCh = embed.blankDueCh || null;
         hardshipState.startLv = embed.startLv || 0;
+        hardshipState.giftId = embed.giftId || null;
         hardshipState.blankFirst = !!embed.blankFirst;
         hardshipState.startLvMap = embed.startLvMap || null;
         hardshipState.fpNote = !!embed.fpNote;
@@ -28193,7 +28455,8 @@ function _isEmbeddedBlankSession() {
                                 hardshipState.quickReviewStageId ||
                                 hardshipState.fruitKey ||
                                 hardshipState.blankDueCh ||
-                                hardshipState.startLv));
+                                hardshipState.startLv ||
+                                hardshipState.giftId));
 }
 
 /* 「모르겠어요」 — 이번 판만 포기하고 정답을 확인한다.
@@ -28696,6 +28959,7 @@ function _hardshipRecallCtx() {
     if (hardshipState.midBossStageId) return 'mid';
     if (hardshipState.bossStageId) return 'boss';
     if (hardshipState.eventId) return 'event';
+    if (hardshipState.giftId) return 'gift';   // 🎁 나눔 열매 먹기 — 24시간 간격의 백지
     if (hardshipState.startLv) return hardshipState.fpNote ? 'fpnote' : 'start';   // 🔑 첫 마디의 고난 · 오답노트
     if (hardshipState.blankDueCh) return 'due';   // 「오늘 백지 차례」 — 백지레벨 차례가 온 절만
     return 'hs';
@@ -28824,6 +29088,7 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
         if (ok && _blankMode) _njNoteBlankDay();   // 새 예루살렘 진주 — 백지로 한 절이라도 통과한 날
         if (hardshipState && hardshipState.fruitKey) _njFruitResult(hardshipState.fruitKey, stageId, !!ok && _blankMode, now);   // 열매 먹기
         if (ok && _blankMode) _njGrowFruit(String(stageId), now);   // 생명나무 — 이번 달 열매
+        if (ok && _blankMode && _hintOk) _giftOnBlank(String(stageId), now);   // 🎁 나눔 열매 — 익히기·먹기
         if (_res && (_res.kind === 'up' || _res.kind === 'enter') && typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) {
             setTimeout(() => SoundEffect.playBlankLevelUp(), 420);
         }
@@ -28940,6 +29205,7 @@ function getHardshipScoreScale() {
     // (어려운 형태의 보상은 승점이 아니라 '통과하면 코스가 짧아지는 것'이다)
     if (hardshipState.quickReviewStageId) return 0;
     if (hardshipState.fruitKey) return 0;   // 열매의 보상은 잎사귀 (백지레벨 보너스는 평소대로)
+    if (hardshipState.giftId) return 0;     // 🎁 나눔 열매의 보상은 💎(보낸 것의 반)·잎사귀
     if (hardshipState.verseCheckStageId) return 0.25;
     if (hardshipState.midBossStageId) return 0.5;
     if (hardshipState.eventId) return 0.5;   // 이벤트 문항 = 2절 묶음, 중간점검과 같은 크기
@@ -29519,7 +29785,7 @@ function finishHardshipSession(reason) {
         if (reason !== 'completed' || hardshipState.mode !== 'memory' ||
             hardshipState.trainingMode || hardshipState.midBossStageId ||
             hardshipState.bossStageId || hardshipState.verseCheckStageId ||
-            hardshipState.eventId || hardshipState.quickReviewStageId || hardshipState.fruitKey || hardshipState.blankDueCh || hardshipState.startLv) return '';
+            hardshipState.eventId || hardshipState.quickReviewStageId || hardshipState.fruitKey || hardshipState.blankDueCh || hardshipState.startLv || hardshipState.giftId) return '';
         const sessionDuration = getHardshipElapsedSeconds();
         const record = {
             correct: hardshipState.studiedCount,
@@ -30663,6 +30929,8 @@ function renderHomeTodo() {
     const chip = (icon, label, n, done, fn) => `<button class="home-todo-chip${done ? ' done' : ''}" onclick="${fn}">${icon} ${label}${done ? ' ✓' : n ? ` <b>${n}</b>` : ''}</button>`;
     let h = chip('📖', t('todo_review'), rev, rev === 0, 'openReviewFromHome()') + chip('✍️', t('todo_blank'), blank, blank === 0, 'openBlankDueScreen()');
     if (S.hasFriends) h += chip('💛', t('todo_cheer'), S.cheerable, S.cheerable === 0, 'openFriendScreen()');
+    { const gf = (njGiftFruits || []).filter(f => !f.done || !f.thanked), act = gf.filter(f => (f.ripe && Date.now() >= f.ripe && !f.done) || (f.done && !f.thanked) || (!f.ripe && !f.done)).length;
+      if (gf.length) h += chip('🎁', t('todo_gift'), act, act === 0, 'openGiftBasket()'); }   // 🎁 받은 나눔 열매
     if (S.inGuild) h += chip('⚔️', t('todo_attend'), 0, S.attended, 'openGuildScreen()');
     el.innerHTML = `<div class="home-todo-title">${t('todo_title')}</div><div class="home-todo-chips">${h}</div>`;
 }
@@ -30964,6 +31232,7 @@ function _guideCardHtml(L, asGuide) {
         <div class="guide-row"><span>마지막 암송</span><span class="guide-dim">${_guideAgo(p.last)}</span></div>
         <div class="guide-row"><span>함께한 날</span><span class="guide-dim">${meets ? `${meets}번 · 마지막 ${lastMeet}` : '아직 없음'}</span></div>
         <div class="guide-actions">${_guideMeetBtn(L, asGuide ? L.beginner : null)}
+            <button class="guide-btn tiny" onclick="openGiftFruit('${asGuide ? L.beginner : L.guide}', ${JSON.stringify(who).replace(/"/g, '&quot;')})">🎁</button>
             <button class="guide-btn tiny" onclick="_guideLeave(${asGuide ? `'${L.beginner}'` : 'null'}, this)">${asGuide ? '동행 놓기' : '동행 그만두기'}</button></div>
     </div>`;
 }
@@ -31280,6 +31549,7 @@ async function _renderFriendScreen() {
                 <span class="friend-list-score">${lastWeekScore.toLocaleString()}점</span>
                 <div class="friend-list-actions" onclick="event.stopPropagation()">
                     <button class="friend-cheer-list-btn${cheered ? ' done' : ''}" onclick="_cheerFriendFromList('${tag}',this)" ${cheered ? 'disabled' : ''}>${cheered ? '✓' : '💛'}</button>
+                    <button class="friend-cheer-list-btn gift${njGiftSent[tag] === _get6AMDayStr() ? ' done' : ''}" onclick="openGiftFruit('${tag}', ${JSON.stringify(nickname || '').replace(/"/g, '&quot;')})" title="🎁">🎁</button>
                     <span class="friend-list-arrow">▶</span>
                 </div>
             </div>`;
