@@ -594,6 +594,7 @@ const LANG = {
         nj3d_glide_on: '🪂 날개를 펼쳤어요 — 점프를 한 번 더 누르면 접혀요',
         nj3d_sub_on: '🚢 잠수함을 탔어요 — 「잠수」를 누르면 가라앉고, 점프를 누르면 떠올라요. 둘 다 떼면 그 깊이에 머물러요',
         nj3d_slide: '🛝 미끄러지기', nj3d_slide_hint: '🛝 생명수의 강을 타고 바다까지! 조이스틱으로 좌우', nj3d_slide_end: '🌊 풍덩! 강물이 이르는 곳마다 살아나는 생명수의 바다예요 (겔 47:9)',
+        nj3d_view_fp: '👁 1인칭', nj3d_view_tp: '🎥 3인칭',
         nj3d_dive: '🤿 잠수', nj3d_dive_hint: '🤿 「잠수」를 누르고 있으면 내려가요 · 점프는 위로 · 둘 다 떼면 천천히 떠올라요',
         nj3d_boat_shore: '⛵ 배는 바닷가에서 탈 수 있어요 — 바다 쪽으로 가 보세요', nj3d_boat_edge: '⛵ 해안이에요 — 「🚶 내리기」로 뭍에 올라요',
         nj3d_ride: '{e} 타기', nj3d_unride: '🚶 내리기', nj3d_mount_shop: '🐴 탈것', nj3d_tack: '⚙️',
@@ -740,6 +741,28 @@ const LANG = {
         clear_blank_lv_mult: '✍️ 백지 Lv{lv} 제때 승점 ×{n}',
         blank_notif_body: '「{label}」 백지로 꺼내볼 시간이에요 ✍️',
         rv_blank_title: '✍️ 오늘 백지 차례',
+        nj3d_dex_btn: '🐠 도감 {n}/{m}', nj3d_dex_title: '🐠 바다 생물 도감', nj3d_dex_intro: '"고기가 각기 종류대로 대해의 고기 같이 심히 많으리라" (겔 47:10)',
+        nj3d_dex_found: '{e} {name} · {ref} — 말씀을 맞혀 💎{gem} · 도감 {n}/{m}', nj3d_dex_all: '🎉 바다 생물 도감 404칸을 다 채웠어요! 💎{gem}', nj3d_dex_bonus: '🏅 {group} 다 모음! 💎{gem}',
+        nj3d_dex_again: '{e} {name} · {ref} — 이번 주엔 이미 만났어요 (월요일 아침 6시에 다시)', nj3d_dex_q: '{e} {name} · 이 생물의 말씀은?', nj3d_dex_retry: '{e} 아쉬워요 — 한 번 더', nj3d_dex_miss: '{e} 이번 주엔 숨어 버렸어요 — 월요일 아침 6시에 다시',
+        nj3d_dex_tap: '👆 생물마다 말씀이 하나씩 — 가까이 가서 누르면 그 구절 문제가 나와요',
+        nj3d_dex_sum: '발견 {f} · 해금 {u} · 전체 {m}', nj3d_dex_next: '백지로 새 절을 쓸 때마다 생물이 하나씩 와요', nj3d_dex_bonus_title: '🏅 수집 보너스 (각 💎{gem})',
+        nj3d_dex_cell: '{ref} · {day}요일 · {when}', nj3d_dex_cell_lock: '{ref}를 처음 백지로 쓰면 와요', nj3d_dex_wk: '이번 주에 만남',
+        dex_g_species: '{name} 모두', dex_g_color: '{name} 생물 모두', dex_g_tier0: '맨몸 생물 모두', dex_g_tier: '{name} 생물 모두',
+        nj3d_dex_seen: '발견 {n}번', nj3d_dex_unknown: '???',
+        dex_when_any: '언제나 바다 어딘가에', dex_when_morning: '아침(6~12시)에만 나와요', dex_when_noon: '오후(12~18시)에만 나와요', dex_when_night: '저녁·밤(18~6시)에만 나와요',
+        dex_where_rock: '바위 틈에 숨어 있어요', dex_where_weed: '해초 숲에 숨어 있어요', dex_where_sand: '모래 바닥에 숨어 있어요', dex_where_swim: '바닷속을 헤엄쳐 다녀요',
+        nj3d_manna_here: '🍞 아침 들판에 만나가 내렸어요 — 성 둘레를 걸어 거두어 보세요 (출 16:14)', nj3d_manna_got: '🍞 만나를 거두었어요 · 💎{gem}', nj3d_manna_sat: ' (여섯째 날 갑절)',
+        nj3d_manna_all: '🍞 오늘 만나를 다 거두었어요 — 저녁이면 메추라기가 와요 (출 16:13)',
+        nj3d_quail_here: '🐦 저녁이 되어 메추라기가 들판에 내려앉았어요 (출 16:13)', nj3d_quail_flee: '🐦 메추라기가 도망치려 해요! — 빈칸에 들어갈 말씀은?', nj3d_quail_again: '🐦 푸드덕! 한 번 더',
+        nj3d_quail_got: '🐦 말씀의 그물로 메추라기를 잡았어요 · 💎{gem}', nj3d_quail_away: '🐦 메추라기가 날아가 버렸어요',
+        nj3d_clam_open: '🐚 조개 열기', nj3d_clam_q: '🐚 조개가 입을 열려면 — 빈칸에 들어갈 말씀은?', nj3d_clam_again: '🐚 꼭 닫혔어요 — 한 번 더',
+        nj3d_clam_shut: '🐚 조개가 입을 꼭 다물었어요 — 내일 아침 다른 곳에 숨어요', nj3d_clam_need: '🐚 말씀을 한 절 외우면 조개를 열 수 있어요',
+        nj3d_clam_got: '{name}를 얻었어요 · 💎{gem} — 강 어귀의 진주 장사에게 팔 수 있어요', nj3d_clam_rare: '✨ 값진 진주! "극히 값진 진주 하나를 발견하매" (마 13:46) · 💎{gem}',
+        nj3d_clam_today: '🐚 오늘 바다 밑에 조개 {n}개가 숨어 있어요 — 반짝이는 곳을 찾아보세요',
+        nj3d_pearl_btn: '💎 진주 팔기', nj3d_pearl_title: '💎 진주 장사', nj3d_pearl_intro: '"좋은 진주를 구하는 장사와 같으니" (마 13:45)',
+        nj3d_pearl_empty: '아직 진주가 없어요 — 바다 밑 조개를 찾아보세요 (오늘 {n}개 남음)', nj3d_pearl_left: '오늘 바다 밑에 남은 조개 {n}개',
+        nj3d_pearl_row: '{n}개 · 하나에 💎{gem}', nj3d_pearl_sell1: '하나 팔기', nj3d_pearl_sellall: '모두 팔기', nj3d_pearl_sold: '💎 {gem}개를 받았어요',
+        pearl_w: '흰 진주', pearl_c: '빛깔 진주', pearl_g: '값진 진주',
         gift_title: '🎁 {nick}님에게 나눔 열매', gift_desc: '내 보석으로 금빛 열매를 보내요. 받은 사람이 백지로 절을 써내면 24시간 뒤에 익고, 다시 백지로 써내며 먹으면 보석과 잎사귀를 받아요.',
         gift_size_s: '작은 열매', gift_size_m: '큰 열매', gift_size_l: '풍성한 열매',
         gift_size_line: '백지 {n}절 · 받는 사람 💎{half} · 🍃{n}',
@@ -1771,6 +1794,7 @@ const LANG = {
         nj3d_glide_on: '🪂 Glider open — press Jump again to fold',
         nj3d_sub_on: '🚢 Aboard the submarine — hold Dive to sink, Jump to rise; let go of both to hold your depth',
         nj3d_slide: '🛝 Slide', nj3d_slide_hint: '🛝 Ride the river of life down to the sea! Joystick to steer', nj3d_slide_end: '🌊 Splash! The sea of living water — everything lives where the river goes (Ezek 47:9)',
+        nj3d_view_fp: '👁 First person', nj3d_view_tp: '🎥 Third person',
         nj3d_dive: '🤿 Dive', nj3d_dive_hint: '🤿 Hold Dive to go down · Jump swims up · let go of both to float up slowly',
         nj3d_boat_shore: '⛵ Boats launch from the shore — head to the sea', nj3d_boat_edge: '⛵ The shore — tap 🚶 Get off to step ashore',
         nj3d_ride: '{e} Ride', nj3d_unride: '🚶 Get off', nj3d_mount_shop: '🐴 Rides', nj3d_tack: '⚙️',
@@ -1917,6 +1941,28 @@ const LANG = {
         clear_blank_lv_mult: '✍️ Blank Lv{lv} on-time points ×{n}',
         blank_notif_body: '"{label}" — time to write it from blank ✍️',
         rv_blank_title: '✍️ Blank review due today',
+        nj3d_dex_btn: '🐠 Log {n}/{m}', nj3d_dex_title: '🐠 Sea creature log', nj3d_dex_intro: '"There will be many kinds of fish, like the fish of the Great Sea" (Ezek 47:10)',
+        nj3d_dex_found: '{e} {name} · {ref} — you knew the verse 💎{gem} · Log {n}/{m}', nj3d_dex_all: '🎉 All 404 sea creatures logged! 💎{gem}', nj3d_dex_bonus: '🏅 {group} complete! 💎{gem}',
+        nj3d_dex_again: '{e} {name} · {ref} — already met this week (again Monday 6 AM)', nj3d_dex_q: '{e} {name} · this creature’s verse?', nj3d_dex_retry: '{e} So close — once more', nj3d_dex_miss: '{e} It hid for this week — back Monday 6 AM',
+        nj3d_dex_tap: '👆 Every creature carries a verse — get close and tap for its question',
+        nj3d_dex_sum: 'found {f} · unlocked {u} · total {m}', nj3d_dex_next: 'Each new verse you write blank brings one more creature', nj3d_dex_bonus_title: '🏅 Collection bonuses (💎{gem} each)',
+        nj3d_dex_cell: '{ref} · {day} · {when}', nj3d_dex_cell_lock: 'Comes when you first write {ref} blank', nj3d_dex_wk: 'met this week',
+        dex_g_species: 'every {name}', dex_g_color: 'every {name} creature', dex_g_tier0: 'every plain creature', dex_g_tier: 'every {name} creature',
+        nj3d_dex_seen: 'found {n}×', nj3d_dex_unknown: '???',
+        dex_when_any: 'Somewhere in the sea, any time', dex_when_morning: 'Only in the morning (6–12)', dex_when_noon: 'Only in the afternoon (12–18)', dex_when_night: 'Only in the evening and night (18–6)',
+        dex_where_rock: 'Hides in rock crevices', dex_where_weed: 'Hides in the seaweed', dex_where_sand: 'Hides on the sandy floor', dex_where_swim: 'Swims through the sea',
+        nj3d_manna_here: '🍞 Manna fell on the field this morning — walk around the city to gather it (Ex 16:14)', nj3d_manna_got: '🍞 You gathered manna · 💎{gem}', nj3d_manna_sat: ' (double on the sixth day)',
+        nj3d_manna_all: '🍞 All of today’s manna is gathered — quail come in the evening (Ex 16:13)',
+        nj3d_quail_here: '🐦 Evening — quail have landed on the field (Ex 16:13)', nj3d_quail_flee: '🐦 The quail is about to run! — which words fill the blank?', nj3d_quail_again: '🐦 Flutter! Once more',
+        nj3d_quail_got: '🐦 Caught in the net of the Word · 💎{gem}', nj3d_quail_away: '🐦 The quail flew away',
+        nj3d_clam_open: '🐚 Open clam', nj3d_clam_q: '🐚 To open the clam — which words fill the blank?', nj3d_clam_again: '🐚 It shut tight — once more',
+        nj3d_clam_shut: '🐚 The clam closed for good — it hides somewhere new tomorrow morning', nj3d_clam_need: '🐚 Memorize one verse to open clams',
+        nj3d_clam_got: 'You found a {name} · 💎{gem} — sell it to the pearl merchant at the river mouth', nj3d_clam_rare: '✨ A pearl of great value! "When he found one pearl of great value" (Matt 13:46) · 💎{gem}',
+        nj3d_clam_today: '🐚 {n} clams are hidden on the sea floor today — look for the sparkle',
+        nj3d_pearl_btn: '💎 Sell pearls', nj3d_pearl_title: '💎 Pearl merchant', nj3d_pearl_intro: '"Like a merchant in search of fine pearls" (Matt 13:45)',
+        nj3d_pearl_empty: 'No pearls yet — search the clams on the sea floor ({n} left today)', nj3d_pearl_left: '{n} clams left on the sea floor today',
+        nj3d_pearl_row: '{n} · 💎{gem} each', nj3d_pearl_sell1: 'Sell one', nj3d_pearl_sellall: 'Sell all', nj3d_pearl_sold: '💎 You received {gem} gems',
+        pearl_w: 'white pearl', pearl_c: 'colored pearl', pearl_g: 'pearl of great value',
         gift_title: '🎁 A shared fruit for {nick}', gift_desc: 'Send a golden fruit with your gems. When they write verses on a blank page it ripens in 24 hours; eating it (writing those verses blank again) gives them gems and leaves.',
         gift_size_s: 'Small fruit', gift_size_m: 'Large fruit', gift_size_l: 'Abundant fruit',
         gift_size_line: '{n} blank verse(s) · they get 💎{half} · 🍃{n}',
@@ -2679,6 +2725,13 @@ let njMountSel = '';    // 🐴 지금 고른 탈것
 let njWings = {};       // 🪂 글라이더·등 날개 — { own: [가진 것], on: 낀 것, mv }
 let njFruits = {};       // 생명나무 열매 — { 'YYYY-MM': { 절id: [열린 때, 먹은 때(0=아직), 마지막 실패 때] } }. 지난 달은 잎사귀 수만 njLeafArch로 접는다
 let njLeafArch = {};     // 접은 달의 먹은 열매(=잎사귀) 수 { 'YYYY-MM': n }
+let njClams = null;            // 🐚 오늘의 조개 { day: 6시 날짜, done: [연(못 연) 조개 번호], fails: {번호: 틀린 수} } (2026-10-05)
+let njPearlFound = { w: 0, c: 0, g: 0 };   // 🐚 찾은 진주(늘기만) — 흰·빛깔·값진
+let njPearlSold = { w: 0, c: 0, g: 0 };    // 💎 판 진주(늘기만) — 가진 진주 = 찾은 − 판
+let njPearlGems = 0;          // 💎 진주를 팔아 받은 보석 합(보석 흐름 실측용)
+let njManna = null;           // 🍞 오늘의 만나·메추라기 { day, got: [거둔 무더기], quail: [끝난 메추라기(잡음·날아감)], qfail: {번호: 틀린 수} } (2026-10-05)
+let njMannaGems = 0;          // 💎 만나·메추라기로 받은 보석 합(실측용)
+let njDex = { v: {}, w: {}, f: {}, b: {}, all: 0 };   // 🐠 바다 생물 도감 — v 처음 만난 절 {절: 시각} · w 이번 주 보상 {절: 주} · f 틀린 수 {절: [주, 수]} · b 받은 묶음 보너스 · all (2026-10-05)
 let njGiftFruits = [];   // 🎁 받은 나눔 열매 [{id, from, fromTag, size, msg, at, v:[백지로 쓴 절], ripe(익는 시각), ate:[먹은 절], done(먹은 시각), thanked}] (2026-10-04)
 let njGiftLeaves = 0;    // 🎁 나눔 열매로 받은 잎사귀 — _njLeaves()·서버 seaLeavesEarned에 더한다
 let njGiftSent = {};     // 🎁 보낸 사람 쪽 — 받는 이 태그 → 마지막으로 보낸 날(6시 날짜). 한 사람에게 하루 한 번
@@ -3157,6 +3210,13 @@ loadGameData = function () {
         njGiftLeaves = Math.max(0, parseInt(parsed.njGiftLeaves, 10) || 0);
         njGiftSent = (parsed.njGiftSent && typeof parsed.njGiftSent === 'object') ? parsed.njGiftSent : {};
         njGiftLog = Object.assign({ sent: 0, gems: 0, fruit: 0 }, (parsed.njGiftLog && typeof parsed.njGiftLog === 'object') ? parsed.njGiftLog : {});
+        njClams = (parsed.njClams && typeof parsed.njClams === 'object' && parsed.njClams.day) ? parsed.njClams : null;
+        njPearlFound = Object.assign({ w: 0, c: 0, g: 0 }, (parsed.njPearlFound && typeof parsed.njPearlFound === 'object') ? parsed.njPearlFound : {});
+        njPearlSold = Object.assign({ w: 0, c: 0, g: 0 }, (parsed.njPearlSold && typeof parsed.njPearlSold === 'object') ? parsed.njPearlSold : {});
+        njPearlGems = Math.max(0, parseInt(parsed.njPearlGems, 10) || 0);
+        njManna = (parsed.njManna && typeof parsed.njManna === 'object' && parsed.njManna.day) ? parsed.njManna : null;
+        njMannaGems = Math.max(0, parseInt(parsed.njMannaGems, 10) || 0);
+        njDex = Object.assign({ v: {}, w: {}, f: {}, b: {}, all: 0 }, (parsed.njDex && typeof parsed.njDex === 'object') ? parsed.njDex : {});
         seaGemsGiven = Math.max(0, parseInt(parsed.seaGemsGiven, 10) || 0);
         njFish = Math.max(0, parseInt(parsed.njFish, 10) || 0);
         njFishSpent = Math.max(0, parseInt(parsed.njFishSpent, 10) || 0);
@@ -7999,9 +8059,9 @@ function _njFishGot(stage, lenTier, half) {
     return { value: v, name: currentLang === 'en' ? k[2] : k[1], score: sc };
 }
 /* 빈칸 문제 — 백지·빈칸으로 써낸 적 있는 절 → 없으면 클리어한 절 → 없으면 1장 앞. 한두 낱말을 가리고 같은 장 다른 절의 낱말로 가짜 셋 */
-function _njFishQuestion() {
+function _njFishQuestion(only) {   // only = 이 절들에서만(🐦 메추라기 — 오늘 외운 절)
     const known = Object.keys(verseRecall || {}).filter(id => { const r = verseRecall[id]; return /^\d+-\d+$/.test(id) && r && (r.typedPass > 0 || r.blankPass > 0); });
-    let pool = known.length ? known : Object.keys(stageClearDate || {}).filter(id => /^\d+-\d+$/.test(id));
+    let pool = (only && only.length) ? only : known.length ? known : Object.keys(stageClearDate || {}).filter(id => /^\d+-\d+$/.test(id));
     if (!pool.length) pool = ['1-1', '1-2', '1-3'];
     const words = id => { const [c, v] = id.split('-').map(Number); return ((((bibleData[c] || [])[v - 1]) || {}).text || '').split(/\s+/).filter(Boolean); };
     for (let tries = 0; tries < 12; tries++) {
@@ -8025,6 +8085,205 @@ function _njFishQuestion() {
     return null;
 }
 
+/* ══ 🐚 값진 진주 찾기 (2026-10-05 사용자) — 마 13:45-46 「좋은 진주를 구하는 장사… 극히 값진 진주 하나를 발견하매」 ══
+   매일 아침 6시 바다 밑 여기저기(깊은 데·중간·얕은 데)에 조개 셋이 새로 숨는다(자리는 날짜로 정해져 모두 같다 — nj3d.js clamSpots).
+   열려면 빈칸 4지(낚시와 같은 문제 — 내가 클리어한 절에서만, 백지로 써낸 절 먼저). 두 번까지, 다 틀리면 그 조개는 오늘 닫힌다.
+   진주: 흰 70% 💎250 · 빛깔 27.5% 💎500 · 값진 2.5%(40개에 하나) 💎10,000 — 보통의 하루(흰 둘 + 빛깔 하나) 💎1,000(사용자: 중앙값 1천).
+   팔기: 강 어귀의 진주 장사(늘 있다 — 소성된 나라가 0이라 사신만으론 팔 곳이 없었다) · 소성된 나라의 사신도 산다.
+   한 절도 클리어하지 않은 사람은 열 수 없다(조개는 보인다 — "한 절 외우면"). 진주 문(주 5일 백지)과는 별개의 진주 */
+const NJ_PEARLS = { w: { gem: 250, p: 0.7 }, c: { gem: 500, p: 0.275 }, g: { gem: 10000, p: 0.025 } };
+const NJ_CLAMS_PER_DAY = 3;
+function _njClamDay() {
+    const d = _get6AMDayStr();
+    if (!njClams || njClams.day !== d) njClams = { day: d, done: [], fails: {} };
+    return njClams;
+}
+function _njClamLeft() { const c = _njClamDay(); return Math.max(0, NJ_CLAMS_PER_DAY - (c.done || []).length); }
+function _njClamKnown() { return Object.keys(stageClearDate || {}).some(id => /^\d+-\d+$/.test(id)); }
+function _njClamQuestion() { return _njClamKnown() ? _njFishQuestion() : null; }   // 낚시 문제 — 백지로 써낸 절 먼저, 없으면 클리어한 절
+function _njClamResult(idx, ok) {
+    const c = _njClamDay(); if ((c.done || []).includes(idx)) return null;
+    if (!ok) {
+        c.fails[idx] = (c.fails[idx] || 0) + 1;
+        if (c.fails[idx] >= 2) c.done.push(idx);
+        saveGameData(); return null;
+    }
+    const r = Math.random(), k = r < NJ_PEARLS.g.p ? 'g' : r < NJ_PEARLS.g.p + NJ_PEARLS.c.p ? 'c' : 'w';
+    c.done.push(idx);
+    njPearlFound[k] = (njPearlFound[k] | 0) + 1;
+    saveGameData();
+    if (typeof syncToFirestore === 'function') syncToFirestore();
+    return { k, gem: NJ_PEARLS[k].gem, name: t('pearl_' + k) };
+}
+function _njPearlAvail(k) { return Math.max(0, (njPearlFound[k] | 0) - (njPearlSold[k] | 0)); }
+function _njPearlSell(k, n) {
+    const have = _njPearlAvail(k), m = Math.min(have, n === 'all' ? have : (n | 0));
+    if (!NJ_PEARLS[k] || m <= 0) return 0;
+    const gem = NJ_PEARLS[k].gem * m;
+    njPearlSold[k] = (njPearlSold[k] | 0) + m;
+    njPearlGems = (njPearlGems | 0) + gem;
+    addGems(gem);
+    saveGameData();
+    if (typeof syncToFirestore === 'function') syncToFirestore();
+    return gem;
+}
+/* 진주 팔기 창(진주 장사·사신이 함께 쓴다) */
+function _njPearlSellHtml() {
+    const rows = ['g', 'c', 'w'].filter(k => _njPearlAvail(k) > 0).map(k => `<div class="nj3d-offer-row"><div><b>${t('pearl_' + k)}</b><span>${t('nj3d_pearl_row', { n: _njPearlAvail(k), gem: NJ_PEARLS[k].gem.toLocaleString() })}</span></div>
+        <span class="nj3d-pearl-btns"><button data-sell="${k}" data-n="1">${t('nj3d_pearl_sell1')}</button><button data-sell="${k}" data-n="all">${t('nj3d_pearl_sellall')}</button></span></div>`).join('');
+    return rows ? rows + `<div class="nj3d-offer-intro">${t('nj3d_pearl_left', { n: _njClamLeft() })}</div>` : `<div class="nj3d-offer-intro">${t('nj3d_pearl_empty', { n: _njClamLeft() })}</div>`;
+}
+/* ══ 🍞 만나와 🐦 메추라기 (2026-10-05 사용자) — 출 16 · 신 8:3 「사람이 떡으로만 사는 것이 아니요 여호와의 입에서 나오는 모든 말씀으로」 ══
+   오늘의 암송(월~토 하루 3절, 일요일 쉼)과 만나가 같은 모양이다 — 엿새 내리고 여섯째 날 갑절, 안식일엔 없다(출 16:22-26).
+   · 만나: **오늘의 암송을 다 마친 날에만**(`_dailyDoneToday`) 성 둘레 들판에 오늘 구절 수만큼 무더기. 밟으면 거두어진다(사용자 결정 「가」 — 이미 백지로 외웠으니 상) → 💎300
+   · 메추라기: 저녁 6시부터(출 16:13 「저녁에는 메추라기가」) 거둔 만나 하나마다 한 마리. 다가가면 도망치려 한다 → 그 절의 빈칸 4지 → 말씀의 그물로 잡으면 💎300.
+     두 번까지(한 번 틀리면 푸드덕 물러나고, 또 틀리면 날아간다). 제한 시간 없음(사용자 — 어르신)
+   · 토요일 두 배(사용자). 다음 날 아침이면 못 거둔 만나는 없어진다(출 16:20) */
+const NJ_MANNA_GEM = 300, NJ_QUAIL_GEM = 300;
+function _njMannaDay() {
+    const d = _get6AMDayStr();
+    if (!njManna || njManna.day !== d) njManna = { day: d, got: [], quail: [], qfail: {} };
+    return njManna;
+}
+function _njIsSixthDay() { const [y, m, d] = _get6AMDayStr().split('-').map(Number); return new Date(y, m - 1, d).getDay() === 6; }
+function _njMannaToday() {   // { ids: 오늘 구절, ready: 오늘의 암송을 다 마쳤나, sat }
+    const dev = (typeof _dailyEvent === 'function') ? _dailyEvent() : null;
+    if (!dev || dev.rest) return { ids: [], ready: false, sat: false };
+    return { ids: _eventVerseIds(dev), ready: _dailyDoneToday(), sat: _njIsSixthDay() };
+}
+function _njMannaGather(i) {
+    const M = _njMannaDay(), T = _njMannaToday();
+    if (!T.ready || i < 0 || i >= T.ids.length || M.got.includes(i)) return 0;
+    M.got.push(i);
+    const gem = NJ_MANNA_GEM * (T.sat ? 2 : 1);
+    addGems(gem); njMannaGems = (njMannaGems | 0) + gem;
+    saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
+    return gem;
+}
+function _njQuailTime() { const h = new Date().getHours(); return h >= 18 || h < 6; }   // 저녁 6시 ~ 다음 날 아침 6시(하루 경계까지)
+function _njQuailQuestion(i) { const id = _njMannaToday().ids[i]; return id ? _njFishQuestion([id]) : null; }
+function _njQuailResult(i, ok) {
+    const M = _njMannaDay(), T = _njMannaToday();
+    if (!M.got.includes(i) || M.quail.includes(i)) return 0;
+    if (!ok) { M.qfail[i] = (M.qfail[i] | 0) + 1; if (M.qfail[i] >= 2) M.quail.push(i); saveGameData(); return 0; }
+    M.quail.push(i);
+    const gem = NJ_QUAIL_GEM * (T.sat ? 2 : 1);
+    addGems(gem); njMannaGems = (njMannaGems | 0) + gem;
+    saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
+    return gem;
+}
+/* ══ 🐠 바다 생물 도감 (2026-10-05 사용자) — 겔 47:10 「고기가 각기 종류대로」 · 암송과 엮는다 ══
+   **생물 하나 = 구절 하나.** 404절마다 정해진 생물(누구에게나 같다): 절 순서 v(0~403) → 종 = v % 12 · 꾸밈 = ⌊v/84⌋(맨몸 1:1~5:2 · 모자 ~10:4 · 안경 ~15:3 · 리본 ~19:16 · 면류관 19:17~22:21)
+   · 빛깔(요일) = (⌊(v%84)/12⌋ + 종) % 7 — 연속된 절이 일곱 요일로 흩어진다. 조합 420칸 중 404칸(면류관 16칸은 비어 있다).
+   · 해금: 그 절을 처음 백지로 써내면(blankPass·백지레벨) 그 생물이 바다에 온다. 자기 빛깔 요일에, 자기 종의 시간대에만(해마 아침 · 가오리·곰치 오후 · 해파리·돌고래 저녁·밤).
+   · 발견: 가까이 가서 누르면 그 절의 빈칸 4지 → 맞히면 💎200. 생물마다 한 주에 한 번 — 모두 월요일 아침 6시에 함께 초기화. 두 번 틀리면 그 주엔 숨는다.
+   · 묶음 보너스 💎5,000(종 12 · 빛깔 7 · 꾸밈 5) · 404칸 다 💎100,000. (처음엔 돌고래가 나흘에 하루꼴 운이었다 — 구절과 엮으며 저녁·밤으로) */
+const NJ_SEA_DEX = [
+    { k: 'octopus', e: '🐙', ko: '문어', en: 'octopus', when: 'any', where: 'rock' },
+    { k: 'seahorse', e: '🐴', ko: '해마', en: 'seahorse', when: 'morning', where: 'weed' },
+    { k: 'turtle', e: '🐢', ko: '바다거북', en: 'sea turtle', when: 'any', where: 'swim' },
+    { k: 'ray', e: '🪁', ko: '가오리', en: 'ray', when: 'noon', where: 'sand' },
+    { k: 'starfish', e: '⭐', ko: '불가사리', en: 'starfish', when: 'any', where: 'sand' },
+    { k: 'crab', e: '🦀', ko: '소라게', en: 'hermit crab', when: 'any', where: 'sand' },
+    { k: 'jelly', e: '🪼', ko: '해파리', en: 'jellyfish', when: 'night', where: 'swim' },
+    { k: 'puffer', e: '🐡', ko: '복어', en: 'pufferfish', when: 'any', where: 'weed' },
+    { k: 'eel', e: '🐍', ko: '곰치', en: 'moray eel', when: 'noon', where: 'rock' },
+    { k: 'clown', e: '🐠', ko: '흰동가리', en: 'clownfish', when: 'any', where: 'weed' },
+    { k: 'urchin', e: '🌰', ko: '성게', en: 'sea urchin', when: 'any', where: 'rock' },
+    { k: 'dolphin', e: '🐬', ko: '돌고래', en: 'dolphin', when: 'night', where: 'swim' },
+];
+const NJ_DEX_COLORS = [   // getDay() 순서 — 일요일부터
+    { ko: '흰', en: 'white', day: '일', dayEn: 'Sun', hex: 0xf3efe6 }, { ko: '빨간', en: 'red', day: '월', dayEn: 'Mon', hex: 0xd94a4a }, { ko: '주황빛', en: 'orange', day: '화', dayEn: 'Tue', hex: 0xee8a2f },
+    { ko: '노란', en: 'yellow', day: '수', dayEn: 'Wed', hex: 0xe8c93a }, { ko: '초록빛', en: 'green', day: '목', dayEn: 'Thu', hex: 0x4fae5a }, { ko: '파란', en: 'blue', day: '금', dayEn: 'Fri', hex: 0x3f7fd0 },
+    { ko: '보랏빛', en: 'purple', day: '토', dayEn: 'Sat', hex: 0x8a56c8 },
+];
+const NJ_DEX_TIERS = [   // 꾸밈 — 절 순서대로 84절씩
+    { k: '', e: '', ko: '맨몸', en: 'plain', pre: '', preEn: '' }, { k: 'hat', e: '🎩', ko: '모자', en: 'hat', pre: '모자 쓴 ', preEn: 'hat-wearing ' },
+    { k: 'glasses', e: '👓', ko: '안경', en: 'glasses', pre: '안경 낀 ', preEn: 'bespectacled ' }, { k: 'ribbon', e: '🎀', ko: '리본', en: 'ribbon', pre: '리본 단 ', preEn: 'ribboned ' },
+    { k: 'crown', e: '👑', ko: '면류관', en: 'crown', pre: '면류관 쓴 ', preEn: 'crowned ' },
+];
+const NJ_DEX_GEM = 200, NJ_DEX_BONUS = 5000, NJ_DEX_ALL = 100000;
+let _njDexVerses = null;
+function _njDexVerseList() {   // 계 1:1 ~ 22:21 순서
+    if (_njDexVerses) return _njDexVerses;
+    const out = []; for (let c = 1; c <= 22; c++) (bibleData[c] || []).forEach((_, i) => out.push(`${c}-${i + 1}`));
+    return (_njDexVerses = out);
+}
+function _njDexOf(vi) { const s = vi % 12, t = Math.floor(vi / 84), a = Math.floor((vi % 84) / 12); return { s, t, c: (a + s) % 7 }; }
+function _njDexEntry(id) { const vi = _njDexVerseList().indexOf(id); if (vi < 0) return null; const o = _njDexOf(vi); return Object.assign(o, { id, vi, d: NJ_SEA_DEX[o.s] }); }
+function _njDexName(d) { return currentLang === 'en' ? d.en : d.ko; }
+function _njDexFullName(E) { const en = currentLang === 'en', T = NJ_DEX_TIERS[E.t], C = NJ_DEX_COLORS[E.c]; return `${en ? T.preEn : T.pre}${en ? C.en : C.ko} ${_njDexName(E.d)}`; }
+function _njDexRef(id) { const [c, v] = id.split('-'); return currentLang === 'en' ? `Rev ${c}:${v}` : `계 ${c}:${v}`; }
+function _njDexUnlocked(id) { const r = (typeof verseRecall !== 'undefined' && verseRecall) ? verseRecall[id] : null; return !!(r && (r.blankPass > 0 || r.bx > 0)); }
+function _njDexWhenOk(d) {
+    const h = new Date().getHours();
+    if (d.when === 'morning') return h >= 6 && h < 12;
+    if (d.when === 'noon') return h >= 12 && h < 18;
+    if (d.when === 'night') return h >= 18 || h < 6;
+    return true;
+}
+function _njDexColorIdx() { const [y, m, d] = _get6AMDayStr().split('-').map(Number); return new Date(y, m - 1, d).getDay(); }
+function _njDexWeek() { const today = _get6AMDayStr(), [y, m, d] = today.split('-').map(Number), wd = new Date(y, m - 1, d).getDay(); return _shift6AMDayStr(today, -((wd + 6) % 7)); }   // 이번 주 월요일(6시 날짜)
+/* 지금 바다에 있는 생물 — 풀렸고, 오늘 요일 빛깔이고, 지금 그 종의 시간대 */
+function _njDexToday() {
+    const ci = _njDexColorIdx();
+    return _njDexVerseList().map((id, vi) => Object.assign(_njDexOf(vi), { id, vi })).filter(E => E.c === ci && _njDexWhenOk(NJ_SEA_DEX[E.s]) && _njDexUnlocked(E.id))
+        .map(E => Object.assign(E, { d: NJ_SEA_DEX[E.s] }));
+}
+function _njDexMetThisWeek(id) { return njDex.w && njDex.w[id] === _njDexWeek(); }
+function _njDexHidden(id) { const f = njDex.f && njDex.f[id]; return Array.isArray(f) && f[0] === _njDexWeek() && f[1] >= 2; }
+function _njDexCount() { return Object.keys(njDex.v || {}).length; }
+function _njDexUnlockedCount() { return _njDexVerseList().filter(_njDexUnlocked).length; }
+function _njDexGroups() {   // 묶음 — 종 12 · 빛깔 7 · 꾸밈 5
+    const L = _njDexVerseList().map((id, vi) => Object.assign(_njDexOf(vi), { id })), en = currentLang === 'en', G = [];
+    NJ_SEA_DEX.forEach((d, s) => G.push({ key: 's' + s, name: t('dex_g_species', { name: (en ? '' : d.e + ' ') + _njDexName(d) }), ids: L.filter(E => E.s === s).map(E => E.id) }));
+    NJ_DEX_COLORS.forEach((c, i) => G.push({ key: 'c' + i, name: t('dex_g_color', { name: en ? c.en : c.ko }), ids: L.filter(E => E.c === i).map(E => E.id) }));
+    NJ_DEX_TIERS.forEach((tt, i) => G.push({ key: 't' + i, name: i ? t('dex_g_tier', { name: tt.e + ' ' + (en ? tt.en : tt.ko) }) : t('dex_g_tier0'), ids: L.filter(E => E.t === i).map(E => E.id) }));
+    return G;
+}
+/* 문제를 맞혔다/틀렸다 — 반환 { gem, bonus: [{name, gem}], all, n, hidden } */
+function _njDexAnswer(id, ok) {
+    const wk = _njDexWeek();
+    if (!njDex.v) njDex.v = {}; if (!njDex.w) njDex.w = {}; if (!njDex.f) njDex.f = {}; if (!njDex.b) njDex.b = {};
+    if (!ok) {
+        const f = Array.isArray(njDex.f[id]) && njDex.f[id][0] === wk ? njDex.f[id] : [wk, 0];
+        f[1]++; njDex.f[id] = f; saveGameData();
+        return { gem: 0, hidden: f[1] >= 2 };
+    }
+    if (njDex.w[id] === wk) return { gem: 0, again: true };
+    njDex.w[id] = wk;
+    if (!njDex.v[id]) njDex.v[id] = Date.now();
+    let gem = NJ_DEX_GEM; const bonus = [];
+    _njDexGroups().forEach(G => { if (!njDex.b[G.key] && G.ids.every(x => njDex.v[x])) { njDex.b[G.key] = Date.now(); gem += NJ_DEX_BONUS; bonus.push({ name: G.name, gem: NJ_DEX_BONUS }); } });
+    let all = false;
+    if (!njDex.all && _njDexCount() >= _njDexVerseList().length) { njDex.all = Date.now(); gem += NJ_DEX_ALL; all = true; }
+    addGems(gem); saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
+    return { gem, bonus, all, n: _njDexCount() };
+}
+/* 도감 창 — 맨 위 요약 · 종마다 카드(세로 꾸밈 5 × 가로 요일 7) · 수집 보너스 */
+function _njDexHtml() {
+    const L = _njDexVerseList(), en = currentLang === 'en', cell = {};
+    L.forEach((id, vi) => { const o = _njDexOf(vi); cell[`${o.s}|${o.t}|${o.c}`] = id; });
+    const found = _njDexCount(), unl = _njDexUnlockedCount();
+    const head = `<div class="nj3d-dex-sum">${t('nj3d_dex_sum', { f: found, u: unl, m: L.length })}<small>${t('nj3d_dex_next')}</small></div>`;
+    const dayRow = `<div class="nj3d-dex-grid nj3d-dex-days"><i></i>${NJ_DEX_COLORS.map(c => `<i>${en ? c.dayEn : c.day}</i>`).join('')}</div>`;
+    const cards = NJ_SEA_DEX.map((d, s) => {
+        const ids = L.filter((_, vi) => vi % 12 === s), got = ids.filter(id => njDex.v && njDex.v[id]).length;
+        const rows = NJ_DEX_TIERS.map((tt, ti) => `<div class="nj3d-dex-grid"><i class="nj3d-dex-tier">${tt.e || '·'}</i>${NJ_DEX_COLORS.map((c, ci) => {
+            const id = cell[`${s}|${ti}|${ci}`]; if (!id) return '<b class="nj3d-dex-cell none"></b>';
+            const st = njDex.v && njDex.v[id] ? 'on' : _njDexUnlocked(id) ? 'open' : 'lock', wk = _njDexMetThisWeek(id) ? ' wk' : '';
+            const tip = st === 'lock' ? t('nj3d_dex_cell_lock', { ref: _njDexRef(id) }) : t('nj3d_dex_cell', { ref: _njDexRef(id), day: en ? c.dayEn : c.day, when: t('dex_when_' + d.when) });
+            return `<b class="nj3d-dex-cell ${st}${wk}" style="--c:#${c.hex.toString(16).padStart(6, '0')}" data-tip="${tip}">${st === 'lock' ? '🔒' : ''}</b>`;
+        }).join('')}</div>`).join('');
+        return `<div class="nj3d-dex-card"><div class="nj3d-dex-card-h"><b>${d.e} ${_njDexName(d)}</b><span>${got}/${ids.length} · ${t('dex_where_' + d.where)} · ${t('dex_when_' + d.when)}</span></div>${dayRow}${rows}<div class="nj3d-dex-tipline"></div></div>`;
+    }).join('');
+    const G = _njDexGroups();
+    const bon = `<div class="nj3d-dex-bon"><div class="nj3d-dex-bon-h">${t('nj3d_dex_bonus_title', { gem: NJ_DEX_BONUS.toLocaleString() })}</div>${G.map(g => {
+        const n = g.ids.filter(id => njDex.v && njDex.v[id]).length, done = !!(njDex.b && njDex.b[g.key]);
+        return `<div class="nj3d-dex-bon-row${done ? ' done' : ''}"><span>${g.name}</span><span>${done ? '✅' : `${n}/${g.ids.length}`}</span></div>`;
+    }).join('')}<div class="nj3d-dex-bon-row all${njDex.all ? ' done' : ''}"><span>🌊 404</span><span>${njDex.all ? '✅' : `${found}/404`} · 💎${NJ_DEX_ALL.toLocaleString()}</span></div></div>`;
+    return head + cards + bon;
+}
 /* ══ 🍇 포도원 (2026-09-30) — docs/새-예루살렘.md 「낚시 · 농사 · 만국의 예물」 ══
    소성된 나라(풀밭 이상)에만, 나라마다 한 그루, 한 사람 여섯 그루까지. 💎로 심고 3일 뒤 거둔다.
    물 주기 = 그 사흘 동안 백지로 한 절이라도 써낸 날(njBlankDays — 진주와 같은 기록). 거두는 양 = 4 + 물 준 날 × 3 (매일이면 13, 한 번도 없으면 4) */
@@ -12571,6 +12830,13 @@ function saveGameData() {
         njGiftLeaves: njGiftLeaves,       // 🎁 나눔 열매로 받은 잎사귀
         njGiftSent: njGiftSent,           // 🎁 한 사람에게 하루 한 번
         njGiftLog: njGiftLog,             // 🎁 보낸 수·보낸 보석·맺힌 열매
+        njClams: njClams,                 // 🐚 오늘의 조개
+        njPearlFound: njPearlFound,       // 🐚 찾은 진주
+        njPearlSold: njPearlSold,         // 💎 판 진주
+        njPearlGems: njPearlGems,         // 💎 진주로 받은 보석 합
+        njManna: njManna,                 // 🍞 오늘의 만나·메추라기
+        njMannaGems: njMannaGems,         // 💎 만나·메추라기로 받은 보석 합
+        njDex: njDex,                     // 🐠 바다 생물 도감(절마다 생물)
         seaGemsGiven: seaGemsGiven,       // 바다를 맑힌 보석
         njFish: njFish,                   // 🎣 낚은 물고기 값 합
         njFishSpent: njFishSpent,         // 🎣 예물에 쓴 물고기
@@ -12955,6 +13221,38 @@ function _mergeSaveProgress(target, other) {
         const tl = Object.assign({ sent: 0, gems: 0, fruit: 0 }, target.njGiftLog || {}), ol = other.njGiftLog || {};
         ['sent', 'gems', 'fruit'].forEach(k => { if ((ol[k] | 0) > (tl[k] | 0)) { tl[k] = ol[k]; took++; } });
         target.njGiftLog = tl;
+    }
+    {   // 🐚 진주 — 찾은·판 수는 종류마다 큰 쪽(늘기만 한다) · 오늘의 조개는 같은 날이면 합치고 아니면 나중 날
+        ['njPearlFound', 'njPearlSold'].forEach(f => { const tt = Object.assign({ w: 0, c: 0, g: 0 }, target[f] || {}), oo = other[f] || {};
+            ['w', 'c', 'g'].forEach(k => { if ((oo[k] | 0) > (tt[k] | 0)) { tt[k] = oo[k]; took++; } }); target[f] = tt; });
+        if ((other.njPearlGems | 0) > (target.njPearlGems | 0)) { target.njPearlGems = other.njPearlGems; took++; }
+        if ((other.njMannaGems | 0) > (target.njMannaGems | 0)) { target.njMannaGems = other.njMannaGems; took++; }
+        {   // 🐠 도감 — 처음 만난 시각·보너스 시각은 이른 쪽, 이번 주 보상 주·틀린 기록은 늦은 쪽
+            const td = Object.assign({ v: {}, w: {}, f: {}, b: {}, all: 0 }, target.njDex || {}), od = other.njDex || {};
+            ['v', 'b'].forEach(f => { td[f] = Object.assign({}, td[f] || {}); Object.entries(od[f] || {}).forEach(([k, ts]) => { if (!td[f][k] || ts < td[f][k]) { td[f][k] = ts; took++; } }); });
+            td.w = Object.assign({}, td.w || {}); Object.entries(od.w || {}).forEach(([k, wk]) => { if (!td.w[k] || wk > td.w[k]) { td.w[k] = wk; took++; } });
+            td.f = Object.assign({}, td.f || {}); Object.entries(od.f || {}).forEach(([k, x]) => { const y = td.f[k]; if (Array.isArray(x) && (!Array.isArray(y) || x[0] > y[0] || (x[0] === y[0] && x[1] > y[1]))) { td.f[k] = x; took++; } });
+            if (od.all && (!td.all || od.all < td.all)) { td.all = od.all; took++; }
+            target.njDex = td;
+        }
+        {   // 🍞 오늘의 만나 — 같은 날이면 합치고 아니면 나중 날
+            const tm = target.njManna, om = other.njManna;
+            if (om && om.day) {
+                if (!tm || !tm.day || om.day > tm.day) { target.njManna = om; took++; }
+                else if (om.day === tm.day) {
+                    tm.got = [...new Set([...(tm.got || []), ...(om.got || [])])]; tm.quail = [...new Set([...(tm.quail || []), ...(om.quail || [])])];
+                    tm.qfail = Object.assign({}, tm.qfail || {}); Object.entries(om.qfail || {}).forEach(([i, n]) => { if ((n | 0) > (tm.qfail[i] | 0)) tm.qfail[i] = n; });
+                }
+            }
+        }
+        const tc = target.njClams, oc = other.njClams;
+        if (oc && oc.day) {
+            if (!tc || !tc.day || oc.day > tc.day) { target.njClams = oc; took++; }
+            else if (oc.day === tc.day) {
+                tc.done = [...new Set([...(tc.done || []), ...(oc.done || [])])];
+                tc.fails = Object.assign({}, tc.fails || {}); Object.entries(oc.fails || {}).forEach(([i, n]) => { if ((n | 0) > (tc.fails[i] | 0)) tc.fails[i] = n; });
+            }
+        }
     }
     if (other.fpRecall && typeof other.fpRecall === 'object') {   // 첫 마디 — 절마다 나중에 한 쪽
         const tf = (target.fpRecall && typeof target.fpRecall === 'object') ? target.fpRecall : {};

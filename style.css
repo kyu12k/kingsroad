@@ -7249,3 +7249,37 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
     animation: nj3dSpeed 0.18s steps(3) infinite; }
 @keyframes nj3dSpeed { 0% { transform: rotate(0deg) scale(1.02); } 50% { transform: rotate(2.3deg) scale(1.04); } 100% { transform: rotate(4.6deg) scale(1.02); } }
 @media (prefers-reduced-motion: reduce) { .nj3d-speed { display: none; } }
+
+/* 🐚 값진 진주 — 진주 팔기 버튼 (2026-10-05) */
+.nj3d-pearl-btns { display: flex; gap: 6px; flex: 0 0 auto; }
+.nj3d-pearl-btns button { border: none; border-radius: 9px; padding: 7px 10px; font-weight: 800; font-size: 0.78rem; background: #f1c40f; color: #2c3e50; cursor: pointer; }
+.nj3d-pearl-btns button + button { background: #e1a33a; color: #fff; }
+.nj3d-offer-head.nj3d-offer-sub { margin-top: 12px; font-size: 0.9rem; }
+
+/* 🗺️ 3D 미니맵 (2026-10-05) — 걷기 화면 오른쪽 위, 보석 표시 아래. 3D 캔버스를 화면 가득 늘이는 규칙(.nj3d-stage canvas)보다 구체적으로 — 처음엔 미니맵이 화면을 덮었다 */
+#nj3d .nj3d-stage canvas.nj3d-mini { position: absolute; right: 12px; top: 52px; left: auto; bottom: auto; width: 116px; height: 116px; border-radius: 50%; z-index: 4; box-shadow: 0 4px 14px rgba(0,0,0,0.35); cursor: pointer; touch-action: none; }
+
+/* 🐠 바다 생물 도감 버튼 — 미니맵 아래 (2026-10-05) */
+.nj3d-dexbtn { position: absolute; right: 12px; top: 174px; width: 116px; z-index: 4; border: 1px solid rgba(246,215,122,0.55); border-radius: 999px; padding: 6px 0; background: rgba(15,26,51,0.88); color: #f6d77a; font-weight: 800; font-size: 0.78rem; cursor: pointer; }
+.nj3d-dex-row.locked b { color: #9aa7b8; }
+
+/* 🐠 도감 — 종마다 카드, 세로 꾸밈 5 × 가로 요일 7 칸판 (2026-10-05) */
+.nj3d-dex-sum { color: #f6d77a; font-weight: 800; font-size: 0.9rem; margin: 4px 0 8px; }
+.nj3d-dex-sum small { display: block; color: #b9c6d6; font-weight: 600; font-size: 0.74rem; margin-top: 2px; }
+.nj3d-dex-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 8px 10px; margin-bottom: 8px; }
+.nj3d-dex-card-h { display: flex; flex-direction: column; gap: 1px; margin-bottom: 4px; }
+.nj3d-dex-card-h b { color: #e6eef8; font-size: 0.86rem; }
+.nj3d-dex-card-h span { color: #9fb0c4; font-size: 0.7rem; }
+.nj3d-dex-grid { display: grid; grid-template-columns: 22px repeat(7, 1fr); gap: 3px; align-items: center; margin-top: 3px; }
+.nj3d-dex-grid i { font-style: normal; text-align: center; font-size: 0.68rem; color: #9fb0c4; }
+.nj3d-dex-tier { font-size: 0.78rem !important; }
+.nj3d-dex-cell { height: 18px; border-radius: 6px; border: 1.5px solid var(--c, #555); box-sizing: border-box; font-size: 0.55rem; display: grid; place-items: center; cursor: pointer; font-weight: 400; }
+.nj3d-dex-cell.on { background: var(--c); }
+.nj3d-dex-cell.on.wk { box-shadow: 0 0 0 2px rgba(255,236,170,0.9); }
+.nj3d-dex-cell.lock { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); opacity: 0.7; }
+.nj3d-dex-cell.none { border: none; background: transparent; cursor: default; }
+.nj3d-dex-tipline { min-height: 1.1em; color: #f6d77a; font-size: 0.72rem; margin-top: 5px; }
+.nj3d-dex-bon { margin-top: 6px; }
+.nj3d-dex-bon-h { color: #f6d77a; font-weight: 800; font-size: 0.85rem; margin-bottom: 4px; }
+.nj3d-dex-bon-row { display: flex; justify-content: space-between; gap: 8px; font-size: 0.76rem; color: #c6d2e2; padding: 4px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+.nj3d-dex-bon-row.done { color: #f6d77a; }

@@ -27,8 +27,8 @@ def base():
     """다시 가만히 있는 부분으로"""
     S.bm = S.parts[0]['bm']; S.CL = S.bm.loops.layers.float_color['Col']
 
-# 재질 번호: 0 = 보통, 1 = 금속(금·쇠), 2 = 빛(불꽃·별)
-BASE, METAL, GLOW = 0, 1, 2
+# 재질 번호: 0 = 보통, 1 = 금속(금·쇠), 2 = 빛(불꽃·별), 3 = 물들일 곳(tint — 게임이 그날 빛깔을 곱한다. 바다 생물 10/5)
+BASE, METAL, GLOW, TINT = 0, 1, 2, 3
 
 def jit(c, k=0.12):
     s = 1 - k / 2 + random.random() * k; return tuple(v * s for v in c)
@@ -181,7 +181,7 @@ def _mat(name, metal, rough, emit=None):
 def finish(name, out_dir, emit=(1.0, 0.75, 0.3), views=None, lens=40, center=True, ao=0.6):   # ao: 구석 그늘 세기(0이면 안 굽는다)   # center=False: 원점을 그대로 둔다(탈것과 그 장식처럼 서로 맞물려야 하는 모델)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     sc = bpy.context.scene
-    mats = [_mat('base', 0.0, 0.72), _mat('metal', 0.9, 0.32), _mat('glow', 0.0, 0.5, emit)]
+    mats = [_mat('base', 0.0, 0.72), _mat('metal', 0.9, 0.32), _mat('glow', 0.0, 0.5, emit), _mat('tint', 0.0, 0.6)]
     obs = []; roots = []
     for pt in S.parts:
         if not pt['bm'].faces: pt['bm'].free(); continue

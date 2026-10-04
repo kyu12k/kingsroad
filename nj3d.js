@@ -52,9 +52,12 @@
                 <div class="nj3d-walk" hidden>
                     <div class="nj3d-joy"><div class="nj3d-knob"></div></div>
                     <div class="nj3d-btns">
+                        <button class="nj3d-wb small nj3d-viewbtn"></button>
                         <button class="nj3d-wb small nj3d-jetbuy"></button>
                         <button class="nj3d-wb fly nj3d-fly" hidden>${T('nj3d_fly')}</button>
                         <button class="nj3d-wb small nj3d-fishbtn" hidden></button>
+                        <button class="nj3d-wb small nj3d-clambtn" hidden></button>
+                        <button class="nj3d-wb small nj3d-pearlbtn" hidden></button>
                         <button class="nj3d-wb small nj3d-talk" hidden></button>
                         <button class="nj3d-wb small nj3d-tackbtn" hidden>${T('nj3d_tack')}</button>
                         <button class="nj3d-wb small nj3d-ridebtn"></button>
@@ -67,6 +70,8 @@
                 <div class="nj3d-speed" aria-hidden="true"></div>
                 <div class="nj3d-hint"></div>
                 <div class="nj3d-wallet"></div>
+                <canvas class="nj3d-mini" hidden></canvas>
+                <button class="nj3d-dexbtn" hidden></button>
                 <div class="nj3d-fishq" hidden></div>
                 <div class="nj3d-offer" hidden></div>
                 <button class="nj3d-skip" hidden></button>
@@ -1253,6 +1258,11 @@
         const P = { x: 1.3, y: 0, z: 9.2, vy: 0, onGround: true, face: Math.PI };
         let deco = null;   // 🛠️ 꾸미기 중이면 상태(아래 「꾸미기」)
         let camOff = null;   // 걷기 카메라 — 순례자에서 카메라까지(이것만 부드럽게 따라간다)
+        let fpView = false; try { fpView = localStorage.getItem('kingsRoad_nj3dFP') === '1'; } catch (e) { }   // 👁 1인칭
+        const viewBtn = ov.querySelector('.nj3d-viewbtn');
+        const syncViewBtn = () => { viewBtn.textContent = T(fpView ? 'nj3d_view_tp' : 'nj3d_view_fp'); };
+        syncViewBtn();
+        viewBtn.addEventListener('click', () => { fpView = !fpView; try { localStorage.setItem('kingsRoad_nj3dFP', fpView ? '1' : '0'); } catch (e) { } syncViewBtn(); if (!fpView) body.visible = true; lastTouch = performance.now(); });
         const slideBtn = ov.querySelector('.nj3d-slidebtn');
         let slide = null, slideCheckT = 0;   // 🛝 생명수 미끄럼 — 남쪽 강을 타고 바다까지 { v 빠르기, t, sp 물보라 }
         // 🛝 속도감 (10/5 사용자: 빠르기는 그대로, 속도감만) — 시야 넓히기 · 물보라 · 화면 가장자리 바람 선 · 흐르는 물·바람 소리. 화면 흔들기는 뺐다(떨림을 싫어했다)
@@ -1605,6 +1615,7 @@
         listen(cvs, 'pointerup', e => {
             if (!tap) return;
             if (proc || deco) { tap = null; return; }   // 행렬을 돌려 보는 손길·꾸미기 — 열매·나라 창을 띄우지 않는다
+            if (creatureTap(e)) { tap = null; return; }   // 🐠 물속 생물을 눌러 살펴봄
             if (!fruitPos.length) {   // 열매가 없으면 해안의 나라만 본다
                 const moved = Math.hypot(e.clientX - tap.x, e.clientY - tap.y), long = performance.now() - tap.t;
                 tap = null;
@@ -1963,7 +1974,7 @@
         }
         setGoLabel();
         modeBtn.addEventListener('click', () => {
-            walk = !walk; controls.enabled = !walk; walkUI.hidden = !walk; pilgrim.visible = true; camOff = null; slide = null; slideBtn.hidden = true; slideSndStop(); fovBoost = 0; speedEl.style.opacity = '0'; plungeMom = null;
+            walk = !walk; controls.enabled = !walk; walkUI.hidden = !walk; pilgrim.visible = true; mini.hidden = !walk; dexBtn.hidden = !walk; miniT = 0; camOff = null; slide = null; slideBtn.hidden = true; slideSndStop(); fovBoost = 0; speedEl.style.opacity = '0'; plungeMom = null;
             if (walk) { controls.autoRotate = false; camera.fov = 62; camera.near = 0.02; showHint(T('nj3d_hint_walk'), 3500); }
             else { camera.fov = 42; camera.near = 0.1; where = P.z > 25 ? 'sea' : 'city'; lookAt(where); setGoLabel(); endFish(); fishBtn.hidden = true; }
             camera.updateProjectionMatrix(); setModeLabel(); lastTouch = performance.now();
@@ -2175,9 +2186,11 @@
                         : have >= o.cost ? `<button data-k="${o.k}">${T('gift_take', { cost: o.cost })}</button>`
                         : `<span class="nj3d-offer-lock">${T('gift_need', { n: o.cost - have })} · ${o.cost}</span>`;
                     return `<div class="nj3d-offer-row${open ? '' : ' locked'}"><div><b>${esc2(typeof _njOfferName === 'function' ? _njOfferName(o) : o.ko)}</b><span>계 ${o.ref}</span></div>${btn}</div>`;
-                }).join('')}</div>`;
-            offerEl.hidden = false;
+                }).join('')}</div>
+                ${typeof _njPearlAvail === 'function' && ['w', 'c', 'g'].some(k => _njPearlAvail(k) > 0) ? `<div class="nj3d-offer-head nj3d-offer-sub">${T('nj3d_pearl_btn')}</div><div class="nj3d-offer-list">${_njPearlSellHtml()}</div>` : ''}`;
+            offerEl.hidden = false; offerEl.dataset.pearl = '';
             offerEl.querySelector('.nj3d-fruit-x').onclick = () => { offerEl.hidden = true; };
+            bindPearlSell(offerEl, () => openOffer(i));   // 💎 소성된 나라의 사신도 진주를 산다
             offerEl.querySelectorAll('button[data-k]').forEach(b => b.onclick = () => {
                 const gf = typeof _njOfferBuy === 'function' ? _njOfferBuy(b.dataset.k, i) : null;
                 if (!gf) return;
@@ -3396,6 +3409,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (typeof SoundEffect !== 'undefined' && SoundEffect.playWhee) SoundEffect.playWhee();
         });
         function speedFx(dt) {   // 시야·바람 선 — 미끄럼이 끝나면 천천히 돌아온다. 물보라는 끝난 뒤에도 떨어질 때까지
+            miniT -= dt; if (miniT <= 0) { miniT = 0.1; miniDraw(); }   // 🗺️ 미니맵 — 초당 10번
             const want = slide ? 16 * slideK : 0;
             fovBoost += (want - fovBoost) * (1 - Math.exp(-dt * 3));
             const fov = 62 + fovBoost; if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
@@ -3408,7 +3422,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (slide) { slideStep(dt); rippleTick(dt); followCam(dt); return; }
             fishUpdate(dt);
             slideCheckT -= dt;
-            if (slideCheckT <= 0) { slideCheckT = 0.25; slideBtn.hidden = !(P.onGround && Math.abs(P.x) < RB && P.z > PL - 1.5 && P.z < SHORE - 3 && !isUnder()); }   // 🛝 남쪽 강물에 섰나
+            clamTick(dt); mannaTick(dt); dexTick(dt);
+            if (slideCheckT <= 0) { clamCheck(); mannaCheck(); slideCheckT = 0.25; slideBtn.hidden = !(P.onGround && Math.abs(P.x) < RB && P.z > PL - 1.5 && P.z < SHORE - 3 && !isUnder()); }   // 🛝 남쪽 강물에 섰나
             envoyCheckT -= dt;
             if (envoyCheckT <= 0) {   // 사신 곁인가 (1초에 네 번)
                 envoyCheckT = 0.25;
@@ -3416,7 +3431,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 if (P.onGround) envoys.forEach(e => { const d = Math.hypot(e.x - P.x, e.z - P.z); if (d < bd) { bd = d; nearEnvoy = e; } });
                 talkBtn.hidden = !nearEnvoy;
                 if (nearEnvoy) talkBtn.innerHTML = T('gift_talk', { name: esc2(natName(nearEnvoy.i)) });
-                else if (!offerEl.hidden) offerEl.hidden = true;
+                else if (!offerEl.hidden && offerEl.dataset.pearl !== '1' && offerEl.dataset.keep !== '1') offerEl.hidden = true;   // 도감 창(keep)도 그대로   // 진주 장사 창은 장사 곁을 떠날 때 닫는다(clamCheck)
             }
             walkT += dt;
             const k = inp.keys;
@@ -3537,6 +3552,14 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const MD = ride.on ? (NJ_MOUNTS[ride.k] || {}) : null;
             const Tg = new THREE.Vector3(P.x, P.y + (ride.on && MD ? 0.12 + (MD.seat || [0, 0.36])[1] * MOUNT_S : 0.17), P.z);   // 탈 때는 앉은 높이만큼(낙타는 높이 — 멀리 보인다)
             const dir = new THREE.Vector3(Math.sin(camYaw) * Math.cos(camPitch), Math.sin(camPitch), Math.cos(camYaw) * Math.cos(camPitch));
+            if (fpView) {   // 👁 1인칭(10/5 사용자) — 순례자 눈높이(탈 때는 안장 위)에서 보는 쪽 그대로. 내 몸은 감춘다
+                const eye = Tg.clone(); eye.y += ride.on ? 0.06 : 0.025;
+                const fw = new THREE.Vector3(-dir.x, 0, -dir.z); if (fw.lengthSq() > 1e-6) eye.addScaledVector(fw.normalize(), 0.035);   // 얼굴 앞 — 머리 속에서 보지 않게
+                eye.y = Math.max(eye.y, groundAt(eye.x, eye.z, eye.y) + 0.05);
+                camera.position.copy(eye); body.visible = false; camOff = null;
+                camera.lookAt(eye.x - dir.x, eye.y - dir.y, eye.z - dir.z);
+                return;
+            }
             let dist = camDist * (ride.on && MD ? (MD.camFar || 1) : 1);   // 큰 탈것(비행기·불병거·열기구)은 카메라를 뒤로 — 날개가 화면을 가렸다
             body.visible = camPitch > -0.75;   // 많이 올려다보면 순례자를 잠시 숨긴다(1인칭처럼) — 등이 화면을 가렸다
             ray.set(Tg, dir); ray.far = dist;
@@ -3561,6 +3584,581 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const k = camPitch > 0 ? Math.max(0, Math.min(1, lift / 0.3)) : 0;
             camera.lookAt(camera.position.x - dir.x + (Tg.x - camera.position.x + dir.x) * k, camera.position.y - dir.y + 0.04 + (Tg.y - camera.position.y + dir.y - 0.04) * k, camera.position.z - dir.z + (Tg.z - camera.position.z + dir.z) * k);
         }
+
+        // ══ 🐚 값진 진주 찾기 (10/5) — 바다 밑 조개 셋(날마다 새 자리) · 강 어귀의 진주 장사 (game.js NJ_PEARLS · docs/새-예루살렘.md) ══
+        const clamBtn = ov.querySelector('.nj3d-clambtn'), pearlBtn = ov.querySelector('.nj3d-pearlbtn');
+        clamBtn.textContent = T('nj3d_clam_open'); pearlBtn.textContent = T('nj3d_pearl_btn');
+        const clams = [], clamAnims = [];
+        let nearClam = null, nearMerchant = false, clamQ = null, clamHinted = false;
+        const shellMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(0xe9c9b4).convertSRGBToLinear(), roughness: 0.55, flatShading: true, side: THREE.DoubleSide });
+        const innerMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(0xf7ece4).convertSRGBToLinear(), roughness: 0.25, metalness: 0.2, side: THREE.DoubleSide });
+        const PEARL_C = { w: 0xf6f2ea, c: 0xf2b8cf, g: 0xffd56a };
+        const halfShell = (() => {   // 부채꼴 조개껍데기 반쪽 — 골이 진 납작한 반구
+            const g = new THREE.SphereGeometry(1, 14, 6, 0, Math.PI * 2, 0, Math.PI / 2), p = g.attributes.position;
+            for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), a = Math.atan2(z, x), rib = 1 + 0.06 * Math.cos(a * 9); p.setXYZ(i, x * rib, y * 0.32, z * rib * 0.85); }
+            g.computeVertexNormals(); return g;
+        })();
+        cleanups.push(() => halfShell.dispose());
+        function clamSpots(day) {   // 날짜로 정해지는 자리 — 깊은 데 · 중간 · 얕은 데
+            let sd = 7; for (const ch of String(day)) sd = (sd * 31 + ch.charCodeAt(0)) % 2147483647; sd = sd || 1;
+            const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+            return [[0.12, 0.42], [0.45, 0.68], [0.7, 0.86]].map(([a0, a1]) => { const a = r() * Math.PI * 2, q = Math.sqrt(a0 + (a1 - a0) * r()); return [Math.cos(a) * q * SRX, SZ + Math.sin(a) * q * SRZ]; });
+        }
+        if (typeof _njClamDay === 'function') {
+            const day = _njClamDay();
+            clamSpots(day.day).forEach(([x, z], i) => {
+                const g = new THREE.Group(), y = seabed(x, z);
+                const bottom = new THREE.Mesh(halfShell, shellMat); bottom.rotation.x = Math.PI; bottom.scale.setScalar(0.09);
+                const hinge = new THREE.Group(); hinge.position.set(-0.075, 0, 0); g.add(hinge);
+                const top = new THREE.Mesh(halfShell, shellMat); top.position.set(0.075, 0, 0); top.scale.setScalar(0.09); hinge.add(top);
+                const inner = new THREE.Mesh(new THREE.CircleGeometry(0.07, 14).rotateX(-Math.PI / 2), innerMat); inner.position.y = 0.002; inner.scale.set(1, 1, 0.85);
+                g.add(bottom, inner);
+                const glint = new THREE.Sprite(new THREE.SpriteMaterial({ map: radial, color: 0xfff2c4, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+                glint.position.y = 0.12; glint.scale.setScalar(0.3); g.add(glint);
+                g.position.set(x, y + 0.02, z); g.rotation.y = i * 2.1; reefG.add(g);
+                const done = (day.done || []).includes(i);
+                if (done) hinge.rotation.z = 0.9;   // 연(또는 닫혀 버린) 조개는 빈 껍데기 — 열린 채로
+                glint.visible = !done;
+                clams.push({ i, x, z, y, g, hinge, glint, done });
+            });
+        }
+        // 진주 장사 — 강 어귀 모래밭, 미끄럼으로 풍덩한 자리가 보이는 곳(마 13:45). 자색 옷, 앞에 깔개와 진주 바구니
+        const MER = { x: 1.9, z: SHORE - 0.9 };
+        {
+            const y = WT(MER.x, MER.z), mg = new THREE.Group(); mg.position.set(MER.x, y, MER.z); scene.add(mg);
+            const man = makePerson(0x6b3fa0); man.scale.setScalar(1.6); mg.add(man);
+            const dx = -MER.x, dz = SHORE + 1.5 - MER.z, L = Math.hypot(dx, dz); man.rotation.y = Math.atan2(-dz / L, dx / L);   // 사람 모델은 +x가 앞 — 어귀를 본다
+            const fx = dx / L * 0.32, fz = dz / L * 0.32;
+            const rug = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.01, 0.3), new THREE.MeshStandardMaterial({ color: 0x9b2d3a, roughness: 0.9 })); rug.position.set(fx, 0.005, fz); rug.rotation.y = man.rotation.y; mg.add(rug);
+            const basket = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.055, 0.06, 12, 1, true), new THREE.MeshStandardMaterial({ color: 0xb08850, roughness: 0.9, side: THREE.DoubleSide })); basket.position.set(fx, 0.04, fz); mg.add(basket);
+            [[0, 0], [0.025, 0.015], [-0.02, 0.02], [0.01, -0.025], [-0.025, -0.01]].forEach(([a, b], k) => { const pm = new THREE.Mesh(new THREE.SphereGeometry(0.016, 10, 8), new THREE.MeshStandardMaterial({ color: [0xf6f2ea, 0xf2b8cf, 0xf6f2ea, 0xd9c8f2, 0xffd56a][k], roughness: 0.15, metalness: 0.3 })); pm.position.set(fx + a, 0.07, fz + b); mg.add(pm); });
+            addBlob(man, 0.3);
+        }
+        function clamHint() {
+            if (clamHinted || typeof _njClamLeft !== 'function') return;
+            const n = _njClamLeft(); if (!n) return;
+            clamHinted = true; showHint(T('nj3d_clam_today', { n }), 4500);
+        }
+        function closeClamQ() { if (clamQ) { clamQ = null; fishQ.hidden = true; fishQ.innerHTML = ''; } }
+        function askClam(c) {
+            const q = typeof _njClamQuestion === 'function' ? _njClamQuestion() : null;
+            if (!q) { showHint(T('nj3d_clam_need'), 3000); return; }
+            clamQ = { c, q, tries: clamQ && clamQ.c === c ? clamQ.tries : 2 };
+            const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+            fishQ.classList.remove('watch', 'now', 'reel');
+            fishQ.innerHTML = `<div class="nj3d-fishq-head">${T(clamQ.tries === 2 ? 'nj3d_clam_q' : 'nj3d_clam_again')}</div>
+                <div class="nj3d-fishq-ref">${esc(q.ref)}</div>
+                <div class="nj3d-fishq-text">${esc(q.before)} <span class="nj3d-fishq-blank">＿＿＿</span> ${esc(q.after)}</div>
+                <div class="nj3d-fishq-choices">${q.choices.map((ch, i) => `<button data-i="${i}">${esc(ch)}</button>`).join('')}</div>`;
+            fishQ.hidden = false;
+            fishQ.querySelectorAll('button[data-i]').forEach(b => b.onclick = () => {
+                const ok = q.choices[+b.dataset.i] === q.answer;
+                if (ok) { closeClamQ(); openClam(c); return; }
+                if (typeof _njClamResult === 'function') _njClamResult(c.i, false);
+                clamQ.tries--;
+                if (clamQ.tries > 0) askClam(c);
+                else { closeClamQ(); c.done = true; c.glint.visible = false; clamAnims.push({ c, t: 0, kind: 'shut' }); showHint(T('nj3d_clam_shut'), 3200); }
+            });
+        }
+        function openClam(c) {
+            const res = typeof _njClamResult === 'function' ? _njClamResult(c.i, true) : null;
+            if (!res) return;
+            c.done = true; c.glint.visible = false;
+            const pearl = new THREE.Mesh(new THREE.SphereGeometry(0.022, 14, 10), new THREE.MeshStandardMaterial({ color: new THREE.Color(PEARL_C[res.k]).convertSRGBToLinear(), roughness: 0.12, metalness: 0.35,
+                emissive: res.k === 'g' ? 0x8a6200 : 0x222222, emissiveIntensity: res.k === 'g' ? 0.9 : 0.25 }));
+            pearl.position.set(0, 0.02, 0); c.g.add(pearl);
+            clamAnims.push({ c, t: 0, kind: 'open', pearl, rare: res.k === 'g' });
+            sprayBurst(c.x, c.y + 0.05, c.z, 12, 0);
+            if (typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) { SoundEffect.playBlankLevelUp(); if (res.k === 'g') setTimeout(() => SoundEffect.playBlankLevelUp(), 380); }
+            showHint(res.k === 'g' ? T('nj3d_clam_rare', { gem: res.gem.toLocaleString() }) : T('nj3d_clam_got', { name: res.name, gem: res.gem.toLocaleString() }), 4800);
+        }
+        function clamTick(dt) {
+            const tt = performance.now() / 1000;
+            clams.forEach(c => { if (c.glint.visible) { const s = 0.24 + Math.sin(tt * 3 + c.i * 2) * 0.08; c.glint.scale.setScalar(s); c.glint.position.y = 0.12 + Math.sin(tt * 1.7 + c.i) * 0.02; } });
+            for (let k = clamAnims.length - 1; k >= 0; k--) {
+                const a = clamAnims[k]; a.t += dt;
+                if (a.kind === 'open') {
+                    a.c.hinge.rotation.z = Math.min(1, a.t / 0.5) * 1.1;
+                    if (a.pearl) { const u = Math.max(0, a.t - 0.4); a.pearl.position.y = 0.02 + Math.min(0.14, u * 0.25); a.pearl.rotation.y = tt * 2; a.pearl.scale.setScalar(1 + (a.rare ? Math.sin(tt * 8) * 0.12 : 0));
+                        if (a.t > 2.6) { const f = Math.max(0, 1 - (a.t - 2.6) / 0.5); a.pearl.scale.setScalar(f); } }
+                    if (a.t > 3.1) { if (a.pearl) { a.c.g.remove(a.pearl); a.pearl.geometry.dispose(); a.pearl.material.dispose(); } a.c.hinge.rotation.z = 0.9; clamAnims.splice(k, 1); }
+                } else {   // 닫혀 버림 — 덜컥 흔들리고 열린 채 빈 껍데기로
+                    a.c.g.rotation.z = Math.sin(a.t * 40) * 0.08 * Math.max(0, 1 - a.t / 0.5);
+                    if (a.t > 0.6) { a.c.g.rotation.z = 0; a.c.hinge.rotation.z = 0.9; clamAnims.splice(k, 1); }
+                }
+            }
+        }
+        function clamCheck() {   // 1초에 네 번 — 물속 조개 곁 · 어귀 진주 장사 곁
+            nearClam = null;
+            if (isUnder()) {
+                let bd = 0.55; clams.forEach(c => { if (c.done) return; const d = Math.hypot(c.x - P.x, c.z - P.z); if (d < bd && Math.abs(P.y - c.y) < 0.9) { bd = d; nearClam = c; } });
+                clamHint();
+            }
+            clamBtn.hidden = !nearClam || !!clamQ;
+            if (clamQ && (!nearClam || nearClam !== clamQ.c)) closeClamQ();   // 헤엄쳐 멀어지면 문제를 닫는다(다시 오면 다시)
+            nearMerchant = !isUnder() && Math.hypot(MER.x - P.x, MER.z - P.z) < 1.3;
+            pearlBtn.hidden = !nearMerchant;
+            if (!nearMerchant && offerEl.dataset.pearl === '1') { offerEl.hidden = true; offerEl.dataset.pearl = ''; }
+        }
+        clamBtn.addEventListener('pointerdown', e => { e.preventDefault(); if (nearClam && !clamQ) { clamBtn.hidden = true; askClam(nearClam); } });
+        function bindPearlSell(root, reopen) {
+            root.querySelectorAll('button[data-sell]').forEach(b => b.onclick = () => {
+                const gem = typeof _njPearlSell === 'function' ? _njPearlSell(b.dataset.sell, b.dataset.n === 'all' ? 'all' : 1) : 0;
+                if (gem > 0) { syncWallet(); showHint(T('nj3d_pearl_sold', { gem: gem.toLocaleString() }), 2400); if (typeof SoundEffect !== 'undefined' && SoundEffect.playGem) SoundEffect.playGem(); }
+                reopen();
+            });
+        }
+        function openPearlShop() {
+            offerEl.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button>
+                <div class="nj3d-offer-head">${T('nj3d_pearl_title')}</div>
+                <div class="nj3d-offer-intro">${T('nj3d_pearl_intro')}</div>
+                <div class="nj3d-offer-list">${typeof _njPearlSellHtml === 'function' ? _njPearlSellHtml() : ''}</div>`;
+            offerEl.hidden = false; offerEl.dataset.pearl = '1';
+            offerEl.querySelector('.nj3d-fruit-x').onclick = () => { offerEl.hidden = true; offerEl.dataset.pearl = ''; };
+            bindPearlSell(offerEl, openPearlShop);
+        }
+        pearlBtn.addEventListener('pointerdown', e => { e.preventDefault(); if (nearMerchant) openPearlShop(); });
+
+        // ══ 🍞 만나 · 🐦 메추라기 (10/5) — 오늘의 암송을 마친 날 성 둘레 들판(출 16:13 「진 사면에」) (game.js _njMannaToday · docs/새-예루살렘.md) ══
+        const MT = typeof _njMannaToday === 'function' ? _njMannaToday() : { ids: [], ready: false };
+        const MD0 = typeof _njMannaDay === 'function' ? _njMannaDay() : { got: [], quail: [], qfail: {} };
+        const mannaSpots = (() => {   // 날짜로 정해지는 자리 — 산마루 안, 성벽 바깥(물길 피함), 고르게 돌아가며
+            let sd = 11; for (const ch of String(MD0.day || '')) sd = (sd * 31 + ch.charCodeAt(0)) % 2147483647; sd = sd || 1;
+            const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647, n = MT.ids.length, a0 = r() * Math.PI * 2, out = [];
+            for (let i = 0; i < n; i++) {
+                let a = a0 + i / Math.max(1, n) * Math.PI * 2 + (r() - 0.5) * 0.4, d = 8.3 + r() * 2.6;
+                for (let k = 0; k < 8; k++) { const c = Math.cos(a), s = Math.sin(a), m = Math.max(Math.abs(c), Math.abs(s)), x = c / m * d, z = s / m * d; if (Math.abs(x) > 1.6 && Math.abs(z) > 1.6) { out.push([x, z]); break; } a += 0.2; }
+                if (out.length <= i) out.push([d, d]);
+            }
+            return out;
+        })();
+        const mannaG = new THREE.Group(); scene.add(mannaG);
+        const mannas = [], quails = [], mannaAnims = [];
+        let mannaHinted = false, quailHinted = false, nearQuail = null, quailQ = null;
+        const flakeG = new THREE.CircleGeometry(0.014, 6); flakeG.rotateX(-Math.PI / 2);
+        const flakeM = new THREE.MeshStandardMaterial({ color: 0xfffdf2, emissive: 0x6b6250, emissiveIntensity: 0.35, roughness: 0.5 });
+        cleanups.push(() => flakeG.dispose());
+        if (MT.ready) mannaSpots.forEach(([x, z], i) => {
+            if ((MD0.got || []).includes(i)) return;
+            const N = MT.sat ? 110 : 60, R0 = MT.sat ? 0.42 : 0.32, im = new THREE.InstancedMesh(flakeG, flakeM, N), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3();
+            for (let k = 0; k < N; k++) { const a = Math.random() * 6.28, rr = Math.sqrt(Math.random()) * R0, fx = x + Math.cos(a) * rr, fz = z + Math.sin(a) * rr, s2 = 0.7 + Math.random() * 0.7;
+                q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.random() * 6.28); v.set(fx, terrain(fx, fz) + 0.008, fz); sc.set(s2, 1, s2); m4.compose(v, q, sc); im.setMatrixAt(k, m4); }
+            const dew = new THREE.Sprite(new THREE.SpriteMaterial({ map: radial, color: 0xfff6dc, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }));
+            dew.position.set(x, terrain(x, z) + 0.06, z); dew.scale.setScalar(R0 * 1.5);   // 이슬빛 — 처음 2.4배는 기둥처럼 번졌다
+            const g = new THREE.Group(); g.add(im, dew); mannaG.add(g);
+            mannas.push({ i, x, z, g, im, dew, done: false });
+        });
+        // 메추라기 — 둥근 갈색 몸, 작은 머리와 부리. 쪼다가 가끔 콩콩
+        const quailBody = new THREE.MeshStandardMaterial({ color: new THREE.Color(0x8a6a45).convertSRGBToLinear(), roughness: 0.85, flatShading: true });
+        const quailHead = new THREE.MeshStandardMaterial({ color: new THREE.Color(0x5b4430).convertSRGBToLinear(), roughness: 0.85, flatShading: true });
+        const quailBeak = new THREE.MeshStandardMaterial({ color: 0xd9a441, roughness: 0.6 });
+        function makeQuail() {
+            const g = new THREE.Group(), body = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), quailBody); body.scale.set(1, 0.82, 1.3); body.position.y = 0.04; g.add(body);
+            const head = new THREE.Group(); head.position.set(0, 0.075, 0.045); g.add(head);
+            head.add(new THREE.Mesh(new THREE.SphereGeometry(0.024, 10, 8), quailHead));
+            const bk = new THREE.Mesh(new THREE.ConeGeometry(0.007, 0.018, 5), quailBeak); bk.rotation.x = Math.PI / 2; bk.position.set(0, -0.004, 0.026); head.add(bk);
+            const plume = new THREE.Mesh(new THREE.ConeGeometry(0.005, 0.03, 4), quailHead); plume.position.set(0, 0.028, 0.006); plume.rotation.x = -0.4; head.add(plume);   // 머리 깃
+            [-1, 1].forEach(s => { const w = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), quailHead); w.scale.set(0.35, 0.6, 1.1); w.position.set(s * 0.04, 0.045, -0.005); w.name = s < 0 ? 'wL' : 'wR'; g.add(w); });
+            g.userData.head = head; return g;
+        }
+        if (MT.ready && typeof _njQuailTime === 'function' && _njQuailTime()) (MD0.got || []).forEach(i => {
+            if ((MD0.quail || []).includes(i) || !mannaSpots[i]) return;
+            const [x0, z0] = mannaSpots[i], g = makeQuail(), x = x0 + 0.5, z = z0 - 0.3;
+            g.position.set(x, terrain(x, z), z); g.rotation.y = Math.random() * 6.28; mannaG.add(g);
+            quails.push({ i, g, x, z, tries: 2, done: false, ph: Math.random() * 6 });
+        });
+        function mannaHint() {
+            if (!mannaHinted && mannas.some(m => !m.done)) { mannaHinted = true; showHint(T('nj3d_manna_here'), 5000); return; }
+            if (!quailHinted && quails.some(q => !q.done)) { quailHinted = true; showHint(T('nj3d_quail_here'), 4500); }
+        }
+        setTimeout(() => { if (cur === C) mannaHint(); }, 3200);
+        function closeQuailQ() { if (quailQ) { quailQ = null; fishQ.hidden = true; fishQ.innerHTML = ''; } }
+        function askQuail(qa) {
+            const q = typeof _njQuailQuestion === 'function' ? _njQuailQuestion(qa.i) : null;
+            if (!q) { catchQuail(qa, ''); return; }   // 문제를 못 만들면(아주 짧은 절) 그냥 잡힌다
+            quailQ = { qa, q };
+            const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+            fishQ.classList.remove('watch', 'now', 'reel');
+            fishQ.innerHTML = `<div class="nj3d-fishq-head">${T(qa.tries === 2 ? 'nj3d_quail_flee' : 'nj3d_quail_again')}</div>
+                <div class="nj3d-fishq-ref">${esc(q.ref)}</div>
+                <div class="nj3d-fishq-text">${esc(q.before)} <span class="nj3d-fishq-blank">＿＿＿</span> ${esc(q.after)}</div>
+                <div class="nj3d-fishq-choices">${q.choices.map((ch, i) => `<button data-i="${i}">${esc(ch)}</button>`).join('')}</div>`;
+            fishQ.hidden = false;
+            fishQ.querySelectorAll('button[data-i]').forEach(b => b.onclick = () => {
+                const ok = q.choices[+b.dataset.i] === q.answer;
+                closeQuailQ();
+                if (ok) { catchQuail(qa, q.answer); return; }
+                if (typeof _njQuailResult === 'function') _njQuailResult(qa.i, false);
+                qa.tries--;
+                if (qa.tries > 0) {   // 푸드덕 물러난다 — 다시 다가가면 또 문제
+                    const dx = qa.x - P.x, dz = qa.z - P.z, L = Math.hypot(dx, dz) || 1;
+                    mannaAnims.push({ kind: 'hop', qa, t: 0, fx: qa.x, fz: qa.z, tx: qa.x + dx / L * 0.9, tz: qa.z + dz / L * 0.9 });
+                    showHint(T('nj3d_quail_again'), 1800);
+                } else { qa.done = true; mannaAnims.push({ kind: 'fly', qa, t: 0, dx: qa.x - P.x, dz: qa.z - P.z }); showHint(T('nj3d_quail_away'), 2600); }
+            });
+        }
+        const netG = (() => { const g = new THREE.SphereGeometry(0.11, 12, 5, 0, Math.PI * 2, 0, Math.PI / 2); return g; })();
+        cleanups.push(() => netG.dispose());
+        function wordSprite(txt) {
+            const cv = document.createElement('canvas'); cv.width = 512; cv.height = 96; const x = cv.getContext('2d');
+            x.font = '700 52px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.shadowColor = 'rgba(120,80,0,0.8)'; x.shadowBlur = 12; x.fillStyle = '#ffe28a'; x.fillText(txt, 256, 48);
+            const tx = new THREE.CanvasTexture(cv); tx.encoding = THREE.sRGBEncoding;
+            const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tx, transparent: true, depthWrite: false })); s.scale.set(0.5, 0.094, 1); return s;
+        }
+        function catchQuail(qa, word) {   // ✨ 말씀의 그물 — 금빛 그물이 위에서 펼쳐져 덮고, 맞힌 말씀이 떠오른다
+            const gem = typeof _njQuailResult === 'function' ? _njQuailResult(qa.i, true) : 0;
+            qa.done = true;
+            const net = new THREE.Mesh(netG, new THREE.MeshBasicMaterial({ color: 0xffd34d, wireframe: true, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }));
+            net.position.set(qa.x, qa.g.position.y + 0.8, qa.z); net.scale.setScalar(2.4); mannaG.add(net);
+            let ws = null; if (word) { ws = wordSprite(word); ws.position.set(qa.x, qa.g.position.y + 0.2, qa.z); ws.material.opacity = 0; mannaG.add(ws); }
+            mannaAnims.push({ kind: 'net', qa, net, ws, t: 0 });
+            sprayBurst(qa.x, qa.g.position.y + 0.05, qa.z, 10, 0);
+            if (typeof SoundEffect !== 'undefined') { if (SoundEffect.playWhee) SoundEffect.playWhee(); if (SoundEffect.playBlankLevelUp) setTimeout(() => SoundEffect.playBlankLevelUp(), 450); }
+            if (gem) setTimeout(() => { if (cur === C) { showHint(T('nj3d_quail_got', { gem: gem.toLocaleString() }), 3500); syncWallet(); } }, 500);
+        }
+        function mannaTick(dt) {
+            const tt = performance.now() / 1000;
+            mannas.forEach(m => { if (!m.done) m.dew.material.opacity = 0.28 + Math.sin(tt * 2 + m.i) * 0.1; });
+            quails.forEach(q => {
+                if (q.done) return;
+                const near = nearQuail === q, hd = q.g.userData.head;
+                q.ph += dt;
+                if (near) { hd.position.y = 0.085; hd.rotation.x = -0.3; q.g.position.y = terrain(q.x, q.z) + Math.abs(Math.sin(tt * 14)) * 0.012; q.g.getObjectByName('wL').rotation.z = Math.sin(tt * 30) * 0.5; q.g.getObjectByName('wR').rotation.z = -Math.sin(tt * 30) * 0.5; }   // 도망치려 푸드덕
+                else { hd.position.y = 0.075; hd.rotation.x = Math.max(0, Math.sin(q.ph * 2.2)) * 0.9; q.g.position.y = terrain(q.x, q.z); }   // 쪼아 먹는다
+            });
+            for (let k = mannaAnims.length - 1; k >= 0; k--) {
+                const a = mannaAnims[k]; a.t += dt;
+                if (a.kind === 'gather') {   // 만나가 반짝이며 떠올라 사라진다
+                    const u = Math.min(1, a.t / 0.8); a.m.g.position.y = u * 0.25; a.m.g.scale.setScalar(1 - u * 0.6); a.m.dew.material.opacity = 0.6 * (1 - u);
+                    if (u >= 1) { mannaG.remove(a.m.g); a.m.im.dispose(); mannaAnims.splice(k, 1); }
+                } else if (a.kind === 'net') {
+                    const u = Math.min(1, a.t / 0.45), e = 1 - Math.pow(1 - u, 3);
+                    a.net.position.y = a.qa.g.position.y + 0.8 - 0.8 * e; a.net.scale.setScalar(2.4 - 1.4 * e); a.net.rotation.y = tt * 0.8;
+                    if (a.ws) { a.ws.position.y = a.qa.g.position.y + 0.2 + Math.max(0, a.t - 0.4) * 0.25; a.ws.material.opacity = Math.max(0, Math.min(1, (a.t - 0.35) * 4)) * Math.max(0, 1 - Math.max(0, a.t - 1.6) * 2); }
+                    if (a.t > 1.7) { const f = Math.max(0, 1 - (a.t - 1.7) / 0.5); a.net.scale.setScalar(f); a.qa.g.scale.setScalar(f); a.net.material.opacity = 0.95 * f; }
+                    if (a.t > 2.3) { mannaG.remove(a.net); a.net.material.dispose(); mannaG.remove(a.qa.g); if (a.ws) { mannaG.remove(a.ws); a.ws.material.map.dispose(); a.ws.material.dispose(); } mannaAnims.splice(k, 1); }
+                } else if (a.kind === 'hop') {   // 푸드덕 물러남
+                    const u = Math.min(1, a.t / 0.45); a.qa.x = a.fx + (a.tx - a.fx) * u; a.qa.z = a.fz + (a.tz - a.fz) * u;
+                    a.qa.g.position.set(a.qa.x, terrain(a.qa.x, a.qa.z) + Math.sin(u * Math.PI) * 0.25, a.qa.z);
+                    if (u >= 1) mannaAnims.splice(k, 1);
+                } else if (a.kind === 'fly') {   // 날아가 버림
+                    const L = Math.hypot(a.dx, a.dz) || 1; a.qa.g.position.x += a.dx / L * dt * 3; a.qa.g.position.z += a.dz / L * dt * 3; a.qa.g.position.y += dt * 2.2;
+                    a.qa.g.getObjectByName('wL').rotation.z = Math.sin(tt * 40) * 0.8; a.qa.g.getObjectByName('wR').rotation.z = -Math.sin(tt * 40) * 0.8;
+                    if (a.t > 2) { mannaG.remove(a.qa.g); mannaAnims.splice(k, 1); }
+                }
+            }
+        }
+        function mannaCheck() {   // 1초에 네 번 — 만나를 밟았나 · 메추라기 곁인가
+            if (isUnder()) { nearQuail = null; return; }
+            mannas.forEach(m => {
+                if (m.done || !P.onGround || Math.hypot(m.x - P.x, m.z - P.z) > 0.45) return;
+                const gem = typeof _njMannaGather === 'function' ? _njMannaGather(m.i) : 0;
+                if (!gem) return;
+                m.done = true; mannaAnims.push({ kind: 'gather', m, t: 0 }); syncWallet();
+                if (typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) SoundEffect.playBlankLevelUp();
+                showHint(mannas.every(x => x.done) ? T('nj3d_manna_got', { gem: gem.toLocaleString() }) + (MT.sat ? T('nj3d_manna_sat') : '') + ' · ' + T('nj3d_manna_all') : T('nj3d_manna_got', { gem: gem.toLocaleString() }) + (MT.sat ? T('nj3d_manna_sat') : ''), 3800);
+            });
+            let best = null, bd = 1.1;
+            quails.forEach(q => { if (q.done) return; const d = Math.hypot(q.x - P.x, q.z - P.z); if (d < bd) { bd = d; best = q; } });
+            const was = nearQuail; nearQuail = best;
+            if (best && !quailQ && !clamQ && best !== (was && quailQ ? was : null) && !mannaAnims.some(a => a.qa === best)) askQuail(best);
+            if (quailQ && (!best || best !== quailQ.qa)) closeQuailQ();   // 멀어지면 문제를 닫는다(다시 다가가면 다시)
+        }
+
+        // ══ 🗺️ 미니맵 (10/5 사용자) — 걷기 화면 오른쪽 위. 바라보는 쪽이 위(조이스틱과 같은 방향), 누르면 가까이/멀리 ══
+        //    성·산마루·강·바다(모래사장)·내 위치 + 진주 장사·만나·메추라기·사신. 조개는 찾는 재미 — 8칸 안에 들어와야 반짝 표시
+        const mini = ov.querySelector('.nj3d-mini'), mctx = mini.getContext('2d');
+        let miniFar = false, miniT = 0;
+        try { miniFar = localStorage.getItem('kingsRoad_nj3dMiniFar') === '1'; } catch (e) { }
+        mini.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); miniFar = !miniFar; try { localStorage.setItem('kingsRoad_nj3dMiniFar', miniFar ? '1' : '0'); } catch (er) { } miniT = 0; });
+        function miniDraw() {
+            const css = mini.clientWidth || 116, dpr = Math.min(2, window.devicePixelRatio || 1), W = Math.round(css * dpr);
+            if (mini.width !== W) { mini.width = W; mini.height = W; }
+            const c = mctx, h = W / 2, Rw = miniFar ? 46 : 16, s = h / Rw;
+            const fx = -Math.sin(camYaw), fz = -Math.cos(camYaw), rx = Math.cos(camYaw), rz = -Math.sin(camYaw);
+            const toMap = (x, z) => { const dx = x - P.x, dz = z - P.z; return [h + (rx * dx + rz * dz) * s, h - (fx * dx + fz * dz) * s]; };
+            c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, W, W);
+            c.save(); c.beginPath(); c.arc(h, h, h - 1, 0, Math.PI * 2); c.clip();
+            c.fillStyle = '#3f7f4b'; c.fillRect(0, 0, W, W);   // 비탈·벌판
+            c.setTransform(rx * s, -fx * s, rz * s, -fz * s, h - s * (rx * P.x + rz * P.z), h + s * (fx * P.x + fz * P.z));   // 세계 좌표 그대로 그린다
+            c.fillStyle = '#e3d29f'; c.beginPath(); c.ellipse(0, SZ, SRX * 1.22, SRZ * 1.22, 0, 0, Math.PI * 2); c.fill();   // 모래사장
+            c.fillStyle = '#3aa7c4'; c.beginPath(); c.ellipse(0, SZ, SRX, SRZ, 0, 0, Math.PI * 2); c.fill();                    // 생명수의 바다
+            c.fillStyle = '#5fae69'; c.fillRect(-PL, -PL, PL * 2, PL * 2);                                                          // 산마루
+            c.strokeStyle = '#7fd8ea'; c.lineWidth = 1.1;
+            c.beginPath(); c.moveTo(0, -150); c.lineTo(0, SHORE + 0.5); c.moveTo(-150, 0); c.lineTo(150, 0); c.stroke();          // 네 강(남쪽은 어귀까지)
+            c.fillStyle = '#f2d58a'; c.fillRect(-HALF, -HALF, HALF * 2, HALF * 2);                                                // 성
+            c.fillStyle = '#ffffff'; c.beginPath(); c.arc(0, 0, 0.9, 0, Math.PI * 2); c.fill();                                   // 보좌
+            c.setTransform(1, 0, 0, 1, 0, 0);
+            const dot = (x, z, col, r, ring) => { const [mx, my] = toMap(x, z); if (Math.hypot(mx - h, my - h) > h - 4) return; c.fillStyle = col; c.beginPath(); c.arc(mx, my, r * dpr, 0, Math.PI * 2); c.fill(); if (ring) { c.strokeStyle = ring; c.lineWidth = 1.2 * dpr; c.stroke(); } };
+            envoys.forEach(e => dot(e.x, e.z, '#c77b2e', 2.6));
+            dot(MER.x, MER.z, '#8e5ad0', 3.6, '#ffffff');                                                                          // 💎 진주 장사
+            mannas.forEach(m => { if (!m.done) dot(m.x, m.z, '#fffdf0', 3.4, '#e8c35a'); });                                      // 🍞 만나
+            quails.forEach(q => { if (!q.done) dot(q.x, q.z, '#8a6a45', 3.2, '#fff2c4'); });                                      // 🐦 메추라기
+            const tw = 0.6 + Math.sin(performance.now() / 180) * 0.4;
+            clams.forEach(cl => { if (!cl.done && Math.hypot(cl.x - P.x, cl.z - P.z) < 8) dot(cl.x, cl.z, `rgba(255,236,170,${tw.toFixed(2)})`, 2.6); });   // 🐚 가까이 오면 반짝
+            // 나 — 가운데 화살표(늘 위)
+            c.fillStyle = '#ffffff'; c.strokeStyle = '#1b2a44'; c.lineWidth = 1.5 * dpr;
+            c.beginPath(); c.moveTo(h, h - 7 * dpr); c.lineTo(h + 5 * dpr, h + 5 * dpr); c.lineTo(h, h + 2.5 * dpr); c.lineTo(h - 5 * dpr, h + 5 * dpr); c.closePath(); c.fill(); c.stroke();
+            c.restore();
+            // 테두리 · 북쪽
+            c.strokeStyle = 'rgba(246,215,122,0.85)'; c.lineWidth = 2 * dpr; c.beginPath(); c.arc(h, h, h - 1.5 * dpr, 0, Math.PI * 2); c.stroke();
+            const [nmx, nmy] = (() => { const dx = 0, dz = -1, X = rx * dx + rz * dz, Y = -(fx * dx + fz * dz); return [h + X * (h - 9 * dpr), h + Y * (h - 9 * dpr)]; })();
+            c.fillStyle = '#1b2a44'; c.beginPath(); c.arc(nmx, nmy, 6 * dpr, 0, Math.PI * 2); c.fill();
+            c.fillStyle = '#f6d77a'; c.font = `800 ${8 * dpr}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('N', nmx, nmy + 0.5 * dpr);
+        }
+
+        // ══ 🐠 바다 생물 도감 (10/5) — 열두 종, 로우폴리로 그린다. 숨는 아이는 다가가면 나오고 헤엄치는 아이는 돌아다닌다 (game.js NJ_SEA_DEX) ══
+        const dexBtn = ov.querySelector('.nj3d-dexbtn');
+        const dexMat = (hex, o) => new THREE.MeshStandardMaterial(Object.assign({ color: new THREE.Color(hex).convertSRGBToLinear(), roughness: 0.6, flatShading: true }, o || {}));
+        const dexDir = () => { const u = Math.random() * 2 - 1, a = Math.random() * Math.PI * 2, r = Math.sqrt(1 - u * u); return new THREE.Vector3(r * Math.cos(a), u, r * Math.sin(a)); };   // 고른 방향(r128엔 randomDirection이 없다)
+        const DAYC = (typeof NJ_DEX_COLORS !== 'undefined' && typeof _njDexColorIdx === 'function') ? NJ_DEX_COLORS[_njDexColorIdx()].hex : null;
+        const dexTint = hex => DAYC == null ? hex : new THREE.Color(hex).lerp(new THREE.Color(DAYC), 0.7).getHex();   // 고유 색에 그날(요일) 빛깔이 물든다
+        const dexMesh = (geo, m, x, y, z, sx, sy, sz) => { const me = new THREE.Mesh(geo, m); me.position.set(x || 0, y || 0, z || 0); if (sx) me.scale.set(sx, sy || sx, sz || sx); return me; };
+        const CREATURE = {
+            octopus() { const g = new THREE.Group(), m = dexMat(dexTint(0xc9564b)), arms = [];
+                g.add(dexMesh(new THREE.SphereGeometry(0.07, 10, 8), m, 0, 0.1, 0, 1, 1.2, 1));
+                [-1, 1].forEach(s => g.add(dexMesh(new THREE.SphereGeometry(0.014, 6, 5), dexMat(0xf6f2e0), s * 0.03, 0.1, 0.06)));
+                for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, arm = new THREE.Group(); arm.position.set(Math.cos(a) * 0.04, 0.05, Math.sin(a) * 0.04); arm.rotation.y = -a;
+                    const tg = new THREE.CylinderGeometry(0.004, 0.014, 0.12, 5); tg.translate(0, -0.06, 0); const t1 = new THREE.Mesh(tg, m); t1.rotation.z = -1.1; arm.add(t1); g.add(arm); arms.push(arm); }
+                return { g, anim: (t) => arms.forEach((a, i) => { a.rotation.z = Math.sin(t * 2 + i) * 0.25; }) }; },
+            seahorse() { const g = new THREE.Group(), m = dexMat(dexTint(0xe8a33a)), pts = [];
+                for (let i = 0; i <= 12; i++) { const u = i / 12; pts.push(new THREE.Vector3(Math.sin(u * 3.2) * 0.03 * (1 - u) + (u > 0.85 ? (u - 0.85) * 0.3 : 0), 0.22 - u * 0.2, u > 0.7 ? -Math.sin((u - 0.7) * 10) * 0.03 : 0)); }
+                g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 20, 0.014, 6), m));
+                const head = dexMesh(new THREE.SphereGeometry(0.022, 8, 6), m, 0, 0.23, 0.01); g.add(head);
+                const sn = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.008, 0.04, 5), m); sn.rotation.x = Math.PI / 2; sn.position.set(0, 0.225, 0.04); g.add(sn);
+                return { g, anim: (t) => { g.position.y = g.userData.y0 + Math.sin(t * 1.5) * 0.02; } }; },
+            turtle() { const g = new THREE.Group(), sh = dexMat(dexTint(0x4f7a3a)), sk = dexMat(0x9cb07a), fl = [];
+                g.add(dexMesh(new THREE.SphereGeometry(0.12, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), sh, 0, 0, 0, 1, 0.45, 1.25));
+                g.add(dexMesh(new THREE.SphereGeometry(0.11, 10, 4), sk, 0, 0, 0, 1, 0.12, 1.2));
+                g.add(dexMesh(new THREE.SphereGeometry(0.04, 8, 6), sk, 0, 0.02, 0.17, 1, 0.8, 1.2));
+                [[1, 1], [-1, 1], [1, -1], [-1, -1]].forEach(([sx, sz]) => { const f = new THREE.Group(); f.position.set(sx * 0.1, 0, sz * 0.08); const fm = dexMesh(new THREE.SphereGeometry(0.05, 6, 4), sk, sx * 0.04, 0, 0, 1.2, 0.18, 0.55); f.add(fm); g.add(f); fl.push([f, sx]); });
+                return { g, swim: 0.35, anim: (t) => fl.forEach(([f, sx], i) => { f.rotation.z = sx * Math.sin(t * 3 + i) * 0.4; }) }; },
+            ray() { const g = new THREE.Group(), m = dexMat(dexTint(0x6f7c8c)), sh = new THREE.Shape();
+                sh.moveTo(0, 0.16); sh.quadraticCurveTo(0.18, 0.02, 0.2, -0.02); sh.quadraticCurveTo(0.08, -0.06, 0, -0.1); sh.quadraticCurveTo(-0.08, -0.06, -0.2, -0.02); sh.quadraticCurveTo(-0.18, 0.02, 0, 0.16);
+                const body = new THREE.Mesh(new THREE.ShapeGeometry(sh, 6), dexMat(dexTint(0x6f7c8c), { side: THREE.DoubleSide })); body.rotation.x = -Math.PI / 2; g.add(body);
+                const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.008, 0.25, 4), m); tail.rotation.x = Math.PI / 2; tail.position.z = 0.22; g.add(tail);
+                return { g, swim: 0.45, anim: (t) => { body.scale.y = 1; body.rotation.z = 0; body.position.y = Math.sin(t * 3) * 0.01; body.scale.x = 1 - Math.abs(Math.sin(t * 3)) * 0.15; } }; },
+            starfish() { const sh = new THREE.Shape(); for (let i = 0; i <= 10; i++) { const a = i / 10 * Math.PI * 2 + Math.PI / 2, r = i % 2 ? 0.035 : 0.09; if (i) sh.lineTo(Math.cos(a) * r, Math.sin(a) * r); else sh.moveTo(Math.cos(a) * r, Math.sin(a) * r); }
+                const geo = new THREE.ExtrudeGeometry(sh, { depth: 0.02, bevelEnabled: true, bevelSize: 0.008, bevelThickness: 0.008, bevelSegments: 1 });
+                const g = new THREE.Group(), me = new THREE.Mesh(geo, dexMat(dexTint(0xe8743b))); me.rotation.x = -Math.PI / 2; me.position.y = 0.01; g.add(me);
+                return { g, anim: (t) => { me.rotation.z = Math.sin(t * 0.4) * 0.15; } }; },
+            crab() { const g = new THREE.Group(), shell = dexMat(dexTint(0xd8c3a0)), leg = dexMat(0xd9603b), legs = [];
+                const sh = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.12, 8), shell); sh.rotation.z = -1.2; sh.position.set(-0.02, 0.05, 0); g.add(sh);
+                g.add(dexMesh(new THREE.SphereGeometry(0.03, 8, 6), leg, 0.05, 0.03, 0));
+                for (let i = 0; i < 6; i++) { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.05, 4), leg); l.position.set(0.04 + (i % 3) * 0.012, 0.015, (i < 3 ? 1 : -1) * 0.03); l.rotation.x = (i < 3 ? 1 : -1) * 0.9; g.add(l); legs.push(l); }
+                [-1, 1].forEach(s => g.add(dexMesh(new THREE.SphereGeometry(0.008, 5, 4), dexMat(0x222222), 0.075, 0.06, s * 0.012)));
+                return { g, anim: (t) => { legs.forEach((l, i) => { l.rotation.z = Math.sin(t * 9 + i) * 0.3; }); g.position.x = g.userData.x0 + Math.sin(t * 0.7) * 0.15; } }; },
+            jelly() { const g = new THREE.Group(), m = new THREE.MeshStandardMaterial({ color: new THREE.Color(dexTint(0xf0b8ff)).convertSRGBToLinear(), transparent: true, opacity: 0.55, emissive: 0x7a3c9c, emissiveIntensity: 0.4, roughness: 0.2, side: THREE.DoubleSide, depthWrite: false }), ts = [];
+                g.add(dexMesh(new THREE.SphereGeometry(0.08, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), m));
+                for (let i = 0; i < 7; i++) { const a = i / 7 * 6.28, tl = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.002, 0.18, 3), m); tl.position.set(Math.cos(a) * 0.05, -0.09, Math.sin(a) * 0.05); g.add(tl); ts.push(tl); }
+                return { g, float: true, anim: (t) => { g.position.y = g.userData.y0 + Math.sin(t * 1.2) * 0.12; g.scale.set(1 + Math.sin(t * 3) * 0.08, 1 - Math.sin(t * 3) * 0.08, 1 + Math.sin(t * 3) * 0.08); ts.forEach((x, i) => { x.rotation.z = Math.sin(t * 2 + i) * 0.2; }); } }; },
+            puffer() { const g = new THREE.Group(), m = dexMat(dexTint(0xe6d36a)), body = dexMesh(new THREE.SphereGeometry(0.05, 10, 8), m); g.add(body);
+                for (let i = 0; i < 18; i++) { const v = dexDir(), sp = new THREE.Mesh(new THREE.ConeGeometry(0.006, 0.025, 4), m); sp.position.copy(v).multiplyScalar(0.05); sp.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), v); body.add(sp); }
+                [-1, 1].forEach(s => body.add(dexMesh(new THREE.SphereGeometry(0.009, 5, 4), dexMat(0x111111), s * 0.025, 0.015, 0.042)));
+                return { g, part: body, float: true, anim: (t, near) => { const k = near ? 1.6 : 1; body.scale.setScalar(body.scale.x + (k - body.scale.x) * 0.1); g.position.y = g.userData.y0 + 0.15 + Math.sin(t * 2) * 0.03; } }; },   // 다가가면 부푼다
+            eel() { const g = new THREE.Group(), m = dexMat(dexTint(0x5d6b2e)), pts = [];
+                for (let i = 0; i <= 8; i++) pts.push(new THREE.Vector3(0, i * 0.035, Math.sin(i * 0.8) * 0.02));
+                const body = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, 0.022, 6), m); g.add(body);
+                g.add(dexMesh(new THREE.SphereGeometry(0.028, 8, 6), m, 0, 0.29, 0.01, 1, 0.9, 1.3));
+                g.add(dexMesh(new THREE.BoxGeometry(0.07, 0.07, 0.07), dexMat(0x5b5148), 0, 0.02, 0));   // 굴 입구 바위
+                return { g, anim: (t) => { body.rotation.x = Math.sin(t * 1.4) * 0.15; } }; },
+            clown() { const g = new THREE.Group(), anem = dexMat(0xe37fb0), fm = dexMat(dexTint(0xf07a24)), wm = dexMat(0xffffff), fish = new THREE.Group();
+                for (let i = 0; i < 14; i++) { const a = i / 14 * 6.28, r = 0.03 + (i % 3) * 0.015, c = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.01, 0.1, 4), anem); c.position.set(Math.cos(a) * r, 0.05, Math.sin(a) * r); c.rotation.set(Math.sin(a) * 0.3, 0, Math.cos(a) * 0.3); g.add(c); }
+                fish.add(dexMesh(new THREE.SphereGeometry(0.03, 8, 6), fm, 0, 0, 0, 1.4, 1, 0.6));
+                [-0.015, 0.02].forEach(x => fish.add(dexMesh(new THREE.TorusGeometry(0.024, 0.005, 4, 10), wm, x, 0, 0, 1, 1.2, 1).rotateY(Math.PI / 2)));
+                const tail = dexMesh(new THREE.ConeGeometry(0.018, 0.03, 4), fm, -0.05, 0, 0); tail.rotation.z = Math.PI / 2; fish.add(tail);
+                g.add(fish);
+                return { g, part: fish, anim: (t) => { const a = t * 1.3; fish.position.set(Math.cos(a) * 0.11, 0.1 + Math.sin(t * 2) * 0.02, Math.sin(a) * 0.11); fish.rotation.y = -a - Math.PI / 2; tail.rotation.y = Math.sin(t * 12) * 0.5; } }; },
+            urchin() { const g = new THREE.Group(), m = dexMat(dexTint(0x3a2448)), body = dexMesh(new THREE.SphereGeometry(0.04, 8, 6), m, 0, 0.035, 0); g.add(body);
+                for (let i = 0; i < 26; i++) { const v = dexDir(); if (v.y < -0.3) continue; const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.001, 0.004, 0.08, 3), m); sp.position.copy(v).multiplyScalar(0.06); sp.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), v); body.add(sp); }
+                return { g, anim: (t) => { body.rotation.y = t * 0.1; } }; },
+            dolphin() { const g = new THREE.Group(), m = dexMat(dexTint(0x7d97ad), { flatShading: false, roughness: 0.35 });
+                g.add(dexMesh(new THREE.SphereGeometry(0.1, 12, 8), m, 0, 0, 0, 0.8, 0.8, 2.6));
+                const sn = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.1, 6), m); sn.rotation.x = Math.PI / 2; sn.position.z = 0.3; g.add(sn);
+                const fin = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.09, 4), m); fin.position.set(0, 0.1, -0.02); fin.rotation.x = -0.4; g.add(fin);
+                const tail = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.012, 0.06), m); tail.position.z = -0.28; g.add(tail);
+                return { g, swim: 0.9, anim: (t) => { tail.rotation.x = Math.sin(t * 6) * 0.4; g.rotation.x = Math.sin(t * 1.5) * 0.12; } }; },
+        };
+        // 🎩👓🎀👑 꾸밈 — 머리 위(모자·리본·면류관) 또는 얼굴 앞(안경). [위, 앞, 크기, 앞이 +x인 아이는 돌림]
+        const ACC_AT = { octopus: [[0, 0.185, 0], [0, 0.11, 0.07], 1], seahorse: [[0, 0.25, 0.01], [0, 0.232, 0.03], 0.7], turtle: [[0, 0.065, 0.17], [0, 0.035, 0.215], 1.3],
+            ray: [[0, 0.02, 0.04], [0, 0.014, 0.11], 1.1], starfish: [[0, 0.045, 0], [0, 0.045, 0.035], 1], crab: [[0.05, 0.065, 0], [0.085, 0.06, 0], 0.8, Math.PI / 2],
+            jelly: [[0, 0.085, 0], [0, 0.04, 0.078], 1.1], puffer: [[0, 0.055, 0], [0, 0.016, 0.05], 1], eel: [[0, 0.32, 0.01], [0, 0.295, 0.04], 0.9],
+            clown: [[0.01, 0.03, 0], [0.045, 0.006, 0], 0.7, Math.PI / 2], urchin: [[0, 0.11, 0], [0, 0.05, 0.065], 1], dolphin: [[0, 0.085, 0.18], [0, 0.045, 0.29], 1.5] };
+        const accMat = { dark: dexMat(0x2b2b38), red: dexMat(0xc0392b), pink: dexMat(0xf48fb1), gold: new THREE.MeshStandardMaterial({ color: 0xf2c14e, metalness: 0.8, roughness: 0.25, emissive: 0x5a3c00, emissiveIntensity: 0.4 }) };
+        accMat.goldIn = accMat.gold.clone(); accMat.goldIn.side = THREE.DoubleSide;   // 금테 안쪽 면도
+        function makeAcc(kind) {
+            const g = new THREE.Group();
+            if (kind === 'hat') { g.add(dexMesh(new THREE.CylinderGeometry(0.04, 0.04, 0.006, 14), accMat.dark)); g.add(dexMesh(new THREE.CylinderGeometry(0.024, 0.026, 0.036, 14), accMat.dark, 0, 0.02, 0)); g.add(dexMesh(new THREE.CylinderGeometry(0.0265, 0.0265, 0.008, 14), accMat.red, 0, 0.008, 0)); }
+            else if (kind === 'glasses') { [-1, 1].forEach(sx => g.add(dexMesh(new THREE.TorusGeometry(0.014, 0.003, 5, 14), accMat.dark, sx * 0.018, 0, 0))); g.add(dexMesh(new THREE.BoxGeometry(0.01, 0.003, 0.003), accMat.dark)); }
+            else if (kind === 'ribbon') { [-1, 1].forEach(sx => { const c = dexMesh(new THREE.ConeGeometry(0.014, 0.03, 6), accMat.pink, sx * 0.016, 0.01, 0); c.rotation.z = sx * Math.PI / 2; g.add(c); }); g.add(dexMesh(new THREE.SphereGeometry(0.008, 8, 6), accMat.pink, 0, 0.01, 0)); }
+            else if (kind === 'crown') { g.add(dexMesh(new THREE.CylinderGeometry(0.026, 0.024, 0.016, 12, 1, true), accMat.goldIn, 0, 0.008, 0)); g.add(dexMesh(new THREE.SphereGeometry(0.023, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), accMat.red, 0, 0.002, 0, 1, 0.75, 1)); g.add(dexMesh(new THREE.SphereGeometry(0.005, 6, 5), accMat.gold, 0, 0.022, 0)); /* 속이 비어 보였다(10/5) — 붉은 벨벳과 꼭대기 구슬 */ for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; g.add(dexMesh(new THREE.ConeGeometry(0.005, 0.014, 4), accMat.gold, Math.cos(a) * 0.025, 0.022, Math.sin(a) * 0.025)); } }
+            return g;
+        }
+        // ══ 🐠 바다 생물 블렌더 모델 (10/5 — tools/blender/sea.py → models/sea/*.glb) ══
+        //    처음엔 위 CREATURE(공·원기둥)로 그렸다 — 문어 다리가 짧고 소라게 소라가 거꾸로, 곰치 머리가 몸에서 떨어지고 돌고래 꼬리가 상자였다(사용자). 이제 모델을 쓰고 CREATURE는 못 받을 때만.
+        //    물들일 곳 = 재질 이름 'tint'(그날 빛깔을 곱한다 — 모델은 옅은 바탕색) · 눈·흰 배는 그대로 · 꾸밈은 SEA_ACC(눈 가운데 앞 / 머리 위, 게임 좌표 = 블렌더 (x, z, −y))
+        const SEA_V = '20261005';
+        const SEA_ACC = {   // top·face = 모자·안경 자리, hs·gs = 크기(안경은 눈 사이 반 너비 ÷ 0.018), node = 이 부분에 단다
+            octopus: { top: [0, 0.217, -0.012], face: [0, 0.083, 0.056], hs: 1.2, gs: 1.67 }, seahorse: { top: [0, 0.256, 0.004], face: [0, 0.243, 0.034], hs: 0.55, gsep: 0.016, gr: 0.0068 },
+            turtle: { top: [0, 0.084, 0.205], face: [0, 0.07, 0.252], hs: 0.8, gsep: 0.024, gr: 0.0105 }, ray: { top: [0, 0.042, 0.06], face: [0, 0.046, 0.075], hs: 0.8, gsep: 0.03, gr: 0.011, grx: -Math.PI / 2 },
+            starfish: { top: [0, 0.036, 0], face: [0, 0.042, 0], hs: 0.8, gsep: 0.022, gr: 0.012, grx: -Math.PI / 2 }, crab: { top: [0, 0.12, -0.04], face: [0, 0.078, 0.074], hs: 0.9, gs: 0.85 },
+            jelly: { top: [0, 0.14, 0], face: [0, 0.1, 0.082], hs: 1.2, gs: 1.6 }, puffer: { top: [0, 0.132, 0], face: [0, 0.088, 0.058], hs: 1.1, gs: 1.78 },
+            eel: { node: 'eel', top: [0, 0.198, 0.03], face: [0, 0.188, 0.056], hs: 0.6, gs: 0.68 }, clown: { node: 'fish', top: [0, 0.027, 0.012], face: [0, 0.007, 0.036], hs: 0.45, gs: 0.6 },
+            urchin: { top: [0, 0.11, 0], face: [0, 0.05, 0.052], hs: 0.9, gs: 1.3 }, dolphin: { top: [0, 0.162, 0.16], face: [0, 0.108, 0.158], hs: 1.0, gsep: 0.05, gr: 0.015 },   // 눈이 옆에 있다 — 렌즈를 눈 바깥에, 다리는 머리 속에 묻힌다(처음엔 코뚜레처럼 부리를 뚫었다)
+        };
+        const SEA_MOVE = { turtle: { swim: 0.35 }, ray: { swim: 0.45 }, dolphin: { swim: 0.9 }, jelly: { float: 1 }, puffer: { float: 1 } };
+        const SEA_ANIM = {   // 이름 붙은 부분을 움직인다 (t 초, near = 순례자가 곁에)
+            octopus: (g, N) => { const a = [0, 1, 2, 3, 4, 5, 6, 7].map(i => N('a' + i)); return t => a.forEach((x, i) => { if (x) { x.rotation.y = Math.sin(t * 1.6 + i * 0.9) * 0.16; x.rotation.x = Math.sin(t * 1.1 + i) * 0.05; } }); },
+            seahorse: (g, N) => { const f = N('fin'); return t => { if (f) f.rotation.y = Math.sin(t * 16) * 0.5; g.position.y = Math.sin(t * 1.5) * 0.015; }; },
+            turtle: (g, N) => { const f = [0, 1, 2, 3].map(i => N('fl' + i)); return t => { const s = Math.sin(t * 2.4); if (f[0]) f[0].rotation.z = s * 0.45; if (f[1]) f[1].rotation.z = -s * 0.45; if (f[2]) f[2].rotation.z = s * 0.2; if (f[3]) f[3].rotation.z = -s * 0.2; }; },
+            ray: (g, N) => { const l = N('wL'), r = N('wR'); return t => { const s = Math.sin(t * 2.6) * 0.32; if (l) l.rotation.z = -s; if (r) r.rotation.z = s; g.position.y = Math.sin(t * 2.6 + 1) * 0.01; }; },
+            starfish: g => t => { g.rotation.y = Math.sin(t * 0.3) * 0.1; },
+            crab: (g, N) => { const l = N('legs'), c = N('claw'); return t => { if (l) l.position.y = Math.abs(Math.sin(t * 9)) * 0.003; if (c) c.rotation.x = Math.sin(t * 1.4) * 0.12; g.position.x = Math.sin(t * 0.7) * 0.12; }; },
+            jelly: (g, N) => { const a = [0, 1, 2, 3].map(i => N('t' + i)); return t => { const p = Math.sin(t * 2.2); g.scale.set(1 + p * 0.06, 1 - p * 0.06, 1 + p * 0.06); g.position.y = Math.sin(t * 1.1) * 0.08; a.forEach((x, i) => { if (x) { x.rotation.x = Math.sin(t * 1.7 + i) * 0.18; x.rotation.z = Math.cos(t * 1.3 + i) * 0.18; } }); }; },
+            puffer: (g, N) => { const l = N('pL'), r = N('pR'), tl = N('tail'); return (t, near) => { if (l) l.rotation.y = Math.sin(t * 9) * 0.5; if (r) r.rotation.y = -Math.sin(t * 9) * 0.5; if (tl) tl.rotation.y = Math.sin(t * 5) * 0.35; const k = near ? 1.4 : 1; g.scale.setScalar(g.scale.x + (k - g.scale.x) * 0.08); g.position.y = 0.1 + Math.sin(t * 2) * 0.02; }; },   // 다가가면 부푼다
+            eel: (g, N) => { const e = N('eel'); return t => { if (e) { e.rotation.z = Math.sin(t * 1.2) * 0.12; e.rotation.x = Math.sin(t * 0.9) * 0.08; } }; },
+            clown: (g, N) => { const f = N('fish'); return t => { if (!f) return; const a = t * 1.1; f.position.set(Math.cos(a) * 0.11, 0.11 + Math.sin(t * 2) * 0.01, Math.sin(a) * 0.11); f.rotation.y = -a; }; },
+            urchin: g => t => { g.rotation.y = t * 0.05; },
+            dolphin: (g, N) => { const tl = N('tail'); return t => { if (tl) tl.rotation.x = Math.sin(t * 5) * 0.3; g.rotation.x = Math.sin(t * 1.5) * 0.08; }; },
+        };
+        const seaCache = {};
+        function seaLoad(k) {
+            if (!seaCache[k]) seaCache[k] = (async () => {
+                if (!THREE.GLTFLoader && typeof loadScript === 'function' && typeof GLTF_URL !== 'undefined') await loadScript(GLTF_URL);
+                const gl = await new Promise((res, rej) => new THREE.GLTFLoader().load(`${typeof SEA_BASE !== 'undefined' ? SEA_BASE : ''}models/sea/${k}.glb?v=${SEA_V}`, res, undefined, rej));
+                gl.scene.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; } });
+                return gl.scene;
+            })();
+            seaCache[k].catch(() => { delete seaCache[k]; });
+            return seaCache[k];
+        }
+        function seaGlasses(sep, r) {   // 안경 — 렌즈 간격(sep)과 크기(r)를 따로(한 배율로 키우면 렌즈가 커져 머리를 파고들었다)
+            const g = new THREE.Group(), tb = Math.max(0.0018, r * 0.22);
+            [-1, 1].forEach(sx => { const t = new THREE.Mesh(new THREE.TorusGeometry(r, tb, 6, 18), accMat.dark); t.position.x = sx * sep; g.add(t); });
+            const bw = Math.max(0.004, 2 * (sep - r)); const br = new THREE.Mesh(new THREE.BoxGeometry(bw, tb * 1.4, tb * 1.4), accMat.dark); g.add(br);
+            return g;
+        }
+        /* 모델 하나를 그날 빛깔·꾸밈으로 — 반환 { g, anim } */
+        function seaMake(tpl, k, hex, tier) {
+            const g = tpl.clone(true), tc = new THREE.Color(hex).convertSRGBToLinear(), done = new Map();
+            g.traverse(o => {
+                if (!o.isMesh) return;
+                const one = m => { if (!m || m.name !== 'tint') return m; if (!done.has(m)) { const c = m.clone(); c.color.copy(tc); if (k === 'jelly') { c.transparent = true; c.opacity = 0.62; c.depthWrite = false; c.side = THREE.DoubleSide; } done.set(m, c); } return done.get(m); };
+                o.material = Array.isArray(o.material) ? o.material.map(one) : one(o.material);
+            });
+            const A = SEA_ACC[k], N = n => g.getObjectByName(n);
+            if (tier && A) {
+                const host = (A.node && N(A.node)) || g, gl = tier === 'glasses', am = gl ? seaGlasses(A.gsep || 0.018 * A.gs, A.gr || 0.014 * A.gs) : makeAcc(tier), at = gl ? A.face : A.top;
+                am.position.set(at[0], at[1], at[2]); if (!gl) am.scale.setScalar(A.hs); if (gl && A.grx) am.rotation.x = A.grx; host.add(am);
+            }
+            return { g, anim: SEA_ANIM[k] ? SEA_ANIM[k](g, N) : () => { } };
+        }
+        // 오늘 바다에 사는 아이들 — 풀린 절(처음 백지로 써낸 절)의 생물 중 오늘 요일 빛깔 · 지금 그 종의 시간대 (game.js _njDexToday). 자리는 절과 날짜로
+        const creatures = [];
+        let dexQ = null, dexTapHinted = false;
+        (typeof _njDexToday === 'function' ? _njDexToday() : []).forEach(E => {
+            let sd = 17; for (const ch of String(_get6AMDayStr()) + E.id) sd = (sd * 31 + ch.charCodeAt(0)) % 2147483647; sd = sd || 1;
+            const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+            const d = E.d; if (!CREATURE[d.k]) return;
+            const a = r() * Math.PI * 2, q = Math.sqrt(0.06 + r() * 0.78), x = Math.cos(a) * q * SRX, z = SZ + Math.sin(a) * q * SRZ;
+            const mv = SEA_MOVE[d.k] || {}, c = { g: new THREE.Group(), anim: () => { }, swim: mv.swim || 0, float: !!mv.float }, y = seabed(x, z), swim = c.swim;
+            c.g.userData.x0 = x; c.g.userData.y0 = swim ? y + 0.8 + r() * 1.2 : c.float ? y + 0.4 : y;
+            c.g.position.set(x, c.g.userData.y0, z); c.g.rotation.y = r() * 6.28;
+            const acc = (typeof NJ_DEX_TIERS !== 'undefined' && NJ_DEX_TIERS[E.t]) ? NJ_DEX_TIERS[E.t].k : '', AT = ACC_AT[d.k];   // 꾸밈은 절이 정한다(장이 뒤로 갈수록 모자 → 안경 → 리본 → 면류관)
+            seaLoad(d.k).then(tpl => { if (cur !== C) return; const m = seaMake(tpl, d.k, DAYC == null ? 0xffffff : DAYC, acc); c.g.add(m.g); c.anim = m.anim; })
+                .catch(() => {   // 모델을 못 받으면 예전 도형으로
+                    if (cur !== C) return; const f = CREATURE[d.k](); f.g.userData.x0 = 0; f.g.userData.y0 = 0;
+                    if (acc && AT) { const am = makeAcc(acc), at = acc === 'glasses' ? AT[1] : AT[0]; am.position.set(at[0], at[1], at[2]); am.scale.setScalar(AT[2]); if (acc === 'glasses' && AT[3]) am.rotation.y = AT[3]; (f.part || f.g).add(am); }
+                    c.g.add(f.g); c.anim = f.anim;
+                });
+            const tapG = new THREE.Sprite(new THREE.SpriteMaterial({ map: radial, color: 0xfff2c4, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));   // 가까이 오면 반짝 — 눌러 보라고
+            tapG.visible = false; tapG.scale.setScalar(0.22); c.g.add(tapG); c.tapG = tapG;
+            const hide = !swim && !c.float;   // 숨는 아이 — 웅크려 있다가 다가가면 나온다
+            if (hide) c.g.scale.setScalar(0.25);
+            reefG.add(c.g);
+            creatures.push(Object.assign(c, { E, d, x, z, hide, cx: x, cz: z, ang: r() * 6.28, rad: 1.5 + r() * 2 }));
+        });
+        const dexWho = c => (typeof _njDexFullName === 'function' ? _njDexFullName(c.E) : c.d.ko);
+        const dexRef = c => (typeof _njDexRef === 'function' ? _njDexRef(c.E.id) : c.E.id);
+        function closeDexQ() { if (dexQ) { dexQ = null; fishQ.hidden = true; fishQ.innerHTML = ''; } }
+        function askDex(c, retry) {   // 그 생물의 말씀 — 빈칸 4지
+            const q = typeof _njFishQuestion === 'function' ? _njFishQuestion([c.E.id]) : null;
+            if (!q) { dexDone(c, typeof _njDexAnswer === 'function' ? _njDexAnswer(c.E.id, true) : null); return; }   // 아주 짧은 절이라 문제를 못 만들면 그냥 만난 것으로
+            dexQ = { c, q };
+            const esc = x => String(x).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+            fishQ.classList.remove('watch', 'now', 'reel');
+            fishQ.innerHTML = `<div class="nj3d-fishq-head">${esc(T(retry ? 'nj3d_dex_retry' : 'nj3d_dex_q', { e: c.d.e, name: dexWho(c) }))}</div>
+                <div class="nj3d-fishq-ref">${esc(q.ref)}</div>
+                <div class="nj3d-fishq-text">${esc(q.before)} <span class="nj3d-fishq-blank">＿＿＿</span> ${esc(q.after)}</div>
+                <div class="nj3d-fishq-choices">${q.choices.map((ch, i) => `<button data-i="${i}">${esc(ch)}</button>`).join('')}</div>`;
+            fishQ.hidden = false;
+            fishQ.querySelectorAll('button[data-i]').forEach(bt => bt.onclick = () => {
+                const ok = q.choices[+bt.dataset.i] === q.answer; closeDexQ();
+                const res = typeof _njDexAnswer === 'function' ? _njDexAnswer(c.E.id, ok) : null;
+                if (ok) { dexDone(c, res); return; }
+                if (res && res.hidden) { c.met = true; c.tapG.visible = false; showHint(T('nj3d_dex_miss', { e: c.d.e }), 3200); if (c.hide) c.g.scale.setScalar(0.25); }
+                else askDex(c, true);
+            });
+        }
+        function dexDone(c, res) {
+            c.met = true; c.tapG.visible = false;
+            if (!res || !res.gem) return;
+            const tot = typeof _njDexVerseList === 'function' ? _njDexVerseList().length : 404;
+            let msg = res.all ? T('nj3d_dex_all', { gem: res.gem.toLocaleString() }) : T('nj3d_dex_found', { e: c.d.e, name: dexWho(c), ref: dexRef(c), gem: (typeof NJ_DEX_GEM !== 'undefined' ? NJ_DEX_GEM : 200).toLocaleString(), n: res.n, m: tot });
+            if (res.bonus && res.bonus.length) msg += ' · ' + res.bonus.map(b => T('nj3d_dex_bonus', { group: b.name, gem: b.gem.toLocaleString() })).join(' · ');
+            showHint(msg, 5000); syncWallet(); syncDexBtn();
+            if (typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) { SoundEffect.playBlankLevelUp(); if (res.bonus && res.bonus.length) setTimeout(() => SoundEffect.playBlankLevelUp(), 420); }
+            sprayBurst(c.x, c.g.position.y + 0.08, c.z, 12, 0);
+        }
+        function creatureTap(e) {   // 👆 눌러서 만남 — 물속에서 2.4 안, 화면에서 70px 안의 가장 가까운 아이
+            if (!walk || !isUnder() || !tap || dexQ) return false;
+            if (Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > 10 || performance.now() - tap.t > 450) return false;
+            const rr = cvs.getBoundingClientRect(), pv = new THREE.Vector3(); let best = null, bd = 70;
+            creatures.forEach(c => {
+                if (!c.g.visible || Math.hypot(c.x - P.x, c.z - P.z) > 2.4 || (c.hide && c.g.scale.x < 0.8)) return;
+                c.g.getWorldPosition(pv); pv.y += 0.06; pv.project(camera); if (pv.z > 1 || pv.z < -1) return;
+                const sx = rr.left + (pv.x + 1) / 2 * rr.width, sy = rr.top + (1 - pv.y) / 2 * rr.height, dd = Math.hypot(sx - e.clientX, sy - e.clientY);
+                if (dd < bd) { bd = dd; best = c; }
+            });
+            if (!best) return false;
+            const id = best.E.id;
+            if (typeof _njDexMetThisWeek === 'function' && _njDexMetThisWeek(id)) { showHint(T('nj3d_dex_again', { e: best.d.e, name: dexWho(best), ref: dexRef(best) }), 3000); return true; }
+            if (typeof _njDexHidden === 'function' && _njDexHidden(id)) { showHint(T('nj3d_dex_miss', { e: best.d.e }), 3000); return true; }
+            askDex(best, false);
+            return true;
+        }
+        function dexTick(dt) {
+            const tt = performance.now() / 1000, under = isUnder();
+            creatures.forEach(c => {
+                const d = Math.hypot(c.x - P.x, c.z - P.z);
+                c.g.visible = d < 12;   // 하루 최대 45마리 — 먼 아이는 그리지 않는다
+                if (!c.g.visible) return;
+                if (c.swim) {   // 둥글게 헤엄친다
+                    c.ang += dt * c.swim / c.rad; const nx = c.cx + Math.cos(c.ang) * c.rad, nz = c.cz + Math.sin(c.ang) * c.rad;
+                    if (seaE(nx, nz) < 0.92) { c.x = nx; c.z = nz; } c.g.position.x = c.x; c.g.position.z = c.z; c.g.rotation.y = -c.ang;
+                    c.g.position.y = Math.max(seabed(c.x, c.z) + 0.15, Math.min(c.g.userData.y0, SEA_Y - 0.35));   // 얕은 데로 와도 물 위로 튀어나오지 않게
+                }
+                const near = under && d < 2.2;
+                if (c.hide && !(c.met && typeof _njDexHidden === 'function' && _njDexHidden(c.E.id))) { const want = near ? 1 : 0.25; c.g.scale.setScalar(c.g.scale.x + (want - c.g.scale.x) * Math.min(1, dt * 3)); }
+                c.anim(tt, near);
+                const fresh = !(typeof _njDexMetThisWeek === 'function' && _njDexMetThisWeek(c.E.id)) && !(typeof _njDexHidden === 'function' && _njDexHidden(c.E.id));
+                const can = fresh && near && (!c.hide || c.g.scale.x > 0.8);   // 이번 주에 아직 안 만난 아이 — 위에 반짝임
+                c.tapG.visible = can; if (can) { c.tapG.position.y = 0.2 + Math.sin(tt * 3) * 0.02; c.tapG.material.opacity = 0.6 + Math.sin(tt * 5) * 0.3; if (!dexTapHinted) { dexTapHinted = true; showHint(T('nj3d_dex_tap'), 4500); } }
+            });
+            if (dexQ && Math.hypot(dexQ.c.x - P.x, dexQ.c.z - P.z) > 2.8) closeDexQ();   // 멀어지면 문제를 닫는다
+        }
+        function syncDexBtn() { dexBtn.textContent = T('nj3d_dex_btn', { n: typeof _njDexCount === 'function' ? _njDexCount() : 0, m: typeof _njDexVerseList === 'function' ? _njDexVerseList().length : 404 }); }
+        syncDexBtn();
+        function openDex() {
+            offerEl.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button>
+                <div class="nj3d-offer-head">${T('nj3d_dex_title')}</div>
+                <div class="nj3d-offer-intro">${T('nj3d_dex_intro')}</div>
+                <div class="nj3d-offer-list">${typeof _njDexHtml === 'function' ? _njDexHtml() : ''}</div>`;
+            offerEl.hidden = false; offerEl.dataset.pearl = ''; offerEl.dataset.keep = '1';
+            offerEl.querySelector('.nj3d-fruit-x').onclick = () => { offerEl.hidden = true; offerEl.dataset.keep = ''; };
+            offerEl.querySelectorAll('.nj3d-dex-cell[data-tip]').forEach(cl => cl.onclick = () => { const line = cl.closest('.nj3d-dex-card').querySelector('.nj3d-dex-tipline'); if (line) line.textContent = cl.dataset.tip; });   // 칸을 누르면 그 절·요일·시간
+        }
+        dexBtn.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); if (!offerEl.hidden && offerEl.dataset.keep === '1') { offerEl.hidden = true; offerEl.dataset.keep = ''; } else openDex(); });
 
         // ── 화질 ──
         function setQuality(h, byUser) {
@@ -3641,6 +4239,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 reefG.visible = cu || camera.position.y < SEA_Y + 2.5;   // 바닷가에 서서 보는 높이까지는 그대로
                 if (cu !== underView) {
                     underView = cu; underEl.hidden = !cu; skyDome.visible = !cu;
+                    if (cu) clamHint();
                     if (cu) { scene.fog.color.copy(UNDER_C); scene.fog.near = 1.5; scene.fog.far = 26; scene.background = UNDER_C.clone(); }
                     else { scene.fog.color.copy(HAZE); scene.fog.near = 70; scene.fog.far = 240; scene.background = HAZE.clone(); }
                     camera.far = cu ? 30 : 420; camera.updateProjectionMatrix();   // 물속 — 안개(26) 너머는 아예 안 그린다
