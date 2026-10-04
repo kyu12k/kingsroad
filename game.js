@@ -28767,7 +28767,8 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
      v 구절 · t 시각 · ok 성공 · g 「모르겠어요」 · h 힌트 수 · f 첫 힌트 위치 · L 글자 수 · w 틀린 글자 · d 구절 소요(ms)
      m 모드(memory/learn/endurance) · u 백지(1)/빈칸(0) · c 출처(hs/boss/mid/vc/quick/event) · o 무작위(1) · p 세션 안 순번 · n 세션 크기
      s 음성 점수 · rs 복습 스텝 · am 모드(k 왕의 길/f 자유) · ms 기억 강도 · tr 집중 훈련
-     lp/la/lb 직전 성공·시도·백지성공 시각 · bp/tp/fl 직전 백지·빈칸 통과·실패 횟수 · ev 이벤트 id · sv 스키마 */
+     lp/la/lb 직전 성공·시도·백지성공 시각 · bp/tp/fl 직전 백지·빈칸 통과·실패 횟수 · ev 이벤트 id · sv 스키마
+     lv 첫 마디 난이도(c가 start·fpnote일 때) */
 const RECALL_LOG_KEY = 'kingsRoad_recallLogBuf';
 const RECALL_LOG_MAX = 2000;           // 버퍼 상한 — 오래 못 올려도 localStorage가 넘치지 않게
 let _recallLogFlushing = false;
@@ -28796,6 +28797,7 @@ function _logRecallAttempt(stageId, ok, hints, mode, extra, prev, training) {
         };
         if (extra && extra.giveUp) e.g = 1;
         if (extra && typeof extra.score === 'number') e.s = extra.score;
+        if (extra && extra.lv) e.lv = extra.lv;   // 🔑 첫 마디의 고난 난이도(1 쉬움 · 2 보통 · 3 어려움) — 10/4 빠져 있던 것
         if (hs.eventId) e.ev = String(hs.eventId);
         if (training) e.tr = 1;
         if (prev) {
