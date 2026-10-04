@@ -674,6 +674,7 @@
 
         // 🐠 바다 밑 풍경 (10/2) — 바위 · 흔들리는 해초 · 산호 · 물고기 떼. 한 번에 그린다(InstancedMesh). 물고기는 물속을 볼 때만 움직인다
         const reefT = { value: 0 }, fishSchools = [];
+        const reefG = new THREE.Group(); seaGrp.add(reefG);   // 바위·해초·산호 — 위에서는 물칸에 가려 안 보이는데 그리고 있었다(10/4 밤: 바다로 활강하면 무거워진다). 카메라가 물속·수면 가까이일 때만
         let fishMesh = null;
         {
             let sd = 41; const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
@@ -684,7 +685,7 @@
             for (let i = 0; i < RK; i++) { const [x, z] = inSea(0.97), s2 = 0.4 + r() * 1.6; e.set(r() * 3, r() * 3, r() * 3); qq.setFromEuler(e);
                 v.set(x, seabed(x, z) + 0.05 * s2, z); sc.set(s2, s2 * (0.5 + r() * 0.5), s2 * (0.7 + r() * 0.6)); m4.compose(v, qq, sc); rocks.setMatrixAt(i, m4);
                 col.setHSL(0.08 + r() * 0.06, 0.15 + r() * 0.15, 0.3 + r() * 0.2).convertSRGBToLinear(); rocks.setColorAt(i, col); }
-            seaGrp.add(rocks); chunkInstanced(rocks, 6, 30, 1, seaGrp);
+            reefG.add(rocks); chunkInstanced(rocks, 6, 30, 1, reefG);
             // 해초 — 끝으로 갈수록 가늘고, 물결 따라 흔들린다(꼭짓점을 시간으로 흔드는 셰이더)
             const SW = 900, weedG = new THREE.CylinderGeometry(0.004, 0.022, 1, 4, 6); weedG.translate(0, 0.5, 0);
             const weedM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
@@ -699,7 +700,7 @@
                     const h = 0.6 + r() * 1.6; v.set(x, seabed(x, z) - 0.05, z); sc.set(1, h, 1); e.set(0, r() * 6.28, 0); qq.setFromEuler(e); m4.compose(v, qq, sc); weed.setMatrixAt(n, m4);
                     col.setHSL(hue, 0.55, 0.22 + r() * 0.12).convertSRGBToLinear(); weed.setColorAt(n, col); n++; }
             }
-            seaGrp.add(weed); chunkInstanced(weed, 6, 30, 2.4, seaGrp);
+            reefG.add(weed); chunkInstanced(weed, 6, 30, 2.4, reefG);
             // 산호 — 얕은 데(가장자리 쪽)에 분홍·주황·보라 가지
             const CR = 260, coral = new THREE.InstancedMesh(new THREE.ConeGeometry(0.06, 0.32, 5), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 }), CR * 3);
             const CC = [0xf28aa0, 0xf5a25a, 0xb58ae0, 0xf2d06a, 0xff7a7a];
@@ -708,7 +709,7 @@
                 for (let b = 0; b < 3; b++) { e.set((r() - 0.5) * 0.9, r() * 6.28, (r() - 0.5) * 0.9); qq.setFromEuler(e); const s2 = 0.6 + r() * 0.8;
                     v.set(x + (r() - 0.5) * 0.12, seabed(x, z) + 0.12 * s2, z + (r() - 0.5) * 0.12); sc.set(s2, s2, s2); m4.compose(v, qq, sc); coral.setMatrixAt(ci, m4);
                     col.setHex(c0).convertSRGBToLinear(); coral.setColorAt(ci, col); ci++; } }
-            seaGrp.add(coral); chunkInstanced(coral, 6, 30, 0.6, seaGrp);
+            reefG.add(coral); chunkInstanced(coral, 6, 30, 0.6, reefG);
             // 물고기 떼 — 떼마다 둥글게 돌며 오르내린다. 물고기 하나 = 몸통(다이아) + 꼬리
             const FPS = 9, FS = 36, fishG = (() => { const P = [0.09, 0, 0, 0, 0.03, 0, 0, -0.03, 0, 0, 0, 0.018, 0, 0, -0.018, -0.03, 0, 0, -0.07, 0.03, 0, -0.07, -0.03, 0];
                 const I = [0, 1, 3, 0, 3, 2, 0, 2, 4, 0, 4, 1, 5, 3, 1, 5, 2, 3, 5, 4, 2, 5, 1, 4, 5, 6, 7];
@@ -1237,6 +1238,7 @@
                 near.instanceMatrix.updateRange.offset = 0; near.instanceMatrix.updateRange.count = n * 16; near.instanceMatrix.needsUpdate = true;
                 near.instanceColor.updateRange.offset = 0; near.instanceColor.updateRange.count = n * 3; near.instanceColor.needsUpdate = true;
             };
+            grassFollow.mesh = near;
         }
         extras.visible = HIGH;
 
@@ -3477,7 +3479,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 perf.n++; if (perf.n > 20) perf.sum += dt;
                 if (perf.n === 140 && perf.sum / 120 > 0.045) { setQuality(false, false); showHint(T('nj3d_slow'), 3500); }
             }
-            if (grassFollow) { if (walk) grassFollow(P.x, P.z); else if (deco) grassFollow(deco.tgt.x, deco.tgt.z); else grassFollow(controls.target.x, controls.target.z); }
+            if (grassFollow) { if (walk) { const air = P.y - groundAt(P.x, P.z, P.y) > 1.2; grassFollow.mesh.visible = !air; if (!air) grassFollow(P.x, P.z); }   // 🪂 높이 날 땐 발밑 풀을 감추고 다시 깔지 않는다(활강은 빨라 초당 5~6번 깔았다)
+                else { grassFollow.mesh.visible = true; if (deco) grassFollow(deco.tgt.x, deco.tgt.z); else grassFollow(controls.target.x, controls.target.z); } }
             if (walk) nearTick(now, P.x, P.z); else if (deco) nearTick(now, deco.tgt.x, deco.tgt.z); else nearTick(now, controls.target.x, controls.target.z);
             {   // 🌗 그림자 굽기 (10/4) — 해는 고정이고 그림자는 성 둘레(±16)에만 생긴다. 바다·바닷가·나라에 있을 땐 매 프레임 다시 굽는 게 헛일이었다
                 //    → 성 둘레 밖이거나 물속이면 2초에 한 번만(늦게 불러온 건물·새로 놓은 꾸밈이 빠지지 않게)
@@ -3494,7 +3497,6 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                     shadowAt = now; shadowGeos = geos; sun.shadow.needsUpdate = true;
                 }
                 if (now - watchAt > 300) { watchAt = now; watchTick(); }
-                blobTick();
             }
             if (walk) walkUpdate(dt);
             else if (deco) decoCam();
@@ -3506,8 +3508,10 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 if (camera.position.y < gy) { camera.position.y = gy; camera.lookAt(controls.target); }
             }
             { const tt = now / 1000; cityAnims.forEach(f => f(tt)); giftsG.children.forEach(g => { if (g.userData.anim) g.userData.anim(tt); }); decoG.children.forEach(g => { if (g.userData.anim) g.userData.anim(tt); }); setG.children.forEach(g => { if (g.userData.anim) g.userData.anim(tt); }); }   // 등불·별·맷돌·분수·양 떼…
+            blobTick();   // 🌑 발밑 그늘 — 순례자·탈것·행렬·양 떼를 **움직인 뒤에** 맞춘다(10/4 밤: 앞에서 맞추면 한 프레임 전 자리라 프레임 간격 따라 발과 어긋나 끊기며 따라왔다)
             {   // 🤿 카메라가 물속이면 — 안개를 짙은 청록으로 가까이, 화면에 물빛 덮개, 하늘 지붕은 끈다
                 const cu = camera.position.y < SEA_Y - 0.01 && seaE(camera.position.x, camera.position.z) < 1;
+                reefG.visible = cu || camera.position.y < SEA_Y + 2.5;   // 바닷가에 서서 보는 높이까지는 그대로
                 if (cu !== underView) {
                     underView = cu; underEl.hidden = !cu; skyDome.visible = !cu;
                     if (cu) { scene.fog.color.copy(UNDER_C); scene.fog.near = 1.5; scene.fog.far = 26; scene.background = UNDER_C.clone(); }
