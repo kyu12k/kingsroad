@@ -4852,6 +4852,19 @@ const SoundEffect = {
             };
         } catch (e) { return null; }
     },
+    // 🛝 바다에 풍덩 (10/5) — 묵직한 '풍'(낮게 떨어짐) + 물 갈라지는 소리 + '덩' + 보글보글 올라오는 거품
+    playPlunge: function () {
+        if (this.keyMuted) return;
+        this._play(t => {
+            this._note(120, t, 0.4, 0.17, { glideTo: 52, partials: this._PURE, attack: 0.003 });
+            this._whoosh(t, 0.28, 0.12, 3200, 380);
+            this._note(270, t + 0.03, 0.14, 0.09, { glideTo: 760, partials: this._PURE, attack: 0.002 });
+            for (let k = 0; k < 8; k++) {
+                const tt = t + 0.28 + k * (0.07 + Math.random() * 0.07), f = 300 + Math.random() * 520;
+                this._note(f, tt, 0.05, 0.055 * (1 - k / 9), { glideTo: f * 2.3, partials: this._PURE, attack: 0.002 });
+            }
+        });
+    },
     // 🛝 출발 — "슝~" 올라가는 휘파람 + 바람
     playWhee: function () {
         if (this.keyMuted) return;

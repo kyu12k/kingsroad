@@ -1267,6 +1267,16 @@
         spray.frustumCulled = false; spray.visible = false; scene.add(spray);
         for (let i = 0; i < SPRAY; i++) sprayPos[i * 3 + 1] = -999;
         let sprayN = 0, sprayAcc = 0;
+        function sprayBurst(x, y, z, n, vz) {   // 풍덩 — 들어간 자리에서 물방울이 위로 크게 솟구친다
+            for (let q = 0; q < n; q++) {
+                const i = sprayN++ % SPRAY, a = Math.random() * Math.PI * 2, r = 0.4 + Math.random() * 0.9;
+                sprayPos[i * 3] = x + Math.cos(a) * 0.05; sprayPos[i * 3 + 1] = y; sprayPos[i * 3 + 2] = z + Math.sin(a) * 0.05;
+                sprayVel[i * 3] = Math.cos(a) * r; sprayVel[i * 3 + 1] = 1.4 + Math.random() * 1.4; sprayVel[i * 3 + 2] = Math.sin(a) * r + vz * 0.2;
+                sprayLife[i] = 0.7 + Math.random() * 0.4;
+            }
+            spray.visible = true;
+        }
+        let plungeMom = null;   // 🌊 풍덩한 뒤 물속으로 나아가는 기세 { vz } — 점점 준다
         function sprayTick(dt, emit) {   // 순례자 양옆·뒤로 튀는 물방울 — 빠를수록 많이
             sprayAcc += emit * dt;
             while (sprayAcc >= 1) {
@@ -1934,7 +1944,7 @@
         const setGoLabel = () => { goBtn.textContent = where === 'city' ? T('nj3d_to_sea') : T('nj3d_to_city'); };
         const placeAt = (dest) => {
             const [x, z, yaw] = SPOT[dest];
-            P.x = x; P.z = z; P.y = terrain(x, z) + 0.05; P.vy = 0; camYaw = yaw; P.face = yaw + Math.PI; slide = null; slideSndStop();
+            P.x = x; P.z = z; P.y = terrain(x, z) + 0.05; P.vy = 0; camYaw = yaw; P.face = yaw + Math.PI; slide = null; slideSndStop(); plungeMom = null;
             pilgrim.position.set(P.x, P.y, P.z);
             if (walk) camera.position.set(P.x + Math.sin(yaw) * camDist, P.y + 0.4, P.z + Math.cos(yaw) * camDist);
         };
@@ -1953,7 +1963,7 @@
         }
         setGoLabel();
         modeBtn.addEventListener('click', () => {
-            walk = !walk; controls.enabled = !walk; walkUI.hidden = !walk; pilgrim.visible = true; camOff = null; slide = null; slideBtn.hidden = true; slideSndStop(); fovBoost = 0; speedEl.style.opacity = '0';
+            walk = !walk; controls.enabled = !walk; walkUI.hidden = !walk; pilgrim.visible = true; camOff = null; slide = null; slideBtn.hidden = true; slideSndStop(); fovBoost = 0; speedEl.style.opacity = '0'; plungeMom = null;
             if (walk) { controls.autoRotate = false; camera.fov = 62; camera.near = 0.02; showHint(T('nj3d_hint_walk'), 3500); }
             else { camera.fov = 42; camera.near = 0.1; where = P.z > 25 ? 'sea' : 'city'; lookAt(where); setGoLabel(); endFish(); fishBtn.hidden = true; }
             camera.updateProjectionMatrix(); setModeLabel(); lastTouch = performance.now();
@@ -3360,9 +3370,13 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             L.armL.rotation.z += (-0.45 - L.armL.rotation.z) * e; L.armR.rotation.z += (0.45 - L.armR.rotation.z) * e;
             body.rotation.x += (0.3 - body.rotation.x) * e; body.position.y += (0 - body.position.y) * e;
             S.sp -= dt; if (S.sp <= 0) { S.sp = 0.12; splash(P.x, P.z, false, true); }   // 지나간 자리에 물결
-            if (seaE(P.x, P.z) < 0.995) {   // 어귀 — 바다에 풍덩
-                slide = null; slideSndStop(); P.y = SEA_Y - 0.06; P.vy = -1.0; P.onGround = false; gliding = false;
-                splash(P.x, P.z, true); showHint(T('nj3d_slide_end'), 3800); fishHintHold = performance.now() + 4500;
+            if (seaE(P.x, P.z) < 0.995) {   // 어귀 — 미끄러지던 기세 그대로 바다 속으로 풍덩 (10/5 사용자: 물속에 풍덩 하는 느낌)
+                const v = S.v; slide = null; slideSndStop();
+                P.y = SEA_Y - 0.05; P.vy = -1.6 - v * 0.25; P.onGround = false; gliding = false;   // 빠를수록 깊이 — 물속 헤엄(뜨는 힘)이 천천히 되돌린다
+                plungeMom = { vz: v * 0.75 };
+                splash(P.x, P.z, true, true); sprayBurst(P.x, SEA_Y + 0.02, P.z, 46, v);
+                if (typeof SoundEffect !== 'undefined' && SoundEffect.playPlunge) SoundEffect.playPlunge();
+                showHint(T('nj3d_slide_end'), 4200); fishHintHold = performance.now() + 5000;
             }
         }
         function rippleTick(dt) {
@@ -3435,6 +3449,10 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const boatOn = ride.on && MD && (MD.kind === 'boat' || MD.kind === 'sub'), seaOk = (x, z) => !boatOn || seaE(x, z) < 0.97;   // ⛵ 배는 바다 안에서만 — 해안에 닿으면 멈춘다
             if (!blocked(nx, P.z, P.y) && seaOk(nx, P.z)) P.x = nx;
             if (!blocked(P.x, nz, P.y) && seaOk(P.x, nz)) P.z = nz;
+            if (plungeMom) {   // 🌊 풍덩 뒤 물속으로 미끄러져 나아간다 — 물의 저항으로 1초 남짓에 멎는다
+                const mz = P.z + plungeMom.vz * dt; if (!blocked(P.x, mz, P.y)) P.z = mz;
+                plungeMom.vz *= Math.exp(-dt * 1.6); if (plungeMom.vz < 0.08) plungeMom = null;
+            }
             if (boatOn && moving && !seaOk(nx, nz)) { ride.edgeT = (ride.edgeT || 0) + dt; if (ride.edgeT > 0.6 && !ride.edgeHint) { ride.edgeHint = true; showHint(T('nj3d_boat_edge'), 2600); } } else { ride.edgeT = 0; if (boatOn && seaE(P.x, P.z) < 0.85) ride.edgeHint = false; }
             const FD = ride.on && MD && MD.kind === 'fly' ? MD : null;   // 🦅🔥🎈✈️ 나는 탈것 — 누르면 떠오르고, 떼면 천천히 내려온다(중력 대신)
             if (!ride.on && diveHeld && P.onGround && seaE(P.x, P.z) < 1 && !isUnder()) {   // 🤿 수면에서 잠수 — 첨벙
@@ -3448,12 +3466,17 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             else if (fly) { P.vy = Math.min(P.vy + 6.5 * dt, 1.4); gliding = false; }
             else if (glide) P.vy = Math.max(P.vy - G * 0.18 * dt, -(WG.sink || 0.42));   // 천천히 내려앉는다 — 좋은 날개일수록 덜 떨어진다
             else P.vy -= G * dt;
+            const prevY = P.y, fallV = P.vy;
             P.y = Math.min(SUB ? SEA_Y - 0.12 : FD ? (FD.maxY || 40) : 18, P.y + P.vy * dt);   // 🚢 잠수함은 수면 바로 아래까지
             const g = groundAt(P.x, P.z, P.y);
             if (P.y <= g) { P.y = g; if (P.vy < 0) P.vy = 0; P.onGround = true; }
             else if (!fly && wasGround && P.vy <= 0 && P.y - g < 0.45) { P.y = g; P.vy = 0; P.onGround = true; }   // 내리막은 발을 땅에 붙인다 — 한 걸음마다 살짝 떴다 떨어져 콩콩 튀었고, 늘 공중이라 점프도 안 됐다(9/30)
             else P.onGround = false;
             if (!wasGround && P.onGround && wetAt(P.x, P.z)) splash(P.x, P.z, true);   // 물에 떨어짐
+            if (!ride.on && prevY >= SEA_Y - 0.03 && P.y < SEA_Y - 0.03 && seaE(P.x, P.z) < 1) {   // 🌊 높은 데서 떨어져 수면을 뚫고 들어감(10/5 사용자: 활강하다 떨어지면 꽤 깊이 잠기는데 소리가 없었다)
+                if (fallV < -1.2) { splash(P.x, P.z, true, true); sprayBurst(P.x, SEA_Y + 0.02, P.z, Math.min(SPRAY, 20 + Math.round(-fallV * 8)), 0); if (typeof SoundEffect !== 'undefined' && SoundEffect.playPlunge) SoundEffect.playPlunge(); }
+                else splash(P.x, P.z, true);   // 살살 내려앉으면 보통 첨벙
+            }
             if (moving) { const want = Math.atan2(-mx, -mz); let d = want - P.face; d = Math.atan2(Math.sin(d), Math.cos(d)); P.face += d * Math.min(1, dt * 10); }
             if (ride.on) {   // 성 안에서는 내린다 — 탈것은 문 밖 마지막 자리에서 기다린다
                 if (inCity(P.x, P.z)) mountDown('city'); else ride.lastOut = [P.x, P.z];
