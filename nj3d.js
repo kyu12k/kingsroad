@@ -182,7 +182,7 @@
                 xs.forEach(zv => xs.forEach(xv => {
                     const x = sx * xv, z = sz * zv, h = WT(x, z), e = seaE(x, z);
                     pos.push(x, e < 1 ? h - 0.3 : h, z);   // 바다 안은 촘촘한 바다 밑 그릇(아래)이 덮는다 — 성긴 땅 그물은 조금 아래로(겹쳐 깜빡이지 않게)
-                    c.copy(cTop).lerp(cLow, Math.min(1, -h / DROP)); if (e < 1.5 && e > 0.75) c.lerp(cSand, 0.55);
+                    c.copy(cTop).lerp(cLow, Math.min(1, -h / DROP)); if (e < 1.5 && e > 0.75) c.lerp(cSand, 0.88 * Math.min(1, (1.5 - e) / 0.18));   // 🏖️ 물가는 모래사장(10/4 밤 — 0.55로 섞어 풀빛이 남았다)
                     if (e < 1) { const dd = Math.min(1, (SEA_Y - h) / SEA_DEEP); c.copy(cSand).lerp(cDeep, Math.pow(dd, 0.7)); }   // 바다 밑 — 모래에서 짙은 청록으로
                     c.convertSRGBToLinear();   // 꼭짓점 색은 선형으로 — 안 바꾸면 화면에서 허옇게 바래 연한 민트로 보였다(10/2 풀밭 손질)
                     col.push(c.r, c.g, c.b);
@@ -256,7 +256,7 @@
                 const c0 = COLS[Math.floor(r() * COLS.length)], cnt = 6 + Math.floor(r() * 13);
                 for (let k = 0; k < cnt && n < N; k++) {
                     const x = cx + (r() - 0.5) * 0.9, z = cz + (r() - 0.5) * 0.9;
-                    if (Math.abs(x) < 1.3 || Math.abs(z) < 1.3 || (Math.abs(x) < 7.6 && Math.abs(z) < 7.6)) continue;
+                    if (Math.abs(x) < 1.3 || Math.abs(z) < 1.3 || (Math.abs(x) < 7.6 && Math.abs(z) < 7.6) || seaE(x, z) < 1.5) continue;   // 모래사장엔 꽃이 없다
                     const h = 0.04 + r() * 0.05, gy = WT(x, z), s2 = 0.8 + r() * 0.5;
                     e.set(0.55 + r() * 0.6, r() * 6.28, 0, 'YXZ'); q.setFromEuler(e);   // 꽃송이를 비스듬히 세운다 — 누워 있으면 낮은 시선에선 옆모습(회색 막대)만 보였다
                     v.set(x, gy + h, z); sc.set(s2, s2, s2); m4.compose(v, q, sc); head.setMatrixAt(n, m4);
@@ -1181,7 +1181,7 @@
                     const cnt = 25 + Math.floor(r() * 40), hue = 0.27 + r() * 0.07, rad = 0.3 + r() * 0.6;
                     for (let k = 0; k < cnt && n < N; k++) {
                         const ang = r() * 6.28, rr = Math.sqrt(r()) * rad, x = cx + Math.cos(ang) * rr, z = cz + Math.sin(ang) * rr;
-                        if (Math.abs(x) < 1.25 || Math.abs(z) < 1.25 || (Math.abs(x) < 7.6 && Math.abs(z) < 7.6)) continue;
+                        if (Math.abs(x) < 1.25 || Math.abs(z) < 1.25 || (Math.abs(x) < 7.6 && Math.abs(z) < 7.6) || seaE(x, z) < 1.5) continue;
                         const s2 = 0.8 + r() * 0.6;
                         e.set(0, r() * 6.28, 0); q.setFromEuler(e); v.set(x, WT(x, z) - 0.003, z); sc.set(s2, s2 * (0.8 + r() * 0.5), s2); m4.compose(v, q, sc); m.setMatrixAt(n, m4);
                         col.setHSL(hue + (r() - 0.5) * 0.03, 0.5 + r() * 0.2, 0.3 + r() * 0.12); m.setColorAt(n, col);
@@ -1211,7 +1211,7 @@
                 for (let j = 0; j < k; j++) {
                     const x = (ix + r()) * CELL, z = (iz + r()) * CELL;
                     if (Math.abs(x) < 7.6 && Math.abs(z) < 7.6) continue;   // 성과 경사로
-                    if (seaE(x, z) < 1.05 || wetAt(x, z)) continue;          // 바다·강
+                    if (seaE(x, z) < 1.45 || wetAt(x, z)) continue;          // 바다·모래사장·강 (10/4 밤: 1.05 — 물 바로 앞까지 풀이 자랐다)
                     const s2 = 0.8 + r() * 0.7;
                     q.setFromAxisAngle(up, r() * 6.28); v.set(x, terrain(x, z) - 0.003, z); sc.set(s2, s2 * (0.8 + r() * 0.6), s2); m4.compose(v, q, sc); m4.toArray(mm, n * 16);
                     col.setHSL(hue + (r() - 0.5) * 0.03, 0.5 + r() * 0.2, 0.3 + r() * 0.12); cc[n * 3] = col.r; cc[n * 3 + 1] = col.g; cc[n * 3 + 2] = col.b;
@@ -1246,6 +1246,7 @@
         const CH = 0.22, CR = 0.07, STEP = 0.14, G = 4.2, JUMP_V = 1.55, WALK_V = 0.95, RUN_V = 1.75;
         const P = { x: 1.3, y: 0, z: 9.2, vy: 0, onGround: true, face: Math.PI };
         let deco = null;   // 🛠️ 꾸미기 중이면 상태(아래 「꾸미기」)
+        let camOff = null;   // 걷기 카메라 — 순례자에서 카메라까지(이것만 부드럽게 따라간다)
         let walk = false, jetOn = false, camYaw = 0, camPitch = 0.12, camDist = 0.95, walkT = 0, gait = 0;
         // 팔다리가 있는 순례자 (9/29) — 엉덩이·어깨를 축으로 흔들어 걷기·달리기·점프·날기 자세를 만든다. 앞은 -z
         const pilgrim = new THREE.Group(), body = new THREE.Group(); pilgrim.add(body);
@@ -1914,7 +1915,7 @@
         }
         setGoLabel();
         modeBtn.addEventListener('click', () => {
-            walk = !walk; controls.enabled = !walk; walkUI.hidden = !walk; pilgrim.visible = true;
+            walk = !walk; controls.enabled = !walk; walkUI.hidden = !walk; pilgrim.visible = true; camOff = null;
             if (walk) { controls.autoRotate = false; camera.fov = 62; camera.near = 0.02; showHint(T('nj3d_hint_walk'), 3500); }
             else { camera.fov = 42; camera.near = 0.1; where = P.z > 25 ? 'sea' : 'city'; lookAt(where); setGoLabel(); endFish(); fishBtn.hidden = true; }
             camera.updateProjectionMatrix(); setModeLabel(); lastTouch = performance.now();
@@ -3430,7 +3431,13 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 cp.y = Math.min(cp.y, SEA_Y - 0.1);
             }   // 🤿 물속에선 카메라도 물속에 — 카메라가 바다 위일 때만(물가에선 뭍 땅속으로 끌려 들어갔다)
             cp.y = Math.max(cp.y, groundAt(cp.x, cp.z, cp.y) + 0.03);
-            camera.position.lerp(cp, Math.min(1, dt * 12));
+            // 🪂 10/4 밤 (사용자: 활강할 때 캐릭터가 덜덜 떨린다) — 전엔 카메라 자리를 lerp(dt × 12)로 쫓았다. 빠를수록 카메라가 뒤처지는데
+            //    그 거리가 프레임 간격마다 달라 순례자가 화면에서 앞뒤로 떨렸다. → 순례자에서 카메라까지의 **오프셋만** 부드럽게(돌리기·벽에 걸림),
+            //    카메라는 늘 순례자 + 오프셋 — 아무리 빨라도 순례자는 화면 같은 자리
+            const want = cp.sub(Tg);
+            if (!camOff || camOff.distanceTo(want) > 6) camOff = want.clone(); else camOff.lerp(want, 1 - Math.exp(-dt * 12));
+            camera.position.copy(Tg).add(camOff);
+            camera.position.y = Math.max(camera.position.y, groundAt(camera.position.x, camera.position.z, camera.position.y) + 0.03);
             // 늘 순례자 쪽(-dir)을 본다 — 카메라가 땅에 걸려 멈춰도 시선은 그대로 위로 들려 하늘을 본다(땅속을 보지 않는다)
             camera.lookAt(camera.position.x - dir.x, camera.position.y - dir.y + 0.04, camera.position.z - dir.z);
         }
