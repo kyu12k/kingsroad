@@ -233,12 +233,18 @@
             if (now - nearAt < 250) return; nearAt = now;
             nearSets.forEach(S => S.parts.forEach(q => { const dx = q.x - fx, dz = q.z - fz; q.mesh.visible = dx * dx + dz * dz < S.R2; }));
         }
-        {   // 🌸 들꽃 (10/2 사용자: 이모지 꽃이 너무 크다 → 순례자 발치에) — 꽃잎 접시 + 노란 꽃술 + 줄기, 무리지어 핀다. 한 번에 그린다(InstancedMesh)
-            const N = 1800, petals = new THREE.CircleGeometry(0.038, 5); petals.rotateX(-Math.PI / 2);
-            const pos = petals.attributes.position;   // 다섯 꽃잎 — 꼭짓점을 들쭉날쭉하게(오각형이 아니라 꽃처럼)
-            for (let i = 1; i < pos.count; i++) { const x = pos.getX(i), z = pos.getZ(i); pos.setXYZ(i, x * 1.15, 0.006, z * 1.15); }
-            const head = new THREE.InstancedMesh(petals, new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x302820, side: THREE.DoubleSide }), N);   // 램버트 — 처음엔 꽃잎이 어둡게 나왔다
-            const ctr = new THREE.InstancedMesh(new THREE.SphereGeometry(0.011, 6, 4), new THREE.MeshStandardMaterial({ color: 0xf2c94c, roughness: 0.6 }), N);
+        {   // 🌸 들꽃 (10/2 사용자: 이모지 꽃이 너무 크다 → 순례자 발치에) — 꽃술을 그린 꽃잎 접시 + 줄기, 무리지어 핀다. 한 번에 그린다(InstancedMesh)
+            // 🔧 10/4 잔렉: 노란 꽃술(작은 구 1,800개 = 삼각형 약 6.5만, 들꽃 전체의 2/3)을 빼고 꽃잎 한 장에 꽃술을 그려 넣는다 —
+            //    가운데 노란 오각(꼭짓점 색) → 얇은 테에서 흰빛으로 → 다섯 꽃잎 끝(살짝 오목한 접시). 꽃 하나 삼각형 41 → 25
+            //    (꼭짓점 하나만 노랗게 하면 노랑이 꽃잎 전체로 번져 꽃술이 안 보였다)
+            const N = 1800, petals = (() => {
+                const R0 = 0.038 * 1.15, Y = [1.55, 1.15, 0.28], P = [0, 0.0045, 0], C = Y.slice(), I = [];   // 꽃술은 1보다 밝게(꽃잎 색이 곱해져도 노랗게) · 가운데를 살짝 볼록하게
+                const ring = (r, y, c) => { for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; P.push(Math.cos(a) * r, y, -Math.sin(a) * r); C.push(c[0], c[1], c[2]); } };
+                ring(R0 * 0.28, 0.003, Y); ring(R0 * 0.38, 0.002, [1, 1, 1]); ring(R0, 0.006, [1, 1, 1]);   // 꽃술 · 테 · 꽃잎 끝
+                for (let i = 0; i < 5; i++) { const j = (i + 1) % 5; I.push(0, 1 + i, 1 + j); [[1, 6], [6, 11]].forEach(([a, b]) => I.push(a + i, b + i, a + j, a + j, b + i, b + j)); }
+                const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); g.setIndex(I); g.computeVertexNormals(); return g;
+            })();
+            const head = new THREE.InstancedMesh(petals, new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x302820, side: THREE.DoubleSide, vertexColors: true }), N);   // 램버트 — 처음엔 꽃잎이 어둡게 나왔다
             const stem = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.003, 0.004, 1, 3), new THREE.MeshStandardMaterial({ color: 0x5f9a3e, roughness: 0.9 }), N);
             const COLS = [0xf4a6c0, 0xffffff, 0xf6d77a, 0xe57a9a, 0xb7a6f0, 0xff9a7a, 0x9ad0f5];
             let sd = 7; const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
@@ -254,13 +260,12 @@
                     const h = 0.04 + r() * 0.05, gy = WT(x, z), s2 = 0.8 + r() * 0.5;
                     e.set(0.55 + r() * 0.6, r() * 6.28, 0, 'YXZ'); q.setFromEuler(e);   // 꽃송이를 비스듬히 세운다 — 누워 있으면 낮은 시선에선 옆모습(회색 막대)만 보였다
                     v.set(x, gy + h, z); sc.set(s2, s2, s2); m4.compose(v, q, sc); head.setMatrixAt(n, m4);
-                    v.set(x, gy + h + 0.008 * s2, z); m4.compose(v, q, sc); ctr.setMatrixAt(n, m4);
                     v.set(x, gy + h / 2, z); sc.set(1, h, 1); m4.compose(v, new THREE.Quaternion(), sc); stem.setMatrixAt(n, m4);
                     col.setHex(c0).offsetHSL(0, 0, (r() - 0.5) * 0.08).convertSRGBToLinear(); head.setColorAt(n, col);   // 선형으로 — 안 바꾸면 바래 보인다
                     n++;
                 }
             }
-            [head, ctr, stem].forEach(m => { m.instanceMatrix.needsUpdate = true; scene.add(m); chunkInstanced(m, 4, 26, 0.3, scene); });   // 가까운 꽃만
+            [head, stem].forEach(m => { m.instanceMatrix.needsUpdate = true; scene.add(m); chunkInstanced(m, 4, 26, 0.3, scene); });   // 가까운 꽃만
         }
         // 보좌 — 빛
         const radial = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
@@ -1192,28 +1197,42 @@
             near.setColorAt(0, new THREE.Color(0x5a8a3a));   // 색 버퍼를 처음부터 — 없이 그리면 셰이더가 색 없이 굳어 풀이 하얗게 나왔다
             near.frustumCulled = false; near.count = 0; scene.add(near);
             const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3(), col = new THREE.Color(), up = new THREE.Vector3(0, 1, 0);
+            // 🔧 10/4 잔렉: 반 칸마다 1.4만 포기를 통째로 다시 계산했다 — 노트북 실측 한 번 5.8ms(최대 11ms), 달리면 초당 3.5번 → 폰에선 20~50ms 멈칫이 계속 끼었다.
+            //    칸마다 한 번 계산한 풀(행렬·색)을 기억해 두고, 다시 깔 때는 기억한 것을 이어 붙이기만 한다. 새로 들어온 칸(한 줄 약 21칸)만 계산
+            const cellCache = new Map(); let cacheQ = '';
+            const MA = near.instanceMatrix.array, CA = near.instanceColor.array;
+            function cellGrass(ix, iz, per) {
+                const ck = ix + ',' + iz; let c = cellCache.get(ck); if (c) return c;
+                let sd = ((ix * 73856093) ^ (iz * 19349663)) >>> 0; sd = sd % 2147483646 + 1;
+                const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+                const patch = r(), k = Math.floor(per * (patch < 0.18 ? 0.15 : patch < 0.5 ? 0.7 : 1.15)), hue = 0.27 + r() * 0.06;   // 풀이 짙은 데·성긴 데
+                const mm = new Float32Array(k * 16), cc = new Float32Array(k * 3); let n = 0;
+                for (let j = 0; j < k; j++) {
+                    const x = (ix + r()) * CELL, z = (iz + r()) * CELL;
+                    if (Math.abs(x) < 7.6 && Math.abs(z) < 7.6) continue;   // 성과 경사로
+                    if (seaE(x, z) < 1.05 || wetAt(x, z)) continue;          // 바다·강
+                    const s2 = 0.8 + r() * 0.7;
+                    q.setFromAxisAngle(up, r() * 6.28); v.set(x, terrain(x, z) - 0.003, z); sc.set(s2, s2 * (0.8 + r() * 0.6), s2); m4.compose(v, q, sc); m4.toArray(mm, n * 16);
+                    col.setHSL(hue + (r() - 0.5) * 0.03, 0.5 + r() * 0.2, 0.3 + r() * 0.12); cc[n * 3] = col.r; cc[n * 3 + 1] = col.g; cc[n * 3 + 2] = col.b;
+                    n++;
+                }
+                c = { m: mm.subarray(0, n * 16), c: cc.subarray(0, n * 3), n, ix, iz };
+                cellCache.set(ck, c); return c;
+            }
             let lastKey = '';
             grassFollow = (px, pz, force) => {
                 const ix0 = Math.floor(px / CELL), iz0 = Math.floor(pz / CELL), key = ix0 + ',' + iz0 + (HIGH ? 'h' : 'b');
                 if (key === lastKey && !force) return; lastKey = key;
-                const per = HIGH ? 45 : 26, R = Math.ceil(FR / CELL); let n = 0;
-                for (let dz = -R; dz <= R && n < FN; dz++) for (let dx = -R; dx <= R && n < FN; dx++) {
+                const per = HIGH ? 45 : 26, R = Math.ceil(FR / CELL), qk = HIGH ? 'h' : 'b'; let n = 0;
+                if (qk !== cacheQ) { cellCache.clear(); cacheQ = qk; }   // 화질이 바뀌면 칸마다 포기 수가 달라진다
+                for (let dz = -R; dz <= R; dz++) for (let dx = -R; dx <= R; dx++) {
                     if (dx * dx + dz * dz > R * R) continue;
-                    const ix = ix0 + dx, iz = iz0 + dz;
-                    let sd = ((ix * 73856093) ^ (iz * 19349663)) >>> 0; sd = sd % 2147483646 + 1;
-                    const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
-                    const patch = r(), k = Math.floor(per * (patch < 0.18 ? 0.15 : patch < 0.5 ? 0.7 : 1.15)), hue = 0.27 + r() * 0.06;   // 풀이 짙은 데·성긴 데
-                    for (let j = 0; j < k && n < FN; j++) {
-                        const x = (ix + r()) * CELL, z = (iz + r()) * CELL;
-                        if (Math.abs(x) < 7.6 && Math.abs(z) < 7.6) continue;   // 성과 경사로
-                        if (seaE(x, z) < 1.05 || wetAt(x, z)) continue;          // 바다·강
-                        const s2 = 0.8 + r() * 0.7;
-                        q.setFromAxisAngle(up, r() * 6.28); v.set(x, terrain(x, z) - 0.003, z); sc.set(s2, s2 * (0.8 + r() * 0.6), s2); m4.compose(v, q, sc); near.setMatrixAt(n, m4);
-                        col.setHSL(hue + (r() - 0.5) * 0.03, 0.5 + r() * 0.2, 0.3 + r() * 0.12); near.setColorAt(n, col);
-                        n++;
-                    }
+                    const c = cellGrass(ix0 + dx, iz0 + dz, per);
+                    if (!c.n || n + c.n > FN) continue;
+                    MA.set(c.m, n * 16); CA.set(c.c, n * 3); n += c.n;
                 }
-                near.count = n; near.instanceMatrix.needsUpdate = true; if (near.instanceColor) near.instanceColor.needsUpdate = true;
+                if (cellCache.size > 1600) cellCache.forEach((c, k) => { if (Math.abs(c.ix - ix0) > 2 * R || Math.abs(c.iz - iz0) > 2 * R) cellCache.delete(k); });   // 멀리 떠난 칸은 잊는다
+                near.count = n; near.instanceMatrix.needsUpdate = true; near.instanceColor.needsUpdate = true;
             };
         }
         extras.visible = HIGH;
