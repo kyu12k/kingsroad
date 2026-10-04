@@ -1541,13 +1541,28 @@
             const hit = natRay.intersectObject(natRing);
             if (hit.length) showNation(Math.floor(hit[0].faceIndex / NAT_FACES)); else hideFruit();
         });
-        cvs.addEventListener('pointerdown', e => { if (!walk || proc) return; lookId = e.pointerId; lx = e.clientX; ly = e.clientY; });   // 행렬 중엔 행렬 카메라가 받는다
+        // 🤏 두 손가락으로 벌리고 오므리면 멀리·가까이 (10/4 사용자: 폰에선 걸을 때 화면 크기가 고정이었다 — 휠만 있었다).
+        //    조이스틱은 화면 밖 단추라 엄지를 얹은 채 한 손가락으로 돌리는 건 그대로. 화면 위 두 손가락일 때만 확대·축소(돌리기는 멈춤)
+        const wPts = new Map(); let wPinch0 = 0, wDist0 = 0;
+        cvs.addEventListener('pointerdown', e => {
+            if (!walk || proc) return;   // 행렬 중엔 행렬 카메라가 받는다
+            wPts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            if (wPts.size === 2) { const [a, b] = [...wPts.values()]; wPinch0 = Math.hypot(a.x - b.x, a.y - b.y); wDist0 = camDist; lookId = null; return; }
+            lookId = e.pointerId; lx = e.clientX; ly = e.clientY;
+        });
         cvs.addEventListener('pointermove', e => {
-            if (!walk || e.pointerId !== lookId) return;
+            if (!walk) return;
+            if (wPts.has(e.pointerId)) wPts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            if (wPts.size === 2 && wPinch0) {
+                const [a, b] = [...wPts.values()];
+                camDist = Math.max(0.45, Math.min(3, wDist0 * wPinch0 / Math.max(20, Math.hypot(a.x - b.x, a.y - b.y))));
+                lastTouch = performance.now(); return;
+            }
+            if (e.pointerId !== lookId) return;
             camYaw -= (e.clientX - lx) * 0.006; camPitch = Math.max(-1.25, Math.min(1.2, camPitch + (e.clientY - ly) * 0.005));   // 음수 = 카메라가 발치로 내려가 하늘을 올려다본다
             lx = e.clientX; ly = e.clientY; lastTouch = performance.now();
         });
-        const endLook = e => { if (e.pointerId === lookId) lookId = null; };
+        const endLook = e => { wPts.delete(e.pointerId); if (wPts.size < 2) wPinch0 = 0; if (e.pointerId === lookId) lookId = null; };
         cvs.addEventListener('pointerup', endLook); cvs.addEventListener('pointercancel', endLook);
         cvs.addEventListener('wheel', e => { if (walk && !proc) { camDist = Math.max(0.45, Math.min(3, camDist * (e.deltaY > 0 ? 1.1 : 0.9))); e.preventDefault(); } }, { passive: false });
         let jumpHeld = false;   // 🦅 나는 탈것 — 점프를 누르고 있는 동안 떠오른다 · 🤿 물속에선 위로 헤엄
