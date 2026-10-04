@@ -131,6 +131,8 @@ const LANG = {
         field_ms_60: '육십 배',
         field_ms_100: '백 배',
         field_ms_100_done: '🌾 백 배에 이르렀습니다',
+        field_ms_144: '열둘의 열둘', field_ms_144_done: '💎 열둘의 열둘에 이르렀어요 — 밭은 계속 넓힐 수 있어요',
+        field_ms_144_verse: '"그 성곽을 척량하매 백사십사 규빗이니 사람의 척량 곧 천사의 척량이라" (계 21:17)',
         field_next_ms: '<b>{name}</b>까지 {n}',
         field_grow_title: '밭 넓히기 {from} → {to}',
         field_grow_btn: '넓히기',
@@ -141,6 +143,7 @@ const LANG = {
         field_ms_modal_sun: '햇살을 하루 {n}번 살 수 있어요 (20분 ×3)',
         field_ms_modal_chip: '이름 옆 칩이 새 모습이 됐어요',
         field_ms_modal_chip_max: '이름 옆 칩이 금빛으로 빛나요',
+        field_ms_modal_chip_144: '이름 옆 칩에 열두 기초석 빛깔의 테가 둘러요',
         field_ms_modal_next: '다음 이정표 {name} — 밭 {n}',
         // 단비 (2026-09-13 베타)
         item_refund_toast: '🍞 떡 {bread}개 · 🛡️ 방패 {shield}개를 💎 {gems}으로 돌려드렸어요',
@@ -1379,6 +1382,8 @@ const LANG = {
         field_ms_60: 'Sixtyfold',
         field_ms_100: 'Hundredfold',
         field_ms_100_done: '🌾 You have reached Hundredfold',
+        field_ms_144: 'Twelve times twelve', field_ms_144_done: '💎 Twelve times twelve — your field can keep growing',
+        field_ms_144_verse: '"He measured its wall, a hundred and forty-four cubits by human measurement, which the angel was using." (Rev 21:17)',
         field_next_ms: '{n} to <b>{name}</b>',
         field_grow_title: 'Widen the field {from} → {to}',
         field_grow_btn: 'Widen',
@@ -1389,6 +1394,7 @@ const LANG = {
         field_ms_modal_sun: 'You can buy sunshine {n} time(s) a day (×3, 20 min)',
         field_ms_modal_chip: 'The chip by your name has a new look',
         field_ms_modal_chip_max: 'The chip by your name now shines gold',
+        field_ms_modal_chip_144: 'The chip by your name is ringed with the colors of the twelve foundation stones',
         field_ms_modal_next: 'Next milestone {name} — field {n}',
         item_refund_toast: '🍞 {bread} bread · 🛡️ {shield} shields refunded as 💎 {gems}',
         rain_name: 'Rain',
@@ -6052,6 +6058,7 @@ const SUN_DAILY_MISSIONS = 4; // 그날 일일 미션을 이만큼 완료하면 
 const SUN_BUY_GEM = 2000;
 let sunBuy = { day: '', count: 0 };   // 오늘(6시 경계) 몇 번 샀나
 function _sunBuySlots(level) {
+    if (level >= 144) return 4;   // 열둘의 열둘 (10/4)
     if (level >= 100) return 3;
     if (level >= 60) return 2;
     if (level >= 30) return 1;
@@ -15457,12 +15464,15 @@ function toggleSound() {
 /* ── 밭 (2026-09-13 베타) ──────────────────────────────────────────────────
    "체력"의 실체는 처음부터 승점 배율이었다. 목숨·부활·회복·방패는 3칸 유예 뒤 빈 껍데기가 됐고,
    랭킹은 '얼마나 오래 투자했는가'를 보여주는 곳이라 배율은 의도된 설계다.
-   씨 뿌리는 자의 비유(막 4:8)로 옮긴다 — 씨(난도 4/5/10) × 밭(내 스탯 5~100) = 열매(승점).
-   상한 100 = 백 배. 이정표는 본문의 30·60·100. */
+   씨 뿌리는 자의 비유(막 4:8)로 옮긴다 — 씨(난도 4/5/10) × 밭(내 스탯 5~) = 열매(승점).
+   이정표는 본문의 30·60·100, 그다음 **144(열둘의 열둘, 계 21:17 성곽 144규빗)**.
+   ★ 2026-10-04 상한을 없앴다(사용자) — 예전엔 구매 100 + 도감 3 = 103에서 멈췄다. 순위에 동기가 있는 사람에게 💎가 계속 가치 있게,
+     순위 밖(꾸미기)에 동기가 있는 사람은 꾸미기에 — 동기의 갈래를 나눈다. 비용은 같은 공식 그대로((밭−4)×3,000). */
 const FIELD_MILESTONES = [
     { at: 30,  key: 'field_ms_30' },
     { at: 60,  key: 'field_ms_60' },
-    { at: 100, key: 'field_ms_100' }
+    { at: 100, key: 'field_ms_100' },
+    { at: 144, key: 'field_ms_144' }   // 열둘의 열둘 (10/4) — 그 뒤는 상한 없음
 ];
 /* 외형 — 자라는 씨의 비유(막 4:28) "처음에는 싹이요 다음에는 이삭이요 그 다음에는 충실한 곡식".
    이정표를 지나면 아이콘이 자란다. 헤더·밭 화면·랭킹 배지가 전부 이 함수를 쓴다. */
@@ -15480,6 +15490,7 @@ function _fieldIcon(level) {
 const FIELD_BANDS = [[1, 29], [30, 59], [60, 99]];
 function _fieldTier(level) {
     level = Math.max(1, level || 1);
+    if (level >= 144) return { stage: 3, max: true, twelve: true };   // 열둘의 열둘 — 열두 보석 테
     if (level >= 100) return { stage: 3, max: true };
     for (const [lo, hi] of FIELD_BANDS) {
         if (level >= lo && level <= hi) {
@@ -15494,7 +15505,7 @@ function _fieldRingHtml(level, extraClass, noTip) {
     const cur = _fieldCurrentTitle(level || 0);
     // 말풍선은 숫자가 옆에 없는 곳(랭킹·프로필 배지)에만. 헤더 칩·밭 화면은 숫자가 이미 보이고, 헤더는 누르면 밭 화면이 열려야 한다
     const tip = noTip ? '' : ` data-tip="${_fieldIcon(level)} ${t('field_label')} ${level}${cur ? ' · ' + t(cur.key) : ''}"`;
-    return `<span class="field-ring tier-${tier.stage}${tier.max ? ' field-max' : ''}${extraClass ? ' ' + extraClass : ''}"${tip}><span class="field-ring-ico">${_fieldIcon(level)}</span></span>`;
+    return `<span class="field-ring tier-${tier.stage}${tier.max ? ' field-max' : ''}${tier.twelve ? ' field-144' : ''}${extraClass ? ' ' + extraClass : ''}"${tip}><span class="field-ring-ico">${_fieldIcon(level)}</span></span>`;
 }
 /* 실시간 암송왕 칭호 — 지난주 지파 1~3위 🥇🥈🥉, 시온성 1~3위는 빛나는 테두리. 이번 주 동안만 (2026-09-14).
    서버(archiveWeeklyRankings)가 leaderboard 문서에 recallTitle{weekId,zionRank,tribeRank}로 남기고 스냅샷이 실어온다.
@@ -15582,8 +15593,8 @@ function openFieldScreen() {
     const level = purchasedMaxHearts;                       // 구매로 올린 밭 (도감 +3은 별도 표시)
     const bonus = maxPlayerHearts - purchasedMaxHearts;     // 도감 보너스
     const cost = _fieldGrowCost(level);
-    const isMax = level >= 100;
-    const canGrow = !isMax && myGems >= cost;
+    const isMax = false;   // 10/4 상한 없음 — 늘 넓힐 수 있다
+    const canGrow = myGems >= cost;
     const next = _fieldNextMilestone(level);
     const title = _fieldCurrentTitle(level);
 
@@ -15607,7 +15618,7 @@ function openFieldScreen() {
             })()}
             ${next ? `<div style="background:#f4f6f7; border-radius:12px; padding:10px 12px; margin-bottom:14px; font-size:0.88rem; color:#555;">
                 ${t('field_next_ms', { name: t(next.key), n: next.at - level })}
-            </div>` : `<div style="background:#fff8e1; border-radius:12px; padding:10px 12px; margin-bottom:14px; font-size:0.88rem; color:#b9770e; font-weight:700;">${t('field_ms_100_done')}</div>`}
+            </div>` : `<div style="background:#fff8e1; border-radius:12px; padding:10px 12px; margin-bottom:14px; font-size:0.88rem; color:#b9770e; font-weight:700;">${t('field_ms_144_done')}</div>`}
             ${isMax ? '' : `
             <div style="display:flex; justify-content:space-between; align-items:center; background:#f4f6f7; border-radius:12px; padding:12px 14px; margin-bottom:14px;">
                 <div style="text-align:left;">
@@ -15652,8 +15663,8 @@ function toggleFieldHelp() {
     if (!box) return;
     if (box.style.display !== 'none') { box.style.display = 'none'; return; }
     const n = maxPlayerHearts;
-    const next = Math.min(100, n < 30 ? 30 : n < 60 ? 60 : 100);   // 다음 이정표
-    const step = Math.min(100, n + 5);
+    const _nm = FIELD_MILESTONES.find(m => n < m.at), next = _nm ? _nm.at : n;   // 다음 이정표(144 뒤엔 없음)
+    const step = n + 5;
     const chapterSeeds = 22 * 10;   // 망각의 고난 한 장(22절) = 씨 220
     const fmt = (x) => x.toLocaleString();
     box.innerHTML = `
@@ -15680,7 +15691,6 @@ function toggleFieldHelp() {
 
 /* 밭 넓히기 — 옛 상점의 체력 구매와 같은 회계, 문구만 다르다. 확인 대화상자는 없앤다(모달 자체가 확인이다) */
 function growField() {
-    if (purchasedMaxHearts >= 100) return;
     const cost = _fieldGrowCost(purchasedMaxHearts);
     if (myGems < cost) { showGemToast(0, t('alert_buy_hearts_no_gems', { cost }), true); return; }
     myGems -= cost;
@@ -15706,7 +15716,8 @@ function showFieldMilestoneModal(ms) {
     if (old) old.remove();
     const level = purchasedMaxHearts;
     const slots = _sunBuySlots(level);
-    const isMax = level >= 100;
+    const isMax = level >= 100;                              // 금빛 연출
+    const isLast = !_fieldNextMilestone(level);              // 마지막 이정표(144) — 「다음」 줄 없음
     const overlay = document.createElement('div');
     overlay.id = 'field-ms-modal';
     overlay.className = 'modal-overlay';
@@ -15717,11 +15728,11 @@ function showFieldMilestoneModal(ms) {
             <div style="display:flex; justify-content:center; margin-bottom:10px;">${_fieldRingHtml(level, 'field-ring-xl', true)}</div>
             <div style="font-size:1.9rem; font-weight:900; margin-bottom:4px; color:${isMax ? '#7d5a00' : '#2c3e50'};">${t(ms.key)}</div>
             <div style="color:#7f8c8d; font-size:0.9rem; margin-bottom:14px;">${t('field_label')} ${level}</div>
-            <p style="font-size:0.92rem; line-height:1.7; color:#555; margin:0 0 14px; font-style:italic;">${t('field_ms_modal_verse')}</p>
+            <p style="font-size:0.92rem; line-height:1.7; color:#555; margin:0 0 14px; font-style:italic;">${t(ms.at === 144 ? 'field_ms_144_verse' : 'field_ms_modal_verse')}</p>
             <div style="background:rgba(255,255,255,0.75); border-radius:12px; padding:10px 12px; text-align:left; font-size:0.86rem; line-height:1.7; color:#444; margin-bottom:16px;">
                 <div>☀️ ${t('field_ms_modal_sun', { n: slots })}</div>
-                <div>${_fieldIcon(level)} ${t(isMax ? 'field_ms_modal_chip_max' : 'field_ms_modal_chip')}</div>
-                ${isMax ? '' : `<div style="color:#95a5a6;">${t('field_ms_modal_next', { name: t((_fieldNextMilestone(level) || ms).key), n: (_fieldNextMilestone(level) || ms).at })}</div>`}
+                <div>${_fieldIcon(level)} ${t(ms.at === 144 ? 'field_ms_modal_chip_144' : isMax ? 'field_ms_modal_chip_max' : 'field_ms_modal_chip')}</div>
+                ${isLast ? '' : `<div style="color:#95a5a6;">${t('field_ms_modal_next', { name: t((_fieldNextMilestone(level) || ms).key), n: (_fieldNextMilestone(level) || ms).at })}</div>`}
             </div>
             <button onclick="document.getElementById('field-ms-modal').remove(); openFieldScreen();" style="width:100%; background:#f1c40f; color:#2c3e50; border:none; padding:12px; border-radius:24px; font-weight:800; font-size:1rem; cursor:pointer; box-shadow:0 3px 0 #d35400;">${t('btn_confirm')}</button>
         </div>`;

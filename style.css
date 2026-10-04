@@ -7185,3 +7185,17 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .nj3d-reel-dots { display: flex; justify-content: center; gap: 8px; margin-top: 8px; }
 .nj3d-reel-dot { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.18); }
 .nj3d-reel-dot.ok { background: #2ecc71; } .nj3d-reel-dot.no { background: #e74c3c; }
+
+/* 💎 밭 144 — 열둘의 열둘 (2026-10-04): 열두 기초석 빛깔(NJ_STONES)이 고리를 두른다. 서열이 아니라 열둘이 함께 */
+.field-ring.field-144 {
+    border-color: transparent;
+    background:
+        radial-gradient(circle at 35% 30%, #fff3cf 0%, #b69ad6 38%, #3a2b58 100%) padding-box,   /* 안쪽은 불투명 — 비치면 고리 전체가 무지개 바퀴가 된다 */
+        conic-gradient(#00a0e9, #1d2088, #59c3e1, #009651, #eb6120, #d7005b, #fdd000, #86cab6, #e39300, #6FBA2C, #005dac, #7f1084, #00a0e9) border-box;
+    animation: field144Shine 3s ease-in-out infinite;
+}
+@keyframes field144Shine {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,0.35), 0 0 8px rgba(160, 120, 255, 0.5); filter: brightness(1); }
+    50%      { box-shadow: 0 0 0 2px rgba(255,255,255,0.6), 0 0 18px rgba(255, 215, 120, 0.85); filter: brightness(1.2); }
+}
+@media (prefers-reduced-motion: reduce) { .field-ring.field-144 { animation: none; } }
