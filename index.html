@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <!-- ★ 반드시 첫 스크립트: 전역 Date를 서버 시각으로 보정한다 (clock.js 주석 참조) -->
-    <script src="clock.js?v=20261004c"></script>
+    <script src="clock.js?v=20261004d"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>King's Road - 요한계시록 암송</title>
 
@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
     <!-- image_0.webp is inlined below; preload removed -->
-    <link rel="stylesheet" href="style.css?v=20261004c">
+    <link rel="stylesheet" href="style.css?v=20261004d">
 
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-TEVW49QB45"></script>
@@ -702,9 +702,8 @@
         <div style="margin-top:5px; display:flex; flex-direction:column; gap:10px; align-items:center;">
 
             <button onclick="openProfileSettings()"
-                style="background:rgba(0,0,0,0.4); border:1px solid #f1c40f; color:#f1c40f; padding:8px 20px; border-radius:20px; font-size:0.9rem; display:flex; align-items:center; cursor:pointer; z-index:10;">
-                <span id="home-nickname-display">순례자</span> <span
-                    style="font-size:0.8em; opacity:0.7; margin-left:5px;" data-i18n="home_change">(변경)</span>
+                class="home-profile-btn" style="background:rgba(0,0,0,0.4); border:1px solid #f1c40f; color:#f1c40f; padding:8px 20px; border-radius:20px; font-size:0.9rem; display:flex; align-items:center; cursor:pointer; z-index:10; max-width:calc(100vw - 32px);">
+                <span id="home-nickname-display">순례자</span>
             </button>
 
             <!-- PWA 설치 버튼 (미설치 시 표시, iOS 불가 기기는 안내) -->
@@ -3589,7 +3588,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="bible_en.js"></script>
-    <script src="game.js?v=20261004c"></script>
+    <script src="game.js?v=20261004d"></script>
     <script>
 
         /* =========================================

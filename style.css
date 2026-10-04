@@ -7151,3 +7151,11 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .home-todo-chip.done { color: #aab7b8; border-color: rgba(255, 255, 255, 0.15); opacity: 0.7; }
 .home-todo-chip:active { transform: scale(0.96); }
 @media (max-width: 380px) { .home-todo-chips { gap: 4px; } .home-todo-chip { font-size: 0.74rem; padding: 4px 7px; } }   /* 좁은 폰에서도 네 칸이 한 줄에 */
+
+/* 홈 프로필 — 이름 줄 · 뱃지 줄 (2026-10-04) */
+#home-nickname-display { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+#home-nickname-display .hp-name { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+#home-nickname-display .hp-tag { opacity: 0.6; font-size: 0.85em; }
+#home-nickname-display .hp-edit { font-size: 0.8em; opacity: 0.7; margin-left: 4px; }
+#home-nickname-display .hp-badges { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; }
+#home-nickname-display .hp-badges > * { margin: 0 !important; }

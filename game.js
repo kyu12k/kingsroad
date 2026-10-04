@@ -23286,7 +23286,10 @@ function updateProfileUI() {
     if (display) {
         const tag = (typeof myTag !== 'undefined' && myTag) ? myTag : "0000";
         // ★ getTribeIcon 사용
-        display.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname} <span style="opacity:0.6; font-size:0.85em;">#${tag}</span>${_fieldBadgeHtml(maxPlayerHearts)}${_recallTitleHtml(_myRecallTitle)}${_recallTitleHtml(_myReadTitle, 'read')}${_dailyBadgeHtml({ dailyDoneDate: _dailyDoneToday() ? _get6AMDayStr() : '', weeklyDoneWeek: dailyWeekDone }, { daily: true })}`;
+        // 두 줄 (10/4 사용자: 뱃지 자리 정리) — ① 지파·이름·#번호·(변경) 한 줄(안 꺾임) ② 밭·칭호·암송 뱃지를 가운데 나란히
+        const badges = `${_fieldBadgeHtml(maxPlayerHearts)}${_recallTitleHtml(_myRecallTitle)}${_recallTitleHtml(_myReadTitle, 'read')}${_dailyBadgeHtml({ dailyDoneDate: _dailyDoneToday() ? _get6AMDayStr() : '', weeklyDoneWeek: dailyWeekDone }, { daily: true })}`;
+        display.innerHTML = `<span class="hp-name">${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname} <span class="hp-tag">#${tag}</span><span class="hp-edit">${t('home_change')}</span></span>`
+            + (badges.trim() ? `<span class="hp-badges">${badges}</span>` : '');
     }
 
     // 2. 상단 작은 닉네임
