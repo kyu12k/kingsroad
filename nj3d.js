@@ -3318,7 +3318,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             P.y = WT(0, P.z) + WL - 0.03; P.vy = 0; P.onGround = true; P.face = Math.PI;
             pilgrim.position.set(P.x, P.y, P.z); pilgrim.rotation.y = P.face;
             const ce = 1 - Math.exp(-dt * 3);
-            camYaw = angLerp(camYaw, Math.PI, ce); camPitch += (0.3 - camPitch) * ce;   // 카메라는 뒤에서 따라 내려간다
+            camYaw = angLerp(camYaw, Math.PI, ce); camPitch += (0.3 + Math.atan(grade) * 0.9 - camPitch) * ce;   // 카메라는 뒤에서 — 비탈이 가파를수록 더 위에서(뒤는 오르막이라 낮으면 땅에 파묻혔다)
             const L = limbs, e = Math.min(1, dt * 10), wv = Math.sin(S.t * 6) * 0.25;   // 앉아서 두 팔을 번쩍, 몸은 뒤로
             L.hipL.rotation.x += (-1.45 - L.hipL.rotation.x) * e; L.hipR.rotation.x += (-1.45 - L.hipR.rotation.x) * e;
             L.armL.rotation.x += (-2.6 + wv - L.armL.rotation.x) * e; L.armR.rotation.x += (-2.6 - wv - L.armR.rotation.x) * e;
@@ -3481,16 +3481,19 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 let dd = dist; while (seaE(cp.x, cp.z) >= 0.99 && dd > 0.12) { dd *= 0.8; cp.copy(Tg).addScaledVector(dir, dd); }
                 cp.y = Math.min(cp.y, SEA_Y - 0.1);
             }   // 🤿 물속에선 카메라도 물속에 — 카메라가 바다 위일 때만(물가에선 뭍 땅속으로 끌려 들어갔다)
-            cp.y = Math.max(cp.y, groundAt(cp.x, cp.z, cp.y) + 0.03);
+            cp.y = Math.max(cp.y, groundAt(cp.x, cp.z, cp.y) + 0.12);   // 10/5: 0.03 — 내리막에서 카메라가 땅 표면에 눌려 파묻힌 듯 보였다
             // 🪂 10/4 밤 (사용자: 활강할 때 캐릭터가 덜덜 떨린다) — 전엔 카메라 자리를 lerp(dt × 12)로 쫓았다. 빠를수록 카메라가 뒤처지는데
             //    그 거리가 프레임 간격마다 달라 순례자가 화면에서 앞뒤로 떨렸다. → 순례자에서 카메라까지의 **오프셋만** 부드럽게(돌리기·벽에 걸림),
             //    카메라는 늘 순례자 + 오프셋 — 아무리 빨라도 순례자는 화면 같은 자리
             const want = cp.sub(Tg);
             if (!camOff || camOff.distanceTo(want) > 6) camOff = want.clone(); else camOff.lerp(want, 1 - Math.exp(-dt * 12));
             camera.position.copy(Tg).add(camOff);
-            camera.position.y = Math.max(camera.position.y, groundAt(camera.position.x, camera.position.z, camera.position.y) + 0.03);
+            const gy = groundAt(camera.position.x, camera.position.z, camera.position.y) + 0.12, lift = gy - camera.position.y;
+            if (lift > 0) camera.position.y = gy;
             // 늘 순례자 쪽(-dir)을 본다 — 카메라가 땅에 걸려 멈춰도 시선은 그대로 위로 들려 하늘을 본다(땅속을 보지 않는다)
-            camera.lookAt(camera.position.x - dir.x, camera.position.y - dir.y + 0.04, camera.position.z - dir.z);
+            // 단 보통 시선(위에서 내려다봄)인데 오르막에 걸려 들렸으면 들린 만큼 순례자 쪽으로 고개를 숙인다 — 안 그러면 땅을 훑어봤다(10/5)
+            const k = camPitch > 0 ? Math.max(0, Math.min(1, lift / 0.3)) : 0;
+            camera.lookAt(camera.position.x - dir.x + (Tg.x - camera.position.x + dir.x) * k, camera.position.y - dir.y + 0.04 + (Tg.y - camera.position.y + dir.y - 0.04) * k, camera.position.z - dir.z + (Tg.z - camera.position.z + dir.z) * k);
         }
 
         // ── 화질 ──
