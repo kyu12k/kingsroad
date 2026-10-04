@@ -13,7 +13,7 @@
     const THREE_URL = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
     const ORBIT_URL = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
     const GLTF_URL = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';   // 예물 모델(.glb) — 예물을 볼 때만 받는다
-    const GIFT_V = '20261001';   // models/gifts/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/)
+    const GIFT_V = '20261004';   // models/gifts/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/)
     const JET_COST = 300000;
     const T = (k, p) => (typeof t === 'function' ? t(k, p) : k);
 
@@ -228,7 +228,7 @@
             nearSets.push({ parts, R2: R * R });
             return parts.map(q => q.mesh);
         }
-        let nearAt = 0, shadowAt = 0;
+        let nearAt = 0, shadowAt = 0, lastMove = 0, shadowGeos = -1, watchAt = 0; const lastCam = new THREE.Vector3();
         function nearTick(now, fx, fz) {   // 0.25초마다 — 순례자(또는 보는 곳)에서 먼 칸은 끈다
             if (now - nearAt < 250) return; nearAt = now;
             nearSets.forEach(S => S.parts.forEach(q => { const dx = q.x - fx, dz = q.z - fz; q.mesh.visible = dx * dx + dz * dz < S.R2; }));
@@ -296,7 +296,7 @@
         const glints = new THREE.Points(glintGeo, new THREE.PointsMaterial({ size: 0.32, map: radial, color: 0xffcf5a, transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending, fog: false, toneMapped: false }));
         scene.add(glints);
         // ── 거룩한 성 모델 (10/1 사용자: 꾸밈 아이템에 비해 성이 멋짐이 덜하다) — 보좌·진주 문은 블렌더 로우폴리(tools/blender/city.py → models/city/*.glb) ──
-        const CITY_V = '20261001b';
+        const CITY_V = '20261004';
         const cityCache = {}, cityAnims = [];
         function loadCity(k) {
             if (!cityCache[k]) cityCache[k] = (async () => {
@@ -1403,6 +1403,17 @@
             blobs.push({ obj, d: d || 0, when, m, mark });
         }
         const _bv = new THREE.Vector3(), _bb = new THREE.Box3();
+        // 👀 세트 조각 감시 — 양·목자·배·그물·수레·신랑 행렬처럼 스스로 움직이는 조각은 한 번이라도 움직이면 발밑 그늘로 바꾼다(굽는 그림자에서 뺀다).
+        //    연출마다 누가 움직이는지 하나하나 적지 않아도 되게(10/4)
+        const watch = [];
+        const watchMove = o => { if (o && !o.userData.blob) watch.push({ o, x: o.position.x, z: o.position.z }); };
+        function watchTick() {
+            for (let i = watch.length - 1; i >= 0; i--) {
+                const w = watch[i];
+                if (!w.o.parent) { watch.splice(i, 1); continue; }
+                if (Math.abs(w.o.position.x - w.x) + Math.abs(w.o.position.z - w.z) > 0.004) { w.o.userData.blob = true; addBlob(w.o, 0); watch.splice(i, 1); }
+            }
+        }
         const shownChain = o => { for (let q = o; q; q = q.parent) { if (!q.visible) return false; if (q === scene) return true; } return false; };
         function blobTick() {
             for (let i = blobs.length - 1; i >= 0; i--) {
@@ -1588,7 +1599,7 @@
 
         // ── 🐴 탈것 (10/2) — 타면 빨라지고, 점프는 탈것째, 공중에서 한 번 더 누르면 뛰어내려 글라이더(사용자 결정). 성 안에서는 내려서 걷는다.
         //    탈것은 내린 자리에서 기다린다(「타기」를 누르면 곁으로 와서 태운다). 모델은 사람 키 0.53 기준이라 순례자 키(0.22)에 맞춰 줄인다
-        const MOUNT_V = '20261002b', MOUNT_S = 0.22 / 0.53;
+        const MOUNT_V = '20261004', MOUNT_S = 0.22 / 0.53;
         const mountCache = {};
         function loadMount(k) {
             if (!mountCache[k]) mountCache[k] = (async () => {
@@ -2146,7 +2157,7 @@
         //    물건을 끌면 옮기고, 빈 곳을 끌면 화면이 움직이고, 두 손가락은 확대·돌리기. 마칠 때 바뀐 것만 저장(_njDecoSave)
         const DS = (typeof NJ_DECO_S !== 'undefined') ? NJ_DECO_S : 0.42;   // 꾸밈 배율(game.js)
         const DIS = (typeof NJ_DECO_ITEM_S !== 'undefined') ? NJ_DECO_ITEM_S : {};   // 아이템마다 더 곱하는 배율
-        const DECO_V = '20261002e';   // models/decor/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/decor.py)
+        const DECO_V = '20261004';   // models/decor/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/decor.py)
         const decoCache = {};
         function loadDecor(k) {
             if (!decoCache[k]) decoCache[k] = (async () => {
@@ -2555,6 +2566,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                     .catch(() => {});
             });
             const walk = setAnim(D, animals);
+            Object.values(holders).forEach(watchMove);   // 움직이는 조각은 발밑 그늘로
             return { anim: t => { if (walk) walk(t); fx.forEach(f => f(t)); }, holders };
         }
         // ── 🏞️ 큰 세트 「목자의 언덕」 연출 — 목자가 일어나 양 떼를 이끌고 물가로 갔다 돌아온다(요 10:4 「앞서 가면 양들이 그의 음성을 아는 고로 따라오되」) ──
@@ -2567,6 +2579,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 loadDecor(k).then(sc => { if (!(cur === C)) return; const c = sc.clone(); h.add(c); a.head = c.getObjectByName('head'); }).catch(() => {});
                 return a; });
             const W = new THREE.Group(); W.visible = false; m.add(W); let legs = [], wHead = null;
+            flock.forEach(a => watchMove(a.o)); watchMove(W);
             loadDecor(Ld.walker).then(sc => { if (!(cur === C)) return; const c = sc.clone(); W.add(c); legs = [c.getObjectByName('legL'), c.getObjectByName('legR')]; wHead = c.getObjectByName('head'); }).catch(() => {});
             const seatH = subs[Ld.seatSet] && subs[Ld.seatSet].holders[Ld.seatPart], fluteH = subs[Ld.seatSet] && subs[Ld.seatSet].holders[Ld.flutePart];
             const gateH = subs[Ld.set] && subs[Ld.set].holders.pengate; let door = null, doorA = 0;   // 우리 문짝(축 door) — 목자·양이 가까이 오면 바깥쪽으로 열린다
@@ -3325,9 +3338,17 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 //    → 성 둘레 밖이거나 물속이면 2초에 한 번만(늦게 불러온 건물·새로 놓은 꾸밈이 빠지지 않게)
                 //    10/4: 성 둘레 안도 매 프레임 → 초당 8번. 빠른 것(순례자·탈것·행렬)은 굽는 그림자에서 빼고 발밑 그림자(blobTick)로
                 const fx = walk ? P.x : deco ? deco.tgt.x : controls.target.x, fz = walk ? P.z : deco ? deco.tgt.z : controls.target.z;
-                const near = !underView && Math.abs(fx) < 20 && Math.abs(fz) < 20;
-                const every = deco ? 0 : near ? 120 : 2000;   // 꾸미는 중(끌어 옮기는 그림자) 매 프레임 · 성 둘레 안 초당 8번 · 밖 2초에 한 번
-                if (now - shadowAt >= every) { shadowAt = now; sun.shadow.needsUpdate = true; }
+                // 10/4 저녁: 초당 8번 굽기는 여덟 프레임에 한 번씩 무거운 프레임이 끼어 「움직일 때 끊어지며 간다」(사용자) —
+                //    고르지 않은 프레임이 고르게 무거운 것보다 더 끊겨 보인다. → **움직이는 동안엔 굽지 않는다.**
+                //    멈춰 있을 때 1.5초에 한 번 · 새 모양이 생기면(모델 도착·건축·세트 조립) 바로 · 꾸미는 중 매 프레임 · 물속은 안 굽는다
+                const cp = camera.position, mv = Math.abs(cp.x - lastCam.x) + Math.abs(cp.y - lastCam.y) + Math.abs(cp.z - lastCam.z);
+                lastCam.copy(cp); if (mv > 0.002) lastMove = now;
+                const geos = renderer.info.memory.geometries;
+                const idle = now - lastMove > 600;
+                if (deco || (!underView && ((idle && now - shadowAt > 1500) || (geos !== shadowGeos && now - shadowAt > 1000)))) {
+                    shadowAt = now; shadowGeos = geos; sun.shadow.needsUpdate = true;
+                }
+                if (now - watchAt > 300) { watchAt = now; watchTick(); }
                 blobTick();
             }
             if (walk) walkUpdate(dt);

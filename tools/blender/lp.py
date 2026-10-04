@@ -116,6 +116,58 @@ def mirror(pts):
         if abs(p[1]) > 1e-6: out.append((p[0], -p[1], p[2]))
     return out
 
+# ── 구석 그늘(AO) 굽기 (2026-10-04) — 면 모서리마다 바깥쪽 반구로 광선을 쏴서 가려진 만큼 꼭짓점 색을 어둡게.
+#    게임은 이 색을 그대로 곱해 그리므로 실시간 계산이 하나도 늘지 않고 텍스처도 없다(용량 거의 그대로).
+#    바닥(모델 맨 아래 높이)도 가리는 것으로 쳐서 땅에 닿는 아랫부분이 자연스럽게 어두워진다. 빛나는 재질(GLOW)은 건너뛴다.
+_AO_DIRS = None
+def _ao_dirs(n=28):
+    global _AO_DIRS
+    if _AO_DIRS is None:   # 코사인 가중 반구 — 고정된 방향(매번 같은 결과)
+        out = []; ga = math.pi * (3 - math.sqrt(5))
+        for i in range(n):
+            u = (i + 0.5) / n; r = math.sqrt(u); a = i * ga
+            out.append(Vector((r * math.cos(a), r * math.sin(a), math.sqrt(max(0.0, 1 - u)))))
+        _AO_DIRS = out
+    return _AO_DIRS
+
+def bake_ao(obs, strength=0.6, reach=0.22, ground=True):
+    from mathutils.bvhtree import BVHTree
+    verts, polys = [], []
+    for ob in obs:
+        mw = ob.matrix_world; o = len(verts)
+        verts += [mw @ v.co for v in ob.data.vertices]
+        polys += [[o + i for i in p.vertices] for p in ob.data.polygons]
+    if not polys: return
+    tree = BVHTree.FromPolygons(verts, polys)
+    zs = [v.z for v in verts]; zmin = min(zs)
+    size = max(max(v.x for v in verts) - min(v.x for v in verts), max(v.y for v in verts) - min(v.y for v in verts), max(zs) - zmin)
+    maxd = max(0.02, size * reach); eps = size * 0.0015
+    dirs = _ao_dirs()
+    for ob in obs:
+        me = ob.data; mw = ob.matrix_world; nm = mw.to_3x3()
+        col = me.color_attributes.get('Col') if hasattr(me, 'color_attributes') else None
+        if col is None: continue
+        for p in me.polygons:
+            if p.material_index == GLOW: continue
+            n = (nm @ p.normal).normalized()
+            q = n.to_track_quat('Z', 'Y')   # 반구의 z를 면의 바깥쪽으로
+            ctr = mw @ p.center
+            for li in p.loop_indices:
+                v = mw @ me.vertices[me.loops[li].vertex_index].co
+                org = v.lerp(ctr, 0.12) + n * eps   # 모서리에서 조금 안쪽 — 이웃 면에 바로 걸리지 않게
+                occ = 0.0
+                for d0 in dirs:
+                    d = q @ d0
+                    hit = tree.ray_cast(org, d, maxd)
+                    dist = hit[3] if hit[0] is not None else None
+                    if ground and d.z < -1e-3:
+                        tg = (zmin - org.z) / d.z
+                        if 0 < tg < maxd and (dist is None or tg < dist): dist = tg
+                    if dist is not None: occ += 1.0 - (dist / maxd) ** 0.5 * 0.6
+                ao = 1.0 - strength * (occ / len(dirs))
+                c = col.data[li].color
+                col.data[li].color = (c[0] * ao, c[1] * ao, c[2] * ao, c[3])
+
 # ── 끝내기: 메시 → 재질 → 바닥 가운데 원점 → glb → 미리보기 ──
 def _mat(name, metal, rough, emit=None):
     m = bpy.data.materials.new(name); m.use_nodes = True; b = m.node_tree.nodes['Principled BSDF']
@@ -126,7 +178,7 @@ def _mat(name, metal, rough, emit=None):
         b.inputs['Emission Color'].default_value = (*emit, 1); b.inputs['Emission Strength'].default_value = 1.0
     return m
 
-def finish(name, out_dir, emit=(1.0, 0.75, 0.3), views=None, lens=40, center=True):   # center=False: 원점을 그대로 둔다(탈것과 그 장식처럼 서로 맞물려야 하는 모델)
+def finish(name, out_dir, emit=(1.0, 0.75, 0.3), views=None, lens=40, center=True, ao=0.6):   # ao: 구석 그늘 세기(0이면 안 굽는다)   # center=False: 원점을 그대로 둔다(탈것과 그 장식처럼 서로 맞물려야 하는 모델)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     sc = bpy.context.scene
     mats = [_mat('base', 0.0, 0.72), _mat('metal', 0.9, 0.32), _mat('glow', 0.0, 0.5, emit)]
@@ -149,6 +201,7 @@ def finish(name, out_dir, emit=(1.0, 0.75, 0.3), views=None, lens=40, center=Tru
         obs.append(ob); roots.append(pivot)
     S.parts = []; S.bm = None
     bpy.context.view_layer.update()
+    if ao and obs: bake_ao(obs, ao, ground=not name.startswith('gd_'))   # 탈것 장식(gd_)은 탈것 위에 얹혀 맨 아래가 땅이 아니다
     xs = [ob.matrix_world @ v.co for ob in obs for v in ob.data.vertices]
     mn = Vector((min(v.x for v in xs), min(v.y for v in xs), min(v.z for v in xs))); mx = Vector((max(v.x for v in xs), max(v.y for v in xs), max(v.z for v in xs)))
     ctr = Vector(((mn.x + mx.x) / 2, (mn.y + mx.y) / 2, mn.z)) if center else Vector((0, 0, 0))
@@ -160,7 +213,8 @@ def finish(name, out_dir, emit=(1.0, 0.75, 0.3), views=None, lens=40, center=Tru
     bpy.context.view_layer.objects.active = obs[0]
     bpy.ops.export_scene.gltf(filepath=path, export_format='GLB', use_selection=True, export_yup=True, export_vertex_color='ACTIVE')
     print('GIFT', name, 'TRIS', tris, 'SIZE', tuple(round(v, 2) for v in size), 'CENTER', (round(ctr.x, 3), round(ctr.y, 3)), 'GLB', os.path.getsize(path), 'PARTS', [o.name for o in obs])   # CENTER = 원점으로 옮긴 바닥 가운데(블렌더 x, y)
-    # 미리보기
+    # 미리보기 (LP_NO_PREVIEW=1이면 건너뛴다 — 모델을 한꺼번에 다시 뽑을 때. 미리보기 렌더가 모델당 1분 넘게 걸렸다)
+    if os.environ.get('LP_NO_PREVIEW'): return
     w = bpy.data.worlds.new('w'); sc.world = w; w.use_nodes = True
     w.node_tree.nodes['Background'].inputs['Color'].default_value = (0.55, 0.62, 0.72, 1); w.node_tree.nodes['Background'].inputs['Strength'].default_value = 0.7
     sun = bpy.data.objects.new('sun', bpy.data.lights.new('sun', 'SUN')); sc.collection.objects.link(sun)
