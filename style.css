@@ -7241,3 +7241,11 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .gift-arrive-from { font-size: 0.9rem; } .gift-arrive-cheer { font-size: 1rem; color: #fff; }
 .gift-arrive-rule { font-size: 0.82rem; color: #aab7c4; line-height: 1.6; }
 @media (prefers-reduced-motion: reduce) { .gift-arrive-fruit, .gift-arrive-card { transition: none; } .gift-arrive-fruit .gift-orb { animation: none; } }
+
+/* 🛝 생명수 미끄럼 — 화면 가장자리 바람 선 (2026-10-05). 가운데는 비우고 가장자리만, 빠를수록 짙게(nj3d.js speedFx가 opacity를 정한다) */
+.nj3d-speed { position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0; transition: opacity 0.25s;
+    background: repeating-conic-gradient(from 0deg at 50% 55%, rgba(255,255,255,0.9) 0deg 0.6deg, rgba(255,255,255,0) 0.6deg 7deg);
+    -webkit-mask-image: radial-gradient(ellipse at 50% 55%, transparent 38%, #000 78%); mask-image: radial-gradient(ellipse at 50% 55%, transparent 38%, #000 78%);
+    animation: nj3dSpeed 0.18s steps(3) infinite; }
+@keyframes nj3dSpeed { 0% { transform: rotate(0deg) scale(1.02); } 50% { transform: rotate(2.3deg) scale(1.04); } 100% { transform: rotate(4.6deg) scale(1.02); } }
+@media (prefers-reduced-motion: reduce) { .nj3d-speed { display: none; } }

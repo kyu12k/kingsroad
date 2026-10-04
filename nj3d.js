@@ -64,6 +64,7 @@
                     </div>
                 </div>
                 <div class="nj3d-under" hidden></div>
+                <div class="nj3d-speed" aria-hidden="true"></div>
                 <div class="nj3d-hint"></div>
                 <div class="nj3d-wallet"></div>
                 <div class="nj3d-fishq" hidden></div>
@@ -1254,6 +1255,35 @@
         let camOff = null;   // 걷기 카메라 — 순례자에서 카메라까지(이것만 부드럽게 따라간다)
         const slideBtn = ov.querySelector('.nj3d-slidebtn');
         let slide = null, slideCheckT = 0;   // 🛝 생명수 미끄럼 — 남쪽 강을 타고 바다까지 { v 빠르기, t, sp 물보라 }
+        // 🛝 속도감 (10/5 사용자: 빠르기는 그대로, 속도감만) — 시야 넓히기 · 물보라 · 화면 가장자리 바람 선 · 흐르는 물·바람 소리. 화면 흔들기는 뺐다(떨림을 싫어했다)
+        let fovBoost = 0, slideSnd = null, slideK = 0;
+        const speedEl = ov.querySelector('.nj3d-speed');
+        const slideSndStop = () => { if (slideSnd) { slideSnd.stop(); slideSnd = null; } };
+        cleanups.push(slideSndStop);
+        listen(document, 'visibilitychange', () => { if (document.hidden) slideSndStop(); });   // 화면을 떠나면 물소리도 멈춘다(돌아오면 미끄럼이 다시 켠다)
+        const SPRAY = 70, sprayPos = new Float32Array(SPRAY * 3), sprayVel = new Float32Array(SPRAY * 3), sprayLife = new Float32Array(SPRAY);
+        const sprayGeo = new THREE.BufferGeometry(); sprayGeo.setAttribute('position', new THREE.BufferAttribute(sprayPos, 3));
+        const spray = new THREE.Points(sprayGeo, new THREE.PointsMaterial({ map: radial, color: 0xf2fbff, size: 0.05, transparent: true, opacity: 1, depthWrite: false }));
+        spray.frustumCulled = false; spray.visible = false; scene.add(spray);
+        for (let i = 0; i < SPRAY; i++) sprayPos[i * 3 + 1] = -999;
+        let sprayN = 0, sprayAcc = 0;
+        function sprayTick(dt, emit) {   // 순례자 양옆·뒤로 튀는 물방울 — 빠를수록 많이
+            sprayAcc += emit * dt;
+            while (sprayAcc >= 1) {
+                sprayAcc -= 1; const i = sprayN++ % SPRAY, side = Math.random() < 0.5 ? -1 : 1;
+                sprayPos[i * 3] = P.x + side * 0.06; sprayPos[i * 3 + 1] = P.y + 0.03; sprayPos[i * 3 + 2] = P.z + 0.02;
+                sprayVel[i * 3] = side * (0.4 + Math.random() * 0.6); sprayVel[i * 3 + 1] = 0.6 + Math.random() * 0.7; sprayVel[i * 3 + 2] = (slide ? slide.v : 0) * (0.35 + Math.random() * 0.3);   // 강물보다 덜 빨라 뒤로 처진다
+                sprayLife[i] = 0.5 + Math.random() * 0.25;
+            }
+            let live = false;
+            for (let i = 0; i < SPRAY; i++) {
+                if (sprayLife[i] <= 0) continue;
+                sprayLife[i] -= dt; if (sprayLife[i] <= 0) { sprayPos[i * 3 + 1] = -999; continue; }
+                live = true; sprayVel[i * 3 + 1] -= 3.2 * dt;
+                sprayPos[i * 3] += sprayVel[i * 3] * dt; sprayPos[i * 3 + 1] += sprayVel[i * 3 + 1] * dt; sprayPos[i * 3 + 2] += sprayVel[i * 3 + 2] * dt;
+            }
+            spray.visible = live; if (live) sprayGeo.attributes.position.needsUpdate = true;
+        }
         let walk = false, jetOn = false, camYaw = 0, camPitch = 0.12, camDist = 0.95, walkT = 0, gait = 0;
         // 팔다리가 있는 순례자 (9/29) — 엉덩이·어깨를 축으로 흔들어 걷기·달리기·점프·날기 자세를 만든다. 앞은 -z
         const pilgrim = new THREE.Group(), body = new THREE.Group(); pilgrim.add(body);
@@ -1904,7 +1934,7 @@
         const setGoLabel = () => { goBtn.textContent = where === 'city' ? T('nj3d_to_sea') : T('nj3d_to_city'); };
         const placeAt = (dest) => {
             const [x, z, yaw] = SPOT[dest];
-            P.x = x; P.z = z; P.y = terrain(x, z) + 0.05; P.vy = 0; camYaw = yaw; P.face = yaw + Math.PI; slide = null;
+            P.x = x; P.z = z; P.y = terrain(x, z) + 0.05; P.vy = 0; camYaw = yaw; P.face = yaw + Math.PI; slide = null; slideSndStop();
             pilgrim.position.set(P.x, P.y, P.z);
             if (walk) camera.position.set(P.x + Math.sin(yaw) * camDist, P.y + 0.4, P.z + Math.cos(yaw) * camDist);
         };
@@ -1923,7 +1953,7 @@
         }
         setGoLabel();
         modeBtn.addEventListener('click', () => {
-            walk = !walk; controls.enabled = !walk; walkUI.hidden = !walk; pilgrim.visible = true; camOff = null; slide = null; slideBtn.hidden = true;
+            walk = !walk; controls.enabled = !walk; walkUI.hidden = !walk; pilgrim.visible = true; camOff = null; slide = null; slideBtn.hidden = true; slideSndStop(); fovBoost = 0; speedEl.style.opacity = '0';
             if (walk) { controls.autoRotate = false; camera.fov = 62; camera.near = 0.02; showHint(T('nj3d_hint_walk'), 3500); }
             else { camera.fov = 42; camera.near = 0.1; where = P.z > 25 ? 'sea' : 'city'; lookAt(where); setGoLabel(); endFish(); fishBtn.hidden = true; }
             camera.updateProjectionMatrix(); setModeLabel(); lastTouch = performance.now();
@@ -3313,6 +3343,11 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const k = inp.keys, jx = inp.jx + ((k.KeyD || k.ArrowRight) ? 1 : 0) - ((k.KeyA || k.ArrowLeft) ? 1 : 0);
             const grade = Math.max(0, (WT(0, P.z) - WT(0, P.z + 0.3)) / 0.3);
             S.v = Math.max(1.3, Math.min(6.5, S.v + (grade * 7 - S.v * 0.22) * dt));
+            slideK = (S.v - 1.3) / 5.2;   // 0(가장 느림) ~ 1(가장 빠름)
+            if (!slideSnd && typeof SoundEffect !== 'undefined' && SoundEffect.slideLoop) slideSnd = SoundEffect.slideLoop();
+            if (slideSnd) slideSnd.set(slideK);
+            if (!reduce) sprayTick(dt, 10 + 60 * slideK);
+            if (S.t - (S.bl || 0) > 0.45 + Math.random() * 0.5 && typeof SoundEffect !== 'undefined' && SoundEffect.playSplash) { S.bl = S.t; SoundEffect.playSplash(false); }   // 이따금 첨벙
             P.z += S.v * dt;
             P.x = Math.max(-RW * 0.8, Math.min(RW * 0.8, P.x - jx * 0.9 * dt));   // 바다를 보고 앉았으니 오른쪽 = −x
             P.y = WT(0, P.z) + WL - 0.03; P.vy = 0; P.onGround = true; P.face = Math.PI;
@@ -3326,7 +3361,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             body.rotation.x += (0.3 - body.rotation.x) * e; body.position.y += (0 - body.position.y) * e;
             S.sp -= dt; if (S.sp <= 0) { S.sp = 0.12; splash(P.x, P.z, false, true); }   // 지나간 자리에 물결
             if (seaE(P.x, P.z) < 0.995) {   // 어귀 — 바다에 풍덩
-                slide = null; P.y = SEA_Y - 0.06; P.vy = -1.0; P.onGround = false; gliding = false;
+                slide = null; slideSndStop(); P.y = SEA_Y - 0.06; P.vy = -1.0; P.onGround = false; gliding = false;
                 splash(P.x, P.z, true); showHint(T('nj3d_slide_end'), 3800); fishHintHold = performance.now() + 4500;
             }
         }
@@ -3344,9 +3379,17 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             slide = { v: 1.6, t: 0, sp: 0 }; slideBtn.hidden = true;
             P.x = Math.max(-RW * 0.8, Math.min(RW * 0.8, P.x));
             showHint(T('nj3d_slide_hint'), 3800); lastTouch = performance.now();
-            if (typeof SoundEffect !== 'undefined' && SoundEffect.playSplash) SoundEffect.playSplash(true);
+            if (typeof SoundEffect !== 'undefined' && SoundEffect.playWhee) SoundEffect.playWhee();
         });
+        function speedFx(dt) {   // 시야·바람 선 — 미끄럼이 끝나면 천천히 돌아온다. 물보라는 끝난 뒤에도 떨어질 때까지
+            const want = slide ? 16 * slideK : 0;
+            fovBoost += (want - fovBoost) * (1 - Math.exp(-dt * 3));
+            const fov = 62 + fovBoost; if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
+            speedEl.style.opacity = slide && !reduce ? (0.45 * Math.max(0, slideK - 0.15)).toFixed(3) : '0';
+            if (!slide && spray.visible) sprayTick(dt, 0);
+        }
         function walkUpdate(dt) {
+            speedFx(dt);
             if (proc) { procUpdate(dt); return; }
             if (slide) { slideStep(dt); rippleTick(dt); followCam(dt); return; }
             fishUpdate(dt);

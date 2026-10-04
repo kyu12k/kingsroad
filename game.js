@@ -4822,6 +4822,44 @@ const SoundEffect = {
             this._note(600 * j, t + (run ? 0.045 : 0.07), 0.03, run ? 0.035 : 0.05, { glideTo: 340 * j, partials: this._PURE, attack: 0.001 });
         });
     },
+    // 🛝 생명수 미끄럼 (10/5) — 흐르는 물(잡음 고리 → 대역 필터) + 빠를수록 커지고 높아지는 바람(고역 잡음). 손잡이 { set(0~1), stop() }
+    _noiseLong: null,
+    slideLoop: function () {
+        if (this.isMuted || this.keyMuted) return null;
+        const c = this.ctx;
+        try {
+            if (c.state !== 'running') c.resume();
+            if (!this._noiseLong) {   // 2초짜리 — 0.5초 고리는 되풀이가 들렸다
+                const len = Math.floor(c.sampleRate * 2), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+                for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+                this._noiseLong = buf;
+            }
+            const src = c.createBufferSource(); src.buffer = this._noiseLong; src.loop = true;
+            const water = c.createBiquadFilter(); water.type = 'bandpass'; water.frequency.value = 800; water.Q.value = 0.7;
+            const wg = c.createGain(); wg.gain.value = 0.0001;
+            const wind = c.createBiquadFilter(); wind.type = 'highpass'; wind.frequency.value = 2200;
+            const ng = c.createGain(); ng.gain.value = 0.0001;
+            src.connect(water); water.connect(wg); wg.connect(this._bus());
+            src.connect(wind); wind.connect(ng); ng.connect(this._bus());
+            const t0 = c.currentTime; src.start(t0); wg.gain.setTargetAtTime(0.05, t0, 0.15);
+            let done = false;
+            return {
+                set: (k) => { if (done) return; const t = c.currentTime;
+                    wg.gain.setTargetAtTime(0.045 + 0.06 * k, t, 0.12); water.frequency.setTargetAtTime(650 + 1000 * k, t, 0.12);
+                    ng.gain.setTargetAtTime(0.0001 + 0.07 * k * k, t, 0.12); wind.frequency.setTargetAtTime(1800 + 2800 * k, t, 0.15); },
+                stop: () => { if (done) return; done = true; const t = c.currentTime;
+                    wg.gain.setTargetAtTime(0.0001, t, 0.08); ng.gain.setTargetAtTime(0.0001, t, 0.08); try { src.stop(t + 0.6); } catch (e) { } }
+            };
+        } catch (e) { return null; }
+    },
+    // 🛝 출발 — "슝~" 올라가는 휘파람 + 바람
+    playWhee: function () {
+        if (this.keyMuted) return;
+        this._play(t => {
+            this._note(480, t, 0.45, 0.07, { glideTo: 1150, partials: this._PURE, wave: 'triangle', attack: 0.03 });
+            this._whoosh(t, 0.5, 0.06, 700, 3200);
+        });
+    },
     playSplash: function (big) {
         if (this.keyMuted) return;
         this._play(t => {
