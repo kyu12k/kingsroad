@@ -7159,3 +7159,11 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 #home-nickname-display .hp-edit { font-size: 0.8em; opacity: 0.7; margin-left: 4px; }
 #home-nickname-display .hp-badges { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; }
 #home-nickname-display .hp-badges > * { margin: 0 !important; }
+
+/* 🔑 첫 마디의 고난 · 📒 오답노트 (2026-10-04) */
+.hardship-mode-btn.hardship-mode-s { background: linear-gradient(135deg, #fffaf0 0%, #ffedc4 100%); border-color: #e9cf8a; }
+.hardship-mode-btn.hardship-mode-s .mode-title { color: #8a5a0c; }
+.hardship-mode-btn.hardship-mode-s .mode-desc { color: #9a7330; }
+.mode-journey-btn.fp-row { border-color: rgba(224,184,74,0.6); background: rgba(224,184,74,0.1); }
+.fp-note-btn { display: block; width: 100%; margin: 4px 0 10px; padding: 10px 12px; border-radius: 12px; border: 1.5px dashed #e0b84a; background: #fff8e6; color: #8a6514; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
+.fp-note-btn.wait { border-style: dotted; background: #f6f3ea; color: #9a8f74; font-weight: 600; cursor: default; }

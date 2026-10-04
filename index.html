@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <!-- ★ 반드시 첫 스크립트: 전역 Date를 서버 시각으로 보정한다 (clock.js 주석 참조) -->
-    <script src="clock.js?v=20261004e"></script>
+    <script src="clock.js?v=20261004f"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>King's Road - 요한계시록 암송</title>
 
@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
     <!-- image_0.webp is inlined below; preload removed -->
-    <link rel="stylesheet" href="style.css?v=20261004e">
+    <link rel="stylesheet" href="style.css?v=20261004f">
 
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-TEVW49QB45"></script>
@@ -3434,6 +3434,15 @@
                 <div class="hardship-mission-reward">미션 💎 700</div>
             </button>
 
+            <!-- 🔑 첫 마디의 고난 — 장이 정해졌을 때만 보인다(_fpModalRefresh) -->
+            <button id="hardship-start-btn" class="mode-btn hardship-mode-btn hardship-mode-s" style="display:none;" onclick="openFirstPhrasePick()">
+                <div class="mode-icon">🔑</div>
+                <div class="mode-info">
+                    <div class="mode-title" data-i18n="fp_title">첫 마디의 고난</div>
+                    <div class="mode-desc" data-i18n="fp_desc">장·절을 보고 첫 마디만 쓰기 · 쉬움·보통·어려움</div>
+                </div>
+            </button>
+
             <button class="mode-btn hardship-mode-btn hardship-mode-c" onclick="startHardshipFromModal('endurance')">
                 <div class="mode-icon">🕊️</div>
                 <div class="mode-info">
@@ -3453,6 +3462,8 @@
                 </div>
                 <div class="hardship-mission-reward">미션 💎 1,500</div>
             </button>
+
+            <button type="button" id="fp-note-btn" class="fp-note-btn" style="display:none;" onclick="startFirstPhraseNote()"></button>
 
             <!-- 망각의 고난이 백지+무작위 고정이라 물러설 곳을 함께 보여준다 (장이 정해졌을 때만) -->
             <button type="button" id="hardship-easier-link" class="hardship-easier-link" style="display:none;"></button>
@@ -3588,7 +3599,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="bible_en.js"></script>
-    <script src="game.js?v=20261004e"></script>
+    <script src="game.js?v=20261004f"></script>
     <script>
 
         /* =========================================

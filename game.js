@@ -499,6 +499,8 @@ const LANG = {
         hardship_address_ch_btn: '{ch}장',
         hardship_address_v_btn: '{v}절',
         hardship_memory_indicator: '주소만 보고 전체 구절을 인출합니다',
+        fp_indicator: '주소만 보고 첫 마디를 씁니다',
+        fp_wrong: '오답이에요. 정답은 <b>「{ans}」</b> — 📒 오답노트에 담았어요<br><span style="opacity:0.8">{text}</span>',
         hardship_btn_submit: '정답 확인',
         nj_title: '새 예루살렘',
         nj_verse: '「그 성의 성곽의 기초석은 각색 보석으로 꾸몄는데」 (계 21:19)',
@@ -729,6 +731,11 @@ const LANG = {
         clear_blank_lv_mult: '✍️ 백지 Lv{lv} 제때 승점 ×{n}',
         blank_notif_body: '「{label}」 백지로 꺼내볼 시간이에요 ✍️',
         rv_blank_title: '✍️ 오늘 백지 차례',
+        fp_title: '첫 마디의 고난', fp_desc: '장·절을 보고 첫 마디만 쓰기 · 쉬움·보통·어려움',
+        fp_pick_title: '🔑 첫 마디의 고난 · {ch}장', fp_pick_desc: '구절은 사슬처럼 외워져서, 첫 마디만 떠오르면 나머지가 따라와요. 주소만 보고 첫 마디를 써 보세요. 순서는 섞여 나와요.',
+        fp_lv1: '쉬움', fp_lv2: '보통', fp_lv3: '어려움', fp_lv1_d: '첫 단어', fp_lv2_d: '앞에서 세 글자가 찰 때까지', fp_lv3_d: '앞 세 단어',
+        fp_embed: '{ch}장 · 첫 마디의 고난 ({lv})', fp_note_btn: '📒 첫 마디 오답노트 · {n}절', fp_note_embed: '📒 첫 마디 오답노트',
+        fp_note_hint: '첫 마디에서 막힌 절이 {n}절 모이면 오답노트가 열려요 (지금 {have}절)',
         bd_desc: '전에 백지로 써낸 절 중에서 다시 꺼내볼 날이 된 절이에요. 단서 없이 써내면 백지레벨이 올라요.',
         bd_note: '중간에 나가도 써낸 절까지는 남아요',
         bd_ch: '{ch}장', bd_count: '백지 차례 {n}개 절', bd_range: '{r}절', bd_start: '✍️ 시작',
@@ -1636,6 +1643,8 @@ const LANG = {
         hardship_address_ch_btn: 'Ch.{ch}',
         hardship_address_v_btn: 'v.{v}',
         hardship_memory_indicator: 'See the reference and recall the full verse',
+        fp_indicator: 'See the reference and write the opening words',
+        fp_wrong: 'Not quite. The answer is <b>“{ans}”</b> — added to 📒 the notebook<br><span style="opacity:0.8">{text}</span>',
         btn_ultimate_memory: 'Ultimate Recall',
         btn_ultimate_memory_off: 'Show Hints',
         hardship_memory_not_filled: 'Please fill in all characters before checking.',
@@ -1869,6 +1878,11 @@ const LANG = {
         clear_blank_lv_mult: '✍️ Blank Lv{lv} on-time points ×{n}',
         blank_notif_body: '"{label}" — time to write it from blank ✍️',
         rv_blank_title: '✍️ Blank review due today',
+        fp_title: 'Trial of the First Words', fp_desc: 'See the reference, write only the opening words · Easy · Normal · Hard',
+        fp_pick_title: '🔑 Trial of the First Words · Ch.{ch}', fp_pick_desc: 'A verse is remembered like a chain — once the first words come, the rest follows. Look at the reference and write the opening words. Verses come in shuffled order.',
+        fp_lv1: 'Easy', fp_lv2: 'Normal', fp_lv3: 'Hard', fp_lv1_d: 'first word', fp_lv2_d: 'first two words', fp_lv3_d: 'first three words',
+        fp_embed: 'Ch.{ch} · First words ({lv})', fp_note_btn: '📒 First-words notebook · {n} verses', fp_note_embed: '📒 First-words notebook',
+        fp_note_hint: 'Once {n} verses stall at the first words, the notebook opens (now {have})',
         bd_desc: 'Verses you once wrote on a blank page that are due to be recalled again. Write them with no clues to raise their blank level.',
         bd_note: 'If you stop midway, the verses you wrote are kept',
         bd_ch: 'Ch.{ch}', bd_count: '{n} verses due', bd_range: 'vv. {r}', bd_start: '✍️ Start',
@@ -2779,7 +2793,8 @@ let _freeStageClearDate = {};
 let _freeStageLastClear = {};
 let _freeStageReviewStep = {};
 let _freeStageNextReviewTime = {};
-let collectionLegacy = null;   // 두 여정 기억을 합치기 전 도감 점수(두 여정 합) — 체력 +3을 합치며 잃지 않게 (2026-10-02)
+let collectionLegacy = null;
+let fpRecall = {};   // 🔑 첫 마디의 고난 — 절 id → { ok, miss, at, lv, note(오답노트에 있음), sd(승점 받은 날) } (2026-10-04)   // 두 여정 기억을 합치기 전 도감 점수(두 여정 합) — 체력 +3을 합치며 잃지 않게 (2026-10-02)
 // 왕의 길 전용 저장 객체
 let kingsRoadData = {
     mastery: {},
@@ -3229,6 +3244,7 @@ loadGameData = function () {
 
         // ★ 기억은 하나 (2026-10-02) — 두 여정이 진도 한 벌을 함께 쓴다
         collectionLegacy = (typeof parsed.collectionLegacy === 'number') ? parsed.collectionLegacy : null;
+        fpRecall = (parsed.fpRecall && typeof parsed.fpRecall === 'object') ? parsed.fpRecall : {};
         _unifyJourneyMemory();
         _resetLongUnstudied();   // 한 달 넘게 손 안 댄 절은 복습 일정을 처음으로
 
@@ -12379,6 +12395,7 @@ function saveGameData() {
         guideInfo: guideInfo,             // 인도자 — 시험 통과·함께 정착한 사람 수(빨간 열매)
         guideRel: guideRel,               // 동행(초심자) — 인도자·시작일·암송한 날
         collectionLegacy: collectionLegacy, // 두 여정을 합치기 전 도감 점수 (체력 +3 유지용)
+        fpRecall: fpRecall,               // 🔑 첫 마디의 고난 기록 · 오답노트
         njBuilt: njBuilt,                 // 새 예루살렘 — 놓은 기초석 수
         njLog: njLog,                     // 새 예루살렘 — 놓은 순간의 기록 (연구용)
         njPearls: njPearls,               // 진주 문 — 얻은 진주 수
@@ -12764,6 +12781,11 @@ function _mergeSaveProgress(target, other) {
     took += _mergeNewJerusalem(target, other);
     took += _mergeGuide(target, other);
     if (typeof other.collectionLegacy === 'number' && !(target.collectionLegacy >= other.collectionLegacy)) { target.collectionLegacy = other.collectionLegacy; took++; }
+    if (other.fpRecall && typeof other.fpRecall === 'object') {   // 첫 마디 — 절마다 나중에 한 쪽
+        const tf = (target.fpRecall && typeof target.fpRecall === 'object') ? target.fpRecall : {};
+        Object.keys(other.fpRecall).forEach(id => { const o = other.fpRecall[id]; if (o && (!tf[id] || (o.at || 0) > (tf[id].at || 0))) { tf[id] = o; took++; } });
+        target.fpRecall = tf;
+    }
     {   // 돌아온 순례자 — 더 최근에 시작된 쪽, 같은 복귀면 더 많이 기록된 쪽
         const a = target.returnBoost, b = other.returnBoost;
         if (b && b.at && (!a || !a.at || b.at > a.at || (b.at === a.at && (b.clears || 0) > (a.clears || 0)))) { target.returnBoost = b; took++; }
@@ -26097,6 +26119,9 @@ function createEmptyHardshipState() {
         quickReviewStageId: null, // 빠른 모드 백지 승급으로 열린 1구절 세션 (끝나면 훈련으로 복귀)
         fruitKey: null,          // 새 예루살렘 생명나무 열매 먹기로 열린 1구절 백지 세션 ('YYYY-MM|절id')
         blankDueCh: null,        // 「오늘 백지 차례」로 열린 세션이면 그 장 (그 장의 차례인 절만, 백지)
+        startLv: 0,              // 🔑 첫 마디의 고난이면 1·2·3(쉬움·보통·어려움) — 쳐야 할 글이 첫 마디로 잘린다
+        startLvMap: null,        // 오답노트 — 절마다 막혔던 난이도
+        fpNote: false,
         verseCheckIsLearn: false, // 그 확인이 초학습 직후였는가 (증거 가치가 낮아 구분해 기록)
         displayTitle: '',       // 헤더·시작 토스트에 쓸 이름 (비면 고난 모드 이름을 쓴다)
         isRandomOrder: false,
@@ -26166,7 +26191,25 @@ function isHardshipFillableChar(character) {
 
 function getHardshipActiveText(verse) {
     if (!verse) return '';
-    return (currentLang === 'en' && verse.textEn) ? verse.textEn : verse.text;
+    const full = (currentLang === 'en' && verse.textEn) ? verse.textEn : verse.text;
+    if (hardshipState && hardshipState.startLv) {   // 🔑 첫 마디의 고난 — 앞의 몇 단어만
+        const id = `${verse.chapter}-${verse.verse}`;
+        const lv = (hardshipState.startLvMap && hardshipState.startLvMap[id]) || hardshipState.startLv;
+        return firstPhraseOf(full, lv, currentLang === 'en' && !!verse.textEn);
+    }
+    return full;
+}
+
+/* 🔑 첫 마디 (2026-10-04 사용자 규칙) — 구절은 사슬이라 첫 마디만은 앞에 단서가 없다(주소뿐).
+   쉬움 = 첫 단어 · 보통 = 앞에서부터 단어를 붙여 **세 음절이 찰 때까지**(이 일 후에 · 내가 곧 · 이 예언의) · 어려움 = 앞 세 단어.
+   영어는 음절을 세지 않고 1·2·3단어. 끝에 붙은 문장부호는 뗀다(쳐야 할 글자가 아니다) */
+function firstPhraseOf(text, lv, en) {
+    const ws = String(text || '').trim().split(/\s+/).filter(Boolean);
+    if (!ws.length) return '';
+    let n;
+    if (en || lv !== 2) n = en ? lv : (lv === 1 ? 1 : 3);
+    else { let syl = 0; n = 0; for (const w of ws) { n++; syl += (w.match(/[가-힣]/g) || []).length; if (syl >= 3) break; } }
+    return ws.slice(0, Math.max(1, n)).join(' ').replace(/[,.;:!?·…"'“”‘’)\]]+$/, '');
 }
 
 function hardshipCharsMatch(inputChar, answerChar) {
@@ -26316,6 +26359,70 @@ function goToChapterBossBlank(chapterNum) {
     openBossSetupModal(bossStage);
 }
 
+/* ── 🔑 첫 마디의 고난 · 📒 오답노트 (2026-10-04) ───────────────────────────────
+   9/27 실측: 백지에서 처음 막힌 자리가 구절 맨 앞 10% 안인 경우 46%(시동), 사람마다 6%~57%, 섞으면 더 막힌다(63% vs 38%).
+   사용자 결정: 첫 마디만 따로 연습하는 고난을 둔다 — 장 단위로만(지도의 장별 고난 길에서), 섞은 순서, 쉬움·보통·어려움.
+   승점은 적게(망각의 고난의 10분의 1, 같은 절 하루 한 번). 기록은 백지레벨과 따로(fpRecall).
+   📒 오답노트: 첫 마디에서 틀렸거나 힌트를 쓴 절이 모이고(FP_NOTE_MIN절이 넘으면 열림), 오답노트나 첫 마디의 고난에서 힌트 없이 맞히면 빠진다.
+   절마다 막혔던 난이도로 나온다. */
+const FP_NOTE_MIN = 5;
+function _fpLvOf(id) { return (hardshipState && ((hardshipState.startLvMap && hardshipState.startLvMap[id]) || hardshipState.startLv)) || 2; }
+function _fpRecord(id, ok, hints) {
+    if (!id) return;
+    const f = fpRecall[id] || (fpRecall[id] = { ok: 0, miss: 0 });
+    const lv = _fpLvOf(id);
+    if (ok && !(hints > 0)) { f.ok = (f.ok || 0) + 1; f.note = 0; }
+    else { f.miss = (f.miss || 0) + 1; f.note = 1; f.lv = Math.max(lv, f.lv || 0); }   // 오답노트엔 막혔던 난이도 중 높은 쪽으로
+    f.lv = f.lv || lv; f.at = Date.now();
+}
+function _fpNoteIds() { return Object.keys(fpRecall || {}).filter(id => fpRecall[id] && fpRecall[id].note && /^\d+-\d+$/.test(id)); }
+function _fpModalRefresh() {   // 고난 고르기 창이 열릴 때 — 첫 마디는 장이 정해졌을 때만, 오답노트는 모였을 때만
+    const sb = document.getElementById('hardship-start-btn');
+    if (sb) sb.style.display = (window.hardshipForcedChapter != null) ? '' : 'none';
+    const nb = document.getElementById('fp-note-btn'), ids = _fpNoteIds();
+    if (nb) {
+        if (ids.length >= FP_NOTE_MIN) { nb.style.display = ''; nb.textContent = t('fp_note_btn', { n: ids.length }); nb.disabled = false; nb.classList.remove('wait'); }
+        else if (ids.length > 0) { nb.style.display = ''; nb.textContent = t('fp_note_hint', { n: FP_NOTE_MIN, have: ids.length }); nb.disabled = true; nb.classList.add('wait'); }
+        else nb.style.display = 'none';
+    }
+}
+function openFirstPhrasePick() {
+    const ch = window.hardshipForcedChapter; if (ch == null) return;
+    _hideHardshipModeModal();
+    let ov = document.getElementById('fp-pick-overlay');
+    if (!ov) { ov = document.createElement('div'); ov.id = 'fp-pick-overlay'; ov.className = 'modal-overlay'; ov.style.zIndex = '10000'; ov.onclick = closeFirstPhrasePick; document.body.appendChild(ov); }
+    const v1 = (typeof HARDSHIP_VERSE_MAP !== 'undefined') ? HARDSHIP_VERSE_MAP[`${ch}-1`] || Object.values(HARDSHIP_VERSE_MAP).find(v => v.chapter === ch) : null;
+    const en = currentLang === 'en' && v1 && v1.textEn, ex = lv => v1 ? firstPhraseOf(en ? v1.textEn : v1.text, lv, !!en) : '';
+    const row = lv => `<button class="mode-journey-btn fp-row" onclick="_startFirstPhrase(${ch}, ${lv})">
+            <div class="mode-btn-text" style="flex:1"><span class="mode-btn-label">${t('fp_lv' + lv)} <span class="bd-count">${t('fp_lv' + lv + '_d')}</span></span>
+            <span class="mode-btn-desc">${ch}:1 「${ex(lv)}」</span></div></button>`;
+    ov.innerHTML = `<div class="result-card mode-select-card" onclick="event.stopPropagation()">
+            <div class="mode-modal-header"><span class="mode-select-title">${t('fp_pick_title', { ch })}</span><button class="mode-close-btn" onclick="closeFirstPhrasePick()">✕</button></div>
+            <div class="bd-desc">${t('fp_pick_desc')}</div>${row(1)}${row(2)}${row(3)}</div>`;
+    ov.style.display = 'flex';
+}
+function closeFirstPhrasePick() { const ov = document.getElementById('fp-pick-overlay'); if (ov) ov.style.display = 'none'; window.hardshipForcedChapter = null; }
+function _startFirstPhrase(ch, lv) {
+    const ids = getHardshipVerseIdsByChapterRange(ch, ch);
+    const ov = document.getElementById('fp-pick-overlay'); if (ov) ov.style.display = 'none';
+    window.hardshipForcedChapter = null;
+    if (!ids.length) { alert(t('alert_training_no_data', { ch })); return; }
+    window.hardshipOrigin = 'map';
+    selectedHardshipOrderType = 'random';
+    selectedHardshipUltimate = true;
+    _pendingHardshipEmbed = { label: t('fp_embed', { ch, lv: t('fp_lv' + lv) }), startLv: lv };
+    startHardshipSession('memory', ids);
+}
+function startFirstPhraseNote() {
+    const ids = _fpNoteIds(); if (ids.length < FP_NOTE_MIN) return;
+    _hideHardshipModeModal(); window.hardshipForcedChapter = null;
+    const map = {}; ids.forEach(id => { map[id] = fpRecall[id].lv || 2; });
+    window.hardshipOrigin = window.hardshipOrigin || 'home';
+    selectedHardshipOrderType = 'random';
+    selectedHardshipUltimate = true;
+    _pendingHardshipEmbed = { label: t('fp_note_embed'), startLv: 2, startLvMap: map, fpNote: true };
+    startHardshipSession('memory', ids);
+}
 function openChapterHardship(chapterNum) {
     // 장별 고난 길: 해당 챕터를 강제 고정하고 모드 선택 모달을 엽니다.
     window.hardshipForcedChapter = chapterNum;
@@ -26385,6 +26492,7 @@ function openHardshipModeSelect() {
     const modal = document.getElementById('hardship-mode-modal');
     if (modal) modal.style.display = 'flex';
     updateHardshipLastPlayedBadges();
+    _fpModalRefresh();
 }
 
 function closeHardshipModeSelect() {
@@ -26771,7 +26879,8 @@ function _isResumableHardshipSession() {
         && !hardshipState.eventId
         && !hardshipState.quickReviewStageId
         && !hardshipState.fruitKey
-        && !hardshipState.blankDueCh);
+        && !hardshipState.blankDueCh
+        && !hardshipState.startLv);
 }
 
 /* ★ 체크포인트를 **여러 건** 보관한다 (보스전은 한 건뿐이다).
@@ -26896,6 +27005,9 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
         hardshipState.quickReviewStageId = embed.quickReviewStageId || null;
         hardshipState.fruitKey = embed.fruitKey || null;
         hardshipState.blankDueCh = embed.blankDueCh || null;
+        hardshipState.startLv = embed.startLv || 0;
+        hardshipState.startLvMap = embed.startLvMap || null;
+        hardshipState.fpNote = !!embed.fpNote;
         hardshipState.verseCheckIsLearn = !!embed.isLearn;
         hardshipState.eventId = embed.eventId || null;
         hardshipState.displayTitle = embed.label || '';
@@ -27055,7 +27167,7 @@ function updateHardshipHeader() {
 
     if (hintBtn) {
         // 힌트는 화면에 떠서 따라다닌다 (positionHardshipHintFab 주석 참고)
-        const shouldShowHint = currentMode === 'memory';
+        const shouldShowHint = currentMode === 'memory' && !hardshipState.startLv;   // 🔑 첫 마디의 고난은 힌트 없음 — 두세 단어라 힌트 하나가 곧 정답이다
         hintBtn.style.display = shouldShowHint ? 'inline-flex' : 'none';
         hintBtn.classList.toggle('hint-fab-on', shouldShowHint);
         hintBtn.disabled = !shouldShowHint;
@@ -27856,7 +27968,7 @@ function renderHardshipMemoryVerse() {
     const hiddenInputMaxLength = getHardshipFillableVerseLength();
 
     field.innerHTML = `
-        <div class="verse-indicator">${t('hardship_memory_indicator')}</div>
+        <div class="verse-indicator">${t(hardshipState.startLv ? 'fp_indicator' : 'hardship_memory_indicator')}</div>
         <div class="hardship-verse-card" onclick="focusHardshipMemoryHiddenInput()" ontouchstart="focusHardshipMemoryHiddenInput()">
             <div class="hardship-mode-tag">[${hardshipState.currentVerse.label}]</div>
             <div class="hardship-typing-board${ultimateActive ? ' hardship-ultimate-active' : ''}" onclick="focusHardshipMemoryHiddenInput()" ontouchstart="focusHardshipMemoryHiddenInput()">${typingBoardHtml}</div>
@@ -27998,7 +28110,8 @@ function _isEmbeddedBlankSession() {
                                 hardshipState.eventId ||
                                 hardshipState.quickReviewStageId ||
                                 hardshipState.fruitKey ||
-                                hardshipState.blankDueCh));
+                                hardshipState.blankDueCh ||
+                                hardshipState.startLv));
 }
 
 /* 「모르겠어요」 — 이번 판만 포기하고 정답을 확인한다.
@@ -28445,6 +28558,7 @@ function _startHardshipHintCooldown() {
 
 function useHardshipMemoryHint() {
     if (!window.isHardshipMode || hardshipState.mode !== 'memory' || hardshipState.locked) return;
+    if (hardshipState.startLv) return;   // 🔑 첫 마디의 고난 — 힌트 없음
     if (_hardshipHintCooldownLeft() > 0) return; // 버튼이 남은 초를 보여주고 있다
 
     const hiddenInput = document.getElementById('hidden-typing-input');
@@ -28500,6 +28614,7 @@ function _hardshipRecallCtx() {
     if (hardshipState.midBossStageId) return 'mid';
     if (hardshipState.bossStageId) return 'boss';
     if (hardshipState.eventId) return 'event';
+    if (hardshipState.startLv) return hardshipState.fpNote ? 'fpnote' : 'start';   // 🔑 첫 마디의 고난 · 오답노트
     if (hardshipState.blankDueCh) return 'due';   // 「오늘 백지 차례」 — 백지레벨 차례가 온 절만
     return 'hs';
 }
@@ -28509,6 +28624,13 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
     // 집중 훈련은 학습 보조라 증거로 세지 않는다 — 일지에는 표시(tr)를 달아 남긴다(연구 재료)
     if (hardshipState && hardshipState.trainingMode) {
         _logRecallAttempt(stageId, ok, hints, mode, extra, verseRecall[stageId] || null, true);
+        return;
+    }
+
+    // 🔑 첫 마디의 고난 — 구절 전체를 써낸 게 아니므로 백지레벨·암송왕·열매·복습에는 넣지 않는다. 첫 마디 기록(오답노트)과 일지만
+    if (hardshipState && hardshipState.startLv) {
+        _fpRecord(stageId, ok, hints);
+        _logRecallAttempt(stageId, ok, hints, 'start', Object.assign({ lv: _fpLvOf(stageId) }, extra || {}), verseRecall[stageId] || null, false);
         return;
     }
 
@@ -28735,6 +28857,7 @@ function getHardshipScoreScale() {
     if (hardshipState.midBossStageId) return 0.5;
     if (hardshipState.eventId) return 0.5;   // 이벤트 문항 = 2절 묶음, 중간점검과 같은 크기
     if (hardshipState.blankDueCh) return 0.5;   // 오늘 백지 차례 — 흩어진 몇 절. 제때 꺼내면 백지레벨 배율은 따로 붙는다
+    if (hardshipState.startLv) return 0.1;      // 🔑 첫 마디 — 구절 전체 대신 두세 단어라 망각의 고난의 10분의 1
 
     // 보스전 빈칸·백지는 **한 장 전체**라 망각의 고난과 분량·위험이 같다 → 깎지 않는다
     if (hardshipState.bossStageId) return 1;
@@ -28762,6 +28885,7 @@ function _blankScoreKind() {
 }
 
 function _blankScoreAlreadyToday(stageId) {
+    if (hardshipState && hardshipState.startLv) { const f = fpRecall[stageId]; return !!(f && f.sd === _get6AMDayStr()); }   // 🔑 첫 마디 — 같은 절 하루 한 번
     const kind = _blankScoreKind();
     if (!stageId || !kind) return false;
     const r = verseRecall[stageId];
@@ -28771,6 +28895,7 @@ function _blankScoreAlreadyToday(stageId) {
 }
 
 function _markBlankScored(stageId) {
+    if (hardshipState && hardshipState.startLv) { if (stageId) { const f = fpRecall[stageId] || (fpRecall[stageId] = { ok: 0, miss: 0 }); f.sd = _get6AMDayStr(); } return; }
     const kind = _blankScoreKind();
     if (!stageId || !kind) return;
     const r = verseRecall[stageId] || { pass: 0, typedPass: 0, fail: 0, firstPass: 0, lastPass: 0, lastAt: 0, lastOk: false, hints: 0, lastHints: 0, lastMode: '' };
@@ -28879,7 +29004,7 @@ function submitHardshipMemoryGuess() {
         const score = getCurrentCollectionScore();
         return getCollectionRank(score);
     })();
-    const allowedTypos = (!hardshipState.trainingMode && rankBuff) ? (rankBuff.wrongCorrection || 0) : 0;
+    const allowedTypos = (!hardshipState.trainingMode && !hardshipState.startLv && rankBuff) ? (rankBuff.wrongCorrection || 0) : 0;   // 첫 마디는 몇 글자뿐이라 오타 보정이 곧 정답 처리 — 끈다
 
     if (hardshipState.wrongSlots.length > 0 && hardshipState.wrongSlots.length <= allowedTypos) {
         const typoCount = hardshipState.wrongSlots.length;
@@ -28925,7 +29050,9 @@ function submitHardshipMemoryGuess() {
     wrongCount += 1;
     hardshipState.feedback = {
         type: 'error',
-        message: t('hardship_feedback_wrong_memory', { text: (currentLang === 'en' && hardshipState.currentVerse.textEn) ? hardshipState.currentVerse.textEn : hardshipState.currentVerse.text })
+        message: hardshipState.startLv   // 🔑 첫 마디 — 정답 첫 마디를 크게, 구절은 이어서(사슬로 이어지는 걸 보게)
+            ? t('fp_wrong', { ans: getHardshipActiveText(hardshipState.currentVerse), text: (currentLang === 'en' && hardshipState.currentVerse.textEn) ? hardshipState.currentVerse.textEn : hardshipState.currentVerse.text })
+            : t('hardship_feedback_wrong_memory', { text: (currentLang === 'en' && hardshipState.currentVerse.textEn) ? hardshipState.currentVerse.textEn : hardshipState.currentVerse.text })
     };
     if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
     renderHardshipMemoryVerse();
@@ -29304,7 +29431,7 @@ function finishHardshipSession(reason) {
         if (reason !== 'completed' || hardshipState.mode !== 'memory' ||
             hardshipState.trainingMode || hardshipState.midBossStageId ||
             hardshipState.bossStageId || hardshipState.verseCheckStageId ||
-            hardshipState.eventId || hardshipState.quickReviewStageId || hardshipState.fruitKey || hardshipState.blankDueCh) return '';
+            hardshipState.eventId || hardshipState.quickReviewStageId || hardshipState.fruitKey || hardshipState.blankDueCh || hardshipState.startLv) return '';
         const sessionDuration = getHardshipElapsedSeconds();
         const record = {
             correct: hardshipState.studiedCount,

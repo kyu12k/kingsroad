@@ -125,6 +125,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | nj3d.js `loadCity` · `cityAnims` · `wallPieces` · `models/city/*.glb` · `tools/blender/city.py` | nj3d.js | 거룩한 성 모델 — 보좌(녹보석 무지개·일곱 등불)·진주 문(큰 진주·천사)·깎은 기초석·벽옥 성벽. 모델을 다시 뽑으면 `CITY_V` |
 | nj3d.js `loadGift` · `giftAnim(k, root)` · `placeGift` · `models/gifts/*.glb` · `tools/blender/` | nj3d.js | 예물 모델 — 블렌더 로우폴리(스크립트로 뽑음), 움직일 부분은 이름 붙은 축 노드. 모델을 다시 뽑으면 `GIFT_V`를 올린다 |
 | `openBlankDueScreen()` · `_startBlankDue(ch)` · `openReviewFromHome()` | game.js:~30330 | 홈 ✍️ 백지 → 오늘 백지 차례 창(장별 절 범위) · 📖 복습 → 마지막 여정의 복습 목록 |
+| `firstPhraseOf(text, lv)` · `openFirstPhrasePick()` · `_startFirstPhrase(ch, lv)` · `startFirstPhraseNote()` · `fpRecall` | game.js:~26330 | 🔑 첫 마디의 고난(장 단위, 쉬움·보통·어려움) · 📒 오답노트(5절부터) — 고난 엔진을 `startLv`로 빌려 쓴다 (`docs/고난과-난이도.md`) |
 | `_resetLongUnstudied()` · `_blankCountsAsClear(id)` | game.js:~10790 | 30일 넘게 밀린 절은 복습 일정을 처음으로 · 백지로 써낸 절 = 그 절 일반 클리어(고난·백지 차례·오늘의 암송·열매) |
 | `_unifyJourneyMemory()` · `collectionLegacy` | game.js:~5610 | 두 여정 진도를 한 벌로(불러올 때) · 합치기 전 도감 점수 보존(체력 +3) |
 | `renderHomeTodo()` · `_todoSocial` · `_syncSocialBadges()` · `updateFriendBadge()` | game.js:~29250 | 홈 「오늘 할 일」(복습·백지·응원·길드 출석)과 친구/길드/더보기 배지. `updateNotificationBadges`가 함께 그린다 |
