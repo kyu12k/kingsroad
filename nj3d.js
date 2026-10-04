@@ -59,6 +59,7 @@
                         <button class="nj3d-wb small nj3d-tackbtn" hidden>${T('nj3d_tack')}</button>
                         <button class="nj3d-wb small nj3d-ridebtn"></button>
                         <button class="nj3d-wb small nj3d-divebtn" hidden>${T('nj3d_dive')}</button>
+                        <button class="nj3d-wb small nj3d-slidebtn" hidden>${T('nj3d_slide')}</button>
                         <button class="nj3d-wb nj3d-jump">${T('nj3d_jump')}</button>
                     </div>
                 </div>
@@ -171,9 +172,11 @@
             return e < 1 ? seabed(x, z) : h;
         }
         const stripDip = u => u >= RB ? 0 : u <= RW ? -RD : -RD * (RB - u) / (RB - RW);
+        // 땅 격자 자리 — 가까운 곳은 촘촘히, 먼 곳은 성기게. 강둑도 이 자리에서 높이를 잰다(10/4 밤: 따로 재서 휜 비탈에서 맞닿는 가장자리가 어긋나 땅 밑이 비쳤다)
+        const GRID_S = (() => { const xs = [RB]; for (let v = 1.5; v <= 20; v += 1) xs.push(v); for (let v = 22; v <= 60; v += 2) xs.push(v); for (let v = 65; v <= 150; v += 5) xs.push(v); return xs; })();
         {
             // 네 조각(물길 띠를 비움) — 가까운 곳은 촘촘히, 먼 곳은 성기게
-            const xs = [RB]; for (let v = 1.5; v <= 20; v += 1) xs.push(v); for (let v = 22; v <= 60; v += 2) xs.push(v); for (let v = 65; v <= 150; v += 5) xs.push(v);
+            const xs = GRID_S;
             const gm = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, side: THREE.DoubleSide });
             const cTop = new THREE.Color(0x2f9e58), cLow = new THREE.Color(0x3d8a48), cSand = new THREE.Color(0xc9b486), cDeep = new THREE.Color(0x1f5a5e), c = new THREE.Color();
             const n = xs.length;
@@ -333,9 +336,10 @@
         { const rg = riverCv.getContext('2d'); rg.fillStyle = '#12b3cc'; rg.fillRect(0, 0, 32, 128); rg.fillStyle = 'rgba(220,250,255,0.75)'; rg.fillRect(7, 10, 2, 34); rg.fillRect(22, 60, 2, 26); rg.fillRect(14, 96, 2, 22); }
         const rivers = [];
         // 물길 띠 — +z 방향 s0~s1, 단면 us(가로)·hs(높이), 바닥 높이는 hf(s)를 따라간다(비탈을 내려간다). 물결 무늬는 바깥으로 흐르게 v = -s/3
-        const ribbonGeo = (s0, s1, us, hs, step, hf) => {
-            const n = us.length, ns = Math.max(1, Math.ceil((s1 - s0) / step)), pos = [], uv = [], idx = [];
-            for (let k = 0; k <= ns; k++) { const sv = s0 + (s1 - s0) * k / ns, b = hf(sv); us.forEach((u, i) => { pos.push(u, b + hs[i], sv); uv.push(i / (n - 1), -sv / 3); }); }
+        const ribbonGeo = (s0, s1, us, hs, step, hf, st) => {   // st = 높이를 잴 자리(땅 격자와 맞출 때)
+            const n = us.length, ns0 = Math.max(1, Math.ceil((s1 - s0) / step)), pos = [], uv = [], idx = [];
+            const SS = st ? [s0, ...st.filter(v => v > s0 + 1e-6 && v < s1 - 1e-6), s1] : Array.from({ length: ns0 + 1 }, (_, k) => s0 + (s1 - s0) * k / ns0), ns = SS.length - 1;
+            SS.forEach(sv => { const b = hf(sv); us.forEach((u, i) => { pos.push(u, b + hs[i], sv); uv.push(i / (n - 1), -sv / 3); }); });
             for (let k = 0; k < ns; k++) for (let i = 0; i < n - 1; i++) { const a = k * n + i; idx.push(a, a + n, a + 1, a + 1, a + n, a + n + 1); }
             const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
             g.setIndex(idx); g.computeVertexNormals(); return g;
@@ -350,8 +354,9 @@
         [[0, SHORE + 0.8, sv => WT(0, sv)], [Math.PI, 150, slopeH], [Math.PI / 2, 150, slopeH], [-Math.PI / 2, 150, slopeH]].forEach(([a, end, hf]) => {
             const grp = new THREE.Group(); grp.rotation.y = a;
             const tex = new THREE.CanvasTexture(riverCv); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.encoding = THREE.sRGBEncoding;
-            const t1 = new THREE.Mesh(ribbonGeo(RB, IN_F, TR_US, TR_HS, 0.5, hf), bankGold), t2 = new THREE.Mesh(ribbonGeo(IN_F, end, TR_US, TR_HS, 1, hf), bankEarth);
+            const t1 = new THREE.Mesh(ribbonGeo(RB, IN_F, TR_US, TR_HS, 0.5, hf), bankGold), t2 = new THREE.Mesh(ribbonGeo(IN_F, end, TR_US, TR_HS, 1, hf, GRID_S), bankEarth);
             t1.receiveShadow = t2.receiveShadow = true; grp.add(t1); grp.add(t2);
+            [-RB, RB].forEach(u => grp.add(new THREE.Mesh(ribbonGeo(IN_F, end, [u, u], [0, -0.6], 1, hf, GRID_S), bankEarth)));   // 둑 가장자리 흙벽 — 남은 틈으로 땅 밑이 비치지 않게
             const [wb, wh] = waterMat(tex);
             grp.add(dual(new THREE.Mesh(ribbonGeo(RB, end, [-WW / 2, WW / 2], [WL, WL], 1, hf)), wb, wh));
             scene.add(grp); rivers.push(tex);
@@ -1247,6 +1252,8 @@
         const P = { x: 1.3, y: 0, z: 9.2, vy: 0, onGround: true, face: Math.PI };
         let deco = null;   // 🛠️ 꾸미기 중이면 상태(아래 「꾸미기」)
         let camOff = null;   // 걷기 카메라 — 순례자에서 카메라까지(이것만 부드럽게 따라간다)
+        const slideBtn = ov.querySelector('.nj3d-slidebtn');
+        let slide = null, slideCheckT = 0;   // 🛝 생명수 미끄럼 — 남쪽 강을 타고 바다까지 { v 빠르기, t, sp 물보라 }
         let walk = false, jetOn = false, camYaw = 0, camPitch = 0.12, camDist = 0.95, walkT = 0, gait = 0;
         // 팔다리가 있는 순례자 (9/29) — 엉덩이·어깨를 축으로 흔들어 걷기·달리기·점프·날기 자세를 만든다. 앞은 -z
         const pilgrim = new THREE.Group(), body = new THREE.Group(); pilgrim.add(body);
@@ -1304,10 +1311,10 @@
             }
         }
         let ripN = 0;
-        const splash = (x, z, big) => {
+        const splash = (x, z, big, quiet) => {
             const d = Math.max(Math.abs(x), Math.abs(z)), base = seaE(x, z) < 1 ? SEA_Y - WL : d <= PL ? 0 : WT(x, z);
             const r = ripples[ripN++ % ripples.length]; r.t = 0; r.big = big; r.m.position.set(x, base + WL + 0.004, z); r.m.visible = true;
-            if (typeof SoundEffect !== 'undefined' && SoundEffect.playSplash) SoundEffect.playSplash(big);
+            if (!quiet && typeof SoundEffect !== 'undefined' && SoundEffect.playSplash) SoundEffect.playSplash(big);
         };
         const walletEl = ov.querySelector('.nj3d-wallet');
         const syncWallet = () => {
@@ -1617,6 +1624,7 @@
         let diveHeld = false, diveHintShown = false;   // 🤿 잠수 — 누르고 있는 동안 내려간다(버튼 또는 C 키)
         const isUnder = () => P.y < SEA_Y - 0.03 && seaE(P.x, P.z) < 1;
         const doJump = () => {
+            if (slide) return;   // 미끄러지는 중엔 뛰지 않는다
             if (!ride.on && isUnder()) return;   // 물속 — 점프는 누르고 있는 동안 위로 헤엄(아래 walkUpdate)
             if (ride.on && kindOfMount(ride.k) === 'sub') return;   // 🚢 잠수함 — 누르는 동안 떠오른다
             if (ride.on && kindOfMount(ride.k) === 'fly') { const D = NJ_MOUNTS[ride.k] || {}; if (P.onGround) { P.vy = D.climb || 1; P.onGround = false; } return; }
@@ -1896,7 +1904,7 @@
         const setGoLabel = () => { goBtn.textContent = where === 'city' ? T('nj3d_to_sea') : T('nj3d_to_city'); };
         const placeAt = (dest) => {
             const [x, z, yaw] = SPOT[dest];
-            P.x = x; P.z = z; P.y = terrain(x, z) + 0.05; P.vy = 0; camYaw = yaw; P.face = yaw + Math.PI;
+            P.x = x; P.z = z; P.y = terrain(x, z) + 0.05; P.vy = 0; camYaw = yaw; P.face = yaw + Math.PI; slide = null;
             pilgrim.position.set(P.x, P.y, P.z);
             if (walk) camera.position.set(P.x + Math.sin(yaw) * camDist, P.y + 0.4, P.z + Math.cos(yaw) * camDist);
         };
@@ -1915,7 +1923,7 @@
         }
         setGoLabel();
         modeBtn.addEventListener('click', () => {
-            walk = !walk; controls.enabled = !walk; walkUI.hidden = !walk; pilgrim.visible = true; camOff = null;
+            walk = !walk; controls.enabled = !walk; walkUI.hidden = !walk; pilgrim.visible = true; camOff = null; slide = null; slideBtn.hidden = true;
             if (walk) { controls.autoRotate = false; camera.fov = 62; camera.near = 0.02; showHint(T('nj3d_hint_walk'), 3500); }
             else { camera.fov = 42; camera.near = 0.1; where = P.z > 25 ? 'sea' : 'city'; lookAt(where); setGoLabel(); endFish(); fishBtn.hidden = true; }
             camera.updateProjectionMatrix(); setModeLabel(); lastTouch = performance.now();
@@ -1951,7 +1959,7 @@
         const fish = { phase: 'idle', t: 0, wait: 0, x: 0, z: 0, stage: 0, tries: 0, q: null, jump: 0, from: null,
             nibbles: [], strike: 0, strikeT: 0, early: false, reel: null };   // 🎣 미니게임 (10/4) — 챔질 성공(1) · 끌어올리기 {k, hits, pos, dir, zone, spd}
         const DIP_WIN = 0.5;   // 챔질 — 찌가 쏙 들어간 뒤 이 안에 누르면 성공(넉넉히: 어르신도)
-        let fishCheckT = 0, fishCell = null, fishHinted = false;
+        let fishCheckT = 0, fishCell = null, fishHinted = false, fishHintHold = 0;   // fishHintHold — 이때까진 낚시 안내를 미룬다(미끄럼 도착 안내가 덮이지 않게)
         const endFish = (msg) => { fish.phase = 'idle'; fish.reel = null; bobber.visible = false; fishQ.hidden = true; fishQ.classList.remove('reel', 'watch', 'now'); if (msg) showHint(msg, 1800); };
         const askFish = () => {
             const q = (typeof _njFishQuestion === 'function') ? _njFishQuestion() : null;
@@ -2073,7 +2081,7 @@
                 if (show) {
                     fishBtn.innerHTML = fishCell.clear ? T('nj3d_fish_btn', { cost: FISH_COST.toLocaleString() }) : T('nj3d_fish_murky');
                     fishBtn.classList.toggle('dim', !fishCell.clear);
-                    if (!fishHinted) { fishHinted = true; showHint(T('nj3d_fish_sea_hint'), 3000); }
+                    if (!fishHinted && performance.now() > fishHintHold) { fishHinted = true; showHint(T('nj3d_fish_sea_hint'), 3000); }
                 }
             }
             if (netRing.visible) { const k = netRing.scale.x + dt * 3; netRing.scale.setScalar(k); netRing.material.opacity = Math.max(0, 0.8 - (k - 0.3) / 3); if (netRing.material.opacity <= 0) netRing.visible = false; }
@@ -3297,9 +3305,53 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             }
         }
 
+        /* 🛝 생명수 미끄럼 (10/4 사용자) — 남쪽 강물(겔 47:1·8 성전에서 나와 바다로 흐르는 강)을 워터슬라이드처럼 타고 내려가 바다에 풍덩.
+           산마루 끝~어귀 앞 강물에 서면 버튼. 비탈이 가파를수록 빨라지고(강바닥 높이 WT(0, z)의 내리막) 골짜기에선 느려진다. 조이스틱 좌우로 물길 안에서 비켜 간다.
+           바다에 닿으면 물속으로 풍덩 → 평소처럼 떠오른다(잠수도 된다) */
+        function slideStep(dt) {
+            const S = slide; S.t += dt; lastTouch = performance.now();
+            const k = inp.keys, jx = inp.jx + ((k.KeyD || k.ArrowRight) ? 1 : 0) - ((k.KeyA || k.ArrowLeft) ? 1 : 0);
+            const grade = Math.max(0, (WT(0, P.z) - WT(0, P.z + 0.3)) / 0.3);
+            S.v = Math.max(1.3, Math.min(6.5, S.v + (grade * 7 - S.v * 0.22) * dt));
+            P.z += S.v * dt;
+            P.x = Math.max(-RW * 0.8, Math.min(RW * 0.8, P.x - jx * 0.9 * dt));   // 바다를 보고 앉았으니 오른쪽 = −x
+            P.y = WT(0, P.z) + WL - 0.03; P.vy = 0; P.onGround = true; P.face = Math.PI;
+            pilgrim.position.set(P.x, P.y, P.z); pilgrim.rotation.y = P.face;
+            const ce = 1 - Math.exp(-dt * 3);
+            camYaw = angLerp(camYaw, Math.PI, ce); camPitch += (0.3 - camPitch) * ce;   // 카메라는 뒤에서 따라 내려간다
+            const L = limbs, e = Math.min(1, dt * 10), wv = Math.sin(S.t * 6) * 0.25;   // 앉아서 두 팔을 번쩍, 몸은 뒤로
+            L.hipL.rotation.x += (-1.45 - L.hipL.rotation.x) * e; L.hipR.rotation.x += (-1.45 - L.hipR.rotation.x) * e;
+            L.armL.rotation.x += (-2.6 + wv - L.armL.rotation.x) * e; L.armR.rotation.x += (-2.6 - wv - L.armR.rotation.x) * e;
+            L.armL.rotation.z += (-0.45 - L.armL.rotation.z) * e; L.armR.rotation.z += (0.45 - L.armR.rotation.z) * e;
+            body.rotation.x += (0.3 - body.rotation.x) * e; body.position.y += (0 - body.position.y) * e;
+            S.sp -= dt; if (S.sp <= 0) { S.sp = 0.12; splash(P.x, P.z, false, true); }   // 지나간 자리에 물결
+            if (seaE(P.x, P.z) < 0.995) {   // 어귀 — 바다에 풍덩
+                slide = null; P.y = SEA_Y - 0.06; P.vy = -1.0; P.onGround = false; gliding = false;
+                splash(P.x, P.z, true); showHint(T('nj3d_slide_end'), 3800); fishHintHold = performance.now() + 4500;
+            }
+        }
+        function rippleTick(dt) {
+            ripples.forEach(r => {
+                if (r.t >= 1) return;
+                r.t = Math.min(1, r.t + dt / (r.big ? 0.9 : 0.6));
+                const sc = 1 + r.t * (r.big ? 9 : 5); r.m.scale.set(sc, 1, sc);
+                r.m.material.opacity = (r.big ? 0.75 : 0.55) * (1 - r.t); if (r.t >= 1) r.m.visible = false;
+            });
+        }
+        slideBtn.addEventListener('click', () => {
+            if (!walk || slide || proc) return;
+            if (ride.on) mountDown();
+            slide = { v: 1.6, t: 0, sp: 0 }; slideBtn.hidden = true;
+            P.x = Math.max(-RW * 0.8, Math.min(RW * 0.8, P.x));
+            showHint(T('nj3d_slide_hint'), 3800); lastTouch = performance.now();
+            if (typeof SoundEffect !== 'undefined' && SoundEffect.playSplash) SoundEffect.playSplash(true);
+        });
         function walkUpdate(dt) {
             if (proc) { procUpdate(dt); return; }
+            if (slide) { slideStep(dt); rippleTick(dt); followCam(dt); return; }
             fishUpdate(dt);
+            slideCheckT -= dt;
+            if (slideCheckT <= 0) { slideCheckT = 0.25; slideBtn.hidden = !(P.onGround && Math.abs(P.x) < RB && P.z > PL - 1.5 && P.z < SHORE - 3 && !isUnder()); }   // 🛝 남쪽 강물에 섰나
             envoyCheckT -= dt;
             if (envoyCheckT <= 0) {   // 사신 곁인가 (1초에 네 번)
                 envoyCheckT = 0.25;
@@ -3410,14 +3462,13 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             L.armL.rotation.z += (zL - L.armL.rotation.z) * e; L.armR.rotation.z += (zR - L.armR.rotation.z) * e;
             body.rotation.x += (lean - body.rotation.x) * e; body.position.y += (bob - body.position.y) * Math.min(1, dt * 30);
             { const sz = !ride.on || RK.pose === 'stand' ? 0 : rk === 'bike' ? (RK.motor ? 0.18 : 0.06) : rk === 'car' ? 0.12 : rk === 'boat' ? 0.15 : 0.42; L.hipL.rotation.z += (-sz - L.hipL.rotation.z) * e; L.hipR.rotation.z += (sz - L.hipR.rotation.z) * e; }   // 탈 때는 다리를 벌린다
-            ripples.forEach(r => {
-                if (r.t >= 1) return;
-                r.t = Math.min(1, r.t + dt / (r.big ? 0.9 : 0.6));
-                const sc = 1 + r.t * (r.big ? 9 : 5); r.m.scale.set(sc, 1, sc);
-                r.m.material.opacity = (r.big ? 0.75 : 0.55) * (1 - r.t); if (r.t >= 1) r.m.visible = false;
-            });
+            rippleTick(dt);
             flames.forEach(f => { f.visible = fly; f.scale.set(0.05, 0.08 + Math.random() * 0.04, 1); });
             if (moving || fly || !P.onGround) lastTouch = performance.now();
+            followCam(dt);
+        }
+        function followCam(dt) {   // 걷기 카메라 — 미끄럼에서도 같이 쓴다
+            const MD = ride.on ? (NJ_MOUNTS[ride.k] || {}) : null;
             const Tg = new THREE.Vector3(P.x, P.y + (ride.on && MD ? 0.12 + (MD.seat || [0, 0.36])[1] * MOUNT_S : 0.17), P.z);   // 탈 때는 앉은 높이만큼(낙타는 높이 — 멀리 보인다)
             const dir = new THREE.Vector3(Math.sin(camYaw) * Math.cos(camPitch), Math.sin(camPitch), Math.cos(camYaw) * Math.cos(camPitch));
             let dist = camDist * (ride.on && MD ? (MD.camFar || 1) : 1);   // 큰 탈것(비행기·불병거·열기구)은 카메라를 뒤로 — 날개가 화면을 가렸다
