@@ -1191,8 +1191,8 @@
             };
             mk(2500, 5, scene);      // 멀리서도 보이는 풀숲 무리(기본 화질에도)
             // 발밑 풀밭 — 세계가 넓어 전체를 촘촘히 깔 수 없다(순례자 키 0.22). 보는 곳 둘레 반지름 5에만 빽빽이 깔고, 반 칸(0.5)을 옮길 때마다 다시 깐다.
-            // 칸마다 같은 씨앗이라 돌아와도 같은 자리에 같은 풀. 고급 화질 약 1.4만 포기 · 기본 8천
-            const FN = 14000, FR = 5, CELL = 0.5;
+            // 칸마다 같은 씨앗이라 돌아와도 같은 자리에 같은 풀. 고급 화질 약 4천 포기 · 기본 2천(10/4 밤 절반으로)
+            const FN = 8000, FR = 5, CELL = 0.5;   // 10/4 밤: 1.4만 → 8천(칸당 포기 수를 절반으로 — 사용자: 성 밖에서 여전히 끊긴다, 풀이 너무 많다)
             const near = new THREE.InstancedMesh(tuft, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, side: THREE.DoubleSide }), FN);
             near.setColorAt(0, new THREE.Color(0x5a8a3a));   // 색 버퍼를 처음부터 — 없이 그리면 셰이더가 색 없이 굳어 풀이 하얗게 나왔다
             near.frustumCulled = false; near.count = 0; scene.add(near);
@@ -1223,7 +1223,7 @@
             grassFollow = (px, pz, force) => {
                 const ix0 = Math.floor(px / CELL), iz0 = Math.floor(pz / CELL), key = ix0 + ',' + iz0 + (HIGH ? 'h' : 'b');
                 if (key === lastKey && !force) return; lastKey = key;
-                const per = HIGH ? 45 : 26, R = Math.ceil(FR / CELL), qk = HIGH ? 'h' : 'b'; let n = 0;
+                const per = HIGH ? 24 : 14, R = Math.ceil(FR / CELL), qk = HIGH ? 'h' : 'b'; let n = 0;
                 if (qk !== cacheQ) { cellCache.clear(); cacheQ = qk; }   // 화질이 바뀌면 칸마다 포기 수가 달라진다
                 for (let dz = -R; dz <= R; dz++) for (let dx = -R; dx <= R; dx++) {
                     if (dx * dx + dz * dz > R * R) continue;
@@ -1232,7 +1232,10 @@
                     MA.set(c.m, n * 16); CA.set(c.c, n * 3); n += c.n;
                 }
                 if (cellCache.size > 1600) cellCache.forEach((c, k) => { if (Math.abs(c.ix - ix0) > 2 * R || Math.abs(c.iz - iz0) > 2 * R) cellCache.delete(k); });   // 멀리 떠난 칸은 잊는다
-                near.count = n; near.instanceMatrix.needsUpdate = true; near.instanceColor.needsUpdate = true;
+                near.count = n;
+                // 쓰는 앞부분만 그래픽 칩으로 보낸다 — 전엔 다시 깔 때마다 버퍼 전체(약 1MB)를 보냈다
+                near.instanceMatrix.updateRange.offset = 0; near.instanceMatrix.updateRange.count = n * 16; near.instanceMatrix.needsUpdate = true;
+                near.instanceColor.updateRange.offset = 0; near.instanceColor.updateRange.count = n * 3; near.instanceColor.needsUpdate = true;
             };
         }
         extras.visible = HIGH;
