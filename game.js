@@ -616,6 +616,11 @@ const LANG = {
         nj3d_fish_again: '놓칠 뻔했어요 — 한 번 더!',
         nj3d_fish_miss: '물고기가 달아났어요',
         nj3d_fish_got: '🐟 {name}을(를) 낚았어요 · 가치 {n}',
+        nj3d_fish_watch: '👀 찌를 지켜보세요 — 쏙 들어가는 순간 「챔질」!', nj3d_fish_now: '⚡ 지금! 챔질!',
+        nj3d_fish_strike_btn: '🎣 챔질!', nj3d_fish_reel_btn: '🎣 감기!',
+        nj3d_fish_early: '앗, 살짝 건드린 거였어요 — 쏙 들어갈 때 눌러요', nj3d_fish_strike_ok: '✨ 정확한 챔질!', nj3d_fish_strike_late: '걸렸어요! (챔질은 조금 늦었어요)',
+        nj3d_fish_reel_head: '🎣 줄을 감아요 — 표시가 <b>초록 칸</b>에 올 때 눌러요 (세 번)',
+        nj3d_fish_bonus1: ' · ✨ 손맛 보너스', nj3d_fish_bonus2: ' · ✨✨ 완벽한 손맛 — 한 단계 큰 물고기!',
         nj3d_fish_left: '그물을 거뒀어요',
         nj3d_fish_sea_hint: '맑은 바다 위에 서면 그물을 던질 수 있어요 (겔 47:10)',
         gift_talk: '🗣 {name}의 사신',
@@ -1767,6 +1772,11 @@ const LANG = {
         nj3d_fish_again: 'Almost lost it — once more!',
         nj3d_fish_miss: 'The fish got away',
         nj3d_fish_got: '🐟 Caught a {name} · worth {n}',
+        nj3d_fish_watch: '👀 Watch the float — strike the moment it dips!', nj3d_fish_now: '⚡ Now! Strike!',
+        nj3d_fish_strike_btn: '🎣 Strike!', nj3d_fish_reel_btn: '🎣 Reel!',
+        nj3d_fish_early: 'Just a nibble — wait for the dip', nj3d_fish_strike_ok: '✨ Perfect strike!', nj3d_fish_strike_late: 'Hooked! (a little late)',
+        nj3d_fish_reel_head: '🎣 Reel in — tap when the marker is in the <b>green</b> (three times)',
+        nj3d_fish_bonus1: ' · ✨ nice handling', nj3d_fish_bonus2: ' · ✨✨ perfect — one size bigger!',
         nj3d_fish_left: 'Net pulled in',
         nj3d_fish_sea_hint: 'Stand on clear water to cast a net (Ezek 47:10)',
         gift_talk: '🗣 Envoy of {name}',
@@ -7850,7 +7860,7 @@ function _seaRiverEnd(containerRect, scrollTop) {
    물고기 = 구절 길이 점수(0~3) + 바다 깊이 점수(발목 0 ~ 헤엄칠 물 3) → 7단계 14종, 값 1·2·3·5·8·13·20 (사용자 9/30 — "정어리뿐인가?")
    긴 구절을 떠올릴수록, 먼 바다로 나갈수록 큰 물고기. 종류별로 모으고(njFishBag) 값은 njFish에 합산 — 만국의 예물을 받을 때 쓴다(다음 단계)
    이 떠올리기는 고르기(4지)라 백지레벨·일지에는 넣지 않는다(인출 기록을 흐리지 않게) */
-const NJ_FISH_COST = 10000;   // 2,000은 너무 싸다(사용자 9/30)
+const NJ_FISH_COST = 1000;    // 10/4 사용자: 1만은 문턱이 너무 높다(보석 수입 중앙값 하루 100 — 낚시한 사람 1명, 포도·예물 0명) → 1천, 예물 값 ×5 (9/30엔 2천 → 1만이었다)
 // 점수(0~6)마다 두 종류 — [키, 한국어, 영어]. 값은 점수마다 같다
 const NJ_FISH_KINDS = [
     [['anchovy', '멸치', 'anchovy'], ['smelt', '빙어', 'smelt']],
@@ -7873,9 +7883,12 @@ function _njFishPay() {
     saveGameData();
     return true;
 }
-function _njFishGot(stage, lenTier) {
-    const sc = Math.max(0, Math.min(6, (stage || 0) + (lenTier || 0)));
-    const pair = NJ_FISH_KINDS[sc], k = pair[Math.floor(Math.random() * pair.length)], v = NJ_FISH_VALUE[sc];
+/* half = 🎣 미니게임 성공 수(챔질·끌어올리기, 10/4) — 1이면 가치가 다음 단계와의 가운데(반 단계), 2면 한 단계 큰 물고기. 최대 한 단계(예물 값이 무너지지 않게) */
+function _njFishGot(stage, lenTier, half) {
+    const base = Math.max(0, Math.min(6, (stage || 0) + (lenTier || 0))), h = Math.max(0, Math.min(2, half || 0));
+    const sc = Math.min(6, base + (h === 2 ? 1 : 0));
+    const pair = NJ_FISH_KINDS[sc], k = pair[Math.floor(Math.random() * pair.length)];
+    const v = h === 1 ? Math.round((NJ_FISH_VALUE[base] + NJ_FISH_VALUE[Math.min(6, base + 1)]) / 2) : NJ_FISH_VALUE[sc];
     njFish = (njFish || 0) + v;
     if (!njFishBag || typeof njFishBag !== 'object') njFishBag = {};
     njFishBag[k[0]] = (njFishBag[k[0]] || 0) + 1;
@@ -7913,7 +7926,7 @@ function _njFishQuestion() {
 /* ══ 🍇 포도원 (2026-09-30) — docs/새-예루살렘.md 「낚시 · 농사 · 만국의 예물」 ══
    소성된 나라(풀밭 이상)에만, 나라마다 한 그루, 한 사람 여섯 그루까지. 💎로 심고 3일 뒤 거둔다.
    물 주기 = 그 사흘 동안 백지로 한 절이라도 써낸 날(njBlankDays — 진주와 같은 기록). 거두는 양 = 4 + 물 준 날 × 3 (매일이면 13, 한 번도 없으면 4) */
-const NJ_VINE_COST = 20000, NJ_VINE_GROW_DAYS = 3, NJ_VINE_MAX = 6;
+const NJ_VINE_COST = 2000, NJ_VINE_GROW_DAYS = 3, NJ_VINE_MAX = 6;   // 10/4 2만 → 2천 (낚시와 함께)
 function _njGrapesAvail() { return Math.max(0, (njGrapes || 0) - (njGrapesSpent || 0)); }
 function _njDayPlus(ds, k) { const [y, m, d] = ds.split('-').map(Number); return _getLocalDateStr(new Date(y, m - 1, d + k)); }
 function _njVineInfo(v) {
@@ -7955,17 +7968,17 @@ function _njVineHarvest(id) {
    21:24, 26 「땅의 왕들이 자기 영광을 가지고 그리로 들어가리라 … 만국의 영광과 존귀를 가지고」 · 사 66:20 · 60:6, 9.
    3D 걷기로 소성된 나라 해안의 사신에게 가서 청한다. 그 장의 보스전을 통과해야 목록에 열리고(암송 = 열쇠), 🐟·🍇로 값을 치른다(물고기부터).
    예물은 세마포에 싸여 행렬로 성까지 온 뒤 성 둘레 자리에 선다. 처음 10가지 — 모양은 nj3d.js giftModel */
-const NJ_OFFERINGS = [
-    { k: 'whitestone', ch: 2,  ref: '2:17',  ko: '흰 돌',            en: 'White stone',               cost: 10,  size: 1 },
-    { k: 'palm',       ch: 7,  ref: '7:9',   ko: '종려 가지',        en: 'Palm branches',             cost: 20,  size: 1 },
-    { k: 'morningstar',ch: 22, ref: '22:16', ko: '광명한 새벽별',    en: 'The bright morning star',   cost: 20,  size: 1 },
-    { k: 'harp',       ch: 15, ref: '15:2',  ko: '유리 바다 가의 거문고', en: 'Harp by the sea of glass', cost: 30, size: 2 },
-    { k: 'menorah',    ch: 1,  ref: '1:12',  ko: '일곱 금 촛대',     en: 'Seven golden lampstands',   cost: 40,  size: 2 },
-    { k: 'olives',     ch: 11, ref: '11:4',  ko: '두 감람나무',      en: 'Two olive trees',           cost: 40,  size: 2 },
-    { k: 'winepress',  ch: 14, ref: '14:19', ko: '포도주 틀',        en: 'The winepress',             cost: 50,  size: 2 },
-    { k: 'rainbow',    ch: 4,  ref: '4:3',   ko: '보좌를 두른 무지개', en: 'Rainbow around the throne', cost: 60,  size: 3 },
-    { k: 'millstone',  ch: 18, ref: '18:21', ko: '바다에 던진 큰 맷돌', en: 'Great millstone cast into the sea', cost: 70, size: 3 },
-    { k: 'dragon',     ch: 20, ref: '20:2',  ko: '쇠사슬로 결박된 용', en: 'The dragon bound with a chain', cost: 100, size: 3 },
+const NJ_OFFERINGS = [   // 값(🐟+🍇) — 10/4 ×5: 그물·포도 값을 1/10로 내리며 예물 값은 ×5 → 💎로 따지면 예물이 절반 값
+    { k: 'whitestone', ch: 2,  ref: '2:17',  ko: '흰 돌',            en: 'White stone',               cost: 50,  size: 1 },
+    { k: 'palm',       ch: 7,  ref: '7:9',   ko: '종려 가지',        en: 'Palm branches',             cost: 100,  size: 1 },
+    { k: 'morningstar',ch: 22, ref: '22:16', ko: '광명한 새벽별',    en: 'The bright morning star',   cost: 100,  size: 1 },
+    { k: 'harp',       ch: 15, ref: '15:2',  ko: '유리 바다 가의 거문고', en: 'Harp by the sea of glass', cost: 150, size: 2 },
+    { k: 'menorah',    ch: 1,  ref: '1:12',  ko: '일곱 금 촛대',     en: 'Seven golden lampstands',   cost: 200,  size: 2 },
+    { k: 'olives',     ch: 11, ref: '11:4',  ko: '두 감람나무',      en: 'Two olive trees',           cost: 200,  size: 2 },
+    { k: 'winepress',  ch: 14, ref: '14:19', ko: '포도주 틀',        en: 'The winepress',             cost: 250,  size: 2 },
+    { k: 'rainbow',    ch: 4,  ref: '4:3',   ko: '보좌를 두른 무지개', en: 'Rainbow around the throne', cost: 300,  size: 3 },
+    { k: 'millstone',  ch: 18, ref: '18:21', ko: '바다에 던진 큰 맷돌', en: 'Great millstone cast into the sea', cost: 350, size: 3 },
+    { k: 'dragon',     ch: 20, ref: '20:2',  ko: '쇠사슬로 결박된 용', en: 'The dragon bound with a chain', cost: 500, size: 3 },
 ];
 // 성 둘레 자리 16 — 산마루(성 밖 6 ~ 산마루 끝 12) 안, 물길 띠와 문 경사로를 비켜서
 const NJ_GIFT_SLOTS = (() => {
@@ -7978,7 +7991,7 @@ function _njOfferUnlocked(o) { return (typeof stageMastery !== 'undefined' && (s
 function _njOfferName(o) { return currentLang === 'en' ? o.en : o.ko; }
 function _njFreeSlot() { const used = new Set((njGifts || []).filter(x => x.x == null && !x.st).map(x => x.slot)); for (let i = 0; i < NJ_GIFT_SLOTS.length; i++) if (!used.has(i)) return i; return -1; }
 /* 🪴 꾸밈 아이템 (2026-10-01) — 계시록과 상관없는 평범한 것들로 성 둘레를 꾸민다. 💎로 바로 산다(사용자: "꽤 저렴해야").
-   예물(🐟·🍇 10~100 = 보석 수만~수십만)과 달리 그물 한 번(💎10,000) 근처. 모델은 models/decor/*.glb (tools/blender/decor.py).
+   예물(🐟·🍇 50~500)과 달리 💎로 바로 산다(10/4 그물은 1천으로 내렸다). 모델은 models/decor/*.glb (tools/blender/decor.py).
    놓기·옮기기·돌리기·치우기는 3D 「꾸미기」 화면(nj3d.js deco) — 예물도 같은 화면에서 옮긴다 */
 const NJ_DECOR = [
     { k: 'bench',     ko: '나무 벤치',   en: 'Bench',          cost: 3000 },

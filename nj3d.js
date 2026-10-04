@@ -1894,9 +1894,11 @@
         netRing.visible = false; scene.add(netRing);
         const caught = new THREE.Sprite(new THREE.SpriteMaterial({ map: fishEmoji, transparent: true, depthWrite: false }));
         caught.scale.set(0.35, 0.35, 1); caught.visible = false; scene.add(caught);
-        const fish = { phase: 'idle', t: 0, wait: 0, x: 0, z: 0, stage: 0, tries: 0, q: null, jump: 0, from: null };
+        const fish = { phase: 'idle', t: 0, wait: 0, x: 0, z: 0, stage: 0, tries: 0, q: null, jump: 0, from: null,
+            nibbles: [], strike: 0, strikeT: 0, early: false, reel: null };   // 🎣 미니게임 (10/4) — 챔질 성공(1) · 끌어올리기 {k, hits, pos, dir, zone, spd}
+        const DIP_WIN = 0.5;   // 챔질 — 찌가 쏙 들어간 뒤 이 안에 누르면 성공(넉넉히: 어르신도)
         let fishCheckT = 0, fishCell = null, fishHinted = false;
-        const endFish = (msg) => { fish.phase = 'idle'; bobber.visible = false; fishQ.hidden = true; if (msg) showHint(msg, 1800); };
+        const endFish = (msg) => { fish.phase = 'idle'; fish.reel = null; bobber.visible = false; fishQ.hidden = true; fishQ.classList.remove('reel', 'watch', 'now'); if (msg) showHint(msg, 1800); };
         const askFish = () => {
             const q = (typeof _njFishQuestion === 'function') ? _njFishQuestion() : null;
             if (!q) { endFish(T('nj3d_fish_miss')); return; }
@@ -1910,21 +1912,81 @@
             fishQ.hidden = false;
             fishQ.querySelectorAll('button[data-i]').forEach(b => b.onclick = () => {
                 const ok = q.choices[+b.dataset.i] === q.answer;
-                if (ok) {
-                    const r = (typeof _njFishGot === 'function') ? _njFishGot(fish.stage, q.lenTier || 0) : { value: 1, name: '', score: 0 };
-                    caught.scale.setScalar(0.28 + (r.score || 0) * 0.09);   // 큰 물고기는 크게 뛰어오른다
-                    fishQ.hidden = true; fish.phase = 'jump'; fish.jump = 0; fish.from = bobber.position.clone(); bobber.visible = false; caught.visible = true;
-                    splash(fish.x, fish.z, true); syncWallet();
-                    showHint(T('nj3d_fish_got', { name: r.name, n: r.value }), 2600);
-                    if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
-                } else {
+                if (ok) startReel();   // 🎣 맞혔으면 끌어올리기(게이지) — 낚느냐는 퀴즈가 정했고, 이건 크기 보너스만
+                else {
                     fish.tries--;
                     if (fish.tries > 0) askFish(); else { splash(fish.x, fish.z, false); endFish(T('nj3d_fish_miss')); }
                 }
             });
         };
+        // ── 🎣 끌어올리기 (10/4 사용자) — 막대 위를 오가는 표시가 초록 칸에 올 때 세 번 누른다. 두 번 이상 맞히면 성공.
+        //    큰 물고기(입질 세기)일수록 표시가 빠르다. 놓쳐도 물고기는 잃지 않는다 — 크기 보너스만
+        const REEL_N = 3;
+        const reelZone = () => { const w = 0.24; const a = 0.08 + Math.random() * (0.92 - w - 0.08); return [a, a + w]; };
+        function renderReel() {
+            const r = fish.reel; if (!r) return;
+            const dots = Array.from({ length: REEL_N }, (_, i) => `<span class="nj3d-reel-dot ${i < r.res.length ? (r.res[i] ? 'ok' : 'no') : ''}"></span>`).join('');
+            fishQ.innerHTML = `<div class="nj3d-fishq-head">${T('nj3d_fish_reel_head')}</div>
+                <div class="nj3d-reel-bar"><div class="nj3d-reel-zone" style="left:${r.zone[0] * 100}%;width:${(r.zone[1] - r.zone[0]) * 100}%"></div><div class="nj3d-reel-mark"></div></div>
+                <div class="nj3d-reel-dots">${dots}</div>`;
+            r.mark = fishQ.querySelector('.nj3d-reel-mark'); r.bar = fishQ.querySelector('.nj3d-reel-bar');
+            fishQ.onpointerdown = e => { e.preventDefault(); reelTap(); };
+        }
+        function startReel() {
+            const pot = fish.stage + ((fish.q && fish.q.lenTier) || 0);
+            fish.phase = 'reel'; fish.t = 0;
+            fish.reel = { res: [], pos: Math.random(), dir: 1, zone: reelZone(), spd: 0.75 + pot * 0.12, flash: 0 };
+            fishQ.classList.remove('watch', 'now'); fishQ.classList.add('reel'); fishQ.hidden = false;
+            bobber.visible = false; renderReel(); syncFishBtn();
+        }
+        function reelTap() {
+            const r = fish.reel; if (!r || fish.phase !== 'reel') return;
+            const ok = r.pos >= r.zone[0] && r.pos <= r.zone[1];
+            r.res.push(ok); splash(fish.x, fish.z, ok);
+            if (typeof SoundEffect !== 'undefined') { if (ok && SoundEffect.playCorrect) SoundEffect.playCorrect(); else if (!ok && SoundEffect.playWrong) SoundEffect.playWrong(); }
+            if (r.res.length >= REEL_N) { landFish(); return; }
+            r.zone = reelZone(); renderReel();
+        }
+        function landFish() {   // 낚음 — 챔질·끌어올리기 성공 하나당 반 단계(둘 다면 한 단계), 최대 한 단계
+            const reelOk = !!(fish.reel && fish.reel.res.filter(Boolean).length >= 2);
+            const half = (fish.strike ? 1 : 0) + (reelOk ? 1 : 0);
+            const q = fish.q || {};
+            const r = (typeof _njFishGot === 'function') ? _njFishGot(fish.stage, q.lenTier || 0, half) : { value: 1, name: '', score: 0 };
+            caught.scale.setScalar(0.28 + (r.score || 0) * 0.09);   // 큰 물고기는 크게 뛰어오른다
+            fishQ.hidden = true; fishQ.classList.remove('reel'); fishQ.onpointerdown = null; fish.reel = null;
+            fish.phase = 'jump'; fish.jump = 0; fish.from = bobber.position.clone(); fish.from.y = SEA_Y; bobber.visible = false; caught.visible = true;
+            splash(fish.x, fish.z, true); syncWallet(); syncFishBtn();
+            const bonus = half === 2 ? T('nj3d_fish_bonus2') : half === 1 ? T('nj3d_fish_bonus1') : '';
+            showHint(T('nj3d_fish_got', { name: r.name, n: r.value }) + bonus, 2800);
+            if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
+        }
+        // ── 🎣 챔질 (10/4 사용자) — 찌가 살짝살짝 흔들리다(가짜 입질) 쏙 가라앉는 순간 누른다. 이르거나 늦어도 물고기는 걸린다
+        function syncFishBtn() {
+            if (fish.phase === 'wait' || fish.phase === 'dip') { fishBtn.hidden = false; fishBtn.classList.remove('dim'); fishBtn.classList.add('act'); fishBtn.innerHTML = T('nj3d_fish_strike_btn'); }
+            else if (fish.phase === 'reel') { fishBtn.hidden = false; fishBtn.classList.remove('dim'); fishBtn.classList.add('act'); fishBtn.innerHTML = T('nj3d_fish_reel_btn'); }
+            else fishBtn.classList.remove('act');
+        }
+        function strikeTap() {
+            if (fish.phase === 'wait') {   // 너무 이름 — 보너스만 없다
+                if (!fish.early) { fish.early = true; showHint(T('nj3d_fish_early'), 1400); }
+                return;
+            }
+            if (fish.phase === 'dip') {
+                fish.strike = (!fish.early && fish.strikeT <= DIP_WIN) ? 1 : 0;
+                showHint(T(fish.strike ? 'nj3d_fish_strike_ok' : 'nj3d_fish_strike_late'), 1400);
+                if (fish.strike && typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
+                hookFish();
+            }
+        }
+        function hookFish() {   // 걸었다 → 빈칸 퀴즈
+            fish.phase = 'bite'; fish.t = 0; fishQ.classList.remove('watch', 'now');
+            fishBtn.hidden = true; fishBtn.classList.remove('act');
+            askFish();
+        }
         fishBtn.addEventListener('pointerdown', e => {
             e.preventDefault();
+            if (fish.phase === 'wait' || fish.phase === 'dip') { strikeTap(); return; }   // 🎣 챔질
+            if (fish.phase === 'reel') { reelTap(); return; }                          // 🎣 감기
             if (fish.phase !== 'idle' || !fishCell) return;
             if (!fishCell.clear) { showHint(T('nj3d_fish_murky'), 1600); return; }
             const gems = (typeof myGems !== 'undefined') ? myGems : 0;
@@ -1936,9 +1998,13 @@
             if (seaE(fish.x, fish.z) >= 1) { fish.x = P.x; fish.z = P.z; }
             const cc = cellAt(fish.x, fish.z) || fishCell;
             fish.stage = cc.stage; fish.phase = 'wait'; fish.t = 0; fish.wait = 1.6 + Math.random() * 2.2; fish.tries = 2;
+            fish.strike = 0; fish.early = false; fish.strikeT = 0; fish.reel = null;
+            fish.nibbles = Array.from({ length: Math.floor(Math.random() * 3) }, () => 0.5 + Math.random() * Math.max(0.3, fish.wait - 0.9)).sort((a, b) => a - b);   // 가짜 입질 — 살짝 흔들림
+            fishQ.innerHTML = `<div class="nj3d-fishq-head">${T('nj3d_fish_watch')}</div>`; fishQ.onpointerdown = null;
+            fishQ.classList.remove('reel', 'now'); fishQ.classList.add('watch'); fishQ.hidden = false; syncFishBtn();
             bobber.position.set(fish.x, SEA_Y + 0.03, fish.z); bobber.visible = true;
             netRing.position.set(fish.x, SEA_Y + 0.02, fish.z); netRing.visible = true; netRing.scale.setScalar(0.3); netRing.material.opacity = 0.8;
-            splash(fish.x, fish.z, false); showHint(T('nj3d_fish_cast'), 1600);
+            splash(fish.x, fish.z, false);
         });
         function fishUpdate(dt) {
             // 발밑 물칸을 1초에 네 번만 본다
@@ -1947,7 +2013,9 @@
                 fishCheckT = 0.25;
                 fishCell = (P.onGround && !gliding) ? cellAt(P.x, P.z) : null;
                 const show = !!fishCell && fish.phase === 'idle';
-                fishBtn.hidden = !show;
+                const mini = fish.phase === 'wait' || fish.phase === 'dip' || fish.phase === 'reel';   // 🎣 챔질·감기 중엔 버튼이 그 일을 한다
+                if (mini) syncFishBtn();
+                fishBtn.hidden = mini ? false : !show;
                 if (show) {
                     fishBtn.innerHTML = fishCell.clear ? T('nj3d_fish_btn', { cost: FISH_COST.toLocaleString() }) : T('nj3d_fish_murky');
                     fishBtn.classList.toggle('dim', !fishCell.clear);
@@ -1955,15 +2023,26 @@
                 }
             }
             if (netRing.visible) { const k = netRing.scale.x + dt * 3; netRing.scale.setScalar(k); netRing.material.opacity = Math.max(0, 0.8 - (k - 0.3) / 3); if (netRing.material.opacity <= 0) netRing.visible = false; }
-            if (fish.phase === 'wait' || fish.phase === 'bite') {
+            if (fish.phase === 'wait' || fish.phase === 'dip' || fish.phase === 'bite') {
                 fish.t += dt;
                 if (Math.hypot(P.x - fish.x, P.z - fish.z) > 3.5) { endFish(T('nj3d_fish_left')); return; }   // 멀리 가면 그물을 거둔다
-                const bob = fish.phase === 'bite' ? Math.sin(fish.t * 18) * 0.03 - 0.02 : Math.sin(fish.t * 3) * 0.008;
+                let bob = Math.sin(fish.t * 3) * 0.008;
+                if (fish.phase === 'wait') { for (const nt of fish.nibbles) { const d = fish.t - nt; if (d > 0 && d < 0.22) bob -= Math.sin(d / 0.22 * Math.PI) * 0.018; } }   // 가짜 입질 — 살짝 톡
+                if (fish.phase === 'dip') { fish.strikeT += dt; bob = -0.07 + Math.sin(fish.t * 22) * 0.008; if (fish.strikeT > DIP_WIN + 0.7) { fish.strike = 0; showHint(T('nj3d_fish_strike_late'), 1400); hookFish(); } }   // 안 누르면 늦은 챔질로 넘어간다
+                if (fish.phase === 'bite') bob = Math.sin(fish.t * 18) * 0.03 - 0.02;
                 bobber.position.y = SEA_Y + 0.03 + bob;
-                if (fish.phase === 'wait' && fish.t > fish.wait) {
-                    fish.phase = 'bite'; fish.t = 0; splash(fish.x, fish.z, false);
-                    askFish();
+                if (fish.phase === 'wait' && fish.t > fish.wait) {   // 쏙! — 진짜 입질
+                    fish.phase = 'dip'; fish.strikeT = 0; splash(fish.x, fish.z, true);
+                    fishQ.innerHTML = `<div class="nj3d-fishq-head now">${T('nj3d_fish_now')}</div>`; fishQ.classList.add('now');
+                    if (typeof SoundEffect !== 'undefined' && SoundEffect.playClick) SoundEffect.playClick();
                 }
+            }
+            if (fish.phase === 'reel' && fish.reel) {   // 끌어올리기 — 표시가 오간다, 물고기가 몸부림친다
+                const r = fish.reel; fish.t += dt;
+                if (Math.hypot(P.x - fish.x, P.z - fish.z) > 3.5) { landFish(); return; }   // 멀리 가도 이미 걸린 물고기는 낚는다
+                r.pos += r.dir * r.spd * dt; if (r.pos > 1) { r.pos = 2 - r.pos; r.dir = -1; } else if (r.pos < 0) { r.pos = -r.pos; r.dir = 1; }
+                if (r.mark) r.mark.style.left = (r.pos * 100) + '%';
+                if (Math.floor(fish.t * 2.5) !== Math.floor((fish.t - dt) * 2.5)) splash(fish.x + (Math.random() - 0.5) * 0.3, fish.z + (Math.random() - 0.5) * 0.3, false);
             }
             if (fish.phase === 'jump') {   // 낚은 물고기가 순례자에게로 뛰어오른다
                 fish.jump += dt / 0.8;

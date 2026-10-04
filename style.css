@@ -7172,3 +7172,16 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .bso-blank-reviews { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: rgba(155,89,182,0.12); border: 1px solid rgba(155,89,182,0.4); color: #6c3483; font-size: 0.82rem; line-height: 1.5; cursor: pointer; }
 
 .rv-verse-blank { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px; background: rgba(155,89,182,0.25); color: #e3c6f0; font-size: 0.78rem; font-weight: 700; }
+
+/* 🎣 낚시 미니게임 — 챔질 · 끌어올리기 (2026-10-04) */
+.nj3d-wb.nj3d-fishbtn.act { background: linear-gradient(135deg, #f2b632, #e8862e); color: #2b1600; font-weight: 800; box-shadow: 0 0 0 3px rgba(255,220,130,0.45); }
+.nj3d-fishq.watch, .nj3d-fishq.now { pointer-events: none; text-align: center; }
+.nj3d-fishq.now { background: rgba(232,134,46,0.92); }
+.nj3d-fishq-head.now { color: #fff; font-size: 1.1rem; }
+.nj3d-fishq.reel { cursor: pointer; touch-action: none; }
+.nj3d-reel-bar { position: relative; height: 26px; margin-top: 10px; border-radius: 13px; background: #0f3440; overflow: hidden; }
+.nj3d-reel-zone { position: absolute; top: 0; bottom: 0; background: rgba(46, 204, 113, 0.75); border-radius: 13px; }
+.nj3d-reel-mark { position: absolute; top: -2px; bottom: -2px; width: 6px; margin-left: -3px; background: #fff; border-radius: 3px; box-shadow: 0 0 6px rgba(255,255,255,0.9); }
+.nj3d-reel-dots { display: flex; justify-content: center; gap: 8px; margin-top: 8px; }
+.nj3d-reel-dot { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.18); }
+.nj3d-reel-dot.ok { background: #2ecc71; } .nj3d-reel-dot.no { background: #e74c3c; }
