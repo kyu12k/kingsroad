@@ -26122,10 +26122,12 @@ function closeProfileNudge(openProfile) {
 /* 🔒 내 기록 지키기 (2026-10-06) — 번호는 있는데 구글 연결이 안 된 사람에게, 5·20·50·100·200절째 클리어 직후 단계마다 한 번.
    실측: 1절+ 978명 중 구글 4%, 30일 안 활동한 50절+도 36%. 로그인이 풀리거나 기기를 바꾸면 새 익명 계정이 생겨 같은 번호 사본이 쌓였다(#5850 9개).
    보상 없음 — 기록을 지키는 일이라 이유가 충분하고, 보상을 걸면 지킬 것 없는 사람까지 연결한다.
-   앱 안 브라우저(카톡 등)는 구글이 로그인을 막고, 기록도 그 앱 안에만 있어 옮기라고 할 수 없다 → 띄우지 않고 'inapp'만 남긴다 */
+   카톡·인스타 등 앱 안 창은 구글이 로그인을 막고, 기록도 그 앱 안에만 있어 옮기라고 할 수 없다 → 띄우지 않고 'inapp'만 남긴다(텔레그램은 된다) */
 const GOOGLE_NUDGE_LV = [5, 20, 50, 100, 200];
 function _googleNudgeLv() { const n = _getClearedVerseCount(); let lv = 0; GOOGLE_NUDGE_LV.forEach(m => { if (n >= m) lv = m; }); return lv; }
 function _googleNudgeNoteLinked() { if (googleNudge && !googleNudge.ok && isGoogleLinked()) { googleNudge.ok = Date.now(); saveGameData(); } }
+/* 구글이 로그인을 막는 앱 안 창 — 텔레그램은 뺀다(10/6 안드로이드 텔레그램 안에서 연결 끝까지 확인: 기본 브라우저(삼성 인터넷) 창을 빌려 연다) */
+function _googleBlockedBrowser() { return /FBAN|FBAV|Instagram|Line\/|KAKAOTALK/i.test(navigator.userAgent || ''); }
 function _googleNudgeEligible() {
     if (typeof auth === 'undefined' || !auth || !auth.currentUser || isGoogleLinked()) return false;
     if (!myTag || myTag === '0000') return false;   // 번호 전엔 프로필 안내가 먼저
@@ -26136,7 +26138,7 @@ function maybeShowGoogleNudge(attempt) {
     _googleNudgeNoteLinked();
     if (!_googleNudgeEligible()) return;
     const lv = _googleNudgeLv(); if (googleNudge && (googleNudge.lv | 0) >= lv) return;
-    if (_isInAppBrowser()) { googleNudge = Object.assign({}, googleNudge, { lv, at: Date.now(), a: 'inapp' }); saveGameData(); return; }
+    if (_googleBlockedBrowser()) { googleNudge = Object.assign({}, googleNudge, { lv, at: Date.now(), a: 'inapp' }); saveGameData(); return; }
     const busy = (typeof isMilestoneShowing !== 'undefined' && isMilestoneShowing)
         || document.querySelector('.modal-overlay.active') || document.getElementById('profile-nudge-modal') || document.getElementById('google-nudge-modal');
     if (busy) { if (attempt < 4) setTimeout(() => maybeShowGoogleNudge(attempt + 1), 2500); return; }
@@ -31872,7 +31874,7 @@ function renderHomeTodo() {
       if (gf.length) h += chip('🎁', t('todo_gift'), act, act === 0, 'openGiftBasket()'); }   // 🎁 받은 나눔 열매
     if (S.inGuild) h += chip('⚔️', t('todo_attend'), 0, S.attended, 'openGuildScreen()');
     _googleNudgeNoteLinked();
-    if (_googleNudgeEligible() && !_isInAppBrowser()) h += chip('🔒', t('todo_protect'), 0, false, 'googleNudgeLink()');   // 🔒 구글 연결 전까지
+    if (_googleNudgeEligible() && !_googleBlockedBrowser()) h += chip('🔒', t('todo_protect'), 0, false, 'googleNudgeLink()');   // 🔒 구글 연결 전까지
     el.innerHTML = `<div class="home-todo-title">${t('todo_title')}</div><div class="home-todo-chips">${h}</div>`;
 }
 
