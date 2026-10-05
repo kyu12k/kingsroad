@@ -3360,7 +3360,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
 
         /* 🛝 생명수 미끄럼 (10/4 사용자) — 남쪽 강물(겔 47:1·8 성전에서 나와 바다로 흐르는 강)을 워터슬라이드처럼 타고 내려가 바다에 풍덩.
            산마루 끝~어귀 앞 강물에 서면 버튼. 비탈이 가파를수록 빨라지고(강바닥 높이 WT(0, z)의 내리막) 골짜기에선 느려진다. 조이스틱 좌우로 물길 안에서 비켜 간다.
-           바다에 닿으면 물속으로 풍덩 → 평소처럼 떠오른다(잠수도 된다) */
+           바다에 닿으면 물속으로 풍덩 → 그 깊이에 머문다(점프로 헤엄쳐 오르고, 잠수로 더 내려간다) */
         function slideStep(dt) {
             const S = slide; S.t += dt; lastTouch = performance.now();
             const k = inp.keys, jx = inp.jx + ((k.KeyD || k.ArrowRight) ? 1 : 0) - ((k.KeyA || k.ArrowLeft) ? 1 : 0);
@@ -3476,7 +3476,10 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             }
             const underNow = !ride.on && isUnder(), SUB = ride.on && MD && MD.kind === 'sub' ? MD : null;
             if (SUB) { const want = jumpHeld ? 1.1 : diveHeld ? -1.1 : 0; P.vy += (want - P.vy) * Math.min(1, dt * 3); gliding = false; }
-            else if (underNow) { const want = jumpHeld ? 0.95 : diveHeld ? -0.95 : 0.16; P.vy += (want - P.vy) * Math.min(1, dt * 4); gliding = false; }
+            else if (underNow) {   // 둘 다 떼면 그 깊이에 머문다 — 10/5까지는 0.16으로 저절로 떠올랐다(길 잃지 말라는 안전장치였는데, 사용자: 잠수 안 해도 떠오르는 게 싫다)
+                const want = jumpHeld ? 0.95 : diveHeld ? -0.95 : 0; P.vy += (want - P.vy) * Math.min(1, dt * 4); gliding = false;
+                if (!diveHintShown) { diveHintShown = true; showHint(T('nj3d_dive_hint'), 3800); }   // 떨어져 잠겨도 「점프 = 위로」를 알게
+            }
             else if (FD) { const want = jumpHeld ? (FD.climb || 1) : P.onGround ? 0 : -(FD.sink || 0.5); P.vy += (want - P.vy) * Math.min(1, dt * 3); }
             else if (fly) { P.vy = Math.min(P.vy + 6.5 * dt, 1.4); gliding = false; }
             else if (glide) P.vy = Math.max(P.vy - G * 0.18 * dt, -(WG.sink || 0.42));   // 천천히 내려앉는다 — 좋은 날개일수록 덜 떨어진다

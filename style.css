@@ -7280,6 +7280,11 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 
 /* 🐠 바다 생물 도감 버튼 — 미니맵 아래 (2026-10-05) */
 .nj3d-dexbtn { position: absolute; right: 12px; top: 174px; width: 116px; z-index: 4; border: 1px solid rgba(246,215,122,0.55); border-radius: 999px; padding: 6px 0; background: rgba(15,26,51,0.88); color: #f6d77a; font-weight: 800; font-size: 0.78rem; cursor: pointer; }
+/* 가로 휴대폰 — 오른쪽 버튼 줄(1인칭·제트팩·안장·타기·점프, 폭 최대 96)이 위로 올라와 미니맵·도감에 덮였다(10/5 사용자). 그 줄 왼쪽으로 비켜 둔다 */
+@media (orientation: landscape) and (max-height: 520px) {
+    #nj3d .nj3d-stage canvas.nj3d-mini { right: 122px; }
+    .nj3d-dexbtn { right: 122px; }
+}
 .nj3d-dex-row.locked b { color: #9aa7b8; }
 
 /* 🐠 도감 — 종마다 카드, 세로 꾸밈 5 × 가로 요일 7 칸판 (2026-10-05) */
@@ -7302,3 +7307,32 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .nj3d-dex-bon-h { color: #f6d77a; font-weight: 800; font-size: 0.85rem; margin-bottom: 4px; }
 .nj3d-dex-bon-row { display: flex; justify-content: space-between; gap: 8px; font-size: 0.76rem; color: #c6d2e2; padding: 4px 0; border-top: 1px solid rgba(255,255,255,0.06); }
 .nj3d-dex-bon-row.done { color: #f6d77a; }
+
+/* ── 암송 화면을 넓은 화면에 맞추기 (2026-10-05 사용자: PC·가로에서 버튼은 그대로고 여백만 많다) ──
+   1) PC·태블릿: 헤더·문제·버튼 칸을 화면 크기만큼 통째로 키운다(zoom). 배율 --play-z는 _playZoomFit()이 높이·너비로 정한다(1~1.6).
+      떠 있는 버튼(힌트·단비·재생)은 위치를 JS가 화면 좌표로 잡으므로 키우지 않는다.
+   2) 가로 휴대폰(높이 520 이하): 위아래로 쌓으면 문제 칸이 손가락 두 마디만 남는다 → 왼쪽 문제 · 오른쪽 버튼 */
+#game-screen > .training-header, #game-screen > #common-hardship-header, #game-screen > .battle-header,
+#game-screen > .battle-field, #game-screen > .battle-control { zoom: var(--play-z, 1); }
+@media (orientation: landscape) and (max-height: 520px) {
+    #game-screen.active { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 42%); grid-template-rows: auto minmax(0, 1fr); }
+    #game-screen > .training-header, #game-screen > #common-hardship-header, #game-screen > .battle-header { grid-column: 1 / -1; grid-row: 1; }
+    #game-screen > .training-header { padding: 6px 15px !important; align-items: center; }
+    #game-screen > .training-header .training-header-left { flex-direction: row; align-items: baseline; gap: 10px; }
+    #game-screen > .battle-field { grid-column: 1; grid-row: 2; padding-bottom: 12px; }
+    #game-screen > .battle-control { grid-column: 2; grid-row: 2; overflow-y: auto; padding-bottom: max(12px, env(safe-area-inset-bottom)) !important; border-left: 1px solid rgba(255,255,255,0.12); }
+    #game-screen > .battle-control:empty { display: none; }
+    #game-screen:has(> .battle-control:empty) > .battle-field { grid-column: 1 / -1; }
+    #game-screen > .battle-field, #game-screen > .battle-control { align-self: stretch; }   /* .screen이 가운데 정렬이라 두 칸이 위아래로 떠 있었다 */
+    #game-screen > .battle-control { padding-right: 64px; }   /* ▶·음성 버튼(끌어서 옮길 수 있음)의 기본 자리 — 단어를 가리지 않게 */
+    #game-screen .answer-zone, #game-screen .reading-card { max-height: none !important; }   /* 35vh·30vh는 가로에서 손가락 두 마디 — 칸 전체가 스크롤된다 */
+}
+@media (min-width: 900px) {   /* 넓은 화면에서 「정답 확인」 같은 줄이 화면 끝까지 늘어나지 않게 */
+    #game-screen > .battle-control > * { max-width: 860px; margin-inline: auto; }
+}
+@media (orientation: landscape) and (max-height: 520px) {   /* 듣기 화면 — 가로에선 장 소제목 세 줄이 구절 글씨와 겹쳤다 */
+    #stage-intro-header { top: 4%; line-height: 1.3; }
+    #stage-intro-header .intro-subtitle { display: none; }
+    #stage-intro-header .intro-verse-num { margin-top: 2px; }
+    #verse-text-overlay { font-size: 1.45rem; max-width: 760px; width: 80vw; }
+}

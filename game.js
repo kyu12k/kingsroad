@@ -595,7 +595,7 @@ const LANG = {
         nj3d_sub_on: '🚢 잠수함을 탔어요 — 「잠수」를 누르면 가라앉고, 점프를 누르면 떠올라요. 둘 다 떼면 그 깊이에 머물러요',
         nj3d_slide: '🛝 미끄러지기', nj3d_slide_hint: '🛝 생명수의 강을 타고 바다까지! 조이스틱으로 좌우', nj3d_slide_end: '🌊 풍덩! 강물이 이르는 곳마다 살아나는 생명수의 바다예요 (겔 47:9)',
         nj3d_view_fp: '👁 1인칭', nj3d_view_tp: '🎥 3인칭',
-        nj3d_dive: '🤿 잠수', nj3d_dive_hint: '🤿 「잠수」를 누르고 있으면 내려가요 · 점프는 위로 · 둘 다 떼면 천천히 떠올라요',
+        nj3d_dive: '🤿 잠수', nj3d_dive_hint: '🤿 「잠수」를 누르고 있으면 내려가요 · 점프는 위로 · 둘 다 떼면 그 깊이에 머물러요',
         nj3d_boat_shore: '⛵ 배는 바닷가에서 탈 수 있어요 — 바다 쪽으로 가 보세요', nj3d_boat_edge: '⛵ 해안이에요 — 「🚶 내리기」로 뭍에 올라요',
         nj3d_ride: '{e} 타기', nj3d_unride: '🚶 내리기', nj3d_mount_shop: '🐴 탈것', nj3d_tack: '⚙️',
         nj3d_ride_on: '{name} 탔어요 — 점프하면 함께 뛰고, 공중에서 한 번 더 누르면 뛰어내려 날개를 펴요',
@@ -1796,7 +1796,7 @@ const LANG = {
         nj3d_sub_on: '🚢 Aboard the submarine — hold Dive to sink, Jump to rise; let go of both to hold your depth',
         nj3d_slide: '🛝 Slide', nj3d_slide_hint: '🛝 Ride the river of life down to the sea! Joystick to steer', nj3d_slide_end: '🌊 Splash! The sea of living water — everything lives where the river goes (Ezek 47:9)',
         nj3d_view_fp: '👁 First person', nj3d_view_tp: '🎥 Third person',
-        nj3d_dive: '🤿 Dive', nj3d_dive_hint: '🤿 Hold Dive to go down · Jump swims up · let go of both to float up slowly',
+        nj3d_dive: '🤿 Dive', nj3d_dive_hint: '🤿 Hold Dive to go down · Jump swims up · let go of both to stay at that depth',
         nj3d_boat_shore: '⛵ Boats launch from the shore — head to the sea', nj3d_boat_edge: '⛵ The shore — tap 🚶 Get off to step ashore',
         nj3d_ride: '{e} Ride', nj3d_unride: '🚶 Get off', nj3d_mount_shop: '🐴 Rides', nj3d_tack: '⚙️',
         nj3d_ride_on: 'Riding the {name} — Jump to leap together, press again in the air to leap off and glide',
@@ -25281,7 +25281,8 @@ function _positionReadAloudToast(toast) {
     let limit = vv ? (vv.offsetTop + vv.height) : window.innerHeight;
     const control = document.querySelector('.battle-control');
     if (control && control.offsetHeight > 0) {
-        limit = Math.min(limit, control.getBoundingClientRect().top);
+        const cr = control.getBoundingClientRect();
+        if (cr.left < window.innerWidth / 3) limit = Math.min(limit, cr.top);   // 가로 화면에선 버튼 칸이 오른쪽 옆에 있다 — 그땐 위로 피할 것 없다
     }
     toast.style.top = Math.max(MARGIN, limit - toast.offsetHeight - MARGIN) + 'px';
     toast.style.bottom = 'auto';
@@ -28766,7 +28767,8 @@ function positionHardshipHintFab() {
     let limit = visibleBottom;
     const control = document.querySelector('.battle-control');
     if (control && control.offsetHeight > 0) {
-        limit = Math.min(limit, control.getBoundingClientRect().top);
+        const cr = control.getBoundingClientRect();
+        if (cr.left < window.innerWidth / 3) limit = Math.min(limit, cr.top);   // 가로 화면에선 버튼 칸이 오른쪽 옆에 있다 — 그땐 위로 피할 것 없다
     }
 
     fab.style.top = Math.max(MARGIN, limit - fab.offsetHeight - MARGIN) + 'px';
@@ -28795,6 +28797,16 @@ function ensureHardshipHintFabListeners() {
     window.addEventListener('resize', reposition);
     window.addEventListener('orientationchange', reposition);
 }
+
+/* 암송 화면 배율 (2026-10-05) — PC·태블릿에서 버튼·글자가 휴대폰 크기 그대로라 가운데가 텅 비었다(사용자).
+   휴대폰 세로(높이 ~700 · 너비 ~400)를 기준으로, 높이와 너비 중 덜 넉넉한 쪽만큼 키운다. 1440×900 → 1.32, 1920×1080 → 1.59.
+   가로 휴대폰은 높이가 모자라 1 그대로(CSS가 두 칸으로 나눈다) */
+function _playZoomFit() {
+    const z = Math.max(1, Math.min(window.innerHeight / 680, window.innerWidth / 720, 1.6));
+    document.documentElement.style.setProperty('--play-z', String(Math.round(z * 100) / 100));
+}
+_playZoomFit();
+window.addEventListener('resize', _playZoomFit);
 
 /* 유휴 안내 — 일정 시간 입력이 없으면 힌트 버튼을 은은하게 맥동시킨다.
    백지 앞에서 막힌 사람이 '힌트가 있는 줄 모르고' 그만두는 것을 막는 게 목적이다.
