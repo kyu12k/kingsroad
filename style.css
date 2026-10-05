@@ -7358,3 +7358,16 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .nj3d-dex-card-h { position: relative; padding-right: 64px; }
 .nj3d-dex-watch { position: absolute; right: 0; top: 0; border: 1px solid rgba(159, 230, 243, 0.55); background: rgba(159, 230, 243, 0.12); color: #dff6ff; border-radius: 999px; padding: 4px 9px; font-size: 0.72rem; font-weight: 800; cursor: pointer; }
 .nj3d-dex-cell.on { cursor: pointer; }
+
+/* 💧 바다 칸에 붓기 (2026-10-05) — 3D 판 · 2D 구역 진행 */
+.nj3d-pour .nj3d-fruit-x { position: absolute; top: 6px; right: 8px; }
+.nj3d-pour .nj3d-fishq-head { padding-right: 24px; }
+.nj3d-pour-bar { height: 7px; border-radius: 4px; background: rgba(255,255,255,0.12); margin: 8px 0 4px; overflow: hidden; }
+.nj3d-pour-bar i { display: block; height: 100%; background: linear-gradient(90deg, #2c95aa, #7fe6f5); }
+.sea-zone-row { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,0.04); }
+.sea-zone-row.on { background: rgba(31,176,201,0.1); box-shadow: inset 0 0 0 1px rgba(31,176,201,0.35); }
+.sea-zone-row.done { opacity: 0.85; }
+.sea-zone-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.sea-zone-row .sea-bar { margin: 6px 0 4px; }
+.sea-go3d { width: 100%; margin-top: 10px; }
+.sea-boat-note { margin-top: 8px; font-size: 0.82rem; line-height: 1.5; color: #9fe6f3; font-weight: 700; }
