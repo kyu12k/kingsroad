@@ -637,6 +637,11 @@ const LANG = {
         gift_need: '🐟·🍇 {n} 더 필요해요',
         gift_full: '성 둘레 자리가 다 찼어요',
         nj3d_dex_mini_hint: '🗺️ 미니맵의 금빛 점 = 이번 주에 아직 못 만난 도감 생물 · 테두리 화살표는 그쪽에 더 있어요',
+        promise_title: '{ref} 외웠어요!', promise_review_soon: '곧 첫 복습', promise_review_in: '{m}분 {s}초 뒤 첫 복습', promise_review_now: '지금 첫 복습할 수 있어요',
+        promise_review_why: '외운 직후부터 잊기 시작해요 — 10분 뒤에 한 번 더 떠올리면 오래가요',
+        promise_next_kings: '내일 아침 6시에 다음 절이 열려요', promise_next_free: '내일 다시 와서 이어 가요', promise_next_why: '하루에 조금씩, 날마다 — 그게 다 외우는 길이에요',
+        promise_notif_btn: '🔔 내일 {time}에 알려 주세요', promise_notif_note: '매일 이 시각에 한 번 알려 드려요 · 알림 설정에서 언제든 바꿔요', promise_notif_ok: '🔔 매일 {time}에 알려 드릴게요',
+        promise_ios_btn: '📱 홈 화면에 추가하기', promise_ios_note: '아이폰은 홈 화면에 추가하면 알림을 받을 수 있어요', promise_later: '좋아요',
         offer_title: '🎁 {name}의 사신', offer_need: '🐟·🍇 {n} 더 필요해요',
         goods_head: '🏺 {name}의 특산물', goods_land: '그 땅의 산물', goods_intro: '나라가 자랄수록 더 크게 청할 수 있어요 — 크면 포장도 행렬도 커지고, 성에도 그 크기로 놓여요',
         goods_size: '{size} · 크기 ×{x}', goods_lock: '나라가 「{lv}」 단계가 되면', goods_peace: '🕊️ 평화의 모습으로 — {name}', goods_peace_ref: '「칼을 쳐서 보습을, 창을 쳐서 낫을」 (사 2:4)',
@@ -1844,6 +1849,11 @@ const LANG = {
         gift_need: 'Need {n} more 🐟·🍇',
         gift_full: 'All places around the city are taken',
         nj3d_dex_mini_hint: '🗺️ Gold dots on the minimap = log creatures you haven’t met this week · arrows on the edge point to more',
+        promise_title: 'You memorized {ref}!', promise_review_soon: 'First review soon', promise_review_in: 'First review in {m}m {s}s', promise_review_now: 'Your first review is ready',
+        promise_review_why: 'Forgetting starts right away — recall it once more in 10 minutes and it lasts',
+        promise_next_kings: 'The next verse opens tomorrow at 6 AM', promise_next_free: 'Come back tomorrow to keep going', promise_next_why: 'A little each day — that is how the whole book is learned',
+        promise_notif_btn: '🔔 Remind me tomorrow at {time}', promise_notif_note: 'One reminder a day at this time · change it anytime in notification settings', promise_notif_ok: '🔔 We will remind you every day at {time}',
+        promise_ios_btn: '📱 Add to home screen', promise_ios_note: 'On iPhone, add it to your home screen to get reminders', promise_later: 'OK',
         offer_title: '🎁 Envoy of {name}', offer_need: 'Need {n} more 🐟·🍇',
         goods_head: '🏺 Treasure of {name}', goods_land: 'Fruit of the land', goods_intro: 'As the nation grows you can ask for more — bigger gifts come in bigger wrappings and longer processions, and stand that big by the city',
         goods_size: '{size} · size ×{x}', goods_lock: 'When the nation reaches “{lv}”', goods_peace: '🕊️ In its peaceful form — {name}', goods_peace_ref: '“Swords into plowshares, spears into pruning hooks” (Isa 2:4)',
@@ -2858,6 +2868,7 @@ let _pendingHardshipEmbed = null;
    활성 사용자의 절반이 한 구절도 클리어하지 않는데, 어디서 멈추는지 서버에 남는 게 없었다.
    앞으로만 진행하는 단계 표식 하나로 다음 집계 때 추측 없이 확인한다. */
 let onboardStep = '';
+let onboardPromise = null;   // 🌅 내일의 약속 카드(10/6) { at, id, shown, notif: 'granted'|'denied'|'unsupported'|'ios-guide'|'later', nt: 'HH:MM' }
 const _ONBOARD_ORDER = ['profile', 'map', 'stage', 'cleared'];
 function markOnboardStep(step) {
     const next = _ONBOARD_ORDER.indexOf(step);
@@ -3180,6 +3191,7 @@ loadGameData = function () {
             };
         }
         if (typeof parsed.onboardStep === 'string') onboardStep = parsed.onboardStep;
+        onboardPromise = (parsed.onboardPromise && typeof parsed.onboardPromise === 'object') ? parsed.onboardPromise : null;
         bossFirstClearClaimed = new Set(parsed.bossFirstClearClaimed || []);
         if (parsed.bibleReadLog) {
             const _today = _get6AMDayStr();
@@ -7608,6 +7620,7 @@ function goMap() {
     }
 
     markOnboardStep('map');
+    if (onboardPromise && !onboardPromise.shown) setTimeout(() => { if (document.getElementById('map-screen').classList.contains('active')) _showPromiseCard(); }, 900);   // 🌅 내일의 약속(첫 절 뒤 한 번)
 
     // ★ 첫 구절 안내 — 아직 아무것도 클리어하지 않은 신규 유저는 지도에서 헤매지 않도록
     // 1장 1절로 바로 데려간다. 한 번만 하고, 이후에는 평소처럼 지도가 나온다.
@@ -13113,6 +13126,7 @@ function saveGameData() {
         reviewSamples: reviewSamples, // 복습 소요 시간 표본 (백지 승급이 실제로 짧은지 판정용)
         recallWeek: recallWeek, // 실시간 암송왕 — 이번 주 써낸 구절 수
         onboardStep: onboardStep, // 온보딩 이탈 지점 (profile→map→stage→cleared)
+        onboardPromise: onboardPromise, // 🌅 내일의 약속 카드 — 본 때·알림 결과(효과 측정)
         bibleReadLog: bibleReadLog,
         bibleReadPasses: bibleReadPasses, // 오늘 장별 완독 회수
         bibleReadTotal: bibleReadTotal,   // 오늘 읽음 수 (회독 포함)
@@ -13554,6 +13568,7 @@ function _mergeSaveProgress(target, other) {
         if ((other.njPearlGems | 0) > (target.njPearlGems | 0)) { target.njPearlGems = other.njPearlGems; took++; }
         if ((other.njMannaGems | 0) > (target.njMannaGems | 0)) { target.njMannaGems = other.njMannaGems; took++; }
         if ((other.njDexFish | 0) > (target.njDexFish | 0)) { target.njDexFish = other.njDexFish; took++; }
+        if (other.onboardPromise && typeof other.onboardPromise === 'object' && (!target.onboardPromise || (!target.onboardPromise.notif && other.onboardPromise.notif))) { target.onboardPromise = other.onboardPromise; took++; }   // 🌅 내일의 약속 — 결과가 있는 쪽
         {   // 🐠 도감 — 처음 만난 시각·보너스 시각은 이른 쪽, 이번 주 보상 주·틀린 기록은 늦은 쪽
             const td = Object.assign({ v: {}, w: {}, f: {}, b: {}, all: 0 }, target.njDex || {}), od = other.njDex || {};
             ['v', 'b'].forEach(f => { td[f] = Object.assign({}, td[f] || {}); Object.entries(od[f] || {}).forEach(([k, ts]) => { if (!td[f][k] || ts < td[f][k]) { td[f][k] = ts; took++; } }); });
@@ -21612,8 +21627,10 @@ stageClear = function (type, rewardMultiplier = 1) {
             return; // ➔ 여기서 함수가 즉시 종료됩니다! (아래 계산 코드 무시)
         }
         // 🌟 ---------------------------------------------------------
+        const _firstEver = type === 'normal' && !onboardPromise && typeof _isPreFirstClear === 'function' && _isPreFirstClear();   // 🌅 처음으로 한 절 — 지도로 돌아가면 「내일의 약속」
         markOnboardStep('cleared');
         const sId = String(window.currentStageId);
+        if (_firstEver && /^\d+-\d+$/.test(sId)) onboardPromise = { at: Date.now(), id: sId };
 
         // 복습 소요 시간 표본 — 일반 스테이지만. 중간점검·보스전은 단위가 달라 섞으면 안 된다.
         // (집중 훈련은 위 `isTrainingMode` 방어막에서 이미 걸러졌다)
@@ -24488,6 +24505,68 @@ async function confirmProfile() {
         // 🚪 곧바로 첫 구절로 (10/6) — 여정 고르기·하루 몇 구절·안내 3쪽·아멘은 첫 구절 뒤로
         if (typeof _isPreFirstClear === 'function' && _isPreFirstClear()) setTimeout(_startFirstVerseNow, 900);
     }
+}
+
+/* 🌅 내일의 약속 (2026-10-06) — 처음으로 한 절을 깬 직후 한 번. 실측: 10절은 둘째 날 재방문이 가르고(첫날 2~4절 깨고 다시 오지 않는 사람이 대부분),
+   알림을 켠 사람(1절+ 892명 중 25명)은 다른 날에도 클리어 88% vs 58% — 다만 지금은 알림을 켜려면 지도 「알림 설정」을 찾아 시간까지 정해야 했다.
+   카드: 외운 절 · 10분 뒤 첫 복습(남은 시간) · 내일 아침 6시에 다음 절 · 🔔 「내일 이 시각에 알려 주세요」(한 번에 권한 + 지금 시각) /
+   알림이 없는 기기(설치 안 한 아이폰)는 「📱 홈 화면에 추가」. 본 것·누른 것·결과를 onboardPromise에 남긴다(한 주 뒤 효과 측정) */
+function _promiseRefOf(id) { const [c, v] = String(id).split('-'); return currentLang === 'en' ? `Rev ${c}:${v}` : `계 ${c}:${v}` + '을을를을를를을을을를'[+String(v).slice(-1)]; }   // 끝자리 읽는 소리로 을/를(영·일·이·삼·사·오·육·칠·팔·구)
+function _promiseNowHM() { const d = new Date(), m = Math.round(d.getMinutes() / 5) * 5, h = (d.getHours() + (m === 60 ? 1 : 0)) % 24; return String(h).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); }
+function _showPromiseCard() {
+    const P = onboardPromise; if (!P || P.shown) return;
+    P.shown = Date.now(); saveGameData();
+    const old = document.getElementById('promise-card'); if (old) old.remove();
+    const noNotif = typeof Notification === 'undefined', iosGuide = noNotif && typeof isIOSNonPWA === 'function' && isIOSNonPWA();
+    const m = document.createElement('div'); m.id = 'promise-card'; m.className = 'promise-overlay';
+    m.innerHTML = `<div class="promise-card">
+        <div class="promise-check">✅</div>
+        <div class="promise-title">${t('promise_title', { ref: _promiseRefOf(P.id) })}</div>
+        <div class="promise-rows">
+            <div class="promise-row"><span>⏰</span><div><b id="promise-review">${t('promise_review_soon')}</b><small>${t('promise_review_why')}</small></div></div>
+            <div class="promise-row"><span>🌅</span><div><b>${t(activeMode === 'kings' ? 'promise_next_kings' : 'promise_next_free')}</b><small>${t('promise_next_why')}</small></div></div>
+        </div>
+        ${iosGuide ? `<button class="promise-main" data-a="ios">${t('promise_ios_btn')}</button><div class="promise-note">${t('promise_ios_note')}</div>`
+            : noNotif ? '' : `<button class="promise-main" data-a="notif">${t('promise_notif_btn', { time: _promiseNowHM() })}</button><div class="promise-note">${t('promise_notif_note')}</div>`}
+        <button class="promise-later" data-a="later">${t('promise_later')}</button>
+    </div>`;
+    document.body.appendChild(m);
+    const tick = () => {   // 첫 복습까지 남은 시간
+        const el = document.getElementById('promise-review'); if (!el) { clearInterval(iv); return; }
+        const st = typeof getReviewStatus === 'function' ? getReviewStatus(P.id) : null, ms = st ? st.remainMs : 0;
+        el.textContent = ms > 0 ? t('promise_review_in', { m: Math.floor(ms / 60000), s: String(Math.floor(ms / 1000) % 60).padStart(2, '0') }) : t('promise_review_now');
+    };
+    const iv = setInterval(tick, 1000); tick();
+    const close = () => { clearInterval(iv); m.remove(); };
+    m.querySelectorAll('button[data-a]').forEach(b => b.onclick = async () => {
+        const a = b.dataset.a;
+        if (a === 'later') { if (!P.notif) P.notif = 'later'; saveGameData(); close(); return; }
+        if (a === 'ios') { P.notif = 'ios-guide'; saveGameData(); close(); if (typeof showIOSInstallGuide === 'function') showIOSInstallGuide(); return; }
+        b.disabled = true;
+        const r = await _promiseNotifOn(); P.notif = r.state; if (r.time) P.nt = r.time; saveGameData();
+        if (r.state === 'granted') { close(); showToast(t('promise_notif_ok', { time: r.time })); }
+        else { b.disabled = false; showToast(t(r.state === 'unsupported' ? 'toast_notif_unsupported' : 'toast_notif_permission')); }
+    });
+}
+/* 🔔 한 번에 — 권한을 묻고 지금 시각(5분 단위)을 매일 알림에 더한다(이미 셋이면 그대로). notifSave와 같은 길로 서버에 */
+async function _promiseNotifOn() {
+    if (typeof Notification === 'undefined') return { state: 'unsupported' };
+    let perm = Notification.permission;
+    if (perm !== 'granted') { try { perm = await Notification.requestPermission(); } catch (e) { perm = 'denied'; } }
+    if (perm !== 'granted') return { state: 'denied' };
+    const time = _promiseNowHM();
+    let times = []; try { times = JSON.parse(localStorage.getItem('notifTimes') || '[]') || []; } catch (e) { }
+    if (!times.includes(time) && times.length < 3) times.push(time);
+    try { localStorage.setItem('notifTimes', JSON.stringify(times)); } catch (e) { }
+    if (myTag && db) {
+        try {
+            await initFCM().catch(() => { }); startFCMTokenRefreshListener();
+            const up = { notificationTimes: times }; if (_fcmToken) up.fcmToken = _fcmToken;
+            await db.collection('leaderboard').doc(String(myTag)).set(up, { merge: true });
+        } catch (e) { console.warn('약속 알림 저장 실패:', e); }
+    }
+    if (typeof scheduleNotifTimesViaSW === 'function') { try { scheduleNotifTimesViaSW(); } catch (e) { } }
+    return { state: 'granted', time };
 }
 
 /* 🚪 가입 직후 곧바로 첫 구절 (2026-10-06) — 실측: 9/9 이후 새 가입자 68명 중 35명(51%)이 등록을 마치고 지도에 한 번도 못 갔다.
