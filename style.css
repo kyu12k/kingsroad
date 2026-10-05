@@ -7336,3 +7336,25 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
     #stage-intro-header .intro-verse-num { margin-top: 2px; }
     #verse-text-overlay { font-size: 1.45rem; max-width: 760px; width: 80vw; }
 }
+
+/* 👀 바다 생물 관찰 (2026-10-05) — 바다에서 누르면 관찰 모드(걷기 단추를 감추고 아래 판), 도감에서 누르면 작은 물속 무대 */
+#nj3d.nj3d-observing .nj3d-walk, #nj3d.nj3d-observing .nj3d-mode, #nj3d.nj3d-observing .nj3d-go, #nj3d.nj3d-observing .nj3d-deco,
+#nj3d.nj3d-observing .nj3d-holo, #nj3d.nj3d-observing .nj3d-stage canvas.nj3d-mini, #nj3d.nj3d-observing .nj3d-dexbtn { display: none !important; }
+.nj3d-obs, .nj3d-watch { position: absolute; left: 50%; transform: translateX(-50%); width: min(400px, calc(100% - 24px)); box-sizing: border-box;
+    background: rgba(10, 30, 46, 0.9); border: 1px solid rgba(159, 230, 243, 0.45); border-radius: 14px; padding: 10px 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.45); color: #e6eef8; }
+.nj3d-obs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 6; }
+.nj3d-watch { top: 58px; z-index: 7; display: flex; flex-direction: column; gap: 8px; width: min(360px, calc(100% - 24px)); background: rgba(10, 30, 46, 0.97); }
+.nj3d-obs .nj3d-fruit-x, .nj3d-watch .nj3d-fruit-x { position: absolute; top: 6px; right: 8px; }
+.nj3d-obs-h { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; padding-right: 26px; font-size: 0.9rem; }
+.nj3d-obs-h b { color: #fff; }
+.nj3d-obs-h span { color: #f6d77a; font-size: 0.78rem; font-weight: 700; }
+.nj3d-obs-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.nj3d-watch .nj3d-obs-acts { margin-top: 0; }
+.nj3d-obs-acts button { border: 1px solid rgba(159, 230, 243, 0.5); background: rgba(159, 230, 243, 0.1); color: #dff6ff; border-radius: 999px; padding: 6px 11px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+.nj3d-obs-acts button.on { background: #9fe6f3; color: #0a1e2e; border-color: #9fe6f3; }
+.nj3d-obs-tip { margin-top: 6px; font-size: 0.7rem; color: #9fb0c4; }
+.nj3d-watch .nj3d-obs-tip { margin-top: 0; }
+.nj3d-watch-cv { height: min(48vh, 380px); width: 100%; border-radius: 10px; touch-action: none; cursor: grab; display: block; }
+.nj3d-dex-card-h { position: relative; padding-right: 64px; }
+.nj3d-dex-watch { position: absolute; right: 0; top: 0; border: 1px solid rgba(159, 230, 243, 0.55); background: rgba(159, 230, 243, 0.12); color: #dff6ff; border-radius: 999px; padding: 4px 9px; font-size: 0.72rem; font-weight: 800; cursor: pointer; }
+.nj3d-dex-cell.on { cursor: pointer; }

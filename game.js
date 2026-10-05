@@ -743,7 +743,7 @@ const LANG = {
         rv_blank_title: '✍️ 오늘 백지 차례',
         nj3d_dex_btn: '🐠 도감 {n}/{m}', nj3d_dex_title: '🐠 바다 생물 도감', nj3d_dex_intro: '"고기가 각기 종류대로 대해의 고기 같이 심히 많으리라" (겔 47:10)',
         nj3d_dex_found: '{e} {name} · {ref} — 말씀을 맞혀 💎{gem} · 도감 {n}/{m}', nj3d_dex_all: '🎉 바다 생물 도감 404칸을 다 채웠어요! 💎{gem}', nj3d_dex_bonus: '🏅 {group} 다 모음! 💎{gem}',
-        nj3d_dex_again: '{e} {name} · {ref} — 이번 주엔 이미 만났어요 (월요일 아침 6시에 다시)', nj3d_dex_q: '{e} {name} · 이 생물의 말씀은?', nj3d_dex_retry: '{e} 아쉬워요 — 한 번 더', nj3d_dex_miss: '{e} 이번 주엔 숨어 버렸어요 — 월요일 아침 6시에 다시',
+        nj3d_dex_again: '{e} {name} · {ref} — 이번 주엔 이미 만났어요 (월요일 아침 6시에 다시)', nj3d_obs_tip: '끌어서 돌려 보고 두 손가락으로 가까이 · 움직임을 눌러 보세요', nj3d_obs_again: '다시 누르면 👀 관찰', nj3d_dex_watch: '👀 관찰', nj3d_watch_tip: '끌어서 돌려 보세요 · 찾은 칸을 누르면 그 모습으로', nj3d_dex_q: '{e} {name} · 이 생물의 말씀은?', nj3d_dex_retry: '{e} 아쉬워요 — 한 번 더', nj3d_dex_miss: '{e} 이번 주엔 숨어 버렸어요 — 월요일 아침 6시에 다시',
         nj3d_dex_tap: '👆 생물마다 말씀이 하나씩 — 가까이 가서 누르면 그 구절 문제가 나와요',
         nj3d_dex_sum: '발견 {f} · 해금 {u} · 전체 {m}', nj3d_dex_next: '백지로 새 절을 쓸 때마다 생물이 하나씩 와요', nj3d_dex_bonus_title: '🏅 수집 보너스 (각 💎{gem})',
         nj3d_dex_cell: '{ref} · {day}요일 · {when}', nj3d_dex_cell_lock: '{ref}를 처음 백지로 쓰면 와요', nj3d_dex_wk: '이번 주에 만남',
@@ -1944,7 +1944,7 @@ const LANG = {
         rv_blank_title: '✍️ Blank review due today',
         nj3d_dex_btn: '🐠 Log {n}/{m}', nj3d_dex_title: '🐠 Sea creature log', nj3d_dex_intro: '"There will be many kinds of fish, like the fish of the Great Sea" (Ezek 47:10)',
         nj3d_dex_found: '{e} {name} · {ref} — you knew the verse 💎{gem} · Log {n}/{m}', nj3d_dex_all: '🎉 All 404 sea creatures logged! 💎{gem}', nj3d_dex_bonus: '🏅 {group} complete! 💎{gem}',
-        nj3d_dex_again: '{e} {name} · {ref} — already met this week (again Monday 6 AM)', nj3d_dex_q: '{e} {name} · this creature’s verse?', nj3d_dex_retry: '{e} So close — once more', nj3d_dex_miss: '{e} It hid for this week — back Monday 6 AM',
+        nj3d_dex_again: '{e} {name} · {ref} — already met this week (again Monday 6 AM)', nj3d_obs_tip: 'Drag to turn, pinch to get closer · tap a move', nj3d_obs_again: 'tap again to 👀 watch', nj3d_dex_watch: '👀 Watch', nj3d_watch_tip: 'Drag to turn · tap a found cell to see that look', nj3d_dex_q: '{e} {name} · this creature’s verse?', nj3d_dex_retry: '{e} So close — once more', nj3d_dex_miss: '{e} It hid for this week — back Monday 6 AM',
         nj3d_dex_tap: '👆 Every creature carries a verse — get close and tap for its question',
         nj3d_dex_sum: 'found {f} · unlocked {u} · total {m}', nj3d_dex_next: 'Each new verse you write blank brings one more creature', nj3d_dex_bonus_title: '🏅 Collection bonuses (💎{gem} each)',
         nj3d_dex_cell: '{ref} · {day} · {when}', nj3d_dex_cell_lock: 'Comes when you first write {ref} blank', nj3d_dex_wk: 'met this week',
@@ -8280,9 +8280,9 @@ function _njDexHtml() {
             const id = cell[`${s}|${ti}|${ci}`]; if (!id) return '<b class="nj3d-dex-cell none"></b>';
             const st = njDex.v && njDex.v[id] ? 'on' : _njDexUnlocked(id) ? 'open' : 'lock', wk = _njDexMetThisWeek(id) ? ' wk' : '';
             const tip = st === 'lock' ? t('nj3d_dex_cell_lock', { ref: _njDexRef(id) }) : t('nj3d_dex_cell', { ref: _njDexRef(id), day: en ? c.dayEn : c.day, when: t('dex_when_' + d.when) });
-            return `<b class="nj3d-dex-cell ${st}${wk}" style="--c:#${c.hex.toString(16).padStart(6, '0')}" data-tip="${tip}">${st === 'lock' ? '🔒' : ''}</b>`;
+            return `<b class="nj3d-dex-cell ${st}${wk}" style="--c:#${c.hex.toString(16).padStart(6, '0')}" data-tip="${tip}" data-ti="${ti}" data-ci="${ci}">${st === 'lock' ? '🔒' : ''}</b>`;
         }).join('')}</div>`).join('');
-        return `<div class="nj3d-dex-card"><div class="nj3d-dex-card-h"><b>${d.e} ${_njDexName(d)}</b><span>${got}/${ids.length} · ${t('dex_where_' + d.where)} · ${t('dex_when_' + d.when)}</span></div>${dayRow}${rows}<div class="nj3d-dex-tipline"></div></div>`;
+        return `<div class="nj3d-dex-card" data-s="${s}"><div class="nj3d-dex-card-h"><b>${d.e} ${_njDexName(d)}</b><span>${got}/${ids.length} · ${t('dex_where_' + d.where)} · ${t('dex_when_' + d.when)}</span>${got ? `<button class="nj3d-dex-watch">${t('nj3d_dex_watch')}</button>` : ''}</div>${dayRow}${rows}<div class="nj3d-dex-tipline"></div></div>`;   // 👀 찾은 칸이 있으면 관찰 (10/5)
     }).join('');
     const G = _njDexGroups();
     const bon = `<div class="nj3d-dex-bon"><div class="nj3d-dex-bon-h">${t('nj3d_dex_bonus_title', { gem: NJ_DEX_BONUS.toLocaleString() })}</div>${G.map(g => {

@@ -1614,7 +1614,7 @@
         };
         listen(cvs, 'pointerup', e => {
             if (!tap) return;
-            if (proc || deco) { tap = null; return; }   // 행렬을 돌려 보는 손길·꾸미기 — 열매·나라 창을 띄우지 않는다
+            if (proc || deco || obs) { tap = null; return; }   // 행렬을 돌려 보는 손길·꾸미기·👀 관찰 — 열매·나라 창을 띄우지 않는다
             if (creatureTap(e)) { tap = null; return; }   // 🐠 물속 생물을 눌러 살펴봄
             if (!fruitPos.length) {   // 열매가 없으면 해안의 나라만 본다
                 const moved = Math.hypot(e.clientX - tap.x, e.clientY - tap.y), long = performance.now() - tap.t;
@@ -1690,7 +1690,7 @@
             if (gliding && P.vy < -0.2) P.vy = -0.2;
             showHint(T(gliding ? 'nj3d_glide_on' : 'nj3d_glide_off'), 1400);
         };
-        listen(window, 'keydown', e => { if (!walk) return; inp.keys[e.code] = true; if (e.code === 'Space') { if (!e.repeat) { jumpHeld = true; doJump(); } e.preventDefault(); } if (e.code === 'Escape') closeNJ3D(); });
+        listen(window, 'keydown', e => { if (!walk) return; inp.keys[e.code] = true; if (e.code === 'Space') { if (!e.repeat) { jumpHeld = true; doJump(); } e.preventDefault(); } if (e.code === 'Escape') { if (dexWatch) closeWatch(); else if (obs) obsClose(); else closeNJ3D(); } });
         listen(window, 'keyup', e => { inp.keys[e.code] = false; if (e.code === 'Space') jumpHeld = false; if (e.code === 'KeyC') diveHeld = false; });
         listen(window, 'keydown', e => { if (walk && e.code === 'KeyC') diveHeld = true; });
         { const db = ov.querySelector('.nj3d-divebtn');
@@ -3420,6 +3420,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             speedFx(dt);
             if (proc) { procUpdate(dt); return; }
             if (slide) { slideStep(dt); rippleTick(dt); followCam(dt); return; }
+            if (obs) { obsTick(dt); return; }   // 👀 관찰 중 — 순례자는 그 자리에, 카메라는 생물에게
             fishUpdate(dt);
             slideCheckT -= dt;
             clamTick(dt); mannaTick(dt); dexTick(dt);
@@ -4054,11 +4055,157 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 const host = (A.node && N(A.node)) || g, gl = tier === 'glasses', am = gl ? seaGlasses(A.gsep || 0.018 * A.gs, A.gr || 0.014 * A.gs) : makeAcc(tier), at = gl ? A.face : A.top;
                 am.position.set(at[0], at[1], at[2]); if (!gl) am.scale.setScalar(A.hs); if (gl && A.grx) am.rotation.x = A.grx; host.add(am);
             }
-            return { g, anim: SEA_ANIM[k] ? SEA_ANIM[k](g, N) : () => { } };
+            return { g, anim: SEA_ANIM[k] ? SEA_ANIM[k](g, N) : () => { }, mats: [...done.values()] };
+        }
+        /* ══ 👀 생물의 움직임 (10/5 사용자: 도감 생물의 움직임을 관찰할 수 있게) ══
+           종마다 서너 가지. 평소 움직임(SEA_ANIM) 위에 얹는다 — 매 프레임 모델 뿌리(m)의 자리·회전을 0으로 되돌린 뒤 평소 움직임 → 이 움직임.
+           I.part(이름)로 만진 부분은 처음 모습을 기억했다가 끝나면 되돌린다(값은 늘 그 처음 모습 기준으로 쓴다 — 더하면 프레임마다 쌓인다).
+           바다에선 가끔 저절로 하고(dexTick), 관찰 모드·도감 관찰 창에선 버튼으로. 기록은 남기지 않는다(사용자 결정) */
+        const ENV = p => Math.sin(Math.PI * Math.min(1, Math.max(0, p)));   // 0 → 1 → 0
+        const EASE = p => p * p * (3 - 2 * p);
+        const OBS_H = { octopus: 0.1, seahorse: 0.15, turtle: 0.05, ray: 0.03, starfish: 0.03, crab: 0.06, jelly: 0.08, puffer: 0.12, eel: 0.17, clown: 0.08, urchin: 0.05, dolphin: 0.05 };   // 카메라가 볼 높이
+        const OBS_D = { turtle: 0.85, ray: 0.75, dolphin: 1.1, eel: 0.7 };   // 처음 거리(나머지 0.6)
+        const SCALE_BASE = { jelly: 1, puffer: 1 };   // 평소 움직임이 크기를 쓰는 아이 — 끝나도 크기를 1로 박지 않는다
+        const SEA_ACTS = {
+            octopus: [
+                { ko: '기어가기', en: 'Crawl', d: 3, f: (I, p, t) => { const e = ENV(p); I.m.position.z = e * 0.18; I.m.position.y = Math.abs(Math.sin(t * 6)) * 0.012 * e; for (let i = 0; i < 8; i++) { const a = I.part('a' + i); if (a) a.rotation.x = I.r0(a).x + Math.sin(t * 7 + i * 1.3) * 0.35 * e; } } },
+                { ko: '먹물 뿜기', en: 'Squirt ink', d: 2.6, f: (I, p) => { if (I.once('ink', 0.15, p)) I.fx('ink', [0, 0.08, -0.07], 14); const e = ENV(p); I.m.scale.set(1 + 0.12 * e, 1 - 0.15 * e, 1 + 0.12 * e); I.m.position.z = e * 0.1; } },
+                { ko: '몸빛 바꾸기', en: 'Camouflage', d: 4, f: (I, p) => I.tint(0xc8b48a, ENV(p) * 0.85) },
+                { ko: '쭉 헤엄치기', en: 'Jet away', d: 2.6, f: (I, p) => { const e = ENV(p); I.m.position.y = e * 0.22; I.m.position.z = e * 0.12; for (let i = 0; i < 8; i++) { const a = I.part('a' + i); if (a) a.rotation.x = I.r0(a).x - 0.6 * e; } } },
+            ],
+            seahorse: [
+                { ko: '끄덕 인사', en: 'Nod hello', d: 2.2, f: (I, p) => { I.m.rotation.x = Math.sin(p * Math.PI * 4) * 0.3 * ENV(p); } },
+                { ko: '빙글 돌기', en: 'Twirl', d: 2.4, f: (I, p) => { I.m.rotation.y = EASE(p) * Math.PI * 2; } },
+                { ko: '위로 떠오르기', en: 'Rise', d: 3, f: (I, p, t) => { I.m.position.y += ENV(p) * 0.18; const f = I.part('fin'); if (f) f.rotation.y = Math.sin(t * 30) * 0.6; } },
+                { ko: '몸빛 바꾸기', en: 'Color shift', d: 3.5, f: (I, p) => I.tint(0xff7ab0, ENV(p) * 0.8) },
+            ],
+            turtle: [
+                { ko: '숨 쉬러 오르기', en: 'Up for air', d: 5, f: (I, p) => { const e = ENV(p); I.m.position.y = e * I.up; I.m.rotation.x = -0.4 * Math.sin(p * Math.PI * 2); if (I.once('air', 0.5, p)) I.fx('bubble', [0, 0.06, 0.2], 10); } },
+                { ko: '힘차게 젓기', en: 'Power stroke', d: 2.6, f: (I, p, t) => { const e = ENV(p), s = Math.sin(t * 7); [1, -1, 1, -1].forEach((sg, i) => { const f = I.part('fl' + i); if (f) f.rotation.z = I.r0(f).z + sg * s * (i < 2 ? 0.8 : 0.4) * e; }); I.m.position.z = e * 0.15; } },
+                { ko: '느긋한 활공', en: 'Glide', d: 3.6, f: (I, p) => { const e = ENV(p); [1, -1, 1, -1].forEach((sg, i) => { const f = I.part('fl' + i); if (f) f.rotation.z = I.r0(f).z + sg * 0.35 * e; }); I.m.rotation.z = Math.sin(p * Math.PI * 2) * 0.25; } },
+                { ko: '한 바퀴 돌기', en: 'Turn around', d: 3, f: (I, p) => { I.m.rotation.y = EASE(p) * Math.PI * 2; } },
+            ],
+            ray: [
+                { ko: '모래에 숨기', en: 'Bury in sand', d: 4, f: (I, p) => { const e = ENV(p); I.m.position.y = -e * 0.035; if (I.once('sand', 0.15, p)) I.fx('sand', [0, 0.01, 0], 14); I.tint(0xd6c49a, e * 0.6); } },
+                { ko: '크게 날갯짓', en: 'Big flap', d: 2.6, f: (I, p, t) => { const s = Math.sin(t * 7) * 0.8 * ENV(p), l = I.part('wL'), r = I.part('wR'); if (l) l.rotation.z = I.r0(l).z - s; if (r) r.rotation.z = I.r0(r).z + s; I.m.position.y += ENV(p) * 0.08; } },
+                { ko: '공중제비', en: 'Somersault', d: 2.4, f: (I, p) => { I.m.rotation.x = -EASE(p) * Math.PI * 2; I.m.position.y = ENV(p) * 0.25; } },
+                { ko: '미끄러지듯 활강', en: 'Glide', d: 3, f: (I, p) => { I.m.position.z = ENV(p) * 0.2; I.m.rotation.z = Math.sin(p * Math.PI * 2) * 0.3; } },
+            ],
+            starfish: [
+                { ko: '팔 들기', en: 'Lift an arm', d: 3, f: (I, p) => { const e = ENV(p); I.m.rotation.x = -e * 0.35; I.m.position.y = e * 0.012; } },
+                { ko: '뒤집기', en: 'Flip over', d: 3, f: (I, p) => { I.m.rotation.z = EASE(p) * Math.PI * 2; I.m.position.y = ENV(p) * 0.1; } },
+                { ko: '천천히 걷기', en: 'Creep', d: 4, f: (I, p) => { I.m.position.x = ENV(p) * 0.1; I.m.rotation.y += ENV(p) * 0.4; } },
+            ],
+            crab: [
+                { ko: '옆걸음 질주', en: 'Sidestep dash', d: 3, f: (I, p, t) => { I.m.position.x = Math.sin(p * Math.PI * 2) * 0.22; const l = I.part('legs'); if (l) l.position.y = I.p0(l).y + Math.abs(Math.sin(t * 20)) * 0.005; } },
+                { ko: '집게 들기', en: 'Raise a claw', d: 2.6, f: (I, p) => { const c = I.part('claw'); if (c) c.rotation.x = I.r0(c).x - ENV(p) * 0.9; } },
+                { ko: '집으로 쏙', en: 'Hide in shell', d: 3, f: (I, p) => { const e = ENV(p), l = I.part('legs'), c = I.part('claw'); if (l) l.scale.setScalar(1 - 0.8 * e); if (c) c.scale.setScalar(1 - 0.7 * e); I.m.position.y = -e * 0.01; } },
+                { ko: '거품 뿜기', en: 'Blow bubbles', d: 2.6, f: (I, p) => { ['b1', 'b2', 'b3'].forEach((k, i) => { if (I.once(k, 0.15 + i * 0.25, p)) I.fx('bubble', [0, 0.07, 0.08], 5); }); } },
+            ],
+            jelly: [
+                { ko: '펄떡 오르기', en: 'Pulse up', d: 3, f: (I, p, t) => { const e = ENV(p), s = Math.sin(t * 9) * 0.15 * e; I.m.position.y += e * 0.35; I.m.scale.set(1 + s, 1 - s, 1 + s); } },
+                { ko: '빛내기', en: 'Glow', d: 4, f: (I, p) => I.glow(ENV(p)) },
+                { ko: '천천히 가라앉기', en: 'Drift down', d: 4, f: (I, p) => { const e = ENV(p); I.m.position.y -= e * 0.2; for (let i = 0; i < 4; i++) { const a = I.part('t' + i); if (a) a.rotation.x = I.r0(a).x + 0.5 * e; } } },
+            ],
+            puffer: [
+                { ko: '부풀기', en: 'Puff up', d: 3.5, f: (I, p) => { I.m.scale.setScalar(1 + 0.7 * ENV(Math.min(1, p * 1.4))); } },
+                { ko: '빙글 돌기', en: 'Spin', d: 2, f: (I, p) => { I.m.rotation.y = EASE(p) * Math.PI * 2; } },
+                { ko: '모래 뿜기', en: 'Blow sand', d: 2.6, f: (I, p) => { I.m.rotation.x = ENV(p) * 0.45; if (I.once('sand', 0.4, p)) I.fx('sand', [0, 0.02, 0.1], 12); } },
+                { ko: '쏜살같이', en: 'Dart', d: 2, f: (I, p, t) => { I.m.position.z = ENV(p) * 0.3; const tl = I.part('tail'); if (tl) tl.rotation.y = I.r0(tl).y + Math.sin(t * 25) * 0.6; } },
+            ],
+            eel: [
+                { ko: '굴에서 나오기', en: 'Peek out', d: 3.6, f: (I, p) => { const e = I.part('eel'); if (e) e.position.y = I.p0(e).y + ENV(p) * 0.08; } },
+                { ko: '고개 들기', en: 'Look up', d: 2.6, f: (I, p) => { const e = I.part('eel'); if (e) e.rotation.x = I.r0(e).x - ENV(p) * 0.35; } },
+                { ko: '쏙 숨기', en: 'Duck in', d: 2.6, f: (I, p) => { const e = I.part('eel'); if (e) e.position.y = I.p0(e).y - ENV(p) * 0.12; } },
+            ],
+            clown: [
+                { ko: '말미잘 속으로', en: 'Hide in anemone', d: 3.6, f: (I, p) => { const f = I.part('fish'); if (f) f.position.lerp(new THREE.Vector3(0, 0.05, 0), ENV(p)); } },
+                { ko: '빠르게 맴돌기', en: 'Zoom around', d: 3, f: (I, p, t) => { const f = I.part('fish'); if (!f) return; const a = t * 4.5, e = ENV(p); f.position.set(Math.cos(a) * 0.13, 0.11, Math.sin(a) * 0.13).lerp(I.p0(f), 1 - e); f.rotation.y = -a; } },
+                { ko: '말미잘 춤', en: 'Anemone dance', d: 3, f: (I, p, t) => { const e = ENV(p); I.m.rotation.z = Math.sin(t * 5) * 0.15 * e; I.m.rotation.x = Math.cos(t * 4) * 0.1 * e; } },
+            ],
+            urchin: [
+                { ko: '가시 떨기', en: 'Bristle', d: 2.4, f: (I, p, t) => { const e = ENV(p); I.m.rotation.x = Math.sin(t * 25) * 0.05 * e; I.m.rotation.z = Math.cos(t * 23) * 0.05 * e; } },
+                { ko: '데굴 구르기', en: 'Roll', d: 3.6, f: (I, p) => { const x = ENV(p) * 0.14; I.m.position.x = x; I.m.rotation.z = -x / 0.06; } },
+                { ko: '움츠리기', en: 'Curl up', d: 3, f: (I, p) => { I.m.scale.setScalar(1 - 0.25 * ENV(p)); } },
+            ],
+            dolphin: [
+                { ko: '물 위로 점프', en: 'Leap', d: 3.2, f: (I, p) => { const H = I.up + 0.45, e = ENV(p); I.m.position.y = e * H; I.m.position.z = e * 0.3; I.m.rotation.x = -Math.cos(p * Math.PI) * 0.9;
+                    const u = Math.asin(Math.min(1, I.up / H)) / Math.PI; if (I.once('s1', u, p)) I.splash(); if (I.once('s2', 1 - u, p)) I.splash(true); } },
+                { ko: '통 구르기', en: 'Barrel roll', d: 2.4, f: (I, p) => { I.m.rotation.z = EASE(p) * Math.PI * 2; } },
+                { ko: '꼬리 철썩', en: 'Tail slap', d: 2.2, f: (I, p, t) => { const tl = I.part('tail'); if (tl) tl.rotation.x = I.r0(tl).x + Math.sin(t * 14) * 0.7 * ENV(p); if (I.once('b', 0.5, p)) I.fx('bubble', [0, 0, -0.3], 10); } },
+            ],
+        };
+        const tmpC = new THREE.Color();
+        /* 생물 하나의 움직임 상자 — m = 모델 뿌리, mats = 물들인 재질, opt.fx(kind, 세계 자리, n) · opt.splash(크게?) */
+        function actInst(m, k, mats, opt) {
+            const I = { m, k, mats: mats || [], act: null, ai: -1, t0: 0, fired: {}, saved: new Map(), up: 0.5, onChange: null };
+            I.part = n => { const o = m.getObjectByName(n); if (o && !I.saved.has(o)) I.saved.set(o, [o.position.clone(), o.rotation.clone(), o.scale.clone()]); return o; };
+            I.p0 = o => I.saved.get(o)[0]; I.r0 = o => I.saved.get(o)[1];
+            I.once = (key, at, p) => (p >= at && !I.fired[key]) ? (I.fired[key] = true) : false;
+            I.tint = (hex, a) => { tmpC.set(hex).convertSRGBToLinear(); I.mats.forEach(mt => { if (!mt.userData.c0) mt.userData.c0 = mt.color.clone(); mt.color.copy(mt.userData.c0).lerp(tmpC, a); }); };
+            I.glow = a => I.mats.forEach(mt => { if (!mt.emissive) return; if (!mt.userData.e0) mt.userData.e0 = mt.emissive.clone(); mt.emissive.copy(mt.userData.e0).lerp(mt.color, a * 0.9); });
+            I.fx = (kind, at, n) => { if (!opt.fx) return; const v = new THREE.Vector3(at[0], at[1], at[2]); m.localToWorld(v); opt.fx(kind, v, n); };
+            I.splash = big => { if (opt.splash) opt.splash(I, big); };
+            return I;
+        }
+        function actStart(I, i, now) {
+            const L = SEA_ACTS[I.k]; if (!L || !L[i]) return;
+            if (I.act) actEnd(I);
+            I.act = L[i]; I.ai = i; I.t0 = now; I.fired = {};
+            if (I.onStart) I.onStart(I);
+            if (I.onChange) I.onChange(I);
+        }
+        function actEnd(I) {
+            I.act = null; I.ai = -1;
+            I.saved.forEach(([p, r, s], o) => { o.position.copy(p); o.rotation.copy(r); o.scale.copy(s); }); I.saved.clear();
+            if (!SCALE_BASE[I.k]) I.m.scale.setScalar(1);
+            I.mats.forEach(mt => { if (mt.userData.c0) mt.color.copy(mt.userData.c0); if (mt.userData.e0) mt.emissive.copy(mt.userData.e0); });
+            if (I.onChange) I.onChange(I);
+        }
+        /* 한 프레임 — 뿌리를 되돌리고 평소 움직임, 그 위에 지금 하는 움직임 */
+        function actFrame(I, base, t, near) {
+            I.m.position.set(0, 0, 0); I.m.rotation.set(0, 0, 0);
+            base(t, near);
+            if (!I.act) return;
+            const p = (t - I.t0) / I.act.d;
+            if (p >= 1) { actEnd(I); return; }
+            I.act.f(I, p, t);
+        }
+        /* 물속 알갱이 — 먹물(어둡게 퍼짐)·모래(옆으로)·거품(위로). 장면마다 하나 */
+        function makeFx(parent) {
+            const list = [];
+            const KIND = { ink: { c: 0x1a1420, n0: 0.04, n1: 0.2, life: 2.4, op: 0.85, add: false }, sand: { c: 0xd8c69a, n0: 0.03, n1: 0.12, life: 1.6, op: 0.7, add: false }, bubble: { c: 0xdff6ff, n0: 0.02, n1: 0.03, life: 2, op: 0.8, add: true } };
+            return {
+                burst(kind, pos, n) {
+                    const K = KIND[kind]; if (!K) return;
+                    for (let i = 0; i < n; i++) {
+                        const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: radial, color: K.c, transparent: true, depthWrite: false, opacity: K.op, blending: K.add ? THREE.AdditiveBlending : THREE.NormalBlending }));
+                        s.position.copy(pos); const v = dexDir();
+                        const vel = kind === 'bubble' ? new THREE.Vector3(v.x * 0.05, 0.25 + Math.random() * 0.15, v.z * 0.05) : kind === 'sand' ? new THREE.Vector3(v.x * 0.25, Math.abs(v.y) * 0.08, v.z * 0.25) : v.multiplyScalar(0.1);
+                        const sz = K.n0 * (0.7 + Math.random() * 0.6); s.scale.setScalar(sz); parent.add(s);
+                        list.push({ s, vel, t: 0, life: K.life * (0.7 + Math.random() * 0.5), K, sz });
+                    }
+                },
+                tick(dt) {
+                    for (let i = list.length - 1; i >= 0; i--) {
+                        const q = list[i]; q.t += dt; const u = q.t / q.life;
+                        if (u >= 1) { parent.remove(q.s); q.s.material.dispose(); list.splice(i, 1); continue; }
+                        q.s.position.addScaledVector(q.vel, dt); q.vel.multiplyScalar(Math.exp(-dt * 1.2));
+                        q.s.scale.setScalar(q.sz + (q.K.n1 - q.K.n0) * Math.sqrt(u)); q.s.material.opacity = q.K.op * (1 - u);
+                    }
+                },
+                clear() { list.forEach(q => { parent.remove(q.s); q.s.material.dispose(); }); list.length = 0; },
+            };
         }
         // 오늘 바다에 사는 아이들 — 풀린 절(처음 백지로 써낸 절)의 생물 중 오늘 요일 빛깔 · 지금 그 종의 시간대 (game.js _njDexToday). 자리는 절과 날짜로
         const creatures = [];
         let dexQ = null, dexTapHinted = false;
+        const seaFx = makeFx(scene);
+        const seaActOpt = {
+            fx: (kind, pos, n) => seaFx.burst(kind, pos, n),
+            splash: (I, big) => { const v = new THREE.Vector3(); I.m.getWorldPosition(v); sprayBurst(v.x, SEA_Y + 0.02, v.z, big ? 26 : 14, 0); if (big && typeof SoundEffect !== 'undefined' && SoundEffect.playPlunge && Math.hypot(v.x - P.x, v.z - P.z) < 6) SoundEffect.playPlunge(); },   // 🐬 물 위로 — 나갈 때·들어올 때 물보라
+        };
+        const actUp = c => Math.max(0.2, SEA_Y - c.g.position.y - 0.12);   // 수면까지 — 거북은 숨 쉬러, 돌고래는 그 위로
         (typeof _njDexToday === 'function' ? _njDexToday() : []).forEach(E => {
             let sd = 17; for (const ch of String(_get6AMDayStr()) + E.id) sd = (sd * 31 + ch.charCodeAt(0)) % 2147483647; sd = sd || 1;
             const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
@@ -4068,11 +4215,11 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             c.g.userData.x0 = x; c.g.userData.y0 = swim ? y + 0.8 + r() * 1.2 : c.float ? y + 0.4 : y;
             c.g.position.set(x, c.g.userData.y0, z); c.g.rotation.y = r() * 6.28;
             const acc = (typeof NJ_DEX_TIERS !== 'undefined' && NJ_DEX_TIERS[E.t]) ? NJ_DEX_TIERS[E.t].k : '', AT = ACC_AT[d.k];   // 꾸밈은 절이 정한다(장이 뒤로 갈수록 모자 → 안경 → 리본 → 면류관)
-            seaLoad(d.k).then(tpl => { if (cur !== C) return; const m = seaMake(tpl, d.k, DAYC == null ? 0xffffff : DAYC, acc); c.g.add(m.g); c.anim = m.anim; })
+            seaLoad(d.k).then(tpl => { if (cur !== C) return; const m = seaMake(tpl, d.k, DAYC == null ? 0xffffff : DAYC, acc); c.g.add(m.g); c.anim = m.anim; c.m = m.g; c.I = actInst(m.g, d.k, m.mats, seaActOpt); c.I.onChange = obsSync; })
                 .catch(() => {   // 모델을 못 받으면 예전 도형으로
                     if (cur !== C) return; const f = CREATURE[d.k](); f.g.userData.x0 = 0; f.g.userData.y0 = 0;
                     if (acc && AT) { const am = makeAcc(acc), at = acc === 'glasses' ? AT[1] : AT[0]; am.position.set(at[0], at[1], at[2]); am.scale.setScalar(AT[2]); if (acc === 'glasses' && AT[3]) am.rotation.y = AT[3]; (f.part || f.g).add(am); }
-                    c.g.add(f.g); c.anim = f.anim;
+                    c.g.add(f.g); c.anim = f.anim; c.m = f.g; c.I = actInst(f.g, d.k, [], seaActOpt); c.I.onChange = obsSync;
                 });
             const tapG = new THREE.Sprite(new THREE.SpriteMaterial({ map: radial, color: 0xfff2c4, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));   // 가까이 오면 반짝 — 눌러 보라고
             tapG.visible = false; tapG.scale.setScalar(0.22); c.g.add(tapG); c.tapG = tapG;
@@ -4109,6 +4256,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const tot = typeof _njDexVerseList === 'function' ? _njDexVerseList().length : 404;
             let msg = res.all ? T('nj3d_dex_all', { gem: res.gem.toLocaleString() }) : T('nj3d_dex_found', { e: c.d.e, name: dexWho(c), ref: dexRef(c), gem: (typeof NJ_DEX_GEM !== 'undefined' ? NJ_DEX_GEM : 200).toLocaleString(), n: res.n, m: tot });
             if (res.bonus && res.bonus.length) msg += ' · ' + res.bonus.map(b => T('nj3d_dex_bonus', { group: b.name, gem: b.gem.toLocaleString() })).join(' · ');
+            msg += ' · ' + T('nj3d_obs_again');
             showHint(msg, 5000); syncWallet(); syncDexBtn();
             if (typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) { SoundEffect.playBlankLevelUp(); if (res.bonus && res.bonus.length) setTimeout(() => SoundEffect.playBlankLevelUp(), 420); }
             sprayBurst(c.x, c.g.position.y + 0.08, c.z, 12, 0);
@@ -4125,7 +4273,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             });
             if (!best) return false;
             const id = best.E.id;
-            if (typeof _njDexMetThisWeek === 'function' && _njDexMetThisWeek(id)) { showHint(T('nj3d_dex_again', { e: best.d.e, name: dexWho(best), ref: dexRef(best) }), 3000); return true; }
+            if (typeof _njDexMetThisWeek === 'function' && _njDexMetThisWeek(id)) { obsOpen(best); return true; }   // 👀 이번 주에 만난 아이 — 관찰
             if (typeof _njDexHidden === 'function' && _njDexHidden(id)) { showHint(T('nj3d_dex_miss', { e: best.d.e }), 3000); return true; }
             askDex(best, false);
             return true;
@@ -4141,14 +4289,65 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                     if (seaE(nx, nz) < 0.92) { c.x = nx; c.z = nz; } c.g.position.x = c.x; c.g.position.z = c.z; c.g.rotation.y = -c.ang;
                     c.g.position.y = Math.max(seabed(c.x, c.z) + 0.15, Math.min(c.g.userData.y0, SEA_Y - 0.35));   // 얕은 데로 와도 물 위로 튀어나오지 않게
                 }
-                const near = under && d < 2.2;
+                const watched = obs && obs.c === c, near = watched || (under && d < 2.2);
                 if (c.hide && !(c.met && typeof _njDexHidden === 'function' && _njDexHidden(c.E.id))) { const want = near ? 1 : 0.25; c.g.scale.setScalar(c.g.scale.x + (want - c.g.scale.x) * Math.min(1, dt * 3)); }
-                c.anim(tt, near);
+                if (c.I) {   // 👀 가끔 저절로 — 지켜보는 아이는 가만 있은 지 6초면
+                    c.actT = (c.actT == null ? 4 + Math.random() * 10 : c.actT) - dt;
+                    if (!c.I.act && c.actT <= 0 && (!c.hide || c.g.scale.x > 0.8)) { const L = SEA_ACTS[c.d.k] || []; if (L.length) { c.I.up = actUp(c); actStart(c.I, Math.floor(Math.random() * L.length), tt); } c.actT = watched ? 6 : 9 + Math.random() * 12; }
+                    if (c.I.act) c.actT = Math.max(c.actT, watched ? 6 : 4);
+                    actFrame(c.I, c.anim, tt, near);
+                } else c.anim(tt, near);
                 const fresh = !(typeof _njDexMetThisWeek === 'function' && _njDexMetThisWeek(c.E.id)) && !(typeof _njDexHidden === 'function' && _njDexHidden(c.E.id));
                 const can = fresh && near && (!c.hide || c.g.scale.x > 0.8);   // 이번 주에 아직 안 만난 아이 — 위에 반짝임
                 c.tapG.visible = can; if (can) { c.tapG.position.y = 0.2 + Math.sin(tt * 3) * 0.02; c.tapG.material.opacity = 0.6 + Math.sin(tt * 5) * 0.3; if (!dexTapHinted) { dexTapHinted = true; showHint(T('nj3d_dex_tap'), 4500); } }
             });
             if (dexQ && Math.hypot(dexQ.c.x - P.x, dexQ.c.z - P.z) > 2.8) closeDexQ();   // 멀어지면 문제를 닫는다
+            seaFx.tick(dt);
+        }
+        /* ══ 👀 관찰 모드 (10/5 사용자: 바닷속에서 생물을 누르면 3인칭으로 관찰) ══
+           이번 주에 이미 만난 아이를 누르면 — 카메라가 그 아이 둘레로. 끌어 돌리기·두 손가락(휠)으로 거리는 걷기와 같은 손길(camYaw·camPitch·camDist를 빌려 쓰고 나올 때 되돌린다).
+           순례자는 그 자리에 머물고 걷기 단추는 감춘다. 아래 판에 움직임 단추 */
+        let obs = null;
+        const obsEl = document.createElement('div'); obsEl.className = 'nj3d-obs'; obsEl.hidden = true; fishQ.parentNode.appendChild(obsEl);
+        const obsV = new THREE.Vector3();
+        function obsOpen(c) {
+            if (obs) obsClose();
+            closeDexQ();
+            obs = { c, dist0: camDist, yaw0: camYaw, pitch0: camPitch };
+            c.g.getWorldPosition(obsV);
+            camYaw = Math.atan2(camera.position.x - obsV.x, camera.position.z - obsV.z); camPitch = 0.2; camDist = OBS_D[c.d.k] || 0.6;
+            ov.classList.add('nj3d-observing');
+            const en = typeof currentLang !== 'undefined' && currentLang === 'en', L = SEA_ACTS[c.d.k] || [];
+            obsEl.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button>
+                <div class="nj3d-obs-h">${c.d.e} <b>${esc2(dexWho(c))}</b><span>${esc2(dexRef(c))}</span></div>
+                <div class="nj3d-obs-acts">${L.map((a, i) => `<button data-i="${i}">${en ? a.en : a.ko}</button>`).join('')}</div>
+                <div class="nj3d-obs-tip">${T('nj3d_obs_tip')}</div>`;
+            obsEl.hidden = false;
+            obsEl.querySelector('.nj3d-fruit-x').onclick = obsClose;
+            obsEl.querySelectorAll('button[data-i]').forEach(b => b.onclick = () => { if (!c.I) return; c.I.up = actUp(c); actStart(c.I, +b.dataset.i, performance.now() / 1000); c.actT = 6; });
+            obsSync(c.I); lastTouch = performance.now();
+        }
+        function obsClose() {
+            if (!obs) return;
+            camDist = obs.dist0; camYaw = obs.yaw0; camPitch = obs.pitch0; camOff = null;
+            obs = null; obsEl.hidden = true; obsEl.innerHTML = ''; ov.classList.remove('nj3d-observing');
+        }
+        function obsSync(I) {   // 지금 하는 움직임 단추에 불
+            if (!obs || !obs.c.I || obs.c.I !== I) return;
+            obsEl.querySelectorAll('button[data-i]').forEach(b => b.classList.toggle('on', +b.dataset.i === I.ai));
+        }
+        function obsTick(dt) {
+            dexTick(dt);
+            if (!obs) return;
+            const c = obs.c;
+            if (!c.g.visible) { obsClose(); return; }
+            (c.m || c.g).getWorldPosition(obsV); obsV.y += (OBS_H[c.d.k] || 0.08) * (c.g.scale.x || 1);
+            const dir = new THREE.Vector3(Math.sin(camYaw) * Math.cos(camPitch), Math.sin(camPitch), Math.cos(camYaw) * Math.cos(camPitch));
+            const cp = obsV.clone().addScaledVector(dir, camDist);
+            if (obsV.y < SEA_Y) cp.y = Math.min(cp.y, SEA_Y - 0.08);   // 물속에서 본다(돌고래가 뛰어오르면 물 밑에서 올려다본다)
+            cp.y = Math.max(cp.y, seabed(cp.x, cp.z) + 0.05);
+            camera.position.lerp(cp, 1 - Math.exp(-dt * 8)); camera.lookAt(obsV);
+            body.visible = false;
         }
         function syncDexBtn() { dexBtn.textContent = T('nj3d_dex_btn', { n: typeof _njDexCount === 'function' ? _njDexCount() : 0, m: typeof _njDexVerseList === 'function' ? _njDexVerseList().length : 404 }); }
         syncDexBtn();
@@ -4158,10 +4357,82 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 <div class="nj3d-offer-intro">${T('nj3d_dex_intro')}</div>
                 <div class="nj3d-offer-list">${typeof _njDexHtml === 'function' ? _njDexHtml() : ''}</div>`;
             offerEl.hidden = false; offerEl.dataset.pearl = ''; offerEl.dataset.keep = '1';
-            offerEl.querySelector('.nj3d-fruit-x').onclick = () => { offerEl.hidden = true; offerEl.dataset.keep = ''; };
-            offerEl.querySelectorAll('.nj3d-dex-cell[data-tip]').forEach(cl => cl.onclick = () => { const line = cl.closest('.nj3d-dex-card').querySelector('.nj3d-dex-tipline'); if (line) line.textContent = cl.dataset.tip; });   // 칸을 누르면 그 절·요일·시간
+            offerEl.querySelector('.nj3d-fruit-x').onclick = () => { offerEl.hidden = true; offerEl.dataset.keep = ''; closeWatch(); };
+            offerEl.querySelectorAll('.nj3d-dex-cell[data-tip]').forEach(cl => cl.onclick = () => {   // 칸을 누르면 그 절·요일·시간 — 찾은 칸이면 그 모습으로 관찰
+                const card = cl.closest('.nj3d-dex-card'), line = card.querySelector('.nj3d-dex-tipline'); if (line) line.textContent = cl.dataset.tip;
+                if (cl.classList.contains('on')) openWatch(+card.dataset.s, +cl.dataset.ci, +cl.dataset.ti);
+            });
+            offerEl.querySelectorAll('.nj3d-dex-watch').forEach(b => b.onclick = () => { const card = b.closest('.nj3d-dex-card'), cl = card.querySelector('.nj3d-dex-cell.on'); if (cl) openWatch(+card.dataset.s, +cl.dataset.ci, +cl.dataset.ti); });
         }
-        dexBtn.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); if (!offerEl.hidden && offerEl.dataset.keep === '1') { offerEl.hidden = true; offerEl.dataset.keep = ''; } else openDex(); });
+        dexBtn.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); if (!offerEl.hidden && offerEl.dataset.keep === '1') { offerEl.hidden = true; offerEl.dataset.keep = ''; closeWatch(); } else openDex(); });
+        /* 👀 도감에서 관찰 (10/5) — 찾은 모습(빛깔 × 꾸밈)을 작은 물속 무대에. 물에 들어가지 않아도 언제든.
+           무대는 따로 그린다(렌더러 하나 더 — 닫으면 버린다). 끌어서 돌리고 휠·두 손가락으로 거리, 가만 두면 천천히 돌며 5초마다 움직임 하나 */
+        let dexWatch = null;
+        function closeWatch() {
+            if (!dexWatch) return;
+            cancelAnimationFrame(dexWatch.raf); dexWatch.fx.clear();
+            dexWatch.r.dispose(); try { dexWatch.r.forceContextLoss(); } catch (e) { }
+            dexWatch.el.remove(); dexWatch = null;
+        }
+        cleanups.push(closeWatch);
+        function openWatch(s, ci, ti) {
+            const d = typeof NJ_SEA_DEX !== 'undefined' ? NJ_SEA_DEX[s] : null; if (!d) return;
+            if (dexWatch && dexWatch.s === s) { dexWatch.look(ci, ti); return; }
+            closeWatch();
+            const en = typeof currentLang !== 'undefined' && currentLang === 'en', L = SEA_ACTS[d.k] || [];
+            const el = document.createElement('div'); el.className = 'nj3d-watch';
+            el.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button>
+                <div class="nj3d-obs-h">${d.e} <b class="nj3d-watch-name"></b></div>
+                <canvas class="nj3d-watch-cv"></canvas>
+                <div class="nj3d-obs-acts">${L.map((a, i) => `<button data-i="${i}">${en ? a.en : a.ko}</button>`).join('')}</div>
+                <div class="nj3d-obs-tip">${T('nj3d_watch_tip')}</div>`;
+            offerEl.parentNode.appendChild(el);
+            const cv = el.querySelector('canvas'), r = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
+            r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); r.outputEncoding = renderer.outputEncoding;
+            const sc = new THREE.Scene(), bg = new THREE.Color(0x0d3b52); sc.background = bg; sc.fog = new THREE.Fog(bg, 1.4, 4.5);
+            sc.add(new THREE.HemisphereLight(0xbfe9ff, 0x2a4a3a, 0.95)); const dl = new THREE.DirectionalLight(0xffffff, 0.85); dl.position.set(1, 2, 1.5); sc.add(dl);
+            const floor = new THREE.Mesh(new THREE.CircleGeometry(1.6, 40), new THREE.MeshStandardMaterial({ color: new THREE.Color(0xcdb98e).convertSRGBToLinear(), roughness: 1 })); floor.rotation.x = -Math.PI / 2; sc.add(floor);
+            const cam = new THREE.PerspectiveCamera(48, 1, 0.01, 20), fx = makeFx(sc), holder = new THREE.Group(); sc.add(holder);
+            const lift = SEA_MOVE[d.k] ? 0.25 : 0; holder.position.y = lift;   // 헤엄치는 아이는 바닥에서 띄운다
+            const W = dexWatch = { s, el, r, fx, raf: 0, I: null, anim: () => { }, yaw: 0.7, pitch: 0.18, dist: (OBS_D[d.k] || 0.6) * 0.85, idle: 3, lt: 0, drag: null, pts: new Map(), pinch0: 0, dist0: 0 };
+            const sync = I => el.querySelectorAll('button[data-i]').forEach(b => b.classList.toggle('on', +b.dataset.i === I.ai));
+            W.look = (ci, ti) => {
+                const Cc = NJ_DEX_COLORS[ci] || NJ_DEX_COLORS[0], TT = NJ_DEX_TIERS[ti] || NJ_DEX_TIERS[0];
+                el.querySelector('.nj3d-watch-name').textContent = en ? `${TT.preEn}${Cc.en} ${d.en}` : `${TT.pre}${Cc.ko} ${d.ko}`;
+                const put = (g, anim, mats) => { holder.clear(); holder.add(g); W.anim = anim; W.I = actInst(g, d.k, mats, { fx: (k, p, n) => fx.burst(k, p, n), splash: (I, big) => { const v = new THREE.Vector3(); I.m.getWorldPosition(v); fx.burst('bubble', v, big ? 12 : 6); } }); W.I.up = 0.12; /* 무대엔 수면이 없다 — 점프를 낮게(창 밖으로 나갔다) */ W.I.onChange = sync; };
+                seaLoad(d.k).then(tpl => { if (dexWatch !== W) return; const mm = seaMake(tpl, d.k, Cc.hex, TT.k); put(mm.g, mm.anim, mm.mats); })
+                    .catch(() => { if (dexWatch !== W || !CREATURE[d.k]) return; const f = CREATURE[d.k](); f.g.userData.x0 = 0; f.g.userData.y0 = 0; put(f.g, f.anim, []); });
+            };
+            el.querySelector('.nj3d-fruit-x').onclick = closeWatch;
+            el.querySelectorAll('button[data-i]').forEach(b => b.onclick = () => { if (W.I) { actStart(W.I, +b.dataset.i, performance.now() / 1000); W.idle = 0; } });
+            cv.addEventListener('pointerdown', e => { W.pts.set(e.pointerId, [e.clientX, e.clientY]); if (W.pts.size === 2) { const [a, b] = [...W.pts.values()]; W.pinch0 = Math.hypot(a[0] - b[0], a[1] - b[1]); W.dist0 = W.dist; W.drag = null; } else W.drag = [e.clientX, e.clientY]; try { cv.setPointerCapture(e.pointerId); } catch (_) { } });
+            cv.addEventListener('pointermove', e => {
+                if (W.pts.has(e.pointerId)) W.pts.set(e.pointerId, [e.clientX, e.clientY]);
+                if (W.pts.size === 2 && W.pinch0) { const [a, b] = [...W.pts.values()]; W.dist = Math.max(0.3, Math.min(2.5, W.dist0 * W.pinch0 / Math.max(20, Math.hypot(a[0] - b[0], a[1] - b[1])))); return; }
+                if (!W.drag) return; W.yaw -= (e.clientX - W.drag[0]) * 0.008; W.pitch = Math.max(-0.3, Math.min(1.2, W.pitch + (e.clientY - W.drag[1]) * 0.006)); W.drag = [e.clientX, e.clientY];
+            });
+            const up = e => { W.pts.delete(e.pointerId); if (W.pts.size < 2) W.pinch0 = 0; if (!W.pts.size) W.drag = null; };
+            cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+            cv.addEventListener('wheel', e => { W.dist = Math.max(0.3, Math.min(2.5, W.dist * (e.deltaY > 0 ? 1.1 : 0.9))); e.preventDefault(); }, { passive: false });
+            const frame = now => {
+                if (dexWatch !== W) return;
+                const t = now / 1000, dt = W.lt ? Math.min(0.05, t - W.lt) : 0.016; W.lt = t;
+                const w = cv.clientWidth, h = cv.clientHeight;
+                if (w && h && (cv.width !== Math.round(w * r.getPixelRatio()) || cv.height !== Math.round(h * r.getPixelRatio()))) { r.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); }
+                if (!W.drag && !W.pts.size) W.yaw += dt * 0.25;
+                W.idle += dt;
+                if (W.I && !W.I.act && W.idle > 5 && L.length) { actStart(W.I, Math.floor(Math.random() * L.length), t); W.idle = 0; }
+                if (W.I && W.I.act) W.idle = 0;
+                if (W.I) actFrame(W.I, W.anim, t, false); else W.anim(t, false);
+                fx.tick(dt);
+                const hy = lift + (OBS_H[d.k] || 0.08) + (W.I ? W.I.m.position.y : 0), dd = W.dist * Math.max(1, 1.15 / (cam.aspect || 1)), mx = W.I ? W.I.m.position.x : 0, mz = W.I ? W.I.m.position.z : 0;   // 뛰어오르면 눈길도 따라 오른다 · 세로로 긴 창은 멀리서(옆이 잘렸다)
+                cam.position.set(mx + Math.sin(W.yaw) * Math.cos(W.pitch) * dd, hy + Math.sin(W.pitch) * dd, mz + Math.cos(W.yaw) * Math.cos(W.pitch) * dd); cam.lookAt(mx, hy, mz);   // 앞으로 나가는 움직임도 가운데에
+                r.render(sc, cam);
+                W.raf = requestAnimationFrame(frame);
+            };
+            W.look(ci, ti);
+            W.raf = requestAnimationFrame(frame);
+        }
 
         // ── 화질 ──
         function setQuality(h, byUser) {
