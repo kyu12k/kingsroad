@@ -132,7 +132,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `openBlankDueScreen()` · `_startBlankDue(ch, from)` · `openReviewFromHome()` · `_renderSheetBlankDue` · `_groupBlankDue` | game.js:~31230 · ~10390 | 홈 ✍️ 백지 → 오늘 백지 차례 창(장별 절 범위) · 📖 복습 → 마지막 여정의 복습 목록 · 장 목록 맨 위 「오늘 백지 차례 / 지금 쓰기」와 묶음 「✍️n」(`from='map'`) |
 | `firstPhraseOf(text, lv)` · `openFirstPhrasePick()` · `_startFirstPhrase(ch, lv)` · `startFirstPhraseNote()` · `fpRecall` | game.js:~26330 | 🔑 첫 마디의 고난(장 단위, 쉬움·보통·어려움) · 📒 오답노트(5절부터) — 고난 엔진을 `startLv`로 빌려 쓴다 (`docs/고난과-난이도.md`) |
 | `_blankFirstDue(id)` · `_bossReviewHold` · `BLANK_FIRST_STEP` · `_reviewNoAdvance` | game.js:~11025 | ✍️ 3일 뒤 복습(단계 6+)부터 백지 먼저 · 막히면 단계 그대로 내일 다시 · 보스전·중간점검은 백지로 깼을 때만 단계 6+ 절을 올린다 (`docs/복습과-기억.md`) |
-| `_resetLongUnstudied()` · `_blankCountsAsClear(id)` | game.js:~10790 | 30일 넘게 밀린 절은 복습 일정을 처음으로 · 백지로 써낸 절 = 그 절 일반 클리어(고난·백지 차례·오늘의 암송·열매) |
+| `_resetLongUnstudied()` · `_stabilityHours(step)` · `_blankCountsAsClear(id)` | game.js:~11600 | 30일 넘게, 또는 보너스 선(기억 강도 40%·차례 뒤 하루+)을 넘긴 절은 복습 일정을 처음으로(`reviewResetLog`) · 백지로 써낸 절 = 그 절 일반 클리어(고난·백지 차례·오늘의 암송·열매) |
 | `_unifyJourneyMemory()` · `collectionLegacy` | game.js:~5610 | 두 여정 진도를 한 벌로(불러올 때) · 합치기 전 도감 점수 보존(체력 +3) |
 | `openGiftFruit(tag, nick)` · `_giftSend` · `_giftCheckInbox` · `_giftArrive` · `_giftOnBlank` · `eatGiftFruit(id)` · `openGiftBasket()` · `njGiftFruits` | game.js:~26480 | 🎁 나눔 열매 — 내 💎로 친구·길드원·동행에게, 받은 이가 백지로 익히고 먹으면 💎 반·🍃. 받는 이 문서 `pendingFruits`·`pendingThanks` (`docs/새-예루살렘.md`) |
 | `renderHomeTodo()` · `_todoSocial` · `_syncSocialBadges()` · `updateFriendBadge()` | game.js:~29250 | 홈 「오늘 할 일」(복습·백지·응원·길드 출석)과 친구/길드/더보기 배지. `updateNotificationBadges`가 함께 그린다 |

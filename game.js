@@ -343,6 +343,7 @@ const LANG = {
         gnudge_keep: 'Google에 연결해 두면 어느 기기에서든 Google로 이어 해요.<br>번호·친구·길드는 그대로예요.',
         gnudge_btn: '🔵 Google로 지키기 (10초)',
         todo_protect: '내 기록 지키기',
+        review_reset_toast: '💤 오래 밀린 {n}절이 처음으로 돌아갔어요 · 지도에서 다시 외울 수 있어요',
 
         // 결과 화면
         result_training_title: '⚔️ 집중 훈련 완료!',
@@ -1563,6 +1564,7 @@ const LANG = {
         gnudge_keep: 'Link Google and you can continue on any device with Google.<br>Your number, friends and guild stay the same.',
         gnudge_btn: '🔵 Protect with Google (10 sec)',
         todo_protect: 'Protect progress',
+        review_reset_toast: '💤 {n} long-overdue verse(s) went back to the start · relearn them from the map',
 
         // 결과 화면
         result_training_title: '⚔️ Training Complete!',
@@ -3229,6 +3231,7 @@ loadGameData = function () {
         if (typeof parsed.onboardStep === 'string') onboardStep = parsed.onboardStep;
         onboardPromise = (parsed.onboardPromise && typeof parsed.onboardPromise === 'object') ? parsed.onboardPromise : null;
         googleNudge = (parsed.googleNudge && typeof parsed.googleNudge === 'object') ? parsed.googleNudge : null;
+        reviewResetLog = Array.isArray(parsed.reviewResetLog) ? parsed.reviewResetLog : [];
         entryEnv = (parsed.entryEnv && typeof parsed.entryEnv === 'object') ? parsed.entryEnv : null;
         bossFirstClearClaimed = new Set(parsed.bossFirstClearClaimed || []);
         if (parsed.bibleReadLog) {
@@ -5996,6 +5999,15 @@ function advanceReviewStep(stageId) {
     return { earnedGem, outcome };
 }
 
+/* 단계별 기억 안정성 S(시간) — getMemoryStrength와 「보너스 선」 초기화(_resetLongUnstudied)가 함께 쓴다 */
+function _stabilityHours(step) {
+    // S값 기준: 대복습 완료 직후 안정성이 약 2배 증가한다는 FSRS 이론 적용
+    // step 1 10분 후 · 2 1시간 · 3 6시간 · 4 23시간 · 5 대복습(23hr) 완료 → S ×2 (R=80%: 46시간 후) · 6 대복습(71hr) 완료 → S ×2 (R=80%: 142시간 후)
+    const STABILITY_HOURS = [0.747, 4.48, 26.9, 103.1, 206.0, 637.0];
+    const idx = step - 1;
+    if (idx < STABILITY_HOURS.length) return STABILITY_HOURS[idx];
+    return (getReviewWaitMs(step + 1) / 3600000) / 0.2231;   // step 7+: 다음 복습 대기시간으로 동적 산출
+}
 // ★ [에빙하우스] 현재 기억 강도 계산 (0~1)
 // 공식: R = e^(-t/S), t=경과시간(hr), S=안정성(hr, 스텝별 증가)
 function getMemoryStrength(stageId) {
@@ -6003,27 +6015,7 @@ function getMemoryStrength(stageId) {
     if (lastClear === 0) return null;
 
     const step = stageReviewStep[stageId] || 1;
-    // S값 기준: 대복습 완료 직후 안정성이 약 2배 증가한다는 FSRS 이론 적용
-    // step 5, 6: 대복습(23hr, 71hr) 완료 후 S를 2배로 상향 → R=80% 여유 구간 확보
-    const STABILITY_HOURS = [
-        0.747,  // step 1: 10분 후 복습
-        4.48,   // step 2: 1시간 후
-        26.9,   // step 3: 6시간 후
-        103.1,  // step 4: 23시간 후
-        206.0,  // step 5: 대복습(23hr) 완료 → S ×2 (R=80%: 46시간 후)
-        637.0,  // step 6: 대복습(71hr) 완료 → S ×2 (R=80%: 142시간 후)
-    ];
-
-    let S;
-    const idx = step - 1;
-    if (idx < STABILITY_HOURS.length) {
-        S = STABILITY_HOURS[idx];
-    } else {
-        // step 7+: 다음 복습 대기시간으로 동적 산출
-        const waitMs = getReviewWaitMs(step + 1);
-        S = (waitMs / 3600000) / 0.2231;
-    }
-
+    const S = _stabilityHours(step);
     const elapsedHr = (Date.now() - lastClear) / 3600000;
     return Math.max(0, Math.min(1, Math.exp(-elapsedHr / S)));
 }
@@ -11582,23 +11574,39 @@ function _blankCountsAsClear(id, now) {
    한 번 복습에 높은 단계 보석을 받고 몇 달 뒤로 밀리는 것도 기억에 맞지 않는다.
    → 차례가 30일 넘게 지난 절은 복습 일정만 처음(단계 1, 다음 0)으로. 복습 차례에서 빠지고, 다시 하면 「처음 외우기」부터.
    클리어 횟수·첫 클리어 날·마지막 클리어·백지 기록(verseRecall)은 그대로 둔다 — 「외운 적은 있지만 잊힌 절」.
-   예외: 백지레벨이 살아 있는 절(백지 차례가 30일 넘게 밀리지 않음). 앱을 켤 때마다 본다. */
+   예외: 백지레벨이 살아 있는 절(백지 차례가 30일 넘게 밀리지 않음). 앱을 켤 때마다 본다.
+   ★ 보너스 선 (2026-10-06 사용자: "보너스를 못 받게 되는 시간이 지나면 복습 대상에서 빼고 초기화") — 기억 강도가 40% 아래
+   (복습 보석이 20%만 나오는 'miss' 구간)로 떨어진 절도 같은 일을 한다. 단 차례 뒤 최소 하루는 기다린다(단계 2는 3.9시간 만에 선을 넘어
+   밤에 외우고 잠들면 아침에 다 돌아가 있게 된다). 선 = 단계 2·3 → 차례 뒤 하루, 4 → 4일, 5 → 7일, 6 → 21일, 7+ → 30일 규칙이 먼저.
+   10/6 실측: 최근 7일 공부한 사람의 밀린 복습 중앙 19절 → 선 아래를 빼면 0(대부분 새로 외운 날의 10분·1시간·6시간 복습을 놓친 절).
+   끊긴 10절+의 64%가 공부를 멈춘 뒤에도 앱을 열었다 — 쌓인 숫자를 보고 다시 닫았다(docs/복습과-기억.md 「중간 이탈 분석」).
+   돌아간 수는 reviewResetLog에 남기고(효과 측정), 그 접속에서 한 번 알린다 */
 const LONG_UNSTUDIED_MS = 30 * 86400000;
+const REVIEW_MISS_R = 0.4, REVIEW_MISS_MIN_LATE_MS = 86400000;
+let reviewResetLog = [];   // [{ at, m: 보너스 선, l: 30일 }] 최근 40번
 function _resetLongUnstudied() {
-    const now = Date.now();
-    let n = 0;
+    const now = Date.now(), missK = Math.log(1 / REVIEW_MISS_R);
+    let n = 0, m = 0;
     for (const id in stageReviewStep) {
         if (!/^\d+-\d+$/.test(id)) continue;
         const step = stageReviewStep[id] || 1, next = stageNextReviewTime[id] || 0;
-        if (step <= 1 || !next || now - next <= LONG_UNSTUDIED_MS) continue;
+        if (step <= 1 || !next) continue;
+        const late = now - next, lc = stageLastClear[id] || 0;
+        const long = late > LONG_UNSTUDIED_MS;
+        const miss = !long && late > REVIEW_MISS_MIN_LATE_MS && lc > 0 && (now - lc) / 3600000 >= _stabilityHours(step) * missK;
+        if (!long && !miss) continue;
         const r = (typeof verseRecall !== 'undefined' && verseRecall) ? verseRecall[id] : null;
         if (r && r.bx && r.bxDue && now - r.bxDue <= LONG_UNSTUDIED_MS) continue;
         stageReviewStep[id] = 1;
         stageNextReviewTime[id] = 0;
-        n++;
+        if (long) n++; else m++;
     }
-    if (n) console.log(`🍂 한 달 넘게 손 안 댄 ${n}절 — 복습 일정을 처음으로`);
-    return n;
+    if (n || m) {
+        console.log(`🍂 복습 일정을 처음으로 — 한 달 넘게 ${n}절 · 보너스 선 ${m}절`);
+        reviewResetLog = [...(Array.isArray(reviewResetLog) ? reviewResetLog : []), { at: now, m, l: n }].slice(-40);
+        setTimeout(() => { if (typeof showToast === 'function') showToast(t('review_reset_toast', { n: n + m })); }, 3500);
+    }
+    return n + m;
 }
 
 function _blankLvNoteText(res, pts, quick) {
@@ -13166,6 +13174,7 @@ function saveGameData() {
         onboardStep: onboardStep, // 온보딩 이탈 지점 (profile→map→stage→cleared)
         onboardPromise: onboardPromise, // 🌅 내일의 약속 카드 — 본 때·알림 결과(효과 측정)
         googleNudge: googleNudge, // 🔒 내 기록 지키기 — 본 단계·누른 것·연결 시각(효과 측정)
+        reviewResetLog: reviewResetLog, // 🍂 복습 일정을 처음으로 돌린 기록(보너스 선·30일, 효과 측정)
         entryEnv: _envNote(), // 📱 들어온 환경 — 텔레그램 안·설치 앱·브라우저 비율(측정)
         bibleReadLog: bibleReadLog,
         bibleReadPasses: bibleReadPasses, // 오늘 장별 완독 회수
@@ -13609,6 +13618,10 @@ function _mergeSaveProgress(target, other) {
         if ((other.njMannaGems | 0) > (target.njMannaGems | 0)) { target.njMannaGems = other.njMannaGems; took++; }
         if ((other.njDexFish | 0) > (target.njDexFish | 0)) { target.njDexFish = other.njDexFish; took++; }
         if (other.onboardPromise && typeof other.onboardPromise === 'object' && (!target.onboardPromise || (!target.onboardPromise.notif && other.onboardPromise.notif))) { target.onboardPromise = other.onboardPromise; took++; }   // 🌅 내일의 약속 — 결과가 있는 쪽
+        if (Array.isArray(other.reviewResetLog) && other.reviewResetLog.length) {   // 🍂 처음으로 돌린 기록 — 시각으로 합집합
+            const seen = new Set((target.reviewResetLog || []).map(e => e.at)), add = other.reviewResetLog.filter(e => e && !seen.has(e.at));
+            if (add.length) { target.reviewResetLog = [...(target.reviewResetLog || []), ...add].sort((a, b) => a.at - b.at).slice(-40); took++; }
+        }
         if (other.entryEnv && typeof other.entryEnv === 'object') {   // 📱 들어온 환경 — 처음은 이른 쪽, 마지막은 늦은 쪽, 본 곳은 합집합
             const a = target.entryEnv || {}, b = other.entryEnv, m = {};
             m.first = (a.first && (!b.first || a.first.at <= b.first.at)) ? a.first : b.first;
