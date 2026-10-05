@@ -30,6 +30,10 @@ const GEM_ABS_MAX          = 100000000; // 젬 절대 상한
 // 증가량을 saves/{uid}.gemLedger에 적어두고, 문턱을 넘으면 flags를 올려 로그만 남긴다. 분석 때 훑어본다.
 // 정상 최대치: 바쁜 날 ~10만, 월요일(랭킹 3판 보상 8.75만 + 미션) ~19만 → 30만.
 const GEM_DAILY_FLAG       = 300000;
+// 줄어든 것도 적는다(2026-10-05 사용자: 오전에 10만이 넘었는데 낮에 보니 그 아래 — 늘어난 양만 남아 언제 줄었는지 알 수 없었다).
+// 그날 줄어든 합(lost)과 한 번에 크게 줄어든 순간(GEM_DROP_MARK 넘게) 최근 10개(drops) — 두 기기 저장이 부딪쳐 한꺼번에 사라진 것을 가려내려고.
+// 같은 저장 트랜잭션 안에서 숫자 몇 개만 더 쓴다 — 요청 수·응답은 그대로
+const GEM_DROP_MARK        = 5000;
 const SCORE_ABS_MAX        = 100000000;   // 주간·월간 점수 절대 상한 ('즉시 1억' 류 차단)
 // 누적·연간은 쌓이기만 하므로 따로 — 2천만 하나로 묶었다가 1위(흠없는 어린양, 누적 19,999,236)가 닿아
 // 그 뒤 모든 점수 제출이 invalid-argument로 거절됐다 (2026-09-29)
@@ -127,8 +131,15 @@ exports.saveGameDataSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
             const led = (old && old.gemLedger && typeof old.gemLedger === "object") ? old.gemLedger : {};
             const prevGems = (old && typeof old.gems === "number") ? old.gems : null;
             let gained = led.day === kstDay ? (led.gained || 0) : 0;
+            let lost = led.day === kstDay ? (led.lost || 0) : 0;
             if (prevGems !== null && newData.gems > prevGems) gained += newData.gems - prevGems;
-            const ledger = { day: kstDay, gained, flags: led.flags || 0, flaggedAt: led.flaggedAt || null };
+            if (prevGems !== null && newData.gems < prevGems) lost += prevGems - newData.gems;
+            let drops = Array.isArray(led.drops) ? led.drops : [];
+            if (prevGems !== null && prevGems - newData.gems > GEM_DROP_MARK) {
+                drops = [...drops, { at: serverNow, from: prevGems, to: newData.gems, base: Number(newData.baseUpdatedAt) || null, prevAt: Number(old && old.updatedAt) || null }].slice(-10);
+                console.warn(`[gemDrop] uid=${uid} tag=${newData.tag} ${prevGems} → ${newData.gems}`);
+            }
+            const ledger = { day: kstDay, gained, lost, drops, flags: led.flags || 0, flaggedAt: led.flaggedAt || null };
             if (gained > GEM_DAILY_FLAG && led.flaggedDay !== kstDay) {
                 ledger.flags += 1;
                 ledger.flaggedAt = serverNow;
