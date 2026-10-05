@@ -13744,6 +13744,13 @@ async function _initFirestoreSyncCore() {
         const _forceRemoteCheck = localStorage.getItem('kingsroad_forceRemoteSync') === 'true';
         if (_forceRemoteCheck) {
             localStorage.removeItem('kingsroad_forceRemoteSync');
+            // 처음 온 사람이 「Google로 시작하기」를 '구글로 가입'으로 알고 누른 경우 — 예전엔 이 안내만 띄우고 끝나
+            // 프로필 창(첫 1회 이미 소비)이 다시 안 떠서 막다른 곳이었다(9/4~10/2 저장본 없는 구글 계정 13개). 이 구글 계정으로 새로 시작한다
+            if (myNickname === '순례자' && (!myTag || myTag === '0000')) {
+                showGemToast(0, 'Google 계정으로 새로 시작해요. 이전 기록이 있다면 그 기기에서 「Google 계정 연결하기」를 먼저 해 주세요.', false);
+                setTimeout(() => { if (typeof openProfileSettings === 'function') openProfileSettings(); }, 600);
+                return;
+            }
             showGemToast(0, 'Google 계정에 연결된 데이터가 없습니다. 기존 기기에서 먼저 "Google 계정 연결하기"를 해주세요.', true);
             return;
         }
