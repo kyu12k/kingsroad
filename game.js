@@ -636,6 +636,11 @@ const LANG = {
         gift_take: '🎁 받기 · {cost}',
         gift_need: '🐟·🍇 {n} 더 필요해요',
         gift_full: '성 둘레 자리가 다 찼어요',
+        offer_title: '🎁 {name}의 사신', offer_need: '🐟·🍇 {n} 더 필요해요',
+        goods_head: '🏺 {name}의 특산물', goods_land: '그 땅의 산물', goods_intro: '나라가 자랄수록 더 크게 청할 수 있어요 — 크면 포장도 행렬도 커지고, 성에도 그 크기로 놓여요',
+        goods_size: '{size} · 크기 ×{x}', goods_lock: '나라가 「{lv}」 단계가 되면', goods_peace: '🕊️ 평화의 모습으로 — {name}', goods_peace_ref: '「칼을 쳐서 보습을, 창을 쳐서 낫을」 (사 2:4)',
+        offer_rev_head: '📜 계시록의 예물 — 어느 나라에서나',
+        deco_peace_on: '🕊️ 평화의 모습', deco_peace_off: '⚔️ 본래 모습', deco_peace_done: '🕊️ 「{name}」 모습으로 바꿨어요',
         deco_btn: '🛠️ 꾸미기',
         nj3d_holo_on: '🏰 완성된 모습',
         nj3d_holo_off: '🏰 지금 모습',
@@ -1837,6 +1842,11 @@ const LANG = {
         gift_take: '🎁 Receive · {cost}',
         gift_need: 'Need {n} more 🐟·🍇',
         gift_full: 'All places around the city are taken',
+        offer_title: '🎁 Envoy of {name}', offer_need: 'Need {n} more 🐟·🍇',
+        goods_head: '🏺 Treasure of {name}', goods_land: 'Fruit of the land', goods_intro: 'As the nation grows you can ask for more — bigger gifts come in bigger wrappings and longer processions, and stand that big by the city',
+        goods_size: '{size} · size ×{x}', goods_lock: 'When the nation reaches “{lv}”', goods_peace: '🕊️ In its peaceful form — {name}', goods_peace_ref: '“Swords into plowshares, spears into pruning hooks” (Isa 2:4)',
+        offer_rev_head: '📜 Gifts of Revelation — from any nation',
+        deco_peace_on: '🕊️ Peaceful form', deco_peace_off: '⚔️ Original form', deco_peace_done: '🕊️ Changed to {name}',
         deco_btn: '🛠️ Decorate',
         nj3d_holo_on: '🏰 Finished city',
         nj3d_holo_off: '🏰 As it is now',
@@ -7967,7 +7977,6 @@ function _escapeHtmlSafe(t) { return String(t).replace(/[&<>"']/g, c => ({ '&': 
    해안 56 나라 = 함 30(어귀 서쪽) · 셈 26(어귀 동쪽), 섬 14 = 야벳(창 10:5 「바닷가의 땅」 — KJV isles; 야완의 아들 깃딤·도다님·달시스는 먼 바다).
    맑힐 수 있는 칸 = 뭍(해안·섬)에서 가까운 바다 2,000칸(육각, 반지름 1.1). 구역 = 뭍에서 몇 번째 칸 — 물가(1) · 얕은 바다(2~3) · 깊은 바다(4~). 그 너머는 「먼 바다」.
    2D 바다 그림·지도도 이 좌표를 줄여 그린다. 3D(nj3d.js)는 이 함수들을 그대로 쓴다 */
-const SEA_G = { CX: 440, CY: 470, RX: 330, RY: 320, HR: 7.75, GAP: 0.13 };   // 옛 2D 둥근 바다 — 2D를 해안선으로 다시 그릴 때까지
 const SEA_SHORE = 43;
 function _seaCoastZ(x) { const k = Math.min(1, Math.abs(x) / 12); return SEA_SHORE + k * (2.4 * Math.sin(x * 0.068) + 1.5 * Math.sin(x * 0.157 + 0.9) + 0.9 * Math.sin(x * 0.31 + 2.1)) + 0.00045 * x * x; }
 // 야벳 14 섬 [x, 해안에서 거리, 반지름] — 0~6 야벳의 아들 · 7~9 고멜의 아들(고멜 곁) · 10~13 야완의 아들(먼 바다). 나라 번호 = 56 + 순서
@@ -8006,69 +8015,93 @@ function _seaGeom() {
     _seaCells = { water, salt: [], ring, zone, zoneSize, nb: nbIdx, R };
     return _seaCells;
 }
-function _seaNatAng(i) { const A0 = -Math.PI / 2 + SEA_G.GAP, SP = Math.PI * 2 - SEA_G.GAP * 2; return [A0 + SP * i / 70, A0 + SP * (i + 1) / 70]; }
-/* 바다와 해안을 그린다 — 크기 S의 정사각형에(가운데 정렬). sel: 고른 나라 */
-function _seaDraw(cv, W, H, w, sel, noRiver) {
+/* 🌊 2D 바다 (10/5 다시 그림) — 3D와 같은 세계 좌표를 위에서 내려다본 띠. 북쪽(위)이 뭍, 남쪽이 바다.
+   해안이 동서로 264나 길어 한 화면에 다 넣으면 칸이 점이 된다 → 세로(뭍 12 ~ 바다 56)를 화면 높이에 맞추고, 가로는 끌어서 넘긴다(_seaView).
+   지도 바다 구역은 강 어귀(x 0)를 가운데로 */
+const SEA_Z0 = SEA_SHORE - 12, SEA_Z1 = SEA_SHORE + 56;
+let _seaView = { cx: 0 };
+function _seaFrame(W, H, cx) {   // 화면 ↔ 세계
+    const k = H / (SEA_Z1 - SEA_Z0), span = W / k, lim = 132 - span / 2;
+    const c = lim > 0 ? Math.max(-lim, Math.min(lim, cx || 0)) : 0;
+    return { k, x0: c - span / 2, span, cx: c };
+}
+function _seaDraw(cv, W, H, w, sel, noRiver, cx) {
     const dpr = Math.min(2.5, window.devicePixelRatio || 2);
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.width = W + 'px'; cv.style.height = H + 'px';
-    const g = cv.getContext('2d'), S = Math.min(W, H), k = S / 880, ox = (W - S) / 2, oy = (H - S) / 2;
-    g.setTransform(dpr * k, 0, 0, dpr * k, dpr * ox, dpr * oy);
-    const { CX, CY, RX, RY, HR } = SEA_G, { water, salt } = _seaGeom();
-    const ring = (a, r) => [CX + Math.cos(a) * (RX + r), CY + Math.sin(a) * (RY + r)];
-    const rng = s0 => { let s1 = s0; return () => (s1 = (s1 * 16807) % 2147483647) / 2147483647; };
-    // 땅
+    const g = cv.getContext('2d'), F = _seaFrame(W, H, cx == null ? _seaView.cx : cx), { k, x0 } = F;
+    const X = x => (x - x0) * k, Y = z => (z - SEA_Z0) * k;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#2f2820'); bg.addColorStop(1, '#221d17'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
-    g.setTransform(dpr * k, 0, 0, dpr * k, dpr * ox, dpr * oy);
-    // 나라
-    const LAND = ['#6e604b', '#5aa962', '#3f8f4d', '#4f9b58', '#62b06a'], r2 = rng(21);
-    for (let i = 0; i < 70; i++) {
-        const [a0, a1] = _seaNatAng(i), n = _seaNat(w, i);
-        g.beginPath(); g.moveTo(...ring(a0, 3));
-        for (let q = 1; q <= 4; q++) g.lineTo(...ring(a0 + (a1 - a0) * q / 4, 3));
-        for (let q = 4; q >= 0; q--) g.lineTo(...ring(a0 + (a1 - a0) * q / 4, 86));
-        g.closePath();
-        g.fillStyle = n.lv ? LAND[n.lv] : (i % 2 ? '#6a5c48' : '#75674f'); g.fill();
-        g.strokeStyle = i === sel ? '#f6d77a' : '#1e1913'; g.lineWidth = i === sel ? 4 : 1.2; g.stroke();
-        const am = (a0 + a1) / 2;
-        if (n.lv >= 2) { const [tx, ty] = ring(am, 26 + r2() * 10); g.fillStyle = '#2b7a3a'; g.beginPath(); g.arc(tx, ty, 7, 0, 7); g.fill(); } else r2();
-        if (n.lv >= 3) { const [hx, hy] = ring(am, 54); g.fillStyle = '#f2e3c2'; g.fillRect(hx - 5, hy - 5, 10, 10); g.fillStyle = '#b5523b'; g.fillRect(hx - 6, hy - 8, 12, 4); }
-        if (n.lv >= 4) { const [hx, hy] = ring(am, 72); g.fillStyle = '#fff4d6'; g.fillRect(hx - 4, hy - 4, 8, 8); }
-        if (!n.lv) { const [tx, ty] = ring(am, 40); g.strokeStyle = '#4b4133'; g.lineWidth = 2; g.beginPath(); g.moveTo(tx - 6, ty + 4); g.lineTo(tx, ty - 5); g.lineTo(tx + 6, ty + 4); g.stroke(); }
-    }
-    // 바다
-    g.fillStyle = '#1b2626'; g.beginPath(); g.ellipse(CX, CY, RX, RY, 0, 0, 7); g.fill();
-    const cs = _seaCellsOf(w), zone = _seaGeom().zone, cz = _seaCurZone(w);
+    const { water, R } = _seaGeom(), cs = _seaCellsOf(w), zone = _seaGeom().zone, cz = _seaCurZone(w);
+    const xa = x0 - 2, xb = x0 + F.span + 2, step = Math.max(0.5, 2 / k);
+    // 바다 바탕 — 먼 바다일수록 짙게
+    const sg = g.createLinearGradient(0, Y(SEA_SHORE), 0, H); sg.addColorStop(0, '#21403f'); sg.addColorStop(1, '#14232a'); g.fillStyle = sg; g.fillRect(0, 0, W, H);
+    // 칸
     const hex = (x, y, r) => { g.beginPath(); for (let q = 0; q < 6; q++) { const a = Math.PI / 6 + q * Math.PI / 3; q ? g.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r) : g.moveTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } g.closePath(); };
-    water.forEach((c, i) => { hex(c.x, c.y, HR - 0.9); g.fillStyle = cs[i] === '1' ? '#1fb0c9' : zone[i] === cz ? '#3b4a3f' : '#26312b'; g.fill(); });   // 맑음 · 지금 구역 · 그 밖
-    salt.forEach(c => { hex(c.x, c.y, HR - 0.9); g.fillStyle = '#d9d2c3'; g.fill(); });
-    // 물고기 · 그물
-    const r3 = rng(33);
-    for (let i = 0; i < 2000; i += 9) { if (cs[i] !== '1') continue; const c = water[i]; if (r3() > 0.5) continue; const dir = r3() < 0.5 ? 1 : -1;
-        g.fillStyle = 'rgba(233,251,255,0.85)'; g.beginPath(); g.ellipse(c.x, c.y, 5, 2.4, 0, 0, 7); g.fill(); g.beginPath(); g.moveTo(c.x - 5 * dir, c.y); g.lineTo(c.x - 9 * dir, c.y - 3); g.lineTo(c.x - 9 * dir, c.y + 3); g.fill(); }
-    for (let i = 0; i < 2000; i++) { if (cs[i] !== '1') continue; const c = water[i], ex = (c.x - CX) / RX, ey = (c.y - CY) / RY; if (ex * ex + ey * ey < 0.86 || i % 7) continue;
-        const a = Math.atan2(ey, ex), [bx, by] = ring(a, 10);
-        g.strokeStyle = 'rgba(245,230,196,0.8)'; g.setLineDash([3, 3]); g.lineWidth = 1.5; g.beginPath(); g.moveTo(c.x, c.y); g.quadraticCurveTo((c.x + bx) / 2 + 8, (c.y + by) / 2 + 8, bx, by); g.stroke(); g.setLineDash([]);
-        g.fillStyle = '#fff'; g.beginPath(); g.arc(bx, by, 4, 0, 7); g.fill(); }
-    // 강 어귀
-    const my = CY - RY, rg = g.createLinearGradient(0, -oy / k, 0, my); rg.addColorStop(0, '#7fe6f5'); rg.addColorStop(1, '#19b3cc');
-    if (!noRiver) { g.fillStyle = rg; g.beginPath(); g.moveTo(CX - 22, -oy / k); g.bezierCurveTo(CX - 18, 60, CX - 12, 90, CX - 16, my + 12); g.lineTo(CX + 16, my + 12); g.bezierCurveTo(CX + 12, 90, CX + 18, 60, CX + 22, -oy / k); g.fill(); }   // 지도에선 지도 강이 어귀까지 이어진다
-    g.textAlign = 'center'; g.font = '800 22px system-ui, sans-serif';
-    [[currentLang === 'en' ? 'Shem' : '셈', 0.1], [currentLang === 'en' ? 'Ham' : '함', Math.PI / 2], [currentLang === 'en' ? 'Japheth' : '야벳', Math.PI + 0.35]].forEach(([tx, a]) => {
-        const [x, y] = ring(a, 44); g.lineWidth = 5; g.strokeStyle = 'rgba(20,16,12,0.85)'; g.strokeText(tx, x, y + 8); g.fillStyle = '#f6d77a'; g.fillText(tx, x, y + 8); });
+    const hr = R * k * 0.98;
+    water.forEach((c, i) => { if (c.x < xa - R || c.x > xb + R) return; hex(X(c.x), Y(c.z), hr - Math.min(0.8, hr * 0.12)); g.fillStyle = cs[i] === '1' ? '#1fb0c9' : zone[i] === cz ? '#3b4a3f' : '#283632'; g.fill(); });
+    // 물고기 — 맑은 칸 몇 군데
+    for (let i = 0; i < water.length; i += 9) { if (cs[i] !== '1') continue; const c = water[i]; if (c.x < xa || c.x > xb || (i * 7919) % 10 > 4) continue; const x = X(c.x), y = Y(c.z), s = Math.max(2, hr * 0.6), dir = i % 2 ? 1 : -1;
+        g.fillStyle = 'rgba(233,251,255,0.85)'; g.beginPath(); g.ellipse(x, y, s, s * 0.48, 0, 0, 7); g.fill(); g.beginPath(); g.moveTo(x - s * dir, y); g.lineTo(x - s * 1.8 * dir, y - s * 0.6); g.lineTo(x - s * 1.8 * dir, y + s * 0.6); g.fill(); }
+    // 뭍 — 해안선 위(북쪽) 전부
+    const LAND = ['#7a6a50', '#5aa962', '#3f8f4d', '#4f9b58', '#62b06a'];
+    g.beginPath(); g.moveTo(X(xa), 0);
+    for (let x = xa; x <= xb; x += step) g.lineTo(X(x), Y(_seaCoastZ(x)));
+    g.lineTo(X(xb), 0); g.closePath(); g.fillStyle = '#4a4232'; g.fill();
+    // 해안 나라 띠 — 해안선에서 뭍 쪽 9
+    const natPoly = (a, b, d) => { g.beginPath(); g.moveTo(X(a), Y(_seaCoastZ(a) - d)); for (let x = a; x <= b; x += step) g.lineTo(X(x), Y(_seaCoastZ(x) - d)); g.lineTo(X(b), Y(_seaCoastZ(b) - d));
+        for (let x = b; x >= a; x -= step) g.lineTo(X(x), Y(_seaCoastZ(x) + 0.05)); g.lineTo(X(a), Y(_seaCoastZ(a))); g.closePath(); };
+    for (let i = 0; i < 56; i++) {
+        const [a, b] = _seaNatSpan(i); if (b < xa || a > xb) continue;
+        const n = _seaNat(w, i); natPoly(a, b, 9);
+        g.fillStyle = n.lv ? LAND[n.lv] : (i % 2 ? '#6a5c48' : '#75674f'); g.fill();
+        g.strokeStyle = i === sel ? '#f6d77a' : 'rgba(20,16,12,0.7)'; g.lineWidth = i === sel ? 3 : 1; g.stroke();
+        _seaNatIcons(g, (a + b) / 2, _seaCoastZ((a + b) / 2) - 4.5, n.lv, k, X, Y);
+    }
+    // 모래톱 — 해안선 따라 옅은 띠
+    g.strokeStyle = 'rgba(232,214,168,0.75)'; g.lineWidth = Math.max(1.5, k * 0.6); g.beginPath();
+    for (let x = xa; x <= xb; x += step) { const y = Y(_seaCoastZ(x)) + g.lineWidth / 2; x === xa ? g.moveTo(X(x), y) : g.lineTo(X(x), y); } g.stroke();
+    // 섬 나라(야벳)
+    _seaIsles().forEach(s => {
+        if (s.x + s.r < xa || s.x - s.r > xb) return;
+        const n = _seaNat(w, s.n), cxp = X(s.x), cyp = Y(s.z), r = s.r * k;
+        g.fillStyle = 'rgba(232,214,168,0.85)'; g.beginPath(); g.arc(cxp, cyp, r + Math.max(1.5, k * 0.5), 0, 7); g.fill();
+        g.fillStyle = n.lv ? LAND[n.lv] : '#75674f'; g.beginPath(); g.arc(cxp, cyp, r, 0, 7); g.fill();
+        if (s.n === sel) { g.strokeStyle = '#f6d77a'; g.lineWidth = 3; g.stroke(); }
+        _seaNatIcons(g, s.x, s.z, n.lv, k, X, Y);
+    });
+    // 강 — 북쪽에서 어귀(0, 해안)로
+    const my = Y(_seaCoastZ(0)), mx = X(0);
+    if (!noRiver && mx > -20 && mx < W + 20) { const rw = Math.max(5, k * 1.4); const rg = g.createLinearGradient(0, 0, 0, my); rg.addColorStop(0, '#7fe6f5'); rg.addColorStop(1, '#19b3cc');
+        g.fillStyle = rg; g.beginPath(); g.moveTo(mx - rw * 0.7, 0); g.bezierCurveTo(mx - rw * 0.6, my * 0.4, mx - rw * 0.4, my * 0.7, mx - rw, my + 2); g.lineTo(mx + rw, my + 2); g.bezierCurveTo(mx + rw * 0.4, my * 0.7, mx + rw * 0.6, my * 0.4, mx + rw * 0.7, 0); g.fill(); }
+    // 가문 이름 — 보이는 쪽에
+    g.textAlign = 'center'; g.font = `800 ${Math.round(Math.max(13, Math.min(20, k * 3.4)))}px system-ui, sans-serif`;
+    const lab = (txt, x, z) => { const px = X(x), py = Y(z); if (px < 24 || px > W - 24) return; g.lineWidth = 4; g.strokeStyle = 'rgba(20,16,12,0.85)'; g.strokeText(txt, px, py); g.fillStyle = '#f6d77a'; g.fillText(txt, px, py); };
+    const en = currentLang === 'en', vis = x => x > xa + 6 && x < xb - 6;
+    const lx = (lo, hi) => Math.max(lo, Math.min(hi, x0 + F.span / 2));   // 가운데에 가깝게, 그 가문 해안 안에서
+    if (xa < -2.5) lab(en ? 'Ham' : '함', lx(-130, -14), SEA_Z0 + 4);
+    if (xb > 2.5) lab(en ? 'Shem' : '셈', lx(14, 130), SEA_Z0 + 4);
+    const isl = _seaIsles().filter(s => vis(s.x)); if (isl.length) { const s = isl.reduce((a, b) => Math.abs(b.x - (x0 + F.span / 2)) < Math.abs(a.x - (x0 + F.span / 2)) ? b : a); lab(en ? 'Japheth' : '야벳', s.x, s.z + s.r + 4.5); }
+    // 넘길 수 있다는 표시 — 양 끝 화살표
+    g.fillStyle = 'rgba(246,215,122,0.75)'; g.font = `800 18px system-ui, sans-serif`;
+    if (x0 > -131) g.fillText('‹', 10, H - 12); if (x0 + F.span < 131) g.fillText('›', W - 10, H - 12);
     g.setTransform(1, 0, 0, 1, 0, 0);
-    return { mouthX: W / 2, mouthY: oy + my * k, S, k, ox, oy };
+    return { mouthX: mx, mouthY: my, k, x0 };
 }
-/* 화면 좌표 → 나라 번호(없으면 -1) */
+function _seaNatIcons(g, x, z, lv, k, X, Y) {   // 나라 단계 — 나무 · 집 · 성읍
+    const px = X(x), py = Y(z), s = Math.max(2.5, k * 0.9);
+    if (!lv) { g.strokeStyle = '#4b4133'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(px - s, py + s * 0.6); g.lineTo(px, py - s * 0.8); g.lineTo(px + s, py + s * 0.6); g.stroke(); return; }
+    if (lv >= 2) { g.fillStyle = '#2b7a3a'; g.beginPath(); g.arc(px - s * 1.2, py, s * 0.9, 0, 7); g.fill(); }
+    if (lv >= 3) { g.fillStyle = '#f2e3c2'; g.fillRect(px + s * 0.2, py - s * 0.5, s * 1.4, s * 1.2); g.fillStyle = '#b5523b'; g.fillRect(px + s * 0.05, py - s * 0.9, s * 1.7, s * 0.5); }
+    if (lv >= 4) { g.fillStyle = '#fff4d6'; g.fillRect(px - s * 0.4, py - s * 1.9, s * 0.9, s * 0.9); }
+}
+/* 화면 좌표 → 나라 번호(없으면 -1) — 해안 나라 띠 또는 섬 */
 function _seaHitNation(cv, e) {
-    const r = cv.getBoundingClientRect(), W = r.width, H = r.height, S = Math.min(W, H), k = S / 880;
-    const x = (e.clientX - r.left - (W - S) / 2) / k, y = (e.clientY - r.top - (H - S) / 2) / k;
-    const ex = (x - SEA_G.CX) / SEA_G.RX, ey = (y - SEA_G.CY) / SEA_G.RY, rr = Math.hypot(ex, ey);
-    if (rr <= 1.0 || rr > 1.32) return -1;
-    const A0 = -Math.PI / 2 + SEA_G.GAP, SP = Math.PI * 2 - SEA_G.GAP * 2;
-    let a = Math.atan2(ey, ex); if (a < A0) a += Math.PI * 2;
-    const i = Math.floor((a - A0) / SP * 70);
-    return (i >= 0 && i < 70) ? i : -1;
+    const r = cv.getBoundingClientRect(), F = _seaFrame(r.width, r.height, _seaView.cx);
+    const x = F.x0 + (e.clientX - r.left) / F.k, z = SEA_Z0 + (e.clientY - r.top) / F.k;
+    for (const s of _seaIsles()) if (Math.hypot(x - s.x, z - s.z) < s.r + 1.2) return s.n;
+    const cz = _seaCoastZ(x);
+    if (z < cz + 1 && z > cz - 10) { for (let i = 0; i < 56; i++) { const [a, b] = _seaNatSpan(i); if (x >= a && x < b) return i; } }
+    return -1;
 }
 
 /* 서버 바다 읽기 — 지도는 5분에 한 번, 바다 화면은 열려 있는 동안 실시간 */
@@ -8096,9 +8129,9 @@ function _seaRiverEnd(containerRect, scrollTop) {
     const zone = document.getElementById('sea-zone'), cv = zone && zone.querySelector('canvas');
     if (!zone || !cv) return null;
     const W = zone.clientWidth || containerRect.width; if (!W) return null;
-    const m = _seaDraw(cv, W, SEA_ZONE_H, _seaRefresh(), -1, true);   // 내 바다 — 늘 저장본에서
+    const m = _seaDraw(cv, W, SEA_ZONE_H, _seaRefresh(), -1, true, 0);   // 지도에선 늘 어귀가 가운데   // 내 바다 — 늘 저장본에서
     _seaZoneLabel();
-    if (!_seaWorld || Date.now() - _seaWorldAt > 300000) _seaFetch().then(w => { if (w && document.getElementById('sea-zone')) { _seaDraw(cv, zone.clientWidth || W, SEA_ZONE_H, w, -1, true); _seaZoneLabel(); } });
+    if (!_seaWorld || Date.now() - _seaWorldAt > 300000) _seaFetch().then(w => { if (w && document.getElementById('sea-zone')) { _seaDraw(cv, zone.clientWidth || W, SEA_ZONE_H, w, -1, true, 0); _seaZoneLabel(); } });
     const zr = zone.getBoundingClientRect();
     return { x: (zr.left - containerRect.left) + m.mouthX, y: (zr.top - containerRect.top) + scrollTop + m.mouthY };
 }
@@ -8415,17 +8448,17 @@ function _njVineHarvest(id) {
    21:24, 26 「땅의 왕들이 자기 영광을 가지고 그리로 들어가리라 … 만국의 영광과 존귀를 가지고」 · 사 66:20 · 60:6, 9.
    3D 걷기로 소성된 나라 해안의 사신에게 가서 청한다. 그 장의 보스전을 통과해야 목록에 열리고(암송 = 열쇠), 🐟·🍇로 값을 치른다(물고기부터).
    예물은 세마포에 싸여 행렬로 성까지 온 뒤 성 둘레 자리에 선다. 처음 10가지 — 모양은 nj3d.js giftModel */
-const NJ_OFFERINGS = [   // 값(🐟+🍇) — 10/4 ×5: 그물·포도 값을 1/10로 내리며 예물 값은 ×5 → 💎로 따지면 예물이 절반 값
-    { k: 'whitestone', ch: 2,  ref: '2:17',  ko: '흰 돌',            en: 'White stone',               cost: 50,  size: 1 },
-    { k: 'palm',       ch: 7,  ref: '7:9',   ko: '종려 가지',        en: 'Palm branches',             cost: 100,  size: 1 },
-    { k: 'morningstar',ch: 22, ref: '22:16', ko: '광명한 새벽별',    en: 'The bright morning star',   cost: 100,  size: 1 },
-    { k: 'harp',       ch: 15, ref: '15:2',  ko: '유리 바다 가의 거문고', en: 'Harp by the sea of glass', cost: 150, size: 2 },
-    { k: 'menorah',    ch: 1,  ref: '1:12',  ko: '일곱 금 촛대',     en: 'Seven golden lampstands',   cost: 200,  size: 2 },
-    { k: 'olives',     ch: 11, ref: '11:4',  ko: '두 감람나무',      en: 'Two olive trees',           cost: 200,  size: 2 },
-    { k: 'winepress',  ch: 14, ref: '14:19', ko: '포도주 틀',        en: 'The winepress',             cost: 250,  size: 2 },
-    { k: 'rainbow',    ch: 4,  ref: '4:3',   ko: '보좌를 두른 무지개', en: 'Rainbow around the throne', cost: 300,  size: 3 },
-    { k: 'millstone',  ch: 18, ref: '18:21', ko: '바다에 던진 큰 맷돌', en: 'Great millstone cast into the sea', cost: 350, size: 3 },
-    { k: 'dragon',     ch: 20, ref: '20:2',  ko: '쇠사슬로 결박된 용', en: 'The dragon bound with a chain', cost: 500, size: 3 },
+const NJ_OFFERINGS = [   // 값(🐟+🍇) — 10/4 ×5: 그물·포도 값을 1/10로 내리며 예물 값은 ×5 → 💎로 따지면 예물이 절반 값 · 10/5 ×3: 나라 특산물(40~220)이 생겨 계시록 예물은 더 값지게(사용자)
+    { k: 'whitestone', ch: 2,  ref: '2:17',  ko: '흰 돌',            en: 'White stone',               cost: 150,  size: 1 },
+    { k: 'palm',       ch: 7,  ref: '7:9',   ko: '종려 가지',        en: 'Palm branches',             cost: 300,  size: 1 },
+    { k: 'morningstar',ch: 22, ref: '22:16', ko: '광명한 새벽별',    en: 'The bright morning star',   cost: 300,  size: 1 },
+    { k: 'harp',       ch: 15, ref: '15:2',  ko: '유리 바다 가의 거문고', en: 'Harp by the sea of glass', cost: 450, size: 2 },
+    { k: 'menorah',    ch: 1,  ref: '1:12',  ko: '일곱 금 촛대',     en: 'Seven golden lampstands',   cost: 600,  size: 2 },
+    { k: 'olives',     ch: 11, ref: '11:4',  ko: '두 감람나무',      en: 'Two olive trees',           cost: 600,  size: 2 },
+    { k: 'winepress',  ch: 14, ref: '14:19', ko: '포도주 틀',        en: 'The winepress',             cost: 750,  size: 2 },
+    { k: 'rainbow',    ch: 4,  ref: '4:3',   ko: '보좌를 두른 무지개', en: 'Rainbow around the throne', cost: 900,  size: 3 },
+    { k: 'millstone',  ch: 18, ref: '18:21', ko: '바다에 던진 큰 맷돌', en: 'Great millstone cast into the sea', cost: 1050, size: 3 },
+    { k: 'dragon',     ch: 20, ref: '20:2',  ko: '쇠사슬로 결박된 용', en: 'The dragon bound with a chain', cost: 1500, size: 3 },
 ];
 // 성 둘레 자리 16 — 산마루(성 밖 6 ~ 산마루 끝 12) 안, 물길 띠와 문 경사로를 비켜서
 const NJ_GIFT_SLOTS = (() => {
@@ -8437,6 +8470,130 @@ function _njTreasureAvail() { return _njFishAvail() + _njGrapesAvail(); }
 function _njOfferUnlocked(o) { return (typeof stageMastery !== 'undefined' && (stageMastery[`${o.ch}-boss`] || 0) > 0); }
 function _njOfferName(o) { return currentLang === 'en' ? o.en : o.ko; }
 function _njFreeSlot() { const used = new Set((njGifts || []).filter(x => x.x == null && !x.st).map(x => x.slot)); for (let i = 0; i < NJ_GIFT_SLOTS.length; i++) if (!used.has(i)) return i; return -1; }
+/* 🏺 만국의 특산물 (2026-10-05) — 70 나라마다 하나, 그 나라 사신에게서만. 「만국의 영광과 존귀」(21:26)를 나라마다 다른 물건으로.
+   말씀에 그 나라의 물건이 나오면 말씀대로(특히 겔 27장 두로의 무역), 없으면 그 땅의 산물. 모델 models/gifts/gd_<n>.glb (tools/blender/goods.py).
+   특산물은 언제나 하나 — 나라 단계가 크기를 연다: 풀밭 = 하나(×1) · 나무 = 한 짐(×1.4) · 집·사람 = 수레 가득(×1.8). 클수록 값·포장·행렬이 크고, 성에 놓일 때도 그 크기.
+   무기 여섯은 🕊️ 평화의 모습도(gd_<n>p, 사 2:4 · 시 46:9) — 살 때 고르고, 꾸미기에서 언제든 바꾼다(pc).
+   값은 계시록 예물과 같이 🐟·🍇. 계시록 예물은 이와 함께 세 배로 올렸다(10/5 사용자: 더 값지게) */
+const NJ_GOODS_SIZES = [
+    { s: 1, lv: 1, cost: 40,  sc: 1,   ko: '하나',      en: 'One' },
+    { s: 2, lv: 2, cost: 100, sc: 1.4, ko: '한 짐',     en: 'A load' },
+    { s: 3, lv: 3, cost: 220, sc: 1.8, ko: '수레 가득', en: 'A cartful' },
+];
+// [이름, 영어, 근거(없으면 그 땅의 산물), 평화의 모습, 영어]
+const NJ_GOODS = [
+    ['화살통', 'Quiver', '사 22:6', '꽃을 꽂은 화살통', 'Quiver of flowers'],
+    ['수놓은 옷을 담은 백향목 상자', 'Cedar chest of embroidered garments', '겔 27:24'],
+    ['시날 땅 벽돌', 'Bricks of Shinar', '창 11:3'],
+    ['투구', 'Helmet', '겔 27:10', '투구 화분', 'Helmet flowerpot'],
+    ['홍보석과 산호', 'Rubies and coral', '겔 27:16'],
+    ['양털', 'Wool', '욥 31:20'],
+    ['헬본 포도주', 'Wine of Helbon', '겔 27:18'],
+    ['석류', 'Pomegranates', ''],
+    ['산꿀', 'Wild honey', ''],
+    ['쐐기문자 토판', 'Cuneiform tablets', ''],
+    ['나그네의 장막', 'Sojourner’s tent', '히 11:9'],
+    ['경계석', 'Boundary stone', '신 19:14'],
+    ['낙타', 'Camels', '사 60:6'],
+    ['몰약', 'Myrrh', ''],
+    ['염소털 장막천', 'Goat-hair tent cloth', '아 1:5'],
+    ['유향', 'Frankincense', ''],
+    ['초승달 장식', 'Crescent ornaments', '삿 8:21'],
+    ['금·은·놋 그릇', 'Vessels of gold, silver and bronze', '대상 18:10'],
+    ['철과 계피와 창포', 'Iron, cassia and calamus', '겔 27:19'],
+    ['대추야자', 'Dates', ''],
+    ['바닷새 깃털 머리띠', 'Seabird-feather headband', ''],
+    ['타조 깃털', 'Ostrich feathers', ''],
+    ['스바의 금', 'Gold of Sheba', '시 72:15'],
+    ['백단목과 보석', 'Almug wood and precious stones', '왕상 10:11'],
+    ['베델리엄과 호마노', 'Bdellium and onyx', '창 2:12'],
+    ['가죽 물부대', 'Leather waterskin', ''],
+    ['구스의 황옥', 'Topaz of Cush', '욥 28:19'],
+    ['수놓은 가는 베 돛', 'Embroidered linen sail', '겔 27:7'],
+    ['방패', 'Shield', '렘 46:9', '방패로 만든 둥근 상', 'Shield made a round table'],
+    ['젖과 꿀', 'Milk and honey', '출 3:8'],
+    ['박달나무(흑단)', 'Ebony', ''],
+    ['정금', 'Pure gold', '창 2:12'],
+    ['구리 거울', 'Copper mirrors', ''],
+    ['각종 보석', 'All kinds of precious stones', '겔 27:22'],
+    ['가죽 북', 'Leather drums', ''],
+    ['상등 향품', 'The finest spices', '겔 27:22'],
+    ['상아', 'Ivory tusks', '겔 27:15'],
+    ['사냥꾼의 창', 'Hunter’s spear', '창 10:9', '낫', 'Sickle'],
+    ['활', 'Bow', '렘 46:9', '수금', 'Lyre'],
+    ['파피루스 두루마리', 'Papyrus scrolls', ''],
+    ['사막 소금', 'Desert salt', ''],
+    ['나일 연꽃', 'Nile lotus', ''],
+    ['옥합', 'Alabaster jars', '막 14:3'],
+    ['도끼와 괭이', 'Axe and mattock', '삼상 13:20'],
+    ['문어 무늬 꽃병', 'Octopus vase', ''],
+    ['백향목 재목', 'Cedar timber', '왕상 5:6'],
+    ['병거', 'Chariot', '왕상 10:29', '곡식 수레', 'Grain cart'],
+    ['타작마당의 곡식단', 'Sheaves of the threshing floor', '삼하 24:18'],
+    ['상수리나무 묘목', 'Oak sapling', '암 2:9'],
+    ['무화과', 'Figs', ''],
+    ['땔나무 단과 물 항아리', 'Firewood and a water jar', '수 9:21'],
+    ['올리브기름 항아리', 'Olive oil jars', ''],
+    ['아마 실타래', 'Skeins of linen thread', ''],
+    ['사공의 노', 'Rowers’ oars', '겔 27:8'],
+    ['자주 물감 단지', 'Purple dye pot', ''],
+    ['물레바퀴', 'Waterwheel', ''],
+    ['털가죽 외투', 'Fur cloak', ''],
+    ['칼을 쳐서 만든 보습', 'Plowshare beaten from a sword', '사 2:4'],
+    ['메대 융단', 'Median carpet', ''],
+    ['놋그릇', 'Bronze vessels', '겔 27:13'],
+    ['대장간 망치와 모루', 'Hammer and anvil', ''],
+    ['청동 솥', 'Bronze cauldron', '겔 27:13'],
+    ['뿔잔', 'Drinking horns', ''],
+    ['호박(琥珀)', 'Amber', ''],
+    ['통나무배', 'Dugout canoe', ''],
+    ['말과 노새', 'Horses and mules', '겔 27:14'],
+    ['청색·자색 천', 'Blue and purple cloth', '겔 27:7'],
+    ['은괴', 'Silver ingots', '겔 27:12'],
+    ['상아로 꾸민 회양목 판', 'Boxwood inlaid with ivory', '겔 27:6'],
+    ['장미 화분', 'Potted roses', ''],
+];
+function _njIsGoods(k) { return typeof k === 'string' && /^gd_\d+$/.test(k); }
+function _njGoods(n) { const g = NJ_GOODS[n]; return g ? { n, k: 'gd_' + n, ko: g[0], en: g[1], ref: g[2], pko: g[3] || '', pen: g[4] || '' } : null; }
+function _njGoodsOf(k) { return _njIsGoods(k) ? _njGoods(parseInt(k.slice(3), 10)) : null; }
+function _njGoodsName(G, peace) { if (!G) return ''; const en = currentLang === 'en'; return peace && G.pko ? (en ? G.pen : G.pko) : (en ? G.en : G.ko); }
+function _njGoodsSize(s) { return NJ_GOODS_SIZES[Math.max(1, Math.min(3, s | 0 || 1)) - 1]; }
+function _njGiftName(gf) {   // 예물 기록 하나의 이름 — 특산물이면 (평화의 모습)·크기까지
+    if (!gf) return '';
+    const G = _njGoodsOf(gf.k);
+    if (G) { const S = _njGoodsSize(gf.sz); return _njGoodsName(G, gf.pc) + (S.s > 1 ? ` · ${currentLang === 'en' ? S.en : S.ko}` : ''); }
+    const o = NJ_OFFERINGS.find(x => x.k === gf.k); return o ? _njOfferName(o) : gf.k;
+}
+/* 🐟부터, 모자라면 🍇 */
+function _njTreasurePay(cost) {
+    if (_njTreasureAvail() < cost) return false;
+    const fromFish = Math.min(cost, _njFishAvail());
+    njFishSpent = (njFishSpent || 0) + fromFish;
+    njGrapesSpent = (njGrapesSpent || 0) + (cost - fromFish);
+    return true;
+}
+function _njNewGift(k, nation, extra) {
+    const slot = _njFreeSlot();   // 16자리가 다 차면 -1 — 성 둘레 빈 곳에 놓는다(아래), 꾸미기에서 옮긴다
+    const gift = Object.assign({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), k, slot, n: nation, at: Date.now() }, extra || {});
+    if (slot < 0) { const a = (njGifts || []).length * 0.83; gift.x = Math.round(Math.cos(a) * 10.4 * 100) / 100; gift.z = Math.round(Math.sin(a) * 10.4 * 100) / 100; gift.r = Math.atan2(gift.x, gift.z); }
+    (njGifts = Array.isArray(njGifts) ? njGifts : []).push(gift);
+    saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
+    return gift;
+}
+/* 특산물 청하기 — 그 나라의 단계가 크기를 연다 */
+function _njGoodsBuy(n, s, peace) {
+    const G = _njGoods(n), S = NJ_GOODS_SIZES[(s | 0) - 1]; if (!G || !S) return null;
+    const lv = (_seaRefresh().nations[n] || {}).lv || 0; if (lv < S.lv) return null;
+    if (!_njTreasurePay(S.cost)) return null;
+    return _njNewGift(G.k, n, Object.assign({ sz: S.s }, peace && G.pko ? { pc: 1 } : {}));
+}
+/* 🕊️ 평화의 모습 ↔ 본래 모습 (꾸미기에서) */
+function _njGoodsPeace(id) {
+    const it = (njGifts || []).find(v => v.id === id), G = it && _njGoodsOf(it.k); if (!G || !G.pko) return null;
+    if (it.pc) delete it.pc; else it.pc = 1;
+    it.mv = Date.now(); saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
+    return !!it.pc;
+}
 /* 🪴 꾸밈 아이템 (2026-10-01) — 계시록과 상관없는 평범한 것들로 성 둘레를 꾸민다. 💎로 바로 산다(사용자: "꽤 저렴해야").
    예물(🐟·🍇 50~500)과 달리 💎로 바로 산다(10/4 그물은 1천으로 내렸다). 모델은 models/decor/*.glb (tools/blender/decor.py).
    놓기·옮기기·돌리기·치우기는 3D 「꾸미기」 화면(nj3d.js deco) — 예물도 같은 화면에서 옮긴다 */
@@ -8953,16 +9110,8 @@ function _njDecoSave(changes) {
 function _njOfferBuy(k, nation) {
     const o = NJ_OFFERINGS.find(x => x.k === k);
     if (!o || !_njOfferUnlocked(o)) return null;
-    if (_njTreasureAvail() < o.cost) return null;
-    const slot = _njFreeSlot();   // 16자리가 다 차면 -1 — 성 둘레 빈 곳에 놓는다(아래), 꾸미기에서 옮긴다
-    const fromFish = Math.min(o.cost, _njFishAvail());
-    njFishSpent = (njFishSpent || 0) + fromFish;
-    njGrapesSpent = (njGrapesSpent || 0) + (o.cost - fromFish);
-    const gift = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), k, slot, n: nation, at: Date.now() };
-    if (slot < 0) { const a = (njGifts || []).length * 0.83; gift.x = Math.round(Math.cos(a) * 10.4 * 100) / 100; gift.z = Math.round(Math.sin(a) * 10.4 * 100) / 100; gift.r = Math.atan2(gift.x, gift.z); }
-    (njGifts = Array.isArray(njGifts) ? njGifts : []).push(gift);
-    saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
-    return gift;
+    if (!_njTreasurePay(o.cost)) return null;
+    return _njNewGift(k, nation);
 }
 
 /* ── 바다 화면 ── */
@@ -8982,7 +9131,14 @@ function openSea() {
     </div>`;
     document.body.appendChild(m);
     const cv = document.getElementById('sea-canvas');
-    cv.addEventListener('click', e => { const i = _seaHitNation(cv, e); _seaSel = i; _seaRender(); if (i >= 0) { const el = document.getElementById('sea-nat'); if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } });
+    // 끌어서 동서로 넘긴다(해안이 길다) — 조금만 움직였으면 누른 것으로
+    let drag = null;
+    cv.addEventListener('pointerdown', e => { drag = { x: e.clientX, cx: _seaView.cx, moved: false }; cv.setPointerCapture && cv.setPointerCapture(e.pointerId); });
+    cv.addEventListener('pointermove', e => { if (!drag) return; const dx = e.clientX - drag.x; if (Math.abs(dx) > 6) drag.moved = true; if (!drag.moved) return;
+        const r = cv.getBoundingClientRect(), F = _seaFrame(r.width, r.height, 0); _seaView.cx = _seaFrame(r.width, r.height, drag.cx - dx / F.k).cx; _seaDraw(cv, r.width, r.height, _seaWorld, _seaSel); });
+    cv.addEventListener('pointerup', e => { const d = drag; drag = null; if (!d || d.moved) return;
+        const i = _seaHitNation(cv, e); _seaSel = i; _seaRender(); if (i >= 0) { const el = document.getElementById('sea-nat'); if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } });
+    cv.addEventListener('pointercancel', () => { drag = null; });
     _seaSel = -1;
     _seaRefresh();   // 🌊 10/5 — 내 바다(저장본). 전엔 서버 sea/world를 실시간으로 받았다
     _seaRender();
@@ -8996,7 +9152,7 @@ function _seaRender() {
     const cv = document.getElementById('sea-canvas'); if (!cv) return;
     const w = _seaWorld, lang = currentLang === 'en' ? 'en' : 'ko';
     const Wd = Math.floor(cv.parentElement.clientWidth || 360);
-    _seaDraw(cv, Wd, Wd, w, _seaSel);
+    _seaDraw(cv, Wd, Math.round(Wd * 0.8), w, _seaSel);
     const clear = (w && w.clear) || 0, ZS = _seaZoneStats(w), si = _seaCurZone(w), full = clear >= 2000, done = _seaCompleted(w);
     const chip = document.getElementById('sea-chip'); if (chip) chip.textContent = t('sea_stage_chip', { n: si + 1, name: SEA_STAGE_NAMES[lang][si] });
     const wal = document.getElementById('sea-wallet');

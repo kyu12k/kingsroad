@@ -6983,8 +6983,8 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .sea-card .nj-head b { flex: 1; }
 .sea-chip { font-size: 0.74rem; font-weight: 700; background: #132b3c; border: 1px solid #21404f; border-radius: 999px; padding: 2px 9px; color: #d9eef3; white-space: nowrap; }
 .sea-stage { position: relative; margin-bottom: 8px; }
-.sea-stage canvas { display: block; width: 100%; border-radius: 14px; cursor: pointer; }
-.sea-wallet { position: absolute; top: 8px; right: 8px; display: flex; gap: 6px; font-size: 0.78rem; font-variant-numeric: tabular-nums; pointer-events: none; }
+.sea-stage canvas { display: block; width: 100%; border-radius: 14px; cursor: grab; touch-action: pan-y; }   /* 10/5 해안이 길어 동서로 끌어 넘긴다 */
+.sea-wallet { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); white-space: nowrap; display: flex; gap: 6px; font-size: 0.78rem; font-variant-numeric: tabular-nums; pointer-events: none; }
 .sea-wallet span { background: rgba(7, 19, 28, 0.8); border-radius: 999px; padding: 2px 9px; color: #e6f1f5; }
 .sea-card .nj-pearl { background: #132b3c; display: grid; gap: 7px; }
 .sea-dim { color: #93aab5; font-size: 0.8rem; font-weight: 400; }
@@ -7274,6 +7274,14 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .nj3d-pearl-btns button { border: none; border-radius: 9px; padding: 7px 10px; font-weight: 800; font-size: 0.78rem; background: #f1c40f; color: #2c3e50; cursor: pointer; }
 .nj3d-pearl-btns button + button { background: #e1a33a; color: #fff; }
 .nj3d-offer-head.nj3d-offer-sub { margin-top: 12px; font-size: 0.9rem; }
+/* 🏺 만국의 특산물 (10/5) — 사신 창 위쪽: 그 나라의 물건 · 평화의 모습 고르기 */
+.nj3d-goods { display: grid; gap: 2px; margin-top: 6px; background: rgba(246,215,122,0.1); border: 1px solid rgba(246,215,122,0.35); border-radius: 10px; padding: 8px 10px; }
+.nj3d-goods b { color: #fff3c4; font-size: 0.95rem; }
+.nj3d-goods span { color: #d8c99a; font-size: 0.74rem; }
+.nj3d-goods-peace { display: flex; gap: 8px; align-items: flex-start; margin-top: 6px; padding: 7px 10px; border-radius: 10px; background: rgba(120,200,150,0.12); color: #cdeed8; font-size: 0.8rem; cursor: pointer; }
+.nj3d-goods-peace input { margin-top: 2px; accent-color: #6cc795; }
+.nj3d-goods-peace span { display: grid; gap: 2px; }
+.nj3d-goods-peace small { color: #9cc8ad; font-size: 0.7rem; }
 
 /* 🗺️ 3D 미니맵 (2026-10-05) — 걷기 화면 오른쪽 위, 보석 표시 아래. 3D 캔버스를 화면 가득 늘이는 규칙(.nj3d-stage canvas)보다 구체적으로 — 처음엔 미니맵이 화면을 덮었다 */
 #nj3d .nj3d-stage canvas.nj3d-mini { position: absolute; right: 12px; top: 52px; left: auto; bottom: auto; width: 116px; height: 116px; border-radius: 50%; z-index: 4; box-shadow: 0 4px 14px rgba(0,0,0,0.35); cursor: pointer; touch-action: none; }

@@ -13,7 +13,7 @@
     const THREE_URL = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
     const ORBIT_URL = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
     const GLTF_URL = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';   // 예물 모델(.glb) — 예물을 볼 때만 받는다
-    const GIFT_V = '20261004';   // models/gifts/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/)
+    const GIFT_V = '20261005';   // models/gifts/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/)
     const JET_COST = 300000;
     const T = (k, p) => (typeof t === 'function' ? t(k, p) : k);
 
@@ -1196,6 +1196,16 @@
           return null;
         }
         const glbCache = {};
+        // 압축(양자화)된 정수 좌표를 실수로 — r128의 광선·상자 계산은 정규화를 모른다(상자가 수천 크기로 나왔다, 10/5)
+        function dequant(root) {
+            root.traverse(o => { if (!o.isMesh) return; const g = o.geometry;
+                ['position', 'normal'].forEach(k => { const a = g.attributes[k]; if (!a || !a.normalized) return;
+                    const A = a.isInterleavedBufferAttribute ? a.data.array : a.array; if (A instanceof Float32Array) return;
+                    const mx = A instanceof Int8Array ? 127 : A instanceof Uint8Array ? 255 : A instanceof Int16Array ? 32767 : 65535, f = new Float32Array(a.count * a.itemSize);
+                    for (let i = 0; i < a.count; i++) for (let j = 0; j < a.itemSize; j++) f[i * a.itemSize + j] = Math.max(-1, (a.isInterleavedBufferAttribute ? A[i * a.data.stride + a.offset + j] : A[i * a.itemSize + j]) / mx);
+                    g.setAttribute(k, new THREE.BufferAttribute(f, a.itemSize)); });
+                g.computeBoundingBox(); g.computeBoundingSphere(); });
+        }
         function loadGift(k) {   // 한 번 받아 두고 쓸 때마다 복제
             if (!glbCache[k]) glbCache[k] = (async () => {
                 if (!THREE.GLTFLoader) await loadScript(GLTF_URL);
@@ -1203,10 +1213,31 @@
                 gl.scene.traverse(o => { if (!o.isMesh) return; o.castShadow = true; o.receiveShadow = true;
                     // 반사할 주변 빛이 없으면(기본 화질) 금속이 검게 보인다 — 금속감을 낮춰 금빛을 살린다
                     const m = o.material; if (m.metalness > 0.5) { m.metalness = 0.35; m.roughness = 0.38; } if (m.emissive && m.emissive.getHex()) m.emissiveIntensity = 1.2; });
+                if (/^(gd|pk)_/.test(k)) dequant(gl.scene);
                 return gl.scene;
             })();
             glbCache[k].catch(() => { delete glbCache[k]; });
             return glbCache[k];
+        }
+        // 🏺 특산물 — 모델 키(평화의 모습이면 gd_<n>p) · 크기 배율
+        const isGoodsK = k => typeof _njIsGoods === 'function' && _njIsGoods(k);
+        function goodsKey(gf) { const G = typeof _njGoodsOf === 'function' ? _njGoodsOf(gf.k) : null; return G && G.pko && gf.pc ? gf.k + 'p' : gf.k; }
+        const goodsSc = gf => (typeof _njGoodsSize === 'function' ? _njGoodsSize(gf.sz).sc : 1);
+        const _gRay = new THREE.Raycaster(), _gDown = new THREE.Vector3(0, -1, 0);
+        function topAt(obj, x, z) { obj.updateMatrixWorld(true); _gRay.set(new THREE.Vector3(x, 30, z), _gDown); const h = _gRay.intersectObject(obj, true); return h.length ? h[0].point.y : 0; }
+        // 포장의 천·깃발·돛 줄(재질 'tint')을 가문 빛깔로 — 셈 파랑 · 함 주황 · 야벳 초록(사신 옷과 같다)
+        function tintPack(root, gf) {
+            const N = (typeof SEA_NATIONS !== 'undefined' && SEA_NATIONS[gf.n]) || [], c = new THREE.Color(FAMILY_ROBE[N[4]] || 0x8a6ab0).convertSRGBToLinear();
+            root.traverse(o => { if (o.isMesh && o.material && o.material.name === 'tint') { o.material = o.material.clone(); o.material.color.copy(c); } });
+        }
+        // 포장 + 그 위에 얹은 특산물 하나(포장 모델 좌표, 광선으로 윗면을 잰다). x0 = 짐 자리 가운데
+        async function packWithGoods(pk, gf, x0) {
+            try {
+                const [P, M] = await Promise.all([loadGift(pk), loadGift(goodsKey(gf))]);
+                const g = new THREE.Group(), pc = P.clone(); g.add(pc); tintPack(pc, gf);
+                const y = topAt(pc, x0, 0), m = M.clone(); m.scale.setScalar(goodsSc(gf)); m.position.set(x0, y, 0); m.rotation.y = -0.2; g.add(m);
+                return g;
+            } catch (e) { return null; }
         }
         const GIFT_SCALE = { dragon: 0.42 };   // 용만 크게 빚었다(길이 4.2)
         function placeGift(gf) {
@@ -1219,10 +1250,10 @@
             }
             const m = new THREE.Group(); m.position.set(sp[0], terrain(sp[0], sp[1]), sp[1]); m.rotation.y = gf.x != null ? (gf.r || 0) : Math.atan2(sp[0], sp[1]);   // 처음엔 성을 등지고 바깥을 본다
             m.userData.item = { kind: 'gift', id: gf.id, k: gf.k };
-            const o = (typeof NJ_OFFERINGS !== 'undefined') ? NJ_OFFERINGS.find(x => x.k === gf.k) : null;
-            m.userData.base = [1, 1, 1.3, 1.7][(o && o.size) || 1]; m.scale.setScalar(m.userData.base);   // 큰 예물은 크게
-            loadGift(gf.k).then(sc => { if (cur !== C) return; const c = sc.clone(); c.scale.setScalar(GIFT_SCALE[gf.k] || 1); m.add(c); m.userData.anim = giftAnim(gf.k, c); })
-                .catch(() => { if (cur === C) m.add(giftModel(gf.k)); });
+            const o = (typeof NJ_OFFERINGS !== 'undefined') ? NJ_OFFERINGS.find(x => x.k === gf.k) : null, isG = isGoodsK(gf.k), mk = isG ? goodsKey(gf) : gf.k;
+            m.userData.base = isG ? goodsSc(gf) : [1, 1, 1.3, 1.7][(o && o.size) || 1]; m.scale.setScalar(m.userData.base);   // 큰 예물은 크게 · 특산물은 산 크기(×1 · ×1.4 · ×1.8)
+            loadGift(mk).then(sc => { if (cur !== C) return; const c = sc.clone(); c.scale.setScalar(GIFT_SCALE[gf.k] || 1); m.add(c); m.userData.anim = giftAnim(mk, c); })
+                .catch(() => { if (cur !== C) return; if (isG) { const w = PM.wrapped(0.3, 0.24, 0.3); w.position.y = 0.12; m.add(w); } else m.add(giftModel(gf.k)); });
             giftsG.add(m); return m;
         }
         ((typeof njGifts !== 'undefined' && Array.isArray(njGifts)) ? njGifts : []).forEach(placeGift);
@@ -2040,7 +2071,7 @@
         const setModeLabel = () => { modeBtn.textContent = walk ? T('nj3d_overview') : T('nj3d_walk'); };
         setModeLabel();
         // 성 ↔ 바다 (한 세계, 9/30) — 내려다보기는 보는 곳을 옮기고, 걷기는 그 자리로 옮겨 선다
-        const FOCUS = { city: { t: [0, 0.5, 0], c: [15, 14, 19] }, sea: { t: [0, -14, 64], c: [30, 22, 18] } };
+        const FOCUS = { city: { t: [0, 0.5, 0], c: [15, 14, 19] }, sea: { t: [0, -14, 56], c: [6, 17, 21] } };   // 10/5 해안선 — 어귀 북쪽 하늘에서 남쪽 바다(해안·섬)를 내려다본다
         const SPOT = { city: [1.3, 9.2, 0], sea: [-2.4, SHORE - 3.5, Math.PI] };   // x, z, 카메라 방향(바다는 남쪽을 본다)
         let where = opts.start === 'sea' ? 'sea' : 'city';
         const goBtn = ov.querySelector('.nj3d-go');
@@ -2103,8 +2134,9 @@
         /* 뭍에 서서 바라보는 물가 칸(뭍과 맞닿은 칸, ring 1) — 낚시·붓기 함께 */
         function shoreCell() {
             if (ride.on || !P.onGround || (seaE(P.x, P.z) < 1 && !saltAt(P.x, P.z))) return null;   // 뭍에 서 있어야
+            for (const dd of [0.75, 1.4, 2.1])   // 10/5 해안선 — 물가 첫 칸 가운데가 물가선에서 2쯤까지 떨어진다(0.75 한 곳만 보니 해안에 서도 못 찾았다)
             for (let k = 0; k < 9; k++) {
-                const a = P.face + (k === 0 ? 0 : Math.ceil(k / 2) * (k % 2 ? 1 : -1) * Math.PI / 4), x = P.x - Math.sin(a) * 0.75, z = P.z - Math.cos(a) * 0.75;
+                const a = P.face + (k === 0 ? 0 : Math.ceil(k / 2) * (k % 2 ? 1 : -1) * Math.PI / 4), x = P.x - Math.sin(a) * dd, z = P.z - Math.cos(a) * dd;
                 if (seaE(x, z) >= 1 || saltAt(x, z)) continue;
                 const c = cellAt(x, z); if (!c || c.ring !== 1) continue;
                 const [X, Z] = cellPos(c); return { cell: c, x: X, z: Z };
@@ -2350,16 +2382,33 @@
             const list = (typeof NJ_OFFERINGS !== 'undefined') ? NJ_OFFERINGS : [];
             const have = typeof _njTreasureAvail === 'function' ? _njTreasureAvail() : 0;
             const full = false;   // 꾸미기(10/1)부터 자리 제한 없음 — 16자리가 차면 성 둘레 빈 곳에 놓고 옮긴다
+            // 🏺 그 나라의 특산물(10/5) — 나라 단계가 크기를 연다. 평화의 모습은 살 때 고른다(꾸미기에서도 바꾼다)
+            const G = typeof _njGoods === 'function' ? _njGoods(i) : null, peace = offerEl.dataset.peace === '1';
+            const w0 = typeof _seaRefresh === 'function' ? _seaRefresh() : seaW, lv = ((w0 && w0.nations && w0.nations[i]) || {}).lv || 0;
+            const lang = (typeof currentLang !== 'undefined' && currentLang === 'en') ? 'en' : 'ko';
+            const goodsHtml = !G ? '' : `<div class="nj3d-offer-head nj3d-offer-sub">${T('goods_head', { name: esc2(natName(i)) })}</div>
+                <div class="nj3d-goods"><b>${esc2(_njGoodsName(G, peace))}</b><span>${esc2(G.ref || T('goods_land'))}</span></div>
+                ${G.pko ? `<label class="nj3d-goods-peace"><input type="checkbox" data-peace${peace ? ' checked' : ''}><span>${T('goods_peace', { name: esc2(_njGoodsName(G, true)) })}<small>${T('goods_peace_ref')}</small></span></label>` : ''}
+                <div class="nj3d-offer-intro">${T('goods_intro')}</div>
+                <div class="nj3d-offer-list">${NJ_GOODS_SIZES.map(S => {
+                    const open = lv >= S.lv, nm = lang === 'en' ? S.en : S.ko;
+                    const btn = !open ? `<span class="nj3d-offer-lock">${T('goods_lock', { lv: (typeof SEA_LV_NAMES !== 'undefined' ? SEA_LV_NAMES[lang][S.lv] : S.lv) })}</span>`
+                        : have >= S.cost ? `<button data-gs="${S.s}">${T('gift_take', { cost: S.cost })}</button>`
+                        : `<span class="nj3d-offer-lock">${T('offer_need', { n: S.cost - have })} · ${S.cost}</span>`;
+                    return `<div class="nj3d-offer-row${open ? '' : ' locked'}"><div><b>${T('goods_size', { size: nm, x: S.sc })}</b></div>${btn}</div>`;
+                }).join('')}</div>
+                <div class="nj3d-offer-head nj3d-offer-sub">${T('offer_rev_head')}</div>`;
             offerEl.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button>
-                <div class="nj3d-offer-head">${T('gift_title', { name: esc2(natName(i)) })}</div>
+                <div class="nj3d-offer-head">${T('offer_title', { name: esc2(natName(i)) })}</div>
                 <div class="nj3d-offer-intro">${T('gift_intro')}</div>
                 <div class="nj3d-offer-have">${T('gift_have', { f: typeof _njFishAvail === 'function' ? _njFishAvail() : 0, g: typeof _njGrapesAvail === 'function' ? _njGrapesAvail() : 0 })}</div>
+                ${goodsHtml}
                 <div class="nj3d-offer-list">${list.map(o => {
                     const open = typeof _njOfferUnlocked === 'function' && _njOfferUnlocked(o);
                     const btn = !open ? `<span class="nj3d-offer-lock">${T('gift_locked', { ch: o.ch })}</span>`
                         : full ? `<span class="nj3d-offer-lock">${T('gift_full')}</span>`
                         : have >= o.cost ? `<button data-k="${o.k}">${T('gift_take', { cost: o.cost })}</button>`
-                        : `<span class="nj3d-offer-lock">${T('gift_need', { n: o.cost - have })} · ${o.cost}</span>`;
+                        : `<span class="nj3d-offer-lock">${T('offer_need', { n: o.cost - have })} · ${o.cost}</span>`;
                     return `<div class="nj3d-offer-row${open ? '' : ' locked'}"><div><b>${esc2(typeof _njOfferName === 'function' ? _njOfferName(o) : o.ko)}</b><span>계 ${o.ref}</span></div>${btn}</div>`;
                 }).join('')}</div>
                 ${typeof _njPearlAvail === 'function' && ['w', 'c', 'g'].some(k => _njPearlAvail(k) > 0) ? `<div class="nj3d-offer-head nj3d-offer-sub">${T('nj3d_pearl_btn')}</div><div class="nj3d-offer-list">${_njPearlSellHtml()}</div>` : ''}`;
@@ -2371,8 +2420,15 @@
                 if (!gf) return;
                 offerEl.hidden = true; syncWallet(); startProc(i, gf);
             });
+            offerEl.querySelectorAll('button[data-gs]').forEach(b => b.onclick = () => {
+                const gf = typeof _njGoodsBuy === 'function' ? _njGoodsBuy(i, +b.dataset.gs, offerEl.dataset.peace === '1') : null;
+                if (!gf) return;
+                offerEl.hidden = true; syncWallet(); startProc(i, gf);
+            });
+            const pc = offerEl.querySelector('input[data-peace]');
+            if (pc) pc.onchange = () => { offerEl.dataset.peace = pc.checked ? '1' : ''; const y = offerEl.scrollTop; openOffer(i); offerEl.scrollTop = y; };
         }
-        talkBtn.addEventListener('pointerdown', e => { e.preventDefault(); if (nearEnvoy && !proc) openOffer(nearEnvoy.i); });
+        talkBtn.addEventListener('pointerdown', e => { e.preventDefault(); if (nearEnvoy && !proc) { offerEl.dataset.peace = ''; openOffer(nearEnvoy.i); } });
         skipBtn.textContent = T('gift_skip');
         const rateBtn = ov.querySelector('.nj3d-rate');
         skipBtn.addEventListener('pointerdown', e => { e.preventDefault();
@@ -2420,13 +2476,54 @@
         }
         const localGround = (obj, lx, lz) => { const S = obj.scale.x, th = obj.rotation.y, c = Math.cos(th), sn = Math.sin(th);
             return terrain(obj.position.x + (lx * c + lz * sn) * S, obj.position.z + (-lx * sn + lz * c) * S); };
+        // 🏺 특산물 행렬 (10/5) — 포장 모델(models/gifts/pk_*.glb, tools/blender/goods.py)을 사람 모형(PM) 크기로 줄여 쓴다.
+        //    채 높이를 가마(litter)와 맞춰(0.215) 가마꾼 자세를 그대로 쓴다. 수레는 끌채 끝(0.44)에 짐승 둘
+        function goodsCarry(s, gf, robe) {
+            const g = new THREE.Group(), inner = new THREE.Group(); g.add(inner);
+            const P = s === 1 ? { k: 'pk_1', sc: 0.7, lift: 0.187 } : { k: 'pk_2', sc: 0.475, lift: 0.12 };
+            inner.position.y = P.lift; inner.scale.setScalar(P.sc);
+            packWithGoods(P.k, gf, 0).then(o => { if (o && cur === C) inner.add(o); });
+            const bearers = [[0.36, 0.19], [0.36, -0.19], [-0.36, 0.19], [-0.36, -0.19]].map(([x, z], n) => { const p = person(robe, 'carry'); p.g.position.set(x, 0, z); g.add(p.g); p.ph = n * 1.3; return p; });
+            return { g, bearers, anim: (t, sp) => bearers.forEach(b => b.anim(t + b.ph, sp)) };
+        }
+        function goodsCart(gf) {
+            const g = new THREE.Group(), inner = new THREE.Group(); inner.scale.setScalar(0.36); g.add(inner);
+            packWithGoods('pk_3', gf, -0.23).then(o => { if (o && cur === C) inner.add(o); });   // 짐 바닥 가운데 = 모델 x -0.23(끌채 때문에 가운데가 밀렸다)
+            return { g };
+        }
+        function goodsShip(gf) {   // 다시스의 배(사 60:9) — 갑판에 크기대로의 포장째 싣는다
+            const g = new THREE.Group(), inner = new THREE.Group(), SC = 0.44; inner.scale.setScalar(SC); g.add(inner);
+            (async () => {
+                try {
+                    const P = await loadGift('pk_ship'); if (cur !== C) return;
+                    const probe = P.clone(), DX = -0.253, dk = Math.min(topAt(probe, DX, 0.3), topAt(probe, DX, -0.3));   // 가운데엔 돛대 밧줄이 지난다 — 옆에서 잰다
+                    const hull = P.clone(); tintPack(hull, gf); inner.add(hull); inner.position.y = -(dk - 0.17) * SC;   // 물에 잠기는 깊이 — 갑판 아래 0.17
+                    const s = gf.sz || 1, pk = ['pk_1', 'pk_2', 'pk_3'][s - 1], csc = [1, 0.85, 0.72][s - 1], x0 = s === 3 ? -0.23 : 0;
+                    const cargo = await packWithGoods(pk, gf, x0); if (!cargo || cur !== C) return;
+                    cargo.scale.setScalar(csc); cargo.position.set(DX - x0 * csc, dk, 0); inner.add(cargo); g.userData.cargo = cargo;
+                } catch (e) { }
+            })();
+            return { g, anim: () => { } };
+        }
+        function goodsLand(fam, robe, gf, add) {
+            const s = gf.sz || 1;
+            if (s < 3) { add(person(robe, 'lead'), s === 1 ? -0.55 : -0.62); add(goodsCarry(s, gf, robe), 0); if (s === 2) add(person(robe, 'walk'), 0.6); return; }
+            const camelP = fam === '함', ahead = camelP ? -0.72 : -0.64;   // 함은 낙타(사 60:6), 셈·야벳은 말
+            add(person(robe, 'lead'), ahead - 0.42);
+            [-1, 1].forEach(sd => add(camelP ? camel(false) : horse(), ahead, { side: 0.11 * sd }));
+            add(goodsCart(gf), 0);
+            [-1, 1].forEach(sd => add(person(robe, 'walk'), 0.62, { side: 0.1 * sd }));
+        }
         function startProc(i, gf) {
-            const N = (typeof SEA_NATIONS !== 'undefined' && SEA_NATIONS[i]) || [], fam = N[4] || '셈';
+            const N = (typeof SEA_NATIONS !== 'undefined' && SEA_NATIONS[i]) || [], fam = N[4] || '셈', isG = isGoodsK(gf.k);
             const o = (typeof NJ_OFFERINGS !== 'undefined') ? NJ_OFFERINGS.find(x => x.k === gf.k) : null, size = (o && o.size) || 1;
             const robe = FAMILY_ROBE[fam] || 0x888888, members = [];
             const add = (mdl, off, extra) => members.push(Object.assign({ obj: mdl.g, anim: mdl.anim, animal: !!mdl.animal, bearers: mdl.bearers, off, init: false }, extra || {}));
             let mode = 'go', seaPts = null;
-            if (fam === '함') {
+            if (isG) {
+                if (fam === '야벳') { add(goodsShip(gf), 0, { sea: true }); mode = 'sail'; seaPts = seaPath(i); }
+                else goodsLand(fam, robe, gf, add);
+            } else if (fam === '함') {
                 add(person(robe, 'lead'), -0.6);
                 const mid = Math.floor(size / 2);
                 for (let k = 0; k < size; k++) add(camel(k === mid), k * 0.75);
@@ -2440,12 +2537,12 @@
             const grp = new THREE.Group(); scene.add(grp);
             members.forEach(m => { m.obj.scale.setScalar(2.2); grp.add(m.obj); if (!m.sea) addBlob(m.obj, 0); });
             const land = fam === '야벳' ? upPath(1.7, gf.slot) : landPath(i, gf.slot);
-            proc = { phase: mode, i, gf, grp, members, t: 0, s: 0, v: 0, robe, rate: 1, model: null,
+            proc = { phase: mode, i, gf, grp, members, t: 0, s: 0, v: 0, robe, rate: 1, model: null, goods: isG, fam,
                 sea: seaPts ? mkPath(seaPts) : null, land: mkPath(land) };
             cam.dist = 7; cam.pitch = 0.42; cam.off = 0.55; cam.ready = false;
-            loadGift(gf.k).catch(() => { });   // 도착하기 전에 모델을 받아 둔다
+            loadGift(isG ? goodsKey(gf) : gf.k).catch(() => { });   // 도착하기 전에 모델을 받아 둔다
             walkUI.hidden = true; talkBtn.hidden = true; fishBtn.hidden = true; skipBtn.hidden = false; rateBtn.hidden = false; rateBtn.textContent = '⏩ 2×';
-            proc.name = o ? (typeof _njOfferName === 'function' ? _njOfferName(o) : o.ko) : '';
+            proc.name = typeof _njGiftName === 'function' ? _njGiftName(gf) : o ? (typeof _njOfferName === 'function' ? _njOfferName(o) : o.ko) : '';
             showHint(T('gift_depart', { item: proc.name, nation: natName(i) }), 3000);
         }
         function placeMembers(path, sv, dt) {
@@ -2457,13 +2554,14 @@
                 if (!m.init) { m.yaw = yaw; m.init = true; m.y = null; m.pitch = 0; }
                 m.yaw = angLerp(m.yaw, yaw, fYaw);
                 m.obj.position.x = p.x; m.obj.position.z = p.z; m.obj.rotation.y = m.yaw;
+                if (m.side) { const S2 = m.obj.scale.x; m.obj.position.x += -p.dz * m.side * S2; m.obj.position.z += p.dx * m.side * S2; }   // 길 옆으로 나란히
                 let ty, tp = 0;
                 if (m.sea) ty = SEA_Y + 0.02 + Math.sin(proc.t * 1.6) * 0.03;
                 else if (m.animal) { const yf = localGround(m.obj, 0.14, 0), yb = localGround(m.obj, -0.14, 0), S = m.obj.scale.x; tp = Math.atan2(yf - yb, 0.28 * S); ty = (yf + yb) / 2; }
                 else if (m.bearers) { const ys = m.bearers.map(b => localGround(m.obj, b.g.position.x, b.g.position.z)), S = m.obj.scale.x;
                     const yf = (ys[0] + ys[1]) / 2, yb = (ys[2] + ys[3]) / 2;
                     ty = (yf + yb) / 2 + Math.abs(yf - yb) * 0.25; tp = Math.atan2(yf - yb, 0.72 * S) * 0.6; }   // 가마는 비탈의 6할만큼만 기울인다
-                else ty = terrain(p.x, p.z);
+                else ty = terrain(m.obj.position.x, m.obj.position.z);
                 m.y = m.y == null ? ty : m.y + (ty - m.y) * fY; m.pitch += (tp - m.pitch) * fP;
                 if (!m.sea && m.y < ty) m.y = ty;   // 땅 아래로는 내려가지 않는다 — 오르막에서 늦게 따라가다 산에 묻혔다(오를 땐 바로, 내려갈 때만 부드럽게)
                 m.obj.position.y = m.y; m.obj.rotation.z = m.sea ? Math.sin(proc.t * 1.6) * 0.04 : m.pitch;
@@ -2521,8 +2619,17 @@
                 const h = placeMembers(path, pr.s, dt); follow(h, dt0, pr.phase === 'sail' ? 1.5 : 1);
                 if (pr.s >= total - 0.02) {
                     if (pr.phase === 'sail') {   // 어귀에 닿으면 배는 머물고, 짐꾼 넷이 가마로 메고 오른다
-                        const l = litter(pr.robe); l.g.scale.setScalar(2.2); pr.grp.add(l.g);
-                        pr.members = [{ obj: l.g, anim: l.anim, bearers: l.bearers, off: 0, init: false }]; pr.phase = 'go'; pr.s = 0; pr.t = 0; pr.v = 0;
+                        if (pr.goods) {   // 🏺 특산물 — 갑판의 짐을 내려 뭍의 행렬로(크기대로)
+                            const sh = pr.members[0] && pr.members[0].obj; if (sh && sh.userData.cargo) sh.userData.cargo.visible = false;
+                            const ms = [], add2 = (mdl, off, extra) => ms.push(Object.assign({ obj: mdl.g, anim: mdl.anim, animal: !!mdl.animal, bearers: mdl.bearers, off, init: false }, extra || {}));
+                            goodsLand(pr.fam, pr.robe, pr.gf, add2);
+                            ms.forEach(m => { m.obj.scale.setScalar(2.2); pr.grp.add(m.obj); addBlob(m.obj, 0); });
+                            pr.members = ms;
+                        } else {
+                            const l = litter(pr.robe); l.g.scale.setScalar(2.2); pr.grp.add(l.g);
+                            pr.members = [{ obj: l.g, anim: l.anim, bearers: l.bearers, off: 0, init: false }];
+                        }
+                        pr.phase = 'go'; pr.s = 0; pr.t = 0; pr.v = 0;
                     } else {   // 도착 — 세마포를 풀고 예물이 선다
                         endGroup();
                         pr.model = placeGift(pr.gf); if (pr.model) pr.model.scale.setScalar(0.01);
@@ -3254,7 +3361,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         decoRing.rotation.x = -Math.PI / 2; decoRing.visible = false; scene.add(decoRing);
         const decoPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), decoHit = new THREE.Vector3();
         const decoName = (it) => {
-            if (it.kind === 'gift') { const o = (typeof NJ_OFFERINGS !== 'undefined') ? NJ_OFFERINGS.find(x => x.k === it.k) : null; return o ? (typeof _njOfferName === 'function' ? _njOfferName(o) : o.ko) : it.k; }
+            if (it.kind === 'gift') { const rec = ((typeof njGifts !== 'undefined' && njGifts) || []).find(v => v.id === it.id) || it; return typeof _njGiftName === 'function' ? _njGiftName(rec) : it.k; }
             if (it.kind === 'set') return (kindOf(it) === 'big' ? '🏞️ ' : '🧩 ') + (typeof _njSetName === 'function' ? _njSetName(it.k) : it.k);
             const d = (typeof NJ_DECOR !== 'undefined') ? NJ_DECOR.find(x => x.k === it.k) : null; return d ? (typeof _njDecorName === 'function' ? _njDecorName(d) : d.ko) : it.k;
         };
@@ -3272,7 +3379,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const it = deco.sel && deco.sel.userData.item;
             const ready = asmReady();
             decoBar.innerHTML = (it ? `<div class="nj3d-deco-sel"><b>${esc2(decoName(it))}${it.kind === 'decor' && partNote(it.k) ? `<small>${partNote(it.k)}</small>` : ''}</b>
-                    <button data-a="rot">${T('deco_rotate')}</button>${it.kind === 'set' ? `<button data-a="dis">${T('deco_disasm')}</button>` : ''}<button data-a="stash">${T('deco_stash')}</button>${it.kind === 'decor' && typeof _njDecorSellPrice === 'function' ? `<button data-a="sell" class="sell">${T('deco_sell', { n: _njDecorSellPrice(it.k).toLocaleString() })}</button>` : ''}${ready.length ? `<button data-a="asm" class="asm-mini" title="${T('deco_asm_title')}">🧩</button>` : ''}</div>`
+                    <button data-a="rot">${T('deco_rotate')}</button>${(() => { if (it.kind !== 'gift' || !isGoodsK(it.k)) return ''; const G = _njGoodsOf(it.k), rec = (njGifts || []).find(v => v.id === it.id); return G && G.pko && rec ? `<button data-a="peace">${T(rec.pc ? 'deco_peace_off' : 'deco_peace_on')}</button>` : ''; })()}${it.kind === 'set' ? `<button data-a="dis">${T('deco_disasm')}</button>` : ''}<button data-a="stash">${T('deco_stash')}</button>${it.kind === 'decor' && typeof _njDecorSellPrice === 'function' ? `<button data-a="sell" class="sell">${T('deco_sell', { n: _njDecorSellPrice(it.k).toLocaleString() })}</button>` : ''}${ready.length ? `<button data-a="asm" class="asm-mini" title="${T('deco_asm_title')}">🧩</button>` : ''}</div>`
                     : ready.length ? `<button class="nj3d-deco-asm" data-a="asm">${T('deco_asm_ready', { name: _njSetName(ready[0]) + (ready.length > 1 ? ` +${ready.length - 1}` : '') })}</button>`
                     : `<div class="nj3d-deco-tip">${T('deco_tip')}</div>`)
                 + `<div class="nj3d-deco-row"><button data-a="bag">${T('deco_bag', { n: deco.stash.length })}</button><button data-a="shop">${T('deco_shop')}</button><button data-a="done" class="done">${T('deco_done')}</button></div>`;
@@ -3413,6 +3520,14 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 o.rotation.y += Math.PI / 4;
                 if (o.userData.sea) { decoTouch(o); return; }
                 const [x, z] = decoSpot(o.position.x, o.position.z, decoExt(kindOf(it), it.k, o.rotation.y), o.position, it.kind === 'set'); o.position.set(x, terrain(x, z), z); decoTouch(o);
+            }
+            else if (a === 'peace' && deco.sel) {   // 🕊️ 평화의 모습 ↔ 본래 모습 — 같은 자리·방향에 새 모델로
+                const o = deco.sel, it = o.userData.item, on = typeof _njGoodsPeace === 'function' ? _njGoodsPeace(it.id) : null; if (on == null) return;
+                const rec = (njGifts || []).find(v => v.id === it.id); if (!rec) return;
+                const n2 = placeGift(Object.assign({}, rec, { x: o.position.x, z: o.position.z, r: o.rotation.y, st: false }));
+                o.parent.remove(o); if (n2) { decoTouch(n2); decoSel(n2); }
+                if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
+                showHint(T('deco_peace_done', { name: esc2(_njGoodsName(_njGoodsOf(rec.k), on)) }), 2200);
             }
             else if (a === 'stash' && deco.sel) {
                 const o = deco.sel, it = o.userData.item; deco.stash.push({ kind: it.kind, id: it.id, k: it.k });
