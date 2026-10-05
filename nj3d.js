@@ -4215,6 +4215,22 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             quails.forEach(q => { if (!q.done) dot(q.x, q.z, '#8a6a45', 3.2, '#fff2c4'); });                                      // 🐦 메추라기
             const tw = 0.6 + Math.sin(performance.now() / 180) * 0.4;
             clams.forEach(cl => { if (!cl.done && Math.hypot(cl.x - P.x, cl.z - P.z) < 8) dot(cl.x, cl.z, `rgba(255,236,170,${tw.toFixed(2)})`, 2.6); });   // 🐚 가까이 오면 반짝
+            {   // 🐠 오늘 나온 도감 생물 (10/5 사용자: 바다가 넓어져 찾기 어렵다) — 이번 주 아직 못 만난 아이는 금빛, 만난 아이는 흐리게.
+                //    미니맵 밖의 못 만난 아이는 가까운 셋만 테두리에 방향 화살표(다 띄우면 테두리가 어지럽다)
+                const far = [];
+                creatures.forEach(cr => {
+                    const id = cr.E.id; if (typeof _njDexHidden === 'function' && _njDexHidden(id)) return;
+                    const met = typeof _njDexMetThisWeek === 'function' && _njDexMetThisWeek(id), [mx, my] = toMap(cr.x, cr.z), dd = Math.hypot(mx - h, my - h);
+                    if (dd <= h - 6 * dpr) dot(cr.x, cr.z, met ? 'rgba(255,255,255,0.5)' : '#ffd34d', met ? 2 : 3.2, met ? null : '#7a4a00');
+                    else if (!met) far.push([Math.hypot(cr.x - P.x, cr.z - P.z), mx, my, dd]);
+                });
+                far.sort((a, b) => a[0] - b[0]).slice(0, 3).forEach(([, mx, my, dd]) => {
+                    const k = (h - 8 * dpr) / dd, a = Math.atan2(my - h, mx - h);
+                    c.save(); c.translate(h + (mx - h) * k, h + (my - h) * k); c.rotate(a);
+                    c.fillStyle = `rgba(255,211,77,${(0.55 + tw * 0.45).toFixed(2)})`; c.strokeStyle = '#7a4a00'; c.lineWidth = 1 * dpr;
+                    c.beginPath(); c.moveTo(5 * dpr, 0); c.lineTo(-3 * dpr, -4 * dpr); c.lineTo(-3 * dpr, 4 * dpr); c.closePath(); c.fill(); c.stroke(); c.restore();
+                });
+            }
             // 나 — 가운데 화살표(늘 위)
             c.fillStyle = '#ffffff'; c.strokeStyle = '#1b2a44'; c.lineWidth = 1.5 * dpr;
             c.beginPath(); c.moveTo(h, h - 7 * dpr); c.lineTo(h + 5 * dpr, h + 5 * dpr); c.lineTo(h, h + 2.5 * dpr); c.lineTo(h - 5 * dpr, h + 5 * dpr); c.closePath(); c.fill(); c.stroke();
@@ -4514,7 +4530,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         }
         // 오늘 바다에 사는 아이들 — 풀린 절(처음 백지로 써낸 절)의 생물 중 오늘 요일 빛깔 · 지금 그 종의 시간대 (game.js _njDexToday). 자리는 절과 날짜로
         const creatures = [];
-        let dexQ = null, dexTapHinted = false;
+        let dexQ = null, dexTapHinted = false, dexMiniHinted = false;
         const seaFx = makeFx(scene);
         const seaActOpt = {
             fx: (kind, pos, n) => seaFx.burst(kind, pos, n),
@@ -4618,6 +4634,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 c.tapG.visible = can; if (can) { c.tapG.position.y = 0.2 + Math.sin(tt * 3) * 0.02; c.tapG.material.opacity = 0.6 + Math.sin(tt * 5) * 0.3; if (!dexTapHinted) { dexTapHinted = true; showHint(T('nj3d_dex_tap'), 4500); } }
             });
             if (dexQ && Math.hypot(dexQ.c.x - P.x, dexQ.c.z - P.z) > 2.8) closeDexQ();   // 멀어지면 문제를 닫는다
+            if (!dexMiniHinted && walk && P.z > SHORE - 3 && creatures.some(c => !(typeof _njDexMetThisWeek === 'function' && _njDexMetThisWeek(c.E.id)))) { dexMiniHinted = true; showHint(T('nj3d_dex_mini_hint'), 4500); }   // 바다에 처음 왔을 때 한 번
             seaFx.tick(dt);
         }
         /* ══ 👀 관찰 모드 (10/5 사용자: 바닷속에서 생물을 누르면 3인칭으로 관찰) ══
