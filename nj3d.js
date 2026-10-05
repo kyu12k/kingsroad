@@ -653,6 +653,18 @@
         const SG = (typeof _seaGeom === 'function') ? _seaGeom() : { water: [], salt: [] };
         const toW = (x, z) => [x, z];   // 10/5부터 칸 자리는 세계 좌표 그대로(전엔 2D 880 좌표를 둥근 바다로 옮겼다)
         const HRW = SG.R || 1.1;
+        // 🪸 그려진 바다 밑 높이 (10/5 사용자: 생물이 바닷속 땅에 파묻힌다) — 바다 밑 그물은 1.5~4 간격 격자를 직선으로 이어
+        //   깊어지는 굽은 면(seabed)보다 위에 뜬다(볼록한 곡선의 할선). 섬 둘레 비탈 그물도 따로 있다 → 실제 그물에 광선을 쏘아 잰다
+        const seaFloorObjs = [], _flRay = new THREE.Raycaster(), _flDown = new THREE.Vector3(0, -1, 0), _flO = new THREE.Vector3();
+        function footFloor(x, z, r) {   // 가운데와 둘레 여덟 점 중 가장 높은 바닥 — 비탈에 놓인 몸이 오르막 쪽으로 묻히지 않게
+            let m = floorAt(x, z); for (let k = 0; k < 8; k++) { const a = k / 8 * 6.283; m = Math.max(m, floorAt(x + Math.cos(a) * r, z + Math.sin(a) * r)); } return m;
+        }
+        function floorAt(x, z) {
+            const base = seabed(x, z); if (!seaFloorObjs.length) return base;
+            _flO.set(x, SEA_Y + 0.5, z); _flRay.set(_flO, _flDown);
+            const h = _flRay.intersectObjects(seaFloorObjs, false);
+            return h.length ? Math.max(base, h[0].point.y) : base;
+        }
         {   // 🏖️ 해안과 바다 밑 (10/5) — z 38부터 맵 끝까지 한 장. 가로 1.5마다(해안선이 계단처럼 보이지 않게), 세로는 물가 촘촘·먼 바다 성기게.
             //   뭍은 벌판·모래사장, 바다는 모래에서 짙은 청록으로. 섬 자리는 아래 섬 그물이 덮어 조금 내린다. 남쪽 강 물길 자리도 내린다(강둑 그물이 덮는다)
             const xs = [], zs = []; for (let x = -156; x <= 156.01; x += 1.5) if (Math.abs(x) > 1.2) xs.push(x);
@@ -671,7 +683,7 @@
             const nx = xs.length;
             for (let j = 0; j < zs.length - 1; j++) for (let i = 0; i < nx - 1; i++) { const a = j * nx + i; idx.push(a, a + nx, a + 1, a + 1, a + nx, a + nx + 1); }
             const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
-            const bed = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, side: THREE.DoubleSide })); bed.receiveShadow = true; scene.add(bed);
+            const bed = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, side: THREE.DoubleSide })); bed.receiveShadow = true; scene.add(bed); bed.updateMatrixWorld(); seaFloorObjs.push(bed);
             // 🏝️ 섬 — 둥근 언덕(꼭대기 풀밭, 가장자리 모래, 물속으로 비탈)
             const RF = [0, 0.25, 0.5, 0.7, 0.85, 1.0, 1.12, 1.3], SEG = 28;
             ISLES.forEach(s => {
@@ -682,7 +694,7 @@
                     c.copy(f < 0.6 ? cTop : f < 0.85 ? cLow : cSand); if (f > 1) c.copy(cSand).lerp(cDeep, 0.25); c.convertSRGBToLinear(); c2.push(c.r, c.g, c.b); } });
                 for (let rr = 0; rr < RF.length - 1; rr++) for (let k = 0; k < SEG; k++) { const a = rr * SEG + k, b = rr * SEG + (k + 1) % SEG; i2.push(a, a + SEG, b, b, a + SEG, b + SEG); }
                 const g2 = new THREE.BufferGeometry(); g2.setAttribute('position', new THREE.Float32BufferAttribute(p2, 3)); g2.setAttribute('color', new THREE.Float32BufferAttribute(c2, 3)); g2.setIndex(i2); g2.computeVertexNormals();
-                const im = new THREE.Mesh(g2, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, side: THREE.DoubleSide })); im.receiveShadow = true; scene.add(im);
+                const im = new THREE.Mesh(g2, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, side: THREE.DoubleSide })); im.receiveShadow = true; scene.add(im); im.updateMatrixWorld(); seaFloorObjs.push(im);
             });
         }
         // 수면 — 10/5 사용자: "타일 같다 · 구분선이 보이고 얼음판 같다". 물칸 2,051장(육각 판, 틈 0.015)을 걷어내고 **수면 한 장**에
@@ -2086,9 +2098,10 @@
             if (walk) camera.position.set(P.x + Math.sin(yaw) * camDist, P.y + 0.4, P.z + Math.cos(yaw) * camDist);
         };
         const lookAt = (dest) => { const f = FOCUS[dest]; controls.target.set(...f.t); camera.position.set(...f.c); controls.update(); };
+        let moveOnWalk = null;   // 내려다보기에서 「성으로/바다로」를 누르면 걷기로 들어갈 때 그 자리로(10/5 사용자: 화면만 바뀌고 걷는 자리는 그대로였다)
         goBtn.addEventListener('click', () => {
             where = where === 'city' ? 'sea' : 'city';
-            if (walk) placeAt(where); else { controls.autoRotate = false; lookAt(where); }
+            if (walk) { placeAt(where); moveOnWalk = null; } else { controls.autoRotate = false; lookAt(where); moveOnWalk = where; }
             setGoLabel(); lastTouch = performance.now();
         });
         if (where === 'sea') { placeAt('sea'); lookAt('sea'); controls.autoRotate = false; }
@@ -2101,7 +2114,7 @@
         setGoLabel();
         modeBtn.addEventListener('click', () => {
             walk = !walk; controls.enabled = !walk; walkUI.hidden = !walk; pilgrim.visible = true; mini.hidden = !walk; dexBtn.hidden = !walk; miniT = 0; camOff = null; slide = null; slideBtn.hidden = true; slideSndStop(); fovBoost = 0; speedEl.style.opacity = '0'; plungeMom = null;
-            if (walk) { controls.autoRotate = false; camera.fov = 62; camera.near = 0.02; showHint(T('nj3d_hint_walk'), 3500); }
+            if (walk) { controls.autoRotate = false; camera.fov = 62; camera.near = 0.02; showHint(T('nj3d_hint_walk'), 3500); if (moveOnWalk) { if ((moveOnWalk === 'sea') !== (P.z > 25)) placeAt(moveOnWalk); moveOnWalk = null; } }
             else { camera.fov = 42; camera.near = 0.1; where = P.z > 25 ? 'sea' : 'city'; lookAt(where); setGoLabel(); endFish(); fishBtn.hidden = true; }
             camera.updateProjectionMatrix(); setModeLabel(); lastTouch = performance.now();
         });
@@ -3926,7 +3939,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         if (typeof _njClamDay === 'function') {
             const day = _njClamDay();
             clamSpots(day.day).forEach(([x, z], i) => {
-                const g = new THREE.Group(), y = seabed(x, z);
+                const g = new THREE.Group(), y = footFloor(x, z, 0.1);   // 비탈에서도 묻히지 않게
                 const bottom = new THREE.Mesh(halfShell, shellMat); bottom.rotation.x = Math.PI; bottom.scale.setScalar(0.09);
                 const hinge = new THREE.Group(); hinge.position.set(-0.075, 0, 0); g.add(hinge);
                 const top = new THREE.Mesh(halfShell, shellMat); top.position.set(0.075, 0, 0); top.scale.setScalar(0.09); hinge.add(top);
@@ -4577,9 +4590,15 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const d = E.d; if (!CREATURE[d.k]) return;
             let x = 0, z = SHORE + 6;   // 10/5: 어귀 좌우 45 안쪽 물칸 띠(물가 다음 줄부터) — 너무 흩어지면 찾기 어렵다
             for (let t = 0; t < 80; t++) { const i = Math.floor(r() * SG.water.length), cc = SG.water[i]; if (SG.ring[i] >= 2 && Math.abs(cc.x) < 45) { x = cc.x + (r() - 0.5) * HRW; z = cc.z + (r() - 0.5) * HRW; break; } }
-            const mv = SEA_MOVE[d.k] || {}, c = { g: new THREE.Group(), anim: () => { }, swim: mv.swim || 0, float: !!mv.float }, y = seabed(x, z), swim = c.swim;
+            const mv = SEA_MOVE[d.k] || {}, c = { g: new THREE.Group(), anim: () => { }, swim: mv.swim || 0, float: !!mv.float }, y = floorAt(x, z) + 0.02, swim = c.swim;   // 그 자리 바닥 위에 — 바닥에 사는 아이는 아래에서 비탈을 따라 눕힌다
             c.g.userData.x0 = x; c.g.userData.y0 = swim ? y + 0.8 + r() * 1.2 : c.float ? y + 0.4 : y;
             c.g.position.set(x, c.g.userData.y0, z); c.g.rotation.y = r() * 6.28;
+            if (!swim && !c.float) {   // 🪸 비탈을 따라 눕는다(10/5 사용자: 바닷속 땅에 파묻힌다 — 물가 비탈이 가팔라 몸 둘레 0.24 안에서 바닥이 0.5까지 솟았다)
+                const dd = 0.25, gx = (floorAt(x + dd, z) - floorAt(x - dd, z)) / (2 * dd), gz = (floorAt(x, z + dd) - floorAt(x, z - dd)) / (2 * dd);
+                const n = new THREE.Vector3(-gx, 1, -gz).normalize(), up = new THREE.Vector3(0, 1, 0), ang = up.angleTo(n), MAXT = 0.6;   // 35°까지만 눕히고
+                if (ang > 0.01) { const q = new THREE.Quaternion().setFromUnitVectors(up, ang > MAXT ? up.clone().lerp(n, MAXT / ang).normalize() : n); c.g.quaternion.premultiply(q); }
+                if (ang > MAXT) c.g.userData.y0 = c.g.position.y = Math.max(c.g.userData.y0, footFloor(x, z, 0.24) - 0.12);   // 더 가파르면 조금 띄운다
+            }
             const acc = (typeof NJ_DEX_TIERS !== 'undefined' && NJ_DEX_TIERS[E.t]) ? NJ_DEX_TIERS[E.t].k : '', AT = ACC_AT[d.k];   // 꾸밈은 절이 정한다(장이 뒤로 갈수록 모자 → 안경 → 리본 → 면류관)
             seaLoad(d.k).then(tpl => { if (cur !== C) return; const m = seaMake(tpl, d.k, DAYC == null ? 0xffffff : DAYC, acc); c.g.add(m.g); c.anim = m.anim; c.m = m.g; c.I = actInst(m.g, d.k, m.mats, seaActOpt); c.I.onChange = obsSync; })
                 .catch(() => {   // 모델을 못 받으면 예전 도형으로
@@ -4592,10 +4611,17 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const hide = !swim && !c.float;   // 숨는 아이 — 웅크려 있다가 다가가면 나온다
             if (hide) c.g.scale.setScalar(0.25);
             reefG.add(c.g);
-            creatures.push(Object.assign(c, { E, d, x, z, hide, cx: x, cz: z, ang: r() * 6.28, rad: 1.5 + r() * 2 }));
+            const ang0 = r() * 6.28, rad = 1.5 + r() * 2;
+            const floorMax = swim ? Math.max(...[0, 1, 2, 3, 4, 5, 6, 7].map(k => floorAt(x + Math.cos(k / 8 * 6.283) * rad, z + Math.sin(k / 8 * 6.283) * rad))) : null;   // 헤엄치는 길에서 가장 높은 바닥 — 매번 쏘지 않게 한 번
+            creatures.push(Object.assign(c, { E, d, x, z, hide, cx: x, cz: z, ang: ang0, rad, floorMax }));
         });
         const dexWho = c => (typeof _njDexFullName === 'function' ? _njDexFullName(c.E) : c.d.ko);
         const dexRef = c => (typeof _njDexRef === 'function' ? _njDexRef(c.E.id) : c.E.id);
+        const dexVerse = c => {   // 그 생물의 말씀 원문 — 관찰할 때 읽게(10/5 사용자: 주소만 나오고 원문이 없다)
+            const [ch, v] = String(c.E.id).split('-').map(Number);
+            const d = (typeof getVerseData === 'function' && getVerseData(ch, v - 1)) || ((typeof bibleData !== 'undefined' && bibleData[ch]) || [])[v - 1];
+            return (d && d.text) || '';
+        };
         function closeDexQ() { if (dexQ) { dexQ = null; fishQ.hidden = true; fishQ.innerHTML = ''; } }
         function askDex(c, retry) {   // 그 생물의 말씀 — 빈칸 4지
             const q = typeof _njFishQuestion === 'function' ? _njFishQuestion([c.E.id], retry ? 'blank' : '') : null;
@@ -4655,7 +4681,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 if (c.swim) {   // 둥글게 헤엄친다
                     c.ang += dt * c.swim / c.rad; const nx = c.cx + Math.cos(c.ang) * c.rad, nz = c.cz + Math.sin(c.ang) * c.rad;
                     if (seaE(nx, nz) < 0.92) { c.x = nx; c.z = nz; } c.g.position.x = c.x; c.g.position.z = c.z; c.g.rotation.y = -c.ang;
-                    c.g.position.y = Math.max(seabed(c.x, c.z) + 0.15, Math.min(c.g.userData.y0, SEA_Y - 0.35));   // 얕은 데로 와도 물 위로 튀어나오지 않게
+                    c.g.position.y = Math.max((c.floorMax != null ? c.floorMax : seabed(c.x, c.z)) + 0.15, Math.min(c.g.userData.y0, SEA_Y - 0.35));   // 얕은 데로 와도 물 위로 튀어나오지 않게
                 }
                 const watched = obs && obs.c === c, near = watched || (under && d < 2.2);
                 if (c.hide && !(c.met && typeof _njDexHidden === 'function' && _njDexHidden(c.E.id))) { const want = near ? 1 : 0.25; c.g.scale.setScalar(c.g.scale.x + (want - c.g.scale.x) * Math.min(1, dt * 3)); }
@@ -4689,6 +4715,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const en = typeof currentLang !== 'undefined' && currentLang === 'en', L = SEA_ACTS[c.d.k] || [];
             obsEl.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button>
                 <div class="nj3d-obs-h">${c.d.e} <b>${esc2(dexWho(c))}</b><span>${esc2(dexRef(c))}</span></div>
+                ${dexVerse(c) ? `<div class="nj3d-obs-verse">${esc2(dexVerse(c))}</div>` : ''}
                 <div class="nj3d-obs-acts">${L.map((a, i) => `<button data-i="${i}">${en ? a.en : a.ko}</button>`).join('')}</div>
                 <div class="nj3d-obs-tip">${T('nj3d_obs_tip')}</div>`;
             obsEl.hidden = false;

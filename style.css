@@ -7279,6 +7279,8 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .nj3d-pearl-btns button + button { background: #e1a33a; color: #fff; }
 .nj3d-offer-head.nj3d-offer-sub { margin-top: 12px; font-size: 0.9rem; }
 /* 🏺 만국의 특산물 (10/5) — 사신 창 위쪽: 그 나라의 물건 · 평화의 모습 고르기 */
+/* 👀 관찰 — 그 생물의 말씀 원문 (10/5) */
+.nj3d-obs-verse { margin: 6px 0 2px; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,0.08); color: #f3ecd8; font-size: 0.86rem; line-height: 1.6; max-height: 7.5em; overflow-y: auto; word-break: keep-all; }
 /* 🔑 3D 퀴즈 — 주소 → 첫 마디 (10/5) · 두 번째 기회는 빈칸 */
 .nj3d-fishq-text.nj3d-fishq-first { font-size: 1.05rem; font-weight: 800; text-align: center; color: #fff3c4; }
 .nj3d-fishq-sub { font-size: 0.74rem; color: #f6d77a; margin-top: 4px; }
