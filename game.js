@@ -27059,7 +27059,9 @@ function openGiftFruit(tag, nick) {
     if (!tag || String(tag) === String(myTag)) return;
     _giftPick = { size: 's', msg: 0 };
     let ov = document.getElementById('gift-send'); if (ov) ov.remove();
-    ov = document.createElement('div'); ov.id = 'gift-send'; ov.className = 'modal-overlay'; ov.style.zIndex = '10001'; ov.style.display = 'flex';
+    // .modal-overlay의 z-index: 2000 !important가 그냥 쓴 zIndex를 이겨서 친구(8500)·길드(3100)·인도자 창 뒤에 깔렸다(10/5).
+    // 9000 = 그 창들 위, 보석 토스트(9999) 아래 — 「보석이 모자라요」가 가려지지 않게
+    ov = document.createElement('div'); ov.id = 'gift-send'; ov.className = 'modal-overlay'; ov.style.setProperty('z-index', '9000', 'important'); ov.style.display = 'flex';
     ov.onclick = () => ov.remove();
     const today = njGiftSent[tag] === _get6AMDayStr();
     const sizeBtn = k => { const S = NJ_GIFT_SIZES[k]; return `<button class="gift-size${k === 's' ? ' on' : ''}" data-k="${k}"><b>${t('gift_size_' + k)}</b><span>💎${S.gem.toLocaleString()}</span><small>${t('gift_size_line', { n: S.n, half: (S.gem / 2).toLocaleString() })}</small></button>`; };
@@ -27101,7 +27103,7 @@ async function _giftSend(tag, nick) {
 function openGiftBasket() {
     _giftWither();
     let ov = document.getElementById('gift-basket'); if (ov) ov.remove();
-    ov = document.createElement('div'); ov.id = 'gift-basket'; ov.className = 'modal-overlay'; ov.style.zIndex = '10000'; ov.style.display = 'flex';
+    ov = document.createElement('div'); ov.id = 'gift-basket'; ov.className = 'modal-overlay'; ov.style.setProperty('z-index', '9000', 'important'); ov.style.display = 'flex';   // 위 openGiftFruit 주석
     ov.onclick = () => ov.remove();
     const now = Date.now();
     const list = njGiftFruits.filter(f => !f.done || !f.thanked).sort((a, b) => (a.done ? 1 : 0) - (b.done ? 1 : 0) || (a.at || 0) - (b.at || 0));
