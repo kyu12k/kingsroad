@@ -2881,6 +2881,28 @@ let _pendingHardshipEmbed = null;
    활성 사용자의 절반이 한 구절도 클리어하지 않는데, 어디서 멈추는지 서버에 남는 게 없었다.
    앞으로만 진행하는 단계 표식 하나로 다음 집계 때 추측 없이 확인한다. */
 let onboardStep = '';
+/* 📱 들어온 환경 (2026-10-06) — 사람들이 텔레그램 링크로 들어온다. 텔레그램·카톡 안 브라우저는 기록이 그 앱 안에만 남고 구글 연결이 막힐 수 있어
+   실제로 어디서 하는지(앱 안·설치한 앱·브라우저 · 안드로이드/아이폰) 비율을 잰다. 화면 변화 없음.
+   { first: {k, os, at}, last: {k, os, at, ua}, seen: [k...] } — last는 환경이 바뀌거나 날이 바뀔 때만 고친다 */
+let entryEnv = null;
+function _envNow() {
+    const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
+    let standalone = false; try { standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; } catch (e) { }
+    const k = /Telegram/i.test(ua) ? 'tg' : /KAKAOTALK/i.test(ua) ? 'kakao' : /Instagram/i.test(ua) ? 'ig' : /FBAN|FBAV/i.test(ua) ? 'fb' : /Line\//i.test(ua) ? 'line'
+        : standalone ? 'pwa' : (/; wv\)/.test(ua) || (/iPhone|iPad|iPod/i.test(ua) && !/Safari\//.test(ua))) ? 'webview' : 'browser';   // 아이폰 앱 안 창은 UA에 앱 이름 없이 Safari/만 빠진다
+    const os = /Android/i.test(ua) ? 'android' : /iPhone|iPad|iPod/i.test(ua) ? 'ios' : /Windows/i.test(ua) ? 'win' : /Macintosh/i.test(ua) ? 'mac' : 'other';
+    return { k, os, ua: ua.slice(0, 200) };
+}
+function _envNote() {
+    try {
+        const e = _envNow(), now = Date.now(), day = d => new Date(d + 9 * 3600e3).toISOString().slice(0, 10);
+        const E = entryEnv || (entryEnv = { first: { k: e.k, os: e.os, at: now } });
+        const L = E.last;
+        if (!L || L.k !== e.k || L.os !== e.os || day(L.at) !== day(now)) E.last = { k: e.k, os: e.os, at: now, ua: e.ua };
+        E.seen = [...new Set([...(E.seen || []), e.k])];
+    } catch (err) { }
+    return entryEnv;
+}
 let googleNudge = null;      // 🔒 내 기록 지키기(10/6) { lv: 본 단계(5·20·50·100·200), at, a: 'later'|'tap'|'inapp', ok: 연결된 시각 }
 let onboardPromise = null;   // 🌅 내일의 약속 카드(10/6) { at, id, shown, notif: 'granted'|'denied'|'unsupported'|'ios-guide'|'later', nt: 'HH:MM' }
 const _ONBOARD_ORDER = ['profile', 'map', 'stage', 'cleared'];
@@ -3207,6 +3229,7 @@ loadGameData = function () {
         if (typeof parsed.onboardStep === 'string') onboardStep = parsed.onboardStep;
         onboardPromise = (parsed.onboardPromise && typeof parsed.onboardPromise === 'object') ? parsed.onboardPromise : null;
         googleNudge = (parsed.googleNudge && typeof parsed.googleNudge === 'object') ? parsed.googleNudge : null;
+        entryEnv = (parsed.entryEnv && typeof parsed.entryEnv === 'object') ? parsed.entryEnv : null;
         bossFirstClearClaimed = new Set(parsed.bossFirstClearClaimed || []);
         if (parsed.bibleReadLog) {
             const _today = _get6AMDayStr();
@@ -13143,6 +13166,7 @@ function saveGameData() {
         onboardStep: onboardStep, // 온보딩 이탈 지점 (profile→map→stage→cleared)
         onboardPromise: onboardPromise, // 🌅 내일의 약속 카드 — 본 때·알림 결과(효과 측정)
         googleNudge: googleNudge, // 🔒 내 기록 지키기 — 본 단계·누른 것·연결 시각(효과 측정)
+        entryEnv: _envNote(), // 📱 들어온 환경 — 텔레그램 안·설치 앱·브라우저 비율(측정)
         bibleReadLog: bibleReadLog,
         bibleReadPasses: bibleReadPasses, // 오늘 장별 완독 회수
         bibleReadTotal: bibleReadTotal,   // 오늘 읽음 수 (회독 포함)
@@ -13585,6 +13609,13 @@ function _mergeSaveProgress(target, other) {
         if ((other.njMannaGems | 0) > (target.njMannaGems | 0)) { target.njMannaGems = other.njMannaGems; took++; }
         if ((other.njDexFish | 0) > (target.njDexFish | 0)) { target.njDexFish = other.njDexFish; took++; }
         if (other.onboardPromise && typeof other.onboardPromise === 'object' && (!target.onboardPromise || (!target.onboardPromise.notif && other.onboardPromise.notif))) { target.onboardPromise = other.onboardPromise; took++; }   // 🌅 내일의 약속 — 결과가 있는 쪽
+        if (other.entryEnv && typeof other.entryEnv === 'object') {   // 📱 들어온 환경 — 처음은 이른 쪽, 마지막은 늦은 쪽, 본 곳은 합집합
+            const a = target.entryEnv || {}, b = other.entryEnv, m = {};
+            m.first = (a.first && (!b.first || a.first.at <= b.first.at)) ? a.first : b.first;
+            m.last = (a.last && (!b.last || a.last.at >= b.last.at)) ? a.last : b.last;
+            m.seen = [...new Set([...(a.seen || []), ...(b.seen || [])])];
+            if (JSON.stringify(m) !== JSON.stringify(target.entryEnv || null)) { target.entryEnv = m; took++; }
+        }
         if (other.googleNudge && typeof other.googleNudge === 'object') {   // 🔒 내 기록 지키기 — 연결 기록이 있는 쪽, 아니면 더 높은 단계
             const a = target.googleNudge, b = other.googleNudge;
             if (!a || (!a.ok && b.ok) || (!a.ok && !b.ok && (b.lv | 0) > (a.lv | 0))) { target.googleNudge = b; took++; }
