@@ -151,7 +151,7 @@ const LANG = {
         sun_name: '햇살',
         rain_promise: '🌧️ 내일 첫 스테이지를 시작하면\n단비가 내립니다 (승점 2배 · 20분)',
         sun_promise: '☀️ 미션 4개 완료!\n내일 첫 스테이지를 시작하면 햇살이 내립니다 (승점 3배 · 20분)',
-        rain_started: '{icon} {name}이 내립니다\n{min}분간 승점 ×{multi}',
+        rain_started: '{icon} {name}{ig} 내립니다\n{min}분간 승점 ×{multi}',
         rain_active: '{name} ×{multi} ({time})',
         header_today: '🌱 오늘 뿌린 씨 {today} · 어제 {yday}',
         header_rain_now: '{icon} {name} 내리는 중',
@@ -793,6 +793,7 @@ const LANG = {
         bd_ch: '{ch}장', bd_count: '백지 차례 {n}개 절', bd_range: '{r}절', bd_start: '✍️ 시작',
         bd_embed: '{ch}장 · 오늘 백지 차례', bd_back: '✍️ 남은 백지 차례 {n}개 절',
         bd_chip: '{ch}장 · {n}개 절',
+        sbd_title: '✍️ 오늘 백지 차례 {n}개 절', sbd_go: '지금 쓰기 ›', sbd_group_tip: '이 묶음에 오늘 백지 차례 {n}개 절',
 
         todo_title: '오늘 할 일', todo_review: '복습', todo_blank: '백지', todo_cheer: '응원', todo_attend: '출석',
         rv_blank_sub: '눌러서 그 장의 차례인 절만 백지로 쓸 수 있어요. 다른 백지(망각의 고난·보스전·중간점검·백지 복습·오늘의 암송·열매)로 써내도 백지레벨이 올라요',
@@ -1993,6 +1994,7 @@ const LANG = {
         bd_ch: 'Ch.{ch}', bd_count: '{n} verses due', bd_range: 'vv. {r}', bd_start: '✍️ Start',
         bd_embed: 'Ch.{ch} · Blank review due', bd_back: '✍️ {n} more blank verses due',
         bd_chip: 'Ch.{ch} · {n} verses',
+        sbd_title: '✍️ {n} verses due for blank review', sbd_go: 'Write now ›', sbd_group_tip: '{n} verses in this group are due for blank review',
 
         todo_title: 'Today', todo_review: 'Review', todo_blank: 'Blank', todo_cheer: 'Cheer', todo_attend: 'Check-in',
         rv_blank_sub: 'Tap to write just that chapter’s due verses on a blank page. Any other blank (trial, boss, checkpoint, blank review, daily recital or fruit) also raises its blank level',
@@ -6315,7 +6317,12 @@ function _maybeStartRain() {
     }
     saveGameData();
     if (typeof startBoosterTimer === 'function') startBoosterTimer();
-    if (typeof showToast === 'function') showToast(t('rain_started', { icon: tier.icon, name: t(tier.nameKey), min: RAIN_MINUTES, multi: tier.mult }));
+    if (typeof showToast === 'function') {
+        // 단비가 · 햇살이 — 받침에 따라 (10/5까지 「단비이 내립니다」였다)
+        const nm = t(tier.nameKey), lc = nm.charCodeAt(nm.length - 1) - 44032;
+        const ig = (lc >= 0 && lc < 11172) ? (lc % 28 ? '이' : '가') : '이';
+        showToast(t('rain_started', { icon: tier.icon, name: nm, ig, min: RAIN_MINUTES, multi: tier.mult }));
+    }
     if (typeof updateHeaderToday === 'function') updateHeaderToday();
 }
 /* 서버 시각 보정(clock.js)이 기기 시계와 1시간 넘게 어긋난 것을 알아채면 한 번 알린다.
@@ -10361,7 +10368,7 @@ function _mapBlankRingHtml(chapter) {
     if (!s.total) return '';
     const pct = Math.round(s.blank / s.total * 100);
     const cls = 'map-blank-ring' + (s.blank >= s.total ? ' all' : '');
-    const tip = `백지로 써낸 절 ${s.blank} / ${s.total}` + (s.due ? ` · 오늘 차례 ${s.due}절` : '');
+    const tip = `백지로 써낸 절 ${s.blank} / ${s.total}` + (s.due ? ` · 오늘 차례 ${s.due}개 절` : '');
     return `<div class="${cls}" style="--p:${pct}" aria-hidden="true"></div>` +
         (s.blank > 0 ? `<span class="map-blank-count${s.blank >= s.total ? ' all' : ''}${s.due ? ' due' : ''}" title="${tip}">✍️${s.blank}/${s.total}</span>` : '');
 }
@@ -10377,10 +10384,33 @@ function _renderSheetBlankEvidence(chapterData) {
     el.innerHTML = (all
         ? `✍️ 이 장 ${ids.length}절을 <b>모두 백지로</b> 써냈어요`
         : `✍️ 백지로 써낸 절 <b>${blank}</b> / ${ids.length}` +
-          (typed > 0 ? ` <span class="sbe-sub">· 빈칸까지 ${typed}절</span>` : '')) +
-        (top > 0 ? ` <span class="sbe-sub">· Lv5 ${top}절</span>` : '') +
-        (due > 0 ? ` <span class="sbe-due">· 오늘 차례 ${due}절</span>` : '');
+          (typed > 0 ? ` <span class="sbe-sub">· 빈칸까지 ${typed}개 절</span>` : '')) +
+        (top > 0 ? ` <span class="sbe-sub">· Lv5 ${top}개 절</span>` : '') +
+        (due > 0 ? ` <span class="sbe-due">· 오늘 차례 ${due}개 절</span>` : '');   // 「3절」은 3절(구절 번호)로 읽힌다 → 「3개 절」
     el.style.display = '';
+    _renderSheetBlankDue(chapterData);
+}
+/* ✍️ 이 장의 오늘 백지 차례 — 어느 절인지 + 바로 쓰기 (2026-10-05)
+   지도 「✍️n/m」의 빨간 점이 무엇인지 알려면 1~4절·5~8절 묶음을 하나씩 펼쳐야 했다(사용자).
+   증거 줄(data-tip 말풍선)은 누르면 말풍선이 클릭을 가로채므로 버튼은 따로 둔다 */
+function _renderSheetBlankDue(chapterData) {
+    const ev = document.getElementById('sheet-blank-evidence');
+    if (!ev) return;
+    let el = document.getElementById('sheet-blank-due');
+    if (!el) { el = document.createElement('div'); el.id = 'sheet-blank-due'; el.className = 'sheet-blank-due'; ev.parentNode.insertBefore(el, ev.nextSibling); }
+    const ch = chapterData && chapterData.id, now = Date.now();
+    const vs = (_chapterBlankStats(chapterData).ids || []).filter(id => { const r = verseRecall[id]; return r && r.bx && r.bxDue && r.bxDue <= now; })
+        .map(id => parseInt(id.split('-')[1], 10));
+    if (!vs.length || typeof ch !== 'number') { el.style.display = 'none'; el.innerHTML = ''; return; }
+    el.innerHTML = `<div class="sbd-text"><b>${t('sbd_title', { n: vs.length })}</b><span class="sbd-vs">${t('bd_range', { r: _verseRangeText(vs) })}</span></div>` +
+        `<button class="sbd-go" onclick="_startBlankDue(${ch}, 'map')">${t('sbd_go')}</button>`;
+    el.style.display = '';
+}
+// 묶음(중간점검) 안에서 오늘 백지 차례인 절 수
+function _groupBlankDue(stages) {
+    if (typeof verseRecall === 'undefined' || !verseRecall) return 0;
+    const now = Date.now();
+    return stages.filter(s => { const r = verseRecall[String(s.id)]; return r && r.bx && r.bxDue && r.bxDue <= now; }).length;
 }
 
 function openStageSheet(chapterData) {
@@ -10433,6 +10463,8 @@ function openStageSheet(chapterData) {
                 return rs.isEligible && rs.step > 1;
             });
             const reviewDotHtml = hasReview ? `<span class="stage-group-review-dot"></span>` : '';
+            const blankDue = _groupBlankDue(group.stages);
+            const blankDueHtml = blankDue ? `<span class="stage-group-blank-due" title="${t('sbd_group_tip', { n: blankDue })}">✍️${blankDue}</span>` : '';
             const hasNewVerse = kingsUnlockedSet && group.stages.some(s =>
                 kingsUnlockedSet.has(s.id) && (stageMastery[s.id] || 0) === 0
             );
@@ -10444,7 +10476,7 @@ function openStageSheet(chapterData) {
 
             const groupEl = document.createElement('div');
             groupEl.className = 'stage-group';
-            if (hasNewVerse || hasLastPlayed) groupEl.classList.add('open');
+            if (hasNewVerse || hasLastPlayed || blankDue) groupEl.classList.add('open');   // 백지 차례가 있는 묶음은 펼쳐 둔다
             const headerEl = document.createElement('div');
             headerEl.className = 'stage-group-header';
             headerEl.innerHTML = `
@@ -10454,6 +10486,7 @@ function openStageSheet(chapterData) {
                 </div>
                 <div class="stage-group-header-right">
                     ${newBadgeHtml}
+                    ${blankDueHtml}
                     ${reviewDotHtml}
                     <span class="stage-group-arrow">›</span>
                 </div>
@@ -31251,13 +31284,14 @@ function closeBlankDueScreen() {
     const ov = document.getElementById('blank-due-overlay');
     if (ov) ov.style.display = 'none';
 }
-function _startBlankDue(ch) {
+function _startBlankDue(ch, from) {
     const it = _blankDueByChapter().find(x => x.ch === ch);
     if (!it || !it.vs.length) { openBlankDueScreen(); return; }
     closeBlankDueScreen();
+    if (from === 'map') closeStageSheet();   // 장 목록 맨 위 「지금 쓰기」 — 끝나면 지도로
     const ids = it.vs.map(v => `${ch}-${v}`);
     window.currentStageId = ids[0];
-    window.hardshipOrigin = 'home';
+    window.hardshipOrigin = from === 'map' ? 'map' : 'home';
     selectedHardshipOrderType = 'sequential';
     selectedHardshipUltimate = true;
     _pendingHardshipEmbed = { label: t('bd_embed', { ch }), blankDueCh: ch };

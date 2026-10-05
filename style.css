@@ -6794,6 +6794,25 @@ body > #guide-screen-overlay .guide-body > .guide-btn.ghost { width: 100%; margi
 .blank-lv-badge.due b { color: #e74c3c; font-weight: 800; }
 .hardship-feedback .blank-lv-note { margin-top: 6px; font-size: 0.85em; font-weight: 700; opacity: 0.95; }
 .sheet-blank-evidence .sbe-due { font-weight: 800; color: #ff8a7a; }
+/* 장 목록 맨 위 — 오늘 백지 차례인 절 + 바로 쓰기 (2026-10-05) */
+.sheet-blank-due {
+    margin: 0 16px 8px; padding: 8px 8px 8px 12px;
+    display: flex; align-items: center; gap: 10px;
+    border-radius: 10px; background: rgba(231,76,60,0.12); border: 1px solid rgba(231,76,60,0.45);
+}
+.sheet-blank-due .sbd-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 0.8rem; line-height: 1.35; color: #ffb3a8; }
+.sheet-blank-due .sbd-text b { font-weight: 800; color: #ff8a7a; }
+.sheet-blank-due .sbd-vs { font-weight: 700; color: #f3e6e4; word-break: keep-all; }
+.sheet-blank-due .sbd-go {
+    flex-shrink: 0; border: none; border-radius: 8px; padding: 8px 12px;
+    background: #e74c3c; color: #fff; font-size: 0.8rem; font-weight: 800; cursor: pointer;
+}
+.sheet-blank-due .sbd-go:active { transform: scale(0.96); }
+.stage-group-blank-due {
+    font-size: 0.72rem; font-weight: 800; line-height: 1;
+    color: #ff8a7a; background: rgba(231,76,60,0.14); border: 1px solid rgba(231,76,60,0.45);
+    padding: 2px 6px; border-radius: 10px;
+}
 
 /* 힌트 흔적 — 답이 보이는 곳에서만. 여러 번 막힌 자리일수록 진하게 */
 .hint-trace { text-decoration: underline dotted; text-underline-offset: 4px; text-decoration-thickness: 2px; }

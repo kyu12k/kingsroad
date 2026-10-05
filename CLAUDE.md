@@ -127,7 +127,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | nj3d.js `chunkInstanced` · `nearTick` · `addBlob` · `blobTick` · `sun.shadow.needsUpdate` | nj3d.js | 3D 가볍게(10/3·10/4) — 흩어진 InstancedMesh를 칸으로 쪼개 가까운 칸만 · 해 그림자는 멈춰 있을 때만 굽는다(움직이는 동안 0번) · 순례자·탈것·행렬·움직인 세트 조각은 발밑 둥근 그늘 · 모델 구석 그늘은 블렌더에서 꼭짓점 색으로(`lp.bake_ao`) (`docs/새-예루살렘.md`) |
 | nj3d.js `loadCity` · `cityAnims` · `wallPieces` · `models/city/*.glb` · `tools/blender/city.py` | nj3d.js | 거룩한 성 모델 — 보좌(녹보석 무지개·일곱 등불)·진주 문(큰 진주·천사)·깎은 기초석·벽옥 성벽. 모델을 다시 뽑으면 `CITY_V` |
 | nj3d.js `loadGift` · `giftAnim(k, root)` · `placeGift` · `models/gifts/*.glb` · `tools/blender/` | nj3d.js | 예물 모델 — 블렌더 로우폴리(스크립트로 뽑음), 움직일 부분은 이름 붙은 축 노드. 모델을 다시 뽑으면 `GIFT_V`를 올린다 |
-| `openBlankDueScreen()` · `_startBlankDue(ch)` · `openReviewFromHome()` | game.js:~30330 | 홈 ✍️ 백지 → 오늘 백지 차례 창(장별 절 범위) · 📖 복습 → 마지막 여정의 복습 목록 |
+| `openBlankDueScreen()` · `_startBlankDue(ch, from)` · `openReviewFromHome()` · `_renderSheetBlankDue` · `_groupBlankDue` | game.js:~31230 · ~10390 | 홈 ✍️ 백지 → 오늘 백지 차례 창(장별 절 범위) · 📖 복습 → 마지막 여정의 복습 목록 · 장 목록 맨 위 「오늘 백지 차례 / 지금 쓰기」와 묶음 「✍️n」(`from='map'`) |
 | `firstPhraseOf(text, lv)` · `openFirstPhrasePick()` · `_startFirstPhrase(ch, lv)` · `startFirstPhraseNote()` · `fpRecall` | game.js:~26330 | 🔑 첫 마디의 고난(장 단위, 쉬움·보통·어려움) · 📒 오답노트(5절부터) — 고난 엔진을 `startLv`로 빌려 쓴다 (`docs/고난과-난이도.md`) |
 | `_blankFirstDue(id)` · `_bossReviewHold` · `BLANK_FIRST_STEP` · `_reviewNoAdvance` | game.js:~11025 | ✍️ 3일 뒤 복습(단계 6+)부터 백지 먼저 · 막히면 단계 그대로 내일 다시 · 보스전·중간점검은 백지로 깼을 때만 단계 6+ 절을 올린다 (`docs/복습과-기억.md`) |
 | `_resetLongUnstudied()` · `_blankCountsAsClear(id)` | game.js:~10790 | 30일 넘게 밀린 절은 복습 일정을 처음으로 · 백지로 써낸 절 = 그 절 일반 클리어(고난·백지 차례·오늘의 암송·열매) |
