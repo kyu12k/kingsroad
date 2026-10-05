@@ -5276,7 +5276,7 @@ body > #guide-screen-overlay .guide-body > .guide-btn.ghost { width: 100%; margi
     left: 50%;
     width: 85vw; /* 화면 너비의 85% 안에 예쁘게 갇힘 */
     max-width: 600px;
-    font-size: 5.5vw; /* 모바일 화면 꽉 차는 시원한 글자 크기 */
+    font-size: calc(5.5vw * var(--verse-fs, 1) * var(--verse-fit, 1)); /* 모바일 화면 꽉 차는 시원한 글자 크기 · 가−/가+로 0.75~1.5배(10/5) */
     font-weight: 900;
     color: #f0e6c8;
     text-align: center;
@@ -5290,7 +5290,7 @@ body > #guide-screen-overlay .guide-body > .guide-btn.ghost { width: 100%; margi
 /* PC/태블릿 환경을 위한 크기 제한 */
 @media (min-width: 768px) {
     #verse-text-overlay {
-        font-size: 2rem;
+        font-size: calc(2rem * var(--verse-fs, 1) * var(--verse-fit, 1));
     }
 }
 
@@ -5543,6 +5543,10 @@ body > #guide-screen-overlay .guide-body > .guide-btn.ghost { width: 100%; margi
     z-index: 10;
 }
 
+/* 🔠 듣기 화면 글자 크기 (10/5 사용자) — 오른쪽 위, 목소리 버튼과 마주 보게 */
+#verse-font-btns { position: absolute; top: 16px; right: 16px; display: flex; gap: 6px; z-index: 10; }
+#verse-font-btns button { padding: 6px 12px; border-radius: 20px; border: 1.5px solid #c8a96e; background: rgba(30, 20, 10, 0.75); color: #f0e6c8; font-size: 0.9rem; font-weight: 800; cursor: pointer; backdrop-filter: blur(4px); }
+#verse-font-btns button:disabled { opacity: 0.35; cursor: default; }
 .voice-select-btn {
     padding: 6px 18px;
     border-radius: 20px;
@@ -7342,7 +7346,7 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
     #stage-intro-header { top: 4%; line-height: 1.3; }
     #stage-intro-header .intro-subtitle { display: none; }
     #stage-intro-header .intro-verse-num { margin-top: 2px; }
-    #verse-text-overlay { font-size: 1.45rem; max-width: 760px; width: 80vw; }
+    #verse-text-overlay { font-size: calc(1.45rem * var(--verse-fs, 1) * var(--verse-fit, 1)); max-width: 760px; width: 80vw; }
 }
 
 /* 👀 바다 생물 관찰 (2026-10-05) — 바다에서 누르면 관찰 모드(걷기 단추를 감추고 아래 판), 도감에서 누르면 작은 물속 무대 */

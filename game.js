@@ -25948,6 +25948,35 @@ function startStageWithTransition(chapterNum, verseNum, startStageCallback) {
     }, 1500);
 }
 
+/* 🔠 듣기 화면(두루마리) 글자 크기 (10/5 사용자) — 0.75 ~ 1.5배, 기기에 기억 */
+const VERSE_FONT_STEPS = [0.75, 0.85, 1, 1.15, 1.3, 1.5];
+function _verseFontApply() {
+    let s = 1; try { s = parseFloat(localStorage.getItem('verseFontScale')) || 1; } catch (e) { }
+    const o = document.getElementById('bible-transition-overlay'); if (o) o.style.setProperty('--verse-fs', s);
+    return s;
+}
+function _verseFontStep(d) {
+    let i = VERSE_FONT_STEPS.findIndex(v => Math.abs(v - _verseFontApply()) < 0.01); if (i < 0) i = 2;
+    i = Math.max(0, Math.min(VERSE_FONT_STEPS.length - 1, i + d));
+    try { localStorage.setItem('verseFontScale', String(VERSE_FONT_STEPS[i])); } catch (e) { }
+    _verseFontShow(true);
+}
+/* 긴 절을 크게 하면 위 장 제목·아래 버튼과 겹친다 — 넘칠 때만 들어갈 만큼 줄인다(가운데 정렬이라 위아래 중 좁은 쪽 기준) */
+function _verseFontFit() {
+    const o = document.getElementById('verse-text-overlay'); if (!o) return;
+    o.style.setProperty('--verse-fit', 1);
+    const H = window.innerHeight, hd = document.getElementById('stage-intro-header'), hb = hd ? hd.getBoundingClientRect().bottom : H * 0.25;
+    const avail = 2 * Math.min(H / 2 - hb - 8, (H - 140) - H / 2 - 8), h = o.offsetHeight;
+    if (avail > 80 && h > avail) o.style.setProperty('--verse-fit', Math.max(0.55, avail / h).toFixed(3));
+}
+function _verseFontShow(on) {
+    const w = document.getElementById('verse-font-btns'); if (!w) return;
+    w.style.display = on ? 'flex' : 'none'; if (!on) return;
+    const s = _verseFontApply(), en = currentLang === 'en', [dn, up] = w.querySelectorAll('button');
+    dn.textContent = en ? 'A−' : '가−'; up.textContent = en ? 'A+' : '가+';
+    dn.disabled = s <= VERSE_FONT_STEPS[0] + 0.001; up.disabled = s >= VERSE_FONT_STEPS[VERSE_FONT_STEPS.length - 1] - 0.001;
+    _verseFontFit();
+}
 /* [시네마틱 + 즉시 스킵 + 음소거 유지] */
 function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, vNum) {
     const overlay = document.getElementById('bible-transition-overlay');
@@ -25959,7 +25988,7 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, 
         textOverlay.id = 'verse-text-overlay';
         overlay.appendChild(textOverlay);
     }
-    textOverlay.innerText = targetText;
+    textOverlay.innerText = targetText; _verseFontFit();
     gsap.set(textOverlay, { opacity: 0, y: 20, scale: 0.9, xPercent: -50, yPercent: -50 });
     if (introHeader) gsap.set(introHeader, { opacity: 0, y: -10 });
 
@@ -26072,6 +26101,7 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, 
         });
     }
 
+    _verseFontShow(true);
     if (muteBtn) {
         muteBtn.style.display = "flex";
         muteBtn.innerText = isGlobalMuted ? "🔇" : "🔊";
@@ -26145,7 +26175,7 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, 
             _activeAudio = null;
             clearTimeout(fallbackTimer);
             skipBtn.style.display = "none";
-            if (muteBtn) muteBtn.style.display = "none";
+            if (muteBtn) muteBtn.style.display = "none"; _verseFontShow(false);
             if (pauseBtn) pauseBtn.style.display = "none";
             if (repeatBtn) {
                 repeatBtn.style.display = "none";
@@ -26204,7 +26234,7 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, 
 
         .call(() => {
             if (skipBtn) skipBtn.style.display = "none";
-            if (muteBtn) muteBtn.style.display = "none";
+            if (muteBtn) muteBtn.style.display = "none"; _verseFontShow(false);
             if (pauseBtn) pauseBtn.style.display = "none";
             if (repeatBtn) {
                 repeatBtn.style.display = "none";
@@ -26245,7 +26275,7 @@ function startBossTransition(chapterNum, startVerse, endVerse, isMidBoss, onComp
     const repeatBtn = document.getElementById('repeat-toggle-btn');
     const skipBtn = document.getElementById('skip-transition-btn');
 
-    if (muteBtn) muteBtn.style.display = 'none';
+    if (muteBtn) muteBtn.style.display = 'none'; _verseFontShow(false);
     if (pauseBtn) pauseBtn.style.display = 'none';
     if (skipBtn) skipBtn.style.display = 'none';
     if (repeatBtn) {
