@@ -7634,7 +7634,7 @@ function _isPreFirstClear() {
 
 /* 첫 구절 안내 대상인가 — 자유여행이고, 클리어 기록이 전무하고, 아직 안내한 적 없을 때만 */
 function _shouldGuideFirstStage() {
-    if (activeMode !== 'free') return false; // 왕의 길은 stepHistory 설정이 선행되어야 함
+    if (activeMode !== 'free' && !(activeMode === 'kings' && kingsRoadData.stepHistory.length)) return false; // 왕의 길은 stepHistory 설정이 선행되어야 함(10/6 — 정해져 있으면 왕의 길도)
     try { if (localStorage.getItem('kingsRoad_firstStageGuided')) return false; } catch (e) {}
     const freeCount = Object.keys(stageMastery || {}).length;
     const kingsCount = Object.keys((typeof kingsRoadData !== 'undefined' && kingsRoadData.mastery) || {}).length;
@@ -24485,7 +24485,22 @@ async function confirmProfile() {
             localStorage.setItem('noticeHideUntil',
                 new Date(Date.now() + 3 * 86400000).toISOString());
         } catch (e) { /* 저장 실패해도 온보딩에는 영향 없음 */ }
+        // 🚪 곧바로 첫 구절로 (10/6) — 여정 고르기·하루 몇 구절·안내 3쪽·아멘은 첫 구절 뒤로
+        if (typeof _isPreFirstClear === 'function' && _isPreFirstClear()) setTimeout(_startFirstVerseNow, 900);
     }
+}
+
+/* 🚪 가입 직후 곧바로 첫 구절 (2026-10-06) — 실측: 9/9 이후 새 가입자 68명 중 35명(51%)이 등록을 마치고 지도에 한 번도 못 갔다.
+   등록 → 홈 → 「여정 시작」 → 여정 고르기(셋) → 하루 몇 구절(셋) → 안내 3쪽 → 아멘 → 지도 → 1장 → 1절, 첫 구절까지 탭 8~10번·선택 셋이었다.
+   이제 「왕의 길 · 하루 1구절」로 정해 두고 지도를 한 번 보여 준 뒤 1:1을 연다. 여정·단계는 지도 칩·홈에서 언제든 바꾼다.
+   안내 3쪽(kingsRoad_introSeen)은 남겨 두어 다음에 「여정 시작」을 누를 때 본다 */
+function _startFirstVerseNow() {
+    if (!_isPreFirstClear()) return;
+    if (!kingsRoadData.stepHistory.length) setKingsRoadStep(1);
+    switchMode('kings');
+    try { localStorage.setItem('kingsRoad_lastAmenDate', getMemoryQuizDate()); } catch (e) { }
+    window._pendingFirstStageStart = true;
+    goMap();
 }
 
 /* [시스템] 데이터 경고 팝업 제어 */
