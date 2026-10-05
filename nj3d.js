@@ -168,15 +168,22 @@
         // ══ 한 세계 (2026-09-30) — 성은 높은 산 위(21:10 「크고 높은 산으로 올라가 거룩한 성을 보이니」),
         //    네 강은 비탈을 따라 내려가고 남쪽 강은 골짜기를 지나 생명수의 바다로(겔 47). 바다는 서버 진행도(sea/world) 그대로 ══
         const PL = 12, DROP = 14, SLOPE = 26;                  // 산마루 반폭 · 산 높이 · 비탈 길이
-        const SZ = 66, SRX = 24, SRZ = 23, SEA_Y = -14.15;    // 바다 가운데(남쪽 z) · 반지름 · 수면
-        const SHORE = SZ - SRZ;                                // 강 어귀
-        const seaE = (x, z) => (x / SRX) ** 2 + ((z - SZ) / SRZ) ** 2;
+        const SEA_Y = -14.15, SHORE = (typeof SEA_SHORE !== 'undefined' ? SEA_SHORE : 43), SZ = SHORE + 23;   // 수면 · 강 어귀 · 바다 쪽 바라볼 곳
+        // 🌊 탁 트인 바다(10/5) — 전엔 성 남쪽 둥근 호수(가운데 z 66, 반지름 24×23)였다. 이제 해안선(game.js _seaCoastZ) 남쪽은 맵 끝까지 바다, 야벳 14 섬.
+        //   seaE는 옛 쓰임새 그대로: 1 아래면 바다(0에 가까울수록 깊다 — 뭍에서 24 넘게 떨어지면 0), 1 넘으면 뭍(물가에서 8 들어가면 2)
+        const coastZ = x => typeof _seaCoastZ === 'function' ? _seaCoastZ(x) : SHORE;
+        const ISLES = typeof _seaIsles === 'function' ? _seaIsles() : [];
+        const isleR = (s, x, z) => { const a = Math.atan2(z - s.z, x - s.x); return s.r * (1 + 0.08 * Math.sin(a * 3 + s.x) + 0.05 * Math.sin(a * 5 + s.z)); };   // 섬 둘레가 조금 울퉁불퉁
+        const seaDistW = (x, z) => { let d = z - coastZ(x); for (let k = 0; k < ISLES.length; k++) { const s = ISLES[k], dc = Math.hypot(x - s.x, z - s.z); if (dc - s.r * 1.15 > d) continue; const q = dc - isleR(s, x, z); if (q < d) d = q; } return d; };
+        const seaE = (x, z) => { const d = seaDistW(x, z); return d > 0 ? Math.max(0, 1 - d / 24) : 1 - d / 8; };
+        // 섬 언덕 — 가운데 반은 평평한 꼭대기(수면 위 0.85), 가장자리로 내려와 물가(0.15 — 벌판과 같은 높이)
+        const isleH = (x, z) => { let h = -Infinity; for (let k = 0; k < ISLES.length; k++) { const s = ISLES[k], dc = Math.hypot(x - s.x, z - s.z); if (dc > s.r * 1.15) continue; const t = dc / isleR(s, x, z); if (t < 1) { const u = Math.min(1, (1 - t) / 0.5); h = Math.max(h, SEA_Y + 0.15 + 0.7 * u * u * (3 - 2 * u)); } } return h; };
         const slopeH = d => { if (d <= PL) return 0; const q = Math.min(1, (d - PL) / SLOPE); return -DROP * q * q * (3 - 2 * q); };
         const SEA_DEEP = 7;   // 🌊 바다 가운데 깊이(10/2 사용자: 물속에 빠질 수 있게 · 잠수함이 다닐 만큼) — 전엔 수면 0.85 아래가 바닥이었다
         const seabed = (x, z) => { const e = seaE(x, z); return SEA_Y - 0.12 - SEA_DEEP * Math.pow(Math.max(0, 1 - e), 0.55) + Math.sin(x * 0.45) * Math.cos(z * 0.38) * 0.35 * (1 - e); };
         function WT(x, z) {   // 땅 높이(물길 파임 제외) — 바다 안은 바다 밑
             const h = slopeH(Math.max(Math.abs(x), Math.abs(z))), e = seaE(x, z);
-            return e < 1 ? seabed(x, z) : h;
+            return e < 1 ? seabed(x, z) : Math.max(h, isleH(x, z));
         }
         const stripDip = u => u >= RB ? 0 : u <= RW ? -RD : -RD * (RB - u) / (RB - RW);
         // 땅 격자 자리 — 가까운 곳은 촘촘히, 먼 곳은 성기게. 강둑도 이 자리에서 높이를 잰다(10/4 밤: 따로 재서 휜 비탈에서 맞닿는 가장자리가 어긋나 땅 밑이 비쳤다)
@@ -191,7 +198,7 @@
                 const pos = [], col = [], idx = [];
                 xs.forEach(zv => xs.forEach(xv => {
                     const x = sx * xv, z = sz * zv, h = WT(x, z), e = seaE(x, z);
-                    pos.push(x, e < 1 ? h - 0.3 : h, z);   // 바다 안은 촘촘한 바다 밑 그릇(아래)이 덮는다 — 성긴 땅 그물은 조금 아래로(겹쳐 깜빡이지 않게)
+                    pos.push(x, z > 30.5 ? h - 0.8 : e < 1 ? h - 0.3 : h, z);   // 🌊 z 30 너머는 아래 해안 그물(촘촘)이 덮는다 — 성긴 그물은 밑으로(10/5: 38부터였더니 모래사장이 성긴 그물에 계단처럼 칠해졌다)   // 바다 안은 촘촘한 바다 밑 그릇(아래)이 덮는다 — 성긴 땅 그물은 조금 아래로(겹쳐 깜빡이지 않게)
                     c.copy(cTop).lerp(cLow, Math.min(1, -h / DROP)); if (e < 1.5 && e > 0.75) c.lerp(cSand, 0.88 * Math.min(1, (1.5 - e) / 0.18));   // 🏖️ 물가는 모래사장(10/4 밤 — 0.55로 섞어 풀빛이 남았다)
                     if (e < 1) { const dd = Math.min(1, (SEA_Y - h) / SEA_DEEP); c.copy(cSand).lerp(cDeep, Math.pow(dd, 0.7)); }   // 바다 밑 — 모래에서 짙은 청록으로
                     c.convertSRGBToLinear();   // 꼭짓점 색은 선형으로 — 안 바꾸면 화면에서 허옇게 바래 연한 민트로 보였다(10/2 풀밭 손질)
@@ -368,10 +375,6 @@
             grp.add(dual(new THREE.Mesh(ribbonGeo(RB, end, [-WW / 2, WW / 2], [WL, WL], 1, hf)), wb, wh));
             scene.add(grp); rivers.push(tex);
         });
-        {   // 어귀부터 남쪽 끝까지 — 물길 띠 자리를 땅으로 메운다(바다 밑 바닥 포함). 처음엔 바다 건너편만 메워 물칸 틈으로 빈 띠가 검은 줄처럼 보였다(9/30)
-            const g = ribbonGeo(SHORE + 0.05, 150, [-RB, RB], [0, 0], 1, sv => WT(0, sv) - (seaE(0, sv) < 1 ? 0.35 : 0));   // 바다 안은 바다 밑 그릇 아래로(물속에서 밝은 띠로 보였다)
-            scene.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0x3d8a48, roughness: 0.95, side: THREE.DoubleSide })));
-        }
         {   // 보좌 둘레 샘 — 네 물길이 만나는 네모 못
             const pool = new THREE.Mesh(new THREE.PlaneGeometry(RB * 2, RB * 2), bankGold); pool.rotation.x = -Math.PI / 2; pool.position.y = -RD; scene.add(pool);
             const tex = new THREE.CanvasTexture(riverCv); tex.encoding = THREE.sRGBEncoding;
@@ -645,18 +648,39 @@
         // ── 생명수의 바다와 만국 (겔 47 · 창 10 · 계 22:2) — 지도 바다와 같은 칸·같은 순서(game.js _seaGeom), 서버 진행도 그대로 ──
         const seaGrp = new THREE.Group(); scene.add(seaGrp);
         const SG = (typeof _seaGeom === 'function') ? _seaGeom() : { water: [], salt: [] };
-        const toW = (x, y) => [(x - 440) / 330 * SRX, SZ + (y - 470) / 320 * SRZ];
-        const HRW = 7.75 / 330 * SRX;
-        {
-            // 바다 밑 그릇 — 극좌표 그물(고리 28 × 72), 모래에서 짙은 청록으로. 옛 짙은 바닥판(수면 0.6 아래)은 물속에서 천장처럼 막아 뺐다
-            const RN = 28, AN = 72, pos = [], col = [], idx = [], cS = new THREE.Color(0xc9b486), cD = new THREE.Color(0x1f5a5e), cc = new THREE.Color();
-            for (let i = 0; i <= RN; i++) for (let j = 0; j < AN; j++) {
-                const q = i / RN * 1.01, a = j / AN * Math.PI * 2, x = Math.cos(a) * q * SRX, z = SZ + Math.sin(a) * q * SRZ, y = Math.min(SEA_Y - 0.12, seabed(x, z));
-                pos.push(x, y, z); cc.copy(cS).lerp(cD, Math.pow(Math.min(1, (SEA_Y - y) / SEA_DEEP), 0.7)).convertSRGBToLinear(); col.push(cc.r, cc.g, cc.b);
-            }
-            for (let i = 0; i < RN; i++) for (let j = 0; j < AN; j++) { const a = i * AN + j, b2 = i * AN + (j + 1) % AN, c2 = a + AN, d2 = b2 + AN; idx.push(a, b2, c2, b2, d2, c2); }
+        const toW = (x, z) => [x, z];   // 10/5부터 칸 자리는 세계 좌표 그대로(전엔 2D 880 좌표를 둥근 바다로 옮겼다)
+        const HRW = SG.R || 1.1;
+        {   // 🏖️ 해안과 바다 밑 (10/5) — z 38부터 맵 끝까지 한 장. 가로 1.5마다(해안선이 계단처럼 보이지 않게), 세로는 물가 촘촘·먼 바다 성기게.
+            //   뭍은 벌판·모래사장, 바다는 모래에서 짙은 청록으로. 섬 자리는 아래 섬 그물이 덮어 조금 내린다. 남쪽 강 물길 자리도 내린다(강둑 그물이 덮는다)
+            const xs = [], zs = []; for (let x = -156; x <= 156.01; x += 1.5) if (Math.abs(x) > 1.2) xs.push(x);
+            xs.push(-0.96, -0.5, 0, 0.5, 0.96); xs.sort((a, b) => a - b);   // 강 물길(반폭 0.95) 자리는 그 안만 내린다 — 넓게 내려 어귀 양옆이 구멍처럼 보였다
+            for (let z = 30; z < 72; z += 1) zs.push(z); for (let z = 72; z < 104; z += 2) zs.push(z); for (let z = 104; z <= 168; z += 4) zs.push(z);
+            const pos = [], col = [], idx = [], cTop = new THREE.Color(0x2f9e58), cLow = new THREE.Color(0x3d8a48), cSand = new THREE.Color(0xc9b486), cDeep = new THREE.Color(0x1f5a5e), c = new THREE.Color();
+            zs.forEach(z => xs.forEach(x => {
+                const e = seaE(x, z), inIsle = ISLES.some(s => Math.hypot(x - s.x, z - s.z) < s.r * 1.3);
+                let h = e < 1 ? Math.min(SEA_Y - 0.12, seabed(x, z)) : WT(x, z);
+                if (inIsle) h = Math.min(h, SEA_Y - 0.6); else if (Math.abs(x) < 0.9 && z < SHORE + 0.2) h -= 0.4;
+                pos.push(x, h, z);
+                if (e < 1) { const dd = Math.min(1, (SEA_Y - h) / SEA_DEEP); c.copy(cSand).lerp(cDeep, Math.pow(dd, 0.7)); }
+                else { c.copy(cTop).lerp(cLow, Math.min(1, -h / DROP)); if (e < 1.5) c.lerp(cSand, 0.88 * Math.min(1, (1.5 - e) / 0.18)); }
+                c.convertSRGBToLinear(); col.push(c.r, c.g, c.b);
+            }));
+            const nx = xs.length;
+            for (let j = 0; j < zs.length - 1; j++) for (let i = 0; i < nx - 1; i++) { const a = j * nx + i; idx.push(a, a + nx, a + 1, a + 1, a + nx, a + nx + 1); }
             const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
-            const bed = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, side: THREE.DoubleSide })); bed.receiveShadow = true; seaGrp.add(bed);
+            const bed = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, side: THREE.DoubleSide })); bed.receiveShadow = true; scene.add(bed);
+            // 🏝️ 섬 — 둥근 언덕(꼭대기 풀밭, 가장자리 모래, 물속으로 비탈)
+            const RF = [0, 0.25, 0.5, 0.7, 0.85, 1.0, 1.12, 1.3], SEG = 28;
+            ISLES.forEach(s => {
+                const p2 = [], c2 = [], i2 = [];
+                RF.forEach(f => { for (let k = 0; k < SEG; k++) { const a = k / SEG * Math.PI * 2, rr0 = isleR(s, s.x + Math.cos(a), s.z + Math.sin(a)), x = s.x + Math.cos(a) * rr0 * f, z = s.z + Math.sin(a) * rr0 * f;
+                    const h = f <= 1 ? isleH(s.x + Math.cos(a) * rr0 * f * 0.999, s.z + Math.sin(a) * rr0 * f * 0.999) : SEA_Y - 0.25 - (f - 1) * 2.2;
+                    p2.push(x, f <= 1 ? Math.max(h, SEA_Y + 0.15) : h, z);
+                    c.copy(f < 0.6 ? cTop : f < 0.85 ? cLow : cSand); if (f > 1) c.copy(cSand).lerp(cDeep, 0.25); c.convertSRGBToLinear(); c2.push(c.r, c.g, c.b); } });
+                for (let rr = 0; rr < RF.length - 1; rr++) for (let k = 0; k < SEG; k++) { const a = rr * SEG + k, b = rr * SEG + (k + 1) % SEG; i2.push(a, a + SEG, b, b, a + SEG, b + SEG); }
+                const g2 = new THREE.BufferGeometry(); g2.setAttribute('position', new THREE.Float32BufferAttribute(p2, 3)); g2.setAttribute('color', new THREE.Float32BufferAttribute(c2, 3)); g2.setIndex(i2); g2.computeVertexNormals();
+                const im = new THREE.Mesh(g2, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, side: THREE.DoubleSide })); im.receiveShadow = true; scene.add(im);
+            });
         }
         // 수면 — 10/5 사용자: "타일 같다 · 구분선이 보이고 얼음판 같다". 물칸 2,051장(육각 판, 틈 0.015)을 걷어내고 **수면 한 장**에
         //   칸 색을 번지듯 칠한다(paintSea — 칸마다 부드러운 원). 맑아진 정도는 그대로 보이고 경계는 이어진다.
@@ -673,16 +697,18 @@
             const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.encoding = THREE.sRGBEncoding; return t;
         };
         const seaTex = rippleTex(24, 7), seaTex2 = rippleTex(18, 91);
-        seaTex.repeat.set(14, 14); seaTex2.repeat.set(8, 8); seaTex2.rotation = 0.6; seaTex2.center.set(0.5, 0.5);
-        const SEA_PX = 256,   /* 작게 그려 GPU가 늘이며 부드럽게 섞는다 */ seaCv = document.createElement('canvas'); seaCv.width = seaCv.height = SEA_PX;
+        // 수면 한 장 = 맵 끝 너머까지(x −170~170, z 30~180). 물결 줄 빽빽함은 둥근 바다 때와 같게
+        const SW_X0 = -170, SW_X1 = 170, SW_Z0 = 30, SW_Z1 = 180, SW_W = SW_X1 - SW_X0, SW_H = SW_Z1 - SW_Z0;
+        seaTex.repeat.set(SW_W * 0.29, SW_H * 0.29); seaTex2.repeat.set(SW_W * 0.17, SW_H * 0.17); seaTex2.rotation = 0.6; seaTex2.center.set(0.5, 0.5);
+        const SEA_PX = 1024,   /* 작게 그려 GPU가 늘이며 부드럽게 섞는다 — 넓어져 1024×452 */ seaCv = document.createElement('canvas'); seaCv.width = SEA_PX; seaCv.height = Math.round(SEA_PX * SW_H / SW_W);
         const seaColTex = new THREE.CanvasTexture(seaCv); seaColTex.encoding = THREE.sRGBEncoding;
         {
-            const R = 1.02, surf = new THREE.CircleGeometry(1, 128);
+            const surf = new THREE.PlaneGeometry(SW_W, SW_H, 1, 1);
             const col = new THREE.Mesh(surf, new THREE.MeshStandardMaterial({ map: seaColTex, transparent: true, opacity: 0.9, roughness: 0.16, metalness: 0.18, side: THREE.DoubleSide, depthWrite: false }));
-            col.rotation.x = -Math.PI / 2; col.scale.set(SRX * R, SRZ * R, 1); col.position.set(0, SEA_Y - 0.002, SZ); col.renderOrder = 1; seaGrp.add(col);
+            col.rotation.x = -Math.PI / 2; col.position.set((SW_X0 + SW_X1) / 2, SEA_Y - 0.002, (SW_Z0 + SW_Z1) / 2); col.renderOrder = 1; seaGrp.add(col);
             [[seaTex, 0.26, 0.004, 2], [seaTex2, 0.16, 0.008, 3]].forEach(([tx, op, dy, ro]) => {
                 const sf = new THREE.Mesh(surf, new THREE.MeshStandardMaterial({ map: tx, color: 0xffffff, transparent: true, opacity: op, roughness: 0.12, metalness: 0.2, depthWrite: false }));
-                sf.rotation.x = -Math.PI / 2; sf.scale.set(SRX * R, SRZ * R, 1); sf.position.set(0, SEA_Y + dy, SZ); sf.renderOrder = ro; seaGrp.add(sf);
+                sf.rotation.x = -Math.PI / 2; sf.position.set((SW_X0 + SW_X1) / 2, SEA_Y + dy, (SW_Z0 + SW_Z1) / 2); sf.renderOrder = ro; seaGrp.add(sf);
             });
         }
         const cellN = SG.water.length + SG.salt.length;
@@ -691,22 +717,49 @@
         SG.salt.forEach(c => { const [X, Z] = toW(c.x, c.y); for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) { const k = (Math.floor(X / 0.5) + dx) + ',' + (Math.floor(Z / 0.5) + dz); (SALT_H.get(k) || SALT_H.set(k, []).get(k)).push([X, Z]); } });
         const saltAt = (x, z) => { const L = SALT_H.get(Math.floor(x / 0.5) + ',' + Math.floor(z / 0.5)); return !!L && L.some(([X, Z]) => Math.hypot(X - x, Z - z) < HRW * 1.05); };
 
+        // 🧱 맵 끝 막 (10/5 사용자: 맵 끝 너머를 바다로 하되 넘어갈 수 없게 반투명한 막 — 다가가면 보이고 이동을 막는다).
+        //    이동은 blocked()가 이미 x ±140 · z −140 · 150에서 막았다(보이지 않는 벽). 이제 그 자리에 빛의 막 — 멀면 투명, 10 안으로 오면 서서히(wallTick)
+        const walls = [];
+        {
+            const cv = document.createElement('canvas'); cv.width = 64; cv.height = 128; const g = cv.getContext('2d');
+            // 물빛 하늘색 — 흰 빛은 크림색 하늘에 묻혀 안 보였다(10/5 시험)
+            const gr = g.createLinearGradient(0, 0, 0, 128); gr.addColorStop(0, 'rgba(90,170,220,0)'); gr.addColorStop(0.45, 'rgba(90,170,220,0.38)'); gr.addColorStop(1, 'rgba(70,160,215,0.75)');
+            g.fillStyle = gr; g.fillRect(0, 0, 64, 128);
+            g.strokeStyle = 'rgba(40,120,190,0.55)'; g.lineWidth = 2; for (let x = 4; x < 64; x += 16) { g.beginPath(); g.moveTo(x, 20); g.lineTo(x + 6, 128); g.stroke(); }
+            g.fillStyle = 'rgba(255,255,255,0.85)'; g.fillRect(0, 118, 64, 3);   // 땅에 닿는 빛줄
+            const tex = new THREE.CanvasTexture(cv); tex.wrapS = THREE.RepeatWrapping; tex.encoding = THREE.sRGBEncoding;
+            [[0, 150, 300, 0], [0, -140, 300, Math.PI], [140, 5, 300, -Math.PI / 2], [-140, 5, 300, Math.PI / 2]].forEach(([x, z, w, ry]) => {
+                const t2 = tex.clone(); t2.needsUpdate = true; t2.repeat.set(w / 6, 1);
+                const m = new THREE.Mesh(new THREE.PlaneGeometry(w, 24), new THREE.MeshBasicMaterial({ map: t2, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+                m.position.set(x, SEA_Y + 11.5, z); m.rotation.y = ry; /* 밝은 아랫단이 땅 높이에 */ m.visible = false; m.renderOrder = 4; scene.add(m);
+                walls.push({ m, tex: t2, axis: Math.abs(ry) === Math.PI / 2 ? 'x' : 'z', at: Math.abs(ry) === Math.PI / 2 ? x : z });
+            });
+        }
+        function wallTick(t) {
+            const cp = camera.position;
+            walls.forEach(w => {
+                const d = Math.abs((w.axis === 'x' ? cp.x : cp.z) - w.at), k = Math.max(0, 1 - d / 16);
+                w.m.visible = k > 0.01; if (!w.m.visible) return;
+                w.m.material.opacity = 0.9 * Math.pow(k, 0.7); w.tex.offset.x = t * 0.04; w.m.position.y = Math.max(SEA_Y + 11.5, cp.y + 2.5);
+            });
+        }
         // 🐠 바다 밑 풍경 (10/2) — 바위 · 흔들리는 해초 · 산호 · 물고기 떼. 한 번에 그린다(InstancedMesh). 물고기는 물속을 볼 때만 움직인다
         const reefT = { value: 0 }, fishSchools = [];
         const reefG = new THREE.Group(); seaGrp.add(reefG);   // 바위·해초·산호 — 위에서는 물칸에 가려 안 보이는데 그리고 있었다(10/4 밤: 바다로 활강하면 무거워진다). 카메라가 물속·수면 가까이일 때만
         let fishMesh = null;
         {
             let sd = 41; const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
-            const inSea = (q) => { const a = r() * Math.PI * 2, d = Math.sqrt(r()) * q; return [Math.cos(a) * d * SRX, SZ + Math.sin(a) * d * SRZ]; };
+            // 바다 밑 자리 — 뭍 가까운 물칸 띠(2,000칸) 안에서 고른다(10/5: 전엔 둥근 바다 안). minRing: 몇 번째 칸부터
+            const inSea = (q, minRing) => { for (let t = 0; t < 30; t++) { const i = Math.floor(r() * SG.water.length), c = SG.water[i]; if (!c || (minRing && SG.ring[i] < minRing)) continue; return [c.x + (r() - 0.5) * HRW * 1.6, c.z + (r() - 0.5) * HRW * 1.6]; } return [0, SHORE + 8]; };
             const m4 = new THREE.Matrix4(), qq = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3(), col = new THREE.Color();
             // 바위
-            const RK = 220, rocks = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(0.22, 0), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, flatShading: true }), RK);
+            const RK = 380, rocks = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(0.22, 0), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, flatShading: true }), RK);
             for (let i = 0; i < RK; i++) { const [x, z] = inSea(0.97), s2 = 0.4 + r() * 1.6; e.set(r() * 3, r() * 3, r() * 3); qq.setFromEuler(e);
                 v.set(x, seabed(x, z) + 0.05 * s2, z); sc.set(s2, s2 * (0.5 + r() * 0.5), s2 * (0.7 + r() * 0.6)); m4.compose(v, qq, sc); rocks.setMatrixAt(i, m4);
                 col.setHSL(0.08 + r() * 0.06, 0.15 + r() * 0.15, 0.3 + r() * 0.2).convertSRGBToLinear(); rocks.setColorAt(i, col); }
             reefG.add(rocks); chunkInstanced(rocks, 6, 30, 1, reefG);
             // 해초 — 끝으로 갈수록 가늘고, 물결 따라 흔들린다(꼭짓점을 시간으로 흔드는 셰이더)
-            const SW = 900, weedG = new THREE.CylinderGeometry(0.004, 0.022, 1, 4, 6); weedG.translate(0, 0.5, 0);
+            const SW = 1600, weedG = new THREE.CylinderGeometry(0.004, 0.022, 1, 4, 6); weedG.translate(0, 0.5, 0);
             const weedM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
             weedM.onBeforeCompile = sh => { sh.uniforms.uT = reefT;
                 sh.vertexShader = 'uniform float uT;\n' + sh.vertexShader.replace('#include <begin_vertex>',
@@ -721,21 +774,21 @@
             }
             reefG.add(weed); chunkInstanced(weed, 6, 30, 2.4, reefG);
             // 산호 — 얕은 데(가장자리 쪽)에 분홍·주황·보라 가지
-            const CR = 260, coral = new THREE.InstancedMesh(new THREE.ConeGeometry(0.06, 0.32, 5), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 }), CR * 3);
+            const CR = 440, coral = new THREE.InstancedMesh(new THREE.ConeGeometry(0.06, 0.32, 5), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 }), CR * 3);
             const CC = [0xf28aa0, 0xf5a25a, 0xb58ae0, 0xf2d06a, 0xff7a7a];
             let ci = 0;
-            for (let i = 0; i < CR; i++) { const a = r() * Math.PI * 2, d = 0.55 + r() * 0.38, x = Math.cos(a) * d * SRX, z = SZ + Math.sin(a) * d * SRZ, c0 = CC[Math.floor(r() * CC.length)];
+            for (let i = 0; i < CR; i++) { const [x, z] = inSea(1), c0 = CC[Math.floor(r() * CC.length)];
                 for (let b = 0; b < 3; b++) { e.set((r() - 0.5) * 0.9, r() * 6.28, (r() - 0.5) * 0.9); qq.setFromEuler(e); const s2 = 0.6 + r() * 0.8;
                     v.set(x + (r() - 0.5) * 0.12, seabed(x, z) + 0.12 * s2, z + (r() - 0.5) * 0.12); sc.set(s2, s2, s2); m4.compose(v, qq, sc); coral.setMatrixAt(ci, m4);
                     col.setHex(c0).convertSRGBToLinear(); coral.setColorAt(ci, col); ci++; } }
             reefG.add(coral); chunkInstanced(coral, 6, 30, 0.6, reefG);
             // 물고기 떼 — 떼마다 둥글게 돌며 오르내린다. 물고기 하나 = 몸통(다이아) + 꼬리
-            const FPS = 9, FS = 36, fishG = (() => { const P = [0.09, 0, 0, 0, 0.03, 0, 0, -0.03, 0, 0, 0, 0.018, 0, 0, -0.018, -0.03, 0, 0, -0.07, 0.03, 0, -0.07, -0.03, 0];
+            const FPS = 9, FS = 60, fishG = (() => { const P = [0.09, 0, 0, 0, 0.03, 0, 0, -0.03, 0, 0, 0, 0.018, 0, 0, -0.018, -0.03, 0, 0, -0.07, 0.03, 0, -0.07, -0.03, 0];
                 const I = [0, 1, 3, 0, 3, 2, 0, 2, 4, 0, 4, 1, 5, 3, 1, 5, 2, 3, 5, 4, 2, 5, 1, 4, 5, 6, 7];
                 const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setIndex(I); g.computeVertexNormals(); return g; })();
             fishMesh = new THREE.InstancedMesh(fishG, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.3, side: THREE.DoubleSide }), FS * FPS);
             const FC = [0xf5c242, 0x7ad0f0, 0xf08a5a, 0xc0c8d0, 0x9ae07a, 0xe57aa8];
-            for (let i = 0; i < FS; i++) { const [x, z] = inSea(0.85), floor = seabed(x, z), c0 = FC[i % FC.length];
+            for (let i = 0; i < FS; i++) { const [x, z] = inSea(0.85, 2), floor = seabed(x, z), c0 = FC[i % FC.length];
                 const sch = { x, z, y: Math.min(SEA_Y - 0.6, floor + 0.6 + r() * Math.max(0.2, SEA_Y - floor - 1.4)), R: 0.8 + r() * 1.6, w: (0.25 + r() * 0.3) * (r() < 0.5 ? 1 : -1), ph: r() * 6.28, off: [] };
                 for (let k = 0; k < FPS; k++) { sch.off.push([(r() - 0.5) * 0.5, (r() - 0.5) * 0.3, (r() - 0.5) * 0.5]); col.setHex(c0).offsetHSL(0, 0, (r() - 0.5) * 0.1).convertSRGBToLinear(); fishMesh.setColorAt(i * FPS + k, col); }
                 fishSchools.push(sch); }
@@ -752,37 +805,52 @@
             fishMesh.instanceMatrix.needsUpdate = true;
         };
         fishTick(0);   // 처음 자리 — 안 그러면 물고기가 모두 원점(성 한가운데)에 모여 있다
-        // 해안 70 나라 — 한 덩이(얼굴 8개씩), 누른 얼굴로 나라를 찾는다
+        // 해안 70 나라 — 한 덩이(얼굴 8개씩), 누른 얼굴로 나라를 찾는다. 10/5: 해안 56(함 서쪽 · 셈 동쪽, 해안선을 따라 띠) · 섬 14(야벳, 섬 꼭대기 둥근 땅)
+        const natSpan = i => typeof _seaNatSpan === 'function' ? _seaNatSpan(i) : null;
+        const natIsle = i => ISLES[i - 56] || null;
+        // 나라 i 안의 자리 — r(옛 2D 둘레 바깥 거리 3~86)만큼 뭍 안쪽. 해안 나라는 해안선에서 북쪽으로, 섬 나라는 꼭대기 둘레
+        const natMid = (i, r) => {
+            const sp = natSpan(i);
+            if (sp) { const x = (sp[0] + sp[1]) / 2 + Math.sin(r * 1.7) * 0.9; return [x, coastZ(x) - (0.4 + r * 0.068)]; }
+            const s = natIsle(i); if (!s) return [0, SHORE - 2];
+            const a = -Math.PI / 2 + (r - 40) * 0.05, f = Math.max(0.12, 0.62 - r / 160), rr = isleR(s, s.x + Math.cos(a), s.z + Math.sin(a));
+            return [s.x + Math.cos(a) * rr * f, s.z + Math.sin(a) * rr * f];
+        };
+        const natLook = (i, X, Z) => { const s = natIsle(i); return s ? [X + (X - s.x), Z + (Z - s.z)] : [X, Z + 5]; };   // 바다 쪽(사신이 바라볼 곳)
         const NAT_FACES = 8, natRing = (() => {
             const pos = [], col = [], idx = [];
-            const A0 = -Math.PI / 2 + 0.13, SP = Math.PI * 2 - 0.26;
             for (let i = 0; i < 70; i++) {
-                const a0 = A0 + SP * i / 70, a1 = A0 + SP * (i + 1) / 70, base = pos.length / 3;
-                for (let q = 0; q <= 4; q++) {
-                    const a = a0 + (a1 - a0) * q / 4;
-                    [3, 86].forEach(r => { const [X, Z] = toW(440 + Math.cos(a) * (330 + r), 470 + Math.sin(a) * (320 + r)); pos.push(X, -DROP + 0.05, Z); col.push(1, 1, 1); });
+                const base = pos.length / 3, sp = natSpan(i);
+                if (sp) {   // 해안 띠 — 해안선 바로 안쪽부터 6.4 들어간 데까지, 다섯 마디
+                    for (let q = 0; q <= 4; q++) { const x = sp[0] + (sp[1] - sp[0]) * q / 4, cz = coastZ(x);
+                        [0.18, 6.4].forEach(d => { const z = cz - d; pos.push(x, WT(x, z) + 0.05, z); col.push(1, 1, 1); }); }
+                    for (let q = 0; q < 4; q++) { const a = base + q * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+                } else {    // 섬 꼭대기 — 가운데 하나 + 둘레 아홉(부채 여덟 조각)
+                    const s = natIsle(i), top = SEA_Y + 0.85 + 0.05;
+                    pos.push(s.x, top, s.z); col.push(1, 1, 1);
+                    for (let k = 0; k <= 8; k++) { const a = k / 8 * Math.PI * 2; pos.push(s.x + Math.cos(a) * s.r * 0.48, top, s.z + Math.sin(a) * s.r * 0.48); col.push(1, 1, 1); }
+                    for (let k = 0; k < 8; k++) idx.push(base, base + 2 + k, base + 1 + k);
                 }
-                for (let q = 0; q < 4; q++) { const a = base + q * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
             }
             const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
             g.setIndex(idx); g.computeVertexNormals();
-            const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, side: THREE.DoubleSide }));
-            m.receiveShadow = true; seaGrp.add(m); return m;
+            // 반투명 땅빛 — 불투명한 판은 해안에 깔린 널빤지처럼 보였다(10/5)
+            const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, side: THREE.DoubleSide, transparent: true, opacity: 0.6, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
+            m.receiveShadow = true; m.renderOrder = 1; seaGrp.add(m); return m;
         })();
         const natTrees = new THREE.InstancedMesh(new THREE.ConeGeometry(0.45, 1.3, 6), new THREE.MeshStandardMaterial({ color: 0x2b7a3a, roughness: 0.8, flatShading: true }), 140);
         const natHouses = new THREE.InstancedMesh(new THREE.BoxGeometry(0.7, 0.55, 0.7), new THREE.MeshStandardMaterial({ color: 0xf2e3c2, roughness: 0.7 }), 140);
         natTrees.count = 0; natHouses.count = 0; seaGrp.add(natTrees); seaGrp.add(natHouses);
-        const natMid = (i, r) => { const A0 = -Math.PI / 2 + 0.13, SP = Math.PI * 2 - 0.26, a = A0 + SP * (i + 0.5) / 70; return toW(440 + Math.cos(a) * (330 + r), 470 + Math.sin(a) * (320 + r)); };
         let seaW = (typeof _seaRefresh === 'function') ? _seaRefresh() : (typeof _seaWorld !== 'undefined') ? _seaWorld : null;   // 🌊 10/5 내 바다
         function paintSea(w) {
             seaW = w;
             const clear = (w && w.clear) || 0;
             const col = new THREE.Color();   // 아래 나라 땅 색에도 쓴다
             {   // 수면 색 — 칸마다 가운데가 진하고 가장자리로 옅어지는 원(반지름 1.7칸)을 겹쳐 칠한다. 이웃 칸끼리 섞여 경계가 이어진다
-                const g = seaCv.getContext('2d'), N = SEA_PX, R = 1.02;
-                g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#1d3a44'; g.fillRect(0, 0, N, N);
-                g.setTransform(N / (2 * SRX * R), 0, 0, N / (2 * SRZ * R), N / 2, N / 2 - SZ * N / (2 * SRZ * R));   // 세계 (x, z) → 그림 칸
-                const dot = (c, hex, r) => { const [X, Z] = toW(c.x, c.y), gr = g.createRadialGradient(X, Z, 0, X, Z, r); gr.addColorStop(0, hex + 'ff'); gr.addColorStop(0.4, hex + 'c0'); gr.addColorStop(1, hex + '00'); g.fillStyle = gr; g.beginPath(); g.arc(X, Z, r, 0, Math.PI * 2); g.fill(); };
+                const g = seaCv.getContext('2d'), N = SEA_PX, k = N / SW_W;
+                g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#173d4a'; g.fillRect(0, 0, seaCv.width, seaCv.height);   // 먼 바다 — 맑히는 칸이 없는 깊은 물
+                g.setTransform(k, 0, 0, k, -SW_X0 * k, -SW_Z0 * k);   // 세계 (x, z) → 그림 칸(북쪽이 위)
+                const dot = (c, hex, r) => { const X = c.x, Z = c.z, gr = g.createRadialGradient(X, Z, 0, X, Z, r); gr.addColorStop(0, hex + 'ff'); gr.addColorStop(0.4, hex + 'c0'); gr.addColorStop(1, hex + '00'); g.fillStyle = gr; g.beginPath(); g.arc(X, Z, r, 0, Math.PI * 2); g.fill(); };
                 const r = HRW * 2.1, layers = [[], [], [], []], cs = typeof _seaCellsOf === 'function' ? _seaCellsOf(w) : '', part = (w && w.part) || {}, cz = typeof _seaCurZone === 'function' ? _seaCurZone(w) : 0;
                 SG.water.forEach((c, i) => layers[cs[i] === '1' ? 3 : part[i] ? 2 : SG.zone && SG.zone[i] === cz ? 1 : 0].push(c));   // 10/5: 칸마다 — 맑음 · 붓는 중 · 지금 구역 · 그 밖
                 [['#1d3a44', 0], ['#2b4f58', 1], ['#2c95aa', 2], ['#1fb0c9', 3]].forEach(([hex, k]) => layers[k].forEach(c => dot(c, hex, r)));   // 탁한 데부터 — 맑은 칸이 위에
@@ -793,11 +861,11 @@
             let nt = 0, nh = 0;
             for (let i = 0; i < 70; i++) {
                 const lv = (w && w.nations && w.nations[i] && w.nations[i].lv) || 0;
-                col.set(lv ? LAND[lv] : (i % 2 ? '#6a5c48' : '#75674f'));
+                col.set(lv ? LAND[lv] : (i % 2 ? '#6a5c48' : '#75674f')).convertSRGBToLinear();   // 꼭짓점 색은 선형으로(안 바꾸면 허옇게 바랬다)
                 for (let v = 0; v < 10; v++) ca.setXYZ(i * 10 + v, col.r, col.g, col.b);
-                if (lv >= 2) [30, 48].forEach(r => { const [X, Z] = natMid(i, r); m4.makeTranslation(X, -DROP + 0.7, Z); natTrees.setMatrixAt(nt++, m4); });
-                if (lv >= 3) { const [X, Z] = natMid(i, 64); m4.makeTranslation(X, -DROP + 0.3, Z); natHouses.setMatrixAt(nh++, m4); }
-                if (lv >= 4) { const [X, Z] = natMid(i, 78); m4.makeTranslation(X, -DROP + 0.3, Z); natHouses.setMatrixAt(nh++, m4); }
+                if (lv >= 2) [30, 48].forEach(r => { const [X, Z] = natMid(i, r); m4.makeTranslation(X, WT(X, Z) + 0.7, Z); natTrees.setMatrixAt(nt++, m4); });
+                if (lv >= 3) { const [X, Z] = natMid(i, 64); m4.makeTranslation(X, WT(X, Z) + 0.3, Z); natHouses.setMatrixAt(nh++, m4); }
+                if (lv >= 4) { const [X, Z] = natMid(i, 78); m4.makeTranslation(X, WT(X, Z) + 0.3, Z); natHouses.setMatrixAt(nh++, m4); }
             }
             ca.needsUpdate = true; natTrees.count = nt; natHouses.count = nh;
             natTrees.instanceMatrix.needsUpdate = true; natHouses.instanceMatrix.needsUpdate = true;
@@ -809,7 +877,7 @@
             const stem = new THREE.MeshStandardMaterial({ color: 0x6b4a2a, roughness: 0.9 }), leaf = new THREE.MeshStandardMaterial({ color: 0x4f9a3a, roughness: 0.8, flatShading: true });
             const grape = new THREE.MeshStandardMaterial({ color: 0x5b2a86, roughness: 0.35, emissive: 0x220a33, emissiveIntensity: 0.3 });
             vines.forEach(v => {
-                const [X, Z] = natMid(v.n, 20), y = -DROP + 0.05, ripe = typeof _njVineInfo === 'function' && _njVineInfo(v).ripe;
+                const [X, Z] = natMid(v.n, 20), y = WT(X, Z) + 0.05, ripe = typeof _njVineInfo === 'function' && _njVineInfo(v).ripe;
                 [-0.5, 0, 0.5].forEach(o => {
                     const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.9, 6), stem); post.position.set(X + o, y + 0.45, Z); vineG.add(post);
                     const bush = new THREE.Mesh(new THREE.IcosahedronGeometry(0.28, 0), leaf); bush.position.set(X + o, y + 0.85, Z); vineG.add(bush);
@@ -976,8 +1044,8 @@
                 const lv = (w && w.nations && w.nations[i] && w.nations[i].lv) || 0;
                 if (lv < 1) continue;
                 const N = (typeof SEA_NATIONS !== 'undefined' && SEA_NATIONS[i]) || [];
-                const [X, Z] = natMid(i, 40), e = makePerson(FAMILY_ROBE[N[4]] || 0x888888);
-                e.scale.setScalar(1.6); e.position.set(X, -DROP + 0.05, Z); e.lookAt(0, -DROP + 0.05, SZ); e.rotateY(Math.PI); e.rotateY(-Math.PI / 2);   // 사람 모델은 +x가 앞
+                const [X, Z] = natMid(i, 40), e = makePerson(FAMILY_ROBE[N[4]] || 0x888888), [LX, LZ] = natLook(i, X, Z), ey = WT(X, Z) + 0.05;
+                e.scale.setScalar(1.6); e.position.set(X, ey, Z); e.lookAt(LX, ey, LZ); e.rotateY(Math.PI); e.rotateY(-Math.PI / 2);   // 사람 모델은 +x가 앞
                 envoyG.add(e); envoys.push({ i, x: X, z: Z });
             }
         }
@@ -1813,7 +1881,7 @@
             if (inCity(P.x, P.z)) { showHint(T('nj3d_ride_city'), 2200); return; }
             if (kindOfMount(k) === 'boat' || kindOfMount(k) === 'sub') {   // ⛵ 배·🚢 잠수함 — 바다 위나 바닷가에서만
                 if (seaE(P.x, P.z) > 1.45) { showHint(T('nj3d_boat_shore'), 2600); return; }
-                for (let i = 0; i < 40 && seaE(P.x, P.z) > 0.95; i++) { const dx = -P.x, dz = SZ - P.z, l = Math.hypot(dx, dz) || 1; P.x += dx / l * 0.1; P.z += dz / l * 0.1; }
+                for (let i = 0; i < 60 && seaE(P.x, P.z) > 0.95; i++) P.z += 0.1;   // 바다 쪽(남쪽)으로 — 10/5 전엔 둥근 바다 가운데로
                 P.y = groundAt(P.x, P.z, P.y + 1);
             }
             if (!ride.obj || ride.k !== k) await refreshMount();
@@ -2007,11 +2075,12 @@
         // ══ 🎣 낚시 — 맑아진 물칸 위에서 그물을 던지고, 걸리면 빈칸 하나 ══
         const fishBtn = ov.querySelector('.nj3d-fishbtn'), fishQ = ov.querySelector('.nj3d-fishq');
         const FISH_COST = (typeof NJ_FISH_COST !== 'undefined') ? NJ_FISH_COST : 2000;
-        const cellAt = (x, z) => {   // 발밑 물칸(880 좌표로 바꿔 가장 가까운 칸) — 번호가 곧 맑아지는 순서
+        // 발밑 물칸 — 2 격자에 담아 둘레 아홉 칸만 본다(10/5: 칸이 세계 좌표가 되어). 물칸 띠 너머 「먼 바다」면 없음
+        const CELL_H = new Map(); SG.water.forEach((c, i) => { const k = Math.floor(c.x / 2) + ',' + Math.floor(c.z / 2); (CELL_H.get(k) || CELL_H.set(k, []).get(k)).push(i); });
+        const cellAt = (x, z) => {
             if (seaE(x, z) >= 1) return null;
-            const px = x / SRX * 330 + 440, py = (z - SZ) / SRZ * 320 + 470;
-            let best = -1, bd = 7.75 * 1.25;
-            SG.water.forEach((c, i) => { const d = Math.hypot(c.x - px, c.y - py); if (d < bd) { bd = d; best = i; } });
+            let best = -1, bd = HRW * 1.2; const gx = Math.floor(x / 2), gz = Math.floor(z / 2);
+            for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) (CELL_H.get((gx + a) + ',' + (gz + b)) || []).forEach(i => { const c = SG.water[i], d = Math.hypot(c.x - x, c.z - z); if (d < bd) { bd = d; best = i; } });
             if (best < 0) return null;
             const cs = typeof _seaCellsOf === 'function' ? _seaCellsOf(seaW) : '', rg = SG.ring ? SG.ring[best] : 1;
             const st = rg <= 1 ? 0 : rg <= 6 ? 1 : rg <= 12 ? 2 : 3;   // 🎣 물고기 크기 — 뭍에서 멀수록(10/5: 칸 번호 대신 자리)
@@ -2019,7 +2088,7 @@
         };
         /* 🎣 어디서 낚나 (10/5 사용자) — ⛵ 배 위에선 발밑 칸, 뭍(소금 땅 포함)에선 **뭍과 맞닿은 칸**만. 헤엄치면서는 못 낚는다.
            뭍에선 바라보는 쪽부터 둘레 여덟 쪽을 0.75 앞에서 찾는다(칸 반지름 0.56 — 바로 앞 첫 칸) → 그 칸 가운데에 찌를 던진다 */
-        const cellPos = c => { const [X, Z] = toW(SG.water[c.idx].x, SG.water[c.idx].y); return [X, Z]; };
+        const cellPos = c => [SG.water[c.idx].x, SG.water[c.idx].z];
         function fishSpot() {
             if (gliding) return null;
             if (ride.on) {
@@ -2335,16 +2404,19 @@
             for (let k = 0; k <= M; k++) { const a = aS + dA * k / M; pts.push([Math.cos(a) * 9.5, Math.sin(a) * 9.5]); }
             pts.push([sp[0], sp[1]]); return pts;
         }
-        function landPath(i, slot) {   // 나라 해안 → 바닷가를 가까운 쪽으로 돌아 어귀 → 골짜기
-            const pts = [], A0 = -Math.PI / 2 + 0.13, SP = Math.PI * 2 - 0.26, a1 = A0 + SP * (i + 0.5) / 70;
-            const toMouth = a1 < Math.PI / 2 ? -Math.PI / 2 + 0.22 : Math.PI * 1.5 - 0.22;
-            const N = Math.max(4, Math.ceil(Math.abs(toMouth - a1) / 0.08));
-            for (let k = 0; k <= N; k++) { const a = a1 + (toMouth - a1) * k / N; pts.push(toW(440 + Math.cos(a) * (330 + 40), 470 + Math.sin(a) * (320 + 40))); }
-            return pts.concat(upPath(toMouth < 0 ? 1.7 : -1.7, slot));
+        // 10/5 해안선 — 해안 나라는 해안선 3만큼 안쪽을 따라 어귀로, 섬 나라는 섬 앞 해안에 닿아서부터(뭍길) · 앞바다를 따라(뱃길)
+        const natX = i => { const sp = natSpan(i); if (sp) return (sp[0] + sp[1]) / 2; const s = natIsle(i); return s ? s.x : 0; };
+        function landPath(i, slot) {   // 나라 → 해안선 안쪽을 따라 어귀 → 골짜기
+            const pts = [], x0 = natX(i), side = x0 >= 0 ? 1 : -1, N = Math.max(4, Math.ceil(Math.abs(x0 - side * 1.7) / 2));
+            for (let k = 0; k <= N; k++) { const x = x0 + (side * 1.7 - x0) * k / N; pts.push([x, coastZ(x) - 3]); }
+            return pts.concat(upPath(side * 1.7, slot));
         }
-        function seaPath(i) {   // 나라 앞바다 → 어귀
-            const A0 = -Math.PI / 2 + 0.13, SP = Math.PI * 2 - 0.26, a1 = A0 + SP * (i + 0.5) / 70, [x0, z0] = toW(440 + Math.cos(a1) * 310, 470 + Math.sin(a1) * 300);
-            return [[x0, z0], [x0 * 0.5, (z0 + SHORE) / 2 + 3], [0.9, SHORE + 1.4], [1.2, SHORE + 0.5]];
+        function seaPath(i) {   // 나라 앞바다 → 해안을 따라 → 어귀
+            const s = natIsle(i), x0 = natX(i), pts = [];
+            if (s) pts.push([s.x, s.z - s.r - 1.2]);   // 섬 — 뭍 쪽 물가에서 떠난다
+            const N = Math.max(3, Math.ceil(Math.abs(x0 - 0.9) / 6));
+            for (let k = 0; k <= N; k++) { const x = x0 + (0.9 - x0) * k / N; pts.push([x, coastZ(x) + 3.2]); }
+            return pts.concat([[0.9, SHORE + 1.4], [1.2, SHORE + 0.5]]);
         }
         const localGround = (obj, lx, lz) => { const S = obj.scale.x, th = obj.rotation.y, c = Math.cos(th), sn = Math.sin(th);
             return terrain(obj.position.x + (lx * c + lz * sn) * S, obj.position.z + (-lx * sn + lz * c) * S); };
@@ -2733,23 +2805,26 @@ if (k === 'mender') {   // 그물 깁는 어부 — 손이 바삐 오간다
         };
         // 🌊 바다 해안 꾸미기 (10/1 사용자) — 갈릴리 바닷가는 생명수의 바다, **소성된 나라 해안 띠**에만. 배는 그 앞 물 위.
         //    나라 i의 해안 = 지도 바다 둘레 각도 A0 + SP·i/70 (natRing과 같다). 소성(lv ≥ 1)은 모두가 함께 하는 것이라 하나라도 소성되면 열린다
-        const SHORE_A0 = -Math.PI / 2 + 0.13, SHORE_SP = Math.PI * 2 - 0.26, SHORE_Y = -DROP + 0.05;
+        //    10/5 해안선: 해안 나라 띠(뭍 쪽 0.7~5.5) · 그 앞 물(0.7~4.6). 섬 나라는 꾸밀 해안이 없다(섬은 좁다)
+        const SHORE_Y = -DROP + 0.05;
         const decoMeta = k => (typeof NJ_DECOR !== 'undefined') ? NJ_DECOR.find(v => v.k === k) : null;
         const isSeaItem = (kind, k) => kind === 'set' ? !!((typeof NJ_SETS !== 'undefined') && NJ_SETS[k] && NJ_SETS[k].sea) : kind === 'decor' ? !!(decoMeta(k) || {}).sea : false;
-        // 열린 해안(10/1 사용자 — 소성된 나라 하나는 세트보다 좁고, 지금은 소성된 나라가 없다): 바다를 한 칸이라도 맑히면 **강 어귀 양쪽 해안**(나라 0·1·68·69),
-        // 나라가 소성되면 **그 나라와 양옆 이웃 해안**까지. 소성될수록 꾸밀 해안이 넓어진다
+        // 해안을 서→동으로 늘어선 순서(함 55…26 · 어귀 · 셈 0…25) — 이웃은 이 순서로
+        const COAST_ORDER = (() => { const o = []; for (let i = 55; i >= 26; i--) o.push(i); for (let i = 0; i < 26; i++) o.push(i); return o; })();
+        // 열린 해안(10/1 사용자): 바다를 한 칸이라도 맑히면 **강 어귀 양쪽 해안**(셈 0·1 · 함 26·27), 나라가 소성되면 **그 나라와 양옆 이웃 해안**까지
         const healedNations = () => {
             const ns = (seaW && seaW.nations) || {}, open = new Set();
-            if (((seaW && seaW.clear) || 0) >= 1) [0, 1, 68, 69].forEach(i => open.add(i));
-            for (let i = 0; i < 70; i++) if (ns[i] && ns[i].lv >= 1) [i - 1, i, i + 1].forEach(j => { if (j >= 0 && j < 70) open.add(j); });
+            if (((seaW && seaW.clear) || 0) >= 1) [0, 1, 26, 27].forEach(i => open.add(i));
+            COAST_ORDER.forEach((i, k) => { if (ns[i] && ns[i].lv >= 1) [k - 1, k, k + 1].forEach(q => { if (q >= 0 && q < COAST_ORDER.length) open.add(COAST_ORDER[q]); }); });
             return [...open].sort((a, b) => a - b);
         };
+        const natAtX = x => { for (let i = 0; i < 56; i++) { const sp = natSpan(i); if (sp && x >= sp[0] && x < sp[1]) return i; } return -1; };
         let openBand = null;   // 꾸미는 동안 열린 해안을 옅은 금빛 띠로 보여 준다
         function showOpenBand(on) {
             if (openBand) { scene.remove(openBand); openBand.geometry.dispose(); openBand = null; }
             if (!on) return;
             const pos = [], idx = [];
-            healedNations().forEach(i => { for (let q = 0; q <= 4; q++) { const a = SHORE_A0 + SHORE_SP * (i + q / 4) / 70; [1.02, 1.25].forEach(r => pos.push(Math.cos(a) * r * SRX, SHORE_Y + 0.03, SZ + Math.sin(a) * r * SRZ)); }
+            healedNations().forEach(i => { const sp = natSpan(i); if (!sp) return; for (let q = 0; q <= 4; q++) { const x = sp[0] + (sp[1] - sp[0]) * q / 4, cz = coastZ(x); [0.7, 5.5].forEach(d => pos.push(x, SHORE_Y + 0.03, cz - d)); }
                 const b = pos.length / 3 - 10; for (let q = 0; q < 4; q++) { const c = b + q * 2; idx.push(c, c + 1, c + 2, c + 1, c + 3, c + 2); } });
             if (!pos.length) return;
             const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx);
@@ -2757,17 +2832,16 @@ if (k === 'mender') {   // 그물 깁는 어부 — 손이 바삐 오간다
             scene.add(openBand);
         }
         function shoreSpot(x, z, r, mode) {   // mode: 'land' 해안 띠 · 'water' 그 앞 물 · 'edge' 물가(세트 가운데)
-            const H = healedNations(); if (!H.length) return null;
-            let a = Math.atan2((z - SZ) / SRZ, x / SRX), q = Math.hypot(x / SRX, (z - SZ) / SRZ) || 1;
-            const rel = ((a - SHORE_A0) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2), i = Math.floor(rel / SHORE_SP * 70);
-            if (rel > SHORE_SP || !H.includes(i)) {   // 소성되지 않은 나라 앞이면 가장 가까운 소성된 나라 해안으로
-                let bd = 9; H.forEach(j => { const c = SHORE_A0 + SHORE_SP * (j + 0.5) / 70, d = Math.abs(Math.atan2(Math.sin(a - c), Math.cos(a - c))); if (d < bd) { bd = d; a = c; } });
+            const H = healedNations().filter(i => natSpan(i)); if (!H.length) return null;
+            let i = natAtX(x);
+            if (!H.includes(i)) {   // 소성되지 않은 나라 앞이면 가장 가까운 소성된 나라 해안 가운데로
+                let bd = Infinity; H.forEach(j => { const sp = natSpan(j), c = (sp[0] + sp[1]) / 2, d = Math.abs(c - x); if (d < bd) { bd = d; x = c; } });
             }
-            const rq = (r || 0.3) / SRX;
-            q = mode === 'water' ? Math.max(0.8, Math.min(0.97 - rq, q)) : mode === 'edge' ? 1.03 : Math.max(1.03 + rq, Math.min(1.24 - rq, q));
-            return [Math.cos(a) * q * SRX, SZ + Math.sin(a) * q * SRZ];
+            const rr = r || 0.3, cz = coastZ(x);
+            z = mode === 'water' ? Math.max(cz + 0.7 + rr, Math.min(cz + 4.6, z)) : mode === 'edge' ? cz - 0.7 : Math.max(cz - 5.5 + rr, Math.min(cz - 0.7 - rr, z));
+            return [x, z];
         }
-        const seaFace = (x, z) => Math.atan2(-x, SZ - z);   // 세트의 +z가 바다 가운데를 본다
+        const seaFace = (x, z) => Math.atan2(-(coastZ(x + 0.5) - coastZ(x - 0.5)), 1);   // 세트의 +z가 바다(해안선에 수직, 남쪽)를 본다
         const kindOf = it => it.big || (it.kind === 'set' && typeof NJ_BIG !== 'undefined' && NJ_BIG[it.k]) ? 'big' : it.kind;
         function addPick(m, size) {
             const [w, d, h] = (size || [0.9, 0.9, 0.9]).map(v => Math.max(0.35, v));
@@ -3380,8 +3454,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             ((typeof njSets !== 'undefined' && njSets) || []).forEach(d => { if (d.st && !d.in) stash.push({ kind: 'set', id: d.id, k: d.s, big: !!d.big }); });
             const sea = where === 'sea', H = healedNations();
             let tgt = new THREE.Vector3(3.4, 0, 8.8);
-            if (sea) { const [hx, hz] = H.length ? natMid(H[0], 10) : [0, SHORE - 2]; tgt = new THREE.Vector3(hx, SHORE_Y, hz); }   // 바다 — 첫 소성된 나라 해안
-            deco = { sea, sel: null, tgt, yaw: sea ? Math.atan2(tgt.x, tgt.z - SZ) : 0.5, pitch: 1.0, dist: sea ? 7 : 9, pts: new Map(), drag: null, stash, touched: new Map(), stashed: new Set() };
+            if (sea) { const hs = H.filter(i => natSpan(i)), [hx, hz] = hs.length ? natMid(hs[0], 10) : [0, SHORE - 2]; tgt = new THREE.Vector3(hx, SHORE_Y, hz); }   // 바다 — 첫 소성된 해안 나라
+            deco = { sea, sel: null, tgt, yaw: sea ? Math.PI : 0.5, pitch: 1.0, dist: sea ? 7 : 9, pts: new Map(), drag: null, stash, touched: new Map(), stashed: new Set() };
             decoPlane.constant = sea ? -SHORE_Y : 0; showOpenBand(sea);
             controls.enabled = false; controls.autoRotate = false;
             modeBtn.hidden = goBtn.hidden = decoBtn.hidden = true; holoBtn.dataset.was = holoBtn.hidden ? '1' : ''; holoBtn.hidden = true; hideFruit(); offerEl.hidden = true;
@@ -3439,7 +3513,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             } else if (d.pan) {
                 const s = deco.dist * 0.0021, cy = Math.cos(deco.yaw), sy = Math.sin(deco.yaw);
                 deco.tgt.x -= (cy * dx + sy * dy) * s; deco.tgt.z -= (-sy * dx + cy * dy) * s;
-                if (deco.sea) { deco.tgt.x = Math.max(-34, Math.min(34, deco.tgt.x)); deco.tgt.z = Math.max(SHORE - 6, Math.min(SZ + 30, deco.tgt.z)); }
+                if (deco.sea) { deco.tgt.x = Math.max(-132, Math.min(132, deco.tgt.x)); const cz = coastZ(deco.tgt.x); deco.tgt.z = Math.max(cz - 7, Math.min(cz + 10, deco.tgt.z)); }
                 else { deco.tgt.x = Math.max(-16, Math.min(16, deco.tgt.x)); deco.tgt.z = Math.max(-16, Math.min(16, deco.tgt.z)); }
             }
             lastTouch = performance.now();
@@ -3726,7 +3800,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         function clamSpots(day) {   // 날짜로 정해지는 자리 — 깊은 데 · 중간 · 얕은 데
             let sd = 7; for (const ch of String(day)) sd = (sd * 31 + ch.charCodeAt(0)) % 2147483647; sd = sd || 1;
             const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
-            return [[0.12, 0.42], [0.45, 0.68], [0.7, 0.86]].map(([a0, a1]) => { const a = r() * Math.PI * 2, q = Math.sqrt(a0 + (a1 - a0) * r()); return [Math.cos(a) * q * SRX, SZ + Math.sin(a) * q * SRZ]; });
+            // 10/5: 물칸 띠에서 — 깊은 데(4번째 칸~) · 중간(2~3) · 얕은 데(물가 다음 줄), 어귀에서 너무 멀지 않게(|x| 60 안)
+            const pick = (lo, hi) => { for (let t = 0; t < 60; t++) { const i = Math.floor(r() * SG.water.length), c = SG.water[i]; if (SG.ring[i] >= lo && SG.ring[i] <= hi && Math.abs(c.x) < 60) return [c.x, c.z]; } return [0, SHORE + 6]; };
+            return [pick(4, 9), pick(2, 3), pick(2, 2)];
         }
         if (typeof _njClamDay === 'function') {
             const day = _njClamDay();
@@ -4005,8 +4081,12 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             c.save(); c.beginPath(); c.arc(h, h, h - 1, 0, Math.PI * 2); c.clip();
             c.fillStyle = '#3f7f4b'; c.fillRect(0, 0, W, W);   // 비탈·벌판
             c.setTransform(rx * s, -fx * s, rz * s, -fz * s, h - s * (rx * P.x + rz * P.z), h + s * (fx * P.x + fz * P.z));   // 세계 좌표 그대로 그린다
-            c.fillStyle = '#e3d29f'; c.beginPath(); c.ellipse(0, SZ, SRX * 1.22, SRZ * 1.22, 0, 0, Math.PI * 2); c.fill();   // 모래사장
-            c.fillStyle = '#3aa7c4'; c.beginPath(); c.ellipse(0, SZ, SRX, SRZ, 0, 0, Math.PI * 2); c.fill();                    // 생명수의 바다
+            {   // 🌊 10/5 해안선 — 모래사장(해안선 4 안쪽까지) · 바다(맵 끝까지) · 섬
+                const x0 = Math.floor((P.x - Rw * 1.5) / 3) * 3, x1 = P.x + Rw * 1.5;
+                const coastPoly = (off, fill) => { c.fillStyle = fill; c.beginPath(); c.moveTo(x0, 200); for (let x = x0; x <= x1 + 3; x += 3) c.lineTo(x, coastZ(x) - off); c.lineTo(x1 + 3, 200); c.closePath(); c.fill(); };
+                coastPoly(4, '#e3d29f'); coastPoly(0, '#3aa7c4');
+                ISLES.forEach(s2 => { c.fillStyle = '#e3d29f'; c.beginPath(); c.arc(s2.x, s2.z, s2.r, 0, Math.PI * 2); c.fill(); c.fillStyle = '#4f9b58'; c.beginPath(); c.arc(s2.x, s2.z, s2.r * 0.6, 0, Math.PI * 2); c.fill(); });
+            }
             c.fillStyle = '#5fae69'; c.fillRect(-PL, -PL, PL * 2, PL * 2);                                                          // 산마루
             c.strokeStyle = '#7fd8ea'; c.lineWidth = 1.1;
             c.beginPath(); c.moveTo(0, -150); c.lineTo(0, SHORE + 0.5); c.moveTo(-150, 0); c.lineTo(150, 0); c.stroke();          // 네 강(남쪽은 어귀까지)
@@ -4330,7 +4410,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             let sd = 17; for (const ch of String(_get6AMDayStr()) + E.id) sd = (sd * 31 + ch.charCodeAt(0)) % 2147483647; sd = sd || 1;
             const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
             const d = E.d; if (!CREATURE[d.k]) return;
-            const a = r() * Math.PI * 2, q = Math.sqrt(0.06 + r() * 0.78), x = Math.cos(a) * q * SRX, z = SZ + Math.sin(a) * q * SRZ;
+            let x = 0, z = SHORE + 6;   // 10/5: 어귀 좌우 45 안쪽 물칸 띠(물가 다음 줄부터) — 너무 흩어지면 찾기 어렵다
+            for (let t = 0; t < 80; t++) { const i = Math.floor(r() * SG.water.length), cc = SG.water[i]; if (SG.ring[i] >= 2 && Math.abs(cc.x) < 45) { x = cc.x + (r() - 0.5) * HRW; z = cc.z + (r() - 0.5) * HRW; break; } }
             const mv = SEA_MOVE[d.k] || {}, c = { g: new THREE.Group(), anim: () => { }, swim: mv.swim || 0, float: !!mv.float }, y = seabed(x, z), swim = c.swim;
             c.g.userData.x0 = x; c.g.userData.y0 = swim ? y + 0.8 + r() * 1.2 : c.float ? y + 0.4 : y;
             c.g.position.set(x, c.g.userData.y0, z); c.g.rotation.y = r() * 6.28;
@@ -4648,6 +4729,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 diveBtn.hidden = !(walk && seaE(P.x, P.z) < 1 && (!ride.on || kindOfMount(ride.k) === 'sub'));
             }
             skyDome.position.copy(camera.position);
+            wallTick(now / 1000);   // 🧱 맵 끝 막
             glints.position.set(camera.position.x, camera.position.y - 6, camera.position.z);
             if (!reduce) {
                 for (let n = 0; n < GLINTS; n++) { const i = n * 3 + 1; glintPos[i] += dt * glintSpd[n]; if (glintPos[i] > 34) glintPos[i] = -6; }

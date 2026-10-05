@@ -7962,34 +7962,48 @@ function _seaLabelHtml(lb) {
 }
 function _escapeHtmlSafe(t) { return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
-/* 물칸 — 880×880 기준 좌표, 한 번만 만든다. 어귀에서 가까운 순서 = 맑아지는 순서. 2,000칸을 넘는 가장자리는 소금 땅(47:11) */
-const SEA_G = { CX: 440, CY: 470, RX: 330, RY: 320, HR: 7.75, GAP: 0.13 };
+/* ══ 🌊 탁 트인 바다 (2026-10-05 사용자: 호수 같다 — 바다처럼 쫙 펼치고 70 나라를 한 줄 해안에, 바다 위 섬도 나라로) ══
+   3D 세계 좌표(x 동서, z 남북 — 남쪽이 +z). 성은 (0, 0) 산 위, 남쪽 강이 어귀(0, 43)로 흘러 든다. 해안선 남쪽은 맵 끝(z 150)까지 모두 바다.
+   해안 56 나라 = 함 30(어귀 서쪽) · 셈 26(어귀 동쪽), 섬 14 = 야벳(창 10:5 「바닷가의 땅」 — KJV isles; 야완의 아들 깃딤·도다님·달시스는 먼 바다).
+   맑힐 수 있는 칸 = 뭍(해안·섬)에서 가까운 바다 2,000칸(육각, 반지름 1.1). 구역 = 뭍에서 몇 번째 칸 — 물가(1) · 얕은 바다(2~3) · 깊은 바다(4~). 그 너머는 「먼 바다」.
+   2D 바다 그림·지도도 이 좌표를 줄여 그린다. 3D(nj3d.js)는 이 함수들을 그대로 쓴다 */
+const SEA_G = { CX: 440, CY: 470, RX: 330, RY: 320, HR: 7.75, GAP: 0.13 };   // 옛 2D 둥근 바다 — 2D를 해안선으로 다시 그릴 때까지
+const SEA_SHORE = 43;
+function _seaCoastZ(x) { const k = Math.min(1, Math.abs(x) / 12); return SEA_SHORE + k * (2.4 * Math.sin(x * 0.068) + 1.5 * Math.sin(x * 0.157 + 0.9) + 0.9 * Math.sin(x * 0.31 + 2.1)) + 0.00045 * x * x; }
+// 야벳 14 섬 [x, 해안에서 거리, 반지름] — 0~6 야벳의 아들 · 7~9 고멜의 아들(고멜 곁) · 10~13 야완의 아들(먼 바다). 나라 번호 = 56 + 순서
+const SEA_ISLE_DEF = [[-34, 12, 3.4], [30, 14, 3.2], [-66, 18, 3.0], [64, 20, 3.6], [-98, 13, 2.8], [100, 16, 3.0], [8, 24, 2.6],
+    [-27, 22, 1.9], [-42, 25, 1.7], [-18, 28, 1.8], [-80, 36, 2.4], [84, 38, 2.6], [40, 42, 2.3], [-6, 46, 2.0]];
+let _seaIslesC = null;
+function _seaIsles() { return _seaIslesC || (_seaIslesC = SEA_ISLE_DEF.map(([x, d, r], k) => ({ x, z: _seaCoastZ(x) + d, r, n: 56 + k }))); }
+// 뭍(해안·섬)까지의 거리 — 바다면 +, 뭍이면 −
+function _seaDist(x, z) { let d = z - _seaCoastZ(x); for (const s of _seaIsles()) { const q = Math.hypot(x - s.x, z - s.z) - s.r; if (q < d) d = q; } return d; }
+// 해안 나라 자리 — 함(26~55) 어귀에서 서쪽으로, 셈(0~25) 어귀에서 동쪽으로. [x0, x1]
+function _seaNatSpan(i) {
+    if (i < 26) { const w = (132 - 2.5) / 26; return [2.5 + w * i, 2.5 + w * (i + 1)]; }
+    if (i < 56) { const w = (132 - 2.5) / 30, k = i - 26; return [-2.5 - w * (k + 1), -2.5 - w * k]; }
+    return null;   // 섬
+}
 let _seaCells = null;
 function _seaGeom() {
     if (_seaCells) return _seaCells;
-    const { CX, CY, RX, RY, HR } = SEA_G, my = CY - RY, cells = [];
-    for (let row = -60; row <= 60; row++) for (let col = -60; col <= 60; col++) {
-        const x = CX + col * HR * 1.732 + (row & 1 ? HR * 0.866 : 0), y = CY + row * HR * 1.5;
-        const ex = (x - CX) / (RX - 6), ey = (y - CY) / (RY - 6);
-        if (ex * ex + ey * ey > 1) continue;
-        cells.push({ x, y, row, col, d: Math.hypot(x - CX, (y - my) * 0.95) });
+    const R = 1.1, HX = R * Math.sqrt(3), HZ = R * 1.5, Z0 = 35, at = (row, col) => [col * HX + (row & 1 ? HX / 2 : 0), Z0 + row * HZ], cells = [];
+    for (let row = 0; row < 75; row++) for (let col = -75; col <= 75; col++) {
+        const [x, z] = at(row, col); if (Math.abs(x) > 128) continue;
+        const d = _seaDist(x, z); if (d < R * 0.55) continue;
+        cells.push({ x, z, row, col, d });
     }
-    cells.sort((a, b) => a.d - b.d);
-    let sd = 5; const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
-    cells.slice(-160).forEach(c => { if (r() < 0.14) c.salt = true; });
-    const water = cells.filter(c => !c.salt).slice(0, 2000);
-    cells.filter(c => !c.salt).slice(2000).forEach(c => c.salt = true);
-    // 🌊 뭍에서 몇 번째 칸인가(10/5) — 이웃 여섯 칸 중 물칸이 아닌 게 있으면 1(물가), 거기서 안쪽으로 하나씩. 서버 kingsroad seaGeom과 **똑같이**
-    //    구역: 물가(1) 194칸 · 얕은 바다(2~6) 735칸 · 깊은 바다(7~) 1,071칸. 물가가 아닌 칸은 배를 타고 가야 붓는다
+    cells.sort((a, b) => a.d - b.d || Math.abs(a.x) - Math.abs(b.x));
+    const water = cells.slice(0, 2000);
+    // 뭍에서 몇 번째 칸 — 이웃 여섯 중 뭍(또는 뭍에 너무 가까운 자리)이 있으면 1, 거기서 바다 쪽으로 하나씩
     const key = (a, b) => a + ',' + b, W = new Map(); water.forEach((c, i) => W.set(key(c.row, c.col), i));
-    const nb = c => (c.row & 1 ? [[0, -1], [0, 1], [-1, 0], [-1, 1], [1, 0], [1, 1]] : [[0, -1], [0, 1], [-1, -1], [-1, 0], [1, -1], [1, 0]]).map(([a, b]) => key(c.row + a, c.col + b));
+    const nb = c => (c.row & 1 ? [[0, -1], [0, 1], [-1, 0], [-1, 1], [1, 0], [1, 1]] : [[0, -1], [0, 1], [-1, -1], [-1, 0], [1, -1], [1, 0]]).map(([a, b]) => [c.row + a, c.col + b]);
     const ring = new Array(water.length).fill(0); let q = [];
-    water.forEach((c, i) => { if (nb(c).some(k => !W.has(k))) { ring[i] = 1; q.push(i); } });
-    while (q.length) { const n = []; q.forEach(i => nb(water[i]).forEach(k => { const j = W.get(k); if (j != null && !ring[j]) { ring[j] = ring[i] + 1; n.push(j); } })); q = n; }
-    const zone = ring.map(v => v <= 1 ? 0 : v <= 6 ? 1 : 2), zoneSize = [0, 0, 0]; zone.forEach(z => zoneSize[z]++);
-    // 맑아지는 순서 — 뭍에서 가까운 칸부터, 같으면 강 어귀에서 가까운 칸부터(칸 번호 = 어귀에서 가까운 순). rank[칸] = 몇 번째로 맑아지나
-    const order = water.map((_, i) => i).sort((a, b) => (ring[a] - ring[b]) || (a - b)), rank = new Array(water.length); order.forEach((i, k) => { rank[i] = k; });
-    _seaCells = { water, salt: cells.filter(c => c.salt), ring, zone, zoneSize, order, rank };
+    water.forEach((c, i) => { if (nb(c).some(([a, b]) => { const [x, z] = at(a, b); return _seaDist(x, z) < R * 0.55; })) { ring[i] = 1; q.push(i); } });
+    while (q.length) { const n = []; q.forEach(i => nb(water[i]).forEach(([a, b]) => { const j = W.get(key(a, b)); if (j != null && !ring[j]) { ring[j] = ring[i] + 1; n.push(j); } })); q = n; }
+    water.forEach((c, i) => { if (!ring[i]) ring[i] = 9; });   // 혹시 이어지지 않은 칸은 깊은 바다로
+    const zone = ring.map(v => v <= 1 ? 0 : v <= 3 ? 1 : 2), zoneSize = [0, 0, 0]; zone.forEach(z => zoneSize[z]++);
+    const nbIdx = water.map(c => nb(c).map(([a, b]) => W.get(key(a, b))).filter(j => j != null));
+    _seaCells = { water, salt: [], ring, zone, zoneSize, nb: nbIdx, R };
     return _seaCells;
 }
 function _seaNatAng(i) { const A0 = -Math.PI / 2 + SEA_G.GAP, SP = Math.PI * 2 - SEA_G.GAP * 2; return [A0 + SP * i / 70, A0 + SP * (i + 1) / 70]; }
