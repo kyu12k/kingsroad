@@ -4619,9 +4619,10 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         }
         function dexDone(c, res) {
             c.met = true; c.tapG.visible = false;
-            if (!res || !res.gem) return;
+            if (!res || !(res.fish || res.gem)) return;
             const tot = typeof _njDexVerseList === 'function' ? _njDexVerseList().length : 404;
-            let msg = res.all ? T('nj3d_dex_all', { gem: res.gem.toLocaleString() }) : T('nj3d_dex_found', { e: c.d.e, name: dexWho(c), ref: dexRef(c), gem: (typeof NJ_DEX_GEM !== 'undefined' ? NJ_DEX_GEM : 200).toLocaleString(), n: res.n, m: tot });
+            let msg = T('nj3d_dex_found', { e: c.d.e, name: dexWho(c), ref: dexRef(c), fish: res.fish || 0, n: res.n, m: tot });   // 10/5 🐟
+            if (res.all) msg += ' · ' + T('nj3d_dex_all', { gem: (typeof NJ_DEX_ALL !== 'undefined' ? NJ_DEX_ALL : 100000).toLocaleString() });
             if (res.bonus && res.bonus.length) msg += ' · ' + res.bonus.map(b => T('nj3d_dex_bonus', { group: b.name, gem: b.gem.toLocaleString() })).join(' · ');
             msg += ' · ' + T('nj3d_obs_again');
             showHint(msg, 5000); syncWallet(); syncDexBtn();

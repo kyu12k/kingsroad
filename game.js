@@ -555,7 +555,7 @@ const LANG = {
         sea_my_gems: '내 바다를 맑힌 보석 💎 {n}',
         sea_land_title: '🍃 만국을 소성',
         sea_land_num: '소성된 나라 {n} / 70 · 모두 {lv} / 280단계',
-        sea_land_rule: '해안의 나라를 눌러 잎사귀 1장으로 한 단계씩 소성해요. 나라는 내 바다를 맑힌 구역만큼 자라요(물가 · 얕은 바다 · 깊은 바다). 잎사귀는 생명나무 열매를 먹으면 생겨요.',
+        sea_land_rule: '해안의 나라를 눌러 잎사귀로 한 단계씩 소성해요 — 풀밭 2 · 나무 4 · 집·사람 8 · 성읍·그물 16장. 나라는 내 바다를 맑힌 구역만큼 자라요(물가 · 얕은 바다 · 깊은 바다). 잎사귀는 생명나무 열매를 먹으면 생겨요.',
         sea_nat_need: '{next}까지 🍃 {a} / {b}',
         sea_nat_full: '온전히 소성되었어요 🎉',
         sea_nat_wait: '{name}를 다 맑히면 더 자랄 수 있어요 — 바다와 땅이 함께 가요',
@@ -570,7 +570,7 @@ const LANG = {
         sea_nat_up: '🍃 {name}이(가) {lv}(으)로 자랐어요',
         sea_fail: '맑히지(소성하지) 못했어요. 인터넷 연결을 확인해 주세요',
         sea_btn_gem: '💎 {n}으로 맑히기',
-        sea_btn_leaf: '🍃 1장으로 {next}까지 소성하기',
+        sea_btn_leaf: '🍃 {n}장으로 {next}까지 소성하기', sea_no_leaves_n: '🍃 잎사귀가 {n}장 더 필요해요 — 생명나무 열매를 먹으면 생겨요',
         vine_title: '🍇 내 포도원',
         vine_count: '{k} / {max}그루 · 🍇 {g}',
         vine_rule: '소성된 나라(풀밭 이상)에 포도나무를 심어요. 3일 뒤 거두고, 그 사흘 동안 백지로 한 절이라도 써낸 날마다 물이 줘져요 — 거두는 양은 4 + 물 준 날 × 3.',
@@ -748,11 +748,11 @@ const LANG = {
         blank_notif_body: '「{label}」 백지로 꺼내볼 시간이에요 ✍️',
         rv_blank_title: '✍️ 오늘 백지 차례',
         nj3d_dex_btn: '🐠 도감 {n}/{m}', nj3d_dex_title: '🐠 바다 생물 도감', nj3d_dex_intro: '"고기가 각기 종류대로 대해의 고기 같이 심히 많으리라" (겔 47:10)',
-        nj3d_dex_found: '{e} {name} · {ref} — 말씀을 맞혀 💎{gem} · 도감 {n}/{m}', nj3d_dex_all: '🎉 바다 생물 도감 404칸을 다 채웠어요! 💎{gem}', nj3d_dex_bonus: '🏅 {group} 다 모음! 💎{gem}',
+        nj3d_dex_found: '{e} {name} · {ref} — 말씀을 맞혀 🐟{fish} · 도감 {n}/{m}', nj3d_dex_all: '🎉 바다 생물 도감 404칸을 다 채웠어요! 💎{gem}', nj3d_dex_bonus: '🏅 {group} 다 모음! 💎{gem}',
         nj3d_dex_again: '{e} {name} · {ref} — 이번 주엔 이미 만났어요 (월요일 아침 6시에 다시)', nj3d_obs_tip: '끌어서 돌려 보고 두 손가락으로 가까이 · 움직임을 눌러 보세요', nj3d_obs_again: '다시 누르면 👀 관찰', nj3d_dex_watch: '👀 관찰', nj3d_watch_tip: '끌어서 돌려 보세요 · 찾은 칸을 누르면 그 모습으로', nj3d_dex_q: '{e} {name} · 이 생물의 말씀은?', nj3d_dex_retry: '{e} 아쉬워요 — 한 번 더', nj3d_dex_miss: '{e} 이번 주엔 숨어 버렸어요 — 월요일 아침 6시에 다시',
         nj3d_dex_tap: '👆 생물마다 말씀이 하나씩 — 가까이 가서 누르면 그 구절 문제가 나와요',
-        nj3d_dex_sum: '발견 {f} · 해금 {u} · 전체 {m}', nj3d_dex_next: '백지로 새 절을 쓸 때마다 생물이 하나씩 와요', nj3d_dex_bonus_title: '🏅 수집 보너스 (각 💎{gem})',
-        nj3d_dex_cell: '{ref} · {day}요일 · {when}', nj3d_dex_cell_lock: '{ref}를 처음 백지로 쓰면 와요', nj3d_dex_wk: '이번 주에 만남',
+        nj3d_dex_sum: '발견 {f} · 해금 {u} · 이번 주 바다에 {w} · 전체 {m}', nj3d_dex_next: '지난주나 이번 주에 백지로 써낸 절의 생물이 바다에 와요 — 만나면 🐟', nj3d_dex_bonus_title: '🏅 수집 보너스 (각 💎{gem})',
+        nj3d_dex_cell: '{ref} · {day}요일 · {when}', nj3d_dex_cell_lock: '{ref}를 백지로 쓰면 와요', nj3d_dex_cell_rest: '{ref} — 쉬는 중이에요 (백지로 쓰면 와요)', nj3d_dex_wk: '이번 주에 만남',
         dex_g_species: '{name} 모두', dex_g_color: '{name} 생물 모두', dex_g_tier0: '맨몸 생물 모두', dex_g_tier: '{name} 생물 모두',
         nj3d_dex_seen: '발견 {n}번', nj3d_dex_unknown: '???',
         dex_when_any: '언제나 바다 어딘가에', dex_when_morning: '아침(6~12시)에만 나와요', dex_when_noon: '오후(12~18시)에만 나와요', dex_when_night: '저녁·밤(18~6시)에만 나와요',
@@ -1762,7 +1762,7 @@ const LANG = {
         sea_my_gems: 'Gems used to clear my sea 💎 {n}',
         sea_land_title: '🍃 Heal the nations',
         sea_land_num: '{n} / 70 nations healed · {lv} / 280 steps',
-        sea_land_rule: 'Tap a nation on the shore and heal it one step with one leaf. Nations grow one step per zone of your sea you have cleared (shore · shallows · deep sea). Leaves come from eating fruit of the tree of life.',
+        sea_land_rule: 'Tap a nation on the shore and heal it one step with leaves — grass 2 · trees 4 · homes 8 · towns 16. Nations grow one step per zone of your sea you have cleared (shore · shallows · deep sea). Leaves come from eating fruit of the tree of life.',
         sea_nat_need: 'To {next}: 🍃 {a} / {b}',
         sea_nat_full: 'Fully healed 🎉',
         sea_nat_wait: 'It can grow once the {name} is fully cleared',
@@ -1777,7 +1777,7 @@ const LANG = {
         sea_nat_up: '🍃 {name} grew to {lv}',
         sea_fail: 'Could not complete. Please check your connection',
         sea_btn_gem: '💎 Clear with {n}',
-        sea_btn_leaf: '🍃 Heal to {next} with 1 leaf',
+        sea_btn_leaf: '🍃 Heal to {next} with {n} leaves', sea_no_leaves_n: '🍃 You need {n} more leaves — eat fruit of the tree of life',
         vine_title: '🍇 My vineyard',
         vine_count: '{k} / {max} vines · 🍇 {g}',
         vine_rule: 'Plant vines in healed nations (grass or better). Harvest after 3 days; each of those days you write a verse from blank waters them — yield 4 + watered days × 3.',
@@ -1955,11 +1955,11 @@ const LANG = {
         blank_notif_body: '"{label}" — time to write it from blank ✍️',
         rv_blank_title: '✍️ Blank review due today',
         nj3d_dex_btn: '🐠 Log {n}/{m}', nj3d_dex_title: '🐠 Sea creature log', nj3d_dex_intro: '"There will be many kinds of fish, like the fish of the Great Sea" (Ezek 47:10)',
-        nj3d_dex_found: '{e} {name} · {ref} — you knew the verse 💎{gem} · Log {n}/{m}', nj3d_dex_all: '🎉 All 404 sea creatures logged! 💎{gem}', nj3d_dex_bonus: '🏅 {group} complete! 💎{gem}',
+        nj3d_dex_found: '{e} {name} · {ref} — you knew the verse 🐟{fish} · Log {n}/{m}', nj3d_dex_all: '🎉 All 404 sea creatures logged! 💎{gem}', nj3d_dex_bonus: '🏅 {group} complete! 💎{gem}',
         nj3d_dex_again: '{e} {name} · {ref} — already met this week (again Monday 6 AM)', nj3d_obs_tip: 'Drag to turn, pinch to get closer · tap a move', nj3d_obs_again: 'tap again to 👀 watch', nj3d_dex_watch: '👀 Watch', nj3d_watch_tip: 'Drag to turn · tap a found cell to see that look', nj3d_dex_q: '{e} {name} · this creature’s verse?', nj3d_dex_retry: '{e} So close — once more', nj3d_dex_miss: '{e} It hid for this week — back Monday 6 AM',
         nj3d_dex_tap: '👆 Every creature carries a verse — get close and tap for its question',
-        nj3d_dex_sum: 'found {f} · unlocked {u} · total {m}', nj3d_dex_next: 'Each new verse you write blank brings one more creature', nj3d_dex_bonus_title: '🏅 Collection bonuses (💎{gem} each)',
-        nj3d_dex_cell: '{ref} · {day} · {when}', nj3d_dex_cell_lock: 'Comes when you first write {ref} blank', nj3d_dex_wk: 'met this week',
+        nj3d_dex_sum: 'found {f} · unlocked {u} · in the sea this week {w} · total {m}', nj3d_dex_next: 'Creatures of the verses you wrote blank last week or this week come to the sea — meet them for 🐟', nj3d_dex_bonus_title: '🏅 Collection bonuses (💎{gem} each)',
+        nj3d_dex_cell: '{ref} · {day} · {when}', nj3d_dex_cell_lock: 'Write {ref} blank and it comes', nj3d_dex_cell_rest: '{ref} — resting (write it blank and it comes)', nj3d_dex_wk: 'met this week',
         dex_g_species: 'every {name}', dex_g_color: 'every {name} creature', dex_g_tier0: 'every plain creature', dex_g_tier: 'every {name} creature',
         nj3d_dex_seen: 'found {n}×', nj3d_dex_unknown: '???',
         dex_when_any: 'Somewhere in the sea, any time', dex_when_morning: 'Only in the morning (6–12)', dex_when_noon: 'Only in the afternoon (12–18)', dex_when_night: 'Only in the evening and night (18–6)',
@@ -2745,6 +2745,7 @@ let njPearlSold = { w: 0, c: 0, g: 0 };    // 💎 판 진주(늘기만) — 가
 let njPearlGems = 0;          // 💎 진주를 팔아 받은 보석 합(보석 흐름 실측용)
 let njManna = null;           // 🍞 오늘의 만나·메추라기 { day, got: [거둔 무더기], quail: [끝난 메추라기(잡음·날아감)], qfail: {번호: 틀린 수}, mfail·melt: 만나 문제 틀린 수·스러진 무더기 } (2026-10-05)
 let njMannaGems = 0;          // 💎 만나·메추라기로 받은 보석 합(실측용)
+let njDexFish = 0;            // 🐟 도감 생물에게서 받은 물고기 합(실측용, 10/5)
 let njDex = { v: {}, w: {}, f: {}, b: {}, all: 0 };   // 🐠 바다 생물 도감 — v 처음 만난 절 {절: 시각} · w 이번 주 보상 {절: 주} · f 틀린 수 {절: [주, 수]} · b 받은 묶음 보너스 · all (2026-10-05)
 let njGiftFruits = [];   // 🎁 받은 나눔 열매 [{id, from, fromTag, size, msg, at, v:[백지로 쓴 절], ripe(익는 시각), ate:[먹은 절], done(먹은 시각), thanked}] (2026-10-04)
 let njGiftLeaves = 0;    // 🎁 나눔 열매로 받은 잎사귀 — _njLeaves()·서버 seaLeavesEarned에 더한다
@@ -3235,6 +3236,7 @@ loadGameData = function () {
         njPearlGems = Math.max(0, parseInt(parsed.njPearlGems, 10) || 0);
         njManna = (parsed.njManna && typeof parsed.njManna === 'object' && parsed.njManna.day) ? parsed.njManna : null;
         njMannaGems = Math.max(0, parseInt(parsed.njMannaGems, 10) || 0);
+        njDexFish = Math.max(0, parseInt(parsed.njDexFish, 10) || 0);
         njDex = Object.assign({ v: {}, w: {}, f: {}, b: {}, all: 0 }, (parsed.njDex && typeof parsed.njDex === 'object') ? parsed.njDex : {});
         seaGemsGiven = Math.max(0, parseInt(parsed.seaGemsGiven, 10) || 0);
         njSea = (typeof parsed.njSea === 'string' && parsed.njSea.length === 2000 && /^[01]+$/.test(parsed.njSea)) ? parsed.njSea : '';
@@ -7914,7 +7916,7 @@ function _njLeavesAvail() { return Math.max(0, _njLeaves() - (njLeafSpent || 0))
 /* ══ 🌊 내 바다 (2026-10-05) — 바다와 만국 소성을 개인으로(사용자). 전엔 모두의 바다 하나(서버 sea/world, 칸마다 💎 20만).
    이제 내 저장본(njSea·njNat)에. 3D에서 **내가 있는 자리**를 맑힌다 — 물가 칸(뭍과 맞닿은 칸)은 뭍에 서서 바라보고, 그 밖은 ⛵ 배 아래(둘레 7칸 한꺼번에도).
    값은 자리마다: 물가 300 · 얕은 바다 600 · 깊은 바다 1,000(전부 약 157만). 구역(단계)은 그 구역을 다 맑히면. 맑힌 칸은 흐려지지 않는다.
-   나라는 🍃 1장에 한 단계, 다 맑힌 구역 수 + 1까지. 화면 코드가 그대로 쓰도록 모두의 바다와 같은 꼴({clear, cells, nations…})로 만들어 _seaWorld에 둔다 */
+   나라는 🍃로 한 단계씩(2·4·8·16장 — NJ_NAT_LEAF), 다 맑힌 구역 수 + 1까지. 화면 코드가 그대로 쓰도록 모두의 바다와 같은 꼴({clear, cells, nations…})로 만들어 _seaWorld에 둔다 */
 const NJ_SEA_COST = [300, 600, 1000];
 function _seaMine() {
     const cells = njSea && njSea.length === 2000 ? njSea : '0'.repeat(2000), nations = {};
@@ -7950,12 +7952,16 @@ function _seaClearCells(ids) {
     if (stageUp != null) { setTimeout(() => { if (typeof showMissionToast === 'function') showMissionToast(t('sea_stage_up', { name: SEA_STAGE_NAMES[currentLang === 'en' ? 'en' : 'ko'][stageUp] }), '🌊'); if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear(); }, 900); }
     return { n: todo.length, cost, stageUp };
 }
-/* 🍃 나라 한 단계 — 잎사귀 1장(10/5, 전엔 모두의 나라에 50장) */
+/* 🍃 나라 한 단계 — 그 단계로 오르는 값(10/5 두 번째: 1장은 너무 싸다 — 많이 쓰는 사람은 한 달에 404장까지 모은다).
+   풀밭 2 · 나무 4 · 집·사람 8 · 성읍·그물 16 = 나라 하나 30, 70 나라 2,100 (전엔 모두의 나라에 한 단계 50장) */
+const NJ_NAT_LEAF = [0, 2, 4, 8, 16];
+function _seaHealCost(lv) { return NJ_NAT_LEAF[Math.min(4, (lv | 0) + 1)] || 0; }   // lv → lv+1
 function _seaHeal(n) {
     const w = _seaRefresh(), lv = (w.nations[n] && w.nations[n].lv) || 0, cap = _seaNationCap(w);
     if (lv >= 4 || lv >= cap) return;
-    if (_njLeavesAvail() < 1) { showGemToast(0, t('sea_no_leaves'), true); return; }
-    njNat[n] = lv + 1; njLeafSpent += 1;
+    const cost = _seaHealCost(lv);
+    if (_njLeavesAvail() < cost) { showGemToast(0, t('sea_no_leaves_n', { n: cost - _njLeavesAvail() }), true); return; }
+    njNat[n] = lv + 1; njLeafSpent += cost;
     saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
     _seaRefresh();
     if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
@@ -8358,7 +8364,28 @@ const NJ_DEX_TIERS = [   // 꾸밈 — 절 순서대로 84절씩
     { k: 'glasses', e: '👓', ko: '안경', en: 'glasses', pre: '안경 낀 ', preEn: 'bespectacled ' }, { k: 'ribbon', e: '🎀', ko: '리본', en: 'ribbon', pre: '리본 단 ', preEn: 'ribboned ' },
     { k: 'crown', e: '👑', ko: '면류관', en: 'crown', pre: '면류관 쓴 ', preEn: 'crowned ' },
 ];
-const NJ_DEX_GEM = 200, NJ_DEX_BONUS = 5000, NJ_DEX_ALL = 100000;
+const NJ_DEX_GEM = 200, NJ_DEX_BONUS = 5000, NJ_DEX_ALL = 100000;   // NJ_DEX_GEM은 10/5까지(이제 만나면 🐟) — 묶음·404칸 보너스는 💎 그대로
+/* 🐠 10/5 사용자: "생물들이 한 주마다 자동 충전되지 않고 백지로 전 주에 써 낸 경우에만 충전되게" · "보석만 보상으로 줄 게 아니라 꾸미기 재화를"
+   → 이번 주 바다에 오는 생물 = **지난주나 이번 주에 그 절을 백지로 써낸** 것만(백지 차례와 상관없이, 주 = 월 6시 ~ 월 6시). 만나면 🐟(특산물·계시록 예물 값) */
+const NJ_DEX_FISH = 3;
+function _njWeekOf(ts) { const d = _tsTo6AMDateStr(ts), [y, m, dd] = d.split('-').map(Number), wd = new Date(y, m - 1, dd).getDay(); return _shift6AMDayStr(d, -((wd + 6) % 7)); }   // 그 시각이 든 주의 월요일(6시 날짜)
+function _njDexPrevWeek() { return _shift6AMDayStr(_njDexWeek(), -7); }
+/* 백지로 써낼 때(recordVerseRecall) — 그 주를 적는다(최근 세 주) */
+function _njDexNoteBlank(id, ts) {
+    if (!njDex || typeof njDex !== 'object') njDex = {};
+    if (!njDex.bw) njDex.bw = {};
+    const wk = _njWeekOf(ts || Date.now()), a = Array.isArray(njDex.bw[id]) ? njDex.bw[id] : [];
+    if (!a.includes(wk)) { a.push(wk); a.sort(); njDex.bw[id] = a.slice(-3); }
+}
+/* 이번 주 바다에 오나 — 지난주나 이번 주에 백지로 썼나. 기록(bw)이 생기기 전 것은 마지막 백지 시각으로 */
+function _njDexCharged(id) {
+    if (!_njDexUnlocked(id)) return false;
+    const ok = [_njDexPrevWeek(), _njDexWeek()], a = njDex && njDex.bw && njDex.bw[id];   // 지난주 또는 이번 주(10/5 사용자) — 이번 주에 썼는데 그 요일이 지났으면 다음 주에(지난주 몫으로)
+    if (Array.isArray(a) && a.some(w => ok.includes(w))) return true;
+    const r = (typeof verseRecall !== 'undefined' && verseRecall) ? verseRecall[id] : null;
+    return !!(r && r.lastBlankPass && ok.includes(_njWeekOf(r.lastBlankPass)));
+}
+function _njDexChargedCount() { return _njDexVerseList().filter(_njDexCharged).length; }
 let _njDexVerses = null;
 function _njDexVerseList() {   // 계 1:1 ~ 22:21 순서
     if (_njDexVerses) return _njDexVerses;
@@ -8380,10 +8407,10 @@ function _njDexWhenOk(d) {
 }
 function _njDexColorIdx() { const [y, m, d] = _get6AMDayStr().split('-').map(Number); return new Date(y, m - 1, d).getDay(); }
 function _njDexWeek() { const today = _get6AMDayStr(), [y, m, d] = today.split('-').map(Number), wd = new Date(y, m - 1, d).getDay(); return _shift6AMDayStr(today, -((wd + 6) % 7)); }   // 이번 주 월요일(6시 날짜)
-/* 지금 바다에 있는 생물 — 풀렸고, 오늘 요일 빛깔이고, 지금 그 종의 시간대 */
+/* 지금 바다에 있는 생물 — 지난주에 백지로 썼고(10/5), 오늘 요일 빛깔이고, 지금 그 종의 시간대 */
 function _njDexToday() {
     const ci = _njDexColorIdx();
-    return _njDexVerseList().map((id, vi) => Object.assign(_njDexOf(vi), { id, vi })).filter(E => E.c === ci && _njDexWhenOk(NJ_SEA_DEX[E.s]) && _njDexUnlocked(E.id))
+    return _njDexVerseList().map((id, vi) => Object.assign(_njDexOf(vi), { id, vi })).filter(E => E.c === ci && _njDexWhenOk(NJ_SEA_DEX[E.s]) && _njDexCharged(E.id))
         .map(E => Object.assign(E, { d: NJ_SEA_DEX[E.s] }));
 }
 function _njDexMetThisWeek(id) { return njDex.w && njDex.w[id] === _njDexWeek(); }
@@ -8406,29 +8433,30 @@ function _njDexAnswer(id, ok) {
         f[1]++; njDex.f[id] = f; saveGameData();
         return { gem: 0, hidden: f[1] >= 2 };
     }
-    if (njDex.w[id] === wk) return { gem: 0, again: true };
+    if (njDex.w[id] === wk) return { gem: 0, fish: 0, again: true };
     njDex.w[id] = wk;
     if (!njDex.v[id]) njDex.v[id] = Date.now();
-    let gem = NJ_DEX_GEM; const bonus = [];
+    const fish = NJ_DEX_FISH; njFish = (njFish || 0) + fish; njDexFish = (njDexFish | 0) + fish;   // 🐟 꾸미기 재화(10/5)
+    let gem = 0; const bonus = [];
     _njDexGroups().forEach(G => { if (!njDex.b[G.key] && G.ids.every(x => njDex.v[x])) { njDex.b[G.key] = Date.now(); gem += NJ_DEX_BONUS; bonus.push({ name: G.name, gem: NJ_DEX_BONUS }); } });
     let all = false;
     if (!njDex.all && _njDexCount() >= _njDexVerseList().length) { njDex.all = Date.now(); gem += NJ_DEX_ALL; all = true; }
-    addGems(gem); saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
-    return { gem, bonus, all, n: _njDexCount() };
+    if (gem) addGems(gem); saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
+    return { gem, fish, bonus, all, n: _njDexCount() };
 }
 /* 도감 창 — 맨 위 요약 · 종마다 카드(세로 꾸밈 5 × 가로 요일 7) · 수집 보너스 */
 function _njDexHtml() {
     const L = _njDexVerseList(), en = currentLang === 'en', cell = {};
     L.forEach((id, vi) => { const o = _njDexOf(vi); cell[`${o.s}|${o.t}|${o.c}`] = id; });
     const found = _njDexCount(), unl = _njDexUnlockedCount();
-    const head = `<div class="nj3d-dex-sum">${t('nj3d_dex_sum', { f: found, u: unl, m: L.length })}<small>${t('nj3d_dex_next')}</small></div>`;
+    const head = `<div class="nj3d-dex-sum">${t('nj3d_dex_sum', { f: found, u: unl, w: _njDexChargedCount(), m: L.length })}<small>${t('nj3d_dex_next')}</small></div>`;
     const dayRow = `<div class="nj3d-dex-grid nj3d-dex-days"><i></i>${NJ_DEX_COLORS.map(c => `<i>${en ? c.dayEn : c.day}</i>`).join('')}</div>`;
     const cards = NJ_SEA_DEX.map((d, s) => {
         const ids = L.filter((_, vi) => vi % 12 === s), got = ids.filter(id => njDex.v && njDex.v[id]).length;
         const rows = NJ_DEX_TIERS.map((tt, ti) => `<div class="nj3d-dex-grid"><i class="nj3d-dex-tier">${tt.e || '·'}</i>${NJ_DEX_COLORS.map((c, ci) => {
             const id = cell[`${s}|${ti}|${ci}`]; if (!id) return '<b class="nj3d-dex-cell none"></b>';
             const st = njDex.v && njDex.v[id] ? 'on' : _njDexUnlocked(id) ? 'open' : 'lock', wk = _njDexMetThisWeek(id) ? ' wk' : '';
-            const tip = st === 'lock' ? t('nj3d_dex_cell_lock', { ref: _njDexRef(id) }) : t('nj3d_dex_cell', { ref: _njDexRef(id), day: en ? c.dayEn : c.day, when: t('dex_when_' + d.when) });
+            const tip = st === 'lock' ? t('nj3d_dex_cell_lock', { ref: _njDexRef(id) }) : !_njDexCharged(id) ? t('nj3d_dex_cell_rest', { ref: _njDexRef(id) }) : t('nj3d_dex_cell', { ref: _njDexRef(id), day: en ? c.dayEn : c.day, when: t('dex_when_' + d.when) });
             return `<b class="nj3d-dex-cell ${st}${wk}" style="--c:#${c.hex.toString(16).padStart(6, '0')}" data-tip="${tip}" data-ti="${ti}" data-ci="${ci}">${st === 'lock' ? '🔒' : ''}</b>`;
         }).join('')}</div>`).join('');
         return `<div class="nj3d-dex-card" data-s="${s}"><div class="nj3d-dex-card-h"><b>${d.e} ${_njDexName(d)}</b><span>${got}/${ids.length} · ${t('dex_where_' + d.where)} · ${t('dex_when_' + d.when)}</span>${got ? `<button class="nj3d-dex-watch">${t('nj3d_dex_watch')}</button>` : ''}</div>${dayRow}${rows}<div class="nj3d-dex-tipline"></div></div>`;   // 👀 찾은 칸이 있으면 관찰 (10/5)
@@ -9226,8 +9254,9 @@ function _seaRender() {
     let body;
     if (n.lv >= 4) body = `<div class="sea-dim">${t('sea_nat_full')}</div>`;
     else if (n.lv >= cap) body = `<div class="sea-dim">${t('sea_nat_wait', { name: SEA_STAGE_NAMES[lang][Math.min(2, cap - 1)] })}</div>`;
-    else body = `<div class="sea-btns"><button class="sea-give" ${avail < 1 ? 'disabled' : ''} onclick="_seaHeal(${_seaSel})">${t('sea_btn_leaf', { next: SEA_LV_NAMES[lang][n.lv + 1] })}</button></div>
-        ${avail < 1 ? `<div class="sea-dim">${t('sea_no_leaves')}</div>` : ''}`;
+    else { const cost = _seaHealCost(n.lv);
+        body = `<div class="sea-btns"><button class="sea-give" ${avail < cost ? 'disabled' : ''} onclick="_seaHeal(${_seaSel})">${t('sea_btn_leaf', { next: SEA_LV_NAMES[lang][n.lv + 1], n: cost })}</button></div>
+        ${avail < cost ? `<div class="sea-dim">${t('sea_no_leaves_n', { n: cost - avail })}</div>` : ''}`; }
     // 🍇 이 나라의 내 포도원
     const vine = _njVineAt(_seaSel);
     let vineHtml;
@@ -13120,6 +13149,7 @@ function saveGameData() {
         njPearlGems: njPearlGems,         // 💎 진주로 받은 보석 합
         njManna: njManna,                 // 🍞 오늘의 만나·메추라기
         njMannaGems: njMannaGems,         // 💎 만나·메추라기로 받은 보석 합
+        njDexFish: njDexFish,             // 🐟 도감 생물에게서 받은 물고기 합
         njDex: njDex,                     // 🐠 바다 생물 도감(절마다 생물)
         seaGemsGiven: seaGemsGiven,       // 모두의 바다에 드린 보석(옛)
         njSea: njSea, njNat: njNat, njSeaGems: njSeaGems, njSeaRefund: njSeaRefund,   // 🌊 내 바다(10/5)
@@ -13523,10 +13553,12 @@ function _mergeSaveProgress(target, other) {
             ['w', 'c', 'g'].forEach(k => { if ((oo[k] | 0) > (tt[k] | 0)) { tt[k] = oo[k]; took++; } }); target[f] = tt; });
         if ((other.njPearlGems | 0) > (target.njPearlGems | 0)) { target.njPearlGems = other.njPearlGems; took++; }
         if ((other.njMannaGems | 0) > (target.njMannaGems | 0)) { target.njMannaGems = other.njMannaGems; took++; }
+        if ((other.njDexFish | 0) > (target.njDexFish | 0)) { target.njDexFish = other.njDexFish; took++; }
         {   // 🐠 도감 — 처음 만난 시각·보너스 시각은 이른 쪽, 이번 주 보상 주·틀린 기록은 늦은 쪽
             const td = Object.assign({ v: {}, w: {}, f: {}, b: {}, all: 0 }, target.njDex || {}), od = other.njDex || {};
             ['v', 'b'].forEach(f => { td[f] = Object.assign({}, td[f] || {}); Object.entries(od[f] || {}).forEach(([k, ts]) => { if (!td[f][k] || ts < td[f][k]) { td[f][k] = ts; took++; } }); });
             td.w = Object.assign({}, td.w || {}); Object.entries(od.w || {}).forEach(([k, wk]) => { if (!td.w[k] || wk > td.w[k]) { td.w[k] = wk; took++; } });
+            td.bw = Object.assign({}, td.bw || {}); Object.entries(od.bw || {}).forEach(([k, a]) => { if (!Array.isArray(a)) return; const u = [...new Set([...(td.bw[k] || []), ...a])].sort().slice(-3); if (u.length !== (td.bw[k] || []).length) took++; td.bw[k] = u; });   // 🐠 백지로 써낸 주(10/5)
             td.f = Object.assign({}, td.f || {}); Object.entries(od.f || {}).forEach(([k, x]) => { const y = td.f[k]; if (Array.isArray(x) && (!Array.isArray(y) || x[0] > y[0] || (x[0] === y[0] && x[1] > y[1]))) { td.f[k] = x; took++; } });
             if (od.all && (!td.all || od.all < td.all)) { td.all = od.all; took++; }
             target.njDex = td;
@@ -29698,7 +29730,7 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
         if (mode === 'memory') {
             // ★ 진짜 백지(칸 없음) 통과는 따로 — typedPass는 빈칸(글자 칸)까지 포함한다.
             //   '백지'를 요구하는 자리(백지 ⭐·시험 준비됨 🏆)는 blankPass를 본다 (2026-09-18)
-            if (hardshipState && hardshipState.ultimateMemoryMode) { r.blankPass = (r.blankPass || 0) + 1; r.lastBlankPass = now; }
+            if (hardshipState && hardshipState.ultimateMemoryMode) { r.blankPass = (r.blankPass || 0) + 1; r.lastBlankPass = now; if (typeof _njDexNoteBlank === 'function') _njDexNoteBlank(stageId, now); }
             if (!r.typedPass) {
                 // 첫 통과 보너스 — 아직 안 써본 구절로 끌어당긴다 (구절당 평생 1회)
                 if (typeof addGems === 'function') {
