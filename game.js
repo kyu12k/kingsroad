@@ -615,9 +615,9 @@ const LANG = {
         nj3d_fish_murky: '🎣 맑은 물에서만',
         nj3d_fish_need: '보석이 {n}개 더 필요해요',
         nj3d_fish_cast: '🎣 그물을 던졌어요 — 찌를 지켜보세요',
-        nj3d_fish_bite: '🐟 물고기가 걸렸어요! 빈칸을 채워 끌어올려요',
-        nj3d_fish_bite2: '🐟 묵직한 입질! 빈칸을 채워 끌어올려요',
-        nj3d_fish_bite3: '🐋 아주 큰 녀석이에요! 빈칸을 채워 끌어올려요',
+        nj3d_fish_bite: '🐟 물고기가 걸렸어요! 말씀을 맞혀 끌어올려요',
+        nj3d_fish_bite2: '🐟 묵직한 입질! 말씀을 맞혀 끌어올려요',
+        nj3d_fish_bite3: '🐋 아주 큰 녀석이에요! 말씀을 맞혀 끌어올려요',
         nj3d_fish_again: '놓칠 뻔했어요 — 한 번 더!',
         nj3d_fish_miss: '물고기가 달아났어요',
         nj3d_fish_got: '🐟 {name}을(를) 낚았어요 · 가치 {n}',
@@ -757,11 +757,11 @@ const LANG = {
         nj3d_dex_seen: '발견 {n}번', nj3d_dex_unknown: '???',
         dex_when_any: '언제나 바다 어딘가에', dex_when_morning: '아침(6~12시)에만 나와요', dex_when_noon: '오후(12~18시)에만 나와요', dex_when_night: '저녁·밤(18~6시)에만 나와요',
         dex_where_rock: '바위 틈에 숨어 있어요', dex_where_weed: '해초 숲에 숨어 있어요', dex_where_sand: '모래 바닥에 숨어 있어요', dex_where_swim: '바닷속을 헤엄쳐 다녀요',
-        nj3d_manna_here: '🍞 아침 들판에 만나가 내렸어요 — 성 둘레를 걸어 거두어 보세요 (출 16:14)', nj3d_manna_got: '🍞 만나를 거두었어요 · 💎{gem}', nj3d_manna_sat: ' (여섯째 날 갑절)',
+        nj3d_manna_here: '🍞 아침 들판에 만나가 내렸어요 — 성 둘레를 걸어 거두어 보세요 (출 16:14)', nj3d_manna_got: '🍞 만나를 거두었어요 · 💎{gem}', nj3d_manna_sat: ' (여섯째 날 갑절)', nj3d_first_q: '이 절은 어떻게 시작하나요?', nj3d_blank_q: '두 번째 기회 — 빈칸에 들어갈 말씀은?', nj3d_manna_q: '🍞 만나를 거두려면 —', nj3d_manna_melt: '☀️ 해가 뜨거워 만나가 스러졌어요 (출 16:21) — 내일 또 내려요',
         nj3d_manna_all: '🍞 오늘 만나를 다 거두었어요 — 저녁이면 메추라기가 와요 (출 16:13)',
-        nj3d_quail_here: '🐦 저녁이 되어 메추라기가 들판에 내려앉았어요 (출 16:13)', nj3d_quail_flee: '🐦 메추라기가 도망치려 해요! — 빈칸에 들어갈 말씀은?', nj3d_quail_again: '🐦 푸드덕! 한 번 더',
+        nj3d_quail_here: '🐦 저녁이 되어 메추라기가 들판에 내려앉았어요 (출 16:13)', nj3d_quail_flee: '🐦 메추라기가 도망치려 해요!', nj3d_quail_again: '🐦 푸드덕! 한 번 더',
         nj3d_quail_got: '🐦 말씀의 그물로 메추라기를 잡았어요 · 💎{gem}', nj3d_quail_away: '🐦 메추라기가 날아가 버렸어요',
-        nj3d_clam_open: '🐚 조개 열기', nj3d_clam_q: '🐚 조개가 입을 열려면 — 빈칸에 들어갈 말씀은?', nj3d_clam_again: '🐚 꼭 닫혔어요 — 한 번 더',
+        nj3d_clam_open: '🐚 조개 열기', nj3d_clam_q: '🐚 조개가 입을 열려면 —', nj3d_clam_again: '🐚 꼭 닫혔어요 — 한 번 더',
         nj3d_clam_shut: '🐚 조개가 입을 꼭 다물었어요 — 내일 아침 다른 곳에 숨어요', nj3d_clam_need: '🐚 말씀을 한 절 외우면 조개를 열 수 있어요',
         nj3d_clam_got: '{name}를 얻었어요 · 💎{gem} — 강 어귀의 진주 장사에게 팔 수 있어요', nj3d_clam_rare: '✨ 값진 진주! "극히 값진 진주 하나를 발견하매" (마 13:46) · 💎{gem}',
         nj3d_clam_today: '🐚 오늘 바다 밑에 조개 {n}개가 숨어 있어요 — 반짝이는 곳을 찾아보세요',
@@ -1822,9 +1822,9 @@ const LANG = {
         nj3d_fish_murky: '🎣 Clear water only',
         nj3d_fish_need: 'Need {n} more gems',
         nj3d_fish_cast: '🎣 Net cast — watch the float',
-        nj3d_fish_bite: '🐟 A bite! Fill the blank to pull it in',
-        nj3d_fish_bite2: '🐟 A heavy bite! Fill the blank to pull it in',
-        nj3d_fish_bite3: '🐋 A huge one! Fill the blank to pull it in',
+        nj3d_fish_bite: '🐟 A bite! Answer to pull it in',
+        nj3d_fish_bite2: '🐟 A heavy bite! Answer to pull it in',
+        nj3d_fish_bite3: '🐋 A huge one! Answer to pull it in',
         nj3d_fish_again: 'Almost lost it — once more!',
         nj3d_fish_miss: 'The fish got away',
         nj3d_fish_got: '🐟 Caught a {name} · worth {n}',
@@ -1964,11 +1964,11 @@ const LANG = {
         nj3d_dex_seen: 'found {n}×', nj3d_dex_unknown: '???',
         dex_when_any: 'Somewhere in the sea, any time', dex_when_morning: 'Only in the morning (6–12)', dex_when_noon: 'Only in the afternoon (12–18)', dex_when_night: 'Only in the evening and night (18–6)',
         dex_where_rock: 'Hides in rock crevices', dex_where_weed: 'Hides in the seaweed', dex_where_sand: 'Hides on the sandy floor', dex_where_swim: 'Swims through the sea',
-        nj3d_manna_here: '🍞 Manna fell on the field this morning — walk around the city to gather it (Ex 16:14)', nj3d_manna_got: '🍞 You gathered manna · 💎{gem}', nj3d_manna_sat: ' (double on the sixth day)',
+        nj3d_manna_here: '🍞 Manna fell on the field this morning — walk around the city to gather it (Ex 16:14)', nj3d_manna_got: '🍞 You gathered manna · 💎{gem}', nj3d_manna_sat: ' (double on the sixth day)', nj3d_first_q: 'How does this verse begin?', nj3d_blank_q: 'Second chance — which words fill the blank?', nj3d_manna_q: '🍞 To gather the manna —', nj3d_manna_melt: '☀️ The sun grew hot and the manna melted (Ex 16:21) — more tomorrow',
         nj3d_manna_all: '🍞 All of today’s manna is gathered — quail come in the evening (Ex 16:13)',
-        nj3d_quail_here: '🐦 Evening — quail have landed on the field (Ex 16:13)', nj3d_quail_flee: '🐦 The quail is about to run! — which words fill the blank?', nj3d_quail_again: '🐦 Flutter! Once more',
+        nj3d_quail_here: '🐦 Evening — quail have landed on the field (Ex 16:13)', nj3d_quail_flee: '🐦 The quail is about to run!', nj3d_quail_again: '🐦 Flutter! Once more',
         nj3d_quail_got: '🐦 Caught in the net of the Word · 💎{gem}', nj3d_quail_away: '🐦 The quail flew away',
-        nj3d_clam_open: '🐚 Open clam', nj3d_clam_q: '🐚 To open the clam — which words fill the blank?', nj3d_clam_again: '🐚 It shut tight — once more',
+        nj3d_clam_open: '🐚 Open clam', nj3d_clam_q: '🐚 To open the clam —', nj3d_clam_again: '🐚 It shut tight — once more',
         nj3d_clam_shut: '🐚 The clam closed for good — it hides somewhere new tomorrow morning', nj3d_clam_need: '🐚 Memorize one verse to open clams',
         nj3d_clam_got: 'You found a {name} · 💎{gem} — sell it to the pearl merchant at the river mouth', nj3d_clam_rare: '✨ A pearl of great value! "When he found one pearl of great value" (Matt 13:46) · 💎{gem}',
         nj3d_clam_today: '🐚 {n} clams are hidden on the sea floor today — look for the sparkle',
@@ -2743,7 +2743,7 @@ let njClams = null;            // 🐚 오늘의 조개 { day: 6시 날짜, done
 let njPearlFound = { w: 0, c: 0, g: 0 };   // 🐚 찾은 진주(늘기만) — 흰·빛깔·값진
 let njPearlSold = { w: 0, c: 0, g: 0 };    // 💎 판 진주(늘기만) — 가진 진주 = 찾은 − 판
 let njPearlGems = 0;          // 💎 진주를 팔아 받은 보석 합(보석 흐름 실측용)
-let njManna = null;           // 🍞 오늘의 만나·메추라기 { day, got: [거둔 무더기], quail: [끝난 메추라기(잡음·날아감)], qfail: {번호: 틀린 수} } (2026-10-05)
+let njManna = null;           // 🍞 오늘의 만나·메추라기 { day, got: [거둔 무더기], quail: [끝난 메추라기(잡음·날아감)], qfail: {번호: 틀린 수}, mfail·melt: 만나 문제 틀린 수·스러진 무더기 } (2026-10-05)
 let njMannaGems = 0;          // 💎 만나·메추라기로 받은 보석 합(실측용)
 let njDex = { v: {}, w: {}, f: {}, b: {}, all: 0 };   // 🐠 바다 생물 도감 — v 처음 만난 절 {절: 시각} · w 이번 주 보상 {절: 주} · f 틀린 수 {절: [주, 수]} · b 받은 묶음 보너스 · all (2026-10-05)
 let njGiftFruits = [];   // 🎁 받은 나눔 열매 [{id, from, fromTag, size, msg, at, v:[백지로 쓴 절], ripe(익는 시각), ate:[먹은 절], done(먹은 시각), thanked}] (2026-10-04)
@@ -8180,10 +8180,38 @@ function _njFishGot(stage, lenTier, half) {
     return { value: v, name: currentLang === 'en' ? k[2] : k[1], score: sc };
 }
 /* 빈칸 문제 — 백지·빈칸으로 써낸 적 있는 절 → 없으면 클리어한 절 → 없으면 1장 앞. 한두 낱말을 가리고 같은 장 다른 절의 낱말로 가짜 셋 */
-function _njFishQuestion(only) {   // only = 이 절들에서만(🐦 메추라기 — 오늘 외운 절)
+/* 🐟🐚🐦🍞🐠 3D 퀴즈 (10/5 사용자: 빈칸 4지가 너무 쉽다 — 백지는 무겁고) — **주소 → 첫 마디**: 주소만 보고 그 절이 어떻게 시작하는지 고른다.
+   가짜 보기는 같은 장 **이웃 절**의 첫 마디(가까운 절부터) — 문맥·조사로 거를 수 없다. 이웃 절과 똑같이 시작하면 한 마디씩 늘린다(3 → 6단어).
+   두 번째 기회는 예전 빈칸 4지(mode 'blank') — 같은 절의 첫 마디를 다시 물으면 보기만 섞인 같은 문제라서 */
+function _njQuizPool(only) {
     const known = Object.keys(verseRecall || {}).filter(id => { const r = verseRecall[id]; return /^\d+-\d+$/.test(id) && r && (r.typedPass > 0 || r.blankPass > 0); });
     let pool = (only && only.length) ? only : known.length ? known : Object.keys(stageClearDate || {}).filter(id => /^\d+-\d+$/.test(id));
     if (!pool.length) pool = ['1-1', '1-2', '1-3'];
+    return pool;
+}
+function _njFishQuestion(only, mode) {   // only = 이 절들에서만(🐦 메추라기·🍞 만나 — 오늘 외운 절) · mode 'blank' = 빈칸 4지
+    if (mode !== 'blank') { const q = _njFirstQuestion(only); if (q) return q; }
+    return _njBlankQuestion(only);
+}
+function _njFirstQuestion(only) {
+    const pool = _njQuizPool(only);
+    const ws = (c, v) => String((((bibleData[c] || [])[v - 1]) || {}).text || '').trim().split(/\s+/).filter(Boolean);
+    const ph = (w, n) => w.slice(0, n).join(' ').replace(/[,.;:!?·…"'“”‘’)\]]+$/, '');
+    for (let tries = 0; tries < 8; tries++) {
+        const id = pool[Math.floor(Math.random() * pool.length)], [c, v] = id.split('-').map(Number), w = ws(c, v), N = (bibleData[c] || []).length;
+        if (w.length < 3 || N < 4) continue;
+        const nb = []; for (let d = 1; d < N; d++) [v - d, v + d].forEach(o => { if (o >= 1 && o <= N) nb.push(ws(c, o)); });   // 가까운 절부터
+        let n = 3; while (n < 6 && n < w.length && nb.some(o => ph(o, n) === ph(w, n))) n++;
+        const answer = ph(w, n), fakes = [];
+        for (const o of nb) { const f = ph(o, n); if (f && f !== answer && !fakes.includes(f)) fakes.push(f); if (fakes.length >= 3) break; }
+        if (!answer || fakes.length < 3) continue;
+        const [cc, vv] = id.split('-');
+        return { id, kind: 'first', lenTier: _njVerseLenTier(id), ref: currentLang === 'en' ? `Rev ${cc}:${vv}` : `계 ${cc}:${vv}`, before: '', after: '', answer, choices: [answer, ...fakes].sort(() => Math.random() - 0.5) };
+    }
+    return null;
+}
+function _njBlankQuestion(only) {
+    const pool = _njQuizPool(only);
     const words = id => { const [c, v] = id.split('-').map(Number); return ((((bibleData[c] || [])[v - 1]) || {}).text || '').split(/\s+/).filter(Boolean); };
     for (let tries = 0; tries < 12; tries++) {
         const id = pool[Math.floor(Math.random() * pool.length)], w = words(id);
@@ -8221,7 +8249,7 @@ function _njClamDay() {
 }
 function _njClamLeft() { const c = _njClamDay(); return Math.max(0, NJ_CLAMS_PER_DAY - (c.done || []).length); }
 function _njClamKnown() { return Object.keys(stageClearDate || {}).some(id => /^\d+-\d+$/.test(id)); }
-function _njClamQuestion() { return _njClamKnown() ? _njFishQuestion() : null; }   // 낚시 문제 — 백지로 써낸 절 먼저, 없으면 클리어한 절
+function _njClamQuestion(mode) { return _njClamKnown() ? _njFishQuestion(null, mode) : null; }   // 낚시 문제 — 백지로 써낸 절 먼저, 없으면 클리어한 절
 function _njClamResult(idx, ok) {
     const c = _njClamDay(); if ((c.done || []).includes(idx)) return null;
     if (!ok) {
@@ -8263,7 +8291,7 @@ function _njPearlSellHtml() {
 const NJ_MANNA_GEM = 300, NJ_QUAIL_GEM = 300;
 function _njMannaDay() {
     const d = _get6AMDayStr();
-    if (!njManna || njManna.day !== d) njManna = { day: d, got: [], quail: [], qfail: {} };
+    if (!njManna || njManna.day !== d) njManna = { day: d, got: [], quail: [], qfail: {}, mfail: {}, melt: [] };
     return njManna;
 }
 function _njIsSixthDay() { const [y, m, d] = _get6AMDayStr().split('-').map(Number); return new Date(y, m - 1, d).getDay() === 6; }
@@ -8274,7 +8302,7 @@ function _njMannaToday() {   // { ids: 오늘 구절, ready: 오늘의 암송을
 }
 function _njMannaGather(i) {
     const M = _njMannaDay(), T = _njMannaToday();
-    if (!T.ready || i < 0 || i >= T.ids.length || M.got.includes(i)) return 0;
+    if (!T.ready || i < 0 || i >= T.ids.length || M.got.includes(i) || (M.melt || []).includes(i)) return 0;
     M.got.push(i);
     const gem = NJ_MANNA_GEM * (T.sat ? 2 : 1);
     addGems(gem); njMannaGems = (njMannaGems | 0) + gem;
@@ -8282,7 +8310,14 @@ function _njMannaGather(i) {
     return gem;
 }
 function _njQuailTime() { const h = new Date().getHours(); return h >= 18 || h < 6; }   // 저녁 6시 ~ 다음 날 아침 6시(하루 경계까지)
-function _njQuailQuestion(i) { const id = _njMannaToday().ids[i]; return id ? _njFishQuestion([id]) : null; }
+function _njQuailQuestion(i, mode) { const id = _njMannaToday().ids[i]; return id ? _njFishQuestion([id], mode) : null; }
+/* 🍞 만나도 말씀으로 거둔다(10/5 사용자) — 밟으면 그 절의 첫 마디, 두 번 틀리면 해가 뜨거워 스러진다(출 16:21) */
+function _njMannaQuestion(i, mode) { const id = _njMannaToday().ids[i]; return id ? _njFishQuestion([id], mode) : null; }
+function _njMannaFail(i) {
+    const M = _njMannaDay(); if (!M.mfail) M.mfail = {}; if (!Array.isArray(M.melt)) M.melt = [];
+    M.mfail[i] = (M.mfail[i] | 0) + 1; if (M.mfail[i] >= 2 && !M.melt.includes(i)) M.melt.push(i);
+    saveGameData(); return M.melt.includes(i);
+}
 function _njQuailResult(i, ok) {
     const M = _njMannaDay(), T = _njMannaToday();
     if (!M.got.includes(i) || M.quail.includes(i)) return 0;
@@ -13503,6 +13538,8 @@ function _mergeSaveProgress(target, other) {
                 else if (om.day === tm.day) {
                     tm.got = [...new Set([...(tm.got || []), ...(om.got || [])])]; tm.quail = [...new Set([...(tm.quail || []), ...(om.quail || [])])];
                     tm.qfail = Object.assign({}, tm.qfail || {}); Object.entries(om.qfail || {}).forEach(([i, n]) => { if ((n | 0) > (tm.qfail[i] | 0)) tm.qfail[i] = n; });
+                    tm.mfail = Object.assign({}, tm.mfail || {}); Object.entries(om.mfail || {}).forEach(([i, n]) => { if ((n | 0) > (tm.mfail[i] | 0)) tm.mfail[i] = n; });
+                    tm.melt = [...new Set([...(tm.melt || []), ...(om.melt || [])])];
                 }
             }
         }

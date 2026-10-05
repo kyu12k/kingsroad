@@ -16,6 +16,9 @@
     const GIFT_V = '20261005';   // models/gifts/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/)
     const JET_COST = 300000;
     const T = (k, p) => (typeof t === 'function' ? t(k, p) : k);
+    // 퀴즈 본문 — 주소 → 첫 마디(kind 'first')면 「이 절은 어떻게 시작하나요?」, 빈칸이면 앞뒤 말씀 사이에 빈칸 (10/5)
+    const quizText = (q, esc) => q.kind === 'first' ? `<div class="nj3d-fishq-text nj3d-fishq-first">${T('nj3d_first_q')}</div>`
+        : `${q.again ? `<div class="nj3d-fishq-sub">${T('nj3d_blank_q')}</div>` : ''}<div class="nj3d-fishq-text">${esc(q.before)} <span class="nj3d-fishq-blank">＿＿＿</span> ${esc(q.after)}</div>`;
 
     function loadScript(src) {
         return new Promise((res, rej) => {
@@ -2216,14 +2219,15 @@
         let fishCheckT = 0, fishCell = null, fishHinted = false, fishHintHold = 0;   // fishHintHold — 이때까진 낚시 안내를 미룬다(미끄럼 도착 안내가 덮이지 않게)
         const endFish = (msg) => { fish.phase = 'idle'; fish.reel = null; bobber.visible = false; fishQ.hidden = true; fishQ.classList.remove('reel', 'watch', 'now'); if (msg) showHint(msg, 1800); };
         const askFish = () => {
-            const q = (typeof _njFishQuestion === 'function') ? _njFishQuestion() : null;
+            const q = (typeof _njFishQuestion === 'function') ? _njFishQuestion(null, fish.tries === 2 ? '' : 'blank') : null;
             if (!q) { endFish(T('nj3d_fish_miss')); return; }
+            if (fish.tries !== 2) q.again = true;
             fish.q = q;
             const esc = t => String(t).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
             const pot = fish.stage + (q.lenTier || 0);   // 입질 세기 — 긴 구절·먼 바다일수록 큰 물고기
             fishQ.innerHTML = `<div class="nj3d-fishq-head">${T(fish.tries === 2 ? (pot >= 5 ? 'nj3d_fish_bite3' : pot >= 3 ? 'nj3d_fish_bite2' : 'nj3d_fish_bite') : 'nj3d_fish_again')}</div>
                 <div class="nj3d-fishq-ref">${esc(q.ref)}</div>
-                <div class="nj3d-fishq-text">${esc(q.before)} <span class="nj3d-fishq-blank">＿＿＿</span> ${esc(q.after)}</div>
+                ${quizText(q, esc)}
                 <div class="nj3d-fishq-choices">${q.choices.map((c, i) => `<button data-i="${i}">${esc(c)}</button>`).join('')}</div>`;
             fishQ.hidden = false;
             fishQ.querySelectorAll('button[data-i]').forEach(b => b.onclick = () => {
@@ -3956,14 +3960,16 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         }
         function closeClamQ() { if (clamQ) { clamQ = null; fishQ.hidden = true; fishQ.innerHTML = ''; } }
         function askClam(c) {
-            const q = typeof _njClamQuestion === 'function' ? _njClamQuestion() : null;
+            const tries = clamQ && clamQ.c === c ? clamQ.tries : 2;
+            const q = typeof _njClamQuestion === 'function' ? _njClamQuestion(tries === 2 ? '' : 'blank') : null;
             if (!q) { showHint(T('nj3d_clam_need'), 3000); return; }
-            clamQ = { c, q, tries: clamQ && clamQ.c === c ? clamQ.tries : 2 };
+            if (tries !== 2) q.again = true;
+            clamQ = { c, q, tries };
             const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
             fishQ.classList.remove('watch', 'now', 'reel');
             fishQ.innerHTML = `<div class="nj3d-fishq-head">${T(clamQ.tries === 2 ? 'nj3d_clam_q' : 'nj3d_clam_again')}</div>
                 <div class="nj3d-fishq-ref">${esc(q.ref)}</div>
-                <div class="nj3d-fishq-text">${esc(q.before)} <span class="nj3d-fishq-blank">＿＿＿</span> ${esc(q.after)}</div>
+                ${quizText(q, esc)}
                 <div class="nj3d-fishq-choices">${q.choices.map((ch, i) => `<button data-i="${i}">${esc(ch)}</button>`).join('')}</div>`;
             fishQ.hidden = false;
             fishQ.querySelectorAll('button[data-i]').forEach(b => b.onclick = () => {
@@ -4054,14 +4060,14 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         const flakeM = new THREE.MeshStandardMaterial({ color: 0xfffdf2, emissive: 0x6b6250, emissiveIntensity: 0.35, roughness: 0.5 });
         cleanups.push(() => flakeG.dispose());
         if (MT.ready) mannaSpots.forEach(([x, z], i) => {
-            if ((MD0.got || []).includes(i)) return;
+            if ((MD0.got || []).includes(i) || (MD0.melt || []).includes(i)) return;   // 거둔 것 · 스러진 것
             const N = MT.sat ? 110 : 60, R0 = MT.sat ? 0.42 : 0.32, im = new THREE.InstancedMesh(flakeG, flakeM, N), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3();
             for (let k = 0; k < N; k++) { const a = Math.random() * 6.28, rr = Math.sqrt(Math.random()) * R0, fx = x + Math.cos(a) * rr, fz = z + Math.sin(a) * rr, s2 = 0.7 + Math.random() * 0.7;
                 q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.random() * 6.28); v.set(fx, terrain(fx, fz) + 0.008, fz); sc.set(s2, 1, s2); m4.compose(v, q, sc); im.setMatrixAt(k, m4); }
             const dew = new THREE.Sprite(new THREE.SpriteMaterial({ map: radial, color: 0xfff6dc, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }));
             dew.position.set(x, terrain(x, z) + 0.06, z); dew.scale.setScalar(R0 * 1.5);   // 이슬빛 — 처음 2.4배는 기둥처럼 번졌다
             const g = new THREE.Group(); g.add(im, dew); mannaG.add(g);
-            mannas.push({ i, x, z, g, im, dew, done: false });
+            mannas.push({ i, x, z, g, im, dew, done: false, fails: ((MD0.mfail || {})[i]) | 0 });
         });
         // 메추라기 — 둥근 갈색 몸, 작은 머리와 부리. 쪼다가 가끔 콩콩
         const quailBody = new THREE.MeshStandardMaterial({ color: new THREE.Color(0x8a6a45).convertSRGBToLinear(), roughness: 0.85, flatShading: true });
@@ -4089,14 +4095,15 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         setTimeout(() => { if (cur === C) mannaHint(); }, 3200);
         function closeQuailQ() { if (quailQ) { quailQ = null; fishQ.hidden = true; fishQ.innerHTML = ''; } }
         function askQuail(qa) {
-            const q = typeof _njQuailQuestion === 'function' ? _njQuailQuestion(qa.i) : null;
-            if (!q) { catchQuail(qa, ''); return; }   // 문제를 못 만들면(아주 짧은 절) 그냥 잡힌다
+            const q = typeof _njQuailQuestion === 'function' ? _njQuailQuestion(qa.i, qa.tries === 2 ? '' : 'blank') : null;
+            if (!q) { catchQuail(qa, ''); return; }
+            if (qa.tries !== 2) q.again = true;   // 문제를 못 만들면(아주 짧은 절) 그냥 잡힌다
             quailQ = { qa, q };
             const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
             fishQ.classList.remove('watch', 'now', 'reel');
             fishQ.innerHTML = `<div class="nj3d-fishq-head">${T(qa.tries === 2 ? 'nj3d_quail_flee' : 'nj3d_quail_again')}</div>
                 <div class="nj3d-fishq-ref">${esc(q.ref)}</div>
-                <div class="nj3d-fishq-text">${esc(q.before)} <span class="nj3d-fishq-blank">＿＿＿</span> ${esc(q.after)}</div>
+                ${quizText(q, esc)}
                 <div class="nj3d-fishq-choices">${q.choices.map((ch, i) => `<button data-i="${i}">${esc(ch)}</button>`).join('')}</div>`;
             fishQ.hidden = false;
             fishQ.querySelectorAll('button[data-i]').forEach(b => b.onclick = () => {
@@ -4163,16 +4170,43 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 }
             }
         }
+        // 🍞 만나 문제 (10/5 사용자) — 밟으면 그 절의 첫 마디. 맞히면 거두고, 틀리면 두 번째(빈칸), 또 틀리면 스러진다(출 16:21)
+        let mannaQ = null;
+        function closeMannaQ() { if (mannaQ) { mannaQ = null; fishQ.hidden = true; fishQ.innerHTML = ''; } }
+        function gatherManna(m) {
+            const gem = typeof _njMannaGather === 'function' ? _njMannaGather(m.i) : 0;
+            if (!gem) return;
+            m.done = true; mannaAnims.push({ kind: 'gather', m, t: 0 }); syncWallet();
+            if (typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) SoundEffect.playBlankLevelUp();
+            showHint(mannas.every(x => x.done) ? T('nj3d_manna_got', { gem: gem.toLocaleString() }) + (MT.sat ? T('nj3d_manna_sat') : '') + ' · ' + T('nj3d_manna_all') : T('nj3d_manna_got', { gem: gem.toLocaleString() }) + (MT.sat ? T('nj3d_manna_sat') : ''), 3800);
+        }
+        function askManna(m) {
+            const again = (m.fails | 0) > 0, q = typeof _njMannaQuestion === 'function' ? _njMannaQuestion(m.i, again ? 'blank' : '') : null;
+            if (!q) { gatherManna(m); return; }   // 문제를 못 만들면(아주 짧은 절) 그냥 거둔다
+            if (again) q.again = true;
+            mannaQ = { m, q };
+            const esc = s2 => String(s2).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+            fishQ.classList.remove('watch', 'now', 'reel');
+            fishQ.innerHTML = `<div class="nj3d-fishq-head">${T('nj3d_manna_q')}</div><div class="nj3d-fishq-ref">${esc(q.ref)}</div>${quizText(q, esc)}
+                <div class="nj3d-fishq-choices">${q.choices.map((ch, i) => `<button data-i="${i}">${esc(ch)}</button>`).join('')}</div>`;
+            fishQ.hidden = false;
+            fishQ.querySelectorAll('button[data-i]').forEach(b => b.onclick = () => {
+                const ok = q.choices[+b.dataset.i] === q.answer; closeMannaQ();
+                if (ok) { gatherManna(m); return; }
+                m.fails = (m.fails | 0) + 1;
+                const melted = typeof _njMannaFail === 'function' ? _njMannaFail(m.i) : m.fails >= 2;
+                if (melted) { m.done = true; mannaAnims.push({ kind: 'gather', m, t: 0 }); showHint(T('nj3d_manna_melt'), 3800); }
+                else askManna(m);
+            });
+        }
         function mannaCheck() {   // 1초에 네 번 — 만나를 밟았나 · 메추라기 곁인가
             if (isUnder()) { nearQuail = null; return; }
             mannas.forEach(m => {
-                if (m.done || !P.onGround || Math.hypot(m.x - P.x, m.z - P.z) > 0.45) return;
-                const gem = typeof _njMannaGather === 'function' ? _njMannaGather(m.i) : 0;
-                if (!gem) return;
-                m.done = true; mannaAnims.push({ kind: 'gather', m, t: 0 }); syncWallet();
-                if (typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) SoundEffect.playBlankLevelUp();
-                showHint(mannas.every(x => x.done) ? T('nj3d_manna_got', { gem: gem.toLocaleString() }) + (MT.sat ? T('nj3d_manna_sat') : '') + ' · ' + T('nj3d_manna_all') : T('nj3d_manna_got', { gem: gem.toLocaleString() }) + (MT.sat ? T('nj3d_manna_sat') : ''), 3800);
+                if (m.done || mannaQ || !P.onGround || Math.hypot(m.x - P.x, m.z - P.z) > 0.45) return;
+                if (quailQ || clamQ || dexQ) return;
+                askManna(m);
             });
+            if (mannaQ && Math.hypot(mannaQ.m.x - P.x, mannaQ.m.z - P.z) > 1.4) closeMannaQ();   // 멀어지면 닫는다(다시 밟으면 다시)
             let best = null, bd = 1.1;
             quails.forEach(q => { if (q.done) return; const d = Math.hypot(q.x - P.x, q.z - P.z); if (d < bd) { bd = d; best = q; } });
             const was = nearQuail; nearQuail = best;
@@ -4564,14 +4598,15 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         const dexRef = c => (typeof _njDexRef === 'function' ? _njDexRef(c.E.id) : c.E.id);
         function closeDexQ() { if (dexQ) { dexQ = null; fishQ.hidden = true; fishQ.innerHTML = ''; } }
         function askDex(c, retry) {   // 그 생물의 말씀 — 빈칸 4지
-            const q = typeof _njFishQuestion === 'function' ? _njFishQuestion([c.E.id]) : null;
+            const q = typeof _njFishQuestion === 'function' ? _njFishQuestion([c.E.id], retry ? 'blank' : '') : null;
+            if (q && retry) q.again = true;
             if (!q) { dexDone(c, typeof _njDexAnswer === 'function' ? _njDexAnswer(c.E.id, true) : null); return; }   // 아주 짧은 절이라 문제를 못 만들면 그냥 만난 것으로
             dexQ = { c, q };
             const esc = x => String(x).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
             fishQ.classList.remove('watch', 'now', 'reel');
             fishQ.innerHTML = `<div class="nj3d-fishq-head">${esc(T(retry ? 'nj3d_dex_retry' : 'nj3d_dex_q', { e: c.d.e, name: dexWho(c) }))}</div>
                 <div class="nj3d-fishq-ref">${esc(q.ref)}</div>
-                <div class="nj3d-fishq-text">${esc(q.before)} <span class="nj3d-fishq-blank">＿＿＿</span> ${esc(q.after)}</div>
+                ${quizText(q, esc)}
                 <div class="nj3d-fishq-choices">${q.choices.map((ch, i) => `<button data-i="${i}">${esc(ch)}</button>`).join('')}</div>`;
             fishQ.hidden = false;
             fishQ.querySelectorAll('button[data-i]').forEach(bt => bt.onclick = () => {
