@@ -14133,12 +14133,23 @@ let _syncRetryTimer = null;
 let _syncInFlight = false;
 let _syncQueuedAgain = false;
 
+/* 🚫 빈 저장본은 서버에 올리지 않는다 (2026-10-06) — 첫 접속 순간 익명 로그인과 함께 빈 저장본이 서버에 생겨 유령이 쌓였다
+   (10/6 정리: 빈 저장본 3,271 · 진도 0 프로필 1,770 등). 태그 없음 + 이름 「순례자」 + 진도 0이면 아직 사람의 기록이 아니다.
+   프로필을 만들거나(태그·이름) 한 절이라도 깨는 순간부터 평소처럼 올라간다 — 프로필 없이 외우는 사람(진도 있음)도 그대로 */
+function _isEmptySave(d) {
+    if (!d || typeof d !== 'object') return true;
+    if (d.tag && d.tag !== '0000') return false;
+    if (d.nickname && d.nickname !== '순례자') return false;
+    const has = o => o && typeof o === 'object' && Object.keys(o).length > 0, km = d.kingsMode || {};
+    return !(has(d.mastery) || has(d.clearDate) || has(km.mastery) || has(km.clearDate) || has(d.verseRecall) || has(d.reviewStep) || has(d.clearedStages) || has(d.hardshipMemoryClearHistory) || has(d.hardshipAddressClearHistory));
+}
 async function syncToFirestore() {
     if (typeof firebase === 'undefined') return;
     if (typeof myPlayerId === 'undefined' || !myPlayerId) return;
     const raw = localStorage.getItem('kingsRoadSave');
     if (!raw) return;
-    try { JSON.parse(raw); } catch (e) { return; }
+    let _parsed; try { _parsed = JSON.parse(raw); } catch (e) { return; }
+    if (_isEmptySave(_parsed)) return;   // 🚫 아직 빈 저장본 — 올리지 않는다(위)
 
     if (_syncInFlight) { _syncQueuedAgain = true; return; }
     _syncInFlight = true;
