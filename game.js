@@ -27397,6 +27397,7 @@ function resetHardshipSessionState() {
     if (hardshipHintBtn) {
         hardshipHintBtn.style.display = 'none';
         hardshipHintBtn.classList.remove('hint-fab-on', 'hint-nudge');
+        _syncGiveupFab(false);
         hardshipHintBtn.disabled = false;
     }
 
@@ -28700,6 +28701,7 @@ function toggleHardshipEnduranceInfo() {
 function renderHardshipEnduranceVerse() {
     const hintBtn = document.getElementById('common-hardship-hint-btn');
     if (hintBtn) { hintBtn.style.display = 'none'; hintBtn.classList.remove('hint-fab-on'); }
+    _syncGiveupFab(false);
     const field = document.querySelector('.battle-field');
     const control = document.querySelector('.battle-control');
     if (!field || !control || !hardshipState.currentVerse) return;
@@ -28917,6 +28919,7 @@ function confirmHardshipEnduranceVerse() {
 function renderHardshipAddressVerse() {
     const hintBtn = document.getElementById('common-hardship-hint-btn');
     if (hintBtn) { hintBtn.style.display = 'none'; hintBtn.classList.remove('hint-fab-on'); }
+    _syncGiveupFab(false);
     const field = document.querySelector('.battle-field');
     const control = document.querySelector('.battle-control');
     if (!field || !control || !hardshipState.currentVerse) return;
@@ -29096,6 +29099,7 @@ function generateVerseChoices(currentVerse) {
 function renderHardshipVerseVerse() {
     const hintBtn = document.getElementById('common-hardship-hint-btn');
     if (hintBtn) { hintBtn.style.display = 'none'; hintBtn.classList.remove('hint-fab-on'); }
+    _syncGiveupFab(false);
     const field = document.querySelector('.battle-field');
     const control = document.querySelector('.battle-control');
     if (!field || !control || !hardshipState.currentVerse) return;
@@ -29282,9 +29286,9 @@ function renderHardshipMemoryVerse() {
             <button id="hardship-memory-submit-btn" class="btn-attack" onclick="submitHardshipMemoryGuess()" style="${hardshipState.awaitingNext ? 'display:none;' : ''}" ${hardshipState.locked ? 'disabled' : ''}>${t('hardship_btn_submit')}</button>
             <button id="hardship-next-btn" class="btn-attack" onclick="proceedHardshipToNextVerse()" style="background:#2ecc71; ${hardshipState.awaitingNext ? '' : 'display:none;'}">${t('hardship_btn_next')}</button>
             <button class="btn-reset-step5" onclick="resetHardshipMemoryInputs()" style="${hardshipState.awaitingNext ? 'display:none;' : ''}" ${hardshipState.locked ? 'disabled' : ''}>${t('hardship_btn_reset_input')}</button>
-            ${_isEmbeddedBlankSession() && !hardshipState.awaitingNext ? `<button class="btn-reset-step5 btn-hardship-giveup" onclick="giveUpHardshipMemoryVerse()" ${hardshipState.locked ? 'disabled' : ''}>${t('hardship_btn_giveup')}</button>` : ''}
         </div>
     `;
+    _syncGiveupFab(_isEmbeddedBlankSession() && !hardshipState.awaitingNext && !hardshipState.locked);
 
     bindHardshipMemoryInputGuards();
     _alignHardshipHiddenInput(field.querySelector('.char-slot.active') || field.querySelector('.char-slot.is-valid'));
@@ -29312,6 +29316,7 @@ function renderHardshipMemoryVerse() {
    position:fixed의 기준은 '레이아웃 뷰포트'이고 getBoundingClientRect()도 같은 기준이라
    visualViewport의 offset/size와 그대로 섞어 계산할 수 있다. */
 function positionHardshipHintFab() {
+    _positionGiveupFab();
     const fab = document.getElementById('common-hardship-hint-btn');
     if (!fab || fab.offsetWidth === 0) return; // display:none이면 offsetWidth가 0
 
@@ -29333,6 +29338,39 @@ function positionHardshipHintFab() {
     fab.style.left = Math.max(MARGIN, visibleRight - fab.offsetWidth - MARGIN) + 'px';
     fab.style.bottom = 'auto';
     fab.style.right = 'auto';
+}
+/* 🙋 「모르겠어요」 — 힌트 FAB와 같은 규칙(보이는 화면 아래, 제출 줄 위), 왼쪽. 힌트가 꺼져 있어도 따로 앉는다 */
+function _positionGiveupFab() {
+    const gu = document.getElementById('hardship-giveup-fab');
+    if (!gu || gu.offsetWidth === 0) return;
+    const MARGIN = 14, vv = window.visualViewport;
+    let limit = vv ? (vv.offsetTop + vv.height) : window.innerHeight;
+    const control = document.querySelector('.battle-control');
+    if (control && control.offsetHeight > 0) {
+        const cr = control.getBoundingClientRect();
+        if (cr.left < window.innerWidth / 3) limit = Math.min(limit, cr.top);
+    }
+    gu.style.top = Math.max(MARGIN, limit - gu.offsetHeight - MARGIN - 4) + 'px';
+    gu.style.left = ((vv ? vv.offsetLeft : 0) + MARGIN) + 'px';
+    gu.style.bottom = 'auto';
+}
+/* 🙋 「모르겠어요」 떠 있는 버튼 (2026-10-06 사용자: "키보드에 가려 잘 안 보인다").
+   예전엔 제출·다시 입력 줄에 있어 키보드가 열리면 그 아래로 숨었다. 힌트 FAB처럼 보이는 화면을 따라다닌다 */
+function _syncGiveupFab(on) {
+    let b = document.getElementById('hardship-giveup-fab');
+    if (!on) { if (b) b.style.display = 'none'; return; }
+    if (!b) {
+        b = document.createElement('button');
+        b.id = 'hardship-giveup-fab';
+        b.type = 'button';
+        b.onclick = () => giveUpHardshipMemoryVerse();
+        b.addEventListener('mousedown', e => e.preventDefault());   // 눌러도 입력칸 초점(키보드)을 뺏지 않게 — 누른 뒤 giveUp이 직접 닫는다
+        document.body.appendChild(b);
+    }
+    b.textContent = '🙋 ' + t('hardship_btn_giveup');
+    b.style.display = 'inline-flex';
+    if (typeof ensureHardshipHintFabListeners === 'function') ensureHardshipHintFabListeners();   // 키보드가 열리고 닫힐 때 따라 움직이게
+    _positionGiveupFab();
 }
 
 /* 키보드 열림/닫힘·회전·주소창 접힘이 전부 visualViewport 이벤트로 온다.

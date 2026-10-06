@@ -6155,6 +6155,28 @@ body > #guide-screen-overlay .guide-body > .guide-btn.ghost { width: 100%; margi
     font-variant-numeric: tabular-nums;
 }
 
+/* 🙋 「모르겠어요」 떠 있는 버튼 — 힌트 FAB와 같은 높이 왼쪽. 키보드 위에서도 보여야 한다(10/6).
+   벌이 아니라 정직한 탈출구라 힌트(노랑)보다 조용하게, 그러나 글자는 또렷하게 */
+#hardship-giveup-fab {
+    display: none;
+    position: fixed;
+    left: 14px;
+    bottom: 100px;
+    z-index: 60;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 15px;
+    border-radius: 999px;
+    border: 1.5px solid rgba(255, 255, 255, 0.55);
+    background: rgba(44, 62, 80, 0.92);
+    color: #fff;
+    font-size: 0.92rem;
+    font-weight: 700;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+#hardship-giveup-fab:active { transform: scale(0.96); }
 /* 「모르겠어요」 — 다시 입력 옆에, 더 조용하게. 벌이 아니라 정직한 탈출구다 */
 .btn-hardship-giveup {
     background: rgba(255, 255, 255, 0.06);
