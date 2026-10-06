@@ -823,6 +823,11 @@ const LANG = {
         lt_scope: '어디를 볼까요?', lt_unit_n: '{n}절', lt_scope_all: '장 전체 {n}절', lt_scope_unit: '{r}절', lt_min: '약 {m}분',
         lt_res_good: '✅ 깨끗하게 나온 절 {n}개',
         lt_btn_relearn: '📖 {r}절 다시 넣기', lt_btn_blank: '✍️ {r}절 빈칸으로 다지기', lt_btn_fp: '🔑 {ch}장 첫 마디',
+        lt_step1: '🔑 첫 마디를 보여 드릴게요 — 이어서 써 보세요', lt_step2: '🔲 이번엔 빈칸으로 — 글자 칸을 보고 써 보세요',
+        lt_cS: '시작 주면', lt_cB: '빈칸이면', lt_res_S: '첫 마디를 주면 나온 {n}절 → 🔑 첫 마디부터', lt_res_B: '빈칸이면 나온 {n}절 → ✍️ 빈칸으로 다지기',
+        lt_intro_ladder: '• 막히면 한 단계씩 내려가요: 백지 → 첫 마디를 보여 주고 이어 쓰기 → 빈칸 → 못 씀',
+        lt_stop_title: '이 구간은 다시 넣기부터예요', lt_stop_body: '처음 세 절이 빈칸으로도 나오지 않았어요. 테스트를 여기서 마치고 다시 넣기부터 할까요?',
+        lt_stop_end: '여기서 마치기', lt_stop_go: '계속하기',
         lt_sheet_btn: '🎓 레벨 테스트', lt_sheet_last: '지난 테스트 {d} · 깨끗 {c}/{n}', lt_sheet_none: '지금 이 장이 정말 나오는지',
         fp_pick_title: '🔑 첫 마디의 고난 · {ch}장', fp_pick_desc: '구절은 사슬처럼 외워져서, 첫 마디만 떠오르면 나머지가 따라와요. 주소만 보고 첫 마디를 써 보세요. 순서는 섞여 나와요.',
         fp_lv1: '쉬움', fp_lv2: '보통', fp_lv3: '어려움', fp_lv1_d: '첫 단어', fp_lv2_d: '앞에서 세 글자가 찰 때까지', fp_lv3_d: '앞 세 단어',
@@ -2063,6 +2068,11 @@ const LANG = {
         lt_scope: 'What to test?', lt_unit_n: '{n} vv.', lt_scope_all: 'Whole chapter · {n}', lt_scope_unit: 'vv. {r}', lt_min: '~{m} min',
         lt_res_good: '✅ {n} verse(s) came out clean',
         lt_btn_relearn: '📖 Re-learn vv. {r}', lt_btn_blank: '✍️ Fill-in vv. {r}', lt_btn_fp: '🔑 Ch. {ch} first words',
+        lt_step1: '🔑 Here are the first words — continue from there', lt_step2: '🔲 Now with blanks — use the letter slots',
+        lt_cS: 'with start', lt_cB: 'with blanks', lt_res_S: '{n} verse(s) came out once given the first words → 🔑 first words', lt_res_B: '{n} verse(s) came out with blanks → ✍️ fill-in',
+        lt_intro_ladder: '• If stuck, it steps down: blank → first words given → blanks → couldn\'t',
+        lt_stop_title: 'Start this part by re-learning', lt_stop_body: 'The first three verses didn\'t come out even with blanks. End the test here and re-learn first?',
+        lt_stop_end: 'End here', lt_stop_go: 'Continue',
         lt_sheet_btn: '🎓 Level test', lt_sheet_last: 'Last test {d} · clean {c}/{n}', lt_sheet_none: 'Does this chapter really come out now?',
         fp_pick_title: '🔑 Trial of the First Words · Ch.{ch}', fp_pick_desc: 'A verse is remembered like a chain — once the first words come, the rest follows. Look at the reference and write the opening words. Verses come in shuffled order.',
         fp_lv1: 'Easy', fp_lv2: 'Normal', fp_lv3: 'Hard', fp_lv1_d: 'first word', fp_lv2_d: 'first two words', fp_lv3_d: 'first three words',
@@ -27402,6 +27412,7 @@ function getHardshipElapsedSeconds() {
 
 function proceedHardshipToNextVerse() {
     if (!window.isHardshipMode || !hardshipState.active || !hardshipState.awaitingNext) return;
+    if (hardshipState.levelTest && hardshipState.ltStopAsk) { hardshipState.ltStopAsk = false; _ltAskStop(); return; }   // 🎓
 
     resumeHardshipTimer();
     hardshipState.awaitingNext = false;
@@ -27578,7 +27589,7 @@ function openLevelTest(chArg) {
             <div class="mode-modal-header"><span class="mode-select-title">${t('lt_intro_title', { ch })}</span><button class="mode-close-btn" onclick="closeLevelTest()">✕</button></div>
             <div class="lt-body">${t('lt_intro_body', { ch, n: ids.length })}</div>
             <div class="lt-frame">${t('lt_intro_frame')}</div>
-            <div class="lt-rules">${t('lt_intro_rules')}</div>
+            <div class="lt-rules">${t('lt_intro_rules')}<br>${t('lt_intro_ladder')}</div>
             <div class="lt-temp ${warm.length ? 'warm' : 'cold'}">${warm.length ? t('lt_intro_warm', { n: warm.length }) : t('lt_intro_cold')}</div>
             ${unitBtns ? `<div class="lt-scope-title">${t('lt_scope')}</div><div class="lt-units">${unitBtns}</div>` : ''}
             <button class="lt-go" onclick="_startLevelTest(${ch}, -1)">${t('lt_scope_all', { n: ids.length })} · ${t('lt_min', { m: mins(ids.length) })}</button>
@@ -27607,43 +27618,76 @@ function _ltNote(id, ok, hints, giveUp) {
     const ch = hardshipState && hardshipState.levelTest, T = ch ? (levelTests[ch] || []).slice(-1)[0] : null;
     if (!T || !id) return;
     const L = (hardshipState.currentVerse ? (getHardshipActiveText(hardshipState.currentVerse) || '') : '').length, rev = hardshipState.revealedHints || [];
-    const c = (!ok || giveUp) ? 0 : !(hints > 0) ? 3 : (hints <= Math.ceil(L * HINT_OK_RATIO)) ? 2 : 1;
+    const st = hardshipState.ltStep || 0;
+    const c = (!ok || giveUp) ? 0 : st === 2 ? 'B' : st === 1 ? 'S' : !(hints > 0) ? 3 : (hints <= Math.ceil(L * HINT_OK_RATIO)) ? 2 : 1;
     T.r[id] = c;
-    if (hints > 0 && rev.length && L > 0 && rev[0] / L < 0.1 && T.s.indexOf(id) < 0) T.s.push(id);   // 첫 힌트가 처음 10% — 시작에서 막힘
+    { const v = Object.values(T.r); if (v.length === 3 && T.n > 3 && v.every(x => x === 0)) hardshipState.ltStopAsk = true; }   // 처음 세 절이 바닥
+    if (st === 0 && hints > 0 && rev.length && L > 0 && rev[0] / L < 0.1 && T.s.indexOf(id) < 0) T.s.push(id);   // 첫 힌트가 처음 10% — 시작에서 막힘
     saveGameData();
 }
 function _ltShowResult(ch) {
     const T = (levelTests[ch] || []).slice(-1)[0]; if (!T) return;
     const ids = getHardshipVerseIdsByChapterRange(ch, ch), done = Object.keys(T.r).length;
     if (!done) return;   // 하나도 안 하고 나갔으면 띄우지 않는다
-    const cnt = [0, 0, 0, 0]; Object.values(T.r).forEach(c => cnt[c]++);
+    const cnt = { 3: 0, 2: 0, 1: 0, S: 0, B: 0, 0: 0 }; Object.values(T.r).forEach(c => { if (c in cnt) cnt[c]++; });
     const warm = new Set(T.w || []);
     const cell = id => { const v = id.split('-')[1], c = T.r[id]; return `<span class="lt-cell ${c == null ? 'cn' : 'c' + c}" title="${ch}:${v}">${v}${warm.has(id) && c != null ? '<i>☀</i>' : ''}</span>`; };
     const lines = [];
     if (cnt[3]) lines.push(t('lt_res_good', { n: cnt[3] }));   // 나온 것 먼저 — 회색만 보고 꺾이지 않게
     if (cnt[0]) lines.push(t('lt_res_next0', { n: cnt[0] }));
     if (cnt[1]) lines.push(t('lt_res_next1', { n: cnt[1] }));
+    if (cnt.B) lines.push(t('lt_res_B', { n: cnt.B }));
+    if (cnt.S) lines.push(t('lt_res_S', { n: cnt.S }));
     if ((T.s || []).length) lines.push(t('lt_res_start', { n: T.s.length }));
     // 바로 누르는 다음 할 일 — 가장 앞쪽의 약한 묶음
     const units = _ltUnits(ch), acts = [];
     const u0 = units.find(u => u.ids.some(id => T.r[id] === 0));
     if (u0) { const first = u0.ids.find(id => T.r[id] === 0); acts.push(`<button class="lt-act" onclick="_ltAct('relearn', '${first}')">${t('lt_btn_relearn', { r: u0.r })}</button>`); }
-    const u1 = units.find(u => u.mid && u.ids.some(id => T.r[id] === 1) && !u.ids.some(id => T.r[id] === 0));
+    const u1 = units.find(u => u.mid && u.ids.some(id => T.r[id] === 1 || T.r[id] === 'B') && !u.ids.some(id => T.r[id] === 0));
     if (u1) acts.push(`<button class="lt-act" onclick="_ltAct('blank', '${u1.mid.id}')">${t('lt_btn_blank', { r: u1.r })}</button>`);
-    if ((T.s || []).length) acts.push(`<button class="lt-act" onclick="_ltAct('fp', '${ch}')">${t('lt_btn_fp', { ch })}</button>`);
+    if ((T.s || []).length || cnt.S) acts.push(`<button class="lt-act" onclick="_ltAct('fp', '${ch}')">${t('lt_btn_fp', { ch })}</button>`);
     let ov = document.getElementById('lt-result');
     if (!ov) { ov = document.createElement('div'); ov.id = 'lt-result'; ov.className = 'modal-overlay'; ov.style.zIndex = '10001'; document.body.appendChild(ov); }
     ov.onclick = e => { if (e.target === ov) ov.style.display = 'none'; };
     ov.innerHTML = `<div class="result-card mode-select-card lt-card" onclick="event.stopPropagation()">
             <div class="mode-modal-header"><span class="mode-select-title">${t('lt_res_title', { ch })}</span><button class="mode-close-btn" onclick="document.getElementById('lt-result').style.display='none'">✕</button></div>
             ${done < ids.length ? `<div class="lt-partial">${t('lt_res_partial', { done, n: ids.length })}</div>` : ''}
-            <div class="lt-legend">${[3, 2, 1, 0].map(c => `<span class="lt-cell c${c}"></span>${t('lt_c' + c)} <b>${cnt[c]}</b>`).join(' &nbsp;')}</div>
+            <div class="lt-legend">${[3, 2, 1, 'S', 'B', 0].filter(c => cnt[c] || c === 3 || c === 0).map(c => `<span class="lt-cell c${c}"></span>${t('lt_c' + c)} <b>${cnt[c]}</b>`).join(' &nbsp;')}</div>
             <div class="lt-grid">${ids.map(cell).join('')}</div>
             ${warm.size ? `<div class="lt-note">${t('lt_res_warm')}</div>` : ''}
             <div class="lt-next">${lines.map(l => `<div>• ${l}</div>`).join('')}</div>
             ${acts.length ? `<div class="lt-acts">${acts.join('')}</div>` : ''}
             <div class="lt-note">${t('lt_res_plan')}</div>
             <button class="lt-go" onclick="document.getElementById('lt-result').style.display='none'">${t('lt_res_ok')}</button></div>`;
+    ov.style.display = 'flex';
+    setTimeout(() => ov.classList.add('active'), 10);
+}
+/* 🎓 한 단계 아래로 — 1: 첫 세 단어를 입력칸에 채워 주고 이어 쓰기 · 2: 빈칸(글자 칸) 모드. 같은 절, 정답은 아직 안 보여준다 */
+function _ltStepDown() {
+    const hs = hardshipState; if (!hs || !hs.currentVerse) return;
+    hs.ltStep = (hs.ltStep || 0) + 1;
+    if (hs.ltStep === 1) {
+        const ph = firstPhraseOf(getHardshipActiveText(hs.currentVerse) || '', 3, currentLang === 'en');
+        hs.ltGiven = ph ? ph + ' ' : '';
+        hs.memoryTypedText = hs.ltGiven;
+        showToast(t('lt_step1'));
+    } else {
+        hs.ultimateMemoryMode = false;
+        hs.memoryTypedText = hs.ltGiven || '';
+        showToast(t('lt_step2'));
+    }
+    hs.wrongSlots = []; hs.feedback = null;
+    renderHardshipMemoryVerse();
+    updateBattleUI();
+}
+function _ltAskStop() {
+    let ov = document.getElementById('lt-stop');
+    if (!ov) { ov = document.createElement('div'); ov.id = 'lt-stop'; ov.className = 'modal-overlay'; ov.style.zIndex = '10002'; document.body.appendChild(ov); }
+    ov.innerHTML = `<div class="result-card mode-select-card lt-card" onclick="event.stopPropagation()">
+            <div class="mode-modal-header"><span class="mode-select-title">${t('lt_stop_title')}</span></div>
+            <div class="lt-body">${t('lt_stop_body')}</div>
+            <button class="lt-go" onclick="document.getElementById('lt-stop').style.display='none'; quitGame('map')">${t('lt_stop_end')}</button>
+            <button class="lt-later" onclick="document.getElementById('lt-stop').style.display='none'; proceedHardshipToNextVerse()">${t('lt_stop_go')}</button></div>`;
     ov.style.display = 'flex';
     setTimeout(() => ov.classList.add('active'), 10);
 }
@@ -28695,6 +28739,8 @@ function loadNextHardshipVerse() {
     hardshipState.revealedHints = [];
     hardshipState.memoryTypedText = '';
     hardshipState.verseChoices = [];
+    hardshipState.ltStep = 0; hardshipState.ltGiven = '';   // 🎓 단계식 — 절마다 백지부터
+    if (hardshipState.levelTest) hardshipState.ultimateMemoryMode = true;
 
     if (hardshipState.currentVerse) {
         hardshipState.memorySlots = getHardshipActiveText(hardshipState.currentVerse).split('').map(character => {
@@ -29661,6 +29707,7 @@ function _isEmbeddedBlankSession() {
 function giveUpHardshipMemoryVerse() {
     if (!window.isHardshipMode || hardshipState.mode !== 'memory' ||
         hardshipState.locked || !hardshipState.currentVerse) return;
+    if (hardshipState.levelTest && (hardshipState.ltStep || 0) < 2) { _ltStepDown(); return; }   // 🎓 바로 끝내지 않고 한 단계 아래로
 
     const hiddenInput = document.getElementById('hidden-typing-input');
     if (hiddenInput && typeof hiddenInput.blur === 'function') hiddenInput.blur();
@@ -29947,7 +29994,7 @@ function handleHardshipMemoryInput(event) {
 function resetHardshipMemoryInputs() {
     if (!window.isHardshipMode || hardshipState.mode !== 'memory' || hardshipState.locked || !hardshipState.currentVerse) return;
 
-    hardshipState.memoryTypedText = '';
+    hardshipState.memoryTypedText = (hardshipState.levelTest && hardshipState.ltGiven) || '';   // 🎓 준 첫 마디는 남긴다
 
     renderHardshipMemoryVerse();
 }
@@ -30367,6 +30414,7 @@ function _logRecallAttempt(stageId, ok, hints, mode, extra, prev, training) {
         if (extra && extra.lv) e.lv = extra.lv;
         if (hs.blankFirst) e.bf = 1;   // 「간격 3일 → 백지」 규칙으로 백지가 된 복습(10/4~)   // 🔑 첫 마디의 고난 난이도(1 쉬움 · 2 보통 · 3 어려움) — 10/4 빠져 있던 것
         if (hs.eventId) e.ev = String(hs.eventId);
+        if (hs.levelTest) e.lts = hs.ltStep || 0;   // 🎓 레벨 테스트 단계(0 백지 · 1 첫 마디 줌 · 2 빈칸)
         if (training) e.tr = 1;
         if (prev) {
             e.lp = prev.lastPass || 0; e.la = prev.lastAt || 0; e.lb = prev.lastBlankPass || 0;
@@ -30616,6 +30664,13 @@ function submitHardshipMemoryGuess() {
         return;
     }
 
+    // 🎓 레벨 테스트 — 틀려도 정답을 보여주지 않고 한 단계 아래로(빈칸까지)
+    if (hardshipState.levelTest && (hardshipState.ltStep || 0) < 2) {
+        hardshipState.locked = false; hardshipState.awaitingNext = false; hardshipState.answeredCount -= 1;
+        resumeHardshipTimer();
+        _ltStepDown();
+        return;
+    }
     // 백지 산출 실패 — 이 구절은 아직 단서 없이 나오지 않는다
     recordVerseRecall(_currentHardshipStageId(), false, (hardshipState.revealedHints || []).length, 'memory');
     wrongCount += 1;

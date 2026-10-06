@@ -7460,3 +7460,6 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .sheet-lt-row { display: flex; align-items: center; gap: 8px; margin: 6px 16px 0; }
 .sheet-lt-btn { flex: 0 0 auto; padding: 6px 12px; border-radius: 999px; border: 1.5px solid #8b7cff; background: rgba(108, 99, 255, 0.12); color: #6c63ff; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
 .sheet-lt-sub { font-size: 0.78rem; color: #8a94a0; min-width: 0; }
+
+.lt-cell.cS { background: #5dade2; color: #0b2c42; }
+.lt-cell.cB { background: #a569bd; color: #fff; }
