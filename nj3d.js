@@ -2121,6 +2121,12 @@
 
         // ══ 🎣 낚시 — 맑아진 물칸 위에서 그물을 던지고, 걸리면 빈칸 하나 ══
         const fishBtn = ov.querySelector('.nj3d-fishbtn'), fishQ = ov.querySelector('.nj3d-fishq');
+        /* 👻 유령 클릭 막기 (10/6 사용자: 생물이 문제 없이 🐟을 주거나, 첫 시도인데 「두 번째 기회」가 뜬다).
+           생물·조개는 손을 뗄 때(pointerup) 문제 창을 바로 띄우는데, 브라우저가 그 직후 같은 자리에 click을 한 번 더 보낸다 —
+           그 자리에 막 뜬 보기 버튼이 있으면 눌린 것이 된다(맞으면 바로 🐟, 틀리면 바로 두 번째 기회). 창이 열리고 0.4초는 보기를 받지 않는다 */
+        let fishQOpenAt = 0;
+        new MutationObserver(() => { if (!fishQ.hidden) fishQOpenAt = performance.now(); }).observe(fishQ, { attributes: true, attributeFilter: ['hidden'], childList: true });
+        fishQ.addEventListener('click', e => { if (performance.now() - fishQOpenAt < 400 && e.target.closest('button')) { e.stopPropagation(); e.preventDefault(); } }, true);
         const FISH_COST = (typeof NJ_FISH_COST !== 'undefined') ? NJ_FISH_COST : 2000;
         // 발밑 물칸 — 2 격자에 담아 둘레 아홉 칸만 본다(10/5: 칸이 세계 좌표가 되어). 물칸 띠 너머 「먼 바다」면 없음
         const CELL_H = new Map(); SG.water.forEach((c, i) => { const k = Math.floor(c.x / 2) + ',' + Math.floor(c.z / 2); (CELL_H.get(k) || CELL_H.set(k, []).get(k)).push(i); });
