@@ -819,6 +819,11 @@ const LANG = {
         lt_res_next3: '깨끗한 {n}절 → 지금은 점검만',
         lt_res_plan: '이 결과에 맞춘 장별 마스터플랜은 곧 이어져요',
         lt_res_ok: '확인',
+        lt_intro_frame: '처음엔 회색이 많아도 정상이에요 — <b>어디서 시작할지</b> 찾는 시험이에요',
+        lt_scope: '어디를 볼까요?', lt_unit_n: '{n}절', lt_scope_all: '장 전체 {n}절', lt_scope_unit: '{r}절', lt_min: '약 {m}분',
+        lt_res_good: '✅ 깨끗하게 나온 절 {n}개',
+        lt_btn_relearn: '📖 {r}절 다시 넣기', lt_btn_blank: '✍️ {r}절 빈칸으로 다지기', lt_btn_fp: '🔑 {ch}장 첫 마디',
+        lt_sheet_btn: '🎓 레벨 테스트', lt_sheet_last: '지난 테스트 {d} · 깨끗 {c}/{n}', lt_sheet_none: '지금 이 장이 정말 나오는지',
         fp_pick_title: '🔑 첫 마디의 고난 · {ch}장', fp_pick_desc: '구절은 사슬처럼 외워져서, 첫 마디만 떠오르면 나머지가 따라와요. 주소만 보고 첫 마디를 써 보세요. 순서는 섞여 나와요.',
         fp_lv1: '쉬움', fp_lv2: '보통', fp_lv3: '어려움', fp_lv1_d: '첫 단어', fp_lv2_d: '앞에서 세 글자가 찰 때까지', fp_lv3_d: '앞 세 단어',
         fp_embed: '{ch}장 · 첫 마디의 고난 ({lv})', fp_note_btn: '📒 첫 마디 오답노트 · {n}절', fp_note_embed: '📒 첫 마디 오답노트',
@@ -2054,6 +2059,11 @@ const LANG = {
         lt_res_next3: '{n} clean verse(s) → just check-ups for now',
         lt_res_plan: 'A chapter master plan based on this result is coming next',
         lt_res_ok: 'OK',
+        lt_intro_frame: 'Lots of grey at first is normal — this test finds <b>where to start</b>',
+        lt_scope: 'What to test?', lt_unit_n: '{n} vv.', lt_scope_all: 'Whole chapter · {n}', lt_scope_unit: 'vv. {r}', lt_min: '~{m} min',
+        lt_res_good: '✅ {n} verse(s) came out clean',
+        lt_btn_relearn: '📖 Re-learn vv. {r}', lt_btn_blank: '✍️ Fill-in vv. {r}', lt_btn_fp: '🔑 Ch. {ch} first words',
+        lt_sheet_btn: '🎓 Level test', lt_sheet_last: 'Last test {d} · clean {c}/{n}', lt_sheet_none: 'Does this chapter really come out now?',
         fp_pick_title: '🔑 Trial of the First Words · Ch.{ch}', fp_pick_desc: 'A verse is remembered like a chain — once the first words come, the rest follows. Look at the reference and write the opening words. Verses come in shuffled order.',
         fp_lv1: 'Easy', fp_lv2: 'Normal', fp_lv3: 'Hard', fp_lv1_d: 'first word', fp_lv2_d: 'first two words', fp_lv3_d: 'first three words',
         fp_embed: 'Ch.{ch} · First words ({lv})', fp_note_btn: '📒 First-words notebook · {n} verses', fp_note_embed: '📒 First-words notebook',
@@ -10776,6 +10786,7 @@ function openStageSheet(chapterData) {
     const sheet = document.getElementById('stage-sheet');
     document.getElementById('sheet-chapter-title').innerText = t('label_chapter_header', { num: chapterData.id });
     _renderSheetBlankEvidence(chapterData);
+    _renderSheetLevelTest(chapterData);   // 🎓
 
     const list = document.getElementById('stage-list-area');
     list.innerHTML = "";
@@ -27532,39 +27543,64 @@ function _ltWarmIds(ids) {
     const lim = Date.now() - LT_COLD_H * 3600e3;
     return ids.filter(id => Math.max(_verseSeenGet(id), (typeof stageLastClear !== 'undefined' && stageLastClear[id]) || 0) > lim);
 }
-function openLevelTest() {
-    const ch = window.hardshipForcedChapter; if (ch == null) return;
+/* 묶음(중간점검 구간) — 외운 절만. [{ r: '1~4', ids, mid: 중간점검 스테이지|null }] */
+function _ltUnits(ch) {
+    const chData = (typeof gameData !== 'undefined') ? gameData.find(c => c.id === ch) : null;
+    if (!chData) return [];
+    const learned = id => (stageMastery[id] || 0) > 0;
+    const gb = (typeof groupStagesByMidBoss === 'function') ? groupStagesByMidBoss(chData) : null;   // { groups, boss } | null
+    const normals = chData.stages.filter(x => x.type === 'normal');
+    let groups = gb && Array.isArray(gb.groups) ? gb.groups.slice() : [];
+    const inG = new Set(); groups.forEach(g => (g.stages || []).forEach(x => inG.add(String(x.id))));
+    const rest = normals.filter(x => !inG.has(String(x.id)));   // 마지막 중간점검 뒤에 남은 절
+    if (rest.length) groups.push({ stages: rest, midBoss: null });
+    const out = [];
+    groups.forEach(g => {
+        const ids = (g.stages || []).map(x => String(x.id)).filter(id => /^\d+-\d+$/.test(id) && learned(id));
+        if (!ids.length) return;
+        const vs = ids.map(id => parseInt(id.split('-')[1], 10));
+        out.push({ r: Math.min(...vs) === Math.max(...vs) ? String(vs[0]) : `${Math.min(...vs)}~${Math.max(...vs)}`, ids, mid: g.midBoss || null });
+    });
+    return out;
+}
+function _ltLearnedIds(ch) { return _ltUnits(ch).reduce((a, u) => a.concat(u.ids), []); }
+function openLevelTest(chArg) {
+    const ch = (chArg != null) ? chArg : window.hardshipForcedChapter; if (ch == null) return;
     _hideHardshipModeModal();
-    const ids = getHardshipVerseIdsByChapterRange(ch, ch);
+    const units = _ltUnits(ch), ids = _ltLearnedIds(ch);
     if (!ids.length) { alert(t('alert_training_no_data', { ch })); return; }
-    const warm = _ltWarmIds(ids);
+    const warm = _ltWarmIds(ids), mins = n => Math.max(1, Math.round(n * 0.6));
     let ov = document.getElementById('lt-overlay');
     if (!ov) { ov = document.createElement('div'); ov.id = 'lt-overlay'; ov.className = 'modal-overlay'; ov.style.zIndex = '10000'; document.body.appendChild(ov); }
     ov.onclick = e => { if (e.target === ov) closeLevelTest(); };
+    const unitBtns = units.length > 1 ? units.map((u, i) => `<button class="lt-unit" onclick="_startLevelTest(${ch}, ${i})">${t('lt_scope_unit', { r: u.r })}<small>${t('lt_unit_n', { n: u.ids.length })} · ${t('lt_min', { m: mins(u.ids.length) })}</small></button>`).join('') : '';
     ov.innerHTML = `<div class="result-card mode-select-card lt-card" onclick="event.stopPropagation()">
             <div class="mode-modal-header"><span class="mode-select-title">${t('lt_intro_title', { ch })}</span><button class="mode-close-btn" onclick="closeLevelTest()">✕</button></div>
             <div class="lt-body">${t('lt_intro_body', { ch, n: ids.length })}</div>
+            <div class="lt-frame">${t('lt_intro_frame')}</div>
             <div class="lt-rules">${t('lt_intro_rules')}</div>
             <div class="lt-temp ${warm.length ? 'warm' : 'cold'}">${warm.length ? t('lt_intro_warm', { n: warm.length }) : t('lt_intro_cold')}</div>
-            <button class="lt-go" onclick="_startLevelTest(${ch})">${t('lt_start')}</button>
+            ${unitBtns ? `<div class="lt-scope-title">${t('lt_scope')}</div><div class="lt-units">${unitBtns}</div>` : ''}
+            <button class="lt-go" onclick="_startLevelTest(${ch}, -1)">${t('lt_scope_all', { n: ids.length })} · ${t('lt_min', { m: mins(ids.length) })}</button>
             <button class="lt-later" onclick="closeLevelTest()">${t('lt_later')}</button></div>`;
     ov.style.display = 'flex';
     setTimeout(() => ov.classList.add('active'), 10);
 }
 function closeLevelTest() { const ov = document.getElementById('lt-overlay'); if (ov) { ov.classList.remove('active'); ov.style.display = 'none'; } window.hardshipForcedChapter = null; }
-function _startLevelTest(ch) {
-    const ids = getHardshipVerseIdsByChapterRange(ch, ch);
+function _startLevelTest(ch, unitIdx) {
+    const units = _ltUnits(ch), u = (unitIdx != null && unitIdx >= 0) ? units[unitIdx] : null;
+    const ids = u ? u.ids : _ltLearnedIds(ch);
     const ov = document.getElementById('lt-overlay'); if (ov) { ov.classList.remove('active'); ov.style.display = 'none'; }
     window.hardshipForcedChapter = null;
     if (!ids.length) return;
     const list = Array.isArray(levelTests[ch]) ? levelTests[ch] : [];
-    list.push({ at: Date.now(), n: ids.length, r: {}, s: [], w: _ltWarmIds(ids) });
+    list.push({ at: Date.now(), n: ids.length, u: u ? u.r : 'all', r: {}, s: [], w: _ltWarmIds(ids) });
     levelTests[ch] = list.slice(-5);
     saveGameData();
     window.hardshipOrigin = 'map';
     selectedHardshipOrderType = 'random';
     selectedHardshipUltimate = true;
-    _pendingHardshipEmbed = { label: t('lt_embed', { ch }), levelTest: ch };
+    _pendingHardshipEmbed = { label: t('lt_embed', { ch }) + (u ? ` · ${u.r}` : ''), levelTest: ch };
     startHardshipSession('memory', ids);
 }
 function _ltNote(id, ok, hints, giveUp) {
@@ -27584,10 +27620,17 @@ function _ltShowResult(ch) {
     const warm = new Set(T.w || []);
     const cell = id => { const v = id.split('-')[1], c = T.r[id]; return `<span class="lt-cell ${c == null ? 'cn' : 'c' + c}" title="${ch}:${v}">${v}${warm.has(id) && c != null ? '<i>☀</i>' : ''}</span>`; };
     const lines = [];
+    if (cnt[3]) lines.push(t('lt_res_good', { n: cnt[3] }));   // 나온 것 먼저 — 회색만 보고 꺾이지 않게
     if (cnt[0]) lines.push(t('lt_res_next0', { n: cnt[0] }));
     if (cnt[1]) lines.push(t('lt_res_next1', { n: cnt[1] }));
     if ((T.s || []).length) lines.push(t('lt_res_start', { n: T.s.length }));
-    if (cnt[3]) lines.push(t('lt_res_next3', { n: cnt[3] }));
+    // 바로 누르는 다음 할 일 — 가장 앞쪽의 약한 묶음
+    const units = _ltUnits(ch), acts = [];
+    const u0 = units.find(u => u.ids.some(id => T.r[id] === 0));
+    if (u0) { const first = u0.ids.find(id => T.r[id] === 0); acts.push(`<button class="lt-act" onclick="_ltAct('relearn', '${first}')">${t('lt_btn_relearn', { r: u0.r })}</button>`); }
+    const u1 = units.find(u => u.mid && u.ids.some(id => T.r[id] === 1) && !u.ids.some(id => T.r[id] === 0));
+    if (u1) acts.push(`<button class="lt-act" onclick="_ltAct('blank', '${u1.mid.id}')">${t('lt_btn_blank', { r: u1.r })}</button>`);
+    if ((T.s || []).length) acts.push(`<button class="lt-act" onclick="_ltAct('fp', '${ch}')">${t('lt_btn_fp', { ch })}</button>`);
     let ov = document.getElementById('lt-result');
     if (!ov) { ov = document.createElement('div'); ov.id = 'lt-result'; ov.className = 'modal-overlay'; ov.style.zIndex = '10001'; document.body.appendChild(ov); }
     ov.onclick = e => { if (e.target === ov) ov.style.display = 'none'; };
@@ -27598,10 +27641,35 @@ function _ltShowResult(ch) {
             <div class="lt-grid">${ids.map(cell).join('')}</div>
             ${warm.size ? `<div class="lt-note">${t('lt_res_warm')}</div>` : ''}
             <div class="lt-next">${lines.map(l => `<div>• ${l}</div>`).join('')}</div>
+            ${acts.length ? `<div class="lt-acts">${acts.join('')}</div>` : ''}
             <div class="lt-note">${t('lt_res_plan')}</div>
             <button class="lt-go" onclick="document.getElementById('lt-result').style.display='none'">${t('lt_res_ok')}</button></div>`;
     ov.style.display = 'flex';
     setTimeout(() => ov.classList.add('active'), 10);
+}
+/* 결과 창의 바로 가기 — 다시 넣기(그 절의 처음 외우기 코스) · 빈칸(그 구간 중간점검 빈칸) · 첫 마디(그 장) */
+function _ltAct(kind, arg) {
+    const ov = document.getElementById('lt-result'); if (ov) ov.style.display = 'none';
+    if (kind === 'relearn') { if (typeof startTraining === 'function') startTraining(String(arg), 'full-new'); return; }
+    if (kind === 'blank') {
+        const ch = parseInt(String(arg).split('-')[0], 10), chData = gameData.find(c => c.id === ch), st = chData && chData.stages.find(x => String(x.id) === String(arg));
+        if (st) _startMidBossBlank(st, false);
+        return;
+    }
+    if (kind === 'fp') { window.hardshipForcedChapter = parseInt(arg, 10); openFirstPhrasePick(); }
+}
+/* 장 시트 머리의 🎓 입구 — 고난 길(보스전을 깬 장)에만 있으면 고난을 안 쓰는 사람은 못 찾는다(10/6 시뮬레이션). 외운 절 3개부터 */
+function _renderSheetLevelTest(chapterData) {
+    const ev = document.getElementById('sheet-blank-evidence'); if (!ev) return;
+    let el = document.getElementById('sheet-lt-row');
+    if (!el) { el = document.createElement('div'); el.id = 'sheet-lt-row'; el.className = 'sheet-lt-row'; ev.parentNode.insertBefore(el, ev); }
+    const ch = chapterData && chapterData.id;
+    const n = typeof ch === 'number' ? _ltLearnedIds(ch).length : 0;
+    if (n < 3) { el.style.display = 'none'; el.innerHTML = ''; return; }
+    const T = (levelTests[ch] || []).slice(-1)[0];
+    const sub = T ? t('lt_sheet_last', { d: new Date(T.at).toLocaleDateString(currentLang === 'en' ? 'en-US' : 'ko-KR', { month: 'numeric', day: 'numeric' }), c: Object.values(T.r || {}).filter(c => c === 3).length, n: T.n || Object.keys(T.r || {}).length }) : t('lt_sheet_none');
+    el.innerHTML = `<button class="sheet-lt-btn" onclick="openLevelTest(${ch})">${t('lt_sheet_btn')}</button><span class="sheet-lt-sub">${sub}</span>`;
+    el.style.display = '';
 }
 function openFirstPhrasePick() {
     const ch = window.hardshipForcedChapter; if (ch == null) return;

@@ -7428,7 +7428,7 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .promise-later { margin-top: 8px; width: 100%; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: #e8e0cc; border-radius: 12px; padding: 10px; font-size: 0.92rem; cursor: pointer; }
 
 /* ── 🎓 레벨 테스트 (2026-10-06) ─────────────────────────────────────────── */
-.lt-card { max-width: 380px; }
+.lt-card { max-width: 380px; max-height: calc(100dvh - 32px); overflow-y: auto; }
 .lt-body { font-size: 0.95rem; line-height: 1.65; color: #ece9f5; margin: 4px 0 10px; }
 .lt-rules { font-size: 0.85rem; line-height: 1.7; color: #cfc9e0; background: rgba(255, 255, 255, 0.06); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
 .lt-temp { font-size: 0.85rem; line-height: 1.6; border-radius: 10px; padding: 9px 12px; margin-bottom: 14px; }
@@ -7449,3 +7449,14 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .lt-cell.cn { background: transparent; border: 1px dashed rgba(255, 255, 255, 0.3); color: #8d93a3; }
 .lt-next { font-size: 0.88rem; line-height: 1.7; color: #ece9f5; margin: 6px 0; }
 .lt-note { font-size: 0.8rem; color: #a9a4ba; line-height: 1.5; margin: 6px 0 12px; }
+
+.lt-frame { font-size: 0.85rem; line-height: 1.6; color: #d9d2f5; background: rgba(108, 99, 255, 0.16); border-radius: 10px; padding: 9px 12px; margin-bottom: 10px; }
+.lt-scope-title { font-size: 0.82rem; color: #a9a4ba; margin: 2px 0 6px; }
+.lt-units { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; margin-bottom: 10px; }
+.lt-unit { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 9px 6px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(255, 255, 255, 0.05); color: #ece9f5; font-size: 0.9rem; font-weight: 700; cursor: pointer; }
+.lt-unit small { font-size: 0.72rem; font-weight: 500; color: #a9a4ba; }
+.lt-acts { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 4px; }
+.lt-act { width: 100%; padding: 11px; border-radius: 12px; border: 1.5px solid #8b7cff; background: rgba(108, 99, 255, 0.14); color: #e4e0ff; font-size: 0.92rem; font-weight: 700; cursor: pointer; text-align: left; }
+.sheet-lt-row { display: flex; align-items: center; gap: 8px; margin: 6px 16px 0; }
+.sheet-lt-btn { flex: 0 0 auto; padding: 6px 12px; border-radius: 999px; border: 1.5px solid #8b7cff; background: rgba(108, 99, 255, 0.12); color: #6c63ff; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+.sheet-lt-sub { font-size: 0.78rem; color: #8a94a0; min-width: 0; }
