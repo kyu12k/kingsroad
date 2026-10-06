@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <!-- ★ 반드시 첫 스크립트: 전역 Date를 서버 시각으로 보정한다 (clock.js 주석 참조) -->
-    <script src="clock.js?v=20261006j"></script>
+    <script src="clock.js?v=20261006k"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>King's Road - 요한계시록 암송</title>
 
@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
     <!-- image_0.webp is inlined below; preload removed -->
-    <link rel="stylesheet" href="style.css?v=20261006j">
+    <link rel="stylesheet" href="style.css?v=20261006k">
 
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-TEVW49QB45"></script>
@@ -740,6 +740,31 @@
             </div>
             <script>
                 const NOTICES = [
+                    {
+                        date: '2026-10-06',
+                        type: 'patch',
+                        title: '🎓 레벨 테스트 · 🙋 「모르겠어요」가 잘 보이게',
+                        titleEn: '🎓 Level test · 🙋 "I don’t know" is easier to see',
+                        content: `
+<div style="padding:4px 0; line-height:1.8;">
+  <p style="color:#555; margin-bottom:6px;"><strong>🎓 레벨 테스트</strong></p>
+  <div style="background:#efeafd; border-radius:12px; padding:12px 14px; margin-bottom:12px;">
+    <p style="color:#666; font-size:0.92em; margin:0;">• 고난 길에서 장을 고르면 「🎓 레벨 테스트」가 있어요. 그 장 전체를 <strong>주소만 보고 무작위 백지</strong>로 써요</p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 복습 단계·백지 레벨과 상관없이 <strong>지금 실제로 나오는지</strong>만 재요 — 결과는 절마다 깨끗·조금 막힘·힌트 많이·못 씀</p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 오늘 그 장을 아직 안 봤을 때(<strong>앱을 열자마자</strong>) 하면 가장 정확해요. 시험이라 승점·보석은 없어요</p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 결과에 맞춘 장별 마스터플랜이 곧 이어져요</p>
+  </div>
+  <p style="color:#555; margin-bottom:6px;"><strong>🙋 「모르겠어요」</strong></p>
+  <div style="background:#f4f6f8; border-radius:12px; padding:12px 14px; margin-bottom:12px;">
+    <p style="color:#666; font-size:0.92em; margin:0;">• 키보드에 가려 안 보이던 「모르겠어요」를 💡 힌트처럼 떠 있는 버튼으로 바꿨어요 (왼쪽)</p>
+  </div>
+</div>`,
+                        contentEn: `
+<div style="padding:4px 0; line-height:1.8;">
+  <p style="color:#666; font-size:0.92em; margin:0;">• 🎓 Level test: pick a chapter in the Trials and write the whole chapter blank from the reference only, in random order. It ignores review steps and blank levels — it measures what really comes out now. Most accurate right after opening the app. No points or gems. A chapter master plan comes next</p>
+  <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 🙋 "I don’t know" is now a floating button (left), no longer hidden by the keyboard</p>
+</div>`
+                    },
                     {
                         date: '2026-10-06',
                         type: 'patch',
@@ -3876,6 +3901,15 @@
                 </div>
             </button>
 
+            <!-- 🎓 레벨 테스트 — 장이 정해졌을 때만 보인다(_fpModalRefresh) -->
+            <button id="lt-btn" class="mode-btn hardship-mode-btn hardship-mode-s" style="display:none;" onclick="openLevelTest()">
+                <div class="mode-icon">🎓</div>
+                <div class="mode-info">
+                    <div class="mode-title" data-i18n="lt_title">레벨 테스트</div>
+                    <div class="mode-desc" data-i18n="lt_desc">지금 이 장이 정말 얼마나 나오나 — 주소만 보고 무작위 백지</div>
+                </div>
+            </button>
+
             <button class="mode-btn hardship-mode-btn hardship-mode-c" onclick="startHardshipFromModal('endurance')">
                 <div class="mode-icon">🕊️</div>
                 <div class="mode-info">
@@ -4032,7 +4066,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="bible_en.js"></script>
-    <script src="game.js?v=20261006j"></script>
+    <script src="game.js?v=20261006k"></script>
     <script>
 
         /* =========================================

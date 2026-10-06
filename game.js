@@ -803,6 +803,22 @@ const LANG = {
         clear_review_hold: '✍️ 이번엔 막혔으니 복습 단계는 그대로예요 — 내일 다시 백지로 확인해요',
         bso_blank_reviews: '✍️ <b>백지</b>로 하면 복습 차례 <b>{n}절</b>이 함께 처리돼요 (복습 간격이 3일이 된 절은 백지로만)',
         fp_title: '첫 마디의 고난', fp_desc: '장·절을 보고 첫 마디만 쓰기 · 쉬움·보통·어려움',
+        lt_title: '레벨 테스트', lt_desc: '지금 이 장이 정말 얼마나 나오나 — 주소만 보고 무작위 백지',
+        lt_intro_title: '🎓 {ch}장 레벨 테스트', lt_embed: '🎓 {ch}장 레벨 테스트',
+        lt_intro_body: '{ch}장 <b>{n}절</b>을 주소만 보고 <b>무작위 순서</b>로 백지로 써요.<br>복습 단계·백지 레벨과는 상관없이 <b>지금 실제로 나오는지</b>만 재요.',
+        lt_intro_rules: '• 모르면 망설이지 말고 <b>🙋 모르겠어요</b> — 그게 가장 정확한 답이에요<br>• 막히면 💡 힌트를 써도 돼요(얼마나 썼는지도 기록돼요)<br>• 시험이라 승점·보석은 없어요. 원문을 보지 않는 게 약속이에요<br>• 중간에 나가도 그때까지 결과는 남아요',
+        lt_intro_warm: '☀️ 오늘 이 장 <b>{n}절</b>을 이미 봤어요. 본 절은 기억이 따뜻해서 실제보다 잘 나와요 — <b>내일 아침 앱을 열자마자</b> 하면 가장 정확해요',
+        lt_intro_cold: '❄️ 오늘 이 장을 아직 안 봤어요 — 지금이 가장 정확한 때예요',
+        lt_start: '시작하기', lt_later: '다음에',
+        lt_res_title: '🎓 {ch}장 레벨 테스트 결과', lt_res_partial: '{done}/{n}절까지 했어요',
+        lt_c3: '깨끗', lt_c2: '조금 막힘', lt_c1: '힌트 많이', lt_c0: '못 씀', lt_cn: '안 함',
+        lt_res_start: '🔑 시작에서 막힌 절 {n}개 — 첫 마디부터 잡으면 빨라져요',
+        lt_res_warm: '☀️ 표시는 오늘 이미 본 절(따뜻함) — 실제보다 잘 나왔을 수 있어요',
+        lt_res_next0: '못 쓴 {n}절 → 원문·녹음으로 <b>다시 넣기</b>부터',
+        lt_res_next1: '힌트 많이 쓴 {n}절 → <b>빈칸</b>으로 다지고 다음 날 백지',
+        lt_res_next3: '깨끗한 {n}절 → 지금은 점검만',
+        lt_res_plan: '이 결과에 맞춘 장별 마스터플랜은 곧 이어져요',
+        lt_res_ok: '확인',
         fp_pick_title: '🔑 첫 마디의 고난 · {ch}장', fp_pick_desc: '구절은 사슬처럼 외워져서, 첫 마디만 떠오르면 나머지가 따라와요. 주소만 보고 첫 마디를 써 보세요. 순서는 섞여 나와요.',
         fp_lv1: '쉬움', fp_lv2: '보통', fp_lv3: '어려움', fp_lv1_d: '첫 단어', fp_lv2_d: '앞에서 세 글자가 찰 때까지', fp_lv3_d: '앞 세 단어',
         fp_embed: '{ch}장 · 첫 마디의 고난 ({lv})', fp_note_btn: '📒 첫 마디 오답노트 · {n}절', fp_note_embed: '📒 첫 마디 오답노트',
@@ -2022,6 +2038,22 @@ const LANG = {
         clear_review_hold: '✍️ You got stuck this time, so the review step stays — we’ll check it blank again tomorrow',
         bso_blank_reviews: '✍️ On <b>blank</b>, <b>{n}</b> due reviews are done too (verses with a 3-day review interval count only on blank)',
         fp_title: 'Trial of the First Words', fp_desc: 'See the reference, write only the opening words · Easy · Normal · Hard',
+        lt_title: 'Level test', lt_desc: 'How much of this chapter really comes out — reference only, random, blank',
+        lt_intro_title: '🎓 Chapter {ch} level test', lt_embed: '🎓 Ch. {ch} level test',
+        lt_intro_body: 'Write all <b>{n} verses</b> of chapter {ch} from the reference only, in <b>random order</b>.<br>It ignores review steps and blank levels — it only measures <b>what comes out now</b>.',
+        lt_intro_rules: '• If you don\'t know, tap <b>🙋 I don\'t know</b> — that is the most accurate answer<br>• You may use 💡 hints (they are counted)<br>• It\'s a test: no points or gems. Please don\'t look at the text<br>• If you leave midway, results so far are kept',
+        lt_intro_warm: '☀️ You already saw <b>{n}</b> verse(s) of this chapter today — they are warm and come out more easily. <b>Right after opening the app tomorrow morning</b> is most accurate',
+        lt_intro_cold: '❄️ You haven\'t seen this chapter today — now is the most accurate time',
+        lt_start: 'Start', lt_later: 'Later',
+        lt_res_title: '🎓 Chapter {ch} level test', lt_res_partial: 'Done {done}/{n} verses',
+        lt_c3: 'clean', lt_c2: 'a little stuck', lt_c1: 'many hints', lt_c0: 'couldn\'t', lt_cn: 'not done',
+        lt_res_start: '🔑 {n} verse(s) got stuck at the start — learning the first words helps',
+        lt_res_warm: '☀️ = seen today (warm) — may have come out more easily than it really would',
+        lt_res_next0: '{n} verse(s) you couldn\'t write → start by <b>re-learning</b> with text and audio',
+        lt_res_next1: '{n} verse(s) with many hints → firm up with <b>fill-in</b>, blank the next day',
+        lt_res_next3: '{n} clean verse(s) → just check-ups for now',
+        lt_res_plan: 'A chapter master plan based on this result is coming next',
+        lt_res_ok: 'OK',
         fp_pick_title: '🔑 Trial of the First Words · Ch.{ch}', fp_pick_desc: 'A verse is remembered like a chain — once the first words come, the rest follows. Look at the reference and write the opening words. Verses come in shuffled order.',
         fp_lv1: 'Easy', fp_lv2: 'Normal', fp_lv3: 'Hard', fp_lv1_d: 'first word', fp_lv2_d: 'first two words', fp_lv3_d: 'first three words',
         fp_embed: 'Ch.{ch} · First words ({lv})', fp_note_btn: '📒 First-words notebook · {n} verses', fp_note_embed: '📒 First-words notebook',
@@ -2905,6 +2937,8 @@ function _envNote() {
     } catch (err) { }
     return entryEnv;
 }
+/* 🎓 레벨 테스트 기록 — { [장]: [{ at, n, r: { '13-1': 3|2|1|0 }, s: [시작에서 막힌 절], w: [시작 때 따뜻했던 절], done }] } 장마다 최근 5번 */
+let levelTests = {};
 let googleNudge = null;      // 🔒 내 기록 지키기(10/6) { lv: 본 단계(5·20·50·100·200), at, a: 'later'|'tap'|'inapp', ok: 연결된 시각 }
 let onboardPromise = null;   // 🌅 내일의 약속 카드(10/6) { at, id, shown, notif: 'granted'|'denied'|'unsupported'|'ios-guide'|'later', nt: 'HH:MM' }
 const _ONBOARD_ORDER = ['profile', 'map', 'stage', 'cleared'];
@@ -3231,6 +3265,7 @@ loadGameData = function () {
         if (typeof parsed.onboardStep === 'string') onboardStep = parsed.onboardStep;
         onboardPromise = (parsed.onboardPromise && typeof parsed.onboardPromise === 'object') ? parsed.onboardPromise : null;
         googleNudge = (parsed.googleNudge && typeof parsed.googleNudge === 'object') ? parsed.googleNudge : null;
+        levelTests = (parsed.levelTests && typeof parsed.levelTests === 'object') ? parsed.levelTests : {};
         reviewResetLog = Array.isArray(parsed.reviewResetLog) ? parsed.reviewResetLog : [];
         entryEnv = (parsed.entryEnv && typeof parsed.entryEnv === 'object') ? parsed.entryEnv : null;
         bossFirstClearClaimed = new Set(parsed.bossFirstClearClaimed || []);
@@ -12953,6 +12988,8 @@ function clearCheckpoint() {
 
 /* [수정] 게임 종료/포기 (나가기 시 밀린 팝업 확인 기능 추가) */
 function quitGame(destination = 'map') {
+    { const _lt = (window.isHardshipMode && hardshipState && hardshipState.levelTest) || 0;   // 🎓 끝냈든 중간에 나갔든 결과를 보여준다
+      if (_lt) { destination = 'map'; setTimeout(() => _ltShowResult(_lt), 450); } }
     const targetScreen = (destination === 'home') ? 'home' : 'map';
     window.isTrainingMode = false; // 🌟 [추가] 포기하고 나갈 때는 훈련 모드 스위치 확실히 끄기!
     if (typeof resetHardshipSessionState === 'function') {
@@ -13175,6 +13212,7 @@ function saveGameData() {
         onboardStep: onboardStep, // 온보딩 이탈 지점 (profile→map→stage→cleared)
         onboardPromise: onboardPromise, // 🌅 내일의 약속 카드 — 본 때·알림 결과(효과 측정)
         googleNudge: googleNudge, // 🔒 내 기록 지키기 — 본 단계·누른 것·연결 시각(효과 측정)
+        levelTests: levelTests, // 🎓 레벨 테스트 결과(장별 최근 5번)
         reviewResetLog: reviewResetLog, // 🍂 복습 일정을 처음으로 돌린 기록(보너스 선·30일, 효과 측정)
         entryEnv: _envNote(), // 📱 들어온 환경 — 텔레그램 안·설치 앱·브라우저 비율(측정)
         bibleReadLog: bibleReadLog,
@@ -13619,6 +13657,15 @@ function _mergeSaveProgress(target, other) {
         if ((other.njMannaGems | 0) > (target.njMannaGems | 0)) { target.njMannaGems = other.njMannaGems; took++; }
         if ((other.njDexFish | 0) > (target.njDexFish | 0)) { target.njDexFish = other.njDexFish; took++; }
         if (other.onboardPromise && typeof other.onboardPromise === 'object' && (!target.onboardPromise || (!target.onboardPromise.notif && other.onboardPromise.notif))) { target.onboardPromise = other.onboardPromise; took++; }   // 🌅 내일의 약속 — 결과가 있는 쪽
+        if (other.levelTests && typeof other.levelTests === 'object') {   // 🎓 레벨 테스트 — 장마다 시각으로 합집합(같은 시각이면 더 많이 한 쪽)
+            const tl = target.levelTests || (target.levelTests = {});
+            for (const ch in other.levelTests) {
+                const a = Array.isArray(tl[ch]) ? tl[ch] : [], b = Array.isArray(other.levelTests[ch]) ? other.levelTests[ch] : [], byAt = {};
+                [...a, ...b].forEach(x => { if (!x || !x.at) return; const k = x.at, n = Object.keys(x.r || {}).length; if (!byAt[k] || n > Object.keys(byAt[k].r || {}).length) byAt[k] = x; });
+                const m = Object.values(byAt).sort((p, q) => p.at - q.at).slice(-5);
+                if (JSON.stringify(m) !== JSON.stringify(a)) { tl[ch] = m; took++; }
+            }
+        }
         if (Array.isArray(other.reviewResetLog) && other.reviewResetLog.length) {   // 🍂 처음으로 돌린 기록 — 시각으로 합집합
             const seen = new Set((target.reviewResetLog || []).map(e => e.at)), add = other.reviewResetLog.filter(e => e && !seen.has(e.at));
             if (add.length) { target.reviewResetLog = [...(target.reviewResetLog || []), ...add].sort((a, b) => a.at - b.at).slice(-40); took++; }
@@ -27466,12 +27513,95 @@ function _fpNoteIds() { return Object.keys(fpRecall || {}).filter(id => fpRecall
 function _fpModalRefresh() {   // 고난 고르기 창이 열릴 때 — 첫 마디는 장이 정해졌을 때만, 오답노트는 모였을 때만
     const sb = document.getElementById('hardship-start-btn');
     if (sb) sb.style.display = (window.hardshipForcedChapter != null) ? '' : 'none';
+    const lb = document.getElementById('lt-btn'); if (lb) lb.style.display = (window.hardshipForcedChapter != null) ? '' : 'none';   // 🎓
     const nb = document.getElementById('fp-note-btn'), ids = _fpNoteIds();
     if (nb) {
         if (ids.length >= FP_NOTE_MIN) { nb.style.display = ''; nb.textContent = t('fp_note_btn', { n: ids.length }); nb.disabled = false; nb.classList.remove('wait'); }
         else if (ids.length > 0) { nb.style.display = ''; nb.textContent = t('fp_note_hint', { n: FP_NOTE_MIN, have: ids.length }); nb.disabled = true; nb.classList.add('wait'); }
         else nb.style.display = 'none';
     }
+}
+/* ── 🎓 레벨 테스트 (2026-10-06 사용자: "입시학원 레벨 테스트처럼 — 지금까지의 복습·백지 레벨과 상관없이 테스트하고 장별 마스터플랜을") ──
+   장 하나를 **주소만 보고 무작위 백지**로(망각의 고난 엔진). 앱이 고르는 시험이라 '자신 있는 장만 시험하는' 치우침이 없고,
+   측정이라 게임 상태(복습 단계·백지 레벨·보석·승점)는 건드리지 않는다 — 결과는 levelTests와 일지(c:'lt')에만.
+   절마다 3 깨끗(힌트 0) · 2 조금 막힘(힌트 ≤ 글자 20%) · 1 힌트 많이 · 0 못 씀(틀림·모르겠어요). 첫 힌트가 처음 10%면 '시작에서 막힘'.
+   ☀️ 따뜻함: 시작 때 8시간 안에 본 절(👁️ _verseSeenGet · 마지막 클리어) — 결과에 표시하고, 시작 전에 알린다(docs/암송-단계.md 「증거의 온도」).
+   마스터플랜은 다음 단계 — 지금은 결과와 다음에 할 일 한 줄씩 */
+const LT_COLD_H = 8;
+function _ltWarmIds(ids) {
+    const lim = Date.now() - LT_COLD_H * 3600e3;
+    return ids.filter(id => Math.max(_verseSeenGet(id), (typeof stageLastClear !== 'undefined' && stageLastClear[id]) || 0) > lim);
+}
+function openLevelTest() {
+    const ch = window.hardshipForcedChapter; if (ch == null) return;
+    _hideHardshipModeModal();
+    const ids = getHardshipVerseIdsByChapterRange(ch, ch);
+    if (!ids.length) { alert(t('alert_training_no_data', { ch })); return; }
+    const warm = _ltWarmIds(ids);
+    let ov = document.getElementById('lt-overlay');
+    if (!ov) { ov = document.createElement('div'); ov.id = 'lt-overlay'; ov.className = 'modal-overlay'; ov.style.zIndex = '10000'; document.body.appendChild(ov); }
+    ov.onclick = e => { if (e.target === ov) closeLevelTest(); };
+    ov.innerHTML = `<div class="result-card mode-select-card lt-card" onclick="event.stopPropagation()">
+            <div class="mode-modal-header"><span class="mode-select-title">${t('lt_intro_title', { ch })}</span><button class="mode-close-btn" onclick="closeLevelTest()">✕</button></div>
+            <div class="lt-body">${t('lt_intro_body', { ch, n: ids.length })}</div>
+            <div class="lt-rules">${t('lt_intro_rules')}</div>
+            <div class="lt-temp ${warm.length ? 'warm' : 'cold'}">${warm.length ? t('lt_intro_warm', { n: warm.length }) : t('lt_intro_cold')}</div>
+            <button class="lt-go" onclick="_startLevelTest(${ch})">${t('lt_start')}</button>
+            <button class="lt-later" onclick="closeLevelTest()">${t('lt_later')}</button></div>`;
+    ov.style.display = 'flex';
+    setTimeout(() => ov.classList.add('active'), 10);
+}
+function closeLevelTest() { const ov = document.getElementById('lt-overlay'); if (ov) { ov.classList.remove('active'); ov.style.display = 'none'; } window.hardshipForcedChapter = null; }
+function _startLevelTest(ch) {
+    const ids = getHardshipVerseIdsByChapterRange(ch, ch);
+    const ov = document.getElementById('lt-overlay'); if (ov) { ov.classList.remove('active'); ov.style.display = 'none'; }
+    window.hardshipForcedChapter = null;
+    if (!ids.length) return;
+    const list = Array.isArray(levelTests[ch]) ? levelTests[ch] : [];
+    list.push({ at: Date.now(), n: ids.length, r: {}, s: [], w: _ltWarmIds(ids) });
+    levelTests[ch] = list.slice(-5);
+    saveGameData();
+    window.hardshipOrigin = 'map';
+    selectedHardshipOrderType = 'random';
+    selectedHardshipUltimate = true;
+    _pendingHardshipEmbed = { label: t('lt_embed', { ch }), levelTest: ch };
+    startHardshipSession('memory', ids);
+}
+function _ltNote(id, ok, hints, giveUp) {
+    const ch = hardshipState && hardshipState.levelTest, T = ch ? (levelTests[ch] || []).slice(-1)[0] : null;
+    if (!T || !id) return;
+    const L = (hardshipState.currentVerse ? (getHardshipActiveText(hardshipState.currentVerse) || '') : '').length, rev = hardshipState.revealedHints || [];
+    const c = (!ok || giveUp) ? 0 : !(hints > 0) ? 3 : (hints <= Math.ceil(L * HINT_OK_RATIO)) ? 2 : 1;
+    T.r[id] = c;
+    if (hints > 0 && rev.length && L > 0 && rev[0] / L < 0.1 && T.s.indexOf(id) < 0) T.s.push(id);   // 첫 힌트가 처음 10% — 시작에서 막힘
+    saveGameData();
+}
+function _ltShowResult(ch) {
+    const T = (levelTests[ch] || []).slice(-1)[0]; if (!T) return;
+    const ids = getHardshipVerseIdsByChapterRange(ch, ch), done = Object.keys(T.r).length;
+    if (!done) return;   // 하나도 안 하고 나갔으면 띄우지 않는다
+    const cnt = [0, 0, 0, 0]; Object.values(T.r).forEach(c => cnt[c]++);
+    const warm = new Set(T.w || []);
+    const cell = id => { const v = id.split('-')[1], c = T.r[id]; return `<span class="lt-cell ${c == null ? 'cn' : 'c' + c}" title="${ch}:${v}">${v}${warm.has(id) && c != null ? '<i>☀</i>' : ''}</span>`; };
+    const lines = [];
+    if (cnt[0]) lines.push(t('lt_res_next0', { n: cnt[0] }));
+    if (cnt[1]) lines.push(t('lt_res_next1', { n: cnt[1] }));
+    if ((T.s || []).length) lines.push(t('lt_res_start', { n: T.s.length }));
+    if (cnt[3]) lines.push(t('lt_res_next3', { n: cnt[3] }));
+    let ov = document.getElementById('lt-result');
+    if (!ov) { ov = document.createElement('div'); ov.id = 'lt-result'; ov.className = 'modal-overlay'; ov.style.zIndex = '10001'; document.body.appendChild(ov); }
+    ov.onclick = e => { if (e.target === ov) ov.style.display = 'none'; };
+    ov.innerHTML = `<div class="result-card mode-select-card lt-card" onclick="event.stopPropagation()">
+            <div class="mode-modal-header"><span class="mode-select-title">${t('lt_res_title', { ch })}</span><button class="mode-close-btn" onclick="document.getElementById('lt-result').style.display='none'">✕</button></div>
+            ${done < ids.length ? `<div class="lt-partial">${t('lt_res_partial', { done, n: ids.length })}</div>` : ''}
+            <div class="lt-legend">${[3, 2, 1, 0].map(c => `<span class="lt-cell c${c}"></span>${t('lt_c' + c)} <b>${cnt[c]}</b>`).join(' &nbsp;')}</div>
+            <div class="lt-grid">${ids.map(cell).join('')}</div>
+            ${warm.size ? `<div class="lt-note">${t('lt_res_warm')}</div>` : ''}
+            <div class="lt-next">${lines.map(l => `<div>• ${l}</div>`).join('')}</div>
+            <div class="lt-note">${t('lt_res_plan')}</div>
+            <button class="lt-go" onclick="document.getElementById('lt-result').style.display='none'">${t('lt_res_ok')}</button></div>`;
+    ov.style.display = 'flex';
+    setTimeout(() => ov.classList.add('active'), 10);
 }
 function openFirstPhrasePick() {
     const ch = window.hardshipForcedChapter; if (ch == null) return;
@@ -28168,6 +28298,7 @@ function _isResumableHardshipSession() {
         && !hardshipState.fruitKey
         && !hardshipState.blankDueCh
         && !hardshipState.startLv
+        && !hardshipState.levelTest   // 🎓 시험은 한 번에 — 이어하면 그 사이에 원문을 볼 수 있다
         && !hardshipState.giftId);
 }
 
@@ -28300,6 +28431,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
         hardshipState.fpNote = !!embed.fpNote;
         hardshipState.verseCheckIsLearn = !!embed.isLearn;
         hardshipState.eventId = embed.eventId || null;
+        hardshipState.levelTest = embed.levelTest || 0;   // 🎓
         hardshipState.displayTitle = embed.label || '';
     }
 
@@ -28308,7 +28440,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
     hardshipState.ultimateMemoryMode = (mode === 'memory') ? selectedHardshipUltimate : false;
     hardshipState.isRandomOrder = (selectedHardshipOrderType === 'random');
     hardshipState.applyToFree = (window.hardshipOrigin !== 'map');
-    hardshipState.rewardBlocked = false;
+    hardshipState.rewardBlocked = !!hardshipState.levelTest;   // 🎓 레벨 테스트는 승점 없음(시험이 정직하게)
     if (forcedChapter != null) hardshipState.forcedChapter = forcedChapter;
     // 같은 장 같은 고난 반복 계수 — 장 단위 진짜 고난에만. 세션 시작 때 한 번 정한다
     hardshipState.repeatFactor = 1;
@@ -29450,6 +29582,7 @@ function _isEmbeddedBlankSession() {
                                 hardshipState.fruitKey ||
                                 hardshipState.blankDueCh ||
                                 hardshipState.startLv ||
+                                hardshipState.levelTest ||
                                 hardshipState.giftId));
 }
 
@@ -29947,6 +30080,7 @@ function useHardshipMemoryHint() {
    'mid'(중간점검) / 'vc'(결과 화면 확인) / 'quick'(빠른 모드 승급) */
 function _hardshipRecallCtx() {
     if (!hardshipState) return '';
+    if (hardshipState.levelTest) return 'lt';   // 🎓 레벨 테스트
     if (hardshipState.fruitKey) return 'fruit';   // 생명나무 열매 먹기 — 7일 이상 간격의 백지
     if (hardshipState.quickReviewStageId) return 'quick';
     if (hardshipState.verseCheckStageId) return 'vc';
@@ -29967,6 +30101,12 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
         return;
     }
 
+    // 🎓 레벨 테스트 — 측정이라 게임 상태(복습 단계·백지 레벨·보석)는 건드리지 않는다. 테스트 기록과 일지만
+    if (hardshipState && hardshipState.levelTest) {
+        _ltNote(stageId, ok, hints, !!(extra && extra.giveUp));
+        _logRecallAttempt(stageId, ok, hints, 'memory', extra || null, verseRecall[stageId] || null, false);
+        return;
+    }
     // 🔑 첫 마디의 고난 — 구절 전체를 써낸 게 아니므로 백지레벨·암송왕·열매·복습에는 넣지 않는다. 첫 마디 기록(오답노트)과 일지만
     if (hardshipState && hardshipState.startLv) {
         _fpRecord(stageId, ok, hints);
@@ -30465,6 +30605,14 @@ function finishHardshipSession(reason) {
         window.isHardshipMode = false;
         resetHardshipSessionState();
         startTraining(_qSid, _passed ? 'quick-after-pass' : 'quick-after-fail');
+        return;
+    }
+
+    // 🎓 레벨 테스트 — 고난 결과 화면 대신 테스트 결과(지도로 나가며 quitGame이 띄운다)
+    if (hardshipState.levelTest) {
+        const _T = (levelTests[hardshipState.levelTest] || []).slice(-1)[0];
+        if (_T && reason === 'completed') { _T.done = 1; saveGameData(); }
+        quitGame('map');
         return;
     }
 

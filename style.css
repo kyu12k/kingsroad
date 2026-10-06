@@ -7426,3 +7426,26 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .promise-main:disabled { opacity: 0.6; }
 .promise-note { font-size: 0.74rem; color: #b9b19c; margin: 6px 0 4px; }
 .promise-later { margin-top: 8px; width: 100%; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: #e8e0cc; border-radius: 12px; padding: 10px; font-size: 0.92rem; cursor: pointer; }
+
+/* ── 🎓 레벨 테스트 (2026-10-06) ─────────────────────────────────────────── */
+.lt-card { max-width: 380px; }
+.lt-body { font-size: 0.95rem; line-height: 1.65; color: #ece9f5; margin: 4px 0 10px; }
+.lt-rules { font-size: 0.85rem; line-height: 1.7; color: #cfc9e0; background: rgba(255, 255, 255, 0.06); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+.lt-temp { font-size: 0.85rem; line-height: 1.6; border-radius: 10px; padding: 9px 12px; margin-bottom: 14px; }
+.lt-temp.warm { background: rgba(245, 176, 65, 0.16); color: #f7c873; }
+.lt-temp.cold { background: rgba(52, 152, 219, 0.16); color: #9fd2f5; }
+.lt-go { width: 100%; padding: 13px; border: none; border-radius: 30px; background: #6c63ff; color: #fff; font-size: 1.02rem; font-weight: 700; cursor: pointer; }
+.lt-later { width: 100%; padding: 12px 0 0; border: none; background: none; color: #a9a4ba; font-size: 0.9rem; cursor: pointer; }
+.lt-partial { font-size: 0.85rem; color: #f7c873; margin-bottom: 6px; }
+.lt-legend { font-size: 0.82rem; color: #cfc9e0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 4px 0 10px; }
+.lt-legend .lt-cell { width: 12px; height: 12px; min-width: 0; padding: 0; }
+.lt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)); gap: 5px; margin-bottom: 10px; }
+.lt-cell { position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 30px; border-radius: 7px; font-size: 0.8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.lt-cell i { position: absolute; top: -5px; right: -3px; font-style: normal; font-size: 0.65rem; }
+.lt-cell.c3 { background: #27ae60; color: #fff; }
+.lt-cell.c2 { background: #a3d977; color: #1e4d0f; }
+.lt-cell.c1 { background: #f5b041; color: #5a3500; }
+.lt-cell.c0 { background: #6b7280; color: #eef0f3; }
+.lt-cell.cn { background: transparent; border: 1px dashed rgba(255, 255, 255, 0.3); color: #8d93a3; }
+.lt-next { font-size: 0.88rem; line-height: 1.7; color: #ece9f5; margin: 6px 0; }
+.lt-note { font-size: 0.8rem; color: #a9a4ba; line-height: 1.5; margin: 6px 0 12px; }
