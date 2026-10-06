@@ -11977,6 +11977,7 @@ function startBossBattle() {
     maxBossHp = window.currentBattleData.length;
     window.currentBattleChapter = chapterNum;
     window.currentBattleStartIndex = startIndex;
+    _verseSeenMark(window.currentBattleData.map(v => chapterNum + '-' + v._verseNum));   // 👁️ 초성 전투는 구간 전체를 보게 된다
 
 
     // ✂️============== [여기서부터 콜백 보따리를 쌉니다] ==============✂️
@@ -14446,6 +14447,7 @@ function startTraining(stageId, mode = 'normal') {
     }
     window.isGamePlaying = true; // ★ 게임 시작! 스위치 ON
     lastPlayedStageId = stageId;
+    _verseSeenMark(stageId);   // 👁️ 원문을 본다
     markOnboardStep('stage');
     const isForceFullNew = (mode === 'full-new');
     // ★ chNum을 여기서 미리 정의 (함수 전체에서 쓰임)
@@ -20053,6 +20055,7 @@ function startEventBattle(eventId, verseIds, difficulty) {
     bossHistory = [];
     clearCheckpoint();
     window.currentBattleData = data;
+    _verseSeenMark(data.map(v => v._chapter + '-' + v._verseNum));   // 👁️
     maxBossHp = data.length;
     window.currentBattleChapter = data[0]._chapter;
     window.currentBattleStartIndex = data[0]._verseNum - 1;
@@ -30071,6 +30074,20 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
      s 음성 점수 · rs 복습 스텝 · am 모드(k 왕의 길/f 자유) · ms 기억 강도 · tr 집중 훈련
      lp/la/lb 직전 성공·시도·백지성공 시각 · bp/tp/fl 직전 백지·빈칸 통과·실패 횟수 · ev 이벤트 id · sv 스키마
      lv 첫 마디 난이도(c가 start·fpnote일 때) */
+/* 👁️ 그 절을 마지막으로 본 시각 (2026-10-06) — 일지 `sx`. 같은 백지 통과라도 방금 본 절(따뜻함)과 오래 안 본 절(콜드)은 증거의 무게가 다르다
+   (사용자: "힌트 없이 백지를 통과했다고 정말 외웠다고 볼 수는 없다", docs/암송-단계.md 「증거의 온도」).
+   원문이 화면에 나오는 곳에서 찍는다: 일반 코스 시작(startTraining) · 보스전·오늘의 암송 보통·어려움 시작(구간 전체) · 모든 시도 직후(답이 보인다).
+   기기 안에만(localStorage) — 다른 기기에서 본 것은 모른다. 스테이지 목록의 첫 부분 미리보기도 못 잡는다 */
+const VERSE_SEEN_KEY = 'kingsRoad_verseSeen';
+function _verseSeenMap() { try { const m = JSON.parse(localStorage.getItem(VERSE_SEEN_KEY) || '{}'); return (m && typeof m === 'object') ? m : {}; } catch (e) { return {}; } }
+function _verseSeenGet(id) { return _verseSeenMap()[String(id)] || 0; }
+function _verseSeenMark(ids, at) {
+    try {
+        const m = _verseSeenMap(), now = at || Date.now();
+        (Array.isArray(ids) ? ids : [ids]).forEach(id => { if (/^\d+-\d+$/.test(String(id))) m[String(id)] = now; });
+        localStorage.setItem(VERSE_SEEN_KEY, JSON.stringify(m));
+    } catch (e) { }
+}
 const RECALL_LOG_KEY = 'kingsRoad_recallLogBuf';
 const RECALL_LOG_MAX = 2000;           // 버퍼 상한 — 오래 못 올려도 localStorage가 넘치지 않게
 let _recallLogFlushing = false;
@@ -30097,6 +30114,8 @@ function _logRecallAttempt(stageId, ok, hints, mode, extra, prev, training) {
             am: (typeof activeMode !== 'undefined' && activeMode === 'kings') ? 'k' : 'f',
             ms: (typeof getMemoryStrength === 'function') ? Math.round((getMemoryStrength(stageId) || 0) * 1000) / 1000 : null
         };
+        { const sx = _verseSeenGet(stageId); if (sx) e.sx = sx; }   // 👁️ 이 시도 직전, 이 절을 마지막으로 본 때(없으면 이 기기에선 처음)
+        _verseSeenMark(stageId, now);   // 시도가 끝나면 답이 보인다
         if (extra && extra.giveUp) e.g = 1;
         if (extra && typeof extra.score === 'number') e.s = extra.score;
         if (extra && extra.lv) e.lv = extra.lv;
