@@ -541,7 +541,7 @@ const LANG = {
         nj_fruit_go: '🍽️ 익은 열매 {n}개 — 3D에서 먹으러 가기',
         nj_fruit_rule: '그달에 백지로 통과한 절마다 열매가 하나 열려요. 7일 뒤 익으면 열매를 눌러 그 절을 백지로 써내고 먹어요 — 🍃 잎사귀 1장. 익은 뒤 30일이 지나면 떨어져요',
         nj_fruit_embed: '🌳 {name} 먹기',
-        nj_fruit_eaten: '🍃 열매를 먹었어요 — 잎사귀 1장',
+        nj_fruit_eaten: '🍃 열매를 먹었어요 — 잎사귀 +1장',
         nj_fruit_fail: '🌳 열매가 그대로 있어요. 내일 다시 먹을 수 있어요',
         nj_fruit_back: '🌳 생명나무로 돌아가기',
         nj_fruit_unripe: '익는 중이에요 — {d}일 뒤 익어요',
@@ -1789,7 +1789,7 @@ const LANG = {
         nj_fruit_go: '🍽️ {n} ripe — go eat them in 3D',
         nj_fruit_rule: 'Each verse you pass in blank mode this month grows one fruit. After 7 days it ripens — tap it, write that verse from blank, and eat it for 🍃 1 leaf. Ripe fruit falls after 30 days',
         nj_fruit_embed: '🌳 Eat the {name}',
-        nj_fruit_eaten: '🍃 You ate the fruit — 1 leaf',
+        nj_fruit_eaten: '🍃 You ate the fruit — +1 leaf',
         nj_fruit_fail: '🌳 The fruit is still there. Try again tomorrow',
         nj_fruit_back: '🌳 Back to the tree of life',
         nj_fruit_unripe: 'Ripening — ready in {d} days',
@@ -7979,7 +7979,7 @@ function _njFruitResult(key, id, ok, now) {
     if (!Array.isArray(f) || f[1]) return;
     if (ok) {
         f[1] = now;
-        setTimeout(() => { if (typeof showMissionToast === 'function') showMissionToast(t('nj_fruit_eaten'), `🍃 ${_njLeaves()}`); }, 1200);
+        setTimeout(() => { if (typeof showMissionToast === 'function') showMissionToast(t('nj_fruit_eaten'), `🍃 ${_njLeavesAvail()}`)   /* 오른쪽 = 지금 가진 잎사귀(10/7: 받은 전부를 보여 줘 쓴 것까지 세었다) */; }, 1200);
     } else {
         f[2] = now;
         setTimeout(() => { if (typeof showToast === 'function') showToast(t('nj_fruit_fail')); }, 1200);
@@ -9639,7 +9639,7 @@ function _njRenderModal() {
     const fe = document.getElementById('nj-fruit');
     if (fe) {
         const L = _njFruitList(), ripe = L.filter(f => f.ripe).length;
-        fe.innerHTML = `<div class="nj-pearl-head">${t('nj_fruit_title', { leaves: _njLeaves() })}</div>
+        fe.innerHTML = `<div class="nj-pearl-head">${t('nj_fruit_title', { leaves: _njLeavesAvail() })}</div>
             <div class="nj-pearl-week">${t('nj_fruit_now', { name: _njFruitName(_njFruitKind(_njMonthKey())), n: L.length, ripe })}</div>
             ${ripe ? `<button class="nj-go-btn" onclick="openNJ3DView()">${t('nj_fruit_go', { n: ripe })}</button>` : ''}
             <button class="nj-go-btn sub" onclick="closeNewJerusalem(); openSea()">${t('sea_open_from_nj', { n: _njLeavesAvail() })}</button>
