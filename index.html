@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <!-- ★ 반드시 첫 스크립트: 전역 Date를 서버 시각으로 보정한다 (clock.js 주석 참조) -->
-    <script src="clock.js?v=20261007c"></script>
+    <script src="clock.js?v=20261007d"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>King's Road - 요한계시록 암송</title>
 
@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
     <!-- image_0.webp is inlined below; preload removed -->
-    <link rel="stylesheet" href="style.css?v=20261007c">
+    <link rel="stylesheet" href="style.css?v=20261007d">
 
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-TEVW49QB45"></script>
@@ -3893,73 +3893,60 @@
                 <button onclick="closeHardshipModeSelect()"
                     style="background:none; border:none; font-size:1.5rem; color:#95a5a6; cursor:pointer;">✕</button>
             </div>
-            <div style="text-align: center; margin-bottom: 20px;">
-                <h2 style="margin:0; color:#2c3e50;" data-i18n="hardship_title">고난 길</h2>
-                <p style="color:#7f8c8d; font-size:0.95rem; margin-top:8px; line-height:1.5;" data-i18n="hardship_subtitle">모드를 고른 뒤 출제 범위를 설정하고 시작합니다.</p>
+            <!-- 🧭 역할별로 나눈 고난 길 (2026-10-07 사용자: 항목이 많아 보기 불편) — 실력 보기 · 외우기 · 주소 익히기. ⭐ 추천은 하나(_hmRecommend) -->
+            <div class="hm-head">
+                <h2 id="hm-title" data-i18n="hardship_title">고난 길</h2>
+                <p id="hm-sub" class="hm-sub" data-i18n="hardship_subtitle">모드를 고른 뒤 출제 범위를 설정하고 시작합니다.</p>
             </div>
 
-            <button class="mode-btn hardship-mode-btn hardship-mode-a" onclick="startHardshipFromModal('address')">
-                <div class="mode-icon">🎯</div>
-                <div class="mode-info">
-                    <div class="mode-title" data-i18n="hardship_mode_a_title">Lv.1 · 주소의 고난</div>
-                    <div class="mode-desc" data-i18n="hardship_mode_a_desc">내용을 보고 장·절 맞히기</div>
-                    <div class="mode-last-played" id="hardship-last-address"></div>
-                </div>
-                <div class="hardship-mission-reward">미션 💎 500</div>
+            <!-- 🎓 레벨 테스트 — 장이 정해졌을 때만(_fpModalRefresh) -->
+            <button id="lt-btn" class="hm-lt-row" data-hm="lt" style="display:none;" onclick="openLevelTest()">
+                <span class="hm-lt-ic">🎓</span>
+                <span class="hm-lt-txt"><b data-i18n="lt_title">레벨 테스트</b><small id="hm-lt-sub"></small></span>
+                <span class="hm-chev">›</span>
             </button>
 
-            <button class="mode-btn hardship-mode-btn hardship-mode-b" onclick="startHardshipFromModal('verse')">
-                <div class="mode-icon">📖</div>
-                <div class="mode-info">
-                    <div class="mode-title" data-i18n="hardship_mode_b_title">Lv.2 · 구절의 고난</div>
-                    <div class="mode-desc" data-i18n="hardship_mode_b_desc">장·절을 보고 정확한 구절을 4지선다로 찾기</div>
-                    <div class="mode-last-played" id="hardship-last-verse"></div>
-                </div>
-                <div class="hardship-mission-reward">미션 💎 700</div>
-            </button>
-
-            <!-- 🔑 첫 마디의 고난 — 장이 정해졌을 때만 보인다(_fpModalRefresh) -->
-            <button id="hardship-start-btn" class="mode-btn hardship-mode-btn hardship-mode-s" style="display:none;" onclick="openFirstPhrasePick()">
-                <div class="mode-icon">🔑</div>
-                <div class="mode-info">
-                    <div class="mode-title" data-i18n="fp_title">첫 마디의 고난</div>
-                    <div class="mode-desc" data-i18n="fp_desc">장·절을 보고 첫 마디만 쓰기 · 쉬움·보통·어려움</div>
-                </div>
-            </button>
-
-            <!-- 🎓 레벨 테스트 — 장이 정해졌을 때만 보인다(_fpModalRefresh) -->
-            <button id="lt-btn" class="mode-btn hardship-mode-btn hardship-mode-s" style="display:none;" onclick="openLevelTest()">
-                <div class="mode-icon">🎓</div>
-                <div class="mode-info">
-                    <div class="mode-title" data-i18n="lt_title">레벨 테스트</div>
-                    <div class="mode-desc" data-i18n="lt_desc">지금 이 장이 정말 얼마나 나오나 — 주소만 보고 무작위 백지</div>
-                </div>
-            </button>
-
-            <button class="mode-btn hardship-mode-btn hardship-mode-c" onclick="startHardshipFromModal('endurance')">
-                <div class="mode-icon">🕊️</div>
-                <div class="mode-info">
-                    <div class="mode-title" data-i18n="hardship_mode_c_title">Lv.3 · 암송의 고난</div>
-                    <div class="mode-desc" data-i18n="hardship_mode_c_desc">소리내어 말씀을 암송하고 채점받기</div>
-                    <div class="mode-last-played" id="hardship-last-endurance"></div>
-                </div>
-                <div class="hardship-mission-reward">미션 💎 900</div>
-            </button>
-
-            <button class="mode-btn hardship-mode-btn hardship-mode-d" onclick="startHardshipFromModal('memory')">
+            <div class="hm-sec" data-i18n="hm_sec_mem">✍️ 외우기</div>
+            <button class="mode-btn hardship-mode-btn hardship-mode-d hm-main" data-hm="memory" onclick="startHardshipFromModal('memory')">
                 <div class="mode-icon">⌨️</div>
                 <div class="mode-info">
-                    <div class="mode-title" data-i18n="hardship_mode_d_title">Lv.4 · 망각의 고난</div>
-                    <div class="mode-desc" data-i18n="hardship_mode_d_desc">장·절을 보고 전체 말씀을 입력하기 · 백지 + 무작위</div>
+                    <div class="mode-title" data-i18n="hardship_mode_d_title">망각의 고난</div>
+                    <div class="mode-desc" data-i18n="hm_d_mem">주소만 보고 전체 말씀 쓰기 · 백지 · 무작위</div>
                     <div class="mode-last-played" id="hardship-last-memory"></div>
                 </div>
-                <div class="hardship-mission-reward">미션 💎 1,500</div>
+                <div class="hardship-mission-reward">💎 1,500</div>
             </button>
+            <div class="hm-tiles">
+                <!-- 🔑 첫 마디의 고난 — 장이 정해졌을 때만(_fpModalRefresh) -->
+                <button id="hardship-start-btn" class="hm-tile hardship-mode-s" data-hm="fp" style="display:none;" onclick="openFirstPhrasePick()">
+                    <span class="hm-tile-t">🔑 <span data-i18n="fp_title">첫 마디의 고난</span></span>
+                    <span class="hm-tile-d" data-i18n="hm_d_fp">첫 마디만 쓰기</span>
+                </button>
+                <button class="hm-tile hardship-mode-c" data-hm="endurance" onclick="startHardshipFromModal('endurance')">
+                    <span class="hm-tile-t">🕊️ <span data-i18n="hardship_mode_c_title">암송의 고난</span></span>
+                    <span class="hm-tile-d"><span data-i18n="hm_d_end">소리 내어 암송</span></span><span class="hardship-mission-reward">💎 900</span>
+                    <span class="mode-last-played" id="hardship-last-endurance"></span>
+                </button>
+            </div>
+
+            <div class="hm-sec" data-i18n="hm_sec_addr">🎯 주소 익히기 · 고르기</div>
+            <div class="hm-tiles">
+                <button class="hm-tile hardship-mode-a" onclick="startHardshipFromModal('address')">
+                    <span class="hm-tile-t">🎯 <span data-i18n="hardship_mode_a_title">주소의 고난</span></span>
+                    <span class="hm-tile-d"><span data-i18n="hm_d_addr">말씀 보고 장·절</span></span><span class="hardship-mission-reward">💎 500</span>
+                    <span class="mode-last-played" id="hardship-last-address"></span>
+                </button>
+                <button class="hm-tile hardship-mode-b" onclick="startHardshipFromModal('verse')">
+                    <span class="hm-tile-t">📖 <span data-i18n="hardship_mode_b_title">구절의 고난</span></span>
+                    <span class="hm-tile-d"><span data-i18n="hm_d_verse">장·절 보고 고르기</span></span><span class="hardship-mission-reward">💎 700</span>
+                    <span class="mode-last-played" id="hardship-last-verse"></span>
+                </button>
+            </div>
 
             <button type="button" id="fp-note-btn" class="fp-note-btn" style="display:none;" onclick="startFirstPhraseNote()"></button>
 
             <!-- 망각의 고난이 백지+무작위 고정이라 물러설 곳을 함께 보여준다 (장이 정해졌을 때만) -->
-            <button type="button" id="hardship-easier-link" class="hardship-easier-link" style="display:none;"></button>
+            <button type="button" id="hardship-easier-link" class="hardship-easier-link" data-hm="easier" style="display:none;"></button>
 
             <p class="hardship-cascade-notice">상위 고난 클리어 시 하위 미션도 자동 달성됩니다</p>
         </div>
@@ -4092,7 +4079,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="bible_en.js"></script>
-    <script src="game.js?v=20261007c"></script>
+    <script src="game.js?v=20261007d"></script>
     <script>
 
         /* =========================================

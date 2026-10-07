@@ -449,13 +449,16 @@ const LANG = {
         // 고난 길 모달
         hardship_title: '고난 길',
         hardship_subtitle: '모드를 고른 뒤 출제 범위를 설정하고 시작합니다.',
-        hardship_mode_a_title: 'Lv.1 · 주소의 고난',
+        hm_title_ch: '{ch}장 · 고난 길', hm_sec_mem: '✍️ 외우기', hm_sec_addr: '🎯 주소 익히기 · 고르기', hm_rec: '⭐ 추천',
+        hm_d_mem: '주소만 보고 전체 말씀 쓰기 · 백지 · 무작위', hm_d_fp: '첫 마디만 쓰기', hm_d_end: '소리 내어 암송', hm_d_addr: '말씀 보고 장·절', hm_d_verse: '장·절 보고 고르기',
+        hm_lt_none: '이 장이 지금 정말 얼마나 나오나',
+        hardship_mode_a_title: '주소의 고난',
         hardship_mode_a_desc: '내용을 보고 장·절 맞히기',
-        hardship_mode_b_title: 'Lv.2 · 구절의 고난',
+        hardship_mode_b_title: '구절의 고난',
         hardship_mode_b_desc: '장·절을 보고 정확한 구절을 4지선다로 찾기',
-        hardship_mode_c_title: 'Lv.3 · 암송의 고난',
+        hardship_mode_c_title: '암송의 고난',
         hardship_mode_c_desc: '소리내어 말씀을 암송하고 채점받기',
-        hardship_mode_d_title: 'Lv.4 · 망각의 고난',
+        hardship_mode_d_title: '망각의 고난',
         hardship_mode_d_desc: '장·절을 보고 전체 말씀을 입력하기',
         hardship_config_title: '고난 길 설정',
         hardship_config_placeholder: '모드를 선택하세요.',
@@ -1695,13 +1698,16 @@ const LANG = {
         // 고난 길 모달
         hardship_title: 'Hardship Road',
         hardship_subtitle: 'Select a mode, set the range, and begin.',
-        hardship_mode_a_title: 'Lv.1 · Trial of Address',
+        hm_title_ch: 'Chapter {ch} · Hardship Road', hm_sec_mem: '✍️ Memorize', hm_sec_addr: '🎯 Learn the references · choose', hm_rec: '⭐ Suggested',
+        hm_d_mem: 'Write the whole verse from the reference · blank · random', hm_d_fp: 'Write only the first words', hm_d_end: 'Recite aloud', hm_d_addr: 'Verse → reference', hm_d_verse: 'Reference → verse',
+        hm_lt_none: 'How much of this chapter really comes out now',
+        hardship_mode_a_title: 'Trial of Address',
         hardship_mode_a_desc: 'Read the text and guess the chapter & verse',
-        hardship_mode_b_title: 'Lv.2 · Trial of Verse',
+        hardship_mode_b_title: 'Trial of Verse',
         hardship_mode_b_desc: 'See the reference and pick the correct verse from 4 choices',
-        hardship_mode_c_title: 'Lv.3 · Trial of Recitation',
+        hardship_mode_c_title: 'Trial of Recitation',
         hardship_mode_c_desc: 'Recite verses aloud and get scored',
-        hardship_mode_d_title: 'Lv.4 · Trial of Forgetting',
+        hardship_mode_d_title: 'Trial of Forgetting',
         hardship_mode_d_desc: 'See the reference and type the full verse',
         hardship_config_title: 'Hardship Road Settings',
         hardship_config_placeholder: 'Select a mode.',
@@ -27540,10 +27546,41 @@ function _fpRecord(id, ok, hints) {
     f.lv = f.lv || lv; f.at = Date.now();
 }
 function _fpNoteIds() { return Object.keys(fpRecall || {}).filter(id => fpRecall[id] && fpRecall[id].note && /^\d+-\d+$/.test(id)); }
+/* 🧭 고난 길 머리·⭐ 추천 (2026-10-07) — 장이 정해졌으면 「n장 · 고난 길」, 레벨 테스트 줄에 지난 결과, 추천은 하나.
+   추천: 최근 14일 레벨 테스트가 있으면 — 아직·빈칸·힌트로 겨우가 절반 이상 → 보스전(빈칸)으로 / 시작 막힘(첫 마디 주면·시작 힌트)이 30% 이상 → 🔑 / 아니면 ⌨️ 망각.
+   테스트가 없으면 — 백지로 써본 절이 30% 미만 → 🎓 레벨 테스트부터 / 아니면 ⌨️ 망각. 잠그지 않는다(왕의 고난 4종 미션이 막힌다) */
+function _hmRecommend(ch) {
+    if (ch == null) return null;
+    const T = (levelTests[ch] || []).slice(-1)[0], v = T ? Object.values(T.r || {}) : [];
+    if (T && Date.now() - T.at < 14 * 864e5 && v.length >= 3) {
+        const low = v.filter(c => c === 0 || c === 'B' || c === 1).length, start = v.filter(c => c === 'S').length + (T.s || []).length;
+        if (low / v.length >= 0.5) return 'easier';
+        if (start / v.length >= 0.3) return 'fp';
+        return 'memory';
+    }
+    const ids = _ltLearnedIds(ch); if (!ids.length) return null;
+    const blank = ids.filter(id => verseRecall[id] && verseRecall[id].blankPass > 0).length;
+    return blank / ids.length < 0.3 ? 'lt' : 'memory';
+}
+function _hmRefresh() {
+    const ch = window.hardshipForcedChapter;
+    const title = document.getElementById('hm-title'), sub = document.getElementById('hm-sub');
+    if (title) title.textContent = ch != null ? t('hm_title_ch', { ch }) : t('hardship_title');
+    if (sub) sub.style.display = ch != null ? 'none' : '';
+    { const fpb = document.getElementById('hardship-start-btn'), grid = fpb && fpb.parentElement; if (grid) grid.classList.toggle('one', ch == null); }   // 장 없이 열면 🔑가 숨어 🕊️ 하나
+    const ls = document.getElementById('hm-lt-sub');
+    if (ls && ch != null) { const T = (levelTests[ch] || []).slice(-1)[0]; ls.textContent = T ? t('lt_sheet_last', { d: new Date(T.at).toLocaleDateString(currentLang === 'en' ? 'en-US' : 'ko-KR', { month: 'numeric', day: 'numeric' }), c: Object.values(T.r || {}).filter(c => c === 3).length, n: T.n || Object.keys(T.r || {}).length }) : t('hm_lt_none'); }
+    const modal = document.getElementById('hardship-mode-modal'); if (!modal) return;
+    modal.querySelectorAll('.hm-rec').forEach(e => e.classList.remove('hm-rec'));
+    modal.querySelectorAll('.hm-badge').forEach(e => e.remove());
+    const rec = _hmRecommend(ch), el = rec ? modal.querySelector(`[data-hm="${rec}"]`) : null;
+    if (el && el.style.display !== 'none') { el.classList.add('hm-rec'); const b = document.createElement('span'); b.className = 'hm-badge'; b.textContent = t('hm_rec'); el.appendChild(b); }
+}
 function _fpModalRefresh() {   // 고난 고르기 창이 열릴 때 — 첫 마디는 장이 정해졌을 때만, 오답노트는 모였을 때만
     const sb = document.getElementById('hardship-start-btn');
     if (sb) sb.style.display = (window.hardshipForcedChapter != null) ? '' : 'none';
     const lb = document.getElementById('lt-btn'); if (lb) lb.style.display = (window.hardshipForcedChapter != null) ? '' : 'none';   // 🎓
+    _hmRefresh();
     const nb = document.getElementById('fp-note-btn'), ids = _fpNoteIds();
     if (nb) {
         if (ids.length >= FP_NOTE_MIN) { nb.style.display = ''; nb.textContent = t('fp_note_btn', { n: ids.length }); nb.disabled = false; nb.classList.remove('wait'); }

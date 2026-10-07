@@ -7476,3 +7476,40 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 #hardship-strong-fab { display: none; position: fixed; right: 14px; bottom: 160px; z-index: 60; align-items: center; padding: 9px 14px; border-radius: 999px;
     border: 1.5px solid #f6d55c; background: rgba(27, 36, 48, 0.94); color: #f6d77a; font-size: 0.9rem; font-weight: 800; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3); cursor: pointer; }
 #hardship-strong-fab:active { transform: scale(0.96); }
+
+/* ── 🧭 고난 길 — 역할별 (2026-10-07) ───────────────────────────────── */
+.hardship-mode-card .hm-head { text-align: center; margin: -6px 0 12px; }
+.hardship-mode-card .hm-head h2 { margin: 0; color: #2c3e50; font-size: 1.3rem; }
+.hardship-mode-card .hm-sub { color: #7f8c8d; font-size: 0.88rem; margin: 6px 0 0; line-height: 1.5; }
+.hm-sec { font-size: 0.8rem; font-weight: 800; color: #7f8c8d; letter-spacing: 0.02em; margin: 14px 2px 6px; text-align: left; }
+.hm-lt-row { position: relative; width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1.5px solid #c9c2ff; background: #f4f2ff; cursor: pointer; text-align: left; }
+.hm-lt-ic { font-size: 1.3rem; }
+.hm-lt-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.hm-lt-txt b { color: #4b3fb8; font-size: 0.95rem; }
+.hm-lt-txt small { color: #7a73b0; font-size: 0.76rem; }
+.hm-chev { color: #8b84c9; font-size: 1.3rem; font-weight: 700; }
+.hardship-mode-btn.hm-main { margin-bottom: 8px; padding: 14px; }
+.hardship-mode-btn.hm-main .mode-title { font-size: 1.08rem; }
+.hm-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+.hm-tile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 11px 12px; border-radius: 12px; border: 1.5px solid transparent; cursor: pointer; text-align: left; min-width: 0; }
+.hm-tile-t { font-weight: 800; font-size: 0.92rem; }
+.hm-tile-d { font-size: 0.74rem; opacity: 0.85; line-height: 1.4; }
+.hm-tile .hardship-mission-reward { padding: 0; background: none; margin: 0; font-size: 0.72rem; }
+.hm-tile .mode-last-played { margin-top: 0; }
+.hm-tile:active, .hm-lt-row:active { transform: scale(0.98); }
+.hm-rec { box-shadow: 0 0 0 2.5px #f1c40f, 0 6px 16px rgba(241, 196, 15, 0.28) !important; }
+.hm-badge { position: absolute; top: -8px; right: 10px; padding: 2px 8px; border-radius: 999px; background: #f1c40f; color: #2c3e50; font-size: 0.7rem; font-weight: 800; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); }
+.hardship-easier-link.hm-rec { border-radius: 10px; }
+.mode-btn.hm-main { overflow: visible; }
+
+.hm-tile.hardship-mode-s { background: linear-gradient(135deg, #fffaf0 0%, #ffedc4 100%); border-color: #e9cf8a; color: #8a5a0c; }
+.hm-tile-t { white-space: nowrap; font-size: 0.88rem; }
+.hm-tile .hardship-mission-reward { display: block; margin-top: 1px; }
+
+.hm-tiles { grid-template-columns: 1fr 1fr; }
+.hm-tiles.one { grid-template-columns: 1fr; }
+.hm-tile-t { overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.hm-tile .hardship-mission-reward { text-align: left; }
+@media (max-width: 380px) { .hm-tile { padding: 10px; } .hm-tile-t { font-size: 0.82rem; } }
+
+.hm-tile .hardship-mission-reward { align-self: flex-start; }
