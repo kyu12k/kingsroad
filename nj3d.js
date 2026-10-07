@@ -3398,7 +3398,37 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         const decoRoot = (o) => { while (o && !(o.userData && o.userData.item)) o = o.parent; return o; };
         const decoSel = (obj) => { deco.sel = obj; decoRing.visible = !!obj; decoPanel.hidden = true; decoRender(); };
         const decoTouch = (obj) => { if (obj && obj.userData.item) deco.touched.set(obj.userData.item.id, obj); };
+        /* 👁️ 꾸밈 미리보기 (2026-10-07 사용자: 사기 전에 어떻게 생겼는지 봐야 결정한다) — 상점에서 누르면 지금 꾸미는 자리에 실제 모델을 잠시 세운다.
+           🔄 돌려 보기 · 💎 사기(한 번 더 눌러야) · ✕ 그만(상점으로 돌아감). 저장본에는 아무것도 남지 않는다(산 뒤에만) */
+        function decoPvClear() {
+            if (!deco || !deco.pv) return;
+            if (deco.pv.obj && deco.pv.obj.parent) deco.pv.obj.parent.remove(deco.pv.obj);
+            if (deco.pvCam) { deco.tgt.copy(deco.pvCam.tgt); deco.dist = deco.pvCam.dist; deco.pvCam = null; }   // 카메라를 꾸미던 자리로
+            deco.pv = null; decoRing.visible = !!(deco.sel); decoRing.scale.setScalar(1);
+        }
+        function decoPreview(k) {
+            decoPvClear();
+            const md = decoMeta(k) || {};
+            const [x, z] = md.sea ? (shoreSpot(deco.tgt.x, deco.tgt.z, 0.4, md.water ? 'water' : md.edge ? 'edge' : 'land') || [deco.tgt.x, deco.tgt.z]) : decoSpot(deco.tgt.x, deco.tgt.z, decoExt('decor', k, 0));
+            const obj = placeDecor({ id: '__pv', k, x, z, r: 0 }); if (!obj) return;
+            obj.userData.item = null; obj.userData.pv = true;   // 고르기·저장 대상이 아니다
+            deco.pv = { obj, k, sure: false }; deco.sel = null;
+            const pk = obj.userData.pick, gp = pk && pk.geometry && pk.geometry.parameters;
+            const rad = gp ? Math.max(gp.width || 0, gp.depth || 0) / 2 * obj.scale.x : 0.5, ht = gp && gp.height ? gp.height * obj.scale.x : rad;
+            deco.pvCam = { tgt: deco.tgt.clone(), dist: deco.dist };   // 가까이서 보게 — 아이템이 가운데, 크기에 맞춘 거리
+            deco.tgt.set(obj.position.x, obj.position.y + Math.min(ht, 2) * 0.45, obj.position.z); deco.dist = Math.max(1.1, Math.min(6, Math.max(rad, ht) * 3.2));
+            decoPanel.hidden = true; decoRing.visible = true; decoRing.position.set(obj.position.x, obj.position.y + 0.02, obj.position.z); decoRing.scale.setScalar(Math.max(0.7, rad / 0.42));
+            decoRender(); showHint(T('deco_pv_hint'), 2600);
+        }
+        function decoPvBar() {
+            const d = decoMeta(deco.pv.k) || {}, gems = Number(typeof myGems !== 'undefined' ? myGems : 0), can = gems >= (d.cost || 0);
+            return `<div class="nj3d-deco-sel nj3d-pv-bar"><b>👁️ ${esc2(typeof _njDecorName === 'function' ? _njDecorName(d) : (d.ko || deco.pv.k))}<small>${T('deco_pv_note')}</small></b>
+                <button data-a="pv-rot">${T('deco_rotate')}</button>
+                ${can ? `<button data-a="pv-buy" class="${deco.pv.sure ? 'sure' : ''}">${deco.pv.sure ? T('deco_buy_sure') : `💎 ${(d.cost || 0).toLocaleString()}`}</button>` : `<span class="nj3d-offer-lock">💎 ${(d.cost || 0).toLocaleString()}</span>`}
+                <button data-a="pv-x">${T('deco_pv_close')}</button></div>`;
+        }
         function decoRender() {
+            if (deco && deco.pv) { decoBar.innerHTML = decoPvBar(); return; }
             const it = deco.sel && deco.sel.userData.item;
             const ready = asmReady();
             decoBar.innerHTML = (it ? `<div class="nj3d-deco-sel"><b>${esc2(decoName(it))}${it.kind === 'decor' && partNote(it.k) ? `<small>${partNote(it.k)}</small>` : ''}</b>
@@ -3447,9 +3477,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                         const own = k => ((typeof njDecor !== 'undefined' && njDecor) || []).filter(v => v.k === k && !v.sold).length;
                         const seaOpen = healedNations().length > 0;
                         const lockOf = d => !!d.sea !== !!deco.sea ? T(d.sea ? 'deco_sea_only' : 'deco_land_only') : (d.sea && !seaOpen ? '🔒' : '');
-                        const row = (d, inSet) => { const lk = lockOf(d); return `<div class="nj3d-offer-row"><div><b>${esc2(typeof _njDecorName === 'function' ? _njDecorName(d) : d.ko)}</b>${d.set && !inSet ? `<span>${partNote(d.k)}</span>` : ''}${own(d.k) ? `<span>${T('deco_owned', { n: own(d.k) })}</span>` : ''}</div>${lk
+                        const row = (d, inSet) => { const lk = lockOf(d); return `<div class="nj3d-offer-row"><div><b>${esc2(typeof _njDecorName === 'function' ? _njDecorName(d) : d.ko)}</b>${d.set && !inSet ? `<span>${partNote(d.k)}</span>` : ''}${own(d.k) ? `<span>${T('deco_owned', { n: own(d.k) })}</span>` : ''}</div><span class="nj3d-pv-wrap">${lk ? '' : `<button class="nj3d-pv" data-pv="${d.k}" aria-label="preview">👁️</button>`}${lk
                             ? `<span class="nj3d-offer-lock">${lk} · 💎 ${d.cost.toLocaleString()}</span>` : gems >= d.cost
-                            ? `<button data-k="${d.k}">💎 ${d.cost.toLocaleString()}</button>` : `<span class="nj3d-offer-lock">💎 ${d.cost.toLocaleString()}</span>`}</div>`; };
+                            ? `<button data-k="${d.k}">💎 ${d.cost.toLocaleString()}</button>` : `<span class="nj3d-offer-lock">💎 ${d.cost.toLocaleString()}</span>`}</span></div>`; };
                         // 10/1 사용자: 아이템 목록이 어수선하다 → 위에 테마 탭(🪴 꾸밈 · 컨셉마다), 세트는 접었다 펴는 칸(제목에 모은 수와 막대). 고른 탭·펼친 세트는 기억
                         const cons = ((typeof NJ_CONCEPTS !== 'undefined') ? NJ_CONCEPTS : []).slice().sort((p, q) => (!!q.sea === !!deco.sea) - (!!p.sea === !!deco.sea));   // 지금 꾸미는 곳의 컨셉이 먼저
                         const tabs = (deco.sea ? [] : ['plain']).concat(cons.map(c => c.k));
@@ -3476,6 +3506,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                         return h;
                     })()}`;
                 decoPanel.querySelectorAll('button[data-tab]').forEach(b => b.onclick = () => { deco.shopTab = b.dataset.tab; const y = 0; decoPanelShow('shop'); decoPanel.scrollTop = y; });
+                decoPanel.querySelectorAll('button[data-pv]').forEach(b => b.onclick = () => { deco.shopY = decoPanel.scrollTop; decoPreview(b.dataset.pv); });
                 decoPanel.querySelectorAll('details[data-set]').forEach(d => d.ontoggle = () => { deco.shopOpen[d.dataset.set] = d.open; });
                 decoPanel.querySelectorAll('button[data-buildset]').forEach(b => b.onclick = () => { decoPanel.hidden = true; decoBar.dispatchEvent(new CustomEvent('asm-ok', { detail: b.dataset.buildset })); });
                 decoPanel.querySelectorAll('button[data-buyset]').forEach(b => b.onclick = () => {   // 남은 낱개 한꺼번에 사서 조립 — 한 번 더 눌러야
@@ -3537,6 +3568,20 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         decoBar.addEventListener('click', e => {
             const b = e.target.closest('button'); if (!b || !deco) return;
             const a = b.dataset.a;
+            if (a === 'pv-rot' && deco.pv) { deco.pv.obj.rotation.y += Math.PI / 4; return; }
+            if (a === 'pv-x' && deco.pv) { const y = deco.shopY || 0; decoPvClear(); decoRender(); decoPanelShow('shop'); decoPanel.scrollTop = y; return; }
+            if (a === 'pv-buy' && deco.pv) {
+                if (!deco.pv.sure) { deco.pv.sure = true; decoRender(); return; }   // 한 번 더 눌러야 산다(상점과 같게)
+                const { obj, k } = deco.pv, x = obj.position.x, z = obj.position.z, rot = obj.rotation.y;
+                decoPvClear();
+                const itm = typeof _njDecorBuy === 'function' ? _njDecorBuy(k, x, z) : null;
+                if (!itm) { showHint(T('deco_need_gems'), 2000); decoRender(); return; }
+                itm.r = rot; const o2 = placeDecor(itm); syncWallet();
+                if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear();
+                if (o2) { o2.rotation.y = rot; decoTouch(o2); decoSel(o2); } else decoRender();
+                const sk0 = setOfK(k); if (sk0 && asmReady().includes(sk0)) decoPanelShow('asm', T('deco_all_got', { name: esc2(_njSetName(sk0)) }));
+                return;
+            }
             if (a === 'rot' && deco.sel) {   // 돌리면 차지하는 폭이 바뀐다 — 성에 닿으면 다시 밀어낸다
                 const o = deco.sel, it = o.userData.item;
                 if (o.userData.sea && it.kind === 'set') { showHint(T('deco_sea_hint'), 2000); return; }   // 바다 세트는 늘 바다를 본다
@@ -3600,6 +3645,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             decoBar.hidden = false; ov.classList.add('deco-on'); decoRender(); showHint(T(sea ? (H.length ? 'deco_sea_hint' : 'deco_sea_need') : 'deco_hint'), 3500); lastTouch = performance.now();
         }
         function exitDeco() {
+            decoPvClear();
             const ch = [];
             deco.touched.forEach((o, id) => { const it = o.userData.item; ch.push({ kind: it.kind, id, x: o.position.x, z: o.position.z, r: o.rotation.y, st: false }); });
             deco.stash.forEach(s => { if (deco.stashed.has(s.id)) ch.push({ kind: s.kind, id: s.id, x: 0, z: 0, r: 0, st: true }); });

@@ -7521,3 +7521,8 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .admin-letter-body { text-align: left; font-size: 0.92rem; line-height: 1.75; color: #3d4b59; background: #fff; border: 1px solid #efe6cf; border-radius: 12px; padding: 12px 14px; }
 .admin-letter-gift { margin-top: 12px; font-weight: 800; color: #8a5a0c; background: #fff4d6; border-radius: 10px; padding: 8px 10px; font-size: 0.9rem; }
 .admin-letter-ok { margin-top: 14px; width: 100%; padding: 12px; border: none; border-radius: 30px; background: #f1c40f; color: #2c3e50; font-weight: 800; font-size: 1rem; cursor: pointer; }
+
+/* 👁️ 꾸밈 미리보기 */
+.nj3d-pv-wrap { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.nj3d-offer-row .nj3d-pv { padding: 6px 9px; border-radius: 10px; border: 1px solid rgba(127, 230, 245, 0.45); background: rgba(19, 74, 90, 0.6); color: #e6f7fb; font-size: 0.95rem; cursor: pointer; }
+.nj3d-pv-bar b small { display: block; font-weight: 600; font-size: 0.72rem; opacity: 0.75; }
