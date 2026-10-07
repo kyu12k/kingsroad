@@ -7513,3 +7513,11 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 @media (max-width: 380px) { .hm-tile { padding: 10px; } .hm-tile-t { font-size: 0.82rem; } }
 
 .hm-tile .hardship-mission-reward { align-self: flex-start; }
+
+/* ✉️ 관리자 편지 */
+.admin-letter { max-width: 360px; background: #fffdf7; color: #2c3e50; text-align: center; padding: 22px 20px 18px; }
+.admin-letter-icon { font-size: 2.4rem; line-height: 1; margin-bottom: 8px; }
+.admin-letter-title { font-weight: 800; font-size: 1.05rem; margin-bottom: 12px; }
+.admin-letter-body { text-align: left; font-size: 0.92rem; line-height: 1.75; color: #3d4b59; background: #fff; border: 1px solid #efe6cf; border-radius: 12px; padding: 12px 14px; }
+.admin-letter-gift { margin-top: 12px; font-weight: 800; color: #8a5a0c; background: #fff4d6; border-radius: 10px; padding: 8px 10px; font-size: 0.9rem; }
+.admin-letter-ok { margin-top: 14px; width: 100%; padding: 12px; border: none; border-radius: 30px; background: #f1c40f; color: #2c3e50; font-weight: 800; font-size: 1rem; cursor: pointer; }

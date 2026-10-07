@@ -13818,13 +13818,29 @@ async function initFirestoreSync() {
                 if (c.score) parts.push(`승점 +${Number(c.score).toLocaleString()}`);
                 if (c.gems) parts.push(`💎 +${Number(c.gems).toLocaleString()}`);
                 if (c.sunSlots) parts.push(`☀️ 햇살 구매 기회 +${c.sunSlots}`);
-                if (typeof showMissionToast === 'function') setTimeout(() => showMissionToast(c.note || '🎁 보상이 적용되었습니다', parts.join(' · ')), 1500);
+                if (c.msg) setTimeout(() => _showAdminLetter(c.note, c.msg, parts.join(' · ')), 1500);   // ✉️ 그 사람에게만 — 편지 창
+                else if (typeof showMissionToast === 'function') setTimeout(() => showMissionToast(c.note || '🎁 보상이 적용되었습니다', parts.join(' · ')), 1500);
                 if (typeof updateGemDisplay === 'function') updateGemDisplay();
             }
         } catch (e) {}
     }
 }
 
+/* ✉️ 관리자 편지 (2026-10-07) — 연락처 없이 제보한 사람에게 답할 길이 없었다. pendingCompensation에 msg를 넣으면
+   보상이 적용되는 순간 한 번 편지 창으로 뜬다(보상 없이 msg만 보내도 된다 — 관리 스크립트로 saves/{uid}.pendingCompensation에 쓰고 updatedAt도 올릴 것) */
+function _showAdminLetter(title, msg, rewards) {
+    const esc = x => String(x || '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+    const ov = document.createElement('div'); ov.className = 'modal-overlay active'; ov.style.zIndex = '10050'; ov.style.display = 'flex';
+    ov.innerHTML = `<div class="result-card admin-letter" onclick="event.stopPropagation()">
+            <div class="admin-letter-icon">✉️</div>
+            <div class="admin-letter-title">${esc(title || '킹스로드에서 온 편지')}</div>
+            <div class="admin-letter-body">${esc(msg).split(String.fromCharCode(10)).join('<br>')}</div>
+            ${rewards ? `<div class="admin-letter-gift">🎁 ${esc(rewards)}</div>` : ''}
+            <button class="admin-letter-ok">${currentLang === 'en' ? 'OK' : '확인'}</button></div>`;
+    ov.querySelector('.admin-letter-ok').onclick = () => ov.remove();
+    document.body.appendChild(ov);
+    if (typeof updateGemDisplay === 'function') updateGemDisplay();
+}
 /* ── '0000'에 갇힌 계정 구제 ──────────────────────────────────────────────────
    저장본에 tag가 없으면 loadGameData()가 myTag를 **'0000'으로 채운다**(위 loadGameData).
    그런데 태그를 만들어주는 유일한 지점(confirmProfile)의 조건이 `if (!myTag)`였고
@@ -13885,7 +13901,7 @@ function _applyPendingCompensation(data, pc) {
         const sb = data.sunBuy || { day: '', count: 0 };
         if (sb.day === today) data.sunBuy = { day: today, count: Math.max(0, (sb.count || 0) - pc.sunSlots) };
     }
-    try { localStorage.setItem('kingsRoad_pendingCompToast', JSON.stringify({ gems: pc.gems || 0, score: (pc.score || 0) + (pc.scoreTotal || 0), sunSlots: pc.sunSlots || 0, note: pc.note || '' })); } catch (e) {}
+    try { localStorage.setItem('kingsRoad_pendingCompToast', JSON.stringify({ gems: pc.gems || 0, score: (pc.score || 0) + (pc.scoreTotal || 0), sunSlots: pc.sunSlots || 0, note: pc.note || '', msg: pc.msg || '' })); } catch (e) {}
     console.log('[Firestore] pendingCompensation 적용:', pc);
     return true;
 }
