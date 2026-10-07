@@ -1970,6 +1970,12 @@ body, html {
     background: rgba(231, 76, 60, 0.14);
     color: #c0392b;
 }
+/* 🌱 모르겠어요 — 벌이 아니라 정직한 답. 빨강이 아니라 차분하게 */
+.hardship-feedback.giveup {
+    background: rgba(241, 196, 15, 0.16);
+    color: #f6dc8c;
+    font-weight: 600;
+}
 
 .hardship-feedback.info {
     background: rgba(52, 152, 219, 0.12);

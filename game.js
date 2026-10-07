@@ -863,6 +863,7 @@ const LANG = {
         hardship_feedback_wrong_address: '오답입니다. 정답은 {label}입니다.',
         hardship_feedback_wrong_verse: '오답입니다.',
         hardship_feedback_wrong_memory: '오답입니다. 정답 말씀: {text}',
+        hardship_feedback_giveup: '괜찮아요 🌱 이 말씀이었어요 — 다음엔 떠오를 거예요<br>{text}',
         hardship_feedback_typo_corrected: '오타 보정! +{pts}점 ({n}글자 오타)',
         hardship_feedback_typo_corrected_no_reward: '오타 보정! 승점 없음 ({n}글자 오타)',
         hardship_step1_indicator: 'Step 1. 한 단어씩 읽으며 \'읽기\'를 눌러 외운 말씀을 확인하세요.<br>확실히 외웠다는 생각이 들 때까지 반복하세요.',
@@ -2116,6 +2117,7 @@ const LANG = {
         hardship_feedback_wrong_address: 'Wrong. The answer is {label}.',
         hardship_feedback_wrong_verse: 'Wrong.',
         hardship_feedback_wrong_memory: 'Wrong. Correct verse: {text}',
+        hardship_feedback_giveup: "That's okay 🌱 here is the verse — it will come next time<br>{text}",
         hardship_feedback_typo_corrected: 'Typo corrected! +{pts} pts ({n} typo(s))',
         hardship_feedback_typo_corrected_no_reward: 'Typo corrected! No points ({n} typo(s))',
         hardship_step1_indicator: 'Step 1. Read each word aloud and tap \'Read\' to confirm.<br>Repeat until you are confident you have memorized it.',
@@ -29933,12 +29935,13 @@ function giveUpHardshipMemoryVerse() {
     wrongCount += 1;
     if (hardshipState.levelTest) {   // 🎓 정답은 결과 창에서만 — 시험 중에 보이면 이웃 절의 단서가 된다
         hardshipState.wrongSlots = [];
-        hardshipState.feedback = { type: 'error', message: t('lt_final_hidden') };
+        hardshipState.feedback = { type: 'giveup', message: t('lt_final_hidden') };
         renderHardshipMemoryVerse(); updateBattleUI(); return;
     }
+    // 🌱 「모르겠어요」는 정직한 답 — 「오답입니다」라고 하면 마음 상한다(10/7 사용자). 틀리게 써서 낸 것과 말을 나눈다
     hardshipState.feedback = {
-        type: 'error',
-        message: t('hardship_feedback_wrong_memory', {
+        type: 'giveup',
+        message: t('hardship_feedback_giveup', {
             text: (currentLang === 'en' && hardshipState.currentVerse.textEn)
                 ? hardshipState.currentVerse.textEn : hardshipState.currentVerse.text
         })
