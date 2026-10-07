@@ -28877,6 +28877,7 @@ function loadNextHardshipVerse() {
     hardshipState.verseChoices = [];
     hardshipState.ltStep = 0; hardshipState.ltGiven = '';   // 🎓 단계식 — 절마다 백지부터
     hardshipState.strongAvail = false; hardshipState.strongHint = false; hardshipState.lastTypeAt = 0;   // 🔑 강한 힌트 — 절마다 다시 얻는다
+    hardshipState._redCnt = {}; hardshipState._redValid = {}; hardshipState._redNow = new Set();   // 🟥 빨간 칸 — 절마다
     if (hardshipState.levelTest) hardshipState.ultimateMemoryMode = true;
 
     if (hardshipState.currentVerse) {
@@ -29771,7 +29772,8 @@ function _strongCheck() {
     if (typed >= ph.length) return;   // 이미 시작을 넘겼다
     const startHints = (hs.revealedHints || []).filter(i => i < ph.length).length;
     const idle = Date.now() - (hs.lastTypeAt || hs.verseStartedAt || Date.now());
-    if (startHints >= SH_START_HINTS || idle >= SH_IDLE_MS) { hs.strongAvail = true; _syncStrongFab(); }
+    const probing = _redStats().ps === 1;   // 🟥 시작에서 더듬음(오타 한 번은 아님)
+    if (startHints >= SH_START_HINTS || idle >= SH_IDLE_MS || probing) { hs.strongAvail = true; _syncStrongFab(); }
 }
 function _syncStrongFab() {
     let b = document.getElementById('hardship-strong-fab');
@@ -29888,6 +29890,30 @@ function _shouldRevealWrong(typedChar, answerChar, slotIndex, cursorIndex) {
     return (cursorIndex - slotIndex) >= WRONG_REVEAL_GAP;
 }
 
+/* 🟥 빨간 칸 기록 (2026-10-07 사용자) — 빨간 칸은 오타를 바로 잡게 하려고 넣었지만, 아직 백지가 어려운 사람은 아무 글자나 넣고 빨개지면 바꾸며 더듬어 맞힌다.
+   그건 떠올린 게 아니라 맞혀 본 것 → 둘을 나눈다: 한 칸이 한 번 빨개지고 다음에 맞게 고침 = **오타**(깎지 않음) /
+   같은 칸이 2번+ 빨개짐, 또는 연달아 3칸+ 빨개짐 = **더듬음**(단서를 받은 것). 일지 rr·rt·rp·rf·rs, 시작에서 더듬으면 🔑 첫 마디 보기.
+   기준 숫자는 추정 — 1~2주 기록으로 맞춘다. 백지 레벨 승급 규칙은 아직 그대로 */
+function _redNote(verseIndex, validIndex) {
+    const hs = hardshipState; if (!hs) return;
+    if (!hs._redNow) hs._redNow = new Set();
+    if (hs._redNow.has(verseIndex)) return;   // 이미 빨간 채로 있다 — 새로 빨개진 것만 센다
+    hs._redNow.add(verseIndex);
+    if (!hs._redCnt) hs._redCnt = {};
+    hs._redCnt[verseIndex] = (hs._redCnt[verseIndex] || 0) + 1;
+    if (!hs._redValid) hs._redValid = {};
+    hs._redValid[validIndex] = verseIndex;
+}
+function _redStats() {
+    const hs = hardshipState, cnt = (hs && hs._redCnt) || {}, vd = (hs && hs._redValid) || {};
+    const probe = new Set(Object.keys(cnt).filter(k => cnt[k] >= 2).map(Number));
+    const vs = Object.keys(vd).map(Number).sort((a, b) => a - b);
+    for (let i = 0; i + 2 < vs.length; i++) if (vs[i + 1] === vs[i] + 1 && vs[i + 2] === vs[i] + 2) [vs[i], vs[i + 1], vs[i + 2]].forEach(x => probe.add(vd[x]));   // 연달아 3칸
+    const all = Object.keys(cnt).map(Number);
+    const ph = typeof _strongPhrase === 'function' ? _strongPhrase().length : 0;
+    const pf = probe.size ? Math.min(...probe) : -1;
+    return { n: all.reduce((a, k) => a + cnt[k], 0), typo: all.filter(k => !probe.has(k)).length, probe: probe.size, pf, ps: probe.size && ph && pf >= 0 && pf < ph ? 1 : 0 };
+}
 const HARDSHIP_HINT_NUDGE_MS = 8000;
 function armHardshipHintNudge() {
     clearTimeout(window._hsHintNudgeTimer);
@@ -30138,9 +30164,12 @@ function updateHardshipMemoryBoard() {
         const answerChar = isNaN(verseIndex) ? '' : activeText.charAt(verseIndex);
         const submittedWrong = Array.isArray(hardshipState.wrongSlots)
             && hardshipState.wrongSlots.indexOf(verseIndex) !== -1;
-        slot.classList.toggle('wrong',
-            submittedWrong || _shouldRevealWrong(charValue, answerChar, index, text.length));
+        const liveWrong = _shouldRevealWrong(charValue, answerChar, index, text.length);
+        slot.classList.toggle('wrong', submittedWrong || liveWrong);
+        if (liveWrong && !isNaN(verseIndex)) _redNote(verseIndex, index);
+        else if (!isNaN(verseIndex) && hardshipState._redNow) hardshipState._redNow.delete(verseIndex);
     });
+    _strongCheck();   // 🔑 시작에서 더듬으면 첫 마디 보기
 
     if (text.length < slots.length && slots[text.length]) {
         slots[text.length].classList.add('active');
@@ -30640,7 +30669,8 @@ function _logRecallAttempt(stageId, ok, hints, mode, extra, prev, training) {
         if (hs.blankFirst) e.bf = 1;   // 「간격 3일 → 백지」 규칙으로 백지가 된 복습(10/4~)   // 🔑 첫 마디의 고난 난이도(1 쉬움 · 2 보통 · 3 어려움) — 10/4 빠져 있던 것
         if (hs.eventId) e.ev = String(hs.eventId);
         if (hs.levelTest) { e.lts = hs.ltStep || 0; if (hs._ltNbNow) e.nb = 1; }
-        if (hs.strongHint) e.sh = 1; else if (hs.strongAvail) e.sh = 0;   // 🔑 강한 힌트 — 1 썼다 · 0 나타났지만 안 썼다   // ↔ 이웃 절을 먼저 쓴 뒤   // 🎓 레벨 테스트 단계(0 백지 · 1 첫 마디 줌 · 2 빈칸)
+        if (hs.strongHint) e.sh = 1; else if (hs.strongAvail) e.sh = 0;
+        { const R = _redStats(); if (R.n) { e.rr = R.n; e.rt = R.typo; e.rp = R.probe; e.rf = R.pf; e.rs = R.ps; } }   // 🟥 빨간 칸: 횟수·오타 칸·더듬은 칸·처음 더듬은 자리·시작에서 더듬음   // 🔑 강한 힌트 — 1 썼다 · 0 나타났지만 안 썼다   // ↔ 이웃 절을 먼저 쓴 뒤   // 🎓 레벨 테스트 단계(0 백지 · 1 첫 마디 줌 · 2 빈칸)
         if (training) e.tr = 1;
         if (prev) {
             e.lp = prev.lastPass || 0; e.la = prev.lastAt || 0; e.lb = prev.lastBlankPass || 0;
