@@ -3012,6 +3012,14 @@ function _get6AMDayStr() {
     const boundary = new Date(now); boundary.setHours(6, 0, 0, 0);
     return _getLocalDateStr(now < boundary ? new Date(now - 86400000) : now);
 }
+/* getMemoryQuizDate()와 **똑같은 값** — 오전 6시 경계의 그날 0시(지역)를 toISOString으로 적는다(한국에선 하루 앞선 날짜로 보이지만 미션 키 전부가 이 형식).
+   getMemoryQuizDate는 파일 끝 IIFE에서 정의돼, 그보다 먼저 도는 첫 loadGameData()(최상위 호출)에선 아직 없다.
+   그때 예비로 _get6AMDayStr(진짜 날짜)를 써서 형식이 어긋났고 → 그날 앱을 처음 **다시** 열 때 심화 미션(누적 보상)이 지워졌다(2026-10-07 제보: "밤 9시쯤 리셋") */
+function _quizDateKey() {
+    const now = new Date();
+    const d = now.getHours() < 6 ? new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1) : new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return d.toISOString().split('T')[0];
+}
 // 특정 타임스탬프를 오전 6시 기준 날짜 문자열로 변환 (isHardshipChapterDoneToday 등 공용)
 function _tsTo6AMDateStr(ts) {
     const d = new Date(ts);
@@ -3251,7 +3259,9 @@ loadGameData = function () {
         // 날짜가 바뀐 경우 심화 미션 리셋 (로드 시점에서 체크, 오전 6시 기준)
         // getMemoryQuizDate()와 동일한 형식을 사용해야 checkMissions()와 일치함
         {
-            const _today = (typeof getMemoryQuizDate === 'function') ? getMemoryQuizDate() : _get6AMDayStr();
+            const _today = (typeof getMemoryQuizDate === 'function') ? getMemoryQuizDate() : _quizDateKey();
+            // 10/7 이전 버그로 진짜 날짜 형식(_get6AMDayStr)이 적힌 오늘 기록도 같은 날로 본다 — 한 번 더 지우지 않게
+            if (missionData.advanced.lastResetDate === _get6AMDayStr()) missionData.advanced.lastResetDate = _today;
             if (missionData.advanced.lastResetDate !== _today) {
                 missionData.advanced = createEmptyAdvancedMissionData(_today);
             }
@@ -4064,7 +4074,7 @@ function checkMissionPointsReset() {
     if (!missionData.points) {
         missionData.points = { dailyKey: '', weeklyKey: '', daily: 0, weekly: 0, dailyClaimedTiers: [], weeklyClaimedTiers: [] };
     }
-    const todayKey = (typeof getMemoryQuizDate === 'function') ? getMemoryQuizDate() : new Date().toISOString().split('T')[0];
+    const todayKey = (typeof getMemoryQuizDate === 'function') ? getMemoryQuizDate() : _quizDateKey();
     if (missionData.points.dailyKey !== todayKey) {
         missionData.points.dailyKey = todayKey;
         missionData.points.daily = 0;
@@ -11092,13 +11102,13 @@ function getForgottenStages() {
 
 // "오늘은 보지 않기" 체크 여부 (오전 6시 기준 날짜 경계)
 function isReviewPopupHiddenToday() {
-    const today = (typeof getMemoryQuizDate === 'function') ? getMemoryQuizDate() : new Date().toISOString().split('T')[0];
+    const today = (typeof getMemoryQuizDate === 'function') ? getMemoryQuizDate() : _quizDateKey();
     return localStorage.getItem('kingsRoad_hideReviewPopupDate') === today;
 }
 
 function toggleHideReviewPopupToday(checked) {
     if (checked) {
-        const today = (typeof getMemoryQuizDate === 'function') ? getMemoryQuizDate() : new Date().toISOString().split('T')[0];
+        const today = (typeof getMemoryQuizDate === 'function') ? getMemoryQuizDate() : _quizDateKey();
         localStorage.setItem('kingsRoad_hideReviewPopupDate', today);
     } else {
         localStorage.removeItem('kingsRoad_hideReviewPopupDate');
@@ -16278,7 +16288,7 @@ function updateStreak() {
     // (이전 new Date().toDateString() 형식은 checkDailyLogin과 불일치하여 매번 미션 초기화 버그 유발)
     const today = (typeof getMemoryQuizDate === 'function')
         ? getMemoryQuizDate()
-        : new Date().toISOString().split('T')[0];
+        : _quizDateKey();
     let lastPlayed = localStorage.getItem('lastPlayedDate');
     let streak = parseInt(localStorage.getItem('streakDays') || 0);
 
