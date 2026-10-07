@@ -13321,7 +13321,11 @@ function saveGameData() {
         // 친구·길드원 메모 — 예전에는 localStorage에만 있어 기기를 바꾸거나 백업을 복원하면 사라졌다
         friendMemos: (typeof _loadFriendMemos === 'function') ? _loadFriendMemos() : {},
         memberMemos: (typeof _getMemberMemos === 'function') ? _getMemberMemos() : {},
-        updatedAt: Date.now() // [Firestore] 충돌 해결용 타임스탬프
+        updatedAt: Date.now(), // [Firestore] 충돌 해결용 타임스탬프
+        // ★ 동시성 기준(서버가 확정한 updatedAt)을 함께 남긴다 (2026-10-07). 빠져 있어서 저장할 때마다 기기의 기준이 지워졌고,
+        //   앱을 다시 열면 _serverUpdatedAt = 0 → 첫 업로드가 **검사 없이** 서버를 덮었다. 옛 상태의 기기를 열면
+        //   다른 기기에서 쌓은 주간 승점·보석이 옛 값으로 되돌아갔다(#TJNGGW 제보: 2만 → 1.6만 → 1.2만 → 9,994, 보석 장부 drops의 base 없음)
+        serverUpdatedAt: _serverUpdatedAt || undefined
     };
 
     // localStorage는 즉시 저장 — syncToFirestore()가 바로 뒤에 호출될 때
@@ -13661,9 +13665,27 @@ function _mergeNewJerusalem(target, other) {
     return took;
 }
 
+/* 🏆 승점 — 같은 주·같은 달·같은 해 안에서는 늘기만 한다 → 큰 쪽 (2026-10-07). 예전엔 로컬 우선이면 로컬 것, 원격 우선이면 원격 것을 통째로 써서
+   옛 상태의 기기를 열 때마다 다른 기기에서 쌓은 주간 승점이 사라졌다 */
+function _mergeLeague(target, other) {
+    const a = target.leagueData, b = other.leagueData;
+    if (!a || !b || typeof a !== 'object' || typeof b !== 'object') return 0;
+    let took = 0;
+    const up = (k, ok) => { if (ok && (Number(b[k]) || 0) > (Number(a[k]) || 0)) { a[k] = b[k]; took++; } };
+    up('myScore', a.weekId && a.weekId === b.weekId);
+    up('myMonthlyScore', a.monthId && a.monthId === b.monthId);
+    up('yearlyScore', String(a.monthId || '').slice(0, 4) && String(a.monthId || '').slice(0, 4) === String(b.monthId || '').slice(0, 4));
+    up('totalScore', true);
+    if (b.weeklyHistory && typeof b.weeklyHistory === 'object') {
+        const h = a.weeklyHistory || (a.weeklyHistory = {});
+        for (const w in b.weeklyHistory) if ((Number(b.weeklyHistory[w]) || 0) > (Number(h[w]) || 0)) { h[w] = b.weeklyHistory[w]; took++; }
+    }
+    return took;
+}
 function _mergeSaveProgress(target, other) {
     if (!target || !other) return 0;
     let took = 0;
+    took += _mergeLeague(target, other);   // 🏆 승점 큰 쪽
     took += _mergeVerseRecall(target, other);
     took += _mergeReviewSamples(target, other);
     took += _mergeRecallWeek(target, other);
@@ -13781,6 +13803,7 @@ async function initFirestoreSync() {
     try {
         await _initFirestoreSyncCore();
     } finally {
+        window._initSyncDone = true;   // 이 뒤의 '낡은 쓰기' 거절만 배너로 알린다(그 전 것은 방금 끝난 초기 동기화가 합쳐 올렸다)
         try { _checkReturnBoost(); _renderReturnFloat(); } catch (e) { console.warn('[returnBoost]', e); }
         try { _guideSync(); } catch (e) {}   // 인도자와 동행 — 서버 상태
         try { await ensureTagAssigned(); } catch (e) { /* 조용히 */ }
@@ -13944,7 +13967,12 @@ async function _initFirestoreSyncCore() {
     const remoteLastLoginDate = remoteData && remoteData.missions && remoteData.missions.lastLoginDate;
     const localDateIsNewer = localLastLoginDate && remoteLastLoginDate && localLastLoginDate > remoteLastLoginDate;
 
-    if (!forceRemote && (localUpdatedAt > remoteUpdatedAt || localDateIsNewer)) {
+    // ★ 이 기기가 마지막으로 맞춘 뒤 서버가 바뀌었나 (2026-10-07) — 바뀌었으면 '로컬이 최신'일 수 없다(다른 기기가 그 사이 저장했다).
+    //   로컬 updatedAt·lastLoginDate는 앱을 켜는 순간 오늘로 바뀌어, 며칠 묵은 기기도 로컬 우선으로 가 옛 승점·보석으로 서버를 덮었다(#TJNGGW).
+    //   기준을 모르면(이번 배포 직후 첫 접속) 예전 판정을 그대로 쓴다
+    const _remoteMoved = (typeof _serverUpdatedAt === 'number' && _serverUpdatedAt > 0) && remoteUpdatedAt > _serverUpdatedAt + 5000;
+    if (_remoteMoved) console.log(`[Firestore] 마지막 동기화(${_serverUpdatedAt}) 뒤 서버가 바뀜(${remoteUpdatedAt}) → 서버 우선 + 진도·승점 병합`);
+    if (!forceRemote && !_remoteMoved && (localUpdatedAt > remoteUpdatedAt || localDateIsNewer)) {
         // 로컬이 더 최신 (게임 시작 직후 행동 등) → Firestore로 업로드
         if (localDateIsNewer) {
             console.log(`[Firestore] 로컬 lastLoginDate(${localLastLoginDate}) > 서버(${remoteLastLoginDate}) → 로컬 우선 업로드`);
@@ -14031,6 +14059,8 @@ async function _initFirestoreSyncCore() {
                 checkDailyLogin();
             }
         }
+        // ★ 방금 서버 기록을 읽어 합쳤으니 그 버전을 기준으로 올린다 — 보존된 옛 기준이면 '낡은 쓰기'로 거절된다(10/7)
+        if (remoteData && remoteData.updatedAt) _setServerUpdatedAt(remoteData.updatedAt);
         await syncToFirestore();
         return;
     }
@@ -14338,7 +14368,8 @@ async function syncToFirestore() {
         if (code === 'aborted') {
             console.warn('[syncToFirestore] 다른 기기의 최신 저장이 있어 업로드가 거절됨');
             if (_syncRetryTimer) { clearTimeout(_syncRetryTimer); _syncRetryTimer = null; }
-            if (typeof _showRemoteNewerBanner === 'function') _showRemoteNewerBanner();
+            // 앱을 막 열어 초기 동기화가 아직이면 알리지 않는다 — 곧 서버 기록을 합쳐 그 버전 위에서 다시 올린다(10/7)
+            if (window._initSyncDone && typeof _showRemoteNewerBanner === 'function') _showRemoteNewerBanner();
             return;
         }
 
