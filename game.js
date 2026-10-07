@@ -13877,11 +13877,15 @@ function _applyPendingCompensation(data, pc) {
     if (pc.score && data.leagueData) {
         for (const k of ['myScore', 'myMonthlyScore', 'totalScore', 'yearlyScore']) data.leagueData[k] = (data.leagueData[k] || 0) + pc.score;
     }
+    // scoreTotal — 누적·연간에만(지난주에 번 점수를 돌려줄 때 — 이번 주 주간 랭킹을 부풀리지 않게, 10/7)
+    if (pc.scoreTotal && data.leagueData) {
+        for (const k of ['totalScore', 'yearlyScore']) data.leagueData[k] = (data.leagueData[k] || 0) + pc.scoreTotal;
+    }
     if (pc.sunSlots) {
         const sb = data.sunBuy || { day: '', count: 0 };
         if (sb.day === today) data.sunBuy = { day: today, count: Math.max(0, (sb.count || 0) - pc.sunSlots) };
     }
-    try { localStorage.setItem('kingsRoad_pendingCompToast', JSON.stringify({ gems: pc.gems || 0, score: pc.score || 0, sunSlots: pc.sunSlots || 0, note: pc.note || '' })); } catch (e) {}
+    try { localStorage.setItem('kingsRoad_pendingCompToast', JSON.stringify({ gems: pc.gems || 0, score: (pc.score || 0) + (pc.scoreTotal || 0), sunSlots: pc.sunSlots || 0, note: pc.note || '' })); } catch (e) {}
     console.log('[Firestore] pendingCompensation 적용:', pc);
     return true;
 }
