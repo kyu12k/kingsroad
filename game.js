@@ -828,6 +828,9 @@ const LANG = {
         lt_intro_ladder: '• 막히면 한 단계씩 쉬워져요: 백지 → 첫 마디를 보여 주고 이어 쓰기 → 빈칸 → 정답 보기',
         lt_stop_title: '이 구간은 다시 넣기부터예요', lt_stop_body: '처음 세 절이 빈칸으로도 나오지 않았어요. 테스트를 여기서 마치고 다시 넣기부터 할까요?',
         lt_stop_end: '여기서 마치기', lt_stop_go: '계속하기',
+        lt_final_hidden: '「아직 안 나옴」으로 남겼어요 · 정답은 끝난 뒤 결과에서 그 칸을 누르면 보여요',
+        lt_res_nb: '↔ 표시는 시험 중에 바로 앞뒤 절을 먼저 쓴 뒤 나온 절 — 이어서 꺼낸 것일 수 있어요',
+        lt_res_tap: '칸을 누르면 그 절의 말씀이 보여요',
         lt_sheet_btn: '🎓 레벨 테스트', lt_sheet_last: '지난 테스트 {d} · 술술 {c}/{n}', lt_sheet_none: '지금 이 장이 정말 나오는지',
         fp_pick_title: '🔑 첫 마디의 고난 · {ch}장', fp_pick_desc: '구절은 사슬처럼 외워져서, 첫 마디만 떠오르면 나머지가 따라와요. 주소만 보고 첫 마디를 써 보세요. 순서는 섞여 나와요.',
         fp_lv1: '쉬움', fp_lv2: '보통', fp_lv3: '어려움', fp_lv1_d: '첫 단어', fp_lv2_d: '앞에서 세 글자가 찰 때까지', fp_lv3_d: '앞 세 단어',
@@ -2073,6 +2076,9 @@ const LANG = {
         lt_intro_ladder: '• If stuck, it gets easier step by step: blank → first words given → blanks → see the answer',
         lt_stop_title: 'Start this part by re-learning', lt_stop_body: 'The first three verses didn\'t come out even with blanks. End the test here and re-learn first?',
         lt_stop_end: 'End here', lt_stop_go: 'Continue',
+        lt_final_hidden: 'Saved as "not yet" · tap that cell in the result afterwards to see the verse',
+        lt_res_nb: '↔ = came after you had already written a neighboring verse in this test — it may have been chained',
+        lt_res_tap: 'Tap a cell to see that verse',
         lt_sheet_btn: '🎓 Level test', lt_sheet_last: 'Last test {d} · flows out {c}/{n}', lt_sheet_none: 'Does this chapter really come out now?',
         fp_pick_title: '🔑 Trial of the First Words · Ch.{ch}', fp_pick_desc: 'A verse is remembered like a chain — once the first words come, the rest follows. Look at the reference and write the opening words. Verses come in shuffled order.',
         fp_lv1: 'Easy', fp_lv2: 'Normal', fp_lv3: 'Hard', fp_lv1_d: 'first word', fp_lv2_d: 'first two words', fp_lv3_d: 'first three words',
@@ -27609,16 +27615,33 @@ function _startLevelTest(ch, unitIdx) {
     levelTests[ch] = list.slice(-5);
     saveGameData();
     window.hardshipOrigin = 'map';
-    selectedHardshipOrderType = 'random';
+    selectedHardshipOrderType = 'sequential';   // 순서는 여기서 정한다 — 무작위이되 이웃 절이 연달아 오지 않게
     selectedHardshipUltimate = true;
     _pendingHardshipEmbed = { label: t('lt_embed', { ch }) + (u ? ` · ${u.r}` : ''), levelTest: ch };
-    startHardshipSession('memory', ids);
+    startHardshipSession('memory', _ltSpacedOrder(ids));
+    if (hardshipState && hardshipState.levelTest) { hardshipState.isRandomOrder = true; hardshipState.ltSeen = []; }   // 일지 o=1(주소로 꺼내기)
+}
+/* 무작위로 섞되 바로 앞 절과 2절 이상 떨어진 것을 먼저 고른다(10/6 사용자: 정답·첫 마디를 본 절이 이웃 절의 단서가 된다) */
+function _ltSpacedOrder(ids) {
+    const pool = ids.slice().sort(() => Math.random() - 0.5), out = [];
+    const vOf = id => parseInt(String(id).split('-')[1], 10);
+    while (pool.length) {
+        const last = out.length ? vOf(out[out.length - 1]) : null;
+        let i = last == null ? 0 : pool.findIndex(id => Math.abs(vOf(id) - last) > 2);
+        if (i < 0) i = 0;
+        out.push(pool.splice(i, 1)[0]);
+    }
+    return out;
 }
 function _ltNote(id, ok, hints, giveUp) {
     const ch = hardshipState && hardshipState.levelTest, T = ch ? (levelTests[ch] || []).slice(-1)[0] : null;
     if (!T || !id) return;
     const L = (hardshipState.currentVerse ? (getHardshipActiveText(hardshipState.currentVerse) || '') : '').length, rev = hardshipState.revealedHints || [];
     const st = hardshipState.ltStep || 0;
+    { const seen = hardshipState.ltSeen || (hardshipState.ltSeen = []), [c0, v0] = String(id).split('-').map(Number);   // ↔ 앞뒤 2절 안을 이미 썼나
+      const nb = seen.some(x => { const [c1, v1] = String(x).split('-').map(Number); return c1 === c0 && Math.abs(v1 - v0) <= 2; });
+      hardshipState._ltNbNow = nb; if (!Array.isArray(T.nb)) T.nb = []; if (nb && T.nb.indexOf(id) < 0) T.nb.push(id);
+      if (seen.indexOf(id) < 0) seen.push(id); }
     const c = (!ok || giveUp) ? 0 : st === 2 ? 'B' : st === 1 ? 'S' : !(hints > 0) ? 3 : (hints <= Math.ceil(L * HINT_OK_RATIO)) ? 2 : 1;
     T.r[id] = c;
     { const v = Object.values(T.r); if (v.length === 3 && T.n > 3 && v.every(x => x === 0)) hardshipState.ltStopAsk = true; }   // 처음 세 절이 바닥
@@ -27630,8 +27653,8 @@ function _ltShowResult(ch) {
     const ids = getHardshipVerseIdsByChapterRange(ch, ch), done = Object.keys(T.r).length;
     if (!done) return;   // 하나도 안 하고 나갔으면 띄우지 않는다
     const cnt = { 3: 0, 2: 0, 1: 0, S: 0, B: 0, 0: 0 }; Object.values(T.r).forEach(c => { if (c in cnt) cnt[c]++; });
-    const warm = new Set(T.w || []);
-    const cell = id => { const v = id.split('-')[1], c = T.r[id]; return `<span class="lt-cell ${c == null ? 'cn' : 'c' + c}" title="${ch}:${v}">${v}${warm.has(id) && c != null ? '<i>☀</i>' : ''}</span>`; };
+    const warm = new Set(T.w || []), nbs = new Set(T.nb || []);
+    const cell = id => { const v = id.split('-')[1], c = T.r[id]; return `<span class="lt-cell ${c == null ? 'cn' : 'c' + c}" title="${ch}:${v}" onclick="_ltShowAns('${id}')">${v}${warm.has(id) && c != null ? '<i>☀</i>' : nbs.has(id) && c != null ? '<i class="nb">↔</i>' : ''}</span>`; };
     const lines = [];
     if (cnt[3]) lines.push(t('lt_res_good', { n: cnt[3] }));   // 나온 것 먼저 — 회색만 보고 꺾이지 않게
     if (cnt[0]) lines.push(t('lt_res_next0', { n: cnt[0] }));
@@ -27654,13 +27677,22 @@ function _ltShowResult(ch) {
             ${done < ids.length ? `<div class="lt-partial">${t('lt_res_partial', { done, n: ids.length })}</div>` : ''}
             <div class="lt-legend">${[3, 2, 1, 'S', 'B', 0].filter(c => cnt[c] || c === 3 || c === 0).map(c => `<span class="lt-cell c${c}"></span>${t('lt_c' + c)} <b>${cnt[c]}</b>`).join(' &nbsp;')}</div>
             <div class="lt-grid">${ids.map(cell).join('')}</div>
+            <div class="lt-ans" id="lt-ans">${t('lt_res_tap')}</div>
             ${warm.size ? `<div class="lt-note">${t('lt_res_warm')}</div>` : ''}
+            ${nbs.size ? `<div class="lt-note">${t('lt_res_nb')}</div>` : ''}
             <div class="lt-next">${lines.map(l => `<div>• ${l}</div>`).join('')}</div>
             ${acts.length ? `<div class="lt-acts">${acts.join('')}</div>` : ''}
             <div class="lt-note">${t('lt_res_plan')}</div>
             <button class="lt-go" onclick="document.getElementById('lt-result').style.display='none'">${t('lt_res_ok')}</button></div>`;
     ov.style.display = 'flex';
     setTimeout(() => ov.classList.add('active'), 10);
+}
+function _ltShowAns(id) {
+    const el = document.getElementById('lt-ans'); if (!el) return;
+    const [c, v] = String(id).split('-').map(Number);
+    const d = (currentLang === 'en' && typeof bibleDataEn !== 'undefined' && bibleDataEn[c] && bibleDataEn[c][v - 1]) || ((bibleData[c] || [])[v - 1]);
+    el.innerHTML = `<b>${currentLang === 'en' ? 'Rev' : '계'} ${c}:${v}</b> ${escapeHtml((d && d.text) || '')}`;
+    el.classList.add('on');
 }
 /* 🎓 한 단계 아래로 — 1: 첫 세 단어를 입력칸에 채워 주고 이어 쓰기 · 2: 빈칸(글자 칸) 모드. 같은 절, 정답은 아직 안 보여준다 */
 function _ltStepDown() {
@@ -29719,6 +29751,11 @@ function giveUpHardshipMemoryVerse() {
 
     recordVerseRecall(_currentHardshipStageId(), false, (hardshipState.revealedHints || []).length, 'memory', { giveUp: true });
     wrongCount += 1;
+    if (hardshipState.levelTest) {   // 🎓 정답은 결과 창에서만 — 시험 중에 보이면 이웃 절의 단서가 된다
+        hardshipState.wrongSlots = [];
+        hardshipState.feedback = { type: 'error', message: t('lt_final_hidden') };
+        renderHardshipMemoryVerse(); updateBattleUI(); return;
+    }
     hardshipState.feedback = {
         type: 'error',
         message: t('hardship_feedback_wrong_memory', {
@@ -29948,7 +29985,9 @@ function updateHardshipMemoryBoard() {
                 // (2026-09-21: 예전엔 iOS만 이 경로였고 안드로이드는 매 키마다 scrollIntoView center — 긴 절에서 진동)
                 const slotRect = slotToScroll.getBoundingClientRect();
                 const vvTop = window.visualViewport.offsetTop;
-                const vvHeight = window.visualViewport.height;
+                let vvHeight = window.visualViewport.height;
+                // 🙋 모르겠어요 · 💡 힌트가 떠 있으면 그 줄 위까지만 '보이는 띠'로 본다 (10/7 사용자: 버튼이 입력 칸을 가린다)
+                ['hardship-giveup-fab', 'common-hardship-hint-btn'].forEach(fid => { const f = document.getElementById(fid); if (f && f.offsetWidth > 0) { const ft = f.getBoundingClientRect().top - 6; if (ft > vvTop + 80) vvHeight = Math.min(vvHeight, ft - vvTop); } });
                 const margin = Math.min(60, vvHeight * 0.15);
                 const slotCenter = slotRect.top + slotRect.height / 2;
                 if (slotRect.top < vvTop + margin || slotRect.bottom > vvTop + vvHeight - margin) {
@@ -30414,7 +30453,7 @@ function _logRecallAttempt(stageId, ok, hints, mode, extra, prev, training) {
         if (extra && extra.lv) e.lv = extra.lv;
         if (hs.blankFirst) e.bf = 1;   // 「간격 3일 → 백지」 규칙으로 백지가 된 복습(10/4~)   // 🔑 첫 마디의 고난 난이도(1 쉬움 · 2 보통 · 3 어려움) — 10/4 빠져 있던 것
         if (hs.eventId) e.ev = String(hs.eventId);
-        if (hs.levelTest) e.lts = hs.ltStep || 0;   // 🎓 레벨 테스트 단계(0 백지 · 1 첫 마디 줌 · 2 빈칸)
+        if (hs.levelTest) { e.lts = hs.ltStep || 0; if (hs._ltNbNow) e.nb = 1; }   // ↔ 이웃 절을 먼저 쓴 뒤   // 🎓 레벨 테스트 단계(0 백지 · 1 첫 마디 줌 · 2 빈칸)
         if (training) e.tr = 1;
         if (prev) {
             e.lp = prev.lastPass || 0; e.la = prev.lastAt || 0; e.lb = prev.lastBlankPass || 0;
@@ -30674,6 +30713,12 @@ function submitHardshipMemoryGuess() {
     // 백지 산출 실패 — 이 구절은 아직 단서 없이 나오지 않는다
     recordVerseRecall(_currentHardshipStageId(), false, (hardshipState.revealedHints || []).length, 'memory');
     wrongCount += 1;
+    if (hardshipState.levelTest) {   // 🎓 빈칸에서도 틀림 — 정답은 결과 창에서만
+        hardshipState.wrongSlots = [];
+        hardshipState.feedback = { type: 'error', message: t('lt_final_hidden') };
+        if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
+        renderHardshipMemoryVerse(); updateBattleUI(); return;
+    }
     hardshipState.feedback = {
         type: 'error',
         message: hardshipState.startLv   // 🔑 첫 마디 — 정답 첫 마디를 크게, 구절은 이어서(사슬로 이어지는 걸 보게)

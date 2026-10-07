@@ -7463,3 +7463,11 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 
 .lt-cell.cS { background: #5dade2; color: #0b2c42; }
 .lt-cell.cB { background: #a569bd; color: #fff; }
+
+.lt-cell { cursor: pointer; }
+.lt-cell i.nb { color: #7fe6f5; font-weight: 800; }
+.lt-ans { font-size: 0.85rem; line-height: 1.6; color: #a9a4ba; background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 9px 12px; margin-bottom: 10px; }
+.lt-ans.on { color: #ece9f5; }
+.lt-ans b { color: #f6d77a; margin-right: 4px; }
+/* 떠 있는 버튼(🙋·💡) 줄만큼 보드 아래 여백 — 마지막 줄 칸을 버튼 위로 끌어올릴 수 있게 */
+#game-screen.mode-hardship-memory .battle-field { padding-bottom: 96px; }
