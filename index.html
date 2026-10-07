@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <!-- ★ 반드시 첫 스크립트: 전역 Date를 서버 시각으로 보정한다 (clock.js 주석 참조) -->
-    <script src="clock.js?v=20261007b"></script>
+    <script src="clock.js?v=20261007c"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>King's Road - 요한계시록 암송</title>
 
@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
     <!-- image_0.webp is inlined below; preload removed -->
-    <link rel="stylesheet" href="style.css?v=20261007b">
+    <link rel="stylesheet" href="style.css?v=20261007c">
 
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-TEVW49QB45"></script>
@@ -740,6 +740,32 @@
             </div>
             <script>
                 const NOTICES = [
+                    {
+                        date: '2026-10-07',
+                        type: 'patch',
+                        title: '🔑 막힌 시작엔 「첫 마디 보기」 · 🎓 레벨 테스트 손질',
+                        titleEn: '🔑 "Show first words" when the start is stuck · 🎓 level test tweaks',
+                        content: `
+<div style="padding:4px 0; line-height:1.8;">
+  <p style="color:#555; margin-bottom:6px;"><strong>🔑 첫 마디 보기 (강한 힌트)</strong></p>
+  <div style="background:#fbf6ea; border-radius:12px; padding:12px 14px; margin-bottom:12px;">
+    <p style="color:#666; font-size:0.92em; margin:0;">• 백지에서 <strong>시작 부분</strong>에 막혀 💡 힌트를 두 번 쓰거나 15초쯤 멈춰 있으면, 💡 위에 「🔑 첫 마디 보기」가 나타나요</p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 누르면 첫 세 단어를 채워 줘요. 대신 그 절은 <strong>백지 레벨이 그대로</strong>이고 승점은 절반이에요</p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 막히는 곳은 대부분 절의 시작이에요 — 먼저 💡로 한 글자씩 떠올려 보고, 그래도 안 되면 그때 쓰세요</p>
+  </div>
+  <p style="color:#555; margin-bottom:6px;"><strong>🎓 레벨 테스트</strong></p>
+  <div style="background:#efeafd; border-radius:12px; padding:12px 14px; margin-bottom:12px;">
+    <p style="color:#666; font-size:0.92em; margin:0;">• 장 목록 맨 위에서 바로 시작 · 구간별(2~5분) 또는 장 전체</p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 막히면 한 단계씩 쉬워져요: 백지 → 첫 마디 주고 이어 쓰기 → 빈칸. 결과는 「술술 나옴 · 살짝 막힘 · 힌트로 겨우 · 첫 마디 주면 나옴 · 빈칸 보면 나옴 · 아직 안 나옴」</p>
+    <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 이웃 절이 서로 단서가 되지 않게 순서를 띄우고, 안 나온 절의 정답은 결과에서 칸을 누르면 보여요 (↔ = 앞뒤 절을 먼저 쓴 뒤)</p>
+  </div>
+</div>`,
+                        contentEn: `
+<div style="padding:4px 0; line-height:1.8;">
+  <p style="color:#666; font-size:0.92em; margin:0;">• 🔑 If you're stuck at the start of a blank verse (two 💡 hints or about 15 seconds), "Show first words" appears above 💡. It fills in the first three words — the blank level stays and points are halved</p>
+  <p style="color:#666; font-size:0.92em; margin:4px 0 0;">• 🎓 Level test: start from the top of the chapter list, by section or whole chapter. It gets easier step by step when you're stuck, spaces neighboring verses apart, and shows answers only in the result</p>
+</div>`
+                    },
                     {
                         date: '2026-10-06',
                         type: 'patch',
@@ -4066,7 +4092,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="bible_en.js"></script>
-    <script src="game.js?v=20261007b"></script>
+    <script src="game.js?v=20261007c"></script>
     <script>
 
         /* =========================================

@@ -831,6 +831,7 @@ const LANG = {
         lt_final_hidden: '「아직 안 나옴」으로 남겼어요 · 정답은 끝난 뒤 결과에서 그 칸을 누르면 보여요',
         lt_res_nb: '↔ 표시는 시험 중에 바로 앞뒤 절을 먼저 쓴 뒤 나온 절 — 이어서 꺼낸 것일 수 있어요',
         lt_res_tap: '칸을 누르면 그 절의 말씀이 보여요',
+        sh_btn: '🔑 첫 마디 보기', sh_note: '🔑 첫 마디를 보고 썼어요 — 백지 레벨은 그대로 · 승점 절반',
         lt_sheet_btn: '🎓 레벨 테스트', lt_sheet_last: '지난 테스트 {d} · 술술 {c}/{n}', lt_sheet_none: '지금 이 장이 정말 나오는지',
         fp_pick_title: '🔑 첫 마디의 고난 · {ch}장', fp_pick_desc: '구절은 사슬처럼 외워져서, 첫 마디만 떠오르면 나머지가 따라와요. 주소만 보고 첫 마디를 써 보세요. 순서는 섞여 나와요.',
         fp_lv1: '쉬움', fp_lv2: '보통', fp_lv3: '어려움', fp_lv1_d: '첫 단어', fp_lv2_d: '앞에서 세 글자가 찰 때까지', fp_lv3_d: '앞 세 단어',
@@ -2079,6 +2080,7 @@ const LANG = {
         lt_final_hidden: 'Saved as "not yet" · tap that cell in the result afterwards to see the verse',
         lt_res_nb: '↔ = came after you had already written a neighboring verse in this test — it may have been chained',
         lt_res_tap: 'Tap a cell to see that verse',
+        sh_btn: '🔑 Show first words', sh_note: '🔑 Written with the first words shown — blank level stays · half points',
         lt_sheet_btn: '🎓 Level test', lt_sheet_last: 'Last test {d} · flows out {c}/{n}', lt_sheet_none: 'Does this chapter really come out now?',
         fp_pick_title: '🔑 Trial of the First Words · Ch.{ch}', fp_pick_desc: 'A verse is remembered like a chain — once the first words come, the rest follows. Look at the reference and write the opening words. Verses come in shuffled order.',
         fp_lv1: 'Easy', fp_lv2: 'Normal', fp_lv3: 'Hard', fp_lv1_d: 'first word', fp_lv2_d: 'first two words', fp_lv3_d: 'first three words',
@@ -27700,12 +27702,12 @@ function _ltStepDown() {
     hs.ltStep = (hs.ltStep || 0) + 1;
     if (hs.ltStep === 1) {
         const ph = firstPhraseOf(getHardshipActiveText(hs.currentVerse) || '', 3, currentLang === 'en');
-        hs.ltGiven = ph ? ph + ' ' : '';
-        hs.memoryTypedText = hs.ltGiven;
+        hs.ltGiven = ph || '';
+        hs.memoryTypedText = _prefixTyped(hs.ltGiven);
         showToast(t('lt_step1'));
     } else {
         hs.ultimateMemoryMode = false;
-        hs.memoryTypedText = hs.ltGiven || '';
+        hs.memoryTypedText = _prefixTyped(hs.ltGiven);
         showToast(t('lt_step2'));
     }
     hs.wrongSlots = []; hs.feedback = null;
@@ -28772,6 +28774,7 @@ function loadNextHardshipVerse() {
     hardshipState.memoryTypedText = '';
     hardshipState.verseChoices = [];
     hardshipState.ltStep = 0; hardshipState.ltGiven = '';   // 🎓 단계식 — 절마다 백지부터
+    hardshipState.strongAvail = false; hardshipState.strongHint = false; hardshipState.lastTypeAt = 0;   // 🔑 강한 힌트 — 절마다 다시 얻는다
     if (hardshipState.levelTest) hardshipState.ultimateMemoryMode = true;
 
     if (hardshipState.currentVerse) {
@@ -29567,6 +29570,7 @@ function renderHardshipMemoryVerse() {
         </div>
     `;
     _syncGiveupFab(_isEmbeddedBlankSession() && !hardshipState.awaitingNext && !hardshipState.locked);
+    _syncStrongFab();
 
     bindHardshipMemoryInputGuards();
     _alignHardshipHiddenInput(field.querySelector('.char-slot.active') || field.querySelector('.char-slot.is-valid'));
@@ -29595,6 +29599,7 @@ function renderHardshipMemoryVerse() {
    visualViewport의 offset/size와 그대로 섞어 계산할 수 있다. */
 function positionHardshipHintFab() {
     _positionGiveupFab();
+    setTimeout(_positionStrongFab, 0);
     const fab = document.getElementById('common-hardship-hint-btn');
     if (!fab || fab.offsetWidth === 0) return; // display:none이면 offsetWidth가 0
 
@@ -29617,6 +29622,81 @@ function positionHardshipHintFab() {
     fab.style.bottom = 'auto';
     fab.style.right = 'auto';
 }
+/* 🔑 강한 힌트 — 💡 힌트 바로 위(오른쪽) */
+function _positionStrongFab() {
+    const sb = document.getElementById('hardship-strong-fab'), hb = document.getElementById('common-hardship-hint-btn');
+    if (!sb || sb.offsetWidth === 0) return;
+    const MARGIN = 14, vv = window.visualViewport, right = vv ? (vv.offsetLeft + vv.width) : window.innerWidth;
+    // 💡 힌트와 같은 바닥(보이는 화면 아래·제출 줄 위)에서 💡 높이만큼 더 위 — 힌트 위치를 읽지 않는다(아직 안 앉았을 수 있다)
+    let limit = vv ? (vv.offsetTop + vv.height) : window.innerHeight;
+    const control = document.querySelector('.battle-control');
+    if (control && control.offsetHeight > 0) { const cr = control.getBoundingClientRect(); if (cr.left < window.innerWidth / 3) limit = Math.min(limit, cr.top); }
+    const hh = (hb && hb.offsetHeight) || 44;
+    sb.style.bottom = 'auto'; const top = limit - MARGIN - hh - 8 - sb.offsetHeight;
+    sb.style.bottom = 'auto'; sb.style.right = 'auto';   // CSS bottom이 남으면 top과 함께 늘어난다
+    sb.style.top = Math.max(MARGIN, top) + 'px';
+    sb.style.left = Math.max(MARGIN, right - sb.offsetWidth - MARGIN) + 'px';
+}
+/* 🔑 강한 힌트 「첫 마디 보기」 (2026-10-07 사용자: 첫 세 단어 = 강한 힌트, 글자 힌트 = 보통 힌트).
+   나란히 두면 덜 힘든 쪽만 누른다(빈칸에만 머무는 사람들, 첫 마디의 고난 5%) — 그래서 **얻는** 구조:
+   시작(첫 세 단어) 안에서 글자 힌트를 2번 쓰고도 막혀 있거나, 시작에서 15초 멈춰 있으면 그때 나타난다. 실력이 늘면 조건에 안 걸려 저절로 덜 쓴다.
+   쓰면: 첫 세 단어를 입력칸에 채운다. 맞혀도 '힌트 많은 통과'(백지 레벨 그대로 · 일반 클리어 아님 · 암송왕 제외) · 승점 절반. 일지 sh:1.
+   레벨 테스트(자체 단계식)·첫 마디의 고난·집중 훈련엔 없다 */
+const SH_IDLE_MS = 15000, SH_START_HINTS = 2;
+/* 첫 세 단어(+뒤 띄어쓰기)까지 채운 '입력 문자열'. 글자 힌트로 이미 열린 칸은 입력과 따로라 건너뛴다
+   (10/7: 통째로 넣었더니 힌트 칸만큼 밀려 맞게 써도 오답이 됐다) */
+function _prefixTyped(phrase) {
+    const hs = hardshipState; if (!hs || !hs.currentVerse || !phrase) return '';
+    const tx = getHardshipActiveText(hs.currentVerse) || '', rev = new Set(hs.revealedHints || []);
+    let end = Math.min(phrase.length, tx.length);
+    while (end < tx.length && !isHardshipTypingTargetChar(tx.charAt(end))) end++;   // 뒤에 붙은 문장부호
+    if (tx.charAt(end) === ' ') end++;                                               // 다음 단어 앞 띄어쓰기
+    let out = '';
+    for (let i = 0; i < end; i++) { const ch = tx.charAt(i); if (isHardshipTypingTargetChar(ch) && !rev.has(i)) out += ch; }
+    return out;
+}
+function _strongPhrase() { const hs = hardshipState; return hs && hs.currentVerse ? firstPhraseOf(getHardshipActiveText(hs.currentVerse) || '', 3, currentLang === 'en') : ''; }
+function _strongEligible() {
+    const hs = hardshipState;
+    return !!(window.isHardshipMode && hs && hs.active && hs.mode === 'memory' && hs.currentVerse && !hs.locked && !hs.awaitingNext
+        && !hs.levelTest && !hs.startLv && !hs.trainingMode && !hs.strongHint);
+}
+function _strongCheck() {
+    const hs = hardshipState;
+    if (!_strongEligible() || hs.strongAvail) return;
+    const ph = _strongPhrase(); if (!ph) return;
+    const typed = String(hs.memoryTypedText || '').length;
+    if (typed >= ph.length) return;   // 이미 시작을 넘겼다
+    const startHints = (hs.revealedHints || []).filter(i => i < ph.length).length;
+    const idle = Date.now() - (hs.lastTypeAt || hs.verseStartedAt || Date.now());
+    if (startHints >= SH_START_HINTS || idle >= SH_IDLE_MS) { hs.strongAvail = true; _syncStrongFab(); }
+}
+function _syncStrongFab() {
+    let b = document.getElementById('hardship-strong-fab');
+    const on = _strongEligible() && hardshipState.strongAvail;
+    if (!on) { if (b) b.style.display = 'none'; }
+    else {
+        if (!b) {
+            b = document.createElement('button'); b.id = 'hardship-strong-fab'; b.type = 'button';
+            b.onclick = () => useStrongHint();
+            b.addEventListener('mousedown', e => e.preventDefault());
+            document.body.appendChild(b);
+        }
+        b.textContent = t('sh_btn'); b.style.display = 'inline-flex';
+        _positionStrongFab();
+    }
+    clearInterval(window._shTimer);   // 시작에서 멈춰 있는지 1초마다
+    if (_strongEligible() && !hardshipState.strongAvail) window._shTimer = setInterval(() => { if (!_strongEligible()) { clearInterval(window._shTimer); return; } _strongCheck(); }, 1000);
+}
+function useStrongHint() {
+    const hs = hardshipState; if (!_strongEligible() || !hs.strongAvail) return;
+    const ph = _strongPhrase(); if (!ph) return;
+    hs.strongHint = true; hs.strongAvail = false;
+    const pre = _prefixTyped(ph); if (String(hs.memoryTypedText || '').length < pre.length) hs.memoryTypedText = pre;
+    hs.lastTypeAt = Date.now();
+    renderHardshipMemoryVerse();
+    focusHardshipMemoryHiddenInput();
+}
 /* 🙋 「모르겠어요」 — 힌트 FAB와 같은 규칙(보이는 화면 아래, 제출 줄 위), 왼쪽. 힌트가 꺼져 있어도 따로 앉는다 */
 function _positionGiveupFab() {
     const gu = document.getElementById('hardship-giveup-fab');
@@ -29636,7 +29716,7 @@ function _positionGiveupFab() {
    예전엔 제출·다시 입력 줄에 있어 키보드가 열리면 그 아래로 숨었다. 힌트 FAB처럼 보이는 화면을 따라다닌다 */
 function _syncGiveupFab(on) {
     let b = document.getElementById('hardship-giveup-fab');
-    if (!on) { if (b) b.style.display = 'none'; return; }
+    if (!on) { if (b) b.style.display = 'none'; _syncStrongFab(); return; }   // 🔑도 자기 조건으로 다시 본다(세션이 끝나면 숨는다)
     if (!b) {
         b = document.createElement('button');
         b.id = 'hardship-giveup-fab';
@@ -29987,7 +30067,7 @@ function updateHardshipMemoryBoard() {
                 const vvTop = window.visualViewport.offsetTop;
                 let vvHeight = window.visualViewport.height;
                 // 🙋 모르겠어요 · 💡 힌트가 떠 있으면 그 줄 위까지만 '보이는 띠'로 본다 (10/7 사용자: 버튼이 입력 칸을 가린다)
-                ['hardship-giveup-fab', 'common-hardship-hint-btn'].forEach(fid => { const f = document.getElementById(fid); if (f && f.offsetWidth > 0) { const ft = f.getBoundingClientRect().top - 6; if (ft > vvTop + 80) vvHeight = Math.min(vvHeight, ft - vvTop); } });
+                ['hardship-giveup-fab', 'common-hardship-hint-btn', 'hardship-strong-fab'].forEach(fid => { const f = document.getElementById(fid); if (f && f.offsetWidth > 0) { const ft = f.getBoundingClientRect().top - 6; if (ft > vvTop + 80) vvHeight = Math.min(vvHeight, ft - vvTop); } });
                 const margin = Math.min(60, vvHeight * 0.15);
                 const slotCenter = slotRect.top + slotRect.height / 2;
                 if (slotRect.top < vvTop + margin || slotRect.bottom > vvTop + vvHeight - margin) {
@@ -30025,6 +30105,7 @@ function handleHardshipMemoryInput(event) {
     const targetLength = Number(input.maxLength) || getHardshipFillableVerseLength();
 
     hardshipState.memoryTypedText = currentText;
+    hardshipState.lastTypeAt = Date.now();   // 🔑 시작에서 멈춰 있나
     updateHardshipMemoryBoard();
     moveHardshipMemoryCursorToEnd(input);
 
@@ -30033,7 +30114,7 @@ function handleHardshipMemoryInput(event) {
 function resetHardshipMemoryInputs() {
     if (!window.isHardshipMode || hardshipState.mode !== 'memory' || hardshipState.locked || !hardshipState.currentVerse) return;
 
-    hardshipState.memoryTypedText = (hardshipState.levelTest && hardshipState.ltGiven) || '';   // 🎓 준 첫 마디는 남긴다
+    hardshipState.memoryTypedText = (hardshipState.levelTest && hardshipState.ltGiven) ? _prefixTyped(hardshipState.ltGiven) : '';   // 🎓 준 첫 마디는 남긴다
 
     renderHardshipMemoryVerse();
 }
@@ -30225,6 +30306,7 @@ function useHardshipMemoryHint() {
     updateGemDisplay();
     saveGameData();
     renderHardshipMemoryVerse();
+    _strongCheck();   // 🔑 시작에서 글자 힌트 2번이면 첫 마디 보기
 }
 
 /* 구절 하나의 백지 산출 시도를 기록한다.
@@ -30351,7 +30433,8 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
     // 백지레벨(라이트너 상자) — 타이핑 시도만. 'learn'(초학습 직후)·음성·집중 훈련은 제외
     if (mode === 'memory') {
         const _len = r.lastVerseLen || 0;
-        const _hintOk = _len > 0 ? (hints || 0) <= Math.ceil(_len * HINT_OK_RATIO) : !(hints > 0);
+        const _strong = !!(hardshipState && hardshipState.strongHint);   // 🔑 첫 마디를 보고 쓴 것 — 힌트 많은 통과로 친다
+        const _hintOk = !_strong && (_len > 0 ? (hints || 0) <= Math.ceil(_len * HINT_OK_RATIO) : !(hints > 0));
         const _blankMode = !!(hardshipState && hardshipState.ultimateMemoryMode);
         const _res = _updateBlankBox(r, !!ok, _blankMode, _hintOk, now);
         let _pts = 0;
@@ -30366,7 +30449,7 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
                 if (hardshipState) (hardshipState.blankUps = hardshipState.blankUps || []).push({ v: String(stageId), lv: _res.to, pts: _pts });
             }
         }
-        if (hardshipState) hardshipState._blankLvNote = _blankLvNoteText(_res, _pts, _quick);
+        if (hardshipState) hardshipState._blankLvNote = (_strong && ok) ? t('sh_note') : _blankLvNoteText(_res, _pts, _quick);
         // 백지로 단서 없이 써냈으면 그 절의 일반 스테이지를 클리어한 것으로 친다 (복습 단계·보석·클리어 횟수)
         if (ok && _blankMode && _hintOk) {
             const _cr = _blankCountsAsClear(String(stageId), now);
@@ -30386,7 +30469,7 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
     // ★ 백지(궁극)만 센다 (2026-09-14). 빈칸(글자 칸 보임)을 같이 세면 모두가 빈칸만 하게 돼
     //   판이 '인출'에서 '빈칸 채우기 속도'로 옮겨간다. "암송왕 = 아무 단서 없이 써낸 구절 수".
     if (ok && mode === 'memory' && hardshipState && hardshipState.ultimateMemoryMode) {
-        _countRecallForWeek(stageId, hints || 0, r.lastVerseLen || 0);
+        if (!(hardshipState && hardshipState.strongHint)) _countRecallForWeek(stageId, hints || 0, r.lastVerseLen || 0);   // 🔑 강한 힌트는 암송왕에서 뺀다
     }
 
     verseRecall[stageId] = r;
@@ -30453,7 +30536,8 @@ function _logRecallAttempt(stageId, ok, hints, mode, extra, prev, training) {
         if (extra && extra.lv) e.lv = extra.lv;
         if (hs.blankFirst) e.bf = 1;   // 「간격 3일 → 백지」 규칙으로 백지가 된 복습(10/4~)   // 🔑 첫 마디의 고난 난이도(1 쉬움 · 2 보통 · 3 어려움) — 10/4 빠져 있던 것
         if (hs.eventId) e.ev = String(hs.eventId);
-        if (hs.levelTest) { e.lts = hs.ltStep || 0; if (hs._ltNbNow) e.nb = 1; }   // ↔ 이웃 절을 먼저 쓴 뒤   // 🎓 레벨 테스트 단계(0 백지 · 1 첫 마디 줌 · 2 빈칸)
+        if (hs.levelTest) { e.lts = hs.ltStep || 0; if (hs._ltNbNow) e.nb = 1; }
+        if (hs.strongHint) e.sh = 1; else if (hs.strongAvail) e.sh = 0;   // 🔑 강한 힌트 — 1 썼다 · 0 나타났지만 안 썼다   // ↔ 이웃 절을 먼저 쓴 뒤   // 🎓 레벨 테스트 단계(0 백지 · 1 첫 마디 줌 · 2 빈칸)
         if (training) e.tr = 1;
         if (prev) {
             e.lp = prev.lastPass || 0; e.la = prev.lastAt || 0; e.lb = prev.lastBlankPass || 0;
@@ -30616,7 +30700,7 @@ function submitHardshipMemoryGuess() {
     if (isCorrect) {
         const orderMult = hardshipState.isRandomOrder ? 2 : 1;
         const _blankSid = _currentHardshipStageId();
-        const _rawPoints = (hardshipState.ultimateMemoryMode ? playerHearts * 5 : playerHearts * 4) * orderMult;
+        const _rawPoints = (hardshipState.ultimateMemoryMode ? playerHearts * 5 : playerHearts * 4) * orderMult * (hardshipState.strongHint ? 0.5 : 1);   // 🔑 강한 힌트는 절반
         const basePoints = _blankScoreAlreadyToday(_blankSid)
             ? 0
             : Math.round(_rawPoints * getHardshipScoreScale() * (hardshipState.repeatFactor || 1));
@@ -30668,7 +30752,7 @@ function submitHardshipMemoryGuess() {
         const typoCount = hardshipState.wrongSlots.length;
         const orderMult = hardshipState.isRandomOrder ? 2 : 1;
         const _blankSid = _currentHardshipStageId();
-        const _rawPoints = (hardshipState.ultimateMemoryMode ? playerHearts * 5 : playerHearts * 4) * orderMult;
+        const _rawPoints = (hardshipState.ultimateMemoryMode ? playerHearts * 5 : playerHearts * 4) * orderMult * (hardshipState.strongHint ? 0.5 : 1);   // 🔑 강한 힌트는 절반
         const basePoints = _blankScoreAlreadyToday(_blankSid)
             ? 0
             : Math.round(_rawPoints * getHardshipScoreScale() * (hardshipState.repeatFactor || 1));
