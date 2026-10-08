@@ -719,12 +719,31 @@
         const seaColTex = new THREE.CanvasTexture(seaCv); seaColTex.encoding = THREE.sRGBEncoding;
         {
             const surf = new THREE.PlaneGeometry(SW_W, SW_H, 1, 1);
-            const col = new THREE.Mesh(surf, new THREE.MeshStandardMaterial({ map: seaColTex, transparent: true, opacity: 0.9, roughness: 0.16, metalness: 0.18, side: THREE.DoubleSide, depthWrite: false }));
+            const col = new THREE.Mesh(surf, new THREE.MeshStandardMaterial({ map: seaColTex, transparent: true, opacity: 0.95, roughness: 0.32, metalness: 0, envMapIntensity: 0.3, side: THREE.DoubleSide, depthWrite: false })   /* 10/8: 비스듬히 보면 금빛 하늘을 거울처럼 비춰 허옇게 — 반사를 줄여 물빛이 보이게 */);
             col.rotation.x = -Math.PI / 2; col.position.set((SW_X0 + SW_X1) / 2, SEA_Y - 0.002, (SW_Z0 + SW_Z1) / 2); col.renderOrder = 1; seaGrp.add(col);
-            [[seaTex, 0.26, 0.004, 2], [seaTex2, 0.16, 0.008, 3]].forEach(([tx, op, dy, ro]) => {
-                const sf = new THREE.Mesh(surf, new THREE.MeshStandardMaterial({ map: tx, color: 0xffffff, transparent: true, opacity: op, roughness: 0.12, metalness: 0.2, depthWrite: false }));
+            [[seaTex, 0.18, 0.004, 2], [seaTex2, 0.1, 0.008, 3]].forEach(([tx, op, dy, ro]) => {
+                const sf = new THREE.Mesh(surf, new THREE.MeshStandardMaterial({ map: tx, color: 0xffffff, transparent: true, opacity: op, roughness: 0.3, metalness: 0, envMapIntensity: 0.4, depthWrite: false }));
                 sf.rotation.x = -Math.PI / 2; sf.position.set((SW_X0 + SW_X1) / 2, SEA_Y + dy, (SW_Z0 + SW_Z1) / 2); sf.renderOrder = ro; seaGrp.add(sf);
             });
+        }
+        {   // 🌊 파도 거품 (10/8) — 해안선(coastZ)을 따라 물가 띠, 하얀 물결이 밀려왔다 빠진다. 바다라는 걸 가장 먼저 알려 주는 것
+            const cv = document.createElement('canvas'); cv.width = 128; cv.height = 64; const g = cv.getContext('2d');
+            for (let i = 0; i < 3; i++) {   // 물결 줄 셋 — 물가 쪽이 진하다
+                const y = 12 + i * 16, a = [0.95, 0.55, 0.3][i];
+                g.strokeStyle = `rgba(255,255,255,${a})`; g.lineWidth = [5, 3, 2][i]; g.beginPath();
+                for (let x = 0; x <= 128; x += 4) { const yy = y + Math.sin(x / 128 * Math.PI * 4 + i) * 3; x ? g.lineTo(x, yy) : g.moveTo(x, yy); } g.stroke();
+            }
+            const tex = new THREE.CanvasTexture(cv); tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.ClampToEdgeWrapping; tex.encoding = THREE.sRGBEncoding;
+            const N = 280, X0 = -140, X1 = 140, W0 = -0.2, W1 = 1.6, pos = [], uv = [], idx = [];
+            for (let i = 0; i <= N; i++) {
+                const x = X0 + (X1 - X0) * i / N, cz = coastZ(x);
+                pos.push(x, SEA_Y + 0.014, cz + W0, x, SEA_Y + 0.014, cz + W1); uv.push(i / N * 70, 0, i / N * 70, 1);
+                if (i) { const a = (i - 1) * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+            }
+            const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx);
+            const fm = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
+            const foam = new THREE.Mesh(geo, fm); foam.renderOrder = 4; seaGrp.add(foam);
+            cityAnims.push(t => { tex.offset.y = -0.18 + 0.18 * Math.sin(t * 0.8); tex.offset.x = t * 0.01; fm.opacity = 0.7 + 0.18 * Math.sin(t * 0.8 + 1.2); });   // 밀려왔다(물가로) 빠진다
         }
         const cellN = SG.water.length + SG.salt.length;
         // 🧂 소금 땅(겔 47:11) — 바다 가장자리 칸. 얕아서 걸어 다닌다(헤엄은 그 밖의 바다). 칸 자리를 0.5 격자에 담아 빨리 찾는다
@@ -863,13 +882,13 @@
             const col = new THREE.Color();   // 아래 나라 땅 색에도 쓴다
             {   // 수면 색 — 칸마다 가운데가 진하고 가장자리로 옅어지는 원(반지름 1.7칸)을 겹쳐 칠한다. 이웃 칸끼리 섞여 경계가 이어진다
                 const g = seaCv.getContext('2d'), N = SEA_PX, k = N / SW_W;
-                g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#173d4a'; g.fillRect(0, 0, seaCv.width, seaCv.height);   // 먼 바다 — 맑히는 칸이 없는 깊은 물
+                g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#1b5a78'; g.fillRect(0, 0, seaCv.width, seaCv.height);   // 먼 바다 — 맑히는 칸이 없는 깊은 물
                 g.setTransform(k, 0, 0, k, -SW_X0 * k, -SW_Z0 * k);   // 세계 (x, z) → 그림 칸(북쪽이 위)
                 const dot = (c, hex, r) => { const X = c.x, Z = c.z, gr = g.createRadialGradient(X, Z, 0, X, Z, r); gr.addColorStop(0, hex + 'ff'); gr.addColorStop(0.4, hex + 'c0'); gr.addColorStop(1, hex + '00'); g.fillStyle = gr; g.beginPath(); g.arc(X, Z, r, 0, Math.PI * 2); g.fill(); };
                 const r = HRW * 2.1, layers = [[], [], [], []], cs = typeof _seaCellsOf === 'function' ? _seaCellsOf(w) : '', part = (w && w.part) || {}, cz = typeof _seaCurZone === 'function' ? _seaCurZone(w) : 0;
                 SG.water.forEach((c, i) => layers[cs[i] === '1' ? 3 : part[i] ? 2 : SG.zone && SG.zone[i] === cz ? 1 : 0].push(c));   // 10/5: 칸마다 — 맑음 · 붓는 중 · 지금 구역 · 그 밖
-                [['#1d3a44', 0], ['#2b4f58', 1], ['#2c95aa', 2], ['#1fb0c9', 3]].forEach(([hex, k]) => layers[k].forEach(c => dot(c, hex, r)));   // 탁한 데부터 — 맑은 칸이 위에
-                SG.salt.forEach(c => dot(c, '#cdc3aa', HRW * 1.6));
+                [['#1f6282', 0], ['#2a7090', 1], ['#2c95aa', 2], ['#1fb0c9', 3]].forEach(([hex, k]) => layers[k].forEach(c => dot(c, hex, r)));   // 탁한 데부터 — 맑은 칸이 위에
+                SG.salt.forEach(c => dot(c, '#7fc4c2', HRW * 1.6));   // 소금 땅 — 얕은 물빛(10/8: 모래색이라 물가가 모래로 보였다)
                 g.setTransform(1, 0, 0, 1, 0, 0); seaColTex.needsUpdate = true;
             }
             const LAND = ['#75674f', '#5aa962', '#3f8f4d', '#4f9b58', '#62b06a'], ca = natRing.geometry.attributes.color, m4 = new THREE.Matrix4();
@@ -1281,6 +1300,7 @@
         let grassFollow = null;   // 🌿 발밑 풀밭 — 보는 곳 둘레에 깐다(아래 풀포기)
         // 🤿 물속 (10/2) — 화면 덮개 · 거품 · 안개 빛깔
         const UNDER_C = new THREE.Color(0x1d6a78).convertSRGBToLinear();
+        const SEA_HAZE = new THREE.Color(0x8ccbd9).convertSRGBToLinear(), seaFogC = new THREE.Color(); let seaFogK = -1;   // 🌫️ 바닷가 안개 — 옅은 물빛
         let underView = false;
         const underEl = ov.querySelector('.nj3d-under'), diveBtn = ov.querySelector('.nj3d-divebtn');
         const BUB = 14, bubPos = new Float32Array(BUB * 3), bubG = new THREE.BufferGeometry(); bubG.setAttribute('position', new THREE.BufferAttribute(bubPos, 3));
@@ -2087,7 +2107,7 @@
         setModeLabel();
         // 성 ↔ 바다 (한 세계, 9/30) — 내려다보기는 보는 곳을 옮기고, 걷기는 그 자리로 옮겨 선다
         const FOCUS = { city: { t: [0, 0.5, 0], c: [15, 14, 19] }, sea: { t: [0, -14, 56], c: [6, 17, 21] } };   // 10/5 해안선 — 어귀 북쪽 하늘에서 남쪽 바다(해안·섬)를 내려다본다
-        const SPOT = { city: [1.3, 9.2, 0], sea: [-2.4, SHORE - 3.5, Math.PI] };   // x, z, 카메라 방향(바다는 남쪽을 본다)
+        const SPOT = { city: [1.3, 9.2, 0], sea: [-2.4, coastZ(-2.4) - 1.1, Math.PI] };   // 10/8 사용자: 바다가 바다같이 안 보인다 — 모래 3.5칸 뒤가 아니라 물가 바로 앞에서   // x, z, 카메라 방향(바다는 남쪽을 본다)
         let where = opts.start === 'sea' ? 'sea' : 'city';
         const goBtn = ov.querySelector('.nj3d-go');
         const setGoLabel = () => { goBtn.textContent = where === 'city' ? T('nj3d_to_sea') : T('nj3d_to_city'); };
@@ -4966,6 +4986,13 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                     else { scene.fog.color.copy(HAZE); scene.fog.near = 70; scene.fog.far = 240; scene.background = HAZE.clone(); }
                     camera.far = cu ? 30 : 420; camera.updateProjectionMatrix();   // 물속 — 안개(26) 너머는 아예 안 그린다
                 }
+                if (!cu) {   // 🌫️ 바닷가 — 금빛 안개가 먼 물을 회갈색으로 바랬다(10/8). 바다 쪽으로 갈수록 옅은 물빛·멀리
+                    const sv = Math.max(0, Math.min(1, (camera.position.z - (SHORE - 16)) / 14)) * 0.9;
+                    if (Math.abs(sv - seaFogK) > 0.01) {
+                        seaFogK = sv; seaFogC.copy(HAZE).lerp(SEA_HAZE, sv);
+                        scene.fog.color.copy(seaFogC); scene.fog.near = 70 + sv * 50; scene.fog.far = 240 + sv * 170; scene.background.copy(seaFogC);
+                    }
+                } else seaFogK = -1;
                 reefT.value = now / 1000; if (cu) fishTick(now / 1000);   // 해초 흔들림 · 물고기는 물속을 볼 때만
                 bubbles.visible = walk && (!ride.on || kindOfMount(ride.k) === 'sub') && isUnder();
                 if (bubbles.visible) {
