@@ -13818,6 +13818,7 @@ async function initFirestoreSync() {
         await _initFirestoreSyncCore();
     } finally {
         window._initSyncDone = true;   // 이 뒤의 '낡은 쓰기' 거절만 배너로 알린다(그 전 것은 방금 끝난 초기 동기화가 합쳐 올렸다)
+        try { if (typeof splashReady === 'function') setTimeout(splashReady, 300); } catch (e) { }   // ⏳ 서버 기록을 받아 왔다 — 시작 화면을 연다(화면이 한 번 다시 그려질 틈)
         try { _checkReturnBoost(); _renderReturnFloat(); } catch (e) { console.warn('[returnBoost]', e); }
         try { _guideSync(); } catch (e) {}   // 인도자와 동행 — 서버 상태
         try { await ensureTagAssigned(); } catch (e) { /* 조용히 */ }

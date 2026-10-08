@@ -129,15 +129,42 @@
                            splashPulse 1.8s ease-in-out 2.1s infinite;
                 letter-spacing: 0.05em;
             }
+            /* ⏳ 불러오는 중 (10/8 사용자: 다 불러오기 전 화면이 보여 — 방치 보상을 받았는데 받기 전 보석이 뜨는 식으로 — 헷갈린다) */
+            #splash-loading {
+                position: absolute; bottom: 56px; display: flex; align-items: center; gap: 10px;
+                font-family: 'Gowun Dodum', serif; font-size: 0.92rem; color: #b8c7d9; letter-spacing: 0.04em;
+                animation: splashSubIn 0.6s ease 0.6s both;
+            }
+            #splash-loading i { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(220, 232, 245, 0.25); border-top-color: #dce8f5; animation: splashSpin 0.9s linear infinite; }
+            @keyframes splashSpin { to { transform: rotate(360deg); } }
+            #splash-screen.ready #splash-loading { display: none; }
+            #splash-screen:not(.ready) #splash-tap { display: none; }
         </style>
         <div id="splash-title">KING'S ROAD</div>
         <div id="splash-sub" data-i18n="splash_sub">제사장의 인 맞는 길</div>
+        <div id="splash-loading"><i></i><span id="splash-loading-t">기록을 불러오는 중…</span></div>
         <div id="splash-tap" data-i18n="splash_tap">아무데나 눌러서 시작</div>
     </div>
     <script>
+        /* 서버 기록을 받아 온 뒤에 들어가게 한다 — 준비 전에 누르면 기다렸다가 준비되는 순간 들어간다.
+           준비 = 첫 동기화(initFirestoreSync) 끝(game.js가 splashReady() 호출) · 오프라인이면 바로 · 늦어도 8초 */
+        window._appReady = false;
+        function splashReady() {
+            if (window._appReady) return;
+            window._appReady = true;
+            const sp = document.getElementById('splash-screen'); if (sp) sp.classList.add('ready');
+            if (window._splashWanted) dismissSplash();
+        }
+        setTimeout(splashReady, 8000);
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) setTimeout(splashReady, 600);
         function dismissSplash() {
             const splash = document.getElementById('splash-screen');
             if (!splash) return;
+            if (!window._appReady) {   // 아직 — 눌렀다는 것만 기억하고 준비되면 들어간다
+                window._splashWanted = true;
+                const lt = document.getElementById('splash-loading-t'); if (lt) lt.textContent = (localStorage.getItem('lang') === 'en') ? 'Almost ready…' : '잠시만요, 거의 다 됐어요…';
+                return;
+            }
             splash.style.animation = 'splashFadeOut 0.4s ease forwards';
             setTimeout(() => {
                 splash.remove();
@@ -154,6 +181,7 @@
             const s = strings[lang] || strings.ko;
             const sub = document.getElementById('splash-sub');
             const tap = document.getElementById('splash-tap');
+            const ld = document.getElementById('splash-loading-t'); if (ld && lang === 'en') ld.textContent = 'Loading your records…';
             if (sub) sub.textContent = s.splash_sub;
             if (tap) tap.textContent = s.splash_tap;
         })();
