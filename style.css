@@ -7532,3 +7532,6 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .nj3d-pv-wrap { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .nj3d-offer-row .nj3d-pv { padding: 6px 9px; border-radius: 10px; border: 1px solid rgba(127, 230, 245, 0.45); background: rgba(19, 74, 90, 0.6); color: #e6f7fb; font-size: 0.95rem; cursor: pointer; }
 .nj3d-pv-bar b small { display: block; font-weight: 600; font-size: 0.72rem; opacity: 0.75; }
+
+.lt-cell.cSH { background: #a9cfe8; color: #0b2c42; }
+.lt-cell.cBH { background: #d2b4de; color: #3b1650; }

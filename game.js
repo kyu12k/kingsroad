@@ -828,7 +828,7 @@ const LANG = {
         lt_res_good: '✅ 술술 나온 절 {n}개',
         lt_btn_relearn: '📖 {r}절 다시 넣기', lt_btn_blank: '✍️ {r}절 빈칸으로 다지기', lt_btn_fp: '🔑 {ch}장 첫 마디',
         lt_step1: '🔑 첫 마디를 보여 드릴게요 — 이어서 써 보세요', lt_step2: '🔲 이번엔 빈칸으로 — 글자 칸을 보고 써 보세요',
-        lt_cS: '첫 마디 주면 나옴', lt_cB: '빈칸 보면 나옴', lt_res_S: '첫 마디를 주면 나온 {n}절 → 🔑 첫 마디부터', lt_res_B: '빈칸을 보면 나온 {n}절 → ✍️ 빈칸으로 다지기',
+        lt_cS: '첫 마디 주면 나옴', lt_cSH: '첫 마디 + 힌트로', lt_cB: '빈칸 보면 나옴', lt_cBH: '빈칸 + 힌트로', lt_res_S: '첫 마디를 주면 나온 {n}절 → 🔑 첫 마디부터', lt_res_B: '빈칸을 보면 나온 {n}절 → ✍️ 빈칸으로 다지기',
         lt_intro_ladder: '• 막히면 한 단계씩 쉬워져요: 백지 → 첫 마디를 보여 주고 이어 쓰기 → 빈칸 → 정답 보기',
         lt_stop_title: '이 구간은 다시 넣기부터예요', lt_stop_body: '처음 세 절이 빈칸으로도 나오지 않았어요. 테스트를 여기서 마치고 다시 넣기부터 할까요?',
         lt_stop_end: '여기서 마치기', lt_stop_go: '계속하기',
@@ -2082,7 +2082,7 @@ const LANG = {
         lt_res_good: '✅ {n} verse(s) flowed out',
         lt_btn_relearn: '📖 Re-learn vv. {r}', lt_btn_blank: '✍️ Fill-in vv. {r}', lt_btn_fp: '🔑 Ch. {ch} first words',
         lt_step1: '🔑 Here are the first words — continue from there', lt_step2: '🔲 Now with blanks — use the letter slots',
-        lt_cS: 'with first words', lt_cB: 'with blanks', lt_res_S: '{n} verse(s) came out once given the first words → 🔑 first words', lt_res_B: '{n} verse(s) came out with blanks → ✍️ fill-in',
+        lt_cS: 'with first words', lt_cSH: 'first words + hints', lt_cB: 'with blanks', lt_cBH: 'blanks + hints', lt_res_S: '{n} verse(s) came out once given the first words → 🔑 first words', lt_res_B: '{n} verse(s) came out with blanks → ✍️ fill-in',
         lt_intro_ladder: '• If stuck, it gets easier step by step: blank → first words given → blanks → see the answer',
         lt_stop_title: 'Start this part by re-learning', lt_stop_body: 'The first three verses didn\'t come out even with blanks. End the test here and re-learn first?',
         lt_stop_end: 'End here', lt_stop_go: 'Continue',
@@ -27618,7 +27618,7 @@ function _hmRecommend(ch) {
     if (ch == null) return null;
     const T = (levelTests[ch] || []).slice(-1)[0], v = T ? Object.values(T.r || {}) : [];
     if (T && Date.now() - T.at < 14 * 864e5 && v.length >= 3) {
-        const low = v.filter(c => c === 0 || c === 'B' || c === 1).length, start = v.filter(c => c === 'S').length + (T.s || []).length;
+        const low = v.filter(c => c === 0 || c === 'B' || c === 'BH' || c === 1).length, start = v.filter(c => c === 'S' || c === 'SH').length + (T.s || []).length;
         if (low / v.length >= 0.5) return 'easier';
         if (start / v.length >= 0.3) return 'fp';
         return 'memory';
@@ -27746,7 +27746,7 @@ function _ltNote(id, ok, hints, giveUp) {
       const nb = seen.some(x => { const [c1, v1] = String(x).split('-').map(Number); return c1 === c0 && Math.abs(v1 - v0) <= 2; });
       hardshipState._ltNbNow = nb; if (!Array.isArray(T.nb)) T.nb = []; if (nb && T.nb.indexOf(id) < 0) T.nb.push(id);
       if (seen.indexOf(id) < 0) seen.push(id); }
-    const c = (!ok || giveUp) ? 0 : st === 2 ? 'B' : st === 1 ? 'S' : !(hints > 0) ? 3 : (hints <= Math.ceil(L * HINT_OK_RATIO)) ? 2 : 1;
+    const c = (!ok || giveUp) ? 0 : st === 2 ? (hints > 0 ? 'BH' : 'B') : st === 1 ? (hints > 0 ? 'SH' : 'S') : !(hints > 0) ? 3 : (hints <= Math.ceil(L * HINT_OK_RATIO)) ? 2 : 1;   // SH·BH — 첫 마디·빈칸에 힌트까지(10/8)
     T.r[id] = c;
     { const v = Object.values(T.r); if (v.length === 3 && T.n > 3 && v.every(x => x === 0)) hardshipState.ltStopAsk = true; }   // 처음 세 절이 바닥
     if (st === 0 && hints > 0 && rev.length && L > 0 && rev[0] / L < 0.1 && T.s.indexOf(id) < 0) T.s.push(id);   // 첫 힌트가 처음 10% — 시작에서 막힘
@@ -27756,34 +27756,34 @@ function _ltShowResult(ch) {
     const T = (levelTests[ch] || []).slice(-1)[0]; if (!T) return;
     const ids = getHardshipVerseIdsByChapterRange(ch, ch), done = Object.keys(T.r).length;
     if (!done) return;   // 하나도 안 하고 나갔으면 띄우지 않는다
-    const cnt = { 3: 0, 2: 0, 1: 0, S: 0, B: 0, 0: 0 }; Object.values(T.r).forEach(c => { if (c in cnt) cnt[c]++; });
+    const cnt = { 3: 0, 2: 0, 1: 0, S: 0, SH: 0, B: 0, BH: 0, 0: 0 }; Object.values(T.r).forEach(c => { if (c in cnt) cnt[c]++; });
     const warm = new Set(T.w || []), nbs = new Set(T.nb || []);
-    const cell = id => { const v = id.split('-')[1], c = T.r[id]; return `<span class="lt-cell ${c == null ? 'cn' : 'c' + c}" title="${ch}:${v}" onclick="_ltShowAns('${id}')">${v}${warm.has(id) && c != null ? '<i>☀</i>' : nbs.has(id) && c != null ? '<i class="nb">↔</i>' : ''}</span>`; };
+    const cell = id => { const v = id.split('-')[1], c = T.r[id]; return `<span class="lt-cell ${c == null ? 'cn' : 'c' + c}" title="${ch}:${v}" onclick="_ltShowAns('${id}')">${v}${warm.has(id) && c != null ? '<i>☀</i>' : ''}</span>`; };
     const lines = [];
     if (cnt[3]) lines.push(t('lt_res_good', { n: cnt[3] }));   // 나온 것 먼저 — 회색만 보고 꺾이지 않게
     if (cnt[0]) lines.push(t('lt_res_next0', { n: cnt[0] }));
     if (cnt[1]) lines.push(t('lt_res_next1', { n: cnt[1] }));
-    if (cnt.B) lines.push(t('lt_res_B', { n: cnt.B }));
-    if (cnt.S) lines.push(t('lt_res_S', { n: cnt.S }));
+    if (cnt.B + cnt.BH) lines.push(t('lt_res_B', { n: cnt.B + cnt.BH }));
+    if (cnt.S + cnt.SH) lines.push(t('lt_res_S', { n: cnt.S + cnt.SH }));
     if ((T.s || []).length) lines.push(t('lt_res_start', { n: T.s.length }));
     // 바로 누르는 다음 할 일 — 가장 앞쪽의 약한 묶음
     const units = _ltUnits(ch), acts = [];
     const u0 = units.find(u => u.ids.some(id => T.r[id] === 0));
     if (u0) { const first = u0.ids.find(id => T.r[id] === 0); acts.push(`<button class="lt-act" onclick="_ltAct('relearn', '${first}')">${t('lt_btn_relearn', { r: u0.r })}</button>`); }
-    const u1 = units.find(u => u.mid && u.ids.some(id => T.r[id] === 1 || T.r[id] === 'B') && !u.ids.some(id => T.r[id] === 0));
+    const u1 = units.find(u => u.mid && u.ids.some(id => T.r[id] === 1 || T.r[id] === 'B' || T.r[id] === 'BH') && !u.ids.some(id => T.r[id] === 0));
     if (u1) acts.push(`<button class="lt-act" onclick="_ltAct('blank', '${u1.mid.id}')">${t('lt_btn_blank', { r: u1.r })}</button>`);
-    if ((T.s || []).length || cnt.S) acts.push(`<button class="lt-act" onclick="_ltAct('fp', '${ch}')">${t('lt_btn_fp', { ch })}</button>`);
+    if ((T.s || []).length || cnt.S || cnt.SH) acts.push(`<button class="lt-act" onclick="_ltAct('fp', '${ch}')">${t('lt_btn_fp', { ch })}</button>`);
     let ov = document.getElementById('lt-result');
     if (!ov) { ov = document.createElement('div'); ov.id = 'lt-result'; ov.className = 'modal-overlay'; ov.style.zIndex = '10001'; document.body.appendChild(ov); }
     ov.onclick = e => { if (e.target === ov) ov.style.display = 'none'; };
     ov.innerHTML = `<div class="result-card mode-select-card lt-card" onclick="event.stopPropagation()">
             <div class="mode-modal-header"><span class="mode-select-title">${t('lt_res_title', { ch })}</span><button class="mode-close-btn" onclick="document.getElementById('lt-result').style.display='none'">✕</button></div>
             ${done < ids.length ? `<div class="lt-partial">${t('lt_res_partial', { done, n: ids.length })}</div>` : ''}
-            <div class="lt-legend">${[3, 2, 1, 'S', 'B', 0].filter(c => cnt[c] || c === 3 || c === 0).map(c => `<span class="lt-cell c${c}"></span>${t('lt_c' + c)} <b>${cnt[c]}</b>`).join(' &nbsp;')}</div>
+            <div class="lt-legend">${[3, 2, 1, 'S', 'SH', 'B', 'BH', 0].filter(c => cnt[c] || c === 3 || c === 0).map(c => `<span class="lt-cell c${c}"></span>${t('lt_c' + c)} <b>${cnt[c]}</b>`).join(' &nbsp;')}</div>
             <div class="lt-grid">${ids.map(cell).join('')}</div>
             <div class="lt-ans" id="lt-ans">${t('lt_res_tap')}</div>
             ${warm.size ? `<div class="lt-note">${t('lt_res_warm')}</div>` : ''}
-            ${nbs.size ? `<div class="lt-note">${t('lt_res_nb')}</div>` : ''}
+
             <div class="lt-next">${lines.map(l => `<div>• ${l}</div>`).join('')}</div>
             ${acts.length ? `<div class="lt-acts">${acts.join('')}</div>` : ''}
             <div class="lt-note">${t('lt_res_plan')}</div>
@@ -28649,7 +28649,7 @@ function _takeHardshipResume(mode, verseIds) {
 }
 
 function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
-    _maybeStartRain();
+    if (!(_pendingHardshipEmbed && _pendingHardshipEmbed.levelTest)) _maybeStartRain();   // 🎓 승점·보석 없는 시험이 그날의 단비·햇살 20분을 써 버렸다(10/8 사용자)
     const modeMeta = getHardshipModeMeta(mode);
 
     // ★ 스테이지 시트를 반드시 닫는다.
