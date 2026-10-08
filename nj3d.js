@@ -175,6 +175,13 @@
         // 🌊 탁 트인 바다(10/5) — 전엔 성 남쪽 둥근 호수(가운데 z 66, 반지름 24×23)였다. 이제 해안선(game.js _seaCoastZ) 남쪽은 맵 끝까지 바다, 야벳 14 섬.
         //   seaE는 옛 쓰임새 그대로: 1 아래면 바다(0에 가까울수록 깊다 — 뭍에서 24 넘게 떨어지면 0), 1 넘으면 뭍(물가에서 8 들어가면 2)
         const coastZ = x => typeof _seaCoastZ === 'function' ? _seaCoastZ(x) : SHORE;
+        /* 🏖️ 해변 비탈 (10/8 사용자: 해안이 각지고 높낮이가 없어 해변 같지 않다) — 본토 해안선에서 잰 거리 d(뭍 −, 바다 +)로
+           마른 모래(뭍 높이) → 물가(수면 살짝 아래) → 얕은 물속 모래(0.55 아래)로 완만하게. 강 어귀(|x| < 2.2)·섬은 그대로.
+           보이는 띠(beach strip)와 걷는 높이(terrain)가 같은 함수를 쓴다 */
+        const BEACH_D0 = -1.7, BEACH_D1 = 3.2, BEACH_Y0 = SEA_Y - 0.06;
+        const smooth01 = t => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
+        const beachProf = d => d <= BEACH_D0 ? -DROP : d <= 0 ? -DROP + (BEACH_Y0 + DROP) * smooth01((d - BEACH_D0) / -BEACH_D0) : BEACH_Y0 - 0.55 * smooth01(d / BEACH_D1);
+        const beachD = (x, z) => Math.abs(x) < 2.2 ? null : z - coastZ(x);
         const ISLES = typeof _seaIsles === 'function' ? _seaIsles() : [];
         const isleR = (s, x, z) => { const a = Math.atan2(z - s.z, x - s.x); return s.r * (1 + 0.08 * Math.sin(a * 3 + s.x) + 0.05 * Math.sin(a * 5 + s.z)); };   // 섬 둘레가 조금 울퉁불퉁
         const seaDistW = (x, z) => { let d = z - coastZ(x); for (let k = 0; k < ISLES.length; k++) { const s = ISLES[k], dc = Math.hypot(x - s.x, z - s.z); if (dc - s.r * 1.15 > d) continue; const q = dc - isleR(s, x, z); if (q < d) d = q; } return d; };
@@ -675,6 +682,7 @@
                 const e = seaE(x, z), inIsle = ISLES.some(s => Math.hypot(x - s.x, z - s.z) < s.r * 1.3);
                 let h = e < 1 ? Math.min(SEA_Y - 0.12, seabed(x, z)) : WT(x, z);
                 if (inIsle) h = Math.min(h, SEA_Y - 0.6); else if (Math.abs(x) < 0.9 && z < SHORE + 0.2) h -= 0.4;
+                { const bd = !inIsle ? beachD(x, z) : null; if (bd != null && bd > BEACH_D0 - 0.4 && bd < BEACH_D1 + 0.3) h = Math.min(h, beachProf(bd) - 0.25); }   // 🏖️ 비탈 띠가 위에 덮인다
                 pos.push(x, h, z);
                 if (e < 1) { const dd = Math.min(1, (SEA_Y - h) / SEA_DEEP); c.copy(cSand).lerp(cDeep, Math.pow(dd, 0.7)); }
                 else { c.copy(cTop).lerp(cLow, Math.min(1, -h / DROP)); if (e < 1.5) c.lerp(cSand, 0.88 * Math.min(1, (1.5 - e) / 0.18)); }
@@ -726,24 +734,47 @@
                 sf.rotation.x = -Math.PI / 2; sf.position.set((SW_X0 + SW_X1) / 2, SEA_Y + dy, (SW_Z0 + SW_Z1) / 2); sf.renderOrder = ro; seaGrp.add(sf);
             });
         }
-        {   // 🌊 파도 거품 (10/8) — 해안선(coastZ)을 따라 물가 띠, 하얀 물결이 밀려왔다 빠진다. 바다라는 걸 가장 먼저 알려 주는 것
-            const cv = document.createElement('canvas'); cv.width = 128; cv.height = 64; const g = cv.getContext('2d');
-            for (let i = 0; i < 3; i++) {   // 물결 줄 셋 — 물가 쪽이 진하다
-                const y = 12 + i * 16, a = [0.95, 0.55, 0.3][i];
-                g.strokeStyle = `rgba(255,255,255,${a})`; g.lineWidth = [5, 3, 2][i]; g.beginPath();
-                for (let x = 0; x <= 128; x += 4) { const yy = y + Math.sin(x / 128 * Math.PI * 4 + i) * 3; x ? g.lineTo(x, yy) : g.moveTo(x, yy); } g.stroke();
-            }
-            const tex = new THREE.CanvasTexture(cv); tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.ClampToEdgeWrapping; tex.encoding = THREE.sRGBEncoding;
-            const N = 280, X0 = -140, X1 = 140, W0 = -0.2, W1 = 1.6, pos = [], uv = [], idx = [];
-            for (let i = 0; i <= N; i++) {
-                const x = X0 + (X1 - X0) * i / N, cz = coastZ(x);
-                pos.push(x, SEA_Y + 0.014, cz + W0, x, SEA_Y + 0.014, cz + W1); uv.push(i / N * 70, 0, i / N * 70, 1);
-                if (i) { const a = (i - 1) * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
-            }
-            const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx);
-            const fm = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
-            const foam = new THREE.Mesh(geo, fm); foam.renderOrder = 4; seaGrp.add(foam);
-            cityAnims.push(t => { tex.offset.y = -0.18 + 0.18 * Math.sin(t * 0.8); tex.offset.x = t * 0.01; fm.opacity = 0.7 + 0.18 * Math.sin(t * 0.8 + 1.2); });   // 밀려왔다(물가로) 빠진다
+        {   // 🏖️ 해변 비탈 띠 + 🌊 밀려왔다 빠지는 파도 (10/8 사용자: 잔잔하게 파도가 해변을 침범하고 물러가는 그림)
+            const DS_ = [-2.0, -1.7, -1.35, -1.0, -0.75, -0.5, -0.3, -0.12, 0, 0.25, 0.6, 1.1, 1.8, 2.6, 3.2], XS = [];
+            for (let x = -150; x <= 150.01; x += 0.75) if (Math.abs(x) >= 2.2) XS.push(x);
+            const cDry = new THREE.Color(0xcdb98a), cWet = new THREE.Color(0xb39d72), cUnder = new THREE.Color(0xc2b087), cc = new THREE.Color();
+            const pos = [], col = [], idx = [], nR = DS_.length;
+            XS.forEach((x, i) => {
+                const cz = coastZ(x);
+                DS_.forEach(d => {
+                    pos.push(x, beachProf(d) + (d <= BEACH_D0 ? 0.004 : 0), cz + d);
+                    if (d < -0.8) cc.copy(cDry); else if (d < 0.05) cc.copy(cDry).lerp(cWet, smooth01((d + 0.8) / 0.75)); else cc.copy(cWet).lerp(cUnder, smooth01(d / 1.5));
+                    cc.convertSRGBToLinear(); col.push(cc.r, cc.g, cc.b);
+                });
+                if (i && Math.abs(XS[i] - XS[i - 1]) < 1) for (let j = 0; j < nR - 1; j++) { const a = (i - 1) * nR + j, b = i * nR + j; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+            });
+            const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
+            const strip = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, side: THREE.DoubleSide })); strip.receiveShadow = true; scene.add(strip);
+            // 파도 — 하얀 거품 띠(폭 0.8)가 비탈을 따라 뭍으로 올라왔다(진하게) 물러간다(옅어지며). 해안선 x마다 두 줄(앞·뒤)
+            const cv = document.createElement('canvas'); cv.width = 128; cv.height = 32; const g2 = cv.getContext('2d');
+            const gr = g2.createLinearGradient(0, 0, 0, 32); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.35, 'rgba(255,255,255,0.95)'); gr.addColorStop(0.55, 'rgba(255,255,255,0.6)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+            g2.fillStyle = gr; g2.fillRect(0, 0, 128, 32);
+            g2.globalCompositeOperation = 'destination-out'; for (let k = 0; k < 18; k++) { g2.beginPath(); g2.arc(Math.random() * 128, 6 + Math.random() * 20, 2 + Math.random() * 4, 0, 6.283); g2.fill(); }   // 거품에 구멍
+            const ftex = new THREE.CanvasTexture(cv); ftex.wrapS = THREE.RepeatWrapping; ftex.encoding = THREE.sRGBEncoding;
+            const N = XS.length, fp = new Float32Array(N * 2 * 3), fuv = [], fidx = [];
+            XS.forEach((x, i) => { fuv.push(x / 4, 1, x / 4, 0); if (i && Math.abs(XS[i] - XS[i - 1]) < 1) { const a = (i - 1) * 2; fidx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); } });
+            const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.BufferAttribute(fp, 3)); fg.setAttribute('uv', new THREE.Float32BufferAttribute(fuv, 2)); fg.setIndex(fidx);
+            const fm = new THREE.MeshBasicMaterial({ map: ftex, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
+            const foam = new THREE.Mesh(fg, fm); foam.renderOrder = 4; foam.frustumCulled = false; scene.add(foam);
+            const XC = XS.map(coastZ), wAt = (i, t) => 0.18 * Math.sin(XS[i] * 0.21 + t * 0.35) + 0.12 * Math.sin(XS[i] * 0.57 - t * 0.5);   // 해안 따라 조금씩 다르게
+            const surfY = d => Math.max(beachProf(d), SEA_Y) + 0.012;
+            let lastFoam = 0;
+            cityAnims.push(t => {
+                if (t - lastFoam < 0.033) return; lastFoam = t;   // 초당 30번
+                const ph = (t * 0.32) % 1, u = ph < 0.55 ? smooth01(ph / 0.55) : 1 - smooth01((ph - 0.55) / 0.45);   // 천천히 밀려와(55%) 조금 빨리 물러간다
+                fm.opacity = 0.35 + 0.6 * (ph < 0.55 ? u : u * 0.6);
+                for (let i = 0; i < N; i++) {
+                    const c = 0.35 - 1.15 * u + wAt(i, t), d0 = c - 0.45, d1 = c + 0.35, o = i * 6;   // 띠 가운데 c: 물속 0.35 → 뭍 −0.8
+                    fp[o] = XS[i]; fp[o + 1] = surfY(d0); fp[o + 2] = XC[i] + d0;
+                    fp[o + 3] = XS[i]; fp[o + 4] = surfY(d1); fp[o + 5] = XC[i] + d1;
+                }
+                fg.attributes.position.needsUpdate = true; ftex.offset.x = t * 0.02;
+            });
         }
         const cellN = SG.water.length + SG.salt.length;
         // 🧂 소금 땅(겔 47:11) — 바다 가장자리 칸. 얕아서 걸어 다닌다(헤엄은 그 밖의 바다). 칸 자리를 0.5 격자에 담아 빨리 찾는다
@@ -1626,6 +1657,8 @@
                 let dip = 0;
                 if (ax0 < RB && z < SHORE) dip = stripDip(ax0);
                 if (az0 < RB) dip = Math.min(dip, stripDip(az0));
+                const bd = beachD(x, z);   // 🏖️ 해변 비탈
+                if (bd != null && bd > BEACH_D0 && !ISLES.some(s => Math.hypot(x - s.x, z - s.z) < s.r * 1.3)) return Math.min(WT(x, z) + dip, beachProf(bd));
                 return WT(x, z) + dip;
             }
             const band = bandHeight(x, z); if (band > 0) return band;
