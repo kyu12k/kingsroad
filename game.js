@@ -829,6 +829,19 @@ const LANG = {
         lt_btn_relearn: '📖 {r}절 다시 넣기', lt_btn_blank: '✍️ {r}절 빈칸으로 다지기', lt_btn_fp: '🔑 {ch}장 첫 마디',
         lt_step1: '🔑 첫 마디를 보여 드릴게요 — 이어서 써 보세요', lt_step2: '🔲 이번엔 빈칸으로 — 글자 칸을 보고 써 보세요',
         lt_full_pay: '🎓 장 전체 테스트 — 망각의 고난으로 인정돼요. 백지로 써낸 절은 승점이 있어요', lt_full_nopay: '🎓 오늘 이 장의 망각의 고난을 이미 해서 이번 테스트는 승점이 없어요', lt_memory_linked: '오늘 이 장은 레벨 테스트로 이미 망각의 고난을 인정받아 승점이 없어요',
+        oil_btn: '🪔 내 암송 — 절마다 기름 단계', oil_btn_short: '🪔 내 암송', oil_btn_from_lt: '🪔 내 암송에서 보기', oil_eyebrow: '킹스로드 · 내 암송', oil_title: '🪔 등에 채운 기름', oil_all: '전체',
+        oil_big: '켜진 등 / {n}절', oil_help_sum: '단계 설명 보기', oil_ch_title: '{ch}장의 등', oil_ch_sub: '켜진 등 {lit} / {n}절', oil_next_title: '다음 할 것', oil_up_note: '🪔 {name}',
+        oil_n0: '빈 등', oil_n1: '감람 열매', oil_n2: '찧은 열매', oil_n3: '짜낸 기름', oil_n4: '맑은 기름', oil_n5: '기름 그릇', oil_n6: '다듬은 심지', oil_n7: '켜진 등', oil_n8: '한밤의 등불',
+        oil_do0: '아직', oil_do1: '익힘', oil_do2: '빈칸 · 순서대로', oil_do3: '첫 마디 · 순서대로', oil_do4: '백지 · 순서대로', oil_do5: '주소', oil_do6: '첫 마디 · 무작위', oil_do7: '백지 · 무작위', oil_do8: '하루 쉬고도',
+        oil_d0: '아직 이 절의 기름이 없어요.', oil_d1: '처음 외웠어요. 기름이 될 열매를 거두었어요.', oil_d2: '빈칸을 보며 순서대로 써냈어요. 열매를 찧으니 기름이 배어 나와요.',
+        oil_d3: '앞 절에 이어 첫 마디가 나와요. 눌러 짜니 기름이 흐르기 시작해요.', oil_d4: '처음부터 끝까지 백지로 이어 썼어요. 찌꺼기를 걸러 낸 순수한 기름이에요. (출 27:20)',
+        oil_d5: '주소와 말씀이 서로 짝지어져요. 기름을 제 그릇에 담았어요. (마 25:4)', oil_d6: '주소만 보고 첫 마디가 나와요. 불이 붙을 심지를 다듬었어요.',
+        oil_d7: '주소만 보고 백지로 써냈어요. 등에 불이 켜졌어요. (마 25:7)', oil_d8: '하루를 쉬고도 써냈어요. 밤중에 소리가 나도 꺼지지 않는 등이에요. (마 25:6)',
+        oil_next0: '{ch}장 {r}절 — 지도에서 처음 외우기부터', oil_next1: '{ch}장 {r}절 — 중간점검 빈칸으로 순서대로 써 보기(장 목록)', oil_next2: '{ch}장 {r}절 — 앞 절에 이어 첫 마디 꺼내기', oil_go2: '🔑 첫 마디 · 순서대로',
+        oil_next3: '{ch}장 {r}절 — 중간점검·보스전 백지로 순서대로(장 목록)', oil_next4: '{ch}장 {r}절 — 주소와 말씀 짝짓기', oil_go4: '🎯 주소의 고난', oil_next5: '{ch}장 {r}절 — 주소만 보고 첫 마디', oil_go5: '🔑 첫 마디 · 무작위',
+        oil_next6: '{ch}장 {r}절 — 주소만 보고 백지로', oil_go6: '⌨️ 망각의 고난', oil_next7_ready: '{ch}장을 하루 쉬었어요 — 장 전체 레벨 테스트로 한밤의 등불을', oil_next7_wait: '{ch}장을 {h}시간 더 쉬면 장 전체 레벨 테스트로 한밤의 등불을 켤 수 있어요', oil_go7: '🎓 레벨 테스트',
+        oil_next8: '{ch}장의 등이 모두 한밤에도 밝아요. 하루 이틀 쉬었다가 다시 확인해 보세요.',
+        fp_order_seq: '순서대로', fp_order_rand: '무작위', fp_order_seq_d: '1절부터 차례로 — 앞 절에 이어 다음 절의 첫 마디', fp_order_rand_d: '섞어서 — 주소만 보고 첫 마디',
         lt_cS: '첫 마디 주면 나옴', lt_cSH: '첫 마디 + 힌트로', lt_cB: '빈칸 보면 나옴', lt_cBH: '빈칸 + 힌트로', lt_res_S: '첫 마디를 주면 나온 {n}절 → 🔑 첫 마디부터', lt_res_B: '빈칸을 보면 나온 {n}절 → ✍️ 빈칸으로 다지기',
         lt_intro_ladder: '• 막히면 한 단계씩 쉬워져요: 백지 → 첫 마디를 보여 주고 이어 쓰기 → 빈칸 → 정답 보기',
         lt_stop_title: '이 구간은 다시 넣기부터예요', lt_stop_body: '처음 세 절이 빈칸으로도 나오지 않았어요. 테스트를 여기서 마치고 다시 넣기부터 할까요?',
@@ -2087,6 +2100,19 @@ const LANG = {
         lt_btn_relearn: '📖 Re-learn vv. {r}', lt_btn_blank: '✍️ Fill-in vv. {r}', lt_btn_fp: '🔑 Ch. {ch} first words',
         lt_step1: '🔑 Here are the first words — continue from there', lt_step2: '🔲 Now with blanks — use the letter slots',
         lt_full_pay: '🎓 Whole-chapter test — counts as Trial of Forgetting. Verses written blank earn points', lt_full_nopay: '🎓 You already did this chapter\'s Trial of Forgetting today — no points this time', lt_memory_linked: 'This chapter already counted today via the level test — no points',
+        oil_btn: '🪔 My recitation — oil by verse', oil_btn_short: '🪔 My recitation', oil_btn_from_lt: '🪔 See in My recitation', oil_eyebrow: "King\u2019s Road · My recitation", oil_title: '🪔 Oil in the lamp', oil_all: 'All',
+        oil_big: 'lamps lit / {n} verses', oil_help_sum: 'What the stages mean', oil_ch_title: 'Chapter {ch} lamps', oil_ch_sub: 'lit {lit} / {n} verses', oil_next_title: 'Next', oil_up_note: '🪔 {name}',
+        oil_n0: 'Empty lamp', oil_n1: 'Olives', oil_n2: 'Crushed', oil_n3: 'Pressed oil', oil_n4: 'Clear oil', oil_n5: 'Oil vessel', oil_n6: 'Trimmed wick', oil_n7: 'Lamp lit', oil_n8: 'Midnight lamp',
+        oil_do0: 'not yet', oil_do1: 'learned', oil_do2: 'blanks · in order', oil_do3: 'first words · in order', oil_do4: 'blank · in order', oil_do5: 'reference', oil_do6: 'first words · random', oil_do7: 'blank · random', oil_do8: 'after a day off',
+        oil_d0: 'No oil for this verse yet.', oil_d1: 'Learned it. The olives are gathered.', oil_d2: 'Wrote it in order with blanks. Crushed olives seep oil.',
+        oil_d3: 'First words come after the verse before. Pressed oil begins to flow.', oil_d4: 'Wrote it blank from start to end. Pure, clear oil. (Ex 27:20)',
+        oil_d5: 'Reference and words are paired. The oil is in its vessel. (Mt 25:4)', oil_d6: 'From the reference, the first words come. The wick is trimmed.',
+        oil_d7: 'From the reference alone, written blank. The lamp is lit. (Mt 25:7)', oil_d8: 'Written even after a day off. A lamp that stays lit at midnight. (Mt 25:6)',
+        oil_next0: 'Ch {ch} v{r} — start learning on the map', oil_next1: 'Ch {ch} v{r} — checkpoint with blanks, in order (chapter list)', oil_next2: 'Ch {ch} v{r} — first words after the verse before', oil_go2: '🔑 First words · in order',
+        oil_next3: 'Ch {ch} v{r} — checkpoint/boss blank, in order (chapter list)', oil_next4: 'Ch {ch} v{r} — pair references and words', oil_go4: '🎯 Trial of Address', oil_next5: 'Ch {ch} v{r} — first words from the reference', oil_go5: '🔑 First words · random',
+        oil_next6: 'Ch {ch} v{r} — blank from the reference', oil_go6: '⌨️ Trial of Forgetting', oil_next7_ready: 'Ch {ch} rested a day — light the midnight lamp with a whole-chapter level test', oil_next7_wait: 'Rest ch {ch} {h} more hours, then a whole-chapter level test lights the midnight lamp', oil_go7: '🎓 Level test',
+        oil_next8: 'Every lamp in ch {ch} burns at midnight. Rest a day or two and check again.',
+        fp_order_seq: 'In order', fp_order_rand: 'Random', fp_order_seq_d: 'From verse 1 — the first words of the next verse', fp_order_rand_d: 'Mixed — first words from the reference',
         lt_cS: 'with first words', lt_cSH: 'first words + hints', lt_cB: 'with blanks', lt_cBH: 'blanks + hints', lt_res_S: '{n} verse(s) came out once given the first words → 🔑 first words', lt_res_B: '{n} verse(s) came out with blanks → ✍️ fill-in',
         lt_intro_ladder: '• If stuck, it gets easier step by step: blank → first words given → blanks → see the answer',
         lt_stop_title: 'Start this part by re-learning', lt_stop_body: 'The first three verses didn\'t come out even with blanks. End the test here and re-learn first?',
@@ -2985,6 +3011,7 @@ function _envNote() {
 }
 /* 🎓 레벨 테스트 기록 — { [장]: [{ at, n, r: { '13-1': 3|2|1|0 }, s: [시작에서 막힌 절], w: [시작 때 따뜻했던 절], done }] } 장마다 최근 5번 */
 let levelTests = {};
+let oilLv = {};   // 🪔 기름 단계 — 절 → { l: 0~8, t: 바뀐 시각 }. 증거로만 오르내린다(통과 = 그 단계까지, 실패 = 그 단계 아래로). docs/암송-단계.md
 let googleNudge = null;      // 🔒 내 기록 지키기(10/6) { lv: 본 단계(5·20·50·100·200), at, a: 'later'|'tap'|'inapp', ok: 연결된 시각 }
 let onboardPromise = null;   // 🌅 내일의 약속 카드(10/6) { at, id, shown, notif: 'granted'|'denied'|'unsupported'|'ios-guide'|'later', nt: 'HH:MM' }
 const _ONBOARD_ORDER = ['profile', 'map', 'stage', 'cleared'];
@@ -3326,6 +3353,7 @@ loadGameData = function () {
         onboardPromise = (parsed.onboardPromise && typeof parsed.onboardPromise === 'object') ? parsed.onboardPromise : null;
         googleNudge = (parsed.googleNudge && typeof parsed.googleNudge === 'object') ? parsed.googleNudge : null;
         levelTests = (parsed.levelTests && typeof parsed.levelTests === 'object') ? parsed.levelTests : {};
+        oilLv = (parsed.oilLv && typeof parsed.oilLv === 'object') ? parsed.oilLv : {};
         reviewResetLog = Array.isArray(parsed.reviewResetLog) ? parsed.reviewResetLog : [];
         entryEnv = (parsed.entryEnv && typeof parsed.entryEnv === 'object') ? parsed.entryEnv : null;
         bossFirstClearClaimed = new Set(parsed.bossFirstClearClaimed || []);
@@ -13281,6 +13309,7 @@ function saveGameData() {
         onboardPromise: onboardPromise, // 🌅 내일의 약속 카드 — 본 때·알림 결과(효과 측정)
         googleNudge: googleNudge, // 🔒 내 기록 지키기 — 본 단계·누른 것·연결 시각(효과 측정)
         levelTests: levelTests, // 🎓 레벨 테스트 결과(장별 최근 5번)
+        oilLv: oilLv,           // 🪔 기름 단계(절마다 {l, t})
         reviewResetLog: reviewResetLog, // 🍂 복습 일정을 처음으로 돌린 기록(보너스 선·30일, 효과 측정)
         entryEnv: _envNote(), // 📱 들어온 환경 — 텔레그램 안·설치 앱·브라우저 비율(측정)
         bibleReadLog: bibleReadLog,
@@ -13739,9 +13768,17 @@ function _mergeSessionTime(target, other) {   // 📅 기기별 학습 시간 �
     }
     return took;
 }
+function _mergeOil(target, other) {   // 🪔 절마다 나중에 바뀐 쪽(실패로 내려간 것도 증거라 큰 쪽이 아니라 늦은 쪽)
+    const b = other.oilLv; if (!b || typeof b !== 'object') return 0;
+    const a = (target.oilLv && typeof target.oilLv === 'object') ? target.oilLv : (target.oilLv = {});
+    let took = 0;
+    for (const id in b) { const o = b[id]; if (!o || typeof o !== 'object') continue; if (!a[id] || (o.t || 0) > (a[id].t || 0)) { a[id] = { l: o.l | 0, t: o.t || 0 }; took++; } }
+    return took;
+}
 function _mergeSaveProgress(target, other) {
     if (!target || !other) return 0;
     let took = 0;
+    took += _mergeOil(target, other);
     took += _mergeLeague(target, other);   // 🏆 승점 큰 쪽
     took += _mergeSessionTime(target, other);
     took += _mergeVerseRecall(target, other);
@@ -20912,7 +20949,7 @@ function closeMoreMenu() {
 
 function openShopFromMenu() { closeMoreMenu(); openFieldScreen(); }
 function openAchievementFromMenu() { closeMoreMenu(); openAchievement(); }
-function openMemoryReportFromMenu() { closeMoreMenu(); openMemoryReport(); }
+function openMemoryReportFromMenu() { closeMoreMenu(); openOilScreen(); }   // 🪔 암기 리포트 → 내 암송(10/9). 옛 리포트 openMemoryReport()는 남겨 둔다
 function openSavedVersesFromMenu() { closeMoreMenu(); if (typeof openSavedVersesQuiz === 'function') openSavedVersesQuiz(); }
 
 
@@ -27791,6 +27828,7 @@ function _fpRecord(id, ok, hints) {
     if (ok && !(hints > 0)) { f.ok = (f.ok || 0) + 1; f.note = 0; }
     else { f.miss = (f.miss || 0) + 1; f.note = 1; f.lv = Math.max(lv, f.lv || 0); }   // 오답노트엔 막혔던 난이도 중 높은 쪽으로
     f.lv = f.lv || lv; f.at = Date.now();
+    try { _oilNote(String(id), (hardshipState && hardshipState.fpSeq) ? 3 : 6, !!(ok && !(hints > 0))); } catch (e) { }   // 🪔 첫 마디 — 순서대로 3 · 무작위 6
 }
 function _fpNoteIds() { return Object.keys(fpRecall || {}).filter(id => fpRecall[id] && fpRecall[id].note && /^\d+-\d+$/.test(id)); }
 /* 🧭 고난 길 머리·⭐ 추천 (2026-10-07) — 장이 정해졌으면 「n장 · 고난 길」, 레벨 테스트 줄에 지난 결과, 추천은 하나.
@@ -27817,6 +27855,10 @@ function _hmRefresh() {
     { const fpb = document.getElementById('hardship-start-btn'), grid = fpb && fpb.parentElement; if (grid) grid.classList.toggle('one', ch == null); }   // 장 없이 열면 🔑가 숨어 🕊️ 하나
     const ls = document.getElementById('hm-lt-sub');
     if (ls && ch != null) { const T = (levelTests[ch] || []).slice(-1)[0]; ls.textContent = T ? t('lt_sheet_last', { d: new Date(T.at).toLocaleDateString(currentLang === 'en' ? 'en-US' : 'ko-KR', { month: 'numeric', day: 'numeric' }), c: Object.values(T.r || {}).filter(c => c === 3).length, n: T.n || Object.keys(T.r || {}).length }) : t('hm_lt_none'); }
+    { const lr = document.getElementById('hm-lt-sub'), host = lr && lr.closest('.hm-lt-row');   // 🪔 장이 정해졌으면 「내 암송」 바로 가기
+      let ob = document.getElementById('hm-oil-btn');
+      if (host && !ob) { ob = document.createElement('button'); ob.id = 'hm-oil-btn'; ob.className = 'hm-oil-btn'; host.parentNode.insertBefore(ob, host.nextSibling); }
+      if (ob) { ob.style.display = ch != null ? '' : 'none'; ob.textContent = t('oil_btn'); ob.onclick = () => { const c = window.hardshipForcedChapter; _hideHardshipModeModal(); openOilScreen(c); }; } }
     const modal = document.getElementById('hardship-mode-modal'); if (!modal) return;
     modal.querySelectorAll('.hm-rec').forEach(e => e.classList.remove('hm-rec'));
     modal.querySelectorAll('.hm-badge').forEach(e => e.remove());
@@ -27897,7 +27939,7 @@ function _startLevelTest(ch, unitIdx) {
     window.hardshipForcedChapter = null;
     if (!ids.length) return;
     const list = Array.isArray(levelTests[ch]) ? levelTests[ch] : [];
-    list.push({ at: Date.now(), n: ids.length, u: u ? u.r : 'all', r: {}, s: [], w: _ltWarmIds(ids) });
+    list.push({ at: Date.now(), n: ids.length, u: u ? u.r : 'all', r: {}, s: [], w: _ltWarmIds(ids), rest: (!u && _ltRested(ch)) ? 1 : 0 });   // rest — 장 전체 · 그 장을 24시간 안 봄 → 🪔 한밤의 등불
     levelTests[ch] = list.slice(-5);
     saveGameData();
     window.hardshipOrigin = 'map';
@@ -27936,10 +27978,164 @@ function _ltNote(id, ok, hints, giveUp) {
       if (seen.indexOf(id) < 0) seen.push(id); }
     const c = (!ok || giveUp) ? 0 : st === 2 ? (hints > 0 ? 'BH' : 'B') : st === 1 ? (hints > 0 ? 'SH' : 'S') : !(hints > 0) ? 3 : (hints <= Math.ceil(L * HINT_OK_RATIO)) ? 2 : 1;   // SH·BH — 첫 마디·빈칸에 힌트까지(10/8)
     T.r[id] = c;
+    try { if (c === 'S' || c === 'SH') _oilNote(String(id), 6, false); else if (c === 'B' || c === 'BH') _oilNote(String(id), 3, false); else if (c === 0) _oilNote(String(id), 2, false); } catch (e) { }   // 🪔 첫 마디를 받아야 = 시작을 모름 · 빈칸까지 = 순서 첫 마디도 · 못 씀
     try { T.d = getHardshipElapsedSeconds(); } catch (e) { }   // ⏱ 치른 시간(초) — 망각의 고난과 같은 방식(정답 확인 중엔 멈춤), 마지막으로 끝낸 절까지(10/9 사용자)
     { const v = Object.values(T.r); if (v.length === 3 && T.n > 3 && v.every(x => x === 0)) hardshipState.ltStopAsk = true; }   // 처음 세 절이 바닥
     if (st === 0 && hints > 0 && rev.length && L > 0 && rev[0] / L < 0.1 && T.s.indexOf(id) < 0) T.s.push(id);   // 첫 힌트가 처음 10% — 시작에서 막힘
     saveGameData();
+}
+/* ══ 🪔 기름 단계 — 「내 암송」 (2026-10-09 사용자) ══════════════════════════════════════
+   절마다 0~8. 단서는 줄이고(빈칸 → 첫 마디 → 백지) 순서는 나중에 푼다(순서대로 → 무작위). 이름은 감람기름을 짜서 등을 켜는 과정(출 27:20, 마 25).
+   0 빈 등 · 1 감람 열매(익힘) · 2 찧은 열매(빈칸) · 3 짜낸 기름(첫 마디 순서) · 4 맑은 기름(백지 순서) · 5 기름 그릇(주소)
+   6 다듬은 심지(첫 마디 무작위) · 7 켜진 등(백지 무작위) · 8 한밤의 등불(그 장을 24시간 쉬고 장 전체 레벨 테스트)
+   기록 oilLv[절] = {l, t}: 통과 → max(l, 단계), 실패 → min(l, 단계−1). 1(익힘)과 5(주소 — 4까지 온 절만)는 계산으로 얹는다.
+   주의: 「24시간 안 봄」은 이 기기의 본 기록(_verseSeenMark)으로만 안다 */
+const OIL_N = 9;
+function _oilNote(id, L, pass) {
+    if (!/^\d+-\d+$/.test(id)) return;
+    const cur = oilLv[id] || { l: 0, t: 0 };
+    if (pass) { if (L > (cur.l | 0)) { oilLv[id] = { l: L, t: Date.now() }; _oilUpNote(id, cur.l | 0, L); } }
+    else if ((cur.l | 0) >= L) oilLv[id] = { l: L - 1, t: Date.now() };
+}
+function _oilUpNote(id, from, to) {   // 결과 화면 한 줄 — 이번 세션에 오른 절 모아 두기
+    if (!hardshipState) return;
+    const u = hardshipState.oilUps || (hardshipState.oilUps = {});
+    u[id] = Math.max(u[id] || 0, to);
+}
+function _oilFromAttempt(id, ok, blankMode, hintOk, strong) {
+    if (!hardshipState || hardshipState.trainingMode || hardshipState.startLv) return;
+    if (!blankMode) { if (ok && hintOk) _oilNote(id, 2, true); else if (!ok) _oilNote(id, 2, false); return; }   // 빈칸(글자 칸)
+    const random = !!hardshipState.isRandomOrder || (hardshipState.queue || []).length <= 1;   // 한 절만 주소로 = 주소로 꺼내기
+    const L = random ? 7 : 4;
+    if (!ok) { _oilNote(id, L, false); return; }
+    if (strong || !hintOk) { _oilNote(id, 2, true); return; }   // 힌트 많이·첫 마디 보고 = 아직 이 단계는 아님(내리지도 않음)
+    _oilNote(id, L, true);
+    if (hardshipState.levelTest && !(hardshipState.ltStep || 0)) {   // 🌙 한밤의 등불 — 그 장을 하루 쉬고 장 전체 테스트에서 백지로
+        const T = (levelTests[hardshipState.levelTest] || []).slice(-1)[0];
+        if (T && T.rest) _oilNote(id, 8, true);
+    }
+}
+function _ltRested(ch) {
+    const ids = getHardshipVerseIdsByChapterRange(ch, ch), cut = Date.now() - 24 * 3600 * 1000;
+    return ids.length > 0 && ids.every(id => (_verseSeenGet(id) || 0) < cut);
+}
+function _oilAddrCleared(ch) { return Array.isArray(hardshipAddressClearHistory[ch]) && hardshipAddressClearHistory[ch].length > 0; }
+function _oilStage(id) {
+    let l = ((oilLv[id] || {}).l) | 0;
+    if (l < 1 && (stageMastery[id] || 0) > 0) l = 1;
+    if (l === 4 && _oilAddrCleared(parseInt(id, 10))) l = 5;
+    return l;
+}
+/* 처음 한 번 — 지금까지의 기록으로 출발 단계를 채운다(마지막 기록의 출처로 어림) */
+function _oilBackfill() {
+    if (oilLv._v) return;
+    const ids = new Set(Object.keys(verseRecall || {}).concat(Object.keys(fpRecall || {})).filter(x => /^\d+-\d+$/.test(x)));
+    const ltLast = {};
+    for (const ch in levelTests) (levelTests[ch] || []).forEach(T => { for (const id in (T.r || {})) { ids.add(id); if (!ltLast[id] || T.at > ltLast[id].at) ltLast[id] = { at: T.at, c: T.r[id] }; } });
+    const now = Date.now();
+    ids.forEach(id => {
+        const r = verseRecall[id] || {}, f = fpRecall[id] || {};
+        let l = 0;
+        if (r.typedPass > 0) l = 2;
+        if (r.blankPass > 0) {
+            if (r.lastOk && r.lastMode === 'memory') l = Math.max(l, ['boss', 'mid', 'event'].includes(r.lastCtx) ? 4 : 7);
+            else l = Math.max(l, 2);
+        }
+        if (f.ok > 0 && !f.note) l = Math.max(l, 6);
+        const lt = ltLast[id];
+        if (lt && (!r.lastAt || lt.at >= r.lastAt - 60000)) {
+            if (lt.c === 3 || lt.c === 2) l = Math.max(l, 7);
+            else if (lt.c === 'S' || lt.c === 'SH') l = Math.min(l, 5);
+            else if (lt.c === 'B' || lt.c === 'BH') l = Math.min(l, 2);
+            else if (lt.c === 0) l = Math.min(l, 1);
+            else if (l > 6) l = 6;
+        }
+        if (l > 0 && !oilLv[id]) oilLv[id] = { l, t: 1 };   // t = 1 — 어느 기기의 실제 기록이든 이것보다 늦다
+    });
+    oilLv._v = 1;
+}
+const OIL_KEYS = ['empty', 'olive', 'crushed', 'pressed', 'clear', 'vessel', 'wick', 'lit', 'night'];
+let _oilU = 0;
+function _oilIcon(st) {
+    const T = (f) => `<rect x="0.5" y="0.5" width="31" height="31" rx="7" fill="${f || '#19202f'}"/>`;
+    const BAR = `<rect x="5" y="29.2" width="22" height="1.3" rx=".65" fill="#2b3447"/>${st ? `<rect x="5" y="29.2" width="${(22 * st / 8).toFixed(2)}" height="1.3" rx=".65" fill="${st >= 8 ? '#ffd968' : '#e8b33a'}"/>` : ''}`;
+    const LB = `<path d="M3 19.6 C 3 14.4, 9 13.2, 13 13.2 C 17.6 13.2, 21.4 14, 23 15.4 L 27.6 16.6 C 29 17, 29 18.6, 27.8 19 L 23 20.6 C 22 24.6, 17.6 26.8, 13 26.8 C 8 26.8, 3 24.6, 3 19.6 Z" fill="#a8774a"/><path d="M5 18.4 C 7 16, 11 15.4, 14 15.6" stroke="#c99566" stroke-width=".9" fill="none" stroke-linecap="round"/><path d="M9.5 26.4 L 16.5 26.4 L 15.6 28.2 L 10.4 28.2 Z" fill="#8a6038"/>`;
+    const LO = `<ellipse cx="13" cy="13.6" rx="2.6" ry=".9" fill="#e8b33a"/>`;
+    const fl = (k, br) => `<path d="M26.6 ${16.8 - 6 * k} C ${26.6 + 2.6 * k} ${15.2 - 2.4 * k}, ${26.6 + 2.2 * k} 16.6, 26.6 17 C ${26.6 - 2.2 * k} 16.6, ${26.6 - 2.6 * k} ${15.2 - 2.4 * k}, 26.6 ${16.8 - 6 * k} Z" fill="${br ? '#ffd968' : '#f6b54a'}"/><path d="M26.6 ${16.8 - 3.2 * k} C ${26.6 + k} ${16 - k}, ${26.6 + .9 * k} 16.7, 26.6 16.9 C ${26.6 - .9 * k} 16.7, ${26.6 - k} ${16 - k}, 26.6 ${16.8 - 3.2 * k} Z" fill="#fff6cf"/>`;
+    const gl = (r, o) => { const id = 'oilg' + (_oilU++); return `<defs><radialGradient id="${id}"><stop offset="0" stop-color="#ffd968" stop-opacity="${o}"/><stop offset="1" stop-color="#ffd968" stop-opacity="0"/></radialGradient></defs><circle cx="26.4" cy="13.5" r="${r}" fill="url(#${id})"/>`; };
+    const sp = (x, y, k) => `<path d="M${x} ${y - 2.4 * k} L ${x + .55 * k} ${y - .55 * k} L ${x + 2.4 * k} ${y} L ${x + .55 * k} ${y + .55 * k} L ${x} ${y + 2.4 * k} L ${x - .55 * k} ${y + .55 * k} L ${x - 2.4 * k} ${y} L ${x - .55 * k} ${y - .55 * k} Z" fill="#fff6cf"/>`;
+    const wick = d => `<rect x="26.1" y="16.3" width="1" height="1.6" rx=".4" fill="${d}"/>`;
+    let g = '';
+    if (st === 0) g = `${LB}<path d="M4.2 19.6 C 4.2 15.6, 9 14.6, 13 14.6 C 17.4 14.6, 21.8 15.6, 21.8 19.8 C 21.8 23.6, 17.4 25.4, 13 25.4 C 8.6 25.4, 4.2 23.6, 4.2 19.6 Z" fill="#2a2030"/><ellipse cx="13" cy="13.6" rx="2.6" ry=".9" fill="#7a5532"/>${wick('#5a4a3a')}`;
+    else if (st === 1) g = `<path d="M4.5 25 C 10 21, 17 15, 27.5 7.5" stroke="#7a5a3a" stroke-width="1.5" fill="none" stroke-linecap="round"/><ellipse cx="21" cy="9.4" rx="5" ry="1.6" transform="rotate(-38 21 9.4)" fill="#86a660"/><ellipse cx="10.4" cy="18.2" rx="4.6" ry="1.5" transform="rotate(-62 10.4 18.2)" fill="#6f9150"/><ellipse cx="25.2" cy="5.6" rx="3.4" ry="1.2" transform="rotate(-20 25.2 5.6)" fill="#9cb873"/><ellipse cx="15.8" cy="23.4" rx="2.5" ry="3.2" transform="rotate(-15 15.8 23.4)" fill="#5d7a2e"/><circle cx="15" cy="22.2" r=".7" fill="#c8d9a0"/><ellipse cx="21.2" cy="19.8" rx="2.5" ry="3.2" transform="rotate(-15 21.2 19.8)" fill="#465f22"/><circle cx="20.4" cy="18.6" r=".7" fill="#b5c98a"/><ellipse cx="26.3" cy="14.6" rx="2.4" ry="3.1" transform="rotate(-15 26.3 14.6)" fill="#5e3a63"/><circle cx="25.5" cy="13.4" r=".7" fill="#c9a8cf"/>`;
+    else if (st === 2) g = `<line x1="19.5" y1="16.5" x2="27" y2="4" stroke="#9a7550" stroke-width="3.2" stroke-linecap="round"/><path d="M4.5 16.6 H27.5 C27.5 23.6, 22.4 27.6, 16 27.6 C9.6 27.6, 4.5 23.6, 4.5 16.6 Z" fill="#7f838c"/><ellipse cx="16" cy="16.6" rx="11.5" ry="2.8" fill="#a1a5ae"/><ellipse cx="16" cy="16.9" rx="9.6" ry="2" fill="#4c5726"/><circle cx="11" cy="16.4" r="1.1" fill="#3a4a1c"/><circle cx="20.5" cy="17.4" r="1" fill="#5e3a63"/><ellipse cx="13.4" cy="16.6" rx="1.6" ry=".5" fill="#e8b33a"/><ellipse cx="18.6" cy="16.2" rx="1.3" ry=".45" fill="#e8b33a"/>`;
+    else if (st === 3) g = `<rect x="6" y="3.6" width="20" height="4.2" rx="1.2" fill="#8b8f99"/><rect x="8" y="8.4" width="16" height="3" rx="1.5" fill="#9a7b4c"/><rect x="8" y="11.6" width="16" height="2.6" rx="1.3" fill="#86683e"/><rect x="5" y="14.6" width="22" height="3.2" rx="1" fill="#7d818b"/><ellipse cx="9" cy="14.5" rx=".9" ry=".5" fill="#e8b33a"/><ellipse cx="22.6" cy="14.5" rx=".9" ry=".5" fill="#e8b33a"/><path d="M16 18.6 C 16.2 21, 15.8 22.4, 16 24.4" stroke="#f0bd3e" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M10.4 23.8 H21.6 C21.6 26.4, 19.4 27.8, 16 27.8 C12.6 27.8, 10.4 26.4, 10.4 23.8 Z" fill="#a8774a"/><ellipse cx="16" cy="24" rx="5" ry=".9" fill="#e8b33a"/>`;
+    else if (st === 4) { const id = 'oilj' + (_oilU++), P = 'M12 11 H20 V12.6 C23.4 13.6, 25 16.4, 25 19.6 V24.4 C25 26.6, 23.4 27.8, 21 27.8 H11 C8.6 27.8, 7 26.6, 7 24.4 V19.6 C7 16.4, 8.6 13.6, 12 12.6 Z';
+        g = `<defs><clipPath id="${id}"><path d="${P}"/></clipPath></defs><path d="${P}" fill="#d6ecf3" fill-opacity=".14"/><g clip-path="url(#${id})"><rect x="0" y="15.6" width="32" height="14" fill="#f3c64a"/><rect x="0" y="15.6" width="32" height="1" fill="#fff0b0"/><rect x="9" y="17" width="2" height="9" rx="1" fill="#fff6cf" opacity=".55"/></g><path d="${P}" fill="none" stroke="#d6ecf3" stroke-opacity=".75" stroke-width=".9"/><rect x="11.2" y="8" width="9.6" height="3.4" rx="1.1" fill="#8a6038"/>${sp(25.5, 7, .9)}`; }
+    else if (st === 5) g = `<path d="M7.2 11.2 H12.8 V13.6 C15.6 14.8, 16.4 17.6, 16.4 20.4 C16.4 24.6, 13.6 27.6, 10 27.6 C6.4 27.6, 3.6 24.6, 3.6 20.4 C3.6 17.6, 4.4 14.8, 7.2 13.6 Z" fill="#b8814d"/><rect x="6.6" y="8.6" width="6.8" height="3" rx="1" fill="#6b4a2a"/><path d="M3.9 20 H16.1" stroke="#e8b33a" stroke-width="1.6"/><g transform="translate(13.6 10.6) scale(.6)">${LB}${LO}${wick('#5a4a3a')}</g>`;
+    else if (st === 6) g = `${LB}${LO}<path d="M25.8 17.2 C 26.2 15.6, 26.8 14.8, 27.4 14.2" stroke="#f2ead8" stroke-width="1.3" fill="none" stroke-linecap="round"/><circle cx="27.5" cy="14" r="1.9" fill="#ff9a3c" opacity=".25"/><circle cx="27.5" cy="14" r=".9" fill="#ff9a3c"/>${sp(23.5, 8.6, .7)}`;
+    else if (st === 7) g = `${gl(9, .45)}${LB}${LO}${wick('#3a2a1a')}${fl(1.05, false)}`;
+    else g = `<path d="M7.6 3.2 A 3.6 3.6 0 1 0 10.6 9.4 A 2.9 2.9 0 1 1 7.6 3.2 Z" fill="#e9eefc"/><circle cx="15" cy="4.4" r=".55" fill="#e9eefc"/><circle cx="19.6" cy="7.2" r=".4" fill="#e9eefc"/>${gl(15, .6)}${LB}${LO}${wick('#3a2a1a')}${fl(1.4, true)}`;
+    return `<svg viewBox="0 0 32 32" class="oil-ic">${T(st === 8 ? '#0c1224' : '')}${g}${BAR}</svg>`;
+}
+const OIL_DOT = ['#3a4152', '#5d7a2e', '#6e7a3a', '#8a7a3a', '#c9a23a', '#d9a640', '#e8b33a', '#ffcf5a', '#fff0a0'];
+function _oilChapterIds(ch) { return getHardshipVerseIdsByChapterRange(ch, ch); }
+function openOilScreen(ch) {
+    try { _oilBackfill(); } catch (e) { }
+    let ov = document.getElementById('oil-overlay');
+    if (!ov) { ov = document.createElement('div'); ov.id = 'oil-overlay'; ov.className = 'modal-overlay'; ov.style.zIndex = '10002'; ov.onclick = e => { if (e.target === ov) closeOilScreen(); }; document.body.appendChild(ov); }
+    ov.innerHTML = `<div class="oil-card" onclick="event.stopPropagation()">${ch ? _oilChapterHtml(ch) : _oilAllHtml()}<button class="oil-close" onclick="closeOilScreen()">${t('btn_close')}</button></div>`;
+    ov.style.display = 'flex';
+    setTimeout(() => ov.classList.add('active'), 10);
+}
+function closeOilScreen() { const ov = document.getElementById('oil-overlay'); if (ov) { ov.classList.remove('active'); ov.style.display = 'none'; } }
+function _oilAllHtml() {
+    const cnt = new Array(OIL_N).fill(0); let rows = '';
+    for (let c = 1; c <= 22; c++) {
+        const ids = _oilChapterIds(c); if (!ids.length) continue;
+        const sts = ids.map(_oilStage); sts.forEach(x => cnt[x]++);
+        if (!sts.some(x => x > 0)) { rows += `<div class="oil-row dim" onclick="openOilScreen(${c})"><b>${c}</b><div class="oil-dots">${sts.map(() => `<i style="background:${OIL_DOT[0]}"></i>`).join('')}</div></div>`; continue; }
+        const lit = sts.filter(x => x >= 7).length;
+        rows += `<div class="oil-row" onclick="openOilScreen(${c})"><b>${c}</b><div class="oil-dots">${sts.map(x => `<i style="background:${OIL_DOT[x]}"${x >= 7 ? ' class="lit"' : ''}></i>`).join('')}</div><span>${lit ? '🔥' + lit : ''}</span></div>`;
+    }
+    const lit = cnt[7] + cnt[8], known = OIL_N - 1;
+    const sum = [8, 7, 6, 5, 4, 3, 2, 1].map(k => `<div class="oil-sum-i" title="${t('oil_n' + k)}">${_oilIcon(k)}<b>${cnt[k]}</b></div>`).join('');
+    return `<div class="oil-head"><div class="oil-eyebrow">${t('oil_eyebrow')}</div><div class="oil-title">${t('oil_title')}</div>
+        <div class="oil-big"><b>${lit}</b><span>${t('oil_big', { n: 404 })}</span></div></div>
+        <div class="oil-sum">${sum}</div>
+        <div class="oil-list">${rows}</div>
+        <details class="oil-help"><summary>${t('oil_help_sum')}</summary>${_oilLegendHtml()}</details>`;
+}
+function _oilLegendHtml() {
+    return `<div class="oil-legend">${[0, 1, 2, 3, 4, 5, 6, 7, 8].map(k => `<div class="oil-lg">${_oilIcon(k)}<div><b>${t('oil_n' + k)}</b><span class="oil-dz">${t('oil_do' + k)}</span><p>${t('oil_d' + k)}</p></div></div>`).join('')}</div>`;
+}
+/* 다음 할 것 — 그 장에서 가장 낮은 단계에 맞춘 한 가지 */
+function _oilNext(ch, sts) {
+    const lo = Math.min(...sts), v = _oilChapterIds(ch).filter((id, i) => sts[i] === lo).map(id => id.split('-')[1]);
+    const r = v.length > 3 ? `${v[0]}~${v[v.length - 1]}` : v.join(', ');
+    const B = (label, js) => `<button class="oil-next-btn" onclick="closeOilScreen(); ${js}">${label}</button>`;
+    switch (lo) {
+        case 0: return { txt: t('oil_next0', { ch, r }), btn: '' };
+        case 1: return { txt: t('oil_next1', { ch, r }), btn: '' };
+        case 2: return { txt: t('oil_next2', { ch, r }), btn: B(t('oil_go2'), `_startFirstPhrase(${ch}, 2, 'seq')`) };
+        case 3: return { txt: t('oil_next3', { ch, r }), btn: '' };
+        case 4: return { txt: t('oil_next4', { ch, r }), btn: B(t('oil_go4'), `openChapterHardship(${ch})`) };
+        case 5: return { txt: t('oil_next5', { ch, r }), btn: B(t('oil_go5'), `_startFirstPhrase(${ch}, 2, 'rand')`) };
+        case 6: return { txt: t('oil_next6', { ch, r }), btn: B(t('oil_go6'), `openChapterHardship(${ch})`) };
+        case 7: { const h = Math.floor((Date.now() - Math.max(0, ..._oilChapterIds(ch).map(id => _verseSeenGet(id) || 0))) / 3600000);
+                  return { txt: h >= 24 ? t('oil_next7_ready', { ch }) : t('oil_next7_wait', { ch, h: 24 - h }), btn: h >= 24 ? B(t('oil_go7'), `openLevelTest(${ch})`) : '' }; }
+        default: return { txt: t('oil_next8', { ch }), btn: '' };
+    }
+}
+function _oilChapterHtml(ch) {
+    const ids = _oilChapterIds(ch), sts = ids.map(_oilStage);
+    const cells = ids.map((id, i) => `<div class="oil-v" title="${ch}:${id.split('-')[1]} · ${t('oil_n' + sts[i])}">${_oilIcon(sts[i])}<span>${id.split('-')[1]}</span></div>`).join('');
+    const nx = _oilNext(ch, sts), lit = sts.filter(x => x >= 7).length;
+    return `<div class="oil-head"><button class="oil-back" onclick="openOilScreen()">‹ ${t('oil_all')}</button><div class="oil-title">${t('oil_ch_title', { ch })}</div>
+        <div class="oil-sub">${t('oil_ch_sub', { lit, n: ids.length })}</div></div>
+        <div class="oil-grid">${cells}</div>
+        <div class="oil-next"><div class="oil-next-t">${t('oil_next_title')}</div><p>${nx.txt}</p>${nx.btn}</div>
+        <details class="oil-help"><summary>${t('oil_help_sum')}</summary>${_oilLegendHtml()}</details>`;
 }
 function _ltFmtTime(sec) {   // ⏱ 4분 12초 / 4m 12s
     if (!(sec > 0)) return '';
@@ -27982,6 +28178,7 @@ function _ltShowResult(ch) {
             <div class="lt-next">${lines.map(l => `<div>• ${l}</div>`).join('')}</div>
             ${acts.length ? `<div class="lt-acts">${acts.join('')}</div>` : ''}
             <div class="lt-note">${t('lt_res_plan')}</div>
+            <button class="lt-oil" onclick="document.getElementById('lt-result').style.display='none'; openOilScreen(${ch})">${t('oil_btn_from_lt')}</button>
             <button class="lt-go" onclick="document.getElementById('lt-result').style.display='none'">${t('lt_res_ok')}</button></div>`;
     ov.style.display = 'flex';
     setTimeout(() => ov.classList.add('active'), 10);
@@ -28048,7 +28245,7 @@ function _renderSheetLevelTest(chapterData) {
     if (n < 3) { el.style.display = 'none'; el.innerHTML = ''; return; }
     const T = (levelTests[ch] || []).slice(-1)[0];
     const sub = T ? t('lt_sheet_last', { d: new Date(T.at).toLocaleDateString(currentLang === 'en' ? 'en-US' : 'ko-KR', { month: 'numeric', day: 'numeric' }), c: Object.values(T.r || {}).filter(c => c === 3).length, n: T.n || Object.keys(T.r || {}).length }) + (T.d > 0 ? ' · ⏱ ' + _ltFmtTime(T.d) : '') : t('lt_sheet_none');
-    el.innerHTML = `<button class="sheet-lt-btn" onclick="openLevelTest(${ch})">${t('lt_sheet_btn')}</button>${T ? `<span class="sheet-lt-sub link" onclick="_ltShowResult(${ch})">${sub} ›</span>` : `<span class="sheet-lt-sub">${sub}</span>`}`;   // 지난 결과 다시 보기(10/9)
+    el.innerHTML = `<button class="sheet-oil-btn" onclick="openOilScreen(${ch})">${t('oil_btn_short')}</button><button class="sheet-lt-btn" onclick="openLevelTest(${ch})">${t('lt_sheet_btn')}</button>${T ? `<span class="sheet-lt-sub link" onclick="_ltShowResult(${ch})">${sub} ›</span>` : `<span class="sheet-lt-sub">${sub}</span>`}`;   // 지난 결과 다시 보기(10/9)
     el.style.display = '';
 }
 function openFirstPhrasePick() {
@@ -28058,24 +28255,27 @@ function openFirstPhrasePick() {
     if (!ov) { ov = document.createElement('div'); ov.id = 'fp-pick-overlay'; ov.className = 'modal-overlay'; ov.style.zIndex = '10000'; ov.onclick = closeFirstPhrasePick; document.body.appendChild(ov); }
     const v1 = (typeof HARDSHIP_VERSE_MAP !== 'undefined') ? HARDSHIP_VERSE_MAP[`${ch}-1`] || Object.values(HARDSHIP_VERSE_MAP).find(v => v.chapter === ch) : null;
     const en = currentLang === 'en' && v1 && v1.textEn, ex = lv => v1 ? firstPhraseOf(en ? v1.textEn : v1.text, lv, !!en) : '';
+    if (!window._fpOrder) window._fpOrder = 'seq';
+    const ordBtn = (k) => `<button class="fp-ord${window._fpOrder === k ? ' on' : ''}" onclick="window._fpOrder='${k}'; openFirstPhrasePick()">${t(k === 'seq' ? 'fp_order_seq' : 'fp_order_rand')}</button>`;
     const row = lv => `<button class="mode-journey-btn fp-row" onclick="_startFirstPhrase(${ch}, ${lv})">
             <div class="mode-btn-text" style="flex:1"><span class="mode-btn-label">${t('fp_lv' + lv)} <span class="bd-count">${t('fp_lv' + lv + '_d')}</span></span>
             <span class="mode-btn-desc">${ch}:1 「${ex(lv)}」</span></div></button>`;
     ov.innerHTML = `<div class="result-card mode-select-card" onclick="event.stopPropagation()">
             <div class="mode-modal-header"><span class="mode-select-title">${t('fp_pick_title', { ch })}</span><button class="mode-close-btn" onclick="closeFirstPhrasePick()">✕</button></div>
-            <div class="bd-desc">${t('fp_pick_desc')}</div>${row(1)}${row(2)}${row(3)}</div>`;
+            <div class="bd-desc">${t('fp_pick_desc')}</div><div class="fp-ords">${ordBtn('seq')}${ordBtn('rand')}</div><div class="fp-ord-desc">${t(window._fpOrder === 'seq' ? 'fp_order_seq_d' : 'fp_order_rand_d')}</div>${row(1)}${row(2)}${row(3)}</div>`;
     ov.style.display = 'flex';
 }
 function closeFirstPhrasePick() { const ov = document.getElementById('fp-pick-overlay'); if (ov) ov.style.display = 'none'; window.hardshipForcedChapter = null; }
-function _startFirstPhrase(ch, lv) {
+function _startFirstPhrase(ch, lv, order) {
     const ids = getHardshipVerseIdsByChapterRange(ch, ch);
     const ov = document.getElementById('fp-pick-overlay'); if (ov) ov.style.display = 'none';
     window.hardshipForcedChapter = null;
     if (!ids.length) { alert(t('alert_training_no_data', { ch })); return; }
+    const seq = (order || window._fpOrder) === 'seq';   // 🪔 순서대로(앞 절에 이어 다음 절 첫 마디) — 10/9
     window.hardshipOrigin = 'map';
-    selectedHardshipOrderType = 'random';
+    selectedHardshipOrderType = seq ? 'sequential' : 'random';
     selectedHardshipUltimate = true;
-    _pendingHardshipEmbed = { label: t('fp_embed', { ch, lv: t('fp_lv' + lv) }), startLv: lv };
+    _pendingHardshipEmbed = { label: t('fp_embed', { ch, lv: t('fp_lv' + lv) }) + (seq ? ' · ' + t('fp_order_seq') : ''), startLv: lv, fpSeq: seq };
     startHardshipSession('memory', ids);
 }
 function startFirstPhraseNote() {
@@ -28874,6 +29074,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
         hardshipState.fruitKey = embed.fruitKey || null;
         hardshipState.blankDueCh = embed.blankDueCh || null;
         hardshipState.startLv = embed.startLv || 0;
+        hardshipState.fpSeq = !!embed.fpSeq;   // 🪔 첫 마디 · 순서대로
         hardshipState.giftId = embed.giftId || null;
         hardshipState.blankFirst = !!embed.blankFirst;
         hardshipState.startLvMap = embed.startLvMap || null;
@@ -30790,6 +30991,7 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
             }
         }
         if (hardshipState) hardshipState._blankLvNote = (_strong && ok) ? t('sh_note') : _blankLvNoteText(_res, _pts, _quick);
+        try { const _ol0 = _oilStage(String(stageId)); _oilFromAttempt(String(stageId), !!ok, _blankMode, _hintOk, _strong); const _ol1 = _oilStage(String(stageId)); if (_ol1 > _ol0 && hardshipState) hardshipState._blankLvNote = [hardshipState._blankLvNote, t('oil_up_note', { name: t('oil_n' + _ol1) })].filter(Boolean).join(' · '); } catch (e) { }   // 🪔 오르면 결과 줄에 「🪔 켜진 등」
         // 백지로 단서 없이 써냈으면 그 절의 일반 스테이지를 클리어한 것으로 친다 (복습 단계·보석·클리어 횟수)
         if (ok && _blankMode && _hintOk) {
             const _cr = _blankCountsAsClear(String(stageId), now);

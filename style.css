@@ -7589,3 +7589,53 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .dj-close { display: block; width: 100%; margin-top: 8px; padding: 9px; border-radius: 10px; border: none; background: rgba(255, 255, 255, .06); color: #e8edf5; cursor: pointer; }
 .dj-weeks.dense { gap: 2px; } .dj-weeks.dense .dj-col { gap: 2px; } .dj-weeks.dense .dj-c { width: 9px; height: 9px; border-radius: 2px; }
 .dj-weeks.dense2 { gap: 1px; } .dj-weeks.dense2 .dj-col { gap: 1px; } .dj-weeks.dense2 .dj-c { width: 6px; height: 6px; border-radius: 1px; }
+
+/* 🪔 내 암송 — 기름 단계 (10/9) */
+#oil-overlay { align-items: center; justify-content: center; }
+.oil-card { width: min(440px, calc(100vw - 24px)); box-sizing: border-box; margin: auto; max-height: 92vh; overflow-y: auto; background: linear-gradient(180deg, #1b2438 0%, #141b2a 100%); border: 1px solid #2f3d57; border-radius: 18px; padding: 16px 14px 12px; color: #e8edf5; box-shadow: 0 20px 50px rgba(0, 0, 0, .5); }
+.oil-head { text-align: center; position: relative; margin-bottom: 10px; }
+.oil-eyebrow { font-size: .72rem; letter-spacing: .08em; color: #9aa8bd; }
+.oil-title { font-family: 'Gowun Dodum', serif; font-size: 1.35rem; color: #f1c40f; margin-top: 2px; }
+.oil-sub { font-size: .85rem; color: #c3cddb; }
+.oil-back { position: absolute; left: 0; top: 0; background: none; border: none; color: #9aa8bd; font-size: .85rem; cursor: pointer; padding: 4px 2px; }
+.oil-big { margin-top: 6px; }
+.oil-big b { font-size: 2rem; color: #ffd968; font-variant-numeric: tabular-nums; }
+.oil-big span { font-size: .85rem; color: #9aa8bd; margin-left: 6px; }
+.oil-ic { width: 100%; height: 100%; display: block; }
+.oil-sum { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; margin-bottom: 12px; }
+.oil-sum-i { display: grid; justify-items: center; gap: 2px; }
+.oil-sum-i svg { width: 34px; height: 34px; }
+.oil-sum-i b { font-size: .78rem; color: #e8edf5; font-variant-numeric: tabular-nums; }
+.oil-list { display: grid; gap: 4px; }
+.oil-row { display: grid; grid-template-columns: 24px 1fr auto; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 10px; background: rgba(255, 255, 255, .03); cursor: pointer; }
+.oil-row:active { background: rgba(255, 255, 255, .08); }
+.oil-row.dim { opacity: .45; }
+.oil-row b { font-family: 'Gowun Dodum', serif; color: #f1c40f; font-weight: 400; text-align: right; }
+.oil-row span { font-size: .72rem; color: #ffd968; white-space: nowrap; }
+.oil-dots { display: flex; flex-wrap: wrap; gap: 2px; min-width: 0; }
+.oil-dots i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.oil-dots i.lit { box-shadow: 0 0 4px rgba(255, 217, 104, .7); }
+.oil-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 5px; }
+.oil-v { display: grid; justify-items: center; gap: 1px; }
+.oil-v svg { width: 40px; height: 40px; }
+.oil-v span { font-size: .66rem; color: #9aa8bd; font-variant-numeric: tabular-nums; }
+.oil-next { margin-top: 12px; padding: 12px; border-radius: 12px; background: rgba(241, 196, 15, .07); border: 1px solid rgba(241, 196, 15, .3); }
+.oil-next-t { font-size: .75rem; color: #f1c40f; letter-spacing: .06em; }
+.oil-next p { margin: 4px 0 0; font-size: .92rem; line-height: 1.5; }
+.oil-next-btn { margin-top: 8px; width: 100%; padding: 10px; border-radius: 10px; border: none; background: #f1c40f; color: #1a1a1a; font-weight: 700; font-size: .95rem; cursor: pointer; }
+.oil-help { margin-top: 12px; }
+.oil-help summary { font-size: .82rem; color: #9aa8bd; cursor: pointer; }
+.oil-legend { display: grid; gap: 6px; margin-top: 8px; }
+.oil-lg { display: grid; grid-template-columns: 40px 1fr; gap: 10px; align-items: start; padding: 8px; border-radius: 10px; background: rgba(255, 255, 255, .03); }
+.oil-lg svg { width: 40px; height: 40px; }
+.oil-lg b { font-family: 'Gowun Dodum', serif; font-weight: 400; color: #f1c40f; font-size: 1rem; margin-right: 6px; }
+.oil-dz { font-size: .7rem; color: #9aa8bd; border: 1px solid #2f3d57; border-radius: 999px; padding: 0 7px; white-space: nowrap; }
+.oil-lg p { margin: 3px 0 0; font-size: .82rem; line-height: 1.5; color: #c3cddb; }
+.oil-close { display: block; width: 100%; margin-top: 10px; padding: 9px; border-radius: 10px; border: none; background: rgba(255, 255, 255, .06); color: #e8edf5; cursor: pointer; }
+.sheet-oil-btn { margin-right: 6px; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(241, 196, 15, .45); background: rgba(241, 196, 15, .08); color: #f1c40f; font-size: .82rem; font-weight: 700; cursor: pointer; }
+.hm-oil-btn { display: block; width: 100%; margin: 6px 0; padding: 9px; border-radius: 10px; border: 1px solid rgba(241, 196, 15, .45); background: rgba(241, 196, 15, .08); color: #f1c40f; font-size: .9rem; font-weight: 700; cursor: pointer; }
+.lt-oil { display: block; width: 100%; margin: 8px 0 4px; padding: 9px; border-radius: 10px; border: 1px solid rgba(241, 196, 15, .45); background: rgba(241, 196, 15, .08); color: #f1c40f; font-weight: 700; cursor: pointer; }
+.fp-ords { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0 4px; }
+.fp-ord { padding: 8px; border-radius: 10px; border: 1px solid #2f3d57; background: none; color: #c3cddb; font-size: .9rem; cursor: pointer; }
+.fp-ord.on { background: #f1c40f; color: #1a1a1a; border-color: #f1c40f; font-weight: 700; }
+.fp-ord-desc { font-size: .78rem; color: #9aa8bd; text-align: center; margin-bottom: 6px; }
