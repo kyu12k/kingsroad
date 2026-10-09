@@ -3003,7 +3003,11 @@ function _noteReadForWeek() {
     readWeek.count = Math.min(READ_WEEK_MAX, (readWeek.count || 0) + 1);
 }
 let _lastBibleReadClickTime = 0;   // 3초 쿨다운용
-let sessionTimeLog = {};           // "YYYY-MM-DD" → ms (이번 주 학습 시간)
+let sessionTimeLog = {};           // "YYYY-MM-DD" → ms (이번 주 학습 시간) — 이 기기 것만
+/* 다른 기기의 학습 시간 — 기기 id → { 날짜 → ms }. 저장본엔 sessionTimeByDev로 함께 올라가고 화면은 모두 더한다.
+   10/9까지는 sessionTimeLog 하나뿐이고 병합에서도 빠져 있어, 동기화 때 한 기기 기록이 다른 기기 것을 덮었다(사용자: "기기에 있는 기록만 체크되나봐") */
+let sessionTimeOther = {};
+const _devId = (() => { try { let d = localStorage.getItem('kingsRoad_devId'); if (!d) { d = Math.random().toString(36).slice(2, 10); localStorage.setItem('kingsRoad_devId', d); } return d; } catch (e) { return 'x'; } })();
 let _sessionVisibleStart = Date.now(); // 현재 탭이 보이기 시작한 시각
 
 function _getLocalDateStr(d) {
@@ -3406,15 +3410,18 @@ loadGameData = function () {
         if (parsed.readWeek && typeof parsed.readWeek === 'object') {
             readWeek = { weekId: String(parsed.readWeek.weekId || ''), count: Math.max(0, parseInt(parsed.readWeek.count, 10) || 0) };
         }
-        if (parsed.sessionTimeLog) {
-            // 최근 14일치만 유지
+        {
+            // 최근 14일치만 유지 · 기기별(sessionTimeByDev)이 있으면 내 기기 것만 sessionTimeLog로
             const _cutoff = new Date();
             _cutoff.setDate(_cutoff.getDate() - 14);
             const _cutoffStr = _getLocalDateStr(_cutoff);
-            sessionTimeLog = {};
-            for (const [k, v] of Object.entries(parsed.sessionTimeLog)) {
-                if (k >= _cutoffStr) sessionTimeLog[k] = v;
-            }
+            const _trim = o => { const r = {}; for (const [k, v] of Object.entries(o || {})) if (k >= _cutoffStr && v > 0) r[k] = v; return r; };
+            const _byDev = (parsed.sessionTimeByDev && typeof parsed.sessionTimeByDev === 'object') ? parsed.sessionTimeByDev : null;
+            if (_byDev) {
+                sessionTimeLog = _trim(_byDev[_devId]);
+                sessionTimeOther = {};
+                for (const d in _byDev) if (d !== _devId) { const t = _trim(_byDev[d]); if (Object.keys(t).length) sessionTimeOther[d] = t; }
+            } else if (parsed.sessionTimeLog) sessionTimeLog = _trim(parsed.sessionTimeLog);
         }
 
         // ★ [게임 모드] 왕의 길 데이터 복구
@@ -13315,6 +13322,7 @@ function saveGameData() {
         njGrapes: njGrapes,               // 🍇 거둔 포도 합
         njGrapesSpent: njGrapesSpent,     // 🍇 예물에 쓴 포도
         sessionTimeLog: sessionTimeLog,
+        sessionTimeByDev: Object.assign({}, sessionTimeOther, { [_devId]: sessionTimeLog }),   // 📅 기기별 학습 시간(병합 _mergeSessionTime)
         // ★ [게임 모드]
         activeMode: activeMode,
         kingsMode: {
@@ -13696,10 +13704,24 @@ function _mergeLeague(target, other) {
     }
     return took;
 }
+function _mergeSessionTime(target, other) {   // 📅 기기별 학습 시간 — 기기·날짜마다 큰 쪽(1분 넘게 차이 날 때만 센다)
+    const b = other.sessionTimeByDev;
+    if (!b || typeof b !== 'object') return 0;
+    // 업데이트 전 저장본(기기별 없음)의 기록은 '_old'로 남긴다 — 안 그러면 불러올 때 내 기기 칸이 비어 그동안의 시간이 사라진다
+    const a = (target.sessionTimeByDev && typeof target.sessionTimeByDev === 'object') ? target.sessionTimeByDev : (target.sessionTimeByDev = (target.sessionTimeLog && typeof target.sessionTimeLog === 'object') ? { _old: Object.assign({}, target.sessionTimeLog) } : {});
+    let took = 0;
+    for (const d in b) {
+        const src = b[d]; if (!src || typeof src !== 'object') continue;
+        const dst = a[d] || (a[d] = {});
+        for (const k in src) { const v = Number(src[k]) || 0; if (v > (Number(dst[k]) || 0)) { if (v - (Number(dst[k]) || 0) > 60000) took++; dst[k] = v; } }
+    }
+    return took;
+}
 function _mergeSaveProgress(target, other) {
     if (!target || !other) return 0;
     let took = 0;
     took += _mergeLeague(target, other);   // 🏆 승점 큰 쪽
+    took += _mergeSessionTime(target, other);
     took += _mergeVerseRecall(target, other);
     took += _mergeReviewSamples(target, other);
     took += _mergeRecallWeek(target, other);
@@ -17478,7 +17500,9 @@ function _buildWeekChart(mondayDate, todayStr) {
         const d = new Date(mondayDate);
         d.setDate(mondayDate.getDate() + i);
         const key = _getLocalDateStr(d);
-        const ms = sessionTimeLog[key] || 0;
+        let ms = sessionTimeLog[key] || 0;
+        for (const dv in sessionTimeOther) ms += (sessionTimeOther[dv] || {})[key] || 0;   // 다른 기기 것도 더한다
+        if (key === _getLocalDateStr() && !document.hidden && _sessionVisibleStart) { const live = Date.now() - _sessionVisibleStart; if (live > 0 && live < 8 * 3600 * 1000) ms += live; }   // 지금 켜 둔 시간
         return { label, ms, isToday: key === todayStr, isFuture: key > todayStr };
     });
     const maxMs = Math.max(...dayData.filter(d => !d.isFuture).map(d => d.ms), 1);
