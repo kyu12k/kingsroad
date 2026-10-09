@@ -27999,7 +27999,7 @@ function _oilNote(id, L, pass) {
     if (!/^\d+-\d+$/.test(id)) return;
     const cur = oilLv[id] || { l: 0, t: 0 };
     if (pass) { if (L > (cur.l | 0)) { oilLv[id] = { l: L, t: Date.now() }; _oilUpNote(id, cur.l | 0, L); } }
-    else if ((cur.l | 0) >= L) oilLv[id] = { l: L - 1, t: Date.now() };
+    else if ((cur.l | 0) >= L) oilLv[id] = { l: L - 1 === 5 ? 4 : L - 1, t: Date.now() };   // 5(기름 그릇)는 주소 기록으로만 얹으므로 저장은 4
 }
 function _oilUpNote(id, from, to) {   // 결과 화면 한 줄 — 이번 세션에 오른 절 모아 두기
     if (!hardshipState) return;
@@ -28030,9 +28030,8 @@ function _oilStage(id) {
     if (l === 4 && _oilAddrCleared(parseInt(id, 10))) l = 5;
     return l;
 }
-/* 처음 한 번 — 지금까지의 기록으로 출발 단계를 채운다(마지막 기록의 출처로 어림) */
+/* 지금까지의 기록으로 출발 단계를 채운다(마지막 기록의 출처로 어림) — 아직 기록 없는 절만 */
 function _oilBackfill() {
-    if (oilLv._v) return;
     const ids = new Set(Object.keys(verseRecall || {}).concat(Object.keys(fpRecall || {})).filter(x => /^\d+-\d+$/.test(x)));
     const ltLast = {};
     for (const ch in levelTests) (levelTests[ch] || []).forEach(T => { for (const id in (T.r || {})) { ids.add(id); if (!ltLast[id] || T.at > ltLast[id].at) ltLast[id] = { at: T.at, c: T.r[id] }; } });
@@ -28042,21 +28041,20 @@ function _oilBackfill() {
         let l = 0;
         if (r.typedPass > 0) l = 2;
         if (r.blankPass > 0) {
-            if (r.lastOk && r.lastMode === 'memory') l = Math.max(l, ['boss', 'mid', 'event'].includes(r.lastCtx) ? 4 : 7);
+            if (r.lastOk && r.lastMode === 'memory') l = Math.max(l, ['boss', 'mid', 'event', 'due'].includes(r.lastCtx) ? 4 : 7);
             else l = Math.max(l, 2);
         }
         if (f.ok > 0 && !f.note) l = Math.max(l, 6);
         const lt = ltLast[id];
         if (lt && (!r.lastAt || lt.at >= r.lastAt - 60000)) {
             if (lt.c === 3 || lt.c === 2) l = Math.max(l, 7);
-            else if (lt.c === 'S' || lt.c === 'SH') l = Math.min(l, 5);
+            else if (lt.c === 'S' || lt.c === 'SH') l = Math.min(l, 4);
             else if (lt.c === 'B' || lt.c === 'BH') l = Math.min(l, 2);
             else if (lt.c === 0) l = Math.min(l, 1);
             else if (l > 6) l = 6;
         }
         if (l > 0 && !oilLv[id]) oilLv[id] = { l, t: 1 };   // t = 1 — 어느 기기의 실제 기록이든 이것보다 늦다
-    });
-    oilLv._v = 1;
+    });   // 비어 있는 절만 채우므로 여러 번 돌아도 같다 — 동기화로 들어온 기록도 다음 번에 채워진다
 }
 const OIL_KEYS = ['empty', 'olive', 'crushed', 'pressed', 'clear', 'vessel', 'wick', 'lit', 'night'];
 let _oilU = 0;
