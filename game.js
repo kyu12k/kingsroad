@@ -1087,6 +1087,9 @@ const LANG = {
         mission_daily_recite_title: '📅 오늘의 암송',
         mission_daily_recite_desc: '오늘 구절을 백지로 모두 써내기',
         daily_cam_btn: '🎥 촬영하기',
+        dj_btn: '📖 내 암송 일지', dj_tab_month: '한 달', dj_tab_journey: '여정 전체', dj_eyebrow: '킹스로드 · 오늘의 암송 일지', dj_pilgrim: '순례자',
+        dj_month_sub: '날마다 켠 등불', dj_journey_sub: '{d}부터 걸어온 길', dj_st_done: '암송한 날 / {n}일', dj_st_verses: '외운 절', dj_st_verses404: '외운 절 / 404', dj_st_streak: '연속',
+        dj_lg_done: '다 함', dj_lg_part: '조금', dj_lg_miss: '못 함', dj_lg_rest: '쉬는 날',
         daily_cam_locked: '먼저 오늘 구절을 백지로 써내면 촬영이 열려요',
         daily_cam_title: '암송 촬영',
         daily_cam_hint: '눈을 감고 외우세요. 막히면 위의 구절을 보면 돼요.',
@@ -2341,6 +2344,9 @@ const LANG = {
         mission_daily_recite_title: '📅 Verses of the Day',
         mission_daily_recite_desc: 'Write all of today\'s verses from a blank page',
         daily_cam_btn: '🎥 Record',
+        dj_btn: '📖 My recitation journal', dj_tab_month: 'Month', dj_tab_journey: 'Whole journey', dj_eyebrow: "King\u2019s Road · Daily recitation journal", dj_pilgrim: 'Pilgrim',
+        dj_month_sub: 'Lamps lit day by day', dj_journey_sub: 'The road since {d}', dj_st_done: 'days recited / {n}', dj_st_verses: 'verses', dj_st_verses404: 'verses / 404', dj_st_streak: 'streak',
+        dj_lg_done: 'all', dj_lg_part: 'some', dj_lg_miss: 'missed', dj_lg_rest: 'rest day',
         daily_cam_locked: 'Write today\'s verses from a blank page first to unlock recording',
         daily_cam_title: 'Record recitation',
         daily_cam_hint: 'Close your eyes and recite. Peek at the verses above if you get stuck.',
@@ -3339,6 +3345,7 @@ loadGameData = function () {
         if (parsed.eventProgress && typeof parsed.eventProgress === 'object') eventProgress = parsed.eventProgress;
         if (parsed.dailyRecite && typeof parsed.dailyRecite === 'object' && parsed.dailyRecite.anchorVerse) dailyRecite = parsed.dailyRecite;
         if (parsed.dailyReciteDone && typeof parsed.dailyReciteDone === 'object') dailyReciteDone = parsed.dailyReciteDone;
+        if (parsed.dailyLog && typeof parsed.dailyLog === 'object') dailyLog = parsed.dailyLog;
         if (typeof parsed.dailyWeekDone === 'string') dailyWeekDone = parsed.dailyWeekDone;
         if (parsed.guideInfo && typeof parsed.guideInfo === 'object') guideInfo = { passedAt: parsed.guideInfo.passedAt || 0, grads: parsed.guideInfo.grads || 0 };
         if (parsed.guideRel && typeof parsed.guideRel === 'object' && parsed.guideRel.g) guideRel = Object.assign({ g: '', gn: '', st: '', since: 0, days: [] }, parsed.guideRel);
@@ -3407,7 +3414,10 @@ loadGameData = function () {
         try {
             const _cut = _shift6AMDayStr(_get6AMDayStr(), -60);
             Object.keys(eventProgress).forEach(k => { if (k.startsWith('daily:') && k.slice(6) < _cut) delete eventProgress[k]; });
-            Object.keys(dailyReciteDone).forEach(k => { if (k < _cut) delete dailyReciteDone[k]; });
+            _dailyLogSync();   // 📖 지우기 전에 일지로 옮긴다
+            const _cut2 = _shift6AMDayStr(_get6AMDayStr(), -400);   // 📖 완료일·일지는 400일(22장 한 바퀴 ≈ 5개월) — 10/9까지는 60일에 지웠다
+            Object.keys(dailyReciteDone).forEach(k => { if (k < _cut2) delete dailyReciteDone[k]; });
+            Object.keys(dailyLog).forEach(k => { if (k < _cut2) delete dailyLog[k]; });
         } catch (e) {}
         if (parsed.readWeek && typeof parsed.readWeek === 'object') {
             readWeek = { weekId: String(parsed.readWeek.weekId || ''), count: Math.max(0, parseInt(parsed.readWeek.count, 10) || 0) };
@@ -13280,6 +13290,7 @@ function saveGameData() {
         eventProgress: eventProgress,     // 이벤트 스테이지 진행 (오늘의 암송은 'daily:YYYY-MM-DD')
         dailyRecite: dailyRecite,         // 오늘의 암송 개인 진도 (null = 교회 진도)
         dailyReciteDone: dailyReciteDone, // 오늘의 암송 완료일 → ts
+        dailyLog: (() => { try { _dailyLogSync(); } catch (e) { } return dailyLog; })(),   // 📖 암송 일지
         dailyWeekDone: dailyWeekDone,     // 오늘의 암송 주간 완료 주차
         returnBoost: returnBoost,         // 돌아온 순례자 — 보석 2배 기간과 효과 기록
         guideInfo: guideInfo,             // 인도자 — 시험 통과·함께 정착한 사람 수(빨간 열매)
@@ -13561,6 +13572,15 @@ function _mergeEventProgress(target, other) {
         if (!target.dailyReciteDone || typeof target.dailyReciteDone !== 'object') target.dailyReciteDone = {};
         for (const day of Object.keys(od)) {
             if (!target.dailyReciteDone[day] && od[day]) { target.dailyReciteDone[day] = od[day]; took++; }
+        }
+    }
+    const ol = other.dailyLog;   // 📖 암송 일지 — 날마다 단계가 높은 쪽(같으면 절이 많은 쪽)
+    if (ol && typeof ol === 'object') {
+        if (!target.dailyLog || typeof target.dailyLog !== 'object') target.dailyLog = {};
+        const sc = x => { const [v, r] = String(x || '').split('|'); return (parseInt(r, 10) || 0) * 100 + (v ? v.split(',').length : 0); };
+        for (const day of Object.keys(ol)) {
+            if (typeof ol[day] !== 'string') continue;
+            if (sc(ol[day]) > sc(target.dailyLog[day])) { target.dailyLog[day] = ol[day]; took++; }
         }
     }
     if (typeof other.dailyWeekDone === 'string' && other.dailyWeekDone > (target.dailyWeekDone || '')) {
@@ -19164,6 +19184,7 @@ function _recordEventClear(eventId, stageIds, rung) {
 let dailySchedule = null;          // Firestore daily_schedule/main
 let dailyRecite = null;            // { anchorDate, anchorVerse, perDay } — 개인 진도. null이면 교회
 let dailyReciteDone = {};          // 6시 날짜 → ts (그날 전 절을 백지로 통과)
+let dailyLog = {};                 // 📖 암송 일지 — 6시 날짜 → '16-13,16-14,16-15|단계'(그날 한 절 · 모든 절이 오른 가장 낮은 단계 0~4). 400일 보관(10/9)
 const DAILY_PER_DAY_MIN = 1, DAILY_PER_DAY_MAX = 5;
 
 let _allVerseIdsCache = null;
@@ -19270,6 +19291,139 @@ function _noteDailyDone(ev) {
     if (typeof saveMyScoreToServer === 'function') setTimeout(saveMyScoreToServer, 1500); // ✅가 남에게 보이게
 }
 
+/* ── 📖 오늘의 암송 일지 (2026-10-09 사용자) ──────────────────────────────────────
+   "하루 암송 기록이 모여서 남으면 좋겠다 — 스크린샷으로 '이렇게 꾸준히 성실하게 암송했다'를 자랑할 수 있게. 한 달치, 22장 치(하루 3절이면 5개월쯤)".
+   기록: dailyLog[6시 날짜] = '절,절,절|단계' — eventProgress('daily:날짜')에서 옮겨 적는다(그건 60일이면 지워진다). 완료는 dailyReciteDone.
+   화면: 한 달(달력) · 여정(22장 칩 + 날마다 칸). 진도일·쉬는 날은 달력(dailySchedule), 없으면 일요일만 쉼 */
+function _dailyLogSync() {
+    for (const k of Object.keys(eventProgress || {})) {
+        if (!k.startsWith('daily:')) continue;
+        const day = k.slice(6), prog = eventProgress[k] || {};
+        const ids = Object.keys(prog).filter(x => /^\d+-\d+$/.test(x));
+        if (!ids.length) continue;
+        ids.sort((a, b) => { const [c1, v1] = a.split('-').map(Number), [c2, v2] = b.split('-').map(Number); return c1 - c2 || v1 - v2; });
+        const r = Math.min(...ids.map(id => _dailyVerseRung(k, id)));
+        const val = ids.join(',') + '|' + r, old = dailyLog[day];
+        const sc = x => { const [v, rr] = String(x || '').split('|'); return (parseInt(rr, 10) || 0) * 100 + (v ? v.split(',').length : 0); };
+        if (sc(val) > sc(old)) dailyLog[day] = val;
+    }
+}
+function _djParse(day) {
+    const raw = dailyLog[day]; if (!raw) return null;
+    const [v, r] = String(raw).split('|');
+    return { ids: v ? v.split(',') : [], r: parseInt(r, 10) || 0 };
+}
+function _djIsRest(day) { return dailySchedule ? _dailyIsRest(day, dailySchedule) : new Date(day + 'T12:00:00').getDay() === 0; }
+function _djStart() {
+    const ks = Object.keys(dailyLog).concat(Object.keys(dailyReciteDone)).sort();
+    return ks[0] || _get6AMDayStr();
+}
+/* 그날 상태 — done(다 백지로) · part(했지만 덜) · miss(진도일인데 안 함) · rest · future · before(일지 시작 전) */
+function _djState(day, today, start) {
+    if (day > today) return 'future';
+    if (dailyReciteDone[day]) return 'done';
+    if (dailyLog[day]) return 'part';
+    if (day < start) return 'before';
+    if (_djIsRest(day)) return 'rest';
+    return day === today ? 'today' : 'miss';
+}
+function _djLamp(st) {   // 등잔 — 켜짐(다 함) · 기름만(덜 함) · 빈 등(안 함)
+    const body = `<path d="M3 19.6 C 3 14.4, 9 13.2, 13 13.2 C 17.6 13.2, 21.4 14, 23 15.4 L 27.6 16.6 C 29 17, 29 18.6, 27.8 19 L 23 20.6 C 22 24.6, 17.6 26.8, 13 26.8 C 8 26.8, 3 24.6, 3 19.6 Z" fill="${st === 'miss' ? '#4a4f5c' : '#a8774a'}"/><path d="M9.5 26.4 L 16.5 26.4 L 15.6 28.2 L 10.4 28.2 Z" fill="${st === 'miss' ? '#3d414c' : '#8a6038'}"/>`;
+    const oil = (st === 'done' || st === 'part') ? `<ellipse cx="13" cy="13.6" rx="2.6" ry=".9" fill="#e8b33a"/>` : `<ellipse cx="13" cy="13.6" rx="2.6" ry=".9" fill="#2a2030"/>`;
+    const fl = st === 'done' ? `<circle cx="26.4" cy="12" r="8" fill="#ffd968" opacity=".22"/><path d="M26.6 9 C 29.4 11.6, 29 16.6, 26.6 17 C 24.2 16.6, 23.8 11.6, 26.6 9 Z" fill="#f6b54a"/><path d="M26.6 12.6 C 27.6 14, 27.5 16.7, 26.6 16.9 C 25.7 16.7, 25.6 14, 26.6 12.6 Z" fill="#fff6cf"/>` : '';
+    return `<svg viewBox="0 0 32 32" class="dj-lamp">${fl}${body}${oil}</svg>`;
+}
+let _djView = 'month', _djMonth = null;
+function openDailyJournal(view) {
+    try { _dailyLogSync(); } catch (e) { }
+    if (view) _djView = view;
+    if (!_djMonth) _djMonth = _get6AMDayStr().slice(0, 7);
+    let ov = document.getElementById('dj-overlay');
+    if (!ov) { ov = document.createElement('div'); ov.id = 'dj-overlay'; ov.className = 'modal-overlay'; ov.style.zIndex = '10000'; ov.onclick = e => { if (e.target === ov) closeDailyJournal(); }; document.body.appendChild(ov); }
+    ov.innerHTML = `<div class="dj-card" onclick="event.stopPropagation()">${_djView === 'month' ? _djMonthHtml() : _djJourneyHtml()}
+        <div class="dj-tabs"><button class="${_djView === 'month' ? 'on' : ''}" onclick="openDailyJournal('month')">${t('dj_tab_month')}</button><button class="${_djView === 'journey' ? 'on' : ''}" onclick="openDailyJournal('journey')">${t('dj_tab_journey')}</button></div>
+        <button class="dj-close" onclick="closeDailyJournal()">${t('btn_close')}</button></div>`;
+    ov.style.display = 'flex';
+    setTimeout(() => ov.classList.add('active'), 10);
+}
+function closeDailyJournal() { const ov = document.getElementById('dj-overlay'); if (ov) { ov.classList.remove('active'); ov.style.display = 'none'; } }
+function _djShiftMonth(n) {
+    const [y, m] = _djMonth.split('-').map(Number), d = new Date(y, m - 1 + n, 1);
+    const nm = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    if (nm > _get6AMDayStr().slice(0, 7) || nm < _djStart().slice(0, 7)) return;
+    _djMonth = nm; openDailyJournal('month');
+}
+function _djStreak(today) {   // 연속 — 쉬는 날은 건너뛰고, 오늘은 아직이면 어제부터
+    let n = 0, d = dailyReciteDone[today] ? today : _shift6AMDayStr(today, -1), g = 0;
+    while (g++ < 500) {
+        if (_djIsRest(d) && !dailyReciteDone[d]) { d = _shift6AMDayStr(d, -1); continue; }
+        if (!dailyReciteDone[d]) break;
+        n++; d = _shift6AMDayStr(d, -1);
+    }
+    return n;
+}
+function _djHead(sub) {
+    return `<div class="dj-head"><div class="dj-eyebrow">${t('dj_eyebrow')}</div><div class="dj-name">${escapeHtml(myNickname || t('dj_pilgrim'))}${myTag && myTag !== '0000' ? ` <span class="dj-tag">#${escapeHtml(myTag)}</span>` : ''}</div><div class="dj-sub">${sub}</div></div>`;
+}
+function _djMonthHtml() {
+    const today = _get6AMDayStr(), start = _djStart();
+    const [y, m] = _djMonth.split('-').map(Number);
+    const first = new Date(y, m - 1, 1), nDays = new Date(y, m, 0).getDate();
+    let done = 0, active = 0, verses = 0, cells = '';
+    for (let i = 0; i < first.getDay(); i++) cells += '<div class="dj-day blank"></div>';
+    for (let d = 1; d <= nDays; d++) {
+        const day = `${_djMonth}-${String(d).padStart(2, '0')}`, st = _djState(day, today, start), lg = _djParse(day);
+        if (st === 'done') { done++; verses += lg ? lg.ids.length : 0; }
+        if (['done', 'part', 'miss'].includes(st) || (st === 'today')) active++;
+        const lab = lg && lg.ids.length ? (() => { const [c, v] = lg.ids[0].split('-'); return `${c}:${v}`; })() : '';
+        const icon = st === 'rest' ? '<span class="dj-rest">🌿</span>' : (st === 'done' || st === 'part' || st === 'miss') ? _djLamp(st) : '';
+        cells += `<div class="dj-day ${st}"><span class="dj-d">${d}</span>${icon}<span class="dj-v">${lab}</span></div>`;
+    }
+    const wk = (currentLang === 'en' ? ['S', 'M', 'T', 'W', 'T', 'F', 'S'] : ['일', '월', '화', '수', '목', '금', '토']).map(w => `<div class="dj-wd">${w}</div>`).join('');
+    const canPrev = _djMonth > start.slice(0, 7), canNext = _djMonth < today.slice(0, 7);
+    const title = currentLang === 'en' ? `${first.toLocaleString('en-US', { month: 'long' })} ${y}` : `${y}년 ${m}월`;
+    return `${_djHead(t('dj_month_sub'))}
+        <div class="dj-month"><button ${canPrev ? '' : 'disabled'} onclick="_djShiftMonth(-1)">‹</button><b>${title}</b><button ${canNext ? '' : 'disabled'} onclick="_djShiftMonth(1)">›</button></div>
+        <div class="dj-stats"><div><b>${done}</b><span>${t('dj_st_done', { n: active })}</span></div><div><b>${verses}</b><span>${t('dj_st_verses')}</span></div><div><b>${_djStreak(today)}</b><span>${t('dj_st_streak')}</span></div></div>
+        <div class="dj-grid">${wk}${cells}</div>
+        <div class="dj-legend">${_djLamp('done')} ${t('dj_lg_done')} &nbsp;${_djLamp('part')} ${t('dj_lg_part')} &nbsp;${_djLamp('miss')} ${t('dj_lg_miss')} &nbsp;🌿 ${t('dj_lg_rest')}</div>`;
+}
+function _djJourneyHtml() {
+    const today = _get6AMDayStr(), start = _djStart();
+    // 22장 — 다 마친 날의 절로 채운다
+    const got = new Set();
+    Object.keys(dailyReciteDone).forEach(day => { const lg = _djParse(day); if (lg) lg.ids.forEach(id => got.add(id)); });
+    let chips = '';
+    for (let c = 1; c <= 22; c++) {
+        const n = (bibleData[c] || []).length || 1; let k = 0;
+        for (let v = 1; v <= n; v++) if (got.has(`${c}-${v}`)) k++;
+        const f = k / n;
+        chips += `<div class="dj-ch${f >= 1 ? ' full' : ''}" title="${c}장 ${k}/${n}"><i style="height:${Math.round(f * 100)}%"></i><span>${c}</span></div>`;
+    }
+    // 날마다 칸 — 주(세로줄) × 요일
+    const s0 = new Date(start + 'T12:00:00'); s0.setDate(s0.getDate() - s0.getDay());
+    let cols = '', d = new Date(s0), done = 0, active = 0, verses = 0, nCol = 0;
+    while (true) {
+        let col = '';
+        for (let w = 0; w < 7; w++) {
+            const day = _getLocalDateStr(d), st = _djState(day, today, start);
+            if (st === 'done') { done++; const lg = _djParse(day); verses += lg ? lg.ids.length : 0; }
+            if (['done', 'part', 'miss'].includes(st)) active++;
+            col += `<i class="dj-c ${st}" title="${day}"></i>`;
+            d.setDate(d.getDate() + 1);
+        }
+        cols += `<div class="dj-col">${col}</div>`; nCol++;
+        if (_getLocalDateStr(d) > today) break;
+    }
+    const [sy, sm, sd] = start.split('-').map(Number);
+    const sub = t('dj_journey_sub', { d: currentLang === 'en' ? `${sm}/${sd}/${sy}` : `${sy}.${sm}.${sd}` });
+    return `${_djHead(sub)}
+        <div class="dj-stats"><div><b>${done}</b><span>${t('dj_st_done', { n: active })}</span></div><div><b>${got.size}</b><span>${t('dj_st_verses404')}</span></div><div><b>${_djStreak(today)}</b><span>${t('dj_st_streak')}</span></div></div>
+        <div class="dj-chs">${chips}</div>
+        <div class="dj-weeks-wrap"><div class="dj-weeks${nCol > 36 ? ' dense2' : nCol > 24 ? ' dense' : ''}">${cols}</div></div>
+        <div class="dj-legend"><i class="dj-c done"></i> ${t('dj_lg_done')} &nbsp;<i class="dj-c part"></i> ${t('dj_lg_part')} &nbsp;<i class="dj-c miss"></i> ${t('dj_lg_miss')} &nbsp;<i class="dj-c rest"></i> ${t('dj_lg_rest')}</div>`;
+}
+
 function loadDailySchedule() {
     if (typeof db === 'undefined' || !db) return Promise.resolve();
     return db.collection('daily_schedule').doc('main').get().then(doc => {
@@ -19321,6 +19475,7 @@ function openDailyScreen() {
             </div>
             <div class="daily-help" id="daily-help" hidden>${t('daily_note')}</div>
             ${body}
+            <button class="daily-journal-btn" onclick="openDailyJournal('month')">${t('dj_btn')}</button>
             <button class="daily-settings-btn" onclick="openDailySettings()">${t('daily_settings')}</button>
             <button onclick="document.getElementById('event-modal').remove()" class="event-close">${t('btn_close')}</button>
         </div>`;

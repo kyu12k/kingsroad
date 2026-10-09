@@ -140,6 +140,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `maybeShowGoogleNudge()` · `googleNudgeLink()` · `_googleNudgeEligible()` · `googleNudge` | game.js:~26103 | 🔒 내 기록 지키기 — 구글 미연결에게 5·20·50·100·200절째 클리어 직후 한 번 + 홈 🔒 칩, 앱 안 브라우저 제외 (`docs/저장과-동기화.md`) |
 | `_checkReturnBoost()` · `_returnBoostExtra(gem)` · `_renderReturnFloat()` · `returnBoost` | game.js:~29450 | 돌아온 순례자 — 14일 넘게 쉬면 7일간 암송 보석 2배(동기화 뒤 판정), 효과 기록 포함 (`docs/랭킹과-이벤트.md`) |
 | `openGuideScreen()` · `openGuideQuiz()` · `_guideSync()` · `_guideNoteDay()` · `_guideTryGraduate()` · `guideInfo`·`guideRel` | game.js:~29700 · kingsroad `guide*` | 🧭 인도자와 동행 — 시험(다 맞힐 때까지) → 인도자 코드, 초심자 신청·승낙, 정착 졸업(망각의 고난 한 장 + 4주 연속 주 3일) → 성 나무에 빨간 열매 (`docs/인도자와-동행.md`) |
+| `openDailyJournal(view)` · `_dailyLogSync()` · `dailyLog` · `_djMonthHtml` · `_djJourneyHtml` | game.js:~19280 | 📖 오늘의 암송 일지 — 날마다 한 절·단계를 400일 보관, 한 달 달력(등잔)·여정 전체(22장 칩 + 주×요일 칸), 스크린샷용 카드 (`docs/랭킹과-이벤트.md`) |
 | `openDailyRecorder()` · `_camDrawLoop` · `_camBeautyFrame(v, w, h, amt)` · `_camDrawWithBg` | game.js:~17400 | 🎥 오늘의 암송 촬영 — 캔버스에 그려 녹화, 액자·WebGL 피부 보정(강도 `softAmt`)·배경 바꾸기 |
 | `SoundEffect` | game.js:~3987 | 효과음 신디사이저 — 종소리 `_note`, 출력 `_bus`, 잠든 오디오 깨우기 `_play`, 진동 `_buzz` |
 

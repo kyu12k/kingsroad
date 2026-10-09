@@ -7538,3 +7538,54 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 
 .sheet-lt-sub.link { cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .lt-time { text-align: center; font-size: .9rem; color: #f1c40f; margin: 2px 0 6px; font-variant-numeric: tabular-nums; }
+
+/* 📖 오늘의 암송 일지 (10/9) — 스크린샷 한 장에 들어가게 */
+.daily-journal-btn { display: block; width: 100%; margin: 8px 0 0; padding: 11px; border-radius: 12px; border: 1px solid rgba(241, 196, 15, .45); background: rgba(241, 196, 15, .08); color: #f1c40f; font-size: .95rem; font-weight: 700; cursor: pointer; }
+#dj-overlay { align-items: center; justify-content: center; }
+.dj-card { width: min(420px, calc(100vw - 24px)); box-sizing: border-box; margin: auto; max-height: 92vh; overflow-y: auto; background: linear-gradient(180deg, #1b2438 0%, #141b2a 100%); border: 1px solid #2f3d57; border-radius: 18px; padding: 18px 16px 14px; color: #e8edf5; box-shadow: 0 20px 50px rgba(0, 0, 0, .5); }
+.dj-head { text-align: center; margin-bottom: 10px; }
+.dj-eyebrow { font-size: .72rem; letter-spacing: .08em; color: #9aa8bd; }
+.dj-name { font-family: 'Gowun Dodum', serif; font-size: 1.35rem; color: #f1c40f; margin-top: 2px; }
+.dj-tag { font-size: .8rem; color: #9aa8bd; font-family: inherit; }
+.dj-sub { font-size: .82rem; color: #c3cddb; margin-top: 2px; }
+.dj-month { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 6px 0 10px; font-size: 1.05rem; }
+.dj-month button { background: none; border: 1px solid #2f3d57; color: #e8edf5; width: 32px; height: 32px; border-radius: 50%; font-size: 1.1rem; cursor: pointer; }
+.dj-month button:disabled { opacity: .25; cursor: default; }
+.dj-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
+.dj-stats > div { background: rgba(255, 255, 255, .04); border-radius: 10px; padding: 8px 4px; text-align: center; }
+.dj-stats b { display: block; font-size: 1.35rem; color: #ffd968; font-variant-numeric: tabular-nums; }
+.dj-stats span { font-size: .72rem; color: #9aa8bd; }
+.dj-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.dj-wd { text-align: center; font-size: .7rem; color: #9aa8bd; padding-bottom: 2px; }
+.dj-day { aspect-ratio: 1 / 1.15; max-width: 100%; border-radius: 8px; background: rgba(255, 255, 255, .03); display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 3px 0 2px; position: relative; overflow: hidden; }
+.dj-day.blank { background: none; }
+.dj-day.future, .dj-day.before { opacity: .35; }
+.dj-day.done { background: rgba(255, 217, 104, .1); box-shadow: inset 0 0 0 1px rgba(255, 217, 104, .35); }
+.dj-day.today { box-shadow: inset 0 0 0 1px #9aa8bd; }
+.dj-d { font-size: .62rem; color: #9aa8bd; line-height: 1; font-variant-numeric: tabular-nums; }
+.dj-v { font-size: .56rem; color: #c3cddb; line-height: 1; min-height: .56rem; font-variant-numeric: tabular-nums; }
+.dj-lamp { width: 26px; height: 26px; }
+.dj-rest { font-size: .95rem; line-height: 1; opacity: .7; }
+.dj-legend { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 6px; font-size: .72rem; color: #9aa8bd; margin-top: 10px; }
+.dj-legend .dj-lamp { width: 18px; height: 18px; vertical-align: middle; }
+.dj-chs { display: grid; grid-template-columns: repeat(11, 1fr); gap: 4px; margin-bottom: 12px; }
+.dj-ch { position: relative; height: 34px; border-radius: 6px; background: rgba(255, 255, 255, .05); overflow: hidden; display: flex; align-items: flex-end; justify-content: center; }
+.dj-ch i { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, #f3c64a, #c98f2a); opacity: .85; }
+.dj-ch span { position: relative; font-size: .68rem; font-weight: 700; color: #e8edf5; padding-bottom: 2px; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
+.dj-ch.full { box-shadow: 0 0 0 1px #ffd968, 0 0 8px rgba(255, 217, 104, .45); }
+.dj-weeks-wrap { overflow-x: auto; padding-bottom: 2px; }
+.dj-weeks { display: flex; gap: 3px; justify-content: center; min-width: min-content; }
+.dj-col { display: flex; flex-direction: column; gap: 3px; }
+.dj-c { display: inline-block; width: 11px; height: 11px; border-radius: 3px; background: rgba(255, 255, 255, .05); vertical-align: middle; }
+.dj-c.done { background: #ffd968; box-shadow: 0 0 4px rgba(255, 217, 104, .6); }
+.dj-c.part { background: #a8774a; }
+.dj-c.miss { background: #3d4352; }
+.dj-c.rest { background: #2f5a3f; }
+.dj-c.today { box-shadow: inset 0 0 0 1px #9aa8bd; }
+.dj-c.future, .dj-c.before { background: transparent; }
+.dj-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 14px; }
+.dj-tabs button { padding: 9px; border-radius: 10px; border: 1px solid #2f3d57; background: none; color: #c3cddb; font-size: .9rem; cursor: pointer; }
+.dj-tabs button.on { background: #f1c40f; color: #1a1a1a; border-color: #f1c40f; font-weight: 700; }
+.dj-close { display: block; width: 100%; margin-top: 8px; padding: 9px; border-radius: 10px; border: none; background: rgba(255, 255, 255, .06); color: #e8edf5; cursor: pointer; }
+.dj-weeks.dense { gap: 2px; } .dj-weeks.dense .dj-col { gap: 2px; } .dj-weeks.dense .dj-c { width: 9px; height: 9px; border-radius: 2px; }
+.dj-weeks.dense2 { gap: 1px; } .dj-weeks.dense2 .dj-col { gap: 1px; } .dj-weeks.dense2 .dj-c { width: 6px; height: 6px; border-radius: 1px; }
