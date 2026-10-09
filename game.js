@@ -748,6 +748,8 @@ const LANG = {
         hardship_endurance_count: '누적 확인 {n}절째입니다.',
         hardship_feedback_correct: '정답입니다. {label} · +{pts}점',
         hardship_feedback_correct_no_reward: '정답입니다. {label} · 승점 없음',
+        hardship_feedback_correct_why: '정답입니다. {label} · {why}', hardship_feedback_typo_why: '오타 보정! {why} ({n}글자 오타)',
+        nr_step: '첫 마디·빈칸으로 써서 승점 없음', nr_linked: '오늘 이 장은 이미 승점을 받아 승점 없음', nr_test: '연습 테스트라 승점 없음 — 장 전체 테스트만 승점',
         hardship_blank_hint_notice: '💡 막히면 힌트를 누르세요 — 한 글자씩만 열려요',
         embed_title_quick_blank_none: '백지 복습',
         hint_trace_tip: '힌트 {n}회 사용 · 최근 3번 중',
@@ -2021,6 +2023,8 @@ const LANG = {
         hardship_endurance_count: 'Confirmed {n} verse(s) so far.',
         hardship_feedback_correct: 'Correct! {label} · +{pts} pts',
         hardship_feedback_correct_no_reward: 'Correct! {label} · No points',
+        hardship_feedback_correct_why: 'Correct! {label} · {why}', hardship_feedback_typo_why: 'Typo corrected! {why} ({n} typo(s))',
+        nr_step: 'no points with first words/blanks given', nr_linked: 'this chapter already earned points today', nr_test: 'practice test, no points — only whole-chapter tests score',
         hardship_blank_hint_notice: '💡 Stuck? Tap the hint — it opens one letter at a time',
         embed_title_quick_blank_none: 'Blank review',
         hint_trace_tip: 'Hint used {n}× · last 3 tries',
@@ -31214,6 +31218,13 @@ function getHardshipScoreScale() {
    백지로 이어서 하는 것 — 이게 우리가 권하는 순서인데,
    예전에는 그러면 **중간점검이 반드시 전부 0점**이 됐다. 어뷰징을 막으려다 복습을 막은 셈.
    같은 중간점검을 두 번 하는 것만 막으면 되고, 다른 콘텐츠는 각자 한 번씩 쳐야 한다. */
+/* 승점이 없을 때 그 이유 한 줄(10/9 사용자: "승점을 안 줄 때는 이유가 안내되는 거지?") — 없으면 '' (예전 문구 「승점 없음」) */
+function _noRewardWhy() {
+    const hs = hardshipState; if (!hs) return '';
+    if (hs.levelTest) return (hs.ltStep || 0) > 0 ? 'nr_step' : (hs.ltFull && !hs.ltPay) ? 'nr_linked' : 'nr_test';
+    if (hs.repeatFactor === 0) return 'nr_linked';
+    return '';
+}
 function _blankScoreKind() {
     if (!hardshipState) return null;
     if (hardshipState.midBossStageId) return 'mid';   // 중간점검 빈칸·백지
@@ -31316,7 +31327,8 @@ function submitHardshipMemoryGuess() {
                 : hardshipState.quickReviewStageId
                     ? t('hardship_feedback_correct_quick', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) })
                     : hardshipState.rewardBlocked
-                        ? t('hardship_feedback_correct_no_reward', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) })
+                        ? (_noRewardWhy() ? t('hardship_feedback_correct_why', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }), why: t(_noRewardWhy()) })
+                            : t('hardship_feedback_correct_no_reward', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) }))
                         // 여기서 0이면 이유는 하나뿐 — 오늘 같은 콘텐츠로 이 구절 승점을 이미 받았다
                         : (earnedPoints <= 0)
                             ? t('hardship_feedback_correct_scored_today', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) })
@@ -31372,7 +31384,7 @@ function submitHardshipMemoryGuess() {
             message: (hardshipState.trainingMode
                 ? t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) + ' · 오타 보정'
                 : hardshipState.rewardBlocked
-                    ? t('hardship_feedback_typo_corrected_no_reward', { n: typoCount })
+                    ? (_noRewardWhy() ? t('hardship_feedback_typo_why', { n: typoCount, why: t(_noRewardWhy()) }) : t('hardship_feedback_typo_corrected_no_reward', { n: typoCount }))
                     // 0이면 이유는 하나뿐 — 오늘 같은 콘텐츠로 이 구절 승점을 이미 받았다
                     : (earnedPoints <= 0)
                         ? t('hardship_feedback_typo_corrected_scored_today', { n: typoCount })
