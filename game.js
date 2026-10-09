@@ -27773,9 +27773,15 @@ function _ltNote(id, ok, hints, giveUp) {
       if (seen.indexOf(id) < 0) seen.push(id); }
     const c = (!ok || giveUp) ? 0 : st === 2 ? (hints > 0 ? 'BH' : 'B') : st === 1 ? (hints > 0 ? 'SH' : 'S') : !(hints > 0) ? 3 : (hints <= Math.ceil(L * HINT_OK_RATIO)) ? 2 : 1;   // SH·BH — 첫 마디·빈칸에 힌트까지(10/8)
     T.r[id] = c;
+    try { T.d = getHardshipElapsedSeconds(); } catch (e) { }   // ⏱ 치른 시간(초) — 망각의 고난과 같은 방식(정답 확인 중엔 멈춤), 마지막으로 끝낸 절까지(10/9 사용자)
     { const v = Object.values(T.r); if (v.length === 3 && T.n > 3 && v.every(x => x === 0)) hardshipState.ltStopAsk = true; }   // 처음 세 절이 바닥
     if (st === 0 && hints > 0 && rev.length && L > 0 && rev[0] / L < 0.1 && T.s.indexOf(id) < 0) T.s.push(id);   // 첫 힌트가 처음 10% — 시작에서 막힘
     saveGameData();
+}
+function _ltFmtTime(sec) {   // ⏱ 4분 12초 / 4m 12s
+    if (!(sec > 0)) return '';
+    const m = Math.floor(sec / 60), s = sec % 60;
+    return currentLang === 'en' ? (m ? `${m}m ${s}s` : `${s}s`) : (m ? `${m}분 ${s}초` : `${s}초`);
 }
 function _ltShowResult(ch) {
     const T = (levelTests[ch] || []).slice(-1)[0]; if (!T) return;
@@ -27804,6 +27810,7 @@ function _ltShowResult(ch) {
     ov.innerHTML = `<div class="result-card mode-select-card lt-card" onclick="event.stopPropagation()">
             <div class="mode-modal-header"><span class="mode-select-title">${t('lt_res_title', { ch })}</span><button class="mode-close-btn" onclick="document.getElementById('lt-result').style.display='none'">✕</button></div>
             ${done < ids.length ? `<div class="lt-partial">${t('lt_res_partial', { done, n: ids.length })}</div>` : ''}
+            ${T.d > 0 ? `<div class="lt-time">⏱ ${_ltFmtTime(T.d)}</div>` : ''}
             <div class="lt-legend">${[3, 2, 1, 'S', 'SH', 'B', 'BH', 0].filter(c => cnt[c] || c === 3 || c === 0).map(c => `<span class="lt-cell c${c}"></span>${t('lt_c' + c)} <b>${cnt[c]}</b>`).join(' &nbsp;')}</div>
             <div class="lt-grid">${ids.map(cell).join('')}</div>
             <div class="lt-ans" id="lt-ans">${t('lt_res_tap')}</div>
@@ -27876,7 +27883,7 @@ function _renderSheetLevelTest(chapterData) {
     const n = typeof ch === 'number' ? _ltLearnedIds(ch).length : 0;
     if (n < 3) { el.style.display = 'none'; el.innerHTML = ''; return; }
     const T = (levelTests[ch] || []).slice(-1)[0];
-    const sub = T ? t('lt_sheet_last', { d: new Date(T.at).toLocaleDateString(currentLang === 'en' ? 'en-US' : 'ko-KR', { month: 'numeric', day: 'numeric' }), c: Object.values(T.r || {}).filter(c => c === 3).length, n: T.n || Object.keys(T.r || {}).length }) : t('lt_sheet_none');
+    const sub = T ? t('lt_sheet_last', { d: new Date(T.at).toLocaleDateString(currentLang === 'en' ? 'en-US' : 'ko-KR', { month: 'numeric', day: 'numeric' }), c: Object.values(T.r || {}).filter(c => c === 3).length, n: T.n || Object.keys(T.r || {}).length }) + (T.d > 0 ? ' · ⏱ ' + _ltFmtTime(T.d) : '') : t('lt_sheet_none');
     el.innerHTML = `<button class="sheet-lt-btn" onclick="openLevelTest(${ch})">${t('lt_sheet_btn')}</button>${T ? `<span class="sheet-lt-sub link" onclick="_ltShowResult(${ch})">${sub} ›</span>` : `<span class="sheet-lt-sub">${sub}</span>`}`;   // 지난 결과 다시 보기(10/9)
     el.style.display = '';
 }
