@@ -837,8 +837,10 @@ const LANG = {
         oil_d3: '앞 절에 이어 첫 마디가 나와요. 눌러 짜니 기름이 흐르기 시작해요.', oil_d4: '처음부터 끝까지 백지로 이어 썼어요. 찌꺼기를 걸러 낸 순수한 기름이에요. (출 27:20)',
         oil_d5: '주소와 말씀이 서로 짝지어져요. 기름을 제 그릇에 담았어요. (마 25:4)', oil_d6: '주소만 보고 첫 마디가 나와요. 불이 붙을 심지를 다듬었어요.',
         oil_d7: '주소만 보고 백지로 써냈어요. 등에 불이 켜졌어요. (마 25:7)', oil_d8: '하루를 쉬고도 써냈어요. 밤중에 소리가 나도 꺼지지 않는 등이에요. (마 25:6)',
-        oil_next0: '{ch}장 {r}절 — 지도에서 처음 외우기부터', oil_next1: '{ch}장 {r}절 — 중간점검 빈칸으로 순서대로 써 보기(장 목록)', oil_next2: '{ch}장 {r}절 — 앞 절에 이어 첫 마디 꺼내기', oil_go2: '🔑 첫 마디 · 순서대로',
-        oil_next3: '{ch}장 {r}절 — 중간점검·보스전 백지로 순서대로(장 목록)', oil_next4: '{ch}장 {r}절 — 주소와 말씀 짝짓기', oil_go4: '🎯 주소의 고난', oil_next5: '{ch}장 {r}절 — 주소만 보고 첫 마디', oil_go5: '🔑 첫 마디 · 무작위',
+        oil_next0: '{ch}장 {r}절 — 지도에서 처음 외우기부터', oil_next1: '{ch}장 {r}절 — 빈칸을 보며 순서대로 써 보기', oil_go1: '✏️ 빈칸으로 · 순서대로', oil_go3: '✍️ 백지로 · 순서대로',
+        oil_next_learning: '{ch}장 {r}절 — 이 묶음을 다 외우면 순서대로 써 볼 수 있어요', oil_next7_whole: '{ch}장을 다 외우면 장 전체 레벨 테스트로 한밤의 등불을 켤 수 있어요',
+        todo_oil: '{ch}장 · {what}', oil_short0: '처음 외우기', oil_short1: '{r}절 빈칸', oil_short2: '첫 마디 순서대로', oil_short3: '{r}절 백지', oil_short4: '주소의 고난', oil_short5: '첫 마디 무작위', oil_short6: '망각의 고난', oil_short7: '레벨 테스트', oil_next2: '{ch}장 {r}절 — 앞 절에 이어 첫 마디 꺼내기', oil_go2: '🔑 첫 마디 · 순서대로',
+        oil_next3: '{ch}장 {r}절 — 백지로 처음부터 끝까지 이어 쓰기', oil_next4: '{ch}장 {r}절 — 주소와 말씀 짝짓기', oil_go4: '🎯 주소의 고난', oil_next5: '{ch}장 {r}절 — 주소만 보고 첫 마디', oil_go5: '🔑 첫 마디 · 무작위',
         oil_next6: '{ch}장 {r}절 — 주소만 보고 백지로', oil_go6: '⌨️ 망각의 고난', oil_next7_ready: '{ch}장을 하루 쉬었어요 — 장 전체 레벨 테스트로 한밤의 등불을', oil_next7_wait: '{ch}장을 {h}시간 더 쉬면 장 전체 레벨 테스트로 한밤의 등불을 켤 수 있어요', oil_go7: '🎓 레벨 테스트',
         oil_next8: '{ch}장의 등이 모두 한밤에도 밝아요. 하루 이틀 쉬었다가 다시 확인해 보세요.',
         fp_order_seq: '순서대로', fp_order_rand: '무작위', fp_order_seq_d: '1절부터 차례로 — 앞 절에 이어 다음 절의 첫 마디', fp_order_rand_d: '섞어서 — 주소만 보고 첫 마디',
@@ -2108,8 +2110,10 @@ const LANG = {
         oil_d3: 'First words come after the verse before. Pressed oil begins to flow.', oil_d4: 'Wrote it blank from start to end. Pure, clear oil. (Ex 27:20)',
         oil_d5: 'Reference and words are paired. The oil is in its vessel. (Mt 25:4)', oil_d6: 'From the reference, the first words come. The wick is trimmed.',
         oil_d7: 'From the reference alone, written blank. The lamp is lit. (Mt 25:7)', oil_d8: 'Written even after a day off. A lamp that stays lit at midnight. (Mt 25:6)',
-        oil_next0: 'Ch {ch} v{r} — start learning on the map', oil_next1: 'Ch {ch} v{r} — checkpoint with blanks, in order (chapter list)', oil_next2: 'Ch {ch} v{r} — first words after the verse before', oil_go2: '🔑 First words · in order',
-        oil_next3: 'Ch {ch} v{r} — checkpoint/boss blank, in order (chapter list)', oil_next4: 'Ch {ch} v{r} — pair references and words', oil_go4: '🎯 Trial of Address', oil_next5: 'Ch {ch} v{r} — first words from the reference', oil_go5: '🔑 First words · random',
+        oil_next0: 'Ch {ch} v{r} — start learning on the map', oil_next1: 'Ch {ch} v{r} — write in order with blanks', oil_go1: '✏️ Blanks · in order', oil_go3: '✍️ Blank · in order',
+        oil_next_learning: 'Ch {ch} v{r} — finish learning this group to write it in order', oil_next7_whole: 'Learn all of ch {ch}, then a whole-chapter level test lights the midnight lamp',
+        todo_oil: 'Ch {ch} · {what}', oil_short0: 'learn', oil_short1: 'v{r} blanks', oil_short2: 'first words in order', oil_short3: 'v{r} blank', oil_short4: 'Trial of Address', oil_short5: 'first words random', oil_short6: 'Trial of Forgetting', oil_short7: 'level test', oil_next2: 'Ch {ch} v{r} — first words after the verse before', oil_go2: '🔑 First words · in order',
+        oil_next3: 'Ch {ch} v{r} — write it blank from start to end', oil_next4: 'Ch {ch} v{r} — pair references and words', oil_go4: '🎯 Trial of Address', oil_next5: 'Ch {ch} v{r} — first words from the reference', oil_go5: '🔑 First words · random',
         oil_next6: 'Ch {ch} v{r} — blank from the reference', oil_go6: '⌨️ Trial of Forgetting', oil_next7_ready: 'Ch {ch} rested a day — light the midnight lamp with a whole-chapter level test', oil_next7_wait: 'Rest ch {ch} {h} more hours, then a whole-chapter level test lights the midnight lamp', oil_go7: '🎓 Level test',
         oil_next8: 'Every lamp in ch {ch} burns at midnight. Rest a day or two and check again.',
         fp_order_seq: 'In order', fp_order_rand: 'Random', fp_order_seq_d: 'From verse 1 — the first words of the next verse', fp_order_rand_d: 'Mixed — first words from the reference',
@@ -28109,28 +28113,69 @@ function _oilAllHtml() {
 function _oilLegendHtml() {
     return `<div class="oil-legend">${[0, 1, 2, 3, 4, 5, 6, 7, 8].map(k => `<div class="oil-lg">${_oilIcon(k)}<div><b>${t('oil_n' + k)}</b><span class="oil-dz">${t('oil_do' + k)}</span><p>${t('oil_d' + k)}</p></div></div>`).join('')}</div>`;
 }
-/* 다음 할 것 — 그 장에서 가장 낮은 단계에 맞춘 한 가지 */
-function _oilNext(ch, sts) {
-    const lo = Math.min(...sts), v = _oilChapterIds(ch).filter((id, i) => sts[i] === lo).map(id => id.split('-')[1]);
-    const r = v.length > 3 ? `${v[0]}~${v[v.length - 1]}` : v.join(', ');
-    const B = (label, js) => `<button class="oil-next-btn" onclick="closeOilScreen(); ${js}">${label}</button>`;
-    switch (lo) {
-        case 0: return { txt: t('oil_next0', { ch, r }), btn: '' };
-        case 1: return { txt: t('oil_next1', { ch, r }), btn: '' };
-        case 2: return { txt: t('oil_next2', { ch, r }), btn: B(t('oil_go2'), `_startFirstPhrase(${ch}, 2, 'seq')`) };
-        case 3: return { txt: t('oil_next3', { ch, r }), btn: '' };
-        case 4: return { txt: t('oil_next4', { ch, r }), btn: B(t('oil_go4'), `openChapterHardship(${ch})`) };
-        case 5: return { txt: t('oil_next5', { ch, r }), btn: B(t('oil_go5'), `_startFirstPhrase(${ch}, 2, 'rand')`) };
-        case 6: return { txt: t('oil_next6', { ch, r }), btn: B(t('oil_go6'), `openChapterHardship(${ch})`) };
-        case 7: { const h = Math.floor((Date.now() - Math.max(0, ..._oilChapterIds(ch).map(id => _verseSeenGet(id) || 0))) / 3600000);
-                  return { txt: h >= 24 ? t('oil_next7_ready', { ch }) : t('oil_next7_wait', { ch, h: 24 - h }), btn: h >= 24 ? B(t('oil_go7'), `openLevelTest(${ch})`) : '' }; }
-        default: return { txt: t('oil_next8', { ch }), btn: '' };
+/* 다음 할 것 — 그 장에서 단계가 가장 낮은 묶음(중간점검 구간) 하나에 맞춘 한 가지. 버튼 하나로 바로 시작(10/9 사용자: 일일이 찾아가지 않게).
+   외운 절만 본다(_ltUnits) — 아직 안 외운 절은 왕의 길이 데려온다. 장 전체로 하는 것(첫 마디·주소·망각)은 외운 절만으로, 장을 다 외웠으면 그 장 기록으로 */
+function _oilPlan(ch) {
+    const units = (typeof _ltUnits === 'function') ? _ltUnits(ch) : [];
+    if (!units.length) return null;
+    const chData = gameData.find(c => c.id === ch), boss = chData && chData.stages.find(x => x.type === 'boss');
+    const all = _oilChapterIds(ch), learned = units.reduce((a, u) => a.concat(u.ids), []), whole = learned.length === all.length;
+    let best = null;
+    units.forEach(u => { const lo = Math.min(...u.ids.map(_oilStage)); if (!best || lo < best.lo) best = { u, lo }; });
+    const { u, lo } = best, r = u.r;
+    const P = (txt, go, js) => ({ lo, txt, go, js, short: t('oil_short' + lo, { r }) });
+    if (lo >= 8) return { lo, txt: t('oil_next8', { ch }) };
+    if (lo <= 1 || lo === 3) {   // 묶음 단위 — 중간점검 빈칸(1) · 백지(3), 순서대로. 중간점검이 없는 묶음은 장을 다 외웠을 때 보스전으로
+        const none = lo === 3, mid = u.mid, full = mid ? u.ids.length === (mid.rangeEnd - mid.rangeStart + 1) : whole;
+        if (mid && full) return P(t(none ? 'oil_next3' : 'oil_next1', { ch, r }), t(none ? 'oil_go3' : 'oil_go1'), `_oilRun('mid', '${mid.id}', ${none})`);
+        if (!mid && full && boss) return P(t(none ? 'oil_next3' : 'oil_next1', { ch, r }), t(none ? 'oil_go3' : 'oil_go1'), `_oilRun('boss', '${boss.id}', ${none})`);
+        return { lo, txt: t('oil_next_learning', { ch, r }) };
+    }
+    if (lo === 2) return P(t('oil_next2', { ch, r }), t('oil_go2'), `_oilRun('fp', ${ch}, 'seq')`);
+    if (lo === 4) return P(t('oil_next4', { ch, r }), t('oil_go4'), `_oilRun('address', ${ch})`);
+    if (lo === 5) return P(t('oil_next5', { ch, r }), t('oil_go5'), `_oilRun('fp', ${ch}, 'rand')`);
+    if (lo === 6) return P(t('oil_next6', { ch, r }), t('oil_go6'), `_oilRun('memory', ${ch})`);
+    const h = Math.floor((Date.now() - Math.max(0, ...all.map(id => _verseSeenGet(id) || 0))) / 3600000);   // 7 → 하루 쉬고 장 전체 레벨 테스트
+    if (!whole) return { lo, txt: t('oil_next7_whole', { ch }) };
+    return h >= 24 ? P(t('oil_next7_ready', { ch }), t('oil_go7'), `_oilRun('lt', ${ch})`) : { lo, txt: t('oil_next7_wait', { ch, h: 24 - h }), wait: 1 };
+}
+function _oilRun(kind, a, b) {
+    closeOilScreen();
+    const ch = typeof a === 'number' ? a : parseInt(String(a), 10);
+    const learnedIds = c => _ltUnits(c).reduce((x, u) => x.concat(u.ids), []);
+    if (kind === 'mid' || kind === 'boss') {
+        const chData = gameData.find(c => c.id === ch), st = chData && chData.stages.find(x => String(x.id) === String(a));
+        if (!st) return;
+        window.currentStageId = st.id;
+        if (kind === 'mid') _startMidBossBlank(st, !!b); else _startBossBlank(st, !!b);
+        return;
+    }
+    if (kind === 'fp') { _startFirstPhrase(ch, 2, b, learnedIds(ch)); return; }
+    if (kind === 'lt') { openLevelTest(ch); return; }
+    if (kind === 'address' || kind === 'memory') {
+        const ids = learnedIds(ch); if (!ids.length) return;
+        window.hardshipOrigin = 'map';
+        if (kind === 'memory') _forceHardshipMemorySettings();
+        startHardshipSession(kind, ids, ids.length === _oilChapterIds(ch).length ? ch : undefined);
     }
 }
+/* 홈 「오늘 할 일」 — 최근에 손댄 장부터, 바로 할 수 있는 것 하나 */
+function _oilHomePick() {
+    try {
+        _oilBackfill();
+        const last = {};
+        Object.keys(stageLastClear || {}).forEach(id => { const m = /^(\d+)-\d+$/.exec(id); if (m) last[m[1]] = Math.max(last[m[1]] || 0, stageLastClear[id] || 0); });
+        const chs = Object.keys(last).map(Number).sort((x, y) => last[y] - last[x]).slice(0, 4);
+        for (const c of chs) { const pl = _oilPlan(c); if (pl && pl.js) return { ch: c, pl }; }
+    } catch (e) { }
+    return null;
+}
+function _oilHomeGo() { const x = _oilHomePick(); if (!x) { openOilScreen(); return; } new Function(x.pl.js)(); }
 function _oilChapterHtml(ch) {
     const ids = _oilChapterIds(ch), sts = ids.map(_oilStage);
     const cells = ids.map((id, i) => `<div class="oil-v" title="${ch}:${id.split('-')[1]} · ${t('oil_n' + sts[i])}">${_oilIcon(sts[i])}<span>${id.split('-')[1]}</span></div>`).join('');
-    const nx = _oilNext(ch, sts), lit = sts.filter(x => x >= 7).length;
+    const pl = _oilPlan(ch), lit = sts.filter(x => x >= 7).length;
+    const nx = pl ? { txt: pl.txt, btn: pl.js ? `<button class="oil-next-btn" onclick="${pl.js}">${pl.go}</button>` : '' } : { txt: t('oil_next0', { ch, r: '1' }), btn: '' };
     return `<div class="oil-head"><button class="oil-back" onclick="openOilScreen()">‹ ${t('oil_all')}</button><div class="oil-title">${t('oil_ch_title', { ch })}</div>
         <div class="oil-sub">${t('oil_ch_sub', { lit, n: ids.length })}</div></div>
         <div class="oil-grid">${cells}</div>
@@ -28266,8 +28311,8 @@ function openFirstPhrasePick() {
     ov.style.display = 'flex';
 }
 function closeFirstPhrasePick() { const ov = document.getElementById('fp-pick-overlay'); if (ov) ov.style.display = 'none'; window.hardshipForcedChapter = null; }
-function _startFirstPhrase(ch, lv, order) {
-    const ids = getHardshipVerseIdsByChapterRange(ch, ch);
+function _startFirstPhrase(ch, lv, order, onlyIds) {
+    const ids = (Array.isArray(onlyIds) && onlyIds.length) ? onlyIds.slice().sort((x, y) => parseInt(x.split('-')[1], 10) - parseInt(y.split('-')[1], 10)) : getHardshipVerseIdsByChapterRange(ch, ch);
     const ov = document.getElementById('fp-pick-overlay'); if (ov) ov.style.display = 'none';
     window.hardshipForcedChapter = null;
     if (!ids.length) { alert(t('alert_training_no_data', { ch })); return; }
@@ -32892,6 +32937,7 @@ function renderHomeTodo() {
     try { blank = _blankDueIds().length; } catch (e) { }
     const chip = (icon, label, n, done, fn) => `<button class="home-todo-chip${done ? ' done' : ''}" onclick="${fn}">${icon} ${label}${done ? ' ✓' : n ? ` <b>${n}</b>` : ''}</button>`;
     let h = chip('📖', t('todo_review'), rev, rev === 0, 'openReviewFromHome()') + chip('✍️', t('todo_blank'), blank, blank === 0, 'openBlankDueScreen()');
+    { const op = _oilHomePick(); if (op) h += `<button class="home-todo-chip oil" onclick="_oilHomeGo()">🪔 ${t('todo_oil', { ch: op.ch, what: op.pl.short })}</button>`; }   // 🪔 기름 단계 — 다음 할 것 하나
     if (S.hasFriends) h += chip('💛', t('todo_cheer'), S.cheerable, S.cheerable === 0, 'openFriendScreen()');
     { const gf = (njGiftFruits || []).filter(f => !f.done || !f.thanked), act = gf.filter(f => (f.ripe && Date.now() >= f.ripe && !f.done) || (f.done && !f.thanked) || (!f.ripe && !f.done)).length;
       if (gf.length) h += chip('🎁', t('todo_gift'), act, act === 0, 'openGiftBasket()'); }   // 🎁 받은 나눔 열매
