@@ -809,7 +809,7 @@ const LANG = {
         fp_title: '첫 마디의 고난', fp_desc: '장·절을 보고 첫 마디만 쓰기 · 쉬움·보통·어려움',
         lt_title: '레벨 테스트', lt_desc: '지금 이 장이 정말 얼마나 나오나 — 주소만 보고 무작위 백지',
         lt_intro_title: '🎓 {ch}장 레벨 테스트', lt_embed: '🎓 {ch}장 레벨 테스트',
-        lt_intro_body: '{ch}장 <b>{n}절</b>을 주소만 보고 <b>무작위 순서</b>로 백지로 써요.<br>복습 단계·백지 레벨과는 상관없이 <b>지금 실제로 나오는지</b>만 재요.',
+        lt_intro_body: '{ch}장 <b>{n}절</b>을 주소만 보고 <b>무작위 순서</b>로 백지로 써요.<br>승점은 없지만, 백지로 써낸 절은 <b>백지 레벨·복습</b>에도 그대로 들어가요.',
         lt_intro_rules: '• 모르면 망설이지 말고 <b>🙋 모르겠어요</b> — 그게 가장 정확한 답이에요<br>• 막히면 💡 힌트를 써도 돼요(얼마나 썼는지도 기록돼요)<br>• 시험이라 승점·보석은 없어요. 원문을 보지 않는 게 약속이에요<br>• 중간에 나가도 그때까지 결과는 남아요',
         lt_intro_warm: '☀️ 오늘 이 장 <b>{n}절</b>을 이미 봤어요. 본 절은 기억이 따뜻해서 실제보다 잘 나와요 — <b>내일 아침 앱을 열자마자</b> 하면 가장 정확해요',
         lt_intro_cold: '❄️ 오늘 이 장을 아직 안 봤어요 — 지금이 가장 정확한 때예요',
@@ -2063,7 +2063,7 @@ const LANG = {
         fp_title: 'Trial of the First Words', fp_desc: 'See the reference, write only the opening words · Easy · Normal · Hard',
         lt_title: 'Level test', lt_desc: 'How much of this chapter really comes out — reference only, random, blank',
         lt_intro_title: '🎓 Chapter {ch} level test', lt_embed: '🎓 Ch. {ch} level test',
-        lt_intro_body: 'Write all <b>{n} verses</b> of chapter {ch} from the reference only, in <b>random order</b>.<br>It ignores review steps and blank levels — it only measures <b>what comes out now</b>.',
+        lt_intro_body: 'Write all <b>{n} verses</b> of chapter {ch} from the reference only, in <b>random order</b>.<br>No points, but verses you write blank also count toward <b>blank levels and reviews</b>.',
         lt_intro_rules: '• If you don\'t know, tap <b>🙋 I don\'t know</b> — that is the most accurate answer<br>• You may use 💡 hints (they are counted)<br>• It\'s a test: no points or gems. Please don\'t look at the text<br>• If you leave midway, results so far are kept',
         lt_intro_warm: '☀️ You already saw <b>{n}</b> verse(s) of this chapter today — they are warm and come out more easily. <b>Right after opening the app tomorrow morning</b> is most accurate',
         lt_intro_cold: '❄️ You haven\'t seen this chapter today — now is the most accurate time',
@@ -11644,7 +11644,7 @@ function _updateBlankBox(r, ok, blankMode, hintOk, now) {
 function _blankCountsAsClear(id, now) {
     if (!/^\d+-\d+$/.test(id)) return '';
     const c = _hardshipRecallCtx();
-    if (!(c === 'hs' || c === 'due' || c === 'event' || c === 'fruit' || c === 'gift')) return '';   // 보스전·중간점검·빠른 복습은 stageClear가 한다 · 'vc'는 빈칸
+    if (!(c === 'hs' || c === 'due' || c === 'event' || c === 'fruit' || c === 'gift' || c === 'lt')) return '';   // 'lt' 🎓 레벨 테스트(10/9)   // 보스전·중간점검·빠른 복습은 stageClear가 한다 · 'vc'는 빈칸
     const st = getReviewStatus(id);
     let note = '';
     if (st.isEligible) {
@@ -27826,6 +27826,10 @@ function _ltShowAns(id) {
 /* 🎓 한 단계 아래로 — 1: 첫 세 단어를 입력칸에 채워 주고 이어 쓰기 · 2: 빈칸(글자 칸) 모드. 같은 절, 정답은 아직 안 보여준다 */
 function _ltStepDown() {
     const hs = hardshipState; if (!hs || !hs.currentVerse) return;
+    if (!(hs.ltStep || 0)) {   // 백지에서 막힘 — 진짜 백지 실패로 게임 상태에 넣는다(백지 레벨·차례). 테스트 기록은 이 절이 끝날 때
+        const sid = _currentHardshipStageId();
+        if (sid) { hs._ltGame = true; try { recordVerseRecall(sid, false, (hs.revealedHints || []).length, 'memory'); } finally { hs._ltGame = false; } }
+    }
     hs.ltStep = (hs.ltStep || 0) + 1;
     if (hs.ltStep === 1) {
         const ph = firstPhraseOf(getHardshipActiveText(hs.currentVerse) || '', 3, currentLang === 'en');
@@ -27873,7 +27877,7 @@ function _renderSheetLevelTest(chapterData) {
     if (n < 3) { el.style.display = 'none'; el.innerHTML = ''; return; }
     const T = (levelTests[ch] || []).slice(-1)[0];
     const sub = T ? t('lt_sheet_last', { d: new Date(T.at).toLocaleDateString(currentLang === 'en' ? 'en-US' : 'ko-KR', { month: 'numeric', day: 'numeric' }), c: Object.values(T.r || {}).filter(c => c === 3).length, n: T.n || Object.keys(T.r || {}).length }) : t('lt_sheet_none');
-    el.innerHTML = `<button class="sheet-lt-btn" onclick="openLevelTest(${ch})">${t('lt_sheet_btn')}</button><span class="sheet-lt-sub">${sub}</span>`;
+    el.innerHTML = `<button class="sheet-lt-btn" onclick="openLevelTest(${ch})">${t('lt_sheet_btn')}</button>${T ? `<span class="sheet-lt-sub link" onclick="_ltShowResult(${ch})">${sub} ›</span>` : `<span class="sheet-lt-sub">${sub}</span>`}`;   // 지난 결과 다시 보기(10/9)
     el.style.display = '';
 }
 function openFirstPhrasePick() {
@@ -30494,11 +30498,16 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
         return;
     }
 
-    // 🎓 레벨 테스트 — 측정이라 게임 상태(복습 단계·백지 레벨·보석)는 건드리지 않는다. 테스트 기록과 일지만
+    /* 🎓 레벨 테스트 — 백지 단계(ltStep 0)의 결과는 **진짜 백지 시도로 인정**한다(10/9 사용자: "백지 차례가 왔는데 테스트만 하다 보니 1장을 한 번 더 해야 하네").
+       백지로 써냄 → 백지 레벨·백지 차례·그 절 클리어(복습 단계) · 백지에서 막혀 첫 마디로 내려감 → 그때 백지 실패로(_ltStepDown이 _ltGame으로 부른다).
+       첫 마디·빈칸 단계의 결과는 테스트 기록과 일지만 — 게임 상태엔 이미 백지 실패로 들어갔다. 승점·암송왕은 없다(rewardBlocked) */
     if (hardshipState && hardshipState.levelTest) {
-        _ltNote(stageId, ok, hints, !!(extra && extra.giveUp));
-        _logRecallAttempt(stageId, ok, hints, 'memory', extra || null, verseRecall[stageId] || null, false);
-        return;
+        if (!hardshipState._ltGame) _ltNote(stageId, ok, hints, !!(extra && extra.giveUp));
+        if ((hardshipState.ltStep || 0) !== 0) {
+            _logRecallAttempt(stageId, ok, hints, 'memory', extra || null, verseRecall[stageId] || null, false);
+            return;
+        }
+        mode = 'memory';
     }
     // 🔑 첫 마디의 고난 — 구절 전체를 써낸 게 아니므로 백지레벨·암송왕·열매·복습에는 넣지 않는다. 첫 마디 기록(오답노트)과 일지만
     if (hardshipState && hardshipState.startLv) {
@@ -30596,7 +30605,7 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
         const _res = _updateBlankBox(r, !!ok, _blankMode, _hintOk, now);
         let _pts = 0;
         const _quick = !!(hardshipState && hardshipState.quickReviewStageId);
-        if (_res && _res.kind === 'up' && _res.mult > 0) {
+        if (_res && _res.kind === 'up' && _res.mult > 0 && !(hardshipState && hardshipState.levelTest)) {   // 🎓 레벨 테스트는 백지 레벨만 오르고 승점은 없다
             if (_quick) {
                 // 빠른 복습: 이어지는 복습 클리어에서 복습 승점과 비교해 큰 쪽 하나만 준다 (stageClear)
                 window._quickBlankBonus = { sid: String(stageId), mult: _res.mult, lv: _res.to };
@@ -30626,11 +30635,11 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
     // ★ 백지(궁극)만 센다 (2026-09-14). 빈칸(글자 칸 보임)을 같이 세면 모두가 빈칸만 하게 돼
     //   판이 '인출'에서 '빈칸 채우기 속도'로 옮겨간다. "암송왕 = 아무 단서 없이 써낸 구절 수".
     if (ok && mode === 'memory' && hardshipState && hardshipState.ultimateMemoryMode) {
-        if (!(hardshipState && hardshipState.strongHint)) _countRecallForWeek(stageId, hints || 0, r.lastVerseLen || 0);   // 🔑 강한 힌트는 암송왕에서 뺀다
+        if (!(hardshipState && (hardshipState.strongHint || hardshipState.levelTest))) _countRecallForWeek(stageId, hints || 0, r.lastVerseLen || 0);   // 🔑 강한 힌트·🎓 레벨 테스트는 암송왕에서 뺀다
     }
 
     verseRecall[stageId] = r;
-    _logRecallAttempt(stageId, ok, hints, mode, extra, _prev, false);
+    if (!(hardshipState && hardshipState._ltGame)) _logRecallAttempt(stageId, ok, hints, mode, extra, _prev, false);   // 🎓 첫 마디로 내려갈 때의 백지 실패는 일지에 따로 안 남긴다(그 절의 최종 결과 한 건으로)
 }
 
 /* ── 암송 일지 (`recall_log`, 2026-09-28) ──────────────────────────────────────
