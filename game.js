@@ -845,6 +845,9 @@ const LANG = {
         oil_next3: '{ch}장 {r}절 — 백지로 처음부터 끝까지 이어 쓰기', oil_next4: '{ch}장 {r}절 — 주소와 말씀 짝짓기', oil_go4: '🎯 주소의 고난', oil_next5: '{ch}장 {r}절 — 주소만 보고 첫 마디', oil_go5: '🔑 첫 마디 · 무작위',
         oil_next6: '{ch}장 {r}절 — 주소만 보고 백지로', oil_go6: '⌨️ 망각의 고난', oil_next7_ready: '{ch}장을 하루 쉬었어요 — 장 전체 레벨 테스트로 한밤의 등불을', oil_next7_wait: '{ch}장을 {h}시간 더 쉬면 장 전체 레벨 테스트로 한밤의 등불을 켤 수 있어요', oil_go7: '🎓 레벨 테스트',
         oil_next8: '{ch}장의 등이 모두 한밤에도 밝아요. 하루 이틀 쉬었다가 다시 확인해 보세요.',
+        fp_bridge_first: '{ch}장의 시작', il_entry: '🔤 {ch}장 첫 글자 줄', il_eyebrow: '첫 글자 줄 — 몇 번째 글자가 곧 절 번호', il_title: '{ch}장 첫 글자 줄',
+        il_view_tip: '칸을 누르면 그 절의 첫 마디가 보여요. 첫 글자들을 노래처럼 한 줄로 읽어 보세요', il_seq_tip: '1절부터 차례로 — 다음 절의 첫 글자는?', il_rand_tip: '섞어서 — 이 절의 첫 글자는?',
+        il_q: '{ch}장 {v}절의 첫 글자는?', il_wrong: '「{c}」가 아니에요 — 다시', il_done: '끝! 한 번에 맞힌 절 {ok} / {n}', il_m_view: '줄 보기', il_m_seq: '순서대로 맞히기', il_m_rand: '무작위 맞히기',
         fp_order_seq: '순서대로', fp_order_rand: '무작위', fp_order_seq_d: '1절부터 차례로 — 앞 절에 이어 다음 절의 첫 마디', fp_order_rand_d: '섞어서 — 주소만 보고 첫 마디',
         lt_cS: '첫 마디 주면 나옴', lt_cSH: '첫 마디 + 힌트로', lt_cB: '빈칸 보면 나옴', lt_cBH: '빈칸 + 힌트로', lt_res_S: '첫 마디를 주면 나온 {n}절 → 🔑 첫 마디부터', lt_res_B: '빈칸을 보면 나온 {n}절 → ✍️ 빈칸으로 다지기',
         lt_intro_ladder: '• 막히면 한 단계씩 쉬워져요: 백지 → 첫 마디를 보여 주고 이어 쓰기 → 빈칸 → 정답 보기',
@@ -2120,6 +2123,9 @@ const LANG = {
         oil_next3: 'Ch {ch} v{r} — write it blank from start to end', oil_next4: 'Ch {ch} v{r} — pair references and words', oil_go4: '🎯 Trial of Address', oil_next5: 'Ch {ch} v{r} — first words from the reference', oil_go5: '🔑 First words · random',
         oil_next6: 'Ch {ch} v{r} — blank from the reference', oil_go6: '⌨️ Trial of Forgetting', oil_next7_ready: 'Ch {ch} rested a day — light the midnight lamp with a whole-chapter level test', oil_next7_wait: 'Rest ch {ch} {h} more hours, then a whole-chapter level test lights the midnight lamp', oil_go7: '🎓 Level test',
         oil_next8: 'Every lamp in ch {ch} burns at midnight. Rest a day or two and check again.',
+        fp_bridge_first: 'Start of ch {ch}', il_entry: '🔤 Ch {ch} first-letter line', il_eyebrow: 'First-letter line — the position is the verse number', il_title: 'Ch {ch} first-letter line',
+        il_view_tip: 'Tap a cell to see the first words. Read the letters as one line, like a chant', il_seq_tip: 'From verse 1 — the next first letter?', il_rand_tip: 'Mixed — this verse begins with?',
+        il_q: 'Ch {ch} v{v} begins with?', il_wrong: 'Not “{c}” — try again', il_done: 'Done! First try {ok} / {n}', il_m_view: 'See the line', il_m_seq: 'In order', il_m_rand: 'Random',
         fp_order_seq: 'In order', fp_order_rand: 'Random', fp_order_seq_d: 'From verse 1 — the first words of the next verse', fp_order_rand_d: 'Mixed — first words from the reference',
         lt_cS: 'with first words', lt_cSH: 'first words + hints', lt_cB: 'with blanks', lt_cBH: 'blanks + hints', lt_res_S: '{n} verse(s) came out once given the first words → 🔑 first words', lt_res_B: '{n} verse(s) came out with blanks → ✍️ fill-in',
         lt_intro_ladder: '• If stuck, it gets easier step by step: blank → first words given → blanks → see the answer',
@@ -28194,7 +28200,7 @@ function _oilChapterHtml(ch) {
     return `<div class="oil-head"><button class="oil-back" onclick="openOilScreen()">‹ ${t('oil_all')}</button><div class="oil-title">${t('oil_ch_title', { ch })}</div>
         <div class="oil-sub">${t('oil_ch_sub', { lit, n: ids.length })}</div></div>
         <div class="oil-grid">${cells}</div>
-        <div class="oil-next"><div class="oil-next-t">${t('oil_next_title')}</div><p>${nx.txt}</p>${nx.btn}</div>
+        <div class="oil-next"><div class="oil-next-t">${t('oil_next_title')}</div><p>${nx.txt}</p>${nx.btn}${pl && (pl.lo === 2 || pl.lo === 5) ? `<button class="oil-next-sub" onclick="closeOilScreen(); openInitialLine(${ch})">${t('il_entry', { ch })}</button>` : ''}</div>
         <details class="oil-help"><summary>${t('oil_help_sum')}</summary>${_oilLegendHtml()}</details>`;
 }
 function _ltFmtTime(sec) {   // ⏱ 4분 12초 / 4m 12s
@@ -28322,7 +28328,7 @@ function openFirstPhrasePick() {
             <span class="mode-btn-desc">${ch}:1 「${ex(lv)}」</span></div></button>`;
     ov.innerHTML = `<div class="result-card mode-select-card" onclick="event.stopPropagation()">
             <div class="mode-modal-header"><span class="mode-select-title">${t('fp_pick_title', { ch })}</span><button class="mode-close-btn" onclick="closeFirstPhrasePick()">✕</button></div>
-            <div class="bd-desc">${t('fp_pick_desc')}</div><div class="fp-ords">${ordBtn('seq')}${ordBtn('rand')}</div><div class="fp-ord-desc">${t(window._fpOrder === 'seq' ? 'fp_order_seq_d' : 'fp_order_rand_d')}</div>${row(1)}${row(2)}${row(3)}</div>`;
+            <div class="bd-desc">${t('fp_pick_desc')}</div><button class="il-entry" onclick="const c=window.hardshipForcedChapter; closeFirstPhrasePick(); openInitialLine(c)">${t('il_entry', { ch })}</button><div class="fp-ords">${ordBtn('seq')}${ordBtn('rand')}</div><div class="fp-ord-desc">${t(window._fpOrder === 'seq' ? 'fp_order_seq_d' : 'fp_order_rand_d')}</div>${row(1)}${row(2)}${row(3)}</div>`;
     ov.style.display = 'flex';
 }
 function closeFirstPhrasePick() { const ov = document.getElementById('fp-pick-overlay'); if (ov) ov.style.display = 'none'; window.hardshipForcedChapter = null; }
@@ -28337,6 +28343,102 @@ function _startFirstPhrase(ch, lv, order, onlyIds) {
     selectedHardshipUltimate = true;
     _pendingHardshipEmbed = { label: t('fp_embed', { ch, lv: t('fp_lv' + lv) }) + (seq ? ' · ' + t('fp_order_seq') : ''), startLv: lv, fpSeq: seq };
     startHardshipSession('memory', ids);
+}
+/* ── 🌉 다리 잇기 (10/10 사용자: 장·절과 첫 마디를 잇는 고리) — 첫 마디 · 순서대로에서 앞 절의 끝 마디를 위에 보여 준다.
+   「…머리는 일곱이라」 → 「내가 본 짐승은」처럼 앞 절 끝과 다음 절 시작을 짝으로 */
+function _verseText(c, v) {
+    const en = currentLang === 'en';
+    const d = (en && typeof bibleDataEn !== 'undefined' && bibleDataEn[c] && bibleDataEn[c][v - 1]) || ((bibleData[c] || [])[v - 1]);
+    return (d && d.text) || '';
+}
+function _lastPhraseOf(text, n) {
+    const w = String(text || '').trim().split(/\s+/).filter(Boolean);
+    return w.slice(-(n || 3)).join(' ');
+}
+function _fpBridgeHtml(cv) {
+    if (!cv || !(cv.verse > 1)) return `<div class="fp-bridge first">${t('fp_bridge_first', { ch: cv ? cv.chapter : '' })}</div>`;
+    const prev = _verseText(cv.chapter, cv.verse - 1);
+    if (!prev) return '';
+    return `<div class="fp-bridge"><span class="fp-bridge-ref">${cv.chapter}:${cv.verse - 1}</span> … ${escapeHtml(_lastPhraseOf(prev, 3))}</div>`;
+}
+
+/* ── 🔤 첫 글자 줄 (10/10 사용자) — 장마다 절의 첫 글자를 한 줄로. 몇 번째 글자 = 절 번호라 「13장 3절 → 셋째 글자 '그' → 그의 머리 하나가…」.
+   보기 · 순서대로 맞히기 · 무작위 맞히기(4지). 연습 도구라 단계·승점은 없다 */
+function _ilInitial(text) {
+    const s0 = String(text || '').replace(/^[\s"'“‘(「『\[]+/, '');
+    if (currentLang === 'en') { const w = s0.split(/\s+/)[0] || ''; return w.charAt(0).toUpperCase(); }
+    return s0.charAt(0);
+}
+let _il = null;   // { ch, mode: 'view'|'seq'|'rand', order: [v...], i, ok, miss, shown:Set, cur, picked }
+function openInitialLine(ch, mode) {
+    ch = parseInt(ch, 10); if (!(ch >= 1 && ch <= 22)) return;
+    const n = (bibleData[ch] || []).length; if (!n) return;
+    const init = []; for (let v = 1; v <= n; v++) init.push(_ilInitial(_verseText(ch, v)));
+    mode = mode || 'view';
+    const order = Array.from({ length: n }, (_, i) => i + 1);
+    if (mode === 'rand') order.sort(() => Math.random() - 0.5);
+    _il = { ch, n, init, mode, order, i: 0, ok: 0, miss: 0, shown: new Set(mode === 'view' ? order : []), first: true };
+    let ov = document.getElementById('il-overlay');
+    if (!ov) { ov = document.createElement('div'); ov.id = 'il-overlay'; ov.className = 'modal-overlay'; ov.style.zIndex = '10003'; ov.onclick = e => { if (e.target === ov) closeInitialLine(); }; document.body.appendChild(ov); }
+    ov.style.display = 'flex';
+    setTimeout(() => ov.classList.add('active'), 10);
+    _ilRender();
+}
+function closeInitialLine() { const ov = document.getElementById('il-overlay'); if (ov) { ov.classList.remove('active'); ov.style.display = 'none'; } _il = null; }
+function _ilRender(fb) {
+    const S = _il, ov = document.getElementById('il-overlay'); if (!S || !ov) return;
+    const cur = S.mode !== 'view' && S.i < S.n ? S.order[S.i] : 0;
+    const cells = S.init.map((c, k) => { const v = k + 1, on = S.shown.has(v);
+        return `<button class="il-cell${on ? ' on' : ''}${v === cur ? ' cur' : ''}${S.wrongV === v ? ' bad' : ''}" onclick="_ilPeek(${v})"><b>${on ? escapeHtml(c) : (v === cur ? '?' : '')}</b><span>${v}</span></button>`; }).join('');
+    let quiz = '';
+    if (S.mode !== 'view') {
+        if (S.i >= S.n) quiz = `<div class="il-done">${t('il_done', { ok: S.ok, n: S.n })}</div><div class="il-modes">${_ilModeBtns()}</div>`;
+        else {
+            const ans = S.init[cur - 1];
+            if (!S.choices || S.choicesFor !== cur) {
+                const pool = [...new Set(S.init.filter(x => x !== ans))];
+                const extra = (currentLang === 'en' ? 'ABCDEFGHIJKLMNOPRSTW' : '그또이내저하너보사나').split('').filter(x => x !== ans && !pool.includes(x));
+                const opts = pool.sort(() => Math.random() - 0.5).slice(0, 3);
+                while (opts.length < 3 && extra.length) opts.push(extra.shift());
+                S.choices = opts.concat([ans]).sort(() => Math.random() - 0.5); S.choicesFor = cur; S.first = true;
+            }
+            quiz = `<div class="il-q">${t('il_q', { ch: S.ch, v: cur })}</div><div class="il-opts">${S.choices.map((c, k) => `<button class="il-opt" onclick="_ilPick(${k})">${escapeHtml(c)}</button>`).join('')}</div>`;
+        }
+    }
+    const tip = fb || (S.mode === 'view' ? t('il_view_tip') : (S.mode === 'seq' ? t('il_seq_tip') : t('il_rand_tip')));
+    ov.innerHTML = `<div class="il-card" onclick="event.stopPropagation()">
+        <div class="il-head"><div class="il-eyebrow">${t('il_eyebrow')}</div><div class="il-title">${t('il_title', { ch: S.ch })}</div></div>
+        <div class="il-line">${cells}</div>
+        <div class="il-fb">${tip}</div>
+        ${quiz}
+        ${S.mode === 'view' ? `<div class="il-modes">${_ilModeBtns()}</div>` : ''}
+        <button class="il-close" onclick="closeInitialLine()">${t('btn_close')}</button></div>`;
+}
+function _ilModeBtns() {
+    const ch = _il.ch;
+    return `<button onclick="openInitialLine(${ch}, 'view')">${t('il_m_view')}</button><button onclick="openInitialLine(${ch}, 'seq')">${t('il_m_seq')}</button><button onclick="openInitialLine(${ch}, 'rand')">${t('il_m_rand')}</button>`;
+}
+function _ilPhraseHtml(v) {
+    const txt = _verseText(_il.ch, v), ph = firstPhraseOf(txt, 2, currentLang === 'en');
+    return `<span class="il-ph"><b>${_il.ch}:${v}</b> ${escapeHtml(ph)}…</span>`;
+}
+function _ilPeek(v) {   // 칸을 누르면 그 절의 첫 마디 — 보기에서만(맞히는 중엔 이미 연 칸만)
+    if (!_il || !_il.shown.has(v)) return;
+    _ilRender(_ilPhraseHtml(v));
+}
+function _ilPick(k) {
+    const S = _il; if (!S || S.i >= S.n) return;
+    const cur = S.order[S.i], ans = S.init[cur - 1], c = S.choices[k];
+    if (c === ans) {
+        if (S.first) S.ok++;
+        S.shown.add(cur); S.i++; S.choices = null; S.wrongV = 0;
+        if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
+        _ilRender(`<span class="il-good">✓</span> ${_ilPhraseHtml(cur)}`);
+    } else {
+        S.first = false; S.miss++; S.wrongV = cur;
+        if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
+        _ilRender(`<span class="il-bad">${t('il_wrong', { c: escapeHtml(c) })}</span>`);
+    }
 }
 function startFirstPhraseNote() {
     const ids = _fpNoteIds(); if (ids.length < FP_NOTE_MIN) return;
@@ -30113,6 +30215,7 @@ function renderHardshipMemoryVerse() {
         <div class="verse-indicator">${t(hardshipState.startLv ? 'fp_indicator' : 'hardship_memory_indicator')}</div>
         <div class="hardship-verse-card" onclick="focusHardshipMemoryHiddenInput()" ontouchstart="focusHardshipMemoryHiddenInput()">
             <div class="hardship-mode-tag">[${hardshipState.currentVerse.label}]</div>
+            ${hardshipState.fpSeq ? _fpBridgeHtml(hardshipState.currentVerse) : ''}
             <div class="hardship-typing-board${ultimateActive ? ' hardship-ultimate-active' : ''}" onclick="focusHardshipMemoryHiddenInput()" ontouchstart="focusHardshipMemoryHiddenInput()">${typingBoardHtml}</div>
             <input
                 id="hidden-typing-input"

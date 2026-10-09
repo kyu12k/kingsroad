@@ -7641,3 +7641,36 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .fp-ord-desc { font-size: .78rem; color: #9aa8bd; text-align: center; margin-bottom: 6px; }
 .home-todo-chip.oil { border-color: rgba(241, 196, 15, .55); color: #f1c40f; }
 .oil-mini { width: 1.25em; height: 1.05em; vertical-align: -0.2em; margin-right: .3em; display: inline-block; }
+
+/* 🌉 다리 잇기 · 🔤 첫 글자 줄 (10/10) */
+.fp-bridge { margin: 4px 0 6px; padding: 6px 10px; border-radius: 8px; background: rgba(255, 255, 255, .05); color: #9aa8bd; font-size: .88rem; text-align: left; }
+.fp-bridge.first { font-style: italic; }
+.fp-bridge-ref { font-size: .72rem; color: #f1c40f; margin-right: 2px; font-variant-numeric: tabular-nums; }
+#il-overlay { align-items: center; justify-content: center; }
+.il-card { width: min(440px, calc(100vw - 24px)); box-sizing: border-box; margin: auto; max-height: 92vh; overflow-y: auto; background: linear-gradient(180deg, #1b2438 0%, #141b2a 100%); border: 1px solid #2f3d57; border-radius: 18px; padding: 16px 14px 12px; color: #e8edf5; box-shadow: 0 20px 50px rgba(0, 0, 0, .5); }
+.il-head { text-align: center; margin-bottom: 10px; }
+.il-eyebrow { font-size: .72rem; letter-spacing: .04em; color: #9aa8bd; }
+.il-title { font-family: 'Gowun Dodum', serif; font-size: 1.35rem; color: #f1c40f; margin-top: 2px; }
+.il-line { display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 4px; }
+.il-cell { display: grid; justify-items: center; gap: 1px; padding: 5px 0 3px; border-radius: 8px; border: 1px solid #2f3d57; background: rgba(255, 255, 255, .03); color: #e8edf5; cursor: pointer; font: inherit; }
+.il-cell b { font-size: 1.15rem; min-height: 1.4rem; line-height: 1.4rem; font-family: 'Gowun Dodum', serif; font-weight: 400; }
+.il-cell span { font-size: .62rem; color: #9aa8bd; font-variant-numeric: tabular-nums; }
+.il-cell.on { background: rgba(241, 196, 15, .08); border-color: rgba(241, 196, 15, .35); }
+.il-cell.on b { color: #ffd968; }
+.il-cell.cur { border-color: #f1c40f; box-shadow: 0 0 0 1px #f1c40f; }
+.il-cell.bad { animation: il-shake .3s; }
+@keyframes il-shake { 0%, 100% { transform: none } 30% { transform: translateX(-3px) } 70% { transform: translateX(3px) } }
+.il-fb { min-height: 2.6em; margin: 10px 2px 6px; font-size: .9rem; line-height: 1.5; color: #c3cddb; }
+.il-ph b { color: #f1c40f; font-weight: 600; margin-right: 4px; font-variant-numeric: tabular-nums; }
+.il-good { color: #7fd28a; font-weight: 700; margin-right: 4px; }
+.il-bad { color: #ff8a80; }
+.il-q { text-align: center; font-size: 1rem; margin: 4px 0 8px; }
+.il-opts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.il-opt { padding: 12px 0; border-radius: 12px; border: 1px solid #2f3d57; background: rgba(255, 255, 255, .05); color: #e8edf5; font-family: 'Gowun Dodum', serif; font-size: 1.4rem; cursor: pointer; }
+.il-opt:active { background: rgba(241, 196, 15, .2); }
+.il-done { text-align: center; font-size: 1rem; color: #ffd968; margin: 6px 0 10px; }
+.il-modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
+.il-modes button { padding: 9px 4px; border-radius: 10px; border: 1px solid #2f3d57; background: none; color: #c3cddb; font-size: .82rem; cursor: pointer; }
+.il-close { display: block; width: 100%; margin-top: 10px; padding: 9px; border-radius: 10px; border: none; background: rgba(255, 255, 255, .06); color: #e8edf5; cursor: pointer; }
+.il-entry { display: block; width: 100%; margin: 8px 0 2px; padding: 9px; border-radius: 10px; border: 1px solid rgba(241, 196, 15, .45); background: rgba(241, 196, 15, .08); color: #f1c40f; font-weight: 700; cursor: pointer; }
+.oil-next-sub { margin-top: 6px; width: 100%; padding: 8px; border-radius: 10px; border: 1px solid rgba(241, 196, 15, .45); background: none; color: #f1c40f; font-size: .88rem; cursor: pointer; }
