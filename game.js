@@ -810,7 +810,7 @@ const LANG = {
         lt_title: '레벨 테스트', lt_desc: '지금 이 장이 정말 얼마나 나오나 — 주소만 보고 무작위 백지',
         lt_intro_title: '🎓 {ch}장 레벨 테스트', lt_embed: '🎓 {ch}장 레벨 테스트',
         lt_intro_body: '{ch}장 <b>{n}절</b>을 주소만 보고 <b>무작위 순서</b>로 백지로 써요.<br>백지로 써낸 절은 <b>백지 레벨·복습</b>에 들어가요. <b>장 전체</b>를 하면 망각의 고난으로 인정돼 승점도 같아요(하루 둘 중 하나만).',
-        lt_intro_rules: '• 모르면 망설이지 말고 <b>🙋 모르겠어요</b> — 그게 가장 정확한 답이에요<br>• 막히면 💡 힌트를 써도 돼요(얼마나 썼는지도 기록돼요)<br>• 시험이라 승점·보석은 없어요. 원문을 보지 않는 게 약속이에요<br>• 중간에 나가도 그때까지 결과는 남아요',
+        lt_intro_rules: '• 모르면 망설이지 말고 <b>🙋 모르겠어요</b> — 그게 가장 정확한 답이에요<br>• 막히면 💡 힌트를 써도 돼요(얼마나 썼는지도 기록돼요)<br>• 원문을 보지 않는 게 약속이에요. 승점은 장 전체 테스트(망각의 고난으로 인정)에만 있어요<br>• 중간에 나가도 그때까지 결과는 남아요',
         lt_intro_warm: '☀️ 오늘 이 장 <b>{n}절</b>을 이미 봤어요. 본 절은 기억이 따뜻해서 실제보다 잘 나와요 — <b>내일 아침 앱을 열자마자</b> 하면 가장 정확해요',
         lt_intro_cold: '❄️ 오늘 이 장을 아직 안 봤어요 — 지금이 가장 정확한 때예요',
         lt_start: '시작하기', lt_later: '다음에',
@@ -2083,7 +2083,7 @@ const LANG = {
         lt_title: 'Level test', lt_desc: 'How much of this chapter really comes out — reference only, random, blank',
         lt_intro_title: '🎓 Chapter {ch} level test', lt_embed: '🎓 Ch. {ch} level test',
         lt_intro_body: 'Write all <b>{n} verses</b> of chapter {ch} from the reference only, in <b>random order</b>.<br>Verses written blank count toward <b>blank levels and reviews</b>. The <b>whole chapter</b> counts as the Trial of Forgetting with the same points (one of the two per day).',
-        lt_intro_rules: '• If you don\'t know, tap <b>🙋 I don\'t know</b> — that is the most accurate answer<br>• You may use 💡 hints (they are counted)<br>• It\'s a test: no points or gems. Please don\'t look at the text<br>• If you leave midway, results so far are kept',
+        lt_intro_rules: '• If you don\'t know, tap <b>🙋 I don\'t know</b> — that is the most accurate answer<br>• You may use 💡 hints (they are counted)<br>• Please don\'t look at the text. Points only for a whole-chapter test (counts as the Trial of Forgetting)<br>• If you leave midway, results so far are kept',
         lt_intro_warm: '☀️ You already saw <b>{n}</b> verse(s) of this chapter today — they are warm and come out more easily. <b>Right after opening the app tomorrow morning</b> is most accurate',
         lt_intro_cold: '❄️ You haven\'t seen this chapter today — now is the most accurate time',
         lt_start: 'Start', lt_later: 'Later',
@@ -13769,6 +13769,14 @@ function _mergeSessionTime(target, other) {   // 📅 기기별 학습 시간 �
         const src = b[d]; if (!src || typeof src !== 'object') continue;
         const dst = a[d] || (a[d] = {});
         for (const k in src) { const v = Number(src[k]) || 0; if (v > (Number(dst[k]) || 0)) { if (v - (Number(dst[k]) || 0) > 60000) took++; dst[k] = v; } }
+    }
+    if (a._old) {   // 옛 기록은 대개 어느 기기 칸과 같은 사본이다 — 기기 칸 합을 넘는 부분만 남겨 두 번 세지 않는다
+        for (const k in a._old) {
+            let sum = 0; for (const d in a) if (d !== '_old') sum += Number((a[d] || {})[k]) || 0;
+            const rest = (Number(a._old[k]) || 0) - sum;
+            if (rest > 60000) a._old[k] = rest; else delete a._old[k];
+        }
+        if (!Object.keys(a._old).length) delete a._old;
     }
     return took;
 }
@@ -29143,6 +29151,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
     hardshipState.repeatFactor = 1;
     if (forcedChapter != null && !embed) {
         hardshipState.repeatFactor = _hardshipRepeatFactor(mode, forcedChapter);
+        if (hardshipState.repeatFactor === 0) hardshipState.rewardBlocked = true;   // 🎓 오늘 장 전체 레벨 테스트로 이미 인정 — 결과 문구도 「승점 없음」
         if (hardshipState.repeatFactor < 1) {
             setTimeout(() => { if (typeof showToast === 'function') showToast(hardshipState.repeatFactor === 0 ? t('lt_memory_linked') : t('hardship_repeat_notice', { pct: Math.round(hardshipState.repeatFactor * 100) })); }, 400);
         }
@@ -31212,6 +31221,7 @@ function _blankScoreKind() {
     if (hardshipState.verseCheckStageId) return 'vc'; // 결과 화면 '빈칸으로 확인해보기'
     if (hardshipState.eventId) return hardshipState.ultimateMemoryMode ? 'event:none' : 'event:blank'; // 이벤트 — 빈칸·백지 따로 하루 1회
     if (hardshipState.blankDueCh) return 'due';       // 오늘 백지 차례
+    if (hardshipState.levelTest && hardshipState.ltPay) return 'lt';   // 🎓 승점 있는 장 전체 테스트 — 같은 절 하루 한 번(중간에 나갔다 다시 해도)
     return null; // 망각의 고난·빠른 모드 승급은 제한 없음 (승급은 배율 0이라 무관)
 }
 
@@ -31292,7 +31302,7 @@ function submitHardshipMemoryGuess() {
         const _rawPoints = (hardshipState.ultimateMemoryMode ? playerHearts * 5 : playerHearts * 4) * orderMult * (hardshipState.strongHint ? 0.5 : 1);   // 🔑 강한 힌트는 절반
         const basePoints = _blankScoreAlreadyToday(_blankSid)
             ? 0
-            : Math.round(_rawPoints * getHardshipScoreScale() * (hardshipState.repeatFactor || 1));
+            : Math.round(_rawPoints * getHardshipScoreScale() * (hardshipState.repeatFactor ?? 1));   // ?? — 0(레벨 테스트로 이미 인정)이 1이 되지 않게(10/9)
         const earnedPoints = hardshipState.rewardBlocked ? 0 : basePoints;
         if (earnedPoints > 0) { awardHardshipScore(earnedPoints); _markBlankScored(_blankSid); }
         // 백지 산출 성공 — revealedHints는 구절마다 초기화되므로 이 구절에 쓴 힌트 수다
@@ -31344,7 +31354,7 @@ function submitHardshipMemoryGuess() {
         const _rawPoints = (hardshipState.ultimateMemoryMode ? playerHearts * 5 : playerHearts * 4) * orderMult * (hardshipState.strongHint ? 0.5 : 1);   // 🔑 강한 힌트는 절반
         const basePoints = _blankScoreAlreadyToday(_blankSid)
             ? 0
-            : Math.round(_rawPoints * getHardshipScoreScale() * (hardshipState.repeatFactor || 1));
+            : Math.round(_rawPoints * getHardshipScoreScale() * (hardshipState.repeatFactor ?? 1));   // ?? — 0(레벨 테스트로 이미 인정)이 1이 되지 않게(10/9)
         const earnedPoints = hardshipState.rewardBlocked ? 0 : basePoints;
         // 오타 정보 수집 (슬롯 초기화 전에)
         const typoPairs = hardshipState.wrongSlots.map(idx => ({
