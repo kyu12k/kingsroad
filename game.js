@@ -841,7 +841,7 @@ const LANG = {
         oil_d7: '주소만 보고 백지로 써냈어요. 등에 불이 켜졌어요. (마 25:7)', oil_d8: '하루를 쉬고도 써냈어요. 밤중에 소리가 나도 꺼지지 않는 등이에요. (마 25:6)',
         oil_next0: '{ch}장 {r}절 — 지도에서 처음 외우기부터', oil_next1: '{ch}장 {r}절 — 빈칸을 보며 순서대로 써 보기', oil_go1: '✏️ 빈칸으로 · 순서대로', oil_go3: '✍️ 백지로 · 순서대로',
         oil_next_learning: '{ch}장 {r}절 — 이 묶음을 다 외우면 순서대로 써 볼 수 있어요', oil_next7_whole: '{ch}장을 다 외우면 장 전체 레벨 테스트로 한밤의 등불을 켤 수 있어요',
-        todo_oil: '{ch}장 · {what}', oil_short0: '처음 외우기', oil_short1: '{r}절 빈칸', oil_short2: '첫 마디 순서대로', oil_short3: '{r}절 백지', oil_short4: '주소의 고난', oil_short5: '첫 마디 무작위', oil_short6: '망각의 고난', oil_short7: '레벨 테스트', oil_next2: '{ch}장 {r}절 — 앞 절에 이어 첫 마디 꺼내기', oil_go2: '🔑 첫 마디 · 순서대로',
+        todo_oil: '{ch}장 · {what}', oil_short0: '처음 외우기', oil_short1: '{low}절 · 빈칸으로', oil_short2: '{low}절 · 첫 마디 순서대로', oil_short3: '{low}절 · 백지로', oil_short4: '주소의 고난', oil_short5: '{low}절 · 첫 마디 무작위', oil_short6: '망각의 고난', oil_short7: '레벨 테스트', oil_next2: '{ch}장 {r}절 — 앞 절에 이어 첫 마디 꺼내기', oil_go2: '🔑 첫 마디 · 순서대로',
         oil_next3: '{ch}장 {r}절 — 백지로 처음부터 끝까지 이어 쓰기', oil_next4: '{ch}장 {r}절 — 주소와 말씀 짝짓기', oil_go4: '🎯 주소의 고난', oil_next5: '{ch}장 {r}절 — 주소만 보고 첫 마디', oil_go5: '🔑 첫 마디 · 무작위',
         oil_next6: '{ch}장 {r}절 — 주소만 보고 백지로', oil_go6: '⌨️ 망각의 고난', oil_next7_ready: '{ch}장을 하루 쉬었어요 — 장 전체 레벨 테스트로 한밤의 등불을', oil_next7_wait: '{ch}장을 {h}시간 더 쉬면 장 전체 레벨 테스트로 한밤의 등불을 켤 수 있어요', oil_go7: '🎓 레벨 테스트',
         oil_next8: '{ch}장의 등이 모두 한밤에도 밝아요. 하루 이틀 쉬었다가 다시 확인해 보세요.',
@@ -2116,7 +2116,7 @@ const LANG = {
         oil_d7: 'From the reference alone, written blank. The lamp is lit. (Mt 25:7)', oil_d8: 'Written even after a day off. A lamp that stays lit at midnight. (Mt 25:6)',
         oil_next0: 'Ch {ch} v{r} — start learning on the map', oil_next1: 'Ch {ch} v{r} — write in order with blanks', oil_go1: '✏️ Blanks · in order', oil_go3: '✍️ Blank · in order',
         oil_next_learning: 'Ch {ch} v{r} — finish learning this group to write it in order', oil_next7_whole: 'Learn all of ch {ch}, then a whole-chapter level test lights the midnight lamp',
-        todo_oil: 'Ch {ch} · {what}', oil_short0: 'learn', oil_short1: 'v{r} blanks', oil_short2: 'first words in order', oil_short3: 'v{r} blank', oil_short4: 'Trial of Address', oil_short5: 'first words random', oil_short6: 'Trial of Forgetting', oil_short7: 'level test', oil_next2: 'Ch {ch} v{r} — first words after the verse before', oil_go2: '🔑 First words · in order',
+        todo_oil: 'Ch {ch} · {what}', oil_short0: 'learn', oil_short1: 'v{low} · blanks', oil_short2: 'v{low} · first words in order', oil_short3: 'v{low} · blank', oil_short4: 'Trial of Address', oil_short5: 'v{low} · first words random', oil_short6: 'Trial of Forgetting', oil_short7: 'level test', oil_next2: 'Ch {ch} v{r} — first words after the verse before', oil_go2: '🔑 First words · in order',
         oil_next3: 'Ch {ch} v{r} — write it blank from start to end', oil_next4: 'Ch {ch} v{r} — pair references and words', oil_go4: '🎯 Trial of Address', oil_next5: 'Ch {ch} v{r} — first words from the reference', oil_go5: '🔑 First words · random',
         oil_next6: 'Ch {ch} v{r} — blank from the reference', oil_go6: '⌨️ Trial of Forgetting', oil_next7_ready: 'Ch {ch} rested a day — light the midnight lamp with a whole-chapter level test', oil_next7_wait: 'Rest ch {ch} {h} more hours, then a whole-chapter level test lights the midnight lamp', oil_go7: '🎓 Level test',
         oil_next8: 'Every lamp in ch {ch} burns at midnight. Rest a day or two and check again.',
@@ -28136,7 +28136,9 @@ function _oilPlan(ch) {
     let best = null;
     units.forEach(u => { const lo = Math.min(...u.ids.map(_oilStage)); if (!best || lo < best.lo) best = { u, lo }; });
     const { u, lo } = best, r = u.r;
-    const P = (txt, go, js) => ({ lo, txt, go, js, short: t('oil_short' + lo, { r }) });
+    const lowV = u.ids.filter(id => _oilStage(id) === lo).map(id => parseInt(id.split('-')[1], 10));
+    const low = lowV.length > 4 ? `${lowV[0]}~${lowV[lowV.length - 1]}` : lowV.join('·');   // 「4·7·9」 — 칩에서 왜 이 장인지 보이게(10/9)
+    const P = (txt, go, js) => ({ lo, txt, go, js, short: t('oil_short' + lo, { r, low }) });
     if (lo >= 8) return { lo, txt: t('oil_next8', { ch }) };
     if (lo <= 1 || lo === 3) {   // 묶음 단위 — 중간점검 빈칸(1) · 백지(3), 순서대로. 중간점검이 없는 묶음은 장을 다 외웠을 때 보스전으로
         const none = lo === 3, mid = u.mid, full = mid ? u.ids.length === (mid.rangeEnd - mid.rangeStart + 1) : whole;
@@ -28144,15 +28146,15 @@ function _oilPlan(ch) {
         if (!mid && full && boss) return P(t(none ? 'oil_next3' : 'oil_next1', { ch, r }), t(none ? 'oil_go3' : 'oil_go1'), `_oilRun('boss', '${boss.id}', ${none})`);
         return { lo, txt: t('oil_next_learning', { ch, r }) };
     }
-    if (lo === 2) return P(t('oil_next2', { ch, r }), t('oil_go2'), `_oilRun('fp', ${ch}, 'seq')`);
+    if (lo === 2) return P(t('oil_next2', { ch, r }), t('oil_go2'), `_oilRun('fp', ${ch}, 'seq', '${u.ids.join(',')}')`);   // 그 묶음만(10/9)
     if (lo === 4) return P(t('oil_next4', { ch, r }), t('oil_go4'), `_oilRun('address', ${ch})`);
-    if (lo === 5) return P(t('oil_next5', { ch, r }), t('oil_go5'), `_oilRun('fp', ${ch}, 'rand')`);
+    if (lo === 5) return P(t('oil_next5', { ch, r }), t('oil_go5'), `_oilRun('fp', ${ch}, 'rand', '${u.ids.join(',')}')`);
     if (lo === 6) return P(t('oil_next6', { ch, r }), t('oil_go6'), `_oilRun('memory', ${ch})`);
     const h = Math.floor((Date.now() - Math.max(0, ...all.map(id => _verseSeenGet(id) || 0))) / 3600000);   // 7 → 하루 쉬고 장 전체 레벨 테스트
     if (!whole) return { lo, txt: t('oil_next7_whole', { ch }) };
     return h >= 24 ? P(t('oil_next7_ready', { ch }), t('oil_go7'), `_oilRun('lt', ${ch})`) : { lo, txt: t('oil_next7_wait', { ch, h: 24 - h }), wait: 1 };
 }
-function _oilRun(kind, a, b) {
+function _oilRun(kind, a, b, idsStr) {
     closeOilScreen();
     const ch = typeof a === 'number' ? a : parseInt(String(a), 10);
     const learnedIds = c => _ltUnits(c).reduce((x, u) => x.concat(u.ids), []);
@@ -28163,7 +28165,7 @@ function _oilRun(kind, a, b) {
         if (kind === 'mid') _startMidBossBlank(st, !!b); else _startBossBlank(st, !!b);
         return;
     }
-    if (kind === 'fp') { _startFirstPhrase(ch, 2, b, learnedIds(ch)); return; }
+    if (kind === 'fp') { _startFirstPhrase(ch, 2, b, idsStr ? String(idsStr).split(',') : learnedIds(ch)); return; }
     if (kind === 'lt') { openLevelTest(ch); return; }
     if (kind === 'address' || kind === 'memory') {
         const ids = learnedIds(ch); if (!ids.length) return;
