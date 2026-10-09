@@ -829,8 +829,8 @@ const LANG = {
         lt_btn_relearn: '📖 {r}절 다시 넣기', lt_btn_blank: '✍️ {r}절 빈칸으로 다지기', lt_btn_fp: '🔑 {ch}장 첫 마디',
         lt_step1: '🔑 첫 마디를 보여 드릴게요 — 이어서 써 보세요', lt_step2: '🔲 이번엔 빈칸으로 — 글자 칸을 보고 써 보세요',
         lt_full_pay: '🎓 장 전체 테스트 — 망각의 고난으로 인정돼요. 백지로 써낸 절은 승점이 있어요', lt_full_nopay: '🎓 오늘 이 장의 망각의 고난을 이미 해서 이번 테스트는 승점이 없어요', lt_memory_linked: '오늘 이 장은 레벨 테스트로 이미 망각의 고난을 인정받아 승점이 없어요',
-        oil_btn: '🪔 내 암송 — 절마다 기름 단계', oil_btn_short: '🪔 내 암송', oil_btn_from_lt: '🪔 내 암송에서 보기', oil_eyebrow: '킹스로드 · 내 암송', oil_title: '🪔 등에 채운 기름', oil_all: '전체',
-        oil_big: '켜진 등 / {n}절', oil_help_sum: '단계 설명 보기', oil_ch_title: '{ch}장의 등', oil_ch_sub: '켜진 등 {lit} / {n}절', oil_next_title: '다음 할 것', oil_up_note: '🪔 {name}',
+        oil_btn: '내 암송 — 절마다 기름 단계', oil_btn_short: '내 암송', oil_btn_from_lt: '내 암송에서 보기', oil_eyebrow: '킹스로드 · 내 암송', oil_title: '등에 채운 기름', oil_all: '전체',
+        oil_big: '켜진 등 / {n}절', oil_help_sum: '단계 설명 보기', oil_ch_title: '{ch}장의 등', oil_ch_sub: '켜진 등 {lit} / {n}절', oil_next_title: '다음 할 것', oil_up_note: '{icon}{name}',
         oil_n0: '빈 등', oil_n1: '감람 열매', oil_n2: '찧은 열매', oil_n3: '짜낸 기름', oil_n4: '맑은 기름', oil_n5: '기름 그릇', oil_n6: '다듬은 심지', oil_n7: '켜진 등', oil_n8: '한밤의 등불',
         oil_do0: '아직', oil_do1: '익힘', oil_do2: '빈칸 · 순서대로', oil_do3: '첫 마디 · 순서대로', oil_do4: '백지 · 순서대로', oil_do5: '주소', oil_do6: '첫 마디 · 무작위', oil_do7: '백지 · 무작위', oil_do8: '하루 쉬고도',
         oil_d0: '아직 이 절의 기름이 없어요.', oil_d1: '처음 외웠어요. 기름이 될 열매를 거두었어요.', oil_d2: '빈칸을 보며 순서대로 써냈어요. 열매를 찧으니 기름이 배어 나와요.',
@@ -2102,8 +2102,8 @@ const LANG = {
         lt_btn_relearn: '📖 Re-learn vv. {r}', lt_btn_blank: '✍️ Fill-in vv. {r}', lt_btn_fp: '🔑 Ch. {ch} first words',
         lt_step1: '🔑 Here are the first words — continue from there', lt_step2: '🔲 Now with blanks — use the letter slots',
         lt_full_pay: '🎓 Whole-chapter test — counts as Trial of Forgetting. Verses written blank earn points', lt_full_nopay: '🎓 You already did this chapter\'s Trial of Forgetting today — no points this time', lt_memory_linked: 'This chapter already counted today via the level test — no points',
-        oil_btn: '🪔 My recitation — oil by verse', oil_btn_short: '🪔 My recitation', oil_btn_from_lt: '🪔 See in My recitation', oil_eyebrow: "King\u2019s Road · My recitation", oil_title: '🪔 Oil in the lamp', oil_all: 'All',
-        oil_big: 'lamps lit / {n} verses', oil_help_sum: 'What the stages mean', oil_ch_title: 'Chapter {ch} lamps', oil_ch_sub: 'lit {lit} / {n} verses', oil_next_title: 'Next', oil_up_note: '🪔 {name}',
+        oil_btn: 'My recitation — oil by verse', oil_btn_short: 'My recitation', oil_btn_from_lt: 'See in My recitation', oil_eyebrow: "King\u2019s Road · My recitation", oil_title: 'Oil in the lamp', oil_all: 'All',
+        oil_big: 'lamps lit / {n} verses', oil_help_sum: 'What the stages mean', oil_ch_title: 'Chapter {ch} lamps', oil_ch_sub: 'lit {lit} / {n} verses', oil_next_title: 'Next', oil_up_note: '{icon}{name}',
         oil_n0: 'Empty lamp', oil_n1: 'Olives', oil_n2: 'Crushed', oil_n3: 'Pressed oil', oil_n4: 'Clear oil', oil_n5: 'Oil vessel', oil_n6: 'Trimmed wick', oil_n7: 'Lamp lit', oil_n8: 'Midnight lamp',
         oil_do0: 'not yet', oil_do1: 'learned', oil_do2: 'blanks · in order', oil_do3: 'first words · in order', oil_do4: 'blank · in order', oil_do5: 'reference', oil_do6: 'first words · random', oil_do7: 'blank · random', oil_do8: 'after a day off',
         oil_d0: 'No oil for this verse yet.', oil_d1: 'Learned it. The olives are gathered.', oil_d2: 'Wrote it in order with blanks. Crushed olives seep oil.',
@@ -27862,7 +27862,7 @@ function _hmRefresh() {
     { const lr = document.getElementById('hm-lt-sub'), host = lr && lr.closest('.hm-lt-row');   // 🪔 장이 정해졌으면 「내 암송」 바로 가기
       let ob = document.getElementById('hm-oil-btn');
       if (host && !ob) { ob = document.createElement('button'); ob.id = 'hm-oil-btn'; ob.className = 'hm-oil-btn'; host.parentNode.insertBefore(ob, host.nextSibling); }
-      if (ob) { ob.style.display = ch != null ? '' : 'none'; ob.textContent = t('oil_btn'); ob.onclick = () => { const c = window.hardshipForcedChapter; _hideHardshipModeModal(); openOilScreen(c); }; } }
+      if (ob) { ob.style.display = ch != null ? '' : 'none'; ob.innerHTML = _oilMini() + escapeHtml(t('oil_btn')); ob.onclick = () => { const c = window.hardshipForcedChapter; _hideHardshipModeModal(); openOilScreen(c); }; } }
     const modal = document.getElementById('hardship-mode-modal'); if (!modal) return;
     modal.querySelectorAll('.hm-rec').forEach(e => e.classList.remove('hm-rec'));
     modal.querySelectorAll('.hm-badge').forEach(e => e.remove());
@@ -28056,6 +28056,9 @@ function _oilBackfill() {
         if (l > 0 && !oilLv[id]) oilLv[id] = { l, t: 1 };   // t = 1 — 어느 기기의 실제 기록이든 이것보다 늦다
     });   // 비어 있는 절만 채우므로 여러 번 돌아도 같다 — 동기화로 들어온 기록도 다음 번에 채워진다
 }
+function _oilMini() {
+    return `<svg class="oil-mini" viewBox="2 6 28 23" aria-hidden="true"><circle cx="26.4" cy="12.5" r="5.5" fill="#ffd968" opacity=".25"/><path d="M3 19.6 C 3 14.4, 9 13.2, 13 13.2 C 17.6 13.2, 21.4 14, 23 15.4 L 27.6 16.6 C 29 17, 29 18.6, 27.8 19 L 23 20.6 C 22 24.6, 17.6 26.8, 13 26.8 C 8 26.8, 3 24.6, 3 19.6 Z" fill="#b8814d"/><path d="M9.5 26.4 L 16.5 26.4 L 15.6 28.2 L 10.4 28.2 Z" fill="#8a6038"/><ellipse cx="13" cy="13.6" rx="2.6" ry=".9" fill="#e8b33a"/><path d="M26.6 9.2 C 29.4 11.6, 29 16.6, 26.6 17 C 24.2 16.6, 23.8 11.6, 26.6 9.2 Z" fill="#f6b54a"/><path d="M26.6 12.6 C 27.6 14, 27.5 16.7, 26.6 16.9 C 25.7 16.7, 25.6 14, 26.6 12.6 Z" fill="#fff6cf"/></svg>`;
+}
 const OIL_KEYS = ['empty', 'olive', 'crushed', 'pressed', 'clear', 'vessel', 'wick', 'lit', 'night'];
 let _oilU = 0;
 function _oilIcon(st) {
@@ -28102,7 +28105,7 @@ function _oilAllHtml() {
     }
     const lit = cnt[7] + cnt[8], known = OIL_N - 1;
     const sum = [8, 7, 6, 5, 4, 3, 2, 1].map(k => `<div class="oil-sum-i" title="${t('oil_n' + k)}">${_oilIcon(k)}<b>${cnt[k]}</b></div>`).join('');
-    return `<div class="oil-head"><div class="oil-eyebrow">${t('oil_eyebrow')}</div><div class="oil-title">${t('oil_title')}</div>
+    return `<div class="oil-head"><div class="oil-eyebrow">${t('oil_eyebrow')}</div><div class="oil-title">${_oilMini()}${t('oil_title')}</div>
         <div class="oil-big"><b>${lit}</b><span>${t('oil_big', { n: 404 })}</span></div></div>
         <div class="oil-sum">${sum}</div>
         <div class="oil-list">${rows}</div>
@@ -28221,7 +28224,7 @@ function _ltShowResult(ch) {
             <div class="lt-next">${lines.map(l => `<div>• ${l}</div>`).join('')}</div>
             ${acts.length ? `<div class="lt-acts">${acts.join('')}</div>` : ''}
             <div class="lt-note">${t('lt_res_plan')}</div>
-            <button class="lt-oil" onclick="document.getElementById('lt-result').style.display='none'; openOilScreen(${ch})">${t('oil_btn_from_lt')}</button>
+            <button class="lt-oil" onclick="document.getElementById('lt-result').style.display='none'; openOilScreen(${ch})">${_oilMini()}${t('oil_btn_from_lt')}</button>
             <button class="lt-go" onclick="document.getElementById('lt-result').style.display='none'">${t('lt_res_ok')}</button></div>`;
     ov.style.display = 'flex';
     setTimeout(() => ov.classList.add('active'), 10);
@@ -28288,7 +28291,7 @@ function _renderSheetLevelTest(chapterData) {
     if (n < 3) { el.style.display = 'none'; el.innerHTML = ''; return; }
     const T = (levelTests[ch] || []).slice(-1)[0];
     const sub = T ? t('lt_sheet_last', { d: new Date(T.at).toLocaleDateString(currentLang === 'en' ? 'en-US' : 'ko-KR', { month: 'numeric', day: 'numeric' }), c: Object.values(T.r || {}).filter(c => c === 3).length, n: T.n || Object.keys(T.r || {}).length }) + (T.d > 0 ? ' · ⏱ ' + _ltFmtTime(T.d) : '') : t('lt_sheet_none');
-    el.innerHTML = `<button class="sheet-oil-btn" onclick="openOilScreen(${ch})">${t('oil_btn_short')}</button><button class="sheet-lt-btn" onclick="openLevelTest(${ch})">${t('lt_sheet_btn')}</button>${T ? `<span class="sheet-lt-sub link" onclick="_ltShowResult(${ch})">${sub} ›</span>` : `<span class="sheet-lt-sub">${sub}</span>`}`;   // 지난 결과 다시 보기(10/9)
+    el.innerHTML = `<button class="sheet-oil-btn" onclick="openOilScreen(${ch})">${_oilMini()}${t('oil_btn_short')}</button><button class="sheet-lt-btn" onclick="openLevelTest(${ch})">${t('lt_sheet_btn')}</button>${T ? `<span class="sheet-lt-sub link" onclick="_ltShowResult(${ch})">${sub} ›</span>` : `<span class="sheet-lt-sub">${sub}</span>`}`;   // 지난 결과 다시 보기(10/9)
     el.style.display = '';
 }
 function openFirstPhrasePick() {
@@ -31034,7 +31037,7 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
             }
         }
         if (hardshipState) hardshipState._blankLvNote = (_strong && ok) ? t('sh_note') : _blankLvNoteText(_res, _pts, _quick);
-        try { const _ol0 = _oilStage(String(stageId)); _oilFromAttempt(String(stageId), !!ok, _blankMode, _hintOk, _strong); const _ol1 = _oilStage(String(stageId)); if (_ol1 > _ol0 && hardshipState) hardshipState._blankLvNote = [hardshipState._blankLvNote, t('oil_up_note', { name: t('oil_n' + _ol1) })].filter(Boolean).join(' · '); } catch (e) { }   // 🪔 오르면 결과 줄에 「🪔 켜진 등」
+        try { const _ol0 = _oilStage(String(stageId)); _oilFromAttempt(String(stageId), !!ok, _blankMode, _hintOk, _strong); const _ol1 = _oilStage(String(stageId)); if (_ol1 > _ol0 && hardshipState) hardshipState._blankLvNote = [hardshipState._blankLvNote, t('oil_up_note', { icon: _oilMini(), name: t('oil_n' + _ol1) })].filter(Boolean).join(' · '); } catch (e) { }   // 🪔 오르면 결과 줄에 「🪔 켜진 등」
         // 백지로 단서 없이 써냈으면 그 절의 일반 스테이지를 클리어한 것으로 친다 (복습 단계·보석·클리어 횟수)
         if (ok && _blankMode && _hintOk) {
             const _cr = _blankCountsAsClear(String(stageId), now);
@@ -32935,7 +32938,7 @@ function renderHomeTodo() {
     try { blank = _blankDueIds().length; } catch (e) { }
     const chip = (icon, label, n, done, fn) => `<button class="home-todo-chip${done ? ' done' : ''}" onclick="${fn}">${icon} ${label}${done ? ' ✓' : n ? ` <b>${n}</b>` : ''}</button>`;
     let h = chip('📖', t('todo_review'), rev, rev === 0, 'openReviewFromHome()') + chip('✍️', t('todo_blank'), blank, blank === 0, 'openBlankDueScreen()');
-    { const op = _oilHomePick(); if (op) h += `<button class="home-todo-chip oil" onclick="_oilHomeGo()">🪔 ${t('todo_oil', { ch: op.ch, what: op.pl.short })}</button>`; }   // 🪔 기름 단계 — 다음 할 것 하나
+    { const op = _oilHomePick(); if (op) h += `<button class="home-todo-chip oil" onclick="_oilHomeGo()">${_oilMini()}${t('todo_oil', { ch: op.ch, what: op.pl.short })}</button>`; }   // 🪔 기름 단계 — 다음 할 것 하나
     if (S.hasFriends) h += chip('💛', t('todo_cheer'), S.cheerable, S.cheerable === 0, 'openFriendScreen()');
     { const gf = (njGiftFruits || []).filter(f => !f.done || !f.thanked), act = gf.filter(f => (f.ripe && Date.now() >= f.ripe && !f.done) || (f.done && !f.thanked) || (!f.ripe && !f.done)).length;
       if (gf.length) h += chip('🎁', t('todo_gift'), act, act === 0, 'openGiftBasket()'); }   // 🎁 받은 나눔 열매

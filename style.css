@@ -7640,3 +7640,4 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .fp-ord.on { background: #f1c40f; color: #1a1a1a; border-color: #f1c40f; font-weight: 700; }
 .fp-ord-desc { font-size: .78rem; color: #9aa8bd; text-align: center; margin-bottom: 6px; }
 .home-todo-chip.oil { border-color: rgba(241, 196, 15, .55); color: #f1c40f; }
+.oil-mini { width: 1.25em; height: 1.05em; vertical-align: -0.2em; margin-right: .3em; display: inline-block; }
