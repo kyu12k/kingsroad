@@ -21816,41 +21816,52 @@ async function _leaveGuild(btn) {
     else _guildConfirm(msg, run);
 }
 
-async function _guildAttend(btn) {
-    await _withButtonLoading(btn, '출석 중…', async () => {
-        try {
-            const res = await _callGuildFn('guildAttend', {});
-            if (res.alreadyDone) { showGemToast(0, '오늘 이미 출석했습니다.', true); return; }
-            if (res.levelUp) showGemToast(0, `길드 레벨 업! Lv.${res.newLevel} 🎉`);
-            else showGemToast(0, `출석 완료! 길드 경험치 +${res.xpGained} XP`);
-            _myGuildStatus.attendedToday = true;
-            _todoSocial.attended = true; _syncSocialBadges();
-            if (_guildData) { _guildData.xp = res.newXp; _guildData.level = res.newLevel; }
-            const body = document.getElementById('guild-screen-body');
-            if (body) _renderGuildHome(body, _guildData, _myGuildStatus);
-        } catch (e) { showGemToast(0, e.message || '출석 실패', true); }
+/* 출석·기부는 서버 함수(guildAttend·guildDonate)를 부른다 — 하루 한 번씩만 불려 거의 늘 잠들어 있어 깨우는 데 1.5~3초(콜드 스타트).
+   → 누르는 즉시 화면을 「완료」로 바꾸고 서버는 뒤에서 처리한다. 실패하면 되돌리고 알린다 (10/10 사용자: "왜 다른 것보다 느리지") */
+function _guildRerender() { const body = document.getElementById('guild-screen-body'); if (body && _guildData) _renderGuildHome(body, _guildData, _myGuildStatus); }
+function _guildAttend(btn) {
+    if (_myGuildStatus.attendedToday) return;
+    _myGuildStatus.attendedToday = true;
+    _todoSocial.attended = true; _syncSocialBadges();
+    showGemToast(0, '출석 완료! 길드 경험치 +5 XP');
+    _guildRerender();
+    _callGuildFn('guildAttend', {}).then(res => {
+        if (!res || res.alreadyDone) return;
+        if (_guildData && res.newXp != null) { _guildData.xp = res.newXp; _guildData.level = res.newLevel; }
+        if (res.levelUp) showGemToast(0, `길드 레벨 업! Lv.${res.newLevel} 🎉`);
+        _guildRerender();
+    }).catch(e => {   // 되돌리기
+        _myGuildStatus.attendedToday = false;
+        _todoSocial.attended = false; _syncSocialBadges();
+        _guildRerender();
+        showGemToast(0, (e && e.message ? e.message : '출석 실패') + ' — 다시 눌러 주세요', true);
     });
 }
 
 function _guildDonate(btn) {
     // 하루 한 번 💎500 (9/30 — 100씩 다섯 번 누르던 것을 합쳤다)
     if (myGems < 500) { showGemToast(0, '보석이 부족합니다. (필요: 💎500)', true); return; }
-    // 로딩 표시는 확인을 누른 뒤에 — 확인 대화상자가 떠 있는 동안 "기부 중"이 보이면 오해를 준다
-    _guildConfirm('보석 500개를 기부하시겠습니까?', async () => {
-        await _withButtonLoading(btn, '기부 중…', async () => {
-            try {
-                const res = await _callGuildFn('guildDonate', { gems: 500 });
-                if (res.alreadyDone) { showGemToast(0, '오늘은 이미 기부했습니다.', true); return; }
-                myGems -= 500;
-                saveGameData();
-                if (res.levelUp) showGemToast(0, `길드 레벨 업! Lv.${res.newLevel} 🎉`);
-                else showGemToast(0, `기부 완료! 길드 경험치 +${res.xpGained} XP`);
-                _myGuildStatus.donateCountToday = res.todayCount;
-                if (_guildData) { _guildData.xp = res.newXp; _guildData.level = res.newLevel; }
-                const body = document.getElementById('guild-screen-body');
-                if (body) _renderGuildHome(body, _guildData, _myGuildStatus);
-            } catch (e) { showGemToast(0, e.message || '기부 실패', true); }
-        });
+    _guildConfirm('보석 500개를 기부하시겠습니까?', () => {
+        if ((_myGuildStatus.donateCountToday || 0) >= 5) return;
+        const prevCount = _myGuildStatus.donateCountToday || 0;
+        myGems -= 500; updateGemDisplay(); saveGameData();
+        _myGuildStatus.donateCountToday = 5;
+        showGemToast(0, '기부 완료! 길드 경험치 +5 XP');
+        _guildRerender();
+        const undo = (msg) => {   // 보석 돌려주기
+            myGems += 500; updateGemDisplay(); saveGameData();
+            _myGuildStatus.donateCountToday = prevCount;
+            _guildRerender();
+            showGemToast(0, msg, true);
+        };
+        _callGuildFn('guildDonate', { gems: 500 }).then(res => {
+            if (!res) return;
+            if (res.alreadyDone) { _myGuildStatus.donateCountToday = 5; undo('오늘은 이미 기부했어요 — 보석은 돌려드렸어요'); _myGuildStatus.donateCountToday = 5; _guildRerender(); return; }
+            _myGuildStatus.donateCountToday = res.todayCount;
+            if (_guildData && res.newXp != null) { _guildData.xp = res.newXp; _guildData.level = res.newLevel; }
+            if (res.levelUp) showGemToast(0, `길드 레벨 업! Lv.${res.newLevel} 🎉`);
+            _guildRerender();
+        }).catch(e => undo((e && e.message ? e.message : '기부 실패') + ' — 보석은 돌려드렸어요'));
     });
 }
 
