@@ -809,7 +809,7 @@ const LANG = {
         fp_title: '첫 마디의 고난', fp_desc: '장·절을 보고 첫 마디만 쓰기 · 쉬움·보통·어려움',
         lt_title: '레벨 테스트', lt_desc: '지금 이 장이 정말 얼마나 나오나 — 주소만 보고 무작위 백지',
         lt_intro_title: '🎓 {ch}장 레벨 테스트', lt_embed: '🎓 {ch}장 레벨 테스트',
-        lt_intro_body: '{ch}장 <b>{n}절</b>을 주소만 보고 <b>무작위 순서</b>로 백지로 써요.<br>승점은 없지만, 백지로 써낸 절은 <b>백지 레벨·복습</b>에도 그대로 들어가요.',
+        lt_intro_body: '{ch}장 <b>{n}절</b>을 주소만 보고 <b>무작위 순서</b>로 백지로 써요.<br>백지로 써낸 절은 <b>백지 레벨·복습</b>에 들어가요. <b>장 전체</b>를 하면 망각의 고난으로 인정돼 승점도 같아요(하루 둘 중 하나만).',
         lt_intro_rules: '• 모르면 망설이지 말고 <b>🙋 모르겠어요</b> — 그게 가장 정확한 답이에요<br>• 막히면 💡 힌트를 써도 돼요(얼마나 썼는지도 기록돼요)<br>• 시험이라 승점·보석은 없어요. 원문을 보지 않는 게 약속이에요<br>• 중간에 나가도 그때까지 결과는 남아요',
         lt_intro_warm: '☀️ 오늘 이 장 <b>{n}절</b>을 이미 봤어요. 본 절은 기억이 따뜻해서 실제보다 잘 나와요 — <b>내일 아침 앱을 열자마자</b> 하면 가장 정확해요',
         lt_intro_cold: '❄️ 오늘 이 장을 아직 안 봤어요 — 지금이 가장 정확한 때예요',
@@ -828,6 +828,7 @@ const LANG = {
         lt_res_good: '✅ 술술 나온 절 {n}개',
         lt_btn_relearn: '📖 {r}절 다시 넣기', lt_btn_blank: '✍️ {r}절 빈칸으로 다지기', lt_btn_fp: '🔑 {ch}장 첫 마디',
         lt_step1: '🔑 첫 마디를 보여 드릴게요 — 이어서 써 보세요', lt_step2: '🔲 이번엔 빈칸으로 — 글자 칸을 보고 써 보세요',
+        lt_full_pay: '🎓 장 전체 테스트 — 망각의 고난으로 인정돼요. 백지로 써낸 절은 승점이 있어요', lt_full_nopay: '🎓 오늘 이 장의 망각의 고난을 이미 해서 이번 테스트는 승점이 없어요', lt_memory_linked: '오늘 이 장은 레벨 테스트로 이미 망각의 고난을 인정받아 승점이 없어요',
         lt_cS: '첫 마디 주면 나옴', lt_cSH: '첫 마디 + 힌트로', lt_cB: '빈칸 보면 나옴', lt_cBH: '빈칸 + 힌트로', lt_res_S: '첫 마디를 주면 나온 {n}절 → 🔑 첫 마디부터', lt_res_B: '빈칸을 보면 나온 {n}절 → ✍️ 빈칸으로 다지기',
         lt_intro_ladder: '• 막히면 한 단계씩 쉬워져요: 백지 → 첫 마디를 보여 주고 이어 쓰기 → 빈칸 → 정답 보기',
         lt_stop_title: '이 구간은 다시 넣기부터예요', lt_stop_body: '처음 세 절이 빈칸으로도 나오지 않았어요. 테스트를 여기서 마치고 다시 넣기부터 할까요?',
@@ -2063,7 +2064,7 @@ const LANG = {
         fp_title: 'Trial of the First Words', fp_desc: 'See the reference, write only the opening words · Easy · Normal · Hard',
         lt_title: 'Level test', lt_desc: 'How much of this chapter really comes out — reference only, random, blank',
         lt_intro_title: '🎓 Chapter {ch} level test', lt_embed: '🎓 Ch. {ch} level test',
-        lt_intro_body: 'Write all <b>{n} verses</b> of chapter {ch} from the reference only, in <b>random order</b>.<br>No points, but verses you write blank also count toward <b>blank levels and reviews</b>.',
+        lt_intro_body: 'Write all <b>{n} verses</b> of chapter {ch} from the reference only, in <b>random order</b>.<br>Verses written blank count toward <b>blank levels and reviews</b>. The <b>whole chapter</b> counts as the Trial of Forgetting with the same points (one of the two per day).',
         lt_intro_rules: '• If you don\'t know, tap <b>🙋 I don\'t know</b> — that is the most accurate answer<br>• You may use 💡 hints (they are counted)<br>• It\'s a test: no points or gems. Please don\'t look at the text<br>• If you leave midway, results so far are kept',
         lt_intro_warm: '☀️ You already saw <b>{n}</b> verse(s) of this chapter today — they are warm and come out more easily. <b>Right after opening the app tomorrow morning</b> is most accurate',
         lt_intro_cold: '❄️ You haven\'t seen this chapter today — now is the most accurate time',
@@ -2082,6 +2083,7 @@ const LANG = {
         lt_res_good: '✅ {n} verse(s) flowed out',
         lt_btn_relearn: '📖 Re-learn vv. {r}', lt_btn_blank: '✍️ Fill-in vv. {r}', lt_btn_fp: '🔑 Ch. {ch} first words',
         lt_step1: '🔑 Here are the first words — continue from there', lt_step2: '🔲 Now with blanks — use the letter slots',
+        lt_full_pay: '🎓 Whole-chapter test — counts as Trial of Forgetting. Verses written blank earn points', lt_full_nopay: '🎓 You already did this chapter\'s Trial of Forgetting today — no points this time', lt_memory_linked: 'This chapter already counted today via the level test — no points',
         lt_cS: 'with first words', lt_cSH: 'first words + hints', lt_cB: 'with blanks', lt_cBH: 'blanks + hints', lt_res_S: '{n} verse(s) came out once given the first words → 🔑 first words', lt_res_B: '{n} verse(s) came out with blanks → ✍️ fill-in',
         lt_intro_ladder: '• If stuck, it gets easier step by step: blank → first words given → blanks → see the answer',
         lt_stop_title: 'Start this part by re-learning', lt_stop_body: 'The first three verses didn\'t come out even with blanks. End the test here and re-learn first?',
@@ -27746,8 +27748,14 @@ function _startLevelTest(ch, unitIdx) {
     window.hardshipOrigin = 'map';
     selectedHardshipOrderType = 'sequential';   // 순서는 여기서 정한다 — 무작위이되 이웃 절이 연달아 오지 않게
     selectedHardshipUltimate = true;
-    _pendingHardshipEmbed = { label: t('lt_embed', { ch }) + (u ? ` · ${u.r}` : ''), levelTest: ch };
+    /* ⌨️ 장 전체 레벨 테스트 = 망각의 고난 (10/9 사용자) — 그 장의 모든 절을 외운 상태의 장 전체 테스트만.
+       승점은 망각의 고난과 같다(백지 단계에서 써낸 절만, 첫 마디·빈칸으로 내려간 절은 0). 오늘(6시 경계) 그 장 망각의 고난이나
+       인정된 테스트를 이미 했으면 승점 없음 — 거꾸로 테스트를 먼저 했으면 그날 그 장 망각의 고난은 승점 0(_hardshipRepeatFactor) */
+    const _full = !u && ids.length === getHardshipVerseIdsByChapterRange(ch, ch).length;
+    const _doneToday = _full && ((hardshipMemoryClearHistory[ch] || []).some(r => r && r.date && _tsTo6AMDateStr(r.date) === _get6AMDayStr()));
+    _pendingHardshipEmbed = { label: t('lt_embed', { ch }) + (u ? ` · ${u.r}` : ''), levelTest: ch, ltFull: _full, ltPay: _full && !_doneToday };
     startHardshipSession('memory', _ltSpacedOrder(ids));
+    if (_full) setTimeout(() => { if (typeof showToast === 'function') showToast(t(_doneToday ? 'lt_full_nopay' : 'lt_full_pay')); }, 500);
     if (hardshipState && hardshipState.levelTest) { hardshipState.isRandomOrder = true; hardshipState.ltSeen = []; }   // 일지 o=1(주소로 꺼내기)
 }
 /* 무작위로 섞되 바로 앞 절과 2절 이상 떨어진 것을 먼저 고른다(10/6 사용자: 정답·첫 마디를 본 절이 이웃 절의 단서가 된다) */
@@ -27838,6 +27846,7 @@ function _ltStepDown() {
         if (sid) { hs._ltGame = true; try { recordVerseRecall(sid, false, (hs.revealedHints || []).length, 'memory'); } finally { hs._ltGame = false; } }
     }
     hs.ltStep = (hs.ltStep || 0) + 1;
+    hs.rewardBlocked = true;   // 첫 마디·빈칸으로 써낸 절은 승점 없음(망각의 고난에서도 못 쓴 절)
     if (hs.ltStep === 1) {
         const ph = firstPhraseOf(getHardshipActiveText(hs.currentVerse) || '', 3, currentLang === 'en');
         hs.ltGiven = ph || '';
@@ -28222,8 +28231,9 @@ function _hardshipRepeatFactor(mode, ch) {
     };
     const history = ((historyMap[mode] || {})[ch]) || [];
     const today = _get6AMDayStr();
-    const k = history.filter(r => r && r.date && _tsTo6AMDateStr(r.date) === today).length;
-    return Math.pow(0.5, k);
+    const todays = history.filter(r => r && r.date && _tsTo6AMDateStr(r.date) === today);
+    if (mode === 'memory' && todays.some(r => r.lt)) return 0;   // 🎓 오늘 장 전체 레벨 테스트로 이미 인정 — 둘 중 하나만 승점(10/9)
+    return Math.pow(0.5, todays.length);
 }
 
 function isHardshipChapterDoneToday(mode, ch) {
@@ -28685,7 +28695,7 @@ function _takeHardshipResume(mode, verseIds) {
 }
 
 function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
-    if (!(_pendingHardshipEmbed && _pendingHardshipEmbed.levelTest)) _maybeStartRain();   // 🎓 승점·보석 없는 시험이 그날의 단비·햇살 20분을 써 버렸다(10/8 사용자)
+    if (!(_pendingHardshipEmbed && _pendingHardshipEmbed.levelTest && !_pendingHardshipEmbed.ltPay)) _maybeStartRain();   // 승점 있는 장 전체 테스트는 망각의 고난처럼 단비·햇살을 켠다   // 🎓 승점·보석 없는 시험이 그날의 단비·햇살 20분을 써 버렸다(10/8 사용자)
     const modeMeta = getHardshipModeMeta(mode);
 
     // ★ 스테이지 시트를 반드시 닫는다.
@@ -28716,6 +28726,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
         hardshipState.verseCheckIsLearn = !!embed.isLearn;
         hardshipState.eventId = embed.eventId || null;
         hardshipState.levelTest = embed.levelTest || 0;   // 🎓
+        hardshipState.ltFull = !!embed.ltFull; hardshipState.ltPay = !!embed.ltPay;   // ⌨️ 장 전체 = 망각의 고난으로 인정 · 오늘 승점 받나
         hardshipState.displayTitle = embed.label || '';
     }
 
@@ -28724,14 +28735,14 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
     hardshipState.ultimateMemoryMode = (mode === 'memory') ? selectedHardshipUltimate : false;
     hardshipState.isRandomOrder = (selectedHardshipOrderType === 'random');
     hardshipState.applyToFree = (window.hardshipOrigin !== 'map');
-    hardshipState.rewardBlocked = !!hardshipState.levelTest;   // 🎓 레벨 테스트는 승점 없음(시험이 정직하게)
+    hardshipState.rewardBlocked = !!hardshipState.levelTest && !hardshipState.ltPay;   // 🎓 레벨 테스트는 승점 없음 — 장 전체(망각의 고난으로 인정)만 예외
     if (forcedChapter != null) hardshipState.forcedChapter = forcedChapter;
     // 같은 장 같은 고난 반복 계수 — 장 단위 진짜 고난에만. 세션 시작 때 한 번 정한다
     hardshipState.repeatFactor = 1;
     if (forcedChapter != null && !embed) {
         hardshipState.repeatFactor = _hardshipRepeatFactor(mode, forcedChapter);
         if (hardshipState.repeatFactor < 1) {
-            setTimeout(() => { if (typeof showToast === 'function') showToast(t('hardship_repeat_notice', { pct: Math.round(hardshipState.repeatFactor * 100) })); }, 400);
+            setTimeout(() => { if (typeof showToast === 'function') showToast(hardshipState.repeatFactor === 0 ? t('lt_memory_linked') : t('hardship_repeat_notice', { pct: Math.round(hardshipState.repeatFactor * 100) })); }, 400);
         }
     }
     const baseIds = Array.isArray(selectedVerseIds) && selectedVerseIds.length > 0
@@ -28912,6 +28923,7 @@ function loadNextHardshipVerse() {
     hardshipState.memoryTypedText = '';
     hardshipState.verseChoices = [];
     hardshipState.ltStep = 0; hardshipState.ltGiven = '';   // 🎓 단계식 — 절마다 백지부터
+    if (hardshipState.levelTest) hardshipState.rewardBlocked = !hardshipState.ltPay;   // 새 절은 다시 백지 — 승점 자격 되살림
     hardshipState.strongAvail = false; hardshipState.strongHint = false; hardshipState.lastTypeAt = 0;   // 🔑 강한 힌트 — 절마다 다시 얻는다
     hardshipState._redCnt = {}; hardshipState._redValid = {}; hardshipState._redNow = new Set();   // 🟥 빨간 칸 — 절마다
     if (hardshipState.levelTest) hardshipState.ultimateMemoryMode = true;
@@ -30612,7 +30624,7 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
         const _res = _updateBlankBox(r, !!ok, _blankMode, _hintOk, now);
         let _pts = 0;
         const _quick = !!(hardshipState && hardshipState.quickReviewStageId);
-        if (_res && _res.kind === 'up' && _res.mult > 0 && !(hardshipState && hardshipState.levelTest)) {   // 🎓 레벨 테스트는 백지 레벨만 오르고 승점은 없다
+        if (_res && _res.kind === 'up' && _res.mult > 0 && !(hardshipState && hardshipState.levelTest && hardshipState.rewardBlocked)) {   // 🎓 승점 없는 레벨 테스트는 백지 레벨만 오른다(장 전체 = 망각의 고난이면 승점도)
             if (_quick) {
                 // 빠른 복습: 이어지는 복습 클리어에서 복습 승점과 비교해 큰 쪽 하나만 준다 (stageClear)
                 window._quickBlankBonus = { sid: String(stageId), mult: _res.mult, lv: _res.to };
@@ -30642,7 +30654,7 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
     // ★ 백지(궁극)만 센다 (2026-09-14). 빈칸(글자 칸 보임)을 같이 세면 모두가 빈칸만 하게 돼
     //   판이 '인출'에서 '빈칸 채우기 속도'로 옮겨간다. "암송왕 = 아무 단서 없이 써낸 구절 수".
     if (ok && mode === 'memory' && hardshipState && hardshipState.ultimateMemoryMode) {
-        if (!(hardshipState && (hardshipState.strongHint || hardshipState.levelTest))) _countRecallForWeek(stageId, hints || 0, r.lastVerseLen || 0);   // 🔑 강한 힌트·🎓 레벨 테스트는 암송왕에서 뺀다
+        if (!(hardshipState && (hardshipState.strongHint || (hardshipState.levelTest && hardshipState.rewardBlocked)))) _countRecallForWeek(stageId, hints || 0, r.lastVerseLen || 0);   // 🔑 강한 힌트·🎓 레벨 테스트는 암송왕에서 뺀다
     }
 
     verseRecall[stageId] = r;
@@ -31038,6 +31050,16 @@ function finishHardshipSession(reason) {
     if (hardshipState.levelTest) {
         const _T = (levelTests[hardshipState.levelTest] || []).slice(-1)[0];
         if (_T && reason === 'completed') { _T.done = 1; saveGameData(); }
+        if (reason === 'completed' && hardshipState.ltFull) {   // ⌨️ 망각의 고난 완주로 인정 — 기록(lt)·일일/심화 미션(레이드 포함)
+            const _ch = hardshipState.levelTest, _r = (_T && _T.r) || {};
+            const rec = { correct: Object.values(_r).filter(c => c === 3 || c === 2 || c === 1).length, total: hardshipState.queue.length,
+                          score: hardshipState.score || 0, date: Date.now(), duration: getHardshipElapsedSeconds(), hints: hardshipState.totalHintsUsed || 0, lt: 1 };
+            (hardshipMemoryClearHistory[_ch] = hardshipMemoryClearHistory[_ch] || []).push(rec);
+            if (hardshipMemoryClearHistory[_ch].length > 10) hardshipMemoryClearHistory[_ch].shift();
+            updateMissionProgress('hardshipMemory', _ch);
+            updateMissionProgress('advancedMemory', _ch);
+            saveGameData(); syncToFirestore();
+        }
         quitGame('map');
         return;
     }
@@ -31396,7 +31418,7 @@ function finishHardshipSession(reason) {
                 const dur = r.duration != null ? r.duration : 0;
                 const timeStr = `${String(Math.floor(dur / 60)).padStart(2,'0')}:${String(dur % 60).padStart(2,'0')}`;
                 return `<tr class="${isThis ? 'hardship-history-current' : ''}">
-                    <td>${isThis ? '▶' : history.length - i}회</td>
+                    <td>${isThis ? '▶' : history.length - i}회${r.lt ? ' 🎓' : ''}</td>
                     <td class="hardship-history-score">${r.correct}/${r.total}</td>
                     <td>${r.score}점</td>
                     <td>${timeStr}</td>
