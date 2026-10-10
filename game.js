@@ -23732,7 +23732,7 @@ function _gConfirm(title, body, okLabel, onOk) {
    지금 기록은 연결된 구글로 서버에 있으니 사라지지 않는다. 고른 구글의 기록이 이 기기에 열리고, 기록이 없으면 새로 시작 */
 function switchGoogleRecord() {
     const email = _googleEmailNow();
-    _gConfirm('🔄 다른 Google 계정으로 들어가기',
+    _gConfirm('🔄 다른 계정으로 로그인',
         `지금 기록 <b>#${escapeHtml(myTag || '')}</b>는 <b>${escapeHtml(email)}</b>에 연결돼 있어, 언제든 그 계정으로 다시 열 수 있어요.<br><br>다음 창에서 고른 Google 계정의 기록이 이 기기에 열려요. 그 계정에 기록이 없으면 처음부터 시작해요.`,
         '계정 고르기', async () => {
             try { if (typeof syncToFirestore === 'function') await syncToFirestore(); } catch (e) { }
@@ -23766,7 +23766,7 @@ function switchGoogleRecord() {
    새 구글에 이미 기록이 있으면 아무것도 바꾸지 않고 알린다(구글 하나에 기록 하나) */
 function changeLinkedGoogle() {
     const email = _googleEmailNow();
-    _gConfirm('✏️ 이 기록의 Google 바꾸기',
+    _gConfirm('✏️ 내 기록을 다른 구글로 옮기기',
         `기록 <b>#${escapeHtml(myTag || '')}</b>는 그대로 두고, 들어오는 Google 계정만 <b>${escapeHtml(email)}</b>에서 다른 계정으로 바꿔요.<br><br>바꾼 뒤에는 새 계정으로 어느 기기에서든 이 기록을 열 수 있고, 예전 계정으로는 열리지 않아요.`,
         '새 계정 고르기', async () => {
             let app2 = null;
@@ -23943,10 +23943,10 @@ function openDataSettings() {
                         ☁️ 다른 기기 데이터 불러오기
                     </button>
                     <button id="google-switch-btn" onclick="switchGoogleRecord()" style="display:none; width:100%; margin-top:8px; background:white; color:#1a73e8; border:1px solid #4285f4; padding:10px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:0.9rem;">
-                        🔄 다른 Google 계정으로 들어가기
+                        🔄 다른 계정으로 로그인<span style="display:block; font-size:0.75rem; font-weight:normal; color:#5f6b7a; margin-top:2px;">다른 구글 계정의 기록을 이 기기에서 열어요</span>
                     </button>
                     <button id="google-change-btn" onclick="changeLinkedGoogle()" style="display:none; width:100%; margin-top:8px; background:white; color:#5f6b7a; border:1px solid #c5ccd6; padding:10px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:0.9rem;">
-                        ✏️ 이 기록의 Google 바꾸기
+                        ✏️ 내 기록을 다른 구글로 옮기기<span style="display:block; font-size:0.75rem; font-weight:normal; color:#7f8a99; margin-top:2px;">지금 기록은 그대로, 앞으로 다른 구글로 들어와요</span>
                     </button>
                 </div>
 
