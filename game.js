@@ -752,7 +752,7 @@ const LANG = {
         nr_step: '첫 마디·빈칸으로 써서 승점 없음', nr_linked: '오늘 이 장은 이미 승점을 받아 승점 없음', nr_test: '연습 테스트라 승점 없음 — 장 전체 테스트만 승점',
         hardship_blank_hint_notice: '💡 막히면 힌트를 누르세요 — 한 글자씩만 열려요',
         embed_title_quick_blank_none: '백지 복습',
-        hint_trace_tip: '힌트 {n}회 사용 · 최근 3번 중',
+        hint_trace_tip: '💡 이 글자에서 힌트를 봤어요 — 최근 3번 시도 중 {n}번',
         blank_lv_up: '✍️ 백지 Lv{from}→{to} · 제때 꺼냈어요 +{pts}',
         blank_lv_up_quick: '✍️ 백지 Lv{from}→{to} · 제때 꺼냈어요',
         blank_lv_enter: '✍️ 백지 Lv{to} 시작 · {days}일 뒤 차례',
@@ -2030,7 +2030,7 @@ const LANG = {
         nr_step: 'no points with first words/blanks given', nr_linked: 'this chapter already earned points today', nr_test: 'practice test, no points — only whole-chapter tests score',
         hardship_blank_hint_notice: '💡 Stuck? Tap the hint — it opens one letter at a time',
         embed_title_quick_blank_none: 'Blank review',
-        hint_trace_tip: 'Hint used {n}× · last 3 tries',
+        hint_trace_tip: '💡 You used a hint here — {n} of your last 3 tries',
         blank_lv_up: '✍️ Blank Lv{from}→{to} · right on time +{pts}',
         blank_lv_up_quick: '✍️ Blank Lv{from}→{to} · right on time',
         blank_lv_enter: '✍️ Blank Lv{to} started · due in {days}d',
@@ -14953,6 +14953,7 @@ function loadStep() {
         const card = document.getElementById('tap-reading-card');
         window.chunksToReveal = trainingVerseData.chunks;
         window.revealedChunks = new Set();
+        window._s1UserHidden = new Set();
         // 힌트 흔적 — 열린 덩어리에만 보인다(가려진 동안은 단서가 되지 않게)
         const _traceHtml = _hintTraceChunkHtml(String(window.currentStageId || ''), window.chunksToReveal);
         let autoFillInterval = null;
@@ -14975,7 +14976,14 @@ function loadStep() {
             span.style.transition = "all 0.3s ease-out";
             span.style.cursor = "pointer";
             span.addEventListener('click', () => {
-                if (!window.revealedChunks.has(idx)) return;
+                if (!window.revealedChunks.has(idx)) {
+                    if (!window._s1UserHidden || !window._s1UserHidden.has(idx)) return;   // 아직 안 연 어절은 「읽기」로 차례대로
+                    window._s1UserHidden.delete(idx); window.revealedChunks.add(idx);
+                    if (span.dataset.traceHtml) span.innerHTML = span.dataset.traceHtml; else span.innerText = span.dataset.original;
+                    span.style.color = ''; span.style.fontWeight = 'bold'; span.style.fontSize = '1.3rem';
+                    return;
+                }
+                (window._s1UserHidden = window._s1UserHidden || new Set()).add(idx);   // 내가 닫은 어절 — 다시 누르면 열린다(10/10)
                 window.revealedChunks.delete(idx);
                 span.innerText = isChosungMode ? span.dataset.chosung : span.dataset.masked;
                 span.style.color = "#3a4f6a";
@@ -16666,7 +16674,9 @@ let _myReadTitle = null;
     document.addEventListener('click', (e) => {
         const el = e.target.closest && e.target.closest('[data-tip]');
         if (!el) { hide(); return; }
-        e.stopPropagation();   // 밭 칩은 헤더에서 밭 화면 열기 안에 있다 — 말풍선만 띄우고 화면은 그대로
+        // 밭 칩은 헤더에서 밭 화면 열기 안에 있다 — 말풍선만 띄우고 화면은 그대로.
+        // 단 힌트 흔적 글자(.hint-trace)는 Step 1 어절 안에 있어, 가로채면 그 어절이 눌러도 닫히지 않았다(10/10 제보: "3번 이상은 안 된다는 경고"로 보임)
+        if (!(el.classList.contains('hint-trace') && el.closest('#tap-reading-card'))) e.stopPropagation();
         show(el);
     }, true);
     document.addEventListener('mouseover', (e) => {
