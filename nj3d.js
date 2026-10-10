@@ -57,7 +57,7 @@
                     <div class="nj3d-btns">
                         <button class="nj3d-wb small nj3d-viewbtn"></button>
                         <button class="nj3d-wb small nj3d-jetbuy"></button>
-                        <button class="nj3d-wb fly nj3d-fly" hidden>${T('nj3d_fly')}</button>
+                        <button class="nj3d-wb fly nj3d-fly" hidden>${T('nj3d_fly')}<span class="nj3d-key">F</span></button>
                         <button class="nj3d-wb small nj3d-fishbtn" hidden></button>
                         <button class="nj3d-wb small nj3d-pourbtn" hidden></button>
                         <button class="nj3d-wb small nj3d-clambtn" hidden></button>
@@ -65,9 +65,9 @@
                         <button class="nj3d-wb small nj3d-talk" hidden></button>
                         <button class="nj3d-wb small nj3d-tackbtn" hidden>${T('nj3d_tack')}</button>
                         <button class="nj3d-wb small nj3d-ridebtn"></button>
-                        <button class="nj3d-wb small nj3d-divebtn" hidden>${T('nj3d_dive')}</button>
+                        <button class="nj3d-wb small nj3d-divebtn" hidden>${T('nj3d_dive')}<span class="nj3d-key">Q</span></button>
                         <button class="nj3d-wb small nj3d-slidebtn" hidden>${T('nj3d_slide')}</button>
-                        <button class="nj3d-wb nj3d-jump">${T('nj3d_jump')}</button>
+                        <button class="nj3d-wb nj3d-jump">${T('nj3d_jump')}<span class="nj3d-key">Space</span></button>
                     </div>
                 </div>
                 <div class="nj3d-under" hidden></div>
@@ -1882,8 +1882,8 @@
             showHint(T(gliding ? 'nj3d_glide_on' : 'nj3d_glide_off'), 1400);
         };
         listen(window, 'keydown', e => { if (!walk) return; inp.keys[e.code] = true; if (e.code === 'Space') { if (!e.repeat) { jumpHeld = true; doJump(); } e.preventDefault(); } if (e.code === 'Escape') { if (dexWatch) closeWatch(); else if (obs) obsClose(); else closeNJ3D(); } });
-        listen(window, 'keyup', e => { inp.keys[e.code] = false; if (e.code === 'Space') jumpHeld = false; if (e.code === 'KeyC') diveHeld = false; });
-        listen(window, 'keydown', e => { if (walk && e.code === 'KeyC') diveHeld = true; });
+        listen(window, 'keyup', e => { inp.keys[e.code] = false; if (e.code === 'Space') jumpHeld = false; if (e.code === 'KeyC' || e.code === 'KeyQ') diveHeld = false; });
+        listen(window, 'keydown', e => { if (walk && (e.code === 'KeyC' || e.code === 'KeyQ')) diveHeld = true; });   // 🤿 잠수 Q(10/10 사용자) · C도
         { const db = ov.querySelector('.nj3d-divebtn');
           db.addEventListener('pointerdown', e => { e.preventDefault(); diveHeld = true; try { db.setPointerCapture(e.pointerId); } catch (_) {} });
           ['pointerup', 'pointercancel'].forEach(tp => db.addEventListener(tp, () => { diveHeld = false; })); }
@@ -3854,10 +3854,14 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             }
             walkT += dt;
             const k = inp.keys;
-            const kv = (k.ControlLeft || k.ControlRight) ? 1 : 0.7;   // 키보드는 걷기, Ctrl을 누르면 달리기
-            const jx = inp.jx + (((k.KeyD || k.ArrowRight) ? 1 : 0) - ((k.KeyA || k.ArrowLeft) ? 1 : 0)) * kv;
-            const jy = inp.jy + (((k.KeyS || k.ArrowDown) ? 1 : 0) - ((k.KeyW || k.ArrowUp) ? 1 : 0)) * kv;
-            const fly = hasJet() && (jetOn || k.ShiftLeft || k.ShiftRight);
+            /* 키보드는 걷기, Shift를 누르면 달리기(10/10) — 예전엔 Ctrl이었는데 W와 함께 누르면 Ctrl+W(브라우저 탭 닫기)였다.
+               두 키(대각선)는 길이가 √2라 걷기(0.7)가 0.99가 돼 달리기로 판정됐다 → 방향만 쓰고 길이는 하나로 */
+            const kv = (k.ShiftLeft || k.ShiftRight) ? 1 : 0.7;
+            let kx = ((k.KeyD || k.ArrowRight) ? 1 : 0) - ((k.KeyA || k.ArrowLeft) ? 1 : 0), ky = ((k.KeyS || k.ArrowDown) ? 1 : 0) - ((k.KeyW || k.ArrowUp) ? 1 : 0);
+            if (kx && ky) { kx *= Math.SQRT1_2; ky *= Math.SQRT1_2; }
+            const jx = inp.jx + kx * kv;
+            const jy = inp.jy + ky * kv;
+            const fly = hasJet() && (jetOn || k.KeyF);   // 🚀 날기 = F (Shift는 달리기로)
             if (fly && ride.on) mountDown();   // 날기 버튼 = 내리며 제트팩
             const fx = -Math.sin(camYaw), fz = -Math.cos(camYaw), rx = Math.cos(camYaw), rz = -Math.sin(camYaw);
             let mx = fx * (-jy) + rx * jx, mz = fz * (-jy) + rz * jx;

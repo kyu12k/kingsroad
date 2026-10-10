@@ -7679,3 +7679,9 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .il-close { display: block; width: 100%; margin-top: 10px; padding: 9px; border-radius: 10px; border: none; background: rgba(255, 255, 255, .06); color: #e8edf5; cursor: pointer; }
 .il-entry { display: block; width: 100%; margin: 8px 0 2px; padding: 9px; border-radius: 10px; border: 1px solid rgba(241, 196, 15, .45); background: rgba(241, 196, 15, .08); color: #f1c40f; font-weight: 700; cursor: pointer; }
 .oil-next-sub { margin-top: 6px; width: 100%; padding: 8px; border-radius: 10px; border: 1px solid rgba(241, 196, 15, .45); background: none; color: #f1c40f; font-size: .88rem; cursor: pointer; }
+
+/* 3D 버튼의 키 표시 — 마우스·키보드 기기에서만 (10/10) */
+.nj3d-key { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .nj3d-key { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 5px; border: 1px solid rgba(255, 255, 255, .45); font-size: .72em; line-height: 1.5; font-weight: 700; opacity: .9; vertical-align: middle; }
+}
