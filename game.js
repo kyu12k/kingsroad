@@ -23534,7 +23534,7 @@ async function linkGoogleAccount() {
         showGemToast(0, '이미 Google 계정이 연결되어 있습니다.', false);
         return;
     }
-    const provider = new firebase.auth.GoogleAuthProvider();
+    const provider = _googleProvider();
     // 텔레그램 인앱 브라우저 등 팝업 차단 환경은 처음부터 redirect
     if (_isInAppBrowser()) {
         try { await auth.currentUser.linkWithRedirect(provider); } catch (e) {
@@ -23634,7 +23634,7 @@ async function _doSignInWithGoogle() {
     //   태그가 실제로 바뀌는 드문 경우 옛 태그가 유령 멤버로 남지만, 자리 하나일 뿐이고 길드장이 추방하면 된다.
     localStorage.removeItem('kingsroad_dataFromTextFile');   // 옛 플래그 정리
 
-    const provider = new firebase.auth.GoogleAuthProvider();
+    const provider = _googleProvider();
     try {
         localStorage.setItem('kingsroad_forceRemoteSync', 'true');
         // signInWithPopup 도중 onAuthStateChanged(null)이 발생해 signInAnonymously가
@@ -23662,6 +23662,96 @@ async function _doSignInWithGoogle() {
     }
 }
 
+function _googleProvider() {
+    const p = new firebase.auth.GoogleAuthProvider();
+    try { p.setCustomParameters({ prompt: 'select_account' }); } catch (e) { }   // 늘 계정 고르는 창
+    return p;
+}
+function _googleEmailNow() { try { const g = auth.currentUser.providerData.find(p => p.providerId === 'google.com'); return g ? g.email : ''; } catch (e) { return ''; } }
+function _gConfirm(title, body, okLabel, onOk) {
+    const el = document.createElement('div');
+    el.id = 'google-swap-confirm';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:10001;padding:20px;box-sizing:border-box;';
+    el.innerHTML = `<div style="background:#1a0e2e;border:1px solid #5a3a8a;border-radius:16px;padding:24px 20px;width:100%;max-width:340px;text-align:center;">
+        <div style="font-size:17px;font-weight:700;color:#e0c0ff;margin-bottom:12px;">${title}</div>
+        <div style="font-size:14px;color:#b9a3d6;margin-bottom:18px;line-height:1.7;text-align:left;">${body}</div>
+        <div style="display:flex;gap:10px;"><button id="gsc-ok" style="flex:1;background:#4285f4;border:none;border-radius:10px;padding:12px;color:white;font-size:15px;font-weight:600;cursor:pointer;">${okLabel}</button>
+        <button onclick="document.getElementById('google-swap-confirm').remove()" style="flex:1;background:#2a1a4a;border:1px solid #5a3a8a;border-radius:10px;padding:12px;color:#9070b0;font-size:15px;cursor:pointer;">취소</button></div></div>`;
+    document.body.appendChild(el);
+    document.getElementById('gsc-ok').onclick = () => { el.remove(); onOk(); };
+}
+/* 🔄 다른 Google 계정으로 들어가기 (10/10 #GAXUNX: 노트북을 엉뚱한 구글로 연결하고 나니 바꿀 길이 없었다 — 연결된 기기엔 「Google로 이어하기」가 숨는다).
+   지금 기록은 연결된 구글로 서버에 있으니 사라지지 않는다. 고른 구글의 기록이 이 기기에 열리고, 기록이 없으면 새로 시작 */
+function switchGoogleRecord() {
+    const email = _googleEmailNow();
+    _gConfirm('🔄 다른 Google 계정으로 들어가기',
+        `지금 기록 <b>#${escapeHtml(myTag || '')}</b>는 <b>${escapeHtml(email)}</b>에 연결돼 있어, 언제든 그 계정으로 다시 열 수 있어요.<br><br>다음 창에서 고른 Google 계정의 기록이 이 기기에 열려요. 그 계정에 기록이 없으면 처음부터 시작해요.`,
+        '계정 고르기', async () => {
+            try { if (typeof syncToFirestore === 'function') await syncToFirestore(); } catch (e) { }
+            const oldUid = auth.currentUser && auth.currentUser.uid;
+            // ★ 로그인이 바뀌는 순간 초기 동기화가 돈다 — 이 기기의 옛 기록이 남아 있으면 새 계정에 올라가 같은 태그가 둘이 된다.
+            //   고르기 전에 기기 쪽 기록을 치우고 저장을 막는다(초기화와 같은 isResetting). 취소·실패면 그대로 되돌린다
+            const backup = localStorage.getItem('kingsRoadSave');
+            const restore = () => { if (backup) localStorage.setItem('kingsRoadSave', backup); localStorage.removeItem('kingsroad_forceRemoteSync'); window.isResetting = false; };
+            window.isResetting = true;
+            localStorage.removeItem('kingsRoadSave');
+            localStorage.setItem('kingsroad_forceRemoteSync', 'true');
+            try {
+                window._googleSignInInProgress = true;
+                const r = await auth.signInWithPopup(_googleProvider());
+                window._googleSignInInProgress = false;
+                if (r && r.user && r.user.uid === oldUid) { restore(); showGemToast(0, '지금과 같은 계정이에요.', false); return; }
+                // 이 기기의 기록은 서버(연결된 구글)에 있다 — 기기 쪽을 비우고 새 계정의 기록을 받는다
+                localStorage.clear();
+                localStorage.setItem('kingsroad_forceRemoteSync', 'true');
+                location.reload();
+            } catch (e) {
+                window._googleSignInInProgress = false;
+                restore();
+                if (e && e.code === 'auth/popup-closed-by-user') return;
+                showGemToast(0, 'Google 로그인 실패: ' + (e.message || e.code), true);
+            }
+        });
+}
+/* ✏️ 이 기록의 Google 바꾸기 — 기록·태그는 그대로, 들어오는 구글 열쇠만 바꾼다.
+   새 구글을 먼저 따로 확인한다(보조 앱으로 로그인): 기록이 없는 구글이면 그 임시 로그인을 지우고 → 지금 구글을 떼고 → 새 구글을 붙인다.
+   새 구글에 이미 기록이 있으면 아무것도 바꾸지 않고 알린다(구글 하나에 기록 하나) */
+function changeLinkedGoogle() {
+    const email = _googleEmailNow();
+    _gConfirm('✏️ 이 기록의 Google 바꾸기',
+        `기록 <b>#${escapeHtml(myTag || '')}</b>는 그대로 두고, 들어오는 Google 계정만 <b>${escapeHtml(email)}</b>에서 다른 계정으로 바꿔요.<br><br>바꾼 뒤에는 새 계정으로 어느 기기에서든 이 기록을 열 수 있고, 예전 계정으로는 열리지 않아요.`,
+        '새 계정 고르기', async () => {
+            let app2 = null;
+            try {
+                app2 = firebase.apps.find(a => a.name === 'gswap') || firebase.initializeApp(firebase.app().options, 'gswap');
+                const r = await app2.auth().signInWithPopup(_googleProvider());
+                const newEmail = (r.user && r.user.email) || '';
+                if (!r.additionalUserInfo || !r.additionalUserInfo.isNewUser) {
+                    await app2.auth().signOut();
+                    if (r.user && auth.currentUser && r.user.uid === auth.currentUser.uid) { showGemToast(0, '지금 연결된 계정과 같아요.', false); return; }
+                    showGemToast(0, `${newEmail}에는 이미 다른 킹스로드 기록이 있어요. 그 기록을 정리하려면 문의해 주세요.`, true);
+                    return;
+                }
+                const cred = r.credential;
+                await r.user.delete();   // 기록 없는 구글의 임시 로그인 — 지워야 이 기록에 붙일 수 있다
+                await auth.currentUser.unlink('google.com');
+                try {
+                    await auth.currentUser.linkWithCredential(cred);
+                } catch (e2) {
+                    _updateGoogleLinkUI();
+                    showGemToast(0, 'Google 연결이 풀렸어요 — 「Google 계정 연결하기」로 다시 연결해 주세요. (' + (e2.code || e2.message) + ')', true);
+                    return;
+                }
+                _updateGoogleLinkUI();
+                showGemToast(0, `✅ 이제 ${newEmail}로 이 기록에 들어올 수 있어요.`, false);
+            } catch (e) {
+                if (e && e.code === 'auth/popup-closed-by-user') return;
+                showGemToast(0, 'Google 바꾸기 실패: ' + (e.message || e.code), true);
+            } finally {
+                try { if (app2) await app2.auth().signOut(); } catch (e) { }
+            }
+        });
+}
 function _updateGoogleLinkUI() {
     const linked = isGoogleLinked();
 
@@ -23686,6 +23776,7 @@ function _updateGoogleLinkUI() {
     // 기기 변경 모달: 연결됐을 때 "다른 기기 데이터 불러오기" 버튼 표시
     const loadBtn = document.getElementById('google-load-from-server-btn');
     if (loadBtn) loadBtn.style.display = linked ? 'block' : 'none';
+    ['google-switch-btn', 'google-change-btn'].forEach(id => { const b = document.getElementById(id); if (b) b.style.display = linked ? 'block' : 'none'; });   // 🔄·✏️ (10/10)
 
     // 홈 화면 상단 고정 버튼 — 연결 전에만 표시
     const homeBtn = document.getElementById('google-home-link-btn');
@@ -23802,6 +23893,12 @@ function openDataSettings() {
                     </button>
                     <button id="google-load-from-server-btn" onclick="forceLoadFromServer()" style="display:none; width:100%; margin-top:8px; background:#1a73e8; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:0.95rem;">
                         ☁️ 다른 기기 데이터 불러오기
+                    </button>
+                    <button id="google-switch-btn" onclick="switchGoogleRecord()" style="display:none; width:100%; margin-top:8px; background:white; color:#1a73e8; border:1px solid #4285f4; padding:10px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:0.9rem;">
+                        🔄 다른 Google 계정으로 들어가기
+                    </button>
+                    <button id="google-change-btn" onclick="changeLinkedGoogle()" style="display:none; width:100%; margin-top:8px; background:white; color:#5f6b7a; border:1px solid #c5ccd6; padding:10px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:0.9rem;">
+                        ✏️ 이 기록의 Google 바꾸기
                     </button>
                 </div>
 
