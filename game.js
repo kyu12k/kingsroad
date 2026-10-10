@@ -3419,6 +3419,7 @@ loadGameData = function () {
         if (parsed.dailyRecite && typeof parsed.dailyRecite === 'object' && parsed.dailyRecite.anchorVerse) dailyRecite = parsed.dailyRecite;
         if (parsed.dailyReciteDone && typeof parsed.dailyReciteDone === 'object') dailyReciteDone = parsed.dailyReciteDone;
         if (parsed.dailyLog && typeof parsed.dailyLog === 'object') dailyLog = parsed.dailyLog;
+        if (parsed.featLog && typeof parsed.featLog === 'object') featLog = parsed.featLog;
         if (typeof parsed.dailyWeekDone === 'string') dailyWeekDone = parsed.dailyWeekDone;
         if (parsed.guideInfo && typeof parsed.guideInfo === 'object') guideInfo = { passedAt: parsed.guideInfo.passedAt || 0, grads: parsed.guideInfo.grads || 0 };
         if (parsed.guideRel && typeof parsed.guideRel === 'object' && parsed.guideRel.g) guideRel = Object.assign({ g: '', gn: '', st: '', since: 0, days: [] }, parsed.guideRel);
@@ -13403,6 +13404,7 @@ function saveGameData() {
         dailyRecite: dailyRecite,         // 오늘의 암송 개인 진도 (null = 교회 진도)
         dailyReciteDone: dailyReciteDone, // 오늘의 암송 완료일 → ts
         dailyLog: (() => { try { _dailyLogSync(); } catch (e) { } return dailyLog; })(),   // 📖 암송 일지
+        featLog: (() => { try { return featLog; } catch (e) { return undefined; } })(),   // 📈 기능 이용률
         dailyWeekDone: dailyWeekDone,     // 오늘의 암송 주간 완료 주차
         returnBoost: returnBoost,         // 돌아온 순례자 — 보석 2배 기간과 효과 기록
         guideInfo: guideInfo,             // 인도자 — 시험 통과·함께 정착한 사람 수(빨간 열매)
@@ -13694,6 +13696,15 @@ function _mergeEventProgress(target, other) {
         for (const day of Object.keys(ol)) {
             if (typeof ol[day] !== 'string') continue;
             if (sc(ol[day]) > sc(target.dailyLog[day])) { target.dailyLog[day] = ol[day]; took++; }
+        }
+    }
+    const of = other.featLog;   // 📈 기능 이용률 — 날마다 칸마다 큰 쪽
+    if (of && typeof of === 'object') {
+        if (!target.featLog || typeof target.featLog !== 'object') target.featLog = {};
+        for (const day of Object.keys(of)) {
+            const o = of[day]; if (!o || typeof o !== 'object') continue;
+            const t0 = target.featLog[day] || (target.featLog[day] = {});
+            for (const k of Object.keys(o)) if ((o[k] | 0) > (t0[k] | 0)) t0[k] = o[k] | 0;
         }
     }
     if (typeof other.dailyWeekDone === 'string' && other.dailyWeekDone > (target.dailyWeekDone || '')) {
@@ -19458,6 +19469,19 @@ function _noteDailyDone(ev) {
    "하루 암송 기록이 모여서 남으면 좋겠다 — 스크린샷으로 '이렇게 꾸준히 성실하게 암송했다'를 자랑할 수 있게. 한 달치, 22장 치(하루 3절이면 5개월쯤)".
    기록: dailyLog[6시 날짜] = '절,절,절|단계' — eventProgress('daily:날짜')에서 옮겨 적는다(그건 60일이면 지워진다). 완료는 dailyReciteDone.
    화면: 한 달(달력) · 여정(22장 칩 + 날마다 칸). 진도일·쉬는 날은 달력(dailySchedule), 없으면 일요일만 쉼 */
+/* 📈 기능 이용률 (10/11 사용자: "기억하시나요 퀴즈·저장한 구절 — 일주일 뒤 이용률을 보고 여차하면 뺀다")
+   featLog[6시 날짜] = { qs 퀴즈 뜸 · qn 답함 · qo 맞힘 · sv 구절 저장 · ss 저장한 구절 열기 · sn 답함 · so 맞힘 · sc 저장해 둔 절 수 }. 60일 보관 */
+let featLog = {};
+function _featNote(k) {
+    try {
+        const day = _get6AMDayStr(), d = featLog[day] || (featLog[day] = {});
+        d[k] = (d[k] | 0) + 1;
+        try { const sv = JSON.parse(localStorage.getItem('kingsRoad_savedVerses') || '[]'); if (Array.isArray(sv)) d.sc = sv.length; } catch (e) { }
+        const cut = _shift6AMDayStr(day, -60);
+        for (const x of Object.keys(featLog)) if (x < cut) delete featLog[x];
+        if (typeof saveGameData === 'function') saveGameData();
+    } catch (e) { }
+}
 function _dailyLogSync() {
     for (const k of Object.keys(eventProgress || {})) {
         if (!k.startsWith('daily:')) continue;
@@ -32732,6 +32756,7 @@ function renderGuidePage() {
         if (overlay) overlay.style.display = 'flex';
 
         populateChapterSelect();
+        if (typeof _featNote === 'function') _featNote('qs');
 
         var stageId = eligible[Math.floor(Math.random() * eligible.length)];
         _currentQuizStageId = stageId;
@@ -32793,6 +32818,7 @@ function renderGuidePage() {
         var correctChapter = parseInt(parts[0]);
         var correctVerse = parseInt(parts[1]);
         var isCorrect = (selectedChapter === correctChapter && selectedVerse === correctVerse);
+        if (typeof _featNote === 'function') { _featNote('qn'); if (isCorrect) _featNote('qo'); }
 
         // 뒷면 채우기
         var vd = bibleData[correctChapter] && bibleData[correctChapter][correctVerse - 1];
@@ -32884,6 +32910,7 @@ function renderGuidePage() {
         if (idx === -1) {
             saved.push(id);
             setSavedVerses(saved);
+            if (typeof _featNote === 'function') _featNote('sv');
             if (btn) { btn.textContent = '🔖 저장됨'; btn.style.color = '#f1c40f'; btn.style.borderColor = '#f1c40f'; }
         } else {
             saved.splice(idx, 1);
@@ -33006,6 +33033,7 @@ function renderGuidePage() {
         if (!overlay) return;
         overlay.style.display = 'flex';
         _savedQuizUsed = [];
+        if (typeof _featNote === 'function') _featNote('ss');
         if (saved.length === 0) {
             if (qPanel) qPanel.style.display = 'none';
             if (emptyEl) emptyEl.style.display = '';
@@ -33022,6 +33050,7 @@ function renderGuidePage() {
         var correctChapter = parseInt(_currentSavedQuizId.split('-')[0]);
         var correctVerse = parseInt(_currentSavedQuizId.split('-')[1]);
         var isCorrect = (_savedQuizChapter === correctChapter && _savedQuizVerse === correctVerse);
+        if (typeof _featNote === 'function') { _featNote('sn'); if (isCorrect) _featNote('so'); }
 
         var vd = bibleData[correctChapter] && bibleData[correctChapter][correctVerse - 1];
         document.getElementById('saved-quiz-back-verse').textContent = '“' + (vd ? vd.text : '') + '”';
