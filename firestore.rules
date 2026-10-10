@@ -174,5 +174,33 @@ service cloud.firestore {
                               && request.resource.data.attempts.size() <= 3000;
       }
     }
+
+    // 💌 서로에게 보내는 편지 (2026-10-11) — 누구나 보내고(검토 대기), 관리자(#8648)가 게시·반려. 게시된 것만 모두 읽는다.
+    // 🙏 힘이 됐어요 = likes/{uid} 문서를 만들면서 likes를 정확히 +1 (한 사람 한 번)
+    match /letters/{id} {
+      function letterAdmin() { return request.auth != null && request.auth.uid == '3fHRAeDquYOqw8pqDZBwEemwJH72'; }
+      allow read: if resource.data.status == 'approved' || letterAdmin() || (request.auth != null && resource.data.uid == request.auth.uid);
+      allow create: if request.auth != null
+                    && request.resource.data.keys().hasOnly(['text', 'kind', 'nick', 'tag', 'uid', 'createdAt', 'status', 'likes'])
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.likes == 0
+                    && request.resource.data.createdAt == request.time
+                    && request.resource.data.text is string && request.resource.data.text.size() >= 5 && request.resource.data.text.size() <= 300
+                    && request.resource.data.kind in ['tip', 'cheer']
+                    && request.resource.data.nick is string && request.resource.data.nick.size() <= 30;
+      allow update: if letterAdmin()
+                    || (request.auth != null
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])
+                        && request.resource.data.likes == resource.data.likes + 1
+                        && resource.data.status == 'approved'
+                        && !exists(/databases/$(database)/documents/letters/$(id)/likes/$(request.auth.uid))
+                        && existsAfter(/databases/$(database)/documents/letters/$(id)/likes/$(request.auth.uid)));
+      allow delete: if letterAdmin();
+      match /likes/{u} {
+        allow read: if request.auth != null && request.auth.uid == u;
+        allow create: if request.auth != null && request.auth.uid == u;
+      }
+    }
   }
 }

@@ -7689,3 +7689,36 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 @media (hover: hover) and (pointer: fine) {
   .nj3d-keyhelp { display: block; position: absolute; left: 18px; bottom: calc(144px + env(safe-area-inset-bottom, 0px)); padding: 4px 10px; border-radius: 8px; background: rgba(12, 18, 30, .55); color: #e8edf5; font-size: .78rem; font-weight: 600; pointer-events: none; white-space: nowrap; }
 }
+
+/* 💌 서로에게 보내는 편지 (10/11) */
+#letter-overlay, #letter-write { align-items: center; justify-content: center; }
+.letter-card { width: min(440px, calc(100vw - 24px)); box-sizing: border-box; margin: auto; max-height: 92vh; overflow-y: auto; background: linear-gradient(180deg, #fdf8ee 0%, #f6efe0 100%); border: 1px solid #e3d3ad; border-radius: 18px; padding: 18px 16px 14px; color: #3d3222; box-shadow: 0 20px 50px rgba(0, 0, 0, .45); }
+.letter-head { text-align: center; margin-bottom: 12px; }
+.letter-title { font-family: 'Gowun Dodum', serif; font-size: 1.35rem; color: #8a5300; }
+.letter-intro { font-size: .86rem; color: #7a6a52; margin-top: 4px; line-height: 1.5; }
+.letter-write-btn { display: block; width: 100%; padding: 11px; border-radius: 12px; border: 1px solid #c98a12; background: #fdf1d6; color: #8a5300; font-size: .95rem; font-weight: 800; cursor: pointer; }
+.letter-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
+.letter-tabs button { padding: 8px; border-radius: 10px; border: 1px solid #d9c9a3; background: none; color: #7a6a52; font-size: .85rem; cursor: pointer; }
+.letter-tabs button.on { background: #8a5300; color: #fff; border-color: #8a5300; font-weight: 700; }
+.letter-list { display: grid; gap: 10px; margin-top: 12px; }
+.letter-empty { text-align: center; color: #9a8a70; font-size: .9rem; padding: 18px 0; }
+.lt-letter { background: #fffdf8; border: 1px solid #eadfc6; border-radius: 12px; padding: 12px 14px; box-shadow: 0 2px 6px rgba(120, 90, 30, .08); }
+.lt-letter-kind { font-size: .75rem; color: #a07a30; font-weight: 700; margin-bottom: 4px; }
+.lt-letter-text { font-family: 'Gowun Dodum', serif; font-size: 1rem; line-height: 1.65; color: #3d3222; white-space: normal; word-break: keep-all; }
+.lt-letter-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.lt-letter-nick { font-size: .82rem; color: #8a7a60; }
+.lt-letter-like { border: 1px solid #e0cfa6; background: #fff7e6; color: #8a5300; border-radius: 999px; padding: 4px 10px; font-size: .8rem; cursor: pointer; }
+.lt-letter-like.on { background: #8a5300; color: #fff; border-color: #8a5300; cursor: default; }
+.lt-letter-admin { display: flex; gap: 6px; margin-top: 8px; }
+.lt-letter-admin button { flex: 1; padding: 7px; border-radius: 8px; border: 1px solid #d9c9a3; background: #fff; cursor: pointer; font-weight: 700; color: #5a4a30; }
+.letter-close { display: block; width: 100%; margin-top: 12px; padding: 9px; border-radius: 10px; border: none; background: rgba(0, 0, 0, .06); color: #5a4a30; cursor: pointer; }
+.letter-kinds { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+.letter-kinds button { padding: 9px; border-radius: 10px; border: 1px solid #d9c9a3; background: #fff; color: #7a6a52; cursor: pointer; font-size: .9rem; }
+.letter-kinds button.on { background: #fdf1d6; border-color: #c98a12; color: #8a5300; font-weight: 800; }
+#letter-text { width: 100%; box-sizing: border-box; border: 1px solid #d9c9a3; border-radius: 10px; padding: 10px; font: inherit; font-size: .95rem; line-height: 1.6; background: #fffdf8; color: #3d3222; resize: vertical; }
+.letter-meta { display: flex; justify-content: space-between; gap: 8px; font-size: .78rem; color: #8a7a60; margin: 6px 2px 10px; }
+#letter-nudge { position: fixed; left: 50%; top: calc(14px + env(safe-area-inset-top, 0px)); transform: translate(-50%, -140%); width: min(420px, calc(100vw - 24px)); box-sizing: border-box; z-index: 10006; background: #fbf5e8; border: 1px solid #e3d3ad; border-radius: 16px; padding: 10px 12px 12px; box-shadow: 0 14px 34px rgba(0, 0, 0, .35); transition: transform .45s cubic-bezier(.2, .9, .3, 1.2); color: #3d3222; }
+#letter-nudge.on { transform: translate(-50%, 0); }
+.ln-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: .82rem; color: #8a5300; font-weight: 700; margin-bottom: 8px; }
+.ln-x { border: none; background: none; font-size: 1rem; color: #8a7a60; cursor: pointer; }
+.ln-more { display: block; width: 100%; margin-top: 8px; padding: 7px; border-radius: 10px; border: 1px solid #d9c9a3; background: none; color: #8a5300; font-size: .85rem; cursor: pointer; }

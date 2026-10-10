@@ -1109,6 +1109,15 @@ const LANG = {
         mission_daily_recite_title: '📅 오늘의 암송',
         mission_daily_recite_desc: '오늘 구절을 백지로 모두 써내기',
         daily_cam_btn: '🎥 촬영하기',
+        letter_title: '💌 서로에게 보내는 편지', letter_intro: '함께 암송하는 성도님들이 보낸 암송 꿀팁과 응원이에요.', letter_write_btn: '✍️ 편지 보내기',
+        letter_write_title: '✍️ 편지 보내기', letter_write_intro: '함께 암송하는 성도님들을 위한 암송 꿀팁과 응원의 메시지를 보내주세요. 충분한 검토 후에 게시판에 올라갑니다.',
+        letter_kind_tip: '💡 암송 꿀팁', letter_kind_cheer: '🙏 응원', letter_placeholder: '예) 처음엔 막막했는데, 일단 계속하니 어느새 늘어 있었어요…', letter_anon: '순례자',
+        letter_nick_note: '게시되면 내 닉네임 <b>{nick}</b>이(가) 함께 올라가요', letter_send: '보내기', letter_sent: '💌 보내 주셔서 감사합니다 — 검토 후 게시판에 올라가요',
+        letter_send_fail: '보내지 못했어요', letter_too_short: '조금만 더 적어 주세요', letter_daily_cap: '편지는 하루 {n}통까지 보낼 수 있어요',
+        letter_like: '힘이 됐어요', letter_loading: '불러오는 중…', letter_none: '아직 올라온 편지가 없어요 — 첫 편지를 보내 주세요', letter_more: '편지 더 보기',
+        letter_tab_list: '게시된 편지', letter_tab_pending: '검토 대기', letter_pending_none: '검토할 편지가 없어요', letter_approve: '✅ 게시', letter_reject: '✕ 반려', letter_approved: '게시했어요', letter_rejected: '반려했어요',
+        letter_nudge_first: '💌 처음엔 다들 막막해요 — 함께 암송하는 분의 편지', letter_nudge_stuck: '💌 막혀도 괜찮아요 — 함께 암송하는 분의 편지', letter_nudge_return: '💌 다시 오셨네요 — 함께 암송하는 분의 편지',
+        nav_letters: '서로에게 보내는 편지',
         dj_btn: '📖 내 암송 일지', dj_tab_month: '한 달', dj_tab_journey: '여정 전체', dj_eyebrow: '킹스로드 · 오늘의 암송 일지', dj_pilgrim: '순례자',
         dj_month_sub: '날마다 켠 등불', dj_journey_sub: '{d}부터 걸어온 길', dj_st_done: '암송한 날 / {n}일', dj_st_verses: '외운 절', dj_st_verses404: '외운 절 / 404', dj_st_streak: '연속',
         dj_lg_done: '다 함', dj_lg_part: '조금', dj_lg_miss: '못 함', dj_lg_rest: '쉬는 날',
@@ -2388,6 +2397,15 @@ const LANG = {
         mission_daily_recite_title: '📅 Verses of the Day',
         mission_daily_recite_desc: 'Write all of today\'s verses from a blank page',
         daily_cam_btn: '🎥 Record',
+        letter_title: '💌 Letters to one another', letter_intro: 'Memorization tips and encouragement from fellow believers.', letter_write_btn: '✍️ Send a letter',
+        letter_write_title: '✍️ Send a letter', letter_write_intro: 'Send memorization tips and words of encouragement to those memorizing with you. Letters are posted after review.',
+        letter_kind_tip: '💡 Tip', letter_kind_cheer: '🙏 Encouragement', letter_placeholder: 'e.g. It felt hopeless at first, but I kept going and got better…', letter_anon: 'Pilgrim',
+        letter_nick_note: 'If posted, your nickname <b>{nick}</b> is shown with it', letter_send: 'Send', letter_sent: '💌 Thank you — it will be posted after review',
+        letter_send_fail: 'Could not send', letter_too_short: 'Please write a little more', letter_daily_cap: 'You can send up to {n} letters a day',
+        letter_like: 'Encouraged me', letter_loading: 'Loading…', letter_none: 'No letters yet — send the first one', letter_more: 'More letters',
+        letter_tab_list: 'Posted', letter_tab_pending: 'To review', letter_pending_none: 'Nothing to review', letter_approve: '✅ Post', letter_reject: '✕ Reject', letter_approved: 'Posted', letter_rejected: 'Rejected',
+        letter_nudge_first: '💌 Everyone feels lost at first — a letter from a fellow believer', letter_nudge_stuck: '💌 It is okay to get stuck — a letter from a fellow believer', letter_nudge_return: '💌 Welcome back — a letter from a fellow believer',
+        nav_letters: 'Letters to one another',
         dj_btn: '📖 My recitation journal', dj_tab_month: 'Month', dj_tab_journey: 'Whole journey', dj_eyebrow: "King\u2019s Road · Daily recitation journal", dj_pilgrim: 'Pilgrim',
         dj_month_sub: 'Lamps lit day by day', dj_journey_sub: 'The road since {d}', dj_st_done: 'days recited / {n}', dj_st_verses: 'verses', dj_st_verses404: 'verses / 404', dj_st_streak: 'streak',
         dj_lg_done: 'all', dj_lg_part: 'some', dj_lg_miss: 'missed', dj_lg_rest: 'rest day',
@@ -13136,6 +13154,8 @@ function clearCheckpoint() {
 
 /* [수정] 게임 종료/포기 (나가기 시 밀린 팝업 확인 기능 추가) */
 function quitGame(destination = 'map') {
+    if ((window._sessFails || 0) >= 3) { window._sessFails = 0; setTimeout(() => { if (typeof _letterNudge === 'function') _letterNudge('stuck'); }, 1400); }   // 💌 크게 막힌 판 뒤에 한 장
+    window._sessFails = 0;
     { const _lt = (window.isHardshipMode && hardshipState && hardshipState.levelTest) || 0;   // 🎓 끝냈든 중간에 나갔든 결과를 보여준다
       if (_lt) { destination = 'map'; setTimeout(() => _ltShowResult(_lt), 450); } }
     const targetScreen = (destination === 'home') ? 'home' : 'map';
@@ -13983,7 +14003,8 @@ async function initFirestoreSync() {
         await _initFirestoreSyncCore();
     } finally {
         window._initSyncDone = true;   // 이 뒤의 '낡은 쓰기' 거절만 배너로 알린다(그 전 것은 방금 끝난 초기 동기화가 합쳐 올렸다)
-        try { if (typeof splashReady === 'function') setTimeout(splashReady, 300); } catch (e) { }   // ⏳ 서버 기록을 받아 왔다 — 시작 화면을 연다(화면이 한 번 다시 그려질 틈)
+        try { if (typeof splashReady === 'function') setTimeout(splashReady, 300); } catch (e) { }
+        try { if (typeof _letterReturnCheck === 'function') _letterReturnCheck(); } catch (e) { }   // 💌 3일+ 쉬고 돌아옴   // ⏳ 서버 기록을 받아 왔다 — 시작 화면을 연다(화면이 한 번 다시 그려질 틈)
         try { _checkReturnBoost(); _renderReturnFloat(); } catch (e) { console.warn('[returnBoost]', e); }
         try { _guideSync(); } catch (e) {}   // 인도자와 동행 — 서버 상태
         try { await ensureTagAssigned(); } catch (e) { /* 조용히 */ }
@@ -21043,6 +21064,137 @@ function closeMoreMenu() {
 
 function openShopFromMenu() { closeMoreMenu(); openFieldScreen(); }
 function openAchievementFromMenu() { closeMoreMenu(); openAchievement(); }
+/* ══ 💌 서로에게 보내는 편지 (2026-10-11 사용자) ══════════════════════════════════════════
+   "잘 모르겠어도 일단 계속하면 실력이 는다 — 그런데 처음엔 막막하고, 시간이 지나면 잊는다. 자주 상기시켜야."
+   그리스도인은 섬기는 마음이 크니 「나에게」보다 「서로에게」. 암송 꿀팁·응원을 보내면 **관리자가 검토한 뒤 게시**(승인제).
+   Firestore letters/{id} = { text, kind:'tip'|'cheer', nick, tag, uid, createdAt, status:'pending'|'approved'|'rejected', likes }
+   · 🙏 힘이 됐어요 = letters/{id}/likes/{uid} + likes +1 (규칙이 한 사람 한 번만)
+   · 막막한 순간에 한 장(_letterNudge): 크게 막힌 판(3절+) · 처음 들어가는 어려운 판(평생 한 번) · 3일+ 쉬고 돌아옴 — 모두 합쳐 하루 한 번 */
+const LETTER_ADMIN_UID = '3fHRAeDquYOqw8pqDZBwEemwJH72';   // #8648 — 승인은 이 계정만(firestore.rules와 같다)
+const LETTER_MAX = 300, LETTER_DAILY_SEND = 3;
+let _letterCache = null, _letterCacheAt = 0;
+function _letterIsAdmin() { try { return !!(auth && auth.currentUser && auth.currentUser.uid === LETTER_ADMIN_UID); } catch (e) { return false; } }
+function _lsGet(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
+function _lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } }
+async function _letterLoad(force) {
+    if (!force && _letterCache && Date.now() - _letterCacheAt < 10 * 60 * 1000) return _letterCache;
+    if (typeof db === 'undefined' || !db) return _letterCache || [];
+    try {
+        const q = await db.collection('letters').where('status', '==', 'approved').orderBy('createdAt', 'desc').limit(60).get();
+        _letterCache = q.docs.map(d => Object.assign({ id: d.id }, d.data())); _letterCacheAt = Date.now();
+    } catch (e) { console.warn('[letters] load', e); }
+    return _letterCache || [];
+}
+function _letterCardHtml(L, opts) {
+    const liked = (_lsGet('kingsRoad_letterLiked', []) || []).includes(L.id);
+    return `<div class="lt-letter" data-id="${escapeHtml(L.id)}">
+        <div class="lt-letter-kind">${L.kind === 'tip' ? t('letter_kind_tip') : t('letter_kind_cheer')}</div>
+        <div class="lt-letter-text">${escapeHtml(L.text || '').replace(/\n/g, '<br>')}</div>
+        <div class="lt-letter-foot"><span class="lt-letter-nick">— ${escapeHtml(L.nick || t('letter_anon'))}</span>
+            <button class="lt-letter-like${liked ? ' on' : ''}" ${liked ? 'disabled' : ''} onclick="_letterLike('${escapeHtml(L.id)}', this)">🙏 ${t('letter_like')} <b>${L.likes | 0}</b></button></div>
+        ${opts && opts.admin ? `<div class="lt-letter-admin"><button onclick="_letterJudge('${escapeHtml(L.id)}', 'approved')">${t('letter_approve')}</button><button onclick="_letterJudge('${escapeHtml(L.id)}', 'rejected')">${t('letter_reject')}</button></div>` : ''}
+    </div>`;
+}
+async function openLetterBoard(tab) {
+    if (typeof closeMoreMenu === 'function') { try { closeMoreMenu(); } catch (e) { } }
+    let ov = document.getElementById('letter-overlay');
+    if (!ov) { ov = document.createElement('div'); ov.id = 'letter-overlay'; ov.className = 'modal-overlay'; ov.style.zIndex = '10004'; ov.onclick = e => { if (e.target === ov) closeLetterBoard(); }; document.body.appendChild(ov); }
+    const admin = _letterIsAdmin();
+    ov.innerHTML = `<div class="letter-card" onclick="event.stopPropagation()">
+        <div class="letter-head"><div class="letter-title">${t('letter_title')}</div><div class="letter-intro">${t('letter_intro')}</div></div>
+        <button class="letter-write-btn" onclick="openLetterWrite()">${t('letter_write_btn')}</button>
+        ${admin ? `<div class="letter-tabs"><button class="${tab !== 'pending' ? 'on' : ''}" onclick="openLetterBoard('list')">${t('letter_tab_list')}</button><button class="${tab === 'pending' ? 'on' : ''}" onclick="openLetterBoard('pending')">${t('letter_tab_pending')} <b id="letter-pend-n"></b></button></div>` : ''}
+        <div class="letter-list" id="letter-list"><div class="letter-empty">${t('letter_loading')}</div></div>
+        <button class="letter-close" onclick="closeLetterBoard()">${t('btn_close')}</button></div>`;
+    ov.style.display = 'flex'; setTimeout(() => ov.classList.add('active'), 10);
+    const box = document.getElementById('letter-list');
+    if (admin && tab === 'pending') {
+        try {
+            const q = await db.collection('letters').where('status', '==', 'pending').orderBy('createdAt', 'desc').limit(50).get();
+            const arr = q.docs.map(d => Object.assign({ id: d.id }, d.data()));
+            box.innerHTML = arr.length ? arr.map(L => _letterCardHtml(L, { admin: true })).join('') : `<div class="letter-empty">${t('letter_pending_none')}</div>`;
+        } catch (e) { box.innerHTML = `<div class="letter-empty">${escapeHtml(String(e.message || e))}</div>`; }
+        return;
+    }
+    const arr = await _letterLoad(true);
+    if (!document.getElementById('letter-list')) return;
+    box.innerHTML = arr.length ? arr.map(L => _letterCardHtml(L)).join('') : `<div class="letter-empty">${t('letter_none')}</div>`;
+    if (admin) { try { const q = await db.collection('letters').where('status', '==', 'pending').orderBy('createdAt', 'desc').limit(50).get(); const el = document.getElementById('letter-pend-n'); if (el) el.textContent = q.size || ''; } catch (e) { } }
+}
+function closeLetterBoard() { const ov = document.getElementById('letter-overlay'); if (ov) { ov.classList.remove('active'); ov.style.display = 'none'; } }
+function openLetterWrite() {
+    let ov = document.getElementById('letter-write');
+    if (!ov) { ov = document.createElement('div'); ov.id = 'letter-write'; ov.className = 'modal-overlay'; ov.style.zIndex = '10005'; ov.onclick = e => { if (e.target === ov) ov.style.display = 'none'; }; document.body.appendChild(ov); }
+    const nick = (typeof myNickname !== 'undefined' && myNickname) ? myNickname : t('letter_anon');
+    ov.innerHTML = `<div class="letter-card" onclick="event.stopPropagation()">
+        <div class="letter-head"><div class="letter-title">${t('letter_write_title')}</div><div class="letter-intro">${t('letter_write_intro')}</div></div>
+        <div class="letter-kinds"><button class="on" data-k="tip" onclick="_letterPickKind(this)">${t('letter_kind_tip')}</button><button data-k="cheer" onclick="_letterPickKind(this)">${t('letter_kind_cheer')}</button></div>
+        <textarea id="letter-text" maxlength="${LETTER_MAX}" rows="6" placeholder="${escapeHtml(t('letter_placeholder'))}" oninput="document.getElementById('letter-count').textContent=this.value.length"></textarea>
+        <div class="letter-meta"><span>${t('letter_nick_note', { nick: escapeHtml(nick) })}</span><span><b id="letter-count">0</b>/${LETTER_MAX}</span></div>
+        <button class="letter-write-btn" onclick="_letterSend()">${t('letter_send')}</button>
+        <button class="letter-close" onclick="document.getElementById('letter-write').style.display='none'">${t('btn_close')}</button></div>`;
+    ov.style.display = 'flex'; setTimeout(() => ov.classList.add('active'), 10);
+}
+function _letterPickKind(b) { b.parentNode.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); }
+async function _letterSend() {
+    const ta = document.getElementById('letter-text'), text = (ta && ta.value || '').trim();
+    if (text.length < 5) { showGemToast(0, t('letter_too_short'), true); return; }
+    const day = _get6AMDayStr(), sent = _lsGet('kingsRoad_letterSent', {}) || {};
+    if ((sent[day] | 0) >= LETTER_DAILY_SEND) { showGemToast(0, t('letter_daily_cap', { n: LETTER_DAILY_SEND }), true); return; }
+    const kb = document.querySelector('#letter-write .letter-kinds .on'), kind = kb ? kb.dataset.k : 'tip';
+    if (typeof db === 'undefined' || !db || !auth || !auth.currentUser) { showGemToast(0, t('alert_server_disconnect'), true); return; }
+    try {
+        await db.collection('letters').add({ text: text.slice(0, LETTER_MAX), kind, nick: String(myNickname || '').slice(0, 30), tag: String(myTag || ''), uid: auth.currentUser.uid,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(), status: 'pending', likes: 0 });
+        sent[day] = (sent[day] | 0) + 1; _lsSet('kingsRoad_letterSent', { [day]: sent[day] });
+        document.getElementById('letter-write').style.display = 'none';
+        showGemToast(0, t('letter_sent'), false);
+    } catch (e) { showGemToast(0, t('letter_send_fail') + ' (' + (e.code || e.message) + ')', true); }
+}
+async function _letterLike(id, btn) {
+    const liked = _lsGet('kingsRoad_letterLiked', []) || [];
+    if (liked.includes(id) || !auth || !auth.currentUser) return;
+    if (btn) { btn.disabled = true; btn.classList.add('on'); const b = btn.querySelector('b'); if (b) b.textContent = (parseInt(b.textContent, 10) || 0) + 1; }
+    liked.push(id); _lsSet('kingsRoad_letterLiked', liked.slice(-300));
+    try {
+        const ref = db.collection('letters').doc(id), lk = ref.collection('likes').doc(auth.currentUser.uid);
+        const batch = db.batch(); batch.set(lk, { at: firebase.firestore.FieldValue.serverTimestamp() }); batch.update(ref, { likes: firebase.firestore.FieldValue.increment(1) });
+        await batch.commit();
+        if (_letterCache) { const L = _letterCache.find(x => x.id === id); if (L) L.likes = (L.likes | 0) + 1; }
+    } catch (e) { console.warn('[letters] like', e.code || e); }   // 이미 누른 적 있음(다른 기기) 등 — 조용히
+}
+async function _letterJudge(id, status) {
+    if (!_letterIsAdmin()) return;
+    try {
+        await db.collection('letters').doc(id).update({ status, judgedAt: firebase.firestore.FieldValue.serverTimestamp() });
+        const card = document.querySelector(`.lt-letter[data-id="${id}"]`); if (card) card.remove();
+        showGemToast(0, status === 'approved' ? t('letter_approved') : t('letter_rejected'), false);
+        _letterCache = null;
+    } catch (e) { showGemToast(0, String(e.code || e.message), true); }
+}
+/* 막막한 순간에 한 장 — 하루 한 번(셋 합쳐), 같은 편지는 최근 다섯 장과 겹치지 않게 */
+async function _letterNudge(reason) {
+    const day = _get6AMDayStr();
+    if (_lsGet('kingsRoad_letterNudgeDay', '') === day) return;
+    const arr = await _letterLoad(false); if (!arr.length) return;
+    const seen = _lsGet('kingsRoad_letterSeen', []) || [];
+    const pool = arr.filter(L => !seen.includes(L.id)), pick = (pool.length ? pool : arr)[Math.floor(Math.random() * (pool.length || arr.length))];
+    _lsSet('kingsRoad_letterNudgeDay', day); _lsSet('kingsRoad_letterSeen', seen.concat([pick.id]).slice(-5));
+    let el = document.getElementById('letter-nudge');
+    if (!el) { el = document.createElement('div'); el.id = 'letter-nudge'; document.body.appendChild(el); }
+    el.innerHTML = `<div class="ln-head">${t('letter_nudge_' + reason)}<button class="ln-x" onclick="document.getElementById('letter-nudge').classList.remove('on')">✕</button></div>
+        ${_letterCardHtml(pick)}
+        <button class="ln-more" onclick="document.getElementById('letter-nudge').classList.remove('on'); openLetterBoard()">${t('letter_more')}</button>`;
+    setTimeout(() => el.classList.add('on'), 30);
+}
+function _letterReturnCheck() {   // 3일 넘게 쉬었다 돌아왔으면
+    const today = _get6AMDayStr(), last = _lsGet('kingsRoad_lastOpenDay', '');
+    _lsSet('kingsRoad_lastOpenDay', today);
+    if (!last || last >= today) return;
+    const [y1, m1, d1] = last.split('-').map(Number), [y2, m2, d2] = today.split('-').map(Number);
+    const gap = Math.round((new Date(y2, m2 - 1, d2) - new Date(y1, m1 - 1, d1)) / 864e5);
+    if (gap >= 3) setTimeout(() => _letterNudge('return'), 2500);
+}
 function openMemoryReportFromMenu() { closeMoreMenu(); openOilScreen(); }   // 🪔 암기 리포트 → 내 암송(10/9). 옛 리포트 openMemoryReport()는 남겨 둔다
 function openSavedVersesFromMenu() { closeMoreMenu(); if (typeof openSavedVersesQuiz === 'function') openSavedVersesQuiz(); }
 
@@ -29626,6 +29778,11 @@ function loadNextHardshipVerse() {
     hardshipState.strongAvail = false; hardshipState.strongHint = false; hardshipState.lastTypeAt = 0;   // 🔑 강한 힌트 — 절마다 다시 얻는다
     hardshipState._redCnt = {}; hardshipState._redValid = {}; hardshipState._redNow = new Set();   // 🟥 빨간 칸 — 절마다
     if (hardshipState.levelTest) hardshipState.ultimateMemoryMode = true;
+    window._sessFails = 0;
+    if (hardshipState.ultimateMemoryMode && !hardshipState.trainingMode) {   // 💌 처음 들어가는 어려운 판 — 판마다 평생 한 번
+        const fk = 'kingsRoad_letterFirst_' + (hardshipState.levelTest ? 'lt' : 'blank');
+        if (!_lsGet(fk, false)) { _lsSet(fk, true); setTimeout(() => { if (typeof _letterNudge === 'function') _letterNudge('first'); }, 1500); }
+    }
 
     if (hardshipState.currentVerse) {
         hardshipState.memorySlots = getHardshipActiveText(hardshipState.currentVerse).split('').map(character => {
@@ -31233,6 +31390,7 @@ function _hardshipRecallCtx() {
 
 function recordVerseRecall(stageId, ok, hints, mode, extra) {
     if (!stageId) return;
+    if (!ok && hardshipState && hardshipState.ultimateMemoryMode && !hardshipState.trainingMode) window._sessFails = (window._sessFails || 0) + 1;   // 💌 크게 막힌 판
     // 집중 훈련은 학습 보조라 증거로 세지 않는다 — 일지에는 표시(tr)를 달아 남긴다(연구 재료)
     if (hardshipState && hardshipState.trainingMode) {
         _logRecallAttempt(stageId, ok, hints, mode, extra, verseRecall[stageId] || null, true);
