@@ -1109,6 +1109,7 @@ const LANG = {
         mission_daily_recite_title: '📅 오늘의 암송',
         mission_daily_recite_desc: '오늘 구절을 백지로 모두 써내기',
         daily_cam_btn: '🎥 촬영하기',
+        first_try_stat: '🌱 처음엔 다들 오래 걸려요 — 한 장을 처음 할 때 절마다 평균 <b>1분 47초</b>, 세 번째엔 <b>1분 6초</b>, 다섯 번째부터는 <b>53초</b>로 절반이 돼요',
         growth_head: '💪 처음({d})과 비교하면', growth_hints: '힌트 {a} → <b>{b}</b>', growth_correct: '맞힌 절 {a} → <b>{b}</b>', growth_time: '시간 {a} → <b>{b}</b>',
         growth_smooth: '술술 {a}절 → <b>{b}절</b>', growth_blank: '백지로 나온 절 {a} → <b>{b}</b>', growth_harder: '오늘은 처음보다 힘들었어요 — 그래도 꺼내 본 만큼 남아요',
         growth_seed: '🌱 오늘 막힌 절이 내일 가장 오래 남을 절이에요 — 애써 떠올린 기억이 더 단단해져요',
@@ -2400,6 +2401,7 @@ const LANG = {
         mission_daily_recite_title: '📅 Verses of the Day',
         mission_daily_recite_desc: 'Write all of today\'s verses from a blank page',
         daily_cam_btn: '🎥 Record',
+        first_try_stat: '🌱 Everyone is slow at first — on a first full-chapter try it takes <b>1m 47s</b> per verse, <b>1m 6s</b> by the third, and <b>53s</b> from the fifth on: half the time',
         growth_head: '💪 Since your first try ({d}):', growth_hints: 'hints {a} → <b>{b}</b>', growth_correct: 'correct {a} → <b>{b}</b>', growth_time: 'time {a} → <b>{b}</b>',
         growth_smooth: 'smooth {a} → <b>{b}</b>', growth_blank: 'written blank {a} → <b>{b}</b>', growth_harder: 'Harder than your first try today — what you reached for still stays',
         growth_seed: '🌱 The verses you got stuck on today are the ones that will last longest — effortful recall makes memory stronger',
@@ -26491,7 +26493,7 @@ function _positionReadAloudToast(toast) {
     toast.style.bottom = 'auto';
 }
 
-function showReadAloudToast(message = "🗣️ 소리 내어 읽으면 기억에 2배 더 오래 남아요!") {
+function showReadAloudToast(message = "🗣️ 소리 내어 읽으면 기억에 2배 더 오래 남아요!", ms) {
     const toast = document.getElementById('read-aloud-toast');
     if (!toast) return;
 
@@ -26508,7 +26510,7 @@ function showReadAloudToast(message = "🗣️ 소리 내어 읽으면 기억에
     // 3초 뒤에 스르륵 사라짐
     toastTimeout = setTimeout(() => {
         toast.classList.remove('show');
-    }, 1500);
+    }, ms || 1500);
 }
 // 🌟 [핵심 수술] 유저가 앱을 껐다가 다시 화면으로 돌아올 때마다 날짜 검사!
 document.addEventListener("visibilitychange", () => {
@@ -29719,6 +29721,11 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
             icon: modeMeta.icon,
             title: hardshipState.displayTitle || modeMeta.title
         }));
+        /* 🌱 이 장의 망각의 고난(또는 장 전체 레벨 테스트)이 처음이면 — 다른 성도들의 실제 기록(10/11, fa/nth_memory.js · 50명 270장):
+           절마다 첫 번째 1분 47초 → 세 번째 1분 6초 → 다섯 번째부터 53초, 맞힌 비율 94% → 99% */
+        { const ch = hardshipState.forcedChapter != null ? hardshipState.forcedChapter : (hardshipState.levelTest && hardshipState.ltFull ? hardshipState.levelTest : null);
+          if (ch != null && mode === 'memory' && hardshipState.ultimateMemoryMode && (hardshipState.isRandomOrder || hardshipState.levelTest) && !hardshipState.trainingMode
+              && !(hardshipMemoryClearHistory[ch] || []).length) setTimeout(() => showReadAloudToast(t('first_try_stat'), 7000), 2000); }
     }
 
     if (window._hardshipEnterHandler) {
