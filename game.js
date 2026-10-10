@@ -13162,7 +13162,10 @@ function clearCheckpoint() {
 
 /* [수정] 게임 종료/포기 (나가기 시 밀린 팝업 확인 기능 추가) */
 function quitGame(destination = 'map') {
-    if ((window._sessFails || 0) >= 3) { window._sessFails = 0; setTimeout(() => { if (typeof _letterNudge === 'function') _letterNudge('stuck'); }, 1400); }   // 💌 크게 막힌 판 뒤에 한 장
+    if (window._letterFirstPending || (window._sessFails || 0) >= 3) {   // 💌 처음 들어간 어려운 판 · 크게 막힌 판 — 마친 뒤에 한 장
+        const why = window._letterFirstPending ? 'first' : 'stuck'; window._letterFirstPending = false;
+        setTimeout(() => { if (typeof _letterNudge === 'function') _letterNudge(why); }, 1400);
+    }
     window._sessFails = 0;
     { const _lt = (window.isHardshipMode && hardshipState && hardshipState.levelTest) || 0;   // 🎓 끝냈든 중간에 나갔든 결과를 보여준다
       if (_lt) { destination = 'map'; setTimeout(() => _ltShowResult(_lt), 450); } }
@@ -26498,6 +26501,7 @@ function showReadAloudToast(message = "🗣️ 소리 내어 읽으면 기억에
     if (!toast) return;
 
     toast.innerHTML = message;
+    toast.classList.toggle('multi', String(message).replace(/<[^>]+>/g, '').length > 34);   // 긴 안내는 여러 줄로
     // 문구를 넣은 **뒤에** 재야 한다 — 높이가 내용에 따라 달라진다
     _positionReadAloudToast(toast);
     toast.classList.add('show');
@@ -29725,7 +29729,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
            절마다 첫 번째 1분 47초 → 세 번째 1분 6초 → 다섯 번째부터 53초, 맞힌 비율 94% → 99% */
         { const ch = hardshipState.forcedChapter != null ? hardshipState.forcedChapter : (hardshipState.levelTest && hardshipState.ltFull ? hardshipState.levelTest : null);
           if (ch != null && mode === 'memory' && hardshipState.ultimateMemoryMode && (hardshipState.isRandomOrder || hardshipState.levelTest) && !hardshipState.trainingMode
-              && !(hardshipMemoryClearHistory[ch] || []).length) setTimeout(() => showReadAloudToast(t('first_try_stat'), 7000), 2000); }
+              && !(hardshipMemoryClearHistory[ch] || []).length) setTimeout(() => showReadAloudToast(t('first_try_stat'), 7000), 4200); }   // 시작 안내·「막히면 힌트를」과 겹치지 않게 조금 뒤에
     }
 
     if (window._hardshipEnterHandler) {
@@ -29831,7 +29835,7 @@ function loadNextHardshipVerse() {
     window._sessFails = 0;
     if (hardshipState.ultimateMemoryMode && !hardshipState.trainingMode) {   // 💌 처음 들어가는 어려운 판 — 판마다 평생 한 번
         const fk = 'kingsRoad_letterFirst_' + (hardshipState.levelTest ? 'lt' : 'blank');
-        if (!_lsGet(fk, false)) { _lsSet(fk, true); setTimeout(() => { if (typeof _letterNudge === 'function') _letterNudge('first'); }, 1500); }
+        if (!_lsGet(fk, false)) { _lsSet(fk, true); window._letterFirstPending = true; }   // 편지는 판을 마친 뒤에(quitGame) — 쓰기 시작할 때 화면을 가리지 않게(10/11 확인)
     }
 
     if (hardshipState.currentVerse) {
