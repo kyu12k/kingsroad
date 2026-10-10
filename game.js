@@ -1113,6 +1113,8 @@ const LANG = {
         growth_head: '💪 처음({d})과 비교하면', growth_hints: '힌트 {a} → <b>{b}</b>', growth_correct: '맞힌 절 {a} → <b>{b}</b>', growth_time: '시간 {a} → <b>{b}</b>',
         growth_smooth: '술술 {a}절 → <b>{b}절</b>', growth_blank: '백지로 나온 절 {a} → <b>{b}</b>', growth_harder: '오늘은 처음보다 힘들었어요 — 그래도 꺼내 본 만큼 남아요',
         growth_seed: '🌱 오늘 막힌 절이 내일 가장 오래 남을 절이에요 — 애써 떠올린 기억이 더 단단해져요',
+        together_home: '🙏 이번 주 <b>{n}명</b>이 함께 암송했어요 · 함께 암송한 절 <b>{v}</b>',
+        together_letter: '🙏 이번 주 <b>{n}명</b>이 함께 암송하고 있어요 — 그분들께 한마디 건네 보세요',
         letter_title: '💌 서로에게 보내는 편지', letter_intro: '함께 암송하는 성도님들이 보낸 암송 꿀팁과 응원이에요.', letter_write_btn: '✍️ 편지 보내기',
         letter_write_title: '✍️ 편지 보내기', letter_write_intro: '함께 암송하는 성도님들을 위한 암송 꿀팁과 응원의 메시지를 보내주세요. 충분한 검토 후에 게시판에 올라갑니다.',
         letter_kind_tip: '💡 암송 꿀팁', letter_kind_cheer: '🙏 응원', letter_placeholder: '예) 처음엔 막막했는데, 일단 계속하니 어느새 늘어 있었어요…', letter_anon: '순례자',
@@ -2405,6 +2407,8 @@ const LANG = {
         growth_head: '💪 Since your first try ({d}):', growth_hints: 'hints {a} → <b>{b}</b>', growth_correct: 'correct {a} → <b>{b}</b>', growth_time: 'time {a} → <b>{b}</b>',
         growth_smooth: 'smooth {a} → <b>{b}</b>', growth_blank: 'written blank {a} → <b>{b}</b>', growth_harder: 'Harder than your first try today — what you reached for still stays',
         growth_seed: '🌱 The verses you got stuck on today are the ones that will last longest — effortful recall makes memory stronger',
+        together_home: '🙏 <b>{n}</b> people recited together this week · <b>{v}</b> verses',
+        together_letter: '🙏 <b>{n}</b> people are reciting together this week — say a word to them',
         letter_title: '💌 Letters to one another', letter_intro: 'Memorization tips and encouragement from fellow believers.', letter_write_btn: '✍️ Send a letter',
         letter_write_title: '✍️ Send a letter', letter_write_intro: 'Send memorization tips and words of encouragement to those memorizing with you. Letters are posted after review.',
         letter_kind_tip: '💡 Tip', letter_kind_cheer: '🙏 Encouragement', letter_placeholder: 'e.g. It felt hopeless at first, but I kept going and got better…', letter_anon: 'Pilgrim',
@@ -21137,11 +21141,13 @@ async function openLetterBoard(tab) {
     const admin = _letterIsAdmin();
     ov.innerHTML = `<div class="letter-card" onclick="event.stopPropagation()">
         <div class="letter-head"><div class="letter-title">${t('letter_title')}</div><div class="letter-intro">${t('letter_intro')}</div></div>
+        <div class="letter-together" id="letter-together">${_togetherHtml('letter')}</div>
         <button class="letter-write-btn" onclick="openLetterWrite()">${t('letter_write_btn')}</button>
         ${admin ? `<div class="letter-tabs"><button class="${tab !== 'pending' ? 'on' : ''}" onclick="openLetterBoard('list')">${t('letter_tab_list')}</button><button class="${tab === 'pending' ? 'on' : ''}" onclick="openLetterBoard('pending')">${t('letter_tab_pending')} <b id="letter-pend-n"></b></button></div>` : ''}
         <div class="letter-list" id="letter-list"><div class="letter-empty">${t('letter_loading')}</div></div>
         <button class="letter-close" onclick="closeLetterBoard()">${t('btn_close')}</button></div>`;
     ov.style.display = 'flex'; setTimeout(() => ov.classList.add('active'), 10);
+    _togetherLoad().then(() => { const el = document.getElementById('letter-together'); if (el) el.innerHTML = _togetherHtml('letter'); });
     const box = document.getElementById('letter-list');
     if (admin && tab === 'pending') {
         try {
@@ -33501,7 +33507,31 @@ function openReviewFromHome() {
     window._forceReviewPopup = true;   // 들어가자마자 복습 목록 (「오늘은 보지 않기」와 상관없이)
     if (activeMode === 'kings' && kingsRoadData.stepHistory.length) onClickKingsRoad(); else onClickFreeJourney();
 }
+/* 🙏 함께 암송하는 성도 (10/11 사용자: "함께 암송하는 사람들의 수를 알 수 있게")
+   서버 togetherStats가 6시간마다 stats/together에 { people 지난 7일 실제로 암송한 사람, verses 사람×절 } — 앱은 문서 하나만 읽고 3시간 담아 둔다.
+   전체 가입 수는 안 보인다(한 번 들어왔다 떠난 계정이 많아 "지금 함께"가 아니다). 다섯 명 아래면 숨긴다 */
+var _together = null, _togetherTried = 0;   // var — 초기화 중 먼저 불려도 TDZ 없이
+try { const c = JSON.parse(localStorage.getItem('kingsRoad_together') || 'null'); if (c && c.people) _together = c; } catch (e) { }
+function _togetherFresh() { return _together && Date.now() - (_together._got || 0) < 3 * 3600e3; }
+function _togetherLoad() {
+    if (_togetherFresh() || Date.now() - _togetherTried < 10 * 60e3 || typeof db === 'undefined' || !db) return Promise.resolve(_together);
+    _togetherTried = Date.now();
+    return db.collection('stats').doc('together').get().then(s => {
+        if (s.exists) { const d = s.data(); _together = { people: d.people | 0, verses: d.verses | 0, _got: Date.now() }; try { localStorage.setItem('kingsRoad_together', JSON.stringify(_together)); } catch (e) { } }
+        return _together;
+    }).catch(() => _together);
+}
+function _togetherHtml(kind) {
+    if (!_together || !(_together.people >= 5)) return '';
+    return t(kind === 'letter' ? 'together_letter' : 'together_home', { n: _together.people.toLocaleString(), v: _together.verses.toLocaleString() });
+}
+function renderHomeTogether() {
+    const paint = () => { const el = document.getElementById('home-together'); if (!el) return; const h = _togetherHtml('home'); el.innerHTML = h; el.style.display = h ? '' : 'none'; };
+    paint();
+    if (!_togetherFresh()) _togetherLoad().then(paint);
+}
 function renderHomeTodo() {
+    try { renderHomeTogether(); } catch (e) { }
     const el = document.getElementById('home-todo'), S = _todoSocial; if (!el || !S) return;
     let rev = 0, blank = 0;
     try { rev = getForgottenStages().length; } catch (e) { }

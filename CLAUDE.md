@@ -144,6 +144,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `openGuideScreen()` · `openGuideQuiz()` · `_guideSync()` · `_guideNoteDay()` · `_guideTryGraduate()` · `guideInfo`·`guideRel` | game.js:~29700 · kingsroad `guide*` | 🧭 인도자와 동행 — 시험(다 맞힐 때까지) → 인도자 코드, 초심자 신청·승낙, 정착 졸업(망각의 고난 한 장 + 4주 연속 주 3일) → 성 나무에 빨간 열매 (`docs/인도자와-동행.md`) |
 | `openDailyJournal(view)` · `_dailyLogSync()` · `dailyLog` · `_djMonthHtml` · `_djJourneyHtml` | game.js:~19280 | 📖 오늘의 암송 일지 — 날마다 한 절·단계를 400일 보관, 한 달 달력(등잔)·여정 전체(22장 칩 + 주×요일 칸), 스크린샷용 카드 (`docs/랭킹과-이벤트.md`) |
 | `openLetterBoard(tab)` · `openLetterWrite()` · `_letterNudge(reason)` · `_letterJudge` · `_letterLike` · `LETTER_ADMIN_UID` | game.js:~21050 | 💌 서로에게 보내는 편지 — 승인제 게시판(Firestore `letters`, 관리자 #8648), 막막한 순간 하루 한 장 (`docs/UX-결정기록.md`) |
+| `renderHomeTogether()` · `_togetherLoad()` · `_togetherHtml(kind)` · kingsroad `togetherStats` | game.js:~33500 · kingsroad/index.js | 🙏 이번 주 함께 암송한 성도 — 서버가 6시간마다 `stats/together`{people, verses}(지난 7일 실제 암송), 홈 「여정 시작」 아래 한 줄 · 편지 창 머리 (`docs/UX-결정기록.md`) |
 | `openDailyRecorder()` · `_camDrawLoop` · `_camBeautyFrame(v, w, h, amt)` · `_camDrawWithBg` | game.js:~17400 | 🎥 오늘의 암송 촬영 — 캔버스에 그려 녹화, 액자·WebGL 피부 보정(강도 `softAmt`)·배경 바꾸기 |
 | `SoundEffect` | game.js:~3987 | 효과음 신디사이저 — 종소리 `_note`, 출력 `_bus`, 잠든 오디오 깨우기 `_play`, 진동 `_buzz` |
 

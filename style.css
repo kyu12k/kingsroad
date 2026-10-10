@@ -7733,3 +7733,10 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 /* 긴 안내는 여러 줄로 (10/11 — 「처음엔 다들 오래 걸려요」가 한 줄이라 양쪽이 잘렸다) */
 #read-aloud-toast.multi { white-space: normal; width: min(380px, calc(100vw - 32px)); box-sizing: border-box; border-radius: 16px; line-height: 1.5; font-size: .9rem; padding: 12px 16px; }
 .lt-letter-tag { font-size: .75rem; color: #a89878; }
+
+/* 🙏 이번 주 함께 암송한 성도 (10/11) — 홈은 조용한 한 줄, 편지는 머리 아래 */
+.home-together { width: 95%; max-width: 360px; margin: 8px auto 0; text-align: center; font-size: .8rem; line-height: 1.45; color: #dfe6e9; opacity: .9; }
+.home-together b { color: #f1c40f; font-weight: 700; }
+.letter-together { font-size: .82rem; line-height: 1.45; text-align: center; margin: 2px 0 8px; opacity: .9; }
+.letter-together:empty { display: none; }
+.letter-together b { color: #a8650a; }

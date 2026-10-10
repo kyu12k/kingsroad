@@ -1361,6 +1361,29 @@ exports.seaGive = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     return out;
 });
 
+// 🙏 함께 암송하는 성도 (2026-10-11) — 6시간마다, 지난 7일 실제로 암송한 사람 수와 사람×절 수를 stats/together에.
+// 「암송했다」 = 절 클리어(lastClear) · 고난 기록 · 오늘의 암송 완료 · 레벨 테스트 중 하나라도. 앱을 열기만 한 사람은 세지 않는다
+async function computeTogether() {
+    const H = ['hardshipMemoryClearHistory', 'hardshipAddressClearHistory', 'hardshipVerseClearHistory', 'hardshipEnduranceClearHistory'];
+    const all = await db.collection('saves').select('lastClear', 'dailyReciteDone', 'levelTests', ...H).get();
+    const now = Date.now(), W = 7 * 864e5, cut = new Date(now - W + 9 * 3600e3).toISOString().slice(0, 10);
+    let people = 0, verses = 0;
+    all.forEach(d => {
+        const x = d.data(); let a = false;
+        for (const k in (x.lastClear || {})) if (/^\d+-\d+$/.test(k) && now - x.lastClear[k] < W) { verses++; a = true; }
+        if (!a) for (const f of H) for (const ch in (x[f] || {})) for (const r of (Array.isArray(x[f][ch]) ? x[f][ch] : [])) if (r && now - r.date < W) a = true;
+        if (!a && Object.keys(x.dailyReciteDone || {}).some(day => day > cut)) a = true;
+        if (!a) for (const ch in (x.levelTests || {})) for (const T of (Array.isArray(x.levelTests[ch]) ? x.levelTests[ch] : [])) if (T && now - T.at < W) a = true;
+        if (a) people++;
+    });
+    return { people, verses };
+}
+exports.togetherStats = onSchedule({ schedule: '0 0,6,12,18 * * *', timeZone: 'Asia/Seoul', region: 'asia-northeast3' }, async () => {
+    const r = await computeTogether();
+    await db.collection('stats').doc('together').set(Object.assign(r, { at: admin.firestore.FieldValue.serverTimestamp() }));
+    console.log(`[togetherStats] ${r.people}명 · ${r.verses}절`);
+});
+
 // 매주 월요일 06:00 KST — 가장 바깥의 맑은 물 일부가 다시 흐려진다.
 // 양은 지난 4주 동안 한 주에 맑힌 칸 평균의 30% (최소 2칸) — 사람이 늘어도 균형이 저절로 맞는다. 한 번 채운 단계(clearMax)와 나라는 그대로
 exports.seaWeekly = onSchedule({ schedule: '0 6 * * 1', timeZone: 'Asia/Seoul', region: 'asia-northeast3' }, async () => {
