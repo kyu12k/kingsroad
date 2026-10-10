@@ -30776,9 +30776,13 @@ function _strongCheck() {
     const probing = _redStats().ps === 1;   // 🟥 시작에서 더듬음(오타 한 번은 아님)
     if (startHints >= SH_START_HINTS || idle >= SH_IDLE_MS || probing) { hs.strongAvail = true; _syncStrongFab(); }
 }
+function _strongPast() {   // 첫 마디를 이미 지나 썼나 — 지나면 🔑는 쓸모가 없다(10/11 사용자). 지우고 돌아오면 다시 보인다
+    const hs = hardshipState, ph = _strongPhrase(); if (!ph) return true;
+    return String(hs.memoryTypedText || '').length >= _prefixTyped(ph).length;
+}
 function _syncStrongFab() {
     let b = document.getElementById('hardship-strong-fab');
-    const on = _strongEligible() && hardshipState.strongAvail;
+    const on = _strongEligible() && hardshipState.strongAvail && !_strongPast();
     if (!on) { if (b) b.style.display = 'none'; }
     else {
         if (!b) {
@@ -30852,7 +30856,18 @@ function ensureHardshipHintFabListeners() {
         pending = true;
         requestAnimationFrame(() => { pending = false; positionHardshipHintFab(); });
     };
+    // 키보드가 열려 화면이 줄면 버튼 줄이 위로 올라와 지금 칸을 덮는다 — 다 자리 잡은 뒤 지금 칸을 버튼 위로 다시 올린다(10/11 사용자 화면)
+    let rsT = 0;
+    const rescroll = () => {
+        clearTimeout(rsT);
+        rsT = setTimeout(() => {
+            const hs = typeof hardshipState !== 'undefined' ? hardshipState : null;
+            if (!window.isHardshipMode || !hs || !hs.active || hs.mode !== 'memory' || hs.isComposing) return;
+            _hsScrollToSlot(document.querySelector('#game-screen .char-slot.active'));
+        }, 250);
+    };
     if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', rescroll);
         window.visualViewport.addEventListener('resize', reposition);
         window.visualViewport.addEventListener('scroll', reposition);
     }
@@ -31188,6 +31203,7 @@ function updateHardshipMemoryBoard() {
     }
 
     armHardshipHintNudge();
+    if (hardshipState.strongAvail) _syncStrongFab();   // 첫 마디를 지나면 🔑 숨김
     _alignHardshipHiddenInput(targetScrollSlot);
 
     if (targetScrollSlot && !hardshipState.isComposing) {
