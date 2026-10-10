@@ -1109,6 +1109,9 @@ const LANG = {
         mission_daily_recite_title: '📅 오늘의 암송',
         mission_daily_recite_desc: '오늘 구절을 백지로 모두 써내기',
         daily_cam_btn: '🎥 촬영하기',
+        growth_head: '💪 처음({d})과 비교하면', growth_hints: '힌트 {a} → <b>{b}</b>', growth_correct: '맞힌 절 {a} → <b>{b}</b>', growth_time: '시간 {a} → <b>{b}</b>',
+        growth_smooth: '술술 {a}절 → <b>{b}절</b>', growth_blank: '백지로 나온 절 {a} → <b>{b}</b>', growth_harder: '오늘은 처음보다 힘들었어요 — 그래도 꺼내 본 만큼 남아요',
+        growth_seed: '🌱 오늘 막힌 절이 내일 가장 오래 남을 절이에요 — 애써 떠올린 기억이 더 단단해져요',
         letter_title: '💌 서로에게 보내는 편지', letter_intro: '함께 암송하는 성도님들이 보낸 암송 꿀팁과 응원이에요.', letter_write_btn: '✍️ 편지 보내기',
         letter_write_title: '✍️ 편지 보내기', letter_write_intro: '함께 암송하는 성도님들을 위한 암송 꿀팁과 응원의 메시지를 보내주세요. 충분한 검토 후에 게시판에 올라갑니다.',
         letter_kind_tip: '💡 암송 꿀팁', letter_kind_cheer: '🙏 응원', letter_placeholder: '예) 처음엔 막막했는데, 일단 계속하니 어느새 늘어 있었어요…', letter_anon: '순례자',
@@ -2397,6 +2400,9 @@ const LANG = {
         mission_daily_recite_title: '📅 Verses of the Day',
         mission_daily_recite_desc: 'Write all of today\'s verses from a blank page',
         daily_cam_btn: '🎥 Record',
+        growth_head: '💪 Since your first try ({d}):', growth_hints: 'hints {a} → <b>{b}</b>', growth_correct: 'correct {a} → <b>{b}</b>', growth_time: 'time {a} → <b>{b}</b>',
+        growth_smooth: 'smooth {a} → <b>{b}</b>', growth_blank: 'written blank {a} → <b>{b}</b>', growth_harder: 'Harder than your first try today — what you reached for still stays',
+        growth_seed: '🌱 The verses you got stuck on today are the ones that will last longest — effortful recall makes memory stronger',
         letter_title: '💌 Letters to one another', letter_intro: 'Memorization tips and encouragement from fellow believers.', letter_write_btn: '✍️ Send a letter',
         letter_write_title: '✍️ Send a letter', letter_write_intro: 'Send memorization tips and words of encouragement to those memorizing with you. Letters are posted after review.',
         letter_kind_tip: '💡 Tip', letter_kind_cheer: '🙏 Encouragement', letter_placeholder: 'e.g. It felt hopeless at first, but I kept going and got better…', letter_anon: 'Pilgrim',
@@ -28535,6 +28541,42 @@ function _oilChapterHtml(ch) {
         <div class="oil-next"><div class="oil-next-t">${t('oil_next_title')}</div><p>${nx.txt}</p>${nx.btn}${pl && (pl.lo === 2 || pl.lo === 5) ? `<button class="oil-next-sub" onclick="closeOilScreen(); openInitialLine(${ch})">${t('il_entry', { ch })}</button>` : ''}</div>
         <details class="oil-help"><summary>${t('oil_help_sum')}</summary>${_oilLegendHtml()}</details>`;
 }
+/* 🌱 나의 처음과 지금 (10/11 사용자: "잘 모르겠어도 계속하면 는다 — 그런데 시간이 지나면 잊는다, 자주 상기시켜야")
+   말로 「계속하면 늘어요」보다 **내 숫자**가 믿음이 간다 — 같은 장을 다시 했을 때 남아 있는 가장 오래된 기록과 나란히 */
+function _growthMd(ts) { const d = new Date(ts); return `${d.getMonth() + 1}/${d.getDate()}`; }
+function _growthHtml(parts, firstAt, struggled) {
+    const lines = [];
+    if (parts.length) lines.push(`<div class="growth-line">${t('growth_head', { d: _growthMd(firstAt) })} ${parts.join(' · ')}</div>`);
+    else if (firstAt) lines.push(`<div class="growth-line soft">${t('growth_harder')}</div>`);
+    if (struggled) lines.push(`<div class="growth-seed">${t('growth_seed')}</div>`);
+    return lines.length ? `<div class="growth-box">${lines.join('')}</div>` : '';
+}
+function _growthFmtSec(sec) { sec = sec | 0; return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`; }
+function _growthMemory(history) {   // 망각의 고난 — history는 오름차순(마지막이 오늘)
+    if (!Array.isArray(history) || !history.length) return '';
+    const now = history[history.length - 1], first = history.length >= 2 ? history[0] : null, parts = [];
+    const struggled = (now.hints | 0) > 0 || (now.correct | 0) < (now.total | 0);
+    if (first) {
+        if (first.hints != null && now.hints != null && now.hints < first.hints) parts.push(t('growth_hints', { a: first.hints, b: now.hints }));
+        if (first.total && now.total && now.correct / now.total > first.correct / first.total) parts.push(t('growth_correct', { a: `${first.correct}/${first.total}`, b: `${now.correct}/${now.total}` }));
+        if (first.duration && now.duration && now.duration < first.duration * 0.9) parts.push(t('growth_time', { a: _growthFmtSec(first.duration), b: _growthFmtSec(now.duration) }));
+    }
+    return _growthHtml(parts, first ? first.date : 0, struggled);
+}
+function _growthLevelTest(ch) {   // 레벨 테스트 — 같은 범위의 가장 오래된 테스트와
+    const list = levelTests[ch] || [], T = list[list.length - 1]; if (!T) return '';
+    const first = list.find(x => x !== T && (x.u || 'all') === (T.u || 'all') && x.at < T.at);
+    const vals = X => Object.values(X.r || {});
+    const smooth = X => vals(X).filter(c => c === 3).length, blank = X => vals(X).filter(c => c === 3 || c === 2 || c === 1).length;
+    const struggled = vals(T).some(c => c !== 3);
+    const parts = [];
+    if (first) {
+        if (smooth(T) > smooth(first)) parts.push(t('growth_smooth', { a: smooth(first), b: smooth(T) }));
+        if (blank(T) > blank(first)) parts.push(t('growth_blank', { a: blank(first), b: blank(T) }));
+        if (first.d && T.d && T.d < first.d * 0.9 && T.n === first.n) parts.push(t('growth_time', { a: _growthFmtSec(first.d), b: _growthFmtSec(T.d) }));
+    }
+    return _growthHtml(parts, first ? first.at : 0, struggled);
+}
 function _ltFmtTime(sec) {   // ⏱ 4분 12초 / 4m 12s
     if (!(sec > 0)) return '';
     const m = Math.floor(sec / 60), s = sec % 60;
@@ -28575,6 +28617,7 @@ function _ltShowResult(ch) {
 
             <div class="lt-next">${lines.map(l => `<div>• ${l}</div>`).join('')}</div>
             ${acts.length ? `<div class="lt-acts">${acts.join('')}</div>` : ''}
+            ${_growthLevelTest(ch)}
             <div class="lt-note">${t('lt_res_plan')}</div>
             <button class="lt-oil" onclick="document.getElementById('lt-result').style.display='none'; openOilScreen(${ch})">${_oilMini()}${t('oil_btn_from_lt')}</button>
             <button class="lt-go" onclick="document.getElementById('lt-result').style.display='none'">${t('lt_res_ok')}</button></div>`;
@@ -32315,7 +32358,7 @@ function finishHardshipSession(reason) {
                     <td>${r.hints != null ? r.hints + '회' : '-'}</td>
                 </tr>`;
             }).join('');
-            return `<div class="hardship-history-wrap">
+            return `${_growthMemory(history)}<div class="hardship-history-wrap">
                 <div class="hardship-history-title">⌨️ ${ch}장 망각의 고난 · 최근 ${history.length}회</div>
                 <table class="hardship-history-table">
                     <thead><tr><th></th><th>맞힌 수</th><th>승점</th><th>클리어 시간</th><th>힌트</th></tr></thead>
