@@ -54,6 +54,7 @@
                 <div class="nj3d-decopanel nj3d-mountpanel" hidden></div>
                 <div class="nj3d-walk" hidden>
                     <div class="nj3d-joy"><div class="nj3d-knob"></div></div>
+                    <div class="nj3d-keyhelp">${T('nj3d_keyhelp')}</div>
                     <div class="nj3d-btns">
                         <button class="nj3d-wb small nj3d-viewbtn"></button>
                         <button class="nj3d-wb small nj3d-jetbuy"></button>
@@ -4960,6 +4961,11 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         function resize() {
             const w = stageEl.clientWidth, h = stageEl.clientHeight;
             if (!w || !h) return;
+            // 휴대폰(390×844·배율 2)은 약 130만 점인데 PC 전체화면(1920×1080·배율 1.25~2)은 320만~800만 점이었다.
+            // 화면 배율 상한은 그대로 두되, 점 총수가 고급 230만 · 기본 150만을 넘으면 그만큼 배율을 낮춘다(최소 0.75)
+            const cap = HIGH ? 2 : 1.5, maxPx = HIGH ? 2.3e6 : 1.5e6;
+            const pr = Math.max(0.75, Math.min(window.devicePixelRatio || 1, cap, Math.sqrt(maxPx / (w * h))));
+            if (Math.abs(renderer.getPixelRatio() - pr) > 0.01) renderer.setPixelRatio(pr);
             renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
         }
         listen(window, 'resize', resize);
