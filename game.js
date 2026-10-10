@@ -30389,8 +30389,10 @@ function _syncStrongFab() {
             b.addEventListener('mousedown', e => e.preventDefault());
             document.body.appendChild(b);
         }
+        const wasHidden = b.style.display === 'none' || !b.style.display;
         b.textContent = t('sh_btn'); b.style.display = 'inline-flex';
         _positionStrongFab();
+        if (wasHidden) setTimeout(() => { _positionStrongFab(); _hsScrollToSlot(document.querySelector('.char-slot.active')); }, 60);   // 갑자기 나타나며 지금 칸을 가리던 것(10/10)
     }
     clearInterval(window._shTimer);   // 시작에서 멈춰 있는지 1초마다
     if (_strongEligible() && !hardshipState.strongAvail) window._shTimer = setInterval(() => { if (!_strongEligible()) { clearInterval(window._shTimer); return; } _strongCheck(); }, 1000);
@@ -30792,7 +30794,14 @@ function updateHardshipMemoryBoard() {
     if (targetScrollSlot && !hardshipState.isComposing) {
         clearTimeout(updateHardshipMemoryBoard._scrollTimer);
         const slotToScroll = targetScrollSlot;
-        updateHardshipMemoryBoard._scrollTimer = setTimeout(() => {
+        updateHardshipMemoryBoard._scrollTimer = setTimeout(() => _hsScrollToSlot(slotToScroll), 80);
+    }
+}
+/* 지금 치는 칸이 떠 있는 버튼(🙋·💡·🔑) 아래로 숨지 않게 보이는 띠 안으로 옮긴다. 타이핑 때와 🔑 첫 마디 보기가 나타날 때(10/10) */
+function _hsScrollToSlot(slotToScroll) {
+    if (!slotToScroll || !slotToScroll.isConnected) return;
+    {
+        {
             const container = slotToScroll.closest('.battle-field');
             if (window.visualViewport && container) {
                 // 키보드가 열리면 '보이는 영역'은 visualViewport뿐이다 — scrollIntoView(레이아웃 뷰포트 기준)는
@@ -30811,7 +30820,7 @@ function updateHardshipMemoryBoard() {
             } else if (typeof slotToScroll.scrollIntoView === 'function') {
                 slotToScroll.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
-        }, 80);
+        }
     }
 }
 

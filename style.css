@@ -7476,7 +7476,7 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .lt-ans.on { color: #ece9f5; }
 .lt-ans b { color: #f6d77a; margin-right: 4px; }
 /* 떠 있는 버튼(🙋·💡) 줄만큼 보드 아래 여백 — 마지막 줄 칸을 버튼 위로 끌어올릴 수 있게 */
-#game-screen.mode-hardship-memory .battle-field { padding-bottom: 96px; }
+#game-screen.mode-hardship-memory .battle-field { padding-bottom: 160px; }   /* 💡 위에 🔑 첫 마디 보기까지 쌓여도 지금 칸을 그 위로 올릴 여백(10/10) */
 
 /* 🔑 강한 힌트 — 💡 위에. 얻어야 나타난다 */
 #hardship-strong-fab { display: none; position: fixed; right: 14px; bottom: 160px; z-index: 60; align-items: center; padding: 9px 14px; border-radius: 999px;
@@ -7560,7 +7560,12 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .dj-day { aspect-ratio: 1 / 1.15; max-width: 100%; border-radius: 8px; background: rgba(255, 255, 255, .03); display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 3px 0 2px; position: relative; overflow: hidden; }
 .dj-day.blank { background: none; }
 .dj-day.future, .dj-day.before { opacity: .35; }
-.dj-day.done { background: rgba(255, 217, 104, .1); box-shadow: inset 0 0 0 1px rgba(255, 217, 104, .35); }
+.dj-day.done { background: linear-gradient(180deg, #8a6a14 0%, #5c470e 100%); box-shadow: inset 0 0 0 2px #f1c40f; }   /* 10/10 사용자: 너무 옅어 주변과 비슷 — 칸 자체를 금빛으로 */
+.dj-day.done .dj-d { color: #fff3c4; font-weight: 700; }
+.dj-day.done .dj-v { color: #ffe9a0; }
+.dj-day.part { background: rgba(184, 129, 77, .22); box-shadow: inset 0 0 0 1.5px #b8814d; }
+.dj-day.miss { background: rgba(120, 40, 40, .28); box-shadow: inset 0 0 0 1px rgba(231, 110, 100, .45); }
+.dj-day.rest { background: rgba(47, 90, 63, .25); }
 .dj-day.today { box-shadow: inset 0 0 0 1px #9aa8bd; }
 .dj-d { font-size: .62rem; color: #9aa8bd; line-height: 1; font-variant-numeric: tabular-nums; }
 .dj-v { font-size: .56rem; color: #c3cddb; line-height: 1; min-height: .56rem; font-variant-numeric: tabular-nums; }
@@ -7577,10 +7582,10 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .dj-weeks { display: flex; gap: 3px; justify-content: center; min-width: min-content; }
 .dj-col { display: flex; flex-direction: column; gap: 3px; }
 .dj-c { display: inline-block; width: 11px; height: 11px; border-radius: 3px; background: rgba(255, 255, 255, .05); vertical-align: middle; }
-.dj-c.done { background: #ffd968; box-shadow: 0 0 4px rgba(255, 217, 104, .6); }
-.dj-c.part { background: #a8774a; }
-.dj-c.miss { background: #3d4352; }
-.dj-c.rest { background: #2f5a3f; }
+.dj-c.done { background: #f1c40f; box-shadow: 0 0 0 1px #fff3c4 inset; }
+.dj-c.part { background: #b8814d; }
+.dj-c.miss { background: #8a3a34; }
+.dj-c.rest { background: #2f6a45; }
 .dj-c.today { box-shadow: inset 0 0 0 1px #9aa8bd; }
 .dj-c.future, .dj-c.before { background: transparent; }
 .dj-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 14px; }
