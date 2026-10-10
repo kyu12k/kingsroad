@@ -856,7 +856,7 @@ const LANG = {
         lt_final_hidden: '「아직 안 나옴」으로 남겼어요 · 정답은 끝난 뒤 결과에서 그 칸을 누르면 보여요',
         lt_res_nb: '↔ 표시는 시험 중에 바로 앞뒤 절을 먼저 쓴 뒤 나온 절 — 이어서 꺼낸 것일 수 있어요',
         lt_res_tap: '칸을 누르면 그 절의 말씀이 보여요',
-        sh_btn: '🔑 첫 마디 보기', sh_note: '🔑 첫 마디를 보고 썼어요 — 백지 레벨은 그대로 · 승점 절반',
+        sh_btn: '🔑 첫 마디 보기', sh_btn_short: '🔑 첫 마디', sh_note: '🔑 첫 마디를 보고 썼어요 — 백지 레벨은 그대로 · 승점 절반',
         lt_sheet_btn: '🎓 레벨 테스트', lt_sheet_last: '지난 테스트 {d} · 술술 {c}/{n}', lt_sheet_none: '지금 이 장이 정말 나오는지',
         fp_pick_title: '🔑 첫 마디의 고난 · {ch}장', fp_pick_desc: '구절은 사슬처럼 외워져서, 첫 마디만 떠오르면 나머지가 따라와요. 주소만 보고 첫 마디를 써 보세요. 순서는 섞여 나와요.',
         fp_lv1: '쉬움', fp_lv2: '보통', fp_lv3: '어려움', fp_lv1_d: '첫 단어', fp_lv2_d: '앞에서 세 글자가 찰 때까지', fp_lv3_d: '앞 세 단어',
@@ -2134,7 +2134,7 @@ const LANG = {
         lt_final_hidden: 'Saved as "not yet" · tap that cell in the result afterwards to see the verse',
         lt_res_nb: '↔ = came after you had already written a neighboring verse in this test — it may have been chained',
         lt_res_tap: 'Tap a cell to see that verse',
-        sh_btn: '🔑 Show first words', sh_note: '🔑 Written with the first words shown — blank level stays · half points',
+        sh_btn: '🔑 Show first words', sh_btn_short: '🔑 First words', sh_note: '🔑 Written with the first words shown — blank level stays · half points',
         lt_sheet_btn: '🎓 Level test', lt_sheet_last: 'Last test {d} · flows out {c}/{n}', lt_sheet_none: 'Does this chapter really come out now?',
         fp_pick_title: '🔑 Trial of the First Words · Ch.{ch}', fp_pick_desc: 'A verse is remembered like a chain — once the first words come, the rest follows. Look at the reference and write the opening words. Verses come in shuffled order.',
         fp_lv1: 'Easy', fp_lv2: 'Normal', fp_lv3: 'Hard', fp_lv1_d: 'first word', fp_lv2_d: 'first two words', fp_lv3_d: 'first three words',
@@ -30328,20 +30328,32 @@ function positionHardshipHintFab() {
     fab.style.bottom = 'auto';
     fab.style.right = 'auto';
 }
-/* 🔑 강한 힌트 — 💡 힌트 바로 위(오른쪽) */
+/* 🔑 강한 힌트 — 💡 힌트 **왼쪽에 나란히**(10/10 사용자: 버튼이 쌓이면 키보드 위 좁은 띠를 또 한 칸 먹고 칸을 가린다).
+   [🙋 모르겠어요] … [🔑 첫 마디 보기] [💡 힌트] 한 줄. 좁아서 🙋와 겹치면 짧은 이름(🔑 첫 마디), 그래도 겹치면 그때만 💡 위로 */
 function _positionStrongFab() {
-    const sb = document.getElementById('hardship-strong-fab'), hb = document.getElementById('common-hardship-hint-btn');
+    const sb = document.getElementById('hardship-strong-fab'), hb = document.getElementById('common-hardship-hint-btn'), gu = document.getElementById('hardship-giveup-fab');
     if (!sb || sb.offsetWidth === 0) return;
-    const MARGIN = 14, vv = window.visualViewport, right = vv ? (vv.offsetLeft + vv.width) : window.innerWidth;
-    // 💡 힌트와 같은 바닥(보이는 화면 아래·제출 줄 위)에서 💡 높이만큼 더 위 — 힌트 위치를 읽지 않는다(아직 안 앉았을 수 있다)
+    const MARGIN = 14, GAP = 8, vv = window.visualViewport, right = vv ? (vv.offsetLeft + vv.width) : window.innerWidth;
     let limit = vv ? (vv.offsetTop + vv.height) : window.innerHeight;
     const control = document.querySelector('.battle-control');
     if (control && control.offsetHeight > 0) { const cr = control.getBoundingClientRect(); if (cr.left < window.innerWidth / 3) limit = Math.min(limit, cr.top); }
-    const hh = (hb && hb.offsetHeight) || 44;
-    sb.style.bottom = 'auto'; const top = limit - MARGIN - hh - 8 - sb.offsetHeight;
     sb.style.bottom = 'auto'; sb.style.right = 'auto';   // CSS bottom이 남으면 top과 함께 늘어난다
-    sb.style.top = Math.max(MARGIN, top) + 'px';
-    sb.style.left = Math.max(MARGIN, right - sb.offsetWidth - MARGIN) + 'px';
+    const hbW = (hb && hb.offsetWidth) || 0, hh = (hb && hb.offsetHeight) || 44;
+    const guR = (gu && gu.offsetWidth > 0) ? gu.getBoundingClientRect().right : 0;
+    const place = () => {
+        const left = right - MARGIN - (hbW ? hbW + GAP : 0) - sb.offsetWidth;
+        return { left, ok: left >= Math.max(MARGIN, guR + GAP) };
+    };
+    sb.textContent = t('sh_btn');
+    let p = place();
+    if (!p.ok) { sb.textContent = t('sh_btn_short'); p = place(); }
+    if (p.ok) {   // 한 줄 — 바닥을 💡와 맞춘다
+        sb.style.top = Math.max(MARGIN, limit - MARGIN - Math.max(hh, sb.offsetHeight) + (Math.max(hh, sb.offsetHeight) - sb.offsetHeight) / 2) + 'px';
+        sb.style.left = p.left + 'px';
+    } else {      // 정말 좁으면 예전처럼 💡 위
+        sb.style.top = Math.max(MARGIN, limit - MARGIN - hh - GAP - sb.offsetHeight) + 'px';
+        sb.style.left = Math.max(MARGIN, right - sb.offsetWidth - MARGIN) + 'px';
+    }
 }
 /* 🔑 강한 힌트 「첫 마디 보기」 (2026-10-07 사용자: 첫 세 단어 = 강한 힌트, 글자 힌트 = 보통 힌트).
    나란히 두면 덜 힘든 쪽만 누른다(빈칸에만 머무는 사람들, 첫 마디의 고난 5%) — 그래서 **얻는** 구조:
@@ -30390,7 +30402,8 @@ function _syncStrongFab() {
             document.body.appendChild(b);
         }
         const wasHidden = b.style.display === 'none' || !b.style.display;
-        b.textContent = t('sh_btn'); b.style.display = 'inline-flex';
+        if (wasHidden) b.textContent = t('sh_btn');
+        b.style.display = 'inline-flex';
         _positionStrongFab();
         if (wasHidden) setTimeout(() => { _positionStrongFab(); _hsScrollToSlot(document.querySelector('.char-slot.active')); }, 60);   // 갑자기 나타나며 지금 칸을 가리던 것(10/10)
     }
