@@ -7540,7 +7540,7 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .lt-time { text-align: center; font-size: .9rem; color: #f1c40f; margin: 2px 0 6px; font-variant-numeric: tabular-nums; }
 
 /* 📖 오늘의 암송 일지 (10/9) — 스크린샷 한 장에 들어가게 */
-.daily-journal-btn { display: block; width: 100%; margin: 8px 0 0; padding: 11px; border-radius: 12px; border: 1px solid rgba(241, 196, 15, .45); background: rgba(241, 196, 15, .08); color: #f1c40f; font-size: .95rem; font-weight: 700; cursor: pointer; }
+.daily-journal-btn { display: block; width: 100%; margin: 8px 0 0; padding: 11px; border-radius: 12px; border: 1px solid #c98a12; background: #fdf1d6; color: #8a5300; font-size: .95rem; font-weight: 800; cursor: pointer; }   /* 10/10: 밝은 창에 노란 글씨라 묻혔다 — 촬영하기처럼 연한 바탕 + 진한 글씨 */
 #dj-overlay { align-items: center; justify-content: center; }
 .dj-card { width: min(420px, calc(100vw - 24px)); box-sizing: border-box; margin: auto; max-height: 92vh; overflow-y: auto; background: linear-gradient(180deg, #1b2438 0%, #141b2a 100%); border: 1px solid #2f3d57; border-radius: 18px; padding: 18px 16px 14px; color: #e8edf5; box-shadow: 0 20px 50px rgba(0, 0, 0, .5); }
 .dj-head { text-align: center; margin-bottom: 10px; }
