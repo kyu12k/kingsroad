@@ -13797,10 +13797,24 @@ function _mergeOil(target, other) {   // 🪔 절마다 나중에 바뀐 쪽(실
     for (const id in b) { const o = b[id]; if (!o || typeof o !== 'object') continue; if (!a[id] || (o.t || 0) > (a[id].t || 0)) { a[id] = { l: o.l | 0, t: o.t || 0 }; took++; } }
     return took;
 }
+/* 🌧️ 단비·햇살 약속 — 나중에 약속한 쪽(같은 날이면 햇살 쪽), 켠 날은 늦은 쪽. 10/10까지 병합에 없어 다른 기기 저장이 통째로 덮었다(#TJNGGW 햇살이 사라짐) */
+function _mergeRain(target, other) {
+    const b = other.rain; if (!b || typeof b !== 'object') return 0;
+    const a = (target.rain && typeof target.rain === 'object') ? target.rain : (target.rain = { earnedFor: '', tier: 0, promisedOn: '', startedOn: '' });
+    let took = 0;
+    const bp = String(b.promisedOn || ''), ap = String(a.promisedOn || '');
+    if (bp > ap || (bp === ap && (parseInt(b.tier, 10) || 0) > (parseInt(a.tier, 10) || 0))) {
+        a.promisedOn = bp; a.earnedFor = String(b.earnedFor || ''); a.tier = parseInt(b.tier, 10) || 0; took++;
+    }
+    if (String(b.startedOn || '') > String(a.startedOn || '')) { a.startedOn = String(b.startedOn); took++; }
+    return took;
+}
 function _mergeSaveProgress(target, other) {
     if (!target || !other) return 0;
     let took = 0;
     took += _mergeOil(target, other);
+    if ((Number(other.maxHearts) || 0) > (Number(target.maxHearts) || 0)) { target.maxHearts = other.maxHearts; took++; }   // 🌱 밭은 줄지 않는다 — 큰 쪽(10/10)
+    took += _mergeRain(target, other);
     took += _mergeLeague(target, other);   // 🏆 승점 큰 쪽
     took += _mergeSessionTime(target, other);
     took += _mergeVerseRecall(target, other);

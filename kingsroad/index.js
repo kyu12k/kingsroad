@@ -126,6 +126,28 @@ exports.saveGameDataSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
                     throw staleErr;
                 }
             }
+            /* ★ 기준 시각 없는 저장은 이미 있는 문서를 덮지 못한다 (2026-10-10).
+               10/7 전 앱은 기준 시각을 저장본에 남기지 않아, 다시 열면 기준 없이 첫 업로드를 했고 위 검사를 건너뛰었다.
+               그 옛 앱이 켜진 채 남은 기기가 10/8·10/9(#TJNGGW 밭 20→17·햇살 약속), 10/10(#FHDVGA 이번 주 승점 −18,506)에 옛 기록으로 덮었다.
+               지금 앱은 서버 기록을 받은 뒤 그 시각을 기준으로 올리므로 걸리지 않는다. 거절된 옛 앱은 「다른 기기에서 더 최근에 저장」 배너 → 서버 기록을 받는다 */
+            if (!hasBase && old && (old.updatedAt || 0) > 0) {
+                const staleErr = new Error("stale-write-nobase");
+                staleErr._staleServerUpdatedAt = old.updatedAt;
+                throw staleErr;
+            }
+            /* ★ 줄지 않는 값은 서버가 지킨다 — 어떤 경로로 낡은 저장이 들어와도 밭·승점은 내려가지 않게 */
+            if (old) {
+                const oh = Number(old.maxHearts) || 0;
+                if ((Number(dataToSave.maxHearts) || 0) < oh) dataToSave.maxHearts = oh;   // 밭은 줄지 않는다
+                const ol = old.leagueData, nl = dataToSave.leagueData;
+                if (ol && nl && typeof ol === "object" && typeof nl === "object") {
+                    const up = (k, same) => { if (same && (Number(ol[k]) || 0) > (Number(nl[k]) || 0)) nl[k] = ol[k]; };
+                    up("totalScore", true);
+                    up("myScore", ol.weekId && ol.weekId === nl.weekId);
+                    up("myMonthlyScore", ol.monthId && ol.monthId === nl.monthId);
+                    up("yearlyScore", String(ol.monthId || "").slice(0, 4) && String(ol.monthId || "").slice(0, 4) === String(nl.monthId || "").slice(0, 4));
+                }
+            }
             // 젬 장부 — 서버만 쓴다. 클라이언트가 echo한 gemLedger는 여기서 덮인다
             const kstDay = new Date(serverNow + 9 * 3600 * 1000).toISOString().slice(0, 10);
             const led = (old && old.gemLedger && typeof old.gemLedger === "object") ? old.gemLedger : {};
