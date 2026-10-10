@@ -183,6 +183,9 @@
         const smooth01 = t => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
         const beachProf = d => d <= BEACH_D0 ? -DROP : d <= 0 ? -DROP + (BEACH_Y0 + DROP) * smooth01((d - BEACH_D0) / -BEACH_D0) : BEACH_Y0 - 0.55 * smooth01(d / BEACH_D1);
         const beachD = (x, z) => Math.abs(x) < 2.2 ? null : z - coastZ(x);
+        /* 강 어귀 곁(|x| 2.2~4.5)은 뭍 쪽 비탈을 원래 땅 높이로 서서히 올려 잇는다 — 어귀 둘레 원래 땅과 낮춘 띠 사이에 턱이 졌다(10/10) */
+        const beachBlend = x => { const a = Math.abs(x); return a >= 4.5 ? 0 : smooth01((4.5 - a) / 2.3); };
+        const beachAt = (x, d, base) => { const b = beachProf(d), w = beachBlend(x); return (w > 0 && d < 0 && base > b) ? b + (base - b) * w : b; };
         const ISLES = typeof _seaIsles === 'function' ? _seaIsles() : [];
         const isleR = (s, x, z) => { const a = Math.atan2(z - s.z, x - s.x); return s.r * (1 + 0.08 * Math.sin(a * 3 + s.x) + 0.05 * Math.sin(a * 5 + s.z)); };   // 섬 둘레가 조금 울퉁불퉁
         const seaDistW = (x, z) => { let d = z - coastZ(x); for (let k = 0; k < ISLES.length; k++) { const s = ISLES[k], dc = Math.hypot(x - s.x, z - s.z); if (dc - s.r * 1.15 > d) continue; const q = dc - isleR(s, x, z); if (q < d) d = q; } return d; };
@@ -683,7 +686,10 @@
                 const e = seaE(x, z), inIsle = ISLES.some(s => Math.hypot(x - s.x, z - s.z) < s.r * 1.3);
                 let h = e < 1 ? Math.min(SEA_Y - 0.12, seabed(x, z)) : WT(x, z);
                 if (inIsle) h = Math.min(h, SEA_Y - 0.6); else if (Math.abs(x) < 0.9 && z < SHORE + 0.2) h -= 0.4;
-                { const bd = !inIsle ? beachD(x, z) : null; if (bd != null && bd > BEACH_D0 - 0.4 && bd < BEACH_D1 + 0.3) h = Math.min(h, beachProf(bd) - 0.25); }   // 🏖️ 비탈 띠가 위에 덮인다
+                /* 🏖️ 비탈 띠가 위에 덮인다 — 띠가 **확실히 덮는 꼭짓점만** 낮춘다(10/10 사용자: 해안선이 이상하다 — 강 어귀 옆이 들쭉날쭉 파랗다).
+                   그물은 가로 1.5 간격이라 낮춘 x=±3.0과 안 낮춘 x=±1.5를 잇는 삼각형이 띠 없는 어귀 틈(|x| 1.5~2.25)으로 수면 아래까지 기울었고,
+                   뭍 쪽도 띠가 시작하는 곳(d −2.0)보다 안쪽(−2.1)까지 수면 아래로 낮춰 띠 바깥 틈에 바다 수면이 비쳤다 → 어귀 둘레 |x| < 3.1은 안 낮추고, 뭍은 d > −1.7부터 */
+                { const bd = !inIsle && Math.abs(x) >= 3.1 ? beachD(x, z) : null; if (bd != null && bd > BEACH_D0 && bd < BEACH_D1 + 0.3) h = Math.min(h, beachProf(bd) - 0.25); }
                 pos.push(x, h, z);
                 if (e < 1) { const dd = Math.min(1, (SEA_Y - h) / SEA_DEEP); c.copy(cSand).lerp(cDeep, Math.pow(dd, 0.7)); }
                 else { c.copy(cTop).lerp(cLow, Math.min(1, -h / DROP)); if (e < 1.5) c.lerp(cSand, 0.88 * Math.min(1, (1.5 - e) / 0.18)); }
@@ -743,7 +749,7 @@
             XS.forEach((x, i) => {
                 const cz = coastZ(x);
                 DS_.forEach(d => {
-                    pos.push(x, beachProf(d) + (d <= BEACH_D0 ? 0.004 : 0), cz + d);
+                    pos.push(x, beachAt(x, d, WT(x, cz + d)) + (d <= BEACH_D0 ? 0.004 : 0), cz + d);
                     if (d < -0.8) cc.copy(cDry); else if (d < 0.05) cc.copy(cDry).lerp(cWet, smooth01((d + 0.8) / 0.75)); else cc.copy(cWet).lerp(cUnder, smooth01(d / 1.5));
                     cc.convertSRGBToLinear(); col.push(cc.r, cc.g, cc.b);
                 });
@@ -1659,7 +1665,7 @@
                 if (ax0 < RB && z < SHORE) dip = stripDip(ax0);
                 if (az0 < RB) dip = Math.min(dip, stripDip(az0));
                 const bd = beachD(x, z);   // 🏖️ 해변 비탈
-                if (bd != null && bd > BEACH_D0 && !ISLES.some(s => Math.hypot(x - s.x, z - s.z) < s.r * 1.3)) return Math.min(WT(x, z) + dip, beachProf(bd));
+                if (bd != null && bd > BEACH_D0 && !ISLES.some(s => Math.hypot(x - s.x, z - s.z) < s.r * 1.3)) return Math.min(WT(x, z) + dip, beachAt(x, bd, WT(x, z) + dip));
                 return WT(x, z) + dip;
             }
             const band = bandHeight(x, z); if (band > 0) return band;
