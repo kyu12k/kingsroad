@@ -7732,3 +7732,4 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 
 /* 긴 안내는 여러 줄로 (10/11 — 「처음엔 다들 오래 걸려요」가 한 줄이라 양쪽이 잘렸다) */
 #read-aloud-toast.multi { white-space: normal; width: min(380px, calc(100vw - 32px)); box-sizing: border-box; border-radius: 16px; line-height: 1.5; font-size: .9rem; padding: 12px 16px; }
+.lt-letter-tag { font-size: .75rem; color: #a89878; }

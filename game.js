@@ -1116,7 +1116,7 @@ const LANG = {
         letter_title: '💌 서로에게 보내는 편지', letter_intro: '함께 암송하는 성도님들이 보낸 암송 꿀팁과 응원이에요.', letter_write_btn: '✍️ 편지 보내기',
         letter_write_title: '✍️ 편지 보내기', letter_write_intro: '함께 암송하는 성도님들을 위한 암송 꿀팁과 응원의 메시지를 보내주세요. 충분한 검토 후에 게시판에 올라갑니다.',
         letter_kind_tip: '💡 암송 꿀팁', letter_kind_cheer: '🙏 응원', letter_placeholder: '예) 처음엔 막막했는데, 일단 계속하니 어느새 늘어 있었어요…', letter_anon: '순례자',
-        letter_nick_note: '게시되면 내 닉네임 <b>{nick}</b>이(가) 함께 올라가요', letter_send: '보내기', letter_sent: '💌 보내 주셔서 감사합니다 — 검토 후 게시판에 올라가요',
+        letter_nick_note: '게시되면 내 닉네임과 태그 <b>{nick}</b>이(가) 함께 올라가요', letter_send: '보내기', letter_sent: '💌 보내 주셔서 감사합니다 — 검토 후 게시판에 올라가요',
         letter_send_fail: '보내지 못했어요', letter_too_short: '조금만 더 적어 주세요', letter_daily_cap: '편지는 하루 {n}통까지 보낼 수 있어요',
         letter_like: '힘이 됐어요', letter_loading: '불러오는 중…', letter_none: '아직 올라온 편지가 없어요 — 첫 편지를 보내 주세요', letter_more: '편지 더 보기',
         letter_tab_list: '게시된 편지', letter_tab_pending: '검토 대기', letter_pending_none: '검토할 편지가 없어요', letter_approve: '✅ 게시', letter_reject: '✕ 반려', letter_approved: '게시했어요', letter_rejected: '반려했어요',
@@ -2408,7 +2408,7 @@ const LANG = {
         letter_title: '💌 Letters to one another', letter_intro: 'Memorization tips and encouragement from fellow believers.', letter_write_btn: '✍️ Send a letter',
         letter_write_title: '✍️ Send a letter', letter_write_intro: 'Send memorization tips and words of encouragement to those memorizing with you. Letters are posted after review.',
         letter_kind_tip: '💡 Tip', letter_kind_cheer: '🙏 Encouragement', letter_placeholder: 'e.g. It felt hopeless at first, but I kept going and got better…', letter_anon: 'Pilgrim',
-        letter_nick_note: 'If posted, your nickname <b>{nick}</b> is shown with it', letter_send: 'Send', letter_sent: '💌 Thank you — it will be posted after review',
+        letter_nick_note: 'If posted, your nickname and tag <b>{nick}</b> are shown with it', letter_send: 'Send', letter_sent: '💌 Thank you — it will be posted after review',
         letter_send_fail: 'Could not send', letter_too_short: 'Please write a little more', letter_daily_cap: 'You can send up to {n} letters a day',
         letter_like: 'Encouraged me', letter_loading: 'Loading…', letter_none: 'No letters yet — send the first one', letter_more: 'More letters',
         letter_tab_list: 'Posted', letter_tab_pending: 'To review', letter_pending_none: 'Nothing to review', letter_approve: '✅ Post', letter_reject: '✕ Reject', letter_approved: 'Posted', letter_rejected: 'Rejected',
@@ -21101,7 +21101,7 @@ function _letterCardHtml(L, opts) {
     return `<div class="lt-letter" data-id="${escapeHtml(L.id)}">
         <div class="lt-letter-kind">${L.kind === 'tip' ? t('letter_kind_tip') : t('letter_kind_cheer')}</div>
         <div class="lt-letter-text">${escapeHtml(L.text || '').replace(/\n/g, '<br>')}</div>
-        <div class="lt-letter-foot"><span class="lt-letter-nick">— ${escapeHtml(L.nick || t('letter_anon'))}</span>
+        <div class="lt-letter-foot"><span class="lt-letter-nick">— ${escapeHtml(L.nick || t('letter_anon'))}${L.tag && L.tag !== '0000' ? ` <span class="lt-letter-tag">#${escapeHtml(L.tag)}</span>` : ''}</span>
             <button class="lt-letter-like${liked ? ' on' : ''}" ${liked ? 'disabled' : ''} onclick="_letterLike('${escapeHtml(L.id)}', this)">🙏 ${t('letter_like')} <b>${L.likes | 0}</b></button></div>
         ${opts && opts.admin ? `<div class="lt-letter-admin"><button onclick="_letterJudge('${escapeHtml(L.id)}', 'approved')">${t('letter_approve')}</button><button onclick="_letterJudge('${escapeHtml(L.id)}', 'rejected')">${t('letter_reject')}</button></div>` : ''}
     </div>`;
@@ -21136,7 +21136,7 @@ function closeLetterBoard() { const ov = document.getElementById('letter-overlay
 function openLetterWrite() {
     let ov = document.getElementById('letter-write');
     if (!ov) { ov = document.createElement('div'); ov.id = 'letter-write'; ov.className = 'modal-overlay'; ov.style.zIndex = '10005'; ov.onclick = e => { if (e.target === ov) ov.style.display = 'none'; }; document.body.appendChild(ov); }
-    const nick = (typeof myNickname !== 'undefined' && myNickname) ? myNickname : t('letter_anon');
+    const nick = ((typeof myNickname !== 'undefined' && myNickname) ? myNickname : t('letter_anon')) + (myTag && myTag !== '0000' ? ' #' + myTag : '');   // 태그도 함께 올라간다(10/11)
     ov.innerHTML = `<div class="letter-card" onclick="event.stopPropagation()">
         <div class="letter-head"><div class="letter-title">${t('letter_write_title')}</div><div class="letter-intro">${t('letter_write_intro')}</div></div>
         <div class="letter-kinds"><button class="on" data-k="tip" onclick="_letterPickKind(this)">${t('letter_kind_tip')}</button><button data-k="cheer" onclick="_letterPickKind(this)">${t('letter_kind_cheer')}</button></div>
