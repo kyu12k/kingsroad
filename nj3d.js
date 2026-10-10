@@ -1799,6 +1799,7 @@
         listen(cvs, 'pointerup', e => {
             if (!tap) return;
             if (proc || deco || obs) { tap = null; return; }   // 행렬을 돌려 보는 손길·꾸미기·👀 관찰 — 열매·나라 창을 띄우지 않는다
+            if (clamTap(e)) { tap = null; return; }   // 🐚 조개를 눌러 연다
             if (creatureTap(e)) { tap = null; return; }   // 🐠 물속 생물을 눌러 살펴봄
             if (!fruitPos.length) {   // 열매가 없으면 해안의 나라만 본다
                 const moved = Math.hypot(e.clientX - tap.x, e.clientY - tap.y), long = performance.now() - tap.t;
@@ -4040,8 +4041,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             g.computeVertexNormals(); return g;
         })();
         cleanups.push(() => halfShell.dispose());
-        function clamSpots(day) {   // 날짜로 정해지는 자리 — 깊은 데 · 중간 · 얕은 데
-            let sd = 7; for (const ch of String(day)) sd = (sd * 31 + ch.charCodeAt(0)) % 2147483647; sd = sd || 1;
+        function clamSpots() {   // 늘 같은 자리(10/10 — 미니맵에서 눌러 가는 포탈) — 깊은 데 · 중간 · 얕은 데
+            let sd = 7; for (const ch of 'kingsroad-clams') sd = (sd * 31 + ch.charCodeAt(0)) % 2147483647; sd = sd || 1;
             const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
             // 10/5: 물칸 띠에서 — 깊은 데(4번째 칸~) · 중간(2~3) · 얕은 데(물가 다음 줄), 어귀에서 너무 멀지 않게(|x| 60 안)
             const pick = (lo, hi) => { for (let t = 0; t < 60; t++) { const i = Math.floor(r() * SG.water.length), c = SG.water[i]; if (SG.ring[i] >= lo && SG.ring[i] <= hi && Math.abs(c.x) < 60) return [c.x, c.z]; } return [0, SHORE + 6]; };
@@ -4049,7 +4050,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         }
         if (typeof _njClamDay === 'function') {
             const day = _njClamDay();
-            clamSpots(day.day).forEach(([x, z], i) => {
+            clamSpots().slice(0, (day.ids || []).length).forEach(([x, z], i) => {
                 const g = new THREE.Group(), y = footFloor(x, z, 0.1);   // 비탈에서도 묻히지 않게
                 const bottom = new THREE.Mesh(halfShell, shellMat); bottom.rotation.x = Math.PI; bottom.scale.setScalar(0.09);
                 const hinge = new THREE.Group(); hinge.position.set(-0.075, 0, 0); g.add(hinge);
@@ -4058,11 +4059,19 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 g.add(bottom, inner);
                 const glint = new THREE.Sprite(new THREE.SpriteMaterial({ map: radial, color: 0xfff2c4, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
                 glint.position.y = 0.12; glint.scale.setScalar(0.3); g.add(glint);
+                const ref = typeof _njClamRef === 'function' ? _njClamRef(i) : '';   // 조개마다 주소 — 「계 16:13」
+                let tag = null;
+                if (ref) { const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64; const cx = cv.getContext('2d');
+                    cx.fillStyle = 'rgba(12,30,48,0.72)'; cx.beginPath(); cx.roundRect ? cx.roundRect(8, 8, 240, 48, 18) : cx.rect(8, 8, 240, 48); cx.fill();
+                    cx.fillStyle = '#fff3c4'; cx.font = 'bold 30px sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText('🐚 ' + ref, 128, 33);
+                    const tx = new THREE.CanvasTexture(cv); tx.encoding = THREE.sRGBEncoding;
+                    tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: tx, transparent: true, depthWrite: false })); tag.scale.set(0.5, 0.125, 1); tag.position.y = 0.32; g.add(tag);
+                    cleanups.push(() => { tx.dispose(); tag.material.dispose(); }); }
                 g.position.set(x, y + 0.02, z); g.rotation.y = i * 2.1; reefG.add(g);
                 const done = (day.done || []).includes(i);
                 if (done) hinge.rotation.z = 0.9;   // 연(또는 닫혀 버린) 조개는 빈 껍데기 — 열린 채로
                 glint.visible = !done;
-                clams.push({ i, x, z, y, g, hinge, glint, done });
+                clams.push({ i, x, z, y, g, hinge, glint, done, tag, ref });
             });
         }
         // 진주 장사 — 강 어귀 모래밭, 미끄럼으로 풍덩한 자리가 보이는 곳(마 13:45). 자색 옷, 앞에 깔개와 진주 바구니
@@ -4084,11 +4093,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         }
         function closeClamQ() { if (clamQ) { clamQ = null; fishQ.hidden = true; fishQ.innerHTML = ''; } }
         function askClam(c) {
-            const tries = clamQ && clamQ.c === c ? clamQ.tries : 2;
-            const q = typeof _njClamQuestion === 'function' ? _njClamQuestion(tries === 2 ? '' : 'blank') : null;
+            const q = typeof _njClamQuestion === 'function' ? _njClamQuestion(c.i) : null;
             if (!q) { showHint(T('nj3d_clam_need'), 3000); return; }
-            if (tries !== 2) q.again = true;
-            clamQ = { c, q, tries };
+            clamQ = { c, q, tries: 1 };
             const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
             fishQ.classList.remove('watch', 'now', 'reel');
             fishQ.innerHTML = `<div class="nj3d-fishq-head">${T(clamQ.tries === 2 ? 'nj3d_clam_q' : 'nj3d_clam_again')}</div>
@@ -4100,9 +4107,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 const ok = q.choices[+b.dataset.i] === q.answer;
                 if (ok) { closeClamQ(); openClam(c); return; }
                 if (typeof _njClamResult === 'function') _njClamResult(c.i, false);
-                clamQ.tries--;
-                if (clamQ.tries > 0) askClam(c);
-                else { closeClamQ(); c.done = true; c.glint.visible = false; clamAnims.push({ c, t: 0, kind: 'shut' }); showHint(T('nj3d_clam_shut'), 3200); }
+                closeClamQ(); c.done = true; c.glint.visible = false; clamAnims.push({ c, t: 0, kind: 'shut' }); showHint(T('nj3d_clam_shut'), 3600);
             });
         }
         function openClam(c) {
@@ -4115,7 +4120,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             clamAnims.push({ c, t: 0, kind: 'open', pearl, rare: res.k === 'g' });
             sprayBurst(c.x, c.y + 0.05, c.z, 12, 0);
             if (typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) { SoundEffect.playBlankLevelUp(); if (res.k === 'g') setTimeout(() => SoundEffect.playBlankLevelUp(), 380); }
-            showHint(res.k === 'g' ? T('nj3d_clam_rare', { gem: res.gem.toLocaleString() }) : T('nj3d_clam_got', { name: res.name, gem: res.gem.toLocaleString() }), 4800);
+            showHint(T('nj3d_clam_got', { name: res.name, gem: res.gem.toLocaleString() }), 4200);
+            if (res.gold) setTimeout(() => { showHint(T('nj3d_clam_gold', { gem: res.gold.gem.toLocaleString() }), 6000); if (typeof SoundEffect !== 'undefined' && SoundEffect.playLevelUp) SoundEffect.playLevelUp(); sprayBurst(c.x, c.y + 0.1, c.z, 30, 0); }, 4300);
+            else if (res.weekLeft) setTimeout(() => showHint(T('nj3d_clam_week', { n: res.weekLeft }), 4200), 4300);
         }
         function clamTick(dt) {
             const tt = performance.now() / 1000;
@@ -4139,8 +4146,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 let bd = 0.55; clams.forEach(c => { if (c.done) return; const d = Math.hypot(c.x - P.x, c.z - P.z); if (d < bd && Math.abs(P.y - c.y) < 0.9) { bd = d; nearClam = c; } });
                 clamHint();
             }
-            clamBtn.hidden = !nearClam || !!clamQ;
-            if (clamQ && (!nearClam || nearClam !== clamQ.c)) closeClamQ();   // 헤엄쳐 멀어지면 문제를 닫는다(다시 오면 다시)
+            clamBtn.hidden = true;   // 10/10 — 버튼 대신 조개를 눌러 연다(clamTap)
+            if (clamQ && Math.hypot(clamQ.c.x - P.x, clamQ.c.z - P.z) > 6) closeClamQ();   // 멀리 헤엄쳐 가면 문제를 닫는다(다시 누르면 다시)
+            clams.forEach(c => { if (c.tag) c.tag.visible = Math.hypot(c.x - P.x, c.z - P.z) < 10; });
             nearMerchant = !isUnder() && Math.hypot(MER.x - P.x, MER.z - P.z) < 1.3;
             pearlBtn.hidden = !nearMerchant;
             if (!nearMerchant && offerEl.dataset.pearl === '1') { offerEl.hidden = true; offerEl.dataset.pearl = ''; }
@@ -4343,7 +4351,12 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         const mini = ov.querySelector('.nj3d-mini'), mctx = mini.getContext('2d');
         let miniFar = false, miniT = 0;
         try { miniFar = localStorage.getItem('kingsRoad_nj3dMiniFar') === '1'; } catch (e) { }
-        mini.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); miniFar = !miniFar; try { localStorage.setItem('kingsRoad_nj3dMiniFar', miniFar ? '1' : '0'); } catch (er) { } miniT = 0; });
+        let miniClamPts = [];   // 🐚 미니맵 위 조개 자리(화면 좌표) — 누르면 그 앞으로
+        mini.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation();
+            const r = mini.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+            const hit = miniClamPts.find(p => Math.hypot(p.x - mx, p.y - my) < 16);
+            if (hit) { clamGo(hit.c); miniT = 0; return; }
+            miniFar = !miniFar; try { localStorage.setItem('kingsRoad_nj3dMiniFar', miniFar ? '1' : '0'); } catch (er) { } miniT = 0; });
         function miniDraw() {
             const css = mini.clientWidth || 116, dpr = Math.min(2, window.devicePixelRatio || 1), W = Math.round(css * dpr);
             if (mini.width !== W) { mini.width = W; mini.height = W; }
@@ -4372,7 +4385,16 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             mannas.forEach(m => { if (!m.done) dot(m.x, m.z, '#fffdf0', 3.4, '#e8c35a'); });                                      // 🍞 만나
             quails.forEach(q => { if (!q.done) dot(q.x, q.z, '#8a6a45', 3.2, '#fff2c4'); });                                      // 🐦 메추라기
             const tw = 0.6 + Math.sin(performance.now() / 180) * 0.4;
-            clams.forEach(cl => { if (!cl.done && Math.hypot(cl.x - P.x, cl.z - P.z) < 8) dot(cl.x, cl.z, `rgba(255,236,170,${tw.toFixed(2)})`, 2.6); });   // 🐚 가까이 오면 반짝
+            {   // 🐚 조개 — 늘 보인다(10/10). 미니맵 밖이면 테두리에 붙여 그린다 · 누르면 그 앞으로
+                miniClamPts = [];
+                clams.forEach(cl => {
+                    let [mx, my] = toMap(cl.x, cl.z); const dd = Math.hypot(mx - h, my - h), lim = h - 9 * dpr;
+                    if (dd > lim) { mx = h + (mx - h) * lim / dd; my = h + (my - h) * lim / dd; }
+                    c.fillStyle = cl.done ? 'rgba(255,255,255,0.45)' : `rgba(255,236,170,${(0.7 + tw * 0.3).toFixed(2)})`; c.strokeStyle = cl.done ? 'rgba(80,80,80,0.6)' : '#8a5a1a'; c.lineWidth = 1.4 * dpr;
+                    c.beginPath(); c.arc(mx, my, 5 * dpr, Math.PI, 0); c.lineTo(mx + 5 * dpr, my + 2 * dpr); c.lineTo(mx - 5 * dpr, my + 2 * dpr); c.closePath(); c.fill(); c.stroke();   // 조개 모양(반달)
+                    miniClamPts.push({ c: cl, x: mx / dpr, y: my / dpr });
+                });
+            }
             {   // 🐠 오늘 나온 도감 생물 (10/5 사용자: 바다가 넓어져 찾기 어렵다) — 이번 주 아직 못 만난 아이는 금빛, 만난 아이는 흐리게.
                 //    미니맵 밖의 못 만난 아이는 가까운 셋만 테두리에 방향 화살표(다 띄우면 테두리가 어지럽다)
                 const far = [];
@@ -4765,6 +4787,29 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             showHint(msg, 5000); syncWallet(); syncDexBtn();
             if (typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) { SoundEffect.playBlankLevelUp(); if (res.bonus && res.bonus.length) setTimeout(() => SoundEffect.playBlankLevelUp(), 420); }
             sprayBurst(c.x, c.g.position.y + 0.08, c.z, 12, 0);
+        }
+        function clamTap(e) {   // 🐚 조개를 눌러 연다(10/10) — 화면에서 60px 안, 10칸 안
+            if (!walk || !tap || clamQ || !clams.length) return false;
+            if (Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > 10 || performance.now() - tap.t > 450) return false;
+            const rr = cvs.getBoundingClientRect(), pv = new THREE.Vector3(); let best = null, bd = 60;
+            clams.forEach(c => {
+                if (Math.hypot(c.x - P.x, c.z - P.z) > 10) return;
+                c.g.getWorldPosition(pv); pv.y += 0.05; pv.project(camera); if (pv.z > 1 || pv.z < -1) return;
+                const sx = rr.left + (pv.x + 1) / 2 * rr.width, sy = rr.top + (1 - pv.y) / 2 * rr.height, dd = Math.hypot(sx - e.clientX, sy - e.clientY);
+                if (dd < bd) { bd = dd; best = c; }
+            });
+            if (!best) return false;
+            if (best.done) { showHint(T('nj3d_clam_done_tip', { ref: best.ref || '' }), 2400); return true; }
+            askClam(best);
+            return true;
+        }
+        function clamGo(c) {   // 🐚 미니맵에서 눌러 그 조개 앞으로(포탈)
+            if (ride.on) mountDown();
+            const dz = coastZ(c.x) - c.z, L = Math.abs(dz) || 1;
+            P.x = c.x; P.z = c.z + Math.sign(dz) * 0.7; P.y = c.y + 0.35; P.vy = 0;
+            P.face = Math.atan2(-(c.x - P.x), -(c.z - P.z)); camYaw = P.face;
+            sprayBurst(P.x, P.y, P.z, 10, 0);
+            showHint(c.done ? T('nj3d_clam_done_tip', { ref: c.ref || '' }) : '🐚 ' + (c.ref || ''), 2200);
         }
         function creatureTap(e) {   // 👆 눌러서 만남 — 물속에서 2.4 안, 화면에서 70px 안의 가장 가까운 아이
             if (!walk || !isUnder() || !tap || dexQ) return false;

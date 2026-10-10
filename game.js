@@ -780,10 +780,12 @@ const LANG = {
         nj3d_manna_all: '🍞 오늘 만나를 다 거두었어요 — 저녁이면 메추라기가 와요 (출 16:13)',
         nj3d_quail_here: '🐦 저녁이 되어 메추라기가 들판에 내려앉았어요 (출 16:13)', nj3d_quail_flee: '🐦 메추라기가 도망치려 해요!', nj3d_quail_again: '🐦 푸드덕! 한 번 더',
         nj3d_quail_got: '🐦 말씀의 그물로 메추라기를 잡았어요 · 💎{gem}', nj3d_quail_away: '🐦 메추라기가 날아가 버렸어요',
-        nj3d_clam_open: '🐚 조개 열기', nj3d_clam_q: '🐚 조개가 입을 열려면 —', nj3d_clam_again: '🐚 꼭 닫혔어요 — 한 번 더',
-        nj3d_clam_shut: '🐚 조개가 입을 꼭 다물었어요 — 내일 아침 다른 곳에 숨어요', nj3d_clam_need: '🐚 말씀을 한 절 외우면 조개를 열 수 있어요',
+        nj3d_clam_open: '🐚 조개 열기', nj3d_clam_q: '🐚 지난 오늘의 암송 — 조개가 입을 열려면', nj3d_clam_again: '🐚 꼭 닫혔어요 — 한 번 더',
+        nj3d_clam_shut: '🐚 조개가 입을 꼭 다물었어요 — 오늘은 열리지 않아요. 내일 아침 새 세 절이 들어와요', nj3d_clam_need: '🐚 말씀을 한 절 외우면 조개를 열 수 있어요',
+        nj3d_clam_gold: '💎 이번 주 날마다 조개를 다 열었어요 — 값진 진주! "극히 값진 진주 하나를 발견하매" (마 13:46) · 💎{gem}', nj3d_clam_week: '🐚 오늘 셋 다 열었어요 — 이번 주 {n}일 더 열면 💎 값진 진주',
+        nj3d_clam_done_tip: '🐚 {ref} — 오늘 연 조개예요',
         nj3d_clam_got: '{name}를 얻었어요 · 💎{gem} — 강 어귀의 진주 장사에게 팔 수 있어요', nj3d_clam_rare: '✨ 값진 진주! "극히 값진 진주 하나를 발견하매" (마 13:46) · 💎{gem}',
-        nj3d_clam_today: '🐚 오늘 바다 밑에 조개 {n}개가 숨어 있어요 — 반짝이는 곳을 찾아보세요',
+        nj3d_clam_today: '🐚 바다 밑 조개 {n}개에 지난 오늘의 암송이 들어 있어요 — 미니맵의 🐚를 누르면 그 앞으로 가요',
         nj3d_pearl_btn: '💎 진주 팔기', nj3d_pearl_title: '💎 진주 장사', nj3d_pearl_intro: '"좋은 진주를 구하는 장사와 같으니" (마 13:45)',
         nj3d_pearl_empty: '아직 진주가 없어요 — 바다 밑 조개를 찾아보세요 (오늘 {n}개 남음)', nj3d_pearl_left: '오늘 바다 밑에 남은 조개 {n}개',
         nj3d_pearl_row: '{n}개 · 하나에 💎{gem}', nj3d_pearl_sell1: '하나 팔기', nj3d_pearl_sellall: '모두 팔기', nj3d_pearl_sold: '💎 {gem}개를 받았어요',
@@ -2058,10 +2060,12 @@ const LANG = {
         nj3d_manna_all: '🍞 All of today’s manna is gathered — quail come in the evening (Ex 16:13)',
         nj3d_quail_here: '🐦 Evening — quail have landed on the field (Ex 16:13)', nj3d_quail_flee: '🐦 The quail is about to run!', nj3d_quail_again: '🐦 Flutter! Once more',
         nj3d_quail_got: '🐦 Caught in the net of the Word · 💎{gem}', nj3d_quail_away: '🐦 The quail flew away',
-        nj3d_clam_open: '🐚 Open clam', nj3d_clam_q: '🐚 To open the clam —', nj3d_clam_again: '🐚 It shut tight — once more',
-        nj3d_clam_shut: '🐚 The clam closed for good — it hides somewhere new tomorrow morning', nj3d_clam_need: '🐚 Memorize one verse to open clams',
+        nj3d_clam_open: '🐚 Open clam', nj3d_clam_q: '🐚 Last daily recitation — to open the clam', nj3d_clam_again: '🐚 It shut tight — once more',
+        nj3d_clam_shut: '🐚 The clam closed — not today. New verses come in tomorrow morning', nj3d_clam_need: '🐚 Memorize one verse to open clams',
+        nj3d_clam_gold: '💎 You opened every clam each day this week — a pearl of great value! (Matt 13:46) · 💎{gem}', nj3d_clam_week: '🐚 All three opened today — {n} more day(s) this week for a 💎 pearl of great value',
+        nj3d_clam_done_tip: '🐚 {ref} — opened today',
         nj3d_clam_got: 'You found a {name} · 💎{gem} — sell it to the pearl merchant at the river mouth', nj3d_clam_rare: '✨ A pearl of great value! "When he found one pearl of great value" (Matt 13:46) · 💎{gem}',
-        nj3d_clam_today: '🐚 {n} clams are hidden on the sea floor today — look for the sparkle',
+        nj3d_clam_today: '🐚 {n} clams on the sea floor hold your last daily verses — tap 🐚 on the minimap to go there',
         nj3d_pearl_btn: '💎 Sell pearls', nj3d_pearl_title: '💎 Pearl merchant', nj3d_pearl_intro: '"Like a merchant in search of fine pearls" (Matt 13:45)',
         nj3d_pearl_empty: 'No pearls yet — search the clams on the sea floor ({n} left today)', nj3d_pearl_left: '{n} clams left on the sea floor today',
         nj3d_pearl_row: '{n} · 💎{gem} each', nj3d_pearl_sell1: 'Sell one', nj3d_pearl_sellall: 'Sell all', nj3d_pearl_sold: '💎 You received {gem} gems',
@@ -2882,7 +2886,8 @@ let njMountSel = '';    // 🐴 지금 고른 탈것
 let njWings = {};       // 🪂 글라이더·등 날개 — { own: [가진 것], on: 낀 것, mv }
 let njFruits = {};       // 생명나무 열매 — { 'YYYY-MM': { 절id: [열린 때, 먹은 때(0=아직), 마지막 실패 때] } }. 지난 달은 잎사귀 수만 njLeafArch로 접는다
 let njLeafArch = {};     // 접은 달의 먹은 열매(=잎사귀) 수 { 'YYYY-MM': n }
-let njClams = null;            // 🐚 오늘의 조개 { day: 6시 날짜, done: [연(못 연) 조개 번호], fails: {번호: 틀린 수} } (2026-10-05)
+let njClams = null;            // 🐚 오늘의 조개 { day: 6시 날짜, ids: [조개마다 절], done: [연(못 연) 조개 번호], got: [진주 꺼낸 번호] } (10/5 · 10/10 지난 오늘의 암송 세 절)
+let njClamWeek = null;         // 🐚 { wk: 주차, days: [세 조개를 다 연 날], g: 이번 주 값진 진주 받음 } (10/10)
 let njPearlFound = { w: 0, c: 0, g: 0 };   // 🐚 찾은 진주(늘기만) — 흰·빛깔·값진
 let njPearlSold = { w: 0, c: 0, g: 0 };    // 💎 판 진주(늘기만) — 가진 진주 = 찾은 − 판
 let njPearlGems = 0;          // 💎 진주를 팔아 받은 보석 합(보석 흐름 실측용)
@@ -3422,6 +3427,7 @@ loadGameData = function () {
         njGiftSent = (parsed.njGiftSent && typeof parsed.njGiftSent === 'object') ? parsed.njGiftSent : {};
         njGiftLog = Object.assign({ sent: 0, gems: 0, fruit: 0 }, (parsed.njGiftLog && typeof parsed.njGiftLog === 'object') ? parsed.njGiftLog : {});
         njClams = (parsed.njClams && typeof parsed.njClams === 'object' && parsed.njClams.day) ? parsed.njClams : null;
+        njClamWeek = (parsed.njClamWeek && typeof parsed.njClamWeek === 'object' && parsed.njClamWeek.wk) ? parsed.njClamWeek : null;
         njPearlFound = Object.assign({ w: 0, c: 0, g: 0 }, (parsed.njPearlFound && typeof parsed.njPearlFound === 'object') ? parsed.njPearlFound : {});
         njPearlSold = Object.assign({ w: 0, c: 0, g: 0 }, (parsed.njPearlSold && typeof parsed.njPearlSold === 'object') ? parsed.njPearlSold : {});
         njPearlGems = Math.max(0, parseInt(parsed.njPearlGems, 10) || 0);
@@ -8435,27 +8441,59 @@ function _njBlankQuestion(only) {
    한 절도 클리어하지 않은 사람은 열 수 없다(조개는 보인다 — "한 절 외우면"). 진주 문(주 5일 백지)과는 별개의 진주 */
 const NJ_PEARLS = { w: { gem: 250, p: 0.7 }, c: { gem: 500, p: 0.275 }, g: { gem: 10000, p: 0.025 } };
 const NJ_CLAMS_PER_DAY = 3;
+/* 🐚 진주조개 (10/10 사용자: 의미가 약하다 — 아무 절 4지, 틀리면 다른 절, 진주는 운)
+   → 조개 셋 = **지난번 오늘의 암송 세 절**(암송 일지 dailyLog). 자리는 고정(3D), 미니맵에서 눌러 순간이동, 조개를 눌러 그 절 빈칸 4지 한 번.
+   맞히면 ✨ 빛깔 진주(💎500) · 틀리면 오늘 닫힘(다른 절로 바꾸지 않는다) · 한 주(월~토 진도일) 날마다 셋을 다 열면 💎 값진 진주(마 13:46) */
+function _njClamPickIds(today) {
+    try { if (typeof _dailyLogSync === 'function') _dailyLogSync(); } catch (e) { }
+    const out = [];
+    const days = Object.keys(dailyLog || {}).filter(d => d < today).sort().reverse();
+    for (const d of days) { const lg = typeof _djParse === 'function' ? _djParse(d) : null; if (lg && lg.ids.length) { lg.ids.forEach(id => { if (out.length < NJ_CLAMS_PER_DAY && !out.includes(id)) out.push(id); }); break; } }
+    if (out.length < NJ_CLAMS_PER_DAY) {   // 오늘의 암송 기록이 없으면 — 백지로 써낸(없으면 클리어한) 절에서
+        const pool = _njQuizPool(null).filter(id => !out.includes(id));
+        while (pool.length && out.length < NJ_CLAMS_PER_DAY) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+    }
+    return out;
+}
 function _njClamDay() {
     const d = _get6AMDayStr();
-    if (!njClams || njClams.day !== d) njClams = { day: d, done: [], fails: {} };
+    if (!njClams || njClams.day !== d) njClams = { day: d, done: [], got: [], ids: _njClamKnown() ? _njClamPickIds(d) : [] };
+    if (!Array.isArray(njClams.ids) || !njClams.ids.length) njClams.ids = _njClamKnown() ? _njClamPickIds(d) : [];   // 10/10 전 저장본
+    if (!Array.isArray(njClams.got)) njClams.got = [];
     return njClams;
 }
-function _njClamLeft() { const c = _njClamDay(); return Math.max(0, NJ_CLAMS_PER_DAY - (c.done || []).length); }
+function _njClamLeft() { const c = _njClamDay(); return Math.max(0, (c.ids || []).length - (c.done || []).length); }
 function _njClamKnown() { return Object.keys(stageClearDate || {}).some(id => /^\d+-\d+$/.test(id)); }
-function _njClamQuestion(mode) { return _njClamKnown() ? _njFishQuestion(null, mode) : null; }   // 낚시 문제 — 백지로 써낸 절 먼저, 없으면 클리어한 절
+function _njClamRef(idx) { const id = (_njClamDay().ids || [])[idx]; if (!id) return ''; const [c, v] = id.split('-'); return currentLang === 'en' ? `Rev ${c}:${v}` : `계 ${c}:${v}`; }
+function _njClamQuestion(idx) {   // 그 조개의 절 — 빈칸 4지(짧은 절은 첫 마디 4지)
+    const id = (_njClamDay().ids || [])[idx]; if (!id) return null;
+    return _njFishQuestion([id], 'blank') || _njFishQuestion([id], '');
+}
+function _njClamNeedDays(today) {   // 이번 주 월~토 중 진도일(쉬는 날 뺌)
+    const [y, m, d] = today.split('-').map(Number), wd = new Date(y, m - 1, d).getDay(), mon = _shift6AMDayStr(today, -((wd + 6) % 7)), out = [];
+    for (let i = 0; i < 6; i++) { const ds = _shift6AMDayStr(mon, i); if (!(typeof _djIsRest === 'function' && _djIsRest(ds))) out.push(ds); }
+    return out;
+}
 function _njClamResult(idx, ok) {
     const c = _njClamDay(); if ((c.done || []).includes(idx)) return null;
-    if (!ok) {
-        c.fails[idx] = (c.fails[idx] || 0) + 1;
-        if (c.fails[idx] >= 2) c.done.push(idx);
-        saveGameData(); return null;
-    }
-    const r = Math.random(), k = r < NJ_PEARLS.g.p ? 'g' : r < NJ_PEARLS.g.p + NJ_PEARLS.c.p ? 'c' : 'w';
     c.done.push(idx);
-    njPearlFound[k] = (njPearlFound[k] | 0) + 1;
+    if (!ok) { saveGameData(); return null; }   // 오늘은 닫힌다 — 다른 절로 바꾸지 않는다
+    c.got.push(idx);
+    njPearlFound.c = (njPearlFound.c | 0) + 1;
+    const res = { k: 'c', gem: NJ_PEARLS.c.gem, name: t('pearl_c') };
+    if (c.got.length >= (c.ids || []).length && c.ids.length) {   // 오늘 셋을 다 열었다
+        const wk = getWeekId();
+        if (!njClamWeek || njClamWeek.wk !== wk) njClamWeek = { wk, days: [], g: false };
+        if (!njClamWeek.days.includes(c.day)) njClamWeek.days.push(c.day);
+        const need = _njClamNeedDays(c.day);
+        if (!njClamWeek.g && need.length && need.every(ds => njClamWeek.days.includes(ds))) {   // 💎 이번 주 진도일을 날마다 다 열었다
+            njClamWeek.g = true; njPearlFound.g = (njPearlFound.g | 0) + 1;
+            res.gold = { gem: NJ_PEARLS.g.gem };
+        } else res.weekLeft = need.filter(ds => !njClamWeek.days.includes(ds)).length;
+    }
     saveGameData();
     if (typeof syncToFirestore === 'function') syncToFirestore();
-    return { k, gem: NJ_PEARLS[k].gem, name: t('pearl_' + k) };
+    return res;
 }
 function _njPearlAvail(k) { return Math.max(0, (njPearlFound[k] | 0) - (njPearlSold[k] | 0)); }
 function _njPearlSell(k, n) {
@@ -13358,6 +13396,7 @@ function saveGameData() {
         njGiftSent: njGiftSent,           // 🎁 한 사람에게 하루 한 번
         njGiftLog: njGiftLog,             // 🎁 보낸 수·보낸 보석·맺힌 열매
         njClams: njClams,                 // 🐚 오늘의 조개
+        njClamWeek: njClamWeek,           // 🐚 이번 주 조개 다 연 날 · 값진 진주
         njPearlFound: njPearlFound,       // 🐚 찾은 진주
         njPearlSold: njPearlSold,         // 💎 판 진주
         njPearlGems: njPearlGems,         // 💎 진주로 받은 보석 합
@@ -13895,8 +13934,17 @@ function _mergeSaveProgress(target, other) {
             if (!tc || !tc.day || oc.day > tc.day) { target.njClams = oc; took++; }
             else if (oc.day === tc.day) {
                 tc.done = [...new Set([...(tc.done || []), ...(oc.done || [])])];
+                tc.got = [...new Set([...(tc.got || []), ...(oc.got || [])])];
+                if (!Array.isArray(tc.ids) && Array.isArray(oc.ids)) tc.ids = oc.ids;
                 tc.fails = Object.assign({}, tc.fails || {}); Object.entries(oc.fails || {}).forEach(([i, n]) => { if ((n | 0) > (tc.fails[i] | 0)) tc.fails[i] = n; });
             }
+        }
+    }
+    {   // 🐚 이번 주 조개 — 같은 주면 날짜 합집합·값진 진주 받음은 어느 한쪽이라도, 다른 주면 나중 주
+        const tw = target.njClamWeek, ow = other.njClamWeek;
+        if (ow && ow.wk) {
+            if (!tw || !tw.wk || ow.wk > tw.wk) { target.njClamWeek = ow; took++; }
+            else if (ow.wk === tw.wk) { tw.days = [...new Set([...(tw.days || []), ...(ow.days || [])])]; tw.g = !!(tw.g || ow.g); }
         }
     }
     if (other.fpRecall && typeof other.fpRecall === 'object') {   // 첫 마디 — 절마다 나중에 한 쪽
