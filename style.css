@@ -7674,7 +7674,7 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .il-opt { padding: 12px 0; border-radius: 12px; border: 1px solid #2f3d57; background: rgba(255, 255, 255, .05); color: #e8edf5; font-family: 'Gowun Dodum', serif; font-size: 1.4rem; cursor: pointer; }
 .il-opt:active { background: rgba(241, 196, 15, .2); }
 .il-done { text-align: center; font-size: 1rem; color: #ffd968; margin: 6px 0 10px; }
-.il-modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
+.il-modes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 8px; }
 .il-modes button { padding: 9px 4px; border-radius: 10px; border: 1px solid #2f3d57; background: none; color: #c3cddb; font-size: .82rem; cursor: pointer; }
 .il-close { display: block; width: 100%; margin-top: 10px; padding: 9px; border-radius: 10px; border: none; background: rgba(255, 255, 255, .06); color: #e8edf5; cursor: pointer; }
 .il-entry { display: block; width: 100%; margin: 8px 0 2px; padding: 9px; border-radius: 10px; border: 1px solid rgba(241, 196, 15, .45); background: rgba(241, 196, 15, .08); color: #f1c40f; font-weight: 700; cursor: pointer; }

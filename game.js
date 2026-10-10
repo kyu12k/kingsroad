@@ -28548,7 +28548,7 @@ function _ilRender(fb) {
 }
 function _ilModeBtns() {
     const ch = _il.ch;
-    return `<button onclick="openInitialLine(${ch}, 'view')">${t('il_m_view')}</button><button onclick="openInitialLine(${ch}, 'seq')">${t('il_m_seq')}</button><button onclick="openInitialLine(${ch}, 'rand')">${t('il_m_rand')}</button>`;
+    return `<button onclick="openInitialLine(${ch}, 'seq')">${t('il_m_seq')}</button><button onclick="openInitialLine(${ch}, 'rand')">${t('il_m_rand')}</button>`;
 }
 function _ilPhraseHtml(v) {
     const txt = _verseText(_il.ch, v), ph = firstPhraseOf(txt, 2, currentLang === 'en');
