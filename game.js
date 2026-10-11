@@ -2785,6 +2785,9 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 window.addEventListener('DOMContentLoaded', () => {
     applyI18nToStaticHTML();
+    // 🪟 홈 화면 안에 갇힌 창을 맨 바깥으로 (10/11 사용자 화면: 공지 창 ✕를 ☰·「시험준비」가, 아래를 설치 배너가 덮었다).
+    // #home-screen은 isolation:isolate이고 그 자식은 z-index:1이라, 창의 z-index가 9999여도 홈 버튼(3000)·설치 배너(1400) 아래에 그려졌다
+    ['notice-modal', 'memory-quiz-overlay', 'journey-overlay'].forEach(id => { const el = document.getElementById(id); if (el && el.parentElement !== document.body) document.body.appendChild(el); });
 
     const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
