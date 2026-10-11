@@ -34,7 +34,7 @@
     let cur = null;   // 열려 있는 보기 — 닫을 때 정리
 
     window.openNJ3D = async function (opts) {
-        if (cur) return;
+        if (cur) { if (cur.suspended) window.resumeNJ3D(); return; }
         const ov = document.createElement('div');
         ov.id = 'nj3d';
         ov.innerHTML = `
@@ -93,9 +93,28 @@
         build(ov, stageEl, loading, cleanups, opts || {});
     };
 
+    /* 🍎 열매 먹으러 갈 때는 버리지 않고 숨겨 둔다 (10/11 사용자: "생명나무로 돌아가는 로딩이 길다") — 닫으면 모델·성·바다를 처음부터 다시 만들어야 했다.
+       숨기는 동안 그리기를 멈추고, 돌아오면 먹은 열매를 지우고 💎·🍃를 고쳐 그 자리에서 이어 간다. 15분 안 돌아오면 그때 닫는다 */
+    window.suspendNJ3D = function () {
+        if (!cur || !cur.running) { window.closeNJ3D(); return false; }   // 아직 만드는 중이면 그냥 닫는다
+        const c = cur;
+        c.running = false; c.suspended = true; c.ov.style.display = 'none';
+        clearTimeout(c.sleepT); c.sleepT = setTimeout(() => { if (cur === c && c.suspended) window.closeNJ3D(); }, 15 * 60e3);
+        return true;
+    };
+    window.resumeNJ3D = function () {
+        if (!cur || !cur.suspended) return false;
+        const c = cur;
+        clearTimeout(c.sleepT); c.suspended = false; c.ov.style.display = '';
+        try { if (c.refreshFruit) c.refreshFruit(); if (c.syncWallet) c.syncWallet(); } catch (e) { }
+        if (c.resume) c.resume();
+        return true;
+    };
+
     window.closeNJ3D = function () {
         if (!cur) return;
         const c = cur; cur = null;
+        clearTimeout(c.sleepT);
         c.running = false;
         c.cleanups.forEach(fn => { try { fn(); } catch (e) { } });
         c.ov.remove();
@@ -621,6 +640,20 @@
             if (fruitList.length) scene.add(fruitMesh);
             else { fruitMesh.geometry.dispose(); fruitMesh.material.dispose(); }
         }
+        // 숨겼다 돌아올 때(resumeNJ3D) — 자리는 그대로 두고 먹은 열매만 지우고(크기 0) 익음 상태를 고친다
+        C.refreshFruit = () => {
+            if (!fruitList.length || typeof _njFruitList !== 'function') return;
+            const byKey = {}; _njFruitList().forEach(f => { byKey[f.key] = f; });
+            const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), col = new THREE.Color();
+            fruitList.forEach((f, i) => {
+                const n = byKey[f.key];
+                if (!n) { fruitList[i] = Object.assign({}, f, { gone: true }); sc.setScalar(0.0001); }
+                else { fruitList[i] = n; sc.setScalar(n.ripe ? 1 : 0.8); col.set(n.ripe ? ((KINDS[n.kind] || {}).color || '#d0383a') : '#e4f28a'); fruitMesh.setColorAt(i, col); }
+                m4.compose(fruitPos[i], q, sc); fruitMesh.setMatrixAt(i, m4);
+            });
+            fruitMesh.instanceMatrix.needsUpdate = true;
+            if (fruitMesh.instanceColor) fruitMesh.instanceColor.needsUpdate = true;
+        };
         const ripeN = fruitList.filter(f => f.ripe).length;
         if (ripeN) showHint(T('nj_fruit_hint', { n: ripeN }), 5000);
         // 🎁 나눔 열매(10/4) — 받은 금빛 열매(아직 안 먹은 것, 많아야 3)를 앞쪽 나무들 수관 바로 아래에 크게, 은은히 빛나며 살랑
@@ -1561,6 +1594,7 @@
             walletEl.innerHTML = `<span>💎 ${Number(typeof myGems !== 'undefined' ? myGems : 0).toLocaleString()}</span><span>🍃 ${typeof _njLeavesAvail === 'function' ? _njLeavesAvail() : 0}</span>${fish ? `<span>🐟 ${fish}</span>` : ''}`;
         };
         syncWallet();
+        C.syncWallet = () => { syncWallet(); hideFruit(); };   // 숨겼다 돌아올 때 — 먹으러 간 열매 창도 닫는다
         // 글라이더 (9/30) — 점프한 채로 점프를 한 번 더: 날개가 펼쳐져 천천히 활강, 또 누르면 접힌다. 땅에 닿으면 접힌다. 값은 없다
         // 🪂 글라이더·등 날개 (10/2) — 종류마다 모양이 다르다(도형으로 그린다, 모델 파일 없음). 글라이더는 머리 위로 들고, 등 날개는 걸을 땐 접혀 있다가 활강할 때 펼쳐 퍼덕인다
         const glider = new THREE.Group(); glider.position.set(0, 0.3, 0.01); glider.visible = false; body.add(glider);
@@ -1823,6 +1857,7 @@
             const r = cvs.getBoundingClientRect(), pv = new THREE.Vector3();
             let best = -1, bd = 28;
             fruitPos.forEach((p, i) => {
+                if (fruitList[i] && fruitList[i].gone) return;   // 먹은 열매
                 pv.copy(p).project(camera);
                 if (pv.z > 1 || pv.z < -1) return;
                 const sx = r.left + (pv.x + 1) / 2 * r.width, sy = r.top + (1 - pv.y) / 2 * r.height, d = Math.hypot(sx - e.clientX, sy - e.clientY);
@@ -1889,9 +1924,10 @@
             if (gliding && P.vy < -0.2) P.vy = -0.2;
             showHint(T(gliding ? 'nj3d_glide_on' : 'nj3d_glide_off'), 1400);
         };
-        listen(window, 'keydown', e => { if (!walk) return; inp.keys[e.code] = true; if (e.code === 'Space') { if (!e.repeat) { jumpHeld = true; doJump(); } e.preventDefault(); } if (e.code === 'Escape') { if (dexWatch) closeWatch(); else if (obs) obsClose(); else closeNJ3D(); } });
+        // 숨겨 둔 동안(열매 백지)엔 스페이스가 점프가 되면 안 된다 — C.suspended
+        listen(window, 'keydown', e => { if (!walk || C.suspended) return; inp.keys[e.code] = true; if (e.code === 'Space') { if (!e.repeat) { jumpHeld = true; doJump(); } e.preventDefault(); } if (e.code === 'Escape') { if (dexWatch) closeWatch(); else if (obs) obsClose(); else closeNJ3D(); } });
         listen(window, 'keyup', e => { inp.keys[e.code] = false; if (e.code === 'Space') jumpHeld = false; if (e.code === 'KeyC' || e.code === 'KeyQ') diveHeld = false; });
-        listen(window, 'keydown', e => { if (walk && (e.code === 'KeyC' || e.code === 'KeyQ')) diveHeld = true; });   // 🤿 잠수 Q(10/10 사용자) · C도
+        listen(window, 'keydown', e => { if (walk && !C.suspended && (e.code === 'KeyC' || e.code === 'KeyQ')) diveHeld = true; });   // 🤿 잠수 Q(10/10 사용자) · C도
         { const db = ov.querySelector('.nj3d-divebtn');
           db.addEventListener('pointerdown', e => { e.preventDefault(); diveHeld = true; try { db.setPointerCapture(e.pointerId); } catch (_) {} });
           ['pointerup', 'pointercancel'].forEach(tp => db.addEventListener(tp, () => { diveHeld = false; })); }
@@ -5108,6 +5144,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             requestAnimationFrame(loop);
         }
         rebuild(); resize(); loading.remove();
+        C.resume = () => { for (const k in inp.keys) inp.keys[k] = false; jumpHeld = diveHeld = false; last = performance.now(); C.running = true; resize(); requestAnimationFrame(loop); };   // 숨겼다 돌아옴 — 눌린 채 남은 키는 놓는다
         C.running = true; requestAnimationFrame(loop);
     }
 })();

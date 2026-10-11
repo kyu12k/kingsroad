@@ -8149,7 +8149,8 @@ function _njFruitList(now) {
 function njEatFruit(key) {
     const f = _njFruitList().find(x => x.key === key);
     if (!f || !f.ripe || (f.retryAt && Date.now() < f.retryAt)) return;
-    if (typeof closeNJ3D === 'function') closeNJ3D();
+    if (typeof suspendNJ3D === 'function') suspendNJ3D();   // 🍎 버리지 않고 숨겨 둔다 — 「생명나무로 돌아가기」가 곧바로(10/11)
+    else if (typeof closeNJ3D === 'function') closeNJ3D();
     closeNewJerusalem();
     window.currentStageId = f.id;
     window.hardshipOrigin = 'map';
