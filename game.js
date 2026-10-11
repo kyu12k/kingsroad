@@ -3101,6 +3101,9 @@ function _envNote() {
         const L = E.last;
         if (!L || L.k !== e.k || L.os !== e.os || day(L.at) !== day(now)) E.last = { k: e.k, os: e.os, at: now, ua: e.ua };
         E.seen = [...new Set([...(E.seen || []), e.k])];
+        // 🔗 들어온 경로(10/11) — ?from=qq(퀴즈퀴즈 계시록) 같은 꼬리표를 경로마다 처음 시각으로. 몇 명이 그 길로 와서 암송까지 했는지 센다
+        const f = (location.search.match(/[?&]from=([A-Za-z0-9_-]{1,20})/) || [])[1];
+        if (f) { E.src = E.src || {}; if (!E.src[f]) E.src[f] = now; }
     } catch (err) { }
     return entryEnv;
 }
@@ -13994,6 +13997,7 @@ function _mergeSaveProgress(target, other) {
             m.first = (a.first && (!b.first || a.first.at <= b.first.at)) ? a.first : b.first;
             m.last = (a.last && (!b.last || a.last.at >= b.last.at)) ? a.last : b.last;
             m.seen = [...new Set([...(a.seen || []), ...(b.seen || [])])];
+            if (a.src || b.src) { m.src = Object.assign({}, b.src || {}); for (const k in (a.src || {})) if (!m.src[k] || a.src[k] < m.src[k]) m.src[k] = a.src[k]; }   // 들어온 경로 — 경로마다 처음 시각
             if (JSON.stringify(m) !== JSON.stringify(target.entryEnv || null)) { target.entryEnv = m; took++; }
         }
         if (other.googleNudge && typeof other.googleNudge === 'object') {   // 🔒 내 기록 지키기 — 연결 기록이 있는 쪽, 아니면 더 높은 단계
