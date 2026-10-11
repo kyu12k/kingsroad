@@ -7752,3 +7752,9 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .ili-note { font-size: .8rem; line-height: 1.5; color: #a0522d; background: #fdf3e7; border-radius: 10px; padding: 8px 10px; margin-bottom: 12px; text-align: left; }
 .ili-copy { width: 100%; background: #3498db; color: #fff; border: none; border-radius: 26px; padding: 12px; font-weight: 700; font-size: .95rem; margin-bottom: 4px; cursor: pointer; }
 .ili-close { width: 100%; background: none; border: none; color: #95a5a6; padding: 10px 0 2px; font-size: .9rem; cursor: pointer; }
+
+/* 🏠 홈 스크롤 (2026-10-11 사용자 화면: 설치 배너가 프로필 버튼·「홈 화면에 추가」를 덮었다 — body·html이 overflow:hidden이라 내릴 수 없었다).
+   홈 화면 자체가 화면 높이 안에서 스크롤한다. 내용이 화면보다 짧으면(큰 화면) 지금과 같다. 배너가 떠 있으면 그 높이만큼 아래 여백 */
+#home-screen.active { height: 100vh; height: 100dvh; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; background-attachment: local; }
+#home-screen.active::before { position: fixed; }
+body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padding-bottom: 110px; }

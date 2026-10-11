@@ -422,3 +422,8 @@ PC에서 CPU 4~6배 감속으로 잰 fps는 회차마다 40~60으로 흔들려 �
 - 사용자 화면(삼성 인터넷): 꿀팁 다음 공지 창의 ✕ 위에 ☰·「시험준비」가, 아래에 「킹스로드 앱으로 설치하기」 배너가 올라와 있었다.
 - 원인: `#home-screen`은 `isolation: isolate`이고 `#home-screen > *`가 `z-index: 1`이라, 그 안의 창은 z-index를 9999로 줘도 홈 버튼(3000)·body의 설치 배너(1400) 아래에 그려진다. 공지 창(`notice-modal`)은 z-index 1 칸에, 「기억하시나요」(`memory-quiz-overlay`)·「여정 시작」(`journey-overlay`)은 홈 화면 안에 있었다.
 - 앱이 켜질 때(DOMContentLoaded) 세 창을 body로 옮긴다. 헤드리스로 창의 네 모서리를 눌러 봐서 모두 창이 맞는지 확인. **홈 화면 안에 새 창을 만들지 말 것** — body에 붙인다.
+
+## 2026-10-11 — 🏠 홈 화면 스크롤
+- 사용자 화면: 설치 배너가 프로필 버튼·「홈 화면에 추가」를 덮었는데 내릴 수 없었다(body·html·#home-screen 모두 overflow:hidden). 설치 화면을 크게 키우는 대신(이미 브라우저로 쓰는 사람을 매번 막는다) 홈을 스크롤하게 했다.
+- `#home-screen.active`가 화면 높이 안에서 스크롤(`overflow-y:auto`, 배경 `local`, 겉 그라데이션 `::before`는 fixed). 배너가 떠 있으면(`body:has(#pwa-install-banner[style*="display: flex"])`) 아래 여백 110px. 내용이 짧은 큰 화면은 그대로.
+- 삼성 인터넷의 「설치」는 삼성 인터넷이 직접 설치한다(크롬으로 안 넘어감) — 크롬으로 이미 설치했으면 아이콘이 둘이 된다.
