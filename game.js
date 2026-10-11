@@ -758,6 +758,7 @@ const LANG = {
         hardship_feedback_correct: '정답입니다. {label} · +{pts}점',
         hardship_feedback_correct_no_reward: '정답입니다. {label} · 승점 없음',
         hardship_feedback_correct_why: '정답입니다. {label} · {why}', hardship_feedback_typo_why: '오타 보정! {why} ({n}글자 오타)',
+        nr_fruit: '열매는 승점 대신 🍃 잎사귀', nr_gift: '나눔 열매는 승점 대신 💎·🍃',
         nr_step: '첫 마디·빈칸으로 써서 승점 없음', nr_linked: '오늘 이 장은 이미 승점을 받아 승점 없음', nr_test: '연습 테스트라 승점 없음 — 장 전체 테스트만 승점',
         hardship_blank_hint_notice: '💡 막히면 힌트를 누르세요 — 한 글자씩만 열려요',
         embed_title_quick_blank_none: '백지 복습',
@@ -2062,6 +2063,7 @@ const LANG = {
         hardship_feedback_correct: 'Correct! {label} · +{pts} pts',
         hardship_feedback_correct_no_reward: 'Correct! {label} · No points',
         hardship_feedback_correct_why: 'Correct! {label} · {why}', hardship_feedback_typo_why: 'Typo corrected! {why} ({n} typo(s))',
+        nr_fruit: 'fruit gives 🍃 leaves instead of points', nr_gift: 'shared fruit gives 💎·🍃 instead of points',
         nr_step: 'no points with first words/blanks given', nr_linked: 'this chapter already earned points today', nr_test: 'practice test, no points — only whole-chapter tests score',
         hardship_blank_hint_notice: '💡 Stuck? Tap the hint — it opens one letter at a time',
         embed_title_quick_blank_none: 'Blank review',
@@ -31865,6 +31867,8 @@ function _noRewardWhy() {
     const hs = hardshipState; if (!hs) return '';
     if (hs.levelTest) return (hs.ltStep || 0) > 0 ? 'nr_step' : (hs.ltFull && !hs.ltPay) ? 'nr_linked' : 'nr_test';
     if (hs.repeatFactor === 0) return 'nr_linked';
+    if (hs.fruitKey) return 'nr_fruit';   // 🍎 생명나무 열매 — 승점 대신 잎사귀(10/11: 「오늘 이미 받은 승점」으로 잘못 나왔다)
+    if (hs.giftId) return 'nr_gift';      // 🎁 나눔 열매 — 승점 대신 💎·🍃
     return '';
 }
 function _blankScoreKind() {
@@ -31971,9 +31975,11 @@ function submitHardshipMemoryGuess() {
                     : hardshipState.rewardBlocked
                         ? (_noRewardWhy() ? t('hardship_feedback_correct_why', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }), why: t(_noRewardWhy()) })
                             : t('hardship_feedback_correct_no_reward', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) }))
-                        // 여기서 0이면 이유는 하나뿐 — 오늘 같은 콘텐츠로 이 구절 승점을 이미 받았다
+                        // 0의 이유 — 승점 대신 다른 보상(열매)·이미 인정된 장이면 그 이유, 아니면 오늘 같은 콘텐츠로 이미 받은 승점(10/11: 열매가 「오늘 이미」로 나왔다)
                         : (earnedPoints <= 0)
-                            ? t('hardship_feedback_correct_scored_today', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) })
+                            ? (_noRewardWhy() ? t('hardship_feedback_correct_why', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }), why: t(_noRewardWhy()) })
+                                : _blankScoreAlreadyToday(_blankSid) ? t('hardship_feedback_correct_scored_today', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) })
+                                : t('hardship_feedback_correct_no_reward', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) }))
                             : t('hardship_feedback_correct', { label: t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }), pts: earnedPoints })
         };
         if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
@@ -32027,9 +32033,11 @@ function submitHardshipMemoryGuess() {
                 ? t('label_revelation_ref', { ch: hardshipState.currentVerse.chapter, v: hardshipState.currentVerse.verse }) + ' · 오타 보정'
                 : hardshipState.rewardBlocked
                     ? (_noRewardWhy() ? t('hardship_feedback_typo_why', { n: typoCount, why: t(_noRewardWhy()) }) : t('hardship_feedback_typo_corrected_no_reward', { n: typoCount }))
-                    // 0이면 이유는 하나뿐 — 오늘 같은 콘텐츠로 이 구절 승점을 이미 받았다
+                    // 0의 이유 — 위 정답 문구와 같은 순서
                     : (earnedPoints <= 0)
-                        ? t('hardship_feedback_typo_corrected_scored_today', { n: typoCount })
+                        ? (_noRewardWhy() ? t('hardship_feedback_typo_why', { n: typoCount, why: t(_noRewardWhy()) })
+                            : _blankScoreAlreadyToday(_blankSid) ? t('hardship_feedback_typo_corrected_scored_today', { n: typoCount })
+                            : t('hardship_feedback_typo_corrected_no_reward', { n: typoCount }))
                         : t('hardship_feedback_typo_corrected', { pts: earnedPoints, n: typoCount }))
                 + `<span class="typo-detail"> (${typoDetail})</span>`
         };
