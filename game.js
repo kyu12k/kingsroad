@@ -338,6 +338,7 @@ const LANG = {
         nudge_later: '나중에',
         // 🔒 내 기록 지키기 (구글 연결 안 된 사람에게 5·20·50·100·200절째)
         gnudge_title: '🔒 내 기록 지키기',
+        gnudge_body_first: '첫 절을 외웠어요! 🎉<br>지금 이 기록은 <b>이 기기에만</b> 있어요.',
         gnudge_body: '외운 <b>{n}절</b>과 💎 <b>{gem}</b>이<br><b>이 기기에만</b> 있어요.',
         gnudge_risk: '폰을 바꾸거나 브라우저 기록을 지우면 되찾을 수 없어요.',
         gnudge_keep: 'Google에 연결해 두면 어느 기기에서든 Google로 이어 해요.<br>번호·친구·길드는 그대로예요.',
@@ -1635,6 +1636,7 @@ const LANG = {
         nudge_confirm: 'Choose a name',
         nudge_later: 'Later',
         gnudge_title: '🔒 Protect your progress',
+        gnudge_body_first: 'You memorized your first verse! 🎉<br>Right now it lives <b>only on this device</b>.',
         gnudge_body: 'Your <b>{n} verse(s)</b> and 💎 <b>{gem}</b><br>live <b>only on this device</b>.',
         gnudge_risk: 'If you switch phones or clear your browser data, there is no way to get them back.',
         gnudge_keep: 'Link Google and you can continue on any device with Google.<br>Your number, friends and guild stay the same.',
@@ -25362,6 +25364,8 @@ function _promiseRefOf(id) { const [c, v] = String(id).split('-'); return curren
 function _promiseNowHM() { const d = new Date(), m = Math.round(d.getMinutes() / 5) * 5, h = (d.getHours() + (m === 60 ? 1 : 0)) % 24; return String(h).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); }
 function _showPromiseCard() {
     const P = onboardPromise; if (!P || P.shown) return;
+    if (document.getElementById('google-nudge-modal')) { window._promiseWait = true; return; }   // 🔒 구글 카드가 떠 있으면 닫은 뒤에
+    if (typeof _googleFirstPending === 'function' && _googleFirstPending()) { window._promiseWait = true; setTimeout(maybeShowGoogleNudge, 300); return; }   // 🔒 첫 절 구글 카드 먼저(10/11)
     P.shown = Date.now(); saveGameData();
     const old = document.getElementById('promise-card'); if (old) old.remove();
     const noNotif = typeof Notification === 'undefined', iosGuide = noNotif && typeof isIOSNonPWA === 'function' && isIOSNonPWA();
@@ -26901,7 +26905,10 @@ function closeProfileNudge(openProfile) {
    실측: 1절+ 978명 중 구글 4%, 30일 안 활동한 50절+도 36%. 로그인이 풀리거나 기기를 바꾸면 새 익명 계정이 생겨 같은 번호 사본이 쌓였다(#5850 9개).
    보상 없음 — 기록을 지키는 일이라 이유가 충분하고, 보상을 걸면 지킬 것 없는 사람까지 연결한다.
    카톡·인스타 등 앱 안 창은 구글이 로그인을 막고, 기록도 그 앱 안에만 있어 옮기라고 할 수 없다 → 띄우지 않고 'inapp'만 남긴다(텔레그램은 된다) */
-const GOOGLE_NUDGE_LV = [5, 20, 50, 100, 200];
+const GOOGLE_NUDGE_LV = [1, 5, 20, 50, 100, 200];   // 1 = 처음 한 절 직후(10/11 사용자: "1장 1절이 끝나면 연동하라고 하자 — 그때도 안 하면 어쩔 수 없고"). 「내일의 약속」보다 먼저
+/* 첫 절 카드가 아직 남았나 — 그동안 「내일의 약속」은 기다렸다가 구글 카드를 닫은 뒤 뜬다 */
+function _googleFirstPending() { try { return _googleNudgeEligible() && !_googleBlockedBrowser() && !(googleNudge && (googleNudge.lv | 0) >= 1); } catch (e) { return false; } }
+function _promiseAfterGoogle() { if (window._promiseWait) { window._promiseWait = false; setTimeout(() => { if (typeof _showPromiseCard === 'function') _showPromiseCard(); }, 450); } }
 function _googleNudgeLv() { const n = _getClearedVerseCount(); let lv = 0; GOOGLE_NUDGE_LV.forEach(m => { if (n >= m) lv = m; }); return lv; }
 function _googleNudgeNoteLinked() { if (googleNudge && !googleNudge.ok && isGoogleLinked()) { googleNudge.ok = Date.now(); saveGameData(); } }
 /* 구글이 로그인을 막는 앱 안 창 — 텔레그램은 뺀다(10/6 안드로이드 텔레그램 안에서 연결 끝까지 확인: 기본 브라우저(삼성 인터넷) 창을 빌려 연다) */
@@ -26914,19 +26921,19 @@ function _googleNudgeEligible() {
 function maybeShowGoogleNudge(attempt) {
     attempt = attempt || 0;
     _googleNudgeNoteLinked();
-    if (!_googleNudgeEligible()) return;
-    const lv = _googleNudgeLv(); if (googleNudge && (googleNudge.lv | 0) >= lv) return;
-    if (_googleBlockedBrowser()) { googleNudge = Object.assign({}, googleNudge, { lv, at: Date.now(), a: 'inapp' }); saveGameData(); return; }
+    if (!_googleNudgeEligible()) { _promiseAfterGoogle(); return; }
+    const lv = _googleNudgeLv(); if (googleNudge && (googleNudge.lv | 0) >= lv) { _promiseAfterGoogle(); return; }
+    if (_googleBlockedBrowser()) { googleNudge = Object.assign({}, googleNudge, { lv, at: Date.now(), a: 'inapp' }); saveGameData(); _promiseAfterGoogle(); return; }
     const busy = (typeof isMilestoneShowing !== 'undefined' && isMilestoneShowing)
         || document.querySelector('.modal-overlay.active') || document.getElementById('profile-nudge-modal') || document.getElementById('google-nudge-modal');
-    if (busy) { if (attempt < 4) setTimeout(() => maybeShowGoogleNudge(attempt + 1), 2500); return; }
+    if (busy) { if (attempt < 4) setTimeout(() => maybeShowGoogleNudge(attempt + 1), 2500); else _promiseAfterGoogle(); return; }   // 끝내 못 띄우면 약속 카드는 놓아준다
     googleNudge = Object.assign({}, googleNudge, { lv, at: Date.now(), a: 'later' }); saveGameData();   // 띄운 순간 이 단계는 끝 — 어떻게 닫든
     const modal = document.createElement('div');
     modal.id = 'google-nudge-modal'; modal.className = 'modal-overlay'; modal.style.zIndex = '9998';
     modal.innerHTML = `
         <div class="result-card" style="max-width:330px; background:#fff; color:#2c3e50; text-align:center; padding-bottom:22px;">
             <h2 style="color:#2c3e50; margin:4px 0 14px; font-size:1.25rem;">${t('gnudge_title')}</h2>
-            <p style="color:#2c3e50; font-size:0.95rem; line-height:1.65; margin:0 0 10px;">${t('gnudge_body', { n: _getClearedVerseCount(), gem: (myGems || 0).toLocaleString() })}</p>
+            <p style="color:#2c3e50; font-size:0.95rem; line-height:1.65; margin:0 0 10px;">${lv === 1 ? t('gnudge_body_first') : t('gnudge_body', { n: _getClearedVerseCount(), gem: (myGems || 0).toLocaleString() })}</p>
             <p style="color:#c0392b; font-size:0.88rem; line-height:1.6; margin:0 0 14px;">${t('gnudge_risk')}</p>
             <p style="color:#7f8c8d; font-size:0.85rem; line-height:1.6; margin:0 0 20px;">${t('gnudge_keep')}</p>
             <button onclick="googleNudgeLink()" style="width:100%; background:#4285f4; color:#fff; border:none; padding:13px; border-radius:30px; font-weight:bold; cursor:pointer; font-size:1.02rem; box-shadow:0 4px 0 #2a66c9;">${t('gnudge_btn')}</button>
@@ -26936,16 +26943,18 @@ function maybeShowGoogleNudge(attempt) {
     document.body.appendChild(modal);
     setTimeout(() => modal.classList.add('active'), 10);
 }
-function closeGoogleNudge() {
+function closeGoogleNudge(keepPromise) {
     const modal = document.getElementById('google-nudge-modal');
     if (modal) { modal.classList.remove('active'); setTimeout(() => modal.remove(), 200); }
+    if (!keepPromise) _promiseAfterGoogle();
 }
 /* 카드의 버튼과 홈 「오늘 할 일」의 🔒 칩이 함께 쓴다. 팝업이면 곧바로, 리다이렉트면 돌아와서 _googleNudgeNoteLinked가 시각을 남긴다 */
 async function googleNudgeLink() {
-    closeGoogleNudge();
+    closeGoogleNudge(true);   // 약속 카드는 연결 창이 끝난 뒤에
     googleNudge = Object.assign({ lv: _googleNudgeLv(), at: Date.now() }, googleNudge, { a: 'tap' }); saveGameData();
-    await linkGoogleAccount();
+    try { await linkGoogleAccount(); } catch (e) { }
     _googleNudgeNoteLinked();
+    _promiseAfterGoogle();
     if (typeof renderHomeTodo === 'function') renderHomeTodo();
 }
 function getAudioUrl(cNum, vNum, voice) {

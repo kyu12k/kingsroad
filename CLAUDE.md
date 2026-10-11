@@ -139,7 +139,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `_unifyJourneyMemory()` · `collectionLegacy` | game.js:~5610 | 두 여정 진도를 한 벌로(불러올 때) · 합치기 전 도감 점수 보존(체력 +3) |
 | `openGiftFruit(tag, nick)` · `_giftSend` · `_giftCheckInbox` · `_giftArrive` · `_giftOnBlank` · `eatGiftFruit(id)` · `openGiftBasket()` · `njGiftFruits` | game.js:~26480 | 🎁 나눔 열매 — 내 💎로 친구·길드원·동행에게, 받은 이가 백지로 익히고 먹으면 💎 반·🍃. 받는 이 문서 `pendingFruits`·`pendingThanks` (`docs/새-예루살렘.md`) |
 | `renderHomeTodo()` · `_todoSocial` · `_syncSocialBadges()` · `updateFriendBadge()` | game.js:~29250 | 홈 「오늘 할 일」(복습·백지·응원·길드 출석)과 친구/길드/더보기 배지. `updateNotificationBadges`가 함께 그린다 |
-| `maybeShowGoogleNudge()` · `googleNudgeLink()` · `_googleNudgeEligible()` · `googleNudge` | game.js:~26103 | 🔒 내 기록 지키기 — 구글 미연결에게 5·20·50·100·200절째 클리어 직후 한 번 + 홈 🔒 칩, 앱 안 브라우저 제외 (`docs/저장과-동기화.md`) |
+| `maybeShowGoogleNudge()` · `googleNudgeLink()` · `_googleNudgeEligible()` · `googleNudge` | game.js:~26103 | 🔒 내 기록 지키기 — 구글 미연결에게 1(처음 한 절, 「내일의 약속」보다 먼저 `_googleFirstPending`)·5·20·50·100·200절째 클리어 직후 한 번 + 홈 🔒 칩, 앱 안 브라우저 제외 (`docs/저장과-동기화.md`) |
 | `_checkReturnBoost()` · `_returnBoostExtra(gem)` · `_renderReturnFloat()` · `returnBoost` | game.js:~29450 | 돌아온 순례자 — 14일 넘게 쉬면 7일간 암송 보석 2배(동기화 뒤 판정), 효과 기록 포함 (`docs/랭킹과-이벤트.md`) |
 | `openGuideScreen()` · `openGuideQuiz()` · `_guideSync()` · `_guideNoteDay()` · `_guideTryGraduate()` · `guideInfo`·`guideRel` | game.js:~29700 · kingsroad `guide*` | 🧭 인도자와 동행 — 시험(다 맞힐 때까지) → 인도자 코드, 초심자 신청·승낙, 정착 졸업(망각의 고난 한 장 + 4주 연속 주 3일) → 성 나무에 빨간 열매 (`docs/인도자와-동행.md`) |
 | `openDailyJournal(view)` · `_dailyLogSync()` · `dailyLog` · `_djMonthHtml` · `_djJourneyHtml` | game.js:~19280 | 📖 오늘의 암송 일지 — 날마다 한 절·단계를 400일 보관, 한 달 달력(등잔)·여정 전체(22장 칩 + 주×요일 칸), 스크린샷용 카드 (`docs/랭킹과-이벤트.md`) |
