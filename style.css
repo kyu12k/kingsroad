@@ -7755,6 +7755,9 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 
 /* 🏠 홈 스크롤 (2026-10-11 사용자 화면: 설치 배너가 프로필 버튼·「홈 화면에 추가」를 덮었다 — body·html이 overflow:hidden이라 내릴 수 없었다).
    홈 화면 자체가 화면 높이 안에서 스크롤한다. 내용이 화면보다 짧으면(큰 화면) 지금과 같다. 배너가 떠 있으면 그 높이만큼 아래 여백 */
-#home-screen.active { height: 100vh; height: 100dvh; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; background-attachment: local; }
+/* 보이는 화면에 딱 맞춘 고정 판(position:fixed; inset:0) — 삼성 인터넷은 100vh를 주소창이 숨은 높이로 잡아 페이지 전체가 밀려 올라가 제목이 주소창 밑으로 사라졌다(10/11 사용자 화면) */
+#home-screen.active { position: fixed; inset: 0; height: auto; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; background-attachment: local; }
 #home-screen.active::before { position: fixed; }
+/* 세로 가운데 정렬은 내용이 화면보다 길면 위로도 넘쳐 제목이 스크롤로도 닿지 않는다 — 넘칠 때만 위에서부터(safe). safe를 모르는 옛 브라우저는 위에서부터 */
+#home-screen.active { justify-content: flex-start; justify-content: safe center; }
 body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padding-bottom: 110px; }

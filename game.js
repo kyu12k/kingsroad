@@ -2788,6 +2788,8 @@ window.addEventListener('DOMContentLoaded', () => {
     // 🪟 홈 화면 안에 갇힌 창을 맨 바깥으로 (10/11 사용자 화면: 공지 창 ✕를 ☰·「시험준비」가, 아래를 설치 배너가 덮었다).
     // #home-screen은 isolation:isolate이고 그 자식은 z-index:1이라, 창의 z-index가 9999여도 홈 버튼(3000)·설치 배너(1400) 아래에 그려졌다
     ['notice-modal', 'memory-quiz-overlay', 'journey-overlay'].forEach(id => { const el = document.getElementById(id); if (el && el.parentElement !== document.body) document.body.appendChild(el); });
+    // 🏠 홈에서는 페이지 전체가 내려가 있으면 안 된다 — 홈 안쪽이 스크롤한다(10/11 삼성 인터넷: 제목이 주소창 밑으로). 다른 화면은 키보드가 창을 올리므로 건드리지 않는다
+    window.addEventListener('scroll', () => { const h = document.getElementById('home-screen'); if (h && h.classList.contains('active') && (window.scrollY || document.documentElement.scrollTop)) window.scrollTo(0, 0); }, { passive: true });
 
     const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);

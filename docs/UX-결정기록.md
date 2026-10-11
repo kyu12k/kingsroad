@@ -427,3 +427,4 @@ PC에서 CPU 4~6배 감속으로 잰 fps는 회차마다 40~60으로 흔들려 �
 - 사용자 화면: 설치 배너가 프로필 버튼·「홈 화면에 추가」를 덮었는데 내릴 수 없었다(body·html·#home-screen 모두 overflow:hidden). 설치 화면을 크게 키우는 대신(이미 브라우저로 쓰는 사람을 매번 막는다) 홈을 스크롤하게 했다.
 - `#home-screen.active`가 화면 높이 안에서 스크롤(`overflow-y:auto`, 배경 `local`, 겉 그라데이션 `::before`는 fixed). 배너가 떠 있으면(`body:has(#pwa-install-banner[style*="display: flex"])`) 아래 여백 110px. 내용이 짧은 큰 화면은 그대로.
 - 삼성 인터넷의 「설치」는 삼성 인터넷이 직접 설치한다(크롬으로 안 넘어감) — 크롬으로 이미 설치했으면 아이콘이 둘이 된다.
+- 이어서(같은 날, 사용자 화면: 맨 위로 올려도 「KING'S ROAD」가 주소창 밑으로 잘림): 진짜 원인은 `.screen.active`의 세로 가운데 정렬(`justify-content: center`) — 내용이 화면보다 길면 위로도 넘쳐 스크롤로 닿지 않는다(헤드리스 높이 700에서 제목 top −56). `#home-screen.active { justify-content: safe center }`(모르면 flex-start) + 홈을 `position:fixed; inset:0` 판으로 + 홈일 때 페이지 전체 스크롤은 0으로 되돌림. 큰 화면은 가운데 그대로.
