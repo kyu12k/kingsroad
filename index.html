@@ -47,8 +47,11 @@
             _pwaPrompt = e;
             let snoozed = false;
             try { snoozed = Date.now() - parseInt(localStorage.getItem('kingsRoad_pwaBannerDismissedAt') || '0', 10) < PWA_BANNER_SNOOZE_MS; } catch (err) { }
+            // ?install=1 — 퀴즈퀴즈 계시록 시상·종료 화면의 「킹스로드로 매일 암송하기」 버튼으로 들어왔다(2026-10-11).
+            // 설치하려고 온 사람이니 「7일 동안 안 보기」와 상관없이 바로 띄운다 (다른 사이트에서는 설치 창을 직접 못 연다)
+            const wantInstall = /[?&]install=1\b/.test(location.search);
             const banner = document.getElementById('pwa-install-banner');
-            if (banner && !snoozed) banner.style.display = 'flex';
+            if (banner && (!snoozed || wantInstall)) banner.style.display = 'flex';
         });
         window.addEventListener('appinstalled', () => {
             const banner = document.getElementById('pwa-install-banner');
