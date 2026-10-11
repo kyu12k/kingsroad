@@ -337,6 +337,14 @@ const LANG = {
         nudge_confirm: '이름 정하기',
         nudge_later: '나중에',
         // 🔒 내 기록 지키기 (구글 연결 안 된 사람에게 5·20·50·100·200절째)
+        ios_inst_title: '킹스로드를 홈 화면에', ios_inst_sub: '앱처럼 열고, 매일 알림도 받을 수 있어요.',
+        ios_inst_s1: '아래 <b>공유 버튼</b>(□↑)을 누르세요<br><small>안 보이면 주소창 옆 <b>⋯</b>을 누른 뒤 「공유」</small>',
+        ios_inst_s2: '목록을 내려 <b>「홈 화면에 추가」</b>를 누르세요',
+        ios_inst_s3: '홈 화면의 <b>킹스로드 아이콘</b>으로 열어서 시작하세요',
+        ios_inst_note: '홈 화면 앱은 사파리와 기록이 따로예요. 처음이라면 아이콘으로 열어서 시작하세요.',
+        ios_inst_o1: '이 창에서는 홈 화면에 추가할 수 없어요. 오른쪽 위·아래의 <b>⋯</b>(또는 나침반) 메뉴에서 <b>「Safari로 열기」</b>를 누르세요',
+        ios_inst_o2: '메뉴가 없으면 아래 버튼으로 주소를 복사해 <b>Safari</b>에 붙여 넣으세요',
+        ios_inst_copy: '🔗 주소 복사', ios_inst_copied: '✅ 복사했어요 — Safari 주소창에 붙여 넣으세요', ios_inst_close: '나중에 할게요',
         gnudge_title: '🔒 내 기록 지키기',
         gnudge_body_first: '첫 절을 외웠어요! 🎉<br>지금 이 기록은 <b>이 기기에만</b> 있어요.',
         gnudge_body: '외운 <b>{n}절</b>과 💎 <b>{gem}</b>이<br><b>이 기기에만</b> 있어요.',
@@ -1635,6 +1643,14 @@ const LANG = {
         nudge_body_gain: 'Choose a name and you can continue on any device,<br>and join friends, guilds, and the rankings.',
         nudge_confirm: 'Choose a name',
         nudge_later: 'Later',
+        ios_inst_title: "Add King's Road to your Home Screen", ios_inst_sub: 'Open it like an app and get daily reminders.',
+        ios_inst_s1: 'Tap the <b>Share button</b> (□↑) below<br><small>Not there? Tap <b>⋯</b> next to the address bar, then Share</small>',
+        ios_inst_s2: 'Scroll down and tap <b>Add to Home Screen</b>',
+        ios_inst_s3: 'Start from the <b>King’s Road icon</b> on your Home Screen',
+        ios_inst_note: 'The Home Screen app keeps its own records, separate from Safari. If you are new, start from the icon.',
+        ios_inst_o1: 'You cannot add to the Home Screen from this window. Open the <b>⋯</b> (or compass) menu and choose <b>Open in Safari</b>',
+        ios_inst_o2: 'No menu? Copy the address below and paste it into <b>Safari</b>',
+        ios_inst_copy: '🔗 Copy address', ios_inst_copied: '✅ Copied — paste it into Safari', ios_inst_close: 'Maybe later',
         gnudge_title: '🔒 Protect your progress',
         gnudge_body_first: 'You memorized your first verse! 🎉<br>Right now it lives <b>only on this device</b>.',
         gnudge_body: 'Your <b>{n} verse(s)</b> and 💎 <b>{gem}</b><br>live <b>only on this device</b>.',
@@ -2803,6 +2819,9 @@ window.addEventListener('DOMContentLoaded', () => {
         homeBtn.onclick = _pwaInstallClick;
     }
 
+    // 📲 퀴즈퀴즈에서 ?install=1로 온 아이폰 — 설치 창 신호가 없어 배너가 안 뜬다. 스플래시 위에 곧바로 안내(10/11)
+    if (!isStandalone && isIOS && /[?&]install=1\b/.test(location.search)) _iosInstallFromLink(isSafari);
+
     const repeatBtn = document.getElementById('repeat-toggle-btn');
     if (repeatBtn) {
         updateVoiceRepeatButtonState(repeatBtn);
@@ -2810,6 +2829,31 @@ window.addEventListener('DOMContentLoaded', () => {
 
     updateTempleUpgradeNotification();
 });
+
+/* 📲 아이폰 설치 안내 (2026-10-11 사용자: "아이폰 사용자만 골라서 안내를") — 퀴즈퀴즈 계시록의 「킹스로드로 매일 암송하기」(?install=1)로 온 사람.
+   아이폰은 설치 창을 띄울 수 없어 단계만 보여 준다. 홈 화면 앱은 사파리와 기록이 따로라 프로필 전에(스플래시 위에) 먼저.
+   사파리가 아니면(텔레그램·카톡 안 창 등) 「Safari로 열기」 + 주소 복사 */
+function _iosInstallFromLink(isSafari) {
+    if (document.getElementById('ios-link-install')) return;
+    const m = document.createElement('div'); m.id = 'ios-link-install'; m.className = 'ios-link-install';
+    const steps = isSafari ? ['ios_inst_s1', 'ios_inst_s2', 'ios_inst_s3'] : ['ios_inst_o1', 'ios_inst_o2'];
+    m.innerHTML = `<div class="ili-card">
+        <div class="ili-icon">📲</div>
+        <div class="ili-title">${t('ios_inst_title')}</div>
+        <div class="ili-sub">${t('ios_inst_sub')}</div>
+        <ol class="ili-steps">${steps.map(k => `<li>${t(k)}</li>`).join('')}</ol>
+        ${isSafari ? `<div class="ili-note">${t('ios_inst_note')}</div>` : `<button class="ili-copy" type="button">${t('ios_inst_copy')}</button>`}
+        <button class="ili-close" type="button">${t('ios_inst_close')}</button>
+    </div>`;
+    document.body.appendChild(m);
+    m.querySelector('.ili-close').onclick = () => m.remove();
+    const cp = m.querySelector('.ili-copy');
+    if (cp) cp.onclick = async () => {
+        const url = location.href;
+        try { await navigator.clipboard.writeText(url); cp.textContent = t('ios_inst_copied'); }
+        catch (e) { try { const ta = document.createElement('textarea'); ta.value = url; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); cp.textContent = t('ios_inst_copied'); } catch (e2) { } }
+    };
+}
 
 // [시스템: 경제 및 인벤토리]
 let myGems = 0;           // 현재 보유 보석

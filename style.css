@@ -7740,3 +7740,15 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .letter-together { font-size: .82rem; line-height: 1.45; text-align: center; margin: 2px 0 8px; opacity: .9; }
 .letter-together:empty { display: none; }
 .letter-together b { color: #a8650a; }
+
+/* 📲 아이폰 설치 안내 — 퀴즈퀴즈 ?install=1 (10/11). 스플래시(99999) 위 */
+.ios-link-install { position: fixed; inset: 0; z-index: 100000; background: rgba(8, 12, 22, .78); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.ili-card { width: 100%; max-width: 340px; background: #fff; color: #2c3e50; border-radius: 18px; padding: 22px 20px 16px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+.ili-icon { font-size: 2.4rem; line-height: 1; margin-bottom: 8px; }
+.ili-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 4px; }
+.ili-sub { font-size: .88rem; color: #7f8c8d; margin-bottom: 14px; }
+.ili-steps { text-align: left; margin: 0 0 12px; padding-left: 22px; font-size: .92rem; line-height: 1.55; display: flex; flex-direction: column; gap: 8px; }
+.ili-steps small { color: #7f8c8d; font-size: .8rem; }
+.ili-note { font-size: .8rem; line-height: 1.5; color: #a0522d; background: #fdf3e7; border-radius: 10px; padding: 8px 10px; margin-bottom: 12px; text-align: left; }
+.ili-copy { width: 100%; background: #3498db; color: #fff; border: none; border-radius: 26px; padding: 12px; font-weight: 700; font-size: .95rem; margin-bottom: 4px; cursor: pointer; }
+.ili-close { width: 100%; background: none; border: none; color: #95a5a6; padding: 10px 0 2px; font-size: .9rem; cursor: pointer; }
