@@ -3107,6 +3107,19 @@ function _envNote() {
     } catch (err) { }
     return entryEnv;
 }
+/* 🔗 꼬리표 주소로 온 사람 (10/11 사용자: "와서 둘러보기만 한 사람도") — 빈 저장본은 올리지 않으니(유령 계정) 따로 arrivals/{uid} 한 장.
+   ?from=이 있을 때만, 계정·경로마다 한 번. 나중에 saves와 uid로 이어 「왔다 → 프로필 → 1절 → 둘째 날」을 센다 */
+function _noteArrival() {
+    const f = (location.search.match(/[?&]from=([A-Za-z0-9_-]{1,20})/) || [])[1];
+    const u = (typeof auth !== 'undefined' && auth) ? auth.currentUser : null;
+    if (!f || !u || typeof db === 'undefined' || !db) return;
+    const key = 'kingsRoad_arrival_' + u.uid + '_' + f;
+    try { if (localStorage.getItem(key)) return; } catch (e) { }
+    const e = _envNow();
+    db.collection('arrivals').doc(u.uid).set({ src: { [f]: Date.now() }, os: e.os, k: e.k, at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+        .then(() => { try { localStorage.setItem(key, '1'); } catch (err) { } })
+        .catch(err => console.warn('[arrival]', err && err.code));
+}
 /* 🎓 레벨 테스트 기록 — { [장]: [{ at, n, r: { '13-1': 3|2|1|0 }, s: [시작에서 막힌 절], w: [시작 때 따뜻했던 절], done }] } 장마다 최근 5번 */
 let levelTests = {};
 let oilLv = {};   // 🪔 기름 단계 — 절 → { l: 0~8, t: 바뀐 시각 }. 증거로만 오르내린다(통과 = 그 단계까지, 실패 = 그 단계 아래로). docs/암송-단계.md
@@ -14082,6 +14095,7 @@ async function initFirestoreSync() {
         try { if (typeof splashReady === 'function') setTimeout(splashReady, 300); } catch (e) { }
         try { if (typeof _letterReturnCheck === 'function') _letterReturnCheck(); } catch (e) { }   // 💌 3일+ 쉬고 돌아옴   // ⏳ 서버 기록을 받아 왔다 — 시작 화면을 연다(화면이 한 번 다시 그려질 틈)
         try { _checkReturnBoost(); _renderReturnFloat(); } catch (e) { console.warn('[returnBoost]', e); }
+        try { _noteArrival(); } catch (e) { }   // 🔗 꼬리표 주소로 온 사람 — 둘러보기만 해도
         try { _guideSync(); } catch (e) {}   // 인도자와 동행 — 서버 상태
         try { await ensureTagAssigned(); } catch (e) { /* 조용히 */ }
         try { _flushRecallLog(); } catch (e) {}   // 지난번에 못 올린 일지

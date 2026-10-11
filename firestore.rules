@@ -175,6 +175,17 @@ service cloud.firestore {
       }
     }
 
+    // 🔗 꼬리표 주소(?from=)로 온 사람 (2026-10-11) — 빈 저장본은 올리지 않으니 둘러보기만 한 사람은 여기 한 장.
+    // 본인 uid에만, 필드 넷, 경로 10개까지. 읽기·지우기는 관리자(admin SDK)만
+    match /arrivals/{uid} {
+      allow read, delete: if false;
+      allow create, update: if request.auth != null
+                            && request.auth.uid == uid
+                            && request.resource.data.keys().hasOnly(['src', 'os', 'k', 'at'])
+                            && request.resource.data.src is map
+                            && request.resource.data.src.size() <= 10;
+    }
+
     // 🙏 함께 암송하는 성도 (2026-10-11) — 서버 togetherStats만 쓴다. 숫자 둘뿐이라 누구나 읽는다
     match /stats/{id} {
       allow read: if true;
