@@ -23,6 +23,11 @@
 > 기기에는 남아 있어 날아가진 않았지만 다른 기기에 안 보였다. 저장본에 새 필드를 넣을 때 **배열의 배열**이면 문자열이나 객체로 바꿀 것(`_hmFix`).
 > 서버 함수 로그(`firebase functions:log --only saveGameDataSecure`)의 `set 실패`가 신호다.
 
+> **Firestore 문서 하나의 색인 항목은 4만 개까지다.** 404절을 다 외운 사람의 저장본(절마다 백지 기록·고난 기록·열매·도감…)이 이 한도를 넘어
+> 저장이 통째로 거절됐다(`too many index entries for entity`) — 2026-10-12 흠없는 어린양·푸른 새벽별, 3만+가 셋 더 있었다. 그 사이 관리자 보상이
+> 서버에서 지워지지 않아 **동기화할 때마다 또 더해져** 밭 74 → 303(#0HY3JE). → `firestore.indexes.json`의 `fieldOverrides`로 saves의 큰 필드 75개를 색인에서 뺐다(`firebase deploy --only firestore:indexes`).
+> **저장본에 큰 맵·배열 필드를 새로 넣으면 fieldOverrides에도 넣을 것.** 보상(`compDone`)·바로잡기(`fixDone`)는 이제 한 번만 적용된다.
+
 ---
 
 ---
@@ -148,6 +153,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `openLetterBoard(tab)` · `openLetterWrite()` · `_letterNudge(reason)` · `_letterJudge` · `_letterLike` · `LETTER_ADMIN_UID` | game.js:~21050 | 💌 서로에게 보내는 편지 — 승인제 게시판(Firestore `letters`, 관리자 #8648), 막막한 순간 하루 한 장 (`docs/UX-결정기록.md`) |
 | `renderHomeTogether()` · `_togetherLoad()` · `_togetherHtml(kind)` · kingsroad `togetherStats` | game.js:~33500 · kingsroad/index.js | 🙏 이번 주 함께 암송한 성도 — 서버가 6시간마다 `stats/together`{people, verses}(지난 7일 실제 암송), 홈 「여정 시작」 아래 한 줄 · 편지 창 머리 (`docs/UX-결정기록.md`) |
 | `openDailyRecorder()` · `_camDrawLoop` · `_camBeautyFrame(v, w, h, amt)` · `_camDrawWithBg` | game.js:~17400 | 🎥 오늘의 암송 촬영 — 캔버스에 그려 녹화, 액자·WebGL 피부 보정(강도 `softAmt`)·배경 바꾸기 |
+| `_applyPendingCompensation(data, pc)` · `compDone` · `_applyPendingFix(data, fx)` · `fixDone` · kingsroad `saveGameDataSecure`(`pendingFix` 이어 붙임·적용한 저장만 「줄지 않게」 건너뜀) | game.js:~14250 | 관리자 보상(더하기)·바로잡기(값 정하기) — 둘 다 열쇠로 **한 번만** (10/12) (`docs/저장과-동기화.md`) |
 | `SoundEffect` | game.js:~3987 | 효과음 신디사이저 — 종소리 `_note`, 출력 `_bus`, 잠든 오디오 깨우기 `_play`, 진동 `_buzz` |
 
 ---

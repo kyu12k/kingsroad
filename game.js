@@ -3506,6 +3506,7 @@ loadGameData = function () {
         if (parsed.dailyLog && typeof parsed.dailyLog === 'object') dailyLog = parsed.dailyLog;
         if (parsed.featLog && typeof parsed.featLog === 'object') featLog = parsed.featLog;
         if (typeof parsed.fixDone === 'string') fixDone = parsed.fixDone;   // 🛠️ 적용한 바로잡기
+        if (Array.isArray(parsed.compDone)) compDone = parsed.compDone;   // 적용한 보상 열쇠
         if (typeof parsed.dailyWeekDone === 'string') dailyWeekDone = parsed.dailyWeekDone;
         if (parsed.guideInfo && typeof parsed.guideInfo === 'object') guideInfo = { passedAt: parsed.guideInfo.passedAt || 0, grads: parsed.guideInfo.grads || 0 };
         if (parsed.guideRel && typeof parsed.guideRel === 'object' && parsed.guideRel.g) guideRel = Object.assign({ g: '', gn: '', st: '', since: 0, days: [] }, parsed.guideRel);
@@ -13548,7 +13549,8 @@ function saveGameData() {
         dailyReciteDone: dailyReciteDone, // 오늘의 암송 완료일 → ts
         dailyLog: (() => { try { _dailyLogSync(); } catch (e) { } return dailyLog; })(),   // 📖 암송 일지
         featLog: (() => { try { return featLog; } catch (e) { return undefined; } })(),   // 📈 기능 이용률
-        fixDone: (() => { try { return fixDone || undefined; } catch (e) { return undefined; } })(),   // 🛠️ 적용한 바로잡기(서버가 한 번만 「줄지 않게」를 건너뛴다)
+        fixDone: (() => { try { return fixDone || undefined; } catch (e) { return undefined; } })(),
+        compDone: (() => { try { return compDone && compDone.length ? compDone : undefined; } catch (e) { return undefined; } })(),   // 적용한 보상 열쇠   // 🛠️ 적용한 바로잡기(서버가 한 번만 「줄지 않게」를 건너뛴다)
         dailyWeekDone: dailyWeekDone,     // 오늘의 암송 주간 완료 주차
         returnBoost: returnBoost,         // 돌아온 순례자 — 보석 2배 기간과 효과 기록
         guideInfo: guideInfo,             // 인도자 — 시험 통과·함께 정착한 사람 수(빨간 열매)
@@ -13846,6 +13848,7 @@ function _mergeEventProgress(target, other) {
         }
     }
     if (other.fixDone && !target.fixDone) target.fixDone = other.fixDone;   // 🛠️ 적용한 바로잡기
+    if (Array.isArray(other.compDone) && other.compDone.length) target.compDone = [...new Set([...(Array.isArray(target.compDone) ? target.compDone : []), ...other.compDone])].slice(-20);   // 적용한 보상 열쇠 — 합집합
     const of = other.featLog;   // 📈 기능 이용률 — 날마다 칸마다 큰 쪽
     if (of && typeof of === 'object') {
         if (!target.featLog || typeof target.featLog !== 'object') target.featLog = {};
@@ -14262,6 +14265,12 @@ function _applyPendingCompensation(data, pc) {
     // until이 있으면 date는 옛 클라이언트용(그날만 적용) 호환 필드로 보고 무시한다
     if (pc.until) { if (today > pc.until) { console.log('[Firestore] pendingCompensation 기한 지남(until)', pc); return false; } }
     else if (pc.date && pc.date !== today) { console.log('[Firestore] pendingCompensation 기한 지남(date)', pc); return false; }
+    // ★ 한 번만 (10/12) — 저장이 서버에서 거절되는 동안엔 서버의 pendingCompensation이 지워지지 않아, 다시 받아 합칠 때마다 또 더해졌다(#0HY3JE 180만이 수십 번 → 밭 74 → 303).
+    //   보상마다 열쇠(id, 없으면 내용으로)를 만들어 저장본 compDone에 남기고, 같은 열쇠는 다시 더하지 않는다
+    const _ck = pc.id || ['c', pc.until || pc.date || '', pc.gems || 0, pc.score || 0, pc.scoreTotal || 0, pc.sunSlots || 0, String(pc.note || '').length].join(':');
+    const _done = Array.isArray(data.compDone) ? data.compDone : [];
+    if (_done.includes(_ck)) { console.log('[Firestore] pendingCompensation 이미 적용함', _ck); return false; }
+    data.compDone = [..._done, _ck].slice(-20);
     if (pc.gems) data.gems = (data.gems || 0) + pc.gems;
     if (pc.score && data.leagueData) {
         for (const k of ['myScore', 'myMonthlyScore', 'totalScore', 'yearlyScore']) data.leagueData[k] = (data.leagueData[k] || 0) + pc.score;
@@ -14283,6 +14292,7 @@ function _applyPendingCompensation(data, pc) {
    pendingCompensation(더하기)과 달리 값을 **정한다**. 저장본 fixDone에 id를 남겨 **한 번만** — 저장이 거절되는 동안 보상이 되풀이 적용돼
    밭 74 → 303이 된 일(#0HY3JE)을 바로잡으며 만들었다. 서버(saveGameDataSecure)는 fixDone === id인 저장만 「밭·승점 줄지 않게」를 건너뛴다 */
 let fixDone = '';
+let compDone = [];   // 적용한 보상(pendingCompensation) 열쇠 — 같은 보상을 두 번 더하지 않게(10/12)
 function _applyPendingFix(data, fx) {
     if (!data || !fx || !fx.id || data.fixDone === fx.id) return false;
     const today = typeof getMemoryQuizDate === 'function' ? getMemoryQuizDate() : '';
