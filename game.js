@@ -353,7 +353,6 @@ const LANG = {
         gnudge_btn: '🔵 Google로 지키기 (10초)',
         todo_protect: '내 기록 지키기',
         review_reset_toast: '💤 오래 밀린 {n}절이 처음으로 돌아갔어요 · 지도에서 다시 외울 수 있어요',
-        review_soft_toast: '📖 한 달 넘게 밀린 {n}절을 다시 확인할 복습 차례로 옮겼어요',
         rv_quota_note: '하루 {q}절씩 — 남은 {n}절은 내일로 미뤄요', rv_quota_done: '🎉 오늘 복습 몫 {q}절을 마쳤어요 · 남은 {n}절은 내일 이어서', rv_more: '📖 더 보기 ({n}절)',
 
         // 결과 화면
@@ -1667,7 +1666,6 @@ const LANG = {
         gnudge_btn: '🔵 Protect with Google (10 sec)',
         todo_protect: 'Protect progress',
         review_reset_toast: '💤 {n} long-overdue verse(s) went back to the start · relearn them from the map',
-        review_soft_toast: '📖 {n} verse(s) overdue for over a month are back in your reviews to check',
         rv_quota_note: '{q} a day — the other {n} wait until tomorrow', rv_quota_done: '🎉 Today’s {q} reviews are done · the other {n} continue tomorrow', rv_more: '📖 Show more ({n})',
 
         // 결과 화면
@@ -11927,12 +11925,12 @@ const REVIEW_MISS_R = 0.4, REVIEW_MISS_MIN_LATE_MS = 86400000;
 let reviewResetLog = [];   // [{ at, m: 보너스 선, l: 30일 }] 최근 40번
 /* ★ 10/12 손질 (사용자: "심각한 문제") — 지난 7일 62명 중 50명·3,680절이 처음으로 돌아갔다. 404절을 외운 사람이 한 주에 476절(같은 절이 되풀이)·
    377절에 396절 — 다시 외움 → 10분·1시간 복습을 놓침 → 또 처음으로. 오래 외운 절이 「처음 외우기」로 보이면 허탈하다.
-   이제: ① 백지로 한 번이라도 써낸 절은 돌리지 않는다(백지 차례가 챙긴다) ② 새로 외운 절(단계 2~3)만 보너스 선·30일로 처음으로
-   ③ 오래 외운 절(단계 4+)은 늦었다고 처음으로 돌리지 않고, 30일 넘게 밀리면 단계 4로만 내려 바로 복습 차례에(단계 4는 보너스 선을 보지 않아 연쇄가 없다).
-   쌓인 숫자는 복습 하루 30절(REVIEW_DAILY)이 맡는다 */
+   나눠 보니 대부분(3,847)은 **30일 넘게 쉬다 돌아온 사람** — 사용자: "오랜만에 돌아온 사람이면 처음 외우기가 낫다, 복습 주기도 한참 놓쳤다" → 30일 규칙은 그대로.
+   바뀐 건 보너스 선만: 새로 외운 절(단계 2~3)만 처음으로. 오래 외운 절(4+)·백지로 써낸 절은 며칠 늦었다고 돌리지 않는다(열심히 하다 일주일 놓친 사람).
+   같은 날 두 번 세진 것(다른 기기·서버 옛 기록과 합쳐질 때)도 있었다. 쌓인 숫자는 복습 하루 30절(REVIEW_DAILY)이 맡는다 */
 function _resetLongUnstudied() {
     const now = Date.now(), missK = Math.log(1 / REVIEW_MISS_R);
-    let n = 0, m = 0, s = 0;
+    let n = 0, m = 0;
     for (const id in stageReviewStep) {
         if (!/^\d+-\d+$/.test(id)) continue;
         const step = stageReviewStep[id] || 1, next = stageNextReviewTime[id] || 0;
@@ -11940,23 +11938,25 @@ function _resetLongUnstudied() {
         const late = now - next, lc = stageLastClear[id] || 0;
         const long = late > LONG_UNSTUDIED_MS;
         const r = (typeof verseRecall !== 'undefined' && verseRecall) ? verseRecall[id] : null;
-        if (r && ((r.blankPass || 0) > 0 || (r.bxMax || 0) >= 2 || r.bx)) continue;   // ① 백지로 써낸 적 있음
-        if (step >= 4) {   // ③ 오래 외운 절 — 30일 넘게 밀렸을 때만, 단계 4로
-            if (long && step > 4) { stageReviewStep[id] = 4; stageNextReviewTime[id] = now; s++; }
-            continue;
+        if (long) {   // 30일 넘게 — 오랜만에 돌아온 사람. 복습 주기를 한참 놓쳤으니 처음 외우기부터(10/12 사용자). 백지 차례가 살아 있는 절만 예외
+            if (r && r.bx && r.bxDue && now - r.bxDue <= LONG_UNSTUDIED_MS) continue;
+            stageReviewStep[id] = 1; stageNextReviewTime[id] = 0; n++; continue;
         }
-        const miss = !long && late > REVIEW_MISS_MIN_LATE_MS && lc > 0 && (now - lc) / 3600000 >= _stabilityHours(step) * missK;
-        if (!long && !miss) continue;
-        stageReviewStep[id] = 1;   // ② 새로 외운 절
+        // 보너스 선 — 새로 외운 절(단계 2~3)만. 오래 외운 절(4+)·백지로 써낸 절은 며칠 늦었다고 처음으로 돌리지 않는다
+        if (step >= 4) continue;
+        if (r && ((r.blankPass || 0) > 0 || (r.bxMax || 0) >= 2 || r.bx)) continue;
+        const miss = late > REVIEW_MISS_MIN_LATE_MS && lc > 0 && (now - lc) / 3600000 >= _stabilityHours(step) * missK;
+        if (!miss) continue;
+        stageReviewStep[id] = 1;
         stageNextReviewTime[id] = 0;
-        if (long) n++; else m++;
+        m++;
     }
-    if (n || m || s) {
-        console.log(`🍂 복습 일정 — 처음으로 한 달 ${n}절 · 보너스 선 ${m}절 · 단계 4로 ${s}절`);
-        reviewResetLog = [...(Array.isArray(reviewResetLog) ? reviewResetLog : []), { at: now, m, l: n, s }].slice(-40);
-        setTimeout(() => { if (typeof showToast === 'function') showToast(n + m ? t('review_reset_toast', { n: n + m }) : t('review_soft_toast', { n: s })); }, 3500);
+    if (n || m) {
+        console.log(`🍂 복습 일정을 처음으로 — 한 달 넘게 ${n}절 · 보너스 선 ${m}절`);
+        reviewResetLog = [...(Array.isArray(reviewResetLog) ? reviewResetLog : []), { at: now, m, l: n }].slice(-40);
+        setTimeout(() => { if (typeof showToast === 'function') showToast(t('review_reset_toast', { n: n + m })); }, 3500);
     }
-    return n + m + s;
+    return n + m;
 }
 
 function _blankLvNoteText(res, pts, quick) {
