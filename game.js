@@ -761,6 +761,7 @@ const LANG = {
         hardship_feedback_correct_why: '정답입니다. {label} · {why}', hardship_feedback_typo_why: '오타 보정! {why} ({n}글자 오타)',
         rl_ask_title: '🌱 모르겠다고 한 {n}절, 다시 익혀 볼까요?', rl_ask_body: '단어 절반이 보이는 빈칸으로 한 번 → 백지로 한 번 다시 써 봐요.<br>백지 레벨·승점에는 들어가지 않아요 — 내일 차례에서 꺼내기가 쉬워져요',
         rl_go: '🌱 다시 익히기', rl_skip: '그만하기', rl_prog_cloze: '🌱 다시 익히기 · 빈칸 {cur}/{total}', rl_prog_blank: '🌱 다시 익히기 · 백지 {cur}/{total}', rl_done: '🌱 다시 익히기 — {n}절 중 {m}절을 백지로 써냈어요',
+        hardship_feedback_assisted: '✋ {label} · 너무 빨리(한꺼번에) 들어와 이번엔 백지로 세지 않았어요 — 키보드 추천·자동 완성·음성 입력 없이 직접 써 주세요',
         nr_fruit: '열매는 승점 대신 🍃 잎사귀', nr_gift: '나눔 열매는 승점 대신 💎·🍃',
         nr_step: '첫 마디·빈칸으로 써서 승점 없음', nr_linked: '오늘 이 장은 이미 승점을 받아 승점 없음', nr_test: '연습 테스트라 승점 없음 — 장 전체 테스트만 승점',
         hardship_blank_hint_notice: '💡 막히면 힌트를 누르세요 — 한 글자씩만 열려요',
@@ -2072,6 +2073,7 @@ const LANG = {
         hardship_feedback_correct_why: 'Correct! {label} · {why}', hardship_feedback_typo_why: 'Typo corrected! {why} ({n} typo(s))',
         rl_ask_title: '🌱 Relearn the {n} verse(s) you missed?', rl_ask_body: 'Write each once with half the words shown, then once from memory.<br>No effect on blank level or points — it makes tomorrow easier',
         rl_go: '🌱 Relearn', rl_skip: 'Stop here', rl_prog_cloze: '🌱 Relearn · blanks {cur}/{total}', rl_prog_blank: '🌱 Relearn · memory {cur}/{total}', rl_done: '🌱 Relearn — wrote {m} of {n} verse(s) from memory',
+        hardship_feedback_assisted: '✋ {label} · entered too fast (all at once), so it was not counted as written from memory — please type it yourself, without keyboard suggestions, autocomplete or voice input',
         nr_fruit: 'fruit gives 🍃 leaves instead of points', nr_gift: 'shared fruit gives 💎·🍃 instead of points',
         nr_step: 'no points with first words/blanks given', nr_linked: 'this chapter already earned points today', nr_test: 'practice test, no points — only whole-chapter tests score',
         hardship_blank_hint_notice: '💡 Stuck? Tap the hint — it opens one letter at a time',
@@ -30108,6 +30110,7 @@ function loadNextHardshipVerse() {
     hardshipState.ltStep = 0; hardshipState.ltGiven = '';   // 🎓 단계식 — 절마다 백지부터
     if (hardshipState.levelTest) hardshipState.rewardBlocked = !hardshipState.ltPay;   // 새 절은 다시 백지 — 승점 자격 되살림
     hardshipState.strongAvail = false; hardshipState.strongHint = false; hardshipState.lastTypeAt = 0;   // 🔑 강한 힌트 — 절마다 다시 얻는다
+    hardshipState.bulkIns = 0;   // ✋ 통째로 들어온 입력 — 절마다
     hardshipState._redCnt = {}; hardshipState._redValid = {}; hardshipState._redNow = new Set();   // 🟥 빨간 칸 — 절마다
     if (hardshipState.levelTest) hardshipState.ultimateMemoryMode = true;
     window._sessFails = 0;
@@ -30905,7 +30908,9 @@ function renderHardshipMemoryVerse() {
                 maxlength="${hiddenInputMaxLength}"
                 autocomplete="off"
                 autocapitalize="off"
+                autocorrect="off"
                 spellcheck="false"
+                data-gramm="false"
                 oninput="handleHardshipMemoryInput(event)"
             />
             ${buildHardshipFeedbackHtml()}
@@ -31522,6 +31527,8 @@ function handleHardshipMemoryInput(event) {
     const currentText = input.value;
     const targetLength = Number(input.maxLength) || getHardshipFillableVerseLength();
 
+    // ✋ 한 번에 10글자 넘게 들어오면(클립보드 추천·음성 입력·자동 완성 문장) 이 절은 백지로 세지 않는다(10/12, _assistKind). 한글 조합은 한 글자씩 는다
+    if (currentText.length - String(hardshipState.memoryTypedText || '').length >= 10) hardshipState.bulkIns = (hardshipState.bulkIns || 0) + 1;
     hardshipState.memoryTypedText = currentText;
     hardshipState.lastTypeAt = Date.now();   // 🔑 시작에서 멈춰 있나
     updateHardshipMemoryBoard();
@@ -31750,6 +31757,7 @@ function _hardshipRecallCtx() {
 function recordVerseRecall(stageId, ok, hints, mode, extra) {
     if (!stageId) return;
     if (!ok) _rlNoteFail(stageId);   // 🌱 판 끝에 다시 익힐 절
+    if (extra && extra.as) { _logRecallAttempt(stageId, ok, hints, mode, extra, verseRecall[stageId] || null, true); return; }   // ✋ 사람이 쳤다고 보기 어려운 입력 — 일지에만(tr·as)
     if (!ok && hardshipState && hardshipState.ultimateMemoryMode && !hardshipState.trainingMode) window._sessFails = (window._sessFails || 0) + 1;   // 💌 크게 막힌 판
     // 집중 훈련은 학습 보조라 증거로 세지 않는다 — 일지에는 표시(tr)를 달아 남긴다(연구 재료)
     if (hardshipState && hardshipState.trainingMode) {
@@ -32102,6 +32110,28 @@ function showCorrectAnswerEffect() {
     setTimeout(() => { if (el.parentNode) el.remove(); }, 1000);
 }
 
+/* ✋ 사람이 쳤다고 보기 어려운 입력 (2026-10-12) — 한 사람의 백지 7,215번을 보다가: 초당 10글자 넘게 들어온 성공이 있었다(69자를 2.7초).
+   붙여넣기는 막았지만 키보드 클립보드 추천·음성 입력·문장 자동 완성은 「입력」으로 들어와 막히지 않는다.
+   빠른 타자(블루투스·PC 자판, 수천 번 친 구절)는 초당 6~10글자도 나와서 그건 건드리지 않는다 — 사람이 칠 수 없는 경우만:
+   한 번에 10글자+가 들어옴(bulkIns) · 또는 30글자+를 초당 15글자 넘게. 맞아도 백지로 세지 않는다(승점·백지 레벨·클리어 없음, 일지엔 tr·as) */
+function _assistKind() {
+    const hs = hardshipState;
+    if (!hs || hs.trainingMode || hs.rlSnap || hs.levelTest || !hs.ultimateMemoryMode) return '';
+    if ((hs.bulkIns || 0) > 0) return 'bulk';
+    let typed = String(hs.memoryTypedText || '').length;
+    if (hs.strongHint) { try { typed -= _prefixTyped(_strongPhrase()).length; } catch (e) { } }
+    const sec = (Date.now() - (hs.verseStartedAt || Date.now())) / 1000;
+    if (typed >= 30 && sec > 0 && typed / sec > 15) return 'fast';
+    return '';
+}
+function _assistedSubmit(kind) {
+    const hs = hardshipState, v = hs.currentVerse;
+    recordVerseRecall(_currentHardshipStageId(), true, (hs.revealedHints || []).length, 'memory', { as: kind });
+    hs.wrongSlots = [];
+    hs.feedback = { type: 'giveup', message: t('hardship_feedback_assisted', { label: t('label_revelation_ref', { ch: v.chapter, v: v.verse }) }) };
+    renderHardshipMemoryVerse();
+    updateBattleUI();
+}
 function submitHardshipMemoryGuess() {
     if (!window.isHardshipMode || hardshipState.mode !== 'memory' || hardshipState.locked || !hardshipState.currentVerse) return;
 
@@ -32135,6 +32165,7 @@ function submitHardshipMemoryGuess() {
     }
 
     if (isCorrect) {
+        { const _as = _assistKind(); if (_as) { _assistedSubmit(_as); return; } }   // ✋ 사람이 쳤다고 보기 어려운 입력
         if (hardshipState.rlSnap && hardshipState.ultimateMemoryMode) hardshipState.rlOk = (hardshipState.rlOk || 0) + 1;   // 🌱 다시 익히기 — 백지로 써냄
         const orderMult = hardshipState.isRandomOrder ? 2 : 1;
         const _blankSid = _currentHardshipStageId();
@@ -32190,6 +32221,7 @@ function submitHardshipMemoryGuess() {
     const allowedTypos = (!hardshipState.trainingMode && !hardshipState.startLv && rankBuff) ? (rankBuff.wrongCorrection || 0) : 0;   // 첫 마디는 몇 글자뿐이라 오타 보정이 곧 정답 처리 — 끈다
 
     if (hardshipState.wrongSlots.length > 0 && hardshipState.wrongSlots.length <= allowedTypos) {
+        { const _as = _assistKind(); if (_as) { _assistedSubmit(_as); return; } }   // ✋
         const typoCount = hardshipState.wrongSlots.length;
         const orderMult = hardshipState.isRandomOrder ? 2 : 1;
         const _blankSid = _currentHardshipStageId();
