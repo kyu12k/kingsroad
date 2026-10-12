@@ -758,6 +758,8 @@ const LANG = {
         hardship_feedback_correct: '정답입니다. {label} · +{pts}점',
         hardship_feedback_correct_no_reward: '정답입니다. {label} · 승점 없음',
         hardship_feedback_correct_why: '정답입니다. {label} · {why}', hardship_feedback_typo_why: '오타 보정! {why} ({n}글자 오타)',
+        rl_ask_title: '🌱 모르겠다고 한 {n}절, 다시 익혀 볼까요?', rl_ask_body: '단어 절반이 보이는 빈칸으로 한 번 → 백지로 한 번 다시 써 봐요.<br>백지 레벨·승점에는 들어가지 않아요 — 내일 차례에서 꺼내기가 쉬워져요',
+        rl_go: '🌱 다시 익히기', rl_skip: '그만하기', rl_prog_cloze: '🌱 다시 익히기 · 빈칸 {cur}/{total}', rl_prog_blank: '🌱 다시 익히기 · 백지 {cur}/{total}', rl_done: '🌱 다시 익히기 — {n}절 중 {m}절을 백지로 써냈어요',
         nr_fruit: '열매는 승점 대신 🍃 잎사귀', nr_gift: '나눔 열매는 승점 대신 💎·🍃',
         nr_step: '첫 마디·빈칸으로 써서 승점 없음', nr_linked: '오늘 이 장은 이미 승점을 받아 승점 없음', nr_test: '연습 테스트라 승점 없음 — 장 전체 테스트만 승점',
         hardship_blank_hint_notice: '💡 막히면 힌트를 누르세요 — 한 글자씩만 열려요',
@@ -2063,6 +2065,8 @@ const LANG = {
         hardship_feedback_correct: 'Correct! {label} · +{pts} pts',
         hardship_feedback_correct_no_reward: 'Correct! {label} · No points',
         hardship_feedback_correct_why: 'Correct! {label} · {why}', hardship_feedback_typo_why: 'Typo corrected! {why} ({n} typo(s))',
+        rl_ask_title: '🌱 Relearn the {n} verse(s) you missed?', rl_ask_body: 'Write each once with half the words shown, then once from memory.<br>No effect on blank level or points — it makes tomorrow easier',
+        rl_go: '🌱 Relearn', rl_skip: 'Stop here', rl_prog_cloze: '🌱 Relearn · blanks {cur}/{total}', rl_prog_blank: '🌱 Relearn · memory {cur}/{total}', rl_done: '🌱 Relearn — wrote {m} of {n} verse(s) from memory',
         nr_fruit: 'fruit gives 🍃 leaves instead of points', nr_gift: 'shared fruit gives 💎·🍃 instead of points',
         nr_step: 'no points with first words/blanks given', nr_linked: 'this chapter already earned points today', nr_test: 'practice test, no points — only whole-chapter tests score',
         hardship_blank_hint_notice: '💡 Stuck? Tap the hint — it opens one letter at a time',
@@ -13243,6 +13247,8 @@ function clearCheckpoint() {
 
 /* [수정] 게임 종료/포기 (나가기 시 밀린 팝업 확인 기능 추가) */
 function quitGame(destination = 'map') {
+    // 🌱 다시 익히기 도중에 나가면 — 본 판은 이미 다 했다. 기록을 되돌리고 「완료」 결과로(그 결과 창에서 다시 나가면 평소대로)
+    if (window.isHardshipMode && hardshipState && hardshipState.rlSnap) { _rlFinish(); return; }
     if (window._letterFirstPending || (window._sessFails || 0) >= 3) {   // 💌 처음 들어간 어려운 판 · 크게 막힌 판 — 마친 뒤에 한 장
         const why = window._letterFirstPending ? 'first' : 'stuck'; window._letterFirstPending = false;
         setTimeout(() => { if (typeof _letterNudge === 'function') _letterNudge(why); }, 1400);
@@ -28186,6 +28192,7 @@ function resumeHardshipTimer() {
    답 제출 후 정답 확인 화면을 보는 구간은 타이머가 멈추므로 제외된다.
    결과 화면 상단과 히스토리 기록이 서로 다른 값을 쓰지 않도록 여기 한 곳에서만 계산한다. */
 function getHardshipElapsedSeconds() {
+    if (hardshipState.elapsedOverride != null) return hardshipState.elapsedOverride;   // 🌱 다시 익히기 시간은 판 시간에 넣지 않는다
     let paused = hardshipState.pausedMs || 0;
     // 일시정지 상태로 세션이 끝난 경우, 아직 닫히지 않은 구간도 포함
     if (hardshipState._pauseStart != null) paused += Date.now() - hardshipState._pauseStart;
@@ -29653,6 +29660,7 @@ function _sameHardshipRange(entry, mode, verseIds, kind) {
 
 function _saveHardshipCheckpoint() {
     if (!_isResumableHardshipSession()) return;
+    if (hardshipState.rlSnap) return;   // 🌱 다시 익히기 중엔 본 판이 이미 끝났다 — 이어하기로 되살리지 않는다
     if (!Array.isArray(hardshipState.queue) || hardshipState.queue.length < 2) return; // 1구절은 이어할 게 없다
     try {
         const entry = ({
@@ -29887,6 +29895,10 @@ function updateHardshipHeader() {
     // 중간점검·백지 확인으로 열린 세션은 그 이름을 쓴다 ('망각의 고난'으로 뜨면 혼란스럽다)
     if (titleEl) titleEl.textContent = hardshipState.displayTitle || modeMeta.title;
     if (progressEl) progressEl.textContent = t('label_progress_verses', { cur: progressCount, total: totalCount });
+    if (hardshipState.rlSnap && progressEl) {   // 🌱 다시 익히기 — 본 판 숫자 대신
+        const n = hardshipState.queue.length - hardshipState.rlSnap.len, i = Math.max(1, hardshipState.cursor - hardshipState.rlSnap.len);
+        progressEl.textContent = t(hardshipState.ultimateMemoryMode ? 'rl_prog_blank' : 'rl_prog_cloze', { cur: i, total: n });
+    }
 
     if (scoreEl) {
         if (currentMode === 'endurance' || hardshipState.trainingMode) {
@@ -29920,16 +29932,75 @@ function updateHardshipHeader() {
     updateHintButtonLabels();
 }
 
+/* 🌱 다시 익히기 (2026-10-12 사용자: "백지 차례가 아직 어렵다 — 하나하나 모르겠어요만 누른다. 나는 의식적으로 백지로 다시 도전했었다")
+   백지 차례·망각의 고난(백지) 한 판에서 「모르겠어요」·틀린 절을 모아, 판 끝에 묻고 → 빈칸 한 번 → 백지 한 번 다시.
+   그동안은 집중 훈련처럼(trainingMode) — 승점·백지레벨·복습 단계·연구 통계(일지엔 tr)에 들어가지 않는다. 그 절은 이미 Lv1(내일).
+   끝나거나 중간에 나가면 판의 기록(맞힌 수·시간·승점·대기열)을 다시 익히기 전으로 되돌리고 본 판을 「완료」로 마친다 */
+function _rlEligible() {
+    const hs = hardshipState;
+    if (!hs || hs.mode !== 'memory' || !hs.ultimateMemoryMode || hs.trainingMode || hs.levelTest || hs.rlSnap) return false;
+    const c = _hardshipRecallCtx();
+    return c === 'hs' || c === 'due';
+}
+function _rlNoteFail(stageId) {
+    if (!stageId || !_rlEligible()) return;
+    const L = hardshipState.rlIds || (hardshipState.rlIds = []);
+    if (!L.includes(stageId)) L.push(stageId);
+}
+function _rlAsk() {
+    const hs = hardshipState, ids = hs.rlIds || [];
+    hs.rlAsked = true;
+    const elapsed = getHardshipElapsedSeconds();
+    pauseHardshipTimer();
+    const m = document.createElement('div'); m.id = 'rl-ask'; m.className = 'modal-overlay active'; m.style.zIndex = '10006'; m.style.display = 'flex';
+    m.innerHTML = `<div class="result-card rl-card" onclick="event.stopPropagation()">
+        <div class="rl-title">${t('rl_ask_title', { n: ids.length })}</div>
+        <div class="rl-refs">${ids.map(id => { const [c, v] = id.split('-'); return t('label_revelation_ref', { ch: c, v }); }).join(' · ')}</div>
+        <div class="rl-body">${t('rl_ask_body')}</div>
+        <button class="rl-go" type="button">${t('rl_go')}</button>
+        <button class="rl-skip" type="button">${t('rl_skip')}</button></div>`;
+    document.body.appendChild(m);
+    m.querySelector('.rl-skip').onclick = () => { m.remove(); resumeHardshipTimer(); finishHardshipSession('completed'); };
+    m.querySelector('.rl-go').onclick = () => {
+        m.remove();
+        hs.rlSnap = { len: hs.queue.length, studied: hs.studiedCount, answered: hs.answeredCount, wrong: wrongCount, score: hs.score, hints: hs.totalHintsUsed,
+            ultimate: hs.ultimateMemoryMode, rb: hs.rewardBlocked, el: elapsed };
+        hs.rlModes = [...ids.map(() => false), ...ids.map(() => true)];   // 빈칸 한 바퀴 → 백지 한 바퀴
+        hs.queue.push(...ids, ...ids);
+        hs.trainingMode = true; hs.rewardBlocked = true; hs.rlOk = 0;
+        resumeHardshipTimer();
+        loadNextHardshipVerse();
+    };
+}
+function _rlRestore() {
+    const hs = hardshipState, S = hs && hs.rlSnap; if (!S) return null;
+    const res = { n: (hs.rlIds || []).length, ok: hs.rlOk || 0 };
+    hs.queue.length = S.len; hs.cursor = S.len;
+    hs.studiedCount = S.studied; hs.answeredCount = S.answered; wrongCount = S.wrong; hs.score = S.score; hs.totalHintsUsed = S.hints;
+    hs.ultimateMemoryMode = S.ultimate; hs.rewardBlocked = S.rb; hs.trainingMode = false;
+    hs.elapsedOverride = S.el;   // 판 시간은 다시 익히기 전까지
+    hs.rlSnap = null; hs.rlModes = null;
+    return res;
+}
+function _rlFinish() {
+    const res = _rlRestore();
+    finishHardshipSession('completed');
+    if (res) setTimeout(() => { if (typeof showReadAloudToast === 'function') showReadAloudToast(t('rl_done', { n: res.n, m: res.ok }), 6000); }, 900);
+}
 function loadNextHardshipVerse() {
     clearHardshipPendingTimeout();
 
     if (!window.isHardshipMode || !hardshipState.active) return;
 
     if (hardshipState.cursor >= hardshipState.queue.length) {
+        if (hardshipState.rlSnap) { _rlFinish(); return; }   // 🌱 다시 익히기를 마쳤다
+        if (!hardshipState.rlAsked && (hardshipState.rlIds || []).length && _rlEligible()) { _rlAsk(); return; }
         finishHardshipSession('completed');
         return;
     }
 
+    const _rlIdx = hardshipState.cursor - (hardshipState.rlSnap ? hardshipState.rlSnap.len : Infinity);
+    if (_rlIdx >= 0 && hardshipState.rlModes) hardshipState.ultimateMemoryMode = !!hardshipState.rlModes[_rlIdx];   // 🌱 빈칸 → 백지
     const nextVerseId = hardshipState.queue[hardshipState.cursor];
     hardshipState.cursor += 1;
     hardshipState.currentVerse = HARDSHIP_VERSE_MAP[nextVerseId] || null;
@@ -29963,6 +30034,17 @@ function loadNextHardshipVerse() {
         currentVerseData = hardshipState.currentVerse;
         trainingVerseData = hardshipState.currentVerse;
         window.currentStageId = hardshipState.currentVerse.id;
+        // 🌱 다시 익히기 첫 바퀴 — 단어를 하나 걸러 미리 보여 주고 나머지만 쓴다(앱의 「빈칸」은 글자 수만 보여 줘서 방금 본 절도 어려웠다)
+        if (_rlIdx >= 0 && hardshipState.rlModes && !hardshipState.rlModes[_rlIdx]) {
+            const tx = getHardshipActiveText(hardshipState.currentVerse), rev = []; let w = 0, inWord = false;
+            for (let i = 0; i < tx.length; i++) {
+                const ch = tx.charAt(i);
+                if (ch === ' ') { if (inWord) w++; inWord = false; continue; }
+                inWord = true;
+                if (w % 2 === 1 && isHardshipTypingTargetChar(ch)) rev.push(i);
+            }
+            hardshipState.revealedHints = rev;
+        }
     }
 
     renderCurrentHardshipVerse();
@@ -31578,6 +31660,7 @@ function _hardshipRecallCtx() {
 
 function recordVerseRecall(stageId, ok, hints, mode, extra) {
     if (!stageId) return;
+    if (!ok) _rlNoteFail(stageId);   // 🌱 판 끝에 다시 익힐 절
     if (!ok && hardshipState && hardshipState.ultimateMemoryMode && !hardshipState.trainingMode) window._sessFails = (window._sessFails || 0) + 1;   // 💌 크게 막힌 판
     // 집중 훈련은 학습 보조라 증거로 세지 않는다 — 일지에는 표시(tr)를 달아 남긴다(연구 재료)
     if (hardshipState && hardshipState.trainingMode) {
@@ -31963,6 +32046,7 @@ function submitHardshipMemoryGuess() {
     }
 
     if (isCorrect) {
+        if (hardshipState.rlSnap && hardshipState.ultimateMemoryMode) hardshipState.rlOk = (hardshipState.rlOk || 0) + 1;   // 🌱 다시 익히기 — 백지로 써냄
         const orderMult = hardshipState.isRandomOrder ? 2 : 1;
         const _blankSid = _currentHardshipStageId();
         const _rawPoints = (hardshipState.ultimateMemoryMode ? playerHearts * 5 : playerHearts * 4) * orderMult * (hardshipState.strongHint ? 0.5 : 1);   // 🔑 강한 힌트는 절반

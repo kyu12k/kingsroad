@@ -134,6 +134,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `openOilScreen(ch)` · `_oilStage(id)` · `_oilNote(id, L, pass)` · `_oilFromAttempt` · `_oilBackfill()` · `_oilIcon(st)` · `oilLv` · `_mergeOil` | game.js:~27950 | 🪔 기름 단계(0~8, 감람 열매 → 한밤의 등불) — 절마다 증거로만 오르내림, 「내 암송」 화면(장 시트·고난 창·레벨 테스트 결과·암기 리포트 자리) (`docs/암송-단계.md`) |
 | `openInitialLine(ch, mode)` · `_ilInitial` · `_fpBridgeHtml` · `_verseText(c, v)` | game.js:~28330 | 🔤 첫 글자 줄(장마다 절 첫 글자 한 줄 — 보기·순서·무작위 4지) · 🌉 첫 마디 순서대로에서 앞 절 끝 마디 (`docs/암송-단계.md`) |
 | `firstPhraseOf(text, lv)` · `openFirstPhrasePick()` · `_startFirstPhrase(ch, lv)` · `startFirstPhraseNote()` · `fpRecall` | game.js:~26330 | 🔑 첫 마디의 고난(장 단위, 쉬움·보통·어려움 · 순서대로/무작위 `fpSeq`) · 📒 오답노트(5절부터) — 고난 엔진을 `startLv`로 빌려 쓴다 (`docs/고난과-난이도.md`) |
+| `_rlEligible()` · `_rlNoteFail(id)` · `_rlAsk()` · `_rlRestore()` · `_rlFinish()` | game.js:~29935 | 🌱 다시 익히기 — 백지 차례·망각의 고난(백지) 판에서 모르겠어요·틀린 절을 판 끝에 단어 절반 빈칸 → 백지로 다시. 그동안 trainingMode(승점·백지레벨·통계 밖), 끝나거나 나가면 판 기록을 되돌리고 「완료」(`docs/복습과-기억.md`) |
 | `_blankFirstDue(id)` · `_bossReviewHold` · `BLANK_FIRST_STEP` · `_reviewNoAdvance` | game.js:~11025 | ✍️ 3일 뒤 복습(단계 6+)부터 백지 먼저 · 막히면 단계 그대로 내일 다시 · 보스전·중간점검은 백지로 깼을 때만 단계 6+ 절을 올린다 (`docs/복습과-기억.md`) |
 | `_resetLongUnstudied()` · `_stabilityHours(step)` · `_blankCountsAsClear(id)` | game.js:~11600 | 30일 넘게, 또는 보너스 선(기억 강도 40%·차례 뒤 하루+)을 넘긴 절은 복습 일정을 처음으로(`reviewResetLog`) · 백지로 써낸 절 = 그 절 일반 클리어(고난·백지 차례·오늘의 암송·열매) |
 | `_unifyJourneyMemory()` · `collectionLegacy` | game.js:~5610 | 두 여정 진도를 한 벌로(불러올 때) · 합치기 전 도감 점수 보존(체력 +3) |
