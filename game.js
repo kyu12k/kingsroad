@@ -6153,7 +6153,7 @@ function getTotalCollectionScore() {
    - 절마다 **마지막으로 복습한 쪽**을 통째로(_mergeProgressSet — 동기화와 같은 규칙), 클리어 횟수만 큰 쪽, 첫 클리어 날은 이른 쪽
      (첫 배포(10/2 21:16)는 스텝이 높은 쪽을 골라 멈춘 기록이 이겼다 — 그날 밤 서버 스냅샷으로 되돌림)
    - 몇 번 불러도 결과가 같다(멱등) — 옛 앱이 두 벌을 따로 써 보내도 다음 불러오기에서 다시 합쳐진다
-   - 저장본은 예전 모양 그대로(최상위·kingsMode 둘 다) 같은 내용을 쓴다 → 옛 앱도 그대로 읽는다
+   - 저장본은 10/12부터 최상위에만 쓴다(kingsMode의 다섯 진도는 빼고 길 정보만) — 불러올 때 kingsMode가 비면 여기서 바깥 진도와 합쳐 같은 객체가 된다
    - 처음 합칠 때 그 전 도감 점수(두 여정 합)를 collectionLegacy로 한 번 남긴다 */
 function _unifyJourneyMemory() {
     if (typeof kingsRoadData === 'undefined' || !kingsRoadData) return;
@@ -13508,8 +13508,8 @@ function saveGameData() {
         mastery: activeMode === 'kings' ? _freeStageMastery : stageMastery,
         clearDate: activeMode === 'kings' ? _freeStageClearDate : stageClearDate,
         lastClear: activeMode === 'kings' ? _freeStageLastClear : stageLastClear,
-        nextEligibleTime: stageNextEligibleTime, // 구버전 호환용
-        timedBonus: stageTimedBonus, // 구버전 호환용
+        // nextEligibleTime·timedBonus(옛 「때를 따른 양식」 보너스)는 10/12부터 저장하지 않는다 — 계산 함수(peek/consumeTimedBonus)를 부르는 곳이 없고,
+        // 아주 옛 저장본(v1.0.0)은 불러올 때 migrateToSerialReview가 읽어 복습 단계로 옮긴다. 큰 저장본에서 최대 약 24KB
         reviewStep: activeMode === 'kings' ? _freeStageReviewStep : stageReviewStep,
         nextReviewTime: activeMode === 'kings' ? _freeStageNextReviewTime : stageNextReviewTime,
         // dailyAttempts 제거됨
@@ -13599,12 +13599,9 @@ function saveGameData() {
         sessionTimeByDev: Object.assign({}, sessionTimeOther, { [_devId]: sessionTimeLog }),   // 📅 기기별 학습 시간(병합 _mergeSessionTime)
         // ★ [게임 모드]
         activeMode: activeMode,
+        // 왕의 길 진도(mastery·clearDate·lastClear·reviewStep·nextReviewTime)는 10/2부터 바깥 진도와 같은 객체(_unifyJourneyMemory)라 한 번만 저장한다(10/12, 약 40KB·색인 4,700).
+        // 불러올 때 비어 있으면 _unifyJourneyMemory가 바깥 진도로 합쳐 같은 객체로 만든다. 10/2 전 옛 앱은 10/10부터 서버가 저장을 받지 않는다
         kingsMode: {
-            mastery: kingsRoadData.mastery,
-            clearDate: kingsRoadData.clearDate,
-            lastClear: kingsRoadData.lastClear,
-            reviewStep: kingsRoadData.reviewStep,
-            nextReviewTime: kingsRoadData.nextReviewTime,
             stepHistory: kingsRoadData.stepHistory,
             startTimestamp: kingsRoadData.startTimestamp,
             manualBonus: kingsRoadData.manualBonus
