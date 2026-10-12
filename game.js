@@ -878,6 +878,9 @@ const LANG = {
         fp_note_hint: '첫 마디에서 막힌 절이 {n}절 모이면 오답노트가 열려요 (지금 {have}절)',
         bd_desc: '전에 백지로 써낸 절 중에서 다시 꺼내볼 날이 된 절이에요. 단서 없이 써내면 백지레벨이 올라요.',
         bd_note: '중간에 나가도 써낸 절까지는 남아요',
+        bd_quota_note: '하루 {q}절씩 — 남은 {n}절은 내일로 미뤄요 (레벨은 그대로예요)',
+        bd_quota_done: '🎉 오늘 몫 {q}절을 마쳤어요<br>남은 차례 {n}절은 내일 이어서 해요 — 미뤄도 레벨은 그대로예요',
+        bd_more: '✍️ 더 하기 ({n}절)',
         bd_ch: '{ch}장', bd_count: '백지 차례 {n}개 절', bd_range: '{r}절', bd_start: '✍️ 시작',
         bd_embed: '{ch}장 · 오늘 백지 차례', bd_back: '✍️ 남은 백지 차례 {n}개 절',
         bd_chip: '{ch}장 · {n}개 절',
@@ -2185,6 +2188,9 @@ const LANG = {
         fp_note_hint: 'Once {n} verses stall at the first words, the notebook opens (now {have})',
         bd_desc: 'Verses you once wrote on a blank page that are due to be recalled again. Write them with no clues to raise their blank level.',
         bd_note: 'If you stop midway, the verses you wrote are kept',
+        bd_quota_note: '{q} a day — the other {n} wait until tomorrow (levels stay the same)',
+        bd_quota_done: '🎉 Today’s {q} are done<br>The other {n} continue tomorrow — waiting does not lower their level',
+        bd_more: '✍️ Do more ({n})',
         bd_ch: 'Ch.{ch}', bd_count: '{n} verses due', bd_range: 'vv. {r}', bd_start: '✍️ Start',
         bd_embed: 'Ch.{ch} · Blank review due', bd_back: '✍️ {n} more blank verses due',
         bd_chip: 'Ch.{ch} · {n} verses',
@@ -9908,7 +9914,7 @@ function _njDayLabel(ts) {
     return currentLang === 'en' ? `${m}/${d} (${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][wd]})` : `${m}/${d}(${'일월화수목금토'[wd]})`;
 }
 function _njGoHtml(pst) {
-    const due = _blankDueIds();
+    const due = _blankDueToday();
     if (due.length) {
         const ch = Math.min(...due.map(id => parseInt(id.split('-')[0], 10)));
         return `<button class="nj-go-btn" onclick="closeNewJerusalem(); openBlankDueScreen()">${t('nj_go_due', { n: due.length })}</button>`;
@@ -11333,7 +11339,7 @@ function maybeAutoShowReviewPopup() {
     window._pendingReviewPopupCheck = false;
     const forced = window._forceReviewPopup; window._forceReviewPopup = false;
     if (!forced && isReviewPopupHiddenToday()) return;
-    if (getForgottenStages().length === 0 && _blankDueIds().length === 0) return;
+    if (getForgottenStages().length === 0 && _blankDueToday().length === 0) return;
     openForgottenStagesOverlay();
 }
 
@@ -11427,8 +11433,8 @@ function openForgottenStagesOverlay() {
 function _reviewOverlayHeadHtml(forgottenList) {
     let html = '';
     const chLabel = (c) => currentLang === 'en' ? `Ch.${c}` : `${c}장`;
-    // ① 백지 차례
-    const dueIds = _blankDueIds();
+    // ① 백지 차례 — 오늘 몫(하루 20절)
+    const dueIds = _blankDueToday();
     if (dueIds.length) {
         const byCh = {};
         dueIds.forEach(id => { const c = parseInt(id.split('-')[0], 10); byCh[c] = (byCh[c] || 0) + 1; });
@@ -11813,6 +11819,23 @@ function _blankDueIds(now) {
         if (r && r.bx && r.bxDue && r.bxDue <= n) out.push(id);
     }
     return out;
+}
+/* 📏 백지 차례 하루 20절 (2026-10-12 사용자) — 꾸준한 사람들도 차례가 수십~이백 절씩 쌓여 있었다(실패가 아니라 쌓임: 차례에 맞춘 실패율 Lv2 1%·Lv3 0%).
+   「229절」 앞에서는 시작하기 어렵다 → 오늘(6시 기준) 백지 차례로 쓴 절을 빼고 20절까지만 보여 준다. 미뤄진 절은 레벨 그대로(벌 없음).
+   고르는 순서: 레벨 높은 절부터(오래 쌓은 것을 먼저 지킨다), 같으면 오래 밀린 절부터. 다 하면 「더 하기」로 나머지도 할 수 있다 */
+const BLANK_DUE_DAILY = 20;
+function _blankDueDoneToday() {
+    if (typeof verseRecall === 'undefined' || !verseRecall) return 0;
+    const d = _get6AMDayStr(); let n = 0;
+    for (const id in verseRecall) { const r = verseRecall[id]; if (r && r.lastCtx === 'due' && r.lastAt && _tsTo6AMDateStr(r.lastAt) === d) n++; }
+    return n;
+}
+function _blankDueToday(all) {
+    const ids = _blankDueIds();
+    if (all) return ids;
+    const q = Math.max(0, BLANK_DUE_DAILY - _blankDueDoneToday());
+    if (ids.length <= q) return ids;
+    return ids.map(id => [id, verseRecall[id]]).sort((a, b) => ((b[1].bx || 0) - (a[1].bx || 0)) || ((a[1].bxDue || 0) - (b[1].bxDue || 0))).slice(0, q).map(x => x[0]);
 }
 /* 상자 갱신. r을 직접 고치고 결과를 돌려준다 — {kind:'enter'|'up'|'early'|'stay'|'down', from, to, mult, due} */
 function _updateBlankBox(r, ok, blankMode, hintOk, now) {
@@ -32354,7 +32377,7 @@ function finishHardshipSession(reason) {
         }
         // 오늘 백지 차례였다면 — 남은 차례가 있으면 창으로 돌아가기
         if (rm && hardshipState.blankDueCh) {
-            const left = _blankDueIds().length;
+            const left = _blankDueToday(!!window._bdAll).length;   // 오늘 몫(「더 하기」를 눌렀으면 전부)
             if (left > 0) {
                 const back = document.createElement('button');
                 back.id = 'btn-next-stage';
@@ -33626,15 +33649,16 @@ function _verseRangeText(vs) {
     }
     return out.join(', ');
 }
-function _blankDueByChapter() {
+function _blankDueByChapter(ids) {
     const by = {};
-    _blankDueIds().forEach(id => {
+    (ids || _blankDueToday(!!window._bdAll)).forEach(id => {
         const m = String(id).match(/^(\d+)-(\d+)$/);
         if (m) (by[m[1]] = by[m[1]] || []).push(parseInt(m[2], 10));
     });
     return Object.keys(by).map(Number).sort((a, b) => a - b).map(ch => ({ ch, vs: by[ch].sort((a, b) => a - b) }));
 }
-function openBlankDueScreen() {
+function openBlankDueScreen(all) {
+    if (all === true) window._bdAll = true;   // 「더 하기」 — 이 앱을 다시 열 때까지 나머지 차례도 보인다
     let ov = document.getElementById('blank-due-overlay');
     if (!ov) {
         ov = document.createElement('div');
@@ -33645,15 +33669,19 @@ function openBlankDueScreen() {
         document.body.appendChild(ov);
     }
     const list = _blankDueByChapter();
+    const allN = _blankDueIds().length, shownN = list.reduce((a, x) => a + x.vs.length, 0);
     let body;
-    if (list.length) {
+    if (!list.length && allN) {   // 📏 오늘 몫을 다 했다
+        body = `<div class="bd-note bd-quota">${t('bd_quota_done', { q: BLANK_DUE_DAILY, n: allN })}</div>
+            <button class="mode-journey-btn bd-more" onclick="openBlankDueScreen(true)">${t('bd_more', { n: allN })}</button>`;
+    } else if (list.length) {
         body = list.map(({ ch, vs }) => `<button class="mode-journey-btn bd-row" onclick="_startBlankDue(${ch})">
                 <div class="mode-btn-text" style="flex:1">
                     <span class="mode-btn-label">${t('bd_ch', { ch })} <span class="bd-count">${t('bd_count', { n: vs.length })}</span></span>
                     <span class="mode-btn-desc">${t('bd_range', { r: _verseRangeText(vs) })}</span>
                 </div>
                 <span class="bd-go">${t('bd_start')}</span>
-            </button>`).join('') + `<div class="bd-note">${t('bd_note')}</div>`;
+            </button>`).join('') + (allN > shownN ? `<div class="bd-note bd-quota">${t('bd_quota_note', { q: BLANK_DUE_DAILY, n: allN - shownN })}</div>` : '') + `<div class="bd-note">${t('bd_note')}</div>`;
     } else {
         // 차례가 없을 때 — 새 예루살렘 안내와 같은 말(다음 차례 날짜)
         let next = Infinity;
@@ -33680,7 +33708,7 @@ function closeBlankDueScreen() {
     if (ov) ov.style.display = 'none';
 }
 function _startBlankDue(ch, from) {
-    const it = _blankDueByChapter().find(x => x.ch === ch);
+    const it = _blankDueByChapter(from === 'map' ? _blankDueIds() : undefined).find(x => x.ch === ch);   // 지도에서 장을 골랐으면 그 장 차례 전부(직접 고른 것)
     if (!it || !it.vs.length) { openBlankDueScreen(); return; }
     closeBlankDueScreen();
     if (from === 'map') closeStageSheet();   // 장 목록 맨 위 「지금 쓰기」 — 끝나면 지도로
@@ -33729,7 +33757,7 @@ function renderHomeTodo() {
     const el = document.getElementById('home-todo'), S = _todoSocial; if (!el || !S) return;
     let rev = 0, blank = 0;
     try { rev = getForgottenStages().length; } catch (e) { }
-    try { blank = _blankDueIds().length; } catch (e) { }
+    try { blank = _blankDueToday().length; } catch (e) { }   // 📏 오늘 몫
     const chip = (icon, label, n, done, fn) => `<button class="home-todo-chip${done ? ' done' : ''}" onclick="${fn}">${icon} ${label}${done ? ' ✓' : n ? ` <b>${n}</b>` : ''}</button>`;
     let h = chip('📖', t('todo_review'), rev, rev === 0, 'openReviewFromHome()') + chip('✍️', t('todo_blank'), blank, blank === 0, 'openBlankDueScreen()');
     { const op = _oilHomePick(); if (op) h += `<button class="home-todo-chip oil" onclick="_oilHomeGo()">${_oilMini()}${t('todo_oil', { ch: op.ch, what: op.pl.short })}</button>`; }   // 🪔 기름 단계 — 다음 할 것 하나

@@ -7769,3 +7769,7 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 .rl-body { font-size: .88rem; color: #7f8c8d; line-height: 1.6; margin-bottom: 16px; }
 .rl-go { width: 100%; background: linear-gradient(135deg, #27ae60, #2ecc71); color: #fff; border: none; border-radius: 30px; padding: 13px; font-weight: 800; font-size: 1rem; box-shadow: 0 4px 0 #1e8449; cursor: pointer; }
 .rl-skip { width: 100%; background: none; border: none; color: #95a5a6; padding: 12px 0 2px; font-size: .9rem; cursor: pointer; }
+
+/* 📏 백지 차례 하루 20절 (10/12) */
+.bd-quota { color: #8e44ad; font-weight: 600; line-height: 1.55; }
+.bd-more { justify-content: center; font-weight: 700; margin-top: 8px; }
