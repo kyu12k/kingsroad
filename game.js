@@ -353,6 +353,8 @@ const LANG = {
         gnudge_btn: '🔵 Google로 지키기 (10초)',
         todo_protect: '내 기록 지키기',
         review_reset_toast: '💤 오래 밀린 {n}절이 처음으로 돌아갔어요 · 지도에서 다시 외울 수 있어요',
+        review_soft_toast: '📖 한 달 넘게 밀린 {n}절을 다시 확인할 복습 차례로 옮겼어요',
+        rv_quota_note: '하루 {q}절씩 — 남은 {n}절은 내일로 미뤄요', rv_quota_done: '🎉 오늘 복습 몫 {q}절을 마쳤어요 · 남은 {n}절은 내일 이어서', rv_more: '📖 더 보기 ({n}절)',
 
         // 결과 화면
         result_training_title: '⚔️ 집중 훈련 완료!',
@@ -1665,6 +1667,8 @@ const LANG = {
         gnudge_btn: '🔵 Protect with Google (10 sec)',
         todo_protect: 'Protect progress',
         review_reset_toast: '💤 {n} long-overdue verse(s) went back to the start · relearn them from the map',
+        review_soft_toast: '📖 {n} verse(s) overdue for over a month are back in your reviews to check',
+        rv_quota_note: '{q} a day — the other {n} wait until tomorrow', rv_quota_done: '🎉 Today’s {q} reviews are done · the other {n} continue tomorrow', rv_more: '📖 Show more ({n})',
 
         // 결과 화면
         result_training_title: '⚔️ Training Complete!',
@@ -11295,14 +11299,26 @@ function openModeSelect(stageId) {
 // =========================================
 
 // 기억 다지기 스테이지 리스트를 수집하는 함수
-function getForgottenStages() {
+/* 📏 복습 하루 30절 (2026-10-12) — 백지 차례처럼 복습도 282·180·169절씩 쌓인 사람들이 있었다. 오늘(6시 기준) 복습으로 깬 절을 빼고 30절까지.
+   새로 외운 절(낮은 단계)부터 — 10분·1시간 복습을 놓치면 처음으로 돌아가니까. 같으면 오래 밀린 절부터. 「더 보기」로 전부(window._rvAll).
+   백지 차례가 온 절은 복습 목록에서 뺀다 — 백지로 써내면 복습도 함께 인정되는데, 복습을 먼저 하면 같은 절을 두 번 했다(229절이 양쪽에 걸린 사람) */
+const REVIEW_DAILY = 30;
+function _reviewDoneToday() {
+    const d = _get6AMDayStr(); let n = 0;
+    for (const id in (stageLastClear || {})) { if (/^\d+-\d+$/.test(id) && (stageReviewStep[id] || 0) >= 3 && _tsTo6AMDateStr(stageLastClear[id]) === d) n++; }
+    return n;
+}
+function getForgottenStages(all) {
     const forgottenList = [];
+    const _now = Date.now();
     for (let chapter of gameData) {
         if (!chapter.stages) continue;
         for (let stage of chapter.stages) {
             // 중간점검/보스전 제외
             if (stage.type === 'boss' || stage.type === 'mid-boss') continue;
             const stageId = stage.id;
+            const _vr = (typeof verseRecall !== 'undefined' && verseRecall) ? verseRecall[stageId] : null;
+            if (_vr && _vr.bx && _vr.bxDue && _vr.bxDue <= _now) continue;   // 백지 차례가 맡는다
             const revStatus = getReviewStatus(stageId);
             if (revStatus.step > 1 && revStatus.isEligible) {
                 const m = String(stageId).match(/^(\d+)-(\d+)$/);
@@ -11315,7 +11331,11 @@ function getForgottenStages() {
             }
         }
     }
-    return forgottenList;
+    if (all || window._rvAll) return forgottenList;
+    const q = Math.max(0, REVIEW_DAILY - _reviewDoneToday());
+    if (forgottenList.length <= q) return forgottenList;
+    const keep = new Set(forgottenList.slice().sort((a, b) => (a.step - b.step) || ((stageNextReviewTime[a.stageId] || 0) - (stageNextReviewTime[b.stageId] || 0))).slice(0, q).map(x => x.stageId));
+    return forgottenList.filter(x => keep.has(x.stageId));   // 장·절 순서는 그대로
 }
 
 // "오늘은 보지 않기" 체크 여부 (오전 6시 기준 날짜 경계)
@@ -11339,7 +11359,7 @@ function maybeAutoShowReviewPopup() {
     window._pendingReviewPopupCheck = false;
     const forced = window._forceReviewPopup; window._forceReviewPopup = false;
     if (!forced && isReviewPopupHiddenToday()) return;
-    if (getForgottenStages().length === 0 && _blankDueToday().length === 0) return;
+    if (getForgottenStages(forced).length === 0 && _blankDueToday(forced).length === 0) return;   // 홈 「복습」으로 왔으면 오늘 몫을 마쳤어도 목록(「더 보기」)
     openForgottenStagesOverlay();
 }
 
@@ -11408,12 +11428,16 @@ function openForgottenStagesOverlay() {
     const listDiv = document.getElementById('forgotten-stages-list');
     const forgottenList = getForgottenStages();
     const headHtml = _reviewOverlayHeadHtml(forgottenList);
+    const _rvAllN = getForgottenStages(true).length, _rvMore = _rvAllN - forgottenList.length;   // 📏 하루 30절 — 남은 수
+    const _rvMoreHtml = _rvMore > 0 ? `<div class="bd-note bd-quota">${t(forgottenList.length ? 'rv_quota_note' : 'rv_quota_done', { q: REVIEW_DAILY, n: _rvMore })}</div>
+        <button class="rv-chip rv-more" onclick="window._rvAll = true; openForgottenStagesOverlay()">${t('rv_more', { n: _rvMore })}</button>` : '';
     if (forgottenList.length === 0) {
-        listDiv.innerHTML = headHtml || `<div style="color:#bdc3c7;">${t('forgotten_empty')}</div>`;
+        listDiv.innerHTML = (headHtml + _rvMoreHtml) || `<div style="color:#bdc3c7;">${t('forgotten_empty')}</div>`;
         return;
     }
     // 구절 목록은 차분한 줄로 — 맨 위 백지 차례만 상자로 강조한다 (2026-09-28)
     listDiv.innerHTML = headHtml + `<div class="rv-sec">${t('rv_list_title', { n: forgottenList.length })}</div>`;
+    if (_rvMoreHtml) listDiv.insertAdjacentHTML('beforeend', _rvMoreHtml);
     for (const item of forgottenList) {
         const btn = document.createElement('button');
         btn.className = 'rv-verse-row';
@@ -11901,29 +11925,38 @@ function _blankCountsAsClear(id, now) {
 const LONG_UNSTUDIED_MS = 30 * 86400000;
 const REVIEW_MISS_R = 0.4, REVIEW_MISS_MIN_LATE_MS = 86400000;
 let reviewResetLog = [];   // [{ at, m: 보너스 선, l: 30일 }] 최근 40번
+/* ★ 10/12 손질 (사용자: "심각한 문제") — 지난 7일 62명 중 50명·3,680절이 처음으로 돌아갔다. 404절을 외운 사람이 한 주에 476절(같은 절이 되풀이)·
+   377절에 396절 — 다시 외움 → 10분·1시간 복습을 놓침 → 또 처음으로. 오래 외운 절이 「처음 외우기」로 보이면 허탈하다.
+   이제: ① 백지로 한 번이라도 써낸 절은 돌리지 않는다(백지 차례가 챙긴다) ② 새로 외운 절(단계 2~3)만 보너스 선·30일로 처음으로
+   ③ 오래 외운 절(단계 4+)은 늦었다고 처음으로 돌리지 않고, 30일 넘게 밀리면 단계 4로만 내려 바로 복습 차례에(단계 4는 보너스 선을 보지 않아 연쇄가 없다).
+   쌓인 숫자는 복습 하루 30절(REVIEW_DAILY)이 맡는다 */
 function _resetLongUnstudied() {
     const now = Date.now(), missK = Math.log(1 / REVIEW_MISS_R);
-    let n = 0, m = 0;
+    let n = 0, m = 0, s = 0;
     for (const id in stageReviewStep) {
         if (!/^\d+-\d+$/.test(id)) continue;
         const step = stageReviewStep[id] || 1, next = stageNextReviewTime[id] || 0;
         if (step <= 1 || !next) continue;
         const late = now - next, lc = stageLastClear[id] || 0;
         const long = late > LONG_UNSTUDIED_MS;
+        const r = (typeof verseRecall !== 'undefined' && verseRecall) ? verseRecall[id] : null;
+        if (r && ((r.blankPass || 0) > 0 || (r.bxMax || 0) >= 2 || r.bx)) continue;   // ① 백지로 써낸 적 있음
+        if (step >= 4) {   // ③ 오래 외운 절 — 30일 넘게 밀렸을 때만, 단계 4로
+            if (long && step > 4) { stageReviewStep[id] = 4; stageNextReviewTime[id] = now; s++; }
+            continue;
+        }
         const miss = !long && late > REVIEW_MISS_MIN_LATE_MS && lc > 0 && (now - lc) / 3600000 >= _stabilityHours(step) * missK;
         if (!long && !miss) continue;
-        const r = (typeof verseRecall !== 'undefined' && verseRecall) ? verseRecall[id] : null;
-        if (r && r.bx && r.bxDue && now - r.bxDue <= LONG_UNSTUDIED_MS) continue;
-        stageReviewStep[id] = 1;
+        stageReviewStep[id] = 1;   // ② 새로 외운 절
         stageNextReviewTime[id] = 0;
         if (long) n++; else m++;
     }
-    if (n || m) {
-        console.log(`🍂 복습 일정을 처음으로 — 한 달 넘게 ${n}절 · 보너스 선 ${m}절`);
-        reviewResetLog = [...(Array.isArray(reviewResetLog) ? reviewResetLog : []), { at: now, m, l: n }].slice(-40);
-        setTimeout(() => { if (typeof showToast === 'function') showToast(t('review_reset_toast', { n: n + m })); }, 3500);
+    if (n || m || s) {
+        console.log(`🍂 복습 일정 — 처음으로 한 달 ${n}절 · 보너스 선 ${m}절 · 단계 4로 ${s}절`);
+        reviewResetLog = [...(Array.isArray(reviewResetLog) ? reviewResetLog : []), { at: now, m, l: n, s }].slice(-40);
+        setTimeout(() => { if (typeof showToast === 'function') showToast(n + m ? t('review_reset_toast', { n: n + m }) : t('review_soft_toast', { n: s })); }, 3500);
     }
-    return n + m;
+    return n + m + s;
 }
 
 function _blankLvNoteText(res, pts, quick) {
@@ -33725,7 +33758,7 @@ function _startBlankDue(ch, from) {
    두 여정이 기억을 함께 쓰므로(_unifyJourneyMemory) 복습 차례는 어느 여정에서 봐도 같다 → 여정을 묻지 않는다.
    (10/2 하루 동안 「어느 여정을 복습할까요?」를 만들었다가 기억을 합치며 뺐다) */
 function openReviewFromHome() {
-    if (getForgottenStages().length === 0) { startGame(); return; }
+    if (getForgottenStages(true).length === 0) { startGame(); return; }   // 오늘 몫을 마쳤어도 남은 게 있으면 목록(「더 보기」)
     window._forceReviewPopup = true;   // 들어가자마자 복습 목록 (「오늘은 보지 않기」와 상관없이)
     if (activeMode === 'kings' && kingsRoadData.stepHistory.length) onClickKingsRoad(); else onClickFreeJourney();
 }
