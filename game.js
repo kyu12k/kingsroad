@@ -528,7 +528,7 @@ const LANG = {
         nj_title: '새 예루살렘',
         nj_verse: '「그 성의 성곽의 기초석은 각색 보석으로 꾸몄는데」 (계 21:19)',
         nj_hint: '보석과, 간격을 두고 백지로 꺼낸 기록(백지레벨)으로 기초석을 하나씩 놓아요',
-        nj_cond: '백지레벨 {lv} 이상 {have} / {need}절',
+        nj_cond: '백지레벨 {lv} 이상에 오른 절 {have} / {need}',
         nj_place: '놓기',
         nj_need_verses: '백지레벨 조건까지 {n}절 더',
         nj_need_gems: '보석이 {n}개 더 필요해요',
@@ -1833,7 +1833,7 @@ const LANG = {
         nj_title: 'New Jerusalem',
         nj_verse: '“The foundations of the city wall were adorned with every kind of precious stone” (Rev 21:19)',
         nj_hint: 'Lay each foundation stone with gems and your blank-recall record (Blank Level)',
-        nj_cond: 'Blank Lv {lv}+ {have} / {need} verses',
+        nj_cond: 'Verses that reached blank Lv {lv}+ {have} / {need}',
         nj_place: 'Place',
         nj_need_verses: '{n} more verses to go',
         nj_need_gems: 'Need {n} more gems',
@@ -7994,13 +7994,14 @@ const NJ_STONES = [
     { ko: '청옥',   en: 'Jacinth',      color: '#005dac' },
     { ko: '자수정', en: 'Amethyst',     color: '#7f1084' },
 ];
-// [백지레벨, 절 수, 보석] — 404절을 12등분, 앞 넷 Lv3 · 가운데 넷 Lv4 · 끝 넷 Lv5. 합계 90만
+// [백지레벨, 절 수, 보석] — 404절을 12등분, 앞 여섯 Lv3 · 뒤 여섯 Lv4(한 번이라도 오른 절, `_njCount`). 합계 90만
+// 10/12 Lv5를 뺐다(사용자: "레벨 4면 다 외웠다고 볼 수 있다") — Lv4 = 첫 성공 뒤 3일·1주 간격으로 단서 없이 써냄. 열두째 = 404절 모두 Lv4 이상에 올라 봄
 // 10/12 1/10로(사용자: "다 꾸며 놨는데 정작 제일 중요한 성은 휑하면 아쉽다") — 꾸밈 117개를 다 사도 68만인데 기초석 하나가 20만~130만(합 900만)이라
 // 보석이 생기면 꾸밈부터 사고 성은 맨 나중이 됐다. 이제 관문은 암송 증거다. 9/29~10/12에 놓은 두 사람은 차액을 돌려줬다
 const NJ_REQ = [
     [3, 34, 20000], [3, 68, 30000], [3, 101, 40000], [3, 135, 50000],
-    [4, 168, 60000], [4, 202, 70000], [4, 236, 80000], [4, 269, 90000],
-    [5, 303, 100000], [5, 337, 110000], [5, 370, 120000], [5, 404, 130000],
+    [3, 168, 60000], [3, 202, 70000], [4, 236, 80000], [4, 269, 90000],
+    [4, 303, 100000], [4, 337, 110000], [4, 370, 120000], [4, 404, 130000],
 ];
 const NJ_ORD_KO = ['첫째', '둘째', '셋째', '넷째', '다섯째', '여섯째', '일곱째', '여덟째', '아홉째', '열째', '열한째', '열두째'];
 const NJ_ZONE_H = 330;
@@ -8011,7 +8012,8 @@ function _njOrd(k) { return currentLang === 'en' ? `#${k + 1}` : NJ_ORD_KO[k]; }
 function _njCount(lv) {
     if (typeof verseRecall === 'undefined' || !verseRecall) return 0;
     let n = 0;
-    _allVerseIds().forEach(id => { const r = verseRecall[id]; if (r && (r.bx || 0) >= lv) n++; });
+    // 🏛️ 한 번이라도 오른 레벨로 센다(10/12) — 지금 레벨로 세면 한 달에 몇 절은 틀려 다시 오르는 중이라 「404절 모두」가 오지 않았다
+    _allVerseIds().forEach(id => { const r = verseRecall[id]; if (r && Math.max(r.bx || 0, r.bxMax || 0) >= lv) n++; });
     return n;
 }
 
@@ -11820,11 +11822,13 @@ function _updateBlankBox(r, ok, blankMode, hintOk, now) {
     if (!hintOk) return r.bx ? { kind: 'stay', from: r.bx, to: r.bx, due: r.bxDue } : null;
     if (!r.bx) {
         r.bx = BLANK_BOX_START; r.bxDue = now + BLANK_BOX_DAYS[BLANK_BOX_START] * BLANK_DAY_MS;
+        r.bxMax = Math.max(r.bxMax || 0, r.bx);
         return { kind: 'enter', from: 0, to: r.bx, due: r.bxDue };
     }
     if (now < (r.bxDue || 0)) return { kind: 'early', from: r.bx, to: r.bx, due: r.bxDue };
     const from = r.bx;
     r.bx = Math.min(5, r.bx + 1);
+    r.bxMax = Math.max(r.bxMax || 0, r.bx);   // 🏛️ 한 번이라도 오른 가장 높은 레벨 — 기초석은 이걸로 센다(10/12, 틀려서 내려가도 남는다)
     r.bxDue = now + BLANK_BOX_DAYS[r.bx] * BLANK_DAY_MS;
     return { kind: 'up', from, to: r.bx, mult: BLANK_BOX_MULT[r.bx], due: r.bxDue };
 }
@@ -13681,6 +13685,9 @@ function _mergeVerseRecall(target, other) {
         const tryB = (rb.pass || 0) + (rb.fail || 0);
         if (tryB > tryA) { out[id] = rb; took++; }
         else out[id] = ra;
+        // 🏛️ 오른 적 있는 가장 높은 백지레벨은 두 기기 중 큰 쪽(한쪽 기록을 통째로 골라도 사라지지 않게)
+        const peak = Math.max(ra.bxMax || 0, rb.bxMax || 0, ra.bx || 0, rb.bx || 0);
+        if (peak > (out[id].bxMax || 0)) out[id] = Object.assign({}, out[id], { bxMax: peak });
     });
     if (target) target.verseRecall = out;
     return took;
