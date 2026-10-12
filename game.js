@@ -3505,6 +3505,7 @@ loadGameData = function () {
         if (parsed.dailyReciteDone && typeof parsed.dailyReciteDone === 'object') dailyReciteDone = parsed.dailyReciteDone;
         if (parsed.dailyLog && typeof parsed.dailyLog === 'object') dailyLog = parsed.dailyLog;
         if (parsed.featLog && typeof parsed.featLog === 'object') featLog = parsed.featLog;
+        if (typeof parsed.fixDone === 'string') fixDone = parsed.fixDone;   // 🛠️ 적용한 바로잡기
         if (typeof parsed.dailyWeekDone === 'string') dailyWeekDone = parsed.dailyWeekDone;
         if (parsed.guideInfo && typeof parsed.guideInfo === 'object') guideInfo = { passedAt: parsed.guideInfo.passedAt || 0, grads: parsed.guideInfo.grads || 0 };
         if (parsed.guideRel && typeof parsed.guideRel === 'object' && parsed.guideRel.g) guideRel = Object.assign({ g: '', gn: '', st: '', since: 0, days: [] }, parsed.guideRel);
@@ -13547,6 +13548,7 @@ function saveGameData() {
         dailyReciteDone: dailyReciteDone, // 오늘의 암송 완료일 → ts
         dailyLog: (() => { try { _dailyLogSync(); } catch (e) { } return dailyLog; })(),   // 📖 암송 일지
         featLog: (() => { try { return featLog; } catch (e) { return undefined; } })(),   // 📈 기능 이용률
+        fixDone: (() => { try { return fixDone || undefined; } catch (e) { return undefined; } })(),   // 🛠️ 적용한 바로잡기(서버가 한 번만 「줄지 않게」를 건너뛴다)
         dailyWeekDone: dailyWeekDone,     // 오늘의 암송 주간 완료 주차
         returnBoost: returnBoost,         // 돌아온 순례자 — 보석 2배 기간과 효과 기록
         guideInfo: guideInfo,             // 인도자 — 시험 통과·함께 정착한 사람 수(빨간 열매)
@@ -13843,6 +13845,7 @@ function _mergeEventProgress(target, other) {
             if (sc(ol[day]) > sc(target.dailyLog[day])) { target.dailyLog[day] = ol[day]; took++; }
         }
     }
+    if (other.fixDone && !target.fixDone) target.fixDone = other.fixDone;   // 🛠️ 적용한 바로잡기
     const of = other.featLog;   // 📈 기능 이용률 — 날마다 칸마다 큰 쪽
     if (of && typeof of === 'object') {
         if (!target.featLog || typeof target.featLog !== 'object') target.featLog = {};
@@ -14276,6 +14279,27 @@ function _applyPendingCompensation(data, pc) {
     return true;
 }
 
+/* 🛠️ 관리자 바로잡기 (2026-10-12) — saves/{uid}.pendingFix { id, setHearts, setGems, scaleWeek: { weekId, r }, note, msg }.
+   pendingCompensation(더하기)과 달리 값을 **정한다**. 저장본 fixDone에 id를 남겨 **한 번만** — 저장이 거절되는 동안 보상이 되풀이 적용돼
+   밭 74 → 303이 된 일(#0HY3JE)을 바로잡으며 만들었다. 서버(saveGameDataSecure)는 fixDone === id인 저장만 「밭·승점 줄지 않게」를 건너뛴다 */
+let fixDone = '';
+function _applyPendingFix(data, fx) {
+    if (!data || !fx || !fx.id || data.fixDone === fx.id) return false;
+    const today = typeof getMemoryQuizDate === 'function' ? getMemoryQuizDate() : '';
+    if (fx.until && today > fx.until) return false;
+    if (typeof fx.setHearts === 'number') data.maxHearts = fx.setHearts;
+    if (typeof fx.setGems === 'number') data.gems = fx.setGems;
+    const L = data.leagueData, sw = fx.scaleWeek;
+    if (sw && L && typeof sw.r === 'number' && L.weekId === sw.weekId) {
+        const cut = Math.max(0, Math.round((L.myScore || 0) * (1 - sw.r)));
+        for (const k of ['myScore', 'myMonthlyScore', 'totalScore', 'yearlyScore']) L[k] = Math.max(0, (L[k] || 0) - cut);
+    }
+    data.fixDone = fx.id;
+    try { localStorage.setItem('kingsRoad_pendingCompToast', JSON.stringify({ gems: 0, score: 0, sunSlots: 0, note: fx.note || '', msg: fx.msg || '' })); } catch (e) {}
+    console.log('[Firestore] 바로잡기 적용:', fx.id);
+    return true;
+}
+
 async function _initFirestoreSyncCore() {
     if (typeof db === 'undefined' || !db) return;
     if (typeof myPlayerId === 'undefined' || !myPlayerId) return;
@@ -14433,6 +14457,7 @@ async function _initFirestoreSyncCore() {
                 delete localData.pendingCompensation;
                 _localChanged = true;
             }
+            if (remoteData.pendingFix && _applyPendingFix(localData, remoteData.pendingFix)) _localChanged = true;   // 🛠️ 바로잡기(한 번만)
             if (_localChanged) {
                 localData.updatedAt = Date.now();
                 localStorage.setItem('kingsRoadSave', JSON.stringify(localData));
@@ -14544,6 +14569,7 @@ async function _initFirestoreSyncCore() {
         delete remoteData.pendingCompensation;
         window._syncDirty = true;
     }
+    if (remoteData.pendingFix) { if (_applyPendingFix(remoteData, remoteData.pendingFix)) window._syncDirty = true; delete remoteData.pendingFix; }   // 🛠️ 바로잡기(한 번만) — 서버가 이어 붙이니 로컬엔 남기지 않는다
     localStorage.setItem('kingsRoadSave', JSON.stringify(remoteData));
     window.firestoreSyncPending = false;
     // 이제부터 이 서버 버전이 기준 — 다음 저장은 이 값 위에서 이뤄진다

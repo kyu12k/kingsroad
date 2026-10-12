@@ -135,8 +135,14 @@ exports.saveGameDataSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
                 staleErr._staleServerUpdatedAt = old.updatedAt;
                 throw staleErr;
             }
+            /* 🛠️ 관리자 바로잡기(2026-10-12) — old.pendingFix { id, ... }. 앱이 적용하고 fixDone === id로 올린 저장만 아래 「줄지 않게」를 한 번 건너뛴다.
+               적용 전 저장(옛 앱 포함)은 pendingFix를 지우지 못하게 이어 붙인다(저장은 문서를 통째로 바꾼다). 계기: 기초석 차액 보상이 저장 거절 중 되풀이 적용돼 밭 74 → 303 */
+            const fix = old && old.pendingFix && typeof old.pendingFix === "object" ? old.pendingFix : null;
+            const fixAck = !!(fix && newData.fixDone === fix.id);
+            if (fix && !fixAck) dataToSave.pendingFix = fix;
+            if (fixAck) { delete dataToSave.pendingFix; console.log(`[saveGameDataSecure] 바로잡기 적용됨 uid=${uid} id=${fix.id} 밭=${dataToSave.maxHearts}`); }
             /* ★ 줄지 않는 값은 서버가 지킨다 — 어떤 경로로 낡은 저장이 들어와도 밭·승점은 내려가지 않게 */
-            if (old) {
+            if (old && !fixAck) {
                 const oh = Number(old.maxHearts) || 0;
                 if ((Number(dataToSave.maxHearts) || 0) < oh) dataToSave.maxHearts = oh;   // 밭은 줄지 않는다
                 const ol = old.leagueData, nl = dataToSave.leagueData;
