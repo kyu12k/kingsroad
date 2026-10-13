@@ -1562,3 +1562,142 @@ exports.guideGraduate = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     if (out.ok) console.log(`[guideGraduate] ${myTag} → 인도자 ${out.guide}`);
     return out;
 });
+
+// ══ ⚔️ 말씀 대결 — 도전장 (2026-10-13, docs/말씀-대결.md) ═══════════════════════════════════════════
+// 보낸 사람이 먼저 7문제를 풀고 그 기록과 함께 보낸다 → 받은 사람이 같은 문제로 그 기록과 겨룬다.
+//  battles/{보낸태그_받는태그} — 두 사람 사이 방향마다 하나. 열린 동안엔 새로 못 보낸다(답하거나 7일 지나면 덮어씀)
+//  battlePairs/{작은태그_큰태그} — 두 사람의 전적
+// 둘 다 구글 연동 · 친구이거나 같은 길드 · 하루 10장. 승패만 남기고 보석·리그에는 넣지 않는다(사용자 10/13).
+// 쓰기는 이 함수들만(규칙 write: false), 읽기는 두 사람만(uids).
+const BATTLE_Q = 7, BATTLE_TTL_MS = 7 * 86400000, BATTLE_SEND_DAILY = 10;
+const BATTLE_KINDS = new Set(['ro', 'bl', 'ra', 'nx']);
+const BATTLE_VERSES = [0, 20, 29, 22, 11, 14, 17, 17, 13, 21, 11, 19, 17, 18, 20, 8, 21, 18, 24, 21, 15, 27, 21];
+const _bNick = (v) => String(v || '').slice(0, 20);
+function _bGoogle(request) { const id = request.auth && request.auth.token && request.auth.token.firebase && request.auth.token.firebase.identities; return !!(id && id['google.com']); }
+function _bRun(run) {
+    if (!Array.isArray(run) || run.length !== BATTLE_Q) return null;
+    return run.map(r => ({ ok: !!(r && r.ok), ms: Math.max(0, Math.min(120000, Math.round(Number(r && r.ms) || 0))) }));
+}
+function _bQs(qs, ch) {
+    if (!Array.isArray(qs) || qs.length !== BATTLE_Q || JSON.stringify(qs).length > 30000) return null;
+    for (const q of qs) {
+        if (!q || !BATTLE_KINDS.has(q.k)) return null;
+        const m = /^(\d+)-(\d+)$/.exec(String(q.v || ''));
+        if (!m || +m[1] !== ch || +m[2] < 1 || +m[2] > BATTLE_VERSES[ch]) return null;
+    }
+    return qs;
+}
+// 문제마다: 한쪽만 맞히면 그쪽, 둘 다 맞히면 빠른 쪽(같으면 아무도)
+function _bJudge(a, b) {
+    let pa = 0, pb = 0; const per = [];
+    for (let i = 0; i < BATTLE_Q; i++) {
+        const x = a[i], y = b[i]; let w = '';
+        if (x.ok && y.ok) w = x.ms < y.ms ? 'from' : y.ms < x.ms ? 'to' : '';
+        else if (x.ok) w = 'from'; else if (y.ok) w = 'to';
+        if (w === 'from') pa++; else if (w === 'to') pb++;
+        per.push(w);
+    }
+    return { score: { from: pa, to: pb }, per, win: pa > pb ? 'from' : pb > pa ? 'to' : 'draw' };
+}
+async function _bPush(lb, title, body) {
+    if (!lb || !lb.fcmToken) return;
+    try { await admin.messaging().send({ token: lb.fcmToken, data: { title, body, link: 'https://kingsload.pages.dev/' } }); }
+    catch (e) { console.warn('[battle] push', e.code || e.message); }
+}
+
+// 보내기 전 확인(보내는 쪽이 문제를 다 풀고 나서야 거절되지 않게) — battleCheck와 battleSend가 함께 쓴다
+async function _bPre(request, myTag, toTag) {
+    if (!_bGoogle(request)) return { ok: false, why: 'google' };
+    const u = await verifyTag(request.auth.uid, myTag);
+    const me = String(myTag), to = String(toTag || '').replace(/^#/, '').toUpperCase();
+    if (!to || to === me) return { ok: false, why: 'self' };
+    const [lbSnap, svSnap, rlSnap] = await Promise.all([
+        db.collection('leaderboard').doc(to).get(),
+        db.collection('saves').where('tag', '==', to).limit(1).get(),
+        db.collection('rate_limits').doc(request.auth.uid).get(),
+    ]);
+    if (!lbSnap.exists || svSnap.empty) return { ok: false, why: 'nouser' };
+    const tl = lbSnap.data(), toUid = svSnap.docs[0].id;
+    if (Array.isArray(tl.blocked) && tl.blocked.includes(me)) return { ok: false, why: 'nouser' };
+    const friend = Array.isArray(u.friends) && u.friends.includes(to);
+    const guild = !!(u.guildId && tl.guildId && u.guildId === tl.guildId);
+    if (!friend && !guild) return { ok: false, why: 'rel' };
+    try {
+        const tu = await admin.auth().getUser(toUid);
+        if (!tu.providerData.some(p => p.providerId === 'google.com')) return { ok: false, why: 'toGoogle' };
+    } catch (e) { return { ok: false, why: 'nouser' }; }
+    const now = Date.now(), ref = db.collection('battles').doc(`${me}_${to}`);
+    const cur = await ref.get();
+    if (cur.exists && cur.data().state === 'open' && cur.data().expiresAt > now) return { ok: false, why: 'open' };
+    const rl = rlSnap.exists ? rlSnap.data().battleSend : null;
+    const used = rl && now - (rl.windowStart || 0) <= 86400000 ? (rl.count || 0) : 0;
+    if (used >= BATTLE_SEND_DAILY) return { ok: false, why: 'daily' };
+    return { ok: true, u, tl, toUid, me, to, ref, left: BATTLE_SEND_DAILY - used };
+}
+
+exports.battleCheck = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { myTag, toTag } = request.data || {};
+    const p = await _bPre(request, myTag, toTag);
+    return p.ok ? { ok: true, left: p.left } : p;
+});
+
+exports.battleSend = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { myTag, toTag, ch, qs, run, nick } = request.data || {};
+    const c = parseInt(ch, 10);
+    if (!(c >= 1 && c <= 22)) throw new HttpsError('invalid-argument', 'ch');
+    const cleanQs = _bQs(qs, c), cleanRun = _bRun(run);
+    if (!cleanQs || !cleanRun) throw new HttpsError('invalid-argument', 'qs/run');
+    const p = await _bPre(request, myTag, toTag);
+    if (!p.ok) return p;
+    await enforceRateLimit(request.auth.uid, 'battleSend', { maxCalls: BATTLE_SEND_DAILY, windowMs: 86400000 });
+    const now = Date.now(), fromNick = _bNick(nick || p.u.nickname), toNick = _bNick(p.tl.nickname);
+    await p.ref.set({
+        ch: c, qs: cleanQs, state: 'open',
+        from: { uid: request.auth.uid, tag: p.me, nick: fromNick }, to: { uid: p.toUid, tag: p.to, nick: toNick },
+        uids: [request.auth.uid, p.toUid], runs: { [request.auth.uid]: cleanRun },
+        createdAt: now, expiresAt: now + BATTLE_TTL_MS,
+    });
+    await _bPush(p.tl, '⚔️ 말씀 대결', `${fromNick}님의 도전장 — ${c}장`);
+    return { ok: true, id: p.ref.id };
+});
+
+exports.battleAnswer = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    if (!_bGoogle(request)) return { ok: false, why: 'google' };
+    const { myTag, id, run } = request.data || {};
+    await verifyTag(request.auth.uid, myTag);
+    const cleanRun = _bRun(run);
+    if (!cleanRun || !/^[A-Z0-9]+_[A-Z0-9]+$/.test(String(id || ''))) throw new HttpsError('invalid-argument', 'run/id');
+    const ref = db.collection('battles').doc(String(id)), uid = request.auth.uid;
+    let out = { ok: false }, d = null;
+    await db.runTransaction(async tx => {
+        const snap = await tx.get(ref);
+        if (!snap.exists) { out = { ok: false, why: 'gone' }; return; }
+        d = snap.data();
+        if (d.to.uid !== uid) { out = { ok: false, why: 'notyou' }; return; }
+        if (d.state !== 'open' || d.expiresAt < Date.now()) { out = { ok: false, why: 'closed' }; return; }
+        const j = _bJudge(d.runs[d.from.uid], cleanRun);
+        const pairId = [d.from.tag, d.to.tag].sort().join('_');
+        tx.update(ref, { state: 'done', [`runs.${uid}`]: cleanRun, score: j.score, per: j.per, win: j.win, doneAt: Date.now() });
+        const inc = admin.firestore.FieldValue.increment(1);
+        const lbF = db.collection('leaderboard').doc(d.from.tag), lbT = db.collection('leaderboard').doc(d.to.tag);
+        if (j.win === 'draw') { tx.set(lbF, { battleD: inc }, { merge: true }); tx.set(lbT, { battleD: inc }, { merge: true }); }
+        else {
+            tx.set(j.win === 'from' ? lbF : lbT, { battleW: inc }, { merge: true });
+            tx.set(j.win === 'from' ? lbT : lbF, { battleL: inc }, { merge: true });
+        }
+        tx.set(db.collection('battlePairs').doc(pairId), {
+            uids: [d.from.uid, d.to.uid], tags: [d.from.tag, d.to.tag].sort(),
+            ...(j.win === 'draw' ? { d: inc } : { w: { [j.win === 'from' ? d.from.tag : d.to.tag]: inc } }), at: Date.now(),
+        }, { merge: true });   // set+merge는 점 경로를 풀지 않는다 — 중첩 객체로
+        out = { ok: true, score: j.score, per: j.per, win: j.win };
+    });
+    if (out.ok) {
+        const lb = (await db.collection('leaderboard').doc(d.from.tag).get()).data();
+        const res = out.win === 'draw' ? '무승부' : out.win === 'from' ? `${d.from.nick}님 승리` : `${d.to.nick}님 승리`;
+        await _bPush(lb, '⚔️ 말씀 대결', `${d.to.nick}님이 ${d.ch}장 도전장에 답했어요 · ${out.score.from}:${out.score.to} ${res}`);
+    }
+    return out;
+});

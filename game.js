@@ -6663,7 +6663,7 @@ function _maybeStartRain() {
 let _errShown = false;
 function _showUncaughtError(msg, src, line) {
     if (_errShown) return;
-    if (src && !/kingsload|game\.js|index\.html|clock\.js/.test(String(src))) return;
+    if (src && !/kingsload|game\.js|index\.html|clock\.js|battle\.js/.test(String(src))) return;
     _errShown = true;
     try {
         const el = document.createElement('div');
@@ -9859,6 +9859,51 @@ function openNJ3DView(opts) {
     sc.onerror = () => { _nj3dLoading = false; showGemToast(0, t('nj3d_fail'), true); };
     document.head.appendChild(sc);
 }
+/* ⚔️ 말씀 대결 (2026-10-13, docs/말씀-대결.md) — 화면은 battle.js(누를 때만 불러온다). 여기엔 입구·일지·「백지로」·홈 칩만 */
+let _battleLoading = false;
+function openBattle(opts) {
+    if (!myTag || myTag === '0000') { showGemToast(0, '닉네임을 먼저 설정해주세요.', true); return; }
+    if (typeof closeFriendScreen === 'function') closeFriendScreen();
+    if (typeof window.openBattleScreen === 'function') { window.openBattleScreen(opts); return; }
+    if (_battleLoading) return;
+    _battleLoading = true;
+    const gs = document.querySelector('script[src*="game.js"]');
+    const ver = gs && /[?&]v=([^&]+)/.test(gs.src) ? RegExp.$1 : String(Date.now());
+    const sc = document.createElement('script');
+    sc.src = `battle.js?v=${ver}`;
+    sc.onload = () => { _battleLoading = false; if (typeof window.openBattleScreen === 'function') window.openBattleScreen(opts); };
+    sc.onerror = () => { _battleLoading = false; showGemToast(0, '말씀 대결을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.', true); };
+    document.head.appendChild(sc);
+}
+// 일지에만 — 대결은 알아보기라 백지 레벨·기름 단계·복습에 넣지 않는다(tr). bk = 문제 형식, d = 걸린 시간
+function _battleLog(id, ok, ms, k) {
+    try {
+        const buf = _readRecallLogBuf();
+        buf.push({ sv: 1, v: String(id), t: Date.now(), ok: ok ? 1 : 0, h: 0, d: ms | 0, m: 'battle', bk: String(k || ''), tr: 1 });
+        _writeRecallLogBuf(buf);
+    } catch (e) { }
+}
+// 틀린 절 → 그 절 하나 백지(열매 먹기와 같은 길). 이건 진짜 백지 시도라 평소처럼 기록된다
+function battleReviewVerse(id) {
+    if (!/^\d+-\d+$/.test(String(id))) return;
+    window.currentStageId = String(id);
+    window.hardshipOrigin = 'map';
+    selectedHardshipOrderType = 'sequential';
+    selectedHardshipUltimate = true;
+    startHardshipSession('memory', [String(id)]);
+}
+// 홈 「오늘 할 일」의 ⚔️ 도전장 — 받은 것 중 아직 안 푼 것
+var _battleInboxN = 0;   // var — renderHomeTodo가 먼저 불려도 TDZ에 걸리지 않게
+async function _battleInboxRefresh() {
+    try {
+        if (!db || !auth || !auth.currentUser || !isGoogleLinked()) { _battleInboxN = 0; return; }
+        const me = auth.currentUser.uid, now = Date.now();
+        const snap = await db.collection('battles').where('uids', 'array-contains', me).get();
+        _battleInboxN = snap.docs.filter(d => { const x = d.data(); return x.state === 'open' && x.to && x.to.uid === me && x.expiresAt > now; }).length;
+        if (typeof renderHomeTodo === 'function') renderHomeTodo();
+    } catch (e) { console.warn('[battle] inbox', e.code || e); }
+}
+window._battleInboxRefresh = _battleInboxRefresh;
 function closeNewJerusalem() { const m = document.getElementById('nj-modal'); if (m) m.remove(); }
 function _njRenderModal() {
     const cv = document.getElementById('nj-canvas'), list = document.getElementById('nj-list');
@@ -23922,6 +23967,7 @@ _checkFirstDailyWeeklyStudy(); // 6. 오늘 첫 접속 시 주간 학습 시간 
 // (하루 1회 아멘 스킵은 proceedToJourneyOverlay()에서 처리됨)
 setTimeout(() => { if (typeof checkFriendEvents === 'function') checkFriendEvents(); }, 2000); // 7. 친구 이벤트 처리
 setTimeout(() => { if (typeof _giftCheckInbox === 'function') _giftCheckInbox(); }, 4000);   // 🎁 나눔 열매 받은 편지함
+setTimeout(() => { if (typeof _battleInboxRefresh === 'function') _battleInboxRefresh(); }, 4500);   // ⚔️ 받은 도전장
 setTimeout(async () => { // 8. 길드 ID 로드 (레이드 대미지 누적용)
     if (db && myTag && myTag !== '0000') {
         try {
@@ -33862,6 +33908,7 @@ function renderHomeTodo() {
     if (S.hasFriends) h += chip('💛', t('todo_cheer'), S.cheerable, S.cheerable === 0, 'openFriendScreen()');
     { const gf = (njGiftFruits || []).filter(f => !f.done || !f.thanked), act = gf.filter(f => (f.ripe && Date.now() >= f.ripe && !f.done) || (f.done && !f.thanked) || (!f.ripe && !f.done)).length;
       if (gf.length) h += chip('🎁', t('todo_gift'), act, act === 0, 'openGiftBasket()'); }   // 🎁 받은 나눔 열매
+    if (_battleInboxN > 0) h += `<button class="home-todo-chip" onclick="openBattle()">📨 도전장 <b>${_battleInboxN}</b></button>`;   // 말씀 대결 — 받은 도전장(⚔️는 길드 출석이 쓴다)
     if (S.inGuild) h += chip('⚔️', t('todo_attend'), 0, S.attended, 'openGuildScreen()');
     _googleNudgeNoteLinked();
     if (_googleNudgeEligible() && !_googleBlockedBrowser()) h += chip('🔒', t('todo_protect'), 0, false, 'googleNudgeLink()');   // 🔒 구글 연결 전까지
@@ -34364,6 +34411,7 @@ function openFriendScreen() {
                 <span class="friend-panel-title">👥 친구</span>
                 <button class="friend-close-btn" onclick="closeFriendScreen()">✕</button>
             </div>
+            <button class="friend-battle-btn" onclick="openBattle()">⚔️ 말씀 대결 — 도전장 보내기·받은 도전장</button>
             <div class="friend-add-row">
                 <input id="friend-tag-input" class="friend-tag-input" placeholder="코드 입력 (#ABCD12)" maxlength="7" />
                 <button class="friend-add-btn" onclick="_submitFriendRequest()">신청</button>
@@ -34483,6 +34531,7 @@ async function _renderFriendScreen() {
                 <div class="friend-list-actions" onclick="event.stopPropagation()">
                     <button class="friend-cheer-list-btn${cheered ? ' done' : ''}" onclick="_cheerFriendFromList('${tag}',this)" ${cheered ? 'disabled' : ''}>${cheered ? '✓' : '💛'}</button>
                     <button class="friend-cheer-list-btn gift${njGiftSent[tag] === _get6AMDayStr() ? ' done' : ''}" onclick="openGiftFruit('${tag}', ${JSON.stringify(nickname || '').replace(/"/g, '&quot;')})" title="🎁">🎁</button>
+                    <button class="friend-cheer-list-btn" onclick="openBattle({ to: '${tag}', nick: ${JSON.stringify(nickname || '').replace(/"/g, '&quot;')} })" title="⚔️ 말씀 대결">⚔️</button>
                     <span class="friend-list-arrow">▶</span>
                 </div>
             </div>`;

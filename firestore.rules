@@ -30,7 +30,8 @@ service cloud.firestore {
                 'prevWeekScore', 'prevMonthlyScore',
                 'recallWeekId', 'recallCount', 'recallTitle',
                 'readWeekId', 'readCount', 'readTitle', 'dailyDoneDate', 'weeklyDoneWeek',
-                'eventId', 'eventTried', 'eventReady', 'eventTotal'];
+                'eventId', 'eventTried', 'eventReady', 'eventTotal',
+                'battleW', 'battleL', 'battleD'];   // ⚔️ 말씀 대결 전적 — battleAnswer만
       }
 
       // 친구 기능은 '상대방 문서에 직접 쓰는' 구조라(신청·수락·응원·삭제)
@@ -189,6 +190,16 @@ service cloud.firestore {
     // 🙏 함께 암송하는 성도 (2026-10-11) — 서버 togetherStats만 쓴다. 숫자 둘뿐이라 누구나 읽는다
     match /stats/{id} {
       allow read: if true;
+      allow write: if false;
+    }
+
+    // ⚔️ 말씀 대결 (2026-10-13) — 쓰기는 kingsroad battleSend·battleAnswer만, 읽기는 두 사람만
+    match /battles/{id} {
+      allow read: if request.auth != null && request.auth.uid in resource.data.uids;
+      allow write: if false;
+    }
+    match /battlePairs/{id} {
+      allow read: if request.auth != null && request.auth.uid in resource.data.uids;
       allow write: if false;
     }
 

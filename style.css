@@ -4699,6 +4699,12 @@ body > #guide-screen-overlay .guide-body > .guide-btn.ghost { width: 100%; margi
     display: flex; gap: 8px; padding: 12px 16px;
     flex-shrink: 0; border-bottom: 1px solid rgba(255,255,255,0.06);
 }
+/* ⚔️ 말씀 대결 입구 (2026-10-13) — 화면은 battle.js */
+.friend-battle-btn {
+    flex-shrink: 0; margin: 12px 16px 0; padding: 10px 12px;
+    background: rgba(212,167,58,0.14); color: #f3cf6b; border: 1px solid rgba(212,167,58,0.45);
+    border-radius: 12px; font-weight: bold; font-size: 0.9rem; cursor: pointer; text-align: center;
+}
 .friend-tag-input {
     flex: 1; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
     border-radius: 10px; color: #ecf0f1; padding: 8px 12px;

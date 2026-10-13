@@ -154,6 +154,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `renderHomeTogether()` · `_togetherLoad()` · `_togetherHtml(kind)` · kingsroad `togetherStats` | game.js:~33500 · kingsroad/index.js | 🙏 이번 주 함께 암송한 성도 — 서버가 6시간마다 `stats/together`{people, verses}(지난 7일 실제 암송), 홈 「여정 시작」 아래 한 줄 · 편지 창 머리 (`docs/UX-결정기록.md`) |
 | `openDailyRecorder()` · `_camDrawLoop` · `_camBeautyFrame(v, w, h, amt)` · `_camDrawWithBg` | game.js:~17400 | 🎥 오늘의 암송 촬영 — 캔버스에 그려 녹화, 액자·WebGL 피부 보정(강도 `softAmt`)·배경 바꾸기 |
 | `_applyPendingCompensation(data, pc)` · `compDone` · `_applyPendingFix(data, fx)` · `fixDone` · kingsroad `saveGameDataSecure`(`pendingFix` 이어 붙임·적용한 저장만 「줄지 않게」 건너뜀) | game.js:~14250 | 관리자 보상(더하기)·바로잡기(값 정하기) — 둘 다 열쇠로 **한 번만** (10/12) (`docs/저장과-동기화.md`) |
+| `openBattle(opts)` · `_battleLog` · `battleReviewVerse(id)` · `_battleInboxRefresh` → battle.js `openBattleScreen`·`makeQs`·`play`·`result` · kingsroad `battleCheck`·`battleSend`·`battleAnswer` | game.js:~9862 · battle.js | ⚔️ 말씀 대결(도전장) — 장을 골라 7문제(순서·빈칸·주소·다음 어절), 받은 사람이 같은 문제로 보낸 사람 기록과 겨룸. 구글 연동끼리·친구/길드원·하루 10장, 승패만(`leaderboard.battleW/L/D` 서버 전용), 일지엔 `m:'battle'`·`tr` (`docs/말씀-대결.md`) |
 | `SoundEffect` | game.js:~3987 | 효과음 신디사이저 — 종소리 `_note`, 출력 `_bus`, 잠든 오디오 깨우기 `_play`, 진동 `_buzz` |
 
 ---
@@ -218,6 +219,7 @@ firebase deploy --only firestore:rules    # 보안 규칙
 | `docs/인도자와-동행.md` | 인도자 시험·동행·정착 지표(망각의 고난 + 4주 연속 주 3일)·빨간 열매 — 오프라인에서 초심자 곁에서 돕는 도구 |
 | `docs/암송-단계.md` | 구절별 암송 단계(증거로만 오르내림)·묶음·「다음 할 것」 설계 — 초안, 검토 중 |
 | `docs/설문-헤비유저.md` | 헤비 유저 데이터 검토와 설문 문항 초안 |
+| `docs/말씀-대결.md` | 1:1 말씀 대결(장 선택·앱 안 도전장·구글 연동끼리·승패만) — 구현 계획 초안 |
 | `docs/새-예루살렘.md` | 밭 100 이후 — 열두 기초석·진주·생명나무 열매·바다와 만국·3D, 보석 수입 실측 |
 | `REVELATION_TOPICS.md` | 계시록 주제 분류 데이터 |
 | `DEPLOYMENT_GUIDE.md` · `README.md` | 초기 설정 안내 |
