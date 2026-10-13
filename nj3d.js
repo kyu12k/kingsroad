@@ -975,19 +975,44 @@
             ca.needsUpdate = true; natTrees.count = nt; natHouses.count = nh;
             natTrees.instanceMatrix.needsUpdate = true; natHouses.instanceMatrix.needsUpdate = true;
         }
-        // 내 포도나무 — 심은 나라 해안에 덩굴, 다 익으면 보랏빛 송이
+        // 내 포도나무 — 심은 나라 해안에 포도밭 시렁 한 줄, 다 익으면 보랏빛 송이
+        // 10/13 사용자: "포도나무가 이런 나무라니… 덩굴 아니야?" — 예전엔 기둥 0.9 + 잎 덩이 0.28로 순례자(키 ≈0.18)의 다섯 배 되는 나무였고,
+        // 줄지어 선 그 잎 덩이 속으로 카메라가 들어가 화면에 「푸른 장막」이 쳐졌다. → 사람 키만 한 시렁(기둥·철사 두 줄) + 구불한 밑동 + 철사를 타고 번진 잎
         const vineG = new THREE.Group(); seaGrp.add(vineG);
         {
             const vines = (typeof _njVinesGrowing === 'function') ? _njVinesGrowing() : [];
-            const stem = new THREE.MeshStandardMaterial({ color: 0x6b4a2a, roughness: 0.9 }), leaf = new THREE.MeshStandardMaterial({ color: 0x4f9a3a, roughness: 0.8, flatShading: true });
-            const grape = new THREE.MeshStandardMaterial({ color: 0x5b2a86, roughness: 0.35, emissive: 0x220a33, emissiveIntensity: 0.3 });
-            vines.forEach(v => {
-                const [X, Z] = natMid(v.n, 20), y = WT(X, Z) + 0.05, ripe = typeof _njVineInfo === 'function' && _njVineInfo(v).ripe;
-                [-0.5, 0, 0.5].forEach(o => {
-                    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.9, 6), stem); post.position.set(X + o, y + 0.45, Z); vineG.add(post);
-                    const bush = new THREE.Mesh(new THREE.IcosahedronGeometry(0.28, 0), leaf); bush.position.set(X + o, y + 0.85, Z); vineG.add(bush);
-                    if (ripe) [[0.12, 0.62, 0.15], [-0.14, 0.6, -0.1]].forEach(([dx, dy, dz]) => { const c = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.22, 7), grape); c.rotation.x = Math.PI; c.position.set(X + o + dx, y + dy, Z + dz); vineG.add(c); });
+            const wood = new THREE.MeshStandardMaterial({ color: 0x8a6a46, roughness: 0.9 }), bark = new THREE.MeshStandardMaterial({ color: 0x5e3f24, roughness: 0.95 });
+            const leaf = new THREE.MeshStandardMaterial({ color: 0x4f9a3a, roughness: 0.8, flatShading: true }), leaf2 = new THREE.MeshStandardMaterial({ color: 0x6aaf45, roughness: 0.8, flatShading: true });
+            const grape = new THREE.MeshStandardMaterial({ color: 0x5b2a86, roughness: 0.35, emissive: 0x220a33, emissiveIntensity: 0.3 }), green = new THREE.MeshStandardMaterial({ color: 0x9cc25a, roughness: 0.5 });
+            const postG = new THREE.CylinderGeometry(0.006, 0.007, 0.22, 5), wireG = new THREE.CylinderGeometry(0.0012, 0.0012, 1, 3);
+            const trunkG = new THREE.CylinderGeometry(0.005, 0.009, 0.13, 5), armG = new THREE.CylinderGeometry(0.0035, 0.0045, 0.1, 5), leafG = new THREE.IcosahedronGeometry(1, 0), berryG = new THREE.SphereGeometry(0.0055, 6, 4);
+            const LEN = 0.6, H1 = 0.11, H2 = 0.18;   // 시렁 길이 · 아래·위 철사 높이(순례자 키 ≈0.18)
+            vines.forEach((v, vi) => {
+                const [X, Z] = natMid(v.n, 20), ripe = typeof _njVineInfo === 'function' && _njVineInfo(v).ripe;
+                const row = new THREE.Group(); row.position.set(X, WT(X, Z) + 0.02, Z); row.rotation.y = (vi % 3 - 1) * 0.12; vineG.add(row);
+                [-LEN / 2, 0, LEN / 2].forEach(x => { const p = new THREE.Mesh(postG, wood); p.position.set(x, 0.11, 0); row.add(p); });
+                [H1, H2].forEach(h => { const w = new THREE.Mesh(wireG, wood); w.rotation.z = Math.PI / 2; w.scale.y = LEN; w.position.set(0, h, 0); row.add(w); });
+                const rnd = (i) => { const s = Math.sin((vi + 1) * 91.7 + i * 12.9898) * 43758.5453; return s - Math.floor(s); };
+                [-0.2, 0, 0.2].forEach((x, k) => {   // 포도나무 셋 — 구불한 밑동이 아래 철사까지 오르고, 거기서 가지(덩굴)가 철사를 타고 양옆으로
+                    const lean = (rnd(k + 200) - 0.5) * 0.25;
+                    const t = new THREE.Mesh(trunkG, bark); t.scale.y = H1 / 0.13; t.position.set(x + lean * 0.03, H1 / 2, 0); t.rotation.z = lean; row.add(t);
+                    [-1, 1].forEach(sg => { const arm = new THREE.Mesh(armG, bark); arm.rotation.z = Math.PI / 2; arm.position.set(x + sg * 0.05, H1 + 0.004, 0); row.add(arm); });
                 });
+                for (let i = 0; i < 26; i++) {   // 잎 — 두 철사 사이를 덮는 잎 울타리(위로 조금 넘친다)
+                    const x = -LEN / 2 + 0.02 + (i + rnd(i)) / 26 * (LEN - 0.04), r = 0.02 + rnd(i + 5) * 0.012;
+                    const l = new THREE.Mesh(leafG, i % 3 ? leaf : leaf2); l.scale.set(r * 1.1, r, r * 0.55);
+                    l.position.set(x, H1 + 0.035 + rnd(i + 60) * (H2 - H1 + 0.005), (rnd(i + 90) - 0.5) * 0.035); l.rotation.set(rnd(i + 7) * 0.6, rnd(i + 8) * 3, 0); row.add(l);
+                }
+                for (let i = 0; i < 6; i++) {   // 송이 — 잎 울타리 아래, 가지(아래 철사) 바로 위에 매달린다(익기 전엔 작고 연두)
+                    const cl = new THREE.Group(), x = -LEN / 2 + 0.06 + i / 5 * (LEN - 0.12);
+                    cl.position.set(x, H1 + 0.026, (i % 2 ? 1 : -1) * 0.02); row.add(cl);
+                    const n = ripe ? 9 : 5, sc = ripe ? 1 : 0.75;
+                    for (let b = 0; b < n; b++) {
+                        const lay = b < 4 ? 0 : b < 7 ? 1 : 2, a = b * 2.4, rr = (lay === 0 ? 0.008 : lay === 1 ? 0.005 : 0.001) * sc;
+                        const be = new THREE.Mesh(berryG, ripe ? grape : green); be.scale.setScalar(sc);
+                        be.position.set(Math.cos(a) * rr, -lay * 0.009 * sc, Math.sin(a) * rr); cl.add(be);
+                    }
+                }
             });
         }
         // ══ 🎁 만국의 예물 — 사신 · 예물 모양 · 성 둘레에 놓인 예물 ══
