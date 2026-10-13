@@ -14949,7 +14949,36 @@ async function checkRemoteIsNewer() {
     } catch (e) { /* 조용히 실패 */ }
 }
 
-function _showRemoteNewerBanner() {
+/* 📱 다른 기기 기록 — 새로고침 안내 대신 알아서 합친다 (2026-10-14 사용자: "잘 합쳐졌으면 굳이 새로고침을 띄울 필요가 있나?")
+   새로고침이 하던 일(앱을 열 때의 병합 _initFirestoreSyncCore — 서버가 바뀌었으면 서버 우선 + 절마다 진도·승점·백지 기록 병합)을 그 자리에서 한다.
+   암송·고난·보스전(게임 화면)·3D·대결 중엔 화면 상태가 흔들리니 미뤘다가(_remoteMergePending) 홈·지도로 돌아오면 합친다. 실패하면 예전 안내로 */
+let _autoMerging = false;
+function _syncIdle() {
+    const gs = document.getElementById('game-screen'); if (gs && gs.classList.contains('active')) return false;
+    const nj = document.getElementById('nj3d'); if (nj && getComputedStyle(nj).display !== 'none') return false;
+    if (document.getElementById('bt-ov')) return false;
+    return true;
+}
+async function _autoMergeRemote() {
+    if (_autoMerging) return;
+    if (!_syncIdle()) { window._remoteMergePending = true; return; }
+    _autoMerging = true; window._remoteMergePending = false;
+    try {
+        saveGameData();   // 아직 메모리에만 있는 진행을 기기 저장본에 — 병합의 「이 기기 쪽」이 된다
+        await _initFirestoreSyncCore();
+        if (window._syncDirty) await syncToFirestore();
+        try { if (typeof updateGemDisplay === 'function') updateGemDisplay(); if (typeof renderHomeTodo === 'function') renderHomeTodo(); } catch (e) { }
+        const b = document.getElementById('remote-newer-banner'); if (b) b.remove();
+        if (typeof showToast === 'function') showToast('📱 다른 기기의 기록을 합쳤어요');
+        console.log('[sync] 다른 기기 기록 자동 병합');
+    } catch (e) {
+        console.warn('[sync] 자동 병합 실패 → 새로고침 안내', e);
+        _showRemoteNewerBannerUI();
+    } finally { _autoMerging = false; }
+}
+setInterval(() => { try { if (window._remoteMergePending && !_autoMerging && _syncIdle()) _autoMergeRemote(); } catch (e) { } }, 5000);
+function _showRemoteNewerBanner() { _autoMergeRemote(); }
+function _showRemoteNewerBannerUI() {
     if (document.getElementById('remote-newer-banner')) return;
     const el = document.createElement('div');
     el.id = 'remote-newer-banner';
