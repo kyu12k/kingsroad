@@ -192,6 +192,7 @@
     const memo = (tag) => { try { return (typeof getFriendMemo === 'function' && getFriendMemo(tag)) || ''; } catch (e) { return ''; } };
     const nameOf = (p) => esc(memo(p.tag) || p.nick);
     const nickSub = (p) => memo(p.tag) ? `${esc(p.nick)} · ` : '';
+    const runOf = (d, side) => (d.runs && (d.runs[side] || d.runs[d[side].uid])) || [];   // 10/13 첫 배포분은 계정 번호로 남았다
     const daysLeft = (d) => Math.max(1, Math.ceil((d.expiresAt - Date.now()) / 86400000));
 
     /* 허브 — 받은 도전장 · 기다리는 도전장 · 지난 대결 · 새 도전장 */
@@ -208,9 +209,9 @@
             docs = snap.docs.map(d => Object.assign({ id: d.id }, d.data())); lb = me || {};
         } catch (e) { console.warn('[battle] hub', e); body.innerHTML = '<div class="bt-empty">불러오지 못했어요. 잠시 뒤 다시 열어 주세요.</div>'; return; }
         if (!document.getElementById('bt-body')) return;
-        const now = Date.now(), me = uid();
-        const inbox = docs.filter(d => d.state === 'open' && d.to.uid === me && d.expiresAt > now).sort((a, b) => b.createdAt - a.createdAt);
-        const waiting = docs.filter(d => d.state === 'open' && d.from.uid === me && d.expiresAt > now);
+        const now = Date.now(), me = String(myTag);   // 쪽은 태그로 가린다 — 한 사람이 계정을 여럿 쓰기도 한다(10/13)
+        const inbox = docs.filter(d => d.state === 'open' && d.to.tag === me && d.expiresAt > now).sort((a, b) => b.createdAt - a.createdAt);
+        const waiting = docs.filter(d => d.state === 'open' && d.from.tag === me && d.expiresAt > now);
         const past = docs.filter(d => d.state === 'done').sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0)).slice(0, 15);
         const seen = seenGet();
         let h = `<div class="bt-rec">내 전적 <b>${lb.battleW | 0}</b>승 <b>${lb.battleL | 0}</b>패${lb.battleD ? ` <b>${lb.battleD | 0}</b>무` : ''}</div>`;
@@ -225,7 +226,7 @@
         if (past.length) {
             h += `<div class="bt-sec">📜 지난 대결</div>`;
             h += past.map(d => {
-                const mine = d.from.uid === me ? 'from' : 'to', opp = mine === 'from' ? d.to : d.from;
+                const mine = d.from.tag === me ? 'from' : 'to', opp = mine === 'from' ? d.to : d.from;
                 const res = d.win === 'draw' ? '무승부' : d.win === mine ? '승' : '패';
                 const isNew = mine === 'from' && !seen[d.id + d.doneAt];
                 return `<div class="bt-row"><div class="bt-m"><div class="bt-n">${nameOf(opp)}${isNew ? ' <span style="color:#f08a96;font-size:.75rem">새 결과</span>' : ''}</div><div class="bt-s">${nickSub(opp)}${d.ch}장 · ${d.score[mine]}:${d.score[mine === 'from' ? 'to' : 'from']} ${res}</div></div><button class="bt-btn sub" data-see="${d.id}">보기</button></div>`;
@@ -297,7 +298,7 @@
     /* 풀기 — d.send가 있으면 보내는 쪽(먼저 풂), 없으면 받은 도전장(상대 기록과 겨룸) */
     function play(d) {
         if (!d) return;
-        const ghost = d.send ? null : d.runs[d.from.uid];
+        const ghost = d.send ? null : runOf(d, 'from');
         S = { d, i: 0, run: [], ghost, me: 0, op: 0, title: d.send ? `⚔️ ${esc(d.send.nick)}님에게 보낼 도전장` : `⚔️ ${esc(d.from.nick)}님의 도전장` };
         note(d.send ? 'bt_write' : 'bt_play');
         ask();
@@ -421,7 +422,7 @@
                 const r = await call('battleAnswer', { id: d.id, run });
                 if (!r || !r.ok) { body.innerHTML = `<div class="bt-note">${msg(r && r.why)}</div><button class="bt-btn big sub" id="bt-back">대결 화면으로</button>`; wire(body); return; }
                 note('bt_done');
-                d.state = 'done'; d.score = r.score; d.per = r.per; d.win = r.win; d.runs = Object.assign({}, d.runs, { [uid()]: run }); d.doneAt = Date.now();
+                d.state = 'done'; d.score = r.score; d.per = r.per; d.win = r.win; d.runs = Object.assign({}, d.runs, { to: run }); d.doneAt = Date.now();
                 result(d);
             }
         } catch (e) {
@@ -442,8 +443,8 @@
     }
     /* 결과 — 두 기록을 문제마다 나란히 */
     function result(d) {
-        const me = uid(), mine = d.from.uid === me ? 'from' : 'to', theirs = mine === 'from' ? 'to' : 'from';
-        const myRun = d.runs[me] || [], opRun = d.runs[d[theirs].uid] || [], opp = d[theirs];
+        const mine = d.from.tag === String(myTag) ? 'from' : 'to', theirs = mine === 'from' ? 'to' : 'from';
+        const myRun = runOf(d, mine), opRun = runOf(d, theirs), opp = d[theirs];
         const res = d.win === 'draw' ? '🤝 무승부' : d.win === mine ? '🏆 이겼어요!' : '다음엔 이겨 봐요';
         const cell = (r) => r ? (r.ok ? `<span style="color:#6fd39a">✓</span>${(r.ms / 1000).toFixed(1)}초` : `<span style="color:#f08a96">✗</span>`) : '';
         const body = shell(`⚔️ ${esc(opp.nick)}님과 · ${d.ch}장`, '', close);

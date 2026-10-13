@@ -1624,7 +1624,7 @@ async function _bPre(request, myTag, toTag) {
     if (!friend && !guild) return { ok: false, why: 'rel' };
     // 한 태그에 저장본이 여럿일 수 있다(옛 익명 계정 + 구글 계정 — 10/13 실측 9개 태그, 5개는 섞임).
     // 아무거나 하나를 고르면 구글로 쓰는 사람을 「연결 안 함」으로 잘못 거절한다 → 구글 연동된 계정 중 최근에 저장한 쪽
-    let toUid = '';
+    let toUid = '', toUids = [];
     try {
         const docs = svSnap.docs.map(d => ({ uid: d.id, up: Number(d.get('updatedAt')) || 0 })).sort((a, b) => b.up - a.up);
         const users = (await admin.auth().getUsers(docs.map(x => ({ uid: x.uid })))).users;
@@ -1632,14 +1632,16 @@ async function _bPre(request, myTag, toTag) {
         const pick = docs.find(x => g.has(x.uid));
         if (!pick) return { ok: false, why: 'toGoogle' };
         toUid = pick.uid;
+        toUids = docs.map(x => x.uid).slice(0, 8);   // 같은 태그의 계정 전부 — 어느 기기(계정)로 열어도 도전장이 보이게(10/13 #NGCTUB: 구글은 9/27에 멈추고 익명으로 씀)
     } catch (e) { return { ok: false, why: 'nouser' }; }
+    const mine = (await db.collection('saves').where('tag', '==', me).get()).docs.map(d => d.id).slice(0, 8);
     const now = Date.now(), ref = db.collection('battles').doc(`${me}_${to}`);
     const cur = await ref.get();
     if (cur.exists && cur.data().state === 'open' && cur.data().expiresAt > now) return { ok: false, why: 'open' };
     const rl = rlSnap.exists ? rlSnap.data().battleSend : null;
     const used = rl && now - (rl.windowStart || 0) <= 86400000 ? (rl.count || 0) : 0;
     if (used >= BATTLE_SEND_DAILY) return { ok: false, why: 'daily' };
-    return { ok: true, u, tl, toUid, me, to, ref, left: BATTLE_SEND_DAILY - used };
+    return { ok: true, u, tl, toUid, toUids, mine, me, to, ref, left: BATTLE_SEND_DAILY - used };
 }
 
 exports.battleCheck = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
@@ -1663,7 +1665,7 @@ exports.battleSend = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     await p.ref.set({
         ch: c, qs: cleanQs, state: 'open',
         from: { uid: request.auth.uid, tag: p.me, nick: fromNick }, to: { uid: p.toUid, tag: p.to, nick: toNick },
-        uids: [request.auth.uid, p.toUid], runs: { [request.auth.uid]: cleanRun },
+        uids: [...new Set([request.auth.uid, ...p.mine, ...p.toUids])], runs: { from: cleanRun },   // 기록은 쪽(from·to)으로 — 계정이 여럿이어도
         createdAt: now, expiresAt: now + BATTLE_TTL_MS,
     });
     await _bPush(p.tl, '⚔️ 말씀 대결', `${fromNick}님의 도전장 — ${c}장`);
@@ -1683,11 +1685,11 @@ exports.battleAnswer = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
         const snap = await tx.get(ref);
         if (!snap.exists) { out = { ok: false, why: 'gone' }; return; }
         d = snap.data();
-        if (d.to.uid !== uid) { out = { ok: false, why: 'notyou' }; return; }
+        if (String(myTag) !== d.to.tag) { out = { ok: false, why: 'notyou' }; return; }   // 받는 사람 = 그 태그(verifyTag가 이 계정의 태그임을 확인했다)
         if (d.state !== 'open' || d.expiresAt < Date.now()) { out = { ok: false, why: 'closed' }; return; }
-        const j = _bJudge(d.runs[d.from.uid], cleanRun);
+        const j = _bJudge(d.runs.from || d.runs[d.from.uid], cleanRun);
         const pairId = [d.from.tag, d.to.tag].sort().join('_');
-        tx.update(ref, { state: 'done', [`runs.${uid}`]: cleanRun, score: j.score, per: j.per, win: j.win, doneAt: Date.now() });
+        tx.update(ref, { state: 'done', 'runs.to': cleanRun, score: j.score, per: j.per, win: j.win, doneAt: Date.now() });
         const inc = admin.firestore.FieldValue.increment(1);
         const lbF = db.collection('leaderboard').doc(d.from.tag), lbT = db.collection('leaderboard').doc(d.to.tag);
         if (j.win === 'draw') { tx.set(lbF, { battleD: inc }, { merge: true }); tx.set(lbT, { battleD: inc }, { merge: true }); }
@@ -1696,7 +1698,7 @@ exports.battleAnswer = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
             tx.set(j.win === 'from' ? lbT : lbF, { battleL: inc }, { merge: true });
         }
         tx.set(db.collection('battlePairs').doc(pairId), {
-            uids: [d.from.uid, d.to.uid], tags: [d.from.tag, d.to.tag].sort(),
+            uids: d.uids, tags: [d.from.tag, d.to.tag].sort(),
             ...(j.win === 'draw' ? { d: inc } : { w: { [j.win === 'from' ? d.from.tag : d.to.tag]: inc } }), at: Date.now(),
         }, { merge: true });   // set+merge는 점 경로를 풀지 않는다 — 중첩 객체로
         out = { ok: true, score: j.score, per: j.per, win: j.win };

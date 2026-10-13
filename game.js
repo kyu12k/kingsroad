@@ -9899,7 +9899,7 @@ async function _battleInboxRefresh() {
         if (!db || !auth || !auth.currentUser || !isGoogleLinked()) { _battleInboxN = 0; return; }
         const me = auth.currentUser.uid, now = Date.now();
         const snap = await db.collection('battles').where('uids', 'array-contains', me).get();
-        _battleInboxN = snap.docs.filter(d => { const x = d.data(); return x.state === 'open' && x.to && x.to.uid === me && x.expiresAt > now; }).length;
+        _battleInboxN = snap.docs.filter(d => { const x = d.data(); return x.state === 'open' && x.to && x.to.tag === String(myTag) && x.expiresAt > now; }).length;
         if (typeof renderHomeTodo === 'function') renderHomeTodo();
     } catch (e) { console.warn('[battle] inbox', e.code || e); }
 }
