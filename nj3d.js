@@ -775,15 +775,22 @@
             });
         }
         {   // 🏖️ 해변 비탈 띠 + 🌊 밀려왔다 빠지는 파도 (10/8 사용자: 잔잔하게 파도가 해변을 침범하고 물러가는 그림)
-            const DS_ = [-2.0, -1.7, -1.35, -1.0, -0.75, -0.5, -0.3, -0.12, 0, 0.25, 0.6, 1.1, 1.8, 2.6, 3.2], XS = [];
+            // 10/14 사용자: "땅에 구멍이 생긴 것처럼" — 아래 땅 그물(가로 1.5)은 물가 꼭짓점(d > −1.7)을 수면 아래로 낮추는데, 그 기울어진 삼각형이
+            //   띠 바깥(뭍 쪽 −2.0 너머, 해안이 비스듬하면 −3.5까지)으로 수면 밑까지 파고들어 바다 수면이 비쳤다 → 띠를 뭍 쪽 −3.8까지 늘려 덮는다.
+            //   늘린 줄(−2.0 안쪽)은 땅 높이(WT)·땅 그물과 같은 색(모래 → 풀빛)이라 해변이 넓어 보이지 않는다
+            const DS_ = [-3.8, -3.2, -2.6, -2.0, -1.7, -1.35, -1.0, -0.75, -0.5, -0.3, -0.12, 0, 0.25, 0.6, 1.1, 1.8, 2.6, 3.2], XS = [];
             for (let x = -150; x <= 150.01; x += 0.75) if (Math.abs(x) >= 2.2) XS.push(x);
+            const cTopB = new THREE.Color(0x2f9e58), cLowB = new THREE.Color(0x3d8a48), cSandB = new THREE.Color(0xc9b486);
             const cDry = new THREE.Color(0xcdb98a), cWet = new THREE.Color(0xb39d72), cUnder = new THREE.Color(0xc2b087), cc = new THREE.Color();
             const pos = [], col = [], idx = [], nR = DS_.length;
             XS.forEach((x, i) => {
                 const cz = coastZ(x);
                 DS_.forEach(d => {
-                    pos.push(x, beachAt(x, d, WT(x, cz + d)) + (d <= BEACH_D0 ? 0.004 : 0), cz + d);
-                    if (d < -0.8) cc.copy(cDry); else if (d < 0.05) cc.copy(cDry).lerp(cWet, smooth01((d + 0.8) / 0.75)); else cc.copy(cWet).lerp(cUnder, smooth01(d / 1.5));
+                    const z = cz + d, inland = d < -1.99;
+                    pos.push(x, inland ? Math.max(WT(x, z), beachAt(x, d, WT(x, z))) + 0.004 : beachAt(x, d, WT(x, z)) + (d <= BEACH_D0 ? 0.004 : 0), z);
+                    if (inland) {   // 땅 그물(아래 해안·바다 밑 그물)과 같은 색 — 높이로 풀빛, 물가 가까이(e < 1.5) 모래를 섞는다
+                        const h = WT(x, z), e = seaE(x, z); cc.copy(cTopB).lerp(cLowB, Math.min(1, -h / DROP)); if (e < 1.5) cc.lerp(cSandB, 0.88 * Math.min(1, (1.5 - e) / 0.18));
+                    } else if (d < -0.8) cc.copy(cDry); else if (d < 0.05) cc.copy(cDry).lerp(cWet, smooth01((d + 0.8) / 0.75)); else cc.copy(cWet).lerp(cUnder, smooth01(d / 1.5));
                     cc.convertSRGBToLinear(); col.push(cc.r, cc.g, cc.b);
                 });
                 if (i && Math.abs(XS[i] - XS[i - 1]) < 1) for (let j = 0; j < nR - 1; j++) { const a = (i - 1) * nR + j, b = i * nR + j; idx.push(a, b, a + 1, a + 1, b, b + 1); }
@@ -932,7 +939,7 @@
                 const base = pos.length / 3, sp = natSpan(i), f0 = idx.length / 3;
                 if (sp) {   // 해안 띠 — 해안선 바로 안쪽부터 6.4 들어간 데까지
                     for (let q = 0; q <= NAT_NX; q++) { const x = sp[0] + (sp[1] - sp[0]) * q / NAT_NX, cz = coastZ(x);
-                        for (let k = 0; k <= NAT_ND; k++) { const z = cz - (0.18 + (6.4 - 0.18) * k / NAT_ND); pos.push(x, terrain(x, z) + 0.012, z); col.push(1, 1, 1); } }   // terrain = 걷는 높이(해변 비탈 포함) — WT엔 비탈이 없어 물가에서 띠가 떠 있었다
+                        for (let k = 0; k <= NAT_ND; k++) { const z = cz - (0.18 + (6.4 - 0.18) * k / NAT_ND); pos.push(x, terrain(x, z) + 0.016, z); col.push(1, 1, 1); } }   // terrain = 걷는 높이(해변 비탈 포함) — WT엔 비탈이 없어 물가에서 띠가 떠 있었다
                     const R = NAT_ND + 1;
                     for (let q = 0; q < NAT_NX; q++) for (let k = 0; k < NAT_ND; k++) { const a = base + q * R + k; idx.push(a, a + R, a + 1, a + 1, a + R, a + R + 1); }
                 } else {    // 섬 꼭대기 — 가운데 하나 + 둘레 아홉(부채 여덟 조각)
