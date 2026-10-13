@@ -154,10 +154,11 @@
 #bt-ov .bt-opts button.ok{background:#1f5d3a;border-color:#2f8a57}
 #bt-ov .bt-opts button.no{background:#6b2430;border-color:#9b3443}
 #bt-ov .bt-cards{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
-#bt-ov .bt-cards button{min-width:3em;background:#e74c3c;color:#fff;border:1px solid #c0392b;border-radius:10px;padding:9px 11px;font-size:1rem;font-weight:bold;cursor:pointer}
+#bt-ov .bt-cards button{min-width:3em;background:#2c5fa8;color:#fff;border:1px solid #1a4080;border-radius:10px;padding:9px 11px;font-size:1rem;font-weight:bold;cursor:pointer}
 #bt-ov .bt-cards button.used{visibility:hidden}
 #bt-ov .bt-placed{min-height:56px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;align-content:flex-start;background:#f4f1e8;border:2px dashed #b9b2a0;border-radius:12px;padding:8px}
-#bt-ov .bt-placed .ph{color:#8a8372;font-size:.88rem}
+#bt-ov .bt-placed .slot{display:inline-block;height:2.4em;border-bottom:3px solid #b9b2a0;border-radius:4px;background:rgba(0,0,0,.04)}
+#bt-ov .bt-placed .slot.next{border-bottom-color:#d4a73a;background:rgba(212,167,58,.14)}
 #bt-ov .bt-placed button{background:#fff;color:#2c3e50;border:1px solid #d5cfc0;border-radius:10px;padding:9px 11px;font-size:1rem;font-weight:bold;cursor:pointer}
 #bt-ov .bt-placed button.c{background:#2ecc71;color:#fff;border-color:#27ae60}
 #bt-ov .bt-placed button.e{background:#e74c3c;color:#fff;border-color:#c0392b;animation:btShake .4s}
@@ -318,7 +319,7 @@
             S.ro = { cards: c.cards, words: c.words, seq: c.seq, a: [] };
             core = `<div class="bt-txt">${esc(ws.slice(0, q.s).join(' '))} <span class="bt-gap">…</span> ${esc(ws.slice(q.s + q.n).join(' '))}</div>
                 <div class="bt-placed" id="bt-placed"></div>
-                <div class="bt-cards">${c.cards.map((cc, k) => `<button data-c="${k}">${esc(cc)}</button>`).join('')}</div>
+                <div class="bt-cards">${c.words.map((wd, k) => `<button data-c="${k}">${esc(wd)}</button>`).join('')}</div>
                 <button class="bt-attack" id="bt-attack" disabled>⚔️ 공격</button>`;
         } else if (q.k === 'bl') {
             core = `<div class="bt-txt">${ws.map((w, k) => k === q.i ? '<span class="bt-gap">&nbsp;</span>' : esc(w)).join(' ')}</div>
@@ -349,7 +350,7 @@
             const g = S.ghost[i];
             S.ghostT = setTimeout(() => { if (S && !S.done) showGhost(); }, Math.min(g.ms, lim));
         }
-        if (q.k === 'ro') {   // 🗡️ 보스전 「어려움」처럼(10/13 사용자) — 빨간 초성 블록을 차례로 놓고 공격, 칸마다 초록·빨강, 시간 안이면 고쳐서 다시
+        if (q.k === 'ro') {   // 🗡️ 보스전처럼 블록을 차례로 놓고 공격, 칸마다 초록·빨강, 시간 안이면 고쳐서 다시(10/13). 10/14 사용자: 난이도를 낮춰 — 초성 대신 단어 블록, 자리마다 그 단어 길이만큼의 빈칸
             drawPlaced(body);
             body.querySelectorAll('[data-c]').forEach(b => b.onclick = () => {
                 if (S.done) return;
@@ -357,7 +358,7 @@
             });
             body.querySelector('#bt-attack').onclick = () => {
                 if (S.done || S.ro.a.length !== S.ro.cards.length) return;
-                S.ro.marks = S.ro.a.map((k, n) => S.ro.cards[k] === S.ro.cards[S.ro.seq[n]]);   // 칸마다 — 초성이 같으면 맞다
+                S.ro.marks = S.ro.a.map((k, n) => bare(S.ro.words[k]) === bare(S.ro.words[S.ro.seq[n]]));   // 칸마다 — 그 자리 단어면 맞다
                 drawPlaced(body);
                 if (S.ro.marks.every(Boolean)) { S.ro.won = true; drawPlaced(body); answer(true, performance.now() - S.t0); }
                 else snd('playWrong');
@@ -381,8 +382,10 @@
     function drawPlaced(body) {
         const el = body.querySelector('#bt-placed'); if (!el) return;
         const R = S.ro, mk = R.marks;
-        el.innerHTML = R.a.length ? R.a.map((k, n) => `<button data-p="${n}" class="${mk ? (mk[n] ? 'c' : 'e') : ''}">${esc(R.won ? R.words[k] : R.cards[k])}</button>`).join('')   // 다 맞으면 블록이 단어로
-            : `<span class="ph">초성 블록을 순서대로 눌러 놓으세요</span>`;
+        // 자리마다 — 놓은 블록, 아직이면 그 자리 단어 길이만큼의 빈칸(다음 자리는 금빛)
+        el.innerHTML = R.seq.map((_, n) => n < R.a.length
+            ? `<button data-p="${n}" class="${mk ? (mk[n] ? 'c' : 'e') : ''}">${esc(R.words[R.a[n]])}</button>`
+            : `<span class="slot${n === R.a.length ? ' next' : ''}" style="width:calc(${bare(R.words[R.seq[n]]).length}em + 22px)"></span>`).join('');
         const atk = body.querySelector('#bt-attack'); if (atk) atk.disabled = R.a.length !== R.cards.length || S.done;
         el.querySelectorAll('[data-p]').forEach(b => b.onclick = () => {   // 놓은 블록을 누르면 아래로 되돌린다(그 블록만)
             if (S.done) return;
