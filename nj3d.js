@@ -922,20 +922,27 @@
             return [s.x + Math.cos(a) * rr * f, s.z + Math.sin(a) * rr * f];
         };
         const natLook = (i, X, Z) => { const s = natIsle(i); return s ? [X + (X - s.x), Z + (Z - s.z)] : [X, Z + 5]; };   // 바다 쪽(사신이 바라볼 곳)
-        const NAT_FACES = 8, natRing = (() => {
+        // 나라 땅 띠 — 나라마다 꼭짓점 몇 개(natV)·삼각형이 어느 나라인지(natFace). 10/13까지는 해안 띠가 다섯 마디 × 두 줄뿐이라
+        // 땅 높낮이를 못 따라가 떠 있는 곳에선 순례자 다리가 반투명 판 뒤로 초록빛이 되고, 묻힌 곳과 갈라져 보였다(사용자: "땅이 갈라지는 것 같네 · 옷 색깔도 바뀌어")
+        // → 마디를 촘촘히(길이 24 × 깊이 10) 하고 칸마다 걷는 높이(terrain — 해변 비탈 포함)를 따라간다. WT엔 비탈이 없어 물가에선 판이 0.2쯤 떠 있었다
+        const NAT_NX = 24, NAT_ND = 10, natV = [], natFace = [];
+        const natRing = (() => {
             const pos = [], col = [], idx = [];
             for (let i = 0; i < 70; i++) {
-                const base = pos.length / 3, sp = natSpan(i);
-                if (sp) {   // 해안 띠 — 해안선 바로 안쪽부터 6.4 들어간 데까지, 다섯 마디
-                    for (let q = 0; q <= 4; q++) { const x = sp[0] + (sp[1] - sp[0]) * q / 4, cz = coastZ(x);
-                        [0.18, 6.4].forEach(d => { const z = cz - d; pos.push(x, WT(x, z) + 0.05, z); col.push(1, 1, 1); }); }
-                    for (let q = 0; q < 4; q++) { const a = base + q * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+                const base = pos.length / 3, sp = natSpan(i), f0 = idx.length / 3;
+                if (sp) {   // 해안 띠 — 해안선 바로 안쪽부터 6.4 들어간 데까지
+                    for (let q = 0; q <= NAT_NX; q++) { const x = sp[0] + (sp[1] - sp[0]) * q / NAT_NX, cz = coastZ(x);
+                        for (let k = 0; k <= NAT_ND; k++) { const z = cz - (0.18 + (6.4 - 0.18) * k / NAT_ND); pos.push(x, terrain(x, z) + 0.012, z); col.push(1, 1, 1); } }   // terrain = 걷는 높이(해변 비탈 포함) — WT엔 비탈이 없어 물가에서 띠가 떠 있었다
+                    const R = NAT_ND + 1;
+                    for (let q = 0; q < NAT_NX; q++) for (let k = 0; k < NAT_ND; k++) { const a = base + q * R + k; idx.push(a, a + R, a + 1, a + 1, a + R, a + R + 1); }
                 } else {    // 섬 꼭대기 — 가운데 하나 + 둘레 아홉(부채 여덟 조각)
                     const s = natIsle(i), top = SEA_Y + 0.85 + 0.05;
                     pos.push(s.x, top, s.z); col.push(1, 1, 1);
                     for (let k = 0; k <= 8; k++) { const a = k / 8 * Math.PI * 2; pos.push(s.x + Math.cos(a) * s.r * 0.48, top, s.z + Math.sin(a) * s.r * 0.48); col.push(1, 1, 1); }
                     for (let k = 0; k < 8; k++) idx.push(base, base + 2 + k, base + 1 + k);
                 }
+                natV[i] = [base, pos.length / 3 - base];
+                for (let f = f0; f < idx.length / 3; f++) natFace[f] = i;
             }
             const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
             g.setIndex(idx); g.computeVertexNormals();
@@ -967,7 +974,7 @@
             for (let i = 0; i < 70; i++) {
                 const lv = (w && w.nations && w.nations[i] && w.nations[i].lv) || 0;
                 col.set(lv ? LAND[lv] : (i % 2 ? '#6a5c48' : '#75674f')).convertSRGBToLinear();   // 꼭짓점 색은 선형으로(안 바꾸면 허옇게 바랬다)
-                for (let v = 0; v < 10; v++) ca.setXYZ(i * 10 + v, col.r, col.g, col.b);
+                for (let v = 0; v < natV[i][1]; v++) ca.setXYZ(natV[i][0] + v, col.r, col.g, col.b);
                 if (lv >= 2) [30, 48].forEach(r => { const [X, Z] = natMid(i, r); m4.makeTranslation(X, WT(X, Z) + 0.7, Z); natTrees.setMatrixAt(nt++, m4); });
                 if (lv >= 3) { const [X, Z] = natMid(i, 64); m4.makeTranslation(X, WT(X, Z) + 0.3, Z); natHouses.setMatrixAt(nh++, m4); }
                 if (lv >= 4) { const [X, Z] = natMid(i, 78); m4.makeTranslation(X, WT(X, Z) + 0.3, Z); natHouses.setMatrixAt(nh++, m4); }
@@ -989,7 +996,7 @@
             const LEN = 0.6, H1 = 0.11, H2 = 0.18;   // 시렁 길이 · 아래·위 철사 높이(순례자 키 ≈0.18)
             vines.forEach((v, vi) => {
                 const [X, Z] = natMid(v.n, 20), ripe = typeof _njVineInfo === 'function' && _njVineInfo(v).ripe;
-                const row = new THREE.Group(); row.position.set(X, WT(X, Z) + 0.02, Z); row.rotation.y = (vi % 3 - 1) * 0.12; vineG.add(row);
+                const row = new THREE.Group(); row.position.set(X, terrain(X, Z), Z); row.rotation.y = (vi % 3 - 1) * 0.12; vineG.add(row);
                 [-LEN / 2, 0, LEN / 2].forEach(x => { const p = new THREE.Mesh(postG, wood); p.position.set(x, 0.11, 0); row.add(p); });
                 [H1, H2].forEach(h => { const w = new THREE.Mesh(wireG, wood); w.rotation.z = Math.PI / 2; w.scale.y = LEN; w.position.set(0, h, 0); row.add(w); });
                 const rnd = (i) => { const s = Math.sin((vi + 1) * 91.7 + i * 12.9898) * 43758.5453; return s - Math.floor(s); };
@@ -1873,7 +1880,7 @@
                 const r = cvs.getBoundingClientRect();
                 natRay.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
                 const hit = natRay.intersectObject(natRing);
-                if (hit.length) showNation(Math.floor(hit[0].faceIndex / NAT_FACES)); else hideFruit();
+                if (hit.length) showNation(natFace[hit[0].faceIndex]); else hideFruit();
                 return;
             }
             const moved = Math.hypot(e.clientX - tap.x, e.clientY - tap.y), long = performance.now() - tap.t;
@@ -1896,7 +1903,7 @@
             }
             natRay.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
             const hit = natRay.intersectObject(natRing);
-            if (hit.length) showNation(Math.floor(hit[0].faceIndex / NAT_FACES)); else hideFruit();
+            if (hit.length) showNation(natFace[hit[0].faceIndex]); else hideFruit();
         });
         // 🤏 두 손가락으로 벌리고 오므리면 멀리·가까이 (10/4 사용자: 폰에선 걸을 때 화면 크기가 고정이었다 — 휠만 있었다).
         //    조이스틱은 화면 밖 단추라 엄지를 얹은 채 한 손가락으로 돌리는 건 그대로. 화면 위 두 손가락일 때만 확대·축소(돌리기는 멈춤)
@@ -2235,7 +2242,7 @@
         }
         setGoLabel();
         modeBtn.addEventListener('click', () => {
-            walk = !walk; controls.enabled = !walk; walkUI.hidden = !walk; pilgrim.visible = true; mini.hidden = !walk; dexBtn.hidden = !walk; miniT = 0; camOff = null; slide = null; slideBtn.hidden = true; slideSndStop(); fovBoost = 0; speedEl.style.opacity = '0'; plungeMom = null;
+            walk = !walk; controls.enabled = !walk; walkUI.hidden = !walk; decoBtn.hidden = walk;   /* 🛠️ 꾸미기는 걷는 동안 안 열린다 — 눌러도 아무 일 없던 버튼을 숨긴다(10/13 사용자) */ pilgrim.visible = true; mini.hidden = !walk; dexBtn.hidden = !walk; miniT = 0; camOff = null; slide = null; slideBtn.hidden = true; slideSndStop(); fovBoost = 0; speedEl.style.opacity = '0'; plungeMom = null;
             if (walk) { controls.autoRotate = false; camera.fov = 62; camera.near = 0.02; showHint(T('nj3d_hint_walk'), 3500); if (moveOnWalk) { if ((moveOnWalk === 'sea') !== (P.z > 25)) placeAt(moveOnWalk); moveOnWalk = null; } }
             else { camera.fov = 42; camera.near = 0.1; where = P.z > 25 ? 'sea' : 'city'; lookAt(where); setGoLabel(); endFish(); fishBtn.hidden = true; }
             camera.updateProjectionMatrix(); setModeLabel(); lastTouch = performance.now();
@@ -3558,7 +3565,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                     <button data-a="rot">${T('deco_rotate')}</button>${(() => { if (it.kind !== 'gift' || !isGoodsK(it.k)) return ''; const G = _njGoodsOf(it.k), rec = (njGifts || []).find(v => v.id === it.id); return G && G.pko && rec ? `<button data-a="peace">${T(rec.pc ? 'deco_peace_off' : 'deco_peace_on')}</button>` : ''; })()}${it.kind === 'set' ? `<button data-a="dis">${T('deco_disasm')}</button>` : ''}<button data-a="stash">${T('deco_stash')}</button>${it.kind === 'decor' && typeof _njDecorSellPrice === 'function' ? `<button data-a="sell" class="sell">${T('deco_sell', { n: _njDecorSellPrice(it.k).toLocaleString() })}</button>` : ''}${ready.length ? `<button data-a="asm" class="asm-mini" title="${T('deco_asm_title')}">🧩</button>` : ''}</div>`
                     : ready.length ? `<button class="nj3d-deco-asm" data-a="asm">${T('deco_asm_ready', { name: _njSetName(ready[0]) + (ready.length > 1 ? ` +${ready.length - 1}` : '') })}</button>`
                     : `<div class="nj3d-deco-tip">${T('deco_tip')}</div>`)
-                + `<div class="nj3d-deco-row"><button data-a="bag">${T('deco_bag', { n: deco.stash.length })}</button><button data-a="shop">${T('deco_shop')}</button><button data-a="done" class="done">${T('deco_done')}</button></div>`;
+                + `<div class="nj3d-deco-row"><button data-a="bag">${T('deco_bag', { n: deco.stash.length })}</button><button data-a="shop">${T('deco_shop')}</button><button data-a="area">${T(deco.sea ? 'deco_to_city' : 'deco_to_sea')}</button><button data-a="done" class="done">${T('deco_done')}</button></div>`;
         }
         function decoPanelShow(kind, note) {
             decoPanel.hidden = false;
@@ -3750,6 +3757,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             else if (a === 'bag') decoPanelShow('bag');
             else if (a === 'shop') decoPanelShow('shop');
             else if (a === 'done') exitDeco();
+            else if (a === 'area') {   // 🏛️↔🌊 성 둘레와 해안은 따로 꾸민다 — 바다에서 연 꾸미기엔 성 둘레 예물·특산물이 안 보였다(10/13 사용자: 구스의 황옥이 선택이 안 된다)
+                const to = deco.sea ? 'city' : 'sea'; exitDeco(); where = to; moveOnWalk = to; setGoLabel(); enterDeco(); return;
+            }
             lastTouch = performance.now();
         });
         function enterDeco() {
@@ -3778,6 +3788,16 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             modeBtn.hidden = goBtn.hidden = decoBtn.hidden = false; holoBtn.hidden = holoBtn.dataset.was === '1'; controls.enabled = true; lookAt(back); lastTouch = performance.now();
         }
         decoBtn.addEventListener('click', enterDeco);
+        // 🧪 헤드리스 확인용(kr_debug3d) — 꾸미기에서 물건 k가 고를 수 있는 목록에 있는지, 그 물건 한가운데를 누르면 무엇이 짚히는지
+        try { if (localStorage.getItem('kr_debug3d') === '1') window._nj3dDecoTest = (k) => {
+            const all = [...giftsG.children, ...decoG.children, ...setG.children].filter(o => o.userData.item);
+            const o = all.find(x => x.userData.item.k === k); if (!o) return { found: false, n: all.length };
+            const inList = decoObjs().includes(o); if (!o.userData.pick) addPick(o);
+            const v = new THREE.Vector3(); o.userData.pick.getWorldPosition(v); const p = v.clone().project(camera);
+            ray.setFromCamera(new THREE.Vector2(p.x, p.y), camera);
+            const hit = ray.intersectObjects(decoObjs().map(x => { if (!x.userData.pick) addPick(x); return x.userData.pick; }), false);
+            return { found: true, inList, sea: !!o.userData.sea, decoSea: !!(deco && deco.sea), pos: [o.position.x, o.position.y, o.position.z].map(n => +n.toFixed(2)), onScreen: [p.x, p.y, p.z].map(n => +n.toFixed(2)), hit: hit.length ? decoRoot(hit[0].object).userData.item.k : null };
+        }; } catch (e) { }
         // 손가락 — 물건을 짚으면 옮기기, 빈 곳이면 화면 옮기기, 두 손가락은 확대·돌리기
         const decoNdc = (e) => { const r = cvs.getBoundingClientRect(); return new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); };
         cvs.addEventListener('pointerdown', e => {
@@ -4878,6 +4898,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             sprayBurst(P.x, P.y, P.z, 10, 0);
             showHint(c.done ? T('nj3d_clam_done_tip', { ref: c.ref || '' }) : '🐚 ' + (c.ref || ''), 2200);
         }
+        // 🧪 헤드리스 확인용 — localStorage kr_debug3d = '1'일 때만. 나라 n의 해안 땅(뭍 안쪽 r)으로 순례자를 옮긴다(10/13 포도밭·땅 띠 확인)
+        try { if (localStorage.getItem('kr_debug3d') === '1') window._nj3dGo = (n, r, yaw) => { const [X, Z] = natMid(n, r || 12); P.x = X; P.z = Z; P.y = WT(X, Z) + 0.3; P.vy = 0; P.face = camYaw = (yaw == null ? Math.PI : yaw); }; } catch (e) { }
+        try { if (localStorage.getItem('kr_debug3d') === '1') window._nj3dInfo = (dx, dz) => { const x = P.x + (dx || 0), z = P.z + (dz || 0); return { x, z, wt: WT(x, z), sea: SEA_Y, coast: coastZ(x) }; }; } catch (e) { }
         function creatureTap(e) {   // 👆 눌러서 만남 — 물속에서 2.4 안, 화면에서 70px 안의 가장 가까운 아이
             if (!walk || !isUnder() || !tap || dexQ) return false;
             if (Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > 10 || performance.now() - tap.t > 450) return false;
