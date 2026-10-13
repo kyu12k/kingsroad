@@ -1613,18 +1613,25 @@ async function _bPre(request, myTag, toTag) {
     if (!to || to === me) return { ok: false, why: 'self' };
     const [lbSnap, svSnap, rlSnap] = await Promise.all([
         db.collection('leaderboard').doc(to).get(),
-        db.collection('saves').where('tag', '==', to).limit(1).get(),
+        db.collection('saves').where('tag', '==', to).get(),
         db.collection('rate_limits').doc(request.auth.uid).get(),
     ]);
     if (!lbSnap.exists || svSnap.empty) return { ok: false, why: 'nouser' };
-    const tl = lbSnap.data(), toUid = svSnap.docs[0].id;
+    const tl = lbSnap.data();
     if (Array.isArray(tl.blocked) && tl.blocked.includes(me)) return { ok: false, why: 'nouser' };
     const friend = Array.isArray(u.friends) && u.friends.includes(to);
     const guild = !!(u.guildId && tl.guildId && u.guildId === tl.guildId);
     if (!friend && !guild) return { ok: false, why: 'rel' };
+    // 한 태그에 저장본이 여럿일 수 있다(옛 익명 계정 + 구글 계정 — 10/13 실측 9개 태그, 5개는 섞임).
+    // 아무거나 하나를 고르면 구글로 쓰는 사람을 「연결 안 함」으로 잘못 거절한다 → 구글 연동된 계정 중 최근에 저장한 쪽
+    let toUid = '';
     try {
-        const tu = await admin.auth().getUser(toUid);
-        if (!tu.providerData.some(p => p.providerId === 'google.com')) return { ok: false, why: 'toGoogle' };
+        const docs = svSnap.docs.map(d => ({ uid: d.id, up: Number(d.get('updatedAt')) || 0 })).sort((a, b) => b.up - a.up);
+        const users = (await admin.auth().getUsers(docs.map(x => ({ uid: x.uid })))).users;
+        const g = new Set(users.filter(x => x.providerData.some(p => p.providerId === 'google.com')).map(x => x.uid));
+        const pick = docs.find(x => g.has(x.uid));
+        if (!pick) return { ok: false, why: 'toGoogle' };
+        toUid = pick.uid;
     } catch (e) { return { ok: false, why: 'nouser' }; }
     const now = Date.now(), ref = db.collection('battles').doc(`${me}_${to}`);
     const cur = await ref.get();

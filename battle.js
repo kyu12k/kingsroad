@@ -188,6 +188,10 @@
     const msg = (why, nick) => (WHY[why] || '잠시 뒤 다시 해 주세요.').replace('{nick}', esc(nick || '상대'));
     const toast = (m, bad) => { if (typeof showGemToast === 'function') showGemToast(0, m, !!bad); };
     const refOf = (v) => v.replace('-', ':');
+    // 목록의 이름 — 친구 메모가 있으면 메모를 크게, 닉네임은 아래에(친구 목록과 같은 방식, 사용자 10/13). 제목·알림 문구는 닉네임 그대로
+    const memo = (tag) => { try { return (typeof getFriendMemo === 'function' && getFriendMemo(tag)) || ''; } catch (e) { return ''; } };
+    const nameOf = (p) => esc(memo(p.tag) || p.nick);
+    const nickSub = (p) => memo(p.tag) ? `${esc(p.nick)} · ` : '';
     const daysLeft = (d) => Math.max(1, Math.ceil((d.expiresAt - Date.now()) / 86400000));
 
     /* 허브 — 받은 도전장 · 기다리는 도전장 · 지난 대결 · 새 도전장 */
@@ -212,11 +216,11 @@
         let h = `<div class="bt-rec">내 전적 <b>${lb.battleW | 0}</b>승 <b>${lb.battleL | 0}</b>패${lb.battleD ? ` <b>${lb.battleD | 0}</b>무` : ''}</div>`;
         h += `<button class="bt-btn big" id="bt-new">＋ 새 도전장 보내기</button>`;
         h += `<div class="bt-sec">📬 받은 도전장</div>`;
-        h += inbox.length ? inbox.map(d => `<div class="bt-row"><div class="bt-m"><div class="bt-n">${esc(d.from.nick)}</div><div class="bt-s">${d.ch}장 · ${daysLeft(d)}일 남음</div></div><button class="bt-btn" data-play="${d.id}">겨루기</button></div>`).join('')
+        h += inbox.length ? inbox.map(d => `<div class="bt-row"><div class="bt-m"><div class="bt-n">${nameOf(d.from)}</div><div class="bt-s">${nickSub(d.from)}${d.ch}장 · ${daysLeft(d)}일 남음</div></div><button class="bt-btn" data-play="${d.id}">겨루기</button></div>`).join('')
             : `<div class="bt-empty">받은 도전장이 없어요</div>`;
         if (waiting.length) {
             h += `<div class="bt-sec">⏳ 답을 기다리는 도전장</div>`;
-            h += waiting.map(d => `<div class="bt-row"><div class="bt-m"><div class="bt-n">${esc(d.to.nick)}</div><div class="bt-s">${d.ch}장 · ${daysLeft(d)}일 남음</div></div></div>`).join('');
+            h += waiting.map(d => `<div class="bt-row"><div class="bt-m"><div class="bt-n">${nameOf(d.to)}</div><div class="bt-s">${nickSub(d.to)}${d.ch}장 · ${daysLeft(d)}일 남음</div></div></div>`).join('');
         }
         if (past.length) {
             h += `<div class="bt-sec">📜 지난 대결</div>`;
@@ -224,7 +228,7 @@
                 const mine = d.from.uid === me ? 'from' : 'to', opp = mine === 'from' ? d.to : d.from;
                 const res = d.win === 'draw' ? '무승부' : d.win === mine ? '승' : '패';
                 const isNew = mine === 'from' && !seen[d.id + d.doneAt];
-                return `<div class="bt-row"><div class="bt-m"><div class="bt-n">${esc(opp.nick)}${isNew ? ' <span style="color:#f08a96;font-size:.75rem">새 결과</span>' : ''}</div><div class="bt-s">${d.ch}장 · ${d.score[mine]}:${d.score[mine === 'from' ? 'to' : 'from']} ${res}</div></div><button class="bt-btn sub" data-see="${d.id}">보기</button></div>`;
+                return `<div class="bt-row"><div class="bt-m"><div class="bt-n">${nameOf(opp)}${isNew ? ' <span style="color:#f08a96;font-size:.75rem">새 결과</span>' : ''}</div><div class="bt-s">${nickSub(opp)}${d.ch}장 · ${d.score[mine]}:${d.score[mine === 'from' ? 'to' : 'from']} ${res}</div></div><button class="bt-btn sub" data-see="${d.id}">보기</button></div>`;
             }).join('');
         }
         h += `<div class="bt-note">📖 도전장을 보내면 내가 먼저 7문제를 풀고, 상대는 같은 문제로 내 기록과 겨뤄요. 문제마다 맞힌 사람이, 둘 다 맞히면 더 빠른 사람이 점수를 얻어요. 친구와 같은 길드원에게 보낼 수 있어요.</div>`;
@@ -262,7 +266,7 @@
         } catch (e) { console.warn('[battle] pick', e); }
         if (!document.getElementById('bt-body')) return;
         if (!list.length) { body.innerHTML = `<div class="bt-empty">친구나 길드원이 생기면 도전장을 보낼 수 있어요.</div>`; return; }
-        body.innerHTML = list.map(p => `<div class="bt-row"><div class="bt-m"><div class="bt-n">${esc(p.nick)}</div><div class="bt-s">#${esc(p.tag)} · ${p.rel}</div></div><button class="bt-btn" data-to="${esc(p.tag)}">선택</button></div>`).join('');
+        body.innerHTML = list.map(p => `<div class="bt-row"><div class="bt-m"><div class="bt-n">${nameOf(p)}</div><div class="bt-s">${nickSub(p)}#${esc(p.tag)} · ${p.rel}</div></div><button class="bt-btn" data-to="${esc(p.tag)}">선택</button></div>`).join('');
         body.querySelectorAll('[data-to]').forEach(b => b.onclick = () => { const p = list.find(x => x.tag === b.dataset.to); precheck(p.tag, p.nick, b); });
     }
     async function precheck(tag, nick, btn) {
