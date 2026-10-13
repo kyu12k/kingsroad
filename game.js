@@ -14238,7 +14238,7 @@ async function initFirestoreSync() {
                 if (c.score) parts.push(`승점 +${Number(c.score).toLocaleString()}`);
                 if (c.gems) parts.push(`💎 +${Number(c.gems).toLocaleString()}`);
                 if (c.sunSlots) parts.push(`☀️ 햇살 구매 기회 +${c.sunSlots}`);
-                if (c.msg) setTimeout(() => _showAdminLetter(c.note, c.msg, parts.join(' · ')), 1500);   // ✉️ 그 사람에게만 — 편지 창
+                if (c.msg) setTimeout(() => _showAdminLetter(c.note, c.msg, parts.join(' · '), c.relink ? () => { if (typeof _googleLostPrompt === 'function') _googleLostPrompt(); } : null), 1500);   // ✉️ 그 사람에게만 — 편지 창(relink면 확인 뒤 다시 로그인 창)
                 else if (typeof showMissionToast === 'function') setTimeout(() => showMissionToast(c.note || '🎁 보상이 적용되었습니다', parts.join(' · ')), 1500);
                 if (typeof updateGemDisplay === 'function') updateGemDisplay();
             }
@@ -14248,7 +14248,7 @@ async function initFirestoreSync() {
 
 /* ✉️ 관리자 편지 (2026-10-07) — 연락처 없이 제보한 사람에게 답할 길이 없었다. pendingCompensation에 msg를 넣으면
    보상이 적용되는 순간 한 번 편지 창으로 뜬다(보상 없이 msg만 보내도 된다 — 관리 스크립트로 saves/{uid}.pendingCompensation에 쓰고 updatedAt도 올릴 것) */
-function _showAdminLetter(title, msg, rewards) {
+function _showAdminLetter(title, msg, rewards, onOk) {
     const esc = x => String(x || '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
     const ov = document.createElement('div'); ov.className = 'modal-overlay active'; ov.style.zIndex = '10050'; ov.style.display = 'flex';
     ov.innerHTML = `<div class="result-card admin-letter" onclick="event.stopPropagation()">
@@ -14257,7 +14257,7 @@ function _showAdminLetter(title, msg, rewards) {
             <div class="admin-letter-body">${esc(msg).split(String.fromCharCode(10)).join('<br>')}</div>
             ${rewards ? `<div class="admin-letter-gift">🎁 ${esc(rewards)}</div>` : ''}
             <button class="admin-letter-ok">${currentLang === 'en' ? 'OK' : '확인'}</button></div>`;
-    ov.querySelector('.admin-letter-ok').onclick = () => ov.remove();
+    ov.querySelector('.admin-letter-ok').onclick = () => { ov.remove(); if (typeof onOk === 'function') onOk(); };
     document.body.appendChild(ov);
     if (typeof updateGemDisplay === 'function') updateGemDisplay();
 }
@@ -14327,7 +14327,8 @@ function _applyPendingCompensation(data, pc) {
         const sb = data.sunBuy || { day: '', count: 0 };
         if (sb.day === today) data.sunBuy = { day: today, count: Math.max(0, (sb.count || 0) - pc.sunSlots) };
     }
-    try { localStorage.setItem('kingsRoad_pendingCompToast', JSON.stringify({ gems: pc.gems || 0, score: (pc.score || 0) + (pc.scoreTotal || 0), sunSlots: pc.sunSlots || 0, note: pc.note || '', msg: pc.msg || '' })); } catch (e) {}
+    try { localStorage.setItem('kingsRoad_pendingCompToast', JSON.stringify({ gems: pc.gems || 0, score: (pc.score || 0) + (pc.scoreTotal || 0), sunSlots: pc.sunSlots || 0, note: pc.note || '', msg: pc.msg || '', relink: pc.relink ? 1 : 0 })); } catch (e) {}
+    if (pc.relink) { try { localStorage.setItem('kr_wasGoogle', '1'); } catch (e) {} }   // 🔑 구글 로그인이 풀린 채 쓰는 사람에게 — 편지 뒤 다시 로그인 창(10/13)
     console.log('[Firestore] pendingCompensation 적용:', pc);
     return true;
 }
@@ -14422,8 +14423,17 @@ async function _initFirestoreSyncCore() {
     }
 
     // Google 로그인 후 새 기기: 빈 로컬이 서버 데이터를 덮어쓰지 않도록 강제 원격 우선
-    const forceRemote = localStorage.getItem('kingsroad_forceRemoteSync') === 'true';
+    let forceRemote = localStorage.getItem('kingsroad_forceRemoteSync') === 'true';
     if (forceRemote) localStorage.removeItem('kingsroad_forceRemoteSync');
+    // ★ 같은 사람의 더 최근 기록이면 서버 우선을 풀고 평소처럼 합친다 (2026-10-13)
+    //   구글 로그인이 풀린 기기는 조용히 새 익명 계정으로 이어 간다(#NGCTUB 9/29~ 2주, 구글 쪽은 9/27에 멈춤).
+    //   거기서 「기록 가져오기」로 구글에 다시 들어오면, 예전엔 서버 우선이라 진도만 합쳐지고 보석·미션 등은 9/27로 돌아갔다.
+    //   서버 우선은 「빈 기기·다른 기록이 서버를 덮지 않게」가 목적이므로, 태그가 같고 기기 쪽이 더 최근이면 필요 없다
+    if (forceRemote && localData && remoteData && localData.tag && localData.tag !== '0000'
+        && String(localData.tag) === String(remoteData.tag) && localUpdatedAt > remoteUpdatedAt) {
+        console.log(`[Firestore] 구글로 다시 로그인 — 같은 태그(#${localData.tag})의 기기 기록이 더 최근 → 서버 우선 대신 병합`);
+        forceRemote = false;
+    }
 
     // lastLoginDate 비교: 로컬 날짜가 더 최신이면 (오늘 클리어한 미션 정보 보호)
     // serverTimestamp 특성상 Firestore updatedAt이 항상 로컬보다 약간 크므로
@@ -24048,12 +24058,12 @@ function _showGoogleSignInConfirm(existingTag) {
     el.innerHTML = `
         <div style="background:#1a0e2e;border:1px solid #e05050;border-radius:16px;padding:28px 24px;width:100%;max-width:340px;text-align:center;">
             <div style="font-size:2rem;margin-bottom:12px;">⚠️</div>
-            <div style="font-size:17px;font-weight:700;color:#e0c0ff;margin-bottom:12px;">현재 기기 데이터 교체</div>
+            <div style="font-size:17px;font-weight:700;color:#e0c0ff;margin-bottom:12px;">Google 계정의 기록 불러오기</div>
             <div style="font-size:14px;color:#9070b0;margin-bottom:20px;line-height:1.7;">
-                이 기기의 기록 <strong style="color:#e0c0ff;">#${escapeHtml(existingTag)}</strong>이<br>
-                Google 계정의 데이터로 교체됩니다.<br>
-                <span style="color:#e05050;font-size:13px;">이 기기의 기록은 사라집니다.</span>
-
+                <!-- 10/13: 같은 번호면 실제로는 합친다(initFirestoreSync) — 예전 「사라집니다」는 겁만 줬다 -->
+                Google 계정의 기록이 이 기기의 기록 <strong style="color:#e0c0ff;">#${escapeHtml(existingTag)}</strong>과<br>
+                <b style="color:#e0c0ff;">같은 번호</b>면 두 기록을 합쳐요.<br>
+                <span style="color:#e05050;font-size:13px;">다른 번호면 Google 계정의 기록으로 바뀌고<br>이 기기의 기록은 사라져요.</span>
             </div>
             <div style="display:flex;gap:10px;">
                 <button onclick="document.getElementById('google-signin-confirm').remove();_doSignInWithGoogle();"
@@ -24217,8 +24227,30 @@ function changeLinkedGoogle() {
             }
         });
 }
+/* 🔑 구글 로그인이 풀린 기기 (2026-10-13) — 구글로 쓰던 기기에서 로그인 정보만 사라지면 앱이 조용히 새 익명 계정으로 이어 가,
+   기록이 계정 둘로 갈렸다(#NGCTUB 2주, #5850 일주일에 네 번). 구글로 쓰던 기기라는 걸 기억해 두고, 익명으로 새로 들어오게 되면 다시 로그인을 권한다.
+   다시 로그인하면 같은 태그·기기 쪽이 최근이면 합친다(initFirestoreSync의 forceRemote 예외) */
+function _noteGoogleDevice() { try { if (isGoogleLinked()) localStorage.setItem('kr_wasGoogle', '1'); } catch (e) { } }
+function _googleLostPrompt() {
+    try {
+        if (localStorage.getItem('kr_wasGoogle') !== '1' || isGoogleLinked() || _googleBlockedBrowser()) return;
+        if (document.getElementById('google-lost-modal')) return;
+        const el = document.createElement('div');
+        el.id = 'google-lost-modal'; el.className = 'modal-overlay'; el.style.zIndex = '10001'; el.style.display = 'flex';
+        el.innerHTML = `<div class="result-card" style="max-width:330px; background:#fff; color:#2c3e50; text-align:center; padding-bottom:22px;">
+            <h2 style="color:#2c3e50; margin:4px 0 12px; font-size:1.2rem;">🔑 Google 로그인이 풀렸어요</h2>
+            <p style="color:#2c3e50; font-size:0.93rem; line-height:1.65; margin:0 0 16px;">이 기기는 Google 계정으로 쓰던 기기예요.<br>다시 로그인하면 기록이 Google 계정에 그대로 이어져요.<br><span style="color:#7f8c8d; font-size:0.85rem;">로그인하지 않으면 기록이 다른 계정에 따로 쌓여요.</span></p>
+            <button id="google-lost-go" style="width:100%; background:#4285f4; color:#fff; border:none; padding:13px; border-radius:30px; font-weight:bold; cursor:pointer; font-size:1rem;">Google로 다시 로그인</button>
+            <button id="google-lost-later" style="width:100%; background:none; border:none; color:#95a5a6; padding:14px 0 0; font-size:0.9rem; cursor:pointer;">나중에</button>
+        </div>`;
+        document.body.appendChild(el);
+        el.querySelector('#google-lost-go').onclick = () => { el.remove(); _doSignInWithGoogle(); };
+        el.querySelector('#google-lost-later').onclick = () => el.remove();
+    } catch (e) { }
+}
 function _updateGoogleLinkUI() {
     const linked = isGoogleLinked();
+    if (linked) _noteGoogleDevice();
 
     // 기기 변경 모달 안 버튼
     const modalBtn = document.getElementById('google-link-btn');
