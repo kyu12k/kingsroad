@@ -21577,6 +21577,7 @@ async function openLetterBoard(tab) {
     if (!ov) { ov = document.createElement('div'); ov.id = 'letter-overlay'; ov.className = 'modal-overlay'; ov.style.zIndex = '10004'; ov.onclick = e => { if (e.target === ov) closeLetterBoard(); }; document.body.appendChild(ov); }
     const admin = _letterIsAdmin();
     ov.innerHTML = `<div class="letter-card" onclick="event.stopPropagation()">
+        <button class="letter-x" onclick="closeLetterBoard()" aria-label="close">✕</button>   <!-- 10/14 사용자: 닫기가 목록 맨 아래에만 있었다 -->
         <div class="letter-head"><div class="letter-title">${t('letter_title')}</div><div class="letter-intro">${t('letter_intro')}</div></div>
         <div class="letter-together" id="letter-together">${_togetherHtml('letter')}</div>
         <button class="letter-write-btn" onclick="openLetterWrite()">${t('letter_write_btn')}</button>
@@ -34771,12 +34772,12 @@ async function _renderFriendScreen() {
                     <span class="friend-list-sub">#${tag}${memo ? ` · ${escapeHtml(memo)}` : ''}</span>
                 </div>
                 <span class="friend-list-score">${lastWeekScore.toLocaleString()}점</span>
-                <div class="friend-list-actions" onclick="event.stopPropagation()">
-                    <button class="friend-cheer-list-btn${cheered ? ' done' : ''}" onclick="_cheerFriendFromList('${tag}',this)" ${cheered ? 'disabled' : ''}>${cheered ? '✓' : '💛'}</button>
-                    <button class="friend-cheer-list-btn gift${njGiftSent[tag] === _get6AMDayStr() ? ' done' : ''}" onclick="openGiftFruit('${tag}', ${JSON.stringify(nickname || '').replace(/"/g, '&quot;')})" title="🎁">🎁</button>
-                    <button class="friend-cheer-list-btn" onclick="openBattle({ to: '${tag}', nick: ${JSON.stringify(nickname || '').replace(/"/g, '&quot;')} })" title="⚔️ 말씀 대결">⚔️</button>
-                    <button class="friend-cheer-list-btn" onclick="openNJVisit('${tag}', ${JSON.stringify(nickname || '').replace(/"/g, '&quot;')})" title="🏛️ 새 예루살렘 구경">🏛️</button>
-                    <span class="friend-list-arrow">▶</span>
+                <span class="friend-list-arrow">▶</span>
+                <div class="friend-list-actions" onclick="event.stopPropagation()">   <!-- 10/14: 버튼이 넷이 되어 좁은 폰에서 🏛️가 밀려났다 — 둘째 줄에 글자와 함께 -->
+                    <button class="friend-cheer-list-btn${cheered ? ' done' : ''}" onclick="_cheerFriendFromList('${tag}',this)" ${cheered ? 'disabled' : ''}>${cheered ? '✓ 응원함' : '💛 응원'}</button>
+                    <button class="friend-cheer-list-btn gift${njGiftSent[tag] === _get6AMDayStr() ? ' done' : ''}" onclick="openGiftFruit('${tag}', ${JSON.stringify(nickname || '').replace(/"/g, '&quot;')})">🎁 열매</button>
+                    <button class="friend-cheer-list-btn" onclick="openBattle({ to: '${tag}', nick: ${JSON.stringify(nickname || '').replace(/"/g, '&quot;')} })">⚔️ 대결</button>
+                    <button class="friend-cheer-list-btn visit" onclick="openNJVisit('${tag}', ${JSON.stringify(nickname || '').replace(/"/g, '&quot;')})">🏛️ 놀러 가기</button>
                 </div>
             </div>`;
         });

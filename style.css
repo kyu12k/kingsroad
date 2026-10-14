@@ -136,7 +136,7 @@ button,
     position: fixed;
     bottom: var(--nav-h);
     right: 0;
-    width: 25%;
+    width: max-content; min-width: 25%; max-width: calc(100vw - 16px);   /* 10/14: 25% 고정이라 「서로에게 보내는 편지」가 잘렸다 — 글자에 맞게 */
     background: rgba(28, 46, 74, 0.97);
     border: 0.5px solid #1d3550;
     border-radius: 12px 12px 0 0;
@@ -4741,7 +4741,7 @@ body > #guide-screen-overlay .guide-body > .guide-btn.ghost { width: 100%; margi
     border-radius: 8px; padding: 6px 12px; font-size: 0.82rem; cursor: pointer;
 }
 .friend-list-item {
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; row-gap: 8px;
     padding: 11px 16px; border-bottom: 1px solid rgba(255,255,255,0.05);
     cursor: pointer;
 }
@@ -4766,7 +4766,9 @@ body > #guide-screen-overlay .guide-body > .guide-btn.ghost { width: 100%; margi
 }
 .friend-list-sort-hint { font-size: 0.72rem; color: #7f8c8d; font-weight: normal; }
 .friend-list-arrow { color: #7f8c8d; font-size: 0.85rem; }
-.friend-list-actions { display: flex; align-items: center; gap: 8px; }
+.friend-list-actions { display: flex; align-items: center; gap: 6px; width: 100%; flex-wrap: wrap; }   /* 둘째 줄(10/14) */
+.friend-list-actions .friend-cheer-list-btn { flex: 1 1 auto; padding: 6px 8px; white-space: nowrap; margin-left: 0; }
+.friend-cheer-list-btn.visit { background: rgba(212,167,58,0.22); border-color: rgba(212,167,58,0.6); color: #f3cf6b; }
 .friend-cheer-list-btn {
     background: rgba(255,215,0,0.12); border: 1px solid rgba(255,215,0,0.3);
     color: #f1c40f; border-radius: 16px; padding: 4px 10px;
@@ -7752,6 +7754,7 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .lt-letter-like.on { background: #8a5300; color: #fff; border-color: #8a5300; cursor: default; }
 .lt-letter-admin { display: flex; gap: 6px; margin-top: 8px; }
 .lt-letter-admin button { flex: 1; padding: 7px; border-radius: 8px; border: 1px solid #d9c9a3; background: #fff; cursor: pointer; font-weight: 700; color: #5a4a30; }
+.letter-x { position: sticky; top: -6px; float: right; z-index: 2; width: 34px; height: 34px; margin: -6px -4px 0 0; border-radius: 50%; border: none; background: rgba(0, 0, 0, .08); color: #5a4a30; font-size: 1.05rem; cursor: pointer; }
 .letter-close { display: block; width: 100%; margin-top: 12px; padding: 9px; border-radius: 10px; border: none; background: rgba(0, 0, 0, .06); color: #5a4a30; cursor: pointer; }
 .letter-kinds { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
 .letter-kinds button { padding: 9px; border-radius: 10px; border: 1px solid #d9c9a3; background: #fff; color: #7a6a52; cursor: pointer; font-size: .9rem; }
