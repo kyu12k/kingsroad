@@ -7855,7 +7855,9 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 #nj3d .nj3d-starwin .sw-title { font-size: 1.25rem; font-weight: 900; color: #ffd76a; margin-top: 6px; letter-spacing: 0.02em; }
 #nj3d .nj3d-starwin .sw-ref { font-size: 0.8rem; color: #c9d3ff; margin-top: 8px; font-weight: 700; }
 #nj3d .nj3d-starwin .sw-txt { font-size: 0.98rem; line-height: 1.65; margin-top: 4px; word-break: keep-all; }
-#nj3d .nj3d-starwin .sw-txt b { color: #ffe9a8; }
+#nj3d .nj3d-starwin .sw-txt { max-height: 38vh; overflow-y: auto; font-size: 0.92rem; }
+#nj3d .nj3d-starwin .sw-txt span { color: rgba(255,255,255,0.78); }
+#nj3d .nj3d-starwin .sw-txt b { color: #ffd76a; text-shadow: 0 0 8px rgba(255,200,80,0.45); }
 #nj3d .nj3d-starwin .sw-dots { margin-top: 12px; display: flex; justify-content: center; gap: 5px; font-size: 1.15rem; }
 #nj3d .nj3d-starwin .sw-dots i { font-style: normal; color: rgba(255,255,255,0.18); }
 #nj3d .nj3d-starwin .sw-dots i.on { color: #ffd34d; text-shadow: 0 0 8px rgba(255,200,60,0.8); }

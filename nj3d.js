@@ -4410,7 +4410,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) SoundEffect.playBlankLevelUp();
             starHudDraw();
         }
-        // ⭐ 별을 얻으면 — 화면 가운데 축하 카드(10/14 사용자: 아래 알림이 심심하다). 모은 말씀 조각 · 오늘 별 칸 · 💎 숫자가 차오른다.
+        // ⭐ 별을 얻으면 — 화면 가운데 축하 카드(10/14 사용자: 아래 알림이 심심하다). 그 절 전체(모은 조각은 금빛) · 오늘 별 칸 · 💎 숫자가 차오른다.
         //    일곱 다 모으면 카드가 한 번 더 — 별 일곱이 함께 빛나고 💎5,000. 누르면 닫힌다
         const starWinEl = document.createElement('div'); starWinEl.className = 'nj3d-starwin'; starWinEl.hidden = true; stageEl.appendChild(starWinEl);
         let starWinT = 0;
@@ -4423,12 +4423,12 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 starWinEl.innerHTML = `<div class="sw-rays"></div><div class="sw-card">
                     <div class="sw-big">${all ? '🌟' : '⭐'}</div>
                     <div class="sw-title">${starEsc(T(all ? 'nj3d_star_all_title' : 'nj3d_star_win'))}</div>
-                    ${all ? '' : `<div class="sw-ref">${starEsc(R.ref)}</div><div class="sw-txt">${R.seg.map(w => `<b>${starEsc(w)}</b>`).join(' ')}</div>`}
+                    ${all ? '' : `<div class="sw-ref">${starEsc(R.ref)}</div><div class="sw-txt">${R.ws.map((w, i) => i >= R.st && i < R.st + R.seg.length ? `<b>${starEsc(w)}</b>` : `<span>${starEsc(w)}</span>`).join(' ')}</div>`}
                     <div class="sw-dots">${dots(res.n)}</div>
                     <div class="sw-gem">💎 +<span>0</span></div></div>`;
                 starWinEl.hidden = false; void starWinEl.offsetWidth; starWinEl.classList.add('in');
                 countUp(starWinEl.querySelector('.sw-gem span'), all ? res.all : res.gem, all ? 1400 : 900);
-                clearTimeout(starWinT); starWinT = setTimeout(() => { starWinEl.hidden = true; }, all ? 5200 : 3600);
+                clearTimeout(starWinT); starWinT = setTimeout(() => { starWinEl.hidden = true; }, all ? 5200 : 5000);
             };
             show(false);
             if (res.all) setTimeout(() => {
@@ -4436,7 +4436,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 show(true);
                 for (let k = 0; k < 6; k++) setTimeout(() => { if (cur === C) sprayBurst(P.x + (Math.random() - 0.5) * 1.6, P.y + 0.6 + Math.random() * 0.8, P.z + (Math.random() - 0.5) * 1.6, 26, 0); }, k * 180);
                 if (typeof SoundEffect !== 'undefined' && SoundEffect.playLevelUp) { SoundEffect.playLevelUp(); setTimeout(() => SoundEffect.playLevelUp(), 380); }
-            }, 3700);
+            }, 5100);
         }
         function starEnd(ok) {
             const R = starRun; if (!R) return; starRun = null;
