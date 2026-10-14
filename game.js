@@ -5060,6 +5060,7 @@ const SoundEffect = {
         master.connect(comp);
         master.connect(dly); dly.connect(lp); lp.connect(fb); fb.connect(dly); lp.connect(wet); wet.connect(comp);
         comp.connect(c.destination);
+        this._dry = comp;   // 울림 없이 바로(펀치처럼 짧게 끊겨야 하는 소리)
         this._out = master;
         return master;
     },
@@ -5158,38 +5159,120 @@ const SoundEffect = {
         this._buzz([25, 40, 25]);
     },
 
-    // 4. 공격 소리 — 둔탁한 타격 (10/14 사용자: 「슉~」 하고 힘 빠지는 소리였다 → 정말 맞힌 느낌으로)
-    //    짧게 휘두르는 기척 → 「쿵」(낮은 음이 순간 뚝 떨어짐) + 「퍽」(거칠게 깎은 잡음) → 아주 낮은 여운
+    // 4. 공격 소리 — 시원한 펀치 (10/14 사용자: 「슉~」 힘 빠짐 → 둔탁하게 → 「시원한 펀치」 → 「툭- 말고 퍽! 팍! — 더 길고 강하게」)
+    //    짧은 휘두름 → 맞는 순간 「팍」(날카로운 잡음) + 「철썩」(중간 높이 찰싹) + 두툼한 중음 + 「퍽」(깊게 떨어지는 몸통).
+    //    대부분은 메아리 없이 바로(뭉개지지 않게), 일부만 메아리로 보내 맞은 뒤 짧게 퍼지는 꼬리를 남긴다
     playAttack: function () {
         this._play(t => {
-            const c = this.ctx, out = this._bus(), hit = t + 0.05;
-            this._whoosh(t, 0.07, 0.07, 1800, 700);
+            const c = this.ctx, wet = this._bus(), dry = this._dry, hit = t + 0.05;
+            this._whoosh(t, 0.07, 0.07, 3200, 1200);
             if (!this._crush) { const n = 256, cv = new Float32Array(n); for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; cv[i] = Math.tanh(x * 3); } this._crush = cv; }
-            // 쿵 — 160Hz에서 50Hz로 0.16초 만에 떨어지는 몸통. 살짝 찌그러뜨려 배음을 만든다(폰 스피커는 150Hz 아래를 거의 못 낸다)
-            const o = c.createOscillator(), g = c.createGain(), osh = c.createWaveShaper(); osh.curve = this._crush;
-            o.type = 'sine';
-            o.frequency.setValueAtTime(160, hit);
-            o.frequency.exponentialRampToValueAtTime(50, hit + 0.16);
-            g.gain.setValueAtTime(0.0001, hit);
-            g.gain.linearRampToValueAtTime(0.9, hit + 0.004);
-            g.gain.exponentialRampToValueAtTime(0.0001, hit + 0.3);
-            const og = c.createGain(); og.gain.value = 0.3;
-            o.connect(g); g.connect(osh); osh.connect(og); og.connect(out); o.start(hit); o.stop(hit + 0.33);
-            // 퍽 — 잡음을 낮게 거르고 찌그러뜨린 짧은 충격
-            if (!this._noise) this._whoosh(hit, 0.001, 0.0001, 500, 400);   // 잡음 버퍼 마련
-            const src = c.createBufferSource(); src.buffer = this._noise;
-            const lp = c.createBiquadFilter(); lp.type = 'lowpass';
-            lp.frequency.setValueAtTime(1400, hit); lp.frequency.exponentialRampToValueAtTime(220, hit + 0.12);
-            const sh = c.createWaveShaper(); sh.curve = this._crush;
-            const ng = c.createGain();
-            ng.gain.setValueAtTime(0.0001, hit);
-            ng.gain.linearRampToValueAtTime(0.2, hit + 0.003);
-            ng.gain.exponentialRampToValueAtTime(0.0001, hit + 0.14);
-            src.connect(lp); lp.connect(sh); sh.connect(ng); ng.connect(out); src.start(hit); src.stop(hit + 0.16);
-            // 여운 — 아주 낮은 울림
-            this._note(55, hit + 0.02, 0.45, 0.1, { partials: [[1, 1, 1], [2, 0.3, 0.4]], glideTo: 42 });
+            const mix = c.createGain(); mix.gain.value = 1; mix.connect(dry);
+            const tail = c.createGain(); tail.gain.value = 0.35; mix.connect(tail); tail.connect(wet);   // 꼬리
+            const burst = (dur, vol, setup) => {   // 잡음 한 번 — setup(src)이 필터 끝 노드를 돌려준다
+                const src = c.createBufferSource(); src.buffer = this._noise;
+                const g = c.createGain(); g.gain.setValueAtTime(0.0001, hit);
+                g.gain.linearRampToValueAtTime(vol, hit + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, hit + dur);
+                setup(src).connect(g); g.connect(mix); src.start(hit); src.stop(hit + dur + 0.02);
+            };
+            // 팍 — 높은 대역, 찌그러뜨려 거칠게
+            burst(0.09, 0.4, src => { const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1500; const sh = c.createWaveShaper(); sh.curve = this._crush; src.connect(hp); hp.connect(sh); return sh; });
+            // 철썩 — 중간 높이 찰싹
+            burst(0.14, 0.32, src => { const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.setValueAtTime(1300, hit); bp.frequency.exponentialRampToValueAtTime(700, hit + 0.14); bp.Q.value = 1.4; src.connect(bp); return bp; });
+            // 두툼함 — 중음 잡음
+            burst(0.2, 0.26, src => { const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(2000, hit); lp.frequency.exponentialRampToValueAtTime(300, hit + 0.2); src.connect(lp); return lp; });
+            // 퍽 — 깊게 떨어지는 몸통(찌그러뜨려 폰에서도 들리게)
+            const o = c.createOscillator(), g = c.createGain(), sh = c.createWaveShaper(), og = c.createGain();
+            sh.curve = this._crush; og.gain.value = 0.42; o.type = 'sine';
+            o.frequency.setValueAtTime(260, hit); o.frequency.exponentialRampToValueAtTime(55, hit + 0.16);
+            g.gain.setValueAtTime(0.0001, hit); g.gain.linearRampToValueAtTime(1, hit + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, hit + 0.3);
+            o.connect(g); g.connect(sh); sh.connect(og); og.connect(mix); o.start(hit); o.stop(hit + 0.33);
         });
-        this._buzz([45]);
+        this._buzz([50]);
+    },
+
+    // 🎺 금관 팡파르 — 퀴즈퀴즈 계시록 app/public/js/show.js의 「정답」(SHOW.correct)을 복사해 옮김(10/14, 같은 사용자가 만든 합성음 — 저작권 걱정 없음).
+    //    톱니 세 겹을 어긋나게 쌓은 금관 + 홀 잔향 + 심벌·팀파니. 「빠-빠-빠 빠아암」 약 2.6초. 퀴즈퀴즈 저장소는 건드리지 않는다
+    _brassFanfare: function (t0) {
+        const c = this.ctx;
+        const noiseBuf = dur => { const n = Math.floor(c.sampleRate * dur), b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; return b; };
+        // 무대 = 마른 소리 + 홀 잔향 → 리미터 → 스피커(효과음 버스의 메아리와는 따로)
+        const comp = c.createDynamicsCompressor(); comp.threshold.value = -10; comp.knee.value = 8; comp.ratio.value = 8; comp.attack.value = 0.003; comp.release.value = 0.25;
+        const master = c.createGain(); master.gain.value = 0.6; comp.connect(master); master.connect(c.destination);   // 0.9 → 0.6(10/15 사용자: 조금 낮게)
+        const dry = c.createGain(); dry.gain.value = 0.85; dry.connect(comp);
+        const rate = c.sampleRate, hn = Math.floor(rate * 2.6), ir = c.createBuffer(2, hn, rate);
+        for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < hn; i++) { const u = i / hn; d[i] = (Math.random() * 2 - 1) * Math.pow(1 - u, 3.2) * (i < rate * 0.01 ? i / (rate * 0.01) : 1); } }
+        const conv = c.createConvolver(); conv.buffer = ir; const wet = c.createGain(); wet.gain.value = 0.34; conv.connect(wet); wet.connect(comp);
+        const send = node => { node.connect(dry); node.connect(conv); };
+        const brass = (t, freq, dur, gain) => {
+            const filt = c.createBiquadFilter(); filt.type = 'lowpass';
+            filt.frequency.setValueAtTime(freq * 2, t); filt.frequency.linearRampToValueAtTime(freq * 7, t + 0.06); filt.frequency.exponentialRampToValueAtTime(freq * 2.2, t + dur); filt.Q.value = 1.4;
+            const g = c.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + 0.035); g.gain.setValueAtTime(gain, t + dur * 0.72); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+            filt.connect(g); send(g);
+            const vib = c.createOscillator(), vibG = c.createGain(); vib.frequency.value = 5.2; vibG.gain.value = freq * 0.006; vib.connect(vibG); vib.start(t); vib.stop(t + dur + 0.1);
+            [-9, 0, 9].forEach(cents => { const o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.value = freq; o.detune.value = cents; vibG.connect(o.frequency); o.connect(filt); o.start(t); o.stop(t + dur + 0.1); });
+            const sub = c.createOscillator(); sub.type = 'triangle'; sub.frequency.value = freq / 2;
+            const sg = c.createGain(); sg.gain.setValueAtTime(0, t); sg.gain.linearRampToValueAtTime(gain * 0.55, t + 0.04); sg.gain.exponentialRampToValueAtTime(0.001, t + dur);
+            sub.connect(sg); send(sg); sub.start(t); sub.stop(t + dur + 0.1);
+        };
+        const chord = (t, freqs, dur, gain) => freqs.forEach((f, i) => brass(t + i * 0.012, f, dur, gain * (i === 0 ? 1 : 0.8)));
+        const cymbal = (t, dur, gain) => {
+            const src = c.createBufferSource(); src.buffer = noiseBuf(dur);
+            const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 3200;
+            const pk = c.createBiquadFilter(); pk.type = 'peaking'; pk.frequency.value = 7000; pk.gain.value = 6;
+            const g = c.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + 0.006); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+            src.connect(hp); hp.connect(pk); pk.connect(g); send(g); src.start(t); src.stop(t + dur);
+        };
+        const timpani = (t, freq, dur, gain) => {
+            const o = c.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(freq * 1.5, t); o.frequency.exponentialRampToValueAtTime(freq, t + 0.09);
+            const g = c.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + 0.008); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+            o.connect(g); send(g); o.start(t); o.stop(t + dur + 0.05);
+            const n = c.createBufferSource(); n.buffer = noiseBuf(0.08);
+            const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400;
+            const ng = c.createGain(); ng.gain.setValueAtTime(gain * 0.5, t); ng.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+            n.connect(lp); lp.connect(ng); send(ng); n.start(t);
+        };
+        const N = n => 440 * Math.pow(2, (n - 69) / 12), C5 = N(72), E5 = N(76), G5 = N(79), C6 = N(84);
+        brass(t0, C5, 0.17, 0.22); brass(t0 + 0.15, E5, 0.17, 0.22); brass(t0 + 0.30, G5, 0.17, 0.23);
+        chord(t0 + 0.46, [C6, G5, E5, C5], 1.25, 0.20); cymbal(t0 + 0.46, 2.0, 0.17); timpani(t0 + 0.46, 131, 0.8, 0.26);
+    },
+
+    // 4-1. 용이 쓰러질 때 (보스·중간점검 승리, 10/14 사용자 — 펀치에 맞춰 전투 소리만 세게)
+    //    「쾅」(넓은 잡음이 닫히며 떨어짐 + 깊은 붐) → 무너지며 땅이 울리는 낮은 여운 → 짧은 승리 화음 한 번.
+    //    축하 팡파레는 2초 뒤 클리어 창의 playClear가 맡는다
+    playBossDefeat: function () {
+        this._lastBossDefeat = Date.now();   // 클리어 창이 바로 뒤에 「도미솔도」를 겹쳐 울리지 않게(showBossClearScreen)
+        this._play(t => {
+            const c = this.ctx, wet = this._bus(), dry = this._dry;
+            if (!this._noise) this._whoosh(t, 0.001, 0.0001, 500, 400);
+            if (!this._crush) { const n = 256, cv = new Float32Array(n); for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; cv[i] = Math.tanh(x * 3); } this._crush = cv; }
+            const mix = c.createGain(); mix.connect(dry);
+            const tail = c.createGain(); tail.gain.value = 0.45; mix.connect(tail); tail.connect(wet);
+            const noise = (at, dur, vol, f0, f1, atk) => {
+                const src = c.createBufferSource(); src.buffer = this._noise; src.loop = true;
+                const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(f0, at); lp.frequency.exponentialRampToValueAtTime(f1, at + dur);
+                const g = c.createGain(); g.gain.setValueAtTime(0.0001, at); g.gain.linearRampToValueAtTime(vol, at + atk); g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+                src.connect(lp); lp.connect(g); g.connect(mix); src.start(at); src.stop(at + dur + 0.05);
+            };
+            // 쾅 — 넓은 잡음이 확 닫힌다
+            noise(t, 0.5, 0.45, 5000, 160, 0.003);
+            // 붐 — 깊게 떨어지는 몸통(찌그러뜨려 폰에서도 들리게)
+            const o = c.createOscillator(), g = c.createGain(), sh = c.createWaveShaper(), og = c.createGain();
+            sh.curve = this._crush; og.gain.value = 0.45; o.type = 'sine';
+            o.frequency.setValueAtTime(180, t); o.frequency.exponentialRampToValueAtTime(32, t + 0.6);
+            g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(1, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.85);
+            o.connect(g); g.connect(sh); sh.connect(og); og.connect(mix); o.start(t); o.stop(t + 0.9);
+            // 무너짐 — 땅이 울리는 낮은 잡음, 두 번 쿵쿵
+            noise(t + 0.18, 1.2, 0.2, 380, 90, 0.08);
+            [0.32, 0.55].forEach((d, k) => { const o2 = c.createOscillator(), g2 = c.createGain(); o2.type = 'sine';
+                o2.frequency.setValueAtTime(110, t + d); o2.frequency.exponentialRampToValueAtTime(40, t + d + 0.25);
+                g2.gain.setValueAtTime(0.0001, t + d); g2.gain.linearRampToValueAtTime(0.5 - k * 0.15, t + d + 0.005); g2.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.3);
+                const s2 = c.createWaveShaper(); s2.curve = this._crush; const og2 = c.createGain(); og2.gain.value = 0.35;
+                o2.connect(g2); g2.connect(s2); s2.connect(og2); og2.connect(mix); o2.start(t + d); o2.stop(t + d + 0.33); });
+            // 승리 — 금관 팡파르 「빠-빠-빠 빠아암」(퀴즈퀴즈 계시록 정답 소리, 10/14 사용자)
+            this._brassFanfare(t + 0.62);
+        });
+        this._buzz([80, 60, 40]);
     },
 
     // 5. 클리어 (도미솔도 오름 + 길게 울리는 화음 + 반짝)
@@ -12772,11 +12855,8 @@ function loadNextVerse() {
                 // 부드러운 'sine' 대신 밝은 'square'나 'triangle' 사용
                 // 0.3(서서히) 대신 0.05(즉각적 타격) 또는 0.1(짧고 경쾌함)으로 변경
 
-                // 빰! 빰! 빰! 빠아암~! (간격도 살짝 타이트하게 당겼습니다)
-                SoundEffect.playTone(330, 'square', 0.1, 0.1);  // 미(E)
-                setTimeout(() => SoundEffect.playTone(392, 'square', 0.1, 0.1), 80);   // 파(G)
-                setTimeout(() => SoundEffect.playTone(494, 'square', 0.1, 0.1), 160);  // 라(A)
-                setTimeout(() => SoundEffect.playTone(587, 'square', 0.4, 0.2), 240);  // 시(B) - 마지막은 길게 뻗음
+                // 쾅 — 용이 쓰러진다(10/14: 펀치에 맞춰 묵직하게). 예전엔 종소리 네 음 「빰빰빰 빠암」
+                if (SoundEffect.playBossDefeat) SoundEffect.playBossDefeat();
             }
 
             // 3. 파티클 폭죽 이펙트 생성
@@ -17069,7 +17149,7 @@ function showBossClearScreen(clearedStageId) {
     if (bossExistingNextBtn) bossExistingNextBtn.remove();
 
     triggerConfetti();
-    SoundEffect.playClear();
+    if (Date.now() - (SoundEffect._lastBossDefeat || 0) > 4500) SoundEffect.playClear();   // 방금 금관 팡파르가 울렸으면 겹치지 않게(10/14)
 
     const endTime = Date.now();
     const duration = Math.floor((bossStartTime ? (endTime - bossStartTime) : 0) / 1000);
