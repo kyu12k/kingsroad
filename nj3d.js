@@ -14,7 +14,7 @@
     const ORBIT_URL = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
     const GLTF_URL = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';   // 예물 모델(.glb) — 예물을 볼 때만 받는다
     const GIFT_V = '20261005';   // models/gifts/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/)
-    const JET_COST = 300000;
+    const JET_COST = 50000;   // 🚀 10/14 사용자: 너무 비싸다 — 30만 → 5만(산 두 분께 차액 25만을 돌려드림)
     const T = (k, p) => (typeof t === 'function' ? t(k, p) : k);
     // 퀴즈 본문 — 주소 → 첫 마디(kind 'first')면 「이 절은 어떻게 시작하나요?」, 빈칸이면 앞뒤 말씀 사이에 빈칸 (10/5)
     const quizText = (q, esc) => q.kind === 'first' ? `<div class="nj3d-fishq-text nj3d-fishq-first">${T('nj3d_first_q')}</div>`
