@@ -173,6 +173,7 @@ firebase deploy --only firestore:rules    # 보안 규칙
 ```
 
 - Firebase 프로젝트: **`kings-road-rank`** (`.firebaserc`)
+- **앱 주소가 둘이다** — Cloudflare `kingsload.pages.dev`(git push로 자동) · Firebase `kings-road-rank.web.app`·`firebaseapp.com`(`firebase deploy --only hosting`). **배포할 때 둘 다 올릴 것.** 10/14까지 Firebase 쪽이 7/26 앱으로 남아, 그 주소로 쓰는 사람은 10/10부터 저장이 전부 거절됐다(기준 시각을 안 보내는 옛 앱 — 「기준 없는 저장은 기존 문서를 못 덮는다」). `docs/저장과-동기화.md` 10/14
 - Hosting은 이 폴더를 통째로 올린다. `functions/`·`kingsroad/`·`assets`·`images`는 제외 (`firebase.json`의 ignore)
 - **Cloud Functions가 두 벌이다**: `functions/`(default) · `kingsroad/`(codebase kingsroad, asia-northeast3). 고친 쪽을 배포해야 한다
 - 함수 배포가 `User code failed to load ... Timeout after 10000`으로 멈추면 `FUNCTIONS_DISCOVERY_TIMEOUT=120`을 붙인다 (OneDrive 폴더라 로딩이 느리다). 배포 전 해당 폴더에 `npm ci`
