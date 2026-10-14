@@ -5158,12 +5158,38 @@ const SoundEffect = {
         this._buzz([25, 40, 25]);
     },
 
-    // 4. 공격 소리 (휙- 바람 + 낮은 울림)
+    // 4. 공격 소리 — 둔탁한 타격 (10/14 사용자: 「슉~」 하고 힘 빠지는 소리였다 → 정말 맞힌 느낌으로)
+    //    짧게 휘두르는 기척 → 「쿵」(낮은 음이 순간 뚝 떨어짐) + 「퍽」(거칠게 깎은 잡음) → 아주 낮은 여운
     playAttack: function () {
         this._play(t => {
-            this._whoosh(t, 0.2, 0.16, 2600, 500);
-            this._note(146.8, t + 0.08, 0.3, 0.1, { partials: [[1, 1, 1], [2, 0.25, 0.5]] });
+            const c = this.ctx, out = this._bus(), hit = t + 0.05;
+            this._whoosh(t, 0.07, 0.07, 1800, 700);
+            if (!this._crush) { const n = 256, cv = new Float32Array(n); for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; cv[i] = Math.tanh(x * 3); } this._crush = cv; }
+            // 쿵 — 160Hz에서 50Hz로 0.16초 만에 떨어지는 몸통. 살짝 찌그러뜨려 배음을 만든다(폰 스피커는 150Hz 아래를 거의 못 낸다)
+            const o = c.createOscillator(), g = c.createGain(), osh = c.createWaveShaper(); osh.curve = this._crush;
+            o.type = 'sine';
+            o.frequency.setValueAtTime(160, hit);
+            o.frequency.exponentialRampToValueAtTime(50, hit + 0.16);
+            g.gain.setValueAtTime(0.0001, hit);
+            g.gain.linearRampToValueAtTime(0.9, hit + 0.004);
+            g.gain.exponentialRampToValueAtTime(0.0001, hit + 0.3);
+            const og = c.createGain(); og.gain.value = 0.3;
+            o.connect(g); g.connect(osh); osh.connect(og); og.connect(out); o.start(hit); o.stop(hit + 0.33);
+            // 퍽 — 잡음을 낮게 거르고 찌그러뜨린 짧은 충격
+            if (!this._noise) this._whoosh(hit, 0.001, 0.0001, 500, 400);   // 잡음 버퍼 마련
+            const src = c.createBufferSource(); src.buffer = this._noise;
+            const lp = c.createBiquadFilter(); lp.type = 'lowpass';
+            lp.frequency.setValueAtTime(1400, hit); lp.frequency.exponentialRampToValueAtTime(220, hit + 0.12);
+            const sh = c.createWaveShaper(); sh.curve = this._crush;
+            const ng = c.createGain();
+            ng.gain.setValueAtTime(0.0001, hit);
+            ng.gain.linearRampToValueAtTime(0.2, hit + 0.003);
+            ng.gain.exponentialRampToValueAtTime(0.0001, hit + 0.14);
+            src.connect(lp); lp.connect(sh); sh.connect(ng); ng.connect(out); src.start(hit); src.stop(hit + 0.16);
+            // 여운 — 아주 낮은 울림
+            this._note(55, hit + 0.02, 0.45, 0.1, { partials: [[1, 1, 1], [2, 0.3, 0.4]], glideTo: 42 });
         });
+        this._buzz([45]);
     },
 
     // 5. 클리어 (도미솔도 오름 + 길게 울리는 화음 + 반짝)
