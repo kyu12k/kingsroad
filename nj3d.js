@@ -2007,6 +2007,9 @@
         const keyTag = k => `<span class="nj3d-key">${k}</span>`;
         function btnLabels() {
             const mk = ride.on ? kindOfMount(ride.k) : '', water = !ride.on && (isUnder() || swimNow());
+            // 🌊 물에서는 제트팩이 없다(10/14 사용자) — 헤엄이 먼저라 켜도 날지 못하고 글자만 바뀌었다. 물에 들면 끄고 버튼을 숨긴다
+            if (water && jetOn) { jetOn = false; jetAir = false; flyBtn.classList.remove('on'); }
+            const fh = !hasJet() || water; if (flyBtn.hidden !== fh) flyBtn.hidden = fh;
             const j = jetOn ? 'nj3d_lb_up' : (water || mk === 'sub') ? 'nj3d_lb_swimup' : mk === 'fly' ? 'nj3d_lb_up'
                 : (ride.on && !P.onGround && mk !== 'boat') ? 'nj3d_lb_leap' : (!ride.on && !P.onGround) ? (gliding ? 'nj3d_lb_fold' : 'nj3d_lb_glide') : 'nj3d_jump';
             const d = jetOn ? 'nj3d_lb_down' : 'nj3d_dive', f0 = jetOn ? 'nj3d_lb_jetoff' : 'nj3d_fly';
@@ -2019,7 +2022,8 @@
            잠수를 누르고 있으면 내려간다. 다시 누르면 꺼진다(땅에 내려앉아도 꺼진다). 예전엔 누르고 있는 동안만 오르고 떼면 바로 떨어졌다 */
         const jetToggle = (on) => {
             if (!hasJet()) return;
-            if (jetTrialLand && (on == null ? !jetOn : on)) return;   // 체험이 끝나 내려앉는 중엔 다시 켜지 않는다
+            if (jetTrialLand && (on == null ? !jetOn : on)) return;
+            if (!ride.on && (isUnder() || swimNow()) && (on == null ? !jetOn : on)) return;   // 물에서는 켜지 않는다(F 키 포함)   // 체험이 끝나 내려앉는 중엔 다시 켜지 않는다
             jetOn = on == null ? !jetOn : !!on; jetAir = false; flyBtn.classList.toggle('on', jetOn);
             if (jetOn) { if (ride.on) mountDown(); gliding = false; if (P.vy < 0) P.vy = 0; showHint(T('nj3d_jet_hover'), 3200); }
         };
