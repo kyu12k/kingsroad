@@ -8730,10 +8730,11 @@ function _njDexNoteBlank(id, ts) {
 /* 이번 주 바다에 오나 — 지난주나 이번 주에 백지로 썼나. 기록(bw)이 생기기 전 것은 마지막 백지 시각으로 */
 function _njDexCharged(id) {
     if (!_njDexUnlocked(id)) return false;
-    const ok = [_njDexPrevWeek(), _njDexWeek()], a = njDex && njDex.bw && njDex.bw[id];   // 지난주 또는 이번 주(10/5 사용자) — 이번 주에 썼는데 그 요일이 지났으면 다음 주에(지난주 몫으로)
+    const VD = _njVisit && _njVisit.dex;   // 🕊️ 구경 중엔 주인의 기록으로(10/14 사용자: 그 사람이 외운 구절의 바다 생물)
+    const ok = [_njDexPrevWeek(), _njDexWeek()], a = VD ? (VD.bw || {})[id] : (njDex && njDex.bw && njDex.bw[id]);   // 지난주 또는 이번 주(10/5 사용자) — 이번 주에 썼는데 그 요일이 지났으면 다음 주에(지난주 몫으로)
     if (Array.isArray(a) && a.some(w => ok.includes(w))) return true;
-    const r = (typeof verseRecall !== 'undefined' && verseRecall) ? verseRecall[id] : null;
-    return !!(r && r.lastBlankPass && ok.includes(_njWeekOf(r.lastBlankPass)));
+    const r = VD ? (VD.vr || {})[id] : (typeof verseRecall !== 'undefined' && verseRecall) ? verseRecall[id] : null;
+    return !!(r && (r.lastBlankPass || r.lb) && ok.includes(_njWeekOf(r.lastBlankPass || r.lb)));
 }
 function _njDexChargedCount() { return _njDexVerseList().filter(_njDexCharged).length; }
 let _njDexVerses = null;
@@ -8747,7 +8748,7 @@ function _njDexEntry(id) { const vi = _njDexVerseList().indexOf(id); if (vi < 0)
 function _njDexName(d) { return currentLang === 'en' ? d.en : d.ko; }
 function _njDexFullName(E) { const en = currentLang === 'en', T = NJ_DEX_TIERS[E.t], C = NJ_DEX_COLORS[E.c]; return `${en ? T.preEn : T.pre}${en ? C.en : C.ko} ${_njDexName(E.d)}`; }
 function _njDexRef(id) { const [c, v] = id.split('-'); return currentLang === 'en' ? `Rev ${c}:${v}` : `계 ${c}:${v}`; }
-function _njDexUnlocked(id) { const r = (typeof verseRecall !== 'undefined' && verseRecall) ? verseRecall[id] : null; return !!(r && (r.blankPass > 0 || r.bx > 0)); }
+function _njDexUnlocked(id) { const VD = _njVisit && _njVisit.dex, r = VD ? (VD.vr || {})[id] : (typeof verseRecall !== 'undefined' && verseRecall) ? verseRecall[id] : null; return !!(r && (r.blankPass > 0 || r.bp > 0 || r.bx > 0)); }
 function _njDexWhenOk(d) {
     const h = new Date().getHours();
     if (d.when === 'morning') return h >= 6 && h < 12;
@@ -9937,7 +9938,7 @@ async function openNJVisit(tag, nick) {
     if (typeof closeFriendScreen === 'function') closeFriendScreen();
     const arr = v => Array.isArray(v) ? v : [], obj = v => (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
     const keep = { njBuilt, njPearls, njGifts, njDecor, njSets, njNat, njSea, njVines, njFruits, njGiftFruits, njClams, njManna };
-    _njVisit = { host: r.host, verses: arr(r.verses), guest: arr(r.guest), order: r.order | 0, week: r.week | 0, keep, signed: false, friend: !!r.friend };
+    _njVisit = { host: r.host, verses: arr(r.verses), guest: arr(r.guest), order: r.order | 0, week: r.week | 0, keep, signed: false, friend: !!r.friend, dex: (r.dex && typeof r.dex === 'object') ? r.dex : { vr: {}, bw: {} } };
     const W = obj(r.world);
     njBuilt = W.njBuilt | 0; njPearls = W.njPearls | 0; njGifts = arr(W.njGifts); njDecor = arr(W.njDecor); njSets = arr(W.njSets);
     njNat = obj(W.njNat); njSea = typeof W.njSea === 'string' ? W.njSea : ''; njVines = arr(W.njVines); njFruits = {}; njGiftFruits = [];
@@ -9976,6 +9977,8 @@ function _njvFoldBar(bar, redraw) {
 }
 function _njPop(html) {
     const ov = document.createElement('div'); ov.className = 'njv-pop'; ov.innerHTML = `<div class="njv-card">${html}</div>`;
+    // 3D를 눌러 뗀 손가락의 뒤따르는 「누름」이 막 뜬 창의 보기에 떨어져 답이 저절로 골라졌다(10/14 사용자: 구스의 황옥을 눌렀는데 빨강·초록이 뜬다) — 잠깐 못 누르게
+    ov.style.pointerEvents = 'none'; setTimeout(() => { ov.style.pointerEvents = ''; }, 400);
     ov.onclick = e => { if (e.target === ov) ov.remove(); };
     document.body.appendChild(ov); return ov;
 }
@@ -10018,6 +10021,7 @@ function _njVisitItem(it) {
         name = rec && typeof _njGiftName === 'function' ? _njGiftName(rec) : (o ? o.ko : '예물');
         if (o && /^\d+:\d+$/.test(o.ref || '')) vid = o.ref.replace(':', '-');
     } else if (it.kind === 'decor') { const d = (typeof NJ_DECOR !== 'undefined') ? NJ_DECOR.find(x => x.k === it.k) : null; name = d ? d.ko : '꾸밈'; }
+    else if (it.kind === 'dex') { name = it.name || '바다 생물'; vid = it.verse || ''; }   // 🐠 주인이 외운 절의 생물 — 그 절 문제
     else { name = typeof _njSetName === 'function' ? _njSetName(it.k) : '세트'; }
     if (!vid) {   // 주인이 백지로 써낸 절 — 물건마다 늘 같은 절
         let h = 7; for (const ch of String(it.id)) h = (h * 31 + ch.charCodeAt(0)) % 1000003;
@@ -10027,7 +10031,7 @@ function _njVisitItem(it) {
     }
     const q = typeof _njBlankQuestion === 'function' ? _njBlankQuestion([vid]) : null;
     if (!q) { showToast(`${name}`); return; }
-    const from = it.kind === 'gift' && vid && (NJ_OFFERINGS || []).some(o => o.k === it.k) ? '이 예물의 말씀' : `${_njvEsc(V.host.nick)}님이 외운 말씀`;
+    const from = it.kind === 'gift' && vid && (NJ_OFFERINGS || []).some(o => o.k === it.k) ? '이 예물의 말씀' : it.kind === 'dex' ? `${_njvEsc(V.host.nick)}님이 백지로 쓴 말씀의 생물` : `${_njvEsc(V.host.nick)}님이 외운 말씀`;
     const ov = _njPop(`<h3>${_njvEsc(name)}</h3><div class="ref">${from} · ${_njvEsc(q.ref)}</div>
         <div class="txt">${_njvEsc(q.before)} <span class="gap">&nbsp;</span> ${_njvEsc(q.after)}</div>
         <div class="opts">${q.choices.map((c, i) => `<button data-i="${i}">${_njvEsc(c)}</button>`).join('')}</div><button class="close">닫기</button>`);

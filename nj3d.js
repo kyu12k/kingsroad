@@ -4940,6 +4940,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             });
             if (!best) return false;
             const id = best.E.id;
+            if (VISIT) { if (typeof window._njVisitItem === 'function') window._njVisitItem({ kind: 'dex', id: 'dex:' + id, verse: id, name: dexWho(best) }); return true; }   // 🕊️ 구경 — 주인이 외운 절의 생물: 내 도감이 아니라 구경 문제로(10/14)
             if (typeof _njDexMetThisWeek === 'function' && _njDexMetThisWeek(id)) { obsOpen(best); return true; }   // 👀 이번 주에 만난 아이 — 관찰
             if (typeof _njDexHidden === 'function' && _njDexHidden(id)) { showHint(T('nj3d_dex_miss', { e: best.d.e }), 3000); return true; }
             askDex(best, false);

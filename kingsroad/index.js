@@ -1745,6 +1745,9 @@ exports.njVisitOpen = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     const hd = sv.docs.map(d => d.data()).sort((a, b) => (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0))[0];   // 지금 쓰는 계정(가장 최근 저장)
     const world = {}; NJV_FIELDS.forEach(f => { if (hd[f] !== undefined) world[f] = hd[f]; });
     const verses = Object.entries(hd.verseRecall || {}).filter(([id, r]) => /^\d+-\d+$/.test(id) && r && ((r.bx | 0) > 0 || (r.bxMax | 0) > 0 || (r.blankPass | 0) > 0)).map(([id]) => id).slice(0, 404);
+    // 🐠 바다 생물(10/14) — 주인이 백지로 써낸 절마다 생물 계산에 드는 것만(백지 통과 수·백지 레벨·마지막으로 써낸 때) + 도감 주별 기록
+    const dvr = {}, dbw = {}, hbw = (hd.njDex && hd.njDex.bw) || {};
+    for (const id of verses) { const r = hd.verseRecall[id] || {}; dvr[id] = { bp: r.blankPass | 0, bx: r.bx | 0, lb: Number(r.lastBlankPass) || 0 }; if (Array.isArray(hbw[id])) dbw[id] = hbw[id].slice(-3); }
     const day = njvDay(), wkId = getWeekId(), ref = db.collection('njVisits').doc(p.host), dref = ref.collection('days').doc(day);
     let list = [], order = 0, wkN = 0;
     await db.runTransaction(async tx => {
@@ -1761,7 +1764,7 @@ exports.njVisitOpen = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
         }
         order = (i < 0 ? list.length : i + 1); wkN = wk.n | 0;
     });
-    return { ok: true, world, verses, host: { tag: p.host, nick: _bNick(p.hl.nickname) }, guest: njvGuest(list), order, week: wkN, friend: p.friend };
+    return { ok: true, world, verses, host: { tag: p.host, nick: _bNick(p.hl.nickname) }, guest: njvGuest(list), order, week: wkN, friend: p.friend, dex: { vr: dvr, bw: dbw } };
 });
 exports.njVisitSign = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
