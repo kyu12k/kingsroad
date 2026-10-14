@@ -4410,6 +4410,34 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) SoundEffect.playBlankLevelUp();
             starHudDraw();
         }
+        // ⭐ 별을 얻으면 — 화면 가운데 축하 카드(10/14 사용자: 아래 알림이 심심하다). 모은 말씀 조각 · 오늘 별 칸 · 💎 숫자가 차오른다.
+        //    일곱 다 모으면 카드가 한 번 더 — 별 일곱이 함께 빛나고 💎5,000. 누르면 닫힌다
+        const starWinEl = document.createElement('div'); starWinEl.className = 'nj3d-starwin'; starWinEl.hidden = true; stageEl.appendChild(starWinEl);
+        let starWinT = 0;
+        starWinEl.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); clearTimeout(starWinT); starWinEl.hidden = true; });
+        function countUp(el, to, ms) { const t0 = performance.now(); const f = () => { const u = Math.min(1, (performance.now() - t0) / ms); el.textContent = Math.round(to * (1 - Math.pow(1 - u, 3))).toLocaleString(); if (u < 1 && !starWinEl.hidden) requestAnimationFrame(f); }; f(); }
+        function starWin(res, R) {
+            const dots = n => Array.from({ length: res.total }, (_, i) => `<i class="${i < n ? 'on' : ''}${i === n - 1 ? ' new' : ''}">★</i>`).join('');
+            const show = (all) => {
+                starWinEl.className = 'nj3d-starwin' + (all ? ' all' : '');
+                starWinEl.innerHTML = `<div class="sw-rays"></div><div class="sw-card">
+                    <div class="sw-big">${all ? '🌟' : '⭐'}</div>
+                    <div class="sw-title">${starEsc(T(all ? 'nj3d_star_all_title' : 'nj3d_star_win'))}</div>
+                    ${all ? '' : `<div class="sw-ref">${starEsc(R.ref)}</div><div class="sw-txt">${R.seg.map(w => `<b>${starEsc(w)}</b>`).join(' ')}</div>`}
+                    <div class="sw-dots">${dots(res.n)}</div>
+                    <div class="sw-gem">💎 +<span>0</span></div></div>`;
+                starWinEl.hidden = false; void starWinEl.offsetWidth; starWinEl.classList.add('in');
+                countUp(starWinEl.querySelector('.sw-gem span'), all ? res.all : res.gem, all ? 1400 : 900);
+                clearTimeout(starWinT); starWinT = setTimeout(() => { starWinEl.hidden = true; }, all ? 5200 : 3600);
+            };
+            show(false);
+            if (res.all) setTimeout(() => {
+                if (cur !== C) return;
+                show(true);
+                for (let k = 0; k < 6; k++) setTimeout(() => { if (cur === C) sprayBurst(P.x + (Math.random() - 0.5) * 1.6, P.y + 0.6 + Math.random() * 0.8, P.z + (Math.random() - 0.5) * 1.6, 26, 0); }, k * 180);
+                if (typeof SoundEffect !== 'undefined' && SoundEffect.playLevelUp) { SoundEffect.playLevelUp(); setTimeout(() => SoundEffect.playLevelUp(), 380); }
+            }, 3700);
+        }
         function starEnd(ok) {
             const R = starRun; if (!R) return; starRun = null;
             ov.classList.remove('nj3d-starrun');
@@ -4418,9 +4446,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (ok) {
                 const res = typeof _njStarGot === 'function' ? _njStarGot(R.s.id) : null;
                 R.s.done = true;
-                sprayBurst(R.s.x, R.s.y, R.s.z, 30, 0);
+                sprayBurst(R.s.x, R.s.y, R.s.z, 30, 0); sprayBurst(P.x, P.y + 0.3, P.z, 24, 0);
                 if (typeof SoundEffect !== 'undefined' && SoundEffect.playLevelUp) SoundEffect.playLevelUp();
-                if (res) { showHint(T('nj3d_star_got', { gem: res.gem.toLocaleString(), n: res.n, total: res.total }), 4200); if (res.all) setTimeout(() => showHint(T('nj3d_star_all', { gem: res.all.toLocaleString() }), 5000), 4300); }
+                if (res) starWin(res, R);
                 syncWallet();
             } else {
                 R.s.g.visible = true;
@@ -4658,7 +4686,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             });
             if (mannaQ && Math.hypot(mannaQ.m.x - P.x, mannaQ.m.z - P.z) > 1.4) closeMannaQ();   // 멀어지면 닫는다(다시 밟으면 다시)
             let best = null, bd = 1.1;
-            quails.forEach(q => { if (q.done) return; const d = Math.hypot(q.x - P.x, q.z - P.z); if (d < bd) { bd = d; best = q; } });
+            quails.forEach(q => { if (q.done || P.y - terrain(q.x, q.z) > 0.9) return; const d = Math.hypot(q.x - P.x, q.z - P.z); if (d < bd) { bd = d; best = q; } });   // 높이 떠 있으면 곁이 아니다(10/14 사용자: 공중인데 메추라기가 반응)
             const was = nearQuail; nearQuail = best;
             if (best && !quailQ && !clamQ && best !== (was && quailQ ? was : null) && !mannaAnims.some(a => a.qa === best)) askQuail(best);
             if (quailQ && (!best || best !== quailQ.qa)) closeQuailQ();   // 멀어지면 문제를 닫는다(다시 다가가면 다시)
