@@ -772,12 +772,18 @@
         const seaColTex = new THREE.CanvasTexture(seaCv); seaColTex.encoding = THREE.sRGBEncoding;
         {
             const surf = new THREE.PlaneGeometry(SW_W, SW_H, 1, 1);
-            const col = new THREE.Mesh(surf, new THREE.MeshStandardMaterial({ map: seaColTex, transparent: true, opacity: 0.95, roughness: 0.32, metalness: 0, envMapIntensity: 0.3, side: THREE.DoubleSide, depthWrite: false })   /* 10/8: 비스듬히 보면 금빛 하늘을 거울처럼 비춰 허옇게 — 반사를 줄여 물빛이 보이게 */);
+            // 10/14 사용자: "바다를 넓게 볼 때 렉" — 넓게 보면 화면 거의 전체가 수면인데, 반투명 수면이 세 겹(색 한 장 + 물결 두 장, 셋 다 빛 계산)이라
+            //   폰 GPU가 화면 전체를 세 번 칠했다 → 물결 두 겹을 색 한 장의 그리기 안에서 섞는다(겹 1장). 물결은 위에서 볼 때만(전엔 앞면만 그렸다)
+            const colM = new THREE.MeshStandardMaterial({ map: seaColTex, transparent: true, opacity: 0.95, roughness: 0.32, metalness: 0, envMapIntensity: 0.3, side: THREE.DoubleSide, depthWrite: false })   /* 10/8: 비스듬히 보면 금빛 하늘을 거울처럼 비춰 허옇게 — 반사를 줄여 물빛이 보이게 */;
+            colM.onBeforeCompile = sh => {
+                sh.uniforms.rT1 = { value: seaTex }; sh.uniforms.rT2 = { value: seaTex2 }; sh.uniforms.rM1 = { value: seaTex.matrix }; sh.uniforms.rM2 = { value: seaTex2.matrix };
+                sh.fragmentShader = 'uniform sampler2D rT1; uniform sampler2D rT2; uniform mat3 rM1; uniform mat3 rM2;\n' + sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+                    if (gl_FrontFacing) { float ra = texture2D(rT1, (rM1 * vec3(vUv, 1.0)).xy).a * 0.18; diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0), ra);
+                        ra = texture2D(rT2, (rM2 * vec3(vUv, 1.0)).xy).a * 0.1; diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0), ra); }`);
+            };
+            const col = new THREE.Mesh(surf, colM);
             col.rotation.x = -Math.PI / 2; col.position.set((SW_X0 + SW_X1) / 2, SEA_Y - 0.002, (SW_Z0 + SW_Z1) / 2); col.renderOrder = 1; seaGrp.add(col);
-            [[seaTex, 0.18, 0.004, 2], [seaTex2, 0.1, 0.008, 3]].forEach(([tx, op, dy, ro]) => {
-                const sf = new THREE.Mesh(surf, new THREE.MeshStandardMaterial({ map: tx, color: 0xffffff, transparent: true, opacity: op, roughness: 0.3, metalness: 0, envMapIntensity: 0.4, depthWrite: false }));
-                sf.rotation.x = -Math.PI / 2; sf.position.set((SW_X0 + SW_X1) / 2, SEA_Y + dy, (SW_Z0 + SW_Z1) / 2); sf.renderOrder = ro; seaGrp.add(sf);
-            });
+            seaTex.updateMatrix(); seaTex2.updateMatrix();
         }
         {   // 🏖️ 해변 비탈 띠 + 🌊 밀려왔다 빠지는 파도 (10/8 사용자: 잔잔하게 파도가 해변을 침범하고 물러가는 그림)
             // 10/14 사용자: "땅에 구멍이 생긴 것처럼" — 아래 땅 그물(가로 1.5)은 물가 꼭짓점(d > −1.7)을 수면 아래로 낮추는데, 그 기울어진 삼각형이
@@ -4442,7 +4448,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             rebuild: () => itemBoxes(), items: () => [...giftsG.children, ...decoG.children].map(o => { let n = 0, vis = 0; o.traverse(m => { if (m.isMesh) { n++; if (m.visible) vis++; } }); return { k: o.userData.item && o.userData.item.k, vis: o.visible, meshes: n, visMeshes: vis, pos: [o.position.x, o.position.y, o.position.z].map(v => +v.toFixed(2)) }; }), ground: (x, z, y) => groundAt(x, z, y), blocked: (x, z, y) => blocked(x, z, y),
             setP: (x, y, z, face) => { P.x = x; P.y = y; P.z = z; P.vy = 0; if (face != null) { P.face = face; camYaw = face; } }, P: () => ({ x: P.x, y: P.y, z: P.z }),
             stars: () => stars.map(s => ({ id: s.id, x: s.x, y: s.g.position.y, z: s.z, done: s.done, vis: s.g.visible })),
-            fragScreen: () => starRun ? starRun.frags.filter(f => !f.got).map(f => { const v = f.sp.position.clone().project(camera); return { i: f.i, sx: +((v.x + 1) / 2).toFixed(2), sy: +((1 - v.y) / 2).toFixed(2), z: +v.z.toFixed(3), sc: [+f.sp.scale.x.toFixed(2), +f.sp.scale.y.toFixed(2)], vis: f.sp.visible, inScene: !!f.sp.parent, dist: +f.sp.position.distanceTo(camera.position).toFixed(2) }; }) : null, cam: () => ({ p: camera.position.toArray().map(v => +v.toFixed(2)), near: camera.near, far: camera.far }),
+            fragScreen: () => starRun ? starRun.frags.filter(f => !f.got).map(f => { const v = f.sp.position.clone().project(camera); return { i: f.i, sx: +((v.x + 1) / 2).toFixed(2), sy: +((1 - v.y) / 2).toFixed(2), z: +v.z.toFixed(3), sc: [+f.sp.scale.x.toFixed(2), +f.sp.scale.y.toFixed(2)], vis: f.sp.visible, inScene: !!f.sp.parent, dist: +f.sp.position.distanceTo(camera.position).toFixed(2) }; }) : null, cam: () => ({ p: camera.position.toArray().map(v => +v.toFixed(2)), near: camera.near, far: camera.far }), three: () => ({ scene, renderer, camera, controls }),
             run: () => starRun ? { next: starRun.next, n: starRun.seg.length, frags: starRun.frags.map(f => ({ i: f.i, x: f.x, y: f.sp.position.y, z: f.z, got: f.got })) } : null };
         } catch (e) { }
 
@@ -5306,13 +5312,15 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         ov.querySelectorAll('.nj3d-q button').forEach(b => b.setAttribute('aria-pressed', (b.dataset.q === 'high') === HIGH ? 'true' : 'false'));
 
         // ── 그리기 ──
+        let farView = false;
         function resize() {
             const w = stageEl.clientWidth, h = stageEl.clientHeight;
             if (!w || !h) return;
             // 휴대폰(390×844·배율 2)은 약 130만 점인데 PC 전체화면(1920×1080·배율 1.25~2)은 320만~800만 점이었다.
             // 화면 배율 상한은 그대로 두되, 점 총수가 고급 230만 · 기본 150만을 넘으면 그만큼 배율을 낮춘다(최소 0.75)
+            // 10/14: 멀리서 넓게 볼 때(구경 거리 40 넘게)는 배율을 0.75배로(점 수 약 0.56배) — 화면 거의 전체가 바다·땅이라 칠할 점이 가장 많은데 멀어서 잔 무늬는 안 보인다
             const cap = HIGH ? 2 : 1.5, maxPx = HIGH ? 2.3e6 : 1.5e6;
-            const pr = Math.max(0.75, Math.min(window.devicePixelRatio || 1, cap, Math.sqrt(maxPx / (w * h))));
+            const pr = Math.max(0.75, Math.min(window.devicePixelRatio || 1, cap, Math.sqrt(maxPx / (w * h))) * (farView ? 0.75 : 1));
             if (Math.abs(renderer.getPixelRatio() - pr) > 0.01) renderer.setPixelRatio(pr);
             renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
         }
@@ -5329,7 +5337,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             // 만지지 않은 지 3초가 지나면 초당 30번 — 쉬지 않고 60번 그리면 폰이 뜨거워져 스스로 느려졌다(시안 실측)
             if (!touching && now - lastTouch > 3000 && now - last < 30) { requestAnimationFrame(loop); return; }
             const dt = Math.min(0.05, (now - last) / 1000); last = now;
-            if (!reduce) { rivers.forEach(tx => { tx.offset.y += dt * 0.25; }); seaTex.offset.x += dt * 0.012; seaTex.offset.y += dt * 0.02; seaTex2.offset.x -= dt * 0.016; seaTex2.offset.y += dt * 0.009; }   // 강은 보좌에서 바깥으로 · 바다 물결은 천천히
+            if (!reduce) { rivers.forEach(tx => { tx.offset.y += dt * 0.25; }); seaTex.offset.x += dt * 0.012; seaTex.offset.y += dt * 0.02; seaTex2.offset.x -= dt * 0.016; seaTex2.offset.y += dt * 0.009; seaTex.updateMatrix(); seaTex2.updateMatrix(); }   // 강은 보좌에서 바깥으로 · 바다 물결은 천천히
             if (HIGH && !reduce) {
                 for (let n = 0; n < MOTES; n++) { const i = n * 3 + 1; motePos[i] += dt * moteSpd[n]; if (motePos[i] > 10) motePos[i] = 0; }
                 moteGeo.attributes.position.needsUpdate = true; shaft.rotation.y += dt * 0.05;
@@ -5365,12 +5373,16 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 const cx = camera.position.x, cz = camera.position.z, d0 = Math.max(Math.abs(cx), Math.abs(cz));
                 const gy = Math.max(d0 <= PL ? 0.6 : WT(cx, cz), SEA_Y) + 0.8;
                 if (camera.position.y < gy) { camera.position.y = gy; camera.lookAt(controls.target); }
+                const cd = camera.position.distanceTo(controls.target), fv = farView ? cd > 34 : cd > 40;   // 들어가고 나오는 선을 달리 — 경계에서 해상도가 깜빡이지 않게
+                if (fv !== farView) { farView = fv; resize(); }
             }
+            if ((walk || deco) && farView) { farView = false; resize(); }   // 걷기·꾸미기는 늘 제 해상도
             { const tt = now / 1000; cityAnims.forEach(f => f(tt)); giftsG.children.forEach(g => { if (g.userData.anim) g.userData.anim(tt); }); decoG.children.forEach(g => { if (g.userData.anim) g.userData.anim(tt); }); setG.children.forEach(g => { if (g.userData.anim) g.userData.anim(tt); }); }   // 등불·별·맷돌·분수·양 떼…
             blobTick();   // 🌑 발밑 그늘 — 순례자·탈것·행렬·양 떼를 **움직인 뒤에** 맞춘다(10/4 밤: 앞에서 맞추면 한 프레임 전 자리라 프레임 간격 따라 발과 어긋나 끊기며 따라왔다)
             {   // 🤿 카메라가 물속이면 — 안개를 짙은 청록으로 가까이, 화면에 물빛 덮개, 하늘 지붕은 끈다
                 const cu = camera.position.y < SEA_Y - 0.01 && seaE(camera.position.x, camera.position.z) < 1;
                 reefG.visible = cu || camera.position.y < SEA_Y + 2.5;   // 바닷가에 서서 보는 높이까지는 그대로
+                if (fishMesh) fishMesh.visible = reefG.visible;   // 물고기 떼 540마리도(10/14 — 위에서 볼 때도 늘 그리고 있었다)
                 if (cu !== underView) {
                     underView = cu; underEl.hidden = !cu; skyDome.visible = !cu;
                     if (cu) clamHint();
