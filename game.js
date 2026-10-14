@@ -732,7 +732,8 @@ const LANG = {
         nj3d_overview: '🗺️ 내려다보기',
         nj3d_hint_orbit: '한 손가락으로 돌리고, 두 손가락으로 확대해 보세요',
         nj3d_hint_walk: '왼쪽 동그라미로 걷고, 화면을 끌어 둘러보세요 · 점프 중에 점프를 한 번 더 누르면 활강',
-        nj3d_lb_up: '⬆️ 위로', nj3d_lb_down: '⬇️ 아래로', nj3d_lb_jetoff: '🚀 끄기', nj3d_lb_swimup: '⬆️ 위로', nj3d_lb_glide: '🪂 날개 펴기', nj3d_lb_fold: '🪂 접기', nj3d_lb_leap: '🪂 뛰어내리기',
+        nj3d_star_hint: '⭐ 오늘 암송한 말씀 {n}절이 하늘의 별이 되었어요 — 날아가 닿아 보세요', nj3d_star_go: '말씀 조각을 순서대로 모으세요', nj3d_star_got: '⭐ 별을 얻었어요 💎{gem} · 오늘 {n}/{total}', nj3d_star_all: '🌟 일곱 별을 다 모았어요! 💎{gem} 더', nj3d_star_fail: '⭐ 시간이 다 됐어요 — 별에 다시 닿으면 또 할 수 있어요',
+        nj3d_lb_up: '⬆️ 위로', nj3d_lb_down: '⬇️ 아래로', nj3d_lb_jetoff: '🚀 끄기', nj3d_lb_swimup: '⬆️ 위로', nj3d_lb_glide: '🪂 펴기', nj3d_lb_fold: '🪂 접기', nj3d_lb_leap: '🪂 내리기',
         nj3d_jump: '점프', nj3d_keyhelp: 'WASD 이동 · Shift 달리기 · Esc 닫기',
         nj3d_fly: '🚀 날기',
         nj3d_jet_hover: '🚀 제트팩 켜짐 — 점프로 올라가고 🤿 잠수로 내려가요 · 둘 다 떼면 그 높이에 떠 있어요 · 날기를 다시 누르면 꺼져요',
@@ -2048,6 +2049,7 @@ const LANG = {
         nj3d_overview: '🗺️ Overview',
         nj3d_hint_orbit: 'Drag to rotate, pinch to zoom',
         nj3d_hint_walk: 'Use the left circle to walk, drag to look around · press Jump in mid-air to glide',
+        nj3d_star_hint: '⭐ {n} verses you recited today became stars in the sky — fly up and touch them', nj3d_star_go: 'collect the word pieces in order', nj3d_star_got: '⭐ Star caught 💎{gem} · today {n}/{total}', nj3d_star_all: '🌟 All seven stars! 💎{gem} more', nj3d_star_fail: '⭐ Time is up — touch the star again to retry',
         nj3d_lb_up: '⬆️ Up', nj3d_lb_down: '⬇️ Down', nj3d_lb_jetoff: '🚀 Off', nj3d_lb_swimup: '⬆️ Up', nj3d_lb_glide: '🪂 Glide', nj3d_lb_fold: '🪂 Fold', nj3d_lb_leap: '🪂 Leap off',
         nj3d_jump: 'Jump', nj3d_keyhelp: 'WASD move · Shift run · Esc close',
         nj3d_fly: '🚀 Fly',
@@ -2996,6 +2998,7 @@ let njClamWeek = null;         // 🐚 { wk: 주차, days: [세 조개를 다 �
 let njPearlFound = { w: 0, c: 0, g: 0 };   // 🐚 찾은 진주(늘기만) — 흰·빛깔·값진
 let njPearlSold = { w: 0, c: 0, g: 0 };    // 💎 판 진주(늘기만) — 가진 진주 = 찾은 − 판
 let njPearlGems = 0;          // 💎 진주를 팔아 받은 보석 합(보석 흐름 실측용)
+let njStars = null;           // ⭐ 오늘의 일곱 별 { day, ids: [오늘 암송한 절 — 처음 들어온 차례, 일곱까지], got: [얻은 절] } (2026-10-14)
 let njManna = null;           // 🍞 오늘의 만나·메추라기 { day, got: [거둔 무더기], quail: [끝난 메추라기(잡음·날아감)], qfail: {번호: 틀린 수}, mfail·melt: 만나 문제 틀린 수·스러진 무더기 } (2026-10-05)
 let njMannaGems = 0;          // 💎 만나·메추라기로 받은 보석 합(실측용)
 let njDexFish = 0;            // 🐟 도감 생물에게서 받은 물고기 합(실측용, 10/5)
@@ -3556,6 +3559,7 @@ loadGameData = function () {
         njPearlSold = Object.assign({ w: 0, c: 0, g: 0 }, (parsed.njPearlSold && typeof parsed.njPearlSold === 'object') ? parsed.njPearlSold : {});
         njPearlGems = Math.max(0, parseInt(parsed.njPearlGems, 10) || 0);
         njManna = (parsed.njManna && typeof parsed.njManna === 'object' && parsed.njManna.day) ? parsed.njManna : null;
+        njStars = (parsed.njStars && typeof parsed.njStars === 'object' && parsed.njStars.day) ? parsed.njStars : null;
         njMannaGems = Math.max(0, parseInt(parsed.njMannaGems, 10) || 0);
         njDexFish = Math.max(0, parseInt(parsed.njDexFish, 10) || 0);
         njDex = Object.assign({ v: {}, w: {}, f: {}, b: {}, all: 0 }, (parsed.njDex && typeof parsed.njDex === 'object') ? parsed.njDex : {});
@@ -8668,6 +8672,31 @@ function _njMannaGather(i) {
     addGems(gem); njMannaGems = (njMannaGems | 0) + gem;
     saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
     return gem;
+}
+/* ⭐ 일곱 별 (2026-10-14 사용자, docs/새-예루살렘.md) — 오늘 암송한 절이 하늘 높이 별이 된다(일곱까지 · 백지가 아니어도 — 스테이지·빈칸·고난 무엇이든).
+   별에 닿으면 그 절 한 토막이 말씀 조각으로 흩어지고, 25초 안에 순서대로 모으면 별을 얻는다(오딧세이 음표처럼). 별마다 💎500, 일곱 다 💎5,000.
+   제트팩·날개·나는 탈것으로 닿는 높이(사용자: 너무 낮으면 하늘을 나는 맛이 없다). 별 자리·토막은 날짜로 정해져 하루 동안 같다 */
+const NJ_STAR_GEM = 500, NJ_STAR_ALL = 5000, NJ_STAR_MAX = 7;
+function _njStarDay() {
+    const d = _get6AMDayStr();
+    if (!njStars || njStars.day !== d) njStars = { day: d, ids: [], got: [] };
+    if (!Array.isArray(njStars.ids)) njStars.ids = []; if (!Array.isArray(njStars.got)) njStars.got = [];
+    if (njStars.ids.length < NJ_STAR_MAX) {   // 오늘 다룬 절 — 시도(verseRecall.lastAt)나 클리어(stageLastClear)가 오늘인 것, 먼저 한 것부터
+        const seen = new Map(), add = (id, ts) => { if (/^\d+-\d+$/.test(id) && ts && _tsTo6AMDateStr(ts) === d) { const [c, v] = id.split('-').map(Number); if (bibleData[c] && bibleData[c][v - 1]) seen.set(id, Math.min(seen.get(id) || Infinity, ts)); } };
+        for (const id in (verseRecall || {})) add(id, verseRecall[id] && verseRecall[id].lastAt);
+        for (const id in (stageLastClear || {})) add(id, stageLastClear[id]);
+        [...seen.entries()].sort((a, b) => a[1] - b[1]).forEach(([id]) => { if (njStars.ids.length < NJ_STAR_MAX && !njStars.ids.includes(id)) njStars.ids.push(id); });
+    }
+    return njStars;
+}
+function _njStarGot(id) {
+    const S = _njStarDay(); if (!S.ids.includes(id) || S.got.includes(id)) return null;
+    S.got.push(id);
+    const all = S.got.length >= NJ_STAR_MAX ? NJ_STAR_ALL : 0;
+    addGems(NJ_STAR_GEM + all);
+    if (typeof _featNote === 'function') _featNote('st_got');
+    saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
+    return { gem: NJ_STAR_GEM, all, n: S.got.length, total: S.ids.length };
 }
 function _njQuailTime() { const h = new Date().getHours(); return h >= 18 || h < 6; }   // 저녁 6시 ~ 다음 날 아침 6시(하루 경계까지)
 function _njQuailQuestion(i, mode) { const id = _njMannaToday().ids[i]; return id ? _njFishQuestion([id], mode) : null; }
@@ -13809,6 +13838,7 @@ function saveGameData() {
         njPearlSold: njPearlSold,         // 💎 판 진주
         njPearlGems: njPearlGems,         // 💎 진주로 받은 보석 합
         njManna: njManna,                 // 🍞 오늘의 만나·메추라기
+        njStars: njStars,                 // ⭐ 오늘의 일곱 별
         njMannaGems: njMannaGems,         // 💎 만나·메추라기로 받은 보석 합
         njDexFish: njDexFish,             // 🐟 도감 생물에게서 받은 물고기 합
         njDex: njDex,                     // 🐠 바다 생물 도감(절마다 생물)
@@ -14336,6 +14366,16 @@ function _mergeSaveProgress(target, other) {
             td.f = Object.assign({}, td.f || {}); Object.entries(od.f || {}).forEach(([k, x]) => { const y = td.f[k]; if (Array.isArray(x) && (!Array.isArray(y) || x[0] > y[0] || (x[0] === y[0] && x[1] > y[1]))) { td.f[k] = x; took++; } });
             if (od.all && (!td.all || od.all < td.all)) { td.all = od.all; took++; }
             target.njDex = td;
+        }
+        {   // ⭐ 오늘의 일곱 별 — 같은 날이면 합치고(절 차례는 이쪽 먼저, 일곱까지) 아니면 나중 날
+            const ts = target.njStars, os = other.njStars;
+            if (os && os.day) {
+                if (!ts || !ts.day || os.day > ts.day) { target.njStars = os; took++; }
+                else if (os.day === ts.day) {
+                    const ids = [...new Set([...(ts.ids || []), ...(os.ids || [])])].slice(0, 7), got = [...new Set([...(ts.got || []), ...(os.got || [])])];
+                    if (ids.length !== (ts.ids || []).length || got.length !== (ts.got || []).length) { ts.ids = ids; ts.got = got; took++; }
+                }
+            }
         }
         {   // 🍞 오늘의 만나 — 같은 날이면 합치고 아니면 나중 날
             const tm = target.njManna, om = other.njManna;

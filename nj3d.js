@@ -4292,6 +4292,160 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         }
         pearlBtn.addEventListener('pointerdown', e => { e.preventDefault(); if (nearMerchant) openPearlShop(); });
 
+        // ══ ⭐ 일곱 별 (10/14 사용자) — 오늘 암송한 절이 하늘 높이 별이 된다. 닿으면 그 절 한 토막이 말씀 조각으로 흩어지고,
+        //    25초 안에 순서대로 모으면 별을 얻는다(오딧세이 음표처럼). 별 자리·토막은 날짜로 정해진다 (game.js _njStarDay · _njStarGot) ══
+        const STAR_T = 25, SD = (!VISIT && typeof _njStarDay === 'function') ? _njStarDay() : { day: '', ids: [], got: [] };
+        const starG = new THREE.Group(); scene.add(starG);
+        const starMat = new THREE.MeshStandardMaterial({ color: 0xffd34d, emissive: 0xffb300, emissiveIntensity: 1.1, roughness: 0.3, metalness: 0.3 });
+        const starGeo = (() => {
+            const sh = new THREE.Shape();
+            for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2 + Math.PI / 2, r = i % 2 ? 0.16 : 0.38, x = Math.cos(a) * r, y = Math.sin(a) * r; if (i) sh.lineTo(x, y); else sh.moveTo(x, y); }
+            sh.closePath();
+            const g = new THREE.ExtrudeGeometry(sh, { depth: 0.08, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 1 }); g.center(); return g;
+        })();
+        const starGlowTex = (() => {
+            const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+            const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,240,180,0.95)'); gr.addColorStop(0.35, 'rgba(255,210,90,0.45)'); gr.addColorStop(1, 'rgba(255,200,80,0)');
+            g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c);
+        })();
+        const stars = [];
+        {
+            let sd = 7; for (const ch of String(SD.day || '')) sd = (sd * 31 + ch.charCodeAt(0)) % 2147483647; sd = sd || 1;
+            const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647, a0 = r() * Math.PI * 2;
+            (SD.ids || []).forEach((id, i) => {
+                const a = a0 + i / 7 * Math.PI * 2 + (r() - 0.5) * 0.5, rr = 8 + r() * 8, x = Math.cos(a) * rr, z = Math.sin(a) * rr, y = terrain(x, z) + 6 + r() * 7;   // 성 둘레 하늘 — 땅에서 6~13 위
+                const g = new THREE.Group(); g.position.set(x, y, z);
+                const m = new THREE.Mesh(starGeo, starMat); g.add(m);
+                const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: starGlowTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); glow.scale.set(2.2, 2.2, 1); g.add(glow);
+                starG.add(g);
+                const done = (SD.got || []).includes(id); g.visible = !done;
+                stars.push({ id, g, m, x, y, z, done, ph: r() * 6 });
+            });
+            const left = stars.filter(s => !s.done).length;
+            if (left) setTimeout(() => { if (cur === C && !C.suspended) showHint(T('nj3d_star_hint', { n: left }), 4500); }, 3000);
+        }
+        let starRun = null;
+        const starHud = document.createElement('div'); starHud.className = 'nj3d-starhud'; starHud.hidden = true; stageEl.appendChild(starHud);
+        const starEsc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+        function starWordSprite(w) {   // (메추라기의 wordSprite와 이름이 겹쳐 덮였다 — 10/14)
+            const c = document.createElement('canvas'), g = c.getContext('2d'), F = 'bold 44px sans-serif';
+            g.font = F; const tw = Math.ceil(g.measureText(w).width); c.width = tw + 48; c.height = 76;
+            const R = 30, W = c.width, H = c.height;
+            g.beginPath(); g.moveTo(R, 4); g.lineTo(W - R, 4); g.quadraticCurveTo(W - 4, 4, W - 4, R); g.lineTo(W - 4, H - R); g.quadraticCurveTo(W - 4, H - 4, W - R, H - 4); g.lineTo(R, H - 4); g.quadraticCurveTo(4, H - 4, 4, H - R); g.lineTo(4, R); g.quadraticCurveTo(4, 4, R, 4); g.closePath();
+            g.fillStyle = 'rgba(28,34,62,0.94)'; g.fill(); g.lineWidth = 5; g.strokeStyle = 'rgba(255,211,77,1)'; g.stroke();   // 크림빛 하늘에 묻히지 않게 짙은 바탕
+            g.font = F; g.fillStyle = '#ffe08a'; g.textBaseline = 'middle'; g.fillText(w, 24, H / 2 + 2);
+            const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding;
+            const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false, fog: false, toneMapped: false })); const h = 0.45; sp.scale.set(h * W / H, h, 1); sp.renderOrder = 6;   // 금빛 안개·밝기 보정에 바래지 않게, 멀리서도 읽히게
+            return sp;
+        }
+        function starHudDraw(flash) {
+            const R = starRun; if (!R) { starHud.hidden = true; return; }
+            const head = R.ws.slice(Math.max(0, R.st - 6), R.st).join(' '), more = R.st > 6 ? '… ' : '';
+            const segH = R.seg.map((w, i) => i < R.next ? `<b>${starEsc(w)}</b>` : `<span class="slot${i === R.next ? ' next' : ''}" style="width:${Math.max(2, String(w).length)}em"></span>`).join(' ');
+            starHud.innerHTML = `<div class="ref">⭐ ${starEsc(R.ref)} · ${T('nj3d_star_go')}</div><div class="txt">${more}${starEsc(head)} ${segH}${R.st + R.seg.length < R.ws.length ? ' …' : ''}</div><div class="bar"><i></i></div>`;
+            starHud.classList.toggle('flash', !!flash); starHud.hidden = false;
+        }
+        function starStart(s) {
+            const [c, v] = s.id.split('-').map(Number), ws = (((bibleData || {})[c] || [])[v - 1] || {}).chunks || [];
+            if (!ws.length) return;
+            const n = Math.min(7, ws.length); let h = 3; for (const ch of s.id + (SD.day || '')) h = (h * 31 + ch.charCodeAt(0)) % 100003;
+            const st = h % (ws.length - n + 1), seg = ws.slice(st, st + n), frags = [];
+            seg.forEach((w, i) => {
+                let fx = s.x, fy = s.y, fz = s.z;
+                for (let t = 0; t < 30; t++) {   // 별 둘레에 흩뿌린다 — 가로 1.4~3.4, 높이 −1~+1, 서로 0.8 넘게 떨어지게
+                    const a = Math.random() * Math.PI * 2, r = 1.4 + Math.random() * 2;
+                    fx = s.x + Math.cos(a) * r; fz = s.z + Math.sin(a) * r; fy = s.y - 1 + Math.random() * 2;
+                    if (frags.every(f => Math.hypot(f.x - fx, f.y - fy, f.z - fz) > 1.1)) break;
+                }
+                const sp = starWordSprite(w); sp.position.set(fx, fy, fz); scene.add(sp);
+                frags.push({ sp, i, x: fx, y: fy, z: fz, got: false, cool: 0 });
+            });
+            starRun = { s, ws, st, seg, frags, next: 0, t0: performance.now(), ref: (typeof currentLang !== 'undefined' && currentLang === 'en') ? `Rev ${c}:${v}` : `계 ${c}:${v}` };
+            s.g.visible = false; ov.classList.add('nj3d-starrun');
+            sprayBurst(s.x, s.y, s.z, 22, 0);
+            if (typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) SoundEffect.playBlankLevelUp();
+            starHudDraw();
+        }
+        function starEnd(ok) {
+            const R = starRun; if (!R) return; starRun = null;
+            ov.classList.remove('nj3d-starrun');
+            R.frags.forEach(f => { scene.remove(f.sp); f.sp.material.map.dispose(); f.sp.material.dispose(); });
+            starHud.hidden = true;
+            if (ok) {
+                const res = typeof _njStarGot === 'function' ? _njStarGot(R.s.id) : null;
+                R.s.done = true;
+                sprayBurst(R.s.x, R.s.y, R.s.z, 30, 0);
+                if (typeof SoundEffect !== 'undefined' && SoundEffect.playLevelUp) SoundEffect.playLevelUp();
+                if (res) { showHint(T('nj3d_star_got', { gem: res.gem.toLocaleString(), n: res.n, total: res.total }), 4200); if (res.all) setTimeout(() => showHint(T('nj3d_star_all', { gem: res.all.toLocaleString() }), 5000), 4300); }
+                syncWallet();
+            } else {
+                R.s.g.visible = true;
+                showHint(T('nj3d_star_fail'), 3600);
+            }
+        }
+        cityAnims.push(t => {
+            stars.forEach(s => { if (!s.g.visible) return; s.m.rotation.y = t * 1.2 + s.ph; s.g.position.y = s.y + Math.sin(t * 1.4 + s.ph) * 0.1; });
+            if (!walk || deco || proc) return;
+            const px = P.x, py = P.y + 0.12, pz = P.z;
+            if (!starRun) {
+                for (const s of stars) if (s.g.visible && !s.done && Math.hypot(s.x - px, s.g.position.y - py, s.z - pz) < 0.6) { starStart(s); break; }
+                return;
+            }
+            const R = starRun, el = (performance.now() - R.t0) / 1000;
+            const bar = starHud.querySelector('.bar i'); if (bar) bar.style.transform = `scaleX(${Math.max(0, 1 - el / STAR_T)})`;
+            if (el > STAR_T) { starEnd(false); return; }
+            R.frags.forEach(f => {
+                if (f.got) return;
+                f.sp.position.y = f.y + Math.sin(t * 2 + f.i) * 0.06;
+                if (Math.hypot(f.x - px, f.sp.position.y - py, f.z - pz) > 0.42) return;   // 조각이 커진 만큼 닿는 거리도
+                if (f.i === R.next) {   // 차례 맞는 조각
+                    f.got = true; scene.remove(f.sp); R.next++;
+                    if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
+                    if (R.next >= R.seg.length) { starEnd(true); return; }
+                    starHudDraw();
+                } else if (t > f.cool) {   // 차례가 아닌 조각 — 튕겨 나간다
+                    f.cool = t + 0.8;
+                    const dx = px - f.x, dz = pz - f.z, dl = Math.hypot(dx, dz) || 1; P.x += dx / dl * 0.35; P.z += dz / dl * 0.35;
+                    if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
+                    starHudDraw(true); setTimeout(() => { if (starRun === R) starHudDraw(); }, 350);
+                }
+            });
+        });
+
+        // ══ 🧱 예물·꾸밈은 단단하다 (10/14 사용자) — 옆에서는 막고 위에는 올라설 수 있다(보좌·성벽과 같은 BOXES).
+        //    바닥에 깔린 것·밑으로 지나가는 것(다리·아치·정자)·세트는 막지 않는다. 모델이 늦게 받아지고 꾸미기로 옮기니 걸을 때 1.5초마다 다시 잰다 ══
+        const PASS_K = new Set(['rug', 'meadow', 'brook', 'steppingstones', 'flowerbed', 'wildflowers', 'bridge', 'arbor', 'gazebo', 'pier', 'reeds']);
+        const _ibb = new THREE.Box3(), _itb = new THREE.Box3();
+        let itemBoxT = -9;
+        function itemBoxes() {
+            const why = [];
+            for (let i = BOXES.length - 1; i >= 0; i--) if (BOXES[i].item) BOXES.splice(i, 1);
+            [...giftsG.children, ...decoG.children].forEach(o => {
+                const it = o.userData.item; if (!it || !o.visible) { why.push('hidden'); return; }
+                if (it.kind === 'decor' && PASS_K.has(it.k)) { why.push(it.k + ':pass'); return; }
+                _ibb.makeEmpty(); o.updateMatrixWorld(true);
+                o.traverse(m => { if (!m.isMesh || m === o.userData.pick || !m.geometry || !m.visible) return; if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); _itb.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); _ibb.union(_itb); });
+                // 바닥에 납작하게 깔린 것만 뺀다 — 세상이 작다(순례자 키 0.22, 벤치 0.12). 0.14(STEP)보다 낮은 건 걸어서 밟고 올라서고, 높은 건 막힌다
+                if (_ibb.isEmpty() || _ibb.max.y - _ibb.min.y < 0.03) { why.push(it.k + ':flat'); return; }
+                const sx = (_ibb.max.x - _ibb.min.x) * 0.12, sz = (_ibb.max.z - _ibb.min.z) * 0.12;   // 둥근 모양 — 상자 가장자리는 조금 안으로
+                const b = { x0: _ibb.min.x + sx, x1: _ibb.max.x - sx, z0: _ibb.min.z + sz, z1: _ibb.max.z - sz, y0: _ibb.min.y, y1: _ibb.max.y, item: true };
+                if (P.x > b.x0 - CR && P.x < b.x1 + CR && P.z > b.z0 - CR && P.z < b.z1 + CR && P.y < b.y1 - STEP && P.y + CH > b.y0) { why.push(it.k + ':inside'); return; }   // 지금 그 안에 있으면 가두지 않게
+                BOXES.push(b); why.push(it.k + ':box');
+            });
+            return why;
+        }
+        cityAnims.push(t => { if (walk && !deco && t - itemBoxT > 1.5) { itemBoxT = t; itemBoxes(); } });
+        try { if (localStorage.getItem('kr_debug3d') === '1') window._nj3dDbg = {   // 🧪 헤드리스 확인용(kr_debug3d)
+            boxes: () => BOXES.filter(b => b.item).map(b => ({ x0: +b.x0.toFixed(2), x1: +b.x1.toFixed(2), z0: +b.z0.toFixed(2), z1: +b.z1.toFixed(2), y1: +b.y1.toFixed(2) })),
+            gbox: () => [...giftsG.children].map(o => { const B = new THREE.Box3(), tb = new THREE.Box3(); o.updateMatrixWorld(true); o.traverse(m => { if (!m.isMesh || m === o.userData.pick) return; if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); tb.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); B.union(tb); }); return { k: o.userData.item.k, sc: +o.scale.x.toFixed(2), min: [B.min.x, B.min.y, B.min.z].map(v => +v.toFixed(2)), max: [B.max.x, B.max.y, B.max.z].map(v => +v.toFixed(2)) }; }),
+            bbox: () => [...decoG.children].map(o => { const B = new THREE.Box3(), tb = new THREE.Box3(); o.updateMatrixWorld(true); o.traverse(m => { if (!m.isMesh || m === o.userData.pick) return; if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); tb.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); B.union(tb); }); return { k: o.userData.item.k, min: [B.min.x, B.min.y, B.min.z].map(v => +v.toFixed(2)), max: [B.max.x, B.max.y, B.max.z].map(v => +v.toFixed(2)) }; }),
+            rebuild: () => itemBoxes(), items: () => [...giftsG.children, ...decoG.children].map(o => { let n = 0, vis = 0; o.traverse(m => { if (m.isMesh) { n++; if (m.visible) vis++; } }); return { k: o.userData.item && o.userData.item.k, vis: o.visible, meshes: n, visMeshes: vis, pos: [o.position.x, o.position.y, o.position.z].map(v => +v.toFixed(2)) }; }), ground: (x, z, y) => groundAt(x, z, y), blocked: (x, z, y) => blocked(x, z, y),
+            setP: (x, y, z, face) => { P.x = x; P.y = y; P.z = z; P.vy = 0; if (face != null) { P.face = face; camYaw = face; } }, P: () => ({ x: P.x, y: P.y, z: P.z }),
+            stars: () => stars.map(s => ({ id: s.id, x: s.x, y: s.g.position.y, z: s.z, done: s.done, vis: s.g.visible })),
+            fragScreen: () => starRun ? starRun.frags.filter(f => !f.got).map(f => { const v = f.sp.position.clone().project(camera); return { i: f.i, sx: +((v.x + 1) / 2).toFixed(2), sy: +((1 - v.y) / 2).toFixed(2), z: +v.z.toFixed(3), sc: [+f.sp.scale.x.toFixed(2), +f.sp.scale.y.toFixed(2)], vis: f.sp.visible, inScene: !!f.sp.parent, dist: +f.sp.position.distanceTo(camera.position).toFixed(2) }; }) : null, cam: () => ({ p: camera.position.toArray().map(v => +v.toFixed(2)), near: camera.near, far: camera.far }),
+            run: () => starRun ? { next: starRun.next, n: starRun.seg.length, frags: starRun.frags.map(f => ({ i: f.i, x: f.x, y: f.sp.position.y, z: f.z, got: f.got })) } : null };
+        } catch (e) { }
+
         // ══ 🍞 만나 · 🐦 메추라기 (10/5) — 오늘의 암송을 마친 날 성 둘레 들판(출 16:13 「진 사면에」) (game.js _njMannaToday · docs/새-예루살렘.md) ══
         const MT = (typeof _njMannaToday === 'function' && !VISIT) ? _njMannaToday() : { ids: [], ready: false };
         const MD0 = typeof _njMannaDay === 'function' ? _njMannaDay() : { got: [], quail: [], qfail: {} };
@@ -4514,6 +4668,17 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                     c.beginPath(); c.arc(mx, my, 5 * dpr, Math.PI, 0); c.lineTo(mx + 5 * dpr, my + 2 * dpr); c.lineTo(mx - 5 * dpr, my + 2 * dpr); c.closePath(); c.fill(); c.stroke();   // 조개 모양(반달)
                     miniClamPts.push({ c: cl, x: mx / dpr, y: my / dpr });
                 });
+            }
+            {   // ⭐ 오늘의 별(10/14 사용자) — 늘 보인다. 미니맵 밖이면 테두리에 붙여 방향을. 모으는 동안엔 남은 말씀 조각도 작은 점으로(순서는 알려 주지 않는다)
+                const lim = h - 9 * dpr, starPath = (mx, my, R) => { c.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? R * 0.45 : R; c[i ? 'lineTo' : 'moveTo'](mx + Math.cos(a) * r, my + Math.sin(a) * r); } c.closePath(); };
+                stars.forEach(st => {
+                    if (st.done || !st.g.visible) return;
+                    let [mx, my] = toMap(st.x, st.z); const dd = Math.hypot(mx - h, my - h);
+                    if (dd > lim) { mx = h + (mx - h) * lim / dd; my = h + (my - h) * lim / dd; }
+                    c.fillStyle = `rgba(255,211,77,${(0.75 + tw * 0.25).toFixed(2)})`; c.strokeStyle = '#7a4a00'; c.lineWidth = 1.2 * dpr;
+                    starPath(mx, my, 6.5 * dpr); c.fill(); c.stroke();
+                });
+                if (starRun) starRun.frags.forEach(f => { if (!f.got) dot(f.x, f.z, '#ffe08a', 2.4, '#1c223e'); });
             }
             {   // 🐠 오늘 나온 도감 생물 (10/5 사용자: 바다가 넓어져 찾기 어렵다) — 이번 주 아직 못 만난 아이는 금빛, 만난 아이는 흐리게.
                 //    미니맵 밖의 못 만난 아이는 가까운 셋만 테두리에 방향 화살표(다 띄우면 테두리가 어지럽다)
