@@ -1710,3 +1710,113 @@ exports.battleAnswer = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     }
     return out;
 });
+
+// ══ 🕊️ 친구의 새 예루살렘 구경 (2026-10-14, docs/새-예루살렘.md) ═══════════════════════════════════
+// 친구·같은 길드원의 3D 세상에 들어가 구경한다. 주인의 저장본은 본인만 읽으므로 꾸밈만 골라 보낸다(보석·암송 기록은 안 보냄 — 문제용 「백지로 쓴 절」 목록만).
+//  njVisits/{주인태그}            — pend(아직 안 받은 보석) · day·dayGems(오늘 쌓인 몫, 하루 5만) · wk{id,n,tags}(이번 주 다녀간 사람) · total
+//  njVisits/{주인태그}/days/{6시날짜} — list[{tag,nick,at,m}] 방명록(오늘 일찍 온 순서, m = 정해진 인사 번호)
+//  njVisitors/{손님태그}          — day · hosts{주인: [맞힌 물건 id]} (하루 다섯 세상 · 세상마다 셋)
+// 손님 💎300(문제마다) · 주인 💎500(손님마다 그날 첫 정답에) · 주인 하루 5만. 들어가는 사람은 구글 연동(말씀 대결과 같은 까닭). 쓰기는 이 함수들만
+const NJV_FIELDS = ['njBuilt', 'njPearls', 'njGifts', 'njDecor', 'njSets', 'njNat', 'njSea', 'njVines'];
+const NJV_QUIZ_GEM = 300, NJV_HOST_GEM = 500, NJV_HOST_DAILY = 50000, NJV_PER_HOST = 3, NJV_HOSTS = 5, NJV_MSGS = 6;
+const njvDay = () => new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);   // KST 오전 6시 기준 날짜(+9 −6)
+const njvGuest = list => list.map(x => ({ nick: x.nick, at: x.at, m: x.m }));
+async function _njvPre(request, myTag, hostTag) {
+    if (!_bGoogle(request)) return { ok: false, why: 'google' };
+    const u = await verifyTag(request.auth.uid, myTag);
+    const me = String(myTag), host = String(hostTag || '').replace(/^#/, '').toUpperCase();
+    if (!host || host === me) return { ok: false, why: 'self' };
+    const lb = await db.collection('leaderboard').doc(host).get();
+    if (!lb.exists) return { ok: false, why: 'nouser' };
+    const hl = lb.data();
+    if (Array.isArray(hl.blocked) && hl.blocked.includes(me)) return { ok: false, why: 'nouser' };
+    const friend = Array.isArray(u.friends) && u.friends.includes(host);
+    const guild = !!(u.guildId && hl.guildId && u.guildId === hl.guildId);
+    if (!friend && !guild) return { ok: false, why: 'rel' };
+    return { ok: true, u, me, host, hl, nick: _bNick(u.nickname) };
+}
+exports.njVisitOpen = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { myTag, hostTag, nick } = request.data || {};
+    const p = await _njvPre(request, myTag, hostTag);
+    if (!p.ok) return p;
+    const sv = await db.collection('saves').where('tag', '==', p.host).get();
+    if (sv.empty) return { ok: false, why: 'nouser' };
+    const hd = sv.docs.map(d => d.data()).sort((a, b) => (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0))[0];   // 지금 쓰는 계정(가장 최근 저장)
+    const world = {}; NJV_FIELDS.forEach(f => { if (hd[f] !== undefined) world[f] = hd[f]; });
+    const verses = Object.entries(hd.verseRecall || {}).filter(([id, r]) => /^\d+-\d+$/.test(id) && r && ((r.bx | 0) > 0 || (r.bxMax | 0) > 0 || (r.blankPass | 0) > 0)).map(([id]) => id).slice(0, 404);
+    const day = njvDay(), wkId = getWeekId(), ref = db.collection('njVisits').doc(p.host), dref = ref.collection('days').doc(day);
+    let list = [], order = 0, wkN = 0;
+    await db.runTransaction(async tx => {
+        const [h, d] = await Promise.all([tx.get(ref), tx.get(dref)]);
+        const H = h.exists ? h.data() : {};
+        list = d.exists && Array.isArray(d.data().list) ? d.data().list : [];
+        let wk = H.wk && H.wk.id === wkId ? H.wk : { id: wkId, n: 0, tags: [] };
+        const i = list.findIndex(x => x.tag === p.me);
+        if (i < 0) {
+            list = list.concat([{ tag: p.me, nick: _bNick(nick || p.nick), at: Date.now(), m: -1 }]).slice(0, 500);
+            tx.set(dref, { list, day }, { merge: true });
+            if (!(wk.tags || []).includes(p.me)) wk = { id: wkId, n: (wk.n | 0) + 1, tags: (wk.tags || []).concat([p.me]).slice(-3000) };
+            tx.set(ref, { wk, total: admin.firestore.FieldValue.increment(1), lastAt: Date.now() }, { merge: true });
+        }
+        order = (i < 0 ? list.length : i + 1); wkN = wk.n | 0;
+    });
+    return { ok: true, world, verses, host: { tag: p.host, nick: _bNick(p.hl.nickname) }, guest: njvGuest(list), order, week: wkN };
+});
+exports.njVisitSign = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { myTag, hostTag, m } = request.data || {};
+    const p = await _njvPre(request, myTag, hostTag);
+    if (!p.ok) return p;
+    const mi = parseInt(m, 10); if (!(mi >= 0 && mi < NJV_MSGS)) throw new HttpsError('invalid-argument', 'm');
+    const dref = db.collection('njVisits').doc(p.host).collection('days').doc(njvDay());
+    let out = { ok: false, why: 'novisit' };
+    await db.runTransaction(async tx => {
+        const d = await tx.get(dref); const list = d.exists && Array.isArray(d.data().list) ? d.data().list.slice() : [];
+        const i = list.findIndex(x => x.tag === p.me); if (i < 0) return;
+        list[i] = Object.assign({}, list[i], { m: mi }); tx.set(dref, { list }, { merge: true });
+        out = { ok: true, guest: njvGuest(list) };
+    });
+    return out;
+});
+exports.njVisitQuiz = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { myTag, hostTag, item } = request.data || {};
+    const p = await _njvPre(request, myTag, hostTag);
+    if (!p.ok) return p;
+    const it = String(item || '').slice(0, 64); if (!it) throw new HttpsError('invalid-argument', 'item');
+    const day = njvDay(), vref = db.collection('njVisitors').doc(p.me), href = db.collection('njVisits').doc(p.host);
+    let out = { ok: false };
+    await db.runTransaction(async tx => {
+        const [v, h] = await Promise.all([tx.get(vref), tx.get(href)]);
+        const V = v.exists && v.data().day === day ? v.data() : { day, hosts: {} };
+        const hosts = Object.assign({}, V.hosts || {}), arr = Array.isArray(hosts[p.host]) ? hosts[p.host].slice() : [];
+        if (!hosts[p.host] && Object.keys(hosts).length >= NJV_HOSTS) { out = { ok: false, why: 'hosts' }; return; }
+        if (arr.includes(it)) { out = { ok: false, why: 'same' }; return; }
+        if (arr.length >= NJV_PER_HOST) { out = { ok: false, why: 'items' }; return; }
+        arr.push(it); hosts[p.host] = arr;
+        tx.set(vref, { day, hosts });
+        let hostGot = false;
+        if (arr.length === 1) {   // 이 손님의 오늘 첫 정답 — 주인에게
+            const H = h.exists ? h.data() : {}, dg = H.day === day ? (H.dayGems | 0) : 0;
+            if (dg + NJV_HOST_GEM <= NJV_HOST_DAILY) { tx.set(href, { pend: admin.firestore.FieldValue.increment(NJV_HOST_GEM), day, dayGems: dg + NJV_HOST_GEM }, { merge: true }); hostGot = true; }
+        }
+        out = { ok: true, gems: NJV_QUIZ_GEM, hostGot, left: NJV_PER_HOST - arr.length };
+    });
+    return out;
+});
+exports.njVisitClaim = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { myTag } = request.data || {};
+    await verifyTag(request.auth.uid, myTag);
+    const me = String(myTag), ref = db.collection('njVisits').doc(me), dref = ref.collection('days').doc(njvDay());
+    let out = { ok: true, gems: 0, guest: [], week: 0, total: 0 };
+    await db.runTransaction(async tx => {
+        const [h, d] = await Promise.all([tx.get(ref), tx.get(dref)]);
+        const H = h.exists ? h.data() : {}, amt = Math.max(0, H.pend | 0);
+        if (amt) tx.set(ref, { pend: 0, claimed: admin.firestore.FieldValue.increment(amt) }, { merge: true });
+        out = { ok: true, gems: amt, guest: njvGuest(d.exists && Array.isArray(d.data().list) ? d.data().list : []),
+            week: H.wk && H.wk.id === getWeekId() ? (H.wk.n | 0) : 0, total: H.total | 0 };
+    });
+    return out;
+});

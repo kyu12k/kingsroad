@@ -527,6 +527,7 @@ const LANG = {
         fp_wrong: '오답이에요. 정답은 <b>「{ans}」</b> — 📒 오답노트에 담았어요<br><span style="opacity:0.8">{text}</span>',
         hardship_btn_submit: '정답 확인',
         nj_title: '새 예루살렘',
+        nj3d_visit_title: '🕊️ {nick}님의 새 예루살렘',
         nj_verse: '「그 성의 성곽의 기초석은 각색 보석으로 꾸몄는데」 (계 21:19)',
         nj_hint: '보석과, 간격을 두고 백지로 꺼낸 기록(백지레벨)으로 기초석을 하나씩 놓아요',
         nj_cond: '백지레벨 {lv} 이상에 오른 절 {have} / {need}',
@@ -1840,6 +1841,7 @@ const LANG = {
         hardship_memory_not_filled: 'Please fill in all characters before checking.',
         hardship_btn_submit: 'Check Answer',
         nj_title: 'New Jerusalem',
+        nj3d_visit_title: '🕊️ New Jerusalem of {nick}',
         nj_verse: '“The foundations of the city wall were adorned with every kind of precious stone” (Rev 21:19)',
         nj_hint: 'Lay each foundation stone with gems and your blank-recall record (Blank Level)',
         nj_cond: 'Verses that reached blank Lv {lv}+ {have} / {need}',
@@ -9850,6 +9852,7 @@ function openNewJerusalem() {
 /* 3D 보기 — nj3d.js를 처음 누를 때만 불러온다(three.js도 그때). 캐시 번호는 game.js와 같게 */
 let _nj3dLoading = false;
 function openNJ3DView(opts) {
+    if (!(opts && opts.visit)) setTimeout(() => { if (typeof _njVisitClaim === 'function') _njVisitClaim(false).then(() => { let n = 0; const t = setInterval(() => { if (document.querySelector('#nj3d .nj3d-stage') || ++n > 40) { clearInterval(t); _njMineBar(); } }, 300); }); }, 400);   // 🕊️ 내 세상에 다녀간 손님
     if (typeof window.openNJ3D === 'function') { window.openNJ3D(opts); return; }
     if (_nj3dLoading) return;
     _nj3dLoading = true;
@@ -9906,6 +9909,164 @@ async function _battleInboxRefresh() {
     } catch (e) { console.warn('[battle] inbox', e.code || e); }
 }
 window._battleInboxRefresh = _battleInboxRefresh;
+
+/* 🕊️ 친구의 새 예루살렘 구경 (2026-10-14, docs/새-예루살렘.md) — 친구·같은 길드원의 3D 세상에 들어가 구경하고 방명록에 인사를 남긴다.
+   예물·꾸밈을 누르면 그 물건의 말씀 빈칸 4지(예물 = 그 계시록 구절 · 그 밖 = 주인이 백지로 써낸 절) → 손님 💎300 · 주인 💎500(손님마다 그날 첫 정답, 하루 5만).
+   서버 kingsroad njVisitOpen·njVisitSign·njVisitQuiz·njVisitClaim. 구경하는 동안은 3D가 읽는 내 꾸밈 기록(njGifts 등)을 그 사람 것으로 잠시 바꿔 끼우므로
+   **저장을 멈춘다**(saveGameData·syncToFirestore가 _njVisit이면 돌아감). 3D를 닫으면 _njVisitEnd가 내 것으로 되돌리고 그때 저장한다 */
+const NJV_MSGS = ['🕊️ 평강이 있기를', '✨ 은혜로운 곳이네요', '🙏 함께 암송해요', '🌿 아름답게 꾸미셨네요', '💛 또 올게요', '👑 주님께 영광을'];
+const NJV_WHY = { google: '친구의 새 예루살렘은 구글 계정을 연결한 분끼리 들어갈 수 있어요.', rel: '친구나 같은 길드원의 새 예루살렘에만 들어갈 수 있어요.', self: '내 새 예루살렘이에요.', nouser: '들어갈 수 없는 곳이에요.',
+    hosts: '오늘은 다섯 곳의 문제를 다 풀었어요. 구경은 계속할 수 있어요.', items: '이곳의 문제는 오늘 세 개까지예요. 구경은 계속할 수 있어요.', same: '이미 푼 물건이에요.' };
+const _njvCall = (name, data) => firebase.app().functions('asia-northeast3').httpsCallable(name)(Object.assign({ myTag }, data)).then(r => r.data);
+const _njvEsc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+var _njVisit = null;   // var — saveGameData가 먼저 불려도 TDZ에 걸리지 않게
+async function openNJVisit(tag, nick) {
+    if (!myTag || myTag === '0000') { showGemToast(0, '닉네임을 먼저 설정해주세요.', true); return; }
+    if (!isGoogleLinked()) { showGemToast(0, NJV_WHY.google, true); return; }
+    if (_njVisit || window._njVisitGoing) return;
+    window._njVisitGoing = true;
+    showGemToast(0, `🕊️ ${nick || '친구'}님의 새 예루살렘으로 가는 중…`);
+    let r;
+    try { r = await _njvCall('njVisitOpen', { hostTag: tag, nick: myNickname }); }
+    catch (e) { console.warn('[visit] open', e); window._njVisitGoing = false; showGemToast(0, '들어가지 못했어요. 인터넷 연결을 확인해 주세요.', true); return; }
+    window._njVisitGoing = false;
+    if (!r || !r.ok) { showGemToast(0, NJV_WHY[r && r.why] || '들어가지 못했어요.', true); return; }
+    try { saveGameData(); } catch (e) { }   // 바꿔 끼우기 전에 내 것을 한 번 저장해 둔다
+    if (typeof closeNJ3D === 'function') closeNJ3D();   // 숨겨 둔 내 3D가 있으면 닫는다(열면 그걸 되살리므로)
+    if (typeof closeFriendScreen === 'function') closeFriendScreen();
+    const arr = v => Array.isArray(v) ? v : [], obj = v => (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+    const keep = { njBuilt, njPearls, njGifts, njDecor, njSets, njNat, njSea, njVines, njFruits, njGiftFruits, njClams, njManna };
+    _njVisit = { host: r.host, verses: arr(r.verses), guest: arr(r.guest), order: r.order | 0, week: r.week | 0, keep, signed: false };
+    const W = obj(r.world);
+    njBuilt = W.njBuilt | 0; njPearls = W.njPearls | 0; njGifts = arr(W.njGifts); njDecor = arr(W.njDecor); njSets = arr(W.njSets);
+    njNat = obj(W.njNat); njSea = typeof W.njSea === 'string' ? W.njSea : ''; njVines = arr(W.njVines); njFruits = {}; njGiftFruits = [];
+    if (typeof _featNote === 'function') _featNote('nv_go');
+    openNJ3DView({ visit: { nick: r.host.nick, tag: r.host.tag, onClose: _njVisitEnd } });
+    let n = 0; const t = setInterval(() => { const st = document.querySelector('#nj3d .nj3d-stage'); if (st && !st.querySelector('.nj3d-visitbar')) { _njVisitBar(); clearInterval(t); } else if (++n > 60) clearInterval(t); }, 300);
+}
+function _njVisitEnd() {
+    const V = _njVisit; if (!V) return;
+    const k = V.keep;
+    njBuilt = k.njBuilt; njPearls = k.njPearls; njGifts = k.njGifts; njDecor = k.njDecor; njSets = k.njSets;
+    njNat = k.njNat; njSea = k.njSea; njVines = k.njVines; njFruits = k.njFruits; njGiftFruits = k.njGiftFruits; njClams = k.njClams; njManna = k.njManna;
+    _njVisit = null;
+    try { if (typeof _seaRefresh === 'function') _seaRefresh(); } catch (e) { }
+    try { updateGemDisplay(); saveGameData(); syncToFirestore(); } catch (e) { }
+}
+function _njVisitBar() {
+    const V = _njVisit, st = document.querySelector('#nj3d .nj3d-stage'); if (!V || !st) return;
+    let bar = st.querySelector('.nj3d-visitbar');
+    if (!bar) { bar = document.createElement('div'); bar.className = 'nj3d-visitbar'; st.appendChild(bar); }
+    if (_njvFolded()) { _njvFoldBar(bar, _njVisitBar); return; }
+    { const ov = document.getElementById('nj3d'); if (ov) ov.classList.remove('nj3d-barfold'); bar.classList.remove('folded'); }
+    bar.innerHTML = `<span>🕊️ 오늘 ${V.order}번째 손님</span><button class="sub" data-a="gb">📖 방명록</button><button data-a="sign">${V.signed ? '✓ 인사함' : '👋 인사'}</button><button class="sub" data-a="fold" aria-label="접기">▴</button>`;
+    bar.querySelector('[data-a="gb"]').onclick = () => _njGuestbook(V.host.nick, V.guest, V.week);
+    bar.querySelector('[data-a="sign"]').onclick = () => _njVisitSignPick();
+    bar.querySelector('[data-a="fold"]').onclick = () => { _njvFolded(true); _njVisitBar(); };
+    if (!V.hinted) { V.hinted = true; setTimeout(() => { if (typeof showToast === 'function') showToast('예물·꾸밈을 누르면 그 말씀 문제가 나와요 — 맞히면 나도 주인도 💎'); }, 1500); }
+}
+// 띠 접기(10/14 사용자) — 작은 「🕊️ ▾」 하나로. 접은 상태는 기기에 기억
+function _njvFolded(v) { try { if (v != null) localStorage.setItem('kr_njvFold', v ? '1' : ''); return localStorage.getItem('kr_njvFold') === '1'; } catch (e) { return false; } }
+function _njvFoldBar(bar, redraw) {
+    bar.classList.add('folded');
+    bar.innerHTML = `<button class="sub" data-a="unfold" aria-label="펼치기">🕊️ ▾</button>`;
+    bar.querySelector('[data-a="unfold"]').onclick = () => { _njvFolded(false); bar.classList.remove('folded'); redraw(); };
+    const ov = document.getElementById('nj3d'); if (ov) ov.classList.add('nj3d-barfold');
+}
+function _njPop(html) {
+    const ov = document.createElement('div'); ov.className = 'njv-pop'; ov.innerHTML = `<div class="njv-card">${html}</div>`;
+    ov.onclick = e => { if (e.target === ov) ov.remove(); };
+    document.body.appendChild(ov); return ov;
+}
+// 방명록 — 오늘(오전 6시부터) 일찍 다녀간 순서
+function _njGuestbook(hostNick, list, week) {
+    const hm = ts => { const d = new Date(ts); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+    const rows = (list || []).map((g, i) => `<div><b>${i + 1}</b><span>${_njvEsc(g.nick)}</span><span class="m">${g.m >= 0 && NJV_MSGS[g.m] ? NJV_MSGS[g.m] : ''}</span><span class="ref">${hm(g.at)}</span></div>`).join('');
+    const ov = _njPop(`<h3>📖 ${_njvEsc(hostNick)}님의 방명록</h3><div class="ref">오늘 오전 6시부터 다녀간 순서${week ? ` · 이번 주 ${week}명` : ''}</div>
+        <div class="gb">${rows || '<div><span class="m">아직 아무도 다녀가지 않았어요</span></div>'}</div><button class="close">닫기</button>`);
+    ov.querySelector('.close').onclick = () => ov.remove();
+}
+function _njVisitSignPick() {
+    const V = _njVisit; if (!V) return;
+    const ov = _njPop(`<h3>👋 ${_njvEsc(V.host.nick)}님께 인사 남기기</h3><div class="opts">${NJV_MSGS.map((m, i) => `<button data-m="${i}">${m}</button>`).join('')}</div><button class="close">닫기</button>`);
+    ov.querySelector('.close').onclick = () => ov.remove();
+    ov.querySelectorAll('[data-m]').forEach(b => b.onclick = async () => {
+        ov.querySelectorAll('button').forEach(x => x.disabled = true);
+        try {
+            const r = await _njvCall('njVisitSign', { hostTag: V.host.tag, m: +b.dataset.m });
+            if (r && r.ok) { V.signed = true; V.guest = r.guest || V.guest; _njVisitBar(); ov.remove(); showToast('📖 방명록에 인사를 남겼어요'); if (typeof _featNote === 'function') _featNote('nv_sign'); return; }
+        } catch (e) { console.warn('[visit] sign', e); }
+        ov.remove(); showGemToast(0, '인사를 남기지 못했어요.', true);
+    });
+}
+// 물건을 눌렀을 때 — 그 물건의 말씀 문제
+function _njVisitItem(it) {
+    const V = _njVisit; if (!V || !it) return;
+    let name = '', vid = '';
+    if (it.kind === 'gift') {
+        const rec = (njGifts || []).find(g => g.id === it.id), o = (typeof NJ_OFFERINGS !== 'undefined') ? NJ_OFFERINGS.find(x => x.k === it.k) : null;
+        name = rec && typeof _njGiftName === 'function' ? _njGiftName(rec) : (o ? o.ko : '예물');
+        if (o && /^\d+:\d+$/.test(o.ref || '')) vid = o.ref.replace(':', '-');
+    } else if (it.kind === 'decor') { const d = (typeof NJ_DECOR !== 'undefined') ? NJ_DECOR.find(x => x.k === it.k) : null; name = d ? d.ko : '꾸밈'; }
+    else { name = typeof _njSetName === 'function' ? _njSetName(it.k) : '세트'; }
+    if (!vid) {   // 주인이 백지로 써낸 절 — 물건마다 늘 같은 절
+        let h = 7; for (const ch of String(it.id)) h = (h * 31 + ch.charCodeAt(0)) % 1000003;
+        const pool = V.verses.length ? V.verses : null;
+        if (pool) vid = pool[h % pool.length];
+        else { const all = []; for (const c in bibleData) bibleData[c].forEach((_, i) => all.push(`${c}-${i + 1}`)); vid = all[h % all.length]; }
+    }
+    const q = typeof _njBlankQuestion === 'function' ? _njBlankQuestion([vid]) : null;
+    if (!q) { showToast(`${name}`); return; }
+    const from = it.kind === 'gift' && vid && (NJ_OFFERINGS || []).some(o => o.k === it.k) ? '이 예물의 말씀' : `${_njvEsc(V.host.nick)}님이 외운 말씀`;
+    const ov = _njPop(`<h3>${_njvEsc(name)}</h3><div class="ref">${from} · ${_njvEsc(q.ref)}</div>
+        <div class="txt">${_njvEsc(q.before)} <span class="gap">&nbsp;</span> ${_njvEsc(q.after)}</div>
+        <div class="opts">${q.choices.map((c, i) => `<button data-i="${i}">${_njvEsc(c)}</button>`).join('')}</div><button class="close">닫기</button>`);
+    ov.querySelector('.close').onclick = () => ov.remove();
+    ov.querySelectorAll('[data-i]').forEach(b => b.onclick = async () => {
+        const ok = q.choices[+b.dataset.i] === q.answer;
+        ov.querySelectorAll('[data-i]').forEach(x => { x.disabled = true; if (q.choices[+x.dataset.i] === q.answer) x.classList.add('ok'); });
+        if (!ok) { b.classList.add('no'); if (typeof SoundEffect !== 'undefined') SoundEffect.playWrong(); return; }
+        if (typeof SoundEffect !== 'undefined') SoundEffect.playCorrect();
+        if (typeof _featNote === 'function') _featNote('nv_ok');
+        try {
+            const r = await _njvCall('njVisitQuiz', { hostTag: V.host.tag, item: String(it.id) });
+            if (r && r.ok) {
+                myGems = (myGems || 0) + (r.gems | 0); updateGemDisplay();
+                showToast(`💎 +${(r.gems | 0).toLocaleString()}${r.hostGot ? ` · ${V.host.nick}님에게도 💎` : ''}${r.left ? ` · 이곳에서 ${r.left}문제 더` : ''}`);
+            } else showToast(NJV_WHY[r && r.why] || '이번엔 보석이 없어요.');
+        } catch (e) { console.warn('[visit] quiz', e); }
+    });
+}
+window._njVisitItem = _njVisitItem;
+// 주인 쪽 — 쌓인 보석 받기 · 오늘 방명록 (앱을 열 때 · 내 3D를 열 때)
+let _njvClaimAt = 0;
+async function _njVisitClaim(showBook) {
+    try {
+        if (_njVisit || !db || !auth || !auth.currentUser || !myTag || myTag === '0000') return;
+        if (Date.now() - _njvClaimAt < 30000 && !showBook) return; _njvClaimAt = Date.now();
+        const r = await _njvCall('njVisitClaim', {});
+        if (!r || !r.ok) return;
+        window._njvMine = r;
+        if (r.gems > 0 && !_njVisit) {
+            myGems = (myGems || 0) + r.gems; updateGemDisplay(); saveGameData(); syncToFirestore();
+            setTimeout(() => { if (typeof showMissionToast === 'function') showMissionToast(`🕊️ 오늘 ${r.guest.length}명이 다녀갔어요`, `💎 +${r.gems.toLocaleString()}`); }, 1200);
+        }
+        if (showBook) _njGuestbook(myNickname, r.guest, r.week);
+    } catch (e) { console.warn('[visit] claim', e.code || e); }
+}
+setTimeout(() => { if (typeof _njVisitClaim === 'function') _njVisitClaim(false); }, 7000);   // 🕊️ 내 새 예루살렘에 다녀간 손님
+// 내 3D — 「🕊️ 오늘 n명 · 이번 주 n명 · 📖 방명록」 띠
+function _njMineBar() {
+    const st = document.querySelector('#nj3d .nj3d-stage'), r = window._njvMine; if (!st || _njVisit || !r) return;
+    if (!r.guest.length && !r.week) return;
+    let bar = st.querySelector('.nj3d-visitbar'); if (!bar) { bar = document.createElement('div'); bar.className = 'nj3d-visitbar'; st.appendChild(bar); }
+    const ov = document.getElementById('nj3d'); if (ov) ov.classList.add('nj3d-hasbar');
+    if (_njvFolded()) { _njvFoldBar(bar, _njMineBar); return; }
+    { const ov = document.getElementById('nj3d'); if (ov) ov.classList.remove('nj3d-barfold'); bar.classList.remove('folded'); }
+    bar.innerHTML = `<span>🕊️ 오늘 ${r.guest.length}명 · 이번 주 ${r.week}명</span><button class="sub" data-a="gb">📖 방명록</button><button class="sub" data-a="fold" aria-label="접기">▴</button>`;
+    bar.querySelector('[data-a="gb"]').onclick = () => _njGuestbook(myNickname, r.guest, r.week);
+    bar.querySelector('[data-a="fold"]').onclick = () => { _njvFolded(true); _njMineBar(); };
+}
 function closeNewJerusalem() { const m = document.getElementById('nj-modal'); if (m) m.remove(); }
 function _njRenderModal() {
     const cv = document.getElementById('nj-canvas'), list = document.getElementById('nj-list');
@@ -13525,6 +13686,7 @@ function claimBossMigrationGems() {
 }
 
 function saveGameData() {
+    if (_njVisit) return;   // 🕊️ 친구 세상 구경 중 — 꾸밈 기록이 그 사람 것으로 바뀌어 있다. 나올 때(_njVisitEnd) 되돌리고 저장한다
     // 리셋 중에는 저장을 중단합니다.
     if (window.isResetting) {
         console.log('저장 중단: 리셋 플래그 활성화');
@@ -14811,6 +14973,7 @@ function _isEmptySave(d) {
 }
 async function syncToFirestore() {
     if (typeof firebase === 'undefined') return;
+    if (_njVisit) return;   // 🕊️ 친구 세상 구경 중엔 올리지 않는다(위 saveGameData와 같은 까닭)
     if (typeof myPlayerId === 'undefined' || !myPlayerId) return;
     const raw = localStorage.getItem('kingsRoadSave');
     if (!raw) return;
@@ -22070,7 +22233,7 @@ function _renderGuildHome(body, guild, myStatus = {}) {
         html += `<div class="guild-member-row" style="flex-wrap:wrap;gap:2px;">
             <span class="guild-member-name">${escapeHtml(nick)}<span class="guild-member-tag"> #${tag}</span>${isThisLeader ? ' <span class="guild-leader-badge">길드장</span>' : ''}</span>
             <span style="display:flex;align-items:center;gap:4px;margin-left:auto;">
-                ${tag !== myTag ? `<button class="guild-btn-gift" onclick="openGiftFruit('${tag}', ${JSON.stringify(nick || '').replace(/"/g, '&quot;')})">🎁</button>` : ''}
+                ${tag !== myTag ? `<button class="guild-btn-gift" onclick="openGiftFruit('${tag}', ${JSON.stringify(nick || '').replace(/"/g, '&quot;')})">🎁</button><button class="guild-btn-gift" onclick="closeGuildScreen && closeGuildScreen(); openNJVisit('${tag}', ${JSON.stringify(nick || '').replace(/"/g, '&quot;')})" title="🏛️ 새 예루살렘 구경">🏛️</button>` : ''}
                 ${isLeader && tag !== myTag ? `<button class="guild-btn-kick" onclick="_kickGuildMember('${tag}',this)">추방</button>` : ''}
                 <button onclick="_editMemberMemo('${tag}')" style="background:none;border:1px solid #4a4a6a;border-radius:5px;color:${memo ? '#f1c40f' : '#7070a0'};font-size:11px;padding:2px 6px;cursor:pointer;" title="${escapeHtml(memo || '메모 없음')}">📝</button>
             </span>
@@ -34595,6 +34758,7 @@ async function _renderFriendScreen() {
                     <button class="friend-cheer-list-btn${cheered ? ' done' : ''}" onclick="_cheerFriendFromList('${tag}',this)" ${cheered ? 'disabled' : ''}>${cheered ? '✓' : '💛'}</button>
                     <button class="friend-cheer-list-btn gift${njGiftSent[tag] === _get6AMDayStr() ? ' done' : ''}" onclick="openGiftFruit('${tag}', ${JSON.stringify(nickname || '').replace(/"/g, '&quot;')})" title="🎁">🎁</button>
                     <button class="friend-cheer-list-btn" onclick="openBattle({ to: '${tag}', nick: ${JSON.stringify(nickname || '').replace(/"/g, '&quot;')} })" title="⚔️ 말씀 대결">⚔️</button>
+                    <button class="friend-cheer-list-btn" onclick="openNJVisit('${tag}', ${JSON.stringify(nickname || '').replace(/"/g, '&quot;')})" title="🏛️ 새 예루살렘 구경">🏛️</button>
                     <span class="friend-list-arrow">▶</span>
                 </div>
             </div>`;

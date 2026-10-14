@@ -37,9 +37,12 @@
         if (cur) { if (cur.suspended) window.resumeNJ3D(); return; }
         const ov = document.createElement('div');
         ov.id = 'nj3d';
+        const visit = opts && opts.visit;   // 🕊️ 친구의 새 예루살렘 구경(10/14) — game.js openNJVisit이 그 사람의 꾸밈을 잠시 끼워 두고 연다
+        if (visit) ov.classList.add('nj3d-visit');
+        const vesc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
         ov.innerHTML = `
             <div class="nj3d-head">
-                <b>${T('nj_title')}</b>
+                <b>${visit ? T('nj3d_visit_title', { nick: vesc(visit.nick) }) : T('nj_title')}</b>
                 <div class="nj3d-q" role="group"><button data-q="basic">${T('nj3d_q_basic')}</button><button data-q="high">${T('nj3d_q_high')}</button></div>
                 <button class="nj3d-x" aria-label="close">✕</button>
             </div>
@@ -122,6 +125,8 @@
 
     function build(ov, stageEl, loading, cleanups, opts) {
         const C = cur;
+        const VISIT = opts.visit || null;   // 🕊️ 구경 — 사고·꾸미고·낚고·맑히는 일은 숨기고(스타일 nj3d-visit), 만나·조개는 내지 않는다. 물건을 누르면 game.js가 문제를 낸다
+        if (VISIT && typeof VISIT.onClose === 'function') cleanups.push(VISIT.onClose);   // 닫을 때 내 꾸밈으로 되돌린다
         const listen = (target, ev, fn, opt) => { target.addEventListener(ev, fn, opt); cleanups.push(() => target.removeEventListener(ev, fn, opt)); };
         const found = Math.max(0, Math.min(12, (typeof njBuilt !== 'undefined' ? njBuilt : 0) | 0));
         const pearls = Math.max(0, Math.min(12, (typeof njPearls !== 'undefined' ? njPearls : 0) | 0));
@@ -1878,6 +1883,7 @@
         listen(cvs, 'pointerup', e => {
             if (!tap) return;
             if (proc || deco || obs) { tap = null; return; }   // 행렬을 돌려 보는 손길·꾸미기·👀 관찰 — 열매·나라 창을 띄우지 않는다
+            if (VISIT && visitTap(e)) { tap = null; return; }   // 🕊️ 구경 — 예물·꾸밈을 누르면 그 물건의 말씀 문제
             if (clamTap(e)) { tap = null; return; }   // 🐚 조개를 눌러 연다
             if (creatureTap(e)) { tap = null; return; }   // 🐠 물속 생물을 눌러 살펴봄
             if (!fruitPos.length) {   // 열매가 없으면 해안의 나라만 본다
@@ -4142,7 +4148,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const pick = (lo, hi) => { for (let t = 0; t < 60; t++) { const i = Math.floor(r() * SG.water.length), c = SG.water[i]; if (SG.ring[i] >= lo && SG.ring[i] <= hi && Math.abs(c.x) < 60) return [c.x, c.z]; } return [0, SHORE + 6]; };
             return [pick(4, 9), pick(2, 3), pick(2, 2)];
         }
-        if (typeof _njClamDay === 'function') {
+        if (typeof _njClamDay === 'function' && !VISIT) {
             const day = _njClamDay();
             clamSpots().slice(0, (day.ids || []).length).forEach(([x, z], i) => {
                 const g = new THREE.Group(), y = footFloor(x, z, 0.1);   // 비탈에서도 묻히지 않게
@@ -4267,7 +4273,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         pearlBtn.addEventListener('pointerdown', e => { e.preventDefault(); if (nearMerchant) openPearlShop(); });
 
         // ══ 🍞 만나 · 🐦 메추라기 (10/5) — 오늘의 암송을 마친 날 성 둘레 들판(출 16:13 「진 사면에」) (game.js _njMannaToday · docs/새-예루살렘.md) ══
-        const MT = typeof _njMannaToday === 'function' ? _njMannaToday() : { ids: [], ready: false };
+        const MT = (typeof _njMannaToday === 'function' && !VISIT) ? _njMannaToday() : { ids: [], ready: false };
         const MD0 = typeof _njMannaDay === 'function' ? _njMannaDay() : { got: [], quail: [], qfail: {} };
         const mannaSpots = (() => {   // 날짜로 정해지는 자리 — 산마루 안, 성벽 바깥(물길 피함), 고르게 돌아가며
             let sd = 11; for (const ch of String(MD0.day || '')) sd = (sd * 31 + ch.charCodeAt(0)) % 2147483647; sd = sd || 1;
@@ -4881,6 +4887,20 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             showHint(msg, 5000); syncWallet(); syncDexBtn();
             if (typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) { SoundEffect.playBlankLevelUp(); if (res.bonus && res.bonus.length) setTimeout(() => SoundEffect.playBlankLevelUp(), 420); }
             sprayBurst(c.x, c.g.position.y + 0.08, c.z, 12, 0);
+        }
+        function visitTap(e) {   // 🕊️ 구경 중 물건 누르기 — 꾸미기와 같은 보이지 않는 상자로 짚는다
+            if (Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > 10 || performance.now() - tap.t > 450) return false;
+            const objs = [...giftsG.children, ...decoG.children, ...setG.children].filter(o => o.userData.item);
+            if (!objs.length) return false;
+            const rr = cvs.getBoundingClientRect(), rc = new THREE.Raycaster();
+            rc.setFromCamera(new THREE.Vector2((e.clientX - rr.left) / rr.width * 2 - 1, -((e.clientY - rr.top) / rr.height) * 2 + 1), camera);
+            const hit = rc.intersectObjects(objs.map(o => { if (!o.userData.pick) addPick(o, o.userData.item.kind === 'decor' ? DECO_BOX[o.userData.item.k] : null); return o.userData.pick; }), false);
+            if (!hit.length) return false;
+            let o = hit[0].object; while (o && !o.userData.item) o = o.parent;
+            if (!o) return false;
+            const it = o.userData.item;
+            if (typeof window._njVisitItem === 'function') window._njVisitItem({ kind: it.kind, id: it.id, k: it.k });
+            return true;
         }
         function clamTap(e) {   // 🐚 조개를 눌러 연다(10/10) — 화면에서 60px 안, 10칸 안
             if (!walk || !tap || clamQ || !clams.length) return false;

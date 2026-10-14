@@ -7391,6 +7391,39 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 /* 👀 바다 생물 관찰 (2026-10-05) — 바다에서 누르면 관찰 모드(걷기 단추를 감추고 아래 판), 도감에서 누르면 작은 물속 무대 */
 #nj3d.nj3d-observing .nj3d-walk, #nj3d.nj3d-observing .nj3d-mode, #nj3d.nj3d-observing .nj3d-go, #nj3d.nj3d-observing .nj3d-deco,
 #nj3d.nj3d-observing .nj3d-holo, #nj3d.nj3d-observing .nj3d-stage canvas.nj3d-mini, #nj3d.nj3d-observing .nj3d-dexbtn { display: none !important; }
+/* 🕊️ 친구의 새 예루살렘 구경(10/14) — 사고·꾸미고·낚고·맑히고·사신과 이야기하는 일은 숨긴다(걷기·점프·탈것·완성된 모습은 그대로) */
+#nj3d.nj3d-visit .nj3d-deco, #nj3d.nj3d-visit .nj3d-jetbuy, #nj3d.nj3d-visit .nj3d-fishbtn, #nj3d.nj3d-visit .nj3d-pourbtn,
+#nj3d.nj3d-visit .nj3d-clambtn, #nj3d.nj3d-visit .nj3d-pearlbtn, #nj3d.nj3d-visit .nj3d-talk, #nj3d.nj3d-visit .nj3d-dexbtn,
+#nj3d.nj3d-visit .nj3d-tackbtn { display: none !important; }
+#nj3d .nj3d-visitbar { position: absolute; left: 50%; transform: translateX(-50%); top: 8px; z-index: 5; display: flex; gap: 6px; align-items: center;
+    background: rgba(15,26,51,0.82); color: #f3e3b0; border-radius: 999px; padding: 6px 8px 6px 14px; font-size: 0.85rem; font-weight: bold; white-space: nowrap; max-width: calc(100% - 20px); }
+/* 띠 자리만큼 위쪽 버튼들을 내린다(구경 중 · 내 세상에 방명록 띠가 있을 때) */
+#nj3d.nj3d-visit .nj3d-mode, #nj3d.nj3d-visit .nj3d-go, #nj3d.nj3d-visit .nj3d-holo, #nj3d.nj3d-visit .nj3d-wallet, #nj3d.nj3d-visit .nj3d-stage canvas.nj3d-mini,
+#nj3d.nj3d-hasbar .nj3d-mode, #nj3d.nj3d-hasbar .nj3d-go, #nj3d.nj3d-hasbar .nj3d-deco, #nj3d.nj3d-hasbar .nj3d-holo, #nj3d.nj3d-hasbar .nj3d-wallet, #nj3d.nj3d-hasbar .nj3d-stage canvas.nj3d-mini, #nj3d.nj3d-hasbar .nj3d-dexbtn { margin-top: 46px; }
+/* 접으면 작은 「🕊️ ▾」 — 오른쪽 위(보석 줄 아래·미니맵 위), 버튼들은 제자리로 */
+#nj3d .nj3d-visitbar.folded { left: auto; right: 10px; transform: none; top: 52px; padding: 0; background: none; }
+#nj3d .nj3d-visitbar.folded button.sub { background: rgba(15,26,51,0.85); color: #f3e3b0; padding: 7px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+#nj3d.nj3d-barfold .nj3d-mode, #nj3d.nj3d-barfold .nj3d-go, #nj3d.nj3d-barfold .nj3d-deco, #nj3d.nj3d-barfold .nj3d-holo, #nj3d.nj3d-barfold .nj3d-wallet,
+#nj3d.nj3d-barfold .nj3d-stage canvas.nj3d-mini, #nj3d.nj3d-barfold .nj3d-dexbtn { margin-top: 0; }
+#nj3d.nj3d-barfold .nj3d-stage canvas.nj3d-mini { margin-top: 40px; }
+#nj3d .nj3d-visitbar button { border: none; border-radius: 999px; padding: 6px 11px; font-weight: bold; font-size: 0.82rem; cursor: pointer; background: #d4a73a; color: #1a1408; }
+#nj3d .nj3d-visitbar button.sub { background: rgba(255,255,255,0.14); color: #fff; }
+.njv-pop { position: fixed; inset: 0; z-index: 10010; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); padding: 16px; }
+.njv-card { width: 100%; max-width: 380px; max-height: 80vh; overflow-y: auto; background: #16202e; color: #e8edf3; border: 1px solid #2c3b52; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.njv-card h3 { margin: 0; font-size: 1.02rem; color: #f3cf6b; }
+.njv-card .ref { font-size: 0.82rem; color: #8fa3bd; }
+.njv-card .txt { font-size: 1rem; line-height: 1.7; word-break: keep-all; }
+.njv-card .gap { display: inline-block; min-width: 3em; border-bottom: 2px solid #d4a73a; }
+.njv-card .opts { display: flex; flex-direction: column; gap: 7px; }
+.njv-card .opts button, .njv-card .row button { background: #1d2a3c; color: #e8edf3; border: 1px solid #2f4260; border-radius: 12px; padding: 11px; font-size: 0.98rem; cursor: pointer; }
+.njv-card .opts button.ok { background: #1f5d3a; border-color: #2f8a57; }
+.njv-card .opts button.no { background: #6b2430; border-color: #9b3443; }
+.njv-card .gb { display: flex; flex-direction: column; gap: 6px; }
+.njv-card .gb div { display: flex; gap: 8px; align-items: baseline; background: #1d2a3c; border-radius: 10px; padding: 8px 10px; font-size: 0.88rem; }
+.njv-card .gb b { color: #f3cf6b; min-width: 2.2em; }
+.njv-card .gb span.m { color: #c9d4e2; flex: 1; }
+.njv-card .close { align-self: stretch; background: #2a3a50; color: #dbe4ee; border: none; border-radius: 12px; padding: 11px; font-weight: bold; cursor: pointer; }
+
 .nj3d-obs, .nj3d-watch { position: absolute; left: 50%; transform: translateX(-50%); width: min(400px, calc(100% - 24px)); box-sizing: border-box;
     background: rgba(10, 30, 46, 0.9); border: 1px solid rgba(159, 230, 243, 0.45); border-radius: 14px; padding: 10px 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.45); color: #e6eef8; }
 .nj3d-obs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 6; }
