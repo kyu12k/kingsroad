@@ -1569,7 +1569,7 @@
             }
             spray.visible = live; if (live) sprayGeo.attributes.position.needsUpdate = true;
         }
-        let walk = false, jetOn = false, camYaw = 0, camPitch = 0.12, camDist = 0.95, walkT = 0, gait = 0;
+        let walk = false, jetOn = false, jetAir = false, camYaw = 0, camPitch = 0.12, camDist = 0.95, walkT = 0, gait = 0;
         // 팔다리가 있는 순례자 (9/29) — 엉덩이·어깨를 축으로 흔들어 걷기·달리기·점프·날기 자세를 만든다. 앞은 -z
         const pilgrim = new THREE.Group(), body = new THREE.Group(); pilgrim.add(body);
         const limbs = {};
@@ -1972,7 +1972,8 @@
         // 숨겨 둔 동안(열매 백지)엔 스페이스가 점프가 되면 안 된다 — C.suspended
         listen(window, 'keydown', e => { if (!walk || C.suspended) return; inp.keys[e.code] = true; if (e.code === 'Space') { if (!e.repeat) { jumpHeld = true; doJump(); } e.preventDefault(); } if (e.code === 'Escape') { if (dexWatch) closeWatch(); else if (obs) obsClose(); else closeNJ3D(); } });
         listen(window, 'keyup', e => { inp.keys[e.code] = false; if (e.code === 'Space') jumpHeld = false; if (e.code === 'KeyC' || e.code === 'KeyQ') diveHeld = false; });
-        listen(window, 'keydown', e => { if (walk && !C.suspended && (e.code === 'KeyC' || e.code === 'KeyQ')) diveHeld = true; });   // 🤿 잠수 Q(10/10 사용자) · C도
+        listen(window, 'keydown', e => { if (walk && !C.suspended && (e.code === 'KeyC' || e.code === 'KeyQ')) diveHeld = true; });
+        listen(window, 'keydown', e => { if (walk && !C.suspended && e.code === 'KeyF' && !e.repeat) jetToggle(); });   // 🚀 F = 제트팩 켜고 끄기(10/14)   // 🤿 잠수 Q(10/10 사용자) · C도
         { const db = ov.querySelector('.nj3d-divebtn');
           db.addEventListener('pointerdown', e => { e.preventDefault(); diveHeld = true; try { db.setPointerCapture(e.pointerId); } catch (_) {} });
           ['pointerup', 'pointercancel'].forEach(tp => db.addEventListener(tp, () => { diveHeld = false; })); }
@@ -1980,8 +1981,26 @@
           jb.addEventListener('pointerdown', e => { e.preventDefault(); jumpHeld = true; try { jb.setPointerCapture(e.pointerId); } catch (_) {} doJump(); });
           ['pointerup', 'pointercancel'].forEach(tp => jb.addEventListener(tp, () => { jumpHeld = false; })); }
         const flyBtn = ov.querySelector('.nj3d-fly'), jetBuy = ov.querySelector('.nj3d-jetbuy');
-        flyBtn.addEventListener('pointerdown', e => { e.preventDefault(); jetOn = true; flyBtn.setPointerCapture(e.pointerId); });
-        ['pointerup', 'pointercancel'].forEach(tp => flyBtn.addEventListener(tp, () => { jetOn = false; }));
+        /* 🔤 상태에 따라 버튼 글자(10/14 사용자) — 뭍·공중·제트팩·물·탈것. 바뀔 때만 다시 그린다 */
+        const jumpBtnEl = ov.querySelector('.nj3d-jump'), diveBtnEl = ov.querySelector('.nj3d-divebtn'), btnLab = { j: '', d: '', f: '' };
+        const keyTag = k => `<span class="nj3d-key">${k}</span>`;
+        function btnLabels() {
+            const mk = ride.on ? kindOfMount(ride.k) : '', water = !ride.on && (isUnder() || swimNow());
+            const j = jetOn ? 'nj3d_lb_up' : (water || mk === 'sub') ? 'nj3d_lb_swimup' : mk === 'fly' ? 'nj3d_lb_up'
+                : (ride.on && !P.onGround && mk !== 'boat') ? 'nj3d_lb_leap' : (!ride.on && !P.onGround) ? (gliding ? 'nj3d_lb_fold' : 'nj3d_lb_glide') : 'nj3d_jump';
+            const d = jetOn ? 'nj3d_lb_down' : 'nj3d_dive', f = jetOn ? 'nj3d_lb_jetoff' : 'nj3d_fly';
+            if (j !== btnLab.j) { btnLab.j = j; jumpBtnEl.innerHTML = T(j) + keyTag('Space'); }
+            if (d !== btnLab.d) { btnLab.d = d; diveBtnEl.innerHTML = T(d) + keyTag('Q'); }
+            if (f !== btnLab.f) { btnLab.f = f; flyBtn.innerHTML = T(f) + keyTag('F'); }
+        }
+        /* 🚀 제트팩 = 켜고 끄기(10/14 사용자: 앞뒤좌우가 어렵다 — 바닷속처럼). 켜면 손을 떼도 그 높이에 떠 있고, 점프를 누르고 있으면 올라가고
+           잠수를 누르고 있으면 내려간다. 다시 누르면 꺼진다(땅에 내려앉아도 꺼진다). 예전엔 누르고 있는 동안만 오르고 떼면 바로 떨어졌다 */
+        const jetToggle = (on) => {
+            if (!hasJet()) return;
+            jetOn = on == null ? !jetOn : !!on; jetAir = false; flyBtn.classList.toggle('on', jetOn);
+            if (jetOn) { if (ride.on) mountDown(); gliding = false; if (P.vy < 0) P.vy = 0; showHint(T('nj3d_jet_hover'), 3200); }
+        };
+        flyBtn.addEventListener('pointerdown', e => { e.preventDefault(); jetToggle(); });
         const syncJetUI = () => {
             const own = hasJet(); jet.visible = own; flyBtn.hidden = !own; jetBuy.hidden = own;
             jetBuy.innerHTML = T('nj3d_jet_buy', { cost: JET_COST.toLocaleString() });
@@ -2074,7 +2093,7 @@
             }
             if (!ride.obj || ride.k !== k) await refreshMount();
             if (!ride.obj || cur !== C) return;
-            ride.on = true; ride.wait = false; gliding = false; jetOn = false; ride.obj.visible = true;
+            ride.on = true; ride.wait = false; gliding = false; jetOn = false; flyBtn.classList.remove('on'); ride.obj.visible = true;
             ride.obj.position.set(P.x, P.y, P.z); ride.obj.rotation.y = P.face + Math.PI / 2; ride.px = P.x; ride.pz = P.z;
             if (kindOfMount(k) === 'sub') { P.y = SEA_Y - 0.35; P.vy = 0; P.onGround = false; ride.obj.position.y = P.y; }   // 🚢 물속으로
             syncRideUI(); showHint(kindOfMount(k) === 'sub' ? T('nj3d_sub_on') : T('nj3d_ride_on', { name: _njMountObj(k) }), 3600);
@@ -3963,7 +3982,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (kx && ky) { kx *= Math.SQRT1_2; ky *= Math.SQRT1_2; }
             const jx = inp.jx + kx * kv;
             const jy = inp.jy + ky * kv;
-            const fly = hasJet() && (jetOn || k.KeyF);   // 🚀 날기 = F (Shift는 달리기로)
+            const fly = hasJet() && jetOn;   // 🚀 날기 = 버튼·F로 켜고 끈다(10/14)
             if (fly && ride.on) mountDown();   // 날기 버튼 = 내리며 제트팩
             const fx = -Math.sin(camYaw), fz = -Math.cos(camYaw), rx = Math.cos(camYaw), rz = -Math.sin(camYaw);
             let mx = fx * (-jy) + rx * jx, mz = fz * (-jy) + rz * jx;
@@ -3984,7 +4003,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (MD && MD.kind === 'sub' && !moving && P.onGround) P.vy = Math.max(P.vy, 0);
             const sp = swim ? (run ? 1.35 : 0.85) : glide ? 2.6 * (1 + (WG.bonus || 0)) : (MD && MD.kind === 'fly') ? RUN_V * (P.onGround ? (MD.groundSpeed ?? 0.6) : mSpd) * (run || !P.onGround ? 1 : 0.55)   // 땅에선 느리게, 하늘에선 빠르게
                 : MD ? RUN_V * mSpd * (run ? 1 : 0.55) * (inRiver && !MD.water ? 0.8 : 1)   // 🐴 탄 채로 — 끝까지 밀면 달리고, 덜 밀면 걷는다(공중에서도 그 빠르기)
-                : (fly || !P.onGround) ? WALK_V * 1.35 : (run ? RUN_V : WALK_V) * (inRiver ? 0.65 : 1);
+                : fly ? RUN_V * 1.15 : !P.onGround ? WALK_V * 1.35 : (run ? RUN_V : WALK_V) * (inRiver ? 0.65 : 1);   // 🚀 떠 있을 땐 달리기보다 조금 빠르게
             const nx = P.x + mx * sp * dt, nz = P.z + mz * sp * dt;
             const boatOn = ride.on && MD && (MD.kind === 'boat' || MD.kind === 'sub');
             const landMount = ride.on && MD && !['boat', 'sub', 'fly'].includes(MD.kind || 'animal');   // 🐴 땅 탈것은 바다에 못 든다 — 내려서 헤엄(10/5: 이제 바다는 걷는 데가 아니다)
@@ -4015,13 +4034,14 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 if (!diveHintShown) { diveHintShown = true; showHint(T('nj3d_dive_hint'), 3800); }   // 떨어져 잠겨도 「점프 = 위로」를 알게
             }
             else if (FD) { const want = jumpHeld ? (FD.climb || 1) : P.onGround ? 0 : -(FD.sink || 0.5); P.vy += (want - P.vy) * Math.min(1, dt * 3); }
-            else if (fly) { P.vy = Math.min(P.vy + 6.5 * dt, 1.4); gliding = false; }
+            else if (fly) { const want = jumpHeld ? 1.5 : diveHeld ? -1.3 : 0; P.vy += (want - P.vy) * Math.min(1, dt * 7); gliding = false; }   // 🚀 떠 있기 — 점프 위로 · 잠수 아래로 · 둘 다 떼면 그 높이
             else if (glide) P.vy = Math.max(P.vy - G * 0.18 * dt, -(WG.sink || 0.42));   // 천천히 내려앉는다 — 좋은 날개일수록 덜 떨어진다
             else P.vy -= G * dt;
             const prevY = P.y, fallV = P.vy;
             P.y = Math.min(SUB ? SEA_Y - 0.12 : FD ? (FD.maxY || 40) : 18, P.y + P.vy * dt);   // 🚢 잠수함은 수면 바로 아래까지
             const inSwim = !ride.on && swimWater(P.x, P.z), g = inSwim ? seabed(P.x, P.z) : groundAt(P.x, P.z, P.y);   // 🏊 순례자에겐 수면이 땅이 아니다(배·장식엔 그대로 땅)
             if (P.y <= g) { P.y = g; if (P.vy < 0) P.vy = 0; P.onGround = true; }
+            if (fly) { if (!P.onGround) jetAir = true; else if (jetAir && !jumpHeld) jetToggle(false); }   // 🚀 날다가 땅에 내려앉으면 꺼진다
             else if (!fly && !inSwim && wasGround && P.vy <= 0 && P.y - g < 0.45) { P.y = g; P.vy = 0; P.onGround = true; }   // 내리막은 발을 땅에 붙인다 — 한 걸음마다 살짝 떴다 떨어져 콩콩 튀었고, 늘 공중이라 점프도 안 됐다(9/30)
             else P.onGround = false;
             if (!wasGround && P.onGround && wetAt(P.x, P.z)) splash(P.x, P.z, true);   // 물에 떨어짐
@@ -4927,7 +4947,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         }
         // 🧪 헤드리스 확인용 — localStorage kr_debug3d = '1'일 때만. 나라 n의 해안 땅(뭍 안쪽 r)으로 순례자를 옮긴다(10/13 포도밭·땅 띠 확인)
         try { if (localStorage.getItem('kr_debug3d') === '1') window._nj3dGo = (n, r, yaw) => { const [X, Z] = natMid(n, r || 12); P.x = X; P.z = Z; P.y = WT(X, Z) + 0.3; P.vy = 0; P.face = camYaw = (yaw == null ? Math.PI : yaw); }; } catch (e) { }
-        try { if (localStorage.getItem('kr_debug3d') === '1') window._nj3dInfo = (dx, dz) => { const x = P.x + (dx || 0), z = P.z + (dz || 0); return { x, z, wt: WT(x, z), sea: SEA_Y, coast: coastZ(x) }; }; } catch (e) { }
+        try { if (localStorage.getItem('kr_debug3d') === '1') window._nj3dInfo = (dx, dz) => { const x = P.x + (dx || 0), z = P.z + (dz || 0); return { x, z, y: P.y, wt: WT(x, z), sea: SEA_Y, coast: coastZ(x) }; }; } catch (e) { }
         function creatureTap(e) {   // 👆 눌러서 만남 — 물속에서 2.4 안, 화면에서 70px 안의 가장 가까운 아이
             if (!walk || !isUnder() || !tap || dexQ) return false;
             if (Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > 10 || performance.now() - tap.t > 450) return false;
@@ -5207,7 +5227,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                     for (let i = 0; i < BUB; i++) { const u = (tt * 0.55 + i / BUB) % 1, bi = i * 3; bubPos[bi] = P.x + Math.sin(i * 2.3 + tt * 2) * 0.02; bubPos[bi + 1] = P.y + 0.2 + u * 0.6; bubPos[bi + 2] = P.z + Math.cos(i * 1.7 + tt * 2) * 0.02; }
                     bubG.attributes.position.needsUpdate = true;
                 }
-                diveBtn.hidden = !(walk && seaE(P.x, P.z) < 1 && (!ride.on || kindOfMount(ride.k) === 'sub'));
+                diveBtn.hidden = !(walk && ((seaE(P.x, P.z) < 1 && (!ride.on || kindOfMount(ride.k) === 'sub')) || jetOn));   // 🚀 제트팩을 켜면 「잠수」 = 내려가기
+                if (walk) btnLabels();
             }
             skyDome.position.copy(camera.position);
             wallTick(now / 1000);   // 🧱 맵 끝 막
