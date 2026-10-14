@@ -7418,6 +7418,8 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .njv-card .opts button, .njv-card .row button { background: #1d2a3c; color: #e8edf3; border: 1px solid #2f4260; border-radius: 12px; padding: 11px; font-size: 0.98rem; cursor: pointer; }
 .njv-card .opts button.ok { background: #1f5d3a; border-color: #2f8a57; }
 .njv-card .opts button.no { background: #6b2430; border-color: #9b3443; }
+.njv-card .row { display: flex; gap: 6px; }
+.njv-card .njv-in { flex: 1; min-width: 0; background: #0f1724; color: #e8edf3; border: 1px solid #2f4260; border-radius: 10px; padding: 10px; font-size: 16px; }
 .njv-card .gb { display: flex; flex-direction: column; gap: 6px; }
 .njv-card .gb div { display: flex; gap: 8px; align-items: baseline; background: #1d2a3c; border-radius: 10px; padding: 8px 10px; font-size: 0.88rem; }
 .njv-card .gb b { color: #f3cf6b; min-width: 2.2em; }

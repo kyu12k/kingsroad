@@ -1720,7 +1720,7 @@ exports.battleAnswer = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
 const NJV_FIELDS = ['njBuilt', 'njPearls', 'njGifts', 'njDecor', 'njSets', 'njNat', 'njSea', 'njVines'];
 const NJV_QUIZ_GEM = 300, NJV_HOST_GEM = 500, NJV_HOST_DAILY = 50000, NJV_PER_HOST = 3, NJV_HOSTS = 5, NJV_MSGS = 6;
 const njvDay = () => new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);   // KST 오전 6시 기준 날짜(+9 −6)
-const njvGuest = list => list.map(x => ({ nick: x.nick, at: x.at, m: x.m }));
+const njvGuest = list => list.map(x => ({ nick: x.nick, at: x.at, m: x.m, t: x.t || '' }));   // t = 친구가 직접 쓴 인사(10/14)
 async function _njvPre(request, myTag, hostTag) {
     if (!_bGoogle(request)) return { ok: false, why: 'google' };
     const u = await verifyTag(request.auth.uid, myTag);
@@ -1733,7 +1733,7 @@ async function _njvPre(request, myTag, hostTag) {
     const friend = Array.isArray(u.friends) && u.friends.includes(host);
     const guild = !!(u.guildId && hl.guildId && u.guildId === hl.guildId);
     if (!friend && !guild) return { ok: false, why: 'rel' };
-    return { ok: true, u, me, host, hl, nick: _bNick(u.nickname) };
+    return { ok: true, u, me, host, hl, friend, nick: _bNick(u.nickname) };
 }
 exports.njVisitOpen = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
@@ -1761,20 +1761,23 @@ exports.njVisitOpen = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
         }
         order = (i < 0 ? list.length : i + 1); wkN = wk.n | 0;
     });
-    return { ok: true, world, verses, host: { tag: p.host, nick: _bNick(p.hl.nickname) }, guest: njvGuest(list), order, week: wkN };
+    return { ok: true, world, verses, host: { tag: p.host, nick: _bNick(p.hl.nickname) }, guest: njvGuest(list), order, week: wkN, friend: p.friend };
 });
 exports.njVisitSign = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
-    const { myTag, hostTag, m } = request.data || {};
+    const { myTag, hostTag, m, text } = request.data || {};
     const p = await _njvPre(request, myTag, hostTag);
     if (!p.ok) return p;
-    const mi = parseInt(m, 10); if (!(mi >= 0 && mi < NJV_MSGS)) throw new HttpsError('invalid-argument', 'm');
+    // 친구는 직접 쓴 인사(40자), 친구가 아닌 길드원은 정해진 인사만(10/14 사용자)
+    const tx0 = typeof text === 'string' ? text.replace(/[\u0000-\u001f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 40) : '';
+    if (tx0 && !p.friend) return { ok: false, why: 'textfriend' };
+    const mi = tx0 ? -1 : parseInt(m, 10); if (!tx0 && !(mi >= 0 && mi < NJV_MSGS)) throw new HttpsError('invalid-argument', 'm');
     const dref = db.collection('njVisits').doc(p.host).collection('days').doc(njvDay());
     let out = { ok: false, why: 'novisit' };
     await db.runTransaction(async tx => {
         const d = await tx.get(dref); const list = d.exists && Array.isArray(d.data().list) ? d.data().list.slice() : [];
         const i = list.findIndex(x => x.tag === p.me); if (i < 0) return;
-        list[i] = Object.assign({}, list[i], { m: mi }); tx.set(dref, { list }, { merge: true });
+        list[i] = Object.assign({}, list[i], { m: mi, t: tx0 }); tx.set(dref, { list }, { merge: true });
         out = { ok: true, guest: njvGuest(list) };
     });
     return out;

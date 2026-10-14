@@ -9916,7 +9916,7 @@ window._battleInboxRefresh = _battleInboxRefresh;
    **저장을 멈춘다**(saveGameData·syncToFirestore가 _njVisit이면 돌아감). 3D를 닫으면 _njVisitEnd가 내 것으로 되돌리고 그때 저장한다 */
 const NJV_MSGS = ['🕊️ 평강이 있기를', '✨ 은혜로운 곳이네요', '🙏 함께 암송해요', '🌿 아름답게 꾸미셨네요', '💛 또 올게요', '👑 주님께 영광을'];
 const NJV_WHY = { google: '친구의 새 예루살렘은 구글 계정을 연결한 분끼리 들어갈 수 있어요.', rel: '친구나 같은 길드원의 새 예루살렘에만 들어갈 수 있어요.', self: '내 새 예루살렘이에요.', nouser: '들어갈 수 없는 곳이에요.',
-    hosts: '오늘은 다섯 곳의 문제를 다 풀었어요. 구경은 계속할 수 있어요.', items: '이곳의 문제는 오늘 세 개까지예요. 구경은 계속할 수 있어요.', same: '이미 푼 물건이에요.' };
+    textfriend: '직접 쓴 인사는 친구에게만 남길 수 있어요.', hosts: '오늘은 다섯 곳의 문제를 다 풀었어요. 구경은 계속할 수 있어요.', items: '이곳의 문제는 오늘 세 개까지예요. 구경은 계속할 수 있어요.', same: '이미 푼 물건이에요.' };
 const _njvCall = (name, data) => firebase.app().functions('asia-northeast3').httpsCallable(name)(Object.assign({ myTag }, data)).then(r => r.data);
 const _njvEsc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 var _njVisit = null;   // var — saveGameData가 먼저 불려도 TDZ에 걸리지 않게
@@ -9936,7 +9936,7 @@ async function openNJVisit(tag, nick) {
     if (typeof closeFriendScreen === 'function') closeFriendScreen();
     const arr = v => Array.isArray(v) ? v : [], obj = v => (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
     const keep = { njBuilt, njPearls, njGifts, njDecor, njSets, njNat, njSea, njVines, njFruits, njGiftFruits, njClams, njManna };
-    _njVisit = { host: r.host, verses: arr(r.verses), guest: arr(r.guest), order: r.order | 0, week: r.week | 0, keep, signed: false };
+    _njVisit = { host: r.host, verses: arr(r.verses), guest: arr(r.guest), order: r.order | 0, week: r.week | 0, keep, signed: false, friend: !!r.friend };
     const W = obj(r.world);
     njBuilt = W.njBuilt | 0; njPearls = W.njPearls | 0; njGifts = arr(W.njGifts); njDecor = arr(W.njDecor); njSets = arr(W.njSets);
     njNat = obj(W.njNat); njSea = typeof W.njSea === 'string' ? W.njSea : ''; njVines = arr(W.njVines); njFruits = {}; njGiftFruits = [];
@@ -9981,23 +9981,32 @@ function _njPop(html) {
 // 방명록 — 오늘(오전 6시부터) 일찍 다녀간 순서
 function _njGuestbook(hostNick, list, week) {
     const hm = ts => { const d = new Date(ts); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
-    const rows = (list || []).map((g, i) => `<div><b>${i + 1}</b><span>${_njvEsc(g.nick)}</span><span class="m">${g.m >= 0 && NJV_MSGS[g.m] ? NJV_MSGS[g.m] : ''}</span><span class="ref">${hm(g.at)}</span></div>`).join('');
+    // 인사 — 친구가 직접 쓴 말 · 고른 인사 · 안 남기고 떠났으면 정해진 인사 중 하나(사람·날마다 늘 같은 것, 10/14 사용자: 안 다녀간 것처럼 보이지 않게)
+    const say = g => { if (g.t) return _njvEsc(g.t); if (g.m >= 0 && NJV_MSGS[g.m]) return NJV_MSGS[g.m]; let h = 3; for (const ch of String(g.nick || '') + (g.at || 0)) h = (h * 31 + ch.charCodeAt(0)) % 100003; return NJV_MSGS[h % NJV_MSGS.length]; };
+    const rows = (list || []).map((g, i) => `<div><b>${i + 1}</b><span>${_njvEsc(g.nick)}</span><span class="m">${say(g)}</span><span class="ref">${hm(g.at)}</span></div>`).join('');
     const ov = _njPop(`<h3>📖 ${_njvEsc(hostNick)}님의 방명록</h3><div class="ref">오늘 오전 6시부터 다녀간 순서${week ? ` · 이번 주 ${week}명` : ''}</div>
         <div class="gb">${rows || '<div><span class="m">아직 아무도 다녀가지 않았어요</span></div>'}</div><button class="close">닫기</button>`);
     ov.querySelector('.close').onclick = () => ov.remove();
 }
 function _njVisitSignPick() {
     const V = _njVisit; if (!V) return;
-    const ov = _njPop(`<h3>👋 ${_njvEsc(V.host.nick)}님께 인사 남기기</h3><div class="opts">${NJV_MSGS.map((m, i) => `<button data-m="${i}">${m}</button>`).join('')}</div><button class="close">닫기</button>`);
+    // 친구는 직접 쓰기(40자)도, 친구가 아닌 길드원은 정해진 인사만(10/14 사용자)
+    const ov = _njPop(`<h3>👋 ${_njvEsc(V.host.nick)}님께 인사 남기기</h3>
+        ${V.friend ? `<div class="row"><input class="njv-in" maxlength="40" placeholder="직접 쓰기 (40자까지)"><button data-free="1">남기기</button></div><div class="ref">또는 골라서</div>` : ''}
+        <div class="opts">${NJV_MSGS.map((m, i) => `<button data-m="${i}">${m}</button>`).join('')}</div><button class="close">닫기</button>`);
     ov.querySelector('.close').onclick = () => ov.remove();
-    ov.querySelectorAll('[data-m]').forEach(b => b.onclick = async () => {
+    const send = async (payload) => {
         ov.querySelectorAll('button').forEach(x => x.disabled = true);
         try {
-            const r = await _njvCall('njVisitSign', { hostTag: V.host.tag, m: +b.dataset.m });
-            if (r && r.ok) { V.signed = true; V.guest = r.guest || V.guest; _njVisitBar(); ov.remove(); showToast('📖 방명록에 인사를 남겼어요'); if (typeof _featNote === 'function') _featNote('nv_sign'); return; }
+            const r = await _njvCall('njVisitSign', Object.assign({ hostTag: V.host.tag }, payload));
+            if (r && r.ok) { V.signed = true; V.guest = r.guest || V.guest; _njVisitBar(); ov.remove(); showToast('📖 방명록에 인사를 남겼어요'); if (typeof _featNote === 'function') _featNote(payload.text ? 'nv_text' : 'nv_sign'); return; }
+            if (r && r.why) { ov.remove(); showGemToast(0, NJV_WHY[r.why] || '인사를 남기지 못했어요.', true); return; }
         } catch (e) { console.warn('[visit] sign', e); }
         ov.remove(); showGemToast(0, '인사를 남기지 못했어요.', true);
-    });
+    };
+    ov.querySelectorAll('[data-m]').forEach(b => b.onclick = () => send({ m: +b.dataset.m }));
+    const fb = ov.querySelector('[data-free]');
+    if (fb) fb.onclick = () => { const t = (ov.querySelector('.njv-in').value || '').trim(); if (!t) { ov.querySelector('.njv-in').focus(); return; } send({ text: t.slice(0, 40) }); };
 }
 // 물건을 눌렀을 때 — 그 물건의 말씀 문제
 function _njVisitItem(it) {
