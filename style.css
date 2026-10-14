@@ -7395,7 +7395,7 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 #nj3d.nj3d-observing .nj3d-walk, #nj3d.nj3d-observing .nj3d-mode, #nj3d.nj3d-observing .nj3d-go, #nj3d.nj3d-observing .nj3d-deco,
 #nj3d.nj3d-observing .nj3d-holo, #nj3d.nj3d-observing .nj3d-stage canvas.nj3d-mini, #nj3d.nj3d-observing .nj3d-dexbtn { display: none !important; }
 /* 🕊️ 친구의 새 예루살렘 구경(10/14) — 사고·꾸미고·낚고·맑히고·사신과 이야기하는 일은 숨긴다(걷기·점프·탈것·완성된 모습은 그대로) */
-#nj3d.nj3d-visit .nj3d-deco, #nj3d.nj3d-visit .nj3d-jetbuy, #nj3d.nj3d-visit .nj3d-fishbtn, #nj3d.nj3d-visit .nj3d-pourbtn,
+#nj3d.nj3d-visit .nj3d-deco, #nj3d.nj3d-visit .nj3d-jetbuy, #nj3d.nj3d-visit .nj3d-jettry, #nj3d.nj3d-visit .nj3d-fishbtn, #nj3d.nj3d-visit .nj3d-pourbtn,
 #nj3d.nj3d-visit .nj3d-clambtn, #nj3d.nj3d-visit .nj3d-pearlbtn, #nj3d.nj3d-visit .nj3d-talk, #nj3d.nj3d-visit .nj3d-dexbtn,
 #nj3d.nj3d-visit .nj3d-tackbtn { display: none !important; }
 #nj3d .nj3d-visitbar { position: absolute; left: 50%; transform: translateX(-50%); top: 8px; z-index: 5; display: flex; gap: 6px; align-items: center;
@@ -7833,3 +7833,7 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 /* 모으는 25초 동안 — 안내가 맨 위, 그 자리의 버튼·미니맵은 잠깐 숨김(별과 조각이 화면 가운데라 가렸다) */
 #nj3d.nj3d-starrun .nj3d-mode, #nj3d.nj3d-starrun .nj3d-go, #nj3d.nj3d-starrun .nj3d-holo, #nj3d.nj3d-starrun .nj3d-deco, #nj3d.nj3d-starrun .nj3d-wallet,
 #nj3d.nj3d-starrun .nj3d-stage canvas.nj3d-mini, #nj3d.nj3d-starrun .nj3d-dexbtn, #nj3d.nj3d-starrun .nj3d-visitbar { visibility: hidden; }
+
+/* 🚀 제트팩 1분 체험 (10/14) */
+#nj3d .nj3d-jettry { background: linear-gradient(135deg, #ffb35c, #ff7a59); color: #fff; }
+#nj3d .nj3d-fly .nj3d-jt { display: block; font-size: 0.72em; font-weight: 800; margin-top: 2px; font-variant-numeric: tabular-nums; }

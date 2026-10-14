@@ -740,7 +740,11 @@ const LANG = {
         nj3d_jet_buy: '🚀 제트팩<br>💎 {cost}',
         nj3d_jet_confirm: '💎 {cost}개로 제트팩을 살까요? 한 번 사면 계속 쓸 수 있어요',
         nj3d_jet_need: '보석이 {n}개 더 필요해요',
-        nj3d_jet_got: '🚀 제트팩이 생겼어요 — 「날기」를 누르고 있으면 떠올라요',
+        nj3d_jet_got: '🚀 제트팩이 생겼어요 — 「날기」로 켜고, 점프로 올라가요',
+        nj3d_jet_try: '🚀 1분 체험<br>오늘 한 번',
+        nj3d_jet_trial_go: '🚀 제트팩 1분 체험 — 점프로 올라가고 🤿 잠수로 내려가요 · 둘 다 떼면 그 높이에 떠 있어요',
+        nj3d_jet_trial_land: '⏳ 체험 시간이 끝났어요 — 천천히 내려앉아요',
+        nj3d_jet_trial_end: '🚀 체험이 끝났어요 · 💎 {cost}개로 내 것이 되면 언제든 날 수 있어요 (체험은 내일 오전 6시에 다시)',
         nj3d_q_basic: '기본',
         nj3d_q_high: '고급 ✦',
         nj3d_slow: '폰이 버거워해서 기본 화질로 바꿨어요',
@@ -2057,7 +2061,11 @@ const LANG = {
         nj3d_jet_buy: '🚀 Jetpack<br>💎 {cost}',
         nj3d_jet_confirm: 'Buy a jetpack for 💎 {cost}? It is yours to keep',
         nj3d_jet_need: 'Need {n} more gems',
-        nj3d_jet_got: '🚀 Jetpack ready — hold Fly to rise',
+        nj3d_jet_got: '🚀 Jetpack ready — turn it on with Fly, Jump goes up',
+        nj3d_jet_try: '🚀 1-min trial<br>once a day',
+        nj3d_jet_trial_go: '🚀 1-minute jetpack trial — Jump goes up, 🤿 Dive goes down · let go of both to hover',
+        nj3d_jet_trial_land: '⏳ Trial over — landing gently',
+        nj3d_jet_trial_end: '🚀 Trial over · own it for 💎 {cost} and fly any time (next trial tomorrow 6 AM)',
         nj3d_q_basic: 'Basic',
         nj3d_q_high: 'High ✦',
         nj3d_slow: 'Switched to Basic quality to keep things smooth',
@@ -8674,7 +8682,7 @@ function _njMannaGather(i) {
     return gem;
 }
 /* ⭐ 일곱 별 (2026-10-14 사용자, docs/새-예루살렘.md) — 오늘 암송한 절이 하늘 높이 별이 된다(일곱까지 · 백지가 아니어도 — 스테이지·빈칸·고난 무엇이든).
-   별에 닿으면 그 절 한 토막이 말씀 조각으로 흩어지고, 25초 안에 순서대로 모으면 별을 얻는다(오딧세이 음표처럼). 별마다 💎500, 일곱 다 💎5,000.
+   별에 닿으면 그 절 한 토막이 말씀 조각으로 흩어지고, 60초 안에(처음 25초 — 10/14 사용자: 너무 어렵다) 순서대로 모으면 별을 얻는다(오딧세이 음표처럼). 별마다 💎500, 일곱 다 💎5,000.
    제트팩·날개·나는 탈것으로 닿는 높이(사용자: 너무 낮으면 하늘을 나는 맛이 없다). 별 자리·토막은 날짜로 정해져 하루 동안 같다 */
 const NJ_STAR_GEM = 500, NJ_STAR_ALL = 5000, NJ_STAR_MAX = 7;
 function _njStarDay() {

@@ -14,7 +14,8 @@
     const ORBIT_URL = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
     const GLTF_URL = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';   // 예물 모델(.glb) — 예물을 볼 때만 받는다
     const GIFT_V = '20261005';   // models/gifts/*.glb 캐시 번호 — 모델을 다시 뽑으면 올린다 (tools/blender/)
-    const JET_COST = 50000;   // 🚀 10/14 사용자: 너무 비싸다 — 30만 → 5만(산 두 분께 차액 25만을 돌려드림)
+    const JET_COST = 50000, JET_TRIAL_MS = 60000;   // 🚀 하루 한 번 1분 체험(10/14 사용자: 타 봐야 사고 싶어진다)
+      // 🚀 10/14 사용자: 너무 비싸다 — 30만 → 5만(산 두 분께 차액 25만을 돌려드림)
     const T = (k, p) => (typeof t === 'function' ? t(k, p) : k);
     // 퀴즈 본문 — 주소 → 첫 마디(kind 'first')면 「이 절은 어떻게 시작하나요?」, 빈칸이면 앞뒤 말씀 사이에 빈칸 (10/5)
     const quizText = (q, esc) => q.kind === 'first' ? `<div class="nj3d-fishq-text nj3d-fishq-first">${T('nj3d_first_q')}</div>`
@@ -60,6 +61,7 @@
                     <div class="nj3d-keyhelp">${T('nj3d_keyhelp')}</div>
                     <div class="nj3d-btns">
                         <button class="nj3d-wb small nj3d-viewbtn"></button>
+                        <button class="nj3d-wb small nj3d-jettry" hidden></button>
                         <button class="nj3d-wb small nj3d-jetbuy"></button>
                         <button class="nj3d-wb fly nj3d-fly" hidden>${T('nj3d_fly')}<span class="nj3d-key">F</span></button>
                         <button class="nj3d-wb small nj3d-fishbtn" hidden></button>
@@ -578,7 +580,7 @@
                     : new THREE.MeshStandardMaterial({ color: 0xfbf8ff, roughness: 0.1, metalness: 0.25, emissive: 0xcfc6f0, emissiveIntensity: 0.3 });
                 const base = (stoneReal || preview) ? FH : 0.02, R = GATE / 2, Tk = 0.14, postH = GATE_H - R;
                 const gate = new THREE.Group();
-                const PC = 0.635 * GATE_SC, PT = 0.2 * GATE_SC, ARCH0 = 3.74, ARCH1 = 4.2;   // 부딪힘 — 진주 문 모델(city.py, ×GATE_SC)의 기둥 가운데·두께·아치 안쪽/바깥 높이
+                const PC = 0.635 * GATE_SC, PT = 0.2 * GATE_SC, ARCH0 = 3.74;   // 부딪힘 — 진주 문 모델(city.py, ×GATE_SC)의 기둥 가운데·두께·아치 안쪽/바깥 높이
                 [-1, 1].forEach(sg => {
                     const post = new THREE.Mesh(new THREE.CylinderGeometry(Tk, Tk, postH, 12), gm); post.position.set(sg * R, postH / 2, 0); post.castShadow = true; gate.add(post);
                     const px = horiz ? cx + sg * PC : cx, pz = horiz ? cz : cz + sg * PC;
@@ -588,14 +590,18 @@
                 const plain = gate.children.slice();
                 loadCity('pearlgate').then(sc => {
                     if (cur !== C || gate.parent !== built) return;
-                    plain.forEach(o => gate.remove(o)); const c = sc.clone(); c.scale.setScalar(GATE_SC); gate.add(c);   // 높은 성벽보다 높게
+                    plain.forEach(o => gate.remove(o)); const c = sc.clone(); c.scale.setScalar(GATE_SC); gate.add(c); c.traverse(o => { o.userData.camPass = true; });   // 카메라를 당기지 않는다(10/14 사용자: 진주 꼭대기에 서면 카메라가 얼굴 앞까지 확대)   // 높은 성벽보다 높게
                     if (gate.userData.holo) holoize(c);
                     const wl = c.getObjectByName('wingL'), wr = c.getObjectByName('wingR'), ph = k * 0.7;
                     cityAnims.push(t => { const f = Math.sin(t * 1.4 + ph) * 0.12; if (wl) wl.rotation.y = f; if (wr) wr.rotation.y = -f; });
                 }).catch(() => {});
-                const aw = PC + PT;   // 아치 — 제트팩으로 날다 부딪히거나 위에 설 수 있게 대략 상자 하나(안쪽 꼭대기 ~ 바깥)
-                BOXES.push(horiz ? { x0: cx - aw, x1: cx + aw, z0: cz - PT, z1: cz + PT, y0: base + ARCH0, y1: base + ARCH1 }
-                                 : { x0: cx - PT, x1: cx + PT, z0: cz - aw, z1: cz + aw, y0: base + ARCH0, y1: base + ARCH1 });
+                // 아치·진주 — 위에 설 수 있게 모델(×GATE_SC)을 높이별로 잰 모양대로(10/14 사용자: "진주문에는 설 수가 없네").
+                //   전엔 아치를 3.74~4.2 한 덩이·두께 0.46으로 잡아 큰 진주(4.0~4.7) 속에 묻히고 너무 얇았다
+                const gbx = (hw, hd, y0, y1) => BOXES.push(horiz ? { x0: cx - hw, x1: cx + hw, z0: cz - hd, z1: cz + hd, y0: base + y0, y1: base + y1 }
+                                                                 : { x0: cx - hd, x1: cx + hd, z0: cz - hw, z1: cz + hw, y0: base + y0, y1: base + y1 });
+                gbx(PC + PT, 0.34, ARCH0, 3.95);   // 아치 어깨 — 진주 양옆에 선다
+                gbx(0.42, 0.42, 3.95, 4.72);       // 큰 진주 — 꼭대기에 선다
+                gbx(0.15, 0.15, 4.72, 5.45);       // 진주 위 천사 — 몸속에 들어가지 않게(그 옆 진주 위에 선다)
                 gate.position.set(cx, base, cz); if (!horiz) gate.rotation.y = Math.PI / 2; built.add(gate);
                 [[-0.72, 1.2], [0.72, 2.2], [-0.72, 3.1], [0.0, 4.6], [0.6, 3.9]].forEach(([a, h]) => sparkPts.push([cx + (horiz ? a : 0) * GATE_SC, base + h * GATE_SC, cz + (horiz ? 0 : a) * GATE_SC]));
                 if (!gateReal) { built.children.slice(g0).forEach(o => { o.userData.holo = true; holoize(o); }); BOXES.length = gb0; sparkPts.length = gs0; }
@@ -780,6 +786,10 @@
                 sh.fragmentShader = 'uniform sampler2D rT1; uniform sampler2D rT2; uniform mat3 rM1; uniform mat3 rM2;\n' + sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
                     if (gl_FrontFacing) { float ra = texture2D(rT1, (rM1 * vec3(vUv, 1.0)).xy).a * 0.18; diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0), ra);
                         ra = texture2D(rT2, (rM2 * vec3(vUv, 1.0)).xy).a * 0.1; diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0), ra); }`);
+                // 🤿 물속에서 올려다본 수면(뒷면) — 위쪽 물빛 색칠을 그대로 쓰니 아래에선 빛을 못 받아 어두운 초록 「천장 판」이 됐고, 올라오는 모래 비탈과 만나는 데 선이 생겼다(10/14 사용자: "해변가가 좀 이상하네")
+                //   → 물속 안개 빛을 조금 밝힌 물빛으로, 안개와 섞여 천장이 물속에 녹아들게
+                sh.uniforms.uUnder = { value: new THREE.Color(0x1d6a78) };
+                sh.fragmentShader = 'uniform vec3 uUnder;' + String.fromCharCode(10) + sh.fragmentShader.replace('#include <fog_fragment>', 'if (!gl_FrontFacing) gl_FragColor = vec4(mix(uUnder, vec3(0.75, 0.95, 1.0), 0.22), 0.8);' + String.fromCharCode(10) + '#include <fog_fragment>');
             };
             const col = new THREE.Mesh(surf, colM);
             col.rotation.x = -Math.PI / 2; col.position.set((SW_X0 + SW_X1) / 2, SEA_Y - 0.002, (SW_Z0 + SW_Z1) / 2); col.renderOrder = 1; seaGrp.add(col);
@@ -1711,7 +1721,12 @@
         const flames = [-1, 1].map(sg => { const f = new THREE.Sprite(flameMat); f.position.set(sg * 0.018, 0.075, 0.03); f.scale.set(0.05, 0.08, 1); jet.add(f); return f; });
         pilgrim.traverse(o => { if (o.isMesh) o.castShadow = true; });
         pilgrim.position.set(P.x, P.y, P.z); pilgrim.visible = false; scene.add(pilgrim);
-        const hasJet = () => typeof njJetpack !== 'undefined' && !!njJetpack;
+        const ownJet = () => typeof njJetpack !== 'undefined' && !!njJetpack;
+        // 🚀 1분 체험 — 오전 6시 기준 하루 한 번(이 기기). 체험 중(끝나고 내려앉는 동안 포함)엔 제트팩이 있는 것과 같다
+        let jetTrialEnd = 0, jetTrialLand = false;
+        const jetTrialDay = () => typeof _get6AMDayStr === 'function' ? _get6AMDayStr() : new Date().toDateString();
+        const jetTrialUsed = () => { try { return localStorage.getItem('kr_jetTrial') === jetTrialDay(); } catch (e) { return false; } };
+        const hasJet = () => ownJet() || jetTrialEnd > 0;
         jet.visible = hasJet();
 
         // 땅 높이 — 기초석 단과 문 경사로
@@ -1986,7 +2001,7 @@
         { const jb = ov.querySelector('.nj3d-jump');
           jb.addEventListener('pointerdown', e => { e.preventDefault(); jumpHeld = true; try { jb.setPointerCapture(e.pointerId); } catch (_) {} doJump(); });
           ['pointerup', 'pointercancel'].forEach(tp => jb.addEventListener(tp, () => { jumpHeld = false; })); }
-        const flyBtn = ov.querySelector('.nj3d-fly'), jetBuy = ov.querySelector('.nj3d-jetbuy');
+        const flyBtn = ov.querySelector('.nj3d-fly'), jetBuy = ov.querySelector('.nj3d-jetbuy'), jetTry = ov.querySelector('.nj3d-jettry');
         /* 🔤 상태에 따라 버튼 글자(10/14 사용자) — 뭍·공중·제트팩·물·탈것. 바뀔 때만 다시 그린다 */
         const jumpBtnEl = ov.querySelector('.nj3d-jump'), diveBtnEl = ov.querySelector('.nj3d-divebtn'), btnLab = { j: '', d: '', f: '' };
         const keyTag = k => `<span class="nj3d-key">${k}</span>`;
@@ -1994,23 +2009,40 @@
             const mk = ride.on ? kindOfMount(ride.k) : '', water = !ride.on && (isUnder() || swimNow());
             const j = jetOn ? 'nj3d_lb_up' : (water || mk === 'sub') ? 'nj3d_lb_swimup' : mk === 'fly' ? 'nj3d_lb_up'
                 : (ride.on && !P.onGround && mk !== 'boat') ? 'nj3d_lb_leap' : (!ride.on && !P.onGround) ? (gliding ? 'nj3d_lb_fold' : 'nj3d_lb_glide') : 'nj3d_jump';
-            const d = jetOn ? 'nj3d_lb_down' : 'nj3d_dive', f = jetOn ? 'nj3d_lb_jetoff' : 'nj3d_fly';
+            const d = jetOn ? 'nj3d_lb_down' : 'nj3d_dive', f0 = jetOn ? 'nj3d_lb_jetoff' : 'nj3d_fly';
+            const tl = jetTrialEnd && !ownJet() ? Math.max(0, Math.ceil((jetTrialEnd - Date.now()) / 1000)) : -1, f = tl >= 0 ? f0 + '|' + tl : f0;   // 체험 중엔 남은 초
             if (j !== btnLab.j) { btnLab.j = j; jumpBtnEl.innerHTML = T(j) + keyTag('Space'); }
             if (d !== btnLab.d) { btnLab.d = d; diveBtnEl.innerHTML = T(d) + keyTag('Q'); }
-            if (f !== btnLab.f) { btnLab.f = f; flyBtn.innerHTML = T(f) + keyTag('F'); }
+            if (f !== btnLab.f) { btnLab.f = f; flyBtn.innerHTML = T(f0) + (tl >= 0 ? `<span class="nj3d-jt">⏳ ${tl}s</span>` : keyTag('F')); }
         }
         /* 🚀 제트팩 = 켜고 끄기(10/14 사용자: 앞뒤좌우가 어렵다 — 바닷속처럼). 켜면 손을 떼도 그 높이에 떠 있고, 점프를 누르고 있으면 올라가고
            잠수를 누르고 있으면 내려간다. 다시 누르면 꺼진다(땅에 내려앉아도 꺼진다). 예전엔 누르고 있는 동안만 오르고 떼면 바로 떨어졌다 */
         const jetToggle = (on) => {
             if (!hasJet()) return;
+            if (jetTrialLand && (on == null ? !jetOn : on)) return;   // 체험이 끝나 내려앉는 중엔 다시 켜지 않는다
             jetOn = on == null ? !jetOn : !!on; jetAir = false; flyBtn.classList.toggle('on', jetOn);
             if (jetOn) { if (ride.on) mountDown(); gliding = false; if (P.vy < 0) P.vy = 0; showHint(T('nj3d_jet_hover'), 3200); }
         };
         flyBtn.addEventListener('pointerdown', e => { e.preventDefault(); jetToggle(); });
         const syncJetUI = () => {
-            const own = hasJet(); jet.visible = own; flyBtn.hidden = !own; jetBuy.hidden = own;
+            const own = hasJet(); jet.visible = own; flyBtn.hidden = !own; jetBuy.hidden = ownJet();   // 체험 중에도 사기 버튼은 그대로
+            jetTry.hidden = own || !!VISIT || jetTrialUsed(); jetTry.innerHTML = T('nj3d_jet_try');
             jetBuy.innerHTML = T('nj3d_jet_buy', { cost: JET_COST.toLocaleString() });
         };
+        jetTry.addEventListener('click', () => {
+            if (hasJet() || jetTrialUsed()) return syncJetUI();
+            try { localStorage.setItem('kr_jetTrial', jetTrialDay()); } catch (e) { }
+            jetTrialEnd = Date.now() + JET_TRIAL_MS; jetTrialLand = false;
+            syncJetUI(); jetToggle(true); showHint(T('nj3d_jet_trial_go'), 4200);
+        });
+        function jetTrialTick() {   // 1분이 지나면 — 공중이면 천천히 내려앉힌 뒤(갑자기 떨어지지 않게) 끝
+            if (!jetTrialEnd) return;
+            if (ownJet()) { jetTrialEnd = 0; jetTrialLand = false; syncJetUI(); return; }   // 체험 중에 샀다
+            if (Date.now() < jetTrialEnd) return;
+            if (walk && jetOn && !P.onGround) { if (!jetTrialLand) { jetTrialLand = true; showHint(T('nj3d_jet_trial_land'), 3000); } return; }
+            jetTrialEnd = 0; jetTrialLand = false; jetOn = false; jetAir = false; flyBtn.classList.remove('on');
+            syncJetUI(); showHint(T('nj3d_jet_trial_end', { cost: JET_COST.toLocaleString() }), 5000);
+        }
         jetBuy.addEventListener('click', () => {
             if (hasJet()) return syncJetUI();
             const gems = (typeof myGems !== 'undefined') ? myGems : 0;
@@ -4040,16 +4072,17 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 if (!diveHintShown) { diveHintShown = true; showHint(T('nj3d_dive_hint'), 3800); }   // 떨어져 잠겨도 「점프 = 위로」를 알게
             }
             else if (FD) { const want = jumpHeld ? (FD.climb || 1) : P.onGround ? 0 : -(FD.sink || 0.5); P.vy += (want - P.vy) * Math.min(1, dt * 3); }
-            else if (fly) { const want = jumpHeld ? 1.5 : diveHeld ? -1.3 : 0; P.vy += (want - P.vy) * Math.min(1, dt * 7); gliding = false; }   // 🚀 떠 있기 — 점프 위로 · 잠수 아래로 · 둘 다 떼면 그 높이
+            else if (fly) { const want = jetTrialLand ? -1.3 : jumpHeld ? 1.5 : diveHeld ? -1.3 : 0; P.vy += (want - P.vy) * Math.min(1, dt * 7); gliding = false; }   // 🚀 떠 있기 — 점프 위로 · 잠수 아래로 · 둘 다 떼면 그 높이
             else if (glide) P.vy = Math.max(P.vy - G * 0.18 * dt, -(WG.sink || 0.42));   // 천천히 내려앉는다 — 좋은 날개일수록 덜 떨어진다
             else P.vy -= G * dt;
             const prevY = P.y, fallV = P.vy;
             P.y = Math.min(SUB ? SEA_Y - 0.12 : FD ? (FD.maxY || 40) : 18, P.y + P.vy * dt);   // 🚢 잠수함은 수면 바로 아래까지
             const inSwim = !ride.on && swimWater(P.x, P.z), g = inSwim ? seabed(P.x, P.z) : groundAt(P.x, P.z, P.y);   // 🏊 순례자에겐 수면이 땅이 아니다(배·장식엔 그대로 땅)
             if (P.y <= g) { P.y = g; if (P.vy < 0) P.vy = 0; P.onGround = true; }
-            if (fly) { if (!P.onGround) jetAir = true; else if (jetAir && !jumpHeld) jetToggle(false); }   // 🚀 날다가 땅에 내려앉으면 꺼진다
+            // 10/14 저녁: 아래 「else」가 착지(P.y <= g) 줄에 이어져야 한다 — 제트팩 줄을 사이에 끼웠더니 착지가 매 프레임 「공중」으로 덮여 점프·걷기가 안 됐다
             else if (!fly && !inSwim && wasGround && P.vy <= 0 && P.y - g < 0.45) { P.y = g; P.vy = 0; P.onGround = true; }   // 내리막은 발을 땅에 붙인다 — 한 걸음마다 살짝 떴다 떨어져 콩콩 튀었고, 늘 공중이라 점프도 안 됐다(9/30)
             else P.onGround = false;
+            if (fly) { if (!P.onGround) jetAir = true; else if (jetAir && !jumpHeld) jetToggle(false); }   // 🚀 날다가 땅에 내려앉으면 꺼진다
             if (!wasGround && P.onGround && wetAt(P.x, P.z)) splash(P.x, P.z, true);   // 물에 떨어짐
             if (!ride.on && prevY >= SEA_Y - 0.03 && P.y < SEA_Y - 0.03 && seaE(P.x, P.z) < 1) {   // 🌊 높은 데서 떨어져 수면을 뚫고 들어감(10/5 사용자: 활강하다 떨어지면 꽤 깊이 잠기는데 소리가 없었다)
                 if (fallV < -1.2) { splash(P.x, P.z, true, true); sprayBurst(P.x, SEA_Y + 0.02, P.z, Math.min(SPRAY, 20 + Math.round(-fallV * 8)), 0); if (typeof SoundEffect !== 'undefined' && SoundEffect.playPlunge) SoundEffect.playPlunge(); }
@@ -4131,7 +4164,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             body.visible = camPitch > -0.75;   // 많이 올려다보면 순례자를 잠시 숨긴다(1인칭처럼) — 등이 화면을 가렸다
             ray.set(Tg, dir); ray.far = dist;
             const hits = ray.intersectObjects(built.children, true);
-            if (hits.length) dist = Math.max(0.12, hits[0].distance - 0.05);
+            const hit = hits.find(h => h.object.isMesh && !h.object.userData.camPass);   // 진주 문·반짝이 점은 카메라가 지나간다 — 진주 꼭대기 반짝이(Points는 반경 1 안이면 맞은 걸로 친다)·천사에 걸려 얼굴 앞까지 당겨졌다(10/14)
+            if (hit) dist = Math.max(0.12, hit.distance - 0.05);
             const cp = Tg.clone().addScaledVector(dir, dist);
             if ((!ride.on || kindOfMount(ride.k) === 'sub') && isUnder()) {   // 🤿 물속에선 카메라도 물속에 — 카메라 자리가 뭍이면 바다 쪽으로 당긴다(바닷가에선 뭍 위에 떠서 물 위를 비췄다)
                 let dd = dist; while (seaE(cp.x, cp.z) >= 0.99 && dd > 0.12) { dd *= 0.8; cp.copy(Tg).addScaledVector(dir, dd); }
@@ -4300,7 +4334,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
 
         // ══ ⭐ 일곱 별 (10/14 사용자) — 오늘 암송한 절이 하늘 높이 별이 된다. 닿으면 그 절 한 토막이 말씀 조각으로 흩어지고,
         //    25초 안에 순서대로 모으면 별을 얻는다(오딧세이 음표처럼). 별 자리·토막은 날짜로 정해진다 (game.js _njStarDay · _njStarGot) ══
-        const STAR_T = 25, SD = (!VISIT && typeof _njStarDay === 'function') ? _njStarDay() : { day: '', ids: [], got: [] };
+        const STAR_T = 60, SD = (!VISIT && typeof _njStarDay === 'function') ? _njStarDay() : { day: '', ids: [], got: [] };
         const starG = new THREE.Group(); scene.add(starG);
         const starMat = new THREE.MeshStandardMaterial({ color: 0xffd34d, emissive: 0xffb300, emissiveIntensity: 1.1, roughness: 0.3, metalness: 0.3 });
         const starGeo = (() => {
@@ -4448,7 +4482,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             rebuild: () => itemBoxes(), items: () => [...giftsG.children, ...decoG.children].map(o => { let n = 0, vis = 0; o.traverse(m => { if (m.isMesh) { n++; if (m.visible) vis++; } }); return { k: o.userData.item && o.userData.item.k, vis: o.visible, meshes: n, visMeshes: vis, pos: [o.position.x, o.position.y, o.position.z].map(v => +v.toFixed(2)) }; }), ground: (x, z, y) => groundAt(x, z, y), blocked: (x, z, y) => blocked(x, z, y),
             setP: (x, y, z, face) => { P.x = x; P.y = y; P.z = z; P.vy = 0; if (face != null) { P.face = face; camYaw = face; } }, P: () => ({ x: P.x, y: P.y, z: P.z }),
             stars: () => stars.map(s => ({ id: s.id, x: s.x, y: s.g.position.y, z: s.z, done: s.done, vis: s.g.visible })),
-            fragScreen: () => starRun ? starRun.frags.filter(f => !f.got).map(f => { const v = f.sp.position.clone().project(camera); return { i: f.i, sx: +((v.x + 1) / 2).toFixed(2), sy: +((1 - v.y) / 2).toFixed(2), z: +v.z.toFixed(3), sc: [+f.sp.scale.x.toFixed(2), +f.sp.scale.y.toFixed(2)], vis: f.sp.visible, inScene: !!f.sp.parent, dist: +f.sp.position.distanceTo(camera.position).toFixed(2) }; }) : null, cam: () => ({ p: camera.position.toArray().map(v => +v.toFixed(2)), near: camera.near, far: camera.far }), three: () => ({ scene, renderer, camera, controls }),
+            fragScreen: () => starRun ? starRun.frags.filter(f => !f.got).map(f => { const v = f.sp.position.clone().project(camera); return { i: f.i, sx: +((v.x + 1) / 2).toFixed(2), sy: +((1 - v.y) / 2).toFixed(2), z: +v.z.toFixed(3), sc: [+f.sp.scale.x.toFixed(2), +f.sp.scale.y.toFixed(2)], vis: f.sp.visible, inScene: !!f.sp.parent, dist: +f.sp.position.distanceTo(camera.position).toFixed(2) }; }) : null, cam: () => ({ p: camera.position.toArray().map(v => +v.toFixed(2)), near: camera.near, far: camera.far }), three: () => ({ scene, renderer, camera, controls }), jetTrial: ms => { if (jetTrialEnd) jetTrialEnd = Date.now() + ms; return { end: jetTrialEnd, land: jetTrialLand, on: jetOn }; }, tall: () => BOXES.filter(b => !b.item && b.y1 > 3.5).map(b => ({ x0: b.x0, x1: b.x1, z0: b.z0, z1: b.z1, y0: b.y0, y1: b.y1 })),
             run: () => starRun ? { next: starRun.next, n: starRun.seg.length, frags: starRun.frags.map(f => ({ i: f.i, x: f.x, y: f.sp.position.y, z: f.z, got: f.got })) } : null };
         } catch (e) { }
 
@@ -5406,6 +5440,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 }
                 diveBtn.hidden = !(walk && ((seaE(P.x, P.z) < 1 && (!ride.on || kindOfMount(ride.k) === 'sub')) || jetOn));   // 🚀 제트팩을 켜면 「잠수」 = 내려가기
                 if (walk) btnLabels();
+                jetTrialTick();
             }
             skyDome.position.copy(camera.position);
             wallTick(now / 1000);   // 🧱 맵 끝 막
