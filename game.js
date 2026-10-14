@@ -21137,7 +21137,7 @@ function startEventQuestion(eventId, qIdx) {
 }
 function startEventAll(eventId) {
     const ev = _findEvent(eventId); if (!ev) return;
-    _startEventRun(ev, _eventVerseIds(ev), t('event_mock_label'));
+    _startEventRun(ev, _eventVerseIds(ev), ev.daily ? t('daily_title') : t('event_mock_label'));   // 오늘의 암송은 「모의고사」가 아니다(10/15)
 }
 function _startEventRun(ev, verseIds, label) {
     const m = document.getElementById('event-modal'); if (m) m.remove();
@@ -33225,6 +33225,8 @@ function finishHardshipSession(reason) {
 
         const existingHistory = resultModal.querySelector('.hardship-history-wrap');
         if (existingHistory) existingHistory.remove();
+        // 🌱 「처음과 비교」 카드도 — 결과 창을 다시 쓰므로 지난 판의 카드가 남아 쌓였다(10/15 사용자: 오늘의 암송 3절에 11절·14절 장의 비교가 붙음)
+        resultModal.querySelectorAll('.growth-box').forEach(el => el.remove());
         const verseHistoryHtml = (() => {
             if (reason !== 'completed' || hardshipState.mode !== 'verse') return '';
             const sessionDuration = getHardshipElapsedSeconds();
