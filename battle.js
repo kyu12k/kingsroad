@@ -141,7 +141,13 @@
 #bt-ov .bt-rec b{color:#f3cf6b}
 #bt-ov .bt-note{font-size:.88rem;line-height:1.6;color:#c9d4e2;background:#1d2a3c;border-radius:12px;padding:12px}
 #bt-ov .bt-chs{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
-#bt-ov .bt-chs button{background:#1d2a3c;color:#e8edf3;border:1px solid #2f4260;border-radius:10px;padding:11px 0;font-weight:bold;cursor:pointer;font-size:.95rem}
+#bt-ov .bt-chs button{background:#1d2a3c;color:#e8edf3;border:1px solid #2f4260;border-radius:10px;padding:11px 0;font-weight:bold;cursor:pointer;font-size:.95rem;position:relative}
+#bt-ov .bt-chs button i{position:absolute;top:-6px;right:-4px;font-style:normal;font-size:.7rem;line-height:1}
+#bt-ov .bt-chs button i.got{color:#6fd39a;font-size:.8rem;top:-5px;right:-2px;font-weight:900}
+#bt-ov .bt-chs button.got{opacity:.6}
+#bt-ov .bt-gem{text-align:center;font-size:1.5rem;font-weight:900;color:#8fe3ff;text-shadow:0 0 12px rgba(120,210,255,.5)}
+#bt-ov .bt-rwno{text-align:center;font-size:.85rem;color:#8fa3bd}
+#bt-ov .bt-rwy{color:#8fe3ff;font-weight:bold}
 #bt-ov .bt-top{display:flex;justify-content:space-between;font-size:.85rem;color:#8fa3bd}
 #bt-ov .bt-bar{height:5px;background:#26354a;border-radius:3px;overflow:hidden}
 #bt-ov .bt-bar i{display:block;height:100%;background:#d4a73a;width:100%;transform-origin:left}
@@ -201,6 +207,16 @@
     const nickSub = (p) => memo(p.tag) ? `${esc(p.nick)} · ` : '';
     const runOf = (d, side) => (d.runs && (d.runs[side] || d.runs[d[side].uid])) || [];   // 10/13 첫 배포분은 계정 번호로 남았다
     const daysLeft = (d) => Math.max(1, Math.ceil((d.expiresAt - Date.now()) / 86400000));
+    /* 💎 보상(10/14 사용자) — 장마다 하루 한 번(오전 6시) · 하루 10판. 서버가 정하고 여기선 보석을 더하고 보여 준다 */
+    let RW = null;   // { chs: [오늘 보상 받은 장], left: 남은 판 }
+    const rwOpen = (ch) => !!(RW && RW.left > 0 && !RW.chs.includes(ch));
+    function give(gem) {
+        if (!(gem > 0)) return;
+        if (typeof addGems === 'function') addGems(gem);
+        if (typeof syncToFirestore === 'function') syncToFirestore();
+    }
+    const rwLine = (rw) => !rw ? '' : rw.gem > 0 ? `<div class="bt-gem">💎 +${rw.gem.toLocaleString()}</div>`
+        : `<div class="bt-rwno">${rw.why === 'daily' ? '오늘 보상 10판을 다 받았어요' : '이 장은 오늘 보상을 이미 받았어요'} · 내일 오전 6시에 다시</div>`;
 
     /* 허브 — 받은 도전장 · 기다리는 도전장 · 지난 대결 · 새 도전장 */
     async function hub() {
@@ -209,11 +225,13 @@
         if (!isGoogleLinked()) { googleGate(body); return; }
         let docs = [], lb = {};
         try {
-            const [snap, me] = await Promise.all([
+            const [snap, me, cl] = await Promise.all([
                 db.collection('battles').where('uids', 'array-contains', uid()).get(),
-                _getFriendDoc(myTag)
+                _getFriendDoc(myTag),
+                call('battleRwClaim', {}).catch(e => { console.warn('[battle] claim', e); return null; })
             ]);
             docs = snap.docs.map(d => Object.assign({ id: d.id }, d.data())); lb = me || {};
+            if (cl && cl.ok) { if (cl.rw) RW = cl.rw; if (cl.gem > 0) { give(cl.gem); toast(`⚔️ 보낸 도전장에 답이 왔어요 — 💎 ${cl.gem.toLocaleString()}`); } }
         } catch (e) { console.warn('[battle] hub', e); body.innerHTML = '<div class="bt-empty">불러오지 못했어요. 잠시 뒤 다시 열어 주세요.</div>'; return; }
         if (!document.getElementById('bt-body')) return;
         const now = Date.now(), me = String(myTag);   // 쪽은 태그로 가린다 — 한 사람이 계정을 여럿 쓰기도 한다(10/13)
@@ -224,7 +242,7 @@
         let h = `<div class="bt-rec">내 전적 <b>${lb.battleW | 0}</b>승 <b>${lb.battleL | 0}</b>패${lb.battleD ? ` <b>${lb.battleD | 0}</b>무` : ''}</div>`;
         h += `<button class="bt-btn big" id="bt-new">＋ 새 도전장 보내기</button>`;
         h += `<div class="bt-sec">📬 받은 도전장</div>`;
-        h += inbox.length ? inbox.map(d => `<div class="bt-row"><div class="bt-m"><div class="bt-n">${nameOf(d.from)}</div><div class="bt-s">${nickSub(d.from)}${d.ch}장 · ${daysLeft(d)}일 남음</div></div><button class="bt-btn" data-play="${d.id}">겨루기</button></div>`).join('')
+        h += inbox.length ? inbox.map(d => `<div class="bt-row"><div class="bt-m"><div class="bt-n">${nameOf(d.from)}</div><div class="bt-s">${nickSub(d.from)}${d.ch}장 · ${daysLeft(d)}일 남음${rwOpen(d.ch) ? ' · <span class="bt-rwy">💎 보상</span>' : ''}</div></div><button class="bt-btn" data-play="${d.id}">겨루기</button></div>`).join('')
             : `<div class="bt-empty">받은 도전장이 없어요</div>`;
         if (waiting.length) {
             h += `<div class="bt-sec">⏳ 답을 기다리는 도전장</div>`;
@@ -240,6 +258,7 @@
             }).join('');
         }
         h += `<div class="bt-note">📖 도전장을 보내면 내가 먼저 7문제를 풀고, 상대는 같은 문제로 내 기록과 겨뤄요. 문제마다 맞힌 사람이, 둘 다 맞히면 더 빠른 사람이 점수를 얻어요. 친구와 같은 길드원에게 보낼 수 있어요.</div>`;
+        h += `<div class="bt-note">💎 <b>보상</b> — 맞힌 문제마다 💎100 · 끝까지 풀면 💎200 · 이기면 💎300(비기면 💎150). 보낸 도전장에 답이 오면 💎200 더.<br>장마다 하루 한 번(보낸 판·답한 판 함께), 하루 10판까지 · 오전 6시에 다시${RW ? ` · 오늘 남은 판 <b>${RW.left}</b>` : ''}</div>`;
         body.innerHTML = h;
         body.querySelector('#bt-new').onclick = () => pickOpponent();
         body.querySelectorAll('[data-play]').forEach(b => b.onclick = () => play(docs.find(d => d.id === b.dataset.play)));
@@ -288,12 +307,15 @@
             body.innerHTML = `<div class="bt-note">${msg(r && r.why, nick)}</div><button class="bt-btn big sub" id="bt-back">대결 화면으로</button>`;
             wire(body); return;
         }
+        if (r.rw) RW = r.rw;
         pickChapter(tag, nick);
     }
-    /* 장 고르기 — 진도는 보여 주지 않는다(사용자 10/13: 부담) */
+    /* 장 고르기 — 진도는 보여 주지 않는다(사용자 10/13: 부담). 💎 = 오늘 보상이 남은 장 · ✓ = 오늘 보상을 받은 장(10/14 사용자) */
     function pickChapter(tag, nick) {
         const body = shell(`⚔️ ${esc(nick)}님에게 · 어느 장으로?`, '', hub);
-        body.innerHTML = `<div class="bt-chs">${Array.from({ length: 22 }, (_, i) => `<button data-ch="${i + 1}">${i + 1}장</button>`).join('')}</div>
+        const mark = (c) => !RW ? '' : RW.chs.includes(c) ? '<i class="got">✓</i>' : RW.left > 0 ? '<i>💎</i>' : '';
+        body.innerHTML = `<div class="bt-chs">${Array.from({ length: 22 }, (_, i) => `<button data-ch="${i + 1}" class="${RW && RW.chs.includes(i + 1) ? 'got' : ''}">${i + 1}장${mark(i + 1)}</button>`).join('')}</div>
+            ${RW ? `<div class="bt-note">${RW.left > 0 ? `💎 표시된 장은 오늘 보상이 있어요 — 맞힌 문제마다 💎100 · 끝까지 풀면 💎200 · 상대가 답하면 더. ✓ 표시는 오늘 이미 받은 장이에요. 오늘 남은 판 <b>${RW.left}</b>` : '오늘 보상 10판을 다 받았어요. 대결은 그대로 할 수 있고, 보상은 내일 오전 6시에 다시 열려요.'}</div>` : ''}
             <div class="bt-note">고른 장에서 7문제가 나와요. 내가 먼저 풀고 나면 도전장이 ${esc(nick)}님에게 가요.</div>`;
         body.querySelectorAll('[data-ch]').forEach(b => b.onclick = () => {
             const ch = +b.dataset.ch, qs = makeQs(ch);
@@ -433,9 +455,10 @@
                 if (!r || !r.ok) { body.innerHTML = `<div class="bt-note">${msg(r && r.why, d.send.nick)}</div>${reviewHtml(d, run)}<button class="bt-btn big sub" id="bt-back">대결 화면으로</button>`; wire(body); return; }
                 note('bt_send');
                 const n = run.filter(x => x.ok).length;
+                if (r.rw) { give(r.rw.gem); if (r.rw.rw) RW = r.rw.rw; if (r.rw.gem > 0) snd('playCorrect'); }
                 body.innerHTML = `<div class="bt-win">📨 ${esc(d.send.nick)}님에게 도전장을 보냈어요</div>
-                    <div class="bt-rec">${d.ch}장 · 내 기록 <b>${n}</b> / ${Q_N}</div>
-                    <div class="bt-note">${esc(d.send.nick)}님이 같은 문제로 이 기록과 겨루면 결과가 알림으로 와요(7일 안).</div>
+                    <div class="bt-rec">${d.ch}장 · 내 기록 <b>${n}</b> / ${Q_N}</div>${rwLine(r.rw)}
+                    <div class="bt-note">${esc(d.send.nick)}님이 같은 문제로 이 기록과 겨루면 결과가 알림으로 와요(7일 안).${r.rw && r.rw.gem > 0 ? ' 답이 오면 💎200, 이기면 💎300 더 — 대결 화면을 열 때 받아요.' : ''}</div>
                     ${reviewHtml(d, run)}<button class="bt-btn big sub" id="bt-back">대결 화면으로</button>`;
                 wire(body);
             } else {
@@ -443,6 +466,7 @@
                 if (!r || !r.ok) { body.innerHTML = `<div class="bt-note">${msg(r && r.why)}</div><button class="bt-btn big sub" id="bt-back">대결 화면으로</button>`; wire(body); return; }
                 note('bt_done');
                 d.state = 'done'; d.score = r.score; d.per = r.per; d.win = r.win; d.runs = Object.assign({}, d.runs, { to: run }); d.doneAt = Date.now();
+                if (r.rw) { give(r.rw.gem); if (r.rw.rw) RW = r.rw.rw; d.rwGot = r.rw; }
                 result(d);
             }
         } catch (e) {
@@ -468,7 +492,7 @@
         const res = d.win === 'draw' ? '🤝 무승부' : d.win === mine ? '🏆 이겼어요!' : '다음엔 이겨 봐요';
         const cell = (r) => r ? (r.ok ? `<span style="color:#6fd39a">✓</span>${(r.ms / 1000).toFixed(1)}초` : `<span style="color:#f08a96">✗</span>`) : '';
         const body = shell(`⚔️ ${esc(opp.nick)}님과 · ${d.ch}장`, '', close);
-        body.innerHTML = `<div class="bt-score">${d.score[mine]} : ${d.score[theirs]}</div><div class="bt-win">${res}</div>
+        body.innerHTML = `<div class="bt-score">${d.score[mine]} : ${d.score[theirs]}</div><div class="bt-win">${res}</div>${rwLine(d.rwGot)}
             <div class="bt-sec">문제마다 (나 · 상대)</div>
             <div class="bt-per">${d.qs.map((q, i) => `<div><span class="r">${i + 1}. ${refOf(q.v)} ${KIND[q.k]}</span>${cell(myRun[i])} · ${cell(opRun[i])}${d.per[i] === mine ? ' ⭐' : ''}</div>`).join('')}</div>
             ${reviewHtml(d, myRun)}

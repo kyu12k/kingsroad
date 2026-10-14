@@ -1567,9 +1567,20 @@ exports.guideGraduate = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
 // 보낸 사람이 먼저 7문제를 풀고 그 기록과 함께 보낸다 → 받은 사람이 같은 문제로 그 기록과 겨룬다.
 //  battles/{보낸태그_받는태그} — 두 사람 사이 방향마다 하나. 열린 동안엔 새로 못 보낸다(답하거나 7일 지나면 덮어씀)
 //  battlePairs/{작은태그_큰태그} — 두 사람의 전적
-// 둘 다 구글 연동 · 친구이거나 같은 길드 · 하루 10장. 승패만 남기고 보석·리그에는 넣지 않는다(사용자 10/13).
+// 둘 다 구글 연동 · 친구이거나 같은 길드 · 하루 10장. 리그·승점에는 넣지 않는다(사용자 10/13).
+// 💎 보상(10/14 사용자 — 대결도 암송이고 하루 10장이라 어뷰징 걱정이 덜하다): 맞힌 문제마다 100 · 끝까지 풀면 200 · 이기면 300(비기면 150).
+//   보낸 사람은 상대가 답하면 답장 200 + 승패 몫. **장마다 하루 한 번**(보낸 판·답한 판 구분 없이, 오전 6시 기준) · 하루 10판까지.
+//   battleRw/{태그} — day · chs(오늘 보상 받은 장) · n · pend(보낸 사람이 아직 안 받은 몫 — 대결 화면을 열 때 battleRwClaim)
 // 쓰기는 이 함수들만(규칙 write: false), 읽기는 두 사람만(uids).
 const BATTLE_Q = 7, BATTLE_TTL_MS = 7 * 86400000, BATTLE_SEND_DAILY = 10;
+const BATTLE_RW = { q: 100, done: 200, win: 300, draw: 150, reply: 200 }, BATTLE_RW_DAILY = 10;
+const _bDay = () => new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);   // KST 오전 6시 기준 날짜(+9 −6)
+function _bRwOf(snap) {   // 오늘 기준으로 — 날이 바뀌면 장 목록·판 수는 비우고 받을 몫(pend)은 그대로
+    const x = snap && snap.exists ? snap.data() : {}, day = _bDay();
+    return x.day === day ? { day, chs: Array.isArray(x.chs) ? x.chs : [], n: x.n | 0, pend: x.pend | 0 } : { day, chs: [], n: 0, pend: x.pend | 0 };
+}
+const _bRwOk = (r, ch) => !r.chs.includes(ch) && r.n < BATTLE_RW_DAILY;
+const _bRwInfo = r => ({ chs: r.chs, left: Math.max(0, BATTLE_RW_DAILY - r.n) });
 const BATTLE_KINDS = new Set(['ro', 'bl', 'ra', 'nx']);
 const BATTLE_VERSES = [0, 20, 29, 22, 11, 14, 17, 17, 13, 21, 11, 19, 17, 18, 20, 8, 21, 18, 24, 21, 15, 27, 21];
 const _bNick = (v) => String(v || '').slice(0, 20);
@@ -1648,7 +1659,26 @@ exports.battleCheck = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
     const { myTag, toTag } = request.data || {};
     const p = await _bPre(request, myTag, toTag);
-    return p.ok ? { ok: true, left: p.left } : p;
+    if (!p.ok) return p;
+    const r = _bRwOf(await db.collection('battleRw').doc(p.me).get());
+    return { ok: true, left: p.left, rw: _bRwInfo(r) };
+});
+
+// 보낸 사람이 쌓인 몫(답장·승패)을 받는다 + 오늘 보상 받은 장 — 대결 화면을 열 때
+exports.battleRwClaim = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    if (!_bGoogle(request)) return { ok: false, why: 'google' };
+    const { myTag } = request.data || {};
+    await verifyTag(request.auth.uid, myTag);
+    const ref = db.collection('battleRw').doc(String(myTag));
+    let out = { ok: true, gem: 0 };
+    await db.runTransaction(async tx => {
+        const r = _bRwOf(await tx.get(ref));
+        out = { ok: true, gem: r.pend, rw: _bRwInfo(r) };
+        if (r.pend > 0) tx.set(ref, { pend: 0 }, { merge: true });
+    });
+    if (out.gem) console.log(`[battleRwClaim] ${myTag} +${out.gem}`);
+    return out;
 });
 
 exports.battleSend = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
@@ -1662,14 +1692,24 @@ exports.battleSend = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     if (!p.ok) return p;
     await enforceRateLimit(request.auth.uid, 'battleSend', { maxCalls: BATTLE_SEND_DAILY, windowMs: 86400000 });
     const now = Date.now(), fromNick = _bNick(nick || p.u.nickname), toNick = _bNick(p.tl.nickname);
-    await p.ref.set({
-        ch: c, qs: cleanQs, state: 'open',
-        from: { uid: request.auth.uid, tag: p.me, nick: fromNick }, to: { uid: p.toUid, tag: p.to, nick: toNick },
-        uids: [...new Set([request.auth.uid, ...p.mine, ...p.toUids])], runs: { from: cleanRun },   // 기록은 쪽(from·to)으로 — 계정이 여럿이어도
-        createdAt: now, expiresAt: now + BATTLE_TTL_MS,
+    const rwRef = db.collection('battleRw').doc(p.me);
+    let rw = { gem: 0 };
+    await db.runTransaction(async tx => {
+        const r = _bRwOf(await tx.get(rwRef));
+        if (_bRwOk(r, c)) {
+            rw = { gem: cleanRun.filter(x => x.ok).length * BATTLE_RW.q + BATTLE_RW.done };
+            tx.set(rwRef, { day: r.day, chs: [...r.chs, c], n: r.n + 1 }, { merge: true });
+        } else rw = { gem: 0, why: r.chs.includes(c) ? 'ch' : 'daily' };
+        rw.rw = _bRwInfo(_bRwOk(r, c) ? { chs: [...r.chs, c], n: r.n + 1 } : r);
+        tx.set(p.ref, {
+            ch: c, qs: cleanQs, state: 'open',
+            from: { uid: request.auth.uid, tag: p.me, nick: fromNick }, to: { uid: p.toUid, tag: p.to, nick: toNick },
+            uids: [...new Set([request.auth.uid, ...p.mine, ...p.toUids])], runs: { from: cleanRun },   // 기록은 쪽(from·to)으로 — 계정이 여럿이어도
+            createdAt: now, expiresAt: now + BATTLE_TTL_MS, rwFrom: rw.gem > 0,   // 보낸 판에 보상이 붙었으면 답장·승패 몫도
+        });
     });
     await _bPush(p.tl, '⚔️ 말씀 대결', `${fromNick}님의 도전장 — ${c}장`);
-    return { ok: true, id: p.ref.id };
+    return { ok: true, id: p.ref.id, rw };
 });
 
 exports.battleAnswer = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
@@ -1687,7 +1727,20 @@ exports.battleAnswer = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
         d = snap.data();
         if (String(myTag) !== d.to.tag) { out = { ok: false, why: 'notyou' }; return; }   // 받는 사람 = 그 태그(verifyTag가 이 계정의 태그임을 확인했다)
         if (d.state !== 'open' || d.expiresAt < Date.now()) { out = { ok: false, why: 'closed' }; return; }
+        const rwT = db.collection('battleRw').doc(d.to.tag), rwF = db.collection('battleRw').doc(d.from.tag);
+        const [sT, sF] = await Promise.all([tx.get(rwT), tx.get(rwF)]);   // 트랜잭션은 읽기를 쓰기보다 먼저
         const j = _bJudge(d.runs.from || d.runs[d.from.uid], cleanRun);
+        const rT = _bRwOf(sT), side = (w) => w === 'draw' ? BATTLE_RW.draw : 0;
+        let rw = { gem: 0 };
+        if (_bRwOk(rT, d.ch)) {
+            rw = { gem: cleanRun.filter(x => x.ok).length * BATTLE_RW.q + BATTLE_RW.done + (j.win === 'to' ? BATTLE_RW.win : side(j.win)) };
+            tx.set(rwT, { day: rT.day, chs: [...rT.chs, d.ch], n: rT.n + 1 }, { merge: true });
+            rw.rw = _bRwInfo({ chs: [...rT.chs, d.ch], n: rT.n + 1 });
+        } else rw = { gem: 0, why: rT.chs.includes(d.ch) ? 'ch' : 'daily', rw: _bRwInfo(rT) };
+        if (d.rwFrom) {   // 보낸 사람 몫 — 답장 + 승패. 대결 화면을 열 때 받는다
+            const fromGem = BATTLE_RW.reply + (j.win === 'from' ? BATTLE_RW.win : side(j.win));
+            tx.set(rwF, { pend: (_bRwOf(sF).pend | 0) + fromGem }, { merge: true });
+        }
         const pairId = [d.from.tag, d.to.tag].sort().join('_');
         tx.update(ref, { state: 'done', 'runs.to': cleanRun, score: j.score, per: j.per, win: j.win, doneAt: Date.now() });
         const inc = admin.firestore.FieldValue.increment(1);
@@ -1701,7 +1754,7 @@ exports.battleAnswer = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
             uids: d.uids, tags: [d.from.tag, d.to.tag].sort(),
             ...(j.win === 'draw' ? { d: inc } : { w: { [j.win === 'from' ? d.from.tag : d.to.tag]: inc } }), at: Date.now(),
         }, { merge: true });   // set+merge는 점 경로를 풀지 않는다 — 중첩 객체로
-        out = { ok: true, score: j.score, per: j.per, win: j.win };
+        out = { ok: true, score: j.score, per: j.per, win: j.win, rw };
     });
     if (out.ok) {
         const lb = (await db.collection('leaderboard').doc(d.from.tag).get()).data();
