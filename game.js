@@ -764,7 +764,7 @@ const LANG = {
         rl_ask_title: '🌱 모르겠다고 한 {n}절, 다시 익혀 볼까요?', rl_ask_body: '단어 절반이 보이는 빈칸으로 한 번 → 백지로 한 번 다시 써 봐요.<br>백지 레벨·승점에는 들어가지 않아요 — 내일 차례에서 꺼내기가 쉬워져요',
         rl_go: '🌱 다시 익히기', rl_skip: '그만하기', rl_prog_cloze: '🌱 다시 익히기 · 빈칸 {cur}/{total}', rl_prog_blank: '🌱 다시 익히기 · 백지 {cur}/{total}', rl_done: '🌱 다시 익히기 — {n}절 중 {m}절을 백지로 써냈어요',
         hardship_feedback_assisted: '✋ {label} · 너무 빨리(한꺼번에) 들어와 이번엔 백지로 세지 않았어요 — 키보드 추천·자동 완성·음성 입력 없이 직접 써 주세요',
-        nr_fruit: '열매는 승점 대신 🍃 잎사귀', nr_gift: '나눔 열매는 승점 대신 💎·🍃',
+        nr_fruit: '열매는 승점 대신 🍃 잎사귀', nr_gift: '나눔 열매는 승점 대신 💎·🍃', nr_battle: '⚔️ 대결 복습 — 승점 없이 백지 기록만',
         nr_step: '첫 마디·빈칸으로 써서 승점 없음', nr_linked: '오늘 이 장은 이미 승점을 받아 승점 없음', nr_test: '연습 테스트라 승점 없음 — 장 전체 테스트만 승점',
         hardship_blank_hint_notice: '💡 막히면 힌트를 누르세요 — 한 글자씩만 열려요',
         embed_title_quick_blank_none: '백지 복습',
@@ -2078,7 +2078,7 @@ const LANG = {
         rl_ask_title: '🌱 Relearn the {n} verse(s) you missed?', rl_ask_body: 'Write each once with half the words shown, then once from memory.<br>No effect on blank level or points — it makes tomorrow easier',
         rl_go: '🌱 Relearn', rl_skip: 'Stop here', rl_prog_cloze: '🌱 Relearn · blanks {cur}/{total}', rl_prog_blank: '🌱 Relearn · memory {cur}/{total}', rl_done: '🌱 Relearn — wrote {m} of {n} verse(s) from memory',
         hardship_feedback_assisted: '✋ {label} · entered too fast (all at once), so it was not counted as written from memory — please type it yourself, without keyboard suggestions, autocomplete or voice input',
-        nr_fruit: 'fruit gives 🍃 leaves instead of points', nr_gift: 'shared fruit gives 💎·🍃 instead of points',
+        nr_fruit: 'fruit gives 🍃 leaves instead of points', nr_gift: 'shared fruit gives 💎·🍃 instead of points', nr_battle: '⚔️ battle review — blank record only, no points',
         nr_step: 'no points with first words/blanks given', nr_linked: 'this chapter already earned points today', nr_test: 'practice test, no points — only whole-chapter tests score',
         hardship_blank_hint_notice: '💡 Stuck? Tap the hint — it opens one letter at a time',
         embed_title_quick_blank_none: 'Blank review',
@@ -9895,6 +9895,7 @@ function battleReviewVerse(id) {
     window.hardshipOrigin = 'map';
     selectedHardshipOrderType = 'sequential';
     selectedHardshipUltimate = true;
+    _pendingHardshipEmbed = { label: `⚔️ 대결 복습 · ${String(id).replace('-', ':')}`, battleRev: String(id) };   // 망각의 고난이 아니다(10/14) — 기록·승점은 끼워 넣은 판 규칙(_isEmbeddedBlankSession)
     startHardshipSession('memory', [String(id)]);
 }
 // 홈 「오늘 할 일」의 ⚔️ 도전장 — 받은 것 중 아직 안 푼 것
@@ -28433,6 +28434,7 @@ function createEmptyHardshipState() {
         fruitKey: null,          // 새 예루살렘 생명나무 열매 먹기로 열린 1구절 백지 세션 ('YYYY-MM|절id')
         blankDueCh: null,        // 「오늘 백지 차례」로 열린 세션이면 그 장 (그 장의 차례인 절만, 백지)
         giftId: null,            // 🎁 나눔 열매 먹기 세션이면 그 열매 id
+        battleRev: null,         // ⚔️ 말씀 대결에서 틀린 절 「✍️ 백지로」(10/14) — 그 절 id. 망각의 고난이 아니다
         startLv: 0,              // 🔑 첫 마디의 고난이면 1·2·3(쉬움·보통·어려움) — 쳐야 할 글이 첫 마디로 잘린다
         startLvMap: null,        // 오답노트 — 절마다 막혔던 난이도
         fpNote: false,
@@ -29988,7 +29990,8 @@ function _isResumableHardshipSession() {
         && !hardshipState.blankDueCh
         && !hardshipState.startLv
         && !hardshipState.levelTest   // 🎓 시험은 한 번에 — 이어하면 그 사이에 원문을 볼 수 있다
-        && !hardshipState.giftId);
+        && !hardshipState.giftId
+        && !hardshipState.battleRev);
 }
 
 /* ★ 체크포인트를 **여러 건** 보관한다 (보스전은 한 건뿐이다).
@@ -30117,6 +30120,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
         hardshipState.startLv = embed.startLv || 0;
         hardshipState.fpSeq = !!embed.fpSeq;   // 🪔 첫 마디 · 순서대로
         hardshipState.giftId = embed.giftId || null;
+        hardshipState.battleRev = embed.battleRev || null;
         hardshipState.blankFirst = !!embed.blankFirst;
         hardshipState.startLvMap = embed.startLvMap || null;
         hardshipState.fpNote = !!embed.fpNote;
@@ -31501,7 +31505,8 @@ function _isEmbeddedBlankSession() {
                                 hardshipState.blankDueCh ||
                                 hardshipState.startLv ||
                                 hardshipState.levelTest ||
-                                hardshipState.giftId));
+                                hardshipState.giftId ||
+                                hardshipState.battleRev));
 }
 
 /* 「모르겠어요」 — 이번 판만 포기하고 정답을 확인한다.
@@ -32030,6 +32035,7 @@ function _hardshipRecallCtx() {
     if (hardshipState.bossStageId) return 'boss';
     if (hardshipState.eventId) return 'event';
     if (hardshipState.giftId) return 'gift';   // 🎁 나눔 열매 먹기 — 24시간 간격의 백지
+    if (hardshipState.battleRev) return 'battle';   // ⚔️ 말씀 대결에서 틀린 절
     if (hardshipState.startLv) return hardshipState.fpNote ? 'fpnote' : 'start';   // 🔑 첫 마디의 고난 · 오답노트
     if (hardshipState.blankDueCh) return 'due';   // 「오늘 백지 차례」 — 백지레벨 차례가 온 절만
     return 'hs';
@@ -32311,6 +32317,7 @@ function getHardshipScoreScale() {
     if (hardshipState.quickReviewStageId) return 0;
     if (hardshipState.fruitKey) return 0;   // 열매의 보상은 잎사귀 (백지레벨 보너스는 평소대로)
     if (hardshipState.giftId) return 0;     // 🎁 나눔 열매의 보상은 💎(보낸 것의 반)·잎사귀
+    if (hardshipState.battleRev) return 0;  // ⚔️ 대결 복습 — 백지 기록만(10/14 사용자: 망각의 고난이 클리어된 것처럼 되었다)
     if (hardshipState.verseCheckStageId) return 0.25;
     if (hardshipState.midBossStageId) return 0.5;
     if (hardshipState.eventId) return 0.5;   // 이벤트 문항 = 2절 묶음, 중간점검과 같은 크기
@@ -32339,6 +32346,7 @@ function _noRewardWhy() {
     if (hs.repeatFactor === 0) return 'nr_linked';
     if (hs.fruitKey) return 'nr_fruit';   // 🍎 생명나무 열매 — 승점 대신 잎사귀(10/11: 「오늘 이미 받은 승점」으로 잘못 나왔다)
     if (hs.giftId) return 'nr_gift';      // 🎁 나눔 열매 — 승점 대신 💎·🍃
+    if (hs.battleRev) return 'nr_battle';  // ⚔️ 대결 복습
     return '';
 }
 function _blankScoreKind() {
@@ -32961,7 +32969,7 @@ function finishHardshipSession(reason) {
         if (reason !== 'completed' || hardshipState.mode !== 'memory' ||
             hardshipState.trainingMode || hardshipState.midBossStageId ||
             hardshipState.bossStageId || hardshipState.verseCheckStageId ||
-            hardshipState.eventId || hardshipState.quickReviewStageId || hardshipState.fruitKey || hardshipState.blankDueCh || hardshipState.startLv || hardshipState.giftId) return '';
+            hardshipState.eventId || hardshipState.quickReviewStageId || hardshipState.fruitKey || hardshipState.blankDueCh || hardshipState.startLv || hardshipState.giftId || hardshipState.battleRev) return '';
         const sessionDuration = getHardshipElapsedSeconds();
         const record = {
             correct: hardshipState.studiedCount,
