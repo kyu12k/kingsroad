@@ -22296,7 +22296,8 @@ function _renderGuildHome(body, guild, myStatus = {}) {
     guild.members.forEach(tag => {
         const nick = nicknames[tag] || tag;
         const isThisLeader = tag === guild.leaderId;
-        const memo = _memos[tag] || '';
+        const fMemo = (typeof getFriendMemo === 'function') ? getFriendMemo(tag) : '';   // 친구이기도 하면 친구 메모를 그대로(10/14 사용자: 매번 따로 적기 번거롭다)
+        const memo = fMemo || _memos[tag] || '';
         html += `<div class="guild-member-row" style="flex-wrap:wrap;gap:2px;">
             <span class="guild-member-name">${escapeHtml(nick)}<span class="guild-member-tag"> #${tag}</span>${isThisLeader ? ' <span class="guild-leader-badge">길드장</span>' : ''}</span>
             <span style="display:flex;align-items:center;gap:4px;margin-left:auto;">
@@ -22304,7 +22305,7 @@ function _renderGuildHome(body, guild, myStatus = {}) {
                 ${isLeader && tag !== myTag ? `<button class="guild-btn-kick" onclick="_kickGuildMember('${tag}',this)">추방</button>` : ''}
                 <button onclick="_editMemberMemo('${tag}')" style="background:none;border:1px solid #4a4a6a;border-radius:5px;color:${memo ? '#f1c40f' : '#7070a0'};font-size:11px;padding:2px 6px;cursor:pointer;" title="${escapeHtml(memo || '메모 없음')}">📝</button>
             </span>
-            ${memo ? `<div style="width:100%;font-size:11px;color:#a090c0;padding:2px 2px 0;white-space:pre-wrap;word-break:break-all;">${escapeHtml(memo)}</div>` : ''}
+            ${memo ? `<div style="width:100%;font-size:11px;color:#a090c0;padding:2px 2px 0;white-space:pre-wrap;word-break:break-all;">${fMemo ? '👥 ' : ''}${escapeHtml(memo)}</div>` : ''}
         </div>`;
     });
     html += `</div>`;
@@ -22420,7 +22421,8 @@ function _editMemberMemo(tag) {
     let overlay = document.getElementById('member-memo-overlay');
     if (overlay) overlay.remove();
     const memos = _getMemberMemos();
-    const current = memos[tag] || '';
+    const fMemo = (typeof getFriendMemo === 'function') ? getFriendMemo(tag) : '';   // 친구 메모가 있으면 그것을 고친다 — 친구 목록과 한 메모
+    const current = fMemo || memos[tag] || '';
     overlay = document.createElement('div');
     overlay.id = 'member-memo-overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10000;display:flex;align-items:center;justify-content:center;';
@@ -22428,6 +22430,7 @@ function _editMemberMemo(tag) {
         <div style="background:#1e1e2e;border-radius:14px;padding:20px;max-width:300px;width:88%;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
             <div style="color:#c8b8e8;font-size:14px;font-weight:700;margin-bottom:12px;">📝 ${escapeHtml(nick)} 메모</div>
             <textarea id="member-memo-input" style="width:100%;box-sizing:border-box;height:80px;background:#12121e;border:1px solid #4a4a6a;border-radius:8px;color:#e0d8f0;font-size:13px;padding:8px;resize:none;" placeholder="나만 보이는 메모">${escapeHtml(current)}</textarea>
+            ${fMemo ? `<div style="color:#8a80b0;font-size:11px;margin-top:6px;">👥 친구 메모예요 — 고치면 친구 목록에도 같이 바뀌어요</div>` : ''}
             <div style="display:flex;gap:8px;margin-top:12px;">
                 <button onclick="_saveMemberMemo('${tag}')" style="flex:1;padding:9px;border-radius:8px;border:none;background:#5040a0;color:#fff;font-size:14px;cursor:pointer;">저장</button>
                 <button onclick="document.getElementById('member-memo-overlay').remove()" style="flex:1;padding:9px;border-radius:8px;border:none;background:#3a3a5c;color:#b0a8d0;font-size:14px;cursor:pointer;">취소</button>
@@ -22443,9 +22446,12 @@ function _saveMemberMemo(tag) {
     if (!input) return;
     const memos = _getMemberMemos();
     const text = input.value.trim();
-    if (text) memos[tag] = text;
+    if (typeof getFriendMemo === 'function' && getFriendMemo(tag)) {   // 친구 메모를 고친다(길드 메모는 비워 하나로)
+        setFriendMemo(tag, text); delete memos[tag];
+    } else if (text) memos[tag] = text;
     else delete memos[tag];
     localStorage.setItem('kingsRoad_memberMemos', JSON.stringify(memos));
+    if (typeof saveGameData === 'function') saveGameData();   // 메모는 저장본에 실려 다른 기기로 간다
     document.getElementById('member-memo-overlay')?.remove();
     _renderGuildScreen();
 }
