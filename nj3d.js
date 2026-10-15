@@ -4592,6 +4592,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 if (f.got) return;
                 f.sp.position.y = f.y + Math.sin(t * 2 + f.i) * 0.06;
                 if (Math.hypot(f.x - px, f.sp.position.y - py, f.z - pz) > 0.42) return;   // 조각이 커진 만큼 닿는 거리도
+                if (f.i !== R.next && R.seg[f.i] === R.seg[R.next]) {   // 같은 말이 두 번 — 겉모습이 같아 구분할 수 없으니 어느 쪽을 먼저 집어도 차례로 친다(10/15 사용자). 차례를 맞바꾼다
+                    const g = R.frags.find(x => !x.got && x.i === R.next); if (g) g.i = f.i; f.i = R.next;
+                }
                 if (f.i === R.next) {   // 차례 맞는 조각
                     f.got = true; scene.remove(f.sp); R.next++;
                     if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect();
@@ -4637,7 +4640,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             setP: (x, y, z, face) => { P.x = x; P.y = y; P.z = z; P.vy = 0; if (face != null) { P.face = face; camYaw = face; } }, P: () => ({ x: P.x, y: P.y, z: P.z }),
             stars: () => stars.map(s => ({ id: s.id, x: s.x, y: s.g.position.y, z: s.z, done: s.done, vis: s.g.visible })),
             fragScreen: () => starRun ? starRun.frags.filter(f => !f.got).map(f => { const v = f.sp.position.clone().project(camera); return { i: f.i, sx: +((v.x + 1) / 2).toFixed(2), sy: +((1 - v.y) / 2).toFixed(2), z: +v.z.toFixed(3), sc: [+f.sp.scale.x.toFixed(2), +f.sp.scale.y.toFixed(2)], vis: f.sp.visible, inScene: !!f.sp.parent, dist: +f.sp.position.distanceTo(camera.position).toFixed(2) }; }) : null, cam: () => ({ p: camera.position.toArray().map(v => +v.toFixed(2)), near: camera.near, far: camera.far }), three: () => ({ scene, renderer, camera, controls }), jetTrial: ms => { if (jetTrialEnd) jetTrialEnd = Date.now() + ms; return { end: jetTrialEnd, land: jetTrialLand, on: jetOn }; }, dyn: () => ({ dynScale: +dynScale.toFixed(2), pr: +renderer.getPixelRatio().toFixed(2), ema: +dynEma.toFixed(3) }), tall: () => BOXES.filter(b => !b.item && b.y1 > 3.5).map(b => ({ x0: b.x0, x1: b.x1, z0: b.z0, z1: b.z1, y0: b.y0, y1: b.y1 })),
-            run: () => starRun ? { next: starRun.next, n: starRun.seg.length, frags: starRun.frags.map(f => ({ i: f.i, x: f.x, y: f.sp.position.y, z: f.z, got: f.got })) } : null };
+            run: () => starRun ? { next: starRun.next, n: starRun.seg.length, seg: starRun.seg, frags: starRun.frags.map(f => ({ i: f.i, w: starRun.seg[f.i], x: f.x, y: f.sp.position.y, z: f.z, got: f.got })) } : null };
         } catch (e) { }
 
         // ══ 🍞 만나 · 🐦 메추라기 (10/5) — 오늘의 암송을 마친 날 성 둘레 들판(출 16:13 「진 사면에」) (game.js _njMannaToday · docs/새-예루살렘.md) ══
@@ -5541,7 +5544,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                큰 화면일수록 그래픽 카드가 버거웠다. 「고급」을 직접 고른 사람은 처음 몇 초 자동 낮춤도 꺼져 있다.
                움직이는 동안 평균 프레임이 느리면(>45ms, 2초) 배율 ×0.85(최저 0.5), 빠르면(<24ms, 5초) 한 단계 되돌린다. 바꾼 뒤 3초는 쉰다 */
             if (rawDt < 0.5) {
-                const moving = walk ? (Math.abs(inp.jx) + Math.abs(inp.jy) > 0.05 || Object.values(inp.keys).some(Boolean) || !P.onGround) : touching;
+                const moving = walk ? (Math.abs(inp.jx) + Math.abs(inp.jy) > 0.05 || Object.values(inp.keys).some(Boolean) || !P.onGround || !!slide) : touching;
                 if (moving) {
                     dynEma = dynEma ? dynEma * 0.95 + rawDt * 0.05 : rawDt;
                     if (now - dynAt > 3000) {
@@ -5560,7 +5563,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 perf.n++; if (perf.n > 20) perf.sum += dt;
                 if (perf.n === 140 && perf.sum / 120 > 0.045) { setQuality(false, false); showHint(T('nj3d_slow'), 3500); }
             }
-            if (grassFollow) { if (walk) { const air = P.y - groundAt(P.x, P.z, P.y) > 1.2; grassFollow.mesh.visible = !air; if (!air) grassFollow(P.x, P.z); }   // 🪂 높이 날 땐 발밑 풀을 감추고 다시 깔지 않는다(활강은 빨라 초당 5~6번 깔았다)
+            if (grassFollow) { if (walk) { const air = P.y - groundAt(P.x, P.z, P.y) > 1.2 || !!slide; grassFollow.mesh.visible = !air; if (!air) grassFollow(P.x, P.z); }   // 🛝 미끄럼 중엔 발밑 풀을 다시 깔지 않는다(물길 속 · 빨라서 계속 다시 깔았다)   // 🪂 높이 날 땐 발밑 풀을 감추고 다시 깔지 않는다(활강은 빨라 초당 5~6번 깔았다)
                 else { grassFollow.mesh.visible = true; if (deco) grassFollow(deco.tgt.x, deco.tgt.z); else grassFollow(controls.target.x, controls.target.z); } }
             if (walk) nearTick(now, P.x, P.z); else if (deco) nearTick(now, deco.tgt.x, deco.tgt.z); else nearTick(now, controls.target.x, controls.target.z);
             {   // 🌗 그림자 굽기 (10/4) — 해는 고정이고 그림자는 성 둘레(±16)에만 생긴다. 바다·바닷가·나라에 있을 땐 매 프레임 다시 굽는 게 헛일이었다
@@ -5632,7 +5635,15 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             renderer.render(scene, camera);
             requestAnimationFrame(loop);
         }
-        rebuild(); resize(); loading.remove();
+        rebuild(); resize();
+        /* 🧪 그리기 프로그램(셰이더)을 미리 한 번에 (10/15 사용자: 강 미끄럼에서 렉 — 프로파일: 바다가 처음 화면에 들어올 때 셰이더를 그제야 만들어 7%).
+           숨겨 둔 것(물보라·비행운·불꽃 등)도 잠깐 켜서 함께 만든다 */
+        try {
+            const hid = []; scene.traverse(o => { if (!o.visible) { hid.push(o); o.visible = true; } });
+            renderer.compile(scene, camera);
+            hid.forEach(o => { o.visible = false; });
+        } catch (e) { }
+        loading.remove();
         ov.querySelector('.nj3d-build').hidden = false;   // 🔨 성이 다 지어진 뒤에(10/15 사용자: 불러오는 동안 건축이 마중 나왔다)
         {   // 🕊️ 들어가는 순간 · 🧭 할 일이 이끄는 입구(opts.start: 'manna' · 'stars' · 'sea')
             const toWalk = !VISIT && (opts.start === 'manna' || opts.start === 'stars');
