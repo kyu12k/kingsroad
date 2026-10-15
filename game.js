@@ -1147,7 +1147,7 @@ const LANG = {
         letter_nick_note: '게시되면 내 닉네임과 태그 <b>{nick}</b>이(가) 함께 올라가요', letter_send: '보내기', letter_sent: '💌 보내 주셔서 감사합니다 — 검토 후 게시판에 올라가요',
         letter_send_fail: '보내지 못했어요', letter_too_short: '조금만 더 적어 주세요', letter_daily_cap: '편지는 하루 {n}통까지 보낼 수 있어요',
         letter_like: '힘이 됐어요', letter_loading: '불러오는 중…', letter_none: '아직 올라온 편지가 없어요 — 첫 편지를 보내 주세요', letter_more: '편지 더 보기',
-        letter_tab_list: '게시된 편지', letter_tab_pending: '검토 대기', letter_pending_none: '검토할 편지가 없어요', letter_approve: '✅ 게시', letter_reject: '✕ 반려', letter_approved: '게시했어요', letter_rejected: '반려했어요',
+        letter_tab_list: '게시된 글', letter_tab_pending: '검토 대기', letter_pending_none: '검토할 편지가 없어요', letter_approve: '✅ 게시', letter_reject: '✕ 반려', letter_approved: '게시했어요', letter_rejected: '반려했어요',
         letter_nudge_first: '💌 처음엔 다들 막막해요 — 함께 암송하는 분의 편지', letter_nudge_stuck: '💌 막혀도 괜찮아요 — 함께 암송하는 분의 편지', letter_nudge_return: '💌 다시 오셨네요 — 함께 암송하는 분의 편지',
         nav_letters: '편지 · 꿀팁',
         letter_tab_cheer: '💌 편지', letter_tab_tip: '💡 꿀팁', tip_write_btn: '💡 꿀팁 남기기', tip_like: '도움 됐어요', tip_all: '전체', tip_none: '아직 이 주제의 꿀팁이 없어요 — 첫 꿀팁을 남겨 주세요',
@@ -21794,11 +21794,13 @@ async function _letterLoad(force) {
 }
 /* 💡 꿀팁 (10/15 사용자) — 편지와 같은 승인제, 창은 「💌 편지 · 💡 꿀팁」 두 탭. 꿀팁은 주제(topic) 하나 + 글쓴이가 외운 절 수(vn, 믿음을 주려고). 보상 없음(사용자) */
 const TIP_TOPICS = ['memo', 'blank', 'review', 'time', 'boss', 'nj', 'etc'];
-const _tipTopicOf = L => TIP_TOPICS.includes(L.topic) ? L.topic : 'etc';   // 10/15 전 꿀팁엔 주제가 없다 — 기타
+const _tipTopicOf = L => TIP_TOPICS.includes(L.topic) ? L.topic : 'etc';
+// 꿀팁 = 주제가 붙은 글만. 10/15 전엔 편지 쓰기에서 「💡 암송 꿀팁/🙏 응원」을 골랐다 — 그 글들은 편지 탭에 그대로(사용자: 꿀팁에 편지가 나온다)
+const _isTip = L => L.kind === 'tip' && TIP_TOPICS.includes(L.topic);
 function _letterCardHtml(L, opts) {
-    const liked = (_lsGet('kingsRoad_letterLiked', []) || []).includes(L.id), tip = L.kind === 'tip';
+    const liked = (_lsGet('kingsRoad_letterLiked', []) || []).includes(L.id), tip = _isTip(L);
     return `<div class="lt-letter${tip ? ' tip' : ''}" data-id="${escapeHtml(L.id)}">
-        <div class="lt-letter-kind">${tip ? t('tip_t_' + _tipTopicOf(L)) : t('letter_kind_cheer')}</div>
+        <div class="lt-letter-kind">${tip ? t('tip_t_' + _tipTopicOf(L)) : L.kind === 'tip' ? t('letter_kind_tip') : t('letter_kind_cheer')}</div>
         <div class="lt-letter-text">${escapeHtml(L.text || '').replace(/\n/g, '<br>')}</div>
         <div class="lt-letter-foot"><span class="lt-letter-nick">— ${escapeHtml(L.nick || t('letter_anon'))}${L.tag && L.tag !== '0000' ? ` <span class="lt-letter-tag">#${escapeHtml(L.tag)}</span>` : ''}${tip && L.vn > 0 ? ` <span class="lt-letter-vn">· ${t('tip_vn', { n: L.vn | 0 })}</span>` : ''}</span>
             <button class="lt-letter-like${liked ? ' on' : ''}" ${liked ? 'disabled' : ''} onclick="_letterLike('${escapeHtml(L.id)}', this)">${tip ? '👍 ' + t('tip_like') : '🙏 ' + t('letter_like')} <b>${L.likes | 0}</b></button></div>
@@ -21836,7 +21838,7 @@ async function openLetterBoard(tab, kind, topic) {
     }
     const all = await _letterLoad(true);
     if (!document.getElementById('letter-list')) return;
-    const arr = all.filter(L => (L.kind === 'tip') === tip && (!topic || _tipTopicOf(L) === topic));
+    const arr = all.filter(L => _isTip(L) === tip && (!topic || _tipTopicOf(L) === topic));
     box.innerHTML = arr.length ? arr.map(L => _letterCardHtml(L)).join('') : `<div class="letter-empty">${tip ? t('tip_none') : t('letter_none')}</div>`;
     if (tip) { box.insertAdjacentHTML('afterend', '<div id="tip-mine"></div>'); _tipMineRender(); }
     if (admin) { try { const q = await db.collection('letters').where('status', '==', 'pending').orderBy('createdAt', 'desc').limit(50).get(); const el = document.getElementById('letter-pend-n'); if (el) el.textContent = q.size || ''; } catch (e) { } }
@@ -21889,7 +21891,7 @@ async function _letterSend() {
 }
 /* 💡 꿀팁 고르기 — 그 주제(없으면 아무 꿀팁) 중 최근에 안 본 것 */
 function _tipPick(topic) {
-    const tips = (_letterCache || []).filter(L => L.kind === 'tip'); if (!tips.length) return null;
+    const tips = (_letterCache || []).filter(_isTip); if (!tips.length) return null;
     const pool0 = tips.filter(L => _tipTopicOf(L) === topic), base = pool0.length ? pool0 : tips;
     const seen = _lsGet('kingsRoad_tipSeen', []) || [], fresh = base.filter(L => !seen.includes(L.id)), arr = fresh.length ? fresh : base;
     const pick = arr[Math.floor(Math.random() * arr.length)];
@@ -21935,7 +21937,7 @@ async function _tipMine() {
     if (typeof db === 'undefined' || !db || !auth || !auth.currentUser) return [];
     try {
         const q = await db.collection('letters').where('uid', '==', auth.currentUser.uid).get();
-        return q.docs.map(d => Object.assign({ id: d.id }, d.data())).filter(L => L.kind === 'tip')
+        return q.docs.map(d => Object.assign({ id: d.id }, d.data())).filter(_isTip)
             .sort((a, b) => ((b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0) - (a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0)));
     } catch (e) { console.warn('[tips] mine', e); return []; }
 }

@@ -52,7 +52,7 @@
                 <button class="nj3d-mode"></button>
                 <button class="nj3d-go"></button>
                 <button class="nj3d-deco"></button>
-                <button class="nj3d-build">${T('nj3d_build')}</button>
+                <button class="nj3d-build" hidden>${T('nj3d_build')}</button>
                 <button class="nj3d-holo" hidden></button>
                 <div class="nj3d-decobar" hidden></div>
                 <div class="nj3d-decopanel" hidden></div>
@@ -546,8 +546,11 @@
                             for (let x = a0 + 0.15; x < a1 - 0.1; x += 0.42) mer.push(x);
                             for (let n = 0; n < Math.round(L * 1.2); n++) { const [sx, sz] = rotXZ(a0 + Math.random() * L, -HALF - 0.04, rot); sparkPts.push([sx, FH + 0.3 + Math.random() * (WALL_H - 0.4), sz]); }   // 벽옥 성벽 겉면
                         });
-                        const mg = new THREE.InstancedMesh(crystalGeo(new THREE.BoxGeometry(0.24, 0.22, WALL_T + 0.04)), wm, mer.length), m4 = new THREE.Matrix4(), q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), rot), one = new THREE.Vector3(1, 1, 1);
-                        mer.forEach((x, n) => { const [wx, wz] = rotXZ(x, -HALF + WALL_T / 2, rot); m4.compose(new THREE.Vector3(wx, FH + WALL_H + 0.11, wz), q, one); mg.setMatrixAt(n, m4); });
+                        // 성가퀴 — 성벽 바깥 가장자리에 얇게(안쪽은 성벽 위를 걷는 길), 부딪힌다(10/15 사용자: 성벽은 밟는데 성가퀴는 통과됐다)
+                        const MER_D = 0.2, mg = new THREE.InstancedMesh(crystalGeo(new THREE.BoxGeometry(0.24, 0.22, MER_D)), wm, mer.length), m4 = new THREE.Matrix4(), q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), rot), one = new THREE.Vector3(1, 1, 1);
+                        mer.forEach((x, n) => { const [wx, wz] = rotXZ(x, -HALF - 0.02 + MER_D / 2, rot); m4.compose(new THREE.Vector3(wx, FH + WALL_H + 0.11, wz), q, one); mg.setMatrixAt(n, m4);
+                            const c1 = rotXZ(x - 0.12, -HALF - 0.02, rot), c2 = rotXZ(x + 0.12, -HALF - 0.02 + MER_D, rot);
+                            BOXES.push({ x0: Math.min(c1[0], c2[0]), x1: Math.max(c1[0], c2[0]), z0: Math.min(c1[1], c2[1]), z1: Math.max(c1[1], c2[1]), y0: FH + WALL_H, y1: FH + WALL_H + 0.22 }); });
                         mg.castShadow = true; built.add(mg);
                         [0, 2].forEach(end => {   // 모퉁이 — 두 면의 성벽이 맞물리는 네모 기둥(성벽과 같은 높이·성가퀴 하나). 망대는 뺐다(10/1 사용자 — 21장에 없고, 문을 닫지 않는 성 21:25)
                             if (idx(i) !== end) return;
@@ -555,7 +558,7 @@
                             if (built.children.some(o => o.userData.corner && Math.hypot(o.position.x - tx, o.position.z - tz) < 0.1)) return;
                             const cn = new THREE.Mesh(crystalGeo(new THREE.BoxGeometry(WALL_T, WALL_H, WALL_T)), wm); cn.userData.corner = true; cn.position.set(tx, FH + WALL_H / 2, tz); cn.castShadow = true; built.add(cn);
                             const cm = new THREE.Mesh(crystalGeo(new THREE.BoxGeometry(WALL_T + 0.04, 0.22, WALL_T + 0.04)), wm); cm.position.y = WALL_H / 2 + 0.11; cn.add(cm);
-                            BOXES.push({ x0: tx - WALL_T / 2, x1: tx + WALL_T / 2, z0: tz - WALL_T / 2, z1: tz + WALL_T / 2, y0: FH, y1: FH + WALL_H });
+                            BOXES.push({ x0: tx - WALL_T / 2, x1: tx + WALL_T / 2, z0: tz - WALL_T / 2, z1: tz + WALL_T / 2, y0: FH, y1: FH + WALL_H + 0.22 });   // 모퉁이 기둥 + 머리의 성가퀴
                         });
                     }
                     // 문 안팎의 경사로 — 기초석 단(0.6)은 순례자 키(0.22)보다 훨씬 높다
@@ -1849,7 +1852,10 @@
         }
         function blocked(x, z, y) {
             if (Math.abs(x) > 140 || z < -140 || z > 150) return true;
-            if ((y < SEA_Y - 0.03 && seaE(x, z) < 1 ? seabed(x, z) : terrain(x, z)) - y > STEP) return true;   // 물속에선 바다 밑이 땅 — 수면을 땅으로 보면 물속에서 앞이 막혀 못 움직였다
+            const gh = (px, pz) => (y < SEA_Y - 0.03 && seaE(px, pz) < 1 ? seabed(px, pz) : terrain(px, pz));
+            if (gh(x, z) - y > STEP) return true;
+            // 성 안팎(기초석 단·경사로·물길 둑) — 몸 둘레까지 본다. 중심만 보니 경사로 옆면에 몸이 반쯤 파묻혔다(10/15 사용자)
+            if (Math.max(Math.abs(x), Math.abs(z)) < HALF + RAMP_L + 0.5) { const r = 0.09; if (gh(x + r, z) - y > STEP || gh(x - r, z) - y > STEP || gh(x, z + r) - y > STEP || gh(x, z - r) - y > STEP) return true; }   // 물속에선 바다 밑이 땅 — 수면을 땅으로 보면 물속에서 앞이 막혀 못 움직였다
             return BOXES.some(b => b.y1 > y + STEP && b.y0 < y + CH && x > b.x0 - CR && x < b.x1 + CR && z > b.z0 - CR && z < b.z1 + CR);
         }
 
@@ -5505,6 +5511,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             requestAnimationFrame(loop);
         }
         rebuild(); resize(); loading.remove();
+        ov.querySelector('.nj3d-build').hidden = false;   // 🔨 성이 다 지어진 뒤에(10/15 사용자: 불러오는 동안 건축이 마중 나왔다)
         {   // 🕊️ 들어가는 순간 · 🧭 할 일이 이끄는 입구(opts.start: 'manna' · 'stars' · 'sea')
             const seaStart = where === 'sea';
             const vref = seaStart ? [21, 24] : [21, 2], en = typeof currentLang !== 'undefined' && currentLang === 'en';
