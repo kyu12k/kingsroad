@@ -561,7 +561,7 @@
                         // 성가퀴 — 성벽 바깥 가장자리에 얇게(안쪽은 성벽 위를 걷는 길), 부딪힌다(10/15 사용자: 성벽은 밟는데 성가퀴는 통과됐다)
                         const MER_D = 0.2, mg = new THREE.InstancedMesh(crystalGeo(new THREE.BoxGeometry(0.24, 0.22, MER_D)), wm, mer.length), m4 = new THREE.Matrix4(), q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), rot), one = new THREE.Vector3(1, 1, 1);
                         mer.forEach((x, n) => { const [wx, wz] = rotXZ(x, -HALF - 0.02 + MER_D / 2, rot); m4.compose(new THREE.Vector3(wx, FH + WALL_H + 0.11, wz), q, one); mg.setMatrixAt(n, m4);
-                            const c1 = rotXZ(x - 0.12, -HALF - 0.02, rot), c2 = rotXZ(x + 0.12, -HALF - 0.02 + MER_D, rot);
+                            const c1 = rotXZ(x - 0.1, -HALF - 0.02, rot), c2 = rotXZ(x + 0.1, -HALF - 0.04 + MER_D, rot);   // 모양(0.24 × 0.2)보다 살짝 작게 — 스치기만 해도 걸렸다
                             BOXES.push({ x0: Math.min(c1[0], c2[0]), x1: Math.max(c1[0], c2[0]), z0: Math.min(c1[1], c2[1]), z1: Math.max(c1[1], c2[1]), y0: FH + WALL_H, y1: FH + WALL_H + 0.22 }); });
                         mg.castShadow = true; built.add(mg);
                         [0, 2].forEach(end => {   // 모퉁이 — 두 면의 성벽이 맞물리는 네모 기둥(성벽과 같은 높이·성가퀴 하나). 망대는 뺐다(10/1 사용자 — 21장에 없고, 문을 닫지 않는 성 21:25)
@@ -4076,8 +4076,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const landMount = ride.on && MD && !['boat', 'sub', 'fly'].includes(MD.kind || 'animal');   // 🐴 땅 탈것은 바다에 못 든다 — 내려서 헤엄(10/5: 이제 바다는 걷는 데가 아니다)
             const seaOk = (x, z) => boatOn ? seaE(x, z) < 0.97 : landMount ? !swimWater(x, z) : true;   // ⛵ 배는 바다 안에서만 — 해안에 닿으면 멈춘다
             const yb = (!ride.on && seaE(P.x, P.z) < 1 && P.y > SEA_Y - 0.6) ? Math.max(P.y, SEA_Y + 0.02) : P.y;   // 🏊 수면·얕은 물에서 뭍으로 — 물가 바닥이 갑자기 깊어 턱에 걸렸다(10/5 시험). 수면 높이로 잰다
-            if (!blocked(nx, P.z, yb) && seaOk(nx, P.z)) P.x = nx;
-            if (!blocked(P.x, nz, yb) && seaOk(P.x, nz)) P.z = nz;
+            const stuck = blocked(P.x, P.z, yb);   // 🧱 이미 무언가와 겹쳐 있으면(성가퀴·문 기둥·예물 틈에 낌) 이번 걸음은 풀어 준다 — 어느 쪽도 못 움직였다(10/15 사용자)
+            if ((stuck || !blocked(nx, P.z, yb)) && seaOk(nx, P.z)) P.x = nx;
+            if ((stuck || !blocked(P.x, nz, yb)) && seaOk(P.x, nz)) P.z = nz;
             if (landMount && moving && (!seaOk(nx, P.z) || !seaOk(P.x, nz)) && performance.now() > mountSeaHint) { mountSeaHint = performance.now() + 6000; showHint(T('nj3d_mount_sea'), 2600); }
             if (plungeMom) {   // 🌊 풍덩 뒤 물속으로 미끄러져 나아간다 — 물의 저항으로 1초 남짓에 멎는다
                 const mz = P.z + plungeMom.vz * dt; if (!blocked(P.x, mz, P.y)) P.z = mz;
