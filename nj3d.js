@@ -1567,7 +1567,7 @@
         const slideBtn = ov.querySelector('.nj3d-slidebtn');
         let slide = null, slideCheckT = 0;   // 🛝 생명수 미끄럼 — 남쪽 강을 타고 바다까지 { v 빠르기, t, sp 물보라 }
         // 🛝 속도감 (10/5 사용자: 빠르기는 그대로, 속도감만) — 시야 넓히기 · 물보라 · 화면 가장자리 바람 선 · 흐르는 물·바람 소리. 화면 흔들기는 뺐다(떨림을 싫어했다)
-        let fovBoost = 0, slideSnd = null, slideK = 0, jetRush = 0;
+        let fovBoost = 0, slideSnd = null, slideK = 0, jetRush = 0, glideK = 0, glideBank = 0, glideFace = 0;
         const speedEl = ov.querySelector('.nj3d-speed');
         const slideSndStop = () => { if (slideSnd) { slideSnd.stop(); slideSnd = null; } };
         cleanups.push(slideSndStop);
@@ -1686,6 +1686,29 @@
         // 글라이더 (9/30) — 점프한 채로 점프를 한 번 더: 날개가 펼쳐져 천천히 활강, 또 누르면 접힌다. 땅에 닿으면 접힌다. 값은 없다
         // 🪂 글라이더·등 날개 (10/2) — 종류마다 모양이 다르다(도형으로 그린다, 모델 파일 없음). 글라이더는 머리 위로 들고, 등 날개는 걸을 땐 접혀 있다가 활강할 때 펼쳐 퍼덕인다
         const glider = new THREE.Group(); glider.position.set(0, 0.3, 0.01); glider.visible = false; body.add(glider);
+        /* 🪂 날개 끝 비행운 (10/15 사용자: 활강이 심심하다) — 양 날개 끝에서 하얀 줄이 뒤로 끌리다 흐려진다 */
+        const TRAIL_N = 26, trails = [-1, 1].map(sg => {
+            const pos = new Float32Array(TRAIL_N * 3), col = new Float32Array(TRAIL_N * 3);
+            for (let i = 0; i < TRAIL_N; i++) { const f = Math.pow(1 - i / (TRAIL_N - 1), 1.6) * 0.85; col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = f; }
+            const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+            const line = new THREE.Line(g, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+            line.frustumCulled = false; line.visible = false; scene.add(line);
+            return { sg, line, pos, on: false, acc: 0 };
+        });
+        const _tw = new THREE.Vector3();
+        function trailTick(dt, on) {
+            trails.forEach(T2 => {
+                if (!on) { if (T2.on) { T2.on = false; T2.line.visible = false; } return; }
+                glider.updateMatrixWorld(true); _tw.set(T2.sg * 0.34, 0.004, 0.12); glider.localToWorld(_tw);
+                const p = T2.pos;
+                if (!T2.on) { for (let i = 0; i < TRAIL_N; i++) { p[i * 3] = _tw.x; p[i * 3 + 1] = _tw.y; p[i * 3 + 2] = _tw.z; } T2.on = true; T2.line.visible = true; }
+                T2.acc += dt;
+                if (T2.acc > 0.03) { T2.acc = 0; p.copyWithin(3, 0, (TRAIL_N - 1) * 3); }   // 한 칸씩 뒤로
+                p[0] = _tw.x; p[1] = _tw.y; p[2] = _tw.z;
+                T2.line.geometry.attributes.position.needsUpdate = true;
+            });
+        }
+        cleanups.push(() => trails.forEach(T2 => { scene.remove(T2.line); T2.line.geometry.dispose(); T2.line.material.dispose(); }));
         const backWings = new THREE.Group(); backWings.position.set(0, 0.155, 0.03); backWings.visible = false; body.add(backWings);
         let gliding = false, wingK = null, wingKind = 'glider', wingFx = null;
         const triGeo = (pts, idx) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3)); g.setIndex(idx); g.computeVertexNormals(); return g; };
@@ -4063,10 +4086,10 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         });
         function speedFx(dt) {   // 시야·바람 선 — 미끄럼이 끝나면 천천히 돌아온다. 물보라는 끝난 뒤에도 떨어질 때까지
             miniT -= dt; if (miniT <= 0) { miniT = 0.1; miniDraw(); }   // 🗺️ 미니맵 — 초당 10번
-            const want = slide ? 16 * slideK : jetRush * 9;   // 🚀 제트팩으로 빠르게 날면 시야가 조금 넓어진다(10/15 사용자: 속도감이 없다)
+            const want = slide ? 16 * slideK : Math.max(jetRush * 9, glideK * 6);   // 🚀 제트팩으로 빠르게 날면 · 🪂 활강하면 시야가 조금 넓어진다(10/15 사용자: 속도감이 없다 · 활강이 심심하다)
             fovBoost += (want - fovBoost) * (1 - Math.exp(-dt * 3));
             const fov = 62 + fovBoost; if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
-            speedEl.style.opacity = reduce ? '0' : slide ? (0.45 * Math.max(0, slideK - 0.15)).toFixed(3) : jetRush > 0.6 ? (0.4 * (jetRush - 0.6) / 0.4).toFixed(3) : '0';
+            speedEl.style.opacity = reduce ? '0' : slide ? (0.45 * Math.max(0, slideK - 0.15)).toFixed(3) : jetRush > 0.6 ? (0.4 * (jetRush - 0.6) / 0.4).toFixed(3) : glideK > 0.3 ? (0.22 * glideK).toFixed(3) : '0';
             if (!slide && spray.visible) sprayTick(dt, 0);
         }
         function walkUpdate(dt) {
@@ -4191,6 +4214,15 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (P.onGround) gliding = false;
             const gl = gliding && !fly;
             glider.visible = gl && wingKind === 'glider';
+            {   // 🪂 활강의 맛 — 도는 쪽으로 날개·몸이 기울고, 곧게 날 때도 바람에 일렁인다. 날개 끝 비행운
+                const turn = Math.atan2(Math.sin(P.face - glideFace), Math.cos(P.face - glideFace)) / Math.max(dt, 1e-3); glideFace = P.face;
+                const wantBank = gl ? Math.max(-0.55, Math.min(0.55, turn * 0.22)) : 0;
+                glideBank += (wantBank - glideBank) * Math.min(1, dt * 4);
+                glideK += ((gl ? 1 : 0) - glideK) * Math.min(1, dt * 3);
+                if (gl) { glider.rotation.z = glideBank + Math.sin(walkT * 2.1) * 0.035; glider.rotation.x = -0.06 + Math.sin(walkT * 1.4) * 0.03; glider.position.y = 0.3 + Math.sin(walkT * 2.6) * 0.004; }
+                body.rotation.z += ((gl ? glideBank * 0.7 : 0) - body.rotation.z) * Math.min(1, dt * 6);
+                trailTick(dt, gl && !reduce);
+            }
             backWings.visible = wingKind === 'wings' && !ride.on;   // 탈 때는 접은 날개를 감춘다(배·자전거에서 삐죽 튀어나왔다)
             if (wingKind === 'wings' && backWings.userData.p) {   // 걸을 땐 등에 접고, 활강하면 펼쳐 퍼덕인다
                 const [pR, pL] = backWings.userData.p, fl = gl ? Math.sin(walkT * 7) * 0.35 + 0.1 : -0.25, ry = gl ? 0.15 : 1.3, ek = Math.min(1, dt * 8);
