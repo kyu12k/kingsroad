@@ -4411,10 +4411,16 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             starHudDraw();
         }
         // ⭐ 별을 얻으면 — 화면 가운데 축하 카드(10/14 사용자: 아래 알림이 심심하다). 그 절 전체(모은 조각은 금빛) · 오늘 별 칸 · 💎 숫자가 차오른다.
-        //    일곱 다 모으면 카드가 한 번 더 — 별 일곱이 함께 빛나고 💎5,000. 누르면 닫힌다
+        //    일곱 다 모으면 카드가 한 번 더 — 별 일곱이 함께 빛나고 💎5,000.
+        //    10/15 사용자: 날며 조작하던 손가락에 카드가 바로 닫혔다 → 아무 데나 눌러서는 안 닫히고 가운데 「확인」으로만, 뜬 뒤 0.6초는 버튼도 안 받음, 저절로 닫히지 않음.
+        //    💎5,000 카드는 첫 카드의 「확인」 뒤에 이어서
         const starWinEl = document.createElement('div'); starWinEl.className = 'nj3d-starwin'; starWinEl.hidden = true; stageEl.appendChild(starWinEl);
-        let starWinT = 0;
-        starWinEl.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); clearTimeout(starWinT); starWinEl.hidden = true; });
+        let starWinNext = null, starWinAt = 0;
+        starWinEl.addEventListener('pointerdown', e => {   // 카드 밖·안 어디를 눌러도 아래 화면(조이스틱·카메라)으로 가지 않게 — 닫는 것은 「확인」만
+            e.preventDefault(); e.stopPropagation();
+            const ok = e.target.closest('.sw-ok'); if (!ok || performance.now() - starWinAt < 600) return;
+            starWinEl.hidden = true; const nx = starWinNext; starWinNext = null; if (nx) nx();
+        });
         function countUp(el, to, ms) { const t0 = performance.now(); const f = () => { const u = Math.min(1, (performance.now() - t0) / ms); el.textContent = Math.round(to * (1 - Math.pow(1 - u, 3))).toLocaleString(); if (u < 1 && !starWinEl.hidden) requestAnimationFrame(f); }; f(); }
         function starWin(res, R) {
             const dots = n => Array.from({ length: res.total }, (_, i) => `<i class="${i < n ? 'on' : ''}${i === n - 1 ? ' new' : ''}">★</i>`).join('');
@@ -4425,18 +4431,19 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                     <div class="sw-title">${starEsc(T(all ? 'nj3d_star_all_title' : 'nj3d_star_win'))}</div>
                     ${all ? '' : `<div class="sw-ref">${starEsc(R.ref)}</div><div class="sw-txt">${R.ws.map((w, i) => i >= R.st && i < R.st + R.seg.length ? `<b>${starEsc(w)}</b>` : `<span>${starEsc(w)}</span>`).join(' ')}</div>`}
                     <div class="sw-dots">${dots(res.n)}</div>
-                    <div class="sw-gem">💎 +<span>0</span></div></div>`;
+                    <div class="sw-gem">💎 +<span>0</span></div>
+                    <button class="sw-ok">${starEsc(T('btn_confirm'))}</button></div>`;
+                starWinAt = performance.now();
                 starWinEl.hidden = false; void starWinEl.offsetWidth; starWinEl.classList.add('in');
                 countUp(starWinEl.querySelector('.sw-gem span'), all ? res.all : res.gem, all ? 1400 : 900);
-                clearTimeout(starWinT); starWinT = setTimeout(() => { starWinEl.hidden = true; }, all ? 5200 : 5000);
             };
             show(false);
-            if (res.all) setTimeout(() => {
+            starWinNext = !res.all ? null : () => {
                 if (cur !== C) return;
                 show(true);
                 for (let k = 0; k < 6; k++) setTimeout(() => { if (cur === C) sprayBurst(P.x + (Math.random() - 0.5) * 1.6, P.y + 0.6 + Math.random() * 0.8, P.z + (Math.random() - 0.5) * 1.6, 26, 0); }, k * 180);
                 if (typeof SoundEffect !== 'undefined' && SoundEffect.playLevelUp) { SoundEffect.playLevelUp(); setTimeout(() => SoundEffect.playLevelUp(), 380); }
-            }, 5100);
+            };
         }
         function starEnd(ok) {
             const R = starRun; if (!R) return; starRun = null;

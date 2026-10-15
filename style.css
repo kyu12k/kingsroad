@@ -7872,3 +7872,8 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 @keyframes swBob { 50% { transform: translateY(-5px) scale(1.06); } }
 @keyframes swPop { 0% { transform: scale(0.2); } 60% { transform: scale(1.7); } 100% { transform: scale(1); } }
 @keyframes swGlow { 50% { text-shadow: 0 0 16px rgba(255,220,90,1); transform: scale(1.15); } }
+/* ⭐ 별 카드 「확인」 — 가운데 크게, 이것으로만 닫힌다(10/15) */
+#nj3d .nj3d-starwin .sw-ok { display: block; margin: 14px auto 0; min-width: 150px; padding: 12px 28px; border: none; border-radius: 999px;
+    background: linear-gradient(180deg, #ffe08a, #f1b93a); color: #3a2600; font-size: 1.05rem; font-weight: 900; cursor: pointer;
+    box-shadow: 0 4px 0 #b9831c, 0 0 18px rgba(255,210,90,0.45); }
+#nj3d .nj3d-starwin .sw-ok:active { transform: translateY(2px); box-shadow: 0 2px 0 #b9831c; }
