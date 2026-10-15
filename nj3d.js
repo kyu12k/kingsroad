@@ -1686,29 +1686,20 @@
         // 글라이더 (9/30) — 점프한 채로 점프를 한 번 더: 날개가 펼쳐져 천천히 활강, 또 누르면 접힌다. 땅에 닿으면 접힌다. 값은 없다
         // 🪂 글라이더·등 날개 (10/2) — 종류마다 모양이 다르다(도형으로 그린다, 모델 파일 없음). 글라이더는 머리 위로 들고, 등 날개는 걸을 땐 접혀 있다가 활강할 때 펼쳐 퍼덕인다
         const glider = new THREE.Group(); glider.position.set(0, 0.3, 0.01); glider.visible = false; body.add(glider);
-        /* 🪂 날개 끝 비행운 (10/15 사용자: 활강이 심심하다) — 양 날개 끝에서 하얀 줄이 뒤로 끌리다 흐려진다 */
-        const TRAIL_N = 26, trails = [-1, 1].map(sg => {
-            const pos = new Float32Array(TRAIL_N * 3), col = new Float32Array(TRAIL_N * 3);
-            for (let i = 0; i < TRAIL_N; i++) { const f = Math.pow(1 - i / (TRAIL_N - 1), 1.6) * 0.85; col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = f; }
-            const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-            const line = new THREE.Line(g, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
-            line.frustumCulled = false; line.visible = false; scene.add(line);
-            return { sg, line, pos, on: false, acc: 0 };
-        });
+        /* 🪂 날개 끝 바람 자국 (10/15 사용자: 활강이 심심하다) — 처음엔 가는 비행운 줄이었는데 물 위에서 철심처럼 보였다(사용자) →
+           날개 끝에서 뽀얀 빛 덩이가 퐁퐁 남아 부풀며 흐려진다(세상 좌표, 24개를 돌려 쓴다) */
+        const puffMat = new THREE.SpriteMaterial({ map: radial, color: 0xffffff, transparent: true, opacity: 0, depthWrite: false });
+        const puffs = Array.from({ length: 24 }, () => { const sp = new THREE.Sprite(puffMat.clone()); sp.visible = false; scene.add(sp); return { sp, life: 0 }; });
+        let puffT = 0, puffI = 0;
         const _tw = new THREE.Vector3();
         function trailTick(dt, on) {
-            trails.forEach(T2 => {
-                if (!on) { if (T2.on) { T2.on = false; T2.line.visible = false; } return; }
-                glider.updateMatrixWorld(true); _tw.set(T2.sg * 0.34, 0.004, 0.12); glider.localToWorld(_tw);
-                const p = T2.pos;
-                if (!T2.on) { for (let i = 0; i < TRAIL_N; i++) { p[i * 3] = _tw.x; p[i * 3 + 1] = _tw.y; p[i * 3 + 2] = _tw.z; } T2.on = true; T2.line.visible = true; }
-                T2.acc += dt;
-                if (T2.acc > 0.03) { T2.acc = 0; p.copyWithin(3, 0, (TRAIL_N - 1) * 3); }   // 한 칸씩 뒤로
-                p[0] = _tw.x; p[1] = _tw.y; p[2] = _tw.z;
-                T2.line.geometry.attributes.position.needsUpdate = true;
-            });
+            puffs.forEach(q => { if (q.life <= 0) return; q.life -= dt; const u = 1 - Math.max(0, q.life) / 0.7; q.sp.material.opacity = 0.32 * (1 - u); q.sp.scale.setScalar(0.03 + u * 0.09); if (q.life <= 0) q.sp.visible = false; });
+            if (!on) return;
+            puffT -= dt; if (puffT > 0) return; puffT = 0.06;
+            glider.updateMatrixWorld(true);
+            [-1, 1].forEach(sg => { _tw.set(sg * 0.33, 0, 0.11); glider.localToWorld(_tw); const q = puffs[puffI++ % puffs.length]; q.sp.position.copy(_tw); q.life = 0.7; q.sp.visible = true; });
         }
-        cleanups.push(() => trails.forEach(T2 => { scene.remove(T2.line); T2.line.geometry.dispose(); T2.line.material.dispose(); }));
+        cleanups.push(() => puffs.forEach(q => { scene.remove(q.sp); q.sp.material.dispose(); }));
         const backWings = new THREE.Group(); backWings.position.set(0, 0.155, 0.03); backWings.visible = false; body.add(backWings);
         let gliding = false, wingK = null, wingKind = 'glider', wingFx = null;
         const triGeo = (pts, idx) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3)); g.setIndex(idx); g.computeVertexNormals(); return g; };
@@ -1743,7 +1734,7 @@
                     m.position.copy(A).add(B).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.clone().sub(A).normalize()); G2.add(m); };
                 const top = [0, 0.012, 0.0], bl = [-0.072, -0.074, -0.004], br = [0.072, -0.074, -0.004];
                 tube(top, bl, 0.0022); tube(top, br, 0.0022); tube(bl, br, 0.0026);   // 내리관 둘 · 손잡이 막대
-                tube([0, 0.03, -0.2], top, 0.0016); tube(top, [0, 0.03, 0.1], 0.0016);   // 용골 — 날개 앞뒤
+                tube([0, -0.004, -0.18], top, 0.0016); tube(top, [0, -0.004, 0.11], 0.0016);   // 용골 — 날개 천 바로 아래(위로 튀어나와 철심처럼 보였다, 10/15 사용자)
             }
             G2.traverse(o => { if (o.isMesh) o.castShadow = false; });   // 순례자와 함께 — 굽는 그림자에서 뺀다
             return G2;
