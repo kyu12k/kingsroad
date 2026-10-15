@@ -4219,8 +4219,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 const wantBank = gl ? Math.max(-0.55, Math.min(0.55, turn * 0.22)) : 0;
                 glideBank += (wantBank - glideBank) * Math.min(1, dt * 4);
                 glideK += ((gl ? 1 : 0) - glideK) * Math.min(1, dt * 3);
-                if (gl) { glider.rotation.z = glideBank + Math.sin(walkT * 2.1) * 0.035; glider.rotation.x = -0.06 + Math.sin(walkT * 1.4) * 0.03; glider.position.y = 0.3 + Math.sin(walkT * 2.6) * 0.004; }
-                body.rotation.z += ((gl ? glideBank * 0.7 : 0) - body.rotation.z) * Math.min(1, dt * 6);
+                // 날개는 몸에 붙여 두고 기울기·일렁임은 몸 전체에 — 날개만 움직이니 손잡이가 손에서 빠져나갔다(10/15 사용자)
+                body.rotation.z += ((gl ? glideBank + Math.sin(walkT * 2.1) * 0.035 : 0) - body.rotation.z) * Math.min(1, dt * 6);
                 trailTick(dt, gl && !reduce);
             }
             backWings.visible = wingKind === 'wings' && !ride.on;   // 탈 때는 접은 날개를 감춘다(배·자전거에서 삐죽 튀어나왔다)
