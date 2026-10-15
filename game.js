@@ -1149,7 +1149,19 @@ const LANG = {
         letter_like: '힘이 됐어요', letter_loading: '불러오는 중…', letter_none: '아직 올라온 편지가 없어요 — 첫 편지를 보내 주세요', letter_more: '편지 더 보기',
         letter_tab_list: '게시된 편지', letter_tab_pending: '검토 대기', letter_pending_none: '검토할 편지가 없어요', letter_approve: '✅ 게시', letter_reject: '✕ 반려', letter_approved: '게시했어요', letter_rejected: '반려했어요',
         letter_nudge_first: '💌 처음엔 다들 막막해요 — 함께 암송하는 분의 편지', letter_nudge_stuck: '💌 막혀도 괜찮아요 — 함께 암송하는 분의 편지', letter_nudge_return: '💌 다시 오셨네요 — 함께 암송하는 분의 편지',
-        nav_letters: '서로에게 보내는 편지',
+        nav_letters: '편지 · 꿀팁',
+        letter_tab_cheer: '💌 편지', letter_tab_tip: '💡 꿀팁', tip_write_btn: '💡 꿀팁 남기기', tip_like: '도움 됐어요', tip_all: '전체', tip_none: '아직 이 주제의 꿀팁이 없어요 — 첫 꿀팁을 남겨 주세요',
+        tip_t_memo: '🧠 외우는 법', tip_t_blank: '✍️ 백지', tip_t_review: '📖 복습 습관', tip_t_time: '⏰ 시간 내기', tip_t_boss: '⚔️ 보스전·고난', tip_t_nj: '🏛️ 새 예루살렘', tip_t_etc: '💬 기타',
+        tip_vn: '{n}절 암송', tip_pick: '어떤 꿀팁인가요?', tip_intro: '먼저 해 본 성도님들의 암송 꿀팁이에요. 주제를 골라 보세요.',
+        tip_nudge_first: '💡 처음엔 다들 막막해요 — 먼저 해 본 분의 꿀팁', tip_more: '꿀팁 더 보기',
+        tip_ask_memo: '🧠 벌써 30절을 외우셨어요! 나만의 외우는 법을 꿀팁 노트에 적어 둘까요?', tip_ask_blank: '✍️ 백지 Lv4까지 굳힌 절이 10절이 됐어요! 백지 요령을 적어 둘까요?',
+        tip_ask_review: '📖 일주일 간격까지 자란 절이 10절이에요! 나의 복습 습관을 적어 둘까요?', tip_ask_time: '⏰ 오늘의 암송 21일째예요! 시간을 내는 나만의 방법을 적어 둘까요?',
+        tip_ask_boss: '⚔️ 처음으로 한 장을 끝까지 외우셨어요! 보스전 요령을 적어 둘까요?', tip_ask_nj: '🏛️ 새 예루살렘에 예물이 5개 모였어요! 새 예루살렘 꿀팁을 적어 둘까요?',
+        tip_ask_sub: '나만 보는 노트예요 · 모두에게 도움이 될 꿀팁은 검토 후 함께 나눠질 수 있어요',
+        tip_ask_btn: '📒 꿀팁 노트에 적기', tip_ask_later: '나중에',
+        tip_note_title: '📒 나의 꿀팁 노트', tip_note_intro: '나만 보는 꿀팁 노트예요. 모두에게 도움이 될 꿀팁은 검토 후 💡 꿀팁 게시판에 함께 나눠질 수 있어요.',
+        tip_note_save: '노트에 적기', tip_saved: '📒 꿀팁 노트에 적었어요', tip_mine: '📒 내 꿀팁 노트', tip_mine_private: '📒 나만 보기', tip_mine_shared: '🌟 함께 나누는 중',
+        tip_shared_toast: '🌟 내 꿀팁이 💡 꿀팁 게시판에 나눠졌어요 — 감사합니다',
         dj_btn: '📖 내 암송 일지', dj_tab_month: '한 달', dj_tab_journey: '여정 전체', dj_eyebrow: '킹스로드 · 오늘의 암송 일지', dj_pilgrim: '순례자',
         dj_month_sub: '날마다 켠 등불', dj_journey_sub: '{d}부터 걸어온 길', dj_st_done: '암송한 날 / {n}일', dj_st_verses: '외운 절', dj_st_verses404: '외운 절 / 404', dj_st_streak: '연속',
         dj_lg_done: '다 함', dj_lg_part: '조금', dj_lg_miss: '못 함', dj_lg_rest: '쉬는 날',
@@ -2469,7 +2481,19 @@ const LANG = {
         letter_like: 'Encouraged me', letter_loading: 'Loading…', letter_none: 'No letters yet — send the first one', letter_more: 'More letters',
         letter_tab_list: 'Posted', letter_tab_pending: 'To review', letter_pending_none: 'Nothing to review', letter_approve: '✅ Post', letter_reject: '✕ Reject', letter_approved: 'Posted', letter_rejected: 'Rejected',
         letter_nudge_first: '💌 Everyone feels lost at first — a letter from a fellow believer', letter_nudge_stuck: '💌 It is okay to get stuck — a letter from a fellow believer', letter_nudge_return: '💌 Welcome back — a letter from a fellow believer',
-        nav_letters: 'Letters to one another',
+        nav_letters: 'Letters · Tips',
+        letter_tab_cheer: '💌 Letters', letter_tab_tip: '💡 Tips', tip_write_btn: '💡 Share a tip', tip_like: 'Helpful', tip_all: 'All', tip_none: 'No tips on this topic yet — share the first one',
+        tip_t_memo: '🧠 How to memorize', tip_t_blank: '✍️ Blank recall', tip_t_review: '📖 Review habits', tip_t_time: '⏰ Finding time', tip_t_boss: '⚔️ Boss & trials', tip_t_nj: '🏛️ New Jerusalem', tip_t_etc: '💬 Other',
+        tip_vn: '{n} verses', tip_pick: 'What is your tip about?', tip_intro: 'Memorization tips from those who went before. Pick a topic.',
+        tip_nudge_first: '💡 Everyone feels lost at first — a tip from someone who has been there', tip_more: 'More tips',
+        tip_ask_memo: '🧠 30 verses already! Jot down your way of memorizing in your tip notes?', tip_ask_blank: '✍️ 10 verses have reached Blank Lv4! Jot down your blank-recall tips?',
+        tip_ask_review: '📖 10 verses now review a week apart! Jot down your review habit?', tip_ask_time: '⏰ Day 21 of Verses of the Day! Jot down how you make time?',
+        tip_ask_boss: '⚔️ Your first whole chapter! Jot down your boss-battle tips?', tip_ask_nj: '🏛️ Five gifts in your New Jerusalem! Jot down a New Jerusalem tip?',
+        tip_ask_sub: 'Your notes are just for you · tips that could help everyone may be shared after review',
+        tip_ask_btn: '📒 Write in my tip notes', tip_ask_later: 'Later',
+        tip_note_title: '📒 My tip notes', tip_note_intro: 'Tip notes just for you. Tips that could help everyone may be shared on the 💡 Tips board after review.',
+        tip_note_save: 'Save to notes', tip_saved: '📒 Saved to your tip notes', tip_mine: '📒 My tip notes', tip_mine_private: '📒 Just for me', tip_mine_shared: '🌟 Shared with everyone',
+        tip_shared_toast: '🌟 Your tip was shared on the 💡 Tips board — thank you',
         dj_btn: '📖 My recitation journal', dj_tab_month: 'Month', dj_tab_journey: 'Whole journey', dj_eyebrow: "King\u2019s Road · Daily recitation journal", dj_pilgrim: 'Pilgrim',
         dj_month_sub: 'Lamps lit day by day', dj_journey_sub: 'The road since {d}', dj_st_done: 'days recited / {n}', dj_st_verses: 'verses', dj_st_verses404: 'verses / 404', dj_st_streak: 'streak',
         dj_lg_done: 'all', dj_lg_part: 'some', dj_lg_miss: 'missed', dj_lg_rest: 'rest day',
@@ -10003,6 +10027,7 @@ function openNewJerusalem() {
 /* 3D 보기 — nj3d.js를 처음 누를 때만 불러온다(three.js도 그때). 캐시 번호는 game.js와 같게 */
 let _nj3dLoading = false;
 function openNJ3DView(opts) {
+    if (typeof _letterLoad === 'function') _letterLoad(false);   // 💡 성문 앞에 이르는 동안 꿀팁 한 줄(10/15)
     if (!(opts && opts.visit)) setTimeout(() => { if (typeof _njVisitClaim === 'function') _njVisitClaim(false).then(() => { let n = 0; const t = setInterval(() => { if (document.querySelector('#nj3d .nj3d-stage') || ++n > 40) { clearInterval(t); _njMineBar(); } }, 300); }); }, 400);   // 🕊️ 내 세상에 다녀간 손님
     if (typeof window.openNJ3D === 'function') { window.openNJ3D(opts); return; }
     if (_nj3dLoading) return;
@@ -10202,6 +10227,33 @@ function _njVisitItem(it) {
     });
 }
 window._njVisitItem = _njVisitItem;
+/* 📜 내 성에서 물건을 누르면 — 이름과 그 물건의 말씀 카드(10/15 사용자: 친구 성에선 말씀이 나오는데 내 것으론 안 나온다).
+   예물 = 그 예물이 나오는 계시록 구절 · 특산물·꾸밈·세트 = 내가 백지로 써낸 절 중 하나(물건마다 늘 같은 절). 문제·보상 없이 읽기만 */
+function _njMyItem(it) {
+    if (!it || _njVisit) return;
+    let name = '', vid = '', fromOffer = false;
+    if (it.kind === 'gift') {
+        const rec = (njGifts || []).find(g => g.id === it.id), o = (typeof NJ_OFFERINGS !== 'undefined') ? NJ_OFFERINGS.find(x => x.k === it.k) : null;
+        name = rec && typeof _njGiftName === 'function' ? _njGiftName(rec) : (o ? o.ko : '예물');
+        if (o && /^\d+:\d+$/.test(o.ref || '')) { vid = o.ref.replace(':', '-'); fromOffer = true; }
+    } else if (it.kind === 'decor') { const d = (typeof NJ_DECOR !== 'undefined') ? NJ_DECOR.find(x => x.k === it.k) : null; name = d ? d.ko : '꾸밈'; }
+    else { name = typeof _njSetName === 'function' ? _njSetName(it.k) : '세트'; }
+    if (!vid) {
+        const mine = _allVerseIds().filter(id => { const r = verseRecall[id]; return r && (r.blankPass > 0 || r.bx > 0); });
+        const pool = mine.length ? mine : _allVerseIds();
+        let h = 7; for (const ch of String(it.id)) h = (h * 31 + ch.charCodeAt(0)) % 1000003;
+        vid = pool[h % pool.length];
+    }
+    const [c, v] = String(vid).split('-').map(Number), en = typeof currentLang !== 'undefined' && currentLang === 'en';
+    const vd = en && typeof bibleDataEn !== 'undefined' && bibleDataEn[c] ? bibleDataEn[c][v - 1] : ((bibleData[c] || [])[v - 1]);
+    const txt = vd ? (vd.text || (vd.chunks || []).join(' ')) : '';
+    if (!txt) { showToast(name); return; }
+    const from = fromOffer ? (en ? 'The word of this gift' : '이 예물의 말씀') : (en ? 'A verse you wrote from memory' : '내가 백지로 써낸 말씀');
+    const ov = _njPop(`<h3>${_njvEsc(name)}</h3><div class="ref">${from} · ${en ? `Rev ${c}:${v}` : `계 ${c}:${v}`}</div>
+        <div class="txt my">${_njvEsc(txt)}</div><button class="close">${t('btn_close')}</button>`);
+    ov.querySelector('.close').onclick = () => ov.remove();
+}
+window._njMyItem = _njMyItem;
 // 주인 쪽 — 쌓인 보석 받기 · 오늘 방명록 (앱을 열 때 · 내 3D를 열 때)
 let _njvClaimAt = 0;
 async function _njVisitClaim(showBook) {
@@ -13693,7 +13745,7 @@ function quitGame(destination = 'map') {
     if (window.isHardshipMode && hardshipState && hardshipState.rlSnap) { _rlFinish(); return; }
     if (window._letterFirstPending || (window._sessFails || 0) >= 3) {   // 💌 처음 들어간 어려운 판 · 크게 막힌 판 — 마친 뒤에 한 장
         const why = window._letterFirstPending ? 'first' : 'stuck'; window._letterFirstPending = false;
-        setTimeout(() => { if (typeof _letterNudge === 'function') _letterNudge(why); }, 1400);
+        setTimeout(() => { if (why === 'first' && typeof _tipNudge === 'function') _tipNudge('blank', 'first'); else if (typeof _letterNudge === 'function') _letterNudge(why); }, 1400);   // 💡 처음 판은 백지 꿀팁(10/15)
     }
     window._sessFails = 0;
     { const _lt = (window.isHardshipMode && hardshipState && hardshipState.levelTest) || 0;   // 🎓 끝냈든 중간에 나갔든 결과를 보여준다
@@ -14571,7 +14623,8 @@ async function initFirestoreSync() {
     } finally {
         window._initSyncDone = true;   // 이 뒤의 '낡은 쓰기' 거절만 배너로 알린다(그 전 것은 방금 끝난 초기 동기화가 합쳐 올렸다)
         try { if (typeof splashReady === 'function') setTimeout(splashReady, 300); } catch (e) { }
-        try { if (typeof _letterReturnCheck === 'function') _letterReturnCheck(); } catch (e) { }   // 💌 3일+ 쉬고 돌아옴   // ⏳ 서버 기록을 받아 왔다 — 시작 화면을 연다(화면이 한 번 다시 그려질 틈)
+        try { if (typeof _letterReturnCheck === 'function') _letterReturnCheck(); } catch (e) { }
+        try { if (typeof _tipSharedCheck === 'function') setTimeout(_tipSharedCheck, 4000); } catch (e) { }   // 🌟 내 꿀팁이 나눠졌으면 한 번   // 💌 3일+ 쉬고 돌아옴   // ⏳ 서버 기록을 받아 왔다 — 시작 화면을 연다(화면이 한 번 다시 그려질 틈)
         try { _checkReturnBoost(); _renderReturnFloat(); } catch (e) { console.warn('[returnBoost]', e); }
         try { _noteArrival(); } catch (e) { }   // 🔗 꼬리표 주소로 온 사람 — 둘러보기만 해도
         try { _guideSync(); } catch (e) {}   // 인도자와 동행 — 서버 상태
@@ -16807,6 +16860,8 @@ function getChosung(str) {
 function showClearScreen() {
     triggerConfetti();
     SoundEffect.playClear();
+    setTimeout(() => { if (typeof _tipLineShow === 'function') _tipLineShow('memo'); }, 80);   // 💡 결과 맨 아래 꿀팁 한 줄(10/15)
+    setTimeout(() => { if (typeof _tipAskCheck === 'function') _tipAskCheck(); }, 2600);   // 📒 그 시스템을 처음 손에 익힌 순간 — 꿀팁 노트에 적어 둘까요?
 
     // 1. 시간 계산 (훈련 모드에서도 이건 피드백으로 보여줍니다!)
     const endTime = Date.now();
@@ -17151,6 +17206,7 @@ function updateStreak() {
 
 /* [보스 클리어 결과 모달 표시] */
 function showBossClearScreen(clearedStageId) {
+    if (/^\d+-boss$/.test(String(arguments[0] || '')) && typeof _tipAskCheck === 'function') setTimeout(() => { window._tipBossJust = true; _tipAskCheck('boss'); window._tipBossJust = false; }, 2600);   // 📒 장을 끝까지 — 보스전 꿀팁(10/15)
     // result-notif-wrap 초기화 (이전 결과 화면의 알림 버튼 잔상 제거)
     const notifWrapBoss = document.getElementById('result-notif-wrap');
     if (notifWrapBoss) { notifWrapBoss.innerHTML = ''; notifWrapBoss.style.display = 'none'; }
@@ -21736,33 +21792,41 @@ async function _letterLoad(force) {
     } catch (e) { console.warn('[letters] load', e); }
     return _letterCache || [];
 }
+/* 💡 꿀팁 (10/15 사용자) — 편지와 같은 승인제, 창은 「💌 편지 · 💡 꿀팁」 두 탭. 꿀팁은 주제(topic) 하나 + 글쓴이가 외운 절 수(vn, 믿음을 주려고). 보상 없음(사용자) */
+const TIP_TOPICS = ['memo', 'blank', 'review', 'time', 'boss', 'nj', 'etc'];
+const _tipTopicOf = L => TIP_TOPICS.includes(L.topic) ? L.topic : 'etc';   // 10/15 전 꿀팁엔 주제가 없다 — 기타
 function _letterCardHtml(L, opts) {
-    const liked = (_lsGet('kingsRoad_letterLiked', []) || []).includes(L.id);
-    return `<div class="lt-letter" data-id="${escapeHtml(L.id)}">
-        <div class="lt-letter-kind">${L.kind === 'tip' ? t('letter_kind_tip') : t('letter_kind_cheer')}</div>
+    const liked = (_lsGet('kingsRoad_letterLiked', []) || []).includes(L.id), tip = L.kind === 'tip';
+    return `<div class="lt-letter${tip ? ' tip' : ''}" data-id="${escapeHtml(L.id)}">
+        <div class="lt-letter-kind">${tip ? t('tip_t_' + _tipTopicOf(L)) : t('letter_kind_cheer')}</div>
         <div class="lt-letter-text">${escapeHtml(L.text || '').replace(/\n/g, '<br>')}</div>
-        <div class="lt-letter-foot"><span class="lt-letter-nick">— ${escapeHtml(L.nick || t('letter_anon'))}${L.tag && L.tag !== '0000' ? ` <span class="lt-letter-tag">#${escapeHtml(L.tag)}</span>` : ''}</span>
-            <button class="lt-letter-like${liked ? ' on' : ''}" ${liked ? 'disabled' : ''} onclick="_letterLike('${escapeHtml(L.id)}', this)">🙏 ${t('letter_like')} <b>${L.likes | 0}</b></button></div>
+        <div class="lt-letter-foot"><span class="lt-letter-nick">— ${escapeHtml(L.nick || t('letter_anon'))}${L.tag && L.tag !== '0000' ? ` <span class="lt-letter-tag">#${escapeHtml(L.tag)}</span>` : ''}${tip && L.vn > 0 ? ` <span class="lt-letter-vn">· ${t('tip_vn', { n: L.vn | 0 })}</span>` : ''}</span>
+            <button class="lt-letter-like${liked ? ' on' : ''}" ${liked ? 'disabled' : ''} onclick="_letterLike('${escapeHtml(L.id)}', this)">${tip ? '👍 ' + t('tip_like') : '🙏 ' + t('letter_like')} <b>${L.likes | 0}</b></button></div>
         ${opts && opts.admin ? `<div class="lt-letter-admin"><button onclick="_letterJudge('${escapeHtml(L.id)}', 'approved')">${t('letter_approve')}</button><button onclick="_letterJudge('${escapeHtml(L.id)}', 'rejected')">${t('letter_reject')}</button></div>` : ''}
     </div>`;
 }
-async function openLetterBoard(tab) {
+/* 창 — tab: 'list'|'pending'(관리자) · kind: 'cheer'(편지)|'tip'(꿀팁) · topic: 꿀팁 주제 거르기 */
+async function openLetterBoard(tab, kind, topic) {
     if (typeof closeMoreMenu === 'function') { try { closeMoreMenu(); } catch (e) { } }
+    kind = kind || _lsGet('kingsRoad_letterKind', 'cheer'); if (kind !== 'tip') kind = 'cheer'; _lsSet('kingsRoad_letterKind', kind);
+    if (!TIP_TOPICS.includes(topic)) topic = '';
     let ov = document.getElementById('letter-overlay');
     if (!ov) { ov = document.createElement('div'); ov.id = 'letter-overlay'; ov.className = 'modal-overlay'; ov.style.zIndex = '10004'; ov.onclick = e => { if (e.target === ov) closeLetterBoard(); }; document.body.appendChild(ov); }
-    const admin = _letterIsAdmin();
+    const admin = _letterIsAdmin(), tip = kind === 'tip';
     ov.innerHTML = `<div class="letter-card" onclick="event.stopPropagation()">
         <button class="letter-x" onclick="closeLetterBoard()" aria-label="close">✕</button>   <!-- 10/14 사용자: 닫기가 목록 맨 아래에만 있었다 -->
-        <div class="letter-head"><div class="letter-title">${t('letter_title')}</div><div class="letter-intro">${t('letter_intro')}</div></div>
-        <div class="letter-together" id="letter-together">${_togetherHtml('letter')}</div>
-        <button class="letter-write-btn" onclick="openLetterWrite()">${t('letter_write_btn')}</button>
-        ${admin ? `<div class="letter-tabs"><button class="${tab !== 'pending' ? 'on' : ''}" onclick="openLetterBoard('list')">${t('letter_tab_list')}</button><button class="${tab === 'pending' ? 'on' : ''}" onclick="openLetterBoard('pending')">${t('letter_tab_pending')} <b id="letter-pend-n"></b></button></div>` : ''}
+        <div class="letter-kindtabs"><button class="${tip ? '' : 'on'}" onclick="openLetterBoard('list', 'cheer')">${t('letter_tab_cheer')}</button><button class="${tip ? 'on' : ''}" onclick="openLetterBoard('list', 'tip')">${t('letter_tab_tip')}</button></div>
+        <div class="letter-head"><div class="letter-intro">${tip ? t('tip_intro') : t('letter_intro')}</div></div>
+        ${tip ? '' : `<div class="letter-together" id="letter-together">${_togetherHtml('letter')}</div>`}
+        <button class="letter-write-btn" onclick="openLetterWrite('${kind}', '${topic}')">${tip ? t('tip_write_btn') : t('letter_write_btn')}</button>
+        ${tip && tab !== 'pending' ? `<div class="tip-topics"><button class="${topic ? '' : 'on'}" onclick="openLetterBoard('list', 'tip')">${t('tip_all')}</button>${TIP_TOPICS.map(k => `<button class="${topic === k ? 'on' : ''}" onclick="openLetterBoard('list', 'tip', '${k}')">${t('tip_t_' + k)}</button>`).join('')}</div>` : ''}
+        ${admin ? `<div class="letter-tabs"><button class="${tab !== 'pending' ? 'on' : ''}" onclick="openLetterBoard('list', '${kind}')">${t('letter_tab_list')}</button><button class="${tab === 'pending' ? 'on' : ''}" onclick="openLetterBoard('pending', '${kind}')">${t('letter_tab_pending')} <b id="letter-pend-n"></b></button></div>` : ''}
         <div class="letter-list" id="letter-list"><div class="letter-empty">${t('letter_loading')}</div></div>
         <button class="letter-close" onclick="closeLetterBoard()">${t('btn_close')}</button></div>`;
     ov.style.display = 'flex'; setTimeout(() => ov.classList.add('active'), 10);
-    _togetherLoad().then(() => { const el = document.getElementById('letter-together'); if (el) el.innerHTML = _togetherHtml('letter'); });
+    if (!tip) _togetherLoad().then(() => { const el = document.getElementById('letter-together'); if (el) el.innerHTML = _togetherHtml('letter'); });
     const box = document.getElementById('letter-list');
-    if (admin && tab === 'pending') {
+    if (admin && tab === 'pending') {   // 검토 대기는 두 종류 모두
         try {
             const q = await db.collection('letters').where('status', '==', 'pending').orderBy('createdAt', 'desc').limit(50).get();
             const arr = q.docs.map(d => Object.assign({ id: d.id }, d.data()));
@@ -21770,40 +21834,152 @@ async function openLetterBoard(tab) {
         } catch (e) { box.innerHTML = `<div class="letter-empty">${escapeHtml(String(e.message || e))}</div>`; }
         return;
     }
-    const arr = await _letterLoad(true);
+    const all = await _letterLoad(true);
     if (!document.getElementById('letter-list')) return;
-    box.innerHTML = arr.length ? arr.map(L => _letterCardHtml(L)).join('') : `<div class="letter-empty">${t('letter_none')}</div>`;
+    const arr = all.filter(L => (L.kind === 'tip') === tip && (!topic || _tipTopicOf(L) === topic));
+    box.innerHTML = arr.length ? arr.map(L => _letterCardHtml(L)).join('') : `<div class="letter-empty">${tip ? t('tip_none') : t('letter_none')}</div>`;
+    if (tip) { box.insertAdjacentHTML('afterend', '<div id="tip-mine"></div>'); _tipMineRender(); }
     if (admin) { try { const q = await db.collection('letters').where('status', '==', 'pending').orderBy('createdAt', 'desc').limit(50).get(); const el = document.getElementById('letter-pend-n'); if (el) el.textContent = q.size || ''; } catch (e) { } }
 }
 function closeLetterBoard() { const ov = document.getElementById('letter-overlay'); if (ov) { ov.classList.remove('active'); ov.style.display = 'none'; } }
-function openLetterWrite() {
+function openLetterWrite(kind, topic) {
+    kind = kind === 'cheer' ? 'cheer' : 'tip';
+    if (!TIP_TOPICS.includes(topic)) topic = 'etc';
     let ov = document.getElementById('letter-write');
     if (!ov) { ov = document.createElement('div'); ov.id = 'letter-write'; ov.className = 'modal-overlay'; ov.style.zIndex = '10005'; ov.onclick = e => { if (e.target === ov) ov.style.display = 'none'; }; document.body.appendChild(ov); }
     const nick = ((typeof myNickname !== 'undefined' && myNickname) ? myNickname : t('letter_anon')) + (myTag && myTag !== '0000' ? ' #' + myTag : '');   // 태그도 함께 올라간다(10/11)
     ov.innerHTML = `<div class="letter-card" onclick="event.stopPropagation()">
-        <div class="letter-head"><div class="letter-title">${t('letter_write_title')}</div><div class="letter-intro">${t('letter_write_intro')}</div></div>
-        <div class="letter-kinds"><button class="on" data-k="tip" onclick="_letterPickKind(this)">${t('letter_kind_tip')}</button><button data-k="cheer" onclick="_letterPickKind(this)">${t('letter_kind_cheer')}</button></div>
+        <div class="letter-head"><div class="letter-title" id="lw-title">${t(kind === 'tip' ? 'tip_note_title' : 'letter_write_title')}</div><div class="letter-intro" id="lw-intro">${t(kind === 'tip' ? 'tip_note_intro' : 'letter_write_intro')}</div></div>
+        <div class="letter-kinds"><button class="${kind === 'tip' ? 'on' : ''}" data-k="tip" onclick="_letterPickKind(this)">${t('letter_kind_tip')}</button><button class="${kind === 'cheer' ? 'on' : ''}" data-k="cheer" onclick="_letterPickKind(this)">${t('letter_kind_cheer')}</button></div>
+        <div class="tip-pick" ${kind === 'tip' ? '' : 'hidden'}><div class="tip-pick-q">${t('tip_pick')}</div><div class="tip-topics">${TIP_TOPICS.map(k => `<button class="${topic === k ? 'on' : ''}" data-t="${k}" onclick="_letterPickKind(this)">${t('tip_t_' + k)}</button>`).join('')}</div></div>
         <textarea id="letter-text" maxlength="${LETTER_MAX}" rows="6" placeholder="${escapeHtml(t('letter_placeholder'))}" oninput="document.getElementById('letter-count').textContent=this.value.length"></textarea>
         <div class="letter-meta"><span>${t('letter_nick_note', { nick: escapeHtml(nick) })}</span><span><b id="letter-count">0</b>/${LETTER_MAX}</span></div>
-        <button class="letter-write-btn" onclick="_letterSend()">${t('letter_send')}</button>
+        <button class="letter-write-btn" id="lw-send" onclick="_letterSend()">${t(kind === 'tip' ? 'tip_note_save' : 'letter_send')}</button>
         <button class="letter-close" onclick="document.getElementById('letter-write').style.display='none'">${t('btn_close')}</button></div>`;
     ov.style.display = 'flex'; setTimeout(() => ov.classList.add('active'), 10);
 }
-function _letterPickKind(b) { b.parentNode.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); }
+function _letterPickKind(b) {
+    b.parentNode.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    if (b.dataset.k) {   // 꿀팁 = 나의 꿀팁 노트(주제 고르기) · 응원 = 편지
+        const tip = b.dataset.k === 'tip', tp = document.querySelector('#letter-write .tip-pick'); if (tp) tp.hidden = !tip;
+        const set = (id, k) => { const el = document.getElementById(id); if (el) el.textContent = t(k); };
+        set('lw-title', tip ? 'tip_note_title' : 'letter_write_title'); set('lw-intro', tip ? 'tip_note_intro' : 'letter_write_intro'); set('lw-send', tip ? 'tip_note_save' : 'letter_send');
+    }
+}
 async function _letterSend() {
     const ta = document.getElementById('letter-text'), text = (ta && ta.value || '').trim();
     if (text.length < 5) { showGemToast(0, t('letter_too_short'), true); return; }
     const day = _get6AMDayStr(), sent = _lsGet('kingsRoad_letterSent', {}) || {};
     if ((sent[day] | 0) >= LETTER_DAILY_SEND) { showGemToast(0, t('letter_daily_cap', { n: LETTER_DAILY_SEND }), true); return; }
     const kb = document.querySelector('#letter-write .letter-kinds .on'), kind = kb ? kb.dataset.k : 'tip';
+    const tb = document.querySelector('#letter-write .tip-topics .on'), topic = tb && TIP_TOPICS.includes(tb.dataset.t) ? tb.dataset.t : 'etc';
     if (typeof db === 'undefined' || !db || !auth || !auth.currentUser) { showGemToast(0, t('alert_server_disconnect'), true); return; }
+    let vn = 0; try { vn = Math.max(0, Math.min(404, _getClearedVerseCount() | 0)); } catch (e) { }
+    const doc = { text: text.slice(0, LETTER_MAX), kind, nick: String(myNickname || '').slice(0, 30), tag: String(myTag || ''), uid: auth.currentUser.uid,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(), status: 'pending', likes: 0 };
+    if (kind === 'tip') { doc.topic = topic; doc.vn = vn; }
     try {
-        await db.collection('letters').add({ text: text.slice(0, LETTER_MAX), kind, nick: String(myNickname || '').slice(0, 30), tag: String(myTag || ''), uid: auth.currentUser.uid,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(), status: 'pending', likes: 0 });
+        await db.collection('letters').add(doc);
         sent[day] = (sent[day] | 0) + 1; _lsSet('kingsRoad_letterSent', { [day]: sent[day] });
         document.getElementById('letter-write').style.display = 'none';
-        showGemToast(0, t('letter_sent'), false);
+        if (kind === 'tip') { const w = _lsGet('kingsRoad_tipWrote', []) || []; if (!w.includes(topic)) _lsSet('kingsRoad_tipWrote', w.concat([topic])); }   // 그 주제는 다시 묻지 않는다 · 나눠지면 알릴 사람
+        showGemToast(0, kind === 'tip' ? t('tip_saved') : t('letter_sent'), false);
+        if (kind === 'tip' && document.getElementById('tip-mine')) _tipMineRender();
     } catch (e) { showGemToast(0, t('letter_send_fail') + ' (' + (e.code || e.message) + ')', true); }
+}
+/* 💡 꿀팁 고르기 — 그 주제(없으면 아무 꿀팁) 중 최근에 안 본 것 */
+function _tipPick(topic) {
+    const tips = (_letterCache || []).filter(L => L.kind === 'tip'); if (!tips.length) return null;
+    const pool0 = tips.filter(L => _tipTopicOf(L) === topic), base = pool0.length ? pool0 : tips;
+    const seen = _lsGet('kingsRoad_tipSeen', []) || [], fresh = base.filter(L => !seen.includes(L.id)), arr = fresh.length ? fresh : base;
+    const pick = arr[Math.floor(Math.random() * arr.length)];
+    _lsSet('kingsRoad_tipSeen', seen.concat([pick.id]).slice(-12));
+    return pick;
+}
+/* 결과 화면 맨 아래 한 줄 — 방금 한 일과 맞는 주제, 하루 세 번까지. 누르면 그 주제 꿀팁 */
+function _tipLineShow(topic) {
+    try {
+        const rm = document.getElementById('result-modal'); if (!rm) return;
+        rm.querySelectorAll('.tip-line').forEach(el => el.remove());
+        if (!_letterCache) { _letterLoad(false); return; }   // 처음엔 불러만 둔다 — 다음 결과부터
+        const day = _get6AMDayStr(), c = _lsGet('kingsRoad_tipLineDay', {}) || {};
+        if (c.day === day && (c.n | 0) >= 3) return;
+        const L = _tipPick(topic); if (!L) return;
+        _lsSet('kingsRoad_tipLineDay', { day, n: (c.day === day ? c.n | 0 : 0) + 1 });
+        const txt = String(L.text || '').replace(/\s+/g, ' '), short = txt.length > 70 ? txt.slice(0, 68) + '…' : txt;
+        const html = `<div class="tip-line" onclick="openLetterBoard('list', 'tip', '${_tipTopicOf(L)}')">💡 <b>${escapeHtml(L.nick || t('letter_anon'))}</b> ${escapeHtml(short)}</div>`;
+        const btn = rm.querySelector('#result-continue-btn');
+        if (btn) btn.insertAdjacentHTML('beforebegin', html); else { const card = rm.querySelector('.result-card'); if (card) card.insertAdjacentHTML('beforeend', html); }
+    } catch (e) { }
+}
+/* 성문 앞에 이르는 중(성 불러오기) 한 줄 — nj3d.js가 부른다 */
+function _tipText(topic) {
+    try { const L = _tipPick(topic); if (!L) return ''; const txt = String(L.text || '').replace(/\s+/g, ' '); return `💡 ${escapeHtml(txt.length > 90 ? txt.slice(0, 88) + '…' : txt)} — ${escapeHtml(L.nick || t('letter_anon'))}`; } catch (e) { return ''; }
+}
+/* 처음 들어간 어려운 판을 마친 뒤 — 그 주제 꿀팁 한 장(없으면 편지). 편지 nudge와 같은 하루 한 번 */
+async function _tipNudge(topic, reason) {
+    const day = _get6AMDayStr();
+    if (_lsGet('kingsRoad_letterNudgeDay', '') === day) return;
+    await _letterLoad(false);
+    const L = _tipPick(topic); if (!L) { _letterNudge(reason); return; }
+    _lsSet('kingsRoad_letterNudgeDay', day);
+    let el = document.getElementById('letter-nudge');
+    if (!el) { el = document.createElement('div'); el.id = 'letter-nudge'; document.body.appendChild(el); }
+    el.innerHTML = `<div class="ln-head">${t('tip_nudge_' + reason)}<button class="ln-x" onclick="document.getElementById('letter-nudge').classList.remove('on')">✕</button></div>
+        ${_letterCardHtml(L)}
+        <button class="ln-more" onclick="document.getElementById('letter-nudge').classList.remove('on'); openLetterBoard('list', 'tip', '${_tipTopicOf(L)}')">${t('tip_more')}</button>`;
+    setTimeout(() => el.classList.add('on'), 30);
+}
+/* 📒 내 꿀팁 노트 — 내가 적은 꿀팁. 검토 중·나누지 않음은 똑같이 「나만 보기」(반려가 드러나지 않게), 게시된 것만 「함께 나누는 중」 (10/15 사용자) */
+async function _tipMine() {
+    if (typeof db === 'undefined' || !db || !auth || !auth.currentUser) return [];
+    try {
+        const q = await db.collection('letters').where('uid', '==', auth.currentUser.uid).get();
+        return q.docs.map(d => Object.assign({ id: d.id }, d.data())).filter(L => L.kind === 'tip')
+            .sort((a, b) => ((b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0) - (a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0)));
+    } catch (e) { console.warn('[tips] mine', e); return []; }
+}
+async function _tipMineRender() {
+    const el = document.getElementById('tip-mine'); if (!el) return;
+    const arr = await _tipMine(); if (!document.getElementById('tip-mine')) return;
+    if (!arr.length) { el.innerHTML = ''; return; }
+    el.innerHTML = `<div class="tip-mine-title">${t('tip_mine')}</div>` + arr.map(L => `<div class="tip-mine-item"><div class="tip-mine-head"><span>${t('tip_t_' + _tipTopicOf(L))}</span><span class="${L.status === 'approved' ? 'shared' : ''}">${L.status === 'approved' ? `${t('tip_mine_shared')} · 👍 ${L.likes | 0}` : t('tip_mine_private')}</span></div><div class="tip-mine-text">${escapeHtml(L.text || '').replace(/\n/g, '<br>')}</div></div>`).join('');
+}
+/* 앱을 열 때 — 내 꿀팁이 나눠졌으면 한 번 알린다(꿀팁을 적어 본 사람만 묻는다) */
+async function _tipSharedCheck() {
+    if (!(_lsGet('kingsRoad_tipWrote', []) || []).length) return;
+    const arr = await _tipMine(), seen = _lsGet('kingsRoad_tipSharedSeen', []) || [];
+    const fresh = arr.filter(L => L.status === 'approved' && !seen.includes(L.id));
+    if (!fresh.length) return;
+    _lsSet('kingsRoad_tipSharedSeen', seen.concat(fresh.map(L => L.id)).slice(-100));
+    showGemToast(0, t('tip_shared_toast'), false);
+}
+/* 꿀팁 노트에 적어 둘까요? — 주제마다 그 시스템을 처음 손에 익힌 순간(10/15 사용자: 보스전·404절만이 이 게임의 전부가 아니다).
+   주제마다 평생 한 번 · 묻는 건 일주일에 한 번까지 · 그 주제로 이미 적었으면 묻지 않는다 · 💬 기타는 묻지 않는다 */
+const TIP_ASK = {
+    memo: () => _getClearedVerseCount() >= 30,
+    blank: () => typeof _njCount === 'function' && _njCount(4) >= 10,
+    review: () => Object.keys(stageReviewStep || {}).filter(id => /^\d+-\d+$/.test(id) && (stageReviewStep[id] | 0) >= 7).length >= 10,
+    time: () => Object.keys(dailyLog || {}).length >= 21,
+    boss: () => !!window._tipBossJust,
+    nj: () => (Array.isArray(njGifts) ? njGifts.length : 0) >= 5,   // 예물(만국의 예물·특산물) 다섯 — 기초석은 누구나 같은 순서라 꿀팁이 덜 생긴다(10/15 사용자). 3D 위에 뜨면 가려지므로 다음 결과 화면에서
+};
+function _tipAskCheck(prefer) {
+    try {
+        if (Date.now() - (Number(_lsGet('kingsRoad_tipAskAt', 0)) || 0) < 7 * 864e5) return;   // ※ `| 0`은 시각(13자리)을 넘쳐 음수로 만든다
+        const asked = _lsGet('kingsRoad_tipAsked', []) || [], wrote = _lsGet('kingsRoad_tipWrote', []) || [];
+        const order = prefer ? [prefer].concat(TIP_TOPICS.filter(k => k !== prefer)) : TIP_TOPICS;
+        const k = order.find(k => TIP_ASK[k] && !asked.includes(k) && !wrote.includes(k) && TIP_ASK[k]());
+        if (!k) return;
+        _lsSet('kingsRoad_tipAsked', asked.concat([k])); _lsSet('kingsRoad_tipAskAt', Date.now());
+        let el = document.getElementById('letter-nudge');
+        if (!el) { el = document.createElement('div'); el.id = 'letter-nudge'; document.body.appendChild(el); }
+        el.innerHTML = `<div class="ln-head">${t('tip_ask_' + k)}<button class="ln-x" onclick="document.getElementById('letter-nudge').classList.remove('on')">✕</button></div>
+            <div class="ln-sub">${t('tip_ask_sub')}</div>
+            <div class="ln-row"><button class="ln-more" onclick="document.getElementById('letter-nudge').classList.remove('on'); openLetterWrite('tip', '${k}')">${t('tip_ask_btn')}</button>
+            <button class="ln-later" onclick="document.getElementById('letter-nudge').classList.remove('on')">${t('tip_ask_later')}</button></div>`;
+        setTimeout(() => el.classList.add('on'), 30);
+    } catch (e) { }
 }
 async function _letterLike(id, btn) {
     const liked = _lsGet('kingsRoad_letterLiked', []) || [];
@@ -33318,6 +33494,8 @@ function finishHardshipSession(reason) {
                 resultModal.querySelector('.result-card').insertAdjacentHTML('beforeend', historyHtml);
             }
         }
+        if (typeof _tipLineShow === 'function') _tipLineShow((hardshipState.bossStageId || hardshipState.midBossStageId) ? 'boss' : (hardshipState.mode === 'memory' ? 'blank' : 'review'));   // 💡 결과 맨 아래 꿀팁 한 줄(10/15)
+        if (typeof _tipAskCheck === 'function') setTimeout(() => _tipAskCheck(hardshipState && hardshipState.mode === 'memory' ? 'blank' : null), 2600);   // 📒 꿀팁 노트에 적어 둘까요?
         resultModal.classList.add('active');
     }
 }

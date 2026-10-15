@@ -48,7 +48,7 @@
                 <button class="nj3d-x" aria-label="close">✕</button>
             </div>
             <div class="nj3d-stage">
-                <div class="nj3d-loading">${T('nj3d_loading')}</div>
+                <div class="nj3d-loading">${T('nj3d_loading')}${!visit && typeof _tipText === 'function' ? `<div class="nj3d-loadtip">${_tipText('nj')}</div>` : ''}</div>
                 <button class="nj3d-mode"></button>
                 <button class="nj3d-go"></button>
                 <button class="nj3d-deco"></button>
@@ -1908,6 +1908,7 @@
             if (VISIT && visitTap(e)) { tap = null; return; }   // 🕊️ 구경 — 예물·꾸밈을 누르면 그 물건의 말씀 문제
             if (clamTap(e)) { tap = null; return; }   // 🐚 조개를 눌러 연다
             if (creatureTap(e)) { tap = null; return; }   // 🐠 물속 생물을 눌러 살펴봄
+            if (!VISIT && visitTap(e, true)) { tap = null; return; }   // 📜 내 예물·특산물·꾸밈 — 그 물건의 말씀 카드
             if (!fruitPos.length) {   // 열매가 없으면 해안의 나라만 본다
                 const moved = Math.hypot(e.clientX - tap.x, e.clientY - tap.y), long = performance.now() - tap.t;
                 tap = null;
@@ -5154,7 +5155,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) { SoundEffect.playBlankLevelUp(); if (res.bonus && res.bonus.length) setTimeout(() => SoundEffect.playBlankLevelUp(), 420); }
             sprayBurst(c.x, c.g.position.y + 0.08, c.z, 12, 0);
         }
-        function visitTap(e) {   // 🕊️ 구경 중 물건 누르기 — 꾸미기와 같은 보이지 않는 상자로 짚는다
+        function visitTap(e, mine) {   // 🕊️ 구경 중 물건 누르기 — 꾸미기와 같은 보이지 않는 상자로 짚는다 · mine = 📜 내 성에서 말씀 카드(10/15)
             if (Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > 10 || performance.now() - tap.t > 450) return false;
             const objs = [...giftsG.children, ...decoG.children, ...setG.children].filter(o => o.userData.item);
             if (!objs.length) return false;
@@ -5165,7 +5166,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             let o = hit[0].object; while (o && !o.userData.item) o = o.parent;
             if (!o) return false;
             const it = o.userData.item;
-            if (typeof window._njVisitItem === 'function') window._njVisitItem({ kind: it.kind, id: it.id, k: it.k });
+            const fn = mine ? window._njMyItem : window._njVisitItem;
+            if (typeof fn === 'function') fn({ kind: it.kind, id: it.id, k: it.k });
             return true;
         }
         function clamTap(e) {   // 🐚 조개를 눌러 연다(10/10) — 화면에서 60px 안, 10칸 안

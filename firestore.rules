@@ -209,14 +209,17 @@ service cloud.firestore {
       function letterAdmin() { return request.auth != null && request.auth.uid == '3fHRAeDquYOqw8pqDZBwEemwJH72'; }
       allow read: if resource.data.status == 'approved' || letterAdmin() || (request.auth != null && resource.data.uid == request.auth.uid);
       allow create: if request.auth != null
-                    && request.resource.data.keys().hasOnly(['text', 'kind', 'nick', 'tag', 'uid', 'createdAt', 'status', 'likes'])
+                    && request.resource.data.keys().hasOnly(['text', 'kind', 'nick', 'tag', 'uid', 'createdAt', 'status', 'likes', 'topic', 'vn'])
                     && request.resource.data.uid == request.auth.uid
                     && request.resource.data.status == 'pending'
                     && request.resource.data.likes == 0
                     && request.resource.data.createdAt == request.time
                     && request.resource.data.text is string && request.resource.data.text.size() >= 5 && request.resource.data.text.size() <= 300
                     && request.resource.data.kind in ['tip', 'cheer']
-                    && request.resource.data.nick is string && request.resource.data.nick.size() <= 30;
+                    && request.resource.data.nick is string && request.resource.data.nick.size() <= 30
+                    // 💡 꿀팁(10/15) — 주제 하나 · 글쓴이가 외운 절 수
+                    && (!('topic' in request.resource.data) || request.resource.data.topic in ['memo', 'blank', 'review', 'time', 'boss', 'nj', 'etc'])
+                    && (!('vn' in request.resource.data) || (request.resource.data.vn is int && request.resource.data.vn >= 0 && request.resource.data.vn <= 404));
       allow update: if letterAdmin()
                     || (request.auth != null
                         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])

@@ -7890,3 +7890,30 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 #nj3d .nj3d-verse .r { margin-top: 6px; font-size: 0.82rem; color: #f6d77a; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.6); }
 #nj3d.nj3d-walking .nj3d-build { top: 98px; }
 #nj3d.nj3d-walking .nj3d-holo { top: 142px; }
+/* 💡 꿀팁 (10/15) — 편지 창의 두 번째 탭 */
+.letter-kindtabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 2px 34px 10px 0; }
+.letter-kindtabs button { padding: 9px; border-radius: 12px; border: 1px solid #d9c9a3; background: #fff; color: #7a6a52; font-size: .95rem; font-weight: 700; cursor: pointer; }
+.letter-kindtabs button.on { background: #8a5300; color: #fff; border-color: #8a5300; }
+.tip-topics { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 2px; }
+.tip-topics button { padding: 6px 10px; border-radius: 999px; border: 1px solid #d9c9a3; background: #fff; color: #7a6a52; font-size: .8rem; cursor: pointer; }
+.tip-topics button.on { background: #fdf1d6; border-color: #c98a12; color: #8a5300; font-weight: 800; }
+.tip-pick { margin-bottom: 8px; }
+.tip-pick[hidden] { display: none; }
+.tip-pick-q { font-size: .82rem; color: #7a6a52; font-weight: 700; }
+.lt-letter.tip .lt-letter-kind { color: #2f7d4f; }
+.lt-letter-vn { color: #2f7d4f; font-weight: 700; font-size: .78rem; }
+.tip-line { margin: 10px 0 4px; padding: 9px 12px; border-radius: 12px; background: #fdf8ee; border: 1px dashed #d9c9a3; color: #6b5a40; font-size: .84rem; line-height: 1.55;
+    text-align: left; cursor: pointer; word-break: keep-all; }
+.tip-line b { color: #8a5300; }
+.ln-row { display: grid; grid-template-columns: 2fr 1fr; gap: 6px; }
+.ln-later { margin-top: 8px; padding: 7px; border-radius: 10px; border: 1px solid #e3d3ad; background: none; color: #9a8a70; font-size: .85rem; cursor: pointer; }
+#nj3d .nj3d-loadtip { margin: 14px auto 0; max-width: 300px; font-size: .82rem; line-height: 1.6; color: #e9e1cf; opacity: .9; word-break: keep-all; }
+/* 📒 내 꿀팁 노트 (10/15) */
+#tip-mine:not(:empty) { margin-top: 14px; padding-top: 10px; border-top: 1px dashed #d9c9a3; }
+.tip-mine-title { font-size: .85rem; font-weight: 800; color: #8a5300; margin-bottom: 6px; }
+.tip-mine-item { background: #fffdf8; border: 1px solid #eadfc4; border-radius: 12px; padding: 9px 11px; margin-bottom: 6px; }
+.tip-mine-head { display: flex; justify-content: space-between; gap: 8px; font-size: .75rem; color: #9a8a70; margin-bottom: 3px; }
+.tip-mine-head .shared { color: #2f7d4f; font-weight: 800; }
+.tip-mine-text { font-size: .86rem; color: #5b4c36; line-height: 1.55; word-break: keep-all; }
+.ln-sub { font-size: .78rem; color: #8a7a60; margin: 2px 0 6px; line-height: 1.5; }
+.njv-card .txt.my { font-family: 'Noto Serif KR', serif; margin: 6px 0 12px; }
