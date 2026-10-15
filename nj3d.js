@@ -52,6 +52,7 @@
                 <button class="nj3d-mode"></button>
                 <button class="nj3d-go"></button>
                 <button class="nj3d-deco"></button>
+                <button class="nj3d-build">${T('nj3d_build')}</button>
                 <button class="nj3d-holo" hidden></button>
                 <div class="nj3d-decobar" hidden></div>
                 <div class="nj3d-decopanel" hidden></div>
@@ -2001,6 +2002,7 @@
         { const jb = ov.querySelector('.nj3d-jump');
           jb.addEventListener('pointerdown', e => { e.preventDefault(); jumpHeld = true; try { jb.setPointerCapture(e.pointerId); } catch (_) {} doJump(); });
           ['pointerup', 'pointercancel'].forEach(tp => jb.addEventListener(tp, () => { jumpHeld = false; })); }
+        ov.querySelector('.nj3d-build').addEventListener('click', () => { if (typeof _njBuildFrom3D === 'function') _njBuildFrom3D(); });   // 🔨 건축(10/15) — 지도에서 바로 성으로 들어오므로 건축 창은 성 안에서
         const flyBtn = ov.querySelector('.nj3d-fly'), jetBuy = ov.querySelector('.nj3d-jetbuy'), jetTry = ov.querySelector('.nj3d-jettry');
         /* 🔤 상태에 따라 버튼 글자(10/14 사용자) — 뭍·공중·제트팩·물·탈것. 바뀔 때만 다시 그린다 */
         const jumpBtnEl = ov.querySelector('.nj3d-jump'), diveBtnEl = ov.querySelector('.nj3d-divebtn'), btnLab = { j: '', d: '', f: '' };
@@ -2316,7 +2318,7 @@
         }
         setGoLabel();
         modeBtn.addEventListener('click', () => {
-            walk = !walk; controls.enabled = !walk; walkUI.hidden = !walk; decoBtn.hidden = walk;   /* 🛠️ 꾸미기는 걷는 동안 안 열린다 — 눌러도 아무 일 없던 버튼을 숨긴다(10/13 사용자) */ pilgrim.visible = true; mini.hidden = !walk; dexBtn.hidden = !walk; miniT = 0; camOff = null; slide = null; slideBtn.hidden = true; slideSndStop(); fovBoost = 0; speedEl.style.opacity = '0'; plungeMom = null;
+            walk = !walk; controls.enabled = !walk; walkUI.hidden = !walk; decoBtn.hidden = walk; ov.classList.toggle('nj3d-walking', walk);   /* 꾸미기가 숨은 자리를 건축·완성된 모습이 메운다(10/15) */   /* 🛠️ 꾸미기는 걷는 동안 안 열린다 — 눌러도 아무 일 없던 버튼을 숨긴다(10/13 사용자) */ pilgrim.visible = true; mini.hidden = !walk; dexBtn.hidden = !walk; miniT = 0; camOff = null; slide = null; slideBtn.hidden = true; slideSndStop(); fovBoost = 0; speedEl.style.opacity = '0'; plungeMom = null;
             if (walk) { controls.autoRotate = false; camera.fov = 62; camera.near = 0.02; showHint(T('nj3d_hint_walk'), 3500); if (moveOnWalk) { if ((moveOnWalk === 'sea') !== (P.z > 25)) placeAt(moveOnWalk); moveOnWalk = null; } }
             else { camera.fov = 42; camera.near = 0.1; where = P.z > 25 ? 'sea' : 'city'; lookAt(where); setGoLabel(); endFish(); fishBtn.hidden = true; }
             camera.updateProjectionMatrix(); setModeLabel(); lastTouch = performance.now();
@@ -5405,6 +5407,15 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         let last = performance.now();
         const perf = { n: 0, sum: 0 };
         listen(document, 'visibilitychange', () => { if (!document.hidden && C.running) { last = performance.now(); requestAnimationFrame(loop); } });
+        /* 🕊️ 들어가는 순간 (10/15 사용자: 「3D로 보기」로는 느낌이 안 산다) — 하늘에서 성으로 내려오는 카메라 + 말씀 한 줄.
+           성 = 계 21:2(거룩한 성 새 예루살렘이 하늘에서 내려오니) · 바다·만국 = 계 21:24(사용자). 누르면 건너뛴다. 걷기로 시작하면(만나·별) 내려온 뒤 걷기로 */
+        let intro = null;
+        const introEase = u => u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+        function introStep(now) {
+            const u = Math.min(1, (now - intro.t0) / intro.dur), e = introEase(u);
+            camera.position.lerpVectors(intro.from, intro.to, e); controls.target.lerpVectors(intro.tf, intro.tt, e); camera.lookAt(controls.target);
+            if (u >= 1) { const it = intro; intro = null; controls.autoRotate = it.rot; controls.update(); lastTouch = now; if (it.after) it.after(); }
+        }
         function loop(now) {
             if (!C.running || cur !== C || document.hidden) return;
             // 만지지 않은 지 3초가 지나면 초당 30번 — 쉬지 않고 60번 그리면 폰이 뜨거워져 스스로 느려졌다(시안 실측)
@@ -5441,7 +5452,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (walk) walkUpdate(dt);
             else if (deco) decoCam();
             else {
-                controls.update();
+                if (intro) introStep(now); else controls.update();
                 // 땅(바다는 수면) 위로 붙잡는다 — 산 속·바다 밑으로 꺼지지 않게
                 const cx = camera.position.x, cz = camera.position.z, d0 = Math.max(Math.abs(cx), Math.abs(cz));
                 const gy = Math.max(d0 <= PL ? 0.6 : WT(cx, cz), SEA_Y) + 0.8;
@@ -5492,6 +5503,36 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             requestAnimationFrame(loop);
         }
         rebuild(); resize(); loading.remove();
+        {   // 🕊️ 들어가는 순간 · 🧭 할 일이 이끄는 입구(opts.start: 'manna' · 'stars' · 'sea')
+            const seaStart = where === 'sea';
+            const vref = seaStart ? [21, 24] : [21, 2], en = typeof currentLang !== 'undefined' && currentLang === 'en';
+            const vd = en && typeof bibleDataEn !== 'undefined' && bibleDataEn[vref[0]] ? bibleDataEn[vref[0]][vref[1] - 1] : ((typeof bibleData !== 'undefined' && bibleData[vref[0]]) || [])[vref[1] - 1];
+            const vtxt = vd ? (vd.text || (vd.chunks || []).join(' ')) : '';
+            const toWalk = !VISIT && (opts.start === 'manna' || opts.start === 'stars');
+            const afterIn = () => {
+                if (!toWalk || walk) return;
+                modeBtn.click();
+                if (opts.start === 'manna') {   // 🍞 아직 안 거둔 만나 곁으로
+                    const i = mannas.findIndex(m => !m.done), m = mannas[i];
+                    if (m) { P.x = m.x + 0.9; P.z = m.z + 0.9; P.y = terrain(P.x, P.z) + 0.05; P.vy = 0; camYaw = Math.atan2(P.x - m.x, P.z - m.z); P.face = camYaw + Math.PI; pilgrim.position.set(P.x, P.y, P.z); camOff = null; }
+                    showHint(T('nj3d_go_manna'), 4000);
+                } else showHint(T('nj3d_go_stars'), 4500);
+            };
+            const cap = document.createElement('div'); cap.className = 'nj3d-verse';
+            if (vtxt && !VISIT) {
+                cap.innerHTML = `<div class="v">${starEsc(vtxt)}</div><div class="r">${en ? `Rev ${vref[0]}:${vref[1]}` : `계 ${vref[0]}:${vref[1]}`}</div>`;
+                stageEl.appendChild(cap); requestAnimationFrame(() => cap.classList.add('in'));
+                setTimeout(() => { cap.classList.remove("in"); setTimeout(() => cap.remove(), 900); }, 5500);
+            }
+            if (!VISIT && !opts.focusGift && !opts.noIntro && !reduce) {
+                const tt = controls.target.clone(), to = camera.position.clone();
+                const from = tt.clone().add(to.clone().sub(tt).multiplyScalar(2.4)); from.y += 34;
+                intro = { t0: performance.now(), dur: 2800, from, to, tf: tt.clone().add(new THREE.Vector3(0, 6, 0)), tt, rot: controls.autoRotate, after: afterIn };
+                controls.autoRotate = false; camera.position.copy(from);
+                const skip = () => { if (intro) intro.t0 = -1e9; };   // 누르면 바로 도착
+                stageEl.addEventListener('pointerdown', skip, { once: true });
+            } else afterIn();
+        }
         C.resume = () => { for (const k in inp.keys) inp.keys[k] = false; jumpHeld = diveHeld = false; last = performance.now(); C.running = true; resize(); requestAnimationFrame(loop); };   // 숨겼다 돌아옴 — 눌린 채 남은 키는 놓는다
         C.running = true; requestAnimationFrame(loop);
     }

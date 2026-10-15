@@ -552,7 +552,7 @@ const LANG = {
         nj_today: '오늘',
         nj_fruit_title: '🌳 생명나무 열매 — 🍃 잎사귀 {leaves}장',
         nj_fruit_now: '이번 달 열매 {name} · 달린 열매 {n}개 · 익은 열매 {ripe}개',
-        nj_fruit_go: '🍽️ 익은 열매 {n}개 — 3D에서 먹으러 가기',
+        nj_fruit_go: '🍽️ 익은 열매 {n}개 — 생명나무로 가기',
         nj_fruit_rule: '그달에 백지로 통과한 절마다 열매가 하나 열려요. 7일 뒤 익으면 열매를 눌러 그 절을 백지로 써내고 먹어요 — 🍃 잎사귀 1장. 익은 뒤 30일이 지나면 떨어져요',
         nj_fruit_embed: '🌳 {name} 먹기',
         nj_fruit_eaten: '🍃 열매를 먹었어요 — 잎사귀 +1장',
@@ -572,7 +572,7 @@ const LANG = {
         sea_full: '바다가 모두 되살아났어요',
         sea_guilds_title: '함께 맑힌 길드들 · {n}단계 {name}',
         sea_guilds_none: '아직 없어요 — 첫 길드가 되어 보세요',
-        sea_water_rule: '내 바다예요. 칸마다 💎로 맑혀요 — 물가 300 · 얕은 바다 600 · 깊은 바다 1,000. 물가(뭍과 맞닿은 칸)는 3D에서 뭍에 서서 바라보는 칸을, 그 밖은 ⛵ 배를 타고 나가 배 아래 칸을 맑혀요. 한 구역을 다 맑히면 나라들이 한 단계 더 자라요. 맑힌 칸은 다시 흐려지지 않아요. 가장자리 흰 칸은 끝내 소금 땅이에요 (47:11).', sea_go_pour: '🌊 3D 바다로 — 맑히러 가기', sea_refund: '🌊 바다가 「내 바다」로 바뀌었어요 — 모두의 바다에 드린 💎{n}를 돌려드렸어요', sea_zone_how0: '뭍에 서서 바라보는 칸 · 한 칸 💎{n}', sea_zone_how1: '⛵ 배를 타고 배 아래 칸 · 한 칸 💎{n}', sea_zone_how2: '⛵ 배를 타고 먼 바다로 · 한 칸 💎{n}', sea_next_cell: '다음 칸까지 💎 {pool} / {cost}', sea_need_boat: '⛵ 물가를 다 맑혔어요. 이제 뭍에서 떨어진 {zone}예요 — 3D에서 배를 타고 그 물 위로 나가서 내요', sea_go_boat: '⛵ 3D 바다로 — 배를 타고 나가기',
+        sea_water_rule: '내 바다예요. 칸마다 💎로 맑혀요 — 물가 300 · 얕은 바다 600 · 깊은 바다 1,000. 물가(뭍과 맞닿은 칸)는 바닷가에 내려가 뭍에 서서 바라보는 칸을, 그 밖은 ⛵ 배를 타고 나가 배 아래 칸을 맑혀요. 한 구역을 다 맑히면 나라들이 한 단계 더 자라요. 맑힌 칸은 다시 흐려지지 않아요. 가장자리 흰 칸은 끝내 소금 땅이에요 (47:11).', sea_go_pour: '🌊 3D 바다로 — 맑히러 가기', sea_refund: '🌊 바다가 「내 바다」로 바뀌었어요 — 모두의 바다에 드린 💎{n}를 돌려드렸어요', sea_zone_how0: '뭍에 서서 바라보는 칸 · 한 칸 💎{n}', sea_zone_how1: '⛵ 배를 타고 배 아래 칸 · 한 칸 💎{n}', sea_zone_how2: '⛵ 배를 타고 먼 바다로 · 한 칸 💎{n}', sea_next_cell: '다음 칸까지 💎 {pool} / {cost}', sea_need_boat: '⛵ 물가를 다 맑혔어요. 이제 뭍에서 떨어진 {zone}예요 — 3D에서 배를 타고 그 물 위로 나가서 내요', sea_go_boat: '⛵ 3D 바다로 — 배를 타고 나가기',
         sea_last_pollution: '지난 월요일엔 {n}칸이 흐려졌어요.',
         sea_my_gems: '내 바다를 맑힌 보석 💎 {n}',
         sea_land_title: '🍃 만국을 소성',
@@ -609,7 +609,7 @@ const LANG = {
         vine_full: '포도나무는 {n}그루까지 — 거둔 뒤에 새로 심어요',
         sea_busy_gem: '맑히는 중…',
         sea_busy_leaf: '소성하는 중…',
-        sea_3d_btn: '🌊 3D로 보기 · 바다에서 걷기',
+        sea_3d_btn: '🌊 바닷가로 내려가기',
         nj3d_to_sea: '🌊 바다로',
         nj3d_to_city: '🏛️ 성으로',
         nj3d_nat_open: '🌊 바다 화면에서 소성하기',
@@ -725,9 +725,9 @@ const LANG = {
         gift_arrive: '🎁 {item}이(가) 성에 도착했어요',
         gift_skip: '건너뛰기 ⏭',
         sea_open_from_nj: '🌊 잎사귀 {n}장 — 바다와 만국으로',
-        nj3d_btn: '🏛️ 3D로 보기 · 걸어서 구경',
-        nj3d_loading: '성을 불러오는 중…',
-        nj3d_fail: '3D를 불러오지 못했어요. 인터넷 연결을 확인해 주세요',
+        nj3d_btn: '🏛️ 성문으로 들어가기', nj3d_build: '🔨 건축', nj3d_go_manna: '🍞 만나가 내렸어요 — 하얀 만나를 밟아 거두세요', nj3d_go_stars: '⭐ 오늘 암송한 말씀이 하늘의 별이 되었어요 — 🚀 날아올라 닿아 보세요', todo_nj: '성에서',
+        nj3d_loading: '성문 앞에 이르는 중…',
+        nj3d_fail: '성에 들어가지 못했어요. 인터넷 연결을 확인해 주세요',
         nj3d_walk: '🚶 걸어서 구경',
         nj3d_overview: '🗺️ 내려다보기',
         nj3d_hint_orbit: '한 손가락으로 돌리고, 두 손가락으로 확대해 보세요',
@@ -1873,7 +1873,7 @@ const LANG = {
         nj_today: 'today',
         nj_fruit_title: '🌳 Fruit of the tree of life — 🍃 {leaves} leaves',
         nj_fruit_now: 'This month: {name} · {n} on the trees · {ripe} ripe',
-        nj_fruit_go: '🍽️ {n} ripe — go eat them in 3D',
+        nj_fruit_go: '🍽️ {n} ripe — go to the Tree of Life',
         nj_fruit_rule: 'Each verse you pass in blank mode this month grows one fruit. After 7 days it ripens — tap it, write that verse from blank, and eat it for 🍃 1 leaf. Ripe fruit falls after 30 days',
         nj_fruit_embed: '🌳 Eat the {name}',
         nj_fruit_eaten: '🍃 You ate the fruit — +1 leaf',
@@ -1893,7 +1893,7 @@ const LANG = {
         sea_full: 'The whole sea lives again',
         sea_guilds_title: 'Guilds who cleared it together · Stage {n} {name}',
         sea_guilds_none: 'None yet — be the first guild',
-        sea_water_rule: 'This is your own sea. Clear it cell by cell with 💎 — shore 300 · shallows 600 · deep sea 1,000. In 3D, clear the shore cells (touching the land) by standing on the land and facing them; the rest by sailing out ⛵ and clearing the cell under your boat. Clear a whole zone and the nations can grow one step more. Cleared cells never cloud again. The white cells stay salt (47:11).', sea_go_pour: '🌊 To the sea in 3D — go and clear it', sea_refund: '🌊 The sea is now your own — the 💎{n} you gave to the shared sea has been returned', sea_zone_how0: 'Stand on the land and face the cell · 💎{n} each', sea_zone_how1: 'By ⛵ boat, the cell under you · 💎{n} each', sea_zone_how2: 'By ⛵ boat, out in the deep · 💎{n} each', sea_next_cell: 'Next cell 💎 {pool} / {cost}', sea_need_boat: '⛵ The shore is clear. Next are the {zone}, away from land — sail out by boat in 3D and give over that water', sea_go_boat: '⛵ To the sea in 3D — sail out',
+        sea_water_rule: 'This is your own sea. Clear it cell by cell with 💎 — shore 300 · shallows 600 · deep sea 1,000. At the shore, clear the shore cells (touching the land) by standing on the land and facing them; the rest by sailing out ⛵ and clearing the cell under your boat. Clear a whole zone and the nations can grow one step more. Cleared cells never cloud again. The white cells stay salt (47:11).', sea_go_pour: '🌊 To the sea in 3D — go and clear it', sea_refund: '🌊 The sea is now your own — the 💎{n} you gave to the shared sea has been returned', sea_zone_how0: 'Stand on the land and face the cell · 💎{n} each', sea_zone_how1: 'By ⛵ boat, the cell under you · 💎{n} each', sea_zone_how2: 'By ⛵ boat, out in the deep · 💎{n} each', sea_next_cell: 'Next cell 💎 {pool} / {cost}', sea_need_boat: '⛵ The shore is clear. Next are the {zone}, away from land — sail out by boat in 3D and give over that water', sea_go_boat: '⛵ To the sea in 3D — sail out',
         sea_last_pollution: 'Last Monday {n} cells clouded.',
         sea_my_gems: 'Gems used to clear my sea 💎 {n}',
         sea_land_title: '🍃 Heal the nations',
@@ -1930,7 +1930,7 @@ const LANG = {
         vine_full: 'Up to {n} vines — harvest before planting more',
         sea_busy_gem: 'Clearing…',
         sea_busy_leaf: 'Healing…',
-        sea_3d_btn: '🌊 View in 3D · Walk by the sea',
+        sea_3d_btn: '🌊 Go down to the shore',
         nj3d_to_sea: '🌊 To the sea',
         nj3d_to_city: '🏛️ To the city',
         nj3d_nat_open: '🌊 Heal it on the sea screen',
@@ -2046,9 +2046,9 @@ const LANG = {
         gift_arrive: '🎁 {item} has arrived at the city',
         gift_skip: 'Skip ⏭',
         sea_open_from_nj: '🌊 {n} leaves — to the Sea and the Nations',
-        nj3d_btn: '🏛️ View in 3D · Walk around',
-        nj3d_loading: 'Loading the city…',
-        nj3d_fail: 'Could not load 3D. Please check your connection',
+        nj3d_btn: '🏛️ Enter through the gate', nj3d_build: '🔨 Build', nj3d_go_manna: '🍞 Manna has fallen — step on it to gather', nj3d_go_stars: '⭐ The verses you recited today became stars — fly up with 🚀 and touch them', todo_nj: 'In the city',
+        nj3d_loading: 'Approaching the gate…',
+        nj3d_fail: 'Could not enter the city. Please check your connection',
         nj3d_walk: '🚶 Walk around',
         nj3d_overview: '🗺️ Overview',
         nj3d_hint_orbit: 'Drag to rotate, pinch to zoom',
@@ -9925,7 +9925,7 @@ function _njDraw(cv, W, H, built, pearls, opts) {
     return { x: cx, y: y1, cx, cy, x0, x1, y0, y1 };
 }
 
-/* 지도 맨 위 성 구역. 누르면 건축 창 */
+/* 지도 맨 위 성 구역. 누르면 바로 성문 앞(10/15 사용자 — 건축 창을 거치지 않게. 건축은 성 안 「🔨 건축」) */
 function _njZoneEl() {
     const zone = document.createElement('div');
     zone.className = 'zone-wrapper nj-zone';
@@ -9935,7 +9935,7 @@ function _njZoneEl() {
     [[5, 9, '🌸'], [92, 8, '🌼'], [4, 30, '🌿'], [94, 28, '🌷'], [4, 72, '🌺'], [94, 74, '🌷'], [7, 90, '🌻'], [91, 90, '🌹'], [16, 97, '🌸'], [82, 97, '🌼']]
         .forEach(([x, y, e], i) => { const f = document.createElement('span'); f.className = 'garden-flower'; f.textContent = e;
             f.style.cssText = `left:${x}%;top:${y}%;font-size:${0.85 + (i % 3) * 0.15}rem;animation-delay:${(i * 0.37) % 2}s`; zone.appendChild(f); });
-    zone.onclick = () => openNewJerusalem();
+    zone.onclick = () => openNJ3DView();
     return zone;
 }
 /* 성을 다시 그리고, 지도 강이 시작할 점을 컨테이너 좌표로 돌려준다 (drawRiver가 부른다) */
@@ -9989,7 +9989,7 @@ function openNewJerusalem() {
         <div class="nj-head"><b>${t('nj_title')}</b><button class="nj-x" onclick="closeNewJerusalem()">✕</button></div>
         <div class="nj-verse">${t('nj_verse')}</div>
         <canvas id="nj-canvas"></canvas>
-        <button class="nj-3d-btn" onclick="openNJ3DView()">${t('nj3d_btn')}</button>
+        <button class="nj-3d-btn" onclick="closeNewJerusalem(); openNJ3DView()">${t('nj3d_btn')}</button>
         <div class="nj-sub">${t('nj_hint')}</div>
         <div class="nj-gems">💎 ${Number(myGems || 0).toLocaleString()} · 🍃 ${_njLeavesAvail()}</div>
         <div class="nj-go" id="nj-go"></div>
@@ -10231,7 +10231,20 @@ function _njMineBar() {
     bar.querySelector('[data-a="gb"]').onclick = () => _njGuestbook(myNickname, r.guest, r.week);
     bar.querySelector('[data-a="fold"]').onclick = () => { _njvFolded(true); _njMineBar(); };
 }
-function closeNewJerusalem() { const m = document.getElementById('nj-modal'); if (m) m.remove(); }
+function closeNewJerusalem() {
+    const m = document.getElementById('nj-modal'); if (m) m.remove();
+    const b = _njBuildBack; _njBuildBack = null;
+    if (!b) return;
+    if (njBuilt !== b.built || njPearls !== b.pearls) { if (window.closeNJ3D) window.closeNJ3D(); openNJ3DView({ noIntro: true }); }   // 새 기초석·진주 — 성을 다시 짓는다
+    else if (window.resumeNJ3D) window.resumeNJ3D();
+}
+/* 🔨 성 안에서 건축 창 열기(10/15) — 성(3D)은 버리지 않고 숨겨 둔다(열매 먹으러 갈 때와 같은 길) */
+let _njBuildBack = null;
+function _njBuildFrom3D() {
+    if (!window.suspendNJ3D || !window.suspendNJ3D()) return;
+    _njBuildBack = { built: njBuilt, pearls: njPearls };
+    openNewJerusalem();
+}
 function _njRenderModal() {
     const cv = document.getElementById('nj-canvas'), list = document.getElementById('nj-list');
     if (!cv || !list) return;
@@ -34322,7 +34335,21 @@ function renderHomeTodo() {
     if (S.hasFriends) h += chip('💛', t('todo_cheer'), S.cheerable, S.cheerable === 0, 'openFriendScreen()');
     { const gf = (njGiftFruits || []).filter(f => !f.done || !f.thanked), act = gf.filter(f => (f.ripe && Date.now() >= f.ripe && !f.done) || (f.done && !f.thanked) || (!f.ripe && !f.done)).length;
       if (gf.length) h += chip('🎁', t('todo_gift'), act, act === 0, 'openGiftBasket()'); }   // 🎁 받은 나눔 열매
-    if (_battleInboxN > 0) h += `<button class="home-todo-chip" onclick="openBattle()">📨 도전장 <b>${_battleInboxN}</b></button>`;   // 말씀 대결 — 받은 도전장(⚔️는 길드 출석이 쓴다)
+    if (_battleInboxN > 0) h += `<button class="home-todo-chip" onclick="openBattle()">📨 도전장 <b>${_battleInboxN}</b></button>`;
+    {   // 🏛️ 성에서 — 만나 · 익은 열매 · 남은 별(10/15 사용자: 할 일이 이끄는 입구). 누르면 그 일이 있는 자리로
+        let manna = 0, fruit = 0, star = 0;
+        try { const T = _njMannaToday(), M = _njMannaDay(); if (T.ready) manna = T.ids.filter((_, i) => !M.got.includes(i) && !(M.melt || []).includes(i)).length; } catch (e) { }
+        try { fruit = _njFruitList().filter(f => f.ripe).length; } catch (e) { }
+        try {   // ⭐ 별은 누구에게나 뜨지만, 「할 일」로 부르는 건 날 수 있는 사람에게만(10/15 사용자) — 제트팩 · 나는 탈것 · 오늘 1분 체험이 남음
+            let fly = !!njJetpack || Object.keys(njMounts || {}).some(k => njMounts[k] && njMounts[k].own && typeof NJ_MOUNTS !== 'undefined' && NJ_MOUNTS[k] && NJ_MOUNTS[k].kind === 'fly');
+            if (!fly) { try { fly = localStorage.getItem('kr_jetTrial') !== _get6AMDayStr(); } catch (e) { } }
+            if (fly) { const S2 = _njStarDay(); star = S2.ids.filter(id => !S2.got.includes(id)).length; }
+        } catch (e) { }
+        if (manna || fruit || star) {
+            const start = manna ? "'manna'" : fruit ? 'null' : "'stars'";
+            h += `<button class="home-todo-chip nj" onclick="openNJ3DView(${start === 'null' ? '' : `{ start: ${start} }`})">🏛️ ${t('todo_nj')}${manna ? ` 🍞<b>${manna}</b>` : ''}${fruit ? ` 🍽️<b>${fruit}</b>` : ''}${star ? ` ⭐<b>${star}</b>` : ''}</button>`;
+        }
+    }   // 말씀 대결 — 받은 도전장(⚔️는 길드 출석이 쓴다)
     if (S.inGuild) h += chip('⚔️', t('todo_attend'), 0, S.attended, 'openGuildScreen()');
     _googleNudgeNoteLinked();
     if (_googleNudgeEligible() && !_googleBlockedBrowser()) h += chip('🔒', t('todo_protect'), 0, false, 'googleNudgeLink()');   // 🔒 구글 연결 전까지

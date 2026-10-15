@@ -7108,10 +7108,10 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
     background: rgba(15, 26, 51, 0.78); color: #9fe6f3; font-weight: 800; font-size: 0.85rem; cursor: pointer; }
 .nj3d-deco { position: absolute; top: 98px; left: 10px; z-index: 3; border: none; border-radius: 999px; padding: 8px 14px;
     background: rgba(15, 26, 51, 0.78); color: #f6d77a; font-weight: 800; font-size: 0.85rem; cursor: pointer; }
-.nj3d-holo { position: absolute; top: 142px; left: 10px; z-index: 3; border: 1px solid rgba(143, 230, 255, 0.5); border-radius: 999px; padding: 8px 14px;
+.nj3d-holo { position: absolute; top: 186px; left: 10px; z-index: 3; border: 1px solid rgba(143, 230, 255, 0.5); border-radius: 999px; padding: 8px 14px;
     background: rgba(15, 26, 51, 0.78); color: #aeefff; font-weight: 800; font-size: 0.85rem; cursor: pointer; }
 .nj3d-holo.on { background: #1d5a78; color: #e6fbff; }
-.nj3d-holo[hidden], .nj3d-deco[hidden], .nj3d-mode[hidden], .nj3d-go[hidden] { display: none; }
+.nj3d-holo[hidden], .nj3d-build[hidden], .nj3d-deco[hidden], .nj3d-mode[hidden], .nj3d-go[hidden] { display: none; }
 /* 꾸미기 — 아래 막대(고른 것 · 보관함 · 상점 · 완료)와 보관함/상점 창 (2026-10-01) */
 .nj3d-decobar { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 4;
     width: min(420px, calc(100% - 20px)); background: rgba(15, 26, 51, 0.92); border: 1px solid rgba(246, 215, 122, 0.35); border-radius: 14px; padding: 9px 10px;
@@ -7392,17 +7392,17 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 }
 
 /* 👀 바다 생물 관찰 (2026-10-05) — 바다에서 누르면 관찰 모드(걷기 단추를 감추고 아래 판), 도감에서 누르면 작은 물속 무대 */
-#nj3d.nj3d-observing .nj3d-walk, #nj3d.nj3d-observing .nj3d-mode, #nj3d.nj3d-observing .nj3d-go, #nj3d.nj3d-observing .nj3d-deco,
+#nj3d.nj3d-observing .nj3d-walk, #nj3d.nj3d-observing .nj3d-mode, #nj3d.nj3d-observing .nj3d-go, #nj3d.nj3d-observing .nj3d-deco, #nj3d.nj3d-observing .nj3d-build,
 #nj3d.nj3d-observing .nj3d-holo, #nj3d.nj3d-observing .nj3d-stage canvas.nj3d-mini, #nj3d.nj3d-observing .nj3d-dexbtn { display: none !important; }
 /* 🕊️ 친구의 새 예루살렘 구경(10/14) — 사고·꾸미고·낚고·맑히고·사신과 이야기하는 일은 숨긴다(걷기·점프·탈것·완성된 모습은 그대로) */
-#nj3d.nj3d-visit .nj3d-deco, #nj3d.nj3d-visit .nj3d-jetbuy, #nj3d.nj3d-visit .nj3d-jettry, #nj3d.nj3d-visit .nj3d-fishbtn, #nj3d.nj3d-visit .nj3d-pourbtn,
+#nj3d.nj3d-visit .nj3d-deco, #nj3d.nj3d-visit .nj3d-build, #nj3d.nj3d-visit .nj3d-jetbuy, #nj3d.nj3d-visit .nj3d-jettry, #nj3d.nj3d-visit .nj3d-fishbtn, #nj3d.nj3d-visit .nj3d-pourbtn,
 #nj3d.nj3d-visit .nj3d-clambtn, #nj3d.nj3d-visit .nj3d-pearlbtn, #nj3d.nj3d-visit .nj3d-talk, #nj3d.nj3d-visit .nj3d-dexbtn,
 #nj3d.nj3d-visit .nj3d-tackbtn { display: none !important; }
 #nj3d .nj3d-visitbar { position: absolute; left: 50%; transform: translateX(-50%); top: 8px; z-index: 5; display: flex; gap: 6px; align-items: center;
     background: rgba(15,26,51,0.82); color: #f3e3b0; border-radius: 999px; padding: 6px 8px 6px 14px; font-size: 0.85rem; font-weight: bold; white-space: nowrap; max-width: calc(100% - 20px); }
 /* 띠 자리만큼 위쪽 버튼들을 내린다(구경 중 · 내 세상에 방명록 띠가 있을 때) */
 #nj3d.nj3d-visit .nj3d-mode, #nj3d.nj3d-visit .nj3d-go, #nj3d.nj3d-visit .nj3d-holo, #nj3d.nj3d-visit .nj3d-wallet, #nj3d.nj3d-visit .nj3d-stage canvas.nj3d-mini,
-#nj3d.nj3d-hasbar .nj3d-mode, #nj3d.nj3d-hasbar .nj3d-go, #nj3d.nj3d-hasbar .nj3d-deco, #nj3d.nj3d-hasbar .nj3d-holo, #nj3d.nj3d-hasbar .nj3d-wallet, #nj3d.nj3d-hasbar .nj3d-stage canvas.nj3d-mini, #nj3d.nj3d-hasbar .nj3d-dexbtn { margin-top: 46px; }
+#nj3d.nj3d-hasbar .nj3d-mode, #nj3d.nj3d-hasbar .nj3d-go, #nj3d.nj3d-hasbar .nj3d-deco, #nj3d.nj3d-hasbar .nj3d-build, #nj3d.nj3d-hasbar .nj3d-holo, #nj3d.nj3d-hasbar .nj3d-wallet, #nj3d.nj3d-hasbar .nj3d-stage canvas.nj3d-mini, #nj3d.nj3d-hasbar .nj3d-dexbtn { margin-top: 46px; }
 /* 접으면 작은 「🕊️ ▾」 — 오른쪽 위(보석 줄 아래·미니맵 위), 버튼들은 제자리로 */
 #nj3d .nj3d-visitbar.folded { left: auto; right: 10px; transform: none; top: 52px; padding: 0; background: none; }
 #nj3d .nj3d-visitbar.folded button.sub { background: rgba(15,26,51,0.85); color: #f3e3b0; padding: 7px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
@@ -7831,7 +7831,7 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 #nj3d .nj3d-starhud .bar i { display: block; height: 100%; background: #ffd34d; transform-origin: left; }
 #nj3d .nj3d-starhud.flash { border-color: #ff6b6b; box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.6); }
 /* 모으는 25초 동안 — 안내가 맨 위, 그 자리의 버튼·미니맵은 잠깐 숨김(별과 조각이 화면 가운데라 가렸다) */
-#nj3d.nj3d-starrun .nj3d-mode, #nj3d.nj3d-starrun .nj3d-go, #nj3d.nj3d-starrun .nj3d-holo, #nj3d.nj3d-starrun .nj3d-deco, #nj3d.nj3d-starrun .nj3d-wallet,
+#nj3d.nj3d-starrun .nj3d-mode, #nj3d.nj3d-starrun .nj3d-go, #nj3d.nj3d-starrun .nj3d-holo, #nj3d.nj3d-starrun .nj3d-deco, #nj3d.nj3d-starrun .nj3d-build, #nj3d.nj3d-starrun .nj3d-wallet,
 #nj3d.nj3d-starrun .nj3d-stage canvas.nj3d-mini, #nj3d.nj3d-starrun .nj3d-dexbtn, #nj3d.nj3d-starrun .nj3d-visitbar { visibility: hidden; }
 
 /* 🚀 제트팩 1분 체험 (10/14) */
@@ -7877,3 +7877,16 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
     background: linear-gradient(180deg, #ffe08a, #f1b93a); color: #3a2600; font-size: 1.05rem; font-weight: 900; cursor: pointer;
     box-shadow: 0 4px 0 #b9831c, 0 0 18px rgba(255,210,90,0.45); }
 #nj3d .nj3d-starwin .sw-ok:active { transform: translateY(2px); box-shadow: 0 2px 0 #b9831c; }
+
+/* 🔨 건축 — 성 안에서 건축 창(10/15). 꾸미기 아래 */
+.nj3d-build { position: absolute; top: 142px; left: 10px; z-index: 3; border: none; border-radius: 999px; padding: 8px 14px;
+    background: rgba(20, 30, 50, 0.82); color: #f6d77a; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
+/* 🕊️ 들어갈 때 말씀 한 줄 — 계 21:2(성) · 21:24(바다·만국) */
+#nj3d .nj3d-verse { position: absolute; left: 50%; bottom: 22%; transform: translate(-50%, 10px); z-index: 7; width: min(420px, calc(100% - 40px));
+    text-align: center; pointer-events: none; opacity: 0; transition: opacity 0.9s ease, transform 0.9s ease; }
+#nj3d .nj3d-verse.in { opacity: 1; transform: translate(-50%, 0); }
+#nj3d .nj3d-verse .v { font-family: 'Noto Serif KR', serif; font-size: 1.02rem; line-height: 1.75; color: #fffaf0; word-break: keep-all;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.55), 0 0 14px rgba(0,0,0,0.45); }
+#nj3d .nj3d-verse .r { margin-top: 6px; font-size: 0.82rem; color: #f6d77a; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.6); }
+#nj3d.nj3d-walking .nj3d-build { top: 98px; }
+#nj3d.nj3d-walking .nj3d-holo { top: 142px; }
