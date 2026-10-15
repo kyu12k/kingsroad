@@ -48,7 +48,7 @@
                 <button class="nj3d-x" aria-label="close">✕</button>
             </div>
             <div class="nj3d-stage">
-                <div class="nj3d-loading">${T('nj3d_loading')}${!visit && typeof _tipText === 'function' ? `<div class="nj3d-loadtip">${_tipText('nj')}</div>` : ''}</div>
+                <div class="nj3d-loading"><div class="nj3d-loadbox">${T('nj3d_loading')}${!visit && typeof _tipText === 'function' ? `<div class="nj3d-loadtip">${_tipText('nj')}</div>` : ''}</div></div>
                 <button class="nj3d-mode"></button>
                 <button class="nj3d-go"></button>
                 <button class="nj3d-deco"></button>
@@ -91,6 +91,18 @@
             </div>`;
         document.body.appendChild(ov);
         const stageEl = ov.querySelector('.nj3d-stage'), loading = ov.querySelector('.nj3d-loading');
+        if (!visit) {   // 🕊️ 말씀은 성문 앞에 이르는 동안부터(10/15 사용자: 성을 다 지은 뒤에야 떠서 늦었다) — 성이 나타나 내려오는 동안 이어진다
+            const vref = opts && opts.start === 'sea' ? [21, 24] : [21, 2], en = typeof currentLang !== 'undefined' && currentLang === 'en';
+            const vd = en && typeof bibleDataEn !== 'undefined' && bibleDataEn[vref[0]] ? bibleDataEn[vref[0]][vref[1] - 1] : ((typeof bibleData !== 'undefined' && bibleData[vref[0]]) || [])[vref[1] - 1];
+            const vtxt = vd ? (vd.text || (vd.chunks || []).join(' ')) : '';
+            if (vtxt) {
+                const cap = document.createElement('div'); cap.className = 'nj3d-verse';
+                const esc = x => String(x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+                cap.innerHTML = `<div class="v">${esc(vtxt)}</div><div class="r">${en ? `Rev ${vref[0]}:${vref[1]}` : `계 ${vref[0]}:${vref[1]}`}</div>`;
+                stageEl.appendChild(cap); requestAnimationFrame(() => cap.classList.add('in'));
+                ov._verseCap = cap;
+            }
+        }
         const cleanups = [];
         cur = { ov, cleanups, running: false };
         ov.querySelector('.nj3d-x').onclick = () => closeNJ3D();
@@ -603,6 +615,10 @@
                 //   전엔 아치를 3.74~4.2 한 덩이·두께 0.46으로 잡아 큰 진주(4.0~4.7) 속에 묻히고 너무 얇았다
                 const gbx = (hw, hd, y0, y1) => BOXES.push(horiz ? { x0: cx - hw, x1: cx + hw, z0: cz - hd, z1: cz + hd, y0: base + y0, y1: base + y1 }
                                                                  : { x0: cx - hd, x1: cx + hd, z0: cz - hw, z1: cz + hw, y0: base + y0, y1: base + y1 });
+                [-1, 1].forEach(sg => {   // 받침 — 문 양쪽 아래 넓은 단(모델을 재면 가로 ±0.6~1.2 · 앞뒤 ±0.38 · 높이 0.4, 가운데 1.2는 통로). 10/15 사용자: 진주 문 아래 장식에 몸이 파묻혔다
+                    BOXES.push(horiz ? { x0: cx + (sg < 0 ? -1.2 : 0.6), x1: cx + (sg < 0 ? -0.6 : 1.2), z0: cz - 0.38, z1: cz + 0.38, y0: base, y1: base + 0.4 }
+                                     : { x0: cx - 0.38, x1: cx + 0.38, z0: cz + (sg < 0 ? -1.2 : 0.6), z1: cz + (sg < 0 ? -0.6 : 1.2), y0: base, y1: base + 0.4 });
+                });
                 gbx(PC + PT, 0.34, ARCH0, 3.95);   // 아치 어깨 — 진주 양옆에 선다
                 gbx(0.42, 0.42, 3.95, 4.72);       // 큰 진주 — 꼭대기에 선다
                 gbx(0.15, 0.15, 4.72, 5.45);       // 진주 위 천사 — 몸속에 들어가지 않게(그 옆 진주 위에 선다)
@@ -4530,7 +4546,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             rebuild: () => itemBoxes(), items: () => [...giftsG.children, ...decoG.children].map(o => { let n = 0, vis = 0; o.traverse(m => { if (m.isMesh) { n++; if (m.visible) vis++; } }); return { k: o.userData.item && o.userData.item.k, vis: o.visible, meshes: n, visMeshes: vis, pos: [o.position.x, o.position.y, o.position.z].map(v => +v.toFixed(2)) }; }), ground: (x, z, y) => groundAt(x, z, y), blocked: (x, z, y) => blocked(x, z, y),
             setP: (x, y, z, face) => { P.x = x; P.y = y; P.z = z; P.vy = 0; if (face != null) { P.face = face; camYaw = face; } }, P: () => ({ x: P.x, y: P.y, z: P.z }),
             stars: () => stars.map(s => ({ id: s.id, x: s.x, y: s.g.position.y, z: s.z, done: s.done, vis: s.g.visible })),
-            fragScreen: () => starRun ? starRun.frags.filter(f => !f.got).map(f => { const v = f.sp.position.clone().project(camera); return { i: f.i, sx: +((v.x + 1) / 2).toFixed(2), sy: +((1 - v.y) / 2).toFixed(2), z: +v.z.toFixed(3), sc: [+f.sp.scale.x.toFixed(2), +f.sp.scale.y.toFixed(2)], vis: f.sp.visible, inScene: !!f.sp.parent, dist: +f.sp.position.distanceTo(camera.position).toFixed(2) }; }) : null, cam: () => ({ p: camera.position.toArray().map(v => +v.toFixed(2)), near: camera.near, far: camera.far }), three: () => ({ scene, renderer, camera, controls }), jetTrial: ms => { if (jetTrialEnd) jetTrialEnd = Date.now() + ms; return { end: jetTrialEnd, land: jetTrialLand, on: jetOn }; }, tall: () => BOXES.filter(b => !b.item && b.y1 > 3.5).map(b => ({ x0: b.x0, x1: b.x1, z0: b.z0, z1: b.z1, y0: b.y0, y1: b.y1 })),
+            fragScreen: () => starRun ? starRun.frags.filter(f => !f.got).map(f => { const v = f.sp.position.clone().project(camera); return { i: f.i, sx: +((v.x + 1) / 2).toFixed(2), sy: +((1 - v.y) / 2).toFixed(2), z: +v.z.toFixed(3), sc: [+f.sp.scale.x.toFixed(2), +f.sp.scale.y.toFixed(2)], vis: f.sp.visible, inScene: !!f.sp.parent, dist: +f.sp.position.distanceTo(camera.position).toFixed(2) }; }) : null, cam: () => ({ p: camera.position.toArray().map(v => +v.toFixed(2)), near: camera.near, far: camera.far }), three: () => ({ scene, renderer, camera, controls }), jetTrial: ms => { if (jetTrialEnd) jetTrialEnd = Date.now() + ms; return { end: jetTrialEnd, land: jetTrialLand, on: jetOn }; }, dyn: () => ({ dynScale: +dynScale.toFixed(2), pr: +renderer.getPixelRatio().toFixed(2), ema: +dynEma.toFixed(3) }), tall: () => BOXES.filter(b => !b.item && b.y1 > 3.5).map(b => ({ x0: b.x0, x1: b.x1, z0: b.z0, z1: b.z1, y0: b.y0, y1: b.y1 })),
             run: () => starRun ? { next: starRun.next, n: starRun.seg.length, frags: starRun.frags.map(f => ({ i: f.i, x: f.x, y: f.sp.position.y, z: f.z, got: f.got })) } : null };
         } catch (e) { }
 
@@ -5395,7 +5411,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         ov.querySelectorAll('.nj3d-q button').forEach(b => b.setAttribute('aria-pressed', (b.dataset.q === 'high') === HIGH ? 'true' : 'false'));
 
         // ── 그리기 ──
-        let farView = false;
+        let farView = false, dynScale = 1;   // 🎚️ dynScale — 움직일 때 느리면 화면 배율을 조금씩 낮추고, 여유가 생기면 되돌린다(10/15)
         function resize() {
             const w = stageEl.clientWidth, h = stageEl.clientHeight;
             if (!w || !h) return;
@@ -5403,7 +5419,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             // 화면 배율 상한은 그대로 두되, 점 총수가 고급 230만 · 기본 150만을 넘으면 그만큼 배율을 낮춘다(최소 0.75)
             // 10/14: 멀리서 넓게 볼 때(구경 거리 40 넘게)는 배율을 0.75배로(점 수 약 0.56배) — 화면 거의 전체가 바다·땅이라 칠할 점이 가장 많은데 멀어서 잔 무늬는 안 보인다
             const cap = HIGH ? 2 : 1.5, maxPx = HIGH ? 2.3e6 : 1.5e6;
-            const pr = Math.max(0.75, Math.min(window.devicePixelRatio || 1, cap, Math.sqrt(maxPx / (w * h))) * (farView ? 0.75 : 1));
+            const pr = Math.max(0.75, Math.min(window.devicePixelRatio || 1, cap, Math.sqrt(maxPx / (w * h))) * (farView ? 0.75 : 1) * dynScale);
             if (Math.abs(renderer.getPixelRatio() - pr) > 0.01) renderer.setPixelRatio(pr);
             renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
         }
@@ -5414,6 +5430,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         controls.addEventListener('end', () => { touching = false; lastTouch = performance.now(); });
         let last = performance.now();
         const perf = { n: 0, sum: 0 };
+        let dynEma = 0, dynAt = 0, dynSlow = 0, dynFast = 0;
         listen(document, 'visibilitychange', () => { if (!document.hidden && C.running) { last = performance.now(); requestAnimationFrame(loop); } });
         /* 🕊️ 들어가는 순간 (10/15 사용자: 「3D로 보기」로는 느낌이 안 산다) — 하늘에서 성으로 내려오는 카메라 + 말씀 한 줄.
            성 = 계 21:2(거룩한 성 새 예루살렘이 하늘에서 내려오니) · 바다·만국 = 계 21:24(사용자). 누르면 건너뛴다. 걷기로 시작하면(만나·별) 내려온 뒤 걷기로 */
@@ -5428,7 +5445,22 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (!C.running || cur !== C || document.hidden) return;
             // 만지지 않은 지 3초가 지나면 초당 30번 — 쉬지 않고 60번 그리면 폰이 뜨거워져 스스로 느려졌다(시안 실측)
             if (!touching && now - lastTouch > 3000 && now - last < 30) { requestAnimationFrame(loop); return; }
-            const dt = Math.min(0.05, (now - last) / 1000); last = now;
+            const rawDt = (now - last) / 1000;
+            const dt = Math.min(0.05, rawDt); last = now;
+            /* 🎚️ 해상도 자동 조절 (10/15 사용자: 성 안에서 움직이면 렉) — 성 안은 화면 대부분이 수정처럼 비치는 벽옥(반투명·광택)이라
+               큰 화면일수록 그래픽 카드가 버거웠다. 「고급」을 직접 고른 사람은 처음 몇 초 자동 낮춤도 꺼져 있다.
+               움직이는 동안 평균 프레임이 느리면(>45ms, 2초) 배율 ×0.85(최저 0.5), 빠르면(<24ms, 5초) 한 단계 되돌린다. 바꾼 뒤 3초는 쉰다 */
+            if (rawDt < 0.5) {
+                const moving = walk ? (Math.abs(inp.jx) + Math.abs(inp.jy) > 0.05 || Object.values(inp.keys).some(Boolean) || !P.onGround) : touching;
+                if (moving) {
+                    dynEma = dynEma ? dynEma * 0.95 + rawDt * 0.05 : rawDt;
+                    if (now - dynAt > 3000) {
+                        if (dynEma > 0.045) { dynSlow += rawDt; dynFast = 0; } else if (dynEma < 0.024) { dynFast += rawDt; dynSlow = 0; } else { dynSlow = dynFast = 0; }
+                        if (dynSlow > 2 && dynScale > 0.5) { dynScale = Math.max(0.5, dynScale * 0.85); dynAt = now; dynSlow = 0; resize(); }
+                        else if (dynFast > 5 && dynScale < 1) { dynScale = Math.min(1, dynScale / 0.85); dynAt = now; dynFast = 0; resize(); }
+                    }
+                }
+            }
             if (!reduce) { rivers.forEach(tx => { tx.offset.y += dt * 0.25; }); seaTex.offset.x += dt * 0.012; seaTex.offset.y += dt * 0.02; seaTex2.offset.x -= dt * 0.016; seaTex2.offset.y += dt * 0.009; seaTex.updateMatrix(); seaTex2.updateMatrix(); }   // 강은 보좌에서 바깥으로 · 바다 물결은 천천히
             if (HIGH && !reduce) {
                 for (let n = 0; n < MOTES; n++) { const i = n * 3 + 1; motePos[i] += dt * moteSpd[n]; if (motePos[i] > 10) motePos[i] = 0; }
@@ -5513,10 +5545,6 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         rebuild(); resize(); loading.remove();
         ov.querySelector('.nj3d-build').hidden = false;   // 🔨 성이 다 지어진 뒤에(10/15 사용자: 불러오는 동안 건축이 마중 나왔다)
         {   // 🕊️ 들어가는 순간 · 🧭 할 일이 이끄는 입구(opts.start: 'manna' · 'stars' · 'sea')
-            const seaStart = where === 'sea';
-            const vref = seaStart ? [21, 24] : [21, 2], en = typeof currentLang !== 'undefined' && currentLang === 'en';
-            const vd = en && typeof bibleDataEn !== 'undefined' && bibleDataEn[vref[0]] ? bibleDataEn[vref[0]][vref[1] - 1] : ((typeof bibleData !== 'undefined' && bibleData[vref[0]]) || [])[vref[1] - 1];
-            const vtxt = vd ? (vd.text || (vd.chunks || []).join(' ')) : '';
             const toWalk = !VISIT && (opts.start === 'manna' || opts.start === 'stars');
             const afterIn = () => {
                 if (!toWalk || walk) return;
@@ -5527,12 +5555,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                     showHint(T('nj3d_go_manna'), 4000);
                 } else showHint(T('nj3d_go_stars'), 4500);
             };
-            const cap = document.createElement('div'); cap.className = 'nj3d-verse';
-            if (vtxt && !VISIT) {
-                cap.innerHTML = `<div class="v">${starEsc(vtxt)}</div><div class="r">${en ? `Rev ${vref[0]}:${vref[1]}` : `계 ${vref[0]}:${vref[1]}`}</div>`;
-                stageEl.appendChild(cap); requestAnimationFrame(() => cap.classList.add('in'));
-                setTimeout(() => { cap.classList.remove("in"); setTimeout(() => cap.remove(), 900); }, 5500);
-            }
+            const cap = ov._verseCap;   // 성문 앞에서부터 떠 있던 말씀 — 내려온 뒤 조금 더 두고 사라진다
+            if (cap) setTimeout(() => { cap.classList.remove('in'); setTimeout(() => cap.remove(), 900); }, 4000);
             if (!VISIT && !opts.focusGift && !opts.noIntro && !reduce) {
                 const tt = controls.target.clone(), to = camera.position.clone();
                 const from = tt.clone().add(to.clone().sub(tt).multiplyScalar(2.4)); from.y += 34;

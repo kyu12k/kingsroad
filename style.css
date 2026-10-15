@@ -7917,3 +7917,4 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 .tip-mine-text { font-size: .86rem; color: #5b4c36; line-height: 1.55; word-break: keep-all; }
 .ln-sub { font-size: .78rem; color: #8a7a60; margin: 2px 0 6px; line-height: 1.5; }
 .njv-card .txt.my { font-family: 'Noto Serif KR', serif; margin: 6px 0 12px; }
+.nj3d-loadbox { text-align: center; padding: 0 24px; }
