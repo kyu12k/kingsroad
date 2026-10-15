@@ -33197,7 +33197,9 @@ function finishHardshipSession(reason) {
             // 판 도중 햇살이 끝났으면 몇 절에 붙었는지 함께 — 「⚡×3」만 보이면 왜 점수가 적은지 알 수 없었다 (9/29 문의)
             const nb = (hardshipState.boostedKeys || []).length, ns = (hardshipState.scoredKeys || []).length;
             const part = (m > 1 && ns > 0 && nb < ns) ? ` ${t('booster_partial', { n: nb, total: ns })}` : '';
-            resultExp.innerText = m > 1 ? `${hardshipState.score} ⚡×${m}${part}` : `${hardshipState.score}`;
+            // 10/16 사용자: 「36500 ⚡×3 (22/29절)」이 한 칸에서 여러 줄로 꺾였다 → 점수 한 줄 + 아래 작은 글씨로 배율 한 줄
+            if (m > 1) resultExp.innerHTML = `${Number(hardshipState.score).toLocaleString()}<span class="stat-sub">⚡×${m}${part}</span>`;
+            else resultExp.innerText = `${Number(hardshipState.score).toLocaleString()}`;
         }
     }
 
