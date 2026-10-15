@@ -1714,6 +1714,14 @@
                 const edge = new THREE.Mesh(triGeo([-0.34, 0.002, 0.12, 0.34, 0.002, 0.12, 0, 0.004, 0.02], [0, 1, 2]), wingMat(0xffd27a, 0xffb040, 1.2)); G2.add(edge);
                 const sp = wingSparks(24, 0xffb050); G2.add(sp.p); G2.userData.fx = (t, on) => sp.step(t, 0.6, on);
             } else G2.add(new THREE.Mesh(triGeo(D, I), wingMat(0xf6d77a, 0x6a4a10, 0.3)));   // 금빛(기본)
+            {   // A자 지지대 + 손잡이 막대(10/15 사용자: 글라이더와 손을 잇는 줄이 없다) — 날개 중심에서 두 손(높이 0.225 = 날개 아래 0.075)으로
+                const fm = new THREE.MeshStandardMaterial({ color: 0xcfd3d8, metalness: 0.7, roughness: 0.35 });
+                const tube = (a2, b2, r) => { const A = new THREE.Vector3(...a2), B = new THREE.Vector3(...b2), L2 = A.distanceTo(B), m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, L2, 6), fm);
+                    m.position.copy(A).add(B).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.clone().sub(A).normalize()); G2.add(m); };
+                const top = [0, 0.012, 0.0], bl = [-0.072, -0.074, -0.004], br = [0.072, -0.074, -0.004];
+                tube(top, bl, 0.0022); tube(top, br, 0.0022); tube(bl, br, 0.0026);   // 내리관 둘 · 손잡이 막대
+                tube([0, 0.03, -0.2], top, 0.0016); tube(top, [0, 0.03, 0.1], 0.0016);   // 용골 — 날개 앞뒤
+            }
             G2.traverse(o => { if (o.isMesh) o.castShadow = false; });   // 순례자와 함께 — 굽는 그림자에서 뺀다
             return G2;
         }
@@ -1758,7 +1766,7 @@
             });
         }
         const nozzles = [-1, 1].map(sg => {
-            const g = new THREE.Group(); g.position.set(sg * 0.026, 0.165, 0.057); g.rotation.set(0.5, 0, sg * 0.14); jet.add(g);   // 아래 끝이 바깥·뒤로 — 날 때 좁아진 치마(0.04)를 확실히 비켜 간다
+            const g = new THREE.Group(); g.position.set(sg * 0.026, 0.165, 0.057); g.rotation.set(0.62, 0, sg * 0.4); jet.add(g);   // 아래 끝이 바깥·뒤로 — 좁아진 치마(0.04)와 뒤로 끌리는 다리를 비켜 간다(10/15 사용자: 불꽃이 다리를 가로질렀다 → 양옆으로 벌림)
             const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.0105, 0.0105, 0.05, 14), jcase); tube.position.y = -0.025; g.add(tube);
             const cap = new THREE.Mesh(new THREE.SphereGeometry(0.0105, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), jcase); g.add(cap);
             const band = new THREE.Mesh(new THREE.TorusGeometry(0.0108, 0.0016, 5, 16), jm); band.rotation.x = Math.PI / 2; band.position.y = -0.012; g.add(band);
