@@ -1567,7 +1567,7 @@
         const slideBtn = ov.querySelector('.nj3d-slidebtn');
         let slide = null, slideCheckT = 0;   // 🛝 생명수 미끄럼 — 남쪽 강을 타고 바다까지 { v 빠르기, t, sp 물보라 }
         // 🛝 속도감 (10/5 사용자: 빠르기는 그대로, 속도감만) — 시야 넓히기 · 물보라 · 화면 가장자리 바람 선 · 흐르는 물·바람 소리. 화면 흔들기는 뺐다(떨림을 싫어했다)
-        let fovBoost = 0, slideSnd = null, slideK = 0;
+        let fovBoost = 0, slideSnd = null, slideK = 0, jetRush = 0;
         const speedEl = ov.querySelector('.nj3d-speed');
         const slideSndStop = () => { if (slideSnd) { slideSnd.stop(); slideSnd = null; } };
         cleanups.push(slideSndStop);
@@ -4016,10 +4016,10 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         });
         function speedFx(dt) {   // 시야·바람 선 — 미끄럼이 끝나면 천천히 돌아온다. 물보라는 끝난 뒤에도 떨어질 때까지
             miniT -= dt; if (miniT <= 0) { miniT = 0.1; miniDraw(); }   // 🗺️ 미니맵 — 초당 10번
-            const want = slide ? 16 * slideK : 0;
+            const want = slide ? 16 * slideK : jetRush * 9;   // 🚀 제트팩으로 빠르게 날면 시야가 조금 넓어진다(10/15 사용자: 속도감이 없다)
             fovBoost += (want - fovBoost) * (1 - Math.exp(-dt * 3));
             const fov = 62 + fovBoost; if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
-            speedEl.style.opacity = slide && !reduce ? (0.45 * Math.max(0, slideK - 0.15)).toFixed(3) : '0';
+            speedEl.style.opacity = reduce ? '0' : slide ? (0.45 * Math.max(0, slideK - 0.15)).toFixed(3) : jetRush > 0.6 ? (0.4 * (jetRush - 0.6) / 0.4).toFixed(3) : '0';
             if (!slide && spray.visible) sprayTick(dt, 0);
         }
         function walkUpdate(dt) {
@@ -4164,7 +4164,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             else if (!ride.on && isUnder()) { const k2 = Math.sin(walkT * 9); hL = 0.25 * k2; hR = -0.25 * k2; const st = Math.sin(walkT * 3.5); aL = -2.6 + st * 0.6; aR = -2.6 - st * 0.6; zL = -0.35; zR = 0.35; lean = moving ? -1.25 : -0.5; }   // 🤿 헤엄 — 몸을 눕혀 발차기, 팔을 젓는다
             else if (glider.visible) { hL = -0.3; hR = -0.2; zL = -2.7; zR = 2.7; lean = -0.35; }   // 두 팔로 날개를 붙잡고 몸을 앞으로
             else if (gl && wingKind === 'wings') { hL = -0.25; hR = -0.15; zL = -0.9; zR = 0.9; lean = -0.5; }   // 등 날개로 날 때 — 팔을 벌리고 몸을 눕힌다
-            else if (fly) { hL = 0.12; hR = 0.05; zL = -0.35; zR = 0.35; lean = -0.25; }
+            else if (fly) {   // 🚀 제트팩 — 나아가는 빠르기(jetRush)만큼 몸을 앞으로 눕히고 팔은 뒤로 젖히고, 다리는 뒤로 끌리며 퍼덕인다(10/15 사용자)
+                const k = jetRush, fl = Math.sin(walkT * 13) * 0.09 * k;
+                hL = 0.12 + 0.3 * k + fl; hR = 0.05 + 0.3 * k - fl; aL = 0.55 * k; aR = 0.55 * k; zL = -0.35 + 0.15 * k; zR = 0.35 - 0.15 * k; lean = -0.25 - 1.0 * k; }
             else if (!P.onGround) { hL = 0.65; hR = -0.3; aL = -0.5; aR = 0.4; zL = -0.75; zR = 0.75; }
             else if (stepping) { hL = amp * sw; hR = -amp * sw; aL = -amp * 0.85 * sw; aR = amp * 0.85 * sw; lean = run ? -0.2 : -0.05; bob = Math.abs(Math.cos(gait)) * (run ? 0.012 : 0.006); }
             const e = Math.min(1, dt * 14), L = limbs;
@@ -4174,7 +4176,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             body.rotation.x += (lean - body.rotation.x) * e; body.position.y += (bob - body.position.y) * Math.min(1, dt * 30);
             { const sz = !ride.on || RK.pose === 'stand' ? 0 : rk === 'bike' ? (RK.motor ? 0.18 : 0.06) : rk === 'car' ? 0.12 : rk === 'boat' ? 0.15 : 0.42; L.hipL.rotation.z += (-sz - L.hipL.rotation.z) * e; L.hipR.rotation.z += (sz - L.hipR.rotation.z) * e; }   // 탈 때는 다리를 벌린다
             rippleTick(dt);
-            flames.forEach(f => { f.visible = fly; f.scale.set(0.05, 0.08 + Math.random() * 0.04, 1); });
+            jetRush += ((fly && moving ? Math.min(1, ml) : 0) - jetRush) * Math.min(1, dt * 4);   // 0 = 떠 있음 ~ 1 = 끝까지 밀어(Shift) 빠르게
+            flames.forEach(f => { f.visible = fly; f.scale.set(0.05 + 0.03 * jetRush, 0.08 + 0.1 * jetRush + Math.random() * (0.04 + 0.05 * jetRush), 1); });
             if (moving || fly || !P.onGround) lastTouch = performance.now();
             followCam(dt);
         }
