@@ -1735,10 +1735,41 @@
             return W;
         }
         const jet = new THREE.Group(); body.add(jet);
-        const jm = new THREE.MeshStandardMaterial({ color: 0xd4a53a, metalness: 0.8, roughness: 0.25 });
-        [-1, 1].forEach(sg => { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.075, 12), jm); c.position.set(sg * 0.018, 0.13, 0.03); jet.add(c); });
+        /* 🚀 제트팩 (10/15 사용자: 펑퍼짐한 겉옷과 겹친다) — 예전엔 등에 붙은 원통 둘(z 0.03)이 겉옷(높이 0.1에서 반지름 0.045) 속에 반쯤 묻히고
+           불꽃이 옷자락 안에서 나왔다. → 어깨에 멘 진줏빛 등판 + 금빛 테·어깨끈, 분사구 둘은 위로 올려 옷 바깥(z 0.06)에 달고 아래 끝을 바깥·뒤로 기울인다.
+           불꽃은 화면을 향하는 빛 그림 대신 분사구에서 몸 아래(=누우면 뒤)로 뻗는 원뿔 — 빠를수록 길다 */
+        const jm = new THREE.MeshStandardMaterial({ color: 0xd4a53a, metalness: 0.8, roughness: 0.25 });   // 금빛 테
+        const jcase = new THREE.MeshStandardMaterial({ color: 0xf6f1e6, metalness: 0.35, roughness: 0.3 });   // 진줏빛 몸체
+        const jdark = new THREE.MeshStandardMaterial({ color: 0x5b4a3a, metalness: 0.6, roughness: 0.4 });   // 분사구 안쪽
+        {
+            const plate = new THREE.Mesh(new THREE.BoxGeometry(0.046, 0.058, 0.012), jcase); plate.position.set(0, 0.143, 0.041); jet.add(plate);
+            const rim = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.004, 0.014), jm); rim.position.set(0, 0.172, 0.041); jet.add(rim);
+            const rim2 = rim.clone(); rim2.position.y = 0.114; jet.add(rim2);
+            [-1, 1].forEach(sg => {   // 어깨끈 — 어깨를 넘어 앞으로
+                const st = new THREE.Mesh(new THREE.TorusGeometry(0.02, 0.0028, 5, 12, Math.PI), jm); st.position.set(sg * 0.02, 0.158, 0.012); st.rotation.set(0, Math.PI / 2, 0); jet.add(st);
+            });
+        }
+        const nozzles = [-1, 1].map(sg => {
+            const g = new THREE.Group(); g.position.set(sg * 0.026, 0.165, 0.057); g.rotation.set(0.32, 0, sg * 0.14); jet.add(g);   // 아래 끝이 바깥·뒤로
+            const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.0105, 0.0105, 0.05, 14), jcase); tube.position.y = -0.025; g.add(tube);
+            const cap = new THREE.Mesh(new THREE.SphereGeometry(0.0105, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), jcase); g.add(cap);
+            const band = new THREE.Mesh(new THREE.TorusGeometry(0.0108, 0.0016, 5, 16), jm); band.rotation.x = Math.PI / 2; band.position.y = -0.012; g.add(band);
+            const bell = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.0135, 0.013, 14, 1, true), jm); bell.position.y = -0.056; g.add(bell);
+            const inner = new THREE.Mesh(new THREE.CircleGeometry(0.009, 12), jdark); inner.rotation.x = Math.PI / 2; inner.position.y = -0.05; g.add(inner);
+            return g;
+        });
         const flameMat = new THREE.SpriteMaterial({ map: radial, color: 0xff9a3c, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
-        const flames = [-1, 1].map(sg => { const f = new THREE.Sprite(flameMat); f.position.set(sg * 0.018, 0.075, 0.03); f.scale.set(0.05, 0.08, 1); jet.add(f); return f; });
+        const flameCone = (() => { const g = new THREE.ConeGeometry(1, 1, 12, 1, true); g.rotateX(Math.PI); g.translate(0, -0.5, 0); return g; })();   // 밑면이 분사구, 꼭지가 아래로
+        // 바깥은 보통 섞기(밝은 하늘에서도 주황이 보이게 — 더하기 섞기는 하얗게 날아갔다), 속은 더하기로 빛나게
+        const flameOut = new THREE.MeshBasicMaterial({ color: 0xff7a1c, transparent: true, opacity: 0.6, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
+        const flameIn = new THREE.MeshBasicMaterial({ color: 0xffc85a, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, toneMapped: false });
+        const flames = nozzles.map(g => {
+            const f = new THREE.Group(); f.position.y = -0.062; g.add(f);
+            const o = new THREE.Mesh(flameCone, flameOut), i = new THREE.Mesh(flameCone, flameIn); o.renderOrder = i.renderOrder = 7; f.add(o, i);
+            const glow = new THREE.Sprite(flameMat); glow.scale.set(0.045, 0.045, 1); glow.position.y = -0.006; f.add(glow);
+            f.userData = { o, i };
+            return f;
+        });
         pilgrim.traverse(o => { if (o.isMesh) o.castShadow = true; });
         pilgrim.position.set(P.x, P.y, P.z); pilgrim.visible = false; scene.add(pilgrim);
         const ownJet = () => typeof njJetpack !== 'undefined' && !!njJetpack;
@@ -4164,9 +4195,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             else if (!ride.on && isUnder()) { const k2 = Math.sin(walkT * 9); hL = 0.25 * k2; hR = -0.25 * k2; const st = Math.sin(walkT * 3.5); aL = -2.6 + st * 0.6; aR = -2.6 - st * 0.6; zL = -0.35; zR = 0.35; lean = moving ? -1.25 : -0.5; }   // 🤿 헤엄 — 몸을 눕혀 발차기, 팔을 젓는다
             else if (glider.visible) { hL = -0.3; hR = -0.2; zL = -2.7; zR = 2.7; lean = -0.35; }   // 두 팔로 날개를 붙잡고 몸을 앞으로
             else if (gl && wingKind === 'wings') { hL = -0.25; hR = -0.15; zL = -0.9; zR = 0.9; lean = -0.5; }   // 등 날개로 날 때 — 팔을 벌리고 몸을 눕힌다
-            else if (fly) {   // 🚀 제트팩 — 나아가는 빠르기(jetRush)만큼 몸을 앞으로 눕히고 팔은 뒤로 젖히고, 다리는 뒤로 끌리며 퍼덕인다(10/15 사용자)
-                const k = jetRush, fl = Math.sin(walkT * 13) * 0.09 * k;
-                hL = 0.12 + 0.3 * k + fl; hR = 0.05 + 0.3 * k - fl; aL = 0.55 * k; aR = 0.55 * k; zL = -0.35 + 0.15 * k; zR = 0.35 - 0.15 * k; lean = -0.25 - 1.0 * k; }
+            else if (fly) {   // 🚀 제트팩 — 나아가는 빠르기(jetRush)만큼 몸을 앞으로 눕히고 팔은 뒤로(10/15 사용자)
+                const k = jetRush;   // 아이언맨처럼 — 두 다리는 곧게 모으고(퍼덕이지 않는다, 10/15 사용자) 팔은 옆구리에 붙여 뒤로
+                hL = hR = 0.06 + 0.22 * k; aL = aR = 0.25 + 0.4 * k; zL = -0.22 + 0.08 * k; zR = 0.22 - 0.08 * k; lean = -0.25 - 1.0 * k; }
             else if (!P.onGround) { hL = 0.65; hR = -0.3; aL = -0.5; aR = 0.4; zL = -0.75; zR = 0.75; }
             else if (stepping) { hL = amp * sw; hR = -amp * sw; aL = -amp * 0.85 * sw; aR = amp * 0.85 * sw; lean = run ? -0.2 : -0.05; bob = Math.abs(Math.cos(gait)) * (run ? 0.012 : 0.006); }
             const e = Math.min(1, dt * 14), L = limbs;
@@ -4177,7 +4208,11 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             { const sz = !ride.on || RK.pose === 'stand' ? 0 : rk === 'bike' ? (RK.motor ? 0.18 : 0.06) : rk === 'car' ? 0.12 : rk === 'boat' ? 0.15 : 0.42; L.hipL.rotation.z += (-sz - L.hipL.rotation.z) * e; L.hipR.rotation.z += (sz - L.hipR.rotation.z) * e; }   // 탈 때는 다리를 벌린다
             rippleTick(dt);
             jetRush += ((fly && moving ? Math.min(1, ml) : 0) - jetRush) * Math.min(1, dt * 4);   // 0 = 떠 있음 ~ 1 = 끝까지 밀어(Shift) 빠르게
-            flames.forEach(f => { f.visible = fly; f.scale.set(0.05 + 0.03 * jetRush, 0.08 + 0.1 * jetRush + Math.random() * (0.04 + 0.05 * jetRush), 1); });
+            flames.forEach(f => {   // 불꽃 길이 — 떠 있을 땐 짧게, 빠를수록 몸 뒤로 길게(누우면 분사구 아래 = 뒤)
+                f.visible = fly; if (!fly) return;
+                const L = 0.045 + 0.11 * jetRush + Math.random() * (0.012 + 0.02 * jetRush), r = 0.0095 + 0.003 * jetRush;
+                f.userData.o.scale.set(r, L, r); f.userData.i.scale.set(r * 0.5, L * 0.6, r * 0.5);
+            });
             if (moving || fly || !P.onGround) lastTouch = performance.now();
             followCam(dt);
         }
