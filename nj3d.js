@@ -1621,6 +1621,14 @@
             { const pa = robeG.attributes.position; for (let i = 0; i < pa.count; i++) { const y = pa.getY(i); if (y < 0.07) { const x = pa.getX(i), z = pa.getZ(i), a = Math.atan2(z, x); pa.setY(i, y + Math.sin(a * 6) * 0.003); } } robeG.computeVertexNormals(); }
             const robe = new THREE.Mesh(robeG, white); body.add(robe);
             const hem = new THREE.Mesh(new THREE.TorusGeometry(0.059, 0.003, 6, 28), gold); hem.rotation.x = Math.PI / 2; hem.position.y = 0.064; body.add(hem);   // 밑단 금선
+            // 🚀 날 때의 겉옷(10/15 사용자: 몸을 눕히면 옷 속이 들여다보이고, 퍼진 치마를 불꽃이 뚫는다) — 허리띠 아래가 바람에 눌린 듯 몸에 붙는다(밑단 0.06 → 0.04).
+            //    밑단은 둘 다 막는다(옷 속이 안 보이게). 날 때만 바꿔 끼우고 내려오면 원래 겉옷
+            const profF = [[0.026, 0.168], [0.032, 0.16], [0.034, 0.14], [0.036, 0.128], [0.038, 0.11], [0.039, 0.09], [0.04, 0.07], [0.04, 0.062]].reverse().map(([r, y]) => new THREE.Vector2(r, y));
+            const robeF = new THREE.Mesh(new THREE.LatheGeometry(profF, 20), white); robeF.visible = false; body.add(robeF);
+            const capM = new THREE.MeshStandardMaterial({ color: 0xece5d6, roughness: 0.8, side: THREE.DoubleSide });
+            const cap = new THREE.Mesh(new THREE.CircleGeometry(0.058, 24), capM); cap.rotation.x = Math.PI / 2; cap.position.y = 0.063; body.add(cap);
+            const capF = new THREE.Mesh(new THREE.CircleGeometry(0.039, 20), capM); capF.rotation.x = Math.PI / 2; capF.position.y = 0.063; capF.visible = false; body.add(capF);
+            limbs.robe = [robe, cap]; limbs.robeF = [robeF, capF]; limbs.hem = hem;
             const collar = new THREE.Mesh(new THREE.TorusGeometry(0.022, 0.006, 8, 20), whiteSh); collar.rotation.x = Math.PI / 2; collar.position.y = 0.168; body.add(collar);
             const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.013, 0.02, 10), skin); neck.position.y = 0.176; body.add(neck);
             const sash = new THREE.Mesh(new THREE.TorusGeometry(0.037, 0.0055, 8, 24), gold); sash.rotation.x = Math.PI / 2; sash.position.y = 0.127; body.add(sash);
@@ -1750,7 +1758,7 @@
             });
         }
         const nozzles = [-1, 1].map(sg => {
-            const g = new THREE.Group(); g.position.set(sg * 0.026, 0.165, 0.057); g.rotation.set(0.32, 0, sg * 0.14); jet.add(g);   // 아래 끝이 바깥·뒤로
+            const g = new THREE.Group(); g.position.set(sg * 0.026, 0.165, 0.057); g.rotation.set(0.5, 0, sg * 0.14); jet.add(g);   // 아래 끝이 바깥·뒤로 — 날 때 좁아진 치마(0.04)를 확실히 비켜 간다
             const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.0105, 0.0105, 0.05, 14), jcase); tube.position.y = -0.025; g.add(tube);
             const cap = new THREE.Mesh(new THREE.SphereGeometry(0.0105, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), jcase); g.add(cap);
             const band = new THREE.Mesh(new THREE.TorusGeometry(0.0108, 0.0016, 5, 16), jm); band.rotation.x = Math.PI / 2; band.position.y = -0.012; g.add(band);
@@ -4201,6 +4209,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             else if (!P.onGround) { hL = 0.65; hR = -0.3; aL = -0.5; aR = 0.4; zL = -0.75; zR = 0.75; }
             else if (stepping) { hL = amp * sw; hR = -amp * sw; aL = -amp * 0.85 * sw; aR = amp * 0.85 * sw; lean = run ? -0.2 : -0.05; bob = Math.abs(Math.cos(gait)) * (run ? 0.012 : 0.006); }
             const e = Math.min(1, dt * 14), L = limbs;
+            if (L.robe && L.robeF) {   // 🚀 날 때는 몸에 붙는 겉옷
+                const f2 = !!fly; if (L.robeF[0].visible !== f2) { L.robe.forEach(m => m.visible = !f2); L.robeF.forEach(m => m.visible = f2); L.hem.scale.setScalar(f2 ? 0.68 : 1); }
+            }
             L.hipL.rotation.x += (hL - L.hipL.rotation.x) * e; L.hipR.rotation.x += (hR - L.hipR.rotation.x) * e;
             L.armL.rotation.x += (aL - L.armL.rotation.x) * e; L.armR.rotation.x += (aR - L.armR.rotation.x) * e;
             L.armL.rotation.z += (zL - L.armL.rotation.z) * e; L.armR.rotation.z += (zR - L.armR.rotation.z) * e;
