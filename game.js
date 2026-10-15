@@ -572,7 +572,7 @@ const LANG = {
         sea_full: '바다가 모두 되살아났어요',
         sea_guilds_title: '함께 맑힌 길드들 · {n}단계 {name}',
         sea_guilds_none: '아직 없어요 — 첫 길드가 되어 보세요',
-        sea_water_rule: '내 바다예요. 칸마다 💎로 맑혀요 — 물가 300 · 얕은 바다 600 · 깊은 바다 1,000. 물가(뭍과 맞닿은 칸)는 바닷가에 내려가 뭍에 서서 바라보는 칸을, 그 밖은 ⛵ 배를 타고 나가 배 아래 칸을 맑혀요. 한 구역을 다 맑히면 나라들이 한 단계 더 자라요. 맑힌 칸은 다시 흐려지지 않아요. 가장자리 흰 칸은 끝내 소금 땅이에요 (47:11).', sea_go_pour: '🌊 3D 바다로 — 맑히러 가기', sea_refund: '🌊 바다가 「내 바다」로 바뀌었어요 — 모두의 바다에 드린 💎{n}를 돌려드렸어요', sea_zone_how0: '뭍에 서서 바라보는 칸 · 한 칸 💎{n}', sea_zone_how1: '⛵ 배를 타고 배 아래 칸 · 한 칸 💎{n}', sea_zone_how2: '⛵ 배를 타고 먼 바다로 · 한 칸 💎{n}', sea_next_cell: '다음 칸까지 💎 {pool} / {cost}', sea_need_boat: '⛵ 물가를 다 맑혔어요. 이제 뭍에서 떨어진 {zone}예요 — 3D에서 배를 타고 그 물 위로 나가서 내요', sea_go_boat: '⛵ 3D 바다로 — 배를 타고 나가기',
+        sea_water_rule: '내 바다예요. 칸마다 💎로 맑혀요 — 물가 300 · 얕은 바다 600 · 깊은 바다 1,000. 여기서 버튼으로 뭍에 가까운 칸부터 맑히거나, 3D 바다에 내려가 물가는 뭍에 서서 바라보는 칸을, 그 밖은 ⛵ 배를 타고 나가 배 아래 칸을 맑혀요. 한 구역을 다 맑히면 나라들이 한 단계 더 자라요. 맑힌 칸은 다시 흐려지지 않아요. 가장자리 흰 칸은 끝내 소금 땅이에요 (47:11).', sea_go_pour: '🌊 3D 바다로 — 걸어서 · 배로 맑히기', sea2d_title: '여기서 맑히기 — 뭍에 가까운 흐린 칸부터', sea2d_one: '1칸 · 💎{c}', sea2d_ten: '{n}칸 · 💎{c}', sea2d_max: '되는 만큼', sea2d_max_ok: '한 번 더 누르면 {n}칸 · 💎{c}', sea2d_done: '🌊 {n}칸을 맑혔어요 · 💎{c}', sea2d_need: '💎 {n}이 모자라요', sea_refund: '🌊 바다가 「내 바다」로 바뀌었어요 — 모두의 바다에 드린 💎{n}를 돌려드렸어요', sea_zone_how0: '뭍에 서서 바라보는 칸 · 한 칸 💎{n}', sea_zone_how1: '⛵ 배를 타고 배 아래 칸 · 한 칸 💎{n}', sea_zone_how2: '⛵ 배를 타고 먼 바다로 · 한 칸 💎{n}', sea_next_cell: '다음 칸까지 💎 {pool} / {cost}', sea_need_boat: '⛵ 물가를 다 맑혔어요. 이제 뭍에서 떨어진 {zone}예요 — 3D에서 배를 타고 그 물 위로 나가서 내요', sea_go_boat: '⛵ 3D 바다로 — 배를 타고 나가기',
         sea_last_pollution: '지난 월요일엔 {n}칸이 흐려졌어요.',
         sea_my_gems: '내 바다를 맑힌 보석 💎 {n}',
         sea_land_title: '🍃 만국을 소성',
@@ -1905,7 +1905,7 @@ const LANG = {
         sea_full: 'The whole sea lives again',
         sea_guilds_title: 'Guilds who cleared it together · Stage {n} {name}',
         sea_guilds_none: 'None yet — be the first guild',
-        sea_water_rule: 'This is your own sea. Clear it cell by cell with 💎 — shore 300 · shallows 600 · deep sea 1,000. At the shore, clear the shore cells (touching the land) by standing on the land and facing them; the rest by sailing out ⛵ and clearing the cell under your boat. Clear a whole zone and the nations can grow one step more. Cleared cells never cloud again. The white cells stay salt (47:11).', sea_go_pour: '🌊 To the sea in 3D — go and clear it', sea_refund: '🌊 The sea is now your own — the 💎{n} you gave to the shared sea has been returned', sea_zone_how0: 'Stand on the land and face the cell · 💎{n} each', sea_zone_how1: 'By ⛵ boat, the cell under you · 💎{n} each', sea_zone_how2: 'By ⛵ boat, out in the deep · 💎{n} each', sea_next_cell: 'Next cell 💎 {pool} / {cost}', sea_need_boat: '⛵ The shore is clear. Next are the {zone}, away from land — sail out by boat in 3D and give over that water', sea_go_boat: '⛵ To the sea in 3D — sail out',
+        sea_water_rule: 'This is your own sea. Clear it cell by cell with 💎 — shore 300 · shallows 600 · deep sea 1,000. Use the buttons here to clear from the land outward, or go down to the sea in 3D — face a shore cell from the land, or sail out ⛵ and clear the cell under your boat. Clear a whole zone and the nations can grow one step more. Cleared cells never cloud again. The white cells stay salt (47:11).', sea_go_pour: '🌊 To the sea in 3D — clear on foot or by boat', sea2d_title: 'Clear from here — cloudy cells nearest the land first', sea2d_one: '1 cell · 💎{c}', sea2d_ten: '{n} cells · 💎{c}', sea2d_max: 'As many as I can', sea2d_max_ok: 'Tap again: {n} cells for 💎{c}', sea2d_done: '🌊 Cleared {n} cells · 💎{c}', sea2d_need: '{n} more 💎 needed', sea_refund: '🌊 The sea is now your own — the 💎{n} you gave to the shared sea has been returned', sea_zone_how0: 'Stand on the land and face the cell · 💎{n} each', sea_zone_how1: 'By ⛵ boat, the cell under you · 💎{n} each', sea_zone_how2: 'By ⛵ boat, out in the deep · 💎{n} each', sea_next_cell: 'Next cell 💎 {pool} / {cost}', sea_need_boat: '⛵ The shore is clear. Next are the {zone}, away from land — sail out by boat in 3D and give over that water', sea_go_boat: '⛵ To the sea in 3D — sail out',
         sea_last_pollution: 'Last Monday {n} cells clouded.',
         sea_my_gems: 'Gems used to clear my sea 💎 {n}',
         sea_land_title: '🍃 Heal the nations',
@@ -8419,6 +8419,44 @@ function _seaClearCells(ids) {
     if (stageUp != null) { setTimeout(() => { if (typeof showMissionToast === 'function') showMissionToast(t('sea_stage_up', { name: SEA_STAGE_NAMES[currentLang === 'en' ? 'en' : 'ko'][stageUp] }), '🌊'); if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear(); }, 900); }
     return { n: todo.length, cost, stageUp };
 }
+/* 🌊 2D에서 맑히기 (10/15 사용자: 3D에서 한 칸씩 찾아가기가 너무 불편하다) — 뭍에서 가까운 흐린 칸부터(ring → 가까운 순).
+   1칸 · 10칸 · 되는 만큼(두 번 눌러 확인). 값은 3D와 같다 */
+function _seaNextCells(max, gems) {
+    const G = _seaGeom(), cs = njSea && njSea.length === 2000 ? njSea : '0'.repeat(2000), out = [];
+    if (!G._order) G._order = G.water.map((c, i) => i).sort((a, b) => G.ring[a] - G.ring[b] || a - b);
+    let cost = 0;
+    for (const i of G._order) {
+        if (out.length >= max) break;
+        if (cs[i] === '1' || G.ring[i] <= 0) continue;
+        const c = _seaCellCost(i);
+        if (gems != null && cost + c > gems) break;
+        out.push(i); cost += c;
+    }
+    return { ids: out, cost };
+}
+let _seaMaxArm = 0;
+function _sea2dClear(kind) {
+    const gems = myGems || 0;
+    if (kind === 'max' && Date.now() - _seaMaxArm > 4000) { _seaMaxArm = Date.now(); _seaRender(); return; }   // 첫 누름 = 확인 문구
+    _seaMaxArm = 0;
+    const pick = kind === 'max' ? _seaNextCells(2000, gems) : _seaNextCells(kind === 'ten' ? 10 : 1);
+    if (!pick.ids.length) { _seaRender(); return; }
+    const r = _seaClearCells(pick.ids);
+    if (r.need) { showGemToast(0, t('sea2d_need', { n: r.need.toLocaleString() }), true); _seaRender(); return; }
+    if (r.n) { showGemToast(0, t('sea2d_done', { n: r.n.toLocaleString(), c: r.cost.toLocaleString() }), true); if (typeof _seaZoneLabel === 'function') _seaZoneLabel(); }
+    _seaRender();
+}
+function _sea2dHtml() {
+    const gems = myGems || 0, one = _seaNextCells(1), ten = _seaNextCells(10), mx = _seaNextCells(2000, gems);
+    if (!one.ids.length) return '';
+    const armed = Date.now() - _seaMaxArm <= 4000;
+    const b = (kind, label, ok) => `<button class="sea-give gem" ${ok ? '' : 'disabled'} onclick="_sea2dClear('${kind}')">${label}</button>`;
+    return `<div class="sea-2d"><div class="sea-dim">${t('sea2d_title')}</div><div class="sea-btns">
+        ${b('one', t('sea2d_one', { c: one.cost.toLocaleString() }), gems >= one.cost)}
+        ${ten.ids.length > 1 ? b('ten', t('sea2d_ten', { n: ten.ids.length, c: ten.cost.toLocaleString() }), gems >= ten.cost) : ''}
+        ${mx.ids.length > 1 ? b('max', armed ? t('sea2d_max_ok', { n: mx.ids.length.toLocaleString(), c: mx.cost.toLocaleString() }) : t('sea2d_max'), true) : ''}
+        </div>${gems < one.cost ? `<div class="sea-dim">${t('sea2d_need', { n: (one.cost - gems).toLocaleString() })}</div>` : ''}</div>`;
+}
 /* 🍃 나라 한 단계 — 그 단계로 오르는 값(10/5 두 번째: 1장은 너무 싸다 — 많이 쓰는 사람은 한 달에 404장까지 모은다).
    풀밭 2 · 나무 4 · 집·사람 8 · 성읍·그물 16 = 나라 하나 30, 70 나라 2,100 (전엔 모두의 나라에 한 단계 50장) */
 const NJ_NAT_LEAF = [0, 2, 4, 8, 16];
@@ -9747,7 +9785,7 @@ function _seaRender() {
     const chip = document.getElementById('sea-chip'); if (chip) chip.textContent = t('sea_stage_chip', { n: si + 1, name: SEA_STAGE_NAMES[lang][si] });
     const wal = document.getElementById('sea-wallet');
     if (wal) wal.innerHTML = `<span>💎 ${Number(myGems || 0).toLocaleString()}</span><span>🍃 ${_njLeavesAvail()}</span>${_njFishAvail() ? `<span>🐟 ${_njFishAvail()}</span>` : ''}${_njGrapesAvail() ? `<span>🍇 ${_njGrapesAvail()}</span>` : ''}`;
-    // 🌊 10/5 — 내 바다. 칸은 3D에서 내가 있는 자리를 맑힌다(물가는 뭍에서, 그 밖은 ⛵ 배로). 여기선 구역마다 얼마나 맑았는지만
+    // 🌊 10/5 — 내 바다. 칸은 3D에서 내가 있는 자리를 맑힌다(물가는 뭍에서, 그 밖은 ⛵ 배로). 10/15부터 여기서도 뭍에 가까운 칸부터(_sea2dHtml)
     const zones = [0, 1, 2].map(z => `<div class="sea-zone-row${ZS.on[z] >= ZS.size[z] ? ' done' : z === si && !full ? ' on' : ''}">
             <div class="sea-zone-h"><b>${z + 1} ${SEA_STAGE_NAMES[lang][z]}</b><span class="sea-dim">${ZS.on[z].toLocaleString()} / ${ZS.size[z].toLocaleString()}${ZS.on[z] >= ZS.size[z] ? ' ✓' : ''}</span></div>
             <div class="sea-bar"><i style="width:${Math.min(100, ZS.on[z] / ZS.size[z] * 100)}%"></i></div>
@@ -9756,7 +9794,7 @@ function _seaRender() {
     if (wa) wa.innerHTML = `
         <div class="nj-pearl-head">${t('sea_water_title')} <span class="sea-dim">${clear.toLocaleString()} / 2,000</span></div>
         ${zones}
-        ${full ? `<div class="sea-dim">${t('sea_full')}</div>` : `<button class="sea-give gem sea-go3d" onclick="closeSea(); openNJ3DView({ start: 'sea' })">${t('sea_go_pour')}</button>`}
+        ${full ? `<div class="sea-dim">${t('sea_full')}</div>` : `${_sea2dHtml()}<button class="sea-give gem sea-go3d" onclick="closeSea(); openNJ3DView({ start: 'sea' })">${t('sea_go_pour')}</button>`}
         <div class="nj-pearl-rule">${t('sea_water_rule')}</div>
         ${njSeaGems ? `<div class="sea-dim">${t('sea_my_gems', { n: njSeaGems.toLocaleString() })}</div>` : ''}`;
     const la = document.getElementById('sea-land');

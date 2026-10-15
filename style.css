@@ -7039,6 +7039,8 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .sea-bar i { display: block; height: 100%; background: linear-gradient(90deg, #19a3bb, #7fe6f5); border-radius: 999px; }
 .sea-bar.leaf i { background: linear-gradient(90deg, #4fae6c, #b5e07a); }
 .sea-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.sea-2d { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.sea-2d .sea-btns button { flex: 1 1 auto; }
 .sea-give { border: none; border-radius: 10px; padding: 8px 12px; font-weight: 800; font-size: 0.86rem; color: #fff; background: var(--c-action); box-shadow: 0 3px 0 var(--c-action-edge); cursor: pointer; }
 .sea-give.gem { background: #1b8fb0; box-shadow: 0 3px 0 #136b85; }
 .sea-give:disabled { background: #34495a; box-shadow: none; color: #9fb0bb; cursor: default; }
