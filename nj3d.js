@@ -5302,12 +5302,12 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         // 🧪 헤드리스 확인용 — localStorage kr_debug3d = '1'일 때만. 나라 n의 해안 땅(뭍 안쪽 r)으로 순례자를 옮긴다(10/13 포도밭·땅 띠 확인)
         try { if (localStorage.getItem('kr_debug3d') === '1') window._nj3dGo = (n, r, yaw) => { const [X, Z] = natMid(n, r || 12); P.x = X; P.z = Z; P.y = WT(X, Z) + 0.3; P.vy = 0; P.face = camYaw = (yaw == null ? Math.PI : yaw); }; } catch (e) { }
         try { if (localStorage.getItem('kr_debug3d') === '1') window._nj3dInfo = (dx, dz) => { const x = P.x + (dx || 0), z = P.z + (dz || 0); return { x, z, y: P.y, wt: WT(x, z), sea: SEA_Y, coast: coastZ(x) }; }; } catch (e) { }
-        function creatureTap(e) {   // 👆 눌러서 만남 — 물속에서 2.4 안, 화면에서 70px 안의 가장 가까운 아이
-            if (!walk || !isUnder() || !tap || dexQ) return false;
+        function creatureTap(e) {   // 👆 눌러서 만남 — 바다에서(물속이든 수면이든 — 10/15 사용자: 수면의 돌고래·거북이가 안 눌렸다) 3.2 안, 화면에서 90px 안의 가장 가까운 아이
+            if (!walk || seaE(P.x, P.z) >= 1 || !tap || dexQ) return false;
             if (Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > 10 || performance.now() - tap.t > 450) return false;
-            const rr = cvs.getBoundingClientRect(), pv = new THREE.Vector3(); let best = null, bd = 70;
+            const rr = cvs.getBoundingClientRect(), pv = new THREE.Vector3(); let best = null, bd = 90;
             creatures.forEach(c => {
-                if (!c.g.visible || Math.hypot(c.x - P.x, c.z - P.z) > 2.4 || (c.hide && c.g.scale.x < 0.8)) return;
+                if (!c.g.visible || Math.hypot(c.x - P.x, c.z - P.z) > 3.2 || (c.hide && c.g.scale.x < 0.8)) return;
                 c.g.getWorldPosition(pv); pv.y += 0.06; pv.project(camera); if (pv.z > 1 || pv.z < -1) return;
                 const sx = rr.left + (pv.x + 1) / 2 * rr.width, sy = rr.top + (1 - pv.y) / 2 * rr.height, dd = Math.hypot(sx - e.clientX, sy - e.clientY);
                 if (dd < bd) { bd = dd; best = c; }
@@ -5326,7 +5326,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 const d = Math.hypot(c.x - P.x, c.z - P.z);
                 c.g.visible = d < 12;   // 하루 최대 45마리 — 먼 아이는 그리지 않는다
                 if (!c.g.visible) return;
-                if (c.swim) {   // 둥글게 헤엄친다
+                if (c.swim && !(dexQ && dexQ.c === c)) {   // 둥글게 헤엄친다 — 문제를 푸는 동안엔 그 자리에서 기다린다(10/15 사용자: 멀리 가 버려 문제 창이 닫혔다)
                     c.ang += dt * c.swim / c.rad; const nx = c.cx + Math.cos(c.ang) * c.rad, nz = c.cz + Math.sin(c.ang) * c.rad;
                     if (seaE(nx, nz) < 0.92) { c.x = nx; c.z = nz; } c.g.position.x = c.x; c.g.position.z = c.z; c.g.rotation.y = -c.ang;
                     c.g.position.y = Math.max((c.floorMax != null ? c.floorMax : seabed(c.x, c.z)) + 0.15, Math.min(c.g.userData.y0, SEA_Y - 0.35));   // 얕은 데로 와도 물 위로 튀어나오지 않게
@@ -5343,7 +5343,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 const can = fresh && near && (!c.hide || c.g.scale.x > 0.8);   // 이번 주에 아직 안 만난 아이 — 위에 반짝임
                 c.tapG.visible = can; if (can) { c.tapG.position.y = 0.2 + Math.sin(tt * 3) * 0.02; c.tapG.material.opacity = 0.6 + Math.sin(tt * 5) * 0.3; if (!dexTapHinted) { dexTapHinted = true; showHint(T('nj3d_dex_tap'), 4500); } }
             });
-            if (dexQ && Math.hypot(dexQ.c.x - P.x, dexQ.c.z - P.z) > 2.8) closeDexQ();   // 멀어지면 문제를 닫는다
+            if (dexQ && Math.hypot(dexQ.c.x - P.x, dexQ.c.z - P.z) > 4) closeDexQ();   // 내가 멀리 헤엄쳐 가면 문제를 닫는다(생물은 기다리고 있다)
             if (!dexMiniHinted && walk && P.z > SHORE - 3 && creatures.some(c => !(typeof _njDexMetThisWeek === 'function' && _njDexMetThisWeek(c.E.id)))) { dexMiniHinted = true; showHint(T('nj3d_dex_mini_hint'), 4500); }   // 바다에 처음 왔을 때 한 번
             seaFx.tick(dt);
         }
