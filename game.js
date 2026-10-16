@@ -3023,7 +3023,7 @@ let njJetpack = false;   // 3D 걸어서 구경 — 보석으로 산 제트팩 (
 let njMounts = {};      // 🐴 탈것 — { 탈것: { own, coats: [가진 털빛], coat, gear: [가진 장식], on: [단 장식], mv } }
 let njMountSel = '';    // 🐴 지금 고른 탈것
 let njWings = {};       // 🪂 글라이더·등 날개 — { own: [가진 것], on: 낀 것, mv }
-let njFruits = {};       // 생명나무 열매 — { 'YYYY-MM': { 절id: [열린 때, 먹은 때(0=아직), 마지막 실패 때] } }. 지난 달은 잎사귀 수만 njLeafArch로 접는다
+let njFruits = {};       // 생명나무 열매 — { 'YYYY-MM': { 절id: [열린 때, 먹은 때(0=아직), 마지막 실패 때, 다시 열린 때(그림자였다가, 10/16)] } }. 지난 달은 잎사귀 수만 njLeafArch로 접는다
 let njLeafArch = {};     // 접은 달의 먹은 열매(=잎사귀) 수 { 'YYYY-MM': n }
 let njClams = null;            // 🐚 오늘의 조개 { day: 6시 날짜, ids: [조개마다 절], done: [연(못 연) 조개 번호], got: [진주 꺼낸 번호] } (10/5 · 10/10 지난 오늘의 암송 세 절)
 let njClamWeek = null;         // 🐚 { wk: 주차, days: [세 조개를 다 연 날], g: 이번 주 값진 진주 받음 } (10/10)
@@ -8296,29 +8296,55 @@ function _njLeaves() {
     });
     return n + (njGiftLeaves | 0);   // 🎁 나눔 열매로 받은 잎사귀 (서버 seaLeavesEarned도 같이)
 }
+/* 🍎 한 절에 열매는 한 번에 하나 (10/16 사용자: 같은 절이 두 번 달린다 — 9월 열매가 37일 달려 있는 동안 10월에 또 백지로 쓰면 둘).
+   열매 [열린 때, 먹은 때, 마지막 실패 때, 다시 열린 때]. 다시 열린 때(4번째)가 있으면 그때부터 익는다.
+   같은 절의 앞 달 열매가 아직 달려 있을 때 열린 기록은 「그림자」 — 나무에 없고, 앞 열매를 먹은(떨어진) 뒤 다시 백지로 쓰면 그때 연다.
+   이미 저장된 겹친 기록도 이 규칙으로 읽는다(지우면 다른 기기 병합이 되살린다) */
+function _njFruitStart(f) { return Math.max(f[0] || 0, f[3] || 0); }
+function _njFruitShadows() {
+    const by = {}, out = new Set();
+    Object.keys(njFruits || {}).sort().forEach(m => Object.keys(njFruits[m] || {}).forEach(id => {
+        const f = njFruits[m][id]; if (Array.isArray(f)) (by[id] || (by[id] = [])).push([m, f]);
+    }));
+    Object.keys(by).forEach(id => {
+        let end = 0;   // 앞 열매가 나무에서 사라진 때(먹음 · 떨어짐 · 그림자면 앞의 끝 그대로)
+        by[id].forEach(([m, f]) => {
+            const st = _njFruitStart(f);
+            if (!f[1] && st < end) { out.add(m + '|' + id); return; }
+            end = f[1] || (st + NJ_FRUIT_FALL_MS);
+        });
+    });
+    return out;
+}
 function _njGrowFruit(id, now) {
     if (!/^\d+-\d+$/.test(String(id))) return;
     const m = _njMonthKey(now);
     if (!njFruits || typeof njFruits !== 'object') njFruits = {};
+    if (_njFruitList(now, true).some(f => f.id === String(id))) return;   // 이 절 열매가 아직 달려 있다
     const mm = njFruits[m] || (njFruits[m] = {});
-    if (mm[id]) return;
+    if (mm[id]) {   // 이번 달 기록이 그림자면 지금 다시 연다 — 그 밖엔 한 달에 한 번
+        if (!mm[id][1] && _njFruitShadows().has(m + '|' + id)) mm[id] = [mm[id][0], 0, 0, now];
+        return;
+    }
     mm[id] = [now, 0, 0];
     _njFruitPrune();
 }
 /* 달린 열매(먹지 않았고 떨어지지 않은 것) — 달·절 순서. 3D·건축 창·지도가 함께 쓴다 */
-function _njFruitList(now) {
-    const n = now || Date.now(), out = [];
+function _njFruitList(now, all) {
+    const n = now || Date.now(), out = [], shadow = _njFruitShadows();
     const cmp = (a, b) => { const [a1, a2] = a.split('-').map(Number), [b1, b2] = b.split('-').map(Number); return a1 - b1 || a2 - b2; };
     Object.keys(njFruits || {}).sort().forEach(m => {
         const kind = _njFruitKind(m);
         Object.keys(njFruits[m] || {}).sort(cmp).forEach(id => {
             const f = njFruits[m][id];
-            if (!Array.isArray(f) || f[1] || n >= f[0] + NJ_FRUIT_FALL_MS) return;
-            const ripeAt = f[0] + NJ_FRUIT_RIPE_MS;
+            if (!Array.isArray(f) || f[1] || shadow.has(m + '|' + id)) return;
+            const st = _njFruitStart(f);
+            if (n >= st + NJ_FRUIT_FALL_MS) return;
+            const ripeAt = st + NJ_FRUIT_RIPE_MS;
             out.push({ key: m + '|' + id, id, m, kind, ripe: n >= ripeAt, ripeAt, retryAt: f[2] ? f[2] + NJ_FRUIT_RETRY_MS : 0 });
         });
     });
-    return out.slice(0, 408);
+    return all ? out : out.slice(0, 408);
 }
 /* 먹기 — 3D·건축 창을 닫고 그 절 하나로 백지 세션을 연다 (결과 화면 '빈칸으로 확인해보기'와 같은 엔진, 단 이쪽은 진짜 백지) */
 function njEatFruit(key) {
@@ -8339,7 +8365,7 @@ function _njFruitResult(key, id, ok, now) {
     const i = key.indexOf('|'), m = key.slice(0, i), fid = key.slice(i + 1);
     if (fid !== String(id)) return;
     const f = njFruits[m] && njFruits[m][fid];
-    if (!Array.isArray(f) || f[1]) return;
+    if (!Array.isArray(f) || f[1] || _njFruitShadows().has(key)) return;
     if (ok) {
         f[1] = now;
         setTimeout(() => { if (typeof showMissionToast === 'function') showMissionToast(t('nj_fruit_eaten'), `🍃 ${_njLeavesAvail()}`)   /* 오른쪽 = 지금 가진 잎사귀(10/7: 받은 전부를 보여 줘 쓴 것까지 세었다) */; }, 1200);
@@ -14401,8 +14427,8 @@ function _mergeNewJerusalem(target, other) {
                 if (!Array.isArray(t0)) { tm[id] = o.slice(); took++; return; }
                 const g = Math.min(t0[0] || o[0], o[0] || t0[0]);
                 const e = (t0[1] && o[1]) ? Math.min(t0[1], o[1]) : (t0[1] || o[1] || 0);
-                const lf = Math.max(t0[2] || 0, o[2] || 0);
-                if (g !== t0[0] || e !== t0[1] || lf !== (t0[2] || 0)) { tm[id] = [g, e, lf]; took++; }
+                const lf = Math.max(t0[2] || 0, o[2] || 0), rg = Math.max(t0[3] || 0, o[3] || 0);   // 다시 열린 때(10/16)는 늦은 쪽
+                if (g !== t0[0] || e !== t0[1] || lf !== (t0[2] || 0) || rg !== (t0[3] || 0)) { tm[id] = rg ? [g, e, lf, rg] : [g, e, lf]; took++; }
             });
         });
         target.njFruits = tf;
@@ -32577,7 +32603,7 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
         // 백지레벨이 오르거나 처음 들어가면 전용 소리 — 정답음이 먼저 울리니 조금 뒤에
         if (ok && _blankMode) _njNoteBlankDay();   // 새 예루살렘 진주 — 백지로 한 절이라도 통과한 날
         if (hardshipState && hardshipState.fruitKey) _njFruitResult(hardshipState.fruitKey, stageId, !!ok && _blankMode, now);   // 열매 먹기
-        if (ok && _blankMode) _njGrowFruit(String(stageId), now);   // 생명나무 — 이번 달 열매
+        if (ok && _blankMode && !(hardshipState && hardshipState.fruitKey)) _njGrowFruit(String(stageId), now);   // 생명나무 — 이번 달 열매 (먹는 판은 열지 않는다 — 먹은 뒤 다시 백지로 써야 다음 열매, 10/16)
         if (ok && _blankMode && _hintOk) _giftOnBlank(String(stageId), now);   // 🎁 나눔 열매 — 익히기·먹기
         if (_res && (_res.kind === 'up' || _res.kind === 'enter') && typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) {
             setTimeout(() => SoundEffect.playBlankLevelUp(), 420);
