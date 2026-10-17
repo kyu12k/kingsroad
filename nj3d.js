@@ -747,12 +747,27 @@
         }
         function floorAt(x, z) {
             const base = seabed(x, z); if (!seaFloorObjs.length && !bedGrid) return base;
-            let h = Math.max(base, gridFloor(x, z));
+            let h = Math.max(base, gridFloor(x, z), stripFloor(x, z));   // 해변 띠 위(10/18 — 생물도 띠에 묻히지 않게)
             const isles = seaFloorObjs.filter(o => o.userData.isle && Math.hypot(x - o.userData.isle.x, z - o.userData.isle.z) < o.userData.isle.r * 1.6);   // 섬 비탈만 광선(작다)
             if (isles.length) { _flO.set(x, SEA_Y + 0.5, z); _flRay.set(_flO, _flDown); const hit = _flRay.intersectObjects(isles, false); if (hit.length) h = Math.max(h, hit[0].point.y); }
             return h;
         }
         let beachStrip = null;
+        /* 🏖️ 해변 띠의 물가·물속 높이(d = 해안선에서 바다 쪽 거리, 0 ~ 3.2) — 그리기와 물속 바닥 판정이 같이 쓴다.
+           10/18 사용자: 물속에서 보면 판이 덮인 것 같고 그 판을 뚫고 다닌다 — 띠가 실제 바닥(seabed)보다 떠서 3.2에서 뚝 끊겼다
+           → 바깥으로 갈수록 바다 밑 그물(gridFloor)에 내려앉아 끝에서 바닥과 만나고, 강 어귀 쪽(|x| < 4.6)은 바닥 밑까지 서서히(턱·끝면이 보였다) */
+        function stripY(x, z, d) {
+            let y = beachAt(x, d, WT(x, z)) + (d <= BEACH_D0 ? 0.004 : 0);
+            const gf = gridFloor(x, z);
+            if (d > 0 && gf > -Infinity) { const t = smooth01(d / BEACH_D1); const lo = Math.min(y, gf + 0.01); y += (lo - y) * t; }
+            if (Math.abs(x) < 4.6 && gf > -Infinity) { const g2 = gf - 0.04, u = smooth01((Math.abs(x) - 2.25) / 2.3); if (g2 < y) y = g2 + (y - g2) * u; }
+            return y;
+        }
+        function stripFloor(x, z) {   // 물속 바닥 — 바다 밑과 해변 띠 중 높은 쪽(띠 아래로 들어가지 않게)
+            const sb = seabed(x, z); if (Math.abs(x) < 2.25 || !bedGrid) return sb;
+            const d = z - coastZ(x); if (d < 0 || d > BEACH_D1) return sb;
+            return Math.max(sb, stripY(x, z, d));
+        }
         {   // 🏖️ 해안과 바다 밑 (10/5) — z 38부터 맵 끝까지 한 장. 가로 1.5마다(해안선이 계단처럼 보이지 않게), 세로는 물가 촘촘·먼 바다 성기게.
             //   뭍은 벌판·모래사장, 바다는 모래에서 짙은 청록으로. 섬 자리는 아래 섬 그물이 덮어 조금 내린다. 남쪽 강 물길 자리도 내린다(강둑 그물이 덮는다)
             const xs = [], zs = []; for (let x = -156; x <= 156.01; x += 1.5) if (Math.abs(x) > 1.2) xs.push(x);
@@ -842,8 +857,7 @@
                 const cz = coastZ(x);
                 DS_.forEach(d => {
                     const z = cz + d, inland = d < -1.99;
-                    let y = inland ? Math.max(WT(x, z), beachAt(x, d, WT(x, z))) + 0.004 : beachAt(x, d, WT(x, z)) + (d <= BEACH_D0 ? 0.004 : 0);
-                    if (Math.abs(x) < 4.6) { const gf = gridFloor(x, z) - 0.04, u = smooth01((Math.abs(x) - 2.25) / 2.3); if (gf < y) y = gf + (y - gf) * u; }   // 🏞️ 강 어귀 쪽 — 띠가 물길(|x| < 2.2) 앞에서 끊기는데 끝이 주변 땅보다 높아 직선 턱·물속 끝면이 보였다(10/18 사용자) → 끝(2.25)에선 땅 밑, 4.6까지 서서히 제 높이로
+                    const y = inland ? Math.max(WT(x, z), beachAt(x, d, WT(x, z))) + 0.004 : stripY(x, z, d);
                     pos.push(x, y, z);
                     if (inland) {   // 땅 그물(아래 해안·바다 밑 그물)과 같은 색 — 높이로 풀빛, 물가 가까이(e < 1.5) 모래를 섞는다
                         const h = WT(x, z), e = seaE(x, z); cc.copy(cTopB).lerp(cLowB, Math.min(1, -h / DROP)); if (e < 1.5) cc.lerp(cSandB, 0.88 * Math.min(1, (1.5 - e) / 0.18));
@@ -925,7 +939,7 @@
             // 바위
             const RK = 380, rocks = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(0.22, 0), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, flatShading: true }), RK);
             for (let i = 0; i < RK; i++) { const [x, z] = inSea(0.97), s2 = 0.4 + r() * 1.6; e.set(r() * 3, r() * 3, r() * 3); qq.setFromEuler(e);
-                v.set(x, seabed(x, z) + 0.05 * s2, z); sc.set(s2, s2 * (0.5 + r() * 0.5), s2 * (0.7 + r() * 0.6)); m4.compose(v, qq, sc); rocks.setMatrixAt(i, m4);
+                v.set(x, stripFloor(x, z) + 0.05 * s2, z); sc.set(s2, s2 * (0.5 + r() * 0.5), s2 * (0.7 + r() * 0.6)); m4.compose(v, qq, sc); rocks.setMatrixAt(i, m4);
                 col.setHSL(0.08 + r() * 0.06, 0.15 + r() * 0.15, 0.3 + r() * 0.2).convertSRGBToLinear(); rocks.setColorAt(i, col); }
             reefG.add(rocks); chunkInstanced(rocks, 6, 30, 1, reefG);
             // 해초 — 끝으로 갈수록 가늘고, 물결 따라 흔들린다(꼭짓점을 시간으로 흔드는 셰이더)
@@ -939,7 +953,7 @@
             while (n < SW) {   // 해초 숲 — 한 곳에 6~20가닥
                 const [cx, cz] = inSea(0.92), cnt = 6 + Math.floor(r() * 15), hue = 0.25 + r() * 0.12;
                 for (let k = 0; k < cnt && n < SW; k++) { const x = cx + (r() - 0.5) * 1.4, z = cz + (r() - 0.5) * 1.4; if (seaE(x, z) > 0.95) continue;
-                    const h = 0.6 + r() * 1.6; v.set(x, seabed(x, z) - 0.05, z); sc.set(1, h, 1); e.set(0, r() * 6.28, 0); qq.setFromEuler(e); m4.compose(v, qq, sc); weed.setMatrixAt(n, m4);
+                    const h = 0.6 + r() * 1.6; v.set(x, stripFloor(x, z) - 0.05, z); sc.set(1, h, 1); e.set(0, r() * 6.28, 0); qq.setFromEuler(e); m4.compose(v, qq, sc); weed.setMatrixAt(n, m4);
                     col.setHSL(hue, 0.55, 0.22 + r() * 0.12).convertSRGBToLinear(); weed.setColorAt(n, col); n++; }
             }
             reefG.add(weed); chunkInstanced(weed, 6, 30, 2.4, reefG);
@@ -949,7 +963,7 @@
             let ci = 0;
             for (let i = 0; i < CR; i++) { const [x, z] = inSea(1), c0 = CC[Math.floor(r() * CC.length)];
                 for (let b = 0; b < 3; b++) { e.set((r() - 0.5) * 0.9, r() * 6.28, (r() - 0.5) * 0.9); qq.setFromEuler(e); const s2 = 0.6 + r() * 0.8;
-                    v.set(x + (r() - 0.5) * 0.12, seabed(x, z) + 0.12 * s2, z + (r() - 0.5) * 0.12); sc.set(s2, s2, s2); m4.compose(v, qq, sc); coral.setMatrixAt(ci, m4);
+                    v.set(x + (r() - 0.5) * 0.12, stripFloor(x, z) + 0.12 * s2, z + (r() - 0.5) * 0.12); sc.set(s2, s2, s2); m4.compose(v, qq, sc); coral.setMatrixAt(ci, m4);
                     col.setHex(c0).convertSRGBToLinear(); coral.setColorAt(ci, col); ci++; } }
             reefG.add(coral); chunkInstanced(coral, 6, 30, 0.6, reefG);
             // 물고기 떼 — 떼마다 둥글게 돌며 오르내린다. 물고기 하나 = 몸통(다이아) + 꼬리
@@ -1957,7 +1971,7 @@
             }
         }
         function groundAt(x, z, y) {
-            if (y < SEA_Y - 0.03 && seaE(x, z) < 1) return seabed(x, z);   // 🤿 물속 — 발밑은 바다 밑(수면이 아니라)
+            if (y < SEA_Y - 0.03 && seaE(x, z) < 1) return stripFloor(x, z);   // 🤿 물속 — 발밑은 바다 밑(수면이 아니라) · 물가는 해변 띠(10/18)
             let g = terrain(x, z);
             BOXES.forEach(b => { if (x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1 && b.y1 <= y + STEP && b.y1 > g) g = b.y1; });
             return g;
@@ -1983,7 +1997,7 @@
         }
         function blocked(x, z, y) {
             if (Math.abs(x) > 140 || z < -140 || z > 150) return true;
-            const gh = (px, pz) => (y < SEA_Y - 0.03 && seaE(px, pz) < 1 ? seabed(px, pz) : terrain(px, pz));
+            const gh = (px, pz) => (y < SEA_Y - 0.03 && seaE(px, pz) < 1 ? stripFloor(px, pz) : terrain(px, pz));
             if (gh(x, z) - y > STEP) return true;
             // 성 안팎(기초석 단·경사로·물길 둑) — 몸 둘레까지 본다. 중심만 보니 경사로 옆면에 몸이 반쯤 파묻혔다(10/15 사용자)
             if (Math.max(Math.abs(x), Math.abs(z)) < HALF + RAMP_L + 0.5) { const r = 0.09; if (gh(x + r, z) - y > STEP || gh(x - r, z) - y > STEP || gh(x, z + r) - y > STEP || gh(x, z - r) - y > STEP) return true; }   // 물속에선 바다 밑이 땅 — 수면을 땅으로 보면 물속에서 앞이 막혀 못 움직였다
@@ -4222,7 +4236,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             else P.vy -= G * dt;
             const prevY = P.y, fallV = P.vy;
             P.y = Math.min(SUB ? SEA_Y - 0.12 : FD ? (FD.maxY || 40) : 18, P.y + P.vy * dt);   // 🚢 잠수함은 수면 바로 아래까지
-            const inSwim = !ride.on && swimWater(P.x, P.z), g = inSwim ? seabed(P.x, P.z) : groundAt(P.x, P.z, P.y);   // 🏊 순례자에겐 수면이 땅이 아니다(배·장식엔 그대로 땅)
+            const inSwim = !ride.on && swimWater(P.x, P.z), g = inSwim ? stripFloor(P.x, P.z) : groundAt(P.x, P.z, P.y);   // 🏊 순례자에겐 수면이 땅이 아니다(배·장식엔 그대로 땅)
             if (P.y <= g) { P.y = g; if (P.vy < 0) P.vy = 0; P.onGround = true; }
             // 10/14 저녁: 아래 「else」가 착지(P.y <= g) 줄에 이어져야 한다 — 제트팩 줄을 사이에 끼웠더니 착지가 매 프레임 「공중」으로 덮여 점프·걷기가 안 됐다
             else if (!fly && !inSwim && wasGround && P.vy <= 0 && P.y - g < 0.45) { P.y = g; P.vy = 0; P.onGround = true; }   // 내리막은 발을 땅에 붙인다 — 한 걸음마다 살짝 떴다 떨어져 콩콩 튀었고, 늘 공중이라 점프도 안 됐다(9/30)
@@ -5455,7 +5469,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const dir = new THREE.Vector3(Math.sin(camYaw) * Math.cos(camPitch), Math.sin(camPitch), Math.cos(camYaw) * Math.cos(camPitch));
             const cp = obsV.clone().addScaledVector(dir, camDist);
             if (obsV.y < SEA_Y) cp.y = Math.min(cp.y, SEA_Y - 0.08);   // 물속에서 본다(돌고래가 뛰어오르면 물 밑에서 올려다본다)
-            cp.y = Math.max(cp.y, seabed(cp.x, cp.z) + 0.05);
+            cp.y = Math.max(cp.y, stripFloor(cp.x, cp.z) + 0.05);
             camera.position.lerp(cp, 1 - Math.exp(-dt * 8)); camera.lookAt(obsV);
             body.visible = false;
         }
