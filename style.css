@@ -6355,13 +6355,18 @@ body > #guide-screen-overlay .guide-body > .guide-btn.ghost { width: 100%; margi
 .njr-done { font-size: 0.8rem; font-weight: 800; color: #1e8449; }
 .njr-wait { font-size: 0.74rem; color: #95a5a6; display: inline-block; max-width: 150px; }
 .njr-rule { font-size: 0.72rem; color: #7f8c8d; line-height: 1.45; }
-/* 🐚 홈 카드 — 어제 외운 세 구절, 기억하세요?(10/17) */
-.rcard { margin: 0 0 12px; padding: 12px 14px; border-radius: 14px; background: linear-gradient(135deg, #e9f4fb, #f3ecfb); border: 1px solid #c9dcef; display: flex; flex-direction: column; gap: 6px; text-align: left; }
-.rcard-q { font-size: 0.98rem; font-weight: 800; color: #2c3e50; }
-.rcard-ref { font-size: 0.82rem; color: #5d6d7e; }
-.rcard-btns { display: flex; gap: 8px; align-items: center; margin-top: 2px; }
-.rcard-go { flex: 1; border: none; border-radius: 11px; padding: 10px 12px; background: #2e86c1; box-shadow: 0 3px 0 #21618c; color: #fff; font-weight: 800; font-size: 0.9rem; cursor: pointer; }
-.rcard-later { border: none; background: none; color: #7f8c8d; font-size: 0.84rem; padding: 8px 6px; cursor: pointer; }
+/* 🐚 어제 외운 세 구절 — 홈 위에 살짝 떠 있는 팝업(10/17). 홈의 어두운 금빛 톤 */
+#home-screen > .rcard-pop { position: fixed; z-index: 30; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); width: min(92vw, 380px); transform: translate(-50%, 24px); opacity: 0; transition: transform .45s cubic-bezier(.2,.9,.3,1.2), opacity .35s; box-sizing: border-box;
+    padding: 14px 16px 12px; border-radius: 18px; background: rgba(22, 27, 46, 0.94); border: 1px solid rgba(241, 196, 15, 0.55); box-shadow: 0 12px 34px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04) inset; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    display: flex; flex-direction: column; gap: 5px; text-align: left; color: #ecf0f1; }
+#home-screen > .rcard-pop.in { transform: translate(-50%, 0); opacity: 1; }
+body:has(#pwa-install-banner[style*="display: flex"]) #home-screen > .rcard-pop { bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
+.rcard-pop .rcard-x { position: absolute; top: 8px; right: 10px; border: none; background: none; color: #8a93a8; font-size: 0.95rem; cursor: pointer; padding: 4px; }
+.rcard-pop .rcard-q { font-size: 0.98rem; font-weight: 800; color: #f5d76e; padding-right: 22px; }
+.rcard-pop .rcard-ref { font-size: 0.82rem; color: #b8c2d6; }
+.rcard-pop .rcard-btns { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+.rcard-pop .rcard-go { flex: 1; border: none; border-radius: 12px; padding: 10px 12px; background: linear-gradient(135deg, #f1c40f, #e0a800); box-shadow: 0 3px 0 #a67c00; color: #2c2205; font-weight: 800; font-size: 0.9rem; cursor: pointer; }
+.rcard-pop .rcard-later { border: none; background: none; color: #8a93a8; font-size: 0.84rem; padding: 8px 6px; cursor: pointer; }
 #daily-cam { position: fixed; inset: 0; z-index: 9990; background: #000; display: flex; flex-direction: column; }
 /* 위 칸: 영상(비율 유지, 안 잘림) / 아래 칸: 버튼 판 — 버튼이 영상을 가리지 않는다 */
 .cam-stage { position: relative; flex: 1 1 auto; min-height: 0; padding-top: env(safe-area-inset-top, 0px); }
@@ -7824,7 +7829,7 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
    홈 화면 자체가 화면 높이 안에서 스크롤한다. 내용이 화면보다 짧으면(큰 화면) 지금과 같다. 배너가 떠 있으면 그 높이만큼 아래 여백 */
 /* 보이는 화면에 딱 맞춘 고정 판(position:fixed; inset:0) — 삼성 인터넷은 100vh를 주소창이 숨은 높이로 잡아 페이지 전체가 밀려 올라가 제목이 주소창 밑으로 사라졌다(10/11 사용자 화면) */
 #home-screen.active { position: fixed; inset: 0; height: auto; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; background-attachment: local; }
-#home-screen.active::before { position: fixed; }
+#home-screen.active::before, #home-screen.active::after { position: fixed; }   /* ::after(어두운 덧칠)도 — 내용이 화면보다 길어 스크롤되면 그 아래가 덧칠 없이 드러났다(10/17 사용자 화면) */
 /* 세로 가운데 정렬은 내용이 화면보다 길면 위로도 넘쳐 제목이 스크롤로도 닿지 않는다 — 넘칠 때만 위에서부터(safe). safe를 모르는 옛 브라우저는 위에서부터 */
 #home-screen.active { justify-content: flex-start; justify-content: safe center; }
 body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padding-bottom: 110px; }

@@ -8932,6 +8932,7 @@ function _njRoundLeft(kind) {   // [{ i, id }] — 아직 안 한 절
 }
 function njRoundStart(kind, from) {
     const left = _njRoundLeft(kind); if (!left.length) return;
+    { const pop = document.getElementById('rcard-pop'); if (pop) pop.remove(); }
     if (from === '3d') { if (!(window.suspendNJ3D && window.suspendNJ3D())) return; }
     else {
         const m = document.getElementById('event-modal'); if (m) m.remove();
@@ -8983,10 +8984,19 @@ function _recallCardHtml() {
     const left = _njRoundLeft('clam'); if (!left.length) return '';
     const c = _njClamDay(), carryN = left.filter(x => x.carry).length, ids = (c.ids || []);
     const ref = ids.length ? _dailyLabel(ids).replace(/^계 /, currentLang === 'en' ? 'Rev ' : '계 ') : '';
-    return `<div class="rcard"><div class="rcard-q">${t('rc_q')}</div><div class="rcard-ref">${ref}${carryN ? t('rc_carry', { n: carryN }) : ''}</div>
-        <div class="rcard-btns"><button class="rcard-go" onclick="njRoundStart('clam', 'home')">${t('rc_go', { m: Math.max(1, Math.round(left.length * 0.7)) })}</button><button class="rcard-later" onclick="_recallCardLater()">${t('rc_later')}</button></div></div>`;
+    return `<button class="rcard-x" aria-label="close" onclick="_recallCardLater()">✕</button><div class="rcard-q">${t('rc_q')}</div><div class="rcard-ref">${ref}${carryN ? t('rc_carry', { n: carryN }) : ''}</div>
+        <div class="rcard-btns"><button class="rcard-go" onclick="njRoundStart('clam', 'home')">${t('rc_go', { m: Math.max(1, Math.round(left.length * 0.7)) })}</button><button class="rcard-later" onclick="_recallCardLater()">${t('rc_later')}</button></div>`;
 }
-function _recallCardLater() { try { localStorage.setItem('kr_rcard', _get6AMDayStr()); } catch (e) { } renderHomeTodo(); }
+/* 홈 위에 살짝 떠 있는 팝업으로(10/17 사용자: 카드가 홈의 조화를 깬다) — 홈 화면 안에 두어 다른 화면으론 따라가지 않는다 */
+function _recallPopSync() {
+    const home = document.getElementById('home-screen'); if (!home) return;
+    let html = ''; try { html = _recallCardHtml(); } catch (e) { }
+    let pop = document.getElementById('rcard-pop');
+    if (!html) { if (pop) pop.remove(); return; }
+    if (!pop) { pop = document.createElement('div'); pop.id = 'rcard-pop'; pop.className = 'rcard-pop'; home.appendChild(pop); requestAnimationFrame(() => pop.classList.add('in')); }
+    pop.innerHTML = html;
+}
+function _recallCardLater() { try { localStorage.setItem('kr_rcard', _get6AMDayStr()); } catch (e) { } const pop = document.getElementById('rcard-pop'); if (pop) pop.remove(); renderHomeTodo(); }
 function _njRoundsHtml() {
     const ev = _dailyEvent(), lang = currentLang === 'en' ? 'en' : 'ko';
     const T = _njMannaToday(), M = _njMannaDay(), C = _njClamKnown() ? _njClamDay() : null;
@@ -34721,8 +34731,8 @@ function renderHomeTodo() {
     if (S.inGuild) h += chip('⚔️', t('todo_attend'), 0, S.attended, 'openGuildScreen()');
     _googleNudgeNoteLinked();
     if (_googleNudgeEligible() && !_googleBlockedBrowser()) h += chip('🔒', t('todo_protect'), 0, false, 'googleNudgeLink()');   // 🔒 구글 연결 전까지
-    let rc = ''; try { rc = _recallCardHtml(); } catch (e) { }   // 🐚 어제 세 구절(10/17)
-    el.innerHTML = `${rc}<div class="home-todo-title">${t('todo_title')}</div><div class="home-todo-chips">${h}</div>`;
+    el.innerHTML = `<div class="home-todo-title">${t('todo_title')}</div><div class="home-todo-chips">${h}</div>`;
+    _recallPopSync();   // 🐚 어제 세 구절 — 떠 있는 팝업(10/17)
 }
 
 // 친구 신청 보내기
