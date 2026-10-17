@@ -734,11 +734,23 @@
         function footFloor(x, z, r) {   // 가운데와 둘레 여덟 점 중 가장 높은 바닥 — 비탈에 놓인 몸이 오르막 쪽으로 묻히지 않게
             let m = floorAt(x, z); for (let k = 0; k < 8; k++) { const a = k / 8 * 6.283; m = Math.max(m, floorAt(x + Math.cos(a) * r, z + Math.sin(a) * r)); } return m;
         }
+        let bedGrid = null;
+        function gridFloor(x, z) {   // 바다 밑 그물의 그 자리 높이 — 그물과 같은 삼각형(a·c·b / b·c·d)으로 나눠 그대로
+            const G = bedGrid; if (!G) return -Infinity;
+            const { xs, zs, nx, pos } = G;
+            if (x < xs[0] || x > xs[xs.length - 1] || z < zs[0] || z > zs[zs.length - 1]) return -Infinity;
+            let i0 = 0, i1 = xs.length - 1; while (i1 - i0 > 1) { const m = (i0 + i1) >> 1; if (xs[m] <= x) i0 = m; else i1 = m; }
+            let j0 = 0, j1 = zs.length - 1; while (j1 - j0 > 1) { const m = (j0 + j1) >> 1; if (zs[m] <= z) j0 = m; else j1 = m; }
+            const u = (x - xs[i0]) / (xs[i0 + 1] - xs[i0]), v = (z - zs[j0]) / (zs[j0 + 1] - zs[j0]), a = j0 * nx + i0;
+            const ha = pos[a * 3 + 1], hb = pos[(a + 1) * 3 + 1], hc = pos[(a + nx) * 3 + 1], hd = pos[(a + nx + 1) * 3 + 1];
+            return u + v <= 1 ? ha + u * (hb - ha) + v * (hc - ha) : hd + (1 - u) * (hc - hd) + (1 - v) * (hb - hd);
+        }
         function floorAt(x, z) {
-            const base = seabed(x, z); if (!seaFloorObjs.length) return base;
-            _flO.set(x, SEA_Y + 0.5, z); _flRay.set(_flO, _flDown);
-            const h = _flRay.intersectObjects(seaFloorObjs, false);
-            return h.length ? Math.max(base, h[0].point.y) : base;
+            const base = seabed(x, z); if (!seaFloorObjs.length && !bedGrid) return base;
+            let h = Math.max(base, gridFloor(x, z));
+            const isles = seaFloorObjs.filter(o => o.userData.isle && Math.hypot(x - o.userData.isle.x, z - o.userData.isle.z) < o.userData.isle.r * 1.6);   // 섬 비탈만 광선(작다)
+            if (isles.length) { _flO.set(x, SEA_Y + 0.5, z); _flRay.set(_flO, _flDown); const hit = _flRay.intersectObjects(isles, false); if (hit.length) h = Math.max(h, hit[0].point.y); }
+            return h;
         }
         {   // 🏖️ 해안과 바다 밑 (10/5) — z 38부터 맵 끝까지 한 장. 가로 1.5마다(해안선이 계단처럼 보이지 않게), 세로는 물가 촘촘·먼 바다 성기게.
             //   뭍은 벌판·모래사장, 바다는 모래에서 짙은 청록으로. 섬 자리는 아래 섬 그물이 덮어 조금 내린다. 남쪽 강 물길 자리도 내린다(강둑 그물이 덮는다)
@@ -762,7 +774,8 @@
             const nx = xs.length;
             for (let j = 0; j < zs.length - 1; j++) for (let i = 0; i < nx - 1; i++) { const a = j * nx + i; idx.push(a, a + nx, a + 1, a + 1, a + nx, a + nx + 1); }
             const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
-            const bed = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, side: THREE.DoubleSide })); bed.receiveShadow = true; scene.add(bed); bed.updateMatrixWorld(); seaFloorObjs.push(bed);
+            const bed = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, side: THREE.DoubleSide })); bed.receiveShadow = true; scene.add(bed); bed.updateMatrixWorld();
+            bedGrid = { xs, zs, nx, pos, mesh: bed };   // ⚡ 바닥 높이는 이 격자로 바로 계산(10/17 — 광선은 한 번에 삼각형 수만 개를 훑어 생물 404마리면 입장이 4초 늦었다)
             // 🏝️ 섬 — 둥근 언덕(꼭대기 풀밭, 가장자리 모래, 물속으로 비탈)
             const RF = [0, 0.25, 0.5, 0.7, 0.85, 1.0, 1.12, 1.3], SEG = 28;
             ISLES.forEach(s => {
@@ -773,7 +786,7 @@
                     c.copy(f < 0.6 ? cTop : f < 0.85 ? cLow : cSand); if (f > 1) c.copy(cSand).lerp(cDeep, 0.25); c.convertSRGBToLinear(); c2.push(c.r, c.g, c.b); } });
                 for (let rr = 0; rr < RF.length - 1; rr++) for (let k = 0; k < SEG; k++) { const a = rr * SEG + k, b = rr * SEG + (k + 1) % SEG; i2.push(a, a + SEG, b, b, a + SEG, b + SEG); }
                 const g2 = new THREE.BufferGeometry(); g2.setAttribute('position', new THREE.Float32BufferAttribute(p2, 3)); g2.setAttribute('color', new THREE.Float32BufferAttribute(c2, 3)); g2.setIndex(i2); g2.computeVertexNormals();
-                const im = new THREE.Mesh(g2, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, side: THREE.DoubleSide })); im.receiveShadow = true; scene.add(im); im.updateMatrixWorld(); seaFloorObjs.push(im);
+                const im = new THREE.Mesh(g2, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, side: THREE.DoubleSide })); im.receiveShadow = true; scene.add(im); im.updateMatrixWorld(); seaFloorObjs.push(im); im.userData.isle = s;
             });
         }
         // 수면 — 10/5 사용자: "타일 같다 · 구분선이 보이고 얼음판 같다". 물칸 2,051장(육각 판, 틈 0.015)을 걷어내고 **수면 한 장**에
@@ -4623,6 +4636,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             setP: (x, y, z, face) => { P.x = x; P.y = y; P.z = z; P.vy = 0; if (face != null) { P.face = face; camYaw = face; } }, P: () => ({ x: P.x, y: P.y, z: P.z }),
             stars: () => stars.map(s => ({ id: s.id, x: s.x, y: s.g.position.y, z: s.z, done: s.done, vis: s.g.visible })),
             fragScreen: () => starRun ? starRun.frags.filter(f => !f.got).map(f => { const v = f.sp.position.clone().project(camera); return { i: f.i, sx: +((v.x + 1) / 2).toFixed(2), sy: +((1 - v.y) / 2).toFixed(2), z: +v.z.toFixed(3), sc: [+f.sp.scale.x.toFixed(2), +f.sp.scale.y.toFixed(2)], vis: f.sp.visible, inScene: !!f.sp.parent, dist: +f.sp.position.distanceTo(camera.position).toFixed(2) }; }) : null, cam: () => ({ p: camera.position.toArray().map(v => +v.toFixed(2)), near: camera.near, far: camera.far }), three: () => ({ scene, renderer, camera, controls }), jetTrial: ms => { if (jetTrialEnd) jetTrialEnd = Date.now() + ms; return { end: jetTrialEnd, land: jetTrialLand, on: jetOn }; }, dyn: () => ({ dynScale: +dynScale.toFixed(2), pr: +renderer.getPixelRatio().toFixed(2), ema: +dynEma.toFixed(3) }), tall: () => BOXES.filter(b => !b.item && b.y1 > 3.5).map(b => ({ x0: b.x0, x1: b.x1, z0: b.z0, z1: b.z1, y0: b.y0, y1: b.y1 })),
+            floorCheck: (x, z) => { _flO.set(x, SEA_Y + 0.5, z); _flRay.set(_flO, _flDown); const hit = bedGrid ? _flRay.intersectObject(bedGrid.mesh, false) : []; return { grid: +gridFloor(x, z).toFixed(4), ray: hit.length ? +hit[0].point.y.toFixed(4) : null }; },
+            dex: () => ({ n: creatures.length, born: creatures.filter(c => c.born).length, shown: creatures.filter(c => c.born && c.g.visible).length, marks: creatures.filter(c => c.mark && c.mark.visible).length }),
             run: () => starRun ? { next: starRun.next, n: starRun.seg.length, seg: starRun.seg, frags: starRun.frags.map(f => ({ i: f.i, w: starRun.seg[f.i], x: f.x, y: f.sp.position.y, z: f.z, got: f.got })) } : null };
         } catch (e) { }
 
@@ -5153,15 +5168,37 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             splash: (I, big) => { const v = new THREE.Vector3(); I.m.getWorldPosition(v); sprayBurst(v.x, SEA_Y + 0.02, v.z, big ? 26 : 14, 0); if (big && typeof SoundEffect !== 'undefined' && SoundEffect.playPlunge && Math.hypot(v.x - P.x, v.z - P.z) < 6) SoundEffect.playPlunge(); },   // 🐬 물 위로 — 나갈 때·들어올 때 물보라
         };
         const actUp = c => Math.max(0.2, SEA_Y - c.g.position.y - 0.12);   // 수면까지 — 거북은 숨 쉬러, 돌고래는 그 위로
+        /* 🐠 10/17 사용자: 지난주·이번 주에 백지로 쓴 절의 생물이 **모두**(요일·시간대 조건 없이, 저마다 제 요일 빛깔) — 많으면 404마리.
+           입장할 땐 자리만 정해 두고(가볍다), 모델은 **내 둘레부터 프레임마다 몇 마리씩** 소환한다(물거품 + 퐁) — 한꺼번에 만들면 입장이 4초 늦었다.
+           많아지니 해안 전체(좌우 120)로 흩고, 그리는 건 가까운 24마리까지 */
+        const DEX_SPREAD = 120, DEX_SHOW = 24, DEX_R = 13;   // 24 — 40이면 어귀 앞에서 그리기 293번·초당 35(10/17 실측)
+        let dexSpawnQ = null, dexQAt = -9, dexShowAt = -9; const seaReady = {};
         (typeof _njDexToday === 'function' ? _njDexToday() : []).forEach(E => {
             let sd = 17; for (const ch of String(_get6AMDayStr()) + E.id) sd = (sd * 31 + ch.charCodeAt(0)) % 2147483647; sd = sd || 1;
             const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
             const d = E.d; if (!CREATURE[d.k]) return;
-            let x = 0, z = SHORE + 6;   // 10/5: 어귀 좌우 45 안쪽 물칸 띠(물가 다음 줄부터) — 너무 흩어지면 찾기 어렵다
-            for (let t = 0; t < 80; t++) { const i = Math.floor(r() * SG.water.length), cc = SG.water[i]; if (SG.ring[i] >= 2 && Math.abs(cc.x) < 45) { x = cc.x + (r() - 0.5) * HRW; z = cc.z + (r() - 0.5) * HRW; break; } }
-            const mv = SEA_MOVE[d.k] || {}, c = { g: new THREE.Group(), anim: () => { }, swim: mv.swim || 0, float: !!mv.float }, y = floorAt(x, z) + 0.02, swim = c.swim;   // 그 자리 바닥 위에 — 바닥에 사는 아이는 아래에서 비탈을 따라 눕힌다
-            c.g.userData.x0 = x; c.g.userData.y0 = swim ? y + 0.8 + r() * 1.2 : c.float ? y + 0.4 : y;
-            c.g.position.set(x, c.g.userData.y0, z); c.g.rotation.y = r() * 6.28;
+            let x = 0, z = SHORE + 6;   // 물가 다음 줄부터의 물칸 — 10/5엔 어귀 좌우 45(하루 45마리), 10/17부터 좌우 120(지난주·이번 주 전부)
+            for (let t = 0; t < 80; t++) { const i = Math.floor(r() * SG.water.length), cc = SG.water[i]; if (SG.ring[i] >= 2 && Math.abs(cc.x) < DEX_SPREAD) { x = cc.x + (r() - 0.5) * HRW; z = cc.z + (r() - 0.5) * HRW; break; } }
+            const mv = SEA_MOVE[d.k] || {};
+            creatures.push({ g: null, anim: () => { }, swim: mv.swim || 0, float: !!mv.float, E, d, x, z, hide: false, cx: x, cz: z, rv: [r(), r(), r(), r()], born: false });
+        });
+        const dexMarkTex = (() => {   // 📜 문제를 풀 수 있는 아이 — 멀리서도 보이는 금빛 표시(10/17 사용자: 지금 빛나는 것보다 잘 구분되게)
+            const cv = document.createElement('canvas'); cv.width = cv.height = 96; const x = cv.getContext('2d');
+            const gl = x.createRadialGradient(48, 48, 22, 48, 48, 48); gl.addColorStop(0, 'rgba(255,224,120,0.9)'); gl.addColorStop(1, 'rgba(255,200,60,0)');   // 은은한 빛 — 물빛에 묻히지 않게
+            x.fillStyle = gl; x.beginPath(); x.arc(48, 48, 48, 0, 7); x.fill();
+            x.fillStyle = '#fff6d8'; x.beginPath(); x.arc(48, 48, 31, 0, 7); x.fill();
+            x.strokeStyle = '#e0a800'; x.lineWidth = 5; x.beginPath(); x.arc(48, 48, 31, 0, 7); x.stroke();
+            x.font = '38px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('📜', 48, 51);
+            const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; return t;
+        })();
+        cleanups.push(() => dexMarkTex.dispose());
+        function dexSpawn(c) {   // 그 아이를 바다에 — 바닥 높이·비탈·꾸밈·모델(원판 복사)
+            c.born = true;
+            const d = c.d, [r1, r2, r3, r4] = c.rv, x = c.x, z = c.z, E = c.E;
+            c.g = new THREE.Group();
+            const y = floorAt(x, z) + 0.02, swim = c.swim;   // 그 자리 바닥 위에 — 바닥에 사는 아이는 아래에서 비탈을 따라 눕힌다
+            c.g.userData.x0 = x; c.g.userData.y0 = swim ? y + 0.8 + r1 * 1.2 : c.float ? y + 0.4 : y;
+            c.g.position.set(x, c.g.userData.y0, z); c.g.rotation.y = r2 * 6.28;
             if (!swim && !c.float) {   // 🪸 비탈을 따라 눕는다(10/5 사용자: 바닷속 땅에 파묻힌다 — 물가 비탈이 가팔라 몸 둘레 0.24 안에서 바닥이 0.5까지 솟았다)
                 const dd = 0.25, gx = (floorAt(x + dd, z) - floorAt(x - dd, z)) / (2 * dd), gz = (floorAt(x, z + dd) - floorAt(x, z - dd)) / (2 * dd);
                 const n = new THREE.Vector3(-gx, 1, -gz).normalize(), up = new THREE.Vector3(0, 1, 0), ang = up.angleTo(n), MAXT = 0.6;   // 35°까지만 눕히고
@@ -5169,21 +5206,22 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 if (ang > MAXT) c.g.userData.y0 = c.g.position.y = Math.max(c.g.userData.y0, footFloor(x, z, 0.24) - 0.12);   // 더 가파르면 조금 띄운다
             }
             const acc = (typeof NJ_DEX_TIERS !== 'undefined' && NJ_DEX_TIERS[E.t]) ? NJ_DEX_TIERS[E.t].k : '', AT = ACC_AT[d.k];   // 꾸밈은 절이 정한다(장이 뒤로 갈수록 모자 → 안경 → 리본 → 면류관)
-            seaLoad(d.k).then(tpl => { if (cur !== C) return; const m = seaMake(tpl, d.k, DAYC == null ? 0xffffff : DAYC, acc); c.g.add(m.g); c.anim = m.anim; c.m = m.g; c.I = actInst(m.g, d.k, m.mats, seaActOpt); c.I.onChange = obsSync; })
+            const hexC = (typeof NJ_DEX_COLORS !== 'undefined' && NJ_DEX_COLORS[E.c]) ? NJ_DEX_COLORS[E.c].hex : (DAYC == null ? 0xffffff : DAYC);   // 저마다 제 요일 빛깔(10/17 — 한 바다에 일곱 빛깔)
+            c.pop = 0; c.g.scale.setScalar(0.001);   // 퐁 — 0에서 제 크기로(dexTick)
+            seaLoad(d.k).then(tpl => { if (cur !== C) return; const m = seaMake(tpl, d.k, hexC, acc); c.g.add(m.g); c.anim = m.anim; c.m = m.g; c.I = actInst(m.g, d.k, m.mats, seaActOpt); c.I.onChange = obsSync; c.pop = 0.0001; seaFx.burst('bubble', c.g.position.clone().setY(c.g.position.y + 0.05), 5); })
                 .catch(() => {   // 모델을 못 받으면 예전 도형으로
                     if (cur !== C) return; const f = CREATURE[d.k](); f.g.userData.x0 = 0; f.g.userData.y0 = 0;
                     if (acc && AT) { const am = makeAcc(acc), at = acc === 'glasses' ? AT[1] : AT[0]; am.position.set(at[0], at[1], at[2]); am.scale.setScalar(AT[2]); if (acc === 'glasses' && AT[3]) am.rotation.y = AT[3]; (f.part || f.g).add(am); }
-                    c.g.add(f.g); c.anim = f.anim; c.m = f.g; c.I = actInst(f.g, d.k, [], seaActOpt); c.I.onChange = obsSync;
+                    c.g.add(f.g); c.anim = f.anim; c.m = f.g; c.I = actInst(f.g, d.k, [], seaActOpt); c.I.onChange = obsSync; c.pop = 0.0001;
                 });
             const tapG = new THREE.Sprite(new THREE.SpriteMaterial({ map: radial, color: 0xfff2c4, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));   // 가까이 오면 반짝 — 눌러 보라고
             tapG.visible = false; tapG.scale.setScalar(0.22); c.g.add(tapG); c.tapG = tapG;
-            const hide = !swim && !c.float;   // 숨는 아이 — 웅크려 있다가 다가가면 나온다
-            if (hide) c.g.scale.setScalar(0.25);
-            reefG.add(c.g);
-            const ang0 = r() * 6.28, rad = 1.5 + r() * 2;
-            const floorMax = swim ? Math.max(...[0, 1, 2, 3, 4, 5, 6, 7].map(k => floorAt(x + Math.cos(k / 8 * 6.283) * rad, z + Math.sin(k / 8 * 6.283) * rad))) : null;   // 헤엄치는 길에서 가장 높은 바닥 — 매번 쏘지 않게 한 번
-            creatures.push(Object.assign(c, { E, d, x, z, hide, cx: x, cz: z, ang: ang0, rad, floorMax }));
-        });
+            const mark = new THREE.Sprite(new THREE.SpriteMaterial({ map: dexMarkTex, transparent: true, depthWrite: false, fog: false })); mark.visible = false; mark.scale.setScalar(0.3); mark.renderOrder = 3; c.g.add(mark); c.mark = mark;
+            // 숨는 아이(바닥에 사는 아이가 1/4로 웅크려 있다가 2칸 안에서 커짐)는 그만 — 10/17 사용자: 다가가야 커지니 보는 맛이 덜하다, 들어가면 큼직하게
+            // 장면에는 그릴 차례가 오면 붙인다(dexTick)
+            c.ang = r3 * 6.28; c.rad = 1.5 + r4 * 2;
+            c.floorMax = swim ? Math.max(...[0, 1, 2, 3, 4, 5, 6, 7].map(k => floorAt(x + Math.cos(k / 8 * 6.283) * c.rad, z + Math.sin(k / 8 * 6.283) * c.rad))) : null;   // 헤엄치는 길에서 가장 높은 바닥 — 매번 재지 않게 한 번
+        }
         const dexWho = c => (typeof _njDexFullName === 'function' ? _njDexFullName(c.E) : c.d.ko);
         const dexRef = c => (typeof _njDexRef === 'function' ? _njDexRef(c.E.id) : c.E.id);
         const dexVerse = c => {   // 그 생물의 말씀 원문 — 관찰할 때 읽게(10/5 사용자: 주소만 나오고 원문이 없다)
@@ -5208,7 +5246,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 const ok = q.choices[+bt.dataset.i] === q.answer; closeDexQ();
                 const res = typeof _njDexAnswer === 'function' ? _njDexAnswer(c.E.id, ok) : null;
                 if (ok) { dexDone(c, res); return; }
-                if (res && res.hidden) { c.met = true; c.tapG.visible = false; showHint(T('nj3d_dex_miss', { e: c.d.e }), 3200); if (c.hide) c.g.scale.setScalar(0.25); }
+                if (res && res.hidden) { c.met = true; c.tapG.visible = false; showHint(T('nj3d_dex_miss', { e: c.d.e }), 3200); }
                 else askDex(c, true);
             });
         }
@@ -5270,7 +5308,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > 10 || performance.now() - tap.t > 450) return false;
             const rr = cvs.getBoundingClientRect(), pv = new THREE.Vector3(); let best = null, bd = 90;
             creatures.forEach(c => {
-                if (!c.g.visible || Math.hypot(c.x - P.x, c.z - P.z) > 3.2 || (c.hide && c.g.scale.x < 0.8)) return;
+                if (!c.g || !c.g.visible || c.pop < 1 || Math.hypot(c.x - P.x, c.z - P.z) > 3.2) return;
                 c.g.getWorldPosition(pv); pv.y += 0.06; pv.project(camera); if (pv.z > 1 || pv.z < -1) return;
                 const sx = rr.left + (pv.x + 1) / 2 * rr.width, sy = rr.top + (1 - pv.y) / 2 * rr.height, dd = Math.hypot(sx - e.clientX, sy - e.clientY);
                 if (dd < bd) { bd = dd; best = c; }
@@ -5284,26 +5322,49 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             return true;
         }
         function dexTick(dt) {
-            const tt = performance.now() / 1000, under = isUnder();
+            const tt = performance.now() / 1000, under = isUnder(), now = performance.now();
+            // 🫧 소환 — 0.5초마다 아직 안 태어난 아이를 가까운 순으로 줄 세우고, 프레임마다 3밀리초 안에서 몇 마리씩
+            if (creatures.length && (!dexSpawnQ || now - dexQAt > 500)) { dexQAt = now; dexSpawnQ = creatures.filter(c => !c.born).sort((a, b) => Math.hypot(a.x - P.x, a.z - P.z) - Math.hypot(b.x - P.x, b.z - P.z)); }
+            if (dexSpawnQ && dexSpawnQ.length) {   // 그 종의 원판(모델)이 도착한 아이만 — 도착 전에 걸어 두면 도착하는 순간 수백 마리 복사가 몰려 1.2초 멈췄다
+                const t0 = performance.now();
+                for (let i = 0; i < dexSpawnQ.length && performance.now() - t0 < 3;) {
+                    const c = dexSpawnQ[i], k = c.d.k;
+                    if (c.born) { dexSpawnQ.splice(i, 1); continue; }
+                    if (seaReady[k] == null) { seaReady[k] = false; seaLoad(k).then(() => { seaReady[k] = true; }, () => { seaReady[k] = true; }); }
+                    if (!seaReady[k]) { i++; continue; }
+                    dexSpawnQ.splice(i, 1); dexSpawn(c);
+                }
+            }
+            // 👁️ 그리는 건 가까운 24마리까지(13칸 안) — 0.25초마다 고른다
+            if (now - dexShowAt > 250) {
+                dexShowAt = now; let k = 0;
+                creatures.filter(c => c.born).map(c => [c, Math.hypot(c.x - P.x, c.z - P.z)]).sort((a, b) => a[1] - b[1]).forEach(([c, d]) => { c.show = d < DEX_R && k++ < DEX_SHOW; });
+                if (obs) obs.c.show = true; if (dexQ) dexQ.c.show = true;   // 관찰·문제 중인 아이는 늘
+                // 안 그리는 아이는 장면에서 떼어 둔다 — 숨기기만 하면 매 프레임 자리 계산(updateMatrixWorld)은 그대로 받았다(404마리 · 부품 7천 개 → 프레임의 21%, 10/17 프로파일)
+                creatures.forEach(c => { if (!c.born) return; if (c.show && !c.g.parent) reefG.add(c.g); else if (!c.show && c.g.parent) reefG.remove(c.g); });
+            }
             creatures.forEach(c => {
+                if (!c.born) return;
                 const d = Math.hypot(c.x - P.x, c.z - P.z);
-                c.g.visible = d < 12;   // 하루 최대 45마리 — 먼 아이는 그리지 않는다
+                c.g.visible = !!c.show;
                 if (!c.g.visible) return;
+                if (c.pop > 0 && c.pop < 1) { c.pop = Math.min(1, c.pop + dt * 2.2); const u = c.pop, e = 1 + 2.2 * Math.pow(u - 1, 3) + 1.2 * Math.pow(u - 1, 2); c.g.scale.setScalar(Math.max(0.001, e)); }   // 퐁 — 살짝 넘쳤다 제 크기로
                 if (c.swim && !(dexQ && dexQ.c === c)) {   // 둥글게 헤엄친다 — 문제를 푸는 동안엔 그 자리에서 기다린다(10/15 사용자: 멀리 가 버려 문제 창이 닫혔다)
                     c.ang += dt * c.swim / c.rad; const nx = c.cx + Math.cos(c.ang) * c.rad, nz = c.cz + Math.sin(c.ang) * c.rad;
                     if (seaE(nx, nz) < 0.92) { c.x = nx; c.z = nz; } c.g.position.x = c.x; c.g.position.z = c.z; c.g.rotation.y = -c.ang;
                     c.g.position.y = Math.max((c.floorMax != null ? c.floorMax : seabed(c.x, c.z)) + 0.15, Math.min(c.g.userData.y0, SEA_Y - 0.35));   // 얕은 데로 와도 물 위로 튀어나오지 않게
                 }
                 const watched = obs && obs.c === c, near = watched || (under && d < 2.2);
-                if (c.hide && !(c.met && typeof _njDexHidden === 'function' && _njDexHidden(c.E.id))) { const want = near ? 1 : 0.25; c.g.scale.setScalar(c.g.scale.x + (want - c.g.scale.x) * Math.min(1, dt * 3)); }
                 if (c.I) {   // 👀 가끔 저절로 — 지켜보는 아이는 가만 있은 지 6초면
                     c.actT = (c.actT == null ? 4 + Math.random() * 10 : c.actT) - dt;
-                    if (!c.I.act && c.actT <= 0 && (!c.hide || c.g.scale.x > 0.8)) { const L = SEA_ACTS[c.d.k] || []; if (L.length) { c.I.up = actUp(c); actStart(c.I, Math.floor(Math.random() * L.length), tt); } c.actT = watched ? 6 : 9 + Math.random() * 12; }
+                    if (!c.I.act && c.actT <= 0 && c.pop >= 1) { const L = SEA_ACTS[c.d.k] || []; if (L.length) { c.I.up = actUp(c); actStart(c.I, Math.floor(Math.random() * L.length), tt); } c.actT = watched ? 6 : 9 + Math.random() * 12; }
                     if (c.I.act) c.actT = Math.max(c.actT, watched ? 6 : 4);
                     actFrame(c.I, c.anim, tt, near);
                 } else c.anim(tt, near);
                 const fresh = !(typeof _njDexMetThisWeek === 'function' && _njDexMetThisWeek(c.E.id)) && !(typeof _njDexHidden === 'function' && _njDexHidden(c.E.id));
-                const can = fresh && near && (!c.hide || c.g.scale.x > 0.8);   // 이번 주에 아직 안 만난 아이 — 위에 반짝임
+                const can = fresh && near && c.pop >= 1;   // 이번 주에 아직 안 만난 아이 — 가까이 오면 위에 반짝임
+                c.mark.visible = fresh && c.pop >= 1 && !can;   // 📜 멀리서도 — 다가가면 반짝임으로 바뀐다
+                if (c.mark.visible) { c.mark.position.y = 0.32 + Math.sin(tt * 2 + c.x) * 0.03; c.mark.scale.setScalar(0.32 + Math.min(0.3, d * 0.025)); }   // 멀수록 조금 크게 — 멀리서도 보이게
                 c.tapG.visible = can; if (can) { c.tapG.position.y = 0.2 + Math.sin(tt * 3) * 0.02; c.tapG.material.opacity = 0.6 + Math.sin(tt * 5) * 0.3; if (!dexTapHinted) { dexTapHinted = true; showHint(T('nj3d_dex_tap'), 4500); } }
             });
             if (dexQ && Math.hypot(dexQ.c.x - P.x, dexQ.c.z - P.z) > 4) closeDexQ();   // 내가 멀리 헤엄쳐 가면 문제를 닫는다(생물은 기다리고 있다)
@@ -5478,7 +5539,12 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         let last = performance.now();
         const perf = { n: 0, sum: 0 };
         let dynEma = 0, dynAt = 0, dynSlow = 0, dynFast = 0;
-        listen(document, 'visibilitychange', () => { if (!document.hidden && C.running) { last = performance.now(); requestAnimationFrame(loop); } });
+        /* 🔁 그리기 반복은 늘 하나 (10/17 사용자: 오전엔 성 위를 날 때 계속 버벅였는데 지금은 안 그렇다) — 창을 내렸다 올리면 브라우저가 멈춰 둔 반복이 그대로 이어지는데
+           여기서 하나를 더 시작해, 내렸다 올릴 때마다·숨겼다 돌아올 때마다 한 화면을 2·3·4번 그렸다(걸을 때 헤드리스 실측 1 → 5번). 가만히 있을 땐 30fps 조절이 가려 티가 안 났다
+           → 시작할 땐 늘 kick() — 앞의 예약을 지우고 하나만 */
+        let rafId = 0;
+        const kick = () => { cancelAnimationFrame(rafId); rafId = requestAnimationFrame(loop); };
+        listen(document, 'visibilitychange', () => { if (!document.hidden && C.running) { last = performance.now(); kick(); } });
         /* 🕊️ 들어가는 순간 (10/15 사용자: 「3D로 보기」로는 느낌이 안 산다) — 하늘에서 성으로 내려오는 카메라 + 말씀 한 줄.
            성 = 계 21:2(거룩한 성 새 예루살렘이 하늘에서 내려오니) · 바다·만국 = 계 21:24(사용자). 누르면 건너뛴다. 걷기로 시작하면(만나·별) 내려온 뒤 걷기로 */
         let intro = null;
@@ -5491,7 +5557,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         function loop(now) {
             if (!C.running || cur !== C || document.hidden) return;
             // 만지지 않은 지 3초가 지나면 초당 30번 — 쉬지 않고 60번 그리면 폰이 뜨거워져 스스로 느려졌다(시안 실측)
-            if (!touching && now - lastTouch > 3000 && now - last < 30) { requestAnimationFrame(loop); return; }
+            if (!touching && now - lastTouch > 3000 && now - last < 30) { rafId = requestAnimationFrame(loop); return; }
             const rawDt = (now - last) / 1000;
             const dt = Math.min(0.05, rawDt); last = now;
             /* 🎚️ 해상도 자동 조절 (10/15 사용자: 성 안에서 움직이면 렉) — 성 안은 화면 대부분이 수정처럼 비치는 벽옥(반투명·광택)이라
@@ -5587,7 +5653,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 glintGeo.attributes.position.needsUpdate = true;
             }
             renderer.render(scene, camera);
-            requestAnimationFrame(loop);
+            rafId = requestAnimationFrame(loop);
         }
         rebuild(); resize();
         /* 🧪 그리기 프로그램(셰이더)을 미리 한 번에 (10/15 사용자: 강 미끄럼에서 렉 — 프로파일: 바다가 처음 화면에 들어올 때 셰이더를 그제야 만들어 7%).
@@ -5621,7 +5687,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 stageEl.addEventListener('pointerdown', skip, { once: true });
             } else afterIn();
         }
-        C.resume = () => { for (const k in inp.keys) inp.keys[k] = false; jumpHeld = diveHeld = false; last = performance.now(); C.running = true; resize(); requestAnimationFrame(loop); };   // 숨겼다 돌아옴 — 눌린 채 남은 키는 놓는다
-        C.running = true; requestAnimationFrame(loop);
+        C.resume = () => { for (const k in inp.keys) inp.keys[k] = false; jumpHeld = diveHeld = false; last = performance.now(); C.running = true; resize(); kick(); };   // 숨겼다 돌아옴 — 눌린 채 남은 키는 놓는다
+        C.running = true; kick();
     }
 })();

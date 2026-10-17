@@ -794,7 +794,7 @@ const LANG = {
         nj3d_dex_again: '{e} {name} · {ref} — 이번 주엔 이미 만났어요 (월요일 아침 6시에 다시)', nj3d_obs_tip: '끌어서 돌려 보고 두 손가락으로 가까이 · 움직임을 눌러 보세요', nj3d_obs_again: '다시 누르면 👀 관찰', nj3d_dex_watch: '👀 관찰', nj3d_watch_tip: '끌어서 돌려 보세요 · 찾은 칸을 누르면 그 모습으로', nj3d_dex_q: '{e} {name} · 이 생물의 말씀은?', nj3d_dex_retry: '{e} 아쉬워요 — 한 번 더', nj3d_dex_miss: '{e} 이번 주엔 숨어 버렸어요 — 월요일 아침 6시에 다시',
         nj3d_dex_tap: '👆 생물마다 말씀이 하나씩 — 가까이 가서 누르면 그 구절 문제가 나와요',
         nj3d_dex_sum: '발견 {f} · 해금 {u} · 이번 주 바다에 {w} · 전체 {m}', nj3d_dex_next: '지난주나 이번 주에 백지로 써낸 절의 생물이 바다에 와요 — 만나면 🐟', nj3d_dex_bonus_title: '🏅 수집 보너스 (각 💎{gem})',
-        nj3d_dex_cell: '{ref} · {day}요일 · {when}', nj3d_dex_cell_lock: '{ref}를 백지로 쓰면 와요', nj3d_dex_cell_rest: '{ref} — 쉬는 중이에요 (백지로 쓰면 와요)', nj3d_dex_wk: '이번 주에 만남',
+        nj3d_dex_cell: '{ref} · {day}요일 빛깔', nj3d_dex_cell_lock: '{ref}를 백지로 쓰면 와요', nj3d_dex_cell_rest: '{ref} — 쉬는 중이에요 (백지로 쓰면 와요)', nj3d_dex_wk: '이번 주에 만남',
         dex_g_species: '{name} 모두', dex_g_color: '{name} 생물 모두', dex_g_tier0: '맨몸 생물 모두', dex_g_tier: '{name} 생물 모두',
         nj3d_dex_seen: '발견 {n}번', nj3d_dex_unknown: '???',
         dex_when_any: '언제나 바다 어딘가에', dex_when_morning: '아침(6~12시)에만 나와요', dex_when_noon: '오후(12~18시)에만 나와요', dex_when_night: '저녁·밤(18~6시)에만 나와요',
@@ -2127,7 +2127,7 @@ const LANG = {
         nj3d_dex_again: '{e} {name} · {ref} — already met this week (again Monday 6 AM)', nj3d_obs_tip: 'Drag to turn, pinch to get closer · tap a move', nj3d_obs_again: 'tap again to 👀 watch', nj3d_dex_watch: '👀 Watch', nj3d_watch_tip: 'Drag to turn · tap a found cell to see that look', nj3d_dex_q: '{e} {name} · this creature’s verse?', nj3d_dex_retry: '{e} So close — once more', nj3d_dex_miss: '{e} It hid for this week — back Monday 6 AM',
         nj3d_dex_tap: '👆 Every creature carries a verse — get close and tap for its question',
         nj3d_dex_sum: 'found {f} · unlocked {u} · in the sea this week {w} · total {m}', nj3d_dex_next: 'Creatures of the verses you wrote blank last week or this week come to the sea — meet them for 🐟', nj3d_dex_bonus_title: '🏅 Collection bonuses (💎{gem} each)',
-        nj3d_dex_cell: '{ref} · {day} · {when}', nj3d_dex_cell_lock: 'Write {ref} blank and it comes', nj3d_dex_cell_rest: '{ref} — resting (write it blank and it comes)', nj3d_dex_wk: 'met this week',
+        nj3d_dex_cell: '{ref} · {day} color', nj3d_dex_cell_lock: 'Write {ref} blank and it comes', nj3d_dex_cell_rest: '{ref} — resting (write it blank and it comes)', nj3d_dex_wk: 'met this week',
         dex_g_species: 'every {name}', dex_g_color: 'every {name} creature', dex_g_tier0: 'every plain creature', dex_g_tier: 'every {name} creature',
         nj3d_dex_seen: 'found {n}×', nj3d_dex_unknown: '???',
         dex_when_any: 'Somewhere in the sea, any time', dex_when_morning: 'Only in the morning (6–12)', dex_when_noon: 'Only in the afternoon (12–18)', dex_when_night: 'Only in the evening and night (18–6)',
@@ -9098,10 +9098,9 @@ function _njDexWhenOk(d) {
 }
 function _njDexColorIdx() { const [y, m, d] = _get6AMDayStr().split('-').map(Number); return new Date(y, m - 1, d).getDay(); }
 function _njDexWeek() { const today = _get6AMDayStr(), [y, m, d] = today.split('-').map(Number), wd = new Date(y, m - 1, d).getDay(); return _shift6AMDayStr(today, -((wd + 6) % 7)); }   // 이번 주 월요일(6시 날짜)
-/* 지금 바다에 있는 생물 — 지난주에 백지로 썼고(10/5), 오늘 요일 빛깔이고, 지금 그 종의 시간대 */
+/* 지금 바다에 있는 생물 — 지난주·이번 주에 백지로 쓴 절의 생물 모두(10/17 — 전엔 오늘 요일 빛깔 · 그 종의 시간대만, 하루 최대 45) */
 function _njDexToday() {
-    const ci = _njDexColorIdx();
-    return _njDexVerseList().map((id, vi) => Object.assign(_njDexOf(vi), { id, vi })).filter(E => E.c === ci && _njDexWhenOk(NJ_SEA_DEX[E.s]) && _njDexCharged(E.id))
+    return _njDexVerseList().map((id, vi) => Object.assign(_njDexOf(vi), { id, vi })).filter(E => _njDexCharged(E.id))   // 10/17 사용자: 지난주·이번 주에 백지로 쓴 생물이 모두 — 요일 빛깔·시간대 조건은 뺐다(빛깔은 저마다 입고 나온다)
         .map(E => Object.assign(E, { d: NJ_SEA_DEX[E.s] }));
 }
 function _njDexMetThisWeek(id) { return njDex.w && njDex.w[id] === _njDexWeek(); }
@@ -9147,10 +9146,10 @@ function _njDexHtml() {
         const rows = NJ_DEX_TIERS.map((tt, ti) => `<div class="nj3d-dex-grid"><i class="nj3d-dex-tier">${tt.e || '·'}</i>${NJ_DEX_COLORS.map((c, ci) => {
             const id = cell[`${s}|${ti}|${ci}`]; if (!id) return '<b class="nj3d-dex-cell none"></b>';
             const st = njDex.v && njDex.v[id] ? 'on' : _njDexUnlocked(id) ? 'open' : 'lock', wk = _njDexMetThisWeek(id) ? ' wk' : '';
-            const tip = st === 'lock' ? t('nj3d_dex_cell_lock', { ref: _njDexRef(id) }) : !_njDexCharged(id) ? t('nj3d_dex_cell_rest', { ref: _njDexRef(id) }) : t('nj3d_dex_cell', { ref: _njDexRef(id), day: en ? c.dayEn : c.day, when: t('dex_when_' + d.when) });
+            const tip = st === 'lock' ? t('nj3d_dex_cell_lock', { ref: _njDexRef(id) }) : !_njDexCharged(id) ? t('nj3d_dex_cell_rest', { ref: _njDexRef(id) }) : t('nj3d_dex_cell', { ref: _njDexRef(id), day: en ? c.dayEn : c.day });
             return `<b class="nj3d-dex-cell ${st}${wk}" style="--c:#${c.hex.toString(16).padStart(6, '0')}" data-tip="${tip}" data-ti="${ti}" data-ci="${ci}">${st === 'lock' ? '🔒' : ''}</b>`;
         }).join('')}</div>`).join('');
-        return `<div class="nj3d-dex-card" data-s="${s}"><div class="nj3d-dex-card-h"><b>${d.e} ${_njDexName(d)}</b><span>${got}/${ids.length} · ${t('dex_where_' + d.where)} · ${t('dex_when_' + d.when)}</span>${got ? `<button class="nj3d-dex-watch">${t('nj3d_dex_watch')}</button>` : ''}</div>${dayRow}${rows}<div class="nj3d-dex-tipline"></div></div>`;   // 👀 찾은 칸이 있으면 관찰 (10/5)
+        return `<div class="nj3d-dex-card" data-s="${s}"><div class="nj3d-dex-card-h"><b>${d.e} ${_njDexName(d)}</b><span>${got}/${ids.length} · ${t('dex_where_' + d.where)}</span>${got ? `<button class="nj3d-dex-watch">${t('nj3d_dex_watch')}</button>` : ''}</div>${dayRow}${rows}<div class="nj3d-dex-tipline"></div></div>`;   // 👀 찾은 칸이 있으면 관찰 (10/5)
     }).join('');
     const G = _njDexGroups();
     const bon = `<div class="nj3d-dex-bon"><div class="nj3d-dex-bon-h">${t('nj3d_dex_bonus_title', { gem: NJ_DEX_BONUS.toLocaleString() })}</div>${G.map(g => {
