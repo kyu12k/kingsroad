@@ -752,6 +752,7 @@
             if (isles.length) { _flO.set(x, SEA_Y + 0.5, z); _flRay.set(_flO, _flDown); const hit = _flRay.intersectObjects(isles, false); if (hit.length) h = Math.max(h, hit[0].point.y); }
             return h;
         }
+        let beachStrip = null;
         {   // 🏖️ 해안과 바다 밑 (10/5) — z 38부터 맵 끝까지 한 장. 가로 1.5마다(해안선이 계단처럼 보이지 않게), 세로는 물가 촘촘·먼 바다 성기게.
             //   뭍은 벌판·모래사장, 바다는 모래에서 짙은 청록으로. 섬 자리는 아래 섬 그물이 덮어 조금 내린다. 남쪽 강 물길 자리도 내린다(강둑 그물이 덮는다)
             const xs = [], zs = []; for (let x = -156; x <= 156.01; x += 1.5) if (Math.abs(x) > 1.2) xs.push(x);
@@ -786,7 +787,7 @@
                     c.copy(f < 0.6 ? cTop : f < 0.85 ? cLow : cSand); if (f > 1) c.copy(cSand).lerp(cDeep, 0.25); c.convertSRGBToLinear(); c2.push(c.r, c.g, c.b); } });
                 for (let rr = 0; rr < RF.length - 1; rr++) for (let k = 0; k < SEG; k++) { const a = rr * SEG + k, b = rr * SEG + (k + 1) % SEG; i2.push(a, a + SEG, b, b, a + SEG, b + SEG); }
                 const g2 = new THREE.BufferGeometry(); g2.setAttribute('position', new THREE.Float32BufferAttribute(p2, 3)); g2.setAttribute('color', new THREE.Float32BufferAttribute(c2, 3)); g2.setIndex(i2); g2.computeVertexNormals();
-                const im = new THREE.Mesh(g2, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, side: THREE.DoubleSide })); im.receiveShadow = true; scene.add(im); im.updateMatrixWorld(); seaFloorObjs.push(im); im.userData.isle = s;
+                const im = new THREE.Mesh(g2, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, side: THREE.DoubleSide })); im.receiveShadow = true; scene.add(im); im.updateMatrixWorld(); seaFloorObjs.push(im); im.userData.isle = s; im.userData.rf = RF; im.userData.seg = SEG;
             });
         }
         // 수면 — 10/5 사용자: "타일 같다 · 구분선이 보이고 얼음판 같다". 물칸 2,051장(육각 판, 틈 0.015)을 걷어내고 **수면 한 장**에
@@ -841,7 +842,9 @@
                 const cz = coastZ(x);
                 DS_.forEach(d => {
                     const z = cz + d, inland = d < -1.99;
-                    pos.push(x, inland ? Math.max(WT(x, z), beachAt(x, d, WT(x, z))) + 0.004 : beachAt(x, d, WT(x, z)) + (d <= BEACH_D0 ? 0.004 : 0), z);
+                    let y = inland ? Math.max(WT(x, z), beachAt(x, d, WT(x, z))) + 0.004 : beachAt(x, d, WT(x, z)) + (d <= BEACH_D0 ? 0.004 : 0);
+                    if (Math.abs(x) < 4.6) { const gf = gridFloor(x, z) - 0.04, u = smooth01((Math.abs(x) - 2.25) / 2.3); if (gf < y) y = gf + (y - gf) * u; }   // 🏞️ 강 어귀 쪽 — 띠가 물길(|x| < 2.2) 앞에서 끊기는데 끝이 주변 땅보다 높아 직선 턱·물속 끝면이 보였다(10/18 사용자) → 끝(2.25)에선 땅 밑, 4.6까지 서서히 제 높이로
+                    pos.push(x, y, z);
                     if (inland) {   // 땅 그물(아래 해안·바다 밑 그물)과 같은 색 — 높이로 풀빛, 물가 가까이(e < 1.5) 모래를 섞는다
                         const h = WT(x, z), e = seaE(x, z); cc.copy(cTopB).lerp(cLowB, Math.min(1, -h / DROP)); if (e < 1.5) cc.lerp(cSandB, 0.88 * Math.min(1, (1.5 - e) / 0.18));
                     } else if (d < -0.8) cc.copy(cDry); else if (d < 0.05) cc.copy(cDry).lerp(cWet, smooth01((d + 0.8) / 0.75)); else cc.copy(cWet).lerp(cUnder, smooth01(d / 1.5));
@@ -851,6 +854,7 @@
             });
             const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
             const strip = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, side: THREE.DoubleSide })); strip.receiveShadow = true; scene.add(strip);
+            beachStrip = strip;
             // 파도 — 하얀 거품 띠(폭 0.8)가 비탈을 따라 뭍으로 올라왔다(진하게) 물러간다(옅어지며). 해안선 x마다 두 줄(앞·뒤)
             const cv = document.createElement('canvas'); cv.width = 128; cv.height = 32; const g2 = cv.getContext('2d');
             const gr = g2.createLinearGradient(0, 0, 0, 32); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.35, 'rgba(255,255,255,0.95)'); gr.addColorStop(0.55, 'rgba(255,255,255,0.6)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
@@ -1009,8 +1013,43 @@
             g.setIndex(idx); g.computeVertexNormals();
             // 반투명 땅빛 — 불투명한 판은 해안에 깔린 널빤지처럼 보였다(10/5)
             const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, side: THREE.DoubleSide, transparent: true, opacity: 0.6, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
-            m.receiveShadow = true; m.renderOrder = 1; seaGrp.add(m); return m;
+            m.receiveShadow = true; m.renderOrder = 1; seaGrp.add(m);
+            m.material.visible = false;   // 🎨 10/18 사용자: 해안·섬에 얇은 막이 덮인 것 같다 — 반투명 판은 그리지 않고(나라 누르기 판정에만) 땅 자체를 나라 빛깔로 물들인다(natTint)
+            return m;
         })();
+        /* 🎨 나라 빛깔을 땅에 — 해안 땅(바다 밑 그물의 뭍 줄)·해변 띠·섬 꼭대기의 꼭짓점 색을 섞는다. 띠 가장자리는 옅어지게.
+           처음 한 번 꼭짓점마다 어느 나라·얼마나 물들지(무게)를 정해 두고, 바다가 바뀔 때마다(paintSea) 원래 색에서 다시 섞는다 */
+        let tintMap = null;
+        function natTintMap() {
+            const spans = []; for (let i = 0; i < 70; i++) { const sp = natSpan(i); if (sp) spans.push([i, Math.min(sp[0], sp[1]), Math.max(sp[0], sp[1])]); }
+            const coastW = (x, z) => {
+                const r = spans.find(q => x >= q[1] && x < q[2]); if (!r) return null;
+                const d = coastZ(x) - z; if (d < -0.1 || d > 6.8) return null;   // 뭍 쪽 깊이(나라 띠와 같은 6.4 + 가장자리)
+                const wd = Math.min(1, (d + 0.1) / 0.7) * Math.min(1, (6.8 - d) / 1.8), we = Math.min(1, (x - r[1]) / 0.9, (r[2] - x) / 0.9);
+                return [r[0], wd * (0.35 + 0.65 * Math.max(0, we))];   // 나라 사이는 조금 옅게 — 경계가 은은히 보이게
+            };
+            const out = [];
+            const addMesh = (mesh, fn) => {
+                const pa = mesh.geometry.attributes.position, ca = mesh.geometry.attributes.color, list = [];
+                for (let v = 0; v < pa.count; v++) { const r = fn(pa.getX(v), pa.getZ(v), v); if (r && r[1] > 0.02) list.push(v, r[0], r[1]); }
+                if (list.length) out.push({ ca, base: ca.array.slice(), list });
+            };
+            if (bedGrid && bedGrid.mesh) addMesh(bedGrid.mesh, coastW);
+            if (beachStrip) addMesh(beachStrip, coastW);
+            const isleNat = new Map(); for (let i = 0; i < 70; i++) if (!natSpan(i)) { const s2 = natIsle(i); if (s2) isleNat.set(s2, i); }
+            seaFloorObjs.forEach(o => { const s2 = o.userData.isle; if (!s2 || !isleNat.has(s2)) return; const ni = isleNat.get(s2), RF2 = o.userData.rf, SG2 = o.userData.seg;
+                addMesh(o, (x, z, v) => { const f = RF2[Math.floor(v / SG2)]; return f <= 0.7 ? [ni, 1] : f <= 0.88 ? [ni, (0.88 - f) / 0.18] : null; }); });   // 섬 — 꼭대기 풀밭만, 모래 가장자리로 옅게
+            return out;
+        }
+        function natTint(colors) {   // colors[i] = THREE.Color(선형) 또는 null, 세기 k[i]
+            if (!tintMap) tintMap = natTintMap();
+            tintMap.forEach(T => {
+                const a = T.ca.array; a.set(T.base);
+                for (let n = 0; n < T.list.length; n += 3) { const v = T.list[n], c = colors[T.list[n + 1]]; if (!c) continue; const w = T.list[n + 2] * c.k, o = v * 3;
+                    a[o] += (c.r - a[o]) * w; a[o + 1] += (c.g - a[o + 1]) * w; a[o + 2] += (c.b - a[o + 2]) * w; }
+                T.ca.needsUpdate = true;
+            });
+        }
         const natTrees = new THREE.InstancedMesh(new THREE.ConeGeometry(0.45, 1.3, 6), new THREE.MeshStandardMaterial({ color: 0x2b7a3a, roughness: 0.8, flatShading: true }), 140);
         const natHouses = new THREE.InstancedMesh(new THREE.BoxGeometry(0.7, 0.55, 0.7), new THREE.MeshStandardMaterial({ color: 0xf2e3c2, roughness: 0.7 }), 140);
         natTrees.count = 0; natHouses.count = 0; seaGrp.add(natTrees); seaGrp.add(natHouses);
@@ -1031,16 +1070,18 @@
                 g.setTransform(1, 0, 0, 1, 0, 0); seaColTex.needsUpdate = true;
             }
             const LAND = ['#75674f', '#5aa962', '#3f8f4d', '#4f9b58', '#62b06a'], ca = natRing.geometry.attributes.color, m4 = new THREE.Matrix4();
-            let nt = 0, nh = 0;
+            let nt = 0, nh = 0; const tints = [];
             for (let i = 0; i < 70; i++) {
                 const lv = (w && w.nations && w.nations[i] && w.nations[i].lv) || 0;
                 col.set(lv ? LAND[lv] : (i % 2 ? '#6a5c48' : '#75674f')).convertSRGBToLinear();   // 꼭짓점 색은 선형으로(안 바꾸면 허옇게 바랬다)
+                tints[i] = Object.assign(col.clone(), { k: lv ? 0.62 : 0.3 });   // 🎨 땅 물들이기 — 소성된 나라는 진하게, 메마른 나라는 옅은 갈색
                 for (let v = 0; v < natV[i][1]; v++) ca.setXYZ(natV[i][0] + v, col.r, col.g, col.b);
                 if (lv >= 2) [30, 48].forEach(r => { const [X, Z] = natMid(i, r); m4.makeTranslation(X, WT(X, Z) + 0.7, Z); natTrees.setMatrixAt(nt++, m4); });
                 if (lv >= 3) { const [X, Z] = natMid(i, 64); m4.makeTranslation(X, WT(X, Z) + 0.3, Z); natHouses.setMatrixAt(nh++, m4); }
                 if (lv >= 4) { const [X, Z] = natMid(i, 78); m4.makeTranslation(X, WT(X, Z) + 0.3, Z); natHouses.setMatrixAt(nh++, m4); }
             }
             ca.needsUpdate = true; natTrees.count = nt; natHouses.count = nh;
+            natTint(tints);   // 🎨 땅에 나라 빛깔(10/18)
             natTrees.instanceMatrix.needsUpdate = true; natHouses.instanceMatrix.needsUpdate = true;
         }
         // 내 포도나무 — 심은 나라 해안에 포도밭 시렁 한 줄, 다 익으면 보랏빛 송이
