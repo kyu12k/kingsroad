@@ -17463,7 +17463,9 @@ function closeResultModal(skipSheetReopen) {
         return; 
     }
     if (window.isHardshipMode) {
-        quitGame(window.hardshipOrigin || 'home');
+        const dest = window.hardshipOrigin || 'home', back = hardshipState && hardshipState.sheetCh;
+        quitGame(dest);
+        if (dest === 'map' && back) openStageSheetForStageId(back + '-1');   // 📂 시작했던 장 시트로(10/17)
         return;
     }
     
@@ -23873,7 +23875,11 @@ function confirmQuit() {
         }
 
         // 3. 화면 초기화 및 원래 진입 화면으로 돌아가기 (진짜 종료)
-        quitGame(window.isHardshipMode ? (window.hardshipOrigin || 'home') : (isFocusedTrainingSession() ? 'home' : 'map'));
+        const dest = window.isHardshipMode ? (window.hardshipOrigin || 'home') : (isFocusedTrainingSession() ? 'home' : 'map');
+        // 📂 지도로 나가면 그 장 시트를 다시 연다(10/17) — 고난 판은 시작할 때 기억해 둔 장, 일반 스테이지·보스전은 그 스테이지의 장
+        const backId = dest !== 'map' ? null : window.isHardshipMode ? (hardshipState && hardshipState.sheetCh && !hardshipState.levelTest ? hardshipState.sheetCh + '-1' : null) : window.currentStageId;   // 🎓 레벨 테스트는 나가면 테스트 결과가 뜬다 — 시트를 겹치지 않게
+        quitGame(dest);
+        if (backId) openStageSheetForStageId(backId);
     }
 }
 
@@ -28962,6 +28968,7 @@ function createEmptyHardshipState() {
         blankDueCh: null,        // 「오늘 백지 차례」로 열린 세션이면 그 장 (그 장의 차례인 절만, 백지)
         giftId: null,            // 🎁 나눔 열매 먹기 세션이면 그 열매 id
         battleRev: null,         // ⚔️ 말씀 대결에서 틀린 절 「✍️ 백지로」(10/14) — 그 절 id. 망각의 고난이 아니다
+        sheetCh: null,           // 📂 끝나면(계속하기·나가기) 다시 열 장 시트 — 지도에서 시트를 연 채 시작했거나 그 장의 중간점검·보스전·빈칸 확인(10/17)
         njRound: null,           // 🍞🐦🐚 만나·메추라기·진주조개 백지 판(10/17) — 'manna'|'quail'|'clam'. 망각의 고난이 아니다
         njFrom: '',              // 그 판을 연 곳 — 'home'(오늘의 암송 창) · '3d'
         startLv: 0,              // 🔑 첫 마디의 고난이면 1·2·3(쉬움·보통·어려움) — 쳐야 할 글이 첫 마디로 잘린다
@@ -30627,6 +30634,9 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
     if (!(_pendingHardshipEmbed && _pendingHardshipEmbed.levelTest && !_pendingHardshipEmbed.ltPay)) _maybeStartRain();   // 승점 있는 장 전체 테스트는 망각의 고난처럼 단비·햇살을 켠다   // 🎓 승점·보석 없는 시험이 그날의 단비·햇살 20분을 써 버렸다(10/8 사용자)
     const modeMeta = getHardshipModeMeta(mode);
 
+    // 📂 끝나면 돌아갈 장 시트 — 시트를 연 채 시작했으면 그 장(10/17 사용자: 중간점검 백지 뒤 「계속하기」로 지도에 왔는데 켜 뒀던 시트가 다시 안 열렸다)
+    const _sheetEl = document.getElementById('stage-sheet');
+    const _sheetOpenCh = (_sheetEl && _sheetEl.classList.contains('open') && typeof currentOpenChapterData !== 'undefined' && currentOpenChapterData) ? currentOpenChapterData.id : null;
     // ★ 스테이지 시트를 반드시 닫는다.
     // 보스전 경로(startBossBattle)는 인트로 연출 콜백 안에서 닫는데, 고난 세션은 연출을 거치지 않는다.
     // 중간점검 빈칸과 결과 화면의 백지 확인에서 시트가 열린 채로 남는 문제가 각각 났으므로,
@@ -30660,6 +30670,10 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
         hardshipState.levelTest = embed.levelTest || 0;   // 🎓
         hardshipState.ltFull = !!embed.ltFull; hardshipState.ltPay = !!embed.ltPay;   // ⌨️ 장 전체 = 망각의 고난으로 인정 · 오늘 승점 받나
         hardshipState.displayTitle = embed.label || '';
+    }
+    {   // 📂 돌아갈 장 — 열려 있던 시트, 아니면 그 판이 속한 장(다음 중간점검·빈칸으로 확인해보기처럼 시트 없이 이어진 판). 지도에서 시작한 판만
+        const anchor = hardshipState.midBossStageId || hardshipState.bossStageId || hardshipState.verseCheckStageId || (hardshipState.blankDueCh ? hardshipState.blankDueCh + '-1' : null);
+        hardshipState.sheetCh = window.hardshipOrigin === 'map' ? (_sheetOpenCh || (anchor ? parseInt(String(anchor).split('-')[0], 10) || null : null)) : null;
     }
 
     hardshipState.active = true;
