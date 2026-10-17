@@ -6353,7 +6353,7 @@ body > #guide-screen-overlay .guide-body > .guide-btn.ghost { width: 100%; margi
 .njr-act { flex: none; text-align: right; }
 .njr-go { border: none; border-radius: 10px; padding: 7px 11px; background: #5d8a2f; box-shadow: 0 3px 0 #436a1f; color: #fff; font-weight: 800; font-size: 0.8rem; cursor: pointer; white-space: nowrap; }
 .njr-done { font-size: 0.8rem; font-weight: 800; color: #1e8449; }
-.njr-wait { font-size: 0.74rem; color: #95a5a6; display: inline-block; max-width: 150px; }
+.njr-wait { font-size: 0.74rem; color: #95a5a6; display: inline-block; white-space: nowrap; }
 .njr-rule { font-size: 0.72rem; color: #7f8c8d; line-height: 1.45; }
 /* 🐚 어제 외운 세 구절 — 홈 위에 살짝 떠 있는 팝업(10/17). 홈의 어두운 금빛 톤 */
 #home-screen > .rcard-pop { position: fixed; z-index: 30; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); width: min(92vw, 380px); transform: translate(-50%, 24px); opacity: 0; transition: transform .45s cubic-bezier(.2,.9,.3,1.2), opacity .35s; box-sizing: border-box;
