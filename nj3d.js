@@ -1149,14 +1149,15 @@
         // ── 사람 · 짐승 · 수레 (9/30 그래픽 2차, 시안 「만국의 예물 행렬」에서) — 모두 +x를 바라본다. 만들면 { g, anim(t, 빠르기), animal? } ──
         const PM = (() => {
         const LINEN = mat(0xfbf8f0, { roughness: 0.85 });
-        const SKIN = mat(0xd9b28c), WOOD = mat(0x7a5230, { roughness: 0.8 }), SANDAL = mat(0x8a5a34);
+        const SKIN0 = mat(0xd9b28c), SKIN = SKIN0, WOOD = mat(0x7a5230, { roughness: 0.8 }), SANDAL = mat(0x8a5a34);
         const ell = (r, sx, sy, sz, m) => { const e = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), m); e.scale.set(sx, sy, sz); return e; };
         const put = (o, x, y, z) => { o.position.set(x, y, z); return o; };
         const cyl = (r0, r1, h, m, seg) => new THREE.Mesh(new THREE.CylinderGeometry(r0, r1, h, seg || 10), m);
         // 사람 — 두건·겉옷·띠, 무릎 없는 다리와 팔(순례자와 같은 크기). pose: 'walk' | 'carry'(두 팔을 들어 채를 붙잡는다) | 'lead'(지팡이)
-        function person(robe, pose) {
+        function person(robe, pose, look) {   // look(10/18 사신마다 다르게) — { cloth: 두건·바지 빛, skin: 얼굴빛, hat: 'turban'|'crown'|'cap'|'' }
           const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
-          const R = mat(robe, { roughness: 0.7 }), cloth = mat(0xeee6d8);
+          const R = mat(robe, { roughness: 0.7 }), cloth = mat((look && look.cloth) || 0xeee6d8);
+          const SKIN = look && look.skin ? mat(look.skin) : SKIN0;
           body.add(put(cyl(0.032, 0.058, 0.12, R, 14), 0, 0.115, 0));
           const belt = new THREE.Mesh(new THREE.TorusGeometry(0.036, 0.006, 6, 16), GOLD); belt.rotation.x = Math.PI / 2; belt.position.y = 0.13; body.add(belt);
           const head = new THREE.Mesh(new THREE.SphereGeometry(0.03, 14, 10), SKIN); head.position.y = 0.2; body.add(head);
@@ -1171,6 +1172,9 @@
           const hipL = limb(0, 0.07, 0.017, 0.07, 0.011, cloth, true), hipR = limb(0, 0.07, -0.017, 0.07, 0.011, cloth, true);
           const armL = limb(0, 0.162, 0.038, 0.066, 0.011, R), armR = limb(0, 0.162, -0.038, 0.066, 0.011, R);
           if (pose === 'lead') { const st = cyl(0.005, 0.005, 0.3, WOOD, 6); st.position.set(0.004, -0.02, 0); armR.add(st); }
+          if (look && look.hat === 'turban') { const tb = ell(0.036, 1.05, 0.7, 1.05, mat(look.hatC || 0xf2efe4)); tb.position.set(-0.002, 0.226, 0); body.add(tb); }
+          else if (look && look.hat === 'crown') { const cr = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.028, 0.016, 10, 1, true), GOLD); cr.position.set(-0.002, 0.236, 0); body.add(cr); }
+          else if (look && look.hat === 'cap') { const cp = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, 0.03, 10), mat(look.hatC || 0x8a3a2e)); cp.position.set(-0.002, 0.236, 0); body.add(cp); }
           const anim = (t, sp) => {
             const w = Math.sin(t * 9 * (sp || 1)), a = 0.5 * w;
             hipL.rotation.z = a; hipR.rotation.z = -a;
@@ -1291,7 +1295,14 @@
         }
             return { person, mule, camel, horse, chariot, litter, ship, wrapped };
         })();
-        const makePerson = robe => PM.person(robe, 'lead').g;   // 사신 — 지팡이 든 사람
+        const makePerson = (robe, look) => PM.person(robe, 'lead', look).g;   // 사신 — 지팡이 든 사람
+        /* 🌍 나라마다 사신 겉모습(10/18 사용자: 만국의 사신들이 다 똑같이 생겼다) — 가문 빛(셈·함·야벳)은 지키고 짙기·두건·얼굴빛·머리 장식을 나라 번호로 */
+        const ENVOY_CLOTH = [0xeee6d8, 0xf2d8a0, 0xd6e2ee, 0xe9cfd9, 0xd3e6cc, 0xe8dcc8], ENVOY_SKIN = [0xf0cfae, 0xd9b28c, 0xb98a62, 0x8d6244, 0x6b4630], ENVOY_HAT = ['', 'turban', 'cap', 'crown', 'turban', ''], ENVOY_HATC = [0xf2efe4, 0x8a3a2e, 0x2e5a8a, 0x6b4b8a, 0xd9a441];
+        function envoyLook(i, base) {
+            const h = (i * 37 + 11) % 97, c = new THREE.Color(base), hsl = {}; c.getHSL(hsl);
+            c.setHSL((hsl.h + ((h % 7) - 3) * 0.012 + 1) % 1, Math.min(1, hsl.s * (0.8 + (h % 5) * 0.1)), Math.min(0.72, Math.max(0.22, hsl.l + ((h % 9) - 4) * 0.045)));
+            return { robe: c.getHex(), look: { cloth: ENVOY_CLOTH[h % ENVOY_CLOTH.length], skin: ENVOY_SKIN[(h >> 1) % ENVOY_SKIN.length], hat: ENVOY_HAT[(h >> 2) % ENVOY_HAT.length], hatC: ENVOY_HATC[(h >> 3) % ENVOY_HATC.length] } };
+        }
         const envoyG = new THREE.Group(); seaGrp.add(envoyG);
         const envoys = [];   // { i, x, z }
         function buildEnvoys(w) {
@@ -1301,7 +1312,8 @@
                 const lv = (w && w.nations && w.nations[i] && w.nations[i].lv) || 0;
                 if (lv < 1) continue;
                 const N = (typeof SEA_NATIONS !== 'undefined' && SEA_NATIONS[i]) || [];
-                const [X, Z] = natMid(i, 40), e = makePerson(FAMILY_ROBE[N[4]] || 0x888888), [LX, LZ] = natLook(i, X, Z), ey = WT(X, Z) + 0.05;
+                const EL = envoyLook(i, FAMILY_ROBE[N[4]] || 0x888888);
+                const [X, Z] = natMid(i, 40), e = makePerson(EL.robe, EL.look), [LX, LZ] = natLook(i, X, Z), ey = WT(X, Z) + 0.05;
                 e.scale.setScalar(1.6); e.position.set(X, ey, Z); e.lookAt(LX, ey, LZ); e.rotateY(Math.PI); e.rotateY(-Math.PI / 2);   // 사람 모델은 +x가 앞
                 envoyG.add(e); envoys.push({ i, x: X, z: Z });
             }
@@ -2762,6 +2774,14 @@
         let nearEnvoy = null, envoyCheckT = 0, proc = null;
         const natName = i => { const N = (typeof SEA_NATIONS !== 'undefined' && SEA_NATIONS[i]) || []; return (typeof currentLang !== 'undefined' && currentLang === 'en') ? (N[2] || '') : (N[0] || ''); };
         const esc2 = t => String(t).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+        /* 🛡️ 사기 버튼 지킴(10/18 사용자: 사신을 누르자마자 바로 사졌다 · 이미 있는 건 있다고 하고 더 살지 묻기)
+           — 창이 열린 뒤 0.4초는 안 눌린다(말 걸기를 누른 손이 떨어지며 그 자리 버튼을 눌렀다) · 가진 것은 한 번 더 눌러야 */
+        const ownCount = (k, sz) => (typeof njGifts !== 'undefined' && Array.isArray(njGifts) ? njGifts : []).filter(g => g.k === k && (sz == null || (g.sz || 1) === sz)).length;
+        function buyOk(b) {
+            if (performance.now() - (+offerEl.dataset.at || 0) < 400) return false;
+            if (b.dataset.own && !b.dataset.armed) { b.dataset.armed = '1'; b.dataset.label = b.textContent; b.textContent = T('offer_again'); b.classList.add('armed'); setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = b.dataset.label; b.classList.remove('armed'); } }, 3000); return false; }
+            return true;
+        }
         function openOffer(i) {
             const list = (typeof NJ_OFFERINGS !== 'undefined') ? NJ_OFFERINGS : [];
             const have = typeof _njTreasureAvail === 'function' ? _njTreasureAvail() : 0;
@@ -2776,10 +2796,11 @@
                 <div class="nj3d-offer-intro">${T('goods_intro')}</div>
                 <div class="nj3d-offer-list">${NJ_GOODS_SIZES.map(S => {
                     const open = lv >= S.lv, nm = lang === 'en' ? S.en : S.ko;
+                    const own = ownCount(G.k, S.s);
                     const btn = !open ? `<span class="nj3d-offer-lock">${T('goods_lock', { lv: (typeof SEA_LV_NAMES !== 'undefined' ? SEA_LV_NAMES[lang][S.lv] : S.lv) })}</span>`
-                        : have >= S.cost ? `<button data-gs="${S.s}">${T('gift_take', { cost: S.cost })}</button>`
+                        : have >= S.cost ? `<button data-gs="${S.s}"${own ? ' data-own="1"' : ''}>${T('gift_take', { cost: S.cost })}</button>`
                         : `<span class="nj3d-offer-lock">${T('offer_need', { n: S.cost - have })} · ${S.cost}</span>`;
-                    return `<div class="nj3d-offer-row${open ? '' : ' locked'}"><div><b>${T('goods_size', { size: nm, x: S.sc })}</b></div>${btn}</div>`;
+                    return `<div class="nj3d-offer-row${open ? '' : ' locked'}"><div><b>${T('goods_size', { size: nm, x: S.sc })}</b>${own ? `<em class="nj3d-own">${T('offer_own', { n: own })}</em>` : ''}</div>${btn}</div>`;
                 }).join('')}</div>
                 <div class="nj3d-offer-head nj3d-offer-sub">${T('offer_rev_head')}</div>`;
             offerEl.innerHTML = `<button class="nj3d-fruit-x" aria-label="close">✕</button>
@@ -2791,20 +2812,23 @@
                     const open = typeof _njOfferUnlocked === 'function' && _njOfferUnlocked(o);
                     const btn = !open ? `<span class="nj3d-offer-lock">${T('gift_locked', { ch: o.ch })}</span>`
                         : full ? `<span class="nj3d-offer-lock">${T('gift_full')}</span>`
-                        : have >= o.cost ? `<button data-k="${o.k}">${T('gift_take', { cost: o.cost })}</button>`
+                        : have >= o.cost ? `<button data-k="${o.k}"${ownCount(o.k) ? ' data-own="1"' : ''}>${T('gift_take', { cost: o.cost })}</button>`
                         : `<span class="nj3d-offer-lock">${T('offer_need', { n: o.cost - have })} · ${o.cost}</span>`;
-                    return `<div class="nj3d-offer-row${open ? '' : ' locked'}"><div><b>${esc2(typeof _njOfferName === 'function' ? _njOfferName(o) : o.ko)}</b><span>계 ${o.ref}</span></div>${btn}</div>`;
+                    const own = ownCount(o.k);
+                    return `<div class="nj3d-offer-row${open ? '' : ' locked'}"><div><b>${esc2(typeof _njOfferName === 'function' ? _njOfferName(o) : o.ko)}</b><span>계 ${o.ref}</span>${own ? `<em class="nj3d-own">${T('offer_own', { n: own })}</em>` : ''}</div>${btn}</div>`;
                 }).join('')}</div>
                 ${typeof _njPearlAvail === 'function' && ['w', 'c', 'g'].some(k => _njPearlAvail(k) > 0) ? `<div class="nj3d-offer-head nj3d-offer-sub">${T('nj3d_pearl_btn')}</div><div class="nj3d-offer-list">${_njPearlSellHtml()}</div>` : ''}`;
-            offerEl.hidden = false; offerEl.dataset.pearl = '';
+            offerEl.hidden = false; offerEl.dataset.pearl = ''; if (!offerEl.dataset.at || offerEl.dataset.for !== String(i)) offerEl.dataset.at = performance.now(); offerEl.dataset.for = String(i);
             offerEl.querySelector('.nj3d-fruit-x').onclick = () => { offerEl.hidden = true; };
             bindPearlSell(offerEl, () => openOffer(i));   // 💎 소성된 나라의 사신도 진주를 산다
             offerEl.querySelectorAll('button[data-k]').forEach(b => b.onclick = () => {
+                if (!buyOk(b)) return;
                 const gf = typeof _njOfferBuy === 'function' ? _njOfferBuy(b.dataset.k, i) : null;
                 if (!gf) return;
                 offerEl.hidden = true; syncWallet(); startProc(i, gf);
             });
             offerEl.querySelectorAll('button[data-gs]').forEach(b => b.onclick = () => {
+                if (!buyOk(b)) return;
                 const gf = typeof _njGoodsBuy === 'function' ? _njGoodsBuy(i, +b.dataset.gs, offerEl.dataset.peace === '1') : null;
                 if (!gf) return;
                 offerEl.hidden = true; syncWallet(); startProc(i, gf);
@@ -2812,7 +2836,7 @@
             const pc = offerEl.querySelector('input[data-peace]');
             if (pc) pc.onchange = () => { offerEl.dataset.peace = pc.checked ? '1' : ''; const y = offerEl.scrollTop; openOffer(i); offerEl.scrollTop = y; };
         }
-        talkBtn.addEventListener('pointerdown', e => { e.preventDefault(); if (nearEnvoy && !proc) { offerEl.dataset.peace = ''; openOffer(nearEnvoy.i); } });
+        talkBtn.addEventListener('pointerdown', e => { e.preventDefault(); if (nearEnvoy && !proc) { offerEl.dataset.peace = ''; offerEl.dataset.at = ''; openOffer(nearEnvoy.i); } });
         skipBtn.textContent = T('gift_skip');
         const rateBtn = ov.querySelector('.nj3d-rate');
         skipBtn.addEventListener('pointerdown', e => { e.preventDefault();
@@ -5231,7 +5255,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         /* 🐠 10/17 사용자: 지난주·이번 주에 백지로 쓴 절의 생물이 **모두**(요일·시간대 조건 없이, 저마다 제 요일 빛깔) — 많으면 404마리.
            입장할 땐 자리만 정해 두고(가볍다), 모델은 **내 둘레부터 프레임마다 몇 마리씩** 소환한다(물거품 + 퐁) — 한꺼번에 만들면 입장이 4초 늦었다.
            많아지니 해안 전체(좌우 120)로 흩고, 그리는 건 가까운 24마리까지 */
-        const DEX_SPREAD = 120, DEX_SHOW = 24, DEX_R = 13;   // 24 — 40이면 어귀 앞에서 그리기 293번·초당 35(10/17 실측)
+        const DEX_SPREAD = 120, DEX_SHOW = 12, DEX_R = 13;   // 12 — 24는 너무 촘촘(10/18 사용자)   // 24 — 40이면 어귀 앞에서 그리기 293번·초당 35(10/17 실측)
         let dexSpawnQ = null, dexQAt = -9, dexShowAt = -9; const seaReady = {};
         (typeof _njDexToday === 'function' ? _njDexToday() : []).forEach(E => {
             let sd = 17; for (const ch of String(_get6AMDayStr()) + E.id) sd = (sd * 31 + ch.charCodeAt(0)) % 2147483647; sd = sd || 1;

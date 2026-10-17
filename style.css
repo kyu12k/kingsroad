@@ -7948,3 +7948,6 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 /* 📈 백지 레벨 오름 보너스(10/18) — 결과 화면 승점 아래 한 줄 */
 .hs-bonus { text-wrap: balance; margin-top: 6px; font-size: 0.8rem; font-weight: 700; color: #1e8449; line-height: 1.4; }
 .hs-bonus.none { color: #95a5a6; font-weight: 600; }
+/* 🛡️ 예물 창 — 이미 가진 것(10/18) */
+.nj3d-offer .nj3d-own { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: rgba(46,204,113,0.18); color: #7fe0a8; font-style: normal; font-size: 0.72rem; font-weight: 800; }
+.nj3d-offer button.armed { background: #e67e22 !important; color: #fff !important; }
