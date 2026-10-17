@@ -7433,7 +7433,7 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 /* 접으면 작은 「🕊️ ▾」 — 오른쪽 위(보석 줄 아래·미니맵 위), 버튼들은 제자리로 */
 #nj3d .nj3d-visitbar.folded { left: auto; right: 10px; transform: none; top: 52px; padding: 0; background: none; }
 #nj3d .nj3d-visitbar.folded button.sub { background: rgba(15,26,51,0.85); color: #f3e3b0; padding: 7px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
-#nj3d.nj3d-barfold .nj3d-mode, #nj3d.nj3d-barfold .nj3d-go, #nj3d.nj3d-barfold .nj3d-deco, #nj3d.nj3d-barfold .nj3d-holo, #nj3d.nj3d-barfold .nj3d-wallet,
+#nj3d.nj3d-barfold .nj3d-mode, #nj3d.nj3d-barfold .nj3d-go, #nj3d.nj3d-barfold .nj3d-deco, #nj3d.nj3d-barfold .nj3d-build, #nj3d.nj3d-barfold .nj3d-holo, #nj3d.nj3d-barfold .nj3d-wallet,   /* 🔨 건축이 빠져 접으면 혼자 46px 아래 — 「완성된 모습」 밑에 깔렸다(10/18 사용자) */
 #nj3d.nj3d-barfold .nj3d-stage canvas.nj3d-mini, #nj3d.nj3d-barfold .nj3d-dexbtn { margin-top: 0; }
 #nj3d.nj3d-barfold .nj3d-stage canvas.nj3d-mini { margin-top: 40px; }
 #nj3d .nj3d-visitbar button { border: none; border-radius: 999px; padding: 6px 11px; font-weight: bold; font-size: 0.82rem; cursor: pointer; background: #d4a73a; color: #1a1408; }

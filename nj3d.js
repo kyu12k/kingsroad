@@ -4622,7 +4622,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 if (_ibb.isEmpty() || _ibb.max.y - _ibb.min.y < 0.03) { why.push(it.k + ':flat'); return; }
                 const sx = (_ibb.max.x - _ibb.min.x) * 0.12, sz = (_ibb.max.z - _ibb.min.z) * 0.12;   // 둥근 모양 — 상자 가장자리는 조금 안으로
                 const b = { x0: _ibb.min.x + sx, x1: _ibb.max.x - sx, z0: _ibb.min.z + sz, z1: _ibb.max.z - sz, y0: _ibb.min.y, y1: _ibb.max.y, item: true };
-                if (P.x > b.x0 - CR && P.x < b.x1 + CR && P.z > b.z0 - CR && P.z < b.z1 + CR && P.y < b.y1 - STEP && P.y + CH > b.y0) { why.push(it.k + ':inside'); return; }   // 지금 그 안에 있으면 가두지 않게
+                if (P.x > b.x0 && P.x < b.x1 && P.z > b.z0 && P.z < b.z1 && P.y < b.y1 - STEP && P.y + CH > b.y0) { why.push(it.k + ':inside'); return; }   // 지금 그 안에 있으면 가두지 않게 — 몸 반경(CR)까지 넣었더니 옆에 붙어 선 순간 상자가 빠져 그대로 통과됐다(10/18 사용자: 종려나무는 통과가 된다). 진짜 안일 때만
                 BOXES.push(b); why.push(it.k + ':box');
             });
             return why;
@@ -4637,6 +4637,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             stars: () => stars.map(s => ({ id: s.id, x: s.x, y: s.g.position.y, z: s.z, done: s.done, vis: s.g.visible })),
             fragScreen: () => starRun ? starRun.frags.filter(f => !f.got).map(f => { const v = f.sp.position.clone().project(camera); return { i: f.i, sx: +((v.x + 1) / 2).toFixed(2), sy: +((1 - v.y) / 2).toFixed(2), z: +v.z.toFixed(3), sc: [+f.sp.scale.x.toFixed(2), +f.sp.scale.y.toFixed(2)], vis: f.sp.visible, inScene: !!f.sp.parent, dist: +f.sp.position.distanceTo(camera.position).toFixed(2) }; }) : null, cam: () => ({ p: camera.position.toArray().map(v => +v.toFixed(2)), near: camera.near, far: camera.far }), three: () => ({ scene, renderer, camera, controls }), jetTrial: ms => { if (jetTrialEnd) jetTrialEnd = Date.now() + ms; return { end: jetTrialEnd, land: jetTrialLand, on: jetOn }; }, dyn: () => ({ dynScale: +dynScale.toFixed(2), pr: +renderer.getPixelRatio().toFixed(2), ema: +dynEma.toFixed(3) }), tall: () => BOXES.filter(b => !b.item && b.y1 > 3.5).map(b => ({ x0: b.x0, x1: b.x1, z0: b.z0, z1: b.z1, y0: b.y0, y1: b.y1 })),
             floorCheck: (x, z) => { _flO.set(x, SEA_Y + 0.5, z); _flRay.set(_flO, _flDown); const hit = bedGrid ? _flRay.intersectObject(bedGrid.mesh, false) : []; return { grid: +gridFloor(x, z).toFixed(4), ray: hit.length ? +hit[0].point.y.toFixed(4) : null }; },
+            natRing: () => natRing,
             dex: () => ({ n: creatures.length, born: creatures.filter(c => c.born).length, shown: creatures.filter(c => c.born && c.g.visible).length, marks: creatures.filter(c => c.mark && c.mark.visible).length }),
             run: () => starRun ? { next: starRun.next, n: starRun.seg.length, seg: starRun.seg, frags: starRun.frags.map(f => ({ i: f.i, w: starRun.seg[f.i], x: f.x, y: f.sp.position.y, z: f.z, got: f.got })) } : null };
         } catch (e) { }
