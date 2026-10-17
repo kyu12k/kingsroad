@@ -7945,3 +7945,6 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 .ln-sub { font-size: .78rem; color: #8a7a60; margin: 2px 0 6px; line-height: 1.5; }
 .njv-card .txt.my { font-family: 'Noto Serif KR', serif; margin: 6px 0 12px; }
 .nj3d-loadbox { text-align: center; padding: 0 24px; }
+/* 📈 백지 레벨 오름 보너스(10/18) — 결과 화면 승점 아래 한 줄 */
+.hs-bonus { text-wrap: balance; margin-top: 6px; font-size: 0.8rem; font-weight: 700; color: #1e8449; line-height: 1.4; }
+.hs-bonus.none { color: #95a5a6; font-weight: 600; }
