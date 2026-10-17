@@ -6355,6 +6355,13 @@ body > #guide-screen-overlay .guide-body > .guide-btn.ghost { width: 100%; margi
 .njr-done { font-size: 0.8rem; font-weight: 800; color: #1e8449; }
 .njr-wait { font-size: 0.74rem; color: #95a5a6; display: inline-block; max-width: 150px; }
 .njr-rule { font-size: 0.72rem; color: #7f8c8d; line-height: 1.45; }
+/* 🐚 홈 카드 — 어제 외운 세 구절, 기억하세요?(10/17) */
+.rcard { margin: 0 0 12px; padding: 12px 14px; border-radius: 14px; background: linear-gradient(135deg, #e9f4fb, #f3ecfb); border: 1px solid #c9dcef; display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.rcard-q { font-size: 0.98rem; font-weight: 800; color: #2c3e50; }
+.rcard-ref { font-size: 0.82rem; color: #5d6d7e; }
+.rcard-btns { display: flex; gap: 8px; align-items: center; margin-top: 2px; }
+.rcard-go { flex: 1; border: none; border-radius: 11px; padding: 10px 12px; background: #2e86c1; box-shadow: 0 3px 0 #21618c; color: #fff; font-weight: 800; font-size: 0.9rem; cursor: pointer; }
+.rcard-later { border: none; background: none; color: #7f8c8d; font-size: 0.84rem; padding: 8px 6px; cursor: pointer; }
 #daily-cam { position: fixed; inset: 0; z-index: 9990; background: #000; display: flex; flex-direction: column; }
 /* 위 칸: 영상(비율 유지, 안 잘림) / 아래 칸: 버튼 판 — 버튼이 영상을 가리지 않는다 */
 .cam-stage { position: relative; flex: 1 1 auto; min-height: 0; padding-top: env(safe-area-inset-top, 0px); }
