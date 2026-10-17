@@ -572,7 +572,7 @@ const LANG = {
         sea_full: '바다가 모두 되살아났어요',
         sea_guilds_title: '함께 맑힌 길드들 · {n}단계 {name}',
         sea_guilds_none: '아직 없어요 — 첫 길드가 되어 보세요',
-        sea_water_rule: '내 바다예요. 칸마다 💎로 맑혀요 — 물가 300 · 얕은 바다 600 · 깊은 바다 1,000. 여기서 버튼으로 뭍에 가까운 칸부터 맑히거나, 3D 바다에 내려가 물가는 뭍에 서서 바라보는 칸을, 그 밖은 ⛵ 배를 타고 나가 배 아래 칸을 맑혀요. 한 구역을 다 맑히면 나라들이 한 단계 더 자라요. 맑힌 칸은 다시 흐려지지 않아요. 가장자리 흰 칸은 끝내 소금 땅이에요 (47:11).', sea_go_pour: '🌊 3D 바다로 — 걸어서 · 배로 맑히기', sea2d_title: '여기서 맑히기 — 뭍에 가까운 흐린 칸부터', sea2d_one: '1칸 · 💎{c}', sea2d_ten: '{n}칸 · 💎{c}', sea2d_max: '되는 만큼', sea2d_max_ok: '한 번 더 누르면 {n}칸 · 💎{c}', sea2d_done: '🌊 {n}칸을 맑혔어요 · 💎{c}', sea2d_need: '💎 {n}이 모자라요', sea_refund: '🌊 바다가 「내 바다」로 바뀌었어요 — 모두의 바다에 드린 💎{n}를 돌려드렸어요', sea_zone_how0: '뭍에 서서 바라보는 칸 · 한 칸 💎{n}', sea_zone_how1: '⛵ 배를 타고 배 아래 칸 · 한 칸 💎{n}', sea_zone_how2: '⛵ 배를 타고 먼 바다로 · 한 칸 💎{n}', sea_next_cell: '다음 칸까지 💎 {pool} / {cost}', sea_need_boat: '⛵ 물가를 다 맑혔어요. 이제 뭍에서 떨어진 {zone}예요 — 3D에서 배를 타고 그 물 위로 나가서 내요', sea_go_boat: '⛵ 3D 바다로 — 배를 타고 나가기',
+        sea_water_rule: '내 바다예요. 칸마다 💎로 맑혀요 — 물가 300 · 얕은 바다 600 · 깊은 바다 1,000. 여기서 버튼으로 뭍에 가까운 칸부터 맑히거나, 3D 바다에 내려가 물가는 뭍에 서서 바라보는 칸을, 그 밖은 ⛵ 배를 타고 나가 배 아래 칸을 맑혀요. 한 구역을 다 맑히면 나라들이 한 단계 더 자라요. 맑힌 칸은 다시 흐려지지 않아요. 가장자리 흰 칸은 끝내 소금 땅이에요 (47:11).', sea_go_pour: '🌊 3D 바다로 — 걸어서 · 배로 맑히기', sea2d_title: '여기서 맑히기 — 뭍에 가까운 흐린 칸부터', sea2d_one: '1칸 · 💎{c}', sea2d_ten: '{n}칸 · 💎{c}', sea2d_max: '되는 만큼', sea2d_max_ok: '한 번 더 누르면 {n}칸 · 💎{c}', sea2d_done: '🌊 {n}칸을 맑혔어요 · 💎{c}', sea2d_need: '💎 {n}이 모자라요', njr_title: '🏛️ 오늘의 암송을 더 오래 — 백지로 다시', njr_manna: '🍞 만나', njr_quail: '🐦 메추라기', njr_clam: '🐚 진주조개', njr_manna_sub: '오늘 세 절 · 마친 뒤 바로', njr_quail_sub: '오늘 세 절 · 저녁 6시부터', njr_clam_sub: '어제 세 절 ({ref})', njr_go: '✍️ 백지로 ({n}절)', njr_done: '✓ 다 했어요', njr_wait_daily: '오늘의 암송을 백지로 마치면 내려요', njr_wait_manna: '만나를 거두면 저녁에 와요', njr_wait_eve: '저녁 6시부터 ({h}시간 남음)', njr_none_clam: '어제 오늘의 암송 기록이 없어요', njr_rule: '한 번에 써야 받아요 — 단서 없이 💎 그대로 · 단서를 쓰면 반 · 못 쓰면 오늘은 끝. 승점도 있어요. 성에 가면 같은 기록이 보여요', njr_lbl_manna: '🍞 만나 거두기', njr_lbl_quail: '🐦 메추라기 잡기', njr_lbl_clam: '🐚 진주조개 열기', njr_got_manna: '🍞 만나를 거두었어요', njr_got_quail: '🐦 메추라기를 잡았어요', njr_got_clam: '🐚 {name}를 얻었어요', njr_half: ' (단서 — 반)', njr_miss_manna: '🍞 만나가 해에 스러졌어요 — 내일 다시', njr_miss_quail: '🐦 메추라기가 날아갔어요 — 내일 다시', njr_miss_clam: '🐚 조개가 닫혔어요 — 내일 다시', njr_back3d: '🏛️ 성으로 돌아가기', nj3d_njr_manna: '🍞 만나 — 오늘 세 절을 백지로 써서 거둬요', nj3d_njr_quail: '🐦 메추라기 — 오늘 세 절을 백지로 써서 잡아요', nj3d_njr_clam: '🐚 진주조개 — 어제 세 절을 백지로 써서 열어요', nj3d_njr_btn: '✍️ 백지로 쓰기 ({n}절)', sea_refund: '🌊 바다가 「내 바다」로 바뀌었어요 — 모두의 바다에 드린 💎{n}를 돌려드렸어요', sea_zone_how0: '뭍에 서서 바라보는 칸 · 한 칸 💎{n}', sea_zone_how1: '⛵ 배를 타고 배 아래 칸 · 한 칸 💎{n}', sea_zone_how2: '⛵ 배를 타고 먼 바다로 · 한 칸 💎{n}', sea_next_cell: '다음 칸까지 💎 {pool} / {cost}', sea_need_boat: '⛵ 물가를 다 맑혔어요. 이제 뭍에서 떨어진 {zone}예요 — 3D에서 배를 타고 그 물 위로 나가서 내요', sea_go_boat: '⛵ 3D 바다로 — 배를 타고 나가기',
         sea_last_pollution: '지난 월요일엔 {n}칸이 흐려졌어요.',
         sea_my_gems: '내 바다를 맑힌 보석 💎 {n}',
         sea_land_title: '🍃 만국을 소성',
@@ -1905,7 +1905,7 @@ const LANG = {
         sea_full: 'The whole sea lives again',
         sea_guilds_title: 'Guilds who cleared it together · Stage {n} {name}',
         sea_guilds_none: 'None yet — be the first guild',
-        sea_water_rule: 'This is your own sea. Clear it cell by cell with 💎 — shore 300 · shallows 600 · deep sea 1,000. Use the buttons here to clear from the land outward, or go down to the sea in 3D — face a shore cell from the land, or sail out ⛵ and clear the cell under your boat. Clear a whole zone and the nations can grow one step more. Cleared cells never cloud again. The white cells stay salt (47:11).', sea_go_pour: '🌊 To the sea in 3D — clear on foot or by boat', sea2d_title: 'Clear from here — cloudy cells nearest the land first', sea2d_one: '1 cell · 💎{c}', sea2d_ten: '{n} cells · 💎{c}', sea2d_max: 'As many as I can', sea2d_max_ok: 'Tap again: {n} cells for 💎{c}', sea2d_done: '🌊 Cleared {n} cells · 💎{c}', sea2d_need: '{n} more 💎 needed', sea_refund: '🌊 The sea is now your own — the 💎{n} you gave to the shared sea has been returned', sea_zone_how0: 'Stand on the land and face the cell · 💎{n} each', sea_zone_how1: 'By ⛵ boat, the cell under you · 💎{n} each', sea_zone_how2: 'By ⛵ boat, out in the deep · 💎{n} each', sea_next_cell: 'Next cell 💎 {pool} / {cost}', sea_need_boat: '⛵ The shore is clear. Next are the {zone}, away from land — sail out by boat in 3D and give over that water', sea_go_boat: '⛵ To the sea in 3D — sail out',
+        sea_water_rule: 'This is your own sea. Clear it cell by cell with 💎 — shore 300 · shallows 600 · deep sea 1,000. Use the buttons here to clear from the land outward, or go down to the sea in 3D — face a shore cell from the land, or sail out ⛵ and clear the cell under your boat. Clear a whole zone and the nations can grow one step more. Cleared cells never cloud again. The white cells stay salt (47:11).', sea_go_pour: '🌊 To the sea in 3D — clear on foot or by boat', sea2d_title: 'Clear from here — cloudy cells nearest the land first', sea2d_one: '1 cell · 💎{c}', sea2d_ten: '{n} cells · 💎{c}', sea2d_max: 'As many as I can', sea2d_max_ok: 'Tap again: {n} cells for 💎{c}', sea2d_done: '🌊 Cleared {n} cells · 💎{c}', sea2d_need: '{n} more 💎 needed', njr_title: '🏛️ Keep today\'s verses longer — write them again', njr_manna: '🍞 Manna', njr_quail: '🐦 Quail', njr_clam: '🐚 Pearl clams', njr_manna_sub: 'Today\'s verses · right after', njr_quail_sub: 'Today\'s verses · from 6 PM', njr_clam_sub: 'Yesterday\'s verses ({ref})', njr_go: '✍️ Write ({n})', njr_done: '✓ Done', njr_wait_daily: 'Falls when you finish today\'s verses from memory', njr_wait_manna: 'Gather the manna — quail come in the evening', njr_wait_eve: 'From 6 PM ({h}h left)', njr_none_clam: 'No daily verses yesterday', njr_rule: 'One try each — no clues: full 💎 · clues: half · missed: done for today. Score too. The city shows the same record', njr_lbl_manna: '🍞 Gather manna', njr_lbl_quail: '🐦 Catch quail', njr_lbl_clam: '🐚 Open pearl clams', njr_got_manna: '🍞 Manna gathered', njr_got_quail: '🐦 Quail caught', njr_got_clam: '🐚 You found a {name}', njr_half: ' (clues — half)', njr_miss_manna: '🍞 The manna melted in the sun — tomorrow again', njr_miss_quail: '🐦 The quail flew away — tomorrow again', njr_miss_clam: '🐚 The clam shut — tomorrow again', njr_back3d: '🏛️ Back to the city', nj3d_njr_manna: '🍞 Manna — write today\'s verses from memory to gather', nj3d_njr_quail: '🐦 Quail — write today\'s verses from memory to catch', nj3d_njr_clam: '🐚 Pearl clams — write yesterday\'s verses from memory to open', nj3d_njr_btn: '✍️ Write from memory ({n})', sea_refund: '🌊 The sea is now your own — the 💎{n} you gave to the shared sea has been returned', sea_zone_how0: 'Stand on the land and face the cell · 💎{n} each', sea_zone_how1: 'By ⛵ boat, the cell under you · 💎{n} each', sea_zone_how2: 'By ⛵ boat, out in the deep · 💎{n} each', sea_next_cell: 'Next cell 💎 {pool} / {cost}', sea_need_boat: '⛵ The shore is clear. Next are the {zone}, away from land — sail out by boat in 3D and give over that water', sea_go_boat: '⛵ To the sea in 3D — sail out',
         sea_last_pollution: 'Last Monday {n} cells clouded.',
         sea_my_gems: 'Gems used to clear my sea 💎 {n}',
         sea_land_title: '🍃 Heal the nations',
@@ -8803,22 +8803,19 @@ function _njClamDay() {
 function _njClamLeft() { const c = _njClamDay(); return Math.max(0, (c.ids || []).length - (c.done || []).length); }
 function _njClamKnown() { return Object.keys(stageClearDate || {}).some(id => /^\d+-\d+$/.test(id)); }
 function _njClamRef(idx) { const id = (_njClamDay().ids || [])[idx]; if (!id) return ''; const [c, v] = id.split('-'); return currentLang === 'en' ? `Rev ${c}:${v}` : `계 ${c}:${v}`; }
-function _njClamQuestion(idx) {   // 그 조개의 절 — 빈칸 4지(짧은 절은 첫 마디 4지)
-    const id = (_njClamDay().ids || [])[idx]; if (!id) return null;
-    return _njFishQuestion([id], 'blank') || _njFishQuestion([id], '');
-}
 function _njClamNeedDays(today) {   // 이번 주 월~토 중 진도일(쉬는 날 뺌)
     const [y, m, d] = today.split('-').map(Number), wd = new Date(y, m - 1, d).getDay(), mon = _shift6AMDayStr(today, -((wd + 6) % 7)), out = [];
     for (let i = 0; i < 6; i++) { const ds = _shift6AMDayStr(mon, i); if (!(typeof _djIsRest === 'function' && _djIsRest(ds))) out.push(ds); }
     return out;
 }
-function _njClamResult(idx, ok) {
+function _njClamResult(idx, ok, k) {
+    k = k === 'w' ? 'w' : 'c';   // 🐚 10/17 백지로 — 단서 없이 빛깔 · 단서를 썼으면 흰 진주
     const c = _njClamDay(); if ((c.done || []).includes(idx)) return null;
     c.done.push(idx);
     if (!ok) { saveGameData(); return null; }   // 오늘은 닫힌다 — 다른 절로 바꾸지 않는다
     c.got.push(idx);
-    njPearlFound.c = (njPearlFound.c | 0) + 1;
-    const res = { k: 'c', gem: NJ_PEARLS.c.gem, name: t('pearl_c') };
+    njPearlFound[k] = (njPearlFound[k] | 0) + 1;
+    const res = { k, gem: NJ_PEARLS[k].gem, name: t('pearl_' + k) };
     if (c.got.length >= (c.ids || []).length && c.ids.length) {   // 오늘 셋을 다 열었다
         const wk = getWeekId();
         if (!njClamWeek || njClamWeek.wk !== wk) njClamWeek = { wk, days: [], g: false };
@@ -8869,15 +8866,6 @@ function _njMannaToday() {   // { ids: 오늘 구절, ready: 오늘의 암송을
     if (!dev || dev.rest) return { ids: [], ready: false, sat: false };
     return { ids: _eventVerseIds(dev), ready: _dailyDoneToday(), sat: _njIsSixthDay() };
 }
-function _njMannaGather(i) {
-    const M = _njMannaDay(), T = _njMannaToday();
-    if (!T.ready || i < 0 || i >= T.ids.length || M.got.includes(i) || (M.melt || []).includes(i)) return 0;
-    M.got.push(i);
-    const gem = NJ_MANNA_GEM * (T.sat ? 2 : 1);
-    addGems(gem); njMannaGems = (njMannaGems | 0) + gem;
-    saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
-    return gem;
-}
 /* ⭐ 일곱 별 (2026-10-14 사용자, docs/새-예루살렘.md) — 오늘 암송한 절이 하늘 높이 별이 된다(일곱까지 · 백지가 아니어도 — 스테이지·빈칸·고난 무엇이든).
    별에 닿으면 그 절 한 토막이 말씀 조각으로 흩어지고, 60초 안에(처음 25초 — 10/14 사용자: 너무 어렵다) 순서대로 모으면 별을 얻는다(오딧세이 음표처럼). 별마다 💎500, 일곱 다 💎5,000.
    제트팩·날개·나는 탈것으로 닿는 높이(사용자: 너무 낮으면 하늘을 나는 맛이 없다). 별 자리·토막은 날짜로 정해져 하루 동안 같다 */
@@ -8904,24 +8892,80 @@ function _njStarGot(id) {
     return { gem: NJ_STAR_GEM, all, n: S.got.length, total: S.ids.length };
 }
 function _njQuailTime() { const h = new Date().getHours(); return h >= 18 || h < 6; }   // 저녁 6시 ~ 다음 날 아침 6시(하루 경계까지)
-function _njQuailQuestion(i, mode) { const id = _njMannaToday().ids[i]; return id ? _njFishQuestion([id], mode) : null; }
-/* 🍞 만나도 말씀으로 거둔다(10/5 사용자) — 밟으면 그 절의 첫 마디, 두 번 틀리면 해가 뜨거워 스러진다(출 16:21) */
-function _njMannaQuestion(i, mode) { const id = _njMannaToday().ids[i]; return id ? _njFishQuestion([id], mode) : null; }
-function _njMannaFail(i) {
-    const M = _njMannaDay(); if (!M.mfail) M.mfail = {}; if (!Array.isArray(M.melt)) M.melt = [];
-    M.mfail[i] = (M.mfail[i] | 0) + 1; if (M.mfail[i] >= 2 && !M.melt.includes(i)) M.melt.push(i);
-    saveGameData(); return M.melt.includes(i);
+/* ══ 🍞🐦🐚 백지로 거두기 (2026-10-17 사용자) — 만나·메추라기·진주조개는 4지선다였다 → 백지로.
+   「눈에 한두 번 바르는 의미는 있어도 제대로 외워지진 않는다」. 오늘의 암송 절을 다음에 다시 백지로 썼을 때 단서 없이 57%(10/3~16, 155번) — 하루 뒤가 가장 흔들린다.
+   여는 조건은 그대로(사용자: 모든 사람이 아니라 암송에 신경 쓰는 사람이 하게): 만나 = 오늘의 암송을 백지로 마친 뒤 · 메추라기 = 거둔 만나마다 저녁 6시부터 · 조개 = 어제(지난번) 세 절, 아침 6시부터.
+   남은 절을 한 판에 이어서(3D를 들락날락하지 않게). 한 번에 써야 받는다 — 단서 없이 💎 그대로 · 단서를 쓰면 반(조개는 흰 진주) · 못 쓰면 그날은 끝.
+   홈 오늘의 암송 창에서도, 3D에서도 같은 판·같은 기록. 망각의 고난이 아니다(10/14 대결 복습 사고 — 끼워 넣은 판 목록 전부에 njRound).
+   승점: 만나 0.25(방금 쓴 절을 다시) · 메추라기·조개 0.5(오늘의 암송과 같은 크기), 셋이 각자 같은 절 하루 한 번 */
+const NJ_ROUND_SCALE = { manna: 0.25, quail: 0.5, clam: 0.5 };
+function _njRoundLeft(kind) {   // [{ i, id }] — 아직 안 한 절
+    if (kind === 'clam') {
+        if (!_njClamKnown()) return [];
+        const c = _njClamDay();
+        return (c.ids || []).map((id, i) => ({ i, id })).filter(x => !(c.done || []).includes(x.i));
+    }
+    const T = _njMannaToday(); if (!T.ready) return [];
+    const M = _njMannaDay();
+    if (kind === 'manna') return T.ids.map((id, i) => ({ i, id })).filter(x => !M.got.includes(x.i) && !(M.melt || []).includes(x.i));
+    if (!_njQuailTime()) return [];
+    return M.got.filter(i => !M.quail.includes(i) && T.ids[i]).map(i => ({ i, id: T.ids[i] }));
 }
-function _njQuailResult(i, ok) {
-    const M = _njMannaDay(), T = _njMannaToday();
-    if (!M.got.includes(i) || M.quail.includes(i)) return 0;
-    if (!ok) { M.qfail[i] = (M.qfail[i] | 0) + 1; if (M.qfail[i] >= 2) M.quail.push(i); saveGameData(); return 0; }
-    M.quail.push(i);
-    const gem = NJ_QUAIL_GEM * (T.sat ? 2 : 1);
-    addGems(gem); njMannaGems = (njMannaGems | 0) + gem;
+function njRoundStart(kind, from) {
+    const left = _njRoundLeft(kind); if (!left.length) return;
+    if (from === '3d') { if (!(window.suspendNJ3D && window.suspendNJ3D())) return; }
+    else {
+        const m = document.getElementById('event-modal'); if (m) m.remove();
+        const dev = _dailyEvent(); window._returnToEvent = dev ? dev.id : null;   // 끝나면 오늘의 암송 창으로
+    }
+    window.currentStageId = left[0].id;
+    window.hardshipOrigin = from === '3d' ? 'map' : 'home';
+    selectedHardshipOrderType = 'sequential';
+    selectedHardshipUltimate = true;   // 백지만
+    _pendingHardshipEmbed = { label: t('njr_lbl_' + kind), njRound: kind, njFrom: from === '3d' ? '3d' : 'home' };
+    startHardshipSession('memory', left.map(x => x.id));
+}
+/* recordVerseRecall에서 — 그 판의 절이면 거두기·잡기·열기. full = 단서 없이 · half = 단서가 있지만 통과(_hintOk) */
+function _njRoundResult(kind, id, ok, hints, hintOk, strong) {
+    const x = _njRoundLeft(kind).find(y => y.id === String(id)); if (!x) return;
+    const full = ok && !(hints > 0) && !strong, half = ok && !full && hintOk, got = full || half;
+    const T = _njMannaToday(), M = _njMannaDay(), mul = T.sat ? 2 : 1;
+    let gem = 0, msg = '';
+    if (kind === 'clam') {
+        const res = _njClamResult(x.i, got, full ? 'c' : 'w');
+        if (res) { msg = t('njr_got_clam', { name: res.name }); if (res.gold) setTimeout(() => showGemToast(0, t('nj3d_clam_gold', { gem: res.gold.gem.toLocaleString() }), true), 2600); }
+        else msg = t('njr_miss_clam');
+    } else if (kind === 'manna') {
+        if (got) { M.got.push(x.i); gem = Math.round(NJ_MANNA_GEM * mul * (full ? 1 : 0.5)); msg = t('njr_got_manna') + (full ? '' : t('njr_half')); }
+        else { if (!Array.isArray(M.melt)) M.melt = []; M.melt.push(x.i); msg = t('njr_miss_manna'); }
+    } else {
+        M.quail.push(x.i);   // 잡았든 날아갔든 오늘은 끝
+        if (got) { gem = Math.round(NJ_QUAIL_GEM * mul * (full ? 1 : 0.5)); msg = t('njr_got_quail') + (full ? '' : t('njr_half')); }
+        else { if (!M.qfail) M.qfail = {}; M.qfail[x.i] = 2; msg = t('njr_miss_quail'); }
+    }
+    if (gem) { addGems(gem); njMannaGems = (njMannaGems | 0) + gem; }
     saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
-    return gem;
+    setTimeout(() => { if (gem) showGemToast(gem, msg); else showToast(msg); }, 1200);
 }
+function _njRoundsHtml() {
+    const ev = _dailyEvent(), lang = currentLang === 'en' ? 'en' : 'ko';
+    const T = _njMannaToday(), M = _njMannaDay(), C = _njClamKnown() ? _njClamDay() : null;
+    const row = (kind, sub, state) => `<div class="njr-row"><div class="njr-name"><b>${t('njr_' + kind)}</b><span>${sub}</span></div><div class="njr-act">${state}</div></div>`;
+    const btn = (kind, n) => `<button class="njr-go" onclick="njRoundStart('${kind}', 'home')">${t('njr_go', { n })}</button>`;
+    const st = (kind, total, waiting) => { const n = _njRoundLeft(kind).length; return n ? btn(kind, n) : total ? `<span class="njr-done">${t('njr_done')}</span>` : `<span class="njr-wait">${waiting}</span>`; };
+    const rows = [];
+    // 🐚 조개 — 어제 세 절(쉬는 날에도)
+    const cids = C ? C.ids || [] : [];
+    rows.push(row('clam', cids.length ? t('njr_clam_sub', { ref: _dailyLabel(cids).replace(/^계 /, lang === 'en' ? 'Rev ' : '계 ') }) : t('njr_none_clam'), cids.length ? st('clam', cids.length, '') : ''));
+    if (ev && !ev.rest) {
+        rows.push(row('manna', t('njr_manna_sub'), st('manna', T.ready ? (M.got.length + (M.melt || []).length) : 0, t('njr_wait_daily'))));
+        let qWait = !T.ready ? t('njr_wait_daily') : !M.got.length ? t('njr_wait_manna') : '';
+        if (!qWait && !_njQuailTime()) { const h = new Date().getHours(); qWait = t('njr_wait_eve', { h: Math.max(1, 18 - h) }); }
+        rows.push(row('quail', t('njr_quail_sub'), st('quail', M.quail.length, qWait)));
+    }
+    return `<div class="njr"><div class="njr-head">${t('njr_title')}</div>${rows.join('')}<div class="njr-rule">${t('njr_rule')}</div></div>`;
+}
+
 /* ══ 🐠 바다 생물 도감 (2026-10-05 사용자) — 겔 47:10 「고기가 각기 종류대로」 · 암송과 엮는다 ══
    **생물 하나 = 구절 하나.** 404절마다 정해진 생물(누구에게나 같다): 절 순서 v(0~403) → 종 = v % 12 · 꾸밈 = ⌊v/84⌋(맨몸 1:1~5:2 · 모자 ~10:4 · 안경 ~15:3 · 리본 ~19:16 · 면류관 19:17~22:21)
    · 빛깔(요일) = (⌊(v%84)/12⌋ + 종) % 7 — 연속된 절이 일곱 요일로 흩어진다. 조합 420칸 중 404칸(면류관 16칸은 비어 있다).
@@ -20384,6 +20428,7 @@ function openDailyScreen() {
             <div class="event-reward${done ? ' done' : ''}">${done ? t('daily_status_done', { n: ids.length }) : t('daily_status_todo', { n: ids.length })}</div>
             ${_camEnabled() ? `<button class="daily-cam-btn" onclick="openDailyRecorder()">${t('daily_cam_btn')}</button>` : ''}`;
     }
+    try { body += _njRoundsHtml(); } catch (e) { }   // 🍞🐦🐚 백지로 다시(10/17)
     const overlay = document.createElement('div');
     overlay.id = 'event-modal';
     overlay.className = 'modal-overlay';
@@ -28859,6 +28904,8 @@ function createEmptyHardshipState() {
         blankDueCh: null,        // 「오늘 백지 차례」로 열린 세션이면 그 장 (그 장의 차례인 절만, 백지)
         giftId: null,            // 🎁 나눔 열매 먹기 세션이면 그 열매 id
         battleRev: null,         // ⚔️ 말씀 대결에서 틀린 절 「✍️ 백지로」(10/14) — 그 절 id. 망각의 고난이 아니다
+        njRound: null,           // 🍞🐦🐚 만나·메추라기·진주조개 백지 판(10/17) — 'manna'|'quail'|'clam'. 망각의 고난이 아니다
+        njFrom: '',              // 그 판을 연 곳 — 'home'(오늘의 암송 창) · '3d'
         startLv: 0,              // 🔑 첫 마디의 고난이면 1·2·3(쉬움·보통·어려움) — 쳐야 할 글이 첫 마디로 잘린다
         startLvMap: null,        // 오답노트 — 절마다 막혔던 난이도
         fpNote: false,
@@ -30415,7 +30462,8 @@ function _isResumableHardshipSession() {
         && !hardshipState.startLv
         && !hardshipState.levelTest   // 🎓 시험은 한 번에 — 이어하면 그 사이에 원문을 볼 수 있다
         && !hardshipState.giftId
-        && !hardshipState.battleRev);
+        && !hardshipState.battleRev
+        && !hardshipState.njRound);
 }
 
 /* ★ 체크포인트를 **여러 건** 보관한다 (보스전은 한 건뿐이다).
@@ -30545,6 +30593,7 @@ function startHardshipSession(mode, selectedVerseIds, forcedChapter) {
         hardshipState.fpSeq = !!embed.fpSeq;   // 🪔 첫 마디 · 순서대로
         hardshipState.giftId = embed.giftId || null;
         hardshipState.battleRev = embed.battleRev || null;
+        hardshipState.njRound = embed.njRound || null; hardshipState.njFrom = embed.njFrom || '';
         hardshipState.blankFirst = !!embed.blankFirst;
         hardshipState.startLvMap = embed.startLvMap || null;
         hardshipState.fpNote = !!embed.fpNote;
@@ -31930,7 +31979,8 @@ function _isEmbeddedBlankSession() {
                                 hardshipState.startLv ||
                                 hardshipState.levelTest ||
                                 hardshipState.giftId ||
-                                hardshipState.battleRev));
+                                hardshipState.battleRev ||
+                                hardshipState.njRound));
 }
 
 /* 「모르겠어요」 — 이번 판만 포기하고 정답을 확인한다.
@@ -32460,6 +32510,7 @@ function _hardshipRecallCtx() {
     if (hardshipState.eventId) return 'event';
     if (hardshipState.giftId) return 'gift';   // 🎁 나눔 열매 먹기 — 24시간 간격의 백지
     if (hardshipState.battleRev) return 'battle';   // ⚔️ 말씀 대결에서 틀린 절
+    if (hardshipState.njRound) return 'nj_' + hardshipState.njRound;   // 🍞🐦🐚 오늘의 암송 다시 — 만나(곧바로)·메추라기(저녁)·조개(하루 뒤)
     if (hardshipState.startLv) return hardshipState.fpNote ? 'fpnote' : 'start';   // 🔑 첫 마디의 고난 · 오답노트
     if (hardshipState.blankDueCh) return 'due';   // 「오늘 백지 차례」 — 백지레벨 차례가 온 절만
     return 'hs';
@@ -32603,6 +32654,7 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
         // 백지레벨이 오르거나 처음 들어가면 전용 소리 — 정답음이 먼저 울리니 조금 뒤에
         if (ok && _blankMode) _njNoteBlankDay();   // 새 예루살렘 진주 — 백지로 한 절이라도 통과한 날
         if (hardshipState && hardshipState.fruitKey) _njFruitResult(hardshipState.fruitKey, stageId, !!ok && _blankMode, now);   // 열매 먹기
+        if (hardshipState && hardshipState.njRound && _blankMode) _njRoundResult(hardshipState.njRound, stageId, !!ok, hints || 0, _hintOk, _strong);   // 🍞🐦🐚 거두기·잡기·열기
         if (ok && _blankMode && !(hardshipState && hardshipState.fruitKey)) _njGrowFruit(String(stageId), now);   // 생명나무 — 이번 달 열매 (먹는 판은 열지 않는다 — 먹은 뒤 다시 백지로 써야 다음 열매, 10/16)
         if (ok && _blankMode && _hintOk) _giftOnBlank(String(stageId), now);   // 🎁 나눔 열매 — 익히기·먹기
         if (_res && (_res.kind === 'up' || _res.kind === 'enter') && typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) {
@@ -32742,6 +32794,7 @@ function getHardshipScoreScale() {
     if (hardshipState.fruitKey) return 0;   // 열매의 보상은 잎사귀 (백지레벨 보너스는 평소대로)
     if (hardshipState.giftId) return 0;     // 🎁 나눔 열매의 보상은 💎(보낸 것의 반)·잎사귀
     if (hardshipState.battleRev) return 0;  // ⚔️ 대결 복습 — 백지 기록만(10/14 사용자: 망각의 고난이 클리어된 것처럼 되었다)
+    if (hardshipState.njRound) return NJ_ROUND_SCALE[hardshipState.njRound] || 0.25;   // 🍞🐦🐚 (10/17 사용자: 승점도 줘야 한다)
     if (hardshipState.verseCheckStageId) return 0.25;
     if (hardshipState.midBossStageId) return 0.5;
     if (hardshipState.eventId) return 0.5;   // 이벤트 문항 = 2절 묶음, 중간점검과 같은 크기
@@ -32780,6 +32833,7 @@ function _blankScoreKind() {
     if (hardshipState.verseCheckStageId) return 'vc'; // 결과 화면 '빈칸으로 확인해보기'
     if (hardshipState.eventId) return hardshipState.ultimateMemoryMode ? 'event:none' : 'event:blank'; // 이벤트 — 빈칸·백지 따로 하루 1회
     if (hardshipState.blankDueCh) return 'due';       // 오늘 백지 차례
+    if (hardshipState.njRound) return 'nj:' + hardshipState.njRound;   // 🍞🐦🐚 셋이 각자 같은 절 하루 한 번
     if (hardshipState.levelTest && hardshipState.ltPay) return 'lt';   // 🎓 승점 있는 장 전체 테스트 — 같은 절 하루 한 번(중간에 나갔다 다시 해도)
     return null; // 망각의 고난·빠른 모드 승급은 제한 없음 (승급은 배율 0이라 무관)
 }
@@ -33186,6 +33240,16 @@ function finishHardshipSession(reason) {
             back.onclick = () => { rm.classList.remove('active'); quitGame('map'); setTimeout(() => { if (typeof openNJ3DView === 'function') openNJ3DView(); }, 250); };
             if (resultContinueBtn) resultContinueBtn.insertAdjacentElement('afterend', back);
         }
+        // 🍞🐦🐚 성(3D)에서 왔으면 성으로 돌아가기 — 숨겨 둔 성이 그 자리에서 이어진다
+        if (rm && hardshipState.njRound && hardshipState.njFrom === '3d') {
+            const back = document.createElement('button');
+            back.id = 'btn-next-stage';
+            back.className = 'btn-continue';
+            back.style.cssText = 'margin-top:8px; background:linear-gradient(135deg,#27ae60,#2ecc71); box-shadow:0 4px 0 #1e8449; color:#fff;';
+            back.textContent = t('njr_back3d');
+            back.onclick = () => { rm.classList.remove('active'); quitGame('map'); setTimeout(() => { if (typeof openNJ3DView === 'function') openNJ3DView(); }, 250); };
+            if (resultContinueBtn) resultContinueBtn.insertAdjacentElement('afterend', back);
+        }
         // 오늘 백지 차례였다면 — 남은 차례가 있으면 창으로 돌아가기
         if (rm && hardshipState.blankDueCh) {
             const left = _blankDueToday(!!window._bdAll).length;   // 오늘 몫(「더 하기」를 눌렀으면 전부)
@@ -33395,7 +33459,7 @@ function finishHardshipSession(reason) {
         if (reason !== 'completed' || hardshipState.mode !== 'memory' ||
             hardshipState.trainingMode || hardshipState.midBossStageId ||
             hardshipState.bossStageId || hardshipState.verseCheckStageId ||
-            hardshipState.eventId || hardshipState.quickReviewStageId || hardshipState.fruitKey || hardshipState.blankDueCh || hardshipState.startLv || hardshipState.giftId || hardshipState.battleRev) return '';
+            hardshipState.eventId || hardshipState.quickReviewStageId || hardshipState.fruitKey || hardshipState.blankDueCh || hardshipState.startLv || hardshipState.giftId || hardshipState.battleRev || hardshipState.njRound) return '';
         const sessionDuration = getHardshipElapsedSeconds();
         const record = {
             correct: hardshipState.studiedCount,

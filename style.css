@@ -6343,6 +6343,18 @@ body > #guide-screen-overlay .guide-body > .guide-btn.ghost { width: 100%; margi
 /* 🎥 암송 촬영 */
 .daily-cam-btn { width: 100%; margin-top: 8px; padding: 11px; border-radius: 12px; border: 1px solid #8e44ad; background: #f5eefb; color: #6c3483; font-weight: 800; cursor: pointer; }
 .daily-cam-btn.locked { opacity: 0.5; }
+/* 🍞🐦🐚 오늘의 암송을 더 오래 — 백지로 다시(10/17) */
+.njr { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: #f4f8ec; border: 1px solid #d6e4bf; display: flex; flex-direction: column; gap: 7px; text-align: left; }
+.njr-head { font-size: 0.84rem; font-weight: 800; color: #4b6a2a; }
+.njr-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.njr-name { display: flex; flex-direction: column; min-width: 0; }
+.njr-name b { font-size: 0.9rem; color: #2c3e50; }
+.njr-name span { font-size: 0.74rem; color: #7f8c8d; }
+.njr-act { flex: none; text-align: right; }
+.njr-go { border: none; border-radius: 10px; padding: 7px 11px; background: #5d8a2f; box-shadow: 0 3px 0 #436a1f; color: #fff; font-weight: 800; font-size: 0.8rem; cursor: pointer; white-space: nowrap; }
+.njr-done { font-size: 0.8rem; font-weight: 800; color: #1e8449; }
+.njr-wait { font-size: 0.74rem; color: #95a5a6; display: inline-block; max-width: 150px; }
+.njr-rule { font-size: 0.72rem; color: #7f8c8d; line-height: 1.45; }
 #daily-cam { position: fixed; inset: 0; z-index: 9990; background: #000; display: flex; flex-direction: column; }
 /* 위 칸: 영상(비율 유지, 안 잘림) / 아래 칸: 버튼 판 — 버튼이 영상을 가리지 않는다 */
 .cam-stage { position: relative; flex: 1 1 auto; min-height: 0; padding-top: env(safe-area-inset-top, 0px); }

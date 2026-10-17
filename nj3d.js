@@ -124,7 +124,7 @@
         if (!cur || !cur.suspended) return false;
         const c = cur;
         clearTimeout(c.sleepT); c.suspended = false; c.ov.style.display = '';
-        try { if (c.refreshFruit) c.refreshFruit(); if (c.syncWallet) c.syncWallet(); } catch (e) { }
+        try { if (c.refreshFruit) c.refreshFruit(); if (c.refreshDaily) c.refreshDaily(); if (c.syncWallet) c.syncWallet(); } catch (e) { }
         if (c.resume) c.resume();
         return true;
     };
@@ -4362,27 +4362,22 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             clamHinted = true; showHint(T('nj3d_clam_today', { n }), 4500);
         }
         function closeClamQ() { if (clamQ) { clamQ = null; fishQ.hidden = true; fishQ.innerHTML = ''; } }
-        function askClam(c) {
-            const q = typeof _njClamQuestion === 'function' ? _njClamQuestion(c.i) : null;
-            if (!q) { showHint(T('nj3d_clam_need'), 3000); return; }
-            clamQ = { c, q, tries: 1 };
-            const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+        /* 🍞🐦🐚 백지로 거두기 (10/17 사용자) — 4지선다 대신 그 절들을 백지로 쓰는 판(game.js njRoundStart). 성은 숨겨 두고 끝나면 그 자리로 */
+        function roundAsk(kind) {
+            const n = typeof _njRoundLeft === 'function' ? _njRoundLeft(kind).length : 0;
+            if (!n) return false;
             fishQ.classList.remove('watch', 'now', 'reel');
-            fishQ.innerHTML = `<div class="nj3d-fishq-head">${T(clamQ.tries === 2 ? 'nj3d_clam_q' : 'nj3d_clam_again')}</div>
-                <div class="nj3d-fishq-ref">${esc(q.ref)}</div>
-                ${quizText(q, esc)}
-                <div class="nj3d-fishq-choices">${q.choices.map((ch, i) => `<button data-i="${i}">${esc(ch)}</button>`).join('')}</div>`;
+            fishQ.innerHTML = `<div class="nj3d-fishq-head">${T('nj3d_njr_' + kind)}</div><div class="nj3d-fishq-choices"><button class="nj3d-njr-go">${T('nj3d_njr_btn', { n })}</button></div>`;
             fishQ.hidden = false;
-            fishQ.querySelectorAll('button[data-i]').forEach(b => b.onclick = () => {
-                const ok = q.choices[+b.dataset.i] === q.answer;
-                if (ok) { closeClamQ(); openClam(c); return; }
-                if (typeof _njClamResult === 'function') _njClamResult(c.i, false);
-                closeClamQ(); c.done = true; c.glint.visible = false; clamAnims.push({ c, t: 0, kind: 'shut' }); showHint(T('nj3d_clam_shut'), 3600);
-            });
+            fishQ.querySelector('.nj3d-njr-go').onclick = () => { mannaQ = quailQ = clamQ = null; fishQ.hidden = true; fishQ.innerHTML = ''; if (typeof njRoundStart === 'function') njRoundStart(kind, '3d'); };
+            return true;
         }
-        function openClam(c) {
-            const res = typeof _njClamResult === 'function' ? _njClamResult(c.i, true) : null;
-            if (!res) return;
+        function askClam(c) {
+            if (!roundAsk('clam')) { showHint(T('nj3d_clam_need'), 3000); return; }
+            clamQ = { c };
+        }
+        function openClam(c, res) {   // 판이 끝나 돌아왔을 때 — 연 조개는 진주가 떠오르고, 닫힌 조개는 흔들리고
+            if (!res) { c.done = true; c.glint.visible = false; clamAnims.push({ c, t: 0, kind: 'shut' }); return; }
             c.done = true; c.glint.visible = false;
             const pearl = new THREE.Mesh(new THREE.SphereGeometry(0.022, 14, 10), new THREE.MeshStandardMaterial({ color: new THREE.Color(PEARL_C[res.k]).convertSRGBToLinear(), roughness: 0.12, metalness: 0.35,
                 emissive: res.k === 'g' ? 0x8a6200 : 0x222222, emissiveIntensity: res.k === 'g' ? 0.9 : 0.25 }));
@@ -4390,9 +4385,6 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             clamAnims.push({ c, t: 0, kind: 'open', pearl, rare: res.k === 'g' });
             sprayBurst(c.x, c.y + 0.05, c.z, 12, 0);
             if (typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) { SoundEffect.playBlankLevelUp(); if (res.k === 'g') setTimeout(() => SoundEffect.playBlankLevelUp(), 380); }
-            showHint(T('nj3d_clam_got', { name: res.name, gem: res.gem.toLocaleString() }), 4200);
-            if (res.gold) setTimeout(() => { showHint(T('nj3d_clam_gold', { gem: res.gold.gem.toLocaleString() }), 6000); if (typeof SoundEffect !== 'undefined' && SoundEffect.playLevelUp) SoundEffect.playLevelUp(); sprayBurst(c.x, c.y + 0.1, c.z, 30, 0); }, 4300);
-            else if (res.weekLeft) setTimeout(() => showHint(T('nj3d_clam_week', { n: res.weekLeft }), 4200), 4300);
         }
         function clamTick(dt) {
             const tt = performance.now() / 1000;
@@ -4676,12 +4668,13 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             [-1, 1].forEach(s => { const w = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), quailHead); w.scale.set(0.35, 0.6, 1.1); w.position.set(s * 0.04, 0.045, -0.005); w.name = s < 0 ? 'wL' : 'wR'; g.add(w); });
             g.userData.head = head; return g;
         }
-        if (MT.ready && typeof _njQuailTime === 'function' && _njQuailTime()) (MD0.got || []).forEach(i => {
-            if ((MD0.quail || []).includes(i) || !mannaSpots[i]) return;
+        function spawnQuail(i) {
+            if (!mannaSpots[i]) return;
             const [x0, z0] = mannaSpots[i], g = makeQuail(), x = x0 + 0.5, z = z0 - 0.3;
             g.position.set(x, terrain(x, z), z); g.rotation.y = Math.random() * 6.28; mannaG.add(g);
             quails.push({ i, g, x, z, tries: 2, done: false, ph: Math.random() * 6 });
-        });
+        }
+        if (MT.ready && typeof _njQuailTime === 'function' && _njQuailTime()) (MD0.got || []).forEach(i => { if (!(MD0.quail || []).includes(i)) spawnQuail(i); });
         function mannaHint() {
             if (!mannaHinted && mannas.some(m => !m.done)) { mannaHinted = true; showHint(T('nj3d_manna_here'), 5000); return; }
             if (!quailHinted && quails.some(q => !q.done)) { quailHinted = true; showHint(T('nj3d_quail_here'), 4500); }
@@ -4689,29 +4682,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         setTimeout(() => { if (cur === C) mannaHint(); }, 3200);
         function closeQuailQ() { if (quailQ) { quailQ = null; fishQ.hidden = true; fishQ.innerHTML = ''; } }
         function askQuail(qa) {
-            const q = typeof _njQuailQuestion === 'function' ? _njQuailQuestion(qa.i, qa.tries === 2 ? '' : 'blank') : null;
-            if (!q) { catchQuail(qa, ''); return; }
-            if (qa.tries !== 2) q.again = true;   // 문제를 못 만들면(아주 짧은 절) 그냥 잡힌다
-            quailQ = { qa, q };
-            const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
-            fishQ.classList.remove('watch', 'now', 'reel');
-            fishQ.innerHTML = `<div class="nj3d-fishq-head">${T(qa.tries === 2 ? 'nj3d_quail_flee' : 'nj3d_quail_again')}</div>
-                <div class="nj3d-fishq-ref">${esc(q.ref)}</div>
-                ${quizText(q, esc)}
-                <div class="nj3d-fishq-choices">${q.choices.map((ch, i) => `<button data-i="${i}">${esc(ch)}</button>`).join('')}</div>`;
-            fishQ.hidden = false;
-            fishQ.querySelectorAll('button[data-i]').forEach(b => b.onclick = () => {
-                const ok = q.choices[+b.dataset.i] === q.answer;
-                closeQuailQ();
-                if (ok) { catchQuail(qa, q.answer); return; }
-                if (typeof _njQuailResult === 'function') _njQuailResult(qa.i, false);
-                qa.tries--;
-                if (qa.tries > 0) {   // 푸드덕 물러난다 — 다시 다가가면 또 문제
-                    const dx = qa.x - P.x, dz = qa.z - P.z, L = Math.hypot(dx, dz) || 1;
-                    mannaAnims.push({ kind: 'hop', qa, t: 0, fx: qa.x, fz: qa.z, tx: qa.x + dx / L * 0.9, tz: qa.z + dz / L * 0.9 });
-                    showHint(T('nj3d_quail_again'), 1800);
-                } else { qa.done = true; mannaAnims.push({ kind: 'fly', qa, t: 0, dx: qa.x - P.x, dz: qa.z - P.z }); showHint(T('nj3d_quail_away'), 2600); }
-            });
+            if (roundAsk('quail')) quailQ = { qa };
         }
         const netG = (() => { const g = new THREE.SphereGeometry(0.11, 12, 5, 0, Math.PI * 2, 0, Math.PI / 2); return g; })();
         cleanups.push(() => netG.dispose());
@@ -4721,8 +4692,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const tx = new THREE.CanvasTexture(cv); tx.encoding = THREE.sRGBEncoding;
             const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tx, transparent: true, depthWrite: false })); s.scale.set(0.5, 0.094, 1); return s;
         }
-        function catchQuail(qa, word) {   // ✨ 말씀의 그물 — 금빛 그물이 위에서 펼쳐져 덮고, 맞힌 말씀이 떠오른다
-            const gem = typeof _njQuailResult === 'function' ? _njQuailResult(qa.i, true) : 0;
+        function catchQuail(qa, word) {   // ✨ 말씀의 그물 — 금빛 그물이 위에서 펼쳐져 덮는다(판이 끝나 돌아왔을 때)
+            const gem = 0;
             qa.done = true;
             const net = new THREE.Mesh(netG, new THREE.MeshBasicMaterial({ color: 0xffd34d, wireframe: true, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }));
             net.position.set(qa.x, qa.g.position.y + 0.8, qa.z); net.scale.setScalar(2.4); mannaG.add(net);
@@ -4767,32 +4738,24 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         // 🍞 만나 문제 (10/5 사용자) — 밟으면 그 절의 첫 마디. 맞히면 거두고, 틀리면 두 번째(빈칸), 또 틀리면 스러진다(출 16:21)
         let mannaQ = null;
         function closeMannaQ() { if (mannaQ) { mannaQ = null; fishQ.hidden = true; fishQ.innerHTML = ''; } }
-        function gatherManna(m) {
-            const gem = typeof _njMannaGather === 'function' ? _njMannaGather(m.i) : 0;
-            if (!gem) return;
-            m.done = true; mannaAnims.push({ kind: 'gather', m, t: 0 }); syncWallet();
-            if (typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) SoundEffect.playBlankLevelUp();
-            showHint(mannas.every(x => x.done) ? T('nj3d_manna_got', { gem: gem.toLocaleString() }) + (MT.sat ? T('nj3d_manna_sat') : '') + ' · ' + T('nj3d_manna_all') : T('nj3d_manna_got', { gem: gem.toLocaleString() }) + (MT.sat ? T('nj3d_manna_sat') : ''), 3800);
-        }
         function askManna(m) {
-            const again = (m.fails | 0) > 0, q = typeof _njMannaQuestion === 'function' ? _njMannaQuestion(m.i, again ? 'blank' : '') : null;
-            if (!q) { gatherManna(m); return; }   // 문제를 못 만들면(아주 짧은 절) 그냥 거둔다
-            if (again) q.again = true;
-            mannaQ = { m, q };
-            const esc = s2 => String(s2).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
-            fishQ.classList.remove('watch', 'now', 'reel');
-            fishQ.innerHTML = `<div class="nj3d-fishq-head">${T('nj3d_manna_q')}</div><div class="nj3d-fishq-ref">${esc(q.ref)}</div>${quizText(q, esc)}
-                <div class="nj3d-fishq-choices">${q.choices.map((ch, i) => `<button data-i="${i}">${esc(ch)}</button>`).join('')}</div>`;
-            fishQ.hidden = false;
-            fishQ.querySelectorAll('button[data-i]').forEach(b => b.onclick = () => {
-                const ok = q.choices[+b.dataset.i] === q.answer; closeMannaQ();
-                if (ok) { gatherManna(m); return; }
-                m.fails = (m.fails | 0) + 1;
-                const melted = typeof _njMannaFail === 'function' ? _njMannaFail(m.i) : m.fails >= 2;
-                if (melted) { m.done = true; mannaAnims.push({ kind: 'gather', m, t: 0 }); showHint(T('nj3d_manna_melt'), 3800); }
-                else askManna(m);
-            });
+            if (roundAsk('manna')) mannaQ = { m };
         }
+        /* 판에서 돌아왔을 때(resumeNJ3D) — 거둔 만나는 떠오르고, 잡은 메추라기는 그물, 날아간 건 날고, 연 조개는 진주. 새로 거둔 만나 곁엔 저녁 메추라기 */
+        C.refreshDaily = () => {
+            const MD = typeof _njMannaDay === 'function' ? _njMannaDay() : null; if (!MD) return;
+            let any = false;
+            mannas.forEach(m => { if (m.done) return; const got = (MD.got || []).includes(m.i);
+                if (got || (MD.melt || []).includes(m.i)) { m.done = true; mannaAnims.push({ kind: 'gather', m, t: 0 }); any = any || got; } });
+            if (any && typeof SoundEffect !== 'undefined' && SoundEffect.playBlankLevelUp) setTimeout(() => SoundEffect.playBlankLevelUp(), 300);
+            quails.forEach(q => { if (q.done || !(MD.quail || []).includes(q.i)) return;
+                if ((MD.qfail || {})[q.i] >= 2) { q.done = true; mannaAnims.push({ kind: 'fly', qa: q, t: 0, dx: q.x - P.x, dz: q.z - P.z }); }
+                else catchQuail(q, ''); });
+            if (MT.ready && typeof _njQuailTime === 'function' && _njQuailTime()) (MD.got || []).forEach(i => { if (!quails.some(q => q.i === i)) spawnQuail(i); });
+            const CD = typeof _njClamDay === 'function' ? _njClamDay() : null;
+            if (CD) clams.forEach(c => { if (c.done || !(CD.done || []).includes(c.i)) return;
+                openClam(c, (CD.got || []).includes(c.i) ? { k: 'c', rare: false } : null); });
+        };
         function mannaCheck() {   // 1초에 네 번 — 만나를 밟았나 · 메추라기 곁인가
             if (isUnder()) { nearQuail = null; return; }
             mannas.forEach(m => {
