@@ -748,7 +748,7 @@
         function floorAt(x, z) {
             const base = seabed(x, z); if (!seaFloorObjs.length && !bedGrid) return base;
             let h = Math.max(base, gridFloor(x, z), stripFloor(x, z));   // 해변 띠 위(10/18 — 생물도 띠에 묻히지 않게)
-            const isles = seaFloorObjs.filter(o => o.userData.isle && Math.hypot(x - o.userData.isle.x, z - o.userData.isle.z) < o.userData.isle.r * 1.6);   // 섬 비탈만 광선(작다)
+            const isles = seaFloorObjs.filter(o => o.userData.isle && Math.hypot(x - o.userData.isle.x, z - o.userData.isle.z) < o.userData.isle.r * 2);   // 섬 비탈만 광선(작다) — 10/18 비탈이 1.85까지
             if (isles.length) { _flO.set(x, SEA_Y + 0.5, z); _flRay.set(_flO, _flDown); const hit = _flRay.intersectObjects(isles, false); if (hit.length) h = Math.max(h, hit[0].point.y); }
             return h;
         }
@@ -763,8 +763,11 @@
             if (Math.abs(x) < 4.6 && gf > -Infinity) { const g2 = gf - 0.04, u = smooth01((Math.abs(x) - 2.25) / 2.3); if (g2 < y) y = g2 + (y - g2) * u; }
             return y;
         }
-        function stripFloor(x, z) {   // 물속 바닥 — 바다 밑과 해변 띠 중 높은 쪽(띠 아래로 들어가지 않게)
-            const sb = seabed(x, z); if (Math.abs(x) < 2.25 || !bedGrid) return sb;
+        function stripFloor(x, z) {   // 물속 바닥 — 바다 밑·해변 띠·섬 비탈 중 높은 쪽(그 아래로 들어가지 않게)
+            let sb = seabed(x, z);
+            const isles = seaFloorObjs.filter(o => o.userData.isle && Math.hypot(x - o.userData.isle.x, z - o.userData.isle.z) < o.userData.isle.r * 2);   // 🏝️ 섬 비탈(10/18)
+            if (isles.length) { _flO.set(x, SEA_Y + 2, z); _flRay.set(_flO, _flDown); const hit = _flRay.intersectObjects(isles, false); if (hit.length) sb = Math.max(sb, hit[0].point.y); }
+            if (Math.abs(x) < 2.25 || !bedGrid) return sb;
             const d = z - coastZ(x); if (d < 0 || d > BEACH_D1) return sb;
             return Math.max(sb, stripY(x, z, d));
         }
@@ -793,11 +796,12 @@
             const bed = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, side: THREE.DoubleSide })); bed.receiveShadow = true; scene.add(bed); bed.updateMatrixWorld();
             bedGrid = { xs, zs, nx, pos, mesh: bed };   // ⚡ 바닥 높이는 이 격자로 바로 계산(10/17 — 광선은 한 번에 삼각형 수만 개를 훑어 생물 404마리면 입장이 4초 늦었다)
             // 🏝️ 섬 — 둥근 언덕(꼭대기 풀밭, 가장자리 모래, 물속으로 비탈)
-            const RF = [0, 0.25, 0.5, 0.7, 0.85, 1.0, 1.12, 1.3], SEG = 28;
+            const RF = [0, 0.25, 0.5, 0.7, 0.85, 1.0, 1.12, 1.3, 1.55, 1.85], SEG = 28;   // 1.55·1.85 — 물속 비탈을 바닥까지(10/18 사용자: 섬이 물속에서 모자 챙처럼 떠 있다)
             ISLES.forEach(s => {
                 const p2 = [], c2 = [], i2 = [];
                 RF.forEach(f => { for (let k = 0; k < SEG; k++) { const a = k / SEG * Math.PI * 2, rr0 = isleR(s, s.x + Math.cos(a), s.z + Math.sin(a)), x = s.x + Math.cos(a) * rr0 * f, z = s.z + Math.sin(a) * rr0 * f;
-                    const h = f <= 1 ? isleH(s.x + Math.cos(a) * rr0 * f * 0.999, s.z + Math.sin(a) * rr0 * f * 0.999) : SEA_Y - 0.25 - (f - 1) * 2.2;
+                    let h = f <= 1 ? isleH(s.x + Math.cos(a) * rr0 * f * 0.999, s.z + Math.sin(a) * rr0 * f * 0.999) : SEA_Y - 0.25 - (f - 1) * 2.2;
+                    if (f > 1) { const gf = gridFloor(x, z), hb = (gf > -Infinity ? gf : seabed(x, z)) - 0.06; if (hb < h) h += (hb - h) * smooth01((f - 1) / 0.85); else h = hb; }   // 바깥 고리는 바다 밑 그물 밑으로 — 비탈 끝이 떠 있었다
                     p2.push(x, f <= 1 ? Math.max(h, SEA_Y + 0.15) : h, z);
                     c.copy(f < 0.6 ? cTop : f < 0.85 ? cLow : cSand); if (f > 1) c.copy(cSand).lerp(cDeep, 0.25); c.convertSRGBToLinear(); c2.push(c.r, c.g, c.b); } });
                 for (let rr = 0; rr < RF.length - 1; rr++) for (let k = 0; k < SEG; k++) { const a = rr * SEG + k, b = rr * SEG + (k + 1) % SEG; i2.push(a, a + SEG, b, b, a + SEG, b + SEG); }
