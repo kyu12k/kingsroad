@@ -4743,6 +4743,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             floorCheck: (x, z) => { _flO.set(x, SEA_Y + 0.5, z); _flRay.set(_flO, _flDown); const hit = bedGrid ? _flRay.intersectObject(bedGrid.mesh, false) : []; return { grid: +gridFloor(x, z).toFixed(4), ray: hit.length ? +hit[0].point.y.toFixed(4) : null }; },
             natRing: () => natRing,
             dexPos: () => creatures.map(c => [c.x, c.z]),
+            dexAll: () => creatures.filter(c => c.born).map(c => ({ id: c.E.id, k: c.d.k, x: +c.x.toFixed(2), y: +c.g.position.y.toFixed(2), z: +c.z.toFixed(2), ask: !!c.ask, mark: !!(c.mark && c.mark.visible), show: !!c.show })),
+            dexTap: id => { const c = creatures.find(x => x.E.id === id); if (!c) return 'none'; if (!c.ask) return 'notnow'; askDex(c); return fishQ.hidden ? 'closed' : fishQ.innerText; },
+            look: (pitch, dist) => { if (pitch != null) camPitch = pitch; if (dist != null) camDist = dist; },
             dex: () => ({ n: creatures.length, born: creatures.filter(c => c.born).length, shown: creatures.filter(c => c.born && c.g.visible).length, marks: creatures.filter(c => c.mark && c.mark.visible).length }),
             run: () => starRun ? { next: starRun.next, n: starRun.seg.length, seg: starRun.seg, frags: starRun.frags.map(f => ({ i: f.i, w: starRun.seg[f.i], x: f.x, y: f.sp.position.y, z: f.z, got: f.got })) } : null };
         } catch (e) { }
@@ -4873,6 +4876,11 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 if ((MD.qfail || {})[q.i] >= 2) { q.done = true; mannaAnims.push({ kind: 'fly', qa: q, t: 0, dx: q.x - P.x, dz: q.z - P.z }); }
                 else catchQuail(q, ''); });
             if (MT.ready && typeof _njQuailTime === 'function' && _njQuailTime()) (MD.got || []).forEach(i => { if (!quails.some(q => q.i === i)) spawnQuail(i); });
+            const DL = window._njDexLast; window._njDexLast = null;   // 🐠 바다 생물 판 — 만났으면 반짝임·🐟 안내, 숨었으면 그 말
+            if (dexQ && fishQ.hidden) dexQ = null;   // 판에 들어갔다 왔다(끝냈든 그만뒀든)
+            if (DL) { const c = creatures.find(x => x.E.id === DL.id);
+                if (c && c.born && DL.res && (DL.res.fish || DL.res.gem)) dexDone(c, DL.res);
+                else if (c && DL.res && DL.res.hidden) { c.met = true; if (c.tapG) c.tapG.visible = false; } }
             const CD = typeof _njClamDay === 'function' ? _njClamDay() : null;
             if (CD) clams.forEach(c => { if (c.done || !(CD.done || []).includes(c.i)) return;
                 openClam(c, (CD.got || []).includes(c.i) ? { k: 'c', rare: false } : null); });
@@ -4957,7 +4965,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 const far = [];
                 creatures.forEach(cr => {
                     const id = cr.E.id; if (typeof _njDexHidden === 'function' && _njDexHidden(id)) return;
-                    const met = typeof _njDexMetThisWeek === 'function' && _njDexMetThisWeek(id), [mx, my] = toMap(cr.x, cr.z), dd = Math.hypot(mx - h, my - h);
+                    const met = !cr.ask || (typeof _njDexMetThisWeek === 'function' && _njDexMetThisWeek(id)), [mx, my] = toMap(cr.x, cr.z), dd = Math.hypot(mx - h, my - h);   // 오늘 안 묻는 아이도 흐리게(10/19)
                     if (dd <= h - 6 * dpr) dot(cr.x, cr.z, met ? 'rgba(255,255,255,0.5)' : '#ffd34d', met ? 2 : 3.2, met ? null : '#7a4a00');
                     else if (!met) far.push([Math.hypot(cr.x - P.x, cr.z - P.z), mx, my, dd]);
                 });
@@ -5278,7 +5286,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
            입장할 땐 자리만 정해 두고(가볍다), 모델은 **내 둘레부터 프레임마다 몇 마리씩** 소환한다(물거품 + 퐁) — 한꺼번에 만들면 입장이 4초 늦었다.
            많아지니 해안 전체(좌우 120)로 흩고, 그리는 건 가까운 24마리까지 */
         const DEX_SPREAD = 120, DEX_SHOW = 12, DEX_R = 13, DEX_GAP = 2.5;   // 12 — 24는 너무 촘촘(10/18 사용자)   // 24 — 40이면 어귀 앞에서 그리기 293번·초당 35(10/17 실측)
-        let dexSpawnQ = null, dexQAt = -9, dexShowAt = -9; const seaReady = {};
+        let dexSpawnQ = null, dexQAt = -9, dexShowAt = -9, jellyRO = 0; const seaReady = {};
         (typeof _njDexToday === 'function' ? _njDexToday() : []).forEach(E => {
             let sd = 17; for (const ch of String(_get6AMDayStr()) + E.id) sd = (sd * 31 + ch.charCodeAt(0)) % 2147483647; sd = sd || 1;
             const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
@@ -5337,25 +5345,16 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             return (d && d.text) || '';
         };
         function closeDexQ() { if (dexQ) { dexQ = null; fishQ.hidden = true; fishQ.innerHTML = ''; } }
-        function askDex(c, retry) {   // 그 생물의 말씀 — 빈칸 4지
-            const q = typeof _njFishQuestion === 'function' ? _njFishQuestion([c.E.id], retry ? 'blank' : '') : null;
-            if (q && retry) q.again = true;
-            if (!q) { dexDone(c, typeof _njDexAnswer === 'function' ? _njDexAnswer(c.E.id, true) : null); return; }   // 아주 짧은 절이라 문제를 못 만들면 그냥 만난 것으로
-            dexQ = { c, q };
+        function askDex(c) {   // 그 생물의 말씀 — 10/19부터 빈칸 4지 대신 그 절을 백지로(사용자: 이 퀴즈들은 다 백지로) — 만나·조개와 같은 판(njRoundStart 'dex'), 성은 숨겨 두고 끝나면 그 자리로
+            window._njDexPick = c.E.id;
+            const n = typeof _njRoundLeft === 'function' ? _njRoundLeft('dex').length : 0;
+            if (!n) { window._njDexPick = null; return; }
+            dexQ = { c };
             const esc = x => String(x).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
             fishQ.classList.remove('watch', 'now', 'reel');
-            fishQ.innerHTML = `<div class="nj3d-fishq-head">${esc(T(retry ? 'nj3d_dex_retry' : 'nj3d_dex_q', { e: c.d.e, name: dexWho(c) }))}</div>
-                <div class="nj3d-fishq-ref">${esc(q.ref)}</div>
-                ${quizText(q, esc)}
-                <div class="nj3d-fishq-choices">${q.choices.map((ch, i) => `<button data-i="${i}">${esc(ch)}</button>`).join('')}</div>`;
+            fishQ.innerHTML = `<div class="nj3d-fishq-head">${esc(T('nj3d_dex_bq', { e: c.d.e, name: dexWho(c), ref: dexRef(c) }))}</div><div class="nj3d-fishq-choices"><button class="nj3d-njr-go">${T('nj3d_njr_btn', { n })}</button></div>`;
             fishQ.hidden = false;
-            fishQ.querySelectorAll('button[data-i]').forEach(bt => bt.onclick = () => {
-                const ok = q.choices[+bt.dataset.i] === q.answer; closeDexQ();
-                const res = typeof _njDexAnswer === 'function' ? _njDexAnswer(c.E.id, ok) : null;
-                if (ok) { dexDone(c, res); return; }
-                if (res && res.hidden) { c.met = true; c.tapG.visible = false; showHint(T('nj3d_dex_miss', { e: c.d.e }), 3200); }
-                else askDex(c, true);
-            });
+            fishQ.querySelector('.nj3d-njr-go').onclick = () => { fishQ.hidden = true; fishQ.innerHTML = ''; if (typeof njRoundStart === 'function') njRoundStart('dex', '3d'); };
         }
         function dexDone(c, res) {
             c.met = true; c.tapG.visible = false;
@@ -5425,7 +5424,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (VISIT) { if (typeof window._njVisitItem === 'function') window._njVisitItem({ kind: 'dex', id: 'dex:' + id, verse: id, name: dexWho(best) }); return true; }   // 🕊️ 구경 — 주인이 외운 절의 생물: 내 도감이 아니라 구경 문제로(10/14)
             if (typeof _njDexMetThisWeek === 'function' && _njDexMetThisWeek(id)) { obsOpen(best); return true; }   // 👀 이번 주에 만난 아이 — 관찰
             if (typeof _njDexHidden === 'function' && _njDexHidden(id)) { showHint(T('nj3d_dex_miss', { e: best.d.e }), 3000); return true; }
-            askDex(best, false);
+            if (!best.ask) { showHint(T('nj3d_dex_notnow', { e: best.d.e, name: dexWho(best), ref: dexRef(best), when: typeof _njDexWhenLabel === 'function' ? _njDexWhenLabel(best.E) : '' }), 3200); return true; }   // 📜 제 요일·시간이 아닌 아이 — 언제 묻는지만
+            askDex(best);
             return true;
         }
         function dexTick(dt) {
@@ -5447,6 +5447,10 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 dexShowAt = now; let k = 0;
                 creatures.filter(c => c.born).map(c => [c, Math.hypot(c.x - P.x, c.z - P.z)]).sort((a, b) => a[1] - b[1]).forEach(([c, d]) => { c.show = d < DEX_R && k++ < DEX_SHOW; });
                 if (obs) obs.c.show = true; if (dexQ) dexQ.c.show = true;   // 관찰·문제 중인 아이는 늘
+                creatures.forEach(c => { c.ask = !VISIT && typeof _njDexAskable === 'function' && _njDexAskable(c.E); });   // 📜 오늘 묻는 아이(제 요일 빛깔·제 시간대) — 시간이 지나면 바뀐다
+                // 🪼 해파리(반투명·깊이 안 씀)는 물속에선 수면보다 뒤에 그린다 — 수면 뒷면(renderOrder 1)이 나중에 칠해져 해파리를 덮었다(10/19 사용자: 파란 막에 가린다). 물 위에선 그대로(수면 너머로 비쳐 보이게)
+                jellyRO = under ? 2 : 0;
+                creatures.forEach(c => { if (c.d.k === 'jelly' && c.m && c.m.userData.ro !== jellyRO) { c.m.userData.ro = jellyRO; c.m.traverse(o => { o.renderOrder = jellyRO; }); } });
                 // 안 그리는 아이는 장면에서 떼어 둔다 — 숨기기만 하면 매 프레임 자리 계산(updateMatrixWorld)은 그대로 받았다(404마리 · 부품 7천 개 → 프레임의 21%, 10/17 프로파일)
                 creatures.forEach(c => { if (!c.born) return; if (c.show && !c.g.parent) reefG.add(c.g); else if (!c.show && c.g.parent) reefG.remove(c.g); });
             }
@@ -5468,14 +5472,14 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                     if (c.I.act) c.actT = Math.max(c.actT, watched ? 6 : 4);
                     actFrame(c.I, c.anim, tt, near);
                 } else c.anim(tt, near);
-                const fresh = !(typeof _njDexMetThisWeek === 'function' && _njDexMetThisWeek(c.E.id)) && !(typeof _njDexHidden === 'function' && _njDexHidden(c.E.id));
+                const fresh = !!c.ask && !(typeof _njDexMetThisWeek === 'function' && _njDexMetThisWeek(c.E.id)) && !(typeof _njDexHidden === 'function' && _njDexHidden(c.E.id));
                 const can = fresh && near && c.pop >= 1;   // 이번 주에 아직 안 만난 아이 — 가까이 오면 위에 반짝임
                 c.mark.visible = fresh && c.pop >= 1 && !can;   // 📜 멀리서도 — 다가가면 반짝임으로 바뀐다
                 if (c.mark.visible) { c.mark.position.y = 0.32 + Math.sin(tt * 2 + c.x) * 0.03; c.mark.scale.setScalar(0.32 + Math.min(0.3, d * 0.025)); }   // 멀수록 조금 크게 — 멀리서도 보이게
                 c.tapG.visible = can; if (can) { c.tapG.position.y = 0.2 + Math.sin(tt * 3) * 0.02; c.tapG.material.opacity = 0.6 + Math.sin(tt * 5) * 0.3; if (!dexTapHinted) { dexTapHinted = true; showHint(T('nj3d_dex_tap'), 4500); } }
             });
             if (dexQ && Math.hypot(dexQ.c.x - P.x, dexQ.c.z - P.z) > 4) closeDexQ();   // 내가 멀리 헤엄쳐 가면 문제를 닫는다(생물은 기다리고 있다)
-            if (!dexMiniHinted && walk && P.z > SHORE - 3 && creatures.some(c => !(typeof _njDexMetThisWeek === 'function' && _njDexMetThisWeek(c.E.id)))) { dexMiniHinted = true; showHint(T('nj3d_dex_mini_hint'), 4500); }   // 바다에 처음 왔을 때 한 번
+            if (!dexMiniHinted && walk && P.z > SHORE - 3 && creatures.some(c => c.ask && !(typeof _njDexMetThisWeek === 'function' && _njDexMetThisWeek(c.E.id)))) { dexMiniHinted = true; showHint(T('nj3d_dex_mini_hint'), 4500); }   // 바다에 처음 왔을 때 한 번
             seaFx.tick(dt);
         }
         /* ══ 👀 관찰 모드 (10/5 사용자: 바닷속에서 생물을 누르면 3인칭으로 관찰) ══
