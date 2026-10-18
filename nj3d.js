@@ -1306,7 +1306,7 @@
         const envoyG = new THREE.Group(); seaGrp.add(envoyG);
         const envoys = [];   // { i, x, z }
         function buildEnvoys(w) {
-            while (envoyG.children.length) envoyG.remove(envoyG.children[0]);
+            while (envoyG.children.length) { const c0 = envoyG.children[0]; envoyG.remove(c0); if (c0.geometry && c0.geometry.type === 'BoxGeometry') { c0.geometry.dispose(); c0.material.dispose(); } }
             envoys.length = 0;
             for (let i = 0; i < 70; i++) {
                 const lv = (w && w.nations && w.nations[i] && w.nations[i].lv) || 0;
@@ -1315,7 +1315,12 @@
                 const EL = envoyLook(i, FAMILY_ROBE[N[4]] || 0x888888);
                 const [X, Z] = natMid(i, 40), e = makePerson(EL.robe, EL.look), [LX, LZ] = natLook(i, X, Z), ey = WT(X, Z) + 0.05;
                 e.scale.setScalar(1.6); e.position.set(X, ey, Z); e.lookAt(LX, ey, LZ); e.rotateY(Math.PI); e.rotateY(-Math.PI / 2);   // 사람 모델은 +x가 앞
-                envoyG.add(e); envoys.push({ i, x: X, z: Z });
+                envoyG.add(e);
+                // 🏺 사신 앞 깔개에 그 나라 특산물(10/18 사용자) — 바다 쪽(바라보는 쪽)으로 0.5 · 모델은 가까이 가면(envoyGoodsTick)
+                const fl = Math.hypot(LX - X, LZ - Z) || 1, gx = X + (LX - X) / fl * 0.5, gz = Z + (LZ - Z) / fl * 0.5, gy = WT(gx, gz) + 0.01;
+                const rug = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.012, 0.3), new THREE.MeshStandardMaterial({ color: new THREE.Color(EL.robe).multiplyScalar(0.55), roughness: 0.9 }));
+                rug.position.set(gx, gy, gz); rug.rotation.y = Math.atan2(LX - X, LZ - Z); envoyG.add(rug);
+                envoys.push({ i, x: X, z: Z, gx, gy, gz, rug, gload: false });
             }
         }
         // 예물 모양 — 블렌더 로우폴리 모델(models/gifts/*.glb, tools/blender/)을 받아 쓴다. 받기 전·실패하면 이 도형(9/30 처음 모양)
@@ -2782,6 +2787,21 @@
             if (b.dataset.own && !b.dataset.armed) { b.dataset.armed = '1'; b.dataset.label = b.textContent; b.textContent = T('offer_again'); b.classList.add('armed'); setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = b.dataset.label; b.classList.remove('armed'); } }, 3000); return false; }
             return true;
         }
+        /* 🏺 사신 앞 특산물 — 18칸 안에 들어온 사신만 모델을 받아 깔개 위에 작게(키 0.25). 이미 가진 특산물이면 깔개가 금빛 */
+        function envoyGoodsTick() {
+            envoys.forEach(e => {
+                if (e.gload || Math.hypot(e.x - P.x, e.z - P.z) > 18) return;
+                const G = typeof _njGoods === 'function' ? _njGoods(e.i) : null; e.gload = true; if (!G) return;
+                if (ownCount(G.k)) { e.rug.material.color.set(0xd4a73a); e.rug.material.emissive = new THREE.Color(0x3a2a00); }
+                loadGift(G.k).then(tpl => {
+                    if (cur !== C || !e.rug.parent) return;
+                    const m = tpl.clone(true), bb = new THREE.Box3().setFromObject(m), sz = new THREE.Vector3(); bb.getSize(sz);
+                    const sc = 0.25 / Math.max(0.05, sz.y, sz.x * 0.7, sz.z * 0.7); m.scale.setScalar(sc);
+                    m.position.set(e.gx, e.gy + 0.006 - bb.min.y * sc, e.gz); m.rotation.y = e.rug.rotation.y;
+                    envoyG.add(m);
+                }).catch(() => { });
+            });
+        }
         function openOffer(i) {
             const list = (typeof NJ_OFFERINGS !== 'undefined') ? NJ_OFFERINGS : [];
             const have = typeof _njTreasureAvail === 'function' ? _njTreasureAvail() : 0;
@@ -4191,6 +4211,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             envoyCheckT -= dt;
             if (envoyCheckT <= 0) {   // 사신 곁인가 (1초에 네 번)
                 envoyCheckT = 0.25;
+                envoyGoodsTick();
                 nearEnvoy = null; let bd = 1.6;
                 if (P.onGround) envoys.forEach(e => { const d = Math.hypot(e.x - P.x, e.z - P.z); if (d < bd) { bd = d; nearEnvoy = e; } });
                 talkBtn.hidden = !nearEnvoy;
@@ -4721,6 +4742,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             fragScreen: () => starRun ? starRun.frags.filter(f => !f.got).map(f => { const v = f.sp.position.clone().project(camera); return { i: f.i, sx: +((v.x + 1) / 2).toFixed(2), sy: +((1 - v.y) / 2).toFixed(2), z: +v.z.toFixed(3), sc: [+f.sp.scale.x.toFixed(2), +f.sp.scale.y.toFixed(2)], vis: f.sp.visible, inScene: !!f.sp.parent, dist: +f.sp.position.distanceTo(camera.position).toFixed(2) }; }) : null, cam: () => ({ p: camera.position.toArray().map(v => +v.toFixed(2)), near: camera.near, far: camera.far }), three: () => ({ scene, renderer, camera, controls }), jetTrial: ms => { if (jetTrialEnd) jetTrialEnd = Date.now() + ms; return { end: jetTrialEnd, land: jetTrialLand, on: jetOn }; }, dyn: () => ({ dynScale: +dynScale.toFixed(2), pr: +renderer.getPixelRatio().toFixed(2), ema: +dynEma.toFixed(3) }), tall: () => BOXES.filter(b => !b.item && b.y1 > 3.5).map(b => ({ x0: b.x0, x1: b.x1, z0: b.z0, z1: b.z1, y0: b.y0, y1: b.y1 })),
             floorCheck: (x, z) => { _flO.set(x, SEA_Y + 0.5, z); _flRay.set(_flO, _flDown); const hit = bedGrid ? _flRay.intersectObject(bedGrid.mesh, false) : []; return { grid: +gridFloor(x, z).toFixed(4), ray: hit.length ? +hit[0].point.y.toFixed(4) : null }; },
             natRing: () => natRing,
+            dexPos: () => creatures.map(c => [c.x, c.z]),
             dex: () => ({ n: creatures.length, born: creatures.filter(c => c.born).length, shown: creatures.filter(c => c.born && c.g.visible).length, marks: creatures.filter(c => c.mark && c.mark.visible).length }),
             run: () => starRun ? { next: starRun.next, n: starRun.seg.length, seg: starRun.seg, frags: starRun.frags.map(f => ({ i: f.i, w: starRun.seg[f.i], x: f.x, y: f.sp.position.y, z: f.z, got: f.got })) } : null };
         } catch (e) { }
@@ -5255,14 +5277,15 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         /* 🐠 10/17 사용자: 지난주·이번 주에 백지로 쓴 절의 생물이 **모두**(요일·시간대 조건 없이, 저마다 제 요일 빛깔) — 많으면 404마리.
            입장할 땐 자리만 정해 두고(가볍다), 모델은 **내 둘레부터 프레임마다 몇 마리씩** 소환한다(물거품 + 퐁) — 한꺼번에 만들면 입장이 4초 늦었다.
            많아지니 해안 전체(좌우 120)로 흩고, 그리는 건 가까운 24마리까지 */
-        const DEX_SPREAD = 120, DEX_SHOW = 12, DEX_R = 13;   // 12 — 24는 너무 촘촘(10/18 사용자)   // 24 — 40이면 어귀 앞에서 그리기 293번·초당 35(10/17 실측)
+        const DEX_SPREAD = 120, DEX_SHOW = 12, DEX_R = 13, DEX_GAP = 2.5;   // 12 — 24는 너무 촘촘(10/18 사용자)   // 24 — 40이면 어귀 앞에서 그리기 293번·초당 35(10/17 실측)
         let dexSpawnQ = null, dexQAt = -9, dexShowAt = -9; const seaReady = {};
         (typeof _njDexToday === 'function' ? _njDexToday() : []).forEach(E => {
             let sd = 17; for (const ch of String(_get6AMDayStr()) + E.id) sd = (sd * 31 + ch.charCodeAt(0)) % 2147483647; sd = sd || 1;
             const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
             const d = E.d; if (!CREATURE[d.k]) return;
             let x = 0, z = SHORE + 6;   // 물가 다음 줄부터의 물칸 — 10/5엔 어귀 좌우 45(하루 45마리), 10/17부터 좌우 120(지난주·이번 주 전부)
-            for (let t = 0; t < 80; t++) { const i = Math.floor(r() * SG.water.length), cc = SG.water[i]; if (SG.ring[i] >= 2 && Math.abs(cc.x) < DEX_SPREAD) { x = cc.x + (r() - 0.5) * HRW; z = cc.z + (r() - 0.5) * HRW; break; } }
+            for (let t = 0; t < 80; t++) { const i = Math.floor(r() * SG.water.length), cc = SG.water[i]; if (SG.ring[i] >= 2 && Math.abs(cc.x) < DEX_SPREAD) { const nx = cc.x + (r() - 0.5) * HRW, nz = cc.z + (r() - 0.5) * HRW; x = nx; z = nz;
+                if (t > 60 || !creatures.some(o => Math.abs(o.x - nx) < DEX_GAP && Math.abs(o.z - nz) < DEX_GAP && Math.hypot(o.x - nx, o.z - nz) < DEX_GAP)) break; } }   // 🫧 서로 2.5칸 이상(10/18 사용자: 촘촘하다 — 뭉친 곳 없이 고르게)
             const mv = SEA_MOVE[d.k] || {};
             creatures.push({ g: null, anim: () => { }, swim: mv.swim || 0, float: !!mv.float, E, d, x, z, hide: false, cx: x, cz: z, rv: [r(), r(), r(), r()], born: false });
         });
