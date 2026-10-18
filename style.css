@@ -7951,3 +7951,14 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 /* 🛡️ 예물 창 — 이미 가진 것(10/18) */
 .nj3d-offer .nj3d-own { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: rgba(46,204,113,0.18); color: #7fe0a8; font-style: normal; font-size: 0.72rem; font-weight: 800; }
 .nj3d-offer button.armed { background: #e67e22 !important; color: #fff !important; }
+/* 🕊️ 구경 문제 결과 · ❓ 도움말(10/18) */
+.njv-card .gap.filled { min-width: 0; padding: 0 4px; border-radius: 6px; font-weight: 800; border-bottom: none; }
+.njv-card .gap.filled.ok { background: rgba(46,204,113,0.22); color: #7fe0a8; }
+.njv-card .gap.filled.no { background: rgba(231,76,60,0.18); color: #ffb3a8; }
+.njv-card .res { margin-top: 10px; padding: 10px 12px; border-radius: 12px; font-weight: 800; line-height: 1.5; text-align: center; }
+.njv-card .res.ok { background: rgba(46,204,113,0.16); color: #7fe0a8; }
+.njv-card .res.no { background: rgba(231,76,60,0.14); color: #ffb3a8; }
+.njv-card .res small { display: block; font-weight: 600; font-size: 0.82rem; opacity: 0.85; margin-top: 2px; }
+.njv-help { margin: 8px 0 12px; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; color: #dfe6ee; font-size: 0.9rem; line-height: 1.55; }
+.njv-help b { color: #f5d76e; }
+.njv-help li.sub { color: #9fb0c2; font-size: 0.82rem; list-style: none; margin-left: -18px; }

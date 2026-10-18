@@ -10299,21 +10299,36 @@ function _njVisitBar() {
     const V = _njVisit, st = document.querySelector('#nj3d .nj3d-stage'); if (!V || !st) return;
     let bar = st.querySelector('.nj3d-visitbar');
     if (!bar) { bar = document.createElement('div'); bar.className = 'nj3d-visitbar'; st.appendChild(bar); }
-    if (_njvFolded()) { _njvFoldBar(bar, _njVisitBar); return; }
+    if (_njvFolded()) { _njvFoldBar(bar, _njVisitBar, true); return; }
     { const ov = document.getElementById('nj3d'); if (ov) ov.classList.remove('nj3d-barfold'); bar.classList.remove('folded'); }
-    bar.innerHTML = `<span>🕊️ 오늘 ${V.order}번째 손님</span><button class="sub" data-a="gb">📖 방명록</button><button data-a="sign">${V.signed ? '✓ 인사함' : '👋 인사'}</button><button class="sub" data-a="fold" aria-label="접기">▴</button>`;
+    bar.innerHTML = `<span>🕊️ 오늘 ${V.order}번째 손님</span><button class="sub" data-a="help" aria-label="놀러 와서 할 수 있는 것">❓</button><button class="sub" data-a="gb">📖 방명록</button><button data-a="sign">${V.signed ? '✓ 인사함' : '👋 인사'}</button><button class="sub" data-a="fold" aria-label="접기">▴</button>`;
+    bar.querySelector('[data-a="help"]').onclick = () => _njVisitHelp();
     bar.querySelector('[data-a="gb"]').onclick = () => _njGuestbook(V.host.nick, V.guest, V.week);
     bar.querySelector('[data-a="sign"]').onclick = () => _njVisitSignPick();
     bar.querySelector('[data-a="fold"]').onclick = () => { _njvFolded(true); _njVisitBar(); };
-    if (!V.hinted) { V.hinted = true; setTimeout(() => { if (typeof showToast === 'function') showToast('예물·꾸밈을 누르면 그 말씀 문제가 나와요 — 맞히면 나도 주인도 💎'); }, 1500); }
+    if (!V.hinted) { V.hinted = true; setTimeout(() => { if (typeof showToast === 'function') showToast('예물·꾸밈을 누르면 그 말씀 문제가 나와요 — 맞히면 나도 주인도 💎 · ❓에 자세히'); }, 1500); }
 }
 // 띠 접기(10/14 사용자) — 작은 「🕊️ ▾」 하나로. 접은 상태는 기기에 기억
 function _njvFolded(v) { try { if (v != null) localStorage.setItem('kr_njvFold', v ? '1' : ''); return localStorage.getItem('kr_njvFold') === '1'; } catch (e) { return false; } }
-function _njvFoldBar(bar, redraw) {
+function _njvFoldBar(bar, redraw, guest) {
     bar.classList.add('folded');
-    bar.innerHTML = `<button class="sub" data-a="unfold" aria-label="펼치기">🕊️ ▾</button>`;
+    bar.innerHTML = `${guest ? `<button class="sub" data-a="help" aria-label="놀러 와서 할 수 있는 것">❓</button>` : ''}<button class="sub" data-a="unfold" aria-label="펼치기">🕊️ ▾</button>`;
+    if (guest) bar.querySelector('[data-a="help"]').onclick = () => _njVisitHelp();
     bar.querySelector('[data-a="unfold"]').onclick = () => { _njvFolded(false); bar.classList.remove('folded'); redraw(); };
     const ov = document.getElementById('nj3d'); if (ov) ov.classList.add('nj3d-barfold');
+}
+/* ❓ 놀러 와서 할 수 있는 것(10/18 사용자: 이웃에게 놀러 갔을 때 뭘 할 수 있는지 알 수 있는 표시 하나라도) — 서버 규칙(kingsroad njVisitQuiz)과 같은 숫자 */
+function _njVisitHelp() {
+    const V = _njVisit; if (!V) return;
+    const nick = _njvEsc(V.host.nick);
+    const ov = _njPop(`<h3>🕊️ ${nick}님의 새 예루살렘에서</h3>
+        <ul class="njv-help">
+            <li><b>🎁 예물·꾸밈·특산물을 눌러 보세요</b> — 그 물건의 말씀 빈칸 문제가 나와요. 맞히면 나는 💎300, ${nick}님도 💎500을 받아요.</li>
+            <li><b>🐠 바다에 들어가 보세요</b> — ${nick}님이 백지로 쓴 절의 생물들이 헤엄쳐요. 눌러도 같은 문제가 나와요.</li>
+            <li><b>👋 인사</b>를 남기면 ${nick}님 방명록에 이름이 남아요(친구는 직접 쓰고, 길드원은 고르기). <b>📖 방명록</b>에서 오늘 누가 다녀갔는지 볼 수 있어요.</li>
+            <li class="sub">문제는 한 곳에서 하루 3개, 하루 다섯 곳까지 보석을 받아요. 구경은 얼마든지 할 수 있어요.</li>
+        </ul><button class="close">알겠어요</button>`);
+    ov.querySelector('.close').onclick = () => ov.remove();
 }
 function _njPop(html) {
     const ov = document.createElement('div'); ov.className = 'njv-pop'; ov.innerHTML = `<div class="njv-card">${html}</div>`;
@@ -10374,21 +10389,27 @@ function _njVisitItem(it) {
     const from = it.kind === 'gift' && vid && (NJ_OFFERINGS || []).some(o => o.k === it.k) ? '이 예물의 말씀' : it.kind === 'dex' ? `${_njvEsc(V.host.nick)}님이 백지로 쓴 말씀의 생물` : `${_njvEsc(V.host.nick)}님이 외운 말씀`;
     const ov = _njPop(`<h3>${_njvEsc(name)}</h3><div class="ref">${from} · ${_njvEsc(q.ref)}</div>
         <div class="txt">${_njvEsc(q.before)} <span class="gap">&nbsp;</span> ${_njvEsc(q.after)}</div>
-        <div class="opts">${q.choices.map((c, i) => `<button data-i="${i}">${_njvEsc(c)}</button>`).join('')}</div><button class="close">닫기</button>`);
+        <div class="opts">${q.choices.map((c, i) => `<button data-i="${i}">${_njvEsc(c)}</button>`).join('')}</div><div class="res" hidden></div><button class="close">닫기</button>`);
     ov.querySelector('.close').onclick = () => ov.remove();
+    // 10/18 사용자: 맞혀도 버튼만 초록이 되고 창은 그대로라 어색하다 — 빈칸을 채우고, 결과·보석을 창 안에(토스트는 창에 가려 잘 안 보였다)
+    const gap = ov.querySelector('.gap'), res = ov.querySelector('.res'), closeB = ov.querySelector('.close');
+    const say = (cls, html) => { res.className = 'res ' + cls; res.innerHTML = html; res.hidden = false; };
     ov.querySelectorAll('[data-i]').forEach(b => b.onclick = async () => {
         const ok = q.choices[+b.dataset.i] === q.answer;
         ov.querySelectorAll('[data-i]').forEach(x => { x.disabled = true; if (q.choices[+x.dataset.i] === q.answer) x.classList.add('ok'); });
-        if (!ok) { b.classList.add('no'); if (typeof SoundEffect !== 'undefined') SoundEffect.playWrong(); return; }
+        if (gap) { gap.textContent = q.answer; gap.classList.add('filled', ok ? 'ok' : 'no'); }
+        closeB.textContent = '확인';
+        if (!ok) { b.classList.add('no'); if (typeof SoundEffect !== 'undefined') SoundEffect.playWrong(); say('no', `❌ 아쉬워요 — 정답은 「${_njvEsc(q.answer)}」`); return; }
         if (typeof SoundEffect !== 'undefined') SoundEffect.playCorrect();
         if (typeof _featNote === 'function') _featNote('nv_ok');
+        say('ok', '⭕ 정답이에요 · 보석 받는 중…');
         try {
             const r = await _njvCall('njVisitQuiz', { hostTag: V.host.tag, item: String(it.id) });
             if (r && r.ok) {
                 myGems = (myGems || 0) + (r.gems | 0); updateGemDisplay();
-                showToast(`💎 +${(r.gems | 0).toLocaleString()}${r.hostGot ? ` · ${V.host.nick}님에게도 💎` : ''}${r.left ? ` · 이곳에서 ${r.left}문제 더` : ''}`);
-            } else showToast(NJV_WHY[r && r.why] || '이번엔 보석이 없어요.');
-        } catch (e) { console.warn('[visit] quiz', e); }
+                say('ok', `⭕ 정답이에요 · 💎 +${(r.gems | 0).toLocaleString()}${r.hostGot ? ` · ${_njvEsc(V.host.nick)}님에게도 💎` : ''}${r.left ? `<small>이곳에서 오늘 ${r.left}문제 더</small>` : ''}`);
+            } else say('ok', `⭕ 정답이에요<small>${_njvEsc(NJV_WHY[r && r.why] || '이번엔 보석이 없어요.')}</small>`);
+        } catch (e) { console.warn('[visit] quiz', e); say('ok', '⭕ 정답이에요<small>보석은 잠시 뒤 다시 해 보세요</small>'); }
     });
 }
 window._njVisitItem = _njVisitItem;
