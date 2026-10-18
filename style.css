@@ -6349,7 +6349,7 @@ body > #guide-screen-overlay .guide-body > .guide-btn.ghost { width: 100%; margi
 .njr-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .njr-name { display: flex; flex-direction: column; min-width: 0; }
 .njr-name b { font-size: 0.9rem; color: #2c3e50; }
-.njr-name span { font-size: 0.74rem; color: #7f8c8d; }
+.njr-name span { font-size: 0.74rem; color: #7f8c8d; word-break: keep-all; }
 .njr-act { flex: none; text-align: right; }
 .njr-go { border: none; border-radius: 10px; padding: 7px 11px; background: #5d8a2f; box-shadow: 0 3px 0 #436a1f; color: #fff; font-weight: 800; font-size: 0.8rem; cursor: pointer; white-space: nowrap; }
 .njr-done { font-size: 0.8rem; font-weight: 800; color: #1e8449; }
