@@ -4721,7 +4721,10 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 const it = o.userData.item; if (!it || !o.visible) { why.push('hidden'); return; }
                 if (it.kind === 'decor' && PASS_K.has(it.k)) { why.push(it.k + ':pass'); return; }
                 _ibb.makeEmpty(); o.updateMatrixWorld(true);
-                o.traverse(m => { if (!m.isMesh || m === o.userData.pick || !m.geometry || !m.visible) return; if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); _itb.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); _ibb.union(_itb); });
+                // 몸 높이(CH)보다 위에 떠 있는 조각은 빼고(10/19 사용자: 종려 가지 화분은 통과되고 둘레에 보이지 않는 벽 — 머리 위로 1.4칸 퍼진 잎까지 땅에서부터 막았다)
+                const parts = []; let gy = Infinity;
+                o.traverse(m => { if (!m.isMesh || m === o.userData.pick || !m.geometry || !m.visible) return; if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); const b = m.geometry.boundingBox.clone().applyMatrix4(m.matrixWorld); parts.push(b); gy = Math.min(gy, b.min.y); });
+                parts.forEach(b => { if (b.min.y < gy + CH) _ibb.union(b); });
                 // 바닥에 납작하게 깔린 것만 뺀다 — 세상이 작다(순례자 키 0.22, 벤치 0.12). 0.14(STEP)보다 낮은 건 걸어서 밟고 올라서고, 높은 건 막힌다
                 if (_ibb.isEmpty() || _ibb.max.y - _ibb.min.y < 0.03) { why.push(it.k + ':flat'); return; }
                 const sx = (_ibb.max.x - _ibb.min.x) * 0.12, sz = (_ibb.max.z - _ibb.min.z) * 0.12;   // 둥근 모양 — 상자 가장자리는 조금 안으로

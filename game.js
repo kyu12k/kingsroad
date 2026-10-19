@@ -3054,6 +3054,7 @@ let njFishCasts = 0;     // 던진 그물 수(연구·보석 흐름 실측용)
 let njVines = [];        // 🍇 포도원 — [{ id, n: 나라 번호, t: 심은 때, h: 거둔 때(0=아직), y: 거둔 양 }]
 let njGrapes = 0;        // 🍇 거둔 포도 합(늘기만) — 예물을 받을 때 쓴다(njGrapesSpent)
 let njGrapesSpent = 0;
+let njGiftGone = [];     // 🗑️ 관리자가 뺀 예물 id(10/19 — 오류로 두 번 산 종려 가지 환불). 기기끼리 합집합이라 그냥 지우면 다른 기기가 되살린다 → 이 목록으로 거른다
 let njGifts = [];        // 🎁 받은 예물 — [{ id, k: 예물 키, slot: 자리 번호, n: 가져온 나라, at, x?, z?, r?(꾸미기로 옮긴 자리·방향), st?(보관함), mv?(옮긴 시각) }]
 let njDecor = [];        // 🪴 꾸밈 아이템(💎로 산다) — [{ id, k, x, z, r, st, mv, at, in?(조립된 세트 id) }] (10/1)
 let njSets = [];         // 🧩 조립한 세트 — [{ id, s: 세트 키, x, z, r, st, mv, at, parts: [꾸밈 id…] }] (10/1)
@@ -3612,7 +3613,8 @@ loadGameData = function () {
         njFishCasts = Math.max(0, parseInt(parsed.njFishCasts, 10) || 0);
         njFishBag = (parsed.njFishBag && typeof parsed.njFishBag === 'object') ? parsed.njFishBag : {};
         njVines = Array.isArray(parsed.njVines) ? parsed.njVines.filter(v => v && v.id) : [];
-        njGifts = Array.isArray(parsed.njGifts) ? parsed.njGifts.filter(v => v && v.id) : [];
+        njGiftGone = Array.isArray(parsed.njGiftGone) ? parsed.njGiftGone.filter(x => typeof x === 'string') : [];
+        njGifts = Array.isArray(parsed.njGifts) ? parsed.njGifts.filter(v => v && v.id && !njGiftGone.includes(v.id)) : [];
         njDecor = Array.isArray(parsed.njDecor) ? parsed.njDecor.filter(v => v && v.id) : [];
         njSets = Array.isArray(parsed.njSets) ? parsed.njSets.filter(v => v && v.id) : [];
         {   // 세트와 낱개를 서로 맞춘다 — 두 기기가 따로 조립·해체하면 병합 뒤 어긋날 수 있다(세트는 남았는데 낱개는 풀렸다 등)
@@ -14324,6 +14326,7 @@ function saveGameData() {
         njFishBag: njFishBag,             // 🎣 종류별로 낚은 수
         njVines: njVines,                 // 🍇 포도원
         njGifts: njGifts,                 // 🎁 받은 예물
+        njGiftGone: njGiftGone,           // 🗑️ 관리자가 뺀 예물 id
         njDecor: njDecor,                 // 🪴 꾸밈 아이템
         njSets: njSets,                   // 🧩 조립한 세트
         njGrapes: njGrapes,               // 🍇 거둔 포도 합
@@ -14704,6 +14707,8 @@ function _mergeNewJerusalem(target, other) {
         });
         target.njVines = tv;
     }
+    // 🗑️ 관리자가 뺀 예물 — 합집합 뒤 예물 목록에서 거른다(다른 기기가 되살리지 않게)
+    if (Array.isArray(other.njGiftGone) && other.njGiftGone.length) target.njGiftGone = [...new Set([...(Array.isArray(target.njGiftGone) ? target.njGiftGone : []), ...other.njGiftGone])];
     // 예물·꾸밈 — id로 합집합, 같은 것은 나중에 옮긴 쪽(mv)
     ['njGifts', 'njDecor', 'njSets'].forEach(key => {
         if (!Array.isArray(other[key]) || !other[key].length) return;
@@ -14716,6 +14721,7 @@ function _mergeNewJerusalem(target, other) {
         });
         target[key] = tg;
     });
+    if (Array.isArray(target.njGiftGone) && Array.isArray(target.njGifts)) target.njGifts = target.njGifts.filter(v => !(v && target.njGiftGone.includes(v.id)));
     return took;
 }
 
@@ -15047,6 +15053,9 @@ function _applyPendingFix(data, fx) {
     if (fx.until && today > fx.until) return false;
     if (typeof fx.setHearts === 'number') data.maxHearts = fx.setHearts;
     if (typeof fx.setGems === 'number') data.gems = fx.setGems;
+    // 🗑️ 예물 빼기 · 🐟 값 돌려주기(10/19) — 쓴 값(njFishSpent)은 기기끼리 큰 쪽이라 줄이면 되돌아간다 → 얻은 값(njFish)에 더한다
+    if (Array.isArray(fx.removeGifts) && fx.removeGifts.length) { data.njGiftGone = [...new Set([...(Array.isArray(data.njGiftGone) ? data.njGiftGone : []), ...fx.removeGifts.map(String)])]; if (Array.isArray(data.njGifts)) data.njGifts = data.njGifts.filter(v => !(v && data.njGiftGone.includes(v.id))); }
+    if (typeof fx.addFish === 'number') data.njFish = (parseInt(data.njFish, 10) || 0) + fx.addFish;
     const L = data.leagueData, sw = fx.scaleWeek;
     if (sw && L && typeof sw.r === 'number' && L.weekId === sw.weekId) {
         const cut = Math.max(0, Math.round((L.myScore || 0) * (1 - sw.r)));
