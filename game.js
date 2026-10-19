@@ -3916,6 +3916,19 @@ function addPlaytimeRange(startMs, endMs) {
     }
 }
 
+/* ⏱️ 화면을 내릴 때만 더하면, 내릴 때 신호가 안 오는 기기(10/19 #5850 안드로이드 10 삼성 인터넷 설치 앱 — 백그라운드에서 꺼질 때)에선 시간이 통째로 빠졌다
+   (그분 플레이타임 13,345초에서 일주일째 그대로, 켜 둔 시간 하루 1~11초). 화면이 보이는 동안 1분마다 그동안의 시간을 더해 둔다(저장은 5분 동기화·떠날 때) */
+setInterval(() => {
+    if (document.hidden || window.isResetting) return;
+    try {
+        const now = Date.now();
+        if (playSessionStart && now - playSessionStart >= 30000) { addPlaytimeRange(playSessionStart, now); playSessionStart = now; }
+        if (typeof _accumulateSessionTime === 'function') _accumulateSessionTime();
+        window._ptTick = (window._ptTick | 0) + 1;
+        if (window._ptTick % 5 === 0 && typeof _njVisit !== 'undefined' && !_njVisit) saveGameData();   // 5분마다 기기에 — 동기화가 올린다
+    } catch (e) { }
+}, 60000);
+window.addEventListener('pagehide', () => { try { stopPlaySession(); if (typeof _accumulateSessionTime === 'function') _accumulateSessionTime(); if (typeof _exitNote === 'function') _exitNote(); } catch (e) { } });
 function startPlaySession() {
     if (playSessionStart) return;
     playSessionStart = Date.now();
@@ -15515,6 +15528,18 @@ function _setServerUpdatedAt(v) {
     } catch (e) {}
 }
 
+/* 서버가 「줄지 않게」 고쳐 저장한 값(밭·승점)을 받아 이 기기에도 — 10/19 #XR0NPB: 서버는 밭 25로 고쳐 저장하고 PC는 모른 채 24를 계속 보여 줬다 */
+function _applyServerKept(k) {
+    let changed = false;
+    if (typeof k.maxHearts === 'number' && k.maxHearts > (purchasedMaxHearts | 0)) { purchasedMaxHearts = k.maxHearts; recalculateMaxHearts(); changed = true; }
+    if (k.league && typeof leagueData !== 'undefined' && leagueData) {
+        for (const f of ['totalScore', 'myScore', 'myMonthlyScore', 'yearlyScore']) if (typeof k.league[f] === 'number' && k.league[f] > (Number(leagueData[f]) || 0)) { leagueData[f] = k.league[f]; changed = true; }
+    }
+    if (!changed) return;
+    console.log('[sync] 서버가 지킨 값 반영', k);
+    saveGameData();
+    try { if (typeof updateProfileUI === 'function') updateProfileUI(); if (typeof updateGemDisplay === 'function') updateGemDisplay(); } catch (e) { }
+}
 async function _callSaveFunction() {
     const raw = localStorage.getItem('kingsRoadSave');
     if (!raw) return;
@@ -15525,6 +15550,7 @@ async function _callSaveFunction() {
     const res = await fn(saveData);
     const confirmed = res && res.data && res.data.updatedAt;
     if (confirmed) _setServerUpdatedAt(confirmed);
+    try { if (res && res.data && res.data.kept) _applyServerKept(res.data.kept); } catch (e) { }
     return confirmed;
 }
 

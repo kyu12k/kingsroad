@@ -133,6 +133,7 @@ exports.saveGameDataSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
     //   덕분에 서버/클라이언트 배포 순서와 무관하게 안전하며, 이 함수만 되돌리면 검사가 사라진다.
     const docRef = db.collection("saves").doc(uid);
     const hasBase = typeof newData.baseUpdatedAt === "number";
+    const kept = {};   // 서버가 「줄지 않게」 고친 값 — 앱에 돌려준다(10/19: 그동안 조용히 고쳐 저장만 해서 PC는 밭 24로 남았다, #XR0NPB)
 
     try {
         await db.runTransaction(async (tx) => {
@@ -165,10 +166,10 @@ exports.saveGameDataSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
             /* ★ 줄지 않는 값은 서버가 지킨다 — 어떤 경로로 낡은 저장이 들어와도 밭·승점은 내려가지 않게 */
             if (old && !fixAck) {
                 const oh = Number(old.maxHearts) || 0;
-                if ((Number(dataToSave.maxHearts) || 0) < oh) dataToSave.maxHearts = oh;   // 밭은 줄지 않는다
+                if ((Number(dataToSave.maxHearts) || 0) < oh) { dataToSave.maxHearts = oh; kept.maxHearts = oh; }   // 밭은 줄지 않는다
                 const ol = old.leagueData, nl = dataToSave.leagueData;
                 if (ol && nl && typeof ol === "object" && typeof nl === "object") {
-                    const up = (k, same) => { if (same && (Number(ol[k]) || 0) > (Number(nl[k]) || 0)) nl[k] = ol[k]; };
+                    const up = (k, same) => { if (same && (Number(ol[k]) || 0) > (Number(nl[k]) || 0)) { nl[k] = ol[k]; (kept.league = kept.league || {})[k] = ol[k]; } };
                     up("totalScore", true);
                     up("myScore", ol.weekId && ol.weekId === nl.weekId);
                     up("myMonthlyScore", ol.monthId && ol.monthId === nl.monthId);
@@ -214,7 +215,7 @@ exports.saveGameDataSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
         throw new HttpsError("internal", "저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
     }
 
-    return { success: true, updatedAt: serverNow };
+    return Object.keys(kept).length ? { success: true, updatedAt: serverNow, kept } : { success: true, updatedAt: serverNow };
 });
 
 /**
