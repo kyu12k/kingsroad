@@ -857,7 +857,7 @@ const LANG = {
         lt_step1: '🔑 첫 마디를 보여 드릴게요 — 이어서 써 보세요', lt_step2: '🔲 이번엔 빈칸으로 — 글자 칸을 보고 써 보세요',
         lt_full_pay: '🎓 장 전체 테스트 — 망각의 고난으로 인정돼요. 백지로 써낸 절은 승점이 있어요', lt_full_nopay: '🎓 오늘 이 장의 망각의 고난을 이미 해서 이번 테스트는 승점이 없어요', lt_memory_linked: '오늘 이 장은 레벨 테스트로 이미 망각의 고난을 인정받아 승점이 없어요',
         oil_btn: '내 암송 — 절마다 기름 단계', oil_btn_short: '내 암송', oil_btn_from_lt: '내 암송에서 보기', oil_eyebrow: '킹스로드 · 내 암송', oil_title: '등에 채운 기름', oil_all: '전체',
-        oil_big: '켜진 등 / {n}절', oil_help_sum: '단계 설명 보기', oil_ch_title: '{ch}장의 등', oil_ch_sub: '켜진 등 {lit} / {n}절', oil_next_title: '다음 할 것', oil_up_note: '{icon}{name}',
+        oil_big: '켜진 등 / {n}절', oil_help_sum: '단계 설명 보기', oil_ch_title: '{ch}장의 등', oil_dry_note: '🕯️ {n}절은 마지막으로 써낸 지 오래돼 기름이 말랐어요 — 한 번 다시 하면 돌아와요', oil_ch_sub: '켜진 등 {lit} / {n}절', oil_next_title: '다음 할 것', oil_up_note: '{icon}{name}',
         oil_n0: '빈 등', oil_n1: '감람 열매', oil_n2: '찧은 열매', oil_n3: '짜낸 기름', oil_n4: '맑은 기름', oil_n5: '기름 그릇', oil_n6: '다듬은 심지', oil_n7: '켜진 등', oil_n8: '한밤의 등불',
         oil_do0: '아직', oil_do1: '익힘', oil_do2: '빈칸 · 순서대로', oil_do3: '첫 마디 · 순서대로', oil_do4: '백지 · 순서대로', oil_do5: '주소', oil_do6: '첫 마디 · 무작위', oil_do7: '백지 · 무작위', oil_do8: '하루 쉬고도',
         oil_d0: '아직 이 절의 기름이 없어요.', oil_d1: '처음 외웠어요. 기름이 될 열매를 거두었어요.', oil_d2: '빈칸을 보며 순서대로 써냈어요. 열매를 찧으니 기름이 배어 나와요.',
@@ -2191,7 +2191,7 @@ const LANG = {
         lt_step1: '🔑 Here are the first words — continue from there', lt_step2: '🔲 Now with blanks — use the letter slots',
         lt_full_pay: '🎓 Whole-chapter test — counts as Trial of Forgetting. Verses written blank earn points', lt_full_nopay: '🎓 You already did this chapter\'s Trial of Forgetting today — no points this time', lt_memory_linked: 'This chapter already counted today via the level test — no points',
         oil_btn: 'My recitation — oil by verse', oil_btn_short: 'My recitation', oil_btn_from_lt: 'See in My recitation', oil_eyebrow: "King\u2019s Road · My recitation", oil_title: 'Oil in the lamp', oil_all: 'All',
-        oil_big: 'lamps lit / {n} verses', oil_help_sum: 'What the stages mean', oil_ch_title: 'Chapter {ch} lamps', oil_ch_sub: 'lit {lit} / {n} verses', oil_next_title: 'Next', oil_up_note: '{icon}{name}',
+        oil_big: 'lamps lit / {n} verses', oil_help_sum: 'What the stages mean', oil_ch_title: 'Chapter {ch} lamps', oil_dry_note: '🕯️ {n} verses dried out — it has been a while. Do them once and they come back', oil_ch_sub: 'lit {lit} / {n} verses', oil_next_title: 'Next', oil_up_note: '{icon}{name}',
         oil_n0: 'Empty lamp', oil_n1: 'Olives', oil_n2: 'Crushed', oil_n3: 'Pressed oil', oil_n4: 'Clear oil', oil_n5: 'Oil vessel', oil_n6: 'Trimmed wick', oil_n7: 'Lamp lit', oil_n8: 'Midnight lamp',
         oil_do0: 'not yet', oil_do1: 'learned', oil_do2: 'blanks · in order', oil_do3: 'first words · in order', oil_do4: 'blank · in order', oil_do5: 'reference', oil_do6: 'first words · random', oil_do7: 'blank · random', oil_do8: 'after a day off',
         oil_d0: 'No oil for this verse yet.', oil_d1: 'Learned it. The olives are gathered.', oil_d2: 'Wrote it in order with blanks. Crushed olives seep oil.',
@@ -29607,8 +29607,11 @@ function _ltNote(id, ok, hints, giveUp) {
 const OIL_N = 9;
 function _oilNote(id, L, pass) {
     if (!/^\d+-\d+$/.test(id)) return;
-    const cur = oilLv[id] || { l: 0, t: 0 };
-    if (pass) { if (L > (cur.l | 0)) { oilLv[id] = { l: L, t: Date.now() }; _oilUpNote(id, cur.l | 0, L); } }
+    const cur = oilLv[id] || { l: 0, t: 0 }, shown = _oilStage(id);
+    if (pass) {
+        if (L >= (cur.l | 0)) { oilLv[id] = { l: L, t: Date.now() }; if (L > shown) _oilUpNote(id, shown, L); }   // 같은 단계도 시각을 새로 — 기름이 다시 찬다(10/19)
+        else if (L > shown) { oilLv[id] = { l: L, t: Date.now() }; _oilUpNote(id, shown, L); }   // 말라서 낮아 보이던 절 — 오래된 높은 단계 대신 지금 증거로
+    }
     else if ((cur.l | 0) >= L) oilLv[id] = { l: L - 1 === 5 ? 4 : L - 1, t: Date.now() };   // 5(기름 그릇)는 주소 기록으로만 얹으므로 저장은 4
 }
 function _oilUpNote(id, from, to) {   // 결과 화면 한 줄 — 이번 세션에 오른 절 모아 두기
@@ -29634,10 +29637,26 @@ function _ltRested(ch) {
     return ids.length > 0 && ids.every(id => (_verseSeenGet(id) || 0) < cut);
 }
 function _oilAddrCleared(ch) { return Array.isArray(hardshipAddressClearHistory[ch]) && hardshipAddressClearHistory[ch].length > 0; }
-function _oilStage(id) {
+function _oilStage(id) { return _oilDry(id, _oilStageRaw(id)); }
+function _oilStageRaw(id) {
     let l = ((oilLv[id] || {}).l) | 0;
     if (l < 1 && (stageMastery[id] || 0) > 0) l = 1;
     if (l === 4 && _oilAddrCleared(parseInt(id, 10))) l = 5;
+    return l;
+}
+/* 🕯️ 기름이 마른다 (10/19 사용자 자기 평가) — 기록은 그대로 두고 **보여 주는 단계만** 마지막 증거로부터 지난 날로 낮춘다.
+   15장(오늘 망각) 켜진 등 ✓ · 1~5장 하루는 괜찮고 이틀 쉬면 장에 힌트 2~3번 · 17·21장(12~17일 전 빠른 복습 백지) 켜진 등 → 「첫 마디를 봐도 힌트가 더 필요」.
+   2일 → 한밤의 등불은 켜진 등 · 5일 → 기름 그릇 이상은 맑은 기름 · 10일 → 짜낸 기름 이상은 찧은 열매. 다시 통과하면 바로 돌아온다(_oilNote) */
+const OIL_DRY = [[10, 3, 2], [5, 5, 4], [2, 8, 7]];   // [지난 날, 이 단계 이상이면, 이 단계로]
+function _oilLastEvidence(id) {
+    const o = oilLv[id] || {}, r = (typeof verseRecall !== 'undefined' && verseRecall[id]) || {};
+    return Math.max((o.t | 0) > 1 ? o.t : 0, Number(r.lastBlankPass) || 0);
+}
+function _oilDry(id, l) {
+    if (l < 3) return l;
+    const t0 = _oilLastEvidence(id); if (!t0) return l;
+    const days = (Date.now() - t0) / 86400000;
+    for (const [d, from, to] of OIL_DRY) if (days >= d && l >= from) return to;
     return l;
 }
 /* 지금까지의 기록으로 출발 단계를 채운다(마지막 기록의 출처로 어림) — 아직 기록 없는 절만 */
@@ -29790,9 +29809,10 @@ function _oilChapterHtml(ch) {
     const ids = _oilChapterIds(ch), sts = ids.map(_oilStage);
     const cells = ids.map((id, i) => `<div class="oil-v" title="${ch}:${id.split('-')[1]} · ${t('oil_n' + sts[i])}">${_oilIcon(sts[i])}<span>${id.split('-')[1]}</span></div>`).join('');
     const pl = _oilPlan(ch), lit = sts.filter(x => x >= 7).length;
+    const dry = ids.filter((id, i) => sts[i] < _oilStageRaw(id)).length;   // 🕯️ 오래돼 낮아 보이는 절
     const nx = pl ? { txt: pl.txt, btn: pl.js ? `<button class="oil-next-btn" onclick="${pl.js}">${pl.go}</button>` : '' } : { txt: t('oil_next0', { ch, r: '1' }), btn: '' };
     return `<div class="oil-head"><button class="oil-back" onclick="openOilScreen()">‹ ${t('oil_all')}</button><div class="oil-title">${t('oil_ch_title', { ch })}</div>
-        <div class="oil-sub">${t('oil_ch_sub', { lit, n: ids.length })}</div></div>
+        <div class="oil-sub">${t('oil_ch_sub', { lit, n: ids.length })}${dry ? `<br><small>${t('oil_dry_note', { n: dry })}</small>` : ''}</div></div>
         <div class="oil-grid">${cells}</div>
         <div class="oil-next"><div class="oil-next-t">${t('oil_next_title')}</div><p>${nx.txt}</p>${nx.btn}${pl && (pl.lo === 2 || pl.lo === 5) ? `<button class="oil-next-sub" onclick="closeOilScreen(); openInitialLine(${ch})">${t('il_entry', { ch })}</button>` : ''}</div>
         <details class="oil-help"><summary>${t('oil_help_sum')}</summary>${_oilLegendHtml()}</details>`;
