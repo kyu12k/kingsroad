@@ -55,6 +55,23 @@ const READ_COUNT_MAX = 200000; // 3초 간격 상한 28,800/일 × 7
 // 실시간 암송왕 상한: 404절 × 7일 (같은 구절 하루 1회 규칙의 이론상 최대)
 const RECALL_COUNT_MAX = 404 * 7;
 
+/* 🚨 사고 기록 (2026-10-19) — 저장 거절(9/28 배열 속 배열·10/12 색인 한도)은 서버 로그에만 남아 며칠 뒤에야 알았다.
+   관리자 열쇠로는 로그를 못 읽어서 아침 보고(kingsroad_metrics/report.js)가 볼 수 있게 incidents/{KST 날짜}에 적는다.
+   { counts: { 종류: 수 }, items: { 종류: { uid: { tag, msg, at, n } } } } — 사람마다 마지막 메시지 하나. 종류: saveFail(저장 실패) · saveReject(검증 거절) · jsError(앱의 빨간 오류 상자) */
+async function noteIncident(kind, uid, tag, msg) {
+    try {
+        const day = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+        const inc = admin.firestore.FieldValue.increment(1);
+        await db.collection('incidents').doc(day).set({ counts: { [kind]: inc }, items: { [kind]: { [String(uid || 'anon')]: { tag: String(tag || '').slice(0, 10), msg: String(msg || '').slice(0, 300), at: Date.now(), n: inc } } } }, { merge: true });
+    } catch (e) { console.warn('[incident] 기록 실패', e && e.message); }
+}
+exports.reportClientError = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) return { ok: false };
+    const d = request.data || {};
+    await noteIncident('jsError', request.auth.uid, d.tag, `${String(d.msg || '').slice(0, 200)} @ ${String(d.src || '').slice(0, 40)}:${Number(d.line) | 0} ${String(d.ver || '').slice(0, 24)}`);
+    return { ok: true };
+});
+
 /**
  * 게임 데이터 저장 검증 Cloud Function
  * 클라이언트가 직접 Firestore에 쓰는 대신 이 함수를 통해 저장
@@ -71,6 +88,7 @@ exports.saveGameDataSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
     // 2. 필수 필드 확인
     for (const field of REQUIRED_FIELDS) {
         if (newData[field] === undefined || newData[field] === null) {
+            await noteIncident('saveReject', uid, newData.tag, `필수 필드 누락: ${field}`);
             throw new HttpsError("invalid-argument", `필수 필드 누락: ${field}`);
         }
     }
@@ -82,15 +100,18 @@ exports.saveGameDataSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
 
     // 4. 기본 타입 검증
     if (typeof newData.gems !== "number" || newData.gems < 0 || newData.gems > GEM_ABS_MAX) {
+        await noteIncident('saveReject', uid, newData.tag, `젬 값 ${newData.gems}`);
         throw new HttpsError("invalid-argument", "젬 값이 유효하지 않습니다.");
     }
     if (typeof newData.level !== "number" || newData.level < 0 || newData.level > 50) {
+        await noteIncident('saveReject', uid, newData.tag, `레벨 값 ${newData.level}`);
         throw new HttpsError("invalid-argument", "레벨 값이 유효하지 않습니다.");
     }
 
     // 5. 서버 시간 기준 updatedAt 유효성 검사 (5분 이상 미래 값 거부)
     const serverNow = Date.now();
     if (newData.updatedAt && newData.updatedAt > serverNow + 5 * 60 * 1000) {
+        await noteIncident('saveReject', uid, newData.tag, `updatedAt 미래 ${newData.updatedAt - serverNow}ms`);
         throw new HttpsError("invalid-argument", "updatedAt이 서버 시간보다 미래입니다.");
     }
 
@@ -189,6 +210,7 @@ exports.saveGameDataSecure = onCall({ cors: ALLOWED_ORIGINS }, async (request) =
             );
         }
         console.error(`[saveGameDataSecure] Firestore set 실패 uid=${uid}`, e);
+        await noteIncident('saveFail', uid, newData.tag, (e && e.message) || String(e));
         throw new HttpsError("internal", "저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
     }
 

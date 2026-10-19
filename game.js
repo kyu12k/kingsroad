@@ -6826,6 +6826,13 @@ function _showUncaughtError(msg, src, line) {
         document.body.appendChild(el);
         setTimeout(() => el.remove(), 12000);
     } catch (e) {}
+    // 🚨 서버에도 한 줄(10/19) — 전엔 그 사람 화면에만 떠서 말해 주지 않으면 몰랐다. 아침 보고가 incidents에서 센다
+    try {
+        if (typeof firebase !== 'undefined' && firebase.apps.length && firebase.auth().currentUser) {
+            const sv = document.querySelector('script[src*="game.js?v="]');
+            firebase.app().functions('asia-northeast3').httpsCallable('reportClientError')({ msg: String(msg).slice(0, 200), src: String(src || '').split('/').pop().split('?')[0], line: line | 0, tag: typeof myTag !== 'undefined' ? myTag : '', ver: sv ? sv.getAttribute('src').split('v=')[1] : '' }).catch(() => { });
+        }
+    } catch (e) { }
 }
 window.addEventListener('error', (ev) => _showUncaughtError(ev.message || (ev.error && ev.error.message) || 'error', ev.filename, ev.lineno));
 window.addEventListener('unhandledrejection', (ev) => { const r = ev.reason; _showUncaughtError((r && (r.message || r.code)) || String(r), 'game.js', 0); });
