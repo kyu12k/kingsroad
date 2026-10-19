@@ -20492,6 +20492,7 @@ function _noteDailyDone(ev) {
    기록: dailyLog[6시 날짜] = '절,절,절|단계' — eventProgress('daily:날짜')에서 옮겨 적는다(그건 60일이면 지워진다). 완료는 dailyReciteDone.
    화면: 한 달(달력) · 여정(22장 칩 + 날마다 칸). 진도일·쉬는 날은 달력(dailySchedule), 없으면 일요일만 쉼 */
 /* 📈 기능 이용률 (10/11 사용자: "기억하시나요 퀴즈·저장한 구절 — 일주일 뒤 이용률을 보고 여차하면 뺀다")
+   (10/19 추가: oo 「내 암송」 열기 · oc 장 보기 · og 「다음 할 것」 시작 · oh 홈 🪔 칩)
    featLog[6시 날짜] = { qs 퀴즈 뜸 · qn 답함 · qo 맞힘 · sv 구절 저장 · ss 저장한 구절 열기 · sn 답함 · so 맞힘 · sc 저장해 둔 절 수 }. 60일 보관 */
 let featLog = {};
 function _featNote(k) {
@@ -29696,6 +29697,7 @@ const OIL_DOT = ['#3a4152', '#5d7a2e', '#6e7a3a', '#8a7a3a', '#c9a23a', '#d9a640
 function _oilChapterIds(ch) { return getHardshipVerseIdsByChapterRange(ch, ch); }
 function openOilScreen(ch) {
     try { _oilBackfill(); } catch (e) { }
+    if (typeof _featNote === 'function') _featNote(ch ? 'oc' : 'oo');   // 📈 「내 암송」 열기·장 보기(10/19 — 설문 전에 쓰이는지 잰다)
     let ov = document.getElementById('oil-overlay');
     if (!ov) { ov = document.createElement('div'); ov.id = 'oil-overlay'; ov.className = 'modal-overlay'; ov.style.zIndex = '10002'; ov.onclick = e => { if (e.target === ov) closeOilScreen(); }; document.body.appendChild(ov); }
     ov.innerHTML = `<div class="oil-card" onclick="event.stopPropagation()">${ch ? _oilChapterHtml(ch) : _oilAllHtml()}<button class="oil-close" onclick="closeOilScreen()">${t('btn_close')}</button></div>`;
@@ -29753,6 +29755,7 @@ function _oilPlan(ch) {
 }
 function _oilRun(kind, a, b, idsStr) {
     closeOilScreen();
+    if (typeof _featNote === 'function') _featNote('og');   // 📈 「다음 할 것」 시작
     const ch = typeof a === 'number' ? a : parseInt(String(a), 10);
     const learnedIds = c => _ltUnits(c).reduce((x, u) => x.concat(u.ids), []);
     if (kind === 'mid' || kind === 'boss') {
@@ -29782,7 +29785,7 @@ function _oilHomePick() {
     } catch (e) { }
     return null;
 }
-function _oilHomeGo() { const x = _oilHomePick(); if (!x) { openOilScreen(); return; } new Function(x.pl.js)(); }
+function _oilHomeGo() { if (typeof _featNote === 'function') _featNote('oh'); const x = _oilHomePick(); if (!x) { openOilScreen(); return; } new Function(x.pl.js)(); }   // 📈 홈 🪔 칩 기록(10/19)
 function _oilChapterHtml(ch) {
     const ids = _oilChapterIds(ch), sts = ids.map(_oilStage);
     const cells = ids.map((id, i) => `<div class="oil-v" title="${ch}:${id.split('-')[1]} · ${t('oil_n' + sts[i])}">${_oilIcon(sts[i])}<span>${id.split('-')[1]}</span></div>`).join('');
