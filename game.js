@@ -3883,6 +3883,8 @@ var userStats = {
     dailyPlaySeconds: {}    // 일별 플레이타임 (YYYY-MM-DD: seconds)
 };
 
+/* 📊 날마다 클리어 수(10/19 — 주간 보고 「이번 주 몇 번 반복했나」) — 6시 날짜 → 수. 병합은 날마다 큰 쪽(_mergeStats) */
+function _statDay(k, v) { try { const d = _get6AMDayStr(), m = userStats[k] && typeof userStats[k] === 'object' ? userStats[k] : (userStats[k] = {}); m[d] = (m[d] | 0) + (v | 0); } catch (e) { } }
 let playSessionStart = null;
 
 function ensurePlaytimeStats() {
@@ -4028,8 +4030,8 @@ function updateStats(type, value = 1) {
                 isChanged = true;
             }
             break;
-        case 'verse_clear': userStats.totalVersesCleared += value; isChanged = true; break;
-        case 'boss_kill': userStats.totalBossKilled += value; isChanged = true; break;
+        case 'verse_clear': userStats.totalVersesCleared += value; _statDay('dailyClears', value); isChanged = true; break;
+        case 'boss_kill': userStats.totalBossKilled += value; _statDay('dailyBoss', value); isChanged = true; break;
         case 'gem_get': userStats.totalGemsEarned += value; isChanged = true; break;
         case 'perfect': userStats.totalPerfects += value; isChanged = true; break;
         case 'castle_levelup':
@@ -14791,6 +14793,23 @@ function _mergeRain(target, other) {
     if (String(b.startedOn || '') > String(a.startedOn || '')) { a.startedOn = String(b.startedOn); took++; }
     return took;
 }
+/* 📊 누계(나의 상세 기록) — 10/19까지 병합에서 빠져 기기끼리 통째로 덮었다(사용자: "같은 구절이라도 여러 번 클리어하는 게 핵심 — 누적해서 얼마나 공부했는지").
+   늘기만 하는 수는 큰 쪽 · 날마다 학습 시간은 날짜마다 큰 쪽 · 계정 생긴 때는 이른 쪽 · 마지막 접속일은 늦은 쪽 */
+function _mergeStats(target, other) {
+    const P = v => { if (typeof v === 'string') { try { return JSON.parse(v); } catch (e) { return null; } } return v && typeof v === 'object' ? v : null; };
+    const o = P(other.stats); if (!o) return 0;
+    const t0 = P(target.stats) || {}; let took = 0;
+    for (const k of ['loginDays', 'totalVersesCleared', 'totalBossKilled', 'totalGemsEarned', 'totalScoreEarned', 'totalPerfects', 'maxCastleLevel', 'earlyBirdCounts', 'totalPlaySeconds', 'rankingViews'])
+        if ((Number(o[k]) || 0) > (Number(t0[k]) || 0)) { t0[k] = o[k]; took++; }
+    if (o.accountCreatedAt && (!t0.accountCreatedAt || o.accountCreatedAt < t0.accountCreatedAt)) { t0.accountCreatedAt = o.accountCreatedAt; took++; }
+    if (typeof o.lastLoginDate === 'string' && o.lastLoginDate > (t0.lastLoginDate || '')) t0.lastLoginDate = o.lastLoginDate;
+    for (const dk of ['dailyPlaySeconds', 'dailyClears', 'dailyBoss']) if (o[dk] && typeof o[dk] === 'object') {
+        const td = t0[dk] && typeof t0[dk] === 'object' ? t0[dk] : (t0[dk] = {});
+        for (const d of Object.keys(o[dk])) if ((Number(o[dk][d]) || 0) > (Number(td[d]) || 0)) { td[d] = o[dk][d]; took++; }
+    }
+    target.stats = t0;
+    return took;
+}
 function _mergeSaveProgress(target, other) {
     if (!target || !other) return 0;
     let took = 0;
@@ -14806,6 +14825,7 @@ function _mergeSaveProgress(target, other) {
     took += _mergeEventProgress(target, other);
     took += _mergeNewJerusalem(target, other);
     took += _mergeGuide(target, other);
+    took += _mergeStats(target, other);   // 📊 누계 — 큰 쪽(10/19)
     if (typeof other.collectionLegacy === 'number' && !(target.collectionLegacy >= other.collectionLegacy)) { target.collectionLegacy = other.collectionLegacy; took++; }
     {   // 🎁 나눔 열매 — id로 합집합, 같은 열매는 더 나아간 쪽(쓴 절·먹은 절·다 먹음·감사)
         const ta = Array.isArray(target.njGiftFruits) ? target.njGiftFruits : [], ob = Array.isArray(other.njGiftFruits) ? other.njGiftFruits : [];
