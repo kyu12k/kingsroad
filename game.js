@@ -771,7 +771,7 @@ const LANG = {
         rl_ask_title: '🌱 모르겠다고 한 {n}절, 다시 익혀 볼까요?', rl_ask_body: '단어 절반이 보이는 빈칸으로 한 번 → 백지로 한 번 다시 써 봐요.<br>백지 레벨·승점에는 들어가지 않아요 — 내일 차례에서 꺼내기가 쉬워져요',
         rl_go: '🌱 다시 익히기', rl_skip: '그만하기', rl_prog_cloze: '🌱 다시 익히기 · 빈칸 {cur}/{total}', rl_prog_blank: '🌱 다시 익히기 · 백지 {cur}/{total}', rl_done: '🌱 다시 익히기 — {n}절 중 {m}절을 백지로 써냈어요',
         hardship_feedback_assisted: '✋ {label} · 너무 빨리(한꺼번에) 들어와 이번엔 백지로 세지 않았어요 — 키보드 추천·자동 완성·음성 입력 없이 직접 써 주세요',
-        nr_fruit: '열매는 승점 대신 🍃 잎사귀', nr_gift: '나눔 열매는 승점 대신 💎·🍃', nr_battle: '⚔️ 대결 복습 — 승점 없이 백지 기록만',
+        nr_fruit: '열매는 승점 대신 🍃 잎사귀', nr_gift: '나눔 열매는 승점 대신 💎·🍃', nr_battle: '⚔️ 대결 복습 — 승점 없이 백지 기록만', nr_quick: '승점은 이어지는 복습을 마치면 받아요',
         nr_step: '첫 마디·빈칸으로 써서 승점 없음', nr_linked: '오늘 이 장은 이미 승점을 받아 승점 없음', nr_test: '연습 테스트라 승점 없음 — 장 전체 테스트만 승점',
         hardship_blank_hint_notice: '💡 막히면 힌트를 누르세요 — 한 글자씩만 열려요',
         embed_title_quick_blank_none: '백지 복습',
@@ -2105,7 +2105,7 @@ const LANG = {
         rl_ask_title: '🌱 Relearn the {n} verse(s) you missed?', rl_ask_body: 'Write each once with half the words shown, then once from memory.<br>No effect on blank level or points — it makes tomorrow easier',
         rl_go: '🌱 Relearn', rl_skip: 'Stop here', rl_prog_cloze: '🌱 Relearn · blanks {cur}/{total}', rl_prog_blank: '🌱 Relearn · memory {cur}/{total}', rl_done: '🌱 Relearn — wrote {m} of {n} verse(s) from memory',
         hardship_feedback_assisted: '✋ {label} · entered too fast (all at once), so it was not counted as written from memory — please type it yourself, without keyboard suggestions, autocomplete or voice input',
-        nr_fruit: 'fruit gives 🍃 leaves instead of points', nr_gift: 'shared fruit gives 💎·🍃 instead of points', nr_battle: '⚔️ battle review — blank record only, no points',
+        nr_fruit: 'fruit gives 🍃 leaves instead of points', nr_gift: 'shared fruit gives 💎·🍃 instead of points', nr_battle: '⚔️ battle review — blank record only, no points', nr_quick: 'points come when you finish the review that follows',
         nr_step: 'no points with first words/blanks given', nr_linked: 'this chapter already earned points today', nr_test: 'practice test, no points — only whole-chapter tests score',
         hardship_blank_hint_notice: '💡 Stuck? Tap the hint — it opens one letter at a time',
         embed_title_quick_blank_none: 'Blank review',
@@ -30970,7 +30970,7 @@ function updateHardshipHeader() {
     }
 
     if (scoreEl) {
-        if (currentMode === 'endurance' || hardshipState.trainingMode) {
+        if (currentMode === 'endurance' || hardshipState.trainingMode || getHardshipScoreScale() === 0) {   // 승점이 이 판에선 안 나온다(빠른 복습 빈칸·열매·나눔 열매·대결 복습) — 「승점 0」은 군더더기(10/19)
             scoreEl.style.display = 'none';
         } else {
             scoreEl.style.display = 'inline-flex';
@@ -33047,6 +33047,7 @@ function _noRewardWhy() {
     if (hs.fruitKey) return 'nr_fruit';   // 🍎 생명나무 열매 — 승점 대신 잎사귀(10/11: 「오늘 이미 받은 승점」으로 잘못 나왔다)
     if (hs.giftId) return 'nr_gift';      // 🎁 나눔 열매 — 승점 대신 💎·🍃
     if (hs.battleRev) return 'nr_battle';  // ⚔️ 대결 복습
+    if (hs.quickReviewStageId) return 'nr_quick';   // ⚡ 빠른 복습의 빈칸·백지 — 승점은 이어지는 코스의 stageClear가 준다(10/19 사용자: 「승점 없음」은 사실과 다르다)
     return '';
 }
 function _blankScoreKind() {
