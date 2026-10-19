@@ -13262,6 +13262,7 @@ function loadNextVerse() {
                 } else {
                     zone.appendChild(proxy);
                 }
+                try { proxy.scrollIntoView({ block: 'nearest' }); } catch (e) { }
 
                 const ph = document.getElementById('placeholder-text');
                 if (ph) ph.style.display = 'none';
@@ -13362,6 +13363,7 @@ function loadNextVerse() {
             const ph = document.getElementById('placeholder-text');
             if (ph) ph.style.display = 'none';
             zone.appendChild(proxy);
+            try { proxy.scrollIntoView({ block: 'nearest' }); } catch (e) { }   // 방금 넣은 단어가 늘 보이게(10/19 — 칸이 넘치면 아래가 가려졌다)
         } else {
             // zone proxy → 제거 + pool 버튼 복원
             restorePoolBtn(btn.dataset.poolIndex);
