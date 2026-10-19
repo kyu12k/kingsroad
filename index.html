@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <!-- ★ 반드시 첫 스크립트: 전역 Date를 서버 시각으로 보정한다 (clock.js 주석 참조) -->
-    <script src="clock.js?v=20261019d"></script>
+    <script src="clock.js?v=20261019e"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>King's Road - 요한계시록 암송</title>
 
@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
     <!-- image_0.webp is inlined below; preload removed -->
-    <link rel="stylesheet" href="style.css?v=20261019d">
+    <link rel="stylesheet" href="style.css?v=20261019e">
 
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-TEVW49QB45"></script>
@@ -640,8 +640,7 @@
                 <div id="quiz-result-area" style="display:none; flex-direction:column; align-items:center;">
                     <div id="memory-quiz-result-text"
                         style="font-size:1em; font-weight:bold; line-height:1.9; margin-bottom:20px; color:#fff;"></div>
-                    <button id="quiz-save-btn" onclick="toggleSavedVerse()"
-                        style="background:transparent; color:#aaa; font-size:0.85rem; border:1px solid #555; border-radius:20px; cursor:pointer; padding:5px 16px; margin-bottom:14px;">🔖 저장하기</button>
+                    <!-- 🔖 저장하기는 10/19에 뺐다(1주 실측: 저장 3명·저장 구절 퀴즈 0명) — 기능 코드는 game.js에 남아 있다 -->
                     <button onclick="handleMemoryQuizContinue()"
                         style="background:#f1c40f; color:#2c3e50; font-size:1.05rem; font-weight:bold; padding:12px 40px; border-radius:30px; border:none; cursor:pointer; margin-bottom:14px; box-shadow:0 2px 10px rgba(0,0,0,0.3);">계속하기</button>
                     <br>
@@ -4092,9 +4091,6 @@
         <div class="more-menu-item" onclick="openLetterBoard()">
             <span data-i18n="nav_letters">편지 · 꿀팁</span> 💌
         </div>
-        <div class="more-menu-item" onclick="openSavedVersesFromMenu()">
-            <span>저장된 구절</span> 🔖
-        </div>
         <div class="more-menu-item" onclick="openFriendScreen()" style="position:relative;">
             <span>친구</span> 👥
             <span id="badge-friend" class="nav-badge" style="position:absolute; top:6px; right:10px; display:none;"></span>
@@ -4465,7 +4461,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="bible_en.js"></script>
-    <script src="game.js?v=20261019d"></script>
+    <script src="game.js?v=20261019e"></script>
     <script>
 
         /* =========================================
@@ -4569,7 +4565,20 @@
                         console.log('[Auth] Google 로그인 진행 중 — signInAnonymously 스킵');
                         return;
                     }
-                    // 로그인 안 되어 있으면 새로 로그인
+                    // 🔑 구글로 쓰던 기기면 익명 계정을 만들기 전에 먼저 묻는다(10/19) — 전엔 열자마자 익명을 만들고 나서 물어,
+                    //   로그인이 실패해 돌아올 때마다 새 익명 계정이 생기고 기록이 같은 태그로 복사됐다(#FHDVGA 10/15 4분에 16개).
+                    //   「나중에」를 고르면 그때 익명으로(_krAnonSignIn)
+                    let _wasG = false; try { _wasG = localStorage.getItem('kr_wasGoogle') === '1'; } catch (e) { }
+                    if (_wasG && typeof _googleLostPrompt === 'function' && !(typeof _googleBlockedBrowser === 'function' && _googleBlockedBrowser())) {
+                        _googleLostPrompt(window._krAnonSignIn);
+                        return;
+                    }
+                    window._krAnonSignIn();
+                }
+            });
+            // 로그인 안 되어 있으면 새로 로그인(익명)
+            window._krAnonSignIn = function () {
+                    if (auth.currentUser) return;
                     auth.signInAnonymously()
                         .then((credential) => {
                             myServerUid = credential.user.uid;
@@ -4583,8 +4592,8 @@
                             // [Firestore 동기화] 신규 로그인 후 마이그레이션 및 최신 데이터 적용
                             if (typeof initFirestoreSync === 'function') initFirestoreSync();
 
-                            // 🔑 구글로 쓰던 기기인데 익명으로 새로 들어왔다 = 구글 로그인이 풀림 → 다시 로그인 권유 (10/13)
-                            setTimeout(() => { if (typeof _googleLostPrompt === 'function') _googleLostPrompt(); }, 2500);
+                            // 🔑 구글로 쓰던 기기인데 익명으로 새로 들어왔다 = 구글 로그인이 풀림 → 다시 로그인 권유 (10/13) — 이미 물어 「나중에」를 골랐으면 안 묻는다
+                            setTimeout(() => { if (typeof _googleLostPrompt === 'function' && !window._gLostLater) _googleLostPrompt(); }, 2500);
 
                             // 지난 주 랭킹 보상 버튼 표시
                             if (typeof checkPendingReward === 'function') checkPendingReward();
@@ -4601,8 +4610,7 @@
                         .catch((error) => {
                             console.error("서버 연결 실패:", error);
                         });
-                }
-            });
+            };
 
         } catch (e) {
             console.error("파이어베이스 초기화 오류 (키를 확인하세요):", e);

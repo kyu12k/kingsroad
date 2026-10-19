@@ -94,9 +94,9 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `generateVerseChoices(verse)` | game.js:~17908 | 구절의 고난용 4지선다 생성 (같은 장 2개 + 다른 장 1개) |
 | `renderHardshipVerseVerse()` | game.js:~17933 | 구절의 고난 문제 렌더링 (주소 표시 + 4지선다) |
 | `submitHardshipVerseGuess(idx)` | game.js:~17962 | 구절의 고난 선택지 제출 처리 |
-| `toggleSavedVerse()` | game.js:~19065 | 기억하시나요 결과에서 구절 저장/해제 토글 |
-| `openSavedVersesQuiz()` | game.js:~19184 | 저장된 구절 퀴즈 오버레이 열기 |
-| `updateSavedVersesBadge()` | game.js:~19056 | 더보기 메뉴의 저장된 구절 배지 갱신 |
+| `toggleSavedVerse()` | game.js:~19065 | 기억하시나요 결과에서 구절 저장/해제 토글 — **10/19 화면에서 뺌**(버튼·메뉴 없음, 코드만 남음) |
+| `openSavedVersesQuiz()` | game.js:~19184 | 저장된 구절 퀴즈 오버레이 열기 — **10/19 화면에서 뺌**(버튼·메뉴 없음, 코드만 남음) |
+| `updateSavedVersesBadge()` | game.js:~19056 | 더보기 메뉴의 저장된 구절 배지 갱신 — **10/19 화면에서 뺌**(버튼·메뉴 없음, 코드만 남음) |
 | `count6AMBoundaries(startTs, endTs)` | game.js:4538 | startTs~endTs 사이 로컬 오전 6시 경계 횟수 반환. **로컬 시간** 기준이므로 UTC 오프셋 무관 |
 | `getKingsRoadUnlockedCount()` | game.js:4544 | 현재 해금된 일반 스테이지 수 (count6AMBoundaries 기반) |
 | `getKingsRoadNextUnlockMs()` | game.js:4676 | 다음 해금까지 남은 ms. 로컬 오전 6시 기준 |

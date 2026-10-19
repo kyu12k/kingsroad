@@ -24950,11 +24950,17 @@ async function _doSignInWithGoogle() {
         // signInWithPopup 도중 onAuthStateChanged(null)이 발생해 signInAnonymously가
         // forceRemoteSync 플래그를 소비하는 경쟁 조건 방지
         window._googleSignInInProgress = true;
+        var _popAt = Date.now();
         await auth.signInWithPopup(provider);
         window._googleSignInInProgress = false;
         // onAuthStateChanged → initFirestoreSync이 forceRemoteSync를 보고 서버 데이터 적용
     } catch (e) {
         window._googleSignInInProgress = false;
+        if ((e.code === 'auth/popup-closed-by-user' && Date.now() - _popAt > 1500) || e.code === 'auth/cancelled-popup-request') {   // 사람이 닫았다 — 페이지를 넘기는 로그인으로 다시 끌고 가지 않는다(10/19: 닫을 때마다 넘어갔다 돌아오며 새 익명 계정이 생겼다). 곧바로 닫힘은 아이폰 홈 화면 앱의 막힌 창 → 아래 리다이렉트
+            localStorage.removeItem('kingsroad_forceRemoteSync');
+            _googleLostRetry();
+            return;
+        }
         if (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user') {
             // iOS Safari 팝업 차단 → 리다이렉트로 재시도 (forceRemoteSync는 이미 세팅됨)
             window._googleSignInInProgress = true; // redirect 완료까지 플래그 유지
@@ -24964,10 +24970,12 @@ async function _doSignInWithGoogle() {
                 window._googleSignInInProgress = false;
                 localStorage.removeItem('kingsroad_forceRemoteSync');
                 showGemToast(0, 'Google 로그인 실패: ' + (e2.message || e2.code), true);
+                _googleLostRetry();
             }
         } else {
             localStorage.removeItem('kingsroad_forceRemoteSync');
             showGemToast(0, 'Google 로그인 실패: ' + (e.message || e.code), true);
+            _googleLostRetry();
         }
     }
 }
@@ -25066,9 +25074,12 @@ function changeLinkedGoogle() {
    기록이 계정 둘로 갈렸다(#NGCTUB 2주, #5850 일주일에 네 번). 구글로 쓰던 기기라는 걸 기억해 두고, 익명으로 새로 들어오게 되면 다시 로그인을 권한다.
    다시 로그인하면 같은 태그·기기 쪽이 최근이면 합친다(initFirestoreSync의 forceRemote 예외) */
 function _noteGoogleDevice() { try { if (isGoogleLinked()) localStorage.setItem('kr_wasGoogle', '1'); } catch (e) { } }
-function _googleLostPrompt() {
+/* onLater — 아직 로그인 전(익명 계정을 만들기 전)에 물을 때(10/19): 「나중에」를 고르거나 로그인이 끝내 안 되면 그때 익명으로 */
+function _googleLostPrompt(onLater) {
     try {
-        if (localStorage.getItem('kr_wasGoogle') !== '1' || isGoogleLinked() || _googleBlockedBrowser()) return;
+        if (onLater) window._gLostOnLater = onLater;
+        const later = () => { window._gLostLater = true; const f = window._gLostOnLater; window._gLostOnLater = null; if (typeof f === 'function') f(); };
+        if (localStorage.getItem('kr_wasGoogle') !== '1' || isGoogleLinked() || _googleBlockedBrowser()) { if (onLater) later(); return; }
         if (document.getElementById('google-lost-modal')) return;
         const el = document.createElement('div');
         el.id = 'google-lost-modal'; el.className = 'modal-overlay'; el.style.zIndex = '10001'; el.style.display = 'flex';
@@ -25080,8 +25091,14 @@ function _googleLostPrompt() {
         </div>`;
         document.body.appendChild(el);
         el.querySelector('#google-lost-go').onclick = () => { el.remove(); _doSignInWithGoogle(); };
-        el.querySelector('#google-lost-later').onclick = () => el.remove();
-    } catch (e) { }
+        el.querySelector('#google-lost-later').onclick = () => { el.remove(); later(); };
+    } catch (e) { if (onLater) { try { onLater(); } catch (e2) { } } }
+}
+/* 구글 로그인이 안 됐는데 아직 아무 계정도 없으면(익명을 만들기 전에 물었을 때) — 다시 묻는다(그 창의 「나중에」가 익명으로) */
+function _googleLostRetry() {
+    if (auth && auth.currentUser) return;
+    if (window._gLostOnLater) _googleLostPrompt();
+    else if (typeof window._krAnonSignIn === 'function') window._krAnonSignIn();
 }
 function _updateGoogleLinkUI() {
     const linked = isGoogleLinked();
