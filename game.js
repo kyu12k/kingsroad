@@ -10288,7 +10288,7 @@ window._battleInboxRefresh = _battleInboxRefresh;
    서버 kingsroad njVisitOpen·njVisitSign·njVisitQuiz·njVisitClaim. 구경하는 동안은 3D가 읽는 내 꾸밈 기록(njGifts 등)을 그 사람 것으로 잠시 바꿔 끼우므로
    **저장을 멈춘다**(saveGameData·syncToFirestore가 _njVisit이면 돌아감). 3D를 닫으면 _njVisitEnd가 내 것으로 되돌리고 그때 저장한다 */
 const NJV_MSGS = ['🕊️ 평강이 있기를', '✨ 은혜로운 곳이네요', '🙏 함께 암송해요', '🌿 아름답게 꾸미셨네요', '💛 또 올게요', '👑 주님께 영광을'];
-const NJV_WHY = { google: '친구의 새 예루살렘은 구글 계정을 연결한 분끼리 들어갈 수 있어요.', rel: '친구나 같은 길드원의 새 예루살렘에만 들어갈 수 있어요.', self: '내 새 예루살렘이에요.', nouser: '들어갈 수 없는 곳이에요.',
+const NJV_WHY = { google: '친구의 새 예루살렘은 구글 계정을 연결한 분끼리 들어갈 수 있어요.', rel: '친구·길드원이거나 「🌍 누구나 들어오기」를 켠 곳에만 들어갈 수 있어요.', self: '내 새 예루살렘이에요.', nouser: '들어갈 수 없는 곳이에요.',
     textfriend: '직접 쓴 인사는 친구에게만 남길 수 있어요.', hosts: '오늘은 다섯 곳의 문제를 다 풀었어요. 구경은 계속할 수 있어요.', items: '이곳의 문제는 오늘 세 개까지예요. 구경은 계속할 수 있어요.', same: '이미 푼 물건이에요.' };
 const _njvCall = (name, data) => firebase.app().functions('asia-northeast3').httpsCallable(name)(Object.assign({ myTag }, data)).then(r => r.data);
 const _njvEsc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -10332,8 +10332,9 @@ function _njVisitBar() {
     if (!bar) { bar = document.createElement('div'); bar.className = 'nj3d-visitbar'; st.appendChild(bar); }
     if (_njvFolded()) { _njvFoldBar(bar, _njVisitBar, true); return; }
     { const ov = document.getElementById('nj3d'); if (ov) ov.classList.remove('nj3d-barfold'); bar.classList.remove('folded'); }
-    bar.innerHTML = `<span>🕊️ 오늘 ${V.order}번째 손님</span><button class="sub" data-a="help" aria-label="놀러 와서 할 수 있는 것">❓</button><button class="sub" data-a="gb">📖 방명록</button><button data-a="sign">${V.signed ? '✓ 인사함' : '👋 인사'}</button><button class="sub" data-a="fold" aria-label="접기">▴</button>`;
+    bar.innerHTML = `<span>🕊️ 오늘 ${V.order}번째 손님</span><button class="sub" data-a="browse" aria-label="다른 곳 둘러보기">🌍</button><button class="sub" data-a="help" aria-label="놀러 와서 할 수 있는 것">❓</button><button class="sub" data-a="gb">📖 방명록</button><button data-a="sign">${V.signed ? '✓ 인사함' : '👋 인사'}</button><button class="sub" data-a="fold" aria-label="접기">▴</button>`;
     bar.querySelector('[data-a="help"]').onclick = () => _njVisitHelp();
+    bar.querySelector('[data-a="browse"]').onclick = () => openNJBrowse();
     bar.querySelector('[data-a="gb"]').onclick = () => _njGuestbook(V.host.nick, V.guest, V.week);
     bar.querySelector('[data-a="sign"]').onclick = () => _njVisitSignPick();
     bar.querySelector('[data-a="fold"]').onclick = () => { _njvFolded(true); _njVisitBar(); };
@@ -10356,7 +10357,7 @@ function _njVisitHelp() {
         <ul class="njv-help">
             <li><b>🎁 예물·꾸밈·특산물을 눌러 보세요</b> — 그 물건의 말씀 빈칸 문제가 나와요. 맞히면 나는 💎300, ${nick}님도 💎500을 받아요.</li>
             <li><b>🐠 바다에 들어가 보세요</b> — ${nick}님이 백지로 쓴 절의 생물들이 헤엄쳐요. 눌러도 같은 문제가 나와요.</li>
-            <li><b>👋 인사</b>를 남기면 ${nick}님 방명록에 이름이 남아요(친구는 직접 쓰고, 길드원은 고르기). <b>📖 방명록</b>에서 오늘 누가 다녀갔는지 볼 수 있어요.</li>
+            <li><b>👋 인사</b>를 남기면 ${nick}님 방명록에 이름이 남아요(친구는 직접 쓰고, 그 밖엔 고르기). <b>🌍</b>로 다른 곳도 둘러볼 수 있어요. <b>📖 방명록</b>에서 오늘 누가 다녀갔는지 볼 수 있어요.</li>
             <li class="sub">문제는 한 곳에서 하루 3개, 하루 다섯 곳까지 보석을 받아요. 구경은 얼마든지 할 수 있어요.</li>
         </ul><button class="close">알겠어요</button>`);
     ov.querySelector('.close').onclick = () => ov.remove();
@@ -10491,14 +10492,66 @@ setTimeout(() => { if (typeof _njVisitClaim === 'function') _njVisitClaim(false)
 // 내 3D — 「🕊️ 오늘 n명 · 이번 주 n명 · 📖 방명록」 띠
 function _njMineBar() {
     const st = document.querySelector('#nj3d .nj3d-stage'), r = window._njvMine; if (!st || _njVisit || !r) return;
-    if (!r.guest.length && !r.week) return;
+    if (!isGoogleLinked() && !r.guest.length && !r.week) return;   // 🌍 둘러보기·누구나 들어오기는 구글 연동한 사람만(10/19) — 아니면 예전처럼 손님이 있을 때만
     let bar = st.querySelector('.nj3d-visitbar'); if (!bar) { bar = document.createElement('div'); bar.className = 'nj3d-visitbar'; st.appendChild(bar); }
     const ov = document.getElementById('nj3d'); if (ov) ov.classList.add('nj3d-hasbar');
     if (_njvFolded()) { _njvFoldBar(bar, _njMineBar); return; }
     { const ov = document.getElementById('nj3d'); if (ov) ov.classList.remove('nj3d-barfold'); bar.classList.remove('folded'); }
-    bar.innerHTML = `<span>🕊️ 오늘 ${r.guest.length}명 · 이번 주 ${r.week}명</span><button class="sub" data-a="gb">📖 방명록</button><button class="sub" data-a="fold" aria-label="접기">▴</button>`;
+    const G = isGoogleLinked();
+    bar.innerHTML = `<span>🕊️ 오늘 ${r.guest.length}명 · 이번 주 ${r.week}명</span><button class="sub" data-a="gb">📖 방명록</button>${G ? `<button class="sub${r.open ? ' on' : ''}" data-a="open">${r.open ? '🌍 누구나 켬' : '🔒 친구만'}</button><button class="sub" data-a="browse">🌍 둘러보기</button>` : ''}<button class="sub" data-a="fold" aria-label="접기">▴</button>`;
     bar.querySelector('[data-a="gb"]').onclick = () => _njGuestbook(myNickname, r.guest, r.week);
+    if (G) { bar.querySelector('[data-a="open"]').onclick = () => _njOpenToggle(); bar.querySelector('[data-a="browse"]').onclick = () => openNJBrowse(); }
     bar.querySelector('[data-a="fold"]').onclick = () => { _njvFolded(true); _njMineBar(); };
+}
+/* 🌍 누구나 들어오기 · 둘러보기 (2026-10-19 사용자: 「친구 세상 구경 다음 단계」) — 서버 kingsroad njVisitSetOpen·njVisitList.
+   켜면 친구·길드원이 아니어도 구글 연동한 누구나 들어와 구경·문제(주인 💎500씩, 하루 5만 그대로). 그런 손님의 인사는 정해진 인사만 */
+function _njOpenToggle() {
+    const r = window._njvMine || {}, on = !!r.open;
+    const ov = _njPop(`<h3>🌍 누구나 들어오기</h3>
+        <ul class="njv-help">
+            <li>켜면 <b>친구가 아니어도</b> 구글을 연결한 순례자 누구나 내 새 예루살렘을 구경할 수 있어요. 「🌍 둘러보기」 목록에도 나와요.</li>
+            <li>손님이 물건의 말씀 문제를 맞히면 나도 <b>💎500</b>씩 받아요(하루 5만까지 — 지금과 같아요).</li>
+            <li class="sub">친구가 아닌 손님은 방명록에 정해진 인사만 남겨요. 보석·암송 기록은 보이지 않아요. 언제든 끌 수 있어요.</li>
+        </ul>
+        <div class="opts"><button data-v="1"${on ? ' class="ok"' : ''}>🌍 누구나 들어오게</button><button data-v="0"${on ? '' : ' class="ok"'}>🔒 친구·길드원만</button></div><button class="close">닫기</button>`);
+    ov.querySelector('.close').onclick = () => ov.remove();
+    ov.querySelectorAll('[data-v]').forEach(b => b.onclick = async () => {
+        const want = b.dataset.v === '1'; ov.querySelectorAll('[data-v]').forEach(x => x.disabled = true);
+        try {
+            const res = await _njvCall('njVisitSetOpen', { open: want });
+            if (res && res.ok) { (window._njvMine = window._njvMine || { guest: [], week: 0 }).open = res.open; ov.remove(); _njMineBar(); showToast(res.open ? '🌍 이제 누구나 내 새 예루살렘에 들어올 수 있어요' : '🔒 이제 친구·길드원만 들어와요'); return; }
+        } catch (e) { console.warn('[visit] open', e); }
+        ov.remove(); showGemToast(0, '바꾸지 못했어요. 잠시 뒤 다시 해 보세요.', true);
+    });
+}
+let _njBrowseTab = 'popular';
+async function openNJBrowse(tab) {
+    if (!myTag || myTag === '0000') { showGemToast(0, '닉네임을 먼저 설정해주세요.', true); return; }
+    if (!isGoogleLinked()) { showGemToast(0, NJV_WHY.google, true); return; }
+    if (tab) _njBrowseTab = tab;
+    document.querySelectorAll('.njv-pop.njv-browse').forEach(x => x.remove());
+    const ov = _njPop(`<h3>🌍 새 예루살렘 둘러보기</h3><div class="ref">「누구나 들어오기」를 켠 곳이에요</div><div class="njb-list"><div class="m">불러오는 중…</div></div><button class="close">닫기</button>`);
+    ov.classList.add('njv-browse');
+    ov.querySelector('.close').onclick = () => ov.remove();
+    let r = null;
+    try { r = await _njvCall('njVisitList', {}); } catch (e) { console.warn('[visit] list', e); }
+    const box = ov.querySelector('.njb-list'); if (!box) return;
+    if (!r || !r.ok) { box.innerHTML = '<div class="m">목록을 불러오지 못했어요. 잠시 뒤 다시 해 보세요.</div>'; return; }
+    const TABS = [['popular', '🔥 인기'], ['fresh', '✨ 새로'], ['random', '🎲 아무 곳'], ['tribe', '🛡️ 같은 지파']];
+    const draw = () => {
+        const L = r[_njBrowseTab] || [];
+        const row = x => `<div class="njb-row"><div><b>${_njvEsc(x.nick || '순례자')}</b>${typeof getTribeIcon === 'function' && x.tribe != null ? ` <span class="tr">${getTribeIcon(x.tribe)}</span>` : ''}<small>이번 주 ${x.week}명 · 꾸밈 ${x.items}${x.been ? ' · 다녀옴' : ''}</small></div><button data-go="${_njvEsc(x.tag)}" data-nick="${_njvEsc(x.nick || '')}">들어가기</button></div>`;
+        box.innerHTML = `<div class="njb-tabs">${TABS.map(([k, l]) => `<button class="${k === _njBrowseTab ? 'on' : ''}" data-tab="${k}">${l}</button>`).join('')}</div>`
+            + (L.length ? L.map(row).join('') : `<div class="m">${r.n ? '여기엔 아직 없어요' : '아직 「누구나 들어오기」를 켠 곳이 없어요 — 내 성의 띠에서 먼저 켜 보세요'}</div>`);
+        box.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { _njBrowseTab = b.dataset.tab; draw(); });
+        box.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
+            ov.remove();
+            const go = () => openNJVisit(b.dataset.go, b.dataset.nick);
+            if (_njVisit && typeof closeNJ3D === 'function') { closeNJ3D(); setTimeout(go, 400); } else go();   // 구경 중이면 지금 곳을 닫고(되돌린 뒤) 다음 곳으로
+        });
+    };
+    draw();
+    if (typeof _featNote === 'function') _featNote('nv_browse');
 }
 function closeNewJerusalem() {
     const m = document.getElementById('nj-modal'); if (m) m.remove();
@@ -35410,6 +35463,7 @@ function openFriendScreen() {
                 <button class="friend-close-btn" onclick="closeFriendScreen()">✕</button>
             </div>
             <button class="friend-battle-btn" onclick="openBattle()">⚔️ 말씀 대결 — 도전장 보내기·받은 도전장</button>
+            <button class="friend-battle-btn njb-btn" onclick="openNJBrowse()">🌍 새 예루살렘 둘러보기 — 누구나 들어오는 곳</button>
             <div class="friend-add-row">
                 <input id="friend-tag-input" class="friend-tag-input" placeholder="코드 입력 (#ABCD12)" maxlength="7" />
                 <button class="friend-add-btn" onclick="_submitFriendRequest()">신청</button>

@@ -1807,9 +1807,43 @@ async function _njvPre(request, myTag, hostTag) {
     if (Array.isArray(hl.blocked) && hl.blocked.includes(me)) return { ok: false, why: 'nouser' };
     const friend = Array.isArray(u.friends) && u.friends.includes(host);
     const guild = !!(u.guildId && hl.guildId && u.guildId === hl.guildId);
-    if (!friend && !guild) return { ok: false, why: 'rel' };
-    return { ok: true, u, me, host, hl, friend, nick: _bNick(u.nickname) };
+    let open = false;
+    if (!friend && !guild) {   // 🌍 누구나 들어오기(10/19) — 주인이 켰으면 구글 연동한 누구나
+        const nv = await db.collection('njVisits').doc(host).get();
+        open = !!(nv.exists && nv.data().open === true);
+        if (!open) return { ok: false, why: 'rel' };
+    }
+    return { ok: true, u, me, host, hl, friend, guild, open, nick: _bNick(u.nickname) };
 }
+/* 🌍 누구나 들어오기 · 둘러보기 목록 (2026-10-19 사용자: 「친구 세상 구경 다음 단계」) — docs/새-예루살렘.md
+   njVisits/{주인}.open(켬) · openAt(처음 켠 때) · nick · tribe · items(꾸밈 수) — 목록은 open == true만. 들어가는 사람은 지금처럼 구글 연동.
+   친구가 아닌 손님은 방명록에 정해진 인사만(njVisitSign의 textfriend 그대로) */
+const njvItems = d => (Array.isArray(d.njGifts) ? d.njGifts.length : 0) + (Array.isArray(d.njDecor) ? d.njDecor.length : 0) + (Array.isArray(d.njSets) ? d.njSets.length : 0) + (Number(d.njBuilt) || 0);
+exports.njVisitSetOpen = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { myTag, open } = request.data || {};
+    const u = await verifyTag(request.auth.uid, myTag);
+    const ref = db.collection('njVisits').doc(String(myTag)), on = open === true;
+    const cur = await ref.get(), C = cur.exists ? cur.data() : {};
+    await ref.set({ open: on, openAt: on ? (C.openAt || Date.now()) : (C.openAt || 0), nick: _bNick(u.nickname), tribe: Number(u.tribe) || 0, items: njvItems(u) }, { merge: true });
+    return { ok: true, open: on };
+});
+exports.njVisitList = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { myTag } = request.data || {};
+    const u = await verifyTag(request.auth.uid, myTag);
+    const me = String(myTag), wkId = getWeekId(), myTribe = Number(u.tribe) || 0;
+    const snap = await db.collection('njVisits').where('open', '==', true).limit(300).get();
+    const all = [];
+    snap.forEach(d => {
+        if (d.id === me) return;
+        const x = d.data();
+        all.push({ tag: d.id, nick: _bNick(x.nick), tribe: Number(x.tribe) || 0, week: x.wk && x.wk.id === wkId ? (x.wk.n | 0) : 0, total: x.total | 0, items: x.items | 0, openAt: Number(x.openAt) || 0, been: !!(x.wk && x.wk.id === wkId && Array.isArray(x.wk.tags) && x.wk.tags.includes(me)) });
+    });
+    const by = (k) => all.slice().sort((a, b) => (b[k] - a[k]) || (b.items - a.items)).slice(0, 20);
+    const rnd = all.slice(); for (let i = rnd.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [rnd[i], rnd[j]] = [rnd[j], rnd[i]]; }
+    return { ok: true, n: all.length, myTribe, popular: by('week'), fresh: by('openAt'), random: rnd.slice(0, 12), tribe: all.filter(x => x.tribe === myTribe).sort((a, b) => (b.week - a.week) || (b.items - a.items)).slice(0, 20) };
+});
 exports.njVisitOpen = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
     const { myTag, hostTag, nick } = request.data || {};
@@ -1835,7 +1869,7 @@ exports.njVisitOpen = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
             list = list.concat([{ tag: p.me, nick: _bNick(nick || p.nick), at: Date.now(), m: -1 }]).slice(0, 500);
             tx.set(dref, { list, day }, { merge: true });
             if (!(wk.tags || []).includes(p.me)) wk = { id: wkId, n: (wk.n | 0) + 1, tags: (wk.tags || []).concat([p.me]).slice(-3000) };
-            tx.set(ref, { wk, total: admin.firestore.FieldValue.increment(1), lastAt: Date.now() }, { merge: true });
+            tx.set(ref, { wk, total: admin.firestore.FieldValue.increment(1), lastAt: Date.now(), nick: _bNick(p.hl.nickname), tribe: Number(p.hl.tribe) || 0, items: njvItems(hd) }, { merge: true });
         }
         order = (i < 0 ? list.length : i + 1); wkN = wk.n | 0;
     });
@@ -1897,7 +1931,7 @@ exports.njVisitClaim = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
         const H = h.exists ? h.data() : {}, amt = Math.max(0, H.pend | 0);
         if (amt) tx.set(ref, { pend: 0, claimed: admin.firestore.FieldValue.increment(amt) }, { merge: true });
         out = { ok: true, gems: amt, guest: njvGuest(d.exists && Array.isArray(d.data().list) ? d.data().list : []),
-            week: H.wk && H.wk.id === getWeekId() ? (H.wk.n | 0) : 0, total: H.total | 0 };
+            week: H.wk && H.wk.id === getWeekId() ? (H.wk.n | 0) : 0, total: H.total | 0, open: H.open === true };
     });
     return out;
 });

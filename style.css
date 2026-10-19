@@ -7976,3 +7976,16 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 .sm-remember { display: flex; align-items: center; gap: 6px; justify-content: center; font-size: 0.82rem; color: #7f8c8d; margin-top: 12px; cursor: pointer; }
 .sm-remember input { width: 16px; height: 16px; }
 
+/* 🌍 새 예루살렘 둘러보기 (10/19) */
+.njb-list { display: flex; flex-direction: column; gap: 8px; max-height: 55vh; overflow-y: auto; margin: 10px 0; }
+.njb-tabs { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 4px; }
+.njb-tabs button { font-size: 0.76rem; padding: 5px 8px; border-radius: 14px; border: 1px solid rgba(241,196,15,0.45); background: transparent; color: #e8d9a8; cursor: pointer; }
+.njb-tabs button.on { background: #f1c40f; border-color: #f1c40f; color: #2c3e50; font-weight: 700; }
+.njb-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,0.05); }
+.njb-row b { font-size: 0.95rem; }
+.njb-row small { display: block; font-size: 0.75rem; color: #b5a988; margin-top: 2px; }
+.njb-row button { flex: none; padding: 6px 12px; border-radius: 14px; border: none; background: #27ae60; color: #fff; font-weight: 700; cursor: pointer; }
+.njb-list .m { text-align: center; color: #b5a988; font-size: 0.85rem; padding: 14px 4px; }
+.nj3d-visitbar button.sub.on { background: #27ae60; color: #fff; }
+.friend-battle-btn.njb-btn { background: linear-gradient(135deg, #1e8449, #27ae60); }
+
