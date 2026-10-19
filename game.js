@@ -3253,7 +3253,11 @@ function _accumulateSessionTime() {
     }
 }
 document.addEventListener('visibilitychange', function() {
-    if (document.hidden) _accumulateSessionTime();
+    if (document.hidden) {
+        _accumulateSessionTime();
+        // ☁️ 떠날 때 밀린 진행을 서버로(10/19) — 전엔 5분마다만 올려, 등록 뒤 첫 구절을 몇 분 보다 나간 사람이 서버엔 「등록에서 멈춤·0분」으로 남았다(그 기록은 기기에만)
+        try { if (window._syncDirty && typeof syncToFirestore === 'function' && typeof _njVisit !== 'undefined' && !_njVisit) { saveGameData(); syncToFirestore(); } } catch (e) { }
+    }
     else _sessionVisibleStart = Date.now();
 });
 window.addEventListener('beforeunload', _accumulateSessionTime);
