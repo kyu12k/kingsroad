@@ -7635,6 +7635,8 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .dj-day.done .dj-d { color: #fff3c4; font-weight: 700; }
 .dj-day.done .dj-v { color: #ffe9a0; }
 .dj-day.part { background: rgba(184, 129, 77, .22); box-shadow: inset 0 0 0 1.5px #b8814d; }
+.dj-day.late { background: rgba(241, 196, 15, .12); outline: 1.5px dashed rgba(241, 196, 15, .75); outline-offset: -3px; }   /* 🌿 쉬는 날에 채움(10/19) — 금빛 테두리만 */
+.dj-day.late .dj-v { color: #f3dc8c; }
 .dj-day.miss { background: rgba(120, 40, 40, .28); box-shadow: inset 0 0 0 1px rgba(231, 110, 100, .45); }
 .dj-day.rest { background: rgba(47, 90, 63, .25); }
 .dj-day.today { box-shadow: inset 0 0 0 1px #9aa8bd; }
@@ -7655,6 +7657,7 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 .dj-c { display: inline-block; width: 11px; height: 11px; border-radius: 3px; background: rgba(255, 255, 255, .05); vertical-align: middle; }
 .dj-c.done { background: #f1c40f; box-shadow: 0 0 0 1px #fff3c4 inset; }
 .dj-c.part { background: #b8814d; }
+.dj-c.late { background: transparent; box-shadow: 0 0 0 1.5px #f1c40f inset; }
 .dj-c.miss { background: #8a3a34; }
 .dj-c.rest { background: #2f6a45; }
 .dj-c.today { box-shadow: inset 0 0 0 1px #9aa8bd; }
