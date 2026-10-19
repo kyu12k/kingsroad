@@ -7995,3 +7995,7 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 .njv-busy::before { content: ''; display: inline-block; width: 12px; height: 12px; margin-right: 7px; vertical-align: -2px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: njvspin 0.7s linear infinite; }
 @keyframes njvspin { to { transform: rotate(360deg); } }
 
+
+/* 💬 쉬었다 돌아온 까닭 (10/19) */
+.njv-card [hidden] { display: none !important; }
+.pause-pop .opts { display: flex; flex-direction: column; gap: 6px; }

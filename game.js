@@ -3558,6 +3558,9 @@ loadGameData = function () {
         if (parsed.dailyMakeup && typeof parsed.dailyMakeup === 'object') dailyMakeup = parsed.dailyMakeup;
         if (parsed.dailyLog && typeof parsed.dailyLog === 'object') dailyLog = parsed.dailyLog;
         if (parsed.featLog && typeof parsed.featLog === 'object') featLog = parsed.featLog;
+        if (Array.isArray(parsed.exitLog)) exitLog = parsed.exitLog.filter(x => x && x.at).slice(-20);   // 🚪 떠난 화면(10/19)
+        if (Array.isArray(parsed.pauseWhy)) pauseWhy = parsed.pauseWhy.slice(-5);
+        if (typeof parsed.lastSeenDay === 'string') lastSeenDay = parsed.lastSeenDay;
         if (typeof parsed.fixDone === 'string') fixDone = parsed.fixDone;   // 🛠️ 적용한 바로잡기
         if (Array.isArray(parsed.compDone)) compDone = parsed.compDone;   // 적용한 보상 열쇠
         if (typeof parsed.dailyWeekDone === 'string') dailyWeekDone = parsed.dailyWeekDone;
@@ -14283,6 +14286,9 @@ function saveGameData() {
         dailyMakeup: dailyMakeup,         // 🌿 쉬는 날에 채운 날 → ts (10/19)
         dailyLog: (() => { try { _dailyLogSync(); } catch (e) { } return dailyLog; })(),   // 📖 암송 일지
         featLog: (() => { try { return featLog; } catch (e) { return undefined; } })(),   // 📈 기능 이용률
+        exitLog: (() => { try { return exitLog; } catch (e) { return undefined; } })(),   // 🚪 떠난 화면(최근 20)
+        pauseWhy: (() => { try { return pauseWhy; } catch (e) { return undefined; } })(),   // 💬 쉬었다 돌아온 까닭(최근 5)
+        lastSeenDay: (() => { try { return lastSeenDay; } catch (e) { return undefined; } })(),   // 마지막으로 앱을 쓴 6시 날짜
         fixDone: (() => { try { return fixDone || undefined; } catch (e) { return undefined; } })(),
         compDone: (() => { try { return compDone && compDone.length ? compDone : undefined; } catch (e) { return undefined; } })(),   // 적용한 보상 열쇠   // 🛠️ 적용한 바로잡기(서버가 한 번만 「줄지 않게」를 건너뛴다)
         dailyWeekDone: dailyWeekDone,     // 오늘의 암송 주간 완료 주차
@@ -14587,6 +14593,9 @@ function _mergeEventProgress(target, other) {
     }
     if (other.fixDone && !target.fixDone) target.fixDone = other.fixDone;   // 🛠️ 적용한 바로잡기
     if (Array.isArray(other.compDone) && other.compDone.length) target.compDone = [...new Set([...(Array.isArray(target.compDone) ? target.compDone : []), ...other.compDone])].slice(-20);   // 적용한 보상 열쇠 — 합집합
+    // 🚪💬 떠난 화면·쉬었다 돌아온 까닭 — 시각으로 합집합 · 마지막으로 쓴 날은 늦은 쪽(10/19)
+    for (const [k, n] of [['exitLog', 20], ['pauseWhy', 5]]) if (Array.isArray(other[k]) && other[k].length) { const m = new Map(); [...(Array.isArray(target[k]) ? target[k] : []), ...other[k]].forEach(x => { if (x && x.at) m.set(x.at, x); }); target[k] = [...m.values()].sort((a, b) => a.at - b.at).slice(-n); }
+    if (typeof other.lastSeenDay === 'string' && other.lastSeenDay > (target.lastSeenDay || '')) target.lastSeenDay = other.lastSeenDay;
     const of = other.featLog;   // 📈 기능 이용률 — 날마다 칸마다 큰 쪽
     if (of && typeof of === 'object') {
         if (!target.featLog || typeof target.featLog !== 'object') target.featLog = {};
@@ -20494,6 +20503,82 @@ function _noteDailyDone(ev) {
 /* 📈 기능 이용률 (10/11 사용자: "기억하시나요 퀴즈·저장한 구절 — 일주일 뒤 이용률을 보고 여차하면 뺀다")
    (10/19 추가: oo 「내 암송」 열기 · oc 장 보기 · og 「다음 할 것」 시작 · oh 홈 🪔 칩)
    featLog[6시 날짜] = { qs 퀴즈 뜸 · qn 답함 · qo 맞힘 · sv 구절 저장 · ss 저장한 구절 열기 · sn 답함 · so 맞힘 · sc 저장해 둔 절 수 }. 60일 보관 */
+/* 🚪 떠난 화면 · 💬 쉬었다 돌아온 까닭 (2026-10-19 사용자: "적응하지 못하고 빠르게 이탈하는 라이트 유저들의 이탈 원인을 찾기 위한 조치")
+   exitLog — 앱을 내릴 때마다 그 순간의 화면(`_exitLabel`: 화면 · 맨 위 창 · 판·스텝)과 그 화면에 머문 초, 외운 절 수. 최근 20. 떠날 때 저장(10/19)으로 서버까지 올라온다
+   pauseWhy — 0~49절인 사람이 3일 넘게 쉬었다 돌아오면 탭 한 번 질문(14일에 한 번). { at, gap(쉰 날), n(절), a(답) } */
+let exitLog = [], pauseWhy = [], lastSeenDay = '';
+let _exitLab = '', _exitSince = Date.now();
+function _exitLabel() {
+    try {
+        const scr = (document.querySelector('.screen.active') || {}).id || '';
+        let top = '', el = document.elementFromPoint(innerWidth / 2, innerHeight / 2);
+        const big = e => { const r = e.getBoundingClientRect(); return r.width * r.height >= innerWidth * innerHeight * 0.3; };
+        while (el && el !== document.body) { if (el.id && el.id !== scr && big(el)) top = el.id; el = el.parentElement; }   // 가운데를 덮은 가장 바깥의 큰 창(스테이지 시트·모달) — 화면 안의 작은 줄 말고
+        let g = '';
+        if (scr === 'game-screen') {
+            if (window.isHardshipMode && typeof hardshipState !== 'undefined' && hardshipState && hardshipState.active) g = `hs:${hardshipState.mode || ''}${hardshipState.ultimateMemoryMode ? ':백지' : ''}:${(hardshipState.queue || []).length}`;
+            else { const sn = (document.getElementById('current-step-num') || {}).textContent; g = `${window.currentStageId || ''}${sn ? ':s' + sn : ''}`; }
+        }
+        return [scr.replace('-screen', ''), top, g].filter(Boolean).join('|').slice(0, 80);
+    } catch (e) { return '?'; }
+}
+setInterval(() => { if (document.hidden) return; const l = _exitLabel(); if (l !== _exitLab) { _exitLab = l; _exitSince = Date.now(); } }, 2000);
+function _exitNote() {
+    try {
+        const l = _exitLabel(); if (l !== _exitLab) { _exitLab = l; _exitSince = Date.now(); }
+        const n = Object.keys(stageClearDate || {}).filter(k => /^\d+-\d+$/.test(k)).length;
+        exitLog.push({ at: Date.now(), s: l, sec: Math.round((Date.now() - _exitSince) / 1000), n, v: (document.querySelector('script[src*="game.js?v="]') || { getAttribute: () => '' }).getAttribute('src').split('v=')[1] || '' });
+        exitLog = exitLog.slice(-20);
+        lastSeenDay = _get6AMDayStr();
+        if (!_njVisit) saveGameData();   // 밀린 진행 표시(_syncDirty) — 뒤따르는 「떠날 때 저장」이 서버로 올린다
+    } catch (e) { }
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) _exitNote(); }, true);   // 떠날 때 저장(아래 visibilitychange)보다 먼저
+const PAUSE_WHY = [['busy', '😮‍💨 바빠서'], ['hard', '🧩 어려워서'], ['lost', '🧭 무엇을 해야 할지 몰라서'], ['dull', '🙂 재미가 덜해서'], ['app', '📱 앱이 불편해서'], ['other', '✏️ 그 밖에']];
+function _pauseCheck() {
+    if (window._pauseChecked) return; window._pauseChecked = true;
+    try {
+        const today = _get6AMDayStr();
+        // 10/19 전엔 lastSeenDay가 없다 — 이 기기 학습 시간 기록(최근 14일)의 마지막 날로 어림
+        const prev = lastSeenDay || Object.keys(sessionTimeLog || {}).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k) && k < today).sort().pop() || '';
+        lastSeenDay = today; saveGameData();
+        if (!prev || prev >= today || !myTag || myTag === '0000' || _njVisit) return;
+        const gap = Math.round((new Date(today + 'T12:00:00') - new Date(prev + 'T12:00:00')) / 86400000);
+        const n = Object.keys(stageClearDate || {}).filter(k => /^\d+-\d+$/.test(k)).length;
+        if (gap < 3 || n >= 50) return;
+        const last = pauseWhy.length ? pauseWhy[pauseWhy.length - 1].at : 0;
+        if (Date.now() - last < 14 * 86400000) return;
+        const go = (tries) => {
+            const busy = document.querySelector('.modal-overlay.active, #new-user-modal, #nickname-modal, #google-lost-modal, #promise-card, .njv-pop, #rcard-pop')
+                || !document.getElementById('home-screen') || !document.getElementById('home-screen').classList.contains('active');
+            if (busy) { if (tries < 20) setTimeout(() => go(tries + 1), 4000); return; }
+            _pauseAsk(gap, n);
+        };
+        setTimeout(() => go(0), 2500);
+    } catch (e) { }
+}
+function _pauseAsk(gap, n) {
+    const ov = document.createElement('div'); ov.className = 'njv-pop pause-pop';
+    ov.innerHTML = `<div class="njv-card"><h3>🙏 다시 오셨네요!</h3><div class="ref">${gap}일 만이에요. 지난번엔 왜 쉬셨는지 알려 주시면 킹스로드를 고치는 데 큰 도움이 돼요.</div>
+        <div class="opts">${PAUSE_WHY.map(([k, l]) => `<button data-k="${k}">${l}</button>`).join('')}</div>
+        <div class="row" hidden><input class="njv-in" maxlength="60" placeholder="짧게 적어 주세요 (60자)"><button data-send="1">보내기</button></div>
+        <button class="close">건너뛰기</button></div>`;
+    document.body.appendChild(ov);
+    const done = (a, txt) => {
+        pauseWhy.push({ at: Date.now(), gap, n, a, t: txt ? String(txt).slice(0, 60) : undefined }); pauseWhy = pauseWhy.slice(-5);
+        saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
+        ov.remove();
+        const tip = { hard: '🧩 고마워요! 「빠른 학습」이나 오늘의 암송 세 절부터 가볍게 시작해 보세요', lost: '🧭 고마워요! 홈 「오늘 할 일」의 첫 칸부터 하나씩 해 보세요', busy: '😮‍💨 고마워요! 하루 한 절이라도 괜찮아요' }[a] || '🙏 알려 주셔서 고마워요!';
+        if (a !== 'skip') showToast(tip);
+    };
+    ov.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
+        if (b.dataset.k === 'other') { ov.querySelector('.row').hidden = false; ov.querySelector('.opts').hidden = true; ov.querySelector('.njv-in').focus(); return; }
+        done(b.dataset.k);
+    });
+    ov.querySelector('[data-send]').onclick = () => done('other', ov.querySelector('.njv-in').value.trim());
+    ov.querySelector('.close').onclick = () => done('skip');
+}
+setTimeout(() => { if (typeof _pauseCheck === 'function') _pauseCheck(); }, 9000);   // 처음 동기화(다른 기기의 마지막 날)를 받은 뒤
 let featLog = {};
 function _featNote(k) {
     try {
