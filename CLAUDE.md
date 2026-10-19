@@ -84,6 +84,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `splitChunksIntoParts(chunks, maxWords)` | game.js:~6009 | 청크 배열을 maxWords(기본 20) 기준으로 균등 분할. 21개 이상이면 파트 수를 `Math.ceil(총/20)`으로 계산해 각 파트를 최대한 균등하게 나눔 |
 | `buildReviewBadgeHtml(id)` | game.js:2010 | 복습 단계 배지 HTML 생성 |
 | `openStageSheet()` | game.js:2809 | 스테이지 시트 열기 + 목록 렌더링 |
+| `_studyModeBarHtml()` · `setStudyModeQuick(v)` · `studyModePreference` | game.js:~12210 | ⚡📖❓ 학습 방식 전환 줄 — 스테이지 창(`#sheet-study-mode`)·복습 목록 위, 매번 묻는 창의 「다음부터 묻지 않기」(10/19) |
 | `updateSheetTimers()` | game.js:~2956 | 60초마다 타이머 + 기억 강도 바 업데이트 |
 | `stageClear(type, rewardMultiplier=1)` | game.js:~12127 | 스테이지 클리어 처리 전체. `rewardMultiplier`로 보상 배율 조정 (보통 모드: 0.7) |
 | `openBossSetupModal(stage)` | game.js:~6170 | 보스/중간점검 진입 전 설정 모달 (난이도·순서 선택) |

@@ -1317,6 +1317,7 @@ const LANG = {
 
         // 복습 모드 선택 모달
         review_mode_title: '학습 모드 선택',
+        sm_bar: '학습 방식', sm_quick: '⚡ 빠른', sm_full: '📖 전체', sm_ask: '❓ 매번', sm_set_quick: '⚡ 이제 빠른 학습으로 시작해요', sm_set_full: '📖 이제 전체 학습으로 시작해요', sm_set_ask: '❓ 이제 시작할 때마다 물어요', sm_remember: '다음부터 묻지 않기 (스테이지 창 위에서 언제든 바꿀 수 있어요)',
         review_mode_subtitle: '완료한 구절입니다.',
         review_mode_quick_tag: '추천',
         review_mode_quick_title: '빠른 학습 (Step 1, 5)',
@@ -2646,6 +2647,7 @@ const LANG = {
 
         // 복습 모드 선택 모달
         review_mode_title: 'Study Mode',
+        sm_bar: 'Study mode', sm_quick: '⚡ Quick', sm_full: '📖 Full', sm_ask: '❓ Ask', sm_set_quick: '⚡ Starting with quick study from now', sm_set_full: '📖 Starting with full study from now', sm_set_ask: '❓ Will ask each time from now', sm_remember: 'Don’t ask again (change it anytime at the top of the stage list)',
         review_mode_subtitle: 'You have completed this verse.',
         review_mode_quick_tag: 'Recommended',
         review_mode_quick_title: 'Quick Study (Step 1, 5)',
@@ -11695,6 +11697,7 @@ function openStageSheet(chapterData) {
     currentOpenChapterData = chapterData;
     const sheet = document.getElementById('stage-sheet');
     document.getElementById('sheet-chapter-title').innerText = t('label_chapter_header', { num: chapterData.id });
+    { const sb = document.getElementById('sheet-study-mode'); if (sb) sb.innerHTML = _studyModeBarHtml(); }   // ⚡📖❓ 학습 방식(10/19)
     _renderSheetBlankEvidence(chapterData);
     _renderSheetLevelTest(chapterData);   // 🎓
 
@@ -11943,6 +11946,7 @@ function openModeSelect(stageId) {
                 <div class="mode-desc">${t('review_mode_full_desc')}</div>
             </div>
         </button>
+        <label class="sm-remember"><input type="checkbox" id="sm-remember"> ${t('sm_remember')}</label>
     `;
 
     window.selectedStageForMode = stageId;
@@ -12081,7 +12085,7 @@ function openForgottenStagesOverlay() {
     // 리스트 렌더링
     const listDiv = document.getElementById('forgotten-stages-list');
     const forgottenList = getForgottenStages();
-    const headHtml = _reviewOverlayHeadHtml(forgottenList);
+    const headHtml = `<div class="study-mode-bar rv-sm">${_studyModeBarHtml()}</div>` + _reviewOverlayHeadHtml(forgottenList);   // ⚡📖❓ 학습 방식(10/19)
     const _rvAllN = getForgottenStages(true).length, _rvMore = _rvAllN - forgottenList.length;   // 📏 하루 30절 — 남은 수
     const _rvMoreHtml = _rvMore > 0 ? `<div class="bd-note bd-quota">${t(forgottenList.length ? 'rv_quota_note' : 'rv_quota_done', { q: REVIEW_DAILY, n: _rvMore })}</div>
         <button class="rv-chip rv-more" onclick="window._rvAll = true; openForgottenStagesOverlay()">${t('rv_more', { n: _rvMore })}</button>` : '';
@@ -12157,6 +12161,8 @@ function closeForgottenStagesOverlay() {
 function confirmMode(mode) {
     if (!window.selectedStageForMode) return;
     const stageId = window.selectedStageForMode;
+    const rem = document.getElementById('sm-remember');
+    if (rem && rem.checked && (mode === 'quick' || mode === 'full')) { studyModePreference = mode; saveGameData(); _syncStudyModeBars(); }   // 다음부터 묻지 않기(10/19)
     closeModeSelect();
     startTraining(stageId, mode);
 }
@@ -12205,10 +12211,26 @@ function _renderStudySettingsModal() {
     }).join('');
 }
 
+/* ⚡📖❓ 학습 방식 전환 줄 (10/19 사용자: 홈에서 메뉴를 뒤져야 바꿀 수 있어 불편 — 스테이지 창·복습 목록 위에서 바로)
+   최근 7일 암송한 76명: 매번 묻기 61 · 빠른 고정 13 · 전체 고정 2 */
+function _studyModeBarHtml() {
+    const b = (v, k) => `<button class="sm-chip${studyModePreference === v ? ' on' : ''}" onclick="setStudyModeQuick('${v}')">${t(k)}</button>`;
+    return `<span class="sm-label">${t('sm_bar')}</span>${b('quick', 'sm_quick')}${b('full', 'sm_full')}${b('ask', 'sm_ask')}`;
+}
+function _syncStudyModeBars() { document.querySelectorAll('.study-mode-bar').forEach(el => { el.innerHTML = _studyModeBarHtml(); }); }
+function setStudyModeQuick(value) {
+    if (studyModePreference === value) return;
+    studyModePreference = value;
+    saveGameData();
+    _syncStudyModeBars();
+    try { _renderStudySettingsModal(); } catch (e) { }
+    showToast(t('sm_set_' + value));
+}
 function setStudyModePreference(value) {
     studyModePreference = value;
     saveGameData();
     _renderStudySettingsModal();
+    _syncStudyModeBars();
 }
 
 function closeStageSheet() {

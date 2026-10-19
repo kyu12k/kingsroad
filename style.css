@@ -7966,3 +7966,13 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 .njv-help { margin: 8px 0 12px; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; color: #dfe6ee; font-size: 0.9rem; line-height: 1.55; }
 .njv-help b { color: #f5d76e; }
 .njv-help li.sub { color: #9fb0c2; font-size: 0.82rem; list-style: none; margin-left: -18px; }
+
+/* ⚡📖❓ 학습 방식 전환 줄 — 스테이지 창·복습 목록 위 (10/19) */
+.study-mode-bar { display: flex; align-items: center; gap: 6px; padding: 4px 16px 8px; flex-wrap: wrap; }
+.study-mode-bar .sm-label { font-size: 0.78rem; color: #95a5a6; margin-right: 2px; }
+.study-mode-bar .sm-chip { font-size: 0.8rem; padding: 4px 10px; border-radius: 14px; border: 1px solid rgba(149,165,166,0.45); background: transparent; color: #7f8c8d; cursor: pointer; font-weight: 600; }
+.study-mode-bar .sm-chip.on { background: #f1c40f; border-color: #f1c40f; color: #2c3e50; }
+.study-mode-bar.rv-sm { padding: 0 0 10px; justify-content: center; }
+.sm-remember { display: flex; align-items: center; gap: 6px; justify-content: center; font-size: 0.82rem; color: #7f8c8d; margin-top: 12px; cursor: pointer; }
+.sm-remember input { width: 16px; height: 16px; }
+
