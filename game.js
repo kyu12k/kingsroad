@@ -10332,7 +10332,7 @@ function _njVisitBar() {
     if (!bar) { bar = document.createElement('div'); bar.className = 'nj3d-visitbar'; st.appendChild(bar); }
     if (_njvFolded()) { _njvFoldBar(bar, _njVisitBar, true); return; }
     { const ov = document.getElementById('nj3d'); if (ov) ov.classList.remove('nj3d-barfold'); bar.classList.remove('folded'); }
-    bar.innerHTML = `<span>🕊️ 오늘 ${V.order}번째 손님</span><button class="sub" data-a="browse" aria-label="다른 곳 둘러보기">🌍</button><button class="sub" data-a="help" aria-label="놀러 와서 할 수 있는 것">❓</button><button class="sub" data-a="gb">📖 방명록</button><button data-a="sign">${V.signed ? '✓ 인사함' : '👋 인사'}</button><button class="sub" data-a="fold" aria-label="접기">▴</button>`;
+    bar.innerHTML = `<span>🕊️ ${V.order}번째 손님</span><button class="sub" data-a="browse" aria-label="다른 곳 둘러보기">🧭</button><button class="sub" data-a="help" aria-label="놀러 와서 할 수 있는 것">❓</button><button class="sub" data-a="gb" aria-label="방명록">📖</button><button data-a="sign">${V.signed ? '✓ 인사함' : '👋 인사'}</button><button class="sub" data-a="fold" aria-label="접기">▴</button>`;
     bar.querySelector('[data-a="help"]').onclick = () => _njVisitHelp();
     bar.querySelector('[data-a="browse"]').onclick = () => openNJBrowse();
     bar.querySelector('[data-a="gb"]').onclick = () => _njGuestbook(V.host.nick, V.guest, V.week);
@@ -10357,7 +10357,7 @@ function _njVisitHelp() {
         <ul class="njv-help">
             <li><b>🎁 예물·꾸밈·특산물을 눌러 보세요</b> — 그 물건의 말씀 빈칸 문제가 나와요. 맞히면 나는 💎300, ${nick}님도 💎500을 받아요.</li>
             <li><b>🐠 바다에 들어가 보세요</b> — ${nick}님이 백지로 쓴 절의 생물들이 헤엄쳐요. 눌러도 같은 문제가 나와요.</li>
-            <li><b>👋 인사</b>를 남기면 ${nick}님 방명록에 이름이 남아요(친구는 직접 쓰고, 그 밖엔 고르기). <b>🌍</b>로 다른 곳도 둘러볼 수 있어요. <b>📖 방명록</b>에서 오늘 누가 다녀갔는지 볼 수 있어요.</li>
+            <li><b>👋 인사</b>를 남기면 ${nick}님 방명록에 이름이 남아요(친구는 직접 쓰고, 그 밖엔 고르기). <b>🧭</b>로 다른 곳도 둘러볼 수 있어요. <b>📖 방명록</b>에서 오늘 누가 다녀갔는지 볼 수 있어요.</li>
             <li class="sub">문제는 한 곳에서 하루 3개, 하루 다섯 곳까지 보석을 받아요. 구경은 얼마든지 할 수 있어요.</li>
         </ul><button class="close">알겠어요</button>`);
     ov.querySelector('.close').onclick = () => ov.remove();
@@ -10498,7 +10498,8 @@ function _njMineBar() {
     if (_njvFolded()) { _njvFoldBar(bar, _njMineBar); return; }
     { const ov = document.getElementById('nj3d'); if (ov) ov.classList.remove('nj3d-barfold'); bar.classList.remove('folded'); }
     const G = isGoogleLinked();
-    bar.innerHTML = `<span>🕊️ 오늘 ${r.guest.length}명 · 이번 주 ${r.week}명</span><button class="sub" data-a="gb">📖 방명록</button>${G ? `<button class="sub${r.open ? ' on' : ''}" data-a="open">${r.open ? '🌍 누구나 켬' : '🔒 친구만'}</button><button class="sub" data-a="browse">🌍 둘러보기</button>` : ''}<button class="sub" data-a="fold" aria-label="접기">▴</button>`;
+    // 10/19 사용자: 칸이 좁아 둘러보기·접기가 화면 밖으로 — 「이번 주」는 방명록 창에, 버튼은 짧게
+    bar.innerHTML = `<span>🕊️ 오늘 ${r.guest.length}명</span><button class="sub" data-a="gb" aria-label="방명록">📖</button>${G ? `<button class="sub${r.open ? ' on' : ''}" data-a="open">${r.open ? '🌍 열림' : '🔒 친구만'}</button><button class="sub" data-a="browse">🧭 구경</button>` : ''}<button class="sub" data-a="fold" aria-label="접기">▴</button>`;
     bar.querySelector('[data-a="gb"]').onclick = () => _njGuestbook(myNickname, r.guest, r.week);
     if (G) { bar.querySelector('[data-a="open"]').onclick = () => _njOpenToggle(); bar.querySelector('[data-a="browse"]').onclick = () => openNJBrowse(); }
     bar.querySelector('[data-a="fold"]').onclick = () => { _njvFolded(true); _njMineBar(); };
@@ -10517,6 +10518,7 @@ function _njOpenToggle() {
     ov.querySelector('.close').onclick = () => ov.remove();
     ov.querySelectorAll('[data-v]').forEach(b => b.onclick = async () => {
         const want = b.dataset.v === '1'; ov.querySelectorAll('[data-v]').forEach(x => x.disabled = true);
+        b.classList.add('njv-busy'); b.textContent = '바꾸는 중…';   // 서버가 깨어나는 동안 몇 초(10/19 사용자: 스피너도 없이 기다려 혼란)
         try {
             const res = await _njvCall('njVisitSetOpen', { open: want });
             if (res && res.ok) { (window._njvMine = window._njvMine || { guest: [], week: 0 }).open = res.open; ov.remove(); _njMineBar(); showToast(res.open ? '🌍 이제 누구나 내 새 예루살렘에 들어올 수 있어요' : '🔒 이제 친구·길드원만 들어와요'); return; }
@@ -10530,7 +10532,7 @@ async function openNJBrowse(tab) {
     if (!isGoogleLinked()) { showGemToast(0, NJV_WHY.google, true); return; }
     if (tab) _njBrowseTab = tab;
     document.querySelectorAll('.njv-pop.njv-browse').forEach(x => x.remove());
-    const ov = _njPop(`<h3>🌍 새 예루살렘 둘러보기</h3><div class="ref">「누구나 들어오기」를 켠 곳이에요</div><div class="njb-list"><div class="m">불러오는 중…</div></div><button class="close">닫기</button>`);
+    const ov = _njPop(`<h3>🌍 새 예루살렘 둘러보기</h3><div class="ref">「누구나 들어오기」를 켠 곳이에요</div><div class="njb-list"><div class="m"><span class="njv-busy"></span>불러오는 중…</div></div><button class="close">닫기</button>`);
     ov.classList.add('njv-browse');
     ov.querySelector('.close').onclick = () => ov.remove();
     let r = null;

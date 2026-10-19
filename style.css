@@ -7427,7 +7427,10 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 #nj3d.nj3d-visit .nj3d-clambtn, #nj3d.nj3d-visit .nj3d-pearlbtn, #nj3d.nj3d-visit .nj3d-talk, #nj3d.nj3d-visit .nj3d-dexbtn,
 #nj3d.nj3d-visit .nj3d-tackbtn { display: none !important; }
 #nj3d .nj3d-visitbar { position: absolute; left: 50%; transform: translateX(-50%); top: 8px; z-index: 5; display: flex; gap: 6px; align-items: center;
-    background: rgba(15,26,51,0.82); color: #f3e3b0; border-radius: 999px; padding: 6px 8px 6px 14px; font-size: 0.85rem; font-weight: bold; white-space: nowrap; max-width: calc(100% - 20px); }
+    background: rgba(15,26,51,0.82); color: #f3e3b0; border-radius: 999px; padding: 6px 8px 6px 14px; font-size: 0.85rem; font-weight: bold; white-space: nowrap; max-width: calc(100% - 20px);
+    overflow-x: auto; scrollbar-width: none; }   /* 그래도 넘치면 띠 안에서 옆으로 밀어 본다(10/19) */
+#nj3d .nj3d-visitbar::-webkit-scrollbar { display: none; }
+#nj3d .nj3d-visitbar button, #nj3d .nj3d-visitbar span { flex: none; }
 /* 띠 자리만큼 위쪽 버튼들을 내린다(구경 중 · 내 세상에 방명록 띠가 있을 때) */
 #nj3d.nj3d-visit .nj3d-mode, #nj3d.nj3d-visit .nj3d-go, #nj3d.nj3d-visit .nj3d-holo, #nj3d.nj3d-visit .nj3d-wallet, #nj3d.nj3d-visit .nj3d-stage canvas.nj3d-mini,
 #nj3d.nj3d-hasbar .nj3d-mode, #nj3d.nj3d-hasbar .nj3d-go, #nj3d.nj3d-hasbar .nj3d-deco, #nj3d.nj3d-hasbar .nj3d-build, #nj3d.nj3d-hasbar .nj3d-holo, #nj3d.nj3d-hasbar .nj3d-wallet, #nj3d.nj3d-hasbar .nj3d-stage canvas.nj3d-mini, #nj3d.nj3d-hasbar .nj3d-dexbtn { margin-top: 46px; }
@@ -7988,4 +7991,7 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 .njb-list .m { text-align: center; color: #b5a988; font-size: 0.85rem; padding: 14px 4px; }
 .nj3d-visitbar button.sub.on { background: #27ae60; color: #fff; }
 .friend-battle-btn.njb-btn { background: linear-gradient(135deg, #1e8449, #27ae60); }
+/* ⏳ 서버를 기다리는 동안(10/19) */
+.njv-busy::before { content: ''; display: inline-block; width: 12px; height: 12px; margin-right: 7px; vertical-align: -2px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: njvspin 0.7s linear infinite; }
+@keyframes njvspin { to { transform: rotate(360deg); } }
 
