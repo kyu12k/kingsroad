@@ -1864,7 +1864,7 @@
             pm.mixer.update(dt);
             pm.w += ((over ? 1 : 0) - pm.w) * Math.min(1, dt * 10); if (over) pm.ov = over;
             if (pm.w < 0.01) return;
-            const D = PM_OVER[pm.ov];
+            const D = typeof pm.ov === 'object' ? pm.ov : PM_OVER[pm.ov];   // 객체면 그때그때 계산한 방향(헤엄)
             const aim = (list, dirs, straight) => dirs && list.forEach((A, i) => {
                 _pv.set(dirs[i][0], dirs[i][1], dirs[i][2]).normalize();
                 _pq.setFromUnitVectors(A.dir, _pv).multiply(A.Wb).premultiply(A.WpInv);   // 처음 자세에서 위 뼈만 그쪽으로 돌린 것 — 부모 기준으로
@@ -4484,7 +4484,15 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (pm.mixer) {   // 🧍 모델 순례자 — 같은 상태를 동작 이름으로
                 let clip = 'Idle', over = null, sp = 1;
                 if (ride.on) { clip = RK.pose === 'stand' ? 'Idle' : 'Sit_Chair_Idle'; if (!RK.pose && rk === 'animal') over = 'ride'; }
-                else if (swimNow() || isUnder()) { clip = moving || isUnder() ? 'Running_B' : 'Idle'; sp = 0.75; }
+                else if (swimNow() || isUnder()) {
+                    /* 🏊 헤엄 (10/20 사용자: 물속에서 팔이 다리 쪽으로 간다) — 달리기 동작에 몸만 눕혀 팔이 엉덩이 쪽으로 흔들렸다. 팔은 직접 젓는다.
+                       몸을 눕히면 모델의 위(+y)가 나아가는 쪽, 앞(+z)이 바닥 쪽. 물속 = 평영(두 팔을 머리 위로 모았다가 옆으로 크게 벌려 당김),
+                       수면에서 나아갈 때 = 자유형(두 팔이 번갈아 머리 위 → 배 밑 → 엉덩이 → 등 위로 돈다). 수면에 멈추면 선헤엄(그대로) */
+                    const un = isUnder();
+                    clip = moving || un ? 'Running_B' : 'Idle'; sp = un ? 0.45 : 0.75;
+                    if (un) { const k = 0.5 - 0.5 * Math.cos(walkT * (moving ? 3.2 : 1.8)); over = { a: [[0.15 + 0.85 * k, 0.95 - 0.75 * k, 0.25], [-0.15 - 0.85 * k, 0.95 - 0.75 * k, 0.25]] }; }
+                    else if (moving) { const a = walkT * 4.5; over = { a: [[0.3, Math.cos(a), Math.sin(a)], [-0.3, Math.cos(a + Math.PI), Math.sin(a + Math.PI)]] }; }
+                }
                 else if (glider.visible) { clip = 'Jump_Idle'; over = 'up'; }
                 else if (gl && wingKind === 'wings') { clip = 'Jump_Idle'; over = 'out'; }
                 else if (fly) clip = 'Idle';
@@ -4883,8 +4891,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             gbox: () => [...giftsG.children].map(o => { const B = new THREE.Box3(), tb = new THREE.Box3(); o.updateMatrixWorld(true); o.traverse(m => { if (!m.isMesh || m === o.userData.pick) return; if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); tb.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); B.union(tb); }); return { k: o.userData.item.k, sc: +o.scale.x.toFixed(2), min: [B.min.x, B.min.y, B.min.z].map(v => +v.toFixed(2)), max: [B.max.x, B.max.y, B.max.z].map(v => +v.toFixed(2)) }; }),
             bbox: () => [...decoG.children].map(o => { const B = new THREE.Box3(), tb = new THREE.Box3(); o.updateMatrixWorld(true); o.traverse(m => { if (!m.isMesh || m === o.userData.pick) return; if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); tb.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); B.union(tb); }); return { k: o.userData.item.k, min: [B.min.x, B.min.y, B.min.z].map(v => +v.toFixed(2)), max: [B.max.x, B.max.y, B.max.z].map(v => +v.toFixed(2)) }; }),
             rebuild: () => itemBoxes(), items: () => [...giftsG.children, ...decoG.children].map(o => { let n = 0, vis = 0; o.traverse(m => { if (m.isMesh) { n++; if (m.visible) vis++; } }); return { k: o.userData.item && o.userData.item.k, vis: o.visible, meshes: n, visMeshes: vis, pos: [o.position.x, o.position.y, o.position.z].map(v => +v.toFixed(2)) }; }), ground: (x, z, y) => groundAt(x, z, y), blocked: (x, z, y) => blocked(x, z, y),
-            pm: (clip, over) => { pm.force = clip ? { clip, over } : null; return { loaded: !!pm.mixer, cur: pm.cur, clips: Object.keys(pm.acts) }; }, camSet: (yaw, pitch, dist) => { camYaw = yaw; camPitch = pitch; if (dist) camDist = dist; }, st: o => { if (o.glide != null) { equipWing(); gliding = o.glide; } if (o.jet) { jetTrialEnd = Date.now() + 60000; syncJetUI(); jetToggle(true); } if (o.ride) { mountUp(); } if (o.keys) Object.assign(inp.keys, o.keys); if (o.jetOff) jetToggle(false); return { gliding, jetOn, ride: ride.on, wingKind }; },
-            setP: (x, y, z, face) => { P.x = x; P.y = y; P.z = z; P.vy = 0; if (face != null) { P.face = face; camYaw = face; } }, P: () => ({ x: P.x, y: P.y, z: P.z }),
+            pm: (clip, over) => { pm.force = clip ? { clip, over } : null; return { loaded: !!pm.mixer, cur: pm.cur, clips: Object.keys(pm.acts) }; }, camSet: (yaw, pitch, dist) => { camYaw = yaw; camPitch = pitch; if (dist) camDist = dist; }, st: o => { if (o.glide != null) { equipWing(); gliding = o.glide; } if (o.jet) { jetTrialEnd = Date.now() + 60000; syncJetUI(); jetToggle(true); } if (o.ride) { mountUp(); } if (o.keys) Object.assign(inp.keys, o.keys); if (o.jetOff) jetToggle(false); if (o.sea) { placeAt('sea'); for (let i = 0; i < 120 && seaE(P.x, P.z) > 0.6; i++) P.z += 0.25; P.y = o.sea === 'top' ? SEA_Y : SEA_Y - 0.4; P.vy = 0; } return { gliding, jetOn, ride: ride.on, wingKind }; },
+            setP: (x, y, z, face) => { P.x = x; P.y = y; P.z = z; P.vy = 0; if (face != null) { P.face = face; camYaw = face; } }, P: () => ({ x: P.x, y: P.y, z: P.z, f: P.face }),
             stars: () => stars.map(s => ({ id: s.id, x: s.x, y: s.g.position.y, z: s.z, done: s.done, vis: s.g.visible })),
             fragScreen: () => starRun ? starRun.frags.filter(f => !f.got).map(f => { const v = f.sp.position.clone().project(camera); return { i: f.i, sx: +((v.x + 1) / 2).toFixed(2), sy: +((1 - v.y) / 2).toFixed(2), z: +v.z.toFixed(3), sc: [+f.sp.scale.x.toFixed(2), +f.sp.scale.y.toFixed(2)], vis: f.sp.visible, inScene: !!f.sp.parent, dist: +f.sp.position.distanceTo(camera.position).toFixed(2) }; }) : null, cam: () => ({ p: camera.position.toArray().map(v => +v.toFixed(2)), near: camera.near, far: camera.far }), three: () => ({ scene, renderer, camera, controls }), jetTrial: ms => { if (jetTrialEnd) jetTrialEnd = Date.now() + ms; return { end: jetTrialEnd, land: jetTrialLand, on: jetOn }; }, dyn: () => ({ dynScale: +dynScale.toFixed(2), pr: +renderer.getPixelRatio().toFixed(2), ema: +dynEma.toFixed(3) }), tall: () => BOXES.filter(b => !b.item && b.y1 > 3.5).map(b => ({ x0: b.x0, x1: b.x1, z0: b.z0, z1: b.z1, y0: b.y0, y1: b.y1 })),
             floorCheck: (x, z) => { _flO.set(x, SEA_Y + 0.5, z); _flRay.set(_flO, _flDown); const hit = bedGrid ? _flRay.intersectObject(bedGrid.mesh, false) : []; return { grid: +gridFloor(x, z).toFixed(4), ray: hit.length ? +hit[0].point.y.toFixed(4) : null }; },
