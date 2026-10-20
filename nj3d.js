@@ -1754,7 +1754,7 @@
            동작 하나(서기·걷기·달리기·점프·앉기)를 고르고, 동작에 없는 팔 자세(글라이더 손잡이·날개·미끄럼 만세)는 위팔 뼈를 덮어쓴다 */
         const PILGRIM_V = '20261020', PM_SEAT = 0.03;
         const oldParts = [...body.children];
-        const pm = { mixer: null, acts: {}, cur: '', arms: [], legs: [], w: 0, ov: 'up' };
+        const pm = { mixer: null, acts: {}, cur: '', arms: [], legs: [], w: 0, ov: 'up', jk: 0 };
         // 모델 공간(앞 +z, 왼쪽 +x)에서 위팔(a)·넓적다리(g)가 향할 쪽 — 팔은 아래팔을 곧게 편다, 다리는 동작의 무릎 굽힘 그대로
         const PM_OVER = { up: { a: [[0.45, 0.9, 0.05], [-0.45, 0.9, 0.05]] }, out: { a: [[1, -0.25, 0.15], [-1, -0.25, 0.15]] }, cheer: { a: [[0.4, 0.9, 0.2], [-0.4, 0.9, 0.2]] },
             ride: { g: [[0.6, -0.35, 0.72], [-0.6, -0.35, 0.72]] } };   // 🐴 걸터앉기 — 의자에 앉듯 두 다리를 앞으로 모으면 말 등에서 어색했다
@@ -4420,6 +4420,11 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 else if (stepping) { clip = run ? 'Running_A' : 'Walking_A'; sp = inRiver ? 0.8 : 1; }
                 if (pm.force) { clip = pm.force.clip; over = pm.force.over; }   // 🧪 헤드리스 확인용
                 pmPose(dt, clip, over, sp); bob = 0;
+                /* 🚀 메고 걸을 때(10/20 사용자: 걸을 때 이상하다) — 날 때 맞춘 기울기(바깥·뒤로)로 서 있으면 분사구가 큰 머리 양옆에 귀처럼 솟았다.
+                   걸을 땐 곧게 세우고 등판째 등 아래로, 날면 예전 자리·기울기로 */
+                pm.jk += ((fly ? 1 : 0) - pm.jk) * Math.min(1, dt * 6);
+                jet.position.y = -0.075 + 0.03 * pm.jk;
+                nozzles.forEach((g, i) => { const sg = i ? 1 : -1; g.rotation.x = 0.1 + 0.52 * pm.jk; g.rotation.z = sg * (0.08 + 0.32 * pm.jk); });
             }
             const e = Math.min(1, dt * 14), L = limbs;
             if (L.robe && L.robeF && !pm.mixer) {   // 🚀 날 때는 몸에 붙는 겉옷
@@ -4805,7 +4810,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             gbox: () => [...giftsG.children].map(o => { const B = new THREE.Box3(), tb = new THREE.Box3(); o.updateMatrixWorld(true); o.traverse(m => { if (!m.isMesh || m === o.userData.pick) return; if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); tb.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); B.union(tb); }); return { k: o.userData.item.k, sc: +o.scale.x.toFixed(2), min: [B.min.x, B.min.y, B.min.z].map(v => +v.toFixed(2)), max: [B.max.x, B.max.y, B.max.z].map(v => +v.toFixed(2)) }; }),
             bbox: () => [...decoG.children].map(o => { const B = new THREE.Box3(), tb = new THREE.Box3(); o.updateMatrixWorld(true); o.traverse(m => { if (!m.isMesh || m === o.userData.pick) return; if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); tb.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); B.union(tb); }); return { k: o.userData.item.k, min: [B.min.x, B.min.y, B.min.z].map(v => +v.toFixed(2)), max: [B.max.x, B.max.y, B.max.z].map(v => +v.toFixed(2)) }; }),
             rebuild: () => itemBoxes(), items: () => [...giftsG.children, ...decoG.children].map(o => { let n = 0, vis = 0; o.traverse(m => { if (m.isMesh) { n++; if (m.visible) vis++; } }); return { k: o.userData.item && o.userData.item.k, vis: o.visible, meshes: n, visMeshes: vis, pos: [o.position.x, o.position.y, o.position.z].map(v => +v.toFixed(2)) }; }), ground: (x, z, y) => groundAt(x, z, y), blocked: (x, z, y) => blocked(x, z, y),
-            pm: (clip, over) => { pm.force = clip ? { clip, over } : null; return { loaded: !!pm.mixer, cur: pm.cur, clips: Object.keys(pm.acts) }; }, camSet: (yaw, pitch, dist) => { camYaw = yaw; camPitch = pitch; if (dist) camDist = dist; }, st: o => { if (o.glide != null) { equipWing(); gliding = o.glide; } if (o.jet) { jetTrialEnd = Date.now() + 60000; syncJetUI(); jetToggle(true); } if (o.ride) { mountUp(); } return { gliding, jetOn, ride: ride.on, wingKind }; },
+            pm: (clip, over) => { pm.force = clip ? { clip, over } : null; return { loaded: !!pm.mixer, cur: pm.cur, clips: Object.keys(pm.acts) }; }, camSet: (yaw, pitch, dist) => { camYaw = yaw; camPitch = pitch; if (dist) camDist = dist; }, st: o => { if (o.glide != null) { equipWing(); gliding = o.glide; } if (o.jet) { jetTrialEnd = Date.now() + 60000; syncJetUI(); jetToggle(true); } if (o.ride) { mountUp(); } if (o.keys) Object.assign(inp.keys, o.keys); if (o.jetOff) jetToggle(false); return { gliding, jetOn, ride: ride.on, wingKind }; },
             setP: (x, y, z, face) => { P.x = x; P.y = y; P.z = z; P.vy = 0; if (face != null) { P.face = face; camYaw = face; } }, P: () => ({ x: P.x, y: P.y, z: P.z }),
             stars: () => stars.map(s => ({ id: s.id, x: s.x, y: s.g.position.y, z: s.z, done: s.done, vis: s.g.visible })),
             fragScreen: () => starRun ? starRun.frags.filter(f => !f.got).map(f => { const v = f.sp.position.clone().project(camera); return { i: f.i, sx: +((v.x + 1) / 2).toFixed(2), sy: +((1 - v.y) / 2).toFixed(2), z: +v.z.toFixed(3), sc: [+f.sp.scale.x.toFixed(2), +f.sp.scale.y.toFixed(2)], vis: f.sp.visible, inScene: !!f.sp.parent, dist: +f.sp.position.distanceTo(camera.position).toFixed(2) }; }) : null, cam: () => ({ p: camera.position.toArray().map(v => +v.toFixed(2)), near: camera.near, far: camera.far }), three: () => ({ scene, renderer, camera, controls }), jetTrial: ms => { if (jetTrialEnd) jetTrialEnd = Date.now() + ms; return { end: jetTrialEnd, land: jetTrialLand, on: jetOn }; }, dyn: () => ({ dynScale: +dynScale.toFixed(2), pr: +renderer.getPixelRatio().toFixed(2), ema: +dynEma.toFixed(3) }), tall: () => BOXES.filter(b => !b.item && b.y1 > 3.5).map(b => ({ x0: b.x0, x1: b.x1, z0: b.z0, z1: b.z1, y0: b.y0, y1: b.y1 })),
