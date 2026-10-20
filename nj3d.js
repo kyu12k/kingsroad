@@ -1796,6 +1796,10 @@
                 body.add(m); lookBtn.hidden = !!VISIT;
                 glider.position.y = 0.28;   // 큰 머리 위로 — 0.245는 날개가 머리를 뚫었다
                 backWings.position.set(0, 0.115, 0.04); jet.position.set(0, -0.045, 0.004);   // 어깨가 낮다(0.11) — 등 날개·제트팩 등판을 등 높이로
+                /* 등에 멘 것은 가슴 뼈에 (10/20 사용자: 달릴 때 허리를 숙여도 제트팩은 땅과 수직이라 어색하다) — 몸(body)과 같은 틀의 받침을
+                   처음 자세 그대로 가슴 뼈에 옮겨 달고(attach — 세상 자리 유지) 그 안에 넣는다. 안의 자리 값은 예전처럼 몸 기준 */
+                const chest = N('chest');
+                if (chest) { const hold = new THREE.Group(); body.add(hold); pilgrim.updateMatrixWorld(true); chest.attach(hold); hold.add(jet, backWings); }
                 pmPose(0, 'Idle');
             } catch (e) { console.warn('pilgrim model', e); }
         })();
