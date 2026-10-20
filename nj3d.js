@@ -1749,6 +1749,58 @@
                 limbs[sg < 0 ? 'hipL' : 'hipR'] = hip; limbs[sg < 0 ? 'armL' : 'armR'] = sh;
             });
         }
+        /* 🧍 순례자 모델 (10/20 사용자: 도형 몇 개 붙여 놓은 것 같다) — KayKit Adventurers의 Mage(CC0, Kay Lousberg)에서 모자·소품을 빼고
+           흰 겉옷·금빛 망토로 칠해 뼈·동작째 쓴다(tools/blender/pilgrim.py → models/pilgrim/pilgrim.glb). 받기 전·실패하면 위의 도형 순례자.
+           동작 하나(서기·걷기·달리기·점프·앉기)를 고르고, 동작에 없는 팔 자세(글라이더 손잡이·날개·미끄럼 만세)는 위팔 뼈를 덮어쓴다 */
+        const PILGRIM_V = '20261020', PM_SEAT = 0.03;
+        const oldParts = [...body.children];
+        const pm = { mixer: null, acts: {}, cur: '', arms: [], legs: [], w: 0, ov: 'up' };
+        // 모델 공간(앞 +z, 왼쪽 +x)에서 위팔(a)·넓적다리(g)가 향할 쪽 — 팔은 아래팔을 곧게 편다, 다리는 동작의 무릎 굽힘 그대로
+        const PM_OVER = { up: { a: [[0.45, 0.9, 0.05], [-0.45, 0.9, 0.05]] }, out: { a: [[1, -0.25, 0.15], [-1, -0.25, 0.15]] }, cheer: { a: [[0.4, 0.9, 0.2], [-0.4, 0.9, 0.2]] },
+            ride: { g: [[0.6, -0.35, 0.72], [-0.6, -0.35, 0.72]] } };   // 🐴 걸터앉기 — 의자에 앉듯 두 다리를 앞으로 모으면 말 등에서 어색했다
+        (async () => {
+            try {
+                if (!THREE.GLTFLoader) await loadScript(GLTF_URL);
+                const gl = await new Promise((res, rej) => new THREE.GLTFLoader().load(`models/pilgrim/pilgrim.glb?v=${PILGRIM_V}`, res, undefined, rej));
+                const m = gl.scene, N = n => m.getObjectByName(n) || m.getObjectByName(n.replace('.', ''));
+                m.updateMatrixWorld(true);   // 아직 아무 데도 안 붙어 세상 = 모델 공간 — 처음(T자) 자세를 적어 둔다
+                const rest = (up, lo) => {
+                    const b = N(up), low = N(lo); if (!b || !low) return null;
+                    const Wb = b.getWorldQuaternion(new THREE.Quaternion()), WpInv = b.parent.getWorldQuaternion(new THREE.Quaternion()).invert();
+                    const dir = low.getWorldPosition(new THREE.Vector3()).sub(b.getWorldPosition(new THREE.Vector3())).normalize();
+                    return { b, low, Wb, WpInv, dir, lowQ: low.quaternion.clone() };
+                };
+                pm.arms = ['l', 'r'].map(s => rest('upperarm.' + s, 'lowerarm.' + s)).filter(Boolean);
+                pm.legs = ['l', 'r'].map(s => rest('upperleg.' + s, 'lowerleg.' + s)).filter(Boolean);
+                const box = new THREE.Box3().setFromObject(m), s = 0.22 / Math.max(0.01, box.max.y - box.min.y);
+                m.scale.setScalar(s); m.rotation.y = Math.PI; m.position.y = -box.min.y * s;
+                m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; if (o.material) { o.material.metalness = 0; o.material.roughness = 0.85; } } });
+                pm.mixer = new THREE.AnimationMixer(m);
+                gl.animations.forEach(c => { pm.acts[c.name] = pm.mixer.clipAction(c); });
+                oldParts.forEach(o => { o.visible = false; });
+                body.add(m); pm.model = m;
+                glider.position.y = 0.28;   // 큰 머리 위로 — 0.245는 날개가 머리를 뚫었다
+                backWings.position.set(0, 0.115, 0.04); jet.position.set(0, -0.045, 0.004);   // 어깨가 낮다(0.11) — 등 날개·제트팩 등판을 등 높이로
+                pmPose(0, 'Idle');
+            } catch (e) { console.warn('pilgrim model', e); }
+        })();
+        const _pq = new THREE.Quaternion(), _pv = new THREE.Vector3();
+        function pmPose(dt, clip, over, speed) {   // 순례자 모델 — 동작 하나(바뀌면 0.2초 겹쳐 넘김) + 팔 덮어쓰기(over)
+            if (!pm.mixer) return;
+            const a = pm.acts[clip] || pm.acts.Idle; if (!a) return;
+            if (pm.cur !== clip) { const pa = pm.acts[pm.cur]; a.reset().play(); if (pa) a.crossFadeFrom(pa, 0.2, false); pm.cur = clip; }
+            a.timeScale = speed || 1;
+            pm.mixer.update(dt);
+            pm.w += ((over ? 1 : 0) - pm.w) * Math.min(1, dt * 10); if (over) pm.ov = over;
+            if (pm.w < 0.01) return;
+            const D = PM_OVER[pm.ov];
+            const aim = (list, dirs, straight) => dirs && list.forEach((A, i) => {
+                _pv.set(dirs[i][0], dirs[i][1], dirs[i][2]).normalize();
+                _pq.setFromUnitVectors(A.dir, _pv).multiply(A.Wb).premultiply(A.WpInv);   // 처음 자세에서 위 뼈만 그쪽으로 돌린 것 — 부모 기준으로
+                A.b.quaternion.slerp(_pq, pm.w); if (straight) A.low.quaternion.slerp(A.lowQ, pm.w);   // 아래팔은 곧게
+            });
+            aim(pm.arms, D.a, true); aim(pm.legs, D.g, false);
+        }
         // 물결 고리 — 물길에서 발을 디디면 퍼진다
         const ripples = [];
         {
@@ -4165,6 +4217,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             L.armL.rotation.x += (-2.6 + wv - L.armL.rotation.x) * e; L.armR.rotation.x += (-2.6 - wv - L.armR.rotation.x) * e;
             L.armL.rotation.z += (-0.45 - L.armL.rotation.z) * e; L.armR.rotation.z += (0.45 - L.armR.rotation.z) * e;
             body.rotation.x += (0.3 - body.rotation.x) * e; body.position.y += (0 - body.position.y) * e;
+            pmPose(dt, 'Sit_Chair_Idle', 'cheer');
             S.sp -= dt; if (S.sp <= 0) { S.sp = 0.12; splash(P.x, P.z, false, true); }   // 지나간 자리에 물결
             if (seaE(P.x, P.z) < 0.995) {   // 어귀 — 미끄러지던 기세 그대로 바다 속으로 풍덩 (10/5 사용자: 물속에 풍덩 하는 느낌)
                 const v = S.v; slide = null; slideSndStop();
@@ -4304,7 +4357,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             pilgrim.position.set(P.x, P.y, P.z); pilgrim.rotation.y = P.face;
             if (ride.on && MD) {   // 안장 위에 — 앉는 자리만큼 올리고 앞뒤로 옮긴다, 달리면 들썩
                 const s = MD.seat || [0, 0.36], fwd = s[0] * MOUNT_S;
-                pilgrim.position.set(P.x - Math.sin(P.face) * fwd, P.y + s[1] * MOUNT_S - (MD.pose === 'stand' ? 0 : 0.07) + (moving && P.onGround ? Math.abs(Math.sin(ride.gait)) * (run ? 0.018 : 0.008) : 0), P.z - Math.cos(P.face) * fwd);
+                pilgrim.position.set(P.x - Math.sin(P.face) * fwd, P.y + s[1] * MOUNT_S - (MD.pose === 'stand' ? 0 : pm.mixer ? PM_SEAT : 0.07) + (moving && P.onGround ? Math.abs(Math.sin(ride.gait)) * (run ? 0.018 : 0.008) : 0), P.z - Math.cos(P.face) * fwd);
             }
             mountAnim(dt, moving, run, inWater);
             // 자세 — 걷기·달리기는 팔다리를 엇갈려 흔들고, 공중에선 팔을 벌리고, 날 때는 다리를 모은다
@@ -4356,8 +4409,20 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 hL = hR = 0.06 + 0.22 * k; aL = aR = 0.25 + 0.4 * k; zL = -0.22 + 0.08 * k; zR = 0.22 - 0.08 * k; lean = -0.25 - 1.0 * k; }
             else if (!P.onGround) { hL = 0.65; hR = -0.3; aL = -0.5; aR = 0.4; zL = -0.75; zR = 0.75; }
             else if (stepping) { hL = amp * sw; hR = -amp * sw; aL = -amp * 0.85 * sw; aR = amp * 0.85 * sw; lean = run ? -0.2 : -0.05; bob = Math.abs(Math.cos(gait)) * (run ? 0.012 : 0.006); }
+            if (pm.mixer) {   // 🧍 모델 순례자 — 같은 상태를 동작 이름으로
+                let clip = 'Idle', over = null, sp = 1;
+                if (ride.on) { clip = RK.pose === 'stand' ? 'Idle' : 'Sit_Chair_Idle'; if (!RK.pose && rk === 'animal') over = 'ride'; }
+                else if (swimNow() || isUnder()) { clip = moving || isUnder() ? 'Running_B' : 'Idle'; sp = 0.75; }
+                else if (glider.visible) { clip = 'Jump_Idle'; over = 'up'; }
+                else if (gl && wingKind === 'wings') { clip = 'Jump_Idle'; over = 'out'; }
+                else if (fly) clip = 'Idle';
+                else if (!P.onGround) clip = 'Jump_Idle';
+                else if (stepping) { clip = run ? 'Running_A' : 'Walking_A'; sp = inRiver ? 0.8 : 1; }
+                if (pm.force) { clip = pm.force.clip; over = pm.force.over; }   // 🧪 헤드리스 확인용
+                pmPose(dt, clip, over, sp); bob = 0;
+            }
             const e = Math.min(1, dt * 14), L = limbs;
-            if (L.robe && L.robeF) {   // 🚀 날 때는 몸에 붙는 겉옷
+            if (L.robe && L.robeF && !pm.mixer) {   // 🚀 날 때는 몸에 붙는 겉옷
                 const f2 = !!fly; if (L.robeF[0].visible !== f2) { L.robe.forEach(m => m.visible = !f2); L.robeF.forEach(m => m.visible = f2); L.hem.scale.setScalar(f2 ? 0.68 : 1); }
             }
             L.hipL.rotation.x += (hL - L.hipL.rotation.x) * e; L.hipR.rotation.x += (hR - L.hipR.rotation.x) * e;
@@ -4740,6 +4805,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             gbox: () => [...giftsG.children].map(o => { const B = new THREE.Box3(), tb = new THREE.Box3(); o.updateMatrixWorld(true); o.traverse(m => { if (!m.isMesh || m === o.userData.pick) return; if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); tb.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); B.union(tb); }); return { k: o.userData.item.k, sc: +o.scale.x.toFixed(2), min: [B.min.x, B.min.y, B.min.z].map(v => +v.toFixed(2)), max: [B.max.x, B.max.y, B.max.z].map(v => +v.toFixed(2)) }; }),
             bbox: () => [...decoG.children].map(o => { const B = new THREE.Box3(), tb = new THREE.Box3(); o.updateMatrixWorld(true); o.traverse(m => { if (!m.isMesh || m === o.userData.pick) return; if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); tb.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); B.union(tb); }); return { k: o.userData.item.k, min: [B.min.x, B.min.y, B.min.z].map(v => +v.toFixed(2)), max: [B.max.x, B.max.y, B.max.z].map(v => +v.toFixed(2)) }; }),
             rebuild: () => itemBoxes(), items: () => [...giftsG.children, ...decoG.children].map(o => { let n = 0, vis = 0; o.traverse(m => { if (m.isMesh) { n++; if (m.visible) vis++; } }); return { k: o.userData.item && o.userData.item.k, vis: o.visible, meshes: n, visMeshes: vis, pos: [o.position.x, o.position.y, o.position.z].map(v => +v.toFixed(2)) }; }), ground: (x, z, y) => groundAt(x, z, y), blocked: (x, z, y) => blocked(x, z, y),
+            pm: (clip, over) => { pm.force = clip ? { clip, over } : null; return { loaded: !!pm.mixer, cur: pm.cur, clips: Object.keys(pm.acts) }; }, camSet: (yaw, pitch, dist) => { camYaw = yaw; camPitch = pitch; if (dist) camDist = dist; }, st: o => { if (o.glide != null) { equipWing(); gliding = o.glide; } if (o.jet) { jetTrialEnd = Date.now() + 60000; syncJetUI(); jetToggle(true); } if (o.ride) { mountUp(); } return { gliding, jetOn, ride: ride.on, wingKind }; },
             setP: (x, y, z, face) => { P.x = x; P.y = y; P.z = z; P.vy = 0; if (face != null) { P.face = face; camYaw = face; } }, P: () => ({ x: P.x, y: P.y, z: P.z }),
             stars: () => stars.map(s => ({ id: s.id, x: s.x, y: s.g.position.y, z: s.z, done: s.done, vis: s.g.visible })),
             fragScreen: () => starRun ? starRun.frags.filter(f => !f.got).map(f => { const v = f.sp.position.clone().project(camera); return { i: f.i, sx: +((v.x + 1) / 2).toFixed(2), sy: +((1 - v.y) / 2).toFixed(2), z: +v.z.toFixed(3), sc: [+f.sp.scale.x.toFixed(2), +f.sp.scale.y.toFixed(2)], vis: f.sp.visible, inScene: !!f.sp.parent, dist: +f.sp.position.distanceTo(camera.position).toFixed(2) }; }) : null, cam: () => ({ p: camera.position.toArray().map(v => +v.toFixed(2)), near: camera.near, far: camera.far }), three: () => ({ scene, renderer, camera, controls }), jetTrial: ms => { if (jetTrialEnd) jetTrialEnd = Date.now() + ms; return { end: jetTrialEnd, land: jetTrialLand, on: jetOn }; }, dyn: () => ({ dynScale: +dynScale.toFixed(2), pr: +renderer.getPixelRatio().toFixed(2), ema: +dynEma.toFixed(3) }), tall: () => BOXES.filter(b => !b.item && b.y1 > 3.5).map(b => ({ x0: b.x0, x1: b.x1, z0: b.z0, z1: b.z1, y0: b.y0, y1: b.y1 })),
