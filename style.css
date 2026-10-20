@@ -7425,7 +7425,23 @@ body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !importa
 /* 🕊️ 친구의 새 예루살렘 구경(10/14) — 사고·꾸미고·낚고·맑히고·사신과 이야기하는 일은 숨긴다(걷기·점프·탈것·완성된 모습은 그대로) */
 #nj3d.nj3d-visit .nj3d-deco, #nj3d.nj3d-visit .nj3d-build, #nj3d.nj3d-visit .nj3d-jetbuy, #nj3d.nj3d-visit .nj3d-jettry, #nj3d.nj3d-visit .nj3d-fishbtn, #nj3d.nj3d-visit .nj3d-pourbtn,
 #nj3d.nj3d-visit .nj3d-clambtn, #nj3d.nj3d-visit .nj3d-pearlbtn, #nj3d.nj3d-visit .nj3d-talk, #nj3d.nj3d-visit .nj3d-dexbtn,
-#nj3d.nj3d-visit .nj3d-tackbtn { display: none !important; }
+#nj3d.nj3d-visit .nj3d-tackbtn, #nj3d.nj3d-visit .nj3d-lookbtn { display: none !important; }
+/* 🙂 내 모습 (10/20) — 아래 반쪽 창, 위에는 얼굴. 여는 동안 걷기 버튼·미니맵은 숨긴다 */
+.nj3d-lookpanel { position: absolute; left: 50%; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 6; width: min(420px, calc(100% - 24px)); max-height: 46%; overflow-y: auto;
+    background: rgba(24, 14, 34, 0.95); border: 1px solid rgba(246, 215, 122, 0.4); border-radius: 14px; padding: 10px 12px 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.45); color: #e6eef8; box-sizing: border-box; }
+.nj3d-lookpanel[hidden] { display: none; }
+.nj3d-look-top { display: flex; align-items: center; justify-content: space-between; color: #f6d77a; font-size: 0.95rem; }
+.nj3d-look-done { border: 0; border-radius: 999px; padding: 6px 16px; background: #f6d77a; color: #2c3e50; font: 800 0.82rem 'Pretendard', sans-serif; cursor: pointer; }
+.nj3d-look-tabs { display: flex; margin: 8px 0 2px; border-bottom: 1px solid rgba(246, 215, 122, 0.25); }
+.nj3d-look-tabs button { flex: 1; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #b9c6d6; padding: 7px 0; font: 700 0.8rem 'Pretendard', sans-serif; cursor: pointer; white-space: nowrap; }
+.nj3d-look-tabs button.on { color: #f6d77a; border-bottom-color: #f6d77a; }
+.nj3d-look-row { display: flex; align-items: center; gap: 8px; margin-top: 9px; }
+.nj3d-look-sec { flex: none; width: 58px; color: #f6d77a; font-weight: 800; font-size: 0.76rem; }
+.nj3d-look-sw { display: flex; flex-wrap: wrap; gap: 7px; }
+.nj3d-look-sw button { width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.35); cursor: pointer; padding: 0; }
+.nj3d-look-sw button.on { border-color: #f6d77a; box-shadow: 0 0 0 2px #f6d77a; }
+.nj3d-look-reset { margin-top: 10px; border: 0; background: transparent; color: #9fb0c4; font-size: 0.76rem; text-decoration: underline; cursor: pointer; padding: 0; }
+#nj3d.nj3d-looking .nj3d-walk, #nj3d.nj3d-looking .nj3d-mini, #nj3d.nj3d-looking .nj3d-dexbtn { display: none !important; }
 #nj3d .nj3d-visitbar { position: absolute; left: 50%; transform: translateX(-50%); top: 8px; z-index: 5; display: flex; gap: 6px; align-items: center;
     background: rgba(15,26,51,0.82); color: #f3e3b0; border-radius: 999px; padding: 6px 8px 6px 14px; font-size: 0.85rem; font-weight: bold; white-space: nowrap; max-width: calc(100% - 20px);
     overflow-x: auto; scrollbar-width: none; }   /* 그래도 넘치면 띠 안에서 옆으로 밀어 본다(10/19) */

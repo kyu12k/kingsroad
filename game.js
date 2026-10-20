@@ -628,7 +628,10 @@ const LANG = {
         mount_speed: '달리기의 {x}배', mount_speed2: '달리기의 {x}배 → 오래 달리면 {y}배', mount_coat: '털빛', mount_gear: '장식 — {name} 전용', mount_gear_on: '달기', mount_gear_off: '떼기',
         mount_need: '💎 보석이 모자라요', mount_got: '🎉 {name} 샀어요! 「타기」를 눌러 보세요',
         mount_sec_bible: '📜 성경의 탈것', mount_sec_modern: '🚗 오늘의 탈것',
-        mount_tab: '🐴 탈것', wing_tab: '🪂 날개', wing_intro: '공중에서 점프를 한 번 더 누르면 펼쳐져요. 좋은 날개일수록 더 빨리, 더 멀리 날아요.',
+        look_btn: '🙂 내 모습', look_title: '🙂 내 모습', look_t_h: '머리', look_t_e: '눈', look_t_nm: '코·입', look_t_ear: '귀', look_t_c: '색',
+        look_beard: '수염', look_blush: '볼터치', look_skin: '피부', look_hair: '머리카락', look_eye: '눈동자', look_reset: '처음 모습으로', look_done: '완료',
+        look_hood_note: '두건을 쓰면 머리카락 색은 수염·눈썹에만 들어요.',
+        mount_tab: '🐴 탈것', wing_tab: '🪂 날개',wing_intro: '공중에서 점프를 한 번 더 누르면 펼쳐져요. 좋은 날개일수록 더 빨리, 더 멀리 날아요.',
         wing_glider: '🪂 글라이더 — 머리 위로 들고 날아요', wing_wings: '🪽 등 날개 — 걸을 땐 접혀 있다가 펼쳐요',
         wing_stat: '활강 {b} · 덜 떨어짐 {s}', wing_base: '기본', wing_on: '✓ 끼는 중', wing_use: '끼기',
         wing_got: '🎉 {name} 끼었어요 — 공중에서 점프를 한 번 더!',
@@ -1962,7 +1965,10 @@ const LANG = {
         mount_speed: '{x}× running speed', mount_speed2: '{x}× running → {y}× on long runs', mount_coat: 'Coat', mount_gear: 'Gear — {name} only', mount_gear_on: 'Put on', mount_gear_off: 'Take off',
         mount_need: '💎 Not enough gems', mount_got: '🎉 You bought the {name}! Tap Ride',
         mount_sec_bible: '📜 Rides of the Bible', mount_sec_modern: '🚗 Rides of today',
-        mount_tab: '🐴 Rides', wing_tab: '🪂 Wings', wing_intro: 'Press Jump again in the air to spread them. Better wings fly faster and farther.',
+        look_btn: '🙂 My look', look_title: '🙂 My look', look_t_h: 'Hair', look_t_e: 'Eyes', look_t_nm: 'Nose·Mouth', look_t_ear: 'Ears', look_t_c: 'Colors',
+        look_beard: 'Beard', look_blush: 'Blush', look_skin: 'Skin', look_hair: 'Hair', look_eye: 'Eyes', look_reset: 'Back to default', look_done: 'Done',
+        look_hood_note: 'With the hood on, hair color shows only on brows and beard.',
+        mount_tab: '🐴 Rides', wing_tab: '🪂 Wings',wing_intro: 'Press Jump again in the air to spread them. Better wings fly faster and farther.',
         wing_glider: '🪂 Gliders — held above your head', wing_wings: '🪽 Back wings — folded while walking, spread to glide',
         wing_stat: 'Glide {b} · Falls slower {s}', wing_base: 'Base', wing_on: '✓ Equipped', wing_use: 'Equip',
         wing_got: '🎉 {name} equipped — press Jump again in the air!',
@@ -3025,6 +3031,7 @@ let njJetpack = false;   // 3D 걸어서 구경 — 보석으로 산 제트팩 (
 let njMounts = {};      // 🐴 탈것 — { 탈것: { own, coats: [가진 털빛], coat, gear: [가진 장식], on: [단 장식], mv } }
 let njMountSel = '';    // 🐴 지금 고른 탈것
 let njWings = {};       // 🪂 글라이더·등 날개 — { own: [가진 것], on: 낀 것, mv }
+let njLook = {};        // 🧍 내 모습(10/20) — { h 머리, e 눈, b 눈썹, n 코, m 입, ear 귀, bl 볼터치, bd 수염, sk·hc·ec 피부·머리·눈 색 번호, mv }
 let njFruits = {};       // 생명나무 열매 — { 'YYYY-MM': { 절id: [열린 때, 먹은 때(0=아직), 마지막 실패 때, 다시 열린 때(그림자였다가, 10/16)] } }. 지난 달은 잎사귀 수만 njLeafArch로 접는다
 let njLeafArch = {};     // 접은 달의 먹은 열매(=잎사귀) 수 { 'YYYY-MM': n }
 let njClams = null;            // 🐚 오늘의 조개 { day: 6시 날짜, ids: [조개마다 절], done: [연(못 연) 조개 번호], got: [진주 꺼낸 번호] } (10/5 · 10/10 지난 오늘의 암송 세 절)
@@ -3589,6 +3596,7 @@ loadGameData = function () {
         njMounts = (parsed.njMounts && typeof parsed.njMounts === 'object') ? parsed.njMounts : {};
         njMountSel = typeof parsed.njMountSel === 'string' ? parsed.njMountSel : '';
         njWings = (parsed.njWings && typeof parsed.njWings === 'object') ? parsed.njWings : {};
+        njLook = (parsed.njLook && typeof parsed.njLook === 'object') ? parsed.njLook : {};
         njFruits = (parsed.njFruits && typeof parsed.njFruits === 'object') ? parsed.njFruits : {};
         njLeafArch = (parsed.njLeafArch && typeof parsed.njLeafArch === 'object') ? parsed.njLeafArch : {};
         njLeafSpent = Math.max(0, parseInt(parsed.njLeafSpent, 10) || 0);
@@ -9879,6 +9887,33 @@ function _njWingBuy(k) {   // 사서 바로 낀다 — 이미 있으면 끼기�
     s.on = k; s.mv = Date.now(); _njMountSave(); return true;
 }
 function _njMountPick(k) { const s = _njMountSt(k); if (!s.own) return false; njMountSel = k; s.mv = Date.now(); _njMountSave(); return true; }
+/* 🧍 내 모습 (10/20 사용자: 머리·눈·코·입·귀를 원하는 대로) — 값 없이 바꾼다. 고르는 이름은 pilgrim.glb 안의 부품(nj3d.js PM_PARTS)
+   [값, 한국어, 영어] · 색은 sRGB. 기본 = 묶은 머리·순한 눈(사용자 선택) */
+const NJ_LOOK = {
+    h: [['tied', '묶은 머리', 'Tied'], ['short', '짧은 머리', 'Short'], ['long', '긴 머리', 'Long'], ['hood', '두건', 'Hood'], ['bald', '민머리', 'Bald']],
+    e: [['soft', '순한 눈', 'Gentle'], ['happy', '웃는 눈', 'Smiling'], ['bright', '또렷한 눈', 'Bright'], ['dot', '점 눈', 'Dots']],
+    b: [['thin', '가는 눈썹', 'Thin'], ['thick', '짙은 눈썹', 'Bold'], ['bushy', '덥수룩한 눈썹', 'Bushy'], ['none', '눈썹 없음', 'None']],
+    n: [['dot', '작은 코', 'Small'], ['button', '동그란 코', 'Round'], ['big', '큰 코', 'Big'], ['none', '코 없음', 'None']],
+    m: [['smile', '미소', 'Smile'], ['open', '활짝', 'Grin'], ['small', '오', 'Oh'], ['flat', '일자', 'Flat']],
+    ear: [['s', '작은 귀', 'Small'], ['m', '보통 귀', 'Medium'], ['l', '큰 귀', 'Large']],
+    sk: ['#f3cfb3', '#e8b896', '#d39a74', '#b57a55', '#8d5a3c', '#5f3b27'],
+    hc: ['#2a1c16', '#5b3a26', '#8b5a34', '#c7954f', '#e6cf93', '#a3a3a3', '#ecebe6', '#8a3420'],
+    ec: ['#1b1212', '#4a2c18', '#2d5d8f', '#3c6e3c', '#6a4e8f'],
+};
+const NJ_LOOK_DEF = { h: 'tied', e: 'soft', b: 'thin', n: 'dot', m: 'smile', ear: 'm', bl: 1, bd: 0, sk: 1, hc: 0, ec: 0 };
+function _njLookGet() {   // 저장본이 이상해도 늘 고를 수 있는 값으로
+    const L = Object.assign({}, NJ_LOOK_DEF, (njLook && typeof njLook === 'object') ? njLook : {});
+    ['h', 'e', 'b', 'n', 'm', 'ear'].forEach(k => { if (!NJ_LOOK[k].some(o => o[0] === L[k])) L[k] = NJ_LOOK_DEF[k]; });
+    ['sk', 'hc', 'ec'].forEach(k => { L[k] = Math.max(0, Math.min(NJ_LOOK[k].length - 1, Number(L[k]) | 0)); });
+    L.bl = L.bl ? 1 : 0; L.bd = L.bd ? 1 : 0;
+    return L;
+}
+function _njLookSet(patch, sync) {   // 바꿀 때마다 기기에 — 다른 기기로는 창을 닫을 때(sync)
+    njLook = Object.assign(_njLookGet(), patch || {}, { mv: Date.now() }); saveGameData();
+    if (sync && typeof syncToFirestore === 'function') syncToFirestore();
+    return _njLookGet();
+}
+function _njLookName(k, v) { const o = (NJ_LOOK[k] || []).find(x => x[0] === v); return o ? (currentLang === 'en' ? o[2] : o[1]) : v; }
 function _njDecorName(d) { return currentLang === 'en' ? d.en : d.ko; }
 /* 사서 보관함 대신 바로 화면 가운데에 놓는다(x, z는 nj3d가 정해 준다) */
 function _njDecorBuy(k, x, z) {
@@ -14322,6 +14357,7 @@ function saveGameData() {
         njMounts: njMounts,               // 🐴 탈것 · 털빛 · 장식
         njMountSel: njMountSel,           // 🐴 고른 탈것
         njWings: njWings,                 // 🪂 글라이더·등 날개
+        njLook: njLook,                   // 🧍 내 모습
         njFruits: njFruits,               // 생명나무 열매 (열린·먹은·실패 때)
         njLeafArch: njLeafArch,           // 접은 달의 잎사귀 수
         njLeafSpent: njLeafSpent,         // 만국에 드린 잎사귀
@@ -14655,6 +14691,7 @@ function _mergeNewJerusalem(target, other) {
         other.njWings.own.forEach(x => { if (!tw.own.includes(x)) { tw.own.push(x); took++; } });
         if ((other.njWings.mv || 0) > (tw.mv || 0)) { tw.on = other.njWings.on; tw.mv = other.njWings.mv; }
     }
+    if (other.njLook && typeof other.njLook === 'object' && (other.njLook.mv || 0) > ((target.njLook && target.njLook.mv) || 0)) { target.njLook = Object.assign({}, other.njLook); took++; }   // 🧍 내 모습 — 나중에 바꾼 쪽 통째로
     // 진주 — 백지로 통과한 날은 합집합. 진주 수는 날짜에서 계산하므로(늘기도 줄기도 한다) 많은 쪽을 취하지 않는다
     if (Array.isArray(other.njBlankDays) && other.njBlankDays.length) {
         const td = Array.isArray(target.njBlankDays) ? target.njBlankDays : [];

@@ -57,6 +57,7 @@
                 <div class="nj3d-decobar" hidden></div>
                 <div class="nj3d-decopanel" hidden></div>
                 <div class="nj3d-decopanel nj3d-mountpanel" hidden></div>
+                <div class="nj3d-lookpanel" hidden></div>
                 <div class="nj3d-walk" hidden>
                     <div class="nj3d-joy"><div class="nj3d-knob"></div></div>
                     <div class="nj3d-keyhelp">${T('nj3d_keyhelp')}</div>
@@ -70,6 +71,7 @@
                         <button class="nj3d-wb small nj3d-clambtn" hidden></button>
                         <button class="nj3d-wb small nj3d-pearlbtn" hidden></button>
                         <button class="nj3d-wb small nj3d-talk" hidden></button>
+                        <button class="nj3d-wb small nj3d-lookbtn" hidden>${T('look_btn')}</button>
                         <button class="nj3d-wb small nj3d-tackbtn" hidden>${T('nj3d_tack')}</button>
                         <button class="nj3d-wb small nj3d-ridebtn"></button>
                         <button class="nj3d-wb small nj3d-divebtn" hidden>${T('nj3d_dive')}<span class="nj3d-key">Q</span></button>
@@ -1752,7 +1754,7 @@
         /* 🧍 순례자 모델 (10/20 사용자: 도형 몇 개 붙여 놓은 것 같다) — KayKit Adventurers의 Mage(CC0, Kay Lousberg)에서 모자·소품을 빼고
            흰 겉옷·금빛 망토로 칠해 뼈·동작째 쓴다(tools/blender/pilgrim.py → models/pilgrim/pilgrim.glb). 받기 전·실패하면 위의 도형 순례자.
            동작 하나(서기·걷기·달리기·점프·앉기)를 고르고, 동작에 없는 팔 자세(글라이더 손잡이·날개·미끄럼 만세)는 위팔 뼈를 덮어쓴다 */
-        const PILGRIM_V = '20261020', PM_SEAT = 0.03;
+        const PILGRIM_V = '20261020b', PM_SEAT = 0.03;
         const oldParts = [...body.children];
         const pm = { mixer: null, acts: {}, cur: '', arms: [], legs: [], w: 0, ov: 'up', jk: 0 };
         // 모델 공간(앞 +z, 왼쪽 +x)에서 위팔(a)·넓적다리(g)가 향할 쪽 — 팔은 아래팔을 곧게 편다, 다리는 동작의 무릎 굽힘 그대로
@@ -1772,18 +1774,83 @@
                 };
                 pm.arms = ['l', 'r'].map(s => rest('upperarm.' + s, 'lowerarm.' + s)).filter(Boolean);
                 pm.legs = ['l', 'r'].map(s => rest('upperleg.' + s, 'lowerleg.' + s)).filter(Boolean);
-                const box = new THREE.Box3().setFromObject(m), s = 0.22 / Math.max(0.01, box.max.y - box.min.y);
+                const box = new THREE.Box3();   // 키는 몸 + 묶은 머리로 잰다 — 모든 머리 부품이 같이 들어 있어 짧은 머리(더 높다)까지 재면 작아진다
+                m.traverse(o => { if (o.isMesh) { let p = o; while (p && p !== m && !/^(Mage_|hair_tied)/.test(p.name)) p = p.parent; if (p && p !== m) box.expandByObject(o); } });
+                const s = 0.22 / Math.max(0.01, box.max.y - box.min.y);
                 m.scale.setScalar(s); m.rotation.y = Math.PI; m.position.y = -box.min.y * s;
-                m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; if (o.material) { o.material.metalness = 0; o.material.roughness = 0.85; } } });
+                pm.mats = {};
+                m.traverse(o => {
+                    if (!o.isMesh) return;
+                    o.castShadow = true; o.frustumCulled = false;
+                    (Array.isArray(o.material) ? o.material : [o.material]).forEach(mt => {
+                        if (!mt) return; mt.metalness = 0; mt.roughness = 0.85;
+                        const po = PM_PO[mt.name]; if (po) { mt.polygonOffset = true; mt.polygonOffsetFactor = po; mt.polygonOffsetUnits = po * 4; }   // 얼굴 그림은 얼굴 면 위에 겹쳐 그린다(멀리서 깜빡이지 않게)
+                        (pm.mats[mt.name] = pm.mats[mt.name] || []).includes(mt) || pm.mats[mt.name].push(mt);
+                    });
+                });
+                pm.parts = new Map(PM_ALL.map(n => [n, m.getObjectByName(n)]).filter(([, o]) => o));
+                pm.model = m; pmLook();
                 pm.mixer = new THREE.AnimationMixer(m);
                 gl.animations.forEach(c => { pm.acts[c.name] = pm.mixer.clipAction(c); });
                 oldParts.forEach(o => { o.visible = false; });
-                body.add(m); pm.model = m;
+                body.add(m); lookBtn.hidden = !!VISIT;
                 glider.position.y = 0.28;   // 큰 머리 위로 — 0.245는 날개가 머리를 뚫었다
                 backWings.position.set(0, 0.115, 0.04); jet.position.set(0, -0.045, 0.004);   // 어깨가 낮다(0.11) — 등 날개·제트팩 등판을 등 높이로
                 pmPose(0, 'Idle');
             } catch (e) { console.warn('pilgrim model', e); }
         })();
+        /* 🙂 내 모습 (10/20 사용자: 머리·눈·코·입·귀를 원하는 대로) — 모델 안에 부품이 다 있고 고른 것만 보인다. 색은 재질 색만 바꾼다.
+           고른 값은 game.js njLook(_njLookGet·_njLookSet, NJ_LOOK) */
+        const PM_PARTS = { h: { tied: ['hair_tied'], short: ['hair_short'], long: ['hair_long'], hood: ['hair_hood'], bald: ['scalp'] } };
+        const PM_ALL = ['hair_tied', 'hair_short', 'hair_long', 'hair_hood', 'scalp', 'beard', 'eyes_soft', 'eyes_happy', 'eyes_bright', 'eyes_dot', 'brow_thin', 'brow_thick', 'brow_bushy',
+            'nose_dot', 'nose_button', 'nose_big', 'mouth_smile', 'mouth_open', 'mouth_small', 'mouth_flat', 'blush', 'ears_s', 'ears_m', 'ears_l'];
+        const PM_PO = { eye: -1, mouth: -1, lip: -1, blush: -1, skin_dk: -1, brow: -1, ink: -2, tongue: -3, white: -4 };   // 겹치는 순서(위로 갈수록 더 앞)
+        const lookBtn = ov.querySelector('.nj3d-lookbtn'), lookEl = ov.querySelector('.nj3d-lookpanel');
+        function pmLook() {
+            if (!pm.model || typeof _njLookGet !== 'function') return;
+            const L = _njLookGet();
+            const on = new Set([...(PM_PARTS.h[L.h] || []), 'eyes_' + L.e, 'brow_' + L.b, 'nose_' + L.n, 'mouth_' + L.m, 'ears_' + L.ear]);
+            if (L.bl) on.add('blush'); if (L.bd) on.add('beard');
+            pm.parts.forEach((o, n) => { o.visible = on.has(n); });
+            const col = (n, hex, k) => (pm.mats[n] || []).forEach(mt => { mt.color.set(hex).convertSRGBToLinear(); if (k) mt.color.multiplyScalar(k); });
+            col('skin', NJ_LOOK.sk[L.sk]); col('skin_dk', NJ_LOOK.sk[L.sk], 0.8); col('hair', NJ_LOOK.hc[L.hc]); col('brow', NJ_LOOK.hc[L.hc], 0.8); col('eye', NJ_LOOK.ec[L.ec]);
+        }
+        let lookTab = 'h';
+        function openLook(tab) {   // 아래 반쪽 창 + 카메라는 얼굴 앞으로
+            if (!pm.model || typeof NJ_LOOK === 'undefined') return;
+            if (tab) lookTab = tab;
+            const L = _njLookGet(), en = typeof currentLang !== 'undefined' && currentLang === 'en';
+            const chips = k => `<div class="nj3d-shop-tabs">${NJ_LOOK[k].map(o => `<button data-lk="${k}:${o[0]}" class="${L[k] === o[0] ? 'on' : ''}">${esc2(en ? o[2] : o[1])}</button>`).join('')}</div>`;
+            const tog = (k, label) => `<div class="nj3d-shop-tabs"><button data-lt="${k}" class="${L[k] ? 'on' : ''}">${L[k] ? '✓ ' : ''}${label}</button></div>`;
+            const sw = (k, label) => `<div class="nj3d-look-row"><span class="nj3d-look-sec">${label}</span><div class="nj3d-look-sw">${NJ_LOOK[k].map((c, i) => `<button data-lc="${k}:${i}" class="${L[k] === i ? 'on' : ''}" style="background:${c}" aria-label="${label} ${i + 1}"></button>`).join('')}</div></div>`;
+            const body = lookTab === 'h' ? chips('h') + tog('bd', T('look_beard'))
+                : lookTab === 'e' ? chips('e') + chips('b')
+                : lookTab === 'nm' ? chips('n') + chips('m') + tog('bl', T('look_blush'))
+                : lookTab === 'ear' ? chips('ear')
+                : sw('sk', T('look_skin')) + sw('hc', T('look_hair')) + sw('ec', T('look_eye')) + (L.h === 'hood' ? `<div class="nj3d-offer-intro">${T('look_hood_note')}</div>` : '');
+            lookEl.innerHTML = `<div class="nj3d-look-top"><b>${T('look_title')}</b><button class="nj3d-look-done">${T('look_done')}</button></div>
+                <div class="nj3d-look-tabs">${['h', 'e', 'nm', 'ear', 'c'].map(t => `<button data-ltab="${t}" class="${lookTab === t ? 'on' : ''}">${T('look_t_' + t)}</button>`).join('')}</div>
+                <div class="nj3d-look-body">${body}</div><button class="nj3d-look-reset">${T('look_reset')}</button>`;
+            const set = patch => { _njLookSet(patch); pm.lookDirty = true; pmLook(); openLook(); };
+            lookEl.querySelectorAll('[data-ltab]').forEach(b => b.onclick = () => openLook(b.dataset.ltab));
+            lookEl.querySelectorAll('[data-lk]').forEach(b => b.onclick = () => { const [k, v] = b.dataset.lk.split(':'); set({ [k]: v }); });
+            lookEl.querySelectorAll('[data-lt]').forEach(b => b.onclick = () => set({ [b.dataset.lt]: L[b.dataset.lt] ? 0 : 1 }));
+            lookEl.querySelectorAll('[data-lc]').forEach(b => b.onclick = () => { const [k, i] = b.dataset.lc.split(':'); set({ [k]: +i }); });
+            lookEl.querySelector('.nj3d-look-reset').onclick = () => set(Object.assign({}, NJ_LOOK_DEF));
+            lookEl.querySelector('.nj3d-look-done').onclick = closeLook;
+            if (!pm.lookOn) {
+                pm.lookOn = true; pm.camSave = { camPitch, camDist }; camPitch = 0.06; camDist = 0.5; camOff = null;
+                ov.classList.add('nj3d-looking'); tackEl.hidden = true;
+            }
+            lookEl.hidden = false;
+        }
+        function closeLook() {
+            lookEl.hidden = true; if (!pm.lookOn) return;
+            pm.lookOn = false; ov.classList.remove('nj3d-looking');
+            if (pm.camSave) { camPitch = pm.camSave.camPitch; camDist = pm.camSave.camDist; camOff = null; }
+            if (pm.lookDirty && typeof _njLookSet === 'function') { pm.lookDirty = false; _njLookSet(null, true); }   // 다른 기기로 — 닫을 때 한 번
+        }
+        lookBtn.addEventListener('click', () => openLook());
         const _pq = new THREE.Quaternion(), _pv = new THREE.Vector3();
         function pmPose(dt, clip, over, speed) {   // 순례자 모델 — 동작 하나(바뀌면 0.2초 겹쳐 넘김) + 팔 덮어쓰기(over)
             if (!pm.mixer) return;
@@ -2543,6 +2610,7 @@
         }
         setGoLabel();
         modeBtn.addEventListener('click', () => {
+            if (pm.lookOn) closeLook();
             walk = !walk; controls.enabled = !walk; walkUI.hidden = !walk; decoBtn.hidden = walk; ov.classList.toggle('nj3d-walking', walk);   /* 꾸미기가 숨은 자리를 건축·완성된 모습이 메운다(10/15) */   /* 🛠️ 꾸미기는 걷는 동안 안 열린다 — 눌러도 아무 일 없던 버튼을 숨긴다(10/13 사용자) */ pilgrim.visible = true; mini.hidden = !walk; dexBtn.hidden = !walk; miniT = 0; camOff = null; slide = null; slideBtn.hidden = true; slideSndStop(); fovBoost = 0; speedEl.style.opacity = '0'; plungeMom = null;
             if (walk) { controls.autoRotate = false; camera.fov = 62; camera.near = 0.02; showHint(T('nj3d_hint_walk'), 3500); if (moveOnWalk) { if ((moveOnWalk === 'sea') !== (P.z > 25)) placeAt(moveOnWalk); moveOnWalk = null; } }
             else { camera.fov = 42; camera.near = 0.1; where = P.z > 25 ? 'sea' : 'city'; lookAt(where); setGoLabel(); endFish(); fishBtn.hidden = true; }
@@ -4447,9 +4515,10 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         }
         function followCam(dt) {   // 걷기 카메라 — 미끄럼에서도 같이 쓴다
             const MD = ride.on ? (NJ_MOUNTS[ride.k] || {}) : null;
-            const Tg = new THREE.Vector3(P.x, P.y + (ride.on && MD ? 0.12 + (MD.seat || [0, 0.36])[1] * MOUNT_S : 0.17), P.z);   // 탈 때는 앉은 높이만큼(낙타는 높이 — 멀리 보인다)
+            if (pm.lookOn) camYaw = angLerp(camYaw, P.face + Math.PI, 1 - Math.exp(-dt * 6));   // 🙂 내 모습 — 얼굴 앞으로 돌아온다
+            const Tg = new THREE.Vector3(P.x, P.y + (ride.on && MD ? 0.12 + (MD.seat || [0, 0.36])[1] * MOUNT_S : 0.17) - (pm.lookOn ? 0.085 : 0), P.z);   // 내 모습 창이 아래 반을 덮는다 — 가슴을 보아 얼굴이 위쪽에   // 탈 때는 앉은 높이만큼(낙타는 높이 — 멀리 보인다)
             const dir = new THREE.Vector3(Math.sin(camYaw) * Math.cos(camPitch), Math.sin(camPitch), Math.cos(camYaw) * Math.cos(camPitch));
-            if (fpView) {   // 👁 1인칭(10/5 사용자) — 순례자 눈높이(탈 때는 안장 위)에서 보는 쪽 그대로. 내 몸은 감춘다
+            if (fpView && !pm.lookOn) {   // 👁 1인칭(10/5 사용자) — 순례자 눈높이(탈 때는 안장 위)에서 보는 쪽 그대로. 내 몸은 감춘다
                 const eye = Tg.clone(); eye.y += ride.on ? 0.06 : 0.025;
                 const fw = new THREE.Vector3(-dir.x, 0, -dir.z); if (fw.lengthSq() > 1e-6) eye.addScaledVector(fw.normalize(), 0.035);   // 얼굴 앞 — 머리 속에서 보지 않게
                 eye.y = Math.max(eye.y, groundAt(eye.x, eye.z, eye.y) + 0.05);
