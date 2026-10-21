@@ -1756,7 +1756,7 @@
         /* 🧍 순례자 모델 (10/20 사용자: 도형 몇 개 붙여 놓은 것 같다) — KayKit Adventurers의 Mage(CC0, Kay Lousberg)에서 모자·소품을 빼고
            흰 겉옷·금빛 망토로 칠해 뼈·동작째 쓴다(tools/blender/pilgrim.py → models/pilgrim/pilgrim.glb). 받기 전·실패하면 위의 도형 순례자.
            동작 하나(서기·걷기·달리기·점프·앉기)를 고르고, 동작에 없는 팔 자세(글라이더 손잡이·날개·미끄럼 만세)는 위팔 뼈를 덮어쓴다 */
-        const PILGRIM_V = '20261021a', PM_SEAT = 0.03;
+        const PILGRIM_V = '20261021b', PM_SEAT = 0.03;
         const oldParts = [...body.children];
         const pm = { mixer: null, acts: {}, cur: '', arms: [], legs: [], w: 0, ov: 'up', jk: 0 };
         // 모델 공간(앞 +z, 왼쪽 +x)에서 위팔(a)·넓적다리(g)가 향할 쪽 — 팔은 아래팔을 곧게 편다, 다리는 동작의 무릎 굽힘 그대로
@@ -1792,6 +1792,17 @@
                 });
                 pm.parts = new Map(PM_ALL.map(n => [n, m.getObjectByName(n)]).filter(([, o]) => o));
                 pm.wear = new Map((typeof NJ_WEAR !== 'undefined' ? NJ_WEAR : []).map(w => [w.k, m.getObjectByName((w.slot === 'head' ? 'wear_' : 'hold_') + w.k)]).filter(([, o]) => o));
+                pm.back = new Map((typeof NJ_WEAR !== 'undefined' ? NJ_WEAR : []).filter(w => w.slot === 'hand').map(w => [w.k, m.getObjectByName('back_' + w.k)]).filter(([, o]) => o));   // 🎒 글라이더를 잡을 땐 등에
+                pm.hatBase = new Map(); const _c = new THREE.Vector3();
+                pm.wear.forEach((o, k) => {   // 🧕 두건 위에 쓰는 모습 — 모자 가운데를 기준으로 조금 키우고(두건이 머리카락보다 크다) 위로
+                    if (NJ_WEAR.find(x => x.k === k).slot !== 'head') return;
+                    o.updateMatrix(); const base = o.matrix.clone(), bb = new THREE.Box3();
+                    o.traverse(c => { if (c.isMesh) { c.geometry.computeBoundingBox(); const g = c.geometry.boundingBox.clone(); bb.union(c === o ? g : g.applyMatrix4(c.matrix)); } });   // 소품 자기 좌표의 크기
+                    bb.getCenter(_c);
+                    // 모자 자기 좌표 = 처음 자세의 세상 축(위 +y) — 가운데를 기준으로 키우고 위로
+                    const S = 1.12, hood = base.clone().multiply(new THREE.Matrix4().makeTranslation(_c.x, _c.y + 0.07, _c.z)).multiply(new THREE.Matrix4().makeScale(S, S, S)).multiply(new THREE.Matrix4().makeTranslation(-_c.x, -_c.y, -_c.z));
+                    pm.hatBase.set(k, { base, hood });
+                });
                 (pm.mats.w_flame || []).forEach(mt => { mt.emissive.set(0xffc35a); mt.emissiveIntensity = 1.3; });   // 🏮 등불 — 은은하게 빛난다
                 pm.model = m; pmLook();
                 pm.mixer = new THREE.AnimationMixer(m);
@@ -1820,13 +1831,16 @@
             const on = new Set([...(PM_PARTS.h[L.h] || []), 'eyes_' + L.e, 'brow_' + L.b, 'nose_' + L.n, 'mouth_' + L.m, 'ears_' + L.ear]);
             if (L.bl) on.add('blush'); if (L.bd) on.add('beard');
             pm.parts.forEach((o, n) => { o.visible = on.has(n); });
-            // 👒 소품 — 두건엔 모자를 쓰지 않는다 · 목자 두건은 머리카락을 덮는다
-            const W = typeof _njWearSt === 'function' ? _njWearSt() : {}; let hideHair = false; pm.holdObj = null;
+            // 👒 소품 — 목자 두건은 머리카락(두건 포함)을 덮는다 · 다른 모자는 두건 위에 조금 크게(10/21 사용자: 두건엔 모자를 안 쓰는 게 의아하다)
+            const W = typeof _njWearSt === 'function' ? _njWearSt() : {}; let hideHair = false; pm.holdObj = null; pm.backObj = null;
             (pm.wear || new Map()).forEach((o, k) => {
-                const w = NJ_WEAR.find(x => x.k === k), vis = w.slot === 'head' ? W.head === k && L.h !== 'hood' : W.hand === k;
+                const w = NJ_WEAR.find(x => x.k === k), vis = w.slot === 'head' ? W.head === k : W.hand === k;
                 o.visible = vis; if (vis && w.hideHair) hideHair = true; if (vis && w.slot === 'hand') pm.holdObj = o;
+                const hb = pm.hatBase && pm.hatBase.get(k);
+                if (hb) { (L.h === 'hood' && !w.hideHair ? hb.hood : hb.base).decompose(o.position, o.quaternion, o.scale); }
             });
-            if (hideHair) ['hair_tied', 'hair_short', 'hair_long', 'scalp'].forEach(n => { const o = pm.parts.get(n); if (o) o.visible = false; });
+            (pm.back || new Map()).forEach((o, k) => { o.visible = false; if (W.hand === k) pm.backObj = o; });
+            if (hideHair) ['hair_tied', 'hair_short', 'hair_long', 'hair_hood', 'scalp'].forEach(n => { const o = pm.parts.get(n); if (o) o.visible = false; });
             const col = (n, hex, k) => (pm.mats[n] || []).forEach(mt => { mt.color.set(hex).convertSRGBToLinear(); if (k) mt.color.multiplyScalar(k); });
             col('skin', NJ_LOOK.sk[L.sk]); col('skin_dk', NJ_LOOK.sk[L.sk], 0.8); col('hair', NJ_LOOK.hc[L.hc]); col('brow', NJ_LOOK.hc[L.hc], 0.8); col('eye', NJ_LOOK.ec[L.ec]);
         }
@@ -1907,7 +1921,10 @@
             a.timeScale = speed || 1;
             pm.mixer.update(dt);
             pm.w += ((over ? 1 : 0) - pm.w) * Math.min(1, dt * 10); if (over) pm.ov = over;
-            if (pm.holdObj) pm.holdObj.visible = pm.w < 0.5;   // 팔을 덮어쓰는 동안(글라이더 손잡이·헤엄·찬양)은 손 소품을 내려 둔다
+            if (pm.holdObj) {   // 🎒 글라이더 손잡이를 잡는 동안만 손 소품을 등에 멘다(10/21 사용자) — 헤엄·찬양·손 흔들기는 손에 든 채 팔을 따라간다
+                const stow = pm.ov === 'up' && pm.w > 0.5;
+                pm.holdObj.visible = !stow; if (pm.backObj) pm.backObj.visible = stow;
+            }
             if (pm.w < 0.01) return;
             const D = typeof pm.ov === 'object' ? pm.ov : PM_OVER[pm.ov];   // 객체면 그때그때 계산한 방향(헤엄)
             const aim = (list, dirs, straight) => dirs && list.forEach((A, i) => {
@@ -2066,7 +2083,7 @@
         const jetTrialDay = () => typeof _get6AMDayStr === 'function' ? _get6AMDayStr() : new Date().toDateString();
         const jetTrialUsed = () => { try { return localStorage.getItem('kr_jetTrial') === jetTrialDay(); } catch (e) { return false; } };
         const hasJet = () => ownJet() || jetTrialEnd > 0;
-        jet.visible = hasJet();
+        jet.visible = false;   // 🚀 날 때만 멘다(10/21 사용자: 늘 메고 다닐 게 아니라 쓸 때만)
 
         // 땅 높이 — 기초석 단과 문 경사로
         function bandHeight(x, z) {
@@ -2368,12 +2385,12 @@
             if (!hasJet()) return;
             if (jetTrialLand && (on == null ? !jetOn : on)) return;
             if (!ride.on && (isUnder() || swimNow()) && (on == null ? !jetOn : on)) return;   // 물에서는 켜지 않는다(F 키 포함)   // 체험이 끝나 내려앉는 중엔 다시 켜지 않는다
-            jetOn = on == null ? !jetOn : !!on; jetAir = false; flyBtn.classList.toggle('on', jetOn);
+            jetOn = on == null ? !jetOn : !!on; jetAir = false; flyBtn.classList.toggle('on', jetOn); jet.visible = jetOn && hasJet();
             if (jetOn) { if (ride.on) mountDown(); gliding = false; if (P.vy < 0) P.vy = 0; showHint(T('nj3d_jet_hover'), 3200); }
         };
         flyBtn.addEventListener('pointerdown', e => { e.preventDefault(); jetToggle(); });
         const syncJetUI = () => {
-            const own = hasJet(); jet.visible = own; flyBtn.hidden = !own; jetBuy.hidden = ownJet();   // 체험 중에도 사기 버튼은 그대로
+            const own = hasJet(); jet.visible = own && jetOn; flyBtn.hidden = !own; jetBuy.hidden = ownJet();   // 체험 중에도 사기 버튼은 그대로
             jetTry.hidden = own || !!VISIT || jetTrialUsed(); jetTry.innerHTML = T('nj3d_jet_try');
             jetBuy.innerHTML = T('nj3d_jet_buy', { cost: JET_COST.toLocaleString() });
         };
@@ -4556,6 +4573,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 pmPose(dt, clip, over, sp); bob = 0;
                 /* 🚀 메고 걸을 때(10/20 사용자: 걸을 때 이상하다) — 날 때 맞춘 기울기(바깥·뒤로)로 서 있으면 분사구가 큰 머리 양옆에 귀처럼 솟았다.
                    걸을 땐 곧게 세우고 등판째 등 아래로, 날면 예전 자리·기울기로 */
+                if (jet.visible !== !!fly) jet.visible = !!fly;   // 🚀 날 때만(체험이 끝나 저절로 꺼질 때도)
                 pm.jk += ((fly ? 1 : 0) - pm.jk) * Math.min(1, dt * 6);
                 jet.position.y = -0.075 + 0.03 * pm.jk;
                 nozzles.forEach((g, i) => { const sg = i ? 1 : -1; g.rotation.x = 0.1 + 0.52 * pm.jk; g.rotation.z = sg * (0.08 + 0.32 * pm.jk); });
@@ -4945,7 +4963,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             gbox: () => [...giftsG.children].map(o => { const B = new THREE.Box3(), tb = new THREE.Box3(); o.updateMatrixWorld(true); o.traverse(m => { if (!m.isMesh || m === o.userData.pick) return; if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); tb.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); B.union(tb); }); return { k: o.userData.item.k, sc: +o.scale.x.toFixed(2), min: [B.min.x, B.min.y, B.min.z].map(v => +v.toFixed(2)), max: [B.max.x, B.max.y, B.max.z].map(v => +v.toFixed(2)) }; }),
             bbox: () => [...decoG.children].map(o => { const B = new THREE.Box3(), tb = new THREE.Box3(); o.updateMatrixWorld(true); o.traverse(m => { if (!m.isMesh || m === o.userData.pick) return; if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); tb.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); B.union(tb); }); return { k: o.userData.item.k, min: [B.min.x, B.min.y, B.min.z].map(v => +v.toFixed(2)), max: [B.max.x, B.max.y, B.max.z].map(v => +v.toFixed(2)) }; }),
             rebuild: () => itemBoxes(), items: () => [...giftsG.children, ...decoG.children].map(o => { let n = 0, vis = 0; o.traverse(m => { if (m.isMesh) { n++; if (m.visible) vis++; } }); return { k: o.userData.item && o.userData.item.k, vis: o.visible, meshes: n, visMeshes: vis, pos: [o.position.x, o.position.y, o.position.z].map(v => +v.toFixed(2)) }; }), ground: (x, z, y) => groundAt(x, z, y), blocked: (x, z, y) => blocked(x, z, y),
-            pm: (clip, over) => { pm.force = clip ? { clip, over } : null; return { loaded: !!pm.mixer, cur: pm.cur, clips: Object.keys(pm.acts) }; }, camSet: (yaw, pitch, dist) => { camYaw = yaw; camPitch = pitch; if (dist) camDist = dist; }, st: o => { if (o.glide != null) { equipWing(); gliding = o.glide; } if (o.jet) { jetTrialEnd = Date.now() + 60000; syncJetUI(); jetToggle(true); } if (o.ride) { mountUp(); } if (o.keys) Object.assign(inp.keys, o.keys); if (o.jetOff) jetToggle(false); if (o.sea) { placeAt('sea'); for (let i = 0; i < 120 && seaE(P.x, P.z) > 0.6; i++) P.z += 0.25; P.y = o.sea === 'top' ? SEA_Y : SEA_Y - 0.4; P.vy = 0; } return { gliding, jetOn, ride: ride.on, wingKind }; },
+            pm: (clip, over) => { pm.force = clip ? { clip, over } : null; return { loaded: !!pm.mixer, cur: pm.cur, clips: Object.keys(pm.acts) }; }, lookApply: () => pmLook(), camSet: (yaw, pitch, dist) => { camYaw = yaw; camPitch = pitch; if (dist) camDist = dist; }, st: o => { if (o.glide != null) { equipWing(); gliding = o.glide; } if (o.jet) { jetTrialEnd = Date.now() + 60000; syncJetUI(); jetToggle(true); } if (o.ride) { mountUp(); } if (o.keys) Object.assign(inp.keys, o.keys); if (o.jetOff) jetToggle(false); if (o.sea) { placeAt('sea'); for (let i = 0; i < 120 && seaE(P.x, P.z) > 0.6; i++) P.z += 0.25; P.y = o.sea === 'top' ? SEA_Y : SEA_Y - 0.4; P.vy = 0; } return { gliding, jetOn, ride: ride.on, wingKind }; },
             setP: (x, y, z, face) => { P.x = x; P.y = y; P.z = z; P.vy = 0; if (face != null) { P.face = face; camYaw = face; } }, P: () => ({ x: P.x, y: P.y, z: P.z, f: P.face }),
             stars: () => stars.map(s => ({ id: s.id, x: s.x, y: s.g.position.y, z: s.z, done: s.done, vis: s.g.visible })),
             fragScreen: () => starRun ? starRun.frags.filter(f => !f.got).map(f => { const v = f.sp.position.clone().project(camera); return { i: f.i, sx: +((v.x + 1) / 2).toFixed(2), sy: +((1 - v.y) / 2).toFixed(2), z: +v.z.toFixed(3), sc: [+f.sp.scale.x.toFixed(2), +f.sp.scale.y.toFixed(2)], vis: f.sp.visible, inScene: !!f.sp.parent, dist: +f.sp.position.distanceTo(camera.position).toFixed(2) }; }) : null, cam: () => ({ p: camera.position.toArray().map(v => +v.toFixed(2)), near: camera.near, far: camera.far }), three: () => ({ scene, renderer, camera, controls }), jetTrial: ms => { if (jetTrialEnd) jetTrialEnd = Date.now() + ms; return { end: jetTrialEnd, land: jetTrialLand, on: jetOn }; }, dyn: () => ({ dynScale: +dynScale.toFixed(2), pr: +renderer.getPixelRatio().toFixed(2), ema: +dynEma.toFixed(3) }), tall: () => BOXES.filter(b => !b.item && b.y1 > 3.5).map(b => ({ x0: b.x0, x1: b.x1, z0: b.z0, z1: b.z1, y0: b.y0, y1: b.y1 })),

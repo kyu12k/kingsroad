@@ -11,7 +11,7 @@
 # 피부는 색칠 지도 대신 skin 재질 — 몸·팔의 살빛 칸(지도 왼쪽 위)을 쓰던 면도 skin으로 바꾼다
 import bpy, os, math, bmesh
 import numpy as np
-from mathutils import Vector
+from mathutils import Vector, Matrix
 from mathutils.bvhtree import BVHTree
 BASE = r'C:\Users\kikej\kingsroad_assets\kaykit'
 APP = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) if '__file__' in dir() else r'C:\Users\kikej\OneDrive\바탕 화면\앱들\kingsload'
@@ -385,10 +385,20 @@ for k, o in wear.items():
     if k.startswith('hold_'): o.data.transform(_q.to_matrix().to_4x4())
 rig.animation_data.action = None; sc.frame_set(0)
 print('REPORT hand up', [round(v, 2) for v in _up])
+# 등에 멘 모습 back_<k> (10/21 사용자: 글라이더를 잡을 땐 손 소품을 등에) — 처음 자세의 세상 좌표로 만들어 가슴 뼈에 붙인다.
+# 소품 원래 틀(긴 쪽 +z, 얇은 쪽 y)로 되돌린 뒤 긴 쪽을 등에 비스듬히(오른 어깨 위 → 왼 허리), 납작한 면은 등을 따라. 가운데 = 등 한가운데(뒤 +y)
+_tilt = Matrix.Rotation(math.atan2(0.5, 1.0), 4, 'Y') @ _q.inverted().to_matrix().to_4x4()
+for k in [k for k in wear if k.startswith('hold_')]:
+    src = wear[k]; me = src.data.copy(); me.transform(_tilt)
+    xs = [v.co for v in me.vertices]; c = Vector([(min(p[i] for p in xs) + max(p[i] for p in xs)) / 2 for i in range(3)])
+    me.transform(Matrix.Translation(Vector((0, 0.52, 1.0)) - c))
+    o = bpy.data.objects.new('back_' + k[5:], me); sc.collection.objects.link(o); o.data.name = o.name
+    for p in o.data.polygons: p.use_smooth = True
+    wear['back_' + k[5:]] = o
 rig.data.pose_position = 'REST'; bpy.context.view_layer.update()
 for k in list(wear):
-    if not k.startswith('wear_'): continue
-    o = wear[k]; mw = o.matrix_world.copy(); o.parent = rig; o.parent_type = 'BONE'; o.parent_bone = 'head'; bpy.context.view_layer.update(); o.matrix_world = mw
+    if not (k.startswith('wear_') or k.startswith('back_')): continue
+    o = wear[k]; mw = o.matrix_world.copy(); o.parent = rig; o.parent_type = 'BONE'; o.parent_bone = 'head' if k.startswith('wear_') else 'chest'; bpy.context.view_layer.update(); o.matrix_world = mw
 rig.data.pose_position = 'POSE'; bpy.context.view_layer.update()
 print('REPORT wear', sorted((k, len(o.data.vertices)) for k, o in wear.items()))
 
@@ -403,6 +413,11 @@ COMBOS = {
     'w2': ['hair_long', 'eyes_happy', 'brow_thin', 'nose_dot', 'mouth_open', 'blush', 'ears_m', 'wear_flower', 'hold_lyre'],
     'w3': ['hair_short', 'eyes_soft', 'brow_thin', 'nose_dot', 'mouth_smile', 'ears_m', 'wear_olive', 'hold_lamp'],
     'w4': ['hair_tied', 'eyes_dot', 'brow_thin', 'nose_dot', 'mouth_small', 'blush', 'ears_m', 'wear_shepherd', 'hold_crook'],
+    'k_palm': ['hair_tied', 'eyes_soft', 'brow_thin', 'nose_dot', 'mouth_smile', 'blush', 'ears_m', 'back_palm'],
+    'k_lyre': ['hair_tied', 'eyes_soft', 'brow_thin', 'nose_dot', 'mouth_smile', 'blush', 'ears_m', 'back_lyre'],
+    'k_lamp': ['hair_tied', 'eyes_soft', 'brow_thin', 'nose_dot', 'mouth_smile', 'blush', 'ears_m', 'back_lamp'],
+    'k_scroll': ['hair_tied', 'eyes_soft', 'brow_thin', 'nose_dot', 'mouth_smile', 'blush', 'ears_m', 'back_scroll'],
+    'k_crook': ['hair_tied', 'eyes_soft', 'brow_thin', 'nose_dot', 'mouth_smile', 'blush', 'ears_m', 'back_crook'],
     'w5': ['hair_tied', 'eyes_bright', 'brow_thin', 'nose_dot', 'mouth_smile', 'blush', 'ears_m', 'wear_beanie', 'hold_scroll'],
 }
 def show(keys):
