@@ -3571,6 +3571,7 @@ loadGameData = function () {
         if (parsed.dailyLog && typeof parsed.dailyLog === 'object') dailyLog = parsed.dailyLog;
         if (parsed.featLog && typeof parsed.featLog === 'object') featLog = parsed.featLog;
         if (Array.isArray(parsed.exitLog)) exitLog = parsed.exitLog.filter(x => x && x.at).slice(-20);   // 🚪 떠난 화면(10/19)
+        if (Array.isArray(parsed.learnLog)) learnLog = parsed.learnLog.filter(x => x && x.at).slice(-60);   // 📏 학습 한 판의 시간(10/21)
         if (Array.isArray(parsed.pauseWhy)) pauseWhy = parsed.pauseWhy.slice(-5);
         if (typeof parsed.lastSeenDay === 'string') lastSeenDay = parsed.lastSeenDay;
         if (typeof parsed.fixDone === 'string') fixDone = parsed.fixDone;   // 🛠️ 적용한 바로잡기
@@ -14391,6 +14392,7 @@ function saveGameData() {
         dailyLog: (() => { try { _dailyLogSync(); } catch (e) { } return dailyLog; })(),   // 📖 암송 일지
         featLog: (() => { try { return featLog; } catch (e) { return undefined; } })(),   // 📈 기능 이용률
         exitLog: (() => { try { return exitLog; } catch (e) { return undefined; } })(),   // 🚪 떠난 화면(최근 20)
+        learnLog: (() => { try { return learnLog; } catch (e) { return undefined; } })(),   // 📏 학습 한 판의 시간(최근 60)
         pauseWhy: (() => { try { return pauseWhy; } catch (e) { return undefined; } })(),   // 💬 쉬었다 돌아온 까닭(최근 5)
         lastSeenDay: (() => { try { return lastSeenDay; } catch (e) { return undefined; } })(),   // 마지막으로 앱을 쓴 6시 날짜
         fixDone: (() => { try { return fixDone || undefined; } catch (e) { return undefined; } })(),
@@ -14700,7 +14702,7 @@ function _mergeEventProgress(target, other) {
     if (other.fixDone && !target.fixDone) target.fixDone = other.fixDone;   // 🛠️ 적용한 바로잡기
     if (Array.isArray(other.compDone) && other.compDone.length) target.compDone = [...new Set([...(Array.isArray(target.compDone) ? target.compDone : []), ...other.compDone])].slice(-20);   // 적용한 보상 열쇠 — 합집합
     // 🚪💬 떠난 화면·쉬었다 돌아온 까닭 — 시각으로 합집합 · 마지막으로 쓴 날은 늦은 쪽(10/19)
-    for (const [k, n] of [['exitLog', 20], ['pauseWhy', 5]]) if (Array.isArray(other[k]) && other[k].length) { const m = new Map(); [...(Array.isArray(target[k]) ? target[k] : []), ...other[k]].forEach(x => { if (x && x.at) m.set(x.at, x); }); target[k] = [...m.values()].sort((a, b) => a.at - b.at).slice(-n); }
+    for (const [k, n] of [['exitLog', 20], ['pauseWhy', 5], ['learnLog', 60]]) if (Array.isArray(other[k]) && other[k].length) { const m = new Map(); [...(Array.isArray(target[k]) ? target[k] : []), ...other[k]].forEach(x => { if (x && x.at) m.set(x.at, x); }); target[k] = [...m.values()].sort((a, b) => a.at - b.at).slice(-n); }
     if (typeof other.lastSeenDay === 'string' && other.lastSeenDay > (target.lastSeenDay || '')) target.lastSeenDay = other.lastSeenDay;
     const of = other.featLog;   // 📈 기능 이용률 — 날마다 칸마다 큰 쪽
     if (of && typeof of === 'object') {
@@ -20666,11 +20668,33 @@ function _exitLabel() {
         return [scr.replace('-screen', ''), top, g].filter(Boolean).join('|').slice(0, 80);
     } catch (e) { return '?'; }
 }
-setInterval(() => { if (document.hidden) return; const l = _exitLabel(); if (l !== _exitLab) { _exitLab = l; _exitSince = Date.now(); } }, 2000);
+setInterval(() => { if (document.hidden) return; const l = _exitLabel(); if (l !== _exitLab) { _exitLab = l; _exitSince = Date.now(); } _lrnTick(l); }, 2000);
+/* 📏 학습 한 판의 시간 (10/21 사용자: 1~5단계가 길고 불필요한가 · 낭독 화면에 사람들이 얼마나 머무나) — 위 2초 타이머가 화면을 보고 판마다 센다(±2초).
+   learnLog: { s 절, at 시작, f 처음 외우는 절이면 1, n 낭독 화면 초, st [1~5단계 초], k 코스(0 전체 · 1 빠른 · 2·3 백지 승급), c 깼으면 1 } 최근 60판.
+   reviewSamples는 처음 외우는 판이 빠지거나 코스가 잘못 찍혀 첫 학습 시간을 알 수 없었다 */
+let learnLog = [], _lrn = null;
+function _lrnFlush() {
+    if (!_lrn) return; const r = _lrn; _lrn = null;
+    if (r.n + r.st.reduce((a, b) => a + b, 0) < 2) return;
+    r.c = (stageMastery && (stageMastery[r.s] | 0) > r.m0) ? 1 : 0; delete r.m0;
+    if (typeof window._reviewRunCourse === 'number') r.k = window._reviewRunCourse;
+    learnLog.push(r); learnLog = learnLog.slice(-60);
+}
+function _lrnTick(l) {
+    try {
+        const id = window.currentStageId ? String(window.currentStageId) : '';
+        const narr = l.indexOf('bible-transition-overlay') >= 0, inGame = l.indexOf('game') === 0 && !/result-modal|hs:/.test(l);
+        if (!/^\d+-\d+$/.test(id) || !(inGame || narr)) { _lrnFlush(); return; }
+        if (!_lrn || _lrn.s !== id) { _lrnFlush(); const m0 = (stageMastery && stageMastery[id]) | 0; _lrn = { s: id, at: Date.now(), f: m0 ? 0 : 1, m0, n: 0, st: [0, 0, 0, 0, 0] }; }
+        if (narr) _lrn.n += 2;
+        else { const sn = parseInt((document.getElementById('current-step-num') || {}).textContent, 10); if (sn >= 1 && sn <= 5) _lrn.st[sn - 1] += 2; }
+    } catch (e) { }
+}
 function _exitNote() {
     try {
         const l = _exitLabel(); if (l !== _exitLab) { _exitLab = l; _exitSince = Date.now(); }
         const n = Object.keys(stageClearDate || {}).filter(k => /^\d+-\d+$/.test(k)).length;
+        _lrnFlush();   // 📏 학습 한 판 — 떠나기 전에 적어 둔다
         const last = exitLog[exitLog.length - 1];
         if (last && last.s === l && Date.now() - last.at < 5000) return;   // 한 번 떠날 때 2~3번 찍혔다(앱 전환 화면에서 숨김 신호가 거듭 온다, 10/21) — 20칸이 금방 밀렸다
         exitLog.push({ at: Date.now(), s: l, sec: Math.round((Date.now() - _exitSince) / 1000), n, v: (document.querySelector('script[src*="game.js?v="]') || { getAttribute: () => '' }).getAttribute('src').split('v=')[1] || '' });

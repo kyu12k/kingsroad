@@ -482,3 +482,9 @@ PC에서 CPU 4~6배 감속으로 잰 fps는 회차마다 40~60으로 흔들려 �
 - #Y16048 `game.js` `null.mimeType` — 🎥 오늘의 암송 촬영에서 녹화 중에 창을 닫으면 `closeDailyRecorder`가 녹화기를 비운 뒤에 「멈춤」(onstop)이 늦게 와 터졌다. onstop이 자기 녹화기가 아니면 그냥 돌아간다.
 - 「Script error.」(내용 없음, 2건) — 다른 주소에서 받은 스크립트의 오류는 브라우저가 가린다. index.html의 Firebase·crypto-js·gsap 일곱 줄에 `crossorigin="anonymous"`(모두 `Access-Control-Allow-Origin: *` 확인, 서비스 워커는 이것들을 캐시하지 않는다) — 다음부터는 내용이 보인다. 앱 안 브라우저가 끼워 넣은 스크립트라면 여전히 가려진다.
 - 내용 없는 「Script error.」와 Firebase 기기 저장소 끊김(「transaction was aborted」·IndexedDB)은 보는 사람이 할 수 있는 게 없어 **상자는 띄우지 않고 서버 기록만**(세션당 한 번, `_errQuietSent`).
+
+## 2026-10-21 — 📏 학습 한 판의 시간 재기 (사용자: 1~5단계가 길고 불필요한가 · 낭독 화면에 얼마나 머무나)
+- 지금 기록으로 본 것(`kingsroad_metrics/studymode.js`, 지난 30일 · reviewSamples 최근 80판): 1절+ 402명의 설정 = 매번 묻기 352 · 빠른 27 · 전체 9(30일 활동 106명: 묻기 84 · 빠른 16 · 전체 6). 판 2,753 = 전체 학습 15% · 빠른 51% · 백지 통과 30% · 백지 막힘 4%. 한 절 시간(낭독 빼고) 중앙: 전체 학습 195초 · 빠른 89초 · 백지 통과 48초. 전체 학습을 한 번이라도 한 사람 51/104, 판의 절반 넘게 쓰는 사람 22.
+- 못 잰 것: **처음 외우는 판**(reviewSamples에 빠지거나 코스가 빠른으로 찍혔다) · **낭독 화면에 머문 시간**(기록 없음).
+- 넣은 것: `learnLog`(최근 60판) — 2초 타이머(`_lrnTick`, 떠난 화면 타이머에 얹음)가 판마다 { s 절, f 처음 외우는 절, n 낭독 초, st 1~5단계 초, k 코스, c 깼나 }. 떠날 때 `_lrnFlush`. 기기끼리 at으로 합친다. 색인 제외(fieldOverrides)에 learnLog·exitLog·pauseWhy·njLook·njWear 추가.
+- 며칠 뒤(10/26쯤) 볼 것: 처음 외울 때 단계별 시간과 어느 단계에서 멈추나 · 낭독 화면 머문 시간(끝까지 듣나, 바로 넘기나) · 새 사람과 오래 쓴 사람 비교.
