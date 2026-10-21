@@ -2392,6 +2392,11 @@ body, html {
     border-bottom: none;
     visibility: visible;
 }
+/* 백지는 밑줄이 없어 고정 폭 칸(24px)·칸 사이 6px이 그대로 「띄엄띄엄 쓴 글」로 보였다(10/21 제보: 음절 사이가 매우 넓다) —
+   글자 폭에 맞추고 띄어쓰기는 보통 글만큼. 빈칸 단계(밑줄 있음)는 그대로 */
+.hardship-typing-board.hardship-ultimate-active { column-gap: 0; }
+.hardship-typing-board.hardship-ultimate-active .hardship-char-slot { width: auto; min-width: 0.92em; padding-left: 0.02em; padding-right: 0.02em; }
+.hardship-typing-board.hardship-ultimate-active .hardship-char-slot.is-space { width: 0.42em; min-width: 0.42em; }
 
 .hardship-not-filled-alert {
     background: rgba(231, 76, 60, 0.92);

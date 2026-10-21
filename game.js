@@ -32712,12 +32712,24 @@ function updateHardshipMemoryBoard() {
     if (hardshipState.strongAvail) _syncStrongFab();   // 첫 마디를 지나면 🔑 숨김
     _alignHardshipHiddenInput(targetScrollSlot);
 
-    if (targetScrollSlot && !hardshipState.isComposing) {
+    if (targetScrollSlot) {   // 한글 조합 중에도(10/21 제보) — 안드로이드 Gboard는 한 단어 내내 조합 중이라 띄어 써야 따라 내려갔다. 띠 밖일 때만 움직이니 흔들리지 않는다
         clearTimeout(updateHardshipMemoryBoard._scrollTimer);
         const slotToScroll = targetScrollSlot;
         updateHardshipMemoryBoard._scrollTimer = setTimeout(() => _hsScrollToSlot(slotToScroll), 80);
     }
 }
+/* ⌨️ 키보드가 덮는 높이만큼 판 아래 여백 (10/21 제보: 망각의 고난·백지에서 커서 쪽으로 화면이 잘 안 내려간다 — 아이폰·안드로이드 둘 다).
+   키보드는 레이아웃 높이를 줄이지 않고 위에 덮이기만 해서, 여백이 120px뿐이면 긴 절의 마지막 몇 줄은 더 올릴 자리가 없어 키보드 뒤에 남았다.
+   키보드가 닫히면(보이는 높이가 돌아오면) 여백도 원래대로 */
+function _hsKbPad(container) {
+    const vv = window.visualViewport; if (!vv || !container) return;
+    const kb = Math.max(0, document.documentElement.clientHeight - (vv.offsetTop + vv.height));
+    const want = kb > 80 ? Math.round(kb + 120) + 'px' : '';
+    if (container.style.paddingBottom !== want) container.style.paddingBottom = want;
+}
+if (window.visualViewport) window.visualViewport.addEventListener('resize', () => {
+    document.querySelectorAll('#game-screen .battle-field').forEach(f => { if (f.style.paddingBottom) _hsKbPad(f); });   // 키보드가 닫히면 덧댄 여백을 거둔다(판은 #game-screen 바로 아래가 아닐 수 있다)
+});
 /* 지금 치는 칸이 떠 있는 버튼(🙋·💡·🔑) 아래로 숨지 않게 보이는 띠 안으로 옮긴다. 타이핑 때와 🔑 첫 마디 보기가 나타날 때(10/10) */
 function _hsScrollToSlot(slotToScroll) {
     if (!slotToScroll || !slotToScroll.isConnected) return;
@@ -32725,6 +32737,7 @@ function _hsScrollToSlot(slotToScroll) {
         {
             const container = slotToScroll.closest('.battle-field');
             if (window.visualViewport && container) {
+                _hsKbPad(container);
                 // 키보드가 열리면 '보이는 영역'은 visualViewport뿐이다 — scrollIntoView(레이아웃 뷰포트 기준)는
                 // 키보드 뒤를 '보인다'고 치거나 그 뒤로 가운데를 맞춘다. 보이는 띠 밖에 있을 때만 그 가운데로 옮긴다.
                 // (2026-09-21: 예전엔 iOS만 이 경로였고 안드로이드는 매 키마다 scrollIntoView center — 긴 절에서 진동)
@@ -32736,7 +32749,11 @@ function _hsScrollToSlot(slotToScroll) {
                 const margin = Math.min(60, vvHeight * 0.15);
                 const slotCenter = slotRect.top + slotRect.height / 2;
                 if (slotRect.top < vvTop + margin || slotRect.bottom > vvTop + vvHeight - margin) {
-                    container.scrollTop += slotCenter - (vvTop + vvHeight / 2);
+                    const d = slotCenter - (vvTop + vvHeight / 2), st0 = container.scrollTop;
+                    container.scrollTop = st0 + d;
+                    // 판에 확대(zoom, 태블릿·PC)가 걸리면 화면 좌표와 스크롤 단위가 달라 덜 가거나 더 갔다 — 실제로 움직인 만큼을 재서 한 번 더 맞춘다
+                    const moved = slotCenter - (slotToScroll.getBoundingClientRect().top + slotRect.height / 2), left = d - moved;
+                    if (Math.abs(left) > 4 && Math.abs(moved) > 4 && container.scrollTop !== st0) container.scrollTop += left * ((container.scrollTop - st0) / moved);
                 }
             } else if (typeof slotToScroll.scrollIntoView === 'function') {
                 slotToScroll.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
