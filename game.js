@@ -7193,8 +7193,26 @@ let bossHintCount = 0;   // 보스전 전용 힌트 사용 횟수
 // ============================================================
 
 // 전역 변수 스왑으로 모드 전환 (기존 함수들이 변경 없이 올바른 데이터를 참조하게 됨)
+/* 🧷 진도 한 벌 보장 (10/21) — 두 여정은 진도를 같은 객체로 쓴다(_unifyJourneyMemory). 그런데 저장본 없이 시작한 새 사람은
+   불러오기를 안 거쳐 두 벌인 채 왕의 길 1:1로 들어갔고, 저장은 최상위에 자유여행 쪽(_freeStage*, 비어 있음)을 쓰고 kingsMode엔 길 정보만 써서
+   **첫 절 기록이 어디에도 안 남았다**(10/20 새 사람 셋: 클리어 수·보석은 있는데 clearDate가 빈 채). 모드를 바꿀 때와 저장 직전에 한 벌로 합친다 */
+function _ensureOneMemory() {
+    if (typeof kingsRoadData === 'undefined' || !kingsRoadData) return;
+    const kingsSet = { mastery: kingsRoadData.mastery, clearDate: kingsRoadData.clearDate, lastClear: kingsRoadData.lastClear, reviewStep: kingsRoadData.reviewStep, nextReviewTime: kingsRoadData.nextReviewTime };
+    const freeSet = activeMode === 'kings'
+        ? { mastery: _freeStageMastery, clearDate: _freeStageClearDate, lastClear: _freeStageLastClear, reviewStep: _freeStageReviewStep, nextReviewTime: _freeStageNextReviewTime }
+        : { mastery: stageMastery, clearDate: stageClearDate, lastClear: stageLastClear, reviewStep: stageReviewStep, nextReviewTime: stageNextReviewTime };
+    if (freeSet.mastery === kingsSet.mastery && freeSet.reviewStep === kingsSet.reviewStep && freeSet.clearDate === kingsSet.clearDate) return;   // 이미 한 벌
+    const r = _mergeProgressSet(freeSet, kingsSet).merged;
+    stageMastery = kingsRoadData.mastery = _freeStageMastery = r.mastery;
+    stageClearDate = kingsRoadData.clearDate = _freeStageClearDate = r.clearDate;
+    stageLastClear = kingsRoadData.lastClear = _freeStageLastClear = r.lastClear;
+    stageReviewStep = kingsRoadData.reviewStep = _freeStageReviewStep = r.reviewStep;
+    stageNextReviewTime = kingsRoadData.nextReviewTime = _freeStageNextReviewTime = r.nextReviewTime;
+}
 function switchMode(mode) {
     if (mode === activeMode) return;
+    _ensureOneMemory();
 
     if (mode === 'kings') {
         // 현재 자유여행 데이터를 백업
@@ -14297,6 +14315,7 @@ function claimBossMigrationGems() {
 
 function saveGameData() {
     if (_njVisit) return;   // 🕊️ 친구 세상 구경 중 — 꾸밈 기록이 그 사람 것으로 바뀌어 있다. 나올 때(_njVisitEnd) 되돌리고 저장한다
+    try { _ensureOneMemory(); } catch (e) { }   // 🧷 진도 한 벌로 — 아니면 왕의 길 진도가 저장에서 빠진다(10/21)
     // 리셋 중에는 저장을 중단합니다.
     if (window.isResetting) {
         console.log('저장 중단: 리셋 플래그 활성화');
