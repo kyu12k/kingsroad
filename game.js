@@ -3122,7 +3122,11 @@ function _countRecallForWeek(stageId, hints, verseLen) {
     if (recallWeek.weekId !== wk) recallWeek = { weekId: wk, count: 0, seen: {} };
     // 힌트가 무료라 다 열고 써도 통과가 된다 — 난이도 라벨과 같은 잣대(HINT_OK_RATIO)로 거른다
     if (verseLen > 0 && (hints || 0) > Math.ceil(verseLen * HINT_OK_RATIO)) return false;
-    const day = _get6AMDayStr();
+    /* 하루 = 오전 6시 경계. 단 **월요일 0~6시는 월요일 몫**(10/21) — 주(getWeekId)는 월요일 0시에 시작하는데 하루는 6시에 바뀌어,
+       월요일 새벽에 쓴 절이 「일요일 몫」으로 이번 주에 한 번, 6시 뒤 「월요일 몫」으로 또 한 번 세졌다(최대 +404/주 — W43 푸른 새벽별 1,216 = 3일×404 + 0시 직후 4절).
+       주 경계·서버 보상 시각(월 00:05)은 그대로 두고 이 하루만 맞춘다 → 한 주 최대 정확히 404×7 */
+    const _now = new Date();
+    const day = (_now.getDay() === 1 && _now.getHours() < 6) ? _getLocalDateStr(_now) : _get6AMDayStr();
     if (recallWeek.seen[stageId] === day) return false;   // 같은 구절은 하루 1회 (승점 제한과 같은 경계)
     recallWeek.seen[stageId] = day;
     recallWeek.count = Math.min(RECALL_WEEK_MAX, recallWeek.count + 1);
