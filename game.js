@@ -3278,7 +3278,8 @@ document.addEventListener('visibilitychange', function() {
 window.addEventListener('beforeunload', _accumulateSessionTime);
 
 // ★ [학습 모드 설정]
-let studyModePreference = 'ask'; // 'ask' | 'quick' | 'full'
+let studyModePreference = 'quick'; // 'ask' | 'quick' | 'full' — 10/21부터 기본은 빠른 복습(처음 외우는 절은 늘 1~5단계 전체)
+let smMig = 0;   // 1 = 「매번 묻기」를 빠른 복습으로 한 번 옮겼다(10/21) — 그 뒤 스스로 「묻기」를 고르면 그대로 둔다
 
 // ★ [보스전/중간점검 모드 설정]
 let bossDifficultyMode = 'hard'; // 'normal' | 'hard'
@@ -3393,7 +3394,11 @@ loadGameData = function () {
         stageTimedBonus = parsed.timedBonus || {}; // 구버전 호환용
         stageReviewStep = parsed.reviewStep || {};
         stageNextReviewTime = parsed.nextReviewTime || {};
-        studyModePreference = parsed.studyModePreference || 'ask';
+        studyModePreference = parsed.studyModePreference || 'quick';
+        smMig = parsed.smMig | 0;
+        /* ⚡ 복습은 빠른 복습이 기본 (10/21 사용자: 1~5단계가 길고 불필요하다) — 전체 학습 판 중앙 195초 · 빠른 89초, 설정은 대부분 기본값 「매번 묻기」였다.
+           「매번 묻기」인 사람을 한 번만 빠른 복습으로 옮긴다. 「전체 학습」을 고른 사람은 그대로 */
+        if (smMig < 1) { if (studyModePreference === 'ask') studyModePreference = 'quick'; smMig = 1; }
         bossDifficultyMode = parsed.bossDifficultyMode || 'hard';
         bossOrderMode = parsed.bossOrderMode || 'sequential';
         lastPlayedStageId = parsed.lastPlayedStageId || null;
@@ -14457,6 +14462,7 @@ function saveGameData() {
             manualBonus: kingsRoadData.manualBonus
         },
         studyModePreference: studyModePreference,
+        smMig: smMig,
         bossDifficultyMode: bossDifficultyMode,
         bossOrderMode: bossOrderMode,
         bossFirstClearClaimed: [...bossFirstClearClaimed],
