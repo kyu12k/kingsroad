@@ -6849,11 +6849,14 @@ function _maybeStartRain() {
 /* 잡히지 않은 오류를 화면 위에 띄운다 (2026-09-17). 아이폰은 콘솔을 볼 수 없어 "모달이 그냥 닫혀요"로만 전해진다.
    세션당 첫 오류 하나, 우리 파일(game.js·index.html)에서 난 것만. 스크린샷으로 원인을 받기 위한 것 */
 let _errShown = false;
+let _errQuietSent = false;
 function _showUncaughtError(msg, src, line) {
-    if (_errShown) return;
     if (src && !/kingsload|game\.js|index\.html|clock\.js|battle\.js/.test(String(src))) return;
-    _errShown = true;
-    try {
+    // 내용 없는 교차 출처 오류(「Script error.」)·Firebase 기기 저장소 끊김 — 보는 사람이 할 수 있는 게 없어 상자는 안 띄우고 기록만(10/21)
+    const quiet = (/^Script error\.?$/.test(String(msg)) && !line) || /transaction was aborted|IndexedDB/i.test(String(msg));
+    if (quiet) { if (_errQuietSent || _errShown) return; _errQuietSent = true; }
+    else { if (_errShown) return; _errShown = true; }
+    if (!quiet) try {
         const el = document.createElement('div');
         el.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:99999;max-width:92vw;background:#7b1e1e;color:#fff;padding:10px 14px;border-radius:10px;font-size:12px;line-height:1.5;word-break:break-all;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.4);';
         el.textContent = `⚠️ 오류: ${String(msg).slice(0, 160)}${line ? ` (${String(src || '').split('/').pop().split('?')[0]}:${line})` : ''}`;
@@ -20610,6 +20613,8 @@ function _exitNote() {
     try {
         const l = _exitLabel(); if (l !== _exitLab) { _exitLab = l; _exitSince = Date.now(); }
         const n = Object.keys(stageClearDate || {}).filter(k => /^\d+-\d+$/.test(k)).length;
+        const last = exitLog[exitLog.length - 1];
+        if (last && last.s === l && Date.now() - last.at < 5000) return;   // 한 번 떠날 때 2~3번 찍혔다(앱 전환 화면에서 숨김 신호가 거듭 온다, 10/21) — 20칸이 금방 밀렸다
         exitLog.push({ at: Date.now(), s: l, sec: Math.round((Date.now() - _exitSince) / 1000), n, v: (document.querySelector('script[src*="game.js?v="]') || { getAttribute: () => '' }).getAttribute('src').split('v=')[1] || '' });
         exitLog = exitLog.slice(-20);
         lastSeenDay = _get6AMDayStr();
@@ -21457,8 +21462,10 @@ function _camToggle() {
         catch (e2) { showGemToast(0, t('daily_cam_unsupported'), true); return; }
     }
     _cam.rec.ondataavailable = (e) => { if (e.data && e.data.size) _cam.chunks.push(e.data); };
-    _cam.rec.onstop = () => {
-        _cam.blob = new Blob(_cam.chunks, { type: _cam.rec.mimeType || _cam.mime || 'video/webm' });
+    const rec = _cam.rec;
+    rec.onstop = () => {
+        if (_cam.rec !== rec) return;   // 녹화 중에 창을 닫음 — 닫기가 녹화기를 비운 뒤에 「멈춤」이 늦게 와 null.mimeType 오류였다(10/20 빨간 상자)
+        _cam.blob = new Blob(_cam.chunks, { type: rec.mimeType || _cam.mime || 'video/webm' });
         clearInterval(_cam.timer); _cam.timer = null;
         _camRelease();   // 마이크를 끄고 재생해야 미디어 음량으로 나온다
         const cv = document.getElementById('cam-canvas'), pb = document.getElementById('cam-playback'), card = document.getElementById('cam-card'), opts = document.getElementById('cam-opts');
