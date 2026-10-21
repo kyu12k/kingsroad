@@ -1884,7 +1884,6 @@
         function wearBody(slot, L) {   // 👒 모자·손 탭 — 이름 · 값(산 것은 ✓)
             const W = _njWearSt(), gems = Number(typeof myGems !== 'undefined' ? myGems : 0);
             return `<div class="nj3d-offer-intro">${T('wear_intro')} · 💎 ${gems.toLocaleString()}</div>`
-                + (slot === 'head' && L.h === 'hood' ? `<div class="nj3d-offer-intro">${T('wear_hood_note')}</div>` : '')
                 + `<div class="nj3d-shop-tabs">${NJ_WEAR.filter(w => w.slot === slot).map(w => { const own = W.own.includes(w.k), on = W[slot] === w.k;
                     return `<button data-wear="${w.k}" class="${on ? 'on' : ''}" title="${esc2(w.ref || '')}">${esc2(_njWearName(w))}${on ? ' ✓' : own ? '' : ` · 💎${w.cost.toLocaleString()}`}</button>`; }).join('')}</div>`;
         }
