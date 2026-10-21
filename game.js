@@ -631,6 +631,9 @@ const LANG = {
         look_btn: '🙂 내 모습', look_title: '🙂 내 모습', look_t_h: '머리', look_t_e: '눈', look_t_nm: '코·입', look_t_ear: '귀', look_t_c: '색',
         look_beard: '수염', look_blush: '볼터치', look_skin: '피부', look_hair: '머리카락', look_eye: '눈동자', look_reset: '처음 모습으로', look_done: '완료',
         look_hood_note: '두건을 쓰면 머리카락 색은 수염·눈썹에만 들어요.',
+        look_t_hat: '모자', look_t_hold: '손', wear_intro: '한 번 사면 계속 써요. 다시 누르면 벗어요.', wear_sure: '한 번 더 누르면 사요', wear_got: '{name}을(를) 샀어요!', wear_need: '보석이 모자라요',
+        wear_hood_note: '두건을 고르면 모자는 쓰지 않아요.',
+        emote_btn: '😊 표현', em_wave: '👋 손 흔들기', em_cheer: '🙌 환호', em_jump: '🐇 기뻐 뛰기', em_praise: '🙏 찬양', em_sit: '🧘 앉기', em_lie: '😴 눕기',
         mount_tab: '🐴 탈것', wing_tab: '🪂 날개',wing_intro: '공중에서 점프를 한 번 더 누르면 펼쳐져요. 좋은 날개일수록 더 빨리, 더 멀리 날아요.',
         wing_glider: '🪂 글라이더 — 머리 위로 들고 날아요', wing_wings: '🪽 등 날개 — 걸을 땐 접혀 있다가 펼쳐요',
         wing_stat: '활강 {b} · 덜 떨어짐 {s}', wing_base: '기본', wing_on: '✓ 끼는 중', wing_use: '끼기',
@@ -1968,6 +1971,9 @@ const LANG = {
         look_btn: '🙂 My look', look_title: '🙂 My look', look_t_h: 'Hair', look_t_e: 'Eyes', look_t_nm: 'Nose·Mouth', look_t_ear: 'Ears', look_t_c: 'Colors',
         look_beard: 'Beard', look_blush: 'Blush', look_skin: 'Skin', look_hair: 'Hair', look_eye: 'Eyes', look_reset: 'Back to default', look_done: 'Done',
         look_hood_note: 'With the hood on, hair color shows only on brows and beard.',
+        look_t_hat: 'Hats', look_t_hold: 'Hand', wear_intro: 'Buy once, keep forever. Tap again to take it off.', wear_sure: 'Tap again to buy', wear_got: 'You got the {name}!', wear_need: 'Not enough gems',
+        wear_hood_note: 'Hats are not worn with the hood.',
+        emote_btn: '😊 Emote', em_wave: '👋 Wave', em_cheer: '🙌 Cheer', em_jump: '🐇 Hop for joy', em_praise: '🙏 Praise', em_sit: '🧘 Sit', em_lie: '😴 Lie down',
         mount_tab: '🐴 Rides', wing_tab: '🪂 Wings',wing_intro: 'Press Jump again in the air to spread them. Better wings fly faster and farther.',
         wing_glider: '🪂 Gliders — held above your head', wing_wings: '🪽 Back wings — folded while walking, spread to glide',
         wing_stat: 'Glide {b} · Falls slower {s}', wing_base: 'Base', wing_on: '✓ Equipped', wing_use: 'Equip',
@@ -3031,6 +3037,7 @@ let njJetpack = false;   // 3D 걸어서 구경 — 보석으로 산 제트팩 (
 let njMounts = {};      // 🐴 탈것 — { 탈것: { own, coats: [가진 털빛], coat, gear: [가진 장식], on: [단 장식], mv } }
 let njMountSel = '';    // 🐴 지금 고른 탈것
 let njWings = {};       // 🪂 글라이더·등 날개 — { own: [가진 것], on: 낀 것, mv }
+let njWear = {};        // 👒 꾸밈 소품(10/21) — { own: [산 것], head: 쓴 것, hand: 든 것, mv }
 let njLook = {};        // 🧍 내 모습(10/20) — { h 머리, e 눈, b 눈썹, n 코, m 입, ear 귀, bl 볼터치, bd 수염, sk·hc·ec 피부·머리·눈 색 번호, mv }
 let njFruits = {};       // 생명나무 열매 — { 'YYYY-MM': { 절id: [열린 때, 먹은 때(0=아직), 마지막 실패 때, 다시 열린 때(그림자였다가, 10/16)] } }. 지난 달은 잎사귀 수만 njLeafArch로 접는다
 let njLeafArch = {};     // 접은 달의 먹은 열매(=잎사귀) 수 { 'YYYY-MM': n }
@@ -3597,6 +3604,7 @@ loadGameData = function () {
         njMountSel = typeof parsed.njMountSel === 'string' ? parsed.njMountSel : '';
         njWings = (parsed.njWings && typeof parsed.njWings === 'object') ? parsed.njWings : {};
         njLook = (parsed.njLook && typeof parsed.njLook === 'object') ? parsed.njLook : {};
+        njWear = (parsed.njWear && typeof parsed.njWear === 'object') ? parsed.njWear : {};
         njFruits = (parsed.njFruits && typeof parsed.njFruits === 'object') ? parsed.njFruits : {};
         njLeafArch = (parsed.njLeafArch && typeof parsed.njLeafArch === 'object') ? parsed.njLeafArch : {};
         njLeafSpent = Math.max(0, parseInt(parsed.njLeafSpent, 10) || 0);
@@ -9916,6 +9924,32 @@ function _njLookSet(patch, sync) {   // 바꿀 때마다 기기에 — 다른 �
     if (sync && typeof syncToFirestore === 'function') syncToFirestore();
     return _njLookGet();
 }
+/* 👒 꾸밈 소품 (10/21 사용자: 동물의 숲 느낌 — 💎로 산다) — 머리 하나·손 하나. 모델 이름은 pilgrim.glb의 wear_<k>(머리 뼈)·hold_<k>(오른손) */
+const NJ_WEAR = [
+    { k: 'straw', slot: 'head', ko: '밀짚모자', en: 'Straw hat', cost: 3000 },
+    { k: 'flower', slot: 'head', ko: '꽃 관', en: 'Flower crown', cost: 2500 },
+    { k: 'olive', slot: 'head', ko: '감람 잎 관', en: 'Olive wreath', cost: 5000 },
+    { k: 'shepherd', slot: 'head', ko: '목자 두건', en: 'Shepherd headcloth', cost: 4000, hideHair: true },
+    { k: 'beanie', slot: 'head', ko: '털모자', en: 'Knit cap', cost: 3000 },
+    { k: 'palm', slot: 'hand', ko: '종려가지', en: 'Palm branch', ref: '계 7:9', cost: 5000 },
+    { k: 'lyre', slot: 'hand', ko: '거문고', en: 'Harp', ref: '계 15:2', cost: 8000 },
+    { k: 'lamp', slot: 'hand', ko: '등불', en: 'Lamp', ref: '마 25:4', cost: 6000 },
+    { k: 'scroll', slot: 'hand', ko: '두루마리', en: 'Scroll', ref: '계 5:1', cost: 3000 },
+    { k: 'crook', slot: 'hand', ko: '목자 지팡이', en: "Shepherd's crook", ref: '시 23:4', cost: 4000 },
+];
+function _njWearSt() {
+    if (!njWear || typeof njWear !== 'object') njWear = {};
+    if (!Array.isArray(njWear.own)) njWear.own = [];
+    ['head', 'hand'].forEach(s => { const w = NJ_WEAR.find(x => x.k === njWear[s]); if (!w || w.slot !== s || !njWear.own.includes(w.k)) njWear[s] = ''; });
+    return njWear;
+}
+function _njWearName(w) { return currentLang === 'en' ? w.en : w.ko; }
+function _njWearPick(k) {   // 산 것이면 쓰기/벗기, 안 산 것이면 사서 바로 쓴다
+    const w = NJ_WEAR.find(x => x.k === k), s = _njWearSt(); if (!w) return false;
+    if (!s.own.includes(k)) { if (!_njMountPay(w.cost)) return false; s.own.push(k); s[w.slot] = k; }
+    else s[w.slot] = s[w.slot] === k ? '' : k;
+    s.mv = Date.now(); _njMountSave(); return true;
+}
 function _njLookName(k, v) { const o = (NJ_LOOK[k] || []).find(x => x[0] === v); return o ? (currentLang === 'en' ? o[2] : o[1]) : v; }
 function _njDecorName(d) { return currentLang === 'en' ? d.en : d.ko; }
 /* 사서 보관함 대신 바로 화면 가운데에 놓는다(x, z는 nj3d가 정해 준다) */
@@ -14361,6 +14395,7 @@ function saveGameData() {
         njMountSel: njMountSel,           // 🐴 고른 탈것
         njWings: njWings,                 // 🪂 글라이더·등 날개
         njLook: njLook,                   // 🧍 내 모습
+        njWear: njWear,                   // 👒 꾸밈 소품
         njFruits: njFruits,               // 생명나무 열매 (열린·먹은·실패 때)
         njLeafArch: njLeafArch,           // 접은 달의 잎사귀 수
         njLeafSpent: njLeafSpent,         // 만국에 드린 잎사귀
@@ -14695,6 +14730,12 @@ function _mergeNewJerusalem(target, other) {
         if ((other.njWings.mv || 0) > (tw.mv || 0)) { tw.on = other.njWings.on; tw.mv = other.njWings.mv; }
     }
     if (other.njLook && typeof other.njLook === 'object' && (other.njLook.mv || 0) > ((target.njLook && target.njLook.mv) || 0)) { target.njLook = Object.assign({}, other.njLook); took++; }   // 🧍 내 모습 — 나중에 바꾼 쪽 통째로
+    if (other.njWear && Array.isArray(other.njWear.own)) {   // 👒 소품 — 산 것은 합집합(값을 치렀다), 쓴 것은 나중에 바꾼 쪽
+        const tw = (target.njWear && typeof target.njWear === 'object') ? target.njWear : (target.njWear = { own: [] });
+        if (!Array.isArray(tw.own)) tw.own = [];
+        other.njWear.own.forEach(x => { if (!tw.own.includes(x)) { tw.own.push(x); took++; } });
+        if ((other.njWear.mv || 0) > (tw.mv || 0)) { tw.head = other.njWear.head || ''; tw.hand = other.njWear.hand || ''; tw.mv = other.njWear.mv; }
+    }
     // 진주 — 백지로 통과한 날은 합집합. 진주 수는 날짜에서 계산하므로(늘기도 줄기도 한다) 많은 쪽을 취하지 않는다
     if (Array.isArray(other.njBlankDays) && other.njBlankDays.length) {
         const td = Array.isArray(target.njBlankDays) ? target.njBlankDays : [];

@@ -58,6 +58,7 @@
                 <div class="nj3d-decopanel" hidden></div>
                 <div class="nj3d-decopanel nj3d-mountpanel" hidden></div>
                 <div class="nj3d-lookpanel" hidden></div>
+                <div class="nj3d-emotes" hidden></div>
                 <div class="nj3d-walk" hidden>
                     <div class="nj3d-joy"><div class="nj3d-knob"></div></div>
                     <div class="nj3d-keyhelp">${T('nj3d_keyhelp')}</div>
@@ -71,6 +72,7 @@
                         <button class="nj3d-wb small nj3d-clambtn" hidden></button>
                         <button class="nj3d-wb small nj3d-pearlbtn" hidden></button>
                         <button class="nj3d-wb small nj3d-talk" hidden></button>
+                        <button class="nj3d-wb small nj3d-emotebtn" hidden>${T('emote_btn')}</button>
                         <button class="nj3d-wb small nj3d-lookbtn" hidden>${T('look_btn')}</button>
                         <button class="nj3d-wb small nj3d-tackbtn" hidden>${T('nj3d_tack')}</button>
                         <button class="nj3d-wb small nj3d-ridebtn"></button>
@@ -1754,7 +1756,7 @@
         /* 🧍 순례자 모델 (10/20 사용자: 도형 몇 개 붙여 놓은 것 같다) — KayKit Adventurers의 Mage(CC0, Kay Lousberg)에서 모자·소품을 빼고
            흰 겉옷·금빛 망토로 칠해 뼈·동작째 쓴다(tools/blender/pilgrim.py → models/pilgrim/pilgrim.glb). 받기 전·실패하면 위의 도형 순례자.
            동작 하나(서기·걷기·달리기·점프·앉기)를 고르고, 동작에 없는 팔 자세(글라이더 손잡이·날개·미끄럼 만세)는 위팔 뼈를 덮어쓴다 */
-        const PILGRIM_V = '20261020b', PM_SEAT = 0.03;
+        const PILGRIM_V = '20261021a', PM_SEAT = 0.03;
         const oldParts = [...body.children];
         const pm = { mixer: null, acts: {}, cur: '', arms: [], legs: [], w: 0, ov: 'up', jk: 0 };
         // 모델 공간(앞 +z, 왼쪽 +x)에서 위팔(a)·넓적다리(g)가 향할 쪽 — 팔은 아래팔을 곧게 편다, 다리는 동작의 무릎 굽힘 그대로
@@ -1789,11 +1791,13 @@
                     });
                 });
                 pm.parts = new Map(PM_ALL.map(n => [n, m.getObjectByName(n)]).filter(([, o]) => o));
+                pm.wear = new Map((typeof NJ_WEAR !== 'undefined' ? NJ_WEAR : []).map(w => [w.k, m.getObjectByName((w.slot === 'head' ? 'wear_' : 'hold_') + w.k)]).filter(([, o]) => o));
+                (pm.mats.w_flame || []).forEach(mt => { mt.emissive.set(0xffc35a); mt.emissiveIntensity = 1.3; });   // 🏮 등불 — 은은하게 빛난다
                 pm.model = m; pmLook();
                 pm.mixer = new THREE.AnimationMixer(m);
                 gl.animations.forEach(c => { pm.acts[c.name] = pm.mixer.clipAction(c); });
                 oldParts.forEach(o => { o.visible = false; });
-                body.add(m); lookBtn.hidden = !!VISIT;
+                body.add(m); lookBtn.hidden = !!VISIT; emoteBtn.hidden = false;
                 glider.position.y = 0.28;   // 큰 머리 위로 — 0.245는 날개가 머리를 뚫었다
                 backWings.position.set(0, 0.115, 0.04); jet.position.set(0, -0.045, 0.004);   // 어깨가 낮다(0.11) — 등 날개·제트팩 등판을 등 높이로
                 /* 등에 멘 것은 가슴 뼈에 (10/20 사용자: 달릴 때 허리를 숙여도 제트팩은 땅과 수직이라 어색하다) — 몸(body)과 같은 틀의 받침을
@@ -1816,6 +1820,13 @@
             const on = new Set([...(PM_PARTS.h[L.h] || []), 'eyes_' + L.e, 'brow_' + L.b, 'nose_' + L.n, 'mouth_' + L.m, 'ears_' + L.ear]);
             if (L.bl) on.add('blush'); if (L.bd) on.add('beard');
             pm.parts.forEach((o, n) => { o.visible = on.has(n); });
+            // 👒 소품 — 두건엔 모자를 쓰지 않는다 · 목자 두건은 머리카락을 덮는다
+            const W = typeof _njWearSt === 'function' ? _njWearSt() : {}; let hideHair = false; pm.holdObj = null;
+            (pm.wear || new Map()).forEach((o, k) => {
+                const w = NJ_WEAR.find(x => x.k === k), vis = w.slot === 'head' ? W.head === k && L.h !== 'hood' : W.hand === k;
+                o.visible = vis; if (vis && w.hideHair) hideHair = true; if (vis && w.slot === 'hand') pm.holdObj = o;
+            });
+            if (hideHair) ['hair_tied', 'hair_short', 'hair_long', 'scalp'].forEach(n => { const o = pm.parts.get(n); if (o) o.visible = false; });
             const col = (n, hex, k) => (pm.mats[n] || []).forEach(mt => { mt.color.set(hex).convertSRGBToLinear(); if (k) mt.color.multiplyScalar(k); });
             col('skin', NJ_LOOK.sk[L.sk]); col('skin_dk', NJ_LOOK.sk[L.sk], 0.8); col('hair', NJ_LOOK.hc[L.hc]); col('brow', NJ_LOOK.hc[L.hc], 0.8); col('eye', NJ_LOOK.ec[L.ec]);
         }
@@ -1831,9 +1842,10 @@
                 : lookTab === 'e' ? chips('e') + chips('b')
                 : lookTab === 'nm' ? chips('n') + chips('m') + tog('bl', T('look_blush'))
                 : lookTab === 'ear' ? chips('ear')
+                : lookTab === 'hat' || lookTab === 'hold' ? wearBody(lookTab === 'hat' ? 'head' : 'hand', L)
                 : sw('sk', T('look_skin')) + sw('hc', T('look_hair')) + sw('ec', T('look_eye')) + (L.h === 'hood' ? `<div class="nj3d-offer-intro">${T('look_hood_note')}</div>` : '');
             lookEl.innerHTML = `<div class="nj3d-look-top"><b>${T('look_title')}</b><button class="nj3d-look-done">${T('look_done')}</button></div>
-                <div class="nj3d-look-tabs">${['h', 'e', 'nm', 'ear', 'c'].map(t => `<button data-ltab="${t}" class="${lookTab === t ? 'on' : ''}">${T('look_t_' + t)}</button>`).join('')}</div>
+                <div class="nj3d-look-tabs">${['h', 'e', 'nm', 'ear', 'c', 'hat', 'hold'].map(t => `<button data-ltab="${t}" class="${lookTab === t ? 'on' : ''}">${T('look_t_' + t)}</button>`).join('')}</div>
                 <div class="nj3d-look-body">${body}</div><button class="nj3d-look-reset">${T('look_reset')}</button>`;
             const set = patch => { _njLookSet(patch); pm.lookDirty = true; pmLook(); openLook(); };
             lookEl.querySelectorAll('[data-ltab]').forEach(b => b.onclick = () => openLook(b.dataset.ltab));
@@ -1841,6 +1853,13 @@
             lookEl.querySelectorAll('[data-lt]').forEach(b => b.onclick = () => set({ [b.dataset.lt]: L[b.dataset.lt] ? 0 : 1 }));
             lookEl.querySelectorAll('[data-lc]').forEach(b => b.onclick = () => { const [k, i] = b.dataset.lc.split(':'); set({ [k]: +i }); });
             lookEl.querySelector('.nj3d-look-reset').onclick = () => set(Object.assign({}, NJ_LOOK_DEF));
+            lookEl.querySelectorAll('[data-wear]').forEach(b => b.onclick = () => {   // 👒 안 산 것은 한 번 더 눌러야 산다
+                const k = b.dataset.wear, w = NJ_WEAR.find(x => x.k === k), own = _njWearSt().own.includes(k);
+                if (!own && b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = T('wear_sure'); b.classList.add('sure'); return; }
+                if (!_njWearPick(k)) { showHint(T('wear_need'), 2000); return; }
+                pmLook(); syncWallet(); openLook();
+                if (!own) { showHint(T('wear_got', { name: _njWearName(w) }), 2600); if (typeof SoundEffect !== 'undefined' && SoundEffect.playClear) SoundEffect.playClear(); }
+            });
             lookEl.querySelector('.nj3d-look-done').onclick = closeLook;
             if (!pm.lookOn) {
                 pm.lookOn = true; pm.camSave = { camPitch, camDist }; camPitch = 0.06; camDist = 0.5; camOff = null;
@@ -1848,6 +1867,31 @@
             }
             lookEl.hidden = false;
         }
+        function wearBody(slot, L) {   // 👒 모자·손 탭 — 이름 · 값(산 것은 ✓)
+            const W = _njWearSt(), gems = Number(typeof myGems !== 'undefined' ? myGems : 0);
+            return `<div class="nj3d-offer-intro">${T('wear_intro')} · 💎 ${gems.toLocaleString()}</div>`
+                + (slot === 'head' && L.h === 'hood' ? `<div class="nj3d-offer-intro">${T('wear_hood_note')}</div>` : '')
+                + `<div class="nj3d-shop-tabs">${NJ_WEAR.filter(w => w.slot === slot).map(w => { const own = W.own.includes(w.k), on = W[slot] === w.k;
+                    return `<button data-wear="${w.k}" class="${on ? 'on' : ''}" title="${esc2(w.ref || '')}">${esc2(_njWearName(w))}${on ? ' ✓' : own ? '' : ` · 💎${w.cost.toLocaleString()}`}</button>`; }).join('')}</div>`;
+        }
+        // 😊 감정 표현 — 움직이거나 뛰거나 타면 그친다. clip = 동작, over(t) = 팔 덮어쓰기, dur = 끝(없으면 움직일 때까지)
+        const PM_EMOTE = {
+            wave: { clip: 'Idle', dur: 2.6, over: t => ({ a: [null, [-0.55 - 0.35 * Math.sin(t * 9), 0.8, 0.3]] }) },
+            cheer: { clip: 'Cheer', times: 2 }, jump: { clip: 'Jump_Full_Short', times: 1 },
+            praise: { clip: 'Idle', dur: 3.2, over: () => ({ a: [[0.5, 0.85, 0.25], [-0.5, 0.85, 0.25]] }) },
+            sit: { clip: 'Sit_Floor_Idle' }, lie: { clip: 'Lie_Idle' },
+        };
+        const emoteBtn = ov.querySelector('.nj3d-emotebtn'), emoteEl = ov.querySelector('.nj3d-emotes');
+        emoteBtn.addEventListener('click', () => {
+            if (!emoteEl.hidden) { emoteEl.hidden = true; return; }
+            emoteEl.innerHTML = Object.keys(PM_EMOTE).map(k => `<button data-em="${k}">${T('em_' + k)}</button>`).join('');
+            emoteEl.querySelectorAll('[data-em]').forEach(b => b.onclick = () => {
+                const E = PM_EMOTE[b.dataset.em], a = pm.acts[E.clip];
+                pm.emote = { k: b.dataset.em, t0: walkT, dur: E.dur || (E.times && a ? a.getClip().duration * E.times : 0) };
+                emoteEl.hidden = true;
+            });
+            emoteEl.hidden = false;
+        });
         function closeLook() {
             lookEl.hidden = true; if (!pm.lookOn) return;
             pm.lookOn = false; ov.classList.remove('nj3d-looking');
@@ -1863,9 +1907,11 @@
             a.timeScale = speed || 1;
             pm.mixer.update(dt);
             pm.w += ((over ? 1 : 0) - pm.w) * Math.min(1, dt * 10); if (over) pm.ov = over;
+            if (pm.holdObj) pm.holdObj.visible = pm.w < 0.5;   // 팔을 덮어쓰는 동안(글라이더 손잡이·헤엄·찬양)은 손 소품을 내려 둔다
             if (pm.w < 0.01) return;
             const D = typeof pm.ov === 'object' ? pm.ov : PM_OVER[pm.ov];   // 객체면 그때그때 계산한 방향(헤엄)
             const aim = (list, dirs, straight) => dirs && list.forEach((A, i) => {
+                if (!dirs[i]) return;   // 한쪽만(손 흔들기)
                 _pv.set(dirs[i][0], dirs[i][1], dirs[i][2]).normalize();
                 _pq.setFromUnitVectors(A.dir, _pv).multiply(A.Wb).premultiply(A.WpInv);   // 처음 자세에서 위 뼈만 그쪽으로 돌린 것 — 부모 기준으로
                 A.b.quaternion.slerp(_pq, pm.w); if (straight) A.low.quaternion.slerp(A.lowQ, pm.w);   // 아래팔은 곧게
@@ -4498,6 +4544,14 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 else if (fly) clip = 'Idle';
                 else if (!P.onGround) clip = 'Jump_Idle';
                 else if (stepping) { clip = run ? 'Running_A' : 'Walking_A'; sp = inRiver ? 0.8 : 1; }
+                if (pm.emote) {   // 😊 감정 표현 — 서 있을 때만, 움직이면 그친다
+                    if (moving || !P.onGround || ride.on || fly || swimNow() || isUnder()) pm.emote = null;
+                    else {
+                        const E = PM_EMOTE[pm.emote.k], et = walkT - pm.emote.t0;
+                        clip = E.clip; over = E.over ? E.over(et) : null; sp = 1;
+                        if (pm.emote.dur && et > pm.emote.dur) pm.emote = null;
+                    }
+                }
                 if (pm.force) { clip = pm.force.clip; over = pm.force.over; }   // 🧪 헤드리스 확인용
                 pmPose(dt, clip, over, sp); bob = 0;
                 /* 🚀 메고 걸을 때(10/20 사용자: 걸을 때 이상하다) — 날 때 맞춘 기울기(바깥·뒤로)로 서 있으면 분사구가 큰 머리 양옆에 귀처럼 솟았다.

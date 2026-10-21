@@ -18,7 +18,7 @@ APP = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(APP, 'models', 'pilgrim')
 PREV = os.path.join(BASE, 'face')
 PREVIEW = os.environ.get('PREVIEW') == '1'
-KEEP = {'Idle', 'Walking_A', 'Running_A', 'Running_B', 'Jump_Idle', 'Jump_Start', 'Sit_Chair_Idle', 'Sit_Floor_Idle', 'Cheer'}
+KEEP = {'Idle', 'Walking_A', 'Running_A', 'Running_B', 'Jump_Idle', 'Jump_Start', 'Sit_Chair_Idle', 'Sit_Floor_Idle', 'Cheer', 'Jump_Full_Short', 'Lie_Idle'}   # 뒤 둘 = 감정 표현(기뻐 뛰기·눕기)
 cdir = None
 for r, d, f in os.walk(os.path.join(BASE, 'adv')):
     if 'Mage.glb' in f: cdir = r
@@ -75,6 +75,8 @@ def join(objs, name):
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=os.path.join(cdir, 'Mage.glb'))
 sc = bpy.context.scene
+_staff = bpy.data.objects['2H_Staff']   # 손에 드는 소품은 원래 지팡이와 같은 틀(오른손 자리 뼈, 손잡이 = 원점, 위 = +z)
+STAFF_MPI, STAFF_LOC, STAFF_BONE = _staff.matrix_parent_inverse.copy(), _staff.location.copy(), _staff.parent_bone
 for o in list(sc.objects):
     if o.type == 'MESH' and o.name in ('Spellbook', 'Spellbook_open', '1H_Wand', '2H_Staff', 'Mage_Hat', 'Icosphere'):
         bpy.data.objects.remove(o, do_unlink=True)
@@ -256,6 +258,140 @@ rig = bpy.data.objects[RIG_NAME]
 for o in parts.values(): attach(o, rig)
 print('REPORT parts', sorted((k, len(o.data.vertices)) for k, o in parts.items()))
 
+# ── 4. 꾸밈 소품 (10/21) — 머리에 쓰는 것 wear_*(머리 뼈) · 손에 드는 것 hold_*(오른손 자리 뼈). 피부처럼 휘지 않는 단단한 물건이라 뼈의 자식으로 ──
+def M(name, rgb, rough=0.7, emit=0.0):
+    m = mat(name, rgb, rough)
+    if emit:
+        b = m.node_tree.nodes['Principled BSDF']; b.inputs['Emission Color'].default_value = (*rgb, 1); b.inputs['Emission Strength'].default_value = emit
+    return m
+STRAW, RIBBON, LEAF, TWIG, WOOD, GOLD = M('w_straw', (0.93, 0.78, 0.45)), M('w_red', (0.78, 0.2, 0.18)), M('w_leaf', (0.36, 0.6, 0.26)), M('w_twig', (0.45, 0.33, 0.2)), M('w_wood', (0.55, 0.36, 0.2)), M('w_gold', (0.95, 0.72, 0.28), 0.4)
+CREAM, BROWN, PAPER, METAL, FLAME = M('w_cream', (0.93, 0.89, 0.8)), M('w_brown', (0.33, 0.21, 0.14)), M('w_paper', (0.95, 0.9, 0.76)), M('w_metal', (0.3, 0.27, 0.25), 0.5), M('w_flame', (1.0, 0.78, 0.35), 0.3, 3.0)
+PETAL = [M('w_pink', (0.98, 0.62, 0.72)), M('w_white', (0.98, 0.97, 0.94)), M('w_yellow', (1.0, 0.85, 0.3))]
+KNIT = M('w_knit', (0.78, 0.22, 0.22), 0.9)
+def _add(kind, m, **kw):
+    getattr(bpy.ops.mesh, 'primitive_' + kind + '_add')(**kw)
+    o = bpy.context.active_object; o.data.materials.append(m); return o
+def sph(r, loc, m, scale=(1, 1, 1), seg=16, rings=10, rot=(0, 0, 0)):
+    o = _add('uv_sphere', m, segments=seg, ring_count=rings, radius=r, location=loc, rotation=rot); o.scale = scale; return o
+def cone(r1, r2, depth, loc, m, rot=(0, 0, 0), seg=24, fill=True):
+    return _add('cone', m, vertices=seg, radius1=r1, radius2=r2, depth=depth, location=loc, rotation=rot, end_fill_type='NGON' if fill else 'NOTHING')
+def torus(R, r, loc, m, rot=(0, 0, 0), seg=32, mseg=8):
+    return _add('torus', m, major_radius=R, minor_radius=r, location=loc, rotation=rot, major_segments=seg, minor_segments=mseg)
+def box(size, loc, m, rot=(0, 0, 0)):
+    o = _add('cube', m, size=1, location=loc, rotation=rot); o.scale = size; return o
+def ctube(pts, r, m):
+    cu = bpy.data.curves.new('c', 'CURVE'); cu.dimensions = '3D'; cu.bevel_depth = r; cu.bevel_resolution = 3; cu.use_fill_caps = True
+    spn = cu.splines.new('POLY'); spn.points.add(len(pts) - 1)
+    for i, p in enumerate(pts): spn.points[i].co = (*p, 1)
+    o = bpy.data.objects.new('c', cu); sc.collection.objects.link(o)
+    me = bpy.data.meshes.new_from_object(o.evaluated_get(bpy.context.evaluated_depsgraph_get())); bpy.data.objects.remove(o)
+    me.materials.clear(); me.materials.append(m)
+    ob = bpy.data.objects.new('t', me); sc.collection.objects.link(ob); return ob
+def solid(o, t):
+    bpy.ops.object.select_all(action='DESELECT'); o.select_set(True); bpy.context.view_layer.objects.active = o
+    md = o.modifiers.new('S', 'SOLIDIFY'); md.thickness = t; bpy.ops.object.modifier_apply(modifier=md.name); return o
+def cut(o, keep):   # 세상 좌표로 keep(v)가 거짓인 꼭짓점을 지운다
+    bpy.ops.object.select_all(action='DESELECT'); o.select_set(True); bpy.context.view_layer.objects.active = o
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    keep_only(o, [i for i, v in enumerate(o.data.vertices) if keep(v.co)]); return o
+def item(name, objs):
+    bpy.ops.object.select_all(action='DESELECT')
+    for o in objs: o.select_set(True)
+    bpy.context.view_layer.objects.active = objs[0]
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    o = join(objs, name)
+    for p in o.data.polygons: p.use_smooth = True
+    return o
+wear = {}
+# 머리 — 세상(처음 자세) 좌표로 만든다: 얼굴 앞 y −0.44, 머리카락 위 z 2.2(짧은 머리 2.31), 머리 반지름 ≈ 0.5
+def straw():
+    crown = cone(0.5, 0.45, 0.42, (0, 0, 2.17), STRAW, seg=28)
+    brim = solid(cone(0.88, 0.5, 0.07, (0, 0, 1.985), STRAW, seg=32, fill=False), 0.03)
+    band = cone(0.505, 0.495, 0.09, (0, 0, 2.02), RIBBON, seg=28, fill=False)
+    return [crown, brim, solid(band, 0.012)]
+def flower():
+    ring = torus(0.52, 0.035, (0, 0, 1.98), LEAF, rot=(0.15, 0, 0))
+    out = [ring]
+    for i in range(8):
+        a = i / 8 * math.tau; x, y = math.sin(a) * 0.52, -math.cos(a) * 0.52; z = 1.98 - (-y) * math.sin(0.15)
+        c = PETAL[i % 3]
+        for j in range(5):
+            b = a + j / 5 * math.tau
+            out.append(sph(0.05, (x + math.cos(b) * 0.045, y + math.sin(b) * 0.045 * 0.3, z + math.sin(b) * 0.045), c, scale=(1, 0.5, 1), seg=6, rings=4))
+        out.append(sph(0.03, (x, y - 0.01, z), PETAL[2] if c is not PETAL[2] else PETAL[1], seg=6, rings=4))
+    return out
+def olive():
+    out = [torus(0.52, 0.018, (0, 0, 1.97), TWIG, rot=(0.15, 0, 0))]
+    for i in range(22):
+        a = (i + 0.5) / 22 * (math.tau - 0.6) + 0.3   # 앞 가운데는 비운다
+        x, y = math.sin(a) * 0.52, -math.cos(a) * 0.52; z = 1.97 + y * math.sin(0.15)   # 고리처럼 앞이 조금 낮다
+        for sg in (-1, 1):   # 잎 둘이 고리를 따라 위아래로 비스듬히
+            out.append(sph(0.07, (x, y, z + sg * 0.035), LEAF, scale=(0.35, 0.35, 1), seg=6, rings=4, rot=(0, sg * 0.9, a)))
+    return out
+def shepherd():
+    cap = cut(sph(0.56, (0, 0.02, 1.74), CREAM, seg=24, rings=14), lambda v: v.z > 1.86)
+    drape = cut(cone(0.66, 0.56, 0.62, (0, 0.02, 1.55), CREAM, seg=28, fill=False), lambda v: v.y > -0.18)
+    band = torus(0.56, 0.04, (0, 0.02, 1.93), BROWN, rot=(0.08, 0, 0))
+    return [cap, solid(drape, 0.02), band]
+def beanie():
+    dome = cut(sph(0.55, (0, 0, 1.76), KNIT, seg=24, rings=14), lambda v: v.z > 1.84)
+    cuff = torus(0.545, 0.07, (0, 0, 1.87), CREAM)
+    pom = sph(0.12, (0, 0, 2.33), CREAM, seg=12, rings=8)
+    return [dome, cuff, pom]
+for k, fn in [('straw', straw), ('flower', flower), ('olive', olive), ('shepherd', shepherd), ('beanie', beanie)]:
+    wear['wear_' + k] = item('wear_' + k, fn())
+# 손 — 지팡이 틀(손잡이 = 원점, 물건이 뻗는 쪽 = +z, 얇은 쪽 = y)로 만든다
+def palm():
+    out = [cone(0.035, 0.018, 1.35, (0, 0, 0.47), LEAF, seg=10)]
+    for i in range(10):
+        z = 0.42 + i * 0.07; L = 0.42 - i * 0.032
+        for sg in (-1, 1):
+            out.append(sph(L / 2, (sg * L * 0.42, 0, z + L * 0.22), LEAF, scale=(1, 0.08, 0.16), seg=8, rings=4, rot=(0, -sg * 0.5, 0)))
+    out.append(sph(0.12, (0, 0, 1.2), LEAF, scale=(0.18, 0.08, 1), seg=10, rings=6))
+    return out
+def lyre():
+    out = [box((0.36, 0.09, 0.2), (0, 0, 0.1), GOLD)]
+    for sg in (-1, 1): out.append(ctube([(sg * 0.15, 0, 0.18), (sg * 0.22, 0, 0.35), (sg * 0.24, 0, 0.52), (sg * 0.19, 0, 0.66), (sg * 0.13, 0, 0.72)], 0.03, GOLD))
+    out.append(cone(0.025, 0.025, 0.46, (0, 0, 0.68), WOOD, rot=(0, math.pi / 2, 0), seg=10))
+    for i in range(5): out.append(cone(0.006, 0.006, 0.48, (-0.08 + i * 0.04, 0, 0.43), PAPER, seg=6))
+    return out
+def lamp():
+    out = [torus(0.07, 0.012, (0, 0, 0.03), METAL, rot=(math.pi / 2, 0, 0), seg=16, mseg=6)]
+    out.append(cone(0.012, 0.012, 0.1, (0, 0, -0.08), METAL, seg=6))
+    out.append(cone(0.12, 0.05, 0.08, (0, 0, -0.16), METAL, seg=16))
+    out.append(cone(0.105, 0.105, 0.24, (0, 0, -0.32), FLAME, seg=16))
+    for a in range(4): out.append(cone(0.012, 0.012, 0.24, (math.cos(a * math.pi / 2) * 0.11, math.sin(a * math.pi / 2) * 0.11, -0.32), METAL, seg=6))
+    out.append(cone(0.13, 0.13, 0.04, (0, 0, -0.46), METAL, seg=16))
+    return out
+def scroll():
+    out = [cone(0.075, 0.075, 0.52, (0, 0, 0.1), PAPER, seg=16)]
+    for z in (-0.18, 0.38): out.append(sph(0.045, (0, 0, z), WOOD, seg=10, rings=6))
+    out.append(torus(0.078, 0.014, (0, 0, 0.1), RIBBON, seg=16, mseg=6))
+    return out
+def crook():
+    pts = [(0, 0, -0.85), (0, 0, 1.1), (0.02, 0, 1.22), (0.09, 0, 1.3), (0.18, 0, 1.31), (0.25, 0, 1.25), (0.27, 0, 1.16), (0.25, 0, 1.09)]
+    return [ctube(pts, 0.032, WOOD)]
+for k, fn in [('palm', palm), ('lyre', lyre), ('lamp', lamp), ('scroll', scroll), ('crook', crook)]:
+    o = item('hold_' + k, fn()); wear['hold_' + k] = o
+    o.parent = rig; o.parent_type = 'BONE'; o.parent_bone = STAFF_BONE; o.matrix_parent_inverse = STAFF_MPI; o.location = STAFF_LOC; o.rotation_euler = (0, 0, 0)
+# 서 있는 자세(Idle)에서 손 자리 뼈가 보는 「하늘」 쪽으로 소품을 돌린다 — 지팡이 틀 그대로면 옆으로 눕혀 들렸다(첫 시안)
+if not rig.animation_data: rig.animation_data_create()
+rig.animation_data.action = bpy.data.actions.get('Idle'); sc.frame_set(8); bpy.context.view_layer.update()
+_pb = rig.pose.bones[STAFF_BONE]; _Mw = rig.matrix_world @ _pb.matrix
+_up = (_Mw.to_3x3().inverted() @ Vector((0, 0, 1))).normalized()
+_fw = (_Mw.to_3x3().inverted() @ Vector((0, -1, 0))).normalized()   # 앞(얼굴 쪽)으로 조금 기울여 든다
+_q = Vector((0, 0, 1)).rotation_difference((_up + _fw * 0.25).normalized())
+for k, o in wear.items():
+    if k.startswith('hold_'): o.data.transform(_q.to_matrix().to_4x4())
+rig.animation_data.action = None; sc.frame_set(0)
+print('REPORT hand up', [round(v, 2) for v in _up])
+rig.data.pose_position = 'REST'; bpy.context.view_layer.update()
+for k in list(wear):
+    if not k.startswith('wear_'): continue
+    o = wear[k]; mw = o.matrix_world.copy(); o.parent = rig; o.parent_type = 'BONE'; o.parent_bone = 'head'; bpy.context.view_layer.update(); o.matrix_world = mw
+rig.data.pose_position = 'POSE'; bpy.context.view_layer.update()
+print('REPORT wear', sorted((k, len(o.data.vertices)) for k, o in wear.items()))
+
 # ── 4. 미리보기 — 조합 몇 개 ──
 COMBOS = {
     'default': ['hair_tied', 'eyes_soft', 'brow_thin', 'nose_dot', 'mouth_smile', 'blush', 'ears_m'],
@@ -263,9 +399,14 @@ COMBOS = {
     'long': ['hair_long', 'eyes_happy', 'brow_thin', 'nose_button', 'mouth_open', 'blush', 'ears_s'],
     'hood': ['hair_hood', 'eyes_dot', 'nose_dot', 'mouth_small', 'blush', 'ears_m'],
     'bald': ['scalp', 'beard', 'eyes_soft', 'brow_bushy', 'nose_big', 'mouth_flat', 'ears_l'],
+    'w1': ['hair_tied', 'eyes_soft', 'brow_thin', 'nose_dot', 'mouth_smile', 'blush', 'ears_m', 'wear_straw', 'hold_palm'],
+    'w2': ['hair_long', 'eyes_happy', 'brow_thin', 'nose_dot', 'mouth_open', 'blush', 'ears_m', 'wear_flower', 'hold_lyre'],
+    'w3': ['hair_short', 'eyes_soft', 'brow_thin', 'nose_dot', 'mouth_smile', 'ears_m', 'wear_olive', 'hold_lamp'],
+    'w4': ['hair_tied', 'eyes_dot', 'brow_thin', 'nose_dot', 'mouth_small', 'blush', 'ears_m', 'wear_shepherd', 'hold_crook'],
+    'w5': ['hair_tied', 'eyes_bright', 'brow_thin', 'nose_dot', 'mouth_smile', 'blush', 'ears_m', 'wear_beanie', 'hold_scroll'],
 }
 def show(keys):
-    for k, o in parts.items(): o.hide_render = k not in keys
+    for k, o in list(parts.items()) + list(wear.items()): o.hide_render = k not in keys
 def render_all():
     try: sc.render.engine = 'BLENDER_EEVEE_NEXT'
     except TypeError: sc.render.engine = 'BLENDER_EEVEE'
@@ -277,13 +418,17 @@ def render_all():
     cam = bpy.data.objects.new('_cam', bpy.data.cameras.new('_cam')); sc.collection.objects.link(cam); cam.data.lens = 60; sc.camera = cam
     for tag, keys in COMBOS.items():
         show(keys)
-        for vt, ctr, dist, az in (('h', Vector((0, 0, 1.65)), 2.3, 25), ('b', Vector((0, 0, 1.1)), 4.8, 150)):
+        for vt, ctr, dist, az in (('h', Vector((0, 0, 1.65)), 2.3, 25), ('b', Vector((0, 0, 1.1)), 4.8, 150), ('f', Vector((0, 0, 1.15)), 5.2, 35)):
             aa = math.radians(az); cam.location = ctr + Vector((math.sin(aa), -math.cos(aa), 0.12)) * dist
             cam.rotation_euler = (ctr - cam.location).to_track_quat('-Z', 'Y').to_euler()
             sc.render.filepath = os.path.join(PREV, f'cmb_{tag}_{vt}.png'); bpy.ops.render.render(write_still=True)
-    for o in parts.values(): o.hide_render = False
+    for o in list(parts.values()) + list(wear.values()): o.hide_render = False
     bpy.data.objects.remove(sun); bpy.data.objects.remove(cam)
 if PREVIEW:
+    if os.environ.get('PREVIEW_ONLY'): COMBOS = {k: v for k, v in COMBOS.items() if k in os.environ['PREVIEW_ONLY'].split(',')}
+    if not rig.animation_data: rig.animation_data_create()
+    for tr in list(rig.animation_data.nla_tracks): rig.animation_data.nla_tracks.remove(tr)
+    rig.animation_data.action = bpy.data.actions.get('Idle'); sc.frame_set(8)   # 서 있는 자세로 — 손 소품이 실제로 어떻게 들리나
     render_all()
 else:
     for ac in list(bpy.data.actions):
