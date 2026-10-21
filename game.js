@@ -32255,6 +32255,7 @@ function renderHardshipMemoryVerse() {
     `;
     _syncGiveupFab(_isEmbeddedBlankSession() && !hardshipState.awaitingNext && !hardshipState.locked);
     _syncStrongFab();
+    setTimeout(_hsKbSubmitSync, 0);   // ⌨️ 키보드 위 버튼 — 정답 확인 ↔ 다음
 
     bindHardshipMemoryInputGuards();
     _alignHardshipHiddenInput(field.querySelector('.char-slot.active') || field.querySelector('.char-slot.is-valid'));
@@ -32809,15 +32810,48 @@ function updateHardshipMemoryBoard() {
 /* ⌨️ 키보드가 덮는 높이만큼 판 아래 여백 (10/21 제보: 망각의 고난·백지에서 커서 쪽으로 화면이 잘 안 내려간다 — 아이폰·안드로이드 둘 다).
    키보드는 레이아웃 높이를 줄이지 않고 위에 덮이기만 해서, 여백이 120px뿐이면 긴 절의 마지막 몇 줄은 더 올릴 자리가 없어 키보드 뒤에 남았다.
    키보드가 닫히면(보이는 높이가 돌아오면) 여백도 원래대로 */
-function _hsKbPad(container) {
+/* 같은 날 고침(제보: 입력하는 곳에서 정답 확인 버튼까지가 너무 멀어졌다) — 키보드 높이만큼(≈600px) 한꺼번에 덧대니, 아이폰처럼 키보드가 화면을
+   줄이지 않는 기기에서 버튼까지 쓸어내리면 빈 여백부터 다 지나야 했다. → **지금 줄을 키보드 위로 올리는 데 모자란 만큼만**(need) 조금씩 늘리고,
+   키보드가 닫히거나 새 구절(빈 입력)이면 거둔다. 원래 여백(CSS)은 kbBase로 기억 */
+function _hsKbPad(container, need) {
     const vv = window.visualViewport; if (!vv || !container) return;
     const kb = Math.max(0, document.documentElement.clientHeight - (vv.offsetTop + vv.height));
-    const want = kb > 80 ? Math.round(kb + 120) + 'px' : '';
-    if (container.style.paddingBottom !== want) container.style.paddingBottom = want;
+    const reset = () => { if (container.style.paddingBottom) { container.style.paddingBottom = ''; } container.dataset.kbx = ''; };
+    if (kb <= 80 || need === -1) { reset(); return; }
+    if (!(need > 0)) return;
+    if (!container.style.paddingBottom) container.dataset.kbBase = parseFloat(getComputedStyle(container).paddingBottom) || 0;
+    const cur = +container.dataset.kbx || 0, nx = Math.min(kb + 40, Math.ceil(cur + need));
+    if (nx > cur) { container.dataset.kbx = nx; container.style.paddingBottom = ((+container.dataset.kbBase || 0) + nx) + 'px'; }
 }
 if (window.visualViewport) window.visualViewport.addEventListener('resize', () => {
     document.querySelectorAll('#game-screen .battle-field').forEach(f => { if (f.style.paddingBottom) _hsKbPad(f); });   // 키보드가 닫히면 덧댄 여백을 거둔다(판은 #game-screen 바로 아래가 아닐 수 있다)
+    _hsKbSubmitSync();
 });
+if (window.visualViewport) window.visualViewport.addEventListener('scroll', () => _hsKbSubmitSync());
+document.addEventListener('focusin', () => setTimeout(_hsKbSubmitSync, 300));   // 키보드가 다 올라온 뒤
+document.addEventListener('focusout', () => setTimeout(_hsKbSubmitSync, 50));
+/* ⌨️ 키보드 위 「✓ 정답 확인」·「다음」 (10/21 제보: 버튼으로 넘기는 사람에겐 입력하는 곳에서 정답 확인 버튼까지가 너무 멀다 — 키보드가 덮는 기기에선
+   버튼이 키보드 뒤에 있다) — 키보드가 열려 있는 동안만 보이는 영역 맨 아래(키보드 바로 위)에. 누를 때 입력칸이 포커스를 잃지 않게 해 키보드가 내려갔다 오지 않는다 */
+function _hsKbSubmitSync() {
+    try {
+        const vv = window.visualViewport; let b = document.getElementById('hs-kb-submit');
+        const sb = document.getElementById('hardship-memory-submit-btn'), nb = document.getElementById('hardship-next-btn');
+        const tgt = sb && sb.offsetParent !== null && !sb.disabled ? sb : nb && nb.offsetParent !== null ? nb : null;
+        const kb = vv ? Math.max(0, document.documentElement.clientHeight - (vv.offsetTop + vv.height)) : 0;
+        const ae = document.activeElement;
+        const on = !!(tgt && kb > 80 && window.isHardshipMode && typeof hardshipState !== 'undefined' && hardshipState && hardshipState.active && ae && ae.id === 'hidden-typing-input');
+        if (!on) { if (b) b.style.display = 'none'; return; }
+        if (!b) {
+            b = document.createElement('button'); b.id = 'hs-kb-submit'; b.type = 'button';
+            const keep = e => e.preventDefault(); b.addEventListener('pointerdown', keep); b.addEventListener('mousedown', keep);
+            b.addEventListener('click', () => { const t2 = document.getElementById(b.dataset.tgt); if (t2 && !t2.disabled) t2.click(); setTimeout(_hsKbSubmitSync, 60); });
+            document.body.appendChild(b);
+        }
+        b.dataset.tgt = tgt.id; b.textContent = tgt.id === 'hardship-next-btn' ? t('hardship_btn_next') : '✓ ' + t('hardship_btn_submit');
+        b.style.display = 'block';
+        b.style.top = Math.round(vv.offsetTop + vv.height - b.offsetHeight - 10) + 'px';
+    } catch (e) { }
+}
 /* 지금 치는 칸이 떠 있는 버튼(🙋·💡·🔑) 아래로 숨지 않게 보이는 띠 안으로 옮긴다. 타이핑 때와 🔑 첫 마디 보기가 나타날 때(10/10) */
 function _hsScrollToSlot(slotToScroll) {
     if (!slotToScroll || !slotToScroll.isConnected) return;
@@ -32825,7 +32859,8 @@ function _hsScrollToSlot(slotToScroll) {
         {
             const container = slotToScroll.closest('.battle-field');
             if (window.visualViewport && container) {
-                _hsKbPad(container);
+                if (!(hardshipState.memoryTypedText || '').length) _hsKbPad(container, -1);   // 새 구절 — 덧댄 여백을 거둔다
+                else _hsKbPad(container);   // 키보드가 닫혔으면 거둔다
                 // 키보드가 열리면 '보이는 영역'은 visualViewport뿐이다 — scrollIntoView(레이아웃 뷰포트 기준)는
                 // 키보드 뒤를 '보인다'고 치거나 그 뒤로 가운데를 맞춘다. 보이는 띠 밖에 있을 때만 그 가운데로 옮긴다.
                 // (2026-09-21: 예전엔 iOS만 이 경로였고 안드로이드는 매 키마다 scrollIntoView center — 긴 절에서 진동)
@@ -32838,6 +32873,8 @@ function _hsScrollToSlot(slotToScroll) {
                 const slotCenter = slotRect.top + slotRect.height / 2;
                 if (slotRect.top < vvTop + margin || slotRect.bottom > vvTop + vvHeight - margin) {
                     const d = slotCenter - (vvTop + vvHeight / 2), st0 = container.scrollTop;
+                    const room = container.scrollHeight - container.clientHeight - st0, needMin = slotRect.bottom - (vvTop + vvHeight - margin);
+                    if (d > room && needMin > room) _hsKbPad(container, needMin - room + 6);   // 끝까지 내려도 키보드 뒤 — 모자란 만큼만 여백
                     container.scrollTop = st0 + d;
                     // 판에 확대(zoom, 태블릿·PC)가 걸리면 화면 좌표와 스크롤 단위가 달라 덜 가거나 더 갔다 — 실제로 움직인 만큼을 재서 한 번 더 맞춘다
                     const moved = slotCenter - (slotToScroll.getBoundingClientRect().top + slotRect.height / 2), left = d - moved;
