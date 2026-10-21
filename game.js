@@ -32853,7 +32853,13 @@ function _hsKbSubmitSync() {
         }
         b.dataset.tgt = tgt.id; b.textContent = tgt.id === 'hardship-next-btn' ? t('hardship_btn_next') : '✓ ' + t('hardship_btn_submit');
         b.style.display = 'block';
-        b.style.top = Math.round(vv.offsetTop + vv.height - b.offsetHeight - 10) + 'px';
+        // 떠 있는 버튼 줄(🙋 모르겠어요 · 🔑 첫 세 마디 · 💡 힌트)도 키보드 위에 있으면 그 줄 바로 위로(10/21 사용자: 🔑 버튼을 가린다)
+        let bottom = vv.offsetTop + vv.height - 10;
+        ['hardship-giveup-fab', 'common-hardship-hint-btn', 'hardship-strong-fab'].forEach(id => {
+            const f = document.getElementById(id); if (!f || f.offsetWidth === 0) return;
+            const r = f.getBoundingClientRect(); if (r.bottom > vv.offsetTop + vv.height * 0.5 && r.top < vv.offsetTop + vv.height) bottom = Math.min(bottom, r.top - 8);
+        });
+        b.style.top = Math.round(bottom - b.offsetHeight) + 'px';
     } catch (e) { }
 }
 /* 지금 치는 칸이 떠 있는 버튼(🙋·💡·🔑) 아래로 숨지 않게 보이는 띠 안으로 옮긴다. 타이핑 때와 🔑 첫 마디 보기가 나타날 때(10/10) */
