@@ -1976,6 +1976,8 @@
         cleanups.push(() => puffs.forEach(q => { scene.remove(q.sp); q.sp.material.dispose(); }));
         const backWings = new THREE.Group(); backWings.position.set(0, 0.155, 0.03); backWings.visible = false; body.add(backWings);
         let gliding = false, wingK = null, wingKind = 'glider', wingFx = null;
+        /* 🚪 좁은 문 경기 중엔 걸어서만(10/22 사용자: 점프 두 번에 글라이더가 펴졌다 접히면 왜인지 모른다) — 막을 때 까닭을 알린다 */
+        const doorBusy = what => { if (!ov.classList.contains('nj3d-doorrun')) return false; const en = typeof currentLang !== 'undefined' && currentLang === 'en'; showHint(en ? `No ${what === 'glide' ? 'glider' : what === 'jet' ? 'jetpack' : 'riding'} during the race — run on foot!` : `경기 중에는 ${what === 'glide' ? '글라이더를 펼' : what === 'jet' ? '제트팩을 쓸' : '탈것을 탈'} 수 없어요 — 걸어서 통과해요`, 1800); return true; };
         const triGeo = (pts, idx) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3)); g.setIndex(idx); g.computeVertexNormals(); return g; };
         const wingMat = (c, em, ei) => new THREE.MeshStandardMaterial({ color: c, emissive: em || 0x000000, emissiveIntensity: ei || 0, roughness: 0.45, metalness: 0.2, side: THREE.DoubleSide });
         const wingSparks = (n, col) => {   // 반짝이는 알갱이 — 날개 뒤로 흘러 사라진다
@@ -2345,6 +2347,7 @@
             }
             if (P.onGround) { P.vy = JUMP_V; P.onGround = false; return; }
             if (jetOn) return;
+            if (!gliding && doorBusy('glide')) return;
             gliding = !gliding;   // 공중에서 한 번 더 — 펼치기 / 접기
             if (gliding && P.vy < -0.2) P.vy = -0.2;
             showHint(T(gliding ? 'nj3d_glide_on' : 'nj3d_glide_off'), 1400);
@@ -2384,6 +2387,7 @@
             if (!hasJet()) return;
             if (jetTrialLand && (on == null ? !jetOn : on)) return;
             if (!ride.on && (isUnder() || swimNow()) && (on == null ? !jetOn : on)) return;   // 물에서는 켜지 않는다(F 키 포함)   // 체험이 끝나 내려앉는 중엔 다시 켜지 않는다
+            if ((on == null ? !jetOn : on) && doorBusy('jet')) return;
             jetOn = on == null ? !jetOn : !!on; jetAir = false; flyBtn.classList.toggle('on', jetOn); jet.visible = jetOn && hasJet();
             if (jetOn) { if (ride.on) mountDown(); gliding = false; if (P.vy < 0) P.vy = 0; showHint(T('nj3d_jet_hover'), 3200); }
         };
@@ -2486,6 +2490,7 @@
             tackBtn.hidden = false;   // 날개 창도 여기서 — 탈것이 없어도 연다
         }
         async function mountUp() {
+            if (doorBusy('ride')) return;
             const k = curMount(); if (!k) { openTack(); return; }
             if (inCity(P.x, P.z)) { showHint(T('nj3d_ride_city'), 2200); return; }
             if (kindOfMount(k) === 'boat' || kindOfMount(k) === 'sub') {   // ⛵ 배·🚢 잠수함 — 바다 위나 바닷가에서만
@@ -2495,6 +2500,7 @@
             }
             if (!ride.obj || ride.k !== k) await refreshMount();
             if (!ride.obj || cur !== C) return;
+            if (doorBusy('ride')) return;   // 모델을 받는 사이 경기에 들어갔으면
             ride.on = true; ride.wait = false; gliding = false; jetOn = false; flyBtn.classList.remove('on'); ride.obj.visible = true;
             ride.obj.position.set(P.x, P.y, P.z); ride.obj.rotation.y = P.face + Math.PI / 2; ride.px = P.x; ride.pz = P.z;
             if (kindOfMount(k) === 'sub') { P.y = SEA_Y - 0.35; P.vy = 0; P.onGround = false; ride.obj.position.y = P.y; }   // 🚢 물속으로
@@ -5032,6 +5038,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         function doorStart(id) {
             if (!id) return;
             if (ride.on) mountDown(); if (jetOn) jetToggle(false); gliding = false;
+            slide = null; slideSndStop(); plungeMom = null; diveHeld = false; P.onGround = true;   // 🛝 미끄럼·🌊 풍덩 기세·잠수 누름이 경기장까지 따라오지 않게
             const B = doorBuild(id);
             doorRun = { ...B, next: 0, t0: 0, miss: 0, hudT: 0, cam: doorCam || [camDist, camPitch] };
             doorCam = doorRun.cam; camDist = 2.3; camPitch = 0.38;   // 📷 한 줄의 문 넷이 다 보이게 — 조금 뒤·위에서
@@ -5094,6 +5101,10 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 });
                 if (moved) r.posts.forEach((p, k) => { const L = r.doors[k - 1], Rt = r.doors[k]; p.position.x = p.userData.bx + (Rt ? (Rt.edge || 0) : 0) - (L ? (L.edge || 0) : 0); });
             });
+            if (R.knock) {   // 💥 밀려나는 중 — 0.3초 남짓에 직전 문 뒤로
+                P.z += (R.knock.z - P.z) * Math.min(1, dt * 12);
+                if (Math.abs(R.knock.z - P.z) < 0.04 || now > R.knock.until) { P.z = R.knock.z; R.knock = null; }
+            }
             const row = R.rows[R.next];
             if (row) {
                 const dz = P.z - row.z;
@@ -5102,7 +5113,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                     if (Math.abs(d.x - P.x) < DR.DW / 2 + 0.02) {
                         if (d.right && !d.opening) { d.opening = true; const bi = BOXES.indexOf(d.box); if (bi >= 0) BOXES.splice(bi, 1); if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect(); }
                         else if (!d.right && dz < CR + 0.06 && now > (R.cool || 0)) {   // 💥 닫힌 문에 부딪힘 — 튕겨 나오고 붉게
-                            R.cool = now + 600; R.miss++; P.z += 0.32; P.vy = Math.max(P.vy, 0.6); P.onGround = false;
+                            // 직전 문 바로 뒤까지 날려 보낸다(10/22 사용자: 더 멀리 — 처음으로는 앞부분만 되풀이하게 돼서 직전 문으로). 틀린 줄을 다시 마주해 그 어절을 한 번 더 떠올린다
+                            const prev = R.rows[R.next - 1], back = prev ? prev.z - 0.35 : DR.Z0 + 0.6;
+                            R.cool = now + 700; R.miss++; R.knock = { z: back, until: now + 450 }; P.vy = Math.max(P.vy, 1.1); P.onGround = false;
                             d.mesh.material = doorMat.bad; d.flash = now + 450;
                             if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
                             doorHudDraw(true); setTimeout(() => { if (doorRun === R) doorHudDraw(); }, 350);
@@ -5146,6 +5159,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             bbox: () => [...decoG.children].map(o => { const B = new THREE.Box3(), tb = new THREE.Box3(); o.updateMatrixWorld(true); o.traverse(m => { if (!m.isMesh || m === o.userData.pick) return; if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); tb.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); B.union(tb); }); return { k: o.userData.item.k, min: [B.min.x, B.min.y, B.min.z].map(v => +v.toFixed(2)), max: [B.max.x, B.max.y, B.max.z].map(v => +v.toFixed(2)) }; }),
             rebuild: () => itemBoxes(), items: () => [...giftsG.children, ...decoG.children].map(o => { let n = 0, vis = 0; o.traverse(m => { if (m.isMesh) { n++; if (m.visible) vis++; } }); return { k: o.userData.item && o.userData.item.k, vis: o.visible, meshes: n, visMeshes: vis, pos: [o.position.x, o.position.y, o.position.z].map(v => +v.toFixed(2)) }; }), ground: (x, z, y) => groundAt(x, z, y), blocked: (x, z, y) => blocked(x, z, y),
             pm: (clip, over) => { pm.force = clip ? { clip, over } : null; return { loaded: !!pm.mixer, cur: pm.cur, clips: Object.keys(pm.acts) }; }, lookApply: () => pmLook(), camSet: (yaw, pitch, dist) => { camYaw = yaw; camPitch = pitch; if (dist) camDist = dist; }, st: o => { if (o.glide != null) { equipWing(); gliding = o.glide; } if (o.jet) { jetTrialEnd = Date.now() + 60000; syncJetUI(); jetToggle(true); } if (o.ride) { mountUp(); } if (o.keys) Object.assign(inp.keys, o.keys); if (o.jetOff) jetToggle(false); if (o.sea) { placeAt('sea'); for (let i = 0; i < 120 && seaE(P.x, P.z) > 0.6; i++) P.z += 0.25; P.y = o.sea === 'top' ? SEA_Y : SEA_Y - 0.4; P.vy = 0; } return { gliding, jetOn, ride: ride.on, wingKind }; },
+            ride: () => ({ on: ride.on, k: ride.k }), jet: () => jetOn, glide: () => gliding, hint: () => hint.textContent, rideBtn: () => rideBtn.click(),
             doorStart: id => doorStart(id || doorPick()), door: () => doorRun && { id: doorRun.id, next: doorRun.next, n: doorRun.ws.length, miss: doorRun.miss, t0: !!doorRun.t0, rows: doorRun.rows.map(r => ({ z: r.z, right: r.right, x: r.doors[r.right].x, w: r.w, sq: r.doors.map(d => +d.sq.toFixed(2)) })) }, doorWin: () => doorWin.hidden ? null : doorWin.innerText,
             setP: (x, y, z, face) => { P.x = x; P.y = y; P.z = z; P.vy = 0; if (face != null) { P.face = face; camYaw = face; } }, P: () => ({ x: P.x, y: P.y, z: P.z, f: P.face }),
             stars: () => stars.map(s => ({ id: s.id, x: s.x, y: s.g.position.y, z: s.z, done: s.done, vis: s.g.visible })),
