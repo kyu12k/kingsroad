@@ -8057,3 +8057,6 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 .nj3d-wb.small.nj3d-bagbtn { background: rgba(15, 26, 51, 0.82); color: #f6d77a; }
 .nj3d-wb.small.nj3d-bagbtn.on { background: #f6d77a; color: #1c2340; }
 #nj3d.nj3d-doorrun .nj3d-bagbtn, #nj3d.nj3d-doorrun .nj3d-bag { display: none !important; }
+#nj3d .nj3d-doorhud .dmode { display: flex; gap: 6px; margin-top: 6px; }
+#nj3d .nj3d-doorhud .dmode button { pointer-events: auto; flex: 1; padding: 6px 8px; border-radius: 10px; border: 1px solid rgba(255,211,77,0.5); background: rgba(255,255,255,0.08); color: #fdf3d0; font: 700 0.8rem 'Pretendard', sans-serif; }
+#nj3d .nj3d-doorhud .dmode button.on { background: #ffd34d; color: #1c2340; }
