@@ -4931,9 +4931,10 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             });
         });
 
-        // ══ 🚪 말씀 문 달리기 (2026-10-22 사용자 — 폴가이즈 「도어 대시」) — 성 북쪽 벌판(바다 반대편)의 경기장.
+        // ══ 🚪 좁은 문 (2026-10-22 사용자 — 폴가이즈 「도어 대시」 · 이름은 마 7:13 「좁은 문으로 들어가라」) — 성 북쪽 벌판(바다 반대편)의 경기장.
         //    줄마다 문 넷, 구절의 **다음 어절** 문만 열리고 나머지(같은 절의 다른 어절)는 닫힌 문 — 부딪히면 튕겨 나온다.
         //    위에는 주소와 지나온 어절만(다음 어절은 스스로 떠올린다). 출발선을 넘으면 시계가 돌고 마지막 줄을 지나면 끝.
+        //    정답 문은 다가가면 문틀이 좁아져 꼭 맞게 지나가고(지나면 돌아온다), 오답 문은 넓게 벌어졌다가 튕겨 낸다(넓은 문 · 사용자 10/22).
         //    1단계: 혼자 달리기 · 관리자(#8648)만(kr_doorTest = '1'이면 시험용으로도). 다음: 친구 기록 유령 → 같은 성 실시간 ══
         const DOOR_ON = !VISIT && ((typeof myTag !== 'undefined' && String(myTag) === '8648') || (() => { try { return localStorage.getItem('kr_doorTest') === '1'; } catch (e) { return false; } })());
         const DR = { AX: 10, Z0: -52, ROW: 1.25, DW: 0.36, PW: 0.06, DH: 0.5, WH: 0.62, FL: 0.1 };   // 가운데 x · 출발선 z · 줄 사이 · 문 폭 · 기둥 폭 · 문 높이 · 벽 높이 · 바닥 두께
@@ -4941,7 +4942,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         const doorEn = () => typeof currentLang !== 'undefined' && currentLang === 'en';
         const doorG = new THREE.Group(); scene.add(doorG);
         let doorRun = null;
-        const doorBtn = document.createElement('button'); doorBtn.className = 'nj3d-doorbtn'; doorBtn.hidden = true; doorBtn.textContent = doorEn() ? '🚪 Word Doors' : '🚪 말씀 문 달리기'; stageEl.appendChild(doorBtn);
+        const doorBtn = document.createElement('button'); doorBtn.className = 'nj3d-doorbtn'; doorBtn.hidden = true; doorBtn.textContent = doorEn() ? '🚪 Narrow Gate' : '🚪 좁은 문'; stageEl.appendChild(doorBtn);
         const doorHud = document.createElement('div'); doorHud.className = 'nj3d-starhud nj3d-doorhud'; doorHud.hidden = true; stageEl.appendChild(doorHud);
         doorHud.innerHTML = '<div class="dh"></div><button class="nj3d-doorquit" aria-label="quit">✕</button>';
         doorHud.querySelector('.nj3d-doorquit').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); doorEnd(false); });
@@ -5000,8 +5001,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 const dec = []; for (const x of cand) { if (x && x !== w && !dec.includes(x)) dec.push(x); if (dec.length === 3) break; }
                 while (dec.length < 3) dec.push('…');
                 const words = [w, ...dec], order = [0, 1, 2, 3].sort(() => rnd() - 0.5), right = order.indexOf(0);
-                const doors = [], col = doorMat.doors[i % 4];
-                for (let k = 0; k <= 4; k++) { const p = new THREE.Mesh(doorGeo.post, doorMat.post); p.position.set(X - DR.LW / 2 + DR.PW / 2 + k * (DR.DW + DR.PW), FY + DR.WH / 2, z); doorG.add(p);
+                const doors = [], posts = [], col = doorMat.doors[i % 4];
+                for (let k = 0; k <= 4; k++) { const p = new THREE.Mesh(doorGeo.post, doorMat.post); p.position.set(X - DR.LW / 2 + DR.PW / 2 + k * (DR.DW + DR.PW), FY + DR.WH / 2, z); doorG.add(p); p.userData.bx = p.position.x; posts.push(p);
                     BOXES.push({ x0: p.position.x - DR.PW / 2 - 0.01, x1: p.position.x + DR.PW / 2 + 0.01, z0: z - 0.05, z1: z + 0.05, y0: FY - 0.1, y1: FY + DR.WH, door: true }); }
                 const lin = new THREE.Mesh(doorGeo.lintel, doorMat.post); lin.position.set(X, FY + DR.DH + (DR.WH - DR.DH) / 2, z); doorG.add(lin);
                 for (let k = 0; k < 4; k++) {
@@ -5010,9 +5011,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                     const d = new THREE.Mesh(doorGeo.door, col); d.position.set(DR.DW / 2, DR.DH / 2, 0); hinge.add(d);
                     const lb = new THREE.Mesh(doorGeo.label, doorLabel(words[order[k]])); lb.position.set(DR.DW / 2, DR.DH * 0.62, 0.022); hinge.add(lb);
                     const box = { x0, x1: x0 + DR.DW, z0: z - 0.03, z1: z + 0.03, y0: FY - 0.1, y1: FY + DR.DH, door: true }; BOXES.push(box);
-                    doors.push({ k, x: x0 + DR.DW / 2, hinge, mesh: d, col, box, right: k === right, open: 0, opening: false, flash: 0 });
+                    doors.push({ k, x: x0 + DR.DW / 2, x0, hinge, mesh: d, lb, col, box, right: k === right, open: 0, opening: false, flash: 0, sq: 0 });
                 }
-                rows.push({ z, w, doors, right });
+                rows.push({ z, w, doors, posts, right });
             }
             return { id, ws, rows, zEnd, FY };
         }
@@ -5071,10 +5072,23 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (!R.t0 && P.z < DR.Z0) { R.t0 = now; if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect(); }
             if (P.z > DR.Z0 + 3 || Math.abs(P.x - DR.AX) > DR.LW / 2 + 1.5) { doorEnd(false); return; }   // 경기장을 벗어남
             // 문 여닫이 — 열리는 문은 0.25초에 활짝(바깥으로 돌아간다), 틀린 문은 잠깐 붉게
-            R.rows.forEach(r => r.doors.forEach(d => {
-                if (d.opening && d.open < 1) { d.open = Math.min(1, d.open + dt * 4); d.hinge.rotation.y = d.open * 1.75; }
-                if (d.flash && now > d.flash) { d.flash = 0; d.mesh.material = d.col; }
-            }));
+            // 좁은 문·넓은 문 — 지금 줄에서 순례자가 마주한 문만. sq 1 = 좁아짐(정답) · −1 = 넓어짐(오답), 지나가거나 비켜서면 0으로
+            const cur0 = R.rows[R.next], near = cur0 && (() => { const dz = P.z - cur0.z; if (dz > 0.7 || dz < -0.35) return null; const d = cur0.doors.reduce((a, b) => Math.abs(b.x - P.x) < Math.abs(a.x - P.x) ? b : a); return Math.abs(d.x - P.x) < DR.DW / 2 + 0.02 ? d : null; })();
+            const passing = R.rows[R.next - 1], passD = passing && P.z > passing.z - 0.3 ? passing.doors[passing.right] : null;   // 막 지나는 중인 정답 문은 다 빠져나갈 때까지 좁게
+            R.rows.forEach(r => {
+                let moved = false;
+                r.doors.forEach(d => {
+                    if (d.opening && d.open < 1) { d.open = Math.min(1, d.open + dt * 4); d.hinge.rotation.y = d.open * 1.75; }
+                    if (d.flash && now > d.flash) { d.flash = 0; d.mesh.material = d.col; }
+                    const want = d === passD ? 1 : d === near ? (d.right ? 1 : (now < (R.cool || 0) ? 0 : -1)) : 0;
+                    if (Math.abs(want - d.sq) < 0.002 && !d.sq) return;
+                    d.sq += (want - d.sq) * Math.min(1, dt * (want ? 9 : 5)); if (Math.abs(d.sq) < 0.002 && !want) d.sq = 0;
+                    const sc = d.sq > 0 ? 1 - 0.38 * d.sq : 1 - 0.3 * d.sq;   // 좁게 62% · 넓게 130%
+                    d.edge = DR.DW * (1 - sc) / 2; d.hinge.scale.x = sc; d.hinge.position.x = d.x0 + d.edge; d.lb.scale.x = 1 / sc;   // 가운데를 축으로 — 이름표 글자는 찌그러지지 않게
+                    moved = true;
+                });
+                if (moved) r.posts.forEach((p, k) => { const L = r.doors[k - 1], Rt = r.doors[k]; p.position.x = p.userData.bx + (Rt ? (Rt.edge || 0) : 0) - (L ? (L.edge || 0) : 0); });
+            });
             const row = R.rows[R.next];
             if (row) {
                 const dz = P.z - row.z;
@@ -5127,7 +5141,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             bbox: () => [...decoG.children].map(o => { const B = new THREE.Box3(), tb = new THREE.Box3(); o.updateMatrixWorld(true); o.traverse(m => { if (!m.isMesh || m === o.userData.pick) return; if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); tb.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); B.union(tb); }); return { k: o.userData.item.k, min: [B.min.x, B.min.y, B.min.z].map(v => +v.toFixed(2)), max: [B.max.x, B.max.y, B.max.z].map(v => +v.toFixed(2)) }; }),
             rebuild: () => itemBoxes(), items: () => [...giftsG.children, ...decoG.children].map(o => { let n = 0, vis = 0; o.traverse(m => { if (m.isMesh) { n++; if (m.visible) vis++; } }); return { k: o.userData.item && o.userData.item.k, vis: o.visible, meshes: n, visMeshes: vis, pos: [o.position.x, o.position.y, o.position.z].map(v => +v.toFixed(2)) }; }), ground: (x, z, y) => groundAt(x, z, y), blocked: (x, z, y) => blocked(x, z, y),
             pm: (clip, over) => { pm.force = clip ? { clip, over } : null; return { loaded: !!pm.mixer, cur: pm.cur, clips: Object.keys(pm.acts) }; }, lookApply: () => pmLook(), camSet: (yaw, pitch, dist) => { camYaw = yaw; camPitch = pitch; if (dist) camDist = dist; }, st: o => { if (o.glide != null) { equipWing(); gliding = o.glide; } if (o.jet) { jetTrialEnd = Date.now() + 60000; syncJetUI(); jetToggle(true); } if (o.ride) { mountUp(); } if (o.keys) Object.assign(inp.keys, o.keys); if (o.jetOff) jetToggle(false); if (o.sea) { placeAt('sea'); for (let i = 0; i < 120 && seaE(P.x, P.z) > 0.6; i++) P.z += 0.25; P.y = o.sea === 'top' ? SEA_Y : SEA_Y - 0.4; P.vy = 0; } return { gliding, jetOn, ride: ride.on, wingKind }; },
-            doorStart: id => doorStart(id || doorPick()), door: () => doorRun && { id: doorRun.id, next: doorRun.next, n: doorRun.ws.length, miss: doorRun.miss, t0: !!doorRun.t0, rows: doorRun.rows.map(r => ({ z: r.z, right: r.right, x: r.doors[r.right].x, w: r.w })) }, doorWin: () => doorWin.hidden ? null : doorWin.innerText,
+            doorStart: id => doorStart(id || doorPick()), door: () => doorRun && { id: doorRun.id, next: doorRun.next, n: doorRun.ws.length, miss: doorRun.miss, t0: !!doorRun.t0, rows: doorRun.rows.map(r => ({ z: r.z, right: r.right, x: r.doors[r.right].x, w: r.w, sq: r.doors.map(d => +d.sq.toFixed(2)) })) }, doorWin: () => doorWin.hidden ? null : doorWin.innerText,
             setP: (x, y, z, face) => { P.x = x; P.y = y; P.z = z; P.vy = 0; if (face != null) { P.face = face; camYaw = face; } }, P: () => ({ x: P.x, y: P.y, z: P.z, f: P.face }),
             stars: () => stars.map(s => ({ id: s.id, x: s.x, y: s.g.position.y, z: s.z, done: s.done, vis: s.g.visible })),
             fragScreen: () => starRun ? starRun.frags.filter(f => !f.got).map(f => { const v = f.sp.position.clone().project(camera); return { i: f.i, sx: +((v.x + 1) / 2).toFixed(2), sy: +((1 - v.y) / 2).toFixed(2), z: +v.z.toFixed(3), sc: [+f.sp.scale.x.toFixed(2), +f.sp.scale.y.toFixed(2)], vis: f.sp.visible, inScene: !!f.sp.parent, dist: +f.sp.position.distanceTo(camera.position).toFixed(2) }; }) : null, cam: () => ({ p: camera.position.toArray().map(v => +v.toFixed(2)), near: camera.near, far: camera.far }), three: () => ({ scene, renderer, camera, controls }), jetTrial: ms => { if (jetTrialEnd) jetTrialEnd = Date.now() + ms; return { end: jetTrialEnd, land: jetTrialLand, on: jetOn }; }, dyn: () => ({ dynScale: +dynScale.toFixed(2), pr: +renderer.getPixelRatio().toFixed(2), ema: +dynEma.toFixed(3) }), tall: () => BOXES.filter(b => !b.item && b.y1 > 3.5).map(b => ({ x0: b.x0, x1: b.x1, z0: b.z0, z1: b.z1, y0: b.y0, y1: b.y1 })),
