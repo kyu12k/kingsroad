@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <!-- ★ 반드시 첫 스크립트: 전역 Date를 서버 시각으로 보정한다 (clock.js 주석 참조) -->
-    <script src="clock.js?v=20261023b"></script>
+    <script src="clock.js?v=20261023c"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>King's Road - 요한계시록 암송</title>
 
@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
     <!-- image_0.webp is inlined below; preload removed -->
-    <link rel="stylesheet" href="style.css?v=20261023b">
+    <link rel="stylesheet" href="style.css?v=20261023c">
 
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-TEVW49QB45"></script>
@@ -457,7 +457,7 @@
             style="display:none; position:fixed; top:72px; right:20px; z-index:3001; background:rgba(44,62,80,0.98); border-radius:18px; box-shadow:0 8px 32px rgba(44,62,80,0.18); padding:18px 14px; min-width:180px; border:1.5px solid #f1c40f; flex-direction:column; gap:8px;">
             <button id="lang-toggle-btn" class="menu-action-btn" onclick="toggleLang(); document.getElementById('menu-panel').style.display='none';">🌐 English</button>
             <button id="kings-step-btn" class="menu-action-btn" style="display:none;" onclick="cycleKingsStep(); document.getElementById('menu-panel').style.display='none';">👑 왕의 길 -단계</button>
-            <button class="menu-action-btn" data-i18n="menu_guide" onclick="openGuideModal(); closeMenu();">📖 게임 가이드</button>
+            <button class="menu-action-btn" data-i18n="menu_guide" onclick="openGuideModal(); document.getElementById('menu-panel').style.display='none';">📖 게임 가이드</button>
             <button class="menu-action-btn" data-i18n="menu_thanks" onclick="openThanksModal()">👥 감사한 분들</button>
             <button id="add-to-home-btn" class="menu-action-btn" data-i18n="menu_home_add" style="display: none;">📱 홈 화면에 추가</button> <button
                 class="menu-action-btn" data-i18n="menu_survey" onclick="window.open('https://naver.me/xVRetic8', '_blank')">📝 설문조사</button>
@@ -4526,7 +4526,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous"></script>
     <script src="bible_en.js"></script>
-    <script src="game.js?v=20261023b"></script>
+    <script src="game.js?v=20261023c"></script>
     <script>
 
         /* =========================================
