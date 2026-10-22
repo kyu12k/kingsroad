@@ -10652,7 +10652,7 @@ async function _njVisitClaim(showBook) {
         window._njvMine = r;
         if (r.gems > 0 && !_njVisit) {
             myGems = (myGems || 0) + r.gems; updateGemDisplay(); saveGameData(); syncToFirestore();
-            setTimeout(() => { if (typeof showMissionToast === 'function') showMissionToast(`🕊️ 오늘 ${r.guest.length}명이 다녀갔어요`, `💎 +${r.gems.toLocaleString()}`); }, 1200);
+            setTimeout(() => { if (typeof showMissionToast === 'function') showMissionToast(r.guest.length ? `🕊️ 오늘 ${r.guest.length}명이 다녀갔어요` : '🕊️ 다녀간 손님이 남긴 보석', `💎 +${r.gems.toLocaleString()}`)   /* 오늘(6시 뒤) 손님이 없는데 어제 쌓인 보석만 받으면 「오늘 0명」으로 떴다(10/23 사용자) */; }, 1200);
         }
         if (showBook) _njGuestbook(myNickname, r.guest, r.week);
     } catch (e) { console.warn('[visit] claim', e.code || e); }
