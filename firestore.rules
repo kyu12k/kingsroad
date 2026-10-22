@@ -105,7 +105,7 @@ service cloud.firestore {
     // 캐시 데이터: 모두 읽기 가능, 로그인한 유저만 쓰기
     match /system_cache/{docId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if false;   // 10/22 보안 점검 — 앱·서버·스크립트 어디서도 안 쓴다(누구나 문서를 쌓을 수 있었다)
     }
 
     // 랭킹 스냅샷: 읽기만 가능 (Cloud Functions에서만 쓰기)
