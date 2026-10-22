@@ -36292,8 +36292,8 @@ async function _blockUser(tag) {
     showGemToast(0, '차단되었습니다.', true);
 }
 // =====================================================================
-/* 🖥️ 휴대폰인데 브라우저의 「데스크톱 사이트(PC 버전 보기)」가 켜져 있으면 — 화면이 980px로 잡혀 모든 게 반쯤 작아진다(10/22 제보).
-   앱이 고칠 수는 없어 끄는 방법만 하루 한 번 알린다. 화면 폭(screen.width)은 이 모드에서도 실제 휴대폰 폭이다 */
+/* 🖥️ 휴대폰인데 화면이 실제 폭보다 훨씬 넓게 잡히면(크롬 접근성 「페이지 확대/축소」를 낮춤 · 데스크톱 사이트) 모든 게 반쯤 작아진다(10/22 제보 —
+   사용자가 직접 데스크톱 사이트로 해 보니 그만큼 작아지진 않았다, 확대/축소가 더 유력). 앱이 고칠 수는 없어 되돌리는 방법만 하루 한 번 알린다. 화면 폭(screen.width)은 이 모드에서도 실제 휴대폰 폭이다 */
 function _desktopModeCheck() {
     try {
         const sw = Math.min(screen.width || 0, screen.height || 0), iw = window.innerWidth || 0;
@@ -36301,16 +36301,28 @@ function _desktopModeCheck() {
         if (!touch || !sw || sw >= 600 || iw < sw * 1.6) return;
         const today = typeof _get6AMDayStr === 'function' ? _get6AMDayStr() : '';
         try { if (localStorage.getItem('kr_deskNote') === today) return; localStorage.setItem('kr_deskNote', today); } catch (e) { }
+        // 🔬 원인을 아직 모른다(제보자: 크롬, 데스크톱 사이트 아님, 최근부터) — 그 순간의 숫자와 화면 밖으로 넘친 요소를 서버에 한 줄
+        try {
+            const W = document.documentElement.clientWidth, ov = [];
+            document.querySelectorAll('body *').forEach(e => { if (ov.length >= 4) return; const r = e.getBoundingClientRect(); if (r.width && (r.right > W + 2 || r.left < -2)) ov.push((e.id ? '#' + e.id : e.tagName + '.' + String(e.className).split(' ')[0]) + ':' + Math.round(r.left) + '~' + Math.round(r.right)); });
+            const cv = (navigator.userAgent.match(/Chrome\/(\d+)/) || [])[1] || '?';
+            const pwa = window.matchMedia && matchMedia('(display-mode: standalone)').matches ? 'pwa' : 'tab';
+            const msg = `zoomedOut iw=${iw} sw=${sw} dpr=${(window.devicePixelRatio || 0).toFixed(2)} vv=${window.visualViewport ? visualViewport.scale.toFixed(2) : '?'} scrollW=${document.documentElement.scrollWidth} ${pwa} chrome=${cv} desk=${/Android|Mobile/.test(navigator.userAgent) ? 0 : 1} ov=${ov.join(',') || '-'}`;
+            if (typeof firebase !== 'undefined' && firebase.apps.length && firebase.auth().currentUser) {
+                const sv = document.querySelector('script[src*="game.js?v="]');
+                firebase.app().functions('asia-northeast3').httpsCallable('reportClientError')({ msg: msg.slice(0, 200), src: 'zoom', line: 0, tag: typeof myTag !== 'undefined' ? myTag : '', ver: sv ? sv.getAttribute('src').split('v=')[1] : '' }).catch(() => { });
+            }
+        } catch (e) { }
         const k = iw / sw, en = typeof currentLang !== 'undefined' && currentLang === 'en';
         const box = document.createElement('div');
         box.id = 'desk-mode-note';
         box.style.cssText = `position:fixed; left:50%; bottom:${Math.round(24 * k)}px; transform:translateX(-50%); width:${Math.round(sw * 0.9 * k)}px; z-index:100000; background:#1f2a44; color:#fff; border:${Math.round(2 * k)}px solid #f1c40f; border-radius:${Math.round(14 * k)}px; padding:${Math.round(14 * k)}px ${Math.round(16 * k)}px; font-size:${Math.round(15 * k)}px; line-height:1.5; box-shadow:0 ${Math.round(6 * k)}px ${Math.round(20 * k)}px rgba(0,0,0,0.5); text-align:left;`;
         box.innerHTML = (en
-            ? `<b>🔍 Everything looks small?</b><br>Your browser is showing the <b>desktop site</b>. Turn it off:<br>· Chrome: ⋮ menu → uncheck <b>Desktop site</b><br>· Samsung Internet: ≡ menu → <b>Mobile view</b>`
-            : `<b>🔍 글씨와 버튼이 작게 보이나요?</b><br>브라우저의 <b>「데스크톱 사이트(PC 버전)」</b>가 켜져 있어요. 끄면 제 크기로 보여요.<br>· 크롬: 오른쪽 위 ⋮ → <b>데스크톱 사이트</b> 체크 해제<br>· 삼성 인터넷: 아래 ≡ → <b>모바일 버전 보기</b>`)
+            ? `<b>🔍 Everything looks small?</b><br>Your browser is zoomed out. Check:<br>· Chrome: ⋮ → Settings → Accessibility → <b>Page zoom</b> to 100%<br>· Chrome: ⋮ → uncheck <b>Desktop site</b><br>· Samsung Internet: ≡ → Settings → reset <b>text size / zoom</b>`
+            : `<b>🔍 글씨와 버튼이 작게 보이나요?</b><br>브라우저 화면이 축소되어 있어요. 아래를 확인해 보세요.<br>· 크롬: ⋮ → 설정 → 접근성 → <b>페이지 확대/축소</b>를 100%로<br>· 크롬: ⋮ → <b>데스크톱 사이트</b>가 체크돼 있으면 해제<br>· 삼성 인터넷: ≡ → 설정에서 <b>글자 크기·확대</b>를 기본으로`)
             + `<button style="display:block; margin:${Math.round(10 * k)}px 0 0 auto; padding:${Math.round(6 * k)}px ${Math.round(16 * k)}px; font-size:${Math.round(14 * k)}px; border:none; border-radius:${Math.round(10 * k)}px; background:#f1c40f; color:#3d2f00; font-weight:700;">${en ? 'OK' : '알겠어요'}</button>`;
         box.querySelector('button').onclick = () => box.remove();
         document.body.appendChild(box);
     } catch (e) { }
 }
-window.addEventListener('load', () => setTimeout(_desktopModeCheck, 2500));
+window.addEventListener('load', () => setTimeout(_desktopModeCheck, 6000));   // 로그인이 끝난 뒤(서버 기록)
