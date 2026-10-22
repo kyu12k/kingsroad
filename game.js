@@ -36292,37 +36292,64 @@ async function _blockUser(tag) {
     showGemToast(0, '차단되었습니다.', true);
 }
 // =====================================================================
-/* 🖥️ 휴대폰인데 화면이 실제 폭보다 훨씬 넓게 잡히면(크롬 접근성 「페이지 확대/축소」를 낮춤 · 데스크톱 사이트) 모든 게 반쯤 작아진다(10/22 제보 —
-   사용자가 직접 데스크톱 사이트로 해 보니 그만큼 작아지진 않았다, 확대/축소가 더 유력). 앱이 고칠 수는 없어 되돌리는 방법만 하루 한 번 알린다. 화면 폭(screen.width)은 이 모드에서도 실제 휴대폰 폭이다 */
-function _desktopModeCheck() {
+/* 🔍 브라우저 확대/축소가 크게 어긋나 있으면 되돌리는 방법을 알린다(10/22 제보: 크롬 확대/축소가 50%라 모든 게 반쯤 작았다 — 본인은 바꾼 기억이 없었다).
+   앱이 다시 키워 맞추면 키보드·3D·누르는 좌표가 어긋날 수 있어 안내만. 배율 = 실제 화면 폭(screen) ÷ 레이아웃 폭(clientWidth — 손가락 확대엔 안 변한다).
+   62% 이하(줄어 있음)·150% 이상(커져 있음 — 버튼이 밀린다)일 때 하루 한 번, 「이대로 쓸게요」면 그 방향은 다시 안 띄운다.
+   기기·브라우저·설치 앱마다 되돌리는 길이 달라 그에 맞는 한 줄만 보여 준다(설치 앱엔 ⋮·「가가」 메뉴가 없다) */
+function _zoomCheck() {
     try {
-        const sw = Math.min(screen.width || 0, screen.height || 0), iw = window.innerWidth || 0;
+        const ua = navigator.userAgent || '', ios = /iPhone|iPod/.test(ua);
+        const land = window.matchMedia && matchMedia('(orientation: landscape)').matches;   // 화면 비율로 — 확대/축소에 안 변한다
+        const sw = ios ? (land ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height)) : (screen.width || 0);   // 아이폰 screen은 늘 세로 기준
+        const iw = document.documentElement.clientWidth || window.innerWidth || 0;
         const touch = (navigator.maxTouchPoints || 0) > 0 || 'ontouchstart' in window;
-        if (!touch || !sw || sw >= 600 || iw < sw * 1.6) return;
+        if (!touch || !sw || !iw || Math.min(screen.width || 0, screen.height || 0) >= 600) return;   // 휴대폰만
+        const pct = Math.round(sw / iw * 100), dir = pct <= 62 ? 'out' : pct >= 150 ? 'in' : '';
+        if (!dir) return;
+        try { if (localStorage.getItem('kr_zoomKeep_' + dir) === '1') return; } catch (e) { }
         const today = typeof _get6AMDayStr === 'function' ? _get6AMDayStr() : '';
         try { if (localStorage.getItem('kr_deskNote') === today) return; localStorage.setItem('kr_deskNote', today); } catch (e) { }
-        // 🔬 원인을 아직 모른다(제보자: 크롬, 데스크톱 사이트 아님, 최근부터) — 그 순간의 숫자와 화면 밖으로 넘친 요소를 서버에 한 줄
+        const pwa = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+        let br = ios ? (/CriOS/.test(ua) ? 'ioschrome' : 'safari') : /SamsungBrowser/.test(ua) ? 'samsung' : /Android|Mobile/.test(ua) ? 'chrome' : 'desk';   // desk = 데스크톱 사이트(UA에 Android가 없다)
+        if (br === 'desk' && dir === 'in') br = 'chrome';   // 데스크톱 사이트는 줄이기만 한다
+        // 🔬 그 순간의 숫자와 화면 밖으로 넘친 요소를 서버에 한 줄(아침 보고 jsError @ zoom)
         try {
             const W = document.documentElement.clientWidth, ov = [];
             document.querySelectorAll('body *').forEach(e => { if (ov.length >= 4) return; const r = e.getBoundingClientRect(); if (r.width && (r.right > W + 2 || r.left < -2)) ov.push((e.id ? '#' + e.id : e.tagName + '.' + String(e.className).split(' ')[0]) + ':' + Math.round(r.left) + '~' + Math.round(r.right)); });
-            const cv = (navigator.userAgent.match(/Chrome\/(\d+)/) || [])[1] || '?';
-            const pwa = window.matchMedia && matchMedia('(display-mode: standalone)').matches ? 'pwa' : 'tab';
-            const msg = `zoomedOut iw=${iw} sw=${sw} dpr=${(window.devicePixelRatio || 0).toFixed(2)} vv=${window.visualViewport ? visualViewport.scale.toFixed(2) : '?'} scrollW=${document.documentElement.scrollWidth} ${pwa} chrome=${cv} desk=${/Android|Mobile/.test(navigator.userAgent) ? 0 : 1} ov=${ov.join(',') || '-'}`;
+            const cv = (ua.match(/(?:Chrome|CriOS|Version)\/(\d+)/) || [])[1] || '?';
+            const msg = `zoom ${dir} ${pct}% iw=${iw} sw=${sw} dpr=${(window.devicePixelRatio || 0).toFixed(2)} ${pwa ? 'pwa' : 'tab'} ${br}${cv} ov=${ov.join(',') || '-'}`;
             if (typeof firebase !== 'undefined' && firebase.apps.length && firebase.auth().currentUser) {
                 const sv = document.querySelector('script[src*="game.js?v="]');
                 firebase.app().functions('asia-northeast3').httpsCallable('reportClientError')({ msg: msg.slice(0, 200), src: 'zoom', line: 0, tag: typeof myTag !== 'undefined' ? myTag : '', ver: sv ? sv.getAttribute('src').split('v=')[1] : '' }).catch(() => { });
             }
         } catch (e) { }
-        const k = iw / sw, en = typeof currentLang !== 'undefined' && currentLang === 'en';
+        const en = typeof currentLang !== 'undefined' && currentLang === 'en';
+        const how = en ? {
+            chrome: pwa ? 'Open the <b>Chrome app</b> → ⋮ → Settings → Accessibility → set <b>Page zoom</b> to 100% (and remove this site from the list below it)' : '⋮ menu → <b>Zoom</b> → <b>Reset</b>. If it stays, ⋮ → Settings → Accessibility → <b>Page zoom</b> 100%',
+            desk: '⋮ menu → uncheck <b>Desktop site</b>, then ⋮ → <b>Zoom</b> → Reset',
+            samsung: '≡ menu → Settings → Accessibility → reset <b>text size / zoom</b>',
+            safari: pwa ? '<b>Settings</b> app → (Apps →) Safari → <b>Page Zoom</b> → 100%' : 'Tap <b>aA</b> on the left of the address bar → tap the % to reset to 100%',
+            ioschrome: '⋯ menu → <b>Zoom</b> → reset to 100%',
+        } : {
+            chrome: pwa ? '<b>크롬 앱</b>을 따로 열어 ⋮ → 설정 → 접근성 → <b>페이지 확대/축소</b>를 100%로 (아래 사이트 목록에 이 앱이 있으면 지우기)' : '오른쪽 위 ⋮ → <b>확대/축소</b> → <b>초기화</b>. 그래도 그대로면 ⋮ → 설정 → 접근성 → <b>페이지 확대/축소</b> 100%',
+            desk: '오른쪽 위 ⋮ → <b>데스크톱 사이트</b> 체크 해제, 그다음 ⋮ → <b>확대/축소</b> → 초기화',
+            samsung: '≡ 메뉴 → 설정 → 접근성 → <b>텍스트 크기·확대/축소</b>를 기본으로',
+            safari: pwa ? '<b>설정</b> 앱 → (앱 →) Safari → <b>페이지 확대/축소</b> → 100%' : '주소창 왼쪽 <b>「가가」</b> 버튼 → 가운데 <b>%</b>를 눌러 100%로',
+            ioschrome: '⋯ 메뉴 → <b>확대/축소</b> → 100%로',
+        };
+        const head = en
+            ? (dir === 'out' ? `<b>🔍 The screen is zoomed out to about ${pct}%</b><br>Set it back to 100% to see everything at normal size.` : `<b>🔍 The screen is zoomed in to about ${pct}%</b><br>Buttons may be pushed off the screen. 100% shows the app as designed.`)
+            : (dir === 'out' ? `<b>🔍 화면이 약 ${pct}%로 줄어 있어요</b><br>100%로 맞추면 글씨와 버튼이 제 크기로 보여요.` : `<b>🔍 화면이 약 ${pct}%로 커져 있어요</b><br>버튼이 화면 밖으로 밀릴 수 있어요. 100%로 맞추면 제 모양으로 보여요.`);
+        const k = iw / sw, px = n => Math.round(n * k) + 'px';   // 줄었든 커졌든 실제 화면에선 보통 크기로 보이게
         const box = document.createElement('div');
         box.id = 'desk-mode-note';
-        box.style.cssText = `position:fixed; left:50%; bottom:${Math.round(24 * k)}px; transform:translateX(-50%); width:${Math.round(sw * 0.9 * k)}px; z-index:100000; background:#1f2a44; color:#fff; border:${Math.round(2 * k)}px solid #f1c40f; border-radius:${Math.round(14 * k)}px; padding:${Math.round(14 * k)}px ${Math.round(16 * k)}px; font-size:${Math.round(15 * k)}px; line-height:1.5; box-shadow:0 ${Math.round(6 * k)}px ${Math.round(20 * k)}px rgba(0,0,0,0.5); text-align:left;`;
-        box.innerHTML = (en
-            ? `<b>🔍 Everything looks small?</b><br>Your browser is zoomed out. Check:<br>· Chrome: ⋮ → Settings → Accessibility → <b>Page zoom</b> to 100%<br>· Chrome: ⋮ → uncheck <b>Desktop site</b><br>· Samsung Internet: ≡ → Settings → reset <b>text size / zoom</b>`
-            : `<b>🔍 글씨와 버튼이 작게 보이나요?</b><br>브라우저 화면이 축소되어 있어요. 아래를 확인해 보세요.<br>· 크롬: ⋮ → 설정 → 접근성 → <b>페이지 확대/축소</b>를 100%로<br>· 크롬: ⋮ → <b>데스크톱 사이트</b>가 체크돼 있으면 해제<br>· 삼성 인터넷: ≡ → 설정에서 <b>글자 크기·확대</b>를 기본으로`)
-            + `<button style="display:block; margin:${Math.round(10 * k)}px 0 0 auto; padding:${Math.round(6 * k)}px ${Math.round(16 * k)}px; font-size:${Math.round(14 * k)}px; border:none; border-radius:${Math.round(10 * k)}px; background:#f1c40f; color:#3d2f00; font-weight:700;">${en ? 'OK' : '알겠어요'}</button>`;
-        box.querySelector('button').onclick = () => box.remove();
+        box.style.cssText = `position:fixed; left:50%; bottom:${px(24)}; transform:translateX(-50%); width:${Math.round(iw * 0.9)}px; box-sizing:border-box; z-index:100000; background:#1f2a44; color:#fff; border:${px(2)} solid #f1c40f; border-radius:${px(14)}; padding:${px(14)} ${px(16)}; font-size:${px(15)}; line-height:1.5; box-shadow:0 ${px(6)} ${px(20)} rgba(0,0,0,0.5); text-align:left;`;
+        const bs = `padding:${px(7)} ${px(14)}; font-size:${px(14)}; border:none; border-radius:${px(10)}; font-weight:700;`;
+        box.innerHTML = `${head}<div style="margin-top:${px(8)}">${how[br]}</div>`
+            + `<div style="display:flex; justify-content:flex-end; gap:${px(8)}; margin-top:${px(12)}"><button data-k="keep" style="${bs} background:transparent; color:#cbd5e1; border:1px solid #64748b;">${en ? 'Keep it this way' : '이대로 쓸게요'}</button><button data-k="ok" style="${bs} background:#f1c40f; color:#3d2f00;">${en ? 'OK' : '알겠어요'}</button></div>`;
+        box.querySelector('[data-k="ok"]').onclick = () => box.remove();
+        box.querySelector('[data-k="keep"]').onclick = () => { try { localStorage.setItem('kr_zoomKeep_' + dir, '1'); } catch (e) { } box.remove(); };
         document.body.appendChild(box);
     } catch (e) { }
 }
-window.addEventListener('load', () => setTimeout(_desktopModeCheck, 6000));   // 로그인이 끝난 뒤(서버 기록)
+window.addEventListener('load', () => setTimeout(_zoomCheck, 6000));   // 로그인이 끝난 뒤(서버 기록)
