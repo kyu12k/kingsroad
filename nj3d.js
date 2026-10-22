@@ -4380,7 +4380,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         });
         function speedFx(dt) {   // 시야·바람 선 — 미끄럼이 끝나면 천천히 돌아온다. 물보라는 끝난 뒤에도 떨어질 때까지
             miniT -= dt; if (miniT <= 0) { miniT = 0.1; miniDraw(); }   // 🗺️ 미니맵 — 초당 10번
-            const want = slide ? 16 * slideK : Math.max(jetRush * 9, glideK * 6);   // 🚀 제트팩으로 빠르게 날면 · 🪂 활강하면 시야가 조금 넓어진다(10/15 사용자: 속도감이 없다 · 활강이 심심하다)
+            const want = ov.classList.contains('nj3d-doorrun') ? 14 : slide ? 16 * slideK : Math.max(jetRush * 9, glideK * 6);   // 🚪 좁은 문 — 세로 폰에서도 한 줄의 문 넷이 들어오게 넓게   // 🚀 제트팩으로 빠르게 날면 · 🪂 활강하면 시야가 조금 넓어진다(10/15 사용자: 속도감이 없다 · 활강이 심심하다)
             fovBoost += (want - fovBoost) * (1 - Math.exp(-dt * 3));
             const fov = 62 + fovBoost; if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
             speedEl.style.opacity = reduce ? '0' : slide ? (0.45 * Math.max(0, slideK - 0.15)).toFixed(3) : jetRush > 0.6 ? (0.4 * (jetRush - 0.6) / 0.4).toFixed(3) : glideK > 0.3 ? (0.22 * glideK).toFixed(3) : '0';
@@ -4937,7 +4937,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         //    정답 문은 다가가면 문틀이 좁아져 꼭 맞게 지나가고(지나면 돌아온다), 오답 문은 넓게 벌어졌다가 튕겨 낸다(넓은 문 · 사용자 10/22).
         //    1단계: 혼자 달리기 · 관리자(#8648)만(kr_doorTest = '1'이면 시험용으로도). 다음: 친구 기록 유령 → 같은 성 실시간 ══
         const DOOR_ON = !VISIT && ((typeof myTag !== 'undefined' && String(myTag) === '8648') || (() => { try { return localStorage.getItem('kr_doorTest') === '1'; } catch (e) { return false; } })());
-        const DR = { AX: 10, Z0: -52, ROW: 1.25, DW: 0.36, PW: 0.06, DH: 0.5, WH: 0.62, FL: 0.1 };   // 가운데 x · 출발선 z · 줄 사이 · 문 폭 · 기둥 폭 · 문 높이 · 벽 높이 · 바닥 두께
+        const DR = { AX: 10, Z0: -52, ROW: 2.2, DW: 0.42, PW: 0.2, DH: 0.5, WH: 0.62, FL: 0.1 };   // 10/22 사용자: 문 사이·줄 사이·경기장을 넓게(기둥 0.06 → 0.2 · 문 0.36 → 0.42 · 줄 1.25 → 2.2)   // 가운데 x · 출발선 z · 줄 사이 · 문 폭 · 기둥 폭 · 문 높이 · 벽 높이 · 바닥 두께
         DR.LW = DR.DW * 4 + DR.PW * 5;   // 길 폭
         const doorEn = () => typeof currentLang !== 'undefined' && currentLang === 'en';
         const doorG = new THREE.Group(); scene.add(doorG);
@@ -4987,9 +4987,13 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const zEnd = DR.Z0 - 1.6 - (n - 1) * DR.ROW - 1.8, zBack = DR.Z0 + 2.2, L = zBack - zEnd;
             const floor = new THREE.Mesh(new THREE.BoxGeometry(DR.LW + 0.5, DR.FL, L), doorMat.floor); floor.position.set(X, Y + DR.FL / 2, (zBack + zEnd) / 2); doorG.add(floor);
             BOXES.push({ x0: X - DR.LW / 2 - 0.25, x1: X + DR.LW / 2 + 0.25, z0: zEnd, z1: zBack, y0: Y - 1, y1: FY, door: true });
-            [-1, 1].forEach(sx => {   // 옆벽
-                const w = new THREE.Mesh(new THREE.BoxGeometry(0.08, DR.WH, L - 2.2), doorMat.wall); w.position.set(X + sx * (DR.LW / 2 + 0.04), FY + DR.WH / 2, (DR.Z0 + zEnd) / 2 - 0.0); doorG.add(w);
-                BOXES.push({ x0: X + sx * (DR.LW / 2 + 0.04) - 0.05, x1: X + sx * (DR.LW / 2 + 0.04) + 0.05, z0: zEnd, z1: DR.Z0, y0: FY - 0.1, y1: FY + DR.WH, door: true });
+            [-1, 1].forEach(sx => {   // 옆벽 — 출발 구역까지 통째로(10/22 사용자: 출발 구역 옆으로 경기장 밖에 나갈 수 있었다)
+                const w = new THREE.Mesh(new THREE.BoxGeometry(0.08, DR.WH, L), doorMat.wall); w.position.set(X + sx * (DR.LW / 2 + 0.04), FY + DR.WH / 2, (zBack + zEnd) / 2); doorG.add(w);
+                BOXES.push({ x0: X + sx * (DR.LW / 2 + 0.04) - 0.05, x1: X + sx * (DR.LW / 2 + 0.04) + 0.05, z0: zEnd - 0.05, z1: zBack + 0.05, y0: FY - 0.1, y1: FY + DR.WH, door: true });
+            });
+            [zBack, zEnd].forEach(z => {   // 뒤·앞 벽 — 끝나면 경기장 뒤(성 쪽)로 내보낸다(doorEnd)
+                const w = new THREE.Mesh(new THREE.BoxGeometry(DR.LW + 0.16, DR.WH, 0.08), doorMat.wall); w.position.set(X, FY + DR.WH / 2, z); doorG.add(w);
+                BOXES.push({ x0: X - DR.LW / 2 - 0.1, x1: X + DR.LW / 2 + 0.1, z0: z - 0.05, z1: z + 0.05, y0: FY - 0.1, y1: FY + DR.WH, door: true });
             });
             [DR.Z0, zEnd + 0.4].forEach(z => { const s = new THREE.Mesh(new THREE.BoxGeometry(DR.LW, 0.006, 0.06), doorMat.line); s.position.set(X, FY + 0.004, z); doorG.add(s); });   // 출발선 · 도착선
             const rows = [];
@@ -5030,7 +5034,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (ride.on) mountDown(); if (jetOn) jetToggle(false); gliding = false;
             const B = doorBuild(id);
             doorRun = { ...B, next: 0, t0: 0, miss: 0, hudT: 0, cam: doorCam || [camDist, camPitch] };
-            doorCam = doorRun.cam; camDist = 1.75; camPitch = 0.3;   // 📷 한 줄의 문 넷이 다 보이게 — 조금 뒤·위에서
+            doorCam = doorRun.cam; camDist = 2.3; camPitch = 0.38;   // 📷 한 줄의 문 넷이 다 보이게 — 조금 뒤·위에서
             P.x = DR.AX; P.z = DR.Z0 + 1.1; P.y = B.FY + 0.02; P.vy = 0; P.face = 0; camYaw = 0;
             ov.classList.add('nj3d-starrun', 'nj3d-doorrun'); doorBtn.hidden = true; doorWin.hidden = true;
             sprayBurst(P.x, P.y + 0.2, P.z, 14, 0);
@@ -5039,6 +5043,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         function doorEnd(ok) {
             const R = doorRun; if (!R) return; doorRun = null;
             if (doorCam) { [camDist, camPitch] = doorCam; doorCam = null; }
+            { const bz = DR.Z0 + 2.2 + 0.7; P.x = DR.AX; P.z = bz; P.y = terrain(DR.AX, bz) + 0.05; P.vy = 0; P.face = Math.PI; camYaw = Math.PI; }   // 경기장 뒤(성 쪽)로 — 사방이 막혀 있다
             ov.classList.remove('nj3d-starrun', 'nj3d-doorrun'); doorHud.hidden = true;
             if (!ok) { showHint(doorEn() ? 'Left the race' : '문 달리기를 그만뒀어요', 2000); return; }
             const ms = performance.now() - R.t0; let best = 0;
