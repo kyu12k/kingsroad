@@ -5003,6 +5003,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             piston: new THREE.MeshStandardMaterial({ color: 0xff7eb6, roughness: 0.5 }),
             sweep: new THREE.MeshStandardMaterial({ color: 0xff5a5a, roughness: 0.4, emissive: 0x551515 }),
             hub: new THREE.MeshStandardMaterial({ color: 0xffd34d, roughness: 0.4 }),
+            stone: new THREE.MeshStandardMaterial({ color: 0x9a8f86, roughness: 0.95 }),
             pit: new THREE.MeshStandardMaterial({ color: 0x3b2f4a, roughness: 1 }),
         };
         const padTex = (() => {   // 🟦 뒤로 미는 칸 — 바닥보다 살짝 푸르고 희미한 화살표(뒤쪽 = 입장문 쪽)
@@ -5064,47 +5065,69 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             //    같은 구절·같은 길이면 같은 배치(따로 씨앗 — 유령·실시간 공정) ──
             let so = 97; for (const ch of id + doorMode) so = (so * 31 + ch.charCodeAt(0)) % 2147483647;
             const ornd = () => (so = (so * 16807) % 2147483647) / 2147483647;
-            const obs = { pads: [], glass: [], pistons: [], sweeps: [] };
+            const obs = { pads: [], glass: [], pistons: [], sweeps: [], stones: [] };
             const OB = {
-                push(a, b) {   // 🟦 뒤로 미는 칸 — 바닥 곳곳에 흩어 둔 네모, 밟으면 뒤로 밀린다
+                push(a, b) {   // 🟦 뒤로 미는 칸 — 가로로 줄지은 두 줄을 붙인 띠. 미는 힘(2.0)이 달리기(1.75)보다 세서 걷거나 달려선 못 건너고, 한 번 내려앉자마자 다시 뛰어 건넌다(10/23 사용자: 수가 적어 점프하면 그만이었다)
                     floorPiece(a, b);
-                    const k = a - b > 2 ? 3 : 2;
-                    for (let j = 0; j < k; j++) {
-                        const z = b + 0.3 + ornd() * Math.max(0.01, a - b - 0.6), x = XL + 0.3 + ornd() * (DR.LW - 0.6);
-                        const m = add(new THREE.BoxGeometry(0.5, 0.012, 0.5), doorMat.pad, x, FY + 0.006, z);
-                        obs.pads.push({ x0: x - 0.25, x1: x + 0.25, z0: z - 0.25, z1: z + 0.25, m });
+                    const len = a - b, D = Math.min(1.5, len - 0.3), depth = D / 2 - 0.03, mid = (a + b) / 2, PWD = (DR.LW - 0.05 * 3) / 4;   // 두 줄을 붙여 깊이 1.5 띠 — 한 번 점프(최대 1.3)로는 못 넘어 한 번은 내려앉는다
+                    [mid + D / 4, mid - D / 4].forEach((z, r) => { for (let k = 0; k < 4; k++) {
+                        const x = XL + PWD / 2 + k * (PWD + 0.05) + (r ? (ornd() - 0.5) * 0.04 : 0);
+                        const m = add(new THREE.BoxGeometry(PWD, 0.012, depth), doorMat.pad, x, FY + 0.006, z);
+                        obs.pads.push({ x0: x - PWD / 2, x1: x + PWD / 2, z0: z - depth / 2, z1: z + depth / 2, m });
+                    } });
+                },
+                ditch(a, b) {   // 🪨 흔들리는 징검다리(10/23 사용자) — 구간 하나를 통째로 덮는 구덩이(약 3 — 한 번 점프로 최대 1.3이라 못 넘는다) 위 작은 돌.
+                    //    어떤 돌은 좌우로 미끄러지고, 올라선 지 0.6초 넘으면 가라앉는다(2초 뒤 다시). 한쪽 벽을 따라 🚶 안전한 우회로 — 칸막이로 나뉘고 안은 지그재그(떨어지진 않지만 두 배쯤 걷는다)
+                    const side = ornd() < 0.5 ? -1 : 1, CW = 0.78, DIV = 0.06;
+                    const cx0 = side < 0 ? XL : XR - CW, cx1 = cx0 + CW;                      // 우회로
+                    const dx0 = side < 0 ? cx1 : cx0 - DIV, dx1 = dx0 + DIV;                 // 칸막이
+                    const sx0 = side < 0 ? dx1 : XL, sx1 = side < 0 ? XR : dx0;              // 징검다리 띠
+                    floorPiece(a, b, cx0, cx1);
+                    add(new THREE.BoxGeometry(DIV, DR.WH + DR.FL, a - b), doorMat.wall, (dx0 + dx1) / 2, Y + (DR.WH + DR.FL) / 2, (a + b) / 2); box(dx0, dx1, b, a, Y - 1, FY + DR.WH);
+                    const nb = Math.max(3, Math.floor((a - b) / 0.5) - 1), gap = 0.32;   // 지그재그 칸막이 — 안쪽·바깥쪽을 번갈아 막는다
+                    for (let k = 1; k <= nb; k++) {
+                        const z = a - k * (a - b) / (nb + 1), open = (k % 2) ? 'in' : 'out';
+                        const wx0 = (open === 'in') === (side < 0) ? cx0 : cx0 + gap, wx1 = (open === 'in') === (side < 0) ? cx1 - gap : cx1;
+                        add(new THREE.BoxGeometry(wx1 - wx0, DR.WH, 0.06), doorMat.wall, (wx0 + wx1) / 2, FY + DR.WH / 2, z); box(wx0, wx1, z - 0.03, z + 0.03, FY - 0.1, FY + DR.WH);
+                    }
+                    { const sp = starWordSprite(doorEn() ? '🚶 Safe detour' : '🚶 돌아가는 길'); sp.scale.multiplyScalar(0.45); sp.position.set((cx0 + cx1) / 2, FY + DR.WH + 0.18, a - 0.05); doorG.add(sp); }
+                    // 돌 — 줄마다 1~2개, 앞줄 돌에서 옆으로 0.55 안(뛰어서 닿는다), 줄 사이 0.7~0.8
+                    const rows = Math.max(3, Math.round((a - b) / 0.75)), rz = (a - b) / (rows + 1), SW = sx1 - sx0;
+                    let px = sx0 + SW * (0.25 + ornd() * 0.5);
+                    for (let r = 1; r <= rows; r++) {
+                        const z = a - r * rz;
+                        px = Math.max(sx0 + 0.25, Math.min(sx1 - 0.25, px + (ornd() - 0.5) * 1.0));
+                        const xs = [px]; if (ornd() < 0.55) { const o = px + (px - sx0 > SW / 2 ? -1 : 1) * (0.55 + ornd() * 0.3); if (o > sx0 + 0.2 && o < sx1 - 0.2) xs.push(o); }
+                        xs.forEach((x, j) => {
+                            const mv = ornd() < 0.45, A = mv ? Math.min(0.45, SW / 2 - 0.25) : 0;
+                            const m = add(new THREE.CylinderGeometry(0.17, 0.2, 0.16, 9), doorMat.stone, x, FY - 0.08, z);
+                            const st = { x, z, x0: x, A, w: 0.9 + ornd() * 0.8, ph: ornd() * 6.28, m, bx: box(x - 0.17, x + 0.17, z - 0.17, z + 0.17, FY - 0.3, FY), on: 0, sink: 0, back: 0, sx0, sx1 };
+                            obs.stones.push(st);
+                        });
                     }
                 },
-                ditch(a, b) {   // 🕳️ 도랑 — 발판과 구덩이가 번갈아(점프를 연이어)
-                    let z = a, pit = true;
-                    while (z > b + 0.001) {
-                        if (pit) { if (z - 0.55 < b + 0.3) { floorPiece(z, b); break; } z -= 0.55; }
-                        else { const l = Math.min(0.38, z - b); floorPiece(z, z - l); z -= l; }
-                        pit = !pit;
-                    }
-                },
-                bridge(a, b) {   // 🔨 좁은 다리 — 아래는 구덩이, 좌우 벽에서 블록이 번갈아 튀어나와 민다
+                bridge(a, b) {   // 🔨 좁은 다리 — 아래는 구덩이, 좌우 벽에서 블록이 번갈아 튀어나와 민다. 0.6마다 한 쌍(10/23 사용자: 한 쌍뿐일 때는 너무 적었다)
                     floorPiece(a, b, X - 0.16, X + 0.16, doorMat.bridge);
-                    const k = Math.max(1, Math.floor((a - b) / 0.9));
+                    const k = Math.max(2, Math.floor((a - b) / 0.6));
                     for (let j = 0; j < k; j++) {
                         const zc = a - (j + 0.5) * (a - b) / k, ph = ornd();
                         [-1, 1].forEach(s => {
-                            const W = DR.LW / 2 + 0.2, m = add(new THREE.BoxGeometry(W, 0.3, 0.3), doorMat.piston, X + s * DR.LW / 2, FY + 0.1, zc);
+                            const W = DR.LW / 2 + 0.2, m = add(new THREE.BoxGeometry(W, 0.3, Math.min(0.3, (a - b) / k - 0.08)), doorMat.piston, X + s * DR.LW / 2, FY + 0.1, zc);
                             obs.pistons.push({ s, zc, W, m, ph: (ph + (s > 0 ? 0.5 : 0)) % 1, f: DR.LW / 2 });
                         });
                     }
                 },
-                glass(a, b) {   // 🪟 유리 미로 — 5칸씩, 구불구불한 진짜 길 하나만 단단하다. 가짜는 밟으면 깨진다(깨진 채로 남고, 밟아 본 진짜는 빛난다)
-                    const C = 5, cw = DR.LW / C, R = Math.max(2, Math.floor((a - b) / 0.48)), rh = (a - b) / R, real = new Set();
+                glass(a, b) {   // 🪟 유리 징검다리(10/23 사용자: 걷지 말고 점프로 — 이어진 길이면 빨리 뛰며 연타해 깨져도 지나갔다).
+                    //    4칸 × 줄, 칸끼리 0.35 넘게 떨어져 걸어서는 못 건넌다. 줄마다 진짜는 하나 — 앞줄 진짜의 바로 앞이나 대각선. 가짜는 닿는 순간 깨진다
+                    const C = 4, cw = DR.LW / C, R = Math.max(4, Math.round((a - b) / 0.7)), rh = (a - b) / R, T = 0.32;
                     let col = Math.floor(ornd() * C);
                     for (let r = 0; r < R; r++) {
-                        real.add(r + ':' + col);
-                        if (r < R - 1) { const to = Math.max(0, Math.min(C - 1, col + Math.round((ornd() - 0.5) * 4))); while (col !== to) { col += Math.sign(to - col); real.add(r + ':' + col); } }
-                    }
-                    for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
-                        const za = a - r * rh, zb = za - rh, x0 = XL + c * cw, ok = real.has(r + ':' + c);
-                        const m = add(new THREE.BoxGeometry(cw - 0.035, 0.03, rh - 0.035), doorMat.pane, x0 + cw / 2, FY - 0.015, (za + zb) / 2);
-                        obs.glass.push({ x0, x1: x0 + cw, z0: zb, z1: za, real: ok, m, bx: box(x0, x0 + cw, zb, za, FY - 0.05, FY), broken: false, lit: false, at: 0 });
+                        if (r) col = Math.max(0, Math.min(C - 1, col + Math.floor(ornd() * 3) - 1));
+                        for (let c = 0; c < C; c++) {
+                            const zc = a - (r + 0.5) * rh, xc = XL + (c + 0.5) * cw, ok = c === col;
+                            const m = add(new THREE.BoxGeometry(T, 0.03, T), doorMat.pane, xc, FY - 0.015, zc);
+                            obs.glass.push({ x0: xc - T / 2, x1: xc + T / 2, z0: zc - T / 2, z1: zc + T / 2, real: ok, m, bx: box(xc - T / 2, xc + T / 2, zc - T / 2, zc + T / 2, FY - 0.05, FY), broken: false, lit: false, at: 0 });
+                        }
                     }
                 },
                 sweep(a, b) {   // 🌀 회전 막대 — 바닥 높이에서 빙글. 점프로 넘거나 맞으면 밀려난다
@@ -5119,15 +5142,15 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                     });
                 },
             };
-            const POOL = ['push', 'ditch', 'bridge', 'glass', 'sweep'];
+            const POOL = ['push', 'ditch', 'bridge', 'glass', 'sweep'], SOLO = new Set(['ditch', 'glass']);
             floorPiece(zBack, zRow(0) - 0.5);   // 출발 구역 ~ 첫 문 뒤(장애물 없음)
             for (let i = 1; i < n; i++) {
                 const a = zRow(i - 1) - 0.5, b = zRow(i) + 0.7;
                 floorPiece(b, zRow(i) - 0.5);   // 문 앞뒤 안전지대
                 if (!hard || i < 3) { floorPiece(a, b); continue; }
-                const t1 = POOL[Math.floor(ornd() * POOL.length)], two = ornd() < 0.45;
+                const t1 = POOL[Math.floor(ornd() * POOL.length)], two = !SOLO.has(t1) && ornd() < 0.45;   // 유리·징검다리는 넓은 자리가 필요해 늘 혼자 한 구간
                 if (!two) { OB[t1](a, b); continue; }
-                let t2 = POOL[Math.floor(ornd() * POOL.length)]; if (t2 === t1) t2 = POOL[(POOL.indexOf(t1) + 1 + Math.floor(ornd() * 4)) % POOL.length];
+                const P2 = POOL.filter(x => !SOLO.has(x) && x !== t1), t2 = P2[Math.floor(ornd() * P2.length)];
                 const mid = (a + b) / 2; OB[t1](a, mid); OB[t2](mid, b);
             }
             floorPiece(zRow(n - 1) - 0.5, zEnd);   // 마지막 문 뒤 ~ 시상대
@@ -5263,6 +5286,11 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         function doorObsAnim(t) {
             const O = doorArena.obs;
             O.sweeps.forEach(q => { q.g.rotation.y = t * q.w; });
+            O.stones.forEach(q => {   // 🪨 미끄러지는 돌 — 상자도 함께 옮긴다(위에 선 사람은 doorObsHit에서 함께 옮김)
+                const nx = q.A ? q.x0 + q.A * Math.sin(t * q.w + q.ph) : q.x0; q.dx = nx - q.x; q.x = nx;
+                const top = doorArena.FY - q.sink * 0.7; q.m.position.set(q.x, top - 0.08, q.z);
+                q.bx.x0 = q.x - 0.17; q.bx.x1 = q.x + 0.17; q.bx.y1 = top;
+            });
             O.pistons.forEach(q => { q.f = pistonF(q, t); q.m.position.x = DR.AX + q.s * (q.f + q.W / 2); });   // 얼굴은 X + s·f, 몸통은 벽 쪽으로
         }
         function doorFall(R, why) {   // 🕳️ 떨어짐 — 직전 문 바로 앞(첫 구간이면 출발선 앞)으로. 이미 연 문은 열린 채
@@ -5277,17 +5305,23 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const R = doorRun, O = R.obs, FY = R.FY;
             if (P.y < FY - 0.28) { doorFall(R); return true; }
             const onFloor = P.onGround && Math.abs(P.y - FY) < 0.03;
-            if (onFloor) for (const q of O.pads) if (P.x > q.x0 && P.x < q.x1 && P.z > q.z0 && P.z < q.z1) { P.z += 1.25 * dt; break; }   // 🟦 뒤로
+            if (onFloor) for (const q of O.pads) if (P.x > q.x0 && P.x < q.x1 && P.z > q.z0 && P.z < q.z1) { P.z += 2.0 * dt; break; }   // 🟦 뒤로(달리기 1.75보다 세게)
             if (onFloor) for (const q of O.glass) {   // 🪟 가짜 유리는 밟고 0.12초 뒤 깨진다 · 진짜는 빛난다(깨진 칸·빛난 칸은 이 판 동안 그대로)
                 if (q.broken || !(P.x > q.x0 && P.x < q.x1 && P.z > q.z0 && P.z < q.z1)) continue;
                 if (q.real) { if (!q.lit) { q.lit = true; q.m.material = doorMat.paneLit; } }
-                else if (!q.at) q.at = now + 120;
+                else if (!q.at) q.at = now;   // 닿는 순간(10/23 — 0.12초 여유에 빨리 튀어 오르면 지나갔다)
                 break;
             }
             for (const q of O.glass) if (q.at && !q.broken && now > q.at) {
                 q.broken = true; q.m.visible = false; const bi = BOXES.indexOf(q.bx); if (bi >= 0) BOXES.splice(bi, 1);
                 sprayBurst((q.x0 + q.x1) / 2, FY, (q.z0 + q.z1) / 2, 16, 0);
                 if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
+            }
+            for (const q of O.stones) {   // 🪨 돌 — 위에 서 있으면 함께 미끄러지고, 0.6초 넘게 서 있으면 가라앉는다(2초 뒤 다시 떠오른다)
+                const onIt = P.onGround && P.x > q.bx.x0 && P.x < q.bx.x1 && P.z > q.z - 0.17 && P.z < q.z + 0.17 && Math.abs(P.y - q.bx.y1) < 0.04;
+                if (onIt) { P.x += q.dx || 0; q.on += dt; } else if (!q.sink) q.on = 0;
+                if (q.on > 0.6 && !q.sink) { q.sink = 0.001; q.back = now + 2600; }
+                if (q.sink) { if (now < q.back) q.sink = Math.min(1, q.sink + dt / 0.35); else { q.sink = Math.max(0, q.sink - dt / 0.5); if (!q.sink) q.on = 0; } }
             }
             for (const q of O.pistons) {   // 🔨 피스톤 — 몸이 얼굴 안쪽으로 들어오면 밀어낸다(다리 밖으로 떨어지게)
                 if (Math.abs(P.z - q.zc) > 0.15 + CR || P.y > FY + 0.32) continue;
@@ -5422,7 +5456,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             pm: (clip, over) => { pm.force = clip ? { clip, over } : null; return { loaded: !!pm.mixer, cur: pm.cur, clips: Object.keys(pm.acts) }; }, lookApply: () => pmLook(), camSet: (yaw, pitch, dist) => { camYaw = yaw; camPitch = pitch; if (dist) camDist = dist; }, st: o => { if (o.glide != null) { equipWing(); gliding = o.glide; } if (o.jet) { jetTrialEnd = Date.now() + 60000; syncJetUI(); jetToggle(true); } if (o.ride) { mountUp(); } if (o.keys) Object.assign(inp.keys, o.keys); if (o.jetOff) jetToggle(false); if (o.sea) { placeAt('sea'); for (let i = 0; i < 120 && seaE(P.x, P.z) > 0.6; i++) P.z += 0.25; P.y = o.sea === 'top' ? SEA_Y : SEA_Y - 0.4; P.vy = 0; } return { gliding, jetOn, ride: ride.on, wingKind }; },
             ride: () => ({ on: ride.on, k: ride.k }), jet: () => jetOn, glide: () => gliding, hint: () => hint.textContent, rideBtn: () => rideBtn.click(),
             gat: (x, z, y) => groundAt(x, z, y), blk: (x, z, y) => blocked(x, z, y), nbox: () => BOXES.filter(b => b.door).map(b => [+b.x0.toFixed(2), +b.x1.toFixed(2), +b.z0.toFixed(2), +b.z1.toFixed(2), +b.y1.toFixed(2)]).slice(0, 14),
-            doorObs: () => doorArena && { mode: doorArena.mode, FY: doorArena.FY, rows: doorArena.rows.map(r => +r.z.toFixed(2)), pads: doorArena.obs.pads.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2)]), glass: doorArena.obs.glass.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2), q.real ? 1 : 0, q.broken ? 'B' : q.lit ? 'L' : '']), pistons: doorArena.obs.pistons.map(q => [q.s, +q.zc.toFixed(2), +q.f.toFixed(2)]), sweeps: doorArena.obs.sweeps.map(q => [+q.x.toFixed(2), +q.z.toFixed(2), +q.R.toFixed(2)]) }, doorFall: () => doorRun && doorRun.fall,
+            doorObs: () => doorArena && { mode: doorArena.mode, FY: doorArena.FY, rows: doorArena.rows.map(r => +r.z.toFixed(2)), pads: doorArena.obs.pads.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2)]), glass: doorArena.obs.glass.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2), q.real ? 1 : 0, q.broken ? 'B' : q.lit ? 'L' : '']), pistons: doorArena.obs.pistons.map(q => [q.s, +q.zc.toFixed(2), +q.f.toFixed(2)]), sweeps: doorArena.obs.sweeps.map(q => [+q.x.toFixed(2), +q.z.toFixed(2), +q.R.toFixed(2)]), stones: doorArena.obs.stones.map(q => [+q.x.toFixed(2), +q.z.toFixed(2), q.A ? 1 : 0, +q.sink.toFixed(2), +q.sx0.toFixed(2), +q.sx1.toFixed(2)]) }, doorFall: () => doorRun && doorRun.fall,
             doorStart: id => doorToLobby(id || doorPick()), doorOut: () => doorOutside(), door: () => doorRun && { phase: doorRun.phase, id: doorRun.id, next: doorRun.next, n: doorRun.ws.length, miss: doorRun.miss, t0: !!doorRun.t0, rows: doorRun.rows.map(r => ({ z: r.z, right: r.right, x: r.doors[r.right].x, w: r.w, sq: r.doors.map(d => +d.sq.toFixed(2)) })) }, doorWin: () => doorWin.hidden ? null : doorWin.innerText,
             setP: (x, y, z, face) => { P.x = x; P.y = y; P.z = z; P.vy = 0; if (face != null) { P.face = face; camYaw = face; } }, P: () => ({ x: P.x, y: P.y, z: P.z, f: P.face }),
             stars: () => stars.map(s => ({ id: s.id, x: s.x, y: s.g.position.y, z: s.z, done: s.done, vis: s.g.visible })),
