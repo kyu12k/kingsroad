@@ -4577,7 +4577,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 else if (!P.onGround) clip = 'Jump_Idle';
                 else if (stepping) { clip = run ? 'Running_A' : 'Walking_A'; sp = inRiver ? 0.8 : 1; }
                 if (pm.emote) {   // 😊 감정 표현 — 서 있을 때만, 움직이면 그친다
-                    if (moving || !P.onGround || ride.on || fly || swimNow() || isUnder()) pm.emote = null;
+                    if ((moving || !P.onGround || ride.on || fly || swimNow() || isUnder()) && !ov.classList.contains('nj3d-podium')) pm.emote = null;   // 🏆 시상식 동안엔 키를 누르고 있어도 그치지 않는다(10/22 사용자: W를 누른 채 들어오니 춤이 끊겼다)
                     else {
                         const E = PM_EMOTE[pm.emote.k], et = walkT - pm.emote.t0;
                         clip = E.clip; over = E.over ? E.over(et) : null; sp = 1;
@@ -5107,7 +5107,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
            지금은 혼자라 1등 자리만. 실시간 단계에서 2·3등 자리에 다른 순례자, 둘이면 진 사람은 땅을 치며 운다(PM_EMOTE.cry) */
         function doorPodium() {
             const R = doorRun; if (!R) return;
-            R.phase = 'podium'; R.ms = performance.now() - R.t0; R.podAt = performance.now();
+            R.phase = 'podium'; R.ms = performance.now() - R.t0; R.podAt = performance.now(); ov.classList.add('nj3d-podium');
             const s0 = R.podium[0]; P.x = s0.x; P.z = s0.z; P.y = s0.y + 0.02; P.vy = 0; P.onGround = true; P.face = Math.PI; camYaw = 0; camDist = 1.5; camPitch = 0.22;
             s0.sp.visible = true;
             const E = PM_EMOTE.cheer, a = pm.acts && pm.acts[E.clip]; pm.emote = { k: 'cheer', t0: walkT, dur: a ? a.getClip().duration * 3 : 3 };
@@ -5118,7 +5118,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             setTimeout(() => { if (doorRun === R) doorEnd(true); }, 3200);
         }
         function doorEnd(ok, out) {   // ok: 도착(시상식 뒤 카드 — 밖으로는 카드를 닫을 때) · out: 경기장 밖(입장문 앞)으로 내보냄
-            const R = doorRun; if (!R) return; doorRun = null;
+            const R = doorRun; if (!R) return; doorRun = null; ov.classList.remove('nj3d-podium');
             if (doorCam) { [camDist, camPitch] = doorCam; doorCam = null; }
             doorCount.hidden = true;
             if (R.veilBox && !BOXES.includes(R.veilBox)) BOXES.push(R.veilBox); R.veil.visible = true; doorReveal(false);   // 다음 입장을 위해 막·「?」를 되돌린다
@@ -5163,7 +5163,10 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (ride.on) mountDown(); if (jetOn) jetToggle(false); gliding = false;   // 경기장 안에선 걸어서만
             const now = performance.now();
             if (P.z > DR.ZB + 0.05 && R.phase !== 'run') { doorEnd(false); return; }   // 입장문으로 도로 나감
-            if (R.phase === 'podium') { const s0 = R.podium[0]; P.x = s0.x; P.z = s0.z; P.face = Math.PI; camYaw = 0; if (P.y < s0.y) P.y = s0.y + 0.01; return; }   // 시상대 위 — 정면(카메라)을 보고
+            if (R.phase === 'podium') {   // 시상대 위 — 정면을 보고 서 있게(카메라는 처음 한 번만 정면 — 그 뒤엔 끌어서 돌린다, 10/22 사용자)
+                const s0 = R.podium[0]; P.x = s0.x; P.z = s0.z; P.face = Math.PI; if (P.y < s0.y) P.y = s0.y + 0.01;
+                if (!pm.emote) { const a = pm.acts && pm.acts.Cheer; pm.emote = { k: 'cheer', t0: walkT, dur: a ? a.getClip().duration : 1.2 }; }   // 환호가 끝나면 카드가 뜰 때까지 다시
+                return; }
             if (R.phase !== 'run') {   // 🏁 모두(지금은 나)가 출발선을 밟으면 3·2·1 — 벗어나면 다시 기다린다
                 if (onLine()) {
                     if (R.phase === 'lobby') { R.phase = 'count'; R.cAt = now; doorHudDraw(); }
