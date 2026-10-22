@@ -8039,3 +8039,12 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 /* ⏳ 곧 처음으로 돌아갈 절(10/22) */
 .home-todo-chip.warn { border-color: rgba(230, 126, 34, .85); color: #f5b041; }
 .rv-head.rv-reset { background: rgba(230,126,34,0.16); border: 1px solid rgba(230,126,34,0.6); }
+
+/* 🚪 말씀 문 달리기(10/22) */
+#nj3d .nj3d-doorbtn { position: absolute; left: 10px; top: 190px; z-index: 3; padding: 8px 12px; border-radius: 999px; border: 2px solid #ff7eb6; background: rgba(28,34,62,0.88); color: #ffe08a; font: 700 0.85rem 'Pretendard', sans-serif; }
+#nj3d .nj3d-doorhud { padding-right: 40px; }
+#nj3d .nj3d-doorhud .nj3d-doorquit { pointer-events: auto; position: absolute; right: 8px; top: 8px; width: 28px; height: 28px; border-radius: 50%; border: none; background: rgba(255,255,255,0.15); color: #fff; font-size: 0.9rem; }
+#nj3d .nj3d-starwin .nj3d-doorbtns { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+#nj3d .nj3d-starwin .nj3d-doorbtns .sw-ok { margin: 14px 0 0; min-width: 0; padding: 10px 18px; }
+#nj3d .nj3d-starwin .nj3d-doorbtns .sw-ok.ghost { background: rgba(255,255,255,0.15); color: #fff; box-shadow: none; }
+#nj3d.nj3d-doorrun .nj3d-viewbtn, #nj3d.nj3d-doorrun .nj3d-jettry, #nj3d.nj3d-doorrun .nj3d-jetbuy, #nj3d.nj3d-doorrun .nj3d-fly, #nj3d.nj3d-doorrun .nj3d-emotebtn, #nj3d.nj3d-doorrun .nj3d-lookbtn, #nj3d.nj3d-doorrun .nj3d-tackbtn, #nj3d.nj3d-doorrun .nj3d-ridebtn, #nj3d.nj3d-doorrun .nj3d-divebtn, #nj3d.nj3d-doorrun .nj3d-slidebtn, #nj3d.nj3d-doorrun .nj3d-wb.nj3d-cfg { display: none !important; }   /* 달리는 동안엔 걷기·점프만 */
