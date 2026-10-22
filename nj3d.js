@@ -1901,6 +1901,8 @@
             cheer: { clip: 'Cheer', times: 2 }, jump: { clip: 'Jump_Full_Short', times: 1 },
             praise: { clip: 'Idle', dur: 3.2, over: () => ({ a: [[0.5, 0.85, 0.25], [-0.5, 0.85, 0.25]] }) },
             sit: { clip: 'Sit_Floor_Idle' }, lie: { clip: 'Lie_Idle' },
+            // 😭 땅을 치며 울기(10/22 사용자: 진 사람) — 바닥에 앉아 두 팔을 번갈아 내리치고 눈물이 떨어진다(눈물은 아래 tearTick)
+            cry: { clip: 'Sit_Floor_Idle', dur: 4.5, tears: true, over: t => { const a = Math.abs(Math.sin(t * 7)), b = Math.abs(Math.sin(t * 7 + 1.4)); return { a: [[0.25, -1.0 + 0.55 * a, 0.75], [-0.25, -1.0 + 0.55 * b, 0.75]] }; } },
         };
         const emoteBtn = ov.querySelector('.nj3d-emotebtn'), emoteEl = ov.querySelector('.nj3d-emotes');
         emoteBtn.addEventListener('click', () => {
@@ -4982,6 +4984,10 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             doors: [0x7ec8ff, 0xb59cff, 0x7fe0b0, 0xffb07a].map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55 })),
             bad: new THREE.MeshStandardMaterial({ color: 0xff4d4d, roughness: 0.55, emissive: 0x661111 }),
             veil: new THREE.MeshBasicMaterial({ color: 0x8fe6ff, transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide }),
+            glass: new THREE.MeshBasicMaterial({ color: 0xcff4ff, transparent: true, opacity: 0.1, depthWrite: false }),
+            gold: new THREE.MeshStandardMaterial({ color: 0xffd34d, roughness: 0.35, metalness: 0.5 }),
+            silver: new THREE.MeshStandardMaterial({ color: 0xd8dde6, roughness: 0.35, metalness: 0.5 }),
+            bronze: new THREE.MeshStandardMaterial({ color: 0xd08a52, roughness: 0.4, metalness: 0.4 }),
         };
         const doorGeo = { door: new THREE.BoxGeometry(DR.DW - 0.012, DR.DH, 0.04), post: new THREE.BoxGeometry(DR.PW, DR.WH, 0.08), lintel: new THREE.BoxGeometry(DR.LW, DR.WH - DR.DH, 0.08), label: new THREE.PlaneGeometry(DR.DW - 0.04, 0.15) };
         function doorLabel(w) {
@@ -5010,7 +5016,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             let sd = 11; for (const ch of id) sd = (sd * 31 + ch.charCodeAt(0)) % 2147483647;
             const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
             const zRow = i => DR.Z0 - DR.FIRST - i * DR.ROW;
-            const zEnd = zRow(n - 1) - 1.8, zBack = DR.ZB, L = zBack - zEnd, H2 = DR.LW / 2 + 0.08;
+            const zFin = zRow(n - 1) - 1.4, zEnd = zRow(n - 1) - 5.2, zBack = DR.ZB, L = zBack - zEnd, H2 = DR.LW / 2 + 0.08;   // 도착선 뒤 3.8 — 🏆 시상대 자리
             const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); doorG.add(m); return m; };
             const box = (x0, x1, z0, z1, y0, y1, tag) => { const b = { x0, x1, z0, z1, y0, y1, door: tag || true }; BOXES.push(b); return b; };
             add(new THREE.BoxGeometry(DR.LW + 0.5, DR.FL, L), doorMat.floor, X, Y + DR.FL / 2, (zBack + zEnd) / 2);
@@ -5022,10 +5028,20 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const gw = (DR.LW + 0.16 - DR.GATE) / 2;   // 뒤 벽 — 가운데가 입장문
             [-1, 1].forEach(sx => { const cx = X + sx * (DR.GATE / 2 + gw / 2); add(new THREE.BoxGeometry(gw, DR.WH, 0.08), doorMat.wall, cx, FY + DR.WH / 2, zBack); box(cx - gw / 2, cx + gw / 2, zBack - 0.05, zBack + 0.05, FY - 0.1, FY + DR.WH); });
             add(new THREE.BoxGeometry(DR.GATE + 0.2, 0.14, 0.12), doorMat.post, X, FY + DR.WH + 0.07, zBack);   // 입장문 위 상인방
-            box(X - H2 - 0.05, X + H2 + 0.05, zEnd - 0.1, zBack + 0.1, FY + DR.WH, FY + 90, 'roof');   // 보이지 않는 천장 — 벽 위로 하늘까지(날아 들어오지 못하게 · 안에선 점프해도 안 닿는다)
+            // 🫙 투명 뚜껑(10/22 사용자: 하늘 기둥 가장자리에서 제트팩으로 비비면 들어가졌다 — 겹치면 풀어 주는 장치 때문) — 벽 바깥선과 똑같은 넓이로, 벽 꼭대기에 딱 맞게.
+            //    위에는 내려앉을 수 있다. 그래도 벽과 뚜껑 사이로 끼면 뚜껑 위로 올린다(cityAnims)
+            add(new THREE.BoxGeometry(H2 * 2, 0.04, L + 0.1), doorMat.glass, X, FY + DR.WH + 0.02, (zBack + zEnd) / 2);
+            box(X - H2 - 0.01, X + H2 + 0.01, zEnd - 0.05, zBack + 0.05, FY + DR.WH - 0.01, FY + DR.WH + 0.04, 'roof');
             const sign = starWordSprite(doorEn() ? '🚪 Narrow Gate' : '🚪 좁은 문'); sign.position.set(X, FY + DR.WH + 0.42, zBack + 0.05); doorG.add(sign);   // 입장문 간판 — 안에 들어가면 숨긴다(뒤에 선 카메라 앞을 가렸다)
             add(new THREE.BoxGeometry(DR.LW, 0.006, 0.34), doorMat.line, X, FY + 0.004, DR.Z0 + 0.18);   // 출발선(밟는 띠)
-            add(new THREE.BoxGeometry(DR.LW, 0.006, 0.06), doorMat.line, X, FY + 0.004, zEnd + 0.4);    // 도착선
+            add(new THREE.BoxGeometry(DR.LW, 0.006, 0.06), doorMat.line, X, FY + 0.004, zFin);    // 도착선
+            // 🏆 시상대 — 가운데 1등(높게) · 왼쪽 2등 · 오른쪽 3등. 앞(성 쪽)을 보고 선다
+            const podZ = zEnd + 1.6, podium = [[0, 0.3], [-0.5, 0.2], [0.5, 0.12]].map(([dx, h], i) => {
+                add(new THREE.BoxGeometry(0.46, h, 0.46), [doorMat.gold, doorMat.silver, doorMat.bronze][i], X + dx, FY + h / 2, podZ);
+                box(X + dx - 0.23, X + dx + 0.23, podZ - 0.23, podZ + 0.23, FY - 0.1, FY + h);
+                const sp = starWordSprite(['🥇 1', '🥈 2', '🥉 3'][i]); sp.scale.multiplyScalar(0.55); sp.position.set(X + dx, FY + h + 0.42, podZ); sp.visible = false; doorG.add(sp);
+                return { x: X + dx, z: podZ, y: FY + h, sp };
+            });
             const veil = add(new THREE.PlaneGeometry(DR.LW, DR.WH), doorMat.veil, X, FY + DR.WH / 2, DR.Z0 - 0.03);   // 출발 막
             const veilBox = box(X - DR.LW / 2, X + DR.LW / 2, DR.Z0 - 0.06, DR.Z0 - 0.01, FY - 0.1, FY + DR.WH, 'veil');
             const rows = [];
@@ -5050,7 +5066,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 }
                 rows.push({ z, w, doors, posts, right });
             }
-            doorArena = { id, ws, rows, zEnd, FY, veil, veilBox, sign };
+            doorArena = { id, ws, rows, zEnd, zFin, FY, veil, veilBox, sign, podium };
             return doorArena;
         }
         function doorReveal(on) { (doorArena ? doorArena.rows : []).forEach(r => r.doors.forEach(d => { d.lb.material = on ? d.lb.userData.word : doorHideMat; })); }
@@ -5061,8 +5077,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const done = R.ws.slice(0, R.next), head = done.slice(-6).join(' '), more = done.length > 6 ? '… ' : '';
             const left = R.ws.length - R.next, slots = R.next < R.ws.length ? `<span class="slot next" style="width:2.2em"></span>${left > 1 ? ' …' : ''}` : '';
             const sec = R.t0 ? ((performance.now() - R.t0) / 1000).toFixed(1) : '0.0';
-            const st = R.phase === 'run' ? '⏱ ' + sec + (doorEn() ? 's' : '초') : R.phase === 'count' ? (doorEn() ? 'Get ready…' : '곧 출발해요') : (doorEn() ? 'Step on the start line' : '출발선을 밟으면 출발해요');
-            doorHud.querySelector('.dh').innerHTML = `<div class="ref">🚪 ${starEsc(doorRef(R.id))} · ${st}${R.miss ? ' · 💥' + R.miss : ''}</div><div class="txt">${R.phase === 'run' ? `${more}${starEsc(head)} ${slots}` : (doorEn() ? 'The words appear when the veil lifts' : '막이 걷히면 문에 어절이 나타나요')}</div>`;
+            const st = R.phase === 'podium' ? '🏆 ' + (doorEn() ? 'Award ceremony' : '시상식') + ' · ⏱ ' + (R.ms / 1000).toFixed(1) + (doorEn() ? 's' : '초') : R.phase === 'run' ? '⏱ ' + sec + (doorEn() ? 's' : '초') : R.phase === 'count' ? (doorEn() ? 'Get ready…' : '곧 출발해요') : (doorEn() ? 'Step on the start line' : '출발선을 밟으면 출발해요');
+            doorHud.querySelector('.dh').innerHTML = `<div class="ref">🚪 ${R.phase === 'run' || R.phase === 'podium' ? starEsc(doorRef(R.id)) : (doorEn() ? 'Verse: at the start' : '구절은 출발 때')} · ${st}${R.miss ? ' · 💥' + R.miss : ''}</div><div class="txt">${R.phase === 'podium' ? R.ws.map(w => `<b>${starEsc(w)}</b>`).join(' ') : R.phase === 'run' ? `${more}${starEsc(head)} ${slots}` : (doorEn() ? 'The verse and the words appear when the veil lifts' : '막이 걷히면 구절과 문의 어절이 나타나요')}</div>`;
             doorHud.classList.toggle('flash', !!flash); doorHud.hidden = false;
         }
         function doorEnter(id) {   // 입장 — 경기장을 이 구절로 다시 짓고(글자는 「?」), 출발선 앞 막을 친다
@@ -5087,19 +5103,32 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             setTimeout(() => { if (doorRun === R && R.phase === 'run') doorCount.hidden = true; }, 800);
             doorHudDraw();
         }
-        function doorEnd(ok, out) {   // ok: 도착 · out: 경기장 밖(입장문 앞)으로 내보냄
+        /* 🏆 시상식(10/22 사용자) — 도착하면 시상대에 올라 앞(성 쪽)을 보고 환호, 카메라는 정면에서. 3초 뒤 결과 카드.
+           지금은 혼자라 1등 자리만. 실시간 단계에서 2·3등 자리에 다른 순례자, 둘이면 진 사람은 땅을 치며 운다(PM_EMOTE.cry) */
+        function doorPodium() {
+            const R = doorRun; if (!R) return;
+            R.phase = 'podium'; R.ms = performance.now() - R.t0; R.podAt = performance.now();
+            const s0 = R.podium[0]; P.x = s0.x; P.z = s0.z; P.y = s0.y + 0.02; P.vy = 0; P.onGround = true; P.face = Math.PI; camYaw = 0; camDist = 1.5; camPitch = 0.22;
+            s0.sp.visible = true;
+            const E = PM_EMOTE.cheer, a = pm.acts && pm.acts[E.clip]; pm.emote = { k: 'cheer', t0: walkT, dur: a ? a.getClip().duration * 3 : 3 };
+            for (let k = 0; k < 6; k++) setTimeout(() => { if (cur === C) sprayBurst(s0.x + (Math.random() - 0.5) * 0.8, s0.y + 0.6, s0.z + (Math.random() - 0.5) * 0.4, 22, 0); }, k * 220);
+            if (typeof SoundEffect !== 'undefined' && SoundEffect.playLevelUp) { SoundEffect.playLevelUp(); setTimeout(() => SoundEffect.playLevelUp(), 380); }
+            doorCount.textContent = doorEn() ? '🥇 1st!' : '🥇 1등!'; doorCount.hidden = false; doorCount.classList.remove('pop'); void doorCount.offsetWidth; doorCount.classList.add('pop');
+            doorHudDraw();
+            setTimeout(() => { if (doorRun === R) doorEnd(true); }, 3200);
+        }
+        function doorEnd(ok, out) {   // ok: 도착(시상식 뒤 카드 — 밖으로는 카드를 닫을 때) · out: 경기장 밖(입장문 앞)으로 내보냄
             const R = doorRun; if (!R) return; doorRun = null;
             if (doorCam) { [camDist, camPitch] = doorCam; doorCam = null; }
             doorCount.hidden = true;
             if (R.veilBox && !BOXES.includes(R.veilBox)) BOXES.push(R.veilBox); R.veil.visible = true; doorReveal(false);   // 다음 입장을 위해 막·「?」를 되돌린다
-            if (out || ok) doorOutside();
+            if (out) doorOutside();
+            (R.podium || []).forEach(q => { q.sp.visible = false; });
             ov.classList.remove('nj3d-starrun', 'nj3d-doorrun'); doorHud.hidden = true;
             if (!ok) { if (out) showHint(doorEn() ? 'Left the Narrow Gate' : '좁은 문을 나왔어요', 2000); return; }
-            const ms = performance.now() - R.t0; let best = 0;
+            const ms = R.ms || (performance.now() - R.t0); let best = 0;
             try { const B = JSON.parse(localStorage.getItem('kr_doorBest') || '{}'); best = B[R.id] || 0; if (!best || ms < best) { B[R.id] = Math.round(ms); localStorage.setItem('kr_doorBest', JSON.stringify(B)); } } catch (e) { }
             const isBest = !best || ms < best, sec = s => (s / 1000).toFixed(1) + (doorEn() ? 's' : '초');
-            for (let k = 0; k < 5; k++) setTimeout(() => { if (cur === C) sprayBurst(P.x + (Math.random() - 0.5), P.y + 0.5, P.z + (Math.random() - 0.5), 22, 0); }, k * 160);
-            if (typeof SoundEffect !== 'undefined' && SoundEffect.playLevelUp) SoundEffect.playLevelUp();
             doorWin.className = 'nj3d-starwin';
             doorWin.innerHTML = `<div class="sw-rays"></div><div class="sw-card">
                 <div class="sw-big">🚪</div>
@@ -5113,7 +5142,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             e.preventDefault(); e.stopPropagation();
             const b = e.target.closest('[data-a]'); if (!b || performance.now() - (doorWin._at || 0) < 600) return;
             doorWin.hidden = true;
-            if (b.dataset.a === 'again') doorToLobby(doorWin._id); else if (b.dataset.a === 'other') doorToLobby(doorPick(doorWin._id));
+            if (b.dataset.a === 'again') doorToLobby(doorWin._id); else if (b.dataset.a === 'other') doorToLobby(doorPick(doorWin._id)); else doorOutside();   // 닫기 — 시상대에서 입장문 앞으로
         });
         doorBtn.addEventListener('pointerdown', e => {   // 입장문 앞으로 데려다준다 — 들어가는 건 걸어서
             e.preventDefault(); e.stopPropagation();
@@ -5128,11 +5157,13 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const showBtn = walk && !deco && !proc && !doorRun && !starRun && doorWin.hidden && !inArena() && Math.hypot(P.x - DR.AX, P.z - DR.ZB) > 3; if (doorBtn.hidden === showBtn) doorBtn.hidden = !showBtn;
             if (doorArena && doorArena.veil.visible) doorArena.veil.material.opacity = 0.22 + Math.sin(t * 3) * 0.08;
             if (doorArena && doorArena.sign.visible === !!doorRun) doorArena.sign.visible = !doorRun;
+            if (doorArena && !doorRun && Math.abs(P.x - DR.AX) < DR.LW / 2 + 0.1 && P.z > doorArena.zEnd && P.z < DR.ZB + 0.05 && P.y > doorArena.FY + 0.42 && P.y < doorArena.FY + DR.WH + 0.04) { P.y = doorArena.FY + DR.WH + 0.05; P.vy = Math.max(0, P.vy); }   // 🫙 벽과 뚜껑 사이로 끼면 뚜껑 위로
             if (!doorRun) { if (walk && !deco && doorWin.hidden && inArena()) doorEnter(doorPick()); return; }   // 입장문을 걸어 들어오면
             const R = doorRun;
             if (ride.on) mountDown(); if (jetOn) jetToggle(false); gliding = false;   // 경기장 안에선 걸어서만
             const now = performance.now();
             if (P.z > DR.ZB + 0.05 && R.phase !== 'run') { doorEnd(false); return; }   // 입장문으로 도로 나감
+            if (R.phase === 'podium') { const s0 = R.podium[0]; P.x = s0.x; P.z = s0.z; P.face = Math.PI; camYaw = 0; if (P.y < s0.y) P.y = s0.y + 0.01; return; }   // 시상대 위 — 정면(카메라)을 보고
             if (R.phase !== 'run') {   // 🏁 모두(지금은 나)가 출발선을 밟으면 3·2·1 — 벗어나면 다시 기다린다
                 if (onLine()) {
                     if (R.phase === 'lobby') { R.phase = 'count'; R.cAt = now; doorHudDraw(); }
@@ -5181,9 +5212,20 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                     }
                 }
                 if (dz < -0.12) { R.next++; doorHudDraw(); }
-            } else if (P.z < R.zEnd + 0.4) { doorEnd(true); return; }
+            } else if (R.phase === 'run' && P.z < R.zFin) { doorPodium(); return; }
             if (now - R.hudT > 100) { R.hudT = now; doorHudDraw(); }
         });
+
+        // 😭 눈물 — 울기 몸짓 동안 얼굴 양옆에서 작은 물방울이 떨어진다(10/22)
+        { const tearMat = new THREE.MeshBasicMaterial({ color: 0x2fa8ff, transparent: true, opacity: 0.95, toneMapped: false, fog: false }), tearGeo = new THREE.SphereGeometry(0.0055, 6, 4), tears = []; let tearT = 0, tearLast = 0;
+          cityAnims.push(t => {
+              const dt = Math.min(0.1, Math.max(0, t - (tearLast || t))); tearLast = t;
+              const on = pm.emote && PM_EMOTE[pm.emote.k] && PM_EMOTE[pm.emote.k].tears;
+              if (on && t > tearT) { tearT = t + 0.18;
+                  [-1, 1].forEach(sd => { const m = new THREE.Mesh(tearGeo, tearMat); const fx = -Math.sin(P.face), fz = -Math.cos(P.face), rx = Math.cos(P.face), rz = -Math.sin(P.face);
+                      m.position.set(pilgrim.position.x + fx * 0.05 + rx * sd * 0.035, pilgrim.position.y + 0.13, pilgrim.position.z + fz * 0.05 + rz * sd * 0.035); scene.add(m); tears.push({ m, vy: 0.05, vx: rx * sd * 0.05, vz: rz * sd * 0.05, life: 0.45 }); }); }
+              for (let i = tears.length - 1; i >= 0; i--) { const q = tears[i]; q.life -= dt; q.vy -= 1.2 * dt; q.m.position.x += q.vx * dt; q.m.position.y += q.vy * dt; q.m.position.z += q.vz * dt; if (q.life <= 0) { scene.remove(q.m); tears.splice(i, 1); } }
+          }); }
 
         // ══ 🧱 예물·꾸밈은 단단하다 (10/14 사용자) — 옆에서는 막고 위에는 올라설 수 있다(보좌·성벽과 같은 BOXES).
         //    바닥에 깔린 것·밑으로 지나가는 것(다리·아치·정자)·세트는 막지 않는다. 모델이 늦게 받아지고 꾸미기로 옮기니 걸을 때 1.5초마다 다시 잰다 ══
