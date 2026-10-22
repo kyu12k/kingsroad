@@ -8035,3 +8035,7 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 /* 💬 쉬었다 돌아온 까닭 (10/19) */
 .njv-card [hidden] { display: none !important; }
 .pause-pop .opts { display: flex; flex-direction: column; gap: 6px; }
+
+/* ⏳ 곧 처음으로 돌아갈 절(10/22) */
+.home-todo-chip.warn { border-color: rgba(230, 126, 34, .85); color: #f5b041; }
+.rv-head.rv-reset { background: rgba(230,126,34,0.16); border: 1px solid rgba(230,126,34,0.6); }

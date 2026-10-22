@@ -905,7 +905,7 @@ const LANG = {
         bd_chip: '{ch}장 · {n}개 절',
         sbd_title: '✍️ 오늘 백지 차례 {n}개 절', sbd_go: '지금 쓰기 ›', sbd_group_tip: '이 묶음에 오늘 백지 차례 {n}개 절',
 
-        todo_title: '오늘 할 일', todo_review: '복습', todo_blank: '백지', todo_cheer: '응원', todo_attend: '출석',
+        todo_title: '오늘 할 일', todo_reset: '곧 처음으로', rv_reset_warn: '⏳ {n}절이 3일 안에 처음으로 돌아가요', rv_reset_sub: '{list} — 지금 복습하면 지켜져요', todo_review: '복습', todo_blank: '백지', todo_cheer: '응원', todo_attend: '출석',
         rv_blank_sub: '눌러서 그 장의 차례인 절만 백지로 쓸 수 있어요. 다른 백지(망각의 고난·보스전·중간점검·백지 복습·오늘의 암송·열매)로 써내도 백지레벨이 올라요',
         rv_route_title: '💡 복습을 한 번에',
         rv_route_due: '복습 {n}절',
@@ -2247,7 +2247,7 @@ const LANG = {
         bd_chip: 'Ch.{ch} · {n} verses',
         sbd_title: '✍️ {n} verses due for blank review', sbd_go: 'Write now ›', sbd_group_tip: '{n} verses in this group are due for blank review',
 
-        todo_title: 'Today', todo_review: 'Review', todo_blank: 'Blank', todo_cheer: 'Cheer', todo_attend: 'Check-in',
+        todo_title: 'Today', todo_reset: 'Resetting soon', rv_reset_warn: '⏳ {n} verses go back to the start within 3 days', rv_reset_sub: '{list} — review now to keep them', todo_review: 'Review', todo_blank: 'Blank', todo_cheer: 'Cheer', todo_attend: 'Check-in',
         rv_blank_sub: 'Tap to write just that chapter’s due verses on a blank page. Any other blank (trial, boss, checkpoint, blank review, daily recital or fruit) also raises its blank level',
         rv_route_title: '💡 Finish reviews in one go',
         rv_route_due: '{n} reviews',
@@ -9013,7 +9013,7 @@ function _njPastDue() {
     const today = _get6AMDayStr(), yday = _shift6AMDayStr(today, -1), mine = new Set();
     Object.keys(dailyLog || {}).forEach(d => { if (d < yday) { const lg = _djParse(d); if (lg) lg.ids.forEach(id => mine.add(id)); } });
     const c = _njClamKnown() ? _njClamDay() : null, skip = new Set([...((c && c.ids) || []), ...((c && c.carry) || [])]);
-    return _blankDueIds().filter(id => mine.has(id) && !skip.has(id)).sort((a, b) => ((verseRecall[a] || {}).bxDue || 0) - ((verseRecall[b] || {}).bxDue || 0)).slice(0, 6);
+    return _blankDueIds(0, true).filter(id => mine.has(id) && !skip.has(id)).sort((a, b) => ((verseRecall[a] || {}).bxDue || 0) - ((verseRecall[b] || {}).bxDue || 0)).slice(0, 6);
 }
 function _njRoundLeft(kind) {   // [{ i, id }] — 아직 안 한 절
     if (kind === 'past') return _njPastDue().map(id => ({ i: -1, id }));
@@ -12185,6 +12185,36 @@ function openModeSelect(stageId) {
    새로 외운 절(낮은 단계)부터 — 10분·1시간 복습을 놓치면 처음으로 돌아가니까. 같으면 오래 밀린 절부터. 「더 보기」로 전부(window._rvAll).
    백지 차례가 온 절은 복습 목록에서 뺀다 — 백지로 써내면 복습도 함께 인정되는데, 복습을 먼저 하면 같은 절을 두 번 했다(229절이 양쪽에 걸린 사람) */
 const REVIEW_DAILY = 30;
+/* 🤫 조용한 장 (2026-10-22 사용자: "손댈 엄두가 안 나는 장들이 복습·백지 대상으로 오래 떠 있지 않았으면 — 일정 기간이 지나면 조용히").
+   실측: 최근 2주 손대지 않은 장의 차례는 띄워 둬도 아무도 안 했다(2주에 1절 vs 손대는 장 4,138절) — 「오늘 할 일」만 무겁게 보였다.
+   **장의 어떤 절도 1주 동안 손대지 않으면**(클리어·백지·빈칸 — 오늘의 암송·만나·조개처럼 앱이 내준 절도 손댄 것) 그 장의 복습·백지 차례를
+   목록·「오늘 할 일」·알림에서 뺀다. 기록(단계·백지 레벨)은 그대로, 30일 규칙(_resetLongUnstudied)도 그대로 흐른다. 그 장을 다시 손대면 바로 돌아온다.
+   절 단위로 자르면 지금 하는 장 안의 밀린 절까지 사라져서(14일 기준 186/1,249) 장 단위로 본다 */
+const QUIET_CH_MS = 7 * 86400000;
+function _chLastTouch() {
+    const m = {}, put = (id, t) => { if (!/^\d+-/.test(id) || !(t > 0)) return; const c = parseInt(id, 10); if (t > (m[c] || 0)) m[c] = t; };
+    for (const id in (typeof stageLastClear !== 'undefined' && stageLastClear) || {}) put(id, stageLastClear[id]);
+    for (const id in (typeof verseRecall !== 'undefined' && verseRecall) || {}) { const r = verseRecall[id]; if (r) put(id, r.lastAt || 0); }
+    return m;
+}
+function _chQuiet(id, lt, now) { return (now || Date.now()) - ((lt || _chLastTouch())[parseInt(id, 10)] || 0) > QUIET_CH_MS; }
+/* ⏳ 곧 처음으로 돌아갈 절(10/22 사용자: 레벨이 내려가거나 처음으로 돌아가게 될 구절에 대한 경고) — 시간으로 생기는 건 「복습이 30일 넘게 밀리면 처음으로」뿐
+   (백지 레벨은 틀렸을 때만 내려간다). 3일 전부터, 조용한 장은 빼고. 복습 목록에선 맨 앞에 */
+const RESET_WARN_MS = 3 * 86400000;
+function _resetSoonIds() {
+    const now = Date.now(), lt = _chLastTouch(), out = [];
+    for (const id in (stageReviewStep || {})) {
+        if (!/^\d+-\d+$/.test(id)) continue;
+        const step = stageReviewStep[id] || 1, next = stageNextReviewTime[id] || 0;
+        if (step <= 1 || !next) continue;
+        const late = now - next; if (late <= LONG_UNSTUDIED_MS - RESET_WARN_MS || late > LONG_UNSTUDIED_MS) continue;
+        const r = (typeof verseRecall !== 'undefined' && verseRecall) ? verseRecall[id] : null;
+        if (r && r.bx && r.bxDue && now - r.bxDue <= LONG_UNSTUDIED_MS) continue;   // 백지 차례가 살아 있으면 처음으로 안 간다(_resetLongUnstudied와 같은 예외)
+        if (_chQuiet(id, lt, now)) continue;
+        out.push(id);
+    }
+    return out;
+}
 function _reviewDoneToday() {
     const d = _get6AMDayStr(); let n = 0;
     for (const id in (stageLastClear || {})) { if (/^\d+-\d+$/.test(id) && (stageReviewStep[id] || 0) >= 3 && _tsTo6AMDateStr(stageLastClear[id]) === d) n++; }
@@ -12192,7 +12222,7 @@ function _reviewDoneToday() {
 }
 function getForgottenStages(all) {
     const forgottenList = [];
-    const _now = Date.now();
+    const _now = Date.now(), _lt = _chLastTouch();
     for (let chapter of gameData) {
         if (!chapter.stages) continue;
         for (let stage of chapter.stages) {
@@ -12201,6 +12231,7 @@ function getForgottenStages(all) {
             const stageId = stage.id;
             const _vr = (typeof verseRecall !== 'undefined' && verseRecall) ? verseRecall[stageId] : null;
             if (_vr && _vr.bx && _vr.bxDue && _vr.bxDue <= _now) continue;   // 백지 차례가 맡는다
+            if (_chQuiet(stageId, _lt, _now)) continue;   // 🤫 1주 동안 손대지 않은 장
             const revStatus = getReviewStatus(stageId);
             if (revStatus.step > 1 && revStatus.isEligible) {
                 const m = String(stageId).match(/^(\d+)-(\d+)$/);
@@ -12216,7 +12247,8 @@ function getForgottenStages(all) {
     if (all || window._rvAll) return forgottenList;
     const q = Math.max(0, REVIEW_DAILY - _reviewDoneToday());
     if (forgottenList.length <= q) return forgottenList;
-    const keep = new Set(forgottenList.slice().sort((a, b) => (a.step - b.step) || ((stageNextReviewTime[a.stageId] || 0) - (stageNextReviewTime[b.stageId] || 0))).slice(0, q).map(x => x.stageId));
+    const soon = new Set(_resetSoonIds());   // ⏳ 곧 처음으로 돌아갈 절이 먼저
+    const keep = new Set(forgottenList.slice().sort((a, b) => ((soon.has(b.stageId) ? 1 : 0) - (soon.has(a.stageId) ? 1 : 0)) || (a.step - b.step) || ((stageNextReviewTime[a.stageId] || 0) - (stageNextReviewTime[b.stageId] || 0))).slice(0, q).map(x => x.stageId));
     return forgottenList.filter(x => keep.has(x.stageId));   // 장·절 순서는 그대로
 }
 
@@ -12338,6 +12370,7 @@ function openForgottenStagesOverlay() {
    중간점검은 걸친 구간(3~4절)만 쓰면 된다 — 대개 중간점검이 이긴다. 둘 다 클리어하면 차례인 절의 복습이 한꺼번에 처리된다. */
 function _reviewOverlayHeadHtml(forgottenList) {
     let html = '';
+    { const soon = _resetSoonIds(); if (soon.length) html += `<div class="rv-head rv-reset"><div class="rv-head-title">${t('rv_reset_warn', { n: soon.length })}</div><div class="rv-head-sub">${t('rv_reset_sub', { list: _blankNotifLabel(soon) })}</div></div>`; }   // ⏳ 곧 처음으로(10/22)
     const chLabel = (c) => currentLang === 'en' ? `Ch.${c}` : `${c}장`;
     // ① 백지 차례 — 오늘 몫(하루 20절)
     const dueIds = _blankDueToday();
@@ -12734,13 +12767,13 @@ const BLANK_BOX_MULT = [0, 0, 2, 3, 5, 8];      // 제때 써내 상자 b로 오
 const BLANK_BOX_START = 2;
 const BLANK_DAY_MS = 86400000;
 const BLANK_NOTIF_GAP_MS = 3 * 3600000;         // 백지 알림끼리 최소 3시간
-function _blankDueIds(now) {
+function _blankDueIds(now, loud) {   // loud — 🤫 조용한 장도 함께(지도에서 그 장을 골랐을 때 · 지난 오늘의 암송)
     const out = [];
     if (typeof verseRecall === 'undefined' || !verseRecall) return out;
-    const n = now || Date.now();
+    const n = now || Date.now(), lt = loud ? null : _chLastTouch();
     for (const id in verseRecall) {
         const r = verseRecall[id];
-        if (r && r.bx && r.bxDue && r.bxDue <= n) out.push(id);
+        if (r && r.bx && r.bxDue && r.bxDue <= n && (loud || !_chQuiet(id, lt, n))) out.push(id);
     }
     return out;
 }
@@ -26076,11 +26109,13 @@ function isReviewNotifOff() {
 function _computeNextReviewNotif() {
     const now = Date.now();
     let best = null;
+    const lt = _chLastTouch();
     const scan = (nextTimes) => {
         if (!nextTimes) return;
         for (const id of Object.keys(nextTimes)) {
             const at = nextTimes[id];
             if (typeof at !== 'number' || at <= now) continue;
+            if (_chQuiet(id, lt, now)) continue;   // 🤫 조용한 장
             if (!best || at < best.at) best = { at, id };
         }
     };
@@ -26129,11 +26164,11 @@ function _buildNotifSchedule() {
     const out = [];
     const rv = _computeNextReviewNotif();
     if (rv) out.push({ at: rv.at, stage: rv.stage });
-    const now = Date.now();
+    const now = Date.now(), lt = _chLastTouch();
     const items = [];
     for (const id in (verseRecall || {})) {
         const r = verseRecall[id];
-        if (r && r.bx && r.bxDue && r.bxDue > now) items.push({ id, t: _quietShift(r.bxDue) });
+        if (r && r.bx && r.bxDue && r.bxDue > now && !_chQuiet(id, lt, now)) items.push({ id, t: _quietShift(r.bxDue) });
     }
     items.sort((a, b) => a.t - b.t);
     let i = 0, last = -Infinity, pushes = 0;
@@ -35344,7 +35379,7 @@ function closeBlankDueScreen() {
     if (ov) ov.style.display = 'none';
 }
 function _startBlankDue(ch, from) {
-    const it = _blankDueByChapter(from === 'map' ? _blankDueIds() : undefined).find(x => x.ch === ch);   // 지도에서 장을 골랐으면 그 장 차례 전부(직접 고른 것)
+    const it = _blankDueByChapter(from === 'map' ? _blankDueIds(0, true) : undefined).find(x => x.ch === ch);   // 지도에서 장을 골랐으면 그 장 차례 전부(직접 고른 것)
     if (!it || !it.vs.length) { openBlankDueScreen(); return; }
     closeBlankDueScreen();
     if (from === 'map') closeStageSheet();   // 장 목록 맨 위 「지금 쓰기」 — 끝나면 지도로
@@ -35396,6 +35431,7 @@ function renderHomeTodo() {
     try { blank = _blankDueToday().length; } catch (e) { }   // 📏 오늘 몫
     const chip = (icon, label, n, done, fn) => `<button class="home-todo-chip${done ? ' done' : ''}" onclick="${fn}">${icon} ${label}${done ? ' ✓' : n ? ` <b>${n}</b>` : ''}</button>`;
     let h = chip('📖', t('todo_review'), rev, rev === 0, 'openReviewFromHome()') + chip('✍️', t('todo_blank'), blank, blank === 0, 'openBlankDueScreen()');
+    try { const soon = _resetSoonIds().length; if (soon) h = `<button class="home-todo-chip warn" onclick="openReviewFromHome()">⏳ ${t('todo_reset')} <b>${soon}</b></button>` + h; } catch (e) { }   // 곧 처음으로(10/22)
     try {   // 🐚 카드를 「나중에」로 접었으면 — 칩으로 남긴다(10/17 사용자: 접으면 어디서 다시 하나?)
         let folded = false; try { folded = localStorage.getItem('kr_rcard') === _get6AMDayStr(); } catch (e) { }
         if (folded && dailyLog && dailyLog[_shift6AMDayStr(_get6AMDayStr(), -1)] && _njClamKnown()) { const n = _njRoundLeft('clam').length; if (n) h = chip('🐚', t('todo_rc'), n, false, "njRoundStart('clam', 'home')") + h; }
