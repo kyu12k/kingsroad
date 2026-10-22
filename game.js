@@ -32896,7 +32896,9 @@ function _hsKbSubmitSync() {
     try {
         const vv = window.visualViewport; let b = document.getElementById('hs-kb-submit');
         const sb = document.getElementById('hardship-memory-submit-btn'), nb = document.getElementById('hardship-next-btn');
-        const tgt = sb && sb.offsetParent !== null && !sb.disabled ? sb : nb && nb.offsetParent !== null ? nb : null;
+        let tgt = sb && sb.offsetParent !== null && !sb.disabled ? sb : nb && nb.offsetParent !== null ? nb : null;
+        // 칸을 다 채우기 전엔 눌러도 「다 채워 주세요」뿐 — 다 채웠을 때만 띄운다(10/22 사용자: 계속 떠 있을 필요가 없다)
+        if (tgt === sb && typeof hardshipState !== 'undefined' && hardshipState && String(hardshipState.memoryTypedText || '').length < getHardshipInputTargetCount()) tgt = null;
         const kb = vv ? Math.max(0, document.documentElement.clientHeight - (vv.offsetTop + vv.height)) : 0;
         const ae = document.activeElement;
         const on = !!(tgt && kb > 80 && window.isHardshipMode && typeof hardshipState !== 'undefined' && hardshipState && hardshipState.active && ae && ae.id === 'hidden-typing-input');
@@ -32983,7 +32985,7 @@ function handleHardshipMemoryInput(event) {
     hardshipState.lastTypeAt = Date.now();   // 🔑 시작에서 멈춰 있나
     updateHardshipMemoryBoard();
     moveHardshipMemoryCursorToEnd(input);
-
+    _hsKbSubmitSync();   // ⌨️ 칸을 다 채웠을 때만 키보드 위 「✓ 정답 확인」
 }
 
 function resetHardshipMemoryInputs() {
