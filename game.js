@@ -36292,3 +36292,25 @@ async function _blockUser(tag) {
     showGemToast(0, '차단되었습니다.', true);
 }
 // =====================================================================
+/* 🖥️ 휴대폰인데 브라우저의 「데스크톱 사이트(PC 버전 보기)」가 켜져 있으면 — 화면이 980px로 잡혀 모든 게 반쯤 작아진다(10/22 제보).
+   앱이 고칠 수는 없어 끄는 방법만 하루 한 번 알린다. 화면 폭(screen.width)은 이 모드에서도 실제 휴대폰 폭이다 */
+function _desktopModeCheck() {
+    try {
+        const sw = Math.min(screen.width || 0, screen.height || 0), iw = window.innerWidth || 0;
+        const touch = (navigator.maxTouchPoints || 0) > 0 || 'ontouchstart' in window;
+        if (!touch || !sw || sw >= 600 || iw < sw * 1.6) return;
+        const today = typeof _get6AMDayStr === 'function' ? _get6AMDayStr() : '';
+        try { if (localStorage.getItem('kr_deskNote') === today) return; localStorage.setItem('kr_deskNote', today); } catch (e) { }
+        const k = iw / sw, en = typeof currentLang !== 'undefined' && currentLang === 'en';
+        const box = document.createElement('div');
+        box.id = 'desk-mode-note';
+        box.style.cssText = `position:fixed; left:50%; bottom:${Math.round(24 * k)}px; transform:translateX(-50%); width:${Math.round(sw * 0.9 * k)}px; z-index:100000; background:#1f2a44; color:#fff; border:${Math.round(2 * k)}px solid #f1c40f; border-radius:${Math.round(14 * k)}px; padding:${Math.round(14 * k)}px ${Math.round(16 * k)}px; font-size:${Math.round(15 * k)}px; line-height:1.5; box-shadow:0 ${Math.round(6 * k)}px ${Math.round(20 * k)}px rgba(0,0,0,0.5); text-align:left;`;
+        box.innerHTML = (en
+            ? `<b>🔍 Everything looks small?</b><br>Your browser is showing the <b>desktop site</b>. Turn it off:<br>· Chrome: ⋮ menu → uncheck <b>Desktop site</b><br>· Samsung Internet: ≡ menu → <b>Mobile view</b>`
+            : `<b>🔍 글씨와 버튼이 작게 보이나요?</b><br>브라우저의 <b>「데스크톱 사이트(PC 버전)」</b>가 켜져 있어요. 끄면 제 크기로 보여요.<br>· 크롬: 오른쪽 위 ⋮ → <b>데스크톱 사이트</b> 체크 해제<br>· 삼성 인터넷: 아래 ≡ → <b>모바일 버전 보기</b>`)
+            + `<button style="display:block; margin:${Math.round(10 * k)}px 0 0 auto; padding:${Math.round(6 * k)}px ${Math.round(16 * k)}px; font-size:${Math.round(14 * k)}px; border:none; border-radius:${Math.round(10 * k)}px; background:#f1c40f; color:#3d2f00; font-weight:700;">${en ? 'OK' : '알겠어요'}</button>`;
+        box.querySelector('button').onclick = () => box.remove();
+        document.body.appendChild(box);
+    } catch (e) { }
+}
+window.addEventListener('load', () => setTimeout(_desktopModeCheck, 2500));
