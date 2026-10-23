@@ -2216,7 +2216,7 @@
             return bandHeight(x, z) <= 0 && !(ax < IN_F && az < IN_F);
         }
         function blocked(x, z, y) {
-            if (Math.abs(x) > 140 || z < (Math.abs(x - 10) < 3 ? -220 : -140) || z > 150) return true;   // 🚪 좁은 문 경기장 띠만 북쪽으로 −220까지(10/23 — 긴 구절은 경기장 끝이 −140을 넘어 마지막 문 앞에서 막혔다)
+            if (Math.abs(x) > 140 || z < -140 || z > 150) return true;
             const gh = (px, pz) => (y < SEA_Y - 0.03 && seaE(px, pz) < 1 ? stripFloor(px, pz) : terrain(px, pz));
             if (gh(x, z) - y > STEP) return true;
             // 성 안팎(기초석 단·경사로·물길 둑) — 몸 둘레까지 본다. 중심만 보니 경사로 옆면에 몸이 반쯤 파묻혔다(10/15 사용자)
@@ -4986,14 +4986,26 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         const doorCount = document.createElement('div'); doorCount.className = 'nj3d-doorcount'; doorCount.hidden = true; stageEl.appendChild(doorCount);
         let doorLastT = 0, doorCam = null, doorArena = null;
         const doorWin = document.createElement('div'); doorWin.className = 'nj3d-starwin'; doorWin.hidden = true; stageEl.appendChild(doorWin);
-        const doorRef = id => { const [c, v] = id.split('-'); return doorEn() ? `Rev ${c}:${v}` : `계 ${c}:${v}`; };
-        const doorWords = id => { const [c, v] = id.split('-').map(Number); return ((((bibleData || {})[c] || [])[v - 1] || {}).chunks || []).map(String); };
-        function doorPick(except) {   // 오늘 별이 된 절(오늘 암송한 절) 먼저, 없으면 외운 절 아무거나 — 어절 5~18개
-            const ok = id => { const n = doorWords(id).length; return n >= 5 && n <= 18 && id !== except; };
+        /* ✂️ 긴 구절은 나눠 달린다(10/23 사용자 — 계시록 404절 중 163절이 18어절 넘고 20:4는 44어절). 한 부분 14어절 이하로 고르게,
+           id는 「장-절/부분」(나뉘지 않는 절은 「장-절」 그대로). 끝나면 카드에 「다음 부분」 */
+        const DOOR_PART = 14;
+        const doorAll = id => { const [c, v] = id.split('/')[0].split('-').map(Number); return ((((bibleData || {})[c] || [])[v - 1] || {}).chunks || []).map(String); };
+        const doorParts = id => Math.max(1, Math.ceil(doorAll(id).length / DOOR_PART));
+        const doorPartOf = id => +(id.split('/')[1] || 1);
+        const doorWords = id => {
+            const ws = doorAll(id), k = doorParts(id), p = Math.min(k, doorPartOf(id));
+            const a = Math.round(ws.length * (p - 1) / k), b = Math.round(ws.length * p / k);
+            return ws.slice(a, b);
+        };
+        const doorIdOf = (vid, p) => doorParts(vid) > 1 ? `${vid}/${p}` : vid;
+        const doorRef = id => { const [c, v] = id.split('/')[0].split('-'), k = doorParts(id); return (doorEn() ? `Rev ${c}:${v}` : `계 ${c}:${v}`) + (k > 1 ? ` (${doorPartOf(id)}/${k})` : ''); };
+        function doorPick(except) {   // 오늘 별이 된 절(오늘 암송한 절) 먼저, 없으면 외운 절 아무거나 — 어절 5개 이상, 긴 절은 첫 부분부터
+            const ex = except && except.split('/')[0];
+            const ok = id => doorAll(id).length >= 5 && id !== ex;
             let pool = (SD.ids || []).filter(ok);
             if (!pool.length) pool = Object.keys((typeof stageClearDate !== 'undefined' && stageClearDate) || {}).filter(id => /^\d+-\d+$/.test(id) && ok(id));
             if (!pool.length) pool = ['21-4', '21-6', '22-13'].filter(ok);
-            return pool[Math.floor(Math.random() * pool.length)];
+            return doorIdOf(pool[Math.floor(Math.random() * pool.length)], 1);
         }
         const doorMat = {
             floor: new THREE.MeshStandardMaterial({ color: 0xf3e6c8, roughness: 0.9 }),
@@ -5283,14 +5295,15 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 <div class="sw-title">${doorEn() ? 'Finished!' : '통과!'} ⏱ ${sec(ms)}</div>
                 <div class="sw-ref">${starEsc(doorRef(R.id))}</div><div class="sw-txt">${R.ws.map(w => `<b>${starEsc(w)}</b>`).join(' ')}</div>
                 <div class="sw-dots">💥 ${R.miss}${R.fall ? ' · 🕳️ ' + R.fall : ''} · ${isBest ? (doorEn() ? '🏅 New best' : '🏅 최고 기록') : (doorEn() ? 'Best ' : '최고 ') + sec(best)}</div>
-                <div class="nj3d-doorbtns"><button class="sw-ok" data-a="again">${doorEn() ? 'Again' : '다시'}</button><button class="sw-ok" data-a="other">${doorEn() ? 'Another verse' : '다른 구절'}</button><button class="sw-ok ghost" data-a="close">${doorEn() ? 'Close' : '닫기'}</button></div></div>`;
+                <div class="nj3d-doorbtns">${doorPartOf(R.id) < doorParts(R.id) ? `<button class="sw-ok" data-a="next">${doorEn() ? 'Next part' : '다음 부분'} (${doorPartOf(R.id) + 1}/${doorParts(R.id)}) ▶</button>` : ''}<button class="sw-ok" data-a="again">${doorEn() ? 'Again' : '다시'}</button><button class="sw-ok" data-a="other">${doorEn() ? 'Another verse' : '다른 구절'}</button><button class="sw-ok ghost" data-a="close">${doorEn() ? 'Close' : '닫기'}</button></div></div>`;
             doorWin.hidden = false; void doorWin.offsetWidth; doorWin.classList.add('in'); doorWin._at = performance.now(); doorWin._id = R.id;
         }
         doorWin.addEventListener('pointerdown', e => {
             e.preventDefault(); e.stopPropagation();
             const b = e.target.closest('[data-a]'); if (!b || performance.now() - (doorWin._at || 0) < 600) return;
             doorWin.hidden = true;
-            if (b.dataset.a === 'again') doorToLobby(doorWin._id); else if (b.dataset.a === 'other') doorToLobby(doorPick(doorWin._id)); else doorOutside();   // 닫기 — 시상대에서 입장문 앞으로
+            if (b.dataset.a === 'next') doorToLobby(doorIdOf(doorWin._id.split('/')[0], doorPartOf(doorWin._id) + 1));
+            else if (b.dataset.a === 'again') doorToLobby(doorWin._id); else if (b.dataset.a === 'other') doorToLobby(doorPick(doorWin._id)); else doorOutside();   // 닫기 — 시상대에서 입장문 앞으로
         });
         doorBtn.addEventListener('pointerdown', e => {   // 입장문 앞으로 데려다준다 — 들어가는 건 걸어서
             e.preventDefault(); e.stopPropagation();
