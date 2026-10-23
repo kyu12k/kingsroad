@@ -4992,6 +4992,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         //    1단계: 혼자 · 관리자(#8648)만(kr_doorTest = '1'이면 시험용으로도). 다음: 친구 기록 유령 → 같은 성 실시간 ══
         const DOOR_ON = !VISIT && ((typeof myTag !== 'undefined' && String(myTag) === '8648') || (() => { try { return localStorage.getItem('kr_doorTest') === '1'; } catch (e) { return false; } })());
         const DR = { AX: 10, Z0: -52, ROW: 2.2, ROW_H: 5.4, CALM: 2.2, LAND: 0.6, FIRST: 3.2, LOBBY: 3.2, GATE: 0.62, DW: 0.42, PW: 0.2, DH: 0.5, WH: 0.62, FL: 0.8 };   // 가운데 x · 출발선 z · 줄 사이(쉬운 길 · 험한 길) · 출발선~첫 문(10/22 사용자: 더 멀게 1.6 → 3.2) · 출발 구역 깊이 · 입장문 폭 · 문 폭 · 기둥 폭 · 문 높이 · 벽 높이 · 바닥 높이(10/23 구덩이에 떨어질 만큼 0.1 → 0.8 — 입장문 앞 계단)
+        const DOOR_LIM = { push: 15, bridge: 16, glass: 18, ditch: 22, sweep: 13 };   // 🕊️ 장애물마다 넉넉히 넘는 시간(초) — 넘도록 문 앞 고요한 구간에 못 닿으면 데려다준다(10/23 사용자)
         let doorMode = (() => { try { return localStorage.getItem('kr_doorMode') === 'easy' ? 'easy' : 'hard'; } catch (e) { return 'hard'; } })();   // 🌿 쉬운 길(장애물 없음) · ⛰ 험한 길 — 대기실에서 고른다(10/23 사용자)
         DR.LW = DR.DW * 4 + DR.PW * 5; DR.ZB = DR.Z0 + DR.LOBBY;   // 길 폭 · 뒤 벽(입장문) z
         const doorEn = () => typeof currentLang !== 'undefined' && currentLang === 'en';
@@ -5116,7 +5117,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             //    같은 구절·같은 길이면 같은 배치(따로 씨앗 — 유령·실시간 공정) ──
             let so = 97; for (const ch of id + doorMode) so = (so * 31 + ch.charCodeAt(0)) % 2147483647;
             const ornd = () => (so = (so * 16807) % 2147483647) / 2147483647;
-            const obs = { pads: [], glass: [], pistons: [], sweeps: [], stones: [], ceils: [], tops: [] };   // tops — 위에서 내려다볼 구간(유리·징검다리, 🎥 시점 고정)
+            const obs = { pads: [], glass: [], pistons: [], sweeps: [], stones: [], ceils: [], tops: [], lim: {} };   // lim — 줄마다 그 앞 장애물 구간의 넉넉한 시간(초, 🕊️ 데려다주기)   // tops — 위에서 내려다볼 구간(유리·징검다리, 🎥 시점 고정)
             const OB = {
                 push(a, b) {   // 🟩🟥 빨라지는 길·느려지는 길(10/23 사용자: 미는 칸이 전부 깔려 점프 몇 번이면 통과) — 세로 네 줄이 1.2초마다 빠름(앞으로)·느림(뒤로)이 바뀐다.
                     //    좌우로 옮겨 다니며 간다. 곳곳에 🧱 낮은 천장 — 그 밑에선 점프가 안 된다
@@ -5210,9 +5211,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 floorPiece(zRow(i), zRow(i) - AFT);   // 문 뒤 착지
                 if (!hard || i < 3) { floorPiece(a, b); continue; }
                 const t1 = POOL[Math.floor(ornd() * POOL.length)], two = !SOLO.has(t1) && ornd() < 0.45;   // 유리·징검다리는 넓은 자리가 필요해 늘 혼자 한 구간
-                if (!two) { OB[t1](a, b); continue; }
+                if (!two) { OB[t1](a, b); obs.lim[i] = DOOR_LIM[t1]; continue; }
                 const P2 = POOL.filter(x => !SOLO.has(x) && x !== t1), t2 = P2[Math.floor(ornd() * P2.length)];
-                const mid = (a + b) / 2; OB[t1](a, mid); OB[t2](mid, b);
+                const mid = (a + b) / 2; OB[t1](a, mid); OB[t2](mid, b); obs.lim[i] = Math.max(DOOR_LIM[t1], DOOR_LIM[t2]) + 5;
             }
             floorPiece(zRow(n - 1) - AFT, zEnd);   // 마지막 문 뒤 ~ 시상대
             add(new THREE.BoxGeometry(DR.GATE + 0.2, 0.14, 0.12), doorMat.post, X, FY + DR.WH + 0.07, zBack);   // 입장문 위 상인방
@@ -5282,7 +5283,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         function doorOutside() { const z = DR.ZB + 2.1; P.x = DR.AX; P.z = z; P.y = terrain(DR.AX, z) + 0.05; P.vy = 0; P.face = 0; camYaw = 0; }   // 입장문 앞(경기장을 바라보며)
         function doorGo() {   // 출발 — 막이 걷히고 글자가 드러난다
             const R = doorRun; if (!R) return;
-            R.phase = 'run'; R.t0 = performance.now();
+            R.phase = 'run'; R.t0 = performance.now(); R.segAt = R.t0;
             const bi = BOXES.indexOf(R.veilBox); if (bi >= 0) BOXES.splice(bi, 1); R.veil.visible = false;
             doorReveal(true, R.mode === 'hard' ? 0 : null);   // 험한 길은 첫 줄만 — 나머지는 고요한 구간에 들어설 때
             sprayBurst(DR.AX, R.FY + 0.3, DR.Z0, 26, 0);
@@ -5306,7 +5307,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             setTimeout(() => { if (doorRun === R) doorEnd(true); }, 3200);
         }
         function doorEnd(ok, out) {   // ok: 도착(시상식 뒤 카드 — 밖으로는 카드를 닫을 때) · out: 경기장 밖(입장문 앞)으로 내보냄
-            const R = doorRun; if (!R) return; doorRun = null; ov.classList.remove('nj3d-podium');
+            const R = doorRun; if (!R) return; doorRun = null; ov.classList.remove('nj3d-podium'); doorGhostMe(false);
             if (doorCam) { [camDist, camPitch] = doorCam; doorCam = null; }
             doorCount.hidden = true;
             if (R.veilBox && !BOXES.includes(R.veilBox)) BOXES.push(R.veilBox); R.veil.visible = true; doorReveal(false);   // 다음 입장을 위해 막·「?」를 되돌린다
@@ -5322,7 +5323,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 <div class="sw-big">🚪</div>
                 <div class="sw-title">${doorEn() ? 'Finished!' : '통과!'} ⏱ ${sec(ms)}</div>
                 <div class="sw-ref">${starEsc(doorRef(R.id))}</div><div class="sw-txt">${R.ws.map(w => `<b>${starEsc(w)}</b>`).join(' ')}</div>
-                <div class="sw-dots">💥 ${R.miss}${R.fall ? ' · 🕳️ ' + R.fall : ''} · ${isBest ? (doorEn() ? '🏅 New best' : '🏅 최고 기록') : (doorEn() ? 'Best ' : '최고 ') + sec(best)}</div>
+                <div class="sw-dots">💥 ${R.miss}${R.fall ? ' · 🕳️ ' + R.fall : ''}${R.rescue ? ' · 🕊️ ' + R.rescue : ''} · ${isBest ? (doorEn() ? '🏅 New best' : '🏅 최고 기록') : (doorEn() ? 'Best ' : '최고 ') + sec(best)}</div>
                 <div class="nj3d-doorbtns">${doorPartOf(R.id) < doorParts(R.id) ? `<button class="sw-ok" data-a="next">${doorEn() ? 'Next part' : '다음 부분'} (${doorPartOf(R.id) + 1}/${doorParts(R.id)}) ▶</button>` : ''}<button class="sw-ok" data-a="again">${doorEn() ? 'Again' : '다시'}</button><button class="sw-ok" data-a="other">${doorEn() ? 'Another verse' : '다른 구절'}</button><button class="sw-ok ghost" data-a="close">${doorEn() ? 'Close' : '닫기'}</button></div></div>`;
             doorWin.hidden = false; void doorWin.offsetWidth; doorWin.classList.add('in'); doorWin._at = performance.now(); doorWin._id = R.id;
         }
@@ -5355,6 +5356,32 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 q.bx.x0 = q.x - 0.25; q.bx.x1 = q.x + 0.25; q.bx.y1 = top;
             });
             O.pistons.forEach(q => { q.f = pistonF(q, t); q.m.position.x = DR.AX + q.s * (q.f + q.W / 2); const fx = DR.AX + q.s * q.f; q.bx.x0 = q.s < 0 ? DR.AX - DR.LW / 2 - 0.3 : fx; q.bx.x1 = q.s < 0 ? fx : DR.AX + DR.LW / 2 + 0.3; });   // 얼굴은 X + s·f, 몸통은 벽 쪽으로
+        }
+        const DOOR_SAVE_D = 2.0;   // 🕊️ 데려다주는 자리 — 문에서 2.0(고요한 구간 뒤쪽)
+        let flyMats = null;
+        function doorGhostMe(on) {   // 순례자를 반투명하게(재질은 복제하지 않고 투명도만 바꿨다 되돌린다)
+            if (on && !flyMats) { flyMats = []; pilgrim.traverse(o => { if (!o.isMesh || !o.material) return; [].concat(o.material).forEach(m => { flyMats.push([m, m.transparent, m.opacity, m.depthWrite]); m.transparent = true; m.opacity = Math.min(m.opacity, 0.45); m.depthWrite = false; }); }); }
+            if (!on && flyMats) { flyMats.forEach(([m, t, op, dw]) => { m.transparent = t; m.opacity = op; m.depthWrite = dw; }); flyMats = null; }
+        }
+        function doorFlyStart(R, now) {
+            const rw = R.rows[R.next];
+            R.fly = { t0: now, dur: 1600, x0: P.x, y0: P.y, z0: P.z, x1: DR.AX, z1: rw.z + DOOR_SAVE_D, cam: [camDist, camPitch] };
+            R.saved = R.next; R.rescue = (R.rescue || 0) + 1; R.knock = null; R.sk = null; moveHold = true; gliding = false;
+            doorGhostMe(true); sprayBurst(P.x, P.y + 0.2, P.z, 18, 0);
+            if (typeof SoundEffect !== 'undefined' && SoundEffect.playLevelUp) SoundEffect.playLevelUp();
+            showHint(doorEn() ? '🕊️ Carried to the doors — now recall the next word' : '🕊️ 문 앞으로 데려다줄게요 — 다음 어절을 떠올려요', 2600);
+            doorHudDraw();
+        }
+        function doorFlyStep(R, now) {   // 위로 솟았다 문 앞에 내려앉는다 — 카메라는 조금 뒤·위에서 따라간다
+            const F = R.fly, u = Math.min(1, (now - F.t0) / F.dur), e = u * u * (3 - 2 * u);
+            P.x = F.x0 + (F.x1 - F.x0) * e; P.z = F.z0 + (F.z1 - F.z0) * e; P.y = F.y0 + (R.FY + 0.02 - F.y0) * e + Math.sin(Math.PI * u) * 0.42;
+            P.vy = 0; P.face = 0; P.onGround = false;
+            camYaw = angLerp(camYaw, 0, 0.12); camPitch += (0.6 - camPitch) * 0.08; camDist += (2.8 - camDist) * 0.08;
+            if (Math.random() < 0.35) sprayBurst(P.x, P.y + 0.15, P.z, 3, 0);
+            if (u >= 1) {
+                R.fly = null; P.y = R.FY + 0.02; P.onGround = true; doorGhostMe(false); moveHold = true; R.segAt = now;
+                [camDist, camPitch] = [2.3, 0.38]; sprayBurst(P.x, P.y + 0.2, P.z, 14, 0); doorHudDraw();
+            }
         }
         function doorFall(R, why) {   // 🕳️ 떨어짐 — 직전 문 바로 앞(첫 구간이면 출발선 앞)으로. 이미 연 문은 열린 채
             const prev = R.rows[R.next - 1], z = prev ? prev.z - 0.5 : DR.Z0 - 0.4;
@@ -5437,6 +5464,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 } else if (R.phase === 'count') { R.phase = 'lobby'; doorCount.hidden = true; doorHudDraw(); }
                 return;
             }
+            if (R.fly) { doorFlyStep(R, now); return; }   // 🕊️ 문 앞으로 날아가는 중 — 장애물·문은 건드리지 않는다
+            { const rw = R.rows[R.next], lim = R.obs.lim[R.next];   // 🕊️ 넉넉한 시간이 지나도록 고요한 구간에 못 닿으면 데려다준다
+              if (rw && lim && !R.knock && P.z > rw.z + DR.CALM && now - (R.segAt || now) > lim * 1000) { doorFlyStart(R, now); return; } }
             if (doorObsHit(dt, now)) return;   // 🕳️ 떨어졌으면 직전 문 앞으로
             // 좁은 문·넓은 문 — 지금 줄에서 순례자가 마주한 문만. sq 1 = 좁아짐(정답) · −1 = 넓어짐(오답), 지나가거나 비켜서면 0으로
             const cur0 = R.rows[R.next], near = cur0 && (() => { const dz = P.z - cur0.z; if (dz > 0.7 || dz < -0.35) return null; const d = cur0.doors.reduce((a, b) => Math.abs(b.x - P.x) < Math.abs(a.x - P.x) ? b : a); return Math.abs(d.x - P.x) < DR.DW / 2 + 0.02 ? d : null; })();
@@ -5476,7 +5506,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                         if (d.right && !d.opening) { d.opening = true; const bi = BOXES.indexOf(d.box); if (bi >= 0) BOXES.splice(bi, 1); if (typeof SoundEffect !== 'undefined' && SoundEffect.playCorrect) SoundEffect.playCorrect(); }
                         else if (!d.right && dz < CR + 0.06 && now > (R.cool || 0)) {   // 💥 닫힌 문에 부딪힘 — 붉어지고 직전 문 바로 뒤로(첫 줄이면 출발선 바로 앞)
                             // 10/22 사용자: 더 멀리 — 처음으로는 앞부분만 되풀이하게 돼서 직전 문으로. 틀린 줄을 다시 마주해 그 어절을 한 번 더 떠올린다
-                            const prev = R.rows[R.next - 1], back = prev ? prev.z - 0.35 : DR.Z0 - 0.4;
+                            const prev = R.rows[R.next - 1], back = R.saved === R.next ? row.z + DOOR_SAVE_D : prev ? prev.z - 0.35 : DR.Z0 - 0.4;   // 🕊️ 데려다준 줄에선 고요한 구간으로(같은 오답을 바로 또 고르지 않게 문에서 2.0)
                             R.cool = now + 700; R.miss++; R.knock = { z: back, until: now + 450 }; P.vy = Math.max(P.vy, 1.1); P.onGround = false;
                             d.mesh.material = doorMat.bad; d.flash = now + 450;
                             if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
@@ -5484,7 +5514,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                         }
                     }
                 }
-                if (dz < -0.12) { R.next++; doorHudDraw(); }
+                if (dz < -0.12) { R.next++; R.segAt = now; doorHudDraw(); }
                 const pr = R.rows[R.next - 1];   // 👻 지나온 줄 — 다 빠져나가면 반투명(10/23 사용자: 통과한 문과 벽이 새 구간을 가린다)
                 if (pr && !pr.ghost && P.z < pr.z - 0.12) { pr.ghost = true; [...pr.posts, pr.lintel, ...pr.doors.map(d => d.mesh)].forEach(m => { m.material = doorMat.ghost; }); pr.doors.forEach(d => { d.lb.visible = false; }); }   // 10/23 사용자: 투명해지는 게 늦다 — 다 빠져나가면(0.45) → 문턱을 넘자마자
             } else if (R.phase === 'run' && P.z < R.zFin) { doorPodium(); return; }
@@ -5538,6 +5568,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             gat: (x, z, y) => groundAt(x, z, y), blk: (x, z, y) => blocked(x, z, y), nbox: () => BOXES.filter(b => b.door).map(b => [+b.x0.toFixed(2), +b.x1.toFixed(2), +b.z0.toFixed(2), +b.z1.toFixed(2), +b.y1.toFixed(2)]).slice(0, 14),
             doorObs: () => doorArena && { mode: doorArena.mode, FY: doorArena.FY, tops: doorArena.obs.tops, rows: doorArena.rows.map(r => +r.z.toFixed(2)), pads: doorArena.obs.pads.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2)]), glass: doorArena.obs.glass.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2), q.real ? 1 : 0, q.broken ? 'B' : q.lit ? 'L' : '']), pistons: doorArena.obs.pistons.map(q => [q.s, +q.zc.toFixed(2), +q.f.toFixed(2)]), sweeps: doorArena.obs.sweeps.map(q => [+q.x.toFixed(2), +q.z.toFixed(2), +q.R.toFixed(2)]), ceils: doorArena.obs.ceils.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2)]), lanes: doorArena.obs.pads.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2), q.fast ? 1 : 0]), stones: doorArena.obs.stones.map(q => [+q.x.toFixed(2), +q.z.toFixed(2), q.A ? 1 : 0, +q.sink.toFixed(2), +q.sx0.toFixed(2), +q.sx1.toFixed(2)]) }, doorFall: () => doorRun && doorRun.fall, ceilDbg: () => doorRun && { n: doorRun.obs.ceils.length, phase: doorRun.phase, FY: doorRun.FY, P: [P.x, P.y, P.z], in: doorRun.obs.ceils.map(q => P.x > q.x0 - CR && P.x < q.x1 + CR && P.z > q.z0 - CR && P.z < q.z1 + CR) },
             doorStart: id => doorToLobby(id || doorPick()), doorOut: () => doorOutside(), door: () => doorRun && { phase: doorRun.phase, id: doorRun.id, next: doorRun.next, n: doorRun.ws.length, miss: doorRun.miss, t0: !!doorRun.t0, rows: doorRun.rows.map(r => ({ z: r.z, sh: !!r.shown, right: r.right, x: r.doors[r.right].x, w: r.w, sq: r.doors.map(d => +d.sq.toFixed(2)) })) }, doorWin: () => doorWin.hidden ? null : doorWin.innerText,
+            doorLim: sec => { if (doorArena) Object.keys(doorArena.obs.lim).forEach(k => { doorArena.obs.lim[k] = sec; }); return doorArena && doorArena.obs.lim; }, doorR: () => doorRun && { next: doorRun.next, saved: doorRun.saved, rescue: doorRun.rescue, fly: !!doorRun.fly, miss: doorRun.miss },
             camInfo: () => ({ yaw: +camYaw.toFixed(3), pitch: +camPitch.toFixed(3), dist: +camDist.toFixed(3), lock: camLock, hold: moveHold }), camLockSet: v => { camLock = !!v; },
             setP: (x, y, z, face) => { P.x = x; P.y = y; P.z = z; P.vy = 0; if (face != null) { P.face = face; camYaw = face; } }, P: () => ({ x: P.x, y: P.y, z: P.z, f: P.face }),
             stars: () => stars.map(s => ({ id: s.id, x: s.x, y: s.g.position.y, z: s.z, done: s.done, vis: s.g.visible })),
