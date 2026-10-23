@@ -2356,6 +2356,7 @@
         const swimWater = (x, z) => seaE(x, z) < 1 && seabed(x, z) < SEA_Y - 0.25 && !saltAt(x, z);   // 헤엄칠 만큼 깊은 바다
         let swimHop = 0, swimStroke = 0, mountSeaHint = 0, swimHinted = false, swimFloat = false;   // swimFloat — 살살 들어왔다(기세로 조금 잠겨도 수면으로 돌아온다)
         const swimNow = () => !ride.on && swimWater(P.x, P.z) && P.y < SEA_Y + 0.05 && !isUnder();
+        let offEdgeAt = 0;
         const doJump = () => {
             if (slide) return;   // 미끄러지는 중엔 뛰지 않는다
             if (!ride.on && isUnder()) return;   // 물속 — 점프는 누르고 있는 동안 위로 헤엄(아래 walkUpdate)
@@ -2367,7 +2368,8 @@
                 if (P.onGround) { P.vy = JUMP_V * (NJ_MOUNTS[ride.k] || {}).jump || JUMP_V; P.onGround = false; return; }
                 mountDown('leap'); return;
             }
-            if (P.onGround) { P.vy = JUMP_V; P.onGround = false; return; }
+            if (P.onGround) { P.vy = JUMP_V; P.onGround = false; offEdgeAt = 0; return; }
+            if (doorRun && doorRun.phase === 'run' && performance.now() - offEdgeAt < 110 && performance.now() - (doorRun.gone || 0) > 400 && P.vy <= 0) { P.vy = JUMP_V; offEdgeAt = 0; return; }   // ⏱ 막 끝을 벗어났으면 아직 뛸 수 있다(발밑이 사라진 건 빼고)
             if (jetOn) return;
             if (!gliding && doorBusy('glide')) return;
             gliding = !gliding;   // 공중에서 한 번 더 — 펼치기 / 접기
@@ -4504,7 +4506,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (P.y <= g) { P.y = g; if (P.vy < 0) P.vy = 0; P.onGround = true; }
             // 10/14 저녁: 아래 「else」가 착지(P.y <= g) 줄에 이어져야 한다 — 제트팩 줄을 사이에 끼웠더니 착지가 매 프레임 「공중」으로 덮여 점프·걷기가 안 됐다
             else if (!fly && !inSwim && wasGround && P.vy <= 0 && P.y - g < 0.45) { P.y = g; P.vy = 0; P.onGround = true; }   // 내리막은 발을 땅에 붙인다 — 한 걸음마다 살짝 떴다 떨어져 콩콩 튀었고, 늘 공중이라 점프도 안 됐다(9/30)
-            else P.onGround = false;
+            else { if (wasGround && P.vy <= 0) offEdgeAt = performance.now(); P.onGround = false; }   // ⏱ 걸어서 끝을 벗어난 시각(좁은 문 끝 점프)
             if (fly) { if (!P.onGround) jetAir = true; else if (jetAir && !jumpHeld) jetToggle(false); }   // 🚀 날다가 땅에 내려앉으면 꺼진다
             if (!wasGround && P.onGround && wetAt(P.x, P.z)) splash(P.x, P.z, true);   // 물에 떨어짐
             if (!ride.on && prevY >= SEA_Y - 0.03 && P.y < SEA_Y - 0.03 && seaE(P.x, P.z) < 1) {   // 🌊 높은 데서 떨어져 수면을 뚫고 들어감(10/5 사용자: 활강하다 떨어지면 꽤 깊이 잠기는데 소리가 없었다)
@@ -4967,7 +4969,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         //    (지금은 혼자라 내가 밟으면. 실시간 단계에서 「모두」가 된다 — 사용자 10/22).
         //    1단계: 혼자 · 관리자(#8648)만(kr_doorTest = '1'이면 시험용으로도). 다음: 친구 기록 유령 → 같은 성 실시간 ══
         const DOOR_ON = !VISIT && ((typeof myTag !== 'undefined' && String(myTag) === '8648') || (() => { try { return localStorage.getItem('kr_doorTest') === '1'; } catch (e) { return false; } })());
-        const DR = { AX: 10, Z0: -52, ROW: 2.2, ROW_H: 5.4, FIRST: 3.2, LOBBY: 3.2, GATE: 0.62, DW: 0.42, PW: 0.2, DH: 0.5, WH: 0.62, FL: 0.8 };   // 가운데 x · 출발선 z · 줄 사이(쉬운 길 · 험한 길) · 출발선~첫 문(10/22 사용자: 더 멀게 1.6 → 3.2) · 출발 구역 깊이 · 입장문 폭 · 문 폭 · 기둥 폭 · 문 높이 · 벽 높이 · 바닥 높이(10/23 구덩이에 떨어질 만큼 0.1 → 0.8 — 입장문 앞 계단)
+        const DR = { AX: 10, Z0: -52, ROW: 2.2, ROW_H: 5.4, CALM: 2.2, LAND: 0.6, FIRST: 3.2, LOBBY: 3.2, GATE: 0.62, DW: 0.42, PW: 0.2, DH: 0.5, WH: 0.62, FL: 0.8 };   // 가운데 x · 출발선 z · 줄 사이(쉬운 길 · 험한 길) · 출발선~첫 문(10/22 사용자: 더 멀게 1.6 → 3.2) · 출발 구역 깊이 · 입장문 폭 · 문 폭 · 기둥 폭 · 문 높이 · 벽 높이 · 바닥 높이(10/23 구덩이에 떨어질 만큼 0.1 → 0.8 — 입장문 앞 계단)
         let doorMode = (() => { try { return localStorage.getItem('kr_doorMode') === 'easy' ? 'easy' : 'hard'; } catch (e) { return 'hard'; } })();   // 🌿 쉬운 길(장애물 없음) · ⛰ 험한 길 — 대기실에서 고른다(10/23 사용자)
         DR.LW = DR.DW * 4 + DR.PW * 5; DR.ZB = DR.Z0 + DR.LOBBY;   // 길 폭 · 뒤 벽(입장문) z
         const doorEn = () => typeof currentLang !== 'undefined' && currentLang === 'en';
@@ -5030,6 +5032,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             ceil: new THREE.MeshStandardMaterial({ color: 0xff7eb6, roughness: 0.6, transparent: true, opacity: 0.75 }),
             ghost: new THREE.MeshStandardMaterial({ color: 0xffd0e4, transparent: true, opacity: 0.18, depthWrite: false }),
             pit: new THREE.MeshStandardMaterial({ color: 0x3b2f4a, roughness: 1 }),
+            calm: new THREE.MeshStandardMaterial({ color: 0x74aaea, roughness: 0.9, emissive: 0x1d4f80, emissiveIntensity: 0.45 }),   // 🕊️ 고요한 구간 — 떠올리는 곳
         };
         const padTex = (() => {   // 🟦 뒤로 미는 칸 — 바닥보다 살짝 푸르고 희미한 화살표(뒤쪽 = 입장문 쪽)
             const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
@@ -5133,7 +5136,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                         xs.forEach((x, j) => {
                             const mv = r > 1 && r < rows, A = mv ? Math.min(0.35, SW / 2 - 0.3) : 0;   // 처음·마지막 줄만 멈춤(10/23 사용자: 멈춘 돌만 밟으면 됐다)
                             const m = add(new THREE.CylinderGeometry(0.22, 0.25, 0.16, 10), doorMat.stone, x, FY - 0.08, z);
-                            const st = { x, z, x0: x, A, w: 0.55 + ornd() * 0.35, ph: ornd() * 6.28, m, bx: box(x - 0.22, x + 0.22, z - 0.22, z + 0.22, FY - 0.3, FY), on: 0, sink: 0, back: 0, sx0, sx1 };
+                            const st = { x, z, x0: x, A, w: 0.55 + ornd() * 0.35, ph: ornd() * 6.28, m, bx: box(x - 0.25, x + 0.25, z - 0.25, z + 0.25, FY - 0.3, FY), on: 0, sink: 0, back: 0, sx0, sx1 };
                             obs.stones.push(st);
                         });
                     }
@@ -5159,13 +5162,14 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                         for (let c = 0; c < C; c++) {
                             const zc = a - (r + 0.5) * rh, xc = XL + (c + 0.5) * cw, ok = c === col;
                             const m = add(new THREE.BoxGeometry(T, 0.03, T), doorMat.pane, xc, FY - 0.015, zc);
-                            obs.glass.push({ x0: xc - T / 2, x1: xc + T / 2, z0: zc - T / 2, z1: zc + T / 2, real: ok, m, bx: box(xc - T / 2, xc + T / 2, zc - T / 2, zc + T / 2, FY - 0.05, FY), broken: false, lit: false, at: 0 });
+                            const TG = T / 2 + 0.035;   // 밟히는 넓이(10/23 — 가장자리를 디뎌도)
+                            obs.glass.push({ x0: xc - TG, x1: xc + TG, z0: zc - TG, z1: zc + TG, real: ok, m, bx: box(xc - TG, xc + TG, zc - TG, zc + TG, FY - 0.05, FY), broken: false, lit: false, at: 0 });
                         }
                     }
                 },
                 sweep(a, b) {   // 🌀 회전 막대 — 바닥 높이에서 빙글. 점프로 넘거나 맞으면 밀려난다
                     floorPiece(a, b);
-                    const zc = (a + b) / 2, R1 = DR.LW / 2 - 0.04;
+                    const zc = (a + b) / 2, R1 = Math.min(DR.LW / 2 - 0.04, (a - b) / 2 - 0.06);
                     const piv = R1 >= 1.0 ? [[X, R1]] : [[X - DR.LW / 4, DR.LW / 4 - 0.03], [X + DR.LW / 4, DR.LW / 4 - 0.03]];
                     piv.forEach(([x, r], j) => {
                         const g = new THREE.Group(); g.position.set(x, FY + 0.05, zc); doorG.add(g);
@@ -5176,17 +5180,19 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 },
             };
             const POOL = ['push', 'ditch', 'bridge', 'glass', 'sweep'], SOLO = new Set(['ditch', 'glass', 'sweep']);   // 막대도 혼자(10/23 사용자: 팔이 짧아 뛸 필요가 없었다)
-            floorPiece(zBack, zRow(0) - (hard ? 1.0 : 0.5));   // 출발 구역 ~ 첫 문 뒤(장애물 없음)
+            const AFT = hard ? DR.LAND : 0.5, BEF = hard ? DR.CALM : 0.7;   // 문 뒤 착지 · 문 앞(험한 길은 🕊️ 고요한 구간)
+            floorPiece(zBack, zRow(0) - AFT);   // 출발 구역 ~ 첫 문 뒤(장애물 없음)
             for (let i = 1; i < n; i++) {
-                const a = zRow(i - 1) - (hard ? 1.0 : 0.5), b = zRow(i) + (hard ? 1.4 : 0.7);   // 10/23 사용자: 안전구간이 짧아 문 고르다 장애물 쪽으로 밀렸다
-                floorPiece(b, zRow(i) - (hard ? 1.0 : 0.5));   // 문 앞뒤 안전지대
+                const a = zRow(i - 1) - AFT, b = zRow(i) + BEF;
+                floorPiece(b, zRow(i), XL, XR, hard ? doorMat.calm : doorMat.floor);   // 문 앞 — 험한 길은 고요한 구간(차분한 바닥)
+                floorPiece(zRow(i), zRow(i) - AFT);   // 문 뒤 착지
                 if (!hard || i < 3) { floorPiece(a, b); continue; }
                 const t1 = POOL[Math.floor(ornd() * POOL.length)], two = !SOLO.has(t1) && ornd() < 0.45;   // 유리·징검다리는 넓은 자리가 필요해 늘 혼자 한 구간
                 if (!two) { OB[t1](a, b); continue; }
                 const P2 = POOL.filter(x => !SOLO.has(x) && x !== t1), t2 = P2[Math.floor(ornd() * P2.length)];
                 const mid = (a + b) / 2; OB[t1](a, mid); OB[t2](mid, b);
             }
-            floorPiece(zRow(n - 1) - (hard ? 1.0 : 0.5), zEnd);   // 마지막 문 뒤 ~ 시상대
+            floorPiece(zRow(n - 1) - AFT, zEnd);   // 마지막 문 뒤 ~ 시상대
             add(new THREE.BoxGeometry(DR.GATE + 0.2, 0.14, 0.12), doorMat.post, X, FY + DR.WH + 0.07, zBack);   // 입장문 위 상인방
             // 🫙 투명 뚜껑(10/22 사용자: 하늘 기둥 가장자리에서 제트팩으로 비비면 들어가졌다 — 겹치면 풀어 주는 장치 때문) — 벽 바깥선과 똑같은 넓이로, 벽 꼭대기에 딱 맞게.
             //    위에는 내려앉을 수 있다. 그래도 벽과 뚜껑 사이로 끼면 뚜껑 위로 올린다(cityAnims)
@@ -5209,7 +5215,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 const z = zRow(i), w = ws[i];
                 // 헷갈릴 만한 어절 — 바로 다음·그다음 어절을 먼저, 모자라면 같은 절의 다른 어절, 그래도 모자라면 이웃 절
                 const cand = [ws[i + 1], ws[i + 2], ws[i - 1], ...ws.slice().sort(() => rnd() - 0.5)];
-                const [c, v] = id.split('-').map(Number); cand.push(...doorWords(c + '-' + (v + 1)), ...doorWords(c + '-' + Math.max(1, v - 1)));
+                const [c, v] = id.split('/')[0].split('-').map(Number); cand.push(...doorWords(c + '-' + (v + 1)), ...doorWords(c + '-' + Math.max(1, v - 1)));
                 const dec = []; for (const x of cand) { if (x && x !== w && !dec.includes(x)) dec.push(x); if (dec.length === 3) break; }
                 while (dec.length < 3) dec.push('…');
                 const words = [w, ...dec], order = [0, 1, 2, 3].sort(() => rnd() - 0.5), right = order.indexOf(0);
@@ -5229,7 +5235,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             doorArena = { id, ws, rows, zEnd, zFin, FY, veil, veilBox, sign, podium, obs, mode: doorMode };
             return doorArena;
         }
-        function doorReveal(on) { (doorArena ? doorArena.rows : []).forEach(r => r.doors.forEach(d => { d.lb.material = on ? d.lb.userData.word : doorHideMat; })); }
+        function doorReveal(on, only) { (doorArena ? doorArena.rows : []).forEach((r, i) => { if (only != null && i !== only) return; r.shown = !!on; r.doors.forEach(d => { d.lb.material = on ? d.lb.userData.word : doorHideMat; }); }); }
         const onLine = () => P.z >= DR.Z0 - 0.02 && P.z <= DR.Z0 + 0.42 && Math.abs(P.x - DR.AX) < DR.LW / 2;
         const inArena = () => !!doorArena && Math.abs(P.x - DR.AX) < DR.LW / 2 + 0.02 && P.z < DR.ZB - 0.02 && P.z > doorArena.zEnd && Math.abs(P.y - doorArena.FY) < 0.6;
         function doorHudDraw(flash) {
@@ -5256,7 +5262,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const R = doorRun; if (!R) return;
             R.phase = 'run'; R.t0 = performance.now();
             const bi = BOXES.indexOf(R.veilBox); if (bi >= 0) BOXES.splice(bi, 1); R.veil.visible = false;
-            doorReveal(true);
+            doorReveal(true, R.mode === 'hard' ? 0 : null);   // 험한 길은 첫 줄만 — 나머지는 고요한 구간에 들어설 때
             sprayBurst(DR.AX, R.FY + 0.3, DR.Z0, 26, 0);
             if (typeof SoundEffect !== 'undefined' && SoundEffect.playLevelUp) SoundEffect.playLevelUp();
             doorCount.textContent = doorEn() ? 'GO!' : '출발!'; doorCount.hidden = false; doorCount.classList.remove('pop'); void doorCount.offsetWidth; doorCount.classList.add('pop');
@@ -5324,7 +5330,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             O.stones.forEach(q => {   // 🪨 미끄러지는 돌 — 상자도 함께 옮긴다(위에 선 사람은 doorObsHit에서 함께 옮김)
                 const nx = q.A ? q.x0 + q.A * Math.sin(t * q.w + q.ph) : q.x0; q.dx = nx - q.x; q.x = nx;
                 const top = doorArena.FY - q.sink * 0.7; q.m.position.set(q.x, top - 0.08, q.z);
-                q.bx.x0 = q.x - 0.22; q.bx.x1 = q.x + 0.22; q.bx.y1 = top;
+                q.bx.x0 = q.x - 0.25; q.bx.x1 = q.x + 0.25; q.bx.y1 = top;
             });
             O.pistons.forEach(q => { q.f = pistonF(q, t); q.m.position.x = DR.AX + q.s * (q.f + q.W / 2); const fx = DR.AX + q.s * q.f; q.bx.x0 = q.s < 0 ? DR.AX - DR.LW / 2 - 0.3 : fx; q.bx.x1 = q.s < 0 ? fx : DR.AX + DR.LW / 2 + 0.3; });   // 얼굴은 X + s·f, 몸통은 벽 쪽으로
         }
@@ -5350,13 +5356,13 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 break;
             }
             for (const q of O.glass) if (q.at && !q.broken && now > q.at) {
-                q.broken = true; q.m.visible = false; const bi = BOXES.indexOf(q.bx); if (bi >= 0) BOXES.splice(bi, 1);
+                q.broken = true; q.m.visible = false; const bi = BOXES.indexOf(q.bx); if (bi >= 0) BOXES.splice(bi, 1); R.gone = now;   // 발밑이 사라짐 — 끝 점프 없음
                 sprayBurst((q.x0 + q.x1) / 2, FY, (q.z0 + q.z1) / 2, 16, 0);
                 if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
             }
             for (const q of O.stones) {   // 🪨 돌 — 위에 서 있으면 함께 미끄러지고, 0.6초 넘게 서 있으면 가라앉는다(2초 뒤 다시 떠오른다)
-                const onIt = P.onGround && P.x > q.bx.x0 && P.x < q.bx.x1 && P.z > q.z - 0.22 && P.z < q.z + 0.22 && Math.abs(P.y - q.bx.y1) < 0.04;
-                if (onIt) { P.x += q.dx || 0; q.on += dt; } else if (!q.sink) q.on = 0;
+                const onIt = P.onGround && P.x > q.bx.x0 && P.x < q.bx.x1 && P.z > q.z - 0.25 && P.z < q.z + 0.25 && Math.abs(P.y - q.bx.y1) < 0.04;
+                if (onIt) { P.x += q.dx || 0; q.on += dt; if (q.sink) R.gone = now; } else if (!q.sink) q.on = 0;
                 if (q.on > 0.9 && !q.sink) { q.sink = 0.001; q.back = now + 2600; }
                 if (q.sink) { if (now < q.back) q.sink = Math.min(1, q.sink + dt / 0.35); else { q.sink = Math.max(0, q.sink - dt / 0.5); if (!q.sink) q.on = 0; } }
             }
@@ -5432,8 +5438,16 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 if (Math.abs(R.knock.z - P.z) < 0.04 || now > R.knock.until) { P.z = R.knock.z; R.knock = null; }
             }
             const row = R.rows[R.next];
+            if (row && !row.shown && P.z < row.z + DR.CALM + 0.05) {   // 🕊️ 고요한 구간에 들어서면 다음 문 글자가 드러난다
+                doorReveal(true, R.next); sprayBurst(DR.AX, R.FY + DR.DH, row.z + 0.1, 10, 0);
+                if (typeof SoundEffect !== 'undefined' && SoundEffect.playKeyStroke) SoundEffect.playKeyStroke();
+            }
             if (row) {
                 const dz = P.z - row.z;
+                if (dz < 0.8 && dz > 0.05 && !R.knock) {   // 🧲 문 가까이 — 가장 가까운 문 가운데로 살짝 당긴다(10/23)
+                    const d = row.doors.reduce((a, b) => Math.abs(b.x - P.x) < Math.abs(a.x - P.x) ? b : a);
+                    if (Math.abs(d.x - P.x) < DR.DW / 2 + 0.06) P.x += (d.x - P.x) * Math.min(1, dt * 4);
+                }
                 if (dz < 0.45 && dz > -0.2) {
                     const d = row.doors.reduce((a, b) => Math.abs(b.x - P.x) < Math.abs(a.x - P.x) ? b : a);
                     if (Math.abs(d.x - P.x) < DR.DW / 2 + 0.02) {
@@ -5501,7 +5515,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             ride: () => ({ on: ride.on, k: ride.k }), jet: () => jetOn, glide: () => gliding, hint: () => hint.textContent, rideBtn: () => rideBtn.click(),
             gat: (x, z, y) => groundAt(x, z, y), blk: (x, z, y) => blocked(x, z, y), nbox: () => BOXES.filter(b => b.door).map(b => [+b.x0.toFixed(2), +b.x1.toFixed(2), +b.z0.toFixed(2), +b.z1.toFixed(2), +b.y1.toFixed(2)]).slice(0, 14),
             doorObs: () => doorArena && { mode: doorArena.mode, FY: doorArena.FY, rows: doorArena.rows.map(r => +r.z.toFixed(2)), pads: doorArena.obs.pads.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2)]), glass: doorArena.obs.glass.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2), q.real ? 1 : 0, q.broken ? 'B' : q.lit ? 'L' : '']), pistons: doorArena.obs.pistons.map(q => [q.s, +q.zc.toFixed(2), +q.f.toFixed(2)]), sweeps: doorArena.obs.sweeps.map(q => [+q.x.toFixed(2), +q.z.toFixed(2), +q.R.toFixed(2)]), ceils: doorArena.obs.ceils.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2)]), lanes: doorArena.obs.pads.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2), q.fast ? 1 : 0]), stones: doorArena.obs.stones.map(q => [+q.x.toFixed(2), +q.z.toFixed(2), q.A ? 1 : 0, +q.sink.toFixed(2), +q.sx0.toFixed(2), +q.sx1.toFixed(2)]) }, doorFall: () => doorRun && doorRun.fall, ceilDbg: () => doorRun && { n: doorRun.obs.ceils.length, phase: doorRun.phase, FY: doorRun.FY, P: [P.x, P.y, P.z], in: doorRun.obs.ceils.map(q => P.x > q.x0 - CR && P.x < q.x1 + CR && P.z > q.z0 - CR && P.z < q.z1 + CR) },
-            doorStart: id => doorToLobby(id || doorPick()), doorOut: () => doorOutside(), door: () => doorRun && { phase: doorRun.phase, id: doorRun.id, next: doorRun.next, n: doorRun.ws.length, miss: doorRun.miss, t0: !!doorRun.t0, rows: doorRun.rows.map(r => ({ z: r.z, right: r.right, x: r.doors[r.right].x, w: r.w, sq: r.doors.map(d => +d.sq.toFixed(2)) })) }, doorWin: () => doorWin.hidden ? null : doorWin.innerText,
+            doorStart: id => doorToLobby(id || doorPick()), doorOut: () => doorOutside(), door: () => doorRun && { phase: doorRun.phase, id: doorRun.id, next: doorRun.next, n: doorRun.ws.length, miss: doorRun.miss, t0: !!doorRun.t0, rows: doorRun.rows.map(r => ({ z: r.z, sh: !!r.shown, right: r.right, x: r.doors[r.right].x, w: r.w, sq: r.doors.map(d => +d.sq.toFixed(2)) })) }, doorWin: () => doorWin.hidden ? null : doorWin.innerText,
             setP: (x, y, z, face) => { P.x = x; P.y = y; P.z = z; P.vy = 0; if (face != null) { P.face = face; camYaw = face; } }, P: () => ({ x: P.x, y: P.y, z: P.z, f: P.face }),
             stars: () => stars.map(s => ({ id: s.id, x: s.x, y: s.g.position.y, z: s.z, done: s.done, vis: s.g.visible })),
             fragScreen: () => starRun ? starRun.frags.filter(f => !f.got).map(f => { const v = f.sp.position.clone().project(camera); return { i: f.i, sx: +((v.x + 1) / 2).toFixed(2), sy: +((1 - v.y) / 2).toFixed(2), z: +v.z.toFixed(3), sc: [+f.sp.scale.x.toFixed(2), +f.sp.scale.y.toFixed(2)], vis: f.sp.visible, inScene: !!f.sp.parent, dist: +f.sp.position.distanceTo(camera.position).toFixed(2) }; }) : null, cam: () => ({ p: camera.position.toArray().map(v => +v.toFixed(2)), near: camera.near, far: camera.far }), three: () => ({ scene, renderer, camera, controls }), jetTrial: ms => { if (jetTrialEnd) jetTrialEnd = Date.now() + ms; return { end: jetTrialEnd, land: jetTrialLand, on: jetOn }; }, dyn: () => ({ dynScale: +dynScale.toFixed(2), pr: +renderer.getPixelRatio().toFixed(2), ema: +dynEma.toFixed(3) }), tall: () => BOXES.filter(b => !b.item && b.y1 > 3.5).map(b => ({ x0: b.x0, x1: b.x1, z0: b.z0, z1: b.z1, y0: b.y0, y1: b.y1 })),
