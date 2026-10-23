@@ -766,6 +766,7 @@ const LANG = {
         quit_modal_message: '지금 나가면 진행 상황이<br>저장되지 않을 수 있습니다.',
         quit_confirm: '정말 중단하시겠습니까?\n지금까지 진행한 상황은 저장되지 않습니다.',
         hardship_quit_title: '{title}을 종료하시겠습니까?',
+        njr_quit_title: '{title} — 그만둘까요?', njr_quit_note: '여기까지 쓴 절의 기록은 남아요.', njr_quit_note3d: '여기까지 쓴 절의 기록은 남아요. 성(3D)으로 돌아가요.',
         hardship_quit_notice_endurance: '현재 진행 순서는 저장되지 않습니다.',
         hardship_quit_notice_scored: '지금까지 획득한 승점은 저장됩니다. 현재 진행 순서는 저장되지 않습니다.',
         hardship_quit_notice_resume: '여기까지의 진행이 저장됩니다. 다음에 같은 범위로 들어오면 이어서 하실 수 있어요.',
@@ -2109,6 +2110,7 @@ const LANG = {
         quit_modal_message: 'Leaving now may not save<br>your progress.',
         quit_confirm: 'Are you sure you want to quit?\nYour progress will not be saved.',
         hardship_quit_title: 'Quit {title}?',
+        njr_quit_title: '{title} — stop here?', njr_quit_note: 'The verses you wrote so far are kept.', njr_quit_note3d: 'The verses you wrote so far are kept. Back to the city (3D).',
         hardship_quit_notice_endurance: 'Your current progress order will not be saved.',
         hardship_quit_notice_scored: 'Your score so far will be saved. Your current progress order will not be saved.',
         hardship_quit_notice_resume: 'Your progress so far will be saved. Come back to the same range to continue.',
@@ -24357,10 +24359,12 @@ function cancelQuit() {
     document.getElementById('quit-modal').classList.remove('active');
 }
 
+const _njQuitRound = () => !!(window.isHardshipMode && hardshipState && hardshipState.njRound);
 function getQuitModalTitleText() {
     if (!window.isHardshipMode) {
         return t('quit_modal_title');
     }
+    if (_njQuitRound()) return t('njr_quit_title', { title: hardshipState.displayTitle || '' });
 
     const modeMeta = getHardshipModeMeta(hardshipState.mode);
     return t('hardship_quit_title', { title: modeMeta.title });
@@ -24368,6 +24372,7 @@ function getQuitModalTitleText() {
 
 function getHardshipQuitNoticeText() {
     if (!window.isHardshipMode) return '';
+    if (_njQuitRound()) return t(hardshipState.njFrom === '3d' ? 'njr_quit_note3d' : 'njr_quit_note');
 
     // 이어하기가 걸리는 세션이면 문구가 달라진다 — '저장되지 않습니다'는 이제 거짓이다
     if (_isResumableHardshipSession()
@@ -24385,6 +24390,7 @@ function getHardshipQuitNoticeText() {
 
 function getHardshipBackQuitNoticeText() {
     if (!window.isHardshipMode) return '';
+    if (_njQuitRound()) return t(hardshipState.njFrom === '3d' ? 'njr_quit_note3d' : 'njr_quit_note');
 
     if (hardshipState.mode === 'endurance') {
         return t('hardship_back_quit_endurance');
@@ -24432,6 +24438,12 @@ function confirmQuit() {
         }
 
         // 3. 화면 초기화 및 원래 진입 화면으로 돌아가기 (진짜 종료)
+        // 🐠 성(3D)에서 시작한 백지 판 — ✕로 나가면 지도에 남겨 두지 않고 숨겨 둔 성으로(10/23 사용자: 지도로 가서 헷갈렸다). 결과 화면의 「성으로 돌아가기」와 같은 길
+        if (_njQuitRound() && hardshipState.njFrom === '3d') {
+            quitGame('map');
+            setTimeout(() => { if (typeof openNJ3DView === 'function') openNJ3DView(); }, 250);
+            return;
+        }
         const dest = window.isHardshipMode ? (window.hardshipOrigin || 'home') : (isFocusedTrainingSession() ? 'home' : 'map');
         // 📂 지도로 나가면 그 장 시트를 다시 연다(10/17) — 고난 판은 시작할 때 기억해 둔 장, 일반 스테이지·보스전은 그 스테이지의 장
         const backId = dest !== 'map' ? null : window.isHardshipMode ? (hardshipState && hardshipState.sheetCh && !hardshipState.levelTest ? hardshipState.sheetCh + '-1' : null) : window.currentStageId;   // 🎓 레벨 테스트는 나가면 테스트 결과가 뜬다 — 시트를 겹치지 않게
