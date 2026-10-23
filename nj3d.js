@@ -4641,7 +4641,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const MD = ride.on ? (NJ_MOUNTS[ride.k] || {}) : null;
             if (camLockOn()) {   // 🔒 추천 시점 — 경기장: 길을 따라 뒤·위에서(문 넷이 다 보이게) · 밖: 걷는 쪽 등 뒤로 천천히
                 const k = 1 - Math.exp(-dt * 3);
-                if (doorRun) { camYaw = angLerp(camYaw, 0, k); camPitch += (0.38 - camPitch) * k; camDist += (2.3 - camDist) * k; }
+                if (doorRun) {   // 🪟 유리·징검다리 구간은 거의 수직으로 내려다본다(10/23 사용자: 칸 사이 간격을 알기 어렵다) — 들어서기 1칸 전부터 · 빠져나가면 다시 뒤에서
+                    const top = doorRun.phase === 'run' && (doorRun.obs.tops || []).some(q => P.z < q.a + 1.0 && P.z > q.b - 0.3);
+                    camYaw = angLerp(camYaw, 0, k); camPitch += ((top ? 1.12 : 0.38) - camPitch) * k; camDist += ((top ? 3.2 : 2.3) - camDist) * k; }
                 else {
                     const mv = Math.abs(inp.jx) + Math.abs(inp.jy) > 0.05 || Object.values(inp.keys).some(Boolean);
                     if (mv) camYaw = angLerp(camYaw, P.face, 1 - Math.exp(-dt * 2));
@@ -5114,7 +5116,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             //    같은 구절·같은 길이면 같은 배치(따로 씨앗 — 유령·실시간 공정) ──
             let so = 97; for (const ch of id + doorMode) so = (so * 31 + ch.charCodeAt(0)) % 2147483647;
             const ornd = () => (so = (so * 16807) % 2147483647) / 2147483647;
-            const obs = { pads: [], glass: [], pistons: [], sweeps: [], stones: [], ceils: [] };
+            const obs = { pads: [], glass: [], pistons: [], sweeps: [], stones: [], ceils: [], tops: [] };   // tops — 위에서 내려다볼 구간(유리·징검다리, 🎥 시점 고정)
             const OB = {
                 push(a, b) {   // 🟩🟥 빨라지는 길·느려지는 길(10/23 사용자: 미는 칸이 전부 깔려 점프 몇 번이면 통과) — 세로 네 줄이 1.2초마다 빠름(앞으로)·느림(뒤로)이 바뀐다.
                     //    좌우로 옮겨 다니며 간다. 곳곳에 🧱 낮은 천장 — 그 밑에선 점프가 안 된다
@@ -5133,7 +5135,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 },
                 ditch(a, b) {   // 🪨 흔들리는 징검다리(10/23 사용자) — 구간 하나를 통째로 덮는 구덩이(약 3 — 한 번 점프로 최대 1.3이라 못 넘는다) 위 작은 돌.
                     //    어떤 돌은 좌우로 미끄러지고, 올라선 지 0.6초 넘으면 가라앉는다(2초 뒤 다시). 한쪽 벽을 따라 🚶 안전한 우회로 — 칸막이로 나뉘고 안은 지그재그(떨어지진 않지만 두 배쯤 걷는다)
-                    const side = ornd() < 0.5 ? -1 : 1, CW = 0.78, DIV = 0.06;
+                    const side = ornd() < 0.5 ? -1 : 1, CW = 0.78, DIV = 0.06; obs.tops.push({ a, b });
                     const cx0 = side < 0 ? XL : XR - CW, cx1 = cx0 + CW;                      // 우회로
                     const dx0 = side < 0 ? cx1 : cx0 - DIV, dx1 = dx0 + DIV;                 // 칸막이
                     const sx0 = side < 0 ? dx1 : XL, sx1 = side < 0 ? XR : dx0;              // 징검다리 띠
@@ -5175,7 +5177,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 },
                 glass(a, b) {   // 🪟 유리 징검다리(10/23 사용자: 걷지 말고 점프로 — 이어진 길이면 빨리 뛰며 연타해 깨져도 지나갔다).
                     //    4칸 × 줄, 칸끼리 0.35 넘게 떨어져 걸어서는 못 건넌다. 줄마다 진짜는 하나 — 앞줄 진짜의 바로 앞이나 대각선. 가짜는 닿는 순간 깨진다
-                    const C = 4, cw = DR.LW / C, R = Math.max(4, Math.round((a - b) / 0.7)), rh = (a - b) / R, T = 0.32;
+                    const C = 4, cw = DR.LW / C, R = Math.max(4, Math.round((a - b) / 0.7)), rh = (a - b) / R, T = 0.32; obs.tops.push({ a, b });
                     let col = Math.floor(ornd() * C);
                     for (let r = 0; r < R; r++) {
                         if (r) col = Math.max(0, Math.min(C - 1, col + Math.floor(ornd() * 3) - 1));
@@ -5534,7 +5536,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             pm: (clip, over) => { pm.force = clip ? { clip, over } : null; return { loaded: !!pm.mixer, cur: pm.cur, clips: Object.keys(pm.acts) }; }, lookApply: () => pmLook(), camSet: (yaw, pitch, dist) => { camYaw = yaw; camPitch = pitch; if (dist) camDist = dist; }, st: o => { if (o.glide != null) { equipWing(); gliding = o.glide; } if (o.jet) { jetTrialEnd = Date.now() + 60000; syncJetUI(); jetToggle(true); } if (o.ride) { mountUp(); } if (o.keys) Object.assign(inp.keys, o.keys); if (o.jetOff) jetToggle(false); if (o.sea) { placeAt('sea'); for (let i = 0; i < 120 && seaE(P.x, P.z) > 0.6; i++) P.z += 0.25; P.y = o.sea === 'top' ? SEA_Y : SEA_Y - 0.4; P.vy = 0; } return { gliding, jetOn, ride: ride.on, wingKind }; },
             ride: () => ({ on: ride.on, k: ride.k }), jet: () => jetOn, glide: () => gliding, hint: () => hint.textContent, rideBtn: () => rideBtn.click(),
             gat: (x, z, y) => groundAt(x, z, y), blk: (x, z, y) => blocked(x, z, y), nbox: () => BOXES.filter(b => b.door).map(b => [+b.x0.toFixed(2), +b.x1.toFixed(2), +b.z0.toFixed(2), +b.z1.toFixed(2), +b.y1.toFixed(2)]).slice(0, 14),
-            doorObs: () => doorArena && { mode: doorArena.mode, FY: doorArena.FY, rows: doorArena.rows.map(r => +r.z.toFixed(2)), pads: doorArena.obs.pads.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2)]), glass: doorArena.obs.glass.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2), q.real ? 1 : 0, q.broken ? 'B' : q.lit ? 'L' : '']), pistons: doorArena.obs.pistons.map(q => [q.s, +q.zc.toFixed(2), +q.f.toFixed(2)]), sweeps: doorArena.obs.sweeps.map(q => [+q.x.toFixed(2), +q.z.toFixed(2), +q.R.toFixed(2)]), ceils: doorArena.obs.ceils.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2)]), lanes: doorArena.obs.pads.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2), q.fast ? 1 : 0]), stones: doorArena.obs.stones.map(q => [+q.x.toFixed(2), +q.z.toFixed(2), q.A ? 1 : 0, +q.sink.toFixed(2), +q.sx0.toFixed(2), +q.sx1.toFixed(2)]) }, doorFall: () => doorRun && doorRun.fall, ceilDbg: () => doorRun && { n: doorRun.obs.ceils.length, phase: doorRun.phase, FY: doorRun.FY, P: [P.x, P.y, P.z], in: doorRun.obs.ceils.map(q => P.x > q.x0 - CR && P.x < q.x1 + CR && P.z > q.z0 - CR && P.z < q.z1 + CR) },
+            doorObs: () => doorArena && { mode: doorArena.mode, FY: doorArena.FY, tops: doorArena.obs.tops, rows: doorArena.rows.map(r => +r.z.toFixed(2)), pads: doorArena.obs.pads.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2)]), glass: doorArena.obs.glass.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2), q.real ? 1 : 0, q.broken ? 'B' : q.lit ? 'L' : '']), pistons: doorArena.obs.pistons.map(q => [q.s, +q.zc.toFixed(2), +q.f.toFixed(2)]), sweeps: doorArena.obs.sweeps.map(q => [+q.x.toFixed(2), +q.z.toFixed(2), +q.R.toFixed(2)]), ceils: doorArena.obs.ceils.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2)]), lanes: doorArena.obs.pads.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2), q.fast ? 1 : 0]), stones: doorArena.obs.stones.map(q => [+q.x.toFixed(2), +q.z.toFixed(2), q.A ? 1 : 0, +q.sink.toFixed(2), +q.sx0.toFixed(2), +q.sx1.toFixed(2)]) }, doorFall: () => doorRun && doorRun.fall, ceilDbg: () => doorRun && { n: doorRun.obs.ceils.length, phase: doorRun.phase, FY: doorRun.FY, P: [P.x, P.y, P.z], in: doorRun.obs.ceils.map(q => P.x > q.x0 - CR && P.x < q.x1 + CR && P.z > q.z0 - CR && P.z < q.z1 + CR) },
             doorStart: id => doorToLobby(id || doorPick()), doorOut: () => doorOutside(), door: () => doorRun && { phase: doorRun.phase, id: doorRun.id, next: doorRun.next, n: doorRun.ws.length, miss: doorRun.miss, t0: !!doorRun.t0, rows: doorRun.rows.map(r => ({ z: r.z, sh: !!r.shown, right: r.right, x: r.doors[r.right].x, w: r.w, sq: r.doors.map(d => +d.sq.toFixed(2)) })) }, doorWin: () => doorWin.hidden ? null : doorWin.innerText,
             camInfo: () => ({ yaw: +camYaw.toFixed(3), pitch: +camPitch.toFixed(3), dist: +camDist.toFixed(3), lock: camLock, hold: moveHold }), camLockSet: v => { camLock = !!v; },
             setP: (x, y, z, face) => { P.x = x; P.y = y; P.z = z; P.vy = 0; if (face != null) { P.face = face; camYaw = face; } }, P: () => ({ x: P.x, y: P.y, z: P.z, f: P.face }),
