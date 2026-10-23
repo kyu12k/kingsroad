@@ -1257,7 +1257,7 @@ const LANG = {
         review_status_retry_remain: '🔄 재도전 {n}회 남음',
         review_status_calculating: '계산중',
         review_status_first: '{gem}💎 첫 학습!',
-        btn_step1_next: '다 외웠다! 성령 충만! 다음 단계로 ▶',
+        btn_step1_next: '다 외웠다! 성령 충만! 다음 단계로 ▶', btn_step1_next_novice: '다음 단계로 ▶', step1_next_note: '아직 다 못 외워도 괜찮아요 — 다음 단계들에서 차근차근 익혀요', btn_step1_again: '🔁 한 번 더 읽기',
         review_dot_start: '시작',
         review_dot_10m: '10분 후',
         review_dot_1h: '1시간 후',
@@ -2597,7 +2597,7 @@ const LANG = {
         review_status_retry_remain: '🔄 {n} retries left',
         review_status_calculating: '...',
         review_status_first: '{gem}💎 First time!',
-        btn_step1_next: "I've got it! Spirit-filled! Next Stage ▶",
+        btn_step1_next: "I've got it! Spirit-filled! Next Stage ▶", btn_step1_next_novice: 'Next step ▶', step1_next_note: 'Not memorized yet? That is fine — the next steps help you learn it', btn_step1_again: '🔁 Read once more',
         review_dot_start: 'Start',
         review_dot_10m: '10 min',
         review_dot_1h: '1 hr',
@@ -16323,9 +16323,10 @@ function loadStep() {
 
         control.innerHTML = `
             <div id="step1-chosung-row" style="display:flex; justify-content:flex-end; margin-bottom:1px;"></div>
+            <button class="btn-attack" id="btn-step1-next" onclick="nextStep()" style="display:none; background-color:#2ecc71; margin-bottom:8px; width: 100%;">${_s1NoviceNext() ? t('btn_step1_next_novice') : t('btn_step1_next')}</button>
+            ${_s1NoviceNext() ? `<div id="step1-next-note" style="display:none; text-align:center; font-size:0.82rem; color:#cfe8d6; margin:-2px 0 8px;">${t('step1_next_note')}</div>` : ''}
             <div id="step1-controls" style="display: flex; gap: 10px; justify-content: center;"></div>
-            <button class="btn-attack" id="btn-step1-next" onclick="nextStep()" style="display:none; background-color:#2ecc71; margin-top:10px; width: 100%;">${t('btn_step1_next')}</button>
-        `;
+        `;   // 10/24 사용자: 「다음 단계로」를 크게·먼저, 「한 번 더 읽기」는 작게(처음 온 사람이 1단계에서 「다 외웠다」를 못 누르고 떠났다)
 
         const controlsContainer = document.getElementById('step1-controls');
 
@@ -16605,11 +16606,10 @@ function loadStep() {
 
             // 읽기 버튼 → 다시하기 버튼으로 즉시 교체
             const restartBtn = document.createElement('button');
-            restartBtn.className = revealBtn.className;
-            restartBtn.style.flex = "1";
-            restartBtn.innerText = t('btn_retry_perfect');
+            restartBtn.className = 'btn-step1-again';   // 작은 회색 — 「다음 단계로」가 주인공
+            restartBtn.innerText = t('btn_step1_again');
             restartBtn.disabled = true;
-            restartBtn.onclick = () => { loadStep(); };
+            restartBtn.onclick = () => { try { if (_lrn) _lrn.r1 = (_lrn.r1 | 0) + 1; } catch (e) { } loadStep(); };   // 📏 1단계 다시 읽은 수
             if (revealBtn.parentNode) {
                 revealBtn.parentNode.replaceChild(restartBtn, revealBtn);
             }
@@ -16617,12 +16617,14 @@ function loadStep() {
 
             SoundEffect.playLevelUp();
 
+            try { if (_lrn) _lrn.o1 = (_lrn.o1 | 0) + 1; } catch (e) { }   // 📏 1단계를 끝까지 연 수
             window._step1FinishTimer = setTimeout(() => {
                 window._step1FinishTimer = null;
                 document.getElementById('btn-step1-next').style.display = 'block';
                 document.getElementById('btn-step1-next').classList.add('shake-effect');
+                const nn = document.getElementById('step1-next-note'); if (nn) nn.style.display = 'block';
                 pouringLight.style.opacity = "0";
-            }, 1500);
+            }, 700);   // 1.5초 → 0.7초 — 「다음」이 먼저 보이게
         };
 
         // ★ 빈칸을 스스로 통과하고 이어진 확인 코스는 **처음부터 전부 열어둔다** (2026-09-27)
@@ -20776,7 +20778,7 @@ function _exitLabel() {
 }
 setInterval(() => { if (document.hidden) return; const l = _exitLabel(); if (l !== _exitLab) { _exitLab = l; _exitSince = Date.now(); } _lrnTick(l); }, 2000);
 /* 📏 학습 한 판의 시간 (10/21 사용자: 1~5단계가 길고 불필요한가 · 낭독 화면에 사람들이 얼마나 머무나) — 위 2초 타이머가 화면을 보고 판마다 센다(±2초).
-   learnLog: { s 절, at 시작, f 처음 외우는 절이면 1, n 낭독 화면 초, st [1~5단계 초], k 코스(0 전체 · 1 빠른 · 2·3 백지 승급), c 깼으면 1 } 최근 60판.
+   learnLog: { s 절, at 시작, f 처음 외우는 절이면 1, n 낭독 화면 초, st [1~5단계 초], k 코스(0 전체 · 1 빠른 · 2·3 백지 승급), c 깼으면 1, o1 1단계를 끝까지 연 수, r1 1단계 「한 번 더 읽기」 수(10/24) } 최근 60판.
    reviewSamples는 처음 외우는 판이 빠지거나 코스가 잘못 찍혀 첫 학습 시간을 알 수 없었다 */
 let learnLog = [], _lrn = null;
 function _lrnFlush() {
@@ -28633,6 +28635,12 @@ function _verseFontShow(on) {
 /* 🌱 처음 온 사람(지금까지 깬 절 3개 미만) — 10/22 새로 온 6명 중 넷이 첫 절 1단계에서 6~22초 만에, 하나는 낭독 화면에서 떠났다(10/23).
    낭독 화면엔 「먼저 귀로」 한 줄 + 남은 시간 막대, 1단계엔 쉬운 안내 + 「읽기」 손가락 */
 function _firstLearnNovice() { try { return Object.keys(stageClearDate || {}).filter(k => /^\d+-\d+$/.test(k)).length < 3; } catch (e) { return false; } }
+function _s1NoviceNext() {
+    try {
+        const id = String(window.currentStageId || '');
+        return _firstLearnNovice() && !(stageMastery && stageMastery[id]) && !/^quick/.test(String(window.trainingMode || '')) && typeof stepSequence !== 'undefined' && stepSequence.length > 1;
+    } catch (e) { return false; }
+}
 function _btGuideStart(overlay) {
     let g = document.getElementById('bt-guide');
     if (!_firstLearnNovice()) { if (g) g.style.display = 'none'; return; }
