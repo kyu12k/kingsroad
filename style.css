@@ -8098,9 +8098,13 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 /* 🕹️ 넓은 조이스틱 자리는 좁은 문 경기장 안에서만(10/23 밤 사용자: 밖에선 카메라를 돌리려다 조이스틱이 잡혔다) */
 #nj3d .nj3d-joyzone { display: none; }
 #nj3d.nj3d-doorrun .nj3d-joyzone { display: block; }
-/* 🎥 시점 고정은 오른쪽 버튼 줄에서 빼 점프 왼쪽에 작게(10/23 밤 사용자: 제트팩·탈것 버튼이 겹쳐 보였다 — 줄이 길어져 켜진 제트팩 빛이 아래 버튼까지) */
-#nj3d .nj3d-btns .nj3d-camlock { position: absolute; right: calc(100% + 10px); bottom: 150px; white-space: nowrap; padding: 7px 10px; }
+/* 🎥 시점 고정 — 오른쪽 위 도감 아래(10/24 사용자가 고름 · 10/23 밤엔 버튼 줄이 길어져 제트팩·탈것이 겹쳐 보였다). 걷기 중에만 */
+#nj3d .nj3d-camlock { position: absolute; right: 12px; top: 214px; width: 116px; z-index: 4; padding: 6px 0; font-size: 0.78rem; white-space: nowrap; pointer-events: auto; }
+#nj3d:not(.nj3d-walking) .nj3d-camlock, #nj3d.nj3d-looking .nj3d-camlock, #nj3d.nj3d-observing .nj3d-camlock { display: none; }
+#nj3d.nj3d-hasbar .nj3d-camlock { margin-top: 46px; }
+#nj3d.nj3d-barfold .nj3d-camlock { margin-top: 0; }
+@media (orientation: landscape) and (max-height: 520px) { #nj3d .nj3d-camlock { right: 122px; } }
 /* 💎 보석 줄 — 좁은 화면에서 「내려다보기」를 덮었다(360px) */
 .nj3d-wallet { max-width: calc(100% - 150px); flex-wrap: wrap; justify-content: flex-end; }
 @media (max-width: 400px) { .nj3d-wallet { font-size: 0.72rem; gap: 4px; } .nj3d-wallet span { padding: 4px 8px; } }
-#nj3d.nj3d-doorrun .nj3d-btns .nj3d-camlock { right: 0; bottom: 86px; }   /* 경기장 안은 버튼이 점프뿐 — 점프 바로 위(가운데 「🕊️ 날아가기」와 안 겹치게) */
+#nj3d.nj3d-doorrun .nj3d-camlock { top: auto; right: 16px; width: auto; padding: 7px 12px; margin-top: 0; bottom: calc(18px + 86px + env(safe-area-inset-bottom, 0px)); }   /* 경기장 안은 위가 안내 창 — 점프 바로 위(가운데 「🕊️ 날아가기」와 안 겹치게) */

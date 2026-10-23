@@ -81,7 +81,6 @@
                         <button class="nj3d-wb small nj3d-ridebtn"></button>
                         <button class="nj3d-wb small nj3d-divebtn" hidden>${T('nj3d_dive')}<span class="nj3d-key">Q</span></button>
                         <button class="nj3d-wb small nj3d-slidebtn" hidden>${T('nj3d_slide')}</button>
-                        <button class="nj3d-wb small nj3d-camlock"></button>
                         <button class="nj3d-wb nj3d-jump">${T('nj3d_jump')}<span class="nj3d-key">Space</span></button>
                     </div>
                 </div>
@@ -91,6 +90,7 @@
                 <div class="nj3d-wallet"></div>
                 <canvas class="nj3d-mini" hidden></canvas>
                 <button class="nj3d-dexbtn" hidden></button>
+                <button class="nj3d-wb small nj3d-camlock"></button>
                 <div class="nj3d-fishq" hidden></div>
                 <div class="nj3d-offer" hidden></div>
                 <button class="nj3d-skip" hidden></button>
