@@ -8063,3 +8063,12 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 #nj3d .nj3d-doorhud .dmode button { pointer-events: auto; flex: 1; padding: 6px 8px; border-radius: 10px; border: 1px solid rgba(255,211,77,0.5); background: rgba(255,255,255,0.08); color: #fdf3d0; font: 700 0.8rem 'Pretendard', sans-serif; }
 #nj3d .nj3d-doorhud .dmode button.on { background: #ffd34d; color: #1c2340; }
 .nj3d-joyzone { position: absolute; left: 0; bottom: 0; width: min(46%, 240px); height: min(40%, 260px); pointer-events: auto; touch-action: none; }   /* 🕹️ 조이스틱 둘레를 넓게(10/23) */
+/* 🌱 처음 온 사람 — 낭독 안내·1단계 손가락(10/23) */
+#bt-guide { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(150px + env(safe-area-inset-bottom, 0px)); width: min(340px, 86vw); z-index: 5; text-align: center; color: #fde9b0; font: 700 0.95rem 'Pretendard', sans-serif; pointer-events: none; }
+#bt-guide .btg-bar { margin-top: 8px; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.15); overflow: hidden; }
+#bt-guide .btg-bar i { display: block; height: 100%; width: 0; background: #f1c40f; transition: width 0.2s linear; }
+.verse-indicator.step1-ind { padding-right: 62px; }
+.btn-attack.novice-pulse { animation: novicePulse 1.2s ease-in-out infinite; }
+@keyframes novicePulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(241,196,15,0.7); } 50% { box-shadow: 0 0 0 8px rgba(241,196,15,0); } }
+.novice-tip { position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%); white-space: nowrap; background: #f1c40f; color: #3d2f00; font: 800 0.85rem 'Pretendard', sans-serif; padding: 5px 10px; border-radius: 10px; pointer-events: none; animation: noviceBob 1s ease-in-out infinite; }
+@keyframes noviceBob { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }

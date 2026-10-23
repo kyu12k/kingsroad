@@ -923,6 +923,7 @@ const LANG = {
         hardship_feedback_giveup: '괜찮아요 🌱 이 말씀이었어요 — 다음엔 떠오를 거예요<br>{text}',
         hardship_feedback_typo_corrected: '오타 보정! +{pts}점 ({n}글자 오타)',
         hardship_feedback_typo_corrected_no_reward: '오타 보정! 승점 없음 ({n}글자 오타)',
+        hardship_step1_novice: 'Step 1. 가려진 말씀을 한 단어씩 떠올려 보고, <b>「읽기」</b>를 눌러 맞는지 확인하세요.<br>몰라도 괜찮아요 — 눌러서 보면 돼요.', step1_novice_tip: '👆 여기를 눌러요', bt_guide: '🎧 먼저 귀로 들어요 — 다 들으면 외우기가 시작돼요',
         hardship_step1_indicator: 'Step 1. 한 단어씩 읽으며 \'읽기\'를 눌러 외운 말씀을 확인하세요.<br>확실히 외웠다는 생각이 들 때까지 반복하세요.',
         step1_tip_text: '하나씩 말하며 \'읽기\' 버튼을 눌러보세요',
         step1_voice_btn: '음성인식',
@@ -2265,6 +2266,7 @@ const LANG = {
         hardship_feedback_giveup: "That's okay 🌱 here is the verse — it will come next time<br>{text}",
         hardship_feedback_typo_corrected: 'Typo corrected! +{pts} pts ({n} typo(s))',
         hardship_feedback_typo_corrected_no_reward: 'Typo corrected! No points ({n} typo(s))',
+        hardship_step1_novice: 'Step 1. Try to recall each hidden word, then tap <b>Read</b> to check.<br>Not sure? That is fine — tap to see it.', step1_novice_tip: '👆 Tap here', bt_guide: '🎧 Listen first — memorizing starts when it ends',
         hardship_step1_indicator: 'Step 1. Read each word aloud and tap \'Read\' to confirm.<br>Repeat until you are confident you have memorized it.',
         step1_tip_text: 'Say each word aloud and tap the \'Read\' button.',
         step1_voice_btn: '🎤 Speak it',
@@ -16234,7 +16236,7 @@ function loadStep() {
     // ----------------------------------------------------
     if (currentStep === 1) {
         field.innerHTML = `
-            <div class="verse-indicator">${verseLabel}${t('hardship_step1_indicator')}</div>
+            <div class="verse-indicator step1-ind">${verseLabel}${t(_firstLearnNovice() ? 'hardship_step1_novice' : 'hardship_step1_indicator')}</div>
             
             <div style="position: relative; margin-bottom: 30px;">
                 <div class="reading-card" id="tap-reading-card" 
@@ -16393,6 +16395,12 @@ function loadStep() {
         revealBtn.className = 'btn-attack';
         revealBtn.style.flex = "1";
         revealBtn.innerText = t('btn_read');
+        if (_firstLearnNovice()) {   // 🌱 처음엔 「읽기」를 눌러 보라고 — 한 번 누르면 사라진다
+            revealBtn.classList.add('novice-pulse');
+            const tip = document.createElement('div'); tip.className = 'novice-tip'; tip.textContent = t('step1_novice_tip');
+            setTimeout(() => { if (revealBtn.isConnected && revealBtn.classList.contains('novice-pulse')) { revealBtn.style.position = 'relative'; revealBtn.appendChild(tip); } }, 400);
+            revealBtn.addEventListener('pointerdown', () => { revealBtn.classList.remove('novice-pulse'); tip.remove(); }, { once: true });
+        }
 
         let longPressTimer = null;
         let longPressActive = false;
@@ -28610,6 +28618,21 @@ function _verseFontShow(on) {
     _verseFontFit();
 }
 /* [시네마틱 + 즉시 스킵 + 음소거 유지] */
+/* 🌱 처음 온 사람(지금까지 깬 절 3개 미만) — 10/22 새로 온 6명 중 넷이 첫 절 1단계에서 6~22초 만에, 하나는 낭독 화면에서 떠났다(10/23).
+   낭독 화면엔 「먼저 귀로」 한 줄 + 남은 시간 막대, 1단계엔 쉬운 안내 + 「읽기」 손가락 */
+function _firstLearnNovice() { try { return Object.keys(stageClearDate || {}).filter(k => /^\d+-\d+$/.test(k)).length < 3; } catch (e) { return false; } }
+function _btGuideStart(overlay) {
+    let g = document.getElementById('bt-guide');
+    if (!_firstLearnNovice()) { if (g) g.style.display = 'none'; return; }
+    if (!g) { g = document.createElement('div'); g.id = 'bt-guide'; g.innerHTML = `<div class="btg-txt"></div><div class="btg-bar"><i></i></div>`; overlay.appendChild(g); }
+    g.querySelector('.btg-txt').textContent = t('bt_guide'); g.style.display = 'block';
+    const bar = g.querySelector('.btg-bar i'); bar.style.width = '0%';
+    clearInterval(window._btgTimer);
+    window._btgTimer = setInterval(() => {
+        if (getComputedStyle(overlay).pointerEvents === 'none' || overlay.style.opacity === '0') { g.style.display = 'none'; clearInterval(window._btgTimer); return; }
+        const a = _activeAudio; if (a && a.duration > 0) bar.style.width = Math.min(100, a.currentTime / a.duration * 100).toFixed(1) + '%';
+    }, 200);
+}
 function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, vNum) {
     const overlay = document.getElementById('bible-transition-overlay');
     const introHeader = document.getElementById('stage-intro-header');
@@ -28621,6 +28644,7 @@ function playScrollTransition(targetText, verseAudio, onCompleteCallback, cNum, 
         overlay.appendChild(textOverlay);
     }
     textOverlay.innerText = targetText; _verseFontFit();
+    _btGuideStart(overlay);   // 🌱 처음 온 사람 — 「먼저 귀로 들어요」 + 남은 시간
     gsap.set(textOverlay, { opacity: 0, y: 20, scale: 0.9, xPercent: -50, yPercent: -50 });
     if (introHeader) gsap.set(introHeader, { opacity: 0, y: -10 });
 
