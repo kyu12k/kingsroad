@@ -2216,7 +2216,7 @@
             return bandHeight(x, z) <= 0 && !(ax < IN_F && az < IN_F);
         }
         function blocked(x, z, y) {
-            if (Math.abs(x) > 140 || z < -140 || z > 150) return true;
+            if (Math.abs(x) > 140 || z < (Math.abs(x - 10) < 3 ? -220 : -140) || z > 150) return true;   // 🚪 좁은 문 경기장 띠만 북쪽으로 −220까지(10/23 — 긴 구절은 경기장 끝이 −140을 넘어 마지막 문 앞에서 막혔다)
             const gh = (px, pz) => (y < SEA_Y - 0.03 && seaE(px, pz) < 1 ? stripFloor(px, pz) : terrain(px, pz));
             if (gh(x, z) - y > STEP) return true;
             // 성 안팎(기초석 단·경사로·물길 둑) — 몸 둘레까지 본다. 중심만 보니 경사로 옆면에 몸이 반쯤 파묻혔다(10/15 사용자)
@@ -2238,10 +2238,15 @@
            방향은 늘 조이스틱 가운데에서 잰다 */
         const joyZone = ov.querySelector('.nj3d-joyzone');
         [joy, joyZone].forEach(el => {
-            el.addEventListener('pointerdown', e => { joyId = e.pointerId; try { el.setPointerCapture(e.pointerId); } catch (_) { } moveJoy(e); });
+            el.addEventListener('pointerdown', e => {   // 🕹️ 누른 자리가 조이스틱 가운데(10/23 사용자: 유리 바닥에서 조작이 너무 어렵다) — 떼면 제자리
+                joyId = e.pointerId; try { el.setPointerCapture(e.pointerId); } catch (_) { }
+                const pr = joy.offsetParent ? joy.offsetParent.getBoundingClientRect() : { left: 0, top: 0 }, half = joy.offsetWidth / 2;
+                joy.style.left = (e.clientX - pr.left - half) + 'px'; joy.style.top = (e.clientY - pr.top - half) + 'px'; joy.style.bottom = 'auto';
+                moveJoy(e);
+            });
             el.addEventListener('pointermove', e => { if (e.pointerId === joyId) moveJoy(e); });
         });
-        const endJoy = e => { if (e.pointerId !== joyId) return; joyId = null; inp.jx = inp.jy = 0; knob.style.transform = ''; };
+        const endJoy = e => { if (e.pointerId !== joyId) return; joyId = null; inp.jx = inp.jy = 0; knob.style.transform = ''; joy.style.left = joy.style.top = joy.style.bottom = ''; };
         [joy, joyZone].forEach(el => { el.addEventListener('pointerup', endJoy); el.addEventListener('pointercancel', endJoy); });
         let lookId = null, lx = 0, ly = 0;
         const cvs = renderer.domElement;
@@ -5084,7 +5089,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                         const x = XL + LWD * (k + 0.5), m = add(new THREE.BoxGeometry(LWD - 0.04, 0.012, a - b - 0.1), doorMat.laneFast.clone(), x, FY + 0.006, (a + b) / 2);
                         obs.pads.push({ x0: x - LWD / 2, x1: x + LWD / 2, z0: b + 0.05, z1: a - 0.05, m, k, ph });
                     }
-                    const nc = Math.max(1, Math.round((a - b) / 1.1));
+                    const nc = Math.max(2, Math.round((a - b) / 0.75));   // 10/23 사용자: 길 곳곳에 — 1.1 → 0.75마다
                     for (let j = 0; j < nc; j++) {   // 낮은 천장 — 길 폭의 절반쯤, 0.5 깊이
                         const zc = a - (j + 0.5) * (a - b) / nc, w2 = DR.LW * (0.35 + ornd() * 0.2), xc = XL + w2 / 2 + ornd() * (DR.LW - w2);
                         add(new THREE.BoxGeometry(w2, 0.05, 0.5), doorMat.ceil, xc, FY + 0.33, zc);
@@ -5123,12 +5128,13 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 },
                 bridge(a, b) {   // 🔨 좁은 다리 — 아래는 구덩이, 좌우 벽에서 블록이 번갈아 튀어나와 민다. 0.6마다 한 쌍(10/23 사용자: 한 쌍뿐일 때는 너무 적었다)
                     floorPiece(a, b, X - 0.25, X + 0.25, doorMat.bridge);   // 10/23 사용자: 가운데 길이 너무 좁다
-                    const k = Math.max(2, Math.floor((a - b) / 0.6));
+                    const k = Math.max(2, Math.floor((a - b) / 1.0));   // 10/23 사용자: 미는 벽 사이 설 자리가 좁다 — 0.6 → 1.0
                     for (let j = 0; j < k; j++) {
                         const zc = a - (j + 0.5) * (a - b) / k, ph = ornd();
                         [-1, 1].forEach(s => {
                             const W = DR.LW / 2 + 0.2, m = add(new THREE.BoxGeometry(W, 0.3, Math.min(0.3, (a - b) / k - 0.08)), doorMat.piston, X + s * DR.LW / 2, FY + 0.1, zc);
-                            obs.pistons.push({ s, zc, W, m, ph: (ph + (s > 0 ? 0.5 : 0)) % 1, f: DR.LW / 2 });
+                            const PD = Math.min(0.3, (a - b) / k - 0.08), bx = box(0, 0, zc - PD / 2, zc + PD / 2, FY - 0.1, FY + 0.25);   // 몸통 상자 — 앞뒤로는 막는다(x는 움직임마다)
+                            obs.pistons.push({ s, zc, W, m, PD, bx, ph: (ph + (s > 0 ? 0.5 : 0)) % 1, f: DR.LW / 2 });
                         });
                     }
                 },
@@ -5307,7 +5313,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 const top = doorArena.FY - q.sink * 0.7; q.m.position.set(q.x, top - 0.08, q.z);
                 q.bx.x0 = q.x - 0.22; q.bx.x1 = q.x + 0.22; q.bx.y1 = top;
             });
-            O.pistons.forEach(q => { q.f = pistonF(q, t); q.m.position.x = DR.AX + q.s * (q.f + q.W / 2); });   // 얼굴은 X + s·f, 몸통은 벽 쪽으로
+            O.pistons.forEach(q => { q.f = pistonF(q, t); q.m.position.x = DR.AX + q.s * (q.f + q.W / 2); const fx = DR.AX + q.s * q.f; q.bx.x0 = q.s < 0 ? DR.AX - DR.LW / 2 - 0.3 : fx; q.bx.x1 = q.s < 0 ? fx : DR.AX + DR.LW / 2 + 0.3; });   // 얼굴은 X + s·f, 몸통은 벽 쪽으로
         }
         function doorFall(R, why) {   // 🕳️ 떨어짐 — 직전 문 바로 앞(첫 구간이면 출발선 앞)으로. 이미 연 문은 열린 채
             const prev = R.rows[R.next - 1], z = prev ? prev.z - 0.5 : DR.Z0 - 0.4;
@@ -5322,7 +5328,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (P.y < FY - 0.28) { doorFall(R); return true; }
             const onFloor = P.onGround && Math.abs(P.y - FY) < 0.03;
             if (onFloor) for (const q of O.pads) if (P.x > q.x0 && P.x < q.x1 && P.z > q.z0 && P.z < q.z1) { P.z += (q.fast ? -1.1 : 1.6) * dt; break; }   // 🟩 앞으로 · 🟥 뒤로
-            for (const q of O.ceils) if (P.x > q.x0 - CR && P.x < q.x1 + CR && P.z > q.z0 - CR && P.z < q.z1 + CR && P.y > FY + 0.06) { P.y = FY + 0.06; if (P.vy > 0) P.vy = 0; }   // 🧱 낮은 천장 밑 — 머리가 닿아 점프가 안 된다
+            for (const q of O.ceils) if (P.x > q.x0 - CR && P.x < q.x1 + CR && P.z > q.z0 - CR && P.z < q.z1 + CR && P.y > FY + 0.06) { P.y = FY + 0.06; if (P.vy > 0) { P.vy = 0; R.ceilHold = now + 250; } }
+            if (R.ceilHold && now < R.ceilHold && !P.onGround) { P.vy = 0; P.y = Math.max(P.y, FY + 0.055); } else R.ceilHold = 0;   // 이마가 닿으면 잠깐 붙어 떠 있다 내려온다(10/23 사용자: 바로 떨어지는 게 어색)   // 🧱 낮은 천장 밑 — 머리가 닿아 점프가 안 된다
             if (onFloor) for (const q of O.glass) {   // 🪟 가짜 유리는 밟고 0.12초 뒤 깨진다 · 진짜는 빛난다(깨진 칸·빛난 칸은 이 판 동안 그대로)
                 if (q.broken || !(P.x > q.x0 && P.x < q.x1 && P.z > q.z0 && P.z < q.z1)) continue;
                 if (q.real) { if (!q.lit) { q.lit = true; q.m.material = doorMat.paneLit; } }
@@ -5341,9 +5348,14 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 if (q.sink) { if (now < q.back) q.sink = Math.min(1, q.sink + dt / 0.35); else { q.sink = Math.max(0, q.sink - dt / 0.5); if (!q.sink) q.on = 0; } }
             }
             for (const q of O.pistons) {   // 🔨 피스톤 — 몸이 얼굴 안쪽으로 들어오면 밀어낸다(다리 밖으로 떨어지게)
-                if (Math.abs(P.z - q.zc) > 0.15 + CR || P.y > FY + 0.32) continue;
+                if (Math.abs(P.z - q.zc) > q.PD / 2 - 0.01 || P.y > FY + 0.32) continue;   // 정면(피스톤 깊이 안)에서만 — 앞뒤에서 닿은 건 상자가 막는다(10/23 사용자: 앞뒤 벽에 비비기만 해도 옆으로 순간이동)
                 const fx = DR.AX + q.s * q.f;   // 피스톤 얼굴(f가 음수면 길 가운데를 넘어 반대쪽까지)
                 if (q.s < 0 && P.x - CR < fx) P.x = fx + CR; else if (q.s > 0 && P.x + CR > fx) P.x = fx - CR;
+            }
+            if (R.sk) {   // 🌀 막대에 밀린 기세 — 벽은 뚫지 않는다, 0.3초 남짓에 멎는다
+                const nx2 = P.x + R.sk.vx * dt, nz2 = P.z + R.sk.vz * dt;
+                if (!blocked(nx2, P.z, P.y)) P.x = nx2; if (!blocked(P.x, nz2, P.y)) P.z = nz2;
+                const k = Math.exp(-dt * 6); R.sk.vx *= k; R.sk.vz *= k; if (Math.hypot(R.sk.vx, R.sk.vz) < 0.08) R.sk = null;
             }
             for (const q of O.sweeps) {   // 🌀 막대 — 바닥 가까이(점프하면 넘는다)에서 닿으면 막대가 도는 쪽으로 튕겨 낸다
                 if (P.y > FY + 0.09) continue;
@@ -5352,7 +5364,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 const nx = -uz, nz = ux, dist = dx * nx + dz * nz;
                 if (Math.abs(dist) > 0.03 + CR || now < (R.swCool || 0)) continue;
                 const dir = Math.sign(q.w * sAl) || 1;   // 막대가 그 자리에서 움직이는 쪽
-                R.swCool = now + 500; P.x += nx * dir * 0.45; P.z += nz * dir * 0.45; P.vy = Math.max(P.vy, 1.2); P.onGround = false;
+                R.swCool = now + 500; R.sk = { vx: nx * dir * 2.2, vz: nz * dir * 2.2 }; P.vy = Math.max(P.vy, 0.5); P.onGround = false;   // 10/23 사용자: 그냥 점프가 되는 느낌 — 막대가 도는 쪽으로 미끄러지듯 밀려나다 멈춘다
                 if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
             }
             return false;
