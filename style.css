@@ -8095,3 +8095,12 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 /* 띄어쓰기 자리에 글자를 넣으면 좁은 칸(백지 0.42em · 빈칸 18px)을 넘쳐 옆 글자와 겹쳤다(10/23 사용자) — 그때만 글자 폭으로 넓힌다 */
 .hardship-char-slot.is-space.space-ch { width: auto; min-width: 18px; }
 .hardship-typing-board.hardship-ultimate-active .hardship-char-slot.is-space.space-ch { width: auto; min-width: 0.92em; }
+/* 🕹️ 넓은 조이스틱 자리는 좁은 문 경기장 안에서만(10/23 밤 사용자: 밖에선 카메라를 돌리려다 조이스틱이 잡혔다) */
+#nj3d .nj3d-joyzone { display: none; }
+#nj3d.nj3d-doorrun .nj3d-joyzone { display: block; }
+/* 🎥 시점 고정은 오른쪽 버튼 줄에서 빼 점프 왼쪽에 작게(10/23 밤 사용자: 제트팩·탈것 버튼이 겹쳐 보였다 — 줄이 길어져 켜진 제트팩 빛이 아래 버튼까지) */
+#nj3d .nj3d-btns .nj3d-camlock { position: absolute; right: calc(100% + 10px); bottom: 150px; white-space: nowrap; padding: 7px 10px; }
+/* 💎 보석 줄 — 좁은 화면에서 「내려다보기」를 덮었다(360px) */
+.nj3d-wallet { max-width: calc(100% - 150px); flex-wrap: wrap; justify-content: flex-end; }
+@media (max-width: 400px) { .nj3d-wallet { font-size: 0.72rem; gap: 4px; } .nj3d-wallet span { padding: 4px 8px; } }
+#nj3d.nj3d-doorrun .nj3d-btns .nj3d-camlock { right: 0; bottom: 86px; }   /* 경기장 안은 버튼이 점프뿐 — 점프 바로 위(가운데 「🕊️ 날아가기」와 안 겹치게) */
