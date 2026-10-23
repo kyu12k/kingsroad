@@ -36400,3 +36400,49 @@ function _zoomCheck() {
     } catch (e) { }
 }
 window.addEventListener('load', () => setTimeout(_zoomCheck, 6000));   // 로그인이 끝난 뒤(서버 기록)
+/* ✨ 새 버전 알림(10/23 사용자: 옛 앱을 그대로 쓰는 분이 꽤 있다 — 휴대폰이 앱을 닫지 않고 재워 두면 며칠 전 버전이 메모리에 남는다).
+   다시 화면에 나올 때(10분 넘게 잤으면)·켜 둔 동안 30분마다 서버의 index.html에서 game.js 버전만 읽어 견준다.
+   새 버전이면 위에 띠 「새 버전이 나왔어요 · 새로고침」. 처음 본 지 하루가 지나도 그대로면 안전한 순간(_syncIdle — 판·3D·대결 밖, 글을 쓰는 중이 아님)에
+   저장하고 조용히 새로고침 → 「✨ 새 버전으로 바꿨어요」(✕로만 닫힘). 같은 버전으로는 한 번만(서버마다 반영이 늦을 때 되풀이하지 않게) */
+const _appVer = (() => { try { const s = document.querySelector('script[src*="game.js?v="]'); return s ? s.getAttribute('src').split('v=')[1] : ''; } catch (e) { return ''; } })();
+let _verChkAt = 0, _verHiddenAt = 0, _verNew = '';
+function _verLS(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } }
+function _verBar(kind) {
+    const old = document.getElementById('ver-bar'); if (old) old.remove();
+    if (!kind) return;
+    const en = typeof currentLang !== 'undefined' && currentLang === 'en';
+    const bar = document.createElement('div'); bar.id = 'ver-bar';
+    bar.style.cssText = 'position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top, 0px));transform:translateX(-50%);z-index:99990;display:flex;align-items:center;gap:10px;max-width:92vw;padding:9px 10px 9px 14px;border-radius:14px;background:#1f2a44;color:#fdf3d0;border:1.5px solid #f1c40f;box-shadow:0 6px 18px rgba(0,0,0,.35);font:600 0.88rem Pretendard,sans-serif;white-space:nowrap;';
+    const msg = kind === 'done' ? (en ? '✨ Updated to the new version' : '✨ 새 버전으로 바꿨어요') : (en ? '✨ A new version is out' : '✨ 새 버전이 나왔어요');
+    bar.innerHTML = `<span>${msg}</span>${kind === 'new' ? `<button data-v="go" style="border:none;border-radius:10px;padding:6px 12px;background:#f1c40f;color:#3d2f00;font-weight:800;">${en ? 'Refresh' : '새로고침'}</button>` : ''}<button data-v="x" aria-label="close" style="border:none;background:none;color:#cbd5e1;font-size:1.05rem;padding:2px 6px;">✕</button>`;
+    bar.querySelector('[data-v="x"]').onclick = () => { bar.remove(); if (kind === 'done') _verLS('kr_verDone', null); };
+    const go = bar.querySelector('[data-v="go"]'); if (go) go.onclick = () => _verReload(false);
+    document.body.appendChild(bar);
+}
+function _verReload(auto) {
+    try { if (typeof saveGameData === 'function') saveGameData(); } catch (e) { }
+    try { sessionStorage.setItem('kr_verTried', _verNew || 'x'); } catch (e) { }
+    if (auto) _verLS('kr_verDone', '1');
+    setTimeout(() => location.reload(), 300);
+}
+async function _verCheck() {
+    if (!_appVer || document.hidden) return;
+    _verChkAt = Date.now();
+    let v = '';
+    try { const r = await fetch('index.html?vc=' + Date.now(), { cache: 'no-store' }); const h = await r.text(); const m = h.match(/game\.js\?v=([A-Za-z0-9_-]+)/); v = m ? m[1] : ''; } catch (e) { return; }
+    if (!v || v === _appVer) { _verLS('kr_verSeen', null); return; }
+    _verNew = v;
+    let tried = ''; try { tried = sessionStorage.getItem('kr_verTried') || ''; } catch (e) { }
+    if (tried === v) return;   // 방금 새로고침했는데도 옛 버전 — 서버 반영이 늦다. 이번엔 조용히
+    let seen = {}; try { seen = JSON.parse(_verLS('kr_verSeen') || '{}'); } catch (e) { }
+    if (seen.v !== v) { seen = { v, at: Date.now() }; _verLS('kr_verSeen', JSON.stringify(seen)); }
+    const ae = document.activeElement, typing = ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName) && ae.id !== 'hidden-typing-input';
+    if (Date.now() - seen.at > 86400000 && typeof _syncIdle === 'function' && _syncIdle() && !typing) { _verReload(true); return; }   // 하루가 지나도 그대로 — 안전한 순간에 조용히
+    if (!document.getElementById('ver-bar')) _verBar('new');
+}
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { _verHiddenAt = Date.now(); return; }
+    if (_verHiddenAt && Date.now() - _verHiddenAt > 10 * 60000) setTimeout(_verCheck, 1500);   // 10분 넘게 잤다가 깨어나면
+});
+setInterval(() => { if (!document.hidden && Date.now() - _verChkAt > 30 * 60000) _verCheck(); }, 60000);   // 켜 둔 동안 30분마다
+setTimeout(() => { if (_verLS('kr_verDone') === '1') _verBar('done'); _verChkAt = Date.now(); }, 2500);   // 조용히 바꿨으면 — ✕로 닫을 때까지

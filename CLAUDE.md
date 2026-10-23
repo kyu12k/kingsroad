@@ -168,6 +168,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `openNJBrowse(tab)` · `_njOpenToggle()` · kingsroad `njVisitSetOpen`·`njVisitList` | game.js:~10500 · kingsroad/index.js | 🌍 누구나 들어오기(주인이 켬, `njVisits/{태그}.open`)·둘러보기 목록(인기·새로·아무 곳·같은 지파) — 구경 3단계(10/19, `docs/새-예루살렘.md`) |
 | `openBattle(opts)` · `_battleLog` · `battleReviewVerse(id)` · `_battleInboxRefresh` → battle.js `openBattleScreen`·`makeQs`·`play`·`result` · kingsroad `battleCheck`·`battleSend`·`battleAnswer` | game.js:~9862 · battle.js | ⚔️ 말씀 대결(도전장) — 장을 골라 7문제(순서·빈칸·주소·다음 어절), 받은 사람이 같은 문제로 보낸 사람 기록과 겨룸. 구글 연동끼리·친구/길드원·하루 10장, 승패(`leaderboard.battleW/L/D` 서버 전용) · 💎 보상은 장마다 하루 한 번·하루 10판(`battleRw`·`battleRwClaim`, 10/14), 일지엔 `m:'battle'`·`tr` (`docs/말씀-대결.md`) |
 | `_exitLabel()` · `_exitNote()` · `exitLog` · `_pauseCheck()` · `_pauseAsk()` · `pauseWhy` · `lastSeenDay` | game.js:~20500 | 🚪 떠난 화면(최근 20)·💬 0~49절이 3일+ 쉬었다 오면 까닭 한 번 묻기 — 라이트 유저 이탈 원인(10/19, `docs/UX-결정기록.md`) |
+| `_verCheck()` · `_verBar(kind)` · `_verReload(auto)` · `_appVer` | game.js 맨 끝 | ✨ 새 버전 알림 — 깨어날 때·30분마다 서버 버전과 견줘 띠, 하루 지나면 안전한 순간에 조용히 새로고침 + ✕로만 닫히는 안내 (`docs/UX-결정기록.md` 10/23) |
 | `SoundEffect` | game.js:~3987 | 효과음 신디사이저 — 종소리 `_note`, 출력 `_bus`, 잠든 오디오 깨우기 `_play`, 진동 `_buzz` |
 
 ---
