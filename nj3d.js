@@ -81,6 +81,7 @@
                         <button class="nj3d-wb small nj3d-ridebtn"></button>
                         <button class="nj3d-wb small nj3d-divebtn" hidden>${T('nj3d_dive')}<span class="nj3d-key">Q</span></button>
                         <button class="nj3d-wb small nj3d-slidebtn" hidden>${T('nj3d_slide')}</button>
+                        <button class="nj3d-wb small nj3d-camlock"></button>
                         <button class="nj3d-wb nj3d-jump">${T('nj3d_jump')}<span class="nj3d-key">Space</span></button>
                     </div>
                 </div>
@@ -1663,6 +1664,13 @@
         { const bag = ov.querySelector('.nj3d-bag'), bagBtn = ov.querySelector('.nj3d-bagbtn');
           bagBtn.addEventListener('click', () => { bag.hidden = !bag.hidden; bagBtn.classList.toggle('on', !bag.hidden); });
           bag.addEventListener('click', e => { if (e.target.closest('button')) setTimeout(() => { bag.hidden = true; bagBtn.classList.remove('on'); }, 0); }); }
+        let camLock = (() => { try { return localStorage.getItem('kr_camLock') === '1'; } catch (e) { return false; } })();
+        const camLockBtn = ov.querySelector('.nj3d-camlock');   // 🎥 시점 고정(10/23 사용자: 걸으면서 카메라까지 돌리기 어려운 사람이 있다)
+        const syncCamLock = () => { const en = typeof currentLang !== 'undefined' && currentLang === 'en'; camLockBtn.textContent = camLock ? (en ? '🔒 View locked' : '🔒 시점 고정됨') : (en ? '🎥 Lock view' : '🎥 시점 고정'); camLockBtn.classList.toggle('on', camLock); };
+        syncCamLock();
+        camLockBtn.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); camLock = !camLock; try { localStorage.setItem('kr_camLock', camLock ? '1' : '0'); } catch (e2) { } syncCamLock();
+            const en = typeof currentLang !== 'undefined' && currentLang === 'en';
+            showHint(camLock ? (en ? 'View locked — the camera follows behind you' : '시점을 고정했어요 — 카메라가 뒤에서 따라와요') : (en ? 'View unlocked — drag to turn' : '시점을 풀었어요 — 끌어서 돌려요'), 1800); lastTouch = performance.now(); });
         const viewBtn = ov.querySelector('.nj3d-viewbtn');
         const syncViewBtn = () => { viewBtn.textContent = T(fpView ? 'nj3d_view_tp' : 'nj3d_view_fp'); };
         syncViewBtn();
@@ -1708,6 +1716,7 @@
             }
             spray.visible = live; if (live) sprayGeo.attributes.position.needsUpdate = true;
         }
+        let moveHold = false;   // 🕳️ 좁은 문에서 떨어진 뒤 — 손을 한 번 떼야 다시 걷는다
         let walk = false, jetOn = false, jetAir = false, camYaw = 0, camPitch = 0.12, camDist = 0.95, walkT = 0, gait = 0;
         // 팔다리가 있는 순례자 (9/29) — 엉덩이·어깨를 축으로 흔들어 걷기·달리기·점프·날기 자세를 만든다. 앞은 -z
         const pilgrim = new THREE.Group(), body = new THREE.Group(); pilgrim.add(body);
@@ -2340,7 +2349,7 @@
                 lastTouch = performance.now(); return;
             }
             if (e.pointerId !== lookId) return;
-            camYaw -= (e.clientX - lx) * 0.006; camPitch = Math.max(-1.25, Math.min(1.2, camPitch + (e.clientY - ly) * 0.005));   // 음수 = 카메라가 발치로 내려가 하늘을 올려다본다
+            if (!camLockOn()) { camYaw -= (e.clientX - lx) * 0.006; camPitch = Math.max(-1.25, Math.min(1.2, camPitch + (e.clientY - ly) * 0.005)); }   // 🔒 고정 중엔 돌리지 않는다   // 음수 = 카메라가 발치로 내려가 하늘을 올려다본다
             lx = e.clientX; ly = e.clientY; lastTouch = performance.now();
         });
         const endLook = e => { wPts.delete(e.pointerId); if (wPts.size < 2) wPinch0 = 0; if (e.pointerId === lookId) lookId = null; };
@@ -4442,8 +4451,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const kv = (k.ShiftLeft || k.ShiftRight) ? 1 : 0.7;
             let kx = ((k.KeyD || k.ArrowRight) ? 1 : 0) - ((k.KeyA || k.ArrowLeft) ? 1 : 0), ky = ((k.KeyS || k.ArrowDown) ? 1 : 0) - ((k.KeyW || k.ArrowUp) ? 1 : 0);
             if (kx && ky) { kx *= Math.SQRT1_2; ky *= Math.SQRT1_2; }
-            const jx = inp.jx + kx * kv;
-            const jy = inp.jy + ky * kv;
+            if (moveHold && Math.abs(inp.jx) + Math.abs(inp.jy) < 0.05 && !kx && !ky) moveHold = false;   // 🕳️ 떨어진 뒤 — 손을 한 번 떼야 다시 걷는다
+            const jx = moveHold ? 0 : inp.jx + kx * kv;
+            const jy = moveHold ? 0 : inp.jy + ky * kv;
             const fly = hasJet() && jetOn;   // 🚀 날기 = 버튼·F로 켜고 끈다(10/14)
             if (fly && ride.on) mountDown();   // 날기 버튼 = 내리며 제트팩
             const fx = -Math.sin(camYaw), fz = -Math.cos(camYaw), rx = Math.cos(camYaw), rz = -Math.sin(camYaw);
@@ -4626,8 +4636,18 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (moving || fly || !P.onGround) lastTouch = performance.now();
             followCam(dt);
         }
+        function camLockOn() { return camLock && walk && !fpView && !pm.lookOn && !slide && !(doorRun && doorRun.phase === 'podium'); }   // 시상식은 늘 자유(10/22 사용자)
         function followCam(dt) {   // 걷기 카메라 — 미끄럼에서도 같이 쓴다
             const MD = ride.on ? (NJ_MOUNTS[ride.k] || {}) : null;
+            if (camLockOn()) {   // 🔒 추천 시점 — 경기장: 길을 따라 뒤·위에서(문 넷이 다 보이게) · 밖: 걷는 쪽 등 뒤로 천천히
+                const k = 1 - Math.exp(-dt * 3);
+                if (doorRun) { camYaw = angLerp(camYaw, 0, k); camPitch += (0.38 - camPitch) * k; camDist += (2.3 - camDist) * k; }
+                else {
+                    const mv = Math.abs(inp.jx) + Math.abs(inp.jy) > 0.05 || Object.values(inp.keys).some(Boolean);
+                    if (mv) camYaw = angLerp(camYaw, P.face, 1 - Math.exp(-dt * 2));
+                    camPitch += ((ride.on ? 0.3 : 0.26) - camPitch) * k;
+                }
+            }
             if (pm.lookOn) camYaw = angLerp(camYaw, P.face + Math.PI, 1 - Math.exp(-dt * 6));   // 🙂 내 모습 — 얼굴 앞으로 돌아온다
             const Tg = new THREE.Vector3(P.x, P.y + (ride.on && MD ? 0.12 + (MD.seat || [0, 0.36])[1] * MOUNT_S : 0.17) - (pm.lookOn ? 0.085 : 0), P.z);   // 내 모습 창이 아래 반을 덮는다 — 가슴을 보아 얼굴이 위쪽에   // 탈 때는 앉은 높이만큼(낙타는 높이 — 멀리 보인다)
             const dir = new THREE.Vector3(Math.sin(camYaw) * Math.cos(camPitch), Math.sin(camPitch), Math.cos(camYaw) * Math.cos(camPitch));
@@ -5336,7 +5356,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         }
         function doorFall(R, why) {   // 🕳️ 떨어짐 — 직전 문 바로 앞(첫 구간이면 출발선 앞)으로. 이미 연 문은 열린 채
             const prev = R.rows[R.next - 1], z = prev ? prev.z - 0.5 : DR.Z0 - 0.4;
-            R.fall++; R.knock = null; P.x = DR.AX; P.z = z; P.y = R.FY + 0.3; P.vy = 0; P.face = 0; camYaw = 0;
+            R.fall++; R.knock = null; P.x = DR.AX; P.z = z; P.y = R.FY + 0.3; P.vy = 0; P.face = 0; camYaw = 0; moveHold = true;
             sprayBurst(P.x, P.y + 0.1, P.z, 14, 0);
             if (typeof SoundEffect !== 'undefined' && SoundEffect.playWrong) SoundEffect.playWrong();
             showHint(why || (doorEn() ? 'You fell — back to the last door' : '떨어졌어요 — 직전 문 앞으로'), 1600);
@@ -5516,6 +5536,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             gat: (x, z, y) => groundAt(x, z, y), blk: (x, z, y) => blocked(x, z, y), nbox: () => BOXES.filter(b => b.door).map(b => [+b.x0.toFixed(2), +b.x1.toFixed(2), +b.z0.toFixed(2), +b.z1.toFixed(2), +b.y1.toFixed(2)]).slice(0, 14),
             doorObs: () => doorArena && { mode: doorArena.mode, FY: doorArena.FY, rows: doorArena.rows.map(r => +r.z.toFixed(2)), pads: doorArena.obs.pads.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2)]), glass: doorArena.obs.glass.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2), q.real ? 1 : 0, q.broken ? 'B' : q.lit ? 'L' : '']), pistons: doorArena.obs.pistons.map(q => [q.s, +q.zc.toFixed(2), +q.f.toFixed(2)]), sweeps: doorArena.obs.sweeps.map(q => [+q.x.toFixed(2), +q.z.toFixed(2), +q.R.toFixed(2)]), ceils: doorArena.obs.ceils.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2)]), lanes: doorArena.obs.pads.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2), q.fast ? 1 : 0]), stones: doorArena.obs.stones.map(q => [+q.x.toFixed(2), +q.z.toFixed(2), q.A ? 1 : 0, +q.sink.toFixed(2), +q.sx0.toFixed(2), +q.sx1.toFixed(2)]) }, doorFall: () => doorRun && doorRun.fall, ceilDbg: () => doorRun && { n: doorRun.obs.ceils.length, phase: doorRun.phase, FY: doorRun.FY, P: [P.x, P.y, P.z], in: doorRun.obs.ceils.map(q => P.x > q.x0 - CR && P.x < q.x1 + CR && P.z > q.z0 - CR && P.z < q.z1 + CR) },
             doorStart: id => doorToLobby(id || doorPick()), doorOut: () => doorOutside(), door: () => doorRun && { phase: doorRun.phase, id: doorRun.id, next: doorRun.next, n: doorRun.ws.length, miss: doorRun.miss, t0: !!doorRun.t0, rows: doorRun.rows.map(r => ({ z: r.z, sh: !!r.shown, right: r.right, x: r.doors[r.right].x, w: r.w, sq: r.doors.map(d => +d.sq.toFixed(2)) })) }, doorWin: () => doorWin.hidden ? null : doorWin.innerText,
+            camInfo: () => ({ yaw: +camYaw.toFixed(3), pitch: +camPitch.toFixed(3), dist: +camDist.toFixed(3), lock: camLock, hold: moveHold }), camLockSet: v => { camLock = !!v; },
             setP: (x, y, z, face) => { P.x = x; P.y = y; P.z = z; P.vy = 0; if (face != null) { P.face = face; camYaw = face; } }, P: () => ({ x: P.x, y: P.y, z: P.z, f: P.face }),
             stars: () => stars.map(s => ({ id: s.id, x: s.x, y: s.g.position.y, z: s.z, done: s.done, vis: s.g.visible })),
             fragScreen: () => starRun ? starRun.frags.filter(f => !f.got).map(f => { const v = f.sp.position.clone().project(camera); return { i: f.i, sx: +((v.x + 1) / 2).toFixed(2), sy: +((1 - v.y) / 2).toFixed(2), z: +v.z.toFixed(3), sc: [+f.sp.scale.x.toFixed(2), +f.sp.scale.y.toFixed(2)], vis: f.sp.visible, inScene: !!f.sp.parent, dist: +f.sp.position.distanceTo(camera.position).toFixed(2) }; }) : null, cam: () => ({ p: camera.position.toArray().map(v => +v.toFixed(2)), near: camera.near, far: camera.far }), three: () => ({ scene, renderer, camera, controls }), jetTrial: ms => { if (jetTrialEnd) jetTrialEnd = Date.now() + ms; return { end: jetTrialEnd, land: jetTrialLand, on: jetOn }; }, dyn: () => ({ dynScale: +dynScale.toFixed(2), pr: +renderer.getPixelRatio().toFixed(2), ema: +dynEma.toFixed(3) }), tall: () => BOXES.filter(b => !b.item && b.y1 > 3.5).map(b => ({ x0: b.x0, x1: b.x1, z0: b.z0, z1: b.z1, y0: b.y0, y1: b.y1 })),
