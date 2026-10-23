@@ -4990,7 +4990,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         //    들어오면 출발선 앞을 투명한 막이 막고, 문 글자는 「?」. 경기장 안의 **모두가 출발선을 밟으면** 3·2·1 → 막이 사라지고 글자가 드러나며 출발
         //    (지금은 혼자라 내가 밟으면. 실시간 단계에서 「모두」가 된다 — 사용자 10/22).
         //    1단계: 혼자 · 관리자(#8648)만(kr_doorTest = '1'이면 시험용으로도). 다음: 친구 기록 유령 → 같은 성 실시간 ══
-        const DOOR_ON = !VISIT && ((typeof myTag !== 'undefined' && String(myTag) === '8648') || (() => { try { return localStorage.getItem('kr_doorTest') === '1'; } catch (e) { return false; } })());
+        const DOOR_ON = !VISIT && ((typeof myTag !== 'undefined' && ['8648', '1Y8T34'].includes(String(myTag).replace('#', ''))) ||   // 10/23 — #1Y8T34도 함께 시험
+            (() => { try { return localStorage.getItem('kr_doorTest') === '1'; } catch (e) { return false; } })());
         const DR = { AX: 10, Z0: -52, ROW: 2.2, ROW_H: 5.4, CALM: 2.2, LAND: 0.6, RH: 0.95, FIRST: 3.2, LOBBY: 3.2, GATE: 0.62, DW: 0.42, PW: 0.2, DH: 0.5, WH: 0.62, FL: 0.8 };   // 가운데 x · 출발선 z · 줄 사이(쉬운 길 · 험한 길) · 출발선~첫 문(10/22 사용자: 더 멀게 1.6 → 3.2) · 출발 구역 깊이 · 입장문 폭 · 문 폭 · 기둥 폭 · 문 높이 · 벽 높이 · 바닥 높이(10/23 구덩이에 떨어질 만큼 0.1 → 0.8 — 입장문 앞 계단)
         const DOOR_LIM = { push: 15, bridge: 16, glass: 18, ditch: 22, sweep: 13, plat: 16, roll: 14, hammer: 16, lift: 16 };   // 🕊️ 장애물마다 넉넉히 넘는 시간(초) — 넘도록 문 앞 고요한 구간에 못 닿으면 데려다준다(10/23 사용자)
         let doorMode = (() => { try { return localStorage.getItem('kr_doorMode') === 'easy' ? 'easy' : 'hard'; } catch (e) { return 'hard'; } })();   // 🌿 쉬운 길(장애물 없음) · ⛰ 험한 길 — 대기실에서 고른다(10/23 사용자)
