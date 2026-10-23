@@ -8073,3 +8073,22 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 .novice-tip { position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%); white-space: nowrap; background: #f1c40f; color: #3d2f00; font: 800 0.85rem 'Pretendard', sans-serif; padding: 5px 10px; border-radius: 10px; pointer-events: none; animation: noviceBob 1s ease-in-out infinite; }
 @keyframes noviceBob { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
 .nj3d-wb.small.nj3d-camlock.on { background: rgba(246, 215, 122, 0.95); color: #1a2340; }   /* 🔒 시점 고정 중(10/23) — 경기 중에도 보인다 */
+/* 🚪 좁은 문 10/23 밤 — 「좁은 문으로」가 위쪽 띠가 있을 때 「완성된 모습」과 겹쳤다(그 버튼만 46px 내려갔다) */
+#nj3d.nj3d-hasbar .nj3d-doorbtn { margin-top: 46px; }
+#nj3d.nj3d-barfold .nj3d-doorbtn { margin-top: 0; }
+#nj3d .nj3d-doorfly { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%); z-index: 6; width: auto; height: auto; padding: 12px 20px; border-radius: 999px; background: rgba(255, 255, 255, 0.95); color: #3a2a6e; font-weight: 800; font-size: 1rem; box-shadow: 0 0 0 3px rgba(181, 156, 255, 0.8), 0 4px 16px rgba(0,0,0,0.3); animation: njDoorFly 1.2s ease-in-out infinite; }
+#nj3d .nj3d-doorfly[hidden] { display: none; }
+@keyframes njDoorFly { 50% { transform: translateX(-50%) scale(1.07); } }
+#nj3d .nj3d-doorhud .dmode button[data-pick] { flex: 1; }
+#nj3d .nj3d-doorpick { position: absolute; left: 12px; right: 12px; top: 118px; z-index: 7; max-height: 60%; overflow-y: auto; padding: 12px; border-radius: 16px; background: rgba(20, 26, 50, 0.96); color: #fdf3d6; pointer-events: auto; box-shadow: 0 6px 24px rgba(0,0,0,0.4); }
+#nj3d .nj3d-doorpick[hidden] { display: none; }
+#nj3d .nj3d-doorpick .dp-h { display: flex; align-items: center; gap: 8px; font-weight: 800; margin-bottom: 10px; }
+#nj3d .nj3d-doorpick .dp-h [data-x] { margin-left: auto; }
+#nj3d .nj3d-doorpick .dp-h button { border: none; background: rgba(255,255,255,0.12); color: #fff; border-radius: 50%; width: 30px; height: 30px; font-size: 1rem; }
+#nj3d .nj3d-doorpick .dp-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+#nj3d .nj3d-doorpick .dp-grid button { padding: 8px 0; border-radius: 10px; border: 1px solid rgba(255,211,77,0.35); background: rgba(255,255,255,0.06); color: #c9c3b0; font-weight: 700; }
+#nj3d .nj3d-doorpick .dp-grid button.mine { color: #fff3c4; background: rgba(255,211,77,0.22); border-color: rgba(255,211,77,0.8); }
+#nj3d .nj3d-doorpick .dp-grid button.on { background: #ffd34d; color: #1c2340; }
+#nj3d .nj3d-doorpick .dp-grid button.wide { grid-column: 1 / -1; }
+#nj3d .nj3d-doorpick .dp-grid button:disabled { opacity: 0.3; }
+#nj3d .nj3d-doorpick .dp-note { margin-top: 8px; font-size: 0.75rem; opacity: 0.7; }
