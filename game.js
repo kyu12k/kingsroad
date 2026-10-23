@@ -889,7 +889,7 @@ const LANG = {
         lt_final_hidden: '「아직 안 나옴」으로 남겼어요 · 정답은 끝난 뒤 결과에서 그 칸을 누르면 보여요',
         lt_res_nb: '↔ 표시는 시험 중에 바로 앞뒤 절을 먼저 쓴 뒤 나온 절 — 이어서 꺼낸 것일 수 있어요',
         lt_res_tap: '칸을 누르면 그 절의 말씀이 보여요',
-        sh_btn: '🔑 첫 마디 보기', sh_btn_short: '🔑 첫 마디', sh_note: '🔑 첫 마디를 보고 썼어요 — 백지 레벨은 그대로 · 승점 절반',
+        sh_btn: '🔑 첫 마디 보기', sh_btn_more: '🔑 한 마디 더 ({n}/{max})', sh_btn_more_short: '🔑 +1 ({n}/{max})', sh_btn_short: '🔑 첫 마디', sh_note: '🔑 첫 마디를 보고 썼어요 — 백지 레벨은 그대로 · 승점 절반',
         lt_sheet_btn: '🎓 레벨 테스트', lt_sheet_last: '지난 테스트 {d} · 술술 {c}/{n}', lt_sheet_none: '지금 이 장이 정말 나오는지',
         fp_pick_title: '🔑 첫 마디의 고난 · {ch}장', fp_pick_desc: '구절은 사슬처럼 외워져서, 첫 마디만 떠오르면 나머지가 따라와요. 주소만 보고 첫 마디를 써 보세요. 순서는 섞여 나와요.',
         fp_lv1: '쉬움', fp_lv2: '보통', fp_lv3: '어려움', fp_lv1_d: '첫 단어', fp_lv2_d: '앞에서 세 글자가 찰 때까지', fp_lv3_d: '앞 세 단어',
@@ -2231,7 +2231,7 @@ const LANG = {
         lt_final_hidden: 'Saved as "not yet" · tap that cell in the result afterwards to see the verse',
         lt_res_nb: '↔ = came after you had already written a neighboring verse in this test — it may have been chained',
         lt_res_tap: 'Tap a cell to see that verse',
-        sh_btn: '🔑 Show first words', sh_btn_short: '🔑 First words', sh_note: '🔑 Written with the first words shown — blank level stays · half points',
+        sh_btn: '🔑 Show first word', sh_btn_more: '🔑 One more word ({n}/{max})', sh_btn_more_short: '🔑 +1 ({n}/{max})', sh_btn_short: '🔑 First words', sh_note: '🔑 Written with the first words shown — blank level stays · half points',
         lt_sheet_btn: '🎓 Level test', lt_sheet_last: 'Last test {d} · flows out {c}/{n}', lt_sheet_none: 'Does this chapter really come out now?',
         fp_pick_title: '🔑 Trial of the First Words · Ch.{ch}', fp_pick_desc: 'A verse is remembered like a chain — once the first words come, the rest follows. Look at the reference and write the opening words. Verses come in shuffled order.',
         fp_lv1: 'Easy', fp_lv2: 'Normal', fp_lv3: 'Hard', fp_lv1_d: 'first word', fp_lv2_d: 'first two words', fp_lv3_d: 'first three words',
@@ -31530,7 +31530,7 @@ function loadNextHardshipVerse() {
     hardshipState.verseChoices = [];
     hardshipState.ltStep = 0; hardshipState.ltGiven = '';   // 🎓 단계식 — 절마다 백지부터
     if (hardshipState.levelTest) hardshipState.rewardBlocked = !hardshipState.ltPay;   // 새 절은 다시 백지 — 승점 자격 되살림
-    hardshipState.strongAvail = false; hardshipState.strongHint = false; hardshipState.lastTypeAt = 0;   // 🔑 강한 힌트 — 절마다 다시 얻는다
+    hardshipState.strongAvail = false; hardshipState.strongHint = false; hardshipState.mj = 0; hardshipState.lastTypeAt = 0;   // 🔑 강한 힌트 — 절마다 다시 얻는다 · 💧 마중물도
     hardshipState.bulkIns = 0;   // ✋ 통째로 들어온 입력 — 절마다
     hardshipState._redCnt = {}; hardshipState._redValid = {}; hardshipState._redNow = new Set();   // 🟥 빨간 칸 — 절마다
     if (hardshipState.levelTest) hardshipState.ultimateMemoryMode = true;
@@ -32416,9 +32416,10 @@ function _positionStrongFab() {
         const left = right - MARGIN - (hbW ? hbW + GAP : 0) - sb.offsetWidth;
         return { left, ok: left >= Math.max(MARGIN, guR + GAP) };
     };
-    sb.textContent = t('sh_btn');
+    const mj = (hardshipState && hardshipState.mj) || 0;   // 💧 한 마디씩 — 두 번째부터 「한 마디 더」
+    sb.textContent = mj ? t('sh_btn_more', { n: mj, max: MJ_MAX }) : t('sh_btn');
     let p = place();
-    if (!p.ok) { sb.textContent = t('sh_btn_short'); p = place(); }
+    if (!p.ok) { sb.textContent = mj ? t('sh_btn_more_short', { n: mj, max: MJ_MAX }) : t('sh_btn_short'); p = place(); }
     if (p.ok) {   // 한 줄 — 바닥을 💡와 맞춘다
         sb.style.top = Math.max(MARGIN, limit - MARGIN - Math.max(hh, sb.offsetHeight) + (Math.max(hh, sb.offsetHeight) - sb.offsetHeight) / 2) + 'px';
         sb.style.left = p.left + 'px';
@@ -32446,10 +32447,18 @@ function _prefixTyped(phrase) {
     return out;
 }
 function _strongPhrase() { const hs = hardshipState; return hs && hs.currentVerse ? firstPhraseOf(getHardshipActiveText(hs.currentVerse) || '', 3, currentLang === 'en') : ''; }
+/* 💧 마중물(10/23 사용자) — 그 절을 쓰려면 첫 마디를 몇 개 줘야 하나(0~3). 🔑은 누를 때마다 한 마디씩(예전엔 세 마디를 한꺼번에), 누른 수가 마중물(hs.mj → 일지 e.mj).
+   1단계: 조용히 잰다 — 마중물이 필요했던 통과는 지금처럼 힌트 쓴 통과(백지 레벨 안 오름). 화면엔 💧만, 「마중물」이라는 말은 설명할 때만 */
+const MJ_MAX = 3;
+function _mjPhrase(n) {
+    const hs = hardshipState; if (!hs || !hs.currentVerse) return '';
+    const ws = String(getHardshipActiveText(hs.currentVerse) || '').trim().split(/\s+/).filter(Boolean);
+    return ws.slice(0, Math.max(1, n)).join(' ').replace(/[,.;:!?·…"'“”‘’)\]]+$/, '');
+}
 function _strongEligible() {
     const hs = hardshipState;
     return !!(window.isHardshipMode && hs && hs.active && hs.mode === 'memory' && hs.currentVerse && !hs.locked && !hs.awaitingNext
-        && !hs.levelTest && !hs.startLv && !hs.trainingMode && !hs.strongHint);
+        && !hs.levelTest && !hs.startLv && !hs.trainingMode && (hs.mj || 0) < MJ_MAX);   // 💧 세 마디까지 한 마디씩
 }
 function _strongCheck() {
     const hs = hardshipState;
@@ -32462,8 +32471,8 @@ function _strongCheck() {
     const probing = _redStats().ps === 1;   // 🟥 시작에서 더듬음(오타 한 번은 아님)
     if (startHints >= SH_START_HINTS || idle >= SH_IDLE_MS || probing) { hs.strongAvail = true; _syncStrongFab(); }
 }
-function _strongPast() {   // 첫 마디를 이미 지나 썼나 — 지나면 🔑는 쓸모가 없다(10/11 사용자). 지우고 돌아오면 다시 보인다
-    const hs = hardshipState, ph = _strongPhrase(); if (!ph) return true;
+function _strongPast() {   // 첫 마디를 이미 지나 썼나 — 지나면 🔑는 쓸모가 없다(10/11 사용자). 지우고 돌아오면 다시 보인다 · 💧 한 마디씩이면 「다음에 줄 마디」까지 지났나
+    const hs = hardshipState, ph = hs && hs.mj ? _mjPhrase(hs.mj + 1) : _strongPhrase(); if (!ph) return true;
     return String(hs.memoryTypedText || '').length >= _prefixTyped(ph).length;
 }
 function _syncStrongFab() {
@@ -32478,7 +32487,7 @@ function _syncStrongFab() {
             document.body.appendChild(b);
         }
         const wasHidden = b.style.display === 'none' || !b.style.display;
-        if (wasHidden) b.textContent = t('sh_btn');
+        b.textContent = hardshipState.mj ? t('sh_btn_more', { n: hardshipState.mj, max: MJ_MAX }) : t('sh_btn');   // 💧 두 번째부터 「한 마디 더 (1/3)」
         b.style.display = 'inline-flex';
         _positionStrongFab();
         if (wasHidden) setTimeout(() => { _positionStrongFab(); _hsScrollToSlot(document.querySelector('.char-slot.active')); }, 60);   // 갑자기 나타나며 지금 칸을 가리던 것(10/10)
@@ -32488,11 +32497,12 @@ function _syncStrongFab() {
 }
 function useStrongHint() {
     const hs = hardshipState; if (!_strongEligible() || !hs.strongAvail) return;
-    const ph = _strongPhrase(); if (!ph) return;
-    hs.strongHint = true; hs.strongAvail = false;
+    const n = Math.min(MJ_MAX, (hs.mj || 0) + 1), ph = _mjPhrase(n); if (!ph) return;
+    hs.mj = n; hs.strongHint = true; hs.strongAvail = n < MJ_MAX;   // 💧 한 마디 더 줄 수 있으면 버튼을 그대로
     const pre = _prefixTyped(ph); if (String(hs.memoryTypedText || '').length < pre.length) hs.memoryTypedText = pre;
     hs.lastTypeAt = Date.now();
     renderHardshipMemoryVerse();
+    _syncStrongFab();   // 💧 「한 마디 더 (n/3)」로 글자를 바꾸거나 세 마디째면 숨긴다
     focusHardshipMemoryHiddenInput();
 }
 /* 🙋 「모르겠어요」 — 힌트 FAB와 같은 규칙(보이는 화면 아래, 제출 줄 위), 왼쪽. 힌트가 꺼져 있어도 따로 앉는다 */
@@ -33465,6 +33475,7 @@ function _logRecallAttempt(stageId, ok, hints, mode, extra, prev, training) {
         if (hs.eventId) e.ev = String(hs.eventId);
         if (hs.levelTest) { e.lts = hs.ltStep || 0; if (hs._ltNbNow) e.nb = 1; }
         if (hs.strongHint) e.sh = 1; else if (hs.strongAvail) e.sh = 0;
+        if (hs.mj) e.mj = hs.mj;   // 💧 마중물 — 🔑으로 받은 첫 마디 수(1~3). 없으면 0(주소만으로 · 또는 막히지 않음)
         { const R = _redStats(); if (R.n) { e.rr = R.n; e.rt = R.typo; e.rp = R.probe; e.rf = R.pf; e.rs = R.ps; } }   // 🟥 빨간 칸: 횟수·오타 칸·더듬은 칸·처음 더듬은 자리·시작에서 더듬음   // 🔑 강한 힌트 — 1 썼다 · 0 나타났지만 안 썼다   // ↔ 이웃 절을 먼저 쓴 뒤   // 🎓 레벨 테스트 단계(0 백지 · 1 첫 마디 줌 · 2 빈칸)
         if (training) e.tr = 1;
         if (prev) {
