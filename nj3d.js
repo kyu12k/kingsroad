@@ -5486,7 +5486,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 }
                 if (dz < -0.12) { R.next++; doorHudDraw(); }
                 const pr = R.rows[R.next - 1];   // 👻 지나온 줄 — 다 빠져나가면 반투명(10/23 사용자: 통과한 문과 벽이 새 구간을 가린다)
-                if (pr && !pr.ghost && P.z < pr.z - 0.45) { pr.ghost = true; [...pr.posts, pr.lintel, ...pr.doors.map(d => d.mesh)].forEach(m => { m.material = doorMat.ghost; }); pr.doors.forEach(d => { d.lb.visible = false; }); }
+                if (pr && !pr.ghost && P.z < pr.z - 0.12) {   // 10/23 사용자: 투명해지는 게 늦다 — 다 빠져나가면(0.45) → 문턱을 넘자마자 pr.ghost = true; [...pr.posts, pr.lintel, ...pr.doors.map(d => d.mesh)].forEach(m => { m.material = doorMat.ghost; }); pr.doors.forEach(d => { d.lb.visible = false; }); }
             } else if (R.phase === 'run' && P.z < R.zFin) { doorPodium(); return; }
             if (now - R.hudT > 100) { R.hudT = now; doorHudDraw(); }
         });
