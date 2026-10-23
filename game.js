@@ -32313,6 +32313,7 @@ function renderHardshipMemoryVerse() {
             isSpaceChar ? 'is-space' : '',
             isHintRevealed ? 'hint-revealed' : '',
             currentValue ? 'filled' : '',
+            isSpaceChar && currentValue && currentValue.trim() ? 'space-ch' : '',   // 띄어쓰기 자리에 글자 — 칸을 글자 폭으로(10/23 사용자: 겹쳐 보였다)
             (isWrong || isSpaceWrong) ? 'wrong' : '',
             !isHintRevealed && activeValidSlotIndex === validSlotIndex ? 'active' : ''
         ].filter(Boolean).join(' ');
@@ -32912,6 +32913,7 @@ function updateHardshipMemoryBoard() {
             slot.classList.remove('filled');
         }
         slot.classList.remove('active');
+        slot.classList.toggle('space-ch', slot.classList.contains('is-space') && !!charValue && !!charValue.trim());   // 띄어쓰기 자리에 글자 — 칸을 글자 폭으로
 
         // ★ 렌더와 **같은 규칙**을 써야 한다 (_shouldRevealWrong 주석 참고).
         //   slots는 .is-valid만 모은 것이라 index가 곧 입력 칸 순번이고, text.length가 커서다.
