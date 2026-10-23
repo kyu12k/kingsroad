@@ -6994,6 +6994,8 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen > .rcard-pop 
 /* 설치 안내 띠는 홈 화면에서만 (2026-09-28) — 지도에선 하단 메뉴·「알림 설정」「복습 타이밍」을 덮었고,
    z-index 999999라 복습 창·시트 위에도 떴다. 이제 1400(시트 1500·창 9999 아래)이고 홈이 아니면 숨긴다 */
 body:not(:has(#home-screen.active)) #pwa-install-banner { display: none !important; }
+/* 10/23 — 홈 위에서 판을 열면 홈이 「active」로 남아 설치 띠가 첫 절 1단계의 「읽기」·「음성인식」을 덮었다(새로 온 사람 거의 모두). 판·오버레이가 떠 있으면 숨긴다 */
+body:has(#game-screen.active) #pwa-install-banner, body:has(#bible-transition-overlay[style*="pointer-events: auto"]) #pwa-install-banner { display: none !important; }
 
 /* 촬영 배경 견본 줄 (2026-09-28) — 가로로 넘겨 고른다 */
 .cam-bg-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
