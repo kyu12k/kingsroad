@@ -63,6 +63,13 @@
                     <div class="nj3d-joyzone"></div><div class="nj3d-joy"><div class="nj3d-knob"></div></div>
                     <div class="nj3d-keyhelp">${T('nj3d_keyhelp')}</div>
                     <div class="nj3d-btns">
+                        <!-- 10/25 사용자: 날기를 누르면 「아래로」가 아래에 생겨 줄이 밀리고 「타기」가 손가락 밑으로 올라와 눌렸다 — 나타났다 사라지는 버튼은 위쪽에, 날기·타기·점프는 자리 고정 -->
+                        <button class="nj3d-wb small nj3d-fishbtn" hidden></button>
+                        <button class="nj3d-wb small nj3d-pourbtn" hidden></button>
+                        <button class="nj3d-wb small nj3d-clambtn" hidden></button>
+                        <button class="nj3d-wb small nj3d-pearlbtn" hidden></button>
+                        <button class="nj3d-wb small nj3d-talk" hidden></button>
+                        <button class="nj3d-wb small nj3d-slidebtn" hidden>${T('nj3d_slide')}</button>
                         <div class="nj3d-bag" hidden>
                             <button class="nj3d-wb small nj3d-viewbtn"></button>
                             <button class="nj3d-wb small nj3d-jettry" hidden></button>
@@ -72,15 +79,9 @@
                             <button class="nj3d-wb small nj3d-tackbtn" hidden>${T('nj3d_tack')}</button>
                         </div>
                         <button class="nj3d-wb small nj3d-bagbtn">🎒 ${(typeof currentLang !== 'undefined' && currentLang === 'en') ? 'More' : '더보기'}</button>
-                        <button class="nj3d-wb fly nj3d-fly" hidden>${T('nj3d_fly')}<span class="nj3d-key">F</span></button>
-                        <button class="nj3d-wb small nj3d-fishbtn" hidden></button>
-                        <button class="nj3d-wb small nj3d-pourbtn" hidden></button>
-                        <button class="nj3d-wb small nj3d-clambtn" hidden></button>
-                        <button class="nj3d-wb small nj3d-pearlbtn" hidden></button>
-                        <button class="nj3d-wb small nj3d-talk" hidden></button>
-                        <button class="nj3d-wb small nj3d-ridebtn"></button>
                         <button class="nj3d-wb small nj3d-divebtn" hidden>${T('nj3d_dive')}<span class="nj3d-key">Q</span></button>
-                        <button class="nj3d-wb small nj3d-slidebtn" hidden>${T('nj3d_slide')}</button>
+                        <button class="nj3d-wb fly nj3d-fly" hidden>${T('nj3d_fly')}<span class="nj3d-key">F</span></button>
+                        <button class="nj3d-wb small nj3d-ridebtn"></button>
                         <button class="nj3d-wb nj3d-jump">${T('nj3d_jump')}<span class="nj3d-key">Space</span></button>
                     </div>
                 </div>
