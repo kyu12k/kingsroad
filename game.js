@@ -20725,7 +20725,7 @@ function _dailyBadgeHtml(row, opts) {
     let h = '';
     if (opts.daily && row.dailyDoneDate && row.dailyDoneDate === _get6AMDayStr()) h += `<span class="daily-badge" data-tip="${t('daily_badge_tip')}">✅</span>`;
     const w = row.weeklyDoneWeek;
-    if (w && typeof getLastWeekId === 'function' && (w === getLastWeekId() || w === getWeekId())) h += `<span class="recall-title daily-week-title" data-tip="${t('daily_week_tip')}">📅 ${t('daily_week_title')}</span>`;
+    if (w && typeof getLastWeekId === 'function' && (w === getLastWeekId() || w === getWeekId())) h += `<span class="recall-title daily-week-title" data-tip="${t('daily_week_tip')}">📅${opts.compact ? '' : ' ' + t('daily_week_title')}</span>`;   // compact — 지도 머리 작은 이름 줄은 📅만(10/25 사용자: 줄이 넘쳐 깨졌다)
     return h;
 }
 /* 오늘의 암송은 '오늘 한 것'만 센다 — 이벤트와 달리 예전 백지 기록(verseRecall)을 인정하지 않는다. id가 날마다 새로우니 그 안의 기록은 전부 오늘 것 */
@@ -26588,7 +26588,7 @@ function updateProfileUI() {
     const subDisplay = document.getElementById('sub-profile-name');
     if (subDisplay) {
         // 지파 아이콘과 닉네임만 표시 (지파 이름 텍스트 제거)
-        subDisplay.innerHTML = `${getTribeIcon(myTribe)}${getDeptTag(myDept)} ${myNickname}${_fieldBadgeHtml(maxPlayerHearts)}${_recallTitleHtml(_myRecallTitle)}${_recallTitleHtml(_myReadTitle, 'read')}${_dailyBadgeHtml({ dailyDoneDate: _dailyDoneToday() ? _get6AMDayStr() : '', weeklyDoneWeek: dailyWeekDone }, { daily: true })}`;
+        subDisplay.innerHTML = `<span class="sp-nm">${getTribeIcon(myTribe)}${getDeptTag(myDept)} <span class="sp-nick">${myNickname}</span></span><span class="sp-bd">${_fieldBadgeHtml(maxPlayerHearts)}${_recallTitleHtml(_myRecallTitle)}${_recallTitleHtml(_myReadTitle, 'read')}${_dailyBadgeHtml({ dailyDoneDate: _dailyDoneToday() ? _get6AMDayStr() : '', weeklyDoneWeek: dailyWeekDone }, { daily: true, compact: true })}</span>`   /* 이름만 줄고 칭호는 그대로(10/25 사용자: 칭호가 늘면 다음 줄로 넘어가 깨졌다) */;
     }
 
     applyHomeThemeByTribe(myTribe);
