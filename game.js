@@ -11555,10 +11555,16 @@ function openChapterAudioPlayer() {
     const existing = document.getElementById('chapter-audio-modal');
     if (existing) return; // 이미 열림
 
-    const mp3Url = `https://kyu12k.github.io/bjtest/bjtest${chapterNum}/mp3/${chapterNum}.mp3`;
+    // 10/25 bjtest가 GitHub Pages를 끄고 Cloudflare(bjtest.pages.dev)로 옮겨 옛 주소가 404.
+    // jsDelivr(같은 저장소) 먼저 — pages.dev는 Range(206)를 안 줘서 아이폰 사파리가 못 틀 수 있다. 안 되면 pages.dev로 한 번 더
+    const mp3Urls = [
+        `https://cdn.jsdelivr.net/gh/kyu12k/bjtest@main/bjtest${chapterNum}/mp3/${chapterNum}.mp3`,
+        `https://bjtest.pages.dev/bjtest${chapterNum}/mp3/${chapterNum}.mp3`
+    ];
+    let mp3Try = 0;
 
     if (_chapAudio) { _chapAudio.pause(); _chapAudio = null; }
-    _chapAudio = new Audio(mp3Url);
+    _chapAudio = new Audio(mp3Urls[0]);
     _chapAudio.loop = false;
 
     const modal = document.createElement('div');
@@ -11606,6 +11612,11 @@ function openChapterAudioPlayer() {
         if (btn) btn.textContent = '▶';
     });
     audio.addEventListener('error', () => {
+        if (_chapAudio === audio && ++mp3Try < mp3Urls.length) {
+            audio.src = mp3Urls[mp3Try];
+            audio.play().then(() => { const b = document.getElementById('chap-audio-play'); if (b) b.textContent = '⏸'; }).catch(() => { });
+            return;
+        }
         const err = document.getElementById('chap-audio-error');
         if (err) { err.style.display = 'block'; err.textContent = '오디오 파일을 불러올 수 없습니다.'; }
     });

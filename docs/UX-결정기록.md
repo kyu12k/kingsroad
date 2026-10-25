@@ -524,3 +524,8 @@ PC에서 CPU 4~6배 감속으로 잰 fps는 회차마다 40~60으로 흔들려 �
 ### 2026-10-25 — 지도 머리 이름 줄이 두 줄로 깨짐
 사용자 화면(폭 ~404px): 「✦ [청] 화평한 만국 🌿 🥉암송왕 ✅」 다음 「📅 암송완료」가 다음 줄로 넘어가 깨졌다 — 이름 줄(`#sub-profile-name`)이 「👑 3단계」 칩·🔊과 한 줄(flex)인데 이름 안쪽이 줄바꿈됐다.
 → 이름 줄을 지파·소속(고정) + 닉네임(`.sp-nick`, 넘치면 「…」, 최소 3.2em) + 칭호 묶음(`.sp-bd`, 고정)으로 나눠 한 줄로. 지도 머리에선 암송완료를 📅만(`_dailyBadgeHtml(…, { compact: true })` — 홈 큰 이름은 그대로 「📅 암송완료」), 칭호 칩 여백을 조금 줄임. 헤드리스: 404·360px 모두 한 줄, 닉네임 안 잘림.
+
+### 2026-10-25 — 장 듣기(🎧) 「오디오 파일을 불러올 수 없습니다」
+사용자 제보(아이폰, 계 14장). 장 음성은 바깥 저장소 bjtest의 GitHub Pages(`kyu12k.github.io/bjtest/...`)에서 받았는데, bjtest가 GitHub Pages를 끄고 Cloudflare(`bjtest.pages.dev`)로 옮겨 옛 주소가 전부 404였다.
+→ jsDelivr(`cdn.jsdelivr.net/gh/kyu12k/bjtest@main/...`) 먼저, 안 되면 `bjtest.pages.dev`로 한 번 더(`openChapterAudioPlayer`의 `mp3Urls`). pages.dev는 Range 요청에 206을 안 줘서 아이폰 사파리가 못 틀 수 있어 뒤로 뒀다. 22장 모두 jsDelivr 206 확인.
+**bjtest 저장소의 mp3 경로를 옮기면 이 앱의 장 듣기가 깨진다.**
