@@ -5783,7 +5783,10 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
                 + (ms.length < 4 ? `<div class="dmode"><button data-inv>👥 ${en ? 'Invite more' : '더 부르기'}</button><button data-leave>${en ? 'Leave room' : '방 나가기'}</button></div>` : `<div class="dmode"><button data-leave>${en ? 'Leave room' : '방 나가기'}</button></div>`);
         }
         function roomInvite() {
-            if (typeof window.openDoorInvite !== 'function') return;
+            if (typeof window.openDoorInvite !== 'function') {   // 3D만 새것이고 game.js는 배포 전 그대로(앱을 켜 둔 채 배포) — 조용히 무시되던 것(10/25)
+                showHint(doorEn() ? 'Updating the app — tap again after it reloads' : '새 버전으로 새로 고쳐요 — 다시 열고 눌러 주세요', 2500);
+                setTimeout(() => location.reload(), 1800); return;
+            }
             const D = doorRoom;
             window.openDoorInvite({ room: D ? D.rid : '', id: doorRun ? doorRun.id : (D && D.cfg ? D.cfg.id : doorPick()), mode: doorMode,
                 have: D ? Object.values(D.mem).map(m => m.tag) : [], onRoom: rid => { if (!doorRoom) doorRoomJoin(rid); } });
