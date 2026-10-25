@@ -5004,7 +5004,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         const doorHud = document.createElement('div'); doorHud.className = 'nj3d-starhud nj3d-doorhud'; doorHud.hidden = true; stageEl.appendChild(doorHud);
         doorHud.innerHTML = '<div class="dh"></div><button class="nj3d-doorquit" aria-label="quit">✕</button>';
         doorHud.querySelector('.nj3d-doorquit').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); doorEnd(false, true); });
-        const doorRelobby = id => { const keep = { cam: doorRun.cam }; doorCount.hidden = true; doorRun = { ...doorBuild(id), phase: 'lobby', next: 0, t0: 0, miss: 0, fall: 0, hudT: 0, ...keep }; doorHudDraw(); };
+        const doorRelobby = id => { if (doorRoom) { roomSetCfg(id); return; } const keep = { cam: doorRun.cam }; doorCount.hidden = true; doorRun = { ...doorBuild(id), phase: 'lobby', next: 0, t0: 0, miss: 0, fall: 0, hudT: 0, ...keep }; doorHudDraw(); };
         const doorPickEl = document.createElement('div'); doorPickEl.className = 'nj3d-doorpick'; doorPickEl.hidden = true; stageEl.appendChild(doorPickEl);
         function doorPickOpen(ch) {   // 📖 장 → 절. 「🎲 이 장에서 아무 절」 · 「전체」 — 외운 절은 진하게
             const en = doorEn(), learned = new Set(doorLearned());
@@ -5018,16 +5018,20 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const b = e.target.closest('button'); if (!b || b.disabled) return;
             if (b.dataset.x !== undefined) { doorPickEl.hidden = true; return; }
             if (b.dataset.back !== undefined) { doorPickOpen(0); return; }
-            if (b.dataset.ch !== undefined) { const c = +b.dataset.ch; if (!c) { doorCh = 0; try { localStorage.setItem('kr_doorCh', '0'); } catch (e2) { } doorPickEl.hidden = true; if (doorRun && doorRun.phase !== 'run' && doorRun.phase !== 'podium') doorRelobby(doorPick()); return; } doorPickOpen(c); return; }
+            if (b.dataset.ch !== undefined) { const c = +b.dataset.ch; if (!c) { doorCh = 0; try { localStorage.setItem('kr_doorCh', '0'); } catch (e2) { } doorPickEl.hidden = true; if (canRepick()) doorRelobby(doorPick()); return; } doorPickOpen(c); return; }
             const setCh = c => { doorCh = c; try { localStorage.setItem('kr_doorCh', String(c)); } catch (e2) { } };
-            if (b.dataset.any) { setCh(+b.dataset.any); doorPickEl.hidden = true; if (doorRun && doorRun.phase !== 'run' && doorRun.phase !== 'podium') doorRelobby(doorPick()); return; }
-            if (b.dataset.v) { setCh(+b.dataset.v.split('-')[0]); doorPickEl.hidden = true; if (doorRun && doorRun.phase !== 'run' && doorRun.phase !== 'podium') doorRelobby(doorIdOf(b.dataset.v, 1)); }
+            if (b.dataset.any) { setCh(+b.dataset.any); doorPickEl.hidden = true; if (canRepick()) doorRelobby(doorPick()); return; }
+            if (b.dataset.v) { setCh(+b.dataset.v.split('-')[0]); doorPickEl.hidden = true; if (canRepick()) doorRelobby(doorIdOf(b.dataset.v, 1)); }
         });
         doorHud.addEventListener('pointerdown', e => {   // 🌿 쉬운 길 · ⛰ 험한 길 — 출발 전에만, 고르면 그 자리에서 다시 짓는다
-            if (e.target.closest('[data-pick]') && doorRun && doorRun.phase !== 'run' && doorRun.phase !== 'podium') { e.preventDefault(); e.stopPropagation(); doorPickOpen(0); return; }
-            const b = e.target.closest('[data-mode]'); if (!b || !doorRun || doorRun.phase === 'run' || doorRun.phase === 'podium') return;
+            if (e.target.closest('[data-inv]')) { e.preventDefault(); e.stopPropagation(); roomInvite(); return; }   // 👥 함께 달리기(10/25)
+            if (e.target.closest('[data-leave]')) { e.preventDefault(); e.stopPropagation(); doorRoomLeave(); return; }
+            if (e.target.closest('[data-pick]') && canRepick()) { e.preventDefault(); e.stopPropagation(); doorPickOpen(0); return; }
+            const b = e.target.closest('[data-mode]'); if (!b || !canRepick()) return;
             e.preventDefault(); e.stopPropagation();
-            if (doorMode === b.dataset.mode) return; doorMode = b.dataset.mode; try { localStorage.setItem('kr_doorMode', doorMode); } catch (e2) { }
+            if (doorMode === b.dataset.mode) return;
+            if (doorRoom) { roomSetCfg(doorRun.id, b.dataset.mode); return; }
+            doorMode = b.dataset.mode; try { localStorage.setItem('kr_doorMode', doorMode); } catch (e2) { }
             const id = doorRun.id, keep = { cam: doorRun.cam }; doorCount.hidden = true; doorRun = { ...doorBuild(id), phase: 'lobby', next: 0, t0: 0, miss: 0, fall: 0, hudT: 0, ...keep }; doorHudDraw();
         });
         const doorCount = document.createElement('div'); doorCount.className = 'nj3d-doorcount'; doorCount.hidden = true; stageEl.appendChild(doorCount);
@@ -5392,7 +5396,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             const left = R.ws.length - R.next, slots = R.next < R.ws.length ? `<span class="slot next" style="width:2.2em"></span>${left > 1 ? ' …' : ''}` : '';
             const sec = R.t0 ? ((performance.now() - R.t0) / 1000).toFixed(1) : '0.0';
             const st = R.phase === 'podium' ? '🏆 ' + (doorEn() ? 'Award ceremony' : '시상식') + ' · ⏱ ' + (R.ms / 1000).toFixed(1) + (doorEn() ? 's' : '초') : R.phase === 'run' ? '⏱ ' + sec + (doorEn() ? 's' : '초') : R.phase === 'count' ? (doorEn() ? 'Get ready…' : '곧 출발해요') : (doorEn() ? 'Step on the start line' : '출발선을 밟으면 출발해요');
-            doorHud.querySelector('.dh').innerHTML = `<div class="ref">🚪 ${R.phase === 'run' || R.phase === 'podium' ? starEsc(doorRef(R.id)) : (doorEn() ? 'Verse: at the start' : '구절은 출발 때')} · ${st}${R.miss ? ' · 💥' + R.miss : ''}${R.fall ? ' · 🕳️' + R.fall : ''}</div><div class="txt">${R.phase === 'podium' ? R.ws.map(w => `<b>${starEsc(w)}</b>`).join(' ') : R.phase === 'run' ? `${more}${starEsc(head)} ${slots}` : `${doorEn() ? 'The verse and the words appear when the veil lifts' : '막이 걷히면 구절과 문의 어절이 나타나요'}<div class="dmode">${[['easy', doorEn() ? '🌿 Easy path' : '🌿 쉬운 길'], ['hard', doorEn() ? '⛰ Rough path' : '⛰ 험한 길']].map(([k, l]) => `<button data-mode="${k}" class="${doorMode === k ? 'on' : ''}">${l}</button>`).join('')}</div><div class="dmode"><button data-pick>📖 ${doorCh ? (doorEn() ? 'Rev ' + doorCh : doorCh + '장') : (doorEn() ? 'All chapters' : '전체')} · ${doorEn() ? 'pick a verse' : '구절 고르기'}</button></div>`}</div>`;
+            doorHud.querySelector('.dh').innerHTML = `<div class="ref">🚪 ${R.phase === 'run' || R.phase === 'podium' ? starEsc(doorRef(R.id)) : (doorEn() ? 'Verse: at the start' : '구절은 출발 때')} · ${st}${R.miss ? ' · 💥' + R.miss : ''}${R.fall ? ' · 🕳️' + R.fall : ''}</div><div class="txt">${R.phase === 'podium' ? R.ws.map(w => `<b>${starEsc(w)}</b>`).join(' ') : R.phase === 'run' ? `${more}${starEsc(head)} ${slots}` : `${doorEn() ? 'The verse and the words appear when the veil lifts' : '막이 걷히면 구절과 문의 어절이 나타나요'}${!doorRoom || roomLeader() ? `<div class="dmode">${[['easy', doorEn() ? '🌿 Easy path' : '🌿 쉬운 길'], ['hard', doorEn() ? '⛰ Rough path' : '⛰ 험한 길']].map(([k, l]) => `<button data-mode="${k}" class="${doorMode === k ? 'on' : ''}">${l}</button>`).join('')}</div><div class="dmode"><button data-pick>📖 ${doorCh ? (doorEn() ? 'Rev ' + doorCh : doorCh + '장') : (doorEn() ? 'All chapters' : '전체')} · ${doorEn() ? 'pick a verse' : '구절 고르기'}</button></div>` : `<div class="dmode"><span class="dm-ro">${doorMode === 'easy' ? (doorEn() ? '🌿 Easy path' : '🌿 쉬운 길') : (doorEn() ? '⛰ Rough path' : '⛰ 험한 길')}</span></div>`}`}${roomHudHtml(R)}</div>`;
             doorHud.classList.toggle('flash', !!flash); doorHud.hidden = false;
         }
         function doorEnter(id) {   // 입장 — 경기장을 이 구절로 다시 짓고(글자는 「?」), 출발선 앞 막을 친다
@@ -5422,12 +5426,15 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         function doorPodium() {
             const R = doorRun; if (!R) return;
             R.phase = 'podium'; R.ms = performance.now() - R.t0; R.podAt = performance.now(); ov.classList.add('nj3d-podium');
-            const s0 = R.podium[0]; P.x = s0.x; P.z = s0.z; P.y = s0.y + 0.02; P.vy = 0; P.onGround = true; P.face = Math.PI; camYaw = 0; camDist = 1.5; camPitch = 0.22;
-            s0.sp.visible = true;
+            let rank = 0;   // 👥 함께면 같은 판에서 나보다 빨리 들어온 사람 수 — 2·3등 자리, 4등은 시상대 옆
+            if (doorRoom && !doorRoom.late) { const D = doorRoom; rank = roomFins().filter(([u, f]) => u !== D.uid && f.ms < R.ms).length; D.ref.child('f/' + D.uid).set({ ms: Math.round(R.ms), round: D.round }).catch(() => { }); }
+            R.rank = rank;
+            const s0 = R.podSlot = rank < 3 ? R.podium[rank] : { x: R.podium[2].x + 0.45, y: R.FY, z: R.podium[2].z, sp: R.podium[2].sp }; P.x = s0.x; P.z = s0.z; P.y = s0.y + 0.02; P.vy = 0; P.onGround = true; P.face = Math.PI; camYaw = 0; camDist = 1.5; camPitch = 0.22;
+            if (!rank) s0.sp.visible = true;
             const E = PM_EMOTE.cheer, a = pm.acts && pm.acts[E.clip]; pm.emote = { k: 'cheer', t0: walkT, dur: a ? a.getClip().duration * 3 : 3 };
             for (let k = 0; k < 6; k++) setTimeout(() => { if (cur === C) sprayBurst(s0.x + (Math.random() - 0.5) * 0.8, s0.y + 0.6, s0.z + (Math.random() - 0.5) * 0.4, 22, 0); }, k * 220);
             if (typeof SoundEffect !== 'undefined' && SoundEffect.playLevelUp) { SoundEffect.playLevelUp(); setTimeout(() => SoundEffect.playLevelUp(), 380); }
-            doorCount.textContent = doorEn() ? '🥇 1st!' : '🥇 1등!'; doorCount.hidden = false; doorCount.classList.remove('pop'); void doorCount.offsetWidth; doorCount.classList.add('pop');
+            doorCount.textContent = (['🥇', '🥈', '🥉', '🏅'][Math.min(3, rank)]) + ' ' + (rank + 1) + (doorEn() ? ['st', 'nd', 'rd', 'th'][Math.min(3, rank)] : '등') + '!'; doorCount.hidden = false; doorCount.classList.remove('pop'); void doorCount.offsetWidth; doorCount.classList.add('pop');
             doorHudDraw();
             setTimeout(() => { if (doorRun === R) doorEnd(true); }, 3200);
         }
@@ -5439,11 +5446,17 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             if (out) doorOutside();
             (R.podium || []).forEach(q => { q.sp.visible = false; });
             ov.classList.remove('nj3d-starrun', 'nj3d-doorrun'); doorHud.hidden = true;
-            if (!ok) { if (out) showHint(doorEn() ? 'Left the Narrow Gate' : '좁은 문을 나왔어요', 2000); return; }
+            if (!ok) { const inRoom = !!doorRoom; if (inRoom) doorRoomLeave(true); if (out || inRoom) showHint(inRoom ? (doorEn() ? 'Left the room' : '좁은 문 방에서 나왔어요') : (doorEn() ? 'Left the Narrow Gate' : '좁은 문을 나왔어요'), 2000); return; }
             const ms = R.ms || (performance.now() - R.t0); let best = 0;
             try { const B = JSON.parse(localStorage.getItem('kr_doorBest') || '{}'); best = B[R.id] || 0; if (!best || ms < best) { B[R.id] = Math.round(ms); localStorage.setItem('kr_doorBest', JSON.stringify(B)); } } catch (e) { }
             const isBest = !best || ms < best, sec = s => (s / 1000).toFixed(1) + (doorEn() ? 's' : '초');
             doorWin.className = 'nj3d-starwin';
+            if (doorRoom) {   // 👥 함께 — 순위 카드(도착하는 대로 채워진다). 👑가 그사이 다음 판을 열었으면 잠시 보여 주고 대기실로
+                doorWin._last = { id: R.id, ws: R.ws, ms }; doorWin._room = true; roomCard();
+                doorWin.hidden = false; void doorWin.offsetWidth; doorWin.classList.add('in'); doorWin._at = performance.now(); doorWin._id = R.id;
+                if (doorRoom.pend) setTimeout(roomAfterRun, 4000);
+                return;
+            }
             doorWin.innerHTML = `<div class="sw-rays"></div><div class="sw-card">
                 <div class="sw-big">🚪</div>
                 <div class="sw-title">${doorEn() ? 'Finished!' : '통과!'} ⏱ ${sec(ms)}</div>
@@ -5456,6 +5469,15 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             e.preventDefault(); e.stopPropagation();
             const b = e.target.closest('[data-a]'); if (!b || performance.now() - (doorWin._at || 0) < 600) return;
             doorWin.hidden = true;
+            if (/^r/.test(b.dataset.a)) {   // 👥 방 카드
+                doorWin._room = false; const D = doorRoom, a = b.dataset.a;
+                if (!D) { doorOutside(); return; }
+                if (a === 'ragain') roomSetCfg(doorWin._id);
+                else if (a === 'rother') doorPickOpen(0);
+                else if (a === 'rleave') { doorRoomLeave(); doorOutside(); }
+                else if (D.cfg) doorToLobby(D.cfg.id);
+                return;
+            }
             if (b.dataset.a === 'next') doorToLobby(doorIdOf(doorWin._id.split('/')[0], doorPartOf(doorWin._id) + 1));
             else if (b.dataset.a === 'again') doorToLobby(doorWin._id); else if (b.dataset.a === 'other') doorToLobby(doorPick(doorWin._id)); else doorOutside();   // 닫기 — 시상대에서 입장문 앞으로
         });
@@ -5598,25 +5620,214 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             }
             return false;
         }
+        /* 👥 함께 달리기(10/25 사용자: 친구와 함께 · 실시간 · 지금 경기장 · 친구·길드원 4명까지) — 방은 Realtime Database door/{방}
+           (game.js _doorDb · openDoorInvite, 서버 doorRoom이 만들고 부른다). 구절·길은 방의 cfg — 가장 먼저 들어와 있는 사람(👑)이 고르고 출발을 연다.
+           모두 출발선을 밟으면 👑가 go{at: 서버 시각, round}를 적고 모두 그 시각에 출발. 위치는 0.1초마다 p/{uid}, 도착은 f/{uid}{ms, round} — 순위는 같은 판의 ms 순.
+           다른 사람은 내 순례자 모델을 하나 더 받아 그 사람 모습으로(부딪히지는 않는다) */
+        let doorRoom = null;
+        const srvNow = () => Date.now() + ((doorRoom && doorRoom.off) || 0);
+        const roomMem = () => Object.entries((doorRoom && doorRoom.mem) || {}).sort((a, b) => (a[1].j || 0) - (b[1].j || 0));
+        const roomLeader = () => { const ms = roomMem(); return !!doorRoom && (!ms.length || ms[0][0] === doorRoom.uid); };
+        const roomBusy = () => !!(doorRun && (doorRun.phase === 'run' || doorRun.phase === 'podium'));
+        const canRepick = () => doorRoom ? roomLeader() && !roomBusy() : !!(doorRun && !roomBusy());
+        const roomFins = () => { const D = doorRoom; if (!D) return []; return Object.entries(D.fin || {}).filter(([, f]) => f && f.round === D.round).sort((a, b) => a[1].ms - b[1].ms); };
+        const roomNick = uid => { const m = doorRoom && doorRoom.mem[uid]; return (m && m.nick) || (doorEn() ? 'Pilgrim' : '순례자'); };
+        async function doorRoomJoin(rid) {
+            if (doorRoom && doorRoom.rid === rid) return;
+            if (doorRoom) doorRoomLeave(true);
+            let rdb; try { rdb = await window._doorDb(); } catch (e) { showHint(doorEn() ? 'Could not connect — check your internet' : '연결하지 못했어요 — 인터넷을 확인해 주세요', 2600); return; }
+            const u = typeof firebase !== 'undefined' && firebase.auth().currentUser; if (!u || cur !== C) return;
+            const ref = rdb.ref('door/' + rid), D = { rid, ref, uid: u.uid, mem: {}, pos: {}, fin: {}, go: null, cfg: null, cfgN: -1, round: 0, rem: new Map(), sendT: 0, line: null, off: 0, offs: [] };
+            const L = typeof _njLookGet === 'function' ? _njLookGet() : null, meRef = ref.child('m/' + D.uid);
+            try { await meRef.set({ tag: String((typeof myTag !== 'undefined' && myTag) || ''), nick: String((typeof myNickname !== 'undefined' && myNickname) || '순례자').slice(0, 20), look: L ? JSON.stringify(L).slice(0, 400) : '', j: firebase.database.ServerValue.TIMESTAMP, line: false }); }
+            catch (e) { showHint(doorEn() ? 'Could not enter the room (the invite may have ended)' : '방에 들어가지 못했어요(부름이 끝났을 수 있어요)', 2800); return; }
+            if (cur !== C) { meRef.remove().catch(() => { }); return; }
+            doorRoom = D;
+            meRef.onDisconnect().remove(); ref.child('p/' + D.uid).onDisconnect().remove();
+            const on = (r, fn) => { r.on('value', fn, () => { }); D.offs.push(() => r.off('value', fn)); };
+            on(rdb.ref('.info/serverTimeOffset'), s => { D.off = s.val() || 0; });
+            on(ref.child('m'), s => { if (doorRoom !== D) return; D.mem = s.val() || {}; doorHudDraw(); });
+            on(ref.child('p'), s => { if (doorRoom === D) D.pos = s.val() || {}; });
+            on(ref.child('f'), s => { if (doorRoom !== D) return; D.fin = s.val() || {}; if (!doorWin.hidden && doorWin._room) roomCard(); });
+            on(ref.child('go'), s => { if (doorRoom !== D) return; D.go = s.val(); roomGo(); });
+            on(ref.child('cfg'), s => { if (doorRoom !== D) return; const c = s.val(); if (c) { D.cfg = c; roomCfg(); } });
+            showHint(doorEn() ? '👥 You are in the room — step on the start line together' : '👥 방에 들어왔어요 — 모두 출발선을 밟으면 함께 출발해요', 3000);
+        }
+        function doorRoomLeave(silent) {
+            const D = doorRoom; if (!D) return; doorRoom = null;
+            D.offs.forEach(f => { try { f(); } catch (e) { } });
+            D.ref.child('m/' + D.uid).remove().catch(() => { }); D.ref.child('p/' + D.uid).remove().catch(() => { });
+            try { D.ref.child('m/' + D.uid).onDisconnect().cancel(); D.ref.child('p/' + D.uid).onDisconnect().cancel(); } catch (e) { }
+            D.rem.forEach(q => roomRemDrop(q)); D.rem.clear();
+            try { doorMode = localStorage.getItem('kr_doorMode') === 'easy' ? 'easy' : 'hard'; } catch (e) { }   // 방의 길에서 내 길로
+            doorWin._room = false;
+            if (!silent) showHint(doorEn() ? 'Left the room' : '방에서 나왔어요', 2000);
+            if (doorRun) doorHudDraw();
+        }
+        function roomSetCfg(id, mode) {   // 👑 구절·길 바꾸기 — 모두 대기실로
+            const D = doorRoom; if (!D || !roomLeader()) return;
+            D.ref.child('cfg').set({ id: String(id), mode: mode || (D.cfg && D.cfg.mode) || doorMode, n: ((D.cfg && D.cfg.n) | 0) + 1 }).catch(() => { });
+        }
+        function roomCfg() {
+            const D = doorRoom, c = D.cfg, R = doorRun;
+            if (D.cfgN < 0 && R && R.id === c.id && R.mode === c.mode && !roomBusy()) { D.cfgN = c.n; if (R.phase === 'count') { R.phase = 'lobby'; doorCount.hidden = true; } doorHudDraw(); return; }   // 방을 연 사람 — 이미 그 구절 대기실
+            if (c.n === D.cfgN) return;
+            if (roomBusy()) { D.pend = true; return; }   // 달리는 중·시상식엔 끝나고(roomAfterRun)
+            D.cfgN = c.n; D.pend = false; D.goSent = false; doorMode = c.mode;
+            doorWin.hidden = true; doorWin._room = false;
+            doorToLobby(c.id);
+        }
+        function roomAfterRun() { const D = doorRoom; if (D && D.pend && D.cfg && D.cfg.n !== D.cfgN) roomCfg(); }
+        function roomGo() {
+            const D = doorRoom, g = D.go, R = doorRun; D.goSent = false;
+            if (!g || g.round <= D.round) return;
+            if (!R || (R.phase !== 'lobby' && R.phase !== 'count')) { D.round = g.round; return; }   // 밖에 있거나 달리는 중 — 이번 판은 지켜본다
+            D.round = g.round;
+            if (srvNow() > g.at + 1500) { D.late = true; showHint(doorEn() ? 'This round has started — join the next one' : '이번 판은 이미 출발했어요 — 다음 판에 함께해요', 2600); doorHudDraw(); return; }
+            D.late = false; R.goAt = g.at; R.phase = 'count'; doorHudDraw();
+        }
+        function roomLobbyTick(R) {   // 대기실 — 내 출발선 밟음을 알리고, 👑는 모두 밟으면 출발을 연다 · 출발은 서버 시각에 맞춰
+            const D = doorRoom, ln = onLine();
+            if (ln !== D.line) { D.line = ln; D.ref.child('m/' + D.uid + '/line').set(ln).catch(() => { }); }
+            if (R.goAt) {
+                const left = Math.ceil((R.goAt - srvNow()) / 1000);
+                if (left <= 0) { const late = Math.max(0, srvNow() - R.goAt); R.goAt = 0; doorGo(); R.t0 -= late; R.segAt = R.t0; return; }
+                if (doorCount.textContent !== String(left) || doorCount.hidden) { doorCount.textContent = String(left); doorCount.hidden = false; doorCount.classList.remove('pop'); void doorCount.offsetWidth; doorCount.classList.add('pop'); if (typeof SoundEffect !== 'undefined' && SoundEffect.playKeyStroke) SoundEffect.playKeyStroke(); }
+                return;
+            }
+            const ms = roomMem();
+            if (roomLeader() && !D.goSent && ms.length && ms.every(([, m]) => m.line)) {
+                D.goSent = true;
+                D.ref.child('go').set({ at: srvNow() + 3200, round: Math.max(D.round, D.go ? D.go.round | 0 : 0) + 1 }).catch(() => { D.goSent = false; });
+            }
+        }
+        const ROOM_CLIP = ['Idle', 'Walking_A', 'Running_A', 'Jump_Idle', 'Cheer'];
+        function roomLabel(nick) {
+            const c = document.createElement('canvas'); c.width = 256; c.height = 64; const g = c.getContext('2d');
+            g.font = 'bold 34px sans-serif'; const w = Math.min(244, g.measureText(nick).width + 28);
+            g.fillStyle = 'rgba(28,34,62,0.82)'; g.beginPath(); if (g.roundRect) g.roundRect(128 - w / 2, 8, w, 48, 22); else g.rect(128 - w / 2, 8, w, 48); g.fill();
+            g.fillStyle = '#ffe08a'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(nick, 128, 33, 230);
+            const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding;
+            const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false, transparent: true, toneMapped: false })); sp.scale.set(0.32, 0.08, 1); sp.position.y = 0.31; sp.renderOrder = 5; return sp;
+        }
+        function roomLookOn(m, L) {   // 그 사람 모습 — pmLook과 같은 규칙(소품은 빼고)
+            L = Object.assign({}, typeof NJ_LOOK_DEF !== 'undefined' ? NJ_LOOK_DEF : {}, L || {});
+            const mats = {};
+            m.traverse(o => {
+                if (/^(wear_|hold_|back_)/.test(o.name)) o.visible = false;
+                if (!o.isMesh) return; o.castShadow = true; o.frustumCulled = false;
+                [].concat(o.material).forEach(mt => { if (!mt) return; mt.metalness = 0; mt.roughness = 0.85; const po = PM_PO[mt.name]; if (po) { mt.polygonOffset = true; mt.polygonOffsetFactor = po; mt.polygonOffsetUnits = po * 4; } (mats[mt.name] = mats[mt.name] || []).push(mt); });
+            });
+            const on = new Set([...(PM_PARTS.h[L.h] || PM_PARTS.h.tied), 'eyes_' + L.e, 'brow_' + L.b, 'nose_' + L.n, 'mouth_' + L.m, 'ears_' + L.ear]);
+            if (L.bl) on.add('blush'); if (L.bd) on.add('beard');
+            PM_ALL.forEach(n => { const o = m.getObjectByName(n); if (o) o.visible = on.has(n); });
+            const LK = typeof NJ_LOOK !== 'undefined' ? NJ_LOOK : null; if (!LK) return;
+            const pick = (k, i) => LK[k][Math.max(0, Math.min(LK[k].length - 1, i | 0))];
+            const col = (n, hex, k) => (mats[n] || []).forEach(mt => { mt.color.set(hex).convertSRGBToLinear(); if (k) mt.color.multiplyScalar(k); });
+            col('skin', pick('sk', L.sk)); col('skin_dk', pick('sk', L.sk), 0.8); col('hair', pick('hc', L.hc)); col('brow', pick('hc', L.hc), 0.8); col('eye', pick('ec', L.ec));
+        }
+        function roomRemote(uid) {
+            const D = doorRoom; let q = D.rem.get(uid); if (q) return q;
+            const mm = D.mem[uid] || {}, g = new THREE.Group(); scene.add(g);
+            const tmp = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, 0.2, 10), new THREE.MeshStandardMaterial({ color: 0xf3efe6, roughness: 0.8 })); tmp.position.y = 0.1; g.add(tmp);
+            const lab = roomLabel(String(mm.nick || '순례자').slice(0, 12)); g.add(lab);
+            q = { uid, g, tmp, lab, mixer: null, acts: {}, cur: '', init: false }; D.rem.set(uid, q);
+            let L = null; try { L = mm.look ? JSON.parse(mm.look) : null; } catch (e) { }
+            (async () => {
+                try {
+                    if (!THREE.GLTFLoader) await loadScript(GLTF_URL);
+                    const gl = await new Promise((res, rej) => new THREE.GLTFLoader().load(`models/pilgrim/pilgrim.glb?v=${PILGRIM_V}`, res, undefined, rej));
+                    if (!doorRoom || doorRoom.rem.get(uid) !== q) return;
+                    const m = gl.scene; m.updateMatrixWorld(true);
+                    const box = new THREE.Box3(); m.traverse(o => { if (o.isMesh) { let p = o; while (p && p !== m && !/^(Mage_|hair_tied)/.test(p.name)) p = p.parent; if (p && p !== m) box.expandByObject(o); } });
+                    const s = 0.22 / Math.max(0.01, box.max.y - box.min.y); m.scale.setScalar(s); m.rotation.y = Math.PI; m.position.y = -box.min.y * s;
+                    roomLookOn(m, L);
+                    g.remove(tmp); tmp.geometry.dispose(); tmp.material.dispose(); q.tmp = null; g.add(m); q.model = m;
+                    q.mixer = new THREE.AnimationMixer(m); gl.animations.forEach(c => { q.acts[c.name] = q.mixer.clipAction(c); });
+                } catch (e) { console.warn('door remote', e); }
+            })();
+            return q;
+        }
+        function roomRemDrop(q) {
+            scene.remove(q.g); if (q.mixer) q.mixer.stopAllAction();
+            q.lab.material.map.dispose(); q.lab.material.dispose();
+            if (q.tmp) { q.tmp.geometry.dispose(); q.tmp.material.dispose(); }
+            if (q.model) q.model.traverse(o => { if (o.isMesh) { o.geometry.dispose(); [].concat(o.material).forEach(mt => { if (mt) { if (mt.map) mt.map.dispose(); mt.dispose(); } }); } });
+        }
+        function roomTick(dt) {   // 내 자리 보내기(0.1초마다) · 다른 사람 따라 그리기
+            const D = doorRoom, now = performance.now();
+            if (walk && now - D.sendT > 100) {
+                D.sendT = now; const R = doorRun;
+                D.ref.child('p/' + D.uid).set({ x: Math.round(P.x * 1000) / 1000, y: Math.round(P.y * 1000) / 1000, z: Math.round(P.z * 1000) / 1000, f: Math.round(P.face * 100) / 100,
+                    a: Math.max(0, ROOM_CLIP.indexOf(pm.cur)), r: R ? R.next : -1, n: R ? R.ws.length : 0 }).catch(() => { });
+            }
+            D.rem.forEach((q, uid) => { if (!D.mem[uid] || !D.pos[uid]) { roomRemDrop(q); D.rem.delete(uid); } });
+            const k = Math.min(1, dt * 10);
+            for (const uid in D.pos) {
+                if (uid === D.uid || !D.mem[uid]) continue;
+                const p = D.pos[uid], q = roomRemote(uid);
+                if (!q.init) { q.g.position.set(p.x, p.y, p.z); q.g.rotation.y = p.f || 0; q.init = true; }
+                q.g.position.x += (p.x - q.g.position.x) * k; q.g.position.y += (p.y - q.g.position.y) * k; q.g.position.z += (p.z - q.g.position.z) * k;
+                q.g.rotation.y = angLerp(q.g.rotation.y, p.f || 0, k);
+                if (q.mixer) { const clip = ROOM_CLIP[p.a | 0] || 'Idle', a = q.acts[clip] || q.acts.Idle; if (a && q.cur !== clip) { const pa = q.acts[q.cur]; a.reset().play(); if (pa) a.crossFadeFrom(pa, 0.2, false); q.cur = clip; } q.mixer.update(dt); }
+            }
+        }
+        function roomHudHtml(R) {   // 대기실 — 누가 있고 누가 출발선에 섰나 · 달리는 중 — 저마다 몇 번째 문
+            const D = doorRoom, en = doorEn();
+            if (!D) return R.phase === 'lobby' || R.phase === 'count' ? `<div class="dmode"><button data-inv>👥 ${en ? 'Run with friends' : '친구와 함께'}</button></div>` : '';
+            const ms = roomMem(), fins = roomFins();
+            if (R.phase === 'run' || R.phase === 'podium') return `<div class="droom">${ms.filter(([u]) => u !== D.uid).map(([u]) => { const p = D.pos[u], fi = fins.findIndex(([x]) => x === u); return `<span>${starEsc(roomNick(u))} ${fi >= 0 ? '🏁' + (fi + 1) : p && p.n ? (p.r | 0) + '/' + p.n : '…'}</span>`; }).join('')}</div>`;
+            const lead = ms[0] && ms[0][0];
+            return `<div class="droom">${ms.map(([u, m]) => `<span class="${m.line ? 'on' : ''}">${u === lead ? '👑' : ''}${starEsc(u === D.uid ? (en ? 'Me' : '나') : (m.nick || ''))}${m.line ? ' ✓' : ''}</span>`).join('')}</div>`
+                + `<div class="dnote">${D.late ? (en ? 'Wait for the next round' : '다음 판을 기다려요') : (en ? 'When everyone is on the start line, we start together' : '모두 출발선을 밟으면 함께 출발해요')}${roomLeader() ? '' : ' · ' + (en ? '👑 picks the verse' : '👑가 구절·길을 골라요')}</div>`
+                + (ms.length < 4 ? `<div class="dmode"><button data-inv>👥 ${en ? 'Invite more' : '더 부르기'}</button><button data-leave>${en ? 'Leave room' : '방 나가기'}</button></div>` : `<div class="dmode"><button data-leave>${en ? 'Leave room' : '방 나가기'}</button></div>`);
+        }
+        function roomInvite() {
+            if (typeof window.openDoorInvite !== 'function') return;
+            const D = doorRoom;
+            window.openDoorInvite({ room: D ? D.rid : '', id: doorRun ? doorRun.id : (D && D.cfg ? D.cfg.id : doorPick()), mode: doorMode,
+                have: D ? Object.values(D.mem).map(m => m.tag) : [], onRoom: rid => { if (!doorRoom) doorRoomJoin(rid); } });
+        }
+        function roomCard() {   // 결과 카드(방) — 도착하는 대로 순위가 채워진다
+            const D = doorRoom, en = doorEn(), last = doorWin._last; if (!D || !last) return;
+            const fins = roomFins(), sec = s => (s / 1000).toFixed(1) + (en ? 's' : '초'), medal = i => ['🥇', '🥈', '🥉', '🏅'][i] || '🏅';
+            const waiting = roomMem().filter(([u]) => !fins.some(([x]) => x === u));
+            doorWin.innerHTML = `<div class="sw-rays"></div><div class="sw-card">
+                <div class="sw-big">🚪</div>
+                <div class="sw-title">${en ? 'Finished!' : '통과!'} ⏱ ${sec(last.ms)}</div>
+                <div class="sw-ref">${starEsc(doorRef(last.id))}</div><div class="sw-txt">${last.ws.map(w => `<b>${starEsc(w)}</b>`).join(' ')}</div>
+                <div class="nj3d-droomres">${fins.map(([u, f], i) => `<div class="${u === D.uid ? 'me' : ''}">${medal(i)} ${starEsc(u === D.uid ? (en ? 'Me' : '나') : roomNick(u))} <b>${sec(f.ms)}</b></div>`).join('')}${waiting.map(([u]) => `<div class="wait">… ${starEsc(roomNick(u))} ${en ? 'running' : '달리는 중'}</div>`).join('')}</div>
+                <div class="nj3d-doorbtns">${roomLeader() ? `<button class="sw-ok" data-a="ragain">${en ? 'One more' : '한 판 더'}</button><button class="sw-ok" data-a="rother">${en ? 'Another verse' : '다른 구절'}</button>` : `<div class="dnote">${en ? '👑 opens the next round' : '👑가 다음 판을 열면 함께 돌아가요'}</div>`}<button class="sw-ok ghost" data-a="rleave">${en ? 'Leave room' : '방 나가기'}</button><button class="sw-ok ghost" data-a="rwait">${en ? 'To the lobby' : '대기실로'}</button></div></div>`;
+        }
+        window._njDoorJoin = rid => {   // game.js — 받은 초대를 누르면(3D가 열려 있을 때)
+            if (cur !== C) return;
+            if (C.suspended && window.resumeNJ3D) window.resumeNJ3D();
+            if (!walk) modeBtn.click();
+            if (doorRun && roomBusy()) doorEnd(false, true);
+            doorRoomJoin(rid);
+        };
+        cleanups.push(() => { if (doorRoom) doorRoomLeave(true); if (window._njDoorJoin) delete window._njDoorJoin; });
         if (DOOR_ON) doorBuild(doorPick());   // 경기장은 늘 그 자리(처음엔 아무 구절로 — 들어갈 때 다시 짓는다)
         cityAnims.push(t => {
             if (!DOOR_ON) return;
             const dt = Math.min(0.1, Math.max(0, t - (doorLastT || t))); doorLastT = t;
+            if (doorRoom) roomTick(dt);   // 👥 내 자리 보내기 · 다른 사람 그리기
             const showBtn = walk && !deco && !proc && !doorRun && !starRun && doorWin.hidden && !inArena() && Math.hypot(P.x - DR.AX, P.z - DR.ZB) > 3; if (doorBtn.hidden === showBtn) doorBtn.hidden = !showBtn;
             if (doorArena && doorArena.veil.visible) doorArena.veil.material.opacity = 0.22 + Math.sin(t * 3) * 0.08;
             if (doorArena && doorArena.sign.visible === !!doorRun) doorArena.sign.visible = !doorRun;
             if (doorArena) doorObsAnim(t);
             if (doorArena && !doorRun && Math.abs(P.x - DR.AX) < DR.LW / 2 + 0.1 && P.z > doorArena.zEnd && P.z < DR.ZB + 0.05 && P.y > doorArena.FY + DR.RH - 0.2 && P.y < doorArena.FY + DR.RH + 0.04) { P.y = doorArena.FY + DR.RH + 0.05; P.vy = Math.max(0, P.vy); }   // 🫙 벽과 뚜껑 사이로 끼면 뚜껑 위로
-            if (!doorRun) { if (walk && !deco && doorWin.hidden && inArena()) doorEnter(doorPick()); return; }   // 입장문을 걸어 들어오면
+            if (!doorRun) { if (walk && !deco && doorWin.hidden && inArena()) { if (doorRoom && doorRoom.cfg) doorToLobby(doorRoom.cfg.id); else doorEnter(doorPick()); } return; }   // 입장문을 걸어 들어오면 · 방이면 방의 구절 대기실로
             const R = doorRun;
             if (ride.on) mountDown(); if (jetOn) jetToggle(false); gliding = false;   // 경기장 안에선 걸어서만
             const now = performance.now();
             if (P.z > DR.ZB + 0.05 && R.phase !== 'run') { doorEnd(false); return; }   // 입장문으로 도로 나감
             if (R.phase === 'podium') {   // 시상대 위 — 정면을 보고 서 있게(카메라는 처음 한 번만 정면 — 그 뒤엔 끌어서 돌린다, 10/22 사용자)
-                const s0 = R.podium[0]; P.x = s0.x; P.z = s0.z; P.face = Math.PI; if (P.y < s0.y) P.y = s0.y + 0.01;
+                const s0 = R.podSlot || R.podium[0]; P.x = s0.x; P.z = s0.z; P.face = Math.PI; if (P.y < s0.y) P.y = s0.y + 0.01;
                 if (!pm.emote) { const a = pm.acts && pm.acts.Cheer; pm.emote = { k: 'cheer', t0: walkT, dur: a ? a.getClip().duration : 1.2 }; }   // 환호가 끝나면 카드가 뜰 때까지 다시
                 return; }
             if (R.phase !== 'run') {   // 🏁 모두(지금은 나)가 출발선을 밟으면 3·2·1 — 벗어나면 다시 기다린다
+                if (doorRoom) { roomLobbyTick(R); return; }   // 👥 함께면 👑가 연 출발 시각에 맞춰
                 if (onLine()) {
                     if (R.phase === 'lobby') { R.phase = 'count'; R.cAt = now; doorHudDraw(); }
                     const left = 3 - Math.floor((now - R.cAt) / 1000);
@@ -5733,7 +5944,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             ride: () => ({ on: ride.on, k: ride.k }), jet: () => jetOn, glide: () => gliding, hint: () => hint.textContent, rideBtn: () => rideBtn.click(),
             gat: (x, z, y) => groundAt(x, z, y), blk: (x, z, y) => blocked(x, z, y), nbox: () => BOXES.filter(b => b.door).map(b => [+b.x0.toFixed(2), +b.x1.toFixed(2), +b.z0.toFixed(2), +b.z1.toFixed(2), +b.y1.toFixed(2)]).slice(0, 14),
             doorObs: () => doorArena && { mode: doorArena.mode, FY: doorArena.FY, tops: doorArena.obs.tops, types: doorArena.obs.types, dvs: doorArena.obs.dvs, tunnels: doorArena.obs.tunnels, hammers: doorArena.obs.hammers.map(q => ({ z: q.z, hx: +q.hx.toFixed(2), hy: +q.hy.toFixed(2) })), lifts: doorArena.obs.lifts.map(q => ({ x: (q.bx.x0 + q.bx.x1) / 2, z: (q.bx.z0 + q.bx.z1) / 2, h: +(q.h || 0).toFixed(2) })), plats: doorArena.obs.plats.map(q => ({ z: q.z, x: +q.x.toFixed(2) })), rolls: doorArena.obs.rolls.map(q => ({ x: q.x, a: q.a, b: q.b, on: q.on, z: +q.pz.toFixed(2) })), rows: doorArena.rows.map(r => +r.z.toFixed(2)), pads: doorArena.obs.pads.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2)]), glass: doorArena.obs.glass.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2), q.real ? 1 : 0, q.broken ? 'B' : q.lit ? 'L' : '']), pistons: doorArena.obs.pistons.map(q => [q.s, +q.zc.toFixed(2), +q.f.toFixed(2)]), sweeps: doorArena.obs.sweeps.map(q => [+q.x.toFixed(2), +q.z.toFixed(2), +q.R.toFixed(2)]), ceils: doorArena.obs.ceils.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2)]), lanes: doorArena.obs.pads.map(q => [+((q.x0 + q.x1) / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2), q.fast ? 1 : 0]), stones: doorArena.obs.stones.map(q => [+q.x.toFixed(2), +q.z.toFixed(2), q.A ? 1 : 0, +q.sink.toFixed(2), +q.sx0.toFixed(2), +q.sx1.toFixed(2)]) }, doorFall: () => doorRun && doorRun.fall, ceilDbg: () => doorRun && { n: doorRun.obs.ceils.length, phase: doorRun.phase, FY: doorRun.FY, P: [P.x, P.y, P.z], in: doorRun.obs.ceils.map(q => P.x > q.x0 - CR && P.x < q.x1 + CR && P.z > q.z0 - CR && P.z < q.z1 + CR) },
-            doorStart: id => doorToLobby(id || doorPick()), doorOut: () => doorOutside(), door: () => doorRun && { phase: doorRun.phase, id: doorRun.id, next: doorRun.next, n: doorRun.ws.length, miss: doorRun.miss, t0: !!doorRun.t0, rows: doorRun.rows.map(r => ({ z: r.z, sh: !!r.shown, right: r.right, x: r.doors[r.right].x, w: r.w, sq: r.doors.map(d => +d.sq.toFixed(2)) })) }, doorWin: () => doorWin.hidden ? null : doorWin.innerText,
+            doorStart: id => doorToLobby(id || doorPick()), doorOut: () => doorOutside(),
+            doorRoom: () => doorRoom && { rid: doorRoom.rid, round: doorRoom.round, leader: roomLeader(), mem: Object.keys(doorRoom.mem), rem: [...doorRoom.rem.values()].map(q => ({ uid: q.uid, model: !!q.model, x: +q.g.position.x.toFixed(2), z: +q.g.position.z.toFixed(2), clip: q.cur })), hud: doorHud.innerText, count: doorCount.hidden ? '' : doorCount.textContent, podSlot: doorRun && doorRun.rank }, door: () => doorRun && { phase: doorRun.phase, id: doorRun.id, next: doorRun.next, n: doorRun.ws.length, miss: doorRun.miss, t0: !!doorRun.t0, rows: doorRun.rows.map(r => ({ z: r.z, sh: !!r.shown, right: r.right, x: r.doors[r.right].x, w: r.w, sq: r.doors.map(d => +d.sq.toFixed(2)) })) }, doorWin: () => doorWin.hidden ? null : doorWin.innerText,
             doorLim: sec => { if (doorArena) Object.keys(doorArena.obs.lim).forEach(k => { doorArena.obs.lim[k] = sec; }); return doorArena && doorArena.obs.lim; }, doorR: () => doorRun && { glow: !!(doorRun.rows[doorRun.next] || {}).glowHint, flyBtn: !doorFlyBtn.hidden, id: doorRun.id, fall: doorRun.fall, next: doorRun.next, saved: doorRun.saved, rescue: doorRun.rescue, fly: !!doorRun.fly, miss: doorRun.miss },
             pilMat: () => { let mn = 1, tr = 0, n = 0; pilgrim.traverse(o => { if (o.isMesh && o.material) [].concat(o.material).forEach(m => { n++; mn = Math.min(mn, m.opacity); if (m.transparent) tr++; }); }); return { n, mn, tr }; },
             camInfo: () => ({ yaw: +camYaw.toFixed(3), pitch: +camPitch.toFixed(3), dist: +camDist.toFixed(3), lock: camLock, hold: moveHold }), camLockSet: v => { camLock = !!v; },
@@ -6777,8 +6989,9 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         loading.remove();
         ov.querySelector('.nj3d-build').hidden = false;   // 🔨 성이 다 지어진 뒤에(10/15 사용자: 불러오는 동안 건축이 마중 나왔다)
         {   // 🕊️ 들어가는 순간 · 🧭 할 일이 이끄는 입구(opts.start: 'manna' · 'stars' · 'sea')
-            const toWalk = !VISIT && (opts.start === 'manna' || opts.start === 'stars');
+            const toWalk = !VISIT && (opts.start === 'manna' || opts.start === 'stars' || opts.start === 'door');
             const afterIn = () => {
+                if (opts.start === 'door' && opts.door && !VISIT) { if (!walk) modeBtn.click(); doorRoomJoin(opts.door); return; }   // 🚪 받은 초대로 들어옴(10/25)
                 if (!toWalk || walk) return;
                 modeBtn.click();
                 if (opts.start === 'manna') {   // 🍞 아직 안 거둔 만나 곁으로

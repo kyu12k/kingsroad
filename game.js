@@ -10465,6 +10465,95 @@ const NJV_WHY = { google: '친구의 새 예루살렘은 구글 계정을 연결
     textfriend: '직접 쓴 인사는 친구에게만 남길 수 있어요.', hosts: '오늘은 다섯 곳의 문제를 다 풀었어요. 구경은 계속할 수 있어요.', items: '이곳의 문제는 오늘 세 개까지예요. 구경은 계속할 수 있어요.', same: '이미 푼 물건이에요.' };
 const _njvCall = (name, data) => firebase.app().functions('asia-northeast3').httpsCallable(name)(Object.assign({ myTag }, data)).then(r => r.data);
 const _njvEsc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+/* 🚪 좁은 문 함께 달리기 (10/25 사용자: 친구와 함께 · 실시간 · 친구·길드원 4명까지) — 여기엔 Realtime Database 연결 · 받은 초대 · 친구 고르기만.
+   방(door/{방})은 서버 doorRoom이 만들고 부른다(doorInv/{uid}/{방} + 푸시). 방 안의 일(출발·위치·순위)은 nj3d.js — docs/새-예루살렘.md */
+const DOOR_RTDB = 'https://kings-road-rank-default-rtdb.asia-southeast1.firebasedatabase.app';
+var _doorDbP = null, _doorInvRef = null, _doorInvTries = 0;
+function _doorDb() {   // SDK는 처음 쓸 때만 받는다
+    if (_doorDbP) return _doorDbP;
+    _doorDbP = new Promise((res, rej) => {
+        const done = () => { try { res(firebase.app().database(DOOR_RTDB)); } catch (e) { rej(e); } };
+        if (firebase.database) { done(); return; }
+        const s = document.createElement('script'); s.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js'; s.crossOrigin = 'anonymous';
+        s.onload = done; s.onerror = rej; document.head.appendChild(s);
+    }).catch(e => { _doorDbP = null; throw e; });
+    return _doorDbP;
+}
+window._doorDb = _doorDb;
+const _doorEn = () => typeof currentLang !== 'undefined' && currentLang === 'en';
+function _doorInbox() {   // 받은 초대 — 15분 안의 것만
+    try {
+        const u = auth && auth.currentUser;
+        if (!u || !myTag || myTag === '0000') { if (++_doorInvTries < 8) setTimeout(_doorInbox, 15000); return; }
+        if (_doorInvRef) return;
+        _doorDb().then(rdb => {
+            if (_doorInvRef) return;
+            _doorInvRef = rdb.ref('doorInv/' + u.uid);
+            _doorInvRef.on('child_added', s => { const v = s.val() || {}; if (!v.at || Date.now() - v.at > 15 * 60000) { s.ref.remove().catch(() => { }); return; } _doorInvShow(s.key, v, s.ref); });
+        }).catch(() => { });
+    } catch (e) { }
+}
+function _doorInvShow(room, v, ref) {
+    if (document.getElementById('door-inv-' + room)) return;
+    const en = _doorEn(), el = document.createElement('div'); el.className = 'door-inv'; el.id = 'door-inv-' + room;
+    el.innerHTML = `<div class="di-t">🚪 ${en ? `<b>${_njvEsc(v.nick || 'A pilgrim')}</b> invites you to run the Narrow Gate together` : `<b>${_njvEsc(v.nick || '순례자')}</b>님이 좁은 문에서 함께 달리자고 불러요`}</div><div class="di-b"><button class="di-go">${en ? 'Join' : '함께 달리기'}</button><button class="di-x">${en ? 'Later' : '다음에'}</button></div>`;
+    document.body.appendChild(el);
+    const done = () => { el.remove(); ref.remove().catch(() => { }); };
+    el.querySelector('.di-go').onclick = () => { done(); _doorJoin(room); };
+    el.querySelector('.di-x').onclick = done;
+    setTimeout(() => { if (el.isConnected) done(); }, Math.max(1000, 15 * 60000 - (Date.now() - v.at)));
+    try { if (SoundEffect && SoundEffect.playLevelUp) SoundEffect.playLevelUp(); } catch (e) { }
+}
+function _doorJoin(room) {
+    if (typeof window._njDoorJoin === 'function') { window._njDoorJoin(room); return; }   // 3D가 열려 있으면(숨겨 둔 것 포함) 그 자리에서
+    openNJ3DView({ start: 'door', door: room, noIntro: true });
+}
+/* 👥 부를 사람 고르기 — 친구 + 같은 길드원(말씀 대결과 같은 목록), 방에 4명까지. o: { room, id, mode, have(이미 방에 있는 태그), onRoom(방) } */
+async function openDoorInvite(o) {
+    o = o || {}; const en = _doorEn();
+    if (!myTag || myTag === '0000') { showGemToast(0, en ? 'Set your nickname first.' : '닉네임을 먼저 설정해주세요.', true); return; }
+    { const o0 = document.getElementById('door-pick-ov'); if (o0) o0.remove(); }
+    const ov = document.createElement('div'); ov.id = 'door-pick-ov'; ov.className = 'door-pick-ov';
+    ov.innerHTML = `<div class="door-pick"><div class="dpk-h">👥 ${en ? 'Who will run with you?' : '누구와 함께 달릴까요?'}<button class="dpk-x">✕</button></div><div class="dpk-sub">${en ? 'Friends and guild members · up to 4 in a room' : '친구·길드원 · 한 방에 4명까지'}</div><div class="dpk-list"><div class="dpk-empty">${en ? 'Loading…' : '불러오는 중…'}</div></div><button class="dpk-send" disabled>${en ? 'Invite' : '부르기'}</button></div>`;
+    document.body.appendChild(ov);
+    const close = () => ov.remove();
+    ov.querySelector('.dpk-x').onclick = close; ov.addEventListener('pointerdown', e => { if (e.target === ov) close(); });
+    let list = [];
+    try {
+        const me = (await _getFriendDoc(myTag)) || {}, tags = new Map();
+        (me.friends || []).forEach(t2 => tags.set(t2, en ? 'Friend' : '친구'));
+        if (me.guildId) { const g = await db.collection('guilds').doc(me.guildId).get(); if (g.exists) (g.data().members || []).forEach(t2 => { if (t2 !== myTag && !tags.has(t2)) tags.set(t2, en ? 'Guild' : '길드원'); }); }
+        const ds = await Promise.all([...tags.keys()].map(t2 => _getFriendDoc(t2).catch(() => null)));
+        list = [...tags.entries()].map(([t2, rel], i) => ({ tag: t2, rel, nick: (ds[i] && ds[i].nickname) || (en ? 'Pilgrim' : '순례자') }));
+    } catch (e) { console.warn('[door] pick', e); }
+    if (!ov.isConnected) return;
+    const have = new Set(o.have || []), room = Math.max(0, 4 - Math.max(1, have.size)), box = ov.querySelector('.dpk-list'), send = ov.querySelector('.dpk-send');
+    list = list.filter(p => !have.has(p.tag));
+    if (!list.length) { box.innerHTML = `<div class="dpk-empty">${en ? 'Make friends or join a guild to run together.' : '친구나 길드원이 생기면 함께 달릴 수 있어요.'}</div>`; return; }
+    if (!room) { box.innerHTML = `<div class="dpk-empty">${en ? 'The room is full (4).' : '방이 가득 찼어요(4명).'}</div>`; return; }
+    box.innerHTML = list.map(p => `<label class="dpk-row"><input type="checkbox" value="${_njvEsc(p.tag)}"><span class="dpk-n">${_njvEsc(p.nick)}</span><span class="dpk-s">#${_njvEsc(p.tag)} · ${p.rel}</span></label>`).join('');
+    const picked = () => [...box.querySelectorAll('input:checked')].map(i => i.value);
+    box.addEventListener('change', e => {
+        if (picked().length > room) { e.target.checked = false; showGemToast(0, en ? `Up to ${room} more` : `${room}명까지 더 부를 수 있어요`, true); }
+        send.disabled = !picked().length;
+    });
+    send.onclick = async () => {
+        const toTags = picked(); if (!toTags.length) return;
+        send.disabled = true; send.textContent = en ? 'Sending…' : '부르는 중…';
+        let r = null;
+        try { r = await _njvCall('doorRoom', { nick: myNickname, room: o.room || '', toTags, id: o.id || '', mode: o.mode || 'hard' }); } catch (e) { console.warn('[door] room', e); }
+        if (!r || !r.ok) {
+            const why = r && r.why;
+            showGemToast(0, why === 'full' ? (en ? 'The room is full.' : '방이 가득 찼어요.') : why === 'rel' ? (en ? 'Only friends or guild members.' : '친구나 같은 길드원만 부를 수 있어요.') : why === 'room' ? (en ? 'The room has closed.' : '방이 닫혔어요.') : (en ? 'Could not invite. Check your connection.' : '부르지 못했어요. 인터넷 연결을 확인해 주세요.'), true);
+            send.disabled = false; send.textContent = en ? 'Invite' : '부르기'; return;
+        }
+        close();
+        const names = list.filter(p => (r.sent || []).includes(p.tag)).map(p => p.nick).join(', ');
+        showGemToast(0, en ? `Invited ${names} — start together when they arrive` : `${names}님을 불렀어요 — 들어오면 함께 출발해요`);
+        if (typeof o.onRoom === 'function') o.onRoom(r.room);
+    };
+}
+window.openDoorInvite = openDoorInvite;
 var _njVisit = null;   // var — saveGameData가 먼저 불려도 TDZ에 걸리지 않게
 async function openNJVisit(tag, nick) {
     if (!myTag || myTag === '0000') { showGemToast(0, '닉네임을 먼저 설정해주세요.', true); return; }
@@ -25297,6 +25386,7 @@ _checkFirstDailyWeeklyStudy(); // 6. 오늘 첫 접속 시 주간 학습 시간 
 setTimeout(() => { if (typeof checkFriendEvents === 'function') checkFriendEvents(); }, 2000); // 7. 친구 이벤트 처리
 setTimeout(() => { if (typeof _giftCheckInbox === 'function') _giftCheckInbox(); }, 4000);   // 🎁 나눔 열매 받은 편지함
 setTimeout(() => { if (typeof _battleInboxRefresh === 'function') _battleInboxRefresh(); }, 4500);   // ⚔️ 받은 도전장
+setTimeout(() => { if (typeof _doorInbox === 'function') _doorInbox(); }, 6000);   // 🚪 좁은 문 함께 달리기 초대(10/25)
 setTimeout(async () => { // 8. 길드 ID 로드 (레이드 대미지 누적용)
     if (db && myTag && myTag !== '0000') {
         try {

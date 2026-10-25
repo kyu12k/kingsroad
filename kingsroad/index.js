@@ -1936,3 +1936,57 @@ exports.njVisitClaim = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
     });
     return out;
 });
+
+/* 🚪 좁은 문 함께 달리기 (2026-10-25 사용자: 친구와 함께 · 실시간 · 지금 경기장 · 친구·길드원 4명까지) — docs/새-예루살렘.md
+   방과 위치는 Realtime Database(asia-southeast1) — door/{방}{ host, hostTag, at, cfg{id,mode,n}, allow{uid: tag}, go{at,round}, m{uid}, p{uid}, f{uid} }.
+   이 함수만 방을 만들고 allow(들어올 수 있는 계정)를 적는다 — 규칙은 allow에 있는 계정만 읽고 제 자리(m·p·f)만 쓰게 한다.
+   부르기: doorInv/{uid}/{방}{ tag, nick, at, id } + 푸시. 보상·기록 없음이라 구글 연동은 묻지 않는다 */
+const DOOR_RTDB = 'https://kings-road-rank-default-rtdb.asia-southeast1.firebasedatabase.app';
+const DOOR_MAX = 4;
+const _doorDb = () => admin.app().database(DOOR_RTDB);
+exports.doorRoom = onCall({ cors: ALLOWED_ORIGINS }, async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+    const { myTag, nick, room, toTags, id, mode } = request.data || {};
+    const u = await verifyTag(request.auth.uid, myTag);
+    const me = String(myTag), uid = request.auth.uid;
+    const tos = [...new Set((Array.isArray(toTags) ? toTags : []).map(t => String(t || '').replace(/^#/, '').toUpperCase()).filter(t => /^[A-Z0-9]{3,8}$/.test(t) && t !== me))].slice(0, DOOR_MAX - 1);
+    if (!tos.length) return { ok: false, why: 'none' };
+    await enforceRateLimit(uid, 'doorRoom', { maxCalls: 60, windowMs: 86400000 });
+    const rdb = _doorDb(), myNick = _bNick(nick || u.nickname) || '순례자';
+    // 부를 사람마다 — 친구거나 같은 길드, 막지 않았고, 그 태그의 계정 전부(어느 기기로 열어도)
+    const people = [], bad = [];
+    for (const to of tos) {
+        const [lb, sv] = await Promise.all([db.collection('leaderboard').doc(to).get(), db.collection('saves').where('tag', '==', to).get()]);
+        if (!lb.exists || sv.empty) { bad.push({ tag: to, why: 'nouser' }); continue; }
+        const tl = lb.data();
+        if (Array.isArray(tl.blocked) && tl.blocked.includes(me)) { bad.push({ tag: to, why: 'nouser' }); continue; }
+        const friend = Array.isArray(u.friends) && u.friends.includes(to), guild = !!(u.guildId && tl.guildId && u.guildId === tl.guildId);
+        if (!friend && !guild) { bad.push({ tag: to, why: 'rel' }); continue; }
+        people.push({ tag: to, tl, uids: sv.docs.map(d => d.id).slice(0, 8) });
+    }
+    if (!people.length) return { ok: false, why: bad[0] ? bad[0].why : 'none', bad };
+    let rid = String(room || '');
+    if (rid) {
+        if (!/^[a-z0-9]{10}$/.test(rid)) throw new HttpsError('invalid-argument', 'room');
+        const r = (await rdb.ref('door/' + rid).get()).val();
+        if (!r || !r.allow || !r.allow[uid]) return { ok: false, why: 'room' };   // 방에 있는 사람이면 누구나 더 부를 수 있다(방장이 나가도)
+        const tags = new Set(Object.values(r.allow));
+        people.forEach(p => tags.add(p.tag));
+        if (tags.size > DOOR_MAX) return { ok: false, why: 'full' };
+    } else {
+        rid = require('crypto').randomBytes(8).toString('hex').replace(/[^a-z0-9]/g, '').slice(0, 10).padEnd(10, '0');
+        const vid = /^\d{1,2}-\d{1,2}(\/\d)?$/.test(String(id || '')) ? String(id) : '21-4';
+        const mine = (await db.collection('saves').where('tag', '==', me).get()).docs.map(d => d.id).slice(0, 8);
+        const allow = {}; [uid, ...mine].forEach(x => { allow[x] = me; });
+        await rdb.ref('door/' + rid).set({ host: uid, hostTag: me, at: Date.now(), cfg: { id: vid, mode: mode === 'easy' ? 'easy' : 'hard', n: 0 }, allow });
+        // 오래된 방 치우기(6시간 넘은 것 몇 개씩)
+        try { const old = await rdb.ref('door').orderByChild('at').endAt(Date.now() - 6 * 3600000).limitToFirst(20).get(); const up = {}; old.forEach(s => { up[s.key] = null; }); if (Object.keys(up).length) await rdb.ref('door').update(up); } catch (e) { console.warn('[doorRoom] tidy', e.message); }
+    }
+    const cfg = (await rdb.ref('door/' + rid + '/cfg').get()).val() || {};
+    const up = {}, now = Date.now();
+    people.forEach(p => p.uids.forEach(x => { up['door/' + rid + '/allow/' + x] = p.tag; up['doorInv/' + x + '/' + rid] = { tag: me, nick: myNick, at: now, id: String(cfg.id || '') }; }));
+    await rdb.ref().update(up);
+    await Promise.all(people.map(p => _bPush(p.tl, '🚪 좁은 문', `${myNick}님이 좁은 문에서 함께 달리자고 불러요`)));
+    console.log(`[doorRoom] ${me} → ${people.map(p => p.tag).join(',')} (${rid})`);
+    return { ok: true, room: rid, sent: people.map(p => p.tag), bad };
+});

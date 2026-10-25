@@ -1,0 +1,46 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "door": {
+      ".indexOn": ["at"],
+      "$room": {
+        ".read": "auth != null && data.child('allow').child(auth.uid).exists()",
+        "cfg": {
+          ".write": "auth != null && root.child('door').child($room).child('allow').child(auth.uid).exists()",
+          ".validate": "newData.hasChildren(['id', 'mode', 'n']) && newData.child('id').isString() && newData.child('id').val().length <= 12 && (newData.child('mode').val() === 'easy' || newData.child('mode').val() === 'hard') && newData.child('n').isNumber()"
+        },
+        "go": {
+          ".write": "auth != null && root.child('door').child($room).child('allow').child(auth.uid).exists()",
+          ".validate": "!newData.exists() || (newData.hasChildren(['at', 'round']) && newData.child('at').isNumber() && newData.child('round').isNumber())"
+        },
+        "m": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && root.child('door').child($room).child('allow').child($uid).exists()",
+            ".validate": "!newData.exists() || (newData.hasChildren(['tag', 'nick', 'j']) && newData.child('nick').isString() && newData.child('nick').val().length <= 24 && (!newData.child('look').exists() || (newData.child('look').isString() && newData.child('look').val().length <= 400)))"
+          }
+        },
+        "p": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && root.child('door').child($room).child('allow').child($uid).exists()",
+            ".validate": "!newData.exists() || (newData.hasChildren(['x', 'y', 'z']) && newData.child('x').isNumber() && newData.child('y').isNumber() && newData.child('z').isNumber())"
+          }
+        },
+        "f": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && root.child('door').child($room).child('allow').child($uid).exists()",
+            ".validate": "!newData.exists() || (newData.hasChildren(['ms', 'round']) && newData.child('ms').isNumber() && newData.child('round').isNumber())"
+          }
+        }
+      }
+    },
+    "doorInv": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$room": {
+          ".write": "auth != null && auth.uid === $uid && !newData.exists()"
+        }
+      }
+    }
+  }
+}
