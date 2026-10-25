@@ -1,4 +1,4 @@
-﻿/* 🌟 세련된 프리텐다드(Pretendard) 폰트 불러오기 (반드시 최상단에 위치!) */
+/* 🌟 세련된 프리텐다드(Pretendard) 폰트 불러오기 (반드시 최상단에 위치!) */
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
 
 /* 스텝 플로팅 오디오 패널 */
@@ -7576,9 +7576,9 @@ body:has(#game-screen.active) #pwa-install-banner, body:has(#bible-transition-ov
 .lt-unit small { font-size: 0.72rem; font-weight: 500; color: #a9a4ba; }
 .lt-acts { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 4px; }
 .lt-act { width: 100%; padding: 11px; border-radius: 12px; border: 1.5px solid #8b7cff; background: rgba(108, 99, 255, 0.14); color: #e4e0ff; font-size: 0.92rem; font-weight: 700; cursor: pointer; text-align: left; }
-.sheet-lt-row { display: flex; align-items: center; gap: 8px; margin: 6px 16px 0; }
-.sheet-lt-btn { flex: 0 0 auto; padding: 6px 12px; border-radius: 999px; border: 1.5px solid #8b7cff; background: rgba(108, 99, 255, 0.12); color: #6c63ff; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
-.sheet-lt-sub { font-size: 0.78rem; color: #8a94a0; min-width: 0; }
+.sheet-lt-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 6px 16px 0; }   /* 10/25: 「지난 테스트」 줄은 버튼 아래 한 줄로 */
+.sheet-lt-btn { flex: 0 0 auto; white-space: nowrap; padding: 6px 12px; border-radius: 999px; border: 1.5px solid #8b7cff; background: rgba(108, 99, 255, 0.12); color: #6c63ff; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+.sheet-lt-sub { flex: 1 1 100%; font-size: 0.78rem; color: #8a94a0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 2px; }
 
 .lt-cell.cS { background: #5dade2; color: #0b2c42; }
 .lt-cell.cB { background: #a569bd; color: #fff; }
@@ -7753,7 +7753,7 @@ body:has(#game-screen.active) #pwa-install-banner, body:has(#bible-transition-ov
 .oil-dz { font-size: .7rem; color: #9aa8bd; border: 1px solid #2f3d57; border-radius: 999px; padding: 0 7px; white-space: nowrap; }
 .oil-lg p { margin: 3px 0 0; font-size: .82rem; line-height: 1.5; color: #c3cddb; }
 .oil-close { display: block; width: 100%; margin-top: 10px; padding: 9px; border-radius: 10px; border: none; background: rgba(255, 255, 255, .06); color: #e8edf5; cursor: pointer; }
-.sheet-oil-btn { margin-right: 6px; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(241, 196, 15, .45); background: rgba(241, 196, 15, .08); color: #f1c40f; font-size: .82rem; font-weight: 700; cursor: pointer; }
+.sheet-oil-btn { flex: 0 0 auto; white-space: nowrap; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(241, 196, 15, .45); background: rgba(241, 196, 15, .08); color: #f1c40f; font-size: .82rem; font-weight: 700; cursor: pointer; }
 .hm-oil-btn { display: block; width: 100%; margin: 6px 0; padding: 9px; border-radius: 10px; border: 1px solid rgba(241, 196, 15, .45); background: rgba(241, 196, 15, .08); color: #f1c40f; font-size: .9rem; font-weight: 700; cursor: pointer; }
 .lt-oil { display: block; width: 100%; margin: 8px 0 4px; padding: 9px; border-radius: 10px; border: 1px solid rgba(241, 196, 15, .45); background: rgba(241, 196, 15, .08); color: #f1c40f; font-weight: 700; cursor: pointer; }
 .fp-ords { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0 4px; }

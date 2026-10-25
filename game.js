@@ -29878,7 +29878,7 @@ function _hmRefresh() {
     if (sub) sub.style.display = ch != null ? 'none' : '';
     { const fpb = document.getElementById('hardship-start-btn'), grid = fpb && fpb.parentElement; if (grid) grid.classList.toggle('one', ch == null); }   // 장 없이 열면 🔑가 숨어 🕊️ 하나
     const ls = document.getElementById('hm-lt-sub');
-    if (ls && ch != null) { const T = (levelTests[ch] || []).slice(-1)[0]; ls.textContent = T ? t('lt_sheet_last', { d: new Date(T.at).toLocaleDateString(currentLang === 'en' ? 'en-US' : 'ko-KR', { month: 'numeric', day: 'numeric' }), c: Object.values(T.r || {}).filter(c => c === 3).length, n: T.n || Object.keys(T.r || {}).length }) : t('hm_lt_none'); }
+    if (ls && ch != null) { const T = (levelTests[ch] || []).slice(-1)[0]; ls.textContent = T ? t('lt_sheet_last', { d: (new Date(T.at).getMonth() + 1) + '/' + new Date(T.at).getDate(), c: Object.values(T.r || {}).filter(c => c === 3).length, n: T.n || Object.keys(T.r || {}).length }) : t('hm_lt_none'); }
     { const lr = document.getElementById('hm-lt-sub'), host = lr && lr.closest('.hm-lt-row');   // 🪔 장이 정해졌으면 「내 암송」 바로 가기
       let ob = document.getElementById('hm-oil-btn');
       if (host && !ob) { ob = document.createElement('button'); ob.id = 'hm-oil-btn'; ob.className = 'hm-oil-btn'; host.parentNode.insertBefore(ob, host.nextSibling); }
@@ -30371,7 +30371,7 @@ function _renderSheetLevelTest(chapterData) {
     const n = typeof ch === 'number' ? _ltLearnedIds(ch).length : 0;
     if (n < 3) { el.style.display = 'none'; el.innerHTML = ''; return; }
     const T = (levelTests[ch] || []).slice(-1)[0];
-    const sub = T ? t('lt_sheet_last', { d: new Date(T.at).toLocaleDateString(currentLang === 'en' ? 'en-US' : 'ko-KR', { month: 'numeric', day: 'numeric' }), c: Object.values(T.r || {}).filter(c => c === 3).length, n: T.n || Object.keys(T.r || {}).length }) + (T.d > 0 ? ' · ⏱ ' + _ltFmtTime(T.d) : '') : t('lt_sheet_none');
+    const sub = T ? t('lt_sheet_last', { d: (new Date(T.at).getMonth() + 1) + '/' + new Date(T.at).getDate(), c: Object.values(T.r || {}).filter(c => c === 3).length, n: T.n || Object.keys(T.r || {}).length }) + (T.d > 0 ? ' · ⏱ ' + _ltFmtTime(T.d) : '') : t('lt_sheet_none');
     el.innerHTML = `<button class="sheet-oil-btn" onclick="openOilScreen(${ch})">${_oilMini()}${t('oil_btn_short')}</button><button class="sheet-lt-btn" onclick="openLevelTest(${ch})">${t('lt_sheet_btn')}</button>${T ? `<span class="sheet-lt-sub link" onclick="_ltShowResult(${ch})">${sub} ›</span>` : `<span class="sheet-lt-sub">${sub}</span>`}`;   // 지난 결과 다시 보기(10/9)
     el.style.display = '';
 }

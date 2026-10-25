@@ -529,3 +529,7 @@ PC에서 CPU 4~6배 감속으로 잰 fps는 회차마다 40~60으로 흔들려 �
 사용자 제보(아이폰, 계 14장). 장 음성은 바깥 저장소 bjtest의 GitHub Pages(`kyu12k.github.io/bjtest/...`)에서 받았는데, bjtest가 GitHub Pages를 끄고 Cloudflare(`bjtest.pages.dev`)로 옮겨 옛 주소가 전부 404였다.
 → jsDelivr(`cdn.jsdelivr.net/gh/kyu12k/bjtest@main/...`) 먼저, 안 되면 `bjtest.pages.dev`로 한 번 더(`openChapterAudioPlayer`의 `mp3Urls`). pages.dev는 Range 요청에 206을 안 줘서 아이폰 사파리가 못 틀 수 있어 뒤로 뒀다. 22장 모두 jsDelivr 206 확인.
 **bjtest 저장소의 mp3 경로를 옮기면 이 앱의 장 듣기가 깨진다.**
+
+### 2026-10-25 — 장 시트 「내 암송 · 레벨 테스트」 줄이 깨짐
+사용자 화면(폭 ~360px): 「🪔 내 암송」이 두 줄(「내 / 암송」)로, 「지난 테스트 10. 18. · 술술 20/20 · ⏱ 6분 42초 ›」가 버튼 옆에 끼어 두 줄로 꺾였다. 「읽기·듣기」 옆 ❓만 큰 맨 글자라 따로 놀았다.
+→ 버튼은 줄바꿈 없이, 「지난 테스트」 줄은 늘 버튼 아래 한 줄(넘치면 …), 날짜는 「10/18」. ❓도 읽기·듣기와 같은 테두리 알약. 헤드리스 360px 확인.
