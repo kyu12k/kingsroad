@@ -7742,6 +7742,35 @@ body:has(#game-screen.active) #pwa-install-banner, body:has(#bible-transition-ov
 .oil-v { display: grid; justify-items: center; gap: 1px; }
 .oil-v svg { width: 40px; height: 40px; }
 .oil-v span { font-size: .66rem; color: #9aa8bd; font-variant-numeric: tabular-nums; }
+/* 🦴 뼈대 세우기 (10/26) */
+.bone-sec { margin: 14px 0 6px; font-size: .74rem; letter-spacing: .06em; color: #9aa8bd; }
+.bone-chips { display: grid; gap: 5px; }
+.bone-chip { text-align: left; padding: 8px 10px; border-radius: 10px; border: 1px solid #2f3d57; background: rgba(255, 255, 255, .03); color: #e8edf5; font-size: .86rem; line-height: 1.45; cursor: pointer; }
+.bone-chip b { color: #f1c40f; font-weight: 700; margin-right: 2px; }
+.bone-chip span { color: #ffd968; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bone-chip small { display: block; color: #9aa8bd; font-size: .74rem; }
+.bone-chip.on { border-color: #f1c40f; background: rgba(241, 196, 15, .1); }
+.bone-units { display: grid; gap: 8px; }
+.bone-unit { padding: 8px; border-radius: 12px; background: rgba(255, 255, 255, .03); }
+.bone-unit-h { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: .86rem; color: #e8edf5; }
+.bone-unit-h b { color: #ffd968; font-variant-numeric: tabular-nums; font-weight: 600; }
+.bone-unit-go { margin-left: auto; padding: 4px 9px; border-radius: 8px; border: 1px solid rgba(241, 196, 15, .45); background: none; color: #f1c40f; font-size: .76rem; cursor: pointer; white-space: nowrap; }
+.bone-units .oil-v { cursor: pointer; border-radius: 9px; padding: 2px 0; position: relative; }
+.bone-units .oil-v.has-cue::after { content: ''; position: absolute; top: 2px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: #7fc8ff; }
+.bone-units .oil-v.bone-hi { background: rgba(241, 196, 15, .22); box-shadow: inset 0 0 0 1px #f1c40f; }
+.bone-units .oil-v.sel { background: rgba(127, 200, 255, .18); box-shadow: inset 0 0 0 1px #7fc8ff; }
+.bone-card { margin-top: 8px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(127, 200, 255, .4); background: rgba(127, 200, 255, .06); }
+.bone-card-ref { font-size: .8rem; color: #7fc8ff; font-weight: 700; }
+.bone-card-ref span { color: #9aa8bd; font-weight: 400; }
+.bone-card p { margin: 4px 0 0; font-size: .95rem; line-height: 1.6; word-break: keep-all; }
+.bone-cue { margin-top: 6px; font-size: .88rem; color: #cfe8ff; }
+.bone-cue b { color: #7fc8ff; }
+.bone-steps { display: grid; gap: 5px; }
+.bone-step { display: flex; gap: 8px; align-items: flex-start; padding: 7px 10px; border-radius: 10px; background: rgba(255, 255, 255, .03); }
+.bone-step i { font-style: normal; color: #f1c40f; }
+.bone-step b { display: block; font-size: .88rem; }
+.bone-step span { font-size: .78rem; color: #9aa8bd; }
+.bone-step-go { margin-top: 4px; padding: 6px 10px; border-radius: 8px; border: none; background: #f1c40f; color: #1a1a1a; font-weight: 700; font-size: .82rem; cursor: pointer; }
 .oil-next { margin-top: 12px; padding: 12px; border-radius: 12px; background: rgba(241, 196, 15, .07); border: 1px solid rgba(241, 196, 15, .3); }
 .oil-next-t { font-size: .75rem; color: #f1c40f; letter-spacing: .06em; }
 .oil-next p { margin: 4px 0 0; font-size: .92rem; line-height: 1.5; }

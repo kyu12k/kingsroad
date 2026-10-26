@@ -865,7 +865,7 @@ const LANG = {
         lt_btn_relearn: '📖 {r}절 다시 넣기', lt_btn_blank: '✍️ {r}절 빈칸으로 다지기', lt_btn_fp: '🔑 {ch}장 첫 마디',
         lt_step1: '🔑 첫 마디를 보여 드릴게요 — 이어서 써 보세요', lt_step2: '🔲 이번엔 빈칸으로 — 글자 칸을 보고 써 보세요',
         lt_full_pay: '🎓 장 전체 테스트 — 망각의 고난으로 인정돼요. 백지로 써낸 절은 승점이 있어요', lt_full_nopay: '🎓 오늘 이 장의 망각의 고난을 이미 해서 이번 테스트는 승점이 없어요', lt_memory_linked: '오늘 이 장은 레벨 테스트로 이미 망각의 고난을 인정받아 승점이 없어요',
-        oil_btn: '내 암송 — 절마다 기름 단계', oil_btn_short: '내 암송', oil_btn_from_lt: '내 암송에서 보기', oil_eyebrow: '킹스로드 · 내 암송', oil_title: '등에 채운 기름', oil_all: '전체',
+        oil_btn: '🦴 뼈대 세우기 — 이 장 완전 암송까지', oil_btn_short: '뼈대 세우기', oil_btn_from_lt: '뼈대 세우기에서 보기', oil_eyebrow: '킹스로드 · 내 암송', oil_title: '등에 채운 기름', oil_all: '전체', bone_title: '🦴 {ch}장 뼈대 세우기', bone_sub: '주소만 보고 단서 없이 써내는 절 {lit} / {n}', bone_ch_head: '{ch}장의 뼈대 — 같은 꼴로 되풀이되는 절', bone_units_head: '단락 — 칸을 누르면 그 절', bone_steps_head: '완전 암송까지', bone_unit_go: '단락 백지', bone_unit_none: '이 단락에 아직 외운 절이 없어요', bone_soon: '곧 열려요', bone_s1: '뼈대 맞히기', bone_s2: '번호 ↔ 낱말', bone_s3: '단락 백지', bone_s3_how: '단락 옆 ✍️ — 주소만 보고 순서대로', bone_s4: '장 전체 백지 = 망각의 고난', bone_s4_go: '망각의 고난에 도전', bone_s4_wait: '장을 다 외우면 열려요',
         oil_big: '켜진 등 / {n}절', oil_help_sum: '단계 설명 보기', oil_ch_title: '{ch}장의 등', oil_dry_note: '🕯️ {n}절은 마지막으로 써낸 지 오래돼 기름이 말랐어요 — 한 번 다시 하면 돌아와요', oil_ch_sub: '켜진 등 {lit} / {n}절', oil_next_title: '다음 할 것', oil_up_note: '{icon}{name}',
         oil_n0: '빈 등', oil_n1: '감람 열매', oil_n2: '찧은 열매', oil_n3: '짜낸 기름', oil_n4: '맑은 기름', oil_n5: '기름 그릇', oil_n6: '다듬은 심지', oil_n7: '켜진 등', oil_n8: '한밤의 등불',
         oil_do0: '아직', oil_do1: '익힘', oil_do2: '빈칸 · 순서대로', oil_do3: '첫 마디 · 순서대로', oil_do4: '백지 · 순서대로', oil_do5: '주소', oil_do6: '첫 마디 · 무작위', oil_do7: '백지 · 무작위', oil_do8: '하루 쉬고도',
@@ -2209,7 +2209,7 @@ const LANG = {
         lt_btn_relearn: '📖 Re-learn vv. {r}', lt_btn_blank: '✍️ Fill-in vv. {r}', lt_btn_fp: '🔑 Ch. {ch} first words',
         lt_step1: '🔑 Here are the first words — continue from there', lt_step2: '🔲 Now with blanks — use the letter slots',
         lt_full_pay: '🎓 Whole-chapter test — counts as Trial of Forgetting. Verses written blank earn points', lt_full_nopay: '🎓 You already did this chapter\'s Trial of Forgetting today — no points this time', lt_memory_linked: 'This chapter already counted today via the level test — no points',
-        oil_btn: 'My recitation — oil by verse', oil_btn_short: 'My recitation', oil_btn_from_lt: 'See in My recitation', oil_eyebrow: "King\u2019s Road · My recitation", oil_title: 'Oil in the lamp', oil_all: 'All',
+        oil_btn: '🦴 Build the bones — to full recitation', oil_btn_short: 'Build the bones', oil_btn_from_lt: 'See in Build the bones', oil_eyebrow: "King\u2019s Road · My recitation", oil_title: 'Oil in the lamp', oil_all: 'All', bone_title: '🦴 Chapter {ch} — Building the bones', bone_sub: 'verses written from the address alone {lit} / {n}', bone_ch_head: 'The bones of chapter {ch} — verses that repeat a pattern', bone_units_head: 'Passages — tap a verse', bone_steps_head: 'Toward full recitation', bone_unit_go: 'Write passage', bone_unit_none: 'No memorized verses in this passage yet', bone_soon: 'Coming soon', bone_s1: 'Find the bones', bone_s2: 'Number ↔ word', bone_s3: 'Passage from blank', bone_s3_how: '✍️ next to a passage — address only, in order', bone_s4: 'Whole chapter = Trial of Forgetting', bone_s4_go: 'Take the Trial', bone_s4_wait: 'Opens when you have learned the whole chapter',
         oil_big: 'lamps lit / {n} verses', oil_help_sum: 'What the stages mean', oil_ch_title: 'Chapter {ch} lamps', oil_dry_note: '🕯️ {n} verses dried out — it has been a while. Do them once and they come back', oil_ch_sub: 'lit {lit} / {n} verses', oil_next_title: 'Next', oil_up_note: '{icon}{name}',
         oil_n0: 'Empty lamp', oil_n1: 'Olives', oil_n2: 'Crushed', oil_n3: 'Pressed oil', oil_n4: 'Clear oil', oil_n5: 'Oil vessel', oil_n6: 'Trimmed wick', oil_n7: 'Lamp lit', oil_n8: 'Midnight lamp',
         oil_do0: 'not yet', oil_do1: 'learned', oil_do2: 'blanks · in order', oil_do3: 'first words · in order', oil_do4: 'blank · in order', oil_do5: 'reference', oil_do6: 'first words · random', oil_do7: 'blank · random', oil_do8: 'after a day off',
@@ -30419,15 +30419,76 @@ function _oilHomePick() {
     return null;
 }
 function _oilHomeGo() { if (typeof _featNote === 'function') _featNote('oh'); const x = _oilHomePick(); if (!x) { openOilScreen(); return; } new Function(x.pl.js)(); }   // 📈 홈 🪔 칩 기록(10/19)
+/* 🦴 뼈대 세우기 (10/26 사용자) — 「내 암송」을 장 하나를 완전 암송(주소만 보고 단서 없이 백지)하러 들어오는 공부방으로 키움. 망각의 고난 전 준비.
+   이름은 겔 37:7 「뼈들이 들어맞아 서로 연락하더라」. 재료 셋:
+   · 단락(REV_UNITS) · 장 뼈대(BONE_CH — 장 안에서 같은 꼴로 되풀이되는 절, 2장이면 편지 시작 1·8·12·18 / 끝 「귀 있는 자는」 7·11·17·29)
+   · 절 고리(BONE_CUE — 절 번호 소리 ↔ 본문 낱말, 2:4 「사랑」의 사 = 4절. 사용자가 실제로 쓰는 방법. 소리가 맞는 절에만, 억지로 잇지 않는다) */
+const BONE_CH = {
+    2: [
+        { name: '편지 시작', phrase: '○○ 교회의 사자에게 편지하기를', v: [1, 8, 12, 18] },
+        { name: '편지 끝', phrase: '귀 있는 자는', v: [7, 11, 17, 29], note: '끝 바로 다음 절이 다음 교회 시작 · 29만 이기는 자 약속(26~28)이 먼저' },
+        { name: '책망', phrase: '그러나 ~ 책망할 것이', v: [4, 14, 20] },
+        { name: '니골라당', phrase: '니골라당', v: [6, 15] },
+    ],
+};
+const BONE_CUE = {   // 절: [번호 소리, 본문 낱말]
+    '2-1': ['일', '일곱 별'], '2-4': ['사', '처음 사랑'], '2-5': ['오', '옮기리라'], '2-9': ['구', '궁핍'], '2-10': ['십', '십일 동안'],
+    '2-12': ['이', '좌우에 날선 검'], '2-20': ['이', '이세벨'], '2-21': ['일', '기회를 (한 번) 주었으되'], '2-22': ['이', '던지고 · 던지고'],
+    '2-23': ['삼', '살피는 자'], '2-24': ['사', '사단의 깊은 것'], '2-25': ['오', '올 때까지'], '2-27': ['칠', '철장'], '2-29': ['구', '귀 있는 자'],
+};
+function _boneCueHtml(id) { const q = BONE_CUE[id]; return q ? `<div class="bone-cue">🔢 <b>${q[0]}</b> → 「${escapeHtml(q[1])}」</div>` : ''; }
+function _boneMark(ch, i) {   // 장 뼈대 칩 → 그 절들을 칸에서 빛나게
+    const box = document.querySelector('.bone-units'); if (!box) return;
+    const g = (BONE_CH[ch] || [])[i], on = !document.querySelector(`.bone-chip[data-i="${i}"]`).classList.contains('on');
+    document.querySelectorAll('.bone-chip').forEach(b => b.classList.toggle('on', on && b.dataset.i === String(i)));
+    box.querySelectorAll('.oil-v').forEach(c => c.classList.toggle('bone-hi', on && g.v.includes(+c.dataset.v)));
+}
+function _boneVerse(ch, v) {   // 칸을 누르면 그 절 — 본문 · 고리
+    const el = document.getElementById('bone-card'); if (!el) return;
+    const id = ch + '-' + v, vs = (bibleData[ch] || [])[v - 1]; if (!vs) return;
+    const u = _revUnitOf(id), on = el.dataset.id !== id;
+    document.querySelectorAll('.bone-units .oil-v').forEach(c => c.classList.toggle('sel', on && +c.dataset.v === v));
+    el.dataset.id = on ? id : '';
+    { const c = document.querySelector(`.bone-units .oil-v[data-v="${v}"]`), un = c && c.closest('.bone-unit'); if (on && un) un.after(el); }   // 누른 단락 바로 밑에
+    el.innerHTML = on ? `<div class="bone-card-ref">${ch}:${v}${u ? ` <span>${escapeHtml(_revUnitLabel(u))}</span>` : ''}</div><p>${escapeHtml(_verseText(ch, v))}</p>${_boneCueHtml(id)}` : '';
+    el.hidden = !on;
+}
+function _boneUnitRun(ch, a, b) {   // ✍️ 단락 백지 — 그 단락의 외운 절을 주소만 보고 순서대로
+    const ids = []; for (let v = a; v <= b; v++) if (stageClearDate[ch + '-' + v]) ids.push(ch + '-' + v);
+    if (!ids.length) { showToast(t('bone_unit_none')); return; }
+    closeOilScreen();
+    if (typeof _featNote === 'function') _featNote('bu');   // 📈 단락 백지
+    window.hardshipOrigin = 'map';
+    selectedHardshipOrderType = 'sequential'; selectedHardshipUltimate = true;
+    startHardshipSession('memory', ids);
+}
 function _oilChapterHtml(ch) {
     const ids = _oilChapterIds(ch), sts = ids.map(_oilStage);
-    const cells = ids.map((id, i) => `<div class="oil-v" title="${ch}:${id.split('-')[1]} · ${t('oil_n' + sts[i])}">${_oilIcon(sts[i])}<span>${id.split('-')[1]}</span></div>`).join('');
+    const cell = (id, i) => `<div class="oil-v${BONE_CUE[id] ? ' has-cue' : ''}" data-v="${id.split('-')[1]}" onclick="_boneVerse(${ch}, ${id.split('-')[1]})" title="${ch}:${id.split('-')[1]} · ${t('oil_n' + sts[i])}">${_oilIcon(sts[i])}<span>${id.split('-')[1]}</span></div>`;
+    const units = (REV_UNITS[ch] || [[1, ids.length, '']]).map(([a, b, name]) => {
+        const learned = ids.slice(a - 1, b).some(id => stageClearDate[id]);
+        return `<div class="bone-unit"><div class="bone-unit-h"><b>${a}–${b}</b> ${escapeHtml(currentLang === 'en' ? '' : name)}${learned ? `<button class="bone-unit-go" onclick="_boneUnitRun(${ch}, ${a}, ${b})">✍️ ${t('bone_unit_go')}</button>` : ''}</div>
+            <div class="oil-grid">${ids.slice(a - 1, b).map((id, k) => cell(id, a - 1 + k)).join('')}</div></div>`;
+    }).join('');
+    const chips = (BONE_CH[ch] || []).map((g, i) => `<button class="bone-chip" data-i="${i}" onclick="_boneMark(${ch}, ${i})"><b>${g.name}</b> 「${escapeHtml(g.phrase)}」 <span>${g.v.join('·')}</span>${g.note ? `<small>${escapeHtml(g.note)}</small>` : ''}</button>`).join('');
     const pl = _oilPlan(ch), lit = sts.filter(x => x >= 7).length;
     const dry = ids.filter((id, i) => sts[i] < _oilStageRaw(id)).length;   // 🕯️ 오래돼 낮아 보이는 절
     const nx = pl ? { txt: pl.txt, btn: pl.js ? `<button class="oil-next-btn" onclick="${pl.js}">${pl.go}</button>` : '' } : { txt: t('oil_next0', { ch, r: '1' }), btn: '' };
-    return `<div class="oil-head"><button class="oil-back" onclick="openOilScreen()">‹ ${t('oil_all')}</button><div class="oil-title">${t('oil_ch_title', { ch })}</div>
-        <div class="oil-sub">${t('oil_ch_sub', { lit, n: ids.length })}${dry ? `<br><small>${t('oil_dry_note', { n: dry })}</small>` : ''}</div></div>
-        <div class="oil-grid">${cells}</div>
+    const whole = ids.every(id => stageClearDate[id]);
+    const steps = [
+        [t('bone_s1'), t('bone_soon')],
+        [t('bone_s2'), t('bone_soon')],
+        [t('bone_s3'), t('bone_s3_how')],
+        [t('bone_s4'), whole ? `<button class="bone-step-go" onclick="_oilRun('memory', ${ch})">${t('bone_s4_go')}</button>` : t('bone_s4_wait')],
+    ].map(([a, b], i) => `<div class="bone-step"><i>${'①②③④'[i]}</i><div><b>${a}</b><span>${b}</span></div></div>`).join('');
+    return `<div class="oil-head"><button class="oil-back" onclick="openOilScreen()">‹ ${t('oil_all')}</button><div class="oil-title">${t('bone_title', { ch })}</div>
+        <div class="oil-sub">${t('bone_sub', { lit, n: ids.length })}${dry ? `<br><small>${t('oil_dry_note', { n: dry })}</small>` : ''}</div></div>
+        ${chips ? `<div class="bone-sec">${t('bone_ch_head', { ch })}</div><div class="bone-chips">${chips}</div>` : ''}
+        <div class="bone-sec">${t('bone_units_head')}</div>
+        <div class="bone-units">${units}</div>
+        <div id="bone-card" class="bone-card" hidden></div>
+        <div class="bone-sec">${t('bone_steps_head')}</div>
+        <div class="bone-steps">${steps}</div>
         <div class="oil-next"><div class="oil-next-t">${t('oil_next_title')}</div><p>${nx.txt}</p>${nx.btn}${pl && (pl.lo === 2 || pl.lo === 5) ? `<button class="oil-next-sub" onclick="closeOilScreen(); openInitialLine(${ch})">${t('il_entry', { ch })}</button>` : ''}</div>
         <details class="oil-help"><summary>${t('oil_help_sum')}</summary>${_oilLegendHtml()}</details>`;
 }
