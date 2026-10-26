@@ -1944,6 +1944,8 @@ body, html {
     font-size: 0.82rem;
     font-weight: 800;
 }
+/* 📜 어제 막힌 단락 — 주소 밑 한 줄 */
+.hs-unit { margin: -8px 0 12px; font-size: 0.8rem; font-weight: 700; color: #f3d98b; }
 
 .hardship-verse-text {
     font-size: 1.2rem;
