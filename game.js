@@ -20865,10 +20865,10 @@ function _noteDailyDone(ev) {
    pauseWhy — 0~49절인 사람이 3일 넘게 쉬었다 돌아오면 탭 한 번 질문(14일에 한 번). { at, gap(쉰 날), n(절), a(답) } */
 let exitLog = [], pauseWhy = [], lastSeenDay = '';
 /* 📝 처음 온 사람 설문 (10/26 사용자: 유입 경로와 앱에 온 목적) — 이름 정할 때 한 문항(고르지 않아도 됨) · 첫 절을 깬 뒤 「내일의 약속」 다음에 두 문항.
-   10/25 새로 온 16명 중 7명이 교역자였다 — 둘러보러 온 사람과 외우러 온 사람을 가려 보려고. firstSurvey = { src, why, exp, at1 이름 정한 때, at2 두 문항 본 때 } */
+   10/25 새로 온 16명 중 7명이 교역자였다 — 둘러보러 온 사람과 외우러 온 사람을 가려 보려고. firstSurvey = { src, srcT 「그 밖에」에 적은 말(30자), why, whyT, exp, at1 이름 정한 때, at2 두 문항 본 때 } — SNS·검색은 그렇게 알린 적이 없어 뺐다(10/26 사용자) */
 let firstSurvey = {};
 const FS_Q = {
-    src: { ko: '어떻게 알고 오셨어요?', en: 'How did you hear about us?', o: [['church', '⛪ 교회·부서 안내', '⛪ Church notice'], ['leader', '🧑‍🏫 교역자·담당자 권유', '🧑‍🏫 A leader'], ['friend', '🙋 지인 추천', '🙋 A friend'], ['sns', '📱 SNS·유튜브', '📱 Social media'], ['search', '🔍 검색', '🔍 Search'], ['other', '✏️ 그 밖에', '✏️ Other']] },
+    src: { ko: '어떻게 알고 오셨어요?', en: 'How did you hear about us?', o: [['church', '⛪ 교회·부서 안내', '⛪ Church notice'], ['leader', '🧑‍🏫 교역자·담당자 권유', '🧑‍🏫 A leader'], ['friend', '🙋 지인 추천', '🙋 A friend'], ['other', '✏️ 그 밖에', '✏️ Other']] },
     why: { ko: '무엇을 하러 오셨어요?', en: 'What brings you here?', o: [['memorize', '📖 계시록을 외우려고', '📖 To memorize Revelation'], ['task', '🎯 부서·모임 과제로', '🎯 A group task'], ['guide', '🧭 다른 분께 안내하려고 둘러보러', '🧭 Looking around to guide others'], ['curious', '👀 궁금해서', '👀 Just curious'], ['other', '✏️ 그 밖에', '✏️ Other']] },
     exp: { ko: '말씀 암송, 해 보셨어요?', en: 'Have you memorized Scripture before?', o: [['none', '처음이에요', 'First time'], ['some', '조금 해 봤어요', 'A little'], ['lots', '많이 외워 봤어요', 'A lot']] },
 };
@@ -20876,13 +20876,17 @@ function _fsChipsHtml(k) {
     const q = FS_Q[k], en = currentLang === 'en';
     window._fsPick = window._fsPick || {};
     return `<div class="fs-q" data-q="${k}"><div class="fs-t">${en ? q.en : q.ko}${k === 'src' ? `<small>${en ? ' (optional)' : ' (골라 주시면 큰 도움이 돼요)'}</small>` : ''}</div>
-        <div class="fs-o">${q.o.map(([v, ko, e]) => `<button type="button" data-v="${v}" onclick="_fsTap(this)">${en ? e : ko}</button>`).join('')}</div></div>`;
+        <div class="fs-o">${q.o.map(([v, ko, e]) => `<button type="button" data-v="${v}" onclick="_fsTap(this)">${en ? e : ko}</button>`).join('')}</div>
+        ${q.o.some(o => o[0] === 'other') ? `<input class="fs-in" maxlength="30" hidden placeholder="${en ? 'Tell us briefly (30 chars)' : '짧게 적어 주세요 (30자)'}">` : ''}</div>`;
 }
+// ✏️ 「그 밖에」를 골랐으면 적은 말(30자, 10/26 사용자) — 비었으면 undefined
+function _fsOtherText(k, root) { const i = (root || document).querySelector(`.fs-q[data-q="${k}"] .fs-in`); const v = i && !i.hidden ? i.value.trim().slice(0, 30).trim() : ''; return v || undefined; }
 function _fsTap(b) {
     const box = b.closest('.fs-q'), k = box.dataset.q; window._fsPick = window._fsPick || {};
     const on = window._fsPick[k] === b.dataset.v;
     box.querySelectorAll('button').forEach(x => x.classList.remove('on'));
     if (on) delete window._fsPick[k]; else { window._fsPick[k] = b.dataset.v; b.classList.add('on'); }
+    const inp = box.querySelector('.fs-in'); if (inp) { inp.hidden = window._fsPick[k] !== 'other'; if (!inp.hidden) inp.focus(); }
     const send = document.querySelector('#fs-card .fs-send'); if (send) send.disabled = !(window._fsPick.why || window._fsPick.exp);
 }
 function _firstSurveyAsk() {
@@ -20896,7 +20900,7 @@ function _firstSurveyAsk() {
     document.body.appendChild(m);
     const done = send => {
         firstSurvey.at2 = Date.now();
-        if (send) { if (window._fsPick.why) firstSurvey.why = window._fsPick.why; if (window._fsPick.exp) firstSurvey.exp = window._fsPick.exp; }
+        if (send) { if (window._fsPick.why) firstSurvey.why = window._fsPick.why; if (window._fsPick.exp) firstSurvey.exp = window._fsPick.exp; const tx = _fsOtherText('why', m); if (tx) firstSurvey.whyT = tx; }
         saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
         m.remove(); if (send) showToast(en ? '🙏 Thank you!' : '🙏 알려 주셔서 고마워요!');
     };
@@ -27060,7 +27064,7 @@ async function confirmProfile() {
     if (!myTag || myTag === '0000') myTag = await generateUniqueTag();
 
     markOnboardStep('profile');
-    if (_isFirstProfile && !firstSurvey.at1) { firstSurvey.at1 = Date.now(); if (window._fsPick && window._fsPick.src) firstSurvey.src = window._fsPick.src; }   // 📝 어떻게 알고 왔나(고르지 않았으면 at1만)
+    if (_isFirstProfile && !firstSurvey.at1) { firstSurvey.at1 = Date.now(); if (window._fsPick && window._fsPick.src) firstSurvey.src = window._fsPick.src; const tx = _fsOtherText('src', document.getElementById('nickname-modal')); if (tx) firstSurvey.srcT = tx; }   // 📝 어떻게 알고 왔나(고르지 않았으면 at1만)
 
     // 저장 및 갱신
     saveGameData();

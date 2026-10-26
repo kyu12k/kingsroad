@@ -8169,3 +8169,6 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 .fs-card .fs-q .fs-o button { background: rgba(255,255,255,0.08); border-color: rgba(241,196,15,0.45); color: #f4ecd8; }
 .fs-card .fs-q .fs-o button.on { background: #f1c40f; border-color: #f1c40f; color: #2a2010; }
 .fs-card .fs-send { margin-top: 12px; }
+.fs-q .fs-in { display: block; width: 100%; box-sizing: border-box; margin-top: 8px; padding: 9px 12px; border-radius: 10px; border: 1px solid #bdc3c7; font-size: 0.9rem; color: #2c3e50; background: #fff; }
+.fs-q .fs-in[hidden] { display: none; }
+.fs-card .fs-q .fs-in { background: rgba(255,255,255,0.95); border-color: #f1c40f; }
