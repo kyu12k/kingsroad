@@ -20888,6 +20888,13 @@ function _lrnFlush() {
     if (typeof window._reviewRunCourse === 'number') r.k = window._reviewRunCourse;
     learnLog.push(r); learnLog = learnLog.slice(-60);
 }
+// 판 기록은 마지막 단계 화면이 닫힐 때 적히고 클리어는 그 뒤(결과까지 ~10초)에 온다 — 그래서 c가 늘 0이었다(10/26). 클리어 때 방금 판을 깼다고 고친다
+function _lrnMarkClear(id) {
+    try {
+        if (_lrn && _lrn.s === id) { _lrn.m0 = -1; return; }
+        for (let i = learnLog.length - 1; i >= 0 && i >= learnLog.length - 3; i--) { const r = learnLog[i]; if (r.s === id && Date.now() - r.at < 30 * 60000) { r.c = 1; return; } }
+    } catch (e) { }
+}
 function _lrnTick(l) {
     try {
         const id = window.currentStageId ? String(window.currentStageId) : '';
@@ -24307,6 +24314,7 @@ stageClear = function (type, rewardMultiplier = 1) {
         if (!stageMastery[sId]) stageMastery[sId] = 0;
         stageMastery[sId]++;
         if (!stageClearDate[sId]) stageClearDate[sId] = getMemoryQuizDate();
+        _lrnMarkClear(sId);   // 📏 learnLog c
 
         const accPercent = Math.floor(accuracyRate * 100);
 
