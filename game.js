@@ -3592,6 +3592,7 @@ loadGameData = function () {
         if (Array.isArray(parsed.exitLog)) exitLog = parsed.exitLog.filter(x => x && x.at).slice(-20);   // 🚪 떠난 화면(10/19)
         if (Array.isArray(parsed.learnLog)) learnLog = parsed.learnLog.filter(x => x && x.at).slice(-60);   // 📏 학습 한 판의 시간(10/21)
         if (Array.isArray(parsed.pauseWhy)) pauseWhy = parsed.pauseWhy.slice(-5);
+        if (parsed.firstSurvey && typeof parsed.firstSurvey === 'object') firstSurvey = parsed.firstSurvey;   // 📝 처음 온 사람 설문(10/26)
         if (typeof parsed.lastSeenDay === 'string') lastSeenDay = parsed.lastSeenDay;
         if (typeof parsed.fixDone === 'string') fixDone = parsed.fixDone;   // 🛠️ 적용한 바로잡기
         if (Array.isArray(parsed.compDone)) compDone = parsed.compDone;   // 적용한 보상 열쇠
@@ -14591,6 +14592,7 @@ function saveGameData() {
         exitLog: (() => { try { return exitLog; } catch (e) { return undefined; } })(),   // 🚪 떠난 화면(최근 20)
         learnLog: (() => { try { return learnLog; } catch (e) { return undefined; } })(),   // 📏 학습 한 판의 시간(최근 60)
         pauseWhy: (() => { try { return pauseWhy; } catch (e) { return undefined; } })(),   // 💬 쉬었다 돌아온 까닭(최근 5)
+        firstSurvey: (() => { try { return Object.keys(firstSurvey).length ? firstSurvey : undefined; } catch (e) { return undefined; } })(),   // 📝 처음 온 사람 설문(10/26)
         lastSeenDay: (() => { try { return lastSeenDay; } catch (e) { return undefined; } })(),   // 마지막으로 앱을 쓴 6시 날짜
         fixDone: (() => { try { return fixDone || undefined; } catch (e) { return undefined; } })(),
         compDone: (() => { try { return compDone && compDone.length ? compDone : undefined; } catch (e) { return undefined; } })(),   // 적용한 보상 열쇠   // 🛠️ 적용한 바로잡기(서버가 한 번만 「줄지 않게」를 건너뛴다)
@@ -14902,6 +14904,7 @@ function _mergeEventProgress(target, other) {
     // 🚪💬 떠난 화면·쉬었다 돌아온 까닭 — 시각으로 합집합 · 마지막으로 쓴 날은 늦은 쪽(10/19)
     for (const [k, n] of [['exitLog', 20], ['pauseWhy', 5], ['learnLog', 60]]) if (Array.isArray(other[k]) && other[k].length) { const m = new Map(); [...(Array.isArray(target[k]) ? target[k] : []), ...other[k]].forEach(x => { if (x && x.at) m.set(x.at, x); }); target[k] = [...m.values()].sort((a, b) => a.at - b.at).slice(-n); }
     if (typeof other.lastSeenDay === 'string' && other.lastSeenDay > (target.lastSeenDay || '')) target.lastSeenDay = other.lastSeenDay;
+    if (other.firstSurvey && typeof other.firstSurvey === 'object') target.firstSurvey = Object.assign({}, other.firstSurvey, target.firstSurvey || {});   // 📝 설문 — 칸마다 있는 쪽
     const of = other.featLog;   // 📈 기능 이용률 — 날마다 칸마다 큰 쪽
     if (of && typeof of === 'object') {
         if (!target.featLog || typeof target.featLog !== 'object') target.featLog = {};
@@ -20861,6 +20864,45 @@ function _noteDailyDone(ev) {
    exitLog — 앱을 내릴 때마다 그 순간의 화면(`_exitLabel`: 화면 · 맨 위 창 · 판·스텝)과 그 화면에 머문 초, 외운 절 수. 최근 20. 떠날 때 저장(10/19)으로 서버까지 올라온다
    pauseWhy — 0~49절인 사람이 3일 넘게 쉬었다 돌아오면 탭 한 번 질문(14일에 한 번). { at, gap(쉰 날), n(절), a(답) } */
 let exitLog = [], pauseWhy = [], lastSeenDay = '';
+/* 📝 처음 온 사람 설문 (10/26 사용자: 유입 경로와 앱에 온 목적) — 이름 정할 때 한 문항(고르지 않아도 됨) · 첫 절을 깬 뒤 「내일의 약속」 다음에 두 문항.
+   10/25 새로 온 16명 중 7명이 교역자였다 — 둘러보러 온 사람과 외우러 온 사람을 가려 보려고. firstSurvey = { src, why, exp, at1 이름 정한 때, at2 두 문항 본 때 } */
+let firstSurvey = {};
+const FS_Q = {
+    src: { ko: '어떻게 알고 오셨어요?', en: 'How did you hear about us?', o: [['church', '⛪ 교회·부서 안내', '⛪ Church notice'], ['leader', '🧑‍🏫 교역자·담당자 권유', '🧑‍🏫 A leader'], ['friend', '🙋 지인 추천', '🙋 A friend'], ['sns', '📱 SNS·유튜브', '📱 Social media'], ['search', '🔍 검색', '🔍 Search'], ['other', '✏️ 그 밖에', '✏️ Other']] },
+    why: { ko: '무엇을 하러 오셨어요?', en: 'What brings you here?', o: [['memorize', '📖 계시록을 외우려고', '📖 To memorize Revelation'], ['task', '🎯 부서·모임 과제로', '🎯 A group task'], ['guide', '🧭 다른 분께 안내하려고 둘러보러', '🧭 Looking around to guide others'], ['curious', '👀 궁금해서', '👀 Just curious'], ['other', '✏️ 그 밖에', '✏️ Other']] },
+    exp: { ko: '말씀 암송, 해 보셨어요?', en: 'Have you memorized Scripture before?', o: [['none', '처음이에요', 'First time'], ['some', '조금 해 봤어요', 'A little'], ['lots', '많이 외워 봤어요', 'A lot']] },
+};
+function _fsChipsHtml(k) {
+    const q = FS_Q[k], en = currentLang === 'en';
+    window._fsPick = window._fsPick || {};
+    return `<div class="fs-q" data-q="${k}"><div class="fs-t">${en ? q.en : q.ko}${k === 'src' ? `<small>${en ? ' (optional)' : ' (골라 주시면 큰 도움이 돼요)'}</small>` : ''}</div>
+        <div class="fs-o">${q.o.map(([v, ko, e]) => `<button type="button" data-v="${v}" onclick="_fsTap(this)">${en ? e : ko}</button>`).join('')}</div></div>`;
+}
+function _fsTap(b) {
+    const box = b.closest('.fs-q'), k = box.dataset.q; window._fsPick = window._fsPick || {};
+    const on = window._fsPick[k] === b.dataset.v;
+    box.querySelectorAll('button').forEach(x => x.classList.remove('on'));
+    if (on) delete window._fsPick[k]; else { window._fsPick[k] = b.dataset.v; b.classList.add('on'); }
+    const send = document.querySelector('#fs-card .fs-send'); if (send) send.disabled = !(window._fsPick.why || window._fsPick.exp);
+}
+function _firstSurveyAsk() {
+    if (firstSurvey.at2 || document.getElementById('fs-card')) return;
+    const en = currentLang === 'en'; window._fsPick = {};
+    const m = document.createElement('div'); m.id = 'fs-card'; m.className = 'promise-overlay';
+    m.innerHTML = `<div class="promise-card fs-card"><div class="promise-title">${en ? 'Two quick questions 🙏' : '두 가지만 여쭤볼게요 🙏'}</div>
+        <div class="promise-note">${en ? 'It helps us make King’s Road better.' : '킹스로드를 고치는 데 큰 도움이 돼요.'}</div>
+        ${_fsChipsHtml('why')}${_fsChipsHtml('exp')}
+        <button class="promise-main fs-send" disabled>${en ? 'Send' : '보내기'}</button><button class="promise-later">${en ? 'Skip' : '건너뛰기'}</button></div>`;
+    document.body.appendChild(m);
+    const done = send => {
+        firstSurvey.at2 = Date.now();
+        if (send) { if (window._fsPick.why) firstSurvey.why = window._fsPick.why; if (window._fsPick.exp) firstSurvey.exp = window._fsPick.exp; }
+        saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
+        m.remove(); if (send) showToast(en ? '🙏 Thank you!' : '🙏 알려 주셔서 고마워요!');
+    };
+    m.querySelector('.fs-send').onclick = () => done(true);
+    m.querySelector('.promise-later').onclick = () => done(false);
+}
 let _exitLab = '', _exitSince = Date.now();
 function _exitLabel() {
     try {
@@ -25395,6 +25437,12 @@ setTimeout(() => { if (typeof checkFriendEvents === 'function') checkFriendEvent
 setTimeout(() => { if (typeof _giftCheckInbox === 'function') _giftCheckInbox(); }, 4000);   // 🎁 나눔 열매 받은 편지함
 setTimeout(() => { if (typeof _battleInboxRefresh === 'function') _battleInboxRefresh(); }, 4500);   // ⚔️ 받은 도전장
 setTimeout(() => { if (typeof _doorInbox === 'function') _doorInbox(); }, 6000);   // 🚪 좁은 문 함께 달리기 초대(10/25)
+setTimeout(() => {   // 📝 첫 절은 깼는데 두 문항을 못 본 사람(아이폰 설치 안내로 갔거나 약속 카드 전에 떠남) — 다음에 열 때 홈에서
+    try {
+        const home = document.getElementById('home-screen');
+        if (firstSurvey.at1 && !firstSurvey.at2 && !_isPreFirstClear() && home && home.classList.contains('active') && !document.querySelector('.modal-overlay.active, .promise-overlay, .njv-pop')) _firstSurveyAsk();
+    } catch (e) { }
+}, 9000);
 setTimeout(async () => { // 8. 길드 ID 로드 (레이드 대미지 누적용)
     if (db && myTag && myTag !== '0000') {
         try {
@@ -26899,6 +26947,7 @@ function openProfileSettings() {
 
             <div style="text-align:left; font-size:0.9rem; font-weight:bold; color:#7f8c8d; margin-bottom:10px; margin-left:5px;">${t('profile_tribe_label')}</div>
             ${tribeButtonsHtml}
+            ${window.isFirstTimeNaming ? _fsChipsHtml('src') : ''}
 
             <button onclick="confirmProfile()" style="width:100%; background:#f1c40f; color:#2c3e50; border:none; padding:12px; border-radius:30px; font-weight:bold; cursor:pointer; font-size:1.1rem; box-shadow: 0 4px 0 #d35400;">
                 ${t('profile_confirm')}
@@ -27011,6 +27060,7 @@ async function confirmProfile() {
     if (!myTag || myTag === '0000') myTag = await generateUniqueTag();
 
     markOnboardStep('profile');
+    if (_isFirstProfile && !firstSurvey.at1) { firstSurvey.at1 = Date.now(); if (window._fsPick && window._fsPick.src) firstSurvey.src = window._fsPick.src; }   // 📝 어떻게 알고 왔나(고르지 않았으면 at1만)
 
     // 저장 및 갱신
     saveGameData();
@@ -27078,11 +27128,11 @@ function _showPromiseCard() {
         el.textContent = ms > 0 ? t('promise_review_in', { m: Math.floor(ms / 60000), s: String(Math.floor(ms / 1000) % 60).padStart(2, '0') }) : t('promise_review_now');
     };
     const iv = setInterval(tick, 1000); tick();
-    const close = () => { clearInterval(iv); m.remove(); };
+    const close = (noAsk) => { clearInterval(iv); m.remove(); if (!noAsk) setTimeout(_firstSurveyAsk, 700); };   // 📝 그다음 처음 온 사람 설문 두 문항(10/26)
     m.querySelectorAll('button[data-a]').forEach(b => b.onclick = async () => {
         const a = b.dataset.a;
         if (a === 'later') { if (!P.notif) P.notif = 'later'; saveGameData(); close(); return; }
-        if (a === 'ios') { P.notif = 'ios-guide'; saveGameData(); close(); if (typeof showIOSInstallGuide === 'function') showIOSInstallGuide(); return; }
+        if (a === 'ios') { P.notif = 'ios-guide'; saveGameData(); close(true); if (typeof showIOSInstallGuide === 'function') showIOSInstallGuide(); return; }
         b.disabled = true;
         const r = await _promiseNotifOn(); P.notif = r.state; if (r.time) P.nt = r.time; saveGameData();
         if (r.state === 'granted') { close(); showToast(t('promise_notif_ok', { time: r.time })); }

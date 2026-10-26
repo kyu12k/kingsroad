@@ -8156,3 +8156,16 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 #nj3d .nj3d-starwin .nj3d-droomres div b { float: right; font-variant-numeric: tabular-nums; }
 #nj3d .nj3d-starwin .nj3d-droomres div.wait { opacity: 0.6; }
 #nj3d .nj3d-starwin .nj3d-doorbtns .dnote { flex-basis: 100%; text-align: center; }
+
+/* 📝 처음 온 사람 설문(10/26) — 이름 정하는 창(흰 바탕)의 한 문항 · 첫 절 뒤 두 문항(약속 카드 모양) */
+.fs-q { text-align: left; margin: 4px 0 16px; }
+.fs-q .fs-t { font-size: 0.9rem; font-weight: bold; color: #7f8c8d; margin: 0 0 8px 5px; }
+.fs-q .fs-t small { font-weight: normal; font-size: 0.75rem; color: #a5b1b8; }
+.fs-q .fs-o { display: flex; flex-wrap: wrap; gap: 6px; }
+.fs-q .fs-o button { padding: 7px 11px; border-radius: 999px; border: 1px solid #bdc3c7; background: #f9f9f9; color: #2c3e50; font-size: 0.82rem; font-weight: bold; cursor: pointer; }
+.fs-q .fs-o button.on { border: 2px solid #f1c40f; background: #fff7d1; }
+.fs-card .fs-q { margin: 14px 0 6px; }
+.fs-card .fs-q .fs-t { color: #f4ecd8; margin-left: 0; }
+.fs-card .fs-q .fs-o button { background: rgba(255,255,255,0.08); border-color: rgba(241,196,15,0.45); color: #f4ecd8; }
+.fs-card .fs-q .fs-o button.on { background: #f1c40f; border-color: #f1c40f; color: #2a2010; }
+.fs-card .fs-send { margin-top: 12px; }
