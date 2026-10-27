@@ -33232,6 +33232,12 @@ function _hsKbSubmitSync() {
             const r = f.getBoundingClientRect(); if (r.bottom > vv.offsetTop + vv.height * 0.5 && r.top < vv.offsetTop + vv.height) bottom = Math.min(bottom, r.top - 8);
         });
         b.style.top = Math.round(bottom - b.offsetHeight) + 'px';
+        // 10/27 제보(21:2): 다 쓰면 나타나는 이 버튼이 마지막 줄(「같더라」)을 덮었다 — 마지막 칸을 버튼 위로 올린다
+        const last = document.querySelector('#game-screen .hardship-typing-board'), f = last && last.closest('.battle-field');   // 칸이 아니라 판 전체 — 다 쓰면 칸 대신 글로 보이는 판도 있다
+        if (f) {
+            const over = last.getBoundingClientRect().bottom + 8 - (bottom - b.offsetHeight);
+            if (over > 0) { const room = f.scrollHeight - f.clientHeight - f.scrollTop; if (over > room) _hsKbPad(f, over - room + 4); f.scrollTop += over; }
+        }
     } catch (e) { }
 }
 /* 지금 치는 칸이 떠 있는 버튼(🙋·💡·🔑) 아래로 숨지 않게 보이는 띠 안으로 옮긴다. 타이핑 때와 🔑 첫 마디 보기가 나타날 때(10/10) */
