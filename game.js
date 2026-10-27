@@ -33259,9 +33259,16 @@ function updateHardshipMemoryBoard() {
 /* 같은 날 고침(제보: 입력하는 곳에서 정답 확인 버튼까지가 너무 멀어졌다) — 키보드 높이만큼(≈600px) 한꺼번에 덧대니, 아이폰처럼 키보드가 화면을
    줄이지 않는 기기에서 버튼까지 쓸어내리면 빈 여백부터 다 지나야 했다. → **지금 줄을 키보드 위로 올리는 데 모자란 만큼만**(need) 조금씩 늘리고,
    키보드가 닫히거나 새 구절(빈 입력)이면 거둔다. 원래 여백(CSS)은 kbBase로 기억 */
+/* 10/27 제보(아이폰, 21:2처럼 판이 화면에 겨우 걸치는 길이만 안 내려감) — 키보드 높이를 「아래에 가려진 만큼」(clientHeight − offsetTop − height)으로 쟀더니,
+   판이 거의 스크롤되지 않는 길이에선 아이폰이 입력칸을 보이려고 화면 전체를 위로 밀어(offsetTop↑) 키보드가 0으로 읽혔다 → 덧댄 여백을 거두고 더 못 내려갔다.
+   긴 절은 판 자체가 스크롤돼 밀어 올림이 없어서 멀쩡했다. 밀어 올림과 상관없이 「줄어든 높이」로 잰다 */
+function _kbHeight() {
+    const vv = window.visualViewport; if (!vv) return 0;
+    return Math.max(0, document.documentElement.clientHeight - vv.height * (vv.scale || 1));   // 손가락 확대로 줄어든 건 키보드가 아니다
+}
 function _hsKbPad(container, need) {
     const vv = window.visualViewport; if (!vv || !container) return;
-    const kb = Math.max(0, document.documentElement.clientHeight - (vv.offsetTop + vv.height));
+    const kb = _kbHeight();
     const reset = () => { if (container.style.paddingBottom) { container.style.paddingBottom = ''; } container.dataset.kbx = ''; };
     if (kb <= 80 || need === -1) { reset(); return; }
     if (!(need > 0)) return;
@@ -33285,7 +33292,7 @@ function _hsKbSubmitSync() {
         let tgt = sb && sb.offsetParent !== null && !sb.disabled ? sb : nb && nb.offsetParent !== null ? nb : null;
         // 칸을 다 채우기 전엔 눌러도 「다 채워 주세요」뿐 — 다 채웠을 때만 띄운다(10/22 사용자: 계속 떠 있을 필요가 없다)
         if (tgt === sb && typeof hardshipState !== 'undefined' && hardshipState && String(hardshipState.memoryTypedText || '').length < getHardshipInputTargetCount()) tgt = null;
-        const kb = vv ? Math.max(0, document.documentElement.clientHeight - (vv.offsetTop + vv.height)) : 0;
+        const kb = _kbHeight();
         const ae = document.activeElement;
         const on = !!(tgt && kb > 80 && window.isHardshipMode && typeof hardshipState !== 'undefined' && hardshipState && hardshipState.active && ae && ae.id === 'hidden-typing-input');
         if (!on) { if (b) b.style.display = 'none'; return; }
