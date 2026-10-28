@@ -6013,7 +6013,8 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             g.position.set(x, terrain(x, z), z); g.rotation.y = Math.random() * 6.28; mannaG.add(g);
             quails.push({ i, g, x, z, tries: 2, done: false, ph: Math.random() * 6 });
         }
-        if (MT.ready && typeof _njQuailTime === 'function' && _njQuailTime()) (MD0.got || []).forEach(i => { if (!(MD0.quail || []).includes(i)) spawnQuail(i); });
+        const quailOpen = i => typeof _njQuailOpen === 'function' ? _njQuailOpen(i) : (typeof _njQuailTime === 'function' && _njQuailTime());   // ⏳ 10/28부터 그 만나를 거두고 2시간 뒤
+        if (MT.ready) (MD0.got || []).forEach(i => { if (!(MD0.quail || []).includes(i) && quailOpen(i)) spawnQuail(i); });
         function mannaHint() {
             if (!mannaHinted && mannas.some(m => !m.done)) { mannaHinted = true; showHint(T('nj3d_manna_here'), 5000); return; }
             if (!quailHinted && quails.some(q => !q.done)) { quailHinted = true; showHint(T('nj3d_quail_here'), 4500); }
@@ -6080,7 +6081,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
         function askManna(m) {
             if (roundAsk('manna')) mannaQ = { m };
         }
-        /* 판에서 돌아왔을 때(resumeNJ3D) — 거둔 만나는 떠오르고, 잡은 메추라기는 그물, 날아간 건 날고, 연 조개는 진주. 새로 거둔 만나 곁엔 저녁 메추라기 */
+        /* 판에서 돌아왔을 때(resumeNJ3D) — 거둔 만나는 떠오르고, 잡은 메추라기는 그물, 날아간 건 날고, 연 조개는 진주. 거둔 지 2시간 된 만나 곁엔 메추라기 */
         C.refreshDaily = () => {
             const MD = typeof _njMannaDay === 'function' ? _njMannaDay() : null; if (!MD) return;
             let any = false;
@@ -6090,7 +6091,7 @@ if ((k === 'disciple' || k === 'disciple2') && D.parts.length) return null;   //
             quails.forEach(q => { if (q.done || !(MD.quail || []).includes(q.i)) return;
                 if ((MD.qfail || {})[q.i] >= 2) { q.done = true; mannaAnims.push({ kind: 'fly', qa: q, t: 0, dx: q.x - P.x, dz: q.z - P.z }); }
                 else catchQuail(q, ''); });
-            if (MT.ready && typeof _njQuailTime === 'function' && _njQuailTime()) (MD.got || []).forEach(i => { if (!quails.some(q => q.i === i)) spawnQuail(i); });
+            if (MT.ready) (MD.got || []).forEach(i => { if (!quails.some(q => q.i === i) && !(MD.quail || []).includes(i) && quailOpen(i)) spawnQuail(i); });
             const DL = window._njDexLast; window._njDexLast = null;   // 🐠 바다 생물 판 — 만났으면 반짝임·🐟 안내, 숨었으면 그 말
             if (dexQ && fishQ.hidden) dexQ = null;   // 판에 들어갔다 왔다(끝냈든 그만뒀든)
             if (DL) { const c = creatures.find(x => x.E.id === DL.id);
