@@ -857,8 +857,9 @@ exports.sendReviewNotifications = functions
                 // ── 백지 차례 알림 (2026-09-28) — 항목에 kind:'blank'가 붙는다. 옛 클라이언트 항목은 kind가 없어 복습으로 본다
                 //    백지만 온 경우엔 밤(23~7시 KST)과 직전 백지 알림 3시간 안을 피해 **미룬다**(클라이언트도 같은 규칙으로 일정을 짜지만 한 번 더 막는다)
                 const blankDue = dueItems.filter(n => n.kind === 'blank');
-                const revDue = dueItems.filter(n => n.kind !== 'blank');
-                if (!revDue.length && blankDue.length) {
+                const njDue = dueItems.filter(n => n.kind === 'nj');   // 🍞🐦 만나·메추라기 (2026-10-28) — 클라이언트가 낮·그날 안에서만 넣는다. 미루지 않는다(아침 6시면 사라진다)
+                const revDue = dueItems.filter(n => n.kind !== 'blank' && n.kind !== 'nj');
+                if (!revDue.length && !njDue.length && blankDue.length) {
                     const kst = new Date(nowMs + 9 * 3600000);
                     const h = kst.getUTCHours();
                     let postponeTo = 0;
@@ -885,6 +886,11 @@ exports.sendReviewNotifications = functions
                     const stageTitle = lastItem.stage || '말씀';
                     notifTitle = '킹스로드 복습 알림';
                     notifBody = `"${stageTitle}" 복습할 시간입니다!`;
+                    if (blankDue.length) notifBody += ` · ✍️ ${blankDue[blankDue.length - 1].stage || ''} 백지 차례`;
+                    if (njDue.length) notifBody += ` · ${njDue[njDue.length - 1].stage || ''}`;
+                } else if (njDue.length) {
+                    notifTitle = '킹스로드';
+                    notifBody = njDue[njDue.length - 1].body || '만나·메추라기가 왔어요';
                     if (blankDue.length) notifBody += ` · ✍️ ${blankDue[blankDue.length - 1].stage || ''} 백지 차례`;
                 } else {
                     const b = blankDue[blankDue.length - 1];
