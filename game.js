@@ -572,7 +572,7 @@ const LANG = {
         sea_full: '바다가 모두 되살아났어요',
         sea_guilds_title: '함께 맑힌 길드들 · {n}단계 {name}',
         sea_guilds_none: '아직 없어요 — 첫 길드가 되어 보세요',
-        sea_water_rule: '내 바다예요. 칸마다 💎로 맑혀요 — 물가 300 · 얕은 바다 600 · 깊은 바다 1,000. 여기서 버튼으로 뭍에 가까운 칸부터 맑히거나, 3D 바다에 내려가 물가는 뭍에 서서 바라보는 칸을, 그 밖은 ⛵ 배를 타고 나가 배 아래 칸을 맑혀요. 한 구역을 다 맑히면 나라들이 한 단계 더 자라요. 맑힌 칸은 다시 흐려지지 않아요. 가장자리 흰 칸은 끝내 소금 땅이에요 (47:11).', sea_go_pour: '🌊 3D 바다로 — 걸어서 · 배로 맑히기', sea2d_title: '여기서 맑히기 — 뭍에 가까운 흐린 칸부터', sea2d_one: '1칸 · 💎{c}', sea2d_ten: '{n}칸 · 💎{c}', sea2d_max: '되는 만큼', sea2d_max_ok: '한 번 더 누르면 {n}칸 · 💎{c}', sea2d_done: '🌊 {n}칸을 맑혔어요 · 💎{c}', sea2d_need: '💎 {n}이 모자라요', njr_title: '🏛️ 오늘의 암송을 더 오래 — 백지로 다시', rc_q: '🐚 어제 외운 세 구절, 기억하세요?', rc_carry: ' + 어제 막힌 단락 {n}절', njr_clam_carry: '+ 어제 막힌 단락 {ref}', rc_go: '✍️ 백지로 확인 · 약 {m}분', rc_later: '나중에', offer_own: '보유 {n}', offer_again: '하나 더? 한 번 더', hs_bonus_up: '📈 그중 백지 레벨 오름 {n}절 +{pts}점', hs_bonus_none: '📈 레벨 오름 보너스 없음 — 차례가 온 절을 써내면 붙어요', todo_rc: '어제 세 구절', njr_lbl_past: '✍️ 지난 오늘의 암송', njr_past_go: '✍️ 지난 오늘의 암송 {n}절도 써 보기', njr_carry_note: '막힌 절은 내일 한 번 더 물어볼게요', njr_got_carry: '🐚 어제 막혔던 절을 써냈어요', njr_miss_carry: '🐚 내일 한 번 더 물어볼게요', njr_manna: '🍞 만나', njr_quail: '🐦 메추라기', njr_clam: '🐚 진주조개', njr_manna_sub: '오늘 세 절 · 마친 뒤 바로', njr_quail_sub: '오늘 세 절 · 저녁 6시부터', njr_clam_sub: '어제 세 절 ({ref})', njr_go: '✍️ 백지로 ({n}절)', njr_done: '✓ 다 했어요', njr_wait_daily: '오늘의 암송 뒤에 내려요', njr_wait_manna: '만나를 거두면 와요', njr_wait_quail: '만나 뒤 저녁에 와요', njr_wait_eve: '저녁 6시부터 ({h}시간 남음)', njr_none_clam: '어제 오늘의 암송 기록이 없어요', njr_rule: '한 번에 써야 받아요 — 단서 없이 💎 그대로 · 단서를 쓰면 반 · 못 쓰면 오늘은 끝. 승점도 있어요. 성에 가면 같은 기록이 보여요', njr_lbl_manna: '🍞 만나 거두기', njr_lbl_quail: '🐦 메추라기 잡기', njr_lbl_clam: '🐚 진주조개 열기', njr_lbl_clamfp: '🔑 어제 첫머리에서 막힌 절 — 주소만 보고 첫 마디',
+        sea_water_rule: '내 바다예요. 칸마다 💎로 맑혀요 — 물가 300 · 얕은 바다 600 · 깊은 바다 1,000. 여기서 버튼으로 뭍에 가까운 칸부터 맑히거나, 3D 바다에 내려가 물가는 뭍에 서서 바라보는 칸을, 그 밖은 ⛵ 배를 타고 나가 배 아래 칸을 맑혀요. 한 구역을 다 맑히면 나라들이 한 단계 더 자라요. 맑힌 칸은 다시 흐려지지 않아요. 가장자리 흰 칸은 끝내 소금 땅이에요 (47:11).', sea_go_pour: '🌊 3D 바다로 — 걸어서 · 배로 맑히기', sea2d_title: '여기서 맑히기 — 뭍에 가까운 흐린 칸부터', sea2d_one: '1칸 · 💎{c}', sea2d_ten: '{n}칸 · 💎{c}', sea2d_max: '되는 만큼', sea2d_max_ok: '한 번 더 누르면 {n}칸 · 💎{c}', sea2d_done: '🌊 {n}칸을 맑혔어요 · 💎{c}', sea2d_need: '💎 {n}이 모자라요', njr_title: '🏛️ 오늘의 암송을 더 오래 — 백지로 다시', rc_q: '🐚 어제 외운 세 구절, 기억하세요?', rc_carry: ' + 어제 막힌 단락 {n}절', njr_clam_carry: '+ 어제 막힌 단락 {ref}', rc_go: '✍️ 백지로 확인 · 약 {m}분', rc_later: '나중에', offer_own: '보유 {n}', offer_again: '하나 더? 한 번 더', hs_bonus_up: '📈 그중 백지 레벨 오름 {n}절 +{pts}점', hs_bonus_none: '📈 레벨 오름 보너스 없음 — 차례가 온 절을 써내면 붙어요', todo_rc: '어제 세 구절', njr_lbl_past: '✍️ 지난 오늘의 암송', njr_past_go: '✍️ 지난 오늘의 암송 {n}절도 써 보기', njr_carry_note: '막힌 절은 내일 한 번 더 물어볼게요', njr_got_carry: '🐚 어제 막혔던 절을 써냈어요', njr_miss_carry: '🐚 내일 한 번 더 물어볼게요', njr_manna: '🍞 만나', njr_quail: '🐦 메추라기', njr_clam: '🐚 진주조개', njr_manna_sub: '오늘 세 절 · 마치고 1시간 뒤', njr_quail_sub: '오늘 세 절 · 만나 거두고 2시간 뒤', njr_clam_sub: '어제 세 절 ({ref})', njr_go: '✍️ 백지로 ({n}절)', njr_done: '✓ 다 했어요', njr_wait_daily: '오늘의 암송 뒤에 내려요', njr_wait_manna: '만나를 거두면 와요', njr_wait_quail: '만나 다음에 와요', njr_wait_eve: '{t} 뒤에 와요', njr_wait_fall: '{t} 뒤에 내려요', njr_none_clam: '어제 오늘의 암송 기록이 없어요', njr_rule: '한 번에 써야 받아요 — 단서 없이 💎 그대로 · 단서를 쓰면 반 · 못 쓰면 오늘은 끝. 승점도 있어요. 성에 가면 같은 기록이 보여요', njr_lbl_manna: '🍞 만나 거두기', njr_lbl_quail: '🐦 메추라기 잡기', njr_lbl_clam: '🐚 진주조개 열기', njr_lbl_clamfp: '🔑 어제 첫머리에서 막힌 절 — 주소만 보고 첫 마디',
         njr_fp_again: '첫 마디는 <b>「{ans}」</b>예요<br><span style="opacity:0.85">다른 절을 쓴 뒤 한 번 더 물을게요 — 그때 주소만 보고 떠올려 보세요</span>',
         njr_fp_tomorrow: '첫 마디는 <b>「{ans}」</b>예요<br><span style="opacity:0.85">내일 다시 첫 마디부터 물을게요</span>',
         njr_fp_cont: '✍️ 이제 전체를 백지로 ({n}절)', njr_sum: '이번 판 {s}', njr_sum_gem: '💎 +{n}', njr_sum_pearl: '🐚 진주 {n}개(팔면 💎 {v})', njr_sum_none: '이번 판엔 얻은 게 없어요',njr_fp_later: '첫 마디는 <b>「{ans}」</b>예요<br><span style="opacity:0.85">나머지 절을 백지로 다 쓴 뒤 한 번 더 물을게요</span>', njr_fp_retry: '🔑 아까 못 떠올린 첫 마디 다시 ({n}절)', njr_lbl_dex: '🐠 바다 생물의 말씀', njr_miss_dex: '🐠 아쉬워요 — 다시 가서 한 번 더 써 보세요', njr_miss_dex_hide: '🐠 이번 주엔 숨어 버렸어요 — 월요일 아침 6시에 다시', dex_when: '{day}요일 {time}', dex_when_any: '하루 종일', dex_when_morning: '아침(6~12시)', dex_when_noon: '오후(12~18시)', dex_when_night: '저녁·밤(18시~)', nj3d_dex_notnow: '{e} {name} · {ref} — 말씀은 {when}에 물어요', nj3d_dex_bq: '{e} {name} · {ref} — 이 생물의 말씀을 백지로', njr_got_manna: '🍞 만나를 거두었어요', njr_got_quail: '🐦 메추라기를 잡았어요', njr_got_clam: '🐚 {name}를 얻었어요', njr_half: ' (단서 — 반)', njr_miss_manna: '🍞 만나가 해에 스러졌어요 — 내일 다시', njr_miss_quail: '🐦 메추라기가 날아갔어요 — 내일 다시', njr_miss_clam: '🐚 조개가 닫혔어요 — 내일 다시', njr_miss_home_clam: '🐚 이 절은 내일 한 번 더 물어볼게요', njr_miss_home_manna: '🍞 이 절은 오늘 만나를 못 거뒀어요', njr_miss_home_quail: '🐦 이 절은 오늘 메추라기를 놓쳤어요', njr_back3d: '🏛️ 성으로 돌아가기', nj3d_njr_manna: '🍞 만나 — 오늘 세 절을 백지로 써서 거둬요', nj3d_njr_quail: '🐦 메추라기 — 오늘 세 절을 백지로 써서 잡아요', nj3d_njr_clam: '🐚 진주조개 — 어제 세 절을 백지로 써서 열어요', nj3d_njr_btn: '✍️ 백지로 쓰기 ({n}절)', sea_refund: '🌊 바다가 「내 바다」로 바뀌었어요 — 모두의 바다에 드린 💎{n}를 돌려드렸어요', sea_zone_how0: '뭍에 서서 바라보는 칸 · 한 칸 💎{n}', sea_zone_how1: '⛵ 배를 타고 배 아래 칸 · 한 칸 💎{n}', sea_zone_how2: '⛵ 배를 타고 먼 바다로 · 한 칸 💎{n}', sea_next_cell: '다음 칸까지 💎 {pool} / {cost}', sea_need_boat: '⛵ 물가를 다 맑혔어요. 이제 뭍에서 떨어진 {zone}예요 — 3D에서 배를 타고 그 물 위로 나가서 내요', sea_go_boat: '⛵ 3D 바다로 — 배를 타고 나가기',
@@ -809,8 +809,8 @@ const LANG = {
         dex_when_any: '언제나 바다 어딘가에', dex_when_morning: '아침(6~12시)에만 나와요', dex_when_noon: '오후(12~18시)에만 나와요', dex_when_night: '저녁·밤(18~6시)에만 나와요',
         dex_where_rock: '바위 틈에 숨어 있어요', dex_where_weed: '해초 숲에 숨어 있어요', dex_where_sand: '모래 바닥에 숨어 있어요', dex_where_swim: '바닷속을 헤엄쳐 다녀요',
         nj3d_manna_here: '🍞 아침 들판에 만나가 내렸어요 — 성 둘레를 걸어 거두어 보세요 (출 16:14)', nj3d_manna_got: '🍞 만나를 거두었어요 · 💎{gem}', nj3d_manna_sat: ' (여섯째 날 갑절)', nj3d_first_q: '이 절은 어떻게 시작하나요?', nj3d_blank_q: '두 번째 기회 — 빈칸에 들어갈 말씀은?', nj3d_manna_q: '🍞 만나를 거두려면 —', nj3d_manna_melt: '☀️ 해가 뜨거워 만나가 스러졌어요 (출 16:21) — 내일 또 내려요',
-        nj3d_manna_all: '🍞 오늘 만나를 다 거두었어요 — 저녁이면 메추라기가 와요 (출 16:13)',
-        nj3d_quail_here: '🐦 저녁이 되어 메추라기가 들판에 내려앉았어요 (출 16:13)', nj3d_quail_flee: '🐦 메추라기가 도망치려 해요!', nj3d_quail_again: '🐦 푸드덕! 한 번 더',
+        nj3d_manna_all: '🍞 오늘 만나를 다 거두었어요 — 두 시간 뒤면 메추라기가 와요 (출 16:13)',
+        nj3d_quail_here: '🐦 메추라기가 들판에 내려앉았어요 (출 16:13)', nj3d_quail_flee: '🐦 메추라기가 도망치려 해요!', nj3d_quail_again: '🐦 푸드덕! 한 번 더',
         nj3d_quail_got: '🐦 말씀의 그물로 메추라기를 잡았어요 · 💎{gem}', nj3d_quail_away: '🐦 메추라기가 날아가 버렸어요',
         nj3d_clam_open: '🐚 조개 열기', nj3d_clam_q: '🐚 지난 오늘의 암송 — 조개가 입을 열려면', nj3d_clam_again: '🐚 꼭 닫혔어요 — 한 번 더',
         nj3d_clam_shut: '🐚 조개가 입을 꼭 다물었어요 — 오늘은 열리지 않아요. 내일 아침 새 세 절이 들어와요', nj3d_clam_need: '🐚 말씀을 한 절 외우면 조개를 열 수 있어요',
@@ -915,8 +915,8 @@ const LANG = {
         rv_route_blank: ' · <b style="white-space:nowrap">✍️ 백지로</b>', rv_row_blank: '✍️ 백지',
         rv_list_title: '📖 복습할 구절 {n}',
         hardship_repeat_notice: '오늘 이 장을 이미 했어요\n같은 고난 반복은 승점 {pct}%',
-        hardship_feedback_correct_scored_today: '정답입니다. {label} · 오늘 이미 받은 승점',
-        hardship_feedback_typo_corrected_scored_today: '오타 보정! 오늘 이미 받은 승점 ({n}글자 오타)',
+        hardship_feedback_correct_scored_today: '정답입니다. {label} · 오늘 받을 승점을 다 받았어요',
+        hardship_feedback_typo_corrected_scored_today: '오타 보정! 오늘 받을 승점을 다 받았어요 ({n}글자 오타)',
         hardship_feedback_correct_quick: '정답입니다. {label} · 초성 조립을 건너뜁니다',
         hardship_feedback_wrong_address: '오답입니다. 정답은 {label}입니다.',
         hardship_feedback_wrong_verse: '오답입니다.',
@@ -977,7 +977,8 @@ const LANG = {
         return_left_h: '{h}시간 남음',
         clear_score: '✨ 승점: +{score}',
         clear_total_gem: '💎 최종 획득: {gem}개',
-        clear_repeat_accuracy: '🎯 정확도: {pct}% (오답: {wrong})',
+        clear_repeat_accuracy: '🎯 정확도: {pct}% (오답: {wrong})', clear_repeat_full: '🔁 이 난이도는 오늘 세 번 승점을 받았어요 — 내일 다시',
+        mid_next_diff: '다음 난이도: {name} ▶',
         clear_repeat_perfect: '(💎 퍼펙트 +{gem})',
         clear_repeat_gem: '💎 보석: +{gem} (성전 +{castle})',
         clear_score_blocked_gem: '💎 보석은 정상 지급됩니다.',
@@ -1106,9 +1107,9 @@ const LANG = {
         event_mock_label: '모의고사',
         event_status_none: '아직 안 해봤어요',
         event_status_passed: '{name} 통과',
-        event_note: '시험은 백지로 쓰니까, 문항마다 백지까지 가보세요.<br>보통·어려움·빈칸·백지 — 난이도마다 하루 한 번씩 승점을 받을 수 있어요.',
+        event_note: '시험은 백지로 쓰니까, 문항마다 백지까지 가보세요.<br>보통·어려움·빈칸·백지 — 난이도마다 하루 세 번까지 승점을 받을 수 있어요.',
         event_cleared: '📝 시험 문항 · {name} 통과',
-        event_scored_today: '오늘 이미 받은 승점',
+        event_scored_today: '오늘 받을 승점을 다 받았어요',
         event_reward_hint: '🎁 오늘 {n}절을 모두 백지로 쓰면 💎{gem} (하루 1회)',
         event_reward_done: '✅ 오늘 전부 백지로 통과 · 💎{gem} 받음',
         event_all_blank_done: '📝 시험 문항 전부 백지 통과!',
@@ -1125,7 +1126,7 @@ const LANG = {
         daily_go: '오늘 {n}절 도전',
         daily_status_done: '✅ 오늘 암송 완료 — 백지로 {n}절을 써냈어요',
         daily_status_todo: '백지로 {n}절을 써내면 「오늘 암송함」이 돼요',
-        daily_note: '보통·어려움·빈칸으로 연습하고, 마지막엔 백지로 써보세요.<br>백지로 오늘 구절을 모두 써내면 「오늘 암송함」이 돼요.<br>난이도마다 하루 한 번씩 승점을 받아요.',
+        daily_note: '보통·어려움·빈칸으로 연습하고, 마지막엔 백지로 써보세요.<br>백지로 오늘 구절을 모두 써내면 「오늘 암송함」이 돼요.<br>난이도마다 하루 세 번까지 승점을 받아요.',
         daily_settings: '⚙️ 내 진도 설정',
         daily_settings_title: '내 진도 설정',
         daily_settings_desc: '다른 곳을 외우고 있다면 오늘 시작 구절과 하루 절 수를 정하세요. 쉬는 날(일요일·연휴)은 그대로예요.',
@@ -1916,7 +1917,7 @@ const LANG = {
         sea_full: 'The whole sea lives again',
         sea_guilds_title: 'Guilds who cleared it together · Stage {n} {name}',
         sea_guilds_none: 'None yet — be the first guild',
-        sea_water_rule: 'This is your own sea. Clear it cell by cell with 💎 — shore 300 · shallows 600 · deep sea 1,000. Use the buttons here to clear from the land outward, or go down to the sea in 3D — face a shore cell from the land, or sail out ⛵ and clear the cell under your boat. Clear a whole zone and the nations can grow one step more. Cleared cells never cloud again. The white cells stay salt (47:11).', sea_go_pour: '🌊 To the sea in 3D — clear on foot or by boat', sea2d_title: 'Clear from here — cloudy cells nearest the land first', sea2d_one: '1 cell · 💎{c}', sea2d_ten: '{n} cells · 💎{c}', sea2d_max: 'As many as I can', sea2d_max_ok: 'Tap again: {n} cells for 💎{c}', sea2d_done: '🌊 Cleared {n} cells · 💎{c}', sea2d_need: '{n} more 💎 needed', njr_title: '🏛️ Keep today\'s verses longer — write them again', rc_q: '🐚 Remember yesterday\'s three verses?', rc_carry: ' + {n} from the passage you got stuck on', njr_clam_carry: '+ passage stuck yesterday: {ref}', rc_go: '✍️ Check from memory · ~{m} min', rc_later: 'Later', offer_own: 'Own {n}', offer_again: 'One more? Tap again', hs_bonus_up: '📈 Incl. +{pts} for {n} level-ups', hs_bonus_none: '📈 No level-up bonus — due verses earn one', todo_rc: 'Yesterday’s verses', njr_lbl_past: '✍️ Earlier daily verses', njr_past_go: '✍️ Also write {n} earlier daily verses', njr_carry_note: 'We\'ll ask the stuck ones again tomorrow', njr_got_carry: '🐚 You wrote the one you got stuck on', njr_miss_carry: '🐚 We\'ll ask again tomorrow', njr_manna: '🍞 Manna', njr_quail: '🐦 Quail', njr_clam: '🐚 Pearl clams', njr_manna_sub: 'Today\'s verses · right after', njr_quail_sub: 'Today\'s verses · from 6 PM', njr_clam_sub: 'Yesterday\'s verses ({ref})', njr_go: '✍️ Write ({n})', njr_done: '✓ Done', njr_wait_daily: 'Falls after today’s verses', njr_wait_manna: 'Comes after the manna', njr_wait_quail: 'Evening, after the manna', njr_wait_eve: 'From 6 PM ({h}h left)', njr_none_clam: 'No daily verses yesterday', njr_rule: 'One try each — no clues: full 💎 · clues: half · missed: done for today. Score too. The city shows the same record', njr_lbl_manna: '🍞 Gather manna', njr_lbl_quail: '🐦 Catch quail', njr_lbl_clam: '🐚 Open pearl clams', njr_lbl_clamfp: '🔑 Verses you stalled on at the start — first words from the reference',
+        sea_water_rule: 'This is your own sea. Clear it cell by cell with 💎 — shore 300 · shallows 600 · deep sea 1,000. Use the buttons here to clear from the land outward, or go down to the sea in 3D — face a shore cell from the land, or sail out ⛵ and clear the cell under your boat. Clear a whole zone and the nations can grow one step more. Cleared cells never cloud again. The white cells stay salt (47:11).', sea_go_pour: '🌊 To the sea in 3D — clear on foot or by boat', sea2d_title: 'Clear from here — cloudy cells nearest the land first', sea2d_one: '1 cell · 💎{c}', sea2d_ten: '{n} cells · 💎{c}', sea2d_max: 'As many as I can', sea2d_max_ok: 'Tap again: {n} cells for 💎{c}', sea2d_done: '🌊 Cleared {n} cells · 💎{c}', sea2d_need: '{n} more 💎 needed', njr_title: '🏛️ Keep today\'s verses longer — write them again', rc_q: '🐚 Remember yesterday\'s three verses?', rc_carry: ' + {n} from the passage you got stuck on', njr_clam_carry: '+ passage stuck yesterday: {ref}', rc_go: '✍️ Check from memory · ~{m} min', rc_later: 'Later', offer_own: 'Own {n}', offer_again: 'One more? Tap again', hs_bonus_up: '📈 Incl. +{pts} for {n} level-ups', hs_bonus_none: '📈 No level-up bonus — due verses earn one', todo_rc: 'Yesterday’s verses', njr_lbl_past: '✍️ Earlier daily verses', njr_past_go: '✍️ Also write {n} earlier daily verses', njr_carry_note: 'We\'ll ask the stuck ones again tomorrow', njr_got_carry: '🐚 You wrote the one you got stuck on', njr_miss_carry: '🐚 We\'ll ask again tomorrow', njr_manna: '🍞 Manna', njr_quail: '🐦 Quail', njr_clam: '🐚 Pearl clams', njr_manna_sub: 'Today\'s verses · 1 hour after', njr_quail_sub: 'Today\'s verses · 2 hours after the manna', njr_clam_sub: 'Yesterday\'s verses ({ref})', njr_go: '✍️ Write ({n})', njr_done: '✓ Done', njr_wait_daily: 'Falls after today’s verses', njr_wait_manna: 'Comes after the manna', njr_wait_quail: 'After the manna', njr_wait_eve: 'In {t}', njr_wait_fall: 'Falls in {t}', njr_none_clam: 'No daily verses yesterday', njr_rule: 'One try each — no clues: full 💎 · clues: half · missed: done for today. Score too. The city shows the same record', njr_lbl_manna: '🍞 Gather manna', njr_lbl_quail: '🐦 Catch quail', njr_lbl_clam: '🐚 Open pearl clams', njr_lbl_clamfp: '🔑 Verses you stalled on at the start — first words from the reference',
         njr_fp_again: 'The first words are <b>“{ans}”</b><br><span style="opacity:0.85">You will get this one again after the others — try to recall it from the reference</span>',
         njr_fp_tomorrow: 'The first words are <b>“{ans}”</b><br><span style="opacity:0.85">We will start with the first words again tomorrow</span>',
         njr_fp_cont: '✍️ Now write the whole verse ({n})', njr_sum: 'This round: {s}', njr_sum_gem: '💎 +{n}', njr_sum_pearl: '🐚 {n} pearls (sell for 💎 {v})', njr_sum_none: 'Nothing gained this round',njr_fp_later: 'The first words are <b>"{ans}"</b><br><span style="opacity:0.85">You will get this one again after writing the rest</span>', njr_fp_retry: '🔑 Try those first words again ({n})', njr_lbl_dex: '🐠 A sea creature’s verse', njr_miss_dex: '🐠 So close — go back and write it once more', njr_miss_dex_hide: '🐠 It hid for this week — back Monday 6 AM', dex_when: '{day} {time}', dex_when_any: 'all day', dex_when_morning: 'morning (6–12)', dex_when_noon: 'afternoon (12–18)', dex_when_night: 'evening & night (18–)', nj3d_dex_notnow: '{e} {name} · {ref} — asks its verse on {when}', nj3d_dex_bq: '{e} {name} · {ref} — write its verse from memory', njr_got_manna: '🍞 Manna gathered', njr_got_quail: '🐦 Quail caught', njr_got_clam: '🐚 You found a {name}', njr_half: ' (clues — half)', njr_miss_manna: '🍞 The manna melted in the sun — tomorrow again', njr_miss_quail: '🐦 The quail flew away — tomorrow again', njr_miss_clam: '🐚 The clam shut — tomorrow again', njr_miss_home_clam: '🐚 We’ll ask this one again tomorrow', njr_miss_home_manna: '🍞 No manna for this verse today', njr_miss_home_quail: '🐦 The quail got away for this verse today', njr_back3d: '🏛️ Back to the city', nj3d_njr_manna: '🍞 Manna — write today\'s verses from memory to gather', nj3d_njr_quail: '🐦 Quail — write today\'s verses from memory to catch', nj3d_njr_clam: '🐚 Pearl clams — write yesterday\'s verses from memory to open', nj3d_njr_btn: '✍️ Write from memory ({n})', sea_refund: '🌊 The sea is now your own — the 💎{n} you gave to the shared sea has been returned', sea_zone_how0: 'Stand on the land and face the cell · 💎{n} each', sea_zone_how1: 'By ⛵ boat, the cell under you · 💎{n} each', sea_zone_how2: 'By ⛵ boat, out in the deep · 💎{n} each', sea_next_cell: 'Next cell 💎 {pool} / {cost}', sea_need_boat: '⛵ The shore is clear. Next are the {zone}, away from land — sail out by boat in 3D and give over that water', sea_go_boat: '⛵ To the sea in 3D — sail out',
@@ -2153,8 +2154,8 @@ const LANG = {
         dex_when_any: 'Somewhere in the sea, any time', dex_when_morning: 'Only in the morning (6–12)', dex_when_noon: 'Only in the afternoon (12–18)', dex_when_night: 'Only in the evening and night (18–6)',
         dex_where_rock: 'Hides in rock crevices', dex_where_weed: 'Hides in the seaweed', dex_where_sand: 'Hides on the sandy floor', dex_where_swim: 'Swims through the sea',
         nj3d_manna_here: '🍞 Manna fell on the field this morning — walk around the city to gather it (Ex 16:14)', nj3d_manna_got: '🍞 You gathered manna · 💎{gem}', nj3d_manna_sat: ' (double on the sixth day)', nj3d_first_q: 'How does this verse begin?', nj3d_blank_q: 'Second chance — which words fill the blank?', nj3d_manna_q: '🍞 To gather the manna —', nj3d_manna_melt: '☀️ The sun grew hot and the manna melted (Ex 16:21) — more tomorrow',
-        nj3d_manna_all: '🍞 All of today’s manna is gathered — quail come in the evening (Ex 16:13)',
-        nj3d_quail_here: '🐦 Evening — quail have landed on the field (Ex 16:13)', nj3d_quail_flee: '🐦 The quail is about to run!', nj3d_quail_again: '🐦 Flutter! Once more',
+        nj3d_manna_all: '🍞 All of today’s manna is gathered — quail come in two hours (Ex 16:13)',
+        nj3d_quail_here: '🐦 Quail have landed on the field (Ex 16:13)', nj3d_quail_flee: '🐦 The quail is about to run!', nj3d_quail_again: '🐦 Flutter! Once more',
         nj3d_quail_got: '🐦 Caught in the net of the Word · 💎{gem}', nj3d_quail_away: '🐦 The quail flew away',
         nj3d_clam_open: '🐚 Open clam', nj3d_clam_q: '🐚 Last daily recitation — to open the clam', nj3d_clam_again: '🐚 It shut tight — once more',
         nj3d_clam_shut: '🐚 The clam closed — not today. New verses come in tomorrow morning', nj3d_clam_need: '🐚 Memorize one verse to open clams',
@@ -2321,7 +2322,8 @@ const LANG = {
         return_left_h: '{h}h left',
         clear_score: '✨ Score: +{score}',
         clear_total_gem: '💎 Total earned: {gem}',
-        clear_repeat_accuracy: '🎯 Accuracy: {pct}% (wrong: {wrong})',
+        clear_repeat_accuracy: '🎯 Accuracy: {pct}% (wrong: {wrong})', clear_repeat_full: '🔁 This level has scored three times today — again tomorrow',
+        mid_next_diff: 'Next level: {name} ▶',
         clear_repeat_perfect: '(💎 Perfect +{gem})',
         clear_repeat_gem: '💎 Gems: +{gem} (temple +{castle})',
         clear_score_blocked_gem: '💎 Gems are awarded normally.',
@@ -2449,7 +2451,7 @@ const LANG = {
         event_mock_label: 'Mock exam',
         event_status_none: 'Not tried yet',
         event_status_passed: '{name} passed',
-        event_note: 'The exam is written from blank, so take each question up to Blank page.<br>Words · Initials · Blanks · Blank page — each level scores once a day.',
+        event_note: 'The exam is written from blank, so take each question up to Blank page.<br>Words · Initials · Blanks · Blank page — each level scores up to three times a day.',
         event_cleared: '📝 Exam question · {name} passed',
         event_scored_today: 'already scored today',
         event_reward_hint: '🎁 Write all {n} verses from a blank page today for 💎{gem} (once a day)',
@@ -2468,7 +2470,7 @@ const LANG = {
         daily_go: 'Try today\'s {n} verses',
         daily_status_done: '✅ Recited today — {n} verses from a blank page',
         daily_status_todo: 'Write {n} verses from a blank page to mark today as recited',
-        daily_note: 'Practice with Words · Initials · Blanks, then finish with Blank page.<br>Write all of today\'s verses from a blank page to mark today as recited.<br>Each level scores once a day.',
+        daily_note: 'Practice with Words · Initials · Blanks, then finish with Blank page.<br>Write all of today\'s verses from a blank page to mark today as recited.<br>Each level scores up to three times a day.',
         daily_settings: '⚙️ My plan',
         daily_settings_title: 'My plan',
         daily_settings_desc: 'Memorizing a different part? Set today\'s starting verse and verses per day. Rest days (Sundays, holidays) stay the same.',
@@ -3054,6 +3056,7 @@ let njClamWeek = null;         // 🐚 { wk: 주차, days: [세 조개를 다 �
 let njPearlFound = { w: 0, c: 0, g: 0 };   // 🐚 찾은 진주(늘기만) — 흰·빛깔·값진
 let njPearlSold = { w: 0, c: 0, g: 0 };    // 💎 판 진주(늘기만) — 가진 진주 = 찾은 − 판
 let njPearlGems = 0;          // 💎 진주를 팔아 받은 보석 합(보석 흐름 실측용)
+let scoreRepeat = null;       // 🔁 같은 날 같은 난이도 승점 횟수 { day, n: { '열쇠': 번 } } — 중간점검·보스전·오늘의 암송 세 번까지(2026-10-28)
 let njStars = null;           // ⭐ 오늘의 일곱 별 { day, ids: [오늘 암송한 절 — 처음 들어온 차례, 일곱까지], got: [얻은 절] } (2026-10-14)
 let njManna = null;           // 🍞 오늘의 만나·메추라기 { day, got: [거둔 무더기], quail: [끝난 메추라기(잡음·날아감)], qfail: {번호: 틀린 수}, mfail·melt: 만나 문제 틀린 수·스러진 무더기 } (2026-10-05)
 let njMannaGems = 0;          // 💎 만나·메추라기로 받은 보석 합(실측용)
@@ -3638,6 +3641,7 @@ loadGameData = function () {
         njPearlGems = Math.max(0, parseInt(parsed.njPearlGems, 10) || 0);
         njManna = (parsed.njManna && typeof parsed.njManna === 'object' && parsed.njManna.day) ? parsed.njManna : null;
         njStars = (parsed.njStars && typeof parsed.njStars === 'object' && parsed.njStars.day) ? parsed.njStars : null;
+        scoreRepeat = (parsed.scoreRepeat && typeof parsed.scoreRepeat === 'object' && parsed.scoreRepeat.day && parsed.scoreRepeat.n) ? parsed.scoreRepeat : null;
         njMannaGems = Math.max(0, parseInt(parsed.njMannaGems, 10) || 0);
         njDexFish = Math.max(0, parseInt(parsed.njDexFish, 10) || 0);
         njDex = Object.assign({ v: {}, w: {}, f: {}, b: {}, all: 0 }, (parsed.njDex && typeof parsed.njDex === 'object') ? parsed.njDex : {});
@@ -9016,14 +9020,20 @@ function _njPearlSellHtml() {
 const NJ_MANNA_GEM = 300, NJ_QUAIL_GEM = 300;
 function _njMannaDay() {
     const d = _get6AMDayStr();
-    if (!njManna || njManna.day !== d) njManna = { day: d, got: [], quail: [], qfail: {}, mfail: {}, melt: [] };
+    if (!njManna || njManna.day !== d) njManna = { day: d, got: [], quail: [], qfail: {}, mfail: {}, melt: [], gotAt: {} };
     return njManna;
 }
+/* ⏳ 10/28 사용자: 「외우고 바로 또 쓰는 게 무슨 의미가 있겠어」 — 만나는 오늘의 암송을 마치고 1시간 뒤, 메추라기는 그 만나를 거두고 2시간 뒤(저녁 6시 규칙 대신).
+   잊을 틈을 두고 다시 떠올리게. 하루 경계(아침 6시)는 그대로 — 그 전에 못 열리면 그날은 없다 */
+const NJ_MANNA_WAIT = 60 * 60 * 1000, NJ_QUAIL_WAIT = 2 * 60 * 60 * 1000;
+function _njQuailAt(i) { const a = (_njMannaDay().gotAt || {})[i]; return (+a || 0) + NJ_QUAIL_WAIT; }   // 거둔 시각 기록 전(10/28 전)에 거둔 것은 곧바로
+function _njQuailOpen(i) { return Date.now() >= _njQuailAt(i); }
 function _njIsSixthDay() { const [y, m, d] = _get6AMDayStr().split('-').map(Number); return new Date(y, m - 1, d).getDay() === 6; }
-function _njMannaToday() {   // { ids: 오늘 구절, ready: 오늘의 암송을 다 마쳤나, sat }
+function _njMannaToday() {   // { ids: 오늘 구절, done: 오늘의 암송을 다 마쳤나, at: 만나가 내리는 시각, ready: 지금 거둘 수 있나, sat }
     const dev = (typeof _dailyEvent === 'function') ? _dailyEvent() : null;
-    if (!dev || dev.rest) return { ids: [], ready: false, sat: false };
-    return { ids: _eventVerseIds(dev), ready: _dailyDoneToday(), sat: _njIsSixthDay() };
+    if (!dev || dev.rest) return { ids: [], done: false, at: 0, ready: false, sat: false };
+    const doneAt = dailyReciteDone[_get6AMDayStr()], done = !!doneAt, at = done ? (+doneAt || 0) + NJ_MANNA_WAIT : 0;
+    return { ids: _eventVerseIds(dev), done, at, ready: done && Date.now() >= at, sat: _njIsSixthDay() };
 }
 /* ⭐ 일곱 별 (2026-10-14 사용자, docs/새-예루살렘.md) — 오늘 암송한 절이 하늘 높이 별이 된다(일곱까지 · 백지가 아니어도 — 스테이지·빈칸·고난 무엇이든).
    별에 닿으면 그 절 한 토막이 말씀 조각으로 흩어지고, 60초 안에(처음 25초 — 10/14 사용자: 너무 어렵다) 순서대로 모으면 별을 얻는다(오딧세이 음표처럼). 별마다 💎500, 일곱 다 💎5,000.
@@ -9050,7 +9060,7 @@ function _njStarGot(id) {
     saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
     return { gem: NJ_STAR_GEM, all, n: S.got.length, total: S.ids.length };
 }
-function _njQuailTime() { const h = new Date().getHours(); return h >= 18 || h < 6; }   // 저녁 6시 ~ 다음 날 아침 6시(하루 경계까지)
+function _njQuailTime() { return _njMannaDay().got.some(_njQuailOpen); }   // 메추라기가 하나라도 왔나(10/28부터 시각이 아니라 거둔 지 2시간 — 옛 3D 사본이 부르는 이름)
 /* ══ 🍞🐦🐚 백지로 거두기 (2026-10-17 사용자) — 만나·메추라기·진주조개는 4지선다였다 → 백지로.
    「눈에 한두 번 바르는 의미는 있어도 제대로 외워지진 않는다」. 오늘의 암송 절을 다음에 다시 백지로 썼을 때 단서 없이 57%(10/3~16, 155번) — 하루 뒤가 가장 흔들린다.
    여는 조건은 그대로(사용자: 모든 사람이 아니라 암송에 신경 쓰는 사람이 하게): 만나 = 오늘의 암송을 백지로 마친 뒤 · 메추라기 = 거둔 만나마다 저녁 6시부터 · 조개 = 어제(지난번) 세 절, 아침 6시부터.
@@ -9084,8 +9094,7 @@ function _njRoundLeft(kind) {   // [{ i, id }] — 아직 안 한 절
     const T = _njMannaToday(); if (!T.ready) return [];
     const M = _njMannaDay();
     if (kind === 'manna') return T.ids.map((id, i) => ({ i, id })).filter(x => !M.got.includes(x.i) && !(M.melt || []).includes(x.i));
-    if (!_njQuailTime()) return [];
-    return M.got.filter(i => !M.quail.includes(i) && T.ids[i]).map(i => ({ i, id: T.ids[i] }));
+    return M.got.filter(i => !M.quail.includes(i) && T.ids[i] && _njQuailOpen(i)).map(i => ({ i, id: T.ids[i] }));
 }
 function njRoundStart(kind, from, cont) {   // cont — 첫 마디 판에서 바로 이어짐(3D는 이미 숨겨 둠)
     let left = _njRoundLeft(kind); if (!left.length) return;
@@ -9166,7 +9175,7 @@ function _njRoundResult(kind, id, ok, hints, hintOk, strong) {
         if (res) { msg = t('njr_got_clam', { name: res.name }); if (res.gold)setTimeout(() => showGemToast(0, t('nj3d_clam_gold', { gem: res.gold.gem.toLocaleString() }), true), 2600); }
         else msg = t(home ? 'njr_miss_home_clam' : 'njr_miss_clam');
     } else if (kind === 'manna') {
-        if (got) { M.got.push(x.i); gem = Math.round(NJ_MANNA_GEM * mul * (full ? 1 : 0.5)); msg = t('njr_got_manna') + (full ? '' : t('njr_half')); }
+        if (got) { M.got.push(x.i); (M.gotAt = M.gotAt || {})[x.i] = Date.now(); gem =Math.round(NJ_MANNA_GEM * mul * (full ? 1 : 0.5)); msg = t('njr_got_manna') + (full ? '' : t('njr_half')); }
         else { if (!Array.isArray(M.melt)) M.melt = []; M.melt.push(x.i); msg = t(home ? 'njr_miss_home_manna' : 'njr_miss_manna'); }
     } else {
         M.quail.push(x.i);   // 잡았든 날아갔든 오늘은 끝
@@ -9214,9 +9223,11 @@ function _njRoundsHtml() {
     const clamSub = cids.length ? `${t('njr_clam_sub', { ref: _dailyLabel(cids).replace(/^계 /, lang === 'en' ? 'Rev ' : '계 ') })}${carry.length ? `</span><span>${t('njr_clam_carry', { n: carry.length, ref: carryRef })}` : ''}` : t('njr_none_clam');
     rows.push(row('clam', clamSub, cids.length ? st('clam', cids.length, '') : ''));
     if (ev && !ev.rest) {
-        rows.push(row('manna', t('njr_manna_sub'), st('manna', T.ready ? (M.got.length + (M.melt || []).length) : 0, t('njr_wait_daily'))));
-        let qWait = !T.ready ? t('njr_wait_quail') : !M.got.length ? t('njr_wait_manna') : '';
-        if (!qWait && !_njQuailTime()) { const h = new Date().getHours(); qWait = t('njr_wait_eve', { h: Math.max(1, 18 - h) }); }
+        const left = ts => { const m = Math.max(1, Math.ceil((ts - Date.now()) / 60000)), h = Math.floor(m / 60), r = m % 60;   // ⏳ 남은 시간
+            return lang === 'en' ? (h ? `${h}h${r ? ' ' + r + 'm' : ''}` : `${m} min`) : (h ? `${h}시간${r ? ' ' + r + '분' : ''}` : `${m}분`); };
+        rows.push(row('manna', t('njr_manna_sub'), st('manna', T.ready ? (M.got.length + (M.melt || []).length) : 0, T.done ? t('njr_wait_fall', { t: left(T.at) }) : t('njr_wait_daily'))));
+        let qWait = !T.done ? t('njr_wait_quail') : !M.got.length ? t('njr_wait_manna') : '';
+        if (!qWait) { const soon = M.got.filter(i => !M.quail.includes(i) && !_njQuailOpen(i)).map(_njQuailAt); if (soon.length) qWait = t('njr_wait_eve', { t: left(Math.min(...soon)) }); }
         rows.push(row('quail', t('njr_quail_sub'), st('quail', M.quail.length, qWait)));
     }
     return `<div class="njr"><div class="njr-head">${t('njr_title')}</div>${rows.join('')}<div class="njr-rule">${t('njr_rule')}</div></div>`;
@@ -14680,6 +14691,7 @@ function saveGameData() {
         njPearlGems: njPearlGems,         // 💎 진주로 받은 보석 합
         njManna: njManna,                 // 🍞 오늘의 만나·메추라기
         njStars: njStars,                 // ⭐ 오늘의 일곱 별
+        scoreRepeat: scoreRepeat,         // 🔁 같은 날 같은 난이도 승점 횟수
         njMannaGems: njMannaGems,         // 💎 만나·메추라기로 받은 보석 합
         njDexFish: njDexFish,             // 🐟 도감 생물에게서 받은 물고기 합
         njDex: njDex,                     // 🐠 바다 생물 도감(절마다 생물)
@@ -15247,6 +15259,13 @@ function _mergeSaveProgress(target, other) {
             if (od.all && (!td.all || od.all < td.all)) { td.all = od.all; took++; }
             target.njDex = td;
         }
+        {   // 🔁 같은 날 승점 횟수 — 같은 날이면 열쇠마다 큰 쪽(두 기기에서 따로 받은 건 합치지 않는다 — 넉넉히 줄지언정 두 번 막지 않게) 아니면 나중 날
+            const tr = target.scoreRepeat, or = other.scoreRepeat;
+            if (or && or.day && or.n) {
+                if (!tr || !tr.day || or.day > tr.day) { target.scoreRepeat = or; took++; }
+                else if (or.day === tr.day) { tr.n = Object.assign({}, tr.n || {}); Object.entries(or.n).forEach(([k, v]) => { if ((v | 0) > (tr.n[k] | 0)) { tr.n[k] = v; took++; } }); }
+            }
+        }
         {   // ⭐ 오늘의 일곱 별 — 같은 날이면 합치고(절 차례는 이쪽 먼저, 일곱까지) 아니면 나중 날
             const ts = target.njStars, os = other.njStars;
             if (os && os.day) {
@@ -15266,6 +15285,7 @@ function _mergeSaveProgress(target, other) {
                     tm.qfail = Object.assign({}, tm.qfail || {}); Object.entries(om.qfail || {}).forEach(([i, n]) => { if ((n | 0) > (tm.qfail[i] | 0)) tm.qfail[i] = n; });
                     tm.mfail = Object.assign({}, tm.mfail || {}); Object.entries(om.mfail || {}).forEach(([i, n]) => { if ((n | 0) > (tm.mfail[i] | 0)) tm.mfail[i] = n; });
                     tm.melt = [...new Set([...(tm.melt || []), ...(om.melt || [])])];
+                    tm.gotAt = Object.assign({}, tm.gotAt || {}); Object.entries(om.gotAt || {}).forEach(([i, ts]) => { if (ts && (!tm.gotAt[i] || ts < tm.gotAt[i])) tm.gotAt[i] = ts; });   // ⏳ 먼저 거둔 시각
                 }
             }
         }
@@ -17790,6 +17810,8 @@ function showClearScreen() {
     // 중간점검 결과 화면에서 남은 버튼 정리 (결과 모달은 하나를 돌려 쓴다)
     const existingNextMid = resultModalEl.querySelector('#btn-next-midboss');
     if (existingNextMid) existingNextMid.remove();
+    const existingNextDiff = resultModalEl.querySelector('#btn-next-diff');
+    if (existingNextDiff) existingNextDiff.remove();
     const _curStageId = window.currentStageId;
     const _curChData = _curStageId ? getChapterDataByStageId(_curStageId) : null;
     const _curStage = _curChData && _curChData.stages ? _curChData.stages.find(s => s.id === _curStageId) : null;
@@ -17891,6 +17913,25 @@ function _attachNextMidBossBtn(anchorBtn, currentMidBossId) {
     anchorBtn.insertAdjacentElement('afterend', btn);
 }
 
+/* 🪜 중간점검 「다음 난이도」(10/28 사용자: 중간점검은 여러 구절을 묶어 하는 건데 「다음 구절 학습」이 나오는 건 맞지 않다)
+   보통 → 어려움 → 빈칸 → 백지 — 같은 구간을 한 단계 위로 설정 창 없이 바로(고른 난이도는 저장). 백지엔 없다 */
+const BOSS_DIFF_ORDER = ['normal', 'hard', 'blank', 'none'];
+function _attachNextDiffBtn(anchorBtn, midId, mode) {
+    const rm = document.getElementById('result-modal');
+    if (!rm) return;
+    const old = rm.querySelector('#btn-next-diff');
+    if (old) old.remove();
+    const i = BOSS_DIFF_ORDER.indexOf(mode), next = i >= 0 ? BOSS_DIFF_ORDER[i + 1] : null;
+    if (!anchorBtn || !midId || !next) return;
+    const btn = document.createElement('button');
+    btn.id = 'btn-next-diff';
+    btn.className = 'btn-continue';
+    btn.style.cssText = 'margin-top:8px; background:linear-gradient(135deg,#d35400,#e67e22); box-shadow:0 4px 0 #a04000; color:#fff;';
+    btn.textContent = t('mid_next_diff', { name: t('event_mode_' + next) });
+    btn.onclick = () => { bossDifficultyMode = next; saveGameData(); goToNextMidBoss(midId); };
+    anchorBtn.insertAdjacentElement('afterend', btn);
+}
+
 // 결과 모달에서 다음 스테이지로 바로 이동
 function goToNextStage(nextId) {
     const clearedStageId = window.currentStageId;
@@ -17979,6 +18020,7 @@ function showBossClearScreen(clearedStageId) {
     // 중간점검이면 '다음 중간점검'으로 바로 이어간다 (맵 왕복 제거)
     _attachNextMidBossBtn(resultContinueBtn,
         String(clearedStageId).includes('mid') ? clearedStageId : null);
+    _attachNextDiffBtn(resultContinueBtn, String(clearedStageId).includes('mid') ? clearedStageId : null, bossDifficultyMode);
     if (quoteEl) {
         quoteEl.textContent = quoteText;
         quoteEl.style.display = 'block';
@@ -22208,7 +22250,9 @@ function _finishEventBattle() {
     const rung = eb.difficulty === 'hard' ? 'hard' : 'normal';
     let pts = 0;
     eb.verseIds.forEach(id => {
-        if (_eventScoredToday(eb.eventId, id, rung)) return;
+        const key = 'event:' + rung + ':' + id;   // 🔁 같은 절·같은 난이도 하루 세 번까지(10/28)
+        if (_srFull(key)) return;
+        _srNote(key);
         pts += Math.floor(playerHearts * (rung === 'hard' ? 1 : 0.7));
     });
     if (pts > 0) { _addLeagueScore(pts); _noteDailySeeds(pts / Math.max(1, playerHearts)); }
@@ -22220,7 +22264,7 @@ function _finishEventBattle() {
     if (typeof showMissionToast === 'function') showMissionToast(t(String(eb.eventId).startsWith('daily:') ? 'daily_cleared' : 'event_cleared', { name: t(rung === 'hard' ? 'event_mode_hard' : 'event_mode_normal') }), pts > 0 ? `+${pts.toLocaleString()}pt` : t('event_scored_today'));
     quitGame('home');
 }
-/* 같은 절·같은 난이도는 하루 1회만 승점 — eventProgress의 시각으로 판단 */
+/* 같은 절·같은 난이도 오늘 통과했나 — eventProgress의 시각으로(10/28부터 승점 판정은 _srFull, 세 번까지) */
 function _eventScoredToday(eventId, stageId, rung) {
     const p = (eventProgress[eventId] || {})[stageId];
     return !!(p && p[rung] && _tsTo6AMDateStr(p[rung]) === _get6AMDayStr());
@@ -24332,6 +24376,12 @@ stageClear = function (type, rewardMultiplier = 1) {
         // ★ 중간점검 빈칸·백지: 승점은 고난 엔진이 구절 단위로 이미 지급했다.
         // 여기서 또 주면 같은 한 번의 암송에 두 번 지급된다. 보석은 정상 지급.
         if (window._midBossBlankClear) scoreResult.score = 0;
+        // 🔁 보통·어려움 중간점검·보스전 — 같은 판·같은 난이도는 하루 세 번까지(10/28, 그 전엔 제한이 없었다)
+        else if (type === 'mid-boss' || type === 'boss') {
+            const _srKey = (type === 'boss' ? 'boss:' : 'mid:') + (bossDifficultyMode === 'normal' ? 'normal' : 'hard') + ':' + sId;
+            if (_srFull(_srKey)) { scoreResult.score = 0; scoreResult.seeds = 0; msg += `${t('clear_repeat_full')}\n`; }
+            else _srNote(_srKey);
+        }
 
         // ★ 빠른 복습을 백지로 해서 백지레벨이 제때 올랐다면: 복습 승점(밭 × 스텝 배율)과 백지레벨 승점(밭 × 상자 배율) 중
         //   **큰 쪽 하나만**. 같은 한 번의 시도에 두 축이 동시에 걸리는 유일한 자리라 이중 지급을 막는다 (2026-09-28)
@@ -31098,7 +31148,7 @@ function _hideHardshipModeModal() {
    하드캡(0)이 아니라 절반인 이유: 약한 장을 오늘 한 번 더 복습하는 진짜 연습은 보상이 남아야 한다.
    여섯 번 돌아도 합이 2배를 못 넘으니(1+½+¼+…) 막판 몰아치기의 힘은 사라진다.
    고난 4종 모두 같은 규칙 — 예전엔 암송의 고난만 "오늘 했으면 0"이고 나머지는 제한이 없었다.
-   중간점검·보스전 빈칸·백지 확인은 별도의 '구절당 하루 1회'(scoredBy)가 이미 있어 여기 안 걸린다. */
+   중간점검·보스전 빈칸·백지는 별도의 '구절·난이도당 하루 세 번'(scoreRepeat, 10/28), 결과 화면 확인은 '구절당 하루 1회'(scoredBy)가 있어 여기 안 걸린다. */
 function _hardshipRepeatFactor(mode, ch) {
     const historyMap = {
         endurance: hardshipEnduranceClearHistory,
@@ -33940,10 +33990,19 @@ function _noRewardWhy() {
     if (hs.quickReviewStageId) return 'nr_quick';   // ⚡ 빠른 복습의 빈칸·백지 — 승점은 이어지는 코스의 stageClear가 준다(10/19 사용자: 「승점 없음」은 사실과 다르다)
     return '';
 }
+/* 🔁 같은 날 같은 난이도는 세 번까지 승점(2026-10-28 사용자: 「이미 통과한 난이도를 통과해도 두 번까지는 승점은 주자 … 최초 시도를 포함해서 총 세 번까지만」)
+   중간점검·보스전(보통·어려움은 그 판, 빈칸·백지는 구절마다) · 오늘의 암송(구절·난이도마다). 그 전엔 보통·어려움 판은 제한이 없었고,
+   빈칸·백지와 오늘의 암송은 하루 한 번(빈칸·백지 중간점검은 둘이 한 칸이라 빈칸 뒤 백지가 0이었다). 다른 판(백지 차례·만나 등)은 그대로 하루 한 번 */
+const SCORE_REPEAT_MAX = 3;
+function _srMap() { const d = _get6AMDayStr(); if (!scoreRepeat || scoreRepeat.day !== d || !scoreRepeat.n) scoreRepeat = { day: d, n: {} }; return scoreRepeat.n; }
+function _srFull(key) { return (_srMap()[key] | 0) >= SCORE_REPEAT_MAX; }
+function _srNote(key) { const n = _srMap(); n[key] = (n[key] | 0) + 1; }
+function _srCounted(kind) { return /^(mid|boss|event):/.test(kind || ''); }
 function _blankScoreKind() {
     if (!hardshipState) return null;
-    if (hardshipState.midBossStageId) return 'mid';   // 중간점검 빈칸·백지
-    if (hardshipState.bossStageId) return 'boss';     // 보스전 빈칸·백지
+    const lv = hardshipState.ultimateMemoryMode ? 'none' : 'blank';   // 빈칸과 백지는 다른 난이도 — 따로 센다
+    if (hardshipState.midBossStageId) return 'mid:' + lv;   // 중간점검 빈칸·백지
+    if (hardshipState.bossStageId) return 'boss:' + lv;     // 보스전 빈칸·백지
     if (hardshipState.verseCheckStageId) return 'vc'; // 결과 화면 '빈칸으로 확인해보기'
     if (hardshipState.eventId) return hardshipState.ultimateMemoryMode ? 'event:none' : 'event:blank'; // 이벤트 — 빈칸·백지 따로 하루 1회
     if (hardshipState.blankDueCh) return 'due';       // 오늘 백지 차례
@@ -33956,6 +34015,7 @@ function _blankScoreAlreadyToday(stageId) {
     if (hardshipState && hardshipState.startLv) { const f = fpRecall[stageId]; return !!(f && f.sd === _get6AMDayStr()); }   // 🔑 첫 마디 — 같은 절 하루 한 번
     const kind = _blankScoreKind();
     if (!stageId || !kind) return false;
+    if (_srCounted(kind)) return _srFull(kind + ':' + stageId);   // 🔁 세 번까지
     const r = verseRecall[stageId];
     const at = r && r.scoredBy && r.scoredBy[kind];
     if (!at) return false;
@@ -33966,6 +34026,7 @@ function _markBlankScored(stageId) {
     if (hardshipState && hardshipState.startLv) { if (stageId) { const f = fpRecall[stageId] || (fpRecall[stageId] = { ok: 0, miss: 0 }); f.sd = _get6AMDayStr(); } return; }
     const kind = _blankScoreKind();
     if (!stageId || !kind) return;
+    if (_srCounted(kind)) _srNote(kind + ':' + stageId);
     const r = verseRecall[stageId] || { pass: 0, typedPass: 0, fail: 0, firstPass: 0, lastPass: 0, lastAt: 0, lastOk: false, hints: 0, lastHints: 0, lastMode: '' };
     if (!r.scoredBy) r.scoredBy = {};
     r.scoredBy[kind] = Date.now();
@@ -34331,9 +34392,8 @@ function finishHardshipSession(reason) {
         const rm = document.getElementById('result-modal');
         const oldNext = rm && rm.querySelector('#btn-next-stage');
         if (oldNext) oldNext.remove();
-        // 백지 확인(1구절)과 중간점검 빈칸·백지 둘 다에서 이어갈 수 있게 한다.
-        // 중간점검은 그 구간 다음의 일반 스테이지가 기준이 된다.
-        const _nextAnchor = hardshipState.verseCheckStageId || hardshipState.midBossStageId;
+        // 백지 확인(1구절)에서만 — 중간점검은 여러 구절을 묶어 하는 것이라 「다음 난이도」·「다음 중간점검」으로(10/28 사용자)
+        const _nextAnchor = hardshipState.verseCheckStageId;
         if (rm && reason === 'completed' && _nextAnchor) {
             const nextId = getNextNormalStageId(_nextAnchor);
             if (nextId) {
@@ -34438,6 +34498,7 @@ function finishHardshipSession(reason) {
         // 중간점검 빈칸·백지였다면 '다음 중간점검'도 함께
         _attachNextMidBossBtn(resultContinueBtn,
             (reason === 'completed') ? hardshipState.midBossStageId : null);
+        _attachNextDiffBtn(resultContinueBtn, (reason === 'completed') ? hardshipState.midBossStageId : null, hardshipState.ultimateMemoryMode ? 'none' : 'blank');
 
     }
 
