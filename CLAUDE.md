@@ -115,7 +115,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `_respondGuildInvite(accept, guildId)` | game.js:~12872 | 길드 초대 수락/거절 CF 호출 |
 | `recordVerseRecall(id, ok, hints, mode, extra)` | game.js:~25400 | 백지·빈칸·음성 시도 1건 기록 — verseRecall 요약 + 백지레벨 + 힌트 흔적 + 일지(`_logRecallAttempt`). 시도 기록은 전부 여기를 지난다 |
 | `_updateBlankBox(r, ok, blankMode, hintOk, now)` | game.js:~8400 | 백지레벨(라이트너 5상자) 갱신. 규칙은 `docs/복습과-기억.md` |
-| `_buildNotifSchedule()` | game.js:~19800 | 푸시 일정 — 복습 1건 + 백지 차례(최소 3시간·밤 피함) |
+| `_buildNotifSchedule()` · `_njNotifItems(now)` | game.js:~26460 · ~9035 | 푸시 일정 — 복습 1건 + 백지 차례(최소 3시간·밤 피함) + 🍞🐦 만나·메추라기 오는 때(`kind:'nj'`, 거둬 본 사람·낮·그날만, 10/28 — 서버 functions/ `sendReviewNotifications`도 함께) |
 | `_reviewOverlayHeadHtml(list)` | game.js:~8100 | 복습 목록 맨 위 — 오늘 백지 차례 · 중간점검/보스전으로 한 번에 |
 | `_chapterBlankStats(chapter)` · `_mapBlankRingHtml(chapter)` | game.js:~7717 | 장별 백지 증거 집계(시트 헤더·지도 공용) · 지도 나무 둘레 백지 고리 |
 | `_buildRiverFlow(points, scrollH)` · `_riverFlowTick` · `_riverGlintStep` | game.js:~7145 | 지도 강물 물결 — 구간별 SVG 조각, 보이는 조각만 초당 15번 흐름 · 가끔 빛줄기 |
