@@ -90,6 +90,8 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `openBossSetupModal(stage)` | game.js:~6170 | 보스/중간점검 진입 전 설정 모달 (난이도·순서 선택) |
 | `setBossSetupOpt(type, value)` | game.js:~6218 | 모달 토글 클릭 핸들러 (type: 'difficulty'|'order') |
 | `confirmBossSetup()` | game.js:~6228 | 모달 확인 → `startBossBattle()` 호출 |
+| `_attachNextDiffBtn(anchor, midId, mode)` · `BOSS_DIFF_ORDER` | game.js:~17905 | 🪜 중간점검 결과 「다음 난이도」(보통→어려움→빈칸→백지, 백지엔 없음, 10/28) |
+| `scoreRepeat` · `SCORE_REPEAT_MAX` · `_srFull(key)` · `_srNote(key)` | game.js:~33880 | 🔁 중간점검·보스전·오늘의 암송 — 같은 날 같은 난이도 승점 세 번까지(저장 필드, 병합은 같은 날 큰 쪽) (`docs/고난과-난이도.md` 10/28) |
 | `saveGameData()` | game.js:4091 | localStorage에 저장 |
 | `showBossHistoryModal()` | game.js:~6370 | 보스전 이전 파트/구절 보기 모달 표시/토글 |
 | `generateVerseChoices(verse)` | game.js:~17908 | 구절의 고난용 4지선다 생성 (같은 장 2개 + 다른 장 1개) |
