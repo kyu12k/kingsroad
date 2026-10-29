@@ -30956,7 +30956,11 @@ function _ltAct(kind, arg) {
 function _renderSheetLevelTest(chapterData) {
     const ev = document.getElementById('sheet-blank-evidence'); if (!ev) return;
     let el = document.getElementById('sheet-lt-row');
-    if (!el) { el = document.createElement('div'); el.id = 'sheet-lt-row'; el.className = 'sheet-lt-row'; ev.parentNode.insertBefore(el, ev); }
+    if (!el) {   // 10/29: 읽기·듣기·❓ 줄에 함께 — 넓은 화면에선 한 줄이 줄어든다
+        el = document.createElement('div'); el.id = 'sheet-lt-row'; el.className = 'sheet-lt-row';
+        const hb = document.getElementById('sheet-head-btns');
+        if (hb) hb.insertBefore(el, hb.querySelector('.close-btn')); else ev.parentNode.insertBefore(el, ev);
+    }
     const ch = chapterData && chapterData.id;
     const n = typeof ch === 'number' ? _ltLearnedIds(ch).length : 0;
     if (n < 3) { el.style.display = 'none'; el.innerHTML = ''; return; }

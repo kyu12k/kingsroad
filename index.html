@@ -4176,9 +4176,9 @@
     <div id="stage-sheet">
         <div class="sheet-header">
             <h2 class="sheet-title" id="sheet-chapter-title">Chapter 1</h2>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <button onclick="openBibleReadingOverlay()" style="background:none; border:none; font-size:0.85rem; color:#2ecc71; cursor:pointer; padding:4px 8px; border:1px solid rgba(46,204,113,0.4); border-radius:12px; font-weight:bold;">📖 읽기</button>
-                <button onclick="openChapterAudioPlayer()" style="background:none; border:none; font-size:0.85rem; color:#9b59b6; cursor:pointer; padding:4px 8px; border:1px solid rgba(155,89,182,0.4); border-radius:12px; font-weight:bold;">🎧 듣기</button>
+            <div id="sheet-head-btns" style="display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center;">
+                <button onclick="openBibleReadingOverlay()" style="background:none; border:none; font-size:0.85rem; color:#2ecc71; cursor:pointer; padding:4px 8px; border:1px solid rgba(46,204,113,0.4); border-radius:12px; font-weight:bold;" title="읽기">📖<span class="shb-t"> 읽기</span></button>
+                <button onclick="openChapterAudioPlayer()" style="background:none; border:none; font-size:0.85rem; color:#9b59b6; cursor:pointer; padding:4px 8px; border:1px solid rgba(155,89,182,0.4); border-radius:12px; font-weight:bold;" title="듣기">🎧<span class="shb-t"> 듣기</span></button>
                 <button class="help-btn" onclick="openStageHelpModal()"
                     style="background:none; font-size:0.85rem; line-height:1.2; color:#3498db; cursor:pointer; padding:4px 8px; border:1px solid rgba(52,152,219,0.4); border-radius:12px;">❓</button>
                 <button class="close-btn" onclick="closeStageSheet()">✕</button>

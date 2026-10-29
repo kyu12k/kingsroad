@@ -7586,6 +7586,14 @@ body:has(#game-screen.active) #pwa-install-banner, body:has(#bible-transition-ov
 .lt-act { width: 100%; padding: 11px; border-radius: 12px; border: 1.5px solid #8b7cff; background: rgba(108, 99, 255, 0.14); color: #e4e0ff; font-size: 0.92rem; font-weight: 700; cursor: pointer; text-align: left; }
 .sheet-lt-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 6px 16px 0; }   /* 10/25: 「지난 테스트」 줄은 버튼 아래 한 줄로 */
 .sheet-lt-btn { flex: 0 0 auto; white-space: nowrap; padding: 6px 12px; border-radius: 999px; border: 1.5px solid #8b7cff; background: rgba(108, 99, 255, 0.12); color: #6c63ff; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+#sheet-head-btns .sheet-lt-row { display: contents; }   /* 10/29: 머리 버튼 줄의 한 식구로 */
+#sheet-head-btns .sheet-lt-sub { text-align: left; }
+@media (max-width: 480px) {   /* 폰: 뼈대·레벨 테스트가 있으면 읽기·듣기는 아이콘만 — 한 줄에 */
+    #sheet-head-btns:has(.sheet-lt-btn) .shb-t { display: none; }
+    #sheet-head-btns:has(.sheet-lt-btn) { gap: 8px 5px !important; }   /* 인라인 gap을 이기려고 */
+    #sheet-head-btns:has(.sheet-lt-btn) > button:not(.close-btn) { padding: 4px 7px !important; }
+    #sheet-head-btns .sheet-lt-btn, #sheet-head-btns .sheet-oil-btn { padding: 6px 8px; font-size: 0.8rem; }
+}
 .sheet-lt-sub { flex: 1 1 100%; font-size: 0.78rem; color: #8a94a0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 2px; }
 
 .lt-cell.cS { background: #5dade2; color: #0b2c42; }
