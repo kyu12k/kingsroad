@@ -90,6 +90,7 @@ step 7+: 이후 지수 증가 (약 2배씩)
 | `openBossSetupModal(stage)` | game.js:~6170 | 보스/중간점검 진입 전 설정 모달 (난이도·순서 선택) |
 | `setBossSetupOpt(type, value)` | game.js:~6218 | 모달 토글 클릭 핸들러 (type: 'difficulty'|'order') |
 | `confirmBossSetup()` | game.js:~6228 | 모달 확인 → `startBossBattle()` 호출 |
+| `chClean` · `_noteChClean(ch)` · `_chCleanOk(id)` | game.js:~8950 | 🏔️ 장을 통째로 백지로 단서 없이(보스전 백지·망각의 고난 백지 장 전체) — 조개 판 「주소 → 첫 마디」는 이 장만 (`docs/새-예루살렘.md` 10/29) |
 | `_attachNextDiffBtn(anchor, midId, mode)` · `BOSS_DIFF_ORDER` | game.js:~17905 | 🪜 중간점검 결과 「다음 난이도」(보통→어려움→빈칸→백지, 백지엔 없음, 10/28) |
 | `scoreRepeat` · `SCORE_REPEAT_MAX` · `_srFull(key)` · `_srNote(key)` | game.js:~33880 | 🔁 중간점검·보스전·오늘의 암송 — 같은 날 같은 난이도 승점 세 번까지(저장 필드, 병합은 같은 날 큰 쪽) (`docs/고난과-난이도.md` 10/28) |
 | `saveGameData()` | game.js:4091 | localStorage에 저장 |

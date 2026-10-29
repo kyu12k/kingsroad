@@ -3058,6 +3058,7 @@ let njClamWeek = null;         // 🐚 { wk: 주차, days: [세 조개를 다 �
 let njPearlFound = { w: 0, c: 0, g: 0 };   // 🐚 찾은 진주(늘기만) — 흰·빛깔·값진
 let njPearlSold = { w: 0, c: 0, g: 0 };    // 💎 판 진주(늘기만) — 가진 진주 = 찾은 − 판
 let njPearlGems = 0;          // 💎 진주를 팔아 받은 보석 합(보석 흐름 실측용)
+let chClean = {};             // 🏔️ 장을 통째로 백지로 단서 없이 써낸 마지막 때 { 장: 시각 } — 보스전 백지·망각의 고난 백지 장 전체(2026-10-29)
 let scoreRepeat = null;       // 🔁 같은 날 같은 난이도 승점 횟수 { day, n: { '열쇠': 번 } } — 중간점검·보스전·오늘의 암송 세 번까지(2026-10-28)
 let njStars = null;           // ⭐ 오늘의 일곱 별 { day, ids: [오늘 암송한 절 — 처음 들어온 차례, 일곱까지], got: [얻은 절] } (2026-10-14)
 let njManna = null;           // 🍞 오늘의 만나·메추라기 { day, got: [거둔 무더기], quail: [끝난 메추라기(잡음·날아감)], qfail: {번호: 틀린 수}, mfail·melt: 만나 문제 틀린 수·스러진 무더기 } (2026-10-05)
@@ -3643,6 +3644,7 @@ loadGameData = function () {
         njPearlGems = Math.max(0, parseInt(parsed.njPearlGems, 10) || 0);
         njManna = (parsed.njManna && typeof parsed.njManna === 'object' && parsed.njManna.day) ? parsed.njManna : null;
         njStars = (parsed.njStars && typeof parsed.njStars === 'object' && parsed.njStars.day) ? parsed.njStars : null;
+        chClean = (parsed.chClean && typeof parsed.chClean === 'object') ? parsed.chClean : {};
         scoreRepeat = (parsed.scoreRepeat && typeof parsed.scoreRepeat === 'object' && parsed.scoreRepeat.day && parsed.scoreRepeat.n) ? parsed.scoreRepeat : null;
         njMannaGems = Math.max(0, parseInt(parsed.njMannaGems, 10) || 0);
         njDexFish = Math.max(0, parseInt(parsed.njDexFish, 10) || 0);
@@ -8939,6 +8941,16 @@ function _carryUnitHtml(id) {   // 판 안 주소 밑 — 「📜 2:18–20 두�
     if (!njClams || !(njClams.carry || []).includes(String(id))) return '';
     const u = _revUnitOf(id); return u ? `<div class="hs-unit">📜 ${_revUnitLabel(u)}</div>` : '';
 }
+/* 🏔️ 장을 통째로 백지로 단서 없이(10/29 사용자) — 「주소 → 첫 마디」는 한 장의 맥락이 선 뒤에 갈고닦을 것.
+   실측(10/22~28, 16명 254절): 조개 판 첫 마디는 첫날 83%가 떠올렸지만 그 절을 통째로 단서 없이 쓴 비율은 날마다 76 → 69 → 66 → 63%로 제자리.
+   기준 = 그 장의 보스전 백지(순서대로)나 망각의 고난 백지 한 장 전체를 단서·실패 없이 끝낸 적이 있다. 레벨 테스트는 단계가 내려가는 판이라 뺐다 */
+function _noteChClean(ch) {
+    const hs = hardshipState;
+    if (!ch || !hs || hs.mode !== 'memory' || !hs.ultimateMemoryMode || hs.notClean || hs.trainingMode || hs.levelTest || (hs.totalHintsUsed | 0) > 0 || hs.studiedCount < hs.queue.length) return;
+    if (!chClean || typeof chClean !== 'object') chClean = {};
+    chClean[ch] = Date.now();
+}
+function _chCleanOk(id) { const c = parseInt(String(id).split('-')[0], 10); return !!(chClean && chClean[c]); }
 function _njClamDay() {
     const d = _get6AMDayStr();
     if (!njClams || njClams.day !== d) {
@@ -8955,7 +8967,7 @@ function _njClamDay() {
         njClams = { day: d, done: [], got: [], clean: [], cs: core, carry: _njCarryExpand(core, ids), carryDone: [], carryClean: [], ids };
         /* 🔑 어제 **앞에서** 막힌 절은 오늘 통째로 쓰기 전에 「주소 → 첫 마디」부터(10/22 사용자: 주소만 보고 첫 마디가 안 떠오르는데 첫 마디만 나오면 꽤 나온다).
            실측: 앞에서 막힌 절을 다음 날 통째로 다시 쓰면 단서 없이 통과 29%·또 앞에서 막힘 46% / 첫 마디를 따로 연습한 절은 앞에서 막힘 20% → 9% (docs/고난과-난이도.md 10/22) */
-        njClams.fpFirst = njClams.carry.filter(id => (old && Array.isArray(old.ss) ? old.ss : []).includes(id));
+        njClams.fpFirst = njClams.carry.filter(id => (old && Array.isArray(old.ss) ? old.ss : []).includes(id) && _chCleanOk(id));   // 🏔️ 장을 통째로 백지로 써낸 장만(10/29) — 아니면 단락째 통째로만
     }
     if (!Array.isArray(njClams.ids) || !njClams.ids.length) njClams.ids = _njClamKnown() ? _njClamPickIds(d) : [];   // 10/10 전 저장본
     if (!Array.isArray(njClams.got)) njClams.got = [];
@@ -9161,7 +9173,7 @@ function _njClamFpResult(id, ok) {
     }
     saveGameData(); if (typeof syncToFirestore === 'function') syncToFirestore();
 }
-function _njClamFpPending() { const c = _njClamDay(); return c.fpFirst.filter(id => !c.fpOk.includes(id) && !c.fpFail.includes(id) && !c.carryDone.includes(id)); }
+function _njClamFpPending() { const c = _njClamDay(); return c.fpFirst.filter(id => _chCleanOk(id) && !c.fpOk.includes(id) && !c.fpFail.includes(id) && !c.carryDone.includes(id)); }
 function _njRoundResult(kind, id, ok, hints, hintOk, strong) {
     const x = _njRoundLeft(kind).find(y => y.id === String(id)); if (!x) return;
     const full = ok && !(hints > 0) && !strong, half = ok && !full && hintOk, got = full || half;
@@ -14706,6 +14718,7 @@ function saveGameData() {
         njManna: njManna,                 // 🍞 오늘의 만나·메추라기
         njStars: njStars,                 // ⭐ 오늘의 일곱 별
         scoreRepeat: scoreRepeat,         // 🔁 같은 날 같은 난이도 승점 횟수
+        chClean: chClean,                 // 🏔️ 장을 통째로 백지로 단서 없이
         njMannaGems: njMannaGems,         // 💎 만나·메추라기로 받은 보석 합
         njDexFish: njDexFish,             // 🐟 도감 생물에게서 받은 물고기 합
         njDex: njDex,                     // 🐠 바다 생물 도감(절마다 생물)
@@ -15272,6 +15285,13 @@ function _mergeSaveProgress(target, other) {
             td.f = Object.assign({}, td.f || {}); Object.entries(od.f || {}).forEach(([k, x]) => { const y = td.f[k]; if (Array.isArray(x) && (!Array.isArray(y) || x[0] > y[0] || (x[0] === y[0] && x[1] > y[1]))) { td.f[k] = x; took++; } });
             if (od.all && (!td.all || od.all < td.all)) { td.all = od.all; took++; }
             target.njDex = td;
+        }
+        {   // 🏔️ 장을 통째로 백지로 — 장마다 늦은 시각
+            const oc = other.chClean;
+            if (oc && typeof oc === 'object') {
+                if (!target.chClean || typeof target.chClean !== 'object') target.chClean = {};
+                Object.entries(oc).forEach(([c, ts]) => { if ((+ts || 0) > (+target.chClean[c] || 0)) { target.chClean[c] = ts; took++; } });
+            }
         }
         {   // 🔁 같은 날 승점 횟수 — 같은 날이면 열쇠마다 큰 쪽(두 기기에서 따로 받은 건 합치지 않는다 — 넉넉히 줄지언정 두 번 막지 않게) 아니면 나중 날
             const tr = target.scoreRepeat, or = other.scoreRepeat;
@@ -33600,6 +33620,7 @@ function recordVerseRecall(stageId, ok, hints, mode, extra) {
     if (!ok) _rlNoteFail(stageId);   // 🌱 판 끝에 다시 익힐 절
     if (extra && extra.as) { _logRecallAttempt(stageId, ok, hints, mode, extra, verseRecall[stageId] || null, true); return; }   // ✋ 사람이 쳤다고 보기 어려운 입력 — 일지에만(tr·as)
     if (!ok && hardshipState && hardshipState.ultimateMemoryMode && !hardshipState.trainingMode) window._sessFails = (window._sessFails || 0) + 1;   // 💌 크게 막힌 판
+    if (hardshipState && (!ok || hints > 0 || hardshipState.strongHint || hardshipState.mj || (extra && extra.giveUp))) hardshipState.notClean = true;   // 🏔️ 한 절이라도 단서·실패 — 장 통째 백지로 치지 않는다
     // 집중 훈련은 학습 보조라 증거로 세지 않는다 — 일지에는 표시(tr)를 달아 남긴다(연구 재료)
     if (hardshipState && hardshipState.trainingMode) {
         _logRecallAttempt(stageId, ok, hints, mode, extra, verseRecall[stageId] || null, true);
@@ -34232,6 +34253,7 @@ function finishHardshipSession(reason) {
         window.currentStageId = _isBoss ? hardshipState.bossStageId : hardshipState.midBossStageId;
         window._suppressClearAlert = true;
         window._midBossBlankClear = true;   // 승점 이중 지급 차단 (고난 쪽에서 이미 지급됨)
+        if (_isBoss) _noteChClean(parseInt(String(hardshipState.bossStageId).split('-')[0], 10));   // 🏔️ 보스전 백지를 단서 없이
         try {
             stageClear(_isBoss ? 'boss' : 'mid-boss', 1);
         } finally {
@@ -34626,6 +34648,7 @@ function finishHardshipSession(reason) {
         };
 
         const ch = hardshipState.forcedChapter;
+        if (ch != null && (bibleData[ch] || []).length === hardshipState.queue.length) _noteChClean(ch);   // 🏔️ 망각의 고난 백지 한 장 전체를 단서 없이 — 보스전보다 어려운 판(무작위)
         if (ch != null) {
             if (!hardshipMemoryClearHistory[ch]) hardshipMemoryClearHistory[ch] = [];
             hardshipMemoryClearHistory[ch].push(record);
