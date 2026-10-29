@@ -14997,7 +14997,7 @@ function _mergeEventProgress(target, other) {
     if (Array.isArray(other.compDone) && other.compDone.length) target.compDone = [...new Set([...(Array.isArray(target.compDone) ? target.compDone : []), ...other.compDone])].slice(-20);   // 적용한 보상 열쇠 — 합집합
     // 🚪💬 떠난 화면·쉬었다 돌아온 까닭 — 시각으로 합집합 · 마지막으로 쓴 날은 늦은 쪽(10/19)
     for (const [k, n] of [['exitLog', 20], ['pauseWhy', 5], ['learnLog', 60]]) if (Array.isArray(other[k]) && other[k].length) { const m = new Map(); [...(Array.isArray(target[k]) ? target[k] : []), ...other[k]].forEach(x => { if (x && x.at) m.set(x.at, x); }); target[k] = [...m.values()].sort((a, b) => a.at - b.at).slice(-n); }
-    if (typeof other.lastSeenDay === 'string' && other.lastSeenDay > (target.lastSeenDay || '')) target.lastSeenDay = other.lastSeenDay;
+    if (typeof other.lastSeenDay === 'string' && other.lastSeenDay > (target.lastSeenDay || '')) { target.lastSeenDay = other.lastSeenDay; took++; }   // 센다 — 안 세면 이것만 다를 때 다시 불러오지 않아 돌아온 편지가 기기 것으로 판단(10/29)
     if (other.firstSurvey && typeof other.firstSurvey === 'object') target.firstSurvey = Object.assign({}, other.firstSurvey, target.firstSurvey || {});   // 📝 설문 — 칸마다 있는 쪽
     const of = other.featLog;   // 📈 기능 이용률 — 날마다 칸마다 큰 쪽
     if (of && typeof of === 'object') {
@@ -15383,6 +15383,7 @@ async function initFirestoreSync() {
         window._initSyncDone = true;   // 이 뒤의 '낡은 쓰기' 거절만 배너로 알린다(그 전 것은 방금 끝난 초기 동기화가 합쳐 올렸다)
         try { if (typeof splashReady === 'function') setTimeout(splashReady, 300); } catch (e) { }
         try { if (typeof _letterReturnCheck === 'function') _letterReturnCheck(); } catch (e) { }
+        try { const m = document.getElementById('weekly-study-modal'); if (m && m.classList.contains('open')) openWeeklyStudyModal(); } catch (e) { }   // 📅 먼저 열어 둔 학습 시간 창 — 다른 기기 시간을 받아 다시 그림
         try { if (typeof _tipSharedCheck === 'function') setTimeout(_tipSharedCheck, 4000); } catch (e) { }   // 🌟 내 꿀팁이 나눠졌으면 한 번   // 💌 3일+ 쉬고 돌아옴   // ⏳ 서버 기록을 받아 왔다 — 시작 화면을 연다(화면이 한 번 다시 그려질 틈)
         try { _checkReturnBoost(); _renderReturnFloat(); } catch (e) { console.warn('[returnBoost]', e); }
         try { _noteArrival(); } catch (e) { }   // 🔗 꼬리표 주소로 온 사람 — 둘러보기만 해도
@@ -16144,6 +16145,7 @@ async function _autoMergeRemote() {
         await _initFirestoreSyncCore();
         if (window._syncDirty) await syncToFirestore();
         try { if (typeof updateGemDisplay === 'function') updateGemDisplay(); if (typeof renderHomeTodo === 'function') renderHomeTodo(); } catch (e) { }
+        try { const m = document.getElementById('weekly-study-modal'); if (m && m.classList.contains('open')) openWeeklyStudyModal(); } catch (e) { }
         const b = document.getElementById('remote-newer-banner'); if (b) b.remove();
         if (typeof showToast === 'function') showToast('📱 다른 기기의 기록을 합쳤어요');
         console.log('[sync] 다른 기기 기록 자동 병합');
@@ -19263,7 +19265,10 @@ function _checkFirstDailyWeeklyStudy() {
     const stored = localStorage.getItem('kingsRoad_weeklyShownDate');
     if (stored !== todayStr) {
         localStorage.setItem('kingsRoad_weeklyShownDate', todayStr);
-        if (myNickname !== '순례자') setTimeout(openWeeklyStudyModal, 800);
+        // 처음 동기화(다른 기기 학습 시간)를 받은 뒤에 연다 — 10/29까지 0.8초 뒤 이 기기 것만으로 떠서 PC에 모바일의 이번 주가 0분으로 보였다(사용자)
+        let n = 0;
+        const go = () => { if (!window._initSyncDone && ++n < 20) return setTimeout(go, 500); if (myNickname !== '순례자') openWeeklyStudyModal(); };
+        setTimeout(go, 800);
     }
 }
 
@@ -23038,7 +23043,9 @@ async function _letterNudge(reason) {
     setTimeout(() => el.classList.add('on'), 30);
 }
 function _letterReturnCheck() {   // 3일 넘게 쉬었다 돌아왔으면
-    const today = _get6AMDayStr(), last = _lsGet('kingsRoad_lastOpenDay', '');
+    // 기기 것만 보면 PC를 며칠 안 쓴 사이 모바일로 매일 해도 「다시 오셨네요」(10/29 사용자) — 동기화로 합친 lastSeenDay(기기 중 늦은 쪽)도 본다
+    const today = _get6AMDayStr(), mine = _lsGet('kingsRoad_lastOpenDay', ''), synced = (typeof lastSeenDay === 'string' && lastSeenDay) || '';
+    const last = synced > mine ? synced : mine;
     _lsSet('kingsRoad_lastOpenDay', today);
     if (!last || last >= today) return;
     const [y1, m1, d1] = last.split('-').map(Number), [y2, m2, d2] = today.split('-').map(Number);
