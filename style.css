@@ -6508,6 +6508,12 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen > .rcard-pop 
 .bso-btn.active .fit-best { color: #ffe680; }
 .bso-btn.active .fit-hard { color: #ffc07a; }
 .bso-btn.active .fit-lock { color: #d8d8e8; }
+/* 🔁 오늘 이 난이도로 승점을 받은 횟수 「1/3」 — 3/3이면 흐리게(그 뒤는 승점 없음) */
+.sr-badge { display: inline-block; font-size: 0.66rem; font-weight: 700; line-height: 1.2; padding: 1px 5px; border-radius: 6px; background: rgba(46, 204, 113, 0.18); color: #27ae60; font-variant-numeric: tabular-nums; }
+.sr-badge.full { background: rgba(127, 140, 141, 0.18); color: #95a5a6; }
+.bso-btn .sr-badge { color: #7ee2a8; }
+.bso-btn .sr-badge.full { color: #aab4b5; }
+.event-mode-btn .sr-badge { display: block; width: max-content; margin: 3px auto 0; }
 
 /* 근거 한 줄 — 라벨만 있으면 마법처럼 보이고, 무엇을 하면 등급이 오르는지가 안 보인다 */
 .bso-fit-note {
