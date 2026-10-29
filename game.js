@@ -3058,7 +3058,7 @@ let njClamWeek = null;         // 🐚 { wk: 주차, days: [세 조개를 다 �
 let njPearlFound = { w: 0, c: 0, g: 0 };   // 🐚 찾은 진주(늘기만) — 흰·빛깔·값진
 let njPearlSold = { w: 0, c: 0, g: 0 };    // 💎 판 진주(늘기만) — 가진 진주 = 찾은 − 판
 let njPearlGems = 0;          // 💎 진주를 팔아 받은 보석 합(보석 흐름 실측용)
-let chClean = {};             // 🏔️ 장을 통째로 백지로 단서 없이 써낸 마지막 때 { 장: 시각 } — 보스전 백지·망각의 고난 백지 장 전체(2026-10-29)
+let chClean = {};             // 🏔️ 장을 통째로 백지로 쓴 가장 최근 판 { 장: +시각(단서 없이) | −시각(단서·실패) } — 보스전 백지·망각의 고난 백지 장 전체(2026-10-29)
 let scoreRepeat = null;       // 🔁 같은 날 같은 난이도 승점 횟수 { day, n: { '열쇠': 번 } } — 중간점검·보스전·오늘의 암송 세 번까지(2026-10-28)
 let njStars = null;           // ⭐ 오늘의 일곱 별 { day, ids: [오늘 암송한 절 — 처음 들어온 차례, 일곱까지], got: [얻은 절] } (2026-10-14)
 let njManna = null;           // 🍞 오늘의 만나·메추라기 { day, got: [거둔 무더기], quail: [끝난 메추라기(잡음·날아감)], qfail: {번호: 틀린 수}, mfail·melt: 만나 문제 틀린 수·스러진 무더기 } (2026-10-05)
@@ -8944,13 +8944,16 @@ function _carryUnitHtml(id) {   // 판 안 주소 밑 — 「📜 2:18–20 두�
 /* 🏔️ 장을 통째로 백지로 단서 없이(10/29 사용자) — 「주소 → 첫 마디」는 한 장의 맥락이 선 뒤에 갈고닦을 것.
    실측(10/22~28, 16명 254절): 조개 판 첫 마디는 첫날 83%가 떠올렸지만 그 절을 통째로 단서 없이 쓴 비율은 날마다 76 → 69 → 66 → 63%로 제자리.
    기준 = 그 장의 보스전 백지(순서대로)나 망각의 고난 백지 한 장 전체를 단서·실패 없이 끝낸 적이 있다. 레벨 테스트는 단계가 내려가는 판이라 뺐다 */
+/* 그 장의 **가장 최근** 통째 백지 판(끝까지 마친 것)이 정한다(10/29 사용자: 다음에 백지로 하다 틀리면?) — 깨끗하면 +시각, 단서·실패가 있었으면 −시각.
+   중간에 그만둔 판은 세지 않는다. 병합은 시각(절댓값)이 늦은 쪽 */
 function _noteChClean(ch) {
     const hs = hardshipState;
-    if (!ch || !hs || hs.mode !== 'memory' || !hs.ultimateMemoryMode || hs.notClean || hs.trainingMode || hs.levelTest || (hs.totalHintsUsed | 0) > 0 || hs.studiedCount < hs.queue.length) return;
+    if (!ch || !hs || hs.mode !== 'memory' || !hs.ultimateMemoryMode || hs.trainingMode || hs.levelTest) return;
+    const ok = !hs.notClean && !((hs.totalHintsUsed | 0) > 0) && hs.studiedCount >= hs.queue.length;
     if (!chClean || typeof chClean !== 'object') chClean = {};
-    chClean[ch] = Date.now();
+    chClean[ch] = ok ? Date.now() : -Date.now();
 }
-function _chCleanOk(id) { const c = parseInt(String(id).split('-')[0], 10); return !!(chClean && chClean[c]); }
+function _chCleanOk(id) { const c = parseInt(String(id).split('-')[0], 10); return !!(chClean && +chClean[c] > 0); }
 function _njClamDay() {
     const d = _get6AMDayStr();
     if (!njClams || njClams.day !== d) {
@@ -15286,11 +15289,11 @@ function _mergeSaveProgress(target, other) {
             if (od.all && (!td.all || od.all < td.all)) { td.all = od.all; took++; }
             target.njDex = td;
         }
-        {   // 🏔️ 장을 통째로 백지로 — 장마다 늦은 시각
+        {   // 🏔️ 장을 통째로 백지로 — 장마다 늦은 판(+깨끗 · −아님, 시각은 절댓값)
             const oc = other.chClean;
             if (oc && typeof oc === 'object') {
                 if (!target.chClean || typeof target.chClean !== 'object') target.chClean = {};
-                Object.entries(oc).forEach(([c, ts]) => { if ((+ts || 0) > (+target.chClean[c] || 0)) { target.chClean[c] = ts; took++; } });
+                Object.entries(oc).forEach(([c, ts]) => { if (Math.abs(+ts || 0) > Math.abs(+target.chClean[c] || 0)) { target.chClean[c] = ts; took++; } });
             }
         }
         {   // 🔁 같은 날 승점 횟수 — 같은 날이면 열쇠마다 큰 쪽(두 기기에서 따로 받은 건 합치지 않는다 — 넉넉히 줄지언정 두 번 막지 않게) 아니면 나중 날
