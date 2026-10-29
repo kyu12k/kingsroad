@@ -29274,41 +29274,11 @@ function startBossTransition(chapterNum, startVerse, endVerse, isMidBoss, onComp
 
     const overlay = document.getElementById('bible-transition-overlay');
 
-    let textOverlay = document.getElementById('verse-text-overlay');
-    if (!textOverlay) {
-        textOverlay = document.createElement('div');
-        textOverlay.id = 'verse-text-overlay';
-        overlay.appendChild(textOverlay);
-    }
-
-    if (isMidBoss) {
-        textOverlay.innerHTML = `<span style="color:red; font-size:1.5em;">⚔️ ${t('label_mid_boss')}</span><br/>${t('label_verse_range', { start: startVerse, end: endVerse })}`;
-    } else {
-        textOverlay.innerHTML = `<span style="color:darkred; font-size:1.5em;">${t('label_boss_appear')}</span><br/>${t('label_chapter_header', { num: chapterNum })}<br>${getChapterTitleHtml(chapterNum)}`;
-    }
-    gsap.set(textOverlay, { opacity: 0, y: 20, scale: 0.9, xPercent: -50, yPercent: -50 });
-
-    gsap.set(overlay, { opacity: 1, pointerEvents: "auto" });
-
-    const tl = gsap.timeline();
-
-    tl
-        .to(textOverlay, { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "power2.out" })
-        .to(textOverlay, { duration: 1.5 })
-        .to(textOverlay, { opacity: 0, duration: 0.8, ease: "power2.inOut" })
-
-        .call(() => {
-            if (onCompleteCallback) onCompleteCallback();
-
-            const gameScreen = document.getElementById('game-screen');
-            if (gameScreen) {
-                gsap.fromTo(gameScreen, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1.0, ease: "power2.out", delay: 0.3 });
-            }
-        })
-        .to(overlay, { opacity: 0, duration: 0.8, ease: "power2.inOut" })
-        .call(() => {
-            gsap.set(overlay, { pointerEvents: "none" });
-        });
+    // 10/29 — 「보스 등장」 글자 연출(약 3초)을 빼고 바로 시작한다
+    if (overlay) gsap.set(overlay, { opacity: 0, pointerEvents: "none" });
+    if (onCompleteCallback) onCompleteCallback();
+    const gs = document.getElementById('game-screen');
+    if (gs) gsap.set(gs, { opacity: 1, y: 0 });
 }
 
 // 🌟 1. 장별 제목 데이터베이스 (개발자님이 주신 데이터!)
