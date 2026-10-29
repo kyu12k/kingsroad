@@ -233,5 +233,35 @@ service cloud.firestore {
         allow create: if request.auth != null && request.auth.uid == u;
       }
     }
+    // 🔗 나눈 기억 고리(10/29) — 편지와 같은 승인제. 「내 고리로」 가져간 수 takes는 한 사람 한 번
+    match /cues/{id} {
+      function cueAdmin() { return request.auth != null && request.auth.uid == '3fHRAeDquYOqw8pqDZBwEemwJH72'; }
+      allow read: if resource.data.status == 'approved' || cueAdmin() || (request.auth != null && resource.data.uid == request.auth.uid);
+      allow create: if request.auth != null
+                    && request.resource.data.keys().hasOnly(['cid', 'ch', 's', 'w', 'k', 'nick', 'tag', 'uid', 'createdAt', 'status', 'takes'])
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.takes == 0
+                    && request.resource.data.createdAt == request.time
+                    && request.resource.data.cid is string && request.resource.data.cid.matches('^[0-9]{1,2}-[0-9]{1,2}$')
+                    && request.resource.data.ch is int && request.resource.data.ch >= 1 && request.resource.data.ch <= 22
+                    && request.resource.data.s is string && request.resource.data.s.size() >= 1 && request.resource.data.s.size() <= 40
+                    && request.resource.data.w is string && request.resource.data.w.size() >= 1 && request.resource.data.w.size() <= 80
+                    && request.resource.data.k in ['', 'n', 's']
+                    && request.resource.data.nick is string && request.resource.data.nick.size() <= 30
+                    && request.resource.data.tag is string && request.resource.data.tag.size() <= 10;
+      allow update: if cueAdmin()
+                    || (request.auth != null
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['takes'])
+                        && request.resource.data.takes == resource.data.takes + 1
+                        && resource.data.status == 'approved'
+                        && !exists(/databases/$(database)/documents/cues/$(id)/takes/$(request.auth.uid))
+                        && existsAfter(/databases/$(database)/documents/cues/$(id)/takes/$(request.auth.uid)));
+      allow delete: if cueAdmin() || (request.auth != null && resource.data.uid == request.auth.uid);
+      match /takes/{u} {
+        allow read: if request.auth != null && request.auth.uid == u;
+        allow create: if request.auth != null && request.auth.uid == u;
+      }
+    }
   }
 }

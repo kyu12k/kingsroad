@@ -866,7 +866,7 @@ const LANG = {
         lt_btn_relearn: '📖 {r}절 다시 넣기', lt_btn_blank: '✍️ {r}절 빈칸으로 다지기', lt_btn_fp: '🔑 {ch}장 첫 마디',
         lt_step1: '🔑 첫 마디를 보여 드릴게요 — 이어서 써 보세요', lt_step2: '🔲 이번엔 빈칸으로 — 글자 칸을 보고 써 보세요',
         lt_full_pay: '🎓 장 전체 테스트 — 망각의 고난으로 인정돼요. 백지로 써낸 절은 승점이 있어요', lt_full_nopay: '🎓 오늘 이 장의 망각의 고난을 이미 해서 이번 테스트는 승점이 없어요', lt_memory_linked: '오늘 이 장은 레벨 테스트로 이미 망각의 고난을 인정받아 승점이 없어요',
-        oil_btn: '🦴 뼈대 세우기 — 이 장 완전 암송까지', oil_btn_short: '뼈대 세우기', oil_btn_from_lt: '뼈대 세우기에서 보기', oil_eyebrow: '킹스로드 · 내 암송', oil_title: '등에 채운 기름', oil_all: '전체', bone_title: '🦴 {ch}장 뼈대 세우기', bone_sub: '주소만 보고 단서 없이 써내는 절 {lit} / {n}', bone_ch_head: '{ch}장의 뼈대 — 같은 꼴로 되풀이되는 절', bone_units_head: '단락 — 칸을 누르면 그 절', bone_steps_head: '완전 암송까지', bone_unit_go: '단락 백지', bone_unit_none: '이 단락에 아직 외운 절이 없어요', bone_soon: '곧 열려요', bone_s1: '뼈대 맞히기', bone_s2: '번호 ↔ 낱말', bone_s3: '단락 백지', bone_s3_how: '단락 옆 ✍️ — 주소만 보고 순서대로', bone_s4: '장 전체 백지 = 망각의 고난', bone_s4_go: '망각의 고난에 도전', bone_s4_wait: '장을 다 외우면 열려요',
+        oil_btn: '🦴 뼈대 세우기 — 이 장 완전 암송까지', oil_btn_short: '뼈대 세우기', oil_btn_from_lt: '뼈대 세우기에서 보기', oil_eyebrow: '킹스로드 · 내 암송', oil_title: '등에 채운 기름', oil_all: '전체', bone_title: '🦴 {ch}장 뼈대 세우기', bone_sub: '주소만 보고 단서 없이 써내는 절 {lit} / {n}', bone_ch_head: '{ch}장의 뼈대 — 같은 꼴로 되풀이되는 절', bone_units_head: '단락 — 칸을 누르면 그 절', bone_steps_head: '완전 암송까지', bone_unit_go: '단락 백지', bone_unit_none: '이 단락에 아직 외운 절이 없어요', bone_soon: '곧 열려요', bone_s1: '뼈대 맞히기', bone_s2: '번호 ↔ 낱말', bone_s3: '단락 백지', bone_s3_how: '단락 옆 ✍️ — 주소만 보고 순서대로', bone_s4: '장 전체 백지 = 망각의 고난', bone_s4_go: '망각의 고난에 도전', bone_s4_wait: '장을 다 외우면 열려요', cue_mine: '내 고리', cue_add: '✏️ 내 고리 달기', cue_edit: '✏️ 고치기', cue_del: '지우기', cue_kd: '🔢 소리', cue_kn: '🔤 이름', cue_ks: '🔷 모양', cue_f_s: '번호 · 소리 (예: 사 → 사람)', cue_f_w: '본문 낱말 (예: 처음 사랑)', cue_share: '다른 성도들과 나누기 — 검토 후 공개돼요', cue_save: '저장', cue_cancel: '취소', cue_too_short: '번호·소리와 낱말을 모두 적어 주세요', cue_saved: '내 고리를 달았어요', cue_saved_share: '내 고리를 달았어요 · 나눔은 검토 후 공개돼요', cue_share_cap: '나누기는 하루 {n}개까지예요 — 내 고리로만 저장했어요', cue_st_pend: '나눔 검토 중', cue_st_ok: '함께 나누는 중', cue_others: '함께 나눈 고리', cue_take: '내 고리로', cue_taken: '내 고리로 가져왔어요', cue_takes: '{n}명이 씀', cue_using: '쓰는 중', cue_pending_head: '🔗 나눈 고리 {n}',
         oil_big: '켜진 등 / {n}절', oil_help_sum: '단계 설명 보기', oil_ch_title: '{ch}장의 등', oil_dry_note: '🕯️ {n}절은 마지막으로 써낸 지 오래돼 기름이 말랐어요 — 한 번 다시 하면 돌아와요', oil_ch_sub: '켜진 등 {lit} / {n}절', oil_next_title: '다음 할 것', oil_up_note: '{icon}{name}',
         oil_n0: '빈 등', oil_n1: '감람 열매', oil_n2: '찧은 열매', oil_n3: '짜낸 기름', oil_n4: '맑은 기름', oil_n5: '기름 그릇', oil_n6: '다듬은 심지', oil_n7: '켜진 등', oil_n8: '한밤의 등불',
         oil_do0: '아직', oil_do1: '익힘', oil_do2: '빈칸 · 순서대로', oil_do3: '첫 마디 · 순서대로', oil_do4: '백지 · 순서대로', oil_do5: '주소', oil_do6: '첫 마디 · 무작위', oil_do7: '백지 · 무작위', oil_do8: '하루 쉬고도',
@@ -2212,7 +2212,7 @@ const LANG = {
         lt_btn_relearn: '📖 Re-learn vv. {r}', lt_btn_blank: '✍️ Fill-in vv. {r}', lt_btn_fp: '🔑 Ch. {ch} first words',
         lt_step1: '🔑 Here are the first words — continue from there', lt_step2: '🔲 Now with blanks — use the letter slots',
         lt_full_pay: '🎓 Whole-chapter test — counts as Trial of Forgetting. Verses written blank earn points', lt_full_nopay: '🎓 You already did this chapter\'s Trial of Forgetting today — no points this time', lt_memory_linked: 'This chapter already counted today via the level test — no points',
-        oil_btn: '🦴 Build the bones — to full recitation', oil_btn_short: 'Build the bones', oil_btn_from_lt: 'See in Build the bones', oil_eyebrow: "King\u2019s Road · My recitation", oil_title: 'Oil in the lamp', oil_all: 'All', bone_title: '🦴 Chapter {ch} — Building the bones', bone_sub: 'verses written from the address alone {lit} / {n}', bone_ch_head: 'The bones of chapter {ch} — verses that repeat a pattern', bone_units_head: 'Passages — tap a verse', bone_steps_head: 'Toward full recitation', bone_unit_go: 'Write passage', bone_unit_none: 'No memorized verses in this passage yet', bone_soon: 'Coming soon', bone_s1: 'Find the bones', bone_s2: 'Number ↔ word', bone_s3: 'Passage from blank', bone_s3_how: '✍️ next to a passage — address only, in order', bone_s4: 'Whole chapter = Trial of Forgetting', bone_s4_go: 'Take the Trial', bone_s4_wait: 'Opens when you have learned the whole chapter',
+        oil_btn: '🦴 Build the bones — to full recitation', oil_btn_short: 'Build the bones', oil_btn_from_lt: 'See in Build the bones', oil_eyebrow: "King\u2019s Road · My recitation", oil_title: 'Oil in the lamp', oil_all: 'All', bone_title: '🦴 Chapter {ch} — Building the bones', bone_sub: 'verses written from the address alone {lit} / {n}', bone_ch_head: 'The bones of chapter {ch} — verses that repeat a pattern', bone_units_head: 'Passages — tap a verse', bone_steps_head: 'Toward full recitation', bone_unit_go: 'Write passage', bone_unit_none: 'No memorized verses in this passage yet', bone_soon: 'Coming soon', bone_s1: 'Find the bones', bone_s2: 'Number ↔ word', bone_s3: 'Passage from blank', bone_s3_how: '✍️ next to a passage — address only, in order', bone_s4: 'Whole chapter = Trial of Forgetting', bone_s4_go: 'Take the Trial', bone_s4_wait: 'Opens when you have learned the whole chapter', cue_mine: 'My cue', cue_add: '✏️ Add my cue', cue_edit: '✏️ Edit', cue_del: 'Delete', cue_kd: '🔢 Sound', cue_kn: '🔤 Name', cue_ks: '🔷 Shape', cue_f_s: 'Number · sound (e.g. 4 → for)', cue_f_w: 'Word in the verse (e.g. first love)', cue_share: 'Share with others — shown after review', cue_save: 'Save', cue_cancel: 'Cancel', cue_too_short: 'Please fill in both the number/sound and the word', cue_saved: 'Your cue is saved', cue_saved_share: 'Your cue is saved · sharing is shown after review', cue_share_cap: 'You can share up to {n} a day — saved as your own cue only', cue_st_pend: 'in review', cue_st_ok: 'shared', cue_others: 'Shared cues', cue_take: 'Use this', cue_taken: 'Added as your cue', cue_takes: 'used by {n}', cue_using: 'in use', cue_pending_head: '🔗 Shared cues {n}',
         oil_big: 'lamps lit / {n} verses', oil_help_sum: 'What the stages mean', oil_ch_title: 'Chapter {ch} lamps', oil_dry_note: '🕯️ {n} verses dried out — it has been a while. Do them once and they come back', oil_ch_sub: 'lit {lit} / {n} verses', oil_next_title: 'Next', oil_up_note: '{icon}{name}',
         oil_n0: 'Empty lamp', oil_n1: 'Olives', oil_n2: 'Crushed', oil_n3: 'Pressed oil', oil_n4: 'Clear oil', oil_n5: 'Oil vessel', oil_n6: 'Trimmed wick', oil_n7: 'Lamp lit', oil_n8: 'Midnight lamp',
         oil_do0: 'not yet', oil_do1: 'learned', oil_do2: 'blanks · in order', oil_do3: 'first words · in order', oil_do4: 'blank · in order', oil_do5: 'reference', oil_do6: 'first words · random', oil_do7: 'blank · random', oil_do8: 'after a day off',
@@ -3058,6 +3058,7 @@ let njClamWeek = null;         // 🐚 { wk: 주차, days: [세 조개를 다 �
 let njPearlFound = { w: 0, c: 0, g: 0 };   // 🐚 찾은 진주(늘기만) — 흰·빛깔·값진
 let njPearlSold = { w: 0, c: 0, g: 0 };    // 💎 판 진주(늘기만) — 가진 진주 = 찾은 − 판
 let njPearlGems = 0;          // 💎 진주를 팔아 받은 보석 합(보석 흐름 실측용)
+let myCues = {};              // 🔗 내 고리 { '장-절': { s: 번호·소리, w: 낱말, k: ''|'n'|'s', at, src?: 가져온 cues 문서, sh?: 나눈 cues 문서 } · 지우면 { del: 1, at } } (2026-10-29)
 let chClean = {};             // 🏔️ 장을 통째로 백지로 쓴 가장 최근 판 { 장: +시각(단서 없이) | −시각(단서·실패) } — 보스전 백지·망각의 고난 백지 장 전체(2026-10-29)
 let scoreRepeat = null;       // 🔁 같은 날 같은 난이도 승점 횟수 { day, n: { '열쇠': 번 } } — 중간점검·보스전·오늘의 암송 세 번까지(2026-10-28)
 let njStars = null;           // ⭐ 오늘의 일곱 별 { day, ids: [오늘 암송한 절 — 처음 들어온 차례, 일곱까지], got: [얻은 절] } (2026-10-14)
@@ -3645,6 +3646,7 @@ loadGameData = function () {
         njManna = (parsed.njManna && typeof parsed.njManna === 'object' && parsed.njManna.day) ? parsed.njManna : null;
         njStars = (parsed.njStars && typeof parsed.njStars === 'object' && parsed.njStars.day) ? parsed.njStars : null;
         chClean = (parsed.chClean && typeof parsed.chClean === 'object') ? parsed.chClean : {};
+        myCues = (parsed.myCues && typeof parsed.myCues === 'object') ? parsed.myCues : {};
         scoreRepeat = (parsed.scoreRepeat && typeof parsed.scoreRepeat === 'object' && parsed.scoreRepeat.day && parsed.scoreRepeat.n) ? parsed.scoreRepeat : null;
         njMannaGems = Math.max(0, parseInt(parsed.njMannaGems, 10) || 0);
         njDexFish = Math.max(0, parseInt(parsed.njDexFish, 10) || 0);
@@ -14722,6 +14724,7 @@ function saveGameData() {
         njStars: njStars,                 // ⭐ 오늘의 일곱 별
         scoreRepeat: scoreRepeat,         // 🔁 같은 날 같은 난이도 승점 횟수
         chClean: chClean,                 // 🏔️ 장을 통째로 백지로 단서 없이
+        myCues: myCues,                   // 🔗 내 고리
         njMannaGems: njMannaGems,         // 💎 만나·메추라기로 받은 보석 합
         njDexFish: njDexFish,             // 🐟 도감 생물에게서 받은 물고기 합
         njDex: njDex,                     // 🐠 바다 생물 도감(절마다 생물)
@@ -15294,6 +15297,13 @@ function _mergeSaveProgress(target, other) {
             if (oc && typeof oc === 'object') {
                 if (!target.chClean || typeof target.chClean !== 'object') target.chClean = {};
                 Object.entries(oc).forEach(([c, ts]) => { if (Math.abs(+ts || 0) > Math.abs(+target.chClean[c] || 0)) { target.chClean[c] = ts; took++; } });
+            }
+        }
+        {   // 🔗 내 고리 — 절마다 나중에 고친 쪽(지운 것도 시각을 남겨 되살아나지 않게)
+            const oc = other.myCues;
+            if (oc && typeof oc === 'object') {
+                if (!target.myCues || typeof target.myCues !== 'object') target.myCues = {};
+                Object.entries(oc).forEach(([id, q]) => { if (q && (+q.at || 0) > (+((target.myCues[id] || {}).at) || 0)) { target.myCues[id] = q; took++; } });
             }
         }
         {   // 🔁 같은 날 승점 횟수 — 같은 날이면 열쇠마다 큰 쪽(두 기기에서 따로 받은 건 합치지 않는다 — 넉넉히 줄지언정 두 번 막지 않게) 아니면 나중 날
@@ -22856,6 +22866,7 @@ async function openLetterBoard(tab, kind, topic) {
             const q = await db.collection('letters').where('status', '==', 'pending').orderBy('createdAt', 'desc').limit(50).get();
             const arr = q.docs.map(d => Object.assign({ id: d.id }, d.data()));
             box.innerHTML = arr.length ? arr.map(L => _letterCardHtml(L, { admin: true })).join('') : `<div class="letter-empty">${t('letter_pending_none')}</div>`;
+            box.insertAdjacentHTML('beforeend', await _cuePendingHtml());   // 🔗 나눈 고리(10/29)
         } catch (e) { box.innerHTML = `<div class="letter-empty">${escapeHtml(String(e.message || e))}</div>`; }
         return;
     }
@@ -22864,7 +22875,7 @@ async function openLetterBoard(tab, kind, topic) {
     const arr = all.filter(L => _isTip(L) === tip && (!topic || _tipTopicOf(L) === topic));
     box.innerHTML = arr.length ? arr.map(L => _letterCardHtml(L)).join('') : `<div class="letter-empty">${tip ? t('tip_none') : t('letter_none')}</div>`;
     if (tip) { box.insertAdjacentHTML('afterend', '<div id="tip-mine"></div>'); _tipMineRender(); }
-    if (admin) { try { const q = await db.collection('letters').where('status', '==', 'pending').orderBy('createdAt', 'desc').limit(50).get(); const el = document.getElementById('letter-pend-n'); if (el) el.textContent = q.size || ''; } catch (e) { } }
+    if (admin) { try { const q = await db.collection('letters').where('status', '==', 'pending').orderBy('createdAt', 'desc').limit(50).get(), qc = await db.collection('cues').where('status', '==', 'pending').limit(100).get(); const el = document.getElementById('letter-pend-n'); if (el) el.textContent = (q.size + qc.size) || ''; } catch (e) { } }
 }
 function closeLetterBoard() { const ov = document.getElementById('letter-overlay'); if (ov) { ov.classList.remove('active'); ov.style.display = 'none'; } }
 function openLetterWrite(kind, topic) {
@@ -30403,6 +30414,7 @@ function openOilScreen(ch) {
     ov.innerHTML = `<div class="oil-card" onclick="event.stopPropagation()">${ch ? _oilChapterHtml(ch) : _oilAllHtml()}<button class="oil-close" onclick="closeOilScreen()">${t('btn_close')}</button></div>`;
     ov.style.display = 'flex';
     setTimeout(() => ov.classList.add('active'), 10);
+    if (ch) _cueLoadCh(ch).then(() => { const el = document.getElementById('bone-card'); if (el && el.dataset.id && document.getElementById('cue-box') && !document.querySelector('#cue-box .cue-form')) _cueRefresh(el.dataset.id); });   // 🔗 함께 나눈 고리
 }
 function closeOilScreen() { const ov = document.getElementById('oil-overlay'); if (ov) { ov.classList.remove('active'); ov.style.display = 'none'; } }
 function _oilAllHtml() {
@@ -30775,8 +30787,126 @@ function _boneVerse(ch, v) {   // 칸을 누르면 그 절 — 본문 · 고리
     document.querySelectorAll('.bone-units .oil-v').forEach(c => c.classList.toggle('sel', on && +c.dataset.v === v));
     el.dataset.id = on ? id : '';
     { const c = document.querySelector(`.bone-units .oil-v[data-v="${v}"]`), un = c && c.closest('.bone-unit'); if (on && un) un.after(el); }   // 누른 단락 바로 밑에
-    el.innerHTML = on ? `<div class="bone-card-ref">${ch}:${v}${u ? ` <span>${escapeHtml(_revUnitLabel(u))}</span>` : ''}</div><p>${escapeHtml(_verseText(ch, v))}</p>${_boneCueHtml(id)}` : '';
+    el.innerHTML = on ? `<div class="bone-card-ref">${ch}:${v}${u ? ` <span>${escapeHtml(_revUnitLabel(u))}</span>` : ''}</div><p>${escapeHtml(_verseText(ch, v))}</p>${_boneCueHtml(id)}<div id="cue-box">${_cueBoxHtml(id)}</div>` : '';
     el.hidden = !on;
+}
+/* 🔗 내 고리 · 함께 나눈 고리 (10/29 사용자: 기본 고리가 없는 절은 각자 채우고, 나눔은 승인제)
+   내 고리 = 저장본 myCues(기기끼리 병합) · 나눔 = Firestore cues/{id}(편지처럼 검토 후 공개, 가져간 수 takes) */
+const CUE_ICON = { '': '🔢', n: '🔤', s: '🔷' }, CUE_DAILY_SHARE = 20;
+let _cueCh = {}, _cueMineDocs = null;   // 장마다 공개된 고리 · 내가 나눈 고리 문서(상태 보기)
+function _myCue(id) { const q = myCues && myCues[id]; return q && !q.del && q.s ? q : null; }
+function _cueLine(q, extra) { return `<div class="bone-cue${extra ? ' ' + extra : ''}">${CUE_ICON[q.k || ''] || '🔢'} <b>${escapeHtml(q.s)}</b> → 「${escapeHtml(q.w)}」`; }
+async function _cueLoadCh(ch, force) {
+    if (!force && _cueCh[ch]) return _cueCh[ch];
+    if (typeof db === 'undefined' || !db) return [];
+    try {
+        const q = await db.collection('cues').where('ch', '==', ch).where('status', '==', 'approved').limit(300).get();
+        _cueCh[ch] = q.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    } catch (e) { console.warn('[cues] load', e); _cueCh[ch] = _cueCh[ch] || []; }
+    try {
+        if (_cueMineDocs === null && auth && auth.currentUser) {
+            const m = await db.collection('cues').where('uid', '==', auth.currentUser.uid).get();
+            _cueMineDocs = {}; m.docs.forEach(d => { _cueMineDocs[d.id] = d.data().status; });
+        }
+    } catch (e) { }
+    return _cueCh[ch];
+}
+function _cueRefresh(id) { const b = document.getElementById('cue-box'); if (b) b.innerHTML = _cueBoxHtml(id); const c = document.querySelector(`.bone-units .oil-v[data-v="${id.split('-')[1]}"]`); if (c) c.classList.toggle('has-cue', !!(BONE_CUE[id] || _myCue(id))); }
+function _cueBoxHtml(id) {
+    const ch = +id.split('-')[0], me = auth && auth.currentUser ? auth.currentUser.uid : '', q = _myCue(id);
+    let mine;
+    if (q) {
+        const st = q.sh ? (_cueMineDocs && _cueMineDocs[q.sh] === 'approved' ? t('cue_st_ok') : _cueMineDocs && _cueMineDocs[q.sh] === 'pending' ? t('cue_st_pend') : '') : '';
+        mine = `${_cueLine(q, 'mine')} <span class="cue-tag">${t('cue_mine')}${st ? ' · ' + st : ''}</span></div>
+            <div class="cue-acts"><button onclick="_cueForm('${id}')">${t('cue_edit')}</button><button onclick="_cueDel('${id}')">${t('cue_del')}</button></div>`;
+    } else mine = `<button class="cue-add" onclick="_cueForm('${id}')">${t('cue_add')}</button>`;
+    const others = (_cueCh[ch] || []).filter(c => c.cid === id && c.uid !== me).sort((a, b) => (b.takes | 0) - (a.takes | 0));
+    const oh = others.map(c => `${_cueLine(c, 'other')} <small>— ${escapeHtml(c.nick || t('letter_anon'))}${c.takes ? ' · ' + t('cue_takes', { n: c.takes | 0 }) : ''}</small>
+        ${q && q.src === c.id ? `<span class="cue-tag">${t('cue_using')}</span>` : `<button class="cue-take" onclick="_cueTake('${id}', '${c.id}')">${t('cue_take')}</button>`}</div>`).join('');
+    return `<div class="cue-mine">${mine}</div>${oh ? `<div class="cue-others"><div class="cue-sec">${t('cue_others')}</div>${oh}</div>` : ''}`;
+}
+function _cueForm(id) {
+    const b = document.getElementById('cue-box'); if (!b) return;
+    const q = _myCue(id) || { s: '', w: '', k: '' };
+    b.innerHTML = `<div class="cue-form">
+        <div class="cue-kinds">${['', 'n', 's'].map(k => `<button class="${(q.k || '') === k ? 'on' : ''}" data-k="${k}" onclick="this.parentNode.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === this))">${t('cue_k' + (k || 'd'))}</button>`).join('')}</div>
+        <input id="cue-s" maxlength="40" placeholder="${escapeHtml(t('cue_f_s'))}" value="${escapeHtml(q.s)}">
+        <input id="cue-w" maxlength="80" placeholder="${escapeHtml(t('cue_f_w'))}" value="${escapeHtml(q.w)}">
+        <label class="cue-share"><input type="checkbox" id="cue-sh"${q.sh ? ' checked' : ''}> ${t('cue_share')}</label>
+        <div class="cue-acts"><button class="on" onclick="_cueSave('${id}')">${t('cue_save')}</button><button onclick="_cueRefresh('${id}')">${t('cue_cancel')}</button></div></div>`;
+    const s = document.getElementById('cue-s'); if (s) s.focus();
+}
+async function _cueUnshare(q) {   // 고치거나 지우면 나눈 문서는 내린다(공개된 것도) — 새로 나누면 다시 검토
+    if (!q || !q.sh || typeof db === 'undefined' || !db) return;
+    try { await db.collection('cues').doc(q.sh).delete(); } catch (e) { }
+    if (_cueMineDocs) delete _cueMineDocs[q.sh];
+}
+async function _cueSave(id) {
+    const s = (document.getElementById('cue-s').value || '').trim().slice(0, 40), w = (document.getElementById('cue-w').value || '').trim().slice(0, 80);
+    if (!s || !w) { showGemToast(0, t('cue_too_short'), true); return; }
+    const kb = document.querySelector('#cue-box .cue-kinds .on'), k = kb ? kb.dataset.k : '', share = document.getElementById('cue-sh').checked;
+    const old = _myCue(id), same = old && old.s === s && old.w === w && (old.k || '') === k;
+    const q = { s, w, k, at: Date.now() };
+    if (same && old.src) q.src = old.src;
+    if (same && old.sh && share) q.sh = old.sh;   // 그대로면 나눔도 그대로
+    else if (old && old.sh) await _cueUnshare(old);
+    if (share && !q.sh) {
+        const day = _get6AMDayStr(), sent = _lsGet('kingsRoad_cueSent', {}) || {};
+        if ((sent[day] | 0) >= CUE_DAILY_SHARE) showGemToast(0, t('cue_share_cap', { n: CUE_DAILY_SHARE }), true);
+        else if (typeof db !== 'undefined' && db && auth && auth.currentUser) {
+            try {
+                const ref = await db.collection('cues').add({ cid: id, ch: +id.split('-')[0], s, w, k, nick: String(myNickname || '').slice(0, 30), tag: String(myTag || '').slice(0, 10),
+                    uid: auth.currentUser.uid, createdAt: firebase.firestore.FieldValue.serverTimestamp(), status: 'pending', takes: 0 });
+                q.sh = ref.id; if (_cueMineDocs) _cueMineDocs[ref.id] = 'pending';
+                _lsSet('kingsRoad_cueSent', { [day]: (sent[day] | 0) + 1 });
+            } catch (e) { showGemToast(0, t('letter_send_fail') + ' (' + (e.code || e.message) + ')', true); }
+        }
+    }
+    myCues[id] = q; saveGameData();
+    if (typeof _featNote === 'function') _featNote('cm');   // 📈 내 고리 달기
+    showGemToast(0, q.sh ? t('cue_saved_share') : t('cue_saved'), false);
+    _cueRefresh(id);
+}
+async function _cueDel(id) {
+    const old = _myCue(id); if (!old) return;
+    await _cueUnshare(old);
+    myCues[id] = { del: 1, at: Date.now() }; saveGameData();
+    _cueRefresh(id);
+}
+async function _cueTake(id, docId) {
+    const c = (_cueCh[+id.split('-')[0]] || []).find(x => x.id === docId); if (!c) return;
+    const old = _myCue(id); if (old && old.sh) await _cueUnshare(old);
+    myCues[id] = { s: c.s, w: c.w, k: c.k || '', at: Date.now(), src: docId }; saveGameData();
+    if (typeof _featNote === 'function') _featNote('ct');   // 📈 남의 고리 가져오기
+    showGemToast(0, t('cue_taken'), false);
+    const taken = _lsGet('kingsRoad_cueTaken', []) || [];
+    const count = !taken.includes(docId) && auth && auth.currentUser;   // 가져간 수는 한 사람 한 번(규칙도 막는다)
+    if (count) { _lsSet('kingsRoad_cueTaken', taken.concat([docId]).slice(-500)); c.takes = (c.takes | 0) + 1; }
+    _cueRefresh(id);
+    if (count) try {
+        const ref = db.collection('cues').doc(docId), tk = ref.collection('takes').doc(auth.currentUser.uid);
+        const batch = db.batch(); batch.set(tk, { at: firebase.firestore.FieldValue.serverTimestamp() }); batch.update(ref, { takes: firebase.firestore.FieldValue.increment(1) });
+        await batch.commit();
+    } catch (e) { console.warn('[cues] take', e.code || e); }
+}
+/* 관리자 — 편지 창의 「검토 대기」 아래에 고리도 */
+async function _cuePendingHtml() {
+    try {
+        const q = await db.collection('cues').where('status', '==', 'pending').limit(100).get();
+        const arr = q.docs.map(d => Object.assign({ id: d.id }, d.data())).sort((a, b) => a.cid.localeCompare(b.cid, undefined, { numeric: true }));
+        return arr.length ? `<div class="cue-sec">${t('cue_pending_head', { n: arr.length })}</div>` + arr.map(c => `<div class="lt-letter cue-pend" data-id="${c.id}"><div class="lt-letter-kind">${c.cid.replace('-', ':')} · ${escapeHtml(_verseText(c.ch, +c.cid.split('-')[1]).slice(0, 40))}…</div>
+            ${_cueLine(c)}</div><div class="lt-letter-foot"><span class="lt-letter-nick">— ${escapeHtml(c.nick || '')}${c.tag ? ' #' + escapeHtml(c.tag) : ''}</span></div>
+            <div class="lt-letter-admin"><button onclick="_cueJudge('${c.id}', 'approved')">${t('letter_approve')}</button><button onclick="_cueJudge('${c.id}', 'rejected')">${t('letter_reject')}</button></div></div>`).join('') : '';
+    } catch (e) { return `<div class="letter-empty">${escapeHtml(String(e.message || e))}</div>`; }
+}
+async function _cueJudge(id, status) {
+    if (!_letterIsAdmin()) return;
+    try {
+        await db.collection('cues').doc(id).update({ status });
+        const card = document.querySelector(`.cue-pend[data-id="${id}"]`); if (card) card.remove();
+        showGemToast(0, status === 'approved' ? t('letter_approved') : t('letter_rejected'), false);
+        _cueCh = {};
+    } catch (e) { showGemToast(0, String(e.code || e.message), true); }
 }
 function _boneUnitRun(ch, a, b) {   // ✍️ 단락 백지 — 그 단락의 외운 절을 주소만 보고 순서대로
     const ids = []; for (let v = a; v <= b; v++) if (stageClearDate[ch + '-' + v]) ids.push(ch + '-' + v);
@@ -30789,7 +30919,7 @@ function _boneUnitRun(ch, a, b) {   // ✍️ 단락 백지 — 그 단락의 �
 }
 function _oilChapterHtml(ch) {
     const ids = _oilChapterIds(ch), sts = ids.map(_oilStage);
-    const cell = (id, i) => `<div class="oil-v${BONE_CUE[id] ? ' has-cue' : ''}" data-v="${id.split('-')[1]}" onclick="_boneVerse(${ch}, ${id.split('-')[1]})" title="${ch}:${id.split('-')[1]} · ${t('oil_n' + sts[i])}">${_oilIcon(sts[i])}<span>${id.split('-')[1]}</span></div>`;
+    const cell = (id, i) => `<div class="oil-v${BONE_CUE[id] || _myCue(id) ? ' has-cue' : ''}" data-v="${id.split('-')[1]}" onclick="_boneVerse(${ch}, ${id.split('-')[1]})" title="${ch}:${id.split('-')[1]} · ${t('oil_n' + sts[i])}">${_oilIcon(sts[i])}<span>${id.split('-')[1]}</span></div>`;
     const units = (REV_UNITS[ch] || [[1, ids.length, '']]).map(([a, b, name]) => {
         const learned = ids.slice(a - 1, b).some(id => stageClearDate[id]);
         return `<div class="bone-unit"><div class="bone-unit-h"><b>${a}–${b}</b> ${escapeHtml(currentLang === 'en' ? '' : name)}${learned ? `<button class="bone-unit-go" onclick="_boneUnitRun(${ch}, ${a}, ${b})">✍️ ${t('bone_unit_go')}</button>` : ''}</div>

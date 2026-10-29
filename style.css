@@ -7779,6 +7779,23 @@ body:has(#game-screen.active) #pwa-install-banner, body:has(#bible-transition-ov
 .bone-card p { margin: 4px 0 0; font-size: .95rem; line-height: 1.6; word-break: keep-all; }
 .bone-cue { margin-top: 6px; font-size: .88rem; color: #cfe8ff; }
 .bone-cue b { color: #7fc8ff; }
+/* 🔗 내 고리 · 함께 나눈 고리 (10/29) */
+.bone-cue.mine b { color: #ffd36b; }
+.bone-cue.other { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; }
+.bone-cue.other small { color: #9aa8bd; }
+.cue-tag { font-size: .72rem; color: #9aa8bd; margin-left: 4px; }
+.cue-sec { margin-top: 10px; font-size: .75rem; color: #9aa8bd; font-weight: 700; }
+.cue-add, .cue-take, .cue-acts button { padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(255, 211, 107, .5); background: rgba(255, 211, 107, .08); color: #ffd36b; font-size: .78rem; font-weight: 700; cursor: pointer; }
+.cue-add { margin-top: 8px; }
+.cue-take { margin-left: auto; padding: 2px 9px; }
+.cue-acts { display: flex; gap: 6px; margin-top: 6px; }
+.cue-acts button.on { background: #ffd36b; color: #2c3e50; }
+.cue-form { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.cue-form input:not([type]) { padding: 7px 9px; border-radius: 8px; border: 1px solid rgba(127, 200, 255, .4); background: rgba(0, 0, 0, .2); color: inherit; font-size: .9rem; }
+.cue-kinds { display: flex; gap: 6px; }
+.cue-kinds button { padding: 3px 9px; border-radius: 999px; border: 1px solid rgba(127, 200, 255, .4); background: transparent; color: #9aa8bd; font-size: .78rem; cursor: pointer; }
+.cue-kinds button.on { background: rgba(127, 200, 255, .2); color: #cfe8ff; }
+.cue-share { font-size: .8rem; color: #cfe8ff; display: flex; align-items: center; gap: 6px; }
 .bone-steps { display: grid; gap: 5px; }
 .bone-step { display: flex; gap: 8px; align-items: flex-start; padding: 7px 10px; border-radius: 10px; background: rgba(255, 255, 255, .03); }
 .bone-step i { font-style: normal; color: #f1c40f; }
