@@ -30962,7 +30962,7 @@ function _renderSheetLevelTest(chapterData) {
     if (n < 3) { el.style.display = 'none'; el.innerHTML = ''; return; }
     const T = (levelTests[ch] || []).slice(-1)[0];
     const sub = T ? t('lt_sheet_last', { d: (new Date(T.at).getMonth() + 1) + '/' + new Date(T.at).getDate(), c: Object.values(T.r || {}).filter(c => c === 3).length, n: T.n || Object.keys(T.r || {}).length }) + (T.d > 0 ? ' · ⏱ ' + _ltFmtTime(T.d) : '') : t('lt_sheet_none');
-    el.innerHTML = `<button class="sheet-oil-btn" onclick="openOilScreen(${ch})">${_oilMini()}${t('oil_btn_short')}</button><button class="sheet-lt-btn" onclick="openLevelTest(${ch})">${t('lt_sheet_btn')}</button>${T ? `<span class="sheet-lt-sub link" onclick="_ltShowResult(${ch})">${sub} ›</span>` : `<span class="sheet-lt-sub">${sub}</span>`}`;   // 지난 결과 다시 보기(10/9)
+    el.innerHTML = `<button class="sheet-oil-btn" onclick="openOilScreen(${ch})">${_oilMini()}${t('oil_btn_short')}</button><button class="sheet-lt-btn" onclick="openLevelTest(${ch})">${t('lt_sheet_btn')}</button>${T ? `<span class="sheet-lt-sub link" onclick="_ltShowResult(${ch})">${sub} ›</span>` : ''}`;   // 지난 결과 다시 보기(10/9) · 안 해 본 장의 안내 한 줄은 뺌(10/29 목록 칸)
     el.style.display = '';
 }
 function openFirstPhrasePick() {
