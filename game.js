@@ -12786,7 +12786,7 @@ function openBossSetupModal(stage) {
     };
     const btn = (mode, label) =>
         `<button class="bso-btn${bossDifficultyMode===mode?' active':''}" id="bso-${mode}" onclick="setBossSetupOpt('difficulty','${mode}')">` +
-        `<span class="bso-name">${label}</span>${fitTag(mode)}</button>`;
+        `<span class="bso-name">${label}</span>${fitTag(mode)}${_srBossBadge(stage, mode)}</button>`;
 
     const blankBtns = btn('blank', '빈칸') + btn('none', '백지');
     // 근거를 한 줄로 밝힌다 — 라벨만 있으면 마법처럼 보이고, 무엇을 하면 등급이 오르는지도 안 보인다
@@ -21309,7 +21309,7 @@ function openDailyScreen() {
     const dateLabel = `${m}/${d} (${wdKo})`;
     const rungIcon = ['·', '😌', '🙂', '⭐', '🏆'];
     const rungName = ['', t('event_mode_normal'), t('event_mode_hard'), t('event_mode_blank'), t('event_mode_none')];
-    const modeBtn = (mm, label) => `<button class="event-mode-btn${_eventMode === mm ? ' on' : ''}" data-mode="${mm}" onclick="setEventMode('${mm}')">${label}</button>`;
+    const modeBtn = (mm, label) => `<button class="event-mode-btn${_eventMode === mm ? ' on' : ''}" data-mode="${mm}" onclick="setEventMode('${mm}')">${label}${_srBadge(ids.map(id => 'event:' + mm + ':' + id))}</button>`;
     let body;
     if (ev.rest) {
         body = `<div class="daily-rest"><div style="font-size:2rem;">🌿</div><div class="daily-rest-title">${t('daily_rest')}</div><div class="daily-rest-desc">${t('daily_rest_desc')}</div></div>`;
@@ -22180,7 +22180,7 @@ function openEventScreen(eventId) {
     const rungIcon = ['·', '😌', '🙂', '⭐', '🏆'];
     const rungName = ['', t('event_mode_normal'), t('event_mode_hard'), t('event_mode_blank'), t('event_mode_none')];
     // 난이도는 어느 엔진으로 갈지만 정한다 — 목록은 안 바뀌니 모달을 다시 그리지 않고 칸만 바꾼다 (다시 그리면 번쩍인다)
-    const modeBtn = (m, label) => `<button class="event-mode-btn${_eventMode === m ? ' on' : ''}" data-mode="${m}" onclick="setEventMode('${m}')">${label}</button>`;
+    const modeBtn = (m, label) => `<button class="event-mode-btn${_eventMode === m ? ' on' : ''}" data-mode="${m}" onclick="setEventMode('${m}')">${label}${_srBadge(_eventVerseIds(ev).map(id => 'event:' + m + ':' + id))}</button>`;
     const rows = _eventQuestions(ev).map((q, i) => {
         const rungs = q.map(id => _eventVerseRung(ev.id, id));
         const minR = Math.min(...rungs);
@@ -34067,6 +34067,18 @@ function _srMap() { const d = _get6AMDayStr(); if (!scoreRepeat || scoreRepeat.d
 function _srFull(key) { return (_srMap()[key] | 0) >= SCORE_REPEAT_MAX; }
 function _srNote(key) { const n = _srMap(); n[key] = (n[key] | 0) + 1; }
 function _srCounted(kind) { return /^(mid|boss|event):/.test(kind || ''); }
+/* 🔁 난이도 버튼 옆 「1/3」 — 오늘 그 난이도로 승점을 받은 횟수(10/29 사용자). 절마다 세는 난이도는 가장 적은 절 기준(한 판 = 모든 절 +1) */
+function _srBadge(keys) {
+    const m = _srMap(), n = keys.length ? Math.min(...keys.map(k => m[k] | 0)) : 0;
+    return n > 0 ? `<span class="sr-badge${n >= SCORE_REPEAT_MAX ? ' full' : ''}">${Math.min(n, SCORE_REPEAT_MAX)}/${SCORE_REPEAT_MAX}</span>` : '';
+}
+function _srBossBadge(stage, mode) {   // 중간점검·보스전 — 보통·어려움은 판 하나, 빈칸·백지는 절마다
+    const isMid = String(stage.id).includes('mid'), pre = isMid ? 'mid:' : 'boss:';
+    if (mode === 'normal' || mode === 'hard') return _srBadge([pre + mode + ':' + stage.id]);
+    const chNum = parseInt(String(stage.id).split('-')[0], 10), chData = gameData.find(c => c.id === chNum); if (!chData) return '';
+    const ids = (isMid ? getSubStagesOfMidBoss(chData, stage) : chData.stages).map(s => String(s.id)).filter(id => /^\d+-\d+$/.test(id) && stageClearDate[id]);
+    return _srBadge(ids.map(id => pre + mode + ':' + id));
+}
 function _blankScoreKind() {
     if (!hardshipState) return null;
     const lv = hardshipState.ultimateMemoryMode ? 'none' : 'blank';   // 빈칸과 백지는 다른 난이도 — 따로 센다
