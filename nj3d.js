@@ -79,9 +79,10 @@
                             <button class="nj3d-wb small nj3d-tackbtn" hidden>${T('nj3d_tack')}</button>
                         </div>
                         <button class="nj3d-wb small nj3d-bagbtn">🎒 ${(typeof currentLang !== 'undefined' && currentLang === 'en') ? 'More' : '더보기'}</button>
-                        <button class="nj3d-wb small nj3d-divebtn" hidden>${T('nj3d_dive')}<span class="nj3d-key">Q</span></button>
-                        <button class="nj3d-wb fly nj3d-fly" hidden>${T('nj3d_fly')}<span class="nj3d-key">F</span></button>
                         <button class="nj3d-wb small nj3d-ridebtn"></button>
+                        <button class="nj3d-wb fly nj3d-fly" hidden>${T('nj3d_fly')}<span class="nj3d-key">F</span></button>
+                        <!-- 10/29 사용자: 아래로는 위로 바로 위에(타기와 자리 바꿈). 날기가 있으면 자리를 비워 둬 날기를 눌러도 줄이 밀리지 않게(style.css) -->
+                        <button class="nj3d-wb small nj3d-divebtn" hidden>${T('nj3d_dive')}<span class="nj3d-key">Q</span></button>
                         <button class="nj3d-wb nj3d-jump">${T('nj3d_jump')}<span class="nj3d-key">Space</span></button>
                     </div>
                 </div>

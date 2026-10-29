@@ -7219,6 +7219,7 @@ body:has(#game-screen.active) #pwa-install-banner, body:has(#bible-transition-ov
 .nj3d-under { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(ellipse at 50% 30%, rgba(60, 170, 190, 0.08), rgba(8, 50, 70, 0.45)); }   /* 🤿 물속 — 물빛과 가장자리 어둠 */
 .nj3d-under[hidden] { display: none; }
 .nj3d-wb.small.nj3d-divebtn { background: rgba(27, 120, 150, 0.92); color: #fff; }
+#nj3d:not(.nj3d-doorrun) .nj3d-fly:not([hidden]) + .nj3d-divebtn[hidden] { display: block !important; visibility: hidden; }   /* 10/29: 날기 밑 「아래로」 자리를 비워 둔다 — 날기를 누르면 그 자리에 나타날 뿐 줄이 밀리지 않게 */
 .nj3d-hint { position: absolute; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 3;
     background: rgba(15, 26, 51, 0.78); color: #e6eef8; font-size: 0.78rem; padding: 6px 12px; border-radius: 999px;
     max-width: calc(100% - 32px); text-align: center; pointer-events: none; opacity: 0; transition: opacity 0.6s; }
@@ -7781,6 +7782,8 @@ body:has(#game-screen.active) #pwa-install-banner, body:has(#bible-transition-ov
 .bone-cue b { color: #7fc8ff; }
 /* 🔗 내 고리 · 함께 나눈 고리 (10/29) */
 .bone-cue.mine b { color: #ffd36b; }
+.cue-ic { font-style: normal; font-size: 1.25em; vertical-align: -0.1em; }
+.cue-kinds button { font-size: .85rem !important; }
 .bone-cue.other { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; }
 .bone-cue.other small { color: #9aa8bd; }
 .cue-tag { font-size: .72rem; color: #9aa8bd; margin-left: 4px; }
