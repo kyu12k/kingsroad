@@ -17847,6 +17847,7 @@ function showClearScreen() {
     const resultModalEl = document.getElementById('result-modal');
     const existingHistoryEl = resultModalEl && resultModalEl.querySelector('.hardship-history-wrap');
     if (existingHistoryEl) existingHistoryEl.remove();
+    if (resultModalEl) resultModalEl.querySelectorAll('.growth-box').forEach(el => el.remove());   // 🌱 망각의 고난 「처음과 비교」가 다음 일반 판 결과에 남았다(10/29 사용자: 16장 9~11절마다 3:32 → 3:09)
 
     // 레이블 i18n 업데이트
     const statLabels = resultModalEl.querySelectorAll('.stat-label');
@@ -18087,6 +18088,7 @@ function showBossClearScreen(clearedStageId) {
     const bossResultModal = document.getElementById('result-modal');
     const existingBossHistory = bossResultModal && bossResultModal.querySelector('.hardship-history-wrap');
     if (existingBossHistory) existingBossHistory.remove();
+    bossResultModal.querySelectorAll('.growth-box').forEach(el => el.remove());   // 🌱 지난 망각의 고난의 「처음과 비교」(10/29)
     bossResultModal.classList.add('active');
 }
 
