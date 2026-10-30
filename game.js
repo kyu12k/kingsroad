@@ -30647,7 +30647,7 @@ const BONE_CH = {
         { name: '이 일 후에', phrase: '이 일 후에 내가 보니', v: [5], note: '4:1 · 7:1 · 7:9와 같은 말' },
         { name: '성전', phrase: '열리며 → 나와 → 연기가 차서 들어갈 자가 없음', v: [5, 6, 8], note: '끝 절은 11:19와 짝' },
         { name: '금', phrase: '금띠 → 금대접', v: [6, 7], note: '1:13 인자의 금띠와 같은 차림' },
-        { name: '💬 이적을 보매', phrase: '크고 이상한 다른 이적을 보매', v: [1], note: '첫 세 마디 밖의 「보매」는 계시록에 이것 하나 — 나머지는 다 「보니」' }
+        { name: '💬 이적을 보매', phrase: '크고 이상한 다른 이적을 보매', v: [1], note: '맨 앞 세 단어 밖의 「보매」는 계시록에 이것 하나 — 나머지는 다 「보니」' }
     ],
     16: [
         { name: '대접을 쏟으매', phrase: '○째가 그 대접을 쏟으매', v: [2, 3, 4, 8, 10, 12, 17], note: '첫째~셋째 = 순서 + 1 (2·3·4) · 넷째~여섯째 = 순서 × 2 (8·10·12) · 일곱째 17' },
@@ -30969,9 +30969,9 @@ const MS_SPEAK = ['가로되', '말하되', '가라사대', '이르되', '이르
 function _msRule(sl) {
     const { w, i, ans, ch, kind } = sl, prev = (w[i - 1] || '').replace(/[,.]$/, '');
     if (kind === 'see') {
-        if (i >= 3) return ans === '보매' ? '⚠️ 첫 세 마디 밖인데 「보매」 — 계시록에 이것(15:1) 하나' : '첫 세 마디 밖의 「보○」는 보니 (예외 15:1 하나)';
-        if (w[0] === '내가' && (w[1] === '또' || w[1] === '이에')) return '「내가 또 보니」 · 「내가 이에 보니」 — 늘 보니';
-        return '절 첫머리의 「보○」는 규칙으로 갈리지 않아요 — 이 장의 칩·고리로 (「보매」는 첫 세 마디 안에만 나와요)';
+        if (i >= 3) return ans === '보매' ? '⚠️ 맨 앞 세 단어 밖인데 「보매」 — 계시록에서 이 절(15:1) 하나뿐이에요' : '맨 앞 세 단어 밖에 있는 「보○」는 보니예요 (예외는 15:1 하나)';
+        if (w[0] === '내가' && (w[1] === '또' || w[1] === '이에')) return '「내가 또 보니」 · 「내가 이에 보니」는 늘 보니예요';
+        return `절 맨 앞의 「보○」는 보니와 보매가 반반이라 정해진 규칙이 없어요. 이 절은 「${w.slice(0, i).concat(ans).join(' ')}」로 외워 두세요`;
     }
     if (kind === 'hear') return ans === '들으매' ? '「들으매」는 계시록에 이것(5:11) 하나 — 8:13은 「보고 들으니」' : '듣는 것은 늘 「들으니」 — 「들으매」는 5:11 하나';
     if (kind === 'open') return ch <= 2 && ans === '또 내가' ? '⚠️ 예수의 편지 말(2:21 · 2:23)은 예외 — 요한의 서술은 12장까지 「내가 또」, 14장부터 「또 내가」' : '12장까지는 「내가 또」, 14장부터는 「또 내가」 (13장엔 둘 다 없음)';
@@ -30988,7 +30988,7 @@ function _msSlots(ids) {
         const [ch, v] = id.split('-').map(Number), d = (bibleData[ch] || [])[v - 1];
         if (!d || !d.text) return;
         const w = d.text.split(/\s+/);
-        const push = (i, n, ans, choices, kind) => { const sl = { id, ch, v, w, i, n, ans, choices, kind }; sl.rule = _msRule(sl); const g = (BONE_CH[ch] || []).find(g => g.v.includes(v) && g.phrase.includes(ans)); if (g) sl.rule += ` · 🦴 ${g.name.replace(/^💬 /, '')} 「${g.phrase}」`; out.push(sl); };   // 그 절이 든 장 칩이 있으면 함께
+        const push = (i, n, ans, choices, kind) => { const sl = { id, ch, v, w, i, n, ans, choices, kind }; sl.rule = _msRule(sl); const g = kind === 'see' && i < 3 && (BONE_CH[ch] || []).find(g => g.v.length > 1 && g.v.includes(v) && g.phrase.includes(ans)); if (g) sl.rule += ` — 함께 외우면 좋은 짝(${g.v.join('·')}절): 「${g.phrase}」`; out.push(sl); };   // 규칙이 없는 절 맨 앞 보○에만, 그 절이 든 짝 칩(13:1 ↔ 13:11)을 함께
         if ((w[0] === '내가' && w[1] === '또') || (w[0] === '또' && w[1] === '내가')) push(0, 2, w[0] + ' ' + w[1], ['내가 또', '또 내가'], 'open');
         w.forEach((x, i) => {
             const y = x.replace(/[,.]$/, '');
