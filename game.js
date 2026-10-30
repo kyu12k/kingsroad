@@ -6892,7 +6892,7 @@ let _errQuietSent = false;
 function _showUncaughtError(msg, src, line) {
     if (src && !/kingsload|game\.js|index\.html|clock\.js|battle\.js/.test(String(src))) return;
     // 내용 없는 교차 출처 오류(「Script error.」)·Firebase 기기 저장소 끊김 — 보는 사람이 할 수 있는 게 없어 상자는 안 띄우고 기록만(10/21)
-    const quiet = (/^Script error\.?$/.test(String(msg)) && !line) || /transaction was aborted|IndexedDB|persistence layer|exclusive access/i.test(String(msg));   // 앱을 두 탭에 열면 두 번째 탭이 Firebase 기기 저장소를 못 잡는다(10/21 #33HDJ1) — 저장·동기화는 그대로
+    const quiet = (/^Script error\.?$/.test(String(msg)) && !line) || /transaction was aborted|IndexedDB|persistence layer|exclusive access|without an in-progress transaction|client has already been terminated/i.test(String(msg));   // 10/31 — 기기 저장소를 잃은 Firebase가 스스로 멈출 때(#WMU48H·#PJ8CMM). 저장은 서버 함수라 그대로 된다   // 앱을 두 탭에 열면 두 번째 탭이 Firebase 기기 저장소를 못 잡는다(10/21 #33HDJ1) — 저장·동기화는 그대로
     if (quiet) { if (_errQuietSent || _errShown) return; _errQuietSent = true; }
     else { if (_errShown) return; _errShown = true; }
     if (!quiet) try {
