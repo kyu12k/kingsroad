@@ -32314,7 +32314,7 @@ function loadNextHardshipVerse() {
     if (hardshipState.levelTest) hardshipState.rewardBlocked = !hardshipState.ltPay;   // 새 절은 다시 백지 — 승점 자격 되살림
     hardshipState.strongAvail = false; hardshipState.strongHint = false; hardshipState.mj = 0; hardshipState.lastTypeAt = 0;   // 🔑 강한 힌트 — 절마다 다시 얻는다 · 💧 마중물도
     hardshipState.bulkIns = 0;   // ✋ 통째로 들어온 입력 — 절마다
-    hardshipState._redCnt = {}; hardshipState._redValid = {}; hardshipState._redNow = new Set();   // 🟥 빨간 칸 — 절마다
+    hardshipState._redCnt = {}; hardshipState._redValid = {}; hardshipState._redNow = new Set(); hardshipState._redCh = {};   // 🟥 빨간 칸 — 절마다
     if (hardshipState.levelTest) hardshipState.ultimateMemoryMode = true;
     window._sessFails = 0;
     if (hardshipState.ultimateMemoryMode && !hardshipState.trainingMode) {   // 💌 처음 들어가는 어려운 판 — 판마다 평생 한 번
@@ -33393,7 +33393,7 @@ function _shouldRevealWrong(typedChar, answerChar, slotIndex, cursorIndex) {
    그건 떠올린 게 아니라 맞혀 본 것 → 둘을 나눈다: 한 칸이 한 번 빨개지고 다음에 맞게 고침 = **오타**(깎지 않음) /
    같은 칸이 2번+ 빨개짐, 또는 연달아 3칸+ 빨개짐 = **더듬음**(단서를 받은 것). 일지 rr·rt·rp·rf·rs, 시작에서 더듬으면 🔑 첫 마디 보기.
    기준 숫자는 추정 — 1~2주 기록으로 맞춘다. 백지 레벨 승급 규칙은 아직 그대로 */
-function _redNote(verseIndex, validIndex) {
+function _redNote(verseIndex, validIndex, typed) {
     const hs = hardshipState; if (!hs) return;
     if (!hs._redNow) hs._redNow = new Set();
     if (hs._redNow.has(verseIndex)) return;   // 이미 빨간 채로 있다 — 새로 빨개진 것만 센다
@@ -33402,6 +33402,8 @@ function _redNote(verseIndex, validIndex) {
     hs._redCnt[verseIndex] = (hs._redCnt[verseIndex] || 0) + 1;
     if (!hs._redValid) hs._redValid = {};
     hs._redValid[validIndex] = verseIndex;
+    if (!hs._redCh) hs._redCh = {};
+    if (!(verseIndex in hs._redCh) && typed) hs._redCh[verseIndex] = typed;   // 📜 처음 잘못 친 글자 — 니↔매·가로되↔말하되 같은 자리를 재려고(10/30)
 }
 function _redStats() {
     const hs = hardshipState, cnt = (hs && hs._redCnt) || {}, vd = (hs && hs._redValid) || {};
@@ -33670,7 +33672,7 @@ function updateHardshipMemoryBoard() {
             && hardshipState.wrongSlots.indexOf(verseIndex) !== -1;
         const liveWrong = _shouldRevealWrong(charValue, answerChar, index, text.length);
         slot.classList.toggle('wrong', submittedWrong || liveWrong);
-        if (liveWrong && !isNaN(verseIndex)) _redNote(verseIndex, index);
+        if (liveWrong && !isNaN(verseIndex)) _redNote(verseIndex, index, charValue);
         else if (!isNaN(verseIndex) && hardshipState._redNow) hardshipState._redNow.delete(verseIndex);
     });
     _strongCheck();   // 🔑 시작에서 더듬으면 첫 마디 보기
@@ -34276,7 +34278,7 @@ function _logRecallAttempt(stageId, ok, hints, mode, extra, prev, training) {
         if (hs.strongHint) e.sh = 1; else if (hs.strongAvail) e.sh = 0;
         if ((hs.njRound === 'clam' || hs.njRound === 'clamfp') && njClams && (njClams.carry || []).includes(String(stageId))) e.cu = (njClams.cs || []).includes(String(stageId)) ? 1 : 2;   // 📜 어제 막힌 절 다시(1 그 절 · 2 같은 단락이라 함께, 10/26~)
         if (hs.mj) e.mj = hs.mj;   // 💧 마중물 — 🔑으로 받은 첫 마디 수(1~3). 없으면 0(주소만으로 · 또는 막히지 않음)
-        { const R = _redStats(); if (R.n) { e.rr = R.n; e.rt = R.typo; e.rp = R.probe; e.rf = R.pf; e.rs = R.ps; } }   // 🟥 빨간 칸: 횟수·오타 칸·더듬은 칸·처음 더듬은 자리·시작에서 더듬음   // 🔑 강한 힌트 — 1 썼다 · 0 나타났지만 안 썼다   // ↔ 이웃 절을 먼저 쓴 뒤   // 🎓 레벨 테스트 단계(0 백지 · 1 첫 마디 줌 · 2 빈칸)
+        { const R = _redStats(); if (R.n) { e.rr = R.n; e.rt = R.typo; e.rp = R.probe; e.rf = R.pf; e.rs = R.ps; } if (hs._redCh) { const w = Object.keys(hs._redCh).slice(0, 12).map(k => k + hs._redCh[k]).join(','); if (w) e.rw = w; } }   // 📜 빨간 칸 자리+친 글자 '12매,40가' — 문자열(배열의 배열 금지)   // 🟥 빨간 칸: 횟수·오타 칸·더듬은 칸·처음 더듬은 자리·시작에서 더듬음   // 🔑 강한 힌트 — 1 썼다 · 0 나타났지만 안 썼다   // ↔ 이웃 절을 먼저 쓴 뒤   // 🎓 레벨 테스트 단계(0 백지 · 1 첫 마디 줌 · 2 빈칸)
         if (training) e.tr = 1;
         if (prev) {
             e.lp = prev.lastPass || 0; e.la = prev.lastAt || 0; e.lb = prev.lastBlankPass || 0;
