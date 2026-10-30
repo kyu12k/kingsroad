@@ -17857,7 +17857,7 @@ function showClearScreen() {
     const resultModalEl = document.getElementById('result-modal');
     const existingHistoryEl = resultModalEl && resultModalEl.querySelector('.hardship-history-wrap');
     if (existingHistoryEl) existingHistoryEl.remove();
-    if (resultModalEl) resultModalEl.querySelectorAll('.growth-box, .unit-bone-line').forEach(el => el.remove());   // 🌱 망각의 고난 「처음과 비교」가 다음 일반 판 결과에 남았다(10/29 사용자: 16장 9~11절마다 3:32 → 3:09)
+    if (resultModalEl) resultModalEl.querySelectorAll('.growth-box').forEach(el => el.remove());   // 🌱 망각의 고난 「처음과 비교」가 다음 일반 판 결과에 남았다(10/29 사용자: 16장 9~11절마다 3:32 → 3:09)
 
     // 레이블 i18n 업데이트
     const statLabels = resultModalEl.querySelectorAll('.stat-label');
@@ -17889,21 +17889,6 @@ function showClearScreen() {
             if (continueBtn) continueBtn.insertAdjacentElement('afterend', nextBtn);
         }
     }
-    try {   // 🦴 단락을 다 외운 순간(그 단락 마지막 절을 처음 깼을 때) — 뼈대 세우기로 이어 준다(10/30 사용자, 단락마다 한 번)
-        const m = !isTraining && !window.isHardshipMode && _isCurNormal && /^(\d+)-(\d+)$/.exec(String(_curStageId));
-        if (m && currentLang !== 'en' && (stageMastery[_curStageId] | 0) === 1) {
-            const ch = +m[1], v = +m[2], u = (REV_UNITS[ch] || []).find(([a, b]) => v >= a && v <= b);
-            const key = u && `kr_unitBone_${ch}-${u[0]}`;
-            if (u && !_lsGet(key, 0) && (_oilChapterIds(ch).slice(u[0] - 1, u[1]).every(id => stageClearDate[id]))) {
-                _lsSet(key, 1);
-                const line = document.createElement('button'); line.className = 'unit-bone-line';
-                line.innerHTML = `🦴 「${escapeHtml(u[2] || '')}」 단락(${ch}:${u[0]}–${u[1]})을 다 외웠어요<small>뼈대 세우기에서 단락째 써 보기 ›</small>`;
-                line.onclick = () => { if (typeof _featNote === 'function') _featNote('ub'); closeResultModal(); setTimeout(() => openOilScreen(ch), 350); };
-                const anchor = resultModalEl.querySelector('#btn-next-stage') || resultModalEl.querySelector('#result-continue-btn');
-                if (anchor) anchor.insertAdjacentElement('afterend', line);
-            }
-        }
-    } catch (e) { }
 
     resultModalEl.classList.add('active');
 }
