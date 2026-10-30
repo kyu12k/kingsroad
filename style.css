@@ -8263,3 +8263,4 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 .ms-btns .ms-go { margin: 0; }
 .bone-chip.ms { border-color: rgba(120, 160, 255, .45); background: rgba(120, 160, 255, .07); }
 .bone-chip.ms b { color: #9cc0ff; }
+.ms-prev { font-size: .82rem; color: #9fb0cc; margin-bottom: 6px; }

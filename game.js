@@ -30976,11 +30976,11 @@ function _msRule(sl) {
     if (kind === 'hear') return ans === '들으매' ? '「들으매」는 계시록에 이것(5:11) 하나 — 8:13은 「보고 들으니」' : '듣는 것은 늘 「들으니」 — 「들으매」는 5:11 하나';
     if (kind === 'open') return ch <= 2 && ans === '또 내가' ? '⚠️ 예수의 편지 말(2:21 · 2:23)은 예외 — 요한의 서술은 12장까지 「내가 또」, 14장부터 「또 내가」' : '12장까지는 「내가 또」, 14장부터는 「또 내가」 (13장엔 둘 다 없음)';
     if (kind === 'hani') return ans.endsWith('매') ? '「하매」는 넷뿐: 9:14 놓아 주라 하매 · 11:18 분노하매 · 12:6 도망하매 · 21:17 척량하매' : '「…하니」가 기본 — 「하매」는 넷뿐(9:14 · 11:18 · 12:6 · 21:17)';
-    if (prev === '내게' || prev === '나더러' || /에게$/.test(prev)) return '「내게 · ○○에게」 바로 뒤엔 가로되도 가라사대도 안 와요 — 말하되 · 말씀하시되 · 이르되';
+    if (prev === '내게' || prev === '나더러' || /에게$/.test(prev)) return '「내게」 · 「○○에게」 바로 뒤엔 가로되도 가라사대도 안 와요 — 말하되 · 말씀하시되 · 이르되 (예: 5:5 「내게 말하되」 · 16:1 「일곱 천사에게 말하되」 · 21:6 「내게 말씀하시되」)';
     if (ans === '가라사대') return '하나님 · 예수 · 성령이 말하면 가라사대';
-    if (ans === '말하되') return '「내게 · ○○에게」 밖의 말하되는 넷뿐 — 생물의 「오라」(6:1 · 6:3 · 6:5)와 14:8';
+    if (ans === '말하되') return '「내게」 · 「○○에게」 뒤가 아닌 말하되는 넷뿐 — 생물의 「오라」(6:1 · 6:3 · 6:5)와 14:8 「그 뒤를 따라 말하되」';
     if (ans === '이르되') return '이르되는 넷뿐: 6:16 · 7:13 · 7:14 · 8:13 독수리';
-    return '천사 · 장로 · 음성 · 무리 · 요한의 말은 가로되 (「내게 · ○○에게」 바로 뒤만 아님)';
+    return '천사 · 장로 · 음성 · 무리 · 요한의 말은 가로되예요 (예: 5:12 「큰 음성으로 가로되」). 다만 「내게」 · 「○○에게」 바로 뒤에는 말하되가 와요 (예: 5:5 「장로 중에 하나가 내게 말하되」)';
 }
 function _msSlots(ids) {
     const out = [];
@@ -31033,7 +31033,7 @@ function _msDraw() {
     }
     const sl = S.list[S.k];
     ov.innerHTML = `<div class="oil-card ms-card"><div class="ms-head"><b>${head}</b><span>${S.k + 1} / ${S.list.length}</span><button class="ms-x" onclick="closeMalssi()">✕</button></div>
-        <div class="ms-addr">계 ${sl.ch}:${sl.v}</div>
+        <div class="ms-addr">계 ${sl.ch}:${sl.v}</div>${sl.i === 0 && sl.v > 1 && bibleData[sl.ch][sl.v - 2] ? `<div class="ms-prev">앞 절 끝: …${escapeHtml(bibleData[sl.ch][sl.v - 2].text.split(/\s+/).slice(-5).join(' '))}</div>` : ''}
         <div class="ms-verse" id="ms-verse">${_msVerseHtml(sl)}</div>
         <div class="ms-choices" id="ms-choices">${sl.choices.map((c, j) => `<button onclick="_msPick(${j})">${escapeHtml(c)}</button>`).join('')}</div>
         <div class="ms-rule" id="ms-rule" hidden></div></div>`;
