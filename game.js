@@ -30434,7 +30434,7 @@ function _oilAllHtml() {
     return `<div class="oil-head"><div class="oil-eyebrow">${t('oil_eyebrow')}</div><div class="oil-title">${_oilMini()}${t('oil_title')}</div>
         <div class="oil-big"><b>${lit}</b><span>${t('oil_big', { n: 404 })}</span></div></div>
         <div class="oil-sum">${sum}</div>
-        ${currentLang === 'en' ? '' : `<button class="ms-entry" onclick="openMalssi()">🗣️ 말씨 고르기 <small>외운 절에서 15개</small></button>`}
+        ${currentLang === 'en' ? '' : `<button class="ms-entry" onclick="openMalssi()">💬 말씨 고르기 <small>외운 절에서 15개</small></button>`}
         <div class="oil-list">${rows}</div>
         <details class="oil-help"><summary>${t('oil_help_sum')}</summary>${_oilLegendHtml()}</details>`;
 }
@@ -30519,7 +30519,7 @@ const BONE_CH = {
         { name: '편지 끝', phrase: '귀 있는 자는', v: [7, 11, 17, 29], note: '끝 바로 다음 절이 다음 교회 시작 · 29만 이기는 자 약속(26~28)이 먼저' },
         { name: '책망', phrase: '그러나 ~ 책망할 것이', v: [4, 14, 20] },
         { name: '니골라당', phrase: '니골라당', v: [6, 15] },
-        { name: '🗣️ 귀 있는 자 → 이기는', phrase: '귀 있는 자는 … 이기는 그에게는 (같은 절)', v: [7, 11, 17], note: '세 교회까지 · 넷째 두아디라부터 뒤집혀 「들을찌어다」로 절이 끝남(2:29 · 3:6 · 3:13 · 3:22)' }
+        { name: '💬 귀 있는 자 → 이기는', phrase: '귀 있는 자는 … 이기는 그에게는 (같은 절)', v: [7, 11, 17], note: '세 교회까지 · 넷째 두아디라부터 뒤집혀 「들을찌어다」로 절이 끝남(2:29 · 3:6 · 3:13 · 3:22)' }
     ],
     3: [
         { name: '편지 시작', phrase: '○○ 교회의 사자에게 편지하기를', v: [1, 7, 14] },
@@ -30528,7 +30528,7 @@ const BONE_CH = {
         { name: '행위를 아노니', phrase: '내가 네 행위를 아노니', v: [1, 8, 15] },
         { name: '흰 옷', phrase: '흰 옷', v: [4, 5, 18] },
         { name: '볼찌어다', phrase: '볼찌어다', v: [8, 20] },
-        { name: '🗣️ 사데만 이어짐', phrase: '가진이가 가라사대 내가 네 행위를 아노니', v: [1], note: '다른 여섯 교회 첫 절은 「가라사대」에서 끝남' }
+        { name: '💬 사데만 이어짐', phrase: '가진이가 가라사대 내가 네 행위를 아노니', v: [1], note: '다른 여섯 교회 첫 절은 「가라사대」에서 끝남' }
     ],
     4: [
         { name: '가운데에서 바깥으로', phrase: '앉으신 이 → 장로 → 등불 → 유리 바다', v: [2, 3, 4, 5, 6] },
@@ -30536,7 +30536,7 @@ const BONE_CH = {
         { name: '세세토록 사시는 이', phrase: '세세토록 사시는 이에게', v: [9, 10] },
         { name: '영광과 존귀와', phrase: '영광과 존귀와 ○○', v: [9, 11], note: '9는 감사 · 11은 능력' },
         { name: '이 일 후에', phrase: '이 일 후에', v: [1], note: '7:1 · 7:9도 같은 말로 시작' },
-        { name: '🗣️ 앉으사', phrase: '보좌에 앉으사 세세토록 사시는', v: [9], note: '보좌의 하나님은 다 「앉으신」 · 여기만 「앉으사」 · 2절은 「보좌 위에」' }
+        { name: '💬 앉으사', phrase: '보좌에 앉으사 세세토록 사시는', v: [9], note: '보좌의 하나님은 다 「앉으신」 · 여기만 「앉으사」 · 2절은 「보좌 위에」' }
     ],
     5: [
         { name: '합당', phrase: '합당', v: [2, 4, 9, 12], note: '누가 합당하냐 → 없어 울었더니 → 새 노래 → 천사들' },
@@ -30546,7 +30546,7 @@ const BONE_CH = {
         { name: '엎드려', phrase: '엎드려', v: [8, 14] },
         { name: '어린 양', phrase: '어린 양이 섰는데 → 책을 취하시니 → 엎드려', v: [6, 7, 8] },
         { name: '천사들', phrase: '많은 천사 → 큰 음성으로', v: [11, 12], note: '7:11 · 7:12와 짝 — 같은 천사들, 12절은 둘 다 일곱 가지 찬양' },
-        { name: '🗣️ 보고 들으매', phrase: '내가 또 보고 들으매', v: [11], note: '「들으매」는 계시록에 이것 하나 — 나머지는 다 「들으니」(8:13 「보고 들으니」)' }
+        { name: '💬 보고 들으매', phrase: '내가 또 보고 들으매', v: [11], note: '「들으매」는 계시록에 이것 하나 — 나머지는 다 「들으니」(8:13 「보고 들으니」)' }
     ],
     6: [
         { name: '인을 떼실 때', phrase: '○째 인을 떼실 때에', v: [1, 3, 5, 7, 9, 12], note: '인을 떼는 절은 홀수 · 여섯째만 12(짝수) · 일곱째 인은 8:1' },
@@ -30636,8 +30636,8 @@ const BONE_CH = {
         { name: '두 추수', phrase: '곡식: 구름 위 앉으신 이 → 포도: 천사', v: [14, 15, 16, 17, 18, 19, 20], note: '「이한 낫」 14 · 17 · 18' },
         { name: '다 익었다', phrase: '곡식이 다 익었음 / 포도가 익었느니라', v: [15, 18] },
         { name: '숫자로 끝남', phrase: '일천 육백 스다디온', v: [20], note: '13:18 666과 짝' },
-        { name: '🗣️ 또 내가', phrase: '여기부터 절 첫머리는 「또 내가」', v: [1, 13, 14], note: '12장까지는 「내가 또」 · 13장엔 둘 다 없음 · 14~21장 모든 장에' },
-        { name: '🗣️ 앉은이 → 앉으신 이', phrase: '구름 위에 앉은이를 향하여 → 구름 위에 앉으신 이가', v: [15, 16], note: '같은 분, 바로 이웃한 두 절' }
+        { name: '💬 여기부터', phrase: '또 내가', v: [1, 13, 14], note: '절 첫머리 — 12장까지는 「내가 또」 · 13장엔 둘 다 없음 · 14~21장 모든 장에' },
+        { name: '💬 앉은이 → 앉으신 이', phrase: '구름 위에 앉은이를 향하여 → 구름 위에 앉으신 이가', v: [15, 16], note: '같은 분, 바로 이웃한 두 절' }
     ],
     15: [
         { name: '셋째 이적', phrase: '크고 이상한 다른 이적', v: [1], note: '12:1 큰 이적 → 12:3 또 다른 이적 → 여기' },
@@ -30647,7 +30647,7 @@ const BONE_CH = {
         { name: '이 일 후에', phrase: '이 일 후에 내가 보니', v: [5], note: '4:1 · 7:1 · 7:9와 같은 말' },
         { name: '성전', phrase: '열리며 → 나와 → 연기가 차서 들어갈 자가 없음', v: [5, 6, 8], note: '끝 절은 11:19와 짝' },
         { name: '금', phrase: '금띠 → 금대접', v: [6, 7], note: '1:13 인자의 금띠와 같은 차림' },
-        { name: '🗣️ 이적을 보매', phrase: '크고 이상한 다른 이적을 보매', v: [1], note: '첫 세 마디 밖의 「보매」는 계시록에 이것 하나 — 나머지는 다 「보니」' }
+        { name: '💬 이적을 보매', phrase: '크고 이상한 다른 이적을 보매', v: [1], note: '첫 세 마디 밖의 「보매」는 계시록에 이것 하나 — 나머지는 다 「보니」' }
     ],
     16: [
         { name: '대접을 쏟으매', phrase: '○째가 그 대접을 쏟으매', v: [2, 3, 4, 8, 10, 12, 17], note: '첫째~셋째 = 순서 + 1 (2·3·4) · 넷째~여섯째 = 순서 × 2 (8·10·12) · 일곱째 17' },
@@ -30683,7 +30683,7 @@ const BONE_CH = {
         { name: '즐거워하라', phrase: '하늘과 성도들과 사도들과 선지자들아', v: [20], note: '12:12 「하늘과 그 가운데 거하는 자들은 즐거워하라」' },
         { name: '맷돌', phrase: '큰 맷돌 같은 돌을 바다에 던짐 → 맷돌 소리가 다시 들리지 않고', v: [21, 22] },
         { name: '피', phrase: '선지자들과 성도들과 땅 위에서 죽임을 당한 모든 자의 피', v: [24], note: '17:6 「성도들의 피와 예수의 증인들의 피에 취한지라」' },
-        { name: '🗣️ 이 일 후에 다른 천사가', phrase: '이 일 후에 다른 천사가 … 보니', v: [1], note: '「이 일 후에」 다음이 「내가」가 아닌 곳은 여기 하나' }
+        { name: '💬 이 일 후에 다른 천사가', phrase: '이 일 후에 다른 천사가 … 보니', v: [1], note: '「이 일 후에」 다음이 「내가」가 아닌 곳은 여기 하나' }
     ],
     19: [
         { name: '할렐루야', phrase: '구원과 영광 → 두번째 → 아멘 할렐루야 → 통치하시도다', v: [1, 3, 4, 6], note: '신약의 할렐루야 네 번이 모두 이 장에' },
@@ -30719,7 +30719,7 @@ const BONE_CH = {
         { name: '정금 · 맑은 유리', phrase: '성은 정금 · 맑은 유리 → 길도 맑은 유리 같은 정금', v: [18, 21] },
         { name: '빛', phrase: '귀한 보석 같은 빛 → 하나님의 영광 · 어린 양이 등 → 만국이 그 빛 가운데로', v: [11, 23, 24] },
         { name: '들어옴', phrase: '왕들이 영광을 가지고 → 사람들이 → 생명책에 기록된 자들뿐', v: [24, 26, 27] },
-        { name: '🗣️ 내게 말씀하시되', phrase: '앉으신 이가 가라사대 → 또 가라사대 → 또 내게 말씀하시되', v: [5, 6], note: '「내게」 바로 뒤엔 가라사대가 오지 않는다' }
+        { name: '💬 내게 말씀하시되', phrase: '앉으신 이가 가라사대 → 또 가라사대 → 또 내게 말씀하시되', v: [5, 6], note: '「내게」 바로 뒤엔 가라사대가 오지 않는다' }
     ],
     22: [
         { name: '생명수 강 · 생명 나무', phrase: '보좌로부터 → 길 가운데로 → 강 좌우에 나무 → 열 두가지 실과 · 잎사귀', v: [1, 2], note: '2:7 생명나무' },
@@ -30938,7 +30938,9 @@ function _oilChapterHtml(ch) {
         return `<div class="bone-unit"><div class="bone-unit-h"><b>${a}–${b}</b> ${escapeHtml(currentLang === 'en' ? '' : name)}${learned ? `<button class="bone-unit-go" onclick="_boneUnitRun(${ch}, ${a}, ${b})">✍️ ${t('bone_unit_go')}</button>` : ''}</div>
             <div class="oil-grid">${ids.slice(a - 1, b).map((id, k) => cell(id, a - 1 + k)).join('')}</div></div>`;
     }).join('');
-    const chips = (BONE_CH[ch] || []).map((g, i) => `<button class="bone-chip" data-i="${i}" onclick="_boneMark(${ch}, ${i})"><b>${g.name}</b> 「${escapeHtml(g.phrase)}」 <span>${g.v.join('·')}</span>${g.note ? `<small>${escapeHtml(g.note)}</small>` : ''}</button>`).join('');
+    const chipOf = (g, i) => `<button class="bone-chip${g.name.startsWith('💬') ? ' ms' : ''}" data-i="${i}" onclick="_boneMark(${ch}, ${i})"><b>${g.name.replace(/^💬 /, '')}</b> 「${escapeHtml(g.phrase)}」 <span>${g.v.join('·')}</span>${g.note ? `<small>${escapeHtml(g.note)}</small>` : ''}</button>`;
+    const chips = (BONE_CH[ch] || []).map((g, i) => g.name.startsWith('💬') ? '' : chipOf(g, i)).join('');
+    const msChips = (BONE_CH[ch] || []).map((g, i) => g.name.startsWith('💬') ? chipOf(g, i) : '').join('');   // 💬 말씨 — 헷갈리는 낱말(10/30) 따로 모음
     const pl = _oilPlan(ch), lit = sts.filter(x => x >= 7).length;
     const dry = ids.filter((id, i) => sts[i] < _oilStageRaw(id)).length;   // 🕯️ 오래돼 낮아 보이는 절
     const nx = pl ? { txt: pl.txt, btn: pl.js ? `<button class="oil-next-btn" onclick="${pl.js}">${pl.go}</button>` : '' } : { txt: t('oil_next0', { ch, r: '1' }), btn: '' };
@@ -30952,7 +30954,7 @@ function _oilChapterHtml(ch) {
     return `<div class="oil-head"><button class="oil-back" onclick="openOilScreen()">‹ ${t('oil_all')}</button><div class="oil-title">${t('bone_title', { ch })}</div>
         <div class="oil-sub">${t('bone_sub', { lit, n: ids.length })}${dry ? `<br><small>${t('oil_dry_note', { n: dry })}</small>` : ''}</div></div>
         ${chips ? `<div class="bone-sec">${t('bone_ch_head', { ch })}</div><div class="bone-chips">${chips}</div>` : ''}
-        ${currentLang === 'en' ? '' : `<button class="ms-entry" onclick="openMalssi(${ch})">🗣️ 말씨 고르기 <small>보니/보매 · 가로되/말하되 · 하니/하매 …</small></button>`}
+        ${currentLang === 'en' ? '' : `<div class="bone-sec">💬 말씨 — 헷갈리는 낱말</div>${msChips ? `<div class="bone-chips">${msChips}</div>` : ''}<button class="ms-entry" onclick="openMalssi(${ch})">💬 말씨 고르기 <small>보니/보매 · 가로되/말하되 · 하니/하매 …</small></button>`}
         <div class="bone-sec">${t('bone_units_head')}</div>
         <div class="bone-units">${units}</div>
         <div id="bone-card" class="bone-card" hidden></div>
@@ -30986,7 +30988,7 @@ function _msSlots(ids) {
         const [ch, v] = id.split('-').map(Number), d = (bibleData[ch] || [])[v - 1];
         if (!d || !d.text) return;
         const w = d.text.split(/\s+/);
-        const push = (i, n, ans, choices, kind) => { const sl = { id, ch, v, w, i, n, ans, choices, kind }; sl.rule = _msRule(sl); const g = (BONE_CH[ch] || []).find(g => g.v.includes(v) && g.phrase.includes(ans)); if (g) sl.rule += ` · 🦴 ${g.name.replace(/^🗣️ /, '')} 「${g.phrase}」`; out.push(sl); };   // 그 절이 든 장 칩이 있으면 함께
+        const push = (i, n, ans, choices, kind) => { const sl = { id, ch, v, w, i, n, ans, choices, kind }; sl.rule = _msRule(sl); const g = (BONE_CH[ch] || []).find(g => g.v.includes(v) && g.phrase.includes(ans)); if (g) sl.rule += ` · 🦴 ${g.name.replace(/^💬 /, '')} 「${g.phrase}」`; out.push(sl); };   // 그 절이 든 장 칩이 있으면 함께
         if ((w[0] === '내가' && w[1] === '또') || (w[0] === '또' && w[1] === '내가')) push(0, 2, w[0] + ' ' + w[1], ['내가 또', '또 내가'], 'open');
         w.forEach((x, i) => {
             const y = x.replace(/[,.]$/, '');
@@ -31021,7 +31023,7 @@ function _msVerseHtml(sl, fill, good) {
 }
 function _msDraw() {
     const S = window._ms, ov = document.getElementById('ms-overlay'); if (!S || !ov) return;
-    const head = `🗣️ 말씨 고르기${S.ch ? ` · ${S.ch}장` : ''}`;
+    const head = `💬 말씨 고르기${S.ch ? ` · ${S.ch}장` : ''}`;
     if (S.k >= S.list.length) {
         const miss = S.miss.map(sl => `<span>${sl.ch}:${sl.v} ${escapeHtml(sl.ans)}</span>`).join('');
         ov.innerHTML = `<div class="oil-card ms-card"><div class="ms-head"><b>${head}</b></div>
