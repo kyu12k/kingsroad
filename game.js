@@ -15404,7 +15404,7 @@ async function initFirestoreSync() {
         try { if (typeof splashReady === 'function') setTimeout(splashReady, 300); } catch (e) { }
         try { if (typeof _letterReturnCheck === 'function') _letterReturnCheck(); } catch (e) { }
         try { const m = document.getElementById('weekly-study-modal'); if (m && m.classList.contains('open')) openWeeklyStudyModal(); } catch (e) { }   // 📅 먼저 열어 둔 학습 시간 창 — 다른 기기 시간을 받아 다시 그림
-        try { if (typeof _tipSharedCheck === 'function') setTimeout(_tipSharedCheck, 4000); } catch (e) { }   // 🌟 내 꿀팁이 나눠졌으면 한 번   // 💌 3일+ 쉬고 돌아옴   // ⏳ 서버 기록을 받아 왔다 — 시작 화면을 연다(화면이 한 번 다시 그려질 틈)
+        try { if (typeof _tipSharedCheck === 'function') setTimeout(_tipSharedCheck, 4000); } catch (e) { } try { setTimeout(_letterReplyCheck, 6000); } catch (e) { }   // 🌟 내 꿀팁이 나눠졌으면 한 번   // 💌 3일+ 쉬고 돌아옴   // ⏳ 서버 기록을 받아 왔다 — 시작 화면을 연다(화면이 한 번 다시 그려질 틈)
         try { _checkReturnBoost(); _renderReturnFloat(); } catch (e) { console.warn('[returnBoost]', e); }
         try { _noteArrival(); } catch (e) { }   // 🔗 꼬리표 주소로 온 사람 — 둘러보기만 해도
         try { _guideSync(); } catch (e) {}   // 인도자와 동행 — 서버 상태
@@ -17857,7 +17857,7 @@ function showClearScreen() {
     const resultModalEl = document.getElementById('result-modal');
     const existingHistoryEl = resultModalEl && resultModalEl.querySelector('.hardship-history-wrap');
     if (existingHistoryEl) existingHistoryEl.remove();
-    if (resultModalEl) resultModalEl.querySelectorAll('.growth-box').forEach(el => el.remove());   // 🌱 망각의 고난 「처음과 비교」가 다음 일반 판 결과에 남았다(10/29 사용자: 16장 9~11절마다 3:32 → 3:09)
+    if (resultModalEl) resultModalEl.querySelectorAll('.growth-box, .unit-bone-line').forEach(el => el.remove());   // 🌱 망각의 고난 「처음과 비교」가 다음 일반 판 결과에 남았다(10/29 사용자: 16장 9~11절마다 3:32 → 3:09)
 
     // 레이블 i18n 업데이트
     const statLabels = resultModalEl.querySelectorAll('.stat-label');
@@ -17889,6 +17889,21 @@ function showClearScreen() {
             if (continueBtn) continueBtn.insertAdjacentElement('afterend', nextBtn);
         }
     }
+    try {   // 🦴 단락을 다 외운 순간(그 단락 마지막 절을 처음 깼을 때) — 뼈대 세우기로 이어 준다(10/30 사용자, 단락마다 한 번)
+        const m = !isTraining && !window.isHardshipMode && _isCurNormal && /^(\d+)-(\d+)$/.exec(String(_curStageId));
+        if (m && currentLang !== 'en' && (stageMastery[_curStageId] | 0) === 1) {
+            const ch = +m[1], v = +m[2], u = (REV_UNITS[ch] || []).find(([a, b]) => v >= a && v <= b);
+            const key = u && `kr_unitBone_${ch}-${u[0]}`;
+            if (u && !_lsGet(key, 0) && (_oilChapterIds(ch).slice(u[0] - 1, u[1]).every(id => stageClearDate[id]))) {
+                _lsSet(key, 1);
+                const line = document.createElement('button'); line.className = 'unit-bone-line';
+                line.innerHTML = `🦴 「${escapeHtml(u[2] || '')}」 단락(${ch}:${u[0]}–${u[1]})을 다 외웠어요<small>뼈대 세우기에서 단락째 써 보기 ›</small>`;
+                line.onclick = () => { if (typeof _featNote === 'function') _featNote('ub'); closeResultModal(); setTimeout(() => openOilScreen(ch), 350); };
+                const anchor = resultModalEl.querySelector('#btn-next-stage') || resultModalEl.querySelector('#result-continue-btn');
+                if (anchor) anchor.insertAdjacentElement('afterend', line);
+            }
+        }
+    } catch (e) { }
 
     resultModalEl.classList.add('active');
 }
@@ -22850,7 +22865,7 @@ function _letterCardHtml(L, opts) {
         <div class="lt-letter-text">${escapeHtml(L.text || '').replace(/\n/g, '<br>')}</div>
         <div class="lt-letter-foot"><span class="lt-letter-nick">— ${escapeHtml(L.nick || t('letter_anon'))}${L.tag && L.tag !== '0000' ? ` <span class="lt-letter-tag">#${escapeHtml(L.tag)}</span>` : ''}${tip && L.vn > 0 ? ` <span class="lt-letter-vn">· ${t('tip_vn', { n: L.vn | 0 })}</span>` : ''}</span>
             <button class="lt-letter-like${liked ? ' on' : ''}" ${liked ? 'disabled' : ''} onclick="_letterLike('${escapeHtml(L.id)}', this)">${tip ? '👍 ' + t('tip_like') : '🙏 ' + t('letter_like')} <b>${L.likes | 0}</b></button></div>
-        ${opts && opts.admin ? `<div class="lt-letter-admin"><button onclick="_letterJudge('${escapeHtml(L.id)}', 'approved')">${t('letter_approve')}</button><button onclick="_letterJudge('${escapeHtml(L.id)}', 'rejected')">${t('letter_reject')}</button></div>` : ''}
+        ${opts && opts.admin ? `<div class="lt-letter-admin"><button onclick="_letterJudge('${escapeHtml(L.id)}', 'approved')">${t('letter_approve')}</button><button onclick="_letterRejectForm('${escapeHtml(L.id)}')">${t('letter_reject')}</button></div>` : ''}
     </div>`;
 }
 /* 창 — tab: 'list'|'pending'(관리자) · kind: 'cheer'(편지)|'tip'(꿀팁) · topic: 꿀팁 주제 거르기 */
@@ -23042,14 +23057,43 @@ async function _letterLike(id, btn) {
         if (_letterCache) { const L = _letterCache.find(x => x.id === id); if (L) L.likes = (L.likes | 0) + 1; }
     } catch (e) { console.warn('[letters] like', e.code || e); }   // 이미 누른 적 있음(다른 기기) 등 — 조용히
 }
-async function _letterJudge(id, status) {
+async function _letterJudge(id, status, reply) {
     if (!_letterIsAdmin()) return;
     try {
-        await db.collection('letters').doc(id).update({ status, judgedAt: firebase.firestore.FieldValue.serverTimestamp() });
+        const up = { status, judgedAt: firebase.firestore.FieldValue.serverTimestamp() };
+        if (reply) { up.reply = String(reply).slice(0, 300); up.replyAt = firebase.firestore.FieldValue.serverTimestamp(); }   // ✉️ 반려 한마디(10/30)
+        await db.collection('letters').doc(id).update(up);
         const card = document.querySelector(`.lt-letter[data-id="${id}"]`); if (card) card.remove();
         showGemToast(0, status === 'approved' ? t('letter_approved') : t('letter_rejected'), false);
         _letterCache = null;
     } catch (e) { showGemToast(0, String(e.code || e.message), true); }
+}
+/* ✉️ 반려할 때 한마디 (10/30 사용자) — 비워 두면 말없이 반려. 글쓴이는 다음에 앱을 열 때 한 번 받는다(_letterReplyCheck) */
+function _letterRejectForm(id) {
+    const card = document.querySelector(`.lt-letter[data-id="${id}"]`); if (!card || card.querySelector('.lt-reply-form')) return;
+    const f = document.createElement('div'); f.className = 'lt-reply-form';
+    f.innerHTML = `<textarea maxlength="300" placeholder="글쓴이에게 한마디 (비워 두면 말없이 반려)"></textarea>
+        <div class="lt-letter-admin"><button onclick="_letterJudge('${id}', 'rejected', this.closest('.lt-reply-form').querySelector('textarea').value.trim())">✕ 반려하기</button><button onclick="this.closest('.lt-reply-form').remove()">취소</button></div>`;
+    card.appendChild(f); f.querySelector('textarea').focus();
+}
+async function _letterReplyCheck() {
+    if (typeof db === 'undefined' || !db || !auth || !auth.currentUser) return;
+    const day = _get6AMDayStr(); if (_lsGet('kingsRoad_letterReplyDay', '') === day) return;   // 하루 한 번만 묻는다
+    _lsSet('kingsRoad_letterReplyDay', day);
+    try {
+        const q = await db.collection('letters').where('uid', '==', auth.currentUser.uid).get();
+        const seen = _lsGet('kingsRoad_letterReplySeen', []) || [];
+        const L = q.docs.map(d => Object.assign({ id: d.id }, d.data())).find(x => x.reply && !seen.includes(x.id));
+        if (!L) return;
+        _lsSet('kingsRoad_letterReplySeen', seen.concat(L.id).slice(-50));
+        let el = document.getElementById('letter-reply-pop');
+        if (!el) { el = document.createElement('div'); el.id = 'letter-reply-pop'; el.className = 'modal-overlay'; el.style.zIndex = '10004'; document.body.appendChild(el); }
+        el.innerHTML = `<div class="letter-reply-card"><div class="lr-title">✉️ 보내 주신 ${L.kind === 'tip' ? '꿀팁' : '응원'}에 답장이 왔어요</div>
+            <div class="lr-mine">${escapeHtml(String(L.text || '').slice(0, 80))}${String(L.text || '').length > 80 ? '…' : ''}</div>
+            <div class="lr-reply">${escapeHtml(L.reply)}</div>
+            <button class="lr-ok" onclick="document.getElementById('letter-reply-pop').style.display='none'">${t('btn_close')}</button></div>`;
+        el.style.display = 'flex'; setTimeout(() => el.classList.add('active'), 10);
+    } catch (e) { console.warn('[letters] reply', e); }
 }
 /* 막막한 순간에 한 장 — 하루 한 번(셋 합쳐), 같은 편지는 최근 다섯 장과 겹치지 않게 */
 async function _letterNudge(reason) {
@@ -30611,6 +30655,7 @@ const BONE_CH = {
         { name: '화', phrase: '둘째 화는 지나갔으나', v: [14], note: '9:12 첫째 → 여기서 둘째 → 셋째는 속히' },
         { name: '일곱째 나팔', phrase: '큰 음성들 → 장로들 엎드려 → 감사 → 심판과 상', v: [15, 16, 17, 18] },
         { name: '번개와 음성', phrase: '번개 · 음성 · 뇌성 · 지진 · 우박', v: [19], note: '4:5 → 8:5(+지진) → 11:19(+우박)' },
+        { name: '💬 사흘 반 → 삼일 반', phrase: '사흘 반 동안 → 삼일 반 후에', v: [9, 11], note: '날 수는 다 한자어(십일 · 육십 일 · 삼일 반)인데 9절만 「사흘 반」' }
     ],
     12: [
         { name: '이적', phrase: '하늘에 큰 이적 → 또 다른 이적', v: [1, 3], note: '여자 → 용' },
@@ -30729,7 +30774,8 @@ const BONE_CH = {
         { name: '정금 · 맑은 유리', phrase: '성은 정금 · 맑은 유리 → 길도 맑은 유리 같은 정금', v: [18, 21] },
         { name: '빛', phrase: '귀한 보석 같은 빛 → 하나님의 영광 · 어린 양이 등 → 만국이 그 빛 가운데로', v: [11, 23, 24] },
         { name: '들어옴', phrase: '왕들이 영광을 가지고 → 사람들이 → 생명책에 기록된 자들뿐', v: [24, 26, 27] },
-        { name: '💬 내게 말씀하시되', phrase: '앉으신 이가 가라사대 → 또 가라사대 → 또 내게 말씀하시되', v: [5, 6], note: '「내게」 바로 뒤엔 가라사대가 오지 않는다' }
+        { name: '💬 내게 말씀하시되', phrase: '앉으신 이가 가라사대 → 또 가라사대 → 또 내게 말씀하시되', v: [5, 6], note: '「내게」 바로 뒤엔 가라사대가 오지 않는다' },
+        { name: '💬 십 이 사도', phrase: '열 두 기초석 · 열 두 이름 · 십 이 사도', v: [14], note: '열둘은 다 「열 두」인데 「사도」만 「십 이」 — 같은 절 안에' }
     ],
     22: [
         { name: '생명수 강 · 생명 나무', phrase: '보좌로부터 → 길 가운데로 → 강 좌우에 나무 → 열 두가지 실과 · 잎사귀', v: [1, 2], note: '2:7 생명나무' },
@@ -36380,18 +36426,18 @@ function renderHomeTodo() {
     let rev = 0, blank = 0;
     try { rev = getForgottenStages().length; } catch (e) { }
     try { blank = _blankDueToday().length; } catch (e) { }   // 📏 오늘 몫
-    const chip = (icon, label, n, done, fn) => `<button class="home-todo-chip${done ? ' done' : ''}" onclick="${fn}">${icon} ${label}${done ? ' ✓' : n ? ` <b>${n}</b>` : ''}</button>`;
-    let h = chip('📖', t('todo_review'), rev, rev === 0, 'openReviewFromHome()') + chip('✍️', t('todo_blank'), blank, blank === 0, 'openBlankDueScreen()');
-    try { const soon = _resetSoonIds().length; if (soon) h = `<button class="home-todo-chip warn" onclick="openReviewFromHome()">⏳ ${t('todo_reset')} <b>${soon}</b></button>` + h; } catch (e) { }   // 곧 처음으로(10/22)
+    const chip = (icon, label, n, done, fn, k) => `<button class="home-todo-chip${done ? ' done' : ''}" onclick="_featNote('${k}'); ${fn}">${icon} ${label}${done ? ' ✓' : n ? ` <b>${n}</b>` : ''}</button>`;
+    let h = chip('📖', t('todo_review'), rev, rev === 0, 'openReviewFromHome()', 'tRv') + chip('✍️', t('todo_blank'), blank, blank === 0, 'openBlankDueScreen()', 'tBl');
+    try { const soon = _resetSoonIds().length; if (soon) h = `<button class="home-todo-chip warn" onclick="_featNote('tRs'); openReviewFromHome()">⏳ ${t('todo_reset')} <b>${soon}</b></button>` + h; } catch (e) { }   // 곧 처음으로(10/22)
     try {   // 🐚 카드를 「나중에」로 접었으면 — 칩으로 남긴다(10/17 사용자: 접으면 어디서 다시 하나?)
         let folded = false; try { folded = localStorage.getItem('kr_rcard') === _get6AMDayStr(); } catch (e) { }
-        if (folded && dailyLog && dailyLog[_shift6AMDayStr(_get6AMDayStr(), -1)] && _njClamKnown()) { const n = _njRoundLeft('clam').length; if (n) h = chip('🐚', t('todo_rc'), n, false, "njRoundStart('clam', 'home')") + h; }
+        if (folded && dailyLog && dailyLog[_shift6AMDayStr(_get6AMDayStr(), -1)] && _njClamKnown()) { const n = _njRoundLeft('clam').length; if (n) h = chip('🐚', t('todo_rc'), n, false, "njRoundStart('clam', 'home')", 'tRc') + h; }
     } catch (e) { }
     { const op = _oilHomePick(); if (op) h += `<button class="home-todo-chip oil" onclick="_oilHomeGo()">${_oilMini()}${t('todo_oil', { ch: op.ch, what: op.pl.short })}</button>`; }   // 🪔 기름 단계 — 다음 할 것 하나
-    if (S.hasFriends) h += chip('💛', t('todo_cheer'), S.cheerable, S.cheerable === 0, 'openFriendScreen()');
+    if (S.hasFriends) h += chip('💛', t('todo_cheer'), S.cheerable, S.cheerable === 0, 'openFriendScreen()', 'tCh');
     { const gf = (njGiftFruits || []).filter(f => !f.done || !f.thanked), act = gf.filter(f => (f.ripe && Date.now() >= f.ripe && !f.done) || (f.done && !f.thanked) || (!f.ripe && !f.done)).length;
-      if (gf.length) h += chip('🎁', t('todo_gift'), act, act === 0, 'openGiftBasket()'); }   // 🎁 받은 나눔 열매
-    if (_battleInboxN > 0) h += `<button class="home-todo-chip" onclick="openBattle()">📨 도전장 <b>${_battleInboxN}</b></button>`;
+      if (gf.length) h += chip('🎁', t('todo_gift'), act, act === 0, 'openGiftBasket()', 'tGf'); }   // 🎁 받은 나눔 열매
+    if (_battleInboxN > 0) h += `<button class="home-todo-chip" onclick="_featNote('tBt'); openBattle()">📨 도전장 <b>${_battleInboxN}</b></button>`;
     {   // 🏛️ 성에서 — 만나 · 익은 열매 · 남은 별(10/15 사용자: 할 일이 이끄는 입구). 누르면 그 일이 있는 자리로
         let manna = 0, fruit = 0, star = 0;
         try { const T = _njMannaToday(), M = _njMannaDay(); if (T.ready) manna = T.ids.filter((_, i) => !M.got.includes(i) && !(M.melt || []).includes(i)).length; } catch (e) { }
@@ -36403,12 +36449,12 @@ function renderHomeTodo() {
         } catch (e) { }
         if (manna || fruit || star) {
             const start = manna ? "'manna'" : fruit ? 'null' : "'stars'";
-            h += `<button class="home-todo-chip nj" onclick="openNJ3DView(${start === 'null' ? '' : `{ start: ${start} }`})">🏛️ ${t('todo_nj')}${manna ? ` 🍞<b>${manna}</b>` : ''}${fruit ? ` 🍽️<b>${fruit}</b>` : ''}${star ? ` ⭐<b>${star}</b>` : ''}</button>`;
+            h += `<button class="home-todo-chip nj" onclick="_featNote('tNj'); openNJ3DView(${start === 'null' ? '' : `{ start: ${start} }`})">🏛️ ${t('todo_nj')}${manna ? ` 🍞<b>${manna}</b>` : ''}${fruit ? ` 🍽️<b>${fruit}</b>` : ''}${star ? ` ⭐<b>${star}</b>` : ''}</button>`;
         }
     }   // 말씀 대결 — 받은 도전장(⚔️는 길드 출석이 쓴다)
-    if (S.inGuild) h += chip('⚔️', t('todo_attend'), 0, S.attended, 'openGuildScreen()');
+    if (S.inGuild) h += chip('⚔️', t('todo_attend'), 0, S.attended, 'openGuildScreen()', 'tGd');
     _googleNudgeNoteLinked();
-    if (_googleNudgeEligible() && !_googleBlockedBrowser()) h += chip('🔒', t('todo_protect'), 0, false, 'googleNudgeLink()');   // 🔒 구글 연결 전까지
+    if (_googleNudgeEligible() && !_googleBlockedBrowser()) h += chip('🔒', t('todo_protect'), 0, false, 'googleNudgeLink()', 'tGo');   // 🔒 구글 연결 전까지
     el.innerHTML = `<div class="home-todo-title">${t('todo_title')}</div><div class="home-todo-chips">${h}</div>`;
     _recallPopSync();   // 🐚 어제 세 구절 — 떠 있는 팝업(10/17)
 }

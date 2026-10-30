@@ -8264,3 +8264,13 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 .bone-chip.ms { border-color: rgba(120, 160, 255, .45); background: rgba(120, 160, 255, .07); }
 .bone-chip.ms b { color: #9cc0ff; }
 .ms-prev { font-size: .82rem; color: #9fb0cc; margin-bottom: 6px; }
+/* ✉️ 반려 한마디 · 🦴 단락 다 외움 (10/30) */
+.lt-reply-form { margin-top: 8px; }
+.lt-reply-form textarea { width: 100%; box-sizing: border-box; min-height: 64px; border-radius: 10px; border: 1px solid #d9c9a3; padding: 8px; font: inherit; font-size: .9rem; }
+.letter-reply-card { width: min(380px, calc(100vw - 32px)); margin: auto; background: #fffaf0; color: #3b2f1e; border-radius: 16px; padding: 18px 16px 14px; box-shadow: 0 16px 40px rgba(0, 0, 0, .4); }
+.letter-reply-card .lr-title { font-weight: 700; margin-bottom: 10px; }
+.letter-reply-card .lr-mine { font-size: .85rem; color: #8a7a60; border-left: 3px solid #e3d3ad; padding-left: 8px; margin-bottom: 10px; }
+.letter-reply-card .lr-reply { font-size: .95rem; line-height: 1.6; white-space: pre-wrap; margin-bottom: 14px; }
+.letter-reply-card .lr-ok { display: block; margin-left: auto; padding: 8px 18px; border-radius: 10px; border: 0; background: #e8a020; color: #fff; font-weight: 700; }
+.unit-bone-line { display: block; width: 100%; margin-top: 8px; padding: 10px 12px; border-radius: 12px; border: 1px solid #e8a020; background: rgba(232, 160, 32, .10); color: #7a4a00; font-weight: 700; font-size: .92rem; text-align: left; cursor: pointer; }
+.unit-bone-line small { display: block; font-weight: 400; color: #9a6a20; font-size: .8rem; margin-top: 2px; }
