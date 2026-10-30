@@ -3058,6 +3058,7 @@ let njClamWeek = null;         // 🐚 { wk: 주차, days: [세 조개를 다 �
 let njPearlFound = { w: 0, c: 0, g: 0 };   // 🐚 찾은 진주(늘기만) — 흰·빛깔·값진
 let njPearlSold = { w: 0, c: 0, g: 0 };    // 💎 판 진주(늘기만) — 가진 진주 = 찾은 − 판
 let njPearlGems = 0;          // 💎 진주를 팔아 받은 보석 합(보석 흐름 실측용)
+let msLog = {};               // 💬 말씨 고르기 { '장-절_자리': { n: 푼 수, w: 틀린 수, x: 마지막에 잘못 고른 말, f: 처음, at: 마지막 } } — 어디서 헷갈리나·연습 뒤 백지에서 덜 틀리나(rw와 짝) (2026-10-30)
 let myCues = {};              // 🔗 내 고리 { '장-절': { s: 번호·소리, w: 낱말, k: ''|'n'|'s', at, src?: 가져온 cues 문서, sh?: 나눈 cues 문서 } · 지우면 { del: 1, at } } (2026-10-29)
 let chClean = {};             // 🏔️ 장을 통째로 백지로 쓴 가장 최근 판 { 장: +시각(단서 없이) | −시각(단서·실패) } — 보스전 백지·망각의 고난 백지 장 전체(2026-10-29)
 let scoreRepeat = null;       // 🔁 같은 날 같은 난이도 승점 횟수 { day, n: { '열쇠': 번 } } — 중간점검·보스전·오늘의 암송 세 번까지(2026-10-28)
@@ -3647,6 +3648,7 @@ loadGameData = function () {
         njStars = (parsed.njStars && typeof parsed.njStars === 'object' && parsed.njStars.day) ? parsed.njStars : null;
         chClean = (parsed.chClean && typeof parsed.chClean === 'object') ? parsed.chClean : {};
         myCues = (parsed.myCues && typeof parsed.myCues === 'object') ? parsed.myCues : {};
+        msLog = (parsed.msLog && typeof parsed.msLog === 'object') ? parsed.msLog : {};
         scoreRepeat = (parsed.scoreRepeat && typeof parsed.scoreRepeat === 'object' && parsed.scoreRepeat.day && parsed.scoreRepeat.n) ? parsed.scoreRepeat : null;
         njMannaGems = Math.max(0, parseInt(parsed.njMannaGems, 10) || 0);
         njDexFish = Math.max(0, parseInt(parsed.njDexFish, 10) || 0);
@@ -14725,6 +14727,7 @@ function saveGameData() {
         scoreRepeat: scoreRepeat,         // 🔁 같은 날 같은 난이도 승점 횟수
         chClean: chClean,                 // 🏔️ 장을 통째로 백지로 단서 없이
         myCues: myCues,                   // 🔗 내 고리
+        msLog: msLog,                     // 💬 말씨 고르기 기록
         njMannaGems: njMannaGems,         // 💎 만나·메추라기로 받은 보석 합
         njDexFish: njDexFish,             // 🐟 도감 생물에게서 받은 물고기 합
         njDex: njDex,                     // 🐠 바다 생물 도감(절마다 생물)
@@ -15297,6 +15300,13 @@ function _mergeSaveProgress(target, other) {
             if (oc && typeof oc === 'object') {
                 if (!target.chClean || typeof target.chClean !== 'object') target.chClean = {};
                 Object.entries(oc).forEach(([c, ts]) => { if (Math.abs(+ts || 0) > Math.abs(+target.chClean[c] || 0)) { target.chClean[c] = ts; took++; } });
+            }
+        }
+        {   // 💬 말씨 고르기 — 자리마다 많이 푼 쪽(같으면 나중 쪽). 두 기기 기록을 더하진 않는다
+            const oc = other.msLog;
+            if (oc && typeof oc === 'object') {
+                if (!target.msLog || typeof target.msLog !== 'object') target.msLog = {};
+                Object.entries(oc).forEach(([k, q]) => { const m = target.msLog[k]; if (q && (!m || (+q.n || 0) > (+m.n || 0) || ((+q.n || 0) === (+m.n || 0) && (+q.at || 0) > (+m.at || 0)))) { target.msLog[k] = q; took++; } });
             }
         }
         {   // 🔗 내 고리 — 절마다 나중에 고친 쪽(지운 것도 시각을 남겨 되살아나지 않게)
@@ -31016,7 +31026,7 @@ function openMalssi(ch) {   // ch 없으면 외운 절 전체에서 무작위 15
     ov.style.display = 'flex'; setTimeout(() => ov.classList.add('active'), 10);
     _msDraw();
 }
-function closeMalssi() { const ov = document.getElementById('ms-overlay'); if (ov) { ov.classList.remove('active'); ov.style.display = 'none'; } }
+function closeMalssi() { if (window._ms && window._ms.dirty) { window._ms.dirty = 0; saveGameData(); } const ov = document.getElementById('ms-overlay'); if (ov) { ov.classList.remove('active'); ov.style.display = 'none'; } }
 function _msVerseHtml(sl, fill, good) {
     const pre = sl.w.slice(0, sl.i).join(' '), post = sl.w.slice(sl.i + sl.n).join(' ');
     const slot = fill ? `<b class="ms-slot ${good ? 'ok' : 'no'}">${escapeHtml(fill)}</b>` : '<b class="ms-slot">？</b>';
@@ -31026,6 +31036,7 @@ function _msDraw() {
     const S = window._ms, ov = document.getElementById('ms-overlay'); if (!S || !ov) return;
     const head = `💬 말씨 고르기${S.ch ? ` · ${S.ch}장` : ''}`;
     if (S.k >= S.list.length) {
+        if (S.dirty) { S.dirty = 0; saveGameData(); }
         const miss = S.miss.map(sl => `<span>${sl.ch}:${sl.v} ${escapeHtml(sl.ans)}</span>`).join('');
         ov.innerHTML = `<div class="oil-card ms-card"><div class="ms-head"><b>${head}</b></div>
             <div class="ms-done"><b>${S.ok}</b> / ${S.list.length}</div>${miss ? `<div class="ms-miss">${miss}</div>` : ''}
@@ -31044,6 +31055,7 @@ function _msPick(j) {
     S.done = S.k;
     const pick = sl.choices[j], good = pick === sl.ans;
     if (good) S.ok++; else S.miss.push(sl);
+    { const k = `${sl.id}_${sl.i}`, now = Date.now(), r = msLog[k] || { n: 0, w: 0, f: now }; r.n++; if (!good) { r.w++; r.x = pick; } r.at = now; msLog[k] = r; S.dirty = 1; }   // 💬 기록 — 저장은 판 끝·닫을 때
     document.getElementById('ms-verse').innerHTML = _msVerseHtml(sl, sl.ans, good);
     document.querySelectorAll('#ms-choices button').forEach((b, x) => { b.disabled = true; if (sl.choices[x] === sl.ans) b.classList.add('ok'); else if (x === j) b.classList.add('no'); });
     const r = document.getElementById('ms-rule');
