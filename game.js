@@ -20833,7 +20833,7 @@ function _recordEventClear(eventId, stageIds, rung) {
         eventProgress[eventId][id][rung] = Date.now();
     });
     // 🪜 다음 난이도를 미리 골라 둔다(10/28 사용자 — 중간점검 「다음 난이도」처럼) · 방금 통과한 난이도가 골라져 있을 때만, 백지 다음은 없다
-    if (_eventMode === rung) { const nx = BOSS_DIFF_ORDER[BOSS_DIFF_ORDER.indexOf(rung) + 1]; if (nx) _eventMode = nx; }
+    if (_eventMode === rung) { const nx = BOSS_DIFF_ORDER[BOSS_DIFF_ORDER.indexOf(rung) + 1]; if (nx) setEventMode(nx); }
     // 보상 — 오늘 10절 전부 백지로 통과했으면 💎1,000, 하루 1회. 모의고사 한 번이든 문항 다섯 개 따로든
     const ev = _findEvent(eventId);
     if (rung === 'none' && ev && ev.daily) _noteDailyDone(ev);
@@ -21316,6 +21316,7 @@ function openDailyScreen() {
     if (!ev) { showGemToast(0, t('daily_none'), true); return; }
     const old = document.getElementById('event-modal'); if (old) old.remove();
     const ids = _eventVerseIds(ev);
+    { const s = _lsGet('kingsRoad_dailyMode', null) || {}; _eventMode = s.day === _get6AMDayStr() && s.m ? s.m : 'normal'; }   // 10/30 사용자: 하루(06시)가 바뀌면 「보통」부터 — 그날 고른 것·통과해 넘어간 것은 그날 안에선 그대로
     const [y, m, d] = _get6AMDayStr().split('-').map(Number);
     const wdKo = ['일', '월', '화', '수', '목', '금', '토'][new Date(y, m - 1, d).getDay()];
     const dateLabel = `${m}/${d} (${wdKo})`;
@@ -22228,7 +22229,7 @@ function openEventScreen(eventId) {
 }
 
 function setEventMode(m) {
-    _eventMode = m;
+    _eventMode = m; _lsSet('kingsRoad_dailyMode', { day: _get6AMDayStr(), m });
     document.querySelectorAll('#event-modal .event-mode-btn').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
 }
 
