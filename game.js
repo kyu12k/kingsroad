@@ -30434,6 +30434,7 @@ function _oilAllHtml() {
     return `<div class="oil-head"><div class="oil-eyebrow">${t('oil_eyebrow')}</div><div class="oil-title">${_oilMini()}${t('oil_title')}</div>
         <div class="oil-big"><b>${lit}</b><span>${t('oil_big', { n: 404 })}</span></div></div>
         <div class="oil-sum">${sum}</div>
+        ${currentLang === 'en' ? '' : `<button class="ms-entry" onclick="openMalssi()">🗣️ 말씨 고르기 <small>외운 절에서 15개</small></button>`}
         <div class="oil-list">${rows}</div>
         <details class="oil-help"><summary>${t('oil_help_sum')}</summary>${_oilLegendHtml()}</details>`;
 }
@@ -30518,6 +30519,7 @@ const BONE_CH = {
         { name: '편지 끝', phrase: '귀 있는 자는', v: [7, 11, 17, 29], note: '끝 바로 다음 절이 다음 교회 시작 · 29만 이기는 자 약속(26~28)이 먼저' },
         { name: '책망', phrase: '그러나 ~ 책망할 것이', v: [4, 14, 20] },
         { name: '니골라당', phrase: '니골라당', v: [6, 15] },
+        { name: '🗣️ 귀 있는 자 → 이기는', phrase: '귀 있는 자는 … 이기는 그에게는 (같은 절)', v: [7, 11, 17], note: '세 교회까지 · 넷째 두아디라부터 뒤집혀 「들을찌어다」로 절이 끝남(2:29 · 3:6 · 3:13 · 3:22)' }
     ],
     3: [
         { name: '편지 시작', phrase: '○○ 교회의 사자에게 편지하기를', v: [1, 7, 14] },
@@ -30526,6 +30528,7 @@ const BONE_CH = {
         { name: '행위를 아노니', phrase: '내가 네 행위를 아노니', v: [1, 8, 15] },
         { name: '흰 옷', phrase: '흰 옷', v: [4, 5, 18] },
         { name: '볼찌어다', phrase: '볼찌어다', v: [8, 20] },
+        { name: '🗣️ 사데만 이어짐', phrase: '가진이가 가라사대 내가 네 행위를 아노니', v: [1], note: '다른 여섯 교회 첫 절은 「가라사대」에서 끝남' }
     ],
     4: [
         { name: '가운데에서 바깥으로', phrase: '앉으신 이 → 장로 → 등불 → 유리 바다', v: [2, 3, 4, 5, 6] },
@@ -30533,6 +30536,7 @@ const BONE_CH = {
         { name: '세세토록 사시는 이', phrase: '세세토록 사시는 이에게', v: [9, 10] },
         { name: '영광과 존귀와', phrase: '영광과 존귀와 ○○', v: [9, 11], note: '9는 감사 · 11은 능력' },
         { name: '이 일 후에', phrase: '이 일 후에', v: [1], note: '7:1 · 7:9도 같은 말로 시작' },
+        { name: '🗣️ 앉으사', phrase: '보좌에 앉으사 세세토록 사시는', v: [9], note: '보좌의 하나님은 다 「앉으신」 · 여기만 「앉으사」 · 2절은 「보좌 위에」' }
     ],
     5: [
         { name: '합당', phrase: '합당', v: [2, 4, 9, 12], note: '누가 합당하냐 → 없어 울었더니 → 새 노래 → 천사들' },
@@ -30542,6 +30546,7 @@ const BONE_CH = {
         { name: '엎드려', phrase: '엎드려', v: [8, 14] },
         { name: '어린 양', phrase: '어린 양이 섰는데 → 책을 취하시니 → 엎드려', v: [6, 7, 8] },
         { name: '천사들', phrase: '많은 천사 → 큰 음성으로', v: [11, 12], note: '7:11 · 7:12와 짝 — 같은 천사들, 12절은 둘 다 일곱 가지 찬양' },
+        { name: '🗣️ 보고 들으매', phrase: '내가 또 보고 들으매', v: [11], note: '「들으매」는 계시록에 이것 하나 — 나머지는 다 「들으니」(8:13 「보고 들으니」)' }
     ],
     6: [
         { name: '인을 떼실 때', phrase: '○째 인을 떼실 때에', v: [1, 3, 5, 7, 9, 12], note: '인을 떼는 절은 홀수 · 여섯째만 12(짝수) · 일곱째 인은 8:1' },
@@ -30631,6 +30636,8 @@ const BONE_CH = {
         { name: '두 추수', phrase: '곡식: 구름 위 앉으신 이 → 포도: 천사', v: [14, 15, 16, 17, 18, 19, 20], note: '「이한 낫」 14 · 17 · 18' },
         { name: '다 익었다', phrase: '곡식이 다 익었음 / 포도가 익었느니라', v: [15, 18] },
         { name: '숫자로 끝남', phrase: '일천 육백 스다디온', v: [20], note: '13:18 666과 짝' },
+        { name: '🗣️ 또 내가', phrase: '여기부터 절 첫머리는 「또 내가」', v: [1, 13, 14], note: '12장까지는 「내가 또」 · 13장엔 둘 다 없음 · 14~21장 모든 장에' },
+        { name: '🗣️ 앉은이 → 앉으신 이', phrase: '구름 위에 앉은이를 향하여 → 구름 위에 앉으신 이가', v: [15, 16], note: '같은 분, 바로 이웃한 두 절' }
     ],
     15: [
         { name: '셋째 이적', phrase: '크고 이상한 다른 이적', v: [1], note: '12:1 큰 이적 → 12:3 또 다른 이적 → 여기' },
@@ -30640,6 +30647,7 @@ const BONE_CH = {
         { name: '이 일 후에', phrase: '이 일 후에 내가 보니', v: [5], note: '4:1 · 7:1 · 7:9와 같은 말' },
         { name: '성전', phrase: '열리며 → 나와 → 연기가 차서 들어갈 자가 없음', v: [5, 6, 8], note: '끝 절은 11:19와 짝' },
         { name: '금', phrase: '금띠 → 금대접', v: [6, 7], note: '1:13 인자의 금띠와 같은 차림' },
+        { name: '🗣️ 이적을 보매', phrase: '크고 이상한 다른 이적을 보매', v: [1], note: '첫 세 마디 밖의 「보매」는 계시록에 이것 하나 — 나머지는 다 「보니」' }
     ],
     16: [
         { name: '대접을 쏟으매', phrase: '○째가 그 대접을 쏟으매', v: [2, 3, 4, 8, 10, 12, 17], note: '첫째~셋째 = 순서 + 1 (2·3·4) · 넷째~여섯째 = 순서 × 2 (8·10·12) · 일곱째 17' },
@@ -30675,6 +30683,7 @@ const BONE_CH = {
         { name: '즐거워하라', phrase: '하늘과 성도들과 사도들과 선지자들아', v: [20], note: '12:12 「하늘과 그 가운데 거하는 자들은 즐거워하라」' },
         { name: '맷돌', phrase: '큰 맷돌 같은 돌을 바다에 던짐 → 맷돌 소리가 다시 들리지 않고', v: [21, 22] },
         { name: '피', phrase: '선지자들과 성도들과 땅 위에서 죽임을 당한 모든 자의 피', v: [24], note: '17:6 「성도들의 피와 예수의 증인들의 피에 취한지라」' },
+        { name: '🗣️ 이 일 후에 다른 천사가', phrase: '이 일 후에 다른 천사가 … 보니', v: [1], note: '「이 일 후에」 다음이 「내가」가 아닌 곳은 여기 하나' }
     ],
     19: [
         { name: '할렐루야', phrase: '구원과 영광 → 두번째 → 아멘 할렐루야 → 통치하시도다', v: [1, 3, 4, 6], note: '신약의 할렐루야 네 번이 모두 이 장에' },
@@ -30710,6 +30719,7 @@ const BONE_CH = {
         { name: '정금 · 맑은 유리', phrase: '성은 정금 · 맑은 유리 → 길도 맑은 유리 같은 정금', v: [18, 21] },
         { name: '빛', phrase: '귀한 보석 같은 빛 → 하나님의 영광 · 어린 양이 등 → 만국이 그 빛 가운데로', v: [11, 23, 24] },
         { name: '들어옴', phrase: '왕들이 영광을 가지고 → 사람들이 → 생명책에 기록된 자들뿐', v: [24, 26, 27] },
+        { name: '🗣️ 내게 말씀하시되', phrase: '앉으신 이가 가라사대 → 또 가라사대 → 또 내게 말씀하시되', v: [5, 6], note: '「내게」 바로 뒤엔 가라사대가 오지 않는다' }
     ],
     22: [
         { name: '생명수 강 · 생명 나무', phrase: '보좌로부터 → 길 가운데로 → 강 좌우에 나무 → 열 두가지 실과 · 잎사귀', v: [1, 2], note: '2:7 생명나무' },
@@ -30942,6 +30952,7 @@ function _oilChapterHtml(ch) {
     return `<div class="oil-head"><button class="oil-back" onclick="openOilScreen()">‹ ${t('oil_all')}</button><div class="oil-title">${t('bone_title', { ch })}</div>
         <div class="oil-sub">${t('bone_sub', { lit, n: ids.length })}${dry ? `<br><small>${t('oil_dry_note', { n: dry })}</small>` : ''}</div></div>
         ${chips ? `<div class="bone-sec">${t('bone_ch_head', { ch })}</div><div class="bone-chips">${chips}</div>` : ''}
+        ${currentLang === 'en' ? '' : `<button class="ms-entry" onclick="openMalssi(${ch})">🗣️ 말씨 고르기 <small>보니/보매 · 가로되/말하되 · 하니/하매 …</small></button>`}
         <div class="bone-sec">${t('bone_units_head')}</div>
         <div class="bone-units">${units}</div>
         <div id="bone-card" class="bone-card" hidden></div>
@@ -30950,6 +30961,93 @@ function _oilChapterHtml(ch) {
         <div class="oil-next"><div class="oil-next-t">${t('oil_next_title')}</div><p>${nx.txt}</p>${nx.btn}${pl && (pl.lo === 2 || pl.lo === 5) ? `<button class="oil-next-sub" onclick="closeOilScreen(); openInitialLine(${ch})">${t('il_entry', { ch })}</button>` : ''}</div>
         <details class="oil-help"><summary>${t('oil_help_sum')}</summary>${_oilLegendHtml()}</details>`;
 }
+/* 🗣️ 말씨 고르기 (10/30 사용자) — 보니/보매 · 들으니/들으매 · 가로되/말하되/가라사대 · 내가 또/또 내가 · 하니/하매 자리만 빈칸으로,
+   주소와 본문을 보고 고른 뒤 그 자리의 규칙 한 줄을 본다. 규칙은 「외우는 순간 아는 것(장 · 앞 말 · 말하는 이) → 낱말」 방향(docs/계시록-말씨.md) */
+const MS_SPEAK = ['가로되', '말하되', '가라사대', '이르되', '이르시되', '말씀하시되'];
+function _msRule(sl) {
+    const { w, i, ans, ch, kind } = sl, prev = (w[i - 1] || '').replace(/[,.]$/, '');
+    if (kind === 'see') {
+        if (i >= 3) return ans === '보매' ? '⚠️ 첫 세 마디 밖인데 「보매」 — 계시록에 이것(15:1) 하나' : '첫 세 마디 밖의 「보○」는 보니 (예외 15:1 하나)';
+        if (w[0] === '내가' && (w[1] === '또' || w[1] === '이에')) return '「내가 또 보니」 · 「내가 이에 보니」 — 늘 보니';
+        return '절 첫머리의 「보○」는 규칙으로 갈리지 않아요 — 이 장의 칩·고리로 (「보매」는 첫 세 마디 안에만 나와요)';
+    }
+    if (kind === 'hear') return ans === '들으매' ? '「들으매」는 계시록에 이것(5:11) 하나 — 8:13은 「보고 들으니」' : '듣는 것은 늘 「들으니」 — 「들으매」는 5:11 하나';
+    if (kind === 'open') return ch <= 2 && ans === '또 내가' ? '⚠️ 예수의 편지 말(2:21 · 2:23)은 예외 — 요한의 서술은 12장까지 「내가 또」, 14장부터 「또 내가」' : '12장까지는 「내가 또」, 14장부터는 「또 내가」 (13장엔 둘 다 없음)';
+    if (kind === 'hani') return ans.endsWith('매') ? '「하매」는 넷뿐: 9:14 놓아 주라 하매 · 11:18 분노하매 · 12:6 도망하매 · 21:17 척량하매' : '「…하니」가 기본 — 「하매」는 넷뿐(9:14 · 11:18 · 12:6 · 21:17)';
+    if (prev === '내게' || prev === '나더러' || /에게$/.test(prev)) return '「내게 · ○○에게」 바로 뒤엔 가로되도 가라사대도 안 와요 — 말하되 · 말씀하시되 · 이르되';
+    if (ans === '가라사대') return '하나님 · 예수 · 성령이 말하면 가라사대';
+    if (ans === '말하되') return '「내게 · ○○에게」 밖의 말하되는 넷뿐 — 생물의 「오라」(6:1 · 6:3 · 6:5)와 14:8';
+    if (ans === '이르되') return '이르되는 넷뿐: 6:16 · 7:13 · 7:14 · 8:13 독수리';
+    return '천사 · 장로 · 음성 · 무리 · 요한의 말은 가로되 (「내게 · ○○에게」 바로 뒤만 아님)';
+}
+function _msSlots(ids) {
+    const out = [];
+    ids.forEach(id => {
+        const [ch, v] = id.split('-').map(Number), d = (bibleData[ch] || [])[v - 1];
+        if (!d || !d.text) return;
+        const w = d.text.split(/\s+/);
+        const push = (i, n, ans, choices, kind) => { const sl = { id, ch, v, w, i, n, ans, choices, kind }; sl.rule = _msRule(sl); const g = (BONE_CH[ch] || []).find(g => g.v.includes(v) && g.phrase.includes(ans)); if (g) sl.rule += ` · 🦴 ${g.name.replace(/^🗣️ /, '')} 「${g.phrase}」`; out.push(sl); };   // 그 절이 든 장 칩이 있으면 함께
+        if ((w[0] === '내가' && w[1] === '또') || (w[0] === '또' && w[1] === '내가')) push(0, 2, w[0] + ' ' + w[1], ['내가 또', '또 내가'], 'open');
+        w.forEach((x, i) => {
+            const y = x.replace(/[,.]$/, '');
+            if (y === '보니' || y === '보매') push(i, 1, y, ['보니', '보매'], 'see');
+            else if (y === '들으니' || y === '들으매') push(i, 1, y, ['들으니', '들으매'], 'hear');
+            else if (MS_SPEAK.includes(y)) push(i, 1, y, ['가로되', '말하되', '가라사대'].concat(['가로되', '말하되', '가라사대'].includes(y) ? [] : [y]), 'speak');
+            else if (/하[니매]$/.test(y) && y.length <= 5) push(i, 1, y, [y.slice(0, -1) + '니', y.slice(0, -1) + '매'], 'hani');
+        });
+    });
+    return out;
+}
+function openMalssi(ch) {   // ch 없으면 외운 절 전체에서 무작위 15
+    if (typeof _featNote === 'function') _featNote(ch ? 'msc' : 'msa');
+    let list;
+    if (ch) list = _msSlots(_oilChapterIds(ch));
+    else {
+        const ids = Object.keys(stageClearDate || {}).filter(id => /^\d+-\d+$/.test(id) && stageClearDate[id]);
+        list = _msSlots(ids).sort(() => Math.random() - .5).slice(0, 15);
+    }
+    if (!list.length) { showToast(ch ? '이 장엔 고를 자리가 없어요' : '외운 절이 생기면 할 수 있어요'); return; }
+    window._ms = { ch, list, k: 0, ok: 0, miss: [], done: -1 };
+    let ov = document.getElementById('ms-overlay');
+    if (!ov) { ov = document.createElement('div'); ov.id = 'ms-overlay'; ov.className = 'modal-overlay'; ov.style.zIndex = '10003'; document.body.appendChild(ov); }
+    ov.style.display = 'flex'; setTimeout(() => ov.classList.add('active'), 10);
+    _msDraw();
+}
+function closeMalssi() { const ov = document.getElementById('ms-overlay'); if (ov) { ov.classList.remove('active'); ov.style.display = 'none'; } }
+function _msVerseHtml(sl, fill, good) {
+    const pre = sl.w.slice(0, sl.i).join(' '), post = sl.w.slice(sl.i + sl.n).join(' ');
+    const slot = fill ? `<b class="ms-slot ${good ? 'ok' : 'no'}">${escapeHtml(fill)}</b>` : '<b class="ms-slot">？</b>';
+    return `${escapeHtml(pre)} ${slot} ${escapeHtml(post)}`;
+}
+function _msDraw() {
+    const S = window._ms, ov = document.getElementById('ms-overlay'); if (!S || !ov) return;
+    const head = `🗣️ 말씨 고르기${S.ch ? ` · ${S.ch}장` : ''}`;
+    if (S.k >= S.list.length) {
+        const miss = S.miss.map(sl => `<span>${sl.ch}:${sl.v} ${escapeHtml(sl.ans)}</span>`).join('');
+        ov.innerHTML = `<div class="oil-card ms-card"><div class="ms-head"><b>${head}</b></div>
+            <div class="ms-done"><b>${S.ok}</b> / ${S.list.length}</div>${miss ? `<div class="ms-miss">${miss}</div>` : ''}
+            <div class="ms-btns">${S.miss.length ? `<button class="ms-go" onclick="_msRetry()">틀린 ${S.miss.length}개 다시</button>` : ''}<button class="oil-close" onclick="closeMalssi()">${t('btn_close')}</button></div></div>`;
+        return;
+    }
+    const sl = S.list[S.k];
+    ov.innerHTML = `<div class="oil-card ms-card"><div class="ms-head"><b>${head}</b><span>${S.k + 1} / ${S.list.length}</span><button class="ms-x" onclick="closeMalssi()">✕</button></div>
+        <div class="ms-addr">계 ${sl.ch}:${sl.v}</div>
+        <div class="ms-verse" id="ms-verse">${_msVerseHtml(sl)}</div>
+        <div class="ms-choices" id="ms-choices">${sl.choices.map((c, j) => `<button onclick="_msPick(${j})">${escapeHtml(c)}</button>`).join('')}</div>
+        <div class="ms-rule" id="ms-rule" hidden></div></div>`;
+}
+function _msPick(j) {
+    const S = window._ms, sl = S && S.list[S.k]; if (!sl || S.done === S.k) return;
+    S.done = S.k;
+    const pick = sl.choices[j], good = pick === sl.ans;
+    if (good) S.ok++; else S.miss.push(sl);
+    document.getElementById('ms-verse').innerHTML = _msVerseHtml(sl, sl.ans, good);
+    document.querySelectorAll('#ms-choices button').forEach((b, x) => { b.disabled = true; if (sl.choices[x] === sl.ans) b.classList.add('ok'); else if (x === j) b.classList.add('no'); });
+    const r = document.getElementById('ms-rule');
+    r.innerHTML = `${good ? '⭕' : '❌'} ${escapeHtml(sl.rule)}<button class="ms-go" onclick="window._ms.k++; _msDraw()">다음</button>`;
+    r.hidden = false;
+}
+function _msRetry() { const S = window._ms; S.list = S.miss; S.miss = []; S.k = 0; S.ok = 0; S.done = -1; _msDraw(); }
 /* 🌱 나의 처음과 지금 (10/11 사용자: "잘 모르겠어도 계속하면 는다 — 그런데 시간이 지나면 잊는다, 자주 상기시켜야")
    말로 「계속하면 늘어요」보다 **내 숫자**가 믿음이 간다 — 같은 장을 다시 했을 때 남아 있는 가장 오래된 기록과 나란히 */
 function _growthMd(ts) { const d = new Date(ts); return `${d.getMonth() + 1}/${d.getDate()}`; }

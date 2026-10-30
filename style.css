@@ -8237,3 +8237,27 @@ body:has(#pwa-install-banner[style*="display: flex"]) #home-screen.active { padd
 .fs-q .fs-in { display: block; width: 100%; box-sizing: border-box; margin-top: 8px; padding: 9px 12px; border-radius: 10px; border: 1px solid #bdc3c7; font-size: 0.9rem; color: #2c3e50; background: #fff; }
 .fs-q .fs-in[hidden] { display: none; }
 .fs-card .fs-q .fs-in { background: rgba(255,255,255,0.95); border-color: #f1c40f; }
+/* 🗣️ 말씨 고르기 (10/30) */
+.ms-entry { display: block; width: 100%; margin: 8px 0 4px; padding: 10px 12px; border-radius: 12px; border: 1px solid #3a4d6e; background: rgba(120, 160, 255, .08); color: #e8edf5; font-size: .92rem; text-align: left; cursor: pointer; }
+.ms-entry small { display: block; color: #9fb0cc; font-size: .76rem; margin-top: 2px; }
+.ms-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.ms-head b { flex: 1; }
+.ms-head span { color: #9fb0cc; font-size: .85rem; font-variant-numeric: tabular-nums; }
+.ms-x { background: none; border: 0; color: #9fb0cc; font-size: 1.1rem; cursor: pointer; }
+.ms-addr { font-size: .85rem; color: #f3c969; margin-bottom: 6px; }
+.ms-verse { font-size: 1.02rem; line-height: 1.75; padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, .04); }
+.ms-slot { display: inline-block; min-width: 2.6em; text-align: center; padding: 0 6px; border-radius: 6px; background: rgba(243, 201, 105, .18); color: #f3c969; }
+.ms-slot.ok { background: rgba(80, 200, 120, .2); color: #7ee2a0; }
+.ms-slot.no { background: rgba(240, 90, 90, .2); color: #ff9a9a; }
+.ms-choices { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.ms-choices button { flex: 1 1 30%; padding: 12px 6px; border-radius: 12px; border: 1px solid #3a4d6e; background: #1f2b42; color: #e8edf5; font-size: 1rem; cursor: pointer; }
+.ms-choices button.ok { border-color: #50c878; background: rgba(80, 200, 120, .18); }
+.ms-choices button.no { border-color: #f05a5a; background: rgba(240, 90, 90, .15); }
+.ms-rule { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: rgba(243, 201, 105, .08); border: 1px solid rgba(243, 201, 105, .3); font-size: .9rem; line-height: 1.55; }
+.ms-go { display: block; margin: 10px 0 0 auto; padding: 8px 18px; border-radius: 10px; border: 0; background: #f3c969; color: #1b2438; font-weight: 700; cursor: pointer; }
+.ms-done { text-align: center; font-size: 1.1rem; margin: 10px 0; }
+.ms-done b { font-size: 2rem; color: #f3c969; }
+.ms-miss { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 8px; }
+.ms-miss span { font-size: .8rem; padding: 3px 8px; border-radius: 8px; background: rgba(240, 90, 90, .12); }
+.ms-btns { display: flex; gap: 8px; justify-content: center; align-items: center; }
+.ms-btns .ms-go { margin: 0; }
