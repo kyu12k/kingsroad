@@ -8938,6 +8938,7 @@ function _njClamStuck() {   // 오늘 조개에서 단서 없이 못 쓴 절 중
 function _njClamStudyGo(ids) {
     window._clamStudyQ = ids.slice();
     startTraining(ids[0], 'normal');   // 'normal' — 복습이어도 백지 먼저로 가로채지 않고 1~5단계
+    window._reviewNoAdvance = String(ids[0]);   // 방금 백지로 막힌 절 — 단계로 외워도 복습 단계는 그대로(백지 먼저 복습에서 막혔을 때와 같이, 내일 다시)
 }
 function _njClamStudyDone(id) {   // 일반 결과 화면에서 — 단계를 다 마친 절
     const Q = window._clamStudyQ; if (!Array.isArray(Q) || !Q.includes(String(id))) return null;
