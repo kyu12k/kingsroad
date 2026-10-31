@@ -5946,6 +5946,9 @@ body > #guide-screen-overlay .guide-body > .guide-btn.ghost { width: 100%; margi
     position: relative;
     cursor: not-allowed;
 }
+/* 🌅 바로 다음에 열릴 잠긴 절 — 언제 열리는지 · 눌러서 지금 열기(10/31) */
+.stage-item.kings-locked.kings-next { cursor: pointer; filter: grayscale(0.2); }
+.kings-lock-hint { margin-top: 6px; font-size: 0.8rem; font-weight: 700; color: #f7dc6f; }
 .kings-locked-badge {
     position: absolute;
     right: 14px;

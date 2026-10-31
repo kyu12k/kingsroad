@@ -212,7 +212,7 @@ const LANG = {
         alert_chapter_locked: '🔒 이전 챕터를 먼저 클리어하여 길을 여세요.',
         alert_verse_locked: '🔒 아직 열리지 않은 구절입니다.\n매일 새로운 구절이 열립니다!',
         alert_kings_unlock_next_confirm: '해금하시면 학습량이 늘어나게 됩니다.\n그래도 괜찮으십니까?',
-        alert_kings_unlock_order: '🔒 순서대로 해금해야 합니다.\n먼저 바로 다음 구절부터 열어주세요.',
+        alert_kings_unlock_order: '🔒 순서대로 해금해야 합니다.\n먼저 바로 다음 구절부터 열어주세요.', kings_lock_hint: '🌅 아침 6시에 열려요 · 지금 열려면 눌러요',
         alert_spell_incomplete: '주문이 완성되지 않았습니다!\n(현재: {cur} / 필요: {need})',
         alert_attack_fail: '❌ 공격 실패!\n{count}군데가 틀렸습니다.',
         alert_defeat: '💔 패배... 눈앞이 캄캄해집니다.',
@@ -1503,7 +1503,7 @@ const LANG = {
         alert_chapter_locked: '🔒 Clear the previous chapter first to open the path.',
         alert_verse_locked: '🔒 This verse is not yet unlocked.\nA new verse unlocks each day!',
         alert_kings_unlock_next_confirm: 'Unlocking this verse will increase your daily study load.\nAre you sure?',
-        alert_kings_unlock_order: '🔒 Verses must be unlocked in order.\nPlease unlock the very next verse first.',
+        alert_kings_unlock_order: '🔒 Verses must be unlocked in order.\nPlease unlock the very next verse first.', kings_lock_hint: '🌅 Opens at 6 AM · tap to open it now',
         alert_spell_incomplete: 'Spell not complete!\n(Current: {cur} / Required: {need})',
         alert_attack_fail: '❌ Attack failed!\n{count} mistake(s) found.',
         alert_defeat: '💔 Defeated... Everything goes dark.',
@@ -11941,6 +11941,11 @@ function buildStageItemEl(stage, chData, kingsUnlockedSet, lastPlayedId) {
     if (kingsUnlockedSet && !kingsUnlockedSet.has(stage.id)) {
         item.classList.add('kings-locked');
         item.innerHTML += `<span class="kings-locked-badge">🔒</span>`;
+        if (stage.type === 'normal' && stage.id === getNextKingsRoadStageId()) {   // 🌅 언제 열리는지 말이 없었다(10/31)
+            item.classList.add('kings-next');
+            const info = item.querySelector('.stage-info');
+            if (info) info.insertAdjacentHTML('beforeend', `<div class="kings-lock-hint">${t('kings_lock_hint')}</div>`);
+        }
         if (stage.type === 'normal') {
             item.onclick = () => {
                 const nextId = getNextKingsRoadStageId();
@@ -17864,7 +17869,14 @@ function showClearScreen() {
             nextBtn.textContent = currentLang === 'en' ? 'Next Verse ▶' : '다음 구절 학습 ▶';
             nextBtn.onclick = () => goToNextStage(nextId);
             const continueBtn = resultModalEl.querySelector('#result-continue-btn');
-            if (continueBtn) continueBtn.insertAdjacentElement('afterend', nextBtn);
+            // 🌱 처음 온 사람(깬 절 3개 미만) · 왕의 길 — 오늘 남은 절로 바로 이어지게 맨 위 큰 버튼(10/31: 1절 뒤 지도로 가면 잠긴 카드만 보고 떠났다)
+            const _left = _kingsTodayLeft() - (stageMastery[_curStageId] > 0 ? 0 : 1), _cleared = Object.keys(stageMastery || {}).filter(k => /^\d+-\d+$/.test(k) && stageMastery[k] > 0).length;
+            if (_left > 0 && _cleared < 3) {
+                const [_c, _v] = String(nextId).split('-');
+                nextBtn.textContent = currentLang === 'en' ? `▶ Continue · Rev ${_c}:${_v} (${_left} left today)` : `▶ 이어서 계 ${_c}:${_v} (오늘 ${_left}절 남음)`;
+                nextBtn.style.cssText = 'margin-top:4px; margin-bottom:8px; font-size:1.1rem; padding:16px; background:linear-gradient(135deg,#27ae60,#2ecc71); box-shadow:0 4px 0 #1e8449; color:#fff;';
+                if (continueBtn) continueBtn.insertAdjacentElement('beforebegin', nextBtn);
+            } else if (continueBtn) continueBtn.insertAdjacentElement('afterend', nextBtn);
         }
     }
     resultModalEl.classList.add('active');
@@ -27287,6 +27299,7 @@ function _promiseRefOf(id) { const [c, v] = String(id).split('-'); return curren
 function _promiseNowHM() { const d = new Date(), m = Math.round(d.getMinutes() / 5) * 5, h = (d.getHours() + (m === 60 ? 1 : 0)) % 24; return String(h).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); }
 function _showPromiseCard() {
     const P = onboardPromise; if (!P || P.shown) return;
+    if (_kingsTodayLeft() > 0) return;   // 🌱 오늘 열린 절이 남았으면 아직 — 「내일 6시에 다음 절」은 오늘 몫을 다 한 뒤(10/31)
     if (document.getElementById('google-nudge-modal')) { window._promiseWait = true; return; }   // 🔒 구글 카드가 떠 있으면 닫은 뒤에
     if (typeof _googleFirstPending === 'function' && _googleFirstPending()) { window._promiseWait = true; setTimeout(maybeShowGoogleNudge, 300); return; }   // 🔒 첫 절 구글 카드 먼저(10/11)
     P.shown = Date.now(); saveGameData();
@@ -27347,9 +27360,17 @@ async function _promiseNotifOn() {
    등록 → 홈 → 「여정 시작」 → 여정 고르기(셋) → 하루 몇 구절(셋) → 안내 3쪽 → 아멘 → 지도 → 1장 → 1절, 첫 구절까지 탭 8~10번·선택 셋이었다.
    이제 「왕의 길 · 하루 1구절」로 정해 두고 지도를 한 번 보여 준 뒤 1:1을 연다. 여정·단계는 지도 칩·홈에서 언제든 바꾼다.
    안내 3쪽(kingsRoad_introSeen)은 남겨 두어 다음에 「여정 시작」을 누를 때 본다 */
+/* 🌱 처음 온 사람의 첫날은 1절이 아니라 첫 단락 1:1~3(10/31) — 실측(10/24~29 새로 온 사람): 첫날 딱 1절 하고 다음 날 다시 온 사람 0/8,
+   3절 넘게 한 사람은 절반이 다시 옴. 왕의 길 1단계는 첫날 1절만 열려 1절을 마치면 잠긴 카드만 남았다. 둘째 날부터는 하루 1절 그대로 */
+const FIRST_DAY_EXTRA = 2;
+function _kingsTodayLeft() {   // 왕의 길에서 열려 있는데 아직 안 깬 절 수
+    if (activeMode !== 'kings' || !kingsRoadData.stepHistory || !kingsRoadData.stepHistory.length) return 0;
+    let n = 0; getKingsRoadUnlockedSet().forEach(id => { if (/^\d+-\d+$/.test(id) && !(stageMastery[id] > 0)) n++; });
+    return n;
+}
 function _startFirstVerseNow() {
     if (!_isPreFirstClear()) return;
-    if (!kingsRoadData.stepHistory.length) setKingsRoadStep(1);
+    if (!kingsRoadData.stepHistory.length) { setKingsRoadStep(1); kingsRoadData.manualBonus = Math.max(kingsRoadData.manualBonus || 0, FIRST_DAY_EXTRA); saveGameData(); }
     switchMode('kings');
     try { localStorage.setItem('kingsRoad_lastAmenDate', getMemoryQuizDate()); } catch (e) { }
     window._pendingFirstStageStart = true;
